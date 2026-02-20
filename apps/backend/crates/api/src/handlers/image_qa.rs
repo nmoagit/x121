@@ -7,6 +7,7 @@ use axum::extract::{Path, State};
 use axum::http::StatusCode;
 use axum::Json;
 use serde::{Deserialize, Serialize};
+use trulience_core::qa_status::{QA_FAIL, QA_PASS, QA_WARN};
 use trulience_core::types::DbId;
 use trulience_db::models::image_qa::{
     CreateImageQualityScore, ImageQaThreshold, ImageQualityScore, QaCheckType,
@@ -113,9 +114,15 @@ pub async fn run_qa(
     for &(script_name, check_names) in SCRIPT_GROUPS {
         let script_output = run_python_script(script_name, &input.image_path, &config).await?;
 
-        let results = script_output.as_array().ok_or_else(|| {
-            AppError::InternalError(format!("Expected array from QA script {script_name}"))
-        })?;
+        // Python scripts return {"results": [...], ...}. Extract the results array.
+        let results = script_output
+            .get("results")
+            .and_then(|v| v.as_array())
+            .ok_or_else(|| {
+                AppError::InternalError(format!(
+                    "Expected object with 'results' array from QA script {script_name}"
+                ))
+            })?;
 
         for result in results {
             let check_name = result
@@ -263,15 +270,15 @@ async fn run_python_script(
 fn determine_status(score: Option<f64>, threshold: Option<&ImageQaThreshold>) -> String {
     let (score, threshold) = match (score, threshold) {
         (Some(s), Some(t)) => (s, t),
-        _ => return "pass".to_string(),
+        _ => return QA_PASS.to_string(),
     };
 
     if score >= threshold.warn_threshold {
-        "pass".to_string()
+        QA_PASS.to_string()
     } else if score >= threshold.fail_threshold {
-        "warn".to_string()
+        QA_WARN.to_string()
     } else {
-        "fail".to_string()
+        QA_FAIL.to_string()
     }
 }
 
@@ -282,14 +289,14 @@ fn compute_overall_status(scores: &[ImageQualityScore]) -> String {
     let mut has_warn = false;
     for s in scores {
         match s.status.as_str() {
-            "fail" => return "fail".to_string(),
-            "warn" => has_warn = true,
+            QA_FAIL => return QA_FAIL.to_string(),
+            QA_WARN => has_warn = true,
             _ => {}
         }
     }
     if has_warn {
-        "warn".to_string()
+        QA_WARN.to_string()
     } else {
-        "pass".to_string()
+        QA_PASS.to_string()
     }
 }

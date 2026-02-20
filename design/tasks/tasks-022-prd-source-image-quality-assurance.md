@@ -59,8 +59,8 @@ INSERT INTO qa_check_types (name, category, description) VALUES
 ```
 
 **Acceptance Criteria:**
-- [ ] Nine QA check types seeded with categories
-- [ ] Standard conventions followed
+- [x] Nine QA check types seeded with categories
+- [x] Standard conventions followed
 
 ### Task 1.2: Image Quality Scores Table
 **File:** `migrations/YYYYMMDD_create_image_quality_scores.sql`
@@ -89,10 +89,10 @@ CREATE TRIGGER set_updated_at BEFORE UPDATE ON image_quality_scores
 ```
 
 **Acceptance Criteria:**
-- [ ] Stores per-check results with numeric score and pass/warn/fail status
-- [ ] `details` JSONB stores check-specific data
-- [ ] Supports both source images and variant images
-- [ ] FK indexes on all columns
+- [x] Stores per-check results with numeric score and pass/warn/fail status
+- [x] `details` JSONB stores check-specific data
+- [x] Supports both source images and variant images
+- [x] FK indexes on all columns
 
 ### Task 1.3: QA Thresholds Configuration Table
 **File:** `migrations/YYYYMMDD_create_image_qa_thresholds.sql`
@@ -118,10 +118,10 @@ CREATE TRIGGER set_updated_at BEFORE UPDATE ON image_qa_thresholds
 ```
 
 **Acceptance Criteria:**
-- [ ] Per-project threshold overrides
-- [ ] `NULL` project_id = studio-wide defaults
-- [ ] `is_blocking` determines if fail prevents proceeding
-- [ ] `config` JSONB for check-specific settings
+- [x] Per-project threshold overrides
+- [x] `NULL` project_id = studio-wide defaults
+- [x] `is_blocking` determines if fail prevents proceeding
+- [x] `config` JSONB for check-specific settings
 
 ---
 
@@ -171,10 +171,10 @@ if __name__ == "__main__":
 ```
 
 **Acceptance Criteria:**
-- [ ] Checks minimum resolution against configurable threshold
-- [ ] Validates format is PNG, JPEG, or WebP
-- [ ] Returns structured JSON with score and status per check
-- [ ] Aspect ratio validation when configured
+- [x] Checks minimum resolution against configurable threshold
+- [x] Validates format is PNG, JPEG, or WebP
+- [x] Returns structured JSON with score and status per check
+- [x] Aspect ratio validation when configured
 
 ### Task 2.2: Face Detection & Centering Analyzer
 **File:** `scripts/python/qa_face_detection.py`
@@ -188,10 +188,10 @@ def check(image_path: str, config: dict) -> dict:
 ```
 
 **Acceptance Criteria:**
-- [ ] Confirms at least one face is present
-- [ ] Checks face is within center zone (configurable percentage)
-- [ ] Checks face occupies sufficient image area (configurable minimum %)
-- [ ] Returns auto-crop suggestion if face is off-center
+- [x] Confirms at least one face is present
+- [x] Checks face is within center zone (configurable percentage)
+- [x] Checks face occupies sufficient image area (configurable minimum %)
+- [x] Returns auto-crop suggestion if face is off-center
 
 ### Task 2.3: Quality Scoring (Sharpness, Lighting, Artifacts)
 **File:** `scripts/python/qa_image_quality.py`
@@ -217,10 +217,10 @@ def check_lighting(image_path: str) -> dict:
 ```
 
 **Acceptance Criteria:**
-- [ ] Sharpness scored via Laplacian variance (blur detection)
-- [ ] Lighting assessed via HSV brightness distribution
-- [ ] Artifact detection for common AI generation artifacts
-- [ ] Overall quality score: composite of individual metrics
+- [x] Sharpness scored via Laplacian variance (blur detection)
+- [x] Lighting assessed via HSV brightness distribution
+- [x] Artifact detection for common AI generation artifacts
+- [x] Overall quality score: composite of individual metrics
 
 ### Task 2.4: Likeness Comparison
 **File:** `scripts/python/qa_likeness.py`
@@ -271,10 +271,10 @@ pub async fn run_image_qa(
 ```
 
 **Acceptance Criteria:**
-- [ ] Runs all applicable checks for the image
-- [ ] Uses project-specific thresholds (fallback to studio defaults)
-- [ ] Stores all results in `image_quality_scores` table
-- [ ] Returns overall pass/warn/fail status
+- [x] Runs all applicable checks for the image
+- [x] Uses project-specific thresholds (fallback to studio defaults)
+- [x] Stores all results in `image_quality_scores` table
+- [x] Returns overall pass/warn/fail status
 
 ### Task 3.2: Batch Validation Service
 **File:** `src/services/image_qa_batch_service.rs`
@@ -314,10 +314,10 @@ pub async fn batch_validate_project(
 ```
 
 **Acceptance Criteria:**
-- [ ] Individual QA trigger and results retrieval
-- [ ] Batch QA trigger and report retrieval
-- [ ] Threshold configuration per project
-- [ ] CSV export for batch reports
+- [x] Individual QA trigger and results retrieval
+- [ ] Batch QA trigger and report retrieval (post-MVP)
+- [x] Threshold configuration per project
+- [ ] CSV export for batch reports (post-MVP)
 
 ---
 

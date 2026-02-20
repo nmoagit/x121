@@ -21,10 +21,10 @@ Source of truth: [`design/design.md`](../design.md)
 | Status | Count |
 |--------|-------|
 | backlog | 0 |
-| planning | 101 |
+| planning | 100 |
 | in-progress | 0 |
 | review | 0 |
-| done | 8 |
+| done | 9 |
 | blocked | 0 |
 | deferred | 0 |
 | maybe | 15 |
@@ -92,7 +92,7 @@ Source of truth: [`design/design.md`](../design.md)
 |-----|-------|----------|--------|-------|-------|
 | PRD-76 | Character Identity Embedding | — | `planning` | — | |
 | PRD-21 | Source Image Management & Variant Generation | — | `planning` | — | |
-| PRD-22 | Source Image Quality Assurance | — | `planning` | — | |
+| PRD-22 | Source Image Quality Assurance | — | `done` | 2026-02-20 | 3 DB tables (qa_check_types, image_quality_scores, image_qa_thresholds), 3 repos, 6 API handlers (/qa/*), 3 Python QA scripts (resolution/format, face detection, image quality), QA runner via subprocess. Post-MVP: likeness comparison (PRD-76), batch validation, frontend components. |
 | PRD-23 | Scene Type Configuration | — | `planning` | — | Updated v1.1 (2026-02-19): clip generation prompt types (full_clip, start_clip, continuation_clip) |
 | PRD-24 | Recursive Video Generation Loop | — | `planning` | — | Updated v1.1 (2026-02-19): position-based prompt type selection |
 | PRD-25 | Incremental Re-stitching & Smoothing | — | `planning` | — | |

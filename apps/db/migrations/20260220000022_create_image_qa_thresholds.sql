@@ -16,6 +16,12 @@ CREATE TABLE image_qa_thresholds (
     updated_at     TIMESTAMPTZ      NOT NULL DEFAULT now()
 );
 
+-- Unique constraint: one threshold per (project, check type) pair.
+-- Uses COALESCE to handle NULL project_id (system defaults) correctly,
+-- since NULL != NULL in SQL would allow duplicate default entries.
+CREATE UNIQUE INDEX uq_image_qa_thresholds_project_check
+    ON image_qa_thresholds (COALESCE(project_id, 0), check_type_id);
+
 -- FK indexes
 CREATE INDEX idx_image_qa_thresholds_project_id    ON image_qa_thresholds(project_id);
 CREATE INDEX idx_image_qa_thresholds_check_type_id ON image_qa_thresholds(check_type_id);

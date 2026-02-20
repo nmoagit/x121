@@ -123,16 +123,7 @@ def _detect_faces_opencv(img):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        print(json.dumps({"error": "Usage: qa_face_detection.py <image_path> [config_json]"}))
-        sys.exit(1)
-
-    image_path = sys.argv[1]
-    config = json.loads(sys.argv[2]) if len(sys.argv) > 2 else {}
-
-    try:
-        result = check(image_path, config)
-        print(json.dumps(result))
-    except Exception as e:
-        print(json.dumps({"error": str(e), "results": []}))
-        sys.exit(1)
+    # Use shared CLI runner to avoid boilerplate duplication across QA scripts.
+    import importlib
+    _qa = importlib.import_module("qa")
+    _qa.run_check_cli(check, script_name="qa_face_detection.py")

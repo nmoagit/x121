@@ -54,7 +54,7 @@ impl ImageQaThresholdRepo {
             "INSERT INTO image_qa_thresholds
                 (project_id, check_type_id, warn_threshold, fail_threshold, is_blocking, config)
              VALUES ($1, $2, $3, $4, COALESCE($5, true), $6)
-             ON CONFLICT (project_id, check_type_id)
+             ON CONFLICT (COALESCE(project_id, 0), check_type_id)
                 DO UPDATE SET
                     warn_threshold = EXCLUDED.warn_threshold,
                     fail_threshold = EXCLUDED.fail_threshold,
