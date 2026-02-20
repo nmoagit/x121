@@ -1,3 +1,5 @@
+pub mod models;
+
 use std::time::Duration;
 
 use sqlx::postgres::PgPoolOptions;

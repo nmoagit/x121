@@ -6,7 +6,7 @@ async fn test_full_bootstrap(pool: PgPool) {
     // Health check
     trulience_db::health_check(&pool).await.unwrap();
 
-    // Verify all six lookup tables exist and have seed data
+    // Verify all nine lookup tables exist and have seed data
     let tables = [
         "job_statuses",
         "approval_statuses",
@@ -14,6 +14,9 @@ async fn test_full_bootstrap(pool: PgPool) {
         "project_statuses",
         "scene_statuses",
         "segment_statuses",
+        "character_statuses",
+        "image_variant_statuses",
+        "scene_type_statuses",
     ];
 
     for table in tables {
