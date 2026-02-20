@@ -23,8 +23,8 @@ const SIZE_CLASSES: Record<DrawerSize, string> = {
 };
 
 const POSITION_CLASSES: Record<DrawerPosition, string> = {
-  left: "left-0 top-0 bottom-0",
-  right: "right-0 top-0 bottom-0",
+  left: "left-0 right-auto top-0 bottom-0",
+  right: "right-0 left-auto top-0 bottom-0",
 };
 
 const SLIDE_ANIMATION: Record<DrawerPosition, string> = {

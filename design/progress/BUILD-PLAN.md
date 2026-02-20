@@ -464,6 +464,7 @@ When a PRD is completed, some phases may be deferred because they depend on PRDs
 | PRD-29 Phase 7: Admin Token Editor UI | PRD-29 (done) | PRD-01, PRD-03 | Both PRD-01 AND PRD-03 are done (also needs Phase 1 above) | M | Color picker, font/spacing adjusters, live preview, save/export to `custom_themes` table, admin RBAC |
 | PRD-29 Phase 8.1: Theme API persistence | PRD-29 (done) | PRD-01, PRD-03 | Both PRD-01 AND PRD-03 are done (also needs Phase 1 above) | S | Connect ThemeProvider to backend API for cross-session persistence (currently localStorage only) |
 | PRD-02 DRY: Router/middleware extraction | PRD-02 (done) | PRD-03 | PRD-03 is done | S | Extract shared router + middleware builder from main.rs and test helper to eliminate ~100 lines of duplication |
+| PRD-29: GitHub Primer-style token reskin | PRD-29 (done) | None | Anytime | S | Remap color, shadow, radius, and font-family token values in `colors.css` and spacing/animation token files to match GitHub's Primer design language. Component structure unchanged — token values only. |
 
 ### Quick Reference: What to pick up after each blocking PRD
 

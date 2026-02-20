@@ -7,6 +7,20 @@ const config: StorybookConfig = {
     name: "@storybook/react-vite",
     options: {},
   },
+  viteFinal(config) {
+    config.optimizeDeps ??= {};
+    config.optimizeDeps.include ??= [];
+    config.optimizeDeps.include.push(
+      "react",
+      "react/jsx-runtime",
+      "react/jsx-dev-runtime",
+      "react-dom",
+      "react-dom/client",
+      "lucide-react",
+      "zustand",
+    );
+    return config;
+  },
 };
 
 export default config;
