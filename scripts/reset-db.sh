@@ -15,7 +15,7 @@ reset_db() {
   echo "Resetting $label database..."
   sqlx database drop -y --database-url "$url" 2>/dev/null || true
   sqlx database create --database-url "$url"
-  sqlx migrate run --database-url "$url" --source migrations/
+  sqlx migrate run --database-url "$url" --source apps/db/migrations/
   echo "$label database ready."
 }
 

@@ -8,61 +8,68 @@ Binding decisions for all implementation work. Read this before writing any code
 
 ```
 trulience/
-├── Cargo.toml                # Rust workspace root
-├── package.json              # pnpm workspace root
-├── pnpm-workspace.yaml
-├── .cargo/config.toml        # Cargo build settings
-├── rust-toolchain.toml       # Pinned Rust version
+├── Makefile                  # Convenience commands (make build, make dev, etc.)
+├── .editorconfig             # Editor settings
 │
-├── crates/                   # All Rust code
-│   ├── api/                  # HTTP server (Axum) — binary
-│   ├── core/                 # Domain types, business logic — library
-│   ├── db/                   # Database layer (SQLx, queries) — library
-│   ├── events/               # Event bus — library
-│   ├── pipeline/             # Video generation pipeline — library
-│   ├── comfyui/              # ComfyUI WebSocket client — library
-│   └── worker/               # GPU worker node — binary
+├── apps/
+│   ├── backend/              # Rust workspace
+│   │   ├── Cargo.toml        # Workspace root
+│   │   ├── Cargo.lock
+│   │   ├── .cargo/config.toml
+│   │   ├── rustfmt.toml
+│   │   ├── clippy.toml
+│   │   ├── rust-toolchain.toml
+│   │   └── crates/
+│   │       ├── api/          # HTTP server (Axum) — binary
+│   │       ├── core/         # Domain types, business logic — library
+│   │       ├── db/           # Database layer (SQLx, queries) — library
+│   │       ├── events/       # Event bus — library
+│   │       ├── pipeline/     # Video generation pipeline — library
+│   │       ├── comfyui/      # ComfyUI WebSocket client — library
+│   │       └── worker/       # GPU worker node — binary
+│   │
+│   ├── frontend/             # React frontend
+│   │   ├── package.json
+│   │   ├── pnpm-lock.yaml
+│   │   ├── vite.config.ts
+│   │   ├── tsconfig.json
+│   │   └── src/
+│   │       ├── main.tsx
+│   │       ├── app/          # App shell, routing, providers
+│   │       ├── components/   # Shared UI components (design system)
+│   │       │   ├── primitives/   # Button, Input, Select, etc.
+│   │       │   ├── composite/    # Card, Modal, Table, etc.
+│   │       │   ├── layout/       # Stack, Grid, Panel, etc.
+│   │       │   └── domain/       # StatusBadge, ThumbnailCard, etc.
+│   │       ├── features/     # Feature modules (1 per PRD or feature area)
+│   │       │   ├── projects/
+│   │       │   ├── characters/
+│   │       │   ├── scenes/
+│   │       │   ├── generation/
+│   │       │   ├── review/
+│   │       │   ├── dashboard/
+│   │       │   └── admin/
+│   │       ├── hooks/        # Shared custom hooks
+│   │       ├── stores/       # Zustand stores
+│   │       ├── lib/          # Utilities, API client, constants
+│   │       └── tokens/       # Design tokens (CSS custom properties)
+│   │
+│   └── db/
+│       └── migrations/       # SQL migrations (sqlx-cli format)
 │
-├── migrations/               # SQL migrations (sqlx-cli format)
-│
-├── web/                      # React frontend
-│   ├── package.json
-│   ├── vite.config.ts
-│   ├── tsconfig.json
-│   ├── tailwind.config.ts
-│   └── src/
-│       ├── main.tsx
-│       ├── app/              # App shell, routing, providers
-│       ├── components/       # Shared UI components (design system)
-│       │   ├── primitives/   # Button, Input, Select, etc.
-│       │   ├── composite/    # Card, Modal, Table, etc.
-│       │   ├── layout/       # Stack, Grid, Panel, etc.
-│       │   └── domain/       # StatusBadge, ThumbnailCard, etc.
-│       ├── features/         # Feature modules (1 per PRD or feature area)
-│       │   ├── projects/
-│       │   ├── characters/
-│       │   ├── scenes/
-│       │   ├── generation/
-│       │   ├── review/
-│       │   ├── dashboard/
-│       │   └── admin/
-│       ├── hooks/            # Shared custom hooks
-│       ├── stores/           # Zustand stores
-│       ├── lib/              # Utilities, API client, constants
-│       └── tokens/           # Design tokens (CSS custom properties)
-│
-├── design/                   # Design documentation (existing)
+├── design/                   # Design documentation
 ├── scripts/                  # Dev & deployment scripts
 └── docker/                   # Docker configs
 ```
 
 ### Rules
 
-- Rust crates live in `crates/`. Never create Rust code outside this directory.
-- Frontend code lives in `web/`. Never create React code outside this directory.
-- SQL migrations live in `migrations/` at the repo root.
-- Feature modules in `web/src/features/` are self-contained: each has its own components, hooks, and types. Shared code goes in the parent directories (`components/`, `hooks/`, `lib/`).
+- Rust crates live in `apps/backend/crates/`. Never create Rust code outside this directory.
+- Frontend code lives in `apps/frontend/`. Never create React code outside this directory.
+- SQL migrations live in `apps/db/migrations/`.
+- Feature modules in `apps/frontend/src/features/` are self-contained: each has its own components, hooks, and types. Shared code goes in the parent directories (`components/`, `hooks/`, `lib/`).
 - No circular dependencies between crates. Dependency direction: `api` → `core`, `db`, `events`, `pipeline` → `comfyui`. Never the reverse.
+- Use `make <target>` from the repo root for common commands (see `Makefile`).
 
 ---
 
@@ -120,7 +127,7 @@ trulience/
 ### Module Organization (per crate)
 
 ```
-crates/api/src/
+apps/backend/crates/api/src/
 ├── main.rs               # Entry point, server startup
 ├── lib.rs                # Public API of the crate
 ├── config.rs             # Configuration struct
@@ -170,7 +177,7 @@ pub type Timestamp = chrono::DateTime<chrono::Utc>;
 Every crate defines its own error type using `thiserror`. The `api` crate maps all errors to HTTP responses.
 
 ```rust
-// crates/core/src/error.rs
+// apps/backend/crates/core/src/error.rs
 #[derive(Debug, thiserror::Error)]
 pub enum CoreError {
     #[error("Entity not found: {entity} with id {id}")]
@@ -189,7 +196,7 @@ pub enum CoreError {
     Forbidden(String),
 }
 
-// crates/api/src/errors.rs — maps CoreError → HTTP response
+// apps/backend/crates/api/src/errors.rs — maps CoreError → HTTP response
 impl IntoResponse for CoreError {
     fn into_response(self) -> Response {
         let (status, code) = match &self {
@@ -231,7 +238,7 @@ mod tests {
     fn test_character_validation() { ... }
 }
 
-// Integration tests: crates/api/tests/
+// Integration tests: apps/backend/crates/api/tests/
 // Use a shared test harness with a real test database
 #[tokio::test]
 async fn test_create_character_endpoint() {
@@ -358,13 +365,14 @@ CREATE INDEX idx_characters_settings ON characters USING GIN (settings);
 
 ```bash
 # Create a new migration
-sqlx migrate add create_characters_table
+sqlx migrate add -r create_characters_table --source apps/db/migrations/
 
 # Run migrations
-sqlx migrate run
+make migrate
+# or: sqlx migrate run --source apps/db/migrations/
 
 # Check migration status
-sqlx migrate info
+sqlx migrate info --source apps/db/migrations/
 ```
 
 ### pgvector Index Strategy
@@ -568,7 +576,7 @@ Rules:
 All API calls go through TanStack Query hooks:
 
 ```tsx
-// web/src/features/characters/hooks/useCharacters.ts
+// apps/frontend/src/features/characters/hooks/useCharacters.ts
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 
@@ -600,7 +608,7 @@ Rules:
 
 ### Design Tokens
 
-Tokens are CSS custom properties defined in `web/src/tokens/`:
+Tokens are CSS custom properties defined in `apps/frontend/src/tokens/`:
 
 ```css
 /* tokens/colors.css */
@@ -664,13 +672,13 @@ Always use `@/` imports. Never relative imports that go up more than one level (
 | Test Type | Location | Database | Runs In |
 |-----------|----------|----------|---------|
 | Unit tests | Same file (`#[cfg(test)]`) | No (mocked) | `cargo test` |
-| Integration tests | `crates/api/tests/` | Yes (test DB) | `cargo test` |
-| DB tests | `crates/db/tests/` | Yes (test DB) | `cargo test` |
+| Integration tests | `apps/backend/crates/api/tests/` | Yes (test DB) | `make test` |
+| DB tests | `apps/backend/crates/db/tests/` | Yes (test DB) | `make test` |
 
 **Test database:** Each test run creates a temporary database from migrations. Use `sqlx::test` attribute or a shared test harness.
 
 ```rust
-#[sqlx::test(migrations = "../migrations")]
+#[sqlx::test(migrations = "../../../db/migrations")]
 async fn test_create_character(pool: PgPool) {
     let repo = CharacterRepo::new(&pool);
     let char = repo.create(&NewCharacter { name: "Jane", ... }).await.unwrap();

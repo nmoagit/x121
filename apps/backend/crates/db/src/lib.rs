@@ -50,7 +50,7 @@ pub async fn health_check(pool: &DbPool) -> Result<(), sqlx::Error> {
     Ok(())
 }
 
-/// Run all pending migrations from the workspace `migrations/` directory.
+/// Run all pending migrations from `apps/db/migrations/`.
 pub async fn run_migrations(pool: &DbPool) -> Result<(), sqlx::migrate::MigrateError> {
-    sqlx::migrate!("../../migrations").run(pool).await
+    sqlx::migrate!("../../../db/migrations").run(pool).await
 }

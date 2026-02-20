@@ -1,7 +1,7 @@
 use sqlx::PgPool;
 
 /// Full bootstrap test: connect, migrate, verify schema.
-#[sqlx::test(migrations = "../../migrations")]
+#[sqlx::test(migrations = "../../../db/migrations")]
 async fn test_full_bootstrap(pool: PgPool) {
     // Health check
     trulience_db::health_check(&pool).await.unwrap();
@@ -26,7 +26,7 @@ async fn test_full_bootstrap(pool: PgPool) {
 }
 
 /// Verify pgvector extension is available.
-#[sqlx::test(migrations = "../../migrations")]
+#[sqlx::test(migrations = "../../../db/migrations")]
 async fn test_pgvector_available(pool: PgPool) {
     let result: (String,) = sqlx::query_as("SELECT '[1,2,3]'::vector::text")
         .fetch_one(&pool)

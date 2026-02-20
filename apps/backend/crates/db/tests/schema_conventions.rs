@@ -1,7 +1,7 @@
 use sqlx::PgPool;
 
 /// All `id` columns must be bigint (entity tables) or smallint (lookup tables).
-#[sqlx::test(migrations = "../../migrations")]
+#[sqlx::test(migrations = "../../../db/migrations")]
 async fn test_all_pks_are_correct_type(pool: PgPool) {
     let rows: Vec<(String, String)> = sqlx::query_as(
         "SELECT table_name, data_type
@@ -24,7 +24,7 @@ async fn test_all_pks_are_correct_type(pool: PgPool) {
 }
 
 /// Every table (except _sqlx_migrations) must have created_at and updated_at as timestamptz.
-#[sqlx::test(migrations = "../../migrations")]
+#[sqlx::test(migrations = "../../../db/migrations")]
 async fn test_all_tables_have_timestamps(pool: PgPool) {
     let tables: Vec<(String,)> = sqlx::query_as(
         "SELECT table_name
@@ -62,7 +62,7 @@ async fn test_all_tables_have_timestamps(pool: PgPool) {
 }
 
 /// No character varying columns should exist — TEXT is preferred.
-#[sqlx::test(migrations = "../../migrations")]
+#[sqlx::test(migrations = "../../../db/migrations")]
 async fn test_no_varchar_columns(pool: PgPool) {
     let rows: Vec<(String, String)> = sqlx::query_as(
         "SELECT table_name, column_name
@@ -84,7 +84,7 @@ async fn test_no_varchar_columns(pool: PgPool) {
 }
 
 /// Every foreign key column must have a corresponding index.
-#[sqlx::test(migrations = "../../migrations")]
+#[sqlx::test(migrations = "../../../db/migrations")]
 async fn test_all_fks_have_indexes(pool: PgPool) {
     // Get all FK columns
     let fk_columns: Vec<(String, String)> = sqlx::query_as(
