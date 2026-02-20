@@ -7,7 +7,9 @@
 
 pub mod character;
 pub mod comfyui;
+pub mod event;
 pub mod image;
+pub mod notification;
 pub mod project;
 pub mod role;
 pub mod scene;

@@ -39,11 +39,7 @@ async fn create_test_user(
 
 /// Log in a user via the API and return the JSON response containing
 /// `access_token`, `refresh_token`, and `user` info.
-async fn login_user(
-    app: axum::Router,
-    username: &str,
-    password: &str,
-) -> serde_json::Value {
+async fn login_user(app: axum::Router, username: &str, password: &str) -> serde_json::Value {
     let body = serde_json::json!({ "username": username, "password": password });
     let response = post_json(app, "/api/v1/auth/login", body).await;
     assert_eq!(response.status(), StatusCode::OK);
@@ -62,9 +58,18 @@ async fn test_login_success(pool: PgPool) {
 
     let json = login_user(app, "loginuser", &password).await;
 
-    assert!(json["access_token"].is_string(), "response must contain access_token");
-    assert!(json["refresh_token"].is_string(), "response must contain refresh_token");
-    assert!(json["expires_in"].is_number(), "response must contain expires_in");
+    assert!(
+        json["access_token"].is_string(),
+        "response must contain access_token"
+    );
+    assert!(
+        json["refresh_token"].is_string(),
+        "response must contain refresh_token"
+    );
+    assert!(
+        json["expires_in"].is_number(),
+        "response must contain expires_in"
+    );
     assert_eq!(json["user"]["id"], user.id);
     assert_eq!(json["user"]["username"], "loginuser");
     assert_eq!(json["user"]["email"], "loginuser@test.com");
@@ -125,8 +130,14 @@ async fn test_token_refresh(pool: PgPool) {
 
     assert_eq!(response.status(), StatusCode::OK);
     let json = body_json(response).await;
-    assert!(json["access_token"].is_string(), "refreshed response must contain access_token");
-    assert!(json["refresh_token"].is_string(), "refreshed response must contain refresh_token");
+    assert!(
+        json["access_token"].is_string(),
+        "refreshed response must contain access_token"
+    );
+    assert!(
+        json["refresh_token"].is_string(),
+        "refreshed response must contain refresh_token"
+    );
     // Token rotation: the new refresh token must differ from the original.
     assert_ne!(
         json["refresh_token"].as_str().unwrap(),
@@ -210,8 +221,7 @@ async fn test_admin_create_user(pool: PgPool) {
         "password": "strong_password_123!",
         "role_id": 2
     });
-    let response =
-        post_json_auth(app, "/api/v1/admin/users", new_user_body, token).await;
+    let response = post_json_auth(app, "/api/v1/admin/users", new_user_body, token).await;
 
     assert_eq!(response.status(), StatusCode::CREATED);
     let json = body_json(response).await;

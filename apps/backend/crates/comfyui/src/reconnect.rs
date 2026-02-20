@@ -160,7 +160,11 @@ mod tests {
         // Cancel immediately — reconnect_loop should return None without trying to connect
         cancel.cancel();
 
-        let client = ComfyUIClient::new(1, "ws://localhost:9999".into(), "http://localhost:9999".into());
+        let client = ComfyUIClient::new(
+            1,
+            "ws://localhost:9999".into(),
+            "http://localhost:9999".into(),
+        );
         let config = ReconnectConfig::default();
 
         let result = reconnect_loop(&client, &config, &cancel).await;

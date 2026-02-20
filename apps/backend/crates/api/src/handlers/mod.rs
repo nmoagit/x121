@@ -9,6 +9,7 @@ pub mod auth;
 pub mod character;
 pub mod derived_image;
 pub mod image_variant;
+pub mod notification;
 pub mod project;
 pub mod scene;
 pub mod scene_type;

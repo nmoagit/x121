@@ -21,10 +21,10 @@ Source of truth: [`design/design.md`](../design.md)
 | Status | Count |
 |--------|-------|
 | backlog | 0 |
-| planning | 102 |
+| planning | 101 |
 | in-progress | 0 |
 | review | 0 |
-| done | 7 |
+| done | 8 |
 | blocked | 0 |
 | deferred | 0 |
 | maybe | 15 |
@@ -51,7 +51,7 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-07 | Parallel Task Execution Engine | — | `planning` | — | |
 | PRD-08 | Queue Management & Job Scheduling | — | `planning` | — | |
 | PRD-09 | Multi-Runtime Script Orchestrator | — | `planning` | — | |
-| PRD-10 | Event Bus & Notification System | — | `planning` | — | |
+| PRD-10 | Event Bus & Notification System | — | `done` | 2026-02-20 | EventBus (broadcast channel), EventPersistence, NotificationRouter, 8 notification API endpoints, webhook/email delivery, digest scheduler, 16 event types, 5 DB tables, 12 unit tests. Phase 7 (frontend) deferred. |
 | PRD-11 | Real-time Collaboration Layer | — | `planning` | — | |
 | PRD-12 | External API & Webhooks | — | `planning` | — | |
 | PRD-46 | Worker Pool Management | — | `planning` | — | |

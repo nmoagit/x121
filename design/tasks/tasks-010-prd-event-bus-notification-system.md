@@ -88,12 +88,12 @@ CREATE INDEX idx_events_created_at ON events(created_at DESC);
 ```
 
 **Acceptance Criteria:**
-- [ ] `event_types` lookup table with category, is_critical flag
-- [ ] Seed data for job, review, system, and collaboration event types
-- [ ] `events` table with FK to event_types, source entity reference, payload
-- [ ] `actor_user_id` tracks who triggered the event
-- [ ] Indexes on event_type, actor, source entity, and created_at
-- [ ] No `updated_at` on `events` (append-only)
+- [x] `event_types` lookup table with category, is_critical flag
+- [x] Seed data for job, review, system, and collaboration event types
+- [x] `events` table with FK to event_types, source entity reference, payload
+- [x] `actor_user_id` tracks who triggered the event
+- [x] Indexes on event_type, actor, source entity, and created_at
+- [x] No `updated_at` on `events` (append-only)
 
 ### Task 1.2: Create Notifications Tables
 **File:** `migrations/20260218900002_create_notifications_tables.sql`
@@ -149,12 +149,12 @@ CREATE TRIGGER set_updated_at BEFORE UPDATE ON user_notification_settings
 ```
 
 **Acceptance Criteria:**
-- [ ] `notifications` table: per-user event delivery with read/delivered tracking
-- [ ] `notification_preferences`: per-event-type channel and scope settings per user
-- [ ] `user_notification_settings`: DND mode, digest mode, global settings
-- [ ] Partial index on unread notifications for fast count queries
-- [ ] Unique constraint on (user_id, event_type_id) in preferences
-- [ ] `scope TEXT` values: 'all', 'my_jobs', 'my_projects'
+- [x] `notifications` table: per-user event delivery with read/delivered tracking
+- [x] `notification_preferences`: per-event-type channel and scope settings per user
+- [x] `user_notification_settings`: DND mode, digest mode, global settings
+- [x] Partial index on unread notifications for fast count queries
+- [x] Unique constraint on (user_id, event_type_id) in preferences
+- [x] `scope TEXT` values: 'all', 'my_jobs', 'my_projects'
 
 ---
 
@@ -199,11 +199,11 @@ impl EventBus {
 ```
 
 **Acceptance Criteria:**
-- [ ] `EventBus` wraps `tokio::sync::broadcast` channel
-- [ ] `publish` is non-blocking (fire and forget for the publisher)
-- [ ] `subscribe` returns a receiver for any component that needs events
-- [ ] Capacity configurable (default 1024 events buffered)
-- [ ] Events include type, source, actor, payload, timestamp
+- [x] `EventBus` wraps `tokio::sync::broadcast` channel
+- [x] `publish` is non-blocking (fire and forget for the publisher)
+- [x] `subscribe` returns a receiver for any component that needs events
+- [x] Capacity configurable (default 1024 events buffered)
+- [x] Events include type, source, actor, payload, timestamp
 
 ### Task 2.2: Event Persistence Service
 **File:** `src/events/persistence.rs`
@@ -257,10 +257,10 @@ impl EventPersistence {
 ```
 
 **Acceptance Criteria:**
-- [ ] Subscribes to event bus and writes all events to `events` table
-- [ ] Handles lagged receiver (logs warning, continues)
-- [ ] Maps event type name to event_type_id via lookup
-- [ ] Runs as a spawned background task
+- [x] Subscribes to event bus and writes all events to `events` table
+- [x] Handles lagged receiver (logs warning, continues)
+- [x] Maps event type name to event_type_id via lookup
+- [x] Runs as a spawned background task
 
 ---
 
@@ -343,12 +343,12 @@ impl NotificationRouter {
 ```
 
 **Acceptance Criteria:**
-- [ ] Routes events to affected users based on event type and source
-- [ ] Respects per-user notification preferences (enabled, channels, scope)
-- [ ] DND mode blocks non-critical events; critical events bypass DND
-- [ ] Digest mode queues events for periodic summary
-- [ ] In-app delivery via WebSocket
-- [ ] Runs as a spawned background task
+- [x] Routes events to affected users based on event type and source
+- [x] Respects per-user notification preferences (enabled, channels, scope)
+- [x] DND mode blocks non-critical events; critical events bypass DND
+- [x] Digest mode queues events for periodic summary
+- [x] In-app delivery via WebSocket
+- [x] Runs as a spawned background task
 
 ### Task 3.2: Target User Determination
 **File:** `src/events/router.rs` (extend)
@@ -385,11 +385,11 @@ impl NotificationRouter {
 ```
 
 **Acceptance Criteria:**
-- [ ] Job events -> job submitter
-- [ ] Review events -> content owner
-- [ ] System events -> all admin users
-- [ ] Mention events -> mentioned users
-- [ ] Scope filtering applied: "my_jobs" = only events for user's own jobs
+- [x] Job events -> job submitter
+- [x] Review events -> content owner
+- [x] System events -> all admin users
+- [x] Mention events -> mentioned users
+- [x] Scope filtering applied: "my_jobs" = only events for user's own jobs
 
 ---
 
@@ -437,11 +437,11 @@ pub async fn unread_count(
 ```
 
 **Acceptance Criteria:**
-- [ ] `GET /api/v1/notifications` — list user's notifications (with unread_only filter)
-- [ ] `POST /api/v1/notifications/:id/read` — mark single as read
-- [ ] `POST /api/v1/notifications/read-all` — mark all as read
-- [ ] `GET /api/v1/notifications/unread-count` — get unread count
-- [ ] All endpoints require authentication
+- [x] `GET /api/v1/notifications` — list user's notifications (with unread_only filter)
+- [x] `POST /api/v1/notifications/:id/read` — mark single as read
+- [x] `POST /api/v1/notifications/read-all` — mark all as read
+- [x] `GET /api/v1/notifications/unread-count` — get unread count
+- [x] All endpoints require authentication
 
 ### Task 4.2: Notification Preferences API
 **File:** `src/api/handlers/notifications.rs` (extend)
@@ -469,18 +469,18 @@ pub async fn update_settings(
 ```
 
 **Acceptance Criteria:**
-- [ ] `GET /api/v1/notifications/preferences` — list all preferences for user
-- [ ] `PUT /api/v1/notifications/preferences/:event_type_id` — update preference for event type
-- [ ] `PUT /api/v1/notifications/settings` — update DND, digest settings
-- [ ] Default preferences created on first access (all enabled, in_app, all scope)
+- [x] `GET /api/v1/notifications/preferences` — list all preferences for user
+- [x] `PUT /api/v1/notifications/preferences/:event_type_id` — update preference for event type
+- [x] `PUT /api/v1/notifications/settings` — update DND, digest settings
+- [x] Default preferences created on first access (all enabled, in_app, all scope)
 
 ### Task 4.3: Register Event and Notification Routes
 **File:** `src/api/routes.rs` (update)
 
 **Acceptance Criteria:**
-- [ ] Notification routes under `/api/v1/notifications`
-- [ ] Preference routes under `/api/v1/notifications/preferences`
-- [ ] Settings routes under `/api/v1/notifications/settings`
+- [x] Notification routes under `/api/v1/notifications`
+- [x] Preference routes under `/api/v1/notifications/preferences`
+- [x] Settings routes under `/api/v1/notifications/settings`
 
 ---
 
@@ -520,10 +520,10 @@ impl WebhookDelivery {
 ```
 
 **Acceptance Criteria:**
-- [ ] Posts event payload as JSON to configured webhook URL
-- [ ] 10-second timeout per delivery attempt
-- [ ] Retries with exponential backoff on failure (1s, 2s, 4s, max 3 attempts)
-- [ ] Delivery failures logged
+- [x] Posts event payload as JSON to configured webhook URL
+- [x] 10-second timeout per delivery attempt
+- [x] Retries with exponential backoff on failure (1s, 2s, 4s, max 3 attempts)
+- [x] Delivery failures logged
 
 ### Task 5.2: Email Delivery
 **File:** `src/events/delivery/email.rs`
@@ -549,11 +549,11 @@ impl EmailDelivery {
 ```
 
 **Acceptance Criteria:**
-- [ ] Sends email via configured SMTP server
-- [ ] Subject includes event type for filtering
-- [ ] Body includes event details in readable format
-- [ ] `lettre` crate added to `Cargo.toml`
-- [ ] SMTP configuration via env vars: `SMTP_HOST`, `SMTP_PORT`, `SMTP_FROM`, `SMTP_USER`, `SMTP_PASSWORD`
+- [x] Sends email via configured SMTP server
+- [x] Subject includes event type for filtering
+- [x] Body includes event details in readable format
+- [x] `lettre` crate added to `Cargo.toml`
+- [x] SMTP configuration via env vars: `SMTP_HOST`, `SMTP_PORT`, `SMTP_FROM`, `SMTP_USER`, `SMTP_PASSWORD`
 
 ---
 
@@ -588,11 +588,11 @@ impl DigestScheduler {
 ```
 
 **Acceptance Criteria:**
-- [ ] Runs every hour, checks for users due for digest delivery
-- [ ] Aggregates events by type: X jobs completed, Y failed, Z awaiting review
-- [ ] Delivers via user's preferred channel
-- [ ] Updates `digest_last_sent_at` after sending
-- [ ] Hourly and daily intervals supported
+- [x] Runs every hour, checks for users due for digest delivery
+- [x] Aggregates events by type: X jobs completed, Y failed, Z awaiting review
+- [x] Delivers via user's preferred channel
+- [x] Updates `digest_last_sent_at` after sending
+- [x] Hourly and daily intervals supported
 
 ---
 
@@ -654,10 +654,10 @@ pub struct AppState {
 ```
 
 **Acceptance Criteria:**
-- [ ] `EventBus` added to `AppState`
-- [ ] Persistence service, notification router, digest scheduler spawned in main
-- [ ] All existing event publishers (ComfyUI bridge, job engine, hardware monitor) publish to the bus
-- [ ] Graceful shutdown cancels all background tasks
+- [x] `EventBus` added to `AppState`
+- [x] Persistence service, notification router, digest scheduler spawned in main
+- [x] All existing event publishers (ComfyUI bridge, job engine, hardware monitor) publish to the bus
+- [x] Graceful shutdown cancels all background tasks
 
 ---
 

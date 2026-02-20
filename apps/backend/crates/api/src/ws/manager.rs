@@ -12,13 +12,11 @@ pub type WsSender = mpsc::UnboundedSender<Message>;
 pub struct WsConnection {
     /// Authenticated user ID, if the connection has been authenticated.
     /// Set after authentication (PRD-03).
-    #[allow(dead_code)]
     pub user_id: Option<DbId>,
     /// Channel sender for outbound messages to this connection.
     pub sender: WsSender,
     /// When this connection was established.
     /// Used by connection management and monitoring (PRD-09).
-    #[allow(dead_code)]
     pub connected_at: Timestamp,
 }
 
@@ -64,7 +62,6 @@ impl WsManager {
 
     /// Find all connection IDs associated with a given user.
     /// Used by authenticated messaging handlers (PRD-03+).
-    #[allow(dead_code)]
     pub async fn get_by_user(&self, user_id: DbId) -> Vec<String> {
         self.connections
             .read()
@@ -85,12 +82,26 @@ impl WsManager {
     /// Connections whose send channels are closed are silently skipped
     /// (they will be cleaned up on their next receive loop iteration).
     /// Used by real-time event broadcasting (PRD-07+).
-    #[allow(dead_code)]
     pub async fn broadcast(&self, message: Message) {
         let conns = self.connections.read().await;
         for conn in conns.values() {
             let _ = conn.sender.send(message.clone());
         }
+    }
+
+    /// Send a message to all connections belonging to a specific user.
+    ///
+    /// Returns the number of connections the message was sent to.
+    pub async fn send_to_user(&self, user_id: DbId, message: Message) -> usize {
+        let conns = self.connections.read().await;
+        let mut count = 0;
+        for conn in conns.values() {
+            if conn.user_id == Some(user_id) {
+                let _ = conn.sender.send(message.clone());
+                count += 1;
+            }
+        }
+        count
     }
 
     /// Return the current number of active connections.

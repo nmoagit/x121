@@ -34,6 +34,7 @@ futures = { workspace = true }
 jsonwebtoken = { workspace = true }
 argon2 = { workspace = true }
 sha2 = { workspace = true }
+tokio-util = { workspace = true }
 
 [dev-dependencies]
 assert_matches = { workspace = true }

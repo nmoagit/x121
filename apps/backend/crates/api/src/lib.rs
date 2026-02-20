@@ -9,6 +9,7 @@ pub mod config;
 pub mod error;
 pub mod handlers;
 pub mod middleware;
+pub mod notifications;
 pub mod routes;
 pub mod state;
 pub mod ws;

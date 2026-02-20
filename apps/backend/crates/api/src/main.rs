@@ -66,12 +66,40 @@ async fn main() {
     let comfyui_manager = trulience_comfyui::manager::ComfyUIManager::start(pool.clone()).await;
     tracing::info!("ComfyUI manager started");
 
+    // --- Event bus ---
+    let event_bus = Arc::new(trulience_events::EventBus::default());
+    tracing::info!("Event bus created");
+
+    // Spawn event persistence (writes all events to the database).
+    let persistence_handle = tokio::spawn(trulience_events::EventPersistence::run(
+        pool.clone(),
+        event_bus.subscribe(),
+    ));
+
+    // Spawn notification router (routes events to users via WebSocket).
+    let notification_router = trulience_api::notifications::NotificationRouter::new(
+        pool.clone(),
+        Arc::clone(&ws_manager),
+    );
+    let router_handle = tokio::spawn(notification_router.run(event_bus.subscribe()));
+
+    // Spawn digest scheduler (checks hourly for digest deliveries).
+    let digest_cancel = tokio_util::sync::CancellationToken::new();
+    let digest_scheduler = trulience_events::DigestScheduler::new(pool.clone());
+    let digest_cancel_clone = digest_cancel.clone();
+    let digest_handle = tokio::spawn(async move {
+        digest_scheduler.run(digest_cancel_clone).await;
+    });
+
+    tracing::info!("Event services started (persistence, notification router, digest scheduler)");
+
     // --- App state ---
     let state = AppState {
         pool,
         config: Arc::new(config.clone()),
         ws_manager: Arc::clone(&ws_manager),
         comfyui_manager: Arc::clone(&comfyui_manager),
+        event_bus: Arc::clone(&event_bus),
     };
 
     // --- Request ID header name ---
@@ -131,6 +159,18 @@ async fn main() {
     // Shut down ComfyUI connections first (they may have in-flight work).
     comfyui_manager.shutdown().await;
     tracing::info!("ComfyUI manager shut down");
+
+    // Stop digest scheduler.
+    digest_cancel.cancel();
+    let _ = tokio::time::timeout(Duration::from_secs(5), digest_handle).await;
+    tracing::info!("Digest scheduler stopped");
+
+    // Drop the event bus sender to close the broadcast channel.
+    // This signals persistence and notification router to shut down.
+    drop(event_bus);
+    let _ = tokio::time::timeout(Duration::from_secs(5), persistence_handle).await;
+    let _ = tokio::time::timeout(Duration::from_secs(5), router_handle).await;
+    tracing::info!("Event services shut down");
 
     let ws_count = ws_manager.connection_count().await;
     tracing::info!(ws_count, "Closing remaining WebSocket connections");

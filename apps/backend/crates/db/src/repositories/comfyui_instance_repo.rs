@@ -21,12 +21,9 @@ impl ComfyUIInstanceRepo {
     // ── Instance status lookups ──────────────────────────────────────
 
     /// List all instance statuses.
-    pub async fn list_statuses(
-        pool: &PgPool,
-    ) -> Result<Vec<ComfyUIInstanceStatus>, sqlx::Error> {
-        let query = format!(
-            "SELECT {STATUS_COLUMNS} FROM comfyui_instance_statuses ORDER BY id ASC"
-        );
+    pub async fn list_statuses(pool: &PgPool) -> Result<Vec<ComfyUIInstanceStatus>, sqlx::Error> {
+        let query =
+            format!("SELECT {STATUS_COLUMNS} FROM comfyui_instance_statuses ORDER BY id ASC");
         sqlx::query_as::<_, ComfyUIInstanceStatus>(&query)
             .fetch_all(pool)
             .await
@@ -85,12 +82,11 @@ impl ComfyUIInstanceRepo {
         id: DbId,
         status_id: DbId,
     ) -> Result<bool, sqlx::Error> {
-        let result =
-            sqlx::query("UPDATE comfyui_instances SET status_id = $2 WHERE id = $1")
-                .bind(id)
-                .bind(status_id)
-                .execute(pool)
-                .await?;
+        let result = sqlx::query("UPDATE comfyui_instances SET status_id = $2 WHERE id = $1")
+            .bind(id)
+            .bind(status_id)
+            .execute(pool)
+            .await?;
         Ok(result.rows_affected() > 0)
     }
 
@@ -109,20 +105,15 @@ impl ComfyUIInstanceRepo {
 
     /// Record a disconnection (sets `last_disconnected_at`).
     pub async fn record_disconnection(pool: &PgPool, id: DbId) -> Result<(), sqlx::Error> {
-        sqlx::query(
-            "UPDATE comfyui_instances SET last_disconnected_at = NOW() WHERE id = $1",
-        )
-        .bind(id)
-        .execute(pool)
-        .await?;
+        sqlx::query("UPDATE comfyui_instances SET last_disconnected_at = NOW() WHERE id = $1")
+            .bind(id)
+            .execute(pool)
+            .await?;
         Ok(())
     }
 
     /// Increment the reconnect attempt counter for an instance.
-    pub async fn increment_reconnect_attempts(
-        pool: &PgPool,
-        id: DbId,
-    ) -> Result<(), sqlx::Error> {
+    pub async fn increment_reconnect_attempts(pool: &PgPool, id: DbId) -> Result<(), sqlx::Error> {
         sqlx::query(
             "UPDATE comfyui_instances \
              SET reconnect_attempts = reconnect_attempts + 1 \

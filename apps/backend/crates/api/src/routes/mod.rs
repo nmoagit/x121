@@ -2,6 +2,7 @@ pub mod admin;
 pub mod auth;
 pub mod character;
 pub mod health;
+pub mod notification;
 pub mod project;
 pub mod scene;
 pub mod scene_type;
@@ -61,6 +62,14 @@ use crate::ws;
 /// /trash/purge-preview                             purge preview (GET)
 /// /trash/{entity_type}/{id}/restore                restore (POST)
 /// /trash/{entity_type}/{id}/purge                  purge one (DELETE)
+///
+/// /notifications                                   list (?unread_only, limit, offset)
+/// /notifications/read-all                          mark all read (POST)
+/// /notifications/unread-count                      unread count (GET)
+/// /notifications/{id}/read                         mark read (POST)
+/// /notifications/preferences                       list preferences (GET)
+/// /notifications/preferences/{event_type_id}       update preference (PUT)
+/// /notifications/settings                          get/update settings (GET, PUT)
 /// ```
 pub fn api_routes() -> Router<AppState> {
     Router::new()
@@ -80,4 +89,6 @@ pub fn api_routes() -> Router<AppState> {
         .nest("/scene-types", scene_type::studio_router())
         // Trash / bin management.
         .nest("/trash", trash::router())
+        // Notifications, preferences, and settings.
+        .nest("/notifications", notification::router())
 }

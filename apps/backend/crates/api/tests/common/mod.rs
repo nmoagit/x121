@@ -53,14 +53,16 @@ pub fn test_config() -> ServerConfig {
 pub async fn build_test_app(pool: PgPool) -> Router {
     let config = test_config();
     let ws_manager = Arc::new(WsManager::new());
-    let comfyui_manager =
-        trulience_comfyui::manager::ComfyUIManager::start(pool.clone()).await;
+    let comfyui_manager = trulience_comfyui::manager::ComfyUIManager::start(pool.clone()).await;
+
+    let event_bus = Arc::new(trulience_events::EventBus::default());
 
     let state = AppState {
         pool,
         config: Arc::new(config),
         ws_manager,
         comfyui_manager,
+        event_bus,
     };
 
     let cors = CorsLayer::new()

@@ -5,7 +5,17 @@ edition.workspace = true
 
 [dependencies]
 trulience-core = { workspace = true }
+trulience-db = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
+sqlx = { workspace = true }
+chrono = { workspace = true }
 tokio = { workspace = true }
 tracing = { workspace = true }
+thiserror = { workspace = true }
+reqwest = { workspace = true }
+lettre = { workspace = true }
+tokio-util = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }

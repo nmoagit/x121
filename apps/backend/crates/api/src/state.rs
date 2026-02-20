@@ -16,4 +16,6 @@ pub struct AppState {
     pub ws_manager: Arc<WsManager>,
     /// ComfyUI connection manager (generation instances).
     pub comfyui_manager: Arc<trulience_comfyui::manager::ComfyUIManager>,
+    /// Centralized event bus for publishing platform events.
+    pub event_bus: Arc<trulience_events::EventBus>,
 }

@@ -42,9 +42,8 @@ impl ComfyUIExecutionRepo {
         pool: &PgPool,
         prompt_id: &str,
     ) -> Result<Option<ComfyUIExecution>, sqlx::Error> {
-        let query = format!(
-            "SELECT {COLUMNS} FROM comfyui_executions WHERE comfyui_prompt_id = $1"
-        );
+        let query =
+            format!("SELECT {COLUMNS} FROM comfyui_executions WHERE comfyui_prompt_id = $1");
         sqlx::query_as::<_, ComfyUIExecution>(&query)
             .bind(prompt_id)
             .fetch_optional(pool)
@@ -95,13 +94,11 @@ impl ComfyUIExecutionRepo {
         prompt_id: &str,
         node: &str,
     ) -> Result<(), sqlx::Error> {
-        sqlx::query(
-            "UPDATE comfyui_executions SET current_node = $2 WHERE comfyui_prompt_id = $1",
-        )
-        .bind(prompt_id)
-        .bind(node)
-        .execute(pool)
-        .await?;
+        sqlx::query("UPDATE comfyui_executions SET current_node = $2 WHERE comfyui_prompt_id = $1")
+            .bind(prompt_id)
+            .bind(node)
+            .execute(pool)
+            .await?;
         Ok(())
     }
 

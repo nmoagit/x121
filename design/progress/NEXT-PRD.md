@@ -4,8 +4,8 @@ Auto-updated after each PRD completion. Check this file to know what to work on 
 
 ## Current
 
-**PRD-10** — Event Bus & Notification System
-- **Why:** Unblocks monitoring dashboards + real-time features. Replaces interim broadcast channel in ComfyUI bridge.
+**PRD-22** — Source Image Quality Assurance
+- **Why:** Critical path: PRD-22→PRD-21→PRD-23→PRD-24. Unblocks image management and generation pipeline.
 - **Status:** Not Started
 
 ## Completed
@@ -14,19 +14,19 @@ Auto-updated after each PRD completion. Check this file to know what to work on 
 |-----|-------|-----------|
 | PRD-03 | User Identity & RBAC | 2026-02-20 |
 | PRD-05 | ComfyUI WebSocket Bridge | 2026-02-20 |
+| PRD-10 | Event Bus & Notification System | 2026-02-20 |
 
 ## Queue (priority order based on critical path)
 
 | Priority | PRD | Title | Why |
 |----------|-----|-------|-----|
-| 3 | PRD-22 | Source Image Quality Assurance | Critical path: PRD-22→PRD-21→PRD-23→PRD-24 |
-| 4 | PRD-14 | Data Validation & Import Integrity | Unblocks PRD-13, PRD-16, PRD-66 |
-| 5 | PRD-17 | Asset Registry & Dependency Mapping | Unblocks PRD-23, PRD-43, PRD-69, PRD-75 |
-| 6 | PRD-15 | Intelligent Disk Reclamation | Unblocks PRD-48, PRD-50, PRD-72 |
-| 7 | PRD-47 | Tagging & Custom Labels | Unblocks PRD-20 (search) |
-| 8 | PRD-06 | Hardware Monitoring | Low urgency, no critical path |
-| 9 | PRD-09 | Multi-Runtime Script Orchestrator | Low urgency, needed by PRD-77 |
-| 10 | PRD-83 | Video Playback Engine | Frontend, critical path to PRD-35→PRD-57 |
+| 3 | PRD-14 | Data Validation & Import Integrity | Unblocks PRD-13, PRD-16, PRD-66 |
+| 4 | PRD-17 | Asset Registry & Dependency Mapping | Unblocks PRD-23, PRD-43, PRD-69, PRD-75 |
+| 5 | PRD-15 | Intelligent Disk Reclamation | Unblocks PRD-48, PRD-50, PRD-72 |
+| 6 | PRD-47 | Tagging & Custom Labels | Unblocks PRD-20 (search) |
+| 7 | PRD-06 | Hardware Monitoring | Low urgency, no critical path |
+| 8 | PRD-09 | Multi-Runtime Script Orchestrator | Low urgency, needed by PRD-77 |
+| 9 | PRD-83 | Video Playback Engine | Frontend, critical path to PRD-35→PRD-57 |
 
 ## Phase 2 Frontend (can run in parallel with backend)
 
@@ -39,4 +39,4 @@ Auto-updated after each PRD completion. Check this file to know what to work on 
 
 ---
 
-*Last updated: 2026-02-20 after PRD-05 completion*
+*Last updated: 2026-02-20 after PRD-10 completion*

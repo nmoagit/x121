@@ -8,7 +8,7 @@ CREATE TABLE scene_video_versions (
     source          TEXT NOT NULL CHECK (source IN ('generated', 'imported')),
     file_path       TEXT NOT NULL,
     file_size_bytes BIGINT,
-    duration_secs   NUMERIC(10,3),
+    duration_secs   DOUBLE PRECISION,
     is_final        BOOLEAN NOT NULL DEFAULT false,
     notes           TEXT,
     deleted_at      TIMESTAMPTZ,
@@ -19,7 +19,7 @@ CREATE TABLE scene_video_versions (
 -- Auto-update updated_at on row change
 CREATE TRIGGER set_updated_at_scene_video_versions
     BEFORE UPDATE ON scene_video_versions
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+    FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
 -- Unique version number per scene
 CREATE UNIQUE INDEX uq_scene_video_versions_scene_version
