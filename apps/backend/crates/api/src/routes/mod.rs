@@ -2,6 +2,7 @@ pub mod admin;
 pub mod auth;
 pub mod character;
 pub mod health;
+pub mod image_qa;
 pub mod notification;
 pub mod project;
 pub mod scene;
@@ -70,6 +71,12 @@ use crate::ws;
 /// /notifications/preferences                       list preferences (GET)
 /// /notifications/preferences/{event_type_id}       update preference (PUT)
 /// /notifications/settings                          get/update settings (GET, PUT)
+///
+/// /qa/check-types                                  list check types
+/// /qa/run                                          run QA checks (POST)
+/// /qa/image-variants/{id}/results                  get QA results
+/// /qa/characters/{character_id}/source-qa-results  get source QA results
+/// /qa/projects/{project_id}/thresholds             get, update thresholds
 /// ```
 pub fn api_routes() -> Router<AppState> {
     Router::new()
@@ -91,4 +98,6 @@ pub fn api_routes() -> Router<AppState> {
         .nest("/trash", trash::router())
         // Notifications, preferences, and settings.
         .nest("/notifications", notification::router())
+        // Image quality assurance (check types, QA runs, thresholds).
+        .nest("/qa", image_qa::router())
 }
