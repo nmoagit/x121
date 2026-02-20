@@ -452,6 +452,28 @@ This phase contains no PRD work — only structural setup.
 
 ---
 
+## Deferred Work Queue
+
+When a PRD is completed, some phases may be deferred because they depend on PRDs that haven't been built yet. This table tracks those deferred items so they are picked up when the blocking PRD is completed.
+
+**How to use:** After completing a PRD, check the "Unblocks" column below. If the PRD you just finished appears there, the deferred work is now unblocked and should be scheduled alongside the next task.
+
+| Deferred Work | Source PRD | Blocked By | Unblocks When | Effort | Description |
+|---------------|-----------|------------|---------------|--------|-------------|
+| PRD-29 Phase 1: Theme DB tables + API | PRD-29 (done) | PRD-01, PRD-03 | Both PRD-01 AND PRD-03 are done | M | `theme_statuses`, `user_theme_preferences`, `custom_themes` tables; Rust models + repository; Axum theme API endpoints (`/user/theme`, `/admin/themes`) |
+| PRD-29 Phase 7: Admin Token Editor UI | PRD-29 (done) | PRD-01, PRD-03 | Both PRD-01 AND PRD-03 are done (also needs Phase 1 above) | M | Color picker, font/spacing adjusters, live preview, save/export to `custom_themes` table, admin RBAC |
+| PRD-29 Phase 8.1: Theme API persistence | PRD-29 (done) | PRD-01, PRD-03 | Both PRD-01 AND PRD-03 are done (also needs Phase 1 above) | S | Connect ThemeProvider to backend API for cross-session persistence (currently localStorage only) |
+| PRD-02 DRY: Router/middleware extraction | PRD-02 (done) | PRD-03 | PRD-03 is done | S | Extract shared router + middleware builder from main.rs and test helper to eliminate ~100 lines of duplication |
+
+### Quick Reference: What to pick up after each blocking PRD
+
+| When this PRD is done... | ...pick up this deferred work |
+|--------------------------|-------------------------------|
+| PRD-01 | Check if PRD-03 is also done → if yes, PRD-29 Phases 1, 7, 8.1 |
+| PRD-03 | PRD-02 DRY (router extraction); Check if PRD-01 is also done → if yes, PRD-29 Phases 1, 7, 8.1 |
+
+---
+
 ## Critical Path
 
 The longest dependency chain determines the minimum project duration:
@@ -519,3 +541,4 @@ PRD-29 → PRD-83 → PRD-35 → PRD-57
 | Date | Change |
 |------|--------|
 | 2026-02-19 | Initial build plan created — 109 PRDs across 13 phases |
+| 2026-02-20 | Added Deferred Work Queue section — tracks PRD-29 deferred phases (1, 7, 8.1) and PRD-02 DRY extraction, both blocked on PRD-01/PRD-03 |
