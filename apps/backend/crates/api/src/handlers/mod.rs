@@ -18,3 +18,4 @@ pub mod scene_video_version;
 pub mod segment;
 pub mod source_image;
 pub mod trash;
+pub mod validation;

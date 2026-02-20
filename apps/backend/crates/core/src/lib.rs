@@ -5,3 +5,4 @@ pub mod naming;
 pub mod qa_status;
 pub mod roles;
 pub mod types;
+pub mod validation;

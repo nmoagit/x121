@@ -8,6 +8,7 @@ pub mod project;
 pub mod scene;
 pub mod scene_type;
 pub mod trash;
+pub mod validation;
 
 use axum::routing::get;
 use axum::Router;
@@ -77,6 +78,16 @@ use crate::ws;
 /// /qa/image-variants/{id}/results                  get QA results
 /// /qa/characters/{character_id}/source-qa-results  get source QA results
 /// /qa/projects/{project_id}/thresholds             get, update thresholds
+///
+/// /validation/rule-types                            list rule types (GET)
+/// /validation/rules                                 list, create rules (GET, POST)
+/// /validation/rules/{id}                            update, delete rule (PUT, DELETE)
+/// /validation/validate                              dry-run validation (POST)
+///
+/// /imports                                          list import reports (GET)
+/// /imports/{id}/commit                              commit import (POST)
+/// /imports/{id}/report                              get report as JSON (GET)
+/// /imports/{id}/report/csv                          get report as CSV (GET)
 /// ```
 pub fn api_routes() -> Router<AppState> {
     Router::new()
@@ -100,4 +111,8 @@ pub fn api_routes() -> Router<AppState> {
         .nest("/notifications", notification::router())
         // Image quality assurance (check types, QA runs, thresholds).
         .nest("/qa", image_qa::router())
+        // Validation engine (rule types, rules, dry-run validation).
+        .nest("/validation", validation::validation_router())
+        // Import reports and commit.
+        .nest("/imports", validation::imports_router())
 }
