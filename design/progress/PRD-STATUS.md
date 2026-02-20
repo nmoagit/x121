@@ -21,10 +21,10 @@ Source of truth: [`design/design.md`](../design.md)
 | Status | Count |
 |--------|-------|
 | backlog | 0 |
-| planning | 108 |
+| planning | 107 |
 | in-progress | 0 |
 | review | 0 |
-| done | 0 |
+| done | 1 |
 | blocked | 0 |
 | deferred | 0 |
 | maybe | 15 |
@@ -36,7 +36,7 @@ Source of truth: [`design/design.md`](../design.md)
 
 | PRD | Title | Priority | Status | Owner | Notes |
 |-----|-------|----------|--------|-------|-------|
-| PRD-00 | Database Normalization & Strict Integrity | — | `planning` | — | Foundation — must be first. Tasks: `tasks/tasks-000-prd-database-normalization.md` |
+| PRD-00 | Database Normalization & Strict Integrity | — | `done` | 2026-02-20 | Foundation. Status lookup tables, pgvector, conventions, integration tests. |
 | PRD-01 | Project, Character & Scene Data Model | — | `planning` | — | Foundation — must be first. Updated v1.1 (2026-02-19): extensible character settings JSONB. Tasks: `tasks/tasks-001-prd-project-character-scene-data-model.md` |
 
 ## Part 1: Infrastructure & System Core

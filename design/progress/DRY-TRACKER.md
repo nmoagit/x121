@@ -83,6 +83,7 @@ Record of every DRY-GUY audit run against the codebase.
 | Date | PRD(s) Touched | Files Audited | Findings | Action Taken |
 |------|---------------|---------------|----------|--------------|
 | 2026-02-20 | Phase -1 scaffold | 33 (11 Rust, 14 Frontend, 8 Infra) | 6 (0 critical, 3 medium, 3 low) | Fixed CI DATABASE_URL dedup, vitest config merge, Storybook color comment. Watch: tracing init, Docker anchors. |
+| 2026-02-20 | PRD-00 Database Normalization | 12 (2 Rust lib, 2 Rust test, 1 API, 4 SQL, 2 docs, 1 DRY-TRACKER) | 3 (0 critical, 1 medium, 2 low) | All acceptable/deferred. Medium: tracing init (2 binaries, extract at 3). Low: SQL filter clause in tests (readable as-is), lookup DDL repetition (mitigated by template migration 000003). No code changes needed. |
 
 ---
 

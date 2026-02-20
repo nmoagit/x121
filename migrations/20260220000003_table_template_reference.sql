@@ -1,0 +1,48 @@
+-- =============================================================
+-- TEMPLATE: Copy this when creating a new entity table migration.
+-- Demonstrates every convention from CONVENTIONS.md section 4.
+-- =============================================================
+--
+-- CREATE TABLE things (
+--     id          BIGSERIAL PRIMARY KEY,
+--
+--     -- Required foreign keys (BIGINT NOT NULL, always indexed)
+--     project_id  BIGINT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+--
+--     -- Optional foreign keys (BIGINT NULL)
+--     parent_id   BIGINT REFERENCES things(id) ON DELETE SET NULL,
+--
+--     -- Status via lookup table (SMALLINT NOT NULL, references *_statuses)
+--     status_id   SMALLINT NOT NULL REFERENCES thing_statuses(id) ON DELETE RESTRICT DEFAULT 1,
+--
+--     -- Data columns (TEXT over VARCHAR, BOOLEAN over int flags)
+--     name        TEXT NOT NULL,
+--     description TEXT,
+--     is_active   BOOLEAN NOT NULL DEFAULT true,
+--     sort_order  INTEGER NOT NULL DEFAULT 0,
+--     settings    JSONB NOT NULL DEFAULT '{}'::jsonb,
+--
+--     -- Timestamps (mandatory on every table)
+--     created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+--     updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+-- );
+--
+-- -- FK indexes (mandatory — PostgreSQL does not auto-index FKs)
+-- CREATE INDEX idx_things_project_id ON things(project_id);
+-- CREATE INDEX idx_things_parent_id ON things(parent_id);
+-- CREATE INDEX idx_things_status_id ON things(status_id);
+--
+-- -- GIN index for JSONB columns
+-- CREATE INDEX idx_things_settings ON things USING GIN (settings);
+--
+-- -- Unique constraints where business logic requires
+-- CREATE UNIQUE INDEX uq_things_project_id_name ON things(project_id, name);
+--
+-- -- Updated_at trigger (mandatory on every table)
+-- CREATE TRIGGER trg_things_updated_at
+--     BEFORE UPDATE ON things
+--     FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+-- =============================================================
+
+-- This migration contains no executable SQL — it is a reference template.
+SELECT 1;

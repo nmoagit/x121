@@ -18,6 +18,23 @@ async fn main() {
         .with(tracing_subscriber::fmt::layer())
         .init();
 
+    let database_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+
+    let pool = trulience_db::create_pool(&database_url)
+        .await
+        .expect("Failed to connect to database");
+    tracing::info!("Database connection pool created");
+
+    trulience_db::health_check(&pool)
+        .await
+        .expect("Database health check failed");
+    tracing::info!("Database health check passed");
+
+    trulience_db::run_migrations(&pool)
+        .await
+        .expect("Failed to run database migrations");
+    tracing::info!("Database migrations applied");
+
     let app = Router::new()
         .merge(routes::health::router())
         .layer(TraceLayer::new_for_http());

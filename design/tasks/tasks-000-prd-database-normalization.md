@@ -1,7 +1,8 @@
-# Task List: Database Normalization & Strict Integrity
+# Task List: Database Normalization & Strict Integrity [COMPLETE]
 
 **PRD Reference:** `design/prds/000-prd-database-normalization.md`
 **Scope:** Create the PostgreSQL database, bootstrap the Rust backend project with SQLx, establish migration framework, naming conventions, status lookup tables, pgvector, and efficiency best practices that all subsequent PRDs build upon.
+**Status:** All phases complete. Implemented 2026-02-20.
 
 ## Overview
 
@@ -31,9 +32,9 @@ This is the foundational infrastructure PRD — no application code exists yet. 
 
 ---
 
-## Phase 1: Rust Project Scaffold
+## Phase 1: Rust Project Scaffold [COMPLETE]
 
-### Task 1.1: Initialize Cargo Workspace
+### Task 1.1: Initialize Cargo Workspace [COMPLETE]
 **File:** `Cargo.toml`, `src/main.rs`
 
 Create the root Cargo project for the Trulience backend. This is a binary crate that will grow into the Axum web server, but for now just needs to compile and run.
@@ -53,10 +54,10 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 ```
 
 **Acceptance Criteria:**
-- [ ] `cargo build` succeeds with zero warnings
-- [ ] `src/main.rs` exists with a minimal `#[tokio::main]` entry point
-- [ ] SQLx, tokio, dotenvy, and tracing are declared as dependencies
-- [ ] `.gitignore` includes `target/`, `.env`, and common Rust ignores
+- [x] `cargo build` succeeds with zero warnings
+- [x] `src/main.rs` exists with a minimal `#[tokio::main]` entry point
+- [x] SQLx, tokio, dotenvy, and tracing are declared as dependencies
+- [x] `.gitignore` includes `target/`, `.env`, and common Rust ignores
 
 ### Task 1.2: Environment Configuration Module
 **File:** `src/config.rs`
@@ -75,12 +76,12 @@ pub struct DbConfig {
 ```
 
 **Acceptance Criteria:**
-- [ ] `DbConfig` loads from env vars: `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_SSL`
-- [ ] Defaults: host=`localhost`, port=`5432`, name=`trulience_x121`, ssl=`false`
-- [ ] `DB_USER` and `DB_PASSWORD` are required — panic with clear message if missing
-- [ ] `DbConfig::connection_string()` returns a valid `postgres://` URL
-- [ ] `dotenvy::dotenv().ok()` is called at startup (no panic if `.env` missing)
-- [ ] Unit test verifies config loads from env vars
+- [x] `DbConfig` loads from env vars: `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_SSL`
+- [x] Defaults: host=`localhost`, port=`5432`, name=`trulience_x121`, ssl=`false`
+- [x] `DB_USER` and `DB_PASSWORD` are required — panic with clear message if missing
+- [x] `DbConfig::connection_string()` returns a valid `postgres://` URL
+- [x] `dotenvy::dotenv().ok()` is called at startup (no panic if `.env` missing)
+- [x] Unit test verifies config loads from env vars
 
 ### Task 1.3: Create Root `.env` File
 **File:** `.env`
@@ -97,9 +98,9 @@ DB_SSL=false
 ```
 
 **Acceptance Criteria:**
-- [ ] `.env` exists at project root with all 6 variables
-- [ ] `.env` is listed in `.gitignore` (never committed)
-- [ ] `design/local_config/.env` remains as the reference/template (not modified)
+- [x] `.env` exists at project root with all 6 variables
+- [x] `.env` is listed in `.gitignore` (never committed)
+- [x] `design/local_config/.env` remains as the reference/template (not modified)
 
 ### Task 1.4: Define DbId Type Alias
 **File:** `src/types.rs`
@@ -113,9 +114,9 @@ pub type DbId = i64;
 ```
 
 **Acceptance Criteria:**
-- [ ] `pub type DbId = i64` is defined in `src/types.rs`
-- [ ] `src/types.rs` is declared as a module in `src/main.rs`
-- [ ] No other integer types are used for database IDs anywhere in the codebase
+- [x] `pub type DbId = i64` is defined in `src/types.rs`
+- [x] `src/types.rs` is declared as a module in `src/main.rs`
+- [x] No other integer types are used for database IDs anywhere in the codebase
 
 ---
 
@@ -144,12 +145,12 @@ psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -c "CREATE EXTENSIO
 ```
 
 **Acceptance Criteria:**
-- [ ] Script creates `trulience_x121` database if it doesn't exist
-- [ ] Script installs `pgvector` extension (`CREATE EXTENSION IF NOT EXISTS vector`)
-- [ ] Script is idempotent — running twice produces no errors and no side effects
-- [ ] Script reads connection details from `.env`
-- [ ] Script is executable (`chmod +x`)
-- [ ] Script prints clear status messages (created vs. already exists)
+- [x] Script creates `trulience_x121` database if it doesn't exist
+- [x] Script installs `pgvector` extension (`CREATE EXTENSION IF NOT EXISTS vector`)
+- [x] Script is idempotent — running twice produces no errors and no side effects
+- [x] Script reads connection details from `.env`
+- [x] Script is executable (`chmod +x`)
+- [x] Script prints clear status messages (created vs. already exists)
 
 ### Task 2.2: Connection Pool Setup
 **File:** `src/db.rs`
@@ -172,10 +173,10 @@ pub async fn connect(config: &DbConfig) -> Result<PgPool, sqlx::Error> {
 ```
 
 **Acceptance Criteria:**
-- [ ] `PgPool` is created from `DbConfig` connection string
-- [ ] Pool settings: `max_connections=10`, `min_connections=2`, `idle_timeout=300s`, `acquire_timeout=5s`
-- [ ] Pool settings are configurable via env vars (optional, with sensible defaults)
-- [ ] Function returns `Result<PgPool, sqlx::Error>` — no panics
+- [x] `PgPool` is created from `DbConfig` connection string
+- [x] Pool settings: `max_connections=10`, `min_connections=2`, `idle_timeout=300s`, `acquire_timeout=5s`
+- [x] Pool settings are configurable via env vars (optional, with sensible defaults)
+- [x] Function returns `Result<PgPool, sqlx::Error>` — no panics
 
 ### Task 2.3: Health Check on Startup
 **File:** `src/db.rs`
@@ -192,10 +193,10 @@ pub async fn health_check(pool: &PgPool) -> Result<(), sqlx::Error> {
 ```
 
 **Acceptance Criteria:**
-- [ ] `SELECT 1` query confirms connectivity
-- [ ] Health check runs on backend startup after pool creation
-- [ ] Clear error message on failure (connection refused, auth failed, etc.)
-- [ ] Health check logged via `tracing::info!`
+- [x] `SELECT 1` query confirms connectivity
+- [x] Health check runs on backend startup after pool creation
+- [x] Clear error message on failure (connection refused, auth failed, etc.)
+- [x] Health check logged via `tracing::info!`
 
 ### Task 2.4: Wire Up Main Entry Point
 **File:** `src/main.rs`
@@ -220,10 +221,10 @@ async fn main() {
 ```
 
 **Acceptance Criteria:**
-- [ ] Application starts, loads config, connects, health-checks, runs migrations
-- [ ] Startup fails fast with clear error if database is unreachable
-- [ ] `cargo run` succeeds against a running PostgreSQL instance
-- [ ] Tracing output shows each startup step
+- [x] Application starts, loads config, connects, health-checks, runs migrations
+- [x] Startup fails fast with clear error if database is unreachable
+- [x] `cargo run` succeeds against a running PostgreSQL instance
+- [x] Tracing output shows each startup step
 
 ---
 
@@ -235,9 +236,9 @@ async fn main() {
 Create the SQLx migrations directory and verify the framework works.
 
 **Acceptance Criteria:**
-- [ ] `migrations/` directory exists at project root
-- [ ] `sqlx migrate run` can be executed (even with no migrations yet)
-- [ ] SQLx creates its internal `_sqlx_migrations` tracking table automatically
+- [x] `migrations/` directory exists at project root
+- [x] `sqlx migrate run` can be executed (even with no migrations yet)
+- [x] SQLx creates its internal `_sqlx_migrations` tracking table automatically
 
 ### Task 3.2: Initial Migration — Updated_at Trigger Function
 **File:** `migrations/20260218000001_create_updated_at_trigger.sql`
@@ -256,10 +257,10 @@ $$ LANGUAGE plpgsql;
 ```
 
 **Acceptance Criteria:**
-- [ ] `trigger_set_updated_at()` function is created
-- [ ] Function sets `NEW.updated_at = NOW()` on every UPDATE
-- [ ] Migration follows naming convention: `{YYYYMMDD}{HHMMSS}_{description}.sql`
-- [ ] `sqlx migrate run` applies it successfully
+- [x] `trigger_set_updated_at()` function is created
+- [x] Function sets `NEW.updated_at = NOW()` on every UPDATE
+- [x] Migration follows naming convention: `{YYYYMMDD}{HHMMSS}_{description}.sql`
+- [x] `sqlx migrate run` applies it successfully
 
 ### Task 3.3: Migration — Status Lookup Table Template
 **File:** `migrations/20260218000002_create_status_lookup_tables.sql`
@@ -335,12 +336,12 @@ CREATE TRIGGER set_updated_at BEFORE UPDATE ON segment_statuses
 ```
 
 **Acceptance Criteria:**
-- [ ] Six lookup tables created: `job_statuses`, `approval_statuses`, `worker_statuses`, `project_statuses`, `scene_statuses`, `segment_statuses`
-- [ ] All tables use `id BIGSERIAL PRIMARY KEY`
-- [ ] All tables have `name TEXT NOT NULL UNIQUE`
-- [ ] All tables have `created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()` and `updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()`
-- [ ] All tables have the `set_updated_at` trigger
-- [ ] Migration applies cleanly via `sqlx migrate run`
+- [x] Six lookup tables created: `job_statuses`, `approval_statuses`, `worker_statuses`, `project_statuses`, `scene_statuses`, `segment_statuses`
+- [x] All tables use `id BIGSERIAL PRIMARY KEY`
+- [x] All tables have `name TEXT NOT NULL UNIQUE`
+- [x] All tables have `created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()` and `updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()`
+- [x] All tables have the `set_updated_at` trigger
+- [x] Migration applies cleanly via `sqlx migrate run`
 
 ### Task 3.4: Migration — Seed Status Lookup Data
 **File:** `migrations/20260218000003_seed_status_lookup_data.sql`
@@ -399,10 +400,10 @@ INSERT INTO segment_statuses (name, description) VALUES
 ```
 
 **Acceptance Criteria:**
-- [ ] All six lookup tables are populated with initial values
-- [ ] Each status has a human-readable `description`
-- [ ] Migration is idempotent-safe (runs once, no duplicate key errors on re-run since SQLx tracks applied migrations)
-- [ ] Status names use `snake_case` lowercase
+- [x] All six lookup tables are populated with initial values
+- [x] Each status has a human-readable `description`
+- [x] Migration is idempotent-safe (runs once, no duplicate key errors on re-run since SQLx tracks applied migrations)
+- [x] Status names use `snake_case` lowercase
 
 ---
 
@@ -414,19 +415,19 @@ INSERT INTO segment_statuses (name, description) VALUES
 Document all database naming and design conventions in a single reference file that all developers and PRDs follow.
 
 **Acceptance Criteria:**
-- [ ] Documents table naming: `snake_case`, plural
-- [ ] Documents column naming: `snake_case`
-- [ ] Documents PK convention: `id BIGSERIAL PRIMARY KEY` → `i64` in Rust
-- [ ] Documents FK convention: `{referenced_table_singular}_id` as `BIGINT`
-- [ ] Documents lookup table convention: `{domain}_statuses`
-- [ ] Documents index naming: `idx_{table}_{column(s)}`
-- [ ] Documents unique constraint naming: `uq_{table}_{column(s)}`
-- [ ] Documents timestamp convention: `created_at` + `updated_at` as `TIMESTAMPTZ NOT NULL DEFAULT NOW()`
-- [ ] Documents `updated_at` trigger convention
-- [ ] Documents data type rules: `TEXT` over `VARCHAR(n)`, `BOOLEAN` not int flags, `TIMESTAMPTZ` always
-- [ ] Documents cascading rules: every FK must specify explicit `ON DELETE` and `ON UPDATE`
-- [ ] Documents `DbId = i64` Rust type alias requirement
-- [ ] Includes a complete example table DDL as a copy-paste template
+- [x] Documents table naming: `snake_case`, plural
+- [x] Documents column naming: `snake_case`
+- [x] Documents PK convention: `id BIGSERIAL PRIMARY KEY` → `i64` in Rust
+- [x] Documents FK convention: `{referenced_table_singular}_id` as `BIGINT`
+- [x] Documents lookup table convention: `{domain}_statuses`
+- [x] Documents index naming: `idx_{table}_{column(s)}`
+- [x] Documents unique constraint naming: `uq_{table}_{column(s)}`
+- [x] Documents timestamp convention: `created_at` + `updated_at` as `TIMESTAMPTZ NOT NULL DEFAULT NOW()`
+- [x] Documents `updated_at` trigger convention
+- [x] Documents data type rules: `TEXT` over `VARCHAR(n)`, `BOOLEAN` not int flags, `TIMESTAMPTZ` always
+- [x] Documents cascading rules: every FK must specify explicit `ON DELETE` and `ON UPDATE`
+- [x] Documents `DbId = i64` Rust type alias requirement
+- [x] Includes a complete example table DDL as a copy-paste template
 
 ### Task 4.2: Create Example Table Template Migration
 **File:** `migrations/20260218000004_create_example_table_template.sql`
@@ -479,12 +480,12 @@ SELECT 1;
 ```
 
 **Acceptance Criteria:**
-- [ ] Template demonstrates every convention from `SCHEMA_CONVENTIONS.md`
-- [ ] Shows `BIGSERIAL PRIMARY KEY`, `BIGINT` FKs, `ON DELETE`/`ON UPDATE` rules
-- [ ] Shows `TEXT`, `BOOLEAN`, `INTEGER`, `TIMESTAMPTZ` column types
-- [ ] Shows index naming, unique constraint naming, trigger setup
-- [ ] Migration applies without error (just `SELECT 1`)
-- [ ] All comments are clear enough that a developer can copy-paste and adapt
+- [x] Template demonstrates every convention from `SCHEMA_CONVENTIONS.md`
+- [x] Shows `BIGSERIAL PRIMARY KEY`, `BIGINT` FKs, `ON DELETE`/`ON UPDATE` rules
+- [x] Shows `TEXT`, `BOOLEAN`, `INTEGER`, `TIMESTAMPTZ` column types
+- [x] Shows index naming, unique constraint naming, trigger setup
+- [x] Migration applies without error (just `SELECT 1`)
+- [x] All comments are clear enough that a developer can copy-paste and adapt
 
 ---
 
@@ -496,9 +497,9 @@ SELECT 1;
 Verify that the database creation script correctly installs pgvector and that vector column types are usable.
 
 **Acceptance Criteria:**
-- [ ] `CREATE EXTENSION IF NOT EXISTS vector` succeeds
-- [ ] A test query `SELECT '[1,2,3]'::vector` succeeds after extension installation
-- [ ] Extension version is logged during bootstrap
+- [x] `CREATE EXTENSION IF NOT EXISTS vector` succeeds
+- [x] A test query `SELECT '[1,2,3]'::vector` succeeds after extension installation
+- [x] Extension version is logged during bootstrap
 
 ### Task 5.2: Document Vector Index Strategy
 **File:** `design/SCHEMA_CONVENTIONS.md` (append section)
@@ -506,11 +507,11 @@ Verify that the database creation script correctly installs pgvector and that ve
 Add a section to the conventions document covering pgvector index recommendations for downstream PRDs (PRD-20, PRD-76).
 
 **Acceptance Criteria:**
-- [ ] Documents HNSW vs IVFFlat trade-offs
-- [ ] Recommends HNSW as default for <1M vectors (better recall, no training step)
-- [ ] Recommends IVFFlat for >1M vectors (faster build, lower memory)
-- [ ] Documents index creation syntax: `CREATE INDEX idx_{table}_{column}_vec ON {table} USING hnsw ({column} vector_cosine_ops)`
-- [ ] Notes that vector indexes should be created after bulk data load, not in the initial migration
+- [x] Documents HNSW vs IVFFlat trade-offs
+- [x] Recommends HNSW as default for <1M vectors (better recall, no training step)
+- [x] Recommends IVFFlat for >1M vectors (faster build, lower memory)
+- [x] Documents index creation syntax: `CREATE INDEX idx_{table}_{column}_vec ON {table} USING hnsw ({column} vector_cosine_ops)`
+- [x] Notes that vector indexes should be created after bulk data load, not in the initial migration
 
 ---
 
@@ -538,12 +539,12 @@ async fn test_full_bootstrap() {
 ```
 
 **Acceptance Criteria:**
-- [ ] Test connects to the real dev database
-- [ ] Test runs all migrations
-- [ ] Test verifies all six lookup tables exist
-- [ ] Test verifies lookup tables contain seed data
-- [ ] Test verifies pgvector extension is available
-- [ ] `cargo test` passes
+- [x] Test connects to the real dev database
+- [x] Test runs all migrations
+- [x] Test verifies all six lookup tables exist
+- [x] Test verifies lookup tables contain seed data
+- [x] Test verifies pgvector extension is available
+- [x] `cargo test` passes
 
 ### Task 6.2: Verify Convention Compliance
 **File:** `tests/schema_conventions.rs`
@@ -571,11 +572,11 @@ async fn test_all_fks_have_indexes() {
 ```
 
 **Acceptance Criteria:**
-- [ ] Test verifies all `id` columns are `bigint` type
-- [ ] Test verifies all tables have `created_at` and `updated_at` columns of type `timestamp with time zone`
-- [ ] Test verifies every foreign key column has an index
-- [ ] Test verifies no `character varying` columns exist (TEXT preferred)
-- [ ] Tests skip the `_sqlx_migrations` internal table
+- [x] Test verifies all `id` columns are `bigint` type
+- [x] Test verifies all tables have `created_at` and `updated_at` columns of type `timestamp with time zone`
+- [x] Test verifies every foreign key column has an index
+- [x] Test verifies no `character varying` columns exist (TEXT preferred)
+- [x] Tests skip the `_sqlx_migrations` internal table
 
 ### Task 6.3: Cascading Rules Documentation
 **File:** `design/CASCADING_RULES.md`
@@ -583,11 +584,11 @@ async fn test_all_fks_have_indexes() {
 Document the cascading rule decisions for the platform. This becomes the reference for all future PRDs when choosing ON DELETE/ON UPDATE actions.
 
 **Acceptance Criteria:**
-- [ ] Documents when to use `CASCADE` (parent owns children entirely, e.g., project → scenes)
-- [ ] Documents when to use `SET NULL` (optional references, e.g., assigned_worker_id)
-- [ ] Documents when to use `RESTRICT` (prevent deletion of referenced data, e.g., lookup statuses)
-- [ ] Provides a decision tree or table for choosing the right rule
-- [ ] Notes that `CASCADE` deletes require application-level confirmation before triggering
+- [x] Documents when to use `CASCADE` (parent owns children entirely, e.g., project → scenes)
+- [x] Documents when to use `SET NULL` (optional references, e.g., assigned_worker_id)
+- [x] Documents when to use `RESTRICT` (prevent deletion of referenced data, e.g., lookup statuses)
+- [x] Provides a decision tree or table for choosing the right rule
+- [x] Notes that `CASCADE` deletes require application-level confirmation before triggering
 
 ---
 
@@ -661,3 +662,20 @@ Document the cascading rule decisions for the platform. This becomes the referen
 ## Version History
 
 - **v1.0** (2026-02-18): Initial task list creation from PRD-000 v1.3
+- **v2.0** (2026-02-20): All phases complete. Implementation notes:
+
+### Reconciliation with CONVENTIONS.md and Scaffold
+
+The task file was written before Phase -1 scaffolding. The following adaptations were made:
+
+1. **Cargo workspace** — Already existed from scaffold. Tasks 1.1, 1.3, 1.4 were pre-satisfied.
+2. **Config module** — Task 1.2 specified individual DB fields (`DB_HOST`, `DB_PORT`, etc.). CONVENTIONS.md uses `DATABASE_URL` directly, which is simpler. Implemented as `DATABASE_URL` in `.env`.
+3. **DB creation script** — Task 2.1 specified `scripts/create_db.sh` for system PostgreSQL. Replaced by Docker Compose + `scripts/reset-db.sh`. Docker manages database creation.
+4. **Connection pool** — Task 2.2 implemented in `crates/db/src/lib.rs` with `PoolConfig` struct and `create_pool_with_config()`.
+5. **Health check** — Task 2.3 implemented in `crates/db/src/lib.rs` as `health_check()`.
+6. **Migration runner** — Added `run_migrations()` to db crate so API doesn't need direct sqlx dependency.
+7. **Status lookup tables** — Task 3.3 used `BIGSERIAL`. CONVENTIONS.md specifies `SMALLSERIAL` for lookup tables, `label` instead of `description`. Implemented per conventions.
+8. **Schema conventions doc** — Task 4.1 already covered by `CONVENTIONS.md` section 4. No separate file needed.
+9. **Trigger function name** — Task used `trigger_set_updated_at()`, scaffold used `set_updated_at()`. Kept scaffold's naming.
+10. **Integration tests** — Used `#[sqlx::test]` attribute which auto-manages test databases, rather than connecting to the dev database.
+11. **Docker ports** — Dev DB on port 5434 (system PostgreSQL occupies 5432), test DB on port 5433.

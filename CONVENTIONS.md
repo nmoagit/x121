@@ -358,7 +358,7 @@ CREATE INDEX idx_characters_settings ON characters USING GIN (settings);
 
 ```bash
 # Create a new migration
-sqlx migrate add -r create_characters_table
+sqlx migrate add create_characters_table
 
 # Run migrations
 sqlx migrate run
@@ -366,6 +366,27 @@ sqlx migrate run
 # Check migration status
 sqlx migrate info
 ```
+
+### pgvector Index Strategy
+
+For vector similarity search columns (PRD-20 image embeddings, PRD-76 similarity matching):
+
+| Index Type | When to Use | Trade-offs |
+|------------|-------------|------------|
+| **HNSW** | < 1M vectors (default) | Better recall, no training step, higher memory |
+| **IVFFlat** | > 1M vectors | Faster build, lower memory, requires training (`CREATE INDEX ... WITH (lists = N)`) |
+
+```sql
+-- HNSW index (default for most tables)
+CREATE INDEX idx_images_embedding_vec ON images
+    USING hnsw (embedding vector_cosine_ops);
+
+-- IVFFlat index (for high-volume tables)
+CREATE INDEX idx_frames_embedding_vec ON frames
+    USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100);
+```
+
+**Important:** Create vector indexes *after* bulk data load, not in the initial table migration. Empty HNSW indexes are fine; empty IVFFlat indexes produce poor query plans.
 
 ---
 
