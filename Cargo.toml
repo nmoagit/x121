@@ -1,0 +1,67 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/core",
+    "crates/db",
+    "crates/api",
+    "crates/events",
+    "crates/comfyui",
+    "crates/pipeline",
+    "crates/worker",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "UNLICENSED"
+
+[workspace.dependencies]
+# Async runtime
+tokio = { version = "1", features = ["full"] }
+
+# Web framework
+axum = { version = "0.8", features = ["ws", "macros"] }
+tower = "0.5"
+tower-http = { version = "0.6", features = ["cors", "compression-gzip", "trace", "request-id"] }
+
+# Serialization
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# Database
+sqlx = { version = "0.8", features = ["runtime-tokio", "tls-rustls", "postgres", "chrono", "uuid", "migrate"] }
+
+# Error handling
+thiserror = "2"
+anyhow = "1"
+
+# Logging / tracing
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+
+# Auth
+jsonwebtoken = "9"
+argon2 = "0.5"
+
+# Types
+chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "1", features = ["v7", "serde"] }
+
+# Validation
+validator = { version = "0.19", features = ["derive"] }
+
+# Config
+dotenvy = "0.15"
+
+# WebSocket
+tokio-tungstenite = { version = "0.24", features = ["rustls-tls-webpki-roots"] }
+
+# Testing
+assert_matches = "1"
+
+# Workspace crates
+trulience-core = { path = "crates/core" }
+trulience-db = { path = "crates/db" }
+trulience-events = { path = "crates/events" }
+trulience-comfyui = { path = "crates/comfyui" }
+trulience-pipeline = { path = "crates/pipeline" }

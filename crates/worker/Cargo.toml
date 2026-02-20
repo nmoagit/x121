@@ -1,0 +1,21 @@
+[package]
+name = "trulience-worker"
+version.workspace = true
+edition.workspace = true
+
+[[bin]]
+name = "trulience-worker"
+path = "src/main.rs"
+
+[dependencies]
+trulience-core = { workspace = true }
+trulience-db = { workspace = true }
+trulience-events = { workspace = true }
+trulience-pipeline = { workspace = true }
+
+tokio = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+dotenvy = { workspace = true }
