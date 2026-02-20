@@ -168,7 +168,10 @@ async fn test_hard_delete_permanently_removes(pool: PgPool) {
 
     // find_by_id (excludes deleted) should return None.
     let found = ProjectRepo::find_by_id(&pool, project.id).await.unwrap();
-    assert!(found.is_none(), "find_by_id should return None after hard delete");
+    assert!(
+        found.is_none(),
+        "find_by_id should return None after hard delete"
+    );
 
     // find_by_id_include_deleted should also return None -- row is truly gone.
     let found_inc = ProjectRepo::find_by_id_include_deleted(&pool, project.id)
@@ -222,12 +225,9 @@ async fn test_soft_delete_scene_also_works(pool: PgPool) {
     )
     .await
     .unwrap();
-    let scene = SceneRepo::create(
-        &pool,
-        &new_scene(character.id, scene_type.id, variant.id),
-    )
-    .await
-    .unwrap();
+    let scene = SceneRepo::create(&pool, &new_scene(character.id, scene_type.id, variant.id))
+        .await
+        .unwrap();
 
     // Soft-delete the scene.
     let deleted = SceneRepo::soft_delete(&pool, scene.id).await.unwrap();

@@ -111,17 +111,19 @@ async fn test_list_trash_filtered_by_type(pool: PgPool) {
     let json = body_json(response).await;
     let items = json["items"].as_array().unwrap();
     assert!(
-        items
-            .iter()
-            .all(|item| item["entity_type"] == "projects"),
+        items.iter().all(|item| item["entity_type"] == "projects"),
         "all items should be of type 'projects' when filtered"
     );
     assert!(
-        items.iter().any(|item| item["id"].as_i64() == Some(project.id)),
+        items
+            .iter()
+            .any(|item| item["id"].as_i64() == Some(project.id)),
         "the trashed project should be in the filtered list"
     );
     assert!(
-        !items.iter().any(|item| item["id"].as_i64() == Some(character.id)),
+        !items
+            .iter()
+            .any(|item| item["id"].as_i64() == Some(character.id)),
         "the character should not appear in project-filtered list"
     );
 }
@@ -214,7 +216,9 @@ async fn test_purge_preview(pool: PgPool) {
     );
     let counts = json["counts_by_type"].as_array().unwrap();
     assert!(
-        counts.iter().any(|c| c["entity_type"] == "projects" && c["count"].as_i64().unwrap() >= 1),
+        counts
+            .iter()
+            .any(|c| c["entity_type"] == "projects" && c["count"].as_i64().unwrap() >= 1),
         "counts_by_type should include projects with count >= 1"
     );
 }
@@ -232,11 +236,7 @@ async fn test_purge_single_item(pool: PgPool) {
 
     // Purge the single item.
     let app = build_test_app(pool.clone());
-    let response = delete(
-        app,
-        &format!("/api/v1/trash/projects/{}/purge", project.id),
-    )
-    .await;
+    let response = delete(app, &format!("/api/v1/trash/projects/{}/purge", project.id)).await;
     assert_eq!(response.status(), StatusCode::NO_CONTENT);
 
     // Verify it is gone from the trash.
@@ -245,7 +245,9 @@ async fn test_purge_single_item(pool: PgPool) {
     let json = body_json(response).await;
     let items = json["items"].as_array().unwrap();
     assert!(
-        !items.iter().any(|item| item["id"].as_i64() == Some(project.id)),
+        !items
+            .iter()
+            .any(|item| item["id"].as_i64() == Some(project.id)),
         "purged project should not appear in trash"
     );
 }
@@ -275,6 +277,9 @@ async fn test_purge_all(pool: PgPool) {
     let app = build_test_app(pool);
     let response = get(app, "/api/v1/trash").await;
     let json = body_json(response).await;
-    assert_eq!(json["total_count"], 0, "trash should be empty after purge all");
+    assert_eq!(
+        json["total_count"], 0,
+        "trash should be empty after purge all"
+    );
     assert!(json["items"].as_array().unwrap().is_empty());
 }

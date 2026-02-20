@@ -30,6 +30,9 @@ sqlx = { workspace = true }
 uuid = { workspace = true }
 chrono = { workspace = true }
 futures = { workspace = true }
+jsonwebtoken = { workspace = true }
+argon2 = { workspace = true }
+sha2 = { workspace = true }
 
 [dev-dependencies]
 assert_matches = { workspace = true }

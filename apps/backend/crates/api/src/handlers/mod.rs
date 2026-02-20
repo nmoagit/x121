@@ -1,9 +1,11 @@
-//! Request handlers for PRD-01 entities.
+//! Request handlers.
 //!
-//! Each submodule provides async handler functions (create, list, get_by_id,
-//! update, delete) for a single entity type. Handlers delegate to the
-//! corresponding repository in `trulience_db` and map errors via [`AppError`].
+//! Each submodule provides async handler functions for a single resource.
+//! Handlers delegate to the corresponding repository in `trulience_db`
+//! and map errors via [`AppError`].
 
+pub mod admin;
+pub mod auth;
 pub mod character;
 pub mod derived_image;
 pub mod image_variant;

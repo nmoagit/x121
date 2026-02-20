@@ -19,6 +19,7 @@ use tower_http::timeout::TimeoutLayer;
 use tower_http::trace::{DefaultMakeSpan, DefaultOnResponse, TraceLayer};
 use tracing::Level;
 
+use trulience_api::auth::jwt::JwtConfig;
 use trulience_api::config::ServerConfig;
 use trulience_api::routes;
 use trulience_api::state::AppState;
@@ -35,6 +36,11 @@ pub fn test_config() -> ServerConfig {
         cors_origins: vec!["http://localhost:5173".to_string()],
         request_timeout_secs: 30,
         shutdown_timeout_secs: 30,
+        jwt: JwtConfig {
+            secret: "test-secret-for-integration-tests-minimum-length".to_string(),
+            access_token_expiry_mins: 15,
+            refresh_token_expiry_days: 7,
+        },
     }
 }
 
@@ -139,6 +145,69 @@ pub async fn delete(app: Router, uri: &str) -> axum::response::Response {
     let request = Request::builder()
         .method(Method::DELETE)
         .uri(uri)
+        .body(Body::empty())
+        .unwrap();
+    app.oneshot(request).await.unwrap()
+}
+
+// ---------------------------------------------------------------------------
+// Authenticated HTTP test helpers
+// ---------------------------------------------------------------------------
+
+/// Send a JSON request with the given HTTP method and a Bearer token.
+pub async fn send_json_auth(
+    app: Router,
+    method: Method,
+    uri: &str,
+    body: serde_json::Value,
+    token: &str,
+) -> axum::response::Response {
+    let request = Request::builder()
+        .method(method)
+        .uri(uri)
+        .header("content-type", "application/json")
+        .header("authorization", format!("Bearer {token}"))
+        .body(Body::from(serde_json::to_vec(&body).unwrap()))
+        .unwrap();
+    app.oneshot(request).await.unwrap()
+}
+
+/// POST JSON with a Bearer token.
+pub async fn post_json_auth(
+    app: Router,
+    uri: &str,
+    body: serde_json::Value,
+    token: &str,
+) -> axum::response::Response {
+    send_json_auth(app, Method::POST, uri, body, token).await
+}
+
+/// PUT JSON with a Bearer token.
+pub async fn put_json_auth(
+    app: Router,
+    uri: &str,
+    body: serde_json::Value,
+    token: &str,
+) -> axum::response::Response {
+    send_json_auth(app, Method::PUT, uri, body, token).await
+}
+
+/// GET from the given URI with a Bearer token.
+pub async fn get_auth(app: Router, uri: &str, token: &str) -> axum::response::Response {
+    let request = Request::builder()
+        .uri(uri)
+        .header("authorization", format!("Bearer {token}"))
+        .body(Body::empty())
+        .unwrap();
+    app.oneshot(request).await.unwrap()
+}
+
+/// DELETE the given URI with a Bearer token.
+pub async fn delete_auth(app: Router, uri: &str, token: &str) -> axum::response::Response {
+    let request = Request::builder()
+        .method(Method::DELETE)
+        .uri(uri)
+        .header("authorization", format!("Bearer {token}"))
         .body(Body::empty())
         .unwrap();
     app.oneshot(request).await.unwrap()

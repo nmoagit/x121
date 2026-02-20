@@ -40,6 +40,10 @@ Ongoing log of components, functions, patterns, and utilities that the DRY-GUY a
 | DRY-009 | `soft_delete` / `restore` / `hard_delete` method pattern | PRD-109, all entity repos | `watch` | All 9+ repos need identical method signatures. Candidate for trait or macro if boilerplate grows. |
 | DRY-010 | Version-as-final transactional pattern | PRD-109, PRD-069 | `watch` | Unmark old + mark new in one transaction. Could be reused if other entities get versioning. |
 | DRY-011 | Trash entity-type parallel lists (5 locations) | PRD-109 | `watch` | 9 entity type strings appear in 5 parallel match/list sites: `KNOWN_ENTITY_TYPES`, `PURGE_ORDER`, `table_and_name_expr`, `check_parent_trashed` (all in `trash_repo.rs`), and `dispatch_restore` (in `handlers/trash.rs`). Adding a new entity type requires updating all 5. Consider a single `EntityMeta` data array if the codebase grows beyond 12 entity types. |
+| DRY-012 | `resolve_role_name` logic duplicated across handlers | PRD-03 | `resolved` | Extracted to `RoleRepo::resolve_name()` in `db/src/repositories/role_repo.rs`. Both `auth.rs` and `admin.rs` now call it. |
+| DRY-013 | Role name magic strings (`"admin"`, `"creator"`, `"reviewer"`) | PRD-03 | `resolved` | Constants defined in `core/src/roles.rs` (`ROLE_ADMIN`, `ROLE_CREATOR`, `ROLE_REVIEWER`). `rbac.rs` updated to use them. |
+| DRY-014 | Validate-then-hash password 2-step pattern | PRD-03 | `watch` | `validate_password_strength(...)` + `hash_password(...)` with identical `map_err` wrapping appears twice in `admin.rs:64-69` and `admin.rs:177-182`. Extract to `validate_and_hash_password(password, min_len) -> AppResult<String>` if a third occurrence appears (e.g., self-service password change endpoint). |
+| DRY-015 | RBAC extractor boilerplate (`RequireAdmin`, `RequireCreator`, `RequireAuth`) | PRD-03 | `watch` | Three `FromRequestParts` impls that differ only in role check logic. If a 4th extractor (e.g., `RequireReviewer`) is added, extract a `require_role!` macro. |
 
 ### Frontend Patterns
 
@@ -76,7 +80,8 @@ Ongoing log of components, functions, patterns, and utilities that the DRY-GUY a
 
 | ID | Original Pattern | Resolution | Shared Location | Date |
 |----|-----------------|------------|-----------------|------|
-| — | — | — | — | — |
+| DRY-012 | `resolve_role_name` duplicated in auth.rs + admin.rs | Extracted to `RoleRepo::resolve_name()` | `db/src/repositories/role_repo.rs` | 2026-02-20 |
+| DRY-013 | Role magic strings hardcoded in rbac.rs | Created `ROLE_ADMIN/CREATOR/REVIEWER` constants | `core/src/roles.rs` | 2026-02-20 |
 
 ---
 
@@ -91,6 +96,7 @@ Record of every DRY-GUY audit run against the codebase.
 | 2026-02-20 | PRD-01 Phase 4 (API Endpoints) | 17 (8 handlers, 5 routes, 1 error, 1 lib, 1 test helper, 1 main) | 2 low, rest acceptable | No changes. NotFound construction (19x) and delete-if pattern (8x) are thin-adapter repetition. DRY-003 stays `watch`. scene_type.rs correctly deduplicates dual-scope via inner helpers. |
 | 2026-02-20 | PRD-01 Test Files (entity_crud, entity_api, schema_conventions) | 8 test files across db+api crates | 2 HIGH (extracted), 1 MEDIUM (watch), 2 LOW (acceptable) | Extracted `body_json`, `post_json`, `put_json`, `get`, `delete`, `send_json` to `api/tests/common/mod.rs`. Unified `post_json`/`put_json` via `send_json` base. Refactored health.rs + entity_api.rs to use shared helpers. Watch: entity_crud.rs fixtures if second api test needs them. |
 | 2026-02-20 | PRD-109 Phases 5-6 (Trash API + Delivery) | 12 (1 trash_repo, 5 entity repos modified, 1 trash handler, 1 trash route, 1 delivery.rs, 1 handlers/mod, 1 routes/mod, 1 repos/mod) | 1 HIGH (dead code), 2 MEDIUM (watch), 2 LOW, 4 CLEAN | HIGH: `find_by_id_include_deleted` on 5 individual repos is dead code (uncalled) — recommend removal. MEDIUM: DRY-009 confirmed (27 identical soft_delete/restore/hard_delete methods across 9 repos), DRY-011 added (5 parallel entity-type lists). LOW: fallback in `table_and_name_expr`, dispatch_restore inherent to architecture. CLEAN: delivery.rs, route file, handler pattern. |
+| 2026-02-20 | PRD-03 Phases 1-6 (User Identity & RBAC) | 19 new + 9 modified (3 SQL migrations, 3 db models, 3 db repos, 3 auth modules, 2 middleware modules, 2 handler modules, 2 route modules, 1 config) | 2 flagged (DRY-012, DRY-013), 2 watch (DRY-014, DRY-015), 3 LOW, rest CLEAN | FLAGGED: `resolve_role_name` duplicated between auth.rs and admin.rs (DRY-012); role name magic strings in rbac.rs (DRY-013). WATCH: validate+hash pattern 2x in admin.rs (DRY-014), RBAC extractor boilerplate at 3 impls (DRY-015). LOW: `"Account is deactivated"` 2x in auth.rs (same file, different paths), `UserInfo` vs `UserResponse` (intentionally different scopes), `"unknown"` fallback (resolves with DRY-012). CLEAN: password.rs, jwt.rs, AuthUser extractor, all repos, all routes, all migrations, test config. |
 
 ---
 

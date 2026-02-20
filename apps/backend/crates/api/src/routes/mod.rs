@@ -1,3 +1,5 @@
+pub mod admin;
+pub mod auth;
 pub mod character;
 pub mod health;
 pub mod project;
@@ -17,6 +19,14 @@ use crate::ws;
 ///
 /// ```text
 /// /ws                                              WebSocket
+///
+/// /auth/login                                      login (public)
+/// /auth/refresh                                    refresh (public)
+/// /auth/logout                                     logout (requires auth)
+///
+/// /admin/users                                     list, create (admin only)
+/// /admin/users/{id}                                get, update, deactivate
+/// /admin/users/{id}/reset-password                 reset password
 ///
 /// /projects                                        list, create
 /// /projects/{id}                                   get, update, delete
@@ -56,6 +66,10 @@ pub fn api_routes() -> Router<AppState> {
     Router::new()
         // WebSocket endpoint.
         .route("/ws", get(ws::ws_handler))
+        // Authentication routes (login, refresh, logout).
+        .nest("/auth", auth::router())
+        // Admin routes (user management).
+        .nest("/admin", admin::router())
         // Project routes (also nests characters and project-scoped scene types).
         .nest("/projects", project::router())
         // Character-scoped sub-resources (images, scenes).

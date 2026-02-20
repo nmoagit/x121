@@ -1,3 +1,5 @@
+use crate::auth::jwt::JwtConfig;
+
 /// Server configuration loaded from environment variables.
 ///
 /// All fields have sensible defaults suitable for local development.
@@ -16,6 +18,8 @@ pub struct ServerConfig {
     /// Used in Phase 7 (graceful shutdown with drain).
     #[allow(dead_code)]
     pub shutdown_timeout_secs: u64,
+    /// JWT token configuration (secret, expiry durations).
+    pub jwt: JwtConfig,
 }
 
 impl ServerConfig {
@@ -53,12 +57,15 @@ impl ServerConfig {
             .parse()
             .expect("SHUTDOWN_TIMEOUT_SECS must be a valid u64");
 
+        let jwt = JwtConfig::from_env();
+
         Self {
             host,
             port,
             cors_origins,
             request_timeout_secs,
             shutdown_timeout_secs,
+            jwt,
         }
     }
 }

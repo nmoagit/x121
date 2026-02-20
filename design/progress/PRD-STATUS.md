@@ -21,10 +21,10 @@ Source of truth: [`design/design.md`](../design.md)
 | Status | Count |
 |--------|-------|
 | backlog | 0 |
-| planning | 104 |
+| planning | 103 |
 | in-progress | 0 |
 | review | 0 |
-| done | 5 |
+| done | 6 |
 | blocked | 0 |
 | deferred | 0 |
 | maybe | 15 |
@@ -44,7 +44,7 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD | Title | Priority | Status | Owner | Notes |
 |-----|-------|----------|--------|-------|-------|
 | PRD-02 | Backend Foundation (Rust/Axum) | — | `done` | 2026-02-20 | Axum 0.8, middleware stack, WebSocket manager, graceful shutdown, 21 integration tests. |
-| PRD-03 | User Identity & RBAC | — | `planning` | — | |
+| PRD-03 | User Identity & RBAC | — | `done` | 2026-02-20 | JWT auth (HS256), Argon2id passwords, 3-role RBAC (admin/creator/reviewer), middleware extractors, admin user mgmt API, frontend auth (Zustand store, LoginPage, ProtectedRoute), 12 integration tests. DRY-012/013 resolved. |
 | PRD-04 | Session & Workspace Persistence | — | `planning` | — | |
 | PRD-05 | ComfyUI WebSocket Bridge | — | `planning` | — | |
 | PRD-06 | Hardware Monitoring & Direct Control | — | `planning` | — | |

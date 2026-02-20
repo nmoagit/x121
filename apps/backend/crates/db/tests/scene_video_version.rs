@@ -18,8 +18,7 @@ use trulience_db::models::scene::CreateScene;
 use trulience_db::models::scene_type::CreateSceneType;
 use trulience_db::models::scene_video_version::CreateSceneVideoVersion;
 use trulience_db::repositories::{
-    CharacterRepo, ImageVariantRepo, ProjectRepo, SceneRepo, SceneTypeRepo,
-    SceneVideoVersionRepo,
+    CharacterRepo, ImageVariantRepo, ProjectRepo, SceneRepo, SceneTypeRepo, SceneVideoVersionRepo,
 };
 
 // ---------------------------------------------------------------------------
@@ -116,12 +115,9 @@ async fn setup_hierarchy(pool: &PgPool, suffix: &str) -> (i64, i64) {
     )
     .await
     .unwrap();
-    let scene = SceneRepo::create(
-        pool,
-        &new_scene(character.id, scene_type.id, variant.id),
-    )
-    .await
-    .unwrap();
+    let scene = SceneRepo::create(pool, &new_scene(character.id, scene_type.id, variant.id))
+        .await
+        .unwrap();
     (project.id, scene.id)
 }
 
@@ -243,7 +239,10 @@ async fn test_next_version_number_increments(pool: PgPool) {
     let first = SceneVideoVersionRepo::next_version_number(&pool, scene_id)
         .await
         .unwrap();
-    assert_eq!(first, 1, "next_version_number should be 1 when no versions exist");
+    assert_eq!(
+        first, 1,
+        "next_version_number should be 1 when no versions exist"
+    );
 
     SceneVideoVersionRepo::create(&pool, &new_version(scene_id))
         .await
@@ -252,7 +251,10 @@ async fn test_next_version_number_increments(pool: PgPool) {
     let second = SceneVideoVersionRepo::next_version_number(&pool, scene_id)
         .await
         .unwrap();
-    assert_eq!(second, 2, "next_version_number should be 2 after one version");
+    assert_eq!(
+        second, 2,
+        "next_version_number should be 2 after one version"
+    );
 }
 
 // ---------------------------------------------------------------------------
@@ -296,7 +298,10 @@ async fn test_find_final_for_scene(pool: PgPool) {
     let none = SceneVideoVersionRepo::find_final_for_scene(&pool, scene_id)
         .await
         .unwrap();
-    assert!(none.is_none(), "should be None when no final version exists");
+    assert!(
+        none.is_none(),
+        "should be None when no final version exists"
+    );
 
     // Create a final version.
     let v1 = SceneVideoVersionRepo::create_as_final(&pool, &new_version(scene_id))
@@ -324,18 +329,12 @@ async fn test_find_scenes_missing_final(pool: PgPool) {
     let character = CharacterRepo::create(&pool, &new_character(project.id, "MFChar"))
         .await
         .unwrap();
-    let st1 = SceneTypeRepo::create(
-        &pool,
-        &new_scene_type(Some(project.id), "MF_Dance"),
-    )
-    .await
-    .unwrap();
-    let st2 = SceneTypeRepo::create(
-        &pool,
-        &new_scene_type(Some(project.id), "MF_Run"),
-    )
-    .await
-    .unwrap();
+    let st1 = SceneTypeRepo::create(&pool, &new_scene_type(Some(project.id), "MF_Dance"))
+        .await
+        .unwrap();
+    let st2 = SceneTypeRepo::create(&pool, &new_scene_type(Some(project.id), "MF_Run"))
+        .await
+        .unwrap();
     let variant = ImageVariantRepo::create(
         &pool,
         &new_image_variant(character.id, "clothed", "/img/mf.png"),
@@ -359,7 +358,11 @@ async fn test_find_scenes_missing_final(pool: PgPool) {
     let missing = SceneVideoVersionRepo::find_scenes_missing_final(&pool, project.id)
         .await
         .unwrap();
-    assert_eq!(missing.len(), 1, "only scene2 should be missing a final version");
+    assert_eq!(
+        missing.len(),
+        1,
+        "only scene2 should be missing a final version"
+    );
     assert_eq!(missing[0], scene2.id);
 }
 

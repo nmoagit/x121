@@ -16,8 +16,7 @@ use trulience_db::models::scene::CreateScene;
 use trulience_db::models::scene_type::CreateSceneType;
 use trulience_db::models::scene_video_version::CreateSceneVideoVersion;
 use trulience_db::repositories::{
-    CharacterRepo, ImageVariantRepo, ProjectRepo, SceneRepo, SceneTypeRepo,
-    SceneVideoVersionRepo,
+    CharacterRepo, ImageVariantRepo, ProjectRepo, SceneRepo, SceneTypeRepo, SceneVideoVersionRepo,
 };
 
 // ---------------------------------------------------------------------------
@@ -168,11 +167,7 @@ async fn test_get_version_404(pool: PgPool) {
     let scene_id = setup_scene(&pool, "get404").await;
 
     let app = build_test_app(pool);
-    let response = get(
-        app,
-        &format!("/api/v1/scenes/{scene_id}/versions/99999"),
-    )
-    .await;
+    let response = get(app, &format!("/api/v1/scenes/{scene_id}/versions/99999")).await;
     assert_eq!(response.status(), StatusCode::NOT_FOUND);
 }
 
@@ -191,7 +186,10 @@ async fn test_set_final(pool: PgPool) {
     let app = build_test_app(pool);
     let response = put_json(
         app,
-        &format!("/api/v1/scenes/{scene_id}/versions/{}/set-final", version.id),
+        &format!(
+            "/api/v1/scenes/{scene_id}/versions/{}/set-final",
+            version.id
+        ),
         serde_json::json!({}),
     )
     .await;

@@ -1,4 +1,14 @@
+import { useAuthStore } from "@/stores/auth-store";
+
+/* --------------------------------------------------------------------------
+   Constants
+   -------------------------------------------------------------------------- */
+
 const BASE_URL = "/api/v1";
+
+/* --------------------------------------------------------------------------
+   Error types
+   -------------------------------------------------------------------------- */
 
 interface ApiError {
   code: string;
@@ -16,20 +26,64 @@ export class ApiRequestError extends Error {
   }
 }
 
-async function request<T>(path: string, options?: RequestInit): Promise<T> {
+/* --------------------------------------------------------------------------
+   Token refresh queue
+   --------------------------------------------------------------------------
+   When multiple requests hit 401 simultaneously, only ONE refresh should
+   execute. All others wait on the same promise.
+   -------------------------------------------------------------------------- */
+
+let refreshPromise: Promise<boolean> | null = null;
+
+async function refreshTokenOnce(): Promise<boolean> {
+  if (!refreshPromise) {
+    refreshPromise = useAuthStore
+      .getState()
+      .refresh()
+      .finally(() => {
+        refreshPromise = null;
+      });
+  }
+  return refreshPromise;
+}
+
+/* --------------------------------------------------------------------------
+   Core request function
+   -------------------------------------------------------------------------- */
+
+async function request<T>(
+  path: string,
+  options?: RequestInit,
+  isRetry = false,
+): Promise<T> {
   const url = `${BASE_URL}${path}`;
 
-  const headers: HeadersInit = {
+  const headers: Record<string, string> = {
     "Content-Type": "application/json",
-    ...options?.headers,
+    ...(options?.headers as Record<string, string> | undefined),
   };
 
-  const token = localStorage.getItem("access_token");
+  const token = useAuthStore.getState().accessToken;
   if (token) {
-    (headers as Record<string, string>).Authorization = `Bearer ${token}`;
+    headers.Authorization = `Bearer ${token}`;
   }
 
   const response = await fetch(url, { ...options, headers });
+
+  /* -- Handle 401: attempt silent refresh, then retry once -- */
+  if (response.status === 401 && !isRetry) {
+    const refreshed = await refreshTokenOnce();
+
+    if (refreshed) {
+      return request<T>(path, options, true);
+    }
+
+    // Refresh failed -- clear auth and redirect to login
+    useAuthStore.getState().clearAuth();
+    window.location.href = "/login";
+    // Return a never-resolving promise so callers don't continue
+    return new Promise<T>(() => {});
+  }
 
   if (!response.ok) {
     const body = await response.json().catch(() => ({
@@ -45,6 +99,10 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const body = await response.json();
   return body.data as T;
 }
+
+/* --------------------------------------------------------------------------
+   Public API client
+   -------------------------------------------------------------------------- */
 
 export const api = {
   get<T>(path: string): Promise<T> {
