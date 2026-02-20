@@ -1,6 +1,6 @@
 -- =============================================================
 -- TEMPLATE: Copy this when creating a new entity table migration.
--- Demonstrates every convention from CONVENTIONS.md section 4.
+-- Demonstrates every convention from design/CONVENTIONS.md section 4.
 -- =============================================================
 --
 -- CREATE TABLE things (
