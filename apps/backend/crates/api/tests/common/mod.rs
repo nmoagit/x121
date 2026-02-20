@@ -13,9 +13,9 @@ use tower_http::trace::{DefaultMakeSpan, DefaultOnResponse, TraceLayer};
 use tracing::Level;
 
 use trulience_api::config::ServerConfig;
+use trulience_api::routes;
 use trulience_api::state::AppState;
 use trulience_api::ws::WsManager;
-use trulience_api::routes;
 
 /// Build a test `ServerConfig` with safe defaults.
 ///
