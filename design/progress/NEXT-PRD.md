@@ -4,8 +4,8 @@ Auto-updated after each PRD completion. Check this file to know what to work on 
 
 ## Current
 
-**PRD-05** — ComfyUI WebSocket Bridge
-- **Why:** Critical path to PRD-24 (generation loop). Unblocks pipeline core.
+**PRD-10** — Event Bus & Notification System
+- **Why:** Unblocks monitoring dashboards + real-time features. Replaces interim broadcast channel in ComfyUI bridge.
 - **Status:** Not Started
 
 ## Completed
@@ -13,12 +13,12 @@ Auto-updated after each PRD completion. Check this file to know what to work on 
 | PRD | Title | Completed |
 |-----|-------|-----------|
 | PRD-03 | User Identity & RBAC | 2026-02-20 |
+| PRD-05 | ComfyUI WebSocket Bridge | 2026-02-20 |
 
 ## Queue (priority order based on critical path)
 
 | Priority | PRD | Title | Why |
 |----------|-----|-------|-----|
-| 1 | PRD-10 | Event Bus & Notification System | Unblocks monitoring dashboards + real-time features |
 | 3 | PRD-22 | Source Image Quality Assurance | Critical path: PRD-22→PRD-21→PRD-23→PRD-24 |
 | 4 | PRD-14 | Data Validation & Import Integrity | Unblocks PRD-13, PRD-16, PRD-66 |
 | 5 | PRD-17 | Asset Registry & Dependency Mapping | Unblocks PRD-23, PRD-43, PRD-69, PRD-75 |
@@ -39,4 +39,4 @@ Auto-updated after each PRD completion. Check this file to know what to work on 
 
 ---
 
-*Last updated: 2026-02-20 after PRD-109 completion*
+*Last updated: 2026-02-20 after PRD-05 completion*

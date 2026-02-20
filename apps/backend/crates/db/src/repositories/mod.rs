@@ -4,6 +4,8 @@
 //! that accept `&PgPool` as the first argument.
 
 pub mod character_repo;
+pub mod comfyui_execution_repo;
+pub mod comfyui_instance_repo;
 pub mod derived_image_repo;
 pub mod image_variant_repo;
 pub mod project_repo;
@@ -18,6 +20,8 @@ pub mod trash_repo;
 pub mod user_repo;
 
 pub use character_repo::CharacterRepo;
+pub use comfyui_execution_repo::ComfyUIExecutionRepo;
+pub use comfyui_instance_repo::ComfyUIInstanceRepo;
 pub use derived_image_repo::DerivedImageRepo;
 pub use image_variant_repo::ImageVariantRepo;
 pub use project_repo::ProjectRepo;

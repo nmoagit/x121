@@ -50,14 +50,17 @@ pub fn test_config() -> ServerConfig {
 /// This mirrors the router construction in `main.rs` so integration tests
 /// exercise the same middleware stack (CORS, request ID, timeout, tracing,
 /// panic recovery) that production uses.
-pub fn build_test_app(pool: PgPool) -> Router {
+pub async fn build_test_app(pool: PgPool) -> Router {
     let config = test_config();
     let ws_manager = Arc::new(WsManager::new());
+    let comfyui_manager =
+        trulience_comfyui::manager::ComfyUIManager::start(pool.clone()).await;
 
     let state = AppState {
         pool,
         config: Arc::new(config),
         ws_manager,
+        comfyui_manager,
     };
 
     let cors = CorsLayer::new()

@@ -122,7 +122,7 @@ async fn test_list_versions(pool: PgPool) {
         .await
         .unwrap();
 
-    let app = build_test_app(pool);
+    let app = build_test_app(pool).await;
     let response = get(app, &format!("/api/v1/scenes/{scene_id}/versions")).await;
     assert_eq!(response.status(), StatusCode::OK);
 
@@ -143,7 +143,7 @@ async fn test_get_version(pool: PgPool) {
         .await
         .unwrap();
 
-    let app = build_test_app(pool);
+    let app = build_test_app(pool).await;
     let response = get(
         app,
         &format!("/api/v1/scenes/{scene_id}/versions/{}", version.id),
@@ -166,7 +166,7 @@ async fn test_get_version(pool: PgPool) {
 async fn test_get_version_404(pool: PgPool) {
     let scene_id = setup_scene(&pool, "get404").await;
 
-    let app = build_test_app(pool);
+    let app = build_test_app(pool).await;
     let response = get(app, &format!("/api/v1/scenes/{scene_id}/versions/99999")).await;
     assert_eq!(response.status(), StatusCode::NOT_FOUND);
 }
@@ -183,7 +183,7 @@ async fn test_set_final(pool: PgPool) {
         .await
         .unwrap();
 
-    let app = build_test_app(pool);
+    let app = build_test_app(pool).await;
     let response = put_json(
         app,
         &format!(
@@ -214,7 +214,7 @@ async fn test_delete_version_204(pool: PgPool) {
         .unwrap();
     assert!(!version.is_final);
 
-    let app = build_test_app(pool);
+    let app = build_test_app(pool).await;
     let response = delete(
         app,
         &format!("/api/v1/scenes/{scene_id}/versions/{}", version.id),
@@ -237,7 +237,7 @@ async fn test_delete_final_version_409(pool: PgPool) {
         .unwrap();
     assert!(version.is_final);
 
-    let app = build_test_app(pool);
+    let app = build_test_app(pool).await;
     let response = delete(
         app,
         &format!("/api/v1/scenes/{scene_id}/versions/{}", version.id),
@@ -264,7 +264,7 @@ async fn test_soft_delete_hides_from_get(pool: PgPool) {
         .unwrap();
 
     // GET via API should return 404.
-    let app = build_test_app(pool);
+    let app = build_test_app(pool).await;
     let response = get(
         app,
         &format!("/api/v1/scenes/{scene_id}/versions/{}", version.id),

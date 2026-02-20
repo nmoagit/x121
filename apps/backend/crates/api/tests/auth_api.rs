@@ -58,7 +58,7 @@ async fn login_user(
 #[sqlx::test(migrations = "../../../db/migrations")]
 async fn test_login_success(pool: PgPool) {
     let (user, password) = create_test_user(&pool, "loginuser", 1).await;
-    let app = common::build_test_app(pool);
+    let app = common::build_test_app(pool).await;
 
     let json = login_user(app, "loginuser", &password).await;
 
@@ -75,7 +75,7 @@ async fn test_login_success(pool: PgPool) {
 #[sqlx::test(migrations = "../../../db/migrations")]
 async fn test_login_wrong_password(pool: PgPool) {
     let (_user, _password) = create_test_user(&pool, "wrongpw", 1).await;
-    let app = common::build_test_app(pool);
+    let app = common::build_test_app(pool).await;
 
     let body = serde_json::json!({ "username": "wrongpw", "password": "incorrect_password" });
     let response = post_json(app, "/api/v1/auth/login", body).await;
@@ -86,7 +86,7 @@ async fn test_login_wrong_password(pool: PgPool) {
 /// Login with a nonexistent username returns 401.
 #[sqlx::test(migrations = "../../../db/migrations")]
 async fn test_login_nonexistent_user(pool: PgPool) {
-    let app = common::build_test_app(pool);
+    let app = common::build_test_app(pool).await;
 
     let body = serde_json::json!({ "username": "ghost", "password": "whatever" });
     let response = post_json(app, "/api/v1/auth/login", body).await;
@@ -102,7 +102,7 @@ async fn test_login_inactive_user(pool: PgPool) {
         .await
         .expect("deactivation should succeed");
 
-    let app = common::build_test_app(pool);
+    let app = common::build_test_app(pool).await;
 
     let body = serde_json::json!({ "username": "inactive", "password": password });
     let response = post_json(app, "/api/v1/auth/login", body).await;
@@ -115,11 +115,11 @@ async fn test_login_inactive_user(pool: PgPool) {
 async fn test_token_refresh(pool: PgPool) {
     let (_user, password) = create_test_user(&pool, "refresher", 1).await;
 
-    let app = common::build_test_app(pool.clone());
+    let app = common::build_test_app(pool.clone()).await;
     let login_json = login_user(app, "refresher", &password).await;
     let refresh_token = login_json["refresh_token"].as_str().unwrap();
 
-    let app = common::build_test_app(pool);
+    let app = common::build_test_app(pool).await;
     let body = serde_json::json!({ "refresh_token": refresh_token });
     let response = post_json(app, "/api/v1/auth/refresh", body).await;
 
@@ -138,7 +138,7 @@ async fn test_token_refresh(pool: PgPool) {
 /// Refreshing with a garbage token returns 401.
 #[sqlx::test(migrations = "../../../db/migrations")]
 async fn test_refresh_with_invalid_token(pool: PgPool) {
-    let app = common::build_test_app(pool);
+    let app = common::build_test_app(pool).await;
 
     let body = serde_json::json!({ "refresh_token": "not-a-real-token" });
     let response = post_json(app, "/api/v1/auth/refresh", body).await;
@@ -151,11 +151,11 @@ async fn test_refresh_with_invalid_token(pool: PgPool) {
 async fn test_logout(pool: PgPool) {
     let (_user, password) = create_test_user(&pool, "logoutuser", 1).await;
 
-    let app = common::build_test_app(pool.clone());
+    let app = common::build_test_app(pool.clone()).await;
     let login_json = login_user(app, "logoutuser", &password).await;
     let access_token = login_json["access_token"].as_str().unwrap();
 
-    let app = common::build_test_app(pool);
+    let app = common::build_test_app(pool).await;
     let body = serde_json::json!({});
     let response = post_json_auth(app, "/api/v1/auth/logout", body, access_token).await;
 
@@ -169,7 +169,7 @@ async fn test_logout(pool: PgPool) {
 /// Admin endpoints require authentication -- missing token returns 401.
 #[sqlx::test(migrations = "../../../db/migrations")]
 async fn test_admin_endpoint_requires_auth(pool: PgPool) {
-    let app = common::build_test_app(pool);
+    let app = common::build_test_app(pool).await;
     let response = get(app, "/api/v1/admin/users").await;
 
     assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
@@ -180,11 +180,11 @@ async fn test_admin_endpoint_requires_auth(pool: PgPool) {
 async fn test_admin_endpoint_requires_admin_role(pool: PgPool) {
     let (_user, password) = create_test_user(&pool, "creatoruser", 2).await;
 
-    let app = common::build_test_app(pool.clone());
+    let app = common::build_test_app(pool.clone()).await;
     let login_json = login_user(app, "creatoruser", &password).await;
     let token = login_json["access_token"].as_str().unwrap();
 
-    let app = common::build_test_app(pool);
+    let app = common::build_test_app(pool).await;
     let response = get_auth(app, "/api/v1/admin/users", token).await;
 
     assert_eq!(response.status(), StatusCode::FORBIDDEN);
@@ -199,11 +199,11 @@ async fn test_admin_endpoint_requires_admin_role(pool: PgPool) {
 async fn test_admin_create_user(pool: PgPool) {
     let (_admin, admin_pw) = create_test_user(&pool, "adminmgr", 1).await;
 
-    let app = common::build_test_app(pool.clone());
+    let app = common::build_test_app(pool.clone()).await;
     let login_json = login_user(app, "adminmgr", &admin_pw).await;
     let token = login_json["access_token"].as_str().unwrap();
 
-    let app = common::build_test_app(pool);
+    let app = common::build_test_app(pool).await;
     let new_user_body = serde_json::json!({
         "username": "newuser",
         "email": "newuser@test.com",
@@ -229,11 +229,11 @@ async fn test_admin_list_users(pool: PgPool) {
     // Create a second user so the list has more than one entry.
     let (_user2, _) = create_test_user(&pool, "listuser2", 2).await;
 
-    let app = common::build_test_app(pool.clone());
+    let app = common::build_test_app(pool.clone()).await;
     let login_json = login_user(app, "listadmin", &admin_pw).await;
     let token = login_json["access_token"].as_str().unwrap();
 
-    let app = common::build_test_app(pool);
+    let app = common::build_test_app(pool).await;
     let response = get_auth(app, "/api/v1/admin/users", token).await;
 
     assert_eq!(response.status(), StatusCode::OK);
@@ -252,14 +252,14 @@ async fn test_account_lockout(pool: PgPool) {
 
     // Fail login 5 times with the wrong password to trigger the lock.
     for _ in 0..5 {
-        let app = common::build_test_app(pool.clone());
+        let app = common::build_test_app(pool.clone()).await;
         let body = serde_json::json!({ "username": "lockme", "password": "wrong_pass" });
         let response = post_json(app, "/api/v1/auth/login", body).await;
         assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
     }
 
     // The 6th attempt (even with the wrong password) should return 403 (locked).
-    let app = common::build_test_app(pool);
+    let app = common::build_test_app(pool).await;
     let body = serde_json::json!({ "username": "lockme", "password": "wrong_pass" });
     let response = post_json(app, "/api/v1/auth/login", body).await;
 

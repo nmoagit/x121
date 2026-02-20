@@ -13,6 +13,7 @@ path = "src/main.rs"
 
 [dependencies]
 trulience-core = { workspace = true }
+trulience-comfyui = { workspace = true }
 trulience-db = { workspace = true }
 trulience-events = { workspace = true }
 

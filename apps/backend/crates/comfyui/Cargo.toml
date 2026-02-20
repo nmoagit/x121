@@ -5,9 +5,16 @@ edition.workspace = true
 
 [dependencies]
 trulience-core = { workspace = true }
+trulience-db = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
+sqlx = { workspace = true }
 tokio = { workspace = true }
 tokio-tungstenite = { workspace = true }
 tracing = { workspace = true }
 thiserror = { workspace = true }
+futures = { workspace = true }
+uuid = { workspace = true }
+chrono = { workspace = true }
+reqwest = { workspace = true }
+tokio-util = { workspace = true }

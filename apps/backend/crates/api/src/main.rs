@@ -62,11 +62,16 @@ async fn main() {
     // --- Heartbeat ---
     let heartbeat_handle = ws::start_heartbeat(Arc::clone(&ws_manager));
 
+    // --- ComfyUI manager ---
+    let comfyui_manager = trulience_comfyui::manager::ComfyUIManager::start(pool.clone()).await;
+    tracing::info!("ComfyUI manager started");
+
     // --- App state ---
     let state = AppState {
         pool,
         config: Arc::new(config.clone()),
         ws_manager: Arc::clone(&ws_manager),
+        comfyui_manager: Arc::clone(&comfyui_manager),
     };
 
     // --- Request ID header name ---
@@ -122,6 +127,10 @@ async fn main() {
 
     // --- Post-shutdown cleanup ---
     tracing::info!("Server stopped accepting connections, cleaning up");
+
+    // Shut down ComfyUI connections first (they may have in-flight work).
+    comfyui_manager.shutdown().await;
+    tracing::info!("ComfyUI manager shut down");
 
     let ws_count = ws_manager.connection_count().await;
     tracing::info!(ws_count, "Closing remaining WebSocket connections");

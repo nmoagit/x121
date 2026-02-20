@@ -42,7 +42,7 @@ fn new_character(project_id: i64, name: &str) -> CreateCharacter {
 
 #[sqlx::test(migrations = "../../../db/migrations")]
 async fn test_list_trash_empty(pool: PgPool) {
-    let app = build_test_app(pool);
+    let app = build_test_app(pool).await;
     let response = get(app, "/api/v1/trash").await;
     assert_eq!(response.status(), StatusCode::OK);
 
@@ -65,7 +65,7 @@ async fn test_list_trash_after_soft_delete(pool: PgPool) {
         .unwrap();
     ProjectRepo::soft_delete(&pool, project.id).await.unwrap();
 
-    let app = build_test_app(pool);
+    let app = build_test_app(pool).await;
     let response = get(app, "/api/v1/trash").await;
     assert_eq!(response.status(), StatusCode::OK);
 
@@ -104,7 +104,7 @@ async fn test_list_trash_filtered_by_type(pool: PgPool) {
         .unwrap();
 
     // Filter by projects -- should only see the project, not the character.
-    let app = build_test_app(pool);
+    let app = build_test_app(pool).await;
     let response = get(app, "/api/v1/trash?type=projects").await;
     assert_eq!(response.status(), StatusCode::OK);
 
@@ -140,7 +140,7 @@ async fn test_restore_trashed_item(pool: PgPool) {
     ProjectRepo::soft_delete(&pool, project.id).await.unwrap();
 
     // Restore via API.
-    let app = build_test_app(pool.clone());
+    let app = build_test_app(pool.clone()).await;
     let response = post_json(
         app,
         &format!("/api/v1/trash/projects/{}/restore", project.id),
@@ -155,7 +155,7 @@ async fn test_restore_trashed_item(pool: PgPool) {
     assert_eq!(json["id"], project.id);
 
     // Verify the project is visible again via the normal GET endpoint.
-    let app = build_test_app(pool);
+    let app = build_test_app(pool).await;
     let response = get(app, &format!("/api/v1/projects/{}", project.id)).await;
     assert_eq!(response.status(), StatusCode::OK);
 }
@@ -180,7 +180,7 @@ async fn test_restore_child_with_trashed_parent_409(pool: PgPool) {
         .unwrap();
 
     // Try to restore the character -- should fail because parent project is trashed.
-    let app = build_test_app(pool);
+    let app = build_test_app(pool).await;
     let response = post_json(
         app,
         &format!("/api/v1/trash/characters/{}/restore", character.id),
@@ -205,7 +205,7 @@ async fn test_purge_preview(pool: PgPool) {
         .unwrap();
     ProjectRepo::soft_delete(&pool, project.id).await.unwrap();
 
-    let app = build_test_app(pool);
+    let app = build_test_app(pool).await;
     let response = get(app, "/api/v1/trash/purge-preview").await;
     assert_eq!(response.status(), StatusCode::OK);
 
@@ -235,12 +235,12 @@ async fn test_purge_single_item(pool: PgPool) {
     ProjectRepo::soft_delete(&pool, project.id).await.unwrap();
 
     // Purge the single item.
-    let app = build_test_app(pool.clone());
+    let app = build_test_app(pool.clone()).await;
     let response = delete(app, &format!("/api/v1/trash/projects/{}/purge", project.id)).await;
     assert_eq!(response.status(), StatusCode::NO_CONTENT);
 
     // Verify it is gone from the trash.
-    let app = build_test_app(pool);
+    let app = build_test_app(pool).await;
     let response = get(app, "/api/v1/trash").await;
     let json = body_json(response).await;
     let items = json["items"].as_array().unwrap();
@@ -269,12 +269,12 @@ async fn test_purge_all(pool: PgPool) {
     ProjectRepo::soft_delete(&pool, p2.id).await.unwrap();
 
     // Purge all.
-    let app = build_test_app(pool.clone());
+    let app = build_test_app(pool.clone()).await;
     let response = delete(app, "/api/v1/trash/purge").await;
     assert_eq!(response.status(), StatusCode::NO_CONTENT);
 
     // Verify trash is empty.
-    let app = build_test_app(pool);
+    let app = build_test_app(pool).await;
     let response = get(app, "/api/v1/trash").await;
     let json = body_json(response).await;
     assert_eq!(

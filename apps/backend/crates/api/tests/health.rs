@@ -14,7 +14,7 @@ use tower::ServiceExt;
 
 #[sqlx::test(migrations = "../../../db/migrations")]
 async fn health_check_returns_ok_with_json(pool: PgPool) {
-    let app = common::build_test_app(pool);
+    let app = common::build_test_app(pool).await;
     let response = get(app, "/health").await;
 
     assert_eq!(response.status(), StatusCode::OK);
@@ -33,7 +33,7 @@ async fn health_check_returns_ok_with_json(pool: PgPool) {
 
 #[sqlx::test(migrations = "../../../db/migrations")]
 async fn unknown_route_returns_404(pool: PgPool) {
-    let app = common::build_test_app(pool);
+    let app = common::build_test_app(pool).await;
     let response = get(app, "/this-route-does-not-exist").await;
 
     assert_eq!(response.status(), StatusCode::NOT_FOUND);
@@ -45,7 +45,7 @@ async fn unknown_route_returns_404(pool: PgPool) {
 
 #[sqlx::test(migrations = "../../../db/migrations")]
 async fn response_contains_x_request_id_header(pool: PgPool) {
-    let app = common::build_test_app(pool);
+    let app = common::build_test_app(pool).await;
     let response = get(app, "/health").await;
 
     assert_eq!(response.status(), StatusCode::OK);
@@ -67,7 +67,7 @@ async fn response_contains_x_request_id_header(pool: PgPool) {
 
 #[sqlx::test(migrations = "../../../db/migrations")]
 async fn cors_preflight_returns_correct_headers(pool: PgPool) {
-    let app = common::build_test_app(pool);
+    let app = common::build_test_app(pool).await;
 
     // CORS preflight requires custom headers, so we build the request manually.
     let request = Request::builder()

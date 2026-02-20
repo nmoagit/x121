@@ -11,8 +11,9 @@ pub struct AppState {
     /// Database connection pool.
     pub pool: trulience_db::DbPool,
     /// Server configuration (accessed by middleware and handlers in later PRDs).
-    #[allow(dead_code)]
     pub config: Arc<ServerConfig>,
-    /// WebSocket connection manager.
+    /// WebSocket connection manager (browser clients).
     pub ws_manager: Arc<WsManager>,
+    /// ComfyUI connection manager (generation instances).
+    pub comfyui_manager: Arc<trulience_comfyui::manager::ComfyUIManager>,
 }

@@ -6,6 +6,7 @@
 //! - A `Deserialize` update DTO (all `Option` fields) for patches
 
 pub mod character;
+pub mod comfyui;
 pub mod image;
 pub mod project;
 pub mod role;

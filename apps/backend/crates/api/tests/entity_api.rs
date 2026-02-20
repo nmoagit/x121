@@ -15,7 +15,7 @@ use sqlx::PgPool;
 
 #[sqlx::test(migrations = "../../../db/migrations")]
 async fn test_create_project_returns_201(pool: PgPool) {
-    let app = common::build_test_app(pool);
+    let app = common::build_test_app(pool).await;
     let response = post_json(
         app,
         "/api/v1/projects",
@@ -31,7 +31,7 @@ async fn test_create_project_returns_201(pool: PgPool) {
 
 #[sqlx::test(migrations = "../../../db/migrations")]
 async fn test_get_project_by_id(pool: PgPool) {
-    let app = common::build_test_app(pool.clone());
+    let app = common::build_test_app(pool.clone()).await;
     let create_resp = post_json(
         app,
         "/api/v1/projects",
@@ -41,7 +41,7 @@ async fn test_get_project_by_id(pool: PgPool) {
     let created = body_json(create_resp).await;
     let id = created["id"].as_i64().unwrap();
 
-    let app = common::build_test_app(pool);
+    let app = common::build_test_app(pool).await;
     let response = get(app, &format!("/api/v1/projects/{id}")).await;
     assert_eq!(response.status(), StatusCode::OK);
 
@@ -51,14 +51,14 @@ async fn test_get_project_by_id(pool: PgPool) {
 
 #[sqlx::test(migrations = "../../../db/migrations")]
 async fn test_get_nonexistent_project_returns_404(pool: PgPool) {
-    let app = common::build_test_app(pool);
+    let app = common::build_test_app(pool).await;
     let response = get(app, "/api/v1/projects/999999").await;
     assert_eq!(response.status(), StatusCode::NOT_FOUND);
 }
 
 #[sqlx::test(migrations = "../../../db/migrations")]
 async fn test_update_project(pool: PgPool) {
-    let app = common::build_test_app(pool.clone());
+    let app = common::build_test_app(pool.clone()).await;
     let create_resp = post_json(
         app,
         "/api/v1/projects",
@@ -68,7 +68,7 @@ async fn test_update_project(pool: PgPool) {
     let created = body_json(create_resp).await;
     let id = created["id"].as_i64().unwrap();
 
-    let app = common::build_test_app(pool);
+    let app = common::build_test_app(pool).await;
     let response = put_json(
         app,
         &format!("/api/v1/projects/{id}"),
@@ -83,7 +83,7 @@ async fn test_update_project(pool: PgPool) {
 
 #[sqlx::test(migrations = "../../../db/migrations")]
 async fn test_delete_project_returns_204(pool: PgPool) {
-    let app = common::build_test_app(pool.clone());
+    let app = common::build_test_app(pool.clone()).await;
     let create_resp = post_json(
         app,
         "/api/v1/projects",
@@ -93,25 +93,25 @@ async fn test_delete_project_returns_204(pool: PgPool) {
     let created = body_json(create_resp).await;
     let id = created["id"].as_i64().unwrap();
 
-    let app = common::build_test_app(pool.clone());
+    let app = common::build_test_app(pool.clone()).await;
     let response = delete(app, &format!("/api/v1/projects/{id}")).await;
     assert_eq!(response.status(), StatusCode::NO_CONTENT);
 
     // Subsequent GET should 404.
-    let app = common::build_test_app(pool);
+    let app = common::build_test_app(pool).await;
     let response = get(app, &format!("/api/v1/projects/{id}")).await;
     assert_eq!(response.status(), StatusCode::NOT_FOUND);
 }
 
 #[sqlx::test(migrations = "../../../db/migrations")]
 async fn test_list_projects(pool: PgPool) {
-    let app = common::build_test_app(pool.clone());
+    let app = common::build_test_app(pool.clone()).await;
     post_json(app, "/api/v1/projects", serde_json::json!({"name": "P1"})).await;
 
-    let app = common::build_test_app(pool.clone());
+    let app = common::build_test_app(pool.clone()).await;
     post_json(app, "/api/v1/projects", serde_json::json!({"name": "P2"})).await;
 
-    let app = common::build_test_app(pool);
+    let app = common::build_test_app(pool).await;
     let response = get(app, "/api/v1/projects").await;
     assert_eq!(response.status(), StatusCode::OK);
 
@@ -126,7 +126,7 @@ async fn test_list_projects(pool: PgPool) {
 
 #[sqlx::test(migrations = "../../../db/migrations")]
 async fn test_create_character_under_project(pool: PgPool) {
-    let app = common::build_test_app(pool.clone());
+    let app = common::build_test_app(pool.clone()).await;
     let project = body_json(
         post_json(
             app,
@@ -138,7 +138,7 @@ async fn test_create_character_under_project(pool: PgPool) {
     .await;
     let project_id = project["id"].as_i64().unwrap();
 
-    let app = common::build_test_app(pool);
+    let app = common::build_test_app(pool).await;
     let response = post_json(
         app,
         &format!("/api/v1/projects/{project_id}/characters"),
@@ -155,7 +155,7 @@ async fn test_create_character_under_project(pool: PgPool) {
 
 #[sqlx::test(migrations = "../../../db/migrations")]
 async fn test_list_characters_for_project(pool: PgPool) {
-    let app = common::build_test_app(pool.clone());
+    let app = common::build_test_app(pool.clone()).await;
     let project = body_json(
         post_json(
             app,
@@ -167,7 +167,7 @@ async fn test_list_characters_for_project(pool: PgPool) {
     .await;
     let pid = project["id"].as_i64().unwrap();
 
-    let app = common::build_test_app(pool.clone());
+    let app = common::build_test_app(pool.clone()).await;
     post_json(
         app,
         &format!("/api/v1/projects/{pid}/characters"),
@@ -175,7 +175,7 @@ async fn test_list_characters_for_project(pool: PgPool) {
     )
     .await;
 
-    let app = common::build_test_app(pool.clone());
+    let app = common::build_test_app(pool.clone()).await;
     post_json(
         app,
         &format!("/api/v1/projects/{pid}/characters"),
@@ -183,7 +183,7 @@ async fn test_list_characters_for_project(pool: PgPool) {
     )
     .await;
 
-    let app = common::build_test_app(pool);
+    let app = common::build_test_app(pool).await;
     let response = get(app, &format!("/api/v1/projects/{pid}/characters")).await;
     assert_eq!(response.status(), StatusCode::OK);
 
@@ -277,7 +277,7 @@ async fn test_segment_crud_under_scene(pool: PgPool) {
     let scene_id = scene.id;
 
     // POST /api/v1/scenes/{scene_id}/segments
-    let app = common::build_test_app(pool.clone());
+    let app = common::build_test_app(pool.clone()).await;
     let response = post_json(
         app,
         &format!("/api/v1/scenes/{scene_id}/segments"),
@@ -290,24 +290,24 @@ async fn test_segment_crud_under_scene(pool: PgPool) {
     assert_eq!(seg["scene_id"], scene_id);
 
     // GET /api/v1/scenes/{scene_id}/segments/{seg_id}
-    let app = common::build_test_app(pool.clone());
+    let app = common::build_test_app(pool.clone()).await;
     let response = get(app, &format!("/api/v1/scenes/{scene_id}/segments/{seg_id}")).await;
     assert_eq!(response.status(), StatusCode::OK);
 
     // GET /api/v1/scenes/{scene_id}/segments (list)
-    let app = common::build_test_app(pool.clone());
+    let app = common::build_test_app(pool.clone()).await;
     let response = get(app, &format!("/api/v1/scenes/{scene_id}/segments")).await;
     assert_eq!(response.status(), StatusCode::OK);
     let list = body_json(response).await;
     assert_eq!(list.as_array().unwrap().len(), 1);
 
     // DELETE
-    let app = common::build_test_app(pool.clone());
+    let app = common::build_test_app(pool.clone()).await;
     let response = delete(app, &format!("/api/v1/scenes/{scene_id}/segments/{seg_id}")).await;
     assert_eq!(response.status(), StatusCode::NO_CONTENT);
 
     // After delete, GET should 404.
-    let app = common::build_test_app(pool);
+    let app = common::build_test_app(pool).await;
     let response = get(app, &format!("/api/v1/scenes/{scene_id}/segments/{seg_id}")).await;
     assert_eq!(response.status(), StatusCode::NOT_FOUND);
 }
@@ -318,7 +318,7 @@ async fn test_segment_crud_under_scene(pool: PgPool) {
 
 #[sqlx::test(migrations = "../../../db/migrations")]
 async fn test_error_response_has_code_and_error_fields(pool: PgPool) {
-    let app = common::build_test_app(pool);
+    let app = common::build_test_app(pool).await;
     let response = get(app, "/api/v1/projects/999999").await;
     assert_eq!(response.status(), StatusCode::NOT_FOUND);
 
