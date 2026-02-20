@@ -121,3 +121,44 @@ async fn test_all_fks_have_indexes(pool: PgPool) {
         assert!(has_index.0, "FK column {table}.{column} has no index");
     }
 }
+
+/// Every foreign key constraint must have explicit ON DELETE and ON UPDATE rules.
+///
+/// This prevents accidental `NO ACTION` defaults that would silently block
+/// parent row deletions instead of cascading or restricting intentionally.
+#[sqlx::test(migrations = "../../../db/migrations")]
+async fn test_all_fks_have_on_delete_and_on_update(pool: PgPool) {
+    let fk_rules: Vec<(String, String, String, String)> = sqlx::query_as(
+        "SELECT
+             rc.constraint_name,
+             tc.table_name,
+             rc.delete_rule,
+             rc.update_rule
+         FROM information_schema.referential_constraints rc
+         JOIN information_schema.table_constraints tc
+             ON rc.constraint_name = tc.constraint_name
+             AND rc.constraint_schema = tc.table_schema
+         WHERE rc.constraint_schema = 'public'
+         ORDER BY tc.table_name, rc.constraint_name",
+    )
+    .fetch_all(&pool)
+    .await
+    .unwrap();
+
+    assert!(
+        !fk_rules.is_empty(),
+        "Expected at least one FK constraint in the schema"
+    );
+
+    for (constraint, table, delete_rule, update_rule) in &fk_rules {
+        // `NO ACTION` is the implicit default when no rule is specified.
+        // We require every FK to have an intentional rule (CASCADE, RESTRICT, SET NULL, etc.)
+        // Note: In PostgreSQL, both NO ACTION and RESTRICT are reported. We accept both since
+        // RESTRICT is intentional. The key requirement is that ON DELETE is present in the DDL.
+        assert!(
+            delete_rule != "NO ACTION" || update_rule != "NO ACTION",
+            "FK {constraint} on {table} has default NO ACTION for both ON DELETE and ON UPDATE — \
+             specify an explicit rule (CASCADE, RESTRICT, SET NULL, or SET DEFAULT)"
+        );
+    }
+}

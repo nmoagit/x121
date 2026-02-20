@@ -4,15 +4,9 @@ mod common;
 
 use axum::body::Body;
 use axum::http::{Method, Request, StatusCode};
-use http_body_util::BodyExt;
+use common::{body_json, get};
 use sqlx::PgPool;
 use tower::ServiceExt;
-
-/// Helper: collect the response body into a `serde_json::Value`.
-async fn body_json(response: axum::response::Response) -> serde_json::Value {
-    let bytes = response.into_body().collect().await.unwrap().to_bytes();
-    serde_json::from_slice(&bytes).unwrap()
-}
 
 // ---------------------------------------------------------------------------
 // Test: GET /health returns 200 with expected JSON fields
@@ -21,13 +15,7 @@ async fn body_json(response: axum::response::Response) -> serde_json::Value {
 #[sqlx::test(migrations = "../../../db/migrations")]
 async fn health_check_returns_ok_with_json(pool: PgPool) {
     let app = common::build_test_app(pool);
-
-    let request = Request::builder()
-        .uri("/health")
-        .body(Body::empty())
-        .unwrap();
-
-    let response = app.oneshot(request).await.unwrap();
+    let response = get(app, "/health").await;
 
     assert_eq!(response.status(), StatusCode::OK);
 
@@ -46,13 +34,7 @@ async fn health_check_returns_ok_with_json(pool: PgPool) {
 #[sqlx::test(migrations = "../../../db/migrations")]
 async fn unknown_route_returns_404(pool: PgPool) {
     let app = common::build_test_app(pool);
-
-    let request = Request::builder()
-        .uri("/this-route-does-not-exist")
-        .body(Body::empty())
-        .unwrap();
-
-    let response = app.oneshot(request).await.unwrap();
+    let response = get(app, "/this-route-does-not-exist").await;
 
     assert_eq!(response.status(), StatusCode::NOT_FOUND);
 }
@@ -64,13 +46,7 @@ async fn unknown_route_returns_404(pool: PgPool) {
 #[sqlx::test(migrations = "../../../db/migrations")]
 async fn response_contains_x_request_id_header(pool: PgPool) {
     let app = common::build_test_app(pool);
-
-    let request = Request::builder()
-        .uri("/health")
-        .body(Body::empty())
-        .unwrap();
-
-    let response = app.oneshot(request).await.unwrap();
+    let response = get(app, "/health").await;
 
     assert_eq!(response.status(), StatusCode::OK);
 
@@ -93,6 +69,7 @@ async fn response_contains_x_request_id_header(pool: PgPool) {
 async fn cors_preflight_returns_correct_headers(pool: PgPool) {
     let app = common::build_test_app(pool);
 
+    // CORS preflight requires custom headers, so we build the request manually.
     let request = Request::builder()
         .method(Method::OPTIONS)
         .uri("/api/v1/ws")

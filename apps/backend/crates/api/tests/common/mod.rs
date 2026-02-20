@@ -1,10 +1,13 @@
 use std::sync::Arc;
 use std::time::Duration;
 
+use axum::body::Body;
 use axum::http::header::{AUTHORIZATION, CONTENT_TYPE};
-use axum::http::{HeaderName, Method, StatusCode};
+use axum::http::{HeaderName, Method, Request, StatusCode};
 use axum::Router;
+use http_body_util::BodyExt;
 use sqlx::PgPool;
+use tower::ServiceExt;
 use tower_http::catch_panic::CatchPanicLayer;
 use tower_http::cors::CorsLayer;
 use tower_http::request_id::{MakeRequestUuid, PropagateRequestIdLayer, SetRequestIdLayer};
@@ -79,4 +82,67 @@ pub fn build_test_app(pool: PgPool) -> Router {
         .layer(SetRequestIdLayer::new(request_id_header, MakeRequestUuid))
         .layer(cors)
         .with_state(state)
+}
+
+// ---------------------------------------------------------------------------
+// Shared HTTP test helpers
+// ---------------------------------------------------------------------------
+
+/// Collect the response body into a `serde_json::Value`.
+pub async fn body_json(response: axum::response::Response) -> serde_json::Value {
+    let bytes = response.into_body().collect().await.unwrap().to_bytes();
+    serde_json::from_slice(&bytes).unwrap()
+}
+
+/// Send a JSON request with the given HTTP method.
+pub async fn send_json(
+    app: Router,
+    method: Method,
+    uri: &str,
+    body: serde_json::Value,
+) -> axum::response::Response {
+    let request = Request::builder()
+        .method(method)
+        .uri(uri)
+        .header("content-type", "application/json")
+        .body(Body::from(serde_json::to_vec(&body).unwrap()))
+        .unwrap();
+    app.oneshot(request).await.unwrap()
+}
+
+/// POST JSON to the given URI and return the response.
+pub async fn post_json(
+    app: Router,
+    uri: &str,
+    body: serde_json::Value,
+) -> axum::response::Response {
+    send_json(app, Method::POST, uri, body).await
+}
+
+/// PUT JSON to the given URI and return the response.
+pub async fn put_json(
+    app: Router,
+    uri: &str,
+    body: serde_json::Value,
+) -> axum::response::Response {
+    send_json(app, Method::PUT, uri, body).await
+}
+
+/// GET from the given URI.
+pub async fn get(app: Router, uri: &str) -> axum::response::Response {
+    let request = Request::builder()
+        .uri(uri)
+        .body(Body::empty())
+        .unwrap();
+    app.oneshot(request).await.unwrap()
+}
+
+/// DELETE the given URI.
+pub async fn delete(app: Router, uri: &str) -> axum::response::Response {
+    let request = Request::builder()
+        .method(Method::DELETE)
+        .uri(uri)
+        .body(Body::empty())
+        .unwrap();
+    app.oneshot(request).await.unwrap()
 }
