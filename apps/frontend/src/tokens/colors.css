@@ -1,22 +1,165 @@
+/* ==========================================================================
+   Color Tokens — Multi-theme system
+
+   Base values in @theme register CSS custom properties for Tailwind utility
+   generation. Theme-specific overrides use [data-theme] attribute selectors.
+
+   Themes: dark-obsidian, dark-neon, light-obsidian, light-neon
+   ========================================================================== */
+
+/* Default / fallback values (dark-obsidian) — used by Tailwind to generate utilities */
 @theme {
-  --color-surface-primary: #1a1a2e;
-  --color-surface-secondary: #16213e;
-  --color-surface-elevated: #1f2b47;
+  /* Surface */
+  --color-surface-primary: #0f0f1a;
+  --color-surface-secondary: #1a1a2e;
+  --color-surface-tertiary: #242440;
   --color-surface-overlay: rgba(0, 0, 0, 0.6);
 
-  --color-text-primary: #e8e8e8;
+  /* Text */
+  --color-text-primary: #e8e8f0;
   --color-text-secondary: #b0b0c0;
-  --color-text-muted: #8888a0;
-  --color-text-inverse: #1a1a2e;
+  --color-text-muted: #70708a;
+  --color-text-inverse: #0f0f1a;
 
-  --color-action-primary: #0f3460;
-  --color-action-primary-hover: #1a4a80;
+  /* Action */
+  --color-action-primary: #4a6cf7;
+  --color-action-primary-hover: #5e7df9;
   --color-action-danger: #e94560;
-  --color-action-danger-hover: #ff5a75;
+  --color-action-danger-hover: #f25c75;
   --color-action-success: #2ecc71;
-  --color-action-warning: #f39c12;
+  --color-action-warning: #f5a623;
 
-  --color-border-default: #2a2a4a;
-  --color-border-focus: #0f3460;
+  /* Border */
+  --color-border-default: #2a2a44;
+  --color-border-focus: #4a6cf7;
   --color-border-error: #e94560;
+}
+
+/* --------------------------------------------------------------------------
+   Dark Obsidian — Professional, muted, cool slate grays with blue undertones
+   -------------------------------------------------------------------------- */
+:root[data-theme="dark-obsidian"] {
+  --color-surface-primary: #0f0f1a;
+  --color-surface-secondary: #1a1a2e;
+  --color-surface-tertiary: #242440;
+  --color-surface-overlay: rgba(0, 0, 0, 0.6);
+
+  --color-text-primary: #e8e8f0;
+  --color-text-secondary: #b0b0c0;
+  --color-text-muted: #70708a;
+  --color-text-inverse: #0f0f1a;
+
+  --color-action-primary: #4a6cf7;
+  --color-action-primary-hover: #5e7df9;
+  --color-action-danger: #e94560;
+  --color-action-danger-hover: #f25c75;
+  --color-action-success: #2ecc71;
+  --color-action-warning: #f5a623;
+
+  --color-border-default: #2a2a44;
+  --color-border-focus: #4a6cf7;
+  --color-border-error: #e94560;
+}
+
+/* --------------------------------------------------------------------------
+   Dark Neon — Vibrant, energetic, deep blacks with electric cyan/magenta
+   -------------------------------------------------------------------------- */
+:root[data-theme="dark-neon"] {
+  --color-surface-primary: #0a0a14;
+  --color-surface-secondary: #12121f;
+  --color-surface-tertiary: #1a1a2a;
+  --color-surface-overlay: rgba(0, 0, 0, 0.7);
+
+  --color-text-primary: #f0f0ff;
+  --color-text-secondary: #c0c0e0;
+  --color-text-muted: #7878a0;
+  --color-text-inverse: #0a0a14;
+
+  --color-action-primary: #00e5ff;
+  --color-action-primary-hover: #33ebff;
+  --color-action-danger: #ff2d6a;
+  --color-action-danger-hover: #ff5a8a;
+  --color-action-success: #00ff88;
+  --color-action-warning: #ffab00;
+
+  --color-border-default: #1e1e3a;
+  --color-border-focus: #00e5ff;
+  --color-border-error: #ff2d6a;
+}
+
+/* --------------------------------------------------------------------------
+   Light Obsidian — Professional, warm neutrals with subtle blue hints
+   -------------------------------------------------------------------------- */
+:root[data-theme="light-obsidian"] {
+  --color-surface-primary: #f8f9fa;
+  --color-surface-secondary: #ffffff;
+  --color-surface-tertiary: #eef0f4;
+  --color-surface-overlay: rgba(0, 0, 0, 0.3);
+
+  --color-text-primary: #1a1a2e;
+  --color-text-secondary: #4a4a60;
+  --color-text-muted: #8888a0;
+  --color-text-inverse: #f8f9fa;
+
+  --color-action-primary: #3b5bdb;
+  --color-action-primary-hover: #4c6ef5;
+  --color-action-danger: #e03e3e;
+  --color-action-danger-hover: #f03e3e;
+  --color-action-success: #099268;
+  --color-action-warning: #e67700;
+
+  --color-border-default: #d0d5dd;
+  --color-border-focus: #3b5bdb;
+  --color-border-error: #e03e3e;
+}
+
+/* --------------------------------------------------------------------------
+   Light Neon — Bright whites with vivid, electric accent colors
+   -------------------------------------------------------------------------- */
+:root[data-theme="light-neon"] {
+  --color-surface-primary: #ffffff;
+  --color-surface-secondary: #f5f5ff;
+  --color-surface-tertiary: #ebebfa;
+  --color-surface-overlay: rgba(0, 0, 0, 0.25);
+
+  --color-text-primary: #0a0a14;
+  --color-text-secondary: #3a3a55;
+  --color-text-muted: #7a7a9a;
+  --color-text-inverse: #ffffff;
+
+  --color-action-primary: #0090ff;
+  --color-action-primary-hover: #2aa4ff;
+  --color-action-danger: #e5004f;
+  --color-action-danger-hover: #ff1a6a;
+  --color-action-success: #00b368;
+  --color-action-warning: #ff8c00;
+
+  --color-border-default: #c8c8e0;
+  --color-border-focus: #0090ff;
+  --color-border-error: #e5004f;
+}
+
+/* --------------------------------------------------------------------------
+   High Contrast Overrides — Boost contrast ratios for accessibility
+   Applied on top of any theme via [data-high-contrast="true"]
+   -------------------------------------------------------------------------- */
+
+/* Dark themes: brighter text, stronger borders */
+:root[data-theme="dark-obsidian"][data-high-contrast="true"],
+:root[data-theme="dark-neon"][data-high-contrast="true"] {
+  --color-text-primary: #ffffff;
+  --color-text-secondary: #d0d0e0;
+  --color-text-muted: #a0a0b8;
+
+  --color-border-default: #4a4a6a;
+}
+
+/* Light themes: darker text, stronger borders */
+:root[data-theme="light-obsidian"][data-high-contrast="true"],
+:root[data-theme="light-neon"][data-high-contrast="true"] {
+  --color-text-primary: #000000;
+  --color-text-secondary: #2a2a40;
+  --color-text-muted: #5a5a70;
+
+  --color-border-default: #8a8aa0;
 }

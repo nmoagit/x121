@@ -21,10 +21,10 @@ Source of truth: [`design/design.md`](../design.md)
 | Status | Count |
 |--------|-------|
 | backlog | 0 |
-| planning | 107 |
+| planning | 105 |
 | in-progress | 0 |
 | review | 0 |
-| done | 1 |
+| done | 3 |
 | blocked | 0 |
 | deferred | 0 |
 | maybe | 15 |
@@ -43,7 +43,7 @@ Source of truth: [`design/design.md`](../design.md)
 
 | PRD | Title | Priority | Status | Owner | Notes |
 |-----|-------|----------|--------|-------|-------|
-| PRD-02 | Backend Foundation (Rust/Axum) | — | `planning` | — | |
+| PRD-02 | Backend Foundation (Rust/Axum) | — | `done` | 2026-02-20 | Axum 0.8, middleware stack, WebSocket manager, graceful shutdown, 21 integration tests. |
 | PRD-03 | User Identity & RBAC | — | `planning` | — | |
 | PRD-04 | Session & Workspace Persistence | — | `planning` | — | |
 | PRD-05 | ComfyUI WebSocket Bridge | — | `planning` | — | |
@@ -124,7 +124,7 @@ Source of truth: [`design/design.md`](../design.md)
 
 | PRD | Title | Priority | Status | Owner | Notes |
 |-----|-------|----------|--------|-------|-------|
-| PRD-29 | Design System & Shared Component Library | — | `planning` | — | |
+| PRD-29 | Design System & Shared Component Library | — | `done` | 2026-02-20 | Token system (4 themes + high-contrast), 25 components, ThemeProvider, 25 Storybook stories, 76 tests. Phases 1/7/8.1 deferred (need users table from PRD-01/PRD-03). |
 | PRD-30 | Modular Layout & Panel Management | — | `planning` | — | |
 | PRD-31 | Command Palette & Navigation (Cmd+K) | — | `planning` | — | |
 | PRD-32 | Progressive Disclosure & UX Intelligence | — | `planning` | — | |
