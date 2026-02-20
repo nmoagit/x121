@@ -43,8 +43,9 @@ CREATE TABLE notification_preferences (
 CREATE UNIQUE INDEX uq_notification_preferences_user_event
     ON notification_preferences(user_id, event_type_id);
 
--- FK indexes (event_type_id covered by unique index above)
-CREATE INDEX idx_notification_preferences_user_id ON notification_preferences(user_id);
+-- FK indexes
+CREATE INDEX idx_notification_preferences_user_id       ON notification_preferences(user_id);
+CREATE INDEX idx_notification_preferences_event_type_id ON notification_preferences(event_type_id);
 
 CREATE TRIGGER trg_notification_preferences_updated_at
     BEFORE UPDATE ON notification_preferences

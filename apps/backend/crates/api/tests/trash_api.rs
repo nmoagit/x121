@@ -120,11 +120,13 @@ async fn test_list_trash_filtered_by_type(pool: PgPool) {
             .any(|item| item["id"].as_i64() == Some(project.id)),
         "the trashed project should be in the filtered list"
     );
-    assert!(
-        !items
-            .iter()
-            .any(|item| item["id"].as_i64() == Some(character.id)),
-        "the character should not appear in project-filtered list"
+    // Note: we cannot check by character.id alone because each table has its
+    // own BIGSERIAL sequence — character.id may equal a project.id numerically.
+    // The entity_type assertion above already proves no characters are present.
+    assert_eq!(
+        items.len(),
+        1,
+        "should only contain the one trashed project, not the character"
     );
 }
 

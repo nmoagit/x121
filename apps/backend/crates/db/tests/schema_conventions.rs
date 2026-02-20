@@ -24,8 +24,14 @@ async fn test_all_pks_are_correct_type(pool: PgPool) {
 }
 
 /// Every table (except _sqlx_migrations) must have created_at and updated_at as timestamptz.
+///
+/// Append-only tables (e.g. event logs, notification deliveries) are exempt from
+/// the `updated_at` requirement since their rows are immutable after insertion.
 #[sqlx::test(migrations = "../../../db/migrations")]
 async fn test_all_tables_have_timestamps(pool: PgPool) {
+    // Append-only tables that intentionally omit updated_at.
+    const APPEND_ONLY_TABLES: &[&str] = &["events", "notifications"];
+
     let tables: Vec<(String,)> = sqlx::query_as(
         "SELECT table_name
          FROM information_schema.tables
@@ -39,26 +45,41 @@ async fn test_all_tables_have_timestamps(pool: PgPool) {
     .unwrap();
 
     for (table,) in &tables {
-        for col in ["created_at", "updated_at"] {
-            let result: Option<(String,)> = sqlx::query_as(&format!(
-                "SELECT data_type
-                 FROM information_schema.columns
-                 WHERE table_schema = 'public'
-                   AND table_name = '{table}'
-                   AND column_name = '{col}'"
-            ))
-            .fetch_optional(&pool)
-            .await
-            .unwrap();
+        // All tables must have created_at.
+        let created = check_timestamp_col(&pool, table, "created_at").await;
+        assert_eq!(
+            created, "timestamp with time zone",
+            "Table {table}.created_at should be timestamptz, got {created}"
+        );
 
-            let (data_type,) =
-                result.unwrap_or_else(|| panic!("Table {table} is missing column {col}"));
-            assert_eq!(
-                data_type, "timestamp with time zone",
-                "Table {table}.{col} should be timestamptz, got {data_type}"
-            );
+        // Append-only tables are exempt from updated_at.
+        if APPEND_ONLY_TABLES.contains(&table.as_str()) {
+            continue;
         }
+
+        let updated = check_timestamp_col(&pool, table, "updated_at").await;
+        assert_eq!(
+            updated, "timestamp with time zone",
+            "Table {table}.updated_at should be timestamptz, got {updated}"
+        );
     }
+}
+
+/// Helper: fetch a column's data type or panic with a clear message.
+async fn check_timestamp_col(pool: &PgPool, table: &str, col: &str) -> String {
+    let result: Option<(String,)> = sqlx::query_as(&format!(
+        "SELECT data_type
+         FROM information_schema.columns
+         WHERE table_schema = 'public'
+           AND table_name = '{table}'
+           AND column_name = '{col}'"
+    ))
+    .fetch_optional(pool)
+    .await
+    .unwrap();
+
+    let (data_type,) = result.unwrap_or_else(|| panic!("Table {table} is missing column {col}"));
+    data_type
 }
 
 /// No character varying columns should exist — TEXT is preferred.

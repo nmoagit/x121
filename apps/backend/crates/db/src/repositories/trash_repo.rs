@@ -131,8 +131,9 @@ impl TrashRepo {
         }
 
         // Estimate bytes from scene_video_versions (has file_size_bytes column).
+        // Note: SUM(bigint) returns numeric in PostgreSQL, so cast back to bigint.
         let bytes: (i64,) = sqlx::query_as(
-            "SELECT COALESCE(SUM(file_size_bytes), 0) \
+            "SELECT COALESCE(SUM(file_size_bytes)::BIGINT, 0) \
              FROM scene_video_versions WHERE deleted_at IS NOT NULL",
         )
         .fetch_one(pool)
