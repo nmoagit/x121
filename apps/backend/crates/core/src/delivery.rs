@@ -7,18 +7,29 @@
 //!     metadata.json
 //!     clothed.png
 //!     topless.png
-//!     dance.mp4
-//!     topless_dance.mp4
+//!     scene_video_1.mp4   (resolved via SceneVideoEntry)
+//!     scene_video_2.mp4
 //!     ...
 //! ```
 
 use serde::Serialize;
+
+use crate::types::DbId;
 
 /// The top-level delivery manifest for a project.
 #[derive(Debug, Clone, Serialize)]
 pub struct DeliveryManifest {
     pub project_name: String,
     pub characters: Vec<CharacterDelivery>,
+}
+
+/// A resolved scene video entry for delivery, referencing the final version.
+#[derive(Debug, Clone, Serialize)]
+pub struct SceneVideoEntry {
+    pub scene_id: DbId,
+    pub file_path: String,
+    pub version_number: i32,
+    pub source: String,
 }
 
 /// A character's delivery contents within the ZIP.
@@ -31,8 +42,8 @@ pub struct CharacterDelivery {
     pub clothed_image: String,
     /// Path to topless reference image.
     pub topless_image: String,
-    /// List of scene video filenames generated via `naming::scene_video_filename`.
-    pub scene_videos: Vec<String>,
+    /// Resolved scene video entries with version information.
+    pub scene_videos: Vec<SceneVideoEntry>,
 }
 
 impl DeliveryManifest {
@@ -74,10 +85,12 @@ impl DeliveryManifest {
                 errors.push(format!("{prefix}: no scene videos"));
             }
 
-            // Validate all video filenames end with .mp4
-            for video in &character.scene_videos {
-                if !video.ends_with(".mp4") {
-                    errors.push(format!("{prefix}: video '{video}' does not end with .mp4"));
+            for entry in &character.scene_videos {
+                if entry.file_path.is_empty() {
+                    errors.push(format!(
+                        "{prefix}: scene video (scene_id={}) has an empty file path",
+                        entry.scene_id
+                    ));
                 }
             }
         }
@@ -98,7 +111,20 @@ mod tests {
                 metadata_json: "metadata.json".to_string(),
                 clothed_image: "clothed.png".to_string(),
                 topless_image: "topless.png".to_string(),
-                scene_videos: vec!["dance.mp4".to_string(), "topless_dance.mp4".to_string()],
+                scene_videos: vec![
+                    SceneVideoEntry {
+                        scene_id: 1,
+                        file_path: "dance.mp4".to_string(),
+                        version_number: 1,
+                        source: "comfyui".to_string(),
+                    },
+                    SceneVideoEntry {
+                        scene_id: 2,
+                        file_path: "topless_dance.mp4".to_string(),
+                        version_number: 1,
+                        source: "comfyui".to_string(),
+                    },
+                ],
             }],
         }
     }
@@ -149,11 +175,16 @@ mod tests {
     }
 
     #[test]
-    fn invalid_video_extension() {
+    fn empty_video_file_path() {
         let mut m = valid_manifest();
-        m.characters[0].scene_videos.push("dance.avi".to_string());
+        m.characters[0].scene_videos.push(SceneVideoEntry {
+            scene_id: 99,
+            file_path: String::new(),
+            version_number: 1,
+            source: "comfyui".to_string(),
+        });
         let errors = m.validate();
-        assert!(errors.iter().any(|e| e.contains(".mp4")));
+        assert!(errors.iter().any(|e| e.contains("empty file path")));
     }
 
     #[test]

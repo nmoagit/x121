@@ -106,20 +106,10 @@ async fn test_delete_project_returns_204(pool: PgPool) {
 #[sqlx::test(migrations = "../../../db/migrations")]
 async fn test_list_projects(pool: PgPool) {
     let app = common::build_test_app(pool.clone());
-    post_json(
-        app,
-        "/api/v1/projects",
-        serde_json::json!({"name": "P1"}),
-    )
-    .await;
+    post_json(app, "/api/v1/projects", serde_json::json!({"name": "P1"})).await;
 
     let app = common::build_test_app(pool.clone());
-    post_json(
-        app,
-        "/api/v1/projects",
-        serde_json::json!({"name": "P2"}),
-    )
-    .await;
+    post_json(app, "/api/v1/projects", serde_json::json!({"name": "P2"})).await;
 
     let app = common::build_test_app(pool);
     let response = get(app, "/api/v1/projects").await;
@@ -301,11 +291,7 @@ async fn test_segment_crud_under_scene(pool: PgPool) {
 
     // GET /api/v1/scenes/{scene_id}/segments/{seg_id}
     let app = common::build_test_app(pool.clone());
-    let response = get(
-        app,
-        &format!("/api/v1/scenes/{scene_id}/segments/{seg_id}"),
-    )
-    .await;
+    let response = get(app, &format!("/api/v1/scenes/{scene_id}/segments/{seg_id}")).await;
     assert_eq!(response.status(), StatusCode::OK);
 
     // GET /api/v1/scenes/{scene_id}/segments (list)
@@ -317,20 +303,12 @@ async fn test_segment_crud_under_scene(pool: PgPool) {
 
     // DELETE
     let app = common::build_test_app(pool.clone());
-    let response = delete(
-        app,
-        &format!("/api/v1/scenes/{scene_id}/segments/{seg_id}"),
-    )
-    .await;
+    let response = delete(app, &format!("/api/v1/scenes/{scene_id}/segments/{seg_id}")).await;
     assert_eq!(response.status(), StatusCode::NO_CONTENT);
 
     // After delete, GET should 404.
     let app = common::build_test_app(pool);
-    let response = get(
-        app,
-        &format!("/api/v1/scenes/{scene_id}/segments/{seg_id}"),
-    )
-    .await;
+    let response = get(app, &format!("/api/v1/scenes/{scene_id}/segments/{seg_id}")).await;
     assert_eq!(response.status(), StatusCode::NOT_FOUND);
 }
 
@@ -345,7 +323,13 @@ async fn test_error_response_has_code_and_error_fields(pool: PgPool) {
     assert_eq!(response.status(), StatusCode::NOT_FOUND);
 
     let json = body_json(response).await;
-    assert!(json["error"].is_string(), "Error response should have 'error' field");
-    assert!(json["code"].is_string(), "Error response should have 'code' field");
+    assert!(
+        json["error"].is_string(),
+        "Error response should have 'error' field"
+    );
+    assert!(
+        json["code"].is_string(),
+        "Error response should have 'code' field"
+    );
     assert_eq!(json["code"], "NOT_FOUND");
 }

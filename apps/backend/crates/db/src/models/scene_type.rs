@@ -21,6 +21,7 @@ pub struct SceneType {
     pub variant_applicability: String,
     pub transition_segment_index: Option<i32>,
     pub is_studio_level: bool,
+    pub deleted_at: Option<Timestamp>,
     pub created_at: Timestamp,
     pub updated_at: Timestamp,
 }

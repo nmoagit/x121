@@ -16,6 +16,7 @@ pub struct Character {
     pub metadata: Option<serde_json::Value>,
     /// NOT NULL in the database; defaults to `{}`.
     pub settings: serde_json::Value,
+    pub deleted_at: Option<Timestamp>,
     pub created_at: Timestamp,
     pub updated_at: Timestamp,
 }

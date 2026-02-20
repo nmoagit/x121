@@ -1,3 +1,7 @@
+// All functions in this module are shared test helpers. Not every test binary
+// uses every helper, so we suppress dead_code warnings at the item level.
+#![allow(dead_code)]
+
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -120,20 +124,13 @@ pub async fn post_json(
 }
 
 /// PUT JSON to the given URI and return the response.
-pub async fn put_json(
-    app: Router,
-    uri: &str,
-    body: serde_json::Value,
-) -> axum::response::Response {
+pub async fn put_json(app: Router, uri: &str, body: serde_json::Value) -> axum::response::Response {
     send_json(app, Method::PUT, uri, body).await
 }
 
 /// GET from the given URI.
 pub async fn get(app: Router, uri: &str) -> axum::response::Response {
-    let request = Request::builder()
-        .uri(uri)
-        .body(Body::empty())
-        .unwrap();
+    let request = Request::builder().uri(uri).body(Body::empty()).unwrap();
     app.oneshot(request).await.unwrap()
 }
 

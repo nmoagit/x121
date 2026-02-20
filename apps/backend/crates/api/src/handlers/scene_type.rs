@@ -140,7 +140,7 @@ async fn update_inner(
 }
 
 async fn delete_inner(state: &AppState, id: DbId) -> AppResult<StatusCode> {
-    let deleted = SceneTypeRepo::delete(&state.pool, id).await?;
+    let deleted = SceneTypeRepo::soft_delete(&state.pool, id).await?;
     if deleted {
         Ok(StatusCode::NO_CONTENT)
     } else {

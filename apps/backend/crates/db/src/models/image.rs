@@ -23,6 +23,7 @@ pub struct SourceImage {
     pub file_path: String,
     pub description: Option<String>,
     pub is_primary: bool,
+    pub deleted_at: Option<Timestamp>,
     pub created_at: Timestamp,
     pub updated_at: Timestamp,
 }
@@ -57,6 +58,7 @@ pub struct DerivedImage {
     pub file_path: String,
     pub variant_type: String,
     pub description: Option<String>,
+    pub deleted_at: Option<Timestamp>,
     pub created_at: Timestamp,
     pub updated_at: Timestamp,
 }
@@ -93,6 +95,7 @@ pub struct ImageVariant {
     pub variant_label: String,
     pub status_id: StatusId,
     pub file_path: String,
+    pub deleted_at: Option<Timestamp>,
     pub created_at: Timestamp,
     pub updated_at: Timestamp,
 }

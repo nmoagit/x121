@@ -15,6 +15,7 @@ pub struct Scene {
     pub image_variant_id: DbId,
     pub status_id: StatusId,
     pub transition_mode: String,
+    pub deleted_at: Option<Timestamp>,
     pub created_at: Timestamp,
     pub updated_at: Timestamp,
 }

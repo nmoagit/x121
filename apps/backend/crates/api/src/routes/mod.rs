@@ -3,6 +3,7 @@ pub mod health;
 pub mod project;
 pub mod scene;
 pub mod scene_type;
+pub mod trash;
 
 use axum::routing::get;
 use axum::Router;
@@ -37,8 +38,19 @@ use crate::ws;
 /// /scenes/{scene_id}/segments                      list, create
 /// /scenes/{scene_id}/segments/{id}                 get, update, delete
 ///
+/// /scenes/{scene_id}/versions                      list
+/// /scenes/{scene_id}/versions/import               import (multipart)
+/// /scenes/{scene_id}/versions/{id}                 get, delete
+/// /scenes/{scene_id}/versions/{id}/set-final       set-final
+///
 /// /scene-types                                     list (studio-level), create
 /// /scene-types/{id}                                get, update, delete
+///
+/// /trash                                           list (?type=entity_type)
+/// /trash/purge                                     purge all (DELETE)
+/// /trash/purge-preview                             purge preview (GET)
+/// /trash/{entity_type}/{id}/restore                restore (POST)
+/// /trash/{entity_type}/{id}/purge                  purge one (DELETE)
 /// ```
 pub fn api_routes() -> Router<AppState> {
     Router::new()
@@ -52,4 +64,6 @@ pub fn api_routes() -> Router<AppState> {
         .nest("/scenes", scene::router())
         // Studio-level scene types.
         .nest("/scene-types", scene_type::studio_router())
+        // Trash / bin management.
+        .nest("/trash", trash::router())
 }

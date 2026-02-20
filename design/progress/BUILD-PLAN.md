@@ -1,6 +1,6 @@
 # Trulience Platform — Build Plan
 
-Optimal build order for all 109 PRDs, organized into dependency-ordered phases.
+Optimal build order for all 110 PRDs, organized into dependency-ordered phases.
 Each phase can begin only after all prior phases are complete. PRDs within a phase
 can be built **in parallel** (dependencies are satisfied by earlier phases).
 
@@ -15,7 +15,7 @@ can be built **in parallel** (dependencies are satisfied by earlier phases).
 - **Track** = a parallel workstream within a phase (Backend / Frontend / Data / Pipeline)
 - PRDs listed within a track have no inter-dependencies and can be built simultaneously
 - Estimated effort is relative (S/M/L/XL) not calendar time
-- The plan covers 109 confirmed PRDs. The 15 "MAYBE" items (M-01 through M-15) are excluded
+- The plan covers 110 confirmed PRDs. The 15 "MAYBE" items (M-01 through M-15) are excluded
 
 ## Mandatory Quality Gate: dry-guy
 
@@ -160,6 +160,7 @@ This phase contains no PRD work — only structural setup.
 | 14 | PRD-17 | Asset Registry & Dependency Mapping | M | PRD-01 |
 | 15 | PRD-22 | Source Image Quality Assurance | M | PRD-01 |
 | 16 | PRD-47 | Tagging & Custom Labels | S | PRD-01 |
+| 17 | PRD-109 | Scene Video Versioning, Import & Soft Delete | L | PRD-00, PRD-01, PRD-02 |
 
 ### Track B — UI Framework & Shell
 
@@ -510,7 +511,7 @@ PRD-29 → PRD-83 → PRD-35 → PRD-57
 |-------|------|-------|---------------|
 | 0 | 3 | Foundations | DB + Backend + Design System |
 | 1 | 6 | Core Services | Data model, ComfyUI, Events, Video player |
-| 2 | 16 | Auth & UI Framework | Login, validation, assets, layout, monitoring |
+| 2 | 17 | Auth & UI Framework | Login, validation, assets, layout, monitoring |
 | 3 | 15 | Workspace & Data | Jobs, API, search, image pipeline, collaboration |
 | 4 | 9 | Scene Config & Workers | Scene types, worker pool, embeddings, cmd palette |
 | 5 | 8 | Generation Core | Video generation loop, QA gates, assembly |
@@ -521,7 +522,7 @@ PRD-29 → PRD-83 → PRD-35 → PRD-57
 | 10 | 8 | Reporting & Delivery | Production reports, compliance, lifecycle, sharing |
 | 11 | 9 | Admin Infrastructure | GPU power, budgets, health, webhooks, observability |
 | 12 | 4 | Polish & Hardening | Backup/DR, mobile review, setup wizard, dashboard config |
-| **Total** | **109** | | |
+| **Total** | **110** | | |
 
 ---
 
@@ -543,3 +544,4 @@ PRD-29 → PRD-83 → PRD-35 → PRD-57
 |------|--------|
 | 2026-02-19 | Initial build plan created — 109 PRDs across 13 phases |
 | 2026-02-20 | Added Deferred Work Queue section — tracks PRD-29 deferred phases (1, 7, 8.1) and PRD-02 DRY extraction, both blocked on PRD-01/PRD-03 |
+| 2026-02-20 | Added PRD-109 (Scene Video Versioning, Import & Soft Delete) to Phase 2 Track A. All deps satisfied. Total: 110 PRDs |

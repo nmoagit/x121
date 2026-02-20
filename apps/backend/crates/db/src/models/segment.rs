@@ -17,6 +17,7 @@ pub struct Segment {
     pub output_video_path: Option<String>,
     pub last_frame_path: Option<String>,
     pub quality_scores: Option<serde_json::Value>,
+    pub deleted_at: Option<Timestamp>,
     pub created_at: Timestamp,
     pub updated_at: Timestamp,
 }

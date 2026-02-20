@@ -24,11 +24,11 @@ Source of truth: [`design/design.md`](../design.md)
 | planning | 104 |
 | in-progress | 0 |
 | review | 0 |
-| done | 4 |
+| done | 5 |
 | blocked | 0 |
 | deferred | 0 |
 | maybe | 15 |
-| **Total** | **123** |
+| **Total** | **124** |
 
 ---
 
@@ -84,6 +84,7 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-86 | Legacy Data Import & Migration Toolkit | — | `planning` | — | |
 | PRD-88 | Batch Metadata Operations | — | `planning` | — | |
 | PRD-104 | Model & LoRA Download Manager | — | `planning` | — | |
+| PRD-109 | Scene Video Versioning, External Import & Soft Delete | — | `done` | — | Implemented (2026-02-20). All 7 phases complete: migrations, models, soft delete infra (9 repos), version repo, version API, trash API, delivery integration, integration tests (30 tests). |
 
 ## Part 3: Generation & Pipeline Core
 
@@ -221,3 +222,4 @@ Source of truth: [`design/design.md`](../design.md)
 | 2026-02-18 | Initial creation — 106 PRDs + 15 MAYBEs, all at `backlog` |
 | 2026-02-18 | Task files generated for all 106 PRDs → `design/tasks/`. All PRDs moved to `planning`. DRY-TRACKER.md created at `design/progress/DRY-TRACKER.md` |
 | 2026-02-19 | Added 2 new PRDs (PRD-107, PRD-108) and updated 4 existing PRDs (PRD-01, PRD-23, PRD-24, PRD-67, PRD-73). New PRDs: Character Readiness & State View (107), Character Settings Dashboard (108). Updates: extensible character settings (01), clip generation prompt types (23, 24), CSV/text upload (67), video technical reports (73). Total PRDs: 108 + 15 MAYBEs = 123 |
+| 2026-02-20 | Added PRD-109 (Scene Video Versioning, External Import & Soft Delete). All dependencies satisfied (PRD-00, 01, 02 done). PRD + task list generated. Total PRDs: 109 + 15 MAYBEs = 124 |

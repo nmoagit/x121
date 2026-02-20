@@ -70,7 +70,7 @@ pub async fn delete(
     State(state): State<AppState>,
     Path((_character_id, id)): Path<(DbId, DbId)>,
 ) -> AppResult<StatusCode> {
-    let deleted = ImageVariantRepo::delete(&state.pool, id).await?;
+    let deleted = ImageVariantRepo::soft_delete(&state.pool, id).await?;
     if deleted {
         Ok(StatusCode::NO_CONTENT)
     } else {

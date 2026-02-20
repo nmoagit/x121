@@ -6,7 +6,8 @@ use trulience_core::types::DbId;
 use crate::models::image::{CreateImageVariant, ImageVariant, UpdateImageVariant};
 
 /// Column list shared across queries to avoid repetition.
-const COLUMNS: &str = "id, character_id, source_image_id, derived_image_id, variant_label, status_id, file_path, created_at, updated_at";
+const COLUMNS: &str = "id, character_id, source_image_id, derived_image_id, variant_label, \
+    status_id, file_path, deleted_at, created_at, updated_at";
 
 /// Provides CRUD operations for image variants.
 pub struct ImageVariantRepo;
@@ -36,9 +37,10 @@ impl ImageVariantRepo {
             .await
     }
 
-    /// Find an image variant by its internal ID.
+    /// Find an image variant by its internal ID. Excludes soft-deleted rows.
     pub async fn find_by_id(pool: &PgPool, id: DbId) -> Result<Option<ImageVariant>, sqlx::Error> {
-        let query = format!("SELECT {COLUMNS} FROM image_variants WHERE id = $1");
+        let query =
+            format!("SELECT {COLUMNS} FROM image_variants WHERE id = $1 AND deleted_at IS NULL");
         sqlx::query_as::<_, ImageVariant>(&query)
             .bind(id)
             .fetch_optional(pool)
@@ -46,13 +48,14 @@ impl ImageVariantRepo {
     }
 
     /// List all image variants for a given character, ordered by most recently created first.
+    /// Excludes soft-deleted rows.
     pub async fn list_by_character(
         pool: &PgPool,
         character_id: DbId,
     ) -> Result<Vec<ImageVariant>, sqlx::Error> {
         let query = format!(
             "SELECT {COLUMNS} FROM image_variants
-             WHERE character_id = $1
+             WHERE character_id = $1 AND deleted_at IS NULL
              ORDER BY created_at DESC"
         );
         sqlx::query_as::<_, ImageVariant>(&query)
@@ -76,7 +79,7 @@ impl ImageVariantRepo {
                 variant_label = COALESCE($4, variant_label),
                 status_id = COALESCE($5, status_id),
                 file_path = COALESCE($6, file_path)
-             WHERE id = $1
+             WHERE id = $1 AND deleted_at IS NULL
              RETURNING {COLUMNS}"
         );
         sqlx::query_as::<_, ImageVariant>(&query)
@@ -90,8 +93,30 @@ impl ImageVariantRepo {
             .await
     }
 
-    /// Delete an image variant by ID. Returns `true` if a row was removed.
-    pub async fn delete(pool: &PgPool, id: DbId) -> Result<bool, sqlx::Error> {
+    /// Soft-delete an image variant by ID. Returns `true` if a row was marked deleted.
+    pub async fn soft_delete(pool: &PgPool, id: DbId) -> Result<bool, sqlx::Error> {
+        let result = sqlx::query(
+            "UPDATE image_variants SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
+        )
+        .bind(id)
+        .execute(pool)
+        .await?;
+        Ok(result.rows_affected() > 0)
+    }
+
+    /// Restore a soft-deleted image variant. Returns `true` if a row was restored.
+    pub async fn restore(pool: &PgPool, id: DbId) -> Result<bool, sqlx::Error> {
+        let result = sqlx::query(
+            "UPDATE image_variants SET deleted_at = NULL WHERE id = $1 AND deleted_at IS NOT NULL",
+        )
+        .bind(id)
+        .execute(pool)
+        .await?;
+        Ok(result.rows_affected() > 0)
+    }
+
+    /// Permanently delete an image variant by ID. Returns `true` if a row was removed.
+    pub async fn hard_delete(pool: &PgPool, id: DbId) -> Result<bool, sqlx::Error> {
         let result = sqlx::query("DELETE FROM image_variants WHERE id = $1")
             .bind(id)
             .execute(pool)

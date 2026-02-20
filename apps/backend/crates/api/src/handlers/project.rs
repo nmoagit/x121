@@ -57,7 +57,7 @@ pub async fn update(
 
 /// DELETE /api/v1/projects/{id}
 pub async fn delete(State(state): State<AppState>, Path(id): Path<DbId>) -> AppResult<StatusCode> {
-    let deleted = ProjectRepo::delete(&state.pool, id).await?;
+    let deleted = ProjectRepo::soft_delete(&state.pool, id).await?;
     if deleted {
         Ok(StatusCode::NO_CONTENT)
     } else {

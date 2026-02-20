@@ -6,7 +6,8 @@ use trulience_core::types::DbId;
 use crate::models::image::{CreateDerivedImage, DerivedImage, UpdateDerivedImage};
 
 /// Column list shared across queries to avoid repetition.
-const COLUMNS: &str = "id, source_image_id, character_id, file_path, variant_type, description, created_at, updated_at";
+const COLUMNS: &str = "id, source_image_id, character_id, file_path, variant_type, \
+    description, deleted_at, created_at, updated_at";
 
 /// Provides CRUD operations for derived images.
 pub struct DerivedImageRepo;
@@ -32,9 +33,10 @@ impl DerivedImageRepo {
             .await
     }
 
-    /// Find a derived image by its internal ID.
+    /// Find a derived image by its internal ID. Excludes soft-deleted rows.
     pub async fn find_by_id(pool: &PgPool, id: DbId) -> Result<Option<DerivedImage>, sqlx::Error> {
-        let query = format!("SELECT {COLUMNS} FROM derived_images WHERE id = $1");
+        let query =
+            format!("SELECT {COLUMNS} FROM derived_images WHERE id = $1 AND deleted_at IS NULL");
         sqlx::query_as::<_, DerivedImage>(&query)
             .bind(id)
             .fetch_optional(pool)
@@ -42,13 +44,14 @@ impl DerivedImageRepo {
     }
 
     /// List all derived images for a given source image, ordered by most recently created first.
+    /// Excludes soft-deleted rows.
     pub async fn list_by_source_image(
         pool: &PgPool,
         source_image_id: DbId,
     ) -> Result<Vec<DerivedImage>, sqlx::Error> {
         let query = format!(
             "SELECT {COLUMNS} FROM derived_images
-             WHERE source_image_id = $1
+             WHERE source_image_id = $1 AND deleted_at IS NULL
              ORDER BY created_at DESC"
         );
         sqlx::query_as::<_, DerivedImage>(&query)
@@ -58,13 +61,14 @@ impl DerivedImageRepo {
     }
 
     /// List all derived images for a given character, ordered by most recently created first.
+    /// Excludes soft-deleted rows.
     pub async fn list_by_character(
         pool: &PgPool,
         character_id: DbId,
     ) -> Result<Vec<DerivedImage>, sqlx::Error> {
         let query = format!(
             "SELECT {COLUMNS} FROM derived_images
-             WHERE character_id = $1
+             WHERE character_id = $1 AND deleted_at IS NULL
              ORDER BY created_at DESC"
         );
         sqlx::query_as::<_, DerivedImage>(&query)
@@ -86,7 +90,7 @@ impl DerivedImageRepo {
                 file_path = COALESCE($2, file_path),
                 variant_type = COALESCE($3, variant_type),
                 description = COALESCE($4, description)
-             WHERE id = $1
+             WHERE id = $1 AND deleted_at IS NULL
              RETURNING {COLUMNS}"
         );
         sqlx::query_as::<_, DerivedImage>(&query)
@@ -98,8 +102,42 @@ impl DerivedImageRepo {
             .await
     }
 
-    /// Delete a derived image by ID. Returns `true` if a row was removed.
-    pub async fn delete(pool: &PgPool, id: DbId) -> Result<bool, sqlx::Error> {
+    /// Find a derived image by ID, including soft-deleted rows. Used for parent-check on restore.
+    pub async fn find_by_id_include_deleted(
+        pool: &PgPool,
+        id: DbId,
+    ) -> Result<Option<DerivedImage>, sqlx::Error> {
+        let query = format!("SELECT {COLUMNS} FROM derived_images WHERE id = $1");
+        sqlx::query_as::<_, DerivedImage>(&query)
+            .bind(id)
+            .fetch_optional(pool)
+            .await
+    }
+
+    /// Soft-delete a derived image by ID. Returns `true` if a row was marked deleted.
+    pub async fn soft_delete(pool: &PgPool, id: DbId) -> Result<bool, sqlx::Error> {
+        let result = sqlx::query(
+            "UPDATE derived_images SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
+        )
+        .bind(id)
+        .execute(pool)
+        .await?;
+        Ok(result.rows_affected() > 0)
+    }
+
+    /// Restore a soft-deleted derived image. Returns `true` if a row was restored.
+    pub async fn restore(pool: &PgPool, id: DbId) -> Result<bool, sqlx::Error> {
+        let result = sqlx::query(
+            "UPDATE derived_images SET deleted_at = NULL WHERE id = $1 AND deleted_at IS NOT NULL",
+        )
+        .bind(id)
+        .execute(pool)
+        .await?;
+        Ok(result.rows_affected() > 0)
+    }
+
+    /// Permanently delete a derived image by ID. Returns `true` if a row was removed.
+    pub async fn hard_delete(pool: &PgPool, id: DbId) -> Result<bool, sqlx::Error> {
         let result = sqlx::query("DELETE FROM derived_images WHERE id = $1")
             .bind(id)
             .execute(pool)

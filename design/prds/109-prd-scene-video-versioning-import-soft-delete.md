@@ -1,0 +1,305 @@
+# PRD-109: Scene Video Versioning, External Import & Soft Delete
+
+## 1. Introduction / Overview
+
+This PRD introduces three interconnected capabilities to the platform:
+
+1. **Scene Video Versioning** — Every regeneration or external import creates a new version of a scene's video. Users can browse the version history and select which version is "final" (the one used for delivery). By default, the latest version is automatically marked final.
+
+2. **External Video Import** — Users can import a pre-made video file for a scene, bypassing the in-app generation pipeline entirely. This supports workflows where videos are produced externally (e.g., manual editing, third-party tools, client-provided assets).
+
+3. **Universal Soft Delete** — Deleting any entity (projects, characters, scenes, images, videos) moves it to a trash/bin state instead of permanently removing it from disk. Permanent deletion only occurs during an explicit purge operation. This protects against accidental data loss and supports compliance/audit requirements.
+
+These features work together: version history preserves all generated and imported videos, soft delete ensures nothing is permanently lost without intent, and the delivery ZIP always reflects the user's final selections.
+
+---
+
+## 2. Related PRDs & Dependencies
+
+### Depends On
+- **PRD-00** (Database Normalization) — Status lookup tables, migration conventions
+- **PRD-01** (Project, Character & Scene Data Model) — Entity hierarchy, scene/segment structure, delivery manifest
+- **PRD-02** (Backend Foundation) — Axum API, error handling, AppState
+
+### Extends
+- **PRD-039** (Scene Assembler & Delivery Packaging) — This PRD changes how the delivery ZIP selects which videos to include (must use "final" version, not just latest). PRD-039's export logic must be aware of versioning.
+- **PRD-069** (Generation Provenance & Asset Versioning) — This PRD adds scene-level video versioning alongside PRD-069's input provenance tracking. They are complementary: PRD-069 records *what inputs produced a segment*, this PRD records *which assembled output the user chose*.
+
+### Supersedes (partially)
+- **PRD-015** (Intelligent & Deferred Disk Reclamation) — This PRD defines the soft delete and trash mechanism that PRD-015 originally scoped. PRD-015's reclamation policies and purge scheduling remain valid but operate on the trash system defined here.
+- **PRD-086** (Legacy Data Import) — External video import for scenes overlaps with PRD-086's "register existing videos as pre-approved scenes" feature. This PRD defines the core import mechanism; PRD-086 extends it with bulk/folder-based import.
+
+### Conflicts With
+- Current hard-delete CASCADE rules on all entity tables — must be replaced with soft delete checks.
+
+---
+
+## 3. Goals
+
+1. **Never lose work** — No video, image, or entity record is permanently deleted without an explicit purge action.
+2. **Full version history** — Every scene video (generated or imported) is retained and browsable. Users can compare versions and switch the final selection at any time.
+3. **External flexibility** — Users can bring externally-produced videos into the platform without going through the generation pipeline.
+4. **Delivery accuracy** — The output ZIP always contains the user's chosen "final" videos, images, and metadata — not just the latest.
+5. **Disk safety** — Permanent disk deletion only happens via explicit purge, with preview of what will be removed.
+
+---
+
+## 4. User Stories
+
+1. **As a producer**, I want to import a video that was edited externally and use it as the final video for a scene, so I don't have to regenerate it in-app.
+
+2. **As a producer**, I want to regenerate a scene video and have the new version automatically become the final one, so my delivery stays up to date without manual intervention.
+
+3. **As a producer**, I want to browse all versions of a scene's video (generated and imported) and switch which one is final, so I can revert to an earlier version if the latest isn't satisfactory.
+
+4. **As a producer**, I want deleted items to go to a trash/bin instead of being permanently removed, so I can recover from accidental deletions.
+
+5. **As an admin**, I want to purge trashed items to reclaim disk space, with a preview of what will be permanently deleted and how much space will be freed.
+
+6. **As a producer**, I want the delivery ZIP to always use my chosen "final" videos and images, so the client receives exactly what I approved.
+
+7. **As a producer**, I want the delivery ZIP to automatically update when I change the final version of a scene (but only if the project is complete and a ZIP has already been generated), so I don't have to remember to re-export.
+
+---
+
+## 5. Functional Requirements
+
+### Phase 1: MVP Implementation
+
+#### Requirement 1.1: Scene Video Version Table
+
+**Description:** Create a `scene_video_versions` table that records every video produced for a scene — whether generated by the pipeline or imported externally.
+
+**Schema:**
+```sql
+CREATE TABLE scene_video_versions (
+    id BIGSERIAL PRIMARY KEY,
+    scene_id BIGINT NOT NULL REFERENCES scenes(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    version_number INTEGER NOT NULL,
+    source TEXT NOT NULL CHECK (source IN ('generated', 'imported')),
+    file_path TEXT NOT NULL,
+    file_size_bytes BIGINT,
+    duration_secs NUMERIC(10,3),
+    is_final BOOLEAN NOT NULL DEFAULT false,
+    notes TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE UNIQUE INDEX uq_scene_video_versions_scene_version
+    ON scene_video_versions (scene_id, version_number);
+
+-- Only one version per scene can be final
+CREATE UNIQUE INDEX uq_scene_video_versions_final
+    ON scene_video_versions (scene_id) WHERE is_final = true;
+
+CREATE INDEX idx_scene_video_versions_scene_id
+    ON scene_video_versions (scene_id);
+```
+
+**Acceptance Criteria:**
+- [ ] Table created with BIGSERIAL PK, timestamptz columns, updated_at trigger
+- [ ] `source` column enforces `generated` or `imported` via CHECK constraint
+- [ ] Unique partial index ensures at most one `is_final = true` per scene
+- [ ] Unique index on `(scene_id, version_number)` prevents duplicate version numbers
+- [ ] FK to `scenes` with CASCADE delete
+- [ ] Rust model structs: `SceneVideoVersion`, `CreateSceneVideoVersion`, `UpdateSceneVideoVersion`
+
+#### Requirement 1.2: Auto-Versioning on Generation
+
+**Description:** When the pipeline generates a new assembled scene video, a new `scene_video_versions` row is created with `source = 'generated'`, the next sequential version number, and `is_final = true`. The previous final version (if any) has `is_final` set to `false`.
+
+**Acceptance Criteria:**
+- [ ] New version row created automatically when a scene video is generated
+- [ ] Version number auto-increments per scene (max existing + 1)
+- [ ] New version is automatically marked as final (`is_final = true`)
+- [ ] Previous final version is unmarked (`is_final = false`) in the same transaction
+- [ ] `file_path` points to the actual video file on disk
+
+#### Requirement 1.3: External Video Import
+
+**Description:** Users can upload/import a video file for a scene. The imported video is stored on disk, and a new `scene_video_versions` row is created with `source = 'imported'` and `is_final = true`.
+
+**Acceptance Criteria:**
+- [ ] API endpoint: `POST /api/v1/scenes/{scene_id}/versions/import` (multipart file upload)
+- [ ] Validates file is a supported video format (`.mp4`, `.webm`, `.mov`)
+- [ ] Stores uploaded file in the project's asset directory
+- [ ] Creates version row with `source = 'imported'`, auto-incremented version number
+- [ ] New import is automatically marked as final
+- [ ] User can optionally include a `notes` field describing the import
+- [ ] Returns the created version record
+
+#### Requirement 1.4: Final Version Selection
+
+**Description:** Users can mark any version as the "final" version for a scene. The final version is the one included in the delivery ZIP.
+
+**Acceptance Criteria:**
+- [ ] API endpoint: `PUT /api/v1/scenes/{scene_id}/versions/{version_id}/set-final`
+- [ ] Unmarks the current final and marks the specified version as final in one transaction
+- [ ] Returns the updated version record
+- [ ] Returns 404 if version does not belong to the specified scene
+
+#### Requirement 1.5: Version History API
+
+**Description:** Users can list all versions for a scene and view details of a specific version.
+
+**Acceptance Criteria:**
+- [ ] API endpoint: `GET /api/v1/scenes/{scene_id}/versions` — list all versions, ordered by version_number DESC
+- [ ] API endpoint: `GET /api/v1/scenes/{scene_id}/versions/{version_id}` — get single version
+- [ ] API endpoint: `DELETE /api/v1/scenes/{scene_id}/versions/{version_id}` — soft-delete a version (see Req 1.6)
+- [ ] List response includes: id, version_number, source, file_path, file_size_bytes, duration_secs, is_final, notes, created_at
+- [ ] Cannot delete the final version (returns 409 Conflict — user must select a different final first)
+
+#### Requirement 1.6: Universal Soft Delete
+
+**Description:** Add a `deleted_at` column to all entity tables. When a record is "deleted", set `deleted_at = NOW()` instead of removing the row. All queries must filter out soft-deleted records by default.
+
+**Tables to add `deleted_at TIMESTAMPTZ` column:**
+- `projects`
+- `characters`
+- `source_images`
+- `derived_images`
+- `image_variants`
+- `scene_types`
+- `scenes`
+- `segments`
+- `scene_video_versions` (new table)
+
+**Acceptance Criteria:**
+- [ ] Migration adds `deleted_at TIMESTAMPTZ DEFAULT NULL` to all entity tables
+- [ ] All repository `list`, `find_by_id`, and scoped queries add `WHERE deleted_at IS NULL`
+- [ ] Delete operations set `deleted_at = NOW()` instead of `DELETE FROM`
+- [ ] Cascade soft-delete: soft-deleting a project also soft-deletes its characters, which soft-deletes their scenes, etc.
+- [ ] Hard-delete CASCADE rules remain on FK constraints (for purge operations)
+- [ ] New repository method: `soft_delete(pool, id)` on all entity repos
+- [ ] New repository method: `restore(pool, id)` to set `deleted_at = NULL`
+- [ ] Index on `deleted_at` for efficient filtering: `CREATE INDEX idx_{table}_deleted_at ON {table} (deleted_at) WHERE deleted_at IS NOT NULL`
+
+#### Requirement 1.7: Trash / Bin API
+
+**Description:** Users can view trashed items and restore them. Admins can purge trashed items permanently.
+
+**Acceptance Criteria:**
+- [ ] API endpoint: `GET /api/v1/trash` — list all soft-deleted entities, grouped by type
+- [ ] API endpoint: `GET /api/v1/trash?type=scenes` — filter by entity type
+- [ ] API endpoint: `POST /api/v1/trash/{entity_type}/{id}/restore` — restore a soft-deleted entity
+- [ ] API endpoint: `DELETE /api/v1/trash/purge` — permanently delete all trashed items (hard delete + remove files from disk)
+- [ ] API endpoint: `DELETE /api/v1/trash/{entity_type}/{id}/purge` — permanently delete a single trashed item
+- [ ] Purge preview: `GET /api/v1/trash/purge-preview` — returns count of items and estimated disk space to be freed
+- [ ] Restoring a child entity whose parent is trashed returns 409 Conflict (must restore parent first)
+- [ ] Cascade restore: restoring a project also restores its children (configurable — children that were independently trashed before the parent may stay trashed)
+
+#### Requirement 1.8: Delivery ZIP Uses Final Versions
+
+**Description:** The delivery manifest and ZIP export must use the "final" version's video file for each scene, not the latest or any other version.
+
+**Acceptance Criteria:**
+- [ ] `DeliveryManifest` builder queries `scene_video_versions WHERE is_final = true` for each scene
+- [ ] If a scene has no final version, it is flagged in the delivery validation (not silently skipped)
+- [ ] Delivery validation endpoint reports which scenes are missing final videos
+- [ ] ZIP export only proceeds when all scenes in the project have a final version selected
+
+#### Requirement 1.9: Auto-Rebuild ZIP on Final Change
+
+**Description:** When the final version of a scene changes (via set-final, new generation, or new import), and a delivery ZIP has previously been generated for the project, and the project is complete (all scenes have final versions), automatically trigger a ZIP rebuild.
+
+**Acceptance Criteria:**
+- [ ] Changing the final version checks if a previous ZIP export exists for the project
+- [ ] If exists AND project is complete (all scenes, images, and metadata present), trigger async ZIP rebuild
+- [ ] If project is incomplete, no auto-rebuild (user must trigger manually when ready)
+- [ ] Manual export is always available regardless of completeness state
+- [ ] Auto-rebuild does not block the API response (fires as background job)
+
+### Phase 2: Enhancements (Post-MVP)
+
+#### Requirement 2.1: Version Comparison UI
+
+**[OPTIONAL — Post-MVP]** Side-by-side video comparison of two versions of the same scene, with playback sync.
+
+#### Requirement 2.2: Trash Retention Policies
+
+**[OPTIONAL — Post-MVP]** Configurable auto-purge after N days in trash (default 30 days). Integrates with PRD-015 reclamation policies.
+
+#### Requirement 2.3: Version Annotations
+
+**[OPTIONAL — Post-MVP]** Users can tag versions with labels (e.g., "client review", "internal draft") and add timestamped comments.
+
+#### Requirement 2.4: Bulk Import
+
+**[OPTIONAL — Post-MVP]** Import multiple videos at once, matching them to scenes by filename convention. Integrates with PRD-086 bulk import.
+
+---
+
+## 6. Non-Goals (Out of Scope)
+
+- **Segment-level versioning** — Versioning applies at the assembled scene video level, not individual segments.
+- **Video transcoding** — Imported videos are stored as-is. Format conversion is handled by PRD-039.
+- **Diff/delta storage** — Each version stores the full video file. Deduplication is out of scope.
+- **Role-based purge permissions** — MVP treats purge as available to any authenticated user. RBAC is handled by PRD-03.
+- **Undo/redo stack** — Soft delete and version history serve as the recovery mechanism. No general undo system.
+- **Image versioning** — This PRD versions scene videos only. Image versioning follows the existing source→derived→variant pipeline.
+
+---
+
+## 7. Design Considerations
+
+- **Version list UI** should show a thumbnail (first frame), version number, source badge ("Generated" / "Imported"), date, file size, and a "Final" badge on the active version.
+- **Trash UI** should group items by type with a count badge, show deletion date, and offer bulk restore/purge.
+- **Import flow** should be a simple file picker or drag-and-drop on the scene detail view, not buried in settings.
+- **Final badge** should be visually prominent on the version list — a star or checkmark icon.
+- Reuse existing components: `StatusBadge` for source type, `ThumbnailCard` for version entries, `Modal` for purge confirmation.
+
+---
+
+## 8. Technical Considerations
+
+### Existing Code to Reuse
+- `trulience_db::repositories` — CRUD pattern for new `SceneVideoVersionRepo`
+- `trulience_core::delivery` — `DeliveryManifest` and validation (must be updated to query final versions)
+- `trulience_core::naming` — Scene video filename generation (used for generated versions)
+- `trulience_api::error` — `AppError` with `classify_sqlx_error` for unique constraint violations
+- `trulience_api::handlers` — CRUD handler pattern for version endpoints
+
+### New Infrastructure Needed
+- `scene_video_versions` table and migration
+- `deleted_at` column migration for all 9 entity tables
+- `SceneVideoVersionRepo` with version-specific operations (set_final, next_version_number)
+- Soft delete trait or shared function for all repositories
+- Trash query aggregation (cross-table query for trash listing)
+- File upload handling for video import (multipart form parsing)
+
+### Database Changes
+- New table: `scene_video_versions`
+- Alter 9 tables: add `deleted_at TIMESTAMPTZ DEFAULT NULL`
+- New partial indexes for soft-delete filtering
+- New partial unique index for `is_final` constraint
+
+### API Changes
+- New endpoints: `/scenes/{id}/versions/*`, `/trash/*`
+- Modified: All existing list/get endpoints add `WHERE deleted_at IS NULL`
+- Modified: All existing delete endpoints change from `DELETE` to `UPDATE SET deleted_at`
+
+---
+
+## 9. Success Metrics
+
+1. **Zero accidental data loss** — No user reports of permanently lost data after enabling soft delete.
+2. **Version adoption** — >80% of scenes that are regenerated have version history utilized (not just latest).
+3. **Import usage** — External video import is used in >10% of projects.
+4. **Delivery accuracy** — 100% of exported ZIPs contain the correct "final" version for every scene.
+5. **Disk recovery** — Purge operations reclaim >95% of expected disk space.
+
+---
+
+## 10. Open Questions
+
+1. **File storage path convention** — Should imported videos follow the same directory structure as generated ones, or have a separate `imports/` subdirectory?
+2. **Maximum file size** — Should there be a limit on imported video file size? If so, what?
+3. **Cascade soft-delete semantics** — When restoring a project, should independently-trashed children (deleted before the project was trashed) also be restored? Current answer: no, but this may need UX validation.
+4. **Version limit** — Should there be a maximum number of versions per scene to prevent unbounded storage growth? Or is this handled by trash purge policies?
+
+---
+
+## 11. Version History
+
+- **v1.0** (2026-02-20): Initial PRD creation

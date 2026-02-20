@@ -6,7 +6,8 @@ use trulience_core::types::DbId;
 use crate::models::character::{Character, CreateCharacter, UpdateCharacter};
 
 /// Column list shared across queries to avoid repetition.
-const COLUMNS: &str = "id, project_id, name, status_id, metadata, settings, created_at, updated_at";
+const COLUMNS: &str =
+    "id, project_id, name, status_id, metadata, settings, deleted_at, created_at, updated_at";
 
 /// Provides CRUD operations for characters plus settings helpers.
 pub struct CharacterRepo;
@@ -32,9 +33,10 @@ impl CharacterRepo {
             .await
     }
 
-    /// Find a character by its internal ID.
+    /// Find a character by its internal ID. Excludes soft-deleted rows.
     pub async fn find_by_id(pool: &PgPool, id: DbId) -> Result<Option<Character>, sqlx::Error> {
-        let query = format!("SELECT {COLUMNS} FROM characters WHERE id = $1");
+        let query =
+            format!("SELECT {COLUMNS} FROM characters WHERE id = $1 AND deleted_at IS NULL");
         sqlx::query_as::<_, Character>(&query)
             .bind(id)
             .fetch_optional(pool)
@@ -42,12 +44,16 @@ impl CharacterRepo {
     }
 
     /// List all characters for a given project, ordered by name ascending.
+    /// Excludes soft-deleted rows.
     pub async fn list_by_project(
         pool: &PgPool,
         project_id: DbId,
     ) -> Result<Vec<Character>, sqlx::Error> {
-        let query =
-            format!("SELECT {COLUMNS} FROM characters WHERE project_id = $1 ORDER BY name ASC");
+        let query = format!(
+            "SELECT {COLUMNS} FROM characters
+             WHERE project_id = $1 AND deleted_at IS NULL
+             ORDER BY name ASC"
+        );
         sqlx::query_as::<_, Character>(&query)
             .bind(project_id)
             .fetch_all(pool)
@@ -68,7 +74,7 @@ impl CharacterRepo {
                 status_id = COALESCE($3, status_id),
                 metadata = COALESCE($4, metadata),
                 settings = COALESCE($5, settings)
-             WHERE id = $1
+             WHERE id = $1 AND deleted_at IS NULL
              RETURNING {COLUMNS}"
         );
         sqlx::query_as::<_, Character>(&query)
@@ -81,8 +87,42 @@ impl CharacterRepo {
             .await
     }
 
-    /// Delete a character by ID. Returns `true` if a row was removed.
-    pub async fn delete(pool: &PgPool, id: DbId) -> Result<bool, sqlx::Error> {
+    /// Find a character by ID, including soft-deleted rows. Used for parent-check on restore.
+    pub async fn find_by_id_include_deleted(
+        pool: &PgPool,
+        id: DbId,
+    ) -> Result<Option<Character>, sqlx::Error> {
+        let query = format!("SELECT {COLUMNS} FROM characters WHERE id = $1");
+        sqlx::query_as::<_, Character>(&query)
+            .bind(id)
+            .fetch_optional(pool)
+            .await
+    }
+
+    /// Soft-delete a character by ID. Returns `true` if a row was marked deleted.
+    pub async fn soft_delete(pool: &PgPool, id: DbId) -> Result<bool, sqlx::Error> {
+        let result = sqlx::query(
+            "UPDATE characters SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
+        )
+        .bind(id)
+        .execute(pool)
+        .await?;
+        Ok(result.rows_affected() > 0)
+    }
+
+    /// Restore a soft-deleted character. Returns `true` if a row was restored.
+    pub async fn restore(pool: &PgPool, id: DbId) -> Result<bool, sqlx::Error> {
+        let result = sqlx::query(
+            "UPDATE characters SET deleted_at = NULL WHERE id = $1 AND deleted_at IS NOT NULL",
+        )
+        .bind(id)
+        .execute(pool)
+        .await?;
+        Ok(result.rows_affected() > 0)
+    }
+
+    /// Permanently delete a character by ID. Returns `true` if a row was removed.
+    pub async fn hard_delete(pool: &PgPool, id: DbId) -> Result<bool, sqlx::Error> {
         let result = sqlx::query("DELETE FROM characters WHERE id = $1")
             .bind(id)
             .execute(pool)
@@ -95,10 +135,12 @@ impl CharacterRepo {
         pool: &PgPool,
         id: DbId,
     ) -> Result<Option<serde_json::Value>, sqlx::Error> {
-        sqlx::query_scalar::<_, serde_json::Value>("SELECT settings FROM characters WHERE id = $1")
-            .bind(id)
-            .fetch_optional(pool)
-            .await
+        sqlx::query_scalar::<_, serde_json::Value>(
+            "SELECT settings FROM characters WHERE id = $1 AND deleted_at IS NULL",
+        )
+        .bind(id)
+        .fetch_optional(pool)
+        .await
     }
 
     /// Fully replace the `settings` column for a character.
@@ -109,7 +151,7 @@ impl CharacterRepo {
     ) -> Result<Option<Character>, sqlx::Error> {
         let query = format!(
             "UPDATE characters SET settings = $2
-             WHERE id = $1
+             WHERE id = $1 AND deleted_at IS NULL
              RETURNING {COLUMNS}"
         );
         sqlx::query_as::<_, Character>(&query)
@@ -127,7 +169,7 @@ impl CharacterRepo {
     ) -> Result<Option<Character>, sqlx::Error> {
         let query = format!(
             "UPDATE characters SET settings = settings || $2::jsonb
-             WHERE id = $1
+             WHERE id = $1 AND deleted_at IS NULL
              RETURNING {COLUMNS}"
         );
         sqlx::query_as::<_, Character>(&query)

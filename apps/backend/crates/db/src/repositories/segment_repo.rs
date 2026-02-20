@@ -7,7 +7,7 @@ use crate::models::segment::{CreateSegment, Segment, UpdateSegment};
 
 /// Column list shared across queries to avoid repetition.
 const COLUMNS: &str = "id, scene_id, sequence_index, status_id, seed_frame_path, \
-    output_video_path, last_frame_path, quality_scores, created_at, updated_at";
+    output_video_path, last_frame_path, quality_scores, deleted_at, created_at, updated_at";
 
 /// Provides CRUD operations for segments.
 pub struct SegmentRepo;
@@ -36,9 +36,9 @@ impl SegmentRepo {
             .await
     }
 
-    /// Find a segment by its internal ID.
+    /// Find a segment by its internal ID. Excludes soft-deleted rows.
     pub async fn find_by_id(pool: &PgPool, id: DbId) -> Result<Option<Segment>, sqlx::Error> {
-        let query = format!("SELECT {COLUMNS} FROM segments WHERE id = $1");
+        let query = format!("SELECT {COLUMNS} FROM segments WHERE id = $1 AND deleted_at IS NULL");
         sqlx::query_as::<_, Segment>(&query)
             .bind(id)
             .fetch_optional(pool)
@@ -46,10 +46,11 @@ impl SegmentRepo {
     }
 
     /// List all segments for a given scene, ordered by sequence index ascending.
+    /// Excludes soft-deleted rows.
     pub async fn list_by_scene(pool: &PgPool, scene_id: DbId) -> Result<Vec<Segment>, sqlx::Error> {
         let query = format!(
             "SELECT {COLUMNS} FROM segments
-             WHERE scene_id = $1
+             WHERE scene_id = $1 AND deleted_at IS NULL
              ORDER BY sequence_index ASC"
         );
         sqlx::query_as::<_, Segment>(&query)
@@ -74,7 +75,7 @@ impl SegmentRepo {
                 output_video_path = COALESCE($5, output_video_path),
                 last_frame_path = COALESCE($6, last_frame_path),
                 quality_scores = COALESCE($7, quality_scores)
-             WHERE id = $1
+             WHERE id = $1 AND deleted_at IS NULL
              RETURNING {COLUMNS}"
         );
         sqlx::query_as::<_, Segment>(&query)
@@ -89,8 +90,30 @@ impl SegmentRepo {
             .await
     }
 
-    /// Delete a segment by ID. Returns `true` if a row was removed.
-    pub async fn delete(pool: &PgPool, id: DbId) -> Result<bool, sqlx::Error> {
+    /// Soft-delete a segment by ID. Returns `true` if a row was marked deleted.
+    pub async fn soft_delete(pool: &PgPool, id: DbId) -> Result<bool, sqlx::Error> {
+        let result = sqlx::query(
+            "UPDATE segments SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
+        )
+        .bind(id)
+        .execute(pool)
+        .await?;
+        Ok(result.rows_affected() > 0)
+    }
+
+    /// Restore a soft-deleted segment. Returns `true` if a row was restored.
+    pub async fn restore(pool: &PgPool, id: DbId) -> Result<bool, sqlx::Error> {
+        let result = sqlx::query(
+            "UPDATE segments SET deleted_at = NULL WHERE id = $1 AND deleted_at IS NOT NULL",
+        )
+        .bind(id)
+        .execute(pool)
+        .await?;
+        Ok(result.rows_affected() > 0)
+    }
+
+    /// Permanently delete a segment by ID. Returns `true` if a row was removed.
+    pub async fn hard_delete(pool: &PgPool, id: DbId) -> Result<bool, sqlx::Error> {
         let result = sqlx::query("DELETE FROM segments WHERE id = $1")
             .bind(id)
             .execute(pool)

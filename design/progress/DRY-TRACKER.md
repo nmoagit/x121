@@ -36,6 +36,10 @@ Ongoing log of components, functions, patterns, and utilities that the DRY-GUY a
 | DRY-005 | `updated_at` trigger creation in migrations | All PRDs with tables | `watch` | Trigger function defined once in PRD-000; each table just adds the trigger. Watch for copy-paste divergence |
 | DRY-006 | Error response formatting | PRD-02 and all API PRDs | `watch` | Constraint violation → user-friendly error translation will be needed everywhere |
 | DRY-007 | FK index creation pattern in migrations | All PRDs with tables | `watch` | Every FK needs `CREATE INDEX idx_{table}_{col}` — easy to forget or name inconsistently |
+| DRY-008 | Soft delete `WHERE deleted_at IS NULL` filter | PRD-109, all entity repos | `watch` | Every repo query (find_by_id, list_*) must include this filter. Missing it = showing deleted records. |
+| DRY-009 | `soft_delete` / `restore` / `hard_delete` method pattern | PRD-109, all entity repos | `watch` | All 9+ repos need identical method signatures. Candidate for trait or macro if boilerplate grows. |
+| DRY-010 | Version-as-final transactional pattern | PRD-109, PRD-069 | `watch` | Unmark old + mark new in one transaction. Could be reused if other entities get versioning. |
+| DRY-011 | Trash entity-type parallel lists (5 locations) | PRD-109 | `watch` | 9 entity type strings appear in 5 parallel match/list sites: `KNOWN_ENTITY_TYPES`, `PURGE_ORDER`, `table_and_name_expr`, `check_parent_trashed` (all in `trash_repo.rs`), and `dispatch_restore` (in `handlers/trash.rs`). Adding a new entity type requires updating all 5. Consider a single `EntityMeta` data array if the codebase grows beyond 12 entity types. |
 
 ### Frontend Patterns
 
@@ -86,6 +90,7 @@ Record of every DRY-GUY audit run against the codebase.
 | 2026-02-20 | PRD-00 Database Normalization | 12 (2 Rust lib, 2 Rust test, 1 API, 4 SQL, 2 docs, 1 DRY-TRACKER) | 3 (0 critical, 1 medium, 2 low) | All acceptable/deferred. Medium: tracing init (2 binaries, extract at 3). Low: SQL filter clause in tests (readable as-is), lookup DDL repetition (mitigated by template migration 000003). No code changes needed. |
 | 2026-02-20 | PRD-01 Phase 4 (API Endpoints) | 17 (8 handlers, 5 routes, 1 error, 1 lib, 1 test helper, 1 main) | 2 low, rest acceptable | No changes. NotFound construction (19x) and delete-if pattern (8x) are thin-adapter repetition. DRY-003 stays `watch`. scene_type.rs correctly deduplicates dual-scope via inner helpers. |
 | 2026-02-20 | PRD-01 Test Files (entity_crud, entity_api, schema_conventions) | 8 test files across db+api crates | 2 HIGH (extracted), 1 MEDIUM (watch), 2 LOW (acceptable) | Extracted `body_json`, `post_json`, `put_json`, `get`, `delete`, `send_json` to `api/tests/common/mod.rs`. Unified `post_json`/`put_json` via `send_json` base. Refactored health.rs + entity_api.rs to use shared helpers. Watch: entity_crud.rs fixtures if second api test needs them. |
+| 2026-02-20 | PRD-109 Phases 5-6 (Trash API + Delivery) | 12 (1 trash_repo, 5 entity repos modified, 1 trash handler, 1 trash route, 1 delivery.rs, 1 handlers/mod, 1 routes/mod, 1 repos/mod) | 1 HIGH (dead code), 2 MEDIUM (watch), 2 LOW, 4 CLEAN | HIGH: `find_by_id_include_deleted` on 5 individual repos is dead code (uncalled) — recommend removal. MEDIUM: DRY-009 confirmed (27 identical soft_delete/restore/hard_delete methods across 9 repos), DRY-011 added (5 parallel entity-type lists). LOW: fallback in `table_and_name_expr`, dispatch_restore inherent to architecture. CLEAN: delivery.rs, route file, handler pattern. |
 
 ---
 

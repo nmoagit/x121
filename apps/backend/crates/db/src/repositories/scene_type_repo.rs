@@ -9,7 +9,7 @@ use crate::models::scene_type::{CreateSceneType, SceneType, UpdateSceneType};
 const COLUMNS: &str = "id, project_id, name, status_id, workflow_json, lora_config, \
     prompt_template, target_duration_secs, segment_duration_secs, \
     variant_applicability, transition_segment_index, is_studio_level, \
-    created_at, updated_at";
+    deleted_at, created_at, updated_at";
 
 /// Provides CRUD operations for scene types.
 pub struct SceneTypeRepo;
@@ -46,9 +46,10 @@ impl SceneTypeRepo {
             .await
     }
 
-    /// Find a scene type by its internal ID.
+    /// Find a scene type by its internal ID. Excludes soft-deleted rows.
     pub async fn find_by_id(pool: &PgPool, id: DbId) -> Result<Option<SceneType>, sqlx::Error> {
-        let query = format!("SELECT {COLUMNS} FROM scene_types WHERE id = $1");
+        let query =
+            format!("SELECT {COLUMNS} FROM scene_types WHERE id = $1 AND deleted_at IS NULL");
         sqlx::query_as::<_, SceneType>(&query)
             .bind(id)
             .fetch_optional(pool)
@@ -56,13 +57,14 @@ impl SceneTypeRepo {
     }
 
     /// List scene types scoped to a specific project, ordered by most recently created first.
+    /// Excludes soft-deleted rows.
     pub async fn list_by_project(
         pool: &PgPool,
         project_id: DbId,
     ) -> Result<Vec<SceneType>, sqlx::Error> {
         let query = format!(
             "SELECT {COLUMNS} FROM scene_types
-             WHERE project_id = $1
+             WHERE project_id = $1 AND deleted_at IS NULL
              ORDER BY created_at DESC"
         );
         sqlx::query_as::<_, SceneType>(&query)
@@ -72,11 +74,11 @@ impl SceneTypeRepo {
     }
 
     /// List studio-level scene types (those with `project_id IS NULL`),
-    /// ordered by most recently created first.
+    /// ordered by most recently created first. Excludes soft-deleted rows.
     pub async fn list_studio_level(pool: &PgPool) -> Result<Vec<SceneType>, sqlx::Error> {
         let query = format!(
             "SELECT {COLUMNS} FROM scene_types
-             WHERE project_id IS NULL
+             WHERE project_id IS NULL AND deleted_at IS NULL
              ORDER BY created_at DESC"
         );
         sqlx::query_as::<_, SceneType>(&query).fetch_all(pool).await
@@ -102,7 +104,7 @@ impl SceneTypeRepo {
                 variant_applicability = COALESCE($9, variant_applicability),
                 transition_segment_index = COALESCE($10, transition_segment_index),
                 is_studio_level = COALESCE($11, is_studio_level)
-             WHERE id = $1
+             WHERE id = $1 AND deleted_at IS NULL
              RETURNING {COLUMNS}"
         );
         sqlx::query_as::<_, SceneType>(&query)
@@ -121,8 +123,30 @@ impl SceneTypeRepo {
             .await
     }
 
-    /// Delete a scene type by ID. Returns `true` if a row was removed.
-    pub async fn delete(pool: &PgPool, id: DbId) -> Result<bool, sqlx::Error> {
+    /// Soft-delete a scene type by ID. Returns `true` if a row was marked deleted.
+    pub async fn soft_delete(pool: &PgPool, id: DbId) -> Result<bool, sqlx::Error> {
+        let result = sqlx::query(
+            "UPDATE scene_types SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
+        )
+        .bind(id)
+        .execute(pool)
+        .await?;
+        Ok(result.rows_affected() > 0)
+    }
+
+    /// Restore a soft-deleted scene type. Returns `true` if a row was restored.
+    pub async fn restore(pool: &PgPool, id: DbId) -> Result<bool, sqlx::Error> {
+        let result = sqlx::query(
+            "UPDATE scene_types SET deleted_at = NULL WHERE id = $1 AND deleted_at IS NOT NULL",
+        )
+        .bind(id)
+        .execute(pool)
+        .await?;
+        Ok(result.rows_affected() > 0)
+    }
+
+    /// Permanently delete a scene type by ID. Returns `true` if a row was removed.
+    pub async fn hard_delete(pool: &PgPool, id: DbId) -> Result<bool, sqlx::Error> {
         let result = sqlx::query("DELETE FROM scene_types WHERE id = $1")
             .bind(id)
             .execute(pool)

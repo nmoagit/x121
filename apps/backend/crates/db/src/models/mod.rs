@@ -10,5 +10,6 @@ pub mod image;
 pub mod project;
 pub mod scene;
 pub mod scene_type;
+pub mod scene_video_version;
 pub mod segment;
 pub mod status;
