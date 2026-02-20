@@ -121,4 +121,41 @@ impl NotificationRepo {
         .await?;
         Ok(())
     }
+
+    /// Count pending (undelivered) notifications for a user on a specific channel.
+    pub async fn pending_count_for_channel(
+        pool: &PgPool,
+        user_id: DbId,
+        channel: &str,
+    ) -> Result<i64, sqlx::Error> {
+        let count: Option<i64> = sqlx::query_scalar(
+            "SELECT COUNT(*) FROM notifications \
+             WHERE user_id = $1 AND is_delivered = false AND channel = $2",
+        )
+        .bind(user_id)
+        .bind(channel)
+        .fetch_one(pool)
+        .await?;
+        Ok(count.unwrap_or(0))
+    }
+
+    /// Mark all undelivered notifications on a specific channel as delivered for a user.
+    ///
+    /// Returns the number of notifications marked.
+    pub async fn mark_channel_delivered(
+        pool: &PgPool,
+        user_id: DbId,
+        channel: &str,
+    ) -> Result<u64, sqlx::Error> {
+        let result = sqlx::query(
+            "UPDATE notifications \
+             SET is_delivered = true, delivered_at = NOW() \
+             WHERE user_id = $1 AND is_delivered = false AND channel = $2",
+        )
+        .bind(user_id)
+        .bind(channel)
+        .execute(pool)
+        .await?;
+        Ok(result.rows_affected())
+    }
 }

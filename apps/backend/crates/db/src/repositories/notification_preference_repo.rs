@@ -147,4 +147,15 @@ impl NotificationPreferenceRepo {
             .fetch_all(pool)
             .await
     }
+
+    /// Update the `digest_last_sent_at` timestamp to now for a specific user.
+    pub async fn mark_digest_sent(pool: &PgPool, user_id: DbId) -> Result<(), sqlx::Error> {
+        sqlx::query(
+            "UPDATE user_notification_settings SET digest_last_sent_at = NOW() WHERE user_id = $1",
+        )
+        .bind(user_id)
+        .execute(pool)
+        .await?;
+        Ok(())
+    }
 }

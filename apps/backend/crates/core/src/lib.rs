@@ -1,3 +1,4 @@
+pub mod channels;
 pub mod delivery;
 pub mod error;
 pub mod naming;

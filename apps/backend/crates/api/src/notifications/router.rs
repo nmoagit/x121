@@ -8,6 +8,7 @@ use std::sync::Arc;
 
 use axum::extract::ws::Message;
 use tokio::sync::broadcast;
+use trulience_core::channels::{CHANNEL_DIGEST, CHANNEL_IN_APP};
 use trulience_core::types::DbId;
 use trulience_db::repositories::{EventRepo, NotificationPreferenceRepo, NotificationRepo};
 use trulience_db::DbPool;
@@ -123,7 +124,7 @@ impl NotificationRouter {
         if is_digest && !event_type.is_critical {
             // Create notification but do not deliver now; the digest job will pick it up.
             if let Some(event_id) = self.find_latest_event_id(&event.event_type).await {
-                NotificationRepo::create(&self.pool, event_id, user_id, "digest")
+                NotificationRepo::create(&self.pool, event_id, user_id, CHANNEL_DIGEST)
                     .await
                     .ok();
             }
@@ -134,11 +135,11 @@ impl NotificationRouter {
         let channels: Vec<String> = pref
             .as_ref()
             .and_then(|p| serde_json::from_value(p.channels.clone()).ok())
-            .unwrap_or_else(|| vec!["in_app".to_string()]);
+            .unwrap_or_else(|| vec![CHANNEL_IN_APP.to_string()]);
 
         for channel in &channels {
             match channel.as_str() {
-                "in_app" => self.deliver_in_app(user_id, event).await,
+                CHANNEL_IN_APP => self.deliver_in_app(user_id, event).await,
                 // Webhook and email delivery will be implemented in Phase 5.
                 other => {
                     tracing::debug!(channel = other, "Channel delivery not yet implemented");
@@ -209,7 +210,7 @@ impl NotificationRouter {
     async fn deliver_in_app(&self, user_id: DbId, event: &PlatformEvent) {
         // Look up the persisted event row for the notification FK.
         if let Some(event_id) = self.find_latest_event_id(&event.event_type).await {
-            NotificationRepo::create(&self.pool, event_id, user_id, "in_app")
+            NotificationRepo::create(&self.pool, event_id, user_id, CHANNEL_IN_APP)
                 .await
                 .ok();
         }

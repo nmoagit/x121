@@ -7,6 +7,7 @@
 
 use tokio::sync::broadcast;
 use trulience_core::types::DbId;
+use trulience_db::repositories::EventRepo;
 use trulience_db::DbPool;
 
 use crate::bus::PlatformEvent;
@@ -48,28 +49,23 @@ impl EventPersistence {
 
     /// Write a single event to the `events` table.
     ///
-    /// Resolves the `event_type` name to its `event_types.id` foreign key,
-    /// then inserts a row into `events`.
+    /// Resolves the `event_type` name to its `event_types.id` foreign key
+    /// via [`EventRepo`], then inserts a row via [`EventRepo::insert`].
     async fn persist(pool: &DbPool, event: &PlatformEvent) -> Result<DbId, sqlx::Error> {
-        let event_type_id: DbId = sqlx::query_scalar("SELECT id FROM event_types WHERE name = $1")
-            .bind(&event.event_type)
-            .fetch_one(pool)
-            .await?;
+        let event_type = EventRepo::get_event_type_by_name(pool, &event.event_type)
+            .await?
+            .ok_or_else(|| {
+                sqlx::Error::RowNotFound
+            })?;
 
-        let id: DbId = sqlx::query_scalar(
-            "INSERT INTO events \
-                (event_type_id, source_entity_type, source_entity_id, actor_user_id, payload) \
-             VALUES ($1, $2, $3, $4, $5) \
-             RETURNING id",
+        EventRepo::insert(
+            pool,
+            event_type.id,
+            event.source_entity_type.as_deref(),
+            event.source_entity_id,
+            event.actor_user_id,
+            &event.payload,
         )
-        .bind(event_type_id)
-        .bind(&event.source_entity_type)
-        .bind(event.source_entity_id)
-        .bind(event.actor_user_id)
-        .bind(&event.payload)
-        .fetch_one(pool)
-        .await?;
-
-        Ok(id)
+        .await
     }
 }

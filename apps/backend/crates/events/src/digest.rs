@@ -9,7 +9,8 @@
 use std::time::Duration;
 
 use tokio_util::sync::CancellationToken;
-use trulience_core::types::DbId;
+use trulience_core::channels::CHANNEL_DIGEST;
+use trulience_db::repositories::{NotificationPreferenceRepo, NotificationRepo};
 use trulience_db::DbPool;
 
 /// How often the scheduler polls for due digests.
@@ -54,24 +55,21 @@ impl DigestScheduler {
 
     /// Find all users due for a digest and process each one.
     async fn process_digests(&self) -> Result<(), sqlx::Error> {
-        let due_users: Vec<(DbId,)> = sqlx::query_as(
-            "SELECT user_id FROM user_notification_settings \
-             WHERE digest_enabled = true \
-             AND (digest_last_sent_at IS NULL \
-                  OR (digest_interval = 'hourly' AND digest_last_sent_at < NOW() - INTERVAL '1 hour') \
-                  OR (digest_interval = 'daily' AND digest_last_sent_at < NOW() - INTERVAL '1 day'))",
-        )
-        .fetch_all(&self.pool)
-        .await?;
+        let due_settings =
+            NotificationPreferenceRepo::list_users_due_for_digest(&self.pool).await?;
 
-        for (user_id,) in &due_users {
-            if let Err(e) = self.send_digest(*user_id).await {
-                tracing::error!(user_id, error = %e, "Failed to send digest for user");
+        for settings in &due_settings {
+            if let Err(e) = self.send_digest(settings.user_id).await {
+                tracing::error!(
+                    user_id = settings.user_id,
+                    error = %e,
+                    "Failed to send digest for user"
+                );
             }
         }
 
-        if !due_users.is_empty() {
-            tracing::info!(count = due_users.len(), "Processed digest deliveries");
+        if !due_settings.is_empty() {
+            tracing::info!(count = due_settings.len(), "Processed digest deliveries");
         }
 
         Ok(())
@@ -83,36 +81,20 @@ impl DigestScheduler {
     /// last-sent timestamp. The actual aggregation and external delivery
     /// (email/webhook) will be added when SMTP and the job system are
     /// available.
-    async fn send_digest(&self, user_id: DbId) -> Result<(), sqlx::Error> {
-        let count: i64 = sqlx::query_scalar(
-            "SELECT COUNT(*) FROM notifications \
-             WHERE user_id = $1 AND is_delivered = false AND channel = 'digest'",
-        )
-        .bind(user_id)
-        .fetch_one(&self.pool)
-        .await?;
+    async fn send_digest(&self, user_id: trulience_core::types::DbId) -> Result<(), sqlx::Error> {
+        let count =
+            NotificationRepo::pending_count_for_channel(&self.pool, user_id, CHANNEL_DIGEST)
+                .await?;
 
         if count == 0 {
             return Ok(());
         }
 
         // Mark digest notifications as delivered.
-        sqlx::query(
-            "UPDATE notifications SET is_delivered = true, delivered_at = NOW() \
-             WHERE user_id = $1 AND is_delivered = false AND channel = 'digest'",
-        )
-        .bind(user_id)
-        .execute(&self.pool)
-        .await?;
+        NotificationRepo::mark_channel_delivered(&self.pool, user_id, CHANNEL_DIGEST).await?;
 
         // Update last-sent timestamp.
-        sqlx::query(
-            "UPDATE user_notification_settings SET digest_last_sent_at = NOW() \
-             WHERE user_id = $1",
-        )
-        .bind(user_id)
-        .execute(&self.pool)
-        .await?;
+        NotificationPreferenceRepo::mark_digest_sent(&self.pool, user_id).await?;
 
         tracing::info!(user_id, notification_count = count, "Digest delivered");
 

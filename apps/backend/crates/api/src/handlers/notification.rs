@@ -7,6 +7,7 @@ use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::Json;
 use serde::Deserialize;
+use trulience_core::channels::CHANNEL_IN_APP;
 use trulience_core::error::CoreError;
 use trulience_core::types::DbId;
 use trulience_db::models::notification::{UpdateNotificationSettings, UpdatePreference};
@@ -146,7 +147,7 @@ pub async fn update_preference(
     let is_enabled = input.is_enabled.unwrap_or(true);
     let channels = input
         .channels
-        .unwrap_or_else(|| serde_json::json!(["in_app"]));
+        .unwrap_or_else(|| serde_json::json!([CHANNEL_IN_APP]));
     let scope = input.scope.unwrap_or_else(|| "all".to_string());
 
     let pref = NotificationPreferenceRepo::upsert(
