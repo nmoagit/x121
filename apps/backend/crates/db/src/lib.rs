@@ -1,4 +1,5 @@
 pub mod models;
+pub mod repositories;
 
 use std::time::Duration;
 
