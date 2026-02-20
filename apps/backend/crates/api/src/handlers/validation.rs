@@ -8,6 +8,7 @@ use axum::http::StatusCode;
 use axum::Json;
 use serde::Deserialize;
 use trulience_core::error::CoreError;
+use trulience_core::import_status::{IMPORT_STATUS_COMMITTED, IMPORT_STATUS_PREVIEW, IMPORT_STATUS_PREVIEW_ID};
 use trulience_core::types::DbId;
 use trulience_core::validation::conflict::ConflictResolutionChoice;
 use trulience_core::validation::evaluator::evaluate_rules;
@@ -196,14 +197,14 @@ pub async fn commit_import(
             id: report_id,
         }))?;
 
-    // Only "preview" reports can be committed (status_id 1 = preview).
-    if report.status_id != 1 {
+    // Only "preview" reports can be committed.
+    if report.status_id != IMPORT_STATUS_PREVIEW_ID {
         return Err(AppError::Core(CoreError::Conflict(
             "Only reports in 'preview' status can be committed".to_string(),
         )));
     }
 
-    let updated = ImportReportRepo::update_status(&state.pool, report_id, "committed")
+    let updated = ImportReportRepo::update_status(&state.pool, report_id, IMPORT_STATUS_COMMITTED)
         .await?
         .ok_or(AppError::InternalError(
             "Failed to update report status".to_string(),
@@ -305,7 +306,7 @@ async fn persist_preview_report(
     preview: &ImportPreview,
 ) -> Result<trulience_db::models::validation::ImportReport, AppError> {
     let input = CreateImportReport {
-        status: "preview".to_string(),
+        status: IMPORT_STATUS_PREVIEW.to_string(),
         source_type: "api".to_string(),
         source_reference: None,
         entity_type: entity_type.to_string(),
@@ -333,7 +334,7 @@ fn build_report_entries(report_id: DbId, preview: &ImportPreview) -> Vec<CreateI
             report_id,
             record_index: entry.record_index as i32,
             entity_id: entry.entity_id,
-            action: format!("{:?}", entry.action).to_lowercase(),
+            action: entry.action.as_str().to_string(),
             field_errors: serde_json::to_value(&entry.validation_result.errors).unwrap_or_default(),
             field_warnings: serde_json::to_value(&entry.validation_result.warnings)
                 .unwrap_or_default(),

@@ -54,9 +54,7 @@ impl EventPersistence {
     async fn persist(pool: &DbPool, event: &PlatformEvent) -> Result<DbId, sqlx::Error> {
         let event_type = EventRepo::get_event_type_by_name(pool, &event.event_type)
             .await?
-            .ok_or_else(|| {
-                sqlx::Error::RowNotFound
-            })?;
+            .ok_or_else(|| sqlx::Error::RowNotFound)?;
 
         EventRepo::insert(
             pool,

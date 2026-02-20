@@ -16,6 +16,18 @@ pub enum ImportAction {
     Reject,
 }
 
+impl ImportAction {
+    /// Stable string representation matching serde's `rename_all = "snake_case"`.
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Create => "create",
+            Self::Update => "update",
+            Self::Skip => "skip",
+            Self::Reject => "reject",
+        }
+    }
+}
+
 /// Field-level diff between current and incoming value.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FieldDiff {

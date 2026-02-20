@@ -33,20 +33,7 @@ impl ValidationRuleRepo {
         entity_type: &str,
         project_id: Option<DbId>,
     ) -> Result<Vec<ValidationRuleRow>, sqlx::Error> {
-        let sql = format!(
-            "SELECT {RULE_COLUMNS} \
-             FROM validation_rules vr \
-             JOIN validation_rule_types vrt ON vrt.id = vr.rule_type_id \
-             WHERE vr.entity_type = $1 \
-               AND vr.is_active = true \
-               AND (vr.project_id IS NULL OR vr.project_id = $2) \
-             ORDER BY vr.sort_order, vr.id"
-        );
-        sqlx::query_as::<_, ValidationRuleRow>(&sql)
-            .bind(entity_type)
-            .bind(project_id)
-            .fetch_all(pool)
-            .await
+        Self::query_rules(pool, entity_type, project_id, true).await
     }
 
     /// List all rules for an entity type (regardless of active state),
@@ -56,11 +43,27 @@ impl ValidationRuleRepo {
         entity_type: &str,
         project_id: Option<DbId>,
     ) -> Result<Vec<ValidationRuleRow>, sqlx::Error> {
+        Self::query_rules(pool, entity_type, project_id, false).await
+    }
+
+    /// Shared query for loading rules with optional active-only filter.
+    async fn query_rules(
+        pool: &PgPool,
+        entity_type: &str,
+        project_id: Option<DbId>,
+        active_only: bool,
+    ) -> Result<Vec<ValidationRuleRow>, sqlx::Error> {
+        let active_clause = if active_only {
+            "AND vr.is_active = true "
+        } else {
+            ""
+        };
         let sql = format!(
             "SELECT {RULE_COLUMNS} \
              FROM validation_rules vr \
              JOIN validation_rule_types vrt ON vrt.id = vr.rule_type_id \
              WHERE vr.entity_type = $1 \
+               {active_clause}\
                AND (vr.project_id IS NULL OR vr.project_id = $2) \
              ORDER BY vr.sort_order, vr.id"
         );
