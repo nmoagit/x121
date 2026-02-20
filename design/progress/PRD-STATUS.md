@@ -21,10 +21,10 @@ Source of truth: [`design/design.md`](../design.md)
 | Status | Count |
 |--------|-------|
 | backlog | 0 |
-| planning | 100 |
+| planning | 99 |
 | in-progress | 0 |
 | review | 0 |
-| done | 9 |
+| done | 10 |
 | blocked | 0 |
 | deferred | 0 |
 | maybe | 15 |
@@ -69,7 +69,7 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD | Title | Priority | Status | Owner | Notes |
 |-----|-------|----------|--------|-------|-------|
 | PRD-13 | Dual-Metadata System (JSON) | — | `planning` | — | |
-| PRD-14 | Data Validation & Import Integrity | — | `planning` | — | |
+| PRD-14 | Data Validation & Import Integrity | — | `done` | 2026-02-20 | Validation engine (8 rule types), import preview/commit, report export (JSON/CSV), 12 integration tests, 33 unit tests. |
 | PRD-15 | Intelligent & Deferred Disk Reclamation | — | `planning` | — | |
 | PRD-16 | Folder-to-Entity Bulk Importer | — | `planning` | — | |
 | PRD-17 | Asset Registry & Dependency Mapping | — | `planning` | — | |

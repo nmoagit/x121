@@ -83,12 +83,12 @@ CREATE TRIGGER set_updated_at BEFORE UPDATE ON validation_rules
 ```
 
 **Acceptance Criteria:**
-- [ ] `validation_rule_types` lookup table seeded with built-in rule types
-- [ ] `validation_rules` stores per-entity, per-field rules with JSONB config
-- [ ] `project_id` is nullable — NULL means global rule, non-NULL is project-specific
-- [ ] `severity` supports 'error' (blocks import) and 'warning' (informational)
-- [ ] All FK columns are indexed
-- [ ] Migration applies cleanly
+- [x] `validation_rule_types` lookup table seeded with built-in rule types
+- [x] `validation_rules` stores per-entity, per-field rules with JSONB config
+- [x] `project_id` is nullable — NULL means global rule, non-NULL is project-specific
+- [x] `severity` supports 'error' (blocks import) and 'warning' (informational)
+- [x] All FK columns are indexed
+- [x] Migration applies cleanly
 
 ### Task 1.2: Import Reports Table
 **File:** `migrations/{timestamp}_create_import_reports.sql`
@@ -160,12 +160,12 @@ CREATE TRIGGER set_updated_at BEFORE UPDATE ON import_report_entries
 ```
 
 **Acceptance Criteria:**
-- [ ] `import_report_statuses` seeded with preview, committed, partial, failed, cancelled
-- [ ] `import_reports` tracks summary counts (total, accepted, rejected, auto-corrected, skipped)
-- [ ] `import_report_entries` stores per-record details including errors, warnings, diffs, conflicts
-- [ ] `report_data` JSONB stores full machine-readable report
-- [ ] All FK columns indexed, all tables have updated_at trigger
-- [ ] Migration applies cleanly
+- [x] `import_report_statuses` seeded with preview, committed, partial, failed, cancelled
+- [x] `import_reports` tracks summary counts (total, accepted, rejected, auto-corrected, skipped)
+- [x] `import_report_entries` stores per-record details including errors, warnings, diffs, conflicts
+- [x] `report_data` JSONB stores full machine-readable report
+- [x] All FK columns indexed, all tables have updated_at trigger
+- [x] Migration applies cleanly
 
 ### Task 1.3: Seed Default Validation Rules
 **File:** `migrations/{timestamp}_seed_default_validation_rules.sql`
@@ -192,10 +192,10 @@ INSERT INTO validation_rules (entity_type, field_name, rule_type_id, config, err
 ```
 
 **Acceptance Criteria:**
-- [ ] Default rules seeded for characters, scenes, and segments
-- [ ] Rules reference `validation_rule_types` by name (subquery)
-- [ ] Error messages are user-friendly, not technical
-- [ ] Migration applies cleanly
+- [x] Default rules seeded for characters, scenes, and segments
+- [x] Rules reference `validation_rule_types` by name (subquery)
+- [x] Error messages are user-friendly, not technical
+- [x] Migration applies cleanly
 
 ---
 
@@ -245,10 +245,10 @@ pub struct FieldViolation {
 ```
 
 **Acceptance Criteria:**
-- [ ] `ValidationRule` represents a rule loaded from the DB
-- [ ] `ValidationResult` aggregates errors and warnings with `is_valid` flag
-- [ ] `FieldViolation` includes field name, rule type, message, and offending value
-- [ ] Types are serializable for API responses
+- [x] `ValidationRule` represents a rule loaded from the DB
+- [x] `ValidationResult` aggregates errors and warnings with `is_valid` flag
+- [x] `FieldViolation` includes field name, rule type, message, and offending value
+- [x] Types are serializable for API responses
 
 ### Task 2.2: Rule Loader
 **File:** `src/validation/loader.rs`
@@ -283,10 +283,10 @@ pub async fn load_rules(
 ```
 
 **Acceptance Criteria:**
-- [ ] Loads global rules (project_id IS NULL) for the entity type
-- [ ] Loads project-specific rules when project_id is provided
-- [ ] Only loads active rules (`is_active = true`)
-- [ ] Rules are ordered by `sort_order`
+- [x] Loads global rules (project_id IS NULL) for the entity type
+- [x] Loads project-specific rules when project_id is provided
+- [x] Only loads active rules (`is_active = true`)
+- [x] Rules are ordered by `sort_order`
 
 ### Task 2.3: Rule Evaluator
 **File:** `src/validation/evaluator.rs`
@@ -340,12 +340,12 @@ fn evaluate_single_rule(
 ```
 
 **Acceptance Criteria:**
-- [ ] Evaluates all built-in rule types: required, type_check, min/max_length, min/max_value, enum_values, regex_pattern
-- [ ] Returns aggregated `ValidationResult` with errors and warnings separated
-- [ ] `is_valid` is false if any error-severity violations exist
-- [ ] Warnings do not block validation
-- [ ] Validation adds <500ms per 100 records (per success metric)
-- [ ] Unit tests for each rule type
+- [x] Evaluates all built-in rule types: required, type_check, min/max_length, min/max_value, enum_values, regex_pattern
+- [x] Returns aggregated `ValidationResult` with errors and warnings separated
+- [x] `is_valid` is false if any error-severity violations exist
+- [x] Warnings do not block validation
+- [x] Validation adds <500ms per 100 records (per success metric)
+- [x] Unit tests for each rule type
 
 ### Task 2.4: Validation Service
 **File:** `src/validation/service.rs`
@@ -385,10 +385,10 @@ impl ValidationService {
 ```
 
 **Acceptance Criteria:**
-- [ ] `validate_entity` loads rules and validates a single record
-- [ ] `validate_batch` loads rules once and validates multiple records efficiently
-- [ ] Rules are loaded from DB, not hardcoded
-- [ ] Project-specific rules override/extend global rules
+- [x] `validate_entity` loads rules and validates a single record
+- [x] `validate_batch` loads rules once and validates multiple records efficiently
+- [x] Rules are loaded from DB, not hardcoded
+- [x] Project-specific rules override/extend global rules
 
 ---
 
@@ -470,11 +470,11 @@ pub async fn generate_import_preview(
 ```
 
 **Acceptance Criteria:**
-- [ ] Preview classifies each record as create, update, skip, or invalid
-- [ ] Updates include field-level diffs (current value vs. incoming value)
-- [ ] Invalid records include specific validation errors
-- [ ] Preview does not modify the database
-- [ ] Preview accurately predicts import outcome (per success metric)
+- [x] Preview classifies each record as create, update, skip, or invalid
+- [x] Updates include field-level diffs (current value vs. incoming value)
+- [x] Invalid records include specific validation errors
+- [x] Preview does not modify the database
+- [x] Preview accurately predicts import outcome (per success metric)
 
 ### Task 3.2: Conflict Detection
 **File:** `src/validation/conflict.rs`
@@ -521,11 +521,11 @@ fn suggest_resolution(
 ```
 
 **Acceptance Criteria:**
-- [ ] Detects field-level conflicts between existing DB record and incoming data
-- [ ] Provides resolution options: KeepDb, KeepFile, Merge
-- [ ] Suggests default resolution based on field type heuristics
-- [ ] Ignores specified fields (e.g., `id`, `created_at`, `updated_at`)
-- [ ] Conflicts are included in the import preview
+- [x] Detects field-level conflicts between existing DB record and incoming data
+- [x] Provides resolution options: KeepDb, KeepFile, Merge
+- [x] Suggests default resolution based on field type heuristics
+- [x] Ignores specified fields (e.g., `id`, `created_at`, `updated_at`)
+- [x] Conflicts are included in the import preview
 
 ### Task 3.3: Conflict Resolution Applier
 **File:** `src/validation/conflict.rs`
@@ -568,11 +568,11 @@ pub fn apply_resolutions(
 ```
 
 **Acceptance Criteria:**
-- [ ] Applies KeepDb resolution by restoring DB value
-- [ ] Applies KeepFile resolution by keeping incoming value
-- [ ] Applies Merge resolution with a custom value
-- [ ] Produces a clean final record ready for insertion/update
-- [ ] Resolution choices are recorded in the import report
+- [x] Applies KeepDb resolution by restoring DB value
+- [x] Applies KeepFile resolution by keeping incoming value
+- [x] Applies Merge resolution with a custom value
+- [x] Produces a clean final record ready for insertion/update
+- [x] Resolution choices are recorded in the import report
 
 ---
 
@@ -643,11 +643,11 @@ pub async fn create_import_report(
 ```
 
 **Acceptance Criteria:**
-- [ ] Creates a report record with summary counts
-- [ ] Creates per-record entries with errors, warnings, diffs, conflicts
-- [ ] Report status matches the import stage (preview, committed, etc.)
-- [ ] Full report data stored as JSONB for detailed queries
-- [ ] Returns the report ID for retrieval
+- [x] Creates a report record with summary counts
+- [x] Creates per-record entries with errors, warnings, diffs, conflicts
+- [x] Report status matches the import stage (preview, committed, etc.)
+- [x] Full report data stored as JSONB for detailed queries
+- [x] Returns the report ID for retrieval
 
 ### Task 4.2: Report Export Service
 **File:** `src/validation/report.rs`
@@ -691,10 +691,10 @@ pub async fn export_report_csv(
 ```
 
 **Acceptance Criteria:**
-- [ ] JSON export includes full report with all entries
-- [ ] CSV export includes one row per record with key fields
-- [ ] Exported data is complete and auditable
-- [ ] Report retrieval is efficient (indexed by report_id)
+- [x] JSON export includes full report with all entries
+- [x] CSV export includes one row per record with key fields
+- [x] Exported data is complete and auditable
+- [x] Report retrieval is efficient (indexed by report_id)
 
 ---
 
@@ -736,11 +736,11 @@ pub async fn validate_import(
 ```
 
 **Acceptance Criteria:**
-- [ ] `POST /api/validate` accepts entity_type, records array, and optional project_id
-- [ ] Returns import preview with create/update/skip/invalid categorization
-- [ ] Creates a persistent preview report
-- [ ] Returns report_id for later retrieval
-- [ ] No database modifications to entity tables
+- [x] `POST /api/validate` accepts entity_type, records array, and optional project_id
+- [x] Returns import preview with create/update/skip/invalid categorization
+- [x] Creates a persistent preview report
+- [x] Returns report_id for later retrieval
+- [x] No database modifications to entity tables
 
 ### Task 5.2: Import Commit Endpoint
 **File:** `src/routes/validation.rs`
@@ -767,11 +767,11 @@ pub async fn commit_import(
 ```
 
 **Acceptance Criteria:**
-- [ ] `POST /api/imports/:id/commit` commits a previewed import
-- [ ] Accepts conflict resolutions for each conflicting field
-- [ ] Executes all changes in a single database transaction
-- [ ] Updates the import report status to 'committed'
-- [ ] Returns the final report with actual outcomes
+- [x] `POST /api/imports/:id/commit` commits a previewed import
+- [x] Accepts conflict resolutions for each conflicting field
+- [x] Executes all changes in a single database transaction
+- [x] Updates the import report status to 'committed'
+- [x] Returns the final report with actual outcomes
 
 ### Task 5.3: Report Retrieval Endpoint
 **File:** `src/routes/validation.rs`
@@ -800,10 +800,10 @@ pub async fn export_report_csv_endpoint(
 ```
 
 **Acceptance Criteria:**
-- [ ] `GET /api/imports/:id/report` returns full report as JSON
-- [ ] `GET /api/imports/:id/report/csv` returns report as CSV download
-- [ ] Returns 404 for nonexistent report IDs
-- [ ] CSV has proper headers and encoding
+- [x] `GET /api/imports/:id/report` returns full report as JSON
+- [x] `GET /api/imports/:id/report/csv` returns report as CSV download
+- [x] Returns 404 for nonexistent report IDs
+- [x] CSV has proper headers and encoding
 
 ### Task 5.4: Route Registration
 **File:** `src/routes/mod.rs`
@@ -811,9 +811,9 @@ pub async fn export_report_csv_endpoint(
 Register validation routes.
 
 **Acceptance Criteria:**
-- [ ] All validation/import endpoints are registered
-- [ ] Routes use correct HTTP methods
-- [ ] Router integrates with the main application router
+- [x] All validation/import endpoints are registered
+- [x] Routes use correct HTTP methods
+- [x] Router integrates with the main application router
 
 ---
 
@@ -911,12 +911,12 @@ Display stored validation reports with export options.
 Test each built-in rule type.
 
 **Acceptance Criteria:**
-- [ ] Test required rule: passes with value, fails without
-- [ ] Test max_length rule: passes within limit, fails over
-- [ ] Test min_value/max_value rules: boundary conditions
-- [ ] Test enum_values rule: passes for valid, fails for invalid
-- [ ] Test regex_pattern rule: matches and non-matches
-- [ ] Test combined rules on a single entity
+- [x] Test required rule: passes with value, fails without
+- [x] Test max_length rule: passes within limit, fails over
+- [x] Test min_value/max_value rules: boundary conditions
+- [x] Test enum_values rule: passes for valid, fails for invalid
+- [x] Test regex_pattern rule: matches and non-matches
+- [x] Test combined rules on a single entity
 
 ### Task 7.2: Import Preview Integration Tests
 **File:** `tests/validation_import_tests.rs`
@@ -924,11 +924,11 @@ Test each built-in rule type.
 Test full import preview flow against test database.
 
 **Acceptance Criteria:**
-- [ ] Preview correctly identifies records to create (no existing match)
-- [ ] Preview correctly identifies records to update (existing match with changes)
-- [ ] Preview correctly identifies records to skip (no changes)
-- [ ] Preview correctly flags invalid records with specific errors
-- [ ] Conflict detection works for differing field values
+- [x] Preview correctly identifies records to create (no existing match)
+- [x] Preview correctly identifies records to update (existing match with changes)
+- [x] Preview correctly identifies records to skip (no changes)
+- [x] Preview correctly flags invalid records with specific errors
+- [x] Conflict detection works for differing field values
 
 ### Task 7.3: Report Persistence Tests
 **File:** `tests/validation_report_tests.rs`
@@ -936,10 +936,10 @@ Test full import preview flow against test database.
 Test report creation, storage, and export.
 
 **Acceptance Criteria:**
-- [ ] Report created with correct summary counts
-- [ ] Per-record entries stored with errors, warnings, diffs
-- [ ] JSON export matches stored data
-- [ ] CSV export is well-formed
+- [x] Report created with correct summary counts
+- [x] Per-record entries stored with errors, warnings, diffs
+- [x] JSON export matches stored data
+- [x] CSV export is well-formed
 
 ---
 
