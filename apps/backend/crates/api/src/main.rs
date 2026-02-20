@@ -1,15 +1,28 @@
 use std::net::SocketAddr;
+use std::sync::Arc;
+use std::time::Duration;
 
+use axum::http::header::{AUTHORIZATION, CONTENT_TYPE};
+use axum::http::{HeaderName, Method, StatusCode};
 use axum::Router;
-use tower_http::trace::TraceLayer;
+use tower_http::catch_panic::CatchPanicLayer;
+use tower_http::cors::CorsLayer;
+use tower_http::request_id::{MakeRequestUuid, PropagateRequestIdLayer, SetRequestIdLayer};
+use tower_http::timeout::TimeoutLayer;
+use tower_http::trace::{DefaultMakeSpan, DefaultOnResponse, TraceLayer};
+use tracing::Level;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
-mod routes;
+use trulience_api::config::ServerConfig;
+use trulience_api::{routes, state, ws};
+
+use state::AppState;
 
 #[tokio::main]
 async fn main() {
     dotenvy::dotenv().ok();
 
+    // --- Tracing ---
     tracing_subscriber::registry()
         .with(
             tracing_subscriber::EnvFilter::try_from_default_env()
@@ -18,6 +31,11 @@ async fn main() {
         .with(tracing_subscriber::fmt::layer())
         .init();
 
+    // --- Configuration ---
+    let config = ServerConfig::from_env();
+    tracing::info!(host = %config.host, port = %config.port, "Loaded server configuration");
+
+    // --- Database ---
     let database_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
 
     let pool = trulience_db::create_pool(&database_url)
@@ -35,19 +53,143 @@ async fn main() {
         .expect("Failed to run database migrations");
     tracing::info!("Database migrations applied");
 
+    // --- CORS ---
+    let cors = build_cors_layer(&config);
+
+    // --- WebSocket manager ---
+    let ws_manager = Arc::new(ws::WsManager::new());
+
+    // --- Heartbeat ---
+    let heartbeat_handle = ws::start_heartbeat(Arc::clone(&ws_manager));
+
+    // --- App state ---
+    let state = AppState {
+        pool,
+        config: Arc::new(config.clone()),
+        ws_manager: Arc::clone(&ws_manager),
+    };
+
+    // --- Request ID header name ---
+    let request_id_header = HeaderName::from_static("x-request-id");
+
+    // --- Router ---
     let app = Router::new()
+        // Health check at root level (not under /api/v1).
         .merge(routes::health::router())
-        .layer(TraceLayer::new_for_http());
+        // API v1 routes.
+        .nest("/api/v1", routes::api_routes())
+        // -- Middleware stack (applied bottom-up) --
+        // Panic recovery: catch panics and return 500 JSON.
+        .layer(CatchPanicLayer::new())
+        // Request timeout.
+        .layer(TimeoutLayer::with_status_code(
+            StatusCode::REQUEST_TIMEOUT,
+            Duration::from_secs(config.request_timeout_secs),
+        ))
+        // Propagate request ID to response.
+        .layer(PropagateRequestIdLayer::new(request_id_header.clone()))
+        // Structured request/response tracing.
+        .layer(
+            TraceLayer::new_for_http()
+                .make_span_with(DefaultMakeSpan::new().level(Level::INFO))
+                .on_response(DefaultOnResponse::new().level(Level::INFO)),
+        )
+        // Set request ID on incoming requests.
+        .layer(SetRequestIdLayer::new(
+            request_id_header,
+            MakeRequestUuid,
+        ))
+        // CORS.
+        .layer(cors)
+        // Shared state.
+        .with_state(state);
 
-    let host = std::env::var("HOST").unwrap_or_else(|_| "0.0.0.0".into());
-    let port: u16 = std::env::var("PORT")
-        .unwrap_or_else(|_| "3000".into())
-        .parse()
-        .expect("PORT must be a number");
+    // --- Start server ---
+    let addr = SocketAddr::new(
+        config.host.parse().expect("Invalid HOST address"),
+        config.port,
+    );
+    tracing::info!(%addr, "Starting server");
 
-    let addr = SocketAddr::new(host.parse().expect("Invalid HOST"), port);
-    tracing::info!("Starting server on {addr}");
+    let listener = tokio::net::TcpListener::bind(addr)
+        .await
+        .expect("Failed to bind to address");
 
-    let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
-    axum::serve(listener, app).await.unwrap();
+    axum::serve(listener, app)
+        .with_graceful_shutdown(shutdown_signal())
+        .await
+        .expect("Server error");
+
+    // --- Post-shutdown cleanup ---
+    tracing::info!("Server stopped accepting connections, cleaning up");
+
+    let ws_count = ws_manager.connection_count().await;
+    tracing::info!(ws_count, "Closing remaining WebSocket connections");
+    ws_manager.shutdown_all().await;
+
+    heartbeat_handle.abort();
+    tracing::info!("Heartbeat task stopped");
+
+    tracing::info!("Graceful shutdown complete");
+}
+
+/// Wait for a termination signal to initiate graceful shutdown.
+///
+/// Handles both SIGINT (Ctrl-C) and SIGTERM (on Unix) so the server
+/// shuts down cleanly whether stopped interactively or by a process
+/// manager (e.g. systemd, Docker, Kubernetes).
+async fn shutdown_signal() {
+    let ctrl_c = async {
+        tokio::signal::ctrl_c()
+            .await
+            .expect("Failed to install Ctrl-C handler");
+    };
+
+    #[cfg(unix)]
+    let terminate = async {
+        tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate())
+            .expect("Failed to install SIGTERM handler")
+            .recv()
+            .await;
+    };
+
+    #[cfg(not(unix))]
+    let terminate = std::future::pending::<()>();
+
+    tokio::select! {
+        () = ctrl_c => {
+            tracing::info!("Received SIGINT (Ctrl-C), starting graceful shutdown");
+        }
+        () = terminate => {
+            tracing::info!("Received SIGTERM, starting graceful shutdown");
+        }
+    }
+}
+
+/// Build the CORS middleware layer from server configuration.
+///
+/// Panics at startup if any configured origin is invalid, which is the
+/// desired behaviour -- we want misconfiguration to fail fast.
+fn build_cors_layer(config: &ServerConfig) -> CorsLayer {
+    let origins: Vec<_> = config
+        .cors_origins
+        .iter()
+        .map(|o| {
+            o.parse()
+                .unwrap_or_else(|e| panic!("Invalid CORS origin '{o}': {e}"))
+        })
+        .collect();
+
+    CorsLayer::new()
+        .allow_origin(origins)
+        .allow_methods([
+            Method::GET,
+            Method::POST,
+            Method::PUT,
+            Method::DELETE,
+            Method::PATCH,
+        ])
+        .allow_headers([CONTENT_TYPE, AUTHORIZATION])
+        .allow_credentials(true)
+        .max_age(Duration::from_secs(3600))
 }

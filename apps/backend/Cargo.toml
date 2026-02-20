@@ -21,8 +21,8 @@ tokio = { version = "1", features = ["full"] }
 
 # Web framework
 axum = { version = "0.8", features = ["ws", "macros"] }
-tower = "0.5"
-tower-http = { version = "0.6", features = ["cors", "compression-gzip", "trace", "request-id"] }
+tower = { version = "0.5", features = ["util"] }
+tower-http = { version = "0.6", features = ["cors", "compression-gzip", "trace", "request-id", "timeout", "catch-panic"] }
 
 # Serialization
 serde = { version = "1", features = ["derive"] }
@@ -45,7 +45,7 @@ argon2 = "0.5"
 
 # Types
 chrono = { version = "0.4", features = ["serde"] }
-uuid = { version = "1", features = ["v7", "serde"] }
+uuid = { version = "1", features = ["v4", "v7", "serde"] }
 
 # Validation
 validator = { version = "0.19", features = ["derive"] }
@@ -56,8 +56,12 @@ dotenvy = "0.15"
 # WebSocket
 tokio-tungstenite = { version = "0.24", features = ["rustls-tls-webpki-roots"] }
 
+# Async streams / futures combinators
+futures = "0.3"
+
 # Testing
 assert_matches = "1"
+http-body-util = "0.1"
 
 # Workspace crates
 trulience-core = { path = "crates/core" }

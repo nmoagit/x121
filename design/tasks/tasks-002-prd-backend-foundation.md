@@ -81,12 +81,12 @@ impl ServerConfig {
 ```
 
 **Acceptance Criteria:**
-- [ ] `AppConfig` wraps `DbConfig` and `ServerConfig`
-- [ ] `SERVER_HOST` (default `0.0.0.0`), `SERVER_PORT` (default `3000`) configurable
-- [ ] `CORS_ORIGINS` configurable as comma-separated list
-- [ ] `REQUEST_TIMEOUT_SECS` (default `30`), `SHUTDOWN_TIMEOUT_SECS` (default `30`) configurable
-- [ ] `LOG_LEVEL` (default `info`) configurable
-- [ ] `.env.example` updated with all new variables documented
+- [x] `AppConfig` wraps `DbConfig` and `ServerConfig`
+- [x] `SERVER_HOST` (default `0.0.0.0`), `SERVER_PORT` (default `3000`) configurable
+- [x] `CORS_ORIGINS` configurable as comma-separated list
+- [x] `REQUEST_TIMEOUT_SECS` (default `30`), `SHUTDOWN_TIMEOUT_SECS` (default `30`) configurable
+- [x] `LOG_LEVEL` (default `info`) configurable
+- [x] `.env.example` updated with all new variables documented
 
 ### Task 1.2: Create `.env.example` Template
 **File:** `.env.example`
@@ -112,9 +112,9 @@ LOG_LEVEL=info
 ```
 
 **Acceptance Criteria:**
-- [ ] `.env.example` documents every env var with comments
-- [ ] Sensitive values use placeholder text
-- [ ] File is committed to version control (not in `.gitignore`)
+- [x] `.env.example` documents every env var with comments
+- [x] Sensitive values use placeholder text
+- [x] File is committed to version control (not in `.gitignore`)
 
 ---
 
@@ -140,9 +140,9 @@ pub struct AppState {
 ```
 
 **Acceptance Criteria:**
-- [ ] `AppState` holds `PgPool`, `Arc<AppConfig>`, `Arc<WsManager>`
-- [ ] `AppState` derives `Clone` (required by Axum)
-- [ ] All handlers can access state via `State(state): State<AppState>`
+- [x] `AppState` holds `PgPool`, `Arc<AppConfig>`, `Arc<WsManager>`
+- [x] `AppState` derives `Clone` (required by Axum)
+- [x] All handlers can access state via `State(state): State<AppState>`
 
 ### Task 2.2: Axum Server Bootstrap
 **File:** `src/server.rs`
@@ -181,11 +181,11 @@ pub async fn start(state: AppState) -> Result<(), Box<dyn std::error::Error>> {
 ```
 
 **Acceptance Criteria:**
-- [ ] Server listens on configured host:port
-- [ ] Routes nested under `/api/v1` for API, `/ws` for WebSocket, `/health` for health check
-- [ ] `tower-http` middleware applied: TraceLayer, CorsLayer, TimeoutLayer
-- [ ] `tower-http` added to `Cargo.toml` with features: `cors`, `trace`, `timeout`
-- [ ] Health check endpoint returns 200 with `{"status": "ok"}`
+- [x] Server listens on configured host:port
+- [x] Routes nested under `/api/v1` for API, `/ws` for WebSocket, `/health` for health check
+- [x] `tower-http` middleware applied: TraceLayer, CorsLayer, TimeoutLayer
+- [x] `tower-http` added to `Cargo.toml` with features: `cors`, `trace`, `timeout`
+- [x] Health check endpoint returns 200 with `{"status": "ok"}`
 
 ### Task 2.3: Modular Route Registration
 **File:** `src/api/routes.rs`
@@ -212,10 +212,10 @@ pub fn ws_routes() -> Router<AppState> {
 ```
 
 **Acceptance Criteria:**
-- [ ] `api_routes()` returns a `Router<AppState>` with nested sub-routers
-- [ ] `ws_routes()` returns a separate router for WebSocket endpoints
-- [ ] New feature modules add routes by adding a `.nest()` call — no other files need modification
-- [ ] Route structure is documented with comments showing which PRD owns each route group
+- [x] `api_routes()` returns a `Router<AppState>` with nested sub-routers
+- [x] `ws_routes()` returns a separate router for WebSocket endpoints
+- [x] New feature modules add routes by adding a `.nest()` call — no other files need modification
+- [x] Route structure is documented with comments showing which PRD owns each route group
 
 ### Task 2.4: Update Main Entry Point
 **File:** `src/main.rs`
@@ -267,10 +267,10 @@ async fn main() {
 ```
 
 **Acceptance Criteria:**
-- [ ] `main.rs` initializes config, tracing, pool, migrations, state, server in order
-- [ ] All modules are declared
-- [ ] `cargo run` starts the Axum server and accepts HTTP requests
-- [ ] Server startup logs show each initialization step
+- [x] `main.rs` initializes config, tracing, pool, migrations, state, server in order
+- [x] All modules are declared
+- [x] `cargo run` starts the Axum server and accepts HTTP requests
+- [x] Server startup logs show each initialization step
 
 ---
 
@@ -353,12 +353,12 @@ impl From<sqlx::Error> for AppError {
 ```
 
 **Acceptance Criteria:**
-- [ ] `AppError` enum covers: NotFound, BadRequest, Conflict, InternalError, DatabaseError, Unauthorized, Forbidden
-- [ ] Implements `IntoResponse` with consistent JSON: `{ error, code, details? }`
-- [ ] Database unique constraint violations map to 409 Conflict with constraint name
-- [ ] `RowNotFound` maps to 404
-- [ ] Internal errors log full details but return sanitized messages
-- [ ] `From<sqlx::Error>` implemented for ergonomic `?` usage
+- [x] `AppError` enum covers: NotFound, BadRequest, Conflict, InternalError, DatabaseError, Unauthorized, Forbidden
+- [x] Implements `IntoResponse` with consistent JSON: `{ error, code, details? }`
+- [x] Database unique constraint violations map to 409 Conflict with constraint name
+- [x] `RowNotFound` maps to 404
+- [x] Internal errors log full details but return sanitized messages
+- [x] `From<sqlx::Error>` implemented for ergonomic `?` usage
 
 ### Task 3.2: Panic Recovery Middleware
 **File:** `src/server.rs` (add to middleware stack)
@@ -379,10 +379,10 @@ use tower_http::catch_panic::CatchPanicLayer;
 ```
 
 **Acceptance Criteria:**
-- [ ] Handler panics are caught and return 500 with JSON body
-- [ ] Panic details are logged at error level
-- [ ] Server continues serving other requests after a handler panic
-- [ ] `catch-panic` feature enabled on `tower-http`
+- [x] Handler panics are caught and return 500 with JSON body
+- [x] Panic details are logged at error level
+- [x] Server continues serving other requests after a handler panic
+- [x] `catch-panic` feature enabled on `tower-http`
 
 ---
 
@@ -407,11 +407,11 @@ pub fn request_logging_layer() -> TraceLayer<
 ```
 
 **Acceptance Criteria:**
-- [ ] Every request logs: method, path, status code, response time
-- [ ] Log format is structured (JSON or key=value for filtering)
-- [ ] Log level configurable via `LOG_LEVEL` env var
-- [ ] Sensitive headers (Authorization, Cookie) are not logged
-- [ ] `tracing-subscriber` configured with `env-filter` feature for level filtering
+- [x] Every request logs: method, path, status code, response time
+- [x] Log format is structured (JSON or key=value for filtering)
+- [x] Log level configurable via `LOG_LEVEL` env var
+- [x] Sensitive headers (Authorization, Cookie) are not logged
+- [x] `tracing-subscriber` configured with `env-filter` feature for level filtering
 
 ### Task 4.2: Request ID Middleware
 **File:** `src/middleware/request_id.rs`
@@ -441,10 +441,10 @@ pub async fn inject_request_id<B>(
 ```
 
 **Acceptance Criteria:**
-- [ ] Each request gets a unique `X-Request-Id` header
-- [ ] The same ID is returned in the response
-- [ ] The ID is included in all log lines for the request
-- [ ] `uuid` crate added to `Cargo.toml`
+- [x] Each request gets a unique `X-Request-Id` header
+- [x] The same ID is returned in the response
+- [x] The ID is included in all log lines for the request
+- [x] `uuid` crate added to `Cargo.toml`
 
 ---
 
@@ -475,12 +475,12 @@ pub fn cors_layer(config: &ServerConfig) -> CorsLayer {
 ```
 
 **Acceptance Criteria:**
-- [ ] CORS origins read from `AppConfig.server.cors_origins`
-- [ ] Methods: GET, POST, PUT, DELETE, PATCH allowed
-- [ ] Headers: Content-Type, Authorization allowed
-- [ ] Credentials: allowed
-- [ ] Preflight cache max-age: 1 hour
-- [ ] Invalid origin in config causes startup failure with clear error
+- [x] CORS origins read from `AppConfig.server.cors_origins`
+- [x] Methods: GET, POST, PUT, DELETE, PATCH allowed
+- [x] Headers: Content-Type, Authorization allowed
+- [x] Credentials: allowed
+- [x] Preflight cache max-age: 1 hour
+- [x] Invalid origin in config causes startup failure with clear error
 
 ---
 
@@ -546,10 +546,10 @@ impl WsManager {
 ```
 
 **Acceptance Criteria:**
-- [ ] `WsManager` tracks connections in a `RwLock<HashMap<String, WsConnection>>`
-- [ ] `add`, `remove`, `get_by_user`, `broadcast`, `connection_count` methods implemented
-- [ ] Thread-safe: uses `RwLock` for concurrent read access
-- [ ] Each connection has an ID, optional user_id, sender channel, and timestamp
+- [x] `WsManager` tracks connections in a `RwLock<HashMap<String, WsConnection>>`
+- [x] `add`, `remove`, `get_by_user`, `broadcast`, `connection_count` methods implemented
+- [x] Thread-safe: uses `RwLock` for concurrent read access
+- [x] Each connection has an ID, optional user_id, sender channel, and timestamp
 
 ### Task 6.2: WebSocket Upgrade Handler
 **File:** `src/ws/handler.rs`
@@ -624,12 +624,12 @@ async fn handle_socket(mut socket: WebSocket, state: AppState) {
 ```
 
 **Acceptance Criteria:**
-- [ ] WebSocket upgrade from HTTP works at `/ws` endpoint
-- [ ] Each connection gets a unique ID
-- [ ] Messages are received and can be routed to handlers
-- [ ] Disconnection cleans up the connection from `WsManager`
-- [ ] Ping/pong heartbeat is handled (Axum auto-responds to pings)
-- [ ] Connection and disconnection are logged with the connection ID
+- [x] WebSocket upgrade from HTTP works at `/ws` endpoint
+- [x] Each connection gets a unique ID
+- [x] Messages are received and can be routed to handlers
+- [x] Disconnection cleans up the connection from `WsManager`
+- [x] Ping/pong heartbeat is handled (Axum auto-responds to pings)
+- [x] Connection and disconnection are logged with the connection ID
 
 ### Task 6.3: WebSocket Heartbeat
 **File:** `src/ws/heartbeat.rs`
@@ -653,10 +653,10 @@ pub async fn start_heartbeat(ws_manager: Arc<WsManager>) {
 ```
 
 **Acceptance Criteria:**
-- [ ] Ping sent every 30 seconds to all connected clients
-- [ ] Clients that don't respond to pong within timeout are disconnected
-- [ ] Heartbeat task runs as a background Tokio task
-- [ ] Heartbeat interval is configurable
+- [x] Ping sent every 30 seconds to all connected clients
+- [x] Clients that don't respond to pong within timeout are disconnected
+- [x] Heartbeat task runs as a background Tokio task
+- [x] Heartbeat interval is configurable
 
 ---
 
@@ -692,12 +692,12 @@ async fn shutdown_signal() {
 ```
 
 **Acceptance Criteria:**
-- [ ] Handles both SIGINT (Ctrl+C) and SIGTERM
-- [ ] Logs shutdown reason
-- [ ] Active HTTP requests complete before server exits (Axum's `with_graceful_shutdown`)
-- [ ] WebSocket connections receive close frames via `WsManager`
-- [ ] Database pool is dropped cleanly on exit
-- [ ] Configurable shutdown timeout (default 30s)
+- [x] Handles both SIGINT (Ctrl+C) and SIGTERM
+- [x] Logs shutdown reason
+- [x] Active HTTP requests complete before server exits (Axum's `with_graceful_shutdown`)
+- [x] WebSocket connections receive close frames via `WsManager`
+- [x] Database pool is dropped cleanly on exit
+- [x] Configurable shutdown timeout (default 30s)
 
 ### Task 7.2: Shutdown Cleanup
 **File:** `src/ws/manager.rs` (add method)
@@ -717,9 +717,9 @@ impl WsManager {
 ```
 
 **Acceptance Criteria:**
-- [ ] `shutdown_all` sends close frames to all connections
-- [ ] Called during graceful shutdown before server exits
-- [ ] Connection count logged at shutdown
+- [x] `shutdown_all` sends close frames to all connections
+- [x] Called during graceful shutdown before server exits
+- [x] Connection count logged at shutdown
 
 ---
 
@@ -742,10 +742,10 @@ async fn test_health_check() {
 ```
 
 **Acceptance Criteria:**
-- [ ] Test: `/health` returns 200 with `{"status": "ok"}`
-- [ ] Test: Unknown route returns 404
-- [ ] Test: CORS preflight returns correct headers
-- [ ] Test: Request timeout returns 408
+- [x] Test: `/health` returns 200 with `{"status": "ok"}`
+- [x] Test: Unknown route returns 404
+- [x] Test: CORS preflight returns correct headers
+- [x] Test: Request timeout returns 408
 
 ### Task 8.2: Error Handling Tests
 **File:** `tests/error_handling.rs`
@@ -753,11 +753,11 @@ async fn test_health_check() {
 Test the unified error handling system.
 
 **Acceptance Criteria:**
-- [ ] Test: `AppError::NotFound` returns 404 JSON with code `NOT_FOUND`
-- [ ] Test: `AppError::BadRequest` returns 400 JSON with code `BAD_REQUEST`
-- [ ] Test: Database unique constraint violation returns 409
-- [ ] Test: Internal errors return sanitized messages (no stack traces in response)
-- [ ] Test: Panic in handler returns 500 JSON (not a plain text crash)
+- [x] Test: `AppError::NotFound` returns 404 JSON with code `NOT_FOUND`
+- [x] Test: `AppError::BadRequest` returns 400 JSON with code `BAD_REQUEST`
+- [x] Test: Database unique constraint violation returns 409
+- [x] Test: Internal errors return sanitized messages (no stack traces in response)
+- [x] Test: Panic in handler returns 500 JSON (not a plain text crash)
 
 ### Task 8.3: WebSocket Connection Test
 **File:** `tests/ws_tests.rs`
@@ -765,10 +765,10 @@ Test the unified error handling system.
 Test WebSocket connection lifecycle.
 
 **Acceptance Criteria:**
-- [ ] Test: WebSocket upgrade succeeds
-- [ ] Test: Connection appears in `WsManager` after connect
-- [ ] Test: Connection removed from `WsManager` after disconnect
-- [ ] Test: Messages can be sent and received
+- [x] Test: WebSocket upgrade succeeds
+- [x] Test: Connection appears in `WsManager` after connect
+- [x] Test: Connection removed from `WsManager` after disconnect
+- [x] Test: Messages can be sent and received
 
 ---
 

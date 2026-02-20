@@ -3,6 +3,10 @@ name = "trulience-api"
 version.workspace = true
 edition.workspace = true
 
+[lib]
+name = "trulience_api"
+path = "src/lib.rs"
+
 [[bin]]
 name = "trulience-api"
 path = "src/main.rs"
@@ -22,6 +26,14 @@ tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
 dotenvy = { workspace = true }
 thiserror = { workspace = true }
+sqlx = { workspace = true }
+uuid = { workspace = true }
+chrono = { workspace = true }
+futures = { workspace = true }
 
 [dev-dependencies]
 assert_matches = { workspace = true }
+http-body-util = { workspace = true }
+sqlx = { workspace = true }
+tokio = { workspace = true }
+tower = { workspace = true }
