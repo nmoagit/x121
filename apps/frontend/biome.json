@@ -31,5 +31,17 @@
   },
   "files": {
     "ignore": ["dist/", "storybook-static/", "node_modules/"]
-  }
+  },
+  "overrides": [
+    {
+      "include": ["**/*.stories.tsx", "**/*.stories.ts", ".storybook/**"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noDefaultExport": "off"
+          }
+        }
+      }
+    }
+  ]
 }
