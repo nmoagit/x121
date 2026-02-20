@@ -43,8 +43,12 @@ CREATE TABLE scene_types (
     workflow_id BIGINT REFERENCES workflows(id) ON DELETE RESTRICT ON UPDATE CASCADE,
     lora_config JSONB,  -- [{lora_id, weight, ...}, ...]
     model_config JSONB,  -- {model_name, vae, ...}
-    prompt_template TEXT,
+    prompt_template TEXT,                -- full_clip prompt (used as default/fallback)
     negative_prompt_template TEXT,
+    prompt_start_clip TEXT,              -- override prompt for first segment in multi-segment chain
+    negative_prompt_start_clip TEXT,
+    prompt_continuation_clip TEXT,       -- override prompt for subsequent segments using previous frames
+    negative_prompt_continuation_clip TEXT,
     target_duration_secs INTEGER NOT NULL DEFAULT 30,
     segment_duration_secs INTEGER NOT NULL DEFAULT 5,
     duration_tolerance_secs INTEGER NOT NULL DEFAULT 2,
@@ -68,7 +72,8 @@ CREATE TRIGGER set_updated_at BEFORE UPDATE ON scene_types
 **Acceptance Criteria:**
 - [ ] Scene types support both studio (project_id NULL) and project scope
 - [ ] Workflow, LoRA, model configuration stored
-- [ ] Prompt templates with positive and negative sections
+- [ ] Prompt templates with positive and negative sections for each clip position
+- [ ] `prompt_start_clip` and `prompt_continuation_clip` columns are nullable (fallback to `prompt_template`)
 - [ ] Duration configuration with tolerance
 - [ ] Variant applicability and transition config
 - [ ] Unique name within scope (project or studio)
@@ -146,11 +151,17 @@ pub async fn validate_scene_type(
 
 ## Phase 3: Prompt Template Engine
 
-### Task 3.1: Template Resolver
+### Task 3.1: Template Resolver with Clip Position Support
 **File:** `src/services/prompt_template_service.rs`
 
 ```rust
 use std::collections::HashMap;
+
+pub enum ClipPosition {
+    FullClip,        // Single-segment video (no chaining)
+    StartClip,       // First segment in a multi-segment chain
+    ContinuationClip // Subsequent segments using previous frames as seed
+}
 
 pub fn resolve_prompt_template(
     template: &str,
@@ -176,6 +187,25 @@ pub fn resolve_prompt_template(
 
     ResolvedPrompt { text: resolved, unresolved_placeholders: unresolved }
 }
+
+/// Select the appropriate prompt template based on clip position.
+/// Fallback: if position-specific prompt is not defined, use full_clip (prompt_template).
+pub fn select_prompt_for_position(
+    scene_type: &SceneType,
+    position: ClipPosition,
+) -> &str {
+    match position {
+        ClipPosition::FullClip => &scene_type.prompt_template,
+        ClipPosition::StartClip => {
+            scene_type.prompt_start_clip.as_deref()
+                .unwrap_or(&scene_type.prompt_template)
+        }
+        ClipPosition::ContinuationClip => {
+            scene_type.prompt_continuation_clip.as_deref()
+                .unwrap_or(&scene_type.prompt_template)
+        }
+    }
+}
 ```
 
 **Acceptance Criteria:**
@@ -183,26 +213,34 @@ pub fn resolve_prompt_template(
 - [ ] Returns list of unresolvable placeholders for warnings
 - [ ] Handles nested braces gracefully
 - [ ] Empty metadata value resolves to empty string (not placeholder)
+- [ ] `select_prompt_for_position` correctly selects prompt based on clip position
+- [ ] Fallback: when `prompt_start_clip` or `prompt_continuation_clip` is NULL, uses `prompt_template` (full_clip)
+- [ ] Each prompt type supports independent positive and negative prompt text
 
-### Task 3.2: Prompt Preview API
+### Task 3.2: Prompt Preview API with Clip Position
 **File:** `src/routes/scene_type_routes.rs`
 
 ```rust
-/// GET /api/scene-types/:id/preview-prompt/:character_id
+/// GET /api/scene-types/:id/preview-prompt/:character_id?clip_position=start_clip
 pub async fn preview_prompt_handler(
     Path((scene_type_id, character_id)): Path<(DbId, DbId)>,
+    Query(params): Query<PromptPreviewParams>,  // clip_position: Option<String>
 ) -> Result<Json<PromptPreviewResponse>, ApiError> {
-    // Load scene type's prompt template
-    // Load character's metadata
-    // Resolve and return with unresolved warnings
+    // 1. Load scene type's prompt templates (all three positions)
+    // 2. Select appropriate template based on clip_position param (default: full_clip)
+    // 3. Load character's metadata
+    // 4. Resolve and return with unresolved warnings
     todo!()
 }
 ```
 
 **Acceptance Criteria:**
 - [ ] Shows resolved prompt for a specific character
+- [ ] Accepts optional `clip_position` query param: `full_clip`, `start_clip`, `continuation_clip`
+- [ ] Defaults to `full_clip` when `clip_position` is not specified
 - [ ] Unresolvable placeholders highlighted in response
-- [ ] Both positive and negative prompts resolved
+- [ ] Both positive and negative prompts resolved for the selected position
+- [ ] Response indicates which prompt source was used (e.g., "start_clip" or "full_clip (fallback)")
 
 ---
 
@@ -314,15 +352,17 @@ export function SceneTypeEditor({ sceneType, onSave }: SceneTypeEditorProps) {
 - [ ] Variant applicability radio buttons
 - [ ] Transition config shown conditionally for clothes_off
 
-### Task 6.2: Prompt Template Editor
+### Task 6.2: Prompt Template Editor with Clip Position Tabs
 **File:** `frontend/src/components/scene-types/PromptTemplateEditor.tsx`
 
 ```typescript
 export function PromptTemplateEditor({ value, onChange, availablePlaceholders }: PromptEditorProps) {
+  // Tab bar for clip position: Full Clip | Start Clip | Continuation Clip
   // Text editor with syntax highlighting for {placeholders}
   // Auto-complete dropdown for available metadata fields
   // Character selector for live preview
   // Unresolvable placeholder warnings
+  // Visual indicator showing which positions have custom prompts vs. falling back to full_clip
 }
 ```
 
@@ -331,6 +371,10 @@ export function PromptTemplateEditor({ value, onChange, availablePlaceholders }:
 - [ ] Auto-complete for known metadata field names
 - [ ] Live preview with character selection
 - [ ] Warnings for unresolvable placeholders
+- [ ] Tab bar for three clip positions: Full Clip, Start Clip, Continuation Clip
+- [ ] Start Clip and Continuation Clip tabs show placeholder text "Using Full Clip prompt (click to override)" when not defined
+- [ ] Each tab has independent positive and negative prompt editors
+- [ ] Visual indicator (badge/icon) on tabs that have custom prompts defined
 
 ### Task 6.3: Scene Matrix View
 **File:** `frontend/src/components/scene-types/SceneMatrixView.tsx`
@@ -378,6 +422,11 @@ export function SceneMatrixView({ matrix, characters, sceneTypes }: SceneMatrixV
 - [ ] Missing placeholder -> listed in unresolved
 - [ ] Empty metadata -> placeholder replaced with empty string
 - [ ] No placeholders in template -> returned as-is
+- [ ] Clip position selection: full_clip returns prompt_template
+- [ ] Clip position selection: start_clip returns prompt_start_clip when defined
+- [ ] Clip position selection: start_clip falls back to prompt_template when not defined
+- [ ] Clip position selection: continuation_clip returns prompt_continuation_clip when defined
+- [ ] Clip position selection: continuation_clip falls back to prompt_template when not defined
 
 ### Task 7.3: Matrix Generation Tests
 **File:** `tests/scene_matrix_test.rs`
@@ -443,3 +492,4 @@ export function SceneMatrixView({ matrix, characters, sceneTypes }: SceneMatrixV
 ## Version History
 
 - **v1.0** (2026-02-18): Initial task list creation from PRD-023 v1.0
+- **v1.1** (2026-02-19): Added clip position prompt types (full_clip, start_clip, continuation_clip) — updated Tasks 1.1, 3.1, 3.2, 6.2, 7.2

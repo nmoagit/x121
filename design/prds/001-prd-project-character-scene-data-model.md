@@ -34,13 +34,17 @@ This PRD defines the hierarchical entity model that underpins the entire platfor
 - [ ] Projects have a unique identifier and display name
 
 #### Requirement 1.2: Character Entity
-**Description:** Belongs to a project. Represents a single model/avatar identity with source images, derived images, image variants, and metadata.
+**Description:** Belongs to a project. Represents a single model/avatar identity with source images, derived images, image variants, metadata, and extensible pipeline settings.
 **Acceptance Criteria:**
 - [ ] Characters belong to exactly one project (or optionally to the studio library per PRD-60)
 - [ ] Each character has a Source Image (original/ground-truth reference)
 - [ ] Derived Images are generated variants of the source (e.g., clothed from topless)
 - [ ] Image Variants track the set of available seed images with status (pending / approved / rejected)
 - [ ] Character metadata is stored as structured JSON (managed by PRD-13)
+- [ ] Character pipeline settings stored as extensible JSONB column (`settings`) separate from biographical metadata
+- [ ] Settings schema supports known fields (e.g., `a2c4_model`, `elevenlabs_voice`, `avatar_json`) and arbitrary additional key-value pairs
+- [ ] Settings are expandable without schema migration — new setting keys can be added dynamically
+- [ ] Avatar JSON in settings is distinct from biographical metadata in PRD-13
 
 #### Requirement 1.3: Scene Type Entity
 **Description:** Reusable definition for a kind of scene (e.g., dance, idle) defined at the project or studio level.
@@ -116,8 +120,8 @@ This PRD defines the hierarchical entity model that underpins the entire platfor
 - **Stack:** PostgreSQL (via PRD-00 standards), SQLx for Rust
 - **Existing Code to Reuse:** PRD-00 lookup tables for all status fields
 - **New Infrastructure Needed:** Core entity tables (projects, characters, source_images, derived_images, image_variants, scene_types, scenes, segments)
-- **Database Changes:** Major — this creates the core schema that all other PRDs extend
-- **API Changes:** CRUD endpoints for all entity types; hierarchical query endpoints (e.g., GET /projects/:id/characters/:id/scenes)
+- **Database Changes:** Major — this creates the core schema that all other PRDs extend. Characters table includes both `metadata JSONB` (biographical, managed by PRD-13) and `settings JSONB` (pipeline/operational settings — extensible key-value store for fields like `a2c4_model`, `elevenlabs_voice`, `avatar_json`, and dynamically added keys)
+- **API Changes:** CRUD endpoints for all entity types; hierarchical query endpoints (e.g., GET /projects/:id/characters/:id/scenes). Settings endpoints: GET/PUT /characters/:id/settings, PATCH /characters/:id/settings (partial update of individual setting keys)
 
 ## 9. Quality Assurance
 
@@ -140,6 +144,9 @@ This check is **blocking** — no PR should be merged without a DRY-GUY audit of
 - Should character names allow special characters, or be restricted to filesystem-safe characters for the ZIP structure?
 - What is the maximum hierarchy depth if sub-projects or character groups are needed in the future?
 - How should the system handle scene type name changes after scenes have been generated (rename files or keep original names)?
+- Should character settings have a registry of "known" setting keys with types/validation, or be entirely free-form JSONB?
+- Should settings be inheritable from project-level defaults (e.g., default a2c4 model for all characters in a project)?
 
 ## 12. Version History
 - **v1.0** (2026-02-18): Initial PRD generation from master specification
+- **v1.1** (2026-02-19): Added extensible character pipeline settings (settings JSONB column) for operational configuration (a2c4 model, ElevenLabs voice, avatar JSON, and dynamically expandable keys) — distinct from biographical metadata

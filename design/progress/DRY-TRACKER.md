@@ -82,7 +82,7 @@ Record of every DRY-GUY audit run against the codebase.
 
 | Date | PRD(s) Touched | Files Audited | Findings | Action Taken |
 |------|---------------|---------------|----------|--------------|
-| — | — | — | — | — |
+| 2026-02-20 | Phase -1 scaffold | 33 (11 Rust, 14 Frontend, 8 Infra) | 6 (0 critical, 3 medium, 3 low) | Fixed CI DATABASE_URL dedup, vitest config merge, Storybook color comment. Watch: tracing init, Docker anchors. |
 
 ---
 

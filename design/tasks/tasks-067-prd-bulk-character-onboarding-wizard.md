@@ -72,6 +72,16 @@ pub async fn step1_upload(pool: &sqlx::PgPool, session_id: DbId, files: Vec<Uplo
     todo!()
 }
 
+pub async fn step1_csv_upload(pool: &sqlx::PgPool, session_id: DbId, csv_file: UploadedFile) -> Result<Vec<DbId>, anyhow::Error> {
+    // 1. Parse CSV/text file (detect format: CSV with headers vs. plain text one-name-per-line)
+    // 2. Map CSV columns to character fields (name, metadata, settings from PRD-01 v1.1)
+    // 3. Preview parsed characters before creation
+    // 4. Create characters in database and add to library (PRD-60)
+    // 5. Run duplicate detection via PRD-079
+    // 6. Return created character IDs
+    todo!()
+}
+
 pub async fn step2_generate_variants(pool: &sqlx::PgPool, session_id: DbId) -> Result<(), anyhow::Error> {
     // Dispatch batch variant generation via PRD-021 + PRD-046
     todo!()
@@ -128,12 +138,13 @@ export function OnboardingWizard({ sessionId }: { sessionId: number }) {
 - `frontend/src/components/onboarding/Step6Summary.tsx`
 
 **Acceptance Criteria:**
-- [ ] Step 1: Multi-file upload, character preview list
+- [ ] Step 1: Multi-file upload OR CSV/text upload, character preview list
+- [ ] Step 1 (CSV mode): CSV column mapping, text file one-name-per-line support, preview table of parsed characters
 - [ ] Step 2: One-click batch variant generation with progress
 - [ ] Step 3: Grid review with bulk-approve
 - [ ] Step 4: Spreadsheet-style metadata entry (reuse PRD-066)
 - [ ] Step 5: Scene type selection with matrix preview (PRD-057)
-- [ ] Step 6: Summary with cost estimate (PRD-061) and submit button
+- [ ] Step 6: Summary with cost estimate (PRD-061), submit button, and selective batch video generation (all/some/one characters submitted to PRD-057 Batch Production Orchestrator)
 
 ---
 
@@ -172,3 +183,4 @@ export function OnboardingWizard({ sessionId }: { sessionId: number }) {
 ## Version History
 
 - **v1.0** (2026-02-18): Initial task list creation from PRD-067 v1.0
+- **v1.1** (2026-02-19): Added CSV/text file upload as alternative onboarding path (Task 2.1, 3.3 Step 1) and selective batch video generation in Step 6

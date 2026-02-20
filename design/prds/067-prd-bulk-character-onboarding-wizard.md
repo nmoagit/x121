@@ -25,12 +25,17 @@ Onboarding 10 characters through general-purpose UI means navigating to the char
 ### Phase 1: MVP Implementation
 
 #### Requirement 1.1: Batch Image Upload (Step 1)
-**Description:** Upload all source images at once.
+**Description:** Upload all source images at once, or alternatively upload a CSV/text file defining characters.
 **Acceptance Criteria:**
 - [ ] Drop all source images; one character created per image
 - [ ] Filename used as initial character name
 - [ ] Preview character list before confirming
 - [ ] Duplicate detection (PRD-79) runs across batch
+- [ ] Alternative: upload a CSV or text file containing a list of character/model names and optional metadata columns
+- [ ] CSV columns mapped to character fields (name, metadata fields, settings fields from PRD-01 v1.1)
+- [ ] Text file: one character name per line (minimal mode)
+- [ ] Characters created from CSV/text are added to the character library (PRD-60)
+- [ ] CSV/text upload shows a preview table of parsed characters before confirmation
 
 #### Requirement 1.2: Batch Variant Generation (Step 2)
 **Description:** Trigger variant generation for all characters at once.
@@ -60,11 +65,13 @@ Onboarding 10 characters through general-purpose UI means navigating to the char
 - [ ] Scene matrix preview via PRD-57
 
 #### Requirement 1.6: Review & Submit (Step 6)
-**Description:** Summary and submission.
+**Description:** Summary and submission with batch video generation support.
 **Acceptance Criteria:**
 - [ ] Summary: N characters, M scene types, estimated GPU time (PRD-61), disk space
 - [ ] Submit to begin generation or save as draft
 - [ ] Resume & partial progress: saves state after each step
+- [ ] Batch video generation: select all, some, or one of the onboarded characters for video generation
+- [ ] Batch generation submits selected characters to the Batch Production Orchestrator (PRD-57)
 
 ### Phase 2: Enhancements (Post-MVP)
 
@@ -107,6 +114,9 @@ This check is **blocking** — no PR should be merged without a DRY-GUY audit of
 ## 11. Open Questions
 - Should the wizard support different configurations per character within the same batch?
 - What is the maximum batch size the wizard should support?
+- What CSV column mapping format should be used (auto-detect headers, or configurable mapping step)?
+- Should CSV upload support linking to existing source images by file path instead of requiring re-upload?
 
 ## 12. Version History
 - **v1.0** (2026-02-18): Initial PRD generation from master specification
+- **v1.1** (2026-02-19): Added CSV/text file upload as alternative character onboarding path (Req 1.1), batch video generation with selective character submission (Req 1.6)

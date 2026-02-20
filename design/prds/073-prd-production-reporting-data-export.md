@@ -68,7 +68,18 @@ Producers and studio managers who don't use the platform daily need visibility i
 - [ ] Annotation density (notes per reviewed segment)
 - [ ] Not for micromanagement — for identifying bottlenecks
 
-#### Requirement 1.7: Export Formats
+#### Requirement 1.7: Video Technical Reports
+**Description:** Per-video and aggregate video technical information reports.
+**Acceptance Criteria:**
+- [ ] Table view listing all videos for a project, character, or the entire studio
+- [ ] Columns include: video name, character, scene type, dimensions (width x height), duration, framerate, codec, file size, segment count, generation date
+- [ ] Sortable and filterable by any column
+- [ ] Individual video detail view showing full technical metadata (bitrate, color space, etc.)
+- [ ] Collective summary: total videos, total duration, average framerate, average file size, min/max dimensions
+- [ ] Export video report as CSV, PDF, or JSON
+- [ ] Filter by date range, project, character, scene type, or resolution tier
+
+#### Requirement 1.8: Export Formats
 **Description:** Multiple output formats for different consumers.
 **Acceptance Criteria:**
 - [ ] CSV for data analysis
@@ -76,7 +87,7 @@ Producers and studio managers who don't use the platform daily need visibility i
 - [ ] JSON for programmatic consumption via PRD-12 API
 - [ ] Custom date range filtering on all reports
 
-#### Requirement 1.8: Scheduled Reports
+#### Requirement 1.9: Scheduled Reports
 **Description:** Automated report generation and delivery.
 **Acceptance Criteria:**
 - [ ] Configure reports to auto-generate at regular intervals (weekly, monthly)
@@ -106,7 +117,7 @@ Producers and studio managers who don't use the platform daily need visibility i
 - **Existing Code to Reuse:** PRD-41 performance data, PRD-49 quality scores, PRD-61 cost data, PRD-42 widget framework
 - **New Infrastructure Needed:** Report engine, PDF renderer, scheduled report runner, email delivery integration
 - **Database Changes:** `reports` table (id, type, config_json, generated_at, file_path), `report_schedules` table (id, report_type, config_json, schedule, recipients_json)
-- **API Changes:** POST /reports/generate, GET /reports/:id/download, CRUD /report-schedules, GET /reports/templates
+- **API Changes:** POST /reports/generate, GET /reports/:id/download, CRUD /report-schedules, GET /reports/templates, GET /reports/videos (video technical report with query params for filtering by project/character/scene-type/date-range)
 
 ## 9. Quality Assurance
 
@@ -130,3 +141,4 @@ This check is **blocking** — no PR should be merged without a DRY-GUY audit of
 
 ## 12. Version History
 - **v1.0** (2026-02-18): Initial PRD generation from master specification
+- **v1.1** (2026-02-19): Added Requirement 1.7 (Video Technical Reports) for per-video and aggregate video metadata table view with dimensions, duration, framerate, etc. Renumbered subsequent requirements.

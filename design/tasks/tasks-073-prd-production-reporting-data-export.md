@@ -54,11 +54,12 @@ INSERT INTO report_types (name, description) VALUES
     ('gpu_utilization', 'Total GPU hours by project, scene type, and resolution'),
     ('quality_metrics', 'Auto-QA pass rates, retry counts, and failure trends'),
     ('cost_per_character', 'Average GPU time and wall-clock time per character'),
-    ('reviewer_productivity', 'Review turnaround time, approval ratios, annotation density');
+    ('reviewer_productivity', 'Review turnaround time, approval ratios, annotation density'),
+    ('video_technical', 'Per-video technical metadata: dimensions, duration, framerate, codec, file size');
 ```
 
 **Acceptance Criteria:**
-- [ ] Six report types seeded matching PRD requirements
+- [ ] Seven report types seeded matching PRD requirements (including video_technical)
 - [ ] `config_schema_json` allows defining per-type configuration options
 - [ ] Follows lookup table conventions
 
@@ -194,7 +195,43 @@ pub struct DeliverySummary {
 - [ ] Annotation density (notes per reviewed segment)
 - [ ] Presented as efficiency metrics, not surveillance
 
-### Task 2.7: Report Formatter -- CSV
+### Task 2.7: Video Technical Report Aggregator
+**File:** `src/services/reports/video_technical_report.rs`
+
+```rust
+pub struct VideoTechnicalRow {
+    pub video_name: String,
+    pub character_name: String,
+    pub scene_type_name: String,
+    pub width: u32,
+    pub height: u32,
+    pub duration_secs: f64,
+    pub framerate: f64,
+    pub codec: String,
+    pub file_size_bytes: u64,
+    pub segment_count: u32,
+    pub generated_at: DateTime<Utc>,
+}
+
+pub struct VideoTechnicalSummary {
+    pub total_videos: u32,
+    pub total_duration_secs: f64,
+    pub avg_framerate: f64,
+    pub avg_file_size_bytes: u64,
+    pub min_dimensions: (u32, u32),
+    pub max_dimensions: (u32, u32),
+}
+```
+
+**Acceptance Criteria:**
+- [ ] Table listing all videos with: name, character, scene type, dimensions, duration, framerate, codec, file size, segment count, generation date
+- [ ] Sortable and filterable by any column
+- [ ] Individual video detail with full technical metadata (bitrate, color space, etc.)
+- [ ] Collective summary: total videos, total duration, average framerate, average file size, min/max dimensions
+- [ ] Filterable by date range, project, character, scene type, resolution tier
+- [ ] Exportable as CSV, PDF, or JSON
+
+### Task 2.8: Report Formatter -- CSV
 **File:** `src/services/reports/formatter_csv.rs`
 
 **Acceptance Criteria:**
@@ -203,7 +240,7 @@ pub struct DeliverySummary {
 - [ ] RFC 4180 compliant
 - [ ] Handles nested data by flattening
 
-### Task 2.8: Report Formatter -- PDF
+### Task 2.9: Report Formatter -- PDF
 **File:** `src/services/reports/formatter_pdf.rs`
 
 **Acceptance Criteria:**
@@ -212,7 +249,7 @@ pub struct DeliverySummary {
 - [ ] Date range and generation metadata in header/footer
 - [ ] Uses Rust PDF library (e.g., `genpdf` or `printpdf`)
 
-### Task 2.9: Scheduled Report Runner
+### Task 2.10: Scheduled Report Runner
 **File:** `src/services/report_scheduler.rs`
 
 Background service that executes scheduled reports.
@@ -360,6 +397,7 @@ Summary widgets for PRD-42 Studio Pulse Dashboard integration.
 | `src/services/reports/quality_metrics.rs` | Quality metrics aggregator |
 | `src/services/reports/cost_per_character.rs` | Cost per character aggregator |
 | `src/services/reports/reviewer_productivity.rs` | Reviewer productivity aggregator |
+| `src/services/reports/video_technical_report.rs` | Video technical metadata report |
 | `src/services/reports/formatter_csv.rs` | CSV export formatter |
 | `src/services/reports/formatter_pdf.rs` | PDF export formatter |
 | `src/services/report_scheduler.rs` | Scheduled report runner |
@@ -408,3 +446,4 @@ Summary widgets for PRD-42 Studio Pulse Dashboard integration.
 
 ## Version History
 - **v1.0** (2026-02-18): Initial task list creation from PRD-073
+- **v1.1** (2026-02-19): Added Task 2.7 (Video Technical Report Aggregator) for per-video metadata table view. Renumbered Tasks 2.8-2.10. Added video_technical to report types seed data.

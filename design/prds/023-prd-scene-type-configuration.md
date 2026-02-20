@@ -41,12 +41,19 @@ Scene types are the reusable "recipe" that gets stamped across characters. Witho
 - [ ] Multiple LoRAs with configurable weights per scene type
 
 #### Requirement 1.3: Prompt Template
-**Description:** Configurable prompts with metadata substitution.
+**Description:** Configurable prompts with metadata substitution and position-based prompt types for different clip generation states.
 **Acceptance Criteria:**
 - [ ] Base prompt per scene type with placeholder slots: `{character_name}`, `{hair_color}`, etc.
 - [ ] Placeholders populated from character metadata at generation time
 - [ ] Preview: show resolved prompt for a selected character
 - [ ] Template validation warns on unresolvable placeholders
+- [ ] Three position-based prompt types per scene type:
+  - `full_clip`: prompt used when the video is a single generation (no chaining)
+  - `start_clip`: prompt used for the first segment in a multi-segment sequence
+  - `continuation_clip`: prompt used for subsequent segments that use previous video frames as seed
+- [ ] Each prompt type supports independent positive and negative prompt text
+- [ ] Fallback behavior: if only `full_clip` is defined, it is used for all positions; `start_clip` and `continuation_clip` override when present
+- [ ] PRD-24 (Recursive Video Generation Loop) selects the appropriate prompt type based on segment position in the chain
 
 #### Requirement 1.4: Duration Configuration
 **Description:** Target total duration and per-segment duration.
@@ -93,8 +100,8 @@ Scene types are the reusable "recipe" that gets stamped across characters. Witho
 - **Stack:** React for configuration UI, Rust for validation and matrix generation
 - **Existing Code to Reuse:** PRD-01 data model, PRD-17 asset references
 - **New Infrastructure Needed:** Scene type service, prompt template resolver, matrix generator
-- **Database Changes:** `scene_types` table (id, name, workflow_id, lora_config, prompt_template, target_duration, segment_duration, variant_applicability, transition_config)
-- **API Changes:** CRUD /scene-types, GET /scene-types/:id/preview-prompt/:character_id, POST /scene-types/matrix
+- **Database Changes:** `scene_types` table (id, name, workflow_id, lora_config, prompt_template, prompt_start_clip, prompt_continuation_clip, target_duration, segment_duration, variant_applicability, transition_config). The `prompt_template` field serves as the `full_clip` prompt; `prompt_start_clip` and `prompt_continuation_clip` are nullable overrides
+- **API Changes:** CRUD /scene-types, GET /scene-types/:id/preview-prompt/:character_id, POST /scene-types/matrix. Prompt preview endpoint accepts optional `clip_position` parameter (full_clip | start_clip | continuation_clip) to show the resolved prompt for the selected position
 
 ## 9. Quality Assurance
 
@@ -117,6 +124,9 @@ This check is **blocking** — no PR should be merged without a DRY-GUY audit of
 - Should scene types support conditional LoRA switching based on character attributes?
 - How should the system handle prompt templates when a character is missing a required metadata field?
 - Should scene types be lockable (prevent modification after scenes are generated)?
+- Should clip position prompts support different placeholder sets (e.g., continuation_clip might reference `{previous_frame_description}`)?
+- Should the UI show a visual indicator of which prompt types are configured vs. falling back to full_clip?
 
 ## 12. Version History
 - **v1.0** (2026-02-18): Initial PRD generation from master specification
+- **v1.1** (2026-02-19): Added position-based clip generation prompt types (full_clip, start_clip, continuation_clip) to Requirement 1.3 and updated database/API specifications

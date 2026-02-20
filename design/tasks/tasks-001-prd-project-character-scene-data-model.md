@@ -135,6 +135,7 @@ CREATE TABLE characters (
     name TEXT NOT NULL,
     status_id BIGINT NOT NULL REFERENCES character_statuses(id) ON DELETE RESTRICT ON UPDATE CASCADE,
     metadata JSONB,
+    settings JSONB NOT NULL DEFAULT '{}',  -- Extensible pipeline settings (a2c4_model, elevenlabs_voice, avatar_json, etc.)
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -151,7 +152,8 @@ CREATE TRIGGER set_updated_at BEFORE UPDATE ON characters
 - [ ] `characters` table with `project_id BIGINT NOT NULL REFERENCES projects(id) ON DELETE CASCADE`
 - [ ] Unique constraint on `(project_id, name)` — character names unique within a project
 - [ ] FK indexes on `project_id` and `status_id`
-- [ ] `metadata JSONB` column for structured character data
+- [ ] `metadata JSONB` column for structured biographical character data
+- [ ] `settings JSONB NOT NULL DEFAULT '{}'` column for extensible pipeline/operational settings (a2c4_model, elevenlabs_voice, avatar_json, and dynamically added keys)
 - [ ] `updated_at` trigger attached
 
 ### Task 1.4: Create Source Images, Derived Images, and Image Variants Tables
@@ -421,7 +423,8 @@ pub struct Segment {
 - [ ] All `id` and FK fields use `DbId` type alias
 - [ ] All timestamp fields use `DateTime<Utc>`
 - [ ] Optional fields use `Option<T>`
-- [ ] JSONB columns use `Option<serde_json::Value>`
+- [ ] JSONB columns use `Option<serde_json::Value>` for metadata, `serde_json::Value` for settings (non-optional, defaults to `{}`)
+- [ ] Character model includes both `metadata` (biographical) and `settings` (pipeline/operational) JSONB fields
 - [ ] `Create*` and `Update*` DTOs defined for each entity
 - [ ] `chrono` and `serde_json` added to `Cargo.toml` dependencies
 
@@ -560,6 +563,9 @@ pub async fn list_by_project(pool: &PgPool, project_id: DbId) -> Result<Vec<Char
 - [ ] `list_by_project` returns characters for a specific project
 - [ ] All queries use explicit column lists
 - [ ] JSONB metadata field properly handled with `serde_json::Value`
+- [ ] JSONB settings field handled with `serde_json::Value` (non-optional, defaults to `{}`)
+- [ ] `get_settings` and `update_settings` operations for character pipeline settings
+- [ ] `patch_settings` operation for partial update of individual setting keys (JSONB merge)
 
 ### Task 3.3: Scene and Segment Repositories
 **File:** `src/repositories/scene_repo.rs`, `src/repositories/segment_repo.rs`
@@ -1114,3 +1120,4 @@ Add tests that verify all PRD-001 tables follow PRD-000 conventions.
 ## Version History
 
 - **v1.0** (2026-02-18): Initial task list creation from PRD
+- **v1.1** (2026-02-19): Added `settings JSONB` column to characters table (Task 1.3) for extensible pipeline settings. Updated model struct (Task 2.1) and character repository (Task 3.2) with settings support.

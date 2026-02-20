@@ -187,14 +187,21 @@ async fn generate_segment(
     segment_index: u32,
     seed_frame_path: &str,
     scene_config: &SceneConfig,
+    total_segments_estimated: u32,
 ) -> Result<GeneratedSegment, anyhow::Error> {
     // 1. Create segment record (status: generating)
-    // 2. Resolve prompt template for the character
-    // 3. Dispatch to ComfyUI via PRD-05 bridge
-    // 4. Wait for completion
-    // 5. Extract last frame
-    // 6. Update segment record
-    // 7. Checkpoint via PRD-028
+    // 2. Determine clip position:
+    //    - If total_segments_estimated == 1: ClipPosition::FullClip
+    //    - If segment_index == 1: ClipPosition::StartClip
+    //    - Otherwise: ClipPosition::ContinuationClip
+    // 3. Select appropriate prompt template via select_prompt_for_position (PRD-023)
+    // 4. Resolve prompt template for the character
+    // 5. Record which prompt type was used in segment metadata
+    // 6. Dispatch to ComfyUI via PRD-05 bridge
+    // 7. Wait for completion
+    // 8. Extract last frame
+    // 9. Update segment record
+    // 10. Checkpoint via PRD-028
     todo!()
 }
 ```
@@ -205,6 +212,11 @@ async fn generate_segment(
 - [ ] Seed frame extraction is automatic after each segment completes
 - [ ] Extracted frames stored as reference images
 - [ ] Checkpoint created after each successful segment
+- [ ] Prompt type selection per segment position (from PRD-023 v1.1):
+  - Single-segment scenes use `full_clip` prompt
+  - First segment in a multi-segment chain uses `start_clip` prompt (fallback to `full_clip`)
+  - Subsequent segments use `continuation_clip` prompt (fallback to `full_clip`)
+- [ ] Selected prompt type recorded in segment metadata for provenance
 
 ### Task 3.2: Duration Accumulation & Elastic Stopping
 **File:** `src/services/generation_loop_service.rs`
@@ -392,10 +404,14 @@ export function BoundaryFrameScrubber({ segmentId, frames }: BoundaryFrameScrubb
 **File:** `tests/generation_loop_test.rs`
 
 **Acceptance Criteria:**
-- [ ] Single-segment scene generates correctly
+- [ ] Single-segment scene generates correctly and uses `full_clip` prompt
 - [ ] Multi-segment chaining works (frame extracted, used as seed)
+- [ ] First segment in multi-segment chain uses `start_clip` prompt
+- [ ] Subsequent segments in chain use `continuation_clip` prompt
+- [ ] Prompt type fallback works when position-specific prompts are not defined
 - [ ] Duration accumulation stops at target
 - [ ] Elastic duration finds stable stopping frame
+- [ ] Segment metadata records which prompt type was used
 
 ### Task 8.2: Transition Tests
 **File:** `tests/transition_test.rs`
@@ -472,3 +488,4 @@ export function BoundaryFrameScrubber({ segmentId, frames }: BoundaryFrameScrubb
 ## Version History
 
 - **v1.0** (2026-02-18): Initial task list creation from PRD-024 v1.0
+- **v1.1** (2026-02-19): Added clip position prompt type selection to Tasks 3.1, 8.1 — segments now select full_clip/start_clip/continuation_clip prompt based on position in chain

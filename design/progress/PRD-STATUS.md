@@ -21,14 +21,14 @@ Source of truth: [`design/design.md`](../design.md)
 | Status | Count |
 |--------|-------|
 | backlog | 0 |
-| planning | 106 |
+| planning | 108 |
 | in-progress | 0 |
 | review | 0 |
 | done | 0 |
 | blocked | 0 |
 | deferred | 0 |
 | maybe | 15 |
-| **Total** | **121** |
+| **Total** | **123** |
 
 ---
 
@@ -37,7 +37,7 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD | Title | Priority | Status | Owner | Notes |
 |-----|-------|----------|--------|-------|-------|
 | PRD-00 | Database Normalization & Strict Integrity | — | `planning` | — | Foundation — must be first. Tasks: `tasks/tasks-000-prd-database-normalization.md` |
-| PRD-01 | Project, Character & Scene Data Model | — | `planning` | — | Foundation — must be first. Tasks: `tasks/tasks-001-prd-project-character-scene-data-model.md` |
+| PRD-01 | Project, Character & Scene Data Model | — | `planning` | — | Foundation — must be first. Updated v1.1 (2026-02-19): extensible character settings JSONB. Tasks: `tasks/tasks-001-prd-project-character-scene-data-model.md` |
 
 ## Part 1: Infrastructure & System Core
 
@@ -92,8 +92,8 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-76 | Character Identity Embedding | — | `planning` | — | |
 | PRD-21 | Source Image Management & Variant Generation | — | `planning` | — | |
 | PRD-22 | Source Image Quality Assurance | — | `planning` | — | |
-| PRD-23 | Scene Type Configuration | — | `planning` | — | |
-| PRD-24 | Recursive Video Generation Loop | — | `planning` | — | |
+| PRD-23 | Scene Type Configuration | — | `planning` | — | Updated v1.1 (2026-02-19): clip generation prompt types (full_clip, start_clip, continuation_clip) |
+| PRD-24 | Recursive Video Generation Loop | — | `planning` | — | Updated v1.1 (2026-02-19): position-based prompt type selection |
 | PRD-25 | Incremental Re-stitching & Smoothing | — | `planning` | — | |
 | PRD-26 | Temporal Continuity (Normalization & Sync) | — | `planning` | — | |
 | PRD-27 | Template & Preset System | — | `planning` | — | |
@@ -109,7 +109,7 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-63 | Prompt Editor & Versioning | — | `planning` | — | |
 | PRD-64 | Failure Pattern Tracking & Insights | — | `planning` | — | |
 | PRD-65 | Workflow Regression Testing | — | `planning` | — | |
-| PRD-67 | Bulk Character Onboarding Wizard | — | `planning` | — | |
+| PRD-67 | Bulk Character Onboarding Wizard | — | `planning` | — | Updated v1.1 (2026-02-19): CSV/text upload, batch video generation |
 | PRD-71 | Smart Auto-Retry | — | `planning` | — | |
 | PRD-74 | Project Configuration Templates | — | `planning` | — | |
 | PRD-91 | Custom QA Rulesets per Scene Type | — | `planning` | — | |
@@ -117,6 +117,8 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-97 | Job Dependency Chains & Triggered Workflows | — | `planning` | — | |
 | PRD-100 | Scene Type Inheritance & Composition | — | `planning` | — | |
 | PRD-103 | Character Face Contact Sheet | — | `planning` | — | |
+| PRD-107 | Character Readiness & State View | — | `planning` | — | New (2026-02-19). Tasks: `tasks/tasks-107-prd-character-readiness-state-view.md` |
+| PRD-108 | Character Settings Dashboard | — | `planning` | — | New (2026-02-19). Tasks: `tasks/tasks-108-prd-character-settings-dashboard.md` |
 
 ## Part 4: Design System & UX Patterns
 
@@ -161,7 +163,7 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-41 | Performance & Benchmarking Dashboard | — | `planning` | — | |
 | PRD-42 | Studio Pulse Dashboard | — | `planning` | — | |
 | PRD-72 | Project Lifecycle & Archival | — | `planning` | — | |
-| PRD-73 | Production Reporting & Data Export | — | `planning` | — | |
+| PRD-73 | Production Reporting & Data Export | — | `planning` | — | Updated v1.1 (2026-02-19): video technical reports |
 | PRD-84 | External Review / Shareable Preview Links | — | `planning` | — | |
 | PRD-89 | Dashboard Widget Customization | — | `planning` | — | |
 | PRD-102 | Video Compliance Checker | — | `planning` | — | |
@@ -205,9 +207,9 @@ Source of truth: [`design/design.md`](../design.md)
 
 | File | Purpose |
 |------|---------|
-| [`design/tasks/`](../tasks/) | Task list files for each PRD (107 files) |
+| [`design/tasks/`](../tasks/) | Task list files for each PRD (109 files) |
 | [`DRY-TRACKER.md`](./DRY-TRACKER.md) | Components and patterns under DRY watch — check before implementing |
-| [`design/prds/`](../prds/) | Individual PRD specification files (107 files) |
+| [`design/prds/`](../prds/) | Individual PRD specification files (109 files) |
 | [`design/design.md`](../design.md) | Master specification document |
 
 ---
@@ -218,3 +220,4 @@ Source of truth: [`design/design.md`](../design.md)
 |------|--------|
 | 2026-02-18 | Initial creation — 106 PRDs + 15 MAYBEs, all at `backlog` |
 | 2026-02-18 | Task files generated for all 106 PRDs → `design/tasks/`. All PRDs moved to `planning`. DRY-TRACKER.md created at `design/progress/DRY-TRACKER.md` |
+| 2026-02-19 | Added 2 new PRDs (PRD-107, PRD-108) and updated 4 existing PRDs (PRD-01, PRD-23, PRD-24, PRD-67, PRD-73). New PRDs: Character Readiness & State View (107), Character Settings Dashboard (108). Updates: extensible character settings (01), clip generation prompt types (23, 24), CSV/text upload (67), video technical reports (73). Total PRDs: 108 + 15 MAYBEs = 123 |

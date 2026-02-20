@@ -25,12 +25,17 @@ This is the core generation engine. The recursive last-frame chaining produces t
 ### Phase 1: MVP Implementation
 
 #### Requirement 1.1: Seed-to-Segment Pipeline
-**Description:** Segment 001 uses the seed image; subsequent segments chain from the previous output.
+**Description:** Segment 001 uses the seed image; subsequent segments chain from the previous output. Each segment selects the appropriate prompt type based on its position in the chain.
 **Acceptance Criteria:**
 - [ ] Segment 001 uses the approved variant from PRD-21 as seed
 - [ ] Each subsequent segment uses the extracted last frame of the previous segment
 - [ ] Seed frame extraction is automatic after each segment completes
 - [ ] Extracted frames are stored as reference images
+- [ ] Prompt type selection per segment position (from PRD-23 Requirement 1.3):
+  - Single-segment scenes use `full_clip` prompt
+  - First segment in a multi-segment chain uses `start_clip` prompt (falls back to `full_clip` if not defined)
+  - Subsequent segments in a chain use `continuation_clip` prompt (falls back to `full_clip` if not defined)
+- [ ] Selected prompt type is recorded in segment metadata for provenance
 
 #### Requirement 1.2: Boundary Frame Selection
 **Description:** Choose the optimal frame from the end of a segment as the seed for the next.
@@ -129,3 +134,4 @@ This check is **blocking** — no PR should be merged without a DRY-GUY audit of
 
 ## 12. Version History
 - **v1.0** (2026-02-18): Initial PRD generation from master specification
+- **v1.1** (2026-02-19): Added position-based prompt type selection (full_clip, start_clip, continuation_clip) to Requirement 1.1, referencing PRD-23 v1.1
