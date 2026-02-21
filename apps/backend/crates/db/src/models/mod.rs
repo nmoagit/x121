@@ -8,6 +8,7 @@
 pub mod asset;
 pub mod character;
 pub mod comfyui;
+pub mod dashboard;
 pub mod event;
 pub mod hardware;
 pub mod image;
@@ -31,4 +32,5 @@ pub mod theme;
 pub mod status;
 pub mod user;
 pub mod validation;
+pub mod performance_metric;
 pub mod video;

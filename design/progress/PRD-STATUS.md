@@ -21,10 +21,10 @@ Source of truth: [`design/design.md`](../design.md)
 | Status | Count |
 |--------|-------|
 | backlog | 0 |
-| planning | 90 |
+| planning | 85 |
 | in-progress | 0 |
 | review | 0 |
-| done | 19 |
+| done | 24 |
 | blocked | 0 |
 | deferred | 0 |
 | maybe | 15 |
@@ -132,7 +132,7 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-51 | Undo/Redo Architecture | — | `planning` | — | |
 | PRD-52 | Keyboard Shortcut System & Presets | — | `done` | 2026-02-21 | Central registry, 4 industry presets, custom keymaps, context-aware, cheat sheet, 26 tests. |
 | PRD-53 | First-Run Experience & Onboarding | — | `planning` | — | |
-| PRD-54 | Background Job Tray | — | `planning` | — | |
+| PRD-54 | Background Job Tray | — | `done` | — | |
 | PRD-82 | Content Sensitivity Controls | — | `planning` | — | |
 
 ## Part 5: Workflow Editor & Review
@@ -143,8 +143,8 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-33 | Node-Based Workflow Canvas | — | `planning` | — | |
 | PRD-34 | Interactive Debugger (Mid-Run Control) | — | `planning` | — | |
 | PRD-35 | One-Key Approval & Finalization Flow | — | `planning` | — | |
-| PRD-36 | Cinema Mode & Sync-Play Grid | — | `planning` | — | |
-| PRD-37 | QA Visual Aids (Ghosting, ROI, Jog Dial) | — | `planning` | — | |
+| PRD-36 | Cinema Mode & Sync-Play Grid | — | `done` | — | |
+| PRD-37 | QA Visual Aids (Ghosting, ROI, Jog Dial) | — | `done` | — | |
 | PRD-38 | Collaborative Review (Notes, Memos, Issues) | — | `planning` | — | |
 | PRD-55 | Director's View (Mobile/Tablet Review) | — | `planning` | — | |
 | PRD-68 | Cross-Character Scene Comparison | — | `planning` | — | |
@@ -161,8 +161,8 @@ Source of truth: [`design/design.md`](../design.md)
 |-----|-------|----------|--------|-------|-------|
 | PRD-39 | Scene Assembler & Delivery Packaging | — | `planning` | — | |
 | PRD-40 | VFX Sidecar & Dataset Export | — | `planning` | — | |
-| PRD-41 | Performance & Benchmarking Dashboard | — | `planning` | — | |
-| PRD-42 | Studio Pulse Dashboard | — | `planning` | — | |
+| PRD-41 | Performance & Benchmarking Dashboard | — | `done` | — | |
+| PRD-42 | Studio Pulse Dashboard | — | `done` | — | |
 | PRD-72 | Project Lifecycle & Archival | — | `planning` | — | |
 | PRD-73 | Production Reporting & Data Export | — | `planning` | — | Updated v1.1 (2026-02-19): video technical reports |
 | PRD-84 | External Review / Shareable Preview Links | — | `planning` | — | |

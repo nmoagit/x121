@@ -61,6 +61,20 @@ export {
   Sun,
   Monitor,
   Palette,
+  // Job / Activity
+  Layers,
+  Bell,
+  BellOff,
+  Clock,
+  Ban,
+  Square,
+  CircleCheck,
+  CircleX,
+  Activity,
+  // Dashboard
+  HardDrive,
+  BarChart3,
+  Zap,
 } from "lucide-react";
 
 /** Standard icon size tokens (px values matching design grid) */

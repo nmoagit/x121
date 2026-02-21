@@ -2,6 +2,7 @@ pub mod admin;
 pub mod assets;
 pub mod auth;
 pub mod character;
+pub mod dashboard;
 pub mod hardware;
 pub mod health;
 pub mod image_qa;
@@ -9,6 +10,7 @@ pub mod jobs;
 pub mod keymaps;
 pub mod layouts;
 pub mod notification;
+pub mod performance;
 pub mod proficiency;
 pub mod project;
 pub mod reclamation;
@@ -88,6 +90,12 @@ use crate::ws;
 ///
 /// /admin/layout-presets                             list, create (admin only)
 /// /admin/layout-presets/{id}                        update, delete
+///
+/// /dashboard/widgets/active-tasks                   active tasks widget (GET)
+/// /dashboard/widgets/project-progress               project progress widget (GET)
+/// /dashboard/widgets/disk-health                    disk health widget (GET)
+/// /dashboard/widgets/activity-feed                  activity feed widget (GET)
+/// /user/dashboard                                   get, save dashboard config
 ///
 /// /ws/metrics                                       agent metrics WebSocket
 ///
@@ -175,6 +183,17 @@ use crate::ws;
 /// /assets/{id}/notes                                  list, add (GET, POST)
 /// /assets/{id}/rating                                 rate (PUT)
 /// /assets/{id}/ratings                                list ratings (GET)
+///
+/// /performance/overview                                aggregated overview (GET)
+/// /performance/trend                                   global trend (GET)
+/// /performance/workflow/{id}                           per-workflow metrics (GET)
+/// /performance/workflow/{id}/trend                     workflow trend (GET)
+/// /performance/worker/{id}                             per-worker metrics (GET)
+/// /performance/workers/comparison                      compare workers (GET)
+/// /performance/comparison                              compare workflows (GET)
+/// /performance/metrics                                 record metric (POST)
+/// /performance/alerts/thresholds                       list, create (GET, POST)
+/// /performance/alerts/thresholds/{id}                  update, delete (PUT, DELETE)
 /// ```
 pub fn api_routes() -> Router<AppState> {
     Router::new()
@@ -202,6 +221,12 @@ pub fn api_routes() -> Router<AppState> {
         .nest("/user/layouts", layouts::user_router())
         // Admin layout preset management (PRD-30).
         .nest("/admin/layout-presets", layouts::admin_router())
+        // Studio Pulse Dashboard: widget data endpoints (PRD-42).
+        .nest("/dashboard", dashboard::router())
+        // User-facing dashboard configuration (PRD-42).
+        .nest("/user/dashboard", dashboard::user_router())
+        // Performance & benchmarking dashboard (PRD-41).
+        .nest("/performance", performance::router())
         // Project routes (also nests characters and project-scoped scene types).
         .nest("/projects", project::router())
         // Character-scoped sub-resources (images, scenes).

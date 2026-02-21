@@ -45,6 +45,28 @@ export function formatDate(iso: string): string {
 }
 
 /**
+ * Format a duration in milliseconds into a human-readable string.
+ *
+ * Examples:
+ * - formatDuration(0)          => "0s"
+ * - formatDuration(45_000)     => "45s"
+ * - formatDuration(90_000)     => "1m 30s"
+ * - formatDuration(3_723_000)  => "1h 2m"
+ */
+export function formatDuration(ms: number): string {
+  if (ms <= 0) return "0s";
+
+  const totalSeconds = Math.floor(ms / 1000);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+
+  if (hours > 0) return `${hours}h ${minutes}m`;
+  if (minutes > 0) return `${minutes}m ${seconds}s`;
+  return `${seconds}s`;
+}
+
+/**
  * Format a countdown from now to a future date.
  *
  * Returns strings like "3d 4h", "2h 15m", "expired".

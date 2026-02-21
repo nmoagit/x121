@@ -73,6 +73,9 @@ regex = "1"
 # Async streams / futures combinators
 futures = "0.3"
 
+# System interfaces (disk stats, etc.)
+libc = "0.2"
+
 # Testing
 assert_matches = "1"
 http-body-util = "0.1"

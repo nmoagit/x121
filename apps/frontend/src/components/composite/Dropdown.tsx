@@ -1,6 +1,7 @@
 import { cn } from "@/lib/cn";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
+import { useClickOutside } from "@/hooks/useClickOutside";
 
 interface DropdownItem {
   label: string;
@@ -44,17 +45,7 @@ export function Dropdown({ trigger, items, onSelect, align = "left" }: DropdownP
     [onSelect, close],
   );
 
-  useEffect(() => {
-    if (!open) return;
-
-    const handleClick = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        close();
-      }
-    };
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, [open, close]);
+  useClickOutside(containerRef, close, open);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {

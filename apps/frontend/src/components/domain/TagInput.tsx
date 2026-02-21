@@ -1,5 +1,6 @@
 import { api } from "@/lib/api";
 import { cn } from "@/lib/cn";
+import { useClickOutside } from "@/hooks/useClickOutside";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { TagChip } from "./TagChip";
 import type { TagInfo, TagWithCount } from "./TagChip";
@@ -72,15 +73,8 @@ export function TagInput({
   }, [input, existingTags]);
 
   // Close suggestions on click outside.
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setShowSuggestions(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  const closeSuggestions = useCallback(() => setShowSuggestions(false), []);
+  useClickOutside(containerRef, closeSuggestions);
 
   const applyTag = useCallback(
     async (tagName: string) => {

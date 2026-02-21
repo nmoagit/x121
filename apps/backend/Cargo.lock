@@ -2906,6 +2906,7 @@ dependencies = [
  "futures",
  "http-body-util",
  "jsonwebtoken",
+ "libc",
  "serde",
  "serde_json",
  "sha2",
