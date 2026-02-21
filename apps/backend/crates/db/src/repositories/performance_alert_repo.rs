@@ -38,9 +38,7 @@ impl PerformanceAlertRepo {
         pool: &PgPool,
         id: DbId,
     ) -> Result<Option<PerformanceAlertThreshold>, sqlx::Error> {
-        let query = format!(
-            "SELECT {COLUMNS} FROM performance_alert_thresholds WHERE id = $1"
-        );
+        let query = format!("SELECT {COLUMNS} FROM performance_alert_thresholds WHERE id = $1");
         sqlx::query_as::<_, PerformanceAlertThreshold>(&query)
             .bind(id)
             .fetch_optional(pool)

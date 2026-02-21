@@ -35,9 +35,7 @@ impl ThemeRepo {
         pool: &PgPool,
         user_id: DbId,
     ) -> Result<Option<UserThemePreference>, sqlx::Error> {
-        let query = format!(
-            "SELECT {PREF_COLUMNS} FROM user_theme_preferences WHERE user_id = $1"
-        );
+        let query = format!("SELECT {PREF_COLUMNS} FROM user_theme_preferences WHERE user_id = $1");
         sqlx::query_as::<_, UserThemePreference>(&query)
             .bind(user_id)
             .fetch_optional(pool)
@@ -78,9 +76,7 @@ impl ThemeRepo {
     // -----------------------------------------------------------------------
 
     /// List all active custom themes (status = 'active').
-    pub async fn list_custom_themes(
-        pool: &PgPool,
-    ) -> Result<Vec<CustomTheme>, sqlx::Error> {
+    pub async fn list_custom_themes(pool: &PgPool) -> Result<Vec<CustomTheme>, sqlx::Error> {
         let query = format!(
             "SELECT {THEME_COLUMNS} FROM custom_themes \
              WHERE status_id = (SELECT id FROM theme_statuses WHERE name = 'active') \
@@ -96,9 +92,7 @@ impl ThemeRepo {
         pool: &PgPool,
         id: DbId,
     ) -> Result<Option<CustomTheme>, sqlx::Error> {
-        let query = format!(
-            "SELECT {THEME_COLUMNS} FROM custom_themes WHERE id = $1"
-        );
+        let query = format!("SELECT {THEME_COLUMNS} FROM custom_themes WHERE id = $1");
         sqlx::query_as::<_, CustomTheme>(&query)
             .bind(id)
             .fetch_optional(pool)
@@ -155,10 +149,7 @@ impl ThemeRepo {
     /// Delete a custom theme by ID.
     ///
     /// Returns `true` if a row was deleted.
-    pub async fn delete_custom_theme(
-        pool: &PgPool,
-        id: DbId,
-    ) -> Result<bool, sqlx::Error> {
+    pub async fn delete_custom_theme(pool: &PgPool, id: DbId) -> Result<bool, sqlx::Error> {
         let result = sqlx::query("DELETE FROM custom_themes WHERE id = $1")
             .bind(id)
             .execute(pool)
@@ -173,11 +164,9 @@ impl ThemeRepo {
         pool: &PgPool,
         id: DbId,
     ) -> Result<Option<serde_json::Value>, sqlx::Error> {
-        sqlx::query_scalar::<_, serde_json::Value>(
-            "SELECT tokens FROM custom_themes WHERE id = $1",
-        )
-        .bind(id)
-        .fetch_optional(pool)
-        .await
+        sqlx::query_scalar::<_, serde_json::Value>("SELECT tokens FROM custom_themes WHERE id = $1")
+            .bind(id)
+            .fetch_optional(pool)
+            .await
     }
 }

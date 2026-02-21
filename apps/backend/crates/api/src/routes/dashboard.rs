@@ -19,7 +19,10 @@ use crate::state::AppState;
 pub fn router() -> Router<AppState> {
     Router::new()
         .route("/widgets/active-tasks", get(dashboard::active_tasks))
-        .route("/widgets/project-progress", get(dashboard::project_progress))
+        .route(
+            "/widgets/project-progress",
+            get(dashboard::project_progress),
+        )
         .route("/widgets/disk-health", get(dashboard::disk_health))
         .route("/widgets/activity-feed", get(dashboard::activity_feed))
 }

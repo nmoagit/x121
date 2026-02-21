@@ -21,10 +21,10 @@ Source of truth: [`design/design.md`](../design.md)
 | Status | Count |
 |--------|-------|
 | backlog | 0 |
-| planning | 85 |
+| planning | 84 |
 | in-progress | 0 |
 | review | 0 |
-| done | 24 |
+| done | 25 |
 | blocked | 0 |
 | deferred | 0 |
 | maybe | 15 |
@@ -57,7 +57,7 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-46 | Worker Pool Management | — | `planning` | — | |
 | PRD-75 | ComfyUI Workflow Import & Validation | — | `planning` | — | |
 | PRD-77 | Pipeline Stage Hooks (Custom Scripts) | — | `planning` | — | |
-| PRD-85 | UI Plugin / Extension Architecture | — | `planning` | — | |
+| PRD-85 | UI Plugin / Extension Architecture | — | `done` | — | |
 | PRD-87 | GPU Power Management & Idle Scheduling | — | `planning` | — | |
 | PRD-90 | Render Queue Timeline / Gantt View | — | `planning` | — | |
 | PRD-93 | Generation Budget & Quota Management | — | `planning` | — | |

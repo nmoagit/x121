@@ -19,9 +19,7 @@ use trulience_core::ffmpeg;
 use trulience_core::types::DbId;
 use trulience_core::video_sources;
 use trulience_db::models::video::{CreateVideoThumbnail, VideoMetadata};
-use trulience_db::repositories::{
-    SceneVideoVersionRepo, SegmentRepo, VideoThumbnailRepo,
-};
+use trulience_db::repositories::{SceneVideoVersionRepo, SegmentRepo, VideoThumbnailRepo};
 
 use crate::error::{AppError, AppResult};
 use crate::state::AppState;
@@ -242,10 +240,7 @@ pub async fn get_metadata(
     let (width, height) = ffmpeg::parse_resolution(&probe);
     let audio_tracks = ffmpeg::parse_audio_tracks(&probe);
 
-    let file_size = tokio::fs::metadata(path)
-        .await
-        .ok()
-        .map(|m| m.len() as i64);
+    let file_size = tokio::fs::metadata(path).await.ok().map(|m| m.len() as i64);
 
     let metadata = VideoMetadata {
         duration_seconds: ffmpeg::parse_duration(&probe),
@@ -332,7 +327,10 @@ pub async fn generate_thumbnails(
     State(state): State<AppState>,
     Path((source_type, source_id)): Path<(String, DbId)>,
     Query(params): Query<GenerateThumbnailsParams>,
-) -> AppResult<(StatusCode, Json<Vec<trulience_db::models::video::VideoThumbnail>>)> {
+) -> AppResult<(
+    StatusCode,
+    Json<Vec<trulience_db::models::video::VideoThumbnail>>,
+)> {
     let file_path = resolve_video_path(&state.pool, &source_type, source_id).await?;
     let video_path = std::path::Path::new(&file_path);
 
@@ -342,15 +340,10 @@ pub async fn generate_thumbnails(
 
     let thumb_dir = thumbnail_dir(&source_type, source_id);
 
-    let results = ffmpeg::extract_thumbnails_at_interval(
-        video_path,
-        &thumb_dir,
-        interval,
-        width,
-        height,
-    )
-    .await
-    .map_err(|e| AppError::InternalError(e.to_string()))?;
+    let results =
+        ffmpeg::extract_thumbnails_at_interval(video_path, &thumb_dir, interval, width, height)
+            .await
+            .map_err(|e| AppError::InternalError(e.to_string()))?;
 
     // Convert to create DTOs.
     let inputs: Vec<CreateVideoThumbnail> = results

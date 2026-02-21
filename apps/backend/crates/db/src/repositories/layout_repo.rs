@@ -69,9 +69,7 @@ impl LayoutRepo {
         pool: &PgPool,
         id: DbId,
     ) -> Result<Option<UserLayout>, sqlx::Error> {
-        let query = format!(
-            "SELECT {USER_LAYOUT_COLUMNS} FROM user_layouts WHERE id = $1"
-        );
+        let query = format!("SELECT {USER_LAYOUT_COLUMNS} FROM user_layouts WHERE id = $1");
         sqlx::query_as::<_, UserLayout>(&query)
             .bind(id)
             .fetch_optional(pool)
@@ -108,10 +106,7 @@ impl LayoutRepo {
     /// Delete a user layout by ID.
     ///
     /// Returns `true` if a row was deleted.
-    pub async fn delete_user_layout(
-        pool: &PgPool,
-        id: DbId,
-    ) -> Result<bool, sqlx::Error> {
+    pub async fn delete_user_layout(pool: &PgPool, id: DbId) -> Result<bool, sqlx::Error> {
         let result = sqlx::query("DELETE FROM user_layouts WHERE id = $1")
             .bind(id)
             .execute(pool)
@@ -161,12 +156,8 @@ impl LayoutRepo {
     }
 
     /// List all admin layout presets.
-    pub async fn list_admin_presets(
-        pool: &PgPool,
-    ) -> Result<Vec<AdminLayoutPreset>, sqlx::Error> {
-        let query = format!(
-            "SELECT {PRESET_COLUMNS} FROM admin_layout_presets ORDER BY name"
-        );
+    pub async fn list_admin_presets(pool: &PgPool) -> Result<Vec<AdminLayoutPreset>, sqlx::Error> {
+        let query = format!("SELECT {PRESET_COLUMNS} FROM admin_layout_presets ORDER BY name");
         sqlx::query_as::<_, AdminLayoutPreset>(&query)
             .fetch_all(pool)
             .await
@@ -207,10 +198,7 @@ impl LayoutRepo {
     /// Delete an admin layout preset by ID.
     ///
     /// Returns `true` if a row was deleted.
-    pub async fn delete_admin_preset(
-        pool: &PgPool,
-        id: DbId,
-    ) -> Result<bool, sqlx::Error> {
+    pub async fn delete_admin_preset(pool: &PgPool, id: DbId) -> Result<bool, sqlx::Error> {
         let result = sqlx::query("DELETE FROM admin_layout_presets WHERE id = $1")
             .bind(id)
             .execute(pool)

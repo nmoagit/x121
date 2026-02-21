@@ -74,11 +74,7 @@ pub async fn update_tag(
         id: tag_id,
     }))?;
 
-    tracing::info!(
-        tag_id,
-        user_id = auth.user_id,
-        "Tag updated",
-    );
+    tracing::info!(tag_id, user_id = auth.user_id, "Tag updated",);
 
     Ok(Json(DataResponse { data: tag }))
 }
@@ -100,11 +96,7 @@ pub async fn delete_tag(
         }));
     }
 
-    tracing::info!(
-        tag_id,
-        user_id = admin.user_id,
-        "Tag deleted",
-    );
+    tracing::info!(tag_id, user_id = admin.user_id, "Tag deleted",);
 
     Ok(StatusCode::NO_CONTENT)
 }
@@ -140,16 +132,13 @@ pub async fn apply_entity_tags(
     validate_entity_type(&entity_type)?;
 
     if input.tag_names.is_empty() {
-        return Err(AppError::BadRequest(
-            "tag_names must not be empty".into(),
-        ));
+        return Err(AppError::BadRequest("tag_names must not be empty".into()));
     }
 
     let mut applied_tags = Vec::new();
 
     for tag_name in &input.tag_names {
-        let tag =
-            TagRepo::create_or_get(&state.pool, tag_name, None, Some(auth.user_id)).await?;
+        let tag = TagRepo::create_or_get(&state.pool, tag_name, None, Some(auth.user_id)).await?;
         TagRepo::apply(
             &state.pool,
             &entity_type,

@@ -24,9 +24,7 @@ impl KeymapRepo {
         pool: &PgPool,
         user_id: DbId,
     ) -> Result<Option<UserKeymap>, sqlx::Error> {
-        let query = format!(
-            "SELECT {COLUMNS} FROM user_keymaps WHERE user_id = $1"
-        );
+        let query = format!("SELECT {COLUMNS} FROM user_keymaps WHERE user_id = $1");
         sqlx::query_as::<_, UserKeymap>(&query)
             .bind(user_id)
             .fetch_optional(pool)

@@ -6,8 +6,7 @@ use trulience_core::types::DbId;
 use crate::models::dashboard::{DashboardConfig, SaveDashboardConfig};
 
 /// Column list for `dashboard_configs` queries.
-const COLUMNS: &str =
-    "id, user_id, layout_json, widget_settings_json, created_at, updated_at";
+const COLUMNS: &str = "id, user_id, layout_json, widget_settings_json, created_at, updated_at";
 
 /// Provides CRUD operations for per-user dashboard configuration.
 pub struct DashboardRepo;
@@ -18,9 +17,7 @@ impl DashboardRepo {
         pool: &PgPool,
         user_id: DbId,
     ) -> Result<Option<DashboardConfig>, sqlx::Error> {
-        let query = format!(
-            "SELECT {COLUMNS} FROM dashboard_configs WHERE user_id = $1"
-        );
+        let query = format!("SELECT {COLUMNS} FROM dashboard_configs WHERE user_id = $1");
         sqlx::query_as::<_, DashboardConfig>(&query)
             .bind(user_id)
             .fetch_optional(pool)

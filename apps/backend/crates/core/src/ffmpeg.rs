@@ -139,12 +139,7 @@ pub async fn extract_frame_thumbnail(
     }
 
     let output = tokio::process::Command::new("ffmpeg")
-        .args([
-            "-y",
-            "-ss",
-            &format!("{timestamp_secs:.3}"),
-            "-i",
-        ])
+        .args(["-y", "-ss", &format!("{timestamp_secs:.3}"), "-i"])
         .arg(video_path)
         .args([
             "-vframes",

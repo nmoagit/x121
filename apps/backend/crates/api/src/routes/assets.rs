@@ -38,10 +38,7 @@ pub fn router() -> Router<AppState> {
             get(assets::get_dependencies).post(assets::add_dependency),
         )
         .route("/{id}/impact", get(assets::get_impact))
-        .route(
-            "/{id}/notes",
-            get(assets::get_notes).post(assets::add_note),
-        )
+        .route("/{id}/notes", get(assets::get_notes).post(assets::add_note))
         .route("/{id}/rating", put(assets::rate_asset))
         .route("/{id}/ratings", get(assets::get_ratings))
 }

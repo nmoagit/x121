@@ -49,7 +49,6 @@ pub fn admin_router() -> Router<AppState> {
         )
         .route(
             "/{id}",
-            axum::routing::put(layouts::update_admin_preset)
-                .delete(layouts::delete_admin_preset),
+            axum::routing::put(layouts::update_admin_preset).delete(layouts::delete_admin_preset),
         )
 }

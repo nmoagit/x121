@@ -27,9 +27,7 @@ pub fn check_deletion_safe(dependent_count: i64) -> DeletionCheck {
         DeletionCheck {
             is_safe: false,
             dependent_count,
-            message: format!(
-                "Cannot delete: asset has {dependent_count} active dependent(s)."
-            ),
+            message: format!("Cannot delete: asset has {dependent_count} active dependent(s)."),
         }
     }
 }

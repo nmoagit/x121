@@ -4,8 +4,8 @@ use sqlx::PgPool;
 use trulience_core::types::{DbId, Timestamp};
 
 use crate::models::performance_metric::{
-    CreatePerformanceMetric, PerformanceMetric, PerformanceTrendPoint,
-    WorkerPerformanceSummary, WorkflowPerformanceSummary,
+    CreatePerformanceMetric, PerformanceMetric, PerformanceTrendPoint, WorkerPerformanceSummary,
+    WorkflowPerformanceSummary,
 };
 
 /// Column list for `performance_metrics` SELECT queries.
@@ -61,9 +61,7 @@ impl PerformanceMetricRepo {
         pool: &PgPool,
         job_id: DbId,
     ) -> Result<Option<PerformanceMetric>, sqlx::Error> {
-        let query = format!(
-            "SELECT {COLUMNS} FROM performance_metrics WHERE job_id = $1"
-        );
+        let query = format!("SELECT {COLUMNS} FROM performance_metrics WHERE job_id = $1");
         sqlx::query_as::<_, PerformanceMetric>(&query)
             .bind(job_id)
             .fetch_optional(pool)

@@ -15,11 +15,7 @@ use crate::ws::WsManager;
 
 /// Handle a ComfyUI event by updating the job record and notifying
 /// connected WebSocket clients.
-pub async fn handle_comfyui_event(
-    pool: &PgPool,
-    ws_manager: &WsManager,
-    event: &ComfyUIEvent,
-) {
+pub async fn handle_comfyui_event(pool: &PgPool, ws_manager: &WsManager, event: &ComfyUIEvent) {
     match event {
         ComfyUIEvent::GenerationProgress {
             platform_job_id,
@@ -27,13 +23,9 @@ pub async fn handle_comfyui_event(
             current_node,
             ..
         } => {
-            if let Err(e) = JobRepo::update_progress(
-                pool,
-                *platform_job_id,
-                *percent,
-                current_node.as_deref(),
-            )
-            .await
+            if let Err(e) =
+                JobRepo::update_progress(pool, *platform_job_id, *percent, current_node.as_deref())
+                    .await
             {
                 tracing::error!(
                     job_id = platform_job_id,
@@ -42,12 +34,15 @@ pub async fn handle_comfyui_event(
                 );
             }
 
-            broadcast_json(ws_manager, serde_json::json!({
-                "type": MSG_TYPE_JOB_PROGRESS,
-                "job_id": platform_job_id,
-                "percent": percent,
-                "current_node": current_node,
-            }))
+            broadcast_json(
+                ws_manager,
+                serde_json::json!({
+                    "type": MSG_TYPE_JOB_PROGRESS,
+                    "job_id": platform_job_id,
+                    "percent": percent,
+                    "current_node": current_node,
+                }),
+            )
             .await;
         }
 
@@ -64,10 +59,13 @@ pub async fn handle_comfyui_event(
                 );
             }
 
-            broadcast_json(ws_manager, serde_json::json!({
-                "type": MSG_TYPE_JOB_COMPLETED,
-                "job_id": platform_job_id,
-            }))
+            broadcast_json(
+                ws_manager,
+                serde_json::json!({
+                    "type": MSG_TYPE_JOB_COMPLETED,
+                    "job_id": platform_job_id,
+                }),
+            )
             .await;
         }
 
@@ -85,11 +83,14 @@ pub async fn handle_comfyui_event(
                 );
             }
 
-            broadcast_json(ws_manager, serde_json::json!({
-                "type": MSG_TYPE_JOB_FAILED,
-                "job_id": platform_job_id,
-                "error": error,
-            }))
+            broadcast_json(
+                ws_manager,
+                serde_json::json!({
+                    "type": MSG_TYPE_JOB_FAILED,
+                    "job_id": platform_job_id,
+                    "error": error,
+                }),
+            )
             .await;
         }
 
@@ -106,10 +107,13 @@ pub async fn handle_comfyui_event(
                 );
             }
 
-            broadcast_json(ws_manager, serde_json::json!({
-                "type": MSG_TYPE_JOB_CANCELLED,
-                "job_id": platform_job_id,
-            }))
+            broadcast_json(
+                ws_manager,
+                serde_json::json!({
+                    "type": MSG_TYPE_JOB_CANCELLED,
+                    "job_id": platform_job_id,
+                }),
+            )
             .await;
         }
 

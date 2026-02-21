@@ -113,10 +113,7 @@ pub async fn import_keymap(
 
     let keymap = KeymapRepo::upsert_keymap(&state.pool, user.user_id, &upsert).await?;
 
-    tracing::info!(
-        user_id = user.user_id,
-        "User keymap imported",
-    );
+    tracing::info!(user_id = user.user_id, "User keymap imported",);
 
     Ok(Json(DataResponse { data: keymap }))
 }

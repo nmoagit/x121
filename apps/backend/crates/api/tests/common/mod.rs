@@ -204,11 +204,7 @@ pub async fn delete_auth(app: Router, uri: &str, token: &str) -> axum::response:
 
 /// Create a test user directly in the database and return the user row plus
 /// the plaintext password used.
-pub async fn create_test_user(
-    pool: &PgPool,
-    username: &str,
-    role_id: i64,
-) -> (User, String) {
+pub async fn create_test_user(pool: &PgPool, username: &str, role_id: i64) -> (User, String) {
     let password = "test_password_123!";
     let hashed = hash_password(password).expect("hashing should succeed");
     let input = CreateUser {

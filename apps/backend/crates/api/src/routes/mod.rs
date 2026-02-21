@@ -3,6 +3,7 @@ pub mod assets;
 pub mod auth;
 pub mod character;
 pub mod dashboard;
+pub mod extensions;
 pub mod hardware;
 pub mod health;
 pub mod image_qa;
@@ -194,6 +195,16 @@ use crate::ws;
 /// /performance/metrics                                 record metric (POST)
 /// /performance/alerts/thresholds                       list, create (GET, POST)
 /// /performance/alerts/thresholds/{id}                  update, delete (PUT, DELETE)
+///
+/// /admin/extensions                                     list, install (GET, POST)
+/// /admin/extensions/{id}                                get, update, uninstall
+/// /admin/extensions/{id}/enable                         enable (POST)
+/// /admin/extensions/{id}/disable                        disable (POST)
+///
+/// /extensions/registry                                  enabled extensions (GET)
+///
+/// /extension-api/projects                               ext proxy: list projects (GET)
+/// /extension-api/characters/{id}                        ext proxy: get character (GET)
 /// ```
 pub fn api_routes() -> Router<AppState> {
     Router::new()
@@ -255,4 +266,10 @@ pub fn api_routes() -> Router<AppState> {
         .nest("/entities", tags::entity_tags_router())
         // Asset registry: CRUD, dependencies, notes, ratings (PRD-17).
         .nest("/assets", assets::router())
+        // Extension admin management (PRD-85).
+        .nest("/admin/extensions", extensions::admin_router())
+        // Extension registry for authenticated clients (PRD-85).
+        .nest("/extensions", extensions::registry_router())
+        // Sandboxed extension API bridge (PRD-85).
+        .nest("/extension-api", extensions::ext_api_router())
 }

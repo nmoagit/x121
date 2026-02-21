@@ -242,10 +242,7 @@ impl AssetRepo {
         asset_id: DbId,
         input: &CreateDependency,
     ) -> Result<AssetDependency, sqlx::Error> {
-        let role = input
-            .dependency_role
-            .as_deref()
-            .unwrap_or("required");
+        let role = input.dependency_role.as_deref().unwrap_or("required");
 
         let query = format!(
             "INSERT INTO asset_dependencies (\
@@ -344,10 +341,7 @@ impl AssetRepo {
     }
 
     /// Get all notes for a specific asset.
-    pub async fn get_notes(
-        pool: &PgPool,
-        asset_id: DbId,
-    ) -> Result<Vec<AssetNote>, sqlx::Error> {
+    pub async fn get_notes(pool: &PgPool, asset_id: DbId) -> Result<Vec<AssetNote>, sqlx::Error> {
         let query = format!(
             "SELECT {NOTE_COLUMNS} FROM asset_notes \
              WHERE asset_id = $1 ORDER BY created_at DESC"

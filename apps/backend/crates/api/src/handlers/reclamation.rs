@@ -35,8 +35,9 @@ pub async fn preview(
     RequireAdmin(_admin): RequireAdmin,
 ) -> AppResult<Json<DataResponse<ReclamationPreview>>> {
     // Query pending trash entries to build preview from actual trash queue.
-    let entries = ReclamationRepo::list_trash_queue(&state.pool, Some("pending"), None, None, 10_000, 0)
-        .await?;
+    let entries =
+        ReclamationRepo::list_trash_queue(&state.pool, Some("pending"), None, None, 10_000, 0)
+            .await?;
 
     let total_bytes: i64 = entries.iter().map(|e| e.file_size_bytes).sum();
     let total_files = entries.len() as i64;
@@ -51,12 +52,14 @@ pub async fn preview(
 
     let per_project: Vec<ProjectReclamationSummary> = project_map
         .into_iter()
-        .map(|(project_id, (file_count, total))| ProjectReclamationSummary {
-            project_id,
-            project_name: None,
-            file_count,
-            total_bytes: total,
-        })
+        .map(
+            |(project_id, (file_count, total))| ProjectReclamationSummary {
+                project_id,
+                project_name: None,
+                file_count,
+                total_bytes: total,
+            },
+        )
         .collect();
 
     Ok(Json(DataResponse {
@@ -123,10 +126,16 @@ pub async fn run_cleanup(
                 bytes_reclaimed += entry.file_size_bytes;
             }
             Ok(None) => {
-                errors.push(format!("Entry {} not found when marking as deleted", entry.id));
+                errors.push(format!(
+                    "Entry {} not found when marking as deleted",
+                    entry.id
+                ));
             }
             Err(e) => {
-                errors.push(format!("DB error marking entry {} deleted: {}", entry.id, e));
+                errors.push(format!(
+                    "DB error marking entry {} deleted: {}",
+                    entry.id, e
+                ));
             }
         }
     }

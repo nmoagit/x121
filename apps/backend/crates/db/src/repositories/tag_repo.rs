@@ -74,10 +74,7 @@ impl TagRepo {
     }
 
     /// List all tags, optionally filtered by namespace, with pagination.
-    pub async fn list_all(
-        pool: &PgPool,
-        params: &TagListParams,
-    ) -> Result<Vec<Tag>, sqlx::Error> {
+    pub async fn list_all(pool: &PgPool, params: &TagListParams) -> Result<Vec<Tag>, sqlx::Error> {
         let limit = params.limit.unwrap_or(DEFAULT_LIMIT).min(MAX_LIMIT);
         let offset = params.offset.unwrap_or(0);
 
@@ -118,7 +115,9 @@ impl TagRepo {
         limit: Option<i64>,
     ) -> Result<Vec<TagSuggestion>, sqlx::Error> {
         let normalized = normalize_tag_name(prefix);
-        let limit = limit.unwrap_or(DEFAULT_SUGGEST_LIMIT).min(MAX_SUGGEST_LIMIT);
+        let limit = limit
+            .unwrap_or(DEFAULT_SUGGEST_LIMIT)
+            .min(MAX_SUGGEST_LIMIT);
         let pattern = format!("{normalized}%");
 
         sqlx::query_as::<_, TagSuggestion>(
@@ -229,12 +228,10 @@ impl TagRepo {
         let was_deleted = result.rows_affected() > 0;
 
         if was_deleted {
-            sqlx::query(
-                "UPDATE tags SET usage_count = GREATEST(usage_count - 1, 0) WHERE id = $1",
-            )
-            .bind(tag_id)
-            .execute(pool)
-            .await?;
+            sqlx::query("UPDATE tags SET usage_count = GREATEST(usage_count - 1, 0) WHERE id = $1")
+                .bind(tag_id)
+                .execute(pool)
+                .await?;
         }
 
         Ok(was_deleted)

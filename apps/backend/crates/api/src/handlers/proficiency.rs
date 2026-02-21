@@ -36,8 +36,7 @@ pub async fn get_proficiency(
     RequireAuth(user): RequireAuth,
     State(state): State<AppState>,
 ) -> AppResult<impl IntoResponse> {
-    let proficiencies =
-        ProficiencyRepo::get_all_proficiency(&state.pool, user.user_id).await?;
+    let proficiencies = ProficiencyRepo::get_all_proficiency(&state.pool, user.user_id).await?;
 
     Ok(Json(DataResponse {
         data: proficiencies,

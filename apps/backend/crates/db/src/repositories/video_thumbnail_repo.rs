@@ -127,13 +127,12 @@ impl VideoThumbnailRepo {
         source_type: &str,
         source_id: DbId,
     ) -> Result<u64, sqlx::Error> {
-        let result = sqlx::query(
-            "DELETE FROM video_thumbnails WHERE source_type = $1 AND source_id = $2",
-        )
-        .bind(source_type)
-        .bind(source_id)
-        .execute(pool)
-        .await?;
+        let result =
+            sqlx::query("DELETE FROM video_thumbnails WHERE source_type = $1 AND source_id = $2")
+                .bind(source_type)
+                .bind(source_id)
+                .execute(pool)
+                .await?;
         Ok(result.rows_affected())
     }
 }

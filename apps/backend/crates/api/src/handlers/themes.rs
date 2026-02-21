@@ -127,11 +127,7 @@ pub async fn update_custom_theme(
             id: theme_id,
         }))?;
 
-    tracing::info!(
-        theme_id,
-        user_id = admin.user_id,
-        "Custom theme updated",
-    );
+    tracing::info!(theme_id, user_id = admin.user_id, "Custom theme updated",);
 
     Ok(Json(DataResponse { data: theme }))
 }
@@ -153,11 +149,7 @@ pub async fn delete_custom_theme(
         }));
     }
 
-    tracing::info!(
-        theme_id,
-        user_id = admin.user_id,
-        "Custom theme deleted",
-    );
+    tracing::info!(theme_id, user_id = admin.user_id, "Custom theme deleted",);
 
     Ok(StatusCode::NO_CONTENT)
 }

@@ -3,6 +3,7 @@ pub mod assets;
 pub mod channels;
 pub mod delivery;
 pub mod error;
+pub mod extensions;
 pub mod ffmpeg;
 pub mod hardware;
 pub mod import_status;

@@ -11,8 +11,8 @@ use serde::Deserialize;
 use trulience_core::error::CoreError;
 use trulience_core::types::DbId;
 use trulience_db::models::performance_metric::{
-    CreateAlertThreshold, CreatePerformanceMetric, PerformanceOverview,
-    UpdateAlertThreshold, WorkflowComparison,
+    CreateAlertThreshold, CreatePerformanceMetric, PerformanceOverview, UpdateAlertThreshold,
+    WorkflowComparison,
 };
 use trulience_db::repositories::{PerformanceAlertRepo, PerformanceMetricRepo};
 
@@ -64,7 +64,10 @@ pub struct WorkerComparisonQuery {
 // ---------------------------------------------------------------------------
 
 /// Parse an optional ISO 8601 string into a Timestamp, with a fallback.
-fn parse_from(s: &Option<String>, default_days_ago: i64) -> AppResult<chrono::DateTime<chrono::Utc>> {
+fn parse_from(
+    s: &Option<String>,
+    default_days_ago: i64,
+) -> AppResult<chrono::DateTime<chrono::Utc>> {
     match s {
         Some(v) => v
             .parse::<chrono::DateTime<chrono::Utc>>()
@@ -161,14 +164,8 @@ pub async fn get_workflow_trend(
     let granularity = params.granularity.as_deref().unwrap_or("day");
     validate_granularity(granularity)?;
 
-    let trend = PerformanceMetricRepo::trend(
-        &state.pool,
-        from,
-        to,
-        granularity,
-        Some(workflow_id),
-    )
-    .await?;
+    let trend =
+        PerformanceMetricRepo::trend(&state.pool, from, to, granularity, Some(workflow_id)).await?;
     Ok(Json(DataResponse { data: trend }))
 }
 

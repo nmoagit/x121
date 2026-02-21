@@ -17,7 +17,10 @@ use crate::state::AppState;
 /// PUT /  -> update_user_theme
 /// ```
 pub fn user_router() -> Router<AppState> {
-    Router::new().route("/", get(themes::get_user_theme).put(themes::update_user_theme))
+    Router::new().route(
+        "/",
+        get(themes::get_user_theme).put(themes::update_user_theme),
+    )
 }
 
 /// Admin custom theme routes mounted at `/admin/themes`.

@@ -61,10 +61,7 @@ impl JobRepo {
     ///
     /// Uses `SELECT FOR UPDATE SKIP LOCKED` to prevent double-dispatch
     /// when multiple dispatcher instances are running.
-    pub async fn claim_next(
-        pool: &PgPool,
-        worker_id: DbId,
-    ) -> Result<Option<Job>, sqlx::Error> {
+    pub async fn claim_next(pool: &PgPool, worker_id: DbId) -> Result<Option<Job>, sqlx::Error> {
         let query = format!(
             "UPDATE jobs \
              SET worker_id = $1, claimed_at = NOW(), status_id = $2 \
@@ -87,13 +84,11 @@ impl JobRepo {
 
     /// Set `started_at` when a job begins actual execution (not just claimed).
     pub async fn mark_started(pool: &PgPool, job_id: DbId) -> Result<(), sqlx::Error> {
-        sqlx::query(
-            "UPDATE jobs SET started_at = NOW(), status_id = $2 WHERE id = $1",
-        )
-        .bind(job_id)
-        .bind(JobStatus::Running.id())
-        .execute(pool)
-        .await?;
+        sqlx::query("UPDATE jobs SET started_at = NOW(), status_id = $2 WHERE id = $1")
+            .bind(job_id)
+            .bind(JobStatus::Running.id())
+            .execute(pool)
+            .await?;
         Ok(())
     }
 
@@ -104,14 +99,12 @@ impl JobRepo {
         percent: i16,
         message: Option<&str>,
     ) -> Result<(), sqlx::Error> {
-        sqlx::query(
-            "UPDATE jobs SET progress_percent = $2, progress_message = $3 WHERE id = $1",
-        )
-        .bind(job_id)
-        .bind(percent)
-        .bind(message)
-        .execute(pool)
-        .await?;
+        sqlx::query("UPDATE jobs SET progress_percent = $2, progress_message = $3 WHERE id = $1")
+            .bind(job_id)
+            .bind(percent)
+            .bind(message)
+            .execute(pool)
+            .await?;
         Ok(())
     }
 
@@ -190,11 +183,7 @@ impl JobRepo {
     ///
     /// The new job has `retry_of_job_id` pointing to the original.
     /// This is the ONLY way to retry a failed job. No automatic retries exist.
-    pub async fn retry(
-        pool: &PgPool,
-        job_id: DbId,
-        user_id: DbId,
-    ) -> Result<Job, sqlx::Error> {
+    pub async fn retry(pool: &PgPool, job_id: DbId, user_id: DbId) -> Result<Job, sqlx::Error> {
         let original = Self::find_by_id(pool, job_id)
             .await?
             .ok_or(sqlx::Error::RowNotFound)?;
@@ -219,10 +208,7 @@ impl JobRepo {
     }
 
     /// Find a job by its ID.
-    pub async fn find_by_id(
-        pool: &PgPool,
-        id: DbId,
-    ) -> Result<Option<Job>, sqlx::Error> {
+    pub async fn find_by_id(pool: &PgPool, id: DbId) -> Result<Option<Job>, sqlx::Error> {
         let query = format!("SELECT {COLUMNS} FROM jobs WHERE id = $1");
         sqlx::query_as::<_, Job>(&query)
             .bind(id)
@@ -240,10 +226,7 @@ impl JobRepo {
     }
 
     /// List all jobs (admin view) with optional status filter and pagination.
-    pub async fn list_all(
-        pool: &PgPool,
-        params: &JobListQuery,
-    ) -> Result<Vec<Job>, sqlx::Error> {
+    pub async fn list_all(pool: &PgPool, params: &JobListQuery) -> Result<Vec<Job>, sqlx::Error> {
         Self::list_jobs(pool, None, params).await
     }
 

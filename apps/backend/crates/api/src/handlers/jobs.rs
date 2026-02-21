@@ -44,9 +44,9 @@ async fn find_and_authorize(
         }))?;
 
     if job.submitted_by != auth.user_id && auth.role != ROLE_ADMIN {
-        return Err(AppError::Core(CoreError::Forbidden(
-            format!("Cannot {action} another user's job"),
-        )));
+        return Err(AppError::Core(CoreError::Forbidden(format!(
+            "Cannot {action} another user's job"
+        ))));
     }
 
     Ok(job)

@@ -26,8 +26,8 @@ pub fn validate_file(file_path: &str) -> Result<FileInfo, AssetError> {
         return Err(AssetError::FileNotFound(file_path.to_string()));
     }
 
-    let metadata = std::fs::metadata(path)
-        .map_err(|_| AssetError::FileNotFound(file_path.to_string()))?;
+    let metadata =
+        std::fs::metadata(path).map_err(|_| AssetError::FileNotFound(file_path.to_string()))?;
 
     let size_bytes = metadata.len() as i64;
 

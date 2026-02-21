@@ -63,10 +63,10 @@ CREATE TRIGGER set_updated_at BEFORE UPDATE ON extensions
 ```
 
 **Acceptance Criteria:**
-- [ ] Unique name constraint prevents duplicate installations
-- [ ] Manifest stored as JSONB for querying
-- [ ] Settings per extension for runtime configuration
-- [ ] `enabled` flag with partial index for fast active-extension queries
+- [x] Unique name constraint prevents duplicate installations
+- [x] Manifest stored as JSONB for querying
+- [x] Settings per extension for runtime configuration
+- [x] `enabled` flag with partial index for fast active-extension queries
 
 ---
 
@@ -96,11 +96,11 @@ pub struct Permission {
 ```
 
 **Acceptance Criteria:**
-- [ ] Parses `plugin.json` manifest format
-- [ ] Validates required fields (name, version, api_version)
-- [ ] Validates permission declarations against known resources
-- [ ] Checks API version compatibility with current platform
-- [ ] Rejects invalid manifests with clear error messages
+- [x] Parses `plugin.json` manifest format
+- [x] Validates required fields (name, version, api_version)
+- [x] Validates permission declarations against known resources
+- [x] Checks API version compatibility with current platform
+- [x] Rejects invalid manifests with clear error messages
 
 ### Task 2.2: Extension Loader
 **File:** `src/services/extension_loader.rs`
@@ -108,10 +108,10 @@ pub struct Permission {
 Load extension bundles from local files or URLs.
 
 **Acceptance Criteria:**
-- [ ] Loads extension from a local file path (ZIP containing plugin.json + bundle)
-- [ ] Loads extension from a URL (downloads and installs)
-- [ ] Validates bundle structure: plugin.json required, entry point JS file
-- [ ] Stores bundle files in a managed directory
+- [x] Loads extension from a local file path (ZIP containing plugin.json + bundle)
+- [x] Loads extension from a URL (downloads and installs)
+- [x] Validates bundle structure: plugin.json required, entry point JS file
+- [x] Stores bundle files in a managed directory
 
 ### Task 2.3: Permission Enforcement
 **File:** `src/services/extension_permissions.rs`
@@ -119,11 +119,11 @@ Load extension bundles from local files or URLs.
 Enforce permission scoping for Extension API calls.
 
 **Acceptance Criteria:**
-- [ ] Each API call from an extension includes the extension ID
-- [ ] Permission check verifies the extension has declared access to the requested resource
-- [ ] Read vs. write access enforced separately
-- [ ] Violations return 403 with descriptive message
-- [ ] Violations logged for admin review
+- [x] Each API call from an extension includes the extension ID
+- [x] Permission check verifies the extension has declared access to the requested resource
+- [x] Read vs. write access enforced separately
+- [x] Violations return 403 with descriptive message
+- [x] Violations logged for admin review
 
 ### Task 2.4: Extension API Bridge (Backend)
 **File:** `src/routes/extension_api.rs`
@@ -138,11 +138,11 @@ POST /extension-api/events/subscribe   -- Subscribe to events
 ```
 
 **Acceptance Criteria:**
-- [ ] All routes require extension authentication (extension ID + session token)
-- [ ] Permission enforcement on every request
-- [ ] Response format matches the Extension API specification
-- [ ] API versioned to allow backward compatibility
-- [ ] Event subscription relays PRD-10 events to the extension
+- [x] All routes require extension authentication (extension ID + session token)
+- [x] Permission enforcement on every request
+- [x] Response format matches the Extension API specification
+- [x] API versioned to allow backward compatibility
+- [x] Event subscription relays PRD-10 events to the extension
 
 ---
 
@@ -161,11 +161,11 @@ POST   /admin/extensions/:id/disable   -- Disable extension
 ```
 
 **Acceptance Criteria:**
-- [ ] Install validates manifest and checks API compatibility
-- [ ] Enable/disable without uninstalling
-- [ ] Update settings applies per-extension configuration
-- [ ] Uninstall removes extension files and database record
-- [ ] Admin-only access
+- [x] Install validates manifest and checks API compatibility
+- [x] Enable/disable without uninstalling
+- [x] Update settings applies per-extension configuration
+- [x] Uninstall removes extension files and database record
+- [x] Admin-only access
 
 ### Task 3.2: Extension Registry Route
 **File:** `src/routes/extensions.rs`
@@ -175,9 +175,9 @@ GET /extensions/registry               -- Active extensions and their registrati
 ```
 
 **Acceptance Criteria:**
-- [ ] Returns all enabled extensions with their registered panels, menu items, renderers
-- [ ] Called by the frontend on startup to configure extension integration
-- [ ] Cached for performance (invalidated on extension enable/disable)
+- [x] Returns all enabled extensions with their registered panels, menu items, renderers
+- [x] Called by the frontend on startup to configure extension integration
+- [x] Cached for performance (invalidated on extension enable/disable)
 
 ---
 
@@ -198,10 +198,10 @@ interface ExtensionSandboxProps {
 ```
 
 **Acceptance Criteria:**
-- [ ] Renders extension in an iframe with `sandbox` attribute
-- [ ] Passes platform context (current project, character, scene) via postMessage
-- [ ] Passes design tokens (colors, fonts) for consistent styling
-- [ ] Handles iframe communication errors gracefully
+- [x] Renders extension in an iframe with `sandbox` attribute
+- [x] Passes platform context (current project, character, scene) via postMessage
+- [x] Passes design tokens (colors, fonts) for consistent styling
+- [x] Handles iframe communication errors gracefully
 
 ### Task 4.2: Extension API Client (Frontend Bridge)
 **File:** `frontend/src/services/extensionApiBridge.ts`
@@ -222,10 +222,10 @@ class ExtensionApiBridge {
 ```
 
 **Acceptance Criteria:**
-- [ ] Validates message origin to prevent cross-origin attacks
-- [ ] Routes API calls from iframe to backend Extension API endpoints
-- [ ] Enforces permission scoping on the client side (defense in depth)
-- [ ] Handles event subscription and delivery
+- [x] Validates message origin to prevent cross-origin attacks
+- [x] Routes API calls from iframe to backend Extension API endpoints
+- [x] Enforces permission scoping on the client side (defense in depth)
+- [x] Handles event subscription and delivery
 
 ### Task 4.3: Panel Registration Integration
 **File:** `frontend/src/components/extensions/ExtensionPanelIntegration.tsx`
@@ -233,10 +233,10 @@ class ExtensionApiBridge {
 Register extension panels in the PRD-30 panel management system.
 
 **Acceptance Criteria:**
-- [ ] Extension panels appear alongside native panels
-- [ ] Panels are resizable, movable, and hideable like native panels
-- [ ] Panel receives platform context (current project/character/scene)
-- [ ] Fallback: if extension fails to load, show error state
+- [x] Extension panels appear alongside native panels
+- [x] Panels are resizable, movable, and hideable like native panels
+- [x] Panel receives platform context (current project/character/scene)
+- [x] Fallback: if extension fails to load, show error state
 
 ### Task 4.4: Context Menu Injection
 **File:** `frontend/src/components/extensions/ContextMenuInjection.tsx`
@@ -244,10 +244,10 @@ Register extension panels in the PRD-30 panel management system.
 Inject extension menu items into entity context menus.
 
 **Acceptance Criteria:**
-- [ ] Extension items added to character, scene, segment context menus
-- [ ] Items grouped under the extension name
-- [ ] Click triggers the extension's registered handler
-- [ ] Items respect declared permissions (hidden if permission not granted)
+- [x] Extension items added to character, scene, segment context menus
+- [x] Items grouped under the extension name
+- [x] Click triggers the extension's registered handler
+- [x] Items respect declared permissions (hidden if permission not granted)
 
 ### Task 4.5: Custom Metadata Renderer
 **File:** `frontend/src/components/extensions/MetadataRendererOverride.tsx`
@@ -255,10 +255,10 @@ Inject extension menu items into entity context menus.
 Allow extensions to override default metadata field display.
 
 **Acceptance Criteria:**
-- [ ] Extensions register renderers for specific metadata field names
-- [ ] Custom renderers replace default display in metadata views
-- [ ] Rendered in iframe for sandboxing (prevents XSS)
-- [ ] Fallback to default rendering on error
+- [x] Extensions register renderers for specific metadata field names
+- [x] Custom renderers replace default display in metadata views
+- [x] Rendered in iframe for sandboxing (prevents XSS)
+- [x] Fallback to default rendering on error
 
 ### Task 4.6: Extension Manager UI
 **File:** `frontend/src/pages/ExtensionManager.tsx`
@@ -266,12 +266,12 @@ Allow extensions to override default metadata field display.
 Admin page for managing extensions.
 
 **Acceptance Criteria:**
-- [ ] List installed extensions with name, version, status (enabled/disabled)
-- [ ] Install from file upload or URL
-- [ ] Permission review before enabling
-- [ ] Per-extension settings form (auto-generated from settings_schema)
-- [ ] Enable/disable toggle
-- [ ] Uninstall with confirmation
+- [x] List installed extensions with name, version, status (enabled/disabled)
+- [x] Install from file upload or URL
+- [x] Permission review before enabling
+- [x] Per-extension settings form (auto-generated from settings_schema)
+- [x] Enable/disable toggle
+- [x] Uninstall with confirmation
 
 ---
 
@@ -281,19 +281,19 @@ Admin page for managing extensions.
 **File:** `tests/extension_manifest_test.rs`
 
 **Acceptance Criteria:**
-- [ ] Test valid manifest parses correctly
-- [ ] Test missing required fields are rejected
-- [ ] Test invalid permissions are rejected
-- [ ] Test API version incompatibility is detected
+- [x] Test valid manifest parses correctly
+- [x] Test missing required fields are rejected
+- [x] Test invalid permissions are rejected
+- [x] Test API version incompatibility is detected
 
 ### Task 5.2: Permission Enforcement Tests
 **File:** `tests/extension_permissions_test.rs`
 
 **Acceptance Criteria:**
-- [ ] Test extension can access declared resources
-- [ ] Test extension cannot access undeclared resources
-- [ ] Test read-only permission blocks write operations
-- [ ] Test violations are logged
+- [x] Test extension can access declared resources
+- [x] Test extension cannot access undeclared resources
+- [x] Test read-only permission blocks write operations
+- [x] Test violations are logged
 
 ---
 

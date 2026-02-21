@@ -9,7 +9,9 @@ use axum::response::IntoResponse;
 use axum::Json;
 use trulience_core::error::CoreError;
 use trulience_core::types::DbId;
-use trulience_db::models::layout::{CreateAdminPreset, CreateUserLayout, UpdateAdminPreset, UpdateUserLayout};
+use trulience_db::models::layout::{
+    CreateAdminPreset, CreateUserLayout, UpdateAdminPreset, UpdateUserLayout,
+};
 use trulience_db::repositories::LayoutRepo;
 
 use crate::error::{AppError, AppResult};
@@ -87,11 +89,7 @@ pub async fn update_user_layout(
             id: layout_id,
         }))?;
 
-    tracing::info!(
-        layout_id,
-        user_id = user.user_id,
-        "User layout updated",
-    );
+    tracing::info!(layout_id, user_id = user.user_id, "User layout updated",);
 
     Ok(Json(DataResponse { data: layout }))
 }
@@ -113,11 +111,7 @@ pub async fn delete_user_layout(
         }));
     }
 
-    tracing::info!(
-        layout_id,
-        user_id = user.user_id,
-        "User layout deleted",
-    );
+    tracing::info!(layout_id, user_id = user.user_id, "User layout deleted",);
 
     Ok(StatusCode::NO_CONTENT)
 }

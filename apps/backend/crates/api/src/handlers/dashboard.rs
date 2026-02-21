@@ -265,19 +265,16 @@ const DISK_CRITICAL_THRESHOLD: f64 = 0.9;
 /// GET /api/v1/dashboard/widgets/disk-health
 ///
 /// Returns current disk usage stats from the filesystem.
-pub async fn disk_health(
-    _auth: AuthUser,
-) -> AppResult<impl IntoResponse> {
+pub async fn disk_health(_auth: AuthUser) -> AppResult<impl IntoResponse> {
     // Use statvfs via std::process::Command to read disk stats for the
     // data directory. Falls back to the root mount if DATA_DIR is unset.
-    let data_dir =
-        std::env::var("DATA_DIR").unwrap_or_else(|_| "/".to_string());
+    let data_dir = std::env::var("DATA_DIR").unwrap_or_else(|_| "/".to_string());
 
-    let stats = tokio::task::spawn_blocking(move || {
-        get_disk_stats(&data_dir)
-    })
-    .await
-    .map_err(|e| crate::error::AppError::InternalError(format!("Disk stats task failed: {e}")))?;
+    let stats = tokio::task::spawn_blocking(move || get_disk_stats(&data_dir))
+        .await
+        .map_err(|e| {
+            crate::error::AppError::InternalError(format!("Disk stats task failed: {e}"))
+        })?;
 
     Ok(Json(DataResponse { data: stats }))
 }
@@ -349,7 +346,10 @@ pub async fn activity_feed(
     State(state): State<AppState>,
     Query(params): Query<ActivityFeedQuery>,
 ) -> AppResult<impl IntoResponse> {
-    let limit = params.limit.unwrap_or(FEED_DEFAULT_LIMIT).min(FEED_MAX_LIMIT);
+    let limit = params
+        .limit
+        .unwrap_or(FEED_DEFAULT_LIMIT)
+        .min(FEED_MAX_LIMIT);
     let offset = params.offset.unwrap_or(0);
 
     // Build dynamic query with optional filters.

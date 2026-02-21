@@ -102,9 +102,8 @@ impl ProficiencyRepo {
         pool: &PgPool,
         user_id: DbId,
     ) -> Result<Option<UserFocusPreference>, sqlx::Error> {
-        let query = format!(
-            "SELECT {FOCUS_COLUMNS} FROM user_focus_preferences WHERE user_id = $1"
-        );
+        let query =
+            format!("SELECT {FOCUS_COLUMNS} FROM user_focus_preferences WHERE user_id = $1");
         sqlx::query_as::<_, UserFocusPreference>(&query)
             .bind(user_id)
             .fetch_optional(pool)

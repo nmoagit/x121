@@ -66,14 +66,15 @@ pub async fn create_asset(
     // Validate file exists and compute metadata.
     // In non-production environments, the file may not exist on the API server.
     // Use a placeholder if the file is not accessible.
-    let (file_size, checksum) = match trulience_core::assets::registry::validate_file(&input.file_path) {
-        Ok(info) => (info.size_bytes, info.checksum),
-        Err(_) => {
-            // File not found on this host -- store placeholder values.
-            // The asset might reside on a different storage node.
-            (0_i64, format!("pending-checksum-{}", input.file_path))
-        }
-    };
+    let (file_size, checksum) =
+        match trulience_core::assets::registry::validate_file(&input.file_path) {
+            Ok(info) => (info.size_bytes, info.checksum),
+            Err(_) => {
+                // File not found on this host -- store placeholder values.
+                // The asset might reside on a different storage node.
+                (0_i64, format!("pending-checksum-{}", input.file_path))
+            }
+        };
 
     let asset = AssetRepo::create(
         &state.pool,
@@ -140,11 +141,7 @@ pub async fn update_asset(
             id,
         }))?;
 
-    tracing::info!(
-        asset_id = id,
-        user_id = admin.user_id,
-        "Asset updated",
-    );
+    tracing::info!(asset_id = id, user_id = admin.user_id, "Asset updated",);
 
     Ok(Json(DataResponse { data: asset }))
 }
@@ -174,11 +171,7 @@ pub async fn delete_asset(
         }));
     }
 
-    tracing::info!(
-        asset_id = id,
-        user_id = admin.user_id,
-        "Asset deleted",
-    );
+    tracing::info!(asset_id = id, user_id = admin.user_id, "Asset deleted",);
 
     Ok(StatusCode::NO_CONTENT)
 }

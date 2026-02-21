@@ -46,4 +46,3 @@ pub struct VideoMetadata {
     pub file_size_bytes: Option<i64>,
     pub audio_tracks: Vec<AudioTrackInfo>,
 }
-

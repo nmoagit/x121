@@ -48,9 +48,8 @@ impl ReclamationRepo {
     pub async fn list_protection_rules(
         pool: &PgPool,
     ) -> Result<Vec<AssetProtectionRule>, sqlx::Error> {
-        let query = format!(
-            "SELECT {RULE_COLUMNS} FROM asset_protection_rules ORDER BY entity_type, name"
-        );
+        let query =
+            format!("SELECT {RULE_COLUMNS} FROM asset_protection_rules ORDER BY entity_type, name");
         sqlx::query_as::<_, AssetProtectionRule>(&query)
             .fetch_all(pool)
             .await
@@ -358,9 +357,7 @@ impl ReclamationRepo {
         pool: &PgPool,
         id: DbId,
     ) -> Result<Option<TrashQueueEntry>, sqlx::Error> {
-        let query = format!(
-            "SELECT {TRASH_COLUMNS} FROM trash_queue WHERE id = $1"
-        );
+        let query = format!("SELECT {TRASH_COLUMNS} FROM trash_queue WHERE id = $1");
         sqlx::query_as::<_, TrashQueueEntry>(&query)
             .bind(id)
             .fetch_optional(pool)
