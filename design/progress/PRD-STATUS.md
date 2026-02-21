@@ -21,10 +21,10 @@ Source of truth: [`design/design.md`](../design.md)
 | Status | Count |
 |--------|-------|
 | backlog | 0 |
-| planning | 73 |
+| planning | 72 |
 | in-progress | 0 |
 | review | 0 |
-| done | 36 |
+| done | 37 |
 | blocked | 0 |
 | deferred | 0 |
 | maybe | 15 |
@@ -131,7 +131,7 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-32 | Progressive Disclosure & UX Intelligence | — | `done` | 2026-02-21 | AdvancedDrawer, focus mode, parameter visibility, proficiency tracking, 13 tests. |
 | PRD-51 | Undo/Redo Architecture | — | `planning` | — | |
 | PRD-52 | Keyboard Shortcut System & Presets | — | `done` | 2026-02-21 | Central registry, 4 industry presets, custom keymaps, context-aware, cheat sheet, 26 tests. |
-| PRD-53 | First-Run Experience & Onboarding | — | `planning` | — | |
+| PRD-53 | First-Run Experience & Onboarding | — | `done` | 2026-02-21 | User onboarding state, guided tours, contextual hints, checklist, onboarding gate, 10 core tests. DRY-191 to DRY-200 audited. |
 | PRD-54 | Background Job Tray | — | `done` | — | |
 | PRD-82 | Content Sensitivity Controls | — | `planning` | — | |
 

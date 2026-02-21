@@ -22,6 +22,7 @@ pub mod metadata;
 pub mod metadata_editor;
 pub mod metric_names;
 pub mod naming;
+pub mod onboarding;
 pub mod qa_status;
 pub mod reclamation;
 pub mod restart_status;

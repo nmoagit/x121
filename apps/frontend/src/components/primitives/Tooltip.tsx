@@ -2,7 +2,11 @@ import { cn } from "@/lib/cn";
 import { useCallback, useRef, useState } from "react";
 import type { ReactNode } from "react";
 
-type TooltipSide = "top" | "bottom" | "left" | "right";
+/** Placement direction for tooltips, hints, and popovers. */
+export type Placement = "top" | "bottom" | "left" | "right";
+
+/** @deprecated Use `Placement` instead. */
+type TooltipSide = Placement;
 
 interface TooltipProps {
   content: ReactNode;
@@ -13,12 +17,16 @@ interface TooltipProps {
 
 const DEFAULT_DELAY = 300;
 
-const POSITION_CLASSES: Record<TooltipSide, string> = {
+/** CSS positioning classes for each placement direction. Shared by Tooltip and ContextualHint. */
+export const PLACEMENT_CLASSES: Record<Placement, string> = {
   top: "bottom-full left-1/2 -translate-x-1/2 mb-2",
   bottom: "top-full left-1/2 -translate-x-1/2 mt-2",
   left: "right-full top-1/2 -translate-y-1/2 mr-2",
   right: "left-full top-1/2 -translate-y-1/2 ml-2",
 };
+
+/** @deprecated Renamed to `PLACEMENT_CLASSES`. */
+const POSITION_CLASSES = PLACEMENT_CLASSES;
 
 export function Tooltip({ content, children, side = "top", delay = DEFAULT_DELAY }: TooltipProps) {
   const [visible, setVisible] = useState(false);

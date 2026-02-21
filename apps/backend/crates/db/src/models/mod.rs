@@ -26,6 +26,7 @@ pub mod keymap;
 pub mod layout;
 pub mod metadata;
 pub mod notification;
+pub mod onboarding;
 pub mod performance_metric;
 pub mod proficiency;
 pub mod project;

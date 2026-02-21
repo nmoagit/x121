@@ -6,4 +6,5 @@ export { Input } from "./Input";
 export { Select } from "./Select";
 export { Spinner } from "./Spinner";
 export { Toggle } from "./Toggle";
-export { Tooltip } from "./Tooltip";
+export { Tooltip, PLACEMENT_CLASSES } from "./Tooltip";
+export type { Placement } from "./Tooltip";

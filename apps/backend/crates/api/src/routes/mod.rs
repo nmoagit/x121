@@ -21,6 +21,7 @@ pub mod keymaps;
 pub mod layouts;
 pub mod metadata;
 pub mod notification;
+pub mod onboarding;
 pub mod performance;
 pub mod proficiency;
 pub mod project;
@@ -111,6 +112,9 @@ use crate::ws;
 /// /dashboard/widgets/disk-health                    disk health widget (GET)
 /// /dashboard/widgets/activity-feed                  activity feed widget (GET)
 /// /user/dashboard                                   get, save dashboard config
+///
+/// /user/onboarding                                  get, update (auth required, PRD-53)
+/// /user/onboarding/reset                            reset onboarding (POST, PRD-53)
 ///
 /// /ws/metrics                                       agent metrics WebSocket
 ///
@@ -330,6 +334,8 @@ pub fn api_routes() -> Router<AppState> {
         .nest("/dashboard", dashboard::router())
         // User-facing dashboard configuration (PRD-42).
         .nest("/user/dashboard", dashboard::user_router())
+        // User onboarding state (PRD-53).
+        .nest("/user/onboarding", onboarding::router())
         // Workspace state persistence (PRD-04).
         .nest("/workspace", workspace::router())
         // Real-time collaboration: entity locks and presence (PRD-11).
