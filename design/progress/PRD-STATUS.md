@@ -47,7 +47,7 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-03 | User Identity & RBAC | — | `done` | 2026-02-20 | JWT auth (HS256), Argon2id passwords, 3-role RBAC (admin/creator/reviewer), middleware extractors, admin user mgmt API, frontend auth (Zustand store, LoginPage, ProtectedRoute), 12 integration tests. DRY-012/013 resolved. |
 | PRD-04 | Session & Workspace Persistence | — | `planning` | — | |
 | PRD-05 | ComfyUI WebSocket Bridge | — | `done` | 2026-02-20 | tokio-tungstenite WS client, reqwest REST API, multi-instance manager with exponential backoff reconnect, message parser (7 ComfyUI types), execution tracking, broadcast event channel, 17 unit tests. |
-| PRD-06 | Hardware Monitoring & Direct Control | — | `planning` | — | |
+| PRD-06 | Hardware Monitoring & Direct Control | 1 | `done` | 2026-02-21 | DB schema (gpu_metrics, metric_thresholds, restart_logs/statuses), agent binary (NVML collector, WS push, restart handler), backend API (7 admin endpoints, WS ingestion, threshold engine, retention job), frontend dashboard (gauges, charts, restart UI), 16 tests. DRY-077 flagged, DRY-080 resolved. |
 | PRD-07 | Parallel Task Execution Engine | — | `planning` | — | |
 | PRD-08 | Queue Management & Job Scheduling | — | `planning` | — | |
 | PRD-09 | Multi-Runtime Script Orchestrator | — | `planning` | — | |

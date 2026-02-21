@@ -1,6 +1,7 @@
 import { Outlet, createRootRoute, createRoute } from "@tanstack/react-router";
 
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { HardwareDashboard } from "@/features/admin/HardwareDashboard";
 import { LoginPage } from "@/features/auth/LoginPage";
 
 /* --------------------------------------------------------------------------
@@ -44,7 +45,21 @@ const indexRoute = createRoute({
 });
 
 /* --------------------------------------------------------------------------
+   Admin routes
+   -------------------------------------------------------------------------- */
+
+const adminHardwareRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/admin/hardware",
+  component: () => (
+    <ProtectedRoute requiredRole="admin">
+      <HardwareDashboard />
+    </ProtectedRoute>
+  ),
+});
+
+/* --------------------------------------------------------------------------
    Route tree
    -------------------------------------------------------------------------- */
 
-export const routeTree = rootRoute.addChildren([loginRoute, indexRoute]);
+export const routeTree = rootRoute.addChildren([loginRoute, indexRoute, adminHardwareRoute]);

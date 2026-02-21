@@ -8,6 +8,7 @@ members = [
     "crates/comfyui",
     "crates/pipeline",
     "crates/worker",
+    "crates/agent",
 ]
 
 [workspace.package]

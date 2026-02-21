@@ -1,6 +1,7 @@
 pub mod admin;
 pub mod auth;
 pub mod character;
+pub mod hardware;
 pub mod health;
 pub mod image_qa;
 pub mod notification;
@@ -13,6 +14,7 @@ pub mod validation;
 use axum::routing::get;
 use axum::Router;
 
+use crate::handlers;
 use crate::state::AppState;
 use crate::ws;
 
@@ -30,6 +32,16 @@ use crate::ws;
 /// /admin/users                                     list, create (admin only)
 /// /admin/users/{id}                                get, update, deactivate
 /// /admin/users/{id}/reset-password                 reset password
+///
+/// /admin/hardware/workers/metrics/current           latest metrics per worker
+/// /admin/hardware/workers/{id}/metrics              worker metric history
+/// /admin/hardware/workers/{id}/restart              restart service (POST)
+/// /admin/hardware/workers/{id}/restarts             restart history
+/// /admin/hardware/thresholds                        list all thresholds
+/// /admin/hardware/workers/{id}/thresholds           update worker thresholds (PUT)
+/// /admin/hardware/thresholds/global                 update global thresholds (PUT)
+///
+/// /ws/metrics                                       agent metrics WebSocket
 ///
 /// /projects                                        list, create
 /// /projects/{id}                                   get, update, delete
@@ -91,12 +103,14 @@ use crate::ws;
 /// ```
 pub fn api_routes() -> Router<AppState> {
     Router::new()
-        // WebSocket endpoint.
+        // WebSocket endpoints.
         .route("/ws", get(ws::ws_handler))
+        .route("/ws/metrics", get(handlers::hardware::metrics_ws_handler))
         // Authentication routes (login, refresh, logout).
         .nest("/auth", auth::router())
-        // Admin routes (user management).
+        // Admin routes (user management + hardware monitoring).
         .nest("/admin", admin::router())
+        .nest("/admin/hardware", hardware::router())
         // Project routes (also nests characters and project-scoped scene types).
         .nest("/projects", project::router())
         // Character-scoped sub-resources (images, scenes).

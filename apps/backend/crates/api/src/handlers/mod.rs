@@ -8,6 +8,7 @@ pub mod admin;
 pub mod auth;
 pub mod character;
 pub mod derived_image;
+pub mod hardware;
 pub mod image_qa;
 pub mod image_variant;
 pub mod notification;

@@ -51,11 +51,7 @@ async function refreshTokenOnce(): Promise<boolean> {
    Core request function
    -------------------------------------------------------------------------- */
 
-async function request<T>(
-  path: string,
-  options?: RequestInit,
-  isRetry = false,
-): Promise<T> {
+async function request<T>(path: string, options?: RequestInit, isRetry = false): Promise<T> {
   const url = `${BASE_URL}${path}`;
 
   const headers: Record<string, string> = {
@@ -113,6 +109,13 @@ export const api = {
     return request<T>(path, {
       method: "POST",
       body: body ? JSON.stringify(body) : undefined,
+    });
+  },
+
+  put<T>(path: string, body: unknown): Promise<T> {
+    return request<T>(path, {
+      method: "PUT",
+      body: JSON.stringify(body),
     });
   },
 

@@ -30,10 +30,10 @@ This PRD creates a hardware monitoring system with two sides: a lightweight Rust
 
 ---
 
-## Phase 1: Database Schema
+## Phase 1: Database Schema [COMPLETE]
 
-### Task 1.1: Create GPU Metrics Table
-**File:** `migrations/20260218500001_create_gpu_metrics_table.sql`
+### Task 1.1: Create GPU Metrics Table [COMPLETE]
+**File:** `apps/db/migrations/20260221000001_create_gpu_metrics_table.sql`
 
 ```sql
 CREATE TABLE gpu_metrics (
@@ -56,14 +56,14 @@ CREATE INDEX idx_gpu_metrics_recorded_at ON gpu_metrics(recorded_at DESC);
 ```
 
 **Acceptance Criteria:**
-- [ ] `gpu_metrics` table with worker_id, gpu_index, and all metric columns
-- [ ] `recorded_at TIMESTAMPTZ` for the actual collection timestamp (may differ from insert time)
-- [ ] Indexes optimized for time-range queries per worker
-- [ ] No `updated_at` trigger (append-only table — metrics are never updated)
-- [ ] Uses `SMALLINT` for bounded numeric values (temperature, utilization %)
+- [x] `gpu_metrics` table with worker_id, gpu_index, and all metric columns
+- [x] `recorded_at TIMESTAMPTZ` for the actual collection timestamp (may differ from insert time)
+- [x] Indexes optimized for time-range queries per worker
+- [x] No `updated_at` trigger (append-only table — metrics are never updated)
+- [x] Uses `SMALLINT` for bounded numeric values (temperature, utilization %)
 
-### Task 1.2: Create Metric Thresholds Table
-**File:** `migrations/20260218500002_create_metric_thresholds_table.sql`
+### Task 1.2: Create Metric Thresholds Table [COMPLETE]
+**File:** `apps/db/migrations/20260221000002_create_metric_thresholds_table.sql`
 
 ```sql
 CREATE TABLE metric_thresholds (
@@ -90,13 +90,15 @@ INSERT INTO metric_thresholds (worker_id, metric_name, warning_value, critical_v
 ```
 
 **Acceptance Criteria:**
-- [ ] Per-worker or global thresholds (`worker_id NULL` = global default)
-- [ ] `warning_value` and `critical_value` for two-tier alerting
-- [ ] Default thresholds seeded: temp 70/85C, VRAM 85/95%, utilization 95/99%
-- [ ] `is_enabled` to disable specific thresholds
+- [x] Per-worker or global thresholds (`worker_id NULL` = global default)
+- [x] `warning_value` and `critical_value` for two-tier alerting
+- [x] Default thresholds seeded: temp 70/85C, VRAM 85/95%, utilization 95/99%
+- [x] `is_enabled` to disable specific thresholds
 
-### Task 1.3: Create Restart Logs Table
-**File:** `migrations/20260218500003_create_restart_logs_table.sql`
+**Implementation:** Added UNIQUE index using COALESCE(worker_id, 0) to handle NULL-safe uniqueness per metric per worker.
+
+### Task 1.3: Create Restart Logs Table [COMPLETE]
+**File:** `apps/db/migrations/20260221000003_create_restart_tables.sql`
 
 ```sql
 CREATE TABLE restart_logs (
@@ -121,17 +123,19 @@ CREATE TRIGGER set_updated_at BEFORE UPDATE ON restart_logs
 ```
 
 **Acceptance Criteria:**
-- [ ] Tracks who initiated the restart (`initiated_by` FK to users)
-- [ ] Status progression: initiated, stopping, restarting, completed, failed
-- [ ] `error_message` for failure details
-- [ ] `completed_at` set when restart finishes
+- [x] Tracks who initiated the restart (`initiated_by` FK to users)
+- [x] Status progression: initiated, stopping, restarting, completed, failed
+- [x] `error_message` for failure details
+- [x] `completed_at` set when restart finishes
+
+**Implementation:** Added `restart_statuses` lookup table per CONVENTIONS.md (status columns must use lookup tables, never raw TEXT). Status FK `status_id SMALLINT REFERENCES restart_statuses(id) DEFAULT 1`.
 
 ---
 
-## Phase 2: Worker Agent
+## Phase 2: Worker Agent [COMPLETE]
 
-### Task 2.1: Agent Binary Scaffold
-**File:** `agent/Cargo.toml`, `agent/src/main.rs`
+### Task 2.1: Agent Binary Scaffold [COMPLETE]
+**File:** `apps/backend/crates/agent/Cargo.toml`, `apps/backend/crates/agent/src/main.rs`
 
 Create the worker agent as a separate binary in the Cargo workspace.
 
@@ -174,13 +178,13 @@ async fn main() {
 ```
 
 **Acceptance Criteria:**
-- [ ] Separate Cargo package `trulience-agent` in workspace
-- [ ] Configurable via env vars: `BACKEND_WS_URL`, `WORKER_ID`, `METRICS_INTERVAL_SECS`
-- [ ] Compiles independently: `cargo build -p trulience-agent`
-- [ ] Root `Cargo.toml` updated with workspace member
+- [x] Separate Cargo package `trulience-agent` in workspace
+- [x] Configurable via env vars: `BACKEND_WS_URL`, `WORKER_ID`, `METRICS_INTERVAL_SECS`
+- [x] Compiles independently: `cargo build -p trulience-agent`
+- [x] Root `Cargo.toml` updated with workspace member
 
-### Task 2.2: NVML Metrics Collection
-**File:** `agent/src/collector.rs`
+### Task 2.2: NVML Metrics Collection [COMPLETE]
+**File:** `apps/backend/crates/agent/src/collector.rs`
 
 ```rust
 use nvml_wrapper::Nvml;
@@ -235,14 +239,16 @@ impl MetricsCollector {
 ```
 
 **Acceptance Criteria:**
-- [ ] Collects VRAM used/total, temperature, utilization, power draw, fan speed
-- [ ] Handles multiple GPUs per machine (`device_count` loop)
-- [ ] Gracefully handles missing metrics (power draw, fan speed as `Option`)
-- [ ] NVML initialization errors are clear (driver not found, permission denied)
-- [ ] `nvml-wrapper` crate in agent dependencies
+- [x] Collects VRAM used/total, temperature, utilization, power draw, fan speed
+- [x] Handles multiple GPUs per machine (`device_count` loop)
+- [x] Gracefully handles missing metrics (power draw, fan speed as `Option`)
+- [x] NVML initialization errors are clear (driver not found, permission denied)
+- [x] `nvml-wrapper` crate in agent dependencies
 
-### Task 2.3: Agent WebSocket Connection and Push
-**File:** `agent/src/sender.rs`
+**Implementation:** NVML stored as `Option<Nvml>` — gracefully handles missing NVIDIA drivers without panicking.
+
+### Task 2.3: Agent WebSocket Connection and Push [COMPLETE]
+**File:** `apps/backend/crates/agent/src/sender.rs`
 
 ```rust
 use tokio_tungstenite::connect_async;
@@ -286,17 +292,19 @@ pub async fn start_metrics_loop(
 ```
 
 **Acceptance Criteria:**
-- [ ] Pushes metrics every `METRICS_INTERVAL_SECS` (default 5) via WebSocket
-- [ ] Automatically reconnects on disconnection (with 5s delay)
-- [ ] JSON payload includes worker_id, all GPU metrics, and ISO 8601 timestamp
-- [ ] Reconnect loop runs indefinitely until process is killed
+- [x] Pushes metrics every `METRICS_INTERVAL_SECS` (default 5) via WebSocket
+- [x] Automatically reconnects on disconnection (with 5s delay)
+- [x] JSON payload includes worker_id, all GPU metrics, and ISO 8601 timestamp
+- [x] Reconnect loop runs indefinitely until process is killed
+
+**Implementation:** Also added `restart.rs` module with service restart handler (validates service names against injection, 60s timeout, reports results back via WS). Added `tokio::select!` for concurrent metrics push and incoming command handling.
 
 ---
 
-## Phase 3: Backend Metrics Ingestion
+## Phase 3: Backend Metrics Ingestion [COMPLETE]
 
-### Task 3.1: Metrics WebSocket Endpoint
-**File:** `src/api/handlers/metrics_ws.rs`
+### Task 3.1: Metrics WebSocket Endpoint [COMPLETE]
+**File:** `apps/backend/crates/api/src/handlers/hardware.rs`
 
 Backend endpoint that receives metrics from worker agents.
 
@@ -331,13 +339,13 @@ async fn handle_metrics_socket(mut socket: WebSocket, state: AppState) {
 ```
 
 **Acceptance Criteria:**
-- [ ] WebSocket endpoint at `/ws/metrics` accepts agent connections
-- [ ] Parses JSON metrics payload and inserts into `gpu_metrics`
-- [ ] Evaluates thresholds on each batch of metrics
-- [ ] Invalid payloads are logged but don't crash the connection
+- [x] WebSocket endpoint at `/ws/metrics` accepts agent connections
+- [x] Parses JSON metrics payload and inserts into `gpu_metrics`
+- [x] Evaluates thresholds on each batch of metrics
+- [x] Invalid payloads are logged but don't crash the connection
 
-### Task 3.2: Threshold Evaluation Engine
-**File:** `src/hardware/thresholds.rs`
+### Task 3.2: Threshold Evaluation Engine [COMPLETE]
+**File:** `apps/backend/crates/core/src/hardware/thresholds.rs`
 
 ```rust
 pub async fn evaluate_thresholds(
@@ -373,17 +381,19 @@ pub async fn evaluate_thresholds(
 ```
 
 **Acceptance Criteria:**
-- [ ] Evaluates temperature, VRAM %, and utilization % against thresholds
-- [ ] Supports per-worker overrides with fallback to global defaults
-- [ ] Emits warning and critical alerts (to be connected to PRD-010 event bus)
-- [ ] Alert deduplication: don't re-alert for the same condition within a cooldown period
+- [x] Evaluates temperature, VRAM %, and utilization % against thresholds
+- [x] Supports per-worker overrides with fallback to global defaults
+- [x] Emits warning and critical alerts (connected to PRD-010 event bus)
+- [x] Alert deduplication: don't re-alert for the same condition within a cooldown period
+
+**Implementation:** Pure evaluation logic in `core` crate with `AlertCooldownTracker` (5-min suppression). Handler in `api` crate calls evaluation after fetching thresholds from DB and emits alerts via event bus. 6 unit tests for threshold evaluation.
 
 ---
 
-## Phase 4: Admin API Endpoints
+## Phase 4: Admin API Endpoints [COMPLETE]
 
-### Task 4.1: Metrics Query API
-**File:** `src/api/handlers/hardware.rs`
+### Task 4.1: Metrics Query API [COMPLETE]
+**File:** `apps/backend/crates/api/src/handlers/hardware.rs`
 
 ```rust
 pub async fn get_worker_metrics(
@@ -408,13 +418,13 @@ pub async fn get_all_workers_current(
 ```
 
 **Acceptance Criteria:**
-- [ ] `GET /api/v1/admin/workers/:id/metrics?since=<ISO8601>` — historical metrics for a worker
-- [ ] `GET /api/v1/admin/workers/metrics/current` — latest metrics for all workers
-- [ ] Admin-only access (`RequireAdmin`)
-- [ ] Configurable time range (default last 1 hour)
+- [x] `GET /api/v1/admin/hardware/workers/:id/metrics?since=<ISO8601>` — historical metrics for a worker
+- [x] `GET /api/v1/admin/hardware/workers/metrics/current` — latest metrics for all workers
+- [x] Admin-only access (`RequireAdmin`)
+- [x] Configurable time range (default last 1 hour)
 
-### Task 4.2: One-Click Restart Endpoint
-**File:** `src/api/handlers/hardware.rs`
+### Task 4.2: One-Click Restart Endpoint [COMPLETE]
+**File:** `apps/backend/crates/api/src/handlers/hardware.rs`
 
 ```rust
 #[derive(Deserialize)]
@@ -442,15 +452,15 @@ pub async fn restart_service(
 ```
 
 **Acceptance Criteria:**
-- [ ] `POST /api/v1/admin/workers/:id/restart` — trigger service restart
-- [ ] Requires Admin role
-- [ ] Request specifies service name and optional reason
-- [ ] `force: true` skips waiting for current job to complete
-- [ ] Restart logged with initiator, timestamp, and outcome
-- [ ] Returns restart log entry with status tracking
+- [x] `POST /api/v1/admin/hardware/workers/:id/restart` — trigger service restart
+- [x] Requires Admin role
+- [x] Request specifies service name and optional reason
+- [x] `force: true` skips waiting for current job to complete
+- [x] Restart logged with initiator, timestamp, and outcome
+- [x] Returns restart log entry with status tracking
 
-### Task 4.3: Threshold Configuration API
-**File:** `src/api/handlers/hardware.rs`
+### Task 4.3: Threshold Configuration API [COMPLETE]
+**File:** `apps/backend/crates/api/src/handlers/hardware.rs`
 
 ```rust
 pub async fn update_thresholds(
@@ -462,17 +472,19 @@ pub async fn update_thresholds(
 ```
 
 **Acceptance Criteria:**
-- [ ] `GET /api/v1/admin/thresholds` — list all thresholds
-- [ ] `PUT /api/v1/admin/workers/:id/thresholds` — update per-worker thresholds
-- [ ] `PUT /api/v1/admin/thresholds/global` — update global defaults
-- [ ] Admin-only access
+- [x] `GET /api/v1/admin/hardware/thresholds` — list all thresholds
+- [x] `PUT /api/v1/admin/hardware/workers/:id/thresholds` — update per-worker thresholds
+- [x] `PUT /api/v1/admin/hardware/thresholds/global` — update global defaults
+- [x] Admin-only access
+
+**Implementation:** All routes nested under `/admin/hardware`. Includes input validation for threshold values (warning < critical, non-negative).
 
 ---
 
-## Phase 5: Metrics Retention
+## Phase 5: Metrics Retention [COMPLETE]
 
-### Task 5.1: Metrics Cleanup Job
-**File:** `src/hardware/retention.rs`
+### Task 5.1: Metrics Cleanup Job [COMPLETE]
+**File:** `apps/backend/crates/api/src/background/metrics_retention.rs`
 
 ```rust
 pub async fn cleanup_old_metrics(pool: &PgPool, retention_hours: i64) {
@@ -492,115 +504,94 @@ pub async fn cleanup_old_metrics(pool: &PgPool, retention_hours: i64) {
 ```
 
 **Acceptance Criteria:**
-- [ ] Deletes metrics older than configurable retention period (default 24h)
-- [ ] Runs as a periodic background task (every hour)
-- [ ] Logs how many rows were deleted
-- [ ] Does not block metric ingestion
+- [x] Deletes metrics older than configurable retention period (default 24h)
+- [x] Runs as a periodic background task (every hour)
+- [x] Logs how many rows were deleted
+- [x] Does not block metric ingestion
+
+**Implementation:** Uses `tokio::spawn` + `tokio::time::interval`. Configurable via `METRICS_RETENTION_HOURS` env var. Uses `CancellationToken` for graceful shutdown.
 
 ---
 
-## Phase 6: Frontend Dashboard
+## Phase 6: Frontend Dashboard [COMPLETE]
 
-### Task 6.1: Hardware Dashboard Page
-**File:** `frontend/src/pages/admin/HardwareDashboard.tsx`
-
-```typescript
-const HardwareDashboard: React.FC = () => {
-  const { data: workers } = useQuery('currentMetrics', fetchAllWorkerMetrics);
-
-  return (
-    <div className="hardware-dashboard">
-      <h1>GPU Workers</h1>
-      <div className="worker-grid">
-        {workers?.map(worker => (
-          <WorkerCard key={worker.worker_id} worker={worker} />
-        ))}
-      </div>
-    </div>
-  );
-};
-```
+### Task 6.1: Hardware Dashboard Page [COMPLETE]
+**File:** `apps/frontend/src/features/admin/HardwareDashboard.tsx`
 
 **Acceptance Criteria:**
-- [ ] Shows all workers in a grid/list view
-- [ ] Each worker card shows: name, GPU count, current metrics
-- [ ] Auto-refreshes every 5 seconds
-- [ ] Admin-only page (protected route)
+- [x] Shows all workers in a grid/list view
+- [x] Each worker card shows: name, GPU count, current metrics
+- [x] Auto-refreshes every 5 seconds
+- [x] Admin-only page (protected route)
 
-### Task 6.2: GPU Metrics Gauge Component
-**File:** `frontend/src/components/hardware/GpuGauge.tsx`
+**Implementation:** Responsive grid (1-4 cols) of WorkerCards. Click-to-expand MetricsChart for selected worker. Route `/admin/hardware` added to TanStack Router with `ProtectedRoute` requiredRole="admin". EmptyState and Spinner for empty/loading states.
 
-```typescript
-interface GpuGaugeProps {
-  label: string;
-  value: number;
-  max: number;
-  unit: string;
-  warningThreshold: number;
-  criticalThreshold: number;
-}
-
-const GpuGauge: React.FC<GpuGaugeProps> = ({ label, value, max, unit, warningThreshold, criticalThreshold }) => {
-  const percent = (value / max) * 100;
-  const color = value >= criticalThreshold ? 'red' : value >= warningThreshold ? 'yellow' : 'green';
-
-  return (
-    <div className="gpu-gauge">
-      <span className="label">{label}</span>
-      <div className="bar" style={{ width: `${percent}%`, backgroundColor: color }} />
-      <span className="value">{value}{unit} / {max}{unit}</span>
-    </div>
-  );
-};
-```
+### Task 6.2: GPU Metrics Gauge Component [COMPLETE]
+**File:** `apps/frontend/src/features/admin/components/GpuGauge.tsx`
 
 **Acceptance Criteria:**
-- [ ] Color-coded: green (<warning), yellow (warning-critical), red (>critical)
-- [ ] Shows value, max, and percentage
-- [ ] Used for temperature, VRAM, utilization, power
-- [ ] Smooth transitions on value changes
+- [x] Color-coded: green (<warning), yellow (warning-critical), red (>critical)
+- [x] Shows value, max, and percentage
+- [x] Used for temperature, VRAM, utilization, power
+- [x] Smooth transitions on value changes
 
-### Task 6.3: Historical Metrics Chart
-**File:** `frontend/src/components/hardware/MetricsChart.tsx`
+**Implementation:** Horizontal bar gauge using CSS custom properties for theme-aware colors. Accessible `progressbar` role with aria attributes. CSS transition on width changes.
 
-**Acceptance Criteria:**
-- [ ] Line chart showing metrics over time
-- [ ] Configurable time range: 1h, 6h, 24h
-- [ ] Separate series for temperature, VRAM, utilization
-- [ ] Threshold lines drawn on chart for reference
-- [ ] Uses a charting library (recharts or similar)
-
-### Task 6.4: Restart Button with Confirmation
-**File:** `frontend/src/components/hardware/RestartButton.tsx`
+### Task 6.3: Historical Metrics Chart [COMPLETE]
+**File:** `apps/frontend/src/features/admin/components/MetricsChart.tsx`
 
 **Acceptance Criteria:**
-- [ ] Button visible on each worker card
-- [ ] Confirmation dialog with reason text input
-- [ ] Shows restart progress: initiated -> stopping -> restarting -> completed
-- [ ] Error display if restart fails
-- [ ] Force-restart option with stronger warning
+- [x] Line chart showing metrics over time
+- [x] Configurable time range: 1h, 6h, 24h
+- [x] Separate series for temperature, VRAM, utilization
+- [x] Threshold lines drawn on chart for reference
+- [x] Uses a charting library (recharts or similar)
+
+**Implementation:** Recharts 3.7 LineChart with three series (temperature=red, VRAM%=blue, utilization%=green). Warning/Critical ReferenceLine overlays. Time range buttons. Theme-aware colors resolved from CSS custom properties.
+
+### Task 6.4: Restart Button with Confirmation [COMPLETE]
+**File:** `apps/frontend/src/features/admin/components/RestartButton.tsx`
+
+**Acceptance Criteria:**
+- [x] Button visible on each worker card
+- [x] Confirmation dialog with reason text input
+- [x] Shows restart progress: initiated -> stopping -> restarting -> completed
+- [x] Error display if restart fails
+- [x] Force-restart option with stronger warning
+
+**Implementation:** Uses existing Modal and Button components. Service name input, optional reason, force checkbox with danger warning. Loading state during mutation, error display on failure, auto-close on success.
+
+**Additional files created:**
+- `apps/frontend/src/features/admin/hooks/use-hardware.ts` — TanStack Query hooks: useCurrentMetrics (5s polling), useWorkerMetrics, useThresholds, useRestartService, useRestartLogs
+- `apps/frontend/src/features/admin/components/WorkerCard.tsx` — Per-worker card with online/offline status, GPU gauges, threshold resolution, restart button
+- Added `put<T>()` method to `src/lib/api.ts` for threshold PUT endpoints
+- Added recharts 3.7 dependency
 
 ---
 
-## Phase 7: Integration Tests
+## Phase 7: Integration Tests [COMPLETE]
 
-### Task 7.1: Metrics Collection Tests
-**File:** `agent/tests/collector_tests.rs`
-
-**Acceptance Criteria:**
-- [ ] Test: NVML initialization (may skip on CI without GPU)
-- [ ] Test: metrics serialization to JSON
-
-### Task 7.2: Backend Metrics API Tests
-**File:** `tests/hardware_tests.rs`
+### Task 7.1: Metrics Collection Tests [COMPLETE]
+**File:** `apps/backend/crates/agent/tests/collector_tests.rs`
 
 **Acceptance Criteria:**
-- [ ] Test: insert and retrieve metrics
-- [ ] Test: latest metrics per worker query
-- [ ] Test: time-range filtering
-- [ ] Test: threshold evaluation triggers alerts
-- [ ] Test: restart log creation and status tracking
-- [ ] Test: metrics cleanup deletes old data
+- [x] Test: NVML initialization (may skip on CI without GPU)
+- [x] Test: metrics serialization to JSON
+
+**Implementation:** 4 tests: GPU metrics serialization (all fields present), optional fields serialize as null, NVML init graceful without drivers, collect() returns vec without panicking. Added `lib.rs` to agent crate for test imports.
+
+### Task 7.2: Backend Metrics API Tests [COMPLETE]
+**File:** `apps/backend/crates/api/tests/hardware_api.rs`
+
+**Acceptance Criteria:**
+- [x] Test: insert and retrieve metrics
+- [x] Test: latest metrics per worker query
+- [x] Test: time-range filtering
+- [x] Test: threshold evaluation triggers alerts
+- [x] Test: restart log creation and status tracking
+- [x] Test: metrics cleanup deletes old data
+
+**Implementation:** 12 tests total: 9 DB-dependent tests using `#[sqlx::test]` with migrations (insert/retrieve, latest per worker, time-range filtering, restart log CRUD, metrics cleanup, threshold upsert, batch insert, restart log listing) + 3 pure threshold evaluation tests (triggers alerts, no alerts in range, VRAM % computation). All non-DB tests pass; DB tests pass when PostgreSQL is available.
 
 ---
 

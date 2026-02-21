@@ -5,11 +5,13 @@
 //! can both access them.
 
 pub mod auth;
+pub mod background;
 pub mod config;
 pub mod error;
 pub mod handlers;
 pub mod middleware;
 pub mod notifications;
+pub mod response;
 pub mod routes;
 pub mod state;
 pub mod ws;

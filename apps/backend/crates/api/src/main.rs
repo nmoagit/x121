@@ -91,7 +91,15 @@ async fn main() {
         digest_scheduler.run(digest_cancel_clone).await;
     });
 
-    tracing::info!("Event services started (persistence, notification router, digest scheduler)");
+    // Spawn metrics retention job (purges old GPU metrics hourly).
+    let retention_cancel = tokio_util::sync::CancellationToken::new();
+    let retention_cancel_clone = retention_cancel.clone();
+    let retention_handle = tokio::spawn(trulience_api::background::metrics_retention::run(
+        pool.clone(),
+        retention_cancel_clone,
+    ));
+
+    tracing::info!("Event services started (persistence, notification router, digest scheduler, metrics retention)");
 
     // --- App state ---
     let state = AppState {
@@ -164,6 +172,11 @@ async fn main() {
     digest_cancel.cancel();
     let _ = tokio::time::timeout(Duration::from_secs(5), digest_handle).await;
     tracing::info!("Digest scheduler stopped");
+
+    // Stop metrics retention job.
+    retention_cancel.cancel();
+    let _ = tokio::time::timeout(Duration::from_secs(5), retention_handle).await;
+    tracing::info!("Metrics retention job stopped");
 
     // Drop the event bus sender to close the broadcast channel.
     // This signals persistence and notification router to shut down.

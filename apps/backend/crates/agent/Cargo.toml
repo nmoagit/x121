@@ -1,0 +1,28 @@
+[package]
+name = "trulience-agent"
+version.workspace = true
+edition.workspace = true
+
+[lib]
+name = "trulience_agent"
+path = "src/lib.rs"
+
+[[bin]]
+name = "trulience-agent"
+path = "src/main.rs"
+
+[dev-dependencies]
+serde_json = { workspace = true }
+
+[dependencies]
+tokio = { workspace = true }
+tokio-tungstenite = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+chrono = { workspace = true }
+dotenvy = { workspace = true }
+futures = { workspace = true }
+nvml-wrapper = "0.10"
+trulience-core = { workspace = true }

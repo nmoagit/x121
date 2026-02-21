@@ -8,6 +8,7 @@
 pub mod character;
 pub mod comfyui;
 pub mod event;
+pub mod hardware;
 pub mod image;
 pub mod image_qa;
 pub mod notification;
