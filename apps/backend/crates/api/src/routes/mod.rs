@@ -3,6 +3,7 @@ pub mod assets;
 pub mod audit;
 pub mod auth;
 pub mod character;
+pub mod character_metadata;
 pub mod checkpoints;
 pub mod collaboration;
 pub mod dashboard;
@@ -11,9 +12,11 @@ pub mod external_api;
 pub mod hardware;
 pub mod health;
 pub mod image_qa;
+pub mod importer;
 pub mod jobs;
 pub mod keymaps;
 pub mod layouts;
+pub mod metadata;
 pub mod notification;
 pub mod performance;
 pub mod proficiency;
@@ -112,6 +115,9 @@ use crate::ws;
 /// /projects/{project_id}/characters                list, create
 /// /projects/{project_id}/characters/{id}           get, update, delete
 /// /projects/{project_id}/characters/{id}/settings  get, put, patch
+/// /projects/{project_id}/characters/metadata             all metadata (PRD-66)
+/// /projects/{project_id}/characters/metadata/completeness project completeness (PRD-66)
+/// /projects/{project_id}/characters/metadata/csv         export/import CSV (PRD-66)
 /// /projects/{project_id}/scene-types               list, create
 /// /projects/{project_id}/scene-types/{id}          get, update, delete
 ///
@@ -121,6 +127,8 @@ use crate::ws;
 /// /characters/{character_id}/derived-images/{id}   get, update, delete
 /// /characters/{character_id}/image-variants        list, create
 /// /characters/{character_id}/image-variants/{id}   get, update, delete
+/// /characters/{character_id}/metadata               get, update (PRD-66)
+/// /characters/{character_id}/metadata/completeness  completeness status (PRD-66)
 /// /characters/{character_id}/scenes                list, create
 /// /characters/{character_id}/scenes/{id}           get, update, delete
 ///
@@ -305,11 +313,15 @@ pub fn api_routes() -> Router<AppState> {
         // Performance & benchmarking dashboard (PRD-41).
         .nest("/performance", performance::router())
         // Project routes (also nests characters and project-scoped scene types).
-        .nest("/projects", project::router())
-        // Character-scoped sub-resources (images, scenes).
-        .nest("/characters", character::router())
+        .nest("/projects", project::router()
+            .merge(metadata::project_metadata_router())
+            .nest("/{project_id}/characters", character_metadata::project_router()))
+        // Character-scoped sub-resources (images, scenes, metadata editor).
+        .nest("/characters", character::router()
+            .merge(metadata::character_metadata_router())
+            .merge(character_metadata::character_router()))
         // Scene-scoped sub-resources (segments).
-        .nest("/scenes", scene::router())
+        .nest("/scenes", scene::router().merge(metadata::scene_metadata_router()))
         // Studio-level scene types.
         .nest("/scene-types", scene_type::studio_router())
         // Trash / bin management.
@@ -322,6 +334,8 @@ pub fn api_routes() -> Router<AppState> {
         .nest("/validation", validation::validation_router())
         // Import reports and commit.
         .nest("/imports", validation::imports_router())
+        // Folder-to-entity bulk importer (PRD-016).
+        .nest("/import", importer::router())
         // Video streaming, metadata, and thumbnails.
         .nest("/videos", video::router())
         // Background job execution engine (PRD-07, PRD-08, PRD-28).

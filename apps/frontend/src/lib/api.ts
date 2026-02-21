@@ -97,6 +97,34 @@ async function request<T>(path: string, options?: RequestInit, isRetry = false):
 }
 
 /* --------------------------------------------------------------------------
+   Raw request function (for non-JSON responses / custom content types)
+   -------------------------------------------------------------------------- */
+
+async function rawRequest(path: string, options?: RequestInit): Promise<Response> {
+  const url = `${BASE_URL}${path}`;
+
+  const headers: Record<string, string> = {
+    ...(options?.headers as Record<string, string> | undefined),
+  };
+
+  const token = useAuthStore.getState().accessToken;
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  const response = await fetch(url, { ...options, headers });
+
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({
+      error: { code: "UNKNOWN", message: response.statusText },
+    }));
+    throw new ApiRequestError(response.status, body.error);
+  }
+
+  return response;
+}
+
+/* --------------------------------------------------------------------------
    Public API client
    -------------------------------------------------------------------------- */
 
@@ -128,5 +156,10 @@ export const api = {
 
   delete<T = void>(path: string): Promise<T> {
     return request<T>(path, { method: "DELETE" });
+  },
+
+  /** Raw fetch with auth but no JSON parsing (for blobs, custom content types). */
+  raw(path: string, options?: RequestInit): Promise<Response> {
+    return rawRequest(path, options);
   },
 };

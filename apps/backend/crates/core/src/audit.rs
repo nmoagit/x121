@@ -3,7 +3,7 @@
 //! This module lives in `core` (zero internal deps) so it can be used by both
 //! the API/repository layer and any future worker or CLI tooling.
 
-use sha2::{Digest, Sha256};
+use crate::hashing;
 
 // ---------------------------------------------------------------------------
 // Action type constants
@@ -69,11 +69,8 @@ const CHAIN_SEED: &str = "AUDIT_LOG_CHAIN_SEED_V1";
 /// (typically the JSON-serialized entry fields).
 pub fn compute_integrity_hash(prev_hash: Option<&str>, entry_data: &str) -> String {
     let prev = prev_hash.unwrap_or(CHAIN_SEED);
-    let mut hasher = Sha256::new();
-    hasher.update(prev.as_bytes());
-    hasher.update(b"|");
-    hasher.update(entry_data.as_bytes());
-    format!("{:x}", hasher.finalize())
+    let combined = format!("{prev}|{entry_data}");
+    hashing::sha256_hex(combined.as_bytes())
 }
 
 // ---------------------------------------------------------------------------

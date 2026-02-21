@@ -21,10 +21,10 @@ Source of truth: [`design/design.md`](../design.md)
 | Status | Count |
 |--------|-------|
 | backlog | 0 |
-| planning | 79 |
+| planning | 76 |
 | in-progress | 0 |
 | review | 0 |
-| done | 30 |
+| done | 33 |
 | blocked | 0 |
 | deferred | 0 |
 | maybe | 15 |
@@ -52,8 +52,8 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-08 | Queue Management & Job Scheduling | — | `done` | 2026-02-21 | State machine (9 states, 27 tests), scheduler, GPU quotas, off-peak policies, queue management API, frontend queue view. |
 | PRD-09 | Multi-Runtime Script Orchestrator | — | `done` | 2026-02-21 | Script execution layer (shell/python/binary), venv isolation with SHA-256 caching, ScriptOrchestrator service, admin API (8 endpoints), 2 DB migrations, 113 unit tests. |
 | PRD-10 | Event Bus & Notification System | — | `done` | 2026-02-20 | EventBus (broadcast channel), EventPersistence, NotificationRouter, 8 notification API endpoints, webhook/email delivery, digest scheduler, 16 event types, 5 DB tables, 12 unit tests. Phase 7 (frontend) deferred. |
-| PRD-11 | Real-time Collaboration Layer | — | `planning` | — | |
-| PRD-12 | External API & Webhooks | — | `planning` | — | |
+| PRD-11 | Real-time Collaboration Layer | — | `done` | 2026-02-21 | Entity locks (partial unique), presence tracking, core collaboration protocol (21 tests), lock/presence repos + handlers, frontend PresenceIndicator + LockStatus (7 tests). |
+| PRD-12 | External API & Webhooks | — | `done` | 2026-02-21 | API key management (SHA-256 hash, key rotation, scopes), webhook delivery with retry, API audit log, admin endpoints, frontend managers (20 tests). |
 | PRD-46 | Worker Pool Management | — | `planning` | — | |
 | PRD-75 | ComfyUI Workflow Import & Validation | — | `planning` | — | |
 | PRD-77 | Pipeline Stage Hooks (Custom Scripts) | — | `planning` | — | |
@@ -75,7 +75,7 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-17 | Asset Registry & Dependency Mapping | — | `done` | 2026-02-21 | Asset registry, dependencies, notes, ratings, impact analysis, browser UI, 8 tests. |
 | PRD-18 | Bulk Data Maintenance (Search/Replace/Re-path) | — | `planning` | — | |
 | PRD-19 | Disk Space Visualizer (Treemap) | — | `planning` | — | |
-| PRD-20 | Search & Discovery Engine | — | `planning` | — | |
+| PRD-20 | Search & Discovery Engine | — | `done` | 2026-02-21 | tsvector/GIN indexes, fulltext + typeahead + visual similarity search, faceted aggregation, saved searches, search analytics, frontend SearchBar + FacetPanel (29 tests). |
 | PRD-47 | Tagging & Custom Labels | — | `done` | 2026-02-21 | Polymorphic tagging, case-insensitive normalization, bulk ops, 3 frontend components. |
 | PRD-48 | External & Tiered Storage | — | `planning` | — | |
 | PRD-66 | Character Metadata Editor | — | `planning` | — | |

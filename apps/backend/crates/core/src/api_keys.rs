@@ -5,7 +5,7 @@
 
 use hmac::{Hmac, Mac};
 use rand::Rng;
-use sha2::{Digest, Sha256};
+use sha2::Sha256;
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -85,9 +85,7 @@ pub fn generate_api_key() -> GeneratedApiKey {
 /// Used both during key creation (to store the hash) and during
 /// authentication (to look up the key by hash).
 pub fn hash_api_key(key: &str) -> String {
-    let mut hasher = Sha256::new();
-    hasher.update(key.as_bytes());
-    format!("{:x}", hasher.finalize())
+    crate::hashing::sha256_hex(key.as_bytes())
 }
 
 /// Extract the prefix from a plaintext API key.
