@@ -11,6 +11,7 @@ pub mod scene_type;
 pub mod scripts;
 pub mod trash;
 pub mod validation;
+pub mod video;
 
 use axum::routing::get;
 use axum::Router;
@@ -107,6 +108,11 @@ use crate::ws;
 /// /imports/{id}/commit                              commit import (POST)
 /// /imports/{id}/report                              get report as JSON (GET)
 /// /imports/{id}/report/csv                          get report as CSV (GET)
+///
+/// /videos/{source_type}/{source_id}/stream           stream video (GET, range)
+/// /videos/{source_type}/{source_id}/metadata         video metadata (GET)
+/// /videos/{source_type}/{source_id}/thumbnails/{f}   get thumbnail (GET)
+/// /videos/{source_type}/{source_id}/thumbnails       generate thumbnails (POST)
 /// ```
 pub fn api_routes() -> Router<AppState> {
     Router::new()
@@ -137,4 +143,6 @@ pub fn api_routes() -> Router<AppState> {
         .nest("/validation", validation::validation_router())
         // Import reports and commit.
         .nest("/imports", validation::imports_router())
+        // Video streaming, metadata, and thumbnails.
+        .nest("/videos", video::router())
 }

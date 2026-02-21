@@ -23,3 +23,4 @@ pub mod session;
 pub mod status;
 pub mod user;
 pub mod validation;
+pub mod video;

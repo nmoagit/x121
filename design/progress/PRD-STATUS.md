@@ -21,10 +21,10 @@ Source of truth: [`design/design.md`](../design.md)
 | Status | Count |
 |--------|-------|
 | backlog | 0 |
-| planning | 98 |
+| planning | 97 |
 | in-progress | 0 |
 | review | 0 |
-| done | 11 |
+| done | 12 |
 | blocked | 0 |
 | deferred | 0 |
 | maybe | 15 |
@@ -139,7 +139,7 @@ Source of truth: [`design/design.md`](../design.md)
 
 | PRD | Title | Priority | Status | Owner | Notes |
 |-----|-------|----------|--------|-------|-------|
-| PRD-83 | Video Playback Engine & Codec Support | — | `planning` | — | |
+| PRD-83 | Video Playback Engine & Codec Support | — | `done` | 2026-02-21 | |
 | PRD-33 | Node-Based Workflow Canvas | — | `planning` | — | |
 | PRD-34 | Interactive Debugger (Mid-Run Control) | — | `planning` | — | |
 | PRD-35 | One-Key Approval & Finalization Flow | — | `planning` | — | |

@@ -32,13 +32,18 @@ export {
   Info,
   XCircle,
   Loader2,
-  // Content
+  // Media
   File,
   Folder,
   Image,
   Video,
   Play,
   Pause,
+  SkipForward,
+  SkipBack,
+  Repeat,
+  Volume2,
+  VolumeX,
   // UI
   Settings,
   User,

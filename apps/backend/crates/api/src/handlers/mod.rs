@@ -21,3 +21,4 @@ pub mod segment;
 pub mod source_image;
 pub mod trash;
 pub mod validation;
+pub mod video;

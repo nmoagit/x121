@@ -32,6 +32,7 @@ pub mod source_image_repo;
 pub mod trash_repo;
 pub mod user_repo;
 pub mod validation_rule_repo;
+pub mod video_thumbnail_repo;
 
 pub use character_repo::CharacterRepo;
 pub use comfyui_execution_repo::ComfyUIExecutionRepo;
@@ -61,3 +62,4 @@ pub use source_image_repo::SourceImageRepo;
 pub use trash_repo::TrashRepo;
 pub use user_repo::UserRepo;
 pub use validation_rule_repo::ValidationRuleRepo;
+pub use video_thumbnail_repo::VideoThumbnailRepo;
