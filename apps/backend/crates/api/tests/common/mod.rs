@@ -3,26 +3,18 @@
 #![allow(dead_code)]
 
 use std::sync::Arc;
-use std::time::Duration;
 
 use axum::body::Body;
-use axum::http::header::{AUTHORIZATION, CONTENT_TYPE};
-use axum::http::{HeaderName, Method, Request, StatusCode};
+use axum::http::{Method, Request, StatusCode};
 use axum::Router;
 use http_body_util::BodyExt;
 use sqlx::PgPool;
 use tower::ServiceExt;
-use tower_http::catch_panic::CatchPanicLayer;
-use tower_http::cors::CorsLayer;
-use tower_http::request_id::{MakeRequestUuid, PropagateRequestIdLayer, SetRequestIdLayer};
-use tower_http::timeout::TimeoutLayer;
-use tower_http::trace::{DefaultMakeSpan, DefaultOnResponse, TraceLayer};
-use tracing::Level;
 
 use trulience_api::auth::jwt::JwtConfig;
 use trulience_api::auth::password::hash_password;
 use trulience_api::config::ServerConfig;
-use trulience_api::routes;
+use trulience_api::router::build_app_router;
 use trulience_api::scripting::orchestrator::ScriptOrchestrator;
 use trulience_api::state::AppState;
 use trulience_api::ws::WsManager;
@@ -51,9 +43,9 @@ pub fn test_config() -> ServerConfig {
 /// Build the full application router with all middleware layers, using the
 /// given database pool and an optional script orchestrator.
 ///
-/// This mirrors the router construction in `main.rs` so integration tests
-/// exercise the same middleware stack (CORS, request ID, timeout, tracing,
-/// panic recovery) that production uses.
+/// Delegates to [`build_app_router`] so integration tests exercise the same
+/// middleware stack (CORS, request ID, timeout, tracing, panic recovery)
+/// that production uses.
 pub async fn build_test_app(pool: PgPool) -> Router {
     build_test_app_with(pool, None).await
 }
@@ -77,45 +69,14 @@ async fn build_test_app_with(
 
     let state = AppState {
         pool,
-        config: Arc::new(config),
+        config: Arc::new(config.clone()),
         ws_manager,
         comfyui_manager,
         event_bus,
         script_orchestrator,
     };
 
-    let cors = CorsLayer::new()
-        .allow_origin(["http://localhost:5173".parse().unwrap()])
-        .allow_methods([
-            Method::GET,
-            Method::POST,
-            Method::PUT,
-            Method::DELETE,
-            Method::PATCH,
-        ])
-        .allow_headers([CONTENT_TYPE, AUTHORIZATION])
-        .allow_credentials(true)
-        .max_age(Duration::from_secs(3600));
-
-    let request_id_header = HeaderName::from_static("x-request-id");
-
-    Router::new()
-        .merge(routes::health::router())
-        .nest("/api/v1", routes::api_routes())
-        .layer(CatchPanicLayer::new())
-        .layer(TimeoutLayer::with_status_code(
-            StatusCode::REQUEST_TIMEOUT,
-            Duration::from_secs(30),
-        ))
-        .layer(PropagateRequestIdLayer::new(request_id_header.clone()))
-        .layer(
-            TraceLayer::new_for_http()
-                .make_span_with(DefaultMakeSpan::new().level(Level::INFO))
-                .on_response(DefaultOnResponse::new().level(Level::INFO)),
-        )
-        .layer(SetRequestIdLayer::new(request_id_header, MakeRequestUuid))
-        .layer(cors)
-        .with_state(state)
+    build_app_router(state, &config)
 }
 
 // ---------------------------------------------------------------------------

@@ -4,11 +4,14 @@ pub mod character;
 pub mod hardware;
 pub mod health;
 pub mod image_qa;
+pub mod jobs;
 pub mod notification;
 pub mod project;
 pub mod scene;
 pub mod scene_type;
 pub mod scripts;
+pub mod tags;
+pub mod themes;
 pub mod trash;
 pub mod validation;
 pub mod video;
@@ -48,6 +51,12 @@ use crate::ws;
 /// /admin/scripts/{id}/test                          test execution (POST)
 /// /admin/scripts/{id}/executions                    execution history (GET)
 /// /admin/scripts/executions/{id}                    execution detail (GET)
+///
+/// /admin/themes                                     list, create (admin only)
+/// /admin/themes/{id}                                get, update, delete
+/// /admin/themes/{id}/export                         export tokens (GET)
+///
+/// /user/theme                                       get, update (auth required)
 ///
 /// /ws/metrics                                       agent metrics WebSocket
 ///
@@ -113,6 +122,20 @@ use crate::ws;
 /// /videos/{source_type}/{source_id}/metadata         video metadata (GET)
 /// /videos/{source_type}/{source_id}/thumbnails/{f}   get thumbnail (GET)
 /// /videos/{source_type}/{source_id}/thumbnails       generate thumbnails (POST)
+///
+/// /jobs                                              list, submit (GET, POST)
+/// /jobs/{id}                                         get job (GET)
+/// /jobs/{id}/cancel                                  cancel job (POST)
+/// /jobs/{id}/retry                                   retry failed job (POST)
+///
+/// /tags                                              list tags (GET)
+/// /tags/suggest                                      autocomplete (GET)
+/// /tags/{id}                                         update, delete (PUT, DELETE)
+/// /tags/bulk-apply                                   bulk apply (POST)
+/// /tags/bulk-remove                                  bulk remove (POST)
+///
+/// /entities/{type}/{id}/tags                         list, apply (GET, POST)
+/// /entities/{type}/{id}/tags/{tag_id}                remove (DELETE)
 /// ```
 pub fn api_routes() -> Router<AppState> {
     Router::new()
@@ -121,10 +144,13 @@ pub fn api_routes() -> Router<AppState> {
         .route("/ws/metrics", get(handlers::hardware::metrics_ws_handler))
         // Authentication routes (login, refresh, logout).
         .nest("/auth", auth::router())
-        // Admin routes (user management + hardware monitoring).
+        // Admin routes (user management + hardware monitoring + themes).
         .nest("/admin", admin::router())
         .nest("/admin/hardware", hardware::router())
         .nest("/admin/scripts", scripts::router())
+        .nest("/admin/themes", themes::admin_router())
+        // User-facing theme preference.
+        .nest("/user/theme", themes::user_router())
         // Project routes (also nests characters and project-scoped scene types).
         .nest("/projects", project::router())
         // Character-scoped sub-resources (images, scenes).
@@ -145,4 +171,10 @@ pub fn api_routes() -> Router<AppState> {
         .nest("/imports", validation::imports_router())
         // Video streaming, metadata, and thumbnails.
         .nest("/videos", video::router())
+        // Background job execution engine (PRD-07).
+        .nest("/jobs", jobs::router())
+        // Tag system: tag CRUD, suggestions, bulk ops (PRD-47).
+        .nest("/tags", tags::router())
+        // Entity-scoped tag associations (PRD-47).
+        .nest("/entities", tags::entity_tags_router())
 }

@@ -5,6 +5,7 @@ pub mod error;
 pub mod ffmpeg;
 pub mod hardware;
 pub mod import_status;
+pub mod job_events;
 pub mod metric_names;
 pub mod naming;
 pub mod qa_status;

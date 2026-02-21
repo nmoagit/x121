@@ -73,6 +73,14 @@ impl ComfyUIManager {
         self.event_tx.subscribe()
     }
 
+    /// Return the IDs of all currently connected instances.
+    ///
+    /// Used by the job dispatcher to determine which workers are available
+    /// for job assignment.
+    pub async fn connected_instance_ids(&self) -> Vec<DbId> {
+        self.connections.read().await.keys().copied().collect()
+    }
+
     /// Submit a workflow to a specific ComfyUI instance.
     ///
     /// Records an execution mapping in the database so that incoming

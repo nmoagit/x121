@@ -9,6 +9,7 @@ import {
 } from "react";
 import type { ReactNode } from "react";
 
+import { useThemePersistence } from "@/hooks/useThemePersistence";
 import { DEFAULT_BRAND_PALETTE, DEFAULT_COLOR_SCHEME, THEME_STORAGE_KEY } from "@/tokens/types";
 import type { BrandPalette, ColorScheme, ThemeId } from "@/tokens/types";
 
@@ -163,6 +164,17 @@ function ThemeProvider({
     mql.addEventListener("change", handler);
     return () => mql.removeEventListener("change", handler);
   }, []);
+
+  /* Sync with backend API when authenticated (PRD-29 Phase 8.1) */
+  const handleAPILoad = useCallback((loaded: { colorScheme: string; brandPalette: string; highContrast: boolean }) => {
+    setState({
+      colorScheme: loaded.colorScheme as ColorScheme,
+      brandPalette: loaded.brandPalette as BrandPalette,
+      highContrast: loaded.highContrast,
+    });
+  }, []);
+
+  useThemePersistence(state, handleAPILoad);
 
   const setColorScheme = useCallback((scheme: ColorScheme) => {
     setState((prev) => ({ ...prev, colorScheme: scheme }));
