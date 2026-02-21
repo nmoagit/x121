@@ -40,5 +40,6 @@ tokio-util = { workspace = true }
 assert_matches = { workspace = true }
 http-body-util = { workspace = true }
 sqlx = { workspace = true }
+tempfile = "3"
 tokio = { workspace = true }
 tower = { workspace = true }

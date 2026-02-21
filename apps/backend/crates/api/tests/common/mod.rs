@@ -20,10 +20,14 @@ use tower_http::trace::{DefaultMakeSpan, DefaultOnResponse, TraceLayer};
 use tracing::Level;
 
 use trulience_api::auth::jwt::JwtConfig;
+use trulience_api::auth::password::hash_password;
 use trulience_api::config::ServerConfig;
 use trulience_api::routes;
+use trulience_api::scripting::orchestrator::ScriptOrchestrator;
 use trulience_api::state::AppState;
 use trulience_api::ws::WsManager;
+use trulience_db::models::user::{CreateUser, User};
+use trulience_db::repositories::UserRepo;
 
 /// Build a test `ServerConfig` with safe defaults.
 ///
@@ -45,12 +49,26 @@ pub fn test_config() -> ServerConfig {
 }
 
 /// Build the full application router with all middleware layers, using the
-/// given database pool.
+/// given database pool and an optional script orchestrator.
 ///
 /// This mirrors the router construction in `main.rs` so integration tests
 /// exercise the same middleware stack (CORS, request ID, timeout, tracing,
 /// panic recovery) that production uses.
 pub async fn build_test_app(pool: PgPool) -> Router {
+    build_test_app_with(pool, None).await
+}
+
+/// Build the test app with a script orchestrator enabled.
+pub async fn build_test_app_with_orchestrator(pool: PgPool) -> Router {
+    let orchestrator = ScriptOrchestrator::new(pool.clone(), "/tmp/trulience_test_venvs".into());
+    build_test_app_with(pool, Some(Arc::new(orchestrator))).await
+}
+
+/// Internal builder that accepts an optional orchestrator.
+async fn build_test_app_with(
+    pool: PgPool,
+    script_orchestrator: Option<Arc<ScriptOrchestrator>>,
+) -> Router {
     let config = test_config();
     let ws_manager = Arc::new(WsManager::new());
     let comfyui_manager = trulience_comfyui::manager::ComfyUIManager::start(pool.clone()).await;
@@ -63,6 +81,7 @@ pub async fn build_test_app(pool: PgPool) -> Router {
         ws_manager,
         comfyui_manager,
         event_bus,
+        script_orchestrator,
     };
 
     let cors = CorsLayer::new()
@@ -216,4 +235,47 @@ pub async fn delete_auth(app: Router, uri: &str, token: &str) -> axum::response:
         .body(Body::empty())
         .unwrap();
     app.oneshot(request).await.unwrap()
+}
+
+// ---------------------------------------------------------------------------
+// Shared user / auth test helpers
+// ---------------------------------------------------------------------------
+
+/// Create a test user directly in the database and return the user row plus
+/// the plaintext password used.
+pub async fn create_test_user(
+    pool: &PgPool,
+    username: &str,
+    role_id: i64,
+) -> (User, String) {
+    let password = "test_password_123!";
+    let hashed = hash_password(password).expect("hashing should succeed");
+    let input = CreateUser {
+        username: username.to_string(),
+        email: format!("{username}@test.com"),
+        password_hash: hashed,
+        role_id,
+    };
+    let user = UserRepo::create(pool, &input)
+        .await
+        .expect("user creation should succeed");
+    (user, password.to_string())
+}
+
+/// Log in a user via the API and return the JSON response containing
+/// `access_token`, `refresh_token`, and `user` info.
+pub async fn login_user(app: Router, username: &str, password: &str) -> serde_json::Value {
+    let body = serde_json::json!({ "username": username, "password": password });
+    let response = post_json(app, "/api/v1/auth/login", body).await;
+    assert_eq!(response.status(), StatusCode::OK);
+    body_json(response).await
+}
+
+/// Convenience: log in and return just the access token string.
+pub async fn login_for_token(app: Router, username: &str, password: &str) -> String {
+    let json = login_user(app, username, password).await;
+    json["access_token"]
+        .as_str()
+        .expect("access_token should be a string")
+        .to_string()
 }

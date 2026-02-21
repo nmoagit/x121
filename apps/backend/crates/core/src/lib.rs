@@ -9,5 +9,7 @@ pub mod naming;
 pub mod qa_status;
 pub mod restart_status;
 pub mod roles;
+pub mod script_types;
+pub mod scripting;
 pub mod types;
 pub mod validation;

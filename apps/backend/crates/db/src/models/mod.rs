@@ -17,6 +17,7 @@ pub mod role;
 pub mod scene;
 pub mod scene_type;
 pub mod scene_video_version;
+pub mod script;
 pub mod segment;
 pub mod session;
 pub mod status;

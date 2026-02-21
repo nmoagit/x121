@@ -8,6 +8,7 @@ pub mod notification;
 pub mod project;
 pub mod scene;
 pub mod scene_type;
+pub mod scripts;
 pub mod trash;
 pub mod validation;
 
@@ -40,6 +41,12 @@ use crate::ws;
 /// /admin/hardware/thresholds                        list all thresholds
 /// /admin/hardware/workers/{id}/thresholds           update worker thresholds (PUT)
 /// /admin/hardware/thresholds/global                 update global thresholds (PUT)
+///
+/// /admin/scripts                                    list, register (admin only)
+/// /admin/scripts/{id}                               get, update, deactivate
+/// /admin/scripts/{id}/test                          test execution (POST)
+/// /admin/scripts/{id}/executions                    execution history (GET)
+/// /admin/scripts/executions/{id}                    execution detail (GET)
 ///
 /// /ws/metrics                                       agent metrics WebSocket
 ///
@@ -111,6 +118,7 @@ pub fn api_routes() -> Router<AppState> {
         // Admin routes (user management + hardware monitoring).
         .nest("/admin", admin::router())
         .nest("/admin/hardware", hardware::router())
+        .nest("/admin/scripts", scripts::router())
         // Project routes (also nests characters and project-scoped scene types).
         .nest("/projects", project::router())
         // Character-scoped sub-resources (images, scenes).

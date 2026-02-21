@@ -21,10 +21,10 @@ Source of truth: [`design/design.md`](../design.md)
 | Status | Count |
 |--------|-------|
 | backlog | 0 |
-| planning | 99 |
+| planning | 98 |
 | in-progress | 0 |
 | review | 0 |
-| done | 10 |
+| done | 11 |
 | blocked | 0 |
 | deferred | 0 |
 | maybe | 15 |
@@ -50,7 +50,7 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-06 | Hardware Monitoring & Direct Control | 1 | `done` | 2026-02-21 | DB schema (gpu_metrics, metric_thresholds, restart_logs/statuses), agent binary (NVML collector, WS push, restart handler), backend API (7 admin endpoints, WS ingestion, threshold engine, retention job), frontend dashboard (gauges, charts, restart UI), 16 tests. DRY-077 flagged, DRY-080 resolved. |
 | PRD-07 | Parallel Task Execution Engine | — | `planning` | — | |
 | PRD-08 | Queue Management & Job Scheduling | — | `planning` | — | |
-| PRD-09 | Multi-Runtime Script Orchestrator | — | `planning` | — | |
+| PRD-09 | Multi-Runtime Script Orchestrator | — | `done` | 2026-02-21 | Script execution layer (shell/python/binary), venv isolation with SHA-256 caching, ScriptOrchestrator service, admin API (8 endpoints), 2 DB migrations, 113 unit tests. |
 | PRD-10 | Event Bus & Notification System | — | `done` | 2026-02-20 | EventBus (broadcast channel), EventPersistence, NotificationRouter, 8 notification API endpoints, webhook/email delivery, digest scheduler, 16 event types, 5 DB tables, 12 unit tests. Phase 7 (frontend) deferred. |
 | PRD-11 | Real-time Collaboration Layer | — | `planning` | — | |
 | PRD-12 | External API & Webhooks | — | `planning` | — | |

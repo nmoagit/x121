@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use crate::config::ServerConfig;
+use crate::scripting::orchestrator::ScriptOrchestrator;
 use crate::ws::WsManager;
 
 /// Shared application state available to all Axum handlers via `State<AppState>`.
@@ -18,4 +19,6 @@ pub struct AppState {
     pub comfyui_manager: Arc<trulience_comfyui::manager::ComfyUIManager>,
     /// Centralized event bus for publishing platform events.
     pub event_bus: Arc<trulience_events::EventBus>,
+    /// Multi-runtime script orchestrator (PRD-09).
+    pub script_orchestrator: Option<Arc<ScriptOrchestrator>>,
 }

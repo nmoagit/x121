@@ -16,6 +16,7 @@ pub mod project;
 pub mod scene;
 pub mod scene_type;
 pub mod scene_video_version;
+pub mod scripts;
 pub mod segment;
 pub mod source_image;
 pub mod trash;

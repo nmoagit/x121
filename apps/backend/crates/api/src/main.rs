@@ -101,6 +101,16 @@ async fn main() {
 
     tracing::info!("Event services started (persistence, notification router, digest scheduler, metrics retention)");
 
+    // --- Script orchestrator (PRD-09) ---
+    let venv_base_dir = std::env::var("VENV_BASE_DIR").unwrap_or_else(|_| "./venvs".to_string());
+    let script_orchestrator = Arc::new(
+        trulience_api::scripting::orchestrator::ScriptOrchestrator::new(
+            pool.clone(),
+            venv_base_dir,
+        ),
+    );
+    tracing::info!("Script orchestrator initialized");
+
     // --- App state ---
     let state = AppState {
         pool,
@@ -108,6 +118,7 @@ async fn main() {
         ws_manager: Arc::clone(&ws_manager),
         comfyui_manager: Arc::clone(&comfyui_manager),
         event_bus: Arc::clone(&event_bus),
+        script_orchestrator: Some(script_orchestrator),
     };
 
     // --- Request ID header name ---
