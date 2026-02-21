@@ -44,7 +44,14 @@ export {
   Repeat,
   Volume2,
   VolumeX,
+  // Layout / Panels
+  GripVertical,
+  Layout,
+  Maximize2,
+  Minimize2,
+  Columns,
   // UI
+  Keyboard,
   Settings,
   User,
   LogOut,

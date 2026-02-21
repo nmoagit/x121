@@ -21,10 +21,10 @@ Source of truth: [`design/design.md`](../design.md)
 | Status | Count |
 |--------|-------|
 | backlog | 0 |
-| planning | 97 |
+| planning | 92 |
 | in-progress | 0 |
 | review | 0 |
-| done | 12 |
+| done | 17 |
 | blocked | 0 |
 | deferred | 0 |
 | maybe | 15 |
@@ -48,7 +48,7 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-04 | Session & Workspace Persistence | — | `planning` | — | |
 | PRD-05 | ComfyUI WebSocket Bridge | — | `done` | 2026-02-20 | tokio-tungstenite WS client, reqwest REST API, multi-instance manager with exponential backoff reconnect, message parser (7 ComfyUI types), execution tracking, broadcast event channel, 17 unit tests. |
 | PRD-06 | Hardware Monitoring & Direct Control | 1 | `done` | 2026-02-21 | DB schema (gpu_metrics, metric_thresholds, restart_logs/statuses), agent binary (NVML collector, WS push, restart handler), backend API (7 admin endpoints, WS ingestion, threshold engine, retention job), frontend dashboard (gauges, charts, restart UI), 16 tests. DRY-077 flagged, DRY-080 resolved. |
-| PRD-07 | Parallel Task Execution Engine | — | `planning` | — | |
+| PRD-07 | Parallel Task Execution Engine | — | `done` | 2026-02-21 | Jobs table, dispatcher, progress tracking, handlers, routes. |
 | PRD-08 | Queue Management & Job Scheduling | — | `planning` | — | |
 | PRD-09 | Multi-Runtime Script Orchestrator | — | `done` | 2026-02-21 | Script execution layer (shell/python/binary), venv isolation with SHA-256 caching, ScriptOrchestrator service, admin API (8 endpoints), 2 DB migrations, 113 unit tests. |
 | PRD-10 | Event Bus & Notification System | — | `done` | 2026-02-20 | EventBus (broadcast channel), EventPersistence, NotificationRouter, 8 notification API endpoints, webhook/email delivery, digest scheduler, 16 event types, 5 DB tables, 12 unit tests. Phase 7 (frontend) deferred. |
@@ -76,7 +76,7 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-18 | Bulk Data Maintenance (Search/Replace/Re-path) | — | `planning` | — | |
 | PRD-19 | Disk Space Visualizer (Treemap) | — | `planning` | — | |
 | PRD-20 | Search & Discovery Engine | — | `planning` | — | |
-| PRD-47 | Tagging & Custom Labels | — | `planning` | — | |
+| PRD-47 | Tagging & Custom Labels | — | `done` | 2026-02-21 | Polymorphic tagging, case-insensitive normalization, bulk ops, 3 frontend components. |
 | PRD-48 | External & Tiered Storage | — | `planning` | — | |
 | PRD-66 | Character Metadata Editor | — | `planning` | — | |
 | PRD-69 | Generation Provenance & Asset Versioning | — | `planning` | — | |
@@ -126,11 +126,11 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD | Title | Priority | Status | Owner | Notes |
 |-----|-------|----------|--------|-------|-------|
 | PRD-29 | Design System & Shared Component Library | — | `done` | 2026-02-20 | Token system (4 themes + high-contrast), 25 components, ThemeProvider, 25 Storybook stories, 76 tests. Phases 1/7/8.1 deferred (need users table from PRD-01/PRD-03). |
-| PRD-30 | Modular Layout & Panel Management | — | `planning` | — | |
+| PRD-30 | Modular Layout & Panel Management | — | `done` | 2026-02-21 | Panel system, snap grid, resize, view module registry, presets, role defaults, 22 tests. |
 | PRD-31 | Command Palette & Navigation (Cmd+K) | — | `planning` | — | |
-| PRD-32 | Progressive Disclosure & UX Intelligence | — | `planning` | — | |
+| PRD-32 | Progressive Disclosure & UX Intelligence | — | `done` | 2026-02-21 | AdvancedDrawer, focus mode, parameter visibility, proficiency tracking, 13 tests. |
 | PRD-51 | Undo/Redo Architecture | — | `planning` | — | |
-| PRD-52 | Keyboard Shortcut System & Presets | — | `planning` | — | |
+| PRD-52 | Keyboard Shortcut System & Presets | — | `done` | 2026-02-21 | Central registry, 4 industry presets, custom keymaps, context-aware, cheat sheet, 26 tests. |
 | PRD-53 | First-Run Experience & Onboarding | — | `planning` | — | |
 | PRD-54 | Background Job Tray | — | `planning` | — | |
 | PRD-82 | Content Sensitivity Controls | — | `planning` | — | |

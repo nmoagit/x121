@@ -179,7 +179,9 @@ export function TagFilter({
                 <span
                   className={cn(
                     "text-[0.65rem] leading-none",
-                    isSelected ? "text-[var(--color-action-primary)]" : "text-[var(--color-text-muted)]",
+                    isSelected
+                      ? "text-[var(--color-action-primary)]"
+                      : "text-[var(--color-text-muted)]",
                   )}
                 >
                   {tag.usage_count}
@@ -197,14 +199,7 @@ export function TagFilter({
           {selectedTagIds.map((tagId) => {
             const tag = tags.find((t) => t.id === tagId);
             if (!tag) return null;
-            return (
-              <TagChip
-                key={tag.id}
-                tag={tag}
-                size="sm"
-                onRemove={() => toggleTag(tag.id)}
-              />
-            );
+            return <TagChip key={tag.id} tag={tag} size="sm" onRemove={() => toggleTag(tag.id)} />;
           })}
         </div>
       )}
@@ -212,4 +207,4 @@ export function TagFilter({
   );
 }
 
-export type { TagFilterProps, TagWithCount, FilterLogic };
+export type { TagFilterProps, FilterLogic };

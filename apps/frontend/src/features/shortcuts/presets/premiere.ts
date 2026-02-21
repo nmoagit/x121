@@ -1,0 +1,20 @@
+/** Adobe Premiere Pro–inspired keyboard preset (PRD-52). */
+export const premierePreset: Record<string, string> = {
+  "playback.playPause": "Space",
+  "playback.frameForward": "ArrowRight",
+  "playback.frameBackward": "ArrowLeft",
+  "playback.speedUp": "l",
+  "playback.speedDown": "j",
+  "review.approve": "Enter",
+  "review.reject": "Backspace",
+  "review.flag": "f",
+  "general.undo": "Ctrl+z",
+  "general.redo": "Ctrl+Shift+z",
+  "general.commandPalette": "Ctrl+k",
+  "general.cheatSheet": "?",
+  "general.focusMode": "Ctrl+Shift+f",
+  "general.save": "Ctrl+s",
+  "general.delete": "Delete",
+  "navigation.nextItem": "ArrowDown",
+  "navigation.prevItem": "ArrowUp",
+};

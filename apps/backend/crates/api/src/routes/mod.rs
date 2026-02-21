@@ -5,7 +5,10 @@ pub mod hardware;
 pub mod health;
 pub mod image_qa;
 pub mod jobs;
+pub mod keymaps;
+pub mod layouts;
 pub mod notification;
+pub mod proficiency;
 pub mod project;
 pub mod scene;
 pub mod scene_type;
@@ -57,6 +60,22 @@ use crate::ws;
 /// /admin/themes/{id}/export                         export tokens (GET)
 ///
 /// /user/theme                                       get, update (auth required)
+///
+/// /user/keymap                                      get, update (auth required)
+///
+/// /keymaps/presets                                   list presets (auth required)
+/// /keymaps/export                                    export keymap (POST)
+/// /keymaps/import                                    import keymap (POST)
+///
+/// /user/proficiency                                 list, set (auth required)
+/// /user/proficiency/record-usage                    record usage (POST)
+/// /user/proficiency/focus-mode                      get, set focus mode
+///
+/// /user/layouts                                     list, create (auth required)
+/// /user/layouts/{id}                                get, update, delete
+///
+/// /admin/layout-presets                             list, create (admin only)
+/// /admin/layout-presets/{id}                        update, delete
 ///
 /// /ws/metrics                                       agent metrics WebSocket
 ///
@@ -151,6 +170,16 @@ pub fn api_routes() -> Router<AppState> {
         .nest("/admin/themes", themes::admin_router())
         // User-facing theme preference.
         .nest("/user/theme", themes::user_router())
+        // User-facing keymap preference (PRD-52).
+        .nest("/user/keymap", keymaps::user_router())
+        // Keymap presets and export/import (PRD-52).
+        .nest("/keymaps", keymaps::preset_router())
+        // User proficiency & focus mode (PRD-32).
+        .nest("/user/proficiency", proficiency::router())
+        // User-facing layout management (PRD-30).
+        .nest("/user/layouts", layouts::user_router())
+        // Admin layout preset management (PRD-30).
+        .nest("/admin/layout-presets", layouts::admin_router())
         // Project routes (also nests characters and project-scoped scene types).
         .nest("/projects", project::router())
         // Character-scoped sub-resources (images, scenes).

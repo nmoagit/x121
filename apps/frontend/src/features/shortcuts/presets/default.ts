@@ -1,0 +1,20 @@
+/** Default keyboard shortcut preset (PRD-52). */
+export const defaultPreset: Record<string, string> = {
+  "playback.playPause": "Space",
+  "playback.frameForward": "ArrowRight",
+  "playback.frameBackward": "ArrowLeft",
+  "playback.speedUp": "Shift+ArrowRight",
+  "playback.speedDown": "Shift+ArrowLeft",
+  "review.approve": "Enter",
+  "review.reject": "Backspace",
+  "review.flag": "f",
+  "general.undo": "Ctrl+z",
+  "general.redo": "Ctrl+Shift+z",
+  "general.commandPalette": "Ctrl+k",
+  "general.cheatSheet": "?",
+  "general.focusMode": "Ctrl+Shift+f",
+  "general.save": "Ctrl+s",
+  "general.delete": "Delete",
+  "navigation.nextItem": "ArrowDown",
+  "navigation.prevItem": "ArrowUp",
+};

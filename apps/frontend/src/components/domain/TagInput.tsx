@@ -87,10 +87,9 @@ export function TagInput({
       if (!tagName.trim()) return;
 
       try {
-        const updatedTags = await api.post<TagInfo[]>(
-          `/entities/${entityType}/${entityId}/tags`,
-          { tag_names: [tagName.trim()] },
-        );
+        const updatedTags = await api.post<TagInfo[]>(`/entities/${entityType}/${entityId}/tags`, {
+          tag_names: [tagName.trim()],
+        });
         onTagsChange(updatedTags);
         setInput("");
         setSuggestions([]);
@@ -118,7 +117,11 @@ export function TagInput({
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === "Enter") {
       e.preventDefault();
-      if (highlightIndex >= 0 && highlightIndex < suggestions.length && suggestions[highlightIndex]) {
+      if (
+        highlightIndex >= 0 &&
+        highlightIndex < suggestions.length &&
+        suggestions[highlightIndex]
+      ) {
         applyTag(suggestions[highlightIndex].display_name);
       } else if (input.trim()) {
         applyTag(input);
@@ -225,9 +228,7 @@ export function TagInput({
               )}
             >
               <span className="font-medium">+</span>
-              <span>
-                Create &quot;{input.trim()}&quot;
-              </span>
+              <span>Create &quot;{input.trim()}&quot;</span>
             </button>
           )}
         </div>
@@ -236,4 +237,4 @@ export function TagInput({
   );
 }
 
-export type { TagInputProps, TagWithCount };
+export type { TagInputProps };
