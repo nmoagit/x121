@@ -4,7 +4,9 @@
 //! that accept `&PgPool` as the first argument.
 
 pub mod asset_repo;
+pub mod audit_repo;
 pub mod character_repo;
+pub mod checkpoint_repo;
 pub mod comfyui_execution_repo;
 pub mod comfyui_instance_repo;
 pub mod dashboard_repo;
@@ -46,9 +48,13 @@ pub mod trash_repo;
 pub mod user_repo;
 pub mod validation_rule_repo;
 pub mod video_thumbnail_repo;
+pub mod workspace_repo;
 
 pub use asset_repo::AssetRepo;
+pub use audit_repo::AuditLogRepo;
+pub use audit_repo::AuditRetentionPolicyRepo;
 pub use character_repo::CharacterRepo;
+pub use checkpoint_repo::CheckpointRepo;
 pub use comfyui_execution_repo::ComfyUIExecutionRepo;
 pub use comfyui_instance_repo::ComfyUIInstanceRepo;
 pub use dashboard_repo::DashboardRepo;
@@ -91,3 +97,5 @@ pub use trash_repo::TrashRepo;
 pub use user_repo::UserRepo;
 pub use validation_rule_repo::ValidationRuleRepo;
 pub use video_thumbnail_repo::VideoThumbnailRepo;
+pub use workspace_repo::UndoSnapshotRepo;
+pub use workspace_repo::WorkspaceRepo;

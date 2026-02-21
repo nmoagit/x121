@@ -30,8 +30,8 @@ Multi-user studio environments need operational accountability. This audit loggi
 
 ## Phase 1: Database Schema
 
-### Task 1.1: Audit Logs Table
-**File:** `migrations/YYYYMMDDHHMMSS_create_audit_logs.sql`
+### Task 1.1: Audit Logs Table [COMPLETE]
+**File:** `apps/db/migrations/20260221000035_create_audit_logs.sql`
 
 ```sql
 CREATE TABLE audit_logs (
@@ -80,14 +80,14 @@ CREATE TRIGGER no_delete_audit_logs
 ```
 
 **Acceptance Criteria:**
-- [ ] No `updated_at` column -- immutable records
-- [ ] UPDATE and DELETE triggers prevent modification
-- [ ] Indexes on timestamp, user_id, action_type, entity for fast queries
-- [ ] GIN index on details_json for JSON content search
-- [ ] `integrity_hash` for tamper detection chain
+- [x] No `updated_at` column -- immutable records
+- [x] UPDATE and DELETE triggers prevent modification
+- [x] Indexes on timestamp, user_id, action_type, entity for fast queries
+- [x] GIN index on details_json for JSON content search
+- [x] `integrity_hash` for tamper detection chain
 
-### Task 1.2: Audit Log Retention Policies Table
-**File:** `migrations/YYYYMMDDHHMMSS_create_audit_retention_policies.sql`
+### Task 1.2: Audit Log Retention Policies Table [COMPLETE]
+**File:** `apps/db/migrations/20260221000036_create_audit_retention_policies.sql`
 
 ```sql
 CREATE TABLE audit_retention_policies (
@@ -101,7 +101,7 @@ CREATE TABLE audit_retention_policies (
 );
 
 CREATE TRIGGER set_updated_at BEFORE UPDATE ON audit_retention_policies
-    FOR EACH ROW EXECUTE FUNCTION trigger_set_updated_at();
+    FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
 INSERT INTO audit_retention_policies (log_category, active_retention_days, archive_retention_days) VALUES
     ('authentication', 90, 365),
@@ -111,9 +111,9 @@ INSERT INTO audit_retention_policies (log_category, active_retention_days, archi
 ```
 
 **Acceptance Criteria:**
-- [ ] Per-category retention configuration
-- [ ] Active and archive retention separate
-- [ ] Four categories seeded with defaults
+- [x] Per-category retention configuration
+- [x] Active and archive retention separate
+- [x] Four categories seeded with defaults
 
 ---
 
@@ -197,8 +197,8 @@ Logs system-initiated events.
 - [ ] Scheduled task executions
 - [ ] No user_id for system events (logged as system actor)
 
-### Task 2.4: Audit Query Engine
-**File:** `src/services/audit_query.rs`
+### Task 2.4: Audit Query Engine [COMPLETE]
+**File:** `apps/backend/crates/db/src/repositories/audit_repo.rs` (AuditLogRepo::query, AuditLogRepo::count)
 
 Structured query service for log retrieval.
 
@@ -217,14 +217,14 @@ pub struct AuditQuery {
 ```
 
 **Acceptance Criteria:**
-- [ ] Filter by: user, action type, entity type, entity ID, time range
-- [ ] Full-text search within log details_json
-- [ ] Pagination for large result sets
-- [ ] Queries return in <2 seconds for 30-day ranges
-- [ ] Returns total count for pagination
+- [x] Filter by: user, action type, entity type, entity ID, time range
+- [x] Full-text search within log details_json
+- [x] Pagination for large result sets
+- [x] Queries return in <2 seconds for 30-day ranges
+- [x] Returns total count for pagination
 
-### Task 2.5: Integrity Verification Service
-**File:** `src/services/audit_integrity.rs`
+### Task 2.5: Integrity Verification Service [COMPLETE]
+**File:** `apps/backend/crates/api/src/handlers/audit.rs` (check_integrity handler) + `apps/backend/crates/core/src/audit.rs` (compute_integrity_hash)
 
 Verify the audit log hash chain has not been tampered with.
 
@@ -237,10 +237,10 @@ pub struct IntegrityCheckResult {
 ```
 
 **Acceptance Criteria:**
-- [ ] Recomputes hash chain from entry N to entry M
-- [ ] Detects any insertion, modification, or deletion of entries
-- [ ] Returns the specific entry where integrity breaks
-- [ ] Can verify entire log or a time range
+- [x] Recomputes hash chain from entry N to entry M
+- [x] Detects any insertion, modification, or deletion of entries
+- [x] Returns the specific entry where integrity breaks
+- [x] Can verify entire log or a time range
 
 ### Task 2.6: Retention Manager
 **File:** `src/services/audit_retention.rs`
@@ -258,8 +258,8 @@ Manage log lifecycle based on retention policies.
 
 ## Phase 3: API Endpoints
 
-### Task 3.1: Audit Log Query Routes
-**File:** `src/routes/audit_logs.rs`
+### Task 3.1: Audit Log Query Routes [COMPLETE]
+**File:** `apps/backend/crates/api/src/routes/audit.rs` + `apps/backend/crates/api/src/handlers/audit.rs`
 
 ```
 GET /admin/audit-logs                  -- Query logs with filters
@@ -268,13 +268,13 @@ GET /admin/audit-logs/integrity-check  -- Run integrity verification
 ```
 
 **Acceptance Criteria:**
-- [ ] Query supports all filter parameters from Task 2.4
-- [ ] Export supports CSV and JSON formats with date range
-- [ ] Integrity check returns verification result
-- [ ] Admin-only access
+- [x] Query supports all filter parameters from Task 2.4
+- [x] Export supports CSV and JSON formats with date range
+- [x] Integrity check returns verification result
+- [x] Admin-only access
 
-### Task 3.2: Retention Policy Routes
-**File:** `src/routes/audit_logs.rs`
+### Task 3.2: Retention Policy Routes [COMPLETE]
+**File:** `apps/backend/crates/api/src/routes/audit.rs` + `apps/backend/crates/api/src/handlers/audit.rs`
 
 ```
 GET /admin/audit-logs/retention        -- List retention policies
@@ -282,49 +282,49 @@ PUT /admin/audit-logs/retention/:category -- Update retention policy
 ```
 
 **Acceptance Criteria:**
-- [ ] List all category retention policies
-- [ ] Update active and archive retention days per category
+- [x] List all category retention policies
+- [x] Update active and archive retention days per category
 
 ---
 
 ## Phase 4: React Frontend
 
-### Task 4.1: Audit Log Viewer
-**File:** `frontend/src/pages/AuditLogs.tsx`
+### Task 4.1: Audit Log Viewer [COMPLETE]
+**File:** `apps/frontend/src/features/audit/AuditLogViewer.tsx`
 
 **Acceptance Criteria:**
-- [ ] Searchable, filterable log table
-- [ ] Filters: user, action type, entity type, date range
-- [ ] Full-text search bar
-- [ ] Expandable row details showing full context JSON
-- [ ] Pagination with page size control
-- [ ] Export buttons (CSV, JSON)
+- [x] Searchable, filterable log table
+- [x] Filters: user, action type, entity type, date range
+- [x] Full-text search bar
+- [x] Expandable row details showing full context JSON
+- [x] Pagination with page size control
+- [x] Export buttons (CSV, JSON)
 
-### Task 4.2: Audit Log Entry Detail
-**File:** `frontend/src/components/audit/AuditEntryDetail.tsx`
-
-**Acceptance Criteria:**
-- [ ] Full detail view for a single log entry
-- [ ] Human-readable action description
-- [ ] Entity link (click to navigate to the referenced entity)
-- [ ] Timestamp with timezone conversion
-- [ ] IP address and device information
-
-### Task 4.3: Integrity Check Panel
-**File:** `frontend/src/components/audit/IntegrityCheck.tsx`
+### Task 4.2: Audit Log Entry Detail [COMPLETE]
+**File:** `apps/frontend/src/features/audit/AuditLogViewer.tsx` (AuditLogRow expanded detail + DetailItem sub-components)
 
 **Acceptance Criteria:**
-- [ ] "Run Integrity Check" button
-- [ ] Progress indicator during verification
-- [ ] Pass/fail result with details on any chain break
+- [x] Full detail view for a single log entry
+- [x] Human-readable action description
+- [x] Entity link (click to navigate to the referenced entity)
+- [x] Timestamp with timezone conversion
+- [x] IP address and device information
 
-### Task 4.4: Retention Policy Settings
-**File:** `frontend/src/components/audit/RetentionSettings.tsx`
+### Task 4.3: Integrity Check Panel [COMPLETE]
+**File:** `apps/frontend/src/features/audit/IntegrityCheck.tsx`
 
 **Acceptance Criteria:**
-- [ ] List of categories with current retention periods
-- [ ] Edit form for adjusting retention days
-- [ ] Warning when reducing retention period
+- [x] "Run Integrity Check" button
+- [x] Progress indicator during verification
+- [x] Pass/fail result with details on any chain break
+
+### Task 4.4: Retention Policy Settings [COMPLETE]
+**File:** `apps/frontend/src/features/audit/RetentionSettings.tsx`
+
+**Acceptance Criteria:**
+- [x] List of categories with current retention periods
+- [x] Edit form for adjusting retention days
+- [x] Warning when reducing retention period
 
 ---
 
@@ -353,19 +353,20 @@ PUT /admin/audit-logs/retention/:category -- Update retention policy
 
 | File | Description |
 |------|-------------|
-| `migrations/YYYYMMDDHHMMSS_create_audit_logs.sql` | Append-only audit log table |
-| `migrations/YYYYMMDDHHMMSS_create_audit_retention_policies.sql` | Retention configuration |
-| `src/services/audit_logger.rs` | Async batched log writer |
-| `src/middleware/audit.rs` | Automatic request auditing |
-| `src/services/system_audit_logger.rs` | System event logging |
-| `src/services/audit_query.rs` | Query engine |
-| `src/services/audit_integrity.rs` | Hash chain verification |
-| `src/services/audit_retention.rs` | Retention lifecycle manager |
-| `src/routes/audit_logs.rs` | Audit log API |
-| `frontend/src/pages/AuditLogs.tsx` | Log viewer page |
-| `frontend/src/components/audit/AuditEntryDetail.tsx` | Entry detail view |
-| `frontend/src/components/audit/IntegrityCheck.tsx` | Integrity check UI |
-| `frontend/src/components/audit/RetentionSettings.tsx` | Retention config UI |
+| `apps/db/migrations/20260221000035_create_audit_logs.sql` | Append-only audit log table |
+| `apps/db/migrations/20260221000036_create_audit_retention_policies.sql` | Retention configuration |
+| `apps/backend/crates/core/src/audit.rs` | Core constants, hashing, redaction (17 unit tests) |
+| `apps/backend/crates/db/src/models/audit.rs` | Entity models and DTOs |
+| `apps/backend/crates/db/src/repositories/audit_repo.rs` | AuditLogRepo + AuditRetentionPolicyRepo |
+| `apps/backend/crates/api/src/handlers/audit.rs` | API handlers (query, export, integrity, retention) |
+| `apps/backend/crates/api/src/routes/audit.rs` | Route definitions (/admin/audit-logs) |
+| `apps/frontend/src/features/audit/types.ts` | TypeScript types and constants |
+| `apps/frontend/src/features/audit/hooks/use-audit.ts` | TanStack Query hooks |
+| `apps/frontend/src/features/audit/AuditLogViewer.tsx` | Log viewer with filters, pagination, expandable rows |
+| `apps/frontend/src/features/audit/IntegrityCheck.tsx` | Integrity check UI |
+| `apps/frontend/src/features/audit/RetentionSettings.tsx` | Retention policy editor |
+| `apps/frontend/src/features/audit/index.ts` | Barrel export |
+| `apps/frontend/src/features/audit/__tests__/AuditLogViewer.test.tsx` | 10 component tests |
 
 ## Dependencies
 

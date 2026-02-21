@@ -10,7 +10,7 @@ use trulience_core::types::DbId;
 use crate::models::job::{Job, JobListQuery, QueuedJobView, SubmitJob};
 use crate::models::status::{JobStatus, StatusId};
 
-/// Column list for `jobs` queries (includes PRD-08 scheduling columns).
+/// Column list for `jobs` queries (includes PRD-08 scheduling + PRD-28 diagnostics).
 const COLUMNS: &str = "\
     id, job_type, status_id, submitted_by, worker_id, priority, \
     parameters, result, error_message, error_details, \
@@ -18,6 +18,8 @@ const COLUMNS: &str = "\
     submitted_at, claimed_at, started_at, completed_at, \
     estimated_duration_secs, actual_duration_secs, retry_of_job_id, \
     scheduled_start_at, is_off_peak_only, is_paused, paused_at, resumed_at, queue_position, \
+    failure_stage_index, failure_stage_name, failure_diagnostics, \
+    last_checkpoint_id, resumed_from_checkpoint_id, original_job_id, \
     created_at, updated_at";
 
 /// Columns for the lightweight queue view.
@@ -353,6 +355,37 @@ impl JobRepo {
             .bind(&original.parameters)
             .bind(original.estimated_duration_secs)
             .bind(job_id)
+            .fetch_one(pool)
+            .await
+    }
+
+    /// Create a new pending job that resumes from a checkpoint of a failed job (PRD-28).
+    ///
+    /// The new job is linked to the original via `original_job_id` and
+    /// `resumed_from_checkpoint_id`. Parameters may be modified before resuming.
+    pub async fn resume_from_checkpoint(
+        pool: &PgPool,
+        user_id: DbId,
+        original: &Job,
+        checkpoint_id: DbId,
+        parameters: &serde_json::Value,
+    ) -> Result<Job, sqlx::Error> {
+        let query = format!(
+            "INSERT INTO jobs \
+                 (job_type, status_id, submitted_by, priority, parameters, \
+                  estimated_duration_secs, original_job_id, resumed_from_checkpoint_id) \
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8) \
+             RETURNING {COLUMNS}"
+        );
+        sqlx::query_as::<_, Job>(&query)
+            .bind(&original.job_type)
+            .bind(JobStatus::Pending.id())
+            .bind(user_id)
+            .bind(original.priority)
+            .bind(parameters)
+            .bind(original.estimated_duration_secs)
+            .bind(original.id)
+            .bind(checkpoint_id)
             .fetch_one(pool)
             .await
     }

@@ -1,5 +1,5 @@
 //! Job entity models and DTOs for the parallel task execution engine (PRD-07)
-//! with scheduling extensions (PRD-08).
+//! with scheduling extensions (PRD-08) and failure diagnostics (PRD-28).
 
 use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
@@ -36,6 +36,13 @@ pub struct Job {
     pub paused_at: Option<Timestamp>,
     pub resumed_at: Option<Timestamp>,
     pub queue_position: Option<i32>,
+    // PRD-28 failure diagnostics & checkpoint columns.
+    pub failure_stage_index: Option<i32>,
+    pub failure_stage_name: Option<String>,
+    pub failure_diagnostics: Option<serde_json::Value>,
+    pub last_checkpoint_id: Option<DbId>,
+    pub resumed_from_checkpoint_id: Option<DbId>,
+    pub original_job_id: Option<DbId>,
     pub created_at: Timestamp,
     pub updated_at: Timestamp,
 }

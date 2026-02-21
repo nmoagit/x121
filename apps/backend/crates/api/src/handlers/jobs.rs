@@ -28,7 +28,9 @@ use crate::state::AppState;
 /// Returns `NotFound` if the job does not exist, `Forbidden` if the caller
 /// is not the owner and is not an admin. `action` is used in the error
 /// message (e.g. "view", "cancel", "retry").
-async fn find_and_authorize(
+///
+/// Public so sibling handler modules (e.g. `checkpoints`) can reuse it.
+pub async fn find_and_authorize(
     pool: &sqlx::PgPool,
     job_id: DbId,
     auth: &AuthUser,

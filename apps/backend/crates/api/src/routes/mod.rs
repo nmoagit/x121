@@ -1,7 +1,9 @@
 pub mod admin;
 pub mod assets;
+pub mod audit;
 pub mod auth;
 pub mod character;
+pub mod checkpoints;
 pub mod dashboard;
 pub mod extensions;
 pub mod hardware;
@@ -24,6 +26,7 @@ pub mod themes;
 pub mod trash;
 pub mod validation;
 pub mod video;
+pub mod workspace;
 
 use axum::routing::get;
 use axum::Router;
@@ -171,6 +174,10 @@ use crate::ws;
 /// /jobs/{id}/pause                                   pause job (POST, PRD-08)
 /// /jobs/{id}/resume                                  resume job (POST, PRD-08)
 /// /jobs/{id}/transitions                             job audit trail (GET, PRD-08)
+/// /jobs/{id}/checkpoints                             list checkpoints (GET, PRD-28)
+/// /jobs/{id}/checkpoints/{checkpoint_id}             get checkpoint (GET, PRD-28)
+/// /jobs/{id}/resume-from-checkpoint                  resume from checkpoint (POST, PRD-28)
+/// /jobs/{id}/diagnostics                             failure diagnostics (GET, PRD-28)
 ///
 /// /queue                                              queue status (GET, PRD-08)
 /// /quota/status                                       user quota status (GET, PRD-08)
@@ -215,8 +222,18 @@ use crate::ws;
 ///
 /// /extensions/registry                                  enabled extensions (GET)
 ///
+/// /admin/audit-logs                                      query logs (GET, PRD-45)
+/// /admin/audit-logs/export                               export logs (GET, PRD-45)
+/// /admin/audit-logs/integrity-check                      integrity check (GET, PRD-45)
+/// /admin/audit-logs/retention                            list policies (GET, PRD-45)
+/// /admin/audit-logs/retention/{category}                 update policy (PUT, PRD-45)
+///
 /// /extension-api/projects                               ext proxy: list projects (GET)
 /// /extension-api/characters/{id}                        ext proxy: get character (GET)
+///
+/// /workspace                                             get, update (GET, PUT, PRD-04)
+/// /workspace/reset                                       reset to defaults (POST, PRD-04)
+/// /workspace/undo/{entity_type}/{entity_id}              get, save snapshot (GET, PUT, PRD-04)
 /// ```
 pub fn api_routes() -> Router<AppState> {
     Router::new()
@@ -232,6 +249,8 @@ pub fn api_routes() -> Router<AppState> {
         .nest("/admin/themes", themes::admin_router())
         // Disk reclamation: protection rules, policies, trash queue (PRD-15).
         .nest("/admin/reclamation", reclamation::router())
+        // Audit logging & compliance (PRD-45).
+        .nest("/admin/audit-logs", audit::router())
         // User-facing theme preference.
         .nest("/user/theme", themes::user_router())
         // User-facing keymap preference (PRD-52).
@@ -248,6 +267,8 @@ pub fn api_routes() -> Router<AppState> {
         .nest("/dashboard", dashboard::router())
         // User-facing dashboard configuration (PRD-42).
         .nest("/user/dashboard", dashboard::user_router())
+        // Workspace state persistence (PRD-04).
+        .nest("/workspace", workspace::router())
         // Performance & benchmarking dashboard (PRD-41).
         .nest("/performance", performance::router())
         // Project routes (also nests characters and project-scoped scene types).
@@ -270,8 +291,8 @@ pub fn api_routes() -> Router<AppState> {
         .nest("/imports", validation::imports_router())
         // Video streaming, metadata, and thumbnails.
         .nest("/videos", video::router())
-        // Background job execution engine (PRD-07, PRD-08).
-        .nest("/jobs", jobs::router())
+        // Background job execution engine (PRD-07, PRD-08, PRD-28).
+        .nest("/jobs", jobs::router().merge(checkpoints::checkpoint_routes()))
         // Queue management & scheduling (PRD-08).
         .nest("/queue", queue::router())
         .nest("/quota", queue::quota_router())

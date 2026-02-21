@@ -1,6 +1,8 @@
 pub mod alert;
 pub mod assets;
+pub mod audit;
 pub mod channels;
+pub mod checkpointing;
 pub mod delivery;
 pub mod error;
 pub mod extensions;
@@ -21,3 +23,4 @@ pub mod scripting;
 pub mod types;
 pub mod validation;
 pub mod video_sources;
+pub mod workspace;

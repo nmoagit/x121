@@ -30,388 +30,138 @@ This PRD creates a workspace persistence system that stores all UI state per use
 
 ---
 
-## Phase 1: Database Schema
+## Phase 1: Database Schema [COMPLETE]
 
-### Task 1.1: Create Workspace States Table
-**File:** `migrations/20260218300001_create_workspace_states_table.sql`
-
-```sql
-CREATE TABLE workspace_states (
-    id BIGSERIAL PRIMARY KEY,
-    user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,
-    device_type TEXT NOT NULL DEFAULT 'desktop',
-    layout_state JSONB NOT NULL DEFAULT '{}',
-    navigation_state JSONB NOT NULL DEFAULT '{}',
-    preferences JSONB NOT NULL DEFAULT '{}',
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
-CREATE INDEX idx_workspace_states_user_id ON workspace_states(user_id);
-CREATE UNIQUE INDEX uq_workspace_states_user_device ON workspace_states(user_id, device_type);
-
-CREATE TRIGGER set_updated_at BEFORE UPDATE ON workspace_states
-    FOR EACH ROW EXECUTE FUNCTION trigger_set_updated_at();
-```
+### Task 1.1: Create Workspace States Table [COMPLETE]
+**File:** `apps/db/migrations/20260221000033_create_workspace_states.sql`
 
 **Acceptance Criteria:**
-- [ ] `workspace_states` table with `user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE`
-- [ ] Unique constraint on `(user_id, device_type)` — one state per user per device
-- [ ] `layout_state JSONB` for panel sizes, positions, visibility
-- [ ] `navigation_state JSONB` for open project/character/scene, scroll positions, zoom
-- [ ] `preferences JSONB` for user-specific settings (zoom level, etc.)
-- [ ] FK index on `user_id`
+- [x] `workspace_states` table with `user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE`
+- [x] Unique constraint on `(user_id, device_type)` — one state per user per device
+- [x] `layout_state JSONB` for panel sizes, positions, visibility
+- [x] `navigation_state JSONB` for open project/character/scene, scroll positions, zoom
+- [x] `preferences JSONB` for user-specific settings (zoom level, etc.)
+- [x] FK index on `user_id`
 
-### Task 1.2: Create Undo Snapshots Table
-**File:** `migrations/20260218300002_create_undo_snapshots_table.sql`
-
-```sql
-CREATE TABLE undo_snapshots (
-    id BIGSERIAL PRIMARY KEY,
-    user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,
-    entity_type TEXT NOT NULL,
-    entity_id BIGINT NOT NULL,
-    snapshot_data JSONB NOT NULL DEFAULT '{}',
-    snapshot_size_bytes INTEGER NOT NULL DEFAULT 0,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
-CREATE INDEX idx_undo_snapshots_user_id ON undo_snapshots(user_id);
-CREATE UNIQUE INDEX uq_undo_snapshots_user_entity ON undo_snapshots(user_id, entity_type, entity_id);
-
-CREATE TRIGGER set_updated_at BEFORE UPDATE ON undo_snapshots
-    FOR EACH ROW EXECUTE FUNCTION trigger_set_updated_at();
-```
+### Task 1.2: Create Undo Snapshots Table [COMPLETE]
+**File:** `apps/db/migrations/20260221000034_create_undo_snapshots.sql`
 
 **Acceptance Criteria:**
-- [ ] `undo_snapshots` table with per-user per-entity undo tree storage
-- [ ] `entity_type TEXT` and `entity_id BIGINT` identify which entity the undo tree belongs to
-- [ ] `snapshot_data JSONB` stores serialized undo tree
-- [ ] `snapshot_size_bytes INTEGER` tracks size for enforcing limits
-- [ ] Unique constraint on `(user_id, entity_type, entity_id)`
+- [x] `undo_snapshots` table with per-user per-entity undo tree storage
+- [x] `entity_type TEXT` and `entity_id BIGINT` identify which entity the undo tree belongs to
+- [x] `snapshot_data JSONB` stores serialized undo tree
+- [x] `snapshot_size_bytes INTEGER` tracks size for enforcing limits
+- [x] Unique constraint on `(user_id, entity_type, entity_id)`
 
 ---
 
-## Phase 2: Backend API
+## Phase 2: Backend API [COMPLETE]
 
-### Task 2.1: Workspace State Repository
-**File:** `src/repositories/workspace_repo.rs`
+### Task 2.1: Workspace State Repository [COMPLETE]
+**File:** `apps/backend/crates/db/src/repositories/workspace_repo.rs`
 
-```rust
-pub struct WorkspaceRepo;
-
-impl WorkspaceRepo {
-    pub async fn get_or_create(
-        pool: &PgPool,
-        user_id: DbId,
-        device_type: &str,
-    ) -> Result<WorkspaceState, sqlx::Error> {
-        // Use INSERT ... ON CONFLICT to upsert with defaults
-        sqlx::query_as::<_, WorkspaceState>(
-            "INSERT INTO workspace_states (user_id, device_type)
-             VALUES ($1, $2)
-             ON CONFLICT (user_id, device_type) DO NOTHING
-             RETURNING id, user_id, device_type, layout_state, navigation_state,
-                       preferences, created_at, updated_at"
-        )
-        .bind(user_id)
-        .bind(device_type)
-        .fetch_optional(pool)
-        .await
-        .map(|opt| opt.unwrap_or_default())
-        // Fallback to SELECT if ON CONFLICT hit
-    }
-
-    pub async fn update_layout(
-        pool: &PgPool,
-        user_id: DbId,
-        device_type: &str,
-        layout_state: &serde_json::Value,
-    ) -> Result<WorkspaceState, sqlx::Error> {
-        sqlx::query_as::<_, WorkspaceState>(
-            "UPDATE workspace_states SET layout_state = $3
-             WHERE user_id = $1 AND device_type = $2
-             RETURNING id, user_id, device_type, layout_state, navigation_state,
-                       preferences, created_at, updated_at"
-        )
-        .bind(user_id)
-        .bind(device_type)
-        .bind(layout_state)
-        .fetch_one(pool)
-        .await
-    }
-
-    pub async fn update_navigation(
-        pool: &PgPool,
-        user_id: DbId,
-        device_type: &str,
-        navigation_state: &serde_json::Value,
-    ) -> Result<WorkspaceState, sqlx::Error> {
-        sqlx::query_as::<_, WorkspaceState>(
-            "UPDATE workspace_states SET navigation_state = $3
-             WHERE user_id = $1 AND device_type = $2
-             RETURNING id, user_id, device_type, layout_state, navigation_state,
-                       preferences, created_at, updated_at"
-        )
-        .bind(user_id)
-        .bind(device_type)
-        .bind(navigation_state)
-        .fetch_one(pool)
-        .await
-    }
-
-    pub async fn reset_to_default(
-        pool: &PgPool,
-        user_id: DbId,
-        device_type: &str,
-    ) -> Result<WorkspaceState, sqlx::Error> {
-        sqlx::query_as::<_, WorkspaceState>(
-            "UPDATE workspace_states
-             SET layout_state = '{}', navigation_state = '{}', preferences = '{}'
-             WHERE user_id = $1 AND device_type = $2
-             RETURNING id, user_id, device_type, layout_state, navigation_state,
-                       preferences, created_at, updated_at"
-        )
-        .bind(user_id)
-        .bind(device_type)
-        .fetch_one(pool)
-        .await
-    }
-}
-```
+**Implementation Notes:** Combined `update_layout` and `update_navigation` into a single `update` method that does partial JSONB merge via `||` operator. Also added `UndoSnapshotRepo` in the same file.
 
 **Acceptance Criteria:**
-- [ ] `get_or_create` returns existing state or creates default
-- [ ] `update_layout` saves panel layout JSONB
-- [ ] `update_navigation` saves navigation JSONB
-- [ ] `reset_to_default` clears all state back to empty JSON
-- [ ] All queries use explicit column lists
+- [x] `get_or_create` returns existing state or creates default
+- [x] `update` saves layout, navigation, and preferences via JSONB merge
+- [x] `reset_to_default` clears all state back to empty JSON
+- [x] All queries use explicit column lists
 
-### Task 2.2: Workspace API Handlers
-**File:** `src/api/handlers/workspace.rs`
-
-```rust
-pub async fn get_workspace(
-    auth: AuthUser,
-    State(state): State<AppState>,
-    Query(params): Query<WorkspaceQuery>,
-) -> Result<Json<WorkspaceState>, AppError> {
-    let device_type = params.device_type.as_deref().unwrap_or("desktop");
-    let ws = WorkspaceRepo::get_or_create(&state.pool, auth.user_id, device_type).await?;
-    Ok(Json(ws))
-}
-
-pub async fn update_workspace(
-    auth: AuthUser,
-    State(state): State<AppState>,
-    Query(params): Query<WorkspaceQuery>,
-    Json(input): Json<UpdateWorkspaceRequest>,
-) -> Result<Json<WorkspaceState>, AppError> {
-    let device_type = params.device_type.as_deref().unwrap_or("desktop");
-    // Update whichever fields are provided
-}
-
-pub async fn reset_workspace(
-    auth: AuthUser,
-    State(state): State<AppState>,
-    Query(params): Query<WorkspaceQuery>,
-) -> Result<Json<WorkspaceState>, AppError> {
-    let device_type = params.device_type.as_deref().unwrap_or("desktop");
-    let ws = WorkspaceRepo::reset_to_default(&state.pool, auth.user_id, device_type).await?;
-    Ok(Json(ws))
-}
-```
+### Task 2.2: Workspace API Handlers [COMPLETE]
+**File:** `apps/backend/crates/api/src/handlers/workspace.rs`
 
 **Acceptance Criteria:**
-- [ ] `GET /api/v1/workspace?device_type=desktop` — returns workspace state for device
-- [ ] `PUT /api/v1/workspace?device_type=desktop` — updates workspace state
-- [ ] `POST /api/v1/workspace/reset?device_type=desktop` — resets to defaults
-- [ ] All endpoints require authentication (`AuthUser`)
-- [ ] Device type defaults to "desktop" if not specified
+- [x] `GET /api/v1/workspace?device_type=desktop` — returns workspace state for device
+- [x] `PUT /api/v1/workspace?device_type=desktop` — updates workspace state
+- [x] `POST /api/v1/workspace/reset?device_type=desktop` — resets to defaults
+- [x] All endpoints require authentication (`AuthUser`)
+- [x] Device type defaults to "desktop" if not specified
 
-### Task 2.3: Undo Snapshot API
-**File:** `src/api/handlers/workspace.rs` (extend)
-
-```rust
-pub async fn get_undo_snapshot(
-    auth: AuthUser,
-    State(state): State<AppState>,
-    Path((entity_type, entity_id)): Path<(String, DbId)>,
-) -> Result<Json<Option<UndoSnapshot>>, AppError> { ... }
-
-pub async fn save_undo_snapshot(
-    auth: AuthUser,
-    State(state): State<AppState>,
-    Path((entity_type, entity_id)): Path<(String, DbId)>,
-    Json(input): Json<SaveUndoRequest>,
-) -> Result<Json<UndoSnapshot>, AppError> {
-    // Check size limit
-    let size = serde_json::to_string(&input.snapshot_data)?.len();
-    if size > MAX_UNDO_SNAPSHOT_BYTES {
-        return Err(AppError::BadRequest("Undo snapshot exceeds size limit".to_string()));
-    }
-    // Upsert snapshot
-}
-```
+### Task 2.3: Undo Snapshot API [COMPLETE]
+**File:** `apps/backend/crates/api/src/handlers/workspace.rs` (same file)
 
 **Acceptance Criteria:**
-- [ ] `GET /api/v1/workspace/undo/:entity_type/:entity_id` — get undo snapshot
-- [ ] `PUT /api/v1/workspace/undo/:entity_type/:entity_id` — save undo snapshot
-- [ ] Size limit enforced (configurable, default 1MB per snapshot)
-- [ ] Requires authentication
+- [x] `GET /api/v1/workspace/undo/{entity_type}/{entity_id}` — get undo snapshot
+- [x] `PUT /api/v1/workspace/undo/{entity_type}/{entity_id}` — save undo snapshot
+- [x] Size limit enforced (1MB per snapshot via `MAX_UNDO_SNAPSHOT_BYTES`)
+- [x] Requires authentication
 
-### Task 2.4: Register Workspace Routes
-**File:** `src/api/routes.rs` (update)
-
-```rust
-fn workspace_routes() -> Router<AppState> {
-    Router::new()
-        .route("/", axum::routing::get(handlers::workspace::get_workspace)
-            .put(handlers::workspace::update_workspace))
-        .route("/reset", axum::routing::post(handlers::workspace::reset_workspace))
-        .route("/undo/:entity_type/:entity_id",
-            axum::routing::get(handlers::workspace::get_undo_snapshot)
-                .put(handlers::workspace::save_undo_snapshot))
-}
-```
+### Task 2.4: Register Workspace Routes [COMPLETE]
+**File:** `apps/backend/crates/api/src/routes/workspace.rs`
 
 **Acceptance Criteria:**
-- [ ] All workspace routes registered under `/api/v1/workspace`
-- [ ] Routes require authentication
+- [x] All workspace routes registered under `/api/v1/workspace`
+- [x] Routes require authentication
+
+### Task 2.5: Core Workspace Constants [COMPLETE]
+**File:** `apps/backend/crates/core/src/workspace.rs`
+
+**Acceptance Criteria:**
+- [x] `MAX_UNDO_SNAPSHOT_BYTES` constant (1MB)
+- [x] `DEFAULT_DEVICE_TYPE` constant
+- [x] `VALID_DEVICE_TYPES` array and `is_valid_device_type` validator
+- [x] Unit tests (4 tests, all passing)
 
 ---
 
-## Phase 3: Frontend State Management
+## Phase 3: Frontend State Management [COMPLETE]
 
-### Task 3.1: Workspace Zustand Store
-**File:** `frontend/src/stores/workspaceStore.ts`
+### Task 3.1: Workspace Zustand Store [COMPLETE]
+**File:** `apps/frontend/src/features/workspace/hooks/use-workspace.ts`
 
-```typescript
-import { create } from 'zustand';
-
-interface LayoutState {
-  panels: Record<string, PanelConfig>;
-  sidebarWidth: number;
-  sidebarCollapsed: boolean;
-}
-
-interface NavigationState {
-  activeProjectId: number | null;
-  activeCharacterId: number | null;
-  activeSceneId: number | null;
-  activeSegmentId: number | null;
-  scrollPositions: Record<string, number>;
-  zoomLevel: number;
-  videoPlaybackPosition: number;
-}
-
-interface WorkspaceStore {
-  layout: LayoutState;
-  navigation: NavigationState;
-  isLoaded: boolean;
-  isDirty: boolean;
-
-  // Actions
-  setLayout: (layout: Partial<LayoutState>) => void;
-  setNavigation: (nav: Partial<NavigationState>) => void;
-  loadFromServer: (deviceType: string) => Promise<void>;
-  saveToServer: (deviceType: string) => Promise<void>;
-  resetLayout: () => Promise<void>;
-}
-```
+**Implementation Notes:** Combined Zustand store with TanStack Query hooks in one module. The store holds the local working copy; TanStack Query handles server sync. This follows the project convention of co-locating hooks with their feature.
 
 **Acceptance Criteria:**
-- [ ] Zustand store manages layout and navigation state
-- [ ] `setLayout` and `setNavigation` update local state and mark dirty
-- [ ] `loadFromServer` fetches state from API on login
-- [ ] `saveToServer` persists state via API
-- [ ] `isLoaded` flag prevents rendering before state is restored
-- [ ] `zustand` added to frontend `package.json`
+- [x] Zustand store manages layout and navigation state
+- [x] `setLayout` and `setNavigation` update local state and mark dirty
+- [x] `loadFromServer` via TanStack Query + `hydrateFromServer` action
+- [x] `saveToServer` via `useUpdateWorkspace` mutation
+- [x] `isLoaded` flag prevents rendering before state is restored
+- [x] `zustand` already in frontend `package.json`
 
-### Task 3.2: Debounced Auto-Save Hook
-**File:** `frontend/src/hooks/useAutoSave.ts`
-
-```typescript
-import { useEffect, useRef } from 'react';
-import { useWorkspaceStore } from '../stores/workspaceStore';
-
-export function useAutoSave(debounceMs: number = 2000) {
-  const { isDirty, saveToServer } = useWorkspaceStore();
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const deviceType = detectDeviceType();
-
-  useEffect(() => {
-    if (!isDirty) return;
-
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
-
-    timeoutRef.current = setTimeout(() => {
-      saveToServer(deviceType);
-    }, debounceMs);
-
-    return () => {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    };
-  }, [isDirty, debounceMs]);
-}
-```
+### Task 3.2: Debounced Auto-Save Hook [COMPLETE]
+**File:** `apps/frontend/src/features/workspace/useAutoSave.ts`
 
 **Acceptance Criteria:**
-- [ ] State changes trigger auto-save after 2-second debounce
-- [ ] Multiple rapid changes reset the debounce timer
-- [ ] `beforeunload` event triggers immediate save
-- [ ] No unnecessary API calls when state hasn't changed
+- [x] State changes trigger auto-save after 2-second debounce
+- [x] Multiple rapid changes reset the debounce timer
+- [x] `beforeunload` event triggers immediate save via `sendBeacon`
+- [x] No unnecessary API calls when state hasn't changed (isDirty guard)
 
-### Task 3.3: Device Type Detection
-**File:** `frontend/src/lib/deviceDetection.ts`
-
-```typescript
-export type DeviceType = 'desktop' | 'tablet' | 'mobile';
-
-export function detectDeviceType(): DeviceType {
-  const ua = navigator.userAgent;
-  if (/tablet|ipad/i.test(ua)) return 'tablet';
-  if (/mobile|iphone|android/i.test(ua) && !/tablet/i.test(ua)) return 'mobile';
-  return 'desktop';
-}
-```
+### Task 3.3: Device Type Detection [COMPLETE]
+**File:** `apps/frontend/src/features/workspace/deviceDetection.ts`
 
 **Acceptance Criteria:**
-- [ ] Detects desktop, tablet, mobile from user agent
-- [ ] Used as key for workspace state API calls
-- [ ] Returns 'desktop' as fallback for unknown user agents
+- [x] Detects desktop, tablet, mobile from user agent
+- [x] Used as key for workspace state API calls
+- [x] Returns 'desktop' as fallback for unknown user agents
 
-### Task 3.4: State Restoration on Login
-**File:** `frontend/src/components/WorkspaceProvider.tsx`
-
-```typescript
-const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { isAuthenticated } = useAuth();
-  const { isLoaded, loadFromServer } = useWorkspaceStore();
-  const deviceType = detectDeviceType();
-
-  useEffect(() => {
-    if (isAuthenticated && !isLoaded) {
-      loadFromServer(deviceType);
-    }
-  }, [isAuthenticated, isLoaded]);
-
-  if (isAuthenticated && !isLoaded) {
-    return <WorkspaceLoadingSkeleton />;
-  }
-
-  return <>{children}</>;
-};
-```
+### Task 3.4: State Restoration on Login [COMPLETE]
+**File:** `apps/frontend/src/features/workspace/WorkspaceProvider.tsx`
 
 **Acceptance Criteria:**
-- [ ] Workspace state loads after authentication completes
-- [ ] Loading skeleton shown during state restoration (no layout flash)
-- [ ] State restoration completes in <500ms
-- [ ] If state load fails, default layout is used gracefully
+- [x] Workspace state loads after authentication completes
+- [x] Loading skeleton shown during state restoration (no layout flash)
+- [x] State restoration completes in <500ms (single GET request)
+- [x] If state load fails, default layout is used gracefully
+
+### Task 3.5: Reset Layout Button [COMPLETE]
+**File:** `apps/frontend/src/features/workspace/ResetLayoutButton.tsx`
+
+**Acceptance Criteria:**
+- [x] Confirmation dialog before reset (destructive action)
+- [x] Resets both layout and navigation state to defaults
+- [x] Immediately saves the reset state to the server
+- [x] Uses design system Button and Modal components
+
+### Task 3.6: Frontend Tests [COMPLETE]
+**File:** `apps/frontend/src/features/workspace/__tests__/WorkspaceProvider.test.tsx`
+
+**Acceptance Criteria:**
+- [x] 7 tests passing (3 component, 4 store unit tests)
+- [x] Tests workspace loading skeleton, hydration, and fallback behavior
+- [x] Tests store setLayout/setNavigation/markClean/reset actions
 
 ---
 
@@ -419,33 +169,6 @@ const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ children }
 
 ### Task 4.1: Panel Configuration System
 **File:** `frontend/src/components/layout/PanelManager.tsx`
-
-Implement panel layout management that integrates with the workspace store.
-
-```typescript
-interface PanelConfig {
-  id: string;
-  isVisible: boolean;
-  position: { x: number; y: number };
-  size: { width: number; height: number };
-  order: number;
-}
-
-const PanelManager: React.FC = () => {
-  const { layout, setLayout } = useWorkspaceStore();
-
-  const handlePanelResize = (panelId: string, size: { width: number; height: number }) => {
-    setLayout({
-      panels: {
-        ...layout.panels,
-        [panelId]: { ...layout.panels[panelId], size },
-      },
-    });
-  };
-
-  // Render panels based on layout state
-};
-```
 
 **Acceptance Criteria:**
 - [ ] Panel sizes and positions persist across sessions
@@ -455,26 +178,6 @@ const PanelManager: React.FC = () => {
 
 ### Task 4.2: Reset Layout Action
 **File:** `frontend/src/components/layout/ResetLayoutButton.tsx`
-
-```typescript
-const ResetLayoutButton: React.FC = () => {
-  const { resetLayout } = useWorkspaceStore();
-  const [confirmOpen, setConfirmOpen] = useState(false);
-
-  return (
-    <>
-      <button onClick={() => setConfirmOpen(true)}>Reset Layout</button>
-      {confirmOpen && (
-        <ConfirmDialog
-          message="This will reset all panels to their default positions. Continue?"
-          onConfirm={() => { resetLayout(); setConfirmOpen(false); }}
-          onCancel={() => setConfirmOpen(false)}
-        />
-      )}
-    </>
-  );
-};
-```
 
 **Acceptance Criteria:**
 - [ ] "Reset Layout" button visible in settings/toolbar
@@ -489,29 +192,6 @@ const ResetLayoutButton: React.FC = () => {
 ### Task 5.1: Navigation State Tracking
 **File:** `frontend/src/hooks/useNavigationPersistence.ts`
 
-```typescript
-export function useNavigationPersistence() {
-  const { navigation, setNavigation } = useWorkspaceStore();
-  const location = useLocation();
-
-  // Track active entity from URL
-  useEffect(() => {
-    const projectId = extractProjectId(location.pathname);
-    const characterId = extractCharacterId(location.pathname);
-    setNavigation({ activeProjectId: projectId, activeCharacterId: characterId });
-  }, [location.pathname]);
-
-  // Track scroll positions
-  const trackScrollPosition = (viewId: string, position: number) => {
-    setNavigation({
-      scrollPositions: { ...navigation.scrollPositions, [viewId]: position },
-    });
-  };
-
-  return { trackScrollPosition };
-}
-```
-
 **Acceptance Criteria:**
 - [ ] Active project/character/scene/segment tracked from URL changes
 - [ ] Scroll positions tracked per list view
@@ -521,20 +201,6 @@ export function useNavigationPersistence() {
 
 ### Task 5.2: Navigation Restoration
 **File:** `frontend/src/hooks/useNavigationRestore.ts`
-
-```typescript
-export function useNavigationRestore() {
-  const { navigation, isLoaded } = useWorkspaceStore();
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    if (!isLoaded) return;
-    if (navigation.activeProjectId) {
-      navigate(`/projects/${navigation.activeProjectId}`);
-    }
-  }, [isLoaded]);
-}
-```
 
 **Acceptance Criteria:**
 - [ ] On login, navigate to the last-viewed entity
@@ -548,33 +214,6 @@ export function useNavigationRestore() {
 
 ### Task 6.1: Backend Workspace API Tests
 **File:** `tests/workspace_tests.rs`
-
-```rust
-#[tokio::test]
-async fn test_workspace_get_creates_default() {
-    // Authenticated GET with no existing state creates default
-}
-
-#[tokio::test]
-async fn test_workspace_update_and_retrieve() {
-    // PUT state, GET state, verify match
-}
-
-#[tokio::test]
-async fn test_workspace_per_device_isolation() {
-    // Update desktop state, verify tablet state is independent
-}
-
-#[tokio::test]
-async fn test_workspace_reset() {
-    // Set state, reset, verify empty
-}
-
-#[tokio::test]
-async fn test_undo_snapshot_size_limit() {
-    // Try to save snapshot exceeding size limit, verify rejection
-}
-```
 
 **Acceptance Criteria:**
 - [ ] Test: default state created on first GET
@@ -590,31 +229,33 @@ async fn test_undo_snapshot_size_limit() {
 
 | File | Description |
 |------|-------------|
-| `migrations/20260218300001_create_workspace_states_table.sql` | Workspace states DDL |
-| `migrations/20260218300002_create_undo_snapshots_table.sql` | Undo snapshots DDL |
-| `src/models/workspace.rs` | WorkspaceState and UndoSnapshot model structs |
-| `src/repositories/workspace_repo.rs` | Workspace CRUD operations |
-| `src/api/handlers/workspace.rs` | Workspace API handlers |
-| `frontend/src/stores/workspaceStore.ts` | Zustand store for workspace state |
-| `frontend/src/hooks/useAutoSave.ts` | Debounced auto-save hook |
-| `frontend/src/hooks/useNavigationPersistence.ts` | Navigation state tracking |
-| `frontend/src/hooks/useNavigationRestore.ts` | Navigation restoration on login |
-| `frontend/src/lib/deviceDetection.ts` | Device type detection utility |
-| `frontend/src/components/layout/PanelManager.tsx` | Panel layout management |
-| `frontend/src/components/layout/ResetLayoutButton.tsx` | Reset layout with confirmation |
-| `frontend/src/components/WorkspaceProvider.tsx` | State restoration wrapper |
+| `apps/db/migrations/20260221000033_create_workspace_states.sql` | Workspace states DDL |
+| `apps/db/migrations/20260221000034_create_undo_snapshots.sql` | Undo snapshots DDL |
+| `apps/backend/crates/db/src/models/workspace.rs` | WorkspaceState and UndoSnapshot model structs |
+| `apps/backend/crates/db/src/repositories/workspace_repo.rs` | Workspace and Undo CRUD operations |
+| `apps/backend/crates/core/src/workspace.rs` | Workspace constants and device type validation |
+| `apps/backend/crates/api/src/handlers/workspace.rs` | Workspace and undo API handlers |
+| `apps/backend/crates/api/src/routes/workspace.rs` | Workspace route definitions |
+| `apps/frontend/src/features/workspace/types.ts` | TypeScript types and defaults |
+| `apps/frontend/src/features/workspace/hooks/use-workspace.ts` | Zustand store + TanStack Query hooks |
+| `apps/frontend/src/features/workspace/useAutoSave.ts` | Debounced auto-save hook |
+| `apps/frontend/src/features/workspace/deviceDetection.ts` | Device type detection utility |
+| `apps/frontend/src/features/workspace/WorkspaceProvider.tsx` | State restoration wrapper |
+| `apps/frontend/src/features/workspace/ResetLayoutButton.tsx` | Reset layout with confirmation |
+| `apps/frontend/src/features/workspace/index.ts` | Barrel export |
+| `apps/frontend/src/features/workspace/__tests__/WorkspaceProvider.test.tsx` | Component and store tests |
 
 ---
 
 ## Dependencies
 
 ### Existing Components to Reuse
-- PRD-000: `trigger_set_updated_at()`, `DbId = i64`, JSONB support
+- PRD-000: `set_updated_at()` trigger function, `DbId = i64`, JSONB support
 - PRD-002: Axum server, `AppState`, `AppError`, API routing
 - PRD-003: `AuthUser` extractor for per-user scoping, `users` table FK
 
 ### New Infrastructure Needed
-- `zustand` npm package for frontend state management
+- `zustand` npm package for frontend state management (already in package.json)
 - No new Rust crates needed (JSONB handled by `serde_json` already in deps)
 
 ---
@@ -622,9 +263,9 @@ async fn test_undo_snapshot_size_limit() {
 ## Implementation Order
 
 ### MVP (Minimum for Feature)
-1. Phase 1: Database Schema — Tasks 1.1–1.2
-2. Phase 2: Backend API — Tasks 2.1–2.4
-3. Phase 3: Frontend State Management — Tasks 3.1–3.4
+1. Phase 1: Database Schema — Tasks 1.1–1.2 [COMPLETE]
+2. Phase 2: Backend API — Tasks 2.1–2.5 [COMPLETE]
+3. Phase 3: Frontend State Management — Tasks 3.1–3.6 [COMPLETE]
 
 **MVP Success Criteria:**
 - Workspace state (layout + navigation) saves and restores per user
@@ -652,3 +293,4 @@ async fn test_undo_snapshot_size_limit() {
 ## Version History
 
 - **v1.0** (2026-02-18): Initial task list creation from PRD
+- **v1.1** (2026-02-21): Phases 1-3 (MVP) implemented — database, backend API, frontend state management

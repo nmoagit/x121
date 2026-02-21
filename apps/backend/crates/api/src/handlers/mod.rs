@@ -6,8 +6,10 @@
 
 pub mod admin;
 pub mod assets;
+pub mod audit;
 pub mod auth;
 pub mod character;
+pub mod checkpoints;
 pub mod dashboard;
 pub mod derived_image;
 pub mod extensions;
@@ -34,3 +36,4 @@ pub mod themes;
 pub mod trash;
 pub mod validation;
 pub mod video;
+pub mod workspace;
