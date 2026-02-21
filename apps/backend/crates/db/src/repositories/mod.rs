@@ -4,8 +4,10 @@
 //! that accept `&PgPool` as the first argument.
 
 pub mod api_key_repo;
+pub mod approval_repo;
 pub mod asset_repo;
 pub mod audit_repo;
+pub mod bug_report_repo;
 pub mod character_repo;
 pub mod checkpoint_repo;
 pub mod collaboration_repo;
@@ -54,11 +56,15 @@ pub mod user_repo;
 pub mod validation_rule_repo;
 pub mod video_thumbnail_repo;
 pub mod webhook_repo;
+pub mod workflow_layout_repo;
 pub mod workspace_repo;
 
 pub use api_key_repo::ApiKeyRepo;
+pub use approval_repo::ApprovalRepo;
+pub use approval_repo::RejectionCategoryRepo;
 pub use asset_repo::AssetRepo;
 pub use audit_repo::AuditLogRepo;
+pub use bug_report_repo::BugReportRepo;
 pub use collaboration_repo::EntityLockRepo;
 pub use collaboration_repo::UserPresenceRepo;
 pub use audit_repo::AuditRetentionPolicyRepo;
@@ -112,4 +118,5 @@ pub use validation_rule_repo::ValidationRuleRepo;
 pub use video_thumbnail_repo::VideoThumbnailRepo;
 pub use workspace_repo::UndoSnapshotRepo;
 pub use webhook_repo::WebhookRepo;
+pub use workflow_layout_repo::WorkflowLayoutRepo;
 pub use workspace_repo::WorkspaceRepo;

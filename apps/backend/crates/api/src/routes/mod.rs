@@ -1,11 +1,14 @@
 pub mod admin;
+pub mod approval;
 pub mod assets;
 pub mod audit;
 pub mod auth;
+pub mod bug_reports;
 pub mod character;
 pub mod character_metadata;
 pub mod checkpoints;
 pub mod collaboration;
+pub mod config_management;
 pub mod dashboard;
 pub mod extensions;
 pub mod external_api;
@@ -32,6 +35,7 @@ pub mod themes;
 pub mod trash;
 pub mod validation;
 pub mod video;
+pub mod workflow_canvas;
 pub mod workspace;
 
 use axum::routing::get;
@@ -134,6 +138,14 @@ use crate::ws;
 ///
 /// /scenes/{scene_id}/segments                      list, create
 /// /scenes/{scene_id}/segments/{id}                 get, update, delete
+/// /scenes/{scene_id}/review-queue                  review queue (GET, PRD-35)
+///
+/// /segments/{segment_id}/approve                   approve segment (POST, PRD-35)
+/// /segments/{segment_id}/reject                    reject segment (POST, PRD-35)
+/// /segments/{segment_id}/flag                      flag segment (POST, PRD-35)
+/// /segments/{segment_id}/approvals                 list approvals (GET, PRD-35)
+///
+/// /rejection-categories                            list categories (GET, PRD-35)
 ///
 /// /scenes/{scene_id}/versions                      list
 /// /scenes/{scene_id}/versions/import               import (multipart)
@@ -270,6 +282,18 @@ use crate::ws;
 /// /admin/webhooks/{id}/deliveries                         delivery history (GET, PRD-12)
 /// /admin/webhooks/{id}/test                               test webhook (POST, PRD-12)
 /// /admin/webhooks/deliveries/{id}/replay                  replay delivery (POST, PRD-12)
+///
+/// /workflows/{id}/canvas                                   get, save canvas (GET, PUT, PRD-33)
+/// /workflows/{id}/telemetry                                node timing data (GET, PRD-33)
+/// /workflows/import-comfyui                                import ComfyUI JSON (POST, PRD-33)
+///
+/// /bug-reports                                              submit, list (POST, GET, PRD-44)
+/// /bug-reports/{id}                                         get report (GET, PRD-44)
+/// /bug-reports/{id}/status                                  update status (PUT, PRD-44)
+///
+/// /admin/config/export                                      export config (POST, PRD-44)
+/// /admin/config/validate                                    validate config (POST, PRD-44)
+/// /admin/config/import                                      import config (POST, PRD-44)
 /// ```
 pub fn api_routes() -> Router<AppState> {
     Router::new()
@@ -320,8 +344,14 @@ pub fn api_routes() -> Router<AppState> {
         .nest("/characters", character::router()
             .merge(metadata::character_metadata_router())
             .merge(character_metadata::character_router()))
-        // Scene-scoped sub-resources (segments).
-        .nest("/scenes", scene::router().merge(metadata::scene_metadata_router()))
+        // Scene-scoped sub-resources (segments, review queue).
+        .nest("/scenes", scene::router()
+            .merge(metadata::scene_metadata_router())
+            .merge(approval::scene_review_router()))
+        // Segment-scoped approval actions (approve, reject, flag) (PRD-35).
+        .nest("/segments", approval::segment_router())
+        // Rejection categories for structured rejection tracking (PRD-35).
+        .nest("/rejection-categories", approval::rejection_categories_router())
         // Studio-level scene types.
         .nest("/scene-types", scene_type::studio_router())
         // Trash / bin management.
@@ -363,4 +393,10 @@ pub fn api_routes() -> Router<AppState> {
         .nest("/extensions", extensions::registry_router())
         // Sandboxed extension API bridge (PRD-85).
         .nest("/extension-api", extensions::ext_api_router())
+        // Workflow canvas: layout persistence, telemetry, ComfyUI import (PRD-33).
+        .nest("/workflows", workflow_canvas::router())
+        // Bug reporting (PRD-44).
+        .nest("/bug-reports", bug_reports::router())
+        // Configuration export/import (PRD-44).
+        .nest("/admin/config", config_management::router())
 }

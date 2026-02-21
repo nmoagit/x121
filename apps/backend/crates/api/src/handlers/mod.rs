@@ -6,13 +6,16 @@
 
 pub mod admin;
 pub mod api_keys;
+pub mod approval;
 pub mod assets;
 pub mod audit;
 pub mod auth;
+pub mod bug_reports;
 pub mod character;
 pub mod character_metadata;
 pub mod checkpoints;
 pub mod collaboration;
+pub mod config_export;
 pub mod dashboard;
 pub mod derived_image;
 pub mod extensions;
@@ -43,4 +46,5 @@ pub mod trash;
 pub mod validation;
 pub mod video;
 pub mod webhooks;
+pub mod workflow_canvas;
 pub mod workspace;

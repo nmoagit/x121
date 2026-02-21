@@ -6,8 +6,10 @@
 //! - A `Deserialize` update DTO (all `Option` fields) for patches
 
 pub mod api_key;
+pub mod approval;
 pub mod asset;
 pub mod audit;
+pub mod bug_report;
 pub mod character;
 pub mod checkpoint;
 pub mod collaboration;
@@ -43,4 +45,5 @@ pub mod theme;
 pub mod user;
 pub mod validation;
 pub mod video;
+pub mod workflow_layout;
 pub mod workspace;
