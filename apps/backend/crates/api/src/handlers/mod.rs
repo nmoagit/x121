@@ -21,6 +21,7 @@ pub mod notification;
 pub mod performance;
 pub mod proficiency;
 pub mod project;
+pub mod queue;
 pub mod reclamation;
 pub mod scene;
 pub mod scene_type;

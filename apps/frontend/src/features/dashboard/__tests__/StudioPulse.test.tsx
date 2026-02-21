@@ -1,6 +1,6 @@
-import { render, screen, waitFor } from "@testing-library/react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
+import { renderWithProviders } from "@/lib/test-utils";
 import { StudioPulse } from "../StudioPulse";
 
 // Mock the api module to prevent real HTTP requests.
@@ -83,17 +83,6 @@ vi.mock("@/lib/api", () => ({
     put: vi.fn().mockResolvedValue({}),
   },
 }));
-
-function renderWithProviders(ui: React.ReactElement) {
-  const queryClient = new QueryClient({
-    defaultOptions: {
-      queries: { retry: false },
-    },
-  });
-  return render(
-    <QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>,
-  );
-}
 
 describe("StudioPulse", () => {
   it("renders the dashboard title", async () => {

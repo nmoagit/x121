@@ -256,6 +256,16 @@ async fn test_segment_crud_under_scene(pool: PgPool) {
             variant_label: "clothed".to_string(),
             status_id: None,
             file_path: "/img/f.png".to_string(),
+            variant_type: None,
+            provenance: None,
+            is_hero: None,
+            file_size_bytes: None,
+            width: None,
+            height: None,
+            format: None,
+            version: None,
+            parent_variant_id: None,
+            generation_params: None,
         },
     )
     .await

@@ -14,6 +14,7 @@ pub mod notification;
 pub mod performance;
 pub mod proficiency;
 pub mod project;
+pub mod queue;
 pub mod reclamation;
 pub mod scene;
 pub mod scene_type;
@@ -167,6 +168,17 @@ use crate::ws;
 /// /jobs/{id}                                         get job (GET)
 /// /jobs/{id}/cancel                                  cancel job (POST)
 /// /jobs/{id}/retry                                   retry failed job (POST)
+/// /jobs/{id}/pause                                   pause job (POST, PRD-08)
+/// /jobs/{id}/resume                                  resume job (POST, PRD-08)
+/// /jobs/{id}/transitions                             job audit trail (GET, PRD-08)
+///
+/// /queue                                              queue status (GET, PRD-08)
+/// /quota/status                                       user quota status (GET, PRD-08)
+///
+/// /admin/queue/reorder                                reorder job (PUT, PRD-08)
+/// /admin/users/{id}/quota                             set user quota (PUT, PRD-08)
+/// /admin/scheduling/policies                          list, create (GET, POST, PRD-08)
+/// /admin/scheduling/policies/{id}                     update (PUT, PRD-08)
 ///
 /// /tags                                              list tags (GET)
 /// /tags/suggest                                      autocomplete (GET)
@@ -258,8 +270,17 @@ pub fn api_routes() -> Router<AppState> {
         .nest("/imports", validation::imports_router())
         // Video streaming, metadata, and thumbnails.
         .nest("/videos", video::router())
-        // Background job execution engine (PRD-07).
+        // Background job execution engine (PRD-07, PRD-08).
         .nest("/jobs", jobs::router())
+        // Queue management & scheduling (PRD-08).
+        .nest("/queue", queue::router())
+        .nest("/quota", queue::quota_router())
+        .nest("/admin/queue", queue::admin_router())
+        .nest("/admin/scheduling", queue::scheduling_admin_router())
+        .route(
+            "/admin/users/{id}/quota",
+            axum::routing::put(crate::handlers::queue::set_user_quota),
+        )
         // Tag system: tag CRUD, suggestions, bulk ops (PRD-47).
         .nest("/tags", tags::router())
         // Entity-scoped tag associations (PRD-47).

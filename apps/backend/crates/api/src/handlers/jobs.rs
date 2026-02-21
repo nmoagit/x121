@@ -1,4 +1,4 @@
-//! Handlers for the `/jobs` resource (PRD-07).
+//! Handlers for the `/jobs` resource (PRD-07, extended by PRD-08).
 //!
 //! All endpoints require authentication via [`AuthUser`].
 //! Admin users can list all jobs; regular users see only their own.
@@ -10,16 +10,14 @@ use axum::Json;
 use trulience_core::error::CoreError;
 use trulience_core::roles::ROLE_ADMIN;
 use trulience_core::types::DbId;
-use trulience_db::models::job::{JobListQuery, SubmitJob};
+use trulience_db::models::job::{Job, JobListQuery, SubmitJob};
 use trulience_db::models::status::JobStatus;
-use trulience_db::repositories::JobRepo;
+use trulience_db::repositories::{JobRepo, JobTransitionRepo};
 
 use crate::error::{AppError, AppResult};
 use crate::middleware::auth::AuthUser;
 use crate::response::DataResponse;
 use crate::state::AppState;
-
-use trulience_db::models::job::Job;
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -59,8 +57,8 @@ async fn find_and_authorize(
 /// POST /api/v1/jobs
 ///
 /// Submit a new background job. Returns 201 with the created job.
-/// The job starts in `pending` status and will be picked up by the
-/// dispatcher.
+/// If `scheduled_start_at` is provided, the job starts in `scheduled` status
+/// and will be moved to `pending` when the time arrives.
 pub async fn submit_job(
     auth: AuthUser,
     State(state): State<AppState>,
@@ -68,11 +66,18 @@ pub async fn submit_job(
 ) -> AppResult<impl IntoResponse> {
     let job = JobRepo::submit(&state.pool, auth.user_id, &input).await?;
 
+    let status_label = if input.scheduled_start_at.is_some() {
+        "scheduled"
+    } else {
+        "submitted"
+    };
+
     tracing::info!(
         job_id = job.id,
         job_type = %job.job_type,
         user_id = auth.user_id,
-        "Job submitted",
+        status = status_label,
+        "Job {status_label}",
     );
 
     Ok((StatusCode::CREATED, Json(DataResponse { data: job })))
@@ -190,4 +195,81 @@ pub async fn retry_job(
     );
 
     Ok((StatusCode::CREATED, Json(DataResponse { data: new_job })))
+}
+
+// ---------------------------------------------------------------------------
+// Pause (PRD-08)
+// ---------------------------------------------------------------------------
+
+/// POST /api/v1/jobs/{id}/pause
+///
+/// Pause a pending or running job. Validates state transition.
+pub async fn pause_job(
+    auth: AuthUser,
+    State(state): State<AppState>,
+    Path(job_id): Path<DbId>,
+) -> AppResult<impl IntoResponse> {
+    find_and_authorize(&state.pool, job_id, &auth, "pause").await?;
+
+    let job = JobRepo::transition_state(
+        &state.pool,
+        job_id,
+        JobStatus::Paused.id(),
+        Some(auth.user_id),
+        Some("Paused by user"),
+    )
+    .await
+    .map_err(|e| AppError::BadRequest(e.to_string()))?;
+
+    tracing::info!(job_id, user_id = auth.user_id, "Job paused");
+
+    Ok(Json(DataResponse { data: job }))
+}
+
+// ---------------------------------------------------------------------------
+// Resume (PRD-08)
+// ---------------------------------------------------------------------------
+
+/// POST /api/v1/jobs/{id}/resume
+///
+/// Resume a paused job (transitions back to pending).
+pub async fn resume_job(
+    auth: AuthUser,
+    State(state): State<AppState>,
+    Path(job_id): Path<DbId>,
+) -> AppResult<impl IntoResponse> {
+    find_and_authorize(&state.pool, job_id, &auth, "resume").await?;
+
+    let job = JobRepo::transition_state(
+        &state.pool,
+        job_id,
+        JobStatus::Pending.id(),
+        Some(auth.user_id),
+        Some("Resumed by user"),
+    )
+    .await
+    .map_err(|e| AppError::BadRequest(e.to_string()))?;
+
+    tracing::info!(job_id, user_id = auth.user_id, "Job resumed");
+
+    Ok(Json(DataResponse { data: job }))
+}
+
+// ---------------------------------------------------------------------------
+// Transitions (PRD-08)
+// ---------------------------------------------------------------------------
+
+/// GET /api/v1/jobs/{id}/transitions
+///
+/// List all state transitions for a job (audit trail).
+pub async fn get_job_transitions(
+    auth: AuthUser,
+    State(state): State<AppState>,
+    Path(job_id): Path<DbId>,
+) -> AppResult<impl IntoResponse> {
+    find_and_authorize(&state.pool, job_id, &auth, "view transitions for").await?;
+
+    let transitions = JobTransitionRepo::list_by_job(&state.pool, job_id).await?;
+
+    Ok(Json(DataResponse { data: transitions }))
 }

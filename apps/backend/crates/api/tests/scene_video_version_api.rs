@@ -75,6 +75,16 @@ async fn setup_scene(pool: &PgPool, suffix: &str) -> i64 {
             variant_label: "clothed".to_string(),
             status_id: None,
             file_path: format!("/img/{suffix}.png"),
+            variant_type: None,
+            provenance: None,
+            is_hero: None,
+            file_size_bytes: None,
+            width: None,
+            height: None,
+            format: None,
+            version: None,
+            parent_variant_id: None,
+            generation_params: None,
         },
     )
     .await

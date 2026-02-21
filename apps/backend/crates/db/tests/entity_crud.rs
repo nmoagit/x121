@@ -75,6 +75,16 @@ fn new_image_variant(character_id: i64, label: &str, path: &str) -> CreateImageV
         variant_label: label.to_string(),
         status_id: None,
         file_path: path.to_string(),
+        variant_type: None,
+        provenance: None,
+        is_hero: None,
+        file_size_bytes: None,
+        width: None,
+        height: None,
+        format: None,
+        version: None,
+        parent_variant_id: None,
+        generation_params: None,
     }
 }
 

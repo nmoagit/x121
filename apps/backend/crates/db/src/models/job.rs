@@ -1,4 +1,5 @@
-//! Job entity models and DTOs for the parallel task execution engine (PRD-07).
+//! Job entity models and DTOs for the parallel task execution engine (PRD-07)
+//! with scheduling extensions (PRD-08).
 
 use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
@@ -28,6 +29,13 @@ pub struct Job {
     pub estimated_duration_secs: Option<i32>,
     pub actual_duration_secs: Option<i32>,
     pub retry_of_job_id: Option<DbId>,
+    // PRD-08 scheduling columns.
+    pub scheduled_start_at: Option<Timestamp>,
+    pub is_off_peak_only: bool,
+    pub is_paused: bool,
+    pub paused_at: Option<Timestamp>,
+    pub resumed_at: Option<Timestamp>,
+    pub queue_position: Option<i32>,
     pub created_at: Timestamp,
     pub updated_at: Timestamp,
 }
@@ -39,6 +47,11 @@ pub struct SubmitJob {
     pub parameters: serde_json::Value,
     pub priority: Option<i32>,
     pub estimated_duration_secs: Option<i32>,
+    /// Optional: defer execution until this time (sets status to Scheduled).
+    pub scheduled_start_at: Option<chrono::DateTime<chrono::Utc>>,
+    /// If true, job only runs during off-peak hours.
+    #[serde(default)]
+    pub is_off_peak_only: bool,
 }
 
 /// Query parameters for `GET /api/v1/jobs`.
@@ -50,4 +63,18 @@ pub struct JobListQuery {
     pub limit: Option<i64>,
     /// Number of results to skip. Defaults to 0.
     pub offset: Option<i64>,
+}
+
+/// Lightweight view for queue display — avoids sending full job payload.
+#[derive(Debug, Clone, FromRow, Serialize)]
+pub struct QueuedJobView {
+    pub id: DbId,
+    pub job_type: String,
+    pub priority: i32,
+    pub submitted_by: DbId,
+    pub submitted_at: Timestamp,
+    pub queue_position: Option<i32>,
+    pub scheduled_start_at: Option<Timestamp>,
+    pub is_off_peak_only: bool,
+    pub is_paused: bool,
 }

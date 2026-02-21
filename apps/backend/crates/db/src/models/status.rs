@@ -61,6 +61,9 @@ define_status_enum! {
         Pending = 1,
         Approved = 2,
         Rejected = 3,
+        Generating = 4,
+        Generated = 5,
+        Editing = 6,
     }
 }
 
@@ -106,6 +109,9 @@ define_status_enum! {
         Failed = 4,
         Cancelled = 5,
         Retrying = 6,
+        Scheduled = 7,
+        Paused = 8,
+        Dispatched = 9,
     }
 }
 
@@ -159,6 +165,16 @@ mod tests {
     }
 
     #[test]
+    fn image_variant_status_ids_match_seed_data() {
+        assert_eq!(ImageVariantStatus::Pending.id(), 1);
+        assert_eq!(ImageVariantStatus::Approved.id(), 2);
+        assert_eq!(ImageVariantStatus::Rejected.id(), 3);
+        assert_eq!(ImageVariantStatus::Generating.id(), 4);
+        assert_eq!(ImageVariantStatus::Generated.id(), 5);
+        assert_eq!(ImageVariantStatus::Editing.id(), 6);
+    }
+
+    #[test]
     fn job_status_ids_match_seed_data() {
         assert_eq!(JobStatus::Pending.id(), 1);
         assert_eq!(JobStatus::Running.id(), 2);
@@ -166,5 +182,8 @@ mod tests {
         assert_eq!(JobStatus::Failed.id(), 4);
         assert_eq!(JobStatus::Cancelled.id(), 5);
         assert_eq!(JobStatus::Retrying.id(), 6);
+        assert_eq!(JobStatus::Scheduled.id(), 7);
+        assert_eq!(JobStatus::Paused.id(), 8);
+        assert_eq!(JobStatus::Dispatched.id(), 9);
     }
 }

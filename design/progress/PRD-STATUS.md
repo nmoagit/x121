@@ -21,10 +21,10 @@ Source of truth: [`design/design.md`](../design.md)
 | Status | Count |
 |--------|-------|
 | backlog | 0 |
-| planning | 84 |
+| planning | 82 |
 | in-progress | 0 |
 | review | 0 |
-| done | 25 |
+| done | 27 |
 | blocked | 0 |
 | deferred | 0 |
 | maybe | 15 |
@@ -49,7 +49,7 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-05 | ComfyUI WebSocket Bridge | — | `done` | 2026-02-20 | tokio-tungstenite WS client, reqwest REST API, multi-instance manager with exponential backoff reconnect, message parser (7 ComfyUI types), execution tracking, broadcast event channel, 17 unit tests. |
 | PRD-06 | Hardware Monitoring & Direct Control | 1 | `done` | 2026-02-21 | DB schema (gpu_metrics, metric_thresholds, restart_logs/statuses), agent binary (NVML collector, WS push, restart handler), backend API (7 admin endpoints, WS ingestion, threshold engine, retention job), frontend dashboard (gauges, charts, restart UI), 16 tests. DRY-077 flagged, DRY-080 resolved. |
 | PRD-07 | Parallel Task Execution Engine | — | `done` | 2026-02-21 | Jobs table, dispatcher, progress tracking, handlers, routes. |
-| PRD-08 | Queue Management & Job Scheduling | — | `planning` | — | |
+| PRD-08 | Queue Management & Job Scheduling | — | `done` | 2026-02-21 | State machine (9 states, 27 tests), scheduler, GPU quotas, off-peak policies, queue management API, frontend queue view. |
 | PRD-09 | Multi-Runtime Script Orchestrator | — | `done` | 2026-02-21 | Script execution layer (shell/python/binary), venv isolation with SHA-256 caching, ScriptOrchestrator service, admin API (8 endpoints), 2 DB migrations, 113 unit tests. |
 | PRD-10 | Event Bus & Notification System | — | `done` | 2026-02-20 | EventBus (broadcast channel), EventPersistence, NotificationRouter, 8 notification API endpoints, webhook/email delivery, digest scheduler, 16 event types, 5 DB tables, 12 unit tests. Phase 7 (frontend) deferred. |
 | PRD-11 | Real-time Collaboration Layer | — | `planning` | — | |
@@ -91,7 +91,7 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD | Title | Priority | Status | Owner | Notes |
 |-----|-------|----------|--------|-------|-------|
 | PRD-76 | Character Identity Embedding | — | `planning` | — | |
-| PRD-21 | Source Image Management & Variant Generation | — | `planning` | — | |
+| PRD-21 | Source Image Management & Variant Generation | — | `done` | 2026-02-21 | Variant lifecycle, hero selection, external edit loop, provenance tracking, variant gallery UI. |
 | PRD-22 | Source Image Quality Assurance | — | `done` | 2026-02-20 | 3 DB tables (qa_check_types, image_quality_scores, image_qa_thresholds), 3 repos, 6 API handlers (/qa/*), 3 Python QA scripts (resolution/format, face detection, image quality), QA runner via subprocess. Post-MVP: likeness comparison (PRD-76), batch validation, frontend components. |
 | PRD-23 | Scene Type Configuration | — | `planning` | — | Updated v1.1 (2026-02-19): clip generation prompt types (full_clip, start_clip, continuation_clip) |
 | PRD-24 | Recursive Video Generation Loop | — | `planning` | — | Updated v1.1 (2026-02-19): position-based prompt type selection |

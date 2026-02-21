@@ -4,7 +4,7 @@
 //! source images, derived images, image variants, and scenes that
 //! belong to a specific character.
 
-use axum::routing::get;
+use axum::routing::{get, post};
 use axum::Router;
 
 use crate::handlers::{derived_image, image_variant, scene, source_image};
@@ -30,6 +30,13 @@ use crate::state::AppState;
 /// GET    /{character_id}/image-variants/{id}      -> get_by_id
 /// PUT    /{character_id}/image-variants/{id}      -> update
 /// DELETE /{character_id}/image-variants/{id}      -> delete
+/// POST   /{character_id}/image-variants/{id}/approve  -> approve_as_hero
+/// POST   /{character_id}/image-variants/{id}/reject   -> reject_variant
+/// POST   /{character_id}/image-variants/{id}/export   -> export_for_editing
+/// POST   /{character_id}/image-variants/{id}/reimport -> reimport_variant
+/// GET    /{character_id}/image-variants/{id}/history  -> variant_history
+/// POST   /{character_id}/image-variants/upload        -> upload_manual_variant
+/// POST   /{character_id}/image-variants/generate      -> generate_variants
 ///
 /// GET    /{character_id}/scenes                   -> list_by_character
 /// POST   /{character_id}/scenes                   -> create
@@ -67,12 +74,19 @@ pub fn router() -> Router<AppState> {
             "/",
             get(image_variant::list_by_character).post(image_variant::create),
         )
+        .route("/upload", post(image_variant::upload_manual_variant))
+        .route("/generate", post(image_variant::generate_variants))
         .route(
             "/{id}",
             get(image_variant::get_by_id)
                 .put(image_variant::update)
                 .delete(image_variant::delete),
-        );
+        )
+        .route("/{id}/approve", post(image_variant::approve_as_hero))
+        .route("/{id}/reject", post(image_variant::reject_variant))
+        .route("/{id}/export", post(image_variant::export_for_editing))
+        .route("/{id}/reimport", post(image_variant::reimport_variant))
+        .route("/{id}/history", get(image_variant::variant_history));
 
     let scene_routes = Router::new()
         .route("/", get(scene::list_by_character).post(scene::create))
