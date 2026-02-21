@@ -5,6 +5,7 @@
 //! and map errors via [`AppError`].
 
 pub mod admin;
+pub mod assets;
 pub mod auth;
 pub mod character;
 pub mod derived_image;
@@ -17,6 +18,7 @@ pub mod jobs;
 pub mod notification;
 pub mod proficiency;
 pub mod project;
+pub mod reclamation;
 pub mod scene;
 pub mod scene_type;
 pub mod scene_video_version;

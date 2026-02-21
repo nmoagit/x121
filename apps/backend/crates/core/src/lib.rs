@@ -1,4 +1,5 @@
 pub mod alert;
+pub mod assets;
 pub mod channels;
 pub mod delivery;
 pub mod error;
@@ -9,6 +10,7 @@ pub mod job_events;
 pub mod metric_names;
 pub mod naming;
 pub mod qa_status;
+pub mod reclamation;
 pub mod restart_status;
 pub mod roles;
 pub mod script_types;

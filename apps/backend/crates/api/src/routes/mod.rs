@@ -1,4 +1,5 @@
 pub mod admin;
+pub mod assets;
 pub mod auth;
 pub mod character;
 pub mod hardware;
@@ -10,6 +11,7 @@ pub mod layouts;
 pub mod notification;
 pub mod proficiency;
 pub mod project;
+pub mod reclamation;
 pub mod scene;
 pub mod scene_type;
 pub mod scripts;
@@ -58,6 +60,16 @@ use crate::ws;
 /// /admin/themes                                     list, create (admin only)
 /// /admin/themes/{id}                                get, update, delete
 /// /admin/themes/{id}/export                         export tokens (GET)
+///
+/// /admin/reclamation/preview                        preview reclaimable space (GET)
+/// /admin/reclamation/run                            trigger cleanup (POST)
+/// /admin/reclamation/trash                          list trash queue (GET)
+/// /admin/reclamation/trash/{id}/restore             restore entry (POST)
+/// /admin/reclamation/history                        cleanup history (GET)
+/// /admin/reclamation/protection-rules               list, create (GET, POST)
+/// /admin/reclamation/protection-rules/{id}          update, delete (PUT, DELETE)
+/// /admin/reclamation/policies                       list, create (GET, POST)
+/// /admin/reclamation/policies/{id}                  update, delete (PUT, DELETE)
 ///
 /// /user/theme                                       get, update (auth required)
 ///
@@ -155,6 +167,14 @@ use crate::ws;
 ///
 /// /entities/{type}/{id}/tags                         list, apply (GET, POST)
 /// /entities/{type}/{id}/tags/{tag_id}                remove (DELETE)
+///
+/// /assets                                             list, create (GET, POST)
+/// /assets/{id}                                        get, update, delete
+/// /assets/{id}/dependencies                           list, add (GET, POST)
+/// /assets/{id}/impact                                 impact analysis (GET)
+/// /assets/{id}/notes                                  list, add (GET, POST)
+/// /assets/{id}/rating                                 rate (PUT)
+/// /assets/{id}/ratings                                list ratings (GET)
 /// ```
 pub fn api_routes() -> Router<AppState> {
     Router::new()
@@ -168,6 +188,8 @@ pub fn api_routes() -> Router<AppState> {
         .nest("/admin/hardware", hardware::router())
         .nest("/admin/scripts", scripts::router())
         .nest("/admin/themes", themes::admin_router())
+        // Disk reclamation: protection rules, policies, trash queue (PRD-15).
+        .nest("/admin/reclamation", reclamation::router())
         // User-facing theme preference.
         .nest("/user/theme", themes::user_router())
         // User-facing keymap preference (PRD-52).
@@ -206,4 +228,6 @@ pub fn api_routes() -> Router<AppState> {
         .nest("/tags", tags::router())
         // Entity-scoped tag associations (PRD-47).
         .nest("/entities", tags::entity_tags_router())
+        // Asset registry: CRUD, dependencies, notes, ratings (PRD-17).
+        .nest("/assets", assets::router())
 }

@@ -3,6 +3,7 @@
 //! Each repository is a zero-sized struct providing async CRUD methods
 //! that accept `&PgPool` as the first argument.
 
+pub mod asset_repo;
 pub mod character_repo;
 pub mod comfyui_execution_repo;
 pub mod comfyui_instance_repo;
@@ -23,6 +24,7 @@ pub mod notification_repo;
 pub mod proficiency_repo;
 pub mod project_repo;
 pub mod qa_check_type_repo;
+pub mod reclamation_repo;
 pub mod restart_log_repo;
 pub mod role_repo;
 pub mod scene_repo;
@@ -40,6 +42,7 @@ pub mod user_repo;
 pub mod validation_rule_repo;
 pub mod video_thumbnail_repo;
 
+pub use asset_repo::AssetRepo;
 pub use character_repo::CharacterRepo;
 pub use comfyui_execution_repo::ComfyUIExecutionRepo;
 pub use comfyui_instance_repo::ComfyUIInstanceRepo;
@@ -59,6 +62,7 @@ pub use notification_repo::NotificationRepo;
 pub use proficiency_repo::ProficiencyRepo;
 pub use project_repo::ProjectRepo;
 pub use qa_check_type_repo::QaCheckTypeRepo;
+pub use reclamation_repo::ReclamationRepo;
 pub use restart_log_repo::RestartLogRepo;
 pub use role_repo::RoleRepo;
 pub use scene_repo::SceneRepo;

@@ -5,6 +5,7 @@
 //! - A `Deserialize` create DTO for inserts
 //! - A `Deserialize` update DTO (all `Option` fields) for patches
 
+pub mod asset;
 pub mod character;
 pub mod comfyui;
 pub mod event;
@@ -17,6 +18,7 @@ pub mod job;
 pub mod notification;
 pub mod proficiency;
 pub mod project;
+pub mod reclamation;
 pub mod role;
 pub mod scene;
 pub mod scene_type;

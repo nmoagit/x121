@@ -21,10 +21,10 @@ Source of truth: [`design/design.md`](../design.md)
 | Status | Count |
 |--------|-------|
 | backlog | 0 |
-| planning | 92 |
+| planning | 90 |
 | in-progress | 0 |
 | review | 0 |
-| done | 17 |
+| done | 19 |
 | blocked | 0 |
 | deferred | 0 |
 | maybe | 15 |
@@ -70,9 +70,9 @@ Source of truth: [`design/design.md`](../design.md)
 |-----|-------|----------|--------|-------|-------|
 | PRD-13 | Dual-Metadata System (JSON) | — | `planning` | — | |
 | PRD-14 | Data Validation & Import Integrity | — | `done` | 2026-02-20 | Validation engine (8 rule types), import preview/commit, report export (JSON/CSV), 12 integration tests, 33 unit tests. |
-| PRD-15 | Intelligent & Deferred Disk Reclamation | — | `planning` | — | |
+| PRD-15 | Intelligent & Deferred Disk Reclamation | — | `done` | 2026-02-21 | Protection rules, policies, trash queue, reclamation engine, admin dashboard, 6 tests. |
 | PRD-16 | Folder-to-Entity Bulk Importer | — | `planning` | — | |
-| PRD-17 | Asset Registry & Dependency Mapping | — | `planning` | — | |
+| PRD-17 | Asset Registry & Dependency Mapping | — | `done` | 2026-02-21 | Asset registry, dependencies, notes, ratings, impact analysis, browser UI, 8 tests. |
 | PRD-18 | Bulk Data Maintenance (Search/Replace/Re-path) | — | `planning` | — | |
 | PRD-19 | Disk Space Visualizer (Treemap) | — | `planning` | — | |
 | PRD-20 | Search & Discovery Engine | — | `planning` | — | |
