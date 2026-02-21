@@ -62,11 +62,11 @@ CREATE TRIGGER set_updated_at BEFORE UPDATE ON entity_locks
 ```
 
 **Acceptance Criteria:**
-- [ ] Unique partial index ensures only one active lock per entity
-- [ ] `expires_at` for automatic expiration
-- [ ] `is_active` flag for soft-release (preserves history)
-- [ ] `lock_type` defaults to 'exclusive' (extensible for shared locks later)
-- [ ] FK index on `user_id`
+- [x] Unique partial index ensures only one active lock per entity
+- [x] `expires_at` for automatic expiration
+- [x] `is_active` flag for soft-release (preserves history)
+- [x] `lock_type` defaults to 'exclusive' (extensible for shared locks later)
+- [x] FK index on `user_id`
 
 ### Task 1.2: Create User Presence Table
 **File:** `migrations/20260219000002_create_user_presence_table.sql`
@@ -94,10 +94,10 @@ CREATE TRIGGER set_updated_at BEFORE UPDATE ON user_presence
 ```
 
 **Acceptance Criteria:**
-- [ ] Tracks which user is viewing which entity
-- [ ] `last_seen_at` updated on heartbeat for activity detection
-- [ ] Unique constraint per user per entity (only one active presence record)
-- [ ] Index on entity for "who is viewing this" queries
+- [x] Tracks which user is viewing which entity
+- [x] `last_seen_at` updated on heartbeat for activity detection
+- [x] Unique constraint per user per entity (only one active presence record)
+- [x] Index on entity for "who is viewing this" queries
 
 ---
 
@@ -230,11 +230,11 @@ pub enum LockError {
 ```
 
 **Acceptance Criteria:**
-- [ ] `acquire` uses INSERT ON CONFLICT DO NOTHING for atomic lock acquisition
-- [ ] Lock conflicts return the holder's user_id and expiration time
-- [ ] `release` only allows the lock holder to release
-- [ ] `extend` resets the expiration timer
-- [ ] `get_active_lock` returns current lock for UI display
+- [x] `acquire` uses INSERT ON CONFLICT DO NOTHING for atomic lock acquisition
+- [x] Lock conflicts return the holder's user_id and expiration time
+- [x] `release` only allows the lock holder to release
+- [x] `extend` resets the expiration timer
+- [x] `get_active_lock` returns current lock for UI display
 
 ### Task 2.2: Stale Lock Cleanup
 **File:** `src/collab/lock_cleanup.rs`
@@ -270,10 +270,10 @@ pub async fn lock_cleanup_loop(pool: PgPool, cancel_token: CancellationToken) {
 ```
 
 **Acceptance Criteria:**
-- [ ] Runs every 60 seconds
-- [ ] Releases all locks past their `expires_at`
-- [ ] Logs released lock count
-- [ ] Graceful shutdown via cancellation token
+- [x] Runs every 60 seconds
+- [x] Releases all locks past their `expires_at`
+- [x] Logs released lock count
+- [x] Graceful shutdown via cancellation token
 
 ---
 
@@ -336,11 +336,11 @@ impl PresenceStore {
 ```
 
 **Acceptance Criteria:**
-- [ ] In-memory HashMap for fast presence queries
-- [ ] `join` and `leave` update both in-memory and database
-- [ ] `get_present_users` returns all users currently viewing an entity
-- [ ] Thread-safe via `RwLock`
-- [ ] Database backup for recovery after restart
+- [x] In-memory HashMap for fast presence queries
+- [x] `join` and `leave` update both in-memory and database
+- [x] `get_present_users` returns all users currently viewing an entity
+- [x] Thread-safe via `RwLock`
+- [x] Database backup for recovery after restart
 
 ### Task 3.2: Presence WebSocket Messages
 **File:** `src/collab/ws_protocol.rs`
@@ -365,10 +365,10 @@ pub enum CollabMessage {
 ```
 
 **Acceptance Criteria:**
-- [ ] Message types for presence join/leave/update and lock acquired/released/denied
-- [ ] All messages include entity_type and entity_id for routing
-- [ ] Serialized as JSON over WebSocket
-- [ ] Presence updates broadcast to all users viewing the same entity
+- [x] Message types for presence join/leave/update and lock acquired/released/denied
+- [x] All messages include entity_type and entity_id for routing
+- [x] Serialized as JSON over WebSocket
+- [x] Presence updates broadcast to all users viewing the same entity
 
 ---
 
@@ -426,12 +426,12 @@ pub async fn get_lock_status(
 ```
 
 **Acceptance Criteria:**
-- [ ] `POST /api/v1/locks/acquire` — acquire exclusive lock
-- [ ] `POST /api/v1/locks/release` — release held lock
-- [ ] `POST /api/v1/locks/extend` — extend lock expiration
-- [ ] `GET /api/v1/locks/:entity_type/:entity_id` — check lock status
-- [ ] Lock conflicts return 409 with holder info
-- [ ] Lock state changes broadcast via WebSocket
+- [x] `POST /api/v1/locks/acquire` — acquire exclusive lock
+- [x] `POST /api/v1/locks/release` — release held lock
+- [x] `POST /api/v1/locks/extend` — extend lock expiration
+- [x] `GET /api/v1/locks/:entity_type/:entity_id` — check lock status
+- [x] Lock conflicts return 409 with holder info
+- [x] Lock state changes broadcast via WebSocket
 
 ### Task 4.2: Presence API Endpoints
 **File:** `src/api/handlers/collab.rs` (extend)
@@ -448,17 +448,17 @@ pub async fn get_presence(
 ```
 
 **Acceptance Criteria:**
-- [ ] `GET /api/v1/presence/:entity_type/:entity_id` — who is viewing this entity
-- [ ] Returns list of users with timestamps
-- [ ] Authenticated access required
+- [x] `GET /api/v1/presence/:entity_type/:entity_id` — who is viewing this entity
+- [x] Returns list of users with timestamps
+- [x] Authenticated access required
 
 ### Task 4.3: Register Collaboration Routes
 **File:** `src/api/routes.rs` (update)
 
 **Acceptance Criteria:**
-- [ ] Lock routes under `/api/v1/locks`
-- [ ] Presence routes under `/api/v1/presence`
-- [ ] All routes require authentication
+- [x] Lock routes under `/api/v1/locks`
+- [x] Presence routes under `/api/v1/presence`
+- [x] All routes require authentication
 
 ---
 
@@ -500,10 +500,10 @@ pub async fn handle_collab_message(
 ```
 
 **Acceptance Criteria:**
-- [ ] Presence join messages add user to entity's presence list
-- [ ] Presence leave messages remove user
-- [ ] Updated presence broadcast to all users viewing the same entity
-- [ ] WebSocket disconnection triggers leave for all entities
+- [x] Presence join messages add user to entity's presence list
+- [x] Presence leave messages remove user
+- [x] Updated presence broadcast to all users viewing the same entity
+- [x] WebSocket disconnection triggers leave for all entities
 
 ---
 
@@ -532,28 +532,28 @@ const PresenceIndicator: React.FC<PresenceIndicatorProps> = ({ entityType, entit
 ```
 
 **Acceptance Criteria:**
-- [ ] Shows user avatars/initials for users viewing the same entity
-- [ ] Updates in real-time via WebSocket
-- [ ] Small and unobtrusive (corner of entity view)
+- [x] Shows user avatars/initials for users viewing the same entity
+- [x] Updates in real-time via WebSocket
+- [x] Small and unobtrusive (corner of entity view)
 
 ### Task 6.2: Lock Status Component
 **File:** `frontend/src/components/collab/LockStatus.tsx`
 
 **Acceptance Criteria:**
-- [ ] Shows lock icon with holder name when entity is locked
-- [ ] "Lock" button for acquiring lock before editing
-- [ ] "Unlock" button for releasing held lock
-- [ ] Lock conflict message: "Locked by [Name] until [time]"
-- [ ] Disabled action buttons when entity is locked by another user
+- [x] Shows lock icon with holder name when entity is locked
+- [x] "Lock" button for acquiring lock before editing
+- [x] "Unlock" button for releasing held lock
+- [x] Lock conflict message: "Locked by [Name] until [time]"
+- [x] Disabled action buttons when entity is locked by another user
 
 ### Task 6.3: Presence and Lock Hooks
 **File:** `frontend/src/hooks/usePresence.ts`, `frontend/src/hooks/useLock.ts`
 
 **Acceptance Criteria:**
-- [ ] `usePresence(entityType, entityId)` — sends join on mount, leave on unmount
-- [ ] `useLock(entityType, entityId)` — acquire, release, extend, check lock
-- [ ] WebSocket message handling for real-time updates
-- [ ] Automatic lock extension before expiration (if user is still active)
+- [x] `usePresence(entityType, entityId)` — sends join on mount, leave on unmount
+- [x] `useLock(entityType, entityId)` — acquire, release, extend, check lock
+- [x] WebSocket message handling for real-time updates
+- [x] Automatic lock extension before expiration (if user is still active)
 
 ---
 
@@ -589,11 +589,11 @@ async fn test_only_holder_can_release() {
 ```
 
 **Acceptance Criteria:**
-- [ ] Test: successful acquire and release
-- [ ] Test: concurrent acquire conflict
-- [ ] Test: expired lock cleanup
-- [ ] Test: non-holder release rejection
-- [ ] Test: lock extension resets timer
+- [x] Test: successful acquire and release
+- [x] Test: concurrent acquire conflict
+- [x] Test: expired lock cleanup
+- [x] Test: non-holder release rejection
+- [x] Test: lock extension resets timer
 
 ---
 

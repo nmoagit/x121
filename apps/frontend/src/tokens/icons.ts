@@ -75,6 +75,9 @@ export {
   HardDrive,
   BarChart3,
   Zap,
+  // Collaboration
+  Lock,
+  Unlock,
 } from "lucide-react";
 
 /** Standard icon size tokens (px values matching design grid) */

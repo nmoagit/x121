@@ -5,10 +5,12 @@
 //! - A `Deserialize` create DTO for inserts
 //! - A `Deserialize` update DTO (all `Option` fields) for patches
 
+pub mod api_key;
 pub mod asset;
 pub mod audit;
 pub mod character;
 pub mod checkpoint;
+pub mod collaboration;
 pub mod comfyui;
 pub mod dashboard;
 pub mod event;
@@ -30,6 +32,7 @@ pub mod scene_type;
 pub mod scene_video_version;
 pub mod scheduling;
 pub mod script;
+pub mod search;
 pub mod segment;
 pub mod session;
 pub mod status;

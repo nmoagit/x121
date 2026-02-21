@@ -5,6 +5,8 @@ edition.workspace = true
 
 [dependencies]
 chrono = { workspace = true }
+hmac = { workspace = true }
+rand = { workspace = true }
 regex = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }

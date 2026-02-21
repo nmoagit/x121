@@ -3,10 +3,12 @@
 //! Each repository is a zero-sized struct providing async CRUD methods
 //! that accept `&PgPool` as the first argument.
 
+pub mod api_key_repo;
 pub mod asset_repo;
 pub mod audit_repo;
 pub mod character_repo;
 pub mod checkpoint_repo;
+pub mod collaboration_repo;
 pub mod comfyui_execution_repo;
 pub mod comfyui_instance_repo;
 pub mod dashboard_repo;
@@ -38,6 +40,7 @@ pub mod scene_type_repo;
 pub mod scene_video_version_repo;
 pub mod scheduling_repo;
 pub mod script_execution_repo;
+pub mod search_repo;
 pub mod script_repo;
 pub mod segment_repo;
 pub mod session_repo;
@@ -48,10 +51,14 @@ pub mod trash_repo;
 pub mod user_repo;
 pub mod validation_rule_repo;
 pub mod video_thumbnail_repo;
+pub mod webhook_repo;
 pub mod workspace_repo;
 
+pub use api_key_repo::ApiKeyRepo;
 pub use asset_repo::AssetRepo;
 pub use audit_repo::AuditLogRepo;
+pub use collaboration_repo::EntityLockRepo;
+pub use collaboration_repo::UserPresenceRepo;
 pub use audit_repo::AuditRetentionPolicyRepo;
 pub use character_repo::CharacterRepo;
 pub use checkpoint_repo::CheckpointRepo;
@@ -88,6 +95,7 @@ pub use scheduling_repo::JobTransitionRepo;
 pub use scheduling_repo::SchedulingPolicyRepo;
 pub use script_execution_repo::ScriptExecutionRepo;
 pub use script_repo::ScriptRepo;
+pub use search_repo::SearchRepo;
 pub use segment_repo::SegmentRepo;
 pub use session_repo::SessionRepo;
 pub use source_image_repo::SourceImageRepo;
@@ -98,4 +106,5 @@ pub use user_repo::UserRepo;
 pub use validation_rule_repo::ValidationRuleRepo;
 pub use video_thumbnail_repo::VideoThumbnailRepo;
 pub use workspace_repo::UndoSnapshotRepo;
+pub use webhook_repo::WebhookRepo;
 pub use workspace_repo::WorkspaceRepo;

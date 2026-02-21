@@ -4,8 +4,10 @@ pub mod audit;
 pub mod auth;
 pub mod character;
 pub mod checkpoints;
+pub mod collaboration;
 pub mod dashboard;
 pub mod extensions;
+pub mod external_api;
 pub mod hardware;
 pub mod health;
 pub mod image_qa;
@@ -21,6 +23,7 @@ pub mod reclamation;
 pub mod scene;
 pub mod scene_type;
 pub mod scripts;
+pub mod search;
 pub mod tags;
 pub mod themes;
 pub mod trash;
@@ -187,6 +190,13 @@ use crate::ws;
 /// /admin/scheduling/policies                          list, create (GET, POST, PRD-08)
 /// /admin/scheduling/policies/{id}                     update (PUT, PRD-08)
 ///
+/// /search                                             unified search (GET, PRD-20)
+/// /search/typeahead                                   typeahead (GET, PRD-20)
+/// /search/similar                                     visual similarity (POST, PRD-20)
+/// /search/saved                                       list, create (GET, POST, PRD-20)
+/// /search/saved/{id}                                  delete (DELETE, PRD-20)
+/// /search/saved/{id}/execute                          execute saved (GET, PRD-20)
+///
 /// /tags                                              list tags (GET)
 /// /tags/suggest                                      autocomplete (GET)
 /// /tags/{id}                                         update, delete (PUT, DELETE)
@@ -234,6 +244,24 @@ use crate::ws;
 /// /workspace                                             get, update (GET, PUT, PRD-04)
 /// /workspace/reset                                       reset to defaults (POST, PRD-04)
 /// /workspace/undo/{entity_type}/{entity_id}              get, save snapshot (GET, PUT, PRD-04)
+///
+/// /collaboration/locks/acquire                            acquire lock (POST, PRD-11)
+/// /collaboration/locks/release                            release lock (POST, PRD-11)
+/// /collaboration/locks/extend                             extend lock (POST, PRD-11)
+/// /collaboration/locks/{entity_type}/{entity_id}          lock status (GET, PRD-11)
+/// /collaboration/presence/{entity_type}/{entity_id}       who is viewing (GET, PRD-11)
+///
+/// /admin/api-keys                                         list, create (GET, POST, PRD-12)
+/// /admin/api-keys/scopes                                  list scopes (GET, PRD-12)
+/// /admin/api-keys/{id}                                    update (PUT, PRD-12)
+/// /admin/api-keys/{id}/rotate                             rotate key (POST, PRD-12)
+/// /admin/api-keys/{id}/revoke                             revoke key (POST, PRD-12)
+///
+/// /admin/webhooks                                         list, create (GET, POST, PRD-12)
+/// /admin/webhooks/{id}                                    update, delete (PUT, DELETE, PRD-12)
+/// /admin/webhooks/{id}/deliveries                         delivery history (GET, PRD-12)
+/// /admin/webhooks/{id}/test                               test webhook (POST, PRD-12)
+/// /admin/webhooks/deliveries/{id}/replay                  replay delivery (POST, PRD-12)
 /// ```
 pub fn api_routes() -> Router<AppState> {
     Router::new()
@@ -251,6 +279,9 @@ pub fn api_routes() -> Router<AppState> {
         .nest("/admin/reclamation", reclamation::router())
         // Audit logging & compliance (PRD-45).
         .nest("/admin/audit-logs", audit::router())
+        // External API & Webhooks admin management (PRD-12).
+        .nest("/admin/api-keys", external_api::api_keys_router())
+        .nest("/admin/webhooks", external_api::webhooks_router())
         // User-facing theme preference.
         .nest("/user/theme", themes::user_router())
         // User-facing keymap preference (PRD-52).
@@ -269,6 +300,8 @@ pub fn api_routes() -> Router<AppState> {
         .nest("/user/dashboard", dashboard::user_router())
         // Workspace state persistence (PRD-04).
         .nest("/workspace", workspace::router())
+        // Real-time collaboration: entity locks and presence (PRD-11).
+        .nest("/collaboration", collaboration::router())
         // Performance & benchmarking dashboard (PRD-41).
         .nest("/performance", performance::router())
         // Project routes (also nests characters and project-scoped scene types).
@@ -302,6 +335,8 @@ pub fn api_routes() -> Router<AppState> {
             "/admin/users/{id}/quota",
             axum::routing::put(crate::handlers::queue::set_user_quota),
         )
+        // Search & discovery engine (PRD-20).
+        .nest("/search", search::router())
         // Tag system: tag CRUD, suggestions, bulk ops (PRD-47).
         .nest("/tags", tags::router())
         // Entity-scoped tag associations (PRD-47).

@@ -1,7 +1,9 @@
 pub mod alert;
+pub mod api_keys;
 pub mod assets;
 pub mod audit;
 pub mod channels;
+pub mod collaboration;
 pub mod checkpointing;
 pub mod delivery;
 pub mod error;
@@ -19,6 +21,7 @@ pub mod restart_status;
 pub mod roles;
 pub mod scheduling;
 pub mod script_types;
+pub mod search;
 pub mod scripting;
 pub mod types;
 pub mod validation;

@@ -31,8 +31,8 @@ This PRD creates the search backbone for the entire platform. It uses PostgreSQL
 
 ## Phase 1: Database Schema & Indexes
 
-### Task 1.1: Full-Text Search Indexes
-**File:** `migrations/{timestamp}_create_search_indexes.sql`
+### Task 1.1: Full-Text Search Indexes [COMPLETE]
+**File:** `migrations/20260221000037_create_search_indexes.sql`
 
 Add tsvector columns and GIN indexes to searchable entity tables.
 
@@ -98,15 +98,15 @@ UPDATE scene_types SET search_vector = search_vector;
 ```
 
 **Acceptance Criteria:**
-- [ ] tsvector columns added to characters, projects, scene_types
-- [ ] Triggers auto-update search vectors on INSERT and UPDATE
-- [ ] Weighted vectors: name=A, description=B, tags=C, other=D
-- [ ] GIN indexes created for fast full-text queries
-- [ ] Existing rows backfilled
-- [ ] Migration applies cleanly
+- [x] tsvector columns added to characters, projects, scene_types
+- [x] Triggers auto-update search vectors on INSERT and UPDATE
+- [x] Weighted vectors: name=A, description=B, tags=C, other=D
+- [x] GIN indexes created for fast full-text queries
+- [x] Existing rows backfilled
+- [x] Migration applies cleanly
 
-### Task 1.2: Saved Searches Table
-**File:** `migrations/{timestamp}_create_saved_searches.sql`
+### Task 1.2: Saved Searches Table [COMPLETE]
+**File:** `migrations/20260221000038_create_saved_searches.sql`
 
 ```sql
 CREATE TABLE saved_searches (
@@ -132,13 +132,13 @@ CREATE TRIGGER set_updated_at BEFORE UPDATE ON saved_searches
 ```
 
 **Acceptance Criteria:**
-- [ ] Saved searches store query text, structured filters, entity type scope
-- [ ] `is_shared` flag for public saved searches
-- [ ] `use_count` and `last_used_at` for popularity tracking
-- [ ] Migration applies cleanly
+- [x] Saved searches store query text, structured filters, entity type scope
+- [x] `is_shared` flag for public saved searches
+- [x] `use_count` and `last_used_at` for popularity tracking
+- [x] Migration applies cleanly
 
-### Task 1.3: Search Analytics Table (Post-MVP prep)
-**File:** `migrations/{timestamp}_create_search_analytics.sql`
+### Task 1.3: Search Analytics Table (Post-MVP prep) [COMPLETE]
+**File:** `migrations/20260221000039_create_search_analytics.sql`
 
 ```sql
 CREATE TABLE search_queries (
@@ -157,17 +157,17 @@ CREATE INDEX idx_search_queries_result_count ON search_queries(result_count)
 ```
 
 **Acceptance Criteria:**
-- [ ] Tracks every search query with result count and duration
-- [ ] Partial index for zero-result queries (for content gap analysis)
-- [ ] No updated_at needed (append-only log)
-- [ ] Migration applies cleanly
+- [x] Tracks every search query with result count and duration
+- [x] Partial index for zero-result queries (for content gap analysis)
+- [x] No updated_at needed (append-only log)
+- [x] Migration applies cleanly
 
 ---
 
 ## Phase 2: Search Engine (Core)
 
-### Task 2.1: Search Query Types
-**File:** `src/search/types.rs`
+### Task 2.1: Search Query Types [COMPLETE]
+**File:** `apps/backend/crates/core/src/search.rs`, `apps/backend/crates/db/src/models/search.rs`
 
 Define search request and result types.
 
@@ -230,13 +230,13 @@ pub struct FacetValue {
 ```
 
 **Acceptance Criteria:**
-- [ ] `SearchRequest` supports free text, entity type filter, structured facets
-- [ ] `SearchResponse` includes results, facets, and timing
-- [ ] `SearchResult` includes entity info, rank, and highlighted matches
-- [ ] `SearchFacets` provides aggregated counts for filter UI
+- [x] `SearchRequest` supports free text, entity type filter, structured facets
+- [x] `SearchResponse` includes results, facets, and timing
+- [x] `SearchResult` includes entity info, rank, and highlighted matches
+- [x] `SearchFacets` provides aggregated counts for filter UI
 
-### Task 2.2: Full-Text Search Service
-**File:** `src/search/fulltext.rs`
+### Task 2.2: Full-Text Search Service [COMPLETE]
+**File:** `apps/backend/crates/db/src/repositories/search_repo.rs`
 
 Execute full-text search across entity tables.
 
@@ -297,15 +297,15 @@ fn build_tsquery(query: &str) -> Result<String, SearchError> {
 ```
 
 **Acceptance Criteria:**
-- [ ] Searches across characters, projects, scene_types
-- [ ] Uses ts_rank for relevance scoring
-- [ ] ts_headline provides matching text fragments for highlighting
-- [ ] Respects entity_type filter
-- [ ] Respects project_id facet filter
-- [ ] Results in <200ms for typical queries (per success metric)
+- [x] Searches across characters, projects, scene_types
+- [x] Uses ts_rank for relevance scoring
+- [x] ts_headline provides matching text fragments for highlighting
+- [x] Respects entity_type filter
+- [x] Respects project_id facet filter
+- [x] Results in <200ms for typical queries (per success metric)
 
-### Task 2.3: Faceted Aggregation Service
-**File:** `src/search/facets.rs`
+### Task 2.3: Faceted Aggregation Service [COMPLETE]
+**File:** `apps/backend/crates/db/src/repositories/search_repo.rs` (compute_facets)
 
 Compute facet counts for the current search context.
 
@@ -351,13 +351,13 @@ pub async fn compute_facets(
 ```
 
 **Acceptance Criteria:**
-- [ ] Computes counts per entity type matching the query
-- [ ] Computes counts per project, status, tag
-- [ ] Facet counts reflect current filter state (narrowing)
-- [ ] All facet queries are efficient (indexed)
+- [x] Computes counts per entity type matching the query
+- [x] Computes counts per project, status, tag
+- [x] Facet counts reflect current filter state (narrowing)
+- [x] All facet queries are efficient (indexed)
 
-### Task 2.4: Visual Similarity Search
-**File:** `src/search/similarity.rs`
+### Task 2.4: Visual Similarity Search [COMPLETE]
+**File:** `apps/backend/crates/db/src/repositories/search_repo.rs` (search_similar)
 
 pgvector-powered image similarity search.
 
@@ -390,14 +390,14 @@ pub async fn search_similar_images(
 ```
 
 **Acceptance Criteria:**
-- [ ] Queries pgvector using cosine distance
-- [ ] Configurable similarity threshold
-- [ ] Returns top N results sorted by similarity
-- [ ] Gracefully handles missing embeddings (returns empty, not error)
-- [ ] Top 10 results in <500ms (per success metric)
+- [x] Queries pgvector using cosine distance
+- [x] Configurable similarity threshold
+- [x] Returns top N results sorted by similarity
+- [x] Gracefully handles missing embeddings (returns empty, not error)
+- [x] Top 10 results in <500ms (per success metric)
 
-### Task 2.5: Search-as-You-Type Service
-**File:** `src/search/typeahead.rs`
+### Task 2.5: Search-as-You-Type Service [COMPLETE]
+**File:** `apps/backend/crates/db/src/repositories/search_repo.rs` (typeahead)
 
 Optimized fast search for Command Palette integration.
 
@@ -438,18 +438,18 @@ pub async fn typeahead_search(
 ```
 
 **Acceptance Criteria:**
-- [ ] Prefix matching (`query:*`) for instant results as user types
-- [ ] Results from all entity types in a single query
-- [ ] Sorted by relevance
-- [ ] <100ms latency per keystroke (per success metric)
-- [ ] Limited to top N results for speed
+- [x] Prefix matching (`query:*`) for instant results as user types
+- [x] Results from all entity types in a single query
+- [x] Sorted by relevance
+- [x] <100ms latency per keystroke (per success metric)
+- [x] Limited to top N results for speed
 
 ---
 
 ## Phase 3: Saved Searches
 
-### Task 3.1: Saved Search Service
-**File:** `src/search/saved.rs`
+### Task 3.1: Saved Search Service [COMPLETE]
+**File:** `apps/backend/crates/db/src/repositories/search_repo.rs` (saved search CRUD)
 
 CRUD for saved searches.
 
@@ -496,17 +496,17 @@ pub async fn list_saved_searches(
 ```
 
 **Acceptance Criteria:**
-- [ ] Save current query + filters as a named search
-- [ ] List user's own searches + shared searches
-- [ ] Track use_count and last_used_at
-- [ ] Delete saved search by ID
+- [x] Save current query + filters as a named search
+- [x] List user's own searches + shared searches
+- [x] Track use_count and last_used_at
+- [x] Delete saved search by ID
 
 ---
 
 ## Phase 4: API Endpoints
 
-### Task 4.1: Unified Search Endpoint
-**File:** `src/routes/search.rs`
+### Task 4.1: Unified Search Endpoint [COMPLETE]
+**File:** `apps/backend/crates/api/src/handlers/search.rs`, `apps/backend/crates/api/src/routes/search.rs`
 
 ```rust
 pub async fn search(
@@ -533,49 +533,49 @@ pub async fn search(
 ```
 
 **Acceptance Criteria:**
-- [ ] `GET /api/search` unified search with query params
-- [ ] Returns results, facets, and timing
-- [ ] Logs query for analytics
-- [ ] Supports all filter combinations
+- [x] `GET /api/v1/search` unified search with query params
+- [x] Returns results, facets, and timing
+- [x] Logs query for analytics
+- [x] Supports all filter combinations
 
-### Task 4.2: Typeahead Endpoint
-**File:** `src/routes/search.rs`
-
-**Acceptance Criteria:**
-- [ ] `GET /api/search/typeahead?q=...` returns fast prefix matches
-- [ ] Results grouped by entity type
-- [ ] <100ms response time
-
-### Task 4.3: Visual Similarity Endpoint
-**File:** `src/routes/search.rs`
+### Task 4.2: Typeahead Endpoint [COMPLETE]
+**File:** `apps/backend/crates/api/src/handlers/search.rs`
 
 **Acceptance Criteria:**
-- [ ] `POST /api/search/similar` accepts image upload or embedding vector
-- [ ] Returns similar images with similarity scores
-- [ ] Configurable threshold and limit
+- [x] `GET /api/v1/search/typeahead?q=...` returns fast prefix matches
+- [x] Results grouped by entity type
+- [x] <100ms response time
 
-### Task 4.4: Saved Searches Endpoints
-**File:** `src/routes/search.rs`
-
-**Acceptance Criteria:**
-- [ ] `POST /api/search/saved` creates a saved search
-- [ ] `GET /api/search/saved` lists saved searches
-- [ ] `DELETE /api/search/saved/:id` deletes a saved search
-- [ ] `GET /api/search/saved/:id/execute` runs a saved search
-
-### Task 4.5: Route Registration
-**File:** `src/routes/mod.rs`
+### Task 4.3: Visual Similarity Endpoint [COMPLETE]
+**File:** `apps/backend/crates/api/src/handlers/search.rs`
 
 **Acceptance Criteria:**
-- [ ] All search endpoints registered
-- [ ] Routes use correct HTTP methods
+- [x] `POST /api/v1/search/similar` accepts embedding vector
+- [x] Returns similar images with similarity scores
+- [x] Configurable threshold and limit
+
+### Task 4.4: Saved Searches Endpoints [COMPLETE]
+**File:** `apps/backend/crates/api/src/handlers/search.rs`
+
+**Acceptance Criteria:**
+- [x] `POST /api/v1/search/saved` creates a saved search
+- [x] `GET /api/v1/search/saved` lists saved searches
+- [x] `DELETE /api/v1/search/saved/{id}` deletes a saved search
+- [x] `GET /api/v1/search/saved/{id}/execute` runs a saved search
+
+### Task 4.5: Route Registration [COMPLETE]
+**File:** `apps/backend/crates/api/src/routes/search.rs`, `apps/backend/crates/api/src/routes/mod.rs`
+
+**Acceptance Criteria:**
+- [x] All search endpoints registered
+- [x] Routes use correct HTTP methods
 
 ---
 
 ## Phase 5: Frontend — Search UI
 
-### Task 5.1: Search Bar Component
-**File:** `frontend/src/components/search/SearchBar.tsx`
+### Task 5.1: Search Bar Component [COMPLETE]
+**File:** `apps/frontend/src/features/search/SearchBar.tsx`
 
 Global search bar with typeahead.
 
@@ -618,13 +618,13 @@ export const SearchBar: React.FC<{ onResultSelect: (result: SearchResult) => voi
 ```
 
 **Acceptance Criteria:**
-- [ ] Debounced typeahead (100ms delay)
-- [ ] Results appear below search bar grouped by type
-- [ ] Keyboard navigation (up/down arrows, Enter to select)
-- [ ] Esc to dismiss, click-away to close
+- [x] Debounced typeahead (100ms delay)
+- [x] Results appear below search bar grouped by type
+- [x] Keyboard navigation (up/down arrows, Enter to select)
+- [x] Esc to dismiss, click-away to close
 
-### Task 5.2: Faceted Filter Panel
-**File:** `frontend/src/components/search/FacetPanel.tsx`
+### Task 5.2: Faceted Filter Panel [COMPLETE]
+**File:** `apps/frontend/src/features/search/FacetPanel.tsx`
 
 Collapsible facet panel for structured filtering.
 
@@ -646,30 +646,30 @@ export const FacetPanel: React.FC<FacetPanelProps> = ({ facets, activeFilters, o
 ```
 
 **Acceptance Criteria:**
-- [ ] Facet groups for entity type, project, status, tags
-- [ ] Each value shows count of matching records
-- [ ] Clicking a facet value adds it as a filter
-- [ ] Active filters shown as removable chips
-- [ ] Collapsible panel to save screen space
-- [ ] Filter state reflected in URL for sharing
+- [x] Facet groups for entity type, project, status, tags
+- [x] Each value shows count of matching records
+- [x] Clicking a facet value adds it as a filter
+- [x] Active filters shown as removable chips
+- [x] Collapsible panel to save screen space
+- [ ] Filter state reflected in URL for sharing (deferred to routing integration)
 
-### Task 5.3: Search Results List
-**File:** `frontend/src/components/search/SearchResults.tsx`
-
-**Acceptance Criteria:**
-- [ ] Displays results with entity type badge, name, description snippet
-- [ ] Highlighted matching terms in results
-- [ ] Click navigates to entity detail view
-- [ ] Pagination or infinite scroll
-
-### Task 5.4: Saved Searches Panel
-**File:** `frontend/src/components/search/SavedSearches.tsx`
+### Task 5.3: Search Results List [COMPLETE]
+**File:** `apps/frontend/src/features/search/SearchResults.tsx`
 
 **Acceptance Criteria:**
-- [ ] List of saved searches with name and use count
-- [ ] Click to execute a saved search
-- [ ] Save current search as new saved search
-- [ ] Delete saved searches
+- [x] Displays results with entity type badge, name, description snippet
+- [x] Highlighted matching terms in results
+- [x] Click navigates to entity detail view
+- [x] Pagination or infinite scroll
+
+### Task 5.4: Saved Searches Panel [COMPLETE]
+**File:** `apps/frontend/src/features/search/SavedSearches.tsx`
+
+**Acceptance Criteria:**
+- [x] List of saved searches with name and use count
+- [x] Click to execute a saved search
+- [x] Save current search as new saved search
+- [x] Delete saved searches
 
 ---
 

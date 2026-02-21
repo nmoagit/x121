@@ -21,10 +21,10 @@ Source of truth: [`design/design.md`](../design.md)
 | Status | Count |
 |--------|-------|
 | backlog | 0 |
-| planning | 82 |
+| planning | 79 |
 | in-progress | 0 |
 | review | 0 |
-| done | 27 |
+| done | 30 |
 | blocked | 0 |
 | deferred | 0 |
 | maybe | 15 |
@@ -45,7 +45,7 @@ Source of truth: [`design/design.md`](../design.md)
 |-----|-------|----------|--------|-------|-------|
 | PRD-02 | Backend Foundation (Rust/Axum) | — | `done` | 2026-02-20 | Axum 0.8, middleware stack, WebSocket manager, graceful shutdown, 21 integration tests. |
 | PRD-03 | User Identity & RBAC | — | `done` | 2026-02-20 | JWT auth (HS256), Argon2id passwords, 3-role RBAC (admin/creator/reviewer), middleware extractors, admin user mgmt API, frontend auth (Zustand store, LoginPage, ProtectedRoute), 12 integration tests. DRY-012/013 resolved. |
-| PRD-04 | Session & Workspace Persistence | — | `planning` | — | |
+| PRD-04 | Session & Workspace Persistence | — | `done` | 2026-02-21 | Workspace states, undo snapshots, auto-save, device detection, Zustand store, 11 tests. |
 | PRD-05 | ComfyUI WebSocket Bridge | — | `done` | 2026-02-20 | tokio-tungstenite WS client, reqwest REST API, multi-instance manager with exponential backoff reconnect, message parser (7 ComfyUI types), execution tracking, broadcast event channel, 17 unit tests. |
 | PRD-06 | Hardware Monitoring & Direct Control | 1 | `done` | 2026-02-21 | DB schema (gpu_metrics, metric_thresholds, restart_logs/statuses), agent binary (NVML collector, WS push, restart handler), backend API (7 admin endpoints, WS ingestion, threshold engine, retention job), frontend dashboard (gauges, charts, restart UI), 16 tests. DRY-077 flagged, DRY-080 resolved. |
 | PRD-07 | Parallel Task Execution Engine | — | `done` | 2026-02-21 | Jobs table, dispatcher, progress tracking, handlers, routes. |
@@ -98,7 +98,7 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-25 | Incremental Re-stitching & Smoothing | — | `planning` | — | |
 | PRD-26 | Temporal Continuity (Normalization & Sync) | — | `planning` | — | |
 | PRD-27 | Template & Preset System | — | `planning` | — | |
-| PRD-28 | Pipeline Error Recovery & Checkpointing | — | `planning` | — | |
+| PRD-28 | Pipeline Error Recovery & Checkpointing | — | `done` | 2026-02-21 | Checkpoints table, failure diagnostics, stage diagram, resume dialog, 22 tests. DRY-152/153 resolved. |
 | PRD-49 | Automated Quality Gates | — | `planning` | — | |
 | PRD-50 | Content Branching & Exploration | — | `planning` | — | |
 | PRD-57 | Batch Production Orchestrator | — | `planning` | — | |
@@ -175,7 +175,7 @@ Source of truth: [`design/design.md`](../design.md)
 |-----|-------|----------|--------|-------|-------|
 | PRD-43 | System Integrity & Repair Tools | — | `planning` | — | |
 | PRD-44 | Bug Reporting & App Config Export | — | `planning` | — | |
-| PRD-45 | Audit Logging & Compliance | — | `planning` | — | |
+| PRD-45 | Audit Logging & Compliance | — | `done` | 2026-02-21 | Immutable audit logs with hash chain, retention policies, dynamic filtering, CSV/JSON export, integrity check, 27 tests. DRY-155/156 resolved. |
 | PRD-56 | Studio Wiki & Contextual Help | — | `planning` | — | |
 | PRD-80 | System Health Page | — | `planning` | — | |
 | PRD-81 | Backup & Disaster Recovery | — | `planning` | — | |

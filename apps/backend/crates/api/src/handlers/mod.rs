@@ -5,11 +5,13 @@
 //! and map errors via [`AppError`].
 
 pub mod admin;
+pub mod api_keys;
 pub mod assets;
 pub mod audit;
 pub mod auth;
 pub mod character;
 pub mod checkpoints;
+pub mod collaboration;
 pub mod dashboard;
 pub mod derived_image;
 pub mod extensions;
@@ -29,6 +31,7 @@ pub mod scene;
 pub mod scene_type;
 pub mod scene_video_version;
 pub mod scripts;
+pub mod search;
 pub mod segment;
 pub mod source_image;
 pub mod tags;
@@ -36,4 +39,5 @@ pub mod themes;
 pub mod trash;
 pub mod validation;
 pub mod video;
+pub mod webhooks;
 pub mod workspace;
