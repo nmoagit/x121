@@ -14,6 +14,21 @@ use trulience_db::repositories::SegmentRepo;
 use crate::error::{AppError, AppResult};
 use crate::state::AppState;
 
+/// Verify that a segment exists, returning an error if not found.
+///
+/// Shared by all handlers that operate on segments (approval, review notes, etc.).
+pub async fn ensure_segment_exists(pool: &sqlx::PgPool, segment_id: DbId) -> AppResult<()> {
+    SegmentRepo::find_by_id(pool, segment_id)
+        .await?
+        .ok_or_else(|| {
+            AppError::Core(CoreError::NotFound {
+                entity: "Segment",
+                id: segment_id,
+            })
+        })?;
+    Ok(())
+}
+
 /// POST /api/v1/scenes/{scene_id}/segments
 ///
 /// Overrides `input.scene_id` with the value from the URL path.

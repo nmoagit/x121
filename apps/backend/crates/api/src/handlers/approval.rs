@@ -9,29 +9,18 @@ use axum::response::IntoResponse;
 use axum::Json;
 
 use trulience_core::approval::{DECISION_APPROVED, DECISION_FLAGGED, DECISION_REJECTED};
+use trulience_core::error::CoreError;
 use trulience_core::types::DbId;
 use trulience_db::models::approval::{
     ApproveRequest, CreateApproval, FlagRequest, RejectRequest,
 };
-use trulience_db::repositories::{ApprovalRepo, RejectionCategoryRepo, SegmentRepo};
+use trulience_db::repositories::{ApprovalRepo, RejectionCategoryRepo};
 
 use crate::error::{AppError, AppResult};
+use crate::handlers::segment::ensure_segment_exists;
 use crate::middleware::auth::AuthUser;
 use crate::response::DataResponse;
 use crate::state::AppState;
-
-/// Verify that a segment exists, returning an error if not found.
-async fn ensure_segment_exists(pool: &sqlx::PgPool, segment_id: DbId) -> AppResult<()> {
-    SegmentRepo::find_by_id(pool, segment_id)
-        .await?
-        .ok_or_else(|| {
-            AppError::Core(trulience_core::error::CoreError::NotFound {
-                entity: "Segment",
-                id: segment_id,
-            })
-        })?;
-    Ok(())
-}
 
 /// POST /api/v1/segments/{segment_id}/approve
 ///
@@ -82,7 +71,7 @@ pub async fn reject_segment(
         RejectionCategoryRepo::find_by_id(&state.pool, cat_id)
             .await?
             .ok_or_else(|| {
-                AppError::Core(trulience_core::error::CoreError::NotFound {
+                AppError::Core(CoreError::NotFound {
                     entity: "RejectionCategory",
                     id: cat_id,
                 })

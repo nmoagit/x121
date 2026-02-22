@@ -17,6 +17,7 @@ pub mod hardware;
 pub mod health;
 pub mod image_qa;
 pub mod importer;
+pub mod job_debug;
 pub mod jobs;
 pub mod keymaps;
 pub mod layouts;
@@ -24,11 +25,13 @@ pub mod library;
 pub mod metadata;
 pub mod notification;
 pub mod onboarding;
+pub mod palette;
 pub mod performance;
 pub mod proficiency;
 pub mod project;
 pub mod queue;
 pub mod reclamation;
+pub mod review_notes;
 pub mod scene;
 pub mod scene_type;
 pub mod scripts;
@@ -121,6 +124,10 @@ use crate::ws;
 /// /user/onboarding                                  get, update (auth required, PRD-53)
 /// /user/onboarding/reset                            reset onboarding (POST, PRD-53)
 ///
+/// /user/recent-items                                list, record, clear (GET, POST, DELETE, PRD-31)
+///
+/// /search/palette                                   command palette search (GET, PRD-31)
+///
 /// /ws/metrics                                       agent metrics WebSocket
 ///
 /// /projects                                        list, create
@@ -159,8 +166,16 @@ use crate::ws;
 /// /segments/{segment_id}/reject                    reject segment (POST, PRD-35)
 /// /segments/{segment_id}/flag                      flag segment (POST, PRD-35)
 /// /segments/{segment_id}/approvals                 list approvals (GET, PRD-35)
+/// /segments/{id}/notes                             list, create (GET, POST, PRD-38)
+/// /segments/{id}/notes/{note_id}                   update, delete (PUT, DELETE, PRD-38)
+/// /segments/{id}/notes/{note_id}/resolve           resolve note (PUT, PRD-38)
+/// /segments/{id}/notes/{note_id}/tags              assign tags (POST, PRD-38)
+/// /segments/{id}/notes/{note_id}/tags/{tag_id}     remove tag (DELETE, PRD-38)
 ///
 /// /rejection-categories                            list categories (GET, PRD-35)
+///
+/// /review-tags                                     list, create (GET, POST, PRD-38)
+/// /review-tags/{id}                                delete (DELETE, PRD-38)
 ///
 /// /scenes/{scene_id}/versions                      list
 /// /scenes/{scene_id}/versions/import               import (multipart)
@@ -219,6 +234,12 @@ use crate::ws;
 /// /jobs/{id}/checkpoints/{checkpoint_id}             get checkpoint (GET, PRD-28)
 /// /jobs/{id}/resume-from-checkpoint                  resume from checkpoint (POST, PRD-28)
 /// /jobs/{id}/diagnostics                             failure diagnostics (GET, PRD-28)
+/// /jobs/{id}/debug                                   debug state (GET, PRD-34)
+/// /jobs/{id}/debug/pause                             debug pause (POST, PRD-34)
+/// /jobs/{id}/debug/resume                            debug resume (POST, PRD-34)
+/// /jobs/{id}/debug/params                            update mid-run params (PUT, PRD-34)
+/// /jobs/{id}/debug/preview                           intermediate previews (GET, PRD-34)
+/// /jobs/{id}/debug/abort                             abort with reason (POST, PRD-34)
 ///
 /// /queue                                              queue status (GET, PRD-08)
 /// /quota/status                                       user quota status (GET, PRD-08)
@@ -379,6 +400,8 @@ pub fn api_routes() -> Router<AppState> {
         .nest("/user/dashboard", dashboard::user_router())
         // User onboarding state (PRD-53).
         .nest("/user/onboarding", onboarding::router())
+        // User recent items for command palette (PRD-31).
+        .nest("/user/recent-items", palette::recent_items_router())
         // Undo/redo tree persistence (PRD-51).
         .nest("/user/undo-tree", undo_tree::router())
         .nest("/user/undo-trees", undo_tree::user_router())
@@ -402,9 +425,13 @@ pub fn api_routes() -> Router<AppState> {
             .merge(metadata::scene_metadata_router())
             .merge(approval::scene_review_router()))
         // Segment-scoped approval actions (approve, reject, flag) (PRD-35).
-        .nest("/segments", approval::segment_router())
+        // Segment-scoped review notes and tags (PRD-38).
+        .nest("/segments", approval::segment_router()
+            .merge(review_notes::segment_notes_router()))
         // Rejection categories for structured rejection tracking (PRD-35).
         .nest("/rejection-categories", approval::rejection_categories_router())
+        // Review tags for collaborative review (PRD-38).
+        .nest("/review-tags", review_notes::review_tags_router())
         // Studio-level scene types.
         .nest("/scene-types", scene_type::studio_router())
         // Trash / bin management.
@@ -421,8 +448,10 @@ pub fn api_routes() -> Router<AppState> {
         .nest("/import", importer::router())
         // Video streaming, metadata, and thumbnails.
         .nest("/videos", video::router())
-        // Background job execution engine (PRD-07, PRD-08, PRD-28).
-        .nest("/jobs", jobs::router().merge(checkpoints::checkpoint_routes()))
+        // Background job execution engine (PRD-07, PRD-08, PRD-28, PRD-34).
+        .nest("/jobs", jobs::router()
+            .merge(checkpoints::checkpoint_routes())
+            .merge(job_debug::debug_routes()))
         // Queue management & scheduling (PRD-08).
         .nest("/queue", queue::router())
         .nest("/quota", queue::quota_router())
@@ -434,6 +463,8 @@ pub fn api_routes() -> Router<AppState> {
         )
         // Search & discovery engine (PRD-20).
         .nest("/search", search::router())
+        // Command palette search (PRD-31).
+        .nest("/search/palette", palette::search_router())
         // Tag system: tag CRUD, suggestions, bulk ops (PRD-47).
         .nest("/tags", tags::router())
         // Entity-scoped tag associations (PRD-47).
