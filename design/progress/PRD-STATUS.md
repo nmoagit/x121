@@ -21,10 +21,10 @@ Source of truth: [`design/design.md`](../design.md)
 | Status | Count |
 |--------|-------|
 | backlog | 0 |
-| planning | 66 |
+| planning | 63 |
 | in-progress | 0 |
 | review | 0 |
-| done | 44 |
+| done | 47 |
 | blocked | 0 |
 | deferred | 0 |
 | maybe | 15 |
@@ -77,7 +77,7 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-19 | Disk Space Visualizer (Treemap) | — | `planning` | — | |
 | PRD-20 | Search & Discovery Engine | — | `done` | 2026-02-21 | tsvector/GIN indexes, fulltext + typeahead + visual similarity search, faceted aggregation, saved searches, search analytics, frontend SearchBar + FacetPanel (29 tests). |
 | PRD-47 | Tagging & Custom Labels | — | `done` | 2026-02-21 | Polymorphic tagging, case-insensitive normalization, bulk ops, 3 frontend components. |
-| PRD-48 | External & Tiered Storage | — | `planning` | — | |
+| PRD-48 | External & Tiered Storage | — | `done` | 2026-02-22 | 4 migrations (backends, locations, policies, migrations), core module (14 tests), 4 repos, 10 API endpoints, frontend panel (10 tests). DRY-219 to DRY-226 audited. |
 | PRD-66 | Character Metadata Editor | — | `done` | 2026-02-21 | Phase 3 Group 4 |
 | PRD-69 | Generation Provenance & Asset Versioning | — | `planning` | — | |
 | PRD-79 | Character Duplicate Detection | — | `planning` | — | |
@@ -104,7 +104,7 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-57 | Batch Production Orchestrator | — | `planning` | — | |
 | PRD-58 | Scene Preview & Quick Test | — | `planning` | — | |
 | PRD-59 | Multi-Resolution Pipeline | — | `planning` | — | |
-| PRD-60 | Character Library (Cross-Project) | — | `planning` | — | |
+| PRD-60 | Character Library (Cross-Project) | — | `done` | 2026-02-22 | 2 migrations (library_characters, project_links), core module (10 tests), 2 repos, 10 API endpoints, frontend browser + import (11 tests). |
 | PRD-61 | Cost & Resource Estimation | — | `planning` | — | |
 | PRD-62 | Storyboard View & Scene Thumbnails | — | `planning` | — | |
 | PRD-63 | Prompt Editor & Versioning | — | `planning` | — | |
@@ -129,7 +129,7 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-30 | Modular Layout & Panel Management | — | `done` | 2026-02-21 | Panel system, snap grid, resize, view module registry, presets, role defaults, 22 tests. |
 | PRD-31 | Command Palette & Navigation (Cmd+K) | — | `planning` | — | |
 | PRD-32 | Progressive Disclosure & UX Intelligence | — | `done` | 2026-02-21 | AdvancedDrawer, focus mode, parameter visibility, proficiency tracking, 13 tests. |
-| PRD-51 | Undo/Redo Architecture | — | `planning` | — | |
+| PRD-51 | Undo/Redo Architecture | — | `done` | 2026-02-22 | 1 migration (undo_trees), core module (8 tests), upsert repo, 4 API endpoints, UndoTree class, frontend components (14 tests). |
 | PRD-52 | Keyboard Shortcut System & Presets | — | `done` | 2026-02-21 | Central registry, 4 industry presets, custom keymaps, context-aware, cheat sheet, 26 tests. |
 | PRD-53 | First-Run Experience & Onboarding | — | `done` | 2026-02-21 | User onboarding state, guided tours, contextual hints, checklist, onboarding gate, 10 core tests. DRY-191 to DRY-200 audited. |
 | PRD-54 | Background Job Tray | — | `done` | — | |
