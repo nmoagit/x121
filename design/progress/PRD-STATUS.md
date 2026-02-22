@@ -21,14 +21,14 @@ Source of truth: [`design/design.md`](../design.md)
 | Status | Count |
 |--------|-------|
 | backlog | 0 |
-| planning | 72 |
+| planning | 66 |
 | in-progress | 0 |
 | review | 0 |
-| done | 37 |
+| done | 44 |
 | blocked | 0 |
 | deferred | 0 |
 | maybe | 15 |
-| **Total** | **124** |
+| **Total** | **125** |
 
 ---
 
@@ -54,7 +54,7 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-10 | Event Bus & Notification System | — | `done` | 2026-02-20 | EventBus (broadcast channel), EventPersistence, NotificationRouter, 8 notification API endpoints, webhook/email delivery, digest scheduler, 16 event types, 5 DB tables, 12 unit tests. Phase 7 (frontend) deferred. |
 | PRD-11 | Real-time Collaboration Layer | — | `done` | 2026-02-21 | Entity locks (partial unique), presence tracking, core collaboration protocol (21 tests), lock/presence repos + handlers, frontend PresenceIndicator + LockStatus (7 tests). |
 | PRD-12 | External API & Webhooks | — | `done` | 2026-02-21 | API key management (SHA-256 hash, key rotation, scopes), webhook delivery with retry, API audit log, admin endpoints, frontend managers (20 tests). |
-| PRD-46 | Worker Pool Management | — | `planning` | — | |
+| PRD-46 | Worker Pool Management | — | `done` | 2026-02-22 | 3 migrations (workers, health_log, jobs FK), core module (16 tests), 12 repo methods, 10 API endpoints, frontend dashboard (11 tests). DRY-209 to DRY-218 audited. |
 | PRD-75 | ComfyUI Workflow Import & Validation | — | `planning` | — | |
 | PRD-77 | Pipeline Stage Hooks (Custom Scripts) | — | `planning` | — | |
 | PRD-85 | UI Plugin / Extension Architecture | — | `done` | — | |
@@ -90,7 +90,7 @@ Source of truth: [`design/design.md`](../design.md)
 
 | PRD | Title | Priority | Status | Owner | Notes |
 |-----|-------|----------|--------|-------|-------|
-| PRD-76 | Character Identity Embedding | — | `planning` | — | |
+| PRD-76 | Character Identity Embedding | — | `done` | 2026-02-22 | 4 migrations (embedding_statuses, character columns, detected_faces, history), core module (12 tests), 9 repo methods, 5 API endpoints, frontend components (11 tests). |
 | PRD-21 | Source Image Management & Variant Generation | — | `done` | 2026-02-21 | Variant lifecycle, hero selection, external edit loop, provenance tracking, variant gallery UI. |
 | PRD-22 | Source Image Quality Assurance | — | `done` | 2026-02-20 | 3 DB tables (qa_check_types, image_quality_scores, image_qa_thresholds), 3 repos, 6 API handlers (/qa/*), 3 Python QA scripts (resolution/format, face detection, image quality), QA runner via subprocess. Post-MVP: likeness comparison (PRD-76), batch validation, frontend components. |
 | PRD-23 | Scene Type Configuration | — | `done` | 2026-02-22 | Migration (11 new columns), core module (prompt resolver, validation, 21 tests), 3 API endpoints (preview_prompt, generate_matrix, validate), frontend feature (SceneTypeEditor, PromptTemplateEditor, SceneMatrixView, 11 tests), DRY fixes (4 resolved, 4 watch). |
@@ -140,9 +140,9 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD | Title | Priority | Status | Owner | Notes |
 |-----|-------|----------|--------|-------|-------|
 | PRD-83 | Video Playback Engine & Codec Support | — | `done` | 2026-02-21 | |
-| PRD-33 | Node-Based Workflow Canvas | — | `planning` | — | |
+| PRD-33 | Node-Based Workflow Canvas | — | `done` | 2026-02-21 | Canvas layout persistence, node graph, telemetry overlay, ComfyUI JSON import. |
 | PRD-34 | Interactive Debugger (Mid-Run Control) | — | `planning` | — | |
-| PRD-35 | One-Key Approval & Finalization Flow | — | `planning` | — | |
+| PRD-35 | One-Key Approval & Finalization Flow | — | `done` | 2026-02-21 | Rejection categories, segment approvals, review queue, structured rejection tracking. |
 | PRD-36 | Cinema Mode & Sync-Play Grid | — | `done` | — | |
 | PRD-37 | QA Visual Aids (Ghosting, ROI, Jog Dial) | — | `done` | — | |
 | PRD-38 | Collaborative Review (Notes, Memos, Issues) | — | `planning` | — | |
@@ -174,7 +174,7 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD | Title | Priority | Status | Owner | Notes |
 |-----|-------|----------|--------|-------|-------|
 | PRD-43 | System Integrity & Repair Tools | — | `planning` | — | |
-| PRD-44 | Bug Reporting & App Config Export | — | `planning` | — | |
+| PRD-44 | Bug Reporting & App Config Export | — | `done` | 2026-02-21 | Bug reports, config export/import/validate, admin endpoints. |
 | PRD-45 | Audit Logging & Compliance | — | `done` | 2026-02-21 | Immutable audit logs with hash chain, retention policies, dynamic filtering, CSV/JSON export, integrity check, 27 tests. DRY-155/156 resolved. |
 | PRD-56 | Studio Wiki & Contextual Help | — | `planning` | — | |
 | PRD-80 | System Health Page | — | `planning` | — | |
