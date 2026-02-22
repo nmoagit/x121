@@ -7,6 +7,9 @@ use trulience_core::types::{DbId, Timestamp};
 use crate::models::status::StatusId;
 
 /// A character row from the `characters` table.
+///
+/// Note: `face_embedding` (vector(512)) is intentionally excluded because it is
+/// large and not needed in most queries. Use the embedding repo for vector ops.
 #[derive(Debug, Clone, FromRow, Serialize)]
 pub struct Character {
     pub id: DbId,
@@ -19,6 +22,11 @@ pub struct Character {
     pub deleted_at: Option<Timestamp>,
     pub created_at: Timestamp,
     pub updated_at: Timestamp,
+    // -- PRD-76: Face embedding columns --
+    pub face_detection_confidence: Option<f64>,
+    pub face_bounding_box: Option<serde_json::Value>,
+    pub embedding_status_id: StatusId,
+    pub embedding_extracted_at: Option<Timestamp>,
 }
 
 /// DTO for creating a new character.

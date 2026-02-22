@@ -135,6 +135,11 @@ define_status_enum! {
     }
 }
 
+// NOTE: EmbeddingStatus lives in `trulience_core::embedding::EmbeddingStatus`
+// (the canonical source) because the core crate needs it for domain logic
+// (`classify_extraction_result`). It provides `id()`, `from_id()`, and `label()`.
+// Do NOT re-add it here via define_status_enum! -- that would create a duplicate (DRY-209).
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -186,4 +191,6 @@ mod tests {
         assert_eq!(JobStatus::Paused.id(), 8);
         assert_eq!(JobStatus::Dispatched.id(), 9);
     }
+
+    // EmbeddingStatus tests live in trulience_core::embedding::tests (DRY-209).
 }

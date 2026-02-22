@@ -10,6 +10,7 @@ pub mod checkpoints;
 pub mod collaboration;
 pub mod config_management;
 pub mod dashboard;
+pub mod embedding;
 pub mod extensions;
 pub mod external_api;
 pub mod hardware;
@@ -37,6 +38,7 @@ pub mod trash;
 pub mod validation;
 pub mod video;
 pub mod workflow_canvas;
+pub mod workers;
 pub mod workspace;
 
 use axum::routing::get;
@@ -139,6 +141,12 @@ use crate::ws;
 /// /characters/{character_id}/metadata/completeness  completeness status (PRD-66)
 /// /characters/{character_id}/scenes                list, create
 /// /characters/{character_id}/scenes/{id}           get, update, delete
+///
+/// /characters/{character_id}/extract-embedding     trigger extraction (POST, PRD-76)
+/// /characters/{character_id}/embedding-status      get status (GET, PRD-76)
+/// /characters/{character_id}/detected-faces        list faces (GET, PRD-76)
+/// /characters/{character_id}/select-face           select face (POST, PRD-76)
+/// /characters/{character_id}/embedding-history     history (GET, PRD-76)
 ///
 /// /scenes/{scene_id}/segments                      list, create
 /// /scenes/{scene_id}/segments/{id}                 get, update, delete
@@ -301,6 +309,16 @@ use crate::ws;
 /// /admin/config/export                                      export config (POST, PRD-44)
 /// /admin/config/validate                                    validate config (POST, PRD-44)
 /// /admin/config/import                                      import config (POST, PRD-44)
+///
+/// /admin/workers                                             list, register (GET, POST, PRD-46)
+/// /admin/workers/stats                                       fleet statistics (GET, PRD-46)
+/// /admin/workers/{id}                                        get, update (GET, PUT, PRD-46)
+/// /admin/workers/{id}/approve                                approve worker (POST, PRD-46)
+/// /admin/workers/{id}/drain                                  drain worker (POST, PRD-46)
+/// /admin/workers/{id}/decommission                           decommission worker (POST, PRD-46)
+/// /admin/workers/{id}/health-log                             health log (GET, PRD-46)
+///
+/// /workers/register                                          agent self-register (POST, PRD-46)
 /// ```
 pub fn api_routes() -> Router<AppState> {
     Router::new()
@@ -349,10 +367,11 @@ pub fn api_routes() -> Router<AppState> {
         .nest("/projects", project::router()
             .merge(metadata::project_metadata_router())
             .nest("/{project_id}/characters", character_metadata::project_router()))
-        // Character-scoped sub-resources (images, scenes, metadata editor).
+        // Character-scoped sub-resources (images, scenes, metadata editor, face embedding).
         .nest("/characters", character::router()
             .merge(metadata::character_metadata_router())
-            .merge(character_metadata::character_router()))
+            .merge(character_metadata::character_router())
+            .merge(embedding::embedding_router()))
         // Scene-scoped sub-resources (segments, review queue).
         .nest("/scenes", scene::router()
             .merge(metadata::scene_metadata_router())
@@ -408,4 +427,8 @@ pub fn api_routes() -> Router<AppState> {
         .nest("/bug-reports", bug_reports::router())
         // Configuration export/import (PRD-44).
         .nest("/admin/config", config_management::router())
+        // Worker pool management: admin endpoints (PRD-46).
+        .nest("/admin/workers", workers::admin_router())
+        // Worker pool management: agent self-registration (PRD-46).
+        .nest("/workers", workers::agent_router())
 }

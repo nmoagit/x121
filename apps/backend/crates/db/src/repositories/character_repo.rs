@@ -6,8 +6,13 @@ use trulience_core::types::DbId;
 use crate::models::character::{Character, CreateCharacter, UpdateCharacter};
 
 /// Column list shared across queries to avoid repetition.
+///
+/// Excludes `face_embedding` (vector(512)) which is large and handled by
+/// the embedding repo. All other PRD-76 columns have DB defaults so
+/// existing INSERT queries remain valid.
 const COLUMNS: &str =
-    "id, project_id, name, status_id, metadata, settings, deleted_at, created_at, updated_at";
+    "id, project_id, name, status_id, metadata, settings, deleted_at, created_at, updated_at, \
+     face_detection_confidence, face_bounding_box, embedding_status_id, embedding_extracted_at";
 
 /// Provides CRUD operations for characters plus settings helpers.
 pub struct CharacterRepo;
