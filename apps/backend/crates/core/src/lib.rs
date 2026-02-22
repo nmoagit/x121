@@ -27,6 +27,7 @@ pub mod qa_status;
 pub mod reclamation;
 pub mod restart_status;
 pub mod roles;
+pub mod scene_type_config;
 pub mod scheduling;
 pub mod script_types;
 pub mod search;

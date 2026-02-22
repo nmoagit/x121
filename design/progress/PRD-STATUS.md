@@ -93,7 +93,7 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-76 | Character Identity Embedding | — | `planning` | — | |
 | PRD-21 | Source Image Management & Variant Generation | — | `done` | 2026-02-21 | Variant lifecycle, hero selection, external edit loop, provenance tracking, variant gallery UI. |
 | PRD-22 | Source Image Quality Assurance | — | `done` | 2026-02-20 | 3 DB tables (qa_check_types, image_quality_scores, image_qa_thresholds), 3 repos, 6 API handlers (/qa/*), 3 Python QA scripts (resolution/format, face detection, image quality), QA runner via subprocess. Post-MVP: likeness comparison (PRD-76), batch validation, frontend components. |
-| PRD-23 | Scene Type Configuration | — | `planning` | — | Updated v1.1 (2026-02-19): clip generation prompt types (full_clip, start_clip, continuation_clip) |
+| PRD-23 | Scene Type Configuration | — | `done` | 2026-02-22 | Migration (11 new columns), core module (prompt resolver, validation, 21 tests), 3 API endpoints (preview_prompt, generate_matrix, validate), frontend feature (SceneTypeEditor, PromptTemplateEditor, SceneMatrixView, 11 tests), DRY fixes (4 resolved, 4 watch). |
 | PRD-24 | Recursive Video Generation Loop | — | `planning` | — | Updated v1.1 (2026-02-19): position-based prompt type selection |
 | PRD-25 | Incremental Re-stitching & Smoothing | — | `planning` | — | |
 | PRD-26 | Temporal Continuity (Normalization & Sync) | — | `planning` | — | |

@@ -158,6 +158,9 @@ use crate::ws;
 ///
 /// /scene-types                                     list (studio-level), create
 /// /scene-types/{id}                                get, update, delete
+/// /scene-types/{id}/preview-prompt/{character_id}  preview prompt (GET, PRD-23)
+/// /scene-types/matrix                              generate matrix (POST, PRD-23)
+/// /scene-types/validate                            validate config (POST, PRD-23)
 ///
 /// /trash                                           list (?type=entity_type)
 /// /trash/purge                                     purge all (DELETE)

@@ -1,5 +1,6 @@
 export { Avatar } from "./Avatar";
 export { Badge } from "./Badge";
+export type { BadgeVariant } from "./Badge";
 export { Button } from "./Button";
 export { Checkbox } from "./Checkbox";
 export { Input } from "./Input";
