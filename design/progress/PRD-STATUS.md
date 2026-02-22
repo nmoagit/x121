@@ -21,10 +21,10 @@ Source of truth: [`design/design.md`](../design.md)
 | Status | Count |
 |--------|-------|
 | backlog | 0 |
-| planning | 60 |
+| planning | 58 |
 | in-progress | 0 |
 | review | 0 |
-| done | 50 |
+| done | 52 |
 | blocked | 0 |
 | deferred | 0 |
 | maybe | 15 |
@@ -94,10 +94,10 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-21 | Source Image Management & Variant Generation | — | `done` | 2026-02-21 | Variant lifecycle, hero selection, external edit loop, provenance tracking, variant gallery UI. |
 | PRD-22 | Source Image Quality Assurance | — | `done` | 2026-02-20 | 3 DB tables (qa_check_types, image_quality_scores, image_qa_thresholds), 3 repos, 6 API handlers (/qa/*), 3 Python QA scripts (resolution/format, face detection, image quality), QA runner via subprocess. Post-MVP: likeness comparison (PRD-76), batch validation, frontend components. |
 | PRD-23 | Scene Type Configuration | — | `done` | 2026-02-22 | Migration (11 new columns), core module (prompt resolver, validation, 21 tests), 3 API endpoints (preview_prompt, generate_matrix, validate), frontend feature (SceneTypeEditor, PromptTemplateEditor, SceneMatrixView, 11 tests), DRY fixes (4 resolved, 4 watch). |
-| PRD-24 | Recursive Video Generation Loop | — | `planning` | — | Updated v1.1 (2026-02-19): position-based prompt type selection |
+| PRD-24 | Recursive Video Generation Loop | — | `done` | 2026-02-22 | 2 migrations (segment+scene generation state), core module (21 tests), generation DTOs, extended segment/scene repos, 4 API endpoints, frontend progress bar + boundary scrubber (9 tests). DRY-237 to DRY-245 audited. |
 | PRD-25 | Incremental Re-stitching & Smoothing | — | `planning` | — | |
 | PRD-26 | Temporal Continuity (Normalization & Sync) | — | `planning` | — | |
-| PRD-27 | Template & Preset System | — | `planning` | — | |
+| PRD-27 | Template & Preset System | — | `done` | 2026-02-22 | 3 migrations (templates, presets, preset_ratings), core module (16 tests), 2 repos, 14 API endpoints, frontend marketplace + editor + override dialog (10 tests). |
 | PRD-28 | Pipeline Error Recovery & Checkpointing | — | `done` | 2026-02-21 | Checkpoints table, failure diagnostics, stage diagram, resume dialog, 22 tests. DRY-152/153 resolved. |
 | PRD-49 | Automated Quality Gates | — | `planning` | — | |
 | PRD-50 | Content Branching & Exploration | — | `planning` | — | |
