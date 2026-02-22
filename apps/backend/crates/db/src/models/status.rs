@@ -135,6 +135,28 @@ define_status_enum! {
     }
 }
 
+define_status_enum! {
+    /// Storage backend availability status (PRD-48).
+    StorageBackendStatus {
+        Active = 1,
+        ReadOnly = 2,
+        Offline = 3,
+        Decommissioned = 4,
+    }
+}
+
+define_status_enum! {
+    /// Storage migration lifecycle status (PRD-48).
+    StorageMigrationStatus {
+        Pending = 1,
+        InProgress = 2,
+        Verifying = 3,
+        Completed = 4,
+        Failed = 5,
+        RolledBack = 6,
+    }
+}
+
 // NOTE: EmbeddingStatus lives in `trulience_core::embedding::EmbeddingStatus`
 // (the canonical source) because the core crate needs it for domain logic
 // (`classify_extraction_result`). It provides `id()`, `from_id()`, and `label()`.
@@ -190,6 +212,24 @@ mod tests {
         assert_eq!(JobStatus::Scheduled.id(), 7);
         assert_eq!(JobStatus::Paused.id(), 8);
         assert_eq!(JobStatus::Dispatched.id(), 9);
+    }
+
+    #[test]
+    fn storage_backend_status_ids_match_seed_data() {
+        assert_eq!(StorageBackendStatus::Active.id(), 1);
+        assert_eq!(StorageBackendStatus::ReadOnly.id(), 2);
+        assert_eq!(StorageBackendStatus::Offline.id(), 3);
+        assert_eq!(StorageBackendStatus::Decommissioned.id(), 4);
+    }
+
+    #[test]
+    fn storage_migration_status_ids_match_seed_data() {
+        assert_eq!(StorageMigrationStatus::Pending.id(), 1);
+        assert_eq!(StorageMigrationStatus::InProgress.id(), 2);
+        assert_eq!(StorageMigrationStatus::Verifying.id(), 3);
+        assert_eq!(StorageMigrationStatus::Completed.id(), 4);
+        assert_eq!(StorageMigrationStatus::Failed.id(), 5);
+        assert_eq!(StorageMigrationStatus::RolledBack.id(), 6);
     }
 
     // EmbeddingStatus tests live in trulience_core::embedding::tests (DRY-209).

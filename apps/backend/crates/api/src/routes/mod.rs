@@ -20,6 +20,7 @@ pub mod importer;
 pub mod jobs;
 pub mod keymaps;
 pub mod layouts;
+pub mod library;
 pub mod metadata;
 pub mod notification;
 pub mod onboarding;
@@ -32,9 +33,11 @@ pub mod scene;
 pub mod scene_type;
 pub mod scripts;
 pub mod search;
+pub mod storage;
 pub mod tags;
 pub mod themes;
 pub mod trash;
+pub mod undo_tree;
 pub mod validation;
 pub mod video;
 pub mod workflow_canvas;
@@ -280,6 +283,9 @@ use crate::ws;
 /// /workspace/reset                                       reset to defaults (POST, PRD-04)
 /// /workspace/undo/{entity_type}/{entity_id}              get, save snapshot (GET, PUT, PRD-04)
 ///
+/// /user/undo-tree/{entity_type}/{entity_id}              get, save, delete (GET, PUT, DELETE, PRD-51)
+/// /user/undo-trees                                       list all trees (GET, PRD-51)
+///
 /// /collaboration/locks/acquire                            acquire lock (POST, PRD-11)
 /// /collaboration/locks/release                            release lock (POST, PRD-11)
 /// /collaboration/locks/extend                             extend lock (POST, PRD-11)
@@ -319,6 +325,22 @@ use crate::ws;
 /// /admin/workers/{id}/health-log                             health log (GET, PRD-46)
 ///
 /// /workers/register                                          agent self-register (POST, PRD-46)
+///
+/// /library/characters                                          list, create (GET, POST, PRD-60)
+/// /library/characters/{id}                                     get, update, delete (PRD-60)
+/// /library/characters/{id}/usage                               cross-project usage (GET, PRD-60)
+/// /library/characters/{id}/import                              import to project (POST, PRD-60)
+/// /library/characters/projects/{project_id}/links              list links (GET, PRD-60)
+/// /library/characters/links/{link_id}                          update, delete link (PUT, DELETE, PRD-60)
+///
+/// /admin/storage/backends                                      list, create (GET, POST, PRD-48)
+/// /admin/storage/backends/{id}                                 update (PUT, PRD-48)
+/// /admin/storage/backends/{id}/decommission                    decommission (POST, PRD-48)
+/// /admin/storage/policies                                      list, create (GET, POST, PRD-48)
+/// /admin/storage/policies/simulate                             simulate policy (POST, PRD-48)
+/// /admin/storage/migrations                                    start migration (POST, PRD-48)
+/// /admin/storage/migrations/{id}                               get migration (GET, PRD-48)
+/// /admin/storage/migrations/{id}/rollback                      rollback migration (POST, PRD-48)
 /// ```
 pub fn api_routes() -> Router<AppState> {
     Router::new()
@@ -357,6 +379,9 @@ pub fn api_routes() -> Router<AppState> {
         .nest("/user/dashboard", dashboard::user_router())
         // User onboarding state (PRD-53).
         .nest("/user/onboarding", onboarding::router())
+        // Undo/redo tree persistence (PRD-51).
+        .nest("/user/undo-tree", undo_tree::router())
+        .nest("/user/undo-trees", undo_tree::user_router())
         // Workspace state persistence (PRD-04).
         .nest("/workspace", workspace::router())
         // Real-time collaboration: entity locks and presence (PRD-11).
@@ -431,4 +456,8 @@ pub fn api_routes() -> Router<AppState> {
         .nest("/admin/workers", workers::admin_router())
         // Worker pool management: agent self-registration (PRD-46).
         .nest("/workers", workers::agent_router())
+        // External & tiered storage management (PRD-48).
+        .nest("/admin/storage", storage::router())
+        // Character library: cross-project character sharing (PRD-60).
+        .nest("/library/characters", library::router())
 }
