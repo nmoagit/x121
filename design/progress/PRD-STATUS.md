@@ -21,10 +21,10 @@ Source of truth: [`design/design.md`](../design.md)
 | Status | Count |
 |--------|-------|
 | backlog | 0 |
-| planning | 63 |
+| planning | 60 |
 | in-progress | 0 |
 | review | 0 |
-| done | 47 |
+| done | 50 |
 | blocked | 0 |
 | deferred | 0 |
 | maybe | 15 |
@@ -127,7 +127,7 @@ Source of truth: [`design/design.md`](../design.md)
 |-----|-------|----------|--------|-------|-------|
 | PRD-29 | Design System & Shared Component Library | — | `done` | 2026-02-20 | Token system (4 themes + high-contrast), 25 components, ThemeProvider, 25 Storybook stories, 76 tests. Phases 1/7/8.1 deferred (need users table from PRD-01/PRD-03). |
 | PRD-30 | Modular Layout & Panel Management | — | `done` | 2026-02-21 | Panel system, snap grid, resize, view module registry, presets, role defaults, 22 tests. |
-| PRD-31 | Command Palette & Navigation (Cmd+K) | — | `planning` | — | |
+| PRD-31 | Command Palette & Navigation (Cmd+K) | — | `done` | 2026-02-22 | 1 migration (user_recent_items), core module (12 tests), repo, 4 API endpoints, CommandRegistry class, frecency scorer, frontend palette (11 tests). DRY-227 to DRY-236 audited. |
 | PRD-32 | Progressive Disclosure & UX Intelligence | — | `done` | 2026-02-21 | AdvancedDrawer, focus mode, parameter visibility, proficiency tracking, 13 tests. |
 | PRD-51 | Undo/Redo Architecture | — | `done` | 2026-02-22 | 1 migration (undo_trees), core module (8 tests), upsert repo, 4 API endpoints, UndoTree class, frontend components (14 tests). |
 | PRD-52 | Keyboard Shortcut System & Presets | — | `done` | 2026-02-21 | Central registry, 4 industry presets, custom keymaps, context-aware, cheat sheet, 26 tests. |
@@ -141,11 +141,11 @@ Source of truth: [`design/design.md`](../design.md)
 |-----|-------|----------|--------|-------|-------|
 | PRD-83 | Video Playback Engine & Codec Support | — | `done` | 2026-02-21 | |
 | PRD-33 | Node-Based Workflow Canvas | — | `done` | 2026-02-21 | Canvas layout persistence, node graph, telemetry overlay, ComfyUI JSON import. |
-| PRD-34 | Interactive Debugger (Mid-Run Control) | — | `planning` | — | |
+| PRD-34 | Interactive Debugger (Mid-Run Control) | — | `done` | 2026-02-22 | 1 migration (job_debug_state), core module (12 tests), 8 repo methods, 6 API endpoints, frontend debugger (11 tests). |
 | PRD-35 | One-Key Approval & Finalization Flow | — | `done` | 2026-02-21 | Rejection categories, segment approvals, review queue, structured rejection tracking. |
 | PRD-36 | Cinema Mode & Sync-Play Grid | — | `done` | — | |
 | PRD-37 | QA Visual Aids (Ghosting, ROI, Jog Dial) | — | `done` | — | |
-| PRD-38 | Collaborative Review (Notes, Memos, Issues) | — | `planning` | — | |
+| PRD-38 | Collaborative Review (Notes, Memos, Issues) | — | `done` | 2026-02-22 | 2 migrations (review_tags, review_notes+note_tags), core module (12 tests), 2 repos, 10 API endpoints, frontend review notes (11 tests). |
 | PRD-55 | Director's View (Mobile/Tablet Review) | — | `planning` | — | |
 | PRD-68 | Cross-Character Scene Comparison | — | `planning` | — | |
 | PRD-70 | On-Frame Annotation & Markup | — | `planning` | — | |
