@@ -67,6 +67,21 @@ export function formatDuration(ms: number): string {
 }
 
 /**
+ * Format an arbitrary value for display in UI (diffs, tables, previews).
+ *
+ * - `null`/`undefined` -> `"(none)"`
+ * - Arrays -> comma-separated elements
+ * - Objects -> JSON string
+ * - Primitives -> `String(value)`
+ */
+export function formatValue(value: unknown): string {
+  if (value === null || value === undefined) return "(none)";
+  if (Array.isArray(value)) return value.join(", ");
+  if (typeof value === "object") return JSON.stringify(value);
+  return String(value);
+}
+
+/**
  * Format a countdown from now to a future date.
  *
  * Returns strings like "3d 4h", "2h 15m", "expired".

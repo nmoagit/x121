@@ -3,11 +3,16 @@
 use sqlx::PgPool;
 use trulience_core::types::DbId;
 
+use crate::models::generation::UpdateSceneGeneration;
 use crate::models::scene::{CreateScene, Scene, UpdateScene};
 
 /// Column list shared across queries to avoid repetition.
 const COLUMNS: &str = "id, character_id, scene_type_id, image_variant_id, \
-    status_id, transition_mode, deleted_at, created_at, updated_at";
+    status_id, transition_mode, \
+    total_segments_estimated, total_segments_completed, \
+    actual_duration_secs, transition_segment_index, \
+    generation_started_at, generation_completed_at, \
+    deleted_at, created_at, updated_at";
 
 /// Provides CRUD operations for scenes.
 pub struct SceneRepo;
@@ -20,8 +25,12 @@ impl SceneRepo {
     pub async fn create(pool: &PgPool, input: &CreateScene) -> Result<Scene, sqlx::Error> {
         let query = format!(
             "INSERT INTO scenes
-                (character_id, scene_type_id, image_variant_id, status_id, transition_mode)
-             VALUES ($1, $2, $3, COALESCE($4, 1), COALESCE($5, 'cut'))
+                (character_id, scene_type_id, image_variant_id, status_id, transition_mode,
+                 total_segments_estimated, total_segments_completed,
+                 actual_duration_secs, transition_segment_index,
+                 generation_started_at, generation_completed_at)
+             VALUES ($1, $2, $3, COALESCE($4, 1), COALESCE($5, 'cut'),
+                     $6, COALESCE($7, 0), $8, $9, $10, $11)
              RETURNING {COLUMNS}"
         );
         sqlx::query_as::<_, Scene>(&query)
@@ -30,6 +39,12 @@ impl SceneRepo {
             .bind(input.image_variant_id)
             .bind(input.status_id)
             .bind(&input.transition_mode)
+            .bind(input.total_segments_estimated)
+            .bind(input.total_segments_completed)
+            .bind(input.actual_duration_secs)
+            .bind(input.transition_segment_index)
+            .bind(input.generation_started_at)
+            .bind(input.generation_completed_at)
             .fetch_one(pool)
             .await
     }
@@ -73,7 +88,13 @@ impl SceneRepo {
                 scene_type_id = COALESCE($2, scene_type_id),
                 image_variant_id = COALESCE($3, image_variant_id),
                 status_id = COALESCE($4, status_id),
-                transition_mode = COALESCE($5, transition_mode)
+                transition_mode = COALESCE($5, transition_mode),
+                total_segments_estimated = COALESCE($6, total_segments_estimated),
+                total_segments_completed = COALESCE($7, total_segments_completed),
+                actual_duration_secs = COALESCE($8, actual_duration_secs),
+                transition_segment_index = COALESCE($9, transition_segment_index),
+                generation_started_at = COALESCE($10, generation_started_at),
+                generation_completed_at = COALESCE($11, generation_completed_at)
              WHERE id = $1 AND deleted_at IS NULL
              RETURNING {COLUMNS}"
         );
@@ -83,6 +104,12 @@ impl SceneRepo {
             .bind(input.image_variant_id)
             .bind(input.status_id)
             .bind(&input.transition_mode)
+            .bind(input.total_segments_estimated)
+            .bind(input.total_segments_completed)
+            .bind(input.actual_duration_secs)
+            .bind(input.transition_segment_index)
+            .bind(input.generation_started_at)
+            .bind(input.generation_completed_at)
             .fetch_optional(pool)
             .await
     }
@@ -128,5 +155,74 @@ impl SceneRepo {
             .execute(pool)
             .await?;
         Ok(result.rows_affected() > 0)
+    }
+
+    // -- Generation-specific methods (PRD-24) ---------------------------------
+
+    /// Update only generation-specific fields on a scene.
+    pub async fn update_generation_state(
+        pool: &PgPool,
+        id: DbId,
+        input: &UpdateSceneGeneration,
+    ) -> Result<Option<Scene>, sqlx::Error> {
+        let query = format!(
+            "UPDATE scenes SET
+                total_segments_estimated = COALESCE($2, total_segments_estimated),
+                total_segments_completed = COALESCE($3, total_segments_completed),
+                actual_duration_secs = COALESCE($4, actual_duration_secs),
+                transition_segment_index = COALESCE($5, transition_segment_index),
+                generation_started_at = COALESCE($6, generation_started_at),
+                generation_completed_at = COALESCE($7, generation_completed_at)
+             WHERE id = $1 AND deleted_at IS NULL
+             RETURNING {COLUMNS}"
+        );
+        sqlx::query_as::<_, Scene>(&query)
+            .bind(id)
+            .bind(input.total_segments_estimated)
+            .bind(input.total_segments_completed)
+            .bind(input.actual_duration_secs)
+            .bind(input.transition_segment_index)
+            .bind(input.generation_started_at)
+            .bind(input.generation_completed_at)
+            .fetch_optional(pool)
+            .await
+    }
+
+    /// Atomically increment `total_segments_completed` by 1.
+    pub async fn increment_completed_segments(
+        pool: &PgPool,
+        scene_id: DbId,
+    ) -> Result<Option<Scene>, sqlx::Error> {
+        let query = format!(
+            "UPDATE scenes SET
+                total_segments_completed = total_segments_completed + 1
+             WHERE id = $1 AND deleted_at IS NULL
+             RETURNING {COLUMNS}"
+        );
+        sqlx::query_as::<_, Scene>(&query)
+            .bind(scene_id)
+            .fetch_optional(pool)
+            .await
+    }
+
+    /// Mark generation as complete, setting `generation_completed_at` and
+    /// `actual_duration_secs` in one atomic update.
+    pub async fn mark_generation_complete(
+        pool: &PgPool,
+        scene_id: DbId,
+        actual_duration: f64,
+    ) -> Result<Option<Scene>, sqlx::Error> {
+        let query = format!(
+            "UPDATE scenes SET
+                generation_completed_at = NOW(),
+                actual_duration_secs = $2
+             WHERE id = $1 AND deleted_at IS NULL
+             RETURNING {COLUMNS}"
+        );
+        sqlx::query_as::<_, Scene>(&query)
+            .bind(scene_id)
+            .bind(actual_duration)
+            .fetch_optional(pool)
+            .await
     }
 }

@@ -15,6 +15,14 @@ pub struct Scene {
     pub image_variant_id: DbId,
     pub status_id: StatusId,
     pub transition_mode: String,
+    // -- Generation state (PRD-24) --
+    pub total_segments_estimated: Option<i32>,
+    pub total_segments_completed: i32,
+    pub actual_duration_secs: Option<f64>,
+    pub transition_segment_index: Option<i32>,
+    pub generation_started_at: Option<Timestamp>,
+    pub generation_completed_at: Option<Timestamp>,
+    // -- Timestamps --
     pub deleted_at: Option<Timestamp>,
     pub created_at: Timestamp,
     pub updated_at: Timestamp,
@@ -29,6 +37,13 @@ pub struct CreateScene {
     /// Defaults to 1 (Pending) if omitted.
     pub status_id: Option<StatusId>,
     pub transition_mode: Option<String>,
+    // -- Generation state (PRD-24) --
+    pub total_segments_estimated: Option<i32>,
+    pub total_segments_completed: Option<i32>,
+    pub actual_duration_secs: Option<f64>,
+    pub transition_segment_index: Option<i32>,
+    pub generation_started_at: Option<Timestamp>,
+    pub generation_completed_at: Option<Timestamp>,
 }
 
 /// DTO for updating an existing scene. All fields are optional.
@@ -38,4 +53,11 @@ pub struct UpdateScene {
     pub image_variant_id: Option<DbId>,
     pub status_id: Option<StatusId>,
     pub transition_mode: Option<String>,
+    // -- Generation state (PRD-24) --
+    pub total_segments_estimated: Option<i32>,
+    pub total_segments_completed: Option<i32>,
+    pub actual_duration_secs: Option<f64>,
+    pub transition_segment_index: Option<i32>,
+    pub generation_started_at: Option<Timestamp>,
+    pub generation_completed_at: Option<Timestamp>,
 }

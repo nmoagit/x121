@@ -17,6 +17,17 @@ pub struct Segment {
     pub output_video_path: Option<String>,
     pub last_frame_path: Option<String>,
     pub quality_scores: Option<serde_json::Value>,
+    // -- Generation state (PRD-24) --
+    pub duration_secs: Option<f64>,
+    pub cumulative_duration_secs: Option<f64>,
+    pub boundary_frame_index: Option<i32>,
+    pub boundary_selection_mode: Option<String>,
+    pub generation_started_at: Option<Timestamp>,
+    pub generation_completed_at: Option<Timestamp>,
+    pub worker_id: Option<DbId>,
+    pub prompt_type: Option<String>,
+    pub prompt_text: Option<String>,
+    // -- Timestamps --
     pub deleted_at: Option<Timestamp>,
     pub created_at: Timestamp,
     pub updated_at: Timestamp,
@@ -33,6 +44,16 @@ pub struct CreateSegment {
     pub output_video_path: Option<String>,
     pub last_frame_path: Option<String>,
     pub quality_scores: Option<serde_json::Value>,
+    // -- Generation state (PRD-24) --
+    pub duration_secs: Option<f64>,
+    pub cumulative_duration_secs: Option<f64>,
+    pub boundary_frame_index: Option<i32>,
+    pub boundary_selection_mode: Option<String>,
+    pub generation_started_at: Option<Timestamp>,
+    pub generation_completed_at: Option<Timestamp>,
+    pub worker_id: Option<DbId>,
+    pub prompt_type: Option<String>,
+    pub prompt_text: Option<String>,
 }
 
 /// DTO for updating an existing segment. All fields are optional.
@@ -44,4 +65,14 @@ pub struct UpdateSegment {
     pub output_video_path: Option<String>,
     pub last_frame_path: Option<String>,
     pub quality_scores: Option<serde_json::Value>,
+    // -- Generation state (PRD-24) --
+    pub duration_secs: Option<f64>,
+    pub cumulative_duration_secs: Option<f64>,
+    pub boundary_frame_index: Option<i32>,
+    pub boundary_selection_mode: Option<String>,
+    pub generation_started_at: Option<Timestamp>,
+    pub generation_completed_at: Option<Timestamp>,
+    pub worker_id: Option<DbId>,
+    pub prompt_type: Option<String>,
+    pub prompt_text: Option<String>,
 }

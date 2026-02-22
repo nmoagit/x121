@@ -12,6 +12,7 @@ pub mod config_management;
 pub mod dashboard;
 pub mod embedding;
 pub mod extensions;
+pub mod generation;
 pub mod external_api;
 pub mod hardware;
 pub mod health;
@@ -27,6 +28,7 @@ pub mod notification;
 pub mod onboarding;
 pub mod palette;
 pub mod performance;
+pub mod presets;
 pub mod proficiency;
 pub mod project;
 pub mod queue;
@@ -161,6 +163,9 @@ use crate::ws;
 /// /scenes/{scene_id}/segments                      list, create
 /// /scenes/{scene_id}/segments/{id}                 get, update, delete
 /// /scenes/{scene_id}/review-queue                  review queue (GET, PRD-35)
+/// /scenes/{id}/generate                            start generation (POST, PRD-24)
+/// /scenes/{id}/progress                            generation progress (GET, PRD-24)
+/// /scenes/batch-generate                           batch generate (POST, PRD-24)
 ///
 /// /segments/{segment_id}/approve                   approve segment (POST, PRD-35)
 /// /segments/{segment_id}/reject                    reject segment (POST, PRD-35)
@@ -171,6 +176,7 @@ use crate::ws;
 /// /segments/{id}/notes/{note_id}/resolve           resolve note (PUT, PRD-38)
 /// /segments/{id}/notes/{note_id}/tags              assign tags (POST, PRD-38)
 /// /segments/{id}/notes/{note_id}/tags/{tag_id}     remove tag (DELETE, PRD-38)
+/// /segments/{id}/select-boundary-frame             select boundary (POST, PRD-24)
 ///
 /// /rejection-categories                            list categories (GET, PRD-35)
 ///
@@ -362,6 +368,16 @@ use crate::ws;
 /// /admin/storage/migrations                                    start migration (POST, PRD-48)
 /// /admin/storage/migrations/{id}                               get migration (GET, PRD-48)
 /// /admin/storage/migrations/{id}/rollback                      rollback migration (POST, PRD-48)
+///
+/// /templates                                                    list, create (GET, POST, PRD-27)
+/// /templates/{id}                                               get, update, delete (PRD-27)
+///
+/// /presets                                                      list, create (GET, POST, PRD-27)
+/// /presets/marketplace                                          marketplace (GET, PRD-27)
+/// /presets/{id}                                                 get, update, delete (PRD-27)
+/// /presets/{id}/rate                                            rate preset (POST, PRD-27)
+/// /presets/{id}/diff/{scene_type_id}                            preview apply (GET, PRD-27)
+/// /presets/{id}/apply/{scene_type_id}                           apply preset (POST, PRD-27)
 /// ```
 pub fn api_routes() -> Router<AppState> {
     Router::new()
@@ -420,14 +436,17 @@ pub fn api_routes() -> Router<AppState> {
             .merge(metadata::character_metadata_router())
             .merge(character_metadata::character_router())
             .merge(embedding::embedding_router()))
-        // Scene-scoped sub-resources (segments, review queue).
+        // Scene-scoped sub-resources (segments, review queue, generation PRD-24).
         .nest("/scenes", scene::router()
             .merge(metadata::scene_metadata_router())
-            .merge(approval::scene_review_router()))
+            .merge(approval::scene_review_router())
+            .merge(generation::generation_scene_router()))
         // Segment-scoped approval actions (approve, reject, flag) (PRD-35).
         // Segment-scoped review notes and tags (PRD-38).
+        // Segment-scoped boundary frame selection (PRD-24).
         .nest("/segments", approval::segment_router()
-            .merge(review_notes::segment_notes_router()))
+            .merge(review_notes::segment_notes_router())
+            .merge(generation::generation_segment_router()))
         // Rejection categories for structured rejection tracking (PRD-35).
         .nest("/rejection-categories", approval::rejection_categories_router())
         // Review tags for collaborative review (PRD-38).
@@ -491,4 +510,7 @@ pub fn api_routes() -> Router<AppState> {
         .nest("/admin/storage", storage::router())
         // Character library: cross-project character sharing (PRD-60).
         .nest("/library/characters", library::router())
+        // Template & preset system (PRD-27).
+        .nest("/templates", presets::template_router())
+        .nest("/presets", presets::preset_router())
 }
