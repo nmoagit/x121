@@ -21,10 +21,10 @@ Source of truth: [`design/design.md`](../design.md)
 | Status | Count |
 |--------|-------|
 | backlog | 0 |
-| planning | 58 |
+| planning | 56 |
 | in-progress | 0 |
 | review | 0 |
-| done | 52 |
+| done | 54 |
 | blocked | 0 |
 | deferred | 0 |
 | maybe | 15 |
@@ -99,7 +99,7 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-26 | Temporal Continuity (Normalization & Sync) | — | `planning` | — | |
 | PRD-27 | Template & Preset System | — | `done` | 2026-02-22 | 3 migrations (templates, presets, preset_ratings), core module (16 tests), 2 repos, 14 API endpoints, frontend marketplace + editor + override dialog (10 tests). |
 | PRD-28 | Pipeline Error Recovery & Checkpointing | — | `done` | 2026-02-21 | Checkpoints table, failure diagnostics, stage diagram, resume dialog, 22 tests. DRY-152/153 resolved. |
-| PRD-49 | Automated Quality Gates | — | `planning` | — | |
+| PRD-49 | Automated Quality Gates | — | `done` | 2026-02-22 | |
 | PRD-50 | Content Branching & Exploration | — | `planning` | — | |
 | PRD-57 | Batch Production Orchestrator | — | `planning` | — | |
 | PRD-58 | Scene Preview & Quick Test | — | `planning` | — | |
@@ -159,7 +159,7 @@ Source of truth: [`design/design.md`](../design.md)
 
 | PRD | Title | Priority | Status | Owner | Notes |
 |-----|-------|----------|--------|-------|-------|
-| PRD-39 | Scene Assembler & Delivery Packaging | — | `planning` | — | |
+| PRD-39 | Scene Assembler & Delivery Packaging | — | `done` | 2026-02-22 | |
 | PRD-40 | VFX Sidecar & Dataset Export | — | `planning` | — | |
 | PRD-41 | Performance & Benchmarking Dashboard | — | `done` | — | |
 | PRD-42 | Studio Pulse Dashboard | — | `done` | — | |
