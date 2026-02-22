@@ -1,6 +1,7 @@
 pub mod alert;
 pub mod api_keys;
 pub mod approval;
+pub mod assembly;
 pub mod assets;
 pub mod audit;
 pub mod bug_report;
@@ -30,6 +31,7 @@ pub mod naming;
 pub mod onboarding;
 pub mod preset;
 pub mod qa_status;
+pub mod quality_gate;
 pub mod reclamation;
 pub mod review;
 pub mod restart_status;

@@ -157,6 +157,19 @@ define_status_enum! {
     }
 }
 
+define_status_enum! {
+    /// Delivery export pipeline status (PRD-39).
+    DeliveryExportStatus {
+        Pending = 1,
+        Assembling = 2,
+        Transcoding = 3,
+        Packaging = 4,
+        Validating = 5,
+        Completed = 6,
+        Failed = 7,
+    }
+}
+
 // NOTE: EmbeddingStatus lives in `trulience_core::embedding::EmbeddingStatus`
 // (the canonical source) because the core crate needs it for domain logic
 // (`classify_extraction_result`). It provides `id()`, `from_id()`, and `label()`.
@@ -230,6 +243,17 @@ mod tests {
         assert_eq!(StorageMigrationStatus::Completed.id(), 4);
         assert_eq!(StorageMigrationStatus::Failed.id(), 5);
         assert_eq!(StorageMigrationStatus::RolledBack.id(), 6);
+    }
+
+    #[test]
+    fn delivery_export_status_ids_match_seed_data() {
+        assert_eq!(DeliveryExportStatus::Pending.id(), 1);
+        assert_eq!(DeliveryExportStatus::Assembling.id(), 2);
+        assert_eq!(DeliveryExportStatus::Transcoding.id(), 3);
+        assert_eq!(DeliveryExportStatus::Packaging.id(), 4);
+        assert_eq!(DeliveryExportStatus::Validating.id(), 5);
+        assert_eq!(DeliveryExportStatus::Completed.id(), 6);
+        assert_eq!(DeliveryExportStatus::Failed.id(), 7);
     }
 
     // EmbeddingStatus tests live in trulience_core::embedding::tests (DRY-209).

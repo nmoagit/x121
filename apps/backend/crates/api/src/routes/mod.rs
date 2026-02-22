@@ -10,6 +10,7 @@ pub mod checkpoints;
 pub mod collaboration;
 pub mod config_management;
 pub mod dashboard;
+pub mod delivery;
 pub mod embedding;
 pub mod extensions;
 pub mod generation;
@@ -31,6 +32,7 @@ pub mod performance;
 pub mod presets;
 pub mod proficiency;
 pub mod project;
+pub mod quality_gates;
 pub mod queue;
 pub mod reclamation;
 pub mod review_notes;
@@ -142,6 +144,8 @@ use crate::ws;
 /// /projects/{project_id}/characters/metadata/csv         export/import CSV (PRD-66)
 /// /projects/{project_id}/scene-types               list, create
 /// /projects/{project_id}/scene-types/{id}          get, update, delete
+/// /projects/{project_id}/qa-thresholds             list, upsert (GET, POST, PRD-49)
+/// /projects/{project_id}/qa-thresholds/{id}        delete (DELETE, PRD-49)
 ///
 /// /characters/{character_id}/source-images         list, create
 /// /characters/{character_id}/source-images/{id}    get, update, delete
@@ -166,6 +170,7 @@ use crate::ws;
 /// /scenes/{id}/generate                            start generation (POST, PRD-24)
 /// /scenes/{id}/progress                            generation progress (GET, PRD-24)
 /// /scenes/batch-generate                           batch generate (POST, PRD-24)
+/// /scenes/{scene_id}/qa-summary                    scene QA summary (GET, PRD-49)
 ///
 /// /segments/{segment_id}/approve                   approve segment (POST, PRD-35)
 /// /segments/{segment_id}/reject                    reject segment (POST, PRD-35)
@@ -177,6 +182,7 @@ use crate::ws;
 /// /segments/{id}/notes/{note_id}/tags              assign tags (POST, PRD-38)
 /// /segments/{id}/notes/{note_id}/tags/{tag_id}     remove tag (DELETE, PRD-38)
 /// /segments/{id}/select-boundary-frame             select boundary (POST, PRD-24)
+/// /segments/{segment_id}/qa-scores                 per-segment QA scores (GET, PRD-49)
 ///
 /// /rejection-categories                            list categories (GET, PRD-35)
 ///
@@ -213,6 +219,7 @@ use crate::ws;
 /// /qa/image-variants/{id}/results                  get QA results
 /// /qa/characters/{character_id}/source-qa-results  get source QA results
 /// /qa/projects/{project_id}/thresholds             get, update thresholds
+/// /qa/quality-gates/defaults                       studio QA defaults (GET, PRD-49)
 ///
 /// /validation/rule-types                            list rule types (GET)
 /// /validation/rules                                 list, create rules (GET, POST)
@@ -378,6 +385,17 @@ use crate::ws;
 /// /presets/{id}/rate                                            rate preset (POST, PRD-27)
 /// /presets/{id}/diff/{scene_type_id}                            preview apply (GET, PRD-27)
 /// /presets/{id}/apply/{scene_type_id}                           apply preset (POST, PRD-27)
+///
+/// /output-format-profiles                                       list, create (GET, POST, PRD-39)
+/// /output-format-profiles/{id}                                  get, update, delete (PRD-39)
+///
+/// /projects/{project_id}/assemble                               start assembly (POST, PRD-39)
+/// /projects/{project_id}/delivery-validation                    validate delivery (GET, PRD-39)
+/// /projects/{project_id}/exports                                list exports (GET, PRD-39)
+/// /projects/{project_id}/exports/{export_id}                    get export (GET, PRD-39)
+///
+/// /watermark-settings                                           list, create (GET, POST, PRD-39)
+/// /watermark-settings/{id}                                      get, update, delete (PRD-39)
 /// ```
 pub fn api_routes() -> Router<AppState> {
     Router::new()
@@ -430,23 +448,28 @@ pub fn api_routes() -> Router<AppState> {
         // Project routes (also nests characters and project-scoped scene types).
         .nest("/projects", project::router()
             .merge(metadata::project_metadata_router())
+            .merge(delivery::export_router())
+            .merge(quality_gates::threshold_router())
             .nest("/{project_id}/characters", character_metadata::project_router()))
         // Character-scoped sub-resources (images, scenes, metadata editor, face embedding).
         .nest("/characters", character::router()
             .merge(metadata::character_metadata_router())
             .merge(character_metadata::character_router())
             .merge(embedding::embedding_router()))
-        // Scene-scoped sub-resources (segments, review queue, generation PRD-24).
+        // Scene-scoped sub-resources (segments, review queue, generation PRD-24, QA PRD-49).
         .nest("/scenes", scene::router()
             .merge(metadata::scene_metadata_router())
             .merge(approval::scene_review_router())
-            .merge(generation::generation_scene_router()))
+            .merge(generation::generation_scene_router())
+            .merge(quality_gates::scene_qa_router()))
         // Segment-scoped approval actions (approve, reject, flag) (PRD-35).
         // Segment-scoped review notes and tags (PRD-38).
         // Segment-scoped boundary frame selection (PRD-24).
+        // Segment-scoped QA scores (PRD-49).
         .nest("/segments", approval::segment_router()
             .merge(review_notes::segment_notes_router())
-            .merge(generation::generation_segment_router()))
+            .merge(generation::generation_segment_router())
+            .merge(quality_gates::segment_qa_router()))
         // Rejection categories for structured rejection tracking (PRD-35).
         .nest("/rejection-categories", approval::rejection_categories_router())
         // Review tags for collaborative review (PRD-38).
@@ -459,6 +482,8 @@ pub fn api_routes() -> Router<AppState> {
         .nest("/notifications", notification::router())
         // Image quality assurance (check types, QA runs, thresholds).
         .nest("/qa", image_qa::router())
+        // Automated Quality Gates: studio-level defaults (PRD-49).
+        .nest("/qa/quality-gates", quality_gates::studio_qa_router())
         // Validation engine (rule types, rules, dry-run validation).
         .nest("/validation", validation::validation_router())
         // Import reports and commit.
@@ -513,4 +538,8 @@ pub fn api_routes() -> Router<AppState> {
         // Template & preset system (PRD-27).
         .nest("/templates", presets::template_router())
         .nest("/presets", presets::preset_router())
+        // Output format profiles (PRD-39).
+        .nest("/output-format-profiles", delivery::profile_router())
+        // Watermark settings (PRD-39).
+        .nest("/watermark-settings", delivery::watermark_router())
 }
