@@ -1,4 +1,5 @@
 pub mod admin;
+pub mod annotation;
 pub mod approval;
 pub mod assets;
 pub mod audit;
@@ -38,6 +39,7 @@ pub mod performance;
 pub mod pipeline_hooks;
 pub mod presets;
 pub mod proficiency;
+pub mod production_notes;
 pub mod production_run;
 pub mod project;
 pub mod project_config;
@@ -195,6 +197,11 @@ use crate::ws;
 /// /segments/{segment_id}/reject                    reject segment (POST, PRD-35)
 /// /segments/{segment_id}/flag                      flag segment (POST, PRD-35)
 /// /segments/{segment_id}/approvals                 list approvals (GET, PRD-35)
+/// /segments/{id}/annotations                       list, create (GET, POST, PRD-70)
+/// /segments/{id}/annotations/summary               annotation summary (GET, PRD-70)
+/// /segments/{id}/annotations/export/{frame}        export frame annotations (GET, PRD-70)
+/// /segments/{id}/annotations/{ann_id}              get, update, delete (GET, PUT, DELETE, PRD-70)
+///
 /// /segments/{id}/notes                             list, create (GET, POST, PRD-38)
 /// /segments/{id}/notes/{note_id}                   update, delete (PUT, DELETE, PRD-38)
 /// /segments/{id}/notes/{note_id}/resolve           resolve note (PUT, PRD-38)
@@ -540,6 +547,18 @@ use crate::ws;
 /// /branches/{id}                                               get, update, delete (GET, PUT, DELETE, PRD-50)
 /// /branches/{id}/promote                                       promote to default (POST, PRD-50)
 /// /branches/{id}/compare/{other_id}                            compare branches (GET, PRD-50)
+///
+/// /notes                                                        list, create (GET, POST, PRD-95)
+/// /notes/search                                                 search notes (GET, PRD-95)
+/// /notes/pinned                                                 list pinned (GET, PRD-95)
+/// /notes/{id}                                                   get, update, delete (GET, PUT, DELETE, PRD-95)
+/// /notes/{id}/pin                                               toggle pin (PATCH, PRD-95)
+/// /notes/{id}/resolve                                           resolve note (PATCH, PRD-95)
+/// /notes/{id}/unresolve                                         unresolve note (PATCH, PRD-95)
+/// /notes/{id}/thread                                            list thread (GET, PRD-95)
+///
+/// /note-categories                                              list, create (GET, POST, PRD-95)
+/// /note-categories/{id}                                         update, delete (PUT, DELETE, PRD-95)
 /// ```
 pub fn api_routes() -> Router<AppState> {
     Router::new()
@@ -619,6 +638,7 @@ pub fn api_routes() -> Router<AppState> {
         // Segment-scoped re-stitching: regenerate, boundary-check, smooth, versions, clear-stale (PRD-25).
         .nest("/segments", approval::segment_router()
             .merge(review_notes::segment_notes_router())
+            .merge(annotation::segment_annotation_router())
             .merge(generation::generation_segment_router())
             .merge(quality_gates::segment_qa_router())
             .merge(restitching::segment_restitching_router())
@@ -742,4 +762,7 @@ pub fn api_routes() -> Router<AppState> {
         .nest("/failure-patterns", failure_analytics::pattern_fixes_router())
         // Content Branching & Exploration (PRD-50).
         .nest("/branches", branching::branch_router())
+        // Production Notes & Internal Comments (PRD-95).
+        .nest("/notes", production_notes::notes_router())
+        .nest("/note-categories", production_notes::note_categories_router())
 }

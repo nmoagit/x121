@@ -21,10 +21,10 @@ Source of truth: [`design/design.md`](../design.md)
 | Status | Count |
 |--------|-------|
 | backlog | 0 |
-| planning | 37 |
+| planning | 35 |
 | in-progress | 0 |
 | review | 0 |
-| done | 73 |
+| done | 75 |
 | blocked | 0 |
 | deferred | 0 |
 | maybe | 15 |
@@ -148,10 +148,10 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-38 | Collaborative Review (Notes, Memos, Issues) | — | `done` | 2026-02-22 | 2 migrations (review_tags, review_notes+note_tags), core module (12 tests), 2 repos, 10 API endpoints, frontend review notes (11 tests). |
 | PRD-55 | Director's View (Mobile/Tablet Review) | — | `planning` | — | |
 | PRD-68 | Cross-Character Scene Comparison | — | `planning` | — | |
-| PRD-70 | On-Frame Annotation & Markup | — | `planning` | — | |
+| PRD-70 | On-Frame Annotation & Markup | — | `done` | 2026-02-23 | Phase 7 |
 | PRD-78 | Segment Trimming & Frame-Level Editing | — | `done` | 2026-02-23 | Phase 6 Track C |
 | PRD-92 | Batch Review & Approval Workflows | — | `planning` | — | |
-| PRD-95 | Production Notes & Internal Comments | — | `planning` | — | |
+| PRD-95 | Production Notes & Internal Comments | — | `done` | 2026-02-23 | Phase 7 |
 | PRD-96 | Poster Frame & Thumbnail Selection | — | `planning` | — | |
 | PRD-101 | Segment Regeneration Comparison | — | `planning` | — | |
 

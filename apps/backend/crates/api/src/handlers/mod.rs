@@ -5,6 +5,7 @@
 //! and map errors via [`AppError`].
 
 pub mod admin;
+pub mod annotation;
 pub mod api_keys;
 pub mod approval;
 pub mod assets;
@@ -45,6 +46,7 @@ pub mod performance;
 pub mod pipeline_hooks;
 pub mod presets;
 pub mod proficiency;
+pub mod production_notes;
 pub mod production_run;
 pub mod prompt_editor;
 pub mod provenance;

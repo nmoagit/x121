@@ -1,4 +1,5 @@
 pub mod alert;
+pub mod annotation;
 pub mod api_keys;
 pub mod approval;
 pub mod assembly;
@@ -39,6 +40,7 @@ pub mod naming;
 pub mod onboarding;
 pub mod pipeline_hooks;
 pub mod preset;
+pub mod production_notes;
 pub mod project_config;
 pub mod prompt_editor;
 pub mod provenance;
