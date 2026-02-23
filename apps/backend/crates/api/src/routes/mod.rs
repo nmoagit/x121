@@ -33,10 +33,12 @@ pub mod notification;
 pub mod onboarding;
 pub mod palette;
 pub mod performance;
+pub mod pipeline_hooks;
 pub mod presets;
 pub mod proficiency;
 pub mod production_run;
 pub mod project;
+pub mod prompt_editor;
 pub mod provenance;
 pub mod quality_gates;
 pub mod queue;
@@ -61,6 +63,7 @@ pub mod validation;
 pub mod video;
 pub mod wiki;
 pub mod workflow_canvas;
+pub mod workflow_import;
 pub mod workers;
 pub mod workspace;
 
@@ -497,6 +500,21 @@ use crate::ws;
 /// /segments/{id}/trim/seed-impact                            seed frame impact (GET, PRD-78)
 /// /trims/batch                                               batch trim (POST, PRD-78)
 /// /trims/preset                                              apply preset (POST, PRD-78)
+///
+/// /scene-types/{id}/prompt-versions                          list, save (GET, POST, PRD-63)
+/// /prompt-versions/{id_a}/diff/{id_b}                        diff versions (GET, PRD-63)
+/// /prompt-versions/{id}/restore                              restore version (POST, PRD-63)
+/// /prompt-library                                            list, create (GET, POST, PRD-63)
+/// /prompt-library/{id}                                       get, update, delete (GET, PUT, DELETE, PRD-63)
+/// /prompt-library/{id}/rate                                  rate entry (POST, PRD-63)
+///
+/// /hooks                                                     list, create (GET, POST, PRD-77)
+/// /hooks/{id}                                                get, update, delete (GET, PUT, DELETE, PRD-77)
+/// /hooks/{id}/toggle                                         toggle enabled (PATCH, PRD-77)
+/// /hooks/{id}/test                                           test hook (POST, PRD-77)
+/// /hooks/{id}/logs                                           execution logs (GET, PRD-77)
+/// /hooks/effective/{scope_type}/{scope_id}                    effective hooks (GET, PRD-77)
+/// /jobs/{id}/hook-logs                                        job hook logs (GET, PRD-77)
 /// ```
 pub fn api_routes() -> Router<AppState> {
     Router::new()
@@ -584,8 +602,9 @@ pub fn api_routes() -> Router<AppState> {
         .nest("/rejection-categories", approval::rejection_categories_router())
         // Review tags for collaborative review (PRD-38).
         .nest("/review-tags", review_notes::review_tags_router())
-        // Studio-level scene types.
-        .nest("/scene-types", scene_type::studio_router())
+        // Studio-level scene types + prompt versioning (PRD-63).
+        .nest("/scene-types", scene_type::studio_router()
+            .merge(prompt_editor::scene_type_prompt_router()))
         // Trash / bin management.
         .nest("/trash", trash::router())
         // Notifications, preferences, and settings.
@@ -602,10 +621,11 @@ pub fn api_routes() -> Router<AppState> {
         .nest("/import", importer::router())
         // Video streaming, metadata, and thumbnails.
         .nest("/videos", video::router())
-        // Background job execution engine (PRD-07, PRD-08, PRD-28, PRD-34).
+        // Background job execution engine (PRD-07, PRD-08, PRD-28, PRD-34, PRD-77).
         .nest("/jobs", jobs::router()
             .merge(checkpoints::checkpoint_routes())
-            .merge(job_debug::debug_routes()))
+            .merge(job_debug::debug_routes())
+            .merge(pipeline_hooks::job_hooks_router()))
         // Queue management & scheduling (PRD-08).
         .nest("/queue", queue::router())
         .nest("/quota", queue::quota_router())
@@ -633,8 +653,9 @@ pub fn api_routes() -> Router<AppState> {
         .nest("/extensions", extensions::registry_router())
         // Sandboxed extension API bridge (PRD-85).
         .nest("/extension-api", extensions::ext_api_router())
-        // Workflow canvas: layout persistence, telemetry, ComfyUI import (PRD-33).
-        .nest("/workflows", workflow_canvas::router())
+        // Workflow canvas (PRD-33) + Workflow Import & Validation (PRD-75).
+        .nest("/workflows", workflow_canvas::router()
+            .merge(workflow_import::workflow_import_router()))
         // Bug reporting (PRD-44).
         .nest("/bug-reports", bug_reports::router())
         // Configuration export/import (PRD-44).
@@ -681,4 +702,9 @@ pub fn api_routes() -> Router<AppState> {
         .nest("/provenance", provenance::provenance_router())
         // Segment Trimming & Frame-Level Editing: batch operations (PRD-78).
         .nest("/trims", trimming::batch_trim_router())
+        // Prompt Editor & Versioning (PRD-63).
+        .nest("/prompt-versions", prompt_editor::prompt_version_router())
+        .nest("/prompt-library", prompt_editor::prompt_library_router())
+        // Pipeline Stage Hooks (PRD-77).
+        .nest("/hooks", pipeline_hooks::hooks_router())
 }

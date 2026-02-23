@@ -21,10 +21,10 @@ Source of truth: [`design/design.md`](../design.md)
 | Status | Count |
 |--------|-------|
 | backlog | 0 |
-| planning | 43 |
+| planning | 40 |
 | in-progress | 0 |
 | review | 0 |
-| done | 67 |
+| done | 70 |
 | blocked | 0 |
 | deferred | 0 |
 | maybe | 15 |
@@ -55,8 +55,8 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-11 | Real-time Collaboration Layer | — | `done` | 2026-02-21 | Entity locks (partial unique), presence tracking, core collaboration protocol (21 tests), lock/presence repos + handlers, frontend PresenceIndicator + LockStatus (7 tests). |
 | PRD-12 | External API & Webhooks | — | `done` | 2026-02-21 | API key management (SHA-256 hash, key rotation, scopes), webhook delivery with retry, API audit log, admin endpoints, frontend managers (20 tests). |
 | PRD-46 | Worker Pool Management | — | `done` | 2026-02-22 | 3 migrations (workers, health_log, jobs FK), core module (16 tests), 12 repo methods, 10 API endpoints, frontend dashboard (11 tests). DRY-209 to DRY-218 audited. |
-| PRD-75 | ComfyUI Workflow Import & Validation | — | `planning` | — | |
-| PRD-77 | Pipeline Stage Hooks (Custom Scripts) | — | `planning` | — | |
+| PRD-75 | ComfyUI Workflow Import & Validation | — | `done` | 2026-02-23 | Phase 7 Track A |
+| PRD-77 | Pipeline Stage Hooks (Custom Scripts) | — | `done` | 2026-02-23 | Phase 7 Track A |
 | PRD-85 | UI Plugin / Extension Architecture | — | `done` | — | |
 | PRD-87 | GPU Power Management & Idle Scheduling | — | `planning` | — | |
 | PRD-90 | Render Queue Timeline / Gantt View | — | `planning` | — | |
@@ -107,7 +107,7 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-60 | Character Library (Cross-Project) | — | `done` | 2026-02-22 | 2 migrations (library_characters, project_links), core module (10 tests), 2 repos, 10 API endpoints, frontend browser + import (11 tests). |
 | PRD-61 | Cost & Resource Estimation | — | `done` | 2026-02-23 | Migration (generation_metrics with upsert), core module (estimation engine, confidence levels, incremental mean, 22 tests), DB models+repo (upsert with ON CONFLICT incremental mean, batch lookup), 3 API endpoints (estimate, history, record), frontend feature (EstimationCard with breakdown, 7 tests). DRY-277/280 fixed. |
 | PRD-62 | Storyboard View & Scene Thumbnails | — | `done` | 2026-02-23 | Phase 6 Track C |
-| PRD-63 | Prompt Editor & Versioning | — | `planning` | — | |
+| PRD-63 | Prompt Editor & Versioning | — | `done` | 2026-02-23 | Phase 7 Track A |
 | PRD-64 | Failure Pattern Tracking & Insights | — | `planning` | — | |
 | PRD-65 | Workflow Regression Testing | — | `planning` | — | |
 | PRD-67 | Bulk Character Onboarding Wizard | — | `planning` | — | Updated v1.1 (2026-02-19): CSV/text upload, batch video generation |
