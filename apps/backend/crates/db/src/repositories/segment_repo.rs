@@ -12,6 +12,8 @@ const COLUMNS: &str = "id, scene_id, sequence_index, status_id, seed_frame_path,
     duration_secs, cumulative_duration_secs, boundary_frame_index, \
     boundary_selection_mode, generation_started_at, generation_completed_at, \
     worker_id, prompt_type, prompt_text, \
+    previous_segment_id, regeneration_count, is_stale, \
+    boundary_ssim_before, boundary_ssim_after, \
     deleted_at, created_at, updated_at";
 
 /// Provides CRUD operations for segments.

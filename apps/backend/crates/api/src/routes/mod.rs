@@ -34,10 +34,12 @@ pub mod palette;
 pub mod performance;
 pub mod presets;
 pub mod proficiency;
+pub mod production_run;
 pub mod project;
 pub mod quality_gates;
 pub mod queue;
 pub mod reclamation;
+pub mod restitching;
 pub mod review_notes;
 pub mod scene;
 pub mod scene_type;
@@ -45,6 +47,7 @@ pub mod scripts;
 pub mod search;
 pub mod storage;
 pub mod tags;
+pub mod temporal;
 pub mod themes;
 pub mod trash;
 pub mod undo_tree;
@@ -187,6 +190,11 @@ use crate::ws;
 /// /segments/{id}/notes/{note_id}/tags/{tag_id}     remove tag (DELETE, PRD-38)
 /// /segments/{id}/select-boundary-frame             select boundary (POST, PRD-24)
 /// /segments/{segment_id}/qa-scores                 per-segment QA scores (GET, PRD-49)
+/// /segments/{id}/regenerate                     regenerate segment (POST, PRD-25)
+/// /segments/{id}/boundary-check                 boundary SSIM check (GET, PRD-25)
+/// /segments/{id}/smooth-boundary                apply smoothing (POST, PRD-25)
+/// /segments/{id}/versions                       version history (GET, PRD-25)
+/// /segments/{id}/clear-stale                    clear stale flag (PATCH, PRD-25)
 ///
 /// /rejection-categories                            list categories (GET, PRD-35)
 ///
@@ -438,6 +446,21 @@ use crate::ws;
 ///
 /// /user/api-tokens                                                list, store (GET, POST, PRD-104)
 /// /user/api-tokens/{service}                                      delete token (DELETE, PRD-104)
+///
+/// /production-runs                                              list, create (GET, POST, PRD-57)
+/// /production-runs/{id}                                         get, delete (GET, DELETE, PRD-57)
+/// /production-runs/{id}/matrix                                  matrix cells (GET, PRD-57)
+/// /production-runs/{id}/submit                                  submit cells (POST, PRD-57)
+/// /production-runs/{id}/resubmit-failed                         resubmit failed (POST, PRD-57)
+/// /production-runs/{id}/deliver                                 deliver run (POST, PRD-57)
+/// /production-runs/{id}/progress                                progress stats (GET, PRD-57)
+///
+/// /scenes/{scene_id}/temporal-metrics                          scene temporal metrics (GET, PRD-26)
+/// /segments/{id}/temporal-metric                               segment temporal metric (GET, PRD-26)
+/// /segments/{id}/analyze-drift                                 analyze drift (POST, PRD-26)
+/// /segments/{id}/analyze-grain                                 analyze grain (POST, PRD-26)
+/// /segments/{id}/normalize-grain                               normalize grain (POST, PRD-26)
+/// /projects/{project_id}/temporal-settings                     get, update settings (GET, PUT, PRD-26)
 /// ```
 pub fn api_routes() -> Router<AppState> {
     Router::new()
@@ -492,6 +515,7 @@ pub fn api_routes() -> Router<AppState> {
             .merge(metadata::project_metadata_router())
             .merge(delivery::export_router())
             .merge(quality_gates::threshold_router())
+            .merge(temporal::project_temporal_router())
             .nest("/{project_id}/characters", character_metadata::project_router()))
         // Character-scoped sub-resources (images, scenes, metadata editor, face embedding).
         .nest("/characters", character::router()
@@ -503,15 +527,19 @@ pub fn api_routes() -> Router<AppState> {
             .merge(metadata::scene_metadata_router())
             .merge(approval::scene_review_router())
             .merge(generation::generation_scene_router())
-            .merge(quality_gates::scene_qa_router()))
+            .merge(quality_gates::scene_qa_router())
+            .merge(temporal::scene_temporal_router()))
         // Segment-scoped approval actions (approve, reject, flag) (PRD-35).
         // Segment-scoped review notes and tags (PRD-38).
         // Segment-scoped boundary frame selection (PRD-24).
         // Segment-scoped QA scores (PRD-49).
+        // Segment-scoped re-stitching: regenerate, boundary-check, smooth, versions, clear-stale (PRD-25).
         .nest("/segments", approval::segment_router()
             .merge(review_notes::segment_notes_router())
             .merge(generation::generation_segment_router())
-            .merge(quality_gates::segment_qa_router()))
+            .merge(quality_gates::segment_qa_router())
+            .merge(restitching::segment_restitching_router())
+            .merge(temporal::segment_temporal_router()))
         // Rejection categories for structured rejection tracking (PRD-35).
         .nest("/rejection-categories", approval::rejection_categories_router())
         // Review tags for collaborative review (PRD-38).
@@ -597,4 +625,6 @@ pub fn api_routes() -> Router<AppState> {
         .nest("/downloads", downloads::download_router())
         .nest("/admin/placement-rules", downloads::placement_router())
         .nest("/user/api-tokens", downloads::token_router())
+        // Batch Production Orchestrator (PRD-57).
+        .nest("/production-runs", production_run::router())
 }

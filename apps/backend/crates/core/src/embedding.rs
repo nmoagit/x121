@@ -100,12 +100,7 @@ pub fn validate_embedding_dimension(embedding: &[f32]) -> Result<(), CoreError> 
 
 /// Validate that a confidence threshold is within `[0.0, 1.0]`.
 pub fn validate_confidence_threshold(threshold: f64) -> Result<(), CoreError> {
-    if !(0.0..=1.0).contains(&threshold) {
-        return Err(CoreError::Validation(format!(
-            "Confidence threshold must be between 0.0 and 1.0, got {threshold}"
-        )));
-    }
-    Ok(())
+    crate::threshold_validation::validate_unit_range(threshold, "Confidence threshold")
 }
 
 // ---------------------------------------------------------------------------
@@ -151,10 +146,19 @@ mod tests {
     #[test]
     fn status_from_id_returns_correct_variant() {
         assert_eq!(EmbeddingStatus::from_id(1), Some(EmbeddingStatus::Pending));
-        assert_eq!(EmbeddingStatus::from_id(2), Some(EmbeddingStatus::Extracting));
-        assert_eq!(EmbeddingStatus::from_id(3), Some(EmbeddingStatus::Completed));
+        assert_eq!(
+            EmbeddingStatus::from_id(2),
+            Some(EmbeddingStatus::Extracting)
+        );
+        assert_eq!(
+            EmbeddingStatus::from_id(3),
+            Some(EmbeddingStatus::Completed)
+        );
         assert_eq!(EmbeddingStatus::from_id(4), Some(EmbeddingStatus::Failed));
-        assert_eq!(EmbeddingStatus::from_id(5), Some(EmbeddingStatus::LowConfidence));
+        assert_eq!(
+            EmbeddingStatus::from_id(5),
+            Some(EmbeddingStatus::LowConfidence)
+        );
         assert_eq!(
             EmbeddingStatus::from_id(6),
             Some(EmbeddingStatus::MultiFacePending)
@@ -183,14 +187,22 @@ mod tests {
         assert_eq!(EmbeddingStatus::Completed.label(), "Completed");
         assert_eq!(EmbeddingStatus::Failed.label(), "Failed");
         assert_eq!(EmbeddingStatus::LowConfidence.label(), "Low Confidence");
-        assert_eq!(EmbeddingStatus::MultiFacePending.label(), "Multi-Face Pending");
+        assert_eq!(
+            EmbeddingStatus::MultiFacePending.label(),
+            "Multi-Face Pending"
+        );
     }
 
     // -- BoundingBox ---------------------------------------------------------
 
     #[test]
     fn bounding_box_serializes_correctly() {
-        let bbox = BoundingBox { x: 10, y: 20, width: 100, height: 150 };
+        let bbox = BoundingBox {
+            x: 10,
+            y: 20,
+            width: 100,
+            height: 150,
+        };
         let json = serde_json::to_string(&bbox).unwrap();
         assert!(json.contains("\"x\":10"));
         assert!(json.contains("\"width\":100"));

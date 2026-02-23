@@ -44,10 +44,10 @@ CREATE INDEX idx_segments_previous_segment_id ON segments(previous_segment_id);
 ```
 
 **Acceptance Criteria:**
-- [ ] `previous_segment_id` links to the old version of a regenerated segment
-- [ ] `regeneration_count` tracks how many times this position has been regenerated
-- [ ] `is_stale` flags segments whose seed frame may have changed
-- [ ] Boundary SSIM scores recorded at both transitions
+- [x] `previous_segment_id` links to the old version of a regenerated segment
+- [x] `regeneration_count` tracks how many times this position has been regenerated
+- [x] `is_stale` flags segments whose seed frame may have changed
+- [x] Boundary SSIM scores recorded at both transitions
 
 ---
 
@@ -76,11 +76,11 @@ pub async fn regenerate_segment(
 ```
 
 **Acceptance Criteria:**
-- [ ] Regenerates using seed frame from previous segment's last frame
-- [ ] Old version preserved with `previous_segment_id` link
-- [ ] QA checks run automatically on new segment
-- [ ] Downstream segments flagged as `is_stale = true`
-- [ ] Modified parameters supported (different seed, CFG, etc.)
+- [x] Regenerates using seed frame from previous segment's last frame
+- [x] Old version preserved with `previous_segment_id` link
+- [x] QA checks run automatically on new segment
+- [x] Downstream segments flagged as `is_stale = true`
+- [x] Modified parameters supported (different seed, CFG, etc.)
 
 ### Task 2.2: Downstream Staleness Flagger
 **File:** `src/services/segment_regeneration_service.rs`
@@ -109,9 +109,9 @@ async fn flag_downstream_stale(
 ```
 
 **Acceptance Criteria:**
-- [ ] All segments after the regenerated one flagged as stale
-- [ ] Returns count of flagged segments
-- [ ] Stale flag cleared when segment is regenerated or manually approved
+- [x] All segments after the regenerated one flagged as stale
+- [x] Returns count of flagged segments
+- [x] Stale flag cleared when segment is regenerated or manually approved
 
 ---
 
@@ -142,10 +142,10 @@ pub async fn check_boundaries(
 ```
 
 **Acceptance Criteria:**
-- [ ] SSIM computed at both boundaries (before and after)
-- [ ] Discontinuity flagged when SSIM < threshold
-- [ ] Results stored on the segment record
-- [ ] Threshold configurable per project
+- [x] SSIM computed at both boundaries (before and after)
+- [x] Discontinuity flagged when SSIM < threshold
+- [x] Results stored on the segment record
+- [x] Threshold configurable per project
 
 ### Task 3.2: Boundary Smoothing Service
 **File:** `src/services/boundary_smoothing_service.rs`
@@ -168,10 +168,10 @@ pub async fn smooth_boundary(
 ```
 
 **Acceptance Criteria:**
-- [ ] Frame blending: cross-fade between adjacent segment frames
-- [ ] Re-extraction: pick a better boundary frame from a wider window
-- [ ] Manual override: accept boundary as-is
-- [ ] Updated SSIM recorded after smoothing
+- [x] Frame blending: cross-fade between adjacent segment frames
+- [x] Re-extraction: pick a better boundary frame from a wider window
+- [x] Manual override: accept boundary as-is
+- [x] Updated SSIM recorded after smoothing
 
 ---
 
@@ -188,10 +188,10 @@ pub async fn smooth_boundary(
 ```
 
 **Acceptance Criteria:**
-- [ ] Regeneration accepts optional modified parameters
-- [ ] Boundary check returns SSIM scores and recommendations
-- [ ] Smoothing accepts method selection
-- [ ] Version history returns all previous versions of this segment position
+- [x] Regeneration accepts optional modified parameters
+- [x] Boundary check returns SSIM scores and recommendations
+- [x] Smoothing accepts method selection
+- [x] Version history returns all previous versions of this segment position
 
 ---
 
@@ -209,9 +209,9 @@ export function RegenerateSegmentButton({ segmentId, onRegenerated }: Regenerate
 ```
 
 **Acceptance Criteria:**
-- [ ] Available directly on segment in review view
-- [ ] Optional parameter modification before regeneration
-- [ ] Confirmation showing downstream impact
+- [x] Available directly on segment in review view
+- [x] Optional parameter modification before regeneration
+- [x] Confirmation showing downstream impact
 
 ### Task 5.2: Boundary Quality Indicator
 **File:** `frontend/src/components/segments/BoundaryQualityIndicator.tsx`
@@ -226,17 +226,17 @@ export function BoundaryQualityIndicator({ ssimBefore, ssimAfter, threshold }: B
 ```
 
 **Acceptance Criteria:**
-- [ ] SSIM scores displayed at each segment boundary
-- [ ] Color-coded: green (good), yellow (borderline), red (discontinuity)
-- [ ] Smoothing action available on red boundaries
+- [x] SSIM scores displayed at each segment boundary
+- [x] Color-coded: green (good), yellow (borderline), red (discontinuity)
+- [x] Smoothing action available on red boundaries
 
 ### Task 5.3: Segment Version Comparison
 **File:** `frontend/src/components/segments/SegmentVersionComparison.tsx`
 
 **Acceptance Criteria:**
-- [ ] Side-by-side comparison of old vs. new segment
-- [ ] QA score comparison between versions
-- [ ] Stale segment indicators in downstream segments
+- [x] Side-by-side comparison of old vs. new segment
+- [x] QA score comparison between versions
+- [x] Stale segment indicators in downstream segments
 
 ---
 
@@ -246,18 +246,18 @@ export function BoundaryQualityIndicator({ ssimBefore, ssimAfter, threshold }: B
 **File:** `tests/segment_regeneration_test.rs`
 
 **Acceptance Criteria:**
-- [ ] Regenerate middle segment -> old preserved, new generated
-- [ ] Downstream segments flagged as stale
-- [ ] QA runs on regenerated segment
-- [ ] Boundary SSIM computed
+- [x] Regenerate middle segment -> old preserved, new generated
+- [x] Downstream segments flagged as stale
+- [x] QA runs on regenerated segment
+- [x] Boundary SSIM computed
 
 ### Task 6.2: Boundary Smoothing Tests
 **File:** `tests/boundary_smoothing_test.rs`
 
 **Acceptance Criteria:**
-- [ ] Smoothing improves SSIM score
-- [ ] Manual override accepts boundary as-is
-- [ ] Both smoothing methods produce valid output
+- [x] Smoothing improves SSIM score
+- [x] Manual override accepts boundary as-is
+- [x] Both smoothing methods produce valid output
 
 ---
 

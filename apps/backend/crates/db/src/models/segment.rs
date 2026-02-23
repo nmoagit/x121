@@ -27,6 +27,12 @@ pub struct Segment {
     pub worker_id: Option<DbId>,
     pub prompt_type: Option<String>,
     pub prompt_text: Option<String>,
+    // -- Versioning state (PRD-25) --
+    pub previous_segment_id: Option<DbId>,
+    pub regeneration_count: i32,
+    pub is_stale: bool,
+    pub boundary_ssim_before: Option<f64>,
+    pub boundary_ssim_after: Option<f64>,
     // -- Timestamps --
     pub deleted_at: Option<Timestamp>,
     pub created_at: Timestamp,

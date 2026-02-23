@@ -131,16 +131,8 @@ pub fn validate_check_type(ct: &str) -> Result<(), CoreError> {
 /// Both must be in `[0.0, 1.0]` and `warn >= fail` (since higher = better,
 /// the warn line must be at or above the fail line).
 pub fn validate_threshold(warn: f64, fail: f64) -> Result<(), CoreError> {
-    if !(0.0..=1.0).contains(&warn) {
-        return Err(CoreError::Validation(format!(
-            "warn_threshold must be between 0.0 and 1.0, got {warn}"
-        )));
-    }
-    if !(0.0..=1.0).contains(&fail) {
-        return Err(CoreError::Validation(format!(
-            "fail_threshold must be between 0.0 and 1.0, got {fail}"
-        )));
-    }
+    crate::threshold_validation::validate_unit_range(warn, "warn_threshold")?;
+    crate::threshold_validation::validate_unit_range(fail, "fail_threshold")?;
     if warn < fail {
         return Err(CoreError::Validation(format!(
             "warn_threshold ({warn}) must be >= fail_threshold ({fail})"

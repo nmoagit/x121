@@ -21,10 +21,10 @@ Source of truth: [`design/design.md`](../design.md)
 | Status | Count |
 |--------|-------|
 | backlog | 0 |
-| planning | 52 |
+| planning | 49 |
 | in-progress | 0 |
 | review | 0 |
-| done | 58 |
+| done | 61 |
 | blocked | 0 |
 | deferred | 0 |
 | maybe | 15 |
@@ -95,13 +95,13 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-22 | Source Image Quality Assurance | — | `done` | 2026-02-20 | 3 DB tables (qa_check_types, image_quality_scores, image_qa_thresholds), 3 repos, 6 API handlers (/qa/*), 3 Python QA scripts (resolution/format, face detection, image quality), QA runner via subprocess. Post-MVP: likeness comparison (PRD-76), batch validation, frontend components. |
 | PRD-23 | Scene Type Configuration | — | `done` | 2026-02-22 | Migration (11 new columns), core module (prompt resolver, validation, 21 tests), 3 API endpoints (preview_prompt, generate_matrix, validate), frontend feature (SceneTypeEditor, PromptTemplateEditor, SceneMatrixView, 11 tests), DRY fixes (4 resolved, 4 watch). |
 | PRD-24 | Recursive Video Generation Loop | — | `done` | 2026-02-22 | 2 migrations (segment+scene generation state), core module (21 tests), generation DTOs, extended segment/scene repos, 4 API endpoints, frontend progress bar + boundary scrubber (9 tests). DRY-237 to DRY-245 audited. |
-| PRD-25 | Incremental Re-stitching & Smoothing | — | `planning` | — | |
-| PRD-26 | Temporal Continuity (Normalization & Sync) | — | `planning` | — | |
+| PRD-25 | Incremental Re-stitching & Smoothing | — | `done` | 2026-02-23 | Migration (segment versioning columns), core module (SSIM validation, smoothing methods, boundary classification, 14 tests), segment_version DTOs, segment_version_repo (archive, stale flagging, boundary SSIM), 5 API endpoints (regenerate, check boundary, smooth, versions, clear stale), frontend feature (RegenerateSegmentButton, BoundaryQualityIndicator, SegmentVersionComparison, 8 tests). DRY-270 sync comment added. |
+| PRD-26 | Temporal Continuity (Normalization & Sync) | — | `done` | 2026-02-23 | Migration (temporal_metrics, temporal_settings), core module (drift/grain/centering classification, threshold validation, 22 tests), temporal metric/setting DTOs, 2 repos (metrics + settings with upsert), 7 API endpoints (scene/segment/project scoped), 4 Python analysis scripts (drift, grain, normalize, centering), frontend feature (DriftTrendChart with shared chartStyles, GrainComparisonPanel, 5 tests). DRY-271 sync comment added. |
 | PRD-27 | Template & Preset System | — | `done` | 2026-02-22 | 3 migrations (templates, presets, preset_ratings), core module (16 tests), 2 repos, 14 API endpoints, frontend marketplace + editor + override dialog (10 tests). |
 | PRD-28 | Pipeline Error Recovery & Checkpointing | — | `done` | 2026-02-21 | Checkpoints table, failure diagnostics, stage diagram, resume dialog, 22 tests. DRY-152/153 resolved. |
 | PRD-49 | Automated Quality Gates | — | `done` | 2026-02-22 | |
 | PRD-50 | Content Branching & Exploration | — | `planning` | — | |
-| PRD-57 | Batch Production Orchestrator | — | `planning` | — | |
+| PRD-57 | Batch Production Orchestrator | — | `done` | 2026-02-23 | Migration (production_runs, production_run_cells), core module (run/cell status constants, matrix validation, delivery readiness, cell status computation, 21 tests), production run DTOs (typed response structs), production_run_repo (batch cell insert via UNNEST, status counting), 9 API endpoints (CRUD, matrix, submit, resubmit, deliver, progress), frontend feature (MatrixGrid, ProductionProgress, 15 tests). DRY-264/265/266 resolved. |
 | PRD-58 | Scene Preview & Quick Test | — | `planning` | — | |
 | PRD-59 | Multi-Resolution Pipeline | — | `planning` | — | |
 | PRD-60 | Character Library (Cross-Project) | — | `done` | 2026-02-22 | 2 migrations (library_characters, project_links), core module (10 tests), 2 repos, 10 API endpoints, frontend browser + import (11 tests). |

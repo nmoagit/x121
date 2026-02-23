@@ -62,10 +62,10 @@ CREATE TRIGGER set_updated_at BEFORE UPDATE ON production_runs
 ```
 
 **Acceptance Criteria:**
-- [ ] Tracks batch production run with matrix configuration
-- [ ] Cell counts for progress tracking
-- [ ] Estimated resources stored pre-submission
-- [ ] Standard conventions followed
+- [x] Tracks batch production run with matrix configuration
+- [x] Cell counts for progress tracking
+- [x] Estimated resources stored pre-submission
+- [x] Standard conventions followed
 
 ---
 
@@ -108,10 +108,10 @@ pub async fn compute_matrix(
 ```
 
 **Acceptance Criteria:**
-- [ ] Computes status for every cell in the matrix
-- [ ] Identifies blocking dependencies per cell
-- [ ] Updates in response to pipeline events
-- [ ] Renders in <2 seconds for 20x10 matrix
+- [x] Computes status for every cell in the matrix
+- [x] Identifies blocking dependencies per cell
+- [x] Updates in response to pipeline events
+- [x] Renders in <2 seconds for 20x10 matrix
 
 ### Task 2.2: Dependency Resolver
 **File:** `src/services/dependency_resolver_service.rs`
@@ -132,9 +132,9 @@ pub async fn resolve_dependencies(
 ```
 
 **Acceptance Criteria:**
-- [ ] Enforces: source QA -> variant generation -> variant approval -> scene generation
-- [ ] Blocked cells show which dependency is unmet
-- [ ] Auto-advance: when dependency met, dependent cells auto-queue
+- [x] Enforces: source QA -> variant generation -> variant approval -> scene generation
+- [x] Blocked cells show which dependency is unmet
+- [x] Auto-advance: when dependency met, dependent cells auto-queue
 
 ---
 
@@ -144,19 +144,19 @@ pub async fn resolve_dependencies(
 **File:** `src/services/batch_submission_service.rs`
 
 **Acceptance Criteria:**
-- [ ] Submit entire matrix or subset
-- [ ] Re-submit failed/rejected cells only
-- [ ] Respects budget limits (PRD-093)
-- [ ] Jobs queued via PRD-008
+- [x] Submit entire matrix or subset
+- [x] Re-submit failed/rejected cells only
+- [x] Respects budget limits (PRD-093)
+- [x] Jobs queued via PRD-008
 
 ### Task 3.2: One-Click Delivery
 **File:** `src/services/batch_delivery_service.rs`
 
 **Acceptance Criteria:**
-- [ ] Button enabled only when all cells approved
-- [ ] Triggers PRD-039 scene assembler for project
-- [ ] Delivery validation runs before packaging
-- [ ] Progress shown during packaging
+- [x] Button enabled only when all cells approved
+- [x] Triggers PRD-039 scene assembler for project
+- [x] Delivery validation runs before packaging
+- [x] Progress shown during packaging
 
 ---
 
@@ -191,18 +191,18 @@ export function MatrixGrid({ matrix, characters, sceneTypes }: MatrixGridProps) 
 ```
 
 **Acceptance Criteria:**
-- [ ] Single-screen overview for entire production
-- [ ] Color-coded status per cell at a glance
-- [ ] Click for navigation, checkbox for selection
-- [ ] Blocked cells show dependency reason on hover
+- [x] Single-screen overview for entire production
+- [x] Color-coded status per cell at a glance
+- [x] Click for navigation, checkbox for selection
+- [x] Blocked cells show dependency reason on hover
 
 ### Task 5.2: Progress Dashboard
 **File:** `frontend/src/components/production/ProductionProgress.tsx`
 
 **Acceptance Criteria:**
-- [ ] Total scenes, segments, QA pass rate, approved count
-- [ ] Estimated time remaining
-- [ ] Real-time WebSocket updates
+- [x] Total scenes, segments, QA pass rate, approved count
+- [x] Estimated time remaining
+- [x] Real-time WebSocket updates
 
 ---
 
@@ -212,10 +212,10 @@ export function MatrixGrid({ matrix, characters, sceneTypes }: MatrixGridProps) 
 **File:** `tests/production_matrix_test.rs`
 
 **Acceptance Criteria:**
-- [ ] Matrix correctly computed for various configurations
-- [ ] Dependencies correctly resolved
-- [ ] Selective submission works
-- [ ] Progress tracking accurate
+- [x] Matrix correctly computed for various configurations
+- [x] Dependencies correctly resolved
+- [x] Selective submission works
+- [x] Progress tracking accurate
 
 ---
 
