@@ -195,6 +195,37 @@ define_status_enum! {
     }
 }
 
+define_status_enum! {
+    /// Bulk operation type (PRD-18).
+    BulkOperationTypeId {
+        FindReplace = 1,
+        Repath = 2,
+        BatchUpdate = 3,
+    }
+}
+
+define_status_enum! {
+    /// Bulk operation status (PRD-18).
+    BulkOperationStatusId {
+        Preview = 1,
+        Executing = 2,
+        Completed = 3,
+        Failed = 4,
+        Undone = 5,
+    }
+}
+
+define_status_enum! {
+    /// Batch metadata operation status (PRD-88).
+    BatchMetadataOpStatusId {
+        Preview = 1,
+        Applying = 2,
+        Completed = 3,
+        Undone = 4,
+        Failed = 5,
+    }
+}
+
 // NOTE: EmbeddingStatus lives in `trulience_core::embedding::EmbeddingStatus`
 // (the canonical source) because the core crate needs it for domain logic
 // (`classify_extraction_result`). It provides `id()`, `from_id()`, and `label()`.
@@ -300,6 +331,31 @@ mod tests {
         assert_eq!(DownloadStatus::Completed.id(), 6);
         assert_eq!(DownloadStatus::Failed.id(), 7);
         assert_eq!(DownloadStatus::Cancelled.id(), 8);
+    }
+
+    #[test]
+    fn bulk_operation_type_ids_match_seed_data() {
+        assert_eq!(BulkOperationTypeId::FindReplace.id(), 1);
+        assert_eq!(BulkOperationTypeId::Repath.id(), 2);
+        assert_eq!(BulkOperationTypeId::BatchUpdate.id(), 3);
+    }
+
+    #[test]
+    fn bulk_operation_status_ids_match_seed_data() {
+        assert_eq!(BulkOperationStatusId::Preview.id(), 1);
+        assert_eq!(BulkOperationStatusId::Executing.id(), 2);
+        assert_eq!(BulkOperationStatusId::Completed.id(), 3);
+        assert_eq!(BulkOperationStatusId::Failed.id(), 4);
+        assert_eq!(BulkOperationStatusId::Undone.id(), 5);
+    }
+
+    #[test]
+    fn batch_metadata_op_status_ids_match_seed_data() {
+        assert_eq!(BatchMetadataOpStatusId::Preview.id(), 1);
+        assert_eq!(BatchMetadataOpStatusId::Applying.id(), 2);
+        assert_eq!(BatchMetadataOpStatusId::Completed.id(), 3);
+        assert_eq!(BatchMetadataOpStatusId::Undone.id(), 4);
+        assert_eq!(BatchMetadataOpStatusId::Failed.id(), 5);
     }
 
     // EmbeddingStatus tests live in trulience_core::embedding::tests (DRY-209).

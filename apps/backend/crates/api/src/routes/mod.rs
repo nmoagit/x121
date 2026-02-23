@@ -4,9 +4,11 @@ pub mod approval;
 pub mod assets;
 pub mod audit;
 pub mod auth;
+pub mod batch_metadata;
 pub mod branching;
 pub mod bug_reports;
 pub mod character;
+pub mod character_dashboard;
 pub mod character_metadata;
 pub mod checkpoints;
 pub mod collaboration;
@@ -30,10 +32,13 @@ pub mod job_debug;
 pub mod jobs;
 pub mod keymaps;
 pub mod layouts;
+pub mod legacy_import;
 pub mod library;
+pub mod maintenance;
 pub mod metadata;
 pub mod notification;
 pub mod onboarding;
+pub mod onboarding_wizard;
 pub mod palette;
 pub mod performance;
 pub mod pipeline_hooks;
@@ -47,6 +52,7 @@ pub mod prompt_editor;
 pub mod provenance;
 pub mod quality_gates;
 pub mod queue;
+pub mod readiness;
 pub mod reclamation;
 pub mod resolution;
 pub mod restitching;
@@ -178,6 +184,13 @@ use crate::ws;
 /// /characters/{character_id}/metadata/completeness  completeness status (PRD-66)
 /// /characters/{character_id}/scenes                list, create
 /// /characters/{character_id}/scenes/{id}           get, update, delete
+///
+/// /characters/{character_id}/readiness              get readiness (GET, PRD-107)
+/// /characters/{character_id}/readiness/invalidate   invalidate cache (POST, PRD-107)
+/// /characters/readiness/batch-evaluate              batch evaluate (POST, PRD-107)
+///
+/// /characters/{character_id}/dashboard              character dashboard (GET, PRD-108)
+/// /characters/{character_id}/settings               patch settings (PATCH, PRD-108)
 ///
 /// /characters/{character_id}/extract-embedding     trigger extraction (POST, PRD-76)
 /// /characters/{character_id}/embedding-status      get status (GET, PRD-76)
@@ -397,6 +410,7 @@ use crate::ws;
 /// /library/characters/{id}/import                              import to project (POST, PRD-60)
 /// /library/characters/projects/{project_id}/links              list links (GET, PRD-60)
 /// /library/characters/links/{link_id}                          update, delete link (PUT, DELETE, PRD-60)
+/// /library/characters/readiness-summary                        readiness summary (GET, PRD-107)
 ///
 /// /admin/storage/backends                                      list, create (GET, POST, PRD-48)
 /// /admin/storage/backends/{id}                                 update (PUT, PRD-48)
@@ -559,6 +573,40 @@ use crate::ws;
 ///
 /// /note-categories                                              list, create (GET, POST, PRD-95)
 /// /note-categories/{id}                                         update, delete (PUT, DELETE, PRD-95)
+///
+/// /onboarding-sessions                                          list, create (GET, POST, PRD-67)
+/// /onboarding-sessions/{id}                                     get session (GET, PRD-67)
+/// /onboarding-sessions/{id}/advance                             advance step (POST, PRD-67)
+/// /onboarding-sessions/{id}/go-back                             go back (POST, PRD-67)
+/// /onboarding-sessions/{id}/step-data                           update step data (PUT, PRD-67)
+/// /onboarding-sessions/{id}/abandon                             abandon session (POST, PRD-67)
+/// /onboarding-sessions/{id}/complete                            complete session (POST, PRD-67)
+///
+/// /admin/import/legacy/runs                                     list, create (GET, POST, PRD-86)
+/// /admin/import/legacy/runs/{id}                                get run (GET, PRD-86)
+/// /admin/import/legacy/runs/{id}/scan                           scan folder (POST, PRD-86)
+/// /admin/import/legacy/runs/{id}/preview                        preview import (POST, PRD-86)
+/// /admin/import/legacy/runs/{id}/commit                         commit import (POST, PRD-86)
+/// /admin/import/legacy/runs/{id}/report                         run report (GET, PRD-86)
+/// /admin/import/legacy/runs/{id}/gap-report                     gap analysis (GET, PRD-86)
+/// /admin/import/legacy/runs/{id}/csv                            CSV import (POST, PRD-86)
+/// /admin/import/legacy/runs/{id}/entities                       entity logs (GET, PRD-86)
+///
+/// /readiness-criteria                                           list, create (GET, POST, PRD-107)
+/// /readiness-criteria/{id}                                      update, delete (PUT, DELETE, PRD-107)
+///
+/// /admin/batch-metadata                                          list, create preview (GET, POST, PRD-88)
+/// /admin/batch-metadata/{id}                                     get operation (GET, PRD-88)
+/// /admin/batch-metadata/{id}/execute                             execute operation (POST, PRD-88)
+/// /admin/batch-metadata/{id}/undo                                undo operation (POST, PRD-88)
+///
+/// /admin/maintenance/find-replace/preview                       preview find/replace (POST, PRD-18)
+/// /admin/maintenance/find-replace/{id}/execute                  execute find/replace (POST, PRD-18)
+/// /admin/maintenance/repath/preview                             preview re-path (POST, PRD-18)
+/// /admin/maintenance/repath/{id}/execute                        execute re-path (POST, PRD-18)
+/// /admin/maintenance/{id}/undo                                  undo operation (POST, PRD-18)
+/// /admin/maintenance/history                                    list operations (GET, PRD-18)
+/// /admin/maintenance/{id}                                       get operation (GET, PRD-18)
 /// ```
 pub fn api_routes() -> Router<AppState> {
     Router::new()
@@ -616,11 +664,13 @@ pub fn api_routes() -> Router<AppState> {
             .merge(temporal::project_temporal_router())
             .merge(project_config::project_export_router())
             .nest("/{project_id}/characters", character_metadata::project_router()))
-        // Character-scoped sub-resources (images, scenes, metadata editor, face embedding).
+        // Character-scoped sub-resources (images, scenes, metadata editor, face embedding, readiness, dashboard PRD-108).
         .nest("/characters", character::router()
             .merge(metadata::character_metadata_router())
             .merge(character_metadata::character_router())
-            .merge(embedding::embedding_router()))
+            .merge(embedding::embedding_router())
+            .merge(readiness::readiness_router())
+            .merge(character_dashboard::dashboard_router()))
         // Scene-scoped sub-resources (segments, review queue, generation PRD-24, QA PRD-49, resolution PRD-59, storyboard PRD-62, branching PRD-50).
         .nest("/scenes", scene::router()
             .merge(metadata::scene_metadata_router())
@@ -713,8 +763,9 @@ pub fn api_routes() -> Router<AppState> {
         .nest("/workers", workers::agent_router())
         // External & tiered storage management (PRD-48).
         .nest("/admin/storage", storage::router())
-        // Character library: cross-project character sharing (PRD-60).
-        .nest("/library/characters", library::router())
+        // Character library: cross-project character sharing (PRD-60) + readiness summary (PRD-107).
+        .nest("/library/characters", library::router()
+            .merge(readiness::readiness_library_router()))
         // Template & preset system (PRD-27).
         .nest("/templates", presets::template_router())
         .nest("/presets", presets::preset_router())
@@ -765,4 +816,14 @@ pub fn api_routes() -> Router<AppState> {
         // Production Notes & Internal Comments (PRD-95).
         .nest("/notes", production_notes::notes_router())
         .nest("/note-categories", production_notes::note_categories_router())
+        // Bulk Character Onboarding Wizard (PRD-67).
+        .nest("/onboarding-sessions", onboarding_wizard::router())
+        // Legacy Data Import & Migration Toolkit (PRD-86).
+        .nest("/admin/import/legacy", legacy_import::legacy_import_router())
+        // Bulk Data Maintenance: find/replace, re-path, undo (PRD-18).
+        .nest("/admin/maintenance", maintenance::maintenance_router())
+        // Batch Metadata Operations (PRD-88).
+        .nest("/admin/batch-metadata", batch_metadata::batch_metadata_router())
+        // Character Readiness & State View: criteria configuration (PRD-107).
+        .nest("/readiness-criteria", readiness::readiness_criteria_router())
 }

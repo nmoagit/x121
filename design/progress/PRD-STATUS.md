@@ -21,10 +21,10 @@ Source of truth: [`design/design.md`](../design.md)
 | Status | Count |
 |--------|-------|
 | backlog | 0 |
-| planning | 35 |
+| planning | 29 |
 | in-progress | 0 |
 | review | 0 |
-| done | 75 |
+| done | 81 |
 | blocked | 0 |
 | deferred | 0 |
 | maybe | 15 |
@@ -73,7 +73,7 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-15 | Intelligent & Deferred Disk Reclamation | — | `done` | 2026-02-21 | Protection rules, policies, trash queue, reclamation engine, admin dashboard, 6 tests. |
 | PRD-16 | Folder-to-Entity Bulk Importer | — | `done` | 2026-02-21 | Phase 3 Group 4 |
 | PRD-17 | Asset Registry & Dependency Mapping | — | `done` | 2026-02-21 | Asset registry, dependencies, notes, ratings, impact analysis, browser UI, 8 tests. |
-| PRD-18 | Bulk Data Maintenance (Search/Replace/Re-path) | — | `planning` | — | |
+| PRD-18 | Bulk Data Maintenance (Search/Replace/Re-path) | — | `done` | 2026-02-23 | Migration 000033, core maintenance module (field registry, validators), 7 API endpoints, frontend feature (FindReplacePanel, RePathPanel, OperationsHistory), 36 tests. |
 | PRD-19 | Disk Space Visualizer (Treemap) | — | `planning` | — | |
 | PRD-20 | Search & Discovery Engine | — | `done` | 2026-02-21 | tsvector/GIN indexes, fulltext + typeahead + visual similarity search, faceted aggregation, saved searches, search analytics, frontend SearchBar + FacetPanel (29 tests). |
 | PRD-47 | Tagging & Custom Labels | — | `done` | 2026-02-21 | Polymorphic tagging, case-insensitive normalization, bulk ops, 3 frontend components. |
@@ -81,8 +81,8 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-66 | Character Metadata Editor | — | `done` | 2026-02-21 | Phase 3 Group 4 |
 | PRD-69 | Generation Provenance & Asset Versioning | — | `done` | 2026-02-23 | Phase 6 Track C |
 | PRD-79 | Character Duplicate Detection | — | `done` | 2026-02-23 | 2 migrations (duplicate_checks, duplicate_detection_settings), core module (16 tests), 2 repos, 6 API endpoints, frontend feature (10 tests). DRY-251 to DRY-263 audited. |
-| PRD-86 | Legacy Data Import & Migration Toolkit | — | `planning` | — | |
-| PRD-88 | Batch Metadata Operations | — | `planning` | — | |
+| PRD-86 | Legacy Data Import & Migration Toolkit | — | `done` | 2026-02-23 | Migrations 000028-000029, core legacy_import module (scanner, mapper, gap analysis), API handlers, frontend feature (legacy-import wizard). |
+| PRD-88 | Batch Metadata Operations | — | `done` | 2026-02-23 | Migration 000032, core batch_metadata module (validators, undo logic), status enum, API handlers, frontend feature (batch-metadata panel), 19 tests. |
 | PRD-104 | Model & LoRA Download Manager | — | `done` | 2026-02-23 | 3 migrations (model_downloads, api_tokens, placement_rules), core module (16 tests), 3 repos, 13 API endpoints, frontend feature (9 tests). |
 | PRD-109 | Scene Video Versioning, External Import & Soft Delete | — | `done` | — | Implemented (2026-02-20). All 7 phases complete: migrations, models, soft delete infra (9 repos), version repo, version API, trash API, delivery integration, integration tests (30 tests). |
 
@@ -110,7 +110,7 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-63 | Prompt Editor & Versioning | — | `done` | 2026-02-23 | Phase 7 Track A |
 | PRD-64 | Failure Pattern Tracking & Insights | — | `done` | 2026-02-23 | Phase 7 Track B |
 | PRD-65 | Workflow Regression Testing | — | `planning` | — | |
-| PRD-67 | Bulk Character Onboarding Wizard | — | `planning` | — | Updated v1.1 (2026-02-19): CSV/text upload, batch video generation |
+| PRD-67 | Bulk Character Onboarding Wizard | — | `done` | 2026-02-23 | Migration 000027, core onboarding_wizard module (step validation), API handlers, frontend feature (onboarding-wizard). Updated v1.1 (2026-02-19): CSV/text upload, batch video generation. |
 | PRD-71 | Smart Auto-Retry | — | `planning` | — | |
 | PRD-74 | Project Configuration Templates | — | `done` | 2026-02-23 | Phase 7 Track B |
 | PRD-91 | Custom QA Rulesets per Scene Type | — | `planning` | — | |
@@ -118,8 +118,8 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-97 | Job Dependency Chains & Triggered Workflows | — | `planning` | — | |
 | PRD-100 | Scene Type Inheritance & Composition | — | `planning` | — | |
 | PRD-103 | Character Face Contact Sheet | — | `planning` | — | |
-| PRD-107 | Character Readiness & State View | — | `planning` | — | New (2026-02-19). Tasks: `tasks/tasks-107-prd-character-readiness-state-view.md` |
-| PRD-108 | Character Settings Dashboard | — | `planning` | — | New (2026-02-19). Tasks: `tasks/tasks-108-prd-character-settings-dashboard.md` |
+| PRD-107 | Character Readiness & State View | — | `done` | 2026-02-23 | Migrations 000030-000031, core readiness module (criteria evaluation, cache), API handlers (CRUD + batch evaluate), frontend feature (ReadinessStateBadge, CriteriaEditor, SummaryBar), 18+ tests. |
+| PRD-108 | Character Settings Dashboard | — | `done` | 2026-02-23 | Core character_dashboard module (settings merge, label builders), API handlers (get_dashboard, patch_settings), frontend feature (CharacterDashboard, MetadataSummarySection, PipelineSettingsEditor), 27 tests. |
 
 ## Part 4: Design System & UX Patterns
 
