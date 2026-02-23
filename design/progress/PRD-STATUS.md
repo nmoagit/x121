@@ -21,10 +21,10 @@ Source of truth: [`design/design.md`](../design.md)
 | Status | Count |
 |--------|-------|
 | backlog | 0 |
-| planning | 56 |
+| planning | 52 |
 | in-progress | 0 |
 | review | 0 |
-| done | 54 |
+| done | 58 |
 | blocked | 0 |
 | deferred | 0 |
 | maybe | 15 |
@@ -80,10 +80,10 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-48 | External & Tiered Storage | — | `done` | 2026-02-22 | 4 migrations (backends, locations, policies, migrations), core module (14 tests), 4 repos, 10 API endpoints, frontend panel (10 tests). DRY-219 to DRY-226 audited. |
 | PRD-66 | Character Metadata Editor | — | `done` | 2026-02-21 | Phase 3 Group 4 |
 | PRD-69 | Generation Provenance & Asset Versioning | — | `planning` | — | |
-| PRD-79 | Character Duplicate Detection | — | `planning` | — | |
+| PRD-79 | Character Duplicate Detection | — | `done` | 2026-02-23 | 2 migrations (duplicate_checks, duplicate_detection_settings), core module (16 tests), 2 repos, 6 API endpoints, frontend feature (10 tests). DRY-251 to DRY-263 audited. |
 | PRD-86 | Legacy Data Import & Migration Toolkit | — | `planning` | — | |
 | PRD-88 | Batch Metadata Operations | — | `planning` | — | |
-| PRD-104 | Model & LoRA Download Manager | — | `planning` | — | |
+| PRD-104 | Model & LoRA Download Manager | — | `done` | 2026-02-23 | 3 migrations (model_downloads, api_tokens, placement_rules), core module (16 tests), 3 repos, 13 API endpoints, frontend feature (9 tests). |
 | PRD-109 | Scene Video Versioning, External Import & Soft Delete | — | `done` | — | Implemented (2026-02-20). All 7 phases complete: migrations, models, soft delete infra (9 repos), version repo, version API, trash API, delivery integration, integration tests (30 tests). |
 
 ## Part 3: Generation & Pipeline Core
@@ -173,10 +173,10 @@ Source of truth: [`design/design.md`](../design.md)
 
 | PRD | Title | Priority | Status | Owner | Notes |
 |-----|-------|----------|--------|-------|-------|
-| PRD-43 | System Integrity & Repair Tools | — | `planning` | — | |
+| PRD-43 | System Integrity & Repair Tools | — | `done` | 2026-02-23 | 2 migrations (integrity_scans, model_checksums), core module (18 tests), 2 repos, 10 API endpoints, frontend feature (9 tests). |
 | PRD-44 | Bug Reporting & App Config Export | — | `done` | 2026-02-21 | Bug reports, config export/import/validate, admin endpoints. |
 | PRD-45 | Audit Logging & Compliance | — | `done` | 2026-02-21 | Immutable audit logs with hash chain, retention policies, dynamic filtering, CSV/JSON export, integrity check, 27 tests. DRY-155/156 resolved. |
-| PRD-56 | Studio Wiki & Contextual Help | — | `planning` | — | |
+| PRD-56 | Studio Wiki & Contextual Help | — | `done` | 2026-02-23 | 2 migrations (wiki_articles, wiki_versions), core module (14 tests), 2 repos, 10 API endpoints, frontend feature (10 tests). |
 | PRD-80 | System Health Page | — | `planning` | — | |
 | PRD-81 | Backup & Disaster Recovery | — | `planning` | — | |
 | PRD-98 | Session Management & Active Users | — | `planning` | — | |
