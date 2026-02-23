@@ -36,7 +36,7 @@ pub const DEFAULT_TYPEAHEAD_LIMIT: i64 = 10;
 pub const MAX_TYPEAHEAD_LIMIT: i64 = 25;
 
 /// Default similarity threshold for visual search (0.0 - 1.0).
-pub const DEFAULT_SIMILARITY_THRESHOLD: f64 = 0.5;
+pub const DEFAULT_SEARCH_SIMILARITY: f64 = 0.5;
 
 /// Default number of similarity results.
 pub const DEFAULT_SIMILARITY_LIMIT: i64 = 10;

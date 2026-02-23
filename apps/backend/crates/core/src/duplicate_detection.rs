@@ -55,7 +55,7 @@ pub const STATUS_MERGED_ID: i16 = 5;
 // Threshold constants
 // ---------------------------------------------------------------------------
 
-pub const DEFAULT_SIMILARITY_THRESHOLD: f64 = 0.90;
+pub const DEFAULT_DUPLICATE_SIMILARITY: f64 = 0.90;
 pub const MIN_SIMILARITY_THRESHOLD: f64 = 0.50;
 pub const MAX_SIMILARITY_THRESHOLD: f64 = 1.00;
 

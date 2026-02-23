@@ -10,6 +10,7 @@ import { useCallback, useState } from "react";
 import { Button } from "@/components/primitives/Button";
 import { Input } from "@/components/primitives/Input";
 import { Select } from "@/components/primitives/Select";
+import { generateSlug } from "@/lib/format";
 
 import type { CreateWikiArticle } from "./types";
 import { CATEGORY_LABELS } from "./types";
@@ -32,19 +33,6 @@ interface WikiArticleEditorProps {
   onCancel: () => void;
   /** Whether the form is submitting. */
   isSubmitting?: boolean;
-}
-
-/* --------------------------------------------------------------------------
-   Helpers
-   -------------------------------------------------------------------------- */
-
-/** Generate a URL-safe slug from a title. */
-function generateSlug(title: string): string {
-  return title
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .replace(/-{2,}/g, "-");
 }
 
 /* --------------------------------------------------------------------------

@@ -6,7 +6,7 @@
 use sqlx::PgPool;
 use trulience_core::search::{
     clamp_limit, clamp_offset, build_prefix_tsquery, build_tsquery,
-    DEFAULT_SEARCH_LIMIT, DEFAULT_SIMILARITY_LIMIT, DEFAULT_SIMILARITY_THRESHOLD,
+    DEFAULT_SEARCH_LIMIT, DEFAULT_SIMILARITY_LIMIT, DEFAULT_SEARCH_SIMILARITY,
     DEFAULT_TYPEAHEAD_LIMIT, MAX_SEARCH_LIMIT, MAX_SIMILARITY_LIMIT, MAX_TYPEAHEAD_LIMIT,
 };
 use trulience_core::types::DbId;
@@ -282,7 +282,7 @@ impl SearchRepo {
         threshold: Option<f64>,
         limit: Option<i64>,
     ) -> Result<Vec<SimilarityResult>, sqlx::Error> {
-        let threshold = threshold.unwrap_or(DEFAULT_SIMILARITY_THRESHOLD);
+        let threshold = threshold.unwrap_or(DEFAULT_SEARCH_SIMILARITY);
         let limit = clamp_limit(limit, DEFAULT_SIMILARITY_LIMIT, MAX_SIMILARITY_LIMIT);
 
         // Check if the image_embeddings table exists before querying.

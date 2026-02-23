@@ -4,7 +4,7 @@
  */
 
 import { Badge } from "@/components/primitives";
-import { formatBytes } from "@/lib/format";
+import { estimateEta, formatBytes, formatSpeed } from "@/lib/format";
 import { Pause, Play, RefreshCw, X } from "@/tokens/icons";
 
 import type { DownloadStatusId, ModelDownload } from "./types";
@@ -24,25 +24,6 @@ import {
 function progressPercent(downloaded: number, total: number | null): number | null {
   if (!total || total <= 0) return null;
   return Math.min(Math.round((downloaded / total) * 100), 100);
-}
-
-/** Format download speed in human-readable units. */
-function formatSpeed(bps: number | null): string {
-  if (!bps || bps <= 0) return "";
-  if (bps >= 1_048_576) return `${(bps / 1_048_576).toFixed(1)} MB/s`;
-  if (bps >= 1_024) return `${(bps / 1_024).toFixed(1)} KB/s`;
-  return `${bps} B/s`;
-}
-
-/** Estimate time remaining in a human-readable format. */
-function estimateEta(downloaded: number, total: number | null, bps: number | null): string {
-  if (!total || !bps || bps <= 0) return "";
-  const remaining = total - downloaded;
-  if (remaining <= 0) return "";
-  const secs = Math.ceil(remaining / bps);
-  if (secs < 60) return `${secs}s`;
-  if (secs < 3600) return `${Math.ceil(secs / 60)}m`;
-  return `${(secs / 3600).toFixed(1)}h`;
 }
 
 /* --------------------------------------------------------------------------

@@ -299,13 +299,9 @@ Ongoing log of components, functions, patterns, and utilities that the DRY-GUY a
 | DRY-259 | 3 repair handlers (`repair_worker`, `sync_models`, `install_nodes`) structurally identical | Extracted shared `trigger_scan(state, auth, worker_id, scan_type)` helper, all 5 scan endpoints use it | `api/src/handlers/integrity.rs` | 2026-02-23 |
 | DRY-260 | `start_scan` and `start_worker_scan` near-identical (differ only in worker_id source) | Both now delegate to shared `trigger_scan` helper (DRY-259) | `api/src/handlers/integrity.rs` | 2026-02-23 |
 
-### Watch Only (Track C)
-
-| ID | Pattern / Component | PRDs Involved | Status | Notes |
-|----|---------------------|---------------|--------|-------|
-| DRY-261 | `generateSlug` cross-boundary duplication (frontend preview vs backend canonical) | PRD-56 | `watch` | Frontend is preview-only; backend is authoritative. Different runtimes. |
-| DRY-262 | `DEFAULT_SIMILARITY_THRESHOLD` name collision (search.rs: 0.5, duplicate_detection.rs: 0.90) | PRD-20, PRD-79 | `watch` | Different domains (search vs duplicate detection). No import conflict. |
-| DRY-263 | `formatSpeed`/`estimateEta` local helpers in `DownloadItem.tsx` | PRD-104 | `watch` | 1 consumer. Extract to `@/lib/format.ts` at 2nd consumer. |
+| DRY-261 | `generateSlug` local in `WikiArticleEditor.tsx` duplicated slug generation logic | Extracted to `@/lib/format.ts` as shared `generateSlug()` with sync comment noting backend canonical version in `core/src/wiki.rs` | `src/lib/format.ts` | 2026-02-23 |
+| DRY-262 | `DEFAULT_SIMILARITY_THRESHOLD` name collision between `search.rs` (0.5) and `duplicate_detection.rs` (0.90) | Renamed to domain-specific: `DEFAULT_SEARCH_SIMILARITY` (search.rs) and `DEFAULT_DUPLICATE_SIMILARITY` (duplicate_detection.rs). Updated consumer in `search_repo.rs` | `core/src/search.rs`, `core/src/duplicate_detection.rs` | 2026-02-23 |
+| DRY-263 | `formatSpeed`/`estimateEta` local helpers in `DownloadItem.tsx` | Extracted to `@/lib/format.ts` as shared `formatSpeed()` and `estimateEta()`. `DownloadItem.tsx` now imports from shared. | `src/lib/format.ts` | 2026-02-23 |
 
 ---
 
