@@ -11,6 +11,8 @@ pub mod collaboration;
 pub mod config_management;
 pub mod dashboard;
 pub mod delivery;
+pub mod downloads;
+pub mod duplicates;
 pub mod embedding;
 pub mod extensions;
 pub mod generation;
@@ -19,6 +21,7 @@ pub mod hardware;
 pub mod health;
 pub mod image_qa;
 pub mod importer;
+pub mod integrity;
 pub mod job_debug;
 pub mod jobs;
 pub mod keymaps;
@@ -47,6 +50,7 @@ pub mod trash;
 pub mod undo_tree;
 pub mod validation;
 pub mod video;
+pub mod wiki;
 pub mod workflow_canvas;
 pub mod workers;
 pub mod workspace;
@@ -396,6 +400,44 @@ use crate::ws;
 ///
 /// /watermark-settings                                           list, create (GET, POST, PRD-39)
 /// /watermark-settings/{id}                                      get, update, delete (PRD-39)
+///
+/// /admin/integrity-scans                                        list, start scan (GET, POST, PRD-43)
+/// /admin/integrity-scans/{worker_id}                            worker report, start worker scan (GET, POST, PRD-43)
+/// /admin/repair/{worker_id}                                     full repair (POST, PRD-43)
+/// /admin/repair/{worker_id}/sync-models                         sync models (POST, PRD-43)
+/// /admin/repair/{worker_id}/install-nodes                       install nodes (POST, PRD-43)
+/// /admin/model-checksums                                        list, create (GET, POST, PRD-43)
+/// /admin/model-checksums/{id}                                   update, delete (PUT, DELETE, PRD-43)
+///
+/// /wiki/articles                                                 list, create (GET, POST, PRD-56)
+/// /wiki/articles/search                                          search articles (GET, PRD-56)
+/// /wiki/articles/pinned                                          list pinned (GET, PRD-56)
+/// /wiki/articles/help/{element_id}                               contextual help (GET, PRD-56)
+/// /wiki/articles/{slug}                                          get, update, delete (PRD-56)
+/// /wiki/articles/{slug}/versions                                 list versions (GET, PRD-56)
+/// /wiki/articles/{slug}/versions/{version}                       get version (GET, PRD-56)
+/// /wiki/articles/{slug}/revert/{version}                         revert (POST, PRD-56)
+/// /wiki/articles/{slug}/diff                                     diff versions (GET, PRD-56)
+///
+/// /characters/duplicates/check                                   check single (POST, PRD-79)
+/// /characters/duplicates/batch                                   batch check (POST, PRD-79)
+/// /characters/duplicates/history                                 check history (GET, PRD-79)
+/// /characters/duplicates/{id}/resolve                            resolve match (POST, PRD-79)
+/// /characters/duplicates/{id}/dismiss                            dismiss match (POST, PRD-79)
+/// /admin/duplicate-settings                                      get, update settings (GET, PUT, PRD-79)
+///
+/// /downloads                                                      list, create (GET, POST, PRD-104)
+/// /downloads/{id}                                                 get download (GET, PRD-104)
+/// /downloads/{id}/pause                                           pause download (POST, PRD-104)
+/// /downloads/{id}/resume                                          resume download (POST, PRD-104)
+/// /downloads/{id}/cancel                                          cancel download (POST, PRD-104)
+/// /downloads/{id}/retry                                           retry download (POST, PRD-104)
+///
+/// /admin/placement-rules                                          list, create (GET, POST, PRD-104)
+/// /admin/placement-rules/{id}                                     update, delete (PUT, DELETE, PRD-104)
+///
+/// /user/api-tokens                                                list, store (GET, POST, PRD-104)
+/// /user/api-tokens/{service}                                      delete token (DELETE, PRD-104)
 /// ```
 pub fn api_routes() -> Router<AppState> {
     Router::new()
@@ -542,4 +584,17 @@ pub fn api_routes() -> Router<AppState> {
         .nest("/output-format-profiles", delivery::profile_router())
         // Watermark settings (PRD-39).
         .nest("/watermark-settings", delivery::watermark_router())
+        // System integrity & repair tools (PRD-43).
+        .nest("/admin/integrity-scans", integrity::scan_router())
+        .nest("/admin/repair", integrity::repair_router())
+        .nest("/admin/model-checksums", integrity::checksum_router())
+        // Studio Wiki & Contextual Help (PRD-56).
+        .nest("/wiki/articles", wiki::router())
+        // Character duplicate detection (PRD-79).
+        .nest("/characters/duplicates", duplicates::router())
+        .nest("/admin/duplicate-settings", duplicates::settings_router())
+        // Model & LoRA download manager (PRD-104).
+        .nest("/downloads", downloads::download_router())
+        .nest("/admin/placement-rules", downloads::placement_router())
+        .nest("/user/api-tokens", downloads::token_router())
 }
