@@ -37,6 +37,7 @@ pub mod presets;
 pub mod proficiency;
 pub mod production_run;
 pub mod project;
+pub mod provenance;
 pub mod quality_gates;
 pub mod queue;
 pub mod reclamation;
@@ -48,10 +49,12 @@ pub mod scene_type;
 pub mod scripts;
 pub mod search;
 pub mod storage;
+pub mod storyboard;
 pub mod tags;
 pub mod temporal;
 pub mod test_shot;
 pub mod themes;
+pub mod trimming;
 pub mod trash;
 pub mod undo_tree;
 pub mod validation;
@@ -472,12 +475,28 @@ use crate::ws;
 /// /estimates/history                                           calibration data (GET, PRD-61)
 /// /estimates/record                                            record metric (POST, PRD-61)
 ///
+/// /scenes/{scene_id}/storyboard                                scene storyboard (GET, PRD-62)
+///
+/// /keyframes                                                   create keyframe (POST, PRD-62)
+/// /keyframes/segment/{segment_id}                              list, delete segment keyframes (GET, DELETE, PRD-62)
+///
+/// /provenance/receipts                                         create receipt (POST, PRD-69)
+/// /provenance/receipts/{id}/complete                           complete receipt (PATCH, PRD-69)
+/// /provenance/staleness                                        staleness report (GET, PRD-69)
+/// /segments/{segment_id}/provenance                            segment provenance (GET, PRD-69)
+/// /assets/{asset_id}/usage                                     asset usage (GET, PRD-69)
+///
 /// /scenes/{scene_id}/temporal-metrics                          scene temporal metrics (GET, PRD-26)
 /// /segments/{id}/temporal-metric                               segment temporal metric (GET, PRD-26)
 /// /segments/{id}/analyze-drift                                 analyze drift (POST, PRD-26)
 /// /segments/{id}/analyze-grain                                 analyze grain (POST, PRD-26)
 /// /segments/{id}/normalize-grain                               normalize grain (POST, PRD-26)
 /// /projects/{project_id}/temporal-settings                     get, update settings (GET, PUT, PRD-26)
+///
+/// /segments/{id}/trim                                        create, get, revert trim (POST, GET, DELETE, PRD-78)
+/// /segments/{id}/trim/seed-impact                            seed frame impact (GET, PRD-78)
+/// /trims/batch                                               batch trim (POST, PRD-78)
+/// /trims/preset                                              apply preset (POST, PRD-78)
 /// ```
 pub fn api_routes() -> Router<AppState> {
     Router::new()
@@ -539,14 +558,15 @@ pub fn api_routes() -> Router<AppState> {
             .merge(metadata::character_metadata_router())
             .merge(character_metadata::character_router())
             .merge(embedding::embedding_router()))
-        // Scene-scoped sub-resources (segments, review queue, generation PRD-24, QA PRD-49, resolution PRD-59).
+        // Scene-scoped sub-resources (segments, review queue, generation PRD-24, QA PRD-49, resolution PRD-59, storyboard PRD-62).
         .nest("/scenes", scene::router()
             .merge(metadata::scene_metadata_router())
             .merge(approval::scene_review_router())
             .merge(generation::generation_scene_router())
             .merge(quality_gates::scene_qa_router())
             .merge(temporal::scene_temporal_router())
-            .merge(resolution::scene_resolution_router()))
+            .merge(resolution::scene_resolution_router())
+            .merge(storyboard::scene_storyboard_router()))
         // Segment-scoped approval actions (approve, reject, flag) (PRD-35).
         // Segment-scoped review notes and tags (PRD-38).
         // Segment-scoped boundary frame selection (PRD-24).
@@ -557,7 +577,9 @@ pub fn api_routes() -> Router<AppState> {
             .merge(generation::generation_segment_router())
             .merge(quality_gates::segment_qa_router())
             .merge(restitching::segment_restitching_router())
-            .merge(temporal::segment_temporal_router()))
+            .merge(temporal::segment_temporal_router())
+            .merge(provenance::segment_provenance_router())
+            .merge(trimming::segment_trim_router()))
         // Rejection categories for structured rejection tracking (PRD-35).
         .nest("/rejection-categories", approval::rejection_categories_router())
         // Review tags for collaborative review (PRD-38).
@@ -602,7 +624,9 @@ pub fn api_routes() -> Router<AppState> {
         // Entity-scoped tag associations (PRD-47).
         .nest("/entities", tags::entity_tags_router())
         // Asset registry: CRUD, dependencies, notes, ratings (PRD-17).
-        .nest("/assets", assets::router())
+        // Asset provenance: reverse usage tracking (PRD-69).
+        .nest("/assets", assets::router()
+            .merge(provenance::asset_provenance_router()))
         // Extension admin management (PRD-85).
         .nest("/admin/extensions", extensions::admin_router())
         // Extension registry for authenticated clients (PRD-85).
@@ -649,6 +673,12 @@ pub fn api_routes() -> Router<AppState> {
         .nest("/test-shots", test_shot::test_shot_router())
         // Multi-Resolution Pipeline (PRD-59).
         .nest("/resolution-tiers", resolution::resolution_router())
+        // Storyboard View & Scene Thumbnails (PRD-62).
+        .nest("/keyframes", storyboard::storyboard_router())
         // Cost & Resource Estimation (PRD-61).
         .nest("/estimates", estimation::estimation_router())
+        // Generation Provenance & Asset Versioning (PRD-69).
+        .nest("/provenance", provenance::provenance_router())
+        // Segment Trimming & Frame-Level Editing: batch operations (PRD-78).
+        .nest("/trims", trimming::batch_trim_router())
 }

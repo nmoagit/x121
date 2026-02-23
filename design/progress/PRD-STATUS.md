@@ -21,10 +21,10 @@ Source of truth: [`design/design.md`](../design.md)
 | Status | Count |
 |--------|-------|
 | backlog | 0 |
-| planning | 46 |
+| planning | 43 |
 | in-progress | 0 |
 | review | 0 |
-| done | 64 |
+| done | 67 |
 | blocked | 0 |
 | deferred | 0 |
 | maybe | 15 |
@@ -79,7 +79,7 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-47 | Tagging & Custom Labels | — | `done` | 2026-02-21 | Polymorphic tagging, case-insensitive normalization, bulk ops, 3 frontend components. |
 | PRD-48 | External & Tiered Storage | — | `done` | 2026-02-22 | 4 migrations (backends, locations, policies, migrations), core module (14 tests), 4 repos, 10 API endpoints, frontend panel (10 tests). DRY-219 to DRY-226 audited. |
 | PRD-66 | Character Metadata Editor | — | `done` | 2026-02-21 | Phase 3 Group 4 |
-| PRD-69 | Generation Provenance & Asset Versioning | — | `planning` | — | |
+| PRD-69 | Generation Provenance & Asset Versioning | — | `done` | 2026-02-23 | Phase 6 Track C |
 | PRD-79 | Character Duplicate Detection | — | `done` | 2026-02-23 | 2 migrations (duplicate_checks, duplicate_detection_settings), core module (16 tests), 2 repos, 6 API endpoints, frontend feature (10 tests). DRY-251 to DRY-263 audited. |
 | PRD-86 | Legacy Data Import & Migration Toolkit | — | `planning` | — | |
 | PRD-88 | Batch Metadata Operations | — | `planning` | — | |
@@ -106,7 +106,7 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-59 | Multi-Resolution Pipeline | — | `done` | 2026-02-23 | 2 migrations (resolution_tiers seed + scene tier columns), core module (tier constants, upscale/delivery validation, 13 tests), DB models+repo (tier CRUD, scene tier update), 5 API endpoints (list/get/create tiers, upscale, get scene tier), frontend feature (TierBadge, UpscaleButton, 7 tests). DRY-274/275 fixed. |
 | PRD-60 | Character Library (Cross-Project) | — | `done` | 2026-02-22 | 2 migrations (library_characters, project_links), core module (10 tests), 2 repos, 10 API endpoints, frontend browser + import (11 tests). |
 | PRD-61 | Cost & Resource Estimation | — | `done` | 2026-02-23 | Migration (generation_metrics with upsert), core module (estimation engine, confidence levels, incremental mean, 22 tests), DB models+repo (upsert with ON CONFLICT incremental mean, batch lookup), 3 API endpoints (estimate, history, record), frontend feature (EstimationCard with breakdown, 7 tests). DRY-277/280 fixed. |
-| PRD-62 | Storyboard View & Scene Thumbnails | — | `planning` | — | |
+| PRD-62 | Storyboard View & Scene Thumbnails | — | `done` | 2026-02-23 | Phase 6 Track C |
 | PRD-63 | Prompt Editor & Versioning | — | `planning` | — | |
 | PRD-64 | Failure Pattern Tracking & Insights | — | `planning` | — | |
 | PRD-65 | Workflow Regression Testing | — | `planning` | — | |
@@ -149,7 +149,7 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-55 | Director's View (Mobile/Tablet Review) | — | `planning` | — | |
 | PRD-68 | Cross-Character Scene Comparison | — | `planning` | — | |
 | PRD-70 | On-Frame Annotation & Markup | — | `planning` | — | |
-| PRD-78 | Segment Trimming & Frame-Level Editing | — | `planning` | — | |
+| PRD-78 | Segment Trimming & Frame-Level Editing | — | `done` | 2026-02-23 | Phase 6 Track C |
 | PRD-92 | Batch Review & Approval Workflows | — | `planning` | — | |
 | PRD-95 | Production Notes & Internal Comments | — | `planning` | — | |
 | PRD-96 | Poster Frame & Thumbnail Selection | — | `planning` | — | |
