@@ -23,19 +23,13 @@ use trulience_db::repositories::HookRepo;
 
 use crate::error::{AppError, AppResult};
 use crate::middleware::auth::AuthUser;
+use crate::query::PaginationParams;
 use crate::response::DataResponse;
 use crate::state::AppState;
 
 // ---------------------------------------------------------------------------
 // Query / request types
 // ---------------------------------------------------------------------------
-
-/// Pagination parameters for execution logs.
-#[derive(Debug, Deserialize)]
-pub struct PaginationParams {
-    pub limit: Option<i64>,
-    pub offset: Option<i64>,
-}
 
 /// Request body for toggling a hook's enabled state.
 #[derive(Debug, Deserialize)]

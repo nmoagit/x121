@@ -7,7 +7,6 @@ use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::Json;
-use serde::Deserialize;
 use trulience_core::error::CoreError;
 use trulience_core::search::{clamp_limit, clamp_offset};
 use trulience_core::types::DbId;
@@ -16,19 +15,9 @@ use trulience_db::repositories::WebhookRepo;
 
 use crate::error::{AppError, AppResult};
 use crate::middleware::rbac::RequireAdmin;
+use crate::query::PaginationParams;
 use crate::response::DataResponse;
 use crate::state::AppState;
-
-// ---------------------------------------------------------------------------
-// Query params
-// ---------------------------------------------------------------------------
-
-/// Pagination parameters for delivery history.
-#[derive(Debug, Deserialize)]
-pub struct PaginationParams {
-    pub limit: Option<i64>,
-    pub offset: Option<i64>,
-}
 
 // ---------------------------------------------------------------------------
 // Webhook CRUD

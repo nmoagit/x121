@@ -21,10 +21,10 @@ Source of truth: [`design/design.md`](../design.md)
 | Status | Count |
 |--------|-------|
 | backlog | 0 |
-| planning | 40 |
+| planning | 37 |
 | in-progress | 0 |
 | review | 0 |
-| done | 70 |
+| done | 73 |
 | blocked | 0 |
 | deferred | 0 |
 | maybe | 15 |
@@ -100,7 +100,7 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-27 | Template & Preset System | — | `done` | 2026-02-22 | 3 migrations (templates, presets, preset_ratings), core module (16 tests), 2 repos, 14 API endpoints, frontend marketplace + editor + override dialog (10 tests). |
 | PRD-28 | Pipeline Error Recovery & Checkpointing | — | `done` | 2026-02-21 | Checkpoints table, failure diagnostics, stage diagram, resume dialog, 22 tests. DRY-152/153 resolved. |
 | PRD-49 | Automated Quality Gates | — | `done` | 2026-02-22 | |
-| PRD-50 | Content Branching & Exploration | — | `planning` | — | |
+| PRD-50 | Content Branching & Exploration | — | `done` | 2026-02-23 | Phase 7 Track B |
 | PRD-57 | Batch Production Orchestrator | — | `done` | 2026-02-23 | Migration (production_runs, production_run_cells), core module (run/cell status constants, matrix validation, delivery readiness, cell status computation, 21 tests), production run DTOs (typed response structs), production_run_repo (batch cell insert via UNNEST, status counting), 9 API endpoints (CRUD, matrix, submit, resubmit, deliver, progress), frontend feature (MatrixGrid, ProductionProgress, 15 tests). DRY-264/265/266 resolved. |
 | PRD-58 | Scene Preview & Quick Test | — | `done` | 2026-02-23 | Migration (test_shots table), core module (test shot validation, status enum, 13 tests), DB models+repo (gallery query, promotion, batch), 6 API endpoints (generate, batch, gallery, detail, promote, delete), frontend feature (TestShotGallery, TestShotButton with Modal, 8 tests). DRY-279 fixed (Modal reuse). |
 | PRD-59 | Multi-Resolution Pipeline | — | `done` | 2026-02-23 | 2 migrations (resolution_tiers seed + scene tier columns), core module (tier constants, upscale/delivery validation, 13 tests), DB models+repo (tier CRUD, scene tier update), 5 API endpoints (list/get/create tiers, upscale, get scene tier), frontend feature (TierBadge, UpscaleButton, 7 tests). DRY-274/275 fixed. |
@@ -108,11 +108,11 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-61 | Cost & Resource Estimation | — | `done` | 2026-02-23 | Migration (generation_metrics with upsert), core module (estimation engine, confidence levels, incremental mean, 22 tests), DB models+repo (upsert with ON CONFLICT incremental mean, batch lookup), 3 API endpoints (estimate, history, record), frontend feature (EstimationCard with breakdown, 7 tests). DRY-277/280 fixed. |
 | PRD-62 | Storyboard View & Scene Thumbnails | — | `done` | 2026-02-23 | Phase 6 Track C |
 | PRD-63 | Prompt Editor & Versioning | — | `done` | 2026-02-23 | Phase 7 Track A |
-| PRD-64 | Failure Pattern Tracking & Insights | — | `planning` | — | |
+| PRD-64 | Failure Pattern Tracking & Insights | — | `done` | 2026-02-23 | Phase 7 Track B |
 | PRD-65 | Workflow Regression Testing | — | `planning` | — | |
 | PRD-67 | Bulk Character Onboarding Wizard | — | `planning` | — | Updated v1.1 (2026-02-19): CSV/text upload, batch video generation |
 | PRD-71 | Smart Auto-Retry | — | `planning` | — | |
-| PRD-74 | Project Configuration Templates | — | `planning` | — | |
+| PRD-74 | Project Configuration Templates | — | `done` | 2026-02-23 | Phase 7 Track B |
 | PRD-91 | Custom QA Rulesets per Scene Type | — | `planning` | — | |
 | PRD-94 | Character Consistency Report | — | `planning` | — | |
 | PRD-97 | Job Dependency Chains & Triggered Workflows | — | `planning` | — | |

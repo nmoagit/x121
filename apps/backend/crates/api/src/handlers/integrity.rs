@@ -18,19 +18,13 @@ use trulience_db::repositories::{IntegrityScanRepo, ModelChecksumRepo};
 
 use crate::error::AppResult;
 use crate::middleware::auth::AuthUser;
+use crate::query::PaginationParams;
 use crate::response::DataResponse;
 use crate::state::AppState;
 
 // ---------------------------------------------------------------------------
 // Query types
 // ---------------------------------------------------------------------------
-
-/// Query parameters for paginated scan/checksum listing.
-#[derive(Debug, Deserialize)]
-pub struct PaginationParams {
-    pub limit: Option<i64>,
-    pub offset: Option<i64>,
-}
 
 /// Query parameters for listing checksums with optional type filter.
 #[derive(Debug, Deserialize)]

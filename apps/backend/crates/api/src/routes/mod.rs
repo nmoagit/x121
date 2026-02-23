@@ -3,6 +3,7 @@ pub mod approval;
 pub mod assets;
 pub mod audit;
 pub mod auth;
+pub mod branching;
 pub mod bug_reports;
 pub mod character;
 pub mod character_metadata;
@@ -16,6 +17,7 @@ pub mod duplicates;
 pub mod embedding;
 pub mod estimation;
 pub mod extensions;
+pub mod failure_analytics;
 pub mod generation;
 pub mod external_api;
 pub mod hardware;
@@ -38,6 +40,7 @@ pub mod presets;
 pub mod proficiency;
 pub mod production_run;
 pub mod project;
+pub mod project_config;
 pub mod prompt_editor;
 pub mod provenance;
 pub mod quality_gates;
@@ -515,6 +518,28 @@ use crate::ws;
 /// /hooks/{id}/logs                                           execution logs (GET, PRD-77)
 /// /hooks/effective/{scope_type}/{scope_id}                    effective hooks (GET, PRD-77)
 /// /jobs/{id}/hook-logs                                        job hook logs (GET, PRD-77)
+///
+/// /project-configs                                            list, create (GET, POST, PRD-74)
+/// /project-configs/recommended                                recommended configs (GET, PRD-74)
+/// /project-configs/{id}                                       get, update, delete (GET, PUT, DELETE, PRD-74)
+/// /project-configs/import                                     import config (POST, PRD-74)
+/// /project-configs/{id}/diff/{project_id}                     diff config (POST, PRD-74)
+/// /projects/{id}/export-config                                export project config (POST, PRD-74)
+///
+/// /analytics/failure-patterns                                  list patterns (GET, PRD-64)
+/// /analytics/failure-patterns/{id}                             get pattern (GET, PRD-64)
+/// /analytics/failure-heatmap                                   heatmap data (GET, PRD-64)
+/// /analytics/failure-trends                                    trend data (GET, PRD-64)
+/// /analytics/failure-alerts                                    alert check (GET, PRD-64)
+/// /failure-patterns/{id}/fixes                                 create, list fixes (POST, GET, PRD-64)
+/// /failure-patterns/fixes/{id}/effectiveness                   update effectiveness (PATCH, PRD-64)
+///
+/// /scenes/{scene_id}/branches                                  list branches (GET, PRD-50)
+/// /scenes/{scene_id}/branch                                    create branch (POST, PRD-50)
+/// /branches/stale                                              stale branches (GET, PRD-50)
+/// /branches/{id}                                               get, update, delete (GET, PUT, DELETE, PRD-50)
+/// /branches/{id}/promote                                       promote to default (POST, PRD-50)
+/// /branches/{id}/compare/{other_id}                            compare branches (GET, PRD-50)
 /// ```
 pub fn api_routes() -> Router<AppState> {
     Router::new()
@@ -570,13 +595,14 @@ pub fn api_routes() -> Router<AppState> {
             .merge(delivery::export_router())
             .merge(quality_gates::threshold_router())
             .merge(temporal::project_temporal_router())
+            .merge(project_config::project_export_router())
             .nest("/{project_id}/characters", character_metadata::project_router()))
         // Character-scoped sub-resources (images, scenes, metadata editor, face embedding).
         .nest("/characters", character::router()
             .merge(metadata::character_metadata_router())
             .merge(character_metadata::character_router())
             .merge(embedding::embedding_router()))
-        // Scene-scoped sub-resources (segments, review queue, generation PRD-24, QA PRD-49, resolution PRD-59, storyboard PRD-62).
+        // Scene-scoped sub-resources (segments, review queue, generation PRD-24, QA PRD-49, resolution PRD-59, storyboard PRD-62, branching PRD-50).
         .nest("/scenes", scene::router()
             .merge(metadata::scene_metadata_router())
             .merge(approval::scene_review_router())
@@ -584,7 +610,8 @@ pub fn api_routes() -> Router<AppState> {
             .merge(quality_gates::scene_qa_router())
             .merge(temporal::scene_temporal_router())
             .merge(resolution::scene_resolution_router())
-            .merge(storyboard::scene_storyboard_router()))
+            .merge(storyboard::scene_storyboard_router())
+            .merge(branching::scene_branch_router()))
         // Segment-scoped approval actions (approve, reject, flag) (PRD-35).
         // Segment-scoped review notes and tags (PRD-38).
         // Segment-scoped boundary frame selection (PRD-24).
@@ -707,4 +734,12 @@ pub fn api_routes() -> Router<AppState> {
         .nest("/prompt-library", prompt_editor::prompt_library_router())
         // Pipeline Stage Hooks (PRD-77).
         .nest("/hooks", pipeline_hooks::hooks_router())
+        // Project Configuration Templates (PRD-74).
+        .nest("/project-configs", project_config::project_config_router()
+            .merge(project_config::project_config_diff_router()))
+        // Failure Pattern Tracking & Insights (PRD-64).
+        .nest("/analytics", failure_analytics::analytics_router())
+        .nest("/failure-patterns", failure_analytics::pattern_fixes_router())
+        // Content Branching & Exploration (PRD-50).
+        .nest("/branches", branching::branch_router())
 }

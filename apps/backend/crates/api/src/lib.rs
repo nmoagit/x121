@@ -12,6 +12,7 @@ pub mod error;
 pub mod handlers;
 pub mod middleware;
 pub mod notifications;
+pub mod query;
 pub mod response;
 pub mod router;
 pub mod routes;
