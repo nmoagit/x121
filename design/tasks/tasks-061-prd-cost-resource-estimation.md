@@ -50,9 +50,9 @@ CREATE TRIGGER set_updated_at BEFORE UPDATE ON generation_metrics
 ```
 
 **Acceptance Criteria:**
-- [ ] Tracks average GPU time and disk per segment per workflow per tier
-- [ ] Sample count for confidence assessment
-- [ ] Unique per workflow + tier combination
+- [x] Tracks average GPU time and disk per segment per workflow per tier
+- [x] Sample count for confidence assessment
+- [x] Unique per workflow + tier combination
 
 ---
 
@@ -98,10 +98,10 @@ pub async fn estimate_batch(pool: &sqlx::PgPool, scenes: &[SceneConfig]) -> Resu
 ```
 
 **Acceptance Criteria:**
-- [ ] Per-scene: segments, GPU time, disk space
-- [ ] Batch: total GPU-hours, wall-clock with workers, disk
-- [ ] Confidence levels based on sample count
-- [ ] Response <1 second for 200 scenes
+- [x] Per-scene: segments, GPU time, disk space
+- [x] Batch: total GPU-hours, wall-clock with workers, disk
+- [x] Confidence levels based on sample count
+- [x] Response <1 second for 200 scenes
 
 ### Task 2.3: Metric Collection Hook
 **File:** `src/services/estimation_service.rs`
@@ -114,9 +114,9 @@ pub async fn record_generation_metric(pool: &sqlx::PgPool, workflow_id: DbId, ti
 ```
 
 **Acceptance Criteria:**
-- [ ] Records actual times after each segment generation
-- [ ] Incremental average update (not full recalculation)
-- [ ] Accuracy improves with more data
+- [x] Records actual times after each segment generation
+- [x] Incremental average update (not full recalculation)
+- [x] Accuracy improves with more data
 
 ---
 
@@ -134,10 +134,10 @@ pub async fn record_generation_metric(pool: &sqlx::PgPool, workflow_id: DbId, ti
 **File:** `frontend/src/components/estimation/EstimationCard.tsx`
 
 **Acceptance Criteria:**
-- [ ] Summary card on submission screen
-- [ ] Breakdown by scene type
-- [ ] Confidence indicator (high/medium/low)
-- [ ] "No estimate available" for new workflows
+- [x] Summary card on submission screen
+- [x] Breakdown by scene type
+- [x] Confidence indicator (high/medium/low)
+- [x] "No estimate available" for new workflows
 
 ---
 
@@ -147,9 +147,9 @@ pub async fn record_generation_metric(pool: &sqlx::PgPool, workflow_id: DbId, ti
 **File:** `tests/estimation_test.rs`
 
 **Acceptance Criteria:**
-- [ ] Estimates within expected ranges for known workflows
-- [ ] New workflows return no-estimate
-- [ ] Batch estimate factors in worker count
+- [x] Estimates within expected ranges for known workflows
+- [x] New workflows return no-estimate
+- [x] Batch estimate factors in worker count
 
 ---
 

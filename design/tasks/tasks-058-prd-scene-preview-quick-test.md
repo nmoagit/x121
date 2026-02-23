@@ -57,9 +57,9 @@ CREATE TRIGGER set_updated_at BEFORE UPDATE ON test_shots
 ```
 
 **Acceptance Criteria:**
-- [ ] Test shots linked to scene type and character
-- [ ] Full generation parameters stored as JSONB
-- [ ] Promotion tracking with link to scene
+- [x] Test shots linked to scene type and character
+- [x] Full generation parameters stored as JSONB
+- [x] Promotion tracking with link to scene
 
 ---
 
@@ -85,10 +85,10 @@ pub async fn batch_test_shots(pool: &sqlx::PgPool, scene_type_id: DbId, characte
 ```
 
 **Acceptance Criteria:**
-- [ ] Single segment generation using PRD-024 pipeline
-- [ ] Batch dispatch across characters
-- [ ] QA runs on results
-- [ ] Available in ~30-60 seconds (GPU-dependent)
+- [x] Single segment generation using PRD-024 pipeline
+- [x] Batch dispatch across characters
+- [x] QA runs on results
+- [x] Available in ~30-60 seconds (GPU-dependent)
 
 ### Task 2.2: Promotion Service
 **File:** `src/services/test_shot_promotion_service.rs`
@@ -104,9 +104,9 @@ pub async fn promote_test_shot(pool: &sqlx::PgPool, test_shot_id: DbId, scene_id
 ```
 
 **Acceptance Criteria:**
-- [ ] Test shot becomes segment 001 of the scene
-- [ ] Last frame used as seed for segment 002
-- [ ] Saves GPU time of re-generating first segment
+- [x] Test shot becomes segment 001 of the scene
+- [x] Last frame used as seed for segment 002
+- [x] Saves GPU time of re-generating first segment
 
 ---
 
@@ -126,16 +126,16 @@ pub async fn promote_test_shot(pool: &sqlx::PgPool, test_shot_id: DbId, scene_id
 **File:** `frontend/src/components/test-shots/TestShotGallery.tsx`
 
 **Acceptance Criteria:**
-- [ ] Gallery of test shots with parameter display
-- [ ] Sortable by date, character, quality
-- [ ] Side-by-side comparison via PRD-036
+- [x] Gallery of test shots with parameter display
+- [x] Sortable by date, character, quality
+- [x] Side-by-side comparison via PRD-036
 
 ### Task 3.3: Test Shot Button
 **File:** `frontend/src/components/test-shots/TestShotButton.tsx`
 
 **Acceptance Criteria:**
-- [ ] Prominent "Test Shot" button on scene type config and scene views
-- [ ] Quick toggle between configurations for comparison
+- [x] Prominent "Test Shot" button on scene type config and scene views
+- [x] Quick toggle between configurations for comparison
 
 ---
 
@@ -145,9 +145,9 @@ pub async fn promote_test_shot(pool: &sqlx::PgPool, test_shot_id: DbId, scene_id
 **File:** `tests/test_shot_test.rs`
 
 **Acceptance Criteria:**
-- [ ] Test shot generates single segment
-- [ ] Promotion correctly creates segment 001
-- [ ] Batch test shots parallelize
+- [x] Test shot generates single segment
+- [x] Promotion correctly creates segment 001
+- [x] Batch test shots parallelize
 
 ---
 

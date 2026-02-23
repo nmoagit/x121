@@ -21,10 +21,10 @@ Source of truth: [`design/design.md`](../design.md)
 | Status | Count |
 |--------|-------|
 | backlog | 0 |
-| planning | 49 |
+| planning | 46 |
 | in-progress | 0 |
 | review | 0 |
-| done | 61 |
+| done | 64 |
 | blocked | 0 |
 | deferred | 0 |
 | maybe | 15 |
@@ -102,10 +102,10 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-49 | Automated Quality Gates | — | `done` | 2026-02-22 | |
 | PRD-50 | Content Branching & Exploration | — | `planning` | — | |
 | PRD-57 | Batch Production Orchestrator | — | `done` | 2026-02-23 | Migration (production_runs, production_run_cells), core module (run/cell status constants, matrix validation, delivery readiness, cell status computation, 21 tests), production run DTOs (typed response structs), production_run_repo (batch cell insert via UNNEST, status counting), 9 API endpoints (CRUD, matrix, submit, resubmit, deliver, progress), frontend feature (MatrixGrid, ProductionProgress, 15 tests). DRY-264/265/266 resolved. |
-| PRD-58 | Scene Preview & Quick Test | — | `planning` | — | |
-| PRD-59 | Multi-Resolution Pipeline | — | `planning` | — | |
+| PRD-58 | Scene Preview & Quick Test | — | `done` | 2026-02-23 | Migration (test_shots table), core module (test shot validation, status enum, 13 tests), DB models+repo (gallery query, promotion, batch), 6 API endpoints (generate, batch, gallery, detail, promote, delete), frontend feature (TestShotGallery, TestShotButton with Modal, 8 tests). DRY-279 fixed (Modal reuse). |
+| PRD-59 | Multi-Resolution Pipeline | — | `done` | 2026-02-23 | 2 migrations (resolution_tiers seed + scene tier columns), core module (tier constants, upscale/delivery validation, 13 tests), DB models+repo (tier CRUD, scene tier update), 5 API endpoints (list/get/create tiers, upscale, get scene tier), frontend feature (TierBadge, UpscaleButton, 7 tests). DRY-274/275 fixed. |
 | PRD-60 | Character Library (Cross-Project) | — | `done` | 2026-02-22 | 2 migrations (library_characters, project_links), core module (10 tests), 2 repos, 10 API endpoints, frontend browser + import (11 tests). |
-| PRD-61 | Cost & Resource Estimation | — | `planning` | — | |
+| PRD-61 | Cost & Resource Estimation | — | `done` | 2026-02-23 | Migration (generation_metrics with upsert), core module (estimation engine, confidence levels, incremental mean, 22 tests), DB models+repo (upsert with ON CONFLICT incremental mean, batch lookup), 3 API endpoints (estimate, history, record), frontend feature (EstimationCard with breakdown, 7 tests). DRY-277/280 fixed. |
 | PRD-62 | Storyboard View & Scene Thumbnails | — | `planning` | — | |
 | PRD-63 | Prompt Editor & Versioning | — | `planning` | — | |
 | PRD-64 | Failure Pattern Tracking & Insights | — | `planning` | — | |

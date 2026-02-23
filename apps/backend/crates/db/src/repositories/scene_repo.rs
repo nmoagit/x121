@@ -12,6 +12,7 @@ const COLUMNS: &str = "id, character_id, scene_type_id, image_variant_id, \
     total_segments_estimated, total_segments_completed, \
     actual_duration_secs, transition_segment_index, \
     generation_started_at, generation_completed_at, \
+    resolution_tier_id, upscaled_from_scene_id, \
     deleted_at, created_at, updated_at";
 
 /// Provides CRUD operations for scenes.

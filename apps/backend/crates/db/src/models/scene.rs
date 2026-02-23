@@ -22,6 +22,9 @@ pub struct Scene {
     pub transition_segment_index: Option<i32>,
     pub generation_started_at: Option<Timestamp>,
     pub generation_completed_at: Option<Timestamp>,
+    // -- Resolution tier (PRD-59) --
+    pub resolution_tier_id: Option<DbId>,
+    pub upscaled_from_scene_id: Option<DbId>,
     // -- Timestamps --
     pub deleted_at: Option<Timestamp>,
     pub created_at: Timestamp,

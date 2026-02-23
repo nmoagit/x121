@@ -14,6 +14,7 @@ pub mod delivery;
 pub mod downloads;
 pub mod duplicates;
 pub mod embedding;
+pub mod estimation;
 pub mod extensions;
 pub mod generation;
 pub mod external_api;
@@ -39,6 +40,7 @@ pub mod project;
 pub mod quality_gates;
 pub mod queue;
 pub mod reclamation;
+pub mod resolution;
 pub mod restitching;
 pub mod review_notes;
 pub mod scene;
@@ -48,6 +50,7 @@ pub mod search;
 pub mod storage;
 pub mod tags;
 pub mod temporal;
+pub mod test_shot;
 pub mod themes;
 pub mod trash;
 pub mod undo_tree;
@@ -455,6 +458,20 @@ use crate::ws;
 /// /production-runs/{id}/deliver                                 deliver run (POST, PRD-57)
 /// /production-runs/{id}/progress                                progress stats (GET, PRD-57)
 ///
+/// /test-shots                                                  generate, list gallery (POST, GET, PRD-58)
+/// /test-shots/batch                                            batch generate (POST, PRD-58)
+/// /test-shots/{id}                                             get, delete (GET, DELETE, PRD-58)
+/// /test-shots/{id}/promote                                     promote to scene (POST, PRD-58)
+///
+/// /resolution-tiers                                            list, create (GET, POST, PRD-59)
+/// /resolution-tiers/{id}                                       get tier (GET, PRD-59)
+/// /scenes/{id}/upscale                                         upscale scene (POST, PRD-59)
+/// /scenes/{id}/tier                                            get scene tier (GET, PRD-59)
+///
+/// /estimates                                                   compute batch estimate (POST, PRD-61)
+/// /estimates/history                                           calibration data (GET, PRD-61)
+/// /estimates/record                                            record metric (POST, PRD-61)
+///
 /// /scenes/{scene_id}/temporal-metrics                          scene temporal metrics (GET, PRD-26)
 /// /segments/{id}/temporal-metric                               segment temporal metric (GET, PRD-26)
 /// /segments/{id}/analyze-drift                                 analyze drift (POST, PRD-26)
@@ -522,13 +539,14 @@ pub fn api_routes() -> Router<AppState> {
             .merge(metadata::character_metadata_router())
             .merge(character_metadata::character_router())
             .merge(embedding::embedding_router()))
-        // Scene-scoped sub-resources (segments, review queue, generation PRD-24, QA PRD-49).
+        // Scene-scoped sub-resources (segments, review queue, generation PRD-24, QA PRD-49, resolution PRD-59).
         .nest("/scenes", scene::router()
             .merge(metadata::scene_metadata_router())
             .merge(approval::scene_review_router())
             .merge(generation::generation_scene_router())
             .merge(quality_gates::scene_qa_router())
-            .merge(temporal::scene_temporal_router()))
+            .merge(temporal::scene_temporal_router())
+            .merge(resolution::scene_resolution_router()))
         // Segment-scoped approval actions (approve, reject, flag) (PRD-35).
         // Segment-scoped review notes and tags (PRD-38).
         // Segment-scoped boundary frame selection (PRD-24).
@@ -627,4 +645,10 @@ pub fn api_routes() -> Router<AppState> {
         .nest("/user/api-tokens", downloads::token_router())
         // Batch Production Orchestrator (PRD-57).
         .nest("/production-runs", production_run::router())
+        // Scene Preview & Quick Test (PRD-58).
+        .nest("/test-shots", test_shot::test_shot_router())
+        // Multi-Resolution Pipeline (PRD-59).
+        .nest("/resolution-tiers", resolution::resolution_router())
+        // Cost & Resource Estimation (PRD-61).
+        .nest("/estimates", estimation::estimation_router())
 }

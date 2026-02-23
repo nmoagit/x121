@@ -64,10 +64,10 @@ CREATE INDEX idx_scenes_upscaled_from_scene_id ON scenes(upscaled_from_scene_id)
 ```
 
 **Acceptance Criteria:**
-- [ ] Built-in tiers: Draft, Preview, Production
-- [ ] Custom tiers configurable by Admin
-- [ ] Scene-level tier tracking
-- [ ] Upscale linkage between scenes
+- [x] Built-in tiers: Draft, Preview, Production
+- [x] Custom tiers configurable by Admin
+- [x] Scene-level tier tracking
+- [x] Upscale linkage between scenes
 
 ---
 
@@ -87,18 +87,18 @@ pub async fn upscale_scene(pool: &sqlx::PgPool, scene_id: DbId, target_tier_id: 
 ```
 
 **Acceptance Criteria:**
-- [ ] One-click upscale from Draft/Preview to Production
-- [ ] Same seeds, parameters, just higher resolution
-- [ ] Progress tracking during upscale
-- [ ] Links maintained between tier versions
+- [x] One-click upscale from Draft/Preview to Production
+- [x] Same seeds, parameters, just higher resolution
+- [x] Progress tracking during upscale
+- [x] Links maintained between tier versions
 
 ### Task 2.2: Delivery Enforcement
 **File:** `src/services/delivery_enforcement.rs`
 
 **Acceptance Criteria:**
-- [ ] PRD-039 delivery rejects non-Production content
-- [ ] Clear warning if attempting non-Production delivery
-- [ ] Resolution tier badge visible on all scene cards
+- [x] PRD-039 delivery rejects non-Production content
+- [x] Clear warning if attempting non-Production delivery
+- [x] Resolution tier badge visible on all scene cards
 
 ---
 
@@ -116,9 +116,9 @@ pub async fn upscale_scene(pool: &sqlx::PgPool, scene_id: DbId, target_tier_id: 
 **File:** `frontend/src/components/resolution/TierBadge.tsx`
 
 **Acceptance Criteria:**
-- [ ] Badge on every scene card: "Draft", "Preview", "Production"
-- [ ] Upscale button prominent on approved Draft scenes
-- [ ] Tier selectable on job submission
+- [x] Badge on every scene card: "Draft", "Preview", "Production"
+- [x] Upscale button prominent on approved Draft scenes
+- [x] Tier selectable on job submission
 
 ---
 
@@ -128,9 +128,9 @@ pub async fn upscale_scene(pool: &sqlx::PgPool, scene_id: DbId, target_tier_id: 
 **File:** `tests/resolution_tier_test.rs`
 
 **Acceptance Criteria:**
-- [ ] Tier selection stored correctly
-- [ ] Upscale creates linked scene at higher tier
-- [ ] Delivery enforcement blocks non-Production
+- [x] Tier selection stored correctly
+- [x] Upscale creates linked scene at higher tier
+- [x] Delivery enforcement blocks non-Production
 
 ---
 
