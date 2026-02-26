@@ -334,7 +334,11 @@ mod tests {
 
     #[test]
     fn delivery_readiness_all_approved() {
-        let cells = vec![CellStatus::Approved, CellStatus::Approved, CellStatus::Delivered];
+        let cells = vec![
+            CellStatus::Approved,
+            CellStatus::Approved,
+            CellStatus::Delivered,
+        ];
         assert!(validate_delivery_readiness(&cells).is_ok());
     }
 

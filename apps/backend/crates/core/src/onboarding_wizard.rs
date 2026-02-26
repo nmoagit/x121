@@ -191,8 +191,7 @@ pub fn validate_step_data(step: u8, data: &serde_json::Value) -> Result<(), Core
                 .map_or(false, |a| !a.is_empty());
             if !has_files && !has_csv {
                 return Err(CoreError::Validation(
-                    "Step 1 (Upload) requires either 'files' or 'csv_characters' data"
-                        .to_string(),
+                    "Step 1 (Upload) requires either 'files' or 'csv_characters' data".to_string(),
                 ));
             }
         }

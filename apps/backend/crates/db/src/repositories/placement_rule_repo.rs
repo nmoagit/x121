@@ -1,7 +1,7 @@
 //! Repository for the `placement_rules` table (PRD-104).
 
 use sqlx::PgPool;
-use trulience_core::types::DbId;
+use x121_core::types::DbId;
 
 use crate::models::placement_rule::{CreatePlacementRule, PlacementRule, UpdatePlacementRule};
 
@@ -34,10 +34,7 @@ impl PlacementRuleRepo {
     }
 
     /// Find a placement rule by ID.
-    pub async fn find_by_id(
-        pool: &PgPool,
-        id: DbId,
-    ) -> Result<Option<PlacementRule>, sqlx::Error> {
+    pub async fn find_by_id(pool: &PgPool, id: DbId) -> Result<Option<PlacementRule>, sqlx::Error> {
         let query = format!("SELECT {COLUMNS} FROM placement_rules WHERE id = $1");
         sqlx::query_as::<_, PlacementRule>(&query)
             .bind(id)
@@ -113,8 +110,10 @@ impl PlacementRuleRepo {
             .into_iter()
             .map(|r| (r.model_type, r.base_model, r.target_directory, r.priority))
             .collect();
-        Ok(trulience_core::download_manager::resolve_target_directory(
-            model_type, base_model, &rule_tuples,
+        Ok(x121_core::download_manager::resolve_target_directory(
+            model_type,
+            base_model,
+            &rule_tuples,
         ))
     }
 }

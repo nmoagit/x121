@@ -22,8 +22,7 @@ pub fn storyboard_router() -> Router<AppState> {
         .route("/", post(storyboard::create_keyframe))
         .route(
             "/segment/{segment_id}",
-            get(storyboard::list_segment_keyframes)
-                .delete(storyboard::delete_segment_keyframes),
+            get(storyboard::list_segment_keyframes).delete(storyboard::delete_segment_keyframes),
         )
 }
 

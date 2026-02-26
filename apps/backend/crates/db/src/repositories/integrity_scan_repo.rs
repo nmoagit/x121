@@ -1,7 +1,7 @@
 //! Repository for the `integrity_scans` table (PRD-43).
 
 use sqlx::PgPool;
-use trulience_core::types::DbId;
+use x121_core::types::DbId;
 
 use crate::models::integrity_scan::{
     CreateIntegrityScan, IntegrityScan, UpdateIntegrityScanResults,
@@ -36,10 +36,7 @@ impl IntegrityScanRepo {
     }
 
     /// Find a single integrity scan by ID.
-    pub async fn find_by_id(
-        pool: &PgPool,
-        id: DbId,
-    ) -> Result<Option<IntegrityScan>, sqlx::Error> {
+    pub async fn find_by_id(pool: &PgPool, id: DbId) -> Result<Option<IntegrityScan>, sqlx::Error> {
         let query = format!("SELECT {COLUMNS} FROM integrity_scans WHERE id = $1");
         sqlx::query_as::<_, IntegrityScan>(&query)
             .bind(id)

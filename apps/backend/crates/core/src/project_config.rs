@@ -50,14 +50,12 @@ pub fn validate_config_json(json: &serde_json::Value) -> Result<(), CoreError> {
         .ok_or_else(|| CoreError::Validation("config_json must be a JSON object".to_string()))?;
 
     let scene_types = obj.get("scene_types").ok_or_else(|| {
-        CoreError::Validation(
-            "config_json must contain a 'scene_types' key".to_string(),
-        )
+        CoreError::Validation("config_json must contain a 'scene_types' key".to_string())
     })?;
 
-    let arr = scene_types.as_array().ok_or_else(|| {
-        CoreError::Validation("'scene_types' must be an array".to_string())
-    })?;
+    let arr = scene_types
+        .as_array()
+        .ok_or_else(|| CoreError::Validation("'scene_types' must be an array".to_string()))?;
 
     if arr.len() > MAX_SCENE_TYPES_PER_CONFIG {
         return Err(CoreError::Validation(format!(
@@ -290,9 +288,7 @@ mod tests {
                 {"name": "wide-shot"}
             ]
         });
-        assert!(
-            validate_selective_import(&cfg, &["close-up".to_string()]).is_ok()
-        );
+        assert!(validate_selective_import(&cfg, &["close-up".to_string()]).is_ok());
     }
 
     #[test]
@@ -300,9 +296,7 @@ mod tests {
         let cfg = json!({
             "scene_types": [{"name": "close-up"}]
         });
-        assert!(
-            validate_selective_import(&cfg, &["wide-shot".to_string()]).is_err()
-        );
+        assert!(validate_selective_import(&cfg, &["wide-shot".to_string()]).is_err());
     }
 
     #[test]
@@ -314,9 +308,7 @@ mod tests {
     #[test]
     fn selective_import_no_scene_types_rejects_any_selection() {
         let cfg = json!({ "other": "data" });
-        assert!(
-            validate_selective_import(&cfg, &["close-up".to_string()]).is_err()
-        );
+        assert!(validate_selective_import(&cfg, &["close-up".to_string()]).is_err());
     }
 
     // -- compute_config_diff ------------------------------------------------
@@ -404,5 +396,4 @@ mod tests {
         let diff = compute_config_diff(&current, &incoming);
         assert!(diff.is_empty());
     }
-
 }

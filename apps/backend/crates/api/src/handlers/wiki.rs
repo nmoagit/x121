@@ -8,17 +8,17 @@ use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::Json;
 
-use trulience_core::error::CoreError;
-use trulience_core::search::{clamp_limit, clamp_offset, DEFAULT_SEARCH_LIMIT, MAX_SEARCH_LIMIT};
-use trulience_core::wiki::{
+use x121_core::error::CoreError;
+use x121_core::search::{clamp_limit, clamp_offset, DEFAULT_SEARCH_LIMIT, MAX_SEARCH_LIMIT};
+use x121_core::wiki::{
     compute_line_diff, generate_slug, validate_category, validate_content, validate_pin_location,
     validate_slug, validate_tags, validate_title, DiffLineType,
 };
-use trulience_db::models::wiki_article::{
+use x121_db::models::wiki_article::{
     ContextualHelpResponse, CreateWikiArticle, DiffLineDto, DiffRequest, DiffResponse,
     UpdateWikiArticle, WikiArticle,
 };
-use trulience_db::repositories::{WikiArticleRepo, WikiVersionRepo};
+use x121_db::repositories::{WikiArticleRepo, WikiVersionRepo};
 
 use crate::error::{AppError, AppResult};
 use crate::middleware::auth::AuthUser;
@@ -26,8 +26,8 @@ use crate::response::DataResponse;
 use crate::state::AppState;
 
 /* --------------------------------------------------------------------------
-   Query param types
-   -------------------------------------------------------------------------- */
+Query param types
+-------------------------------------------------------------------------- */
 
 #[derive(Debug, serde::Deserialize)]
 pub struct ListArticlesParams {
@@ -44,8 +44,8 @@ pub struct SearchParams {
 }
 
 /* --------------------------------------------------------------------------
-   Helpers
-   -------------------------------------------------------------------------- */
+Helpers
+-------------------------------------------------------------------------- */
 
 /// Fetch an article by slug or return 404.
 async fn ensure_article_by_slug(pool: &sqlx::PgPool, slug: &str) -> AppResult<WikiArticle> {
@@ -60,8 +60,8 @@ async fn ensure_article_by_slug(pool: &sqlx::PgPool, slug: &str) -> AppResult<Wi
 }
 
 /* --------------------------------------------------------------------------
-   Article CRUD
-   -------------------------------------------------------------------------- */
+Article CRUD
+-------------------------------------------------------------------------- */
 
 /// GET /wiki/articles
 ///
@@ -121,8 +121,7 @@ pub async fn create_article(
         None => generate_slug(&input.title),
     };
 
-    let article =
-        WikiArticleRepo::create(&state.pool, &input, &slug, Some(auth.user_id)).await?;
+    let article = WikiArticleRepo::create(&state.pool, &input, &slug, Some(auth.user_id)).await?;
 
     tracing::info!(
         user_id = auth.user_id,
@@ -173,8 +172,7 @@ pub async fn update_article(
         validate_pin_location(loc).map_err(AppError::Core)?;
     }
 
-    let article =
-        WikiArticleRepo::update(&state.pool, &slug, &input, Some(auth.user_id)).await?;
+    let article = WikiArticleRepo::update(&state.pool, &slug, &input, Some(auth.user_id)).await?;
 
     tracing::info!(
         user_id = auth.user_id,
@@ -215,8 +213,8 @@ pub async fn delete_article(
 }
 
 /* --------------------------------------------------------------------------
-   Versions
-   -------------------------------------------------------------------------- */
+Versions
+-------------------------------------------------------------------------- */
 
 /// GET /wiki/articles/{slug}/versions
 ///
@@ -289,8 +287,8 @@ pub async fn revert_to_version(
 }
 
 /* --------------------------------------------------------------------------
-   Diff
-   -------------------------------------------------------------------------- */
+Diff
+-------------------------------------------------------------------------- */
 
 /// GET /wiki/articles/{slug}/diff?v1=X&v2=Y
 ///
@@ -345,8 +343,8 @@ pub async fn diff_versions(
 }
 
 /* --------------------------------------------------------------------------
-   Search
-   -------------------------------------------------------------------------- */
+Search
+-------------------------------------------------------------------------- */
 
 /// GET /wiki/articles/search?q=query&limit=N
 ///
@@ -369,8 +367,8 @@ pub async fn search_articles(
 }
 
 /* --------------------------------------------------------------------------
-   Contextual help
-   -------------------------------------------------------------------------- */
+Contextual help
+-------------------------------------------------------------------------- */
 
 /// GET /wiki/articles/help/{element_id}
 ///
@@ -390,8 +388,8 @@ pub async fn get_contextual_help(
 }
 
 /* --------------------------------------------------------------------------
-   Pinned articles
-   -------------------------------------------------------------------------- */
+Pinned articles
+-------------------------------------------------------------------------- */
 
 /// GET /wiki/articles/pinned
 ///

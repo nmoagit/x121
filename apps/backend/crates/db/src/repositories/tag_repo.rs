@@ -4,7 +4,7 @@
 //! bulk operations, and tag-based entity filtering.
 
 use sqlx::PgPool;
-use trulience_core::types::DbId;
+use x121_core::types::DbId;
 
 use crate::models::tag::{
     BulkTagResult, Tag, TagFilterLogic, TagInfo, TagListParams, TagSuggestion,

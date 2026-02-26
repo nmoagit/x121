@@ -5,11 +5,11 @@
 
 use axum::extract::ws::Message;
 use sqlx::PgPool;
-use trulience_comfyui::events::ComfyUIEvent;
-use trulience_core::job_events::{
+use x121_comfyui::events::ComfyUIEvent;
+use x121_core::job_events::{
     MSG_TYPE_JOB_CANCELLED, MSG_TYPE_JOB_COMPLETED, MSG_TYPE_JOB_FAILED, MSG_TYPE_JOB_PROGRESS,
 };
-use trulience_db::repositories::JobRepo;
+use x121_db::repositories::JobRepo;
 
 use crate::ws::WsManager;
 

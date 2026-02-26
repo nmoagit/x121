@@ -1,7 +1,7 @@
 //! Repository for the `events` and `event_types` tables.
 
 use sqlx::PgPool;
-use trulience_core::types::DbId;
+use x121_core::types::DbId;
 
 use crate::models::event::{Event, EventType};
 

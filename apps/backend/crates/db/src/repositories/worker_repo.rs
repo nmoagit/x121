@@ -1,7 +1,7 @@
 //! Repository for the `workers` and `worker_health_log` tables (PRD-46).
 
 use sqlx::PgPool;
-use trulience_core::types::DbId;
+use x121_core::types::DbId;
 
 use crate::models::status::{StatusId, WorkerStatus};
 use crate::models::worker::{
@@ -80,9 +80,7 @@ impl WorkerRepo {
     /// List all workers ordered by name (admin view).
     pub async fn list(pool: &PgPool) -> Result<Vec<Worker>, sqlx::Error> {
         let query = format!("SELECT {COLUMNS} FROM workers ORDER BY name ASC");
-        sqlx::query_as::<_, Worker>(&query)
-            .fetch_all(pool)
-            .await
+        sqlx::query_as::<_, Worker>(&query).fetch_all(pool).await
     }
 
     /// List only available workers: idle, enabled, approved, not decommissioned.
@@ -220,9 +218,7 @@ impl WorkerRepo {
                 COUNT(*) FILTER (WHERE is_approved = true) AS approved_workers, \
                 COUNT(*) FILTER (WHERE is_enabled = true) AS enabled_workers \
             FROM workers";
-        sqlx::query_as::<_, FleetStats>(query)
-            .fetch_one(pool)
-            .await
+        sqlx::query_as::<_, FleetStats>(query).fetch_one(pool).await
     }
 
     // ── Health log ───────────────────────────────────────────────────────

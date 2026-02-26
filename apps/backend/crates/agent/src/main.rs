@@ -1,7 +1,7 @@
-//! `trulience-agent` -- lightweight GPU metrics daemon.
+//! `x121-agent` -- lightweight GPU metrics daemon.
 //!
 //! Runs on GPU worker machines, collects NVIDIA GPU metrics via NVML,
-//! and pushes them to the Trulience backend over WebSocket.  Also
+//! and pushes them to the X121 backend over WebSocket.  Also
 //! listens for service restart commands from the backend.
 //!
 //! # Environment variables
@@ -14,8 +14,8 @@
 
 use std::time::Duration;
 
-use trulience_agent::collector;
-use trulience_agent::sender;
+use x121_agent::collector;
+use x121_agent::sender;
 
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
@@ -29,7 +29,7 @@ async fn main() {
     tracing_subscriber::registry()
         .with(
             tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| "trulience_agent=info".into()),
+                .unwrap_or_else(|_| "x121_agent=info".into()),
         )
         .with(tracing_subscriber::fmt::layer())
         .init();
@@ -61,7 +61,7 @@ async fn main() {
         worker_id,
         ws_url = %ws_url,
         interval_secs,
-        "Starting trulience-agent",
+        "Starting x121-agent",
     );
 
     let collector = collector::MetricsCollector::new();

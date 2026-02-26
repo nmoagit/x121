@@ -1,7 +1,7 @@
 //! Repository for the `model_downloads` table (PRD-104).
 
 use sqlx::PgPool;
-use trulience_core::types::DbId;
+use x121_core::types::DbId;
 
 use crate::models::model_download::{CreateModelDownload, ModelDownload};
 use crate::models::status::{DownloadStatus, StatusId};
@@ -43,17 +43,19 @@ impl ModelDownloadRepo {
             .bind(input.file_size_bytes)
             .bind(&input.target_path)
             .bind(&input.expected_hash)
-            .bind(input.source_metadata.as_ref().unwrap_or(&serde_json::json!({})))
+            .bind(
+                input
+                    .source_metadata
+                    .as_ref()
+                    .unwrap_or(&serde_json::json!({})),
+            )
             .bind(input.initiated_by)
             .fetch_one(pool)
             .await
     }
 
     /// Find a model download by ID.
-    pub async fn find_by_id(
-        pool: &PgPool,
-        id: DbId,
-    ) -> Result<Option<ModelDownload>, sqlx::Error> {
+    pub async fn find_by_id(pool: &PgPool, id: DbId) -> Result<Option<ModelDownload>, sqlx::Error> {
         let query = format!("SELECT {COLUMNS} FROM model_downloads WHERE id = $1");
         sqlx::query_as::<_, ModelDownload>(&query)
             .bind(id)
@@ -118,13 +120,11 @@ impl ModelDownloadRepo {
         id: DbId,
         status_id: StatusId,
     ) -> Result<bool, sqlx::Error> {
-        let result = sqlx::query(
-            "UPDATE model_downloads SET status_id = $2 WHERE id = $1",
-        )
-        .bind(id)
-        .bind(status_id)
-        .execute(pool)
-        .await?;
+        let result = sqlx::query("UPDATE model_downloads SET status_id = $2 WHERE id = $1")
+            .bind(id)
+            .bind(status_id)
+            .execute(pool)
+            .await?;
         Ok(result.rows_affected() > 0)
     }
 

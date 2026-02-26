@@ -1,8 +1,8 @@
 //! Repository for the `duplicate_checks` table (PRD-79).
 
 use sqlx::PgPool;
-use trulience_core::duplicate_detection;
-use trulience_core::types::DbId;
+use x121_core::duplicate_detection;
+use x121_core::types::DbId;
 
 use crate::models::duplicate_check::{CreateDuplicateCheck, DuplicateCheck};
 use crate::models::status::StatusId;
@@ -42,13 +42,8 @@ impl DuplicateCheckRepo {
     }
 
     /// Find a duplicate check by its primary key.
-    pub async fn find_by_id(
-        pool: &PgPool,
-        id: DbId,
-    ) -> Result<DuplicateCheck, sqlx::Error> {
-        let query = format!(
-            "SELECT {COLUMNS} FROM duplicate_checks WHERE id = $1"
-        );
+    pub async fn find_by_id(pool: &PgPool, id: DbId) -> Result<DuplicateCheck, sqlx::Error> {
+        let query = format!("SELECT {COLUMNS} FROM duplicate_checks WHERE id = $1");
         sqlx::query_as::<_, DuplicateCheck>(&query)
             .bind(id)
             .fetch_one(pool)

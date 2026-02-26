@@ -1,8 +1,8 @@
 //! Repository for the `hooks` table (PRD-77).
 
 use sqlx::PgPool;
-use trulience_core::search::{clamp_limit, clamp_offset};
-use trulience_core::types::DbId;
+use x121_core::search::{clamp_limit, clamp_offset};
+use x121_core::types::DbId;
 
 use crate::models::hook::{CreateHook, Hook, HookFilter, UpdateHook};
 

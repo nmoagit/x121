@@ -135,12 +135,12 @@ pub fn parse_resolution_str(s: &str) -> Result<(u32, u32), CoreError> {
             "Invalid resolution format '{s}': expected WIDTHxHEIGHT"
         )));
     }
-    let width = parts[0].parse::<u32>().map_err(|_| {
-        CoreError::Validation(format!("Invalid width in resolution '{s}'"))
-    })?;
-    let height = parts[1].parse::<u32>().map_err(|_| {
-        CoreError::Validation(format!("Invalid height in resolution '{s}'"))
-    })?;
+    let width = parts[0]
+        .parse::<u32>()
+        .map_err(|_| CoreError::Validation(format!("Invalid width in resolution '{s}'")))?;
+    let height = parts[1]
+        .parse::<u32>()
+        .map_err(|_| CoreError::Validation(format!("Invalid height in resolution '{s}'")))?;
     if width == 0 || height == 0 {
         return Err(CoreError::Validation(format!(
             "Resolution dimensions must be > 0, got '{s}'"

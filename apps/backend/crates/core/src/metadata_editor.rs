@@ -562,8 +562,7 @@ pub fn parse_csv(data: &[u8]) -> Result<Vec<CsvRecord>, String> {
                             .split(';')
                             .map(|s| serde_json::Value::String(s.trim().to_string()))
                             .collect();
-                        fields
-                            .insert(field_name.to_string(), serde_json::Value::Array(items));
+                        fields.insert(field_name.to_string(), serde_json::Value::Array(items));
                     } else if let Ok(n) = value.parse::<f64>() {
                         // Try numeric.
                         fields.insert(
@@ -633,7 +632,9 @@ mod tests {
         standard_field_defs()
     }
 
-    fn make_metadata(entries: &[(&str, serde_json::Value)]) -> serde_json::Map<String, serde_json::Value> {
+    fn make_metadata(
+        entries: &[(&str, serde_json::Value)],
+    ) -> serde_json::Map<String, serde_json::Value> {
         let mut map = serde_json::Map::new();
         for (k, v) in entries {
             map.insert(k.to_string(), v.clone());
@@ -674,9 +675,7 @@ mod tests {
     #[test]
     fn completeness_partial_fill() {
         let fields = sample_fields();
-        let metadata = make_metadata(&[
-            ("full_name", serde_json::Value::String("Alice".into())),
-        ]);
+        let metadata = make_metadata(&[("full_name", serde_json::Value::String("Alice".into()))]);
         let result = calculate_completeness(1, &metadata, &fields);
 
         assert_eq!(result.filled, 1);
@@ -718,13 +717,17 @@ mod tests {
     fn project_completeness_aggregates() {
         let fields = sample_fields();
         let characters = vec![
-            (1, make_metadata(&[
-                ("full_name", serde_json::Value::String("Alice".into())),
-                ("description", serde_json::Value::String("Hero".into())),
-            ])),
-            (2, make_metadata(&[
-                ("full_name", serde_json::Value::String("Bob".into())),
-            ])),
+            (
+                1,
+                make_metadata(&[
+                    ("full_name", serde_json::Value::String("Alice".into())),
+                    ("description", serde_json::Value::String("Hero".into())),
+                ]),
+            ),
+            (
+                2,
+                make_metadata(&[("full_name", serde_json::Value::String("Bob".into()))]),
+            ),
             (3, serde_json::Map::new()),
         ];
 
@@ -754,9 +757,8 @@ mod tests {
     #[test]
     fn validate_unknown_field_rejected() {
         let fields = sample_fields();
-        let updates = make_metadata(&[
-            ("nonexistent_field", serde_json::Value::String("x".into())),
-        ]);
+        let updates =
+            make_metadata(&[("nonexistent_field", serde_json::Value::String("x".into()))]);
         let errors = validate_metadata_fields(&updates, &fields);
         assert_eq!(errors.len(), 1);
         assert!(errors[0].message.contains("Unknown"));
@@ -765,9 +767,7 @@ mod tests {
     #[test]
     fn validate_number_field_rejects_string() {
         let fields = sample_fields();
-        let updates = make_metadata(&[
-            ("age", serde_json::Value::String("not a number".into())),
-        ]);
+        let updates = make_metadata(&[("age", serde_json::Value::String("not a number".into()))]);
         let errors = validate_metadata_fields(&updates, &fields);
         assert_eq!(errors.len(), 1);
         assert!(errors[0].message.contains("number"));
@@ -776,9 +776,7 @@ mod tests {
     #[test]
     fn validate_select_field_rejects_invalid_option() {
         let fields = sample_fields();
-        let updates = make_metadata(&[
-            ("hair_color", serde_json::Value::String("Purple".into())),
-        ]);
+        let updates = make_metadata(&[("hair_color", serde_json::Value::String("Purple".into()))]);
         let errors = validate_metadata_fields(&updates, &fields);
         assert_eq!(errors.len(), 1);
         assert!(errors[0].message.contains("Invalid value"));
@@ -787,9 +785,7 @@ mod tests {
     #[test]
     fn validate_select_field_accepts_valid_option() {
         let fields = sample_fields();
-        let updates = make_metadata(&[
-            ("hair_color", serde_json::Value::String("Black".into())),
-        ]);
+        let updates = make_metadata(&[("hair_color", serde_json::Value::String("Black".into()))]);
         let errors = validate_metadata_fields(&updates, &fields);
         assert!(errors.is_empty());
     }
@@ -808,9 +804,10 @@ mod tests {
     #[test]
     fn validate_multiselect_rejects_invalid_item() {
         let fields = sample_fields();
-        let updates = make_metadata(&[
-            ("personality_traits", serde_json::json!(["Introverted", "BadTrait"])),
-        ]);
+        let updates = make_metadata(&[(
+            "personality_traits",
+            serde_json::json!(["Introverted", "BadTrait"]),
+        )]);
         let errors = validate_metadata_fields(&updates, &fields);
         assert_eq!(errors.len(), 1);
         assert!(errors[0].message.contains("BadTrait"));
@@ -829,7 +826,10 @@ mod tests {
                     ("full_name", serde_json::Value::String("Alice".into())),
                     ("description", serde_json::Value::String("The hero".into())),
                     ("age", serde_json::json!(25)),
-                    ("personality_traits", serde_json::json!(["Creative", "Empathetic"])),
+                    (
+                        "personality_traits",
+                        serde_json::json!(["Creative", "Empathetic"]),
+                    ),
                 ]),
             ),
             (
@@ -837,7 +837,10 @@ mod tests {
                 "Bob".to_string(),
                 make_metadata(&[
                     ("full_name", serde_json::Value::String("Bob".into())),
-                    ("description", serde_json::Value::String("The sidekick".into())),
+                    (
+                        "description",
+                        serde_json::Value::String("The sidekick".into()),
+                    ),
                 ]),
             ),
         ];
@@ -879,10 +882,7 @@ mod tests {
         let characters = vec![(
             1,
             "Alice".to_string(),
-            make_metadata(&[(
-                "notes",
-                serde_json::Value::String("Hello, World".into()),
-            )]),
+            make_metadata(&[("notes", serde_json::Value::String("Hello, World".into()))]),
         )];
 
         let csv = build_csv(&characters, &fields);

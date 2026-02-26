@@ -8,11 +8,11 @@ use std::sync::Arc;
 
 use axum::extract::ws::Message;
 use tokio::sync::broadcast;
-use trulience_core::channels::{CHANNEL_DIGEST, CHANNEL_IN_APP};
-use trulience_core::types::DbId;
-use trulience_db::repositories::{EventRepo, NotificationPreferenceRepo, NotificationRepo};
-use trulience_db::DbPool;
-use trulience_events::PlatformEvent;
+use x121_core::channels::{CHANNEL_DIGEST, CHANNEL_IN_APP};
+use x121_core::types::DbId;
+use x121_db::repositories::{EventRepo, NotificationPreferenceRepo, NotificationRepo};
+use x121_db::DbPool;
+use x121_events::PlatformEvent;
 
 use crate::ws::WsManager;
 
@@ -36,7 +36,7 @@ impl NotificationRouter {
     ///
     /// Subscribes to the event bus via `receiver` and processes each event.
     /// The loop exits when the channel is closed (i.e. the
-    /// [`EventBus`](trulience_events::EventBus) is dropped).
+    /// [`EventBus`](x121_events::EventBus) is dropped).
     pub async fn run(self, mut receiver: broadcast::Receiver<PlatformEvent>) {
         loop {
             match receiver.recv().await {
@@ -183,7 +183,7 @@ impl NotificationRouter {
              JOIN roles r ON u.role_id = r.id \
              WHERE r.name = $1 AND u.is_active = true",
         )
-        .bind(trulience_core::roles::ROLE_ADMIN)
+        .bind(x121_core::roles::ROLE_ADMIN)
         .fetch_all(&self.pool)
         .await
     }

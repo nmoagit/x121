@@ -9,7 +9,7 @@ use std::time::Duration;
 use chrono::Utc;
 use sqlx::PgPool;
 use tokio_util::sync::CancellationToken;
-use trulience_db::repositories::GpuMetricRepo;
+use x121_db::repositories::GpuMetricRepo;
 
 /// Default retention period: 24 hours.
 const DEFAULT_RETENTION_HOURS: i64 = 24;

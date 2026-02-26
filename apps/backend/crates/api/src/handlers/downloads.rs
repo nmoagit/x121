@@ -9,17 +9,17 @@ use axum::response::IntoResponse;
 use axum::Json;
 use serde::Deserialize;
 
-use trulience_core::download_manager;
-use trulience_core::error::CoreError;
-use trulience_core::search::{clamp_limit, clamp_offset, DEFAULT_SEARCH_LIMIT, MAX_SEARCH_LIMIT};
-use trulience_core::types::DbId;
-use trulience_db::models::model_download::{
+use x121_core::download_manager;
+use x121_core::error::CoreError;
+use x121_core::search::{clamp_limit, clamp_offset, DEFAULT_SEARCH_LIMIT, MAX_SEARCH_LIMIT};
+use x121_core::types::DbId;
+use x121_db::models::model_download::{
     CreateDownloadRequest, CreateModelDownload, DownloadCreatedResponse, ModelDownload,
 };
-use trulience_db::models::placement_rule::{CreatePlacementRule, PlacementRule, UpdatePlacementRule};
-use trulience_db::models::status::DownloadStatus;
-use trulience_db::models::user_api_token::{ApiTokenInfo, StoreTokenRequest};
-use trulience_db::repositories::{ModelDownloadRepo, PlacementRuleRepo, UserApiTokenRepo};
+use x121_db::models::placement_rule::{CreatePlacementRule, PlacementRule, UpdatePlacementRule};
+use x121_db::models::status::DownloadStatus;
+use x121_db::models::user_api_token::{ApiTokenInfo, StoreTokenRequest};
+use x121_db::repositories::{ModelDownloadRepo, PlacementRuleRepo, UserApiTokenRepo};
 
 use crate::error::{AppError, AppResult};
 use crate::middleware::auth::AuthUser;
@@ -256,10 +256,7 @@ pub async fn retry_download(
 ) -> AppResult<impl IntoResponse> {
     let download = ensure_download_exists(&state.pool, id).await?;
 
-    let retryable = [
-        DownloadStatus::Failed.id(),
-        DownloadStatus::Cancelled.id(),
-    ];
+    let retryable = [DownloadStatus::Failed.id(), DownloadStatus::Cancelled.id()];
     if !retryable.contains(&download.status_id) {
         return Err(AppError::BadRequest(
             "Can only retry failed or cancelled downloads".to_string(),
@@ -268,11 +265,7 @@ pub async fn retry_download(
 
     ModelDownloadRepo::update_status(&state.pool, id, DownloadStatus::Queued.id()).await?;
 
-    tracing::info!(
-        download_id = id,
-        user_id = user.user_id,
-        "Download retried",
-    );
+    tracing::info!(download_id = id, user_id = user.user_id, "Download retried",);
 
     let updated = ensure_download_exists(&state.pool, id).await?;
     Ok(Json(DataResponse { data: updated }))

@@ -10,16 +10,14 @@ use axum::Json;
 
 use serde::Deserialize;
 
-use trulience_core::error::CoreError;
-use trulience_core::pipeline_hooks::{
-    self, EffectiveHook, HookInput, HookPoint, HookType, ScopeType,
-};
-use trulience_core::search::{clamp_limit, clamp_offset, DEFAULT_SEARCH_LIMIT, MAX_SEARCH_LIMIT};
-use trulience_core::types::DbId;
-use trulience_db::models::hook::{CreateHook, Hook, HookFilter, UpdateHook};
-use trulience_db::models::hook_execution_log::CreateHookExecutionLog;
-use trulience_db::repositories::HookExecutionLogRepo;
-use trulience_db::repositories::HookRepo;
+use x121_core::error::CoreError;
+use x121_core::pipeline_hooks::{self, EffectiveHook, HookInput, HookPoint, HookType, ScopeType};
+use x121_core::search::{clamp_limit, clamp_offset, DEFAULT_SEARCH_LIMIT, MAX_SEARCH_LIMIT};
+use x121_core::types::DbId;
+use x121_db::models::hook::{CreateHook, Hook, HookFilter, UpdateHook};
+use x121_db::models::hook_execution_log::CreateHookExecutionLog;
+use x121_db::repositories::HookExecutionLogRepo;
+use x121_db::repositories::HookRepo;
 
 use crate::error::{AppError, AppResult};
 use crate::middleware::auth::AuthUser;
@@ -58,12 +56,7 @@ pub struct EffectiveHookQuery {
 async fn ensure_hook_exists(pool: &sqlx::PgPool, id: DbId) -> AppResult<Hook> {
     HookRepo::find_by_id(pool, id)
         .await?
-        .ok_or_else(|| {
-            AppError::Core(CoreError::NotFound {
-                entity: "Hook",
-                id,
-            })
-        })
+        .ok_or_else(|| AppError::Core(CoreError::NotFound { entity: "Hook", id }))
 }
 
 /// Convert a DB `Hook` row into a `HookInput` for the core resolver.
@@ -190,12 +183,7 @@ pub async fn update_hook(
 
     let updated = HookRepo::update(&state.pool, id, &body)
         .await?
-        .ok_or_else(|| {
-            AppError::Core(CoreError::NotFound {
-                entity: "Hook",
-                id,
-            })
-        })?;
+        .ok_or_else(|| AppError::Core(CoreError::NotFound { entity: "Hook", id }))?;
 
     tracing::info!(hook_id = id, user_id = auth.user_id, "Hook updated");
 
@@ -217,10 +205,7 @@ pub async fn delete_hook(
         tracing::info!(hook_id = id, user_id = auth.user_id, "Hook deleted");
         Ok(StatusCode::NO_CONTENT)
     } else {
-        Err(AppError::Core(CoreError::NotFound {
-            entity: "Hook",
-            id,
-        }))
+        Err(AppError::Core(CoreError::NotFound { entity: "Hook", id }))
     }
 }
 
@@ -239,10 +224,7 @@ pub async fn toggle_hook(
 
     let toggled = HookRepo::toggle_enabled(&state.pool, id, body.enabled).await?;
     if !toggled {
-        return Err(AppError::Core(CoreError::NotFound {
-            entity: "Hook",
-            id,
-        }));
+        return Err(AppError::Core(CoreError::NotFound { entity: "Hook", id }));
     }
 
     tracing::info!(
@@ -307,7 +289,8 @@ pub async fn test_hook(
 fn simulate_hook_execution(hook: &Hook) -> (bool, i32, String, Option<String>) {
     match hook.hook_type.as_str() {
         "shell" | "python" => {
-            let script_path = hook.config_json
+            let script_path = hook
+                .config_json
                 .get("script_path")
                 .and_then(|v| v.as_str())
                 .unwrap_or("<unknown>");
@@ -319,7 +302,8 @@ fn simulate_hook_execution(hook: &Hook) -> (bool, i32, String, Option<String>) {
             )
         }
         "webhook" => {
-            let url = hook.config_json
+            let url = hook
+                .config_json
                 .get("url")
                 .and_then(|v| v.as_str())
                 .unwrap_or("<unknown>");
@@ -371,7 +355,8 @@ pub async fn get_effective_hooks(
     for hp in &hook_points {
         // Fetch hooks at each level
         let studio_hooks = HookRepo::list_by_scope(&state.pool, "studio", None, hp).await?;
-        let project_hooks = HookRepo::list_by_scope(&state.pool, "project", Some(scope_id), hp).await?;
+        let project_hooks =
+            HookRepo::list_by_scope(&state.pool, "project", Some(scope_id), hp).await?;
         let scene_type_hooks = if scope_type == "scene_type" {
             HookRepo::list_by_scope(&state.pool, "scene_type", Some(scope_id), hp).await?
         } else {
@@ -382,16 +367,15 @@ pub async fn get_effective_hooks(
         let project_inputs: Vec<HookInput> = project_hooks.iter().map(hook_to_input).collect();
         let scene_inputs: Vec<HookInput> = scene_type_hooks.iter().map(hook_to_input).collect();
 
-        let resolved = pipeline_hooks::resolve_effective_hooks(
-            &studio_inputs,
-            &project_inputs,
-            &scene_inputs,
-        );
+        let resolved =
+            pipeline_hooks::resolve_effective_hooks(&studio_inputs, &project_inputs, &scene_inputs);
 
         all_effective.extend(resolved);
     }
 
-    Ok(Json(DataResponse { data: all_effective }))
+    Ok(Json(DataResponse {
+        data: all_effective,
+    }))
 }
 
 // ---------------------------------------------------------------------------
@@ -409,8 +393,7 @@ pub async fn list_hook_logs(
     let limit = clamp_limit(params.limit, DEFAULT_SEARCH_LIMIT, MAX_SEARCH_LIMIT);
     let offset = clamp_offset(params.offset);
 
-    let logs =
-        HookExecutionLogRepo::list_for_hook(&state.pool, hook_id, limit, offset).await?;
+    let logs = HookExecutionLogRepo::list_for_hook(&state.pool, hook_id, limit, offset).await?;
 
     Ok(Json(DataResponse { data: logs }))
 }

@@ -1,7 +1,7 @@
 //! Repository for the `batch_metadata_operations` table (PRD-088).
 
 use sqlx::PgPool;
-use trulience_core::types::{DbId, Timestamp};
+use x121_core::types::{DbId, Timestamp};
 
 use crate::models::batch_metadata_operation::{
     BatchMetadataOpStatus, BatchMetadataOperation, CreateBatchMetadataOperation,
@@ -54,9 +54,7 @@ impl BatchMetadataOperationRepo {
         pool: &PgPool,
         id: DbId,
     ) -> Result<Option<BatchMetadataOperation>, sqlx::Error> {
-        let query = format!(
-            "SELECT {COLUMNS} FROM batch_metadata_operations WHERE id = $1"
-        );
+        let query = format!("SELECT {COLUMNS} FROM batch_metadata_operations WHERE id = $1");
         sqlx::query_as::<_, BatchMetadataOperation>(&query)
             .bind(id)
             .fetch_optional(pool)
@@ -160,10 +158,7 @@ impl BatchMetadataOperationRepo {
     }
 
     /// Count batch operations by status name.
-    pub async fn count_by_status(
-        pool: &PgPool,
-        status_name: &str,
-    ) -> Result<i64, sqlx::Error> {
+    pub async fn count_by_status(pool: &PgPool, status_name: &str) -> Result<i64, sqlx::Error> {
         let count: (i64,) = sqlx::query_as(
             "SELECT COUNT(*) FROM batch_metadata_operations bmo \
              JOIN batch_metadata_op_statuses bmos ON bmo.status_id = bmos.id \
@@ -176,12 +171,9 @@ impl BatchMetadataOperationRepo {
     }
 
     /// List all statuses from the lookup table.
-    pub async fn list_statuses(
-        pool: &PgPool,
-    ) -> Result<Vec<BatchMetadataOpStatus>, sqlx::Error> {
-        let query = format!(
-            "SELECT {STATUS_COLUMNS} FROM batch_metadata_op_statuses ORDER BY id ASC"
-        );
+    pub async fn list_statuses(pool: &PgPool) -> Result<Vec<BatchMetadataOpStatus>, sqlx::Error> {
+        let query =
+            format!("SELECT {STATUS_COLUMNS} FROM batch_metadata_op_statuses ORDER BY id ASC");
         sqlx::query_as::<_, BatchMetadataOpStatus>(&query)
             .fetch_all(pool)
             .await
@@ -192,9 +184,8 @@ impl BatchMetadataOperationRepo {
         pool: &PgPool,
         name: &str,
     ) -> Result<Option<BatchMetadataOpStatus>, sqlx::Error> {
-        let query = format!(
-            "SELECT {STATUS_COLUMNS} FROM batch_metadata_op_statuses WHERE name = $1"
-        );
+        let query =
+            format!("SELECT {STATUS_COLUMNS} FROM batch_metadata_op_statuses WHERE name = $1");
         sqlx::query_as::<_, BatchMetadataOpStatus>(&query)
             .bind(name)
             .fetch_optional(pool)

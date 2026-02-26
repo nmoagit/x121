@@ -12,11 +12,11 @@ use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::Json;
 
-use trulience_core::embedding::EmbeddingStatus;
-use trulience_core::error::CoreError;
-use trulience_core::types::DbId;
-use trulience_db::models::embedding::{ExtractEmbeddingRequest, SelectFaceRequest};
-use trulience_db::repositories::{CharacterRepo, EmbeddingRepo};
+use x121_core::embedding::EmbeddingStatus;
+use x121_core::error::CoreError;
+use x121_core::types::DbId;
+use x121_db::models::embedding::{ExtractEmbeddingRequest, SelectFaceRequest};
+use x121_db::repositories::{CharacterRepo, EmbeddingRepo};
 
 use crate::error::{AppError, AppResult};
 use crate::response::DataResponse;
@@ -50,7 +50,7 @@ pub async fn extract_embedding(
     // Validate optional confidence threshold if provided.
     if let Some(Json(ref req)) = body {
         if let Some(threshold) = req.confidence_threshold {
-            trulience_core::embedding::validate_confidence_threshold(threshold)?;
+            x121_core::embedding::validate_confidence_threshold(threshold)?;
         }
     }
 
@@ -75,10 +75,7 @@ pub async fn extract_embedding(
 
     let status = EmbeddingRepo::get_embedding_status(&state.pool, character_id).await?;
 
-    Ok((
-        StatusCode::ACCEPTED,
-        Json(DataResponse { data: status }),
-    ))
+    Ok((StatusCode::ACCEPTED, Json(DataResponse { data: status })))
 }
 
 /// GET /api/v1/characters/{character_id}/embedding-status

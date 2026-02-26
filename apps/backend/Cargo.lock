@@ -2878,153 +2878,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "trulience-agent"
-version = "0.1.0"
-dependencies = [
- "chrono",
- "dotenvy",
- "futures",
- "nvml-wrapper",
- "serde",
- "serde_json",
- "tokio",
- "tokio-tungstenite 0.24.0",
- "tracing",
- "tracing-subscriber",
- "trulience-core",
-]
-
-[[package]]
-name = "trulience-api"
-version = "0.1.0"
-dependencies = [
- "argon2",
- "assert_matches",
- "axum",
- "chrono",
- "dotenvy",
- "futures",
- "http-body-util",
- "jsonwebtoken",
- "libc",
- "serde",
- "serde_json",
- "sha2",
- "sqlx",
- "tempfile",
- "thiserror 2.0.18",
- "tokio",
- "tokio-util",
- "tower",
- "tower-http",
- "tracing",
- "tracing-subscriber",
- "trulience-comfyui",
- "trulience-core",
- "trulience-db",
- "trulience-events",
- "uuid",
-]
-
-[[package]]
-name = "trulience-comfyui"
-version = "0.1.0"
-dependencies = [
- "chrono",
- "futures",
- "reqwest",
- "serde",
- "serde_json",
- "sqlx",
- "thiserror 2.0.18",
- "tokio",
- "tokio-tungstenite 0.24.0",
- "tokio-util",
- "tracing",
- "trulience-core",
- "trulience-db",
- "uuid",
-]
-
-[[package]]
-name = "trulience-core"
-version = "0.1.0"
-dependencies = [
- "chrono",
- "hmac",
- "rand 0.9.2",
- "regex",
- "serde",
- "serde_json",
- "sha2",
- "tempfile",
- "thiserror 2.0.18",
- "tokio",
- "uuid",
- "validator",
-]
-
-[[package]]
-name = "trulience-db"
-version = "0.1.0"
-dependencies = [
- "chrono",
- "serde",
- "serde_json",
- "sqlx",
- "thiserror 2.0.18",
- "tracing",
- "trulience-core",
-]
-
-[[package]]
-name = "trulience-events"
-version = "0.1.0"
-dependencies = [
- "chrono",
- "lettre",
- "reqwest",
- "serde",
- "serde_json",
- "sqlx",
- "thiserror 2.0.18",
- "tokio",
- "tokio-util",
- "tracing",
- "trulience-core",
- "trulience-db",
-]
-
-[[package]]
-name = "trulience-pipeline"
-version = "0.1.0"
-dependencies = [
- "serde",
- "serde_json",
- "thiserror 2.0.18",
- "tokio",
- "tracing",
- "trulience-comfyui",
- "trulience-core",
-]
-
-[[package]]
-name = "trulience-worker"
-version = "0.1.0"
-dependencies = [
- "dotenvy",
- "serde",
- "serde_json",
- "tokio",
- "tracing",
- "tracing-subscriber",
- "trulience-core",
- "trulience-db",
- "trulience-events",
- "trulience-pipeline",
-]
-
-[[package]]
 name = "try-lock"
 version = "0.2.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3772,6 +3625,153 @@ name = "writeable"
 version = "0.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9edde0db4769d2dc68579893f2306b26c6ecfbe0ef499b013d731b7b9247e0b9"
+
+[[package]]
+name = "x121-agent"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "dotenvy",
+ "futures",
+ "nvml-wrapper",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tokio-tungstenite 0.24.0",
+ "tracing",
+ "tracing-subscriber",
+ "x121-core",
+]
+
+[[package]]
+name = "x121-api"
+version = "0.1.0"
+dependencies = [
+ "argon2",
+ "assert_matches",
+ "axum",
+ "chrono",
+ "dotenvy",
+ "futures",
+ "http-body-util",
+ "jsonwebtoken",
+ "libc",
+ "serde",
+ "serde_json",
+ "sha2",
+ "sqlx",
+ "tempfile",
+ "thiserror 2.0.18",
+ "tokio",
+ "tokio-util",
+ "tower",
+ "tower-http",
+ "tracing",
+ "tracing-subscriber",
+ "uuid",
+ "x121-comfyui",
+ "x121-core",
+ "x121-db",
+ "x121-events",
+]
+
+[[package]]
+name = "x121-comfyui"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "futures",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "sqlx",
+ "thiserror 2.0.18",
+ "tokio",
+ "tokio-tungstenite 0.24.0",
+ "tokio-util",
+ "tracing",
+ "uuid",
+ "x121-core",
+ "x121-db",
+]
+
+[[package]]
+name = "x121-core"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "hmac",
+ "rand 0.9.2",
+ "regex",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tempfile",
+ "thiserror 2.0.18",
+ "tokio",
+ "uuid",
+ "validator",
+]
+
+[[package]]
+name = "x121-db"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "serde",
+ "serde_json",
+ "sqlx",
+ "thiserror 2.0.18",
+ "tracing",
+ "x121-core",
+]
+
+[[package]]
+name = "x121-events"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "lettre",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "sqlx",
+ "thiserror 2.0.18",
+ "tokio",
+ "tokio-util",
+ "tracing",
+ "x121-core",
+ "x121-db",
+]
+
+[[package]]
+name = "x121-pipeline"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "thiserror 2.0.18",
+ "tokio",
+ "tracing",
+ "x121-comfyui",
+ "x121-core",
+]
+
+[[package]]
+name = "x121-worker"
+version = "0.1.0"
+dependencies = [
+ "dotenvy",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
+ "x121-core",
+ "x121-db",
+ "x121-events",
+ "x121-pipeline",
+]
 
 [[package]]
 name = "yoke"

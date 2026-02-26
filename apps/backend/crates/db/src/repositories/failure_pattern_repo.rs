@@ -1,8 +1,8 @@
 //! Repository for the `failure_patterns` table (PRD-64).
 
 use sqlx::PgPool;
-use trulience_core::search::{clamp_limit, clamp_offset, DEFAULT_SEARCH_LIMIT, MAX_SEARCH_LIMIT};
-use trulience_core::types::DbId;
+use x121_core::search::{clamp_limit, clamp_offset, DEFAULT_SEARCH_LIMIT, MAX_SEARCH_LIMIT};
+use x121_core::types::DbId;
 
 use crate::models::failure_pattern::{FailurePattern, UpsertFailurePattern};
 
@@ -161,9 +161,7 @@ impl FailurePatternRepo {
     ) -> Result<Vec<(String, f64, i32)>, sqlx::Error> {
         // For now, return the current state as a single trend point.
         // A full implementation would query a historical snapshots table.
-        let query = format!(
-            "SELECT {COLUMNS} FROM failure_patterns WHERE id = $1"
-        );
+        let query = format!("SELECT {COLUMNS} FROM failure_patterns WHERE id = $1");
         let maybe = sqlx::query_as::<_, FailurePattern>(&query)
             .bind(pattern_id)
             .fetch_optional(pool)

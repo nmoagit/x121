@@ -7,10 +7,10 @@ use axum::extract::{Path, State};
 use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::Json;
-use trulience_core::error::CoreError;
-use trulience_core::types::DbId;
-use trulience_db::models::theme::{CreateCustomTheme, UpdateCustomTheme, UpsertThemePreference};
-use trulience_db::repositories::ThemeRepo;
+use x121_core::error::CoreError;
+use x121_core::types::DbId;
+use x121_db::models::theme::{CreateCustomTheme, UpdateCustomTheme, UpsertThemePreference};
+use x121_db::repositories::ThemeRepo;
 
 use crate::error::{AppError, AppResult};
 use crate::middleware::rbac::{RequireAdmin, RequireAuth};

@@ -1,7 +1,7 @@
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
 use serde_json::json;
-use trulience_core::error::CoreError;
+use x121_core::error::CoreError;
 
 /// Application-level error type for HTTP handlers.
 ///
@@ -9,7 +9,7 @@ use trulience_core::error::CoreError;
 /// Implements [`IntoResponse`] to produce consistent JSON error responses.
 #[derive(Debug, thiserror::Error)]
 pub enum AppError {
-    /// A domain-level error from `trulience_core`.
+    /// A domain-level error from `x121_core`.
     #[error(transparent)]
     Core(#[from] CoreError),
 

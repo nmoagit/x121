@@ -48,10 +48,7 @@ pub fn template_router() -> Router<AppState> {
 /// Preset routes — mounted at `/presets`.
 pub fn preset_router() -> Router<AppState> {
     Router::new()
-        .route(
-            "/",
-            get(presets::list_presets).post(presets::create_preset),
-        )
+        .route("/", get(presets::list_presets).post(presets::create_preset))
         .route("/marketplace", get(presets::marketplace))
         .route(
             "/{id}",

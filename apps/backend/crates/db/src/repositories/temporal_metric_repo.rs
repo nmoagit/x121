@@ -1,7 +1,7 @@
 //! Repository for `temporal_metrics` and `temporal_settings` tables (PRD-26).
 
 use sqlx::PgPool;
-use trulience_core::types::DbId;
+use x121_core::types::DbId;
 
 use crate::models::temporal_metric::{
     CreateTemporalMetric, CreateTemporalSetting, TemporalMetric, TemporalSetting,
@@ -32,10 +32,7 @@ impl TemporalMetricRepo {
         pool: &PgPool,
         input: &CreateTemporalMetric,
     ) -> Result<TemporalMetric, sqlx::Error> {
-        let version = input
-            .analysis_version
-            .as_deref()
-            .unwrap_or("v1");
+        let version = input.analysis_version.as_deref().unwrap_or("v1");
         let query = format!(
             "INSERT INTO temporal_metrics \
                 (segment_id, drift_score, centering_offset_x, centering_offset_y, \
@@ -61,10 +58,7 @@ impl TemporalMetricRepo {
         pool: &PgPool,
         input: &CreateTemporalMetric,
     ) -> Result<TemporalMetric, sqlx::Error> {
-        let version = input
-            .analysis_version
-            .as_deref()
-            .unwrap_or("v1");
+        let version = input.analysis_version.as_deref().unwrap_or("v1");
         let query = format!(
             "INSERT INTO temporal_metrics \
                 (segment_id, drift_score, centering_offset_x, centering_offset_y, \

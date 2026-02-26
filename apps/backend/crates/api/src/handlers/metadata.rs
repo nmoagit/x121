@@ -9,17 +9,15 @@ use axum::extract::{Path, State};
 use axum::response::IntoResponse;
 use axum::Json;
 use serde::{Deserialize, Serialize};
-use trulience_core::error::CoreError;
-use trulience_core::metadata::{
+use x121_core::error::CoreError;
+use x121_core::metadata::{
     self, BiographicalData, CharacterMetadata, PhysicalAttributes, ProvenanceInfo, SegmentInfo,
     VideoMetadata, VideoTechnicalInfo, CHARACTER_SCHEMA_VERSION, ENTITY_TYPE_CHARACTER,
     FILE_TYPE_CHARACTER, VIDEO_SCHEMA_VERSION,
 };
-use trulience_core::types::DbId;
-use trulience_db::models::metadata::{CreateMetadataGeneration, RegenerationReport, StaleMetadata};
-use trulience_db::repositories::{
-    CharacterRepo, MetadataGenerationRepo, SceneRepo, SegmentRepo,
-};
+use x121_core::types::DbId;
+use x121_db::models::metadata::{CreateMetadataGeneration, RegenerationReport, StaleMetadata};
+use x121_db::repositories::{CharacterRepo, MetadataGenerationRepo, SceneRepo, SegmentRepo};
 
 use crate::error::{AppError, AppResult};
 use crate::response::DataResponse;
@@ -60,7 +58,7 @@ async fn build_character_metadata(
         }))?;
 
     // Fetch the project name.
-    let project = trulience_db::repositories::ProjectRepo::find_by_id(pool, character.project_id)
+    let project = x121_db::repositories::ProjectRepo::find_by_id(pool, character.project_id)
         .await?
         .ok_or(AppError::Core(CoreError::NotFound {
             entity: "Project",
@@ -116,10 +114,7 @@ fn extract_bio_and_physical(
 }
 
 /// Build a `VideoMetadata` struct from database records.
-async fn build_video_metadata(
-    pool: &sqlx::PgPool,
-    scene_id: DbId,
-) -> AppResult<VideoMetadata> {
+async fn build_video_metadata(pool: &sqlx::PgPool, scene_id: DbId) -> AppResult<VideoMetadata> {
     let scene = SceneRepo::find_by_id(pool, scene_id)
         .await?
         .ok_or(AppError::Core(CoreError::NotFound {
@@ -348,12 +343,11 @@ pub async fn get_stale_metadata(
     let stale_scenes = MetadataGenerationRepo::find_stale_scenes(&state.pool).await?;
 
     // Filter to the requested project's entities.
-    let project_character_ids: Vec<DbId> =
-        CharacterRepo::list_by_project(&state.pool, project_id)
-            .await?
-            .iter()
-            .map(|c| c.id)
-            .collect();
+    let project_character_ids: Vec<DbId> = CharacterRepo::list_by_project(&state.pool, project_id)
+        .await?
+        .iter()
+        .map(|c| c.id)
+        .collect();
 
     let filtered_characters: Vec<StaleMetadata> = stale_characters
         .into_iter()

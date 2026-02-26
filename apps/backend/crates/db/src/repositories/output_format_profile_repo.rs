@@ -1,7 +1,7 @@
 //! Repository for the `output_format_profiles` table (PRD-39).
 
 use sqlx::PgPool;
-use trulience_core::types::DbId;
+use x121_core::types::DbId;
 
 use crate::models::output_format_profile::{
     CreateOutputFormatProfile, OutputFormatProfile, UpdateOutputFormatProfile,
@@ -65,9 +65,7 @@ impl OutputFormatProfileRepo {
     }
 
     /// List all output format profiles, ordered by name.
-    pub async fn list_all(
-        pool: &PgPool,
-    ) -> Result<Vec<OutputFormatProfile>, sqlx::Error> {
+    pub async fn list_all(pool: &PgPool) -> Result<Vec<OutputFormatProfile>, sqlx::Error> {
         let query = format!("SELECT {COLUMNS} FROM output_format_profiles ORDER BY name ASC");
         sqlx::query_as::<_, OutputFormatProfile>(&query)
             .fetch_all(pool)

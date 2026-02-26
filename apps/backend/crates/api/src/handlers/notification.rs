@@ -7,11 +7,11 @@ use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::Json;
 use serde::Deserialize;
-use trulience_core::channels::CHANNEL_IN_APP;
-use trulience_core::error::CoreError;
-use trulience_core::types::DbId;
-use trulience_db::models::notification::{UpdateNotificationSettings, UpdatePreference};
-use trulience_db::repositories::{EventRepo, NotificationPreferenceRepo, NotificationRepo};
+use x121_core::channels::CHANNEL_IN_APP;
+use x121_core::error::CoreError;
+use x121_core::types::DbId;
+use x121_db::models::notification::{UpdateNotificationSettings, UpdatePreference};
+use x121_db::repositories::{EventRepo, NotificationPreferenceRepo, NotificationRepo};
 
 use crate::error::{AppError, AppResult};
 use crate::middleware::auth::AuthUser;

@@ -8,15 +8,15 @@ use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::Json;
 
-use trulience_core::character_library;
-use trulience_core::error::CoreError;
-use trulience_core::types::DbId;
-use trulience_db::models::character::CreateCharacter;
-use trulience_db::models::library_character::{
+use x121_core::character_library;
+use x121_core::error::CoreError;
+use x121_core::types::DbId;
+use x121_db::models::character::CreateCharacter;
+use x121_db::models::library_character::{
     CreateLibraryCharacter, CreateProjectCharacterLink, ImportCharacterRequest, LibraryCharacter,
     UpdateLibraryCharacter,
 };
-use trulience_db::repositories::{CharacterRepo, LibraryCharacterRepo, ProjectCharacterLinkRepo};
+use x121_db::repositories::{CharacterRepo, LibraryCharacterRepo, ProjectCharacterLinkRepo};
 
 use crate::error::{AppError, AppResult};
 use crate::middleware::auth::AuthUser;
@@ -69,10 +69,7 @@ pub async fn create_library_character(
 ) -> AppResult<impl IntoResponse> {
     let created = LibraryCharacterRepo::create(&state.pool, auth.user_id, &input).await?;
     tracing::info!(id = created.id, name = %created.name, "Library character created");
-    Ok((
-        StatusCode::CREATED,
-        Json(DataResponse { data: created }),
-    ))
+    Ok((StatusCode::CREATED, Json(DataResponse { data: created })))
 }
 
 // ---------------------------------------------------------------------------
@@ -168,9 +165,12 @@ pub async fn import_to_project(
     let lc = ensure_library_character_exists(&state.pool, library_id).await?;
 
     // Check if already linked to this project.
-    let existing =
-        ProjectCharacterLinkRepo::find_by_project_and_library(&state.pool, input.project_id, library_id)
-            .await?;
+    let existing = ProjectCharacterLinkRepo::find_by_project_and_library(
+        &state.pool,
+        input.project_id,
+        library_id,
+    )
+    .await?;
     if existing.is_some() {
         return Err(AppError::Core(CoreError::Conflict(
             "Library character is already imported into this project".to_string(),

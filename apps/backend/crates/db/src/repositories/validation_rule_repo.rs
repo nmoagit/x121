@@ -1,7 +1,7 @@
 //! Repository for validation rules and rule types.
 
 use sqlx::PgPool;
-use trulience_core::types::DbId;
+use x121_core::types::DbId;
 
 use crate::models::validation::{
     CreateValidationRule, UpdateValidationRule, ValidationRuleRow, ValidationRuleType,

@@ -30,24 +30,12 @@ pub fn router() -> Router<AppState> {
             "/{id}",
             get(production_run::get_run).delete(production_run::delete_run),
         )
-        .route(
-            "/{id}/matrix",
-            get(production_run::get_matrix),
-        )
-        .route(
-            "/{id}/submit",
-            post(production_run::submit_cells),
-        )
+        .route("/{id}/matrix", get(production_run::get_matrix))
+        .route("/{id}/submit", post(production_run::submit_cells))
         .route(
             "/{id}/resubmit-failed",
             post(production_run::resubmit_failed),
         )
-        .route(
-            "/{id}/deliver",
-            post(production_run::deliver_run),
-        )
-        .route(
-            "/{id}/progress",
-            get(production_run::get_progress),
-        )
+        .route("/{id}/deliver", post(production_run::deliver_run))
+        .route("/{id}/progress", get(production_run::get_progress))
 }

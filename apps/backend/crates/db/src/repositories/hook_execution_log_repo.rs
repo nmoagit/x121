@@ -1,7 +1,7 @@
 //! Repository for the `hook_execution_logs` table (PRD-77).
 
 use sqlx::PgPool;
-use trulience_core::types::DbId;
+use x121_core::types::DbId;
 
 use crate::models::hook_execution_log::{CreateHookExecutionLog, HookExecutionLog};
 

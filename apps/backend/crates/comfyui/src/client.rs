@@ -5,7 +5,7 @@
 //! live [`ComfyUIConnection`] over WebSocket.
 
 use tokio_tungstenite::{connect_async, MaybeTlsStream};
-use trulience_core::types::DbId;
+use x121_core::types::DbId;
 
 /// Configuration handle for a ComfyUI instance.
 ///

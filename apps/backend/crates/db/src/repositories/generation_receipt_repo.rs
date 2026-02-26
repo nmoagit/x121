@@ -1,7 +1,7 @@
 //! Repository for the `generation_receipts` table (PRD-69).
 
 use sqlx::PgPool;
-use trulience_core::types::{DbId, Timestamp};
+use x121_core::types::{DbId, Timestamp};
 
 use crate::models::generation_receipt::{
     AssetUsageEntry, CreateGenerationReceipt, GenerationReceipt, StalenessReportEntry,
@@ -73,13 +73,13 @@ impl GenerationReceiptRepo {
             "UPDATE generation_receipts SET
                 generation_completed_at = $1,
                 generation_duration_ms = $2
-             WHERE id = $3"
+             WHERE id = $3",
         )
-            .bind(completed_at)
-            .bind(duration_ms)
-            .bind(receipt_id)
-            .execute(pool)
-            .await?;
+        .bind(completed_at)
+        .bind(duration_ms)
+        .bind(receipt_id)
+        .execute(pool)
+        .await?;
         Ok(result.rows_affected() > 0)
     }
 
@@ -88,9 +88,7 @@ impl GenerationReceiptRepo {
         pool: &PgPool,
         id: DbId,
     ) -> Result<Option<GenerationReceipt>, sqlx::Error> {
-        let query = format!(
-            "SELECT {COLUMNS} FROM generation_receipts WHERE id = $1"
-        );
+        let query = format!("SELECT {COLUMNS} FROM generation_receipts WHERE id = $1");
         sqlx::query_as::<_, GenerationReceipt>(&query)
             .bind(id)
             .fetch_optional(pool)
@@ -150,11 +148,11 @@ impl GenerationReceiptRepo {
                  WHERE (a.id IS NOT NULL AND gr.model_hash != COALESCE(a.name, ''))
                     OR (a.is_current_version = false)
                  AND c.project_id = $1
-                 ORDER BY gr.created_at DESC"
+                 ORDER BY gr.created_at DESC",
             )
-                .bind(pid)
-                .fetch_all(pool)
-                .await
+            .bind(pid)
+            .fetch_all(pool)
+            .await
         } else {
             sqlx::query_as::<_, StalenessReportEntry>(
                 "SELECT gr.segment_id, s.scene_id, gr.id AS receipt_id,
@@ -165,10 +163,10 @@ impl GenerationReceiptRepo {
                  LEFT JOIN assets a ON a.id = gr.model_asset_id
                  WHERE (a.id IS NOT NULL AND gr.model_hash != COALESCE(a.name, ''))
                     OR (a.is_current_version = false)
-                 ORDER BY gr.created_at DESC"
+                 ORDER BY gr.created_at DESC",
             )
-                .fetch_all(pool)
-                .await
+            .fetch_all(pool)
+            .await
         }
     }
 
@@ -187,12 +185,12 @@ impl GenerationReceiptRepo {
                  FROM generation_receipts gr
                  JOIN segments s ON s.id = gr.segment_id
                  WHERE gr.model_asset_id = $1 AND gr.model_version = $2
-                 ORDER BY gr.created_at DESC"
+                 ORDER BY gr.created_at DESC",
             )
-                .bind(asset_id)
-                .bind(ver)
-                .fetch_all(pool)
-                .await
+            .bind(asset_id)
+            .bind(ver)
+            .fetch_all(pool)
+            .await
         } else {
             sqlx::query_as::<_, AssetUsageEntry>(
                 "SELECT gr.segment_id, s.scene_id,
@@ -200,19 +198,16 @@ impl GenerationReceiptRepo {
                  FROM generation_receipts gr
                  JOIN segments s ON s.id = gr.segment_id
                  WHERE gr.model_asset_id = $1
-                 ORDER BY gr.created_at DESC"
+                 ORDER BY gr.created_at DESC",
             )
-                .bind(asset_id)
-                .fetch_all(pool)
-                .await
+            .bind(asset_id)
+            .fetch_all(pool)
+            .await
         }
     }
 
     /// Count the number of receipts for a segment.
-    pub async fn count_for_segment(
-        pool: &PgPool,
-        segment_id: DbId,
-    ) -> Result<i64, sqlx::Error> {
+    pub async fn count_for_segment(pool: &PgPool, segment_id: DbId) -> Result<i64, sqlx::Error> {
         let row: (i64,) =
             sqlx::query_as("SELECT COUNT(*) FROM generation_receipts WHERE segment_id = $1")
                 .bind(segment_id)

@@ -9,9 +9,9 @@
 use std::time::Duration;
 
 use tokio_util::sync::CancellationToken;
-use trulience_core::channels::CHANNEL_DIGEST;
-use trulience_db::repositories::{NotificationPreferenceRepo, NotificationRepo};
-use trulience_db::DbPool;
+use x121_core::channels::CHANNEL_DIGEST;
+use x121_db::repositories::{NotificationPreferenceRepo, NotificationRepo};
+use x121_db::DbPool;
 
 /// How often the scheduler polls for due digests.
 const DIGEST_CHECK_INTERVAL: Duration = Duration::from_secs(3600);
@@ -81,7 +81,7 @@ impl DigestScheduler {
     /// last-sent timestamp. The actual aggregation and external delivery
     /// (email/webhook) will be added when SMTP and the job system are
     /// available.
-    async fn send_digest(&self, user_id: trulience_core::types::DbId) -> Result<(), sqlx::Error> {
+    async fn send_digest(&self, user_id: x121_core::types::DbId) -> Result<(), sqlx::Error> {
         let count =
             NotificationRepo::pending_count_for_channel(&self.pool, user_id, CHANNEL_DIGEST)
                 .await?;

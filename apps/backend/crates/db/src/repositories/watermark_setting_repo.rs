@@ -1,7 +1,7 @@
 //! Repository for the `watermark_settings` table (PRD-39).
 
 use sqlx::PgPool;
-use trulience_core::types::DbId;
+use x121_core::types::DbId;
 
 use crate::models::watermark_setting::{
     CreateWatermarkSetting, UpdateWatermarkSetting, WatermarkSetting,
@@ -49,9 +49,7 @@ impl WatermarkSettingRepo {
     }
 
     /// List all watermark settings, ordered by name.
-    pub async fn list_all(
-        pool: &PgPool,
-    ) -> Result<Vec<WatermarkSetting>, sqlx::Error> {
+    pub async fn list_all(pool: &PgPool) -> Result<Vec<WatermarkSetting>, sqlx::Error> {
         let query = format!("SELECT {COLUMNS} FROM watermark_settings ORDER BY name ASC");
         sqlx::query_as::<_, WatermarkSetting>(&query)
             .fetch_all(pool)

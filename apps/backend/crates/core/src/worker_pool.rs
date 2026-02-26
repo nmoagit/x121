@@ -130,9 +130,7 @@ pub fn validate_tags(tags: &[String]) -> Result<(), CoreError> {
     let mut seen = std::collections::HashSet::with_capacity(tags.len());
     for tag in tags {
         if !seen.insert(tag.as_str()) {
-            return Err(CoreError::Validation(format!(
-                "Duplicate tag: \"{tag}\""
-            )));
+            return Err(CoreError::Validation(format!("Duplicate tag: \"{tag}\"")));
         }
     }
 

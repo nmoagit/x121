@@ -1,8 +1,8 @@
 //! Repository for the `delivery_exports` table (PRD-39).
 
 use sqlx::PgPool;
-use trulience_core::assembly::{EXPORT_STATUS_ID_COMPLETED, EXPORT_STATUS_ID_FAILED};
-use trulience_core::types::DbId;
+use x121_core::assembly::{EXPORT_STATUS_ID_COMPLETED, EXPORT_STATUS_ID_FAILED};
+use x121_core::types::DbId;
 
 use crate::models::delivery_export::{CreateDeliveryExport, DeliveryExport};
 use crate::models::status::StatusId;

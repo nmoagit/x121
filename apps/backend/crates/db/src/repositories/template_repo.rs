@@ -1,7 +1,7 @@
 //! Repository for the `templates` table (PRD-27).
 
 use sqlx::PgPool;
-use trulience_core::types::DbId;
+use x121_core::types::DbId;
 
 use crate::models::template::{CreateTemplate, Template, UpdateTemplate};
 
@@ -37,10 +37,7 @@ impl TemplateRepo {
     }
 
     /// Find a template by ID.
-    pub async fn find_by_id(
-        pool: &PgPool,
-        id: DbId,
-    ) -> Result<Option<Template>, sqlx::Error> {
+    pub async fn find_by_id(pool: &PgPool, id: DbId) -> Result<Option<Template>, sqlx::Error> {
         let query = format!("SELECT {COLUMNS} FROM templates WHERE id = $1");
         sqlx::query_as::<_, Template>(&query)
             .bind(id)
@@ -103,10 +100,7 @@ impl TemplateRepo {
     }
 
     /// Soft-deactivate a template (set is_active = false).
-    pub async fn deactivate(
-        pool: &PgPool,
-        id: DbId,
-    ) -> Result<bool, sqlx::Error> {
+    pub async fn deactivate(pool: &PgPool, id: DbId) -> Result<bool, sqlx::Error> {
         let result = sqlx::query(
             "UPDATE templates SET is_active = false WHERE id = $1 AND is_active = true",
         )

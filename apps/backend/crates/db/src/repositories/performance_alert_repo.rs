@@ -1,7 +1,7 @@
 //! Repository for the `performance_alert_thresholds` table (PRD-41).
 
 use sqlx::PgPool;
-use trulience_core::types::DbId;
+use x121_core::types::DbId;
 
 use crate::models::performance_metric::{
     CreateAlertThreshold, PerformanceAlertThreshold, UpdateAlertThreshold,

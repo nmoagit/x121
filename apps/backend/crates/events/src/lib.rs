@@ -1,4 +1,4 @@
-//! Trulience event bus and notification infrastructure.
+//! X121 event bus and notification infrastructure.
 //!
 //! This crate provides the core building blocks for the platform-wide
 //! event system (PRD-10):

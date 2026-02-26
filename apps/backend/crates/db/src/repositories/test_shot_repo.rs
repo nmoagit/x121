@@ -1,7 +1,7 @@
 //! Repository for the `test_shots` table (PRD-58).
 
 use sqlx::PgPool;
-use trulience_core::types::DbId;
+use x121_core::types::DbId;
 
 use crate::models::test_shot::{CreateTestShot, TestShot};
 
@@ -16,10 +16,7 @@ pub struct TestShotRepo;
 
 impl TestShotRepo {
     /// Insert a new test shot, returning the created row.
-    pub async fn create(
-        pool: &PgPool,
-        input: &CreateTestShot,
-    ) -> Result<TestShot, sqlx::Error> {
+    pub async fn create(pool: &PgPool, input: &CreateTestShot) -> Result<TestShot, sqlx::Error> {
         let query = format!(
             "INSERT INTO test_shots
                 (scene_type_id, character_id, workflow_id, parameters,
@@ -40,13 +37,8 @@ impl TestShotRepo {
     }
 
     /// Find a test shot by its primary key.
-    pub async fn find_by_id(
-        pool: &PgPool,
-        id: DbId,
-    ) -> Result<Option<TestShot>, sqlx::Error> {
-        let query = format!(
-            "SELECT {COLUMNS} FROM test_shots WHERE id = $1"
-        );
+    pub async fn find_by_id(pool: &PgPool, id: DbId) -> Result<Option<TestShot>, sqlx::Error> {
+        let query = format!("SELECT {COLUMNS} FROM test_shots WHERE id = $1");
         sqlx::query_as::<_, TestShot>(&query)
             .bind(id)
             .fetch_optional(pool)

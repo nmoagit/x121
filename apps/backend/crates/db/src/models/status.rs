@@ -226,7 +226,7 @@ define_status_enum! {
     }
 }
 
-// NOTE: EmbeddingStatus lives in `trulience_core::embedding::EmbeddingStatus`
+// NOTE: EmbeddingStatus lives in `x121_core::embedding::EmbeddingStatus`
 // (the canonical source) because the core crate needs it for domain logic
 // (`classify_extraction_result`). It provides `id()`, `from_id()`, and `label()`.
 // Do NOT re-add it here via define_status_enum! -- that would create a duplicate (DRY-209).
@@ -358,5 +358,5 @@ mod tests {
         assert_eq!(BatchMetadataOpStatusId::Failed.id(), 5);
     }
 
-    // EmbeddingStatus tests live in trulience_core::embedding::tests (DRY-209).
+    // EmbeddingStatus tests live in x121_core::embedding::tests (DRY-209).
 }

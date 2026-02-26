@@ -4,7 +4,7 @@
 //! pause/resume, parameter modification, preview storage, and abort.
 
 use sqlx::PgPool;
-use trulience_core::types::DbId;
+use x121_core::types::DbId;
 
 use crate::models::job_debug::JobDebugState;
 
@@ -22,9 +22,7 @@ impl JobDebugRepo {
         pool: &PgPool,
         job_id: DbId,
     ) -> Result<Option<JobDebugState>, sqlx::Error> {
-        let query = format!(
-            "SELECT {COLUMNS} FROM job_debug_state WHERE job_id = $1"
-        );
+        let query = format!("SELECT {COLUMNS} FROM job_debug_state WHERE job_id = $1");
         sqlx::query_as::<_, JobDebugState>(&query)
             .bind(job_id)
             .fetch_optional(pool)
@@ -35,10 +33,7 @@ impl JobDebugRepo {
     ///
     /// Creates a new row if none exists, or returns the existing one
     /// (updating `updated_at` via the trigger).
-    pub async fn upsert(
-        pool: &PgPool,
-        job_id: DbId,
-    ) -> Result<JobDebugState, sqlx::Error> {
+    pub async fn upsert(pool: &PgPool, job_id: DbId) -> Result<JobDebugState, sqlx::Error> {
         let query = format!(
             "INSERT INTO job_debug_state (job_id) \
              VALUES ($1) \
@@ -150,10 +145,7 @@ impl JobDebugRepo {
     /// Delete debug state for a job (cleanup).
     ///
     /// Returns the number of rows deleted (0 or 1).
-    pub async fn delete_by_job_id(
-        pool: &PgPool,
-        job_id: DbId,
-    ) -> Result<u64, sqlx::Error> {
+    pub async fn delete_by_job_id(pool: &PgPool, job_id: DbId) -> Result<u64, sqlx::Error> {
         let result = sqlx::query("DELETE FROM job_debug_state WHERE job_id = $1")
             .bind(job_id)
             .execute(pool)

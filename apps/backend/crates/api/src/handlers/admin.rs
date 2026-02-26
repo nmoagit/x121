@@ -6,10 +6,10 @@ use axum::extract::{Path, State};
 use axum::http::StatusCode;
 use axum::Json;
 use serde::Deserialize;
-use trulience_core::error::CoreError;
-use trulience_core::types::DbId;
-use trulience_db::models::user::{CreateUser, UpdateUser, User, UserResponse};
-use trulience_db::repositories::{RoleRepo, UserRepo};
+use x121_core::error::CoreError;
+use x121_core::types::DbId;
+use x121_db::models::user::{CreateUser, UpdateUser, User, UserResponse};
+use x121_db::repositories::{RoleRepo, UserRepo};
 
 use crate::auth::password::{hash_password, validate_password_strength};
 use crate::error::{AppError, AppResult};

@@ -9,8 +9,8 @@ use std::collections::HashSet;
 use crate::error::CoreError;
 
 /* --------------------------------------------------------------------------
-   Constants
-   -------------------------------------------------------------------------- */
+Constants
+-------------------------------------------------------------------------- */
 
 /// Maximum number of linked fields allowed on a single project-character link.
 pub const MAX_LINKED_FIELDS: usize = 50;
@@ -33,8 +33,8 @@ const NON_LINKABLE_FIELDS: &[&str] = &[
 ];
 
 /* --------------------------------------------------------------------------
-   Types
-   -------------------------------------------------------------------------- */
+Types
+-------------------------------------------------------------------------- */
 
 /// Per-field synchronisation status between a library character and a project copy.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -50,8 +50,8 @@ pub struct FieldSyncStatus {
 }
 
 /* --------------------------------------------------------------------------
-   Validation
-   -------------------------------------------------------------------------- */
+Validation
+-------------------------------------------------------------------------- */
 
 /// Validate a list of linked field names.
 ///
@@ -93,8 +93,8 @@ pub fn is_field_linkable(field: &str) -> bool {
 }
 
 /* --------------------------------------------------------------------------
-   Field sync classification
-   -------------------------------------------------------------------------- */
+Field sync classification
+-------------------------------------------------------------------------- */
 
 /// Classify every field across library and project metadata into a sync status.
 ///
@@ -173,8 +173,8 @@ pub fn classify_field_sync(
 }
 
 /* --------------------------------------------------------------------------
-   Tests
-   -------------------------------------------------------------------------- */
+Tests
+-------------------------------------------------------------------------- */
 
 #[cfg(test)]
 mod tests {

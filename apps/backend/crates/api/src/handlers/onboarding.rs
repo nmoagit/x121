@@ -8,9 +8,9 @@ use axum::extract::State;
 use axum::response::IntoResponse;
 use axum::Json;
 
-use trulience_core::onboarding;
-use trulience_db::models::onboarding::UpdateOnboarding;
-use trulience_db::repositories::OnboardingRepo;
+use x121_core::onboarding;
+use x121_db::models::onboarding::UpdateOnboarding;
+use x121_db::repositories::OnboardingRepo;
 
 use crate::error::AppResult;
 use crate::middleware::auth::AuthUser;

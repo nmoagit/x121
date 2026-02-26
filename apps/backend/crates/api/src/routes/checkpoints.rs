@@ -27,5 +27,8 @@ pub fn checkpoint_routes() -> Router<AppState> {
             "/{id}/resume-from-checkpoint",
             post(checkpoints::resume_from_checkpoint),
         )
-        .route("/{id}/diagnostics", get(checkpoints::get_failure_diagnostics))
+        .route(
+            "/{id}/diagnostics",
+            get(checkpoints::get_failure_diagnostics),
+        )
 }

@@ -1,7 +1,7 @@
 //! Repository for the `scenes` table.
 
 use sqlx::PgPool;
-use trulience_core::types::DbId;
+use x121_core::types::DbId;
 
 use crate::models::generation::UpdateSceneGeneration;
 use crate::models::scene::{CreateScene, Scene, UpdateScene};

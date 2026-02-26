@@ -6,10 +6,10 @@ use axum::extract::{Path, State};
 use axum::response::IntoResponse;
 use axum::Json;
 use serde::{Deserialize, Serialize};
-use trulience_core::types::DbId;
-use trulience_db::models::job::QueuedJobView;
-use trulience_db::models::scheduling::{SetGpuQuota, UpsertSchedulingPolicy};
-use trulience_db::repositories::{GpuQuotaRepo, JobRepo, SchedulingPolicyRepo};
+use x121_core::types::DbId;
+use x121_db::models::job::QueuedJobView;
+use x121_db::models::scheduling::{SetGpuQuota, UpsertSchedulingPolicy};
+use x121_db::repositories::{GpuQuotaRepo, JobRepo, SchedulingPolicyRepo};
 
 use crate::error::{AppError, AppResult};
 use crate::middleware::auth::AuthUser;
@@ -50,8 +50,7 @@ pub async fn get_queue_status(
     State(state): State<AppState>,
 ) -> AppResult<impl IntoResponse> {
     let jobs = JobRepo::list_queue(&state.pool).await?;
-    let (total_queued, total_running, total_scheduled) =
-        JobRepo::queue_counts(&state.pool).await?;
+    let (total_queued, total_running, total_scheduled) = JobRepo::queue_counts(&state.pool).await?;
 
     // Estimate wait: (queued jobs * avg duration) / max(running, 1)
     let estimated_wait_secs = if total_queued > 0 {

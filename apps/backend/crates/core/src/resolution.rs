@@ -6,8 +6,8 @@
 use crate::error::CoreError;
 
 /* --------------------------------------------------------------------------
-   Named constants
-   -------------------------------------------------------------------------- */
+Named constants
+-------------------------------------------------------------------------- */
 
 /// Tier name: draft (lowest quality, fastest iteration).
 pub const TIER_DRAFT: &str = "draft";
@@ -34,8 +34,8 @@ pub const ALL_TIER_NAMES: &[&str] = &[TIER_DRAFT, TIER_PREVIEW, TIER_PRODUCTION]
 const MAX_DIMENSION: i32 = 7680;
 
 /* --------------------------------------------------------------------------
-   Validation functions
-   -------------------------------------------------------------------------- */
+Validation functions
+-------------------------------------------------------------------------- */
 
 /// Validate that the given name is a recognized tier name.
 pub fn validate_tier_name(name: &str) -> Result<(), CoreError> {
@@ -107,8 +107,8 @@ pub fn validate_delivery_tier(tier_id: i64) -> Result<(), CoreError> {
 }
 
 /* --------------------------------------------------------------------------
-   Tests
-   -------------------------------------------------------------------------- */
+Tests
+-------------------------------------------------------------------------- */
 
 #[cfg(test)]
 mod tests {

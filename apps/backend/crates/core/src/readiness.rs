@@ -26,7 +26,8 @@ pub const STATE_PARTIALLY_READY: &str = "partially_ready";
 pub const STATE_NOT_STARTED: &str = "not_started";
 
 /// All valid readiness state strings.
-pub const VALID_READINESS_STATES: &[&str] = &[STATE_READY, STATE_PARTIALLY_READY, STATE_NOT_STARTED];
+pub const VALID_READINESS_STATES: &[&str] =
+    &[STATE_READY, STATE_PARTIALLY_READY, STATE_NOT_STARTED];
 
 /// Maximum number of custom settings keys allowed in criteria.
 pub const MAX_SETTINGS_KEYS: usize = 50;
@@ -326,9 +327,7 @@ pub fn parse_criteria_json(json: &serde_json::Value) -> Result<ReadinessCriteria
         .as_object()
         .ok_or_else(|| "criteria_json must be a JSON object".to_string())?;
 
-    let required_fields = obj
-        .get("required_fields")
-        .and_then(|v| v.as_object());
+    let required_fields = obj.get("required_fields").and_then(|v| v.as_object());
 
     match required_fields {
         Some(rf) => {
@@ -521,11 +520,18 @@ mod tests {
     #[test]
     fn evaluate_returns_correct_character_id() {
         let criteria = ReadinessCriteria::default();
-        let result = evaluate_readiness(42, &criteria, true, true, true, &[
-            "a2c4_model".to_string(),
-            "elevenlabs_voice".to_string(),
-            "avatar_json".to_string(),
-        ]);
+        let result = evaluate_readiness(
+            42,
+            &criteria,
+            true,
+            true,
+            true,
+            &[
+                "a2c4_model".to_string(),
+                "elevenlabs_voice".to_string(),
+                "avatar_json".to_string(),
+            ],
+        );
         assert_eq!(result.character_id, 42);
     }
 

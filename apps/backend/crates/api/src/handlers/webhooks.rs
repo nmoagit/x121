@@ -7,11 +7,11 @@ use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::Json;
-use trulience_core::error::CoreError;
-use trulience_core::search::{clamp_limit, clamp_offset};
-use trulience_core::types::DbId;
-use trulience_db::models::api_key::{CreateWebhook, UpdateWebhook};
-use trulience_db::repositories::WebhookRepo;
+use x121_core::error::CoreError;
+use x121_core::search::{clamp_limit, clamp_offset};
+use x121_core::types::DbId;
+use x121_db::models::api_key::{CreateWebhook, UpdateWebhook};
+use x121_db::repositories::WebhookRepo;
 
 use crate::error::{AppError, AppResult};
 use crate::middleware::rbac::RequireAdmin;
@@ -104,11 +104,7 @@ pub async fn update_webhook(
         id: webhook_id,
     }))?;
 
-    tracing::info!(
-        webhook_id,
-        user_id = admin.user_id,
-        "Webhook updated",
-    );
+    tracing::info!(webhook_id, user_id = admin.user_id, "Webhook updated",);
 
     Ok(Json(DataResponse { data: updated }))
 }
@@ -130,11 +126,7 @@ pub async fn delete_webhook(
         }));
     }
 
-    tracing::info!(
-        webhook_id,
-        user_id = admin.user_id,
-        "Webhook deleted",
-    );
+    tracing::info!(webhook_id, user_id = admin.user_id, "Webhook deleted",);
 
     Ok(StatusCode::NO_CONTENT)
 }

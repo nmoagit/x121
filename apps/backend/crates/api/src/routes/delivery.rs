@@ -51,18 +51,12 @@ pub fn profile_router() -> Router<AppState> {
 /// Delivery export routes — merged into `/projects`.
 pub fn export_router() -> Router<AppState> {
     Router::new()
-        .route(
-            "/{project_id}/assemble",
-            post(delivery::start_assembly),
-        )
+        .route("/{project_id}/assemble", post(delivery::start_assembly))
         .route(
             "/{project_id}/delivery-validation",
             get(delivery::validate_delivery),
         )
-        .route(
-            "/{project_id}/exports",
-            get(delivery::list_exports),
-        )
+        .route("/{project_id}/exports", get(delivery::list_exports))
         .route(
             "/{project_id}/exports/{export_id}",
             get(delivery::get_export),

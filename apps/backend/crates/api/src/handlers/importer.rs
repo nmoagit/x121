@@ -7,18 +7,17 @@ use axum::extract::{Multipart, Path, Query, State};
 use axum::http::StatusCode;
 use axum::Json;
 use serde::Deserialize;
-use trulience_core::error::CoreError;
-use trulience_core::importer::{
-    detect_uniqueness_conflicts, default_mapping_rules, map_files_to_entities,
-    is_hidden_or_system, ParsedFile,
-    SESSION_STATUS_CANCELLED, SESSION_STATUS_COMMITTED, SESSION_STATUS_PARSING,
-    SESSION_STATUS_PREVIEW, STAGING_DIR_PREFIX, MAX_FOLDER_DEPTH,
+use x121_core::error::CoreError;
+use x121_core::importer::{
+    default_mapping_rules, detect_uniqueness_conflicts, is_hidden_or_system, map_files_to_entities,
+    ParsedFile, MAX_FOLDER_DEPTH, SESSION_STATUS_CANCELLED, SESSION_STATUS_COMMITTED,
+    SESSION_STATUS_PARSING, SESSION_STATUS_PREVIEW, STAGING_DIR_PREFIX,
 };
-use trulience_core::types::DbId;
-use trulience_db::models::importer::{
+use x121_core::types::DbId;
+use x121_db::models::importer::{
     CreateImportMappingEntry, CreateImportSession, FolderImportPreview, ImportCommitResult,
 };
-use trulience_db::repositories::{ImportMappingEntryRepo, ImportSessionRepo};
+use x121_db::repositories::{ImportMappingEntryRepo, ImportSessionRepo};
 
 use serde::Serialize;
 
@@ -54,9 +53,7 @@ pub async fn upload_folder(
 ) -> AppResult<(StatusCode, Json<DataResponse<UploadResult>>)> {
     // Create a unique staging directory.
     let session_stamp = chrono::Utc::now().timestamp_millis();
-    let staging_dir = std::path::PathBuf::from(format!(
-        "{STAGING_DIR_PREFIX}/{session_stamp}"
-    ));
+    let staging_dir = std::path::PathBuf::from(format!("{STAGING_DIR_PREFIX}/{session_stamp}"));
     tokio::fs::create_dir_all(&staging_dir)
         .await
         .map_err(|e| AppError::InternalError(format!("Failed to create staging dir: {e}")))?;
@@ -68,10 +65,7 @@ pub async fn upload_folder(
         .await
         .map_err(|e| AppError::BadRequest(e.to_string()))?
     {
-        let filename = field
-            .file_name()
-            .unwrap_or("unknown")
-            .to_string();
+        let filename = field.file_name().unwrap_or("unknown").to_string();
 
         // Skip hidden/system files.
         let basename = filename.rsplit('/').next().unwrap_or(&filename);
@@ -263,12 +257,8 @@ pub async fn commit_import(
 
     // Deselect entries if requested.
     if !body.deselected_entry_ids.is_empty() {
-        ImportMappingEntryRepo::update_selection(
-            &state.pool,
-            &body.deselected_entry_ids,
-            false,
-        )
-        .await?;
+        ImportMappingEntryRepo::update_selection(&state.pool, &body.deselected_entry_ids, false)
+            .await?;
     }
 
     // Load selected entries.
@@ -329,7 +319,7 @@ pub async fn cancel_import(
 pub async fn get_import_session(
     State(state): State<AppState>,
     Path(session_id): Path<DbId>,
-) -> AppResult<Json<DataResponse<trulience_db::models::importer::ImportSession>>> {
+) -> AppResult<Json<DataResponse<x121_db::models::importer::ImportSession>>> {
     let session = ImportSessionRepo::find_by_id(&state.pool, session_id)
         .await?
         .ok_or(AppError::Core(CoreError::NotFound {
@@ -385,9 +375,7 @@ async fn parse_recursive(
         if path.is_dir() {
             Box::pin(parse_recursive(root, &path, files, depth + 1, max_depth)).await?;
         } else {
-            let relative = path
-                .strip_prefix(root)
-                .unwrap_or(&path);
+            let relative = path.strip_prefix(root).unwrap_or(&path);
             let parent_folders: Vec<String> = relative
                 .parent()
                 .map(|p| {

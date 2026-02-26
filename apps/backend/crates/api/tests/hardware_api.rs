@@ -12,15 +12,11 @@ mod common;
 
 use chrono::{Duration, Utc};
 use sqlx::PgPool;
-use trulience_core::alert::AlertLevel;
-use trulience_core::hardware::thresholds::{
-    evaluate, AlertCooldownTracker, GpuSnapshot, Threshold,
-};
-use trulience_core::metric_names::{
-    METRIC_TEMPERATURE, METRIC_UTILIZATION, METRIC_VRAM_USED_PERCENT,
-};
-use trulience_db::models::hardware::{CreateGpuMetric, CreateRestartLog, UpsertThreshold};
-use trulience_db::repositories::{GpuMetricRepo, MetricThresholdRepo, RestartLogRepo};
+use x121_core::alert::AlertLevel;
+use x121_core::hardware::thresholds::{evaluate, AlertCooldownTracker, GpuSnapshot, Threshold};
+use x121_core::metric_names::{METRIC_TEMPERATURE, METRIC_UTILIZATION, METRIC_VRAM_USED_PERCENT};
+use x121_db::models::hardware::{CreateGpuMetric, CreateRestartLog, UpsertThreshold};
+use x121_db::repositories::{GpuMetricRepo, MetricThresholdRepo, RestartLogRepo};
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -50,9 +46,9 @@ fn make_metric_dto(
 ///
 /// Required because `restart_logs.initiated_by` is a foreign key to `users.id`.
 async fn create_test_user(pool: &PgPool) -> i64 {
-    use trulience_api::auth::password::hash_password;
-    use trulience_db::models::user::CreateUser;
-    use trulience_db::repositories::UserRepo;
+    use x121_api::auth::password::hash_password;
+    use x121_db::models::user::CreateUser;
+    use x121_db::repositories::UserRepo;
 
     let password_hash = hash_password("test_password_123!").expect("hashing should succeed");
     let input = CreateUser {

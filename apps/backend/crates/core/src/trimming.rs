@@ -61,11 +61,9 @@ impl TrimPreset {
             )));
         }
 
-        let frames: i32 = parts[1].parse().map_err(|_| {
-            CoreError::Validation(format!(
-                "Invalid frame count in preset: '{s}'"
-            ))
-        })?;
+        let frames: i32 = parts[1]
+            .parse()
+            .map_err(|_| CoreError::Validation(format!("Invalid frame count in preset: '{s}'")))?;
 
         match parts[0] {
             "first" => Ok(Self::First(frames)),

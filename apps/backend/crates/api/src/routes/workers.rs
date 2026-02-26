@@ -23,9 +23,15 @@ use crate::state::AppState;
 /// ```
 pub fn admin_router() -> Router<AppState> {
     Router::new()
-        .route("/", get(workers::list_workers).post(workers::register_worker))
+        .route(
+            "/",
+            get(workers::list_workers).post(workers::register_worker),
+        )
         .route("/stats", get(workers::fleet_stats))
-        .route("/{id}", get(workers::get_worker).put(workers::update_worker))
+        .route(
+            "/{id}",
+            get(workers::get_worker).put(workers::update_worker),
+        )
         .route("/{id}/approve", post(workers::approve_worker))
         .route("/{id}/drain", post(workers::drain_worker))
         .route("/{id}/decommission", post(workers::decommission_worker))

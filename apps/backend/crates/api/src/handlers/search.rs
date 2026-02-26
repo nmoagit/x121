@@ -7,12 +7,12 @@ use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::Json;
-use trulience_core::error::CoreError;
-use trulience_core::types::DbId;
-use trulience_db::models::search::{
+use x121_core::error::CoreError;
+use x121_core::types::DbId;
+use x121_db::models::search::{
     CreateSavedSearch, SearchParams, SearchResponse, SimilarityRequest, TypeaheadParams,
 };
-use trulience_db::repositories::SearchRepo;
+use x121_db::repositories::SearchRepo;
 
 use crate::error::{AppError, AppResult};
 use crate::middleware::auth::AuthUser;
@@ -124,13 +124,9 @@ pub async fn visual_similarity(
         return Err(AppError::BadRequest("embedding must not be empty".into()));
     }
 
-    let results = SearchRepo::search_similar(
-        &state.pool,
-        &input.embedding,
-        input.threshold,
-        input.limit,
-    )
-    .await?;
+    let results =
+        SearchRepo::search_similar(&state.pool, &input.embedding, input.threshold, input.limit)
+            .await?;
 
     Ok(Json(DataResponse { data: results }))
 }

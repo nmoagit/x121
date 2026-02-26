@@ -30,13 +30,8 @@ pub const FRECENCY_WEEK_WEIGHT: f64 = 2.0;
 pub const FRECENCY_OLD_WEIGHT: f64 = 1.0;
 
 /// Valid entity types that can appear in the command palette.
-pub const VALID_PALETTE_ENTITY_TYPES: &[&str] = &[
-    "project",
-    "character",
-    "scene",
-    "segment",
-    "scene_type",
-];
+pub const VALID_PALETTE_ENTITY_TYPES: &[&str] =
+    &["project", "character", "scene", "segment", "scene_type"];
 
 // ---------------------------------------------------------------------------
 // Validation
@@ -162,7 +157,10 @@ mod tests {
         let now = Utc::now();
         let recent = calculate_frecency_score(1, now);
         let old = calculate_frecency_score(1, now - Duration::days(30));
-        assert!(recent > old, "Recent item ({recent}) should score higher than old item ({old})");
+        assert!(
+            recent > old,
+            "Recent item ({recent}) should score higher than old item ({old})"
+        );
     }
 
     #[test]
@@ -170,7 +168,10 @@ mod tests {
         let now = Utc::now();
         let frequent = calculate_frecency_score(50, now);
         let rare = calculate_frecency_score(1, now);
-        assert!(frequent > rare, "Frequent item ({frequent}) should score higher than rare item ({rare})");
+        assert!(
+            frequent > rare,
+            "Frequent item ({frequent}) should score higher than rare item ({rare})"
+        );
     }
 
     #[test]
@@ -189,7 +190,10 @@ mod tests {
     fn single_access_count_produces_positive_score() {
         let now = Utc::now();
         let score = calculate_frecency_score(1, now);
-        assert!(score > 0.0, "Score should be positive for access_count=1, got {score}");
+        assert!(
+            score > 0.0,
+            "Score should be positive for access_count=1, got {score}"
+        );
     }
 
     #[test]

@@ -2,11 +2,11 @@
 
 use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
-use trulience_core::types::{DbId, Timestamp};
+use x121_core::types::{DbId, Timestamp};
 
 /* --------------------------------------------------------------------------
-   Review tags
-   -------------------------------------------------------------------------- */
+Review tags
+-------------------------------------------------------------------------- */
 
 /// A row from the `review_tags` table.
 #[derive(Debug, Clone, FromRow, Serialize)]
@@ -29,8 +29,8 @@ pub struct CreateReviewTag {
 }
 
 /* --------------------------------------------------------------------------
-   Review notes
-   -------------------------------------------------------------------------- */
+Review notes
+-------------------------------------------------------------------------- */
 
 /// A row from the `review_notes` table.
 #[derive(Debug, Clone, FromRow, Serialize)]
@@ -69,8 +69,8 @@ pub struct UpdateReviewNote {
 }
 
 /* --------------------------------------------------------------------------
-   Note-tag associations
-   -------------------------------------------------------------------------- */
+Note-tag associations
+-------------------------------------------------------------------------- */
 
 /// A row from the `review_note_tags` junction table.
 #[derive(Debug, Clone, FromRow, Serialize)]
@@ -82,8 +82,8 @@ pub struct ReviewNoteTag {
 }
 
 /* --------------------------------------------------------------------------
-   Aggregation types
-   -------------------------------------------------------------------------- */
+Aggregation types
+-------------------------------------------------------------------------- */
 
 /// Tag usage frequency (aggregate query result).
 #[derive(Debug, Clone, FromRow, Serialize)]

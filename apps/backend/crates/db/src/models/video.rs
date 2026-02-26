@@ -2,10 +2,10 @@
 
 use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
-use trulience_core::types::{DbId, Timestamp};
+use x121_core::types::{DbId, Timestamp};
 
 /// Re-export `AudioTrackInfo` from core to keep it as the single source of truth.
-pub use trulience_core::ffmpeg::AudioTrackInfo;
+pub use x121_core::ffmpeg::AudioTrackInfo;
 
 /// A row from the `video_thumbnails` table.
 #[derive(Debug, Clone, FromRow, Serialize)]

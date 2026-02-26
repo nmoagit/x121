@@ -1,7 +1,7 @@
 //! Repository for the `audit_logs` and `audit_retention_policies` tables (PRD-45).
 
 use sqlx::PgPool;
-use trulience_core::types::{DbId, Timestamp};
+use x121_core::types::{DbId, Timestamp};
 
 use crate::models::audit::{
     AuditLog, AuditQuery, AuditRetentionPolicy, CreateAuditLog, UpdateRetentionPolicy,
@@ -87,10 +87,7 @@ impl AuditLogRepo {
     }
 
     /// Query audit logs with filtering and pagination.
-    pub async fn query(
-        pool: &PgPool,
-        params: &AuditQuery,
-    ) -> Result<Vec<AuditLog>, sqlx::Error> {
+    pub async fn query(pool: &PgPool, params: &AuditQuery) -> Result<Vec<AuditLog>, sqlx::Error> {
         let limit = params.limit.unwrap_or(50).min(500);
         let offset = params.offset.unwrap_or(0);
 
@@ -108,15 +105,10 @@ impl AuditLogRepo {
     }
 
     /// Count audit logs matching the given filter (for pagination metadata).
-    pub async fn count(
-        pool: &PgPool,
-        params: &AuditQuery,
-    ) -> Result<i64, sqlx::Error> {
+    pub async fn count(pool: &PgPool, params: &AuditQuery) -> Result<i64, sqlx::Error> {
         let (where_clause, bind_values, _) = build_audit_filter(params);
 
-        let query = format!(
-            "SELECT COUNT(*)::BIGINT AS count FROM audit_logs {where_clause}"
-        );
+        let query = format!("SELECT COUNT(*)::BIGINT AS count FROM audit_logs {where_clause}");
 
         let q = bind_audit_values_scalar(sqlx::query_scalar::<_, i64>(&query), &bind_values);
         q.fetch_one(pool).await
@@ -164,15 +156,13 @@ impl AuditLogRepo {
             (Some(_), Some(_)) => format!(
                 "SELECT {COLUMNS} FROM audit_logs WHERE id >= $1 AND id <= $2 ORDER BY id ASC"
             ),
-            (Some(_), None) => format!(
-                "SELECT {COLUMNS} FROM audit_logs WHERE id >= $1 ORDER BY id ASC"
-            ),
-            (None, Some(_)) => format!(
-                "SELECT {COLUMNS} FROM audit_logs WHERE id <= $1 ORDER BY id ASC"
-            ),
-            (None, None) => format!(
-                "SELECT {COLUMNS} FROM audit_logs ORDER BY id ASC"
-            ),
+            (Some(_), None) => {
+                format!("SELECT {COLUMNS} FROM audit_logs WHERE id >= $1 ORDER BY id ASC")
+            }
+            (None, Some(_)) => {
+                format!("SELECT {COLUMNS} FROM audit_logs WHERE id <= $1 ORDER BY id ASC")
+            }
+            (None, None) => format!("SELECT {COLUMNS} FROM audit_logs ORDER BY id ASC"),
         };
 
         match (from_id, to_id) {
@@ -195,11 +185,7 @@ impl AuditLogRepo {
                     .fetch_all(pool)
                     .await
             }
-            (None, None) => {
-                sqlx::query_as::<_, AuditLog>(&query)
-                    .fetch_all(pool)
-                    .await
-            }
+            (None, None) => sqlx::query_as::<_, AuditLog>(&query).fetch_all(pool).await,
         }
     }
 }
@@ -213,9 +199,7 @@ pub struct AuditRetentionPolicyRepo;
 
 impl AuditRetentionPolicyRepo {
     /// List all retention policies.
-    pub async fn list_all(
-        pool: &PgPool,
-    ) -> Result<Vec<AuditRetentionPolicy>, sqlx::Error> {
+    pub async fn list_all(pool: &PgPool) -> Result<Vec<AuditRetentionPolicy>, sqlx::Error> {
         let query = format!(
             "SELECT {RETENTION_COLUMNS} FROM audit_retention_policies ORDER BY log_category"
         );

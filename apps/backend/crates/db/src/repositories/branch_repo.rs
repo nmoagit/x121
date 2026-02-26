@@ -1,7 +1,7 @@
 //! Repository for the `branches` table (PRD-50).
 
 use sqlx::PgPool;
-use trulience_core::types::DbId;
+use x121_core::types::DbId;
 
 use crate::models::branch::{Branch, CreateBranch, UpdateBranch};
 
@@ -42,10 +42,7 @@ impl BranchRepo {
     }
 
     /// Find a branch by its primary key.
-    pub async fn find_by_id(
-        pool: &PgPool,
-        id: DbId,
-    ) -> Result<Option<Branch>, sqlx::Error> {
+    pub async fn find_by_id(pool: &PgPool, id: DbId) -> Result<Option<Branch>, sqlx::Error> {
         let query = format!("SELECT {COLUMNS} FROM branches WHERE id = $1");
         sqlx::query_as::<_, Branch>(&query)
             .bind(id)
@@ -54,10 +51,7 @@ impl BranchRepo {
     }
 
     /// List all branches for a scene, default branch first, then by creation date.
-    pub async fn list_by_scene(
-        pool: &PgPool,
-        scene_id: DbId,
-    ) -> Result<Vec<Branch>, sqlx::Error> {
+    pub async fn list_by_scene(pool: &PgPool, scene_id: DbId) -> Result<Vec<Branch>, sqlx::Error> {
         let query = format!(
             "SELECT {COLUMNS} FROM branches
              WHERE scene_id = $1
@@ -70,23 +64,16 @@ impl BranchRepo {
     }
 
     /// Count branches for a scene.
-    pub async fn count_by_scene(
-        pool: &PgPool,
-        scene_id: DbId,
-    ) -> Result<i64, sqlx::Error> {
-        let row: (i64,) =
-            sqlx::query_as("SELECT COUNT(*) FROM branches WHERE scene_id = $1")
-                .bind(scene_id)
-                .fetch_one(pool)
-                .await?;
+    pub async fn count_by_scene(pool: &PgPool, scene_id: DbId) -> Result<i64, sqlx::Error> {
+        let row: (i64,) = sqlx::query_as("SELECT COUNT(*) FROM branches WHERE scene_id = $1")
+            .bind(scene_id)
+            .fetch_one(pool)
+            .await?;
         Ok(row.0)
     }
 
     /// Get the default branch for a scene.
-    pub async fn get_default(
-        pool: &PgPool,
-        scene_id: DbId,
-    ) -> Result<Option<Branch>, sqlx::Error> {
+    pub async fn get_default(pool: &PgPool, scene_id: DbId) -> Result<Option<Branch>, sqlx::Error> {
         let query = format!(
             "SELECT {COLUMNS} FROM branches
              WHERE scene_id = $1 AND is_default = true"
@@ -156,24 +143,19 @@ impl BranchRepo {
     /// Returns `true` if a row was deleted, `false` if not found.
     /// The caller must ensure the branch is not the default before calling.
     pub async fn delete(pool: &PgPool, id: DbId) -> Result<bool, sqlx::Error> {
-        let result =
-            sqlx::query("DELETE FROM branches WHERE id = $1 AND is_default = false")
-                .bind(id)
-                .execute(pool)
-                .await?;
+        let result = sqlx::query("DELETE FROM branches WHERE id = $1 AND is_default = false")
+            .bind(id)
+            .execute(pool)
+            .await?;
         Ok(result.rows_affected() > 0)
     }
 
     /// Count segments belonging to a branch.
-    pub async fn count_segments(
-        pool: &PgPool,
-        branch_id: DbId,
-    ) -> Result<i64, sqlx::Error> {
-        let row: (i64,) =
-            sqlx::query_as("SELECT COUNT(*) FROM segments WHERE branch_id = $1")
-                .bind(branch_id)
-                .fetch_one(pool)
-                .await?;
+    pub async fn count_segments(pool: &PgPool, branch_id: DbId) -> Result<i64, sqlx::Error> {
+        let row: (i64,) = sqlx::query_as("SELECT COUNT(*) FROM segments WHERE branch_id = $1")
+            .bind(branch_id)
+            .fetch_one(pool)
+            .await?;
         Ok(row.0)
     }
 

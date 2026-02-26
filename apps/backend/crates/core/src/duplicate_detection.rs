@@ -78,8 +78,16 @@ pub fn cosine_similarity(a: &[f32], b: &[f32]) -> f64 {
         .map(|(x, y)| (*x as f64) * (*y as f64))
         .sum();
 
-    let norm_a: f64 = a.iter().map(|x| (*x as f64) * (*x as f64)).sum::<f64>().sqrt();
-    let norm_b: f64 = b.iter().map(|x| (*x as f64) * (*x as f64)).sum::<f64>().sqrt();
+    let norm_a: f64 = a
+        .iter()
+        .map(|x| (*x as f64) * (*x as f64))
+        .sum::<f64>()
+        .sqrt();
+    let norm_b: f64 = b
+        .iter()
+        .map(|x| (*x as f64) * (*x as f64))
+        .sum::<f64>()
+        .sqrt();
 
     if norm_a == 0.0 || norm_b == 0.0 {
         return 0.0;
@@ -142,10 +150,7 @@ pub struct CrossMatch {
 ///
 /// Each entry in `embeddings` is `(character_id, embedding_vector)`.
 /// Only unique pairs are returned (no duplicates, no self-matches).
-pub fn find_cross_matches(
-    embeddings: &[(i64, Vec<f32>)],
-    threshold: f64,
-) -> Vec<CrossMatch> {
+pub fn find_cross_matches(embeddings: &[(i64, Vec<f32>)], threshold: f64) -> Vec<CrossMatch> {
     let mut matches = Vec::new();
 
     for i in 0..embeddings.len() {
@@ -288,10 +293,7 @@ mod tests {
 
     #[test]
     fn find_cross_matches_no_duplicate_pairs() {
-        let embeddings = vec![
-            (1, vec![1.0, 0.0]),
-            (2, vec![1.0, 0.0]),
-        ];
+        let embeddings = vec![(1, vec![1.0, 0.0]), (2, vec![1.0, 0.0])];
         let matches = find_cross_matches(&embeddings, 0.50);
         // Should return exactly one pair (1,2), not also (2,1).
         assert_eq!(matches.len(), 1);

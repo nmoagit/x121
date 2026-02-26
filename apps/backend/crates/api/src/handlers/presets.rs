@@ -10,12 +10,12 @@ use axum::Json;
 
 use serde::Deserialize;
 
-use trulience_core::error::CoreError;
-use trulience_core::preset;
-use trulience_core::types::DbId;
-use trulience_db::models::preset::{CreatePreset, CreatePresetRating, Preset, UpdatePreset};
-use trulience_db::models::template::{CreateTemplate, Template, UpdateTemplate};
-use trulience_db::repositories::{PresetRepo, TemplateRepo};
+use x121_core::error::CoreError;
+use x121_core::preset;
+use x121_core::types::DbId;
+use x121_db::models::preset::{CreatePreset, CreatePresetRating, Preset, UpdatePreset};
+use x121_db::models::template::{CreateTemplate, Template, UpdateTemplate};
+use x121_db::repositories::{PresetRepo, TemplateRepo};
 
 use crate::error::{AppError, AppResult};
 use crate::middleware::auth::AuthUser;
@@ -45,40 +45,27 @@ pub struct MarketplaceParams {
 // ---------------------------------------------------------------------------
 
 /// Verify that a template exists, returning the full row.
-async fn ensure_template_exists(
-    pool: &sqlx::PgPool,
-    id: DbId,
-) -> AppResult<Template> {
-    TemplateRepo::find_by_id(pool, id)
-        .await?
-        .ok_or_else(|| {
-            AppError::Core(CoreError::NotFound {
-                entity: "Template",
-                id,
-            })
+async fn ensure_template_exists(pool: &sqlx::PgPool, id: DbId) -> AppResult<Template> {
+    TemplateRepo::find_by_id(pool, id).await?.ok_or_else(|| {
+        AppError::Core(CoreError::NotFound {
+            entity: "Template",
+            id,
         })
+    })
 }
 
 /// Verify that a preset exists, returning the full row.
-async fn ensure_preset_exists(
-    pool: &sqlx::PgPool,
-    id: DbId,
-) -> AppResult<Preset> {
-    PresetRepo::find_by_id(pool, id)
-        .await?
-        .ok_or_else(|| {
-            AppError::Core(CoreError::NotFound {
-                entity: "Preset",
-                id,
-            })
+async fn ensure_preset_exists(pool: &sqlx::PgPool, id: DbId) -> AppResult<Preset> {
+    PresetRepo::find_by_id(pool, id).await?.ok_or_else(|| {
+        AppError::Core(CoreError::NotFound {
+            entity: "Preset",
+            id,
         })
+    })
 }
 
 /// Validate scope and scope-project consistency for create/update operations.
-fn validate_scope_and_project(
-    scope: Option<&str>,
-    project_id: Option<DbId>,
-) -> AppResult<()> {
+fn validate_scope_and_project(scope: Option<&str>, project_id: Option<DbId>) -> AppResult<()> {
     let scope_val = scope.unwrap_or(preset::SCOPE_PERSONAL);
     preset::validate_scope(scope_val)?;
     preset::validate_scope_project_consistency(scope_val, project_id)?;
@@ -319,7 +306,12 @@ pub async fn rate_preset(
     preset::validate_rating(input.rating)?;
 
     let rating = PresetRepo::rate(&state.pool, id, auth.user_id, &input).await?;
-    tracing::info!(preset_id = id, user_id = auth.user_id, rating = input.rating, "Preset rated");
+    tracing::info!(
+        preset_id = id,
+        user_id = auth.user_id,
+        rating = input.rating,
+        "Preset rated"
+    );
     Ok(Json(DataResponse { data: rating }))
 }
 

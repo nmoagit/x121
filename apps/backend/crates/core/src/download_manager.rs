@@ -143,7 +143,7 @@ pub fn resolve_target_directory(
 
         // Match: rule has no base_model constraint, or base_model matches.
         let base_match = match (rule_base.as_deref(), base_model) {
-            (None, _) => true,               // rule applies to all base models
+            (None, _) => true,                // rule applies to all base models
             (Some(rb), Some(bm)) => rb == bm, // specific match
             (Some(_), None) => false,         // rule requires base_model but none given
         };
@@ -173,7 +173,10 @@ pub fn extract_filename_from_url(url: &str) -> String {
     let clean = clean.split('#').next().unwrap_or(clean);
 
     // Strip scheme (http:// or https://) and domain to get the path only
-    let path = if let Some(rest) = clean.strip_prefix("https://").or_else(|| clean.strip_prefix("http://")) {
+    let path = if let Some(rest) = clean
+        .strip_prefix("https://")
+        .or_else(|| clean.strip_prefix("http://"))
+    {
         // Find the first '/' after the domain
         rest.find('/').map(|i| &rest[i..]).unwrap_or("")
     } else {
@@ -369,7 +372,10 @@ mod tests {
 
     #[test]
     fn extract_empty_path_returns_default() {
-        assert_eq!(extract_filename_from_url("https://example.com/"), "download");
+        assert_eq!(
+            extract_filename_from_url("https://example.com/"),
+            "download"
+        );
     }
 
     // -- generate_token_hint -------------------------------------------------

@@ -23,16 +23,7 @@ pub fn batch_metadata_router() -> Router<AppState> {
             "/",
             get(batch_metadata::list_operations).post(batch_metadata::create_preview),
         )
-        .route(
-            "/{id}",
-            get(batch_metadata::get_operation),
-        )
-        .route(
-            "/{id}/execute",
-            post(batch_metadata::execute_operation),
-        )
-        .route(
-            "/{id}/undo",
-            post(batch_metadata::undo_operation),
-        )
+        .route("/{id}", get(batch_metadata::get_operation))
+        .route("/{id}/execute", post(batch_metadata::execute_operation))
+        .route("/{id}/undo", post(batch_metadata::undo_operation))
 }

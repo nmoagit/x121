@@ -11,14 +11,14 @@ use axum::Json;
 
 use serde::Deserialize;
 
-use trulience_core::error::CoreError;
-use trulience_core::onboarding_wizard;
-use trulience_core::search::{clamp_limit, clamp_offset};
-use trulience_core::types::DbId;
-use trulience_db::models::onboarding_session::{
+use x121_core::error::CoreError;
+use x121_core::onboarding_wizard;
+use x121_core::search::{clamp_limit, clamp_offset};
+use x121_core::types::DbId;
+use x121_db::models::onboarding_session::{
     CreateOnboardingSession, OnboardingSession, UpdateOnboardingStepData,
 };
-use trulience_db::repositories::OnboardingSessionRepo;
+use x121_db::repositories::OnboardingSessionRepo;
 
 use crate::error::{AppError, AppResult};
 use crate::middleware::auth::AuthUser;
@@ -42,10 +42,7 @@ pub struct ListSessionsParams {
 // ---------------------------------------------------------------------------
 
 /// Verify that an onboarding session exists, returning the full row.
-async fn ensure_session_exists(
-    pool: &sqlx::PgPool,
-    id: DbId,
-) -> AppResult<OnboardingSession> {
+async fn ensure_session_exists(pool: &sqlx::PgPool, id: DbId) -> AppResult<OnboardingSession> {
     OnboardingSessionRepo::find_by_id(pool, id)
         .await?
         .ok_or_else(|| {
@@ -66,8 +63,7 @@ pub async fn create_session(
     auth: AuthUser,
     Json(body): Json<CreateOnboardingSession>,
 ) -> AppResult<impl IntoResponse> {
-    let session =
-        OnboardingSessionRepo::create(&state.pool, body.project_id, auth.user_id).await?;
+    let session = OnboardingSessionRepo::create(&state.pool, body.project_id, auth.user_id).await?;
 
     tracing::info!(
         session_id = session.id,
@@ -317,13 +313,9 @@ pub async fn list_sessions(
     let limit = clamp_limit(params.limit, 25, 100);
     let offset = clamp_offset(params.offset);
 
-    let items = OnboardingSessionRepo::list_by_project(
-        &state.pool,
-        params.project_id,
-        limit,
-        offset,
-    )
-    .await?;
+    let items =
+        OnboardingSessionRepo::list_by_project(&state.pool, params.project_id, limit, offset)
+            .await?;
 
     tracing::debug!(
         count = items.len(),

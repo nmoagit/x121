@@ -4,7 +4,7 @@
 //! Actual checkpoint data lives on the filesystem at the `data_path`.
 
 use sqlx::PgPool;
-use trulience_core::types::DbId;
+use x121_core::types::DbId;
 
 use crate::models::checkpoint::{Checkpoint, CreateCheckpoint};
 
@@ -49,10 +49,7 @@ impl CheckpointRepo {
     }
 
     /// Find a checkpoint by its ID.
-    pub async fn find_by_id(
-        pool: &PgPool,
-        id: DbId,
-    ) -> Result<Option<Checkpoint>, sqlx::Error> {
+    pub async fn find_by_id(pool: &PgPool, id: DbId) -> Result<Option<Checkpoint>, sqlx::Error> {
         let query = format!("SELECT {COLUMNS} FROM checkpoints WHERE id = $1");
         sqlx::query_as::<_, Checkpoint>(&query)
             .bind(id)
@@ -61,10 +58,7 @@ impl CheckpointRepo {
     }
 
     /// List all checkpoints for a job, ordered by stage index ascending.
-    pub async fn list_by_job(
-        pool: &PgPool,
-        job_id: DbId,
-    ) -> Result<Vec<Checkpoint>, sqlx::Error> {
+    pub async fn list_by_job(pool: &PgPool, job_id: DbId) -> Result<Vec<Checkpoint>, sqlx::Error> {
         let query = format!(
             "SELECT {COLUMNS} FROM checkpoints \
              WHERE job_id = $1 ORDER BY stage_index ASC"
@@ -93,10 +87,7 @@ impl CheckpointRepo {
     /// Delete all checkpoints for a job (used after successful completion).
     ///
     /// Returns the number of rows deleted.
-    pub async fn delete_by_job(
-        pool: &PgPool,
-        job_id: DbId,
-    ) -> Result<u64, sqlx::Error> {
+    pub async fn delete_by_job(pool: &PgPool, job_id: DbId) -> Result<u64, sqlx::Error> {
         let result = sqlx::query("DELETE FROM checkpoints WHERE job_id = $1")
             .bind(job_id)
             .execute(pool)

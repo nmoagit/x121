@@ -1,12 +1,10 @@
 //! Repository for the `project_configs` table (PRD-74).
 
 use sqlx::PgPool;
-use trulience_core::search::{clamp_limit, clamp_offset, DEFAULT_SEARCH_LIMIT, MAX_SEARCH_LIMIT};
-use trulience_core::types::DbId;
+use x121_core::search::{clamp_limit, clamp_offset, DEFAULT_SEARCH_LIMIT, MAX_SEARCH_LIMIT};
+use x121_core::types::DbId;
 
-use crate::models::project_config::{
-    CreateProjectConfig, ProjectConfig, UpdateProjectConfig,
-};
+use crate::models::project_config::{CreateProjectConfig, ProjectConfig, UpdateProjectConfig};
 
 /// Column list for project_configs queries.
 const COLUMNS: &str = "id, name, description, version, config_json, source_project_id, \
@@ -39,10 +37,7 @@ impl ProjectConfigRepo {
     }
 
     /// Find a project config by its primary key.
-    pub async fn find_by_id(
-        pool: &PgPool,
-        id: DbId,
-    ) -> Result<Option<ProjectConfig>, sqlx::Error> {
+    pub async fn find_by_id(pool: &PgPool, id: DbId) -> Result<Option<ProjectConfig>, sqlx::Error> {
         let query = format!("SELECT {COLUMNS} FROM project_configs WHERE id = $1");
         sqlx::query_as::<_, ProjectConfig>(&query)
             .bind(id)
@@ -130,7 +125,7 @@ impl ProjectConfigRepo {
             "SELECT id, name, prompt_template, negative_prompt_template, \
                     workflow_json, lora_config, model_config, generation_params, \
                     target_duration_secs, segment_duration_secs, \
-                    duration_tolerance_secs, variant_applicability, \
+                    duration_tolerance_secs, \
                     sort_order, description \
              FROM scene_types \
              WHERE project_id = $1 AND deleted_at IS NULL \
@@ -155,7 +150,6 @@ impl ProjectConfigRepo {
                     "target_duration_secs": r.target_duration_secs,
                     "segment_duration_secs": r.segment_duration_secs,
                     "duration_tolerance_secs": r.duration_tolerance_secs,
-                    "variant_applicability": r.variant_applicability,
                     "sort_order": r.sort_order,
                 })
             })
@@ -184,6 +178,5 @@ struct SceneTypeRow {
     target_duration_secs: Option<i32>,
     segment_duration_secs: Option<i32>,
     duration_tolerance_secs: i32,
-    variant_applicability: String,
     sort_order: i32,
 }

@@ -1,11 +1,11 @@
 [package]
-name = "trulience-events"
+name = "x121-events"
 version.workspace = true
 edition.workspace = true
 
 [dependencies]
-trulience-core = { workspace = true }
-trulience-db = { workspace = true }
+x121-core = { workspace = true }
+x121-db = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 sqlx = { workspace = true }

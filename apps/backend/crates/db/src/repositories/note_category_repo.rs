@@ -1,7 +1,7 @@
 //! Repository for the `note_categories` table (PRD-95).
 
 use sqlx::PgPool;
-use trulience_core::types::DbId;
+use x121_core::types::DbId;
 
 use crate::models::note_category::{CreateNoteCategory, NoteCategory, UpdateNoteCategory};
 
@@ -21,10 +21,7 @@ impl NoteCategoryRepo {
     }
 
     /// Find a note category by its ID.
-    pub async fn find_by_id(
-        pool: &PgPool,
-        id: DbId,
-    ) -> Result<Option<NoteCategory>, sqlx::Error> {
+    pub async fn find_by_id(pool: &PgPool, id: DbId) -> Result<Option<NoteCategory>, sqlx::Error> {
         let query = format!("SELECT {COLUMNS} FROM note_categories WHERE id = $1");
         sqlx::query_as::<_, NoteCategory>(&query)
             .bind(id)

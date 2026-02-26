@@ -4,7 +4,7 @@
 //! cost & resource estimation engine.
 
 use sqlx::PgPool;
-use trulience_core::types::DbId;
+use x121_core::types::DbId;
 
 use crate::models::generation_metric::{GenerationMetric, RecordMetricInput};
 

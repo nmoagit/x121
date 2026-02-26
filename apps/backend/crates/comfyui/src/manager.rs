@@ -14,8 +14,8 @@ use std::sync::Arc;
 
 use tokio::sync::{broadcast, RwLock};
 use tokio_util::sync::CancellationToken;
-use trulience_core::types::DbId;
-use trulience_db::repositories::{ComfyUIExecutionRepo, ComfyUIInstanceRepo};
+use x121_core::types::DbId;
+use x121_db::repositories::{ComfyUIExecutionRepo, ComfyUIInstanceRepo};
 
 use crate::api::ComfyUIApi;
 use crate::client::ComfyUIClient;

@@ -802,7 +802,7 @@ This document is the architectural blueprint, divided into granular, PRD-ready m
 - **Key Capabilities:**
   - **Shortcut Registry** — Single centralized registry of all keyboard shortcuts across the platform. Every action that has a shortcut is registered here — no scattered `addEventListener` calls.
   - **Preset Profiles** — Built-in keymap presets modeled after industry tools:
-    - **Default** — Platform-native shortcuts optimized for the Trulience workflow.
+    - **Default** — Platform-native shortcuts optimized for the X121 workflow.
     - **Premiere** — Familiar to Adobe Premiere Pro editors.
     - **Resolve** — Familiar to DaVinci Resolve colorists.
     - **Avid** — Familiar to Avid Media Composer editors.
@@ -830,7 +830,7 @@ This document is the architectural blueprint, divided into granular, PRD-ready m
   - **Expandable Panel** — Click the tray icon to expand a dropdown showing each active job with: name, progress bar, elapsed time, estimated remaining time, and quick actions (pause/cancel).
   - **Toast Notifications** — When a job completes or fails, a transient toast appears (integrated with PRD-10 event bus). Clicking the toast navigates to the completed segment.
   - **Sound Alerts** — Optional audio notification on job completion (configurable: on/off, custom sound). Useful when the user is working in a different application.
-  - **Minimized Progress** — When the browser tab is not focused, the page title updates to show progress (e.g., "[73%] Trulience — Generating Scene 3").
+  - **Minimized Progress** — When the browser tab is not focused, the page title updates to show progress (e.g., "[73%] X121 — Generating Scene 3").
 - **Decision:** PRD-42 (Studio Pulse) is a full dashboard for studio-wide monitoring. This PRD is the personal, glanceable companion — "What are my jobs doing right now?" When a 20-minute generation is running and the user is editing metadata on a different character, they need passive awareness without navigating to a separate dashboard. The browser title trick extends this awareness even when the app isn't the active window.
 
 ### [PRD-82] Content Sensitivity Controls

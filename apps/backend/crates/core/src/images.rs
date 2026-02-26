@@ -19,7 +19,7 @@ pub const PROVENANCE_MANUAL_UPLOAD: &str = "manual_upload";
 /// # Examples
 ///
 /// ```
-/// use trulience_core::images::is_valid_image_format;
+/// use x121_core::images::is_valid_image_format;
 ///
 /// assert!(is_valid_image_format("png"));
 /// assert!(is_valid_image_format("JPEG"));

@@ -7,13 +7,13 @@ use axum::extract::{Path, Query, State};
 use axum::response::IntoResponse;
 use axum::Json;
 use serde::{Deserialize, Serialize};
-use trulience_core::error::CoreError;
-use trulience_core::maintenance;
-use trulience_core::search::{clamp_limit, clamp_offset, DEFAULT_SEARCH_LIMIT, MAX_SEARCH_LIMIT};
-use trulience_core::types::DbId;
-use trulience_db::models::bulk_operation::CreateBulkOperation;
-use trulience_db::models::status::{BulkOperationStatusId, BulkOperationTypeId};
-use trulience_db::repositories::BulkOperationRepo;
+use x121_core::error::CoreError;
+use x121_core::maintenance;
+use x121_core::search::{clamp_limit, clamp_offset, DEFAULT_SEARCH_LIMIT, MAX_SEARCH_LIMIT};
+use x121_core::types::DbId;
+use x121_db::models::bulk_operation::CreateBulkOperation;
+use x121_db::models::status::{BulkOperationStatusId, BulkOperationTypeId};
+use x121_db::repositories::BulkOperationRepo;
 
 use crate::error::AppResult;
 use crate::middleware::auth::AuthUser;
@@ -190,12 +190,8 @@ pub async fn execute_find_replace(
     }
 
     // Mark as executing.
-    BulkOperationRepo::update_status(
-        &state.pool,
-        id,
-        BulkOperationStatusId::Executing.id(),
-    )
-    .await?;
+    BulkOperationRepo::update_status(&state.pool, id, BulkOperationStatusId::Executing.id())
+        .await?;
 
     // Mark as completed with execution metadata.
     let completed = BulkOperationRepo::update_execution(
@@ -294,12 +290,8 @@ pub async fn execute_repath(
         .into());
     }
 
-    BulkOperationRepo::update_status(
-        &state.pool,
-        id,
-        BulkOperationStatusId::Executing.id(),
-    )
-    .await?;
+    BulkOperationRepo::update_status(&state.pool, id, BulkOperationStatusId::Executing.id())
+        .await?;
 
     let completed = BulkOperationRepo::update_execution(
         &state.pool,
@@ -341,10 +333,9 @@ pub async fn undo_operation(
         })?;
 
     if op.status_id != BulkOperationStatusId::Completed.id() {
-        return Err(CoreError::Validation(
-            "Only completed operations can be undone".to_string(),
-        )
-        .into());
+        return Err(
+            CoreError::Validation("Only completed operations can be undone".to_string()).into(),
+        );
     }
 
     let undone = BulkOperationRepo::update_undo(
@@ -385,10 +376,9 @@ pub async fn list_operations(
             "repath" => BulkOperationTypeId::Repath.id(),
             "batch_update" => BulkOperationTypeId::BatchUpdate.id(),
             _ => {
-                return Err(CoreError::Validation(format!(
-                    "Unknown operation type: '{op_type}'"
-                ))
-                .into())
+                return Err(
+                    CoreError::Validation(format!("Unknown operation type: '{op_type}'")).into(),
+                )
             }
         };
         BulkOperationRepo::list_by_type(&state.pool, type_id, limit, offset).await?

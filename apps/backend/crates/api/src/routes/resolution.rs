@@ -19,7 +19,10 @@ use crate::state::AppState;
 /// ```
 pub fn resolution_router() -> Router<AppState> {
     Router::new()
-        .route("/", get(resolution::list_tiers).post(resolution::create_tier))
+        .route(
+            "/",
+            get(resolution::list_tiers).post(resolution::create_tier),
+        )
         .route("/{id}", get(resolution::get_tier))
 }
 

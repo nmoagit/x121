@@ -23,8 +23,5 @@ pub fn router() -> Router<AppState> {
         .route("/export", get(audit::export_audit_logs))
         .route("/integrity-check", get(audit::check_integrity))
         .route("/retention", get(audit::list_retention_policies))
-        .route(
-            "/retention/{category}",
-            put(audit::update_retention_policy),
-        )
+        .route("/retention/{category}", put(audit::update_retention_policy))
 }

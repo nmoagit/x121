@@ -7,22 +7,15 @@ use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::Json;
-use serde::Deserialize;
 use x121_core::error::CoreError;
 use x121_core::types::DbId;
 use x121_db::models::track::{CreateTrack, UpdateTrack};
 use x121_db::repositories::TrackRepo;
 
 use crate::error::{AppError, AppResult};
+use crate::query::IncludeInactiveParams;
 use crate::response::DataResponse;
 use crate::state::AppState;
-
-/// Query parameters for listing tracks.
-#[derive(Debug, Deserialize)]
-pub struct ListParams {
-    #[serde(default)]
-    pub include_inactive: bool,
-}
 
 // ---------------------------------------------------------------------------
 // Handlers
@@ -33,7 +26,7 @@ pub struct ListParams {
 /// List all tracks, optionally including inactive ones.
 pub async fn list(
     State(state): State<AppState>,
-    Query(params): Query<ListParams>,
+    Query(params): Query<IncludeInactiveParams>,
 ) -> AppResult<impl IntoResponse> {
     let tracks = TrackRepo::list(&state.pool, params.include_inactive).await?;
     Ok(Json(DataResponse { data: tracks }))

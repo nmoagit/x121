@@ -1,13 +1,12 @@
 //! Repository for the `review_tags` table (PRD-38).
 
 use sqlx::PgPool;
-use trulience_core::types::DbId;
+use x121_core::types::DbId;
 
 use crate::models::review_note::{CreateReviewTag, ReviewTag, TagFrequency};
 
 /// Column list for review_tags queries.
-const COLUMNS: &str =
-    "id, name, color, category, created_by, created_at, updated_at";
+const COLUMNS: &str = "id, name, color, category, created_by, created_at, updated_at";
 
 /// Provides CRUD operations for review tags.
 pub struct ReviewTagRepo;
@@ -15,12 +14,8 @@ pub struct ReviewTagRepo;
 impl ReviewTagRepo {
     /// List all review tags, ordered by category then name.
     pub async fn list(pool: &PgPool) -> Result<Vec<ReviewTag>, sqlx::Error> {
-        let query = format!(
-            "SELECT {COLUMNS} FROM review_tags ORDER BY category, name"
-        );
-        sqlx::query_as::<_, ReviewTag>(&query)
-            .fetch_all(pool)
-            .await
+        let query = format!("SELECT {COLUMNS} FROM review_tags ORDER BY category, name");
+        sqlx::query_as::<_, ReviewTag>(&query).fetch_all(pool).await
     }
 
     /// Create a new review tag, returning the created row.
@@ -44,13 +39,8 @@ impl ReviewTagRepo {
     }
 
     /// Find a review tag by its ID.
-    pub async fn find_by_id(
-        pool: &PgPool,
-        id: DbId,
-    ) -> Result<Option<ReviewTag>, sqlx::Error> {
-        let query = format!(
-            "SELECT {COLUMNS} FROM review_tags WHERE id = $1"
-        );
+    pub async fn find_by_id(pool: &PgPool, id: DbId) -> Result<Option<ReviewTag>, sqlx::Error> {
+        let query = format!("SELECT {COLUMNS} FROM review_tags WHERE id = $1");
         sqlx::query_as::<_, ReviewTag>(&query)
             .bind(id)
             .fetch_optional(pool)

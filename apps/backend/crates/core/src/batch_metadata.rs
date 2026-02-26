@@ -212,9 +212,7 @@ pub fn validate_search_pattern(pattern: &str, is_regex: bool) -> Result<(), Stri
         ));
     }
     if is_regex {
-        regex::Regex::new(pattern).map_err(|e| {
-            format!("Invalid regex pattern: {e}")
-        })?;
+        regex::Regex::new(pattern).map_err(|e| format!("Invalid regex pattern: {e}"))?;
     }
     Ok(())
 }
@@ -222,9 +220,7 @@ pub fn validate_search_pattern(pattern: &str, is_regex: bool) -> Result<(), Stri
 /// Validate batch size is within allowed bounds.
 pub fn validate_batch_size(count: usize) -> Result<(), String> {
     if count < MIN_BATCH_SIZE {
-        return Err(format!(
-            "Batch size must be at least {MIN_BATCH_SIZE}"
-        ));
+        return Err(format!("Batch size must be at least {MIN_BATCH_SIZE}"));
     }
     if count > MAX_BATCH_SIZE {
         return Err(format!(
@@ -562,61 +558,46 @@ mod tests {
 
     #[test]
     fn summary_multi_select_edit() {
-        let summary = compute_batch_summary(
-            &BatchOperationType::MultiSelectEdit,
-            Some("agency"),
-            42,
-        );
+        let summary =
+            compute_batch_summary(&BatchOperationType::MultiSelectEdit, Some("agency"), 42);
         assert_eq!(summary, "Set 'agency' for 42 characters");
     }
 
     #[test]
     fn summary_search_replace_specific_field() {
-        let summary = compute_batch_summary(
-            &BatchOperationType::SearchReplace,
-            Some("hair_color"),
-            10,
+        let summary =
+            compute_batch_summary(&BatchOperationType::SearchReplace, Some("hair_color"), 10);
+        assert_eq!(
+            summary,
+            "Search & replace in hair_color across 10 characters"
         );
-        assert_eq!(summary, "Search & replace in hair_color across 10 characters");
     }
 
     #[test]
     fn summary_search_replace_all_fields() {
-        let summary = compute_batch_summary(
-            &BatchOperationType::SearchReplace,
-            None,
-            10,
+        let summary = compute_batch_summary(&BatchOperationType::SearchReplace, None, 10);
+        assert_eq!(
+            summary,
+            "Search & replace in all fields across 10 characters"
         );
-        assert_eq!(summary, "Search & replace in all fields across 10 characters");
     }
 
     #[test]
     fn summary_csv_import() {
-        let summary = compute_batch_summary(
-            &BatchOperationType::CsvImport,
-            None,
-            25,
-        );
+        let summary = compute_batch_summary(&BatchOperationType::CsvImport, None, 25);
         assert_eq!(summary, "25 characters updated from CSV import");
     }
 
     #[test]
     fn summary_field_operation() {
-        let summary = compute_batch_summary(
-            &BatchOperationType::FieldOperation,
-            Some("hair_color"),
-            5,
-        );
+        let summary =
+            compute_batch_summary(&BatchOperationType::FieldOperation, Some("hair_color"), 5);
         assert_eq!(summary, "Field operation on 'hair_color' for 5 characters");
     }
 
     #[test]
     fn summary_with_no_field_name() {
-        let summary = compute_batch_summary(
-            &BatchOperationType::MultiSelectEdit,
-            None,
-            3,
-        );
+        let summary = compute_batch_summary(&BatchOperationType::MultiSelectEdit, None, 3);
         assert_eq!(summary, "Set 'unknown' for 3 characters");
     }
 

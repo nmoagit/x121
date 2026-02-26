@@ -2,7 +2,7 @@
 //!
 //! This module contains pure business logic for the reclamation system.
 //! No database dependencies — all data access is done through the repository
-//! layer in `trulience_db`. The core module provides:
+//! layer in `x121_db`. The core module provides:
 //!
 //! - Domain error types
 //! - Protection rule evaluation

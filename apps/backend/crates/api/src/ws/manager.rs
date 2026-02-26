@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use axum::body::Bytes;
 use axum::extract::ws::Message;
 use tokio::sync::{mpsc, RwLock};
-use trulience_core::types::{DbId, Timestamp};
+use x121_core::types::{DbId, Timestamp};
 
 /// Channel sender half for pushing messages to a WebSocket connection.
 pub type WsSender = mpsc::UnboundedSender<Message>;

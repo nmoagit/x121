@@ -1,6 +1,6 @@
 # Image-to-Video Generation Platform Design
 
-The **Image-to-Video Platform** (internally referred to as "Trulience") is a professional-grade studio orchestration tool designed to manage complex AI video production pipelines. It bridges the gap between raw AI generation (like ComfyUI) and a structured, multi-user VFX production environment.
+The **Image-to-Video Platform** (internally referred to as "X121") is a professional-grade studio orchestration tool designed to manage complex AI video production pipelines. It bridges the gap between raw AI generation (like ComfyUI) and a structured, multi-user VFX production environment.
 
 ### **Core Purpose**
 The platform automates the lifecycle of video creation—starting from a single portrait (**Seed A**) and a foundation style (**Seed B**), then iteratively generating and "stitching" video segments to ensure temporal stability, likeness consistency, and professional-quality output.

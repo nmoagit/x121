@@ -1,7 +1,7 @@
 //! Repository for the `user_recent_items` table (PRD-31).
 
 use sqlx::PgPool;
-use trulience_core::types::DbId;
+use x121_core::types::DbId;
 
 use crate::models::recent_item::UserRecentItem;
 
@@ -81,16 +81,11 @@ impl RecentItemRepo {
     }
 
     /// Clear all recent items for a user.
-    pub async fn clear_all(
-        pool: &PgPool,
-        user_id: DbId,
-    ) -> Result<u64, sqlx::Error> {
-        let result = sqlx::query(
-            "DELETE FROM user_recent_items WHERE user_id = $1",
-        )
-        .bind(user_id)
-        .execute(pool)
-        .await?;
+    pub async fn clear_all(pool: &PgPool, user_id: DbId) -> Result<u64, sqlx::Error> {
+        let result = sqlx::query("DELETE FROM user_recent_items WHERE user_id = $1")
+            .bind(user_id)
+            .execute(pool)
+            .await?;
         Ok(result.rows_affected())
     }
 }

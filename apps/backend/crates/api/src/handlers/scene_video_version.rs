@@ -6,10 +6,10 @@
 use axum::extract::{Multipart, Path, State};
 use axum::http::StatusCode;
 use axum::Json;
-use trulience_core::error::CoreError;
-use trulience_core::types::DbId;
-use trulience_db::models::scene_video_version::{CreateSceneVideoVersion, SceneVideoVersion};
-use trulience_db::repositories::SceneVideoVersionRepo;
+use x121_core::error::CoreError;
+use x121_core::types::DbId;
+use x121_db::models::scene_video_version::{CreateSceneVideoVersion, SceneVideoVersion};
+use x121_db::repositories::SceneVideoVersionRepo;
 
 use crate::error::{AppError, AppResult};
 use crate::state::AppState;

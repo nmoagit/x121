@@ -8,7 +8,7 @@
 //! passed as text (e.g. `'[0.1, 0.2, ...]'::vector`) and cast in SQL.
 
 use sqlx::PgPool;
-use trulience_core::types::DbId;
+use x121_core::types::DbId;
 
 use crate::models::embedding::{
     CreateDetectedFace, DetectedFace, EmbeddingHistory, EmbeddingStatusResponse,
@@ -179,7 +179,7 @@ impl EmbeddingRepo {
         )
         .bind(character_id)
         .bind(face_id)
-        .bind(trulience_core::embedding::EmbeddingStatus::Completed.id())
+        .bind(x121_core::embedding::EmbeddingStatus::Completed.id())
         .execute(&mut *tx)
         .await?;
 
@@ -243,10 +243,7 @@ impl EmbeddingRepo {
     /// Archive the current character embedding into the history table.
     ///
     /// Only archives if the character has an existing embedding.
-    pub async fn archive_embedding(
-        pool: &PgPool,
-        character_id: DbId,
-    ) -> Result<(), sqlx::Error> {
+    pub async fn archive_embedding(pool: &PgPool, character_id: DbId) -> Result<(), sqlx::Error> {
         sqlx::query(
             "INSERT INTO embedding_history \
                 (character_id, face_embedding, face_detection_confidence, face_bounding_box) \
@@ -289,6 +286,6 @@ struct EmbeddingStatusRow {
     embedding_status_label: String,
     face_detection_confidence: Option<f64>,
     face_bounding_box: Option<serde_json::Value>,
-    embedding_extracted_at: Option<trulience_core::types::Timestamp>,
+    embedding_extracted_at: Option<x121_core::types::Timestamp>,
     has_embedding: bool,
 }

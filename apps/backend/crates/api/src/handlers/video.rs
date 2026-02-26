@@ -14,12 +14,12 @@ use axum::Json;
 use serde::Deserialize;
 use tokio::io::{AsyncReadExt, AsyncSeekExt};
 use tokio_util::io::ReaderStream;
-use trulience_core::error::CoreError;
-use trulience_core::ffmpeg;
-use trulience_core::types::DbId;
-use trulience_core::video_sources;
-use trulience_db::models::video::{CreateVideoThumbnail, VideoMetadata};
-use trulience_db::repositories::{SceneVideoVersionRepo, SegmentRepo, VideoThumbnailRepo};
+use x121_core::error::CoreError;
+use x121_core::ffmpeg;
+use x121_core::types::DbId;
+use x121_core::video_sources;
+use x121_db::models::video::{CreateVideoThumbnail, VideoMetadata};
+use x121_db::repositories::{SceneVideoVersionRepo, SegmentRepo, VideoThumbnailRepo};
 
 use crate::error::{AppError, AppResult};
 use crate::state::AppState;
@@ -329,7 +329,7 @@ pub async fn generate_thumbnails(
     Query(params): Query<GenerateThumbnailsParams>,
 ) -> AppResult<(
     StatusCode,
-    Json<Vec<trulience_db::models::video::VideoThumbnail>>,
+    Json<Vec<x121_db::models::video::VideoThumbnail>>,
 )> {
     let file_path = resolve_video_path(&state.pool, &source_type, source_id).await?;
     let video_path = std::path::Path::new(&file_path);

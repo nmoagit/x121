@@ -4,7 +4,7 @@
 //! version history retrieval, and boundary data lookups.
 
 use sqlx::PgPool;
-use trulience_core::types::DbId;
+use x121_core::types::DbId;
 
 use crate::models::segment_version::{SegmentBoundaryData, SegmentVersionInfo};
 
@@ -39,7 +39,7 @@ impl SegmentVersionRepo {
             "UPDATE segments SET
                 previous_segment_id = $2,
                 regeneration_count = $3
-             WHERE id = $1 AND deleted_at IS NULL"
+             WHERE id = $1 AND deleted_at IS NULL",
         )
         .bind(new_segment_id)
         .bind(old_segment_id)
@@ -62,7 +62,7 @@ impl SegmentVersionRepo {
              WHERE scene_id = $1
                AND sequence_index > $2
                AND deleted_at IS NULL
-               AND is_stale = false"
+               AND is_stale = false",
         )
         .bind(scene_id)
         .bind(from_sequence_index)
@@ -75,7 +75,7 @@ impl SegmentVersionRepo {
     pub async fn clear_stale_flag(pool: &PgPool, segment_id: DbId) -> Result<bool, sqlx::Error> {
         let result = sqlx::query(
             "UPDATE segments SET is_stale = false
-             WHERE id = $1 AND deleted_at IS NULL AND is_stale = true"
+             WHERE id = $1 AND deleted_at IS NULL AND is_stale = true",
         )
         .bind(segment_id)
         .execute(pool)
@@ -141,7 +141,7 @@ impl SegmentVersionRepo {
             "UPDATE segments SET
                 boundary_ssim_before = COALESCE($2, boundary_ssim_before),
                 boundary_ssim_after = COALESCE($3, boundary_ssim_after)
-             WHERE id = $1 AND deleted_at IS NULL"
+             WHERE id = $1 AND deleted_at IS NULL",
         )
         .bind(segment_id)
         .bind(before_ssim)
@@ -152,12 +152,9 @@ impl SegmentVersionRepo {
     }
 
     /// Get the total number of segments in a scene (for downstream impact estimation).
-    pub async fn count_scene_segments(
-        pool: &PgPool,
-        scene_id: DbId,
-    ) -> Result<i64, sqlx::Error> {
+    pub async fn count_scene_segments(pool: &PgPool, scene_id: DbId) -> Result<i64, sqlx::Error> {
         let row: (i64,) = sqlx::query_as(
-            "SELECT COUNT(*) FROM segments WHERE scene_id = $1 AND deleted_at IS NULL"
+            "SELECT COUNT(*) FROM segments WHERE scene_id = $1 AND deleted_at IS NULL",
         )
         .bind(scene_id)
         .fetch_one(pool)

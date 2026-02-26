@@ -35,7 +35,7 @@ pub enum EmailError {
 const DEFAULT_SMTP_PORT: u16 = 587;
 
 /// Default sender address when `SMTP_FROM` is not set.
-const DEFAULT_FROM_ADDRESS: &str = "noreply@trulience.local";
+const DEFAULT_FROM_ADDRESS: &str = "noreply@x121.local";
 
 /// Configuration for the SMTP email delivery service.
 #[derive(Debug, Clone)]
@@ -62,7 +62,7 @@ impl EmailConfig {
     /// |-----------------|----------|----------------------------|
     /// | `SMTP_HOST`     | yes      | —                          |
     /// | `SMTP_PORT`     | no       | `587`                      |
-    /// | `SMTP_FROM`     | no       | `noreply@trulience.local`  |
+    /// | `SMTP_FROM`     | no       | `noreply@x121.local`  |
     /// | `SMTP_USER`     | no       | —                          |
     /// | `SMTP_PASSWORD`  | no       | —                          |
     pub fn from_env() -> Option<Self> {
@@ -103,7 +103,7 @@ impl EmailDelivery {
             AsyncSmtpTransport, AsyncTransport, Message, Tokio1Executor,
         };
 
-        let subject = format!("[Trulience] {}", event.event_type);
+        let subject = format!("[X121] {}", event.event_type);
         let body = format!(
             "Event: {}\nTime: {}\nDetails: {}",
             event.event_type,

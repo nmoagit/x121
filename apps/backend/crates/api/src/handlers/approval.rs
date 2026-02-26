@@ -8,13 +8,11 @@ use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::Json;
 
-use trulience_core::approval::{DECISION_APPROVED, DECISION_FLAGGED, DECISION_REJECTED};
-use trulience_core::error::CoreError;
-use trulience_core::types::DbId;
-use trulience_db::models::approval::{
-    ApproveRequest, CreateApproval, FlagRequest, RejectRequest,
-};
-use trulience_db::repositories::{ApprovalRepo, RejectionCategoryRepo};
+use x121_core::approval::{DECISION_APPROVED, DECISION_FLAGGED, DECISION_REJECTED};
+use x121_core::error::CoreError;
+use x121_core::types::DbId;
+use x121_db::models::approval::{ApproveRequest, CreateApproval, FlagRequest, RejectRequest};
+use x121_db::repositories::{ApprovalRepo, RejectionCategoryRepo};
 
 use crate::error::{AppError, AppResult};
 use crate::handlers::segment::ensure_segment_exists;

@@ -8,13 +8,13 @@
 //! - Update and list operations
 
 use sqlx::PgPool;
-use trulience_db::models::character::CreateCharacter;
-use trulience_db::models::image::{CreateImageVariant, CreateSourceImage};
-use trulience_db::models::project::{CreateProject, UpdateProject};
-use trulience_db::models::scene::CreateScene;
-use trulience_db::models::scene_type::CreateSceneType;
-use trulience_db::models::segment::CreateSegment;
-use trulience_db::repositories::{
+use x121_db::models::character::CreateCharacter;
+use x121_db::models::image::{CreateImageVariant, CreateSourceImage};
+use x121_db::models::project::{CreateProject, UpdateProject};
+use x121_db::models::scene::CreateScene;
+use x121_db::models::scene_type::CreateSceneType;
+use x121_db::models::segment::CreateSegment;
+use x121_db::repositories::{
     CharacterRepo, ImageVariantRepo, ProjectRepo, SceneRepo, SceneTypeRepo, SegmentRepo,
     SourceImageRepo,
 };
@@ -50,10 +50,20 @@ fn new_scene_type(project_id: Option<i64>, name: &str) -> CreateSceneType {
         workflow_json: None,
         lora_config: None,
         prompt_template: None,
+        description: None,
+        model_config: None,
+        negative_prompt_template: None,
+        prompt_start_clip: None,
+        negative_prompt_start_clip: None,
+        prompt_continuation_clip: None,
+        negative_prompt_continuation_clip: None,
         target_duration_secs: None,
         segment_duration_secs: None,
-        variant_applicability: None,
+        duration_tolerance_secs: None,
         transition_segment_index: None,
+        generation_params: None,
+        sort_order: None,
+        is_active: None,
         is_studio_level: None,
     }
 }

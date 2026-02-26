@@ -1,7 +1,7 @@
 //! Repository for `undo_trees` table (PRD-51).
 
 use sqlx::PgPool;
-use trulience_core::types::DbId;
+use x121_core::types::DbId;
 
 use crate::models::undo_tree::{SaveUndoTree, UndoTree};
 

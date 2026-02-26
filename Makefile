@@ -1,6 +1,6 @@
 MANIFEST := --manifest-path apps/backend/Cargo.toml
 
-.PHONY: build check clippy test fmt fmt-check dev install lint typecheck test-frontend storybook migrate reset-db
+.PHONY: build check clippy test fmt fmt-check dev install lint typecheck test-frontend storybook migrate reset-db start stop status
 
 # --- Backend (Rust) ---
 
@@ -49,3 +49,14 @@ migrate:
 
 reset-db:
 	./scripts/reset-db.sh
+
+# --- Dev Environment ---
+
+start:
+	./scripts/dev-start.sh
+
+stop:
+	./scripts/dev-stop.sh
+
+status:
+	./scripts/dev-status.sh

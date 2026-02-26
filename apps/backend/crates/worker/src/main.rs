@@ -7,7 +7,7 @@ async fn main() {
     tracing_subscriber::registry()
         .with(
             tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| "trulience_worker=debug".into()),
+                .unwrap_or_else(|_| "x121_worker=debug".into()),
         )
         .with(tracing_subscriber::fmt::layer())
         .init();

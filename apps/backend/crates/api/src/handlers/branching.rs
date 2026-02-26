@@ -10,11 +10,11 @@ use axum::Json;
 
 use serde::Deserialize;
 
-use trulience_core::branching;
-use trulience_core::error::CoreError;
-use trulience_core::types::DbId;
-use trulience_db::models::branch::{BranchWithStats, CreateBranch, UpdateBranch};
-use trulience_db::repositories::BranchRepo;
+use x121_core::branching;
+use x121_core::error::CoreError;
+use x121_core::types::DbId;
+use x121_db::models::branch::{BranchWithStats, CreateBranch, UpdateBranch};
+use x121_db::repositories::BranchRepo;
 
 use crate::error::{AppError, AppResult};
 use crate::middleware::auth::AuthUser;
@@ -39,15 +39,13 @@ pub struct StaleParams {
 async fn ensure_branch_exists(
     pool: &sqlx::PgPool,
     id: DbId,
-) -> AppResult<trulience_db::models::branch::Branch> {
-    BranchRepo::find_by_id(pool, id)
-        .await?
-        .ok_or_else(|| {
-            AppError::Core(CoreError::NotFound {
-                entity: "Branch",
-                id,
-            })
+) -> AppResult<x121_db::models::branch::Branch> {
+    BranchRepo::find_by_id(pool, id).await?.ok_or_else(|| {
+        AppError::Core(CoreError::NotFound {
+            entity: "Branch",
+            id,
         })
+    })
 }
 
 // ---------------------------------------------------------------------------
@@ -77,7 +75,7 @@ pub async fn list_branches(
 /// Create a new branch for a scene.
 ///
 /// Validates the branch name, nesting depth, and per-scene count limits
-/// via `trulience_core::branching`.
+/// via `x121_core::branching`.
 pub async fn create_branch(
     State(state): State<AppState>,
     auth: AuthUser,

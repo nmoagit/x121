@@ -61,8 +61,7 @@ pub const REPAIR_INSTALL_NODES: &str = "install_nodes";
 pub const REPAIR_FULL: &str = "full_verify_repair";
 
 /// All valid repair actions.
-pub const VALID_REPAIR_ACTIONS: &[&str] =
-    &[REPAIR_SYNC_MODELS, REPAIR_INSTALL_NODES, REPAIR_FULL];
+pub const VALID_REPAIR_ACTIONS: &[&str] = &[REPAIR_SYNC_MODELS, REPAIR_INSTALL_NODES, REPAIR_FULL];
 
 // ---------------------------------------------------------------------------
 // Validation functions

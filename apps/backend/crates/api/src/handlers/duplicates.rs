@@ -6,15 +6,15 @@
 use axum::extract::{Path, Query, State};
 use axum::response::IntoResponse;
 use axum::Json;
-use trulience_core::duplicate_detection;
-use trulience_core::search::{clamp_limit, clamp_offset, DEFAULT_SEARCH_LIMIT, MAX_SEARCH_LIMIT};
-use trulience_core::types::DbId;
-use trulience_db::models::duplicate_check::{
+use x121_core::duplicate_detection;
+use x121_core::search::{clamp_limit, clamp_offset, DEFAULT_SEARCH_LIMIT, MAX_SEARCH_LIMIT};
+use x121_core::types::DbId;
+use x121_db::models::duplicate_check::{
     BatchCheckRequest, CheckDuplicateRequest, CreateDuplicateCheck, DuplicateCheck,
     ResolveCheckRequest,
 };
-use trulience_db::models::duplicate_setting::UpdateDuplicateSetting;
-use trulience_db::repositories::{DuplicateCheckRepo, DuplicateSettingRepo};
+use x121_db::models::duplicate_setting::UpdateDuplicateSetting;
+use x121_db::repositories::{DuplicateCheckRepo, DuplicateSettingRepo};
 
 use crate::error::AppResult;
 use crate::middleware::auth::AuthUser;

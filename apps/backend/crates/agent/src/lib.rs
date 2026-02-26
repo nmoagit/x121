@@ -1,4 +1,4 @@
-//! `trulience-agent` library crate.
+//! `x121-agent` library crate.
 //!
 //! Re-exports internal modules for integration testing. The binary
 //! entrypoint lives in `main.rs`.

@@ -219,10 +219,17 @@ mod tests {
             weight: 0.7,
         };
 
-        let h1 =
-            compute_inputs_hash("s", "v", "w", "m", &[lora_a.clone(), lora_b.clone()], "p", 1.0, 1);
-        let h2 =
-            compute_inputs_hash("s", "v", "w", "m", &[lora_b, lora_a], "p", 1.0, 1);
+        let h1 = compute_inputs_hash(
+            "s",
+            "v",
+            "w",
+            "m",
+            &[lora_a.clone(), lora_b.clone()],
+            "p",
+            1.0,
+            1,
+        );
+        let h2 = compute_inputs_hash("s", "v", "w", "m", &[lora_b, lora_a], "p", 1.0, 1);
         assert_eq!(h1, h2);
     }
 

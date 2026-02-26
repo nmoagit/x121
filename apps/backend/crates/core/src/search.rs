@@ -74,7 +74,11 @@ fn sanitize_terms(query: &str) -> Option<Vec<&str>> {
         .filter(|t| !t.is_empty())
         .collect();
 
-    if terms.is_empty() { None } else { Some(terms) }
+    if terms.is_empty() {
+        None
+    } else {
+        Some(terms)
+    }
 }
 
 /// Sanitize and convert user input into a PostgreSQL `tsquery` string.
@@ -86,7 +90,7 @@ fn sanitize_terms(query: &str) -> Option<Vec<&str>> {
 /// # Examples
 ///
 /// ```
-/// use trulience_core::search::build_tsquery;
+/// use x121_core::search::build_tsquery;
 /// assert_eq!(build_tsquery("john dance"), Some("john & dance".to_string()));
 /// assert_eq!(build_tsquery("  "), None);
 /// assert_eq!(build_tsquery("hello"), Some("hello".to_string()));
@@ -102,7 +106,7 @@ pub fn build_tsquery(query: &str) -> Option<String> {
 /// # Examples
 ///
 /// ```
-/// use trulience_core::search::build_prefix_tsquery;
+/// use x121_core::search::build_prefix_tsquery;
 /// assert_eq!(build_prefix_tsquery("joh"), Some("joh:*".to_string()));
 /// assert_eq!(build_prefix_tsquery("john da"), Some("john & da:*".to_string()));
 /// assert_eq!(build_prefix_tsquery(""), None);

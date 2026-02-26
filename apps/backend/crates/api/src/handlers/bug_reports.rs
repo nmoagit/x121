@@ -9,15 +9,13 @@ use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::Json;
 
-use trulience_core::bug_report;
-use trulience_core::error::CoreError;
-use trulience_core::roles::ROLE_ADMIN;
-use trulience_core::search::{clamp_limit, clamp_offset};
-use trulience_core::types::DbId;
-use trulience_db::models::bug_report::{
-    BugReportListParams, CreateBugReport, UpdateBugReportStatus,
-};
-use trulience_db::repositories::BugReportRepo;
+use x121_core::bug_report;
+use x121_core::error::CoreError;
+use x121_core::roles::ROLE_ADMIN;
+use x121_core::search::{clamp_limit, clamp_offset};
+use x121_core::types::DbId;
+use x121_db::models::bug_report::{BugReportListParams, CreateBugReport, UpdateBugReportStatus};
+use x121_db::repositories::BugReportRepo;
 
 use crate::error::{AppError, AppResult};
 use crate::middleware::auth::AuthUser;

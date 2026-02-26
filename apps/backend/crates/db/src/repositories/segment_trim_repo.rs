@@ -1,7 +1,7 @@
 //! Repository for the `segment_trims` table (PRD-78).
 
 use sqlx::PgPool;
-use trulience_core::types::DbId;
+use x121_core::types::DbId;
 
 use crate::models::segment_trim::{CreateSegmentTrim, SegmentTrim};
 
@@ -38,13 +38,8 @@ impl SegmentTrimRepo {
     }
 
     /// Find a segment trim by its primary key.
-    pub async fn find_by_id(
-        pool: &PgPool,
-        id: DbId,
-    ) -> Result<Option<SegmentTrim>, sqlx::Error> {
-        let query = format!(
-            "SELECT {COLUMNS} FROM segment_trims WHERE id = $1"
-        );
+    pub async fn find_by_id(pool: &PgPool, id: DbId) -> Result<Option<SegmentTrim>, sqlx::Error> {
+        let query = format!("SELECT {COLUMNS} FROM segment_trims WHERE id = $1");
         sqlx::query_as::<_, SegmentTrim>(&query)
             .bind(id)
             .fetch_optional(pool)
@@ -90,13 +85,11 @@ impl SegmentTrimRepo {
         id: DbId,
         trimmed_path: &str,
     ) -> Result<bool, sqlx::Error> {
-        let result = sqlx::query(
-            "UPDATE segment_trims SET trimmed_path = $1 WHERE id = $2",
-        )
-        .bind(trimmed_path)
-        .bind(id)
-        .execute(pool)
-        .await?;
+        let result = sqlx::query("UPDATE segment_trims SET trimmed_path = $1 WHERE id = $2")
+            .bind(trimmed_path)
+            .bind(id)
+            .execute(pool)
+            .await?;
         Ok(result.rows_affected() > 0)
     }
 
@@ -114,19 +107,15 @@ impl SegmentTrimRepo {
         pool: &PgPool,
         segment_id: DbId,
     ) -> Result<u64, sqlx::Error> {
-        let result =
-            sqlx::query("DELETE FROM segment_trims WHERE segment_id = $1")
-                .bind(segment_id)
-                .execute(pool)
-                .await?;
+        let result = sqlx::query("DELETE FROM segment_trims WHERE segment_id = $1")
+            .bind(segment_id)
+            .execute(pool)
+            .await?;
         Ok(result.rows_affected())
     }
 
     /// Count trims for a given segment.
-    pub async fn count_for_segment(
-        pool: &PgPool,
-        segment_id: DbId,
-    ) -> Result<i64, sqlx::Error> {
+    pub async fn count_for_segment(pool: &PgPool, segment_id: DbId) -> Result<i64, sqlx::Error> {
         let row: (i64,) =
             sqlx::query_as("SELECT COUNT(*) FROM segment_trims WHERE segment_id = $1")
                 .bind(segment_id)

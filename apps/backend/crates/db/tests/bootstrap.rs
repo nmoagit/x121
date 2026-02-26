@@ -4,7 +4,7 @@ use sqlx::PgPool;
 #[sqlx::test(migrations = "../../../db/migrations")]
 async fn test_full_bootstrap(pool: PgPool) {
     // Health check
-    trulience_db::health_check(&pool).await.unwrap();
+    x121_db::health_check(&pool).await.unwrap();
 
     // Verify all nine lookup tables exist and have seed data
     let tables = [

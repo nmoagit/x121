@@ -7,10 +7,10 @@ use axum::extract::{Query, State};
 use axum::response::IntoResponse;
 use axum::Json;
 use serde::{Deserialize, Serialize};
-use trulience_core::types::{DbId, Timestamp};
-use trulience_db::models::dashboard::SaveDashboardConfig;
-use trulience_db::models::status::{JobStatus, ProjectStatus, SceneStatus};
-use trulience_db::repositories::DashboardRepo;
+use x121_core::types::{DbId, Timestamp};
+use x121_db::models::dashboard::SaveDashboardConfig;
+use x121_db::models::status::{JobStatus, ProjectStatus, SceneStatus};
+use x121_db::repositories::DashboardRepo;
 
 use crate::error::AppResult;
 use crate::middleware::auth::AuthUser;

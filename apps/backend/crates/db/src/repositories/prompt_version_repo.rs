@@ -1,7 +1,7 @@
 //! Repository for the `prompt_versions` table (PRD-63).
 
 use sqlx::PgPool;
-use trulience_core::types::DbId;
+use x121_core::types::DbId;
 
 use crate::models::prompt_version::{CreatePromptVersion, PromptVersion};
 
@@ -39,13 +39,8 @@ impl PromptVersionRepo {
     }
 
     /// Find a prompt version by its primary key.
-    pub async fn find_by_id(
-        pool: &PgPool,
-        id: DbId,
-    ) -> Result<Option<PromptVersion>, sqlx::Error> {
-        let query = format!(
-            "SELECT {COLUMNS} FROM prompt_versions WHERE id = $1"
-        );
+    pub async fn find_by_id(pool: &PgPool, id: DbId) -> Result<Option<PromptVersion>, sqlx::Error> {
+        let query = format!("SELECT {COLUMNS} FROM prompt_versions WHERE id = $1");
         sqlx::query_as::<_, PromptVersion>(&query)
             .bind(id)
             .fetch_optional(pool)

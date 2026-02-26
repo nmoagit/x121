@@ -83,8 +83,8 @@ assert_matches = "1"
 http-body-util = "0.1"
 
 # Workspace crates
-trulience-core = { path = "crates/core" }
-trulience-db = { path = "crates/db" }
-trulience-events = { path = "crates/events" }
-trulience-comfyui = { path = "crates/comfyui" }
-trulience-pipeline = { path = "crates/pipeline" }
+x121-core = { path = "crates/core" }
+x121-db = { path = "crates/db" }
+x121-events = { path = "crates/events" }
+x121-comfyui = { path = "crates/comfyui" }
+x121-pipeline = { path = "crates/pipeline" }

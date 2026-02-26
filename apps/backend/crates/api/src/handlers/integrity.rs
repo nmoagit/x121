@@ -8,13 +8,13 @@ use axum::response::IntoResponse;
 use axum::Json;
 use serde::Deserialize;
 use serde::Serialize;
-use trulience_core::error::CoreError;
-use trulience_core::integrity;
-use trulience_core::search::{clamp_limit, clamp_offset, DEFAULT_SEARCH_LIMIT, MAX_SEARCH_LIMIT};
-use trulience_core::types::DbId;
-use trulience_db::models::integrity_scan::CreateIntegrityScan;
-use trulience_db::models::model_checksum::{CreateModelChecksum, UpdateModelChecksum};
-use trulience_db::repositories::{IntegrityScanRepo, ModelChecksumRepo};
+use x121_core::error::CoreError;
+use x121_core::integrity;
+use x121_core::search::{clamp_limit, clamp_offset, DEFAULT_SEARCH_LIMIT, MAX_SEARCH_LIMIT};
+use x121_core::types::DbId;
+use x121_db::models::integrity_scan::CreateIntegrityScan;
+use x121_db::models::model_checksum::{CreateModelChecksum, UpdateModelChecksum};
+use x121_db::repositories::{IntegrityScanRepo, ModelChecksumRepo};
 
 use crate::error::AppResult;
 use crate::middleware::auth::AuthUser;
@@ -58,7 +58,7 @@ pub struct WorkerScanRequest {
 /// Typed response for worker integrity report (DRY-258).
 #[derive(Serialize)]
 struct WorkerReportResponse {
-    scan: trulience_db::models::integrity_scan::IntegrityScan,
+    scan: x121_db::models::integrity_scan::IntegrityScan,
     health_status: String,
 }
 
@@ -66,10 +66,16 @@ struct WorkerReportResponse {
 async fn ensure_checksum_exists(
     pool: &sqlx::PgPool,
     id: DbId,
-) -> AppResult<trulience_db::models::model_checksum::ModelChecksum> {
+) -> AppResult<x121_db::models::model_checksum::ModelChecksum> {
     ModelChecksumRepo::find_by_id(pool, id)
         .await?
-        .ok_or_else(|| CoreError::NotFound { entity: "ModelChecksum", id }.into())
+        .ok_or_else(|| {
+            CoreError::NotFound {
+                entity: "ModelChecksum",
+                id,
+            }
+            .into()
+        })
 }
 
 /// Shared helper to create an integrity scan for a worker (DRY-259/260).

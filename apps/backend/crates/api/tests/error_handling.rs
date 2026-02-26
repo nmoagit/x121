@@ -6,8 +6,8 @@
 
 use axum::response::IntoResponse;
 use http_body_util::BodyExt;
-use trulience_api::error::AppError;
-use trulience_core::error::CoreError;
+use x121_api::error::AppError;
+use x121_core::error::CoreError;
 
 /// Helper: convert an `AppError` into its status code and parsed JSON body.
 async fn error_to_response(err: AppError) -> (axum::http::StatusCode, serde_json::Value) {

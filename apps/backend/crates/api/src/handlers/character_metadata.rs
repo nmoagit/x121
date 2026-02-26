@@ -11,15 +11,15 @@ use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::Json;
 use serde::Serialize;
-use trulience_core::error::CoreError;
-use trulience_core::metadata_editor::{
-    calculate_completeness, calculate_project_completeness, build_csv, parse_csv,
+use x121_core::error::CoreError;
+use x121_core::metadata_editor::{
+    build_csv, calculate_completeness, calculate_project_completeness, parse_csv,
     standard_field_defs, validate_metadata_fields, CompletenessResult, CsvDiffEntry,
     MetadataFieldDef, MetadataFieldError,
 };
-use trulience_core::types::DbId;
-use trulience_db::models::character::Character;
-use trulience_db::repositories::CharacterRepo;
+use x121_core::types::DbId;
+use x121_db::models::character::Character;
+use x121_db::repositories::CharacterRepo;
 
 use crate::error::{AppError, AppResult};
 use crate::response::DataResponse;
@@ -174,7 +174,11 @@ pub async fn update_character_metadata(
             status: "validation_failed".to_string(),
             errors: validation_errors,
         };
-        return Ok((StatusCode::UNPROCESSABLE_ENTITY, Json(DataResponse { data: failure })).into_response());
+        return Ok((
+            StatusCode::UNPROCESSABLE_ENTITY,
+            Json(DataResponse { data: failure }),
+        )
+            .into_response());
     }
 
     // Merge updates into existing metadata.
@@ -188,7 +192,7 @@ pub async fn update_character_metadata(
     let updated = CharacterRepo::update(
         &state.pool,
         character_id,
-        &trulience_db::models::character::UpdateCharacter {
+        &x121_db::models::character::UpdateCharacter {
             name: None,
             status_id: None,
             metadata: Some(new_metadata.clone()),
@@ -279,11 +283,10 @@ pub async fn export_metadata_csv(
     let characters = CharacterRepo::list_by_project(&state.pool, project_id).await?;
     let fields = standard_field_defs();
 
-    let character_data: Vec<(i64, String, serde_json::Map<String, serde_json::Value>)> =
-        characters
-            .iter()
-            .map(|c| (c.id, c.name.clone(), character_metadata_map(c)))
-            .collect();
+    let character_data: Vec<(i64, String, serde_json::Map<String, serde_json::Value>)> = characters
+        .iter()
+        .map(|c| (c.id, c.name.clone(), character_metadata_map(c)))
+        .collect();
 
     let csv = build_csv(&character_data, &fields);
 
@@ -310,7 +313,8 @@ pub async fn import_metadata_csv_preview(
     Path(project_id): Path<DbId>,
     body: axum::body::Bytes,
 ) -> AppResult<impl IntoResponse> {
-    let records = parse_csv(&body).map_err(|e| AppError::BadRequest(format!("CSV parse error: {e}")))?;
+    let records =
+        parse_csv(&body).map_err(|e| AppError::BadRequest(format!("CSV parse error: {e}")))?;
     let characters = CharacterRepo::list_by_project(&state.pool, project_id).await?;
     let fields = standard_field_defs();
 

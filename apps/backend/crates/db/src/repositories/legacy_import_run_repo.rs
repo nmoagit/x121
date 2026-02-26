@@ -1,8 +1,8 @@
 //! Repository for the `legacy_import_runs` table (PRD-86).
 
 use sqlx::PgPool;
-use trulience_core::search::{clamp_limit, clamp_offset, DEFAULT_SEARCH_LIMIT, MAX_SEARCH_LIMIT};
-use trulience_core::types::DbId;
+use x121_core::search::{clamp_limit, clamp_offset, DEFAULT_SEARCH_LIMIT, MAX_SEARCH_LIMIT};
+use x121_core::types::DbId;
 
 use crate::models::legacy_import_run::{
     CreateLegacyImportRun, LegacyImportRun, UpdateLegacyImportRun,

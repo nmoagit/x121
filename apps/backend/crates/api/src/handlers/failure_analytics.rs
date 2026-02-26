@@ -8,13 +8,11 @@ use axum::extract::{Path, Query, State};
 use axum::response::IntoResponse;
 use axum::Json;
 use serde::Deserialize;
-use trulience_core::failure_tracking::{self, PatternInput};
-use trulience_core::types::DbId;
-use trulience_db::models::failure_pattern::{
-    HeatmapCellResponse, HeatmapData, TrendPointResponse,
-};
-use trulience_db::models::pattern_fix::CreatePatternFix;
-use trulience_db::repositories::{FailurePatternRepo, PatternFixRepo};
+use x121_core::failure_tracking::{self, PatternInput};
+use x121_core::types::DbId;
+use x121_db::models::failure_pattern::{HeatmapCellResponse, HeatmapData, TrendPointResponse};
+use x121_db::models::pattern_fix::CreatePatternFix;
+use x121_db::repositories::{FailurePatternRepo, PatternFixRepo};
 
 use crate::error::AppResult;
 use crate::middleware::auth::AuthUser;
@@ -255,7 +253,7 @@ pub async fn update_fix_effectiveness(
 
 /// Extract a human-readable label for a dimension from a pattern row.
 fn dimension_label(
-    pattern: &trulience_db::models::failure_pattern::FailurePattern,
+    pattern: &x121_db::models::failure_pattern::FailurePattern,
     dimension: &str,
 ) -> String {
     match dimension {

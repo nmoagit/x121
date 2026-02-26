@@ -14,3 +14,12 @@ pub struct PaginationParams {
     pub limit: Option<i64>,
     pub offset: Option<i64>,
 }
+
+/// Query parameters for list endpoints that support an `include_inactive` flag.
+///
+/// Used by tracks, scene catalog, and any other entity with soft-deactivation.
+#[derive(Debug, Deserialize)]
+pub struct IncludeInactiveParams {
+    #[serde(default)]
+    pub include_inactive: bool,
+}

@@ -7,8 +7,8 @@
 use futures::StreamExt;
 use tokio::sync::broadcast;
 use tokio_tungstenite::tungstenite::Message;
-use trulience_core::types::DbId;
-use trulience_db::repositories::ComfyUIExecutionRepo;
+use x121_core::types::DbId;
+use x121_db::repositories::ComfyUIExecutionRepo;
 
 use crate::events::ComfyUIEvent;
 use crate::messages::{parse_message, ComfyUIMessage};

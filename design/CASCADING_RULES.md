@@ -1,6 +1,6 @@
 # Cascading Rules — ON DELETE / ON UPDATE Reference
 
-Decision guide for choosing the correct referential action on every foreign key in the Trulience schema.
+Decision guide for choosing the correct referential action on every foreign key in the X121 schema.
 
 ---
 

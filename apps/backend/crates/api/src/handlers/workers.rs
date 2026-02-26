@@ -10,12 +10,12 @@ use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::Json;
 
-use trulience_core::error::CoreError;
-use trulience_core::types::DbId;
-use trulience_core::worker_pool;
-use trulience_db::models::status::WorkerStatus;
-use trulience_db::models::worker::{CreateHealthLogEntry, CreateWorker, UpdateWorker, Worker};
-use trulience_db::repositories::WorkerRepo;
+use x121_core::error::CoreError;
+use x121_core::types::DbId;
+use x121_core::worker_pool;
+use x121_db::models::status::WorkerStatus;
+use x121_db::models::worker::{CreateHealthLogEntry, CreateWorker, UpdateWorker, Worker};
+use x121_db::repositories::WorkerRepo;
 
 use crate::error::{AppError, AppResult};
 use crate::middleware::rbac::RequireAdmin;
@@ -28,14 +28,12 @@ use crate::state::AppState;
 
 /// Verify that a worker exists, returning the full Worker row.
 async fn ensure_worker_exists(pool: &sqlx::PgPool, id: DbId) -> AppResult<Worker> {
-    WorkerRepo::find_by_id(pool, id)
-        .await?
-        .ok_or_else(|| {
-            AppError::Core(CoreError::NotFound {
-                entity: "Worker",
-                id,
-            })
+    WorkerRepo::find_by_id(pool, id).await?.ok_or_else(|| {
+        AppError::Core(CoreError::NotFound {
+            entity: "Worker",
+            id,
         })
+    })
 }
 
 /// Validate worker registration input (name + optional tags).
@@ -146,11 +144,7 @@ pub async fn update_worker(
             id,
         }))?;
 
-    tracing::info!(
-        worker_id = id,
-        admin_id = admin.user_id,
-        "Worker updated",
-    );
+    tracing::info!(worker_id = id, admin_id = admin.user_id, "Worker updated",);
 
     Ok(Json(DataResponse { data: worker }))
 }
@@ -189,11 +183,7 @@ pub async fn approve_worker(
         .await?;
     }
 
-    tracing::info!(
-        worker_id = id,
-        admin_id = admin.user_id,
-        "Worker approved",
-    );
+    tracing::info!(worker_id = id, admin_id = admin.user_id, "Worker approved",);
 
     Ok(Json(DataResponse { data: worker }))
 }

@@ -1,7 +1,7 @@
 //! User session model and DTOs.
 
 use sqlx::FromRow;
-use trulience_core::types::{DbId, Timestamp};
+use x121_core::types::{DbId, Timestamp};
 
 /// A user session row from the `user_sessions` table.
 #[derive(Debug, Clone, FromRow)]

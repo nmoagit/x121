@@ -8,12 +8,12 @@ use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
 use axum::Json;
 use serde::Deserialize;
-use trulience_core::error::CoreError;
-use trulience_core::types::DbId;
-use trulience_db::repositories::trash_repo::{
+use x121_core::error::CoreError;
+use x121_core::types::DbId;
+use x121_db::repositories::trash_repo::{
     is_known_entity_type, PurgePreview, TrashRepo, TrashSummary,
 };
-use trulience_db::repositories::{
+use x121_db::repositories::{
     CharacterRepo, DerivedImageRepo, ImageVariantRepo, ProjectRepo, SceneRepo, SceneTypeRepo,
     SceneVideoVersionRepo, SegmentRepo, SourceImageRepo,
 };

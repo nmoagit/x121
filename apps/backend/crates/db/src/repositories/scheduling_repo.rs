@@ -3,7 +3,7 @@
 //! Covers: `scheduling_policies`, `gpu_quotas`, `job_state_transitions`.
 
 use sqlx::PgPool;
-use trulience_core::types::DbId;
+use x121_core::types::DbId;
 
 use crate::models::scheduling::{
     GpuQuota, JobStateTransition, QuotaStatus, SchedulingPolicy, SetGpuQuota,
@@ -196,10 +196,7 @@ impl GpuQuotaRepo {
     }
 
     /// Check a user's quota status by summing completed job durations.
-    pub async fn check_quota(
-        pool: &PgPool,
-        user_id: DbId,
-    ) -> Result<QuotaStatus, sqlx::Error> {
+    pub async fn check_quota(pool: &PgPool, user_id: DbId) -> Result<QuotaStatus, sqlx::Error> {
         let quota = Self::find_by_user(pool, user_id).await?;
 
         let Some(quota) = quota else {

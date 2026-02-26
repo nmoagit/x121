@@ -1,13 +1,12 @@
 //! Repository for the `character_readiness_cache` table (PRD-107).
 
 use sqlx::PgPool;
-use trulience_core::types::DbId;
+use x121_core::types::DbId;
 
 use crate::models::readiness_cache::{CharacterReadinessCache, UpsertReadinessCache};
 
 /// Column list for character_readiness_cache queries.
-const COLUMNS: &str =
-    "character_id, state, missing_items, readiness_pct, computed_at";
+const COLUMNS: &str = "character_id, state, missing_items, readiness_pct, computed_at";
 
 /// Provides data access for the character readiness cache.
 pub struct ReadinessCacheRepo;
@@ -73,20 +72,15 @@ impl ReadinessCacheRepo {
         pool: &PgPool,
         character_id: DbId,
     ) -> Result<bool, sqlx::Error> {
-        let result = sqlx::query(
-            "DELETE FROM character_readiness_cache WHERE character_id = $1",
-        )
-        .bind(character_id)
-        .execute(pool)
-        .await?;
+        let result = sqlx::query("DELETE FROM character_readiness_cache WHERE character_id = $1")
+            .bind(character_id)
+            .execute(pool)
+            .await?;
         Ok(result.rows_affected() > 0)
     }
 
     /// Delete all cache entries for characters in a given project.
-    pub async fn delete_by_project(
-        pool: &PgPool,
-        project_id: DbId,
-    ) -> Result<u64, sqlx::Error> {
+    pub async fn delete_by_project(pool: &PgPool, project_id: DbId) -> Result<u64, sqlx::Error> {
         let result = sqlx::query(
             "DELETE FROM character_readiness_cache
              WHERE character_id IN (
@@ -140,10 +134,6 @@ impl ReadinessCacheRepo {
         .fetch_one(pool)
         .await?;
 
-        Ok((
-            row.0.unwrap_or(0),
-            row.1.unwrap_or(0),
-            row.2.unwrap_or(0),
-        ))
+        Ok((row.0.unwrap_or(0), row.1.unwrap_or(0), row.2.unwrap_or(0)))
     }
 }

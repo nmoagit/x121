@@ -1,7 +1,7 @@
 //! Repository for the `video_thumbnails` table.
 
 use sqlx::PgPool;
-use trulience_core::types::DbId;
+use x121_core::types::DbId;
 
 use crate::models::video::{CreateVideoThumbnail, VideoThumbnail};
 

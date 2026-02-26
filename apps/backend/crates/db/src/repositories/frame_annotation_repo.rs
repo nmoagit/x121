@@ -1,7 +1,7 @@
 //! Repository for the `frame_annotations` table (PRD-70).
 
 use sqlx::PgPool;
-use trulience_core::types::DbId;
+use x121_core::types::DbId;
 
 use crate::models::frame_annotation::{
     AnnotationSummary, CreateFrameAnnotation, FrameAnnotation, UpdateFrameAnnotation,
@@ -43,9 +43,7 @@ impl FrameAnnotationRepo {
         pool: &PgPool,
         id: DbId,
     ) -> Result<Option<FrameAnnotation>, sqlx::Error> {
-        let query = format!(
-            "SELECT {COLUMNS} FROM frame_annotations WHERE id = $1"
-        );
+        let query = format!("SELECT {COLUMNS} FROM frame_annotations WHERE id = $1");
         sqlx::query_as::<_, FrameAnnotation>(&query)
             .bind(id)
             .fetch_optional(pool)

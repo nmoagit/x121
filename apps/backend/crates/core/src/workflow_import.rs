@@ -248,9 +248,9 @@ const STANDARD_NODE_TYPES: &[&str] = &[
 /// }
 /// ```
 pub fn parse_workflow(json: &serde_json::Value) -> Result<ParsedWorkflow, CoreError> {
-    let obj = json.as_object().ok_or_else(|| {
-        CoreError::Validation("Workflow JSON must be an object".to_string())
-    })?;
+    let obj = json
+        .as_object()
+        .ok_or_else(|| CoreError::Validation("Workflow JSON must be an object".to_string()))?;
 
     if obj.is_empty() {
         return Err(CoreError::Validation(
@@ -406,9 +406,8 @@ pub fn validate_workflow_name(name: &str) -> Result<(), CoreError> {
 
 /// Validate that a workflow JSON does not exceed the size limit.
 pub fn validate_workflow_json_size(json: &serde_json::Value) -> Result<(), CoreError> {
-    let serialized = serde_json::to_string(json).map_err(|e| {
-        CoreError::Internal(format!("Failed to serialize workflow JSON: {e}"))
-    })?;
+    let serialized = serde_json::to_string(json)
+        .map_err(|e| CoreError::Internal(format!("Failed to serialize workflow JSON: {e}")))?;
     if serialized.len() > MAX_WORKFLOW_JSON_SIZE {
         return Err(CoreError::Validation(format!(
             "Workflow JSON exceeds maximum size of {} bytes (got {} bytes)",
@@ -472,13 +471,12 @@ fn discover_clip_text_params(params: &mut Vec<DiscoveredParameter>, node: &Workf
         // Heuristic: determine whether this is a positive or negative prompt.
         // We check the node ID for common naming conventions.
         let node_id_lower = node.id.to_lowercase();
-        let (param_type, suggested_name) = if node_id_lower.contains("neg")
-            || node_id_lower.contains("negative")
-        {
-            (ParamType::NegativePrompt, "Negative Prompt")
-        } else {
-            (ParamType::Prompt, "Prompt")
-        };
+        let (param_type, suggested_name) =
+            if node_id_lower.contains("neg") || node_id_lower.contains("negative") {
+                (ParamType::NegativePrompt, "Negative Prompt")
+            } else {
+                (ParamType::Prompt, "Prompt")
+            };
 
         params.push(DiscoveredParameter {
             node_id: node.id.clone(),
@@ -793,7 +791,9 @@ mod tests {
 
         let prompt_params: Vec<_> = params
             .iter()
-            .filter(|p| p.param_type == ParamType::Prompt || p.param_type == ParamType::NegativePrompt)
+            .filter(|p| {
+                p.param_type == ParamType::Prompt || p.param_type == ParamType::NegativePrompt
+            })
             .collect();
         // Two CLIPTextEncode nodes.
         assert_eq!(prompt_params.len(), 2);

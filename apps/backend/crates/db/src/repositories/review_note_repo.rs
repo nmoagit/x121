@@ -1,9 +1,11 @@
 //! Repository for the `review_notes` and `review_note_tags` tables (PRD-38).
 
 use sqlx::PgPool;
-use trulience_core::types::DbId;
+use x121_core::types::DbId;
 
-use crate::models::review_note::{CreateReviewNote, ReviewNote, ReviewNoteTag, ReviewTag, UpdateReviewNote};
+use crate::models::review_note::{
+    CreateReviewNote, ReviewNote, ReviewNoteTag, ReviewTag, UpdateReviewNote,
+};
 
 /// Column list for review_notes queries.
 const NOTE_COLUMNS: &str = "id, segment_id, user_id, parent_note_id, timecode, \
@@ -75,13 +77,8 @@ impl ReviewNoteRepo {
     }
 
     /// Find a review note by its ID.
-    pub async fn find_by_id(
-        pool: &PgPool,
-        id: DbId,
-    ) -> Result<Option<ReviewNote>, sqlx::Error> {
-        let query = format!(
-            "SELECT {NOTE_COLUMNS} FROM review_notes WHERE id = $1"
-        );
+    pub async fn find_by_id(pool: &PgPool, id: DbId) -> Result<Option<ReviewNote>, sqlx::Error> {
+        let query = format!("SELECT {NOTE_COLUMNS} FROM review_notes WHERE id = $1");
         sqlx::query_as::<_, ReviewNote>(&query)
             .bind(id)
             .fetch_optional(pool)
@@ -163,11 +160,7 @@ impl ReviewNoteRepo {
     }
 
     /// Remove a tag association from a note.
-    pub async fn remove_tag(
-        pool: &PgPool,
-        note_id: DbId,
-        tag_id: DbId,
-    ) -> Result<(), sqlx::Error> {
+    pub async fn remove_tag(pool: &PgPool, note_id: DbId, tag_id: DbId) -> Result<(), sqlx::Error> {
         sqlx::query("DELETE FROM review_note_tags WHERE note_id = $1 AND tag_id = $2")
             .bind(note_id)
             .bind(tag_id)

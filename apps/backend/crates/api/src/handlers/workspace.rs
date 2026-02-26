@@ -7,11 +7,9 @@ use axum::extract::{Path, Query, State};
 use axum::response::IntoResponse;
 use axum::Json;
 
-use trulience_core::workspace::{
-    is_valid_device_type, DEFAULT_DEVICE_TYPE, MAX_UNDO_SNAPSHOT_BYTES,
-};
-use trulience_db::models::workspace::{SaveUndoSnapshot, UpdateWorkspaceState, WorkspaceQuery};
-use trulience_db::repositories::{UndoSnapshotRepo, WorkspaceRepo};
+use x121_core::workspace::{is_valid_device_type, DEFAULT_DEVICE_TYPE, MAX_UNDO_SNAPSHOT_BYTES};
+use x121_db::models::workspace::{SaveUndoSnapshot, UpdateWorkspaceState, WorkspaceQuery};
+use x121_db::repositories::{UndoSnapshotRepo, WorkspaceRepo};
 
 use crate::error::{AppError, AppResult};
 use crate::middleware::auth::AuthUser;

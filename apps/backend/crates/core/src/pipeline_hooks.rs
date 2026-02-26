@@ -360,12 +360,7 @@ pub fn resolve_effective_hooks(
 
     let mut result: Vec<EffectiveHook> = merged
         .into_values()
-        .filter(|eff| {
-            enabled_lookup
-                .get(&eff.hook_id)
-                .copied()
-                .unwrap_or(true)
-        })
+        .filter(|eff| enabled_lookup.get(&eff.hook_id).copied().unwrap_or(true))
         .collect();
 
     result.sort_by_key(|h| h.sort_order);

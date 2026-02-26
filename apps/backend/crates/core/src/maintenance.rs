@@ -162,9 +162,8 @@ pub fn validate_regex_pattern(pattern: &str) -> Result<(), CoreError> {
             "Regex pattern must not be empty".to_string(),
         ));
     }
-    regex::Regex::new(pattern).map_err(|e| {
-        CoreError::Validation(format!("Invalid regex pattern: {e}"))
-    })?;
+    regex::Regex::new(pattern)
+        .map_err(|e| CoreError::Validation(format!("Invalid regex pattern: {e}")))?;
     Ok(())
 }
 

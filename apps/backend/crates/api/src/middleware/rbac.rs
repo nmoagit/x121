@@ -6,8 +6,8 @@
 
 use axum::extract::FromRequestParts;
 use axum::http::request::Parts;
-use trulience_core::error::CoreError;
-use trulience_core::roles::{ROLE_ADMIN, ROLE_CREATOR};
+use x121_core::error::CoreError;
+use x121_core::roles::{ROLE_ADMIN, ROLE_CREATOR};
 
 use super::auth::AuthUser;
 use crate::error::AppError;

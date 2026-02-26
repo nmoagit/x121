@@ -4,7 +4,7 @@
 
 use serde::Serialize;
 use sqlx::FromRow;
-use trulience_core::types::{DbId, Timestamp};
+use x121_core::types::{DbId, Timestamp};
 
 /// A ComfyUI server instance managed by the bridge.
 #[derive(Debug, Clone, FromRow, Serialize)]

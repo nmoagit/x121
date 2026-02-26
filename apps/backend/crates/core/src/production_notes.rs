@@ -146,7 +146,9 @@ pub fn extract_mentions(content: &str) -> Vec<String> {
                 let start = i + 1;
                 let mut end = start;
                 while end < len
-                    && (bytes[end].is_ascii_alphanumeric() || bytes[end] == b'_' || bytes[end] == b'-')
+                    && (bytes[end].is_ascii_alphanumeric()
+                        || bytes[end] == b'_'
+                        || bytes[end] == b'-')
                 {
                     end += 1;
                 }

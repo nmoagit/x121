@@ -4,7 +4,7 @@
 //! workflow canvas layout persistence.
 
 use sqlx::PgPool;
-use trulience_core::types::DbId;
+use x121_core::types::DbId;
 
 use crate::models::workflow_layout::{CreateWorkflowLayout, WorkflowLayout};
 
@@ -24,9 +24,7 @@ impl WorkflowLayoutRepo {
         pool: &PgPool,
         workflow_id: DbId,
     ) -> Result<Option<WorkflowLayout>, sqlx::Error> {
-        let query = format!(
-            "SELECT {COLUMNS} FROM workflow_layouts WHERE workflow_id = $1"
-        );
+        let query = format!("SELECT {COLUMNS} FROM workflow_layouts WHERE workflow_id = $1");
         sqlx::query_as::<_, WorkflowLayout>(&query)
             .bind(workflow_id)
             .fetch_optional(pool)

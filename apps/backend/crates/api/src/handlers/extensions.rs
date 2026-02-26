@@ -9,11 +9,11 @@ use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::Json;
 use serde::Deserialize;
-use trulience_core::error::CoreError;
-use trulience_core::extensions::{self, ExtensionManifest};
-use trulience_core::types::DbId;
-use trulience_db::models::extension::{CreateExtension, UpdateExtensionSettings};
-use trulience_db::repositories::{CharacterRepo, ExtensionRepo, ProjectRepo};
+use x121_core::error::CoreError;
+use x121_core::extensions::{self, ExtensionManifest};
+use x121_core::types::DbId;
+use x121_db::models::extension::{CreateExtension, UpdateExtensionSettings};
+use x121_db::repositories::{CharacterRepo, ExtensionRepo, ProjectRepo};
 
 use crate::error::{AppError, AppResult};
 use crate::middleware::auth::AuthUser;
@@ -202,11 +202,7 @@ async fn toggle_extension(
         }))?;
 
     let action = if enabled { "enabled" } else { "disabled" };
-    tracing::info!(
-        extension_id = id,
-        user_id,
-        "Extension {action}",
-    );
+    tracing::info!(extension_id = id, user_id, "Extension {action}",);
 
     Ok(Json(DataResponse { data: extension }))
 }

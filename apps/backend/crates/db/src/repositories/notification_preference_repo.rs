@@ -1,7 +1,7 @@
 //! Repository for the `notification_preferences` and `user_notification_settings` tables.
 
 use sqlx::PgPool;
-use trulience_core::types::DbId;
+use x121_core::types::DbId;
 
 use crate::models::notification::{
     NotificationPreference, UpdateNotificationSettings, UserNotificationSettings,

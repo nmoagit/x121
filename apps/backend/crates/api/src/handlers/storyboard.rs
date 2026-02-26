@@ -10,11 +10,11 @@ use axum::Json;
 
 use serde::Deserialize;
 
-use trulience_core::search::{clamp_limit, clamp_offset, DEFAULT_SEARCH_LIMIT, MAX_SEARCH_LIMIT};
-use trulience_core::storyboard;
-use trulience_core::types::DbId;
-use trulience_db::models::keyframe::CreateKeyframe;
-use trulience_db::repositories::KeyframeRepo;
+use x121_core::search::{clamp_limit, clamp_offset, DEFAULT_SEARCH_LIMIT, MAX_SEARCH_LIMIT};
+use x121_core::storyboard;
+use x121_core::types::DbId;
+use x121_db::models::keyframe::CreateKeyframe;
+use x121_db::repositories::KeyframeRepo;
 
 use crate::error::AppResult;
 use crate::middleware::auth::AuthUser;

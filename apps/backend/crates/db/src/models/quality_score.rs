@@ -4,7 +4,7 @@
 
 use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
-use trulience_core::types::{DbId, Timestamp};
+use x121_core::types::{DbId, Timestamp};
 
 // ---------------------------------------------------------------------------
 // Entity
@@ -44,7 +44,7 @@ pub struct CreateQualityScore {
 // ---------------------------------------------------------------------------
 
 // NOTE: Per-segment QA summary (counts by status) is provided by
-// `trulience_core::quality_gate::QaSummary`. Do not re-define here.
+// `x121_core::quality_gate::QaSummary`. Do not re-define here.
 
 /// Per-scene QA summary (aggregated across all segments in the scene).
 #[derive(Debug, Serialize)]

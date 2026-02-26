@@ -22,10 +22,7 @@ pub fn segment_router() -> Router<AppState> {
         .route("/{segment_id}/approve", post(approval::approve_segment))
         .route("/{segment_id}/reject", post(approval::reject_segment))
         .route("/{segment_id}/flag", post(approval::flag_segment))
-        .route(
-            "/{segment_id}/approvals",
-            get(approval::list_approvals),
-        )
+        .route("/{segment_id}/approvals", get(approval::list_approvals))
 }
 
 /// Scene-scoped review queue route, merged into `/scenes`.

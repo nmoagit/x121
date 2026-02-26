@@ -5,7 +5,7 @@
 
 use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
-use trulience_core::types::{DbId, Timestamp};
+use x121_core::types::{DbId, Timestamp};
 
 // ── Import Session Status ────────────────────────────────────────────
 
@@ -99,7 +99,7 @@ pub struct FolderImportPreview {
     pub total_size_bytes: u64,
     pub entities_to_create: usize,
     pub entities_to_update: usize,
-    pub uniqueness_conflicts: Vec<trulience_core::importer::UniquenessConflict>,
+    pub uniqueness_conflicts: Vec<x121_core::importer::UniquenessConflict>,
     pub entries: Vec<ImportMappingEntry>,
 }
 

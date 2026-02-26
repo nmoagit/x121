@@ -22,26 +22,14 @@ use crate::state::AppState;
 /// Analytics routes nested at `/analytics`.
 pub fn analytics_router() -> Router<AppState> {
     Router::new()
-        .route(
-            "/failure-patterns",
-            get(failure_analytics::list_patterns),
-        )
+        .route("/failure-patterns", get(failure_analytics::list_patterns))
         .route(
             "/failure-patterns/{id}",
             get(failure_analytics::get_pattern),
         )
-        .route(
-            "/failure-heatmap",
-            get(failure_analytics::get_heatmap),
-        )
-        .route(
-            "/failure-trends",
-            get(failure_analytics::get_trends),
-        )
-        .route(
-            "/failure-alerts",
-            get(failure_analytics::check_alerts),
-        )
+        .route("/failure-heatmap", get(failure_analytics::get_heatmap))
+        .route("/failure-trends", get(failure_analytics::get_trends))
+        .route("/failure-alerts", get(failure_analytics::check_alerts))
 }
 
 /// Pattern fix routes nested at `/failure-patterns`.

@@ -10,16 +10,16 @@ use axum::Json;
 
 use serde::Deserialize;
 
-use trulience_core::error::CoreError;
-use trulience_core::prompt_editor::{self, compute_diff};
-use trulience_core::search::{clamp_limit, clamp_offset, DEFAULT_SEARCH_LIMIT, MAX_SEARCH_LIMIT};
-use trulience_core::types::DbId;
-use trulience_db::models::prompt_library_entry::{
+use x121_core::error::CoreError;
+use x121_core::prompt_editor::{self, compute_diff};
+use x121_core::search::{clamp_limit, clamp_offset, DEFAULT_SEARCH_LIMIT, MAX_SEARCH_LIMIT};
+use x121_core::types::DbId;
+use x121_db::models::prompt_library_entry::{
     CreateLibraryEntry, RateLibraryEntryRequest, UpdateLibraryEntry,
 };
-use trulience_db::models::prompt_version::{CreatePromptVersion, PromptVersion};
-use trulience_db::repositories::PromptLibraryRepo;
-use trulience_db::repositories::PromptVersionRepo;
+use x121_db::models::prompt_version::{CreatePromptVersion, PromptVersion};
+use x121_db::repositories::PromptLibraryRepo;
+use x121_db::repositories::PromptVersionRepo;
 
 use crate::error::{AppError, AppResult};
 use crate::middleware::auth::AuthUser;
@@ -74,10 +74,7 @@ pub struct CreateLibraryEntryRequest {
 // ---------------------------------------------------------------------------
 
 /// Verify that a prompt version exists, returning the full row.
-async fn ensure_prompt_version_exists(
-    pool: &sqlx::PgPool,
-    id: DbId,
-) -> AppResult<PromptVersion> {
+async fn ensure_prompt_version_exists(pool: &sqlx::PgPool, id: DbId) -> AppResult<PromptVersion> {
     PromptVersionRepo::find_by_id(pool, id)
         .await?
         .ok_or_else(|| {
@@ -92,7 +89,7 @@ async fn ensure_prompt_version_exists(
 async fn ensure_library_entry_exists(
     pool: &sqlx::PgPool,
     id: DbId,
-) -> AppResult<trulience_db::models::prompt_library_entry::PromptLibraryEntry> {
+) -> AppResult<x121_db::models::prompt_library_entry::PromptLibraryEntry> {
     PromptLibraryRepo::find_by_id(pool, id)
         .await?
         .ok_or_else(|| {
@@ -382,7 +379,11 @@ pub async fn rate_library_entry(
 
     let updated = ensure_library_entry_exists(&state.pool, id).await?;
 
-    tracing::info!(library_entry_id = id, rating = body.rating, "Library entry rated");
+    tracing::info!(
+        library_entry_id = id,
+        rating = body.rating,
+        "Library entry rated"
+    );
 
     Ok(Json(DataResponse { data: updated }))
 }

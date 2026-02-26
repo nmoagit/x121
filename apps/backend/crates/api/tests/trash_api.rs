@@ -9,9 +9,9 @@ mod common;
 use axum::http::StatusCode;
 use common::{body_json, build_test_app, delete, get, post_json};
 use sqlx::PgPool;
-use trulience_db::models::character::CreateCharacter;
-use trulience_db::models::project::CreateProject;
-use trulience_db::repositories::{CharacterRepo, ProjectRepo};
+use x121_db::models::character::CreateCharacter;
+use x121_db::models::project::CreateProject;
+use x121_db::repositories::{CharacterRepo, ProjectRepo};
 
 // ---------------------------------------------------------------------------
 // Helpers

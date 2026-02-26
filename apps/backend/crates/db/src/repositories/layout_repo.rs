@@ -4,7 +4,7 @@
 //! layout presets used by the modular panel management system.
 
 use sqlx::PgPool;
-use trulience_core::types::DbId;
+use x121_core::types::DbId;
 
 use crate::models::layout::{
     AdminLayoutPreset, CreateAdminPreset, CreateUserLayout, UpdateAdminPreset, UpdateUserLayout,

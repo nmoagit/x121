@@ -199,12 +199,12 @@ async fn test_list_characters_for_project(pool: PgPool) {
 async fn test_segment_crud_under_scene(pool: PgPool) {
     // Set up: project -> character, scene_type, image_variant -> scene.
     // We use the repository layer directly to avoid many HTTP calls for setup.
-    use trulience_db::models::character::CreateCharacter;
-    use trulience_db::models::image::CreateImageVariant;
-    use trulience_db::models::project::CreateProject;
-    use trulience_db::models::scene::CreateScene;
-    use trulience_db::models::scene_type::CreateSceneType;
-    use trulience_db::repositories::*;
+    use x121_db::models::character::CreateCharacter;
+    use x121_db::models::image::CreateImageVariant;
+    use x121_db::models::project::CreateProject;
+    use x121_db::models::scene::CreateScene;
+    use x121_db::models::scene_type::CreateSceneType;
+    use x121_db::repositories::*;
 
     let project = ProjectRepo::create(
         &pool,
@@ -238,10 +238,20 @@ async fn test_segment_crud_under_scene(pool: PgPool) {
             workflow_json: None,
             lora_config: None,
             prompt_template: None,
+            description: None,
+            model_config: None,
+            negative_prompt_template: None,
+            prompt_start_clip: None,
+            negative_prompt_start_clip: None,
+            prompt_continuation_clip: None,
+            negative_prompt_continuation_clip: None,
             target_duration_secs: None,
             segment_duration_secs: None,
-            variant_applicability: None,
+            duration_tolerance_secs: None,
             transition_segment_index: None,
+            generation_params: None,
+            sort_order: None,
+            is_active: None,
             is_studio_level: None,
         },
     )

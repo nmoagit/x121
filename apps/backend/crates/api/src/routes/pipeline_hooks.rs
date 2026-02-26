@@ -35,7 +35,10 @@ pub fn hooks_router() -> Router<AppState> {
                 .put(pipeline_hooks::update_hook)
                 .delete(pipeline_hooks::delete_hook),
         )
-        .route("/{id}/toggle", axum::routing::patch(pipeline_hooks::toggle_hook))
+        .route(
+            "/{id}/toggle",
+            axum::routing::patch(pipeline_hooks::toggle_hook),
+        )
         .route("/{id}/test", post(pipeline_hooks::test_hook))
         .route("/{id}/logs", get(pipeline_hooks::list_hook_logs))
         .route(

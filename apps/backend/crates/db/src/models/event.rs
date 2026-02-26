@@ -2,7 +2,7 @@
 
 use serde::Serialize;
 use sqlx::FromRow;
-use trulience_core::types::{DbId, Timestamp};
+use x121_core::types::{DbId, Timestamp};
 
 /// A row from the `event_types` lookup table.
 #[derive(Debug, Clone, FromRow, Serialize)]

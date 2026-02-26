@@ -6,10 +6,10 @@
 use axum::extract::{Path, State};
 use axum::response::IntoResponse;
 use axum::Json;
-use trulience_core::quality_gate;
-use trulience_core::types::DbId;
-use trulience_db::models::qa_threshold::CreateQaThreshold;
-use trulience_db::repositories::{QaThresholdRepo, QualityScoreRepo};
+use x121_core::quality_gate;
+use x121_core::types::DbId;
+use x121_db::models::qa_threshold::CreateQaThreshold;
+use x121_db::repositories::{QaThresholdRepo, QualityScoreRepo};
 
 use crate::error::AppResult;
 use crate::middleware::auth::AuthUser;
@@ -75,8 +75,7 @@ pub async fn upsert_threshold(
     quality_gate::validate_check_type(&body.check_type)?;
     quality_gate::validate_threshold(body.warn_threshold, body.fail_threshold)?;
 
-    let threshold =
-        QaThresholdRepo::upsert(&state.pool, Some(project_id), &body).await?;
+    let threshold = QaThresholdRepo::upsert(&state.pool, Some(project_id), &body).await?;
     Ok(Json(DataResponse { data: threshold }))
 }
 
@@ -101,9 +100,7 @@ pub async fn delete_threshold(
 /// GET /api/v1/qa/quality-gates/defaults
 ///
 /// Returns the studio-level default thresholds.
-pub async fn list_studio_defaults(
-    State(state): State<AppState>,
-) -> AppResult<impl IntoResponse> {
+pub async fn list_studio_defaults(State(state): State<AppState>) -> AppResult<impl IntoResponse> {
     let defaults = QaThresholdRepo::list_studio_defaults(&state.pool).await?;
     Ok(Json(DataResponse { data: defaults }))
 }

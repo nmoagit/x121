@@ -1,7 +1,7 @@
 //! Repository for the `production_runs` and `production_run_cells` tables (PRD-57).
 
 use sqlx::PgPool;
-use trulience_core::types::DbId;
+use x121_core::types::DbId;
 
 use crate::models::production_run::{
     CreateProductionRun, CreateProductionRunCell, ProductionRun, ProductionRunCell,
@@ -121,7 +121,7 @@ impl ProductionRunRepo {
         );
         sqlx::query_as::<_, ProductionRun>(&query)
             .bind(id)
-            .bind(trulience_core::batch_production::RUN_STATUS_ID_COMPLETED)
+            .bind(x121_core::batch_production::RUN_STATUS_ID_COMPLETED)
             .fetch_optional(pool)
             .await
     }
@@ -306,7 +306,7 @@ impl ProductionRunRepo {
         );
         sqlx::query_as::<_, ProductionRunCell>(&query)
             .bind(run_id)
-            .bind(trulience_core::batch_production::RUN_STATUS_ID_FAILED)
+            .bind(x121_core::batch_production::RUN_STATUS_ID_FAILED)
             .fetch_all(pool)
             .await
     }

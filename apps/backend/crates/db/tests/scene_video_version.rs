@@ -11,13 +11,13 @@
 //! - Soft-delete hides versions from queries
 
 use sqlx::PgPool;
-use trulience_db::models::character::CreateCharacter;
-use trulience_db::models::image::CreateImageVariant;
-use trulience_db::models::project::CreateProject;
-use trulience_db::models::scene::CreateScene;
-use trulience_db::models::scene_type::CreateSceneType;
-use trulience_db::models::scene_video_version::CreateSceneVideoVersion;
-use trulience_db::repositories::{
+use x121_db::models::character::CreateCharacter;
+use x121_db::models::image::CreateImageVariant;
+use x121_db::models::project::CreateProject;
+use x121_db::models::scene::CreateScene;
+use x121_db::models::scene_type::CreateSceneType;
+use x121_db::models::scene_video_version::CreateSceneVideoVersion;
+use x121_db::repositories::{
     CharacterRepo, ImageVariantRepo, ProjectRepo, SceneRepo, SceneTypeRepo, SceneVideoVersionRepo,
 };
 
@@ -52,10 +52,20 @@ fn new_scene_type(project_id: Option<i64>, name: &str) -> CreateSceneType {
         workflow_json: None,
         lora_config: None,
         prompt_template: None,
+        description: None,
+        model_config: None,
+        negative_prompt_template: None,
+        prompt_start_clip: None,
+        negative_prompt_start_clip: None,
+        prompt_continuation_clip: None,
+        negative_prompt_continuation_clip: None,
         target_duration_secs: None,
         segment_duration_secs: None,
-        variant_applicability: None,
+        duration_tolerance_secs: None,
         transition_segment_index: None,
+        generation_params: None,
+        sort_order: None,
+        is_active: None,
         is_studio_level: None,
     }
 }

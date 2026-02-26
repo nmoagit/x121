@@ -27,10 +27,7 @@ pub fn readiness_router() -> Router<AppState> {
             "/{character_id}/readiness/invalidate",
             post(readiness::invalidate_cache),
         )
-        .route(
-            "/readiness/batch-evaluate",
-            post(readiness::batch_evaluate),
-        )
+        .route("/readiness/batch-evaluate", post(readiness::batch_evaluate))
 }
 
 /// Readiness criteria CRUD routes.
@@ -63,8 +60,5 @@ pub fn readiness_criteria_router() -> Router<AppState> {
 /// GET    /readiness-summary   -> get_readiness_summary
 /// ```
 pub fn readiness_library_router() -> Router<AppState> {
-    Router::new().route(
-        "/readiness-summary",
-        get(readiness::get_readiness_summary),
-    )
+    Router::new().route("/readiness-summary", get(readiness::get_readiness_summary))
 }

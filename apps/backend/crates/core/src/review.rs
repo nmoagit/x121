@@ -6,8 +6,8 @@
 use crate::error::CoreError;
 
 /* --------------------------------------------------------------------------
-   Constants
-   -------------------------------------------------------------------------- */
+Constants
+-------------------------------------------------------------------------- */
 
 /// Maximum length for a review note's text content.
 pub const MAX_NOTE_LENGTH: usize = 10_000;
@@ -28,11 +28,8 @@ pub const NOTE_STATUS_RESOLVED: &str = "resolved";
 pub const NOTE_STATUS_WONT_FIX: &str = "wont_fix";
 
 /// All valid note status values.
-pub const VALID_NOTE_STATUSES: &[&str] = &[
-    NOTE_STATUS_OPEN,
-    NOTE_STATUS_RESOLVED,
-    NOTE_STATUS_WONT_FIX,
-];
+pub const VALID_NOTE_STATUSES: &[&str] =
+    &[NOTE_STATUS_OPEN, NOTE_STATUS_RESOLVED, NOTE_STATUS_WONT_FIX];
 
 /// All valid tag category values.
 pub const VALID_TAG_CATEGORIES: &[&str] = &[
@@ -45,8 +42,8 @@ pub const VALID_TAG_CATEGORIES: &[&str] = &[
 ];
 
 /* --------------------------------------------------------------------------
-   Validation functions
-   -------------------------------------------------------------------------- */
+Validation functions
+-------------------------------------------------------------------------- */
 
 /// Validate that a note status string is one of the accepted values.
 pub fn validate_note_status(status: &str) -> Result<(), CoreError> {
@@ -144,8 +141,8 @@ pub fn validate_note_content(
 }
 
 /* --------------------------------------------------------------------------
-   Tests
-   -------------------------------------------------------------------------- */
+Tests
+-------------------------------------------------------------------------- */
 
 #[cfg(test)]
 mod tests {
@@ -162,7 +159,10 @@ mod tests {
     fn test_invalid_note_status_rejected() {
         let result = validate_note_status("invalid");
         assert!(result.is_err());
-        assert!(result.unwrap_err().to_string().contains("Invalid note status"));
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("Invalid note status"));
     }
 
     #[test]
@@ -211,19 +211,13 @@ mod tests {
 
     #[test]
     fn test_note_content_text_only() {
-        let result = validate_note_content(
-            &Some("Some text".to_string()),
-            &None,
-        );
+        let result = validate_note_content(&Some("Some text".to_string()), &None);
         assert!(result.is_ok());
     }
 
     #[test]
     fn test_note_content_voice_only() {
-        let result = validate_note_content(
-            &None,
-            &Some("/path/to/memo.webm".to_string()),
-        );
+        let result = validate_note_content(&None, &Some("/path/to/memo.webm".to_string()));
         assert!(result.is_ok());
     }
 
@@ -240,15 +234,15 @@ mod tests {
     fn test_note_content_neither_present() {
         let result = validate_note_content(&None, &None);
         assert!(result.is_err());
-        assert!(result.unwrap_err().to_string().contains("text content or a voice memo"));
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("text content or a voice memo"));
     }
 
     #[test]
     fn test_note_content_empty_strings_rejected() {
-        let result = validate_note_content(
-            &Some("   ".to_string()),
-            &Some("  ".to_string()),
-        );
+        let result = validate_note_content(&Some("   ".to_string()), &Some("  ".to_string()));
         assert!(result.is_err());
     }
 

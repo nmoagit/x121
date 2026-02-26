@@ -4,12 +4,12 @@
 //! saved search CRUD, visual similarity search, and analytics logging.
 
 use sqlx::PgPool;
-use trulience_core::search::{
-    clamp_limit, clamp_offset, build_prefix_tsquery, build_tsquery,
-    DEFAULT_SEARCH_LIMIT, DEFAULT_SIMILARITY_LIMIT, DEFAULT_SEARCH_SIMILARITY,
-    DEFAULT_TYPEAHEAD_LIMIT, MAX_SEARCH_LIMIT, MAX_SIMILARITY_LIMIT, MAX_TYPEAHEAD_LIMIT,
+use x121_core::search::{
+    build_prefix_tsquery, build_tsquery, clamp_limit, clamp_offset, DEFAULT_SEARCH_LIMIT,
+    DEFAULT_SEARCH_SIMILARITY, DEFAULT_SIMILARITY_LIMIT, DEFAULT_TYPEAHEAD_LIMIT, MAX_SEARCH_LIMIT,
+    MAX_SIMILARITY_LIMIT, MAX_TYPEAHEAD_LIMIT,
 };
-use trulience_core::types::DbId;
+use x121_core::types::DbId;
 
 use crate::models::search::{
     FacetValue, SavedSearch, SearchFacets, SearchParams, SearchResultRow, SimilarityResult,
@@ -372,9 +372,7 @@ impl SearchRepo {
         pool: &PgPool,
         id: DbId,
     ) -> Result<Option<SavedSearch>, sqlx::Error> {
-        let sql = format!(
-            "SELECT {SAVED_SEARCH_COLUMNS} FROM saved_searches WHERE id = $1"
-        );
+        let sql = format!("SELECT {SAVED_SEARCH_COLUMNS} FROM saved_searches WHERE id = $1");
 
         sqlx::query_as::<_, SavedSearch>(&sql)
             .bind(id)
@@ -383,10 +381,7 @@ impl SearchRepo {
     }
 
     /// Delete a saved search by ID. Returns `true` if a row was deleted.
-    pub async fn delete_saved_search(
-        pool: &PgPool,
-        id: DbId,
-    ) -> Result<bool, sqlx::Error> {
+    pub async fn delete_saved_search(pool: &PgPool, id: DbId) -> Result<bool, sqlx::Error> {
         let result = sqlx::query("DELETE FROM saved_searches WHERE id = $1")
             .bind(id)
             .execute(pool)
@@ -395,10 +390,7 @@ impl SearchRepo {
     }
 
     /// Increment use_count and update last_used_at for a saved search.
-    pub async fn record_saved_search_use(
-        pool: &PgPool,
-        id: DbId,
-    ) -> Result<(), sqlx::Error> {
+    pub async fn record_saved_search_use(pool: &PgPool, id: DbId) -> Result<(), sqlx::Error> {
         sqlx::query(
             "UPDATE saved_searches \
              SET use_count = use_count + 1, last_used_at = NOW() \

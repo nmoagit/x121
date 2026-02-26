@@ -10,8 +10,8 @@ use crate::error::CoreError;
 use crate::types::DbId;
 
 /* --------------------------------------------------------------------------
-   Scope constants
-   -------------------------------------------------------------------------- */
+Scope constants
+-------------------------------------------------------------------------- */
 
 /// Personal scope — visible only to the owning user.
 pub const SCOPE_PERSONAL: &str = "personal";
@@ -26,8 +26,8 @@ pub const SCOPE_STUDIO: &str = "studio";
 pub const VALID_SCOPES: &[&str] = &[SCOPE_PERSONAL, SCOPE_PROJECT, SCOPE_STUDIO];
 
 /* --------------------------------------------------------------------------
-   Validation limits
-   -------------------------------------------------------------------------- */
+Validation limits
+-------------------------------------------------------------------------- */
 
 /// Maximum length for a template name.
 pub const MAX_TEMPLATE_NAME_LEN: usize = 200;
@@ -45,8 +45,8 @@ pub const MIN_RATING: i16 = 1;
 pub const MAX_RATING: i16 = 5;
 
 /* --------------------------------------------------------------------------
-   Validation functions
-   -------------------------------------------------------------------------- */
+Validation functions
+-------------------------------------------------------------------------- */
 
 /// Validate that `scope` is one of the allowed values.
 pub fn validate_scope(scope: &str) -> Result<(), CoreError> {
@@ -127,17 +127,15 @@ pub fn validate_scope_project_consistency(
         }
         _ => {
             // Caller should have validated scope first, but be defensive.
-            return Err(CoreError::Validation(format!(
-                "Invalid scope '{scope}'"
-            )));
+            return Err(CoreError::Validation(format!("Invalid scope '{scope}'")));
         }
     }
     Ok(())
 }
 
 /* --------------------------------------------------------------------------
-   Override diff
-   -------------------------------------------------------------------------- */
+Override diff
+-------------------------------------------------------------------------- */
 
 /// A single field difference between current parameters and preset parameters.
 #[derive(Debug, Clone, Serialize, PartialEq)]
@@ -189,8 +187,8 @@ pub fn compute_override_diff(
 }
 
 /* --------------------------------------------------------------------------
-   Tests
-   -------------------------------------------------------------------------- */
+Tests
+-------------------------------------------------------------------------- */
 
 #[cfg(test)]
 mod tests {

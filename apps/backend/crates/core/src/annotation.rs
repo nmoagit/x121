@@ -46,9 +46,7 @@ pub enum DrawingToolType {
 }
 
 /// All valid drawing tool type strings.
-const VALID_TOOL_STRINGS: &[&str] = &[
-    "pen", "circle", "rectangle", "arrow", "highlight", "text",
-];
+const VALID_TOOL_STRINGS: &[&str] = &["pen", "circle", "rectangle", "arrow", "highlight", "text"];
 
 impl DrawingToolType {
     /// Return the tool type as a lowercase string slice.
@@ -120,9 +118,7 @@ pub fn validate_annotations_json(json: &serde_json::Value) -> Result<(), CoreErr
 
     for (i, item) in arr.iter().enumerate() {
         let obj = item.as_object().ok_or_else(|| {
-            CoreError::Validation(format!(
-                "annotations_json[{i}] must be a JSON object"
-            ))
+            CoreError::Validation(format!("annotations_json[{i}] must be a JSON object"))
         })?;
 
         if !obj.contains_key("tool") {
@@ -231,37 +227,55 @@ mod tests {
     #[test]
     fn tool_type_pen_round_trip() {
         assert_eq!(DrawingToolType::Pen.as_str(), "pen");
-        assert_eq!(DrawingToolType::from_str("pen").unwrap(), DrawingToolType::Pen);
+        assert_eq!(
+            DrawingToolType::from_str("pen").unwrap(),
+            DrawingToolType::Pen
+        );
     }
 
     #[test]
     fn tool_type_circle_round_trip() {
         assert_eq!(DrawingToolType::Circle.as_str(), "circle");
-        assert_eq!(DrawingToolType::from_str("circle").unwrap(), DrawingToolType::Circle);
+        assert_eq!(
+            DrawingToolType::from_str("circle").unwrap(),
+            DrawingToolType::Circle
+        );
     }
 
     #[test]
     fn tool_type_rectangle_round_trip() {
         assert_eq!(DrawingToolType::Rectangle.as_str(), "rectangle");
-        assert_eq!(DrawingToolType::from_str("rectangle").unwrap(), DrawingToolType::Rectangle);
+        assert_eq!(
+            DrawingToolType::from_str("rectangle").unwrap(),
+            DrawingToolType::Rectangle
+        );
     }
 
     #[test]
     fn tool_type_arrow_round_trip() {
         assert_eq!(DrawingToolType::Arrow.as_str(), "arrow");
-        assert_eq!(DrawingToolType::from_str("arrow").unwrap(), DrawingToolType::Arrow);
+        assert_eq!(
+            DrawingToolType::from_str("arrow").unwrap(),
+            DrawingToolType::Arrow
+        );
     }
 
     #[test]
     fn tool_type_highlight_round_trip() {
         assert_eq!(DrawingToolType::Highlight.as_str(), "highlight");
-        assert_eq!(DrawingToolType::from_str("highlight").unwrap(), DrawingToolType::Highlight);
+        assert_eq!(
+            DrawingToolType::from_str("highlight").unwrap(),
+            DrawingToolType::Highlight
+        );
     }
 
     #[test]
     fn tool_type_text_round_trip() {
         assert_eq!(DrawingToolType::Text.as_str(), "text");
-        assert_eq!(DrawingToolType::from_str("text").unwrap(), DrawingToolType::Text);
+        assert_eq!(
+            DrawingToolType::from_str("text").unwrap(),
+            DrawingToolType::Text
+        );
     }
 
     #[test]

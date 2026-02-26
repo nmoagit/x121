@@ -8,12 +8,12 @@ use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::Json;
 use serde::Deserialize;
-use trulience_core::error::CoreError;
-use trulience_core::images;
-use trulience_core::types::DbId;
-use trulience_db::models::image::{CreateImageVariant, UpdateImageVariant};
-use trulience_db::models::status::ImageVariantStatus;
-use trulience_db::repositories::ImageVariantRepo;
+use x121_core::error::CoreError;
+use x121_core::images;
+use x121_core::types::DbId;
+use x121_db::models::image::{CreateImageVariant, UpdateImageVariant};
+use x121_db::models::status::ImageVariantStatus;
+use x121_db::repositories::ImageVariantRepo;
 
 use crate::error::{AppError, AppResult};
 use crate::response::DataResponse;
@@ -144,13 +144,12 @@ pub async fn approve_as_hero(
         ))));
     }
 
-    let updated =
-        ImageVariantRepo::set_hero(&state.pool, id, ImageVariantStatus::Approved.id())
-            .await?
-            .ok_or(AppError::Core(CoreError::NotFound {
-                entity: "ImageVariant",
-                id,
-            }))?;
+    let updated = ImageVariantRepo::set_hero(&state.pool, id, ImageVariantStatus::Approved.id())
+        .await?
+        .ok_or(AppError::Core(CoreError::NotFound {
+            entity: "ImageVariant",
+            id,
+        }))?;
 
     Ok(Json(DataResponse { data: updated }))
 }
@@ -354,8 +353,7 @@ pub async fn upload_manual_variant(
     let vtype = variant_type
         .ok_or_else(|| AppError::BadRequest("Missing required 'variant_type' field".into()))?;
 
-    let vlabel =
-        variant_label.unwrap_or_else(|| format!("Manual upload ({})", &vtype));
+    let vlabel = variant_label.unwrap_or_else(|| format!("Manual upload ({})", &vtype));
 
     // Validate format
     let ext = filename.rsplit('.').next().unwrap_or("").to_lowercase();

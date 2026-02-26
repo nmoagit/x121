@@ -8,16 +8,16 @@ use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::Json;
 
-use trulience_core::error::CoreError;
-use trulience_core::production_notes::{
+use x121_core::error::CoreError;
+use x121_core::production_notes::{
     validate_entity_type, validate_note_content, validate_visibility,
 };
-use trulience_core::types::DbId;
-use trulience_db::models::note_category::{CreateNoteCategory, UpdateNoteCategory};
-use trulience_db::models::production_note::{
+use x121_core::types::DbId;
+use x121_db::models::note_category::{CreateNoteCategory, UpdateNoteCategory};
+use x121_db::models::production_note::{
     CreateProductionNote, NoteSearchParams, UpdateProductionNote,
 };
-use trulience_db::repositories::{NoteCategoryRepo, ProductionNoteRepo};
+use x121_db::repositories::{NoteCategoryRepo, ProductionNoteRepo};
 
 use crate::error::{AppError, AppResult};
 use crate::middleware::auth::AuthUser;
@@ -56,8 +56,7 @@ pub async fn list_notes(
     State(state): State<AppState>,
     Query(params): Query<EntityNoteParams>,
 ) -> AppResult<impl IntoResponse> {
-    validate_entity_type(&params.entity_type)
-        .map_err(AppError::BadRequest)?;
+    validate_entity_type(&params.entity_type).map_err(AppError::BadRequest)?;
 
     let notes = ProductionNoteRepo::list_by_entity(
         &state.pool,
@@ -79,10 +78,8 @@ pub async fn create_note(
     State(state): State<AppState>,
     Json(input): Json<CreateProductionNote>,
 ) -> AppResult<impl IntoResponse> {
-    validate_entity_type(&input.entity_type)
-        .map_err(AppError::BadRequest)?;
-    validate_note_content(&input.content_md)
-        .map_err(AppError::BadRequest)?;
+    validate_entity_type(&input.entity_type).map_err(AppError::BadRequest)?;
+    validate_note_content(&input.content_md).map_err(AppError::BadRequest)?;
 
     if let Some(ref vis) = input.visibility {
         validate_visibility(vis).map_err(AppError::BadRequest)?;
@@ -294,12 +291,10 @@ pub async fn list_pinned(
     State(state): State<AppState>,
     Query(params): Query<PinnedNoteParams>,
 ) -> AppResult<impl IntoResponse> {
-    validate_entity_type(&params.entity_type)
-        .map_err(AppError::BadRequest)?;
+    validate_entity_type(&params.entity_type).map_err(AppError::BadRequest)?;
 
     let notes =
-        ProductionNoteRepo::list_pinned(&state.pool, &params.entity_type, params.entity_id)
-            .await?;
+        ProductionNoteRepo::list_pinned(&state.pool, &params.entity_type, params.entity_id).await?;
 
     Ok(Json(DataResponse { data: notes }))
 }

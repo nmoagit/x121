@@ -37,24 +37,15 @@ pub fn workflow_import_router() -> Router<AppState> {
                 .put(workflow_import::update_workflow)
                 .delete(workflow_import::delete_workflow),
         )
-        .route(
-            "/{id}/validate",
-            post(workflow_import::validate_workflow),
-        )
+        .route("/{id}/validate", post(workflow_import::validate_workflow))
         .route(
             "/{id}/validation-report",
             get(workflow_import::get_validation_report),
         )
-        .route(
-            "/{id}/versions",
-            get(workflow_import::list_versions),
-        )
+        .route("/{id}/versions", get(workflow_import::list_versions))
         .route(
             "/{id}/versions/{version}",
             get(workflow_import::get_version),
         )
-        .route(
-            "/{id}/diff",
-            get(workflow_import::diff_versions),
-        )
+        .route("/{id}/diff", get(workflow_import::diff_versions))
 }

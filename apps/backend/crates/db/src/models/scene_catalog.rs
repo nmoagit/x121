@@ -10,6 +10,22 @@ use x121_core::types::{DbId, Timestamp};
 
 use super::track::Track;
 
+/// Computed effective scene setting, used by both the project and character
+/// tiers of the three-level inheritance chain. Shared to avoid duplication.
+///
+/// The `source` field indicates which tier provided the value:
+/// - `"catalog"`: default from `scene_catalog.is_active`
+/// - `"project"`: overridden at the project level
+/// - `"character"`: overridden at the character level
+#[derive(Debug, Clone, FromRow, Serialize)]
+pub struct EffectiveSceneSetting {
+    pub scene_catalog_id: DbId,
+    pub name: String,
+    pub slug: String,
+    pub is_enabled: bool,
+    pub source: String,
+}
+
 /// A row from the `scene_catalog` table.
 #[derive(Debug, Clone, FromRow, Serialize)]
 pub struct SceneCatalogEntry {

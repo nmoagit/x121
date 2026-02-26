@@ -1,12 +1,10 @@
 //! Repository for the `production_notes` table (PRD-95).
 
 use sqlx::PgPool;
-use trulience_core::search::{clamp_limit, clamp_offset, DEFAULT_SEARCH_LIMIT, MAX_SEARCH_LIMIT};
-use trulience_core::types::DbId;
+use x121_core::search::{clamp_limit, clamp_offset, DEFAULT_SEARCH_LIMIT, MAX_SEARCH_LIMIT};
+use x121_core::types::DbId;
 
-use crate::models::production_note::{
-    CreateProductionNote, ProductionNote, UpdateProductionNote,
-};
+use crate::models::production_note::{CreateProductionNote, ProductionNote, UpdateProductionNote};
 
 /// Column list for production_notes queries.
 const COLUMNS: &str = "id, entity_type, entity_id, user_id, content_md, category_id, \
@@ -170,10 +168,7 @@ impl ProductionNoteRepo {
     }
 
     /// Clear the resolved state of a note.
-    pub async fn unresolve(
-        pool: &PgPool,
-        id: DbId,
-    ) -> Result<Option<ProductionNote>, sqlx::Error> {
+    pub async fn unresolve(pool: &PgPool, id: DbId) -> Result<Option<ProductionNote>, sqlx::Error> {
         let query = format!(
             "UPDATE production_notes SET resolved_at = NULL, resolved_by = NULL
              WHERE id = $1

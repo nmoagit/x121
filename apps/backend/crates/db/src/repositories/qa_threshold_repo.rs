@@ -1,7 +1,7 @@
 //! Repository for the `qa_thresholds` table (PRD-49).
 
 use sqlx::PgPool;
-use trulience_core::types::DbId;
+use x121_core::types::DbId;
 
 use crate::models::qa_threshold::{CreateQaThreshold, QaThreshold, UpdateQaThreshold};
 
@@ -36,9 +36,7 @@ impl QaThresholdRepo {
     }
 
     /// List studio-level default thresholds (where `project_id IS NULL`).
-    pub async fn list_studio_defaults(
-        pool: &PgPool,
-    ) -> Result<Vec<QaThreshold>, sqlx::Error> {
+    pub async fn list_studio_defaults(pool: &PgPool) -> Result<Vec<QaThreshold>, sqlx::Error> {
         let query = format!(
             "SELECT {COLUMNS} FROM qa_thresholds
              WHERE project_id IS NULL

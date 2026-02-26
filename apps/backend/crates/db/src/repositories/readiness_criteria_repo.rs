@@ -1,15 +1,14 @@
 //! Repository for the `readiness_criteria` table (PRD-107).
 
 use sqlx::PgPool;
-use trulience_core::types::DbId;
+use x121_core::types::DbId;
 
 use crate::models::readiness_criteria::{
     CreateReadinessCriteria, ReadinessCriteria, UpdateReadinessCriteria,
 };
 
 /// Column list for readiness_criteria queries.
-const COLUMNS: &str =
-    "id, scope_type, scope_id, criteria_json, created_at, updated_at";
+const COLUMNS: &str = "id, scope_type, scope_id, criteria_json, created_at, updated_at";
 
 /// Provides CRUD operations for readiness criteria.
 pub struct ReadinessCriteriaRepo;
@@ -65,8 +64,7 @@ impl ReadinessCriteriaRepo {
         pool: &PgPool,
         project_id: DbId,
     ) -> Result<Option<ReadinessCriteria>, sqlx::Error> {
-        let project_criteria =
-            Self::find_by_scope(pool, "project", Some(project_id)).await?;
+        let project_criteria = Self::find_by_scope(pool, "project", Some(project_id)).await?;
         if project_criteria.is_some() {
             return Ok(project_criteria);
         }
@@ -105,11 +103,10 @@ impl ReadinessCriteriaRepo {
 
     /// Delete a readiness criteria row by ID. Returns `true` if a row was deleted.
     pub async fn delete(pool: &PgPool, id: DbId) -> Result<bool, sqlx::Error> {
-        let result =
-            sqlx::query("DELETE FROM readiness_criteria WHERE id = $1")
-                .bind(id)
-                .execute(pool)
-                .await?;
+        let result = sqlx::query("DELETE FROM readiness_criteria WHERE id = $1")
+            .bind(id)
+            .execute(pool)
+            .await?;
         Ok(result.rows_affected() > 0)
     }
 }

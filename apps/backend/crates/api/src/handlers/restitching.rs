@@ -8,12 +8,12 @@ use axum::extract::{Path, State};
 use axum::response::IntoResponse;
 use axum::Json;
 use serde::Serialize;
-use trulience_core::restitching;
-use trulience_core::types::DbId;
-use trulience_db::models::segment_version::{
+use x121_core::restitching;
+use x121_core::types::DbId;
+use x121_db::models::segment_version::{
     BoundaryCheckResult, RegenerateRequest, SmoothBoundaryRequest,
 };
-use trulience_db::repositories::{SegmentRepo, SegmentVersionRepo};
+use x121_db::repositories::{SegmentRepo, SegmentVersionRepo};
 
 use crate::error::AppResult;
 use crate::handlers::segment::ensure_segment_exists;
@@ -73,7 +73,7 @@ pub async fn regenerate(
     // Create a new segment at the same position with the same seed frame.
     let new_seg = SegmentRepo::create(
         &state.pool,
-        &trulience_db::models::segment::CreateSegment {
+        &x121_db::models::segment::CreateSegment {
             scene_id: segment.scene_id,
             sequence_index: segment.sequence_index,
             status_id: Some(1), // Pending
@@ -143,12 +143,8 @@ pub async fn boundary_check(
     let result = BoundaryCheckResult {
         before_ssim: segment.boundary_ssim_before,
         after_ssim: segment.boundary_ssim_after,
-        needs_smoothing_before: segment
-            .boundary_ssim_before
-            .is_some_and(|v| v < threshold),
-        needs_smoothing_after: segment
-            .boundary_ssim_after
-            .is_some_and(|v| v < threshold),
+        needs_smoothing_before: segment.boundary_ssim_before.is_some_and(|v| v < threshold),
+        needs_smoothing_after: segment.boundary_ssim_after.is_some_and(|v| v < threshold),
     };
 
     Ok(Json(DataResponse { data: result }))
@@ -176,7 +172,7 @@ pub async fn smooth_boundary(
         "after" => restitching::BoundaryPosition::After,
         other => {
             return Err(crate::error::AppError::Core(
-                trulience_core::error::CoreError::Validation(format!(
+                x121_core::error::CoreError::Validation(format!(
                     "Invalid boundary position: '{other}'. Must be 'before' or 'after'."
                 )),
             ));
@@ -189,14 +185,12 @@ pub async fn smooth_boundary(
         let ssim = 1.0;
         match body.boundary.as_str() {
             "before" => {
-                SegmentVersionRepo::update_boundary_ssim(
-                    &state.pool, segment_id, Some(ssim), None,
-                ).await?;
+                SegmentVersionRepo::update_boundary_ssim(&state.pool, segment_id, Some(ssim), None)
+                    .await?;
             }
             _ => {
-                SegmentVersionRepo::update_boundary_ssim(
-                    &state.pool, segment_id, None, Some(ssim),
-                ).await?;
+                SegmentVersionRepo::update_boundary_ssim(&state.pool, segment_id, None, Some(ssim))
+                    .await?;
             }
         }
         Some(ssim)

@@ -56,11 +56,7 @@ pub const VALID_FEATURE_KEYS: &[&str] = &[
 
 /// Validate that a value is present in a known list, returning a
 /// descriptive error if not.
-fn validate_known_key(
-    value: &str,
-    valid: &[&str],
-    label: &str,
-) -> Result<(), CoreError> {
+fn validate_known_key(value: &str, valid: &[&str], label: &str) -> Result<(), CoreError> {
     if valid.contains(&value) {
         Ok(())
     } else {
@@ -71,11 +67,7 @@ fn validate_known_key(
 }
 
 /// Validate that every key in a slice is present in a known list.
-fn validate_known_keys(
-    keys: &[String],
-    valid: &[&str],
-    label: &str,
-) -> Result<(), CoreError> {
+fn validate_known_keys(keys: &[String], valid: &[&str], label: &str) -> Result<(), CoreError> {
     for key in keys {
         validate_known_key(key, valid, label)?;
     }
@@ -186,31 +178,19 @@ mod tests {
 
     #[test]
     fn validate_checklist_keys_batch() {
-        let valid = vec![
-            "upload_portrait".to_string(),
-            "run_generation".to_string(),
-        ];
+        let valid = vec!["upload_portrait".to_string(), "run_generation".to_string()];
         assert!(validate_checklist_keys(&valid).is_ok());
 
-        let invalid = vec![
-            "upload_portrait".to_string(),
-            "bad_key".to_string(),
-        ];
+        let invalid = vec!["upload_portrait".to_string(), "bad_key".to_string()];
         assert!(validate_checklist_keys(&invalid).is_err());
     }
 
     #[test]
     fn validate_feature_keys_batch() {
-        let valid = vec![
-            "advanced_workflow".to_string(),
-            "branching".to_string(),
-        ];
+        let valid = vec!["advanced_workflow".to_string(), "branching".to_string()];
         assert!(validate_feature_keys(&valid).is_ok());
 
-        let invalid = vec![
-            "advanced_workflow".to_string(),
-            "bad_feature".to_string(),
-        ];
+        let invalid = vec!["advanced_workflow".to_string(), "bad_feature".to_string()];
         assert!(validate_feature_keys(&invalid).is_err());
     }
 }

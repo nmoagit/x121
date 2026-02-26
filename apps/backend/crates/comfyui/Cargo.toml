@@ -1,11 +1,11 @@
 [package]
-name = "trulience-comfyui"
+name = "x121-comfyui"
 version.workspace = true
 edition.workspace = true
 
 [dependencies]
-trulience-core = { workspace = true }
-trulience-db = { workspace = true }
+x121-core = { workspace = true }
+x121-db = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 sqlx = { workspace = true }

@@ -7,15 +7,15 @@ use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::Json;
-use trulience_core::assets::dependencies::check_deletion_safe;
-use trulience_core::assets::impact::{AffectedGroup, UpdateImpact};
-use trulience_core::assets::registry::validate_rating;
-use trulience_core::error::CoreError;
-use trulience_core::types::DbId;
-use trulience_db::models::asset::{
+use x121_core::assets::dependencies::check_deletion_safe;
+use x121_core::assets::impact::{AffectedGroup, UpdateImpact};
+use x121_core::assets::registry::validate_rating;
+use x121_core::error::CoreError;
+use x121_core::types::DbId;
+use x121_db::models::asset::{
     AssetSearchParams, CreateAsset, CreateDependency, CreateNote, RateAsset, UpdateAsset,
 };
-use trulience_db::repositories::AssetRepo;
+use x121_db::repositories::AssetRepo;
 
 use crate::error::{AppError, AppResult};
 use crate::middleware::auth::AuthUser;
@@ -66,15 +66,14 @@ pub async fn create_asset(
     // Validate file exists and compute metadata.
     // In non-production environments, the file may not exist on the API server.
     // Use a placeholder if the file is not accessible.
-    let (file_size, checksum) =
-        match trulience_core::assets::registry::validate_file(&input.file_path) {
-            Ok(info) => (info.size_bytes, info.checksum),
-            Err(_) => {
-                // File not found on this host -- store placeholder values.
-                // The asset might reside on a different storage node.
-                (0_i64, format!("pending-checksum-{}", input.file_path))
-            }
-        };
+    let (file_size, checksum) = match x121_core::assets::registry::validate_file(&input.file_path) {
+        Ok(info) => (info.size_bytes, info.checksum),
+        Err(_) => {
+            // File not found on this host -- store placeholder values.
+            // The asset might reside on a different storage node.
+            (0_i64, format!("pending-checksum-{}", input.file_path))
+        }
+    };
 
     let asset = AssetRepo::create(
         &state.pool,

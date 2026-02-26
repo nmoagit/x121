@@ -7,8 +7,8 @@ use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::Json;
 use serde::Deserialize;
-use trulience_db::models::proficiency::{SetFocusMode, SetProficiency};
-use trulience_db::repositories::ProficiencyRepo;
+use x121_db::models::proficiency::{SetFocusMode, SetProficiency};
+use x121_db::repositories::ProficiencyRepo;
 
 use crate::error::AppResult;
 use crate::middleware::rbac::RequireAuth;

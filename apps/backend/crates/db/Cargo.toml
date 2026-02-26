@@ -1,10 +1,10 @@
 [package]
-name = "trulience-db"
+name = "x121-db"
 version.workspace = true
 edition.workspace = true
 
 [dependencies]
-trulience-core = { workspace = true }
+x121-core = { workspace = true }
 sqlx = { workspace = true }
 chrono = { workspace = true }
 serde = { workspace = true }

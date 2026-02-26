@@ -1,7 +1,7 @@
 //! Repository for the `duplicate_detection_settings` table (PRD-79).
 
 use sqlx::PgPool;
-use trulience_core::types::DbId;
+use x121_core::types::DbId;
 
 use crate::models::duplicate_setting::{DuplicateDetectionSetting, UpdateDuplicateSetting};
 

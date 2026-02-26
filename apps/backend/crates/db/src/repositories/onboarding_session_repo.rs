@@ -1,7 +1,7 @@
 //! Repository for the `onboarding_sessions` table (PRD-67).
 
 use sqlx::PgPool;
-use trulience_core::types::DbId;
+use x121_core::types::DbId;
 
 use crate::models::onboarding_session::OnboardingSession;
 
@@ -156,10 +156,7 @@ impl OnboardingSessionRepo {
     }
 
     /// Count sessions for a project.
-    pub async fn count_by_project(
-        pool: &PgPool,
-        project_id: DbId,
-    ) -> Result<i64, sqlx::Error> {
+    pub async fn count_by_project(pool: &PgPool, project_id: DbId) -> Result<i64, sqlx::Error> {
         let row: (i64,) =
             sqlx::query_as("SELECT COUNT(*) FROM onboarding_sessions WHERE project_id = $1")
                 .bind(project_id)

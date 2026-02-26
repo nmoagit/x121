@@ -8,10 +8,10 @@ use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::Json;
 use serde::Deserialize;
-use trulience_core::error::CoreError;
-use trulience_core::types::DbId;
-use trulience_db::models::workflow_layout::CreateWorkflowLayout;
-use trulience_db::repositories::WorkflowLayoutRepo;
+use x121_core::error::CoreError;
+use x121_core::types::DbId;
+use x121_db::models::workflow_layout::CreateWorkflowLayout;
+use x121_db::repositories::WorkflowLayoutRepo;
 
 use crate::error::{AppError, AppResult};
 use crate::middleware::rbac::RequireAuth;
@@ -126,8 +126,14 @@ pub async fn import_comfyui(
             .and_then(|v| v.as_str())
             .unwrap_or("unknown");
 
-        let meta = node_value.get("_meta").cloned().unwrap_or(serde_json::json!({}));
-        let title = meta.get("title").and_then(|v| v.as_str()).unwrap_or(class_type);
+        let meta = node_value
+            .get("_meta")
+            .cloned()
+            .unwrap_or(serde_json::json!({}));
+        let title = meta
+            .get("title")
+            .and_then(|v| v.as_str())
+            .unwrap_or(class_type);
 
         nodes.push(serde_json::json!({
             "id": node_id,
@@ -147,7 +153,9 @@ pub async fn import_comfyui(
             for (input_name, input_val) in inputs {
                 if let Some(arr) = input_val.as_array() {
                     if arr.len() == 2 {
-                        if let Some(source_id) = arr[0].as_str().or_else(|| arr[0].as_u64().map(|_| "")) {
+                        if let Some(source_id) =
+                            arr[0].as_str().or_else(|| arr[0].as_u64().map(|_| ""))
+                        {
                             let source_node_id = if source_id.is_empty() {
                                 arr[0].to_string().trim_matches('"').to_string()
                             } else {

@@ -13,7 +13,7 @@ use serde::{Deserialize, Serialize};
 use tokio_tungstenite::connect_async;
 use tokio_tungstenite::tungstenite::Message;
 
-use trulience_core::metric_names::{MSG_TYPE_GPU_METRICS, MSG_TYPE_RESTART_RESULT};
+use x121_core::metric_names::{MSG_TYPE_GPU_METRICS, MSG_TYPE_RESTART_RESULT};
 
 use crate::collector::{GpuMetrics, MetricsCollector};
 use crate::restart::{self, RestartCommand, RestartResult};

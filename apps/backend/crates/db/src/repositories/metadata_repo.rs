@@ -1,8 +1,8 @@
 //! Repository for the `metadata_generations` table (PRD-13).
 
 use sqlx::PgPool;
-use trulience_core::metadata::{ENTITY_TYPE_CHARACTER, ENTITY_TYPE_SCENE};
-use trulience_core::types::DbId;
+use x121_core::metadata::{ENTITY_TYPE_CHARACTER, ENTITY_TYPE_SCENE};
+use x121_core::types::DbId;
 
 use crate::models::metadata::{CreateMetadataGeneration, MetadataGeneration, StaleMetadata};
 
@@ -92,17 +92,13 @@ impl MetadataGenerationRepo {
 
     /// Find all character metadata records where the source character has been
     /// updated since the metadata was last generated.
-    pub async fn find_stale_characters(
-        pool: &PgPool,
-    ) -> Result<Vec<StaleMetadata>, sqlx::Error> {
+    pub async fn find_stale_characters(pool: &PgPool) -> Result<Vec<StaleMetadata>, sqlx::Error> {
         Self::find_stale_entities(pool, ENTITY_TYPE_CHARACTER, "characters").await
     }
 
     /// Find all scene/video metadata records where the source scene has been
     /// updated since the metadata was last generated.
-    pub async fn find_stale_scenes(
-        pool: &PgPool,
-    ) -> Result<Vec<StaleMetadata>, sqlx::Error> {
+    pub async fn find_stale_scenes(pool: &PgPool) -> Result<Vec<StaleMetadata>, sqlx::Error> {
         Self::find_stale_entities(pool, ENTITY_TYPE_SCENE, "scenes").await
     }
 

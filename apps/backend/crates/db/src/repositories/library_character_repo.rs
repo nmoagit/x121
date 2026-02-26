@@ -1,7 +1,7 @@
 //! Repository for the `library_characters` and `project_character_links` tables (PRD-60).
 
 use sqlx::PgPool;
-use trulience_core::types::DbId;
+use x121_core::types::DbId;
 
 use crate::models::library_character::{
     CreateLibraryCharacter, CreateProjectCharacterLink, LibraryCharacter, LibraryUsageEntry,
@@ -9,8 +9,8 @@ use crate::models::library_character::{
 };
 
 /* --------------------------------------------------------------------------
-   LibraryCharacterRepo
-   -------------------------------------------------------------------------- */
+LibraryCharacterRepo
+-------------------------------------------------------------------------- */
 
 const LC_COLUMNS: &str = "id, name, source_character_id, source_project_id, master_metadata, \
      tags, description, thumbnail_path, is_published, created_by_id, created_at, updated_at";
@@ -60,10 +60,7 @@ impl LibraryCharacterRepo {
     }
 
     /// List all library characters (published, plus unpublished owned by the given user).
-    pub async fn list(
-        pool: &PgPool,
-        user_id: DbId,
-    ) -> Result<Vec<LibraryCharacter>, sqlx::Error> {
+    pub async fn list(pool: &PgPool, user_id: DbId) -> Result<Vec<LibraryCharacter>, sqlx::Error> {
         let query = format!(
             "SELECT {LC_COLUMNS} FROM library_characters \
              WHERE is_published = true OR created_by_id = $1 \
@@ -132,8 +129,8 @@ impl LibraryCharacterRepo {
 }
 
 /* --------------------------------------------------------------------------
-   ProjectCharacterLinkRepo
-   -------------------------------------------------------------------------- */
+ProjectCharacterLinkRepo
+-------------------------------------------------------------------------- */
 
 const PCL_COLUMNS: &str = "id, project_id, library_character_id, project_character_id, \
      linked_fields, imported_at, created_at, updated_at";

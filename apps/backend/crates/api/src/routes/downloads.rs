@@ -24,7 +24,10 @@ use crate::state::AppState;
 /// ```
 pub fn download_router() -> Router<AppState> {
     Router::new()
-        .route("/", get(downloads::list_downloads).post(downloads::create_download))
+        .route(
+            "/",
+            get(downloads::list_downloads).post(downloads::create_download),
+        )
         .route("/{id}", get(downloads::get_download))
         .route("/{id}/pause", post(downloads::pause_download))
         .route("/{id}/resume", post(downloads::resume_download))
@@ -61,6 +64,9 @@ pub fn placement_router() -> Router<AppState> {
 /// ```
 pub fn token_router() -> Router<AppState> {
     Router::new()
-        .route("/", get(downloads::list_tokens).post(downloads::store_token))
+        .route(
+            "/",
+            get(downloads::list_tokens).post(downloads::store_token),
+        )
         .route("/{service}", delete(downloads::delete_token))
 }

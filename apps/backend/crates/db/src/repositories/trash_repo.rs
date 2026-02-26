@@ -6,7 +6,7 @@
 
 use serde::Serialize;
 use sqlx::PgPool;
-use trulience_core::types::{DbId, Timestamp};
+use x121_core::types::{DbId, Timestamp};
 
 /// Known entity types that support soft-delete.
 const KNOWN_ENTITY_TYPES: &[&str] = &[

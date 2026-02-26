@@ -3,7 +3,7 @@
 //! Verifies serialization of [`GpuMetrics`] and graceful handling of
 //! missing NVIDIA drivers.
 
-use trulience_agent::collector::{GpuMetrics, MetricsCollector};
+use x121_agent::collector::{GpuMetrics, MetricsCollector};
 
 // ---------------------------------------------------------------------------
 // Test: GpuMetrics serialization round-trip

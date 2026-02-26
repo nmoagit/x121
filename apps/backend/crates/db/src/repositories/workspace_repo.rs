@@ -1,7 +1,7 @@
 //! Repository for `workspace_states` and `undo_snapshots` tables (PRD-04).
 
 use sqlx::PgPool;
-use trulience_core::types::DbId;
+use x121_core::types::DbId;
 
 use crate::models::workspace::{UndoSnapshot, UpdateWorkspaceState, WorkspaceState};
 
@@ -88,13 +88,12 @@ impl WorkspaceRepo {
         user_id: DbId,
         device_type: &str,
     ) -> Result<bool, sqlx::Error> {
-        let result = sqlx::query(
-            "DELETE FROM workspace_states WHERE user_id = $1 AND device_type = $2",
-        )
-        .bind(user_id)
-        .bind(device_type)
-        .execute(pool)
-        .await?;
+        let result =
+            sqlx::query("DELETE FROM workspace_states WHERE user_id = $1 AND device_type = $2")
+                .bind(user_id)
+                .bind(device_type)
+                .execute(pool)
+                .await?;
         Ok(result.rows_affected() > 0)
     }
 }

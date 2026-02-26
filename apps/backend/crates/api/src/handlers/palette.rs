@@ -7,9 +7,9 @@ use axum::extract::{Query, State};
 use axum::response::IntoResponse;
 use axum::Json;
 
-use trulience_core::command_palette;
-use trulience_db::models::recent_item::{PaletteSearchParams, RecordAccessRequest};
-use trulience_db::repositories::RecentItemRepo;
+use x121_core::command_palette;
+use x121_db::models::recent_item::{PaletteSearchParams, RecordAccessRequest};
+use x121_db::repositories::RecentItemRepo;
 
 use crate::error::AppResult;
 use crate::middleware::auth::AuthUser;
@@ -48,12 +48,18 @@ pub async fn get_recent_items(
     Query(params): Query<PaletteSearchParams>,
 ) -> AppResult<impl IntoResponse> {
     let limit = command_palette::validate_recent_limit(
-        params.limit.unwrap_or(command_palette::DEFAULT_RECENT_LIMIT),
+        params
+            .limit
+            .unwrap_or(command_palette::DEFAULT_RECENT_LIMIT),
     );
 
     let items = RecentItemRepo::get_recent(&state.pool, auth.user_id, limit).await?;
 
-    tracing::debug!(user_id = auth.user_id, count = items.len(), "Fetched recent items");
+    tracing::debug!(
+        user_id = auth.user_id,
+        count = items.len(),
+        "Fetched recent items"
+    );
 
     Ok(Json(DataResponse { data: items }))
 }

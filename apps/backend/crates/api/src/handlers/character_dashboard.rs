@@ -8,9 +8,9 @@ use axum::extract::{Path, State};
 use axum::response::IntoResponse;
 use axum::Json;
 
-use trulience_core::character_dashboard::validate_settings_update;
-use trulience_core::types::DbId;
-use trulience_db::repositories::ReadinessCacheRepo;
+use x121_core::character_dashboard::validate_settings_update;
+use x121_core::types::DbId;
+use x121_db::repositories::ReadinessCacheRepo;
 
 use crate::error::{AppError, AppResult};
 use crate::middleware::auth::AuthUser;
@@ -126,7 +126,7 @@ pub async fn get_dashboard(
     .fetch_optional(&state.pool)
     .await?
     .ok_or_else(|| {
-        AppError::Core(trulience_core::error::CoreError::NotFound {
+        AppError::Core(x121_core::error::CoreError::NotFound {
             entity: "Character",
             id: character_id,
         })
@@ -239,7 +239,7 @@ pub async fn patch_settings(
     .fetch_optional(&state.pool)
     .await?
     .ok_or_else(|| {
-        AppError::Core(trulience_core::error::CoreError::NotFound {
+        AppError::Core(x121_core::error::CoreError::NotFound {
             entity: "Character",
             id: character_id,
         })

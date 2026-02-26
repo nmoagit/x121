@@ -9,16 +9,14 @@ use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::Json;
 use serde::Deserialize;
-use trulience_core::error::CoreError;
-use trulience_core::reclamation::types::{
-    CleanupReport, ProjectReclamationSummary, ReclamationPreview,
-};
-use trulience_core::types::DbId;
-use trulience_db::models::reclamation::{
+use x121_core::error::CoreError;
+use x121_core::reclamation::types::{CleanupReport, ProjectReclamationSummary, ReclamationPreview};
+use x121_core::types::DbId;
+use x121_db::models::reclamation::{
     CreateProtectionRule, CreateReclamationPolicy, CreateReclamationRun, UpdateProtectionRule,
     UpdateReclamationPolicy,
 };
-use trulience_db::repositories::ReclamationRepo;
+use x121_db::repositories::ReclamationRepo;
 
 use crate::error::{AppError, AppResult};
 use crate::middleware::rbac::RequireAdmin;

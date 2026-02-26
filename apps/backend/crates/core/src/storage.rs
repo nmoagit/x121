@@ -136,7 +136,7 @@ impl StorageBackendType {
 }
 
 // NOTE: StorageBackendStatus and StorageMigrationStatus live in
-// `trulience_db::models::status` (defined via `define_status_enum!` macro).
+// `x121_db::models::status` (defined via `define_status_enum!` macro).
 // They are NOT duplicated here -- the db crate is the canonical source (DRY-220).
 
 // ---------------------------------------------------------------------------
@@ -149,9 +149,9 @@ impl StorageBackendType {
 /// Returns at least 1 second.
 pub fn estimate_retrieval_time_secs(file_size_bytes: u64, tier: &str) -> u64 {
     let bytes_per_sec: u64 = match tier {
-        TIER_HOT => 100 * 1024 * 1024,  // ~100 MB/s
-        TIER_COLD => 10 * 1024 * 1024,  // ~10 MB/s
-        _ => 10 * 1024 * 1024,          // default to cold speed
+        TIER_HOT => 100 * 1024 * 1024, // ~100 MB/s
+        TIER_COLD => 10 * 1024 * 1024, // ~10 MB/s
+        _ => 10 * 1024 * 1024,         // default to cold speed
     };
     (file_size_bytes / bytes_per_sec).max(1)
 }
@@ -230,9 +230,18 @@ mod tests {
 
     #[test]
     fn backend_type_from_name() {
-        assert_eq!(StorageBackendType::from_name("local").unwrap(), StorageBackendType::Local);
-        assert_eq!(StorageBackendType::from_name("s3").unwrap(), StorageBackendType::S3);
-        assert_eq!(StorageBackendType::from_name("nfs").unwrap(), StorageBackendType::Nfs);
+        assert_eq!(
+            StorageBackendType::from_name("local").unwrap(),
+            StorageBackendType::Local
+        );
+        assert_eq!(
+            StorageBackendType::from_name("s3").unwrap(),
+            StorageBackendType::S3
+        );
+        assert_eq!(
+            StorageBackendType::from_name("nfs").unwrap(),
+            StorageBackendType::Nfs
+        );
         assert!(StorageBackendType::from_name("ftp").is_err());
     }
 
@@ -263,5 +272,5 @@ mod tests {
         assert_eq!(estimate_retrieval_time_secs(100, "cold"), 1);
     }
 
-    // Status enum ID tests live in trulience_db::models::status (DRY-220).
+    // Status enum ID tests live in x121_db::models::status (DRY-220).
 }

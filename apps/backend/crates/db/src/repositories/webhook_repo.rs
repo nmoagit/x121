@@ -1,7 +1,7 @@
 //! Repository for the `webhooks` and `webhook_deliveries` tables (PRD-12).
 
 use sqlx::PgPool;
-use trulience_core::types::DbId;
+use x121_core::types::DbId;
 
 use crate::models::api_key::{Webhook, WebhookDelivery};
 
@@ -54,12 +54,8 @@ impl WebhookRepo {
 
     /// List all webhooks ordered by creation date (newest first).
     pub async fn list(pool: &PgPool) -> Result<Vec<Webhook>, sqlx::Error> {
-        let query = format!(
-            "SELECT {WEBHOOK_COLUMNS} FROM webhooks ORDER BY created_at DESC"
-        );
-        sqlx::query_as::<_, Webhook>(&query)
-            .fetch_all(pool)
-            .await
+        let query = format!("SELECT {WEBHOOK_COLUMNS} FROM webhooks ORDER BY created_at DESC");
+        sqlx::query_as::<_, Webhook>(&query).fetch_all(pool).await
     }
 
     /// Find a webhook by ID.

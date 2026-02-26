@@ -6,8 +6,8 @@ set -euo pipefail
 
 TARGET="${1:-all}"
 
-DEV_URL="postgres://trulience:trulience@localhost:5434/trulience"
-TEST_URL="postgres://trulience:trulience@localhost:5433/trulience_test"
+DEV_URL="postgres://x121:x121@localhost:5434/x121"
+TEST_URL="postgres://x121:x121@localhost:5433/x121_test"
 
 reset_db() {
   local url="$1"

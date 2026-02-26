@@ -22,7 +22,10 @@ use crate::state::AppState;
 /// ```
 pub fn api_keys_router() -> Router<AppState> {
     Router::new()
-        .route("/", get(api_keys::list_api_keys).post(api_keys::create_api_key))
+        .route(
+            "/",
+            get(api_keys::list_api_keys).post(api_keys::create_api_key),
+        )
         .route("/scopes", get(api_keys::list_scopes))
         .route("/{id}", put(api_keys::update_api_key))
         .route("/{id}/rotate", post(api_keys::rotate_api_key))
@@ -42,7 +45,10 @@ pub fn api_keys_router() -> Router<AppState> {
 /// ```
 pub fn webhooks_router() -> Router<AppState> {
     Router::new()
-        .route("/", get(webhooks::list_webhooks).post(webhooks::create_webhook))
+        .route(
+            "/",
+            get(webhooks::list_webhooks).post(webhooks::create_webhook),
+        )
         .route(
             "/{id}",
             put(webhooks::update_webhook).delete(webhooks::delete_webhook),

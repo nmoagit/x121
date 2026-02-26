@@ -1,12 +1,10 @@
 //! Repository for the `legacy_import_entity_log` table (PRD-86).
 
 use sqlx::PgPool;
-use trulience_core::search::{clamp_limit, clamp_offset, DEFAULT_SEARCH_LIMIT, MAX_SEARCH_LIMIT};
-use trulience_core::types::DbId;
+use x121_core::search::{clamp_limit, clamp_offset, DEFAULT_SEARCH_LIMIT, MAX_SEARCH_LIMIT};
+use x121_core::types::DbId;
 
-use crate::models::legacy_import_entity_log::{
-    CreateLegacyImportEntityLog, LegacyImportEntityLog,
-};
+use crate::models::legacy_import_entity_log::{CreateLegacyImportEntityLog, LegacyImportEntityLog};
 
 /// Column list for legacy_import_entity_log queries.
 const COLUMNS: &str = "id, run_id, entity_type, entity_id, source_path, action, \

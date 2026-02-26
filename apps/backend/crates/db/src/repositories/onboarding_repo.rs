@@ -1,7 +1,7 @@
 //! Repository for the `user_onboarding` table (PRD-53).
 
 use sqlx::PgPool;
-use trulience_core::types::DbId;
+use x121_core::types::DbId;
 
 use crate::models::onboarding::{UpdateOnboarding, UserOnboarding};
 
@@ -82,9 +82,7 @@ impl OnboardingRepo {
 
         if set_clauses.is_empty() {
             // Nothing to update — just return current state.
-            let select = format!(
-                "SELECT {COLUMNS} FROM user_onboarding WHERE user_id = $1"
-            );
+            let select = format!("SELECT {COLUMNS} FROM user_onboarding WHERE user_id = $1");
             return sqlx::query_as::<_, UserOnboarding>(&select)
                 .bind(user_id)
                 .fetch_one(pool)
@@ -115,10 +113,7 @@ impl OnboardingRepo {
     }
 
     /// Reset all onboarding progress to defaults for a user.
-    pub async fn reset(
-        pool: &PgPool,
-        user_id: DbId,
-    ) -> Result<UserOnboarding, sqlx::Error> {
+    pub async fn reset(pool: &PgPool, user_id: DbId) -> Result<UserOnboarding, sqlx::Error> {
         let query = format!(
             "UPDATE user_onboarding \
              SET tour_completed = FALSE, \

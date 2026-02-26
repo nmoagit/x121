@@ -11,15 +11,15 @@ use http_body_util::BodyExt;
 use sqlx::PgPool;
 use tower::ServiceExt;
 
-use trulience_api::auth::jwt::JwtConfig;
-use trulience_api::auth::password::hash_password;
-use trulience_api::config::ServerConfig;
-use trulience_api::router::build_app_router;
-use trulience_api::scripting::orchestrator::ScriptOrchestrator;
-use trulience_api::state::AppState;
-use trulience_api::ws::WsManager;
-use trulience_db::models::user::{CreateUser, User};
-use trulience_db::repositories::UserRepo;
+use x121_api::auth::jwt::JwtConfig;
+use x121_api::auth::password::hash_password;
+use x121_api::config::ServerConfig;
+use x121_api::router::build_app_router;
+use x121_api::scripting::orchestrator::ScriptOrchestrator;
+use x121_api::state::AppState;
+use x121_api::ws::WsManager;
+use x121_db::models::user::{CreateUser, User};
+use x121_db::repositories::UserRepo;
 
 /// Build a test `ServerConfig` with safe defaults.
 ///
@@ -52,7 +52,7 @@ pub async fn build_test_app(pool: PgPool) -> Router {
 
 /// Build the test app with a script orchestrator enabled.
 pub async fn build_test_app_with_orchestrator(pool: PgPool) -> Router {
-    let orchestrator = ScriptOrchestrator::new(pool.clone(), "/tmp/trulience_test_venvs".into());
+    let orchestrator = ScriptOrchestrator::new(pool.clone(), "/tmp/x121_test_venvs".into());
     build_test_app_with(pool, Some(Arc::new(orchestrator))).await
 }
 
@@ -63,9 +63,9 @@ async fn build_test_app_with(
 ) -> Router {
     let config = test_config();
     let ws_manager = Arc::new(WsManager::new());
-    let comfyui_manager = trulience_comfyui::manager::ComfyUIManager::start(pool.clone()).await;
+    let comfyui_manager = x121_comfyui::manager::ComfyUIManager::start(pool.clone()).await;
 
-    let event_bus = Arc::new(trulience_events::EventBus::default());
+    let event_bus = Arc::new(x121_events::EventBus::default());
 
     let state = AppState {
         pool,

@@ -7,9 +7,9 @@ use axum::extract::{Path, State};
 use axum::response::IntoResponse;
 use axum::Json;
 
-use trulience_core::collaboration::validate_entity_ref;
-use trulience_db::models::collaboration::{AcquireLockRequest, LockActionRequest};
-use trulience_db::repositories::{EntityLockRepo, UserPresenceRepo};
+use x121_core::collaboration::validate_entity_ref;
+use x121_db::models::collaboration::{AcquireLockRequest, LockActionRequest};
+use x121_db::repositories::{EntityLockRepo, UserPresenceRepo};
 
 use crate::error::{AppError, AppResult};
 use crate::middleware::auth::AuthUser;
@@ -29,8 +29,7 @@ pub async fn acquire_lock(
     State(state): State<AppState>,
     Json(input): Json<AcquireLockRequest>,
 ) -> AppResult<impl IntoResponse> {
-    validate_entity_ref(&input.entity_type, input.entity_id)
-        .map_err(AppError::BadRequest)?;
+    validate_entity_ref(&input.entity_type, input.entity_id).map_err(AppError::BadRequest)?;
 
     let lock = EntityLockRepo::acquire(
         &state.pool,
@@ -52,15 +51,12 @@ pub async fn acquire_lock(
         }
         None => {
             // Lock already held -- fetch holder info for the error message.
-            let holder = EntityLockRepo::get_active(
-                &state.pool,
-                &input.entity_type,
-                input.entity_id,
-            )
-            .await?;
+            let holder =
+                EntityLockRepo::get_active(&state.pool, &input.entity_type, input.entity_id)
+                    .await?;
 
             match holder {
-                Some(h) => Err(AppError::Core(trulience_core::error::CoreError::Conflict(
+                Some(h) => Err(AppError::Core(x121_core::error::CoreError::Conflict(
                     format!(
                         "Entity is locked by user {} until {}",
                         h.user_id, h.expires_at
@@ -83,8 +79,7 @@ pub async fn release_lock(
     State(state): State<AppState>,
     Json(input): Json<LockActionRequest>,
 ) -> AppResult<impl IntoResponse> {
-    validate_entity_ref(&input.entity_type, input.entity_id)
-        .map_err(AppError::BadRequest)?;
+    validate_entity_ref(&input.entity_type, input.entity_id).map_err(AppError::BadRequest)?;
 
     let released = EntityLockRepo::release(
         &state.pool,
@@ -120,8 +115,7 @@ pub async fn extend_lock(
     State(state): State<AppState>,
     Json(input): Json<LockActionRequest>,
 ) -> AppResult<impl IntoResponse> {
-    validate_entity_ref(&input.entity_type, input.entity_id)
-        .map_err(AppError::BadRequest)?;
+    validate_entity_ref(&input.entity_type, input.entity_id).map_err(AppError::BadRequest)?;
 
     let lock = EntityLockRepo::extend(
         &state.pool,
@@ -156,8 +150,7 @@ pub async fn get_lock_status(
     State(state): State<AppState>,
     Path((entity_type, entity_id)): Path<(String, i64)>,
 ) -> AppResult<impl IntoResponse> {
-    validate_entity_ref(&entity_type, entity_id)
-        .map_err(AppError::BadRequest)?;
+    validate_entity_ref(&entity_type, entity_id).map_err(AppError::BadRequest)?;
 
     let lock = EntityLockRepo::get_active(&state.pool, &entity_type, entity_id).await?;
     Ok(Json(DataResponse { data: lock }))
@@ -175,8 +168,7 @@ pub async fn get_presence(
     State(state): State<AppState>,
     Path((entity_type, entity_id)): Path<(String, i64)>,
 ) -> AppResult<impl IntoResponse> {
-    validate_entity_ref(&entity_type, entity_id)
-        .map_err(AppError::BadRequest)?;
+    validate_entity_ref(&entity_type, entity_id).map_err(AppError::BadRequest)?;
 
     let users = UserPresenceRepo::get_present(&state.pool, &entity_type, entity_id).await?;
     Ok(Json(DataResponse { data: users }))

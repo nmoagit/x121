@@ -1,7 +1,7 @@
 //! Repository for the `segment_approvals` and `rejection_categories` tables (PRD-35).
 
 use sqlx::PgPool;
-use trulience_core::types::DbId;
+use x121_core::types::DbId;
 
 use crate::models::approval::{
     CreateApproval, RejectionCategory, ReviewQueueItem, SegmentApproval,
@@ -88,9 +88,7 @@ impl ApprovalRepo {
         pool: &PgPool,
         id: DbId,
     ) -> Result<Option<SegmentApproval>, sqlx::Error> {
-        let query = format!(
-            "SELECT {APPROVAL_COLUMNS} FROM segment_approvals WHERE id = $1"
-        );
+        let query = format!("SELECT {APPROVAL_COLUMNS} FROM segment_approvals WHERE id = $1");
         sqlx::query_as::<_, SegmentApproval>(&query)
             .bind(id)
             .fetch_optional(pool)
@@ -104,9 +102,8 @@ pub struct RejectionCategoryRepo;
 impl RejectionCategoryRepo {
     /// List all rejection categories, ordered by name ascending.
     pub async fn list_all(pool: &PgPool) -> Result<Vec<RejectionCategory>, sqlx::Error> {
-        let query = format!(
-            "SELECT {CATEGORY_COLUMNS} FROM rejection_categories ORDER BY name ASC"
-        );
+        let query =
+            format!("SELECT {CATEGORY_COLUMNS} FROM rejection_categories ORDER BY name ASC");
         sqlx::query_as::<_, RejectionCategory>(&query)
             .fetch_all(pool)
             .await
@@ -117,9 +114,7 @@ impl RejectionCategoryRepo {
         pool: &PgPool,
         id: DbId,
     ) -> Result<Option<RejectionCategory>, sqlx::Error> {
-        let query = format!(
-            "SELECT {CATEGORY_COLUMNS} FROM rejection_categories WHERE id = $1"
-        );
+        let query = format!("SELECT {CATEGORY_COLUMNS} FROM rejection_categories WHERE id = $1");
         sqlx::query_as::<_, RejectionCategory>(&query)
             .bind(id)
             .fetch_optional(pool)

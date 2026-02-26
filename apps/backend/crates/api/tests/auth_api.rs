@@ -8,9 +8,9 @@ mod common;
 use axum::http::StatusCode;
 use common::{body_json, get, get_auth, post_json, post_json_auth};
 use sqlx::PgPool;
-use trulience_api::auth::password::hash_password;
-use trulience_db::models::user::CreateUser;
-use trulience_db::repositories::UserRepo;
+use x121_api::auth::password::hash_password;
+use x121_db::models::user::CreateUser;
+use x121_db::repositories::UserRepo;
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -22,7 +22,7 @@ async fn create_test_user(
     pool: &PgPool,
     username: &str,
     role_id: i64,
-) -> (trulience_db::models::user::User, String) {
+) -> (x121_db::models::user::User, String) {
     let password = "test_password_123!";
     let hashed = hash_password(password).expect("hashing should succeed");
     let input = CreateUser {

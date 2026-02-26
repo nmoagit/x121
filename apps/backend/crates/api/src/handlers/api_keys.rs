@@ -8,13 +8,11 @@ use axum::extract::{Path, State};
 use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::Json;
-use trulience_core::api_keys::{
-    generate_api_key, DEFAULT_RATE_LIMIT_READ, DEFAULT_RATE_LIMIT_WRITE,
-};
-use trulience_core::error::CoreError;
-use trulience_core::types::DbId;
-use trulience_db::models::api_key::{ApiKeyCreatedResponse, CreateApiKey, UpdateApiKey};
-use trulience_db::repositories::ApiKeyRepo;
+use x121_core::api_keys::{generate_api_key, DEFAULT_RATE_LIMIT_READ, DEFAULT_RATE_LIMIT_WRITE};
+use x121_core::error::CoreError;
+use x121_core::types::DbId;
+use x121_db::models::api_key::{ApiKeyCreatedResponse, CreateApiKey, UpdateApiKey};
+use x121_db::repositories::ApiKeyRepo;
 
 use crate::error::{AppError, AppResult};
 use crate::middleware::rbac::RequireAdmin;
@@ -40,15 +38,17 @@ pub async fn create_api_key(
     // Resolve scope
     let scope = ApiKeyRepo::find_scope_by_name(&state.pool, &input.scope)
         .await?
-        .ok_or_else(|| {
-            AppError::BadRequest(format!("Unknown scope: '{}'", input.scope))
-        })?;
+        .ok_or_else(|| AppError::BadRequest(format!("Unknown scope: '{}'", input.scope)))?;
 
     // Generate key material
     let generated = generate_api_key();
 
-    let rate_read = input.rate_limit_read_per_min.unwrap_or(DEFAULT_RATE_LIMIT_READ);
-    let rate_write = input.rate_limit_write_per_min.unwrap_or(DEFAULT_RATE_LIMIT_WRITE);
+    let rate_read = input
+        .rate_limit_read_per_min
+        .unwrap_or(DEFAULT_RATE_LIMIT_READ);
+    let rate_write = input
+        .rate_limit_write_per_min
+        .unwrap_or(DEFAULT_RATE_LIMIT_WRITE);
 
     let key = ApiKeyRepo::create(
         &state.pool,
@@ -149,17 +149,12 @@ pub async fn rotate_api_key(
 
     let generated = generate_api_key();
 
-    let rotated = ApiKeyRepo::rotate(
-        &state.pool,
-        key_id,
-        &generated.hash,
-        &generated.prefix,
-    )
-    .await?
-    .ok_or(AppError::Core(CoreError::NotFound {
-        entity: "ApiKey",
-        id: key_id,
-    }))?;
+    let rotated = ApiKeyRepo::rotate(&state.pool, key_id, &generated.hash, &generated.prefix)
+        .await?
+        .ok_or(AppError::Core(CoreError::NotFound {
+            entity: "ApiKey",
+            id: key_id,
+        }))?;
 
     tracing::info!(
         api_key_id = key_id,

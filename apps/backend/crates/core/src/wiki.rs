@@ -45,13 +45,7 @@ pub fn generate_slug(title: &str) -> String {
     let slug: String = title
         .to_lowercase()
         .chars()
-        .map(|c| {
-            if c.is_ascii_alphanumeric() {
-                c
-            } else {
-                '-'
-            }
-        })
+        .map(|c| if c.is_ascii_alphanumeric() { c } else { '-' })
         .collect();
 
     // Collapse consecutive hyphens.

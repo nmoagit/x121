@@ -1,7 +1,7 @@
 //! Repository for the `derived_images` table.
 
 use sqlx::PgPool;
-use trulience_core::types::DbId;
+use x121_core::types::DbId;
 
 use crate::models::image::{CreateDerivedImage, DerivedImage, UpdateDerivedImage};
 

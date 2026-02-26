@@ -6,7 +6,7 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use tokio::sync::broadcast;
-use trulience_core::types::DbId;
+use x121_core::types::DbId;
 
 // ---------------------------------------------------------------------------
 // PlatformEvent
@@ -89,7 +89,7 @@ const DEFAULT_CAPACITY: usize = 1024;
 /// # Usage
 ///
 /// ```rust
-/// use trulience_events::bus::{EventBus, PlatformEvent};
+/// use x121_events::bus::{EventBus, PlatformEvent};
 ///
 /// let bus = EventBus::default();
 /// let mut rx = bus.subscribe();

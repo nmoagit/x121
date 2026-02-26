@@ -26,28 +26,10 @@ pub fn router() -> Router<AppState> {
             "/",
             get(onboarding_wizard::list_sessions).post(onboarding_wizard::create_session),
         )
-        .route(
-            "/{id}",
-            get(onboarding_wizard::get_session),
-        )
-        .route(
-            "/{id}/advance",
-            post(onboarding_wizard::advance_step),
-        )
-        .route(
-            "/{id}/go-back",
-            post(onboarding_wizard::go_back),
-        )
-        .route(
-            "/{id}/step-data",
-            put(onboarding_wizard::update_step_data),
-        )
-        .route(
-            "/{id}/abandon",
-            post(onboarding_wizard::abandon_session),
-        )
-        .route(
-            "/{id}/complete",
-            post(onboarding_wizard::complete_session),
-        )
+        .route("/{id}", get(onboarding_wizard::get_session))
+        .route("/{id}/advance", post(onboarding_wizard::advance_step))
+        .route("/{id}/go-back", post(onboarding_wizard::go_back))
+        .route("/{id}/step-data", put(onboarding_wizard::update_step_data))
+        .route("/{id}/abandon", post(onboarding_wizard::abandon_session))
+        .route("/{id}/complete", post(onboarding_wizard::complete_session))
 }

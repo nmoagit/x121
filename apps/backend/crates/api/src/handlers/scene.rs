@@ -6,10 +6,10 @@
 use axum::extract::{Path, State};
 use axum::http::StatusCode;
 use axum::Json;
-use trulience_core::error::CoreError;
-use trulience_core::types::DbId;
-use trulience_db::models::scene::{CreateScene, Scene, UpdateScene};
-use trulience_db::repositories::SceneRepo;
+use x121_core::error::CoreError;
+use x121_core::types::DbId;
+use x121_db::models::scene::{CreateScene, Scene, UpdateScene};
+use x121_db::repositories::SceneRepo;
 
 use crate::error::{AppError, AppResult};
 use crate::state::AppState;

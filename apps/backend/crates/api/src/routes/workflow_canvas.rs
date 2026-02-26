@@ -25,12 +25,6 @@ pub fn router() -> Router<AppState> {
             "/{id}/canvas",
             get(workflow_canvas::get_canvas).put(workflow_canvas::save_canvas),
         )
-        .route(
-            "/{id}/telemetry",
-            get(workflow_canvas::get_telemetry),
-        )
-        .route(
-            "/import-comfyui",
-            post(workflow_canvas::import_comfyui),
-        )
+        .route("/{id}/telemetry", get(workflow_canvas::get_telemetry))
+        .route("/import-comfyui", post(workflow_canvas::import_comfyui))
 }

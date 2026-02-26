@@ -1,21 +1,21 @@
 [package]
-name = "trulience-api"
+name = "x121-api"
 version.workspace = true
 edition.workspace = true
 
 [lib]
-name = "trulience_api"
+name = "x121_api"
 path = "src/lib.rs"
 
 [[bin]]
-name = "trulience-api"
+name = "x121-api"
 path = "src/main.rs"
 
 [dependencies]
-trulience-core = { workspace = true }
-trulience-comfyui = { workspace = true }
-trulience-db = { workspace = true }
-trulience-events = { workspace = true }
+x121-core = { workspace = true }
+x121-comfyui = { workspace = true }
+x121-db = { workspace = true }
+x121-events = { workspace = true }
 
 axum = { workspace = true }
 tokio = { workspace = true }

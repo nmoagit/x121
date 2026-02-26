@@ -39,10 +39,7 @@ pub fn character_router() -> Router<AppState> {
 /// `/projects/{project_id}/characters`.
 pub fn project_router() -> Router<AppState> {
     Router::new()
-        .route(
-            "/metadata",
-            get(character_metadata::list_project_metadata),
-        )
+        .route("/metadata", get(character_metadata::list_project_metadata))
         .route(
             "/metadata/completeness",
             get(character_metadata::get_project_completeness),

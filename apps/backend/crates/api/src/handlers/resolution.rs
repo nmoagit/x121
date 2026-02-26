@@ -7,12 +7,16 @@ use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::Json;
 
-use trulience_core::error::CoreError;
-use trulience_core::resolution::{can_upscale, validate_dimensions, validate_speed_factor, validate_tier_name};
-use trulience_core::types::DbId;
-use trulience_db::models::resolution_tier::{CreateResolutionTier, ResolutionTier, UpscaleRequest, UpscaleResponse};
-use trulience_db::models::scene::Scene;
-use trulience_db::repositories::{ResolutionTierRepo, SceneRepo};
+use x121_core::error::CoreError;
+use x121_core::resolution::{
+    can_upscale, validate_dimensions, validate_speed_factor, validate_tier_name,
+};
+use x121_core::types::DbId;
+use x121_db::models::resolution_tier::{
+    CreateResolutionTier, ResolutionTier, UpscaleRequest, UpscaleResponse,
+};
+use x121_db::models::scene::Scene;
+use x121_db::repositories::{ResolutionTierRepo, SceneRepo};
 
 use crate::error::{AppError, AppResult};
 use crate::middleware::auth::AuthUser;
@@ -25,21 +29,29 @@ use crate::state::AppState;
 
 /// Verify that a scene exists, returning the full row.
 async fn ensure_scene_exists(pool: &sqlx::PgPool, id: DbId) -> AppResult<Scene> {
-    SceneRepo::find_by_id(pool, id)
-        .await?
-        .ok_or_else(|| AppError::Core(CoreError::NotFound { entity: "Scene", id }))
+    SceneRepo::find_by_id(pool, id).await?.ok_or_else(|| {
+        AppError::Core(CoreError::NotFound {
+            entity: "Scene",
+            id,
+        })
+    })
 }
 
 /// Verify that a resolution tier exists, returning the full row.
 async fn ensure_tier_exists(pool: &sqlx::PgPool, id: DbId) -> AppResult<ResolutionTier> {
     ResolutionTierRepo::find_by_id(pool, id)
         .await?
-        .ok_or_else(|| AppError::Core(CoreError::NotFound { entity: "ResolutionTier", id }))
+        .ok_or_else(|| {
+            AppError::Core(CoreError::NotFound {
+                entity: "ResolutionTier",
+                id,
+            })
+        })
 }
 
 /* --------------------------------------------------------------------------
-   Resolution tier CRUD
-   -------------------------------------------------------------------------- */
+Resolution tier CRUD
+-------------------------------------------------------------------------- */
 
 /// GET /resolution-tiers
 ///
@@ -93,8 +105,8 @@ pub async fn create_tier(
 }
 
 /* --------------------------------------------------------------------------
-   Scene resolution endpoints
-   -------------------------------------------------------------------------- */
+Scene resolution endpoints
+-------------------------------------------------------------------------- */
 
 /// POST /scenes/{id}/upscale
 ///

@@ -7,6 +7,8 @@ use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
 use x121_core::types::{DbId, Timestamp};
 
+pub use super::scene_catalog::EffectiveSceneSetting;
+
 /// A row from the `project_scene_settings` table.
 #[derive(Debug, Clone, FromRow, Serialize)]
 pub struct ProjectSceneSetting {
@@ -18,29 +20,24 @@ pub struct ProjectSceneSetting {
     pub updated_at: Timestamp,
 }
 
-/// Computed effective setting for a project, including source attribution.
-///
-/// Used by the list-effective query which LEFT JOINs `scene_catalog`
-/// with `project_scene_settings`.
-#[derive(Debug, Clone, FromRow, Serialize)]
-pub struct EffectiveProjectSceneSetting {
-    pub scene_catalog_id: DbId,
-    pub name: String,
-    pub slug: String,
-    pub is_enabled: bool,
-    /// Either `"catalog"` (default from scene_catalog.is_active) or `"project"`.
-    pub source: String,
-}
+/// Type alias for backward compatibility. The effective setting struct is
+/// shared across the project and character tiers.
+pub type EffectiveProjectSceneSetting = EffectiveSceneSetting;
 
 /// Bulk update request for project scene settings.
 #[derive(Debug, Clone, Deserialize)]
 pub struct BulkProjectSceneSettings {
-    pub settings: Vec<ProjectSceneSettingUpdate>,
+    pub settings: Vec<SceneSettingUpdate>,
 }
 
 /// A single setting update within a bulk request.
+///
+/// Shared shape used by both project and character scene setting updates.
 #[derive(Debug, Clone, Deserialize)]
-pub struct ProjectSceneSettingUpdate {
+pub struct SceneSettingUpdate {
     pub scene_catalog_id: DbId,
     pub is_enabled: bool,
 }
+
+/// Backward-compat alias.
+pub type ProjectSceneSettingUpdate = SceneSettingUpdate;

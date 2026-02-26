@@ -32,10 +32,7 @@ pub fn embedding_router() -> Router<AppState> {
             "/{character_id}/detected-faces",
             get(embedding::get_detected_faces),
         )
-        .route(
-            "/{character_id}/select-face",
-            post(embedding::select_face),
-        )
+        .route("/{character_id}/select-face", post(embedding::select_face))
         .route(
             "/{character_id}/embedding-history",
             get(embedding::get_embedding_history),

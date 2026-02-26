@@ -133,12 +133,18 @@ mod tests {
 
     #[test]
     fn login_maps_to_authentication() {
-        assert_eq!(action_to_category(action_types::LOGIN), log_categories::AUTHENTICATION);
+        assert_eq!(
+            action_to_category(action_types::LOGIN),
+            log_categories::AUTHENTICATION
+        );
     }
 
     #[test]
     fn logout_maps_to_authentication() {
-        assert_eq!(action_to_category(action_types::LOGOUT), log_categories::AUTHENTICATION);
+        assert_eq!(
+            action_to_category(action_types::LOGOUT),
+            log_categories::AUTHENTICATION
+        );
     }
 
     #[test]
@@ -151,22 +157,34 @@ mod tests {
 
     #[test]
     fn system_maps_to_system() {
-        assert_eq!(action_to_category(action_types::SYSTEM), log_categories::SYSTEM);
+        assert_eq!(
+            action_to_category(action_types::SYSTEM),
+            log_categories::SYSTEM
+        );
     }
 
     #[test]
     fn job_submit_maps_to_operations() {
-        assert_eq!(action_to_category(action_types::JOB_SUBMIT), log_categories::OPERATIONS);
+        assert_eq!(
+            action_to_category(action_types::JOB_SUBMIT),
+            log_categories::OPERATIONS
+        );
     }
 
     #[test]
     fn entity_create_maps_to_operations() {
-        assert_eq!(action_to_category(action_types::ENTITY_CREATE), log_categories::OPERATIONS);
+        assert_eq!(
+            action_to_category(action_types::ENTITY_CREATE),
+            log_categories::OPERATIONS
+        );
     }
 
     #[test]
     fn unknown_action_maps_to_operations() {
-        assert_eq!(action_to_category("some_unknown_action"), log_categories::OPERATIONS);
+        assert_eq!(
+            action_to_category("some_unknown_action"),
+            log_categories::OPERATIONS
+        );
     }
 
     // -----------------------------------------------------------------------

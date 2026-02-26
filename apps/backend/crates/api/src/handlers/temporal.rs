@@ -8,17 +8,17 @@ use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::Json;
 use serde::Serialize;
-use trulience_core::error::CoreError;
-use trulience_core::temporal_continuity::{
+use x121_core::error::CoreError;
+use x121_core::temporal_continuity::{
     classify_drift, classify_grain_match, compute_trend_direction, validate_centering_threshold,
     validate_drift_threshold, validate_grain_threshold, DriftSeverity, GrainQuality,
     TrendDirection, DEFAULT_DRIFT_THRESHOLD, DEFAULT_GRAIN_THRESHOLD,
 };
-use trulience_core::types::DbId;
-use trulience_db::models::temporal_metric::{
+use x121_core::types::DbId;
+use x121_db::models::temporal_metric::{
     CreateTemporalMetric, CreateTemporalSetting, TemporalMetric,
 };
-use trulience_db::repositories::{TemporalMetricRepo, TemporalSettingRepo};
+use x121_db::repositories::{TemporalMetricRepo, TemporalSettingRepo};
 
 use crate::error::{AppError, AppResult};
 use crate::middleware::auth::AuthUser;
@@ -60,19 +60,18 @@ pub async fn get_scene_metrics(
 ) -> AppResult<impl IntoResponse> {
     let metrics = TemporalMetricRepo::list_by_scene(&state.pool, scene_id).await?;
 
-    let drift_scores: Vec<f64> = metrics
-        .iter()
-        .filter_map(|m| m.drift_score)
-        .collect();
+    let drift_scores: Vec<f64> = metrics.iter().filter_map(|m| m.drift_score).collect();
     let drift_trend = compute_trend_direction(&drift_scores);
 
     let enriched: Vec<EnrichedTemporalMetric> = metrics
         .into_iter()
         .map(|m| {
-            let drift_severity =
-                m.drift_score.map(|s| classify_drift(s, DEFAULT_DRIFT_THRESHOLD));
-            let grain_quality =
-                m.grain_match_score.map(|s| classify_grain_match(s, DEFAULT_GRAIN_THRESHOLD));
+            let drift_severity = m
+                .drift_score
+                .map(|s| classify_drift(s, DEFAULT_DRIFT_THRESHOLD));
+            let grain_quality = m
+                .grain_match_score
+                .map(|s| classify_grain_match(s, DEFAULT_GRAIN_THRESHOLD));
             EnrichedTemporalMetric {
                 metric: m,
                 drift_severity,
@@ -108,10 +107,12 @@ pub async fn get_segment_metric(
             id: segment_id,
         }))?;
 
-    let drift_severity =
-        metric.drift_score.map(|s| classify_drift(s, DEFAULT_DRIFT_THRESHOLD));
-    let grain_quality =
-        metric.grain_match_score.map(|s| classify_grain_match(s, DEFAULT_GRAIN_THRESHOLD));
+    let drift_severity = metric
+        .drift_score
+        .map(|s| classify_drift(s, DEFAULT_DRIFT_THRESHOLD));
+    let grain_quality = metric
+        .grain_match_score
+        .map(|s| classify_grain_match(s, DEFAULT_GRAIN_THRESHOLD));
 
     let enriched = EnrichedTemporalMetric {
         metric,

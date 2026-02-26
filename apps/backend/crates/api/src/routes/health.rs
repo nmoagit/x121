@@ -17,7 +17,7 @@ pub struct HealthResponse {
 
 /// GET /health -- returns service and database health.
 async fn health_check(State(state): State<AppState>) -> Json<HealthResponse> {
-    let db_healthy = trulience_db::health_check(&state.pool).await.is_ok();
+    let db_healthy = x121_db::health_check(&state.pool).await.is_ok();
 
     let status = if db_healthy { "ok" } else { "degraded" };
 

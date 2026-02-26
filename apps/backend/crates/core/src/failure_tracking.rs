@@ -138,7 +138,7 @@ pub fn classify_severity(failure_count: i32, total_count: i32) -> PatternSeverit
 /// # Examples
 ///
 /// ```
-/// use trulience_core::failure_tracking::compute_pattern_key;
+/// use x121_core::failure_tracking::compute_pattern_key;
 ///
 /// let key = compute_pattern_key(Some(5), Some(3), Some(12), Some(7), Some("6+"));
 /// assert_eq!(key, "w:5:l:3:c:12:st:7:sp:6+");

@@ -1,7 +1,7 @@
 //! Repository for the `user_proficiency` and `user_focus_preferences` tables (PRD-32).
 
 use sqlx::PgPool;
-use trulience_core::types::DbId;
+use x121_core::types::DbId;
 
 use crate::models::proficiency::{UserFocusPreference, UserProficiency};
 

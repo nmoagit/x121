@@ -97,9 +97,7 @@ pub fn compute_generation_summary(
     rejected: i32,
     pending: i32,
 ) -> String {
-    format!(
-        "{total} total ({approved} approved, {rejected} rejected, {pending} pending)"
-    )
+    format!("{total} total ({approved} approved, {rejected} rejected, {pending} pending)")
 }
 
 /// Convert a settings key to a human-readable label.

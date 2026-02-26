@@ -9,15 +9,13 @@ use axum::response::IntoResponse;
 use axum::Json;
 use serde::Deserialize;
 
-use trulience_core::batch_metadata::{
-    self, BatchOperationStatus, BatchOperationType,
-};
-use trulience_core::error::CoreError;
-use trulience_core::search::{clamp_limit, clamp_offset, DEFAULT_SEARCH_LIMIT, MAX_SEARCH_LIMIT};
-use trulience_core::types::DbId;
-use trulience_db::models::batch_metadata_operation::CreateBatchMetadataOperation;
-use trulience_db::models::status::BatchMetadataOpStatusId;
-use trulience_db::repositories::BatchMetadataOperationRepo;
+use x121_core::batch_metadata::{self, BatchOperationStatus, BatchOperationType};
+use x121_core::error::CoreError;
+use x121_core::search::{clamp_limit, clamp_offset, DEFAULT_SEARCH_LIMIT, MAX_SEARCH_LIMIT};
+use x121_core::types::DbId;
+use x121_db::models::batch_metadata_operation::CreateBatchMetadataOperation;
+use x121_db::models::status::BatchMetadataOpStatusId;
+use x121_db::repositories::BatchMetadataOperationRepo;
 
 use crate::error::{AppError, AppResult};
 use crate::middleware::auth::AuthUser;
@@ -71,19 +69,16 @@ pub async fn list_operations(
 
     // Validate operation_type if provided.
     if let Some(ref op_type) = params.operation_type {
-        batch_metadata::validate_operation_type(op_type)
-            .map_err(AppError::BadRequest)?;
+        batch_metadata::validate_operation_type(op_type).map_err(AppError::BadRequest)?;
     }
 
     // Validate status if provided.
     if let Some(ref status_str) = params.status {
-        BatchOperationStatus::from_str_value(status_str)
-            .map_err(AppError::BadRequest)?;
+        BatchOperationStatus::from_str_value(status_str).map_err(AppError::BadRequest)?;
     }
 
     let operations = if let Some(project_id) = params.project_id {
-        BatchMetadataOperationRepo::list_by_project(&state.pool, project_id, limit, offset)
-            .await?
+        BatchMetadataOperationRepo::list_by_project(&state.pool, project_id, limit, offset).await?
     } else {
         BatchMetadataOperationRepo::list_recent(&state.pool, limit).await?
     };
@@ -121,18 +116,16 @@ pub async fn create_preview(
     Json(body): Json<CreatePreviewRequest>,
 ) -> AppResult<impl IntoResponse> {
     // Validate operation type.
-    let op_type = BatchOperationType::from_str_value(&body.operation_type)
-        .map_err(AppError::BadRequest)?;
+    let op_type =
+        BatchOperationType::from_str_value(&body.operation_type).map_err(AppError::BadRequest)?;
 
     // Validate field name if provided.
     if let Some(ref field) = body.field_name {
-        batch_metadata::validate_field_name(field)
-            .map_err(AppError::BadRequest)?;
+        batch_metadata::validate_field_name(field).map_err(AppError::BadRequest)?;
     }
 
     // Validate batch size.
-    batch_metadata::validate_batch_size(body.character_ids.len())
-        .map_err(AppError::BadRequest)?;
+    batch_metadata::validate_batch_size(body.character_ids.len()).map_err(AppError::BadRequest)?;
 
     let summary = batch_metadata::compute_batch_summary(
         &op_type,

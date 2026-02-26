@@ -1,7 +1,7 @@
 //! Repository for the `gpu_metrics` table (append-only time-series).
 
 use sqlx::PgPool;
-use trulience_core::types::{DbId, Timestamp};
+use x121_core::types::{DbId, Timestamp};
 
 use crate::models::hardware::{CreateGpuMetric, GpuMetric, WorkerCurrentMetrics};
 

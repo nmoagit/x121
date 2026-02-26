@@ -15,7 +15,7 @@
 /// # Examples
 ///
 /// ```
-/// use trulience_core::naming::scene_video_filename;
+/// use x121_core::naming::scene_video_filename;
 ///
 /// assert_eq!(scene_video_filename("clothed", "Dance", false, None), "dance.mp4");
 /// assert_eq!(scene_video_filename("topless", "Dance", false, None), "topless_dance.mp4");

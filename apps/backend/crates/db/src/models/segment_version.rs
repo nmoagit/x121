@@ -6,7 +6,7 @@
 
 use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
-use trulience_core::types::{DbId, Timestamp};
+use x121_core::types::{DbId, Timestamp};
 
 /// Lightweight view of a segment's versioning state.
 #[derive(Debug, Clone, FromRow, Serialize)]

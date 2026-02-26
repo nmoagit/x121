@@ -1,7 +1,7 @@
 //! Repository for the `presets` and `preset_ratings` tables (PRD-27).
 
 use sqlx::PgPool;
-use trulience_core::types::DbId;
+use x121_core::types::DbId;
 
 use crate::models::preset::{
     CreatePreset, CreatePresetRating, Preset, PresetRating, PresetWithRating, UpdatePreset,
@@ -38,10 +38,7 @@ impl PresetRepo {
     }
 
     /// Find a preset by ID.
-    pub async fn find_by_id(
-        pool: &PgPool,
-        id: DbId,
-    ) -> Result<Option<Preset>, sqlx::Error> {
+    pub async fn find_by_id(pool: &PgPool, id: DbId) -> Result<Option<Preset>, sqlx::Error> {
         let query = format!("SELECT {COLUMNS} FROM presets WHERE id = $1");
         sqlx::query_as::<_, Preset>(&query)
             .bind(id)
@@ -137,30 +134,21 @@ impl PresetRepo {
     }
 
     /// Atomically increment the usage count for a preset.
-    pub async fn increment_usage(
-        pool: &PgPool,
-        id: DbId,
-    ) -> Result<bool, sqlx::Error> {
-        let result = sqlx::query(
-            "UPDATE presets SET usage_count = usage_count + 1 WHERE id = $1",
-        )
-        .bind(id)
-        .execute(pool)
-        .await?;
+    pub async fn increment_usage(pool: &PgPool, id: DbId) -> Result<bool, sqlx::Error> {
+        let result = sqlx::query("UPDATE presets SET usage_count = usage_count + 1 WHERE id = $1")
+            .bind(id)
+            .execute(pool)
+            .await?;
         Ok(result.rows_affected() > 0)
     }
 
     /// Soft-deactivate a preset (set is_active = false).
-    pub async fn deactivate(
-        pool: &PgPool,
-        id: DbId,
-    ) -> Result<bool, sqlx::Error> {
-        let result = sqlx::query(
-            "UPDATE presets SET is_active = false WHERE id = $1 AND is_active = true",
-        )
-        .bind(id)
-        .execute(pool)
-        .await?;
+    pub async fn deactivate(pool: &PgPool, id: DbId) -> Result<bool, sqlx::Error> {
+        let result =
+            sqlx::query("UPDATE presets SET is_active = false WHERE id = $1 AND is_active = true")
+                .bind(id)
+                .execute(pool)
+                .await?;
         Ok(result.rows_affected() > 0)
     }
 

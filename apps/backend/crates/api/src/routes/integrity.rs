@@ -21,10 +21,7 @@ use crate::state::AppState;
 /// Routes for integrity scan management.
 pub fn scan_router() -> Router<AppState> {
     Router::new()
-        .route(
-            "/",
-            post(integrity::start_scan).get(integrity::list_scans),
-        )
+        .route("/", post(integrity::start_scan).get(integrity::list_scans))
         .route(
             "/{worker_id}",
             post(integrity::start_worker_scan).get(integrity::get_worker_report),
@@ -35,14 +32,8 @@ pub fn scan_router() -> Router<AppState> {
 pub fn repair_router() -> Router<AppState> {
     Router::new()
         .route("/{worker_id}", post(integrity::repair_worker))
-        .route(
-            "/{worker_id}/sync-models",
-            post(integrity::sync_models),
-        )
-        .route(
-            "/{worker_id}/install-nodes",
-            post(integrity::install_nodes),
-        )
+        .route("/{worker_id}/sync-models", post(integrity::sync_models))
+        .route("/{worker_id}/install-nodes", post(integrity::install_nodes))
 }
 
 /// Routes for model checksum CRUD.

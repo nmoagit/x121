@@ -40,10 +40,7 @@ pub fn project_config_router() -> Router<AppState> {
 
 /// Config diff routes -- mounted at `/project-configs`.
 pub fn project_config_diff_router() -> Router<AppState> {
-    Router::new().route(
-        "/{id}/diff/{project_id}",
-        post(project_config::diff_config),
-    )
+    Router::new().route("/{id}/diff/{project_id}", post(project_config::diff_config))
 }
 
 /// Project export route -- merged into `/projects`.

@@ -1,7 +1,7 @@
 //! Repository for the `api_keys`, `api_key_scopes`, and `api_audit_log` tables (PRD-12).
 
 use sqlx::PgPool;
-use trulience_core::types::DbId;
+use x121_core::types::DbId;
 
 use crate::models::api_key::{ApiAuditLogEntry, ApiKey, ApiKeyListItem, ApiKeyScope};
 
@@ -119,10 +119,11 @@ impl ApiKeyRepo {
     /// Find an active, non-revoked, non-expired API key by its SHA-256 hash.
     ///
     /// Used during authentication. Returns the key only if it is valid.
-    pub async fn find_by_hash(pool: &PgPool, key_hash: &str) -> Result<Option<ApiKey>, sqlx::Error> {
-        let query = format!(
-            "SELECT {API_KEY_COLUMNS} FROM api_keys WHERE key_hash = $1"
-        );
+    pub async fn find_by_hash(
+        pool: &PgPool,
+        key_hash: &str,
+    ) -> Result<Option<ApiKey>, sqlx::Error> {
+        let query = format!("SELECT {API_KEY_COLUMNS} FROM api_keys WHERE key_hash = $1");
         sqlx::query_as::<_, ApiKey>(&query)
             .bind(key_hash)
             .fetch_optional(pool)

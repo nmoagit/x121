@@ -7,13 +7,13 @@ use axum::extract::{Path, State};
 use axum::http::StatusCode;
 use axum::Json;
 use serde::{Deserialize, Serialize};
-use trulience_core::qa_status::{QA_FAIL, QA_PASS, QA_WARN};
-use trulience_core::types::DbId;
-use trulience_db::models::image_qa::{
+use x121_core::qa_status::{QA_FAIL, QA_PASS, QA_WARN};
+use x121_core::types::DbId;
+use x121_db::models::image_qa::{
     CreateImageQualityScore, ImageQaThreshold, ImageQualityScore, QaCheckType,
     UpsertImageQaThreshold,
 };
-use trulience_db::repositories::{ImageQaThresholdRepo, ImageQualityScoreRepo, QaCheckTypeRepo};
+use x121_db::repositories::{ImageQaThresholdRepo, ImageQualityScoreRepo, QaCheckTypeRepo};
 
 use crate::error::{AppError, AppResult};
 use crate::state::AppState;

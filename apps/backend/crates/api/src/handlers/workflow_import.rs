@@ -10,16 +10,14 @@ use axum::Json;
 
 use serde::Deserialize;
 
-use trulience_core::error::CoreError;
-use trulience_core::search::{clamp_limit, clamp_offset, DEFAULT_SEARCH_LIMIT, MAX_SEARCH_LIMIT};
-use trulience_core::types::DbId;
-use trulience_core::workflow_import::{
-    self, WORKFLOW_STATUS_ID_VALIDATED,
-};
-use trulience_db::models::workflow::{CreateWorkflow, ImportWorkflowRequest, UpdateWorkflow, Workflow};
-use trulience_db::models::workflow_version::{CreateWorkflowVersion, WorkflowDiffResponse};
-use trulience_db::repositories::WorkflowRepo;
-use trulience_db::repositories::WorkflowVersionRepo;
+use x121_core::error::CoreError;
+use x121_core::search::{clamp_limit, clamp_offset, DEFAULT_SEARCH_LIMIT, MAX_SEARCH_LIMIT};
+use x121_core::types::DbId;
+use x121_core::workflow_import::{self, WORKFLOW_STATUS_ID_VALIDATED};
+use x121_db::models::workflow::{CreateWorkflow, ImportWorkflowRequest, UpdateWorkflow, Workflow};
+use x121_db::models::workflow_version::{CreateWorkflowVersion, WorkflowDiffResponse};
+use x121_db::repositories::WorkflowRepo;
+use x121_db::repositories::WorkflowVersionRepo;
 
 use crate::error::{AppError, AppResult};
 use crate::middleware::auth::AuthUser;
@@ -58,14 +56,12 @@ pub struct DiffParams {
 
 /// Verify that a workflow exists, returning the full row.
 async fn ensure_workflow_exists(pool: &sqlx::PgPool, id: DbId) -> AppResult<Workflow> {
-    WorkflowRepo::find_by_id(pool, id)
-        .await?
-        .ok_or_else(|| {
-            AppError::Core(CoreError::NotFound {
-                entity: "Workflow",
-                id,
-            })
+    WorkflowRepo::find_by_id(pool, id).await?.ok_or_else(|| {
+        AppError::Core(CoreError::NotFound {
+            entity: "Workflow",
+            id,
         })
+    })
 }
 
 // ---------------------------------------------------------------------------
@@ -197,13 +193,11 @@ pub async fn update_workflow(
         let new_version = WorkflowVersionRepo::create(&state.pool, &version_input).await?;
 
         // Update the current_version on the workflow.
-        sqlx::query(
-            "UPDATE workflows SET current_version = $1 WHERE id = $2",
-        )
-        .bind(new_version.version)
-        .bind(id)
-        .execute(&state.pool)
-        .await?;
+        sqlx::query("UPDATE workflows SET current_version = $1 WHERE id = $2")
+            .bind(new_version.version)
+            .bind(id)
+            .execute(&state.pool)
+            .await?;
     }
 
     let updated = WorkflowRepo::update(&state.pool, id, &body)
@@ -307,11 +301,7 @@ pub async fn validate_workflow(
         WorkflowRepo::update_status(&state.pool, id, WORKFLOW_STATUS_ID_VALIDATED).await?;
     }
 
-    tracing::info!(
-        workflow_id = id,
-        overall_valid,
-        "Workflow validated"
-    );
+    tracing::info!(workflow_id = id, overall_valid, "Workflow validated");
 
     Ok(Json(DataResponse { data: validation }))
 }
@@ -327,7 +317,9 @@ pub async fn get_validation_report(
 ) -> AppResult<impl IntoResponse> {
     let workflow = ensure_workflow_exists(&state.pool, id).await?;
 
-    let results = workflow.validation_results_json.unwrap_or(serde_json::json!(null));
+    let results = workflow
+        .validation_results_json
+        .unwrap_or(serde_json::json!(null));
     Ok(Json(DataResponse { data: results }))
 }
 
@@ -346,13 +338,8 @@ pub async fn list_versions(
     let limit = clamp_limit(params.limit, DEFAULT_SEARCH_LIMIT, MAX_SEARCH_LIMIT);
     let offset = clamp_offset(params.offset);
 
-    let versions = WorkflowVersionRepo::list_for_workflow(
-        &state.pool,
-        workflow_id,
-        limit,
-        offset,
-    )
-    .await?;
+    let versions =
+        WorkflowVersionRepo::list_for_workflow(&state.pool, workflow_id, limit, offset).await?;
 
     Ok(Json(DataResponse { data: versions }))
 }

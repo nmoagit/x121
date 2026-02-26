@@ -6,9 +6,9 @@
 //! gracefully when the bus sender is dropped.
 
 use tokio::sync::broadcast;
-use trulience_core::types::DbId;
-use trulience_db::repositories::EventRepo;
-use trulience_db::DbPool;
+use x121_core::types::DbId;
+use x121_db::repositories::EventRepo;
+use x121_db::DbPool;
 
 use crate::bus::PlatformEvent;
 

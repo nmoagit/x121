@@ -40,10 +40,7 @@ pub fn scheduling_admin_router() -> Router<AppState> {
             "/policies",
             get(queue::list_scheduling_policies).post(queue::create_scheduling_policy),
         )
-        .route(
-            "/policies/{id}",
-            put(queue::update_scheduling_policy),
-        )
+        .route("/policies/{id}", put(queue::update_scheduling_policy))
 }
 
 /// Quota routes mounted at `/quota`.

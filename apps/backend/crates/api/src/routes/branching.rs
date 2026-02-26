@@ -23,14 +23,8 @@ use crate::state::AppState;
 /// Scene-scoped branch routes, merged into the `/scenes` router.
 pub fn scene_branch_router() -> Router<AppState> {
     Router::new()
-        .route(
-            "/{scene_id}/branches",
-            get(branching::list_branches),
-        )
-        .route(
-            "/{scene_id}/branch",
-            post(branching::create_branch),
-        )
+        .route("/{scene_id}/branches", get(branching::list_branches))
+        .route("/{scene_id}/branch", post(branching::create_branch))
 }
 
 /// Branch-level routes, mounted at `/branches`.

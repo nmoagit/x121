@@ -1,7 +1,7 @@
 //! Repository for the `characters` table.
 
 use sqlx::PgPool;
-use trulience_core::types::DbId;
+use x121_core::types::DbId;
 
 use crate::models::character::{Character, CreateCharacter, UpdateCharacter};
 

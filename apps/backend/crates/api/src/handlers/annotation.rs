@@ -9,11 +9,11 @@ use axum::response::IntoResponse;
 use axum::Json;
 use serde::Deserialize;
 
-use trulience_core::annotation::{validate_annotations_json, validate_frame_number};
-use trulience_core::error::CoreError;
-use trulience_core::types::DbId;
-use trulience_db::models::frame_annotation::{CreateFrameAnnotation, UpdateFrameAnnotation};
-use trulience_db::repositories::FrameAnnotationRepo;
+use x121_core::annotation::{validate_annotations_json, validate_frame_number};
+use x121_core::error::CoreError;
+use x121_core::types::DbId;
+use x121_db::models::frame_annotation::{CreateFrameAnnotation, UpdateFrameAnnotation};
+use x121_db::repositories::FrameAnnotationRepo;
 
 use crate::error::{AppError, AppResult};
 use crate::handlers::segment::ensure_segment_exists;
@@ -22,8 +22,8 @@ use crate::response::DataResponse;
 use crate::state::AppState;
 
 /* --------------------------------------------------------------------------
-   Query filters
-   -------------------------------------------------------------------------- */
+Query filters
+-------------------------------------------------------------------------- */
 
 /// Optional query filters for listing annotations.
 #[derive(Debug, Deserialize)]
@@ -33,8 +33,8 @@ pub struct AnnotationListFilters {
 }
 
 /* --------------------------------------------------------------------------
-   Handlers
-   -------------------------------------------------------------------------- */
+Handlers
+-------------------------------------------------------------------------- */
 
 /// GET /segments/{id}/annotations
 ///
@@ -194,12 +194,7 @@ pub async fn export_frame(
     // Collect all annotation JSON arrays into a flat list for easy compositing.
     let all_objects: Vec<serde_json::Value> = annotations
         .iter()
-        .flat_map(|a| {
-            a.annotations_json
-                .as_array()
-                .cloned()
-                .unwrap_or_default()
-        })
+        .flat_map(|a| a.annotations_json.as_array().cloned().unwrap_or_default())
         .collect();
 
     Ok(Json(DataResponse { data: all_objects }))

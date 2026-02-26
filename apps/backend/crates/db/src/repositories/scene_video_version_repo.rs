@@ -1,7 +1,7 @@
 //! Repository for the `scene_video_versions` table.
 
 use sqlx::PgPool;
-use trulience_core::types::DbId;
+use x121_core::types::DbId;
 
 use crate::models::scene_video_version::{
     CreateSceneVideoVersion, SceneVideoVersion, UpdateSceneVideoVersion,

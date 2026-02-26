@@ -1,7 +1,7 @@
 //! Repository for the `segments` table.
 
 use sqlx::PgPool;
-use trulience_core::types::DbId;
+use x121_core::types::DbId;
 
 use crate::models::generation::UpdateSegmentGeneration;
 use crate::models::segment::{CreateSegment, Segment, UpdateSegment};

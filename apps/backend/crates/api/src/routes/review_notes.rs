@@ -22,7 +22,10 @@ use crate::state::AppState;
 /// ```
 pub fn segment_notes_router() -> Router<AppState> {
     Router::new()
-        .route("/{id}/notes", get(review_notes::list_notes).post(review_notes::create_note))
+        .route(
+            "/{id}/notes",
+            get(review_notes::list_notes).post(review_notes::create_note),
+        )
         .route(
             "/{id}/notes/{note_id}",
             put(review_notes::update_note).delete(review_notes::delete_note),
@@ -50,6 +53,9 @@ pub fn segment_notes_router() -> Router<AppState> {
 /// ```
 pub fn review_tags_router() -> Router<AppState> {
     Router::new()
-        .route("/", get(review_notes::list_tags).post(review_notes::create_tag))
+        .route(
+            "/",
+            get(review_notes::list_tags).post(review_notes::create_tag),
+        )
         .route("/{id}", delete(review_notes::delete_tag))
 }

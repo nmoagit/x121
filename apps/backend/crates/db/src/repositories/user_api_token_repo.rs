@@ -1,7 +1,7 @@
 //! Repository for the `user_api_tokens` table (PRD-104).
 
 use sqlx::PgPool;
-use trulience_core::types::DbId;
+use x121_core::types::DbId;
 
 use crate::models::user_api_token::{ApiTokenInfo, UserApiToken};
 
@@ -76,13 +76,12 @@ impl UserApiTokenRepo {
         user_id: DbId,
         service_name: &str,
     ) -> Result<bool, sqlx::Error> {
-        let result = sqlx::query(
-            "DELETE FROM user_api_tokens WHERE user_id = $1 AND service_name = $2",
-        )
-        .bind(user_id)
-        .bind(service_name)
-        .execute(pool)
-        .await?;
+        let result =
+            sqlx::query("DELETE FROM user_api_tokens WHERE user_id = $1 AND service_name = $2")
+                .bind(user_id)
+                .bind(service_name)
+                .execute(pool)
+                .await?;
         Ok(result.rows_affected() > 0)
     }
 

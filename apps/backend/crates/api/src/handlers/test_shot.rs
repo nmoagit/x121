@@ -10,17 +10,15 @@ use axum::Json;
 
 use serde::Deserialize;
 
-use trulience_core::error::CoreError;
-use trulience_core::search::{clamp_limit, clamp_offset, DEFAULT_SEARCH_LIMIT, MAX_SEARCH_LIMIT};
-use trulience_core::test_shot::{
-    self, DEFAULT_TEST_SHOT_DURATION_SECS,
-};
-use trulience_core::types::DbId;
-use trulience_db::models::test_shot::{
+use x121_core::error::CoreError;
+use x121_core::search::{clamp_limit, clamp_offset, DEFAULT_SEARCH_LIMIT, MAX_SEARCH_LIMIT};
+use x121_core::test_shot::{self, DEFAULT_TEST_SHOT_DURATION_SECS};
+use x121_core::types::DbId;
+use x121_db::models::test_shot::{
     BatchTestShotRequest, BatchTestShotResponse, CreateTestShot, GenerateTestShotRequest,
     PromoteResponse, TestShot,
 };
-use trulience_db::repositories::TestShotRepo;
+use x121_db::repositories::TestShotRepo;
 
 use crate::error::{AppError, AppResult};
 use crate::middleware::auth::AuthUser;
@@ -46,14 +44,12 @@ pub struct GalleryParams {
 
 /// Verify that a test shot exists, returning the full row.
 async fn ensure_test_shot_exists(pool: &sqlx::PgPool, id: DbId) -> AppResult<TestShot> {
-    TestShotRepo::find_by_id(pool, id)
-        .await?
-        .ok_or_else(|| {
-            AppError::Core(CoreError::NotFound {
-                entity: "TestShot",
-                id,
-            })
+    TestShotRepo::find_by_id(pool, id).await?.ok_or_else(|| {
+        AppError::Core(CoreError::NotFound {
+            entity: "TestShot",
+            id,
         })
+    })
 }
 
 // ---------------------------------------------------------------------------
@@ -69,7 +65,9 @@ pub async fn generate_test_shot(
     auth: AuthUser,
     Json(body): Json<GenerateTestShotRequest>,
 ) -> AppResult<impl IntoResponse> {
-    let duration = body.duration_secs.unwrap_or(DEFAULT_TEST_SHOT_DURATION_SECS);
+    let duration = body
+        .duration_secs
+        .unwrap_or(DEFAULT_TEST_SHOT_DURATION_SECS);
     test_shot::validate_test_shot_params(duration)?;
 
     let input = CreateTestShot {
@@ -110,7 +108,9 @@ pub async fn batch_test_shots(
 ) -> AppResult<impl IntoResponse> {
     test_shot::validate_batch_size(body.character_ids.len())?;
 
-    let duration = body.duration_secs.unwrap_or(DEFAULT_TEST_SHOT_DURATION_SECS);
+    let duration = body
+        .duration_secs
+        .unwrap_or(DEFAULT_TEST_SHOT_DURATION_SECS);
     test_shot::validate_test_shot_params(duration)?;
 
     let params = body.parameters.unwrap_or_else(|| serde_json::json!({}));

@@ -2,11 +2,11 @@
 
 use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
-use trulience_core::types::{DbId, Timestamp};
+use x121_core::types::{DbId, Timestamp};
 
 /* --------------------------------------------------------------------------
-   Library Character
-   -------------------------------------------------------------------------- */
+Library Character
+-------------------------------------------------------------------------- */
 
 /// A row from the `library_characters` table.
 #[derive(Debug, Clone, FromRow, Serialize)]
@@ -50,8 +50,8 @@ pub struct UpdateLibraryCharacter {
 }
 
 /* --------------------------------------------------------------------------
-   Project Character Link
-   -------------------------------------------------------------------------- */
+Project Character Link
+-------------------------------------------------------------------------- */
 
 /// A row from the `project_character_links` table.
 #[derive(Debug, Clone, FromRow, Serialize)]
@@ -76,8 +76,8 @@ pub struct CreateProjectCharacterLink {
 }
 
 /* --------------------------------------------------------------------------
-   Import Request (handler-level DTO)
-   -------------------------------------------------------------------------- */
+Import Request (handler-level DTO)
+-------------------------------------------------------------------------- */
 
 /// Request body for importing a library character into a project.
 #[derive(Debug, Clone, Deserialize)]
@@ -87,8 +87,8 @@ pub struct ImportCharacterRequest {
 }
 
 /* --------------------------------------------------------------------------
-   Usage Entry (read-only view)
-   -------------------------------------------------------------------------- */
+Usage Entry (read-only view)
+-------------------------------------------------------------------------- */
 
 /// A single entry in the cross-project usage view for a library character.
 #[derive(Debug, Clone, FromRow, Serialize)]

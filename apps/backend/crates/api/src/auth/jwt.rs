@@ -7,8 +7,8 @@
 use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, Validation};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
-use trulience_core::types::DbId;
 use uuid::Uuid;
+use x121_core::types::DbId;
 
 /// JWT claims embedded in every access token.
 #[derive(Debug, Serialize, Deserialize, Clone)]

@@ -10,15 +10,15 @@ use crate::ws::WsManager;
 #[derive(Clone)]
 pub struct AppState {
     /// Database connection pool.
-    pub pool: trulience_db::DbPool,
+    pub pool: x121_db::DbPool,
     /// Server configuration (accessed by middleware and handlers in later PRDs).
     pub config: Arc<ServerConfig>,
     /// WebSocket connection manager (browser clients).
     pub ws_manager: Arc<WsManager>,
     /// ComfyUI connection manager (generation instances).
-    pub comfyui_manager: Arc<trulience_comfyui::manager::ComfyUIManager>,
+    pub comfyui_manager: Arc<x121_comfyui::manager::ComfyUIManager>,
     /// Centralized event bus for publishing platform events.
-    pub event_bus: Arc<trulience_events::EventBus>,
+    pub event_bus: Arc<x121_events::EventBus>,
     /// Multi-runtime script orchestrator (PRD-09).
     pub script_orchestrator: Option<Arc<ScriptOrchestrator>>,
 }

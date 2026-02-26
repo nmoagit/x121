@@ -9,15 +9,15 @@
 use axum::extract::{Path, State};
 use axum::response::IntoResponse;
 use axum::Json;
-use trulience_core::error::CoreError;
-use trulience_core::generation;
-use trulience_core::types::DbId;
-use trulience_db::models::generation::{
+use x121_core::error::CoreError;
+use x121_core::generation;
+use x121_core::types::DbId;
+use x121_db::models::generation::{
     BatchGenerateError, BatchGenerateRequest, BatchGenerateResponse, GenerationProgress,
     SelectBoundaryFrameRequest, SelectBoundaryFrameResponse, StartGenerationRequest,
     StartGenerationResponse, UpdateSceneGeneration, UpdateSegmentGeneration,
 };
-use trulience_db::repositories::{SceneRepo, SceneTypeRepo, SegmentRepo};
+use x121_db::repositories::{SceneRepo, SceneTypeRepo, SegmentRepo};
 
 use crate::error::{AppError, AppResult};
 use crate::response::DataResponse;

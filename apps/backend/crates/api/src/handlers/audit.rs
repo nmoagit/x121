@@ -6,11 +6,11 @@ use axum::extract::{Path, Query, State};
 use axum::response::IntoResponse;
 use axum::Json;
 use serde::Deserialize;
-use trulience_core::audit::compute_integrity_hash;
-use trulience_db::models::audit::{
+use x121_core::audit::compute_integrity_hash;
+use x121_db::models::audit::{
     AuditLogPage, AuditQuery, IntegrityCheckResult, UpdateRetentionPolicy,
 };
-use trulience_db::repositories::{AuditLogRepo, AuditRetentionPolicyRepo};
+use x121_db::repositories::{AuditLogRepo, AuditRetentionPolicyRepo};
 
 use crate::error::{AppError, AppResult};
 use crate::middleware::rbac::RequireAdmin;

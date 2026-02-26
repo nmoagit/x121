@@ -8,14 +8,14 @@ use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::Json;
 
-use trulience_core::error::CoreError;
-use trulience_core::review::{
+use x121_core::error::CoreError;
+use x121_core::review::{
     validate_note_content, validate_note_status, validate_tag_color, validate_timecode,
     NOTE_STATUS_RESOLVED,
 };
-use trulience_core::types::DbId;
-use trulience_db::models::review_note::{CreateReviewNote, CreateReviewTag, UpdateReviewNote};
-use trulience_db::repositories::{ReviewNoteRepo, ReviewTagRepo};
+use x121_core::types::DbId;
+use x121_db::models::review_note::{CreateReviewNote, CreateReviewTag, UpdateReviewNote};
+use x121_db::repositories::{ReviewNoteRepo, ReviewTagRepo};
 
 use crate::error::{AppError, AppResult};
 use crate::handlers::segment::ensure_segment_exists;
@@ -24,8 +24,8 @@ use crate::response::DataResponse;
 use crate::state::AppState;
 
 /* --------------------------------------------------------------------------
-   Helpers
-   -------------------------------------------------------------------------- */
+Helpers
+-------------------------------------------------------------------------- */
 
 /// Verify that a review note exists, returning an error if not found.
 async fn ensure_note_exists(pool: &sqlx::PgPool, note_id: DbId) -> AppResult<()> {
@@ -41,8 +41,8 @@ async fn ensure_note_exists(pool: &sqlx::PgPool, note_id: DbId) -> AppResult<()>
 }
 
 /* --------------------------------------------------------------------------
-   Note handlers
-   -------------------------------------------------------------------------- */
+Note handlers
+-------------------------------------------------------------------------- */
 
 /// GET /segments/{id}/notes
 ///
@@ -71,8 +71,7 @@ pub async fn create_note(
     input.segment_id = segment_id;
 
     // Validate content.
-    validate_note_content(&input.text_content, &input.voice_memo_path)
-        .map_err(AppError::Core)?;
+    validate_note_content(&input.text_content, &input.voice_memo_path).map_err(AppError::Core)?;
 
     // Validate timecode if provided.
     if let Some(ref tc) = input.timecode {
@@ -157,8 +156,7 @@ pub async fn resolve_note(
 ) -> AppResult<impl IntoResponse> {
     ensure_note_exists(&state.pool, note_id).await?;
 
-    let note =
-        ReviewNoteRepo::update_status(&state.pool, note_id, NOTE_STATUS_RESOLVED).await?;
+    let note = ReviewNoteRepo::update_status(&state.pool, note_id, NOTE_STATUS_RESOLVED).await?;
 
     tracing::info!(
         user_id = auth.user_id,
@@ -170,8 +168,8 @@ pub async fn resolve_note(
 }
 
 /* --------------------------------------------------------------------------
-   Tag handlers
-   -------------------------------------------------------------------------- */
+Tag handlers
+-------------------------------------------------------------------------- */
 
 /// GET /review-tags
 ///
@@ -228,18 +226,14 @@ pub async fn delete_tag(
 
     ReviewTagRepo::delete(&state.pool, id).await?;
 
-    tracing::info!(
-        user_id = auth.user_id,
-        tag_id = id,
-        "Review tag deleted"
-    );
+    tracing::info!(user_id = auth.user_id, tag_id = id, "Review tag deleted");
 
     Ok(StatusCode::NO_CONTENT)
 }
 
 /* --------------------------------------------------------------------------
-   Note-tag association handlers
-   -------------------------------------------------------------------------- */
+Note-tag association handlers
+-------------------------------------------------------------------------- */
 
 /// Request body for assigning tags to a note.
 #[derive(Debug, serde::Deserialize)]
@@ -258,8 +252,7 @@ pub async fn assign_note_tags(
 ) -> AppResult<impl IntoResponse> {
     ensure_note_exists(&state.pool, note_id).await?;
 
-    let associations =
-        ReviewNoteRepo::assign_tags(&state.pool, note_id, &input.tag_ids).await?;
+    let associations = ReviewNoteRepo::assign_tags(&state.pool, note_id, &input.tag_ids).await?;
 
     tracing::info!(
         user_id = auth.user_id,
@@ -268,7 +261,10 @@ pub async fn assign_note_tags(
         "Tags assigned to review note"
     );
 
-    Ok((StatusCode::CREATED, Json(DataResponse { data: associations })))
+    Ok((
+        StatusCode::CREATED,
+        Json(DataResponse { data: associations }),
+    ))
 }
 
 /// DELETE /segments/{id}/notes/{note_id}/tags/{tag_id}

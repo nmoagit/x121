@@ -7,10 +7,10 @@ use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::Json;
 use serde::{Deserialize, Serialize};
-use trulience_core::error::CoreError;
-use trulience_core::types::DbId;
-use trulience_db::models::status::JobStatus;
-use trulience_db::repositories::{CheckpointRepo, JobRepo};
+use x121_core::error::CoreError;
+use x121_core::types::DbId;
+use x121_db::models::status::JobStatus;
+use x121_db::repositories::{CheckpointRepo, JobRepo};
 
 use crate::error::{AppError, AppResult};
 use crate::handlers::jobs::find_and_authorize;

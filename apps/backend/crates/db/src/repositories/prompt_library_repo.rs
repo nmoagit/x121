@@ -1,7 +1,7 @@
 //! Repository for the `prompt_library` table (PRD-63).
 
 use sqlx::PgPool;
-use trulience_core::types::DbId;
+use x121_core::types::DbId;
 
 use crate::models::prompt_library_entry::{
     CreateLibraryEntry, PromptLibraryEntry, UpdateLibraryEntry,
@@ -45,9 +45,7 @@ impl PromptLibraryRepo {
         pool: &PgPool,
         id: DbId,
     ) -> Result<Option<PromptLibraryEntry>, sqlx::Error> {
-        let query = format!(
-            "SELECT {COLUMNS} FROM prompt_library WHERE id = $1"
-        );
+        let query = format!("SELECT {COLUMNS} FROM prompt_library WHERE id = $1");
         sqlx::query_as::<_, PromptLibraryEntry>(&query)
             .bind(id)
             .fetch_optional(pool)
@@ -130,27 +128,21 @@ impl PromptLibraryRepo {
 
     /// Increment the usage count for a library entry. Returns `true` if updated.
     pub async fn increment_usage(pool: &PgPool, id: DbId) -> Result<bool, sqlx::Error> {
-        let result = sqlx::query(
-            "UPDATE prompt_library SET usage_count = usage_count + 1 WHERE id = $1",
-        )
-        .bind(id)
-        .execute(pool)
-        .await?;
+        let result =
+            sqlx::query("UPDATE prompt_library SET usage_count = usage_count + 1 WHERE id = $1")
+                .bind(id)
+                .execute(pool)
+                .await?;
         Ok(result.rows_affected() > 0)
     }
 
     /// Update the average rating for a library entry. Returns `true` if updated.
-    pub async fn update_rating(
-        pool: &PgPool,
-        id: DbId,
-        new_avg: f64,
-    ) -> Result<bool, sqlx::Error> {
-        let result =
-            sqlx::query("UPDATE prompt_library SET avg_rating = $1 WHERE id = $2")
-                .bind(new_avg)
-                .bind(id)
-                .execute(pool)
-                .await?;
+    pub async fn update_rating(pool: &PgPool, id: DbId, new_avg: f64) -> Result<bool, sqlx::Error> {
+        let result = sqlx::query("UPDATE prompt_library SET avg_rating = $1 WHERE id = $2")
+            .bind(new_avg)
+            .bind(id)
+            .execute(pool)
+            .await?;
         Ok(result.rows_affected() > 0)
     }
 }

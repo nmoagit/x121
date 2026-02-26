@@ -12,8 +12,11 @@ pub const MAX_BRANCHES_PER_NODE: usize = 50;
 pub const VALID_ENTITY_TYPES: &[&str] = &["character", "scene", "segment", "project"];
 
 /// Action types that cannot be undone.
-pub const NON_UNDOABLE_ACTIONS: &[&str] =
-    &["completed_generation", "disk_reclamation", "audit_log_entry"];
+pub const NON_UNDOABLE_ACTIONS: &[&str] = &[
+    "completed_generation",
+    "disk_reclamation",
+    "audit_log_entry",
+];
 
 /// Validate that an entity type is one of the known undoable types.
 pub fn validate_entity_type(entity_type: &str) -> Result<(), CoreError> {

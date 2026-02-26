@@ -18,7 +18,7 @@ use std::collections::HashMap;
 pub const MAX_FOLDER_DEPTH: usize = 10;
 
 /// Server-side staging directory prefix.
-pub const STAGING_DIR_PREFIX: &str = "/tmp/trulience/staging";
+pub const STAGING_DIR_PREFIX: &str = "/tmp/x121/staging";
 
 /// Image file extensions recognised by the importer.
 pub const IMAGE_EXTENSIONS: &[&str] = &["png", "jpg", "jpeg", "webp", "tiff", "bmp", "gif"];
@@ -282,7 +282,11 @@ mod tests {
     #[test]
     fn test_image_extensions() {
         for ext in &["png", "jpg", "jpeg", "webp", "tiff", "bmp", "gif"] {
-            assert_eq!(derive_entity_type(ext), DerivedEntityType::Image, "ext: {ext}");
+            assert_eq!(
+                derive_entity_type(ext),
+                DerivedEntityType::Image,
+                "ext: {ext}"
+            );
         }
     }
 
@@ -295,14 +299,22 @@ mod tests {
     #[test]
     fn test_metadata_extensions() {
         for ext in &["json", "yaml", "yml", "toml"] {
-            assert_eq!(derive_entity_type(ext), DerivedEntityType::Metadata, "ext: {ext}");
+            assert_eq!(
+                derive_entity_type(ext),
+                DerivedEntityType::Metadata,
+                "ext: {ext}"
+            );
         }
     }
 
     #[test]
     fn test_video_extensions() {
         for ext in &["mp4", "mov", "webm", "avi", "mkv"] {
-            assert_eq!(derive_entity_type(ext), DerivedEntityType::Video, "ext: {ext}");
+            assert_eq!(
+                derive_entity_type(ext),
+                DerivedEntityType::Video,
+                "ext: {ext}"
+            );
         }
     }
 
@@ -509,7 +521,10 @@ mod tests {
         assert_eq!(conflicts.len(), 1);
         assert_eq!(conflicts[0].entity_name, "Alice");
         assert_eq!(conflicts[0].paths.len(), 2);
-        assert_eq!(conflicts[0].suggested_action, UniquenessAction::RenameWithPath);
+        assert_eq!(
+            conflicts[0].suggested_action,
+            UniquenessAction::RenameWithPath
+        );
     }
 
     #[test]

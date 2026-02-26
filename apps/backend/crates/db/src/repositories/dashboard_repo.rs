@@ -1,7 +1,7 @@
 //! Repository for the `dashboard_configs` table (PRD-42).
 
 use sqlx::PgPool;
-use trulience_core::types::DbId;
+use x121_core::types::DbId;
 
 use crate::models::dashboard::{DashboardConfig, SaveDashboardConfig};
 

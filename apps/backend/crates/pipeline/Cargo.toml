@@ -1,11 +1,11 @@
 [package]
-name = "trulience-pipeline"
+name = "x121-pipeline"
 version.workspace = true
 edition.workspace = true
 
 [dependencies]
-trulience-core = { workspace = true }
-trulience-comfyui = { workspace = true }
+x121-core = { workspace = true }
+x121-comfyui = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 tokio = { workspace = true }

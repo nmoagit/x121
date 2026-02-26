@@ -314,8 +314,8 @@ mod tests {
     #[test]
     fn batch_estimate_confidence_is_lowest() {
         let scenes = vec![
-            estimate_scene(6, 10.0, 50.0, 15),  // High
-            estimate_scene(4, 10.0, 50.0, 2),   // Low
+            estimate_scene(6, 10.0, 50.0, 15), // High
+            estimate_scene(4, 10.0, 50.0, 2),  // Low
         ];
         let batch = estimate_batch(scenes, 1);
         assert_eq!(batch.confidence, EstimateConfidence::Low);

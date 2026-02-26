@@ -12,16 +12,16 @@ use serde::Deserialize;
 
 use serde::Serialize;
 
-use trulience_core::error::CoreError;
-use trulience_core::legacy_import::{
+use x121_core::error::CoreError;
+use x121_core::legacy_import::{
     default_mapping_rules, match_path_pattern, validate_mapping_config, validate_match_key,
     validate_source_path, InferredEntity,
 };
-use trulience_core::search::{clamp_limit, clamp_offset};
-use trulience_core::types::DbId;
-use trulience_db::models::legacy_import_entity_log::CreateLegacyImportEntityLog;
-use trulience_db::models::legacy_import_run::{CreateLegacyImportRun, LegacyImportRun};
-use trulience_db::repositories::{LegacyImportEntityLogRepo, LegacyImportRunRepo};
+use x121_core::search::{clamp_limit, clamp_offset};
+use x121_core::types::DbId;
+use x121_db::models::legacy_import_entity_log::CreateLegacyImportEntityLog;
+use x121_db::models::legacy_import_run::{CreateLegacyImportRun, LegacyImportRun};
+use x121_db::repositories::{LegacyImportEntityLogRepo, LegacyImportRunRepo};
 
 use crate::error::{AppError, AppResult};
 use crate::middleware::auth::AuthUser;
@@ -97,10 +97,7 @@ pub struct ActionCountEntry {
 // ---------------------------------------------------------------------------
 
 /// Verify that a legacy import run exists, returning the full row.
-async fn ensure_run_exists(
-    pool: &sqlx::PgPool,
-    id: DbId,
-) -> AppResult<LegacyImportRun> {
+async fn ensure_run_exists(pool: &sqlx::PgPool, id: DbId) -> AppResult<LegacyImportRun> {
     LegacyImportRunRepo::find_by_id(pool, id)
         .await?
         .ok_or_else(|| {
@@ -367,13 +364,8 @@ pub async fn list_entity_logs(
     let limit = clamp_limit(params.limit, 25, 100);
     let offset = clamp_offset(params.offset);
 
-    let logs = LegacyImportEntityLogRepo::list_by_run(
-        &state.pool,
-        id,
-        Some(limit),
-        Some(offset),
-    )
-    .await?;
+    let logs =
+        LegacyImportEntityLogRepo::list_by_run(&state.pool, id, Some(limit), Some(offset)).await?;
 
     Ok(Json(DataResponse { data: logs }))
 }

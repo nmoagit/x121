@@ -1,7 +1,7 @@
 //! Repository for the `source_images` table.
 
 use sqlx::PgPool;
-use trulience_core::types::DbId;
+use x121_core::types::DbId;
 
 use crate::models::image::{CreateSourceImage, SourceImage, UpdateSourceImage};
 

@@ -8,11 +8,11 @@ use axum::extract::{Path, State};
 use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::Json;
-use trulience_core::error::CoreError;
-use trulience_core::job_debug;
-use trulience_core::types::DbId;
-use trulience_db::models::job_debug::{AbortJobRequest, PauseJobRequest, UpdateParamsRequest};
-use trulience_db::repositories::JobDebugRepo;
+use x121_core::error::CoreError;
+use x121_core::job_debug;
+use x121_core::types::DbId;
+use x121_db::models::job_debug::{AbortJobRequest, PauseJobRequest, UpdateParamsRequest};
+use x121_db::repositories::JobDebugRepo;
 
 use crate::error::{AppError, AppResult};
 use crate::handlers::jobs::find_and_authorize;
@@ -28,7 +28,7 @@ use crate::state::AppState;
 async fn ensure_debug_state_exists(
     pool: &sqlx::PgPool,
     job_id: DbId,
-) -> AppResult<trulience_db::models::job_debug::JobDebugState> {
+) -> AppResult<x121_db::models::job_debug::JobDebugState> {
     JobDebugRepo::find_by_job_id(pool, job_id)
         .await?
         .ok_or(AppError::Core(CoreError::NotFound {
@@ -72,8 +72,7 @@ pub async fn pause_job(
 ) -> AppResult<impl IntoResponse> {
     find_and_authorize(&state.pool, job_id, &auth, "pause").await?;
 
-    job_debug::validate_control_action("pause")
-        .map_err(AppError::Core)?;
+    job_debug::validate_control_action("pause").map_err(AppError::Core)?;
 
     // Ensure debug state row exists.
     JobDebugRepo::upsert(&state.pool, job_id).await?;
@@ -100,8 +99,7 @@ pub async fn resume_job(
 ) -> AppResult<impl IntoResponse> {
     find_and_authorize(&state.pool, job_id, &auth, "resume").await?;
 
-    job_debug::validate_control_action("resume")
-        .map_err(AppError::Core)?;
+    job_debug::validate_control_action("resume").map_err(AppError::Core)?;
 
     ensure_debug_state_exists(&state.pool, job_id).await?;
 
@@ -128,8 +126,7 @@ pub async fn update_params(
     find_and_authorize(&state.pool, job_id, &auth, "update params for").await?;
 
     // Validate modified params.
-    job_debug::validate_modified_params(&input.params)
-        .map_err(AppError::Core)?;
+    job_debug::validate_modified_params(&input.params).map_err(AppError::Core)?;
 
     ensure_debug_state_exists(&state.pool, job_id).await?;
 
@@ -181,10 +178,8 @@ pub async fn abort_job(
 ) -> AppResult<impl IntoResponse> {
     find_and_authorize(&state.pool, job_id, &auth, "abort").await?;
 
-    job_debug::validate_control_action("abort")
-        .map_err(AppError::Core)?;
-    job_debug::validate_abort_reason(&input.reason)
-        .map_err(AppError::Core)?;
+    job_debug::validate_control_action("abort").map_err(AppError::Core)?;
+    job_debug::validate_abort_reason(&input.reason).map_err(AppError::Core)?;
 
     // Ensure debug state row exists.
     JobDebugRepo::upsert(&state.pool, job_id).await?;
@@ -192,12 +187,7 @@ pub async fn abort_job(
     let reason = input.reason.as_deref().unwrap_or("User aborted");
     let debug_state = JobDebugRepo::set_abort_reason(&state.pool, job_id, reason).await?;
 
-    tracing::info!(
-        job_id,
-        user_id = auth.user_id,
-        reason,
-        "Job debug: aborted"
-    );
+    tracing::info!(job_id, user_id = auth.user_id, reason, "Job debug: aborted");
 
     Ok(Json(DataResponse { data: debug_state }))
 }

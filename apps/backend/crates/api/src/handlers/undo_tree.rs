@@ -7,9 +7,9 @@ use axum::extract::{Path, State};
 use axum::response::IntoResponse;
 use axum::Json;
 
-use trulience_core::undo::{validate_entity_type, validate_tree_json};
-use trulience_db::models::undo_tree::SaveUndoTree;
-use trulience_db::repositories::UndoTreeRepo;
+use x121_core::undo::{validate_entity_type, validate_tree_json};
+use x121_db::models::undo_tree::SaveUndoTree;
+use x121_db::repositories::UndoTreeRepo;
 
 use crate::error::AppResult;
 use crate::middleware::auth::AuthUser;
@@ -30,8 +30,7 @@ pub async fn get_tree(
 ) -> AppResult<impl IntoResponse> {
     validate_entity_type(&entity_type)?;
 
-    let tree =
-        UndoTreeRepo::get_tree(&state.pool, auth.user_id, &entity_type, entity_id).await?;
+    let tree = UndoTreeRepo::get_tree(&state.pool, auth.user_id, &entity_type, entity_id).await?;
     Ok(Json(DataResponse { data: tree }))
 }
 
@@ -49,8 +48,7 @@ pub async fn save_tree(
     validate_tree_json(&input.tree_json)?;
 
     let tree =
-        UndoTreeRepo::save_tree(&state.pool, auth.user_id, &entity_type, entity_id, &input)
-            .await?;
+        UndoTreeRepo::save_tree(&state.pool, auth.user_id, &entity_type, entity_id, &input).await?;
 
     tracing::debug!(
         user_id = auth.user_id,

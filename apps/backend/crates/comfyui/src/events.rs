@@ -5,7 +5,7 @@
 //! (not yet implemented) after interpreting raw WebSocket messages.
 
 use serde::Serialize;
-use trulience_core::types::DbId;
+use x121_core::types::DbId;
 
 /// A platform-level event originating from a ComfyUI instance.
 #[derive(Debug, Clone, Serialize)]

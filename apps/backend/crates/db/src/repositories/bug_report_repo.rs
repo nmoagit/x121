@@ -1,7 +1,7 @@
 //! Repository for the `bug_reports` table (PRD-44).
 
 use sqlx::PgPool;
-use trulience_core::types::DbId;
+use x121_core::types::DbId;
 
 use crate::models::bug_report::{BugReport, CreateBugReport};
 
@@ -41,10 +41,7 @@ impl BugReportRepo {
     }
 
     /// Find a bug report by ID.
-    pub async fn find_by_id(
-        pool: &PgPool,
-        id: DbId,
-    ) -> Result<Option<BugReport>, sqlx::Error> {
+    pub async fn find_by_id(pool: &PgPool, id: DbId) -> Result<Option<BugReport>, sqlx::Error> {
         let query = format!("SELECT {COLUMNS} FROM bug_reports WHERE id = $1");
         sqlx::query_as::<_, BugReport>(&query)
             .bind(id)
@@ -106,9 +103,7 @@ impl BugReportRepo {
         id: DbId,
         new_status: &str,
     ) -> Result<Option<BugReport>, sqlx::Error> {
-        let query = format!(
-            "UPDATE bug_reports SET status = $1 WHERE id = $2 RETURNING {COLUMNS}"
-        );
+        let query = format!("UPDATE bug_reports SET status = $1 WHERE id = $2 RETURNING {COLUMNS}");
         sqlx::query_as::<_, BugReport>(&query)
             .bind(new_status)
             .bind(id)

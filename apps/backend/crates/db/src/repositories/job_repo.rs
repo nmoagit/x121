@@ -4,8 +4,8 @@
 //! No magic numbers — every status literal is a named constant.
 
 use sqlx::PgPool;
-use trulience_core::scheduling::state_machine;
-use trulience_core::types::DbId;
+use x121_core::scheduling::state_machine;
+use x121_core::types::DbId;
 
 use crate::models::job::{Job, JobListQuery, QueuedJobView, SubmitJob};
 use crate::models::status::{JobStatus, StatusId};
@@ -79,7 +79,7 @@ impl JobRepo {
 
     /// Validate and perform a state transition, logging it in `job_state_transitions`.
     ///
-    /// Uses the state machine from `trulience_core::scheduling` to validate.
+    /// Uses the state machine from `x121_core::scheduling` to validate.
     /// Returns `Err` if the transition is invalid or the job does not exist.
     pub async fn transition_state(
         pool: &PgPool,
@@ -94,9 +94,8 @@ impl JobRepo {
             .ok_or(sqlx::Error::RowNotFound)?;
 
         // 2. Validate transition via core state machine.
-        state_machine::validate_transition(job.status_id, to_status_id).map_err(|msg| {
-            sqlx::Error::Protocol(msg)
-        })?;
+        state_machine::validate_transition(job.status_id, to_status_id)
+            .map_err(|msg| sqlx::Error::Protocol(msg))?;
 
         // 3. Build the SET clause — handle pause/resume side effects.
         let set_clause = if to_status_id == JobStatus::Paused.id() {
@@ -108,9 +107,8 @@ impl JobRepo {
             "status_id = $2"
         };
 
-        let update_query = format!(
-            "UPDATE jobs SET {set_clause} WHERE id = $1 RETURNING {COLUMNS}"
-        );
+        let update_query =
+            format!("UPDATE jobs SET {set_clause} WHERE id = $1 RETURNING {COLUMNS}");
         let updated = sqlx::query_as::<_, Job>(&update_query)
             .bind(job_id)
             .bind(to_status_id)
@@ -206,9 +204,7 @@ impl JobRepo {
     }
 
     /// Count jobs in each queue-relevant status.
-    pub async fn queue_counts(
-        pool: &PgPool,
-    ) -> Result<(i64, i64, i64), sqlx::Error> {
+    pub async fn queue_counts(pool: &PgPool) -> Result<(i64, i64, i64), sqlx::Error> {
         let row: (i64, i64, i64) = sqlx::query_as(
             "SELECT \
                  COALESCE(SUM(CASE WHEN status_id = $1 THEN 1 ELSE 0 END), 0), \
@@ -396,9 +392,7 @@ impl JobRepo {
         job_id: DbId,
         new_priority: i32,
     ) -> Result<Job, sqlx::Error> {
-        let query = format!(
-            "UPDATE jobs SET priority = $2 WHERE id = $1 RETURNING {COLUMNS}"
-        );
+        let query = format!("UPDATE jobs SET priority = $2 WHERE id = $1 RETURNING {COLUMNS}");
         sqlx::query_as::<_, Job>(&query)
             .bind(job_id)
             .bind(new_priority)

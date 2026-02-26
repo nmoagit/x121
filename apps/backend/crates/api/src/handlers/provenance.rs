@@ -10,13 +10,11 @@ use axum::Json;
 
 use serde::Deserialize;
 
-use trulience_core::error::CoreError;
-use trulience_core::provenance;
-use trulience_core::types::DbId;
-use trulience_db::models::generation_receipt::{
-    CompleteReceiptInput, CreateGenerationReceipt,
-};
-use trulience_db::repositories::GenerationReceiptRepo;
+use x121_core::error::CoreError;
+use x121_core::provenance;
+use x121_core::types::DbId;
+use x121_db::models::generation_receipt::{CompleteReceiptInput, CreateGenerationReceipt};
+use x121_db::repositories::GenerationReceiptRepo;
 
 use crate::error::{AppError, AppResult};
 use crate::middleware::auth::AuthUser;
@@ -55,9 +53,8 @@ pub async fn create_receipt(
 ) -> AppResult<impl IntoResponse> {
     // Validate receipt inputs.
     let lora_configs: Vec<provenance::LoraConfig> =
-        serde_json::from_value(body.lora_configs.clone()).map_err(|e| {
-            AppError::BadRequest(format!("Invalid lora_configs: {e}"))
-        })?;
+        serde_json::from_value(body.lora_configs.clone())
+            .map_err(|e| AppError::BadRequest(format!("Invalid lora_configs: {e}")))?;
 
     provenance::validate_receipt_inputs(
         body.prompt_text.len(),
@@ -118,9 +115,7 @@ pub async fn get_segment_provenance(
 ) -> AppResult<impl IntoResponse> {
     let receipt = GenerationReceiptRepo::find_for_segment(&state.pool, segment_id).await?;
 
-    Ok(Json(DataResponse {
-        data: receipt,
-    }))
+    Ok(Json(DataResponse { data: receipt }))
 }
 
 // ---------------------------------------------------------------------------

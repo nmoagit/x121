@@ -18,7 +18,10 @@ use crate::state::AppState;
 /// ```
 pub fn router() -> Router<AppState> {
     Router::new()
-        .route("/", post(bug_reports::submit_bug_report).get(bug_reports::list_bug_reports))
+        .route(
+            "/",
+            post(bug_reports::submit_bug_report).get(bug_reports::list_bug_reports),
+        )
         .route("/{id}", get(bug_reports::get_bug_report))
         .route("/{id}/status", put(bug_reports::update_bug_report_status))
 }

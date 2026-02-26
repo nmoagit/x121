@@ -8,16 +8,13 @@ use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::Json;
 
-use trulience_core::error::CoreError;
-use trulience_core::trimming::{
-    self, seed_frame_after_trim, TrimPreset,
+use x121_core::error::CoreError;
+use x121_core::trimming::{self, seed_frame_after_trim, TrimPreset};
+use x121_core::types::DbId;
+use x121_db::models::segment_trim::{
+    ApplyPresetRequest, BatchTrimRequest, BatchTrimResponse, CreateSegmentTrim, SeedFrameUpdate,
 };
-use trulience_core::types::DbId;
-use trulience_db::models::segment_trim::{
-    ApplyPresetRequest, BatchTrimRequest, BatchTrimResponse,
-    CreateSegmentTrim, SeedFrameUpdate,
-};
-use trulience_db::repositories::SegmentTrimRepo;
+use x121_db::repositories::SegmentTrimRepo;
 
 use crate::error::{AppError, AppResult};
 use crate::middleware::auth::AuthUser;
@@ -33,15 +30,13 @@ use crate::state::AppState;
 async fn ensure_trim_exists(
     pool: &sqlx::PgPool,
     id: DbId,
-) -> AppResult<trulience_db::models::segment_trim::SegmentTrim> {
-    SegmentTrimRepo::find_by_id(pool, id)
-        .await?
-        .ok_or_else(|| {
-            AppError::Core(CoreError::NotFound {
-                entity: "SegmentTrim",
-                id,
-            })
+) -> AppResult<x121_db::models::segment_trim::SegmentTrim> {
+    SegmentTrimRepo::find_by_id(pool, id).await?.ok_or_else(|| {
+        AppError::Core(CoreError::NotFound {
+            entity: "SegmentTrim",
+            id,
         })
+    })
 }
 
 // ---------------------------------------------------------------------------
@@ -66,11 +61,7 @@ pub async fn create_trim(
     Path(segment_id): Path<DbId>,
     Json(body): Json<CreateTrimBody>,
 ) -> AppResult<impl IntoResponse> {
-    trimming::validate_trim_points(
-        body.in_frame,
-        body.out_frame,
-        body.total_original_frames,
-    )?;
+    trimming::validate_trim_points(body.in_frame, body.out_frame, body.total_original_frames)?;
 
     let input = CreateSegmentTrim {
         segment_id,
@@ -208,11 +199,7 @@ pub async fn batch_trim(
 
     let count = ids.len();
 
-    tracing::info!(
-        count,
-        user_id = auth.user_id,
-        "Batch segment trims created"
-    );
+    tracing::info!(count, user_id = auth.user_id, "Batch segment trims created");
 
     Ok((
         StatusCode::CREATED,

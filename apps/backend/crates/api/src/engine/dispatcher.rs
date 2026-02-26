@@ -9,9 +9,9 @@ use std::time::Duration;
 
 use sqlx::PgPool;
 use tokio_util::sync::CancellationToken;
-use trulience_comfyui::manager::ComfyUIManager;
-use trulience_db::models::status::JobStatus;
-use trulience_db::repositories::JobRepo;
+use x121_comfyui::manager::ComfyUIManager;
+use x121_db::models::status::JobStatus;
+use x121_db::repositories::JobRepo;
 
 /// Default polling interval for the dispatcher loop.
 const DEFAULT_POLL_INTERVAL: Duration = Duration::from_secs(1);

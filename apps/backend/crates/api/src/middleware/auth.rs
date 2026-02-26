@@ -2,8 +2,8 @@
 
 use axum::extract::FromRequestParts;
 use axum::http::request::Parts;
-use trulience_core::error::CoreError;
-use trulience_core::types::DbId;
+use x121_core::error::CoreError;
+use x121_core::types::DbId;
 
 use crate::auth::jwt::validate_token;
 use crate::error::AppError;

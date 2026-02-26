@@ -79,8 +79,14 @@ impl ImportRunStatus {
 
     /// All valid status values.
     pub const ALL: &'static [&'static str] = &[
-        "scanning", "mapping", "preview", "importing",
-        "completed", "partial", "failed", "cancelled",
+        "scanning",
+        "mapping",
+        "preview",
+        "importing",
+        "completed",
+        "partial",
+        "failed",
+        "cancelled",
     ];
 }
 
@@ -128,9 +134,8 @@ impl EntityAction {
     }
 
     /// All valid action values.
-    pub const ALL: &'static [&'static str] = &[
-        "created", "updated", "skipped", "failed", "duplicate",
-    ];
+    pub const ALL: &'static [&'static str] =
+        &["created", "updated", "skipped", "failed", "duplicate"];
 }
 
 impl std::fmt::Display for EntityAction {
@@ -614,8 +619,7 @@ mod tests {
     #[test]
     fn multi_capture_match() {
         let captures =
-            match_path_pattern("Alice/scenes/intro/file.png", "{name}/scenes/{scene}/**")
-                .unwrap();
+            match_path_pattern("Alice/scenes/intro/file.png", "{name}/scenes/{scene}/**").unwrap();
         assert_eq!(captures.get("name").unwrap(), "Alice");
         assert_eq!(captures.get("scene").unwrap(), "intro");
     }
@@ -633,8 +637,7 @@ mod tests {
 
     #[test]
     fn globstar_matches_rest() {
-        let captures =
-            match_path_pattern("Alice/deep/nested/path/file.png", "{name}/**").unwrap();
+        let captures = match_path_pattern("Alice/deep/nested/path/file.png", "{name}/**").unwrap();
         assert_eq!(captures.get("name").unwrap(), "Alice");
     }
 

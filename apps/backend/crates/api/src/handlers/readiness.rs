@@ -8,13 +8,11 @@ use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::Json;
 
-use trulience_core::error::CoreError;
-use trulience_core::readiness::{self, validate_criteria_json, validate_scope_type};
-use trulience_core::types::DbId;
-use trulience_db::models::readiness_criteria::{
-    CreateReadinessCriteria, UpdateReadinessCriteria,
-};
-use trulience_db::repositories::{ReadinessCacheRepo, ReadinessCriteriaRepo};
+use x121_core::error::CoreError;
+use x121_core::readiness::{self, validate_criteria_json, validate_scope_type};
+use x121_core::types::DbId;
+use x121_db::models::readiness_criteria::{CreateReadinessCriteria, UpdateReadinessCriteria};
+use x121_db::repositories::{ReadinessCacheRepo, ReadinessCriteriaRepo};
 
 use crate::error::{AppError, AppResult};
 use crate::middleware::auth::AuthUser;
@@ -78,8 +76,7 @@ pub async fn invalidate_cache(
     State(state): State<AppState>,
     Path(character_id): Path<DbId>,
 ) -> AppResult<impl IntoResponse> {
-    let deleted =
-        ReadinessCacheRepo::delete_by_character_id(&state.pool, character_id).await?;
+    let deleted = ReadinessCacheRepo::delete_by_character_id(&state.pool, character_id).await?;
 
     tracing::info!(
         user_id = auth.user_id,
@@ -115,8 +112,7 @@ pub async fn batch_evaluate(
 
     // Fetch existing cache entries for these characters.
     let existing =
-        ReadinessCacheRepo::find_by_character_ids(&state.pool, &body.character_ids)
-            .await?;
+        ReadinessCacheRepo::find_by_character_ids(&state.pool, &body.character_ids).await?;
 
     tracing::info!(
         user_id = auth.user_id,
@@ -180,11 +176,9 @@ pub async fn create_criteria(
     State(state): State<AppState>,
     Json(input): Json<CreateReadinessCriteria>,
 ) -> AppResult<impl IntoResponse> {
-    validate_scope_type(&input.scope_type)
-        .map_err(AppError::BadRequest)?;
+    validate_scope_type(&input.scope_type).map_err(AppError::BadRequest)?;
 
-    validate_criteria_json(&input.criteria_json)
-        .map_err(AppError::BadRequest)?;
+    validate_criteria_json(&input.criteria_json).map_err(AppError::BadRequest)?;
 
     let criteria = ReadinessCriteriaRepo::create(&state.pool, &input).await?;
 

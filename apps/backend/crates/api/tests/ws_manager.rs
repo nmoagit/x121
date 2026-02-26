@@ -5,7 +5,7 @@
 //! delivery, and graceful shutdown behaviour.
 
 use axum::extract::ws::Message;
-use trulience_api::ws::WsManager;
+use x121_api::ws::WsManager;
 
 // ---------------------------------------------------------------------------
 // Test: new manager starts with zero connections

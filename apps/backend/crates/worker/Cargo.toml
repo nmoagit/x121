@@ -1,17 +1,17 @@
 [package]
-name = "trulience-worker"
+name = "x121-worker"
 version.workspace = true
 edition.workspace = true
 
 [[bin]]
-name = "trulience-worker"
+name = "x121-worker"
 path = "src/main.rs"
 
 [dependencies]
-trulience-core = { workspace = true }
-trulience-db = { workspace = true }
-trulience-events = { workspace = true }
-trulience-pipeline = { workspace = true }
+x121-core = { workspace = true }
+x121-db = { workspace = true }
+x121-events = { workspace = true }
+x121-pipeline = { workspace = true }
 
 tokio = { workspace = true }
 serde = { workspace = true }

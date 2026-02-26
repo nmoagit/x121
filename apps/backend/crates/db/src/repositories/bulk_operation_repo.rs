@@ -1,7 +1,7 @@
 //! Repository for the `bulk_operations` table (PRD-18).
 
 use sqlx::PgPool;
-use trulience_core::types::{DbId, Timestamp};
+use x121_core::types::{DbId, Timestamp};
 
 use crate::models::bulk_operation::{BulkOperation, CreateBulkOperation};
 use crate::models::status::StatusId;
@@ -41,10 +41,7 @@ impl BulkOperationRepo {
     }
 
     /// Find a single bulk operation by ID.
-    pub async fn find_by_id(
-        pool: &PgPool,
-        id: DbId,
-    ) -> Result<Option<BulkOperation>, sqlx::Error> {
+    pub async fn find_by_id(pool: &PgPool, id: DbId) -> Result<Option<BulkOperation>, sqlx::Error> {
         let query = format!("SELECT {COLUMNS} FROM bulk_operations WHERE id = $1");
         sqlx::query_as::<_, BulkOperation>(&query)
             .bind(id)
@@ -58,9 +55,8 @@ impl BulkOperationRepo {
         id: DbId,
         status_id: StatusId,
     ) -> Result<BulkOperation, sqlx::Error> {
-        let query = format!(
-            "UPDATE bulk_operations SET status_id = $2 WHERE id = $1 RETURNING {COLUMNS}"
-        );
+        let query =
+            format!("UPDATE bulk_operations SET status_id = $2 WHERE id = $1 RETURNING {COLUMNS}");
         sqlx::query_as::<_, BulkOperation>(&query)
             .bind(id)
             .bind(status_id)
@@ -195,15 +191,10 @@ impl BulkOperationRepo {
     }
 
     /// Count operations by status.
-    pub async fn count_by_status(
-        pool: &PgPool,
-        status_id: StatusId,
-    ) -> Result<i64, sqlx::Error> {
-        sqlx::query_scalar::<_, i64>(
-            "SELECT COUNT(*) FROM bulk_operations WHERE status_id = $1",
-        )
-        .bind(status_id)
-        .fetch_one(pool)
-        .await
+    pub async fn count_by_status(pool: &PgPool, status_id: StatusId) -> Result<i64, sqlx::Error> {
+        sqlx::query_scalar::<_, i64>("SELECT COUNT(*) FROM bulk_operations WHERE status_id = $1")
+            .bind(status_id)
+            .fetch_one(pool)
+            .await
     }
 }

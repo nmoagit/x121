@@ -13,15 +13,9 @@ use x121_db::models::scene_catalog::{CreateSceneCatalogEntry, UpdateSceneCatalog
 use x121_db::repositories::SceneCatalogRepo;
 
 use crate::error::{AppError, AppResult};
+use crate::query::IncludeInactiveParams;
 use crate::response::DataResponse;
 use crate::state::AppState;
-
-/// Query parameters for listing scene catalog entries.
-#[derive(Debug, Deserialize)]
-pub struct ListParams {
-    #[serde(default)]
-    pub include_inactive: bool,
-}
 
 /// Request body for adding tracks to a scene catalog entry.
 #[derive(Debug, Deserialize)]
@@ -38,7 +32,7 @@ pub struct AddTracksRequest {
 /// List all scene catalog entries with their associated tracks.
 pub async fn list(
     State(state): State<AppState>,
-    Query(params): Query<ListParams>,
+    Query(params): Query<IncludeInactiveParams>,
 ) -> AppResult<impl IntoResponse> {
     let entries = SceneCatalogRepo::list_with_tracks(&state.pool, params.include_inactive).await?;
     Ok(Json(DataResponse { data: entries }))

@@ -1,8 +1,8 @@
 //! Repository for the `workflows` table (PRD-75).
 
 use sqlx::PgPool;
-use trulience_core::types::DbId;
-use trulience_core::workflow_import::WORKFLOW_STATUS_ID_DRAFT;
+use x121_core::types::DbId;
+use x121_core::workflow_import::WORKFLOW_STATUS_ID_DRAFT;
 
 use crate::models::workflow::{CreateWorkflow, UpdateWorkflow, Workflow};
 
@@ -18,10 +18,7 @@ impl WorkflowRepo {
     /// Insert a new workflow, returning the created row.
     ///
     /// Defaults `status_id` to DRAFT.
-    pub async fn create(
-        pool: &PgPool,
-        input: &CreateWorkflow,
-    ) -> Result<Workflow, sqlx::Error> {
+    pub async fn create(pool: &PgPool, input: &CreateWorkflow) -> Result<Workflow, sqlx::Error> {
         let query = format!(
             "INSERT INTO workflows
                 (name, description, json_content, discovered_params_json,
@@ -42,13 +39,8 @@ impl WorkflowRepo {
     }
 
     /// Find a workflow by its primary key.
-    pub async fn find_by_id(
-        pool: &PgPool,
-        id: DbId,
-    ) -> Result<Option<Workflow>, sqlx::Error> {
-        let query = format!(
-            "SELECT {COLUMNS} FROM workflows WHERE id = $1"
-        );
+    pub async fn find_by_id(pool: &PgPool, id: DbId) -> Result<Option<Workflow>, sqlx::Error> {
+        let query = format!("SELECT {COLUMNS} FROM workflows WHERE id = $1");
         sqlx::query_as::<_, Workflow>(&query)
             .bind(id)
             .fetch_optional(pool)
@@ -56,13 +48,8 @@ impl WorkflowRepo {
     }
 
     /// Find a workflow by its unique name.
-    pub async fn find_by_name(
-        pool: &PgPool,
-        name: &str,
-    ) -> Result<Option<Workflow>, sqlx::Error> {
-        let query = format!(
-            "SELECT {COLUMNS} FROM workflows WHERE name = $1"
-        );
+    pub async fn find_by_name(pool: &PgPool, name: &str) -> Result<Option<Workflow>, sqlx::Error> {
+        let query = format!("SELECT {COLUMNS} FROM workflows WHERE name = $1");
         sqlx::query_as::<_, Workflow>(&query)
             .bind(name)
             .fetch_optional(pool)
@@ -134,13 +121,11 @@ impl WorkflowRepo {
         id: DbId,
         status_id: DbId,
     ) -> Result<bool, sqlx::Error> {
-        let result = sqlx::query(
-            "UPDATE workflows SET status_id = $1 WHERE id = $2",
-        )
-        .bind(status_id)
-        .bind(id)
-        .execute(pool)
-        .await?;
+        let result = sqlx::query("UPDATE workflows SET status_id = $1 WHERE id = $2")
+            .bind(status_id)
+            .bind(id)
+            .execute(pool)
+            .await?;
         Ok(result.rows_affected() > 0)
     }
 
@@ -150,13 +135,11 @@ impl WorkflowRepo {
         id: DbId,
         results: &serde_json::Value,
     ) -> Result<bool, sqlx::Error> {
-        let result = sqlx::query(
-            "UPDATE workflows SET validation_results_json = $1 WHERE id = $2",
-        )
-        .bind(results)
-        .bind(id)
-        .execute(pool)
-        .await?;
+        let result = sqlx::query("UPDATE workflows SET validation_results_json = $1 WHERE id = $2")
+            .bind(results)
+            .bind(id)
+            .execute(pool)
+            .await?;
         Ok(result.rows_affected() > 0)
     }
 

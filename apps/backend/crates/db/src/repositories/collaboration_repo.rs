@@ -1,8 +1,8 @@
 //! Repositories for `entity_locks` and `user_presence` tables (PRD-11).
 
 use sqlx::PgPool;
-use trulience_core::collaboration::DEFAULT_LOCK_DURATION_MINS;
-use trulience_core::types::DbId;
+use x121_core::collaboration::DEFAULT_LOCK_DURATION_MINS;
+use x121_core::types::DbId;
 
 use crate::models::collaboration::{EntityLock, UserPresence};
 

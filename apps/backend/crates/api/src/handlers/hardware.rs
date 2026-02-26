@@ -15,16 +15,14 @@ use chrono::{Duration, Utc};
 use futures::StreamExt;
 use serde::Deserialize;
 use tokio::sync::Mutex;
-use trulience_core::alert::MetricAlert;
-use trulience_core::error::CoreError;
-use trulience_core::hardware::thresholds::{
-    evaluate, AlertCooldownTracker, GpuSnapshot, Threshold,
-};
-use trulience_core::metric_names::MSG_TYPE_GPU_METRICS;
-use trulience_core::types::DbId;
-use trulience_db::models::hardware::{CreateGpuMetric, CreateRestartLog, UpsertThreshold};
-use trulience_db::repositories::{GpuMetricRepo, MetricThresholdRepo, RestartLogRepo};
-use trulience_events::PlatformEvent;
+use x121_core::alert::MetricAlert;
+use x121_core::error::CoreError;
+use x121_core::hardware::thresholds::{evaluate, AlertCooldownTracker, GpuSnapshot, Threshold};
+use x121_core::metric_names::MSG_TYPE_GPU_METRICS;
+use x121_core::types::DbId;
+use x121_db::models::hardware::{CreateGpuMetric, CreateRestartLog, UpsertThreshold};
+use x121_db::repositories::{GpuMetricRepo, MetricThresholdRepo, RestartLogRepo};
+use x121_events::PlatformEvent;
 
 use crate::error::{AppError, AppResult};
 use crate::middleware::rbac::RequireAdmin;
@@ -75,7 +73,7 @@ pub struct UpdateThresholdsRequest {
 pub async fn get_all_workers_current(
     State(state): State<AppState>,
     RequireAdmin(_admin): RequireAdmin,
-) -> AppResult<Json<DataResponse<Vec<trulience_db::models::hardware::WorkerCurrentMetrics>>>> {
+) -> AppResult<Json<DataResponse<Vec<x121_db::models::hardware::WorkerCurrentMetrics>>>> {
     let metrics = GpuMetricRepo::get_latest_per_worker(&state.pool).await?;
     Ok(Json(DataResponse { data: metrics }))
 }
@@ -88,7 +86,7 @@ pub async fn get_worker_metrics(
     RequireAdmin(_admin): RequireAdmin,
     Path(worker_id): Path<DbId>,
     Query(query): Query<MetricsQuery>,
-) -> AppResult<Json<DataResponse<Vec<trulience_db::models::hardware::GpuMetric>>>> {
+) -> AppResult<Json<DataResponse<Vec<x121_db::models::hardware::GpuMetric>>>> {
     let hours = query.hours.unwrap_or(1);
     if !(1..=168).contains(&hours) {
         return Err(AppError::BadRequest(
@@ -110,7 +108,7 @@ pub async fn restart_service(
     Json(input): Json<RestartRequest>,
 ) -> AppResult<(
     StatusCode,
-    Json<DataResponse<trulience_db::models::hardware::RestartLog>>,
+    Json<DataResponse<x121_db::models::hardware::RestartLog>>,
 )> {
     if input.service_name.is_empty() {
         return Err(AppError::Core(CoreError::Validation(
@@ -147,7 +145,7 @@ pub async fn list_restart_logs(
     State(state): State<AppState>,
     RequireAdmin(_admin): RequireAdmin,
     Path(worker_id): Path<DbId>,
-) -> AppResult<Json<DataResponse<Vec<trulience_db::models::hardware::RestartLog>>>> {
+) -> AppResult<Json<DataResponse<Vec<x121_db::models::hardware::RestartLog>>>> {
     let logs = RestartLogRepo::list_by_worker(&state.pool, worker_id).await?;
     Ok(Json(DataResponse { data: logs }))
 }
@@ -158,7 +156,7 @@ pub async fn list_restart_logs(
 pub async fn list_thresholds(
     State(state): State<AppState>,
     RequireAdmin(_admin): RequireAdmin,
-) -> AppResult<Json<DataResponse<Vec<trulience_db::models::hardware::MetricThreshold>>>> {
+) -> AppResult<Json<DataResponse<Vec<x121_db::models::hardware::MetricThreshold>>>> {
     let thresholds = MetricThresholdRepo::list_all(&state.pool).await?;
     Ok(Json(DataResponse { data: thresholds }))
 }
@@ -171,7 +169,7 @@ pub async fn update_worker_thresholds(
     RequireAdmin(_admin): RequireAdmin,
     Path(worker_id): Path<DbId>,
     Json(input): Json<UpdateThresholdsRequest>,
-) -> AppResult<Json<DataResponse<Vec<trulience_db::models::hardware::MetricThreshold>>>> {
+) -> AppResult<Json<DataResponse<Vec<x121_db::models::hardware::MetricThreshold>>>> {
     let results = upsert_thresholds(&state.pool, Some(worker_id), &input).await?;
     Ok(Json(DataResponse { data: results }))
 }
@@ -183,7 +181,7 @@ pub async fn update_global_thresholds(
     State(state): State<AppState>,
     RequireAdmin(_admin): RequireAdmin,
     Json(input): Json<UpdateThresholdsRequest>,
-) -> AppResult<Json<DataResponse<Vec<trulience_db::models::hardware::MetricThreshold>>>> {
+) -> AppResult<Json<DataResponse<Vec<x121_db::models::hardware::MetricThreshold>>>> {
     let results = upsert_thresholds(&state.pool, None, &input).await?;
     Ok(Json(DataResponse { data: results }))
 }
@@ -194,7 +192,7 @@ async fn upsert_thresholds(
     pool: &sqlx::PgPool,
     worker_id: Option<DbId>,
     input: &UpdateThresholdsRequest,
-) -> AppResult<Vec<trulience_db::models::hardware::MetricThreshold>> {
+) -> AppResult<Vec<x121_db::models::hardware::MetricThreshold>> {
     let mut results = Vec::with_capacity(input.thresholds.len());
     for t in &input.thresholds {
         validate_threshold(t)?;
@@ -331,11 +329,11 @@ async fn process_metrics_message(
 /// global default. The input is expected to be sorted by (metric_name,
 /// worker_id NULLS LAST).
 fn resolve_effective_thresholds(
-    db_thresholds: &[trulience_db::models::hardware::MetricThreshold],
+    db_thresholds: &[x121_db::models::hardware::MetricThreshold],
 ) -> Vec<Threshold> {
     use std::collections::HashMap;
 
-    let mut seen: HashMap<&str, &trulience_db::models::hardware::MetricThreshold> = HashMap::new();
+    let mut seen: HashMap<&str, &x121_db::models::hardware::MetricThreshold> = HashMap::new();
 
     for t in db_thresholds {
         if !t.is_enabled {

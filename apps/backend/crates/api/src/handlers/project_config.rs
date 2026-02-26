@@ -8,13 +8,13 @@ use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::Json;
 
-use trulience_core::error::CoreError;
-use trulience_core::project_config;
-use trulience_core::types::DbId;
-use trulience_db::models::project_config::{
+use x121_core::error::CoreError;
+use x121_core::project_config;
+use x121_core::types::DbId;
+use x121_db::models::project_config::{
     CreateProjectConfig, ImportConfigRequest, ImportResult, UpdateProjectConfig,
 };
-use trulience_db::repositories::ProjectConfigRepo;
+use x121_db::repositories::ProjectConfigRepo;
 
 use crate::error::{AppError, AppResult};
 use crate::middleware::auth::AuthUser;
@@ -30,7 +30,7 @@ use crate::state::AppState;
 async fn ensure_config_exists(
     pool: &sqlx::PgPool,
     id: DbId,
-) -> AppResult<trulience_db::models::project_config::ProjectConfig> {
+) -> AppResult<x121_db::models::project_config::ProjectConfig> {
     ProjectConfigRepo::find_by_id(pool, id)
         .await?
         .ok_or_else(|| {
@@ -62,9 +62,7 @@ pub async fn list_configs(
 // ---------------------------------------------------------------------------
 
 /// List only recommended project configs.
-pub async fn list_recommended(
-    State(state): State<AppState>,
-) -> AppResult<impl IntoResponse> {
+pub async fn list_recommended(State(state): State<AppState>) -> AppResult<impl IntoResponse> {
     let configs = ProjectConfigRepo::list_recommended(&state.pool).await?;
 
     tracing::debug!(count = configs.len(), "Listed recommended project configs");
@@ -284,11 +282,9 @@ pub async fn diff_config(
     let config = ensure_config_exists(&state.pool, config_id).await?;
 
     // Get the project's current config by exporting it
-    let current_json =
-        ProjectConfigRepo::export_project_config(&state.pool, project_id).await?;
+    let current_json = ProjectConfigRepo::export_project_config(&state.pool, project_id).await?;
 
-    let diff_entries =
-        project_config::compute_config_diff(&current_json, &config.config_json);
+    let diff_entries = project_config::compute_config_diff(&current_json, &config.config_json);
 
     Ok(Json(DataResponse { data: diff_entries }))
 }

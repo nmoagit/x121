@@ -1,7 +1,7 @@
 //! Repository for the `model_checksums` table (PRD-43).
 
 use sqlx::PgPool;
-use trulience_core::types::DbId;
+use x121_core::types::DbId;
 
 use crate::models::model_checksum::{CreateModelChecksum, ModelChecksum, UpdateModelChecksum};
 
@@ -36,10 +36,7 @@ impl ModelChecksumRepo {
     }
 
     /// Find a single model checksum by ID.
-    pub async fn find_by_id(
-        pool: &PgPool,
-        id: DbId,
-    ) -> Result<Option<ModelChecksum>, sqlx::Error> {
+    pub async fn find_by_id(pool: &PgPool, id: DbId) -> Result<Option<ModelChecksum>, sqlx::Error> {
         let query = format!("SELECT {COLUMNS} FROM model_checksums WHERE id = $1");
         sqlx::query_as::<_, ModelChecksum>(&query)
             .bind(id)

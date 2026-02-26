@@ -24,12 +24,24 @@ use crate::state::AppState;
 /// ```
 pub fn router() -> Router<AppState> {
     Router::new()
-        .route("/backends", get(storage::list_backends).post(storage::create_backend))
+        .route(
+            "/backends",
+            get(storage::list_backends).post(storage::create_backend),
+        )
         .route("/backends/{id}", put(storage::update_backend))
-        .route("/backends/{id}/decommission", post(storage::decommission_backend))
-        .route("/policies", get(storage::list_policies).post(storage::create_policy))
+        .route(
+            "/backends/{id}/decommission",
+            post(storage::decommission_backend),
+        )
+        .route(
+            "/policies",
+            get(storage::list_policies).post(storage::create_policy),
+        )
         .route("/policies/simulate", post(storage::simulate_policy))
         .route("/migrations", post(storage::start_migration))
         .route("/migrations/{id}", get(storage::get_migration))
-        .route("/migrations/{id}/rollback", post(storage::rollback_migration))
+        .route(
+            "/migrations/{id}/rollback",
+            post(storage::rollback_migration),
+        )
 }

@@ -1,7 +1,7 @@
 //! Repository for the `resolution_tiers` table (PRD-59).
 
 use sqlx::PgPool;
-use trulience_core::types::DbId;
+use x121_core::types::DbId;
 
 use crate::models::resolution_tier::{CreateResolutionTier, ResolutionTier};
 

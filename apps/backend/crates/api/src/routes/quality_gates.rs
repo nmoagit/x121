@@ -18,20 +18,18 @@ use crate::state::AppState;
 
 /// Segment-scoped QA score routes, merged into the `/segments` nest.
 pub fn segment_qa_router() -> Router<AppState> {
-    Router::new()
-        .route(
-            "/{segment_id}/qa-scores",
-            get(quality_gates::get_segment_scores),
-        )
+    Router::new().route(
+        "/{segment_id}/qa-scores",
+        get(quality_gates::get_segment_scores),
+    )
 }
 
 /// Scene-scoped QA summary routes, merged into the `/scenes` nest.
 pub fn scene_qa_router() -> Router<AppState> {
-    Router::new()
-        .route(
-            "/{scene_id}/qa-summary",
-            get(quality_gates::get_scene_qa_summary),
-        )
+    Router::new().route(
+        "/{scene_id}/qa-summary",
+        get(quality_gates::get_scene_qa_summary),
+    )
 }
 
 /// Project-scoped threshold management routes, merged into the `/projects` nest.

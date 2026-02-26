@@ -9,10 +9,10 @@
 use axum::extract::{Path, State};
 use axum::http::StatusCode;
 use axum::Json;
-use trulience_core::error::CoreError;
-use trulience_core::types::DbId;
-use trulience_db::models::character::{Character, CreateCharacter, UpdateCharacter};
-use trulience_db::repositories::CharacterRepo;
+use x121_core::error::CoreError;
+use x121_core::types::DbId;
+use x121_db::models::character::{Character, CreateCharacter, UpdateCharacter};
+use x121_db::repositories::CharacterRepo;
 
 use crate::error::{AppError, AppResult};
 use crate::state::AppState;

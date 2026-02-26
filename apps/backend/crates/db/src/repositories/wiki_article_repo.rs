@@ -3,7 +3,7 @@
 //! Also manages version creation on article create/update.
 
 use sqlx::PgPool;
-use trulience_core::types::DbId;
+use x121_core::types::DbId;
 
 use crate::models::wiki_article::{CreateWikiArticle, UpdateWikiArticle, WikiArticle};
 use crate::models::wiki_version::WikiVersion;
@@ -58,10 +58,7 @@ impl WikiArticleRepo {
     }
 
     /// Find a wiki article by ID.
-    pub async fn find_by_id(
-        pool: &PgPool,
-        id: DbId,
-    ) -> Result<Option<WikiArticle>, sqlx::Error> {
+    pub async fn find_by_id(pool: &PgPool, id: DbId) -> Result<Option<WikiArticle>, sqlx::Error> {
         let query = format!("SELECT {COLUMNS} FROM wiki_articles WHERE id = $1");
         sqlx::query_as::<_, WikiArticle>(&query)
             .bind(id)
@@ -201,9 +198,8 @@ impl WikiArticleRepo {
         user_id: Option<DbId>,
     ) -> Result<WikiArticle, sqlx::Error> {
         // Update article content.
-        let query = format!(
-            "UPDATE wiki_articles SET content_md = $1 WHERE id = $2 RETURNING {COLUMNS}"
-        );
+        let query =
+            format!("UPDATE wiki_articles SET content_md = $1 WHERE id = $2 RETURNING {COLUMNS}");
         let article = sqlx::query_as::<_, WikiArticle>(&query)
             .bind(&old_version.content_md)
             .bind(article_id)
@@ -211,8 +207,7 @@ impl WikiArticleRepo {
             .await?;
 
         // Create a new version for the revert.
-        let next_version =
-            WikiVersionRepo::get_latest_version_number(pool, article_id).await? + 1;
+        let next_version = WikiVersionRepo::get_latest_version_number(pool, article_id).await? + 1;
         let summary = format!("Reverted to version {}", old_version.version);
         WikiVersionRepo::create(
             pool,

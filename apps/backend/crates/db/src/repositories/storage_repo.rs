@@ -2,7 +2,7 @@
 //! and storage migrations (PRD-48).
 
 use sqlx::PgPool;
-use trulience_core::types::DbId;
+use x121_core::types::DbId;
 
 use crate::models::status::StatusId;
 use crate::models::storage::{
@@ -180,14 +180,12 @@ impl AssetLocationRepo {
         new_backend_id: DbId,
         new_storage_path: &str,
     ) -> Result<(), sqlx::Error> {
-        sqlx::query(
-            "UPDATE asset_locations SET backend_id = $2, storage_path = $3 WHERE id = $1",
-        )
-        .bind(id)
-        .bind(new_backend_id)
-        .bind(new_storage_path)
-        .execute(pool)
-        .await?;
+        sqlx::query("UPDATE asset_locations SET backend_id = $2, storage_path = $3 WHERE id = $1")
+            .bind(id)
+            .bind(new_backend_id)
+            .bind(new_storage_path)
+            .execute(pool)
+            .await?;
         Ok(())
     }
 

@@ -1,7 +1,7 @@
 //! Repository for import reports and report entries.
 
 use sqlx::PgPool;
-use trulience_core::types::DbId;
+use x121_core::types::DbId;
 
 use crate::models::validation::{
     CreateImportReport, CreateImportReportEntry, ImportReport, ImportReportEntry,

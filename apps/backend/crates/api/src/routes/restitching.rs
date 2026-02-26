@@ -19,24 +19,9 @@ use crate::state::AppState;
 /// Segment-scoped re-stitching routes, merged into the `/segments` nest.
 pub fn segment_restitching_router() -> Router<AppState> {
     Router::new()
-        .route(
-            "/{id}/regenerate",
-            post(restitching::regenerate),
-        )
-        .route(
-            "/{id}/boundary-check",
-            get(restitching::boundary_check),
-        )
-        .route(
-            "/{id}/smooth-boundary",
-            post(restitching::smooth_boundary),
-        )
-        .route(
-            "/{id}/versions",
-            get(restitching::list_versions),
-        )
-        .route(
-            "/{id}/clear-stale",
-            patch(restitching::clear_stale),
-        )
+        .route("/{id}/regenerate", post(restitching::regenerate))
+        .route("/{id}/boundary-check", get(restitching::boundary_check))
+        .route("/{id}/smooth-boundary", post(restitching::smooth_boundary))
+        .route("/{id}/versions", get(restitching::list_versions))
+        .route("/{id}/clear-stale", patch(restitching::clear_stale))
 }

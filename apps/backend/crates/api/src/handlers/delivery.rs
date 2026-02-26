@@ -10,23 +10,21 @@ use axum::Json;
 
 use serde::Deserialize;
 
-use trulience_core::assembly;
-use trulience_core::error::CoreError;
-use trulience_core::search::{clamp_limit, clamp_offset};
-use trulience_core::types::DbId;
-use trulience_db::models::delivery_export::{
-    AssemblyStartedResponse, CreateDeliveryExport, DeliveryExport,
-    DeliveryValidationResponse, StartAssemblyRequest, ValidationIssueDto,
+use x121_core::assembly;
+use x121_core::error::CoreError;
+use x121_core::search::{clamp_limit, clamp_offset};
+use x121_core::types::DbId;
+use x121_db::models::delivery_export::{
+    AssemblyStartedResponse, CreateDeliveryExport, DeliveryExport, DeliveryValidationResponse,
+    StartAssemblyRequest, ValidationIssueDto,
 };
-use trulience_db::models::output_format_profile::{
+use x121_db::models::output_format_profile::{
     CreateOutputFormatProfile, OutputFormatProfile, UpdateOutputFormatProfile,
 };
-use trulience_db::models::watermark_setting::{
+use x121_db::models::watermark_setting::{
     CreateWatermarkSetting, UpdateWatermarkSetting, WatermarkSetting,
 };
-use trulience_db::repositories::{
-    DeliveryExportRepo, OutputFormatProfileRepo, WatermarkSettingRepo,
-};
+use x121_db::repositories::{DeliveryExportRepo, OutputFormatProfileRepo, WatermarkSettingRepo};
 
 use crate::error::{AppError, AppResult};
 use crate::middleware::auth::AuthUser;
@@ -49,10 +47,7 @@ pub struct ListExportsParams {
 // ---------------------------------------------------------------------------
 
 /// Verify that an output format profile exists, returning the full row.
-async fn ensure_profile_exists(
-    pool: &sqlx::PgPool,
-    id: DbId,
-) -> AppResult<OutputFormatProfile> {
+async fn ensure_profile_exists(pool: &sqlx::PgPool, id: DbId) -> AppResult<OutputFormatProfile> {
     OutputFormatProfileRepo::find_by_id(pool, id)
         .await?
         .ok_or_else(|| {
@@ -64,10 +59,7 @@ async fn ensure_profile_exists(
 }
 
 /// Verify that a watermark setting exists, returning the full row.
-async fn ensure_watermark_exists(
-    pool: &sqlx::PgPool,
-    id: DbId,
-) -> AppResult<WatermarkSetting> {
+async fn ensure_watermark_exists(pool: &sqlx::PgPool, id: DbId) -> AppResult<WatermarkSetting> {
     WatermarkSettingRepo::find_by_id(pool, id)
         .await?
         .ok_or_else(|| {
@@ -79,10 +71,7 @@ async fn ensure_watermark_exists(
 }
 
 /// Verify that a delivery export exists, returning the full row.
-async fn ensure_export_exists(
-    pool: &sqlx::PgPool,
-    id: DbId,
-) -> AppResult<DeliveryExport> {
+async fn ensure_export_exists(pool: &sqlx::PgPool, id: DbId) -> AppResult<DeliveryExport> {
     DeliveryExportRepo::find_by_id(pool, id)
         .await?
         .ok_or_else(|| {
@@ -102,9 +91,7 @@ async fn ensure_export_exists(
 // ---------------------------------------------------------------------------
 
 /// List all output format profiles.
-pub async fn list_profiles(
-    State(state): State<AppState>,
-) -> AppResult<impl IntoResponse> {
+pub async fn list_profiles(State(state): State<AppState>) -> AppResult<impl IntoResponse> {
     let items = OutputFormatProfileRepo::list_all(&state.pool).await?;
     tracing::debug!(count = items.len(), "Listed output format profiles");
     Ok(Json(DataResponse { data: items }))
@@ -221,9 +208,10 @@ pub async fn start_assembly(
     // Verify the format profile exists.
     ensure_profile_exists(&state.pool, body.format_profile_id).await?;
 
-    let characters_json = body.character_ids.as_ref().map(|ids| {
-        serde_json::to_value(ids).unwrap_or(serde_json::Value::Null)
-    });
+    let characters_json = body
+        .character_ids
+        .as_ref()
+        .map(|ids| serde_json::to_value(ids).unwrap_or(serde_json::Value::Null));
 
     let input = CreateDeliveryExport {
         project_id,
@@ -332,9 +320,7 @@ pub async fn validate_delivery(
 // ---------------------------------------------------------------------------
 
 /// List all watermark settings.
-pub async fn list_watermarks(
-    State(state): State<AppState>,
-) -> AppResult<impl IntoResponse> {
+pub async fn list_watermarks(State(state): State<AppState>) -> AppResult<impl IntoResponse> {
     let items = WatermarkSettingRepo::list_all(&state.pool).await?;
     tracing::debug!(count = items.len(), "Listed watermark settings");
     Ok(Json(DataResponse { data: items }))

@@ -6,12 +6,12 @@ use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
 use axum::Json;
 use serde::Deserialize;
-use trulience_core::scripting::executor::ScriptOutput;
-use trulience_core::types::DbId;
-use trulience_db::models::script::{CreateScript, Script, ScriptExecution, UpdateScript};
-use trulience_db::repositories::{ScriptExecutionRepo, ScriptRepo};
+use x121_core::scripting::executor::ScriptOutput;
+use x121_core::types::DbId;
+use x121_db::models::script::{CreateScript, Script, ScriptExecution, UpdateScript};
+use x121_db::repositories::{ScriptExecutionRepo, ScriptRepo};
 
-use trulience_core::error::CoreError;
+use x121_core::error::CoreError;
 
 use crate::error::{AppError, AppResult};
 use crate::middleware::rbac::RequireAdmin;
@@ -65,9 +65,7 @@ pub async fn register_script(
     // For Python scripts with requirements: compute the hash.
     if let Some(ref req_path) = input.requirements_path {
         if !req_path.is_empty() {
-            match trulience_core::scripting::python::PythonExecutor::hash_requirements(req_path)
-                .await
-            {
+            match x121_core::scripting::python::PythonExecutor::hash_requirements(req_path).await {
                 Ok(hash) => input.requirements_hash = Some(hash),
                 Err(_) => {
                     return Err(AppError::BadRequest(format!(
@@ -81,7 +79,7 @@ pub async fn register_script(
     let script = ScriptRepo::create(&state.pool, &input).await?;
 
     // Publish event.
-    let event = trulience_events::PlatformEvent::new("script.registered")
+    let event = x121_events::PlatformEvent::new("script.registered")
         .with_source("script", script.id)
         .with_actor(admin.user_id)
         .with_payload(serde_json::json!({
@@ -142,7 +140,7 @@ pub async fn update_script(
             })
         })?;
 
-    let event = trulience_events::PlatformEvent::new("script.updated")
+    let event = x121_events::PlatformEvent::new("script.updated")
         .with_source("script", script.id)
         .with_actor(admin.user_id);
     state.event_bus.publish(event);
@@ -167,7 +165,7 @@ pub async fn deactivate_script(
         }));
     }
 
-    let event = trulience_events::PlatformEvent::new("script.deactivated")
+    let event = x121_events::PlatformEvent::new("script.deactivated")
         .with_source("script", id)
         .with_actor(admin.user_id);
     state.event_bus.publish(event);

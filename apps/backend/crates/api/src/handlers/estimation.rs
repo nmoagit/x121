@@ -7,10 +7,10 @@ use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::Json;
 use serde::Deserialize;
-use trulience_core::estimation;
-use trulience_core::generation::{estimate_segments, DEFAULT_SEGMENT_DURATION_SECS};
-use trulience_db::models::generation_metric::{EstimateRequest, RecordMetricInput};
-use trulience_db::repositories::GenerationMetricRepo;
+use x121_core::estimation;
+use x121_core::generation::{estimate_segments, DEFAULT_SEGMENT_DURATION_SECS};
+use x121_db::models::generation_metric::{EstimateRequest, RecordMetricInput};
+use x121_db::repositories::GenerationMetricRepo;
 
 use crate::error::{AppError, AppResult};
 use crate::middleware::rbac::RequireAuth;
@@ -35,7 +35,7 @@ pub struct PaginationQuery {
 /// Compute resource estimates for a list of scenes.
 ///
 /// Looks up calibration metrics for each (workflow, resolution_tier) pair,
-/// then delegates to the pure estimation functions in `trulience_core`.
+/// then delegates to the pure estimation functions in `x121_core`.
 pub async fn estimate_scenes(
     State(state): State<AppState>,
     RequireAuth(_user): RequireAuth,
@@ -97,8 +97,8 @@ pub async fn list_calibration_data(
     RequireAuth(_user): RequireAuth,
     Query(params): Query<PaginationQuery>,
 ) -> AppResult<impl IntoResponse> {
-    let limit = trulience_core::search::clamp_limit(params.limit, 50, 200);
-    let offset = trulience_core::search::clamp_offset(params.offset);
+    let limit = x121_core::search::clamp_limit(params.limit, 50, 200);
+    let offset = x121_core::search::clamp_offset(params.offset);
 
     let metrics = GenerationMetricRepo::list_all(&state.pool, limit, offset).await?;
     Ok(Json(DataResponse { data: metrics }))
@@ -118,14 +118,10 @@ pub async fn record_metric(
     Json(input): Json<RecordMetricInput>,
 ) -> AppResult<impl IntoResponse> {
     if input.gpu_secs < 0.0 {
-        return Err(AppError::BadRequest(
-            "gpu_secs must be non-negative".into(),
-        ));
+        return Err(AppError::BadRequest("gpu_secs must be non-negative".into()));
     }
     if input.disk_mb < 0.0 {
-        return Err(AppError::BadRequest(
-            "disk_mb must be non-negative".into(),
-        ));
+        return Err(AppError::BadRequest("disk_mb must be non-negative".into()));
     }
 
     let metric = GenerationMetricRepo::upsert_metric(&state.pool, &input).await?;

@@ -2,7 +2,7 @@
 
 use serde::Serialize;
 use sqlx::FromRow;
-use trulience_core::types::{DbId, Timestamp};
+use x121_core::types::{DbId, Timestamp};
 
 /// A role row from the `roles` table.
 #[derive(Debug, Clone, FromRow, Serialize)]

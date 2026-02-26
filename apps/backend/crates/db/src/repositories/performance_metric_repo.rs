@@ -1,7 +1,7 @@
 //! Repository for the `performance_metrics` table (PRD-41).
 
 use sqlx::PgPool;
-use trulience_core::types::{DbId, Timestamp};
+use x121_core::types::{DbId, Timestamp};
 
 use crate::models::performance_metric::{
     CreatePerformanceMetric, PerformanceMetric, PerformanceTrendPoint, WorkerPerformanceSummary,

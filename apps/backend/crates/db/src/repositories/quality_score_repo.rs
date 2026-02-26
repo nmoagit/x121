@@ -1,7 +1,7 @@
 //! Repository for the `quality_scores` table (PRD-49).
 
 use sqlx::PgPool;
-use trulience_core::types::DbId;
+use x121_core::types::DbId;
 
 use crate::models::quality_score::{CreateQualityScore, QualityScore, SceneQaSummary};
 
@@ -82,10 +82,7 @@ impl QualityScoreRepo {
     }
 
     /// Delete all quality scores for a segment (for re-running QA).
-    pub async fn delete_by_segment(
-        pool: &PgPool,
-        segment_id: DbId,
-    ) -> Result<(), sqlx::Error> {
+    pub async fn delete_by_segment(pool: &PgPool, segment_id: DbId) -> Result<(), sqlx::Error> {
         sqlx::query("DELETE FROM quality_scores WHERE segment_id = $1")
             .bind(segment_id)
             .execute(pool)

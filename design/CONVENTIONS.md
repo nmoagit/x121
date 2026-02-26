@@ -1,4 +1,4 @@
-# Trulience — Conventions & Technical Standards
+# X121 — Conventions & Technical Standards
 
 Binding decisions for all implementation work. Read this before writing any code.
 
@@ -7,7 +7,7 @@ Binding decisions for all implementation work. Read this before writing any code
 ## 1. Repository Structure
 
 ```
-trulience/
+x121/
 ├── Makefile                  # Convenience commands (make build, make dev, etc.)
 ├── .editorconfig             # Editor settings
 │
@@ -153,7 +153,7 @@ apps/backend/crates/api/src/
 
 | Item | Convention | Example |
 |------|-----------|---------|
-| Crate names | `snake_case` | `trulience_core` |
+| Crate names | `snake_case` | `x121_core` |
 | Module files | `snake_case.rs` | `character_metadata.rs` |
 | Structs | `PascalCase` | `Character`, `SceneType` |
 | Enums | `PascalCase` with `PascalCase` variants | `JobStatus::InProgress` |
@@ -262,8 +262,8 @@ use std::sync::Arc;
 use axum::{extract::State, Json};
 use serde::{Deserialize, Serialize};
 
-use trulience_core::types::DbId;
-use trulience_db::repos::CharacterRepo;
+use x121_core::types::DbId;
+use x121_db::repos::CharacterRepo;
 
 use crate::extractors::AuthUser;
 ```
@@ -728,12 +728,12 @@ test_list_characters_returns_paginated
 
 ```bash
 # .env (local development — never committed)
-DATABASE_URL=postgres://trulience:trulience@localhost:5432/trulience
+DATABASE_URL=postgres://x121:x121@localhost:5432/x121
 REDIS_URL=redis://localhost:6379
 JWT_SECRET=dev-secret-change-in-production
 COMFYUI_WS_URL=ws://localhost:8188/ws
-STORAGE_ROOT=/data/trulience
-RUST_LOG=trulience_api=debug,tower_http=debug
+STORAGE_ROOT=/data/x121
+RUST_LOG=x121_api=debug,tower_http=debug
 ```
 
 ### Layered Config

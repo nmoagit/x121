@@ -1,7 +1,7 @@
 //! Repository for import sessions and mapping entries (PRD-016).
 
 use sqlx::PgPool;
-use trulience_core::types::DbId;
+use x121_core::types::DbId;
 
 use crate::models::importer::{
     CreateImportMappingEntry, CreateImportSession, ImportMappingEntry, ImportSession,
@@ -12,8 +12,7 @@ use crate::models::importer::{
 const STATUS_COLUMNS: &str = "id, name, description, created_at, updated_at";
 
 /// Column list for `import_sessions`.
-const SESSION_COLUMNS: &str =
-    "id, status_id, project_id, staging_path, source_name, total_files, \
+const SESSION_COLUMNS: &str = "id, status_id, project_id, staging_path, source_name, total_files, \
      total_size_bytes, mapped_entities, validation_report_id, created_by, \
      created_at, updated_at";
 
@@ -54,10 +53,7 @@ impl ImportSessionRepo {
     }
 
     /// Find an import session by ID.
-    pub async fn find_by_id(
-        pool: &PgPool,
-        id: DbId,
-    ) -> Result<Option<ImportSession>, sqlx::Error> {
+    pub async fn find_by_id(pool: &PgPool, id: DbId) -> Result<Option<ImportSession>, sqlx::Error> {
         let sql = format!("SELECT {SESSION_COLUMNS} FROM import_sessions WHERE id = $1");
         sqlx::query_as::<_, ImportSession>(&sql)
             .bind(id)

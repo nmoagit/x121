@@ -5,14 +5,15 @@ use axum::http::StatusCode;
 use axum::Json;
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
-use trulience_core::error::CoreError;
-use trulience_core::types::DbId;
-use trulience_db::repositories::{RoleRepo, SessionRepo, UserRepo};
+use x121_core::error::CoreError;
+use x121_core::types::DbId;
+use x121_db::repositories::{RoleRepo, SessionRepo, UserRepo};
 
 use crate::auth::jwt::{generate_access_token, generate_refresh_token, hash_refresh_token};
 use crate::auth::password::verify_password;
 use crate::error::{AppError, AppResult};
 use crate::middleware::auth::AuthUser;
+use crate::response::DataResponse;
 use crate::state::AppState;
 
 /// Maximum consecutive failed login attempts before locking the account.
@@ -67,7 +68,7 @@ pub struct UserInfo {
 pub async fn login(
     State(state): State<AppState>,
     Json(input): Json<LoginRequest>,
-) -> AppResult<Json<AuthResponse>> {
+) -> AppResult<Json<DataResponse<AuthResponse>>> {
     // 1. Find user by username.
     let user = UserRepo::find_by_username(&state.pool, &input.username)
         .await?
@@ -122,7 +123,7 @@ pub async fn login(
     let response =
         create_auth_response(&state, user.id, &user.username, &user.email, &role_name).await?;
 
-    Ok(Json(response))
+    Ok(Json(DataResponse { data: response }))
 }
 
 /// POST /api/v1/auth/refresh
@@ -131,7 +132,7 @@ pub async fn login(
 pub async fn refresh(
     State(state): State<AppState>,
     Json(input): Json<RefreshRequest>,
-) -> AppResult<Json<AuthResponse>> {
+) -> AppResult<Json<DataResponse<AuthResponse>>> {
     // 1. Hash the provided refresh token.
     let token_hash = hash_refresh_token(&input.refresh_token);
 
@@ -164,7 +165,7 @@ pub async fn refresh(
     let response =
         create_auth_response(&state, user.id, &user.username, &user.email, &role_name).await?;
 
-    Ok(Json(response))
+    Ok(Json(DataResponse { data: response }))
 }
 
 /// POST /api/v1/auth/logout
@@ -195,7 +196,7 @@ async fn create_auth_response(
     let expires_at =
         Utc::now() + chrono::Duration::days(state.config.jwt.refresh_token_expiry_days);
 
-    let session_input = trulience_db::models::session::CreateSession {
+    let session_input = x121_db::models::session::CreateSession {
         user_id,
         refresh_token_hash: refresh_hash,
         expires_at,
