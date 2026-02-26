@@ -59,7 +59,7 @@ The source image is the single point of truth for a character's likeness. This f
 
 ### Task 2.1: Upload Handler [COMPLETE]
 
-**Implementation Notes:** Upload handler implemented as `upload_manual_variant` in `apps/backend/crates/api/src/handlers/image_variant.rs` with multipart file upload, format validation via `trulience_core::images::is_valid_image_format()`, and local file storage. Image format constants and validation in `apps/backend/crates/core/src/images.rs`.
+**Implementation Notes:** Upload handler implemented as `upload_manual_variant` in `apps/backend/crates/api/src/handlers/image_variant.rs` with multipart file upload, format validation via `x121_core::images::is_valid_image_format()`, and local file storage. Image format constants and validation in `apps/backend/crates/core/src/images.rs`.
 
 **Acceptance Criteria:**
 - [x] Accepts drag-and-drop or file browser upload (frontend calls same API)

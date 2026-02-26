@@ -10,12 +10,12 @@ This implementation adds three interconnected features: (1) a `scene_video_versi
 The implementation follows the existing codebase patterns: zero-sized repository structs with `&PgPool` methods, three-struct models (entity/create/update), Axum handlers with `AppState`/`AppResult`, and `#[sqlx::test]` integration tests.
 
 ### What Already Exists
-- `trulience_db::repositories::*` — 8 CRUD repositories with `delete` (hard) methods
-- `trulience_db::models::*` — 8 entity/create/update model struct triplets
-- `trulience_core::delivery` — `DeliveryManifest` with `CharacterDelivery.scene_videos: Vec<String>`
-- `trulience_api::handlers::*` — 8 handler modules with consistent CRUD pattern
-- `trulience_api::routes::*` — Nested route tree with `api_routes()` root
-- `trulience_api::error` — `AppError`/`CoreError` with `classify_sqlx_error` for constraint violations
+- `x121_db::repositories::*` — 8 CRUD repositories with `delete` (hard) methods
+- `x121_db::models::*` — 8 entity/create/update model struct triplets
+- `x121_core::delivery` — `DeliveryManifest` with `CharacterDelivery.scene_videos: Vec<String>`
+- `x121_api::handlers::*` — 8 handler modules with consistent CRUD pattern
+- `x121_api::routes::*` — Nested route tree with `api_routes()` root
+- `x121_api::error` — `AppError`/`CoreError` with `classify_sqlx_error` for constraint violations
 - `tests/common/mod.rs` — `build_test_app`, `body_json`, `post_json`, `put_json`, `get`, `delete` helpers
 
 ### What We're Building
@@ -142,7 +142,7 @@ Follow the existing three-struct pattern (entity/create/update) from `models/sce
 ```rust
 use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
-use trulience_core::types::{DbId, Timestamp};
+use x121_core::types::{DbId, Timestamp};
 
 /// A row from the `scene_video_versions` table.
 #[derive(Debug, Clone, FromRow, Serialize)]
@@ -185,7 +185,7 @@ pub struct UpdateSceneVideoVersion {
 - [ ] Main struct derives `Debug, Clone, FromRow, Serialize`
 - [ ] Create DTO derives `Debug, Clone, Deserialize`
 - [ ] Update DTO derives `Debug, Clone, Deserialize`
-- [ ] Uses `DbId` (`i64`) and `Timestamp` from `trulience_core::types`
+- [ ] Uses `DbId` (`i64`) and `Timestamp` from `x121_core::types`
 - [ ] `deleted_at: Option<Timestamp>` included in main struct
 - [ ] `version_number` is `i32` (matches SQL `INTEGER`)
 - [ ] `duration_secs` uses appropriate Rust type for `NUMERIC(10,3)`
@@ -887,12 +887,12 @@ Update existing tests that reference `delete` to use `soft_delete`, and verify t
 ## Dependencies
 
 ### Existing Components to Reuse
-- `trulience_db::repositories::*` — CRUD pattern (zero-sized struct, `COLUMNS` const, `&PgPool`)
-- `trulience_db::models::*` — Three-struct pattern (entity/create/update)
-- `trulience_core::types::{DbId, Timestamp}` — Shared type aliases
-- `trulience_core::error::CoreError` — Domain error variants (NotFound, Conflict, Validation)
-- `trulience_api::error::{AppError, AppResult, classify_sqlx_error}` — HTTP error mapping
-- `trulience_api::state::AppState` — Shared app state with `pool: PgPool`
+- `x121_db::repositories::*` — CRUD pattern (zero-sized struct, `COLUMNS` const, `&PgPool`)
+- `x121_db::models::*` — Three-struct pattern (entity/create/update)
+- `x121_core::types::{DbId, Timestamp}` — Shared type aliases
+- `x121_core::error::CoreError` — Domain error variants (NotFound, Conflict, Validation)
+- `x121_api::error::{AppError, AppResult, classify_sqlx_error}` — HTTP error mapping
+- `x121_api::state::AppState` — Shared app state with `pool: PgPool`
 - `tests/common/mod.rs` — `build_test_app`, `body_json`, `post_json`, `put_json`, `get`, `delete`
 
 ### New Infrastructure Needed

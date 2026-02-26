@@ -5,11 +5,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { api } from "@/lib/api";
-import type {
-  CreateSceneCatalogEntry,
-  SceneCatalogEntry,
-  UpdateSceneCatalogEntry,
-} from "../types";
+import type { CreateSceneCatalogEntry, SceneCatalogEntry, UpdateSceneCatalogEntry } from "../types";
 
 /* --------------------------------------------------------------------------
    Query key factory
@@ -18,8 +14,7 @@ import type {
 export const sceneCatalogKeys = {
   all: ["scene-catalog"] as const,
   lists: () => [...sceneCatalogKeys.all, "list"] as const,
-  list: (includeInactive?: boolean) =>
-    [...sceneCatalogKeys.lists(), { includeInactive }] as const,
+  list: (includeInactive?: boolean) => [...sceneCatalogKeys.lists(), { includeInactive }] as const,
   details: () => [...sceneCatalogKeys.all, "detail"] as const,
   detail: (id: number) => [...sceneCatalogKeys.details(), id] as const,
 };

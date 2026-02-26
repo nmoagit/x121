@@ -19,7 +19,7 @@ interface ProtectedRouteProps {
    Role checking
    -------------------------------------------------------------------------- */
 
-function hasAccess(userRole: UserRole, requiredRole?: UserRole): boolean {
+export function hasAccess(userRole: UserRole, requiredRole?: UserRole): boolean {
   if (!requiredRole) return true;
   if (userRole === "admin") return true;
   return userRole === requiredRole;

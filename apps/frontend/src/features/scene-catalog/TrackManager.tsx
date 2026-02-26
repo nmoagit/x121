@@ -10,21 +10,11 @@ import { useCallback, useState } from "react";
 import { Card } from "@/components/composite/Card";
 import { Stack } from "@/components/layout";
 import { Badge, Button, Input, Spinner, Toggle } from "@/components/primitives";
+import { generateSnakeSlug } from "@/lib/format";
 import { Plus } from "@/tokens/icons";
 
 import { useCreateTrack, useTracks, useUpdateTrack } from "./hooks/use-tracks";
 import type { CreateTrack, Track } from "./types";
-
-/* --------------------------------------------------------------------------
-   Slug generation
-   -------------------------------------------------------------------------- */
-
-function toSlug(name: string): string {
-  return name
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "_")
-    .replace(/^_|_$/g, "");
-}
 
 /* --------------------------------------------------------------------------
    Add track form
@@ -44,7 +34,7 @@ function AddTrackForm({ onClose }: AddTrackFormProps) {
 
     const data: CreateTrack = {
       name: name.trim(),
-      slug: toSlug(name.trim()),
+      slug: generateSnakeSlug(name.trim()),
       sort_order: Number.parseInt(sortOrder, 10) || 0,
     };
 
@@ -120,15 +110,9 @@ function TrackRow({ track }: TrackRowProps) {
     return (
       <tr className="border-b border-[var(--color-border-default)]">
         <td className="px-4 py-3">
-          <Input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="text-sm"
-          />
+          <Input value={name} onChange={(e) => setName(e.target.value)} className="text-sm" />
         </td>
-        <td className="px-4 py-3 text-sm text-[var(--color-text-muted)]">
-          {track.slug}
-        </td>
+        <td className="px-4 py-3 text-sm text-[var(--color-text-muted)]">{track.slug}</td>
         <td className="px-4 py-3">
           <Input
             type="number"
@@ -168,18 +152,10 @@ function TrackRow({ track }: TrackRowProps) {
       <td className="px-4 py-3 text-sm font-medium text-[var(--color-text-primary)]">
         {track.name}
       </td>
-      <td className="px-4 py-3 text-sm text-[var(--color-text-muted)]">
-        {track.slug}
-      </td>
-      <td className="px-4 py-3 text-sm text-[var(--color-text-secondary)]">
-        {track.sort_order}
-      </td>
+      <td className="px-4 py-3 text-sm text-[var(--color-text-muted)]">{track.slug}</td>
+      <td className="px-4 py-3 text-sm text-[var(--color-text-secondary)]">{track.sort_order}</td>
       <td className="px-4 py-3">
-        <Toggle
-          checked={track.is_active}
-          onChange={handleToggleActive}
-          size="sm"
-        />
+        <Toggle checked={track.is_active} onChange={handleToggleActive} size="sm" />
       </td>
       <td className="px-4 py-3">
         <Button variant="ghost" size="sm" onClick={() => setEditing(true)}>
@@ -209,9 +185,7 @@ export function TrackManager() {
   return (
     <Stack gap={4}>
       <div className="flex items-center justify-between">
-        <h2 className="text-base font-semibold text-[var(--color-text-primary)]">
-          Tracks
-        </h2>
+        <h2 className="text-base font-semibold text-[var(--color-text-primary)]">Tracks</h2>
         {!showAdd && (
           <Button
             variant="secondary"
@@ -231,11 +205,21 @@ export function TrackManager() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-[var(--color-border-default)]">
-                <th className="px-4 py-3 text-left font-medium text-[var(--color-text-muted)]">Name</th>
-                <th className="px-4 py-3 text-left font-medium text-[var(--color-text-muted)]">Slug</th>
-                <th className="px-4 py-3 text-left font-medium text-[var(--color-text-muted)]">Order</th>
-                <th className="px-4 py-3 text-left font-medium text-[var(--color-text-muted)]">Active</th>
-                <th className="px-4 py-3 text-left font-medium text-[var(--color-text-muted)]">Actions</th>
+                <th className="px-4 py-3 text-left font-medium text-[var(--color-text-muted)]">
+                  Name
+                </th>
+                <th className="px-4 py-3 text-left font-medium text-[var(--color-text-muted)]">
+                  Slug
+                </th>
+                <th className="px-4 py-3 text-left font-medium text-[var(--color-text-muted)]">
+                  Order
+                </th>
+                <th className="px-4 py-3 text-left font-medium text-[var(--color-text-muted)]">
+                  Active
+                </th>
+                <th className="px-4 py-3 text-left font-medium text-[var(--color-text-muted)]">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -249,9 +233,7 @@ export function TrackManager() {
                   </td>
                 </tr>
               ) : (
-                tracks.map((track) => (
-                  <TrackRow key={track.id} track={track} />
-                ))
+                tracks.map((track) => <TrackRow key={track.id} track={track} />)
               )}
             </tbody>
           </table>

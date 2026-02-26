@@ -42,7 +42,7 @@ export type AuthStore = AuthState & AuthActions;
    Constants
    -------------------------------------------------------------------------- */
 
-const BASE_URL = "/api/v1";
+const BASE_URL = `${import.meta.env.BASE_URL}api/v1`;
 
 const INITIAL_STATE: AuthState = {
   user: null,

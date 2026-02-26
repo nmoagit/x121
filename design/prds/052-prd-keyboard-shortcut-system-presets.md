@@ -34,7 +34,7 @@ A professional production tool without comprehensive keyboard shortcuts forces u
 #### Requirement 1.2: Preset Profiles
 **Description:** Built-in keymap presets modeled after industry tools.
 **Acceptance Criteria:**
-- [ ] Default: platform-native shortcuts optimized for the Trulience workflow
+- [ ] Default: platform-native shortcuts optimized for the X121 workflow
 - [ ] Premiere: familiar to Adobe Premiere Pro editors
 - [ ] Resolve: familiar to DaVinci Resolve colorists
 - [ ] Avid: familiar to Avid Media Composer editors

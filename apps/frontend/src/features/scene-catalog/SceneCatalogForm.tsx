@@ -11,24 +11,11 @@ import { useCallback, useState } from "react";
 import { Drawer } from "@/components/composite/Drawer";
 import { Stack } from "@/components/layout";
 import { Button, Checkbox, Input, Toggle } from "@/components/primitives";
+import { generateSnakeSlug } from "@/lib/format";
 
-import {
-  useCreateSceneCatalogEntry,
-  useUpdateSceneCatalogEntry,
-} from "./hooks/use-scene-catalog";
+import { useCreateSceneCatalogEntry, useUpdateSceneCatalogEntry } from "./hooks/use-scene-catalog";
 import { useTracks } from "./hooks/use-tracks";
 import type { CreateSceneCatalogEntry, SceneCatalogEntry } from "./types";
-
-/* --------------------------------------------------------------------------
-   Slug generation
-   -------------------------------------------------------------------------- */
-
-function toSlug(name: string): string {
-  return name
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "_")
-    .replace(/^_|_$/g, "");
-}
 
 /* --------------------------------------------------------------------------
    Props
@@ -50,12 +37,8 @@ export function SceneCatalogForm({ entry, open, onClose }: SceneCatalogFormProps
   const [name, setName] = useState(entry?.name ?? "");
   const [slug, setSlug] = useState(entry?.slug ?? "");
   const [description, setDescription] = useState(entry?.description ?? "");
-  const [hasClothesOff, setHasClothesOff] = useState(
-    entry?.has_clothes_off_transition ?? false,
-  );
-  const [sortOrder, setSortOrder] = useState(
-    entry?.sort_order?.toString() ?? "0",
-  );
+  const [hasClothesOff, setHasClothesOff] = useState(entry?.has_clothes_off_transition ?? false);
+  const [sortOrder, setSortOrder] = useState(entry?.sort_order?.toString() ?? "0");
   const [selectedTrackIds, setSelectedTrackIds] = useState<Set<number>>(
     new Set(entry?.tracks.map((t) => t.id) ?? []),
   );
@@ -71,7 +54,7 @@ export function SceneCatalogForm({ entry, open, onClose }: SceneCatalogFormProps
     (value: string) => {
       setName(value);
       if (!isEdit) {
-        setSlug(toSlug(value));
+        setSlug(generateSnakeSlug(value));
       }
     },
     [isEdit],
@@ -134,12 +117,7 @@ export function SceneCatalogForm({ entry, open, onClose }: SceneCatalogFormProps
   );
 
   return (
-    <Drawer
-      open={open}
-      onClose={onClose}
-      title={isEdit ? "Edit Scene" : "Add Scene"}
-      size="md"
-    >
+    <Drawer open={open} onClose={onClose} title={isEdit ? "Edit Scene" : "Add Scene"} size="md">
       <form onSubmit={handleSubmit}>
         <Stack gap={5}>
           <Input
@@ -191,9 +169,7 @@ export function SceneCatalogForm({ entry, open, onClose }: SceneCatalogFormProps
 
           {/* Track assignment */}
           <div className="flex flex-col gap-2">
-            <span className="text-sm font-medium text-[var(--color-text-secondary)]">
-              Tracks
-            </span>
+            <span className="text-sm font-medium text-[var(--color-text-secondary)]">Tracks</span>
             {!tracks || tracks.length === 0 ? (
               <p className="text-sm text-[var(--color-text-muted)]">
                 No tracks available. Create tracks first.
@@ -217,12 +193,7 @@ export function SceneCatalogForm({ entry, open, onClose }: SceneCatalogFormProps
             <Button type="button" variant="secondary" onClick={onClose}>
               Cancel
             </Button>
-            <Button
-              type="submit"
-              variant="primary"
-              disabled={isNameEmpty}
-              loading={isPending}
-            >
+            <Button type="submit" variant="primary" disabled={isNameEmpty} loading={isPending}>
               {isEdit ? "Save Changes" : "Create Scene"}
             </Button>
           </div>

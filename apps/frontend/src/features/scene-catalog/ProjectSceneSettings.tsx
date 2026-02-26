@@ -2,7 +2,7 @@
  * Project-level scene settings panel (PRD-111).
  *
  * Shows effective scene settings for a project with toggle switches
- * and source badges (catalog_default / project_override).
+ * and source badges (catalog / project).
  */
 
 import { useCallback } from "react";
@@ -11,11 +11,11 @@ import { Card } from "@/components/composite/Card";
 import { Stack } from "@/components/layout";
 import { Spinner, Toggle } from "@/components/primitives";
 
+import { SourceBadge } from "./SourceBadge";
 import {
   useProjectSceneSettings,
   useToggleProjectSceneSetting,
 } from "./hooks/use-project-scene-settings";
-import { SourceBadge } from "./SourceBadge";
 import type { EffectiveSceneSetting } from "./types";
 
 /* --------------------------------------------------------------------------
@@ -40,13 +40,9 @@ function SettingRow({ setting, onToggle, isPending }: SettingRowProps) {
   return (
     <tr className="border-b border-[var(--color-border-default)]">
       <td className="px-4 py-3">
-        <span className="text-sm font-medium text-[var(--color-text-primary)]">
-          {setting.name}
-        </span>
+        <span className="text-sm font-medium text-[var(--color-text-primary)]">{setting.name}</span>
       </td>
-      <td className="px-4 py-3 text-sm text-[var(--color-text-muted)]">
-        {setting.slug}
-      </td>
+      <td className="px-4 py-3 text-sm text-[var(--color-text-muted)]">{setting.slug}</td>
       <td className="px-4 py-3">
         <Toggle
           checked={setting.is_enabled}
@@ -91,11 +87,9 @@ export function ProjectSceneSettings({ projectId }: ProjectSceneSettingsProps) {
   return (
     <Stack gap={4}>
       <div>
-        <h3 className="text-base font-semibold text-[var(--color-text-primary)]">
-          Scene Settings
-        </h3>
+        <h3 className="text-base font-semibold text-[var(--color-text-primary)]">Scene Settings</h3>
         <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-          Enable or disable scenes for this project. Overrides will be marked as "project_override".
+          Enable or disable scenes for this project. Overrides will be marked as "project".
         </p>
       </div>
 
@@ -104,10 +98,18 @@ export function ProjectSceneSettings({ projectId }: ProjectSceneSettingsProps) {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-[var(--color-border-default)]">
-                <th className="px-4 py-3 text-left font-medium text-[var(--color-text-muted)]">Scene</th>
-                <th className="px-4 py-3 text-left font-medium text-[var(--color-text-muted)]">Slug</th>
-                <th className="px-4 py-3 text-left font-medium text-[var(--color-text-muted)]">Enabled</th>
-                <th className="px-4 py-3 text-left font-medium text-[var(--color-text-muted)]">Source</th>
+                <th className="px-4 py-3 text-left font-medium text-[var(--color-text-muted)]">
+                  Scene
+                </th>
+                <th className="px-4 py-3 text-left font-medium text-[var(--color-text-muted)]">
+                  Slug
+                </th>
+                <th className="px-4 py-3 text-left font-medium text-[var(--color-text-muted)]">
+                  Enabled
+                </th>
+                <th className="px-4 py-3 text-left font-medium text-[var(--color-text-muted)]">
+                  Source
+                </th>
               </tr>
             </thead>
             <tbody>

@@ -179,7 +179,7 @@ export function AssetDetail({ assetId, onBack }: AssetDetailProps) {
   const warnings = notes.filter((n) => n.severity === "warning" || n.severity === "error");
 
   return (
-    <div className="min-h-screen bg-[var(--color-surface-primary)] p-[var(--spacing-6)]">
+    <div className="min-h-full">
       <Stack gap={6}>
         {/* Header */}
         <div className="flex items-center gap-[var(--spacing-3)]">

@@ -30,7 +30,7 @@ Every professional studio tool depends on trustworthy data. Data drift — where
 #### Requirement 1.0: Database Creation & Bootstrap
 **Description:** Create the PostgreSQL database, install required extensions, and configure the connection for the platform backend. Configuration is read from environment variables or a `.env` file (see `design/local_config/.env` for dev defaults).
 **Acceptance Criteria:**
-- [ ] Database `trulience_x121` is created on the configured PostgreSQL instance
+- [ ] Database `x121_x121` is created on the configured PostgreSQL instance
 - [ ] Connection parameters (host, port, user, password, database name, SSL mode) are read from environment configuration — never hardcoded
 - [ ] `pgvector` extension is installed (`CREATE EXTENSION IF NOT EXISTS vector`)
 - [ ] No unnecessary extensions installed — only extensions with a clear use case (e.g., `pgvector`)
@@ -155,7 +155,7 @@ Every professional studio tool depends on trustworthy data. Data drift — where
 - **Environment Variables:**
   - `DB_HOST` — PostgreSQL host (default: `localhost`)
   - `DB_PORT` — PostgreSQL port (default: `5432`)
-  - `DB_NAME` — Database name (default: `trulience_x121`)
+  - `DB_NAME` — Database name (default: `x121_x121`)
   - `DB_USER` — Database user
   - `DB_PASSWORD` — Database password
   - `DB_SSL` — SSL mode (default: `false` for dev)

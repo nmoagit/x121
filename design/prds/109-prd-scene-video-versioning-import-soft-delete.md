@@ -254,11 +254,11 @@ CREATE INDEX idx_scene_video_versions_scene_id
 ## 8. Technical Considerations
 
 ### Existing Code to Reuse
-- `trulience_db::repositories` — CRUD pattern for new `SceneVideoVersionRepo`
-- `trulience_core::delivery` — `DeliveryManifest` and validation (must be updated to query final versions)
-- `trulience_core::naming` — Scene video filename generation (used for generated versions)
-- `trulience_api::error` — `AppError` with `classify_sqlx_error` for unique constraint violations
-- `trulience_api::handlers` — CRUD handler pattern for version endpoints
+- `x121_db::repositories` — CRUD pattern for new `SceneVideoVersionRepo`
+- `x121_core::delivery` — `DeliveryManifest` and validation (must be updated to query final versions)
+- `x121_core::naming` — Scene video filename generation (used for generated versions)
+- `x121_api::error` — `AppError` with `classify_sqlx_error` for unique constraint violations
+- `x121_api::handlers` — CRUD handler pattern for version endpoints
 
 ### New Infrastructure Needed
 - `scene_video_versions` table and migration

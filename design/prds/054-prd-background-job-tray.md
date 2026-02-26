@@ -50,7 +50,7 @@ When a 20-minute generation is running and the user is editing metadata on a dif
 **Description:** Progress indicator in the browser tab.
 **Acceptance Criteria:**
 - [ ] When the browser tab is not focused, page title updates to show progress
-- [ ] Format: "[73%] Trulience — Generating Scene 3"
+- [ ] Format: "[73%] X121 — Generating Scene 3"
 - [ ] Reverts to normal title when no jobs are active or tab regains focus
 
 #### Requirement 1.5: Sound Alerts

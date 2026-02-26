@@ -3,7 +3,7 @@ import { RouterProvider, createRouter } from "@tanstack/react-router";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 
-import { routeTree } from "@/app/router";
+import { routeTree, basepath } from "@/app/router";
 import { ThemeProvider } from "@/theme";
 import "@/app/index.css";
 
@@ -16,7 +16,7 @@ const queryClient = new QueryClient({
   },
 });
 
-const router = createRouter({ routeTree });
+const router = createRouter({ routeTree, basepath });
 
 declare module "@tanstack/react-router" {
   interface Register {

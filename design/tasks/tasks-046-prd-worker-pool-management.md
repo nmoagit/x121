@@ -10,7 +10,7 @@ This PRD creates the fleet management layer that sits between individual hardwar
 ### What Already Exists
 - PRD-002: Axum server, `AppState`, WebSocket infrastructure
 - PRD-003: Admin RBAC
-- PRD-006: Worker agent binary (`trulience-agent`), GPU metrics collection, `gpu_metrics` table
+- PRD-006: Worker agent binary (`x121-agent`), GPU metrics collection, `gpu_metrics` table
 - PRD-007: `jobs` table with `worker_id`, job dispatch, job lifecycle management
 - PRD-008: Scheduler with priority ordering, `job_statuses`
 - PRD-000: `worker_statuses` lookup table (idle, busy, offline, draining)
@@ -650,7 +650,7 @@ async fn test_tag_matching() {
 
 ## Notes
 
-1. **Worker-agent integration:** The `trulience-agent` binary from PRD-006 needs to be extended to send heartbeats and self-register. The heartbeat is a JSON message like `{"type": "heartbeat", "worker_id": 1, "status": "idle"}` sent alongside GPU metrics.
+1. **Worker-agent integration:** The `x121-agent` binary from PRD-006 needs to be extended to send heartbeats and self-register. The heartbeat is a JSON message like `{"type": "heartbeat", "worker_id": 1, "status": "idle"}` sent alongside GPU metrics.
 2. **GIN index on tags:** PostgreSQL's GIN index on the JSONB `tags` column enables efficient `@>` containment queries. A query like `WHERE tags @> '["high-vram"]'` uses the index.
 3. **Draining state:** When a worker is set to "draining", it finishes its current job but doesn't accept new ones. The scheduler checks `status_id != 4 (draining)` when selecting workers.
 4. **Self-registration security:** Self-registration is rate-limited and requires admin approval. A shared secret token in the agent's environment prevents random machines from registering.

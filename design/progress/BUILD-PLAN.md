@@ -1,6 +1,6 @@
-# Trulience Platform — Build Plan
+# X121 Platform — Build Plan
 
-Optimal build order for all 110 PRDs, organized into dependency-ordered phases.
+Optimal build order for all 119 PRDs, organized into dependency-ordered phases.
 Each phase can begin only after all prior phases are complete. PRDs within a phase
 can be built **in parallel** (dependencies are satisfied by earlier phases).
 
@@ -15,7 +15,7 @@ can be built **in parallel** (dependencies are satisfied by earlier phases).
 - **Track** = a parallel workstream within a phase (Backend / Frontend / Data / Pipeline)
 - PRDs listed within a track have no inter-dependencies and can be built simultaneously
 - Estimated effort is relative (S/M/L/XL) not calendar time
-- The plan covers 110 confirmed PRDs. The 15 "MAYBE" items (M-01 through M-15) are excluded
+- The plan covers 119 confirmed PRDs. The 15 "MAYBE" items (M-01 through M-15) are excluded
 
 ## Mandatory Quality Gate: dry-guy
 
@@ -161,6 +161,9 @@ This phase contains no PRD work — only structural setup.
 | 15 | PRD-22 | Source Image Quality Assurance | M | PRD-01 |
 | 16 | PRD-47 | Tagging & Custom Labels | S | PRD-01 |
 | 17 | PRD-109 | Scene Video Versioning, Import & Soft Delete | L | PRD-00, PRD-01, PRD-02 |
+| 18 | PRD-111 | Scene Catalog & Track Management | M | PRD-00, PRD-01, PRD-02, PRD-29 |
+| 19 | PRD-113 | Character Ingest Pipeline | L | PRD-00, PRD-01, PRD-02, PRD-14 |
+| 20 | PRD-116 | Dynamic File & Entity Naming Engine | M | PRD-01, PRD-02, PRD-29 |
 
 ### Track B — UI Framework & Shell
 
@@ -171,6 +174,9 @@ This phase contains no PRD work — only structural setup.
 | 19 | PRD-36 | Cinema Mode & Sync-Play Grid | M | PRD-29 |
 | 20 | PRD-37 | QA Visual Aids (Ghosting, ROI, Jog Dial) | M | PRD-29, PRD-83 |
 | 21 | PRD-52 | Keyboard Shortcut System & Presets | M | PRD-29 |
+| 22 | PRD-110 | Admin Platform Settings Panel | M | PRD-00, PRD-02 |
+| 23 | PRD-112 | Project Hub & Management | M | PRD-00, PRD-01, PRD-02, PRD-29 |
+| 24 | PRD-117 | System Status Footer Bar | M | PRD-02, PRD-10, PRD-29 |
 
 ### Track C — Monitoring Dashboards
 
@@ -180,6 +186,7 @@ This phase contains no PRD work — only structural setup.
 | 23 | PRD-42 | Studio Pulse Dashboard | M | PRD-10 |
 | 24 | PRD-54 | Background Job Tray | S | PRD-10 |
 | 25 | PRD-85 | UI Plugin / Extension Architecture | L | PRD-02, PRD-10, PRD-29 |
+| 26 | PRD-118 | Live Activity Console & Logging System | L | PRD-02, PRD-10, PRD-29 |
 
 ---
 
@@ -278,6 +285,7 @@ This phase contains no PRD work — only structural setup.
 | 55 | PRD-56 | Studio Wiki & Contextual Help | M | PRD-20, PRD-42 |
 | 56 | PRD-79 | Character Duplicate Detection | M | PRD-01, PRD-20, PRD-76 |
 | 57 | PRD-104 | Model & LoRA Download Manager | M | PRD-17, PRD-46 |
+| 58 | PRD-114 | Cloud GPU Provider Integration (RunPod) | XL | PRD-02, PRD-05, PRD-07, PRD-08, PRD-46 |
 
 **Critical path:** PRD-24 (Generation Loop) is the highest-risk, highest-effort item in the entire project. Consider starting a spike/prototype in Phase 4.
 
@@ -329,6 +337,7 @@ This phase contains no PRD work — only structural setup.
 | 72 | PRD-50 | Content Branching & Exploration | L | Backend | PRD-01, PRD-15, PRD-36 |
 | 73 | PRD-70 | On-Frame Annotation & Markup | M | Frontend | PRD-38, PRD-29 |
 | 74 | PRD-95 | Production Notes & Internal Comments | M | Frontend | PRD-10, PRD-20, PRD-38 |
+| 75 | PRD-115 | Generation Strategy & Workflow Prompt Management | L | Full-Stack | PRD-23, PRD-24, PRD-63, PRD-75 |
 
 ---
 
@@ -421,21 +430,22 @@ This phase contains no PRD work — only structural setup.
 | 98 | PRD-90 | Render Queue Timeline / Gantt View | M | PRD-08, PRD-46, PRD-61 |
 | 99 | PRD-93 | Generation Budget & Quota Management | M | PRD-08, PRD-10, PRD-57, PRD-61, PRD-90 |
 | 100 | PRD-97 | Job Dependency Chains & Triggered Workflows | M | PRD-08, PRD-10, PRD-12, PRD-45, PRD-57 |
+| 101 | PRD-119 | Time-Based Job Scheduling | M | PRD-07, PRD-08, PRD-10, PRD-03 |
 
 ### Track B — Admin & Health
 
 | # | PRD | Title | Effort | Depends On |
 |---|-----|-------|--------|------------|
-| 101 | PRD-80 | System Health Page | M | PRD-05, PRD-06, PRD-10, PRD-12, PRD-17, PRD-46 |
-| 102 | PRD-98 | Session Management & Active Users | M | PRD-03, PRD-10, PRD-11, PRD-45 |
-| 103 | PRD-19 | Disk Space Visualizer (Treemap) | S | PRD-01, PRD-15 |
+| 102 | PRD-80 | System Health Page | M | PRD-05, PRD-06, PRD-10, PRD-12, PRD-17, PRD-46 |
+| 103 | PRD-98 | Session Management & Active Users | M | PRD-03, PRD-10, PRD-11, PRD-45 |
+| 104 | PRD-19 | Disk Space Visualizer (Treemap) | S | PRD-01, PRD-15 |
 
 ### Track C — Integration Testing
 
 | # | PRD | Title | Effort | Depends On |
 |---|-----|-------|--------|------------|
-| 104 | PRD-99 | Webhook & Integration Testing Console | M | PRD-10, PRD-12, PRD-77 |
-| 105 | PRD-106 | API Usage & Observability Dashboard | M | PRD-10, PRD-12, PRD-45 |
+| 105 | PRD-99 | Webhook & Integration Testing Console | M | PRD-10, PRD-12, PRD-77 |
+| 106 | PRD-106 | API Usage & Observability Dashboard | M | PRD-10, PRD-12, PRD-45 |
 
 ---
 
@@ -446,10 +456,10 @@ This phase contains no PRD work — only structural setup.
 
 | # | PRD | Title | Effort | Track | Depends On |
 |---|-----|-------|--------|-------|------------|
-| 106 | PRD-81 | Backup & Disaster Recovery | L | Admin | PRD-00, PRD-44, PRD-74, PRD-77, PRD-80 |
-| 107 | PRD-55 | Director's View (Mobile/Tablet Review) | L | Frontend | PRD-03, PRD-29, PRD-35, PRD-36, PRD-38, PRD-52 |
-| 108 | PRD-89 | Dashboard Widget Customization | M | Frontend | PRD-04, PRD-42, PRD-85 |
-| 109 | PRD-105 | Platform Setup Wizard | M | Admin | PRD-03, PRD-05, PRD-46, PRD-80, PRD-81 |
+| 107 | PRD-81 | Backup & Disaster Recovery | L | Admin | PRD-00, PRD-44, PRD-74, PRD-77, PRD-80 |
+| 108 | PRD-55 | Director's View (Mobile/Tablet Review) | L | Frontend | PRD-03, PRD-29, PRD-35, PRD-36, PRD-38, PRD-52 |
+| 109 | PRD-89 | Dashboard Widget Customization | M | Frontend | PRD-04, PRD-42, PRD-85 |
+| 110 | PRD-105 | Platform Setup Wizard | M | Admin | PRD-03, PRD-05, PRD-46, PRD-80, PRD-81 |
 
 ---
 
@@ -511,18 +521,18 @@ PRD-29 → PRD-83 → PRD-35 → PRD-57
 |-------|------|-------|---------------|
 | 0 | 3 | Foundations | DB + Backend + Design System |
 | 1 | 6 | Core Services | Data model, ComfyUI, Events, Video player |
-| 2 | 17 | Auth & UI Framework | Login, validation, assets, layout, monitoring |
+| 2 | 24 | Auth & UI Framework | Login, validation, assets, layout, monitoring, ingest, naming, footer, settings, activity console |
 | 3 | 15 | Workspace & Data | Jobs, API, search, image pipeline, collaboration |
 | 4 | 9 | Scene Config & Workers | Scene types, worker pool, embeddings, cmd palette |
-| 5 | 8 | Generation Core | Video generation loop, QA gates, assembly |
+| 5 | 9 | Generation Core | Video generation loop, QA gates, assembly, cloud GPU |
 | 6 | 9 | Production at Scale | Batch orchestrator, multi-res, storyboards |
-| 7 | 8 | Pipeline Tools | Workflow import, hooks, prompts, branching |
+| 7 | 9 | Pipeline Tools | Workflow import, hooks, prompts, branching, generation strategy |
 | 8 | 6 | Bulk Onboarding | CSV import, character dashboards, legacy migration |
 | 9 | 8 | Advanced Review | Cross-char comparison, QA rulesets, regression testing |
 | 10 | 8 | Reporting & Delivery | Production reports, compliance, lifecycle, sharing |
-| 11 | 9 | Admin Infrastructure | GPU power, budgets, health, webhooks, observability |
+| 11 | 10 | Admin Infrastructure | GPU power, budgets, health, webhooks, observability, time scheduling |
 | 12 | 4 | Polish & Hardening | Backup/DR, mobile review, setup wizard, dashboard config |
-| **Total** | **110** | | |
+| **Total** | **119** | | |
 
 ---
 
@@ -545,3 +555,13 @@ PRD-29 → PRD-83 → PRD-35 → PRD-57
 | 2026-02-19 | Initial build plan created — 109 PRDs across 13 phases |
 | 2026-02-20 | Added Deferred Work Queue section — tracks PRD-29 deferred phases (1, 7, 8.1) and PRD-02 DRY extraction, both blocked on PRD-01/PRD-03 |
 | 2026-02-20 | Added PRD-109 (Scene Video Versioning, Import & Soft Delete) to Phase 2 Track A. All deps satisfied. Total: 110 PRDs |
+| 2026-02-24 | Added PRD-111 (Scene Catalog & Track Management) to Phase 2 Track A as high priority. Replaces variant_applicability with normalized tracks. All deps done (PRD-00, 01, 02, 29). Total: 111 PRDs |
+| 2026-02-24 | Added PRD-112 (Project Hub & Management) to Phase 2 Track B as high priority. Frontend-only — all backend CRUD exists. All deps done. Total: 112 PRDs |
+| 2026-02-24 | Added PRD-113 (Character Ingest Pipeline) to Phase 2 Track A. Folder scanner, name parser, metadata generation/validation, import wizard. All deps done. Total: 113 PRDs |
+| 2026-02-24 | Added PRD-114 (Cloud GPU Provider Integration) to Phase 5 Track C. RunPod Pods + Serverless, provider trait, auto-scaling, S3 transfer, cost tracking. All deps done. Total: 114 PRDs |
+| 2026-02-24 | Added PRD-115 (Generation Strategy & Workflow Prompt Management) to Phase 7. Strategy selection, prompt node mapping, character+scene fragments, in-app editing. All deps done. Total: 115 PRDs |
+| 2026-02-24 | Added PRD-116 (Dynamic File & Entity Naming Engine) to Phase 2 Track A. Configurable naming templates, token substitution, live preview, project overrides. All deps done. Total: 116 PRDs |
+| 2026-02-24 | Added PRD-117 (System Status Footer Bar) to Phase 2 Track B. Persistent IDE-style footer bar, service health, cloud GPU, jobs, workflows. All deps done. Total: 117 PRDs |
+| 2026-02-25 | Added PRD-110 (Admin Platform Settings Panel) to Phase 2 Track B. Key/value settings with validation, caching, audit. All deps done. Total: 118 PRDs |
+| 2026-02-25 | Added PRD-118 (Live Activity Console & Logging System) to Phase 2 Track C. Terminal-style console, role-based streaming, DB persistence. All deps done. Total: 119 PRDs |
+| 2026-02-25 | Added PRD-119 (Time-Based Job Scheduling) to Phase 11 Track A. Cron-style schedules, calendar UI, off-peak selection, timezone handling. All deps done. Total: 119 PRDs |

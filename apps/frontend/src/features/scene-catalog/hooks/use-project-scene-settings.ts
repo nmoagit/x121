@@ -14,8 +14,7 @@ import type { EffectiveSceneSetting, SceneSettingUpdate } from "../types";
 export const projectSceneSettingKeys = {
   all: ["project-scene-settings"] as const,
   lists: () => [...projectSceneSettingKeys.all, "list"] as const,
-  list: (projectId: number) =>
-    [...projectSceneSettingKeys.lists(), projectId] as const,
+  list: (projectId: number) => [...projectSceneSettingKeys.lists(), projectId] as const,
 };
 
 /* --------------------------------------------------------------------------
@@ -26,10 +25,7 @@ export const projectSceneSettingKeys = {
 export function useProjectSceneSettings(projectId: number | null) {
   return useQuery({
     queryKey: projectSceneSettingKeys.list(projectId ?? 0),
-    queryFn: () =>
-      api.get<EffectiveSceneSetting[]>(
-        `/projects/${projectId}/scene-settings`,
-      ),
+    queryFn: () => api.get<EffectiveSceneSetting[]>(`/projects/${projectId}/scene-settings`),
     enabled: projectId !== null,
   });
 }
@@ -44,10 +40,7 @@ export function useBulkUpdateProjectSceneSettings(projectId: number) {
 
   return useMutation({
     mutationFn: (updates: SceneSettingUpdate[]) =>
-      api.put<EffectiveSceneSetting[]>(
-        `/projects/${projectId}/scene-settings`,
-        updates,
-      ),
+      api.put<EffectiveSceneSetting[]>(`/projects/${projectId}/scene-settings`, updates),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: projectSceneSettingKeys.list(projectId),

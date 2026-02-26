@@ -12,12 +12,9 @@ import { Stack } from "@/components/layout";
 import { Badge, Button, Spinner, Toggle } from "@/components/primitives";
 import { Plus } from "@/tokens/icons";
 
-import {
-  useDeactivateSceneCatalogEntry,
-  useSceneCatalog,
-} from "./hooks/use-scene-catalog";
 import { SceneCatalogForm } from "./SceneCatalogForm";
 import { TrackBadge } from "./TrackBadge";
+import { useDeactivateSceneCatalogEntry, useSceneCatalog } from "./hooks/use-scene-catalog";
 import type { SceneCatalogEntry } from "./types";
 
 /* --------------------------------------------------------------------------
@@ -35,12 +32,8 @@ function EntryRow({ entry, onEdit, onDeactivate }: EntryRowProps) {
     <tr className="border-b border-[var(--color-border-default)]">
       <td className="px-4 py-3">
         <div className="flex flex-col">
-          <span className="text-sm font-medium text-[var(--color-text-primary)]">
-            {entry.name}
-          </span>
-          <span className="text-xs text-[var(--color-text-muted)] mt-0.5">
-            {entry.slug}
-          </span>
+          <span className="text-sm font-medium text-[var(--color-text-primary)]">{entry.name}</span>
+          <span className="text-xs text-[var(--color-text-muted)] mt-0.5">{entry.slug}</span>
         </div>
       </td>
       <td className="px-4 py-3 text-sm text-[var(--color-text-secondary)]">
@@ -59,7 +52,9 @@ function EntryRow({ entry, onEdit, onDeactivate }: EntryRowProps) {
       </td>
       <td className="px-4 py-3 text-center">
         {entry.has_clothes_off_transition ? (
-          <Badge variant="warning" size="sm">Yes</Badge>
+          <Badge variant="warning" size="sm">
+            Yes
+          </Badge>
         ) : (
           <span className="text-xs text-[var(--color-text-muted)]">No</span>
         )}
@@ -75,11 +70,7 @@ function EntryRow({ entry, onEdit, onDeactivate }: EntryRowProps) {
             Edit
           </Button>
           {entry.is_active && (
-            <Button
-              variant="danger"
-              size="sm"
-              onClick={() => onDeactivate(entry)}
-            >
+            <Button variant="danger" size="sm" onClick={() => onDeactivate(entry)}>
               Deactivate
             </Button>
           )}
@@ -100,8 +91,7 @@ export function SceneCatalogList() {
 
   const [formOpen, setFormOpen] = useState(false);
   const [editEntry, setEditEntry] = useState<SceneCatalogEntry | undefined>();
-  const [deactivateTarget, setDeactivateTarget] =
-    useState<SceneCatalogEntry | null>(null);
+  const [deactivateTarget, setDeactivateTarget] = useState<SceneCatalogEntry | null>(null);
 
   const handleEdit = useCallback((entry: SceneCatalogEntry) => {
     setEditEntry(entry);
@@ -152,12 +142,7 @@ export function SceneCatalogList() {
             label="Show Inactive"
             size="sm"
           />
-          <Button
-            variant="primary"
-            size="md"
-            icon={<Plus size={20} />}
-            onClick={handleCreate}
-          >
+          <Button variant="primary" size="md" icon={<Plus size={20} />} onClick={handleCreate}>
             Add Scene
           </Button>
         </div>
@@ -169,12 +154,24 @@ export function SceneCatalogList() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-[var(--color-border-default)]">
-                <th className="px-4 py-3 text-left font-medium text-[var(--color-text-muted)]">Name</th>
-                <th className="px-4 py-3 text-left font-medium text-[var(--color-text-muted)]">Description</th>
-                <th className="px-4 py-3 text-left font-medium text-[var(--color-text-muted)]">Tracks</th>
-                <th className="px-4 py-3 text-center font-medium text-[var(--color-text-muted)]">Clothes Off</th>
-                <th className="px-4 py-3 text-left font-medium text-[var(--color-text-muted)]">Status</th>
-                <th className="px-4 py-3 text-left font-medium text-[var(--color-text-muted)]">Actions</th>
+                <th className="px-4 py-3 text-left font-medium text-[var(--color-text-muted)]">
+                  Name
+                </th>
+                <th className="px-4 py-3 text-left font-medium text-[var(--color-text-muted)]">
+                  Description
+                </th>
+                <th className="px-4 py-3 text-left font-medium text-[var(--color-text-muted)]">
+                  Tracks
+                </th>
+                <th className="px-4 py-3 text-center font-medium text-[var(--color-text-muted)]">
+                  Clothes Off
+                </th>
+                <th className="px-4 py-3 text-left font-medium text-[var(--color-text-muted)]">
+                  Status
+                </th>
+                <th className="px-4 py-3 text-left font-medium text-[var(--color-text-muted)]">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -221,17 +218,11 @@ export function SceneCatalogList() {
           <Stack gap={4}>
             <p className="text-sm text-[var(--color-text-secondary)]">
               Are you sure you want to deactivate{" "}
-              <strong className="text-[var(--color-text-primary)]">
-                {deactivateTarget.name}
-              </strong>
-              ? It will no longer appear in scene settings.
+              <strong className="text-[var(--color-text-primary)]">{deactivateTarget.name}</strong>?
+              It will no longer appear in scene settings.
             </p>
             <div className="flex justify-end gap-2">
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => setDeactivateTarget(null)}
-              >
+              <Button variant="secondary" size="sm" onClick={() => setDeactivateTarget(null)}>
                 Cancel
               </Button>
               <Button

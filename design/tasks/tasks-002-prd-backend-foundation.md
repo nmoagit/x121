@@ -97,7 +97,7 @@ Document all environment variables the application reads.
 # Database
 DB_HOST=localhost
 DB_PORT=5432
-DB_NAME=trulience_x121
+DB_NAME=x121_x121
 DB_USER=your_user
 DB_PASSWORD=your_password
 DB_SSL=false

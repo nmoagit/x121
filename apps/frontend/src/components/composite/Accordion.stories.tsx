@@ -4,8 +4,8 @@ import { Accordion } from "./Accordion";
 const SAMPLE_ITEMS = [
   {
     id: "section-1",
-    title: "What is Trulience?",
-    content: "Trulience is a platform for managing AI-powered digital experiences.",
+    title: "What is X121?",
+    content: "X121 is a platform for managing AI-powered digital experiences.",
   },
   {
     id: "section-2",

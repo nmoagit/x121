@@ -20,4 +20,4 @@ export const DEFAULT_COLOR_SCHEME: ColorScheme = "dark";
 export const DEFAULT_BRAND_PALETTE: BrandPalette = "obsidian";
 
 /** localStorage key for persisted theme preference */
-export const THEME_STORAGE_KEY = "trulience-theme";
+export const THEME_STORAGE_KEY = "x121-theme";

@@ -21,14 +21,14 @@ Source of truth: [`design/design.md`](../design.md)
 | Status | Count |
 |--------|-------|
 | backlog | 0 |
-| planning | 29 |
+| planning | 38 |
 | in-progress | 0 |
 | review | 0 |
-| done | 81 |
+| done | 82 |
 | blocked | 0 |
 | deferred | 0 |
 | maybe | 15 |
-| **Total** | **125** |
+| **Total** | **134** |
 
 ---
 
@@ -63,6 +63,8 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-93 | Generation Budget & Quota Management | — | `planning` | — | |
 | PRD-99 | Webhook & Integration Testing Console | — | `planning` | — | |
 | PRD-106 | API Usage & Observability Dashboard | — | `planning` | — | |
+| PRD-114 | Cloud GPU Provider Integration (RunPod) | 1 | `planning` | — | High priority. Provider trait + RunPod implementation (Pods + Serverless), auto-scaling, cost tracking, S3 file transfer, admin UI. Deps: PRD-02, PRD-05, PRD-07, PRD-08, PRD-46 (all done). |
+| PRD-119 | Time-Based Job Scheduling | — | `planning` | — | Cron-style schedules (one-time + recurring), calendar UI, smart off-peak slot selection, timezone handling, batch scheduling (PRD-57), schedule executor, execution history. Deps: PRD-08, PRD-07, PRD-10, PRD-03 (all done). Extends PRD-08. Integrates with PRD-87, PRD-57, PRD-54, PRD-97. |
 
 ## Part 2: Data & Storage Management
 
@@ -85,6 +87,7 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-88 | Batch Metadata Operations | — | `done` | 2026-02-23 | Migration 000032, core batch_metadata module (validators, undo logic), status enum, API handlers, frontend feature (batch-metadata panel), 19 tests. |
 | PRD-104 | Model & LoRA Download Manager | — | `done` | 2026-02-23 | 3 migrations (model_downloads, api_tokens, placement_rules), core module (16 tests), 3 repos, 13 API endpoints, frontend feature (9 tests). |
 | PRD-109 | Scene Video Versioning, External Import & Soft Delete | — | `done` | — | Implemented (2026-02-20). All 7 phases complete: migrations, models, soft delete infra (9 repos), version repo, version API, trash API, delivery integration, integration tests (30 tests). |
+| PRD-113 | Character Ingest Pipeline | 1 | `planning` | — | High priority. Folder scanner, name parser, metadata detection/generation, validation, import wizard. Deps: PRD-00, PRD-01, PRD-02, PRD-14 (all done). Integrates with PRD-112 (project hub), PRD-09 (script orchestrator). |
 
 ## Part 3: Generation & Pipeline Core
 
@@ -118,6 +121,8 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-97 | Job Dependency Chains & Triggered Workflows | — | `planning` | — | |
 | PRD-100 | Scene Type Inheritance & Composition | — | `planning` | — | |
 | PRD-103 | Character Face Contact Sheet | — | `planning` | — | |
+| PRD-111 | Scene Catalog & Track Management | 1 | `done` | 2026-02-26 | 6 migrations, 4 models, 4 repos (three-level inheritance), 4 handlers, 12 frontend components, 13 tests. Replaces variant_applicability with normalized tracks. |
+| PRD-115 | Generation Strategy & Workflow Prompt Management | 1 | `planning` | — | High priority. Generation strategy selection (platform vs workflow-managed), prompt node mapping, character+scene additive fragments, prompt fragment library, in-app prompt editing. Deps: PRD-23, PRD-24, PRD-63, PRD-75 (all done). |
 | PRD-107 | Character Readiness & State View | — | `done` | 2026-02-23 | Migrations 000030-000031, core readiness module (criteria evaluation, cache), API handlers (CRUD + batch evaluate), frontend feature (ReadinessStateBadge, CriteriaEditor, SummaryBar), 18+ tests. |
 | PRD-108 | Character Settings Dashboard | — | `done` | 2026-02-23 | Core character_dashboard module (settings merge, label builders), API handlers (get_dashboard, patch_settings), frontend feature (CharacterDashboard, MetadataSummarySection, PipelineSettingsEditor), 27 tests. |
 
@@ -134,6 +139,9 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-53 | First-Run Experience & Onboarding | — | `done` | 2026-02-21 | User onboarding state, guided tours, contextual hints, checklist, onboarding gate, 10 core tests. DRY-191 to DRY-200 audited. |
 | PRD-54 | Background Job Tray | — | `done` | — | |
 | PRD-82 | Content Sensitivity Controls | — | `planning` | — | |
+| PRD-112 | Project Hub & Management | 1 | `planning` | — | High priority. Frontend-only — all backend CRUD exists from PRD-01. Deps: PRD-00, PRD-01, PRD-02, PRD-29 (all done). Integrates with PRD-111 (scene settings), PRD-74 (config templates). |
+| PRD-117 | System Status Footer Bar | 1 | `planning` | — | High priority. Persistent IDE-style status bar showing service health, cloud GPU state, active jobs, running workflows. Role-filtered (admins see infra, all see jobs). Deps: PRD-02, PRD-10, PRD-29 (all done). Complements PRD-54, PRD-80. |
+| PRD-118 | Live Activity Console & Logging System | — | `planning` | — | Terminal-style console panel + dedicated page for real-time streaming operational logs from all backend services. Role-based visibility, curated/verbose modes, DB persistence with configurable retention. Deps: PRD-02, PRD-10, PRD-29 (all done). Integrates with PRD-117 (footer bar), PRD-54 (job tray), PRD-30 (panel system). |
 
 ## Part 5: Workflow Editor & Review
 
@@ -181,6 +189,8 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-81 | Backup & Disaster Recovery | — | `planning` | — | |
 | PRD-98 | Session Management & Active Users | — | `planning` | — | |
 | PRD-105 | Platform Setup Wizard | — | `planning` | — | |
+| PRD-110 | Admin Platform Settings Panel | — | `planning` | — | |
+| PRD-116 | Dynamic File & Entity Naming Engine | 1 | `planning` | — | High priority. Configurable naming templates per file category (12 categories), token substitution, live preview, project-level overrides. Deps: PRD-01, PRD-02, PRD-29 (all done). Extends PRD-01 naming.rs. |
 
 ## Part 8: Evaluation List (MAYBE)
 
@@ -208,9 +218,9 @@ Source of truth: [`design/design.md`](../design.md)
 
 | File | Purpose |
 |------|---------|
-| [`design/tasks/`](../tasks/) | Task list files for each PRD (109 files) |
+| [`design/tasks/`](../tasks/) | Task list files for each PRD (119 files) |
 | [`DRY-TRACKER.md`](./DRY-TRACKER.md) | Components and patterns under DRY watch — check before implementing |
-| [`design/prds/`](../prds/) | Individual PRD specification files (109 files) |
+| [`design/prds/`](../prds/) | Individual PRD specification files (119 files) |
 | [`design/design.md`](../design.md) | Master specification document |
 
 ---
@@ -223,3 +233,13 @@ Source of truth: [`design/design.md`](../design.md)
 | 2026-02-18 | Task files generated for all 106 PRDs → `design/tasks/`. All PRDs moved to `planning`. DRY-TRACKER.md created at `design/progress/DRY-TRACKER.md` |
 | 2026-02-19 | Added 2 new PRDs (PRD-107, PRD-108) and updated 4 existing PRDs (PRD-01, PRD-23, PRD-24, PRD-67, PRD-73). New PRDs: Character Readiness & State View (107), Character Settings Dashboard (108). Updates: extensible character settings (01), clip generation prompt types (23, 24), CSV/text upload (67), video technical reports (73). Total PRDs: 108 + 15 MAYBEs = 123 |
 | 2026-02-20 | Added PRD-109 (Scene Video Versioning, External Import & Soft Delete). All dependencies satisfied (PRD-00, 01, 02 done). PRD + task list generated. Total PRDs: 109 + 15 MAYBEs = 124 |
+| 2026-02-24 | Added PRD-110 (Admin Platform Settings Panel). Dependencies: PRD-00, PRD-02 (both done). Extends PRD-44. Total PRDs: 110 + 15 MAYBEs = 125 |
+| 2026-02-24 | Added PRD-111 (Scene Catalog & Track Management). High priority — replaces variant_applicability with normalized tracks. Dependencies: PRD-00, PRD-01, PRD-02, PRD-29 (all done). Total PRDs: 111 + 15 MAYBEs = 126 |
+| 2026-02-24 | Added PRD-112 (Project Hub & Management). High priority — frontend-only, all backend exists. Project list + detail page + character grid. Total PRDs: 112 + 15 MAYBEs = 127 |
+| 2026-02-24 | Added PRD-113 (Character Ingest Pipeline). High priority — folder scanner, name parser, metadata detection/generation/validation, import wizard. Total PRDs: 113 + 15 MAYBEs = 128 |
+| 2026-02-24 | Added PRD-114 (Cloud GPU Provider Integration). RunPod Pods + Serverless, provider trait, auto-scaling, cost tracking, admin UI. Total PRDs: 114 + 15 MAYBEs = 129 |
+| 2026-02-24 | Added PRD-115 (Generation Strategy & Workflow Prompt Management). Strategy selection, prompt node mapping, character+scene fragments, fragment library, in-app editing. Total PRDs: 115 + 15 MAYBEs = 130 |
+| 2026-02-24 | Added PRD-116 (Dynamic File & Entity Naming Engine). Configurable naming templates per file category, token substitution, live preview, project overrides. Total PRDs: 116 + 15 MAYBEs = 131 |
+| 2026-02-24 | Added PRD-117 (System Status Footer Bar). Persistent IDE-style footer bar with service health, cloud GPU, jobs, workflows. Role-filtered. Total PRDs: 117 + 15 MAYBEs = 132 |
+| 2026-02-25 | Added PRD-118 (Live Activity Console & Logging System). Terminal-style console for real-time streaming operational logs from all backend services. Dockable panel + dedicated page, role-based visibility, curated/verbose modes, DB persistence with configurable retention. Total PRDs: 118 + 15 MAYBEs = 133 |
+| 2026-02-25 | Added PRD-119 (Time-Based Job Scheduling). Cron-style schedules (one-time + recurring), calendar UI with drag-to-reschedule, smart off-peak slot selection, per-user timezone handling, batch scheduling for production runs, schedule executor, execution history. Extends PRD-08. Total PRDs: 119 + 15 MAYBEs = 134 |

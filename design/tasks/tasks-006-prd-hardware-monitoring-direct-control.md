@@ -25,7 +25,7 @@ This PRD creates a hardware monitoring system with two sides: a lightweight Rust
 ### Key Design Decisions
 1. **Push model** — Worker agents push metrics to the backend via WebSocket. This avoids the backend needing network access into worker machines and allows agents behind firewalls.
 2. **NVML over nvidia-smi** — Direct NVML bindings are faster and more reliable than parsing `nvidia-smi` text output. The `nvml-wrapper` crate provides safe Rust bindings.
-3. **Separate binary** — The worker agent is a separate Rust binary (`trulience-agent`) in the same Cargo workspace, compiled independently for deployment to worker machines.
+3. **Separate binary** — The worker agent is a separate Rust binary (`x121-agent`) in the same Cargo workspace, compiled independently for deployment to worker machines.
 4. **Metrics retention** — Raw metrics older than 24h are aggregated into hourly summaries. This prevents storage bloat while preserving historical trends.
 
 ---
@@ -142,7 +142,7 @@ Create the worker agent as a separate binary in the Cargo workspace.
 ```toml
 # agent/Cargo.toml
 [package]
-name = "trulience-agent"
+name = "x121-agent"
 version = "0.1.0"
 edition = "2021"
 
@@ -178,9 +178,9 @@ async fn main() {
 ```
 
 **Acceptance Criteria:**
-- [x] Separate Cargo package `trulience-agent` in workspace
+- [x] Separate Cargo package `x121-agent` in workspace
 - [x] Configurable via env vars: `BACKEND_WS_URL`, `WORKER_ID`, `METRICS_INTERVAL_SECS`
-- [x] Compiles independently: `cargo build -p trulience-agent`
+- [x] Compiles independently: `cargo build -p x121-agent`
 - [x] Root `Cargo.toml` updated with workspace member
 
 ### Task 2.2: NVML Metrics Collection [COMPLETE]

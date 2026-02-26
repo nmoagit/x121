@@ -781,7 +781,7 @@ Real-time progress during import commit.
 - PRD-014: `ValidationService`, `ImportPreview`, conflict detection, report generation
 
 ### New Infrastructure Needed
-- Staging directory for uploaded files (configurable path, e.g., `/tmp/trulience/staging/`)
+- Staging directory for uploaded files (configurable path, e.g., `/tmp/x121/staging/`)
 - `tokio::fs` for async filesystem operations
 - `axum::extract::Multipart` for file upload handling
 

@@ -361,7 +361,7 @@ DELETE /admin/backup-schedules/:id
 1. **pg_dump vs. pg_basebackup** -- Use `pg_dump --format=custom` for full backups (portable, selective restore). Use `pg_basebackup` for base backups when PITR is configured.
 2. **WAL archiving performance** -- WAL archiving adds continuous I/O. Monitor write latency impact on the production database.
 3. **Backup encryption** -- The open question about encryption can be addressed by piping pg_dump output through `gpg` or using S3 server-side encryption.
-4. **Test restore database name** -- Use `trulience_verify_{timestamp}` for temporary restore databases to avoid conflicts.
+4. **Test restore database name** -- Use `x121_verify_{timestamp}` for temporary restore databases to avoid conflicts.
 
 ## Version History
 - **v1.0** (2026-02-18): Initial task list creation from PRD-081

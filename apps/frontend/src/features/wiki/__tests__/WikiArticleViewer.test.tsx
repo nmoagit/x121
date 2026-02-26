@@ -16,9 +16,9 @@ import type { WikiArticle } from "../types";
 
 const mockArticle: WikiArticle = {
   id: 1,
-  title: "Getting Started with Trulience",
-  slug: "getting-started-with-trulience",
-  content_md: "Welcome to Trulience! This guide will help you get started.",
+  title: "Getting Started with X121",
+  slug: "getting-started-with-x121",
+  content_md: "Welcome to X121! This guide will help you get started.",
   category: "tutorial",
   tags: ["beginner", "onboarding"],
   is_builtin: false,
@@ -39,7 +39,7 @@ describe("WikiArticleViewer", () => {
 
     expect(screen.getByTestId("wiki-article-viewer")).toBeInTheDocument();
     expect(screen.getByTestId("wiki-article-content")).toHaveTextContent(
-      "Welcome to Trulience!",
+      "Welcome to X121!",
     );
   });
 

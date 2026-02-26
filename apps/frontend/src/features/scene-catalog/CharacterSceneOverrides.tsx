@@ -11,12 +11,12 @@ import { Card, Modal } from "@/components/composite";
 import { Stack } from "@/components/layout";
 import { Button, Spinner, Toggle } from "@/components/primitives";
 
+import { SourceBadge } from "./SourceBadge";
 import {
   useCharacterSceneSettings,
   useRemoveCharacterSceneOverride,
   useToggleCharacterSceneSetting,
 } from "./hooks/use-character-scene-settings";
-import { SourceBadge } from "./SourceBadge";
 import type { EffectiveSceneSetting } from "./types";
 
 /* --------------------------------------------------------------------------
@@ -39,18 +39,14 @@ interface SettingRowProps {
 }
 
 function SettingRow({ setting, onToggle, onReset, isPending }: SettingRowProps) {
-  const isCharacterOverride = setting.source === "character_override";
+  const isCharacterOverride = setting.source === "character";
 
   return (
     <tr className="border-b border-[var(--color-border-default)]">
       <td className="px-4 py-3">
-        <span className="text-sm font-medium text-[var(--color-text-primary)]">
-          {setting.name}
-        </span>
+        <span className="text-sm font-medium text-[var(--color-text-primary)]">{setting.name}</span>
       </td>
-      <td className="px-4 py-3 text-sm text-[var(--color-text-muted)]">
-        {setting.slug}
-      </td>
+      <td className="px-4 py-3 text-sm text-[var(--color-text-muted)]">{setting.slug}</td>
       <td className="px-4 py-3">
         <Toggle
           checked={setting.is_enabled}
@@ -82,19 +78,14 @@ function SettingRow({ setting, onToggle, onReset, isPending }: SettingRowProps) 
    Main component
    -------------------------------------------------------------------------- */
 
-export function CharacterSceneOverrides({
-  characterId,
-}: CharacterSceneOverridesProps) {
-  const { data: settings, isLoading } =
-    useCharacterSceneSettings(characterId);
+export function CharacterSceneOverrides({ characterId }: CharacterSceneOverridesProps) {
+  const { data: settings, isLoading } = useCharacterSceneSettings(characterId);
   const toggleMutation = useToggleCharacterSceneSetting(characterId);
   const removeMutation = useRemoveCharacterSceneOverride(characterId);
 
   const [showResetAll, setShowResetAll] = useState(false);
 
-  const hasCharacterOverrides = settings?.some(
-    (s) => s.source === "character_override",
-  );
+  const hasCharacterOverrides = settings?.some((s) => s.source === "character");
 
   const handleToggle = useCallback(
     (sceneCatalogId: number, enabled: boolean) => {
@@ -116,9 +107,7 @@ export function CharacterSceneOverrides({
   const handleResetAll = useCallback(() => {
     if (!settings) return;
 
-    const overrides = settings.filter(
-      (s) => s.source === "character_override",
-    );
+    const overrides = settings.filter((s) => s.source === "character");
 
     // Remove each character override
     for (const override of overrides) {
@@ -147,11 +136,7 @@ export function CharacterSceneOverrides({
           </p>
         </div>
         {hasCharacterOverrides && (
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => setShowResetAll(true)}
-          >
+          <Button variant="secondary" size="sm" onClick={() => setShowResetAll(true)}>
             Reset All Overrides
           </Button>
         )}
@@ -162,11 +147,21 @@ export function CharacterSceneOverrides({
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-[var(--color-border-default)]">
-                <th className="px-4 py-3 text-left font-medium text-[var(--color-text-muted)]">Scene</th>
-                <th className="px-4 py-3 text-left font-medium text-[var(--color-text-muted)]">Slug</th>
-                <th className="px-4 py-3 text-left font-medium text-[var(--color-text-muted)]">Enabled</th>
-                <th className="px-4 py-3 text-left font-medium text-[var(--color-text-muted)]">Source</th>
-                <th className="px-4 py-3 text-left font-medium text-[var(--color-text-muted)]">Actions</th>
+                <th className="px-4 py-3 text-left font-medium text-[var(--color-text-muted)]">
+                  Scene
+                </th>
+                <th className="px-4 py-3 text-left font-medium text-[var(--color-text-muted)]">
+                  Slug
+                </th>
+                <th className="px-4 py-3 text-left font-medium text-[var(--color-text-muted)]">
+                  Enabled
+                </th>
+                <th className="px-4 py-3 text-left font-medium text-[var(--color-text-muted)]">
+                  Source
+                </th>
+                <th className="px-4 py-3 text-left font-medium text-[var(--color-text-muted)]">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -186,9 +181,7 @@ export function CharacterSceneOverrides({
                     setting={setting}
                     onToggle={handleToggle}
                     onReset={handleReset}
-                    isPending={
-                      toggleMutation.isPending || removeMutation.isPending
-                    }
+                    isPending={toggleMutation.isPending || removeMutation.isPending}
                   />
                 ))
               )}
@@ -206,15 +199,11 @@ export function CharacterSceneOverrides({
       >
         <Stack gap={4}>
           <p className="text-sm text-[var(--color-text-secondary)]">
-            This will remove all character-level scene setting overrides.
-            Settings will fall back to project and catalog defaults.
+            This will remove all character-level scene setting overrides. Settings will fall back to
+            project and catalog defaults.
           </p>
           <div className="flex justify-end gap-2">
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => setShowResetAll(false)}
-            >
+            <Button variant="secondary" size="sm" onClick={() => setShowResetAll(false)}>
               Cancel
             </Button>
             <Button

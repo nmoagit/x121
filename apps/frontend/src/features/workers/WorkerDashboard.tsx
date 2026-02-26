@@ -61,7 +61,7 @@ export function WorkerDashboard() {
   return (
     <div className="flex h-full">
       {/* Main content */}
-      <div className="flex-1 overflow-auto p-[var(--spacing-6)]">
+      <div className="flex-1 overflow-auto">
         <Stack gap={6}>
           {/* Page header */}
           <div>

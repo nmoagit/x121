@@ -187,7 +187,7 @@ export const defaultPreset: Record<string, string> = {
 ```
 
 **Acceptance Criteria:**
-- [ ] Default preset: platform-native shortcuts optimized for Trulience workflow
+- [ ] Default preset: platform-native shortcuts optimized for X121 workflow
 - [ ] Covers all registered shortcut actions
 
 ### Task 3.2: Industry Presets (Premiere, Resolve, Avid)

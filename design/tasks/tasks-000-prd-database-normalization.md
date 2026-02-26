@@ -37,11 +37,11 @@ This is the foundational infrastructure PRD — no application code exists yet. 
 ### Task 1.1: Initialize Cargo Workspace [COMPLETE]
 **File:** `Cargo.toml`, `src/main.rs`
 
-Create the root Cargo project for the Trulience backend. This is a binary crate that will grow into the Axum web server, but for now just needs to compile and run.
+Create the root Cargo project for the X121 backend. This is a binary crate that will grow into the Axum web server, but for now just needs to compile and run.
 
 ```toml
 [package]
-name = "trulience"
+name = "x121"
 version = "0.1.0"
 edition = "2021"
 
@@ -77,7 +77,7 @@ pub struct DbConfig {
 
 **Acceptance Criteria:**
 - [x] `DbConfig` loads from env vars: `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_SSL`
-- [x] Defaults: host=`localhost`, port=`5432`, name=`trulience_x121`, ssl=`false`
+- [x] Defaults: host=`localhost`, port=`5432`, name=`x121_x121`, ssl=`false`
 - [x] `DB_USER` and `DB_PASSWORD` are required — panic with clear message if missing
 - [x] `DbConfig::connection_string()` returns a valid `postgres://` URL
 - [x] `dotenvy::dotenv().ok()` is called at startup (no panic if `.env` missing)
@@ -91,7 +91,7 @@ Create the project root `.env` file for local development, mirroring `design/loc
 ```env
 DB_USER=matthias
 DB_HOST=localhost
-DB_NAME=trulience_x121
+DB_NAME=x121_x121
 DB_PASSWORD=FNvv-iJz7GX9wtXZAZ74
 DB_PORT=5432
 DB_SSL=false
@@ -145,7 +145,7 @@ psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -c "CREATE EXTENSIO
 ```
 
 **Acceptance Criteria:**
-- [x] Script creates `trulience_x121` database if it doesn't exist
+- [x] Script creates `x121_x121` database if it doesn't exist
 - [x] Script installs `pgvector` extension (`CREATE EXTENSION IF NOT EXISTS vector`)
 - [x] Script is idempotent — running twice produces no errors and no side effects
 - [x] Script reads connection details from `.env`
@@ -526,9 +526,9 @@ End-to-end test that verifies the full bootstrap sequence: config load → conne
 #[tokio::test]
 async fn test_full_bootstrap() {
     dotenvy::dotenv().ok();
-    let config = trulience::config::DbConfig::from_env();
-    let pool = trulience::db::connect(&config).await.unwrap();
-    trulience::db::health_check(&pool).await.unwrap();
+    let config = x121::config::DbConfig::from_env();
+    let pool = x121::db::connect(&config).await.unwrap();
+    x121::db::health_check(&pool).await.unwrap();
     sqlx::migrate!().run(&pool).await.unwrap();
 
     // Verify lookup tables exist and have data

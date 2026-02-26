@@ -194,7 +194,7 @@ Long-form AI-generated video suffers from progressive "subject drift" -- the cha
 ## Verification Results
 
 - [x] `cargo check` — zero errors, zero warnings
-- [x] `cargo test -p trulience-core --lib temporal_continuity` — 22/22 passed
+- [x] `cargo test -p x121-core --lib temporal_continuity` — 22/22 passed
 - [x] `npx tsc --noEmit` — zero errors
 - [x] `npx vitest run src/features/temporal` — 5/5 passed
 

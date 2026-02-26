@@ -49,7 +49,7 @@ export interface EffectiveSceneSetting {
   name: string;
   slug: string;
   is_enabled: boolean;
-  source: "catalog_default" | "project_override" | "character_override";
+  source: "catalog" | "project" | "character";
 }
 
 export interface SceneSettingUpdate {

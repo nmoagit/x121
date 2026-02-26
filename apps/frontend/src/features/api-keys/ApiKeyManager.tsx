@@ -279,7 +279,7 @@ export function ApiKeyManager() {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--color-surface-primary)] p-[var(--spacing-6)]">
+    <div className="min-h-full">
       <Stack gap={6}>
         {/* Header */}
         <div className="flex items-center justify-between">

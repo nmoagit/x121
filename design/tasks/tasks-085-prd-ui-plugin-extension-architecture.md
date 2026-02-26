@@ -344,7 +344,7 @@ Admin page for managing extensions.
 
 1. **Iframe vs. Shadow DOM** -- The open question about iframe vs. shadow DOM: start with iframe for maximum security isolation. Shadow DOM can be considered for performance-sensitive extensions later.
 2. **Extension bundle format** -- ZIP containing: `plugin.json` (manifest), `index.js` (entry point), and any static assets. Keep bundles small (<5MB).
-3. **Design token delivery** -- Pass CSS custom properties to the iframe via a style injection. Extensions use `var(--trulience-primary-color)` etc.
+3. **Design token delivery** -- Pass CSS custom properties to the iframe via a style injection. Extensions use `var(--x121-primary-color)` etc.
 4. **Rate limiting** -- Extension API calls should be rate-limited per extension to prevent abuse. Default: 100 requests/minute.
 
 ## Version History

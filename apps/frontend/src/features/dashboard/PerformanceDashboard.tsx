@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import { Card } from "@/components/composite/Card";
 import { Tabs } from "@/components/composite/Tabs";
@@ -41,13 +41,13 @@ const TABS = [
 export function PerformanceDashboard() {
   const [activeTab, setActiveTab] = useState("overview");
   const [datePreset, setDatePreset] = useState<DatePreset>("30d");
-  const { from, to } = presetToRange(datePreset);
+  const { from, to } = useMemo(() => presetToRange(datePreset), [datePreset]);
 
   const { data: overview, isLoading: overviewLoading } = usePerformanceOverview(from, to);
   const { data: trendData, isLoading: trendLoading } = usePerformanceTrend(from, to, "day");
 
   return (
-    <div className="min-h-screen bg-[var(--color-surface-primary)] p-[var(--spacing-6)]">
+    <div className="min-h-full">
       <Stack gap={6}>
         {/* Header */}
         <div className="flex items-center justify-between">

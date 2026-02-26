@@ -33,7 +33,7 @@ interface SoundPreferencesStore extends SoundPreferences {
    Constants
    -------------------------------------------------------------------------- */
 
-const STORAGE_KEY = "trulience-sound-prefs";
+const STORAGE_KEY = "x121-sound-prefs";
 
 const DEFAULT_PREFS: SoundPreferences = {
   enabled: false,

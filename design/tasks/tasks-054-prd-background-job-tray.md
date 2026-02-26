@@ -152,7 +152,7 @@ export const JobTrayPanel: React.FC<{ onClose: () => void }> = ({ onClose }) => 
 **File:** `frontend/src/features/job-tray/useTabTitleProgress.ts`
 
 **Acceptance Criteria:**
-- [x] When tab is not focused, title shows progress: "[73%] Trulience -- Generating Scene 3"
+- [x] When tab is not focused, title shows progress: "[73%] X121 -- Generating Scene 3"
 - [x] Reverts to normal title when no jobs active or tab regains focus
 - [x] Updates in real-time as progress changes
 

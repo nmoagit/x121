@@ -16,8 +16,7 @@ import { sceneCatalogKeys } from "./use-scene-catalog";
 export const trackKeys = {
   all: ["tracks"] as const,
   lists: () => [...trackKeys.all, "list"] as const,
-  list: (includeInactive?: boolean) =>
-    [...trackKeys.lists(), { includeInactive }] as const,
+  list: (includeInactive?: boolean) => [...trackKeys.lists(), { includeInactive }] as const,
 };
 
 /* --------------------------------------------------------------------------

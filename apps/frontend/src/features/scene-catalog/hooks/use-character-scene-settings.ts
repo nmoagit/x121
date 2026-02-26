@@ -17,8 +17,7 @@ import type { EffectiveSceneSetting, SceneSettingUpdate } from "../types";
 export const characterSceneSettingKeys = {
   all: ["character-scene-settings"] as const,
   lists: () => [...characterSceneSettingKeys.all, "list"] as const,
-  list: (characterId: number) =>
-    [...characterSceneSettingKeys.lists(), characterId] as const,
+  list: (characterId: number) => [...characterSceneSettingKeys.lists(), characterId] as const,
 };
 
 /* --------------------------------------------------------------------------
@@ -29,10 +28,7 @@ export const characterSceneSettingKeys = {
 export function useCharacterSceneSettings(characterId: number | null) {
   return useQuery({
     queryKey: characterSceneSettingKeys.list(characterId ?? 0),
-    queryFn: () =>
-      api.get<EffectiveSceneSetting[]>(
-        `/characters/${characterId}/scene-settings`,
-      ),
+    queryFn: () => api.get<EffectiveSceneSetting[]>(`/characters/${characterId}/scene-settings`),
     enabled: characterId !== null,
   });
 }
@@ -47,10 +43,7 @@ export function useBulkUpdateCharacterSceneSettings(characterId: number) {
 
   return useMutation({
     mutationFn: (updates: SceneSettingUpdate[]) =>
-      api.put<EffectiveSceneSetting[]>(
-        `/characters/${characterId}/scene-settings`,
-        updates,
-      ),
+      api.put<EffectiveSceneSetting[]>(`/characters/${characterId}/scene-settings`, updates),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: characterSceneSettingKeys.list(characterId),
@@ -83,9 +76,7 @@ export function useRemoveCharacterSceneOverride(characterId: number) {
 
   return useMutation({
     mutationFn: (sceneCatalogId: number) =>
-      api.delete(
-        `/characters/${characterId}/scene-settings/${sceneCatalogId}`,
-      ),
+      api.delete(`/characters/${characterId}/scene-settings/${sceneCatalogId}`),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: characterSceneSettingKeys.list(characterId),

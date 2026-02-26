@@ -4,7 +4,7 @@ import { useAuthStore } from "@/stores/auth-store";
    Constants
    -------------------------------------------------------------------------- */
 
-const BASE_URL = "/api/v1";
+const BASE_URL = `${import.meta.env.BASE_URL}api/v1`;
 
 /* --------------------------------------------------------------------------
    Error types
@@ -76,9 +76,8 @@ async function request<T>(path: string, options?: RequestInit, isRetry = false):
 
     // Refresh failed -- clear auth and redirect to login
     useAuthStore.getState().clearAuth();
-    window.location.href = "/login";
-    // Return a never-resolving promise so callers don't continue
-    return new Promise<T>(() => {});
+    window.location.href = `${import.meta.env.BASE_URL}login`;
+    throw new ApiRequestError(401, { code: "UNAUTHORIZED", message: "Session expired" });
   }
 
   if (!response.ok) {
