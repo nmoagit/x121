@@ -10,6 +10,7 @@ pub mod bug_reports;
 pub mod character;
 pub mod character_dashboard;
 pub mod character_metadata;
+pub mod character_scene_overrides;
 pub mod checkpoints;
 pub mod collaboration;
 pub mod config_management;
@@ -20,9 +21,9 @@ pub mod duplicates;
 pub mod embedding;
 pub mod estimation;
 pub mod extensions;
+pub mod external_api;
 pub mod failure_analytics;
 pub mod generation;
-pub mod external_api;
 pub mod hardware;
 pub mod health;
 pub mod image_qa;
@@ -43,11 +44,12 @@ pub mod palette;
 pub mod performance;
 pub mod pipeline_hooks;
 pub mod presets;
-pub mod proficiency;
 pub mod production_notes;
 pub mod production_run;
+pub mod proficiency;
 pub mod project;
 pub mod project_config;
+pub mod project_scene_settings;
 pub mod prompt_editor;
 pub mod provenance;
 pub mod quality_gates;
@@ -58,6 +60,7 @@ pub mod resolution;
 pub mod restitching;
 pub mod review_notes;
 pub mod scene;
+pub mod scene_catalog;
 pub mod scene_type;
 pub mod scripts;
 pub mod search;
@@ -67,15 +70,16 @@ pub mod tags;
 pub mod temporal;
 pub mod test_shot;
 pub mod themes;
-pub mod trimming;
+pub mod track;
 pub mod trash;
+pub mod trimming;
 pub mod undo_tree;
 pub mod validation;
 pub mod video;
 pub mod wiki;
+pub mod workers;
 pub mod workflow_canvas;
 pub mod workflow_import;
-pub mod workers;
 pub mod workspace;
 
 use axum::routing::get;
@@ -663,14 +667,16 @@ pub fn api_routes() -> Router<AppState> {
             .merge(quality_gates::threshold_router())
             .merge(temporal::project_temporal_router())
             .merge(project_config::project_export_router())
-            .nest("/{project_id}/characters", character_metadata::project_router()))
+            .nest("/{project_id}/characters", character_metadata::project_router())
+            .nest("/{project_id}/scene-settings", project_scene_settings::router()))
         // Character-scoped sub-resources (images, scenes, metadata editor, face embedding, readiness, dashboard PRD-108).
         .nest("/characters", character::router()
             .merge(metadata::character_metadata_router())
             .merge(character_metadata::character_router())
             .merge(embedding::embedding_router())
             .merge(readiness::readiness_router())
-            .merge(character_dashboard::dashboard_router()))
+            .merge(character_dashboard::dashboard_router())
+            .nest("/{character_id}/scene-settings", character_scene_overrides::router()))
         // Scene-scoped sub-resources (segments, review queue, generation PRD-24, QA PRD-49, resolution PRD-59, storyboard PRD-62, branching PRD-50).
         .nest("/scenes", scene::router()
             .merge(metadata::scene_metadata_router())
@@ -702,6 +708,9 @@ pub fn api_routes() -> Router<AppState> {
         // Studio-level scene types + prompt versioning (PRD-63).
         .nest("/scene-types", scene_type::studio_router()
             .merge(prompt_editor::scene_type_prompt_router()))
+        // Scene catalog & tracks (PRD-111).
+        .nest("/scene-catalog", scene_catalog::router())
+        .nest("/tracks", track::router())
         // Trash / bin management.
         .nest("/trash", trash::router())
         // Notifications, preferences, and settings.

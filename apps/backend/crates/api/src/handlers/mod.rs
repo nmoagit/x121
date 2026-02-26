@@ -1,7 +1,7 @@
 //! Request handlers.
 //!
 //! Each submodule provides async handler functions for a single resource.
-//! Handlers delegate to the corresponding repository in `trulience_db`
+//! Handlers delegate to the corresponding repository in `x121_db`
 //! and map errors via [`AppError`].
 
 pub mod admin;
@@ -17,6 +17,7 @@ pub mod bug_reports;
 pub mod character;
 pub mod character_dashboard;
 pub mod character_metadata;
+pub mod character_scene_overrides;
 pub mod checkpoints;
 pub mod collaboration;
 pub mod config_export;
@@ -33,8 +34,8 @@ pub mod generation;
 pub mod hardware;
 pub mod image_qa;
 pub mod image_variant;
-pub mod integrity;
 pub mod importer;
+pub mod integrity;
 pub mod job_debug;
 pub mod jobs;
 pub mod keymaps;
@@ -50,13 +51,14 @@ pub mod palette;
 pub mod performance;
 pub mod pipeline_hooks;
 pub mod presets;
-pub mod proficiency;
 pub mod production_notes;
 pub mod production_run;
-pub mod prompt_editor;
-pub mod provenance;
+pub mod proficiency;
 pub mod project;
 pub mod project_config;
+pub mod project_scene_settings;
+pub mod prompt_editor;
+pub mod provenance;
 pub mod quality_gates;
 pub mod queue;
 pub mod readiness;
@@ -65,6 +67,7 @@ pub mod resolution;
 pub mod restitching;
 pub mod review_notes;
 pub mod scene;
+pub mod scene_catalog;
 pub mod scene_type;
 pub mod scene_video_version;
 pub mod scripts;
@@ -77,14 +80,15 @@ pub mod tags;
 pub mod temporal;
 pub mod test_shot;
 pub mod themes;
-pub mod trimming;
+pub mod track;
 pub mod trash;
+pub mod trimming;
 pub mod undo_tree;
 pub mod validation;
 pub mod video;
 pub mod webhooks;
 pub mod wiki;
+pub mod workers;
 pub mod workflow_canvas;
 pub mod workflow_import;
-pub mod workers;
 pub mod workspace;

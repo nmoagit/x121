@@ -27,7 +27,6 @@ const MOCK_SCENE_TYPE: SceneType = {
   target_duration_secs: null,
   segment_duration_secs: null,
   duration_tolerance_secs: 2,
-  variant_applicability: "both",
   transition_segment_index: null,
   generation_params: null,
   sort_order: 0,

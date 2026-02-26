@@ -2,7 +2,7 @@
 
 use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
-use trulience_core::types::{DbId, Timestamp};
+use x121_core::types::{DbId, Timestamp};
 
 use crate::models::status::StatusId;
 
@@ -26,7 +26,6 @@ pub struct SceneType {
     pub target_duration_secs: Option<i32>,
     pub segment_duration_secs: Option<i32>,
     pub duration_tolerance_secs: i32,
-    pub variant_applicability: String,
     pub transition_segment_index: Option<i32>,
     pub generation_params: Option<serde_json::Value>,
     pub sort_order: i32,
@@ -57,7 +56,6 @@ pub struct CreateSceneType {
     pub target_duration_secs: Option<i32>,
     pub segment_duration_secs: Option<i32>,
     pub duration_tolerance_secs: Option<i32>,
-    pub variant_applicability: Option<String>,
     pub transition_segment_index: Option<i32>,
     pub generation_params: Option<serde_json::Value>,
     pub sort_order: Option<i32>,
@@ -83,7 +81,6 @@ pub struct UpdateSceneType {
     pub target_duration_secs: Option<i32>,
     pub segment_duration_secs: Option<i32>,
     pub duration_tolerance_secs: Option<i32>,
-    pub variant_applicability: Option<String>,
     pub transition_segment_index: Option<i32>,
     pub generation_params: Option<serde_json::Value>,
     pub sort_order: Option<i32>,

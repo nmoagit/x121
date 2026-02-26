@@ -17,7 +17,6 @@ import {
   TEXTAREA_CLASSES,
 } from "./PromptTemplateEditor";
 import type { CreateSceneType, SceneType } from "./types";
-import { VARIANT_OPTIONS } from "./types";
 
 /* --------------------------------------------------------------------------
    Props
@@ -36,9 +35,6 @@ interface SceneTypeEditorProps {
 export function SceneTypeEditor({ sceneType, onSave, onCancel }: SceneTypeEditorProps) {
   const [name, setName] = useState(sceneType?.name ?? "");
   const [description, setDescription] = useState(sceneType?.description ?? "");
-  const [variantApplicability, setVariantApplicability] = useState(
-    sceneType?.variant_applicability ?? "both",
-  );
   const [targetDuration, setTargetDuration] = useState(
     sceneType?.target_duration_secs?.toString() ?? "",
   );
@@ -67,7 +63,6 @@ export function SceneTypeEditor({ sceneType, onSave, onCancel }: SceneTypeEditor
     const data: CreateSceneType = {
       name: name.trim(),
       description: description.trim() || null,
-      variant_applicability: variantApplicability,
       target_duration_secs: targetDuration ? Number.parseInt(targetDuration, 10) : null,
       segment_duration_secs: segmentDuration ? Number.parseInt(segmentDuration, 10) : null,
       duration_tolerance_secs: durationTolerance ? Number.parseInt(durationTolerance, 10) : null,
@@ -162,30 +157,6 @@ export function SceneTypeEditor({ sceneType, onSave, onCancel }: SceneTypeEditor
               onChange={(e) => setDurationTolerance(e.target.value)}
               placeholder="2"
             />
-          </div>
-        </CardBody>
-      </Card>
-
-      {/* Variants */}
-      <Card>
-        <CardHeader>
-          <h3 className="text-base font-semibold text-[var(--color-text-primary)]">
-            Variant Applicability
-          </h3>
-        </CardHeader>
-        <CardBody>
-          <div className="flex gap-2" role="group" aria-label="Variant applicability">
-            {VARIANT_OPTIONS.map((option) => (
-              <Button
-                key={option.value}
-                type="button"
-                variant={variantApplicability === option.value ? "primary" : "secondary"}
-                size="sm"
-                onClick={() => setVariantApplicability(option.value)}
-              >
-                {option.label}
-              </Button>
-            ))}
           </div>
         </CardBody>
       </Card>

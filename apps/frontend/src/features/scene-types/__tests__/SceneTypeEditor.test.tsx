@@ -34,23 +34,6 @@ describe("SceneTypeEditor", () => {
     expect(screen.getByLabelText("Name")).toBeInTheDocument();
   });
 
-  it("shows variant applicability options", () => {
-    renderWithProviders(<SceneTypeEditor {...defaultProps} />);
-
-    expect(
-      screen.getByRole("button", { name: "Clothed only" }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: "Both variants" }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: "Topless only" }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: "Clothes off (transition)" }),
-    ).toBeInTheDocument();
-  });
-
   it("disables save when name is empty", () => {
     renderWithProviders(<SceneTypeEditor {...defaultProps} />);
 
@@ -77,6 +60,5 @@ describe("SceneTypeEditor", () => {
     expect(onSave).toHaveBeenCalledTimes(1);
     const firstCall = onSave.mock.calls[0] as [CreateSceneType];
     expect(firstCall[0].name).toBe("Close-up portrait");
-    expect(firstCall[0].variant_applicability).toBe("both");
   });
 });

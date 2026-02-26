@@ -63,6 +63,7 @@ export {
   Palette,
   // Job / Activity
   Layers,
+  List,
   Bell,
   BellOff,
   Clock,

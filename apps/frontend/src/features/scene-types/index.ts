@@ -23,4 +23,4 @@ export type {
   MatrixCell,
   ValidationResult,
 } from "./types";
-export { VARIANT_OPTIONS, CLIP_POSITIONS } from "./types";
+export { CLIP_POSITIONS } from "./types";

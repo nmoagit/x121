@@ -20,7 +20,6 @@ export interface SceneType {
   target_duration_secs: number | null;
   segment_duration_secs: number | null;
   duration_tolerance_secs: number;
-  variant_applicability: string;
   transition_segment_index: number | null;
   generation_params: unknown | null;
   sort_order: number;
@@ -48,7 +47,6 @@ export interface CreateSceneType {
   target_duration_secs?: number | null;
   segment_duration_secs?: number | null;
   duration_tolerance_secs?: number | null;
-  variant_applicability?: string | null;
   transition_segment_index?: number | null;
   generation_params?: unknown | null;
   sort_order?: number | null;
@@ -72,7 +70,6 @@ export interface UpdateSceneType {
   target_duration_secs?: number | null;
   segment_duration_secs?: number | null;
   duration_tolerance_secs?: number | null;
-  variant_applicability?: string | null;
   transition_segment_index?: number | null;
   generation_params?: unknown | null;
   sort_order?: number | null;
@@ -100,13 +97,6 @@ export interface ValidationResult {
   errors: string[];
   warnings: string[];
 }
-
-export const VARIANT_OPTIONS = [
-  { value: "clothed", label: "Clothed only" },
-  { value: "topless", label: "Topless only" },
-  { value: "both", label: "Both variants" },
-  { value: "clothes_off", label: "Clothes off (transition)" },
-] as const;
 
 export const CLIP_POSITIONS = [
   "full_clip",

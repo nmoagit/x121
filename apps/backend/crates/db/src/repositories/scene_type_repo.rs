@@ -1,7 +1,7 @@
 //! Repository for the `scene_types` table.
 
 use sqlx::PgPool;
-use trulience_core::types::DbId;
+use x121_core::types::DbId;
 
 use crate::models::scene_type::{CreateSceneType, SceneType, UpdateSceneType};
 
@@ -11,7 +11,7 @@ const COLUMNS: &str = "id, project_id, name, status_id, workflow_json, lora_conf
     prompt_start_clip, negative_prompt_start_clip, \
     prompt_continuation_clip, negative_prompt_continuation_clip, \
     target_duration_secs, segment_duration_secs, duration_tolerance_secs, \
-    variant_applicability, transition_segment_index, generation_params, \
+    transition_segment_index, generation_params, \
     sort_order, is_active, is_studio_level, deleted_at, created_at, updated_at";
 
 /// Provides CRUD operations for scene types.
@@ -21,7 +21,6 @@ impl SceneTypeRepo {
     /// Insert a new scene type, returning the created row.
     ///
     /// If `status_id` is `None`, defaults to 1 (Draft).
-    /// If `variant_applicability` is `None`, defaults to `'all'`.
     /// If `is_studio_level` is `None`, defaults to `false`.
     pub async fn create(pool: &PgPool, input: &CreateSceneType) -> Result<SceneType, sqlx::Error> {
         let query = format!(
@@ -32,13 +31,13 @@ impl SceneTypeRepo {
                  prompt_continuation_clip, negative_prompt_continuation_clip,
                  target_duration_secs, segment_duration_secs,
                  duration_tolerance_secs,
-                 variant_applicability, transition_segment_index,
+                 transition_segment_index,
                  generation_params, sort_order, is_active, is_studio_level)
              VALUES ($1, $2, COALESCE($3, 1), $4, $5, $6, $7, $8, $9,
                      $10, $11, $12, $13, $14, $15,
                      COALESCE($16, 2),
-                     COALESCE($17, 'all'), $18,
-                     $19, COALESCE($20, 0), COALESCE($21, true), COALESCE($22, false))
+                     $17,
+                     $18, COALESCE($19, 0), COALESCE($20, true), COALESCE($21, false))
              RETURNING {COLUMNS}"
         );
         sqlx::query_as::<_, SceneType>(&query)
@@ -58,7 +57,6 @@ impl SceneTypeRepo {
             .bind(input.target_duration_secs)
             .bind(input.segment_duration_secs)
             .bind(input.duration_tolerance_secs)
-            .bind(&input.variant_applicability)
             .bind(input.transition_segment_index)
             .bind(&input.generation_params)
             .bind(input.sort_order)
@@ -131,12 +129,11 @@ impl SceneTypeRepo {
                 target_duration_secs = COALESCE($14, target_duration_secs),
                 segment_duration_secs = COALESCE($15, segment_duration_secs),
                 duration_tolerance_secs = COALESCE($16, duration_tolerance_secs),
-                variant_applicability = COALESCE($17, variant_applicability),
-                transition_segment_index = COALESCE($18, transition_segment_index),
-                generation_params = COALESCE($19, generation_params),
-                sort_order = COALESCE($20, sort_order),
-                is_active = COALESCE($21, is_active),
-                is_studio_level = COALESCE($22, is_studio_level)
+                transition_segment_index = COALESCE($17, transition_segment_index),
+                generation_params = COALESCE($18, generation_params),
+                sort_order = COALESCE($19, sort_order),
+                is_active = COALESCE($20, is_active),
+                is_studio_level = COALESCE($21, is_studio_level)
              WHERE id = $1 AND deleted_at IS NULL
              RETURNING {COLUMNS}"
         );
@@ -157,7 +154,6 @@ impl SceneTypeRepo {
             .bind(input.target_duration_secs)
             .bind(input.segment_duration_secs)
             .bind(input.duration_tolerance_secs)
-            .bind(&input.variant_applicability)
             .bind(input.transition_segment_index)
             .bind(&input.generation_params)
             .bind(input.sort_order)
@@ -185,10 +181,7 @@ impl SceneTypeRepo {
     }
 
     /// List scene types by a set of IDs (for matrix generation).
-    pub async fn list_by_ids(
-        pool: &PgPool,
-        ids: &[DbId],
-    ) -> Result<Vec<SceneType>, sqlx::Error> {
+    pub async fn list_by_ids(pool: &PgPool, ids: &[DbId]) -> Result<Vec<SceneType>, sqlx::Error> {
         let query = format!(
             "SELECT {COLUMNS} FROM scene_types
              WHERE id = ANY($1) AND deleted_at IS NULL"

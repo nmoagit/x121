@@ -9,32 +9,54 @@ static PLACEHOLDER_RE: LazyLock<regex::Regex> =
     LazyLock::new(|| regex::Regex::new(r"\{(\w+)\}").expect("valid regex"));
 
 // ---------------------------------------------------------------------------
-// Variant applicability
+// Track expansion (PRD-111)
 // ---------------------------------------------------------------------------
 
+/// Expand a list of track slugs into a deduplicated, ordered list of variant labels.
+///
+/// This replaces the former `expand_variants` function. Track slugs are sourced
+/// from the `tracks` table via `TrackRepo::list`.
+pub fn expand_tracks(track_slugs: &[String]) -> Vec<String> {
+    let mut result = Vec::with_capacity(track_slugs.len());
+    for slug in track_slugs {
+        if !result.contains(slug) {
+            result.push(slug.clone());
+        }
+    }
+    result
+}
+
+// ---------------------------------------------------------------------------
+// Deprecated variant applicability (backward compat)
+// ---------------------------------------------------------------------------
+
+#[deprecated(note = "Use tracks system (PRD-111). Will be removed in a future release.")]
 pub const VARIANT_CLOTHED: &str = "clothed";
+#[deprecated(note = "Use tracks system (PRD-111). Will be removed in a future release.")]
 pub const VARIANT_TOPLESS: &str = "topless";
+#[deprecated(note = "Use tracks system (PRD-111). Will be removed in a future release.")]
 pub const VARIANT_BOTH: &str = "both";
+#[deprecated(note = "Use tracks system (PRD-111). Will be removed in a future release.")]
 pub const VARIANT_CLOTHES_OFF: &str = "clothes_off";
 
-pub const VALID_VARIANT_TYPES: &[&str] = &[
-    VARIANT_CLOTHED,
-    VARIANT_TOPLESS,
-    VARIANT_BOTH,
-    VARIANT_CLOTHES_OFF,
-];
+#[deprecated(note = "Use tracks system (PRD-111). Will be removed in a future release.")]
+pub const VALID_VARIANT_TYPES: &[&str] = &["clothed", "topless", "both", "clothes_off"];
 
 /// Expand a variant_applicability value into the concrete variant labels.
+#[deprecated(note = "Use expand_tracks (PRD-111). Will be removed in a future release.")]
+#[allow(deprecated)]
 pub fn expand_variants(variant_applicability: &str) -> Vec<&'static str> {
     match variant_applicability {
-        VARIANT_CLOTHED => vec![VARIANT_CLOTHED],
-        VARIANT_TOPLESS => vec![VARIANT_TOPLESS],
-        VARIANT_BOTH => vec![VARIANT_CLOTHED, VARIANT_TOPLESS],
-        VARIANT_CLOTHES_OFF => vec![VARIANT_CLOTHED, VARIANT_TOPLESS], // both, with transition
-        _ => vec![VARIANT_CLOTHED, VARIANT_TOPLESS],                  // default to both
+        "clothed" => vec!["clothed"],
+        "topless" => vec!["topless"],
+        "both" => vec!["clothed", "topless"],
+        "clothes_off" => vec!["clothed", "topless"],
+        _ => vec!["clothed", "topless"],
     }
 }
 
+#[deprecated(note = "Use tracks system (PRD-111). Will be removed in a future release.")]
+#[allow(deprecated)]
 pub fn validate_variant_applicability(value: &str) -> Result<(), String> {
     if VALID_VARIANT_TYPES.contains(&value) {
         Ok(())
@@ -206,24 +228,46 @@ pub fn validate_placeholders(template: &str) -> Vec<String> {
 mod tests {
     use super::*;
 
-    // -- Variant expansion --
+    // -- Track expansion (PRD-111) --
 
     #[test]
+    fn expand_tracks_deduplicates() {
+        let slugs = vec![
+            "clothed".to_string(),
+            "topless".to_string(),
+            "clothed".to_string(),
+        ];
+        assert_eq!(expand_tracks(&slugs), vec!["clothed", "topless"]);
+    }
+
+    #[test]
+    fn expand_tracks_empty() {
+        let slugs: Vec<String> = vec![];
+        assert!(expand_tracks(&slugs).is_empty());
+    }
+
+    // -- Deprecated variant expansion (backward compat) --
+
+    #[test]
+    #[allow(deprecated)]
     fn expand_clothed_only() {
         assert_eq!(expand_variants(VARIANT_CLOTHED), vec!["clothed"]);
     }
 
     #[test]
+    #[allow(deprecated)]
     fn expand_topless_only() {
         assert_eq!(expand_variants(VARIANT_TOPLESS), vec!["topless"]);
     }
 
     #[test]
+    #[allow(deprecated)]
     fn expand_both_variants() {
         assert_eq!(expand_variants(VARIANT_BOTH), vec!["clothed", "topless"]);
     }
 
     #[test]
+    #[allow(deprecated)]
     fn expand_clothes_off() {
         assert_eq!(
             expand_variants(VARIANT_CLOTHES_OFF),
@@ -232,12 +276,14 @@ mod tests {
     }
 
     #[test]
+    #[allow(deprecated)]
     fn validate_variant_valid() {
         assert!(validate_variant_applicability("clothed").is_ok());
         assert!(validate_variant_applicability("both").is_ok());
     }
 
     #[test]
+    #[allow(deprecated)]
     fn validate_variant_invalid() {
         assert!(validate_variant_applicability("naked").is_err());
         assert!(validate_variant_applicability("").is_err());
@@ -319,30 +365,21 @@ mod tests {
 
     #[test]
     fn select_start_clip_with_override() {
-        let result = select_prompt_for_position(
-            Some("full"),
-            Some("start"),
-            None,
-            ClipPosition::StartClip,
-        );
+        let result =
+            select_prompt_for_position(Some("full"), Some("start"), None, ClipPosition::StartClip);
         assert_eq!(result, Some("start"));
     }
 
     #[test]
     fn select_start_clip_fallback() {
-        let result =
-            select_prompt_for_position(Some("full"), None, None, ClipPosition::StartClip);
+        let result = select_prompt_for_position(Some("full"), None, None, ClipPosition::StartClip);
         assert_eq!(result, Some("full"));
     }
 
     #[test]
     fn select_continuation_clip_fallback() {
-        let result = select_prompt_for_position(
-            Some("full"),
-            None,
-            None,
-            ClipPosition::ContinuationClip,
-        );
+        let result =
+            select_prompt_for_position(Some("full"), None, None, ClipPosition::ContinuationClip);
         assert_eq!(result, Some("full"));
     }
 

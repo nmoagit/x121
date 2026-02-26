@@ -8,13 +8,13 @@ use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::Json;
-use trulience_core::error::CoreError;
-use trulience_core::types::DbId;
-use trulience_db::models::scene_type::{
+use x121_core::error::CoreError;
+use x121_core::types::DbId;
+use x121_db::models::scene_type::{
     CreateSceneType, MatrixCellDto, MatrixRequest, PromptPreviewQuery, PromptPreviewResponse,
     SceneType, UpdateSceneType, ValidationResult,
 };
-use trulience_db::repositories::{CharacterRepo, SceneTypeRepo};
+use x121_db::repositories::{CharacterRepo, SceneTypeRepo};
 
 use crate::error::{AppError, AppResult};
 use crate::response::DataResponse;
@@ -166,7 +166,7 @@ pub async fn preview_prompt(
     Path((scene_type_id, character_id)): Path<(DbId, DbId)>,
     Query(params): Query<PromptPreviewQuery>,
 ) -> AppResult<impl IntoResponse> {
-    use trulience_core::scene_type_config::{self, ClipPosition, ResolvedPrompt};
+    use x121_core::scene_type_config::{self, ClipPosition, ResolvedPrompt};
 
     // 1. Load scene type
     let scene_type = SceneTypeRepo::find_by_id(&state.pool, scene_type_id)
@@ -280,21 +280,24 @@ pub async fn generate_matrix(
     State(state): State<AppState>,
     Json(body): Json<MatrixRequest>,
 ) -> AppResult<impl IntoResponse> {
-    use trulience_core::scene_type_config::expand_variants;
+    use x121_db::repositories::TrackRepo;
 
     // Load scene types
     let scene_types = SceneTypeRepo::list_by_ids(&state.pool, &body.scene_type_ids).await?;
 
+    // Load active tracks to use as variant types (replaces expand_variants)
+    let tracks = TrackRepo::list(&state.pool, false).await?;
+    let track_slugs: Vec<String> = tracks.into_iter().map(|t| t.slug).collect();
+
     // Build matrix cells
     let mut cells: Vec<MatrixCellDto> = Vec::new();
     for st in &scene_types {
-        let variants = expand_variants(&st.variant_applicability);
         for &character_id in &body.character_ids {
-            for variant in &variants {
+            for slug in &track_slugs {
                 cells.push(MatrixCellDto {
                     character_id,
                     scene_type_id: st.id,
-                    variant_type: variant.to_string(),
+                    variant_type: slug.clone(),
                     existing_scene_id: None,
                     status: "not_started".to_string(),
                 });
@@ -332,7 +335,7 @@ pub async fn generate_matrix(
 
 /// Map a scene status_id to a display label for the matrix view.
 fn scene_status_label(status_id: i16) -> &'static str {
-    use trulience_db::models::status::SceneStatus;
+    use x121_db::models::status::SceneStatus;
     match status_id {
         x if x == SceneStatus::Pending.id() => "pending",
         x if x == SceneStatus::Generating.id() => "generating",
@@ -348,7 +351,7 @@ fn scene_status_label(status_id: i16) -> &'static str {
 pub async fn validate_scene_type_config(
     Json(input): Json<CreateSceneType>,
 ) -> AppResult<impl IntoResponse> {
-    use trulience_core::scene_type_config;
+    use x121_core::scene_type_config;
 
     let mut errors = Vec::new();
     let mut warnings = Vec::new();
@@ -356,13 +359,6 @@ pub async fn validate_scene_type_config(
     // Validate name
     if input.name.trim().is_empty() {
         errors.push("name is required".to_string());
-    }
-
-    // Validate variant applicability
-    if let Some(ref va) = input.variant_applicability {
-        if let Err(e) = scene_type_config::validate_variant_applicability(va) {
-            errors.push(e);
-        }
     }
 
     // Validate duration
