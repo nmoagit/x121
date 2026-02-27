@@ -1,6 +1,7 @@
 //! Repository for the `activity_logs` table and lookup tables (PRD-118).
 
 use sqlx::PgPool;
+use x121_core::search::{clamp_limit, clamp_offset};
 use x121_core::types::Timestamp;
 
 use crate::models::activity_log::{ActivityLog, ActivityLogQuery, CreateActivityLog};
@@ -88,8 +89,8 @@ impl ActivityLogRepo {
         pool: &PgPool,
         params: &ActivityLogQuery,
     ) -> Result<Vec<ActivityLog>, sqlx::Error> {
-        let limit = params.limit.unwrap_or(25).min(100);
-        let offset = params.offset.unwrap_or(0);
+        let limit = clamp_limit(params.limit, 25, 100);
+        let offset = clamp_offset(params.offset);
 
         let (where_clause, bind_values, bind_idx) = build_activity_filter(params, pool).await?;
 

@@ -15,6 +15,10 @@ import type {
   UpdateActivityLogSettings,
 } from "../types";
 
+// Note: ActivityLogPage.items are ActivityLogRow (REST shape with level_id/source_id),
+// NOT ActivityLogEntry (WebSocket shape with level/source strings).
+// Use LEVEL_ID_MAP and SOURCE_ID_MAP from types.ts to convert for display.
+
 /* --------------------------------------------------------------------------
    Query keys
    -------------------------------------------------------------------------- */
@@ -50,7 +54,7 @@ export function useActivityLogHistory(params: ActivityLogQueryParams) {
       if (params.offset != null) searchParams.set("offset", String(params.offset));
 
       const qs = searchParams.toString();
-      const path = qs ? `/admin/activity-logs?${qs}` : "/admin/activity-logs";
+      const path = qs ? `/activity-logs?${qs}` : "/activity-logs";
       return api.get<ActivityLogPage>(path);
     },
   });
@@ -73,7 +77,7 @@ export function useUpdateActivityLogSettings() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (data: UpdateActivityLogSettings) =>
-      api.patch<ActivityLogSettings>("/admin/activity-logs/settings", data),
+      api.put<ActivityLogSettings>("/admin/activity-logs/settings", data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: activityLogKeys.settings() });
     },

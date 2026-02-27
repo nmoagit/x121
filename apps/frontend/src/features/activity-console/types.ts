@@ -70,6 +70,30 @@ export interface UpdateActivityLogSettings {
    REST query
    -------------------------------------------------------------------------- */
 
+/**
+ * A persisted activity log row returned by the REST API.
+ *
+ * Unlike `ActivityLogEntry` (WebSocket shape), the REST model has numeric
+ * `level_id`/`source_id` instead of string `level`/`source`, and includes
+ * `id` and `created_at` from the database.
+ */
+export interface ActivityLogRow {
+  id: number;
+  timestamp: string;
+  level_id: number;
+  source_id: number;
+  message: string;
+  fields: Record<string, unknown>;
+  category: string;
+  entity_type?: string;
+  entity_id?: number;
+  user_id?: number;
+  job_id?: number;
+  project_id?: number;
+  trace_id?: string;
+  created_at: string;
+}
+
 export interface ActivityLogQueryParams {
   level?: string;
   source?: string;
@@ -85,16 +109,34 @@ export interface ActivityLogQueryParams {
 }
 
 export interface ActivityLogPage {
-  items: ActivityLogEntry[];
+  items: ActivityLogRow[];
   total: number;
 }
+
+/** Maps level_id from the REST API to the display level string. */
+export const LEVEL_ID_MAP: Record<number, ActivityLogLevel> = {
+  1: "debug",
+  2: "info",
+  3: "warn",
+  4: "error",
+};
+
+/** Maps source_id from the REST API to the display source string. */
+export const SOURCE_ID_MAP: Record<number, ActivityLogSource> = {
+  1: "api",
+  2: "comfyui",
+  3: "worker",
+  4: "agent",
+  5: "pipeline",
+};
 
 /* --------------------------------------------------------------------------
    WebSocket actions (client -> server)
    -------------------------------------------------------------------------- */
 
-export interface WsSubscribeAction {
-  action: "subscribe";
+/** Client-to-server WebSocket message for subscribing or updating filters. */
+export interface WsClientAction {
+  action: "subscribe" | "update_filter";
   levels?: ActivityLogLevel[];
   sources?: ActivityLogSource[];
   mode?: ActivityLogCategory;
@@ -102,18 +144,6 @@ export interface WsSubscribeAction {
   entity_id?: number;
   search?: string;
 }
-
-export interface WsUpdateFilterAction {
-  action: "update_filter";
-  levels?: ActivityLogLevel[];
-  sources?: ActivityLogSource[];
-  mode?: ActivityLogCategory;
-  entity_type?: string;
-  entity_id?: number;
-  search?: string;
-}
-
-export type WsClientAction = WsSubscribeAction | WsUpdateFilterAction;
 
 /* --------------------------------------------------------------------------
    Connection status

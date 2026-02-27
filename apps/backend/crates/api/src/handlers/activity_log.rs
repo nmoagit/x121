@@ -13,9 +13,12 @@ use x121_core::activity::{ActivityLogCategory, ActivityLogEntry, ActivityLogLeve
 use x121_db::models::activity_log::{ActivityLogPage, ActivityLogQuery, UpdateActivityLogSettings};
 use x121_db::repositories::{ActivityLogRepo, ActivityLogSettingsRepo};
 
+use x121_core::roles::ROLE_ADMIN;
+
 use crate::error::{AppError, AppResult};
 use crate::middleware::auth::AuthUser;
 use crate::middleware::rbac::RequireAdmin;
+use crate::query::parse_timestamp;
 use crate::response::DataResponse;
 use crate::state::AppState;
 
@@ -102,11 +105,7 @@ impl WsFilter {
                 .iter()
                 .filter_map(|s| ActivityLogSource::from_str(s))
                 .collect(),
-            mode: msg.mode.as_deref().and_then(|m| match m {
-                "curated" => Some(ActivityLogCategory::Curated),
-                "verbose" => Some(ActivityLogCategory::Verbose),
-                _ => None,
-            }),
+            mode: msg.mode.as_deref().and_then(ActivityLogCategory::from_str),
             entity_type: msg.entity_type.clone(),
             entity_id: msg.entity_id,
             search: msg.search.clone(),
@@ -151,19 +150,6 @@ impl WsFilter {
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-/// Parse an optional ISO 8601 date string.
-fn parse_timestamp(
-    s: &Option<String>,
-    fallback: chrono::DateTime<chrono::Utc>,
-) -> AppResult<chrono::DateTime<chrono::Utc>> {
-    match s {
-        Some(v) => v
-            .parse::<chrono::DateTime<chrono::Utc>>()
-            .map_err(|_| AppError::BadRequest("Invalid date format".into())),
-        None => Ok(fallback),
-    }
-}
 
 /// Build an `ActivityLogQuery` from REST query parameters.
 fn build_query(params: &ActivityLogQueryParams) -> AppResult<ActivityLogQuery> {
@@ -210,7 +196,7 @@ pub async fn query_activity_logs(
     let mut query = build_query(&params)?;
 
     // Role-based scoping: non-admin users only see their own entries.
-    if auth.role != "admin" {
+    if auth.role != ROLE_ADMIN {
         query.user_id = Some(auth.user_id);
     }
 
@@ -243,7 +229,7 @@ pub async fn export_activity_logs(
         ..Default::default()
     };
 
-    if auth.role != "admin" {
+    if auth.role != ROLE_ADMIN {
         query.user_id = Some(auth.user_id);
     }
 
@@ -396,7 +382,7 @@ pub async fn ws_activity_logs(
 
 async fn handle_activity_ws(socket: WebSocket, state: AppState, auth: AuthUser) {
     let conn_id = uuid::Uuid::new_v4().to_string();
-    let is_admin = auth.role == "admin";
+    let is_admin = auth.role == ROLE_ADMIN;
 
     tracing::info!(
         conn_id = %conn_id,

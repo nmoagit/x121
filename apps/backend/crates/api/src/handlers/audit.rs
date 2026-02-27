@@ -14,6 +14,7 @@ use x121_db::repositories::{AuditLogRepo, AuditRetentionPolicyRepo};
 
 use crate::error::{AppError, AppResult};
 use crate::middleware::rbac::RequireAdmin;
+use crate::query::parse_timestamp;
 use crate::response::DataResponse;
 use crate::state::AppState;
 
@@ -41,23 +42,6 @@ pub struct ExportParams {
     pub from: Option<String>,
     pub to: Option<String>,
     pub format: Option<String>,
-}
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-/// Parse an optional ISO 8601 date string, with a fallback.
-fn parse_timestamp(
-    s: &Option<String>,
-    fallback: chrono::DateTime<chrono::Utc>,
-) -> AppResult<chrono::DateTime<chrono::Utc>> {
-    match s {
-        Some(v) => v
-            .parse::<chrono::DateTime<chrono::Utc>>()
-            .map_err(|_| AppError::BadRequest("Invalid date format".into())),
-        None => Ok(fallback),
-    }
 }
 
 // ---------------------------------------------------------------------------

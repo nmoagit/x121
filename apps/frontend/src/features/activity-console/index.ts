@@ -26,9 +26,11 @@ export type {
   ActivityLogLevel,
   ActivityLogPage,
   ActivityLogQueryParams,
+  ActivityLogRow,
   ActivityLogSettings,
   ActivityLogSource,
   UpdateActivityLogSettings,
+  WsClientAction,
   WsConnectionStatus,
   WsMessage,
 } from "./types";
@@ -36,7 +38,9 @@ export {
   ALL_LEVELS,
   ALL_SOURCES,
   LEVEL_BADGE_VARIANT,
+  LEVEL_ID_MAP,
   LEVEL_LABELS,
   SOURCE_ACCENT_CLASSES,
+  SOURCE_ID_MAP,
   SOURCE_LABELS,
 } from "./types";

@@ -109,6 +109,15 @@ impl ActivityLogCategory {
             Self::Verbose => "verbose",
         }
     }
+
+    /// Parse from the lowercase name.
+    pub fn from_str(s: &str) -> Option<Self> {
+        match s {
+            "curated" => Some(Self::Curated),
+            "verbose" => Some(Self::Verbose),
+            _ => None,
+        }
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -308,5 +317,18 @@ mod tests {
     fn test_category_as_str() {
         assert_eq!(ActivityLogCategory::Curated.as_str(), "curated");
         assert_eq!(ActivityLogCategory::Verbose.as_str(), "verbose");
+    }
+
+    #[test]
+    fn test_category_from_str() {
+        assert_eq!(
+            ActivityLogCategory::from_str("curated"),
+            Some(ActivityLogCategory::Curated)
+        );
+        assert_eq!(
+            ActivityLogCategory::from_str("verbose"),
+            Some(ActivityLogCategory::Verbose)
+        );
+        assert_eq!(ActivityLogCategory::from_str("unknown"), None);
     }
 }

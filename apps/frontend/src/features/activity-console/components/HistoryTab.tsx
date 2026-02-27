@@ -12,7 +12,8 @@ import { Stack } from "@/components/layout";
 import { AlertCircle } from "@/tokens/icons";
 
 import { useActivityLogHistory } from "../hooks/useActivityLogHistory";
-import type { ActivityLogLevel, ActivityLogQueryParams, ActivityLogSource } from "../types";
+import type { ActivityLogEntry, ActivityLogLevel, ActivityLogQueryParams, ActivityLogRow, ActivityLogSource } from "../types";
+import { LEVEL_ID_MAP, SOURCE_ID_MAP } from "../types";
 import { HistoryFilterBar } from "./HistoryFilterBar";
 import { LogEntryRow } from "./LogEntryRow";
 
@@ -21,6 +22,29 @@ import { LogEntryRow } from "./LogEntryRow";
    -------------------------------------------------------------------------- */
 
 const PAGE_SIZE = 50;
+
+/* --------------------------------------------------------------------------
+   Helpers
+   -------------------------------------------------------------------------- */
+
+/** Convert a REST `ActivityLogRow` (numeric IDs) to `ActivityLogEntry` (string enums). */
+function rowToEntry(row: ActivityLogRow): ActivityLogEntry {
+  return {
+    type: "entry",
+    timestamp: row.timestamp,
+    level: LEVEL_ID_MAP[row.level_id] ?? "info",
+    source: SOURCE_ID_MAP[row.source_id] ?? "api",
+    message: row.message,
+    fields: row.fields,
+    category: row.category as ActivityLogEntry["category"],
+    entity_type: row.entity_type ?? undefined,
+    entity_id: row.entity_id ?? undefined,
+    user_id: row.user_id ?? undefined,
+    job_id: row.job_id ?? undefined,
+    project_id: row.project_id ?? undefined,
+    trace_id: row.trace_id ?? undefined,
+  };
+}
 
 /* --------------------------------------------------------------------------
    Component
@@ -97,8 +121,8 @@ export function HistoryTab() {
       ) : data && data.items.length > 0 ? (
         <div className="border border-[var(--color-border-default)] rounded-[var(--radius-lg)] overflow-hidden bg-[var(--color-surface-primary)]">
           <div className="max-h-[60vh] overflow-y-auto">
-            {data.items.map((entry, idx) => (
-              <LogEntryRow key={`${entry.timestamp}-${idx}`} entry={entry} />
+            {data.items.map((row, idx) => (
+              <LogEntryRow key={`${row.timestamp}-${idx}`} entry={rowToEntry(row)} />
             ))}
           </div>
         </div>

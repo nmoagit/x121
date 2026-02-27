@@ -1,9 +1,11 @@
-//! Shared query parameter types for API handlers.
+//! Shared query parameter types and helpers for API handlers.
 //!
-//! Common query structs that appear across multiple handler modules are
-//! extracted here to avoid duplication.
+//! Common query structs and parsing utilities that appear across multiple
+//! handler modules are extracted here to avoid duplication.
 
 use serde::Deserialize;
+
+use crate::error::{AppError, AppResult};
 
 /// Generic pagination parameters (`?limit=&offset=`).
 ///
@@ -22,4 +24,24 @@ pub struct PaginationParams {
 pub struct IncludeInactiveParams {
     #[serde(default)]
     pub include_inactive: bool,
+}
+
+// ---------------------------------------------------------------------------
+// Timestamp parsing
+// ---------------------------------------------------------------------------
+
+/// Parse an optional ISO 8601 date string, returning `fallback` if `None`.
+///
+/// Used by audit log and activity log handlers for `?from=` / `?to=` query
+/// parameters.
+pub fn parse_timestamp(
+    s: &Option<String>,
+    fallback: chrono::DateTime<chrono::Utc>,
+) -> AppResult<chrono::DateTime<chrono::Utc>> {
+    match s {
+        Some(v) => v
+            .parse::<chrono::DateTime<chrono::Utc>>()
+            .map_err(|_| AppError::BadRequest("Invalid date format".into())),
+        None => Ok(fallback),
+    }
 }
