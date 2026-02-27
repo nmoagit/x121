@@ -1,6 +1,6 @@
 # X121 Platform — Build Plan
 
-Optimal build order for all 119 PRDs, organized into dependency-ordered phases.
+Optimal build order for all 120 PRDs, organized into dependency-ordered phases.
 Each phase can begin only after all prior phases are complete. PRDs within a phase
 can be built **in parallel** (dependencies are satisfied by earlier phases).
 
@@ -15,7 +15,7 @@ can be built **in parallel** (dependencies are satisfied by earlier phases).
 - **Track** = a parallel workstream within a phase (Backend / Frontend / Data / Pipeline)
 - PRDs listed within a track have no inter-dependencies and can be built simultaneously
 - Estimated effort is relative (S/M/L/XL) not calendar time
-- The plan covers 119 confirmed PRDs. The 15 "MAYBE" items (M-01 through M-15) are excluded
+- The plan covers 120 confirmed PRDs. The 15 "MAYBE" items (M-01 through M-15) are excluded
 
 ## Mandatory Quality Gate: dry-guy
 
@@ -463,6 +463,16 @@ This phase contains no PRD work — only structural setup.
 
 ---
 
+## Standalone — Python Generation Scripts
+
+**Goal:** Improvements to the standalone Python generation scripts (`scripts/python/`). These are independent of the web application and have no Rust/React/DB dependencies. Can be done at any time.
+
+| # | PRD | Title | Effort | Depends On |
+|---|-----|-------|--------|------------|
+| 120 | PRD-120 | Scene & Workflow Naming Hierarchy | M | None (standalone Python script) |
+
+---
+
 ## Deferred Work Queue
 
 When a PRD is completed, some phases may be deferred because they depend on PRDs that haven't been built yet. This table tracks those deferred items so they are picked up when the blocking PRD is completed.
@@ -532,7 +542,8 @@ PRD-29 → PRD-83 → PRD-35 → PRD-57
 | 10 | 8 | Reporting & Delivery | Production reports, compliance, lifecycle, sharing |
 | 11 | 10 | Admin Infrastructure | GPU power, budgets, health, webhooks, observability, time scheduling |
 | 12 | 4 | Polish & Hardening | Backup/DR, mobile review, setup wizard, dashboard config |
-| **Total** | **119** | | |
+| Standalone | 1 | Python Scripts | Scene naming hierarchy for generation script |
+| **Total** | **120** | | |
 
 ---
 
@@ -565,3 +576,4 @@ PRD-29 → PRD-83 → PRD-35 → PRD-57
 | 2026-02-25 | Added PRD-110 (Admin Platform Settings Panel) to Phase 2 Track B. Key/value settings with validation, caching, audit. All deps done. Total: 118 PRDs |
 | 2026-02-25 | Added PRD-118 (Live Activity Console & Logging System) to Phase 2 Track C. Terminal-style console, role-based streaming, DB persistence. All deps done. Total: 119 PRDs |
 | 2026-02-25 | Added PRD-119 (Time-Based Job Scheduling) to Phase 11 Track A. Cron-style schedules, calendar UI, off-peak selection, timezone handling. All deps done. Total: 119 PRDs |
+| 2026-02-27 | Added PRD-120 (Scene & Workflow Naming Hierarchy) to new "Standalone — Python Generation Scripts" section. Independent of web app, no deps. Total: 120 PRDs |

@@ -26,6 +26,12 @@ Usage:
         --input ./seeds/ \
         --no-manage-pod
 
+    # Custom retry count (default: 3)
+    python scripts/python/comfyui_batch.py \
+        --workflow bottom.json \
+        --input ./seeds/ \
+        --retries 5
+
 Environment variables (or .env file):
     RUNPOD_API_KEY     - RunPod API key (required)
     RUNPOD_POD_ID      - Pod ID (required)
@@ -91,6 +97,7 @@ WORKFLOW_SEARCH_DIRS = [
 ]
 POLL_INTERVAL = 5       # seconds between status checks
 GENERATION_TIMEOUT = 600  # 10 min per generation
+DEFAULT_RETRIES = 3       # retry failed generations this many times
 
 # ---------------------------------------------------------------------------
 # Logging
@@ -573,14 +580,130 @@ def collect_input_files(input_path: Path) -> list[Path]:
 # Main batch processing
 # ---------------------------------------------------------------------------
 
+def process_single(
+    input_file: Path,
+    workflow_template: dict,
+    client_id: str,
+    output_dir: Path,
+    timeout: int,
+    step: int,
+    total: int,
+    attempt: int = 1,
+) -> Optional[dict]:
+    """Process a single image through a ComfyUI workflow.
+
+    Returns a result dict on success, or None on failure.
+    """
+    attempt_label = f" (attempt {attempt})" if attempt > 1 else ""
+    log(f"\n{'='*60}")
+    log_step(step, total, f"Processing: {input_file.name}{attempt_label}")
+    log(f"{'='*60}")
+
+    # Upload the seed image to ComfyUI
+    upload_name = input_file.name
+    log(f"  Uploading seed image: {upload_name}")
+    try:
+        upload_result = comfyui_upload_image(input_file, upload_name)
+        actual_name = upload_result.get("name", upload_name)
+        log(f"  Uploaded as: {actual_name}")
+    except Exception as e:
+        log(f"  HTTP upload failed ({e}), trying SCP fallback...")
+        try:
+            scp_upload(str(input_file), f"{COMFYUI_INPUT_DIR}/{upload_name}")
+            actual_name = upload_name
+        except Exception as e2:
+            log(f"  SCP upload also failed: {e2}")
+            return None
+
+    # Prepare workflow with this image
+    workflow = json.loads(json.dumps(workflow_template))
+    try:
+        set_input_image_name(workflow, actual_name)
+    except ValueError as e:
+        log(f"  Warning: {e}")
+        log("  Submitting workflow without modifying input image.")
+
+    # Queue the prompt
+    log("  Queueing prompt...")
+    try:
+        prompt_id = comfyui_queue_prompt(workflow, client_id)
+    except RuntimeError as e:
+        log(f"  ERROR queueing prompt: {e}")
+        return None
+    log(f"  Prompt ID: {prompt_id}")
+
+    # Wait for completion
+    log("  Waiting for generation...")
+    try:
+        history = wait_for_prompt(prompt_id, client_id, timeout=timeout)
+    except (TimeoutError, RuntimeError) as e:
+        log(f"  ERROR: {e}")
+        return None
+
+    # Download outputs
+    output_files = get_output_files(history)
+    if not output_files:
+        log("  Warning: No output files found in history.")
+        return None
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+    downloaded = []
+    for out_file in output_files:
+        fname = out_file["filename"]
+        ext = Path(fname).suffix or ".mp4"
+        out_name = f"{input_file.stem}{ext}"
+        if len(output_files) > 1:
+            idx = output_files.index(out_file)
+            out_name = f"{input_file.stem}_{idx}{ext}"
+        dest = output_dir / out_name
+
+        log(f"  Downloading: {fname} -> {dest.name}")
+        try:
+            comfyui_download_output(
+                out_file["filename"],
+                out_file["subfolder"],
+                out_file["type"],
+                dest,
+            )
+            downloaded.append(out_name)
+        except Exception as e:
+            log(f"  HTTP download failed ({e}), trying SCP...")
+            remote_output = (
+                f"{COMFYUI_DIR}/output/{out_file['subfolder']}/{fname}"
+                if out_file["subfolder"]
+                else f"{COMFYUI_DIR}/output/{fname}"
+            )
+            try:
+                scp_download(remote_output, str(dest))
+                downloaded.append(out_name)
+            except Exception as e2:
+                log(f"  SCP download also failed: {e2}")
+
+    if not downloaded:
+        log("  ERROR: All downloads failed.")
+        return None
+
+    log_step(step, total, f"Done: {input_file.name}")
+    return {
+        "input": input_file.name,
+        "output": downloaded[0] if len(downloaded) == 1 else downloaded,
+        "prompt_id": prompt_id,
+    }
+
+
 def process_batch(
     workflow_path: str,
     input_files: list[Path],
     output_dir: Path,
     timeout: int = GENERATION_TIMEOUT,
+    max_retries: int = DEFAULT_RETRIES,
 ) -> list[dict]:
-    """Process a batch of images through a ComfyUI workflow."""
-    total_steps = len(input_files)
+    """Process a batch of images through a ComfyUI workflow.
+
+    Failed generations are deferred and retried after the remaining images
+    have been processed, up to ``max_retries`` rounds.
+    """
+    total = len(input_files)
     client_id = str(uuid.uuid4())
 
     # Load workflow from pod
@@ -589,95 +712,49 @@ def process_batch(
     log(f"Workflow loaded ({len(workflow_template)} nodes)")
 
     results = []
+    pending: list[Path] = list(input_files)
 
-    for i, input_file in enumerate(input_files, 1):
-        log(f"\n{'='*60}")
-        log_step(i, total_steps, f"Processing: {input_file.name}")
-        log(f"{'='*60}")
+    for attempt in range(1, max_retries + 1):
+        if not pending:
+            break
 
-        # Upload the seed image to ComfyUI
-        upload_name = input_file.name
-        log(f"  Uploading seed image: {upload_name}")
-        try:
-            upload_result = comfyui_upload_image(input_file, upload_name)
-            actual_name = upload_result.get("name", upload_name)
-            log(f"  Uploaded as: {actual_name}")
-        except Exception as e:
-            log(f"  HTTP upload failed ({e}), trying SCP fallback...")
-            scp_upload(str(input_file), f"{COMFYUI_INPUT_DIR}/{upload_name}")
-            actual_name = upload_name
+        if attempt > 1:
+            log(f"\n{'#'*60}")
+            log(f"RETRY ROUND {attempt}/{max_retries} — {len(pending)} failed image(s)")
+            log(f"{'#'*60}")
 
-        # Prepare workflow with this image
-        workflow = json.loads(json.dumps(workflow_template))
-        try:
-            set_input_image_name(workflow, actual_name)
-        except ValueError as e:
-            log(f"  Warning: {e}")
-            log("  Submitting workflow without modifying input image.")
+        failed: list[Path] = []
+        for i, input_file in enumerate(pending, 1):
+            step_label = i if attempt == 1 else i
+            step_total = len(pending)
+            result = process_single(
+                input_file,
+                workflow_template,
+                client_id,
+                output_dir,
+                timeout,
+                step=step_label,
+                total=step_total,
+                attempt=attempt,
+            )
+            if result is not None:
+                results.append(result)
+            else:
+                failed.append(input_file)
 
-        # Queue the prompt
-        log("  Queueing prompt...")
-        try:
-            prompt_id = comfyui_queue_prompt(workflow, client_id)
-        except RuntimeError as e:
-            log(f"  ERROR queueing prompt: {e}")
-            continue
-        log(f"  Prompt ID: {prompt_id}")
+        if not failed:
+            break
 
-        # Wait for completion
-        log("  Waiting for generation...")
-        try:
-            history = wait_for_prompt(prompt_id, client_id, timeout=timeout)
-        except (TimeoutError, RuntimeError) as e:
-            log(f"  ERROR: {e}")
-            continue
+        remaining_retries = max_retries - attempt
+        if remaining_retries > 0:
+            log(f"\n{len(failed)} image(s) failed — "
+                f"{remaining_retries} retry round(s) remaining: "
+                f"{', '.join(f.name for f in failed)}")
+        else:
+            log(f"\n{len(failed)} image(s) failed after {max_retries} attempt(s): "
+                f"{', '.join(f.name for f in failed)}")
 
-        # Download outputs
-        output_files = get_output_files(history)
-        if not output_files:
-            log("  Warning: No output files found in history.")
-            continue
-
-        output_dir.mkdir(parents=True, exist_ok=True)
-        for out_file in output_files:
-            fname = out_file["filename"]
-            ext = Path(fname).suffix or ".mp4"
-            # Name output after the input seed
-            out_name = f"{input_file.stem}{ext}"
-            # Avoid collisions when multiple outputs per input
-            if len(output_files) > 1:
-                idx = output_files.index(out_file)
-                out_name = f"{input_file.stem}_{idx}{ext}"
-            dest = output_dir / out_name
-
-            log(f"  Downloading: {fname} → {dest.name}")
-            try:
-                comfyui_download_output(
-                    out_file["filename"],
-                    out_file["subfolder"],
-                    out_file["type"],
-                    dest,
-                )
-                results.append({
-                    "input": input_file.name,
-                    "output": out_name,
-                    "prompt_id": prompt_id,
-                })
-            except Exception as e:
-                log(f"  HTTP download failed ({e}), trying SCP...")
-                # Fallback: download from output dir via SCP
-                remote_output = f"{COMFYUI_DIR}/output/{out_file['subfolder']}/{fname}" if out_file["subfolder"] else f"{COMFYUI_DIR}/output/{fname}"
-                try:
-                    scp_download(remote_output, str(dest))
-                    results.append({
-                        "input": input_file.name,
-                        "output": out_name,
-                        "prompt_id": prompt_id,
-                    })
-                except Exception as e2:
-                    log(f"  SCP download also failed: {e2}")
-
-        log_step(i, total_steps, f"Done: {input_file.name}")
+        pending = failed
 
     return results
 
@@ -723,6 +800,12 @@ def main():
         type=int,
         default=GENERATION_TIMEOUT,
         help=f"Timeout per generation in seconds (default: {GENERATION_TIMEOUT})",
+    )
+    parser.add_argument(
+        "--retries",
+        type=int,
+        default=DEFAULT_RETRIES,
+        help=f"Max retry rounds for failed generations (default: {DEFAULT_RETRIES})",
     )
 
     args = parser.parse_args()
@@ -819,7 +902,7 @@ def main():
     generation_timeout = args.timeout
 
     log(f"\nStep 5: Processing {len(input_files)} image(s)...")
-    results = process_batch(workflow_path, input_files, output_dir, generation_timeout)
+    results = process_batch(workflow_path, input_files, output_dir, generation_timeout, args.retries)
 
     # -----------------------------------------------------------------------
     # Step 6: Summary and cleanup
