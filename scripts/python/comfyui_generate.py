@@ -115,22 +115,120 @@ GENERATION_TIMEOUT = 600
 JOB_MAX_RETRIES = 2  # retry up to 2 times on transient failures
 
 # ---------------------------------------------------------------------------
-# Scene definitions: scene_name -> (seed_file, workflow_file)
+# Scene hierarchy: WORKFLOWS -> SCENE_TYPES -> derived SCENES
 # ---------------------------------------------------------------------------
 
-SCENE_DEFS = {
-    "bj":                   ("clothed.png",  "bj-api.json"),
-    "topless_bj":           ("topless.png",  "bj-api.json"),
-    "feet":                 ("clothed.png",  "feet-api.json"),
-    "topless_feet":         ("topless.png",  "feet-api.json"),
-    "topless_sex":          ("topless.png",  "topless-sex-api.json"),
-    "boobs_fondle":         ("clothed.png",  "boobs-fondle-api.json"),
-    "topless_boobs_fondle": ("topless.png",  "boobs-fondle-api.json"),
-    "bottom":               ("clothed.png",  "bottom-api.json"),
-    "topless_bottom":       ("topless.png",  "topless-bottom-api.json"),
-    "boobs_clothes_off":    ("clothed.png",  "strip-api.json"),
+WORKFLOWS = {
+    "bj":             {"name": "bj-api.json",             "display": "BJ"},
+    "boobs_fondle":   {"name": "boobs-fondle-api.json",   "display": "Boobs Fondle"},
+    "bottom":         {"name": "bottom-api.json",         "display": "Bottom"},
+    "feet":           {"name": "feet-api.json",           "display": "Feet"},
+    "strip":          {"name": "strip-api.json",          "display": "Strip"},
+    "topless_bottom": {"name": "topless-bottom-api.json", "display": "Topless Bottom"},
+    "topless_sex":    {"name": "topless-sex-api.json",    "display": "Topless Sex"},
 }
-ALL_SCENE_NAMES = list(SCENE_DEFS.keys())
+
+SEED_CLOTHED = {"name": "clothed", "file": "clothed.png"}
+SEED_TOPLESS = {"name": "topless", "file": "topless.png"}
+
+SCENE_TYPES = {
+    "bj":                {"workflow": "bj",             "display": "BJ",                "seeds": [SEED_CLOTHED, SEED_TOPLESS]},
+    "feet":              {"workflow": "feet",           "display": "Feet",              "seeds": [SEED_CLOTHED, SEED_TOPLESS]},
+    "boobs_fondle":      {"workflow": "boobs_fondle",   "display": "Boobs Fondle",      "seeds": [SEED_CLOTHED, SEED_TOPLESS]},
+    "bottom":            {"workflow": "bottom",         "display": "Bottom",            "seeds": [SEED_CLOTHED, SEED_TOPLESS]},
+    "topless_bottom":    {"workflow": "topless_bottom", "display": "Topless Bottom",    "seeds": [SEED_TOPLESS]},
+    "topless_sex":       {"workflow": "topless_sex",    "display": "Topless Sex",       "seeds": [SEED_TOPLESS]},
+    "boobs_clothes_off": {"workflow": "strip",          "display": "Boobs Clothes Off", "seeds": [SEED_CLOTHED]},
+}
+
+
+def build_scene_registry():
+    """Derive SCENES, ALL_SCENE_NAMES, and SCENE_TYPE_TO_SCENES from WORKFLOWS and SCENE_TYPES."""
+    scenes = {}
+    type_to_scenes = {}
+
+    for type_key, type_def in SCENE_TYPES.items():
+        wf_key = type_def["workflow"]
+        assert wf_key in WORKFLOWS, f"SCENE_TYPES[{type_key!r}].workflow={wf_key!r} not in WORKFLOWS"
+        assert type_def["seeds"], f"SCENE_TYPES[{type_key!r}] has empty seeds list"
+
+        wf = WORKFLOWS[wf_key]
+        multi_seed = len(type_def["seeds"]) > 1
+        derived = []
+
+        for seed in type_def["seeds"]:
+            # Compute derived scene name
+            if not multi_seed:
+                scene_name = type_key
+            elif seed["name"] == "clothed":
+                scene_name = type_key
+            elif seed["name"] == "topless":
+                scene_name = type_key if type_key.startswith("topless_") else f"topless_{type_key}"
+            else:
+                scene_name = f"{seed['name']}_{type_key}"
+
+            # Compute display name
+            if not multi_seed:
+                display = type_def["display"]
+            elif seed["name"] == "clothed":
+                display = f"Clothed {type_def['display']}"
+            elif seed["name"] == "topless":
+                display = f"Topless {type_def['display']}"
+            else:
+                display = f"{seed['name'].title()} {type_def['display']}"
+
+            scenes[scene_name] = {
+                "scene_type": type_key,
+                "workflow_key": wf_key,
+                "workflow_file": wf["name"],
+                "workflow_display": wf["display"],
+                "seed_file": seed["file"],
+                "seed_name": seed["name"],
+                "display": display,
+                "scene_type_display": type_def["display"],
+            }
+            derived.append(scene_name)
+
+        type_to_scenes[type_key] = derived
+
+    return scenes, list(scenes.keys()), type_to_scenes
+
+
+SCENES, ALL_SCENE_NAMES, SCENE_TYPE_TO_SCENES = build_scene_registry()
+
+# Consistency assertions
+_EXPECTED_SCENES = {
+    "bj", "topless_bj", "feet", "topless_feet", "topless_sex",
+    "boobs_fondle", "topless_boobs_fondle", "bottom", "topless_bottom",
+    "boobs_clothes_off",
+}
+assert set(SCENES.keys()) == _EXPECTED_SCENES, (
+    f"Derived scenes mismatch.\n"
+    f"  Expected: {sorted(_EXPECTED_SCENES)}\n"
+    f"  Got:      {sorted(SCENES.keys())}"
+)
+
+
+def list_scenes():
+    """Print the full scene hierarchy and exit."""
+    print(f"\nWORKFLOWS ({len(WORKFLOWS)}):")
+    for key, wf in WORKFLOWS.items():
+        print(f"  {key:<20s} {wf['name']:<30s} \"{wf['display']}\"")
+
+    print(f"\nSCENE TYPES ({len(SCENE_TYPES)}):")
+    for key, st in SCENE_TYPES.items():
+        seeds = ", ".join(s["name"] for s in st["seeds"])
+        print(f"  {key:<22s} workflow: {st['workflow']:<18s} seeds: {seeds:<20s} \"{st['display']}\"")
+
+    print(f"\nDERIVED SCENES ({len(SCENES)}):")
+    for name, s in SCENES.items():
+        print(f"  {name:<25s} seed: {s['seed_file']:<14s} workflow: {s['workflow_file']:<28s} \"{s['display']}\"")
+
+    print(f"\nSCENE TYPE EXPANSION:")
+    for type_key, scene_names in SCENE_TYPE_TO_SCENES.items():
+        print(f"  --scenes {type_key:<20s} -> {', '.join(scene_names)}")
+    print()
+
 
 # ---------------------------------------------------------------------------
 # Logging (thread-safe with per-worker prefix)
@@ -567,14 +665,49 @@ def load_batch_file(path: Path) -> list[dict]:
 # Scene-based batch: discovery, resolution, preview
 # ---------------------------------------------------------------------------
 
+def _expand_scene_tokens(tokens: list[str]) -> list[str]:
+    """Expand a list of tokens (scene type names or derived scene names) to derived scene names.
+
+    Scene type names take precedence: if a token matches a SCENE_TYPE_TO_SCENES key,
+    it expands to all derived scenes for that type.
+    """
+    result = []
+    for token in tokens:
+        token = token.lower()
+        if token in SCENE_TYPE_TO_SCENES:
+            for s in SCENE_TYPE_TO_SCENES[token]:
+                if s not in result:
+                    result.append(s)
+        elif token in SCENES:
+            if token not in result:
+                result.append(token)
+        else:
+            _raise_unknown_scene(token)
+    return result
+
+
+def _raise_unknown_scene(name: str):
+    type_names = ", ".join(SCENE_TYPE_TO_SCENES.keys())
+    scene_names = ", ".join(ALL_SCENE_NAMES)
+    raise ValueError(
+        f"Unknown scene: '{name}'.\n"
+        f"  Valid scene types: {type_names}\n"
+        f"  Valid scenes: {scene_names}"
+    )
+
+
 def resolve_scenes(scenes_arg: Optional[str], no_scenes_arg: Optional[str]) -> list[str]:
     """Resolve which scenes to process from CLI args.
 
+    Supports dual-level resolution: scene type names expand to all their
+    derived scenes (e.g., 'bj' -> ['bj', 'topless_bj']), while derived
+    scene names resolve to just that one scene.
+
     Rules:
       - None or "ALL" -> all scenes
-      - Comma-separated list -> only those scenes
-      - "NO x, NO y" in scenes_arg -> all scenes minus x, y
-      - --no-scenes arg -> additional exclusions
+      - Comma-separated list -> expand each token (type or scene)
+      - "NO x, NO y" in scenes_arg -> all scenes minus expanded x, y
+      - --no-scenes arg -> additional exclusions (also expanded)
     """
     if not scenes_arg or scenes_arg.strip().upper() == "ALL":
         scenes = list(ALL_SCENE_NAMES)
@@ -589,25 +722,26 @@ def resolve_scenes(scenes_arg: Optional[str], no_scenes_arg: Optional[str]) -> l
                 excludes.append(item[3:].strip())
             else:
                 includes.append(item)
+
         if includes:
-            scenes = includes
+            scenes = _expand_scene_tokens(includes)
         else:
             scenes = list(ALL_SCENE_NAMES)
-        for ex in excludes:
-            if ex in scenes:
-                scenes.remove(ex)
+
+        if excludes:
+            expanded_excludes = _expand_scene_tokens(excludes)
+            scenes = [s for s in scenes if s not in expanded_excludes]
 
     # Apply --no-scenes exclusions
     if no_scenes_arg:
-        for item in no_scenes_arg.split(","):
-            item = item.strip().lower()
-            if item and item in scenes:
-                scenes.remove(item)
+        tokens = [t.strip().lower() for t in no_scenes_arg.split(",") if t.strip()]
+        expanded = _expand_scene_tokens(tokens)
+        scenes = [s for s in scenes if s not in expanded]
 
     # Validate
     for s in scenes:
-        if s not in SCENE_DEFS:
-            raise ValueError(f"Unknown scene: '{s}'. Valid scenes:\n  {', '.join(ALL_SCENE_NAMES)}")
+        if s not in SCENES:
+            _raise_unknown_scene(s)
 
     return scenes
 
@@ -639,14 +773,15 @@ def parse_scene_spec(spec: str) -> tuple[list[str], list[str]]:
 
 def apply_scene_spec(includes: list[str], excludes: list[str],
                      base_scenes: list[str]) -> list[str]:
-    """Apply include/exclude filters to a base scene list."""
+    """Apply include/exclude filters to a base scene list with type-level expansion."""
     if includes:
-        scenes = [s for s in includes if s in SCENE_DEFS]
+        expanded = _expand_scene_tokens(includes)
+        scenes = [s for s in expanded if s in base_scenes]
     else:
         scenes = list(base_scenes)
-    for ex in excludes:
-        if ex in scenes:
-            scenes.remove(ex)
+    if excludes:
+        expanded_excludes = _expand_scene_tokens(excludes)
+        scenes = [s for s in scenes if s not in expanded_excludes]
     return scenes
 
 
@@ -756,7 +891,9 @@ def build_scene_jobs(characters: list[dict], default_scenes: list[str],
             char_scenes = default_scenes
 
         for scene in char_scenes:
-            seed_file, workflow = SCENE_DEFS[scene]
+            scene_def = SCENES[scene]
+            seed_file = scene_def["seed_file"]
+            workflow = scene_def["workflow_file"]
             seed_path = char["dir"] / seed_file
 
             if not seed_path.exists():
@@ -767,6 +904,10 @@ def build_scene_jobs(characters: list[dict], default_scenes: list[str],
             jobs.append({
                 "character": char["name"],
                 "scene": scene,
+                "display": scene_def["display"],
+                "scene_type": scene_def["scene_type"],
+                "scene_type_display": scene_def["scene_type_display"],
+                "workflow_display": scene_def["workflow_display"],
                 "workflow": workflow,
                 "seed": str(seed_path),
                 "dest_dir": str(char_output_dir),
@@ -817,13 +958,15 @@ def preview_jobs(jobs: list[dict], characters: list[dict], scenes: list[str],
         if char["has_topless"]:
             seeds.append("topless")
         log(f"\n  {char['name']}/ ({', '.join(seeds)}) — {len(char_jobs)} scenes:")
-        log(f"    {'Scene':<25s} {'Seed':<14s} {'Workflow':<25s} {'Output'}")
-        log(f"    {'─'*25} {'─'*14} {'─'*25} {'─'*30}")
+        log(f"    {'Scene':<25s} {'Display':<25s} {'Seed':<14s} {'Workflow':<25s} {'Output'}")
+        log(f"    {'─'*25} {'─'*25} {'─'*14} {'─'*25} {'─'*30}")
         for j in char_jobs:
-            seed_file = SCENE_DEFS[j["scene"]][0]
+            scene_def = SCENES[j["scene"]]
+            seed_file = scene_def["seed_file"]
+            display = scene_def["display"]
             out_rel = f"{char['name']}/{j['dest_name']}.mp4"
             marker = " [EXISTS]" if j["_exists"] else ""
-            log(f"    {j['scene']:<25s} {seed_file:<14s} {j['workflow']:<25s} {out_rel}{marker}")
+            log(f"    {j['scene']:<25s} {display:<25s} {seed_file:<14s} {j['workflow']:<25s} {out_rel}{marker}")
 
     if warnings:
         log(f"\n  Skipped ({len(warnings)}):")
@@ -900,7 +1043,11 @@ class ProgressTracker:
                 "status": "in_progress",
                 "character": job["character"],
                 "scene": job.get("scene", ""),
+                "display": job.get("display", ""),
+                "scene_type": job.get("scene_type", ""),
+                "scene_type_display": job.get("scene_type_display", ""),
                 "workflow": job.get("workflow", ""),
+                "workflow_display": job.get("workflow_display", ""),
                 "started": _now_iso(),
             }
             self._save()
@@ -912,7 +1059,11 @@ class ProgressTracker:
                 "status": "completed",
                 "character": job["character"],
                 "scene": job.get("scene", ""),
+                "display": job.get("display", ""),
+                "scene_type": job.get("scene_type", ""),
+                "scene_type_display": job.get("scene_type_display", ""),
                 "workflow": job.get("workflow", ""),
+                "workflow_display": job.get("workflow_display", ""),
                 "started": self.data["jobs"].get(key, {}).get("started", _now_iso()),
                 "finished": _now_iso(),
                 "duration_s": round(duration, 1),
@@ -928,7 +1079,11 @@ class ProgressTracker:
                 "status": "failed",
                 "character": job["character"],
                 "scene": job.get("scene", ""),
+                "display": job.get("display", ""),
+                "scene_type": job.get("scene_type", ""),
+                "scene_type_display": job.get("scene_type_display", ""),
                 "workflow": job.get("workflow", ""),
+                "workflow_display": job.get("workflow_display", ""),
                 "started": self.data["jobs"].get(key, {}).get("started", _now_iso()),
                 "failed": _now_iso(),
                 "duration_s": round(duration, 1),
@@ -1096,7 +1251,8 @@ def process_job(
     dest_dir = Path(job["dest_dir"]) if "dest_dir" in job else output_dir
     dest_name = job.get("dest_name")  # e.g., "bj" for scene-based mode
 
-    label = f"{character}/{scene}" if scene else character
+    display = job.get("display", scene)
+    label = f"{character} / {display}" if display else f"{character}/{scene}" if scene else character
     log(f"\n{'='*60}")
     log(f"[{job_num}/{total}] {label}")
     log(f"  Workflow: {workflow_name}")
@@ -1201,6 +1357,10 @@ def process_job(
         saved.append({
             "character": character,
             "scene": scene or Path(workflow_name).stem.replace("-api", ""),
+            "display": job.get("display", ""),
+            "scene_type": job.get("scene_type", ""),
+            "scene_type_display": job.get("scene_type_display", ""),
+            "workflow_display": job.get("workflow_display", ""),
             "file": str(dest.relative_to(dest_dir.parent) if dest_name else out_name),
         })
     except Exception as e:
@@ -1240,10 +1400,20 @@ Scene-based batch mode:
   python comfyui_generate.py --batch-dir ./chars -o ./out --no-scenes bj,topless_bj
   python comfyui_generate.py --batch-dir ./chars -o ./out --scenes feet,bottom
 
-Available scenes:
-  bj, topless_bj, feet, topless_feet, topless_sex,
-  boobs_fondle, topless_boobs_fondle, bottom, topless_bottom,
-  boobs_clothes_off
+Scene hierarchy:
+  Use --list-scenes to see the full hierarchy of workflows, scene types,
+  and derived scenes.
+
+  Scene types: bj, feet, boobs_fondle, bottom, topless_bottom, topless_sex,
+               boobs_clothes_off
+  Derived scenes: bj, topless_bj, feet, topless_feet, topless_sex,
+                  boobs_fondle, topless_boobs_fondle, bottom,
+                  topless_bottom, boobs_clothes_off
+
+  --scenes accepts both levels:
+    --scenes bj           -> expands to bj + topless_bj (scene type)
+    --scenes topless_bj   -> just topless_bj (derived scene)
+    --scenes bj,feet      -> all bj + all feet variants
 
 CSV/JSON batch mode:
   python comfyui_generate.py --batch batch.csv -o ./output
@@ -1258,8 +1428,10 @@ Single job mode:
     # Scene-based batch mode
     parser.add_argument("--batch-dir", "-d",
                         help="Directory of character folders (each with clothed.png/topless.png)")
+    parser.add_argument("--list-scenes", action="store_true",
+                        help="Show the full scene hierarchy and exit")
     parser.add_argument("--scenes",
-                        help="Scenes to process: ALL (default), comma-separated, or 'NO x, NO y' to exclude")
+                        help="Scenes to process: ALL (default), comma-separated scene types or derived scenes")
     parser.add_argument("--no-scenes",
                         help="Scenes to exclude (comma-separated)")
     parser.add_argument("--yes", "-y", action="store_true",
@@ -1292,6 +1464,10 @@ Single job mode:
                         help="Max pods in parallel mode (default: 5)")
 
     args = parser.parse_args()
+
+    if args.list_scenes:
+        list_scenes()
+        sys.exit(0)
 
     if not RUNPOD_API_KEY:
         print("Error: RUNPOD_API_KEY not set")
