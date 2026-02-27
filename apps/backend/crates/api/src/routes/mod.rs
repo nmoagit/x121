@@ -37,6 +37,7 @@ pub mod legacy_import;
 pub mod library;
 pub mod maintenance;
 pub mod metadata;
+pub mod naming;
 pub mod notification;
 pub mod onboarding;
 pub mod onboarding_wizard;
@@ -841,4 +842,6 @@ pub fn api_routes() -> Router<AppState> {
         .nest("/status", status::router())
         // Platform settings (PRD-110).
         .nest("/admin/settings", platform_settings::router())
+        // Dynamic naming engine (PRD-116).
+        .nest("/admin/naming", naming::router())
 }

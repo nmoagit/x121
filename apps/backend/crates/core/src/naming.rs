@@ -15,6 +15,7 @@
 /// # Examples
 ///
 /// ```
+/// #[allow(deprecated)]
 /// use x121_core::naming::scene_video_filename;
 ///
 /// assert_eq!(scene_video_filename("clothed", "Dance", false, None), "dance.mp4");
@@ -22,6 +23,10 @@
 /// assert_eq!(scene_video_filename("clothed", "Dance", true, None), "dance_clothes_off.mp4");
 /// assert_eq!(scene_video_filename("clothed", "Idle", false, Some(2)), "idle_2.mp4");
 /// ```
+#[deprecated(
+    since = "0.2.0",
+    note = "Use naming_engine::resolve_template (PRD-116). Will be removed in a future release."
+)]
 pub fn scene_video_filename(
     variant_label: &str,
     scene_type_name: &str,
@@ -54,6 +59,7 @@ pub fn scene_video_filename(
 }
 
 #[cfg(test)]
+#[allow(deprecated)]
 mod tests {
     use super::*;
 

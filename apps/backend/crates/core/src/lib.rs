@@ -41,6 +41,7 @@ pub mod metadata;
 pub mod metadata_editor;
 pub mod metric_names;
 pub mod naming;
+pub mod naming_engine;
 pub mod onboarding;
 pub mod onboarding_wizard;
 pub mod pipeline_hooks;

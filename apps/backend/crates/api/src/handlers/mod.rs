@@ -44,6 +44,7 @@ pub mod legacy_import;
 pub mod library;
 pub mod maintenance;
 pub mod metadata;
+pub mod naming;
 pub mod notification;
 pub mod onboarding;
 pub mod onboarding_wizard;

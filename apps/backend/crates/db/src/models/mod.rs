@@ -48,6 +48,7 @@ pub mod library_character;
 pub mod metadata;
 pub mod model_checksum;
 pub mod model_download;
+pub mod naming_rule;
 pub mod note_category;
 pub mod notification;
 pub mod onboarding;
