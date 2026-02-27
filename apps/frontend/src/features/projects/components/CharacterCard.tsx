@@ -4,23 +4,10 @@
 
 import { Card } from "@/components/composite";
 import { Badge } from "@/components/primitives";
-import type { BadgeVariant } from "@/components/primitives";
 import { cn } from "@/lib/cn";
 
 import type { Character, CharacterGroup } from "../types";
-import { STATUS_COLORS, STATUS_LABELS } from "../types";
-
-/* --------------------------------------------------------------------------
-   Helpers
-   -------------------------------------------------------------------------- */
-
-const COLOR_TO_VARIANT: Record<string, BadgeVariant> = {
-  gray: "default",
-  yellow: "warning",
-  blue: "info",
-  purple: "info",
-  green: "success",
-};
+import { characterStatusBadgeVariant, characterStatusLabel } from "../types";
 
 /* --------------------------------------------------------------------------
    Component
@@ -33,15 +20,8 @@ interface CharacterCardProps {
 }
 
 export function CharacterCard({ character, group, onClick }: CharacterCardProps) {
-  const statusLabel = character.status_id
-    ? (STATUS_LABELS[character.status_id] ?? "Unknown")
-    : "No Status";
-
-  const statusColor = character.status_id
-    ? (STATUS_COLORS[character.status_id] ?? "gray")
-    : "gray";
-
-  const badgeVariant = COLOR_TO_VARIANT[statusColor] ?? "default";
+  const statusLabel = characterStatusLabel(character.status_id);
+  const badgeVariant = characterStatusBadgeVariant(character.status_id);
 
   return (
     <Card

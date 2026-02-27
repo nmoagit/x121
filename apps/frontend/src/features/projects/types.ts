@@ -4,6 +4,8 @@
  * These types mirror the backend API response shapes.
  */
 
+import type { BadgeVariant } from "@/components/primitives";
+
 /* --------------------------------------------------------------------------
    Project
    -------------------------------------------------------------------------- */
@@ -150,3 +152,37 @@ export const CHARACTER_TABS = [
   { id: "metadata", label: "Metadata" },
   { id: "settings", label: "Settings" },
 ] as const;
+
+/* --------------------------------------------------------------------------
+   Badge variant helpers (shared by ProjectCard, ProjectDetailPage,
+   CharacterCard, CharacterDetailPage, CharacterOverviewTab)
+   -------------------------------------------------------------------------- */
+
+/** Project status string -> Badge variant. */
+export const PROJECT_STATUS_BADGE_VARIANT: Record<string, BadgeVariant> = {
+  active: "success",
+  archived: "default",
+  draft: "warning",
+};
+
+/** Intermediate color string -> Badge variant (for character status_id). */
+const COLOR_TO_VARIANT: Record<string, BadgeVariant> = {
+  gray: "default",
+  yellow: "warning",
+  blue: "info",
+  purple: "info",
+  green: "success",
+};
+
+/** Derive a human-readable label from a character status_id. */
+export function characterStatusLabel(statusId: number | null): string {
+  if (statusId === null) return "No Status";
+  return STATUS_LABELS[statusId] ?? "Unknown";
+}
+
+/** Derive a BadgeVariant from a character status_id. */
+export function characterStatusBadgeVariant(statusId: number | null): BadgeVariant {
+  if (statusId === null) return "default";
+  const color = STATUS_COLORS[statusId] ?? "gray";
+  return COLOR_TO_VARIANT[color] ?? "default";
+}

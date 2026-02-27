@@ -4,27 +4,11 @@
 
 import { Card } from "@/components/composite";
 import { Badge } from "@/components/primitives";
-import type { BadgeVariant } from "@/components/primitives";
 import { cn } from "@/lib/cn";
 import { formatDate } from "@/lib/format";
 
 import type { Project } from "../types";
-import { PROJECT_STATUS_LABELS } from "../types";
-
-/* --------------------------------------------------------------------------
-   Helpers
-   -------------------------------------------------------------------------- */
-
-const STATUS_BADGE_VARIANT: Record<string, BadgeVariant> = {
-  active: "success",
-  archived: "default",
-  draft: "warning",
-};
-
-function truncate(text: string, maxLength: number): string {
-  if (text.length <= maxLength) return text;
-  return `${text.slice(0, maxLength)}...`;
-}
+import { PROJECT_STATUS_BADGE_VARIANT, PROJECT_STATUS_LABELS } from "../types";
 
 /* --------------------------------------------------------------------------
    Component
@@ -36,7 +20,7 @@ interface ProjectCardProps {
 }
 
 export function ProjectCard({ project, onClick }: ProjectCardProps) {
-  const variant = STATUS_BADGE_VARIANT[project.status] ?? "default";
+  const variant = PROJECT_STATUS_BADGE_VARIANT[project.status] ?? "default";
   const statusLabel = PROJECT_STATUS_LABELS[project.status] ?? project.status;
 
   return (
@@ -66,7 +50,7 @@ export function ProjectCard({ project, onClick }: ProjectCardProps) {
 
         {project.description && (
           <p className="mt-[var(--spacing-1)] text-sm text-[var(--color-text-muted)] line-clamp-2">
-            {truncate(project.description, 120)}
+            {project.description}
           </p>
         )}
 

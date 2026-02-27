@@ -10,7 +10,6 @@ import { Link, useParams } from "@tanstack/react-router";
 
 import { Tabs } from "@/components/composite";
 import { Badge, Spinner } from "@/components/primitives";
-import type { BadgeVariant } from "@/components/primitives";
 import { Stack } from "@/components/layout";
 import { EmptyState } from "@/components/domain";
 import { AlertCircle, ChevronRight, FolderKanban } from "@/tokens/icons";
@@ -23,17 +22,7 @@ import { ProjectSceneSettingsTab } from "./tabs/ProjectSceneSettingsTab";
 import { ProjectProductionTab } from "./tabs/ProjectProductionTab";
 import { ProjectDeliveryTab } from "./tabs/ProjectDeliveryTab";
 import { ProjectConfigTab } from "./tabs/ProjectConfigTab";
-import { PROJECT_STATUS_LABELS, PROJECT_TABS } from "./types";
-
-/* --------------------------------------------------------------------------
-   Helpers
-   -------------------------------------------------------------------------- */
-
-const STATUS_BADGE_VARIANT: Record<string, BadgeVariant> = {
-  active: "success",
-  archived: "default",
-  draft: "warning",
-};
+import { PROJECT_STATUS_BADGE_VARIANT, PROJECT_STATUS_LABELS, PROJECT_TABS } from "./types";
 
 /* --------------------------------------------------------------------------
    Component
@@ -66,7 +55,7 @@ export function ProjectDetailPage() {
     );
   }
 
-  const variant = STATUS_BADGE_VARIANT[project.status] ?? "default";
+  const variant = PROJECT_STATUS_BADGE_VARIANT[project.status] ?? "default";
   const statusLabel = PROJECT_STATUS_LABELS[project.status] ?? project.status;
 
   return (

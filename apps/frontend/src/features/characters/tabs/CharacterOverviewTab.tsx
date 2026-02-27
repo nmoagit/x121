@@ -6,7 +6,7 @@ import { Card } from "@/components/composite";
 import { Stack } from "@/components/layout";
 
 import type { Character } from "@/features/projects/types";
-import { STATUS_LABELS } from "@/features/projects/types";
+import { characterStatusLabel } from "@/features/projects/types";
 
 /* --------------------------------------------------------------------------
    Component
@@ -17,9 +17,7 @@ interface CharacterOverviewTabProps {
 }
 
 export function CharacterOverviewTab({ character }: CharacterOverviewTabProps) {
-  const statusLabel = character.status_id
-    ? (STATUS_LABELS[character.status_id] ?? "Unknown")
-    : "No Status";
+  const statusLabel = characterStatusLabel(character.status_id);
 
   return (
     <Stack gap={4}>

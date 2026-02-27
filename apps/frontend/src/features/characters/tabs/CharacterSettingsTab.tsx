@@ -6,6 +6,7 @@ import { Card } from "@/components/composite";
 import { Spinner } from "@/components/primitives";
 import { EmptyState } from "@/components/domain";
 import { Stack } from "@/components/layout";
+import { formatValue } from "@/lib/format";
 import { Settings } from "@/tokens/icons";
 
 import { useCharacterSettings } from "../hooks/use-character-detail";
@@ -64,7 +65,7 @@ export function CharacterSettingsTab({
                 {key}
               </dt>
               <dd className="text-sm text-[var(--color-text-primary)] break-words">
-                {formatSettingValue(value)}
+                {formatValue(value)}
               </dd>
             </div>
           ))}
@@ -74,12 +75,3 @@ export function CharacterSettingsTab({
   );
 }
 
-/* --------------------------------------------------------------------------
-   Helpers
-   -------------------------------------------------------------------------- */
-
-function formatSettingValue(value: unknown): string {
-  if (value === null || value === undefined) return "(none)";
-  if (typeof value === "object") return JSON.stringify(value);
-  return String(value);
-}

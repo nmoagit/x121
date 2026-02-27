@@ -10,7 +10,6 @@ import { Link, useParams } from "@tanstack/react-router";
 
 import { Tabs } from "@/components/composite";
 import { Badge, Spinner } from "@/components/primitives";
-import type { BadgeVariant } from "@/components/primitives";
 import { EmptyState } from "@/components/domain";
 import { Stack } from "@/components/layout";
 import { AlertCircle, ChevronRight, User } from "@/tokens/icons";
@@ -19,8 +18,8 @@ import { useProject } from "@/features/projects/hooks/use-projects";
 import { useCharacter } from "@/features/projects/hooks/use-project-characters";
 import {
   CHARACTER_TABS,
-  STATUS_COLORS,
-  STATUS_LABELS,
+  characterStatusBadgeVariant,
+  characterStatusLabel,
 } from "@/features/projects/types";
 
 import { CharacterOverviewTab } from "./tabs/CharacterOverviewTab";
@@ -29,18 +28,6 @@ import { CharacterScenesTab } from "./tabs/CharacterScenesTab";
 import { CharacterAssetsTab } from "./tabs/CharacterAssetsTab";
 import { CharacterMetadataTab } from "./tabs/CharacterMetadataTab";
 import { CharacterSettingsTab } from "./tabs/CharacterSettingsTab";
-
-/* --------------------------------------------------------------------------
-   Helpers
-   -------------------------------------------------------------------------- */
-
-const COLOR_TO_VARIANT: Record<string, BadgeVariant> = {
-  gray: "default",
-  yellow: "warning",
-  blue: "info",
-  purple: "info",
-  green: "success",
-};
 
 /* --------------------------------------------------------------------------
    Component
@@ -77,15 +64,8 @@ export function CharacterDetailPage() {
     );
   }
 
-  const statusLabel = character.status_id
-    ? (STATUS_LABELS[character.status_id] ?? "Unknown")
-    : "No Status";
-
-  const statusColor = character.status_id
-    ? (STATUS_COLORS[character.status_id] ?? "gray")
-    : "gray";
-
-  const badgeVariant = COLOR_TO_VARIANT[statusColor] ?? "default";
+  const statusLabel = characterStatusLabel(character.status_id);
+  const badgeVariant = characterStatusBadgeVariant(character.status_id);
 
   return (
     <Stack gap={6}>
