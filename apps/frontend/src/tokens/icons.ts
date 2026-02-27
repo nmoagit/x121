@@ -91,6 +91,8 @@ export {
   // Console
   Terminal,
   ArrowDown,
+  // Projects
+  FolderKanban,
 } from "lucide-react";
 
 /** Standard icon size tokens (px values matching design grid) */

@@ -55,6 +55,40 @@ const performanceRoute = createRoute({
 });
 
 /* --------------------------------------------------------------------------
+   Project routes (PRD-112)
+   -------------------------------------------------------------------------- */
+
+const projectsLayoutRoute = createRoute({
+  getParentRoute: () => authenticatedRoute,
+  id: "projects",
+  component: Outlet,
+});
+
+const projectListRoute = createRoute({
+  getParentRoute: () => projectsLayoutRoute,
+  path: "/projects",
+  component: lazyRouteComponent(() =>
+    import("@/features/projects").then((m) => ({ default: m.ProjectListPage })),
+  ),
+});
+
+const projectDetailRoute = createRoute({
+  getParentRoute: () => projectsLayoutRoute,
+  path: "/projects/$projectId",
+  component: lazyRouteComponent(() =>
+    import("@/features/projects").then((m) => ({ default: m.ProjectDetailPage })),
+  ),
+});
+
+const characterDetailRoute = createRoute({
+  getParentRoute: () => projectsLayoutRoute,
+  path: "/projects/$projectId/characters/$characterId",
+  component: lazyRouteComponent(() =>
+    import("@/features/characters").then((m) => ({ default: m.CharacterDetailPage })),
+  ),
+});
+
+/* --------------------------------------------------------------------------
    Content routes
    -------------------------------------------------------------------------- */
 
@@ -483,6 +517,12 @@ export const routeTree = rootRoute.addChildren([
   authenticatedRoute.addChildren([
     indexRoute,
     performanceRoute,
+
+    projectsLayoutRoute.addChildren([
+      projectListRoute,
+      projectDetailRoute,
+      characterDetailRoute,
+    ]),
 
     contentLayoutRoute.addChildren([
       scenesRoute,

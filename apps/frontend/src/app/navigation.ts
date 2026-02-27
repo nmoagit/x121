@@ -10,6 +10,7 @@ import {
   File,
   FileText,
   Folder,
+  FolderKanban,
   HardDrive,
   Image,
   Info,
@@ -52,6 +53,12 @@ export const NAV_GROUPS: NavGroupDef[] = [
     items: [
       { label: "Home", path: "/", icon: BarChart3 },
       { label: "Performance", path: "/performance", icon: Activity },
+    ],
+  },
+  {
+    label: "Projects",
+    items: [
+      { label: "All Projects", path: "/projects", icon: FolderKanban },
     ],
   },
   {

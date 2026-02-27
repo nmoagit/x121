@@ -1,0 +1,254 @@
+/**
+ * Project characters tab with group headers and character grid (PRD-112).
+ */
+
+import { useMemo, useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
+
+import { Drawer } from "@/components/composite";
+import { EmptyState } from "@/components/domain";
+import { Grid, Stack } from "@/components/layout";
+import { Button, Input, Select, Spinner } from "@/components/primitives";
+import { Plus, User } from "@/tokens/icons";
+
+import { CharacterCard } from "../components/CharacterCard";
+import { useCharacterGroups } from "../hooks/use-character-groups";
+import {
+  useCreateCharacter,
+  useProjectCharacters,
+} from "../hooks/use-project-characters";
+import type { CharacterGroup } from "../types";
+
+/* --------------------------------------------------------------------------
+   Component
+   -------------------------------------------------------------------------- */
+
+interface ProjectCharactersTabProps {
+  projectId: number;
+}
+
+export function ProjectCharactersTab({ projectId }: ProjectCharactersTabProps) {
+  const navigate = useNavigate();
+
+  const { data: characters, isLoading: charsLoading } =
+    useProjectCharacters(projectId);
+  const { data: groups, isLoading: groupsLoading } =
+    useCharacterGroups(projectId);
+  const createCharacter = useCreateCharacter(projectId);
+
+  const [searchQuery, setSearchQuery] = useState("");
+  const [groupFilter, setGroupFilter] = useState("");
+
+  /* --- drawer state --- */
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [newName, setNewName] = useState("");
+
+  /* --- group filter options --- */
+  const groupOptions = useMemo(() => {
+    const opts = [{ value: "", label: "All Groups" }];
+    if (groups) {
+      for (const g of groups) {
+        opts.push({ value: String(g.id), label: g.name });
+      }
+      opts.push({ value: "ungrouped", label: "Ungrouped" });
+    }
+    return opts;
+  }, [groups]);
+
+  /* --- group lookup map --- */
+  const groupMap = useMemo(() => {
+    const map = new Map<number, CharacterGroup>();
+    if (groups) {
+      for (const g of groups) {
+        map.set(g.id, g);
+      }
+    }
+    return map;
+  }, [groups]);
+
+  /* --- filtered characters --- */
+  const filteredCharacters = useMemo(() => {
+    if (!characters) return [];
+
+    let result = [...characters];
+
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter((c) => c.name.toLowerCase().includes(q));
+    }
+
+    if (groupFilter === "ungrouped") {
+      result = result.filter((c) => c.group_id === null);
+    } else if (groupFilter) {
+      const gid = Number(groupFilter);
+      result = result.filter((c) => c.group_id === gid);
+    }
+
+    return result;
+  }, [characters, searchQuery, groupFilter]);
+
+  /* --- grouped character sections --- */
+  const groupedSections = useMemo(() => {
+    if (!groups || groupFilter) return null;
+
+    const sections: Array<{
+      label: string;
+      characters: typeof filteredCharacters;
+    }> = [];
+
+    for (const g of groups) {
+      const chars = filteredCharacters.filter((c) => c.group_id === g.id);
+      if (chars.length > 0) {
+        sections.push({ label: g.name, characters: chars });
+      }
+    }
+
+    const ungrouped = filteredCharacters.filter((c) => c.group_id === null);
+    if (ungrouped.length > 0) {
+      sections.push({ label: "Ungrouped", characters: ungrouped });
+    }
+
+    return sections;
+  }, [groups, groupFilter, filteredCharacters]);
+
+  /* --- create handler --- */
+  function handleCreate() {
+    if (!newName.trim()) return;
+
+    createCharacter.mutate(
+      { name: newName.trim() },
+      {
+        onSuccess: () => {
+          setDrawerOpen(false);
+          setNewName("");
+        },
+      },
+    );
+  }
+
+  const isLoading = charsLoading || groupsLoading;
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-[var(--spacing-8)]">
+        <Spinner size="lg" />
+      </div>
+    );
+  }
+
+  return (
+    <Stack gap={4}>
+      {/* Filter bar */}
+      <div className="flex flex-wrap items-end gap-[var(--spacing-3)]">
+        <div className="flex-1 min-w-[200px] max-w-[280px]">
+          <Input
+            placeholder="Search characters..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+        <div className="w-[160px]">
+          <Select
+            options={groupOptions}
+            value={groupFilter}
+            onChange={setGroupFilter}
+          />
+        </div>
+        <Button
+          size="sm"
+          icon={<Plus size={14} />}
+          onClick={() => setDrawerOpen(true)}
+        >
+          Add Character
+        </Button>
+      </div>
+
+      {/* Content */}
+      {filteredCharacters.length === 0 ? (
+        <EmptyState
+          icon={<User size={32} />}
+          title="No characters"
+          description={
+            characters && characters.length > 0
+              ? "No characters match your filter."
+              : "Add a character to this project."
+          }
+          action={
+            !characters?.length ? (
+              <Button
+                size="sm"
+                icon={<Plus size={14} />}
+                onClick={() => setDrawerOpen(true)}
+              >
+                Add Character
+              </Button>
+            ) : undefined
+          }
+        />
+      ) : groupedSections ? (
+        <Stack gap={6}>
+          {groupedSections.map((section) => (
+            <div key={section.label}>
+              <h3 className="text-sm font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide mb-[var(--spacing-2)]">
+                {section.label} ({section.characters.length})
+              </h3>
+              <Grid cols={1} gap={3} className="sm:grid-cols-2 lg:grid-cols-3">
+                {section.characters.map((char) => (
+                  <CharacterCard
+                    key={char.id}
+                    character={char}
+                    group={char.group_id ? groupMap.get(char.group_id) : undefined}
+                    onClick={() =>
+                      navigate({
+                        to: `/projects/${projectId}/characters/${char.id}`,
+                      })
+                    }
+                  />
+                ))}
+              </Grid>
+            </div>
+          ))}
+        </Stack>
+      ) : (
+        <Grid cols={1} gap={3} className="sm:grid-cols-2 lg:grid-cols-3">
+          {filteredCharacters.map((char) => (
+            <CharacterCard
+              key={char.id}
+              character={char}
+              group={char.group_id ? groupMap.get(char.group_id) : undefined}
+              onClick={() =>
+                navigate({
+                  to: `/projects/${projectId}/characters/${char.id}`,
+                })
+              }
+            />
+          ))}
+        </Grid>
+      )}
+
+      {/* Add character drawer */}
+      <Drawer
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        title="Add Character"
+        size="sm"
+      >
+        <Stack gap={4}>
+          <Input
+            label="Character Name"
+            placeholder="e.g. Aria"
+            value={newName}
+            onChange={(e) => setNewName(e.target.value)}
+          />
+          <Button
+            onClick={handleCreate}
+            loading={createCharacter.isPending}
+            disabled={!newName.trim()}
+          >
+            Create Character
+          </Button>
+        </Stack>
+      </Drawer>
+    </Stack>
+  );
+}
