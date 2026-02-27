@@ -75,8 +75,10 @@ INSERT INTO naming_categories (id, name, description, example_output) VALUES
     (8, 'delivery_metadata', 'Metadata files inside delivery ZIP', 'metadata.json'),
     (9, 'delivery_folder', 'Folder structure inside delivery ZIP', 'project_name/character_name'),
     (10, 'test_shot', 'Quick test shot outputs', 'test_chloe_dance_001.mp4'),
-    (11, 'chunk_artifact', 'Intermediate workflow chunk files', 'chunk_001_chloe_dance.mp4'),
-    (12, 'delivery_zip', 'The delivery ZIP file itself', 'project_alpha_delivery_20260224.zip');
+    (11, 'chunk_artifact', 'Intermediate workflow chunk video files', 'chunk_001_chloe_dance.mp4'),
+    (12, 'delivery_zip', 'The delivery ZIP file itself', 'project_alpha_delivery_20260224.zip'),
+    (13, 'pipeline_intermediate_image', 'Intermediate images generated during ComfyUI pipeline (previews, step outputs, frame extractions)', 'inter_001_chloe_dance.png'),
+    (14, 'pipeline_intermediate_video', 'Intermediate videos generated during ComfyUI pipeline (segment passes, pre-interpolation, pre-upscale)', 'inter_001_chloe_dance_pass1.mp4');
 
 CREATE TABLE naming_rules (
     id BIGSERIAL PRIMARY KEY,
@@ -106,11 +108,13 @@ INSERT INTO naming_rules (category_id, project_id, template, description) VALUES
     (9, NULL, '{project_slug}/{character_slug}', 'Default delivery folder structure'),
     (10, NULL, 'test_{character_slug}_{scene_type_slug}_{sequence:03}.mp4', 'Default test shot naming'),
     (11, NULL, 'chunk_{sequence:03}_{character_slug}_{scene_type_slug}.mp4', 'Default chunk artifact naming'),
-    (12, NULL, '{project_slug}_delivery_{date_compact}.zip', 'Default delivery ZIP naming');
+    (12, NULL, '{project_slug}_delivery_{date_compact}.zip', 'Default delivery ZIP naming'),
+    (13, NULL, 'inter_{sequence:03}_{character_slug}_{scene_type_slug}.png', 'Default pipeline intermediate image naming'),
+    (14, NULL, 'inter_{sequence:03}_{character_slug}_{scene_type_slug}_pass{pass_number}.mp4', 'Default pipeline intermediate video naming');
 ```
 
 **Acceptance Criteria:**
-- [ ] 12 naming categories defined covering all file types in the platform
+- [ ] 14 naming categories defined covering all file types in the platform
 - [ ] Each category has exactly one global default rule (seeded on migration)
 - [ ] Global defaults match current hardcoded patterns (backward compatible)
 - [ ] Projects can override any category with a project-specific rule
@@ -153,6 +157,7 @@ INSERT INTO naming_rules (category_id, project_id, template, description) VALUES
 | `{metadata_type}` | String | Metadata type label | `character_metadata` |
 | `{id}` | Integer | Entity database ID | `42` |
 | `{uuid}` | String | Short UUID (8 chars) | `a3f7c2b1` |
+| `{pass_number}` | Integer | Pipeline pass/step number (e.g., 1=base gen, 2=interpolation, 3=upscale) | `1` |
 
 **Format Specifiers:**
 
@@ -185,6 +190,8 @@ Not all tokens make sense for every category. The engine defines which tokens ar
 | `test_shot` | project, character, scene_type, sequence, date, id |
 | `chunk_artifact` | project, character, scene_type, sequence, date, id |
 | `delivery_zip` | project, batch, date, id |
+| `pipeline_intermediate_image` | project, character, scene_type, sequence, date, id, ext |
+| `pipeline_intermediate_video` | project, character, scene_type, sequence, pass_number, date, id |
 
 **Acceptance Criteria:**
 - [ ] 25+ tokens defined covering all entity attributes
@@ -372,7 +379,7 @@ Response:
 
 ```
 Naming Rules
-├── Category List (12 categories, grouped by type)
+├── Category List (14 categories, grouped by type)
 │   ├── Generation
 │   │   ├── Scene Video: {variant_prefix}{scene_type_slug}...
 │   │   ├── Thumbnail: frame_{frame_number:06}.jpg
@@ -411,7 +418,7 @@ Naming Rules
 
 **Acceptance Criteria:**
 - [ ] Naming Rules page accessible at `/admin/naming`
-- [ ] All 12 categories displayed, grouped by type (Generation, Storage, Export, Delivery)
+- [ ] All 14 categories displayed, grouped by type (Generation, Storage, Export, Delivery)
 - [ ] Each category shows its current template and a resolved example
 - [ ] Rule editor with token autocomplete and syntax highlighting
 - [ ] Live preview updates as template is edited
@@ -437,7 +444,7 @@ Naming Rules
 
 ```
 Naming Conventions for "Alpha Project"
-├── Using global defaults (10 of 12 categories)
+├── Using global defaults (10 of 14 categories)
 ├── Custom rules:
 │   ├── Delivery Video: {character_slug}_{scene_type_slug}_final.mp4  [Edit] [Remove]
 │   └── Delivery Folder: alpha/{batch_slug}/{character_slug}           [Edit] [Remove]
@@ -528,7 +535,7 @@ Naming Conventions for "Alpha Project"
 
 2 new tables: `naming_categories` (lookup, 12 rows), `naming_rules` (configurable rules)
 
-Seed migration with 12 categories + 12 default global rules matching current hardcoded patterns.
+Seed migration with 14 categories + 14 default global rules matching current hardcoded patterns.
 
 ### API Changes
 
@@ -539,7 +546,7 @@ Modifications to all file creation handlers to call `resolve_filename()` instead
 ## 9. Success Metrics
 
 - Zero hardcoded `format!()` calls for filenames in handler code after migration.
-- All 12 naming categories have configurable rules with working live preview.
+- All 14 naming categories have configurable rules with working live preview.
 - Default rules produce byte-identical filenames to previous hardcoded patterns (backward compatibility verified by tests).
 - Admin can change a naming rule and see the new pattern applied to the next generated file within the same session.
 - Project-specific delivery naming works correctly — two projects using different delivery rules produce correctly named files.
@@ -555,3 +562,4 @@ Modifications to all file creation handlers to call `resolve_filename()` instead
 ## 11. Version History
 
 - **v1.0** (2026-02-24): Initial PRD creation. 12 naming categories, token system, core engine, platform integration, admin UI, project overrides.
+- **v1.1** (2026-02-26): Added 2 new naming categories for pipeline intermediates (`pipeline_intermediate_image`, `pipeline_intermediate_video`) and `pass_number` token — total 14 categories. Ensures all ComfyUI pipeline artifacts (not just final outputs) are named consistently.
