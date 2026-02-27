@@ -49,7 +49,11 @@ async fn test_list_scene_catalog(pool: PgPool) {
 
     let json = body_json(response).await;
     let data = json["data"].as_array().expect("data should be an array");
-    assert_eq!(data.len(), 26, "should return all 26 seeded catalog entries");
+    assert_eq!(
+        data.len(),
+        26,
+        "should return all 26 seeded catalog entries"
+    );
 
     // Each entry should have tracks array
     let first = &data[0];
@@ -125,16 +129,10 @@ async fn test_update_scene_catalog(pool: PgPool) {
     let tracks_resp = get(app, "/api/v1/tracks").await;
     let tracks_json = body_json(tracks_resp).await;
     let tracks_arr = tracks_json["data"].as_array().unwrap();
-    let clothed_id = tracks_arr
-        .iter()
-        .find(|t| t["slug"] == "clothed")
-        .unwrap()["id"]
+    let clothed_id = tracks_arr.iter().find(|t| t["slug"] == "clothed").unwrap()["id"]
         .as_i64()
         .unwrap();
-    let topless_id = tracks_arr
-        .iter()
-        .find(|t| t["slug"] == "topless")
-        .unwrap()["id"]
+    let topless_id = tracks_arr.iter().find(|t| t["slug"] == "topless").unwrap()["id"]
         .as_i64()
         .unwrap();
 

@@ -154,16 +154,13 @@ impl HealthAggregator {
 // Probe helpers
 // ---------------------------------------------------------------------------
 
-/// Probe the database with `SELECT 1` and measure latency.
+/// Probe the database via the shared `x121_db::health_check` and measure latency.
 async fn probe_database(pool: &PgPool) -> ServiceStatus {
     let start = Instant::now();
     let now = Utc::now();
 
-    match sqlx::query_scalar::<_, i32>("SELECT 1")
-        .fetch_one(pool)
-        .await
-    {
-        Ok(_) => {
+    match x121_db::health_check(pool).await {
+        Ok(()) => {
             let latency_ms = start.elapsed().as_millis() as u32;
             ServiceStatus {
                 status: "healthy",

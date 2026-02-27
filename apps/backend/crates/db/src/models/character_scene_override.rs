@@ -7,8 +7,8 @@ use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
 use x121_core::types::{DbId, Timestamp};
 
-pub use super::scene_catalog::EffectiveSceneSetting;
 pub use super::project_scene_setting::SceneSettingUpdate;
+pub use super::scene_catalog::EffectiveSceneSetting;
 
 /// A row from the `character_scene_overrides` table.
 #[derive(Debug, Clone, FromRow, Serialize)]

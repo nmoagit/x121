@@ -321,7 +321,9 @@ async fn test_scene_catalog_track_management(pool: PgPool) {
     assert_eq!(entry_tracks[0].id, custom_track.id);
 
     // set_tracks to empty clears all associations
-    SceneCatalogRepo::set_tracks(&pool, entry.id, &[]).await.unwrap();
+    SceneCatalogRepo::set_tracks(&pool, entry.id, &[])
+        .await
+        .unwrap();
     let entry_tracks = SceneCatalogRepo::get_tracks_for_scene(&pool, entry.id)
         .await
         .unwrap();
@@ -331,7 +333,9 @@ async fn test_scene_catalog_track_management(pool: PgPool) {
     SceneCatalogRepo::set_tracks(&pool, entry.id, &[clothed_id, custom_track.id])
         .await
         .unwrap();
-    let with_tracks = SceneCatalogRepo::list_with_tracks(&pool, false).await.unwrap();
+    let with_tracks = SceneCatalogRepo::list_with_tracks(&pool, false)
+        .await
+        .unwrap();
     let our_entry = with_tracks
         .iter()
         .find(|e| e.entry.id == entry.id)
@@ -404,7 +408,10 @@ async fn test_project_scene_settings(pool: PgPool) {
         .find(|s| s.scene_catalog_id == intro_id)
         .unwrap();
     assert_eq!(intro_reverted.source, "catalog");
-    assert!(intro_reverted.is_enabled, "should revert to catalog default");
+    assert!(
+        intro_reverted.is_enabled,
+        "should revert to catalog default"
+    );
 
     // Delete non-existent override should return false
     let deleted_again = ProjectSceneSettingRepo::delete(&pool, project.id, intro_id)
@@ -459,7 +466,10 @@ async fn test_character_scene_overrides(pool: PgPool) {
         .find(|s| s.scene_catalog_id == idle_id)
         .unwrap();
     assert_eq!(idle_setting.source, "project");
-    assert!(!idle_setting.is_enabled, "idle should be disabled at project level");
+    assert!(
+        !idle_setting.is_enabled,
+        "idle should be disabled at project level"
+    );
 
     // Step 3: Add a character-level override for "idle" -> re-enable it
     CharacterSceneOverrideRepo::upsert(&pool, character.id, idle_id, true)
@@ -474,7 +484,10 @@ async fn test_character_scene_overrides(pool: PgPool) {
         .find(|s| s.scene_catalog_id == idle_id)
         .unwrap();
     assert_eq!(idle_char.source, "character");
-    assert!(idle_char.is_enabled, "idle should be re-enabled at character level");
+    assert!(
+        idle_char.is_enabled,
+        "idle should be re-enabled at character level"
+    );
 
     // Step 4: Delete character override -> should fall back to project level (disabled)
     let deleted = CharacterSceneOverrideRepo::delete(&pool, character.id, idle_id)
@@ -583,7 +596,9 @@ async fn test_seed_data(pool: PgPool) {
     }
 
     // Verify clothed track is assigned to all 26 entries
-    let catalog_with_tracks = SceneCatalogRepo::list_with_tracks(&pool, false).await.unwrap();
+    let catalog_with_tracks = SceneCatalogRepo::list_with_tracks(&pool, false)
+        .await
+        .unwrap();
     for entry in &catalog_with_tracks {
         assert!(
             entry.tracks.iter().any(|t| t.slug == "clothed"),

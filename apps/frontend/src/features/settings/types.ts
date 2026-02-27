@@ -29,11 +29,11 @@ export interface SettingsListResponse {
   pending_restart_keys: string[];
 }
 
-/** Result of a connection test against a URL/WsUrl setting. */
+/** Result of a connection test (must match backend `TestConnectionResponse`). */
 export interface ConnectionTestResult {
-  reachable: boolean;
+  success: boolean;
+  message: string;
   latency_ms: number | null;
-  error: string | null;
 }
 
 /** Human-readable label for each setting source. */
@@ -58,5 +58,5 @@ export const SETTING_CATEGORIES = [
   { id: "system", label: "System" },
 ] as const;
 
-/** Value types that support connection testing. */
-export const TESTABLE_VALUE_TYPES = new Set(["Url", "WsUrl"]);
+/** Value types that support connection testing (must match backend `SettingValueType::as_str()`). */
+export const TESTABLE_VALUE_TYPES = new Set(["url", "ws_url"]);

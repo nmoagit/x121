@@ -117,26 +117,13 @@ pub async fn list_settings(
 
         let (resolved_value, source) = state.settings_service.resolve(def.key, db_value);
 
-        // Mask sensitive values.
-        let display_value = if def.sensitive {
-            mask_value(&resolved_value)
-        } else {
-            resolved_value
-        };
-
-        settings.push(SettingResponse {
-            key: def.key.to_string(),
-            category: def.category.to_string(),
-            label: def.label.to_string(),
-            description: def.description.to_string(),
-            value: display_value,
-            source: source.as_str().to_string(),
-            value_type: def.value_type.as_str().to_string(),
-            requires_restart: def.requires_restart,
-            sensitive: def.sensitive,
-            updated_at: db_entry.map(|e| e.updated_at),
-            updated_by: db_entry.and_then(|e| e.updated_by),
-        });
+        settings.push(build_setting_response(
+            def,
+            resolved_value,
+            source,
+            db_entry.map(|e| e.updated_at),
+            db_entry.and_then(|e| e.updated_by),
+        ));
     }
 
     Ok(Json(DataResponse {
@@ -156,37 +143,21 @@ pub async fn get_setting(
     RequireAdmin(_admin): RequireAdmin,
     Path(key): Path<String>,
 ) -> AppResult<Json<DataResponse<SettingResponse>>> {
-    let def = find_definition(&key).ok_or_else(|| {
-        AppError::Core(x121_core::error::CoreError::Validation(format!(
-            "Unknown setting key: '{key}'"
-        )))
-    })?;
+    let def = ensure_setting_definition(&key)?;
 
     let db_entry = PlatformSettingRepo::find_by_key(&state.pool, &key).await?;
     let db_value = db_entry.as_ref().map(|e| e.value.clone());
 
     let (resolved_value, source) = state.settings_service.resolve(&key, db_value);
 
-    let display_value = if def.sensitive {
-        mask_value(&resolved_value)
-    } else {
-        resolved_value
-    };
-
     Ok(Json(DataResponse {
-        data: SettingResponse {
-            key: def.key.to_string(),
-            category: def.category.to_string(),
-            label: def.label.to_string(),
-            description: def.description.to_string(),
-            value: display_value,
-            source: source.as_str().to_string(),
-            value_type: def.value_type.as_str().to_string(),
-            requires_restart: def.requires_restart,
-            sensitive: def.sensitive,
-            updated_at: db_entry.as_ref().map(|e| e.updated_at),
-            updated_by: db_entry.and_then(|e| e.updated_by),
-        },
+        data: build_setting_response(
+            def,
+            resolved_value,
+            source,
+            db_entry.as_ref().map(|e| e.updated_at),
+            db_entry.and_then(|e| e.updated_by),
+        ),
     }))
 }
 
@@ -200,11 +171,7 @@ pub async fn update_setting(
     Path(key): Path<String>,
     Json(input): Json<UpdateSettingRequest>,
 ) -> AppResult<Json<DataResponse<SettingResponse>>> {
-    let def = find_definition(&key).ok_or_else(|| {
-        AppError::Core(x121_core::error::CoreError::Validation(format!(
-            "Unknown setting key: '{key}'"
-        )))
-    })?;
+    let def = ensure_setting_definition(&key)?;
 
     // Validate the new value.
     x121_core::settings::validate_setting_value(def, &input.value)?;
@@ -247,26 +214,14 @@ pub async fn update_setting(
         .settings_service
         .resolve(&key, Some(saved.value.clone()));
 
-    let display_value = if def.sensitive {
-        mask_value(&resolved_value)
-    } else {
-        resolved_value
-    };
-
     Ok(Json(DataResponse {
-        data: SettingResponse {
-            key: def.key.to_string(),
-            category: def.category.to_string(),
-            label: def.label.to_string(),
-            description: def.description.to_string(),
-            value: display_value,
-            source: source.as_str().to_string(),
-            value_type: def.value_type.as_str().to_string(),
-            requires_restart: def.requires_restart,
-            sensitive: def.sensitive,
-            updated_at: Some(saved.updated_at),
-            updated_by: saved.updated_by,
-        },
+        data: build_setting_response(
+            def,
+            resolved_value,
+            source,
+            Some(saved.updated_at),
+            saved.updated_by,
+        ),
     }))
 }
 
@@ -278,11 +233,7 @@ pub async fn reset_setting(
     RequireAdmin(admin): RequireAdmin,
     Path(key): Path<String>,
 ) -> AppResult<Json<DataResponse<SettingResponse>>> {
-    let def = find_definition(&key).ok_or_else(|| {
-        AppError::Core(x121_core::error::CoreError::Validation(format!(
-            "Unknown setting key: '{key}'"
-        )))
-    })?;
+    let def = ensure_setting_definition(&key)?;
 
     // Capture old value for audit.
     let old_entry = PlatformSettingRepo::find_by_key(&state.pool, &key).await?;
@@ -317,26 +268,8 @@ pub async fn reset_setting(
     // Resolve the fallback value (env or default).
     let (resolved_value, source) = state.settings_service.resolve(&key, None);
 
-    let display_value = if def.sensitive {
-        mask_value(&resolved_value)
-    } else {
-        resolved_value
-    };
-
     Ok(Json(DataResponse {
-        data: SettingResponse {
-            key: def.key.to_string(),
-            category: def.category.to_string(),
-            label: def.label.to_string(),
-            description: def.description.to_string(),
-            value: display_value,
-            source: source.as_str().to_string(),
-            value_type: def.value_type.as_str().to_string(),
-            requires_restart: def.requires_restart,
-            sensitive: def.sensitive,
-            updated_at: None,
-            updated_by: None,
-        },
+        data: build_setting_response(def, resolved_value, source, None, None),
     }))
 }
 
@@ -351,11 +284,7 @@ pub async fn test_connection(
     Path(key): Path<String>,
     Json(input): Json<TestConnectionRequest>,
 ) -> AppResult<Json<DataResponse<TestConnectionResponse>>> {
-    let def = find_definition(&key).ok_or_else(|| {
-        AppError::Core(x121_core::error::CoreError::Validation(format!(
-            "Unknown setting key: '{key}'"
-        )))
-    })?;
+    let def = ensure_setting_definition(&key)?;
 
     let timeout = std::time::Duration::from_secs(5);
     let start = std::time::Instant::now();
@@ -398,6 +327,46 @@ pub async fn test_connection(
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+
+/// Find the setting definition for `key` or return a Validation error.
+fn ensure_setting_definition(
+    key: &str,
+) -> AppResult<&'static x121_core::settings::SettingDefinition> {
+    find_definition(key).ok_or_else(|| {
+        AppError::Core(x121_core::error::CoreError::Validation(format!(
+            "Unknown setting key: '{key}'"
+        )))
+    })
+}
+
+/// Build a [`SettingResponse`] from a definition, resolved value/source, and
+/// optional DB metadata.
+fn build_setting_response(
+    def: &x121_core::settings::SettingDefinition,
+    resolved_value: String,
+    source: x121_core::settings::SettingSource,
+    updated_at: Option<Timestamp>,
+    updated_by: Option<i64>,
+) -> SettingResponse {
+    let display_value = if def.sensitive {
+        mask_value(&resolved_value)
+    } else {
+        resolved_value
+    };
+    SettingResponse {
+        key: def.key.to_string(),
+        category: def.category.to_string(),
+        label: def.label.to_string(),
+        description: def.description.to_string(),
+        value: display_value,
+        source: source.as_str().to_string(),
+        value_type: def.value_type.as_str().to_string(),
+        requires_restart: def.requires_restart,
+        sensitive: def.sensitive,
+        updated_at,
+        updated_by,
+    }
+}
 
 /// Mask a sensitive value, showing only the last 4 characters.
 fn mask_value(value: &str) -> String {

@@ -89,17 +89,17 @@ export function SettingRow({ setting }: SettingRowProps) {
 
   function testConnection() {
     testMutation.mutate(
-      { key: setting.key },
+      { key: setting.key, url: setting.value },
       {
         onSuccess: (result) => {
-          if (result.reachable) {
+          if (result.success) {
             addToast({
               message: `Connection OK (${result.latency_ms ?? "?"}ms)`,
               variant: "success",
             });
           } else {
             addToast({
-              message: result.error ?? "Connection failed",
+              message: result.message || "Connection failed",
               variant: "error",
             });
           }

@@ -74,10 +74,10 @@ export function useResetSetting() {
 /** Test connectivity for a URL/WsUrl setting. */
 export function useTestConnection() {
   return useMutation({
-    mutationFn: ({ key, value }: { key: string; value?: string }) =>
+    mutationFn: ({ key, url }: { key: string; url: string }) =>
       api.post<ConnectionTestResult>(
         `/admin/settings/${key}/actions/test`,
-        value !== undefined ? { value } : undefined,
+        { url },
       ),
   });
 }
