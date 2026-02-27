@@ -96,6 +96,13 @@ async fn main() {
     ));
     tracing::info!("Script orchestrator initialized");
 
+    // --- Health aggregator (PRD-117) ---
+    let health_aggregator = Arc::new(x121_api::engine::health_aggregator::HealthAggregator::new());
+    health_aggregator
+        .clone()
+        .start_polling(pool.clone(), Arc::clone(&comfyui_manager));
+    tracing::info!("Health aggregator started (30s interval)");
+
     // --- App state ---
     let state = AppState {
         pool,
@@ -104,6 +111,7 @@ async fn main() {
         comfyui_manager: Arc::clone(&comfyui_manager),
         event_bus: Arc::clone(&event_bus),
         script_orchestrator: Some(script_orchestrator),
+        health_aggregator,
     };
 
     // --- Router ---

@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use crate::config::ServerConfig;
+use crate::engine::health_aggregator::HealthAggregator;
 use crate::scripting::orchestrator::ScriptOrchestrator;
 use crate::ws::WsManager;
 
@@ -21,4 +22,6 @@ pub struct AppState {
     pub event_bus: Arc<x121_events::EventBus>,
     /// Multi-runtime script orchestrator (PRD-09).
     pub script_orchestrator: Option<Arc<ScriptOrchestrator>>,
+    /// In-memory health aggregator for the system status footer (PRD-117).
+    pub health_aggregator: Arc<HealthAggregator>,
 }

@@ -2,6 +2,7 @@ import { Outlet } from "@tanstack/react-router";
 
 import { Header } from "@/app/Header";
 import { Sidebar } from "@/app/Sidebar";
+import { StatusFooter } from "@/app/StatusFooter";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 
 export function AppShell() {
@@ -14,6 +15,7 @@ export function AppShell() {
           <main className="flex-1 overflow-y-auto p-6 scrollbar-thin">
             <Outlet />
           </main>
+          <StatusFooter />
         </div>
       </div>
     </ProtectedRoute>

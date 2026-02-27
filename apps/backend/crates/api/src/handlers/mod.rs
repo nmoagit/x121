@@ -74,6 +74,7 @@ pub mod scripts;
 pub mod search;
 pub mod segment;
 pub mod source_image;
+pub mod status;
 pub mod storage;
 pub mod storyboard;
 pub mod tags;

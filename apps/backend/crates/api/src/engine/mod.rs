@@ -6,4 +6,5 @@
 //! notifications.
 
 pub mod dispatcher;
+pub mod health_aggregator;
 pub mod progress;

@@ -84,6 +84,9 @@ export {
   Cpu,
   Power,
   ShieldCheck,
+  // Cloud / Status Footer
+  Cloud,
+  Workflow,
 } from "lucide-react";
 
 /** Standard icon size tokens (px values matching design grid) */

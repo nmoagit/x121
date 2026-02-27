@@ -64,6 +64,7 @@ pub mod scene_catalog;
 pub mod scene_type;
 pub mod scripts;
 pub mod search;
+pub mod status;
 pub mod storage;
 pub mod storyboard;
 pub mod tags;
@@ -835,4 +836,6 @@ pub fn api_routes() -> Router<AppState> {
         .nest("/admin/batch-metadata", batch_metadata::batch_metadata_router())
         // Character Readiness & State View: criteria configuration (PRD-107).
         .nest("/readiness-criteria", readiness::readiness_criteria_router())
+        // System status footer (PRD-117).
+        .nest("/status", status::router())
 }
