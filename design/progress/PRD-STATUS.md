@@ -21,14 +21,14 @@ Source of truth: [`design/design.md`](../design.md)
 | Status | Count |
 |--------|-------|
 | backlog | 0 |
-| planning | 38 |
+| planning | 39 |
 | in-progress | 0 |
 | review | 0 |
 | done | 82 |
 | blocked | 0 |
 | deferred | 0 |
 | maybe | 15 |
-| **Total** | **134** |
+| **Total** | **135** |
 
 ---
 
@@ -125,6 +125,7 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-115 | Generation Strategy & Workflow Prompt Management | 1 | `planning` | — | High priority. Generation strategy selection (platform vs workflow-managed), prompt node mapping, character+scene additive fragments, prompt fragment library, in-app prompt editing. Deps: PRD-23, PRD-24, PRD-63, PRD-75 (all done). |
 | PRD-107 | Character Readiness & State View | — | `done` | 2026-02-23 | Migrations 000030-000031, core readiness module (criteria evaluation, cache), API handlers (CRUD + batch evaluate), frontend feature (ReadinessStateBadge, CriteriaEditor, SummaryBar), 18+ tests. |
 | PRD-108 | Character Settings Dashboard | — | `done` | 2026-02-23 | Core character_dashboard module (settings merge, label builders), API handlers (get_dashboard, patch_settings), frontend feature (CharacterDashboard, MetadataSummarySection, PipelineSettingsEditor), 27 tests. |
+| PRD-120 | Scene & Workflow Naming Hierarchy (Generation Script) | — | `planning` | — | Python generation script only. Three-level hierarchy (WORKFLOWS, SCENE_TYPES, derived SCENES), display names, dual-level filtering, --list-scenes flag. Independent of web app. |
 
 ## Part 4: Design System & UX Patterns
 
@@ -243,3 +244,4 @@ Source of truth: [`design/design.md`](../design.md)
 | 2026-02-24 | Added PRD-117 (System Status Footer Bar). Persistent IDE-style footer bar with service health, cloud GPU, jobs, workflows. Role-filtered. Total PRDs: 117 + 15 MAYBEs = 132 |
 | 2026-02-25 | Added PRD-118 (Live Activity Console & Logging System). Terminal-style console for real-time streaming operational logs from all backend services. Dockable panel + dedicated page, role-based visibility, curated/verbose modes, DB persistence with configurable retention. Total PRDs: 118 + 15 MAYBEs = 133 |
 | 2026-02-25 | Added PRD-119 (Time-Based Job Scheduling). Cron-style schedules (one-time + recurring), calendar UI with drag-to-reschedule, smart off-peak slot selection, per-user timezone handling, batch scheduling for production runs, schedule executor, execution history. Extends PRD-08. Total PRDs: 119 + 15 MAYBEs = 134 |
+| 2026-02-27 | Added PRD-120 (Scene & Workflow Naming Hierarchy). Python generation script restructure: three-level hierarchy (WORKFLOWS, SCENE_TYPES, derived SCENES), display names in output/progress/manifest, dual-level filtering (type + scene), --list-scenes flag, backward-compatible config files. Total PRDs: 120 + 15 MAYBEs = 135 |
