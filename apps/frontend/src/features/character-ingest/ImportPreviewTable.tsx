@@ -8,28 +8,10 @@
 import { useState } from "react";
 
 import { Badge } from "@/components/primitives";
-import type { BadgeVariant } from "@/components/primitives";
 import { ChevronDown, ChevronRight } from "@/tokens/icons";
 import { NameParserPreview } from "./NameParserPreview";
+import { METADATA_STATUS_VARIANT, VALIDATION_STATUS_VARIANT } from "./types";
 import type { CharacterIngestEntry, IngestEntryUpdate, NameConfidence } from "./types";
-
-/* --------------------------------------------------------------------------
-   Status badge helpers
-   -------------------------------------------------------------------------- */
-
-const METADATA_STATUS_VARIANT: Record<string, BadgeVariant> = {
-  none: "default",
-  generating: "info",
-  generated: "success",
-  failed: "danger",
-};
-
-const VALIDATION_STATUS_VARIANT: Record<string, BadgeVariant> = {
-  pass: "success",
-  warning: "warning",
-  fail: "danger",
-  pending: "default",
-};
 
 /* --------------------------------------------------------------------------
    Component

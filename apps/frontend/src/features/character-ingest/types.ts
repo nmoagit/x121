@@ -6,6 +6,8 @@
  * `handlers/video_spec.rs`, and `handlers/validation_dashboard.rs`.
  */
 
+import type { BadgeVariant } from "@/components/primitives";
+
 /* --------------------------------------------------------------------------
    Ingest session
    -------------------------------------------------------------------------- */
@@ -182,6 +184,44 @@ export const INGEST_STATUS_LABELS: Record<number, string> = {
 
 /** Name confidence levels. */
 export type NameConfidence = "high" | "medium" | "low";
+
+/** Name confidence -> Badge variant mapping (DRY-385). */
+export const CONFIDENCE_VARIANT: Record<NameConfidence, BadgeVariant> = {
+  high: "success",
+  medium: "warning",
+  low: "danger",
+};
+
+/** Name confidence -> human label (DRY-385). */
+export const CONFIDENCE_LABEL: Record<NameConfidence, string> = {
+  high: "High",
+  medium: "Medium",
+  low: "Low",
+};
+
+/** Metadata status -> Badge variant mapping (DRY-386). */
+export const METADATA_STATUS_VARIANT: Record<string, BadgeVariant> = {
+  none: "default",
+  generating: "info",
+  generated: "success",
+  failed: "danger",
+};
+
+/** Validation status -> Badge variant mapping (DRY-386). */
+export const VALIDATION_STATUS_VARIANT: Record<string, BadgeVariant> = {
+  pass: "success",
+  warning: "warning",
+  fail: "danger",
+  pending: "default",
+};
+
+/** Ingest session status_id -> Badge variant (DRY-386). */
+export function ingestSessionBadgeVariant(statusId: number): BadgeVariant {
+  if (statusId === 6) return "success";
+  if (statusId === 7) return "danger";
+  if (statusId === 8) return "default";
+  return "info";
+}
 
 /** Wizard step definitions. */
 export const WIZARD_STEPS = [

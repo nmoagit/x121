@@ -8,12 +8,13 @@
 import { Badge, Button, Spinner } from "@/components/primitives";
 import { Card } from "@/components/composite";
 import { Stack } from "@/components/layout";
+import { formatDate } from "@/lib/format";
 import {
   useIngestSessions,
   useRevalidateProject,
   useValidationSummary,
 } from "./hooks/use-character-ingest";
-import { INGEST_STATUS_LABELS } from "./types";
+import { INGEST_STATUS_LABELS, ingestSessionBadgeVariant } from "./types";
 
 /* --------------------------------------------------------------------------
    Component
@@ -115,7 +116,7 @@ export function ValidationDashboard({ projectId }: ValidationDashboardProps) {
                     {session.error_count}
                   </td>
                   <td className="px-3 py-2 text-xs text-muted-foreground">
-                    {new Date(session.created_at).toLocaleDateString()}
+                    {formatDate(session.created_at)}
                   </td>
                 </tr>
               ))}
@@ -165,15 +166,5 @@ function SummaryCard({
 
 function SessionStatusBadge({ statusId }: { statusId: number }) {
   const label = INGEST_STATUS_LABELS[statusId] ?? "Unknown";
-
-  const variant =
-    statusId === 6
-      ? "success"
-      : statusId === 7
-        ? "danger"
-        : statusId === 8
-          ? "default"
-          : "info";
-
-  return <Badge variant={variant}>{label}</Badge>;
+  return <Badge variant={ingestSessionBadgeVariant(statusId)}>{label}</Badge>;
 }

@@ -8,25 +8,9 @@
 import { useState } from "react";
 
 import { Badge } from "@/components/primitives";
-import type { BadgeVariant } from "@/components/primitives";
 import { ArrowRight } from "@/tokens/icons";
+import { CONFIDENCE_LABEL, CONFIDENCE_VARIANT } from "./types";
 import type { NameConfidence } from "./types";
-
-/* --------------------------------------------------------------------------
-   Confidence → Badge mapping
-   -------------------------------------------------------------------------- */
-
-const CONFIDENCE_VARIANT: Record<NameConfidence, BadgeVariant> = {
-  high: "success",
-  medium: "warning",
-  low: "danger",
-};
-
-const CONFIDENCE_LABEL: Record<NameConfidence, string> = {
-  high: "High",
-  medium: "Medium",
-  low: "Low",
-};
 
 /* --------------------------------------------------------------------------
    Component

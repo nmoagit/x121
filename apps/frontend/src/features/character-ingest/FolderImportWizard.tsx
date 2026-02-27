@@ -6,6 +6,7 @@
  * for review, editing, validation, and bulk import.
  */
 
+import type { ReactNode } from "react";
 import { useState } from "react";
 
 import { Badge, Button, Spinner } from "@/components/primitives";
@@ -26,7 +27,7 @@ import type {
   IngestSessionDetail,
   WizardStepId,
 } from "./types";
-import { WIZARD_STEPS } from "./types";
+import { VALIDATION_STATUS_VARIANT, WIZARD_STEPS } from "./types";
 
 /* --------------------------------------------------------------------------
    Props
@@ -208,23 +209,11 @@ export function FolderImportWizard({
                 onUpdateEntry={handleUpdateEntry}
                 onToggleInclude={handleToggleInclude}
               />
-              <div className="flex justify-between">
-                <Button variant="secondary" onClick={goBack}>
-                  Back
+              <WizardNavFooter onBack={goBack} onCancel={handleCancel}>
+                <Button onClick={handleValidate} disabled={validateSession.isPending}>
+                  {validateSession.isPending ? <Spinner size="sm" /> : "Validate"}
                 </Button>
-                <div className="flex gap-2">
-                  <Button variant="secondary" onClick={handleCancel}>
-                    Cancel
-                  </Button>
-                  <Button onClick={handleValidate} disabled={validateSession.isPending}>
-                    {validateSession.isPending ? (
-                      <Spinner size="sm" />
-                    ) : (
-                      "Validate"
-                    )}
-                  </Button>
-                </div>
-              </div>
+              </WizardNavFooter>
             </Stack>
           )}
 
@@ -241,17 +230,9 @@ export function FolderImportWizard({
                 onUpdateEntry={handleUpdateEntry}
                 onToggleInclude={handleToggleInclude}
               />
-              <div className="flex justify-between">
-                <Button variant="secondary" onClick={goBack}>
-                  Back
-                </Button>
-                <div className="flex gap-2">
-                  <Button variant="secondary" onClick={handleCancel}>
-                    Cancel
-                  </Button>
-                  <Button onClick={goNext}>Continue to Confirm</Button>
-                </div>
-              </div>
+              <WizardNavFooter onBack={goBack} onCancel={handleCancel}>
+                <Button onClick={goNext}>Continue to Confirm</Button>
+              </WizardNavFooter>
             </Stack>
           )}
 
@@ -265,26 +246,14 @@ export function FolderImportWizard({
               ) : (
                 <>
                   <ConfirmPreview entries={sessionData.entries} />
-                  <div className="flex justify-between">
-                    <Button variant="secondary" onClick={goBack}>
-                      Back
+                  <WizardNavFooter onBack={goBack} onCancel={handleCancel}>
+                    <Button
+                      onClick={handleConfirm}
+                      disabled={confirmImport.isPending}
+                    >
+                      {confirmImport.isPending ? <Spinner size="sm" /> : "Confirm Import"}
                     </Button>
-                    <div className="flex gap-2">
-                      <Button variant="secondary" onClick={handleCancel}>
-                        Cancel
-                      </Button>
-                      <Button
-                        onClick={handleConfirm}
-                        disabled={confirmImport.isPending}
-                      >
-                        {confirmImport.isPending ? (
-                          <Spinner size="sm" />
-                        ) : (
-                          "Confirm Import"
-                        )}
-                      </Button>
-                    </div>
-                  </div>
+                  </WizardNavFooter>
                 </>
               )}
             </Stack>
@@ -298,6 +267,31 @@ export function FolderImportWizard({
 /* --------------------------------------------------------------------------
    Sub-components
    -------------------------------------------------------------------------- */
+
+/** Shared wizard navigation footer: Back (left) | Cancel + Primary (right). */
+function WizardNavFooter({
+  onBack,
+  onCancel,
+  children,
+}: {
+  onBack: () => void;
+  onCancel: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <div className="flex justify-between">
+      <Button variant="secondary" onClick={onBack}>
+        Back
+      </Button>
+      <div className="flex gap-2">
+        <Button variant="secondary" onClick={onCancel}>
+          Cancel
+        </Button>
+        {children}
+      </div>
+    </div>
+  );
+}
 
 function StepIndicator({ currentIndex }: { currentIndex: number }) {
   return (
@@ -344,13 +338,7 @@ function ConfirmPreview({ entries }: { entries: CharacterIngestEntry[] }) {
             <span>{entry.confirmed_name ?? entry.parsed_name}</span>
             {entry.validation_status && (
               <Badge
-                variant={
-                  entry.validation_status === "pass"
-                    ? "success"
-                    : entry.validation_status === "warning"
-                      ? "warning"
-                      : "default"
-                }
+                variant={VALIDATION_STATUS_VARIANT[entry.validation_status] ?? "default"}
               >
                 {entry.validation_status}
               </Badge>
