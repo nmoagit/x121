@@ -338,6 +338,16 @@ const activityConsoleRoute = createRoute({
   ),
 });
 
+const characterIngestRoute = createRoute({
+  getParentRoute: () => toolsLayoutRoute,
+  path: "/tools/character-ingest",
+  component: lazyRouteComponent(() =>
+    import("@/features/character-ingest").then((m) => ({
+      default: m.CharacterIngestPage,
+    })),
+  ),
+});
+
 /* --------------------------------------------------------------------------
    Admin routes (role-gated by AdminGuard)
    -------------------------------------------------------------------------- */
@@ -560,6 +570,7 @@ export const routeTree = rootRoute.addChildren([
       searchRoute,
       branchingRoute,
       activityConsoleRoute,
+      characterIngestRoute,
     ]),
 
     adminLayoutRoute.addChildren([

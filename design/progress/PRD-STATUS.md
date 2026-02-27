@@ -21,10 +21,10 @@ Source of truth: [`design/design.md`](../design.md)
 | Status | Count |
 |--------|-------|
 | backlog | 0 |
-| planning | 39 |
+| planning | 37 |
 | in-progress | 0 |
 | review | 0 |
-| done | 82 |
+| done | 84 |
 | blocked | 0 |
 | deferred | 0 |
 | maybe | 15 |
@@ -87,7 +87,7 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-88 | Batch Metadata Operations | — | `done` | 2026-02-23 | Migration 000032, core batch_metadata module (validators, undo logic), status enum, API handlers, frontend feature (batch-metadata panel), 19 tests. |
 | PRD-104 | Model & LoRA Download Manager | — | `done` | 2026-02-23 | 3 migrations (model_downloads, api_tokens, placement_rules), core module (16 tests), 3 repos, 13 API endpoints, frontend feature (9 tests). |
 | PRD-109 | Scene Video Versioning, External Import & Soft Delete | — | `done` | — | Implemented (2026-02-20). All 7 phases complete: migrations, models, soft delete infra (9 repos), version repo, version API, trash API, delivery integration, integration tests (30 tests). |
-| PRD-113 | Character Ingest Pipeline | 1 | `planning` | — | High priority. Folder scanner, name parser, metadata detection/generation, validation, import wizard. Deps: PRD-00, PRD-01, PRD-02, PRD-14 (all done). Integrates with PRD-112 (project hub), PRD-09 (script orchestrator). |
+| PRD-113 | Character Ingest Pipeline | 1 | `done` | 2026-02-27 | 3 migrations (5 tables), 4 core modules (name parser, folder scanner, metadata validator, video spec validator), 3 model modules, 3 repo modules, 4 handler modules, 4 route modules, frontend wizard + validation dashboard. 38 core tests. |
 
 ## Part 3: Generation & Pipeline Core
 
@@ -140,9 +140,9 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-53 | First-Run Experience & Onboarding | — | `done` | 2026-02-21 | User onboarding state, guided tours, contextual hints, checklist, onboarding gate, 10 core tests. DRY-191 to DRY-200 audited. |
 | PRD-54 | Background Job Tray | — | `done` | — | |
 | PRD-82 | Content Sensitivity Controls | — | `planning` | — | |
-| PRD-112 | Project Hub & Management | 1 | `planning` | — | High priority. Frontend-only — all backend CRUD exists from PRD-01. Deps: PRD-00, PRD-01, PRD-02, PRD-29 (all done). Integrates with PRD-111 (scene settings), PRD-74 (config templates). |
-| PRD-117 | System Status Footer Bar | 1 | `planning` | — | High priority. Persistent IDE-style status bar showing service health, cloud GPU state, active jobs, running workflows. Role-filtered (admins see infra, all see jobs). Deps: PRD-02, PRD-10, PRD-29 (all done). Complements PRD-54, PRD-80. |
-| PRD-118 | Live Activity Console & Logging System | — | `planning` | — | Terminal-style console panel + dedicated page for real-time streaming operational logs from all backend services. Role-based visibility, curated/verbose modes, DB persistence with configurable retention. Deps: PRD-02, PRD-10, PRD-29 (all done). Integrates with PRD-117 (footer bar), PRD-54 (job tray), PRD-30 (panel system). |
+| PRD-112 | Project Hub & Management | 1 | `done` | 2026-02-27 | 2 migrations (character_groups, group_id FK), character group model/repo/handlers, project stats endpoint, 25 frontend files (project list, detail with 6 tabs, character workstation with 6 tabs, 3 TanStack Query hook files). |
+| PRD-117 | System Status Footer Bar | 1 | `done` | 2026-02-27 | HealthAggregator background service, status handler, 7 frontend components (StatusFooter, FooterSegment, ServiceHealth, CloudGpu, Job, Workflow, Collapsed). |
+| PRD-118 | Live Activity Console & Logging System | — | `done` | 2026-02-27 | 1 migration (4 tables), core types, ActivityLogBroadcaster, custom tracing::Layer, batch persistence/retention services, WebSocket handler, REST endpoints, Zustand store, dual-mode UI (panel + page). |
 
 ## Part 5: Workflow Editor & Review
 
@@ -190,8 +190,8 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-81 | Backup & Disaster Recovery | — | `planning` | — | |
 | PRD-98 | Session Management & Active Users | — | `planning` | — | |
 | PRD-105 | Platform Setup Wizard | — | `planning` | — | |
-| PRD-110 | Admin Platform Settings Panel | — | `planning` | — | |
-| PRD-116 | Dynamic File & Entity Naming Engine | 1 | `planning` | — | High priority. Configurable naming templates per file category (12 categories), token substitution, live preview, project-level overrides. Deps: PRD-01, PRD-02, PRD-29 (all done). Extends PRD-01 naming.rs. |
+| PRD-110 | Admin Platform Settings Panel | 1 | `done` | 2026-02-27 | Platform settings with type-safe validation, caching, DB persistence. Route: `/admin/settings`. |
+| PRD-116 | Dynamic File & Entity Naming Engine | 1 | `done` | 2026-02-27 | Configurable naming templates per file category (12 categories), token substitution, live preview, project-level overrides. Route: `/admin/naming`. |
 
 ## Part 8: Evaluation List (MAYBE)
 

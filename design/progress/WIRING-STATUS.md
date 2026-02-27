@@ -3,14 +3,14 @@
 Tracks which completed PRDs have frontend features that are accessible via routes/navigation
 versus those that are implemented but unreachable by users.
 
-**Last updated:** 2026-02-26
+**Last updated:** 2026-02-27
 
 ## Summary
 
 | Category | Count |
 |----------|-------|
-| Routed (accessible via sidebar/nav) | 40 |
-| Correctly unrouted (overlays/framework/embedded) | 10 |
+| Routed (accessible via sidebar/nav) | 46 |
+| Correctly unrouted (overlays/framework/embedded) | 11 |
 | Missing routes (should be wired up) | 20 |
 
 ---
@@ -63,6 +63,13 @@ These features have routes in `router.tsx` and entries in `navigation.ts`.
 | `/settings/shortcuts` | `shortcuts` | PRD-52 |
 | `/settings/wiki` | `wiki` | PRD-56 |
 | `/content/scene-catalog` | `scene-catalog` | PRD-111 |
+| `/admin/settings` | `settings` | PRD-110 |
+| `/admin/naming` | `naming-rules` | PRD-116 |
+| `/tools/activity-console` | `activity-console` | PRD-118 |
+| `/tools/character-ingest` | `character-ingest` | PRD-113 |
+| `/projects` | `projects` | PRD-112 |
+| `/projects/$projectId` | `projects` | PRD-112 |
+| `/projects/$projectId/characters/$characterId` | `characters` | PRD-112 |
 
 ---
 
@@ -83,6 +90,7 @@ framework-level functionality. They do NOT need their own routes.
 | `qa-aids` | PRD-37 | Ghosting, ROI, jog dial tools embedded in review player |
 | `video-player` | PRD-83 | Video playback engine embedded in review/cinema views |
 | `workspace` | PRD-04 | Session/workspace persistence (store/framework, not a page) |
+| `footer` | PRD-117 | System status footer bar (global widget in AppShell, not a page) |
 
 ---
 
@@ -96,7 +104,7 @@ These features are implemented but have no route or navigation entry. Each needs
 
 | Feature Dir | PRD | Title | Suggested Route | Suggested Nav Group | Status |
 |-------------|-----|-------|-----------------|---------------------|--------|
-| `projects` | PRD-01 | Project list & hub | `/projects` | Dashboard | `todo` |
+| ~~`projects`~~ | ~~PRD-01~~ | ~~Project list & hub~~ | ~~`/projects`~~ | ~~Dashboard~~ | `done` (PRD-112) |
 | `debugger` | PRD-34 | Interactive job debugger | `/production/debugger` | Production | `todo` |
 | `batch-metadata` | PRD-88 | Batch metadata operations | `/tools/batch-metadata` | Tools | `todo` |
 | `duplicates` | PRD-79 | Character duplicate detection | `/content/duplicates` | Content | `todo` |
@@ -133,13 +141,13 @@ added to this tracker and wired into the router.
 | PRD | Title | Expected Route/Location |
 |-----|-------|------------------------|
 | ~~PRD-111~~ | ~~Scene Catalog & Track Management~~ | Routed at `/content/scene-catalog` |
-| PRD-112 | Project Hub & Management | `/projects` (new page) |
-| PRD-113 | Character Ingest Pipeline | `/admin/ingest` or modal wizard |
+| ~~PRD-112~~ | ~~Project Hub & Management~~ | Routed at `/projects`, `/projects/$projectId`, `/projects/$projectId/characters/$characterId` |
+| ~~PRD-113~~ | ~~Character Ingest Pipeline~~ | Routed at `/tools/character-ingest` |
 | PRD-114 | Cloud GPU Provider Integration | `/admin/cloud-gpu` |
 | PRD-115 | Generation Strategy & Workflow Prompt Management | `/tools/generation-strategy` |
-| PRD-116 | Dynamic File & Entity Naming Engine | `/settings/naming` or `/admin/naming` |
-| PRD-117 | System Status Footer Bar | Global footer (no route needed) |
-| PRD-118 | Live Activity Console & Logging System | `/tools/activity-console` (dedicated page) + dockable panel (no route needed for panel) |
+| ~~PRD-116~~ | ~~Dynamic File & Entity Naming Engine~~ | Routed at `/admin/naming` |
+| ~~PRD-117~~ | ~~System Status Footer Bar~~ | Global footer (correctly unrouted) |
+| ~~PRD-118~~ | ~~Live Activity Console & Logging System~~ | Routed at `/tools/activity-console` |
 | PRD-119 | Time-Based Job Scheduling | `/production/schedule` |
 
 ### Standard Priority
@@ -176,7 +184,7 @@ added to this tracker and wired into the router.
 | PRD-104 | Model & LoRA Download Manager | Already routed at `/admin/downloads` |
 | PRD-105 | Platform Setup Wizard | First-run flow (overlay) |
 | PRD-106 | API Usage & Observability Dashboard | `/admin/api-usage` |
-| PRD-110 | Admin Platform Settings Panel | `/admin/settings` |
+| ~~PRD-110~~ | ~~Admin Platform Settings Panel~~ | Routed at `/admin/settings` |
 
 ---
 

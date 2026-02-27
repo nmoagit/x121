@@ -105,6 +105,7 @@ export const NAV_GROUPS: NavGroupDef[] = [
       { label: "Search", path: "/tools/search", icon: Search },
       { label: "Branching", path: "/tools/branching", icon: Columns },
       { label: "Activity Console", path: "/tools/activity-console", icon: Terminal },
+      { label: "Character Ingest", path: "/tools/character-ingest", icon: Upload },
     ],
   },
   {
