@@ -26,6 +26,7 @@ import {
   Server,
   Settings,
   ShieldCheck,
+  Terminal,
   Upload,
   User,
   Zap,
@@ -96,6 +97,7 @@ export const NAV_GROUPS: NavGroupDef[] = [
       { label: "Presets", path: "/tools/presets", icon: Palette },
       { label: "Search", path: "/tools/search", icon: Search },
       { label: "Branching", path: "/tools/branching", icon: Columns },
+      { label: "Activity Console", path: "/tools/activity-console", icon: Terminal },
     ],
   },
   {

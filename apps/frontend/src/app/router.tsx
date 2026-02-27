@@ -296,6 +296,14 @@ const branchingRoute = createRoute({
   ),
 });
 
+const activityConsoleRoute = createRoute({
+  getParentRoute: () => toolsLayoutRoute,
+  path: "/tools/activity-console",
+  component: lazyRouteComponent(() =>
+    import("@/features/activity-console").then((m) => ({ default: m.ActivityConsolePage })),
+  ),
+});
+
 /* --------------------------------------------------------------------------
    Admin routes (role-gated by AdminGuard)
    -------------------------------------------------------------------------- */
@@ -511,6 +519,7 @@ export const routeTree = rootRoute.addChildren([
       presetsRoute,
       searchRoute,
       branchingRoute,
+      activityConsoleRoute,
     ]),
 
     adminLayoutRoute.addChildren([

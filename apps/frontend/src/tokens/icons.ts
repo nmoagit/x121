@@ -88,6 +88,9 @@ export {
   // Cloud / Status Footer
   Cloud,
   Workflow,
+  // Console
+  Terminal,
+  ArrowDown,
 } from "lucide-react";
 
 /** Standard icon size tokens (px values matching design grid) */
