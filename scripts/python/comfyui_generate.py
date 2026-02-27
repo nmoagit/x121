@@ -604,6 +604,11 @@ def download_output(base_url: str, filename: str, subfolder: str,
 # Workflow helpers
 # ---------------------------------------------------------------------------
 
+def wf_short_name(workflow_name: str) -> str:
+    """Extract a short name from a workflow filename (strip path and '-api' suffix)."""
+    return Path(workflow_name).stem.replace("-api", "")
+
+
 def resolve_workflow(host: str, port: str, name: str) -> str:
     """Find a workflow by name on the pod."""
     if name.startswith("/"):
@@ -709,34 +714,22 @@ def resolve_scenes(scenes_arg: Optional[str], no_scenes_arg: Optional[str]) -> l
       - "NO x, NO y" in scenes_arg -> all scenes minus expanded x, y
       - --no-scenes arg -> additional exclusions (also expanded)
     """
-    if not scenes_arg or scenes_arg.strip().upper() == "ALL":
-        scenes = list(ALL_SCENE_NAMES)
+    # Parse the primary --scenes arg via parse_scene_spec + apply_scene_spec
+    if scenes_arg and scenes_arg.strip().upper() != "ALL":
+        includes, excludes = parse_scene_spec(scenes_arg)
     else:
-        includes = []
-        excludes = []
-        for item in scenes_arg.split(","):
-            item = item.strip()
-            if not item:
-                continue
-            if item.upper().startswith("NO "):
-                excludes.append(item[3:].strip())
-            else:
-                includes.append(item)
+        includes, excludes = [], []
 
-        if includes:
-            scenes = _expand_scene_tokens(includes)
-        else:
-            scenes = list(ALL_SCENE_NAMES)
-
-        if excludes:
-            expanded_excludes = _expand_scene_tokens(excludes)
-            scenes = [s for s in scenes if s not in expanded_excludes]
+    scenes = apply_scene_spec(includes, excludes, list(ALL_SCENE_NAMES))
 
     # Apply --no-scenes exclusions
     if no_scenes_arg:
-        tokens = [t.strip().lower() for t in no_scenes_arg.split(",") if t.strip()]
-        expanded = _expand_scene_tokens(tokens)
-        scenes = [s for s in scenes if s not in expanded]
+        no_includes, no_excludes = parse_scene_spec(no_scenes_arg)
+        # Treat all tokens in --no-scenes as exclusions
+        all_excludes = no_includes + no_excludes
+        if all_excludes:
+            expanded = _expand_scene_tokens(all_excludes)
+            scenes = [s for s in scenes if s not in expanded]
 
     # Validate
     for s in scenes:
@@ -931,7 +924,7 @@ def preview_jobs(jobs: list[dict], characters: list[dict], scenes: list[str],
         if dest_name:
             j["_exists"] = (dest_dir / f"{dest_name}.mp4").exists()
         else:
-            wf_short = Path(j["workflow"]).stem.replace("-api", "")
+            wf_short = wf_short_name(j["workflow"])
             j["_exists"] = (dest_dir / f"{j['character']}_{wf_short}.mp4").exists()
         if j["_exists"]:
             existing += 1
@@ -988,7 +981,7 @@ def preview_jobs(jobs: list[dict], characters: list[dict], scenes: list[str],
 
 def _job_key(job: dict) -> str:
     """Unique key for a job: character/scene or character/workflow."""
-    scene = job.get("scene") or Path(job["workflow"]).stem.replace("-api", "")
+    scene = job.get("scene") or wf_short_name(job["workflow"])
     return f"{job['character']}/{scene}"
 
 
@@ -1036,18 +1029,25 @@ class ProgressTracker:
         with self._lock:
             return sum(1 for j in self.data["jobs"].values() if j.get("status") == "completed")
 
+    @staticmethod
+    def _job_fields(job: dict) -> dict:
+        """Extract the common metadata fields from a job dict."""
+        return {
+            "character": job["character"],
+            "scene": job.get("scene", ""),
+            "display": job.get("display", ""),
+            "scene_type": job.get("scene_type", ""),
+            "scene_type_display": job.get("scene_type_display", ""),
+            "workflow": job.get("workflow", ""),
+            "workflow_display": job.get("workflow_display", ""),
+        }
+
     def start_job(self, job: dict):
         with self._lock:
             key = _job_key(job)
             self.data["jobs"][key] = {
                 "status": "in_progress",
-                "character": job["character"],
-                "scene": job.get("scene", ""),
-                "display": job.get("display", ""),
-                "scene_type": job.get("scene_type", ""),
-                "scene_type_display": job.get("scene_type_display", ""),
-                "workflow": job.get("workflow", ""),
-                "workflow_display": job.get("workflow_display", ""),
+                **self._job_fields(job),
                 "started": _now_iso(),
             }
             self._save()
@@ -1057,13 +1057,7 @@ class ProgressTracker:
             key = _job_key(job)
             self.data["jobs"][key] = {
                 "status": "completed",
-                "character": job["character"],
-                "scene": job.get("scene", ""),
-                "display": job.get("display", ""),
-                "scene_type": job.get("scene_type", ""),
-                "scene_type_display": job.get("scene_type_display", ""),
-                "workflow": job.get("workflow", ""),
-                "workflow_display": job.get("workflow_display", ""),
+                **self._job_fields(job),
                 "started": self.data["jobs"].get(key, {}).get("started", _now_iso()),
                 "finished": _now_iso(),
                 "duration_s": round(duration, 1),
@@ -1077,13 +1071,7 @@ class ProgressTracker:
             key = _job_key(job)
             self.data["jobs"][key] = {
                 "status": "failed",
-                "character": job["character"],
-                "scene": job.get("scene", ""),
-                "display": job.get("display", ""),
-                "scene_type": job.get("scene_type", ""),
-                "scene_type_display": job.get("scene_type_display", ""),
-                "workflow": job.get("workflow", ""),
-                "workflow_display": job.get("workflow_display", ""),
+                **self._job_fields(job),
                 "started": self.data["jobs"].get(key, {}).get("started", _now_iso()),
                 "failed": _now_iso(),
                 "duration_s": round(duration, 1),
@@ -1265,7 +1253,7 @@ def process_job(
     if dest_name:
         dest_file = dest_dir / f"{dest_name}.mp4"
     else:
-        wf_short = Path(workflow_name).stem.replace("-api", "")
+        wf_short = wf_short_name(workflow_name)
         dest_file = dest_dir / f"{character}_{wf_short}.mp4"
     if dest_file.exists():
         log(f"  SKIP: Output already exists: {dest_file.name}")
@@ -1341,7 +1329,7 @@ def process_job(
     if dest_name:
         out_name = f"{dest_name}{ext}"
     else:
-        wf_short = Path(workflow_name).stem.replace("-api", "")
+        wf_short = wf_short_name(workflow_name)
         out_name = f"{character}_{wf_short}{ext}"
 
     dest = dest_dir / out_name
@@ -1356,7 +1344,7 @@ def process_job(
         )
         saved.append({
             "character": character,
-            "scene": scene or Path(workflow_name).stem.replace("-api", ""),
+            "scene": scene or wf_short_name(workflow_name),
             "display": job.get("display", ""),
             "scene_type": job.get("scene_type", ""),
             "scene_type_display": job.get("scene_type_display", ""),
@@ -1368,6 +1356,37 @@ def process_job(
 
     log(f"  Saved: {out_name}")
     return saved
+
+# ---------------------------------------------------------------------------
+# CLI helpers
+# ---------------------------------------------------------------------------
+
+def _preview_and_confirm(
+    jobs: list[dict],
+    characters_info: list[dict],
+    scenes: list[str],
+    output_dir: Path,
+    warnings: list[str],
+    args,
+) -> int:
+    """Show preview, handle --dry-run / --yes, compute num_pods. Returns num_pods."""
+    num_unique_chars = len(set(j["character"] for j in jobs))
+    num_pods = min(num_unique_chars, args.max_pods) if args.parallel else 1
+
+    preview_jobs(jobs, characters_info, scenes, output_dir, warnings,
+                 num_pods=num_pods)
+
+    if args.dry_run:
+        log("\nDry run -- exiting.")
+        sys.exit(0)
+    if not args.yes:
+        response = input("\nProceed? [y/N] ")
+        if response.strip().lower() not in ("y", "yes"):
+            log("Aborted.")
+            sys.exit(0)
+
+    return num_pods
+
 
 # ---------------------------------------------------------------------------
 # CLI
@@ -1550,21 +1569,8 @@ Single job mode:
                     print(f"  ! {w}")
             sys.exit(1)
 
-        # Calculate parallel pod count
-        num_unique_chars = len(set(j["character"] for j in jobs))
-        num_pods = min(num_unique_chars, args.max_pods) if args.parallel else 1
-
-        preview_jobs(jobs, characters_info, scenes, output_dir, warnings,
-                     num_pods=num_pods)
-
-        if args.dry_run:
-            log("\nDry run — exiting.")
-            sys.exit(0)
-        if not args.yes:
-            response = input("\nProceed? [y/N] ")
-            if response.strip().lower() not in ("y", "yes"):
-                log("Aborted.")
-                sys.exit(0)
+        num_pods = _preview_and_confirm(
+            jobs, characters_info, scenes, output_dir, warnings, args)
 
     elif args.batch_dir:
         # --- Scene-based batch mode (CLI args) ---
@@ -1593,21 +1599,8 @@ Single job mode:
                     print(f"  ! {w}")
             sys.exit(1)
 
-        # Calculate parallel pod count
-        num_unique_chars = len(set(j["character"] for j in jobs))
-        num_pods = min(num_unique_chars, args.max_pods) if args.parallel else 1
-
-        preview_jobs(jobs, characters_info, scenes, output_dir, warnings,
-                     num_pods=num_pods)
-
-        if args.dry_run:
-            log("\nDry run — exiting.")
-            sys.exit(0)
-        if not args.yes:
-            response = input("\nProceed? [y/N] ")
-            if response.strip().lower() not in ("y", "yes"):
-                log("Aborted.")
-                sys.exit(0)
+        num_pods = _preview_and_confirm(
+            jobs, characters_info, scenes, output_dir, warnings, args)
 
     elif args.batch:
         # --- Legacy CSV/JSON batch mode ---
