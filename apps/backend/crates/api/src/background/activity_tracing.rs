@@ -30,7 +30,11 @@ impl<S> Layer<S> for ActivityTracingLayer
 where
     S: tracing::Subscriber,
 {
-    fn on_event(&self, event: &tracing::Event<'_>, _ctx: tracing_subscriber::layer::Context<'_, S>) {
+    fn on_event(
+        &self,
+        event: &tracing::Event<'_>,
+        _ctx: tracing_subscriber::layer::Context<'_, S>,
+    ) {
         let meta = event.metadata();
 
         // Only capture INFO and above.

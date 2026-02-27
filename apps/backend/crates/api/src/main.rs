@@ -19,10 +19,9 @@ async fn main() {
     let activity_broadcaster = Arc::new(x121_events::ActivityLogBroadcaster::default());
 
     // --- Tracing ---
-    let activity_tracing_layer =
-        x121_api::background::activity_tracing::ActivityTracingLayer::new(
-            Arc::clone(&activity_broadcaster),
-        );
+    let activity_tracing_layer = x121_api::background::activity_tracing::ActivityTracingLayer::new(
+        Arc::clone(&activity_broadcaster),
+    );
 
     tracing_subscriber::registry()
         .with(
@@ -110,12 +109,10 @@ async fn main() {
     // Spawn activity log retention (purges old entries hourly, PRD-118).
     let activity_retention_cancel = tokio_util::sync::CancellationToken::new();
     let activity_retention_cancel_clone = activity_retention_cancel.clone();
-    let activity_retention_handle = tokio::spawn(
-        x121_api::background::activity_retention::run(
-            pool.clone(),
-            activity_retention_cancel_clone,
-        ),
-    );
+    let activity_retention_handle = tokio::spawn(x121_api::background::activity_retention::run(
+        pool.clone(),
+        activity_retention_cancel_clone,
+    ));
 
     tracing::info!("Event services started (persistence, notification router, digest scheduler, metrics retention, activity log persistence, activity log retention)");
 

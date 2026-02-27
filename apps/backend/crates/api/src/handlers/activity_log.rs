@@ -9,7 +9,9 @@ use axum::response::IntoResponse;
 use axum::Json;
 use futures::{SinkExt, StreamExt};
 use serde::{Deserialize, Serialize};
-use x121_core::activity::{ActivityLogCategory, ActivityLogEntry, ActivityLogLevel, ActivityLogSource};
+use x121_core::activity::{
+    ActivityLogCategory, ActivityLogEntry, ActivityLogLevel, ActivityLogSource,
+};
 use x121_db::models::activity_log::{ActivityLogPage, ActivityLogQuery, UpdateActivityLogSettings};
 use x121_db::repositories::{ActivityLogRepo, ActivityLogSettingsRepo};
 
@@ -216,10 +218,7 @@ pub async fn export_activity_logs(
     auth: AuthUser,
     Query(params): Query<ExportParams>,
 ) -> AppResult<impl IntoResponse> {
-    let from = parse_timestamp(
-        &params.from,
-        chrono::Utc::now() - chrono::Duration::days(7),
-    )?;
+    let from = parse_timestamp(&params.from, chrono::Utc::now() - chrono::Duration::days(7))?;
     let to = parse_timestamp(&params.to, chrono::Utc::now())?;
 
     let mut query = ActivityLogQuery {

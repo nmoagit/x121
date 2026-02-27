@@ -10,6 +10,7 @@ pub mod branching;
 pub mod bug_reports;
 pub mod character;
 pub mod character_dashboard;
+pub mod character_ingest;
 pub mod character_metadata;
 pub mod character_scene_overrides;
 pub mod checkpoints;
@@ -38,6 +39,7 @@ pub mod legacy_import;
 pub mod library;
 pub mod maintenance;
 pub mod metadata;
+pub mod metadata_template;
 pub mod naming;
 pub mod notification;
 pub mod onboarding;
@@ -79,7 +81,9 @@ pub mod trash;
 pub mod trimming;
 pub mod undo_tree;
 pub mod validation;
+pub mod validation_dashboard;
 pub mod video;
+pub mod video_spec;
 pub mod wiki;
 pub mod workers;
 pub mod workflow_canvas;
@@ -185,6 +189,17 @@ use crate::ws;
 /// /projects/{project_id}/scene-types/{id}          get, update, delete
 /// /projects/{project_id}/qa-thresholds             list, upsert (GET, POST, PRD-49)
 /// /projects/{project_id}/qa-thresholds/{id}        delete (DELETE, PRD-49)
+///
+/// /projects/{id}/validation-summary                validation summary (GET, PRD-113)
+/// /projects/{id}/validate                          revalidate project (POST, PRD-113)
+/// /projects/{project_id}/ingest                    list sessions (GET, PRD-113)
+/// /projects/{project_id}/ingest/text               ingest from text (POST, PRD-113)
+/// /projects/{project_id}/ingest/{id}               get, cancel session (GET, DELETE, PRD-113)
+/// /projects/{project_id}/ingest/{id}/entries       list entries (GET, PRD-113)
+/// /projects/{project_id}/ingest/{id}/entries/{eid} update entry (PUT, PRD-113)
+/// /projects/{project_id}/ingest/{id}/validate      validate session (POST, PRD-113)
+/// /projects/{project_id}/ingest/{id}/generate-metadata  generate metadata (POST, PRD-113)
+/// /projects/{project_id}/ingest/{id}/confirm       confirm import (POST, PRD-113)
 ///
 /// /characters/{character_id}/source-images         list, create
 /// /characters/{character_id}/source-images/{id}    get, update, delete
@@ -619,6 +634,14 @@ use crate::ws;
 /// /admin/maintenance/{id}/undo                                  undo operation (POST, PRD-18)
 /// /admin/maintenance/history                                    list operations (GET, PRD-18)
 /// /admin/maintenance/{id}                                       get operation (GET, PRD-18)
+///
+/// /metadata-templates                                            list, create (GET, POST, PRD-113)
+/// /metadata-templates/{id}                                       get, update, delete (PRD-113)
+/// /metadata-templates/{id}/fields                                list, create (GET, POST, PRD-113)
+/// /metadata-templates/{id}/fields/{field_id}                     delete (DELETE, PRD-113)
+///
+/// /video-specs                                                   list, create (GET, POST, PRD-113)
+/// /video-specs/{id}                                              get, update, delete (PRD-113)
 /// ```
 pub fn api_routes() -> Router<AppState> {
     Router::new()
@@ -676,7 +699,9 @@ pub fn api_routes() -> Router<AppState> {
             .merge(quality_gates::threshold_router())
             .merge(temporal::project_temporal_router())
             .merge(project_config::project_export_router())
+            .merge(validation_dashboard::router())
             .nest("/{project_id}/characters", character_metadata::project_router())
+            .nest("/{project_id}/ingest", character_ingest::router())
             .nest("/{project_id}/scene-settings", project_scene_settings::router()))
         // Character-scoped sub-resources (images, scenes, metadata editor, face embedding, readiness, dashboard PRD-108).
         .nest("/characters", character::router()
@@ -854,4 +879,8 @@ pub fn api_routes() -> Router<AppState> {
         .nest("/activity-logs", activity_log::router())
         // Activity logs: admin settings and purge (PRD-118).
         .nest("/admin/activity-logs", activity_log::admin_router())
+        // Metadata templates: template CRUD and field management (PRD-113).
+        .nest("/metadata-templates", metadata_template::router())
+        // Video spec requirements: CRUD (PRD-113).
+        .nest("/video-specs", video_spec::router())
 }

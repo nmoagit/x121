@@ -1,0 +1,452 @@
+//! Handlers for the character ingest pipeline (PRD-113).
+//!
+//! Routes are nested under `/projects/{project_id}/ingest/...`.
+
+use axum::extract::{Path, State};
+use axum::http::StatusCode;
+use axum::Json;
+use serde::{Deserialize, Serialize};
+use x121_core::error::CoreError;
+use x121_core::types::DbId;
+use x121_db::models::character::CreateCharacter;
+use x121_db::models::character_ingest::{
+    CharacterIngestEntry, CharacterIngestSession, CreateCharacterIngestEntry,
+    CreateCharacterIngestSession, UpdateCharacterIngestEntry,
+};
+use x121_db::repositories::{
+    CharacterIngestEntryRepo, CharacterIngestSessionRepo, CharacterRepo, IngestEntryCounts,
+    MetadataTemplateFieldRepo, MetadataTemplateRepo,
+};
+
+use crate::error::{AppError, AppResult};
+use crate::state::AppState;
+
+// ---------------------------------------------------------------------------
+// Request/response types
+// ---------------------------------------------------------------------------
+
+/// Request body for creating an ingest session from a list of text names.
+#[derive(Debug, Deserialize)]
+pub struct TextIngestRequest {
+    pub names: Vec<String>,
+    pub source_type: Option<String>,
+    pub target_group_id: Option<DbId>,
+}
+
+/// Full session detail including entries and counts.
+#[derive(Debug, Serialize)]
+pub struct IngestSessionDetail {
+    pub session: CharacterIngestSession,
+    pub entries: Vec<CharacterIngestEntry>,
+    pub counts: IngestEntryCounts,
+}
+
+/// Summary of validation results for a session.
+#[derive(Debug, Serialize)]
+pub struct IngestValidationSummary {
+    pub total: i64,
+    pub pass: i64,
+    pub warning: i64,
+    pub fail: i64,
+    pub pending: i64,
+}
+
+/// Result of confirming and importing characters.
+#[derive(Debug, Serialize)]
+pub struct IngestConfirmResult {
+    pub created: i64,
+    pub failed: i64,
+    pub skipped: i64,
+    pub character_ids: Vec<DbId>,
+}
+
+// ---------------------------------------------------------------------------
+// Handlers
+// ---------------------------------------------------------------------------
+
+/// POST /api/v1/projects/{project_id}/ingest/text
+///
+/// Create an ingest session from a list of character names.
+pub async fn ingest_from_text(
+    State(state): State<AppState>,
+    Path(project_id): Path<DbId>,
+    Json(input): Json<TextIngestRequest>,
+) -> AppResult<(StatusCode, Json<IngestSessionDetail>)> {
+    if input.names.is_empty() {
+        return Err(AppError::BadRequest(
+            "At least one name is required".to_string(),
+        ));
+    }
+
+    let source_type = input.source_type.unwrap_or_else(|| "text".to_string());
+
+    // Create the session.
+    let session = CharacterIngestSessionRepo::create(
+        &state.pool,
+        &CreateCharacterIngestSession {
+            project_id,
+            source_type,
+            source_name: Some("text input".to_string()),
+            target_group_id: input.target_group_id,
+            created_by: None,
+        },
+    )
+    .await?;
+
+    // Parse names and create entries.
+    let entries_input: Vec<CreateCharacterIngestEntry> = input
+        .names
+        .iter()
+        .map(|name| {
+            let parsed = x121_core::name_parser::parse_character_name(name);
+            CreateCharacterIngestEntry {
+                session_id: session.id,
+                folder_name: None,
+                parsed_name: parsed.parsed,
+                name_confidence: Some(parsed.confidence.as_str().to_string()),
+                detected_images: None,
+                image_classifications: None,
+                metadata_status: Some("none".to_string()),
+                metadata_json: None,
+                metadata_source: None,
+                tov_json: None,
+                bio_json: None,
+            }
+        })
+        .collect();
+
+    let entries = CharacterIngestEntryRepo::create_batch(&state.pool, &entries_input).await?;
+
+    // Update counts.
+    CharacterIngestSessionRepo::update_counts(&state.pool, session.id).await?;
+
+    let counts = CharacterIngestEntryRepo::count_by_status(&state.pool, session.id).await?;
+
+    // Refresh session to get updated counts.
+    let session = CharacterIngestSessionRepo::find_by_id(&state.pool, session.id)
+        .await?
+        .ok_or(AppError::Core(CoreError::NotFound {
+            entity: "CharacterIngestSession",
+            id: session.id,
+        }))?;
+
+    // Move to preview status.
+    let session = CharacterIngestSessionRepo::update_status(&state.pool, session.id, 2)
+        .await?
+        .ok_or(AppError::Core(CoreError::NotFound {
+            entity: "CharacterIngestSession",
+            id: session.id,
+        }))?;
+
+    Ok((
+        StatusCode::CREATED,
+        Json(IngestSessionDetail {
+            session,
+            entries,
+            counts,
+        }),
+    ))
+}
+
+/// GET /api/v1/projects/{project_id}/ingest/{session_id}
+///
+/// Get a session with its entries and counts.
+pub async fn get_session(
+    State(state): State<AppState>,
+    Path((_project_id, session_id)): Path<(DbId, DbId)>,
+) -> AppResult<Json<IngestSessionDetail>> {
+    let session = CharacterIngestSessionRepo::find_by_id(&state.pool, session_id)
+        .await?
+        .ok_or(AppError::Core(CoreError::NotFound {
+            entity: "CharacterIngestSession",
+            id: session_id,
+        }))?;
+
+    let entries = CharacterIngestEntryRepo::list_by_session(&state.pool, session_id).await?;
+    let counts = CharacterIngestEntryRepo::count_by_status(&state.pool, session_id).await?;
+
+    Ok(Json(IngestSessionDetail {
+        session,
+        entries,
+        counts,
+    }))
+}
+
+/// GET /api/v1/projects/{project_id}/ingest/{session_id}/entries
+///
+/// List entries for a session.
+pub async fn list_entries(
+    State(state): State<AppState>,
+    Path((_project_id, session_id)): Path<(DbId, DbId)>,
+) -> AppResult<Json<Vec<CharacterIngestEntry>>> {
+    let entries = CharacterIngestEntryRepo::list_by_session(&state.pool, session_id).await?;
+    Ok(Json(entries))
+}
+
+/// PUT /api/v1/projects/{project_id}/ingest/{session_id}/entries/{entry_id}
+///
+/// Update an ingest entry.
+pub async fn update_entry(
+    State(state): State<AppState>,
+    Path((_project_id, _session_id, entry_id)): Path<(DbId, DbId, DbId)>,
+    Json(input): Json<UpdateCharacterIngestEntry>,
+) -> AppResult<Json<CharacterIngestEntry>> {
+    let entry = CharacterIngestEntryRepo::update(&state.pool, entry_id, &input)
+        .await?
+        .ok_or(AppError::Core(CoreError::NotFound {
+            entity: "CharacterIngestEntry",
+            id: entry_id,
+        }))?;
+    Ok(Json(entry))
+}
+
+/// POST /api/v1/projects/{project_id}/ingest/{session_id}/validate
+///
+/// Run metadata validation on all included entries in a session.
+pub async fn validate_session(
+    State(state): State<AppState>,
+    Path((_project_id, session_id)): Path<(DbId, DbId)>,
+) -> AppResult<Json<IngestValidationSummary>> {
+    let session = CharacterIngestSessionRepo::find_by_id(&state.pool, session_id)
+        .await?
+        .ok_or(AppError::Core(CoreError::NotFound {
+            entity: "CharacterIngestSession",
+            id: session_id,
+        }))?;
+
+    // Get default template for the project.
+    let template =
+        MetadataTemplateRepo::find_default(&state.pool, Some(session.project_id)).await?;
+
+    let template_fields = if let Some(ref tmpl) = template {
+        let db_fields = MetadataTemplateFieldRepo::list_by_template(&state.pool, tmpl.id).await?;
+        db_fields
+            .into_iter()
+            .map(|f| x121_core::metadata_validator::TemplateField {
+                field_name: f.field_name,
+                field_type: f.field_type,
+                is_required: f.is_required,
+                constraints: f.constraints,
+            })
+            .collect::<Vec<_>>()
+    } else {
+        Vec::new()
+    };
+
+    let entries = CharacterIngestEntryRepo::list_by_session(&state.pool, session_id).await?;
+
+    let mut pass_count: i64 = 0;
+    let mut warning_count: i64 = 0;
+    let mut fail_count: i64 = 0;
+    let mut pending_count: i64 = 0;
+
+    for entry in &entries {
+        if !entry.is_included {
+            continue;
+        }
+
+        let (status, errors_json, warnings_json) = match &entry.metadata_json {
+            Some(metadata) => {
+                if let Some(map) = metadata.as_object() {
+                    let result =
+                        x121_core::metadata_validator::validate_metadata(map, &template_fields);
+                    let status = if !result.is_valid {
+                        "fail"
+                    } else if !result.warnings.is_empty() {
+                        "warning"
+                    } else {
+                        "pass"
+                    };
+                    (
+                        status,
+                        serde_json::to_value(&result.errors).unwrap_or_default(),
+                        serde_json::to_value(&result.warnings).unwrap_or_default(),
+                    )
+                } else {
+                    (
+                        "fail",
+                        serde_json::json!([{"field": "metadata", "message": "Metadata is not a JSON object", "severity": "error"}]),
+                        serde_json::json!([]),
+                    )
+                }
+            }
+            None => {
+                // No metadata yet — mark as pending.
+                ("pending", serde_json::json!([]), serde_json::json!([]))
+            }
+        };
+
+        CharacterIngestEntryRepo::update_validation(
+            &state.pool,
+            entry.id,
+            status,
+            &errors_json,
+            &warnings_json,
+        )
+        .await?;
+
+        match status {
+            "pass" => pass_count += 1,
+            "warning" => warning_count += 1,
+            "fail" => fail_count += 1,
+            _ => pending_count += 1,
+        }
+    }
+
+    // Update session counts.
+    CharacterIngestSessionRepo::update_counts(&state.pool, session_id).await?;
+
+    let total = pass_count + warning_count + fail_count + pending_count;
+
+    Ok(Json(IngestValidationSummary {
+        total,
+        pass: pass_count,
+        warning: warning_count,
+        fail: fail_count,
+        pending: pending_count,
+    }))
+}
+
+/// POST /api/v1/projects/{project_id}/ingest/{session_id}/generate-metadata
+///
+/// Stub: mark entries as "generating" metadata. Full LLM integration is a
+/// future PRD.
+pub async fn generate_metadata(
+    State(state): State<AppState>,
+    Path((_project_id, session_id)): Path<(DbId, DbId)>,
+) -> AppResult<Json<CharacterIngestSession>> {
+    // Set session status to "generating_metadata" (3).
+    let session = CharacterIngestSessionRepo::update_status(&state.pool, session_id, 3)
+        .await?
+        .ok_or(AppError::Core(CoreError::NotFound {
+            entity: "CharacterIngestSession",
+            id: session_id,
+        }))?;
+
+    // Mark all included entries without metadata as "generating".
+    let entries = CharacterIngestEntryRepo::list_by_session(&state.pool, session_id).await?;
+    for entry in &entries {
+        if entry.is_included && entry.metadata_json.is_none() {
+            CharacterIngestEntryRepo::update_metadata_status(
+                &state.pool,
+                entry.id,
+                "generating",
+                None,
+                None,
+                None,
+            )
+            .await?;
+        }
+    }
+
+    Ok(Json(session))
+}
+
+/// POST /api/v1/projects/{project_id}/ingest/{session_id}/confirm
+///
+/// Create characters from all included, validated entries.
+pub async fn confirm_import(
+    State(state): State<AppState>,
+    Path((project_id, session_id)): Path<(DbId, DbId)>,
+) -> AppResult<Json<IngestConfirmResult>> {
+    // Set session status to "importing" (5).
+    CharacterIngestSessionRepo::update_status(&state.pool, session_id, 5).await?;
+
+    let entries = CharacterIngestEntryRepo::list_by_session(&state.pool, session_id).await?;
+
+    let session = CharacterIngestSessionRepo::find_by_id(&state.pool, session_id)
+        .await?
+        .ok_or(AppError::Core(CoreError::NotFound {
+            entity: "CharacterIngestSession",
+            id: session_id,
+        }))?;
+
+    let mut created: i64 = 0;
+    let mut failed: i64 = 0;
+    let mut skipped: i64 = 0;
+    let mut character_ids = Vec::new();
+
+    for entry in &entries {
+        // Skip excluded entries.
+        if !entry.is_included {
+            skipped += 1;
+            continue;
+        }
+
+        // Skip entries with validation failures.
+        if entry.validation_status.as_deref() == Some("fail") {
+            skipped += 1;
+            continue;
+        }
+
+        let character_name = entry
+            .confirmed_name
+            .as_deref()
+            .unwrap_or(&entry.parsed_name);
+
+        let create_input = CreateCharacter {
+            project_id,
+            name: character_name.to_string(),
+            status_id: Some(1), // Draft
+            metadata: entry.metadata_json.clone(),
+            settings: None,
+            group_id: session.target_group_id.map(Some),
+        };
+
+        match CharacterRepo::create(&state.pool, &create_input).await {
+            Ok(character) => {
+                CharacterIngestEntryRepo::set_created_character(
+                    &state.pool,
+                    entry.id,
+                    character.id,
+                )
+                .await?;
+                character_ids.push(character.id);
+                created += 1;
+            }
+            Err(e) => {
+                tracing::warn!(entry_id = entry.id, error = %e, "Failed to create character from ingest entry");
+                failed += 1;
+            }
+        }
+    }
+
+    // Set session status to "completed" (6) or "failed" (7).
+    let final_status = if failed > 0 && created == 0 { 7 } else { 6 };
+    CharacterIngestSessionRepo::update_status(&state.pool, session_id, final_status).await?;
+    CharacterIngestSessionRepo::update_counts(&state.pool, session_id).await?;
+
+    Ok(Json(IngestConfirmResult {
+        created,
+        failed,
+        skipped,
+        character_ids,
+    }))
+}
+
+/// DELETE /api/v1/projects/{project_id}/ingest/{session_id}
+///
+/// Cancel an ingest session by setting its status to "cancelled" (8).
+pub async fn cancel_session(
+    State(state): State<AppState>,
+    Path((_project_id, session_id)): Path<(DbId, DbId)>,
+) -> AppResult<StatusCode> {
+    CharacterIngestSessionRepo::update_status(&state.pool, session_id, 8)
+        .await?
+        .ok_or(AppError::Core(CoreError::NotFound {
+            entity: "CharacterIngestSession",
+            id: session_id,
+        }))?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
+/// GET /api/v1/projects/{project_id}/ingest
+///
+/// List all ingest sessions for a project.
+pub async fn list_sessions(
+    State(state): State<AppState>,
+    Path(project_id): Path<DbId>,
+) -> AppResult<Json<Vec<CharacterIngestSession>>> {
+    let sessions = CharacterIngestSessionRepo::list_by_project(&state.pool, project_id).await?;
+    Ok(Json(sessions))
+}

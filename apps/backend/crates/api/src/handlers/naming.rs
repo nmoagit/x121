@@ -370,8 +370,8 @@ pub async fn preview(
         .as_deref()
         .map(|cat| naming_engine::validate_template(&input.template, cat));
 
-    let resolved =
-        naming_engine::resolve_template(&input.template, &ctx).map_err(naming_error_to_app_error)?;
+    let resolved = naming_engine::resolve_template(&input.template, &ctx)
+        .map_err(naming_error_to_app_error)?;
 
     Ok(Json(DataResponse {
         data: PreviewResponse {

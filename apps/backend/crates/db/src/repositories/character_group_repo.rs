@@ -35,9 +35,8 @@ impl CharacterGroupRepo {
         pool: &PgPool,
         id: DbId,
     ) -> Result<Option<CharacterGroup>, sqlx::Error> {
-        let query = format!(
-            "SELECT {COLUMNS} FROM character_groups WHERE id = $1 AND deleted_at IS NULL"
-        );
+        let query =
+            format!("SELECT {COLUMNS} FROM character_groups WHERE id = $1 AND deleted_at IS NULL");
         sqlx::query_as::<_, CharacterGroup>(&query)
             .bind(id)
             .fetch_optional(pool)

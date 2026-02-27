@@ -15,9 +15,7 @@ pub struct ActivityLogSettingsRepo;
 impl ActivityLogSettingsRepo {
     /// Get the current settings (singleton row id=1).
     pub async fn get(pool: &PgPool) -> Result<ActivityLogSettings, sqlx::Error> {
-        let query = format!(
-            "SELECT {COLUMNS} FROM activity_log_settings WHERE id = 1"
-        );
+        let query = format!("SELECT {COLUMNS} FROM activity_log_settings WHERE id = 1");
         sqlx::query_as::<_, ActivityLogSettings>(&query)
             .fetch_one(pool)
             .await

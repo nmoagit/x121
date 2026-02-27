@@ -7,7 +7,9 @@ use serde::Deserialize;
 use x121_core::error::CoreError;
 use x121_core::types::DbId;
 use x121_db::models::character::UpdateCharacter;
-use x121_db::models::character_group::{CreateCharacterGroup, CharacterGroup, UpdateCharacterGroup};
+use x121_db::models::character_group::{
+    CharacterGroup, CreateCharacterGroup, UpdateCharacterGroup,
+};
 use x121_db::repositories::{CharacterGroupRepo, CharacterRepo};
 
 use crate::error::{AppError, AppResult};

@@ -277,22 +277,40 @@ mod tests {
 
     #[test]
     fn test_level_from_str() {
-        assert_eq!(ActivityLogLevel::from_str("info"), Some(ActivityLogLevel::Info));
+        assert_eq!(
+            ActivityLogLevel::from_str("info"),
+            Some(ActivityLogLevel::Info)
+        );
         assert_eq!(ActivityLogLevel::from_str("unknown"), None);
     }
 
     #[test]
     fn test_source_from_str() {
-        assert_eq!(ActivityLogSource::from_str("comfyui"), Some(ActivityLogSource::Comfyui));
+        assert_eq!(
+            ActivityLogSource::from_str("comfyui"),
+            Some(ActivityLogSource::Comfyui)
+        );
         assert_eq!(ActivityLogSource::from_str("unknown"), None);
     }
 
     #[test]
     fn test_source_from_target() {
-        assert_eq!(ActivityLogSource::from_target("x121_comfyui::manager"), ActivityLogSource::Comfyui);
-        assert_eq!(ActivityLogSource::from_target("x121_worker::runner"), ActivityLogSource::Worker);
-        assert_eq!(ActivityLogSource::from_target("x121_pipeline::stage"), ActivityLogSource::Pipeline);
-        assert_eq!(ActivityLogSource::from_target("x121_api::handlers"), ActivityLogSource::Api);
+        assert_eq!(
+            ActivityLogSource::from_target("x121_comfyui::manager"),
+            ActivityLogSource::Comfyui
+        );
+        assert_eq!(
+            ActivityLogSource::from_target("x121_worker::runner"),
+            ActivityLogSource::Worker
+        );
+        assert_eq!(
+            ActivityLogSource::from_target("x121_pipeline::stage"),
+            ActivityLogSource::Pipeline
+        );
+        assert_eq!(
+            ActivityLogSource::from_target("x121_api::handlers"),
+            ActivityLogSource::Api
+        );
     }
 
     #[test]

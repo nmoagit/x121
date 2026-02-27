@@ -106,10 +106,7 @@ impl ActivityLogRepo {
     }
 
     /// Count activity logs matching the given filter.
-    pub async fn count(
-        pool: &PgPool,
-        params: &ActivityLogQuery,
-    ) -> Result<i64, sqlx::Error> {
+    pub async fn count(pool: &PgPool, params: &ActivityLogQuery) -> Result<i64, sqlx::Error> {
         let (where_clause, bind_values, _) = build_activity_filter(params, pool).await?;
 
         let query = format!("SELECT COUNT(*)::BIGINT FROM activity_logs {where_clause}");
@@ -142,9 +139,8 @@ impl ActivityLogRepo {
             )
         };
 
-        let query = format!(
-            "SELECT {COLUMNS} FROM activity_logs {where_clause} ORDER BY timestamp ASC"
-        );
+        let query =
+            format!("SELECT {COLUMNS} FROM activity_logs {where_clause} ORDER BY timestamp ASC");
 
         let q = bind_activity_values(sqlx::query_as::<_, ActivityLog>(&query), &bind_values);
         q.bind(from).bind(to).fetch_all(pool).await
@@ -156,35 +152,30 @@ impl ActivityLogRepo {
         level_id: i16,
         cutoff: Timestamp,
     ) -> Result<u64, sqlx::Error> {
-        let result = sqlx::query(
-            "DELETE FROM activity_logs WHERE level_id = $1 AND timestamp < $2",
-        )
-        .bind(level_id)
-        .bind(cutoff)
-        .execute(pool)
-        .await?;
+        let result =
+            sqlx::query("DELETE FROM activity_logs WHERE level_id = $1 AND timestamp < $2")
+                .bind(level_id)
+                .bind(cutoff)
+                .execute(pool)
+                .await?;
 
         Ok(result.rows_affected())
     }
 
     /// Resolve a level name (e.g. "info") to its `activity_log_levels.id`.
     pub async fn resolve_level_id(pool: &PgPool, name: &str) -> Result<Option<i16>, sqlx::Error> {
-        sqlx::query_scalar::<_, i16>(
-            "SELECT id FROM activity_log_levels WHERE name = $1",
-        )
-        .bind(name)
-        .fetch_optional(pool)
-        .await
+        sqlx::query_scalar::<_, i16>("SELECT id FROM activity_log_levels WHERE name = $1")
+            .bind(name)
+            .fetch_optional(pool)
+            .await
     }
 
     /// Resolve a source name (e.g. "api") to its `activity_log_sources.id`.
     pub async fn resolve_source_id(pool: &PgPool, name: &str) -> Result<Option<i16>, sqlx::Error> {
-        sqlx::query_scalar::<_, i16>(
-            "SELECT id FROM activity_log_sources WHERE name = $1",
-        )
-        .bind(name)
-        .fetch_optional(pool)
-        .await
+        sqlx::query_scalar::<_, i16>("SELECT id FROM activity_log_sources WHERE name = $1")
+            .bind(name)
+            .fetch_optional(pool)
+            .await
     }
 
     /// Load all level rows for caching.
