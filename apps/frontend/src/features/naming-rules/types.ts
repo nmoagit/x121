@@ -32,14 +32,23 @@ export interface TokenInfo {
 }
 
 export interface ChangelogEntry {
-  template: string;
+  old_template: string;
+  old_description: string | null;
   changed_at: string;
   changed_by: number | null;
 }
 
 export interface PreviewResult {
-  resolved: string;
-  tokens_used: string[];
+  filename: string;
+  unresolved_tokens: string[];
+  validation: ValidationResult | null;
+}
+
+export interface ValidationResult {
+  valid: boolean;
+  tokens_found: string[];
+  unknown_tokens: string[];
+  missing_tokens: string[];
   warnings: string[];
 }
 
@@ -57,6 +66,7 @@ export interface CreateNamingRule {
 export interface UpdateNamingRule {
   template?: string;
   description?: string;
+  is_active?: boolean;
 }
 
 /* --------------------------------------------------------------------------

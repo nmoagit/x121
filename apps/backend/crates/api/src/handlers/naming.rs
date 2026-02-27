@@ -138,14 +138,7 @@ pub async fn list_category_tokens(
     RequireAdmin(_admin): RequireAdmin,
     Path(id): Path<i16>,
 ) -> AppResult<Json<DataResponse<TokensResponse>>> {
-    let categories = NamingRuleRepo::list_categories(&state.pool).await?;
-
-    let category = categories.into_iter().find(|c| c.id == id).ok_or_else(|| {
-        AppError::Core(x121_core::error::CoreError::Validation(format!(
-            "Naming category with id {id} not found"
-        )))
-    })?;
-
+    let category = ensure_category_exists(&state.pool, id).await?;
     let tokens = naming_engine::tokens_for_category(&category.name);
 
     Ok(Json(DataResponse {
@@ -177,14 +170,7 @@ pub async fn get_rule(
     RequireAdmin(_admin): RequireAdmin,
     Path(id): Path<DbId>,
 ) -> AppResult<Json<DataResponse<NamingRule>>> {
-    let rule = NamingRuleRepo::find_rule_by_id(&state.pool, id)
-        .await?
-        .ok_or_else(|| {
-            AppError::Core(x121_core::error::CoreError::NotFound {
-                entity: "naming_rule",
-                id,
-            })
-        })?;
+    let rule = ensure_rule_exists(&state.pool, id).await?;
     Ok(Json(DataResponse { data: rule }))
 }
 
@@ -197,10 +183,10 @@ pub async fn create_rule(
     Json(input): Json<CreateRuleRequest>,
 ) -> AppResult<Json<DataResponse<NamingRule>>> {
     // Resolve category name for validation
-    let category_name = resolve_category_name(&state, input.category_id).await?;
+    let category = ensure_category_exists(&state.pool, input.category_id).await?;
 
     // Validate template tokens
-    let validation = naming_engine::validate_template(&input.template, &category_name);
+    let validation = naming_engine::validate_template(&input.template, &category.name);
     if !validation.valid {
         return Err(AppError::Core(x121_core::error::CoreError::Validation(
             format!(
@@ -254,19 +240,12 @@ pub async fn update_rule(
     Json(input): Json<UpdateRuleRequest>,
 ) -> AppResult<Json<DataResponse<NamingRule>>> {
     // Fetch existing rule to get category for validation
-    let existing = NamingRuleRepo::find_rule_by_id(&state.pool, id)
-        .await?
-        .ok_or_else(|| {
-            AppError::Core(x121_core::error::CoreError::NotFound {
-                entity: "naming_rule",
-                id,
-            })
-        })?;
+    let existing = ensure_rule_exists(&state.pool, id).await?;
 
     // Validate new template if provided
     if let Some(ref new_template) = input.template {
-        let category_name = resolve_category_name(&state, existing.category_id).await?;
-        let validation = naming_engine::validate_template(new_template, &category_name);
+        let category = ensure_category_exists(&state.pool, existing.category_id).await?;
+        let validation = naming_engine::validate_template(new_template, &category.name);
         if !validation.valid {
             return Err(AppError::Core(x121_core::error::CoreError::Validation(
                 format!(
@@ -286,6 +265,7 @@ pub async fn update_rule(
     let rule = NamingRuleRepo::update_rule(&state.pool, id, &update_dto, admin.user_id)
         .await?
         .ok_or_else(|| {
+            // Race condition: rule deleted between existence check and update
             AppError::Core(x121_core::error::CoreError::NotFound {
                 entity: "naming_rule",
                 id,
@@ -326,14 +306,7 @@ pub async fn delete_rule(
     Path(id): Path<DbId>,
 ) -> AppResult<Json<DataResponse<serde_json::Value>>> {
     // Fetch existing to check scope
-    let existing = NamingRuleRepo::find_rule_by_id(&state.pool, id)
-        .await?
-        .ok_or_else(|| {
-            AppError::Core(x121_core::error::CoreError::NotFound {
-                entity: "naming_rule",
-                id,
-            })
-        })?;
+    let existing = ensure_rule_exists(&state.pool, id).await?;
 
     if existing.project_id.is_none() {
         return Err(AppError::Core(x121_core::error::CoreError::Validation(
@@ -397,20 +370,8 @@ pub async fn preview(
         .as_deref()
         .map(|cat| naming_engine::validate_template(&input.template, cat));
 
-    let resolved = naming_engine::resolve_template(&input.template, &ctx).map_err(|e| match e {
-        NamingError::EmptyResult => AppError::Core(x121_core::error::CoreError::Validation(
-            "Template resolved to an empty filename".to_string(),
-        )),
-        NamingError::UnknownTokens(tokens) => {
-            AppError::Core(x121_core::error::CoreError::Validation(format!(
-                "Unknown tokens: {}",
-                tokens.join(", ")
-            )))
-        }
-        NamingError::RuleNotFound(cat) => AppError::Core(x121_core::error::CoreError::Validation(
-            format!("No active rule for category: {cat}"),
-        )),
-    })?;
+    let resolved =
+        naming_engine::resolve_template(&input.template, &ctx).map_err(naming_error_to_app_error)?;
 
     Ok(Json(DataResponse {
         data: PreviewResponse {
@@ -429,14 +390,7 @@ pub async fn rule_history(
     RequireAdmin(_admin): RequireAdmin,
     Path(id): Path<DbId>,
 ) -> AppResult<Json<DataResponse<HistoryResponse>>> {
-    let rule = NamingRuleRepo::find_rule_by_id(&state.pool, id)
-        .await?
-        .ok_or_else(|| {
-            AppError::Core(x121_core::error::CoreError::NotFound {
-                entity: "naming_rule",
-                id,
-            })
-        })?;
+    let rule = ensure_rule_exists(&state.pool, id).await?;
 
     Ok(Json(DataResponse {
         data: HistoryResponse {
@@ -470,20 +424,8 @@ pub async fn resolve_filename(
             )))
         })?;
 
-    let resolved = naming_engine::resolve_template(&rule.template, ctx).map_err(|e| match e {
-        NamingError::EmptyResult => AppError::Core(x121_core::error::CoreError::Validation(
-            "Naming template resolved to an empty filename".to_string(),
-        )),
-        NamingError::UnknownTokens(tokens) => {
-            AppError::Core(x121_core::error::CoreError::Validation(format!(
-                "Naming template contains unknown tokens: {}",
-                tokens.join(", ")
-            )))
-        }
-        NamingError::RuleNotFound(cat) => AppError::Core(x121_core::error::CoreError::Validation(
-            format!("No active naming rule for category: {cat}"),
-        )),
-    })?;
+    let resolved =
+        naming_engine::resolve_template(&rule.template, ctx).map_err(naming_error_to_app_error)?;
 
     Ok(resolved.filename)
 }
@@ -492,16 +434,48 @@ pub async fn resolve_filename(
 // Helpers
 // ---------------------------------------------------------------------------
 
-/// Look up the category name by its integer id.
-async fn resolve_category_name(state: &AppState, category_id: i16) -> Result<String, AppError> {
-    let categories = NamingRuleRepo::list_categories(&state.pool).await?;
-    let cat = categories
+/// Fetch a naming rule by id or return a 404 error.
+async fn ensure_rule_exists(pool: &sqlx::PgPool, id: DbId) -> AppResult<NamingRule> {
+    NamingRuleRepo::find_rule_by_id(pool, id)
+        .await?
+        .ok_or_else(|| {
+            AppError::Core(x121_core::error::CoreError::NotFound {
+                entity: "naming_rule",
+                id,
+            })
+        })
+}
+
+/// Look up a naming category by its integer id, or return a Validation error.
+async fn ensure_category_exists(
+    pool: &sqlx::PgPool,
+    category_id: i16,
+) -> Result<NamingCategory, AppError> {
+    let categories = NamingRuleRepo::list_categories(pool).await?;
+    categories
         .into_iter()
         .find(|c| c.id == category_id)
         .ok_or_else(|| {
             AppError::Core(x121_core::error::CoreError::Validation(format!(
                 "Naming category with id {category_id} not found"
             )))
-        })?;
-    Ok(cat.name)
+        })
+}
+
+/// Convert a [`NamingError`] to an [`AppError`].
+fn naming_error_to_app_error(e: NamingError) -> AppError {
+    match e {
+        NamingError::EmptyResult => AppError::Core(x121_core::error::CoreError::Validation(
+            "Template resolved to an empty filename".to_string(),
+        )),
+        NamingError::UnknownTokens(tokens) => {
+            AppError::Core(x121_core::error::CoreError::Validation(format!(
+                "Unknown tokens: {}",
+                tokens.join(", ")
+            )))
+        }
+        NamingError::RuleNotFound(cat) => AppError::Core(x121_core::error::CoreError::Validation(
+            format!("No active naming rule for category: {cat}"),
+        )),
+    }
 }

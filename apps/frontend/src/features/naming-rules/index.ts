@@ -28,5 +28,6 @@ export type {
   TokenInfo,
   ChangelogEntry,
   PreviewResult,
+  ValidationResult,
 } from "./types";
 export { CATEGORY_GROUPS } from "./types";

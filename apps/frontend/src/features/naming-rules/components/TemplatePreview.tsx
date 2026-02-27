@@ -20,14 +20,14 @@ export function TemplatePreview({ preview, isLoading }: TemplatePreviewProps) {
         {isLoading ? (
           <Spinner size="sm" />
         ) : preview ? (
-          <span className="text-[var(--color-text-primary)]">{preview.resolved}</span>
+          <span className="text-[var(--color-text-primary)]">{preview.filename}</span>
         ) : (
           <span className="text-[var(--color-text-muted)]">
             Enter a template to see a preview
           </span>
         )}
       </div>
-      {preview?.warnings && preview.warnings.length > 0 && (
+      {preview?.validation?.warnings && preview.validation.warnings.length > 0 && (
         <div className="flex items-start gap-1.5 mt-1">
           <AlertTriangle
             size={14}
@@ -35,7 +35,7 @@ export function TemplatePreview({ preview, isLoading }: TemplatePreviewProps) {
             aria-hidden
           />
           <span className="text-xs text-[var(--color-action-warning)]">
-            {preview.warnings.join("; ")}
+            {preview.validation.warnings.join("; ")}
           </span>
         </div>
       )}
