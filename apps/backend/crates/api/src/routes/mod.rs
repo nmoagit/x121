@@ -171,9 +171,13 @@ use crate::ws;
 ///
 /// /projects                                        list, create
 /// /projects/{id}                                   get, update, delete
+/// /projects/{id}/stats                             project stats (GET, PRD-112)
 /// /projects/{project_id}/characters                list, create
 /// /projects/{project_id}/characters/{id}           get, update, delete
 /// /projects/{project_id}/characters/{id}/settings  get, put, patch
+/// /projects/{project_id}/characters/{id}/group     assign group (PUT, PRD-112)
+/// /projects/{project_id}/groups                    list, create (PRD-112)
+/// /projects/{project_id}/groups/{id}               update, delete (PRD-112)
 /// /projects/{project_id}/characters/metadata             all metadata (PRD-66)
 /// /projects/{project_id}/characters/metadata/completeness project completeness (PRD-66)
 /// /projects/{project_id}/characters/metadata/csv         export/import CSV (PRD-66)

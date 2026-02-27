@@ -17,6 +17,7 @@ pub mod branching;
 pub mod bug_reports;
 pub mod character;
 pub mod character_dashboard;
+pub mod character_group;
 pub mod character_metadata;
 pub mod character_scene_overrides;
 pub mod checkpoints;

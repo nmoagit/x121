@@ -184,6 +184,7 @@ pub async fn import_to_project(
         status_id: Some(1), // Draft
         metadata: Some(lc.master_metadata.clone()),
         settings: None,
+        group_id: None,
     };
     let project_char = CharacterRepo::create(&state.pool, &create_char).await?;
 

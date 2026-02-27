@@ -19,6 +19,7 @@ pub struct Character {
     pub metadata: Option<serde_json::Value>,
     /// NOT NULL in the database; defaults to `{}`.
     pub settings: serde_json::Value,
+    pub group_id: Option<DbId>,
     pub deleted_at: Option<Timestamp>,
     pub created_at: Timestamp,
     pub updated_at: Timestamp,
@@ -38,6 +39,7 @@ pub struct CreateCharacter {
     pub status_id: Option<StatusId>,
     pub metadata: Option<serde_json::Value>,
     pub settings: Option<serde_json::Value>,
+    pub group_id: Option<Option<DbId>>,
 }
 
 /// DTO for updating an existing character. All fields are optional.
@@ -47,4 +49,5 @@ pub struct UpdateCharacter {
     pub status_id: Option<StatusId>,
     pub metadata: Option<serde_json::Value>,
     pub settings: Option<serde_json::Value>,
+    pub group_id: Option<Option<DbId>>,
 }

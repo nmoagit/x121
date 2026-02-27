@@ -15,6 +15,7 @@ pub mod branch;
 pub mod bug_report;
 pub mod bulk_operation;
 pub mod character;
+pub mod character_group;
 pub mod character_scene_override;
 pub mod checkpoint;
 pub mod collaboration;

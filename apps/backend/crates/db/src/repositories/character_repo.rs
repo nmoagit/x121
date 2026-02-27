@@ -11,7 +11,7 @@ use crate::models::character::{Character, CreateCharacter, UpdateCharacter};
 /// the embedding repo. All other PRD-76 columns have DB defaults so
 /// existing INSERT queries remain valid.
 const COLUMNS: &str =
-    "id, project_id, name, status_id, metadata, settings, deleted_at, created_at, updated_at, \
+    "id, project_id, name, status_id, metadata, settings, group_id, deleted_at, created_at, updated_at, \
      face_detection_confidence, face_bounding_box, embedding_status_id, embedding_extracted_at";
 
 /// Provides CRUD operations for characters plus settings helpers.
@@ -24,8 +24,8 @@ impl CharacterRepo {
     /// If `settings` is `None`, defaults to `'{}'::jsonb`.
     pub async fn create(pool: &PgPool, input: &CreateCharacter) -> Result<Character, sqlx::Error> {
         let query = format!(
-            "INSERT INTO characters (project_id, name, status_id, metadata, settings)
-             VALUES ($1, $2, COALESCE($3, 1), $4, COALESCE($5, '{{}}'::jsonb))
+            "INSERT INTO characters (project_id, name, status_id, metadata, settings, group_id)
+             VALUES ($1, $2, COALESCE($3, 1), $4, COALESCE($5, '{{}}'::jsonb), $6)
              RETURNING {COLUMNS}"
         );
         sqlx::query_as::<_, Character>(&query)
@@ -34,6 +34,7 @@ impl CharacterRepo {
             .bind(input.status_id)
             .bind(&input.metadata)
             .bind(&input.settings)
+            .bind(input.group_id.flatten())
             .fetch_one(pool)
             .await
     }
@@ -73,12 +74,20 @@ impl CharacterRepo {
         id: DbId,
         input: &UpdateCharacter,
     ) -> Result<Option<Character>, sqlx::Error> {
+        // group_id uses a special pattern: outer Option = provided?, inner Option = nullable value.
+        // When outer is None we keep the current value; when outer is Some we set to inner.
+        let (group_id_provided, group_id_value) = match &input.group_id {
+            Some(inner) => (true, *inner),
+            None => (false, None),
+        };
+
         let query = format!(
             "UPDATE characters SET
                 name = COALESCE($2, name),
                 status_id = COALESCE($3, status_id),
                 metadata = COALESCE($4, metadata),
-                settings = COALESCE($5, settings)
+                settings = COALESCE($5, settings),
+                group_id = CASE WHEN $6 THEN $7 ELSE group_id END
              WHERE id = $1 AND deleted_at IS NULL
              RETURNING {COLUMNS}"
         );
@@ -88,6 +97,8 @@ impl CharacterRepo {
             .bind(input.status_id)
             .bind(&input.metadata)
             .bind(&input.settings)
+            .bind(group_id_provided)
+            .bind(group_id_value)
             .fetch_optional(pool)
             .await
     }
