@@ -50,6 +50,7 @@ pub mod onboarding_wizard;
 pub mod palette;
 pub mod performance;
 pub mod pipeline_hooks;
+pub mod platform_settings;
 pub mod presets;
 pub mod production_notes;
 pub mod production_run;

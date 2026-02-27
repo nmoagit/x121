@@ -56,6 +56,7 @@ pub mod output_format_profile;
 pub mod pattern_fix;
 pub mod performance_metric;
 pub mod placement_rule;
+pub mod platform_setting;
 pub mod preset;
 pub mod production_note;
 pub mod production_run;

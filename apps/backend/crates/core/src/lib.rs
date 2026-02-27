@@ -63,6 +63,7 @@ pub mod scheduling;
 pub mod script_types;
 pub mod scripting;
 pub mod search;
+pub mod settings;
 pub mod storage;
 pub mod storyboard;
 pub mod temporal_continuity;

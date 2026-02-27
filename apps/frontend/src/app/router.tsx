@@ -412,6 +412,14 @@ const adminReadinessRoute = createRoute({
   ),
 });
 
+const adminSettingsRoute = createRoute({
+  getParentRoute: () => adminLayoutRoute,
+  path: "/admin/settings",
+  component: lazyRouteComponent(() =>
+    import("@/features/settings").then((m) => ({ default: m.SettingsPanel })),
+  ),
+});
+
 /* --------------------------------------------------------------------------
    Settings routes
    -------------------------------------------------------------------------- */
@@ -511,6 +519,7 @@ export const routeTree = rootRoute.addChildren([
       adminOnboardingRoute,
       adminLegacyImportRoute,
       adminReadinessRoute,
+      adminSettingsRoute,
     ]),
 
     settingsLayoutRoute.addChildren([shortcutsRoute, wikiRoute]),

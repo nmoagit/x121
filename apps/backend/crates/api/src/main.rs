@@ -103,6 +103,12 @@ async fn main() {
         .start_polling(pool.clone(), Arc::clone(&comfyui_manager));
     tracing::info!("Health aggregator started (30s interval)");
 
+    // --- Settings service (PRD-110) ---
+    let settings_service = Arc::new(x121_core::settings::SettingsService::new(
+        Duration::from_secs(60),
+    ));
+    tracing::info!("Settings service initialized (60s cache TTL)");
+
     // --- App state ---
     let state = AppState {
         pool,
@@ -112,6 +118,7 @@ async fn main() {
         event_bus: Arc::clone(&event_bus),
         script_orchestrator: Some(script_orchestrator),
         health_aggregator,
+        settings_service,
     };
 
     // --- Router ---

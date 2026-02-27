@@ -114,6 +114,7 @@ export const NAV_GROUPS: NavGroupDef[] = [
       { label: "Onboarding Wizard", path: "/admin/onboarding-wizard", icon: Upload },
       { label: "Legacy Import", path: "/admin/legacy-import", icon: Upload },
       { label: "Readiness", path: "/admin/readiness", icon: ShieldCheck },
+      { label: "Settings", path: "/admin/settings", icon: Settings },
     ],
   },
   {

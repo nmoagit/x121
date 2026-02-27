@@ -24,4 +24,6 @@ pub struct AppState {
     pub script_orchestrator: Option<Arc<ScriptOrchestrator>>,
     /// In-memory health aggregator for the system status footer (PRD-117).
     pub health_aggregator: Arc<HealthAggregator>,
+    /// Platform settings cache and resolution service (PRD-110).
+    pub settings_service: Arc<x121_core::settings::SettingsService>,
 }

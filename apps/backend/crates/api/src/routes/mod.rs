@@ -43,6 +43,7 @@ pub mod onboarding_wizard;
 pub mod palette;
 pub mod performance;
 pub mod pipeline_hooks;
+pub mod platform_settings;
 pub mod presets;
 pub mod production_notes;
 pub mod production_run;
@@ -838,4 +839,6 @@ pub fn api_routes() -> Router<AppState> {
         .nest("/readiness-criteria", readiness::readiness_criteria_router())
         // System status footer (PRD-117).
         .nest("/status", status::router())
+        // Platform settings (PRD-110).
+        .nest("/admin/settings", platform_settings::router())
 }
