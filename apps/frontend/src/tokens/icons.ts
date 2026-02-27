@@ -34,6 +34,7 @@ export {
   Loader2,
   // Media
   File,
+  FileText,
   Folder,
   Image,
   Video,

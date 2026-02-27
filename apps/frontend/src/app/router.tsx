@@ -404,6 +404,14 @@ const adminLegacyImportRoute = createRoute({
   ),
 });
 
+const adminNamingRoute = createRoute({
+  getParentRoute: () => adminLayoutRoute,
+  path: "/admin/naming",
+  component: lazyRouteComponent(() =>
+    import("@/features/naming-rules").then((m) => ({ default: m.NamingRulesPage })),
+  ),
+});
+
 const adminReadinessRoute = createRoute({
   getParentRoute: () => adminLayoutRoute,
   path: "/admin/readiness",
@@ -518,6 +526,7 @@ export const routeTree = rootRoute.addChildren([
       adminMaintenanceRoute,
       adminOnboardingRoute,
       adminLegacyImportRoute,
+      adminNamingRoute,
       adminReadinessRoute,
       adminSettingsRoute,
     ]),
