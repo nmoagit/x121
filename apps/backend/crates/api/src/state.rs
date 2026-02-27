@@ -26,4 +26,6 @@ pub struct AppState {
     pub health_aggregator: Arc<HealthAggregator>,
     /// Platform settings cache and resolution service (PRD-110).
     pub settings_service: Arc<x121_core::settings::SettingsService>,
+    /// Activity log broadcast channel for real-time streaming (PRD-118).
+    pub activity_broadcaster: Arc<x121_events::ActivityLogBroadcaster>,
 }

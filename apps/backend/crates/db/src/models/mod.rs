@@ -5,6 +5,7 @@
 //! - A `Deserialize` create DTO for inserts
 //! - A `Deserialize` update DTO (all `Option` fields) for patches
 
+pub mod activity_log;
 pub mod api_key;
 pub mod approval;
 pub mod asset;

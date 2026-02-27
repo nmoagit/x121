@@ -4,4 +4,7 @@
 //! spawned via `tokio::spawn`. All tasks accept a [`CancellationToken`]
 //! for graceful shutdown.
 
+pub mod activity_persistence;
+pub mod activity_retention;
+pub mod activity_tracing;
 pub mod metrics_retention;

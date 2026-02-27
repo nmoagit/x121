@@ -1,3 +1,4 @@
+pub mod activity_log;
 pub mod admin;
 pub mod annotation;
 pub mod approval;
@@ -620,6 +621,7 @@ pub fn api_routes() -> Router<AppState> {
         // WebSocket endpoints.
         .route("/ws", get(ws::ws_handler))
         .route("/ws/metrics", get(handlers::hardware::metrics_ws_handler))
+        .route("/ws/activity-logs", get(handlers::activity_log::ws_activity_logs))
         // Authentication routes (login, refresh, logout).
         .nest("/auth", auth::router())
         // Admin routes (user management + hardware monitoring + themes).
@@ -844,4 +846,8 @@ pub fn api_routes() -> Router<AppState> {
         .nest("/admin/settings", platform_settings::router())
         // Dynamic naming engine (PRD-116).
         .nest("/admin/naming", naming::router())
+        // Activity logs: query and export (PRD-118).
+        .nest("/activity-logs", activity_log::router())
+        // Activity logs: admin settings and purge (PRD-118).
+        .nest("/admin/activity-logs", activity_log::admin_router())
 }

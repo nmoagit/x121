@@ -11,11 +11,13 @@
 //! - [`delivery`] — external delivery channels (webhook, email).
 //! - [`DigestScheduler`] — periodic digest notification processor.
 
+pub mod activity;
 pub mod bus;
 pub mod delivery;
 pub mod digest;
 pub mod persistence;
 
+pub use activity::ActivityLogBroadcaster;
 pub use bus::{EventBus, PlatformEvent};
 pub use delivery::email::{EmailConfig, EmailDelivery};
 pub use delivery::webhook::WebhookDelivery;

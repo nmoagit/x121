@@ -14,13 +14,23 @@ use state::AppState;
 async fn main() {
     dotenvy::dotenv().ok();
 
+    // --- Activity log broadcaster (PRD-118) ---
+    // Created early so the tracing layer can publish to it.
+    let activity_broadcaster = Arc::new(x121_events::ActivityLogBroadcaster::default());
+
     // --- Tracing ---
+    let activity_tracing_layer =
+        x121_api::background::activity_tracing::ActivityTracingLayer::new(
+            Arc::clone(&activity_broadcaster),
+        );
+
     tracing_subscriber::registry()
         .with(
             tracing_subscriber::EnvFilter::try_from_default_env()
                 .unwrap_or_else(|_| "x121_api=debug,tower_http=debug".into()),
         )
         .with(tracing_subscriber::fmt::layer())
+        .with(activity_tracing_layer)
         .init();
 
     // --- Configuration ---
@@ -86,7 +96,28 @@ async fn main() {
         retention_cancel_clone,
     ));
 
-    tracing::info!("Event services started (persistence, notification router, digest scheduler, metrics retention)");
+    // Spawn activity log persistence (batch writes to activity_logs table, PRD-118).
+    let activity_persist_cancel = tokio_util::sync::CancellationToken::new();
+    let activity_persist_cancel_clone = activity_persist_cancel.clone();
+    let activity_persist_handle = tokio::spawn(x121_api::background::activity_persistence::run(
+        pool.clone(),
+        activity_broadcaster.subscribe(),
+        activity_persist_cancel_clone,
+        100,
+        Duration::from_millis(1000),
+    ));
+
+    // Spawn activity log retention (purges old entries hourly, PRD-118).
+    let activity_retention_cancel = tokio_util::sync::CancellationToken::new();
+    let activity_retention_cancel_clone = activity_retention_cancel.clone();
+    let activity_retention_handle = tokio::spawn(
+        x121_api::background::activity_retention::run(
+            pool.clone(),
+            activity_retention_cancel_clone,
+        ),
+    );
+
+    tracing::info!("Event services started (persistence, notification router, digest scheduler, metrics retention, activity log persistence, activity log retention)");
 
     // --- Script orchestrator (PRD-09) ---
     let venv_base_dir = std::env::var("VENV_BASE_DIR").unwrap_or_else(|_| "./venvs".to_string());
@@ -119,6 +150,7 @@ async fn main() {
         script_orchestrator: Some(script_orchestrator),
         health_aggregator,
         settings_service,
+        activity_broadcaster: Arc::clone(&activity_broadcaster),
     };
 
     // --- Router ---
@@ -156,6 +188,13 @@ async fn main() {
     retention_cancel.cancel();
     let _ = tokio::time::timeout(Duration::from_secs(5), retention_handle).await;
     tracing::info!("Metrics retention job stopped");
+
+    // Stop activity log services (PRD-118).
+    activity_persist_cancel.cancel();
+    let _ = tokio::time::timeout(Duration::from_secs(5), activity_persist_handle).await;
+    activity_retention_cancel.cancel();
+    let _ = tokio::time::timeout(Duration::from_secs(5), activity_retention_handle).await;
+    tracing::info!("Activity log services stopped");
 
     // Drop the event bus sender to close the broadcast channel.
     // This signals persistence and notification router to shut down.

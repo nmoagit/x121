@@ -22,3 +22,8 @@ pub const METRIC_UTILIZATION: &str = "utilization_percent";
 ///
 /// Used by the agent when reporting restart outcomes back to the backend.
 pub const MSG_TYPE_RESTART_RESULT: &str = "restart_result";
+
+/// WebSocket message type discriminator for agent log payloads (PRD-118).
+///
+/// Used by the agent when forwarding operational logs to the backend.
+pub const MSG_TYPE_AGENT_LOG: &str = "agent_log";

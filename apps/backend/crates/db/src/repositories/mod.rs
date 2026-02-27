@@ -3,6 +3,8 @@
 //! Each repository is a zero-sized struct providing async CRUD methods
 //! that accept `&PgPool` as the first argument.
 
+pub mod activity_log_repo;
+pub mod activity_log_settings_repo;
 pub mod api_key_repo;
 pub mod approval_repo;
 pub mod asset_repo;
@@ -120,6 +122,8 @@ pub mod workflow_repo;
 pub mod workflow_version_repo;
 pub mod workspace_repo;
 
+pub use activity_log_repo::ActivityLogRepo;
+pub use activity_log_settings_repo::ActivityLogSettingsRepo;
 pub use api_key_repo::ApiKeyRepo;
 pub use approval_repo::ApprovalRepo;
 pub use approval_repo::RejectionCategoryRepo;

@@ -1,3 +1,4 @@
+pub mod activity;
 pub mod alert;
 pub mod annotation;
 pub mod api_keys;

@@ -4,6 +4,7 @@
 //! Handlers delegate to the corresponding repository in `x121_db`
 //! and map errors via [`AppError`].
 
+pub mod activity_log;
 pub mod admin;
 pub mod annotation;
 pub mod api_keys;
