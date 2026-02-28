@@ -10,16 +10,7 @@ import { Input } from "@/components/primitives/Input";
 import { cn } from "@/lib/cn";
 
 import { FragmentDropdown } from "./FragmentDropdown";
-import type { FragmentEntry, PromptFragment, WorkflowPromptSlot } from "./types";
-
-/* --------------------------------------------------------------------------
-   Props
-   -------------------------------------------------------------------------- */
-
-interface SlotDraft {
-  fragments: FragmentEntry[];
-  notes: string;
-}
+import type { PromptFragment, SlotDraft, WorkflowPromptSlot } from "./types";
 
 export interface SlotOverrideSectionProps {
   slot: WorkflowPromptSlot;

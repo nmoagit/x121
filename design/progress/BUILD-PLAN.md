@@ -337,7 +337,7 @@ This phase contains no PRD work — only structural setup.
 | 72 | PRD-50 | Content Branching & Exploration | L | Backend | PRD-01, PRD-15, PRD-36 |
 | 73 | PRD-70 | On-Frame Annotation & Markup | M | Frontend | PRD-38, PRD-29 |
 | 74 | PRD-95 | Production Notes & Internal Comments | M | Frontend | PRD-10, PRD-20, PRD-38 |
-| 75 | PRD-115 | Generation Strategy & Workflow Prompt Management | L | Full-Stack | PRD-23, PRD-24, PRD-63, PRD-75 |
+| 75 | PRD-115 | Generation Strategy & Workflow Prompt Management | L | Full-Stack | PRD-23, PRD-24, PRD-63, PRD-75 | **DONE** 2026-02-28 |
 
 ---
 

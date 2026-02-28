@@ -35,6 +35,7 @@ export type {
   UpdatePromptFragment,
   ResolvedPromptSlot,
   AppliedFragment,
+  SlotDraft,
   SlotOverride,
   ResolvePromptRequest,
   FragmentListParams,

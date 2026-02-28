@@ -10,6 +10,7 @@ use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
 use axum::Json;
 use serde::Deserialize;
+use x121_core::error::CoreError;
 use x121_core::prompt_resolution::{self, FragmentEntry, PromptSlotInput};
 use x121_core::types::DbId;
 use x121_db::models::character_scene_prompt_override::CreateCharacterScenePromptOverride;
@@ -70,6 +71,36 @@ pub struct FragmentListParams {
 }
 
 // ---------------------------------------------------------------------------
+// Shared helpers
+// ---------------------------------------------------------------------------
+
+/// Load a workflow prompt slot by ID or return 404.
+async fn ensure_slot_exists(
+    pool: &sqlx::PgPool,
+    id: DbId,
+) -> AppResult<x121_db::models::workflow_prompt_slot::WorkflowPromptSlot> {
+    WorkflowPromptSlotRepo::find_by_id(pool, id)
+        .await?
+        .ok_or(AppError::Core(CoreError::NotFound {
+            entity: "WorkflowPromptSlot",
+            id,
+        }))
+}
+
+/// Load a prompt fragment by ID or return 404.
+async fn ensure_fragment_exists(
+    pool: &sqlx::PgPool,
+    id: DbId,
+) -> AppResult<x121_db::models::prompt_fragment::PromptFragment> {
+    PromptFragmentRepo::find_by_id(pool, id)
+        .await?
+        .ok_or(AppError::Core(CoreError::NotFound {
+            entity: "PromptFragment",
+            id,
+        }))
+}
+
+// ---------------------------------------------------------------------------
 // Workflow Prompt Slots
 // ---------------------------------------------------------------------------
 
@@ -93,12 +124,7 @@ pub async fn update_prompt_slot(
     Json(input): Json<UpdateWorkflowPromptSlot>,
 ) -> AppResult<Json<x121_db::models::workflow_prompt_slot::WorkflowPromptSlot>> {
     // Verify the slot exists and belongs to the workflow.
-    let existing = WorkflowPromptSlotRepo::find_by_id(&state.pool, slot_id)
-        .await?
-        .ok_or(AppError::Core(x121_core::error::CoreError::NotFound {
-            entity: "WorkflowPromptSlot",
-            id: slot_id,
-        }))?;
+    let existing = ensure_slot_exists(&state.pool, slot_id).await?;
 
     if existing.workflow_id != workflow_id {
         return Err(AppError::BadRequest(format!(
@@ -108,7 +134,7 @@ pub async fn update_prompt_slot(
 
     let updated = WorkflowPromptSlotRepo::update(&state.pool, slot_id, &input)
         .await?
-        .ok_or(AppError::Core(x121_core::error::CoreError::NotFound {
+        .ok_or(AppError::Core(CoreError::NotFound {
             entity: "WorkflowPromptSlot",
             id: slot_id,
         }))?;
@@ -367,7 +393,7 @@ pub async fn update_fragment(
 ) -> AppResult<Json<x121_db::models::prompt_fragment::PromptFragment>> {
     let fragment = PromptFragmentRepo::update(&state.pool, id, &input)
         .await?
-        .ok_or(AppError::Core(x121_core::error::CoreError::NotFound {
+        .ok_or(AppError::Core(CoreError::NotFound {
             entity: "PromptFragment",
             id,
         }))?;
@@ -385,7 +411,7 @@ pub async fn delete_fragment(
     if deleted {
         Ok(StatusCode::NO_CONTENT)
     } else {
-        Err(AppError::Core(x121_core::error::CoreError::NotFound {
+        Err(AppError::Core(CoreError::NotFound {
             entity: "PromptFragment",
             id,
         }))

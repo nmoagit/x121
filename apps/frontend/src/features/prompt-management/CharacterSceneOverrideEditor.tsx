@@ -19,9 +19,9 @@ import {
 import { SlotOverrideSection } from "./SlotOverrideSection";
 import type {
   CharacterScenePromptOverride,
-  FragmentEntry,
   PromptFragment,
   SceneTypePromptDefault,
+  SlotDraft,
   SlotOverride,
   WorkflowPromptSlot,
 } from "./types";
@@ -34,15 +34,6 @@ interface CharacterSceneOverrideEditorProps {
   characterId: number;
   sceneTypeId: number;
   workflowId: number;
-}
-
-/* --------------------------------------------------------------------------
-   Local types
-   -------------------------------------------------------------------------- */
-
-interface SlotDraft {
-  fragments: FragmentEntry[];
-  notes: string;
 }
 
 /* --------------------------------------------------------------------------

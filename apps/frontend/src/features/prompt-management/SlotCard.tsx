@@ -5,17 +5,14 @@
  * type badge, and save button.
  */
 
+import type React from "react";
+
 import { Badge } from "@/components/primitives/Badge";
 import { Button } from "@/components/primitives/Button";
+import { PLACEHOLDER_REGEX } from "@/features/prompt-editor";
 import { cn } from "@/lib/cn";
 
 import type { WorkflowPromptSlot } from "./types";
-
-/* --------------------------------------------------------------------------
-   Constants
-   -------------------------------------------------------------------------- */
-
-const PLACEHOLDER_REGEX = /\{(\w+)\}/g;
 
 /* --------------------------------------------------------------------------
    Helpers
@@ -23,17 +20,27 @@ const PLACEHOLDER_REGEX = /\{(\w+)\}/g;
 
 /** Render text with `{placeholder}` tokens highlighted in bold. */
 function renderPromptText(text: string) {
-  const parts = text.split(PLACEHOLDER_REGEX);
-  return parts.map((part, i) => {
-    if (i % 2 === 1) {
-      return (
-        <strong key={i} className="text-[var(--color-action-primary)]">
-          {`{${part}}`}
-        </strong>
-      );
+  const regex = new RegExp(PLACEHOLDER_REGEX.source, "g");
+  const result: React.ReactNode[] = [];
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+  let key = 0;
+
+  while ((match = regex.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      result.push(<span key={key++}>{text.slice(lastIndex, match.index)}</span>);
     }
-    return <span key={i}>{part}</span>;
-  });
+    result.push(
+      <strong key={key++} className="text-[var(--color-action-primary)]">
+        {match[0]}
+      </strong>,
+    );
+    lastIndex = regex.lastIndex;
+  }
+  if (lastIndex < text.length) {
+    result.push(<span key={key++}>{text.slice(lastIndex)}</span>);
+  }
+  return result;
 }
 
 /* --------------------------------------------------------------------------
