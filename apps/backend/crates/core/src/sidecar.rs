@@ -21,8 +21,7 @@ pub const VALID_SIDECAR_FORMATS: &[&str] = &[FORMAT_XML, FORMAT_CSV];
 // ---------------------------------------------------------------------------
 
 pub use crate::job_status::{
-    JOB_STATUS_ID_COMPLETED, JOB_STATUS_ID_FAILED, JOB_STATUS_ID_PENDING,
-    JOB_STATUS_ID_RUNNING,
+    JOB_STATUS_ID_COMPLETED, JOB_STATUS_ID_FAILED, JOB_STATUS_ID_PENDING, JOB_STATUS_ID_RUNNING,
 };
 
 // ---------------------------------------------------------------------------

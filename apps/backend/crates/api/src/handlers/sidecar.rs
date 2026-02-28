@@ -28,14 +28,12 @@ use x121_db::models::sidecar::SidecarTemplate;
 
 /// Look up a sidecar template by ID, returning `AppError::NotFound` if absent.
 async fn ensure_template_exists(pool: &sqlx::PgPool, id: DbId) -> AppResult<SidecarTemplate> {
-    SidecarRepo::get_template(pool, id)
-        .await?
-        .ok_or_else(|| {
-            AppError::Core(CoreError::NotFound {
-                entity: "SidecarTemplate",
-                id,
-            })
+    SidecarRepo::get_template(pool, id).await?.ok_or_else(|| {
+        AppError::Core(CoreError::NotFound {
+            entity: "SidecarTemplate",
+            id,
         })
+    })
 }
 
 // ---------------------------------------------------------------------------

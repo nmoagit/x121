@@ -21,10 +21,10 @@ Source of truth: [`design/design.md`](../design.md)
 | Status | Count |
 |--------|-------|
 | backlog | 0 |
-| planning | 24 |
+| planning | 23 |
 | in-progress | 0 |
 | review | 0 |
-| done | 97 |
+| done | 98 |
 | blocked | 0 |
 | deferred | 0 |
 | maybe | 15 |
@@ -174,7 +174,7 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-42 | Studio Pulse Dashboard | — | `done` | — | |
 | PRD-72 | Project Lifecycle & Archival | — | `planning` | — | |
 | PRD-73 | Production Reporting & Data Export | — | `done` | 2026-02-28 | Migration, core, models, repo, handlers, routes, frontend components, tests |
-| PRD-84 | External Review / Shareable Preview Links | — | `planning` | — | |
+| PRD-84 | External Review / Shareable Preview Links | — | `done` | 2026-02-28 | |
 | PRD-89 | Dashboard Widget Customization | — | `planning` | — | |
 | PRD-102 | Video Compliance Checker | — | `done` | 2026-02-28 | Migration (2 tables), core (24 tests), models, repo, handlers (8), routes, frontend (6 components), 11 tests |
 

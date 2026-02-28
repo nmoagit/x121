@@ -6,10 +6,9 @@
  * Generation Parameters, and Timing.
  */
 
-import { useCallback, useState } from "react";
-
 import { Accordion } from "@/components";
 import { Badge, Spinner } from "@/components";
+import { useCopyToClipboard } from "@/hooks/useCopyToClipboard";
 
 import { useSegmentProvenance } from "./hooks/use-provenance";
 import type { GenerationReceipt, LoraConfig } from "./types";
@@ -28,21 +27,14 @@ interface ReceiptPanelProps {
 
 /** Copy text to clipboard with visual feedback. */
 function CopyableHash({ label, value }: { label: string; value: string }) {
-  const [copied, setCopied] = useState(false);
-
-  const handleCopy = useCallback(() => {
-    navigator.clipboard.writeText(value).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
-    });
-  }, [value]);
+  const { copied, copy } = useCopyToClipboard(1500);
 
   return (
     <div className="flex items-center justify-between gap-2">
       <span className="text-xs text-[var(--color-text-muted)]">{label}</span>
       <button
         type="button"
-        onClick={handleCopy}
+        onClick={() => copy(value)}
         title="Copy to clipboard"
         data-testid={`copy-${label.toLowerCase().replace(/\s+/g, "-")}`}
         className="font-mono text-xs text-[var(--color-text-secondary)] truncate max-w-48 hover:text-[var(--color-text-primary)] transition-colors"

@@ -82,6 +82,7 @@ pub mod scripts;
 pub mod search;
 pub mod segment_comparison;
 pub mod sensitivity;
+pub mod shared_link;
 pub mod sidecar;
 pub mod status;
 pub mod storage;
@@ -999,4 +1000,8 @@ pub fn api_routes() -> Router<AppState> {
         // VFX Sidecar Templates & Dataset Export (PRD-40).
         .nest("/sidecar-templates", sidecar::sidecar_template_router())
         .nest("/datasets", sidecar::dataset_export_router())
+        // Shareable Preview Links: authenticated management (PRD-84).
+        .nest("/shared-links", shared_link::authenticated_router())
+        // Shareable Preview Links: public external review (PRD-84, no auth).
+        .nest("/review", shared_link::public_router())
 }

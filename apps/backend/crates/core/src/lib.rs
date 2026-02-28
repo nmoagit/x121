@@ -82,6 +82,7 @@ pub mod search;
 pub mod segment_comparison;
 pub mod sensitivity;
 pub mod settings;
+pub mod shared_link;
 pub mod sidecar;
 pub mod storage;
 pub mod storyboard;

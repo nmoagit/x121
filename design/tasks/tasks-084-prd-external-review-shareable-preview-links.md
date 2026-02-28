@@ -61,11 +61,11 @@ CREATE TRIGGER set_updated_at BEFORE UPDATE ON shared_links
 ```
 
 **Acceptance Criteria:**
-- [ ] Token hash is unique and indexed for fast lookup
-- [ ] Scope type constrained to valid entity types
-- [ ] `max_views` nullable (NULL = unlimited)
-- [ ] `password_hash` nullable (NULL = no password)
-- [ ] `expires_at` indexed for cleanup queries
+- [x] Token hash is unique and indexed for fast lookup
+- [x] Scope type constrained to valid entity types
+- [x] `max_views` nullable (NULL = unlimited)
+- [x] `password_hash` nullable (NULL = no password)
+- [x] `expires_at` indexed for cleanup queries
 
 ### Task 1.2: Link Access Log Table
 **File:** `migrations/YYYYMMDDHHMMSS_create_link_access_log.sql`
@@ -88,10 +88,10 @@ CREATE INDEX idx_link_access_log_accessed_at ON link_access_log(accessed_at);
 ```
 
 **Acceptance Criteria:**
-- [ ] Tracks every access with timestamp, IP, and user agent
-- [ ] Optional feedback text and approve/reject decision
-- [ ] Optional viewer name for attribution
-- [ ] No `updated_at` -- access logs are immutable
+- [x] Tracks every access with timestamp, IP, and user agent
+- [x] Optional feedback text and approve/reject decision
+- [x] Optional viewer name for attribution
+- [x] No `updated_at` -- access logs are immutable
 
 ---
 
@@ -125,10 +125,10 @@ impl TokenService {
 ```
 
 **Acceptance Criteria:**
-- [ ] Tokens are 32 bytes of cryptographic randomness, base64url-encoded
-- [ ] Only the SHA-256 hash is stored in the database
-- [ ] Token validation is O(1) via hash index lookup
-- [ ] Unit tests verify hash consistency
+- [x] Tokens are 32 bytes of cryptographic randomness, base64url-encoded
+- [x] Only the SHA-256 hash is stored in the database
+- [x] Token validation is O(1) via hash index lookup
+- [x] Unit tests verify hash consistency
 
 ### Task 2.2: Link Validation Service
 **File:** `src/services/shared_link_validator.rs`
@@ -145,21 +145,21 @@ pub enum LinkValidationError {
 ```
 
 **Acceptance Criteria:**
-- [ ] Validates: token exists, not expired, not revoked, view count under limit
-- [ ] If password-protected, requires password check
-- [ ] Increments `current_views` on successful validation
-- [ ] Records access in `link_access_log`
-- [ ] Returns the scoped content reference on success
+- [x] Validates: token exists, not expired, not revoked, view count under limit
+- [x] If password-protected, requires password check
+- [x] Increments `current_views` on successful validation
+- [x] Records access in `link_access_log`
+- [x] Returns the scoped content reference on success
 
 ### Task 2.3: Shared Link Model & CRUD
 **File:** `src/models/shared_link.rs`
 
 **Acceptance Criteria:**
-- [ ] Create: generates token, stores hash, returns plain token in URL
-- [ ] List: by creator (management view), by scope (content view)
-- [ ] Revoke: sets `is_revoked = true`
-- [ ] Bulk revoke: revoke all links for emergency response
-- [ ] Delete: hard delete with cascade to access logs
+- [x] Create: generates token, stores hash, returns plain token in URL
+- [x] List: by creator (management view), by scope (content view)
+- [x] Revoke: sets `is_revoked = true`
+- [x] Bulk revoke: revoke all links for emergency response
+- [x] Delete: hard delete with cascade to access logs
 
 ### Task 2.4: Feedback Collection Service
 **File:** `src/services/shared_link_feedback.rs`
@@ -167,10 +167,10 @@ pub enum LinkValidationError {
 Process feedback from external viewers and attach to review threads.
 
 **Acceptance Criteria:**
-- [ ] Stores feedback in `link_access_log`
-- [ ] Creates a review note in PRD-38 review thread attributed to the link token
-- [ ] Feedback includes: viewer name (optional), decision (approve/reject), text comment
-- [ ] Feedback timestamp recorded
+- [x] Stores feedback in `link_access_log`
+- [x] Creates a review note in PRD-38 review thread attributed to the link token
+- [x] Feedback includes: viewer name (optional), decision (approve/reject), text comment
+- [x] Feedback timestamp recorded
 
 ---
 
@@ -188,10 +188,10 @@ POST   /shared-links/bulk-revoke       -- Revoke multiple links
 ```
 
 **Acceptance Criteria:**
-- [ ] Create accepts: scope_type, scope_id, expires_in, max_views, password
-- [ ] Returns the full shareable URL with plain token
-- [ ] List includes access count, feedback count, expiry status
-- [ ] Revoke is immediate and logged in audit trail
+- [x] Create accepts: scope_type, scope_id, expires_in, max_views, password
+- [x] Returns the full shareable URL with plain token
+- [x] List includes access count, feedback count, expiry status
+- [x] Revoke is immediate and logged in audit trail
 
 ### Task 3.2: External Review Routes (Public, Token-Authenticated)
 **File:** `src/routes/external_review.rs`
@@ -203,11 +203,11 @@ POST /review/:token/verify-password    -- Verify password for protected links
 ```
 
 **Acceptance Criteria:**
-- [ ] GET validates token and returns scoped content metadata + video URLs
-- [ ] Video URLs are watermarked versions (PRD-39 watermark settings)
-- [ ] POST feedback accepts: viewer_name, decision, feedback_text
-- [ ] All routes log access in `link_access_log`
-- [ ] Expired/revoked tokens return clear error messages without content
+- [x] GET validates token and returns scoped content metadata + video URLs
+- [x] Video URLs are watermarked versions (PRD-39 watermark settings)
+- [x] POST feedback accepts: viewer_name, decision, feedback_text
+- [x] All routes log access in `link_access_log`
+- [x] Expired/revoked tokens return clear error messages without content
 
 ---
 
@@ -219,10 +219,10 @@ POST /review/:token/verify-password    -- Verify password for protected links
 Lightweight, standalone page for external viewers. Separate bundle from main app.
 
 **Acceptance Criteria:**
-- [ ] Minimal, clean layout with optional studio logo/name
-- [ ] No platform chrome, no navigation -- just content and feedback controls
-- [ ] Mobile-responsive for viewing on any device
-- [ ] Fast load (<3 seconds)
+- [x] Minimal, clean layout with optional studio logo/name
+- [x] No platform chrome, no navigation -- just content and feedback controls
+- [x] Mobile-responsive for viewing on any device
+- [x] Fast load (<3 seconds)
 
 ### Task 4.2: Video Player Integration
 **File:** `frontend/src/components/external/ExternalVideoPlayer.tsx`
@@ -230,37 +230,37 @@ Lightweight, standalone page for external viewers. Separate bundle from main app
 Embedded video player for external review.
 
 **Acceptance Criteria:**
-- [ ] Uses PRD-83 video playback engine (embedded, lightweight mode)
-- [ ] Watermarked video playback
-- [ ] Standard playback controls (play/pause, seek, volume)
-- [ ] No download button
+- [x] Uses PRD-83 video playback engine (embedded, lightweight mode)
+- [x] Watermarked video playback
+- [x] Standard playback controls (play/pause, seek, volume)
+- [x] No download button
 
 ### Task 4.3: Feedback Form
 **File:** `frontend/src/components/external/FeedbackForm.tsx`
 
 **Acceptance Criteria:**
-- [ ] Optional viewer name input
-- [ ] Approve/Reject buttons
-- [ ] Text comment field
-- [ ] Submit confirmation with "Thank you" message
-- [ ] Form disables after submission (prevent duplicates)
+- [x] Optional viewer name input
+- [x] Approve/Reject buttons
+- [x] Text comment field
+- [x] Submit confirmation with "Thank you" message
+- [x] Form disables after submission (prevent duplicates)
 
 ### Task 4.4: Password Gate
 **File:** `frontend/src/components/external/PasswordGate.tsx`
 
 **Acceptance Criteria:**
-- [ ] Password input shown before content for protected links
-- [ ] Clear error on incorrect password
-- [ ] Session-based: verified once per browser session
+- [x] Password input shown before content for protected links
+- [x] Clear error on incorrect password
+- [x] Session-based: verified once per browser session
 
 ### Task 4.5: Expired/Error States
 **File:** `frontend/src/components/external/LinkError.tsx`
 
 **Acceptance Criteria:**
-- [ ] "This link has expired" message with expiry date
-- [ ] "View limit reached" message
-- [ ] "This link has been revoked" message
-- [ ] Professional appearance -- no technical error codes
+- [x] "This link has expired" message with expiry date
+- [x] "View limit reached" message
+- [x] "This link has been revoked" message
+- [x] Professional appearance -- no technical error codes
 
 ---
 
@@ -270,29 +270,29 @@ Embedded video player for external review.
 **File:** `frontend/src/pages/SharedLinks.tsx`
 
 **Acceptance Criteria:**
-- [ ] List all active shared links with: scope, created date, expiry, view count, feedback count
-- [ ] Status indicators: active (green), expiring soon (yellow), expired (grey), revoked (red)
-- [ ] Revoke button per link with confirmation
-- [ ] Bulk revoke action for emergency response
-- [ ] Copy link URL button
+- [x] List all active shared links with: scope, created date, expiry, view count, feedback count
+- [x] Status indicators: active (green), expiring soon (yellow), expired (grey), revoked (red)
+- [x] Revoke button per link with confirmation
+- [x] Bulk revoke action for emergency response
+- [x] Copy link URL button
 
 ### Task 5.2: Link Creation Dialog
 **File:** `frontend/src/components/shared-links/CreateLinkDialog.tsx`
 
 **Acceptance Criteria:**
-- [ ] Scope selector: current segment, scene, character, or project
-- [ ] Expiry selector: 24h, 7d, 30d, custom
-- [ ] Optional view limit input
-- [ ] Optional password input
-- [ ] Generated URL displayed with copy button
+- [x] Scope selector: current segment, scene, character, or project
+- [x] Expiry selector: 24h, 7d, 30d, custom
+- [x] Optional view limit input
+- [x] Optional password input
+- [x] Generated URL displayed with copy button
 
 ### Task 5.3: Link Activity View
 **File:** `frontend/src/components/shared-links/LinkActivity.tsx`
 
 **Acceptance Criteria:**
-- [ ] Timeline of access events for a specific link
-- [ ] Each event shows: timestamp, IP, device, feedback (if any)
-- [ ] Summary: total views, unique IPs, feedback submitted
+- [x] Timeline of access events for a specific link
+- [x] Each event shows: timestamp, IP, device, feedback (if any)
+- [x] Summary: total views, unique IPs, feedback submitted
 
 ---
 
@@ -302,20 +302,20 @@ Embedded video player for external review.
 **File:** `tests/shared_link_token_test.rs`
 
 **Acceptance Criteria:**
-- [ ] Test token generation produces unique tokens
-- [ ] Test hash consistency (same input produces same hash)
-- [ ] Test token validation succeeds for valid token
-- [ ] Test expired tokens are rejected
-- [ ] Test revoked tokens are rejected
-- [ ] Test view limit enforcement
+- [x] Test token generation produces unique tokens
+- [x] Test hash consistency (same input produces same hash)
+- [x] Test token validation succeeds for valid token
+- [x] Test expired tokens are rejected
+- [x] Test revoked tokens are rejected
+- [x] Test view limit enforcement
 
 ### Task 6.2: Feedback Integration Tests
 **File:** `tests/shared_link_feedback_test.rs`
 
 **Acceptance Criteria:**
-- [ ] Test feedback is stored in access log
-- [ ] Test feedback flows to PRD-38 review thread
-- [ ] Test feedback attributed to link token
+- [x] Test feedback is stored in access log
+- [x] Test feedback flows to PRD-38 review thread
+- [x] Test feedback attributed to link token
 
 ---
 

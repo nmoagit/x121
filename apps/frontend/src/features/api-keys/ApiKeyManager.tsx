@@ -8,6 +8,7 @@
 import { useCallback, useState } from "react";
 
 import { Card, Modal } from "@/components/composite";
+import { useCopyToClipboard } from "@/hooks/useCopyToClipboard";
 import { Stack } from "@/components/layout";
 import { Badge, Button, Input, Spinner } from "@/components/primitives";
 import { formatDateTime } from "@/lib/format";
@@ -117,14 +118,11 @@ interface KeyRevealProps {
 }
 
 function KeyReveal({ response, onClose }: KeyRevealProps) {
-  const [copied, setCopied] = useState(false);
+  const { copied, copy } = useCopyToClipboard();
 
   const handleCopy = useCallback(() => {
-    navigator.clipboard.writeText(response.plaintext_key).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    });
-  }, [response.plaintext_key]);
+    copy(response.plaintext_key);
+  }, [response.plaintext_key, copy]);
 
   return (
     <Stack gap={4}>
