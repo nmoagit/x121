@@ -82,6 +82,7 @@ pub mod scripts;
 pub mod search;
 pub mod segment_comparison;
 pub mod sensitivity;
+pub mod sidecar;
 pub mod status;
 pub mod storage;
 pub mod storyboard;
@@ -778,6 +779,7 @@ pub fn api_routes() -> Router<AppState> {
             .merge(comparison::router())
             .merge(poster_frame::project_poster_router())
             .merge(consistency_report::project_consistency_router())
+            .merge(sidecar::dataset_export_project_router())
             .nest("/{project_id}/characters", character_metadata::project_router())
             .nest("/{project_id}/ingest", character_ingest::router())
             .nest("/{project_id}/scene-settings", project_scene_settings::router()))
@@ -994,4 +996,7 @@ pub fn api_routes() -> Router<AppState> {
         .nest("/video-specs", video_spec::router())
         // Video Compliance Checker: rule management (PRD-102).
         .nest("/compliance-rules", compliance::compliance_rule_router())
+        // VFX Sidecar Templates & Dataset Export (PRD-40).
+        .nest("/sidecar-templates", sidecar::sidecar_template_router())
+        .nest("/datasets", sidecar::dataset_export_router())
 }

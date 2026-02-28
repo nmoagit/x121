@@ -61,8 +61,7 @@ pub async fn create_rule(
     State(state): State<AppState>,
     Json(input): Json<CreateComplianceRule>,
 ) -> AppResult<impl IntoResponse> {
-    validate_rule_type(&input.rule_type)
-        .map_err(AppError::BadRequest)?;
+    validate_rule_type(&input.rule_type).map_err(AppError::BadRequest)?;
 
     let rule = ComplianceRepo::create_rule(&state.pool, &input, auth.user_id).await?;
 

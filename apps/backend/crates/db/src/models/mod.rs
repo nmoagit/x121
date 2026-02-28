@@ -107,6 +107,7 @@ pub mod segment_trim;
 pub mod segment_version;
 pub mod sensitivity;
 pub mod session;
+pub mod sidecar;
 pub mod status;
 pub mod storage;
 pub mod tag;

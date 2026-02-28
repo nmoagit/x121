@@ -56,10 +56,10 @@ CREATE TRIGGER set_updated_at BEFORE UPDATE ON sidecar_templates
 ```
 
 **Acceptance Criteria:**
-- [ ] `BIGSERIAL PRIMARY KEY`, `TIMESTAMPTZ` timestamps, `updated_at` trigger
-- [ ] CHECK constraint on `format` column
-- [ ] `template_json` stores field mappings as JSONB
-- [ ] `is_builtin` flag distinguishes platform-provided vs. custom templates
+- [x] `BIGSERIAL PRIMARY KEY`, `TIMESTAMPTZ` timestamps, `updated_at` trigger
+- [x] CHECK constraint on `format` column
+- [x] `template_json` stores field mappings as JSONB
+- [x] `is_builtin` flag distinguishes platform-provided vs. custom templates
 
 ### Task 1.2: Seed Built-in Sidecar Templates
 **File:** `migrations/YYYYMMDDHHMMSS_seed_sidecar_templates.sql`
@@ -80,9 +80,9 @@ INSERT INTO sidecar_templates (name, description, format, target_tool, template_
 ```
 
 **Acceptance Criteria:**
-- [ ] Three built-in templates seeded: Nuke, After Effects, Resolve
-- [ ] Templates have appropriate field definitions for each tool
-- [ ] `is_builtin` set to `true` for all seeded templates
+- [x] Three built-in templates seeded: Nuke, After Effects, Resolve
+- [x] Templates have appropriate field definitions for each tool
+- [x] `is_builtin` set to `true` for all seeded templates
 
 ### Task 1.3: Dataset Exports Table
 **File:** `migrations/YYYYMMDDHHMMSS_create_dataset_exports.sql`
@@ -112,9 +112,9 @@ CREATE TRIGGER set_updated_at BEFORE UPDATE ON dataset_exports
 ```
 
 **Acceptance Criteria:**
-- [ ] All FK columns indexed
-- [ ] Uses `job_statuses` lookup for status (reusing existing lookup table)
-- [ ] `config_json` stores filters, splits, and quality thresholds
+- [x] All FK columns indexed
+- [x] Uses `job_statuses` lookup for status (reusing existing lookup table)
+- [x] `config_json` stores filters, splits, and quality thresholds
 
 ---
 
@@ -140,9 +140,9 @@ pub struct SidecarTemplate {
 ```
 
 **Acceptance Criteria:**
-- [ ] CRUD operations: create, get_by_id, list_all, update, delete
-- [ ] Prevent deletion of built-in templates
-- [ ] Validate template_json structure on create/update
+- [x] CRUD operations: create, get_by_id, list_all, update, delete
+- [x] Prevent deletion of built-in templates
+- [x] Validate template_json structure on create/update
 
 ### Task 2.2: XML Sidecar Generator
 **File:** `src/services/sidecar_xml_generator.rs`
@@ -165,11 +165,11 @@ impl XmlSidecarGenerator {
 ```
 
 **Acceptance Criteria:**
-- [ ] Generates well-formed XML with template-defined root element
-- [ ] Includes: resolution, framerate, codec, duration, color space, generation parameters
-- [ ] Sidecar filename matches video filename (e.g., `video.mp4` -> `video.xml`)
-- [ ] Output validates against basic XML schema
-- [ ] Generation completes in <1 second per video
+- [x] Generates well-formed XML with template-defined root element
+- [x] Includes: resolution, framerate, codec, duration, color space, generation parameters
+- [x] Sidecar filename matches video filename (e.g., `video.mp4` -> `video.xml`)
+- [x] Output validates against basic XML schema
+- [x] Generation completes in <1 second per video
 
 ### Task 2.3: CSV Sidecar Generator
 **File:** `src/services/sidecar_csv_generator.rs`
@@ -177,10 +177,10 @@ impl XmlSidecarGenerator {
 Generate CSV files with frame-level technical data.
 
 **Acceptance Criteria:**
-- [ ] Header row from template column definitions
-- [ ] Per-frame rows: face confidence, motion scores, quality metrics, boundary SSIM
-- [ ] CSV properly escaped and RFC 4180 compliant
-- [ ] Filename matches video: `video.mp4` -> `video.csv`
+- [x] Header row from template column definitions
+- [x] Per-frame rows: face confidence, motion scores, quality metrics, boundary SSIM
+- [x] CSV properly escaped and RFC 4180 compliant
+- [x] Filename matches video: `video.mp4` -> `video.csv`
 
 ### Task 2.4: Sidecar Export Orchestrator
 **File:** `src/services/sidecar_exporter.rs`
@@ -188,10 +188,10 @@ Generate CSV files with frame-level technical data.
 Coordinate sidecar generation for a project or character export.
 
 **Acceptance Criteria:**
-- [ ] Takes project/character scope and selected templates
-- [ ] Generates sidecars for all videos in scope
-- [ ] Integrates with PRD-39 export pipeline (sidecars included in delivery)
-- [ ] Progress reporting per video
+- [x] Takes project/character scope and selected templates
+- [x] Generates sidecars for all videos in scope
+- [x] Integrates with PRD-39 export pipeline (sidecars included in delivery)
+- [x] Progress reporting per video
 
 ---
 
@@ -201,8 +201,8 @@ Coordinate sidecar generation for a project or character export.
 **File:** `src/models/dataset_export.rs`
 
 **Acceptance Criteria:**
-- [ ] Maps all `dataset_exports` table columns
-- [ ] Functions: create, get_by_id, list_by_project, update_status
+- [x] Maps all `dataset_exports` table columns
+- [x] Functions: create, get_by_id, list_by_project, update_status
 
 ### Task 3.2: Dataset Packager Service
 **File:** `src/services/dataset_packager.rs`
@@ -223,11 +223,11 @@ pub struct DatasetConfig {
 ```
 
 **Acceptance Criteria:**
-- [ ] Packages video files, face crop images, and per-sample metadata JSON
-- [ ] Configurable filters: quality threshold, scene types, characters
-- [ ] Metadata per sample includes: prompt text, LoRA weights, quality scores, failure tags
-- [ ] Split assignment (train/validation/test) by configured percentages
-- [ ] Large dataset streaming to avoid memory issues
+- [x] Packages video files, face crop images, and per-sample metadata JSON
+- [x] Configurable filters: quality threshold, scene types, characters
+- [x] Metadata per sample includes: prompt text, LoRA weights, quality scores, failure tags
+- [x] Split assignment (train/validation/test) by configured percentages
+- [x] Large dataset streaming to avoid memory issues
 
 ### Task 3.3: Dataset Manifest Builder
 **File:** `src/services/dataset_manifest.rs`
@@ -254,10 +254,10 @@ pub struct DatasetSample {
 ```
 
 **Acceptance Criteria:**
-- [ ] JSON manifest lists all samples with relative paths
-- [ ] Split configuration reflected in manifest
-- [ ] Compatible with HuggingFace datasets and PyTorch DataLoader conventions
-- [ ] Manifest written as `manifest.json` at dataset root
+- [x] JSON manifest lists all samples with relative paths
+- [x] Split configuration reflected in manifest
+- [x] Compatible with HuggingFace datasets and PyTorch DataLoader conventions
+- [x] Manifest written as `manifest.json` at dataset root
 
 ---
 
@@ -275,8 +275,8 @@ DELETE /sidecar-templates/:id          -- Delete (non-builtin only)
 ```
 
 **Acceptance Criteria:**
-- [ ] CRUD with protection for built-in templates
-- [ ] Template preview endpoint returns sample output for a given template
+- [x] CRUD with protection for built-in templates
+- [x] Template preview endpoint returns sample output for a given template
 
 ### Task 4.2: Sidecar Export Routes
 **File:** `src/routes/sidecar_export.rs`
@@ -286,9 +286,9 @@ POST   /projects/:id/export-sidecars   -- Generate sidecars for project
 ```
 
 **Acceptance Criteria:**
-- [ ] Accepts template IDs and scope (project/character)
-- [ ] Async operation returning job ID for progress tracking
-- [ ] Sidecars available for download when complete
+- [x] Accepts template IDs and scope (project/character)
+- [x] Async operation returning job ID for progress tracking
+- [x] Sidecars available for download when complete
 
 ### Task 4.3: Dataset Export Routes
 **File:** `src/routes/dataset_export.rs`
@@ -300,9 +300,9 @@ GET    /projects/:id/datasets/:id      -- Get dataset details with manifest
 ```
 
 **Acceptance Criteria:**
-- [ ] Accepts filter configuration (quality threshold, scene types, characters, splits)
-- [ ] Async operation with progress tracking
-- [ ] Download link for completed dataset ZIP
+- [x] Accepts filter configuration (quality threshold, scene types, characters, splits)
+- [x] Async operation with progress tracking
+- [x] Download link for completed dataset ZIP
 
 ---
 
@@ -312,29 +312,29 @@ GET    /projects/:id/datasets/:id      -- Get dataset details with manifest
 **File:** `frontend/src/pages/SidecarTemplates.tsx`
 
 **Acceptance Criteria:**
-- [ ] List templates with format, target tool, built-in badge
-- [ ] Custom template editor with field mapping configuration
-- [ ] Preview panel showing sample sidecar output
-- [ ] Delete blocked for built-in templates
+- [x] List templates with format, target tool, built-in badge
+- [x] Custom template editor with field mapping configuration
+- [x] Preview panel showing sample sidecar output
+- [x] Delete blocked for built-in templates
 
 ### Task 5.2: Export Configuration Panel
 **File:** `frontend/src/components/export/SidecarExportPanel.tsx`
 
 **Acceptance Criteria:**
-- [ ] Template selection with multi-select for generating multiple formats
-- [ ] Scope selection (project, character)
-- [ ] Progress display during generation
-- [ ] Accessible from project delivery view
+- [x] Template selection with multi-select for generating multiple formats
+- [x] Scope selection (project, character)
+- [x] Progress display during generation
+- [x] Accessible from project delivery view
 
 ### Task 5.3: Dataset Export Configuration
 **File:** `frontend/src/components/export/DatasetExportPanel.tsx`
 
 **Acceptance Criteria:**
-- [ ] Quality threshold slider
-- [ ] Scene type filter checkboxes
-- [ ] Character selection
-- [ ] Train/validation/test split percentage inputs (must sum to 100%)
-- [ ] Progress display for large exports
+- [x] Quality threshold slider
+- [x] Scene type filter checkboxes
+- [x] Character selection
+- [x] Train/validation/test split percentage inputs (must sum to 100%)
+- [x] Progress display for large exports
 
 ---
 
@@ -344,19 +344,19 @@ GET    /projects/:id/datasets/:id      -- Get dataset details with manifest
 **File:** `tests/sidecar_generation_test.rs`
 
 **Acceptance Criteria:**
-- [ ] Test XML generation validates output structure
-- [ ] Test CSV generation validates header and row counts
-- [ ] Test filename matching (sidecar name matches video name)
-- [ ] Test template rendering with various field configurations
+- [x] Test XML generation validates output structure
+- [x] Test CSV generation validates header and row counts
+- [x] Test filename matching (sidecar name matches video name)
+- [x] Test template rendering with various field configurations
 
 ### Task 6.2: Dataset Packaging Tests
 **File:** `tests/dataset_packaging_test.rs`
 
 **Acceptance Criteria:**
-- [ ] Test manifest structure is valid and complete
-- [ ] Test split assignments respect configured percentages
-- [ ] Test quality threshold filtering excludes low-quality samples
-- [ ] Test ZIP structure contains all expected files
+- [x] Test manifest structure is valid and complete
+- [x] Test split assignments respect configured percentages
+- [x] Test quality threshold filtering excludes low-quality samples
+- [x] Test ZIP structure contains all expected files
 
 ---
 

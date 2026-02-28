@@ -21,10 +21,10 @@ Source of truth: [`design/design.md`](../design.md)
 | Status | Count |
 |--------|-------|
 | backlog | 0 |
-| planning | 25 |
+| planning | 24 |
 | in-progress | 0 |
 | review | 0 |
-| done | 96 |
+| done | 97 |
 | blocked | 0 |
 | deferred | 0 |
 | maybe | 15 |
@@ -169,7 +169,7 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD | Title | Priority | Status | Owner | Notes |
 |-----|-------|----------|--------|-------|-------|
 | PRD-39 | Scene Assembler & Delivery Packaging | — | `done` | 2026-02-22 | |
-| PRD-40 | VFX Sidecar & Dataset Export | — | `planning` | — | |
+| PRD-40 | VFX Sidecar & Dataset Export | — | `done` | 2026-02-28 | |
 | PRD-41 | Performance & Benchmarking Dashboard | — | `done` | — | |
 | PRD-42 | Studio Pulse Dashboard | — | `done` | — | |
 | PRD-72 | Project Lifecycle & Archival | — | `planning` | — | |

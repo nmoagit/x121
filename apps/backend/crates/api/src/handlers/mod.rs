@@ -92,6 +92,7 @@ pub mod search;
 pub mod segment;
 pub mod segment_comparison;
 pub mod sensitivity;
+pub mod sidecar;
 pub mod source_image;
 pub mod status;
 pub mod storage;

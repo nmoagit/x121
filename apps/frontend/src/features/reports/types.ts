@@ -5,7 +5,12 @@
  * generated reports, and report schedules.
  */
 
-import type { BadgeVariant } from "@/components/primitives";
+import {
+  type JobStatusLabel,
+  JOB_STATUS_BADGE_VARIANT,
+  JOB_STATUS_LABELS,
+  resolveJobStatus,
+} from "@/lib/job-status";
 
 /* --------------------------------------------------------------------------
    Report format
@@ -14,10 +19,11 @@ import type { BadgeVariant } from "@/components/primitives";
 export type ReportFormat = "json" | "csv" | "pdf";
 
 /* --------------------------------------------------------------------------
-   Report status
+   Report status -- delegates to shared job-status module
    -------------------------------------------------------------------------- */
 
-export type ReportStatus = "pending" | "running" | "completed" | "failed";
+/** @deprecated Use `JobStatusLabel` from `@/lib/job-status` directly. */
+export type ReportStatus = JobStatusLabel;
 
 /* --------------------------------------------------------------------------
    Entities
@@ -121,36 +127,18 @@ export const SCHEDULE_LABELS: Record<string, string> = {
 };
 
 /* --------------------------------------------------------------------------
-   Status styling
+   Status styling -- delegates to shared job-status module
    -------------------------------------------------------------------------- */
 
-export const REPORT_STATUS_BADGE_VARIANT: Record<ReportStatus, BadgeVariant> = {
-  pending: "default",
-  running: "info",
-  completed: "success",
-  failed: "danger",
-};
+/** @deprecated Use `JOB_STATUS_BADGE_VARIANT` from `@/lib/job-status`. */
+export const REPORT_STATUS_BADGE_VARIANT = JOB_STATUS_BADGE_VARIANT;
 
-export const REPORT_STATUS_LABELS: Record<ReportStatus, string> = {
-  pending: "Pending",
-  running: "Running",
-  completed: "Completed",
-  failed: "Failed",
-};
-
-/* --------------------------------------------------------------------------
-   Helpers
-   -------------------------------------------------------------------------- */
+/** @deprecated Use `JOB_STATUS_LABELS` from `@/lib/job-status`. */
+export const REPORT_STATUS_LABELS = JOB_STATUS_LABELS;
 
 /**
- * Maps a numeric status_id (from job_statuses lookup table) to a ReportStatus string.
+ * Resolves a numeric `status_id` to a status label string.
+ *
+ * @deprecated Use `resolveJobStatus` from `@/lib/job-status` directly.
  */
-export function resolveReportStatus(statusId: number): ReportStatus {
-  const STATUS_MAP: Record<number, ReportStatus> = {
-    1: "pending",
-    2: "running",
-    3: "completed",
-    4: "failed",
-  };
-  return STATUS_MAP[statusId] ?? "pending";
-}
+export const resolveReportStatus = resolveJobStatus;

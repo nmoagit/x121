@@ -48,17 +48,19 @@ pub const VALID_FORMATS: &[&str] = &["json", "csv", "pdf"];
 const VALID_SCHEDULE_KEYWORDS: &[&str] = &["daily", "weekly", "monthly"];
 
 // ---------------------------------------------------------------------------
-// Report status ID constants (matching job_statuses seed data)
+// Re-export shared job status ID constants with report-prefixed aliases
 // ---------------------------------------------------------------------------
 
-/// Status ID for a pending report.
-pub const REPORT_STATUS_ID_PENDING: i64 = 1;
-/// Status ID for a running report.
-pub const REPORT_STATUS_ID_RUNNING: i64 = 2;
-/// Status ID for a completed report.
-pub const REPORT_STATUS_ID_COMPLETED: i64 = 3;
-/// Status ID for a failed report.
-pub const REPORT_STATUS_ID_FAILED: i64 = 4;
+use crate::job_status;
+
+/// Status ID for a pending report (alias for `JOB_STATUS_ID_PENDING`).
+pub const REPORT_STATUS_ID_PENDING: i64 = job_status::JOB_STATUS_ID_PENDING;
+/// Status ID for a running report (alias for `JOB_STATUS_ID_RUNNING`).
+pub const REPORT_STATUS_ID_RUNNING: i64 = job_status::JOB_STATUS_ID_RUNNING;
+/// Status ID for a completed report (alias for `JOB_STATUS_ID_COMPLETED`).
+pub const REPORT_STATUS_ID_COMPLETED: i64 = job_status::JOB_STATUS_ID_COMPLETED;
+/// Status ID for a failed report (alias for `JOB_STATUS_ID_FAILED`).
+pub const REPORT_STATUS_ID_FAILED: i64 = job_status::JOB_STATUS_ID_FAILED;
 
 // ---------------------------------------------------------------------------
 // Validation functions
