@@ -75,6 +75,7 @@ pub mod scene_type;
 pub mod scene_type_inheritance;
 pub mod scripts;
 pub mod search;
+pub mod segment_comparison;
 pub mod status;
 pub mod storage;
 pub mod storyboard;
@@ -268,6 +269,10 @@ use crate::ws;
 /// /segments/{id}/smooth-boundary                apply smoothing (POST, PRD-25)
 /// /segments/{id}/versions                       version history (GET, PRD-25)
 /// /segments/{id}/clear-stale                    clear stale flag (PATCH, PRD-25)
+/// /segments/{id}/version-history                version history (GET, PRD-101)
+/// /segments/{id}/compare?v1={n}&v2={n}          compare versions (GET, PRD-101)
+/// /segments/{id}/versions/{version_id}/select   select active version (POST, PRD-101)
+/// /segments/{id}/versions/{version_id}          get single version (GET, PRD-101)
 /// /segments/{id}/retry-attempts                 list, create (GET, POST, PRD-71)
 /// /segments/{id}/retry-attempts/{aid}           get, update (GET, PUT, PRD-71)
 /// /segments/{id}/retry-attempts/{aid}/select    select best-of-N (POST, PRD-71)
@@ -769,12 +774,14 @@ pub fn api_routes() -> Router<AppState> {
         // Segment-scoped boundary frame selection (PRD-24).
         // Segment-scoped QA scores (PRD-49).
         // Segment-scoped re-stitching: regenerate, boundary-check, smooth, versions, clear-stale (PRD-25).
+        // Segment-scoped version comparison: history, compare, select, get (PRD-101).
         .nest("/segments", approval::segment_router()
             .merge(review_notes::segment_notes_router())
             .merge(annotation::segment_annotation_router())
             .merge(generation::generation_segment_router())
             .merge(quality_gates::segment_qa_router())
             .merge(restitching::segment_restitching_router())
+            .merge(segment_comparison::segment_comparison_router())
             .merge(temporal::segment_temporal_router())
             .merge(provenance::segment_provenance_router())
             .merge(trimming::segment_trim_router())

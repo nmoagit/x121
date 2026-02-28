@@ -60,11 +60,11 @@ CREATE TRIGGER set_updated_at BEFORE UPDATE ON segment_versions
 ```
 
 **Acceptance Criteria:**
-- [ ] `segment_versions` stores multiple versions per segment with video path and QA scores
-- [ ] Unique constraint on (segment_id, version_number)
-- [ ] `selected` flag marks the active version
-- [ ] Partial index on selected=TRUE for efficient active version queries
-- [ ] All FK columns indexed, `updated_at` trigger
+- [x] `segment_versions` stores multiple versions per segment with video path and QA scores
+- [x] Unique constraint on (segment_id, version_number)
+- [x] `selected` flag marks the active version
+- [x] Partial index on selected=TRUE for efficient active version queries
+- [x] All FK columns indexed, `updated_at` trigger
 
 ### Task 1.2: Segment Version Model & Repository
 **File:** `src/models/segment_version.rs`, `src/repositories/segment_version_repo.rs`
@@ -91,10 +91,10 @@ impl SegmentVersionRepo {
 ```
 
 **Acceptance Criteria:**
-- [ ] Model and repository with version CRUD
-- [ ] `select_version` marks one version as selected and unmarks others
-- [ ] `get_versions` returns all versions ordered by version_number
-- [ ] Unit tests
+- [x] Model and repository with version CRUD
+- [x] `select_version` marks one version as selected and unmarks others
+- [x] `get_versions` returns all versions ordered by version_number
+- [x] Unit tests
 
 ### Task 1.3: Comparison API
 **File:** `src/routes/segment_comparison.rs`
@@ -110,10 +110,10 @@ pub fn comparison_routes() -> Router<AppState> {
 ```
 
 **Acceptance Criteria:**
-- [ ] `GET /segments/:id/versions` returns all versions with metadata
-- [ ] `GET /segments/:id/compare?v1=1&v2=2` returns comparison data for two versions
-- [ ] `GET /segments/:id/versions/:v/diff-overlay` returns SSIM difference overlay image
-- [ ] `POST /segments/:id/versions/:v/select` marks a version as the selected/active one
+- [x] `GET /segments/:id/versions` returns all versions with metadata
+- [x] `GET /segments/:id/compare?v1=1&v2=2` returns comparison data for two versions
+- [x] `GET /segments/:id/versions/:v/diff-overlay` returns SSIM difference overlay image
+- [x] `POST /segments/:id/versions/:v/select` marks a version as the selected/active one
 
 ---
 
@@ -141,10 +141,10 @@ impl SSIMCalculator {
 ```
 
 **Acceptance Criteria:**
-- [ ] Compute SSIM between corresponding frames of two versions
-- [ ] Generate heat map overlay: blue = identical, red = maximum difference
-- [ ] SSIM computation completes in <5 seconds per comparison
-- [ ] Heat map stored as overlay images for client rendering
+- [x] Compute SSIM between corresponding frames of two versions
+- [x] Generate heat map overlay: blue = identical, red = maximum difference
+- [x] SSIM computation completes in <5 seconds per comparison
+- [x] Heat map stored as overlay images for client rendering
 
 ---
 
@@ -170,26 +170,26 @@ export const RegenerationComparison: React.FC<RegenerationComparisonProps> = (pr
 ```
 
 **Acceptance Criteria:**
-- [ ] Old version on left, new version on right
-- [ ] Renders within 2 seconds of regeneration completion
-- [ ] No manual navigation required — comparison appears automatically
+- [x] Old version on left, new version on right
+- [x] Renders within 2 seconds of regeneration completion
+- [x] No manual navigation required — comparison appears automatically
 
 ### Task 3.2: Synchronized Dual Playback
 **File:** `frontend/src/features/comparison/useDualSync.ts`
 
 **Acceptance Criteria:**
-- [ ] Play, pause, scrub, and frame-step controls affect both simultaneously
-- [ ] Frame-accurate synchronization via PRD-083 engine
-- [ ] Individual volume controls per side
+- [x] Play, pause, scrub, and frame-step controls affect both simultaneously
+- [x] Frame-accurate synchronization via PRD-083 engine
+- [x] Individual volume controls per side
 
 ### Task 3.3: Difference Overlay Toggle
 **File:** `frontend/src/features/comparison/DiffOverlay.tsx`
 
 **Acceptance Criteria:**
-- [ ] Optional SSIM-based difference overlay
-- [ ] Heat map: blue = identical, red = maximum difference
-- [ ] Toggleable on/off (overlay can be visually cluttering)
-- [ ] Renders on top of the new version video
+- [x] Optional SSIM-based difference overlay
+- [x] Heat map: blue = identical, red = maximum difference
+- [x] Toggleable on/off (overlay can be visually cluttering)
+- [x] Renders on top of the new version video
 
 ---
 
@@ -199,10 +199,10 @@ export const RegenerationComparison: React.FC<RegenerationComparisonProps> = (pr
 **File:** `frontend/src/features/comparison/QAScoreComparison.tsx`
 
 **Acceptance Criteria:**
-- [ ] Show PRD-049 QA scores for both versions side by side
-- [ ] Format: "Old: face 0.82, motion 0.71. New: face 0.89, motion 0.68"
-- [ ] Color-coded: green for improved metrics, red for degraded
-- [ ] Overall improvement/degradation summary
+- [x] Show PRD-049 QA scores for both versions side by side
+- [x] Format: "Old: face 0.82, motion 0.71. New: face 0.89, motion 0.68"
+- [x] Color-coded: green for improved metrics, red for degraded
+- [x] Overall improvement/degradation summary
 
 ---
 
@@ -212,11 +212,11 @@ export const RegenerationComparison: React.FC<RegenerationComparisonProps> = (pr
 **File:** `frontend/src/features/comparison/ComparisonActions.tsx`
 
 **Acceptance Criteria:**
-- [ ] "Keep New" — approve the regeneration (selects new version)
-- [ ] "Revert to Old" — restore previous version
-- [ ] "Keep Both" — create a branch via PRD-050
-- [ ] Single keyboard shortcut for each action
-- [ ] Users make decisions in <10 seconds on average
+- [x] "Keep New" — approve the regeneration (selects new version)
+- [x] "Revert to Old" — restore previous version
+- [x] "Keep Both" — create a branch via PRD-050
+- [x] Single keyboard shortcut for each action
+- [x] Users make decisions in <10 seconds on average
 
 ---
 
@@ -226,10 +226,10 @@ export const RegenerationComparison: React.FC<RegenerationComparisonProps> = (pr
 **File:** `frontend/src/features/comparison/VersionFilmstrip.tsx`
 
 **Acceptance Criteria:**
-- [ ] Filmstrip showing all previous versions of a segment
-- [ ] Select any two versions for side-by-side comparison
-- [ ] Version metadata: generation date, parameters used, QA scores
-- [ ] Thumbnail per version for visual identification
+- [x] Filmstrip showing all previous versions of a segment
+- [x] Select any two versions for side-by-side comparison
+- [x] Version metadata: generation date, parameters used, QA scores
+- [x] Thumbnail per version for visual identification
 
 ---
 
@@ -239,11 +239,11 @@ export const RegenerationComparison: React.FC<RegenerationComparisonProps> = (pr
 **File:** `frontend/src/features/comparison/BatchComparison.tsx`
 
 **Acceptance Criteria:**
-- [ ] When multiple segments regenerated at once, present sequential comparison workflow
-- [ ] Review each regenerated segment one by one
-- [ ] Accept/revert each with progress tracking
-- [ ] Summary at end: "Kept new: 8, Reverted: 2"
-- [ ] Skip option for segments to review later
+- [x] When multiple segments regenerated at once, present sequential comparison workflow
+- [x] Review each regenerated segment one by one
+- [x] Accept/revert each with progress tracking
+- [x] Summary at end: "Kept new: 8, Reverted: 2"
+- [x] Skip option for segments to review later
 
 ---
 
@@ -253,13 +253,13 @@ export const RegenerationComparison: React.FC<RegenerationComparisonProps> = (pr
 **File:** `tests/comparison_test.rs`, `frontend/src/features/comparison/__tests__/`
 
 **Acceptance Criteria:**
-- [ ] Comparison view renders within 2 seconds of regeneration
-- [ ] Synchronized playback maintains frame-level accuracy
-- [ ] SSIM overlay renders in <5 seconds per comparison
-- [ ] Quick actions correctly select/revert versions
-- [ ] Version filmstrip correctly lists all versions
-- [ ] Batch comparison workflow tracks progress correctly
-- [ ] Users make accept/revert decisions in <10 seconds on average
+- [x] Comparison view renders within 2 seconds of regeneration
+- [x] Synchronized playback maintains frame-level accuracy
+- [x] SSIM overlay renders in <5 seconds per comparison
+- [x] Quick actions correctly select/revert versions
+- [x] Version filmstrip correctly lists all versions
+- [x] Batch comparison workflow tracks progress correctly
+- [x] Users make accept/revert decisions in <10 seconds on average
 
 ---
 

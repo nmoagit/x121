@@ -85,6 +85,7 @@ pub mod scene_video_version;
 pub mod scripts;
 pub mod search;
 pub mod segment;
+pub mod segment_comparison;
 pub mod source_image;
 pub mod status;
 pub mod storage;

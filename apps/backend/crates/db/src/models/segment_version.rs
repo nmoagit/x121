@@ -8,6 +8,10 @@ use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
 use x121_core::types::{DbId, Timestamp};
 
+// ---------------------------------------------------------------------------
+// PRD-25 types (existing segment versioning columns on `segments` table)
+// ---------------------------------------------------------------------------
+
 /// Lightweight view of a segment's versioning state.
 #[derive(Debug, Clone, FromRow, Serialize)]
 pub struct SegmentVersionInfo {
@@ -63,4 +67,45 @@ pub struct SegmentBoundaryData {
     pub last_frame_path: Option<String>,
     pub boundary_ssim_before: Option<f64>,
     pub boundary_ssim_after: Option<f64>,
+}
+
+// ---------------------------------------------------------------------------
+// PRD-101 types (full `segment_versions` table)
+// ---------------------------------------------------------------------------
+
+/// A full version record from the `segment_versions` table (PRD-101).
+#[derive(Debug, Clone, FromRow, Serialize)]
+pub struct SegmentVersion {
+    pub id: DbId,
+    pub segment_id: DbId,
+    pub version_number: i32,
+    pub video_path: String,
+    pub thumbnail_path: Option<String>,
+    pub qa_scores_json: Option<serde_json::Value>,
+    pub params_json: Option<serde_json::Value>,
+    pub selected: bool,
+    pub created_by: DbId,
+    pub created_at: Timestamp,
+    pub updated_at: Timestamp,
+}
+
+/// DTO for creating a new segment version.
+#[derive(Debug, Clone, Deserialize)]
+pub struct CreateSegmentVersion {
+    pub segment_id: DbId,
+    pub video_path: String,
+    pub thumbnail_path: Option<String>,
+    pub qa_scores_json: Option<serde_json::Value>,
+    pub params_json: Option<serde_json::Value>,
+}
+
+/// Comparison data for two versions returned by the compare endpoint.
+#[derive(Debug, Clone, Serialize)]
+pub struct VersionComparison {
+    /// The older version being compared.
+    pub old_version: SegmentVersion,
+    /// The newer version being compared.
+    pub new_version: SegmentVersion,
+    /// Per-metric QA score differences (positive = improvement).
+    pub score_diffs: Option<serde_json::Value>,
 }

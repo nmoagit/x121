@@ -368,7 +368,7 @@ This phase contains no PRD work — only structural setup.
 |---|-----|-------|--------|------------|
 | 81 | PRD-71 | Smart Auto-Retry | M | PRD-23, PRD-49, PRD-61, PRD-64, PRD-69 | **DONE** 2026-02-28 |
 | 82 | PRD-91 | Custom QA Rulesets per Scene Type | M | PRD-23, PRD-49, PRD-77 | **DONE** 2026-02-28 |
-| 83 | PRD-100 | Scene Type Inheritance & Composition | M | PRD-23 |
+| 83 | PRD-100 | Scene Type Inheritance & Composition | M | PRD-23 | **DONE** 2026-02-28 |
 
 ### Track B — Review UI
 
@@ -376,7 +376,7 @@ This phase contains no PRD work — only structural setup.
 |---|-----|-------|--------|------------|
 | 84 | PRD-68 | Cross-Character Scene Comparison | M | PRD-23, PRD-35, PRD-36, PRD-57, PRD-62 | **DONE** 2026-02-28 |
 | 85 | PRD-96 | Poster Frame & Thumbnail Selection | M | PRD-49, PRD-60, PRD-83 | **DONE** 2026-02-28 |
-| 86 | PRD-101 | Segment Regeneration Comparison | M | PRD-35, PRD-49, PRD-50, PRD-83 |
+| 86 | PRD-101 | Segment Regeneration Comparison | M | PRD-35, PRD-49, PRD-50, PRD-83 | **DONE** 2026-02-28 |
 | 87 | PRD-82 | Content Sensitivity Controls | M | PRD-29, PRD-35, PRD-39, PRD-52 |
 
 ### Track C — Workflow Testing

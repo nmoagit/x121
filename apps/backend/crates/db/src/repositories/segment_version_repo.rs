@@ -6,7 +6,9 @@
 use sqlx::PgPool;
 use x121_core::types::DbId;
 
-use crate::models::segment_version::{SegmentBoundaryData, SegmentVersionInfo};
+use crate::models::segment_version::{
+    CreateSegmentVersion, SegmentBoundaryData, SegmentVersion, SegmentVersionInfo,
+};
 
 /// Column list for versioning-related queries.
 const VERSION_COLUMNS: &str = "id, scene_id, sequence_index, \
@@ -18,6 +20,10 @@ const VERSION_COLUMNS: &str = "id, scene_id, sequence_index, \
 const BOUNDARY_COLUMNS: &str = "id, scene_id, sequence_index, \
     seed_frame_path, last_frame_path, \
     boundary_ssim_before, boundary_ssim_after";
+
+/// Column list for `segment_versions` table queries (PRD-101).
+const SV_COLUMNS: &str = "id, segment_id, version_number, video_path, thumbnail_path, \
+    qa_scores_json, params_json, selected, created_by, created_at, updated_at";
 
 /// Versioning operations for segments.
 pub struct SegmentVersionRepo;
@@ -160,5 +166,151 @@ impl SegmentVersionRepo {
         .fetch_one(pool)
         .await?;
         Ok(row.0)
+    }
+
+    // -----------------------------------------------------------------------
+    // PRD-101: Segment version CRUD (segment_versions table)
+    // -----------------------------------------------------------------------
+
+    /// Create a new version for a segment.
+    ///
+    /// Automatically calculates the next version number, marks it as
+    /// selected, and unmarks any previously selected version.
+    pub async fn create_version(
+        pool: &PgPool,
+        input: &CreateSegmentVersion,
+        created_by: DbId,
+    ) -> Result<SegmentVersion, sqlx::Error> {
+        // Unmark the currently selected version (if any).
+        sqlx::query("UPDATE segment_versions SET selected = FALSE WHERE segment_id = $1 AND selected = TRUE")
+            .bind(input.segment_id)
+            .execute(pool)
+            .await?;
+
+        let query = format!(
+            "INSERT INTO segment_versions (
+                segment_id, version_number, video_path, thumbnail_path,
+                qa_scores_json, params_json, selected, created_by
+             )
+             VALUES (
+                $1,
+                COALESCE((SELECT MAX(version_number) FROM segment_versions WHERE segment_id = $1), 0) + 1,
+                $2, $3, $4, $5, TRUE, $6
+             )
+             RETURNING {SV_COLUMNS}"
+        );
+
+        sqlx::query_as::<_, SegmentVersion>(&query)
+            .bind(input.segment_id)
+            .bind(&input.video_path)
+            .bind(&input.thumbnail_path)
+            .bind(&input.qa_scores_json)
+            .bind(&input.params_json)
+            .bind(created_by)
+            .fetch_one(pool)
+            .await
+    }
+
+    /// List all versions for a segment, ordered by version number descending.
+    pub async fn get_version_history(
+        pool: &PgPool,
+        segment_id: DbId,
+    ) -> Result<Vec<SegmentVersion>, sqlx::Error> {
+        let query = format!(
+            "SELECT {SV_COLUMNS} FROM segment_versions \
+             WHERE segment_id = $1 \
+             ORDER BY version_number DESC"
+        );
+        sqlx::query_as::<_, SegmentVersion>(&query)
+            .bind(segment_id)
+            .fetch_all(pool)
+            .await
+    }
+
+    /// Get the currently selected version for a segment.
+    pub async fn get_selected_version(
+        pool: &PgPool,
+        segment_id: DbId,
+    ) -> Result<Option<SegmentVersion>, sqlx::Error> {
+        let query = format!(
+            "SELECT {SV_COLUMNS} FROM segment_versions \
+             WHERE segment_id = $1 AND selected = TRUE"
+        );
+        sqlx::query_as::<_, SegmentVersion>(&query)
+            .bind(segment_id)
+            .fetch_optional(pool)
+            .await
+    }
+
+    /// Mark a specific version as selected, unmarking all others for that segment.
+    ///
+    /// Returns `true` if the version was found and marked, `false` otherwise.
+    pub async fn select_version(
+        pool: &PgPool,
+        segment_id: DbId,
+        version_id: DbId,
+    ) -> Result<bool, sqlx::Error> {
+        // Unmark all versions for this segment.
+        sqlx::query("UPDATE segment_versions SET selected = FALSE WHERE segment_id = $1")
+            .bind(segment_id)
+            .execute(pool)
+            .await?;
+
+        // Mark the specified version.
+        let result = sqlx::query(
+            "UPDATE segment_versions SET selected = TRUE \
+             WHERE id = $1 AND segment_id = $2",
+        )
+        .bind(version_id)
+        .bind(segment_id)
+        .execute(pool)
+        .await?;
+
+        Ok(result.rows_affected() > 0)
+    }
+
+    /// Find a single version by its ID.
+    pub async fn find_version_by_id(
+        pool: &PgPool,
+        version_id: DbId,
+    ) -> Result<Option<SegmentVersion>, sqlx::Error> {
+        let query = format!("SELECT {SV_COLUMNS} FROM segment_versions WHERE id = $1");
+        sqlx::query_as::<_, SegmentVersion>(&query)
+            .bind(version_id)
+            .fetch_optional(pool)
+            .await
+    }
+
+    /// Fetch two specific versions by version number for comparison.
+    ///
+    /// Returns `None` if either version does not exist. The first element
+    /// is the lower version number (old), the second is the higher (new).
+    pub async fn get_comparison_pair(
+        pool: &PgPool,
+        segment_id: DbId,
+        v1: i32,
+        v2: i32,
+    ) -> Result<Option<(SegmentVersion, SegmentVersion)>, sqlx::Error> {
+        let query = format!(
+            "SELECT {SV_COLUMNS} FROM segment_versions \
+             WHERE segment_id = $1 AND version_number IN ($2, $3) \
+             ORDER BY version_number ASC"
+        );
+        let rows = sqlx::query_as::<_, SegmentVersion>(&query)
+            .bind(segment_id)
+            .bind(v1)
+            .bind(v2)
+            .fetch_all(pool)
+            .await?;
+
+        if rows.len() == 2 {
+            // rows is sorted by version_number ASC.
+            let mut iter = rows.into_iter();
+            let first = iter.next().expect("checked length");
+            let second = iter.next().expect("checked length");
+            Ok(Some((first, second)))
+        } else {
+            Ok(None)
+        }
     }
 }

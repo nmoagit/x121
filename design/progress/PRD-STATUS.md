@@ -21,10 +21,10 @@ Source of truth: [`design/design.md`](../design.md)
 | Status | Count |
 |--------|-------|
 | backlog | 0 |
-| planning | 32 |
+| planning | 31 |
 | in-progress | 0 |
 | review | 0 |
-| done | 89 |
+| done | 90 |
 | blocked | 0 |
 | deferred | 0 |
 | maybe | 15 |
@@ -162,7 +162,7 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-92 | Batch Review & Approval Workflows | — | `planning` | — | |
 | PRD-95 | Production Notes & Internal Comments | — | `done` | 2026-02-23 | Phase 7 |
 | PRD-96 | Poster Frame & Thumbnail Selection | — | `done` | 2026-02-28 | Migration, core module (6 tests), model/repo/handler/routes, 6 frontend components (EntityPoster shared), 16 frontend tests. DRY-442 to DRY-450 audited. |
-| PRD-101 | Segment Regeneration Comparison | — | `planning` | — | |
+| PRD-101 | Segment Regeneration Comparison | — | `done` | 2026-02-28 | Migration (segment_versions table), core module (score diff logic, 12 tests), model/repo extension (6 new methods), 4 API endpoints, 9 frontend components (dual sync, QA comparison, batch workflow), 18 frontend tests. DRY-451 fixed, DRY-446 to DRY-450 watch. |
 
 ## Part 6: Production & Hand-off
 
