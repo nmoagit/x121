@@ -78,6 +78,23 @@ impl CharacterScenePromptOverrideRepo {
             .await
     }
 
+    /// List all overrides for a character + scene type pair, ordered by slot.
+    pub async fn list_by_character_and_scene_type(
+        pool: &PgPool,
+        character_id: DbId,
+        scene_type_id: DbId,
+    ) -> Result<Vec<CharacterScenePromptOverride>, sqlx::Error> {
+        let query = format!(
+            "SELECT {COLUMNS} FROM character_scene_prompt_overrides \
+             WHERE character_id = $1 AND scene_type_id = $2 ORDER BY prompt_slot_id"
+        );
+        sqlx::query_as::<_, CharacterScenePromptOverride>(&query)
+            .bind(character_id)
+            .bind(scene_type_id)
+            .fetch_all(pool)
+            .await
+    }
+
     /// List all overrides for a scene type, ordered by character and slot.
     pub async fn list_by_scene_type(
         pool: &PgPool,

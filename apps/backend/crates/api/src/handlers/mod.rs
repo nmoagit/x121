@@ -64,6 +64,7 @@ pub mod project;
 pub mod project_config;
 pub mod project_scene_settings;
 pub mod prompt_editor;
+pub mod prompt_management;
 pub mod provenance;
 pub mod quality_gates;
 pub mod queue;

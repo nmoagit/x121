@@ -56,6 +56,7 @@ pub mod project;
 pub mod project_config;
 pub mod project_scene_settings;
 pub mod prompt_editor;
+pub mod prompt_management;
 pub mod provenance;
 pub mod quality_gates;
 pub mod queue;
@@ -653,6 +654,16 @@ use crate::ws;
 ///
 /// /video-specs                                                   list, create (GET, POST, PRD-113)
 /// /video-specs/{id}                                              get, update, delete (PRD-113)
+///
+/// /workflows/{id}/prompt-slots                                   list prompt slots (GET, PRD-115)
+/// /workflows/{id}/prompt-slots/{slot_id}                         update prompt slot (PUT, PRD-115)
+/// /scene-types/{id}/prompt-defaults                              list prompt defaults (GET, PRD-115)
+/// /scene-types/{id}/prompt-defaults/{slot_id}                    upsert prompt default (PUT, PRD-115)
+/// /characters/{id}/scenes/{scene_type_id}/prompt-overrides       get, upsert overrides (GET, PUT, PRD-115)
+/// /prompts/resolve                                               resolve prompt preview (POST, PRD-115)
+/// /prompt-fragments                                              list, create (GET, POST, PRD-115)
+/// /prompt-fragments/{id}                                         update, delete (PUT, DELETE, PRD-115)
+/// /prompt-fragments/{id}/pin/{scene_type_id}                     pin, unpin (POST, DELETE, PRD-115)
 /// ```
 pub fn api_routes() -> Router<AppState> {
     Router::new()
@@ -714,13 +725,14 @@ pub fn api_routes() -> Router<AppState> {
             .nest("/{project_id}/characters", character_metadata::project_router())
             .nest("/{project_id}/ingest", character_ingest::router())
             .nest("/{project_id}/scene-settings", project_scene_settings::router()))
-        // Character-scoped sub-resources (images, scenes, metadata editor, face embedding, readiness, dashboard PRD-108).
+        // Character-scoped sub-resources (images, scenes, metadata editor, face embedding, readiness, dashboard PRD-108, prompt overrides PRD-115).
         .nest("/characters", character::router()
             .merge(metadata::character_metadata_router())
             .merge(character_metadata::character_router())
             .merge(embedding::embedding_router())
             .merge(readiness::readiness_router())
             .merge(character_dashboard::dashboard_router())
+            .merge(prompt_management::character_prompt_override_router())
             .nest("/{character_id}/scene-settings", character_scene_overrides::router()))
         // Scene-scoped sub-resources (segments, review queue, generation PRD-24, QA PRD-49, resolution PRD-59, storyboard PRD-62, branching PRD-50).
         .nest("/scenes", scene::router()
@@ -750,10 +762,11 @@ pub fn api_routes() -> Router<AppState> {
         .nest("/rejection-categories", approval::rejection_categories_router())
         // Review tags for collaborative review (PRD-38).
         .nest("/review-tags", review_notes::review_tags_router())
-        // Studio-level scene types + prompt versioning (PRD-63) + inheritance (PRD-100).
+        // Studio-level scene types + prompt versioning (PRD-63) + inheritance (PRD-100) + prompt defaults (PRD-115).
         .nest("/scene-types", scene_type::studio_router()
             .merge(prompt_editor::scene_type_prompt_router())
-            .merge(scene_type_inheritance::inheritance_router()))
+            .merge(scene_type_inheritance::inheritance_router())
+            .merge(prompt_management::scene_type_prompt_default_router()))
         // Mixin CRUD (PRD-100).
         .nest("/mixins", scene_type_inheritance::mixin_router())
         // Scene catalog & tracks (PRD-111).
@@ -807,9 +820,10 @@ pub fn api_routes() -> Router<AppState> {
         .nest("/extensions", extensions::registry_router())
         // Sandboxed extension API bridge (PRD-85).
         .nest("/extension-api", extensions::ext_api_router())
-        // Workflow canvas (PRD-33) + Workflow Import & Validation (PRD-75).
+        // Workflow canvas (PRD-33) + Workflow Import & Validation (PRD-75) + Prompt Slots (PRD-115).
         .nest("/workflows", workflow_canvas::router()
-            .merge(workflow_import::workflow_import_router()))
+            .merge(workflow_import::workflow_import_router())
+            .merge(prompt_management::workflow_prompt_slot_router()))
         // Bug reporting (PRD-44).
         .nest("/bug-reports", bug_reports::router())
         // Configuration export/import (PRD-44).
@@ -860,6 +874,10 @@ pub fn api_routes() -> Router<AppState> {
         // Prompt Editor & Versioning (PRD-63).
         .nest("/prompt-versions", prompt_editor::prompt_version_router())
         .nest("/prompt-library", prompt_editor::prompt_library_router())
+        // Prompt Resolution Preview (PRD-115).
+        .nest("/prompts", prompt_management::prompt_resolve_router())
+        // Prompt Fragment Library (PRD-115).
+        .nest("/prompt-fragments", prompt_management::prompt_fragment_router())
         // Pipeline Stage Hooks (PRD-77).
         .nest("/hooks", pipeline_hooks::hooks_router())
         // Project Configuration Templates (PRD-74).
