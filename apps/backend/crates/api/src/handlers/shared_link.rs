@@ -21,6 +21,7 @@ use x121_db::repositories::SharedLinkRepo;
 use crate::error::{AppError, AppResult};
 use crate::middleware::auth::AuthUser;
 use crate::query::PaginationParams;
+use crate::request::extract_ip;
 use crate::response::DataResponse;
 use crate::state::AppState;
 
@@ -119,19 +120,6 @@ async fn ensure_valid_link(pool: &sqlx::PgPool, token: &str) -> AppResult<Shared
     Ok(link)
 }
 
-/// Extract the client IP address from request headers.
-fn extract_ip(headers: &HeaderMap) -> Option<String> {
-    headers
-        .get("x-forwarded-for")
-        .and_then(|v| v.to_str().ok())
-        .map(|v| v.split(',').next().unwrap_or(v).trim().to_string())
-        .or_else(|| {
-            headers
-                .get("x-real-ip")
-                .and_then(|v| v.to_str().ok())
-                .map(|s| s.to_string())
-        })
-}
 
 /// Extract the user-agent string from request headers.
 fn extract_user_agent(headers: &HeaderMap) -> Option<String> {

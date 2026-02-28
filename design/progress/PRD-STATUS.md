@@ -21,10 +21,10 @@ Source of truth: [`design/design.md`](../design.md)
 | Status | Count |
 |--------|-------|
 | backlog | 0 |
-| planning | 15 |
+| planning | 11 |
 | in-progress | 0 |
 | review | 0 |
-| done | 106 |
+| done | 110 |
 | blocked | 0 |
 | deferred | 0 |
 | maybe | 15 |
@@ -60,9 +60,9 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-85 | UI Plugin / Extension Architecture | — | `done` | — | |
 | PRD-87 | GPU Power Management & Idle Scheduling | — | `done` | 2026-03-01 | Migration (power_schedules, worker columns, consumption_log), core (34 tests), models, repo, 9 admin handlers, frontend (6 components, 10s polling), 15 tests. DRY: 5 CRITICAL + 4 HIGH fixed. |
 | PRD-90 | Render Queue Timeline / Gantt View | — | `done` | — | |
-| PRD-93 | Generation Budget & Quota Management | — | `planning` | — | |
-| PRD-99 | Webhook & Integration Testing Console | — | `planning` | — | |
-| PRD-106 | API Usage & Observability Dashboard | — | `planning` | — | |
+| PRD-93 | Generation Budget & Quota Management | — | `done` | — | |
+| PRD-99 | Webhook & Integration Testing Console | — | `done` | — | |
+| PRD-106 | API Usage & Observability Dashboard | — | `done` | — | |
 | PRD-114 | Cloud GPU Provider Integration (RunPod) | 1 | `planning` | — | High priority. Provider trait + RunPod implementation (Pods + Serverless), auto-scaling, cost tracking, S3 file transfer, admin UI. Deps: PRD-02, PRD-05, PRD-07, PRD-08, PRD-46 (all done). |
 | PRD-119 | Time-Based Job Scheduling | — | `done` | — | Cron-style schedules (one-time + recurring), calendar UI, smart off-peak slot selection, timezone handling, batch scheduling (PRD-57), schedule executor, execution history. Deps: PRD-08, PRD-07, PRD-10, PRD-03 (all done). Extends PRD-08. Integrates with PRD-87, PRD-57, PRD-54, PRD-97. |
 
@@ -118,7 +118,7 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-74 | Project Configuration Templates | — | `done` | 2026-02-23 | Phase 7 Track B |
 | PRD-91 | Custom QA Rulesets per Scene Type | — | `done` | — | |
 | PRD-94 | Character Consistency Report | — | `done` | 2026-02-28 | Migration, core (19 tests), models, repo, handlers, routes, frontend (heatmap, outliers, overview), 10 tests |
-| PRD-97 | Job Dependency Chains & Triggered Workflows | — | `planning` | — | |
+| PRD-97 | Job Dependency Chains & Triggered Workflows | — | `done` | — | |
 | PRD-100 | Scene Type Inheritance & Composition | — | `done` | 2026-02-28 | Migration (parent/depth on scene_types, overrides table, mixins tables), core inheritance resolver (field-level source tracking, depth validation, cascade detection), repos (MixinRepo, SceneTypeOverrideRepo), 13 API endpoints (children, effective-config, cascade-preview, overrides CRUD, mixins CRUD), frontend (OverrideIndicator, InheritanceTree, 15 hooks), 9 integration + 13 frontend tests. |
 | PRD-103 | Character Face Contact Sheet | — | `done` | 2026-02-28 | Migration, core (15 tests), models, repo, handlers, routes, frontend (grid, controls, page), 10 tests |
 | PRD-111 | Scene Catalog & Track Management | 1 | `done` | 2026-02-26 | 6 migrations, 4 models, 4 repos (three-level inheritance), 4 handlers, 12 frontend components, 13 tests. Replaces variant_applicability with normalized tracks. |

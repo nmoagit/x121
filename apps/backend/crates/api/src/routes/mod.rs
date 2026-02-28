@@ -1,6 +1,7 @@
 pub mod activity_log;
 pub mod admin;
 pub mod annotation;
+pub mod api_observability;
 pub mod approval;
 pub mod assets;
 pub mod audit;
@@ -9,6 +10,7 @@ pub mod auto_retry;
 pub mod batch_metadata;
 pub mod batch_review;
 pub mod branching;
+pub mod budget_quota;
 pub mod bug_reports;
 pub mod character;
 pub mod character_dashboard;
@@ -101,12 +103,14 @@ pub mod test_shot;
 pub mod themes;
 pub mod track;
 pub mod trash;
+pub mod trigger_workflow;
 pub mod trimming;
 pub mod undo_tree;
 pub mod validation;
 pub mod validation_dashboard;
 pub mod video;
 pub mod video_spec;
+pub mod webhook_testing;
 pub mod wiki;
 pub mod workers;
 pub mod workflow_canvas;
@@ -1016,6 +1020,9 @@ pub fn api_routes() -> Router<AppState> {
         .nest("/status", status::router())
         // System Health Page: service health, uptime, alerts (PRD-80).
         .nest("/admin/health", system_health::router())
+        // API Observability Dashboard: metrics, alerts, rate limits (PRD-106).
+        .nest("/admin/api-metrics", api_observability::metrics_router())
+        .nest("/admin/api-alerts", api_observability::alerts_router())
         // Platform settings (PRD-110).
         .nest("/admin/settings", platform_settings::router())
         // Dynamic naming engine (PRD-116).
@@ -1041,8 +1048,18 @@ pub fn api_routes() -> Router<AppState> {
         .nest("/review", shared_link::public_router())
         // Time-based job scheduling (PRD-119).
         .nest("/schedules", job_scheduling::router())
+        // Trigger workflows: admin endpoints (PRD-97).
+        .nest("/admin/triggers", trigger_workflow::admin_router())
         // Session management: admin endpoints (PRD-98).
         .nest("/admin/sessions", session_management::admin_router())
         // Session management: user endpoints (PRD-98).
         .nest("/sessions", session_management::user_router())
+        // Generation Budget & Quota Management (PRD-93).
+        .nest("/admin/budgets", budget_quota::admin_budget_router())
+        .nest("/admin/quotas", budget_quota::admin_quota_router())
+        .nest("/admin/budget-exemptions", budget_quota::admin_exemption_router())
+        .nest("/budgets", budget_quota::user_router())
+        // Webhook Integration Testing Console (PRD-99).
+        .nest("/admin/webhook-testing", webhook_testing::admin_router())
+        .nest("/mock", webhook_testing::mock_router())
 }
