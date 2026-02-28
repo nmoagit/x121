@@ -14,6 +14,7 @@ pub mod audit;
 pub mod auth;
 pub mod auto_retry;
 pub mod batch_metadata;
+pub mod batch_review;
 pub mod branching;
 pub mod bug_reports;
 pub mod character;

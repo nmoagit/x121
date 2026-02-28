@@ -74,8 +74,7 @@ pub async fn transition_project(
     let admin_override = request.admin_override.unwrap_or(false);
 
     if target == LifecycleState::Delivered {
-        let agg =
-            ProjectLifecycleRepo::get_project_aggregates(&state.pool, project_id).await?;
+        let agg = ProjectLifecycleRepo::get_project_aggregates(&state.pool, project_id).await?;
 
         if !admin_override {
             let checklist = evaluate_checklist(
@@ -100,14 +99,11 @@ pub async fn transition_project(
         }
 
         // Resolve the target status ID and perform the transition first.
-        let new_status_id =
-            ProjectLifecycleRepo::get_status_id_by_name(&state.pool, &target_state)
-                .await?
-                .ok_or_else(|| {
-                    AppError::BadRequest(format!(
-                        "Status '{target_state}' not found in database"
-                    ))
-                })?;
+        let new_status_id = ProjectLifecycleRepo::get_status_id_by_name(&state.pool, &target_state)
+            .await?
+            .ok_or_else(|| {
+                AppError::BadRequest(format!("Status '{target_state}' not found in database"))
+            })?;
 
         let is_edit_locked = target.is_edit_locked();
 
@@ -137,13 +133,8 @@ pub async fn transition_project(
         let report_json = serde_json::to_value(&summary_data)
             .map_err(|e| AppError::InternalError(format!("Failed to serialize summary: {e}")))?;
 
-        ProjectLifecycleRepo::create_summary(
-            &state.pool,
-            project_id,
-            &report_json,
-            auth.user_id,
-        )
-        .await?;
+        ProjectLifecycleRepo::create_summary(&state.pool, project_id, &report_json, auth.user_id)
+            .await?;
 
         tracing::info!(
             user_id = auth.user_id,

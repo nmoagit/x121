@@ -11,6 +11,7 @@ pub mod approval;
 pub mod asset;
 pub mod audit;
 pub mod batch_metadata_operation;
+pub mod batch_review;
 pub mod branch;
 pub mod bug_report;
 pub mod bulk_operation;

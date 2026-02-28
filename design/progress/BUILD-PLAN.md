@@ -413,7 +413,7 @@ This phase contains no PRD work — only structural setup.
 | # | PRD | Title | Effort | Depends On |
 |---|-----|-------|--------|------------|
 | 95 | PRD-72 | Project Lifecycle & Archival | M | PRD-01, PRD-15, PRD-39, PRD-45, PRD-48 | DONE |
-| 96 | PRD-92 | Batch Review & Approval Workflows | M | PRD-35, PRD-49, PRD-52, PRD-91 |
+| 96 | PRD-92 | Batch Review & Approval Workflows | M | PRD-35, PRD-49, PRD-52, PRD-91 | DONE |
 
 ---
 

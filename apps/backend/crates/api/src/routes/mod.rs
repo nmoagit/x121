@@ -7,6 +7,7 @@ pub mod audit;
 pub mod auth;
 pub mod auto_retry;
 pub mod batch_metadata;
+pub mod batch_review;
 pub mod branching;
 pub mod bug_reports;
 pub mod character;
@@ -1005,6 +1006,8 @@ pub fn api_routes() -> Router<AppState> {
         .nest("/datasets", sidecar::dataset_export_router())
         // Shareable Preview Links: authenticated management (PRD-84).
         .nest("/shared-links", shared_link::authenticated_router())
+        // Batch Review & Approval Workflows (PRD-92).
+        .nest("/batch-review", batch_review::batch_review_router())
         // Shareable Preview Links: public external review (PRD-84, no auth).
         .nest("/review", shared_link::public_router())
 }

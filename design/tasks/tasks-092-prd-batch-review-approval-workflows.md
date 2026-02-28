@@ -82,9 +82,9 @@ CREATE TRIGGER set_updated_at BEFORE UPDATE ON review_sessions
 ```
 
 **Acceptance Criteria:**
-- [ ] `review_assignments` tracks batch assignments with filter criteria and deadlines
-- [ ] `review_sessions` tracks per-user review session statistics
-- [ ] All FK columns indexed, `updated_at` triggers applied
+- [x] `review_assignments` tracks batch assignments with filter criteria and deadlines
+- [x] `review_sessions` tracks per-user review session statistics
+- [x] All FK columns indexed, `updated_at` triggers applied
 
 ### Task 1.2: Batch Review Models & Repository
 **File:** `src/models/batch_review.rs`, `src/repositories/batch_review_repo.rs`
@@ -105,10 +105,10 @@ pub struct ReviewAssignment {
 ```
 
 **Acceptance Criteria:**
-- [ ] Models for assignments and sessions
-- [ ] Repository: CRUD for assignments, session tracking, progress queries
-- [ ] Deadline check query for escalation notifications
-- [ ] Unit tests
+- [x] Models for assignments and sessions
+- [x] Repository: CRUD for assignments, session tracking, progress queries
+- [x] Deadline check query for escalation notifications
+- [x] Unit tests
 
 ### Task 1.3: Batch Review API
 **File:** `src/routes/batch_review.rs`
@@ -126,12 +126,12 @@ pub fn batch_review_routes() -> Router<AppState> {
 ```
 
 **Acceptance Criteria:**
-- [ ] `POST /review/batch-approve` approves multiple segments at once
-- [ ] `POST /review/batch-reject` rejects multiple segments with shared reason
-- [ ] `POST /review/auto-approve?threshold=X` approves all segments above QA threshold
-- [ ] CRUD for assignments
-- [ ] `GET /review/progress` returns session statistics and queue progress
-- [ ] Batch actions complete in <5 seconds for up to 100 segments
+- [x] `POST /review/batch-approve` approves multiple segments at once
+- [x] `POST /review/batch-reject` rejects multiple segments with shared reason
+- [x] `POST /review/auto-approve?threshold=X` approves all segments above QA threshold
+- [x] CRUD for assignments
+- [x] `GET /review/progress` returns session statistics and queue progress
+- [x] Batch actions complete in <5 seconds for up to 100 segments
 
 ---
 
@@ -141,12 +141,12 @@ pub fn batch_review_routes() -> Router<AppState> {
 **File:** `frontend/src/features/batch-review/MultiSelectReview.tsx`
 
 **Acceptance Criteria:**
-- [ ] Checkboxes on segment cards for selection
-- [ ] Shift+Click for range selection
-- [ ] Ctrl+A for select all visible
-- [ ] Actions toolbar: Approve All, Reject All, Reject & Re-queue All
-- [ ] Visual feedback for selected items
-- [ ] Selection count indicator
+- [x] Checkboxes on segment cards for selection
+- [x] Shift+Click for range selection
+- [x] Ctrl+A for select all visible
+- [x] Actions toolbar: Approve All, Reject All, Reject & Re-queue All
+- [x] Visual feedback for selected items
+- [x] Selection count indicator
 
 ---
 
@@ -156,11 +156,11 @@ pub fn batch_review_routes() -> Router<AppState> {
 **File:** `frontend/src/features/batch-review/AutoApproveAction.tsx`
 
 **Acceptance Criteria:**
-- [ ] "Approve all segments with QA score above X" one-click action
-- [ ] Configurable threshold per batch (uses PRD-091 rulesets when available)
-- [ ] Preview showing how many segments would be approved at selected threshold
-- [ ] Threshold slider with real-time count update
-- [ ] Confirmation dialog before execution
+- [x] "Approve all segments with QA score above X" one-click action
+- [x] Configurable threshold per batch (uses PRD-091 rulesets when available)
+- [x] Preview showing how many segments would be approved at selected threshold
+- [x] Threshold slider with real-time count update
+- [x] Confirmation dialog before execution
 
 ---
 
@@ -170,10 +170,10 @@ pub fn batch_review_routes() -> Router<AppState> {
 **File:** `frontend/src/features/batch-review/SortedQueue.tsx`
 
 **Acceptance Criteria:**
-- [ ] Sort options: worst QA score first, oldest first (FIFO), by scene type, by character, random
-- [ ] Saved sort preferences per user
-- [ ] Filter to specific characters, scene types, or variants
-- [ ] Filter combinations (e.g., "unapproved dance scenes for Character A")
+- [x] Sort options: worst QA score first, oldest first (FIFO), by scene type, by character, random
+- [x] Saved sort preferences per user
+- [x] Filter to specific characters, scene types, or variants
+- [x] Filter combinations (e.g., "unapproved dance scenes for Character A")
 
 ---
 
@@ -191,20 +191,20 @@ export const QuickReviewMode: React.FC<{ queueId: number }> = ({ queueId }) => {
 ```
 
 **Acceptance Criteria:**
-- [ ] Video auto-plays on load
-- [ ] `1` = Approve, `2` = Reject, `3` = Flag, `Space` = Skip (via PRD-052)
-- [ ] No mouse interaction needed
-- [ ] Next segment loads automatically after action
-- [ ] Optimized for maximum throughput (>20 segments/minute)
-- [ ] UI stripped to absolute minimum
+- [x] Video auto-plays on load
+- [x] `1` = Approve, `2` = Reject, `3` = Flag, `Space` = Skip (via PRD-052)
+- [x] No mouse interaction needed
+- [x] Next segment loads automatically after action
+- [x] Optimized for maximum throughput (>20 segments/minute)
+- [x] UI stripped to absolute minimum
 
 ### Task 5.2: Review Progress Counter
 **File:** `frontend/src/features/batch-review/ReviewProgress.tsx`
 
 **Acceptance Criteria:**
-- [ ] "23 of 47 reviewed" with progress bar
-- [ ] Estimated time remaining based on average review pace
-- [ ] Session statistics: review rate, approval ratio
+- [x] "23 of 47 reviewed" with progress bar
+- [x] Estimated time remaining based on average review pace
+- [x] Session statistics: review rate, approval ratio
 
 ---
 
@@ -214,20 +214,20 @@ export const QuickReviewMode: React.FC<{ queueId: number }> = ({ queueId }) => {
 **File:** `frontend/src/features/batch-review/AssignmentManager.tsx`
 
 **Acceptance Criteria:**
-- [ ] Assign batches to reviewers with filter criteria
-- [ ] Example: "Jane reviews all dance scenes, Bob reviews all idle scenes"
-- [ ] Assignment dashboard showing who has what and their progress
-- [ ] Unassigned segments visible in shared pool
+- [x] Assign batches to reviewers with filter criteria
+- [x] Example: "Jane reviews all dance scenes, Bob reviews all idle scenes"
+- [x] Assignment dashboard showing who has what and their progress
+- [x] Unassigned segments visible in shared pool
 
 ### Task 6.2: Deadline Tracker
 **File:** `frontend/src/features/batch-review/DeadlineTracker.tsx`, `src/services/deadline_checker.rs`
 
 **Acceptance Criteria:**
-- [ ] Set deadline on review batches
-- [ ] Notification escalation as deadline approaches with unreviewed items
-- [ ] "12 segments unreviewed -- deadline in 2 hours" alert
-- [ ] Overdue batches highlighted in the assignment dashboard
-- [ ] Backend deadline checker service for scheduled notifications
+- [x] Set deadline on review batches
+- [x] Notification escalation as deadline approaches with unreviewed items
+- [x] "12 segments unreviewed -- deadline in 2 hours" alert
+- [x] Overdue batches highlighted in the assignment dashboard
+- [x] Backend deadline checker service for scheduled notifications
 
 ---
 
@@ -237,12 +237,12 @@ export const QuickReviewMode: React.FC<{ queueId: number }> = ({ queueId }) => {
 **File:** `tests/batch_review_test.rs`, `frontend/src/features/batch-review/__tests__/`
 
 **Acceptance Criteria:**
-- [ ] Quick Review Mode achieves >20 segments/minute throughput
-- [ ] Auto-QA filter correctly processes all qualifying segments
-- [ ] Batch actions complete in <5 seconds for up to 100 segments
-- [ ] Review deadline notifications delivered accurately
-- [ ] Assignment filtering correctly scopes segments to reviewers
-- [ ] Session statistics accurately track review pace
+- [x] Quick Review Mode achieves >20 segments/minute throughput
+- [x] Auto-QA filter correctly processes all qualifying segments
+- [x] Batch actions complete in <5 seconds for up to 100 segments
+- [x] Review deadline notifications delivered accurately
+- [x] Assignment filtering correctly scopes segments to reviewers
+- [x] Session statistics accurately track review pace
 
 ---
 

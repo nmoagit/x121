@@ -9,6 +9,7 @@ pub mod audit;
 pub mod auto_retry;
 pub mod batch_metadata;
 pub mod batch_production;
+pub mod batch_review;
 pub mod branching;
 pub mod bug_report;
 pub mod channels;
