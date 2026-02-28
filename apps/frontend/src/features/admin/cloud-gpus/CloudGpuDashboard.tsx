@@ -59,7 +59,7 @@ export function CloudGpuDashboard() {
         <Stack gap={6}>
           <PageHeader />
           <EmptyState
-            icon={Server}
+            icon={<Server />}
             title="No providers configured"
             description="Add a cloud GPU provider to start provisioning GPU instances."
           />
