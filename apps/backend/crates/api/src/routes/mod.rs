@@ -5,6 +5,7 @@ pub mod approval;
 pub mod assets;
 pub mod audit;
 pub mod auth;
+pub mod auto_retry;
 pub mod batch_metadata;
 pub mod branching;
 pub mod bug_reports;
@@ -256,6 +257,9 @@ use crate::ws;
 /// /segments/{id}/smooth-boundary                apply smoothing (POST, PRD-25)
 /// /segments/{id}/versions                       version history (GET, PRD-25)
 /// /segments/{id}/clear-stale                    clear stale flag (PATCH, PRD-25)
+/// /segments/{id}/retry-attempts                 list, create (GET, POST, PRD-71)
+/// /segments/{id}/retry-attempts/{aid}           get, update (GET, PUT, PRD-71)
+/// /segments/{id}/retry-attempts/{aid}/select    select best-of-N (POST, PRD-71)
 ///
 /// /rejection-categories                            list categories (GET, PRD-35)
 ///
@@ -279,6 +283,7 @@ use crate::ws;
 /// /scene-types/{id}/overrides/{field}              delete override (DELETE, PRD-100)
 /// /scene-types/{id}/mixins                         list (GET), apply (POST, PRD-100)
 /// /scene-types/{id}/mixins/{mixin_id}              remove mixin (DELETE, PRD-100)
+/// /scene-types/{id}/retry-policy                   get, update (GET, PUT, PRD-71)
 ///
 /// /mixins                                          list (GET), create (POST, PRD-100)
 /// /mixins/{id}                                     get (GET), update (PUT), delete (DELETE, PRD-100)
@@ -757,16 +762,18 @@ pub fn api_routes() -> Router<AppState> {
             .merge(restitching::segment_restitching_router())
             .merge(temporal::segment_temporal_router())
             .merge(provenance::segment_provenance_router())
-            .merge(trimming::segment_trim_router()))
+            .merge(trimming::segment_trim_router())
+            .merge(auto_retry::retry_attempt_router()))
         // Rejection categories for structured rejection tracking (PRD-35).
         .nest("/rejection-categories", approval::rejection_categories_router())
         // Review tags for collaborative review (PRD-38).
         .nest("/review-tags", review_notes::review_tags_router())
-        // Studio-level scene types + prompt versioning (PRD-63) + inheritance (PRD-100) + prompt defaults (PRD-115).
+        // Studio-level scene types + prompt versioning (PRD-63) + inheritance (PRD-100) + prompt defaults (PRD-115) + retry policy (PRD-71).
         .nest("/scene-types", scene_type::studio_router()
             .merge(prompt_editor::scene_type_prompt_router())
             .merge(scene_type_inheritance::inheritance_router())
-            .merge(prompt_management::scene_type_prompt_default_router()))
+            .merge(prompt_management::scene_type_prompt_default_router())
+            .merge(auto_retry::retry_policy_router()))
         // Mixin CRUD (PRD-100).
         .nest("/mixins", scene_type_inheritance::mixin_router())
         // Scene catalog & tracks (PRD-111).

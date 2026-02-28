@@ -36,6 +36,12 @@ pub struct SceneType {
     pub generation_strategy: String,
     pub expected_chunks: Option<i32>,
     pub chunk_output_pattern: Option<String>,
+    // -- Auto-retry policy (PRD-71) --
+    pub auto_retry_enabled: bool,
+    pub auto_retry_max_attempts: i32,
+    pub auto_retry_trigger_checks: Option<Vec<String>>,
+    pub auto_retry_seed_variation: bool,
+    pub auto_retry_cfg_jitter: Option<f64>,
     pub deleted_at: Option<Timestamp>,
     pub created_at: Timestamp,
     pub updated_at: Timestamp,
@@ -70,10 +76,16 @@ pub struct CreateSceneType {
     pub generation_strategy: Option<String>,
     pub expected_chunks: Option<i32>,
     pub chunk_output_pattern: Option<String>,
+    // -- Auto-retry policy (PRD-71) --
+    pub auto_retry_enabled: Option<bool>,
+    pub auto_retry_max_attempts: Option<i32>,
+    pub auto_retry_trigger_checks: Option<Vec<String>>,
+    pub auto_retry_seed_variation: Option<bool>,
+    pub auto_retry_cfg_jitter: Option<f64>,
 }
 
 /// DTO for updating an existing scene type. All fields are optional.
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Default, Deserialize)]
 pub struct UpdateSceneType {
     pub name: Option<String>,
     pub status_id: Option<StatusId>,
@@ -100,6 +112,12 @@ pub struct UpdateSceneType {
     pub generation_strategy: Option<String>,
     pub expected_chunks: Option<i32>,
     pub chunk_output_pattern: Option<String>,
+    // -- Auto-retry policy (PRD-71) --
+    pub auto_retry_enabled: Option<bool>,
+    pub auto_retry_max_attempts: Option<i32>,
+    pub auto_retry_trigger_checks: Option<Vec<String>>,
+    pub auto_retry_seed_variation: Option<bool>,
+    pub auto_retry_cfg_jitter: Option<f64>,
 }
 
 /// Query params for prompt preview endpoint.

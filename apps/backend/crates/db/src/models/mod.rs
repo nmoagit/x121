@@ -81,6 +81,7 @@ pub mod readiness_criteria;
 pub mod recent_item;
 pub mod reclamation;
 pub mod resolution_tier;
+pub mod retry_attempt;
 pub mod review_note;
 pub mod role;
 pub mod scene;

@@ -14,6 +14,8 @@ const COLUMNS: &str = "id, project_id, name, status_id, workflow_json, lora_conf
     transition_segment_index, generation_params, \
     sort_order, is_active, is_studio_level, parent_scene_type_id, depth, \
     generation_strategy, expected_chunks, chunk_output_pattern, \
+    auto_retry_enabled, auto_retry_max_attempts, auto_retry_trigger_checks, \
+    auto_retry_seed_variation, auto_retry_cfg_jitter, \
     deleted_at, created_at, updated_at";
 
 /// Provides CRUD operations for scene types.
@@ -37,14 +39,19 @@ impl SceneTypeRepo {
                  transition_segment_index,
                  generation_params, sort_order, is_active, is_studio_level,
                  parent_scene_type_id,
-                 generation_strategy, expected_chunks, chunk_output_pattern)
+                 generation_strategy, expected_chunks, chunk_output_pattern,
+                 auto_retry_enabled, auto_retry_max_attempts,
+                 auto_retry_trigger_checks, auto_retry_seed_variation,
+                 auto_retry_cfg_jitter)
              VALUES ($1, $2, COALESCE($3, 1), $4, $5, $6, $7, $8, $9,
                      $10, $11, $12, $13, $14, $15,
                      COALESCE($16, 2),
                      $17,
                      $18, COALESCE($19, 0), COALESCE($20, true), COALESCE($21, false),
                      $22,
-                     COALESCE($23, 'platform_orchestrated'), $24, $25)
+                     COALESCE($23, 'platform_orchestrated'), $24, $25,
+                     COALESCE($26, false), COALESCE($27, 3),
+                     $28, COALESCE($29, true), $30)
              RETURNING {COLUMNS}"
         );
         sqlx::query_as::<_, SceneType>(&query)
@@ -73,6 +80,11 @@ impl SceneTypeRepo {
             .bind(&input.generation_strategy)
             .bind(input.expected_chunks)
             .bind(&input.chunk_output_pattern)
+            .bind(input.auto_retry_enabled)
+            .bind(input.auto_retry_max_attempts)
+            .bind(&input.auto_retry_trigger_checks)
+            .bind(input.auto_retry_seed_variation)
+            .bind(input.auto_retry_cfg_jitter)
             .fetch_one(pool)
             .await
     }
@@ -149,7 +161,12 @@ impl SceneTypeRepo {
                 depth = COALESCE($23, depth),
                 generation_strategy = COALESCE($24, generation_strategy),
                 expected_chunks = COALESCE($25, expected_chunks),
-                chunk_output_pattern = COALESCE($26, chunk_output_pattern)
+                chunk_output_pattern = COALESCE($26, chunk_output_pattern),
+                auto_retry_enabled = COALESCE($27, auto_retry_enabled),
+                auto_retry_max_attempts = COALESCE($28, auto_retry_max_attempts),
+                auto_retry_trigger_checks = COALESCE($29, auto_retry_trigger_checks),
+                auto_retry_seed_variation = COALESCE($30, auto_retry_seed_variation),
+                auto_retry_cfg_jitter = COALESCE($31, auto_retry_cfg_jitter)
              WHERE id = $1 AND deleted_at IS NULL
              RETURNING {COLUMNS}"
         );
@@ -180,6 +197,11 @@ impl SceneTypeRepo {
             .bind(&input.generation_strategy)
             .bind(input.expected_chunks)
             .bind(&input.chunk_output_pattern)
+            .bind(input.auto_retry_enabled)
+            .bind(input.auto_retry_max_attempts)
+            .bind(&input.auto_retry_trigger_checks)
+            .bind(input.auto_retry_seed_variation)
+            .bind(input.auto_retry_cfg_jitter)
             .fetch_optional(pool)
             .await
     }

@@ -12,6 +12,7 @@ pub mod approval;
 pub mod assets;
 pub mod audit;
 pub mod auth;
+pub mod auto_retry;
 pub mod batch_metadata;
 pub mod branching;
 pub mod bug_reports;

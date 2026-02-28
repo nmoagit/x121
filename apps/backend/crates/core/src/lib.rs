@@ -6,6 +6,7 @@ pub mod approval;
 pub mod assembly;
 pub mod assets;
 pub mod audit;
+pub mod auto_retry;
 pub mod batch_metadata;
 pub mod batch_production;
 pub mod branching;
