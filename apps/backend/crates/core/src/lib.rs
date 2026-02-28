@@ -53,6 +53,7 @@ pub mod preset;
 pub mod production_notes;
 pub mod project_config;
 pub mod prompt_editor;
+pub mod prompt_resolution;
 pub mod provenance;
 pub mod qa_status;
 pub mod quality_gate;

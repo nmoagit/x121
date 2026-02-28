@@ -13,6 +13,7 @@ const COLUMNS: &str = "id, project_id, name, status_id, workflow_json, lora_conf
     target_duration_secs, segment_duration_secs, duration_tolerance_secs, \
     transition_segment_index, generation_params, \
     sort_order, is_active, is_studio_level, parent_scene_type_id, depth, \
+    generation_strategy, expected_chunks, chunk_output_pattern, \
     deleted_at, created_at, updated_at";
 
 /// Provides CRUD operations for scene types.
@@ -35,13 +36,15 @@ impl SceneTypeRepo {
                  duration_tolerance_secs,
                  transition_segment_index,
                  generation_params, sort_order, is_active, is_studio_level,
-                 parent_scene_type_id)
+                 parent_scene_type_id,
+                 generation_strategy, expected_chunks, chunk_output_pattern)
              VALUES ($1, $2, COALESCE($3, 1), $4, $5, $6, $7, $8, $9,
                      $10, $11, $12, $13, $14, $15,
                      COALESCE($16, 2),
                      $17,
                      $18, COALESCE($19, 0), COALESCE($20, true), COALESCE($21, false),
-                     $22)
+                     $22,
+                     COALESCE($23, 'platform_orchestrated'), $24, $25)
              RETURNING {COLUMNS}"
         );
         sqlx::query_as::<_, SceneType>(&query)
@@ -67,6 +70,9 @@ impl SceneTypeRepo {
             .bind(input.is_active)
             .bind(input.is_studio_level)
             .bind(input.parent_scene_type_id)
+            .bind(&input.generation_strategy)
+            .bind(input.expected_chunks)
+            .bind(&input.chunk_output_pattern)
             .fetch_one(pool)
             .await
     }
@@ -140,7 +146,10 @@ impl SceneTypeRepo {
                 is_active = COALESCE($20, is_active),
                 is_studio_level = COALESCE($21, is_studio_level),
                 parent_scene_type_id = COALESCE($22, parent_scene_type_id),
-                depth = COALESCE($23, depth)
+                depth = COALESCE($23, depth),
+                generation_strategy = COALESCE($24, generation_strategy),
+                expected_chunks = COALESCE($25, expected_chunks),
+                chunk_output_pattern = COALESCE($26, chunk_output_pattern)
              WHERE id = $1 AND deleted_at IS NULL
              RETURNING {COLUMNS}"
         );
@@ -168,6 +177,9 @@ impl SceneTypeRepo {
             .bind(input.is_studio_level)
             .bind(input.parent_scene_type_id)
             .bind(input.depth)
+            .bind(&input.generation_strategy)
+            .bind(input.expected_chunks)
+            .bind(&input.chunk_output_pattern)
             .fetch_optional(pool)
             .await
     }
@@ -233,11 +245,7 @@ impl SceneTypeRepo {
     }
 
     /// Update only the depth column for a scene type.
-    pub async fn update_depth(
-        pool: &PgPool,
-        id: DbId,
-        depth: i32,
-    ) -> Result<(), sqlx::Error> {
+    pub async fn update_depth(pool: &PgPool, id: DbId, depth: i32) -> Result<(), sqlx::Error> {
         sqlx::query("UPDATE scene_types SET depth = $1 WHERE id = $2")
             .bind(depth)
             .bind(id)

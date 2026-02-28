@@ -65,12 +65,11 @@ impl SceneTypeOverrideRepo {
         pool: &PgPool,
         scene_type_id: DbId,
     ) -> Result<Vec<String>, sqlx::Error> {
-        let rows: Vec<(String,)> = sqlx::query_as(
-            "SELECT field_name FROM scene_type_overrides WHERE scene_type_id = $1",
-        )
-        .bind(scene_type_id)
-        .fetch_all(pool)
-        .await?;
+        let rows: Vec<(String,)> =
+            sqlx::query_as("SELECT field_name FROM scene_type_overrides WHERE scene_type_id = $1")
+                .bind(scene_type_id)
+                .fetch_all(pool)
+                .await?;
         Ok(rows.into_iter().map(|(f,)| f).collect())
     }
 
