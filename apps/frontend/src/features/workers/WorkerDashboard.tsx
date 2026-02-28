@@ -8,8 +8,7 @@
 
 import { useState } from "react";
 
-import { Card } from "@/components/composite/Card";
-import { Spinner } from "@/components/primitives";
+import { Spinner, StatBadge } from "@/components/primitives";
 import { Stack } from "@/components/layout";
 import { AlertCircle, Server } from "@/tokens/icons";
 
@@ -23,27 +22,6 @@ import {
 import type { Worker } from "./types";
 import { WorkerCard } from "./WorkerCard";
 import { WorkerDetailPanel } from "./WorkerDetailPanel";
-
-/* --------------------------------------------------------------------------
-   Fleet stats summary bar
-   -------------------------------------------------------------------------- */
-
-interface StatBadgeProps {
-  label: string;
-  value: number;
-  className?: string;
-}
-
-function StatBadge({ label, value, className }: StatBadgeProps) {
-  return (
-    <Card elevation="flat" padding="sm" className={className}>
-      <p className="text-xs text-[var(--color-text-muted)]">{label}</p>
-      <p className="text-lg font-semibold text-[var(--color-text-primary)]">
-        {value}
-      </p>
-    </Card>
-  );
-}
 
 /* --------------------------------------------------------------------------
    Component

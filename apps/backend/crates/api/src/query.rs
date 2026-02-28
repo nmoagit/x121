@@ -45,3 +45,19 @@ pub fn parse_timestamp(
         None => Ok(fallback),
     }
 }
+
+/// Parse an optional YYYY-MM-DD date string, returning `fallback` if `None`.
+///
+/// Used by consumption summary and other handlers that accept date-only
+/// query parameters.
+pub fn parse_date(
+    s: &Option<String>,
+    fallback: chrono::NaiveDate,
+) -> AppResult<chrono::NaiveDate> {
+    match s {
+        Some(v) => v
+            .parse::<chrono::NaiveDate>()
+            .map_err(|_| AppError::BadRequest("Invalid date format, expected YYYY-MM-DD".into())),
+        None => Ok(fallback),
+    }
+}

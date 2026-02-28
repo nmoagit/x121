@@ -6,6 +6,8 @@ export { Checkbox } from "./Checkbox";
 export { Input } from "./Input";
 export { Select } from "./Select";
 export { Spinner } from "./Spinner";
+export { StatBadge } from "./StatBadge";
+export type { StatBadgeProps } from "./StatBadge";
 export { Toggle } from "./Toggle";
 export { Tooltip, PLACEMENT_CLASSES } from "./Tooltip";
 export type { Placement } from "./Tooltip";

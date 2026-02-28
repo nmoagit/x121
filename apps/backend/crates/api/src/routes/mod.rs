@@ -32,6 +32,7 @@ pub mod extensions;
 pub mod external_api;
 pub mod failure_analytics;
 pub mod generation;
+pub mod gpu_power;
 pub mod hardware;
 pub mod health;
 pub mod image_qa;
@@ -89,6 +90,7 @@ pub mod sidecar;
 pub mod status;
 pub mod storage;
 pub mod storyboard;
+pub mod system_health;
 pub mod tags;
 pub mod temporal;
 pub mod test_shot;
@@ -128,6 +130,14 @@ use crate::ws;
 /// /admin/users                                     list, create (admin only)
 /// /admin/users/{id}                                get, update, deactivate
 /// /admin/users/{id}/reset-password                 reset password
+///
+/// /admin/health/statuses                            all service statuses (GET, PRD-80)
+/// /admin/health/services/{service}                  service detail (GET, PRD-80)
+/// /admin/health/uptime                              uptime percentages (GET, PRD-80)
+/// /admin/health/startup                             startup checklist (GET, PRD-80)
+/// /admin/health/recheck/{service}                   recheck service (POST, PRD-80)
+/// /admin/health/alerts                              list alert configs (GET, PRD-80)
+/// /admin/health/alerts/{service}                    update alert config (PUT, PRD-80)
 ///
 /// /admin/hardware/workers/metrics/current           latest metrics per worker
 /// /admin/hardware/workers/{id}/metrics              worker metric history
@@ -907,6 +917,8 @@ pub fn api_routes() -> Router<AppState> {
         .nest("/admin/workers", workers::admin_router())
         // Worker pool management: agent self-registration (PRD-46).
         .nest("/workers", workers::agent_router())
+        // GPU power management & idle scheduling (PRD-87).
+        .nest("/admin/power", gpu_power::router())
         // External & tiered storage management (PRD-48).
         .nest("/admin/storage", storage::router())
         // Character library: cross-project character sharing (PRD-60) + readiness summary (PRD-107).
@@ -987,6 +999,8 @@ pub fn api_routes() -> Router<AppState> {
         .nest("/readiness-criteria", readiness::readiness_criteria_router())
         // System status footer (PRD-117).
         .nest("/status", status::router())
+        // System Health Page: service health, uptime, alerts (PRD-80).
+        .nest("/admin/health", system_health::router())
         // Platform settings (PRD-110).
         .nest("/admin/settings", platform_settings::router())
         // Dynamic naming engine (PRD-116).

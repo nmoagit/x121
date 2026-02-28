@@ -142,6 +142,28 @@ export function formatPercent(value: number, decimals = 1): string {
 }
 
 /**
+ * Return a YYYY-MM-DD date string for N days ago (date-only, no time).
+ *
+ * Useful for API query parameters that accept date-only values.
+ */
+export function daysAgoDate(n: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() - n);
+  return d.toISOString().slice(0, 10);
+}
+
+/**
+ * Return a full ISO 8601 timestamp string for N days ago.
+ *
+ * Useful for API query parameters that accept full timestamps.
+ */
+export function daysAgoIso(n: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() - n);
+  return d.toISOString();
+}
+
+/**
  * Generate a URL-safe slug from a title string.
  *
  * NOTE: The backend has a canonical `generate_slug()` in `core/src/wiki.rs`

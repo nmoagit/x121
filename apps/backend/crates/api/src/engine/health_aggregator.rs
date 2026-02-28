@@ -12,6 +12,7 @@ use serde::Serialize;
 use sqlx::PgPool;
 use tokio::sync::RwLock;
 
+use x121_core::system_health::{STATUS_DEGRADED, STATUS_DOWN, STATUS_HEALTHY};
 use x121_db::repositories::WorkerRepo;
 
 /// How often the background task refreshes the cached snapshot.
@@ -163,7 +164,7 @@ async fn probe_database(pool: &PgPool) -> ServiceStatus {
         Ok(()) => {
             let latency_ms = start.elapsed().as_millis() as u32;
             ServiceStatus {
-                status: "healthy",
+                status: STATUS_HEALTHY,
                 latency_ms: Some(latency_ms),
                 checked_at: now,
                 detail: None,
@@ -172,7 +173,7 @@ async fn probe_database(pool: &PgPool) -> ServiceStatus {
         Err(e) => {
             tracing::warn!(error = %e, "Database health probe failed");
             ServiceStatus {
-                status: "down",
+                status: STATUS_DOWN,
                 latency_ms: None,
                 checked_at: now,
                 detail: Some(e.to_string()),
@@ -189,14 +190,14 @@ async fn probe_comfyui(comfyui: &x121_comfyui::manager::ComfyUIManager) -> Servi
 
     if count > 0 {
         ServiceStatus {
-            status: "healthy",
+            status: STATUS_HEALTHY,
             latency_ms: None,
             checked_at: now,
             detail: Some(format!("{count} instance(s) connected")),
         }
     } else {
         ServiceStatus {
-            status: "down",
+            status: STATUS_DOWN,
             latency_ms: None,
             checked_at: now,
             detail: Some("No ComfyUI instances connected".to_string()),
@@ -215,11 +216,11 @@ async fn probe_workers(pool: &PgPool) -> ServiceStatus {
             let busy = stats.busy_workers;
 
             let status = if total == 0 {
-                "down"
+                STATUS_DOWN
             } else if idle == 0 && busy == 0 {
-                "degraded"
+                STATUS_DEGRADED
             } else {
-                "healthy"
+                STATUS_HEALTHY
             };
 
             ServiceStatus {
@@ -232,7 +233,7 @@ async fn probe_workers(pool: &PgPool) -> ServiceStatus {
         Err(e) => {
             tracing::warn!(error = %e, "Worker fleet probe failed");
             ServiceStatus {
-                status: "degraded",
+                status: STATUS_DEGRADED,
                 latency_ms: None,
                 checked_at: now,
                 detail: Some(e.to_string()),
@@ -249,7 +250,7 @@ async fn probe_workers(pool: &PgPool) -> ServiceStatus {
 fn initial_snapshot() -> FooterSnapshot {
     let now = Utc::now();
     let down = || ServiceStatus {
-        status: "down",
+        status: STATUS_DOWN,
         latency_ms: None,
         checked_at: now,
         detail: None,

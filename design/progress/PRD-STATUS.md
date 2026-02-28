@@ -21,10 +21,10 @@ Source of truth: [`design/design.md`](../design.md)
 | Status | Count |
 |--------|-------|
 | backlog | 0 |
-| planning | 21 |
+| planning | 19 |
 | in-progress | 0 |
 | review | 0 |
-| done | 100 |
+| done | 102 |
 | blocked | 0 |
 | deferred | 0 |
 | maybe | 15 |
@@ -58,7 +58,7 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-75 | ComfyUI Workflow Import & Validation | — | `done` | 2026-02-23 | Phase 7 Track A |
 | PRD-77 | Pipeline Stage Hooks (Custom Scripts) | — | `done` | 2026-02-23 | Phase 7 Track A |
 | PRD-85 | UI Plugin / Extension Architecture | — | `done` | — | |
-| PRD-87 | GPU Power Management & Idle Scheduling | — | `planning` | — | |
+| PRD-87 | GPU Power Management & Idle Scheduling | — | `done` | 2026-03-01 | Migration (power_schedules, worker columns, consumption_log), core (34 tests), models, repo, 9 admin handlers, frontend (6 components, 10s polling), 15 tests. DRY: 5 CRITICAL + 4 HIGH fixed. |
 | PRD-90 | Render Queue Timeline / Gantt View | — | `planning` | — | |
 | PRD-93 | Generation Budget & Quota Management | — | `planning` | — | |
 | PRD-99 | Webhook & Integration Testing Console | — | `planning` | — | |
@@ -186,7 +186,7 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-44 | Bug Reporting & App Config Export | — | `done` | 2026-02-21 | Bug reports, config export/import/validate, admin endpoints. |
 | PRD-45 | Audit Logging & Compliance | — | `done` | 2026-02-21 | Immutable audit logs with hash chain, retention policies, dynamic filtering, CSV/JSON export, integrity check, 27 tests. DRY-155/156 resolved. |
 | PRD-56 | Studio Wiki & Contextual Help | — | `done` | 2026-02-23 | 2 migrations (wiki_articles, wiki_versions), core module (14 tests), 2 repos, 10 API endpoints, frontend feature (10 tests). |
-| PRD-80 | System Health Page | — | `planning` | — | |
+| PRD-80 | System Health Page | — | `done` | 2026-03-01 | Migration (3 tables), core (28 tests), 3 repo structs, 7 handlers, frontend (6 components, 30s auto-refresh), 21 tests. DRY-530 to DRY-538 audited. |
 | PRD-81 | Backup & Disaster Recovery | — | `planning` | — | |
 | PRD-98 | Session Management & Active Users | — | `planning` | — | |
 | PRD-105 | Platform Setup Wizard | — | `planning` | — | |

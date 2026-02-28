@@ -242,7 +242,11 @@ pub async fn list_assignments(
     State(state): State<AppState>,
     Query(params): Query<AssignmentListParams>,
 ) -> AppResult<impl IntoResponse> {
-    let limit = clamp_limit(params.pagination.limit, DEFAULT_SEARCH_LIMIT, MAX_SEARCH_LIMIT);
+    let limit = clamp_limit(
+        params.pagination.limit,
+        DEFAULT_SEARCH_LIMIT,
+        MAX_SEARCH_LIMIT,
+    );
     let offset = clamp_offset(params.pagination.offset);
 
     let assignments =

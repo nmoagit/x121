@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { api } from "@/lib/api";
+import { daysAgoIso } from "@/lib/format";
 
 /* --------------------------------------------------------------------------
    Types
@@ -126,21 +127,11 @@ const performanceKeys = {
    Date range helpers
    -------------------------------------------------------------------------- */
 
-function daysAgoIso(days: number): string {
-  const d = new Date();
-  d.setDate(d.getDate() - days);
-  return d.toISOString();
-}
-
-function nowIso(): string {
-  return new Date().toISOString();
-}
-
 export type DatePreset = "7d" | "30d" | "90d";
 
 export function presetToRange(preset: DatePreset): { from: string; to: string } {
   const days = preset === "7d" ? 7 : preset === "30d" ? 30 : 90;
-  return { from: daysAgoIso(days), to: nowIso() };
+  return { from: daysAgoIso(days), to: daysAgoIso(0) };
 }
 
 /* --------------------------------------------------------------------------

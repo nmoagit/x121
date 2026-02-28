@@ -426,7 +426,7 @@ This phase contains no PRD work — only structural setup.
 
 | # | PRD | Title | Effort | Depends On |
 |---|-----|-------|--------|------------|
-| 97 | PRD-87 | GPU Power Management & Idle Scheduling | M | PRD-08, PRD-46 |
+| 97 | PRD-87 | GPU Power Management & Idle Scheduling | M | PRD-08, PRD-46 | DONE |
 | 98 | PRD-90 | Render Queue Timeline / Gantt View | M | PRD-08, PRD-46, PRD-61 |
 | 99 | PRD-93 | Generation Budget & Quota Management | M | PRD-08, PRD-10, PRD-57, PRD-61, PRD-90 |
 | 100 | PRD-97 | Job Dependency Chains & Triggered Workflows | M | PRD-08, PRD-10, PRD-12, PRD-45, PRD-57 |
@@ -436,7 +436,7 @@ This phase contains no PRD work — only structural setup.
 
 | # | PRD | Title | Effort | Depends On |
 |---|-----|-------|--------|------------|
-| 102 | PRD-80 | System Health Page | M | PRD-05, PRD-06, PRD-10, PRD-12, PRD-17, PRD-46 |
+| 102 | PRD-80 | System Health Page | M | PRD-05, PRD-06, PRD-10, PRD-12, PRD-17, PRD-46 | DONE |
 | 103 | PRD-98 | Session Management & Active Users | M | PRD-03, PRD-10, PRD-11, PRD-45 |
 | 104 | PRD-19 | Disk Space Visualizer (Treemap) | S | PRD-01, PRD-15 |
 
