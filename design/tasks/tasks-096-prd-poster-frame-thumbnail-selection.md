@@ -62,9 +62,9 @@ CREATE TRIGGER set_updated_at BEFORE UPDATE ON poster_frames
 ```
 
 **Acceptance Criteria:**
-- [ ] `poster_frames` stores entity reference, frame number, image path, and crop/adjust settings
-- [ ] Unique constraint on (entity_type, entity_id) — one poster per entity
-- [ ] All FK columns indexed, `updated_at` trigger applied
+- [x] `poster_frames` stores entity reference, frame number, image path, and crop/adjust settings
+- [x] Unique constraint on (entity_type, entity_id) — one poster per entity
+- [x] All FK columns indexed, `updated_at` trigger applied
 
 ### Task 1.2: Poster Frame Model & Repository
 **File:** `src/models/poster_frame.rs`, `src/repositories/poster_frame_repo.rs`
@@ -88,10 +88,10 @@ pub struct PosterFrame {
 ```
 
 **Acceptance Criteria:**
-- [ ] Model and repository with upsert and query operations
-- [ ] `get_poster(entity_type, entity_id)` returns current poster
-- [ ] `get_project_gallery(project_id)` returns all character posters for a project
-- [ ] Unit tests
+- [x] Model and repository with upsert and query operations
+- [x] `get_poster(entity_type, entity_id)` returns current poster
+- [x] `get_project_gallery(project_id)` returns all character posters for a project
+- [x] Unit tests
 
 ### Task 1.3: Poster Frame API
 **File:** `src/routes/poster_frame.rs`
@@ -107,10 +107,10 @@ pub fn poster_frame_routes() -> Router<AppState> {
 ```
 
 **Acceptance Criteria:**
-- [ ] `POST /scenes/:id/poster-frame` sets poster from frame number + segment
-- [ ] `POST /characters/:id/poster-frame` sets character poster
-- [ ] `GET /projects/:id/poster-gallery` returns all character poster frames
-- [ ] `POST /projects/:id/auto-select-posters` auto-selects using face confidence
+- [x] `POST /scenes/:id/poster-frame` sets poster from frame number + segment
+- [x] `POST /characters/:id/poster-frame` sets character poster
+- [x] `GET /projects/:id/poster-gallery` returns all character poster frames
+- [x] `POST /projects/:id/auto-select-posters` auto-selects using face confidence
 
 ---
 
@@ -120,10 +120,10 @@ pub fn poster_frame_routes() -> Router<AppState> {
 **File:** `frontend/src/features/poster-frame/SetPosterButton.tsx`
 
 **Acceptance Criteria:**
-- [ ] "Set as Poster Frame" button visible in PRD-035/PRD-083 player
-- [ ] Uses current frame as the scene or character thumbnail
-- [ ] Selected frame extracted and stored as a static image
-- [ ] Extraction completes in <1 second
+- [x] "Set as Poster Frame" button visible in PRD-035/PRD-083 player
+- [x] Uses current frame as the scene or character thumbnail
+- [x] Selected frame extracted and stored as a static image
+- [x] Extraction completes in <1 second
 
 ### Task 2.2: Frame Extraction Service
 **File:** `src/services/frame_extractor.rs`
@@ -144,9 +144,9 @@ impl FrameExtractor {
 ```
 
 **Acceptance Criteria:**
-- [ ] Extract specific frame from video as JPEG or WebP
-- [ ] Extraction completes in <1 second
-- [ ] Output at full video frame resolution
+- [x] Extract specific frame from video as JPEG or WebP
+- [x] Extraction completes in <1 second
+- [x] Output at full video frame resolution
 
 ---
 
@@ -156,18 +156,18 @@ impl FrameExtractor {
 **File:** `frontend/src/features/poster-frame/CharacterPoster.tsx`
 
 **Acceptance Criteria:**
-- [ ] Character poster appears in: library views, dashboard widgets, search results, shared links
-- [ ] Defaults to keyframe from first approved scene if not manually set
-- [ ] One-click override from any scene's poster frame
-- [ ] Poster visible across all dependent PRDs (PRD-060, PRD-042, PRD-020, PRD-084)
+- [x] Character poster appears in: library views, dashboard widgets, search results, shared links
+- [x] Defaults to keyframe from first approved scene if not manually set
+- [x] One-click override from any scene's poster frame
+- [x] Poster visible across all dependent PRDs (PRD-060, PRD-042, PRD-020, PRD-084)
 
 ### Task 3.2: Scene Poster Management
 **File:** `frontend/src/features/poster-frame/ScenePoster.tsx`
 
 **Acceptance Criteria:**
-- [ ] Poster per scene used in: scene list, batch orchestrator grid, comparison views
-- [ ] Defaults to first frame of first segment
-- [ ] Override from any frame within the scene's segments
+- [x] Poster per scene used in: scene list, batch orchestrator grid, comparison views
+- [x] Defaults to first frame of first segment
+- [x] Override from any frame within the scene's segments
 
 ---
 
@@ -177,10 +177,10 @@ impl FrameExtractor {
 **File:** `frontend/src/features/poster-frame/PosterGallery.tsx`
 
 **Acceptance Criteria:**
-- [ ] Grid view of all poster frames for a project's characters
-- [ ] Quickly identify characters with weak or unrepresentative thumbnails
-- [ ] Click to navigate to character detail for re-selection
-- [ ] Bulk "Auto-select best frame" action
+- [x] Grid view of all poster frames for a project's characters
+- [x] Quickly identify characters with weak or unrepresentative thumbnails
+- [x] Click to navigate to character detail for re-selection
+- [x] Bulk "Auto-select best frame" action
 
 ---
 
@@ -190,11 +190,11 @@ impl FrameExtractor {
 **File:** `frontend/src/features/poster-frame/CropAdjust.tsx`
 
 **Acceptance Criteria:**
-- [ ] Crop to aspect ratio: square (1:1), 16:9, 4:3, custom
-- [ ] Brightness/contrast adjustment sliders
-- [ ] Preview before saving
-- [ ] Lightweight — not a full image editor
-- [ ] Adjustments stored as metadata (applied on render, not destructive)
+- [x] Crop to aspect ratio: square (1:1), 16:9, 4:3, custom
+- [x] Brightness/contrast adjustment sliders
+- [x] Preview before saving
+- [x] Lightweight — not a full image editor
+- [x] Adjustments stored as metadata (applied on render, not destructive)
 
 ---
 
@@ -218,17 +218,17 @@ impl PosterAutoSelector {
 ```
 
 **Acceptance Criteria:**
-- [ ] Auto-select identifies highest face-quality frame in >90% of cases
-- [ ] Processes batch auto-select for entire project
-- [ ] Uses PRD-049 face confidence scores
+- [x] Auto-select identifies highest face-quality frame in >90% of cases
+- [x] Processes batch auto-select for entire project
+- [x] Uses PRD-049 face confidence scores
 
 ### Task 6.2: Version Persistence
 **File:** `src/services/poster_version_handler.rs`
 
 **Acceptance Criteria:**
-- [ ] When scene is regenerated, poster frame persists if selected frame still exists
-- [ ] If segment was regenerated, user prompted to select new poster
-- [ ] Previous poster available for reference during re-selection
+- [x] When scene is regenerated, poster frame persists if selected frame still exists
+- [x] If segment was regenerated, user prompted to select new poster
+- [x] Previous poster available for reference during re-selection
 
 ---
 
@@ -238,11 +238,11 @@ impl PosterAutoSelector {
 **File:** `tests/poster_frame_test.rs`, `frontend/src/features/poster-frame/__tests__/`
 
 **Acceptance Criteria:**
-- [ ] Poster frame extraction in <1 second
-- [ ] Poster frames display correctly in all dependent views
-- [ ] Auto-select correctly identifies best face-quality frame in >90% of cases
-- [ ] Crop/adjust previews correctly before saving
-- [ ] Version persistence works across regeneration cycles
+- [x] Poster frame extraction in <1 second
+- [x] Poster frames display correctly in all dependent views
+- [x] Auto-select correctly identifies best face-quality frame in >90% of cases
+- [x] Crop/adjust previews correctly before saving
+- [x] Version persistence works across regeneration cycles
 
 ---
 

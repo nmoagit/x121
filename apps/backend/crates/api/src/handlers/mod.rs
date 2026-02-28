@@ -58,6 +58,7 @@ pub mod palette;
 pub mod performance;
 pub mod pipeline_hooks;
 pub mod platform_settings;
+pub mod poster_frame;
 pub mod presets;
 pub mod production_notes;
 pub mod production_run;

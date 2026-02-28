@@ -51,10 +51,7 @@ pub async fn get_profile(
 pub async fn create_profile(
     State(state): State<AppState>,
     Json(input): Json<CreateQaProfile>,
-) -> AppResult<(
-    StatusCode,
-    Json<DataResponse<QaProfile>>,
-)> {
+) -> AppResult<(StatusCode, Json<DataResponse<QaProfile>>)> {
     let profile = QaProfileRepo::create(&state.pool, &input).await?;
     Ok((StatusCode::CREATED, Json(DataResponse { data: profile })))
 }
@@ -177,8 +174,7 @@ pub async fn resolve_effective_thresholds(
 ) -> AppResult<Json<DataResponse<ResolvedThresholds>>> {
     ensure_scene_type_exists(&state.pool, scene_type_id).await?;
 
-    let effective =
-        load_effective_thresholds(&state, scene_type_id, query.project_id).await?;
+    let effective = load_effective_thresholds(&state, scene_type_id, query.project_id).await?;
 
     Ok(Json(DataResponse { data: effective }))
 }
@@ -207,8 +203,7 @@ pub async fn ab_test_thresholds(
 ) -> AppResult<Json<DataResponse<qa_ruleset::AbTestResult>>> {
     ensure_scene_type_exists(&state.pool, body.scene_type_id).await?;
 
-    let current =
-        load_effective_thresholds(&state, body.scene_type_id, body.project_id).await?;
+    let current = load_effective_thresholds(&state, body.scene_type_id, body.project_id).await?;
 
     // Load historical quality_scores for segments belonging to scenes of this scene type.
     let window = body.window_days.unwrap_or(30);
@@ -223,10 +218,7 @@ pub async fn ab_test_thresholds(
 // ---------------------------------------------------------------------------
 
 /// Look up a QA profile by ID, returning `NotFound` if missing.
-async fn ensure_qa_profile_exists(
-    pool: &sqlx::PgPool,
-    id: DbId,
-) -> AppResult<QaProfile> {
+async fn ensure_qa_profile_exists(pool: &sqlx::PgPool, id: DbId) -> AppResult<QaProfile> {
     QaProfileRepo::find_by_id(pool, id)
         .await?
         .ok_or(AppError::Core(CoreError::NotFound {

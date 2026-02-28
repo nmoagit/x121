@@ -64,6 +64,7 @@ pub mod pattern_fix;
 pub mod performance_metric;
 pub mod placement_rule;
 pub mod platform_setting;
+pub mod poster_frame;
 pub mod preset;
 pub mod production_note;
 pub mod production_run;

@@ -50,6 +50,7 @@ pub mod palette;
 pub mod performance;
 pub mod pipeline_hooks;
 pub mod platform_settings;
+pub mod poster_frame;
 pub mod presets;
 pub mod production_notes;
 pub mod production_run;
@@ -197,6 +198,9 @@ use crate::ws;
 /// /projects/{project_id}/qa-thresholds             list, upsert (GET, POST, PRD-49)
 /// /projects/{project_id}/qa-thresholds/{id}        delete (DELETE, PRD-49)
 ///
+/// /projects/{id}/poster-gallery                    project poster gallery (GET, PRD-96)
+/// /projects/{id}/auto-select-posters               auto-select poster frames (POST, PRD-96)
+///
 /// /projects/{id}/validation-summary                validation summary (GET, PRD-113)
 /// /projects/{id}/validate                          revalidate project (POST, PRD-113)
 /// /projects/{project_id}/ingest                    list sessions (GET, PRD-113)
@@ -226,6 +230,8 @@ use crate::ws;
 /// /characters/{character_id}/dashboard              character dashboard (GET, PRD-108)
 /// /characters/{character_id}/settings               patch settings (PATCH, PRD-108)
 ///
+/// /characters/{id}/poster-frame                    get, set poster frame (GET, POST, PRD-96)
+///
 /// /characters/{character_id}/extract-embedding     trigger extraction (POST, PRD-76)
 /// /characters/{character_id}/embedding-status      get status (GET, PRD-76)
 /// /characters/{character_id}/detected-faces        list faces (GET, PRD-76)
@@ -239,6 +245,7 @@ use crate::ws;
 /// /scenes/{id}/progress                            generation progress (GET, PRD-24)
 /// /scenes/batch-generate                           batch generate (POST, PRD-24)
 /// /scenes/{scene_id}/qa-summary                    scene QA summary (GET, PRD-49)
+/// /scenes/{id}/poster-frame                         get, set poster frame (GET, POST, PRD-96)
 ///
 /// /segments/{segment_id}/approve                   approve segment (POST, PRD-35)
 /// /segments/{segment_id}/reject                    reject segment (POST, PRD-35)
@@ -732,6 +739,7 @@ pub fn api_routes() -> Router<AppState> {
             .merge(project_config::project_export_router())
             .merge(validation_dashboard::router())
             .merge(comparison::router())
+            .merge(poster_frame::project_poster_router())
             .nest("/{project_id}/characters", character_metadata::project_router())
             .nest("/{project_id}/ingest", character_ingest::router())
             .nest("/{project_id}/scene-settings", project_scene_settings::router()))
@@ -743,6 +751,7 @@ pub fn api_routes() -> Router<AppState> {
             .merge(readiness::readiness_router())
             .merge(character_dashboard::dashboard_router())
             .merge(prompt_management::character_prompt_override_router())
+            .merge(poster_frame::character_poster_router())
             .nest("/{character_id}/scene-settings", character_scene_overrides::router()))
         // Scene-scoped sub-resources (segments, review queue, generation PRD-24, QA PRD-49, resolution PRD-59, storyboard PRD-62, branching PRD-50).
         .nest("/scenes", scene::router()
@@ -753,7 +762,8 @@ pub fn api_routes() -> Router<AppState> {
             .merge(temporal::scene_temporal_router())
             .merge(resolution::scene_resolution_router())
             .merge(storyboard::scene_storyboard_router())
-            .merge(branching::scene_branch_router()))
+            .merge(branching::scene_branch_router())
+            .merge(poster_frame::scene_poster_router()))
         // Segment-scoped approval actions (approve, reject, flag) (PRD-35).
         // Segment-scoped review notes and tags (PRD-38).
         // Segment-scoped boundary frame selection (PRD-24).
