@@ -21,10 +21,10 @@ Source of truth: [`design/design.md`](../design.md)
 | Status | Count |
 |--------|-------|
 | backlog | 0 |
-| planning | 31 |
+| planning | 30 |
 | in-progress | 0 |
 | review | 0 |
-| done | 90 |
+| done | 91 |
 | blocked | 0 |
 | deferred | 0 |
 | maybe | 15 |
@@ -139,7 +139,7 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-52 | Keyboard Shortcut System & Presets | — | `done` | 2026-02-21 | Central registry, 4 industry presets, custom keymaps, context-aware, cheat sheet, 26 tests. |
 | PRD-53 | First-Run Experience & Onboarding | — | `done` | 2026-02-21 | User onboarding state, guided tours, contextual hints, checklist, onboarding gate, 10 core tests. DRY-191 to DRY-200 audited. |
 | PRD-54 | Background Job Tray | — | `done` | — | |
-| PRD-82 | Content Sensitivity Controls | — | `planning` | — | |
+| PRD-82 | Content Sensitivity Controls | — | `done` | 2026-02-28 | Migration (2 tables), core module (blur level enforcement, 7 tests), model/repo (upsert pattern), 4 API endpoints (user+admin), frontend provider (context+localStorage+API sync), BlurredMedia component, WatermarkOverlay, ScreenShareMode (Ctrl+Shift+S shortcut), admin defaults UI, 18 frontend tests. DRY-453 to DRY-459 watch. |
 | PRD-112 | Project Hub & Management | 1 | `done` | 2026-02-27 | 2 migrations (character_groups, group_id FK), character group model/repo/handlers, project stats endpoint, 25 frontend files (project list, detail with 6 tabs, character workstation with 6 tabs, 3 TanStack Query hook files). |
 | PRD-117 | System Status Footer Bar | 1 | `done` | 2026-02-27 | HealthAggregator background service, status handler, 7 frontend components (StatusFooter, FooterSegment, ServiceHealth, CloudGpu, Job, Workflow, Collapsed). |
 | PRD-118 | Live Activity Console & Logging System | — | `done` | 2026-02-27 | 1 migration (4 tables), core types, ActivityLogBroadcaster, custom tracing::Layer, batch persistence/retention services, WebSocket handler, REST endpoints, Zustand store, dual-mode UI (panel + page). |

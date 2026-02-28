@@ -74,6 +74,7 @@ pub mod script_types;
 pub mod scripting;
 pub mod search;
 pub mod segment_comparison;
+pub mod sensitivity;
 pub mod settings;
 pub mod storage;
 pub mod storyboard;

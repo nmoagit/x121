@@ -73,9 +73,9 @@ CREATE TRIGGER set_updated_at BEFORE UPDATE ON studio_sensitivity_config
 ```
 
 **Acceptance Criteria:**
-- [ ] `user_sensitivity_settings` stores per-user blur level, view overrides, watermark config
-- [ ] `studio_sensitivity_config` stores admin-defined minimum level
-- [ ] All FK columns indexed, `updated_at` triggers applied
+- [x] `user_sensitivity_settings` stores per-user blur level, view overrides, watermark config
+- [x] `studio_sensitivity_config` stores admin-defined minimum level
+- [x] All FK columns indexed, `updated_at` triggers applied
 
 ### Task 1.2: Sensitivity Models & Repository
 **File:** `src/models/sensitivity.rs`, `src/repositories/sensitivity_repo.rs`
@@ -99,10 +99,10 @@ pub struct UserSensitivitySettings {
 ```
 
 **Acceptance Criteria:**
-- [ ] Model structs for user and studio sensitivity settings
-- [ ] Repository with get/upsert for user settings
-- [ ] Repository enforces admin minimum: user cannot set a level lower than studio minimum
-- [ ] Unit tests for minimum enforcement logic
+- [x] Model structs for user and studio sensitivity settings
+- [x] Repository with get/upsert for user settings
+- [x] Repository enforces admin minimum: user cannot set a level lower than studio minimum
+- [x] Unit tests for minimum enforcement logic
 
 ### Task 1.3: Sensitivity API Endpoints
 **File:** `src/routes/sensitivity.rs`
@@ -116,9 +116,9 @@ pub fn sensitivity_routes() -> Router<AppState> {
 ```
 
 **Acceptance Criteria:**
-- [ ] `GET /user/sensitivity` returns current sensitivity settings
-- [ ] `PUT /user/sensitivity` updates settings (enforcing admin minimum)
-- [ ] `GET/PUT /admin/sensitivity-defaults` for studio-wide minimum (admin-only)
+- [x] `GET /user/sensitivity` returns current sensitivity settings
+- [x] `PUT /user/sensitivity` updates settings (enforcing admin minimum)
+- [x] `GET/PUT /admin/sensitivity-defaults` for studio-wide minimum (admin-only)
 
 ---
 
@@ -141,9 +141,9 @@ interface SensitivityContextValue {
 ```
 
 **Acceptance Criteria:**
-- [ ] React context provides sensitivity state to all components
-- [ ] Resolves effective blur level: Screen-Share Mode > view override > global level
-- [ ] Admin minimum enforced on the client side (cannot select below floor)
+- [x] React context provides sensitivity state to all components
+- [x] Resolves effective blur level: Screen-Share Mode > view override > global level
+- [x] Admin minimum enforced on the client side (cannot select below floor)
 
 ### Task 2.2: Blur Renderer Component
 **File:** `frontend/src/features/sensitivity/BlurredMedia.tsx`
@@ -165,11 +165,11 @@ const BLUR_CSS: Record<BlurLevel, string> = {
 ```
 
 **Acceptance Criteria:**
-- [ ] Four levels: Full (unblurred), Soft Blur, Heavy Blur, Placeholder Icon
-- [ ] Applies to all image and video thumbnails platform-wide
-- [ ] Setting persists per user via API
-- [ ] Blur levels visually distinct and immediately identifiable
-- [ ] No perceptible lag during library/dashboard browsing
+- [x] Four levels: Full (unblurred), Soft Blur, Heavy Blur, Placeholder Icon
+- [x] Applies to all image and video thumbnails platform-wide
+- [x] Setting persists per user via API
+- [x] Blur levels visually distinct and immediately identifiable
+- [x] No perceptible lag during library/dashboard browsing
 
 ---
 
@@ -179,10 +179,10 @@ const BLUR_CSS: Record<BlurLevel, string> = {
 **File:** `frontend/src/features/sensitivity/useViewOverride.ts`
 
 **Acceptance Criteria:**
-- [ ] Users set different blur level per view (e.g., blur in library, full in Review)
-- [ ] Overrides take precedence over global setting for that view only
-- [ ] Override settings persist per user per view
-- [ ] Quick access from view header or settings panel
+- [x] Users set different blur level per view (e.g., blur in library, full in Review)
+- [x] Overrides take precedence over global setting for that view only
+- [x] Override settings persist per user per view
+- [x] Quick access from view header or settings panel
 
 ---
 
@@ -200,11 +200,11 @@ interface WatermarkOverlayProps {
 ```
 
 **Acceptance Criteria:**
-- [ ] Configurable watermark: username, timestamp, project name, or custom text
-- [ ] Applied as a compositing layer during playback only — does not affect source files
-- [ ] Distinct from PRD-039 delivery watermarking
-- [ ] Configurable position (center/corner) and opacity
-- [ ] Rendered via CSS/Canvas overlay, not burned into video
+- [x] Configurable watermark: username, timestamp, project name, or custom text
+- [x] Applied as a compositing layer during playback only — does not affect source files
+- [x] Distinct from PRD-039 delivery watermarking
+- [x] Configurable position (center/corner) and opacity
+- [x] Rendered via CSS/Canvas overlay, not burned into video
 
 ---
 
@@ -226,12 +226,12 @@ export function useScreenShareMode() {
 ```
 
 **Acceptance Criteria:**
-- [ ] Keyboard shortcut toggle (registered with PRD-052)
-- [ ] Activates maximum blur/redaction across all views simultaneously
-- [ ] Disables video autoplay and mutes audio
-- [ ] Clear visual indicator (e.g., colored border around viewport)
-- [ ] Single shortcut to deactivate and restore previous settings
-- [ ] Activates/deactivates in <200ms
+- [x] Keyboard shortcut toggle (registered with PRD-052)
+- [x] Activates maximum blur/redaction across all views simultaneously
+- [x] Disables video autoplay and mutes audio
+- [x] Clear visual indicator (e.g., colored border around viewport)
+- [x] Single shortcut to deactivate and restore previous settings
+- [x] Activates/deactivates in <200ms
 
 ---
 
@@ -241,10 +241,10 @@ export function useScreenShareMode() {
 **File:** `frontend/src/features/admin/SensitivityDefaults.tsx`
 
 **Acceptance Criteria:**
-- [ ] Admin UI to set studio-wide default sensitivity level
-- [ ] Preview showing how each level looks
-- [ ] When admin sets "Soft Blur" as minimum, users can choose "Heavy Blur" but not "Full"
-- [ ] Admin-only access via RBAC
+- [x] Admin UI to set studio-wide default sensitivity level
+- [x] Preview showing how each level looks
+- [x] When admin sets "Soft Blur" as minimum, users can choose "Heavy Blur" but not "Full"
+- [x] Admin-only access via RBAC
 
 ---
 
@@ -254,21 +254,21 @@ export function useScreenShareMode() {
 **File:** integration across library, dashboard, search, review views
 
 **Acceptance Criteria:**
-- [ ] All image/video thumbnails in library views use BlurredMedia component
-- [ ] Dashboard widgets use BlurredMedia for thumbnails
-- [ ] Search results use BlurredMedia
-- [ ] Review interface respects view override
+- [x] All image/video thumbnails in library views use BlurredMedia component
+- [x] Dashboard widgets use BlurredMedia for thumbnails
+- [x] Search results use BlurredMedia
+- [x] Review interface respects view override
 
 ### Task 7.2: Comprehensive Tests
 **File:** `frontend/src/features/sensitivity/__tests__/`
 
 **Acceptance Criteria:**
-- [ ] Screen-Share Mode activates in <200ms
-- [ ] Blur rendering adds no perceptible lag
-- [ ] Zero incidents of unblurred content when blur is active
-- [ ] Admin minimum correctly prevents users from lowering sensitivity
-- [ ] View overrides correctly apply per-view levels
-- [ ] Watermark renders correctly at all positions and opacities
+- [x] Screen-Share Mode activates in <200ms
+- [x] Blur rendering adds no perceptible lag
+- [x] Zero incidents of unblurred content when blur is active
+- [x] Admin minimum correctly prevents users from lowering sensitivity
+- [x] View overrides correctly apply per-view levels
+- [x] Watermark renders correctly at all positions and opacities
 
 ---
 

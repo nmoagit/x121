@@ -76,6 +76,7 @@ pub mod scene_type_inheritance;
 pub mod scripts;
 pub mod search;
 pub mod segment_comparison;
+pub mod sensitivity;
 pub mod status;
 pub mod storage;
 pub mod storyboard;
@@ -699,6 +700,8 @@ pub fn api_routes() -> Router<AppState> {
         .nest("/admin/hardware", hardware::router())
         .nest("/admin/scripts", scripts::router())
         .nest("/admin/themes", themes::admin_router())
+        // Studio-wide sensitivity defaults (PRD-82).
+        .nest("/admin/sensitivity-defaults", sensitivity::admin_router())
         // Disk reclamation: protection rules, policies, trash queue (PRD-15).
         .nest("/admin/reclamation", reclamation::router())
         // Audit logging & compliance (PRD-45).
@@ -708,6 +711,8 @@ pub fn api_routes() -> Router<AppState> {
         .nest("/admin/webhooks", external_api::webhooks_router())
         // User-facing theme preference.
         .nest("/user/theme", themes::user_router())
+        // User-facing sensitivity preference (PRD-82).
+        .nest("/user/sensitivity", sensitivity::user_router())
         // User-facing keymap preference (PRD-52).
         .nest("/user/keymap", keymaps::user_router())
         // Keymap presets and export/import (PRD-52).
