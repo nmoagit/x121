@@ -1,142 +1,145 @@
 /* ==========================================================================
-   Color Tokens — Multi-theme system
+   Color Tokens — Multi-theme system (Primer-derived palette)
 
    Base values in @theme register CSS custom properties for Tailwind utility
    generation. Theme-specific overrides use [data-theme] attribute selectors.
 
    Themes: dark-obsidian, dark-neon, light-obsidian, light-neon
+   Palette: GitHub Primer design language with obsidian/neon brand axis.
    ========================================================================== */
 
-/* Default / fallback values (dark-obsidian) — used by Tailwind to generate utilities */
+/* Default / fallback values (dark-obsidian) — used by Tailwind to generate utilities.
+   SYNC: These must match the dark-obsidian theme below AND EMPTY_TOKENS in
+   src/features/admin/token-editor/TokenSections.tsx */
 @theme {
   /* Surface */
-  --color-surface-primary: #0f0f1a;
-  --color-surface-secondary: #1a1a2e;
-  --color-surface-tertiary: #242440;
-  --color-surface-overlay: rgba(0, 0, 0, 0.6);
+  --color-surface-primary: #0d1117;
+  --color-surface-secondary: #151b23;
+  --color-surface-tertiary: #212830;
+  --color-surface-overlay: rgba(1, 4, 9, 0.6);
 
   /* Text */
-  --color-text-primary: #e8e8f0;
-  --color-text-secondary: #b0b0c0;
-  --color-text-muted: #70708a;
-  --color-text-inverse: #0f0f1a;
+  --color-text-primary: #f0f6fc;
+  --color-text-secondary: #9198a1;
+  --color-text-muted: #656c76;
+  --color-text-inverse: #0d1117;
 
   /* Action */
-  --color-action-primary: #4a6cf7;
-  --color-action-primary-hover: #5e7df9;
-  --color-action-danger: #e94560;
-  --color-action-danger-hover: #f25c75;
-  --color-action-success: #2ecc71;
-  --color-action-warning: #f5a623;
+  --color-action-primary: #1f6feb;
+  --color-action-primary-hover: #4493f8;
+  --color-action-danger: #da3633;
+  --color-action-danger-hover: #f85149;
+  --color-action-success: #3fb950;
+  --color-action-warning: #d29922;
 
   /* Border */
-  --color-border-default: #2a2a44;
-  --color-border-focus: #4a6cf7;
-  --color-border-error: #e94560;
+  --color-border-default: #3d444d;
+  --color-border-focus: #1f6feb;
+  --color-border-error: #da3633;
 }
 
 /* --------------------------------------------------------------------------
-   Dark Obsidian — Professional, muted, cool slate grays with blue undertones
+   Dark Obsidian — Professional, muted, Primer dark palette
    -------------------------------------------------------------------------- */
 :root[data-theme="dark-obsidian"] {
-  --color-surface-primary: #0f0f1a;
-  --color-surface-secondary: #1a1a2e;
-  --color-surface-tertiary: #242440;
-  --color-surface-overlay: rgba(0, 0, 0, 0.6);
+  --color-surface-primary: #0d1117;
+  --color-surface-secondary: #151b23;
+  --color-surface-tertiary: #212830;
+  --color-surface-overlay: rgba(1, 4, 9, 0.6);
 
-  --color-text-primary: #e8e8f0;
-  --color-text-secondary: #b0b0c0;
-  --color-text-muted: #70708a;
-  --color-text-inverse: #0f0f1a;
+  --color-text-primary: #f0f6fc;
+  --color-text-secondary: #9198a1;
+  --color-text-muted: #656c76;
+  --color-text-inverse: #0d1117;
 
-  --color-action-primary: #4a6cf7;
-  --color-action-primary-hover: #5e7df9;
-  --color-action-danger: #e94560;
-  --color-action-danger-hover: #f25c75;
-  --color-action-success: #2ecc71;
-  --color-action-warning: #f5a623;
+  --color-action-primary: #1f6feb;
+  --color-action-primary-hover: #4493f8;
+  --color-action-danger: #da3633;
+  --color-action-danger-hover: #f85149;
+  --color-action-success: #3fb950;
+  --color-action-warning: #d29922;
 
-  --color-border-default: #2a2a44;
-  --color-border-focus: #4a6cf7;
-  --color-border-error: #e94560;
+  --color-border-default: #3d444d;
+  --color-border-focus: #1f6feb;
+  --color-border-error: #da3633;
 }
 
 /* --------------------------------------------------------------------------
-   Dark Neon — Vibrant, energetic, deep blacks with electric cyan/magenta
+   Dark Neon — Vibrant Primer dark with saturated accents
    -------------------------------------------------------------------------- */
 :root[data-theme="dark-neon"] {
-  --color-surface-primary: #0a0a14;
-  --color-surface-secondary: #12121f;
-  --color-surface-tertiary: #1a1a2a;
-  --color-surface-overlay: rgba(0, 0, 0, 0.7);
+  --color-surface-primary: #010409;
+  --color-surface-secondary: #0d1117;
+  --color-surface-tertiary: #151b23;
+  --color-surface-overlay: rgba(1, 4, 9, 0.7);
 
-  --color-text-primary: #f0f0ff;
-  --color-text-secondary: #c0c0e0;
-  --color-text-muted: #7878a0;
-  --color-text-inverse: #0a0a14;
+  --color-text-primary: #f0f6fc;
+  --color-text-secondary: #b1bac4;
+  --color-text-muted: #7d8590;
+  --color-text-inverse: #010409;
 
-  --color-action-primary: #00e5ff;
-  --color-action-primary-hover: #33ebff;
-  --color-action-danger: #ff2d6a;
-  --color-action-danger-hover: #ff5a8a;
-  --color-action-success: #00ff88;
-  --color-action-warning: #ffab00;
+  --color-action-primary: #2f81f7;
+  --color-action-primary-hover: #58a6ff;
+  --color-action-danger: #f85149;
+  --color-action-danger-hover: #ff7b72;
+  --color-action-success: #56d364;
+  --color-action-warning: #e3b341;
 
-  --color-border-default: #1e1e3a;
-  --color-border-focus: #00e5ff;
-  --color-border-error: #ff2d6a;
+  --color-border-default: #30363d;
+  --color-border-focus: #2f81f7;
+  --color-border-error: #f85149;
 }
 
 /* --------------------------------------------------------------------------
-   Light Obsidian — Professional, warm neutrals with subtle blue hints
+   Light Obsidian — Professional Primer light palette
    -------------------------------------------------------------------------- */
 :root[data-theme="light-obsidian"] {
-  --color-surface-primary: #f8f9fa;
-  --color-surface-secondary: #ffffff;
-  --color-surface-tertiary: #eef0f4;
-  --color-surface-overlay: rgba(0, 0, 0, 0.3);
+  --color-surface-primary: #ffffff;
+  --color-surface-secondary: #f6f8fa;
+  --color-surface-tertiary: #eff2f5;
+  --color-surface-overlay: rgba(31, 35, 40, 0.3);
 
-  --color-text-primary: #1a1a2e;
-  --color-text-secondary: #4a4a60;
-  --color-text-muted: #8888a0;
-  --color-text-inverse: #f8f9fa;
+  --color-text-primary: #1f2328;
+  --color-text-secondary: #59636e;
+  --color-text-muted: #818b98;
+  --color-text-inverse: #ffffff;
 
-  --color-action-primary: #3b5bdb;
-  --color-action-primary-hover: #4c6ef5;
-  --color-action-danger: #e03e3e;
-  --color-action-danger-hover: #f03e3e;
-  --color-action-success: #099268;
-  --color-action-warning: #e67700;
+  --color-action-primary: #0969da;
+  --color-action-primary-hover: #0550ae;
+  --color-action-danger: #cf222e;
+  --color-action-danger-hover: #a40e26;
+  --color-action-success: #1a7f37;
+  --color-action-warning: #9a6700;
 
-  --color-border-default: #d0d5dd;
-  --color-border-focus: #3b5bdb;
-  --color-border-error: #e03e3e;
+  --color-border-default: #d1d9e0;
+  --color-border-focus: #0969da;
+  --color-border-error: #cf222e;
 }
 
 /* --------------------------------------------------------------------------
-   Light Neon — Bright whites with vivid, electric accent colors
+   Light Neon — Bright Primer light with vivid accents
    -------------------------------------------------------------------------- */
 :root[data-theme="light-neon"] {
   --color-surface-primary: #ffffff;
-  --color-surface-secondary: #f5f5ff;
-  --color-surface-tertiary: #ebebfa;
-  --color-surface-overlay: rgba(0, 0, 0, 0.25);
+  --color-surface-secondary: #f6f8fa;
+  --color-surface-tertiary: #eaeef2;
+  --color-surface-overlay: rgba(31, 35, 40, 0.25);
 
-  --color-text-primary: #0a0a14;
-  --color-text-secondary: #3a3a55;
-  --color-text-muted: #7a7a9a;
+  --color-text-primary: #1f2328;
+  --color-text-secondary: #424a53;
+  --color-text-muted: #6e7781;
   --color-text-inverse: #ffffff;
 
-  --color-action-primary: #0090ff;
-  --color-action-primary-hover: #2aa4ff;
-  --color-action-danger: #e5004f;
-  --color-action-danger-hover: #ff1a6a;
-  --color-action-success: #00b368;
-  --color-action-warning: #ff8c00;
+  --color-action-primary: #0969da;
+  --color-action-primary-hover: #0550ae;
+  --color-action-danger: #d1242f;
+  --color-action-danger-hover: #cf222e;
+  --color-action-success: #1f883d;
+  --color-action-warning: #9a6700;
 
-  --color-border-default: #c8c8e0;
-  --color-border-focus: #0090ff;
-  --color-border-error: #e5004f;
+  --color-border-default: #d0d7de;
+  --color-border-focus: #0969da;
+  --color-border-error: #d1242f;
 }
 
 /* --------------------------------------------------------------------------
@@ -148,18 +151,18 @@
 :root[data-theme="dark-obsidian"][data-high-contrast="true"],
 :root[data-theme="dark-neon"][data-high-contrast="true"] {
   --color-text-primary: #ffffff;
-  --color-text-secondary: #d0d0e0;
-  --color-text-muted: #a0a0b8;
+  --color-text-secondary: #d1d9e0;
+  --color-text-muted: #9198a1;
 
-  --color-border-default: #4a4a6a;
+  --color-border-default: #656c76;
 }
 
 /* Light themes: darker text, stronger borders */
 :root[data-theme="light-obsidian"][data-high-contrast="true"],
 :root[data-theme="light-neon"][data-high-contrast="true"] {
-  --color-text-primary: #000000;
-  --color-text-secondary: #2a2a40;
-  --color-text-muted: #5a5a70;
+  --color-text-primary: #0e1116;
+  --color-text-secondary: #25292e;
+  --color-text-muted: #424a53;
 
-  --color-border-default: #8a8aa0;
+  --color-border-default: #818b98;
 }

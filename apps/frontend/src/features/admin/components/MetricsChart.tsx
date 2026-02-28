@@ -90,12 +90,12 @@ export function MetricsChart({ workerId }: MetricsChartProps) {
 
   const colors = useMemo(
     () => ({
-      temperature: getCssVar("--color-action-danger", "#e94560"),
-      vram: getCssVar("--color-action-primary", "#4a6cf7"),
-      utilization: getCssVar("--color-action-success", "#2ecc71"),
-      warning: getCssVar("--color-action-warning", "#f5a623"),
-      grid: getCssVar("--color-border-default", "#2a2a44"),
-      text: getCssVar("--color-text-muted", "#70708a"),
+      temperature: getCssVar("--color-action-danger", "#da3633"),
+      vram: getCssVar("--color-action-primary", "#1f6feb"),
+      utilization: getCssVar("--color-action-success", "#3fb950"),
+      warning: getCssVar("--color-action-warning", "#d29922"),
+      grid: getCssVar("--color-border-default", "#3d444d"),
+      text: getCssVar("--color-text-muted", "#656c76"),
     }),
     [],
   );

@@ -127,6 +127,7 @@ export const NAV_GROUPS: NavGroupDef[] = [
       { label: "Naming Rules", path: "/admin/naming", icon: FileText },
       { label: "Readiness", path: "/admin/readiness", icon: ShieldCheck },
       { label: "Settings", path: "/admin/settings", icon: Settings },
+      { label: "Themes", path: "/admin/themes", icon: Palette },
     ],
   },
   {

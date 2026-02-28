@@ -480,6 +480,14 @@ const adminSettingsRoute = createRoute({
   ),
 });
 
+const adminThemesRoute = createRoute({
+  getParentRoute: () => adminLayoutRoute,
+  path: "/admin/themes",
+  component: lazyRouteComponent(() =>
+    import("@/features/admin/TokenEditor").then((m) => ({ default: m.TokenEditor })),
+  ),
+});
+
 /* --------------------------------------------------------------------------
    Settings routes
    -------------------------------------------------------------------------- */
@@ -589,6 +597,7 @@ export const routeTree = rootRoute.addChildren([
       adminNamingRoute,
       adminReadinessRoute,
       adminSettingsRoute,
+      adminThemesRoute,
     ]),
 
     settingsLayoutRoute.addChildren([shortcutsRoute, wikiRoute]),

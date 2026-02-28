@@ -3,13 +3,13 @@
 Tracks which completed PRDs have frontend features that are accessible via routes/navigation
 versus those that are implemented but unreachable by users.
 
-**Last updated:** 2026-02-27
+**Last updated:** 2026-03-01
 
 ## Summary
 
 | Category | Count |
 |----------|-------|
-| Routed (accessible via sidebar/nav) | 46 |
+| Routed (accessible via sidebar/nav) | 47 |
 | Correctly unrouted (overlays/framework/embedded) | 11 |
 | Missing routes (should be wired up) | 20 |
 
@@ -65,6 +65,7 @@ These features have routes in `router.tsx` and entries in `navigation.ts`.
 | `/content/scene-catalog` | `scene-catalog` | PRD-111 |
 | `/admin/settings` | `settings` | PRD-110 |
 | `/admin/naming` | `naming-rules` | PRD-116 |
+| `/admin/themes` | `admin/TokenEditor` | PRD-29 (Phase 7) |
 | `/tools/activity-console` | `activity-console` | PRD-118 |
 | `/tools/character-ingest` | `character-ingest` | PRD-113 |
 | `/projects` | `projects` | PRD-112 |

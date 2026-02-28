@@ -53,20 +53,25 @@ export interface TokenSet {
   spacing?: SpacingTokens;
 }
 
-/** Default token values used as fallbacks when creating a new theme. */
+/**
+ * Default token values used as fallbacks when creating a new theme.
+ *
+ * SYNC: Color values must match the dark-obsidian theme in `src/tokens/colors.css`.
+ * SYNC: Font values must match `src/tokens/typography.css`.
+ */
 export const EMPTY_TOKENS: TokenSet = {
-  surface: { primary: "#0a0a0f", secondary: "#12121a", tertiary: "#1a1a26" },
-  text: { primary: "#e4e4eb", secondary: "#a0a0b0", muted: "#6b6b80", inverse: "#0a0a0f" },
+  surface: { primary: "#0d1117", secondary: "#151b23", tertiary: "#212830" },
+  text: { primary: "#f0f6fc", secondary: "#9198a1", muted: "#656c76", inverse: "#0d1117" },
   action: {
-    primary: "#6366f1",
-    primaryHover: "#818cf8",
-    danger: "#ef4444",
-    dangerHover: "#f87171",
+    primary: "#1f6feb",
+    primaryHover: "#4493f8",
+    danger: "#da3633",
+    dangerHover: "#f85149",
   },
-  border: { default: "#2a2a3a", focus: "#6366f1", error: "#ef4444" },
+  border: { default: "#3d444d", focus: "#1f6feb", error: "#da3633" },
   font: {
-    family: "Inter, system-ui, sans-serif",
-    sizeBase: "16px",
+    family: "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji'",
+    sizeBase: "13px",
     weightNormal: "400",
     weightMedium: "500",
     weightBold: "700",
@@ -123,17 +128,17 @@ export function SurfaceSection({ tokens, onChange }: SurfaceSectionProps) {
     <Stack gap={3}>
       <ColorField
         label="Primary"
-        value={tokens.primary ?? "#000000"}
+        value={tokens.primary ?? "#0d1117"}
         onChange={(v) => onChange({ ...tokens, primary: v })}
       />
       <ColorField
         label="Secondary"
-        value={tokens.secondary ?? "#000000"}
+        value={tokens.secondary ?? "#151b23"}
         onChange={(v) => onChange({ ...tokens, secondary: v })}
       />
       <ColorField
         label="Tertiary"
-        value={tokens.tertiary ?? "#000000"}
+        value={tokens.tertiary ?? "#212830"}
         onChange={(v) => onChange({ ...tokens, tertiary: v })}
       />
     </Stack>
@@ -150,22 +155,22 @@ export function TextSection({ tokens, onChange }: TextSectionProps) {
     <Stack gap={3}>
       <ColorField
         label="Primary"
-        value={tokens.primary ?? "#ffffff"}
+        value={tokens.primary ?? "#f0f6fc"}
         onChange={(v) => onChange({ ...tokens, primary: v })}
       />
       <ColorField
         label="Secondary"
-        value={tokens.secondary ?? "#aaaaaa"}
+        value={tokens.secondary ?? "#9198a1"}
         onChange={(v) => onChange({ ...tokens, secondary: v })}
       />
       <ColorField
         label="Muted"
-        value={tokens.muted ?? "#666666"}
+        value={tokens.muted ?? "#656c76"}
         onChange={(v) => onChange({ ...tokens, muted: v })}
       />
       <ColorField
         label="Inverse"
-        value={tokens.inverse ?? "#000000"}
+        value={tokens.inverse ?? "#0d1117"}
         onChange={(v) => onChange({ ...tokens, inverse: v })}
       />
     </Stack>
@@ -182,22 +187,22 @@ export function ActionSection({ tokens, onChange }: ActionSectionProps) {
     <Stack gap={3}>
       <ColorField
         label="Primary"
-        value={tokens.primary ?? "#6366f1"}
+        value={tokens.primary ?? "#1f6feb"}
         onChange={(v) => onChange({ ...tokens, primary: v })}
       />
       <ColorField
         label="Primary Hover"
-        value={tokens.primaryHover ?? "#818cf8"}
+        value={tokens.primaryHover ?? "#4493f8"}
         onChange={(v) => onChange({ ...tokens, primaryHover: v })}
       />
       <ColorField
         label="Danger"
-        value={tokens.danger ?? "#ef4444"}
+        value={tokens.danger ?? "#da3633"}
         onChange={(v) => onChange({ ...tokens, danger: v })}
       />
       <ColorField
         label="Danger Hover"
-        value={tokens.dangerHover ?? "#f87171"}
+        value={tokens.dangerHover ?? "#f85149"}
         onChange={(v) => onChange({ ...tokens, dangerHover: v })}
       />
     </Stack>
@@ -214,17 +219,17 @@ export function BorderSection({ tokens, onChange }: BorderSectionProps) {
     <Stack gap={3}>
       <ColorField
         label="Default"
-        value={tokens.default ?? "#2a2a3a"}
+        value={tokens.default ?? "#3d444d"}
         onChange={(v) => onChange({ ...tokens, default: v })}
       />
       <ColorField
         label="Focus"
-        value={tokens.focus ?? "#6366f1"}
+        value={tokens.focus ?? "#1f6feb"}
         onChange={(v) => onChange({ ...tokens, focus: v })}
       />
       <ColorField
         label="Error"
-        value={tokens.error ?? "#ef4444"}
+        value={tokens.error ?? "#da3633"}
         onChange={(v) => onChange({ ...tokens, error: v })}
       />
     </Stack>
@@ -246,7 +251,7 @@ export function FontSection({ tokens, onChange }: FontSectionProps) {
       />
       <Input
         label="Base Size"
-        value={tokens.sizeBase ?? "16px"}
+        value={tokens.sizeBase ?? "13px"}
         onChange={(e) => onChange({ ...tokens, sizeBase: e.target.value })}
       />
       <Select

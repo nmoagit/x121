@@ -1,6 +1,10 @@
+/* ==========================================================================
+   Typography Tokens — Primer-derived font stack and scale
+   ========================================================================== */
+
 @theme {
-  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, Ubuntu, Cantarell, "Noto Sans", sans-serif;
-  --font-mono: Menlo, Consolas, "DejaVu Sans Mono", ui-monospace, monospace;
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
 
   --text-xs: 0.6875rem;
   --text-sm: 0.75rem;

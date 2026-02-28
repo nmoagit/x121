@@ -479,20 +479,17 @@ When a PRD is completed, some phases may be deferred because they depend on PRDs
 
 **How to use:** After completing a PRD, check the "Unblocks" column below. If the PRD you just finished appears there, the deferred work is now unblocked and should be scheduled alongside the next task.
 
-| Deferred Work | Source PRD | Blocked By | Unblocks When | Effort | Description |
-|---------------|-----------|------------|---------------|--------|-------------|
-| PRD-29 Phase 1: Theme DB tables + API | PRD-29 (done) | PRD-01, PRD-03 | Both PRD-01 AND PRD-03 are done | M | `theme_statuses`, `user_theme_preferences`, `custom_themes` tables; Rust models + repository; Axum theme API endpoints (`/user/theme`, `/admin/themes`) |
-| PRD-29 Phase 7: Admin Token Editor UI | PRD-29 (done) | PRD-01, PRD-03 | Both PRD-01 AND PRD-03 are done (also needs Phase 1 above) | M | Color picker, font/spacing adjusters, live preview, save/export to `custom_themes` table, admin RBAC |
-| PRD-29 Phase 8.1: Theme API persistence | PRD-29 (done) | PRD-01, PRD-03 | Both PRD-01 AND PRD-03 are done (also needs Phase 1 above) | S | Connect ThemeProvider to backend API for cross-session persistence (currently localStorage only) |
-| PRD-02 DRY: Router/middleware extraction | PRD-02 (done) | PRD-03 | PRD-03 is done | S | Extract shared router + middleware builder from main.rs and test helper to eliminate ~100 lines of duplication |
-| PRD-29: GitHub Primer-style token reskin | PRD-29 (done) | None | Anytime | S | Remap color, shadow, radius, and font-family token values in `colors.css` and spacing/animation token files to match GitHub's Primer design language. Component structure unchanged — token values only. |
+| Deferred Work | Source PRD | Blocked By | Unblocks When | Effort | Description | Status |
+|---------------|-----------|------------|---------------|--------|-------------|--------|
+| PRD-29 Phase 1: Theme DB tables + API | PRD-29 (done) | PRD-01, PRD-03 | Both PRD-01 AND PRD-03 are done | M | `theme_statuses`, `user_theme_preferences`, `custom_themes` tables; Rust models + repository; Axum theme API endpoints (`/user/theme`, `/admin/themes`) | **DONE** — migration 20260221000010, models, repo, handlers, routes all implemented |
+| PRD-29 Phase 7: Admin Token Editor UI | PRD-29 (done) | PRD-01, PRD-03 | Both PRD-01 AND PRD-03 are done (also needs Phase 1 above) | M | Color picker, font/spacing adjusters, live preview, save/export to `custom_themes` table, admin RBAC | **DONE** — TokenEditor + TokenSections + tests, wired at `/admin/themes` |
+| PRD-29 Phase 8.1: Theme API persistence | PRD-29 (done) | PRD-01, PRD-03 | Both PRD-01 AND PRD-03 are done (also needs Phase 1 above) | S | Connect ThemeProvider to backend API for cross-session persistence (currently localStorage only) | **DONE** — `useThemePersistence` hook syncs with backend API, debounced saves |
+| PRD-02 DRY: Router/middleware extraction | PRD-02 (done) | PRD-03 | PRD-03 is done | S | Extract shared router + middleware builder from main.rs and test helper to eliminate ~100 lines of duplication | **DONE** — DRY-017 resolved, `build_app_router()` in `api/src/router.rs` |
+| PRD-29: GitHub Primer-style token reskin | PRD-29 (done) | None | Anytime | S | Remap color, shadow, radius, and font-family token values in `colors.css` and spacing/animation token files to match GitHub's Primer design language. Component structure unchanged — token values only. | **DONE** — All 4 themes remapped to Primer-derived palette |
 
 ### Quick Reference: What to pick up after each blocking PRD
 
-| When this PRD is done... | ...pick up this deferred work |
-|--------------------------|-------------------------------|
-| PRD-01 | Check if PRD-03 is also done → if yes, PRD-29 Phases 1, 7, 8.1 |
-| PRD-03 | PRD-02 DRY (router extraction); Check if PRD-01 is also done → if yes, PRD-29 Phases 1, 7, 8.1 |
+All deferred work items are now complete (2026-03-01).
 
 ---
 
