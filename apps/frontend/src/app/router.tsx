@@ -22,6 +22,14 @@ const loginRoute = createRoute({
   component: LoginPage,
 });
 
+const externalReviewRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/review/share/$token",
+  component: lazyRouteComponent(() =>
+    import("@/app/pages/ExternalReviewPage").then((m) => ({ default: m.ExternalReviewPage })),
+  ),
+});
+
 /* --------------------------------------------------------------------------
    Authenticated layout (AppShell wraps all protected routes)
    -------------------------------------------------------------------------- */
@@ -50,6 +58,16 @@ const performanceRoute = createRoute({
   component: lazyRouteComponent(() =>
     import("@/features/dashboard/PerformanceDashboard").then((m) => ({
       default: m.PerformanceDashboard,
+    })),
+  ),
+});
+
+const dashboardCustomizeRoute = createRoute({
+  getParentRoute: () => authenticatedRoute,
+  path: "/dashboard/customize",
+  component: lazyRouteComponent(() =>
+    import("@/features/dashboard-customization").then((m) => ({
+      default: m.DashboardCustomizationPage,
     })),
   ),
 });
@@ -164,6 +182,22 @@ const characterDashboardRoute = createRoute({
   ),
 });
 
+const contactSheetRoute = createRoute({
+  getParentRoute: () => contentLayoutRoute,
+  path: "/content/contact-sheet",
+  component: lazyRouteComponent(() =>
+    import("@/app/pages/ContactSheetPage").then((m) => ({ default: m.ContactSheetPage })),
+  ),
+});
+
+const duplicatesRoute = createRoute({
+  getParentRoute: () => contentLayoutRoute,
+  path: "/content/duplicates",
+  component: lazyRouteComponent(() =>
+    import("@/app/pages/DuplicatesPage").then((m) => ({ default: m.DuplicatesPage })),
+  ),
+});
+
 /* --------------------------------------------------------------------------
    Production routes
    -------------------------------------------------------------------------- */
@@ -222,6 +256,22 @@ const checkpointsRoute = createRoute({
   ),
 });
 
+const debuggerRoute = createRoute({
+  getParentRoute: () => productionLayoutRoute,
+  path: "/production/debugger",
+  component: lazyRouteComponent(() =>
+    import("@/app/pages/DebuggerPage").then((m) => ({ default: m.DebuggerPage })),
+  ),
+});
+
+const renderTimelineRoute = createRoute({
+  getParentRoute: () => productionLayoutRoute,
+  path: "/production/render-timeline",
+  component: lazyRouteComponent(() =>
+    import("@/features/render-timeline").then((m) => ({ default: m.RenderTimelinePage })),
+  ),
+});
+
 /* --------------------------------------------------------------------------
    Review routes
    -------------------------------------------------------------------------- */
@@ -269,6 +319,14 @@ const cinemaRoute = createRoute({
   path: "/review/cinema",
   component: lazyRouteComponent(() =>
     import("@/app/pages/CinemaPage").then((m) => ({ default: m.CinemaPage })),
+  ),
+});
+
+const temporalRoute = createRoute({
+  getParentRoute: () => reviewLayoutRoute,
+  path: "/review/temporal",
+  component: lazyRouteComponent(() =>
+    import("@/app/pages/TemporalPage").then((m) => ({ default: m.TemporalPage })),
   ),
 });
 
@@ -345,6 +403,38 @@ const characterIngestRoute = createRoute({
     import("@/features/character-ingest").then((m) => ({
       default: m.CharacterIngestPage,
     })),
+  ),
+});
+
+const batchMetadataRoute = createRoute({
+  getParentRoute: () => toolsLayoutRoute,
+  path: "/tools/batch-metadata",
+  component: lazyRouteComponent(() =>
+    import("@/app/pages/BatchMetadataPage").then((m) => ({ default: m.BatchMetadataPage })),
+  ),
+});
+
+const pipelineHooksRoute = createRoute({
+  getParentRoute: () => toolsLayoutRoute,
+  path: "/tools/pipeline-hooks",
+  component: lazyRouteComponent(() =>
+    import("@/app/pages/PipelineHooksPage").then((m) => ({ default: m.PipelineHooksPage })),
+  ),
+});
+
+const workflowImportRoute = createRoute({
+  getParentRoute: () => toolsLayoutRoute,
+  path: "/tools/workflow-import",
+  component: lazyRouteComponent(() =>
+    import("@/app/pages/WorkflowImportPage").then((m) => ({ default: m.WorkflowImportPage })),
+  ),
+});
+
+const undoRoute = createRoute({
+  getParentRoute: () => toolsLayoutRoute,
+  path: "/tools/undo",
+  component: lazyRouteComponent(() =>
+    import("@/app/pages/UndoPage").then((m) => ({ default: m.UndoPage })),
   ),
 });
 
@@ -498,6 +588,94 @@ const adminCloudGpusRoute = createRoute({
   ),
 });
 
+const adminJobSchedulingRoute = createRoute({
+  getParentRoute: () => adminLayoutRoute,
+  path: "/admin/job-scheduling",
+  component: lazyRouteComponent(() =>
+    import("@/features/job-scheduling").then((m) => ({ default: m.JobSchedulingPage })),
+  ),
+});
+
+const adminSessionManagementRoute = createRoute({
+  getParentRoute: () => adminLayoutRoute,
+  path: "/admin/session-management",
+  component: lazyRouteComponent(() =>
+    import("@/features/session-management").then((m) => ({ default: m.SessionManagementPage })),
+  ),
+});
+
+const adminWebhookTestingRoute = createRoute({
+  getParentRoute: () => adminLayoutRoute,
+  path: "/admin/webhook-testing",
+  component: lazyRouteComponent(() =>
+    import("@/features/webhook-testing").then((m) => ({ default: m.WebhookTestingPage })),
+  ),
+});
+
+const adminApiObservabilityRoute = createRoute({
+  getParentRoute: () => adminLayoutRoute,
+  path: "/admin/api-observability",
+  component: lazyRouteComponent(() =>
+    import("@/features/api-observability").then((m) => ({ default: m.ApiObservabilityPage })),
+  ),
+});
+
+const adminTriggerWorkflowsRoute = createRoute({
+  getParentRoute: () => adminLayoutRoute,
+  path: "/admin/trigger-workflows",
+  component: lazyRouteComponent(() =>
+    import("@/features/trigger-workflows").then((m) => ({ default: m.TriggerWorkflowPage })),
+  ),
+});
+
+const adminBackupsRoute = createRoute({
+  getParentRoute: () => adminLayoutRoute,
+  path: "/admin/backups",
+  component: lazyRouteComponent(() =>
+    import("@/features/backup-recovery").then((m) => ({ default: m.BackupDashboard })),
+  ),
+});
+
+const adminBudgetsRoute = createRoute({
+  getParentRoute: () => adminLayoutRoute,
+  path: "/admin/budgets",
+  component: lazyRouteComponent(() =>
+    import("@/app/pages/BudgetPage").then((m) => ({ default: m.BudgetPage })),
+  ),
+});
+
+const adminGpuSchedulingRoute = createRoute({
+  getParentRoute: () => adminLayoutRoute,
+  path: "/admin/gpu-scheduling",
+  component: lazyRouteComponent(() =>
+    import("@/features/gpu-power").then((m) => ({ default: m.PowerDashboard })),
+  ),
+});
+
+const adminDiskUsageRoute = createRoute({
+  getParentRoute: () => adminLayoutRoute,
+  path: "/admin/disk-usage",
+  component: lazyRouteComponent(() =>
+    import("@/features/storage-visualizer").then((m) => ({ default: m.StorageVisualizerPage })),
+  ),
+});
+
+const adminFailureAnalyticsRoute = createRoute({
+  getParentRoute: () => adminLayoutRoute,
+  path: "/admin/failure-analytics",
+  component: lazyRouteComponent(() =>
+    import("@/app/pages/FailureAnalyticsPage").then((m) => ({ default: m.FailureAnalyticsPage })),
+  ),
+});
+
+const adminImporterRoute = createRoute({
+  getParentRoute: () => adminLayoutRoute,
+  path: "/admin/importer",
+  component: lazyRouteComponent(() =>
+    import("@/app/pages/ImporterPage").then((m) => ({ default: m.ImporterPage })),
+  ),
+});
+
 /* --------------------------------------------------------------------------
    Settings routes
    -------------------------------------------------------------------------- */
@@ -542,9 +720,11 @@ const notFoundRoute = createRoute({
 
 export const routeTree = rootRoute.addChildren([
   loginRoute,
+  externalReviewRoute,
   authenticatedRoute.addChildren([
     indexRoute,
     performanceRoute,
+    dashboardCustomizeRoute,
 
     projectsLayoutRoute.addChildren([
       projectListRoute,
@@ -561,6 +741,8 @@ export const routeTree = rootRoute.addChildren([
       sceneTypesRoute,
       sceneCatalogRoute,
       characterDashboardRoute,
+      contactSheetRoute,
+      duplicatesRoute,
     ]),
 
     productionLayoutRoute.addChildren([
@@ -570,6 +752,8 @@ export const routeTree = rootRoute.addChildren([
       batchRoute,
       deliveryRoute,
       checkpointsRoute,
+      debuggerRoute,
+      renderTimelineRoute,
     ]),
 
     reviewLayoutRoute.addChildren([
@@ -578,6 +762,7 @@ export const routeTree = rootRoute.addChildren([
       productionNotesRoute,
       qaGatesRoute,
       cinemaRoute,
+      temporalRoute,
     ]),
 
     toolsLayoutRoute.addChildren([
@@ -589,6 +774,10 @@ export const routeTree = rootRoute.addChildren([
       branchingRoute,
       activityConsoleRoute,
       characterIngestRoute,
+      batchMetadataRoute,
+      pipelineHooksRoute,
+      workflowImportRoute,
+      undoRoute,
     ]),
 
     adminLayoutRoute.addChildren([
@@ -609,6 +798,17 @@ export const routeTree = rootRoute.addChildren([
       adminSettingsRoute,
       adminThemesRoute,
       adminCloudGpusRoute,
+      adminJobSchedulingRoute,
+      adminSessionManagementRoute,
+      adminWebhookTestingRoute,
+      adminApiObservabilityRoute,
+      adminTriggerWorkflowsRoute,
+      adminBackupsRoute,
+      adminBudgetsRoute,
+      adminGpuSchedulingRoute,
+      adminDiskUsageRoute,
+      adminFailureAnalyticsRoute,
+      adminImporterRoute,
     ]),
 
     settingsLayoutRoute.addChildren([shortcutsRoute, wikiRoute]),

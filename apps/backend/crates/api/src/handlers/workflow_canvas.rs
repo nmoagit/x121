@@ -3,11 +3,13 @@
 //! Provides endpoints for canvas layout persistence, per-node timing
 //! telemetry, and ComfyUI workflow JSON import.
 
+use std::collections::HashMap;
+
 use axum::extract::{Path, State};
 use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::Json;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use x121_core::error::CoreError;
 use x121_core::types::DbId;
 use x121_db::models::workflow_layout::CreateWorkflowLayout;
@@ -62,6 +64,33 @@ pub async fn save_canvas(
 }
 
 // ---------------------------------------------------------------------------
+// Telemetry types
+// ---------------------------------------------------------------------------
+
+/// Per-node timing data for a single workflow node.
+#[derive(Debug, Clone, Serialize)]
+pub struct NodeTiming {
+    /// Average execution time in milliseconds across recent runs.
+    pub avg_ms: Option<u64>,
+    /// Last recorded execution time in milliseconds.
+    pub last_ms: Option<u64>,
+    /// Number of executions recorded.
+    pub run_count: u32,
+}
+
+/// Aggregated per-node timing telemetry for a workflow.
+///
+/// Populated once the ComfyUI WebSocket bridge (PRD-05) streams execution
+/// events into the telemetry store. Until then, `nodes` will be empty and
+/// `total_ms` will be `None`.
+#[derive(Debug, Clone, Serialize)]
+pub struct WorkflowTelemetry {
+    pub workflow_id: DbId,
+    pub nodes: HashMap<String, NodeTiming>,
+    pub total_ms: Option<u64>,
+}
+
+// ---------------------------------------------------------------------------
 // Telemetry endpoint
 // ---------------------------------------------------------------------------
 
@@ -69,19 +98,17 @@ pub async fn save_canvas(
 ///
 /// Return per-node timing telemetry for recent runs of a workflow.
 ///
-/// This is a placeholder that returns an empty telemetry object.
-/// Real data will be populated once the ComfyUI WebSocket bridge (PRD-05)
-/// streams execution events into the telemetry store.
+/// Returns a typed but empty telemetry response until the ComfyUI WebSocket
+/// bridge (PRD-05) streams execution events into the telemetry store.
 pub async fn get_telemetry(
     RequireAuth(_user): RequireAuth,
     Path(workflow_id): Path<DbId>,
 ) -> AppResult<impl IntoResponse> {
-    // Placeholder: return empty telemetry keyed by workflow ID.
-    let telemetry = serde_json::json!({
-        "workflow_id": workflow_id,
-        "nodes": {},
-        "total_ms": null,
-    });
+    let telemetry = WorkflowTelemetry {
+        workflow_id,
+        nodes: HashMap::new(),
+        total_ms: None,
+    };
 
     Ok(Json(DataResponse { data: telemetry }))
 }

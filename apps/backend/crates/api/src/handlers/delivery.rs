@@ -8,8 +8,6 @@ use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::Json;
 
-use serde::Deserialize;
-
 use x121_core::assembly;
 use x121_core::error::CoreError;
 use x121_core::search::{clamp_limit, clamp_offset};
@@ -24,23 +22,16 @@ use x121_db::models::output_format_profile::{
 use x121_db::models::watermark_setting::{
     CreateWatermarkSetting, UpdateWatermarkSetting, WatermarkSetting,
 };
-use x121_db::repositories::{DeliveryExportRepo, OutputFormatProfileRepo, WatermarkSettingRepo};
+use x121_db::repositories::{
+    CharacterRepo, DeliveryExportRepo, OutputFormatProfileRepo, SceneVideoVersionRepo,
+    WatermarkSettingRepo,
+};
 
 use crate::error::{AppError, AppResult};
 use crate::middleware::auth::AuthUser;
+use crate::query::PaginationParams;
 use crate::response::DataResponse;
 use crate::state::AppState;
-
-// ---------------------------------------------------------------------------
-// Query parameters
-// ---------------------------------------------------------------------------
-
-/// Pagination parameters for listing exports.
-#[derive(Debug, Deserialize)]
-pub struct ListExportsParams {
-    pub limit: Option<i64>,
-    pub offset: Option<i64>,
-}
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -245,7 +236,7 @@ pub async fn start_assembly(
 pub async fn list_exports(
     State(state): State<AppState>,
     Path(project_id): Path<DbId>,
-    Query(params): Query<ListExportsParams>,
+    Query(params): Query<PaginationParams>,
 ) -> AppResult<impl IntoResponse> {
     let limit = clamp_limit(params.limit, 50, 200);
     let offset = clamp_offset(params.offset);
@@ -274,16 +265,51 @@ pub async fn get_export(
 
 /// Run pre-export validation checks for a project.
 ///
-/// This performs basic structural validation. A full implementation would
-/// check for missing videos, codec consistency, and resolution matching.
+/// Validates that all scenes in the project have finalized video versions
+/// and that each character has at least one scene.
 pub async fn validate_delivery(
-    State(_state): State<AppState>,
+    State(state): State<AppState>,
     Path(project_id): Path<DbId>,
 ) -> AppResult<impl IntoResponse> {
-    // Placeholder: return an empty validation result.
-    // A full implementation would query project data and run checks.
-    let _project_id = project_id;
-    let issues: Vec<assembly::ValidationIssue> = Vec::new();
+    let mut issues: Vec<assembly::ValidationIssue> = Vec::new();
+
+    // Check that the project has characters.
+    let characters = CharacterRepo::list_by_project(&state.pool, project_id).await?;
+    if characters.is_empty() {
+        issues.push(assembly::ValidationIssue {
+            severity: assembly::IssueSeverity::Error,
+            category: "missing_characters".to_string(),
+            message: "Project has no characters".to_string(),
+            entity_id: Some(project_id),
+        });
+    }
+
+    // Check for scenes missing a finalized video version.
+    let missing_final =
+        SceneVideoVersionRepo::find_scenes_missing_final(&state.pool, project_id).await?;
+    for scene_id in &missing_final {
+        issues.push(assembly::ValidationIssue {
+            severity: assembly::IssueSeverity::Error,
+            category: "missing_final_video".to_string(),
+            message: format!("Scene {scene_id} has no finalized video version"),
+            entity_id: Some(*scene_id),
+        });
+    }
+
+    // Check for characters with no scenes (warning, not blocking).
+    for character in &characters {
+        let scenes =
+            x121_db::repositories::SceneRepo::list_by_character(&state.pool, character.id).await?;
+        if scenes.is_empty() {
+            issues.push(assembly::ValidationIssue {
+                severity: assembly::IssueSeverity::Warning,
+                category: "no_scenes".to_string(),
+                message: format!("Character '{}' has no scenes", character.name),
+                entity_id: Some(character.id),
+            });
+        }
+    }
+
     let result = assembly::ValidationResult::from_issues(issues);
 
     let dto_issues: Vec<ValidationIssueDto> = result

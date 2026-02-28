@@ -9,7 +9,8 @@ use axum::Json;
 
 use x121_core::command_palette;
 use x121_db::models::recent_item::{PaletteSearchParams, RecordAccessRequest};
-use x121_db::repositories::RecentItemRepo;
+use x121_db::models::search::TypeaheadResult;
+use x121_db::repositories::{RecentItemRepo, SearchRepo};
 
 use crate::error::AppResult;
 use crate::middleware::auth::AuthUser;
@@ -22,17 +23,25 @@ use crate::state::AppState;
 
 /// Search the command palette for matching entities and commands.
 ///
-/// Currently returns an empty list; full-text search integration will be
-/// added when the search engine supports palette-specific queries.
+/// Uses the full-text typeahead search from `SearchRepo` to find matching
+/// characters, projects, and scene types by name prefix.
 pub async fn palette_search(
     _auth: AuthUser,
+    State(state): State<AppState>,
     Query(params): Query<PaletteSearchParams>,
 ) -> AppResult<impl IntoResponse> {
-    let _query = params.q.unwrap_or_default();
-    // Placeholder: return empty results until search infrastructure integration.
-    let results: Vec<serde_json::Value> = Vec::new();
+    let query = params.q.unwrap_or_default();
 
-    tracing::debug!("Palette search executed");
+    if query.trim().is_empty() {
+        return Ok(Json(DataResponse {
+            data: Vec::<TypeaheadResult>::new(),
+        }));
+    }
+
+    let limit = params.limit.map(|l| l as i64);
+    let results = SearchRepo::typeahead(&state.pool, &query, limit).await?;
+
+    tracing::debug!(query = %query, count = results.len(), "Palette search executed");
 
     Ok(Json(DataResponse { data: results }))
 }

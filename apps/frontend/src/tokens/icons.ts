@@ -93,6 +93,17 @@ export {
   ArrowDown,
   // Projects
   FolderKanban,
+  // Gap-fill additions
+  Bug,
+  Calendar,
+  DollarSign,
+  FileSearch,
+  Link2,
+  Timer,
+  TrendingUp,
+  Undo2,
+  Users,
+  Wrench,
 } from "lucide-react";
 
 /** Standard icon size tokens (px values matching design grid) */

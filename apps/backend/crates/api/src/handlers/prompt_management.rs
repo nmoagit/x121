@@ -87,19 +87,6 @@ async fn ensure_slot_exists(
         }))
 }
 
-/// Load a prompt fragment by ID or return 404.
-async fn ensure_fragment_exists(
-    pool: &sqlx::PgPool,
-    id: DbId,
-) -> AppResult<x121_db::models::prompt_fragment::PromptFragment> {
-    PromptFragmentRepo::find_by_id(pool, id)
-        .await?
-        .ok_or(AppError::Core(CoreError::NotFound {
-            entity: "PromptFragment",
-            id,
-        }))
-}
-
 // ---------------------------------------------------------------------------
 // Workflow Prompt Slots
 // ---------------------------------------------------------------------------

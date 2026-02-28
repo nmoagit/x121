@@ -14,11 +14,12 @@ use x121_core::error::CoreError;
 use x121_core::search::{clamp_limit, clamp_offset, DEFAULT_SEARCH_LIMIT, MAX_SEARCH_LIMIT};
 use x121_core::test_shot::{self, DEFAULT_TEST_SHOT_DURATION_SECS};
 use x121_core::types::DbId;
+use x121_db::models::scene::CreateScene;
 use x121_db::models::test_shot::{
     BatchTestShotRequest, BatchTestShotResponse, CreateTestShot, GenerateTestShotRequest,
     PromoteResponse, TestShot,
 };
-use x121_db::repositories::TestShotRepo;
+use x121_db::repositories::{ImageVariantRepo, SceneRepo, TestShotRepo};
 
 use crate::error::{AppError, AppResult};
 use crate::middleware::auth::AuthUser;
@@ -201,8 +202,10 @@ pub async fn get_test_shot(
 
 /// Promote a test shot to a full scene.
 ///
-/// Validates that the shot has not already been promoted, marks it as
-/// promoted, and returns the promotion details.
+/// Creates a real scene record from the test shot data: uses the shot's
+/// `character_id` and `scene_type_id`, and resolves the character's hero
+/// image variant for the `image_variant_id` field. Marks the test shot
+/// as promoted and links it to the newly created scene.
 pub async fn promote_test_shot(
     State(state): State<AppState>,
     auth: AuthUser,
@@ -211,12 +214,27 @@ pub async fn promote_test_shot(
     let shot = ensure_test_shot_exists(&state.pool, id).await?;
     test_shot::can_promote(shot.is_promoted)?;
 
-    // In a full implementation, this would create a real scene record.
-    // For now, we use a placeholder scene_id to demonstrate the flow.
-    // The actual scene creation would be handled by the scene service.
-    let placeholder_scene_id: DbId = 0;
+    // Resolve the image_variant_id: prefer the hero variant for this character,
+    // fall back to the most recently created variant.
+    let image_variant_id = resolve_image_variant(&state.pool, shot.character_id).await?;
 
-    let promoted = TestShotRepo::mark_promoted(&state.pool, id, placeholder_scene_id)
+    let create_scene = CreateScene {
+        character_id: shot.character_id,
+        scene_type_id: shot.scene_type_id,
+        image_variant_id,
+        status_id: None,
+        transition_mode: None,
+        total_segments_estimated: None,
+        total_segments_completed: None,
+        actual_duration_secs: shot.duration_secs,
+        transition_segment_index: None,
+        generation_started_at: None,
+        generation_completed_at: None,
+    };
+
+    let scene = SceneRepo::create(&state.pool, &create_scene).await?;
+
+    let promoted = TestShotRepo::mark_promoted(&state.pool, id, scene.id)
         .await?
         .ok_or_else(|| {
             AppError::Core(CoreError::NotFound {
@@ -227,17 +245,37 @@ pub async fn promote_test_shot(
 
     tracing::info!(
         test_shot_id = id,
-        promoted_to_scene_id = placeholder_scene_id,
+        promoted_to_scene_id = scene.id,
         user_id = auth.user_id,
-        "Test shot promoted"
+        "Test shot promoted to scene"
     );
 
     Ok(Json(DataResponse {
         data: PromoteResponse {
             test_shot_id: promoted.id,
-            promoted_to_scene_id: placeholder_scene_id,
+            promoted_to_scene_id: scene.id,
         },
     }))
+}
+
+/// Resolve the image variant ID for a character to use when creating a scene.
+///
+/// Prefers the hero variant (of any type), falling back to the most recently
+/// created variant. Returns an error if the character has no image variants.
+async fn resolve_image_variant(pool: &sqlx::PgPool, character_id: DbId) -> AppResult<DbId> {
+    let variants = ImageVariantRepo::list_by_character(pool, character_id).await?;
+
+    // Prefer the hero variant.
+    if let Some(hero) = variants.iter().find(|v| v.is_hero) {
+        return Ok(hero.id);
+    }
+
+    // Fall back to the most recently created variant.
+    variants.first().map(|v| v.id).ok_or_else(|| {
+        AppError::BadRequest(format!(
+            "Character {character_id} has no image variants; cannot promote test shot"
+        ))
+    })
 }
 
 // ---------------------------------------------------------------------------

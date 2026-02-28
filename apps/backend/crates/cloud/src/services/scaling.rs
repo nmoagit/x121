@@ -33,7 +33,9 @@ async fn evaluate_all_rules(
     pool: &PgPool,
     registry: &ProviderRegistry,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    use x121_db::repositories::{CloudCostEventRepo, CloudInstanceRepo, CloudScalingRuleRepo};
+    use x121_db::repositories::{
+        CloudCostEventRepo, CloudInstanceRepo, CloudScalingRuleRepo, JobRepo,
+    };
 
     let rules = CloudScalingRuleRepo::list_enabled(pool).await?;
 
@@ -47,9 +49,8 @@ async fn evaluate_all_rules(
             CloudInstanceRepo::active_count_by_gpu_type(pool, rule.provider_id, rule.gpu_type_id)
                 .await? as u16;
 
-        // Get pending job count (simplified — use queue_threshold as comparison)
-        // In production this would query the jobs table for pending jobs targeting this GPU type.
-        let queue_depth = 0u32; // TODO: wire to actual job queue
+        let (pending, _running, _scheduled) = JobRepo::queue_counts(pool).await?;
+        let queue_depth = pending as u32;
 
         let now = chrono::Utc::now();
         let budget_spent = if rule.budget_limit_cents.is_some() {

@@ -9,9 +9,9 @@ versus those that are implemented but unreachable by users.
 
 | Category | Count |
 |----------|-------|
-| Routed (accessible via sidebar/nav) | 48 |
-| Correctly unrouted (overlays/framework/embedded) | 11 |
-| Missing routes (should be wired up) | 20 |
+| Routed (accessible via sidebar/nav) | 70 |
+| Correctly unrouted (overlays/framework/embedded) | 12 |
+| Missing routes (should be wired up) | 9 |
 
 ---
 
@@ -23,6 +23,7 @@ These features have routes in `router.tsx` and entries in `navigation.ts`.
 |-------|-------------|-----|
 | `/` | `dashboard` | PRD-42 |
 | `/performance` | `dashboard` | PRD-41 |
+| `/dashboard/customize` | `dashboard-customization` | PRD-89 |
 | `/content/scenes` | `scenes` | PRD-01 |
 | `/content/characters` | `characters` | PRD-01 |
 | `/content/library` | `library` | PRD-60 |
@@ -30,23 +31,36 @@ These features have routes in `router.tsx` and entries in `navigation.ts`.
 | `/content/images` | `images` | PRD-21 |
 | `/content/scene-types` | `scene-types` | PRD-23 |
 | `/content/character-dashboard` | `character-dashboard` | PRD-108 |
+| `/content/scene-catalog` | `scene-catalog` | PRD-111 |
+| `/content/contact-sheet` | `contact-sheet` | PRD-103 |
+| `/content/duplicates` | `duplicates` | PRD-79 |
 | `/production/queue` | `queue` | PRD-08 |
 | `/production/generation` | `generation` | PRD-24 |
 | `/production/test-shots` | `test-shots` | PRD-58 |
 | `/production/batch` | `production` | PRD-57 |
 | `/production/delivery` | `delivery` | PRD-39 |
 | `/production/checkpoints` | `checkpoints` | PRD-28 |
+| `/production/debugger` | `debugger` | PRD-34 |
+| `/production/render-timeline` | `render-timeline` | PRD-90 |
 | `/review/annotations` | `annotations` | PRD-70 |
 | `/review/notes` | `review-notes` | PRD-38 |
 | `/review/production-notes` | `production-notes` | PRD-95 |
 | `/review/qa-gates` | `quality-gates` | PRD-49 |
 | `/review/cinema` | `cinema` | PRD-36 |
+| `/review/temporal` | `temporal` | PRD-26 |
+| `/review/share/$token` | `shared-links` | PRD-84 (public, no shell) |
 | `/tools/prompts` | `prompt-editor` | PRD-63 |
 | `/tools/workflows` | `workflow-canvas` | PRD-33 |
 | `/tools/config` | `config-templates` | PRD-74 |
 | `/tools/presets` | `presets` | PRD-27 |
 | `/tools/search` | `search` | PRD-20 |
 | `/tools/branching` | `branching` | PRD-50 |
+| `/tools/activity-console` | `activity-console` | PRD-118 |
+| `/tools/character-ingest` | `character-ingest` | PRD-113 |
+| `/tools/batch-metadata` | `batch-metadata` | PRD-88 |
+| `/tools/pipeline-hooks` | `pipeline-hooks` | PRD-77 |
+| `/tools/workflow-import` | `workflow-import` | PRD-75 |
+| `/tools/undo` | `undo` | PRD-51 |
 | `/admin/hardware` | `admin` | PRD-06 |
 | `/admin/workers` | `workers` | PRD-46 |
 | `/admin/integrity` | `integrity` | PRD-43 |
@@ -59,16 +73,24 @@ These features have routes in `router.tsx` and entries in `navigation.ts`.
 | `/admin/maintenance` | `maintenance` | PRD-18 |
 | `/admin/onboarding-wizard` | `onboarding-wizard` | PRD-67 |
 | `/admin/legacy-import` | `legacy-import` | PRD-86 |
+| `/admin/naming` | `naming-rules` | PRD-116 |
 | `/admin/readiness` | `readiness` | PRD-107 |
+| `/admin/settings` | `settings` | PRD-110 |
+| `/admin/themes` | `admin/TokenEditor` | PRD-29 (Phase 7) |
+| `/admin/cloud-gpus` | `admin/cloud-gpus` | PRD-114 |
+| `/admin/job-scheduling` | `job-scheduling` | PRD-119 |
+| `/admin/session-management` | `session-management` | PRD-98 |
+| `/admin/webhook-testing` | `webhook-testing` | PRD-99 |
+| `/admin/api-observability` | `api-observability` | PRD-106 |
+| `/admin/trigger-workflows` | `trigger-workflows` | PRD-97 |
+| `/admin/backups` | `backup-recovery` | PRD-81 |
+| `/admin/budgets` | `budget-quota` | PRD-93 |
+| `/admin/gpu-scheduling` | `gpu-power` | PRD-87 |
+| `/admin/disk-usage` | `storage-visualizer` | PRD-19 |
+| `/admin/failure-analytics` | `failure-analytics` | PRD-64 |
+| `/admin/importer` | `importer` | PRD-16 |
 | `/settings/shortcuts` | `shortcuts` | PRD-52 |
 | `/settings/wiki` | `wiki` | PRD-56 |
-| `/content/scene-catalog` | `scene-catalog` | PRD-111 |
-| `/admin/settings` | `settings` | PRD-110 |
-| `/admin/naming` | `naming-rules` | PRD-116 |
-| `/admin/themes` | `admin/TokenEditor` | PRD-29 (Phase 7) |
-| `/tools/activity-console` | `activity-console` | PRD-118 |
-| `/tools/character-ingest` | `character-ingest` | PRD-113 |
-| `/admin/cloud-gpus` | `admin/cloud-gpus` | PRD-114 |
 | `/projects` | `projects` | PRD-112 |
 | `/projects/$projectId` | `projects` | PRD-112 |
 | `/projects/$projectId/characters/$characterId` | `characters` | PRD-112 |
@@ -93,29 +115,14 @@ framework-level functionality. They do NOT need their own routes.
 | `video-player` | PRD-83 | Video playback engine embedded in review/cinema views |
 | `workspace` | PRD-04 | Session/workspace persistence (store/framework, not a page) |
 | `footer` | PRD-117 | System status footer bar (global widget in AppShell, not a page) |
+| `setup-wizard` | PRD-105 | Platform setup wizard (first-run overlay flow) |
 
 ---
 
 ## Missing Routes (Should Be Wired Up)
 
-These features are implemented but have no route or navigation entry. Each needs either:
-- A dedicated route + nav entry, OR
-- Integration into an existing page (noted in "Suggested Location" column)
-
-### Standalone pages needed
-
-| Feature Dir | PRD | Title | Suggested Route | Suggested Nav Group | Status |
-|-------------|-----|-------|-----------------|---------------------|--------|
-| ~~`projects`~~ | ~~PRD-01~~ | ~~Project list & hub~~ | ~~`/projects`~~ | ~~Dashboard~~ | `done` (PRD-112) |
-| `debugger` | PRD-34 | Interactive job debugger | `/production/debugger` | Production | `todo` |
-| `batch-metadata` | PRD-88 | Batch metadata operations | `/tools/batch-metadata` | Tools | `todo` |
-| `duplicates` | PRD-79 | Character duplicate detection | `/content/duplicates` | Content | `todo` |
-| `failure-analytics` | PRD-64 | Failure pattern tracking | `/admin/failure-analytics` | Admin | `todo` |
-| `importer` | PRD-16 | Bulk folder importer | `/admin/importer` | Admin | `todo` |
-| `pipeline-hooks` | PRD-77 | Pipeline stage hook config | `/tools/pipeline-hooks` | Tools | `todo` |
-| `temporal` | PRD-26 | Temporal continuity analysis | `/review/temporal` | Review | `todo` |
-| `workflow-import` | PRD-75 | Workflow import uploader | `/tools/workflow-import` | Tools | `todo` |
-| `undo` | PRD-51 | Undo tree visualization | `/tools/undo` | Tools | `todo` |
+These features are implemented but designed as embedded components, not standalone pages.
+They need integration into existing host pages.
 
 ### Embedded in existing pages (need integration, not standalone routes)
 
@@ -150,13 +157,13 @@ added to this tracker and wired into the router.
 | ~~PRD-116~~ | ~~Dynamic File & Entity Naming Engine~~ | Routed at `/admin/naming` |
 | ~~PRD-117~~ | ~~System Status Footer Bar~~ | Global footer (correctly unrouted) |
 | ~~PRD-118~~ | ~~Live Activity Console & Logging System~~ | Routed at `/tools/activity-console` |
-| PRD-119 | Time-Based Job Scheduling | `/production/schedule` |
+| ~~PRD-119~~ | ~~Time-Based Job Scheduling~~ | Routed at `/admin/job-scheduling` |
 
 ### Standard Priority
 
 | PRD | Title | Expected Route/Location |
 |-----|-------|------------------------|
-| PRD-19 | Disk Space Visualizer (Treemap) | `/admin/disk-usage` |
+| ~~PRD-19~~ | ~~Disk Space Visualizer (Treemap)~~ | Routed at `/admin/disk-usage` |
 | PRD-40 | VFX Sidecar & Dataset Export | `/production/export` |
 | PRD-55 | Director's View (Mobile/Tablet) | Responsive layout variant |
 | PRD-65 | Workflow Regression Testing | `/tools/regression-tests` |
@@ -165,27 +172,27 @@ added to this tracker and wired into the router.
 | PRD-72 | Project Lifecycle & Archival | `/projects` (extends) |
 | PRD-73 | Production Reporting & Data Export | `/production/reports` |
 | PRD-80 | System Health Page | `/admin/health` |
-| PRD-81 | Backup & Disaster Recovery | `/admin/backups` |
+| ~~PRD-81~~ | ~~Backup & Disaster Recovery~~ | Routed at `/admin/backups` |
 | PRD-82 | Content Sensitivity Controls | Settings or embedded |
-| PRD-84 | External Review / Shareable Preview Links | `/review/share` |
-| PRD-87 | GPU Power Management & Idle Scheduling | `/admin/gpu-scheduling` |
-| PRD-89 | Dashboard Widget Customization | Dashboard (extends) |
-| PRD-90 | Render Queue Timeline / Gantt View | `/production/timeline` |
+| ~~PRD-84~~ | ~~External Review / Shareable Preview Links~~ | Routed at `/review/share/$token` |
+| ~~PRD-87~~ | ~~GPU Power Management & Idle Scheduling~~ | Routed at `/admin/gpu-scheduling` |
+| ~~PRD-89~~ | ~~Dashboard Widget Customization~~ | Routed at `/dashboard/customize` |
+| ~~PRD-90~~ | ~~Render Queue Timeline / Gantt View~~ | Routed at `/production/render-timeline` |
 | PRD-91 | Custom QA Rulesets per Scene Type | `/review/qa-rules` |
 | PRD-92 | Batch Review & Approval Workflows | `/review/batch` |
-| PRD-93 | Generation Budget & Quota Management | `/admin/budgets` |
+| ~~PRD-93~~ | ~~Generation Budget & Quota Management~~ | Routed at `/admin/budgets` |
 | PRD-94 | Character Consistency Report | `/content/consistency` |
 | PRD-96 | Poster Frame & Thumbnail Selection | Embedded in scene/video views |
-| PRD-97 | Job Dependency Chains & Triggered Workflows | `/production/dependencies` |
-| PRD-98 | Session Management & Active Users | `/admin/sessions` |
-| PRD-99 | Webhook & Integration Testing Console | `/admin/webhook-testing` |
+| ~~PRD-97~~ | ~~Job Dependency Chains & Triggered Workflows~~ | Routed at `/admin/trigger-workflows` |
+| ~~PRD-98~~ | ~~Session Management & Active Users~~ | Routed at `/admin/session-management` |
+| ~~PRD-99~~ | ~~Webhook & Integration Testing Console~~ | Routed at `/admin/webhook-testing` |
 | PRD-100 | Scene Type Inheritance & Composition | `/content/scene-types` (extends) |
 | PRD-101 | Segment Regeneration Comparison | Embedded in segment views |
 | PRD-102 | Video Compliance Checker | `/production/compliance` |
-| PRD-103 | Character Face Contact Sheet | `/content/contact-sheet` |
-| PRD-104 | Model & LoRA Download Manager | Already routed at `/admin/downloads` |
-| PRD-105 | Platform Setup Wizard | First-run flow (overlay) |
-| PRD-106 | API Usage & Observability Dashboard | `/admin/api-usage` |
+| ~~PRD-103~~ | ~~Character Face Contact Sheet~~ | Routed at `/content/contact-sheet` |
+| ~~PRD-104~~ | ~~Model & LoRA Download Manager~~ | Already routed at `/admin/downloads` |
+| ~~PRD-105~~ | ~~Platform Setup Wizard~~ | Correctly unrouted (first-run overlay) |
+| ~~PRD-106~~ | ~~API Usage & Observability Dashboard~~ | Routed at `/admin/api-observability` |
 | ~~PRD-110~~ | ~~Admin Platform Settings Panel~~ | Routed at `/admin/settings` |
 
 ---
