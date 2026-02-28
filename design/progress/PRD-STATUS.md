@@ -21,10 +21,10 @@ Source of truth: [`design/design.md`](../design.md)
 | Status | Count |
 |--------|-------|
 | backlog | 0 |
-| planning | 8 |
+| planning | 7 |
 | in-progress | 0 |
 | review | 0 |
-| done | 113 |
+| done | 114 |
 | blocked | 0 |
 | deferred | 0 |
 | maybe | 15 |
@@ -189,7 +189,7 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-80 | System Health Page | — | `done` | 2026-03-01 | Migration (3 tables), core (28 tests), 3 repo structs, 7 handlers, frontend (6 components, 30s auto-refresh), 21 tests. DRY-530 to DRY-538 audited. |
 | PRD-81 | Backup & Disaster Recovery | — | `done` | — | |
 | PRD-98 | Session Management & Active Users | — | `done` | — | |
-| PRD-105 | Platform Setup Wizard | — | `planning` | — | |
+| PRD-105 | Platform Setup Wizard | — | `done` | — | |
 | PRD-110 | Admin Platform Settings Panel | 1 | `done` | 2026-02-27 | Platform settings with type-safe validation, caching, DB persistence. Route: `/admin/settings`. |
 | PRD-116 | Dynamic File & Entity Naming Engine | 1 | `done` | 2026-02-27 | Configurable naming templates per file category (12 categories), token substitution, live preview, project-level overrides. Route: `/admin/naming`. |
 

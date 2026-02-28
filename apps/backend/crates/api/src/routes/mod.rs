@@ -93,6 +93,7 @@ pub mod search;
 pub mod segment_comparison;
 pub mod sensitivity;
 pub mod session_management;
+pub mod setup_wizard;
 pub mod shared_link;
 pub mod sidecar;
 pub mod status;
@@ -1080,4 +1081,6 @@ pub fn api_routes() -> Router<AppState> {
         .nest("/admin/backup-schedules", backup_recovery::backup_schedule_router())
         // Director's View: mobile/tablet review (PRD-55).
         .nest("/user", directors_view::directors_view_router())
+        // Platform Setup Wizard (PRD-105).
+        .nest("/admin/setup", setup_wizard::setup_wizard_router())
 }

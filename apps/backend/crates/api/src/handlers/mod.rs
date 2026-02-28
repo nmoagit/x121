@@ -103,6 +103,7 @@ pub mod segment;
 pub mod segment_comparison;
 pub mod sensitivity;
 pub mod session_management;
+pub mod setup_wizard;
 pub mod shared_link;
 pub mod sidecar;
 pub mod source_image;

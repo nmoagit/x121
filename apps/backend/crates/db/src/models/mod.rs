@@ -118,6 +118,7 @@ pub mod segment_version;
 pub mod sensitivity;
 pub mod session;
 pub mod session_management;
+pub mod setup_wizard;
 pub mod shared_link;
 pub mod sidecar;
 pub mod status;
