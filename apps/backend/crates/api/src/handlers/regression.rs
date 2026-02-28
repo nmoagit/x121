@@ -12,8 +12,7 @@ use x121_core::error::CoreError;
 use x121_core::regression;
 use x121_core::types::DbId;
 use x121_db::models::regression::{
-    CreateRegressionReference, RegressionReference, RegressionRun, RunReport,
-    TriggerRegressionRun,
+    CreateRegressionReference, RegressionReference, RegressionRun, RunReport, TriggerRegressionRun,
 };
 use x121_db::repositories::RegressionRepo;
 

@@ -59,9 +59,9 @@ INSERT INTO report_types (name, description) VALUES
 ```
 
 **Acceptance Criteria:**
-- [ ] Seven report types seeded matching PRD requirements (including video_technical)
-- [ ] `config_schema_json` allows defining per-type configuration options
-- [ ] Follows lookup table conventions
+- [x] Seven report types seeded matching PRD requirements (including video_technical)
+- [x] `config_schema_json` allows defining per-type configuration options
+- [x] Follows lookup table conventions
 
 ### Task 1.2: Generated Reports Table
 **File:** `migrations/YYYYMMDDHHMMSS_create_reports.sql`
@@ -92,10 +92,10 @@ CREATE TRIGGER set_updated_at BEFORE UPDATE ON reports
 ```
 
 **Acceptance Criteria:**
-- [ ] All FK columns indexed
-- [ ] `config_json` stores date range, filters, groupings
-- [ ] `data_json` stores the aggregated report data
-- [ ] `file_path` points to generated file for download
+- [x] All FK columns indexed
+- [x] `config_json` stores date range, filters, groupings
+- [x] `data_json` stores the aggregated report data
+- [x] `file_path` points to generated file for download
 
 ### Task 1.3: Report Schedules Table
 **File:** `migrations/YYYYMMDDHHMMSS_create_report_schedules.sql`
@@ -125,10 +125,10 @@ CREATE TRIGGER set_updated_at BEFORE UPDATE ON report_schedules
 ```
 
 **Acceptance Criteria:**
-- [ ] Schedule supports cron expressions or named intervals
-- [ ] Recipients stored as JSON array of email addresses
-- [ ] `next_run_at` indexed for efficient scheduler queries
-- [ ] `enabled` flag for pausing without deleting
+- [x] Schedule supports cron expressions or named intervals
+- [x] Recipients stored as JSON array of email addresses
+- [x] `next_run_at` indexed for efficient scheduler queries
+- [x] `enabled` flag for pausing without deleting
 
 ---
 
@@ -147,53 +147,53 @@ pub struct DeliverySummary {
 ```
 
 **Acceptance Criteria:**
-- [ ] Characters delivered per period, broken down by project
-- [ ] Comparison with previous period (trend direction and percentage)
-- [ ] Supports date range filtering
+- [x] Characters delivered per period, broken down by project
+- [x] Comparison with previous period (trend direction and percentage)
+- [x] Supports date range filtering
 
 ### Task 2.2: Throughput Metrics Aggregator
 **File:** `src/services/reports/throughput_metrics.rs`
 
 **Acceptance Criteria:**
-- [ ] Average turnaround time from character onboarding to delivery
-- [ ] Trend over time with breakdown by project, scene type, resolution
-- [ ] Time-series data suitable for charting
+- [x] Average turnaround time from character onboarding to delivery
+- [x] Trend over time with breakdown by project, scene type, resolution
+- [x] Time-series data suitable for charting
 
 ### Task 2.3: GPU Utilization Aggregator
 **File:** `src/services/reports/gpu_utilization.rs`
 
 **Acceptance Criteria:**
-- [ ] Total GPU hours by project, scene type, and resolution tier
-- [ ] Idle time vs. active generation time
-- [ ] Per-worker utilization comparison
-- [ ] Sources data from PRD-41 performance metrics
+- [x] Total GPU hours by project, scene type, and resolution tier
+- [x] Idle time vs. active generation time
+- [x] Per-worker utilization comparison
+- [x] Sources data from PRD-41 performance metrics
 
 ### Task 2.4: Quality Metrics Aggregator
 **File:** `src/services/reports/quality_metrics.rs`
 
 **Acceptance Criteria:**
-- [ ] Auto-QA pass rates over time (PRD-49)
-- [ ] Average retry count (PRD-71)
-- [ ] Most common failure types and failure rate trends
-- [ ] Quality improvement tracking after workflow changes
+- [x] Auto-QA pass rates over time (PRD-49)
+- [x] Average retry count (PRD-71)
+- [x] Most common failure types and failure rate trends
+- [x] Quality improvement tracking after workflow changes
 
 ### Task 2.5: Cost Per Character Aggregator
 **File:** `src/services/reports/cost_per_character.rs`
 
 **Acceptance Criteria:**
-- [ ] Average GPU time and wall-clock time per character
-- [ ] Breakdown by scene type
-- [ ] Identifies most expensive scene types
-- [ ] Sources data from PRD-61 cost estimation
+- [x] Average GPU time and wall-clock time per character
+- [x] Breakdown by scene type
+- [x] Identifies most expensive scene types
+- [x] Sources data from PRD-61 cost estimation
 
 ### Task 2.6: Reviewer Productivity Aggregator
 **File:** `src/services/reports/reviewer_productivity.rs`
 
 **Acceptance Criteria:**
-- [ ] Average review turnaround time
-- [ ] Approval/rejection ratios
-- [ ] Annotation density (notes per reviewed segment)
-- [ ] Presented as efficiency metrics, not surveillance
+- [x] Average review turnaround time
+- [x] Approval/rejection ratios
+- [x] Annotation density (notes per reviewed segment)
+- [x] Presented as efficiency metrics, not surveillance
 
 ### Task 2.7: Video Technical Report Aggregator
 **File:** `src/services/reports/video_technical_report.rs`
@@ -224,30 +224,30 @@ pub struct VideoTechnicalSummary {
 ```
 
 **Acceptance Criteria:**
-- [ ] Table listing all videos with: name, character, scene type, dimensions, duration, framerate, codec, file size, segment count, generation date
-- [ ] Sortable and filterable by any column
-- [ ] Individual video detail with full technical metadata (bitrate, color space, etc.)
-- [ ] Collective summary: total videos, total duration, average framerate, average file size, min/max dimensions
-- [ ] Filterable by date range, project, character, scene type, resolution tier
-- [ ] Exportable as CSV, PDF, or JSON
+- [x] Table listing all videos with: name, character, scene type, dimensions, duration, framerate, codec, file size, segment count, generation date
+- [x] Sortable and filterable by any column
+- [x] Individual video detail with full technical metadata (bitrate, color space, etc.)
+- [x] Collective summary: total videos, total duration, average framerate, average file size, min/max dimensions
+- [x] Filterable by date range, project, character, scene type, resolution tier
+- [x] Exportable as CSV, PDF, or JSON
 
 ### Task 2.8: Report Formatter -- CSV
 **File:** `src/services/reports/formatter_csv.rs`
 
 **Acceptance Criteria:**
-- [ ] Converts aggregated report data to CSV format
-- [ ] Proper header row with column names
-- [ ] RFC 4180 compliant
-- [ ] Handles nested data by flattening
+- [x] Converts aggregated report data to CSV format
+- [x] Proper header row with column names
+- [x] RFC 4180 compliant
+- [x] Handles nested data by flattening
 
 ### Task 2.9: Report Formatter -- PDF
 **File:** `src/services/reports/formatter_pdf.rs`
 
 **Acceptance Criteria:**
-- [ ] Generates professionally formatted PDF with charts and tables
-- [ ] Executive summary section at the top
-- [ ] Date range and generation metadata in header/footer
-- [ ] Uses Rust PDF library (e.g., `genpdf` or `printpdf`)
+- [x] Generates professionally formatted PDF with charts and tables
+- [x] Executive summary section at the top
+- [x] Date range and generation metadata in header/footer
+- [x] Uses Rust PDF library (e.g., `genpdf` or `printpdf`)
 
 ### Task 2.10: Scheduled Report Runner
 **File:** `src/services/report_scheduler.rs`
@@ -255,11 +255,11 @@ pub struct VideoTechnicalSummary {
 Background service that executes scheduled reports.
 
 **Acceptance Criteria:**
-- [ ] Polls `report_schedules` for due reports (where `next_run_at <= NOW()`)
-- [ ] Generates report with the schedule's configuration
-- [ ] Delivers via email to configured recipients
-- [ ] Updates `last_run_at` and calculates `next_run_at`
-- [ ] Error handling: retries on failure, alerts on repeated failures
+- [x] Polls `report_schedules` for due reports (where `next_run_at <= NOW()`)
+- [x] Generates report with the schedule's configuration
+- [x] Delivers via email to configured recipients
+- [x] Updates `last_run_at` and calculates `next_run_at`
+- [x] Error handling: retries on failure, alerts on repeated failures
 
 ---
 
@@ -275,9 +275,9 @@ POST /reports/generate
 Request body: report type, format, config (date range, filters).
 
 **Acceptance Criteria:**
-- [ ] Async operation: returns report ID for polling
-- [ ] Validates report type and configuration
-- [ ] Generates report in requested format (csv, pdf, json)
+- [x] Async operation: returns report ID for polling
+- [x] Validates report type and configuration
+- [x] Generates report in requested format (csv, pdf, json)
 
 ### Task 3.2: Report Download Route
 **File:** `src/routes/reports.rs`
@@ -287,9 +287,9 @@ GET /reports/:id/download
 ```
 
 **Acceptance Criteria:**
-- [ ] Returns the generated file with appropriate Content-Type
-- [ ] 404 if report not yet generated or failed
-- [ ] Supports Content-Disposition for browser download
+- [x] Returns the generated file with appropriate Content-Type
+- [x] 404 if report not yet generated or failed
+- [x] Supports Content-Disposition for browser download
 
 ### Task 3.3: Report History Routes
 **File:** `src/routes/reports.rs`
@@ -300,8 +300,8 @@ GET /reports/templates                 -- List available report types
 ```
 
 **Acceptance Criteria:**
-- [ ] Paginated list of past reports with type, date, format, status
-- [ ] Templates endpoint returns available report types with descriptions
+- [x] Paginated list of past reports with type, date, format, status
+- [x] Templates endpoint returns available report types with descriptions
 
 ### Task 3.4: Report Schedule CRUD Routes
 **File:** `src/routes/report_schedules.rs`
@@ -314,9 +314,9 @@ DELETE /report-schedules/:id
 ```
 
 **Acceptance Criteria:**
-- [ ] Standard CRUD for report schedules
-- [ ] Validation: valid schedule expression, valid email addresses
-- [ ] Enable/disable toggle without deletion
+- [x] Standard CRUD for report schedules
+- [x] Validation: valid schedule expression, valid email addresses
+- [x] Enable/disable toggle without deletion
 
 ---
 
@@ -326,29 +326,29 @@ DELETE /report-schedules/:id
 **File:** `frontend/src/pages/Reports.tsx`
 
 **Acceptance Criteria:**
-- [ ] Select report type from available templates
-- [ ] Date range selector with presets (This Week, This Month, Last Quarter)
-- [ ] Format selection (CSV, PDF, JSON)
-- [ ] Additional filters based on report type
-- [ ] Generate button with progress indicator
+- [x] Select report type from available templates
+- [x] Date range selector with presets (This Week, This Month, Last Quarter)
+- [x] Format selection (CSV, PDF, JSON)
+- [x] Additional filters based on report type
+- [x] Generate button with progress indicator
 
 ### Task 4.2: Report Viewer
 **File:** `frontend/src/components/reports/ReportViewer.tsx`
 
 **Acceptance Criteria:**
-- [ ] Renders report data in-browser with charts and tables
-- [ ] Download buttons for each format
-- [ ] Drill-down capability on aggregate numbers
-- [ ] Print-friendly layout
+- [x] Renders report data in-browser with charts and tables
+- [x] Download buttons for each format
+- [x] Drill-down capability on aggregate numbers
+- [x] Print-friendly layout
 
 ### Task 4.3: Report Schedule Manager
 **File:** `frontend/src/components/reports/ScheduleManager.tsx`
 
 **Acceptance Criteria:**
-- [ ] List active schedules with next run date
-- [ ] Create/edit schedule with report type, format, recipients, interval
-- [ ] Enable/disable toggle
-- [ ] Preview of next N scheduled runs
+- [x] List active schedules with next run date
+- [x] Create/edit schedule with report type, format, recipients, interval
+- [x] Enable/disable toggle
+- [x] Preview of next N scheduled runs
 
 ### Task 4.4: Dashboard Report Widgets
 **File:** `frontend/src/components/dashboard/ReportWidgets.tsx`
@@ -356,9 +356,9 @@ DELETE /report-schedules/:id
 Summary widgets for PRD-42 Studio Pulse Dashboard integration.
 
 **Acceptance Criteria:**
-- [ ] Compact delivery summary widget
-- [ ] GPU utilization gauge widget
-- [ ] Click-through to full report from widget
+- [x] Compact delivery summary widget
+- [x] GPU utilization gauge widget
+- [x] Click-through to full report from widget
 
 ---
 
@@ -368,19 +368,19 @@ Summary widgets for PRD-42 Studio Pulse Dashboard integration.
 **File:** `tests/report_aggregation_test.rs`
 
 **Acceptance Criteria:**
-- [ ] Test delivery summary with known data returns correct counts
-- [ ] Test GPU utilization aggregation accuracy
-- [ ] Test cost per character calculation
-- [ ] Test date range filtering excludes out-of-range data
-- [ ] Reports generate in <30 seconds for 30-day periods
+- [x] Test delivery summary with known data returns correct counts
+- [x] Test GPU utilization aggregation accuracy
+- [x] Test cost per character calculation
+- [x] Test date range filtering excludes out-of-range data
+- [x] Reports generate in <30 seconds for 30-day periods
 
 ### Task 5.2: Formatter Tests
 **File:** `tests/report_formatter_test.rs`
 
 **Acceptance Criteria:**
-- [ ] Test CSV output is valid RFC 4180
-- [ ] Test PDF output is valid and readable
-- [ ] Test JSON output matches expected schema
+- [x] Test CSV output is valid RFC 4180
+- [x] Test PDF output is valid and readable
+- [x] Test JSON output matches expected schema
 
 ---
 

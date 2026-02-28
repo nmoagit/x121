@@ -4,7 +4,11 @@ import { useAuthStore } from "@/stores/auth-store";
    Constants
    -------------------------------------------------------------------------- */
 
-const BASE_URL = `${import.meta.env.BASE_URL}api/v1`;
+/** Base URL for all API requests. Exported for direct-link construction (e.g. download URLs). */
+export const API_BASE_URL = `${import.meta.env.BASE_URL}api/v1`;
+
+/** @deprecated Use `API_BASE_URL` instead. Alias kept for internal use within this module. */
+const BASE_URL = API_BASE_URL;
 
 /* --------------------------------------------------------------------------
    Error types

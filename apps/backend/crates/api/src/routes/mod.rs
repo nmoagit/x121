@@ -53,6 +53,7 @@ pub mod platform_settings;
 pub mod poster_frame;
 pub mod presets;
 pub mod production_notes;
+pub mod production_report;
 pub mod production_run;
 pub mod proficiency;
 pub mod project;
@@ -687,6 +688,15 @@ use crate::ws;
 /// /prompt-fragments                                              list, create (GET, POST, PRD-115)
 /// /prompt-fragments/{id}                                         update, delete (PUT, DELETE, PRD-115)
 /// /prompt-fragments/{id}/pin/{scene_type_id}                     pin, unpin (POST, DELETE, PRD-115)
+///
+/// /reports                                                        list reports (GET, PRD-73)
+/// /reports/generate                                               generate report (POST, PRD-73)
+/// /reports/templates                                              list report types (GET, PRD-73)
+/// /reports/{id}                                                   get report (GET, PRD-73)
+/// /reports/{id}/download                                          download report (GET, PRD-73)
+///
+/// /report-schedules                                               list, create (GET, POST, PRD-73)
+/// /report-schedules/{id}                                          update, delete (PUT, DELETE, PRD-73)
 /// ```
 pub fn api_routes() -> Router<AppState> {
     Router::new()
@@ -931,6 +941,9 @@ pub fn api_routes() -> Router<AppState> {
         // Production Notes & Internal Comments (PRD-95).
         .nest("/notes", production_notes::notes_router())
         .nest("/note-categories", production_notes::note_categories_router())
+        // Production Reporting & Data Export (PRD-73).
+        .nest("/reports", production_report::report_router())
+        .nest("/report-schedules", production_report::report_schedule_router())
         // Bulk Character Onboarding Wizard (PRD-67).
         .nest("/onboarding-sessions", onboarding_wizard::router())
         // Legacy Data Import & Migration Toolkit (PRD-86).

@@ -53,6 +53,7 @@ pub mod pipeline_hooks;
 pub mod poster_frame;
 pub mod preset;
 pub mod production_notes;
+pub mod production_report;
 pub mod project_config;
 pub mod prompt_editor;
 pub mod prompt_resolution;

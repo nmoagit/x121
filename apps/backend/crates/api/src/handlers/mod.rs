@@ -61,6 +61,7 @@ pub mod platform_settings;
 pub mod poster_frame;
 pub mod presets;
 pub mod production_notes;
+pub mod production_report;
 pub mod production_run;
 pub mod proficiency;
 pub mod project;
