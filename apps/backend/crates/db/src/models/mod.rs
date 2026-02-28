@@ -75,6 +75,7 @@ pub mod production_run;
 pub mod proficiency;
 pub mod project;
 pub mod project_config;
+pub mod project_lifecycle;
 pub mod project_scene_setting;
 pub mod prompt_fragment;
 pub mod prompt_library_entry;

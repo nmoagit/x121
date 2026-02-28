@@ -59,6 +59,7 @@ pub mod preset;
 pub mod production_notes;
 pub mod production_report;
 pub mod project_config;
+pub mod project_lifecycle;
 pub mod prompt_editor;
 pub mod prompt_resolution;
 pub mod provenance;

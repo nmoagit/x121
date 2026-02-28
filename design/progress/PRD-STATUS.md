@@ -21,10 +21,10 @@ Source of truth: [`design/design.md`](../design.md)
 | Status | Count |
 |--------|-------|
 | backlog | 0 |
-| planning | 23 |
+| planning | 22 |
 | in-progress | 0 |
 | review | 0 |
-| done | 98 |
+| done | 99 |
 | blocked | 0 |
 | deferred | 0 |
 | maybe | 15 |
@@ -172,7 +172,7 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-40 | VFX Sidecar & Dataset Export | — | `done` | 2026-02-28 | |
 | PRD-41 | Performance & Benchmarking Dashboard | — | `done` | — | |
 | PRD-42 | Studio Pulse Dashboard | — | `done` | — | |
-| PRD-72 | Project Lifecycle & Archival | — | `planning` | — | |
+| PRD-72 | Project Lifecycle & Archival | — | `done` | 2026-02-28 | |
 | PRD-73 | Production Reporting & Data Export | — | `done` | 2026-02-28 | Migration, core, models, repo, handlers, routes, frontend components, tests |
 | PRD-84 | External Review / Shareable Preview Links | — | `done` | 2026-02-28 | |
 | PRD-89 | Dashboard Widget Customization | — | `planning` | — | |

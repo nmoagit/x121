@@ -52,9 +52,9 @@ ON CONFLICT (name) DO NOTHING;
 ```
 
 **Acceptance Criteria:**
-- [ ] All five states exist in `project_statuses`: setup, active, delivered, archived, closed
-- [ ] Idempotent: safe to run if some statuses already exist
-- [ ] Each status has a human-readable description
+- [x] All five states exist in `project_statuses`: setup, active, delivered, archived, closed
+- [x] Idempotent: safe to run if some statuses already exist
+- [x] Each status has a human-readable description
 
 ### Task 1.2: Lifecycle Columns on Projects Table
 **File:** `migrations/YYYYMMDDHHMMSS_add_lifecycle_columns_to_projects.sql`
@@ -69,9 +69,9 @@ CREATE INDEX idx_projects_lifecycle_transitioned_by ON projects(lifecycle_transi
 ```
 
 **Acceptance Criteria:**
-- [ ] Transition timestamp and actor tracked on the projects table
-- [ ] `is_edit_locked` flag for quick middleware checks
-- [ ] FK on `lifecycle_transitioned_by` with index
+- [x] Transition timestamp and actor tracked on the projects table
+- [x] `is_edit_locked` flag for quick middleware checks
+- [x] FK on `lifecycle_transitioned_by` with index
 
 ### Task 1.3: Project Summaries Table
 **File:** `migrations/YYYYMMDDHHMMSS_create_project_summaries.sql`
@@ -95,9 +95,9 @@ CREATE TRIGGER set_updated_at BEFORE UPDATE ON project_summaries
 ```
 
 **Acceptance Criteria:**
-- [ ] Summary stored as JSONB for flexible content
-- [ ] Linked to project via FK with CASCADE delete
-- [ ] `generated_at` captures when the report was auto-generated
+- [x] Summary stored as JSONB for flexible content
+- [x] Linked to project via FK with CASCADE delete
+- [x] `generated_at` captures when the report was auto-generated
 
 ---
 
@@ -134,11 +134,11 @@ impl LifecycleState {
 ```
 
 **Acceptance Criteria:**
-- [ ] State enum maps to `project_statuses` lookup table names
-- [ ] `valid_transitions` defines allowed state transitions
-- [ ] Delivered and Archived can re-open to Active
-- [ ] Closed is terminal -- no transitions out
-- [ ] `transition` function validates and returns error for invalid transitions
+- [x] State enum maps to `project_statuses` lookup table names
+- [x] `valid_transitions` defines allowed state transitions
+- [x] Delivered and Archived can re-open to Active
+- [x] Closed is terminal -- no transitions out
+- [x] `transition` function validates and returns error for invalid transitions
 
 ### Task 2.2: Completion Checklist Evaluator
 **File:** `src/services/completion_checklist.rs`
@@ -161,10 +161,10 @@ pub struct ChecklistItem {
 ```
 
 **Acceptance Criteria:**
-- [ ] Checks: all scenes approved, metadata complete, delivery validation passed (PRD-39)
-- [ ] Returns structured result with per-item pass/fail
-- [ ] Blocking items prevent transition; non-blocking items are warnings
-- [ ] Admin override available with audit log entry (PRD-45)
+- [x] Checks: all scenes approved, metadata complete, delivery validation passed (PRD-39)
+- [x] Returns structured result with per-item pass/fail
+- [x] Blocking items prevent transition; non-blocking items are warnings
+- [x] Admin override available with audit log entry (PRD-45)
 
 ### Task 2.3: Project Summary Report Generator
 **File:** `src/services/summary_report.rs`
@@ -184,10 +184,10 @@ pub struct ProjectSummaryReport {
 ```
 
 **Acceptance Criteria:**
-- [ ] Generated automatically on transition to Delivered
-- [ ] Includes: total characters, scenes produced, GPU hours, wall-clock time, QA pass rates, re-generation counts
-- [ ] Stored in `project_summaries` table as JSONB
-- [ ] Exportable as PDF/JSON via separate endpoint
+- [x] Generated automatically on transition to Delivered
+- [x] Includes: total characters, scenes produced, GPU hours, wall-clock time, QA pass rates, re-generation counts
+- [x] Stored in `project_summaries` table as JSONB
+- [x] Exportable as PDF/JSON via separate endpoint
 
 ### Task 2.4: Edit Lock Middleware
 **File:** `src/middleware/edit_lock.rs`
@@ -208,10 +208,10 @@ pub async fn enforce_edit_lock(
 ```
 
 **Acceptance Criteria:**
-- [ ] Intercepts POST/PUT/PATCH/DELETE on project-scoped routes
-- [ ] Returns 403 Forbidden with "Project is in {state} state and cannot be modified"
-- [ ] Does not block read operations (GET)
-- [ ] Does not block the explicit "re-open" transition endpoint
+- [x] Intercepts POST/PUT/PATCH/DELETE on project-scoped routes
+- [x] Returns 403 Forbidden with "Project is in {state} state and cannot be modified"
+- [x] Does not block read operations (GET)
+- [x] Does not block the explicit "re-open" transition endpoint
 
 ### Task 2.5: Bulk Archival Service
 **File:** `src/services/bulk_archival.rs`
@@ -219,11 +219,11 @@ pub async fn enforce_edit_lock(
 Archive multiple delivered projects at once.
 
 **Acceptance Criteria:**
-- [ ] Select multiple Delivered projects for archival
-- [ ] Schedule archival: "Archive all Delivered projects older than N days"
-- [ ] Archival moves binary assets to cold storage (PRD-48 integration point)
-- [ ] Metadata remains searchable
-- [ ] Progress tracking for multi-project archival
+- [x] Select multiple Delivered projects for archival
+- [x] Schedule archival: "Archive all Delivered projects older than N days"
+- [x] Archival moves binary assets to cold storage (PRD-48 integration point)
+- [x] Metadata remains searchable
+- [x] Progress tracking for multi-project archival
 
 ---
 
@@ -237,12 +237,12 @@ POST /projects/:id/transition/:state
 ```
 
 **Acceptance Criteria:**
-- [ ] Validates transition is allowed from current state
-- [ ] Runs completion checklist for Active -> Delivered
-- [ ] Auto-generates summary report on Delivered transition
-- [ ] Sets/clears edit lock based on new state
-- [ ] Logs transition in audit trail (PRD-45)
-- [ ] Returns updated project with new state
+- [x] Validates transition is allowed from current state
+- [x] Runs completion checklist for Active -> Delivered
+- [x] Auto-generates summary report on Delivered transition
+- [x] Sets/clears edit lock based on new state
+- [x] Logs transition in audit trail (PRD-45)
+- [x] Returns updated project with new state
 
 ### Task 3.2: Completion Checklist Route
 **File:** `src/routes/project_lifecycle.rs`
@@ -252,9 +252,9 @@ GET /projects/:id/completion-checklist
 ```
 
 **Acceptance Criteria:**
-- [ ] Returns structured checklist with pass/fail per item
-- [ ] Includes details for failed items (e.g., "Scene 'intro' is not approved")
-- [ ] Available regardless of current state (informational)
+- [x] Returns structured checklist with pass/fail per item
+- [x] Includes details for failed items (e.g., "Scene 'intro' is not approved")
+- [x] Available regardless of current state (informational)
 
 ### Task 3.3: Summary Report Routes
 **File:** `src/routes/project_lifecycle.rs`
@@ -266,10 +266,10 @@ GET /projects/:id/summary-report/json  -- Download as JSON
 ```
 
 **Acceptance Criteria:**
-- [ ] Returns latest summary report for project
-- [ ] PDF export with formatted layout
-- [ ] JSON export for programmatic consumption
-- [ ] 404 if no summary report exists (project not yet delivered)
+- [x] Returns latest summary report for project
+- [x] PDF export with formatted layout
+- [x] JSON export for programmatic consumption
+- [x] 404 if no summary report exists (project not yet delivered)
 
 ### Task 3.4: Bulk Archival Route
 **File:** `src/routes/project_lifecycle.rs`
@@ -279,9 +279,9 @@ POST /projects/bulk-archive
 ```
 
 **Acceptance Criteria:**
-- [ ] Accepts list of project IDs or schedule rule (e.g., "delivered older than 90 days")
-- [ ] Returns job ID for progress tracking
-- [ ] Validates all projects are in Delivered state
+- [x] Accepts list of project IDs or schedule rule (e.g., "delivered older than 90 days")
+- [x] Returns job ID for progress tracking
+- [x] Validates all projects are in Delivered state
 
 ---
 
@@ -293,37 +293,37 @@ POST /projects/bulk-archive
 Prominent lifecycle state indicator on the project header.
 
 **Acceptance Criteria:**
-- [ ] State badge with color coding (Setup=blue, Active=green, Delivered=purple, Archived=grey, Closed=dark grey)
-- [ ] Transition buttons for valid next states
-- [ ] Confirmation dialog for irreversible transitions (Archive, Close)
-- [ ] "Re-open" action for Delivered/Archived projects
+- [x] State badge with color coding (Setup=blue, Active=green, Delivered=purple, Archived=grey, Closed=dark grey)
+- [x] Transition buttons for valid next states
+- [x] Confirmation dialog for irreversible transitions (Archive, Close)
+- [x] "Re-open" action for Delivered/Archived projects
 
 ### Task 4.2: Completion Checklist Panel
 **File:** `frontend/src/components/project/CompletionChecklist.tsx`
 
 **Acceptance Criteria:**
-- [ ] Checklist items with green/red indicators
-- [ ] Failed items link to the entity that needs attention
-- [ ] "Override & Deliver" button for Admin (with confirmation)
-- [ ] Auto-refreshes when user navigates back from fixing an item
+- [x] Checklist items with green/red indicators
+- [x] Failed items link to the entity that needs attention
+- [x] "Override & Deliver" button for Admin (with confirmation)
+- [x] Auto-refreshes when user navigates back from fixing an item
 
 ### Task 4.3: Summary Report View
 **File:** `frontend/src/components/project/SummaryReport.tsx`
 
 **Acceptance Criteria:**
-- [ ] Formatted display of report data with charts
-- [ ] Export buttons for PDF and JSON
-- [ ] Shows generation breakdown by scene type
-- [ ] Displays QA metrics and re-generation statistics
+- [x] Formatted display of report data with charts
+- [x] Export buttons for PDF and JSON
+- [x] Shows generation breakdown by scene type
+- [x] Displays QA metrics and re-generation statistics
 
 ### Task 4.4: Bulk Archival Panel
 **File:** `frontend/src/pages/BulkArchival.tsx`
 
 **Acceptance Criteria:**
-- [ ] List of delivered projects eligible for archival
-- [ ] Multi-select with "Select All" option
-- [ ] Schedule configuration: "Archive projects delivered more than N days ago"
-- [ ] Progress display during bulk archival
+- [x] List of delivered projects eligible for archival
+- [x] Multi-select with "Select All" option
+- [x] Schedule configuration: "Archive projects delivered more than N days ago"
+- [x] Progress display during bulk archival
 
 ---
 
@@ -333,19 +333,19 @@ Prominent lifecycle state indicator on the project header.
 **File:** `tests/project_lifecycle_test.rs`
 
 **Acceptance Criteria:**
-- [ ] Test all valid transitions succeed
-- [ ] Test all invalid transitions are rejected
-- [ ] Test Closed is terminal (no transitions out)
-- [ ] Test edit lock is set on Delivered/Archived, cleared on Active
+- [x] Test all valid transitions succeed
+- [x] Test all invalid transitions are rejected
+- [x] Test Closed is terminal (no transitions out)
+- [x] Test edit lock is set on Delivered/Archived, cleared on Active
 
 ### Task 5.2: Completion Checklist Tests
 **File:** `tests/completion_checklist_test.rs`
 
 **Acceptance Criteria:**
-- [ ] Test checklist blocks when scenes are unapproved
-- [ ] Test checklist blocks when metadata is incomplete
-- [ ] Test checklist passes when all conditions met
-- [ ] Test Admin override bypasses blocking items
+- [x] Test checklist blocks when scenes are unapproved
+- [x] Test checklist blocks when metadata is incomplete
+- [x] Test checklist passes when all conditions met
+- [x] Test Admin override bypasses blocking items
 
 ---
 

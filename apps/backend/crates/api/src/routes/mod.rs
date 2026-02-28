@@ -61,6 +61,7 @@ pub mod production_run;
 pub mod proficiency;
 pub mod project;
 pub mod project_config;
+pub mod project_lifecycle;
 pub mod project_scene_settings;
 pub mod prompt_editor;
 pub mod prompt_management;
@@ -781,6 +782,8 @@ pub fn api_routes() -> Router<AppState> {
             .merge(poster_frame::project_poster_router())
             .merge(consistency_report::project_consistency_router())
             .merge(sidecar::dataset_export_project_router())
+            .merge(project_lifecycle::project_lifecycle_router())
+            .merge(project_lifecycle::bulk_lifecycle_router())
             .nest("/{project_id}/characters", character_metadata::project_router())
             .nest("/{project_id}/ingest", character_ingest::router())
             .nest("/{project_id}/scene-settings", project_scene_settings::router()))
