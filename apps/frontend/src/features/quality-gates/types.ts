@@ -72,15 +72,11 @@ export interface UpdateQaThreshold {
    Constants and helpers
    -------------------------------------------------------------------------- */
 
-/** Human-readable labels for check types. */
-export const CHECK_TYPE_LABELS: Record<string, string> = {
-  face_confidence: "Face Confidence",
-  boundary_ssim: "Boundary SSIM",
-  motion: "Motion",
-  resolution: "Resolution",
-  artifacts: "Artifacts",
-  likeness_drift: "Likeness Drift",
-};
+/**
+ * Human-readable labels for check types.
+ * Re-exported from shared `@/lib/qa-constants` for backwards compatibility.
+ */
+export { QA_CHECK_TYPE_LABELS as CHECK_TYPE_LABELS } from "@/lib/qa-constants";
 
 /** Map QA status to a Badge variant from the primitives library. */
 export function statusBadgeVariant(

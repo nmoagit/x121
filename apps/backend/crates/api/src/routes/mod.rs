@@ -59,6 +59,7 @@ pub mod project_scene_settings;
 pub mod prompt_editor;
 pub mod prompt_management;
 pub mod provenance;
+pub mod qa_rulesets;
 pub mod quality_gates;
 pub mod queue;
 pub mod readiness;
@@ -768,12 +769,13 @@ pub fn api_routes() -> Router<AppState> {
         .nest("/rejection-categories", approval::rejection_categories_router())
         // Review tags for collaborative review (PRD-38).
         .nest("/review-tags", review_notes::review_tags_router())
-        // Studio-level scene types + prompt versioning (PRD-63) + inheritance (PRD-100) + prompt defaults (PRD-115) + retry policy (PRD-71).
+        // Studio-level scene types + prompt versioning (PRD-63) + inheritance (PRD-100) + prompt defaults (PRD-115) + retry policy (PRD-71) + QA rulesets (PRD-91).
         .nest("/scene-types", scene_type::studio_router()
             .merge(prompt_editor::scene_type_prompt_router())
             .merge(scene_type_inheritance::inheritance_router())
             .merge(prompt_management::scene_type_prompt_default_router())
-            .merge(auto_retry::retry_policy_router()))
+            .merge(auto_retry::retry_policy_router())
+            .merge(qa_rulesets::qa_override_router()))
         // Mixin CRUD (PRD-100).
         .nest("/mixins", scene_type_inheritance::mixin_router())
         // Scene catalog & tracks (PRD-111).
@@ -787,6 +789,8 @@ pub fn api_routes() -> Router<AppState> {
         .nest("/qa", image_qa::router())
         // Automated Quality Gates: studio-level defaults (PRD-49).
         .nest("/qa/quality-gates", quality_gates::studio_qa_router())
+        // QA Profiles: named threshold bundles (PRD-91).
+        .nest("/qa-profiles", qa_rulesets::qa_profile_router())
         // Validation engine (rule types, rules, dry-run validation).
         .nest("/validation", validation::validation_router())
         // Import reports and commit.

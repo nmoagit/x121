@@ -21,10 +21,10 @@ Source of truth: [`design/design.md`](../design.md)
 | Status | Count |
 |--------|-------|
 | backlog | 0 |
-| planning | 35 |
+| planning | 34 |
 | in-progress | 0 |
 | review | 0 |
-| done | 86 |
+| done | 87 |
 | blocked | 0 |
 | deferred | 0 |
 | maybe | 15 |
@@ -116,7 +116,7 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-67 | Bulk Character Onboarding Wizard | — | `done` | 2026-02-23 | Migration 000027, core onboarding_wizard module (step validation), API handlers, frontend feature (onboarding-wizard). Updated v1.1 (2026-02-19): CSV/text upload, batch video generation. |
 | PRD-71 | Smart Auto-Retry | — | `done` | 2026-02-28 | Migration (retry_attempts table, 5 policy columns on scene_types), core module (jitter engine, best-of-N selector, retry policy evaluation, 11 tests), retry_attempt model/repo, 7 API endpoints (policy CRUD, attempt CRUD, select), frontend feature (RetryHistoryPanel, RetryPolicyEditor, AttemptRow, 15 tests). |
 | PRD-74 | Project Configuration Templates | — | `done` | 2026-02-23 | Phase 7 Track B |
-| PRD-91 | Custom QA Rulesets per Scene Type | — | `planning` | — | |
+| PRD-91 | Custom QA Rulesets per Scene Type | — | `done` | — | |
 | PRD-94 | Character Consistency Report | — | `planning` | — | |
 | PRD-97 | Job Dependency Chains & Triggered Workflows | — | `planning` | — | |
 | PRD-100 | Scene Type Inheritance & Composition | — | `done` | 2026-02-28 | Migration (parent/depth on scene_types, overrides table, mixins tables), core inheritance resolver (field-level source tracking, depth validation, cascade detection), repos (MixinRepo, SceneTypeOverrideRepo), 13 API endpoints (children, effective-config, cascade-preview, overrides CRUD, mixins CRUD), frontend (OverrideIndicator, InheritanceTree, 15 hooks), 9 integration + 13 frontend tests. |

@@ -367,7 +367,7 @@ This phase contains no PRD work — only structural setup.
 | # | PRD | Title | Effort | Depends On |
 |---|-----|-------|--------|------------|
 | 81 | PRD-71 | Smart Auto-Retry | M | PRD-23, PRD-49, PRD-61, PRD-64, PRD-69 | **DONE** 2026-02-28 |
-| 82 | PRD-91 | Custom QA Rulesets per Scene Type | M | PRD-23, PRD-49, PRD-77 |
+| 82 | PRD-91 | Custom QA Rulesets per Scene Type | M | PRD-23, PRD-49, PRD-77 | **DONE** 2026-02-28 |
 | 83 | PRD-100 | Scene Type Inheritance & Composition | M | PRD-23 |
 
 ### Track B — Review UI
