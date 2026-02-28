@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Disaster Recovery Runbook</title>
+    <style>
+        body { font-family: system-ui, sans-serif; max-width: 800px; margin: 2rem auto; padding: 0 1rem; line-height: 1.6; color: #1a1a1a; }
+        h1 { border-bottom: 2px solid #333; padding-bottom: 0.5rem; }
+        h2 { margin-top: 2rem; color: #444; }
+        ol { padding-left: 1.5rem; }
+        li { margin-bottom: 0.5rem; }
+        code { background: #f4f4f4; padding: 0.15rem 0.4rem; border-radius: 3px; font-size: 0.9em; }
+        pre { background: #f4f4f4; padding: 1rem; border-radius: 4px; overflow-x: auto; }
+        .warning { background: #fff3cd; border-left: 4px solid #ffc107; padding: 0.75rem 1rem; margin: 1rem 0; }
+        .critical { background: #f8d7da; border-left: 4px solid #dc3545; padding: 0.75rem 1rem; margin: 1rem 0; }
+    </style>
+</head>
+<body>
+    <h1>Disaster Recovery Runbook</h1>
+    <p>This document outlines the procedures for recovering the X121 platform from various failure scenarios.</p>
+
+    <h2>1. Full Database Restore</h2>
+    <ol>
+        <li>Identify the most recent verified full backup from the admin dashboard.</li>
+        <li>Stop all application services: <code>systemctl stop x121-api x121-worker</code></li>
+        <li>Restore the database from the backup file:
+            <pre>pg_restore -d x121_production -c -j 4 /path/to/backup.dump</pre>
+        </li>
+        <li>Apply any incremental WAL logs since the full backup.</li>
+        <li>Run verification queries to confirm data integrity.</li>
+        <li>Restart application services: <code>systemctl start x121-api x121-worker</code></li>
+    </ol>
+
+    <h2>2. Point-in-Time Recovery (PITR)</h2>
+    <ol>
+        <li>Identify the target recovery timestamp.</li>
+        <li>Restore from the nearest full backup before the target time.</li>
+        <li>Configure <code>recovery_target_time</code> in <code>postgresql.conf</code>.</li>
+        <li>Replay WAL archives up to the target timestamp.</li>
+        <li>Verify recovered data and promote the standby.</li>
+    </ol>
+
+    <h2>3. Configuration-Only Restore</h2>
+    <ol>
+        <li>Download the latest config backup from the backup storage.</li>
+        <li>Extract configuration files to the application config directory.</li>
+        <li>Validate configuration: <code>x121-api --validate-config</code></li>
+        <li>Restart affected services.</li>
+    </ol>
+
+    <h2>4. Verification Procedure</h2>
+    <ol>
+        <li>Check row counts for critical tables (users, projects, characters).</li>
+        <li>Verify referential integrity across foreign keys.</li>
+        <li>Run application health check endpoints.</li>
+        <li>Confirm recent data (last 24h of activity logs) is present.</li>
+    </ol>
+
+    <div class="warning">
+        <strong>Warning:</strong> Always test restore procedures in a staging environment before applying to production.
+    </div>
+
+    <div class="critical">
+        <strong>Critical:</strong> Document the incident timeline and notify stakeholders within 15 minutes of initiating recovery.
+    </div>
+
+    <h2>5. Contact Information</h2>
+    <ul>
+        <li>Platform Lead: Check internal directory</li>
+        <li>Database Administrator: Check internal directory</li>
+        <li>Infrastructure Team: Check internal directory</li>
+    </ul>
+</body>
+</html>

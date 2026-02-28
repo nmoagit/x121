@@ -7,6 +7,7 @@ pub mod assets;
 pub mod audit;
 pub mod auth;
 pub mod auto_retry;
+pub mod backup_recovery;
 pub mod batch_metadata;
 pub mod batch_review;
 pub mod branching;
@@ -25,7 +26,9 @@ pub mod config_management;
 pub mod consistency_report;
 pub mod contact_sheet;
 pub mod dashboard;
+pub mod dashboard_customization;
 pub mod delivery;
+pub mod directors_view;
 pub mod downloads;
 pub mod duplicates;
 pub mod embedding;
@@ -204,6 +207,12 @@ use crate::ws;
 /// /dashboard/widgets/disk-health                    disk health widget (GET)
 /// /dashboard/widgets/activity-feed                  activity feed widget (GET)
 /// /user/dashboard                                   get, save dashboard config
+///
+/// /user/review-queue                                get review queue (GET, PRD-55)
+/// /user/review-queue/{segment_id}/action            submit review action (POST, PRD-55)
+/// /user/push-subscription                           register, delete push sub (POST, DELETE, PRD-55)
+/// /user/sync                                        sync offline actions (POST, PRD-55)
+/// /user/activity-feed                               mobile activity feed (GET, PRD-55)
 ///
 /// /user/onboarding                                  get, update (auth required, PRD-53)
 /// /user/onboarding/reset                            reset onboarding (POST, PRD-53)
@@ -780,10 +789,14 @@ pub fn api_routes() -> Router<AppState> {
         .nest("/user/layouts", layouts::user_router())
         // Admin layout preset management (PRD-30).
         .nest("/admin/layout-presets", layouts::admin_router())
-        // Studio Pulse Dashboard: widget data endpoints (PRD-42).
-        .nest("/dashboard", dashboard::router())
-        // User-facing dashboard configuration (PRD-42).
-        .nest("/user/dashboard", dashboard::user_router())
+        // Studio Pulse Dashboard: widget data endpoints (PRD-42) + widget catalog (PRD-89).
+        .nest("/dashboard", dashboard::router()
+            .merge(dashboard_customization::dashboard_catalog_router()))
+        // User-facing dashboard configuration (PRD-42) + presets & customization (PRD-89).
+        .nest("/user/dashboard", dashboard::user_router()
+            .merge(dashboard_customization::user_dashboard_router()))
+        // Admin dashboard role defaults (PRD-89).
+        .nest("/admin/dashboard", dashboard_customization::admin_dashboard_router())
         // User onboarding state (PRD-53).
         .nest("/user/onboarding", onboarding::router())
         // User recent items for command palette (PRD-31).
@@ -1062,4 +1075,9 @@ pub fn api_routes() -> Router<AppState> {
         // Webhook Integration Testing Console (PRD-99).
         .nest("/admin/webhook-testing", webhook_testing::admin_router())
         .nest("/mock", webhook_testing::mock_router())
+        // Backup & Disaster Recovery (PRD-81).
+        .nest("/admin/backups", backup_recovery::backup_router())
+        .nest("/admin/backup-schedules", backup_recovery::backup_schedule_router())
+        // Director's View: mobile/tablet review (PRD-55).
+        .nest("/user", directors_view::directors_view_router())
 }

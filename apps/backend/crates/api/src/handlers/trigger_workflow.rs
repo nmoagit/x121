@@ -119,8 +119,13 @@ pub async fn list_triggers(
     _admin: RequireAdmin,
     Query(query): Query<TriggerListQuery>,
 ) -> AppResult<impl IntoResponse> {
-    let triggers =
-        TriggerRepo::list_all(&state.pool, query.project_id, query.pagination.limit, query.pagination.offset).await?;
+    let triggers = TriggerRepo::list_all(
+        &state.pool,
+        query.project_id,
+        query.pagination.limit,
+        query.pagination.offset,
+    )
+    .await?;
 
     tracing::debug!(count = triggers.len(), "Listed triggers");
 

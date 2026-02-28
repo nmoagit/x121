@@ -12,7 +12,9 @@ use serde::Deserialize;
 use x121_core::api_observability::{self, HeatmapCell};
 use x121_core::search::{clamp_limit, clamp_offset};
 use x121_core::types::DbId;
-use x121_db::models::api_observability::{ApiAlertConfig, CreateAlertConfig, MetricsSummary, UpdateAlertConfig};
+use x121_db::models::api_observability::{
+    ApiAlertConfig, CreateAlertConfig, MetricsSummary, UpdateAlertConfig,
+};
 use x121_db::repositories::api_observability_repo::{CreateAlertInput, UpdateAlertInput};
 use x121_db::repositories::{ApiAlertConfigRepo, ApiMetricsRepo, RateLimitUtilRepo};
 
@@ -87,10 +89,7 @@ fn parse_period(period: Option<&str>) -> Duration {
 }
 
 /// Ensure an alert config exists, returning a proper 404 if not found.
-async fn ensure_alert_exists(
-    pool: &sqlx::PgPool,
-    id: DbId,
-) -> AppResult<ApiAlertConfig> {
+async fn ensure_alert_exists(pool: &sqlx::PgPool, id: DbId) -> AppResult<ApiAlertConfig> {
     ApiAlertConfigRepo::find_by_id(pool, id)
         .await?
         .ok_or_else(|| {

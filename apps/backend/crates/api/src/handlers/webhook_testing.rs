@@ -514,4 +514,3 @@ pub async fn receive_mock_payload(
 
     StatusCode::OK.into_response()
 }
-

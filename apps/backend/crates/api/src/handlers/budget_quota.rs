@@ -72,10 +72,7 @@ fn consumed_pct(consumed: f64, total: f64) -> f64 {
 }
 
 /// Build a full BudgetStatus for a project, including trend projection.
-async fn build_budget_status(
-    state: &AppState,
-    budget: ProjectBudget,
-) -> AppResult<BudgetStatus> {
+async fn build_budget_status(state: &AppState, budget: ProjectBudget) -> AppResult<BudgetStatus> {
     let since = compute_period_since(&budget.period_type, budget.period_start);
     let consumed =
         ConsumptionLedgerRepo::sum_for_project_period(&state.pool, budget.project_id, since)

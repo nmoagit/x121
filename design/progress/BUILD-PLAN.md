@@ -456,9 +456,9 @@ This phase contains no PRD work — only structural setup.
 
 | # | PRD | Title | Effort | Track | Depends On |
 |---|-----|-------|--------|-------|------------|
-| 107 | PRD-81 | Backup & Disaster Recovery | L | Admin | PRD-00, PRD-44, PRD-74, PRD-77, PRD-80 |
-| 108 | PRD-55 | Director's View (Mobile/Tablet Review) | L | Frontend | PRD-03, PRD-29, PRD-35, PRD-36, PRD-38, PRD-52 |
-| 109 | PRD-89 | Dashboard Widget Customization | M | Frontend | PRD-04, PRD-42, PRD-85 |
+| 107 | PRD-81 | Backup & Disaster Recovery | L | Admin | PRD-00, PRD-44, PRD-74, PRD-77, PRD-80 | DONE |
+| 108 | PRD-55 | Director's View (Mobile/Tablet Review) | L | Frontend | PRD-03, PRD-29, PRD-35, PRD-36, PRD-38, PRD-52 | DONE |
+| 109 | PRD-89 | Dashboard Widget Customization | M | Frontend | PRD-04, PRD-42, PRD-85 | DONE |
 | 110 | PRD-105 | Platform Setup Wizard | M | Admin | PRD-03, PRD-05, PRD-46, PRD-80, PRD-81 |
 
 ---

@@ -21,10 +21,10 @@ Source of truth: [`design/design.md`](../design.md)
 | Status | Count |
 |--------|-------|
 | backlog | 0 |
-| planning | 11 |
+| planning | 8 |
 | in-progress | 0 |
 | review | 0 |
-| done | 110 |
+| done | 113 |
 | blocked | 0 |
 | deferred | 0 |
 | maybe | 15 |
@@ -155,7 +155,7 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-36 | Cinema Mode & Sync-Play Grid | — | `done` | — | |
 | PRD-37 | QA Visual Aids (Ghosting, ROI, Jog Dial) | — | `done` | — | |
 | PRD-38 | Collaborative Review (Notes, Memos, Issues) | — | `done` | 2026-02-22 | 2 migrations (review_tags, review_notes+note_tags), core module (12 tests), 2 repos, 10 API endpoints, frontend review notes (11 tests). |
-| PRD-55 | Director's View (Mobile/Tablet Review) | — | `planning` | — | |
+| PRD-55 | Director's View (Mobile/Tablet Review) | — | `done` | — | |
 | PRD-68 | Cross-Character Scene Comparison | — | `done` | 2026-02-28 | Backend comparison API + frontend gallery with sync play, sort/filter, quick actions |
 | PRD-70 | On-Frame Annotation & Markup | — | `done` | 2026-02-23 | Phase 7 |
 | PRD-78 | Segment Trimming & Frame-Level Editing | — | `done` | 2026-02-23 | Phase 6 Track C |
@@ -175,7 +175,7 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-72 | Project Lifecycle & Archival | — | `done` | 2026-02-28 | |
 | PRD-73 | Production Reporting & Data Export | — | `done` | 2026-02-28 | Migration, core, models, repo, handlers, routes, frontend components, tests |
 | PRD-84 | External Review / Shareable Preview Links | — | `done` | 2026-02-28 | |
-| PRD-89 | Dashboard Widget Customization | — | `planning` | — | |
+| PRD-89 | Dashboard Widget Customization | — | `done` | — | |
 | PRD-102 | Video Compliance Checker | — | `done` | 2026-02-28 | Migration (2 tables), core (24 tests), models, repo, handlers (8), routes, frontend (6 components), 11 tests |
 
 ## Part 7: Maintenance & Admin
@@ -187,7 +187,7 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-45 | Audit Logging & Compliance | — | `done` | 2026-02-21 | Immutable audit logs with hash chain, retention policies, dynamic filtering, CSV/JSON export, integrity check, 27 tests. DRY-155/156 resolved. |
 | PRD-56 | Studio Wiki & Contextual Help | — | `done` | 2026-02-23 | 2 migrations (wiki_articles, wiki_versions), core module (14 tests), 2 repos, 10 API endpoints, frontend feature (10 tests). |
 | PRD-80 | System Health Page | — | `done` | 2026-03-01 | Migration (3 tables), core (28 tests), 3 repo structs, 7 handlers, frontend (6 components, 30s auto-refresh), 21 tests. DRY-530 to DRY-538 audited. |
-| PRD-81 | Backup & Disaster Recovery | — | `planning` | — | |
+| PRD-81 | Backup & Disaster Recovery | — | `done` | — | |
 | PRD-98 | Session Management & Active Users | — | `done` | — | |
 | PRD-105 | Platform Setup Wizard | — | `planning` | — | |
 | PRD-110 | Admin Platform Settings Panel | 1 | `done` | 2026-02-27 | Platform settings with type-safe validation, caching, DB persistence. Route: `/admin/settings`. |

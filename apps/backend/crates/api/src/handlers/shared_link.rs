@@ -120,7 +120,6 @@ async fn ensure_valid_link(pool: &sqlx::PgPool, token: &str) -> AppResult<Shared
     Ok(link)
 }
 
-
 /// Extract the user-agent string from request headers.
 fn extract_user_agent(headers: &HeaderMap) -> Option<String> {
     headers
