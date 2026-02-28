@@ -108,8 +108,8 @@ fn build_report_input(
     let outlier_indices = identify_outliers(scores, OUTLIER_THRESHOLD);
     let outlier_ids: Vec<DbId> = outlier_indices.iter().map(|&i| i as DbId).collect();
 
-    let scores_json = serde_json::to_value(scores)
-        .map_err(|e| AppError::InternalError(e.to_string()))?;
+    let scores_json =
+        serde_json::to_value(scores).map_err(|e| AppError::InternalError(e.to_string()))?;
 
     Ok(CreateConsistencyReport {
         character_id,
@@ -237,21 +237,17 @@ pub async fn batch_generate(
     let mut errors = Vec::new();
 
     for (&character_id, scores) in &input.character_scores {
-        let create = match build_report_input(
-            character_id,
-            project_id,
-            scores,
-            input.report_type.clone(),
-        ) {
-            Ok(c) => c,
-            Err(e) => {
-                errors.push(BatchErrorEntry {
-                    character_id,
-                    error: e.to_string(),
-                });
-                continue;
-            }
-        };
+        let create =
+            match build_report_input(character_id, project_id, scores, input.report_type.clone()) {
+                Ok(c) => c,
+                Err(e) => {
+                    errors.push(BatchErrorEntry {
+                        character_id,
+                        error: e.to_string(),
+                    });
+                    continue;
+                }
+            };
 
         match ConsistencyReportRepo::create(&state.pool, &create).await {
             Ok(report) => {

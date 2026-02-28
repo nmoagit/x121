@@ -19,6 +19,7 @@ pub mod collaboration;
 pub mod comparison;
 pub mod config_management;
 pub mod consistency_report;
+pub mod contact_sheet;
 pub mod dashboard;
 pub mod delivery;
 pub mod downloads;
@@ -783,6 +784,7 @@ pub fn api_routes() -> Router<AppState> {
             .merge(prompt_management::character_prompt_override_router())
             .merge(poster_frame::character_poster_router())
             .merge(consistency_report::character_consistency_router())
+            .merge(contact_sheet::character_contact_sheet_router())
             .nest("/{character_id}/scene-settings", character_scene_overrides::router()))
         // Scene-scoped sub-resources (segments, review queue, generation PRD-24, QA PRD-49, resolution PRD-59, storyboard PRD-62, branching PRD-50).
         .nest("/scenes", scene::router()
@@ -956,6 +958,8 @@ pub fn api_routes() -> Router<AppState> {
         .nest("/report-schedules", production_report::report_schedule_router())
         // Character Consistency Reports (PRD-94).
         .nest("/consistency-reports", consistency_report::consistency_report_router())
+        // Contact Sheet Image delete (PRD-103).
+        .nest("/contact-sheet-images", contact_sheet::contact_sheet_image_router())
         // Bulk Character Onboarding Wizard (PRD-67).
         .nest("/onboarding-sessions", onboarding_wizard::router())
         // Legacy Data Import & Migration Toolkit (PRD-86).

@@ -20,6 +20,7 @@ use x121_db::repositories::{
 };
 
 use crate::error::{AppError, AppResult};
+use crate::handlers::consistency_report::ensure_character_exists;
 use crate::middleware::auth::AuthUser;
 use crate::response::DataResponse;
 use crate::state::AppState;
@@ -42,17 +43,6 @@ async fn ensure_scene_exists(pool: &PgPool, id: DbId) -> AppResult<()> {
         .await?
         .ok_or(AppError::Core(CoreError::NotFound {
             entity: "Scene",
-            id,
-        }))?;
-    Ok(())
-}
-
-/// Ensure a character exists (or 404).
-async fn ensure_character_exists(pool: &PgPool, id: DbId) -> AppResult<()> {
-    CharacterRepo::find_by_id(pool, id)
-        .await?
-        .ok_or(AppError::Core(CoreError::NotFound {
-            entity: "Character",
             id,
         }))?;
     Ok(())

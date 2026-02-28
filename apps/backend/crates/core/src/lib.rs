@@ -20,6 +20,7 @@ pub mod collaboration;
 pub mod command_palette;
 pub mod config_export;
 pub mod consistency_report;
+pub mod contact_sheet;
 pub mod delivery;
 pub mod diff;
 pub mod download_manager;

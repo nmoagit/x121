@@ -23,6 +23,7 @@ pub mod checkpoint;
 pub mod collaboration;
 pub mod comfyui;
 pub mod consistency_report;
+pub mod contact_sheet;
 pub mod dashboard;
 pub mod delivery_export;
 pub mod duplicate_check;

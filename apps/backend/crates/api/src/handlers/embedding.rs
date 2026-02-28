@@ -13,27 +13,14 @@ use axum::response::IntoResponse;
 use axum::Json;
 
 use x121_core::embedding::EmbeddingStatus;
-use x121_core::error::CoreError;
 use x121_core::types::DbId;
 use x121_db::models::embedding::{ExtractEmbeddingRequest, SelectFaceRequest};
-use x121_db::repositories::{CharacterRepo, EmbeddingRepo};
+use x121_db::repositories::EmbeddingRepo;
 
-use crate::error::{AppError, AppResult};
+use crate::error::AppResult;
+use crate::handlers::consistency_report::ensure_character_exists;
 use crate::response::DataResponse;
 use crate::state::AppState;
-
-/// Verify that a character exists, returning an error if not found.
-async fn ensure_character_exists(pool: &sqlx::PgPool, character_id: DbId) -> AppResult<()> {
-    CharacterRepo::find_by_id(pool, character_id)
-        .await?
-        .ok_or_else(|| {
-            AppError::Core(CoreError::NotFound {
-                entity: "Character",
-                id: character_id,
-            })
-        })?;
-    Ok(())
-}
 
 /// POST /api/v1/characters/{character_id}/extract-embedding
 ///

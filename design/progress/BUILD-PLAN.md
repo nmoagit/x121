@@ -398,7 +398,7 @@ This phase contains no PRD work — only structural setup.
 |---|-----|-------|--------|------------|
 | 89 | PRD-73 | Production Reporting & Data Export | L | PRD-12, PRD-41, PRD-42, PRD-49, PRD-61 | DONE |
 | 90 | PRD-94 | Character Consistency Report | M | PRD-49, PRD-68, PRD-76, PRD-91 | DONE |
-| 91 | PRD-103 | Character Face Contact Sheet | M | PRD-49, PRD-76, PRD-94, PRD-96 |
+| 91 | PRD-103 | Character Face Contact Sheet | M | PRD-49, PRD-76, PRD-94, PRD-96 | DONE |
 
 ### Track B — Delivery & Compliance
 

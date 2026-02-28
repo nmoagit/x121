@@ -94,10 +94,10 @@ pub async fn generate_contact_sheet(pool: &sqlx::PgPool, character_id: DbId) -> 
 ```
 
 **Acceptance Criteria:**
-- [ ] Extracts from poster frame (PRD-096) or best face frame (PRD-049)
-- [ ] Consistent padding ratio for uniform cells
-- [ ] Stored as lightweight images for fast display
-- [ ] Generates in <10 seconds per character
+- [x] Extracts from poster frame (PRD-096) or best face frame (PRD-049)
+- [x] Consistent padding ratio for uniform cells
+- [x] Stored as lightweight images for fast display
+- [x] Generates in <10 seconds per character
 
 ---
 
@@ -120,10 +120,10 @@ pub async fn export_batch_pdf(pool: &sqlx::PgPool, project_id: DbId) -> Result<S
 ```
 
 **Acceptance Criteria:**
-- [ ] Single PNG/PDF per character
-- [ ] Includes character name, project, generation date
-- [ ] Batch PDF: multi-page, one per character
-- [ ] Batch export in <2 minutes for 20 characters
+- [x] Single PNG/PDF per character
+- [x] Includes character name, project, generation date
+- [x] Batch PDF: multi-page, one per character
+- [x] Batch export in <2 minutes for 20 characters
 
 ---
 
@@ -151,18 +151,18 @@ export function ContactSheetGrid({ crops, outlierThreshold }: ContactSheetGridPr
 ```
 
 **Acceptance Criteria:**
-- [ ] Grid: scene types as columns, variants as rows
-- [ ] Labels for orientation
-- [ ] Outlier highlighting using PRD-094 thresholds
-- [ ] Click to navigate to scene review
+- [x] Grid: scene types as columns, variants as rows
+- [x] Labels for orientation
+- [x] Outlier highlighting using PRD-094 thresholds
+- [x] Click to navigate to scene review
 
 ### Task 4.3: Source Image Overlay
 **File:** `frontend/src/components/contact-sheet/SourceOverlay.tsx`
 
 **Acceptance Criteria:**
-- [ ] Toggle overlay showing source face on each cell
-- [ ] Semi-transparent overlay
-- [ ] Deviations visible through overlay
+- [x] Toggle overlay showing source face on each cell
+- [x] Semi-transparent overlay
+- [x] Deviations visible through overlay
 
 ---
 
@@ -172,10 +172,10 @@ export function ContactSheetGrid({ crops, outlierThreshold }: ContactSheetGridPr
 **File:** `tests/contact_sheet_test.rs`
 
 **Acceptance Criteria:**
-- [ ] Crops extracted with consistent sizing
-- [ ] Grid renders correctly
-- [ ] Outlier highlighting matches PRD-094 scores
-- [ ] Export produces valid PNG/PDF
+- [x] Crops extracted with consistent sizing
+- [x] Grid renders correctly
+- [x] Outlier highlighting matches PRD-094 scores
+- [x] Export produces valid PNG/PDF
 
 ---
 

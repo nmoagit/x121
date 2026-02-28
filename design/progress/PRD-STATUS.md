@@ -21,10 +21,10 @@ Source of truth: [`design/design.md`](../design.md)
 | Status | Count |
 |--------|-------|
 | backlog | 0 |
-| planning | 27 |
+| planning | 26 |
 | in-progress | 0 |
 | review | 0 |
-| done | 94 |
+| done | 95 |
 | blocked | 0 |
 | deferred | 0 |
 | maybe | 15 |
@@ -120,7 +120,7 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-94 | Character Consistency Report | — | `done` | 2026-02-28 | Migration, core (19 tests), models, repo, handlers, routes, frontend (heatmap, outliers, overview), 10 tests |
 | PRD-97 | Job Dependency Chains & Triggered Workflows | — | `planning` | — | |
 | PRD-100 | Scene Type Inheritance & Composition | — | `done` | 2026-02-28 | Migration (parent/depth on scene_types, overrides table, mixins tables), core inheritance resolver (field-level source tracking, depth validation, cascade detection), repos (MixinRepo, SceneTypeOverrideRepo), 13 API endpoints (children, effective-config, cascade-preview, overrides CRUD, mixins CRUD), frontend (OverrideIndicator, InheritanceTree, 15 hooks), 9 integration + 13 frontend tests. |
-| PRD-103 | Character Face Contact Sheet | — | `planning` | — | |
+| PRD-103 | Character Face Contact Sheet | — | `done` | 2026-02-28 | Migration, core (15 tests), models, repo, handlers, routes, frontend (grid, controls, page), 10 tests |
 | PRD-111 | Scene Catalog & Track Management | 1 | `done` | 2026-02-26 | 6 migrations, 4 models, 4 repos (three-level inheritance), 4 handlers, 12 frontend components, 13 tests. Replaces variant_applicability with normalized tracks. |
 | PRD-115 | Generation Strategy & Workflow Prompt Management | 1 | `done` | 2026-02-28 | Migration (6 table changes), 5 models, 5 repos, core prompt resolution engine (13 unit tests), 13 API handlers, 5 routers, 7 frontend components, 13 hooks, 22 frontend tests. |
 | PRD-107 | Character Readiness & State View | — | `done` | 2026-02-23 | Migrations 000030-000031, core readiness module (criteria evaluation, cache), API handlers (CRUD + batch evaluate), frontend feature (ReadinessStateBadge, CriteriaEditor, SummaryBar), 18+ tests. |
