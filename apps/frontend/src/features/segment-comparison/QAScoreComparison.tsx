@@ -7,7 +7,7 @@
 
 import { Badge } from "@/components/primitives";
 import { cn } from "@/lib/cn";
-import { qaMetricLabel } from "@/lib/qa-constants";
+import { formatDiff, formatScore, qaMetricLabel } from "@/lib/qa-constants";
 
 /* --------------------------------------------------------------------------
    Props
@@ -48,15 +48,6 @@ const TREND_LABEL: Record<OverallTrend, string> = {
   degraded: "Degraded",
   mixed: "Mixed",
 };
-
-function formatScore(score: number): string {
-  return score.toFixed(2);
-}
-
-function formatDiff(diff: number): string {
-  const sign = diff > 0 ? "+" : "";
-  return `${sign}${diff.toFixed(2)}`;
-}
 
 /* --------------------------------------------------------------------------
    Component

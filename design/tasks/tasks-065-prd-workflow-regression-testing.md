@@ -81,25 +81,25 @@ CREATE TRIGGER set_updated_at BEFORE UPDATE ON regression_results FOR EACH ROW E
 **File:** `src/services/regression_reference_service.rs`
 
 **Acceptance Criteria:**
-- [ ] Mark character + scene type as reference benchmark
-- [ ] Store baseline quality scores for comparison
+- [x] Mark character + scene type as reference benchmark
+- [x] Store baseline quality scores for comparison
 
 ### Task 2.2: Regression Run Orchestrator
 **File:** `src/services/regression_run_service.rs`
 
 **Acceptance Criteria:**
-- [ ] Trigger on workflow/LoRA update
-- [ ] Re-generate references at Draft resolution (PRD-059)
-- [ ] Same seeds and parameters as reference
-- [ ] Compare new vs. baseline scores
+- [x] Trigger on workflow/LoRA update
+- [x] Re-generate references at Draft resolution (PRD-059)
+- [x] Same seeds and parameters as reference
+- [x] Compare new vs. baseline scores
 
 ### Task 2.3: Comparison Engine
 **File:** `src/services/regression_comparison_service.rs`
 
 **Acceptance Criteria:**
-- [ ] SSIM, face similarity, motion, QA metrics compared
-- [ ] Verdict: improved, same, or degraded per reference
-- [ ] Configurable thresholds for pass/fail
+- [x] SSIM, face similarity, motion, QA metrics compared
+- [x] Verdict: improved, same, or degraded per reference
+- [x] Configurable thresholds for pass/fail
 
 ---
 
@@ -118,9 +118,9 @@ CREATE TRIGGER set_updated_at BEFORE UPDATE ON regression_results FOR EACH ROW E
 **File:** `frontend/src/components/regression/RegressionReport.tsx`
 
 **Acceptance Criteria:**
-- [ ] Per-reference: improved/same/degraded indicator
-- [ ] Side-by-side comparison via PRD-036
-- [ ] Rollback button on degraded results
+- [x] Per-reference: improved/same/degraded indicator
+- [x] Side-by-side comparison via PRD-036
+- [x] Rollback button on degraded results
 
 ---
 
@@ -130,9 +130,9 @@ CREATE TRIGGER set_updated_at BEFORE UPDATE ON regression_results FOR EACH ROW E
 **File:** `tests/regression_test.rs`
 
 **Acceptance Criteria:**
-- [ ] References correctly designate benchmarks
-- [ ] Re-generation at Draft tier works
-- [ ] Comparison correctly classifies changes
+- [x] References correctly designate benchmarks
+- [x] Re-generation at Draft tier works
+- [x] Comparison correctly classifies changes
 
 ---
 

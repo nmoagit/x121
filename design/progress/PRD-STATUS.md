@@ -21,10 +21,10 @@ Source of truth: [`design/design.md`](../design.md)
 | Status | Count |
 |--------|-------|
 | backlog | 0 |
-| planning | 30 |
+| planning | 29 |
 | in-progress | 0 |
 | review | 0 |
-| done | 91 |
+| done | 92 |
 | blocked | 0 |
 | deferred | 0 |
 | maybe | 15 |
@@ -112,7 +112,7 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-62 | Storyboard View & Scene Thumbnails | — | `done` | 2026-02-23 | Phase 6 Track C |
 | PRD-63 | Prompt Editor & Versioning | — | `done` | 2026-02-23 | Phase 7 Track A |
 | PRD-64 | Failure Pattern Tracking & Insights | — | `done` | 2026-02-23 | Phase 7 Track B |
-| PRD-65 | Workflow Regression Testing | — | `planning` | — | |
+| PRD-65 | Workflow Regression Testing | — | `done` | 2026-02-28 | Migration (3 tables), core verdict logic reusing segment_comparison (19 tests), 3 models, repo (14 methods), 8 API endpoints, frontend feature (ReferenceManager, RunHistoryPanel, RegressionReport, VerdictBadge, ScoreDiffDisplay), 17 frontend tests. DRY-460/462/463 fixed, DRY-461/464/468 watch. |
 | PRD-67 | Bulk Character Onboarding Wizard | — | `done` | 2026-02-23 | Migration 000027, core onboarding_wizard module (step validation), API handlers, frontend feature (onboarding-wizard). Updated v1.1 (2026-02-19): CSV/text upload, batch video generation. |
 | PRD-71 | Smart Auto-Retry | — | `done` | 2026-02-28 | Migration (retry_attempts table, 5 policy columns on scene_types), core module (jitter engine, best-of-N selector, retry policy evaluation, 11 tests), retry_attempt model/repo, 7 API endpoints (policy CRUD, attempt CRUD, select), frontend feature (RetryHistoryPanel, RetryPolicyEditor, AttemptRow, 15 tests). |
 | PRD-74 | Project Configuration Templates | — | `done` | 2026-02-23 | Phase 7 Track B |

@@ -40,15 +40,15 @@ pub fn compute_score_diffs(old_scores: &Value, new_scores: &Value) -> Value {
     Value::Object(diffs)
 }
 
-/// Determine if overall quality improved based on score diffs.
+/// Compute the average of all numeric values in a JSON score-diffs object.
 ///
-/// Computes the average of all numeric diff values and returns `true`
-/// if the average is strictly positive. Returns `false` for empty diffs
-/// or when the average is zero or negative.
-pub fn overall_quality_improved(score_diffs: &Value) -> bool {
+/// Returns `None` if the input is not an object, is empty, or contains no
+/// numeric values.  Used by [`overall_quality_improved`] and
+/// [`regression::classify_from_diffs`](crate::regression::classify_from_diffs).
+pub fn average_score_diffs(score_diffs: &Value) -> Option<f64> {
     let map = match score_diffs.as_object() {
         Some(m) if !m.is_empty() => m,
-        _ => return false,
+        _ => return None,
     };
 
     let (sum, count) = map.values().fold((0.0_f64, 0_usize), |(s, c), v| {
@@ -60,10 +60,19 @@ pub fn overall_quality_improved(score_diffs: &Value) -> bool {
     });
 
     if count == 0 {
-        return false;
+        return None;
     }
 
-    (sum / count as f64) > 0.0
+    Some(sum / count as f64)
+}
+
+/// Determine if overall quality improved based on score diffs.
+///
+/// Computes the average of all numeric diff values and returns `true`
+/// if the average is strictly positive. Returns `false` for empty diffs
+/// or when the average is zero or negative.
+pub fn overall_quality_improved(score_diffs: &Value) -> bool {
+    average_score_diffs(score_diffs).map_or(false, |avg| avg > 0.0)
 }
 
 // ---------------------------------------------------------------------------

@@ -20,3 +20,14 @@ export const QA_CHECK_TYPE_LABELS: Record<string, string> = {
 export function qaMetricLabel(metric: string): string {
   return QA_CHECK_TYPE_LABELS[metric] ?? metric;
 }
+
+/** Format a QA score to 2 decimal places (e.g. 0.85 -> "0.85"). */
+export function formatScore(score: number): string {
+  return score.toFixed(2);
+}
+
+/** Format a score diff with sign prefix (e.g. 0.05 -> "+0.05", -0.07 -> "-0.07"). */
+export function formatDiff(diff: number): string {
+  const sign = diff > 0 ? "+" : "";
+  return `${sign}${diff.toFixed(2)}`;
+}

@@ -383,7 +383,7 @@ This phase contains no PRD work — only structural setup.
 
 | # | PRD | Title | Effort | Depends On |
 |---|-----|-------|--------|------------|
-| 88 | PRD-65 | Workflow Regression Testing | L | PRD-23, PRD-27, PRD-36, PRD-49, PRD-59, PRD-63, PRD-08 |
+| 88 | PRD-65 | Workflow Regression Testing | L | PRD-23, PRD-27, PRD-36, PRD-49, PRD-59, PRD-63, PRD-08 | **DONE** 2026-02-28 |
 
 ---
 

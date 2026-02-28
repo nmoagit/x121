@@ -62,6 +62,7 @@ pub mod qa_status;
 pub mod quality_gate;
 pub mod readiness;
 pub mod reclamation;
+pub mod regression;
 pub mod resolution;
 pub mod restart_status;
 pub mod restitching;

@@ -74,6 +74,7 @@ pub mod quality_gates;
 pub mod queue;
 pub mod readiness;
 pub mod reclamation;
+pub mod regression;
 pub mod resolution;
 pub mod restitching;
 pub mod review_notes;

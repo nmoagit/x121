@@ -66,6 +66,7 @@ pub mod quality_gates;
 pub mod queue;
 pub mod readiness;
 pub mod reclamation;
+pub mod regression;
 pub mod resolution;
 pub mod restitching;
 pub mod review_notes;
@@ -898,6 +899,8 @@ pub fn api_routes() -> Router<AppState> {
         .nest("/production-runs", production_run::router())
         // Scene Preview & Quick Test (PRD-58).
         .nest("/test-shots", test_shot::test_shot_router())
+        // Workflow regression testing (PRD-65).
+        .nest("/regression", regression::regression_router())
         // Multi-Resolution Pipeline (PRD-59).
         .nest("/resolution-tiers", resolution::resolution_router())
         // Storyboard View & Scene Thumbnails (PRD-62).
