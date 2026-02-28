@@ -17,6 +17,7 @@ pub mod character_scene_overrides;
 pub mod checkpoints;
 pub mod collaboration;
 pub mod comparison;
+pub mod compliance;
 pub mod config_management;
 pub mod consistency_report;
 pub mod contact_sheet;
@@ -706,6 +707,12 @@ use crate::ws;
 /// /report-schedules/{id}                                          update, delete (PUT, DELETE, PRD-73)
 ///
 /// /consistency-reports/{id}                                        get report (GET, PRD-94)
+///
+/// /compliance-rules                                                list, create (GET, POST, PRD-102)
+/// /compliance-rules/{id}                                           get, update, delete (GET, PUT, DELETE, PRD-102)
+/// /scenes/{scene_id}/compliance-check                              run compliance check (POST, PRD-102)
+/// /scenes/{scene_id}/compliance-checks                             list checks (GET, PRD-102)
+/// /scenes/{scene_id}/compliance-summary                            check summary (GET, PRD-102)
 /// ```
 pub fn api_routes() -> Router<AppState> {
     Router::new()
@@ -796,7 +803,8 @@ pub fn api_routes() -> Router<AppState> {
             .merge(resolution::scene_resolution_router())
             .merge(storyboard::scene_storyboard_router())
             .merge(branching::scene_branch_router())
-            .merge(poster_frame::scene_poster_router()))
+            .merge(poster_frame::scene_poster_router())
+            .merge(compliance::compliance_check_router()))
         // Segment-scoped approval actions (approve, reject, flag) (PRD-35).
         // Segment-scoped review notes and tags (PRD-38).
         // Segment-scoped boundary frame selection (PRD-24).
@@ -984,4 +992,6 @@ pub fn api_routes() -> Router<AppState> {
         .nest("/metadata-templates", metadata_template::router())
         // Video spec requirements: CRUD (PRD-113).
         .nest("/video-specs", video_spec::router())
+        // Video Compliance Checker: rule management (PRD-102).
+        .nest("/compliance-rules", compliance::compliance_rule_router())
 }

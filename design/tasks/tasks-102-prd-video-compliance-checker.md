@@ -55,10 +55,10 @@ CREATE TRIGGER set_updated_at BEFORE UPDATE ON compliance_rules
 ```
 
 **Acceptance Criteria:**
-- [ ] Rules linked to output format profiles
-- [ ] Rule types cover all PRD requirements (resolution, codec, bitrate, etc.)
-- [ ] Tolerance supports percentage-based comparison
-- [ ] Severity distinguishes blocking errors from warnings
+- [x] Rules linked to output format profiles
+- [x] Rule types cover all PRD requirements (resolution, codec, bitrate, etc.)
+- [x] Tolerance supports percentage-based comparison
+- [x] Severity distinguishes blocking errors from warnings
 
 ### Task 1.2: Compliance Checks Table
 **File:** `migrations/YYYYMMDDHHMMSS_create_compliance_checks.sql`
@@ -89,9 +89,9 @@ CREATE TRIGGER set_updated_at BEFORE UPDATE ON compliance_checks
 ```
 
 **Acceptance Criteria:**
-- [ ] Summary counts for quick pass/fail overview
-- [ ] Detailed `results_json` contains per-file compliance data
-- [ ] `passed` boolean for simple gate checks
+- [x] Summary counts for quick pass/fail overview
+- [x] Detailed `results_json` contains per-file compliance data
+- [x] `passed` boolean for simple gate checks
 
 ### Task 1.3: Pre-Export Gate Configuration
 **File:** `migrations/YYYYMMDDHHMMSS_add_compliance_gate_to_projects.sql`
@@ -103,9 +103,9 @@ ALTER TABLE projects
 ```
 
 **Acceptance Criteria:**
-- [ ] Per-project configurable gate mode
-- [ ] Default is `warn` (show issues but allow export)
-- [ ] `strict` blocks export on any compliance failure
+- [x] Per-project configurable gate mode
+- [x] Default is `warn` (show issues but allow export)
+- [x] `strict` blocks export on any compliance failure
 
 ---
 
@@ -145,11 +145,11 @@ impl VideoFileAnalyzer {
 ```
 
 **Acceptance Criteria:**
-- [ ] Extracts: resolution, codec, container, bitrate, framerate, duration, pixel format
-- [ ] Detects audio track presence and properties
-- [ ] Detects truncated files (incomplete moov atom, missing EOF marker)
-- [ ] Detects corrupted headers
-- [ ] Analysis completes in <2 seconds per file
+- [x] Extracts: resolution, codec, container, bitrate, framerate, duration, pixel format
+- [x] Detects audio track presence and properties
+- [x] Detects truncated files (incomplete moov atom, missing EOF marker)
+- [x] Detects corrupted headers
+- [x] Analysis completes in <2 seconds per file
 
 ### Task 2.2: Compliance Rule Engine
 **File:** `src/services/compliance_rule_engine.rs`
@@ -174,11 +174,11 @@ pub struct ComplianceCheck {
 ```
 
 **Acceptance Criteria:**
-- [ ] Checks each rule against actual video metadata
-- [ ] Tolerance-based comparison for bitrate and duration
-- [ ] Exact match for codec, container, pixel format
-- [ ] Resolution comparison with tolerance (within 1% for scaling artifacts)
-- [ ] Returns structured result with specific deviation details
+- [x] Checks each rule against actual video metadata
+- [x] Tolerance-based comparison for bitrate and duration
+- [x] Exact match for codec, container, pixel format
+- [x] Resolution comparison with tolerance (within 1% for scaling artifacts)
+- [x] Returns structured result with specific deviation details
 
 ### Task 2.3: File Integrity Checker
 **File:** `src/services/file_integrity_checker.rs`
@@ -186,11 +186,11 @@ pub struct ComplianceCheck {
 Detect corrupted or incomplete video files.
 
 **Acceptance Criteria:**
-- [ ] Verify every video is playable to its last frame
-- [ ] Detect truncated files (common after interrupted generation)
-- [ ] Detect corrupted headers
-- [ ] Detect files claiming a duration longer than actual content
-- [ ] Uses FFprobe error output to detect issues
+- [x] Verify every video is playable to its last frame
+- [x] Detect truncated files (common after interrupted generation)
+- [x] Detect corrupted headers
+- [x] Detect files claiming a duration longer than actual content
+- [x] Uses FFprobe error output to detect issues
 
 ### Task 2.4: Naming Convention Validator
 **File:** `src/services/naming_validator.rs`
@@ -198,10 +198,10 @@ Detect corrupted or incomplete video files.
 Verify all filenames follow the PRD-01 naming convention.
 
 **Acceptance Criteria:**
-- [ ] Parse filename and verify prefix, content, suffix, index components
-- [ ] Flag misnamed files with suggested corrections
-- [ ] Check for missing prefix, incorrect scene type names, wrong index numbers
-- [ ] Returns specific correction suggestions
+- [x] Parse filename and verify prefix, content, suffix, index components
+- [x] Flag misnamed files with suggested corrections
+- [x] Check for missing prefix, incorrect scene type names, wrong index numbers
+- [x] Returns specific correction suggestions
 
 ### Task 2.5: Completeness Checker
 **File:** `src/services/completeness_checker.rs`
@@ -209,10 +209,10 @@ Verify all filenames follow the PRD-01 naming convention.
 Cross-reference delivery manifest against actual files.
 
 **Acceptance Criteria:**
-- [ ] Verifies all expected scenes present for each character
-- [ ] Verifies all required files (metadata.json, clothed.png, topless.png)
-- [ ] Reports missing files with expected paths
-- [ ] Integrates with PRD-39 delivery validation
+- [x] Verifies all expected scenes present for each character
+- [x] Verifies all required files (metadata.json, clothed.png, topless.png)
+- [x] Reports missing files with expected paths
+- [x] Integrates with PRD-39 delivery validation
 
 ### Task 2.6: Compliance Report Generator
 **File:** `src/services/compliance_report.rs`
@@ -241,10 +241,10 @@ pub struct ComplianceIssue {
 ```
 
 **Acceptance Criteria:**
-- [ ] Pass/fail per character and per file
-- [ ] Summary: "42 of 44 files pass. 2 issues: [specific problems]"
-- [ ] Fix suggestions where possible (re-transcode, re-name)
-- [ ] Exportable as PDF/JSON
+- [x] Pass/fail per character and per file
+- [x] Summary: "42 of 44 files pass. 2 issues: [specific problems]"
+- [x] Fix suggestions where possible (re-transcode, re-name)
+- [x] Exportable as PDF/JSON
 
 ### Task 2.7: Pre-Export Gate Service
 **File:** `src/services/compliance_gate.rs`
@@ -252,11 +252,11 @@ pub struct ComplianceIssue {
 Optionally block export on compliance failure.
 
 **Acceptance Criteria:**
-- [ ] Reads `compliance_gate_mode` from project settings
-- [ ] `strict`: block export and return compliance report
-- [ ] `warn`: allow export but include warnings in response
-- [ ] `disabled`: skip compliance check entirely
-- [ ] Admin override with audit log entry
+- [x] Reads `compliance_gate_mode` from project settings
+- [x] `strict`: block export and return compliance report
+- [x] `warn`: allow export but include warnings in response
+- [x] `disabled`: skip compliance check entirely
+- [x] Admin override with audit log entry
 
 ---
 
@@ -270,10 +270,10 @@ POST /projects/:id/compliance-check
 ```
 
 **Acceptance Criteria:**
-- [ ] Triggers full compliance analysis of project deliverables
-- [ ] Async operation: returns check ID for polling
-- [ ] Accepts optional profile_id to check against specific profile
-- [ ] Stores results in `compliance_checks` table
+- [x] Triggers full compliance analysis of project deliverables
+- [x] Async operation: returns check ID for polling
+- [x] Accepts optional profile_id to check against specific profile
+- [x] Stores results in `compliance_checks` table
 
 ### Task 3.2: Compliance Report Route
 **File:** `src/routes/compliance.rs`
@@ -285,9 +285,9 @@ GET /projects/:id/compliance-report/json
 ```
 
 **Acceptance Criteria:**
-- [ ] Returns latest compliance check results
-- [ ] PDF export with formatted pass/fail indicators
-- [ ] JSON export for programmatic consumption
+- [x] Returns latest compliance check results
+- [x] PDF export with formatted pass/fail indicators
+- [x] JSON export for programmatic consumption
 
 ### Task 3.3: Compliance Fix Route
 **File:** `src/routes/compliance.rs`
@@ -297,9 +297,9 @@ POST /projects/:id/compliance-fix/:file_id
 ```
 
 **Acceptance Criteria:**
-- [ ] Triggers auto-fix for a specific file (re-transcode, re-name)
-- [ ] Only available for fixable issues
-- [ ] Returns job ID for tracking the fix operation
+- [x] Triggers auto-fix for a specific file (re-transcode, re-name)
+- [x] Only available for fixable issues
+- [x] Returns job ID for tracking the fix operation
 
 ### Task 3.4: Compliance Rules CRUD
 **File:** `src/routes/compliance.rs`
@@ -312,8 +312,8 @@ DELETE /compliance-rules/:id
 ```
 
 **Acceptance Criteria:**
-- [ ] CRUD for compliance rules linked to output format profiles
-- [ ] Auto-populate default rules when a profile is created
+- [x] CRUD for compliance rules linked to output format profiles
+- [x] Auto-populate default rules when a profile is created
 
 ---
 
@@ -323,36 +323,36 @@ DELETE /compliance-rules/:id
 **File:** `frontend/src/components/compliance/ComplianceReport.tsx`
 
 **Acceptance Criteria:**
-- [ ] Per-character accordion with per-file pass/fail indicators
-- [ ] Green/red icons for quick scanning
-- [ ] Expandable details per file showing specific deviations
-- [ ] Fix suggestions with action buttons (re-transcode, view file)
-- [ ] Summary banner: "42/44 pass" with overall status
+- [x] Per-character accordion with per-file pass/fail indicators
+- [x] Green/red icons for quick scanning
+- [x] Expandable details per file showing specific deviations
+- [x] Fix suggestions with action buttons (re-transcode, view file)
+- [x] Summary banner: "42/44 pass" with overall status
 
 ### Task 4.2: Compliance Check Trigger
 **File:** `frontend/src/components/compliance/ComplianceCheck.tsx`
 
 **Acceptance Criteria:**
-- [ ] "Run Compliance Check" button on project delivery page
-- [ ] Progress indicator during analysis
-- [ ] Results displayed inline when complete
-- [ ] Export buttons for PDF/JSON
+- [x] "Run Compliance Check" button on project delivery page
+- [x] Progress indicator during analysis
+- [x] Results displayed inline when complete
+- [x] Export buttons for PDF/JSON
 
 ### Task 4.3: Compliance Gate Settings
 **File:** `frontend/src/components/compliance/GateSettings.tsx`
 
 **Acceptance Criteria:**
-- [ ] Toggle between strict, warn, and disabled modes
-- [ ] Clear explanation of each mode's behavior
-- [ ] Admin-only for changing the gate mode
+- [x] Toggle between strict, warn, and disabled modes
+- [x] Clear explanation of each mode's behavior
+- [x] Admin-only for changing the gate mode
 
 ### Task 4.4: Compliance Rules Editor
 **File:** `frontend/src/components/compliance/RulesEditor.tsx`
 
 **Acceptance Criteria:**
-- [ ] List rules for a selected output format profile
-- [ ] Add/edit/delete rules with severity and tolerance
-- [ ] Preview: shows what the rule would check
+- [x] List rules for a selected output format profile
+- [x] Add/edit/delete rules with severity and tolerance
+- [x] Preview: shows what the rule would check
 
 ---
 
@@ -362,29 +362,29 @@ DELETE /compliance-rules/:id
 **File:** `tests/video_analyzer_test.rs`
 
 **Acceptance Criteria:**
-- [ ] Test metadata extraction from valid video files
-- [ ] Test truncated file detection
-- [ ] Test corrupted header detection
-- [ ] Test duration mismatch detection
+- [x] Test metadata extraction from valid video files
+- [x] Test truncated file detection
+- [x] Test corrupted header detection
+- [x] Test duration mismatch detection
 
 ### Task 5.2: Rule Engine Tests
 **File:** `tests/compliance_rule_engine_test.rs`
 
 **Acceptance Criteria:**
-- [ ] Test exact match rules (codec, container)
-- [ ] Test tolerance-based rules (bitrate within 10%)
-- [ ] Test resolution tolerance
-- [ ] Test duration range compliance
-- [ ] Test audio presence/absence validation
+- [x] Test exact match rules (codec, container)
+- [x] Test tolerance-based rules (bitrate within 10%)
+- [x] Test resolution tolerance
+- [x] Test duration range compliance
+- [x] Test audio presence/absence validation
 
 ### Task 5.3: End-to-End Compliance Tests
 **File:** `tests/compliance_e2e_test.rs`
 
 **Acceptance Criteria:**
-- [ ] Test full compliance check on a project with known issues
-- [ ] Test pre-export gate blocks export in strict mode
-- [ ] Test pre-export gate allows export in warn mode
-- [ ] Test compliance report generation (PDF and JSON)
+- [x] Test full compliance check on a project with known issues
+- [x] Test pre-export gate blocks export in strict mode
+- [x] Test pre-export gate allows export in warn mode
+- [x] Test compliance report generation (PDF and JSON)
 
 ---
 

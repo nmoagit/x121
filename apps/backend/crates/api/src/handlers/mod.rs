@@ -25,6 +25,7 @@ pub mod character_scene_overrides;
 pub mod checkpoints;
 pub mod collaboration;
 pub mod comparison;
+pub mod compliance;
 pub mod config_export;
 pub mod consistency_report;
 pub mod contact_sheet;

@@ -18,6 +18,7 @@ pub mod character_library;
 pub mod checkpointing;
 pub mod collaboration;
 pub mod command_palette;
+pub mod compliance;
 pub mod config_export;
 pub mod consistency_report;
 pub mod contact_sheet;

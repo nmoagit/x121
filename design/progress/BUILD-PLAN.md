@@ -404,7 +404,7 @@ This phase contains no PRD work — only structural setup.
 
 | # | PRD | Title | Effort | Depends On |
 |---|-----|-------|--------|------------|
-| 92 | PRD-102 | Video Compliance Checker | M | PRD-01, PRD-23, PRD-39, PRD-59 |
+| 92 | PRD-102 | Video Compliance Checker | M | PRD-01, PRD-23, PRD-39, PRD-59 | DONE |
 | 93 | PRD-40 | VFX Sidecar & Dataset Export | M | PRD-39, PRD-13 |
 | 94 | PRD-84 | External Review / Shareable Preview Links | M | PRD-38, PRD-39, PRD-83 |
 

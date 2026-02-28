@@ -22,6 +22,7 @@ pub mod character_scene_prompt_override;
 pub mod checkpoint;
 pub mod collaboration;
 pub mod comfyui;
+pub mod compliance;
 pub mod consistency_report;
 pub mod contact_sheet;
 pub mod dashboard;
