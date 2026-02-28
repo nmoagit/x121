@@ -374,7 +374,7 @@ This phase contains no PRD work — only structural setup.
 
 | # | PRD | Title | Effort | Depends On |
 |---|-----|-------|--------|------------|
-| 84 | PRD-68 | Cross-Character Scene Comparison | M | PRD-23, PRD-35, PRD-36, PRD-57, PRD-62 |
+| 84 | PRD-68 | Cross-Character Scene Comparison | M | PRD-23, PRD-35, PRD-36, PRD-57, PRD-62 | **DONE** 2026-02-28 |
 | 85 | PRD-96 | Poster Frame & Thumbnail Selection | M | PRD-49, PRD-60, PRD-83 |
 | 86 | PRD-101 | Segment Regeneration Comparison | M | PRD-35, PRD-49, PRD-50, PRD-83 |
 | 87 | PRD-82 | Content Sensitivity Controls | M | PRD-29, PRD-35, PRD-39, PRD-52 |

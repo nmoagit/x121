@@ -24,6 +24,7 @@ pub mod character_metadata;
 pub mod character_scene_overrides;
 pub mod checkpoints;
 pub mod collaboration;
+pub mod comparison;
 pub mod config_export;
 pub mod dashboard;
 pub mod delivery;

@@ -16,6 +16,7 @@ pub mod character_metadata;
 pub mod character_scene_overrides;
 pub mod checkpoints;
 pub mod collaboration;
+pub mod comparison;
 pub mod config_management;
 pub mod dashboard;
 pub mod delivery;
@@ -189,6 +190,8 @@ use crate::ws;
 /// /projects/{project_id}/characters/metadata             all metadata (PRD-66)
 /// /projects/{project_id}/characters/metadata/completeness project completeness (PRD-66)
 /// /projects/{project_id}/characters/metadata/csv         export/import CSV (PRD-66)
+/// /projects/{project_id}/scene-comparison            scene comparison gallery (GET, PRD-68)
+/// /projects/{project_id}/characters/{id}/all-scenes character all-scenes view (GET, PRD-68)
 /// /projects/{project_id}/scene-types               list, create
 /// /projects/{project_id}/scene-types/{id}          get, update, delete
 /// /projects/{project_id}/qa-thresholds             list, upsert (GET, POST, PRD-49)
@@ -728,6 +731,7 @@ pub fn api_routes() -> Router<AppState> {
             .merge(temporal::project_temporal_router())
             .merge(project_config::project_export_router())
             .merge(validation_dashboard::router())
+            .merge(comparison::router())
             .nest("/{project_id}/characters", character_metadata::project_router())
             .nest("/{project_id}/ingest", character_ingest::router())
             .nest("/{project_id}/scene-settings", project_scene_settings::router()))
