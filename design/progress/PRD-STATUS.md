@@ -21,14 +21,14 @@ Source of truth: [`design/design.md`](../design.md)
 | Status | Count |
 |--------|-------|
 | backlog | 0 |
-| planning | 7 |
+| planning | 1 |
 | in-progress | 0 |
 | review | 0 |
-| done | 114 |
+| done | 120 |
 | blocked | 0 |
 | deferred | 0 |
 | maybe | 15 |
-| **Total** | **135** |
+| **Total** | **136** |
 
 ---
 
@@ -125,7 +125,7 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-115 | Generation Strategy & Workflow Prompt Management | 1 | `done` | 2026-02-28 | Migration (6 table changes), 5 models, 5 repos, core prompt resolution engine (13 unit tests), 13 API handlers, 5 routers, 7 frontend components, 13 hooks, 22 frontend tests. |
 | PRD-107 | Character Readiness & State View | — | `done` | 2026-02-23 | Migrations 000030-000031, core readiness module (criteria evaluation, cache), API handlers (CRUD + batch evaluate), frontend feature (ReadinessStateBadge, CriteriaEditor, SummaryBar), 18+ tests. |
 | PRD-108 | Character Settings Dashboard | — | `done` | 2026-02-23 | Core character_dashboard module (settings merge, label builders), API handlers (get_dashboard, patch_settings), frontend feature (CharacterDashboard, MetadataSummarySection, PipelineSettingsEditor), 27 tests. |
-| PRD-120 | Scene & Workflow Naming Hierarchy (Generation Script) | — | `planning` | — | Python generation script only. Three-level hierarchy (WORKFLOWS, SCENE_TYPES, derived SCENES), display names, dual-level filtering, --list-scenes flag. Independent of web app. |
+| PRD-120 | Scene & Workflow Naming Hierarchy (Generation Script) | — | `done` | 2026-03-01 | Python generation script only. Three-level hierarchy (WORKFLOWS, SCENE_TYPES, derived SCENES), display names in all output, dual-level filtering (type + scene), --list-scenes flag, 26 unit tests. Independent of web app. |
 
 ## Part 4: Design System & UX Patterns
 
