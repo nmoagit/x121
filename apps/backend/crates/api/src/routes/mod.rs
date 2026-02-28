@@ -67,6 +67,7 @@ pub mod review_notes;
 pub mod scene;
 pub mod scene_catalog;
 pub mod scene_type;
+pub mod scene_type_inheritance;
 pub mod scripts;
 pub mod search;
 pub mod status;
@@ -270,6 +271,16 @@ use crate::ws;
 /// /scene-types/{id}/preview-prompt/{character_id}  preview prompt (GET, PRD-23)
 /// /scene-types/matrix                              generate matrix (POST, PRD-23)
 /// /scene-types/validate                            validate config (POST, PRD-23)
+/// /scene-types/{id}/children                       create child (POST), list children (GET, PRD-100)
+/// /scene-types/{id}/effective-config               resolved config (GET, PRD-100)
+/// /scene-types/{id}/cascade-preview/{field}        cascade preview (GET, PRD-100)
+/// /scene-types/{id}/overrides                      list (GET), upsert (PUT, PRD-100)
+/// /scene-types/{id}/overrides/{field}              delete override (DELETE, PRD-100)
+/// /scene-types/{id}/mixins                         list (GET), apply (POST, PRD-100)
+/// /scene-types/{id}/mixins/{mixin_id}              remove mixin (DELETE, PRD-100)
+///
+/// /mixins                                          list (GET), create (POST, PRD-100)
+/// /mixins/{id}                                     get (GET), update (PUT), delete (DELETE, PRD-100)
 ///
 /// /trash                                           list (?type=entity_type)
 /// /trash/purge                                     purge all (DELETE)
@@ -739,9 +750,12 @@ pub fn api_routes() -> Router<AppState> {
         .nest("/rejection-categories", approval::rejection_categories_router())
         // Review tags for collaborative review (PRD-38).
         .nest("/review-tags", review_notes::review_tags_router())
-        // Studio-level scene types + prompt versioning (PRD-63).
+        // Studio-level scene types + prompt versioning (PRD-63) + inheritance (PRD-100).
         .nest("/scene-types", scene_type::studio_router()
-            .merge(prompt_editor::scene_type_prompt_router()))
+            .merge(prompt_editor::scene_type_prompt_router())
+            .merge(scene_type_inheritance::inheritance_router()))
+        // Mixin CRUD (PRD-100).
+        .nest("/mixins", scene_type_inheritance::mixin_router())
         // Scene catalog & tracks (PRD-111).
         .nest("/scene-catalog", scene_catalog::router())
         .nest("/tracks", track::router())

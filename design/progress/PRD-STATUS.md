@@ -21,10 +21,10 @@ Source of truth: [`design/design.md`](../design.md)
 | Status | Count |
 |--------|-------|
 | backlog | 0 |
-| planning | 37 |
+| planning | 36 |
 | in-progress | 0 |
 | review | 0 |
-| done | 84 |
+| done | 85 |
 | blocked | 0 |
 | deferred | 0 |
 | maybe | 15 |
@@ -119,7 +119,7 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-91 | Custom QA Rulesets per Scene Type | — | `planning` | — | |
 | PRD-94 | Character Consistency Report | — | `planning` | — | |
 | PRD-97 | Job Dependency Chains & Triggered Workflows | — | `planning` | — | |
-| PRD-100 | Scene Type Inheritance & Composition | — | `planning` | — | |
+| PRD-100 | Scene Type Inheritance & Composition | — | `done` | 2026-02-28 | Migration (parent/depth on scene_types, overrides table, mixins tables), core inheritance resolver (field-level source tracking, depth validation, cascade detection), repos (MixinRepo, SceneTypeOverrideRepo), 13 API endpoints (children, effective-config, cascade-preview, overrides CRUD, mixins CRUD), frontend (OverrideIndicator, InheritanceTree, 15 hooks), 9 integration + 13 frontend tests. |
 | PRD-103 | Character Face Contact Sheet | — | `planning` | — | |
 | PRD-111 | Scene Catalog & Track Management | 1 | `done` | 2026-02-26 | 6 migrations, 4 models, 4 repos (three-level inheritance), 4 handlers, 12 frontend components, 13 tests. Replaces variant_applicability with normalized tracks. |
 | PRD-115 | Generation Strategy & Workflow Prompt Management | 1 | `planning` | — | High priority. Generation strategy selection (platform vs workflow-managed), prompt node mapping, character+scene additive fragments, prompt fragment library, in-app prompt editing. Deps: PRD-23, PRD-24, PRD-63, PRD-75 (all done). |

@@ -31,6 +31,8 @@ pub struct SceneType {
     pub sort_order: i32,
     pub is_active: bool,
     pub is_studio_level: bool,
+    pub parent_scene_type_id: Option<DbId>,
+    pub depth: i32,
     pub deleted_at: Option<Timestamp>,
     pub created_at: Timestamp,
     pub updated_at: Timestamp,
@@ -61,6 +63,7 @@ pub struct CreateSceneType {
     pub sort_order: Option<i32>,
     pub is_active: Option<bool>,
     pub is_studio_level: Option<bool>,
+    pub parent_scene_type_id: Option<DbId>,
 }
 
 /// DTO for updating an existing scene type. All fields are optional.
@@ -86,6 +89,8 @@ pub struct UpdateSceneType {
     pub sort_order: Option<i32>,
     pub is_active: Option<bool>,
     pub is_studio_level: Option<bool>,
+    pub parent_scene_type_id: Option<DbId>,
+    pub depth: Option<i32>,
 }
 
 /// Query params for prompt preview endpoint.

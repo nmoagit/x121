@@ -12,7 +12,8 @@ const COLUMNS: &str = "id, project_id, name, status_id, workflow_json, lora_conf
     prompt_continuation_clip, negative_prompt_continuation_clip, \
     target_duration_secs, segment_duration_secs, duration_tolerance_secs, \
     transition_segment_index, generation_params, \
-    sort_order, is_active, is_studio_level, deleted_at, created_at, updated_at";
+    sort_order, is_active, is_studio_level, parent_scene_type_id, depth, \
+    deleted_at, created_at, updated_at";
 
 /// Provides CRUD operations for scene types.
 pub struct SceneTypeRepo;
@@ -22,6 +23,7 @@ impl SceneTypeRepo {
     ///
     /// If `status_id` is `None`, defaults to 1 (Draft).
     /// If `is_studio_level` is `None`, defaults to `false`.
+    /// `depth` is auto-calculated from the parent when `parent_scene_type_id` is set.
     pub async fn create(pool: &PgPool, input: &CreateSceneType) -> Result<SceneType, sqlx::Error> {
         let query = format!(
             "INSERT INTO scene_types
@@ -32,12 +34,14 @@ impl SceneTypeRepo {
                  target_duration_secs, segment_duration_secs,
                  duration_tolerance_secs,
                  transition_segment_index,
-                 generation_params, sort_order, is_active, is_studio_level)
+                 generation_params, sort_order, is_active, is_studio_level,
+                 parent_scene_type_id)
              VALUES ($1, $2, COALESCE($3, 1), $4, $5, $6, $7, $8, $9,
                      $10, $11, $12, $13, $14, $15,
                      COALESCE($16, 2),
                      $17,
-                     $18, COALESCE($19, 0), COALESCE($20, true), COALESCE($21, false))
+                     $18, COALESCE($19, 0), COALESCE($20, true), COALESCE($21, false),
+                     $22)
              RETURNING {COLUMNS}"
         );
         sqlx::query_as::<_, SceneType>(&query)
@@ -62,6 +66,7 @@ impl SceneTypeRepo {
             .bind(input.sort_order)
             .bind(input.is_active)
             .bind(input.is_studio_level)
+            .bind(input.parent_scene_type_id)
             .fetch_one(pool)
             .await
     }
@@ -133,7 +138,9 @@ impl SceneTypeRepo {
                 generation_params = COALESCE($18, generation_params),
                 sort_order = COALESCE($19, sort_order),
                 is_active = COALESCE($20, is_active),
-                is_studio_level = COALESCE($21, is_studio_level)
+                is_studio_level = COALESCE($21, is_studio_level),
+                parent_scene_type_id = COALESCE($22, parent_scene_type_id),
+                depth = COALESCE($23, depth)
              WHERE id = $1 AND deleted_at IS NULL
              RETURNING {COLUMNS}"
         );
@@ -159,6 +166,8 @@ impl SceneTypeRepo {
             .bind(input.sort_order)
             .bind(input.is_active)
             .bind(input.is_studio_level)
+            .bind(input.parent_scene_type_id)
+            .bind(input.depth)
             .fetch_optional(pool)
             .await
     }
@@ -190,6 +199,51 @@ impl SceneTypeRepo {
             .bind(ids)
             .fetch_all(pool)
             .await
+    }
+
+    /// List direct children of a scene type, ordered by name. Excludes soft-deleted rows.
+    pub async fn list_children(
+        pool: &PgPool,
+        parent_id: DbId,
+    ) -> Result<Vec<SceneType>, sqlx::Error> {
+        let query = format!(
+            "SELECT {COLUMNS} FROM scene_types \
+             WHERE parent_scene_type_id = $1 AND deleted_at IS NULL \
+             ORDER BY name"
+        );
+        sqlx::query_as::<_, SceneType>(&query)
+            .bind(parent_id)
+            .fetch_all(pool)
+            .await
+    }
+
+    /// List IDs of direct children of a scene type. Excludes soft-deleted rows.
+    pub async fn list_children_ids(
+        pool: &PgPool,
+        parent_id: DbId,
+    ) -> Result<Vec<DbId>, sqlx::Error> {
+        let rows: Vec<(DbId,)> = sqlx::query_as(
+            "SELECT id FROM scene_types \
+             WHERE parent_scene_type_id = $1 AND deleted_at IS NULL",
+        )
+        .bind(parent_id)
+        .fetch_all(pool)
+        .await?;
+        Ok(rows.into_iter().map(|(id,)| id).collect())
+    }
+
+    /// Update only the depth column for a scene type.
+    pub async fn update_depth(
+        pool: &PgPool,
+        id: DbId,
+        depth: i32,
+    ) -> Result<(), sqlx::Error> {
+        sqlx::query("UPDATE scene_types SET depth = $1 WHERE id = $2")
+            .bind(depth)
+            .bind(id)
+            .execute(pool)
+            .await?;
+        Ok(())
     }
 
     /// Soft-delete a scene type by ID. Returns `true` if a row was marked deleted.

@@ -64,6 +64,7 @@ pub mod restitching;
 pub mod review;
 pub mod roles;
 pub mod scene_type_config;
+pub mod scene_type_inheritance;
 pub mod scheduling;
 pub mod script_types;
 pub mod scripting;

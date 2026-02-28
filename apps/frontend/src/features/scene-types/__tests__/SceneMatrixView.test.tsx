@@ -35,6 +35,8 @@ const MOCK_SCENE_TYPE: SceneType = {
   deleted_at: null,
   created_at: "2026-02-21T00:00:00Z",
   updated_at: "2026-02-21T00:00:00Z",
+  parent_scene_type_id: null,
+  depth: 0,
 };
 
 const MOCK_CHARACTERS = [

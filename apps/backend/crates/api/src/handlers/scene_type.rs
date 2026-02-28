@@ -17,6 +17,7 @@ use x121_db::models::scene_type::{
 use x121_db::repositories::{CharacterRepo, SceneTypeRepo};
 
 use crate::error::{AppError, AppResult};
+use crate::handlers::scene_type_inheritance::ensure_scene_type_exists;
 use crate::response::DataResponse;
 use crate::state::AppState;
 
@@ -121,12 +122,7 @@ pub async fn delete(State(state): State<AppState>, Path(id): Path<DbId>) -> AppR
 // ---------------------------------------------------------------------------
 
 async fn get_by_id_inner(state: &AppState, id: DbId) -> AppResult<Json<SceneType>> {
-    let scene_type = SceneTypeRepo::find_by_id(&state.pool, id)
-        .await?
-        .ok_or(AppError::Core(CoreError::NotFound {
-            entity: "SceneType",
-            id,
-        }))?;
+    let scene_type = ensure_scene_type_exists(&state.pool, id).await?;
     Ok(Json(scene_type))
 }
 
@@ -169,12 +165,7 @@ pub async fn preview_prompt(
     use x121_core::scene_type_config::{self, ClipPosition, ResolvedPrompt};
 
     // 1. Load scene type
-    let scene_type = SceneTypeRepo::find_by_id(&state.pool, scene_type_id)
-        .await?
-        .ok_or(AppError::Core(CoreError::NotFound {
-            entity: "SceneType",
-            id: scene_type_id,
-        }))?;
+    let scene_type = ensure_scene_type_exists(&state.pool, scene_type_id).await?;
 
     // 2. Load character
     let character = CharacterRepo::find_by_id(&state.pool, character_id)

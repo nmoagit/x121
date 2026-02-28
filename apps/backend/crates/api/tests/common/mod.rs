@@ -14,6 +14,7 @@ use tower::ServiceExt;
 use x121_api::auth::jwt::JwtConfig;
 use x121_api::auth::password::hash_password;
 use x121_api::config::ServerConfig;
+use x121_api::engine::health_aggregator::HealthAggregator;
 use x121_api::router::build_app_router;
 use x121_api::scripting::orchestrator::ScriptOrchestrator;
 use x121_api::state::AppState;
@@ -66,6 +67,11 @@ async fn build_test_app_with(
     let comfyui_manager = x121_comfyui::manager::ComfyUIManager::start(pool.clone()).await;
 
     let event_bus = Arc::new(x121_events::EventBus::default());
+    let health_aggregator = Arc::new(HealthAggregator::new());
+    let settings_service = Arc::new(x121_core::settings::SettingsService::new(
+        std::time::Duration::from_secs(60),
+    ));
+    let activity_broadcaster = Arc::new(x121_events::ActivityLogBroadcaster::default());
 
     let state = AppState {
         pool,
@@ -74,6 +80,9 @@ async fn build_test_app_with(
         comfyui_manager,
         event_bus,
         script_orchestrator,
+        health_aggregator,
+        settings_service,
+        activity_broadcaster,
     };
 
     build_app_router(state, &config)
