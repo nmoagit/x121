@@ -137,6 +137,54 @@ async fn main() {
     ));
     tracing::info!("Settings service initialized (60s cache TTL)");
 
+    // --- Cloud GPU provider registry (PRD-114) ---
+    let cloud_registry = Arc::new(x121_cloud::registry::ProviderRegistry::new());
+    // Load active providers from DB and register runtime instances.
+    {
+        if let Ok(providers) = x121_db::repositories::CloudProviderRepo::list_active(&pool).await {
+            if let Ok(master_hex) = std::env::var("CLOUD_ENCRYPTION_KEY") {
+                if let Ok(master_key) = x121_core::crypto::parse_master_key(&master_hex) {
+                    for p in &providers {
+                        if let Ok(api_key) = x121_core::crypto::decrypt_api_key(
+                            &p.api_key_encrypted,
+                            &p.api_key_nonce,
+                            &master_key,
+                        ) {
+                            let runtime: Arc<dyn x121_core::cloud::CloudGpuProvider> =
+                                match p.provider_type.as_str() {
+                                    "runpod" => Arc::new(x121_cloud::runpod::RunPodProvider::new(
+                                        api_key,
+                                        p.base_url.clone(),
+                                    )),
+                                    _ => continue,
+                                };
+                            cloud_registry.register(p.id, runtime).await;
+                        }
+                    }
+                    tracing::info!(count = providers.len(), "Cloud GPU providers loaded");
+                }
+            }
+        }
+    }
+
+    // Spawn cloud background services (PRD-114).
+    let _scaling_handle = x121_cloud::services::scaling::spawn_scaling_service(
+        pool.clone(),
+        Arc::clone(&cloud_registry),
+        None,
+    );
+    let _monitoring_handle = x121_cloud::services::monitoring::spawn_monitoring_service(
+        pool.clone(),
+        Arc::clone(&cloud_registry),
+        None,
+    );
+    let _reconciliation_handle = x121_cloud::services::reconciliation::spawn_reconciliation_service(
+        pool.clone(),
+        Arc::clone(&cloud_registry),
+        None,
+    );
+    tracing::info!("Cloud GPU services started (scaling, monitoring, reconciliation)");
+
     // --- App state ---
     let state = AppState {
         pool,
@@ -148,6 +196,7 @@ async fn main() {
         health_aggregator,
         settings_service,
         activity_broadcaster: Arc::clone(&activity_broadcaster),
+        cloud_registry,
     };
 
     // --- Router ---

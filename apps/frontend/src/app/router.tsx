@@ -488,6 +488,16 @@ const adminThemesRoute = createRoute({
   ),
 });
 
+const adminCloudGpusRoute = createRoute({
+  getParentRoute: () => adminLayoutRoute,
+  path: "/admin/cloud-gpus",
+  component: lazyRouteComponent(() =>
+    import("@/features/admin/cloud-gpus/CloudGpuDashboard").then((m) => ({
+      default: m.CloudGpuDashboard,
+    })),
+  ),
+});
+
 /* --------------------------------------------------------------------------
    Settings routes
    -------------------------------------------------------------------------- */
@@ -598,6 +608,7 @@ export const routeTree = rootRoute.addChildren([
       adminReadinessRoute,
       adminSettingsRoute,
       adminThemesRoute,
+      adminCloudGpusRoute,
     ]),
 
     settingsLayoutRoute.addChildren([shortcutsRoute, wikiRoute]),

@@ -226,6 +226,29 @@ define_status_enum! {
     }
 }
 
+define_status_enum! {
+    /// Cloud GPU provider availability status (PRD-114).
+    CloudProviderStatus {
+        Active = 1,
+        Disabled = 2,
+        Error = 3,
+    }
+}
+
+define_status_enum! {
+    /// Cloud GPU instance lifecycle status (PRD-114).
+    CloudInstanceStatus {
+        Provisioning = 1,
+        Starting = 2,
+        Running = 3,
+        Stopping = 4,
+        Stopped = 5,
+        Terminating = 6,
+        Terminated = 7,
+        Error = 8,
+    }
+}
+
 // NOTE: EmbeddingStatus lives in `x121_core::embedding::EmbeddingStatus`
 // (the canonical source) because the core crate needs it for domain logic
 // (`classify_extraction_result`). It provides `id()`, `from_id()`, and `label()`.
@@ -356,6 +379,25 @@ mod tests {
         assert_eq!(BatchMetadataOpStatusId::Completed.id(), 3);
         assert_eq!(BatchMetadataOpStatusId::Undone.id(), 4);
         assert_eq!(BatchMetadataOpStatusId::Failed.id(), 5);
+    }
+
+    #[test]
+    fn cloud_provider_status_ids_match_seed_data() {
+        assert_eq!(CloudProviderStatus::Active.id(), 1);
+        assert_eq!(CloudProviderStatus::Disabled.id(), 2);
+        assert_eq!(CloudProviderStatus::Error.id(), 3);
+    }
+
+    #[test]
+    fn cloud_instance_status_ids_match_seed_data() {
+        assert_eq!(CloudInstanceStatus::Provisioning.id(), 1);
+        assert_eq!(CloudInstanceStatus::Starting.id(), 2);
+        assert_eq!(CloudInstanceStatus::Running.id(), 3);
+        assert_eq!(CloudInstanceStatus::Stopping.id(), 4);
+        assert_eq!(CloudInstanceStatus::Stopped.id(), 5);
+        assert_eq!(CloudInstanceStatus::Terminating.id(), 6);
+        assert_eq!(CloudInstanceStatus::Terminated.id(), 7);
+        assert_eq!(CloudInstanceStatus::Error.id(), 8);
     }
 
     // EmbeddingStatus tests live in x121_core::embedding::tests (DRY-209).

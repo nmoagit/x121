@@ -2,6 +2,7 @@ import type { UserRole } from "@/stores/auth-store";
 import {
   Activity,
   BarChart3,
+  Cloud,
   Columns,
   Cpu,
   Download,
@@ -128,6 +129,7 @@ export const NAV_GROUPS: NavGroupDef[] = [
       { label: "Readiness", path: "/admin/readiness", icon: ShieldCheck },
       { label: "Settings", path: "/admin/settings", icon: Settings },
       { label: "Themes", path: "/admin/themes", icon: Palette },
+      { label: "Cloud GPUs", path: "/admin/cloud-gpus", icon: Cloud },
     ],
   },
   {

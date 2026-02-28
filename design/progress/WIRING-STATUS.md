@@ -9,7 +9,7 @@ versus those that are implemented but unreachable by users.
 
 | Category | Count |
 |----------|-------|
-| Routed (accessible via sidebar/nav) | 47 |
+| Routed (accessible via sidebar/nav) | 48 |
 | Correctly unrouted (overlays/framework/embedded) | 11 |
 | Missing routes (should be wired up) | 20 |
 
@@ -68,6 +68,7 @@ These features have routes in `router.tsx` and entries in `navigation.ts`.
 | `/admin/themes` | `admin/TokenEditor` | PRD-29 (Phase 7) |
 | `/tools/activity-console` | `activity-console` | PRD-118 |
 | `/tools/character-ingest` | `character-ingest` | PRD-113 |
+| `/admin/cloud-gpus` | `admin/cloud-gpus` | PRD-114 |
 | `/projects` | `projects` | PRD-112 |
 | `/projects/$projectId` | `projects` | PRD-112 |
 | `/projects/$projectId/characters/$characterId` | `characters` | PRD-112 |
@@ -144,7 +145,7 @@ added to this tracker and wired into the router.
 | ~~PRD-111~~ | ~~Scene Catalog & Track Management~~ | Routed at `/content/scene-catalog` |
 | ~~PRD-112~~ | ~~Project Hub & Management~~ | Routed at `/projects`, `/projects/$projectId`, `/projects/$projectId/characters/$characterId` |
 | ~~PRD-113~~ | ~~Character Ingest Pipeline~~ | Routed at `/tools/character-ingest` |
-| PRD-114 | Cloud GPU Provider Integration | `/admin/cloud-gpu` |
+| ~~PRD-114~~ | ~~Cloud GPU Provider Integration~~ | Routed at `/admin/cloud-gpus` |
 | PRD-115 | Generation Strategy & Workflow Prompt Management | `/tools/generation-strategy` |
 | ~~PRD-116~~ | ~~Dynamic File & Entity Naming Engine~~ | Routed at `/admin/naming` |
 | ~~PRD-117~~ | ~~System Status Footer Bar~~ | Global footer (correctly unrouted) |

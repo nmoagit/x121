@@ -26,6 +26,30 @@ pub enum AppError {
     InternalError(String),
 }
 
+/// Cloud provider error from `x121_core::cloud`.
+impl From<x121_core::cloud::CloudProviderError> for AppError {
+    fn from(err: x121_core::cloud::CloudProviderError) -> Self {
+        use x121_core::cloud::CloudProviderError;
+        match err {
+            CloudProviderError::AuthError(msg) => AppError::Core(CoreError::Unauthorized(msg)),
+            CloudProviderError::NotFound(msg) => AppError::BadRequest(format!("Not found at provider: {msg}")),
+            CloudProviderError::BudgetExceeded { spent_cents, limit_cents } => {
+                AppError::BadRequest(format!("Budget exceeded: spent {spent_cents} of {limit_cents} cents"))
+            }
+            CloudProviderError::RateLimited => AppError::BadRequest("Rate limited by provider".into()),
+            CloudProviderError::ProvisionFailed(msg) => AppError::InternalError(format!("Provisioning failed: {msg}")),
+            _ => AppError::InternalError(err.to_string()),
+        }
+    }
+}
+
+/// Crypto error from `x121_core::crypto`.
+impl From<x121_core::crypto::CryptoError> for AppError {
+    fn from(err: x121_core::crypto::CryptoError) -> Self {
+        AppError::InternalError(format!("Crypto error: {err}"))
+    }
+}
+
 /// Convenience type alias for handler return values.
 pub type AppResult<T> = Result<T, AppError>;
 

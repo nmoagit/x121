@@ -142,6 +142,18 @@ export function formatPercent(value: number, decimals = 1): string {
 }
 
 /**
+ * Format a cent amount as a dollar string.
+ *
+ * Examples:
+ * - formatCents(1234)  => "$12.34"
+ * - formatCents(0)     => "$0.00"
+ * - formatCents(50)    => "$0.50"
+ */
+export function formatCents(cents: number): string {
+  return `$${(cents / 100).toFixed(2)}`;
+}
+
+/**
  * Return a YYYY-MM-DD date string for N days ago (date-only, no time).
  *
  * Useful for API query parameters that accept date-only values.

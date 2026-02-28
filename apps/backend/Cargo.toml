@@ -9,6 +9,7 @@ members = [
     "crates/pipeline",
     "crates/worker",
     "crates/agent",
+    "crates/cloud",
 ]
 
 [workspace.package]
@@ -46,6 +47,10 @@ argon2 = "0.5"
 sha2 = "0.10"
 hmac = "0.12"
 rand = { version = "0.9", features = ["thread_rng"] }
+aes-gcm = "0.10"
+
+# Async trait (for cloud provider trait)
+async-trait = "0.1"
 
 # Types
 chrono = { version = "0.4", features = ["serde"] }
@@ -88,3 +93,4 @@ x121-db = { path = "crates/db" }
 x121-events = { path = "crates/events" }
 x121-comfyui = { path = "crates/comfyui" }
 x121-pipeline = { path = "crates/pipeline" }
+x121-cloud = { path = "crates/cloud" }

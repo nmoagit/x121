@@ -21,10 +21,10 @@ Source of truth: [`design/design.md`](../design.md)
 | Status | Count |
 |--------|-------|
 | backlog | 0 |
-| planning | 1 |
+| planning | 0 |
 | in-progress | 0 |
 | review | 0 |
-| done | 120 |
+| done | 121 |
 | blocked | 0 |
 | deferred | 0 |
 | maybe | 15 |
@@ -63,7 +63,7 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-93 | Generation Budget & Quota Management | — | `done` | — | |
 | PRD-99 | Webhook & Integration Testing Console | — | `done` | — | |
 | PRD-106 | API Usage & Observability Dashboard | — | `done` | — | |
-| PRD-114 | Cloud GPU Provider Integration (RunPod) | 1 | `planning` | — | High priority. Provider trait + RunPod implementation (Pods + Serverless), auto-scaling, cost tracking, S3 file transfer, admin UI. Deps: PRD-02, PRD-05, PRD-07, PRD-08, PRD-46 (all done). |
+| PRD-114 | Cloud GPU Provider Integration (RunPod) | 1 | `done` | 2026-02-28 | 6 migrations (providers, GPU types, instances, scaling rules, cost events), 5 repos, core domain (provider trait, AES-256-GCM crypto, auto-scaling), new `crates/cloud` (RunPod GraphQL+Serverless, registry, 3 background services, S3 bridge), 29 admin API endpoints, frontend dashboard (5 components, 22 hooks). DRY-539 to DRY-554 audited. |
 | PRD-119 | Time-Based Job Scheduling | — | `done` | — | Cron-style schedules (one-time + recurring), calendar UI, smart off-peak slot selection, timezone handling, batch scheduling (PRD-57), schedule executor, execution history. Deps: PRD-08, PRD-07, PRD-10, PRD-03 (all done). Extends PRD-08. Integrates with PRD-87, PRD-57, PRD-54, PRD-97. |
 
 ## Part 2: Data & Storage Management

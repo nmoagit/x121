@@ -28,4 +28,6 @@ pub struct AppState {
     pub settings_service: Arc<x121_core::settings::SettingsService>,
     /// Activity log broadcast channel for real-time streaming (PRD-118).
     pub activity_broadcaster: Arc<x121_events::ActivityLogBroadcaster>,
+    /// Cloud GPU provider registry (PRD-114).
+    pub cloud_registry: Arc<x121_cloud::registry::ProviderRegistry>,
 }

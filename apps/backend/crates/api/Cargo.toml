@@ -13,6 +13,7 @@ path = "src/main.rs"
 
 [dependencies]
 x121-core = { workspace = true }
+x121-cloud = { workspace = true }
 x121-comfyui = { workspace = true }
 x121-db = { workspace = true }
 x121-events = { workspace = true }

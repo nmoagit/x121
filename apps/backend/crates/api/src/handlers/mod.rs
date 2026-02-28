@@ -27,6 +27,7 @@ pub mod character_ingest;
 pub mod character_metadata;
 pub mod character_scene_overrides;
 pub mod checkpoints;
+pub mod cloud_providers;
 pub mod collaboration;
 pub mod comparison;
 pub mod compliance;
