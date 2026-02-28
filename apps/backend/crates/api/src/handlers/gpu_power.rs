@@ -437,4 +437,3 @@ pub async fn get_consumption_summary(
 
     Ok(Json(DataResponse { data: summary }))
 }
-

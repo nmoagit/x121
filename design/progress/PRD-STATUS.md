@@ -21,10 +21,10 @@ Source of truth: [`design/design.md`](../design.md)
 | Status | Count |
 |--------|-------|
 | backlog | 0 |
-| planning | 19 |
+| planning | 15 |
 | in-progress | 0 |
 | review | 0 |
-| done | 102 |
+| done | 106 |
 | blocked | 0 |
 | deferred | 0 |
 | maybe | 15 |
@@ -59,12 +59,12 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-77 | Pipeline Stage Hooks (Custom Scripts) | — | `done` | 2026-02-23 | Phase 7 Track A |
 | PRD-85 | UI Plugin / Extension Architecture | — | `done` | — | |
 | PRD-87 | GPU Power Management & Idle Scheduling | — | `done` | 2026-03-01 | Migration (power_schedules, worker columns, consumption_log), core (34 tests), models, repo, 9 admin handlers, frontend (6 components, 10s polling), 15 tests. DRY: 5 CRITICAL + 4 HIGH fixed. |
-| PRD-90 | Render Queue Timeline / Gantt View | — | `planning` | — | |
+| PRD-90 | Render Queue Timeline / Gantt View | — | `done` | — | |
 | PRD-93 | Generation Budget & Quota Management | — | `planning` | — | |
 | PRD-99 | Webhook & Integration Testing Console | — | `planning` | — | |
 | PRD-106 | API Usage & Observability Dashboard | — | `planning` | — | |
 | PRD-114 | Cloud GPU Provider Integration (RunPod) | 1 | `planning` | — | High priority. Provider trait + RunPod implementation (Pods + Serverless), auto-scaling, cost tracking, S3 file transfer, admin UI. Deps: PRD-02, PRD-05, PRD-07, PRD-08, PRD-46 (all done). |
-| PRD-119 | Time-Based Job Scheduling | — | `planning` | — | Cron-style schedules (one-time + recurring), calendar UI, smart off-peak slot selection, timezone handling, batch scheduling (PRD-57), schedule executor, execution history. Deps: PRD-08, PRD-07, PRD-10, PRD-03 (all done). Extends PRD-08. Integrates with PRD-87, PRD-57, PRD-54, PRD-97. |
+| PRD-119 | Time-Based Job Scheduling | — | `done` | — | Cron-style schedules (one-time + recurring), calendar UI, smart off-peak slot selection, timezone handling, batch scheduling (PRD-57), schedule executor, execution history. Deps: PRD-08, PRD-07, PRD-10, PRD-03 (all done). Extends PRD-08. Integrates with PRD-87, PRD-57, PRD-54, PRD-97. |
 
 ## Part 2: Data & Storage Management
 
@@ -76,7 +76,7 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-16 | Folder-to-Entity Bulk Importer | — | `done` | 2026-02-21 | Phase 3 Group 4 |
 | PRD-17 | Asset Registry & Dependency Mapping | — | `done` | 2026-02-21 | Asset registry, dependencies, notes, ratings, impact analysis, browser UI, 8 tests. |
 | PRD-18 | Bulk Data Maintenance (Search/Replace/Re-path) | — | `done` | 2026-02-23 | Migration 000033, core maintenance module (field registry, validators), 7 API endpoints, frontend feature (FindReplacePanel, RePathPanel, OperationsHistory), 36 tests. |
-| PRD-19 | Disk Space Visualizer (Treemap) | — | `planning` | — | |
+| PRD-19 | Disk Space Visualizer (Treemap) | — | `done` | — | |
 | PRD-20 | Search & Discovery Engine | — | `done` | 2026-02-21 | tsvector/GIN indexes, fulltext + typeahead + visual similarity search, faceted aggregation, saved searches, search analytics, frontend SearchBar + FacetPanel (29 tests). |
 | PRD-47 | Tagging & Custom Labels | — | `done` | 2026-02-21 | Polymorphic tagging, case-insensitive normalization, bulk ops, 3 frontend components. |
 | PRD-48 | External & Tiered Storage | — | `done` | 2026-02-22 | 4 migrations (backends, locations, policies, migrations), core module (14 tests), 4 repos, 10 API endpoints, frontend panel (10 tests). DRY-219 to DRY-226 audited. |
@@ -188,7 +188,7 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-56 | Studio Wiki & Contextual Help | — | `done` | 2026-02-23 | 2 migrations (wiki_articles, wiki_versions), core module (14 tests), 2 repos, 10 API endpoints, frontend feature (10 tests). |
 | PRD-80 | System Health Page | — | `done` | 2026-03-01 | Migration (3 tables), core (28 tests), 3 repo structs, 7 handlers, frontend (6 components, 30s auto-refresh), 21 tests. DRY-530 to DRY-538 audited. |
 | PRD-81 | Backup & Disaster Recovery | — | `planning` | — | |
-| PRD-98 | Session Management & Active Users | — | `planning` | — | |
+| PRD-98 | Session Management & Active Users | — | `done` | — | |
 | PRD-105 | Platform Setup Wizard | — | `planning` | — | |
 | PRD-110 | Admin Platform Settings Panel | 1 | `done` | 2026-02-27 | Platform settings with type-safe validation, caching, DB persistence. Route: `/admin/settings`. |
 | PRD-116 | Dynamic File & Entity Naming Engine | 1 | `done` | 2026-02-27 | Configurable naming templates per file category (12 categories), token substitution, live preview, project-level overrides. Route: `/admin/naming`. |

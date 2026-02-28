@@ -39,6 +39,7 @@ pub mod image_qa;
 pub mod importer;
 pub mod integrity;
 pub mod job_debug;
+pub mod job_scheduling;
 pub mod jobs;
 pub mod keymaps;
 pub mod layouts;
@@ -74,6 +75,7 @@ pub mod queue;
 pub mod readiness;
 pub mod reclamation;
 pub mod regression;
+pub mod render_timeline;
 pub mod resolution;
 pub mod restitching;
 pub mod review_notes;
@@ -85,10 +87,12 @@ pub mod scripts;
 pub mod search;
 pub mod segment_comparison;
 pub mod sensitivity;
+pub mod session_management;
 pub mod shared_link;
 pub mod sidecar;
 pub mod status;
 pub mod storage;
+pub mod storage_visualizer;
 pub mod storyboard;
 pub mod system_health;
 pub mod tags;
@@ -156,6 +160,12 @@ use crate::ws;
 /// /admin/themes                                     list, create (admin only)
 /// /admin/themes/{id}                                get, update, delete
 /// /admin/themes/{id}/export                         export tokens (GET)
+///
+/// /admin/storage/treemap                            treemap hierarchy (GET, PRD-19)
+/// /admin/storage/breakdown                          file type distribution (GET, PRD-19)
+/// /admin/storage/summary                            total storage summary (GET, PRD-19)
+/// /admin/storage/refresh                            trigger snapshot refresh (POST, PRD-19)
+/// /admin/storage/categories                         file type categories (GET, PRD-19)
 ///
 /// /admin/reclamation/preview                        preview reclaimable space (GET)
 /// /admin/reclamation/run                            trigger cleanup (POST)
@@ -743,6 +753,8 @@ pub fn api_routes() -> Router<AppState> {
         .nest("/admin/themes", themes::admin_router())
         // Studio-wide sensitivity defaults (PRD-82).
         .nest("/admin/sensitivity-defaults", sensitivity::admin_router())
+        // Storage visualizer: treemap, breakdown, summary (PRD-19).
+        .nest("/admin/storage", storage_visualizer::router())
         // Disk reclamation: protection rules, policies, trash queue (PRD-15).
         .nest("/admin/reclamation", reclamation::router())
         // Audit logging & compliance (PRD-45).
@@ -887,6 +899,9 @@ pub fn api_routes() -> Router<AppState> {
             "/admin/users/{id}/quota",
             axum::routing::put(crate::handlers::queue::set_user_quota),
         )
+        // Render queue timeline / Gantt view (PRD-90).
+        // Reorder uses existing PUT /admin/queue/reorder from queue.rs (PRD-08).
+        .nest("/queue/timeline", render_timeline::router())
         // Search & discovery engine (PRD-20).
         .nest("/search", search::router())
         // Command palette search (PRD-31).
@@ -1024,4 +1039,10 @@ pub fn api_routes() -> Router<AppState> {
         .nest("/batch-review", batch_review::batch_review_router())
         // Shareable Preview Links: public external review (PRD-84, no auth).
         .nest("/review", shared_link::public_router())
+        // Time-based job scheduling (PRD-119).
+        .nest("/schedules", job_scheduling::router())
+        // Session management: admin endpoints (PRD-98).
+        .nest("/admin/sessions", session_management::admin_router())
+        // Session management: user endpoints (PRD-98).
+        .nest("/sessions", session_management::user_router())
 }

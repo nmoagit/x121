@@ -50,10 +50,7 @@ pub fn parse_timestamp(
 ///
 /// Used by consumption summary and other handlers that accept date-only
 /// query parameters.
-pub fn parse_date(
-    s: &Option<String>,
-    fallback: chrono::NaiveDate,
-) -> AppResult<chrono::NaiveDate> {
+pub fn parse_date(s: &Option<String>, fallback: chrono::NaiveDate) -> AppResult<chrono::NaiveDate> {
     match s {
         Some(v) => v
             .parse::<chrono::NaiveDate>()

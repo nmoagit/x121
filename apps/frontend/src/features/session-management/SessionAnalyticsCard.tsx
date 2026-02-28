@@ -1,0 +1,47 @@
+/**
+ * Session analytics summary cards (PRD-98).
+ *
+ * Displays key session metrics using the shared StatBadge component.
+ */
+
+import { Spinner, StatBadge } from "@/components/primitives";
+import { formatDuration } from "@/lib/format";
+
+import { useSessionAnalytics } from "./hooks/use-session-management";
+
+/* --------------------------------------------------------------------------
+   Component
+   -------------------------------------------------------------------------- */
+
+export function SessionAnalyticsCard() {
+  const { data, isLoading, error } = useSessionAnalytics();
+
+  if (isLoading) {
+    return (
+      <div className="flex h-32 items-center justify-center">
+        <Spinner size="lg" />
+      </div>
+    );
+  }
+
+  if (error || !data) {
+    return (
+      <p className="py-8 text-center text-sm text-[var(--color-text-muted)]">
+        Failed to load session analytics.
+      </p>
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-2 gap-[var(--spacing-3)] sm:grid-cols-3 lg:grid-cols-5">
+      <StatBadge label="Total Sessions" value={data.total_sessions} />
+      <StatBadge label="Active" value={data.active_sessions} />
+      <StatBadge label="Idle" value={data.idle_sessions} />
+      <StatBadge
+        label="Avg Duration"
+        value={formatDuration(data.avg_duration_seconds * 1000)}
+      />
+      <StatBadge label="Peak Concurrent" value={data.peak_concurrent} />
+    </div>
+  );
+}
