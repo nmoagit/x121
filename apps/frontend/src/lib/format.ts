@@ -130,6 +130,18 @@ export function estimateEta(downloaded: number, total: number | null, bps: numbe
 }
 
 /**
+ * Format a 0-1 value as a percentage string.
+ *
+ * Examples:
+ * - formatPercent(0.852)    => "85.2%"
+ * - formatPercent(0.852, 0) => "85%"
+ * - formatPercent(1)        => "100.0%"
+ */
+export function formatPercent(value: number, decimals = 1): string {
+  return `${(value * 100).toFixed(decimals)}%`;
+}
+
+/**
  * Generate a URL-safe slug from a title string.
  *
  * NOTE: The backend has a canonical `generate_slug()` in `core/src/wiki.rs`

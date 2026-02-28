@@ -22,6 +22,7 @@ pub mod character_scene_prompt_override;
 pub mod checkpoint;
 pub mod collaboration;
 pub mod comfyui;
+pub mod consistency_report;
 pub mod dashboard;
 pub mod delivery_export;
 pub mod duplicate_check;

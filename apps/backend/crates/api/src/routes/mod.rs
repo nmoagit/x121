@@ -18,6 +18,7 @@ pub mod checkpoints;
 pub mod collaboration;
 pub mod comparison;
 pub mod config_management;
+pub mod consistency_report;
 pub mod dashboard;
 pub mod delivery;
 pub mod downloads;
@@ -205,6 +206,9 @@ use crate::ws;
 /// /projects/{id}/poster-gallery                    project poster gallery (GET, PRD-96)
 /// /projects/{id}/auto-select-posters               auto-select poster frames (POST, PRD-96)
 ///
+/// /projects/{project_id}/consistency-overview       consistency overview (GET, PRD-94)
+/// /projects/{project_id}/batch-consistency          batch generate reports (POST, PRD-94)
+///
 /// /projects/{id}/validation-summary                validation summary (GET, PRD-113)
 /// /projects/{id}/validate                          revalidate project (POST, PRD-113)
 /// /projects/{project_id}/ingest                    list sessions (GET, PRD-113)
@@ -233,6 +237,8 @@ use crate::ws;
 ///
 /// /characters/{character_id}/dashboard              character dashboard (GET, PRD-108)
 /// /characters/{character_id}/settings               patch settings (PATCH, PRD-108)
+///
+/// /characters/{character_id}/consistency-report     generate, get latest (POST, GET, PRD-94)
 ///
 /// /characters/{id}/poster-frame                    get, set poster frame (GET, POST, PRD-96)
 ///
@@ -697,6 +703,8 @@ use crate::ws;
 ///
 /// /report-schedules                                               list, create (GET, POST, PRD-73)
 /// /report-schedules/{id}                                          update, delete (PUT, DELETE, PRD-73)
+///
+/// /consistency-reports/{id}                                        get report (GET, PRD-94)
 /// ```
 pub fn api_routes() -> Router<AppState> {
     Router::new()
@@ -761,6 +769,7 @@ pub fn api_routes() -> Router<AppState> {
             .merge(validation_dashboard::router())
             .merge(comparison::router())
             .merge(poster_frame::project_poster_router())
+            .merge(consistency_report::project_consistency_router())
             .nest("/{project_id}/characters", character_metadata::project_router())
             .nest("/{project_id}/ingest", character_ingest::router())
             .nest("/{project_id}/scene-settings", project_scene_settings::router()))
@@ -773,6 +782,7 @@ pub fn api_routes() -> Router<AppState> {
             .merge(character_dashboard::dashboard_router())
             .merge(prompt_management::character_prompt_override_router())
             .merge(poster_frame::character_poster_router())
+            .merge(consistency_report::character_consistency_router())
             .nest("/{character_id}/scene-settings", character_scene_overrides::router()))
         // Scene-scoped sub-resources (segments, review queue, generation PRD-24, QA PRD-49, resolution PRD-59, storyboard PRD-62, branching PRD-50).
         .nest("/scenes", scene::router()
@@ -944,6 +954,8 @@ pub fn api_routes() -> Router<AppState> {
         // Production Reporting & Data Export (PRD-73).
         .nest("/reports", production_report::report_router())
         .nest("/report-schedules", production_report::report_schedule_router())
+        // Character Consistency Reports (PRD-94).
+        .nest("/consistency-reports", consistency_report::consistency_report_router())
         // Bulk Character Onboarding Wizard (PRD-67).
         .nest("/onboarding-sessions", onboarding_wizard::router())
         // Legacy Data Import & Migration Toolkit (PRD-86).

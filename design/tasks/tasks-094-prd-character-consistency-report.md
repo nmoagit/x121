@@ -72,15 +72,15 @@ pub async fn compute_face_consistency(pool: &sqlx::PgPool, character_id: DbId) -
 **File:** `scripts/python/consistency_color_analysis.py`
 
 **Acceptance Criteria:**
-- [ ] Compare average color temperature, brightness, saturation across scenes
-- [ ] Flag visually inconsistent scenes
+- [x] Compare average color temperature, brightness, saturation across scenes
+- [x] Flag visually inconsistent scenes
 
 ### Task 2.3: Outlier Detection
 **File:** `src/services/consistency_analysis_service.rs`
 
 **Acceptance Criteria:**
-- [ ] Flag scenes deviating from character average by configurable threshold
-- [ ] One-click: "Re-queue flagged scenes for regeneration"
+- [x] Flag scenes deviating from character average by configurable threshold
+- [x] One-click: "Re-queue flagged scenes for regeneration"
 
 ---
 
@@ -100,17 +100,17 @@ pub async fn compute_face_consistency(pool: &sqlx::PgPool, character_id: DbId) -
 **File:** `frontend/src/components/consistency/ConsistencyHeatmap.tsx`
 
 **Acceptance Criteria:**
-- [ ] Pairwise similarity heatmap (green=consistent, red=outlier)
-- [ ] Click cell to see two scenes side by side
-- [ ] Outlier scenes highlighted
+- [x] Pairwise similarity heatmap (green=consistent, red=outlier)
+- [x] Click cell to see two scenes side by side
+- [x] Outlier scenes highlighted
 
 ### Task 3.3: Report Export
 **File:** `src/services/consistency_report_export_service.rs`
 
 **Acceptance Criteria:**
-- [ ] Export as PDF with keyframes and scores
-- [ ] Batch PDF: one page per character
-- [ ] Overview: "8 of 12 characters fully consistent"
+- [x] Export as PDF with keyframes and scores
+- [x] Batch PDF: one page per character
+- [x] Overview: "8 of 12 characters fully consistent"
 
 ---
 
@@ -120,9 +120,9 @@ pub async fn compute_face_consistency(pool: &sqlx::PgPool, character_id: DbId) -
 **File:** `tests/consistency_report_test.rs`
 
 **Acceptance Criteria:**
-- [ ] Pairwise matrix correctly computed
-- [ ] Outliers identified
-- [ ] Report generates in <30 seconds per character
+- [x] Pairwise matrix correctly computed
+- [x] Outliers identified
+- [x] Report generates in <30 seconds per character
 
 ---
 

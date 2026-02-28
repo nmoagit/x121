@@ -202,10 +202,7 @@ pub async fn update_schedule(
 // ---------------------------------------------------------------------------
 
 /// Ensure a report type exists, returning an error if not found.
-async fn ensure_report_type_exists(
-    pool: &sqlx::PgPool,
-    id: DbId,
-) -> AppResult<()> {
+async fn ensure_report_type_exists(pool: &sqlx::PgPool, id: DbId) -> AppResult<()> {
     ProductionReportRepo::get_report_type_by_id(pool, id)
         .await?
         .ok_or_else(|| {

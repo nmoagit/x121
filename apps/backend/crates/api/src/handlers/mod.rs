@@ -26,6 +26,7 @@ pub mod checkpoints;
 pub mod collaboration;
 pub mod comparison;
 pub mod config_export;
+pub mod consistency_report;
 pub mod dashboard;
 pub mod delivery;
 pub mod derived_image;
