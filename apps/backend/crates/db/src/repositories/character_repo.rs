@@ -39,6 +39,44 @@ impl CharacterRepo {
             .await
     }
 
+    /// Bulk-insert characters by name, returning all created rows.
+    ///
+    /// All characters share the same `project_id` and optional `group_id`.
+    /// Uses a single multi-row INSERT for efficiency.
+    /// Params: $1=project_id, $2=group_id, $3..=$N=names.
+    pub async fn create_many(
+        pool: &PgPool,
+        project_id: DbId,
+        names: &[String],
+        group_id: Option<DbId>,
+    ) -> Result<Vec<Character>, sqlx::Error> {
+        if names.is_empty() {
+            return Ok(Vec::new());
+        }
+
+        let values: Vec<String> = names
+            .iter()
+            .enumerate()
+            .map(|(i, _)| format!("($1, ${}, 1, '{{}}'::jsonb, $2)", i + 3))
+            .collect();
+
+        let query = format!(
+            "INSERT INTO characters (project_id, name, status_id, settings, group_id)
+             VALUES {}
+             RETURNING {COLUMNS}",
+            values.join(", ")
+        );
+
+        let mut q = sqlx::query_as::<_, Character>(&query)
+            .bind(project_id)
+            .bind(group_id);
+        for name in names {
+            q = q.bind(name);
+        }
+
+        q.fetch_all(pool).await
+    }
+
     /// Find a character by its internal ID. Excludes soft-deleted rows.
     pub async fn find_by_id(pool: &PgPool, id: DbId) -> Result<Option<Character>, sqlx::Error> {
         let query =

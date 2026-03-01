@@ -1,7 +1,5 @@
 /**
- * Placeholder for project production tab (PRD-112).
- *
- * Depends on PRD-103 (Generation Pipeline) being implemented.
+ * Placeholder for project production tab.
  */
 
 import { EmptyState } from "@/components/domain";
@@ -12,7 +10,7 @@ export function ProjectProductionTab() {
     <EmptyState
       icon={<Zap size={32} />}
       title="Production"
-      description="Production queue and generation management will be available once PRD-103 is implemented."
+      description="Queue scenes for generation, monitor progress, and manage production batches."
     />
   );
 }

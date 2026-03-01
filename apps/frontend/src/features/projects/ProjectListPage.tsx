@@ -5,10 +5,10 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 
-import { Drawer } from "@/components/composite";
+import { Modal } from "@/components/composite";
 import { EmptyState } from "@/components/domain";
 import { Grid } from "@/components/layout";
-import { Button, Input, Select, Spinner, Toggle } from "@/components/primitives";
+import { Button, Input, LoadingPane, Select, Toggle } from "@/components/primitives";
 import { Stack } from "@/components/layout";
 import { FolderKanban, Plus } from "@/tokens/icons";
 
@@ -50,8 +50,8 @@ export function ProjectListPage() {
   const [sortBy, setSortBy] = useState("created-desc");
   const [hideArchived, setHideArchived] = useState(false);
 
-  /* --- drawer state --- */
-  const [drawerOpen, setDrawerOpen] = useState(false);
+  /* --- modal state --- */
+  const [modalOpen, setModalOpen] = useState(false);
   const [newName, setNewName] = useState("");
   const [newDescription, setNewDescription] = useState("");
 
@@ -110,7 +110,7 @@ export function ProjectListPage() {
       },
       {
         onSuccess: () => {
-          setDrawerOpen(false);
+          setModalOpen(false);
           setNewName("");
           setNewDescription("");
         },
@@ -140,7 +140,7 @@ export function ProjectListPage() {
 
         <Button
           icon={<Plus size={16} />}
-          onClick={() => setDrawerOpen(true)}
+          onClick={() => setModalOpen(true)}
         >
           New Project
         </Button>
@@ -179,9 +179,7 @@ export function ProjectListPage() {
 
       {/* Content */}
       {isLoading ? (
-        <div className="flex items-center justify-center py-[var(--spacing-8)]">
-          <Spinner size="lg" />
-        </div>
+        <LoadingPane />
       ) : error ? (
         <EmptyState
           icon={<FolderKanban size={32} />}
@@ -211,7 +209,7 @@ export function ProjectListPage() {
             !projects?.length ? (
               <Button
                 icon={<Plus size={16} />}
-                onClick={() => setDrawerOpen(true)}
+                onClick={() => setModalOpen(true)}
               >
                 New Project
               </Button>
@@ -220,11 +218,11 @@ export function ProjectListPage() {
         />
       )}
 
-      {/* Create project drawer */}
-      <Drawer
-        open={drawerOpen}
+      {/* Create project modal */}
+      <Modal
+        open={modalOpen}
         onClose={() => {
-          setDrawerOpen(false);
+          setModalOpen(false);
           setNewName("");
           setNewDescription("");
         }}
@@ -252,7 +250,7 @@ export function ProjectListPage() {
             Create Project
           </Button>
         </Stack>
-      </Drawer>
+      </Modal>
     </Stack>
   );
 }

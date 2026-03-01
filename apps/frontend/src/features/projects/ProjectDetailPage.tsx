@@ -9,7 +9,7 @@ import { useState } from "react";
 import { Link, useParams } from "@tanstack/react-router";
 
 import { Tabs } from "@/components/composite";
-import { Badge, Spinner } from "@/components/primitives";
+import { Badge, LoadingPane } from "@/components/primitives";
 import { Stack } from "@/components/layout";
 import { EmptyState } from "@/components/domain";
 import { AlertCircle, ChevronRight, FolderKanban } from "@/tokens/icons";
@@ -18,6 +18,7 @@ import { formatDate } from "@/lib/format";
 import { useProject, useProjectStats } from "./hooks/use-projects";
 import { ProjectOverviewTab } from "./tabs/ProjectOverviewTab";
 import { ProjectCharactersTab } from "./tabs/ProjectCharactersTab";
+import { ProjectGroupsTab } from "./tabs/ProjectGroupsTab";
 import { ProjectSceneSettingsTab } from "./tabs/ProjectSceneSettingsTab";
 import { ProjectProductionTab } from "./tabs/ProjectProductionTab";
 import { ProjectDeliveryTab } from "./tabs/ProjectDeliveryTab";
@@ -38,11 +39,7 @@ export function ProjectDetailPage() {
   const [activeTab, setActiveTab] = useState<string>(PROJECT_TABS[0].id);
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-[var(--spacing-8)]">
-        <Spinner size="lg" />
-      </div>
-    );
+    return <LoadingPane />;
   }
 
   if (error || !project) {
@@ -113,6 +110,7 @@ export function ProjectDetailPage() {
       {/* Tab content */}
       {activeTab === "overview" && <ProjectOverviewTab projectId={id} stats={stats} />}
       {activeTab === "characters" && <ProjectCharactersTab projectId={id} />}
+      {activeTab === "groups" && <ProjectGroupsTab projectId={id} />}
       {activeTab === "scene-settings" && <ProjectSceneSettingsTab />}
       {activeTab === "production" && <ProjectProductionTab />}
       {activeTab === "delivery" && <ProjectDeliveryTab />}

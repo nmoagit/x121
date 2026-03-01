@@ -21,6 +21,7 @@ use crate::state::AppState;
 ///
 /// GET    /{project_id}/characters           -> list_by_project
 /// POST   /{project_id}/characters           -> create
+/// POST   /{project_id}/characters/bulk      -> bulk_create
 /// GET    /{project_id}/characters/{id}      -> get_by_id
 /// PUT    /{project_id}/characters/{id}      -> update
 /// DELETE /{project_id}/characters/{id}      -> delete
@@ -43,6 +44,7 @@ use crate::state::AppState;
 pub fn router() -> Router<AppState> {
     let character_routes = Router::new()
         .route("/", get(character::list_by_project).post(character::create))
+        .route("/bulk", axum::routing::post(character::bulk_create))
         .route(
             "/{id}",
             get(character::get_by_id)

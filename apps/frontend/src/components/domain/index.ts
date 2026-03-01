@@ -1,4 +1,5 @@
 export { EmptyState } from "./EmptyState";
+export { FileDropZone } from "./FileDropZone";
 export { MetadataField } from "./MetadataField";
 export { ProjectCharacterPicker } from "./ProjectCharacterPicker";
 export { ProjectPicker } from "./ProjectPicker";

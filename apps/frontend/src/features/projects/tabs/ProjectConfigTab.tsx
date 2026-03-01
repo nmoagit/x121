@@ -1,8 +1,5 @@
 /**
- * Placeholder for project configuration tab (PRD-112).
- *
- * Will contain project-level settings such as naming rules,
- * workflow presets, and integration configuration.
+ * Placeholder for project configuration tab.
  */
 
 import { EmptyState } from "@/components/domain";
@@ -13,7 +10,7 @@ export function ProjectConfigTab() {
     <EmptyState
       icon={<Settings size={32} />}
       title="Configuration"
-      description="Project-level configuration will be available in a future update."
+      description="Manage project-level settings, naming rules, and workflow configuration."
     />
   );
 }

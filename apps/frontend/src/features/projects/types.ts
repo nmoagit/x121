@@ -137,6 +137,7 @@ export const PROJECT_STATUS_LABELS: Record<string, string> = {
 export const PROJECT_TABS = [
   { id: "overview", label: "Overview" },
   { id: "characters", label: "Characters" },
+  { id: "groups", label: "Groups" },
   { id: "scene-settings", label: "Scene Settings" },
   { id: "production", label: "Production" },
   { id: "delivery", label: "Delivery" },

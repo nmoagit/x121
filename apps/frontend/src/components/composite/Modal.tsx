@@ -74,7 +74,7 @@ export function Modal({ open, onClose, title, size = "md", children }: ModalProp
     <div
       className={cn(
         "fixed inset-0 z-50 flex items-center justify-center",
-        "bg-[var(--color-surface-overlay)]",
+        "bg-[var(--color-surface-overlay)] backdrop-blur-sm",
         "animate-[fadeIn_var(--duration-fast)_var(--ease-default)]",
       )}
       role="presentation"

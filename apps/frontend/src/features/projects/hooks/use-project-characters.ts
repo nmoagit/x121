@@ -65,6 +65,24 @@ export function useCreateCharacter(projectId: number) {
   });
 }
 
+/** Bulk-create characters from a list of names. */
+export function useBulkCreateCharacters(projectId: number) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: { names: string[]; group_id?: number }) =>
+      api.post<Character[]>(
+        `/projects/${projectId}/characters/bulk`,
+        data,
+      ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: projectCharacterKeys.all(projectId),
+      });
+    },
+  });
+}
+
 /** Update an existing character. */
 export function useUpdateCharacter(projectId: number) {
   const queryClient = useQueryClient();

@@ -5,14 +5,17 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 
-import { Drawer } from "@/components/composite";
-import { EmptyState } from "@/components/domain";
+import { Modal } from "@/components/composite";
+import { EmptyState, FileDropZone } from "@/components/domain";
 import { Grid, Stack } from "@/components/layout";
-import { Button, Input, Select, Spinner } from "@/components/primitives";
+import { Button, Input, LoadingPane, Select } from "@/components/primitives";
+import { toSelectOptions } from "@/lib/select-utils";
 import { Plus, User } from "@/tokens/icons";
 
 import { CharacterCard } from "../components/CharacterCard";
+import { ImportConfirmModal } from "../components/ImportConfirmModal";
 import { useCharacterGroups } from "../hooks/use-character-groups";
+import { useCharacterImport } from "../hooks/use-character-import";
 import {
   useCreateCharacter,
   useProjectCharacters,
@@ -35,25 +38,24 @@ export function ProjectCharactersTab({ projectId }: ProjectCharactersTabProps) {
   const { data: groups, isLoading: groupsLoading } =
     useCharacterGroups(projectId);
   const createCharacter = useCreateCharacter(projectId);
+  const charImport = useCharacterImport(projectId);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [groupFilter, setGroupFilter] = useState("");
 
-  /* --- drawer state --- */
-  const [drawerOpen, setDrawerOpen] = useState(false);
+  /* --- modal state --- */
+  const [modalOpen, setModalOpen] = useState(false);
   const [newName, setNewName] = useState("");
 
   /* --- group filter options --- */
-  const groupOptions = useMemo(() => {
-    const opts = [{ value: "", label: "All Groups" }];
-    if (groups) {
-      for (const g of groups) {
-        opts.push({ value: String(g.id), label: g.name });
-      }
-      opts.push({ value: "ungrouped", label: "Ungrouped" });
-    }
-    return opts;
-  }, [groups]);
+  const groupOptions = useMemo(
+    () => [
+      { value: "", label: "All Groups" },
+      ...toSelectOptions(groups),
+      ...(groups?.length ? [{ value: "ungrouped", label: "Ungrouped" }] : []),
+    ],
+    [groups],
+  );
 
   /* --- group lookup map --- */
   const groupMap = useMemo(() => {
@@ -119,7 +121,7 @@ export function ProjectCharactersTab({ projectId }: ProjectCharactersTabProps) {
       { name: newName.trim() },
       {
         onSuccess: () => {
-          setDrawerOpen(false);
+          setModalOpen(false);
           setNewName("");
         },
       },
@@ -129,14 +131,11 @@ export function ProjectCharactersTab({ projectId }: ProjectCharactersTabProps) {
   const isLoading = charsLoading || groupsLoading;
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-[var(--spacing-8)]">
-        <Spinner size="lg" />
-      </div>
-    );
+    return <LoadingPane />;
   }
 
   return (
+    <FileDropZone onNamesDropped={charImport.handleImportDrop}>
     <Stack gap={4}>
       {/* Filter bar */}
       <div className="flex flex-wrap items-end gap-[var(--spacing-3)]">
@@ -157,7 +156,7 @@ export function ProjectCharactersTab({ projectId }: ProjectCharactersTabProps) {
         <Button
           size="sm"
           icon={<Plus size={14} />}
-          onClick={() => setDrawerOpen(true)}
+          onClick={() => setModalOpen(true)}
         >
           Add Character
         </Button>
@@ -178,7 +177,7 @@ export function ProjectCharactersTab({ projectId }: ProjectCharactersTabProps) {
               <Button
                 size="sm"
                 icon={<Plus size={14} />}
-                onClick={() => setDrawerOpen(true)}
+                onClick={() => setModalOpen(true)}
               >
                 Add Character
               </Button>
@@ -226,10 +225,10 @@ export function ProjectCharactersTab({ projectId }: ProjectCharactersTabProps) {
         </Grid>
       )}
 
-      {/* Add character drawer */}
-      <Drawer
-        open={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
+      {/* Add character modal */}
+      <Modal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
         title="Add Character"
         size="sm"
       >
@@ -248,7 +247,18 @@ export function ProjectCharactersTab({ projectId }: ProjectCharactersTabProps) {
             Create Character
           </Button>
         </Stack>
-      </Drawer>
+      </Modal>
+
+      {/* Import confirmation modal */}
+      <ImportConfirmModal
+        open={charImport.importOpen}
+        onClose={charImport.closeImport}
+        names={charImport.importNames}
+        projectId={projectId}
+        onConfirm={charImport.handleImportConfirm}
+        loading={charImport.bulkCreatePending}
+      />
     </Stack>
+    </FileDropZone>
   );
 }

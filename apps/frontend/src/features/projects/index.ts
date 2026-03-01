@@ -29,6 +29,7 @@ export {
   useProjectCharacters,
   useCharacter,
   useCreateCharacter,
+  useBulkCreateCharacters,
   useUpdateCharacter,
   useDeleteCharacter,
 } from "./hooks/use-project-characters";

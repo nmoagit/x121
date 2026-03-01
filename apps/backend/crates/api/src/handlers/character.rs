@@ -32,6 +32,26 @@ pub async fn create(
     Ok((StatusCode::CREATED, Json(DataResponse { data: character })))
 }
 
+/// Request body for bulk character creation.
+#[derive(serde::Deserialize)]
+pub struct BulkCreateRequest {
+    pub names: Vec<String>,
+    pub group_id: Option<DbId>,
+}
+
+/// POST /api/v1/projects/{project_id}/characters/bulk
+///
+/// Creates multiple characters at once from a list of names.
+pub async fn bulk_create(
+    State(state): State<AppState>,
+    Path(project_id): Path<DbId>,
+    Json(input): Json<BulkCreateRequest>,
+) -> AppResult<(StatusCode, Json<DataResponse<Vec<Character>>>)> {
+    let characters =
+        CharacterRepo::create_many(&state.pool, project_id, &input.names, input.group_id).await?;
+    Ok((StatusCode::CREATED, Json(DataResponse { data: characters })))
+}
+
 /// GET /api/v1/projects/{project_id}/characters
 pub async fn list_by_project(
     State(state): State<AppState>,
