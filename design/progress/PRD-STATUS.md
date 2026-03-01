@@ -21,10 +21,10 @@ Source of truth: [`design/design.md`](../design.md)
 | Status | Count |
 |--------|-------|
 | backlog | 0 |
-| planning | 2 |
+| planning | 0 |
 | in-progress | 0 |
 | review | 0 |
-| done | 121 |
+| done | 123 |
 | blocked | 0 |
 | deferred | 0 |
 | maybe | 15 |
@@ -88,7 +88,7 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-104 | Model & LoRA Download Manager | — | `done` | 2026-02-23 | 3 migrations (model_downloads, api_tokens, placement_rules), core module (16 tests), 3 repos, 13 API endpoints, frontend feature (9 tests). |
 | PRD-109 | Scene Video Versioning, External Import & Soft Delete | — | `done` | — | Implemented (2026-02-20). All 7 phases complete: migrations, models, soft delete infra (9 repos), version repo, version API, trash API, delivery integration, integration tests (30 tests). |
 | PRD-113 | Character Ingest Pipeline | 1 | `done` | 2026-02-27 | 3 migrations (5 tables), 4 core modules (name parser, folder scanner, metadata validator, video spec validator), 3 model modules, 3 repo modules, 4 handler modules, 4 route modules, frontend wizard + validation dashboard. 38 core tests. |
-| PRD-122 | Storage Configuration (Local & Cloud S3) | 1 | `planning` | — | StorageProvider trait abstraction (local + S3), aws-sdk-s3 integration, S3 settings in admin panel (PRD-110), connection test, runtime backend switching. Extends PRD-48, PRD-110. |
+| PRD-122 | Storage Configuration (Local & Cloud S3) | 1 | `done` | 2026-03-01 | StorageProvider trait + LocalStorageProvider (core), S3StorageProvider (cloud crate, aws-sdk-s3), runtime hot-swap via RwLock, 5 CoreError variants, 7 settings, seed migration, set_default/test_s3_connection handlers, frontend S3 field toggle. DRY-627 to DRY-634 audited. |
 
 ## Part 3: Generation & Pipeline Core
 
@@ -164,7 +164,7 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-95 | Production Notes & Internal Comments | — | `done` | 2026-02-23 | Phase 7 |
 | PRD-96 | Poster Frame & Thumbnail Selection | — | `done` | 2026-02-28 | Migration, core module (6 tests), model/repo/handler/routes, 6 frontend components (EntityPoster shared), 16 frontend tests. DRY-442 to DRY-450 audited. |
 | PRD-101 | Segment Regeneration Comparison | — | `done` | 2026-02-28 | Migration (segment_versions table), core module (score diff logic, 12 tests), model/repo extension (6 new methods), 4 API endpoints, 9 frontend components (dual sync, QA comparison, batch workflow), 18 frontend tests. DRY-451 fixed, DRY-446 to DRY-450 watch. |
-| PRD-121 | SVI Clip Management | 1 | `planning` | — | Clip gallery UI, clip QA (approve/reject), resume generation from last good clip, external clip import UI. Extends PRD-109. Deps: PRD-109, PRD-24, PRD-25, PRD-35 (all done). |
+| PRD-121 | SVI Clip Management | 1 | `done` | 2026-03-01 | Migration (QA columns), model/DTO updates, soft-delete repo methods, 3 handlers (approve/reject/resume-from), clip_qa constants module, frontend ClipGallery + ClipCard + QA actions + 3 dialogs + useClipManagement hook. DRY-627 to DRY-634 audited. |
 
 ## Part 6: Production & Hand-off
 
@@ -249,3 +249,4 @@ Source of truth: [`design/design.md`](../design.md)
 | 2026-02-27 | Added PRD-120 (Scene & Workflow Naming Hierarchy). Python generation script restructure: three-level hierarchy (WORKFLOWS, SCENE_TYPES, derived SCENES), display names in output/progress/manifest, dual-level filtering (type + scene), --list-scenes flag, backward-compatible config files. Total PRDs: 120 + 15 MAYBEs = 135 |
 | 2026-02-28 | Added PRD-121 (SVI Clip Management). Clip gallery frontend, clip-level QA (approve/reject with reason), resume generation from last good clip, external clip import UI. Extends PRD-109. Total PRDs: 121 + 15 MAYBEs = 136 (+ 1 planning). |
 | 2026-02-28 | Added PRD-122 (Storage Configuration — Local & Cloud S3). StorageProvider trait abstraction, LocalStorageProvider + S3StorageProvider implementations, aws-sdk-s3 integration, S3 settings in admin panel, connection testing, runtime backend switching. Extends PRD-48, PRD-110. Total PRDs: 122 + 15 MAYBEs + 1 done = 138 (2 planning). |
+| 2026-03-01 | Implemented PRD-121 + PRD-122. Both complete: clip QA workflow, storage provider abstraction with S3, runtime hot-swap, 8 DRY findings fixed (DRY-627–634). |
