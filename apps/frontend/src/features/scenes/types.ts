@@ -1,3 +1,18 @@
+export interface Scene {
+  id: number;
+  character_id: number;
+  scene_type_id: number;
+  image_variant_id: number;
+  status_id: number;
+  transition_mode: string;
+  total_segments_estimated: number | null;
+  total_segments_completed: number;
+  actual_duration_secs: number | null;
+  deleted_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface SceneVideoVersion {
   id: number;
   scene_id: number;
