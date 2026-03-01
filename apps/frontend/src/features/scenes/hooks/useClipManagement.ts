@@ -74,20 +74,43 @@ export function useResumeFromClip(sceneId: number) {
   });
 }
 
+/** Build a FormData for clip import and POST it. Shared by single and bulk hooks. */
+function postClipImport(sceneId: number, file: File, notes?: string) {
+  const formData = new FormData();
+  formData.append("file", file);
+  if (notes) formData.append("notes", notes);
+  return api.raw(`/scenes/${sceneId}/versions/import`, {
+    method: "POST",
+    body: formData,
+  });
+}
+
 export function useImportClip(sceneId: number) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ file, notes }: { file: File; notes?: string }) => {
-      const formData = new FormData();
-      formData.append("file", file);
-      if (notes) formData.append("notes", notes);
-      return api.raw(`/scenes/${sceneId}/versions/import`, {
-        method: "POST",
-        body: formData,
-      });
-    },
+    mutationFn: ({ file, notes }: { file: File; notes?: string }) =>
+      postClipImport(sceneId, file, notes),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: clipKeys.list(sceneId) });
+    },
+  });
+}
+
+/** Import a clip with sceneId provided at call time (for bulk operations). */
+export function useBulkImportClip() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      sceneId,
+      file,
+      notes,
+    }: {
+      sceneId: number;
+      file: File;
+      notes?: string;
+    }) => postClipImport(sceneId, file, notes),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: clipKeys.all });
     },
   });
 }

@@ -135,6 +135,7 @@ export function CharacterDetailPage() {
         tabs={CHARACTER_TABS.map((t) => ({ id: t.id, label: t.label }))}
         activeTab={activeTab}
         onTabChange={setActiveTab}
+        variant="pill"
       />
 
       {/* Tab content */}
@@ -142,7 +143,7 @@ export function CharacterDetailPage() {
         <CharacterOverviewTab character={character} characterId={characterId} />
       )}
       {activeTab === "images" && <CharacterImagesTab characterId={characterId} />}
-      {activeTab === "scenes" && <CharacterScenesTab characterId={characterId} />}
+      {activeTab === "scenes" && <CharacterScenesTab characterId={characterId} projectId={projectId} />}
       {activeTab === "deliverables" && <CharacterDeliverablesTab characterId={characterId} />}
       {activeTab === "metadata" && <CharacterMetadataTab characterId={characterId} />}
       {activeTab === "settings" && (

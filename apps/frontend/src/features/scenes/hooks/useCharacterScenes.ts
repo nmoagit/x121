@@ -1,8 +1,8 @@
 /**
- * Hook to list scenes for a character.
+ * Hooks for character scene listing and creation.
  */
 
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import type { Scene } from "../types";
 
@@ -18,5 +18,31 @@ export function useCharacterScenes(characterId: number) {
     queryFn: () =>
       api.get<Scene[]>(`/characters/${characterId}/scenes`),
     enabled: characterId > 0,
+  });
+}
+
+/* --------------------------------------------------------------------------
+   Create scene
+   -------------------------------------------------------------------------- */
+
+export interface CreateSceneInput {
+  scene_type_id: number;
+  image_variant_id?: number | null;
+  track_id?: number | null;
+  transition_mode?: string;
+}
+
+/** Create a new scene for a character. */
+export function useCreateScene(characterId: number) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: CreateSceneInput) =>
+      api.post<Scene>(`/characters/${characterId}/scenes`, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: sceneKeys.byCharacter(characterId),
+      });
+    },
   });
 }
