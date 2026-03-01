@@ -101,6 +101,9 @@ const projectDetailRoute = createRoute({
 const characterDetailRoute = createRoute({
   getParentRoute: () => projectsLayoutRoute,
   path: "/projects/$projectId/characters/$characterId",
+  validateSearch: (search: Record<string, unknown>) => ({
+    tab: typeof search.tab === "string" ? search.tab : undefined,
+  }),
   component: lazyRouteComponent(() =>
     import("@/features/characters").then((m) => ({ default: m.CharacterDetailPage })),
   ),

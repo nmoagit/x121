@@ -18,10 +18,12 @@ import { Grid } from "@/components/layout";
 import { Badge, Button, LoadingPane } from "@/components/primitives";
 import { Checkbox } from "@/components/primitives/Checkbox";
 import { API_BASE_URL } from "@/lib/api";
+import { cn } from "@/lib/cn";
 import { AlertCircle, Pause, Play, Upload, Video } from "@/tokens/icons";
 
 import { useBatchGenerate } from "@/features/generation/hooks/use-generation";
 import { useImageVariants } from "@/features/images/hooks/use-image-variants";
+import { findVariantForTrack } from "@/features/images/utils";
 import { sourceLabel } from "@/features/scene-catalog/SourceBadge";
 import { TrackBadge } from "@/features/scene-catalog/TrackBadge";
 import { useCharacterSceneSettings } from "@/features/scene-catalog/hooks/use-character-scene-settings";
@@ -38,6 +40,7 @@ import {
 import type { Scene } from "@/features/scenes/types";
 
 import { ImportPreviewModal } from "./ImportPreviewModal";
+import { MediaPlaceholder } from "./MediaPlaceholder";
 import { matchDroppedVideos } from "./matchDroppedVideos";
 import type { MatchResult } from "./matchDroppedVideos";
 
@@ -67,7 +70,7 @@ export function CharacterScenesTab({ characterId }: CharacterScenesTabProps) {
     isLoading: settingsLoading,
     error: settingsError,
   } = useCharacterSceneSettings(characterId);
-  const { expandedRows: allExpandedRows, catalogLoading } = useExpandedSettings(settings);
+  const allExpandedRows = useExpandedSettings(settings);
   const { data: scenes, isLoading: scenesLoading } = useCharacterScenes(characterId);
   const { data: tracks } = useTracks();
   const { data: imageVariants } = useImageVariants(characterId);
@@ -104,20 +107,11 @@ export function CharacterScenesTab({ characterId }: CharacterScenesTabProps) {
 
   /* --- resolve image_variant_id for a track slug --- */
   const resolveVariantId = useCallback(
-    (trackSlug: string | undefined): number | null => {
+    (trackSlug: string | null | undefined): number | null => {
       if (!imageVariants || imageVariants.length === 0) return null;
       if (trackSlug) {
-        const match = imageVariants.find(
-          (v) => v.variant_type?.toLowerCase() === trackSlug.toLowerCase() && v.is_hero,
-        );
-        if (match) return match.id;
-        // Fallback: any variant matching the track type
-        const fallback = imageVariants.find(
-          (v) => v.variant_type?.toLowerCase() === trackSlug.toLowerCase(),
-        );
-        if (fallback) return fallback.id;
-        // No variant matches this track — don't fall through to a generic one
-        return null;
+        const match = findVariantForTrack(imageVariants, trackSlug);
+        return match?.id ?? null;
       }
       // No track specified — need a generic seed image
       const hero = imageVariants.find((v) => v.is_hero);
@@ -249,7 +243,7 @@ export function CharacterScenesTab({ characterId }: CharacterScenesTabProps) {
     }
   }, [pendingImport, scenes, resolveVariantId, createScene, bulkImport, addToast]);
 
-  if (settingsLoading || catalogLoading || scenesLoading) {
+  if (settingsLoading || scenesLoading) {
     return <LoadingPane />;
   }
 
@@ -339,6 +333,35 @@ export function CharacterScenesTab({ characterId }: CharacterScenesTabProps) {
 
   function handleSingleGenerate(sceneId: number) {
     batchGenerate.mutate({ scene_ids: [sceneId] });
+  }
+
+  async function handleSceneVideoDrop(slot: SceneSlot, file: File) {
+    let sceneId: number;
+
+    if (slot.scene) {
+      sceneId = slot.scene.id;
+    } else {
+      const variantId = resolveVariantId(slot.row.track_slug);
+      try {
+        const newScene = await createScene.mutateAsync({
+          scene_type_id: slot.row.scene_type_id,
+          image_variant_id: variantId,
+          track_id: slot.row.track_id ?? null,
+        });
+        sceneId = newScene.id;
+      } catch {
+        addToast({ message: `Failed to create scene for "${slot.row.name}"`, variant: "error" });
+        return;
+      }
+    }
+
+    try {
+      await bulkImport.mutateAsync({ sceneId, file });
+      addToast({ message: `Imported video for "${slot.row.name}"`, variant: "success" });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "unknown error";
+      addToast({ message: `Import failed: ${msg}`, variant: "error" });
+    }
   }
 
   const isDisabled = importing || batchGenerate.isPending;
@@ -436,6 +459,7 @@ export function CharacterScenesTab({ characterId }: CharacterScenesTabProps) {
             isSelected={slot.scene !== null && selected.has(slot.scene.id)}
             onToggleSelect={toggleSelect}
             onGenerate={handleSingleGenerate}
+            onVideoDrop={handleSceneVideoDrop}
             generating={isDisabled}
             playback={playback}
           />
@@ -469,23 +493,62 @@ interface SceneCardProps {
   isSelected: boolean;
   onToggleSelect: (sceneId: number) => void;
   onGenerate: (sceneId: number) => void;
+  onVideoDrop: (slot: SceneSlot, file: File) => void;
   generating: boolean;
   playback: boolean;
 }
 
-function SceneCard({ slot, isSelected, onToggleSelect, onGenerate, generating, playback }: SceneCardProps) {
+function SceneCard({ slot, isSelected, onToggleSelect, onGenerate, onVideoDrop, generating, playback }: SceneCardProps) {
   const { row, scene } = slot;
   const isPlaceholder = scene === null;
   const hasSeedImage = slot.missingVariant === null;
+  const [dragOver, setDragOver] = useState(false);
 
   const estimated = scene?.total_segments_estimated ?? 0;
   const completed = scene?.total_segments_completed ?? 0;
   const pct = estimated > 0 ? Math.round((completed / estimated) * 100) : 0;
   const isGenerating = scene?.status_id === SCENE_STATUS_GENERATING;
 
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setDragOver(false);
+      const file = e.dataTransfer.files[0];
+      if (file && file.type.startsWith("video/")) {
+        onVideoDrop(slot, file);
+      }
+    },
+    [onVideoDrop, slot],
+  );
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOver(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+      setDragOver(false);
+    }
+  }, []);
+
   return (
-    <Card padding="md" className={isPlaceholder ? "opacity-60 border-dashed" : undefined}>
-      <div className="flex flex-col gap-[var(--spacing-3)]">
+    <Card
+      padding="md"
+      className={cn(
+        "transition-colors",
+        isPlaceholder && !dragOver && "opacity-60 border-dashed",
+        dragOver && "ring-2 ring-[var(--color-action-primary)] bg-[var(--color-surface-secondary)]",
+      )}
+    >
+      <div
+        className="flex flex-col gap-[var(--spacing-3)]"
+        onDrop={handleDrop}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+      >
         {/* Header: checkbox + title + track badge */}
         <div className="flex items-center gap-[var(--spacing-2)] min-w-0">
           {scene && hasSeedImage && (
@@ -501,8 +564,15 @@ function SceneCard({ slot, isSelected, onToggleSelect, onGenerate, generating, p
           )}
         </div>
 
-        {/* Video preview — always rendered for fixed layout */}
-        <SceneVideoThumbnail sceneId={scene?.id ?? 0} playback={playback} />
+        {/* Video preview / drop target */}
+        {dragOver ? (
+          <div className="flex flex-col items-center justify-center rounded border-2 border-dashed border-[var(--color-action-primary)] aspect-video">
+            <Upload size={24} className="text-[var(--color-action-primary)]" />
+            <span className="text-xs text-[var(--color-action-primary)] mt-1">Drop video here</span>
+          </div>
+        ) : (
+          <SceneVideoThumbnail sceneId={scene?.id ?? 0} playback={playback} />
+        )}
 
         {/* Status row */}
         <div className="flex items-center gap-[var(--spacing-2)]">
@@ -572,10 +642,10 @@ function SceneVideoThumbnail({ sceneId, playback }: { sceneId: number; playback:
 
   if (!sceneId || !versions || versions.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center rounded bg-[var(--color-surface-tertiary)] aspect-video">
-        <Video size={24} className="text-[var(--color-text-muted)]" />
-        <span className="text-xs text-[var(--color-text-muted)] mt-1">No video</span>
-      </div>
+      <MediaPlaceholder
+        icon={<Video size={24} className="text-[var(--color-text-muted)]" />}
+        label="No video"
+      />
     );
   }
 

@@ -24,6 +24,7 @@ import {
   type ImageVariantStatusId,
   type Provenance,
 } from "./types";
+import { variantImageUrl } from "./utils";
 
 /* --------------------------------------------------------------------------
    Types
@@ -168,7 +169,7 @@ export function ExternalEditFlow({
                 >
                   {entry.file_path ? (
                     <img
-                      src={entry.file_path}
+                      src={variantImageUrl(entry.file_path)}
                       alt={`Version ${entry.version}`}
                       className="h-10 w-10 shrink-0 rounded-[var(--radius-sm)] object-cover"
                     />

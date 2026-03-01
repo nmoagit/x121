@@ -5,6 +5,8 @@
  * - `.txt` files: split by newlines
  * - `.csv` files: first column as names (auto-detects headers)
  * - Directories: collect subfolder names via `webkitGetAsEntry`
+ * - Asset-aware mode: when `onFolderDropped` is provided, collects files
+ *   from dropped directories and classifies them as images/videos.
  *
  * Wraps children and overlays a visual indicator on drag-over.
  */
@@ -12,7 +14,9 @@
 import { useCallback, useRef, useState } from "react";
 import type { ReactNode } from "react";
 
+import type { CharacterDropPayload, DroppedAsset } from "@/features/projects/types";
 import { cn } from "@/lib/cn";
+import { isImageFile, isVideoFile, stripExtension } from "@/lib/file-types";
 
 /* --------------------------------------------------------------------------
    Props
@@ -21,12 +25,14 @@ import { cn } from "@/lib/cn";
 interface FileDropZoneProps {
   children: ReactNode;
   onNamesDropped: (names: string[]) => void;
+  /** When provided and directories are dropped, called instead of onNamesDropped. */
+  onFolderDropped?: (payloads: CharacterDropPayload[]) => void;
   /** Optional ref callback to receive the browseFolder function. */
   browseFolderRef?: React.MutableRefObject<(() => void) | null>;
 }
 
 /* --------------------------------------------------------------------------
-   Helpers
+   Helpers — text parsing (unchanged)
    -------------------------------------------------------------------------- */
 
 /** Parse a plain text file into trimmed, non-empty lines. */
@@ -64,40 +70,9 @@ function parseCsv(text: string): string[] {
     .filter(Boolean);
 }
 
-/**
- * Read a dropped directory and extract character names.
- *
- * - If the directory contains subdirectories, each subdirectory name
- *   is a character (e.g. dropping `batch5/videos/` yields `carli_nicki`,
- *   `cj_miles`, etc. from its subfolders).
- * - If the directory contains only files (no subdirectories), the
- *   directory's own name is the character (e.g. dropping `carli_nicki/`
- *   yields `carli_nicki`).
- */
-async function readDirectoryNames(
-  entry: FileSystemDirectoryEntry,
-): Promise<string[]> {
-  return new Promise((resolve) => {
-    const reader = entry.createReader();
-    const subfolderNames: string[] = [];
-
-    reader.readEntries((entries) => {
-      for (const e of entries) {
-        if (e.isDirectory) {
-          subfolderNames.push(e.name);
-        }
-      }
-
-      if (subfolderNames.length > 0) {
-        // Parent directory with character subfolders
-        resolve(subfolderNames);
-      } else {
-        // Leaf character folder — use the folder's own name
-        resolve([entry.name]);
-      }
-    });
-  });
-}
+/* --------------------------------------------------------------------------
+   Helpers — directory reading
+   -------------------------------------------------------------------------- */
 
 /** Read a File's text content. */
 function readFileText(file: File): Promise<string> {
@@ -109,13 +84,139 @@ function readFileText(file: File): Promise<string> {
   });
 }
 
+/**
+ * Read all entries from a directory reader, handling the browser quirk
+ * where `readEntries()` returns max ~100 entries per call.
+ */
+function readAllEntries(reader: FileSystemDirectoryReader): Promise<FileSystemEntry[]> {
+  return new Promise((resolve, reject) => {
+    const allEntries: FileSystemEntry[] = [];
+
+    function readBatch() {
+      reader.readEntries(
+        (entries) => {
+          if (entries.length === 0) {
+            resolve(allEntries);
+          } else {
+            allEntries.push(...entries);
+            readBatch();
+          }
+        },
+        reject,
+      );
+    }
+
+    readBatch();
+  });
+}
+
+/** Convert a FileSystemFileEntry to a File. */
+function entryToFile(entry: FileSystemFileEntry): Promise<File> {
+  return new Promise((resolve, reject) => {
+    entry.file(resolve, reject);
+  });
+}
+
+/**
+ * Recursively collect all Files from a directory entry.
+ */
+async function collectFilesFromDirectory(
+  dirEntry: FileSystemDirectoryEntry,
+): Promise<File[]> {
+  const entries = await readAllEntries(dirEntry.createReader());
+  const files: File[] = [];
+
+  for (const entry of entries) {
+    if (entry.isFile) {
+      files.push(await entryToFile(entry as FileSystemFileEntry));
+    }
+    // Ignore nested subdirectories within a character folder
+  }
+
+  return files;
+}
+
+/** Strip extension from a filename and return the lowercased stem. */
+function filenameStem(filename: string): string {
+  return stripExtension(filename).toLowerCase();
+}
+
+/** Classify a list of files from a character folder into a CharacterDropPayload. */
+function classifyCharacterFiles(
+  characterName: string,
+  files: File[],
+): CharacterDropPayload {
+  const assets: DroppedAsset[] = [];
+
+  for (const file of files) {
+    if (isImageFile(file.name)) {
+      assets.push({
+        file,
+        category: filenameStem(file.name),
+        kind: "image",
+      });
+    } else if (isVideoFile(file.name)) {
+      assets.push({
+        file,
+        category: filenameStem(file.name),
+        kind: "video",
+      });
+    }
+    // Ignore other file types
+  }
+
+  return { rawName: characterName, assets };
+}
+
+/**
+ * Read a dropped directory and produce CharacterDropPayloads.
+ *
+ * - If the directory contains subdirectories, each subdirectory is a character.
+ * - If the directory contains only files, the directory itself is a character.
+ */
+async function readDirectoryPayloads(
+  entry: FileSystemDirectoryEntry,
+): Promise<CharacterDropPayload[]> {
+  const entries = await readAllEntries(entry.createReader());
+  const subdirs = entries.filter((e) => e.isDirectory);
+
+  if (subdirs.length > 0) {
+    // Parent directory with character subfolders
+    const payloads: CharacterDropPayload[] = [];
+    for (const sub of subdirs) {
+      const files = await collectFilesFromDirectory(sub as FileSystemDirectoryEntry);
+      payloads.push(classifyCharacterFiles(sub.name, files));
+    }
+    return payloads;
+  }
+
+  // Leaf character folder — collect files from it directly
+  const files = await collectFilesFromDirectory(entry);
+  return [classifyCharacterFiles(entry.name, files)];
+}
+
+/**
+ * Read a dropped directory and extract character names (legacy path).
+ */
+async function readDirectoryNames(
+  entry: FileSystemDirectoryEntry,
+): Promise<string[]> {
+  const entries = await readAllEntries(entry.createReader());
+  const subfolderNames = entries.filter((e) => e.isDirectory).map((e) => e.name);
+
+  if (subfolderNames.length > 0) {
+    return subfolderNames;
+  }
+
+  return [entry.name];
+}
+
 /* --------------------------------------------------------------------------
-   Component
+   Helpers — folder picker (browse button)
    -------------------------------------------------------------------------- */
 
 /** Extract names from a list of files selected via the folder picker. */
 function namesFromFolderFiles(files: FileList): string[] {
-  // Collect unique top-level subfolder names from relative paths
   const folderNames = new Set<string>();
   const fileNames: string[] = [];
 
@@ -125,25 +226,84 @@ function namesFromFolderFiles(files: FileList): string[] {
     const rel =
       (file as File & { webkitRelativePath?: string }).webkitRelativePath ?? "";
     const parts = rel.split("/");
-    // parts[0] = selected root folder, parts[1] = subfolder or file
     if (parts.length >= 3 && parts[1]) {
-      // Has subdirectories — use subfolder name
       folderNames.add(parts[1]);
     } else if (parts.length === 2 && parts[1]) {
-      // Direct file in root — use filename without extension
       const stem = parts[1].replace(/\.[^.]+$/, "");
       if (stem) fileNames.push(stem);
     }
   }
 
-  // Prefer subfolder names; fall back to filenames if no subdirs
   if (folderNames.size > 0) return [...folderNames];
   return [...new Set(fileNames)];
 }
 
+/** Build CharacterDropPayloads from browse-folder file picker results. */
+function payloadsFromFolderFiles(files: FileList): CharacterDropPayload[] {
+  // Group files by character folder name
+  const charFilesMap = new Map<string, File[]>();
+  let hasSubdirs = false;
+
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    if (!file) continue;
+    const rel =
+      (file as File & { webkitRelativePath?: string }).webkitRelativePath ?? "";
+    const parts = rel.split("/");
+
+    if (parts.length >= 3 && parts[1]) {
+      // parts[0] = root folder, parts[1] = character subfolder
+      hasSubdirs = true;
+      const charName = parts[1];
+      const arr = charFilesMap.get(charName);
+      if (arr) {
+        arr.push(file);
+      } else {
+        charFilesMap.set(charName, [file]);
+      }
+    } else if (parts.length === 2 && parts[0]) {
+      // Direct files in root folder — character name is the root folder
+      const charName = parts[0];
+      const arr = charFilesMap.get(charName);
+      if (arr) {
+        arr.push(file);
+      } else {
+        charFilesMap.set(charName, [file]);
+      }
+    }
+  }
+
+  // If there were subdirectories, use subfolder names as character names
+  // If not, the root folder is the character name (single char folder was picked)
+  if (!hasSubdirs) {
+    // All files belong to a single character folder
+    const rootName = files[0]
+      ? ((files[0] as File & { webkitRelativePath?: string }).webkitRelativePath ?? "").split("/")[0] ?? ""
+      : "";
+    if (rootName) {
+      const allFiles: File[] = [];
+      for (let i = 0; i < files.length; i++) {
+        if (files[i]) allFiles.push(files[i]!);
+      }
+      return [classifyCharacterFiles(rootName, allFiles)];
+    }
+  }
+
+  const payloads: CharacterDropPayload[] = [];
+  for (const [name, charFiles] of charFilesMap) {
+    payloads.push(classifyCharacterFiles(name, charFiles));
+  }
+  return payloads;
+}
+
+/* --------------------------------------------------------------------------
+   Component
+   -------------------------------------------------------------------------- */
+
 export function FileDropZone({
   children,
   onNamesDropped,
+  onFolderDropped,
   browseFolderRef,
 }: FileDropZoneProps) {
   const [isDragOver, setIsDragOver] = useState(false);
@@ -162,13 +322,19 @@ export function FileDropZone({
   const handleFolderInput = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       if (!e.target.files?.length) return;
-      const names = namesFromFolderFiles(e.target.files);
-      const unique = [...new Set(names)];
-      if (unique.length > 0) onNamesDropped(unique);
+
+      if (onFolderDropped) {
+        const payloads = payloadsFromFolderFiles(e.target.files);
+        if (payloads.length > 0) onFolderDropped(payloads);
+      } else {
+        const names = namesFromFolderFiles(e.target.files);
+        const unique = [...new Set(names)];
+        if (unique.length > 0) onNamesDropped(unique);
+      }
       // Reset so the same folder can be re-selected
       e.target.value = "";
     },
-    [onNamesDropped],
+    [onNamesDropped, onFolderDropped],
   );
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -191,45 +357,73 @@ export function FileDropZone({
       e.preventDefault();
       setIsDragOver(false);
 
-      const items = e.dataTransfer.items;
-      const allNames: string[] = [];
+      // Collect all entries and files SYNCHRONOUSLY before any async work.
+      // Browsers invalidate `e.dataTransfer.items` after the first await,
+      // so a second loop iteration would see an empty/stale list.
+      const dirEntries: FileSystemDirectoryEntry[] = [];
+      const plainFiles: File[] = [];
 
+      const items = e.dataTransfer.items;
       for (let i = 0; i < items.length; i++) {
         const item = items[i];
         if (!item || item.kind !== "file") continue;
 
-        // Check if it's a directory via webkitGetAsEntry
         const entry = item.webkitGetAsEntry?.();
         if (entry?.isDirectory) {
-          const dirNames = await readDirectoryNames(
-            entry as FileSystemDirectoryEntry,
-          );
-          allNames.push(...dirNames);
-          continue;
+          dirEntries.push(entry as FileSystemDirectoryEntry);
+        } else {
+          const file = item.getAsFile();
+          if (file) plainFiles.push(file);
+        }
+      }
+
+      // Asset-aware directory path
+      if (dirEntries.length > 0 && onFolderDropped) {
+        const allPayloads: CharacterDropPayload[] = [];
+        for (const dirEntry of dirEntries) {
+          const payloads = await readDirectoryPayloads(dirEntry);
+          allPayloads.push(...payloads);
         }
 
-        // Regular file
-        const file = item.getAsFile();
-        if (!file) continue;
+        // Deduplicate by rawName, keeping first occurrence
+        const seen = new Set<string>();
+        const unique = allPayloads.filter((p) => {
+          if (seen.has(p.rawName)) return false;
+          seen.add(p.rawName);
+          return true;
+        });
 
+        if (unique.length > 0) {
+          onFolderDropped(unique);
+        }
+        return;
+      }
+
+      // Legacy name-only path (directories without onFolderDropped, or text/csv files)
+      const allNames: string[] = [];
+
+      for (const dirEntry of dirEntries) {
+        const dirNames = await readDirectoryNames(dirEntry);
+        allNames.push(...dirNames);
+      }
+
+      for (const file of plainFiles) {
         const text = await readFileText(file);
         const ext = file.name.split(".").pop()?.toLowerCase();
 
         if (ext === "csv") {
           allNames.push(...parseCsv(text));
         } else {
-          // Treat as plain text (.txt or any other)
           allNames.push(...parseTxt(text));
         }
       }
 
-      // Deduplicate while preserving order
       const unique = [...new Set(allNames)];
       if (unique.length > 0) {
         onNamesDropped(unique);
       }
     },
-    [onNamesDropped],
+    [onNamesDropped, onFolderDropped],
   );
 
   return (

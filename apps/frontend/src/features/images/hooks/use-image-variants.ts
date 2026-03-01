@@ -46,8 +46,7 @@ export function useImageVariants(characterId: number, variantType?: string) {
   const params = variantType ? `?variant_type=${encodeURIComponent(variantType)}` : "";
   return useQuery({
     queryKey: imageVariantKeys.list(characterId, variantType),
-    queryFn: () =>
-      api.get<ImageVariant[]>(`${variantBasePath(characterId)}${params}`),
+    queryFn: () => api.get<ImageVariant[]>(`${variantBasePath(characterId)}${params}`),
     enabled: characterId > 0,
   });
 }
@@ -56,8 +55,7 @@ export function useImageVariants(characterId: number, variantType?: string) {
 export function useImageVariant(characterId: number, id: number | null) {
   return useQuery({
     queryKey: imageVariantKeys.detail(characterId, id ?? 0),
-    queryFn: () =>
-      api.get<ImageVariant>(`${variantBasePath(characterId)}/${id}`),
+    queryFn: () => api.get<ImageVariant>(`${variantBasePath(characterId)}/${id}`),
     enabled: id !== null && characterId > 0,
   });
 }
@@ -66,8 +64,7 @@ export function useImageVariant(characterId: number, id: number | null) {
 export function useVariantHistory(characterId: number, id: number | null) {
   return useQuery({
     queryKey: imageVariantKeys.history(characterId, id ?? 0),
-    queryFn: () =>
-      api.get<ImageVariant[]>(`${variantBasePath(characterId)}/${id}/history`),
+    queryFn: () => api.get<ImageVariant[]>(`${variantBasePath(characterId)}/${id}/history`),
     enabled: id !== null && characterId > 0,
   });
 }
@@ -110,8 +107,7 @@ export function useDeleteImageVariant(characterId: number) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: number) =>
-      api.delete(`${variantBasePath(characterId)}/${id}`),
+    mutationFn: (id: number) => api.delete(`${variantBasePath(characterId)}/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: imageVariantKeys.lists() });
     },
@@ -157,16 +153,51 @@ export function useExportVariant(characterId: number) {
   });
 }
 
+/** Build FormData and POST an image variant upload. Shared by hook and bulk upload. */
+export function postImageVariantUpload(
+  characterId: number,
+  file: File,
+  variantType: string,
+  variantLabel?: string,
+) {
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("variant_type", variantType);
+  if (variantLabel) formData.append("variant_label", variantLabel);
+
+  return api.raw(`${variantBasePath(characterId)}/upload`, {
+    method: "POST",
+    body: formData,
+  });
+}
+
+/** Upload an image variant via multipart form. */
+export function useUploadImageVariant(characterId: number) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      file,
+      variant_type,
+      variant_label,
+    }: {
+      file: File;
+      variant_type: string;
+      variant_label?: string;
+    }) => postImageVariantUpload(characterId, file, variant_type, variant_label),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: imageVariantKeys.lists() });
+    },
+  });
+}
+
 /** Generate variants via ComfyUI. */
 export function useGenerateVariants(characterId: number) {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (data: GenerateVariantsInput) =>
-      api.post<ImageVariant[]>(
-        `${variantBasePath(characterId)}/generate`,
-        data,
-      ),
+      api.post<ImageVariant[]>(`${variantBasePath(characterId)}/generate`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: imageVariantKeys.lists() });
     },

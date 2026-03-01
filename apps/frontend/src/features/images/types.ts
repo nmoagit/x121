@@ -121,3 +121,9 @@ export interface GenerateVariantsInput {
 
 export const VALID_IMAGE_FORMATS = ["png", "jpeg", "jpg", "webp"] as const;
 export type ValidImageFormat = (typeof VALID_IMAGE_FORMATS)[number];
+
+/** Comma-separated MIME types derived from VALID_IMAGE_FORMATS, suitable for `<input accept>`. */
+export const IMAGE_ACCEPT_STRING = VALID_IMAGE_FORMATS
+  .filter((f) => f !== "jpg") // jpg is a duplicate of jpeg
+  .map((f) => `image/${f}`)
+  .join(",");

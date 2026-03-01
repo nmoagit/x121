@@ -19,6 +19,11 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (p) => p.replace(/^\/x121/, ""),
       },
+      "/x121/storage": {
+        target: "http://localhost:3000",
+        changeOrigin: true,
+        rewrite: (p) => p.replace(/^\/x121/, ""),
+      },
     },
   },
 });

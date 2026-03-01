@@ -104,6 +104,7 @@ export {
   TrendingUp,
   Undo2,
   Users,
+  Wand2,
   Wrench,
 } from "lucide-react";
 

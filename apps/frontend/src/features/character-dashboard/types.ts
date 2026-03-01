@@ -60,6 +60,7 @@ export interface CharacterDashboardData {
   readiness: ReadinessSnapshot | null;
   scene_count: number;
   generation_summary: GenerationSummary;
+  scene_assignments: SceneAssignment[];
 }
 
 /** A missing item with category, label, and action URL. */

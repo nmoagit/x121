@@ -102,6 +102,24 @@ export interface UpdateCharacter {
 }
 
 /* --------------------------------------------------------------------------
+   Folder-drop import payloads
+   -------------------------------------------------------------------------- */
+
+/** A file classified from a dropped character folder. */
+export interface DroppedAsset {
+  file: File;
+  /** For images: variant_type (e.g. "topless"). For videos: raw filename stem. */
+  category: string;
+  kind: "image" | "video";
+}
+
+/** All files for one character, parsed from a folder drop. */
+export interface CharacterDropPayload {
+  rawName: string;
+  assets: DroppedAsset[];
+}
+
+/* --------------------------------------------------------------------------
    Constants
    -------------------------------------------------------------------------- */
 
@@ -136,12 +154,10 @@ export const PROJECT_STATUS_LABELS: Record<string, string> = {
 /** Tab definitions for project detail page. */
 export const PROJECT_TABS = [
   { id: "overview", label: "Overview" },
-  { id: "groups", label: "Groups" },
   { id: "characters", label: "Characters" },
-  { id: "scene-settings", label: "Scene Settings" },
   { id: "production", label: "Production" },
   { id: "delivery", label: "Delivery" },
-  { id: "config", label: "Configuration" },
+  { id: "settings", label: "Settings" },
 ] as const;
 
 /** Tab definitions for character detail page. */

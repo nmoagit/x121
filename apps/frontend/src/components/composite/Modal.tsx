@@ -88,7 +88,7 @@ export function Modal({ open, onClose, title, size = "md", children }: ModalProp
         aria-label={title}
         className={cn(
           "relative w-full mx-[var(--spacing-4)]",
-          "bg-[var(--color-surface-secondary)] rounded-[var(--radius-lg)]",
+          "bg-[var(--color-surface-secondary)] text-[var(--color-text-primary)] rounded-[var(--radius-lg)]",
           "shadow-[var(--shadow-lg)] p-[var(--spacing-6)]",
           "animate-[scaleIn_var(--duration-fast)_var(--ease-default)]",
           "focus:outline-none",

@@ -27,6 +27,7 @@ import {
   type ImageVariantStatusId,
   type Provenance,
 } from "./types";
+import { variantImageUrl } from "./utils";
 
 /* --------------------------------------------------------------------------
    Helpers
@@ -98,7 +99,7 @@ function VariantCard({
             </div>
           ) : variant.file_path ? (
             <img
-              src={variant.file_path}
+              src={variantImageUrl(variant.file_path)}
               alt={variant.variant_label}
               className="h-32 w-full object-cover"
             />
@@ -297,7 +298,7 @@ export function VariantGallery({ characterId, sourceImageUrl }: VariantGalleryPr
             <div className="flex justify-center">
               {previewVariant.file_path ? (
                 <img
-                  src={previewVariant.file_path}
+                  src={variantImageUrl(previewVariant.file_path)}
                   alt={previewVariant.variant_label}
                   className="max-h-[60vh] rounded-[var(--radius-md)] object-contain"
                 />

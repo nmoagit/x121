@@ -1,13 +1,12 @@
 /**
- * Character settings tab with inline editing (PRD-112).
+ * Character settings tab with pipeline settings and scene overrides (PRD-112).
  */
 
 import { LoadingPane } from "@/components/primitives";
-import { EmptyState } from "@/components/domain";
 import { Stack } from "@/components/layout";
-import { Settings } from "@/tokens/icons";
 
 import { PipelineSettingsEditor } from "@/features/character-dashboard";
+import { CharacterSceneOverrides } from "@/features/scene-catalog";
 
 import {
   useCharacterSettings,
@@ -37,23 +36,14 @@ export function CharacterSettingsTab({
     return <LoadingPane />;
   }
 
-  if (!settings || Object.keys(settings).length === 0) {
-    return (
-      <EmptyState
-        icon={<Settings size={32} />}
-        title="No settings"
-        description="This character has no settings configured."
-      />
-    );
-  }
-
   return (
-    <Stack gap={4}>
+    <Stack gap={6}>
       <PipelineSettingsEditor
-        settings={settings}
+        settings={settings ?? {}}
         onSave={(updates) => updateSettings.mutate(updates)}
         isSaving={updateSettings.isPending}
       />
+      <CharacterSceneOverrides characterId={characterId} />
     </Stack>
   );
 }

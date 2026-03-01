@@ -18,11 +18,9 @@ import { formatDate } from "@/lib/format";
 import { useProject, useProjectStats } from "./hooks/use-projects";
 import { ProjectOverviewTab } from "./tabs/ProjectOverviewTab";
 import { ProjectCharactersTab } from "./tabs/ProjectCharactersTab";
-import { ProjectGroupsTab } from "./tabs/ProjectGroupsTab";
-import { ProjectSceneSettingsTab } from "./tabs/ProjectSceneSettingsTab";
 import { ProjectProductionTab } from "./tabs/ProjectProductionTab";
 import { ProjectDeliveryTab } from "./tabs/ProjectDeliveryTab";
-import { ProjectConfigTab } from "./tabs/ProjectConfigTab";
+import { ProjectSettingsTab } from "./tabs/ProjectConfigTab";
 import { PROJECT_STATUS_BADGE_VARIANT, PROJECT_STATUS_LABELS, PROJECT_TABS } from "./types";
 
 /* --------------------------------------------------------------------------
@@ -111,11 +109,9 @@ export function ProjectDetailPage() {
       {/* Tab content */}
       {activeTab === "overview" && <ProjectOverviewTab projectId={id} stats={stats} />}
       {activeTab === "characters" && <ProjectCharactersTab projectId={id} />}
-      {activeTab === "groups" && <ProjectGroupsTab projectId={id} />}
-      {activeTab === "scene-settings" && <ProjectSceneSettingsTab projectId={id} />}
       {activeTab === "production" && <ProjectProductionTab />}
       {activeTab === "delivery" && <ProjectDeliveryTab />}
-      {activeTab === "config" && <ProjectConfigTab projectId={id} />}
+      {activeTab === "settings" && <ProjectSettingsTab projectId={id} />}
     </Stack>
   );
 }

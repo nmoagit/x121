@@ -11,6 +11,7 @@ import { Download, Video, Image } from "@/tokens/icons";
 import { useImageVariants } from "@/features/images/hooks/use-image-variants";
 import { IMAGE_VARIANT_STATUS } from "@/features/images/types";
 import type { ImageVariant } from "@/features/images/types";
+import { variantImageUrl } from "@/features/images/utils";
 import { useCharacterScenes } from "@/features/scenes/hooks/useCharacterScenes";
 import { useSceneVersions } from "@/features/scenes/hooks/useClipManagement";
 import type { Scene, SceneVideoVersion } from "@/features/scenes/types";
@@ -25,7 +26,7 @@ function ApprovedVariantCard({ variant }: { variant: ImageVariant }) {
       <Stack gap={2}>
         {variant.file_path ? (
           <img
-            src={variant.file_path}
+            src={variantImageUrl(variant.file_path)}
             alt={variant.variant_label}
             className="h-32 w-full rounded-[var(--radius-sm)] object-cover"
           />
@@ -52,7 +53,7 @@ function ApprovedVariantCard({ variant }: { variant: ImageVariant }) {
             variant="ghost"
             size="sm"
             icon={<Download size={14} />}
-            onClick={() => window.open(variant.file_path, "_blank")}
+            onClick={() => window.open(variantImageUrl(variant.file_path), "_blank")}
           >
             Download
           </Button>

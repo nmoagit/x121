@@ -74,8 +74,9 @@ export function useResumeFromClip(sceneId: number) {
   });
 }
 
-/** Build a FormData for clip import and POST it. Shared by single and bulk hooks. */
-function postClipImport(sceneId: number, file: File, notes?: string) {
+/** Build a FormData for clip import and POST it. Shared by single and bulk hooks,
+ *  as well as standalone bulk-asset-upload functions. */
+export function postClipImport(sceneId: number, file: File, notes?: string) {
   const formData = new FormData();
   formData.append("file", file);
   if (notes) formData.append("notes", notes);

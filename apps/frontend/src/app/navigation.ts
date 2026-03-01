@@ -51,6 +51,8 @@ export interface NavItemDef {
   path: string;
   icon: LucideIcon;
   requiredRole?: UserRole;
+  /** When true, only highlight when the URL matches exactly (no fuzzy child matching). */
+  exact?: boolean;
 }
 
 export interface NavGroupDef {
@@ -71,7 +73,7 @@ export const NAV_GROUPS: NavGroupDef[] = [
   {
     label: "Projects",
     items: [
-      { label: "All Projects", path: "/projects", icon: FolderKanban },
+      { label: "All Projects", path: "/projects", icon: FolderKanban, exact: true },
     ],
   },
   {

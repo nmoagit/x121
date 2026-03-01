@@ -11,7 +11,7 @@ interface NavItemProps {
 
 export function NavItem({ item, collapsed }: NavItemProps) {
   const matchRoute = useMatchRoute();
-  const isActive = matchRoute({ to: item.path, fuzzy: item.path !== "/" });
+  const isActive = matchRoute({ to: item.path, fuzzy: !item.exact && item.path !== "/" });
 
   const link = (
     <Link

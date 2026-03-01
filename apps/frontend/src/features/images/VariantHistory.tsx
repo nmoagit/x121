@@ -17,6 +17,7 @@ import {
   type ImageVariantStatusId,
   type Provenance,
 } from "./types";
+import { variantImageUrl } from "./utils";
 
 /* --------------------------------------------------------------------------
    Types
@@ -74,7 +75,7 @@ export function VariantHistory({ characterId, variantId }: VariantHistoryProps) 
                   {/* Thumbnail */}
                   {entry.file_path ? (
                     <img
-                      src={entry.file_path}
+                      src={variantImageUrl(entry.file_path)}
                       alt={`Version ${entry.version}`}
                       className="h-16 w-16 shrink-0 rounded-[var(--radius-sm)] object-cover"
                     />

@@ -13,7 +13,7 @@
  */
 
 import type { ExpandedSceneSetting } from "@/features/scene-catalog/types";
-import { isVideoFile } from "@/lib/file-types";
+import { isVideoFile, stripExtension } from "@/lib/file-types";
 
 /** Default track for files with no track prefix in the filename. */
 const DEFAULT_TRACK_SLUG = "clothed";
@@ -28,17 +28,12 @@ export interface MatchResult {
   unmatched: File[];
 }
 
-function stripExtension(filename: string): string {
-  const dotIndex = filename.lastIndexOf(".");
-  return dotIndex > 0 ? filename.slice(0, dotIndex) : filename;
-}
-
-interface ParsedFilename {
+export interface ParsedFilename {
   sceneSlug: string;
   trackSlug: string;
 }
 
-function parseFilename(filename: string, trackSlugs: string[]): ParsedFilename {
+export function parseFilename(filename: string, trackSlugs: string[]): ParsedFilename {
   const stem = stripExtension(filename).toLowerCase();
 
   // Check if stem starts with a track slug prefix (e.g. "topless_bj")

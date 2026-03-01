@@ -9,11 +9,14 @@ import { User } from "@/tokens/icons";
 
 import {
   deriveMissingItems,
+  GenerationHistorySection,
+  MetadataSummarySection,
   MissingItemsBanner,
+  SceneAssignmentsSection,
   useCharacterDashboard,
 } from "@/features/character-dashboard";
 import { useImageVariants } from "@/features/images/hooks/use-image-variants";
-import { IMAGE_VARIANT_STATUS } from "@/features/images/types";
+import { pickAvatarUrl } from "@/features/images/utils";
 import type { Character } from "@/features/projects/types";
 import {
   characterStatusBadgeVariant,
@@ -29,22 +32,6 @@ import type { ReadinessState } from "@/features/readiness/types";
 interface CharacterOverviewTabProps {
   character: Character;
   characterId: number;
-}
-
-/* --------------------------------------------------------------------------
-   Helpers
-   -------------------------------------------------------------------------- */
-
-function findAvatarUrl(
-  variants: { is_hero: boolean; status_id: number; file_path: string }[] | undefined,
-): string | null {
-  if (!variants?.length) return null;
-  const hero = variants.find((v) => v.is_hero && v.file_path);
-  if (hero) return hero.file_path;
-  const approved = variants.find(
-    (v) => v.status_id === IMAGE_VARIANT_STATUS.APPROVED && v.file_path,
-  );
-  return approved?.file_path ?? null;
 }
 
 /* --------------------------------------------------------------------------
@@ -78,7 +65,7 @@ export function CharacterOverviewTab({
 
   const statusLabel = characterStatusLabel(character.status_id);
   const badgeVariant = characterStatusBadgeVariant(character.status_id);
-  const avatarUrl = findAvatarUrl(variants);
+  const avatarUrl = pickAvatarUrl(variants ?? []);
 
   if (dashboardLoading) {
     return <LoadingPane />;
@@ -168,6 +155,34 @@ export function CharacterOverviewTab({
 
             <MissingItemsBanner items={missingItems} />
           </Stack>
+        </Card>
+      )}
+
+      {/* Metadata Completeness */}
+      {dashboard && (
+        <Card elevation="flat" padding="md">
+          <MetadataSummarySection
+            characterId={characterId}
+            settings={dashboard.settings}
+            sourceImageCount={dashboard.source_image_count}
+          />
+        </Card>
+      )}
+
+      {/* Scene Assignments */}
+      {dashboard && (
+        <Card elevation="flat" padding="md">
+          <SceneAssignmentsSection
+            assignments={dashboard.scene_assignments ?? []}
+            sceneCount={dashboard.scene_count}
+          />
+        </Card>
+      )}
+
+      {/* Generation History */}
+      {dashboard && (
+        <Card elevation="flat" padding="md">
+          <GenerationHistorySection summary={dashboard.generation_summary} />
         </Card>
       )}
     </Stack>
