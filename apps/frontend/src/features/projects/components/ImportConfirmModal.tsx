@@ -33,11 +33,54 @@ interface ImportConfirmModalProps {
    Helpers
    -------------------------------------------------------------------------- */
 
-/** Convert `carli_nicki` or `carli-nicki` to `Carli Nicki`. */
-function toTitleCase(name: string): string {
-  return name
-    .replace(/[_-]/g, " ")
-    .replace(/\b\w/g, (c) => c.toUpperCase());
+/** 2-char codes that are NOT initials (articles/prepositions). */
+const NOT_INITIALS = new Set(["la", "le", "el", "de", "mr", "ms", "dr"]);
+
+/**
+ * Normalize a folder-style name into a display name.
+ *
+ * Handles edge cases ported from `batch_fix_metadata.py`:
+ * - `carli_nicki`  → `Carli Nicki`
+ * - `cj_miles`     → `CJ Miles`     (2-char initials uppercased)
+ * - `maddy_o_reilly` → `Maddy O'Reilly` (Irish/Scottish O')
+ * - `miss_molly`   → `Miss Molly`    (title preserved)
+ * - `la_sirena_69` → `La Sirena 69`  (article + number)
+ */
+function normalizeCharacterName(raw: string): string {
+  const rawParts = raw.replace(/[_-]/g, " ").split(/\s+/);
+
+  // Title-case each part; uppercase 2-char alpha parts that aren't articles
+  const parts: string[] = rawParts.map((p) => {
+    if (
+      p.length === 2 &&
+      /^[a-zA-Z]{2}$/.test(p) &&
+      !NOT_INITIALS.has(p.toLowerCase())
+    ) {
+      return p.toUpperCase(); // CJ, AJ, etc.
+    }
+    // If already all-uppercase (like "AJ"), keep it; otherwise title-case
+    if (p === p.toUpperCase() && p.length > 1) return p;
+    return p.charAt(0).toUpperCase() + p.slice(1).toLowerCase();
+  });
+
+  // Join Irish/Scottish "O" + NextName → "O'NextName"
+  const joined: string[] = [];
+  let i = 0;
+  while (i < parts.length) {
+    if (
+      parts[i] === "O" &&
+      i + 1 < parts.length &&
+      /^[A-Z]/.test(parts[i + 1]!)
+    ) {
+      joined.push(`O'${parts[i + 1]}`);
+      i += 2;
+    } else {
+      joined.push(parts[i]!);
+      i += 1;
+    }
+  }
+
+  return joined.join(" ");
 }
 
 /* --------------------------------------------------------------------------
@@ -58,12 +101,12 @@ export function ImportConfirmModal({
   const [checked, setChecked] = useState<Set<number>>(
     () => new Set(names.map((_, i) => i)),
   );
-  const [titleCase, setTitleCase] = useState(false);
+  const [normalize, setNormalize] = useState(true);
   const [groupId, setGroupId] = useState("");
 
   const displayNames = useMemo(
-    () => (titleCase ? names.map(toTitleCase) : names),
-    [names, titleCase],
+    () => (normalize ? names.map(normalizeCharacterName) : names),
+    [names, normalize],
   );
 
   // Build set of existing names for O(1) duplicate lookup
@@ -93,13 +136,13 @@ export function ImportConfirmModal({
     const initial = new Set<number>();
     for (let i = 0; i < names.length; i++) {
       // Don't check duplicates by default (they'll need explicit opt-in)
-      const display = titleCase ? toTitleCase(names[i]!) : names[i]!;
+      const display = normalize ? normalizeCharacterName(names[i]!) : names[i]!;
       if (!existingSet.has(display.toLowerCase())) {
         initial.add(i);
       }
     }
     setChecked(initial);
-  }, [names, existingSet, titleCase]);
+  }, [names, existingSet, normalize]);
 
   const groupOptions = useMemo(
     () => [{ value: "", label: "No group" }, ...toSelectOptions(groups)],
@@ -160,9 +203,9 @@ export function ImportConfirmModal({
             />
           </div>
           <Toggle
-            checked={titleCase}
-            onChange={setTitleCase}
-            label="Title Case names"
+            checked={normalize}
+            onChange={setNormalize}
+            label="Normalize names"
             size="sm"
           />
         </div>
