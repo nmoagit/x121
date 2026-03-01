@@ -28,46 +28,59 @@ export function CharacterCard({ character, group, onClick, onEdit }: CharacterCa
   return (
     <Card
       elevation="sm"
-      padding="md"
+      padding="none"
       className={cn(
         "group/card cursor-pointer",
         "transition-shadow duration-[var(--duration-fast)] ease-[var(--ease-default)]",
         "hover:shadow-[var(--shadow-md)]",
       )}
     >
-      <div className="flex items-start justify-between gap-[var(--spacing-2)]">
-        <button
-          type="button"
-          onClick={onClick}
-          className="flex-1 min-w-0 text-left"
-          aria-label={`Open character ${character.name}`}
-        >
-          <h3 className="text-base font-semibold text-[var(--color-text-primary)] truncate">
-            {character.name}
-          </h3>
-          {group && (
-            <p className="mt-[var(--spacing-1)] text-xs text-[var(--color-text-muted)]">
-              Group: {group.name}
-            </p>
-          )}
-        </button>
+      <button
+        type="button"
+        onClick={onClick}
+        className="w-full text-left px-[var(--spacing-4)] py-[var(--spacing-3)]"
+        aria-label={`Open character ${character.name}`}
+      >
+        <div className="flex items-start justify-between gap-[var(--spacing-2)]">
+          <div className="flex-1 min-w-0">
+            <h3 className="text-base font-semibold text-[var(--color-text-primary)] truncate">
+              {character.name}
+            </h3>
+            {group && (
+              <p className="mt-[var(--spacing-1)] text-xs text-[var(--color-text-muted)]">
+                Group: {group.name}
+              </p>
+            )}
+          </div>
 
-        <div className="flex items-center gap-[var(--spacing-1)] shrink-0">
-          {onEdit && (
-            <button
-              type="button"
-              className="p-1 rounded-[var(--radius-sm)] text-[var(--color-text-muted)] opacity-0 group-hover/card:opacity-100 hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-tertiary)] cursor-pointer transition-opacity"
-              onClick={onEdit}
-              aria-label={`Edit ${character.name}`}
-            >
-              <Edit3 size={14} aria-hidden />
-            </button>
-          )}
-          <Badge variant={badgeVariant} size="sm">
-            {statusLabel}
-          </Badge>
+          <div className="flex items-center gap-[var(--spacing-1)] shrink-0">
+            {onEdit && (
+              <span
+                role="button"
+                tabIndex={0}
+                className="p-1 rounded-[var(--radius-sm)] text-[var(--color-text-muted)] opacity-0 group-hover/card:opacity-100 hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-tertiary)] cursor-pointer transition-opacity"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit();
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onEdit();
+                  }
+                }}
+                aria-label={`Edit ${character.name}`}
+              >
+                <Edit3 size={14} aria-hidden />
+              </span>
+            )}
+            <Badge variant={badgeVariant} size="sm">
+              {statusLabel}
+            </Badge>
+          </div>
         </div>
-      </div>
+      </button>
     </Card>
   );
 }
