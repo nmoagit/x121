@@ -172,17 +172,22 @@ export function FileDropZone({
   );
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
+    // Only activate for external file drops, not internal element drags
+    if (!e.dataTransfer.types.includes("Files")) return;
     e.preventDefault();
     setIsDragOver(true);
   }, []);
 
   const handleDragLeave = useCallback((e: React.DragEvent) => {
+    if (!e.dataTransfer.types.includes("Files")) return;
     e.preventDefault();
     setIsDragOver(false);
   }, []);
 
   const handleDrop = useCallback(
     async (e: React.DragEvent) => {
+      // Ignore internal element drags (e.g. character card reordering)
+      if (!e.dataTransfer.types.includes("Files")) return;
       e.preventDefault();
       setIsDragOver(false);
 

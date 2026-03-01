@@ -154,6 +154,7 @@ export function ProjectGroupsTab({ projectId }: ProjectGroupsTabProps) {
 
   const handleGroupDragOver = useCallback((e: React.DragEvent, groupId: number | "ungrouped") => {
     e.preventDefault();
+    e.stopPropagation();
     e.dataTransfer.dropEffect = "move";
     setDragOverGroupId(groupId);
   }, []);
@@ -165,6 +166,7 @@ export function ProjectGroupsTab({ projectId }: ProjectGroupsTabProps) {
   const handleGroupDrop = useCallback(
     (e: React.DragEvent, targetGroupId: number | "ungrouped") => {
       e.preventDefault();
+      e.stopPropagation();
       setDragOverGroupId(null);
 
       const charIdStr = e.dataTransfer.getData("text/plain");
