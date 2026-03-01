@@ -26,7 +26,7 @@ CREATE INDEX idx_group_scene_settings_track_id
     ON group_scene_settings (track_id);
 
 -- Auto-update updated_at on modification.
-CREATE TRIGGER set_updated_at_group_scene_settings
+CREATE TRIGGER set_updated_at
     BEFORE UPDATE ON group_scene_settings
     FOR EACH ROW
-    EXECUTE FUNCTION update_updated_at_column();
+    EXECUTE FUNCTION trigger_set_updated_at();
