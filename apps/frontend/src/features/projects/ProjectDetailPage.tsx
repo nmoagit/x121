@@ -111,10 +111,10 @@ export function ProjectDetailPage() {
       {activeTab === "overview" && <ProjectOverviewTab projectId={id} stats={stats} />}
       {activeTab === "characters" && <ProjectCharactersTab projectId={id} />}
       {activeTab === "groups" && <ProjectGroupsTab projectId={id} />}
-      {activeTab === "scene-settings" && <ProjectSceneSettingsTab />}
+      {activeTab === "scene-settings" && <ProjectSceneSettingsTab projectId={id} />}
       {activeTab === "production" && <ProjectProductionTab />}
       {activeTab === "delivery" && <ProjectDeliveryTab />}
-      {activeTab === "config" && <ProjectConfigTab />}
+      {activeTab === "config" && <ProjectConfigTab projectId={id} />}
     </Stack>
   );
 }

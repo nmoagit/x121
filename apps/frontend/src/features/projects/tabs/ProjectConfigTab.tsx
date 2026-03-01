@@ -1,16 +1,15 @@
 /**
- * Placeholder for project configuration tab.
+ * Configuration tab for project detail page.
+ *
+ * Delegates to the ConfigLibrary feature component (PRD-74).
  */
 
-import { EmptyState } from "@/components/domain";
-import { Settings } from "@/tokens/icons";
+import { ConfigLibrary } from "@/features/config-templates";
 
-export function ProjectConfigTab() {
-  return (
-    <EmptyState
-      icon={<Settings size={32} />}
-      title="Configuration"
-      description="Manage project-level settings, naming rules, and workflow configuration."
-    />
-  );
+interface ProjectConfigTabProps {
+  projectId: number;
+}
+
+export function ProjectConfigTab({ projectId }: ProjectConfigTabProps) {
+  return <ConfigLibrary projectId={projectId} />;
 }

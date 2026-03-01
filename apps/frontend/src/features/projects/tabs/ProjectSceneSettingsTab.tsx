@@ -1,16 +1,15 @@
 /**
- * Placeholder for project scene settings tab.
+ * Scene settings tab for project detail page.
+ *
+ * Delegates to the ProjectSceneSettings feature component (PRD-111).
  */
 
-import { EmptyState } from "@/components/domain";
-import { Settings } from "@/tokens/icons";
+import { ProjectSceneSettings } from "@/features/scene-catalog";
 
-export function ProjectSceneSettingsTab() {
-  return (
-    <EmptyState
-      icon={<Settings size={32} />}
-      title="Scene Settings"
-      description="Configure scene types, transitions, and generation parameters for this project."
-    />
-  );
+interface ProjectSceneSettingsTabProps {
+  projectId: number;
+}
+
+export function ProjectSceneSettingsTab({ projectId }: ProjectSceneSettingsTabProps) {
+  return <ProjectSceneSettings projectId={projectId} />;
 }

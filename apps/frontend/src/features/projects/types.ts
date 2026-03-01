@@ -136,8 +136,8 @@ export const PROJECT_STATUS_LABELS: Record<string, string> = {
 /** Tab definitions for project detail page. */
 export const PROJECT_TABS = [
   { id: "overview", label: "Overview" },
-  { id: "characters", label: "Characters" },
   { id: "groups", label: "Groups" },
+  { id: "characters", label: "Characters" },
   { id: "scene-settings", label: "Scene Settings" },
   { id: "production", label: "Production" },
   { id: "delivery", label: "Delivery" },
