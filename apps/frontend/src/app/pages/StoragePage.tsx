@@ -10,8 +10,10 @@ import { useState } from "react";
 import { PageHeader, Stack } from "@/components/layout";
 import { LoadingPane } from "@/components/primitives";
 
+import type { StorageBackend } from "@/features/storage";
 import {
   BackendConfigPanel,
+  BackendFormModal,
   MigrationProgressView,
   useMigration,
   useRollbackMigration,
@@ -28,6 +30,8 @@ export function StoragePage() {
   const setDefault = useSetDefaultBackend();
   const rollback = useRollbackMigration();
 
+  const [formOpen, setFormOpen] = useState(false);
+  const [editingBackend, setEditingBackend] = useState<StorageBackend | null>(null);
   const [activeMigrationId, setActiveMigrationId] = useState<number | null>(null);
   const { data: migration } = useMigration(activeMigrationId ?? 0, activeMigrationId !== null);
 
@@ -44,6 +48,14 @@ export function StoragePage() {
         {!isLoading && (
           <BackendConfigPanel
             backends={backends ?? []}
+            onAdd={() => {
+              setEditingBackend(null);
+              setFormOpen(true);
+            }}
+            onSelect={(b) => {
+              setEditingBackend(b);
+              setFormOpen(true);
+            }}
             onSetDefault={(backend) => setDefault.mutate(backend.id)}
           />
         )}
@@ -59,6 +71,12 @@ export function StoragePage() {
           />
         )}
       </Stack>
+
+      <BackendFormModal
+        open={formOpen}
+        onClose={() => setFormOpen(false)}
+        backend={editingBackend}
+      />
     </div>
   );
 }

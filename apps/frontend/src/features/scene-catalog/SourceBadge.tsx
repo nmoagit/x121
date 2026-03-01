@@ -21,6 +21,11 @@ const SOURCE_CONFIG: Record<SettingSource, { label: string; variant: BadgeVarian
   character: { label: "Character", variant: "warning" },
 };
 
+/** Returns the human-readable label for a setting source. */
+export function sourceLabel(source: SettingSource): string {
+  return SOURCE_CONFIG[source].label;
+}
+
 /* --------------------------------------------------------------------------
    Component
    -------------------------------------------------------------------------- */

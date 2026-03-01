@@ -1,4 +1,5 @@
 export { BackendConfigPanel } from "./BackendConfigPanel";
+export { BackendFormModal } from "./BackendFormModal";
 export { MigrationProgressView } from "./MigrationProgressView";
 export { TierIndicator } from "./TierIndicator";
 export type {
@@ -11,6 +12,7 @@ export type {
   StorageBackendTypeId,
   StorageMigration,
   StorageMigrationStatusId,
+  StorageTier,
   TieringCandidate,
   TieringPolicy,
   UpdateStorageBackend,
@@ -22,6 +24,7 @@ export {
   BACKEND_TYPE_LABELS,
   MIGRATION_STATUS,
   MIGRATION_STATUS_LABELS,
+  TIER_LABELS,
 } from "./types";
 export {
   useCreateBackend,

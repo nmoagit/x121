@@ -1,8 +1,11 @@
+import type { BadgeVariant } from "@/components/primitives/Badge";
+
 export interface Scene {
   id: number;
   character_id: number;
   scene_type_id: number;
-  image_variant_id: number;
+  image_variant_id: number | null;
+  track_id: number | null;
   status_id: number;
   transition_mode: string;
   total_segments_estimated: number | null;
@@ -68,6 +71,44 @@ export function qaStatusColor(status: QaStatus): string {
     case "rejected":
       return "var(--color-action-danger)";
   }
+}
+
+/* --------------------------------------------------------------------------
+   Scene status helpers (mirrors scene_statuses lookup table)
+   -------------------------------------------------------------------------- */
+
+/** Status ID constants from scene_statuses lookup table. */
+export const SCENE_STATUS_PENDING = 1;
+export const SCENE_STATUS_GENERATING = 2;
+export const SCENE_STATUS_GENERATED = 3;
+export const SCENE_STATUS_APPROVED = 4;
+export const SCENE_STATUS_REJECTED = 5;
+export const SCENE_STATUS_DELIVERED = 6;
+
+const SCENE_STATUS_LABELS: Record<number, string> = {
+  1: "Pending",
+  2: "Generating",
+  3: "Generated",
+  4: "Approved",
+  5: "Rejected",
+  6: "Delivered",
+};
+
+const SCENE_STATUS_BADGE: Record<number, BadgeVariant> = {
+  1: "default",
+  2: "info",
+  3: "warning",
+  4: "success",
+  5: "danger",
+  6: "success",
+};
+
+export function sceneStatusLabel(statusId: number): string {
+  return SCENE_STATUS_LABELS[statusId] ?? "Unknown";
+}
+
+export function sceneStatusBadgeVariant(statusId: number): BadgeVariant {
+  return SCENE_STATUS_BADGE[statusId] ?? "default";
 }
 
 // IMPORTANT: Use `formatBytes` from `@/lib/format` for file sizes.

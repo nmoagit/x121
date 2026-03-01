@@ -1,23 +1,27 @@
 /**
  * Character-level scene setting overrides panel (PRD-111).
  *
- * Shows the three-level merged scene settings for a character with
- * toggle switches, source badges, and reset actions.
+ * Shows the three-level merged scene settings expanded by track, with
+ * toggle switches, source badges, and reset actions. Each scene_type × track
+ * combination is a separate row. Toggles and resets operate at the
+ * scene_type level (backend granularity).
  */
 
 import { useCallback, useState } from "react";
 
 import { Card, Modal } from "@/components/composite";
 import { Stack } from "@/components/layout";
-import { Button, Spinner, Toggle } from "@/components/primitives";
+import { Button, LoadingPane, Toggle } from "@/components/primitives";
 
 import { SourceBadge } from "./SourceBadge";
+import { TrackBadge } from "./TrackBadge";
 import {
   useCharacterSceneSettings,
   useRemoveCharacterSceneOverride,
   useToggleCharacterSceneSetting,
 } from "./hooks/use-character-scene-settings";
-import type { EffectiveSceneSetting } from "./types";
+import { useExpandedSettings } from "./hooks/use-expanded-settings";
+import type { ExpandedSceneSetting } from "./types";
 
 /* --------------------------------------------------------------------------
    Props
@@ -32,38 +36,57 @@ interface CharacterSceneOverridesProps {
    -------------------------------------------------------------------------- */
 
 interface SettingRowProps {
-  setting: EffectiveSceneSetting;
+  row: ExpandedSceneSetting;
   onToggle: (sceneTypeId: number, enabled: boolean) => void;
   onReset: (sceneTypeId: number) => void;
   isPending: boolean;
 }
 
-function SettingRow({ setting, onToggle, onReset, isPending }: SettingRowProps) {
-  const isCharacterOverride = setting.source === "character";
+function SettingRow({ row, onToggle, onReset, isPending }: SettingRowProps) {
+  const isCharacterOverride = row.source === "character";
 
   return (
     <tr className="border-b border-[var(--color-border-default)]">
+      {/* Scene name — only shown on first row of each scene_type group */}
       <td className="px-4 py-3">
-        <span className="text-sm font-medium text-[var(--color-text-primary)]">{setting.name}</span>
+        {row.isFirstInGroup ? (
+          <span className="text-sm font-medium text-[var(--color-text-primary)]">{row.name}</span>
+        ) : (
+          <span />
+        )}
       </td>
-      <td className="px-4 py-3 text-sm text-[var(--color-text-muted)]">{setting.slug}</td>
+
+      {/* Track badge */}
+      <td className="px-4 py-3">
+        {row.track_slug ? (
+          <TrackBadge name={row.track_name ?? ""} slug={row.track_slug} />
+        ) : (
+          <span className="text-xs text-[var(--color-text-muted)]">-</span>
+        )}
+      </td>
+
+      {/* Toggle — toggles entire scene_type */}
       <td className="px-4 py-3">
         <Toggle
-          checked={setting.is_enabled}
-          onChange={(checked) => onToggle(setting.scene_type_id, checked)}
+          checked={row.is_enabled}
+          onChange={(checked) => onToggle(row.scene_type_id, checked)}
           size="sm"
           disabled={isPending}
         />
       </td>
+
+      {/* Source badge */}
       <td className="px-4 py-3">
-        <SourceBadge source={setting.source} />
+        <SourceBadge source={row.source} />
       </td>
+
+      {/* Reset — only on first row of character overrides */}
       <td className="px-4 py-3">
-        {isCharacterOverride && (
+        {isCharacterOverride && row.isFirstInGroup && (
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => onReset(setting.scene_type_id)}
+            onClick={() => onReset(row.scene_type_id)}
             disabled={isPending}
           >
             Reset
@@ -79,7 +102,8 @@ function SettingRow({ setting, onToggle, onReset, isPending }: SettingRowProps) 
    -------------------------------------------------------------------------- */
 
 export function CharacterSceneOverrides({ characterId }: CharacterSceneOverridesProps) {
-  const { data: settings, isLoading } = useCharacterSceneSettings(characterId);
+  const { data: settings, isLoading: settingsLoading } = useCharacterSceneSettings(characterId);
+  const { expandedRows, catalogLoading } = useExpandedSettings(settings);
   const toggleMutation = useToggleCharacterSceneSetting(characterId);
   const removeMutation = useRemoveCharacterSceneOverride(characterId);
 
@@ -116,12 +140,8 @@ export function CharacterSceneOverrides({ characterId }: CharacterSceneOverrides
     setShowResetAll(false);
   }, [settings, removeMutation]);
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <Spinner size="lg" />
-      </div>
-    );
+  if (settingsLoading || catalogLoading) {
+    return <LoadingPane />;
   }
 
   return (
@@ -151,7 +171,7 @@ export function CharacterSceneOverrides({ characterId }: CharacterSceneOverrides
                   Scene
                 </th>
                 <th className="px-4 py-3 text-left font-medium text-[var(--color-text-muted)]">
-                  Slug
+                  Track
                 </th>
                 <th className="px-4 py-3 text-left font-medium text-[var(--color-text-muted)]">
                   Enabled
@@ -165,7 +185,7 @@ export function CharacterSceneOverrides({ characterId }: CharacterSceneOverrides
               </tr>
             </thead>
             <tbody>
-              {!settings || settings.length === 0 ? (
+              {expandedRows.length === 0 ? (
                 <tr>
                   <td
                     colSpan={5}
@@ -175,10 +195,10 @@ export function CharacterSceneOverrides({ characterId }: CharacterSceneOverrides
                   </td>
                 </tr>
               ) : (
-                settings.map((setting) => (
+                expandedRows.map((row) => (
                   <SettingRow
-                    key={setting.scene_type_id}
-                    setting={setting}
+                    key={`${row.scene_type_id}-${row.track_id ?? "none"}`}
+                    row={row}
                     onToggle={handleToggle}
                     onReset={handleReset}
                     isPending={toggleMutation.isPending || removeMutation.isPending}

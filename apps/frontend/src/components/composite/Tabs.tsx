@@ -73,7 +73,7 @@ export function Tabs({ tabs, activeTab, onTabChange, variant = "underline" }: Ta
               "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-border-focus)]",
               isPill
                 ? cn(
-                    "px-[var(--spacing-3)] py-[var(--spacing-1.5)] rounded-[var(--radius-md)]",
+                    "px-[var(--spacing-3)] py-[var(--spacing-2)] rounded-[var(--radius-md)]",
                     isActive
                       ? "bg-[var(--color-surface-primary)] text-[var(--color-text-primary)] shadow-[var(--shadow-sm)]"
                       : "text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]",

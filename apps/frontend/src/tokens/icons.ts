@@ -38,6 +38,7 @@ export {
   Folder,
   Image,
   Video,
+  FileVideo,
   Play,
   Pause,
   SkipForward,

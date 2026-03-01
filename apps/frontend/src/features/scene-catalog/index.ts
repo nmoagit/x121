@@ -7,7 +7,7 @@ export { SceneCatalogList } from "./SceneCatalogList";
 export { SceneCatalogForm } from "./SceneCatalogForm";
 export { TrackManager } from "./TrackManager";
 export { TrackBadge } from "./TrackBadge";
-export { SourceBadge } from "./SourceBadge";
+export { SourceBadge, sourceLabel } from "./SourceBadge";
 export { ProjectSceneSettings } from "./ProjectSceneSettings";
 export { CharacterSceneOverrides } from "./CharacterSceneOverrides";
 
@@ -46,14 +46,19 @@ export {
   useRemoveCharacterSceneOverride,
 } from "./hooks/use-character-scene-settings";
 
-// Types
+// Hooks — Expanded settings (settings × tracks cross-join)
+export { useExpandedSettings } from "./hooks/use-expanded-settings";
+
+// Types & utilities
 export type {
   Track,
   SceneCatalogEntry,
   CreateSceneCatalogEntry,
   UpdateSceneCatalogEntry,
   EffectiveSceneSetting,
+  ExpandedSceneSetting,
   SceneSettingUpdate,
   CreateTrack,
   UpdateTrack,
 } from "./types";
+export { expandSettingsWithTracks } from "./types";

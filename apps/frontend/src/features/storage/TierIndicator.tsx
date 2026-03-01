@@ -9,6 +9,8 @@
 import { Badge } from "@/components/primitives";
 
 import type { BadgeVariant } from "@/components/primitives";
+import type { StorageTier } from "./types";
+import { TIER_LABELS } from "./types";
 
 /* --------------------------------------------------------------------------
    Props
@@ -16,7 +18,7 @@ import type { BadgeVariant } from "@/components/primitives";
 
 interface TierIndicatorProps {
   /** The storage tier: "hot" or "cold". */
-  tier: "hot" | "cold";
+  tier: StorageTier;
   /** Whether the asset is currently being retrieved from cold storage. */
   isRetrieving?: boolean;
 }
@@ -25,9 +27,9 @@ interface TierIndicatorProps {
    Constants
    -------------------------------------------------------------------------- */
 
-const TIER_CONFIG: Record<"hot" | "cold", { label: string; variant: BadgeVariant }> = {
-  hot: { label: "Hot", variant: "success" },
-  cold: { label: "Cold", variant: "info" },
+const TIER_VARIANT: Record<StorageTier, BadgeVariant> = {
+  hot: "success",
+  cold: "info",
 };
 
 /* --------------------------------------------------------------------------
@@ -35,8 +37,6 @@ const TIER_CONFIG: Record<"hot" | "cold", { label: string; variant: BadgeVariant
    -------------------------------------------------------------------------- */
 
 export function TierIndicator({ tier, isRetrieving = false }: TierIndicatorProps) {
-  const config = TIER_CONFIG[tier];
-
   if (isRetrieving) {
     return (
       <Badge variant="warning" size="sm">
@@ -46,8 +46,8 @@ export function TierIndicator({ tier, isRetrieving = false }: TierIndicatorProps
   }
 
   return (
-    <Badge variant={config.variant} size="sm">
-      {config.label}
+    <Badge variant={TIER_VARIANT[tier]} size="sm">
+      {TIER_LABELS[tier]}
     </Badge>
   );
 }

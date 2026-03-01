@@ -1,17 +1,10 @@
 import { Modal } from "@/components/composite/Modal";
 import { Button } from "@/components/primitives/Button";
+import { MAX_VIDEO_FILE_SIZE, VIDEO_EXTENSIONS } from "@/lib/file-types";
 import { formatBytes } from "@/lib/format";
-import { FileVideo, Upload } from "lucide-react";
+import { FileVideo, Upload } from "@/tokens/icons";
 import { useCallback, useRef, useState } from "react";
 import { useImportClip } from "./hooks/useClipManagement";
-
-/**
- * Accepted video formats for import.
- * Keep in sync with `SUPPORTED_VIDEO_EXTENSIONS` in
- * `api/src/handlers/scene_video_version.rs`.
- */
-const ACCEPTED_FORMATS = [".mp4", ".webm", ".mov"];
-const MAX_FILE_SIZE = 500 * 1024 * 1024; // 500 MB
 
 interface ImportClipDialogProps {
   isOpen: boolean;
@@ -31,10 +24,10 @@ export function ImportClipDialog({ isOpen, onClose, sceneId, onSuccess }: Import
 
   const validateFile = useCallback((f: File): string | null => {
     const ext = f.name.toLowerCase().split(".").pop() ?? "";
-    if (!ACCEPTED_FORMATS.includes(`.${ext}`)) {
-      return `Unsupported format .${ext}. Accepted: ${ACCEPTED_FORMATS.join(", ")}`;
+    if (!VIDEO_EXTENSIONS.includes(`.${ext}`)) {
+      return `Unsupported format .${ext}. Accepted: ${VIDEO_EXTENSIONS.join(", ")}`;
     }
-    if (f.size > MAX_FILE_SIZE) {
+    if (f.size > MAX_VIDEO_FILE_SIZE) {
       return "File exceeds 500 MB limit";
     }
     return null;

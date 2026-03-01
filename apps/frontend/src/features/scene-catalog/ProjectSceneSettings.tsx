@@ -1,22 +1,25 @@
 /**
  * Project-level scene settings panel (PRD-111).
  *
- * Shows effective scene settings for a project with toggle switches
- * and source badges (catalog / project).
+ * Shows effective scene settings expanded by track, with toggle switches
+ * and source badges. Each scene_type × track combination is a separate row.
+ * Toggling any track row toggles the entire scene type (backend-level granularity).
  */
 
 import { useCallback } from "react";
 
 import { Card } from "@/components/composite/Card";
 import { Stack } from "@/components/layout";
-import { Spinner, Toggle } from "@/components/primitives";
+import { LoadingPane, Toggle } from "@/components/primitives";
 
 import { SourceBadge } from "./SourceBadge";
+import { TrackBadge } from "./TrackBadge";
+import { useExpandedSettings } from "./hooks/use-expanded-settings";
 import {
   useProjectSceneSettings,
   useToggleProjectSceneSetting,
 } from "./hooks/use-project-scene-settings";
-import type { EffectiveSceneSetting } from "./types";
+import type { ExpandedSceneSetting } from "./types";
 
 /* --------------------------------------------------------------------------
    Props
@@ -31,28 +34,45 @@ interface ProjectSceneSettingsProps {
    -------------------------------------------------------------------------- */
 
 interface SettingRowProps {
-  setting: EffectiveSceneSetting;
+  row: ExpandedSceneSetting;
   onToggle: (sceneTypeId: number, enabled: boolean) => void;
   isPending: boolean;
 }
 
-function SettingRow({ setting, onToggle, isPending }: SettingRowProps) {
+function SettingRow({ row, onToggle, isPending }: SettingRowProps) {
   return (
     <tr className="border-b border-[var(--color-border-default)]">
+      {/* Scene name — only shown on first row of each scene_type group */}
       <td className="px-4 py-3">
-        <span className="text-sm font-medium text-[var(--color-text-primary)]">{setting.name}</span>
+        {row.isFirstInGroup ? (
+          <span className="text-sm font-medium text-[var(--color-text-primary)]">{row.name}</span>
+        ) : (
+          <span />
+        )}
       </td>
-      <td className="px-4 py-3 text-sm text-[var(--color-text-muted)]">{setting.slug}</td>
+
+      {/* Track badge */}
+      <td className="px-4 py-3">
+        {row.track_slug ? (
+          <TrackBadge name={row.track_name ?? ""} slug={row.track_slug} />
+        ) : (
+          <span className="text-xs text-[var(--color-text-muted)]">-</span>
+        )}
+      </td>
+
+      {/* Toggle — toggles entire scene_type */}
       <td className="px-4 py-3">
         <Toggle
-          checked={setting.is_enabled}
-          onChange={(checked) => onToggle(setting.scene_type_id, checked)}
+          checked={row.is_enabled}
+          onChange={(checked) => onToggle(row.scene_type_id, checked)}
           size="sm"
           disabled={isPending}
         />
       </td>
+
+      {/* Source badge */}
       <td className="px-4 py-3">
-        <SourceBadge source={setting.source} />
+        <SourceBadge source={row.source} />
       </td>
     </tr>
   );
@@ -63,7 +83,8 @@ function SettingRow({ setting, onToggle, isPending }: SettingRowProps) {
    -------------------------------------------------------------------------- */
 
 export function ProjectSceneSettings({ projectId }: ProjectSceneSettingsProps) {
-  const { data: settings, isLoading } = useProjectSceneSettings(projectId);
+  const { data: settings, isLoading: settingsLoading } = useProjectSceneSettings(projectId);
+  const { expandedRows, catalogLoading } = useExpandedSettings(settings);
   const toggleMutation = useToggleProjectSceneSetting(projectId);
 
   const handleToggle = useCallback(
@@ -76,12 +97,8 @@ export function ProjectSceneSettings({ projectId }: ProjectSceneSettingsProps) {
     [toggleMutation],
   );
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <Spinner size="lg" />
-      </div>
-    );
+  if (settingsLoading || catalogLoading) {
+    return <LoadingPane />;
   }
 
   return (
@@ -102,7 +119,7 @@ export function ProjectSceneSettings({ projectId }: ProjectSceneSettingsProps) {
                   Scene
                 </th>
                 <th className="px-4 py-3 text-left font-medium text-[var(--color-text-muted)]">
-                  Slug
+                  Track
                 </th>
                 <th className="px-4 py-3 text-left font-medium text-[var(--color-text-muted)]">
                   Enabled
@@ -113,7 +130,7 @@ export function ProjectSceneSettings({ projectId }: ProjectSceneSettingsProps) {
               </tr>
             </thead>
             <tbody>
-              {!settings || settings.length === 0 ? (
+              {expandedRows.length === 0 ? (
                 <tr>
                   <td
                     colSpan={4}
@@ -123,10 +140,10 @@ export function ProjectSceneSettings({ projectId }: ProjectSceneSettingsProps) {
                   </td>
                 </tr>
               ) : (
-                settings.map((setting) => (
+                expandedRows.map((row) => (
                   <SettingRow
-                    key={setting.scene_type_id}
-                    setting={setting}
+                    key={`${row.scene_type_id}-${row.track_id ?? "none"}`}
+                    row={row}
                     onToggle={handleToggle}
                     isPending={toggleMutation.isPending}
                   />

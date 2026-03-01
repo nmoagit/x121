@@ -94,6 +94,19 @@ export const MIGRATION_STATUS_VARIANT: Record<StorageMigrationStatusId, BadgeVar
 };
 
 // ---------------------------------------------------------------------------
+// Storage tier
+// ---------------------------------------------------------------------------
+
+/** The two storage tiers. */
+export type StorageTier = "hot" | "cold";
+
+/** Human-readable labels for each storage tier. */
+export const TIER_LABELS: Record<StorageTier, string> = {
+  hot: "Hot",
+  cold: "Cold",
+};
+
+// ---------------------------------------------------------------------------
 // Entity types
 // ---------------------------------------------------------------------------
 
@@ -103,7 +116,7 @@ export interface StorageBackend {
   name: string;
   backend_type_id: StorageBackendTypeId;
   status_id: StorageBackendStatusId;
-  tier: "hot" | "cold";
+  tier: StorageTier;
   config: Record<string, unknown>;
   is_default: boolean;
   total_capacity_bytes: number | null;
@@ -117,7 +130,7 @@ export interface StorageBackend {
 export interface CreateStorageBackend {
   name: string;
   backend_type_id: StorageBackendTypeId;
-  tier?: "hot" | "cold";
+  tier?: StorageTier;
   config: Record<string, unknown>;
   is_default?: boolean;
   total_capacity_bytes?: number;
@@ -127,7 +140,7 @@ export interface CreateStorageBackend {
 /** DTO for updating a storage backend. */
 export interface UpdateStorageBackend {
   name?: string;
-  tier?: "hot" | "cold";
+  tier?: StorageTier;
   config?: Record<string, unknown>;
   is_default?: boolean;
   total_capacity_bytes?: number;
@@ -155,8 +168,8 @@ export interface TieringPolicy {
   id: number;
   name: string;
   description: string | null;
-  source_tier: "hot" | "cold";
-  target_tier: "hot" | "cold";
+  source_tier: StorageTier;
+  target_tier: StorageTier;
   target_backend_id: number;
   entity_type: string;
   condition_field: string | null;
@@ -174,8 +187,8 @@ export interface TieringPolicy {
 export interface CreateTieringPolicy {
   name: string;
   description?: string;
-  source_tier: "hot" | "cold";
-  target_tier: "hot" | "cold";
+  source_tier: StorageTier;
+  target_tier: StorageTier;
   target_backend_id: number;
   entity_type: string;
   condition_field?: string;
