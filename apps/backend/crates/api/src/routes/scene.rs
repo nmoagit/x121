@@ -3,12 +3,16 @@
 //! These routes are mounted at `/scenes` and provide access to segments
 //! and video versions that belong to a specific scene.
 
+use axum::extract::DefaultBodyLimit;
 use axum::routing::{get, post, put};
 use axum::Router;
 
 use crate::handlers::scene_video_version as version;
 use crate::handlers::segment;
 use crate::state::AppState;
+
+/// 500 MB — generous limit for video file imports.
+const IMPORT_BODY_LIMIT: usize = 500 * 1024 * 1024;
 
 /// Routes mounted at `/scenes`.
 ///
@@ -45,7 +49,8 @@ pub fn router() -> Router<AppState> {
         .route("/{id}/set-final", put(version::set_final))
         .route("/{id}/approve", put(version::approve_clip))
         .route("/{id}/reject", put(version::reject_clip))
-        .route("/{id}/resume-from", post(version::resume_from_clip));
+        .route("/{id}/resume-from", post(version::resume_from_clip))
+        .layer(DefaultBodyLimit::max(IMPORT_BODY_LIMIT));
 
     Router::new()
         .nest("/{scene_id}/segments", segment_routes)

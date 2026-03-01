@@ -81,8 +81,8 @@ async fn init_scene_generation(
 
     let target_duration = scene_type.target_duration_secs.map(|d| d as f64);
 
-    // image_variant_id > 0 indicates a seed variant is set.
-    generation::validate_generation_start(scene.image_variant_id > 0, target_duration)
+    // A seed variant must be set for AI generation.
+    generation::validate_generation_start(scene.image_variant_id.is_some(), target_duration)
         .map_err(AppError::Core)?;
 
     let estimated = generation::estimate_segments(

@@ -221,7 +221,8 @@ pub async fn promote_test_shot(
     let create_scene = CreateScene {
         character_id: shot.character_id,
         scene_type_id: shot.scene_type_id,
-        image_variant_id,
+        image_variant_id: Some(image_variant_id),
+        track_id: None,
         status_id: None,
         transition_mode: None,
         total_segments_estimated: None,

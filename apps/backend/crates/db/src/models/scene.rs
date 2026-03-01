@@ -12,7 +12,8 @@ pub struct Scene {
     pub id: DbId,
     pub character_id: DbId,
     pub scene_type_id: DbId,
-    pub image_variant_id: DbId,
+    pub image_variant_id: Option<DbId>,
+    pub track_id: Option<DbId>,
     pub status_id: StatusId,
     pub transition_mode: String,
     // -- Generation state (PRD-24) --
@@ -34,9 +35,12 @@ pub struct Scene {
 /// DTO for creating a new scene.
 #[derive(Debug, Clone, Deserialize)]
 pub struct CreateScene {
+    /// Set from the URL path by the handler — not required in the request body.
+    #[serde(default)]
     pub character_id: DbId,
     pub scene_type_id: DbId,
-    pub image_variant_id: DbId,
+    pub image_variant_id: Option<DbId>,
+    pub track_id: Option<DbId>,
     /// Defaults to 1 (Pending) if omitted.
     pub status_id: Option<StatusId>,
     pub transition_mode: Option<String>,

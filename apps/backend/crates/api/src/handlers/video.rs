@@ -88,6 +88,24 @@ async fn resolve_video_path(
     }
 }
 
+/// Resolve a video file path to an absolute filesystem path.
+///
+/// If the path from the database is already absolute, returns it as-is.
+/// Otherwise treats it as a storage key and resolves through the storage
+/// provider (for local storage this prepends the storage root).
+async fn resolve_to_absolute(
+    state: &AppState,
+    file_path: &str,
+) -> AppResult<std::path::PathBuf> {
+    if std::path::Path::new(file_path).is_absolute() {
+        return Ok(std::path::PathBuf::from(file_path));
+    }
+    let provider = state.storage_provider().await;
+    let url = provider.presigned_url(file_path, 3600).await?;
+    let abs = url.strip_prefix("file://").unwrap_or(&url);
+    Ok(std::path::PathBuf::from(abs))
+}
+
 /// Guess a Content-Type from a file extension.
 fn content_type_for_extension(path: &str) -> &'static str {
     let ext = path.rsplit('.').next().unwrap_or("").to_lowercase();
@@ -147,7 +165,7 @@ pub async fn stream_video(
     headers: HeaderMap,
 ) -> AppResult<Response> {
     let file_path = resolve_video_path(&state.pool, &source_type, source_id).await?;
-    let path = std::path::Path::new(&file_path);
+    let path = resolve_to_absolute(&state, &file_path).await?;
 
     if !path.exists() {
         return Err(AppError::Core(CoreError::NotFound {
@@ -156,7 +174,7 @@ pub async fn stream_video(
         }));
     }
 
-    let metadata = tokio::fs::metadata(path)
+    let metadata = tokio::fs::metadata(&path)
         .await
         .map_err(|e| AppError::InternalError(e.to_string()))?;
     let file_size = metadata.len();
@@ -183,7 +201,7 @@ pub async fn stream_video(
 
             let length = end - start + 1;
 
-            let mut file = tokio::fs::File::open(path)
+            let mut file = tokio::fs::File::open(&path)
                 .await
                 .map_err(|e| AppError::InternalError(e.to_string()))?;
             file.seek(std::io::SeekFrom::Start(start))
@@ -208,7 +226,7 @@ pub async fn stream_video(
     }
 
     // No Range header — serve the full file.
-    let file = tokio::fs::File::open(path)
+    let file = tokio::fs::File::open(&path)
         .await
         .map_err(|e| AppError::InternalError(e.to_string()))?;
     let stream = ReaderStream::new(file);
@@ -231,16 +249,16 @@ pub async fn get_metadata(
     Path((source_type, source_id)): Path<(String, DbId)>,
 ) -> AppResult<Json<VideoMetadata>> {
     let file_path = resolve_video_path(&state.pool, &source_type, source_id).await?;
-    let path = std::path::Path::new(&file_path);
+    let path = resolve_to_absolute(&state, &file_path).await?;
 
-    let probe = ffmpeg::probe_video(path)
+    let probe = ffmpeg::probe_video(&path)
         .await
         .map_err(|e| AppError::InternalError(e.to_string()))?;
 
     let (width, height) = ffmpeg::parse_resolution(&probe);
     let audio_tracks = ffmpeg::parse_audio_tracks(&probe);
 
-    let file_size = tokio::fs::metadata(path).await.ok().map(|m| m.len() as i64);
+    let file_size = tokio::fs::metadata(&path).await.ok().map(|m| m.len() as i64);
 
     let metadata = VideoMetadata {
         duration_seconds: ffmpeg::parse_duration(&probe),
@@ -274,10 +292,10 @@ pub async fn get_thumbnail(
 
     // Not cached — extract on-the-fly.
     let file_path = resolve_video_path(&state.pool, &source_type, source_id).await?;
-    let video_path = std::path::Path::new(&file_path);
+    let video_path = resolve_to_absolute(&state, &file_path).await?;
 
     // Determine the timestamp from the frame number by probing framerate.
-    let probe = ffmpeg::probe_video(video_path)
+    let probe = ffmpeg::probe_video(&video_path)
         .await
         .map_err(|e| AppError::InternalError(e.to_string()))?;
     let fps = ffmpeg::parse_framerate(&probe);
@@ -295,7 +313,7 @@ pub async fn get_thumbnail(
     let thumb_path = thumb_dir.join(format!("frame_{frame:06}.jpg"));
 
     ffmpeg::extract_frame_thumbnail(
-        video_path,
+        &video_path,
         &thumb_path,
         timestamp,
         THUMB_WIDTH,
@@ -332,7 +350,7 @@ pub async fn generate_thumbnails(
     Json<Vec<x121_db::models::video::VideoThumbnail>>,
 )> {
     let file_path = resolve_video_path(&state.pool, &source_type, source_id).await?;
-    let video_path = std::path::Path::new(&file_path);
+    let video_path = resolve_to_absolute(&state, &file_path).await?;
 
     let interval = params.interval_seconds.unwrap_or(DEFAULT_INTERVAL_SECS);
     let width = params.width.unwrap_or(THUMB_WIDTH);
@@ -341,7 +359,7 @@ pub async fn generate_thumbnails(
     let thumb_dir = thumbnail_dir(&source_type, source_id);
 
     let results =
-        ffmpeg::extract_thumbnails_at_interval(video_path, &thumb_dir, interval, width, height)
+        ffmpeg::extract_thumbnails_at_interval(&video_path, &thumb_dir, interval, width, height)
             .await
             .map_err(|e| AppError::InternalError(e.to_string()))?;
 

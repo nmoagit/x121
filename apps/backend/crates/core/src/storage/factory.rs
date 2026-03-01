@@ -33,7 +33,12 @@ pub fn build_provider(
         )),
         _ => {
             let root = backend_config
-                .and_then(|c| c.config.get("root").and_then(|v| v.as_str()))
+                .and_then(|c| {
+                    c.config
+                        .get("base_path")
+                        .or_else(|| c.config.get("root"))
+                        .and_then(|v| v.as_str())
+                })
                 .map(String::from)
                 .unwrap_or_else(|| {
                     let (val, _) = settings.resolve("storage_root", None);

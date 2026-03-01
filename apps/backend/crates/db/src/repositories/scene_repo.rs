@@ -7,7 +7,7 @@ use crate::models::generation::UpdateSceneGeneration;
 use crate::models::scene::{CreateScene, Scene, UpdateScene};
 
 /// Column list shared across queries to avoid repetition.
-const COLUMNS: &str = "id, character_id, scene_type_id, image_variant_id, \
+const COLUMNS: &str = "id, character_id, scene_type_id, image_variant_id, track_id, \
     status_id, transition_mode, \
     total_segments_estimated, total_segments_completed, \
     actual_duration_secs, transition_segment_index, \
@@ -26,18 +26,19 @@ impl SceneRepo {
     pub async fn create(pool: &PgPool, input: &CreateScene) -> Result<Scene, sqlx::Error> {
         let query = format!(
             "INSERT INTO scenes
-                (character_id, scene_type_id, image_variant_id, status_id, transition_mode,
+                (character_id, scene_type_id, image_variant_id, track_id, status_id, transition_mode,
                  total_segments_estimated, total_segments_completed,
                  actual_duration_secs, transition_segment_index,
                  generation_started_at, generation_completed_at)
-             VALUES ($1, $2, $3, COALESCE($4, 1), COALESCE($5, 'cut'),
-                     $6, COALESCE($7, 0), $8, $9, $10, $11)
+             VALUES ($1, $2, $3, $4, COALESCE($5, 1), COALESCE($6, 'cut'),
+                     $7, COALESCE($8, 0), $9, $10, $11, $12)
              RETURNING {COLUMNS}"
         );
         sqlx::query_as::<_, Scene>(&query)
             .bind(input.character_id)
             .bind(input.scene_type_id)
             .bind(input.image_variant_id)
+            .bind(input.track_id)
             .bind(input.status_id)
             .bind(&input.transition_mode)
             .bind(input.total_segments_estimated)
