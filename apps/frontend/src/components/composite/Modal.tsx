@@ -87,7 +87,8 @@ export function Modal({ open, onClose, title, size = "md", children }: ModalProp
         tabIndex={-1}
         aria-label={title}
         className={cn(
-          "relative w-full mx-[var(--spacing-4)]",
+          "relative w-full mx-[var(--spacing-4)] max-h-[calc(100vh-var(--spacing-8))]",
+          "flex flex-col",
           "bg-[var(--color-surface-secondary)] text-[var(--color-text-primary)] rounded-[var(--radius-lg)]",
           "shadow-[var(--shadow-lg)] p-[var(--spacing-6)]",
           "animate-[scaleIn_var(--duration-fast)_var(--ease-default)]",
@@ -96,7 +97,7 @@ export function Modal({ open, onClose, title, size = "md", children }: ModalProp
         )}
       >
         {title && (
-          <h2 className="text-lg font-semibold text-[var(--color-text-primary)] pr-8 mb-[var(--spacing-4)]">
+          <h2 className="text-lg font-semibold text-[var(--color-text-primary)] pr-8 mb-[var(--spacing-4)] shrink-0">
             {title}
           </h2>
         )}
@@ -105,7 +106,7 @@ export function Modal({ open, onClose, title, size = "md", children }: ModalProp
           type="button"
           onClick={onClose}
           className={cn(
-            "absolute top-[var(--spacing-4)] right-[var(--spacing-4)]",
+            "absolute top-[var(--spacing-4)] right-[var(--spacing-4)] z-10",
             "p-1 rounded-[var(--radius-sm)]",
             "text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]",
             "hover:bg-[var(--color-surface-tertiary)]",
@@ -116,7 +117,9 @@ export function Modal({ open, onClose, title, size = "md", children }: ModalProp
           <X size={20} aria-hidden="true" />
         </button>
 
-        {children}
+        <div className="overflow-y-auto min-h-0">
+          {children}
+        </div>
       </dialog>
     </div>,
     document.body,
