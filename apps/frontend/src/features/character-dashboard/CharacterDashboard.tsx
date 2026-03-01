@@ -9,6 +9,7 @@
 import { Spinner } from "@/components";
 
 import { GenerationHistorySection } from "./GenerationHistorySection";
+import { deriveMissingItems } from "./helpers";
 import { MetadataSummarySection } from "./MetadataSummarySection";
 import { MissingItemsBanner } from "./MissingItemsBanner";
 import { PipelineSettingsEditor } from "./PipelineSettingsEditor";
@@ -17,7 +18,7 @@ import {
   useCharacterDashboard,
   usePatchSettings,
 } from "./hooks/use-character-dashboard";
-import type { MissingItem, SceneAssignment } from "./types";
+import type { SceneAssignment } from "./types";
 
 /* --------------------------------------------------------------------------
    Types
@@ -30,37 +31,6 @@ interface CharacterDashboardProps {
   sceneAssignments?: SceneAssignment[];
   /** Called when the user navigates to a missing item action. */
   onNavigate?: (url: string) => void;
-}
-
-/* --------------------------------------------------------------------------
-   Helpers
-   -------------------------------------------------------------------------- */
-
-function deriveMissingItems(
-  characterId: number,
-  missingItems: string[],
-): MissingItem[] {
-  return missingItems.map((item) => {
-    // Determine category from the item label.
-    let category: MissingItem["category"] = "pipeline_setting";
-    if (item === "source_image") category = "source_image";
-    else if (item === "approved_variant") category = "approved_variant";
-    else if (item === "metadata_complete") category = "metadata_complete";
-
-    // Build action URL based on category.
-    const urlMap: Record<MissingItem["category"], string> = {
-      source_image: `/characters/${characterId}/source-images`,
-      approved_variant: `/characters/${characterId}/image-variants`,
-      metadata_complete: `/characters/${characterId}/metadata`,
-      pipeline_setting: `/characters/${characterId}/settings`,
-    };
-
-    return {
-      category,
-      label: item.replace(/_/g, " "),
-      actionUrl: urlMap[category],
-    };
-  });
 }
 
 /* --------------------------------------------------------------------------

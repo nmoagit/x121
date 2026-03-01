@@ -4,6 +4,7 @@
 
 // Components
 export { CharacterDashboard } from "./CharacterDashboard";
+export { deriveMissingItems } from "./helpers";
 export { GenerationHistorySection } from "./GenerationHistorySection";
 export { MetadataSummarySection } from "./MetadataSummarySection";
 export { MissingItemsBanner } from "./MissingItemsBanner";

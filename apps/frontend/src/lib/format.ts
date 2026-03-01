@@ -176,6 +176,17 @@ export function daysAgoIso(n: number): string {
 }
 
 /**
+ * Convert a snake_case key to Title Case.
+ *
+ * Examples:
+ * - snakeCaseToTitle("first_name") => "First Name"
+ * - snakeCaseToTitle("a2c4_model") => "A2c4 Model"
+ */
+export function snakeCaseToTitle(key: string): string {
+  return key.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+/**
  * Generate a URL-safe slug from a title string.
  *
  * NOTE: The backend has a canonical `generate_slug()` in `core/src/wiki.rs`

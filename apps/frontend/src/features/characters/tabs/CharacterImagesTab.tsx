@@ -1,18 +1,25 @@
 /**
- * Placeholder for character images tab (PRD-112).
- *
- * Depends on PRD-113 (Character Ingest Pipeline) for image management.
+ * Character images tab — source image upload + variant gallery (PRD-112).
  */
 
-import { EmptyState } from "@/components/domain";
-import { Image } from "@/tokens/icons";
+import { Stack } from "@/components/layout";
 
-export function CharacterImagesTab() {
+import { SourceImageUpload } from "@/features/images/SourceImageUpload";
+import { VariantGallery } from "@/features/images/VariantGallery";
+
+/* --------------------------------------------------------------------------
+   Component
+   -------------------------------------------------------------------------- */
+
+interface CharacterImagesTabProps {
+  characterId: number;
+}
+
+export function CharacterImagesTab({ characterId }: CharacterImagesTabProps) {
   return (
-    <EmptyState
-      icon={<Image size={32} />}
-      title="Images"
-      description="Character image management will be available once PRD-113 is implemented."
-    />
+    <Stack gap={6}>
+      <SourceImageUpload characterId={characterId} onUploaded={() => {}} />
+      <VariantGallery characterId={characterId} />
+    </Stack>
   );
 }

@@ -8,6 +8,7 @@
 import { useState } from "react";
 
 import { Button, Input } from "@/components";
+import { snakeCaseToTitle } from "@/lib/format";
 
 /* --------------------------------------------------------------------------
    Types
@@ -33,10 +34,6 @@ const KNOWN_KEYS = [
   "lora_model",
   "comfyui_workflow",
 ];
-
-function formatKeyLabel(key: string): string {
-  return key.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
-}
 
 /* --------------------------------------------------------------------------
    Component
@@ -98,7 +95,7 @@ export function PipelineSettingsEditor({
               className="w-40 text-xs text-[var(--color-text-secondary)]"
               data-testid={`setting-label-${key}`}
             >
-              {formatKeyLabel(key)}
+              {snakeCaseToTitle(key)}
             </label>
             <Input
               data-testid={`setting-input-${key}`}

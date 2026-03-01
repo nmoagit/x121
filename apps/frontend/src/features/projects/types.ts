@@ -149,7 +149,7 @@ export const CHARACTER_TABS = [
   { id: "overview", label: "Overview" },
   { id: "images", label: "Images" },
   { id: "scenes", label: "Scenes" },
-  { id: "assets", label: "Assets" },
+  { id: "deliverables", label: "Deliverables" },
   { id: "metadata", label: "Metadata" },
   { id: "settings", label: "Settings" },
 ] as const;

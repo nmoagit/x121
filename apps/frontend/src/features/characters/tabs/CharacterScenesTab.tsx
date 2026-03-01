@@ -1,18 +1,22 @@
 /**
- * Placeholder for character scenes tab (PRD-112).
- *
- * Depends on scene management PRDs being implemented.
+ * Character scenes tab — scene picker with clip gallery (PRD-112).
  */
 
-import { EmptyState } from "@/components/domain";
-import { Layers } from "@/tokens/icons";
+import { ScenePicker } from "@/components/domain/ScenePicker";
+import { ClipGallery } from "@/features/scenes/ClipGallery";
 
-export function CharacterScenesTab() {
+/* --------------------------------------------------------------------------
+   Component
+   -------------------------------------------------------------------------- */
+
+interface CharacterScenesTabProps {
+  characterId: number;
+}
+
+export function CharacterScenesTab({ characterId }: CharacterScenesTabProps) {
   return (
-    <EmptyState
-      icon={<Layers size={32} />}
-      title="Scenes"
-      description="Scene assignment and generation will be available in a future update."
-    />
+    <ScenePicker characterId={characterId}>
+      {(sceneId) => <ClipGallery sceneId={sceneId} />}
+    </ScenePicker>
   );
 }

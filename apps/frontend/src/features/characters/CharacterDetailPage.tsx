@@ -29,7 +29,7 @@ import {
   characterStatusLabel,
 } from "@/features/projects/types";
 
-import { CharacterAssetsTab } from "./tabs/CharacterAssetsTab";
+import { CharacterDeliverablesTab } from "./tabs/CharacterDeliverablesTab";
 import { CharacterImagesTab } from "./tabs/CharacterImagesTab";
 import { CharacterMetadataTab } from "./tabs/CharacterMetadataTab";
 import { CharacterOverviewTab } from "./tabs/CharacterOverviewTab";
@@ -138,10 +138,12 @@ export function CharacterDetailPage() {
       />
 
       {/* Tab content */}
-      {activeTab === "overview" && <CharacterOverviewTab character={character} />}
-      {activeTab === "images" && <CharacterImagesTab />}
-      {activeTab === "scenes" && <CharacterScenesTab />}
-      {activeTab === "assets" && <CharacterAssetsTab />}
+      {activeTab === "overview" && (
+        <CharacterOverviewTab character={character} characterId={characterId} />
+      )}
+      {activeTab === "images" && <CharacterImagesTab characterId={characterId} />}
+      {activeTab === "scenes" && <CharacterScenesTab characterId={characterId} />}
+      {activeTab === "deliverables" && <CharacterDeliverablesTab characterId={characterId} />}
       {activeTab === "metadata" && <CharacterMetadataTab characterId={characterId} />}
       {activeTab === "settings" && (
         <CharacterSettingsTab projectId={projectId} characterId={characterId} />
