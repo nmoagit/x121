@@ -14,7 +14,7 @@ import { Plus, Upload, User } from "@/tokens/icons";
 
 import { CharacterCard } from "../components/CharacterCard";
 import { ImportConfirmModal } from "../components/ImportConfirmModal";
-import { useCharacterGroups } from "../hooks/use-character-groups";
+import { useCharacterGroups, useCreateGroup } from "../hooks/use-character-groups";
 import { useCharacterImport } from "../hooks/use-character-import";
 import {
   useCreateCharacter,
@@ -38,6 +38,7 @@ export function ProjectCharactersTab({ projectId }: ProjectCharactersTabProps) {
   const { data: groups, isLoading: groupsLoading } =
     useCharacterGroups(projectId);
   const createCharacter = useCreateCharacter(projectId);
+  const createGroup = useCreateGroup(projectId);
   const charImport = useCharacterImport(projectId);
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -46,6 +47,9 @@ export function ProjectCharactersTab({ projectId }: ProjectCharactersTabProps) {
   /* --- modal state --- */
   const [modalOpen, setModalOpen] = useState(false);
   const [newName, setNewName] = useState("");
+  const [selectedGroupId, setSelectedGroupId] = useState("");
+  const [newGroupName, setNewGroupName] = useState("");
+  const [showNewGroup, setShowNewGroup] = useState(false);
 
   /* --- group filter options --- */
   const groupOptions = useMemo(
@@ -54,6 +58,12 @@ export function ProjectCharactersTab({ projectId }: ProjectCharactersTabProps) {
       ...toSelectOptions(groups),
       ...(groups?.length ? [{ value: "ungrouped", label: "Ungrouped" }] : []),
     ],
+    [groups],
+  );
+
+  /* --- modal group options --- */
+  const modalGroupOptions = useMemo(
+    () => [{ value: "", label: "No group" }, ...toSelectOptions(groups)],
     [groups],
   );
 
@@ -117,12 +127,32 @@ export function ProjectCharactersTab({ projectId }: ProjectCharactersTabProps) {
   function handleCreate() {
     if (!newName.trim()) return;
 
+    const groupId = selectedGroupId ? Number(selectedGroupId) : undefined;
     createCharacter.mutate(
-      { name: newName.trim() },
+      { name: newName.trim(), group_id: groupId },
       {
         onSuccess: () => {
           setModalOpen(false);
           setNewName("");
+          setSelectedGroupId("");
+          setShowNewGroup(false);
+          setNewGroupName("");
+        },
+      },
+    );
+  }
+
+  function handleCreateNewGroup() {
+    const name = newGroupName.trim();
+    if (!name) return;
+
+    createGroup.mutate(
+      { name },
+      {
+        onSuccess: (created) => {
+          setSelectedGroupId(String(created.id));
+          setNewGroupName("");
+          setShowNewGroup(false);
         },
       },
     );
@@ -250,6 +280,54 @@ export function ProjectCharactersTab({ projectId }: ProjectCharactersTabProps) {
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
           />
+
+          {/* Group selection */}
+          <div>
+            <Select
+              label="Group"
+              options={modalGroupOptions}
+              value={selectedGroupId}
+              onChange={setSelectedGroupId}
+            />
+            {!showNewGroup ? (
+              <button
+                type="button"
+                className="mt-[var(--spacing-1)] text-xs text-[var(--color-text-link)] hover:underline"
+                onClick={() => setShowNewGroup(true)}
+              >
+                + Create new group
+              </button>
+            ) : (
+              <div className="mt-[var(--spacing-2)] flex items-end gap-[var(--spacing-2)]">
+                <div className="flex-1">
+                  <Input
+                    placeholder="New group name"
+                    value={newGroupName}
+                    onChange={(e) => setNewGroupName(e.target.value)}
+                  />
+                </div>
+                <Button
+                  size="sm"
+                  onClick={handleCreateNewGroup}
+                  loading={createGroup.isPending}
+                  disabled={!newGroupName.trim()}
+                >
+                  Add
+                </Button>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => {
+                    setShowNewGroup(false);
+                    setNewGroupName("");
+                  }}
+                >
+                  Cancel
+                </Button>
+              </div>
+            )}
+          </div>
+
           <Button
             onClick={handleCreate}
             loading={createCharacter.isPending}
