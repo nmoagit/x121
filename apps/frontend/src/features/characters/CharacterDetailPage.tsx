@@ -204,16 +204,16 @@ export function CharacterDetailPage() {
         variant="pill"
       />
 
-      {/* Tab content */}
+      {/* Tab content — key on characterId to reset state when navigating between characters */}
       {activeTab === "overview" && (
-        <CharacterOverviewTab character={character} characterId={characterId} />
+        <CharacterOverviewTab key={characterId} character={character} characterId={characterId} />
       )}
-      {activeTab === "images" && <CharacterImagesTab characterId={characterId} />}
-      {activeTab === "scenes" && <CharacterScenesTab characterId={characterId} projectId={projectId} />}
-      {activeTab === "deliverables" && <CharacterDeliverablesTab characterId={characterId} />}
-      {activeTab === "metadata" && <CharacterMetadataTab characterId={characterId} />}
+      {activeTab === "images" && <CharacterImagesTab key={characterId} characterId={characterId} />}
+      {activeTab === "scenes" && <CharacterScenesTab key={characterId} characterId={characterId} projectId={projectId} />}
+      {activeTab === "deliverables" && <CharacterDeliverablesTab key={characterId} characterId={characterId} />}
+      {activeTab === "metadata" && <CharacterMetadataTab key={characterId} characterId={characterId} />}
       {activeTab === "settings" && (
-        <CharacterSettingsTab projectId={projectId} characterId={characterId} />
+        <CharacterSettingsTab key={characterId} projectId={projectId} characterId={characterId} />
       )}
 
       {/* Edit character modal */}
