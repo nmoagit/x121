@@ -13,9 +13,11 @@ interface TabsProps {
   tabs: Tab[];
   activeTab: string;
   onTabChange: (tabId: string) => void;
+  /** Visual style variant. Defaults to "underline". */
+  variant?: "underline" | "pill";
 }
 
-export function Tabs({ tabs, activeTab, onTabChange }: TabsProps) {
+export function Tabs({ tabs, activeTab, onTabChange, variant = "underline" }: TabsProps) {
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
       const currentIndex = tabs.findIndex((t) => t.id === activeTab);
@@ -39,10 +41,17 @@ export function Tabs({ tabs, activeTab, onTabChange }: TabsProps) {
     [tabs, activeTab, onTabChange],
   );
 
+  const isPill = variant === "pill";
+
   return (
     <div
       role="tablist"
-      className="flex border-b border-[var(--color-border-default)]"
+      className={cn(
+        "flex",
+        isPill
+          ? "gap-[var(--spacing-1)] rounded-[var(--radius-lg)] bg-[var(--color-surface-secondary)] p-[var(--spacing-1)]"
+          : "border-b border-[var(--color-border-default)]",
+      )}
       onKeyDown={handleKeyDown}
     >
       {tabs.map((tab) => {
@@ -59,13 +68,22 @@ export function Tabs({ tabs, activeTab, onTabChange }: TabsProps) {
             disabled={tab.disabled}
             onClick={() => onTabChange(tab.id)}
             className={cn(
-              "inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium",
-              "border-b-2 -mb-px",
+              "inline-flex items-center gap-2 text-sm font-medium cursor-pointer",
               "transition-colors duration-[var(--duration-fast)] ease-[var(--ease-default)]",
               "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-border-focus)]",
-              isActive
-                ? "border-[var(--color-action-primary)] text-[var(--color-action-primary)]"
-                : "border-transparent text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:border-[var(--color-border-default)]",
+              isPill
+                ? cn(
+                    "px-[var(--spacing-3)] py-[var(--spacing-1.5)] rounded-[var(--radius-md)]",
+                    isActive
+                      ? "bg-[var(--color-surface-primary)] text-[var(--color-text-primary)] shadow-[var(--shadow-sm)]"
+                      : "text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]",
+                  )
+                : cn(
+                    "px-4 py-2.5 border-b-2 -mb-px",
+                    isActive
+                      ? "border-[var(--color-action-primary)] text-[var(--color-action-primary)]"
+                      : "border-transparent text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:border-[var(--color-border-default)]",
+                  ),
               tab.disabled && "opacity-50 pointer-events-none",
             )}
           >

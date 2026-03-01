@@ -105,6 +105,7 @@ export function ProjectDetailPage() {
         tabs={PROJECT_TABS.map((t) => ({ id: t.id, label: t.label }))}
         activeTab={activeTab}
         onTabChange={setActiveTab}
+        variant="pill"
       />
 
       {/* Tab content */}
