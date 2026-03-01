@@ -13,7 +13,7 @@ import { ConfirmDeleteModal, Modal } from "@/components/composite";
 import { EmptyState, FileDropZone } from "@/components/domain";
 import { Grid, Stack } from "@/components/layout";
 import { Button, Input, LoadingPane } from "@/components/primitives";
-import { Check, ChevronDown, ChevronRight, Edit3, Folder, Plus, Trash2, Upload } from "@/tokens/icons";
+import { ChevronDown, ChevronRight, Edit3, Folder, Plus, Trash2, Upload } from "@/tokens/icons";
 
 import { CharacterCard } from "../components/CharacterCard";
 import { ImportConfirmModal } from "../components/ImportConfirmModal";
@@ -496,42 +496,22 @@ function GroupSection({
             </p>
           ) : (
             <Grid cols={1} gap={3} className="sm:grid-cols-2 lg:grid-cols-3">
-              {characters.map((c) => {
-                const isSelected = selectedCharIds.has(c.id);
-                return (
-                  <div
-                    key={c.id}
-                    draggable
-                    onDragStart={(e) => onCharDragStart(e, c.id)}
-                    className="flex items-center gap-[var(--spacing-2)] cursor-grab active:cursor-grabbing"
-                  >
-                    {/* Selection checkbox */}
-                    <button
-                      type="button"
-                      className={`shrink-0 w-5 h-5 rounded-[var(--radius-sm)] border flex items-center justify-center cursor-pointer transition-colors ${
-                        isSelected
-                          ? "bg-[var(--color-action-primary)] border-[var(--color-action-primary)] text-white"
-                          : "border-[var(--color-border-default)] bg-[var(--color-surface-primary)] hover:border-[var(--color-border-accent)] text-transparent"
-                      }`}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onCharSelect(c.id);
-                      }}
-                      aria-label={`${isSelected ? "Deselect" : "Select"} ${c.name}`}
-                    >
-                      <Check size={12} aria-hidden />
-                    </button>
-                    <div className="flex-1 min-w-0">
-                      <CharacterCard
-                        character={c}
-                        group={c.group_id ? groupMap.get(c.group_id) : undefined}
-                        selected={isSelected}
-                        onClick={() => onCharClick(c)}
-                      />
-                    </div>
-                  </div>
-                );
-              })}
+              {characters.map((c) => (
+                <div
+                  key={c.id}
+                  draggable
+                  onDragStart={(e) => onCharDragStart(e, c.id)}
+                  className="cursor-grab active:cursor-grabbing"
+                >
+                  <CharacterCard
+                    character={c}
+                    group={c.group_id ? groupMap.get(c.group_id) : undefined}
+                    selected={selectedCharIds.has(c.id)}
+                    onSelect={onCharSelect}
+                    onClick={() => onCharClick(c)}
+                  />
+                </div>
+              ))}
             </Grid>
           )}
         </div>
