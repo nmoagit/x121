@@ -10,7 +10,7 @@ import { EmptyState, FileDropZone } from "@/components/domain";
 import { Grid, Stack } from "@/components/layout";
 import { Button, Input, LoadingPane, Select } from "@/components/primitives";
 import { toSelectOptions } from "@/lib/select-utils";
-import { Plus, User } from "@/tokens/icons";
+import { Plus, Upload, User } from "@/tokens/icons";
 
 import { CharacterCard } from "../components/CharacterCard";
 import { ImportConfirmModal } from "../components/ImportConfirmModal";
@@ -135,7 +135,10 @@ export function ProjectCharactersTab({ projectId }: ProjectCharactersTabProps) {
   }
 
   return (
-    <FileDropZone onNamesDropped={charImport.handleImportDrop}>
+    <FileDropZone
+      onNamesDropped={charImport.handleImportDrop}
+      browseFolderRef={charImport.browseFolderRef}
+    >
     <Stack gap={4}>
       {/* Filter bar */}
       <div className="flex flex-wrap items-end gap-[var(--spacing-3)]">
@@ -153,6 +156,14 @@ export function ProjectCharactersTab({ projectId }: ProjectCharactersTabProps) {
             onChange={setGroupFilter}
           />
         </div>
+        <Button
+          size="sm"
+          variant="secondary"
+          icon={<Upload size={14} />}
+          onClick={charImport.browseFolder}
+        >
+          Import Folder
+        </Button>
         <Button
           size="sm"
           icon={<Plus size={14} />}
@@ -255,6 +266,7 @@ export function ProjectCharactersTab({ projectId }: ProjectCharactersTabProps) {
         onClose={charImport.closeImport}
         names={charImport.importNames}
         projectId={projectId}
+        existingNames={characters?.map((c) => c.name) ?? []}
         onConfirm={charImport.handleImportConfirm}
         loading={charImport.bulkCreatePending}
       />

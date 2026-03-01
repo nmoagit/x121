@@ -18,6 +18,7 @@ import {
   Folder,
   Plus,
   Trash2,
+  Upload,
   User,
 } from "@/tokens/icons";
 
@@ -154,7 +155,10 @@ export function ProjectGroupsTab({ projectId }: ProjectGroupsTabProps) {
   }
 
   return (
-    <FileDropZone onNamesDropped={charImport.handleImportDrop}>
+    <FileDropZone
+      onNamesDropped={charImport.handleImportDrop}
+      browseFolderRef={charImport.browseFolderRef}
+    >
     <Stack gap={4}>
       {/* Top bar */}
       <div className="flex flex-wrap items-end gap-[var(--spacing-3)]">
@@ -165,6 +169,14 @@ export function ProjectGroupsTab({ projectId }: ProjectGroupsTabProps) {
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
+        <Button
+          size="sm"
+          variant="secondary"
+          icon={<Upload size={14} />}
+          onClick={charImport.browseFolder}
+        >
+          Import Folder
+        </Button>
         <Button size="sm" icon={<Plus size={14} />} onClick={openCreate}>
           Create Group
         </Button>
@@ -271,6 +283,7 @@ export function ProjectGroupsTab({ projectId }: ProjectGroupsTabProps) {
         onClose={charImport.closeImport}
         names={charImport.importNames}
         projectId={projectId}
+        existingNames={characters?.map((c) => c.name) ?? []}
         onConfirm={charImport.handleImportConfirm}
         loading={charImport.bulkCreatePending}
       />

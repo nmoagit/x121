@@ -9,7 +9,7 @@
  * Wraps children and overlays a visual indicator on drag-over.
  */
 
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import type { ReactNode } from "react";
 
 import { cn } from "@/lib/cn";
@@ -21,6 +21,8 @@ import { cn } from "@/lib/cn";
 interface FileDropZoneProps {
   children: ReactNode;
   onNamesDropped: (names: string[]) => void;
+  /** Optional ref callback to receive the browseFolder function. */
+  browseFolderRef?: React.MutableRefObject<(() => void) | null>;
 }
 
 /* --------------------------------------------------------------------------
@@ -104,8 +106,63 @@ function readFileText(file: File): Promise<string> {
    Component
    -------------------------------------------------------------------------- */
 
-export function FileDropZone({ children, onNamesDropped }: FileDropZoneProps) {
+/** Extract names from a list of files selected via the folder picker. */
+function namesFromFolderFiles(files: FileList): string[] {
+  // Collect unique top-level subfolder names from relative paths
+  const folderNames = new Set<string>();
+  const fileNames: string[] = [];
+
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    if (!file) continue;
+    const rel =
+      (file as File & { webkitRelativePath?: string }).webkitRelativePath ?? "";
+    const parts = rel.split("/");
+    // parts[0] = selected root folder, parts[1] = subfolder or file
+    if (parts.length >= 3 && parts[1]) {
+      // Has subdirectories — use subfolder name
+      folderNames.add(parts[1]);
+    } else if (parts.length === 2 && parts[1]) {
+      // Direct file in root — use filename without extension
+      const stem = parts[1].replace(/\.[^.]+$/, "");
+      if (stem) fileNames.push(stem);
+    }
+  }
+
+  // Prefer subfolder names; fall back to filenames if no subdirs
+  if (folderNames.size > 0) return [...folderNames];
+  return [...new Set(fileNames)];
+}
+
+export function FileDropZone({
+  children,
+  onNamesDropped,
+  browseFolderRef,
+}: FileDropZoneProps) {
   const [isDragOver, setIsDragOver] = useState(false);
+  const folderInputRef = useRef<HTMLInputElement>(null);
+
+  /** Open the native folder picker dialog. Consumers call this via button. */
+  const browseFolder = useCallback(() => {
+    folderInputRef.current?.click();
+  }, []);
+
+  // Expose browseFolder to the parent
+  if (browseFolderRef) {
+    browseFolderRef.current = browseFolder;
+  }
+
+  const handleFolderInput = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (!e.target.files?.length) return;
+      const names = namesFromFolderFiles(e.target.files);
+      const unique = [...new Set(names)];
+      if (unique.length > 0) onNamesDropped(unique);
+      // Reset so the same folder can be re-selected
+      e.target.value = "";
+    },
+    [onNamesDropped],
+  );
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -172,6 +229,17 @@ export function FileDropZone({ children, onNamesDropped }: FileDropZoneProps) {
     >
       {children}
 
+      {/* Hidden folder input for browse button */}
+      <input
+        ref={folderInputRef}
+        type="file"
+        className="hidden"
+        onChange={handleFolderInput}
+        // @ts-expect-error -- webkitdirectory is non-standard
+        webkitdirectory=""
+        multiple
+      />
+
       {/* Drag overlay */}
       {isDragOver && (
         <div
@@ -183,7 +251,7 @@ export function FileDropZone({ children, onNamesDropped }: FileDropZoneProps) {
           )}
         >
           <p className="text-sm font-medium text-[var(--color-text-primary)]">
-            Drop file to import characters
+            Drop files or folders to import characters
           </p>
         </div>
       )}

@@ -23,6 +23,8 @@ interface ImportConfirmModalProps {
   onClose: () => void;
   names: string[];
   projectId: number;
+  /** Names of characters that already exist (case-insensitive match). */
+  existingNames?: string[];
   onConfirm: (names: string[], groupId?: number) => void;
   loading?: boolean;
 }
@@ -47,6 +49,7 @@ export function ImportConfirmModal({
   onClose,
   names,
   projectId,
+  existingNames = [],
   onConfirm,
   loading,
 }: ImportConfirmModalProps) {
@@ -58,24 +61,59 @@ export function ImportConfirmModal({
   const [titleCase, setTitleCase] = useState(false);
   const [groupId, setGroupId] = useState("");
 
-  // Reset checked set when names change
+  const displayNames = useMemo(
+    () => (titleCase ? names.map(toTitleCase) : names),
+    [names, titleCase],
+  );
+
+  // Build set of existing names for O(1) duplicate lookup
+  const existingSet = useMemo(() => {
+    const set = new Set<string>();
+    for (const n of existingNames) {
+      set.add(n.toLowerCase());
+    }
+    return set;
+  }, [existingNames]);
+
+  // Compute which indices are duplicates (against existing + title-case)
+  const duplicateIndices = useMemo(() => {
+    const dupes = new Set<number>();
+    for (let i = 0; i < displayNames.length; i++) {
+      if (existingSet.has(displayNames[i]!.toLowerCase())) {
+        dupes.add(i);
+      }
+    }
+    return dupes;
+  }, [displayNames, existingSet]);
+
+  const duplicateCount = duplicateIndices.size;
+
+  // Reset checked set when names change — auto-uncheck duplicates
   useEffect(() => {
-    setChecked(new Set(names.map((_, i) => i)));
-  }, [names]);
+    const initial = new Set<number>();
+    for (let i = 0; i < names.length; i++) {
+      // Don't check duplicates by default (they'll need explicit opt-in)
+      const display = titleCase ? toTitleCase(names[i]!) : names[i]!;
+      if (!existingSet.has(display.toLowerCase())) {
+        initial.add(i);
+      }
+    }
+    setChecked(initial);
+  }, [names, existingSet, titleCase]);
 
   const groupOptions = useMemo(
     () => [{ value: "", label: "No group" }, ...toSelectOptions(groups)],
     [groups],
   );
 
-  const displayNames = useMemo(
-    () => (titleCase ? names.map(toTitleCase) : names),
-    [names, titleCase],
-  );
-
-  const selectedCount = checked.size;
+  // Count only non-duplicate selected items
+  const selectedCount = [...checked].filter(
+    (i) => !duplicateIndices.has(i),
+  ).length;
 
   function toggleItem(idx: number) {
+    // Don't allow checking duplicates
+    if (duplicateIndices.has(idx)) return;
     setChecked((prev) => {
       const next = new Set(prev);
       if (next.has(idx)) {
@@ -88,17 +126,25 @@ export function ImportConfirmModal({
   }
 
   function toggleAll() {
-    if (checked.size === names.length) {
+    const nonDuplicates = names
+      .map((_, i) => i)
+      .filter((i) => !duplicateIndices.has(i));
+    const allChecked = nonDuplicates.every((i) => checked.has(i));
+    if (allChecked) {
       setChecked(new Set());
     } else {
-      setChecked(new Set(names.map((_, i) => i)));
+      setChecked(new Set(nonDuplicates));
     }
   }
 
   function handleConfirm() {
-    const selected = displayNames.filter((_, i) => checked.has(i));
+    const selected = displayNames.filter(
+      (_, i) => checked.has(i) && !duplicateIndices.has(i),
+    );
     onConfirm(selected, groupId ? Number(groupId) : undefined);
   }
+
+  const importableCount = names.length - duplicateCount;
 
   return (
     <Modal open={open} onClose={onClose} title="Import Characters" size="lg">
@@ -121,36 +167,60 @@ export function ImportConfirmModal({
           />
         </div>
 
+        {/* Duplicate warning */}
+        {duplicateCount > 0 && (
+          <div className="rounded-[var(--radius-md)] border border-[var(--color-border-warning)] bg-[var(--color-surface-warning)] px-[var(--spacing-3)] py-[var(--spacing-2)]">
+            <p className="text-sm text-[var(--color-text-warning)]">
+              {duplicateCount} {duplicateCount === 1 ? "name" : "names"} already{" "}
+              {duplicateCount === 1 ? "exists" : "exist"} and will be skipped.
+            </p>
+          </div>
+        )}
+
         {/* Name list */}
         <div className="max-h-[320px] overflow-y-auto rounded-[var(--radius-md)] border border-[var(--color-border-default)] bg-[var(--color-surface-primary)]">
           {/* Select all header */}
           <div className="px-[var(--spacing-3)] py-[var(--spacing-2)] border-b border-[var(--color-border-default)] hover:bg-[var(--color-surface-secondary)]">
             <Checkbox
-              checked={checked.size === names.length}
-              indeterminate={checked.size > 0 && checked.size < names.length}
+              checked={importableCount > 0 && selectedCount === importableCount}
+              indeterminate={selectedCount > 0 && selectedCount < importableCount}
               onChange={toggleAll}
-              label={`Select all (${names.length})`}
+              label={`Select all (${importableCount})`}
             />
           </div>
 
-          {displayNames.map((name, idx) => (
-            <div
-              key={idx}
-              className="px-[var(--spacing-3)] py-[var(--spacing-1)] hover:bg-[var(--color-surface-secondary)]"
-            >
-              <Checkbox
-                checked={checked.has(idx)}
-                onChange={() => toggleItem(idx)}
-                label={name}
-              />
-            </div>
-          ))}
+          {displayNames.map((name, idx) => {
+            const isDuplicate = duplicateIndices.has(idx);
+            return (
+              <div
+                key={idx}
+                className={`flex items-center gap-[var(--spacing-2)] px-[var(--spacing-3)] py-[var(--spacing-1)] ${
+                  isDuplicate
+                    ? "opacity-50"
+                    : "hover:bg-[var(--color-surface-secondary)]"
+                }`}
+              >
+                <Checkbox
+                  checked={checked.has(idx)}
+                  onChange={() => toggleItem(idx)}
+                  disabled={isDuplicate}
+                  label={name}
+                />
+                {isDuplicate && (
+                  <span className="text-xs text-[var(--color-text-warning)] ml-auto shrink-0">
+                    already exists
+                  </span>
+                )}
+              </div>
+            );
+          })}
         </div>
 
         {/* Footer */}
         <div className="flex items-center justify-between">
           <span className="text-sm text-[var(--color-text-muted)]">
-            {selectedCount} of {names.length} selected
+            {selectedCount} of {importableCount} selected
+            {duplicateCount > 0 && ` (${duplicateCount} duplicates)`}
           </span>
           <div className="flex gap-[var(--spacing-2)]">
             <Button variant="secondary" onClick={onClose}>

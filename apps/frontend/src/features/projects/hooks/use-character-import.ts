@@ -6,7 +6,7 @@
  * identical import behavior without duplicating code.
  */
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import { useBulkCreateCharacters } from "./use-project-characters";
 
@@ -14,6 +14,7 @@ export function useCharacterImport(projectId: number) {
   const bulkCreate = useBulkCreateCharacters(projectId);
   const [importNames, setImportNames] = useState<string[]>([]);
   const [importOpen, setImportOpen] = useState(false);
+  const browseFolderRef = useRef<(() => void) | null>(null);
 
   function handleImportDrop(names: string[]) {
     setImportNames(names);
@@ -36,6 +37,10 @@ export function useCharacterImport(projectId: number) {
     setImportOpen(false);
   }
 
+  function browseFolder() {
+    browseFolderRef.current?.();
+  }
+
   return {
     importNames,
     importOpen,
@@ -43,5 +48,7 @@ export function useCharacterImport(projectId: number) {
     handleImportConfirm,
     closeImport,
     bulkCreatePending: bulkCreate.isPending,
+    browseFolderRef,
+    browseFolder,
   };
 }
