@@ -21,10 +21,10 @@ Source of truth: [`design/design.md`](../design.md)
 | Status | Count |
 |--------|-------|
 | backlog | 0 |
-| planning | 1 |
+| planning | 0 |
 | in-progress | 0 |
 | review | 0 |
-| done | 123 |
+| done | 124 |
 | blocked | 0 |
 | deferred | 0 |
 | maybe | 15 |
@@ -127,7 +127,7 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-107 | Character Readiness & State View | — | `done` | 2026-02-23 | Migrations 000030-000031, core readiness module (criteria evaluation, cache), API handlers (CRUD + batch evaluate), frontend feature (ReadinessStateBadge, CriteriaEditor, SummaryBar), 18+ tests. |
 | PRD-108 | Character Settings Dashboard | — | `done` | 2026-02-23 | Core character_dashboard module (settings merge, label builders), API handlers (get_dashboard, patch_settings), frontend feature (CharacterDashboard, MetadataSummarySection, PipelineSettingsEditor), 27 tests. |
 | PRD-120 | Scene & Workflow Naming Hierarchy (Generation Script) | — | `done` | 2026-03-01 | Python generation script only. Three-level hierarchy (WORKFLOWS, SCENE_TYPES, derived SCENES), display names in all output, dual-level filtering (type + scene), --list-scenes flag, 26 unit tests. Independent of web app. |
-| PRD-123 | Scene Catalog & Scene Types Unification | 1 | `planning` | — | Absorbs scene_catalog into scene_types. Adds slug + has_clothes_off_transition to scene_types, creates scene_type_tracks junction, migrates project_scene_settings and character_scene_overrides FKs, drops scene_catalog tables, unifies frontend to single "Scene Catalog" page. |
+| PRD-123 | Scene Catalog & Scene Types Unification | 1 | `done` | — | Absorbs scene_catalog into scene_types. Adds slug + has_clothes_off_transition to scene_types, creates scene_type_tracks junction, migrates project_scene_settings and character_scene_overrides FKs, drops scene_catalog tables, unifies frontend to single "Scene Catalog" page. |
 
 ## Part 4: Design System & UX Patterns
 
