@@ -18,9 +18,11 @@ import { useCharacterGroups, useCreateGroup } from "../hooks/use-character-group
 import { useCharacterImport } from "../hooks/use-character-import";
 import {
   useCreateCharacter,
+  useDeleteCharacter,
   useProjectCharacters,
+  useUpdateCharacter,
 } from "../hooks/use-project-characters";
-import type { CharacterGroup } from "../types";
+import type { Character, CharacterGroup } from "../types";
 
 /* --------------------------------------------------------------------------
    Component
@@ -38,18 +40,28 @@ export function ProjectCharactersTab({ projectId }: ProjectCharactersTabProps) {
   const { data: groups, isLoading: groupsLoading } =
     useCharacterGroups(projectId);
   const createCharacter = useCreateCharacter(projectId);
+  const updateCharacter = useUpdateCharacter(projectId);
+  const deleteCharacter = useDeleteCharacter(projectId);
   const createGroup = useCreateGroup(projectId);
   const charImport = useCharacterImport(projectId);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [groupFilter, setGroupFilter] = useState("");
 
-  /* --- modal state --- */
+  /* --- create modal state --- */
   const [modalOpen, setModalOpen] = useState(false);
   const [newName, setNewName] = useState("");
   const [selectedGroupId, setSelectedGroupId] = useState("");
   const [newGroupName, setNewGroupName] = useState("");
   const [showNewGroup, setShowNewGroup] = useState(false);
+
+  /* --- edit modal state --- */
+  const [editingChar, setEditingChar] = useState<Character | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editGroupId, setEditGroupId] = useState("");
+
+  /* --- delete confirmation state --- */
+  const [deleteTarget, setDeleteTarget] = useState<Character | null>(null);
 
   /* --- group filter options --- */
   const groupOptions = useMemo(
@@ -158,6 +170,45 @@ export function ProjectCharactersTab({ projectId }: ProjectCharactersTabProps) {
     );
   }
 
+  function openEdit(char: Character) {
+    setEditingChar(char);
+    setEditName(char.name);
+    setEditGroupId(char.group_id ? String(char.group_id) : "");
+  }
+
+  function handleUpdate() {
+    if (!editingChar || !editName.trim()) return;
+
+    const data: { name?: string; group_id?: number | null } = {};
+    if (editName.trim() !== editingChar.name) {
+      data.name = editName.trim();
+    }
+    const newGroupId = editGroupId ? Number(editGroupId) : null;
+    if (newGroupId !== editingChar.group_id) {
+      data.group_id = newGroupId;
+    }
+
+    if (Object.keys(data).length === 0) {
+      setEditingChar(null);
+      return;
+    }
+
+    updateCharacter.mutate(
+      { characterId: editingChar.id, data },
+      { onSuccess: () => setEditingChar(null) },
+    );
+  }
+
+  function handleDelete() {
+    if (!deleteTarget) return;
+    deleteCharacter.mutate(deleteTarget.id, {
+      onSuccess: () => {
+        setDeleteTarget(null);
+        setEditingChar(null);
+      },
+    });
+  }
+
   const isLoading = charsLoading || groupsLoading;
 
   if (isLoading) {
@@ -243,6 +294,7 @@ export function ProjectCharactersTab({ projectId }: ProjectCharactersTabProps) {
                         to: `/projects/${projectId}/characters/${char.id}`,
                       })
                     }
+                    onEdit={() => openEdit(char)}
                   />
                 ))}
               </Grid>
@@ -261,6 +313,7 @@ export function ProjectCharactersTab({ projectId }: ProjectCharactersTabProps) {
                   to: `/projects/${projectId}/characters/${char.id}`,
                 })
               }
+              onEdit={() => openEdit(char)}
             />
           ))}
         </Grid>
@@ -335,6 +388,76 @@ export function ProjectCharactersTab({ projectId }: ProjectCharactersTabProps) {
           >
             Create Character
           </Button>
+        </Stack>
+      </Modal>
+
+      {/* Edit character modal */}
+      <Modal
+        open={editingChar !== null}
+        onClose={() => setEditingChar(null)}
+        title="Edit Character"
+        size="sm"
+      >
+        <Stack gap={4}>
+          <Input
+            label="Character Name"
+            value={editName}
+            onChange={(e) => setEditName(e.target.value)}
+          />
+          <Select
+            label="Group"
+            options={modalGroupOptions}
+            value={editGroupId}
+            onChange={setEditGroupId}
+          />
+          <div className="flex items-center justify-between">
+            <button
+              type="button"
+              className="text-xs text-[var(--color-action-danger)] hover:text-[var(--color-action-danger-hover)] hover:underline cursor-pointer"
+              onClick={() => setDeleteTarget(editingChar)}
+            >
+              Delete character
+            </button>
+            <div className="flex gap-[var(--spacing-2)]">
+              <Button variant="secondary" onClick={() => setEditingChar(null)}>
+                Cancel
+              </Button>
+              <Button
+                onClick={handleUpdate}
+                loading={updateCharacter.isPending}
+                disabled={!editName.trim()}
+              >
+                Save Changes
+              </Button>
+            </div>
+          </div>
+        </Stack>
+      </Modal>
+
+      {/* Delete character confirmation */}
+      <Modal
+        open={deleteTarget !== null}
+        onClose={() => setDeleteTarget(null)}
+        title="Delete Character"
+        size="sm"
+      >
+        <Stack gap={4}>
+          <p className="text-sm text-[var(--color-text-secondary)]">
+            Are you sure you want to delete{" "}
+            <strong>{deleteTarget?.name}</strong>? This action cannot be undone.
+          </p>
+          <div className="flex gap-[var(--spacing-2)] justify-end">
+            <Button variant="secondary" onClick={() => setDeleteTarget(null)}>
+              Cancel
+            </Button>
+            <Button
+              variant="danger"
+              onClick={handleDelete}
+              loading={deleteCharacter.isPending}
+            >
+              Delete
+            </Button>
+          </div>
         </Stack>
       </Modal>
 
