@@ -19,6 +19,7 @@ use x121_db::repositories::{
 };
 
 use crate::error::{AppError, AppResult};
+use crate::response::DataResponse;
 use crate::state::AppState;
 
 /// Query parameters for the trash listing endpoint.
@@ -35,12 +36,12 @@ pub struct TrashQuery {
 pub async fn list_trashed(
     State(state): State<AppState>,
     Query(params): Query<TrashQuery>,
-) -> AppResult<Json<TrashSummary>> {
+) -> AppResult<Json<DataResponse<TrashSummary>>> {
     if let Some(ref et) = params.entity_type {
         validate_entity_type(et)?;
     }
     let summary = TrashRepo::list_trashed(&state.pool, params.entity_type.as_deref()).await?;
-    Ok(Json(summary))
+    Ok(Json(DataResponse { data: summary }))
 }
 
 /// POST /api/v1/trash/{entity_type}/{id}/restore
@@ -51,7 +52,7 @@ pub async fn list_trashed(
 pub async fn restore(
     State(state): State<AppState>,
     Path((entity_type, id)): Path<(String, DbId)>,
-) -> AppResult<Json<serde_json::Value>> {
+) -> AppResult<Json<DataResponse<serde_json::Value>>> {
     validate_entity_type(&entity_type)?;
 
     // Check whether the parent is trashed; if so, block the restore.
@@ -63,11 +64,13 @@ pub async fn restore(
     let restored = dispatch_restore(&state.pool, &entity_type, id).await?;
 
     if restored {
-        Ok(Json(serde_json::json!({
-            "restored": true,
-            "entity_type": entity_type,
-            "id": id,
-        })))
+        Ok(Json(DataResponse {
+            data: serde_json::json!({
+                "restored": true,
+                "entity_type": entity_type,
+                "id": id,
+            }),
+        }))
     } else {
         Err(AppError::Core(CoreError::NotFound {
             entity: "TrashedItem",
@@ -107,9 +110,9 @@ pub async fn purge_one(
 ///
 /// Preview how many rows would be removed by a purge-all, broken down by
 /// entity type, with an estimated byte count from file-bearing tables.
-pub async fn purge_preview(State(state): State<AppState>) -> AppResult<Json<PurgePreview>> {
+pub async fn purge_preview(State(state): State<AppState>) -> AppResult<Json<DataResponse<PurgePreview>>> {
     let preview = TrashRepo::purge_preview(&state.pool).await?;
-    Ok(Json(preview))
+    Ok(Json(DataResponse { data: preview }))
 }
 
 // ── Private helpers ──────────────────────────────────────────────────────

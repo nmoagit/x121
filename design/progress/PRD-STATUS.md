@@ -21,14 +21,14 @@ Source of truth: [`design/design.md`](../design.md)
 | Status | Count |
 |--------|-------|
 | backlog | 0 |
-| planning | 0 |
+| planning | 1 |
 | in-progress | 0 |
 | review | 0 |
 | done | 123 |
 | blocked | 0 |
 | deferred | 0 |
 | maybe | 15 |
-| **Total** | **138** |
+| **Total** | **139** |
 
 ---
 
@@ -127,6 +127,7 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-107 | Character Readiness & State View | — | `done` | 2026-02-23 | Migrations 000030-000031, core readiness module (criteria evaluation, cache), API handlers (CRUD + batch evaluate), frontend feature (ReadinessStateBadge, CriteriaEditor, SummaryBar), 18+ tests. |
 | PRD-108 | Character Settings Dashboard | — | `done` | 2026-02-23 | Core character_dashboard module (settings merge, label builders), API handlers (get_dashboard, patch_settings), frontend feature (CharacterDashboard, MetadataSummarySection, PipelineSettingsEditor), 27 tests. |
 | PRD-120 | Scene & Workflow Naming Hierarchy (Generation Script) | — | `done` | 2026-03-01 | Python generation script only. Three-level hierarchy (WORKFLOWS, SCENE_TYPES, derived SCENES), display names in all output, dual-level filtering (type + scene), --list-scenes flag, 26 unit tests. Independent of web app. |
+| PRD-123 | Scene Catalog & Scene Types Unification | 1 | `planning` | — | Absorbs scene_catalog into scene_types. Adds slug + has_clothes_off_transition to scene_types, creates scene_type_tracks junction, migrates project_scene_settings and character_scene_overrides FKs, drops scene_catalog tables, unifies frontend to single "Scene Catalog" page. |
 
 ## Part 4: Design System & UX Patterns
 
@@ -250,3 +251,4 @@ Source of truth: [`design/design.md`](../design.md)
 | 2026-02-28 | Added PRD-121 (SVI Clip Management). Clip gallery frontend, clip-level QA (approve/reject with reason), resume generation from last good clip, external clip import UI. Extends PRD-109. Total PRDs: 121 + 15 MAYBEs = 136 (+ 1 planning). |
 | 2026-02-28 | Added PRD-122 (Storage Configuration — Local & Cloud S3). StorageProvider trait abstraction, LocalStorageProvider + S3StorageProvider implementations, aws-sdk-s3 integration, S3 settings in admin panel, connection testing, runtime backend switching. Extends PRD-48, PRD-110. Total PRDs: 122 + 15 MAYBEs + 1 done = 138 (2 planning). |
 | 2026-03-01 | Implemented PRD-121 + PRD-122. Both complete: clip QA workflow, storage provider abstraction with S3, runtime hot-swap, 8 DRY findings fixed (DRY-627–634). |
+| 2026-03-01 | Added PRD-123 (Scene Catalog & Scene Types Unification). Absorbs scene_catalog into scene_types: adds slug + has_clothes_off_transition columns, creates scene_type_tracks junction, migrates project_scene_settings/character_scene_overrides FKs from scene_catalog_id to scene_type_id, drops scene_catalog tables, unifies frontend to single "Scene Catalog" page, removes "Scene Types" nav entry. Total PRDs: 124 + 15 MAYBEs = 139. |

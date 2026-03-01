@@ -32,26 +32,26 @@ pub async fn create(
     State(state): State<AppState>,
     Path(project_id): Path<DbId>,
     Json(mut input): Json<CreateSceneType>,
-) -> AppResult<(StatusCode, Json<SceneType>)> {
+) -> AppResult<(StatusCode, Json<DataResponse<SceneType>>)> {
     input.project_id = Some(project_id);
     let scene_type = SceneTypeRepo::create(&state.pool, &input).await?;
-    Ok((StatusCode::CREATED, Json(scene_type)))
+    Ok((StatusCode::CREATED, Json(DataResponse { data: scene_type })))
 }
 
 /// GET /api/v1/projects/{project_id}/scene-types
 pub async fn list_by_project(
     State(state): State<AppState>,
     Path(project_id): Path<DbId>,
-) -> AppResult<Json<Vec<SceneType>>> {
+) -> AppResult<Json<DataResponse<Vec<SceneType>>>> {
     let scene_types = SceneTypeRepo::list_by_project(&state.pool, project_id).await?;
-    Ok(Json(scene_types))
+    Ok(Json(DataResponse { data: scene_types }))
 }
 
 /// GET /api/v1/projects/{project_id}/scene-types/{id}
 pub async fn get_by_id_scoped(
     State(state): State<AppState>,
     Path((_project_id, id)): Path<(DbId, DbId)>,
-) -> AppResult<Json<SceneType>> {
+) -> AppResult<Json<DataResponse<SceneType>>> {
     get_by_id_inner(&state, id).await
 }
 
@@ -60,7 +60,7 @@ pub async fn update_scoped(
     State(state): State<AppState>,
     Path((_project_id, id)): Path<(DbId, DbId)>,
     Json(input): Json<UpdateSceneType>,
-) -> AppResult<Json<SceneType>> {
+) -> AppResult<Json<DataResponse<SceneType>>> {
     update_inner(&state, id, input).await
 }
 
@@ -82,24 +82,24 @@ pub async fn delete_scoped(
 pub async fn create_studio(
     State(state): State<AppState>,
     Json(mut input): Json<CreateSceneType>,
-) -> AppResult<(StatusCode, Json<SceneType>)> {
+) -> AppResult<(StatusCode, Json<DataResponse<SceneType>>)> {
     input.project_id = None;
     input.is_studio_level = Some(true);
     let scene_type = SceneTypeRepo::create(&state.pool, &input).await?;
-    Ok((StatusCode::CREATED, Json(scene_type)))
+    Ok((StatusCode::CREATED, Json(DataResponse { data: scene_type })))
 }
 
 /// GET /api/v1/scene-types
-pub async fn list_studio_level(State(state): State<AppState>) -> AppResult<Json<Vec<SceneType>>> {
+pub async fn list_studio_level(State(state): State<AppState>) -> AppResult<Json<DataResponse<Vec<SceneType>>>> {
     let scene_types = SceneTypeRepo::list_studio_level(&state.pool).await?;
-    Ok(Json(scene_types))
+    Ok(Json(DataResponse { data: scene_types }))
 }
 
 /// GET /api/v1/scene-types/{id}
 pub async fn get_by_id(
     State(state): State<AppState>,
     Path(id): Path<DbId>,
-) -> AppResult<Json<SceneType>> {
+) -> AppResult<Json<DataResponse<SceneType>>> {
     get_by_id_inner(&state, id).await
 }
 
@@ -108,7 +108,7 @@ pub async fn update(
     State(state): State<AppState>,
     Path(id): Path<DbId>,
     Json(input): Json<UpdateSceneType>,
-) -> AppResult<Json<SceneType>> {
+) -> AppResult<Json<DataResponse<SceneType>>> {
     update_inner(&state, id, input).await
 }
 
@@ -121,23 +121,23 @@ pub async fn delete(State(state): State<AppState>, Path(id): Path<DbId>) -> AppR
 // Shared helpers
 // ---------------------------------------------------------------------------
 
-async fn get_by_id_inner(state: &AppState, id: DbId) -> AppResult<Json<SceneType>> {
+async fn get_by_id_inner(state: &AppState, id: DbId) -> AppResult<Json<DataResponse<SceneType>>> {
     let scene_type = ensure_scene_type_exists(&state.pool, id).await?;
-    Ok(Json(scene_type))
+    Ok(Json(DataResponse { data: scene_type }))
 }
 
 async fn update_inner(
     state: &AppState,
     id: DbId,
     input: UpdateSceneType,
-) -> AppResult<Json<SceneType>> {
+) -> AppResult<Json<DataResponse<SceneType>>> {
     let scene_type = SceneTypeRepo::update(&state.pool, id, &input)
         .await?
         .ok_or(AppError::Core(CoreError::NotFound {
             entity: "SceneType",
             id,
         }))?;
-    Ok(Json(scene_type))
+    Ok(Json(DataResponse { data: scene_type }))
 }
 
 async fn delete_inner(state: &AppState, id: DbId) -> AppResult<StatusCode> {

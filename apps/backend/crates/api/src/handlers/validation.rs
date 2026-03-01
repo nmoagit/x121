@@ -18,11 +18,12 @@ use x121_core::validation::import_preview::{ImportAction, ImportPreview, ImportP
 use x121_core::validation::rules::{ValidationRule, ValidationSeverity};
 use x121_db::models::validation::{
     CreateImportReport, CreateImportReportEntry, CreateValidationRule, UpdateValidationRule,
-    ValidationRuleRow,
+    ValidationRuleRow, ValidationRuleType,
 };
 use x121_db::repositories::{ImportReportRepo, ValidationRuleRepo};
 
 use crate::error::{AppError, AppResult};
+use crate::response::DataResponse;
 use crate::state::AppState;
 
 // ── Validation Rule CRUD ─────────────────────────────────────────────
@@ -30,9 +31,9 @@ use crate::state::AppState;
 /// GET /api/v1/validation/rule-types
 ///
 /// List all available validation rule types (seeded lookup data).
-pub async fn list_rule_types(State(state): State<AppState>) -> AppResult<Json<serde_json::Value>> {
+pub async fn list_rule_types(State(state): State<AppState>) -> AppResult<Json<DataResponse<Vec<ValidationRuleType>>>> {
     let types = ValidationRuleRepo::list_rule_types(&state.pool).await?;
-    Ok(Json(serde_json::json!({ "data": types })))
+    Ok(Json(DataResponse { data: types }))
 }
 
 /// Query parameters for listing validation rules.

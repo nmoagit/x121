@@ -13,6 +13,7 @@ use x121_db::models::character_group::{
 use x121_db::repositories::{CharacterGroupRepo, CharacterRepo};
 
 use crate::error::{AppError, AppResult};
+use crate::response::DataResponse;
 use crate::state::AppState;
 
 /// POST /api/v1/projects/{project_id}/groups
@@ -22,19 +23,19 @@ pub async fn create(
     State(state): State<AppState>,
     Path(project_id): Path<DbId>,
     Json(mut input): Json<CreateCharacterGroup>,
-) -> AppResult<(StatusCode, Json<CharacterGroup>)> {
+) -> AppResult<(StatusCode, Json<DataResponse<CharacterGroup>>)> {
     input.project_id = project_id;
     let group = CharacterGroupRepo::create(&state.pool, &input).await?;
-    Ok((StatusCode::CREATED, Json(group)))
+    Ok((StatusCode::CREATED, Json(DataResponse { data: group })))
 }
 
 /// GET /api/v1/projects/{project_id}/groups
 pub async fn list_by_project(
     State(state): State<AppState>,
     Path(project_id): Path<DbId>,
-) -> AppResult<Json<Vec<CharacterGroup>>> {
+) -> AppResult<Json<DataResponse<Vec<CharacterGroup>>>> {
     let groups = CharacterGroupRepo::list_by_project(&state.pool, project_id).await?;
-    Ok(Json(groups))
+    Ok(Json(DataResponse { data: groups }))
 }
 
 /// PUT /api/v1/projects/{project_id}/groups/{id}
@@ -42,14 +43,14 @@ pub async fn update(
     State(state): State<AppState>,
     Path((_project_id, id)): Path<(DbId, DbId)>,
     Json(input): Json<UpdateCharacterGroup>,
-) -> AppResult<Json<CharacterGroup>> {
+) -> AppResult<Json<DataResponse<CharacterGroup>>> {
     let group = CharacterGroupRepo::update(&state.pool, id, &input)
         .await?
         .ok_or(AppError::Core(CoreError::NotFound {
             entity: "CharacterGroup",
             id,
         }))?;
-    Ok(Json(group))
+    Ok(Json(DataResponse { data: group }))
 }
 
 /// DELETE /api/v1/projects/{project_id}/groups/{id}
@@ -85,7 +86,7 @@ pub async fn assign_character_to_group(
     State(state): State<AppState>,
     Path((_project_id, character_id)): Path<(DbId, DbId)>,
     Json(body): Json<AssignGroupBody>,
-) -> AppResult<Json<x121_db::models::character::Character>> {
+) -> AppResult<Json<DataResponse<x121_db::models::character::Character>>> {
     let input = UpdateCharacter {
         name: None,
         status_id: None,
@@ -99,5 +100,5 @@ pub async fn assign_character_to_group(
             entity: "Character",
             id: character_id,
         }))?;
-    Ok(Json(character))
+    Ok(Json(DataResponse { data: character }))
 }

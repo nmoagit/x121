@@ -16,6 +16,7 @@ use x121_db::models::image_qa::{
 use x121_db::repositories::{ImageQaThresholdRepo, ImageQualityScoreRepo, QaCheckTypeRepo};
 
 use crate::error::{AppError, AppResult};
+use crate::response::DataResponse;
 use crate::state::AppState;
 
 // ---------------------------------------------------------------------------
@@ -74,9 +75,9 @@ pub struct QaRunResponse {
 /// GET /api/v1/qa/check-types
 ///
 /// Returns all registered QA check types.
-pub async fn list_check_types(State(state): State<AppState>) -> AppResult<Json<Vec<QaCheckType>>> {
+pub async fn list_check_types(State(state): State<AppState>) -> AppResult<Json<DataResponse<Vec<QaCheckType>>>> {
     let types = QaCheckTypeRepo::list(&state.pool).await?;
-    Ok(Json(types))
+    Ok(Json(DataResponse { data: types }))
 }
 
 /// POST /api/v1/qa/run

@@ -14,6 +14,7 @@ use x121_db::models::scene_type_override::{SceneTypeOverride, UpsertOverride};
 use x121_db::repositories::{MixinRepo, SceneTypeOverrideRepo, SceneTypeRepo};
 
 use crate::error::{AppError, AppResult};
+use crate::response::DataResponse;
 use crate::state::AppState;
 
 // ---------------------------------------------------------------------------
@@ -44,7 +45,7 @@ pub async fn create_child(
     State(state): State<AppState>,
     Path(parent_id): Path<DbId>,
     Json(mut input): Json<CreateSceneType>,
-) -> AppResult<(StatusCode, Json<SceneType>)> {
+) -> AppResult<(StatusCode, Json<DataResponse<SceneType>>)> {
     // Load parent.
     let parent = ensure_scene_type_exists(&state.pool, parent_id).await?;
 
@@ -66,7 +67,7 @@ pub async fn create_child(
     // Reload to get the updated depth.
     let child = ensure_scene_type_exists(&state.pool, child.id).await?;
 
-    Ok((StatusCode::CREATED, Json(child)))
+    Ok((StatusCode::CREATED, Json(DataResponse { data: child })))
 }
 
 /// GET /api/v1/scene-types/{id}/effective-config
@@ -76,7 +77,7 @@ pub async fn create_child(
 pub async fn effective_config(
     State(state): State<AppState>,
     Path(id): Path<DbId>,
-) -> AppResult<Json<EffectiveConfig>> {
+) -> AppResult<Json<DataResponse<EffectiveConfig>>> {
     let chain = build_inheritance_chain(&state, id).await?;
     let mixins_db = MixinRepo::list_for_scene_type(&state.pool, id).await?;
 
@@ -90,7 +91,7 @@ pub async fn effective_config(
         .collect();
 
     let config = scene_type_inheritance::resolve_effective_config(&chain, &mixin_entries);
-    Ok(Json(config))
+    Ok(Json(DataResponse { data: config }))
 }
 
 /// GET /api/v1/scene-types/{id}/children
@@ -99,9 +100,9 @@ pub async fn effective_config(
 pub async fn list_children(
     State(state): State<AppState>,
     Path(id): Path<DbId>,
-) -> AppResult<Json<Vec<SceneType>>> {
+) -> AppResult<Json<DataResponse<Vec<SceneType>>>> {
     let children = SceneTypeRepo::list_children(&state.pool, id).await?;
-    Ok(Json(children))
+    Ok(Json(DataResponse { data: children }))
 }
 
 /// GET /api/v1/scene-types/{id}/cascade-preview/{field}
@@ -111,7 +112,7 @@ pub async fn list_children(
 pub async fn cascade_preview(
     State(state): State<AppState>,
     Path((id, field)): Path<(DbId, String)>,
-) -> AppResult<Json<Vec<DbId>>> {
+) -> AppResult<Json<DataResponse<Vec<DbId>>>> {
     // Find direct children IDs.
     let child_ids = SceneTypeRepo::list_children_ids(&state.pool, id).await?;
 
@@ -123,7 +124,7 @@ pub async fn cascade_preview(
     }
 
     let affected = scene_type_inheritance::find_cascade_affected(&children_with_overrides, &field);
-    Ok(Json(affected))
+    Ok(Json(DataResponse { data: affected }))
 }
 
 // ---------------------------------------------------------------------------
@@ -134,9 +135,9 @@ pub async fn cascade_preview(
 pub async fn list_overrides(
     State(state): State<AppState>,
     Path(id): Path<DbId>,
-) -> AppResult<Json<Vec<SceneTypeOverride>>> {
+) -> AppResult<Json<DataResponse<Vec<SceneTypeOverride>>>> {
     let overrides = SceneTypeOverrideRepo::list_by_scene_type(&state.pool, id).await?;
-    Ok(Json(overrides))
+    Ok(Json(DataResponse { data: overrides }))
 }
 
 /// PUT /api/v1/scene-types/{id}/overrides
@@ -144,9 +145,9 @@ pub async fn upsert_override(
     State(state): State<AppState>,
     Path(id): Path<DbId>,
     Json(input): Json<UpsertOverride>,
-) -> AppResult<Json<SceneTypeOverride>> {
+) -> AppResult<Json<DataResponse<SceneTypeOverride>>> {
     let override_row = SceneTypeOverrideRepo::upsert(&state.pool, id, &input).await?;
-    Ok(Json(override_row))
+    Ok(Json(DataResponse { data: override_row }))
 }
 
 /// DELETE /api/v1/scene-types/{id}/overrides/{field}
@@ -170,32 +171,32 @@ pub async fn delete_override(
 // ---------------------------------------------------------------------------
 
 /// GET /api/v1/mixins
-pub async fn list_mixins(State(state): State<AppState>) -> AppResult<Json<Vec<Mixin>>> {
+pub async fn list_mixins(State(state): State<AppState>) -> AppResult<Json<DataResponse<Vec<Mixin>>>> {
     let mixins = MixinRepo::list(&state.pool).await?;
-    Ok(Json(mixins))
+    Ok(Json(DataResponse { data: mixins }))
 }
 
 /// POST /api/v1/mixins
 pub async fn create_mixin(
     State(state): State<AppState>,
     Json(input): Json<CreateMixin>,
-) -> AppResult<(StatusCode, Json<Mixin>)> {
+) -> AppResult<(StatusCode, Json<DataResponse<Mixin>>)> {
     let mixin = MixinRepo::create(&state.pool, &input).await?;
-    Ok((StatusCode::CREATED, Json(mixin)))
+    Ok((StatusCode::CREATED, Json(DataResponse { data: mixin })))
 }
 
 /// GET /api/v1/mixins/{id}
 pub async fn get_mixin(
     State(state): State<AppState>,
     Path(id): Path<DbId>,
-) -> AppResult<Json<Mixin>> {
+) -> AppResult<Json<DataResponse<Mixin>>> {
     let mixin = MixinRepo::find_by_id(&state.pool, id)
         .await?
         .ok_or(AppError::Core(CoreError::NotFound {
             entity: "Mixin",
             id,
         }))?;
-    Ok(Json(mixin))
+    Ok(Json(DataResponse { data: mixin }))
 }
 
 /// PUT /api/v1/mixins/{id}
@@ -203,14 +204,14 @@ pub async fn update_mixin(
     State(state): State<AppState>,
     Path(id): Path<DbId>,
     Json(input): Json<UpdateMixin>,
-) -> AppResult<Json<Mixin>> {
+) -> AppResult<Json<DataResponse<Mixin>>> {
     let mixin = MixinRepo::update(&state.pool, id, &input)
         .await?
         .ok_or(AppError::Core(CoreError::NotFound {
             entity: "Mixin",
             id,
         }))?;
-    Ok(Json(mixin))
+    Ok(Json(DataResponse { data: mixin }))
 }
 
 /// DELETE /api/v1/mixins/{id}
@@ -238,9 +239,9 @@ pub async fn apply_mixin(
     State(state): State<AppState>,
     Path(id): Path<DbId>,
     Json(input): Json<ApplyMixin>,
-) -> AppResult<(StatusCode, Json<SceneTypeMixin>)> {
+) -> AppResult<(StatusCode, Json<DataResponse<SceneTypeMixin>>)> {
     let assoc = MixinRepo::apply_to_scene_type(&state.pool, id, &input).await?;
-    Ok((StatusCode::CREATED, Json(assoc)))
+    Ok((StatusCode::CREATED, Json(DataResponse { data: assoc })))
 }
 
 /// DELETE /api/v1/scene-types/{id}/mixins/{mixin_id}
@@ -263,9 +264,9 @@ pub async fn remove_mixin(
 pub async fn list_scene_type_mixins(
     State(state): State<AppState>,
     Path(id): Path<DbId>,
-) -> AppResult<Json<Vec<Mixin>>> {
+) -> AppResult<Json<DataResponse<Vec<Mixin>>>> {
     let mixins = MixinRepo::list_for_scene_type(&state.pool, id).await?;
-    Ok(Json(mixins))
+    Ok(Json(DataResponse { data: mixins }))
 }
 
 // ---------------------------------------------------------------------------

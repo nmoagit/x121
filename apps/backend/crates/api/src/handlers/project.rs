@@ -10,35 +10,36 @@ use x121_db::models::project::{CreateProject, Project, UpdateProject};
 use x121_db::repositories::ProjectRepo;
 
 use crate::error::{AppError, AppResult};
+use crate::response::DataResponse;
 use crate::state::AppState;
 
 /// POST /api/v1/projects
 pub async fn create(
     State(state): State<AppState>,
     Json(input): Json<CreateProject>,
-) -> AppResult<(StatusCode, Json<Project>)> {
+) -> AppResult<(StatusCode, Json<DataResponse<Project>>)> {
     let project = ProjectRepo::create(&state.pool, &input).await?;
-    Ok((StatusCode::CREATED, Json(project)))
+    Ok((StatusCode::CREATED, Json(DataResponse { data: project })))
 }
 
 /// GET /api/v1/projects
-pub async fn list(State(state): State<AppState>) -> AppResult<Json<Vec<Project>>> {
+pub async fn list(State(state): State<AppState>) -> AppResult<Json<DataResponse<Vec<Project>>>> {
     let projects = ProjectRepo::list(&state.pool).await?;
-    Ok(Json(projects))
+    Ok(Json(DataResponse { data: projects }))
 }
 
 /// GET /api/v1/projects/{id}
 pub async fn get_by_id(
     State(state): State<AppState>,
     Path(id): Path<DbId>,
-) -> AppResult<Json<Project>> {
+) -> AppResult<Json<DataResponse<Project>>> {
     let project = ProjectRepo::find_by_id(&state.pool, id)
         .await?
         .ok_or(AppError::Core(CoreError::NotFound {
             entity: "Project",
             id,
         }))?;
-    Ok(Json(project))
+    Ok(Json(DataResponse { data: project }))
 }
 
 /// PUT /api/v1/projects/{id}
@@ -46,14 +47,14 @@ pub async fn update(
     State(state): State<AppState>,
     Path(id): Path<DbId>,
     Json(input): Json<UpdateProject>,
-) -> AppResult<Json<Project>> {
+) -> AppResult<Json<DataResponse<Project>>> {
     let project = ProjectRepo::update(&state.pool, id, &input)
         .await?
         .ok_or(AppError::Core(CoreError::NotFound {
             entity: "Project",
             id,
         }))?;
-    Ok(Json(project))
+    Ok(Json(DataResponse { data: project }))
 }
 
 /// DELETE /api/v1/projects/{id}
@@ -94,7 +95,7 @@ pub struct ProjectStats {
 pub async fn get_stats(
     State(state): State<AppState>,
     Path(project_id): Path<DbId>,
-) -> AppResult<Json<ProjectStats>> {
+) -> AppResult<Json<DataResponse<ProjectStats>>> {
     // Verify project exists.
     let _project = ProjectRepo::find_by_id(&state.pool, project_id)
         .await?
@@ -139,7 +140,7 @@ pub async fn get_stats(
         0.0
     };
 
-    Ok(Json(ProjectStats {
+    Ok(Json(DataResponse { data: ProjectStats {
         character_count: char_stats.0,
         characters_ready: char_stats.1,
         characters_generating: char_stats.2,
@@ -150,5 +151,5 @@ pub async fn get_stats(
         scenes_rejected: scene_stats.3,
         scenes_pending: scene_stats.4,
         delivery_readiness_pct,
-    }))
+    }}))
 }

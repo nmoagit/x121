@@ -15,6 +15,7 @@ use x121_db::models::character::{Character, CreateCharacter, UpdateCharacter};
 use x121_db::repositories::CharacterRepo;
 
 use crate::error::{AppError, AppResult};
+use crate::response::DataResponse;
 use crate::state::AppState;
 
 /// POST /api/v1/projects/{project_id}/characters
@@ -25,33 +26,33 @@ pub async fn create(
     State(state): State<AppState>,
     Path(project_id): Path<DbId>,
     Json(mut input): Json<CreateCharacter>,
-) -> AppResult<(StatusCode, Json<Character>)> {
+) -> AppResult<(StatusCode, Json<DataResponse<Character>>)> {
     input.project_id = project_id;
     let character = CharacterRepo::create(&state.pool, &input).await?;
-    Ok((StatusCode::CREATED, Json(character)))
+    Ok((StatusCode::CREATED, Json(DataResponse { data: character })))
 }
 
 /// GET /api/v1/projects/{project_id}/characters
 pub async fn list_by_project(
     State(state): State<AppState>,
     Path(project_id): Path<DbId>,
-) -> AppResult<Json<Vec<Character>>> {
+) -> AppResult<Json<DataResponse<Vec<Character>>>> {
     let characters = CharacterRepo::list_by_project(&state.pool, project_id).await?;
-    Ok(Json(characters))
+    Ok(Json(DataResponse { data: characters }))
 }
 
 /// GET /api/v1/projects/{project_id}/characters/{id}
 pub async fn get_by_id(
     State(state): State<AppState>,
     Path((_project_id, id)): Path<(DbId, DbId)>,
-) -> AppResult<Json<Character>> {
+) -> AppResult<Json<DataResponse<Character>>> {
     let character = CharacterRepo::find_by_id(&state.pool, id)
         .await?
         .ok_or(AppError::Core(CoreError::NotFound {
             entity: "Character",
             id,
         }))?;
-    Ok(Json(character))
+    Ok(Json(DataResponse { data: character }))
 }
 
 /// PUT /api/v1/projects/{project_id}/characters/{id}
@@ -59,14 +60,14 @@ pub async fn update(
     State(state): State<AppState>,
     Path((_project_id, id)): Path<(DbId, DbId)>,
     Json(input): Json<UpdateCharacter>,
-) -> AppResult<Json<Character>> {
+) -> AppResult<Json<DataResponse<Character>>> {
     let character = CharacterRepo::update(&state.pool, id, &input)
         .await?
         .ok_or(AppError::Core(CoreError::NotFound {
             entity: "Character",
             id,
         }))?;
-    Ok(Json(character))
+    Ok(Json(DataResponse { data: character }))
 }
 
 /// DELETE /api/v1/projects/{project_id}/characters/{id}
@@ -93,14 +94,14 @@ pub async fn delete(
 pub async fn get_settings(
     State(state): State<AppState>,
     Path((_project_id, id)): Path<(DbId, DbId)>,
-) -> AppResult<Json<serde_json::Value>> {
+) -> AppResult<Json<DataResponse<serde_json::Value>>> {
     let settings = CharacterRepo::get_settings(&state.pool, id)
         .await?
         .ok_or(AppError::Core(CoreError::NotFound {
             entity: "Character",
             id,
         }))?;
-    Ok(Json(settings))
+    Ok(Json(DataResponse { data: settings }))
 }
 
 /// PUT /api/v1/projects/{project_id}/characters/{id}/settings
@@ -110,14 +111,14 @@ pub async fn update_settings(
     State(state): State<AppState>,
     Path((_project_id, id)): Path<(DbId, DbId)>,
     Json(settings): Json<serde_json::Value>,
-) -> AppResult<Json<Character>> {
+) -> AppResult<Json<DataResponse<Character>>> {
     let character = CharacterRepo::update_settings(&state.pool, id, &settings)
         .await?
         .ok_or(AppError::Core(CoreError::NotFound {
             entity: "Character",
             id,
         }))?;
-    Ok(Json(character))
+    Ok(Json(DataResponse { data: character }))
 }
 
 /// PATCH /api/v1/projects/{project_id}/characters/{id}/settings
@@ -128,12 +129,12 @@ pub async fn patch_settings(
     State(state): State<AppState>,
     Path((_project_id, id)): Path<(DbId, DbId)>,
     Json(patch): Json<serde_json::Value>,
-) -> AppResult<Json<Character>> {
+) -> AppResult<Json<DataResponse<Character>>> {
     let character = CharacterRepo::patch_settings(&state.pool, id, &patch)
         .await?
         .ok_or(AppError::Core(CoreError::NotFound {
             entity: "Character",
             id,
         }))?;
-    Ok(Json(character))
+    Ok(Json(DataResponse { data: character }))
 }

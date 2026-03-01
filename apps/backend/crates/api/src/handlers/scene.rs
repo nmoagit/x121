@@ -12,6 +12,7 @@ use x121_db::models::scene::{CreateScene, Scene, UpdateScene};
 use x121_db::repositories::SceneRepo;
 
 use crate::error::{AppError, AppResult};
+use crate::response::DataResponse;
 use crate::state::AppState;
 
 /// POST /api/v1/characters/{character_id}/scenes
@@ -21,33 +22,33 @@ pub async fn create(
     State(state): State<AppState>,
     Path(character_id): Path<DbId>,
     Json(mut input): Json<CreateScene>,
-) -> AppResult<(StatusCode, Json<Scene>)> {
+) -> AppResult<(StatusCode, Json<DataResponse<Scene>>)> {
     input.character_id = character_id;
     let scene = SceneRepo::create(&state.pool, &input).await?;
-    Ok((StatusCode::CREATED, Json(scene)))
+    Ok((StatusCode::CREATED, Json(DataResponse { data: scene })))
 }
 
 /// GET /api/v1/characters/{character_id}/scenes
 pub async fn list_by_character(
     State(state): State<AppState>,
     Path(character_id): Path<DbId>,
-) -> AppResult<Json<Vec<Scene>>> {
+) -> AppResult<Json<DataResponse<Vec<Scene>>>> {
     let scenes = SceneRepo::list_by_character(&state.pool, character_id).await?;
-    Ok(Json(scenes))
+    Ok(Json(DataResponse { data: scenes }))
 }
 
 /// GET /api/v1/characters/{character_id}/scenes/{id}
 pub async fn get_by_id(
     State(state): State<AppState>,
     Path((_character_id, id)): Path<(DbId, DbId)>,
-) -> AppResult<Json<Scene>> {
+) -> AppResult<Json<DataResponse<Scene>>> {
     let scene = SceneRepo::find_by_id(&state.pool, id)
         .await?
         .ok_or(AppError::Core(CoreError::NotFound {
             entity: "Scene",
             id,
         }))?;
-    Ok(Json(scene))
+    Ok(Json(DataResponse { data: scene }))
 }
 
 /// PUT /api/v1/characters/{character_id}/scenes/{id}
@@ -55,14 +56,14 @@ pub async fn update(
     State(state): State<AppState>,
     Path((_character_id, id)): Path<(DbId, DbId)>,
     Json(input): Json<UpdateScene>,
-) -> AppResult<Json<Scene>> {
+) -> AppResult<Json<DataResponse<Scene>>> {
     let scene = SceneRepo::update(&state.pool, id, &input)
         .await?
         .ok_or(AppError::Core(CoreError::NotFound {
             entity: "Scene",
             id,
         }))?;
-    Ok(Json(scene))
+    Ok(Json(DataResponse { data: scene }))
 }
 
 /// DELETE /api/v1/characters/{character_id}/scenes/{id}
