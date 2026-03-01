@@ -1,6 +1,7 @@
 export { Accordion } from "./Accordion";
 export { AdvancedDrawer } from "./AdvancedDrawer";
 export { Card, CardHeader, CardBody, CardFooter } from "./Card";
+export { ConfirmDeleteModal } from "./ConfirmDeleteModal";
 export { Drawer } from "./Drawer";
 export { Dropdown } from "./Dropdown";
 export { Modal } from "./Modal";

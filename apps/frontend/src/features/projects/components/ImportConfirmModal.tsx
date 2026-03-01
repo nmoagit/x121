@@ -10,9 +10,8 @@ import { useEffect, useMemo, useState } from "react";
 import { Modal } from "@/components/composite";
 import { Stack } from "@/components/layout";
 import { Button, Checkbox, Select, Toggle } from "@/components/primitives";
-import { toSelectOptions } from "@/lib/select-utils";
 
-import { useCharacterGroups } from "../hooks/use-character-groups";
+import { useGroupSelectOptions } from "../hooks/use-group-select-options";
 
 /* --------------------------------------------------------------------------
    Props
@@ -96,7 +95,7 @@ export function ImportConfirmModal({
   onConfirm,
   loading,
 }: ImportConfirmModalProps) {
-  const { data: groups } = useCharacterGroups(projectId);
+  const { options: groupOptions } = useGroupSelectOptions(projectId);
 
   const [checked, setChecked] = useState<Set<number>>(
     () => new Set(names.map((_, i) => i)),
@@ -143,11 +142,6 @@ export function ImportConfirmModal({
     }
     setChecked(initial);
   }, [names, existingSet, normalize]);
-
-  const groupOptions = useMemo(
-    () => [{ value: "", label: "No group" }, ...toSelectOptions(groups)],
-    [groups],
-  );
 
   // Count only non-duplicate selected items
   const selectedCount = [...checked].filter(

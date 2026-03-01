@@ -6,22 +6,14 @@
  * Characters can be dragged between groups to reassign them.
  */
 
-import { useCallback, useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
+import { useCallback, useMemo, useState } from "react";
 
-import { Modal } from "@/components/composite";
+import { ConfirmDeleteModal, Modal } from "@/components/composite";
 import { EmptyState, FileDropZone } from "@/components/domain";
 import { Grid, Stack } from "@/components/layout";
 import { Button, Input, LoadingPane } from "@/components/primitives";
-import {
-  ChevronDown,
-  ChevronRight,
-  Edit3,
-  Folder,
-  Plus,
-  Trash2,
-  Upload,
-} from "@/tokens/icons";
+import { ChevronDown, ChevronRight, Edit3, Folder, Plus, Trash2, Upload } from "@/tokens/icons";
 
 import { CharacterCard } from "../components/CharacterCard";
 import { ImportConfirmModal } from "../components/ImportConfirmModal";
@@ -33,6 +25,7 @@ import {
   useUpdateGroup,
 } from "../hooks/use-character-groups";
 import { useCharacterImport } from "../hooks/use-character-import";
+import { useGroupMap } from "../hooks/use-group-map";
 import { useProjectCharacters } from "../hooks/use-project-characters";
 import type { Character, CharacterGroup } from "../types";
 
@@ -51,10 +44,8 @@ interface ProjectGroupsTabProps {
 export function ProjectGroupsTab({ projectId }: ProjectGroupsTabProps) {
   const navigate = useNavigate();
 
-  const { data: groups, isLoading: groupsLoading } =
-    useCharacterGroups(projectId);
-  const { data: characters, isLoading: charsLoading } =
-    useProjectCharacters(projectId);
+  const { data: groups, isLoading: groupsLoading } = useCharacterGroups(projectId);
+  const { data: characters, isLoading: charsLoading } = useProjectCharacters(projectId);
 
   const createGroup = useCreateGroup(projectId);
   const updateGroup = useUpdateGroup(projectId);
@@ -74,14 +65,10 @@ export function ProjectGroupsTab({ projectId }: ProjectGroupsTabProps) {
   const [deleteTarget, setDeleteTarget] = useState<CharacterGroup | null>(null);
 
   /* --- expanded groups --- */
-  const [expandedIds, setExpandedIds] = useState<Set<number | "ungrouped">>(
-    new Set(),
-  );
+  const [expandedIds, setExpandedIds] = useState<Set<number | "ungrouped">>(new Set());
 
   /* --- drag state --- */
-  const [dragOverGroupId, setDragOverGroupId] = useState<
-    number | "ungrouped" | null
-  >(null);
+  const [dragOverGroupId, setDragOverGroupId] = useState<number | "ungrouped" | null>(null);
 
   /* --- group -> characters mapping --- */
   const charactersByGroup = useMemo(() => {
@@ -101,13 +88,7 @@ export function ProjectGroupsTab({ projectId }: ProjectGroupsTabProps) {
   }, [characters]);
 
   /* --- group lookup map --- */
-  const groupMap = useMemo(() => {
-    const map = new Map<number, CharacterGroup>();
-    if (groups) {
-      for (const g of groups) map.set(g.id, g);
-    }
-    return map;
-  }, [groups]);
+  const groupMap = useGroupMap(groups);
 
   /* --- filtered groups --- */
   const filteredGroups = useMemo(() => {
@@ -142,10 +123,7 @@ export function ProjectGroupsTab({ projectId }: ProjectGroupsTabProps) {
         { onSuccess: () => setFormOpen(false) },
       );
     } else {
-      createGroup.mutate(
-        { name },
-        { onSuccess: () => setFormOpen(false) },
-      );
+      createGroup.mutate({ name }, { onSuccess: () => setFormOpen(false) });
     }
   }
 
@@ -169,22 +147,16 @@ export function ProjectGroupsTab({ projectId }: ProjectGroupsTabProps) {
   }
 
   /* --- drag and drop --- */
-  const handleCharDragStart = useCallback(
-    (e: React.DragEvent, characterId: number) => {
-      e.dataTransfer.setData("text/plain", String(characterId));
-      e.dataTransfer.effectAllowed = "move";
-    },
-    [],
-  );
+  const handleCharDragStart = useCallback((e: React.DragEvent, characterId: number) => {
+    e.dataTransfer.setData("text/plain", String(characterId));
+    e.dataTransfer.effectAllowed = "move";
+  }, []);
 
-  const handleGroupDragOver = useCallback(
-    (e: React.DragEvent, groupId: number | "ungrouped") => {
-      e.preventDefault();
-      e.dataTransfer.dropEffect = "move";
-      setDragOverGroupId(groupId);
-    },
-    [],
-  );
+  const handleGroupDragOver = useCallback((e: React.DragEvent, groupId: number | "ungrouped") => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    setDragOverGroupId(groupId);
+  }, []);
 
   const handleGroupDragLeave = useCallback(() => {
     setDragOverGroupId(null);
@@ -221,161 +193,144 @@ export function ProjectGroupsTab({ projectId }: ProjectGroupsTabProps) {
       onNamesDropped={charImport.handleImportDrop}
       browseFolderRef={charImport.browseFolderRef}
     >
-    <Stack gap={4}>
-      {/* Top bar */}
-      <div className="flex flex-wrap items-end gap-[var(--spacing-3)]">
-        <div className="flex-1 min-w-[200px] max-w-[280px]">
-          <Input
-            placeholder="Search groups..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
+      <Stack gap={4}>
+        {/* Top bar */}
+        <div className="flex flex-wrap items-end gap-[var(--spacing-3)]">
+          <div className="flex-1 min-w-[200px] max-w-[280px]">
+            <Input
+              placeholder="Search groups..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+          <Button
+            size="sm"
+            variant="secondary"
+            icon={<Upload size={14} />}
+            onClick={charImport.browseFolder}
+          >
+            Import Folder
+          </Button>
+          <Button size="sm" icon={<Plus size={14} />} onClick={openCreate}>
+            Create Group
+          </Button>
         </div>
-        <Button
-          size="sm"
-          variant="secondary"
-          icon={<Upload size={14} />}
-          onClick={charImport.browseFolder}
-        >
-          Import Folder
-        </Button>
-        <Button size="sm" icon={<Plus size={14} />} onClick={openCreate}>
-          Create Group
-        </Button>
-      </div>
 
-      {/* Group sections */}
-      {filteredGroups.length === 0 && ungroupedChars.length === 0 ? (
-        <EmptyState
-          icon={<Folder size={32} />}
-          title="No groups"
-          description="Create a group to organize characters."
-          action={
-            <Button size="sm" icon={<Plus size={14} />} onClick={openCreate}>
-              Create Group
-            </Button>
-          }
-        />
-      ) : (
-        <Stack gap={2}>
-          {filteredGroups.map((group) => {
-            const chars = charactersByGroup.get(group.id) ?? [];
-            const expanded = expandedIds.has(group.id);
+        {/* Group sections */}
+        {filteredGroups.length === 0 && ungroupedChars.length === 0 ? (
+          <EmptyState
+            icon={<Folder size={32} />}
+            title="No groups"
+            description="Create a group to organize characters."
+            action={
+              <Button size="sm" icon={<Plus size={14} />} onClick={openCreate}>
+                Create Group
+              </Button>
+            }
+          />
+        ) : (
+          <Stack gap={2}>
+            {filteredGroups.map((group) => {
+              const chars = charactersByGroup.get(group.id) ?? [];
+              const expanded = expandedIds.has(group.id);
 
-            return (
+              return (
+                <GroupSection
+                  key={group.id}
+                  groupId={group.id}
+                  group={group}
+                  characters={chars}
+                  groupMap={groupMap}
+                  expanded={expanded}
+                  isDragOver={dragOverGroupId === group.id}
+                  projectId={projectId}
+                  onToggle={() => toggleExpanded(group.id)}
+                  onEdit={() => openEdit(group)}
+                  onDelete={() => setDeleteTarget(group)}
+                  onCharClick={(char) =>
+                    navigate({
+                      to: `/projects/${projectId}/characters/${char.id}`,
+                    })
+                  }
+                  onCharDragStart={handleCharDragStart}
+                  onDragOver={(e) => handleGroupDragOver(e, group.id)}
+                  onDragLeave={handleGroupDragLeave}
+                  onDrop={(e) => handleGroupDrop(e, group.id)}
+                />
+              );
+            })}
+
+            {/* Ungrouped section */}
+            {ungroupedChars.length > 0 && (
               <GroupSection
-                key={group.id}
-                groupId={group.id}
-                group={group}
-                characters={chars}
+                groupId="ungrouped"
+                label="Ungrouped"
+                characters={ungroupedChars}
                 groupMap={groupMap}
-                expanded={expanded}
-                isDragOver={dragOverGroupId === group.id}
+                expanded={expandedIds.has("ungrouped")}
+                isDragOver={dragOverGroupId === "ungrouped"}
                 projectId={projectId}
-                onToggle={() => toggleExpanded(group.id)}
-                onEdit={() => openEdit(group)}
-                onDelete={() => setDeleteTarget(group)}
+                onToggle={() => toggleExpanded("ungrouped")}
                 onCharClick={(char) =>
                   navigate({
                     to: `/projects/${projectId}/characters/${char.id}`,
                   })
                 }
                 onCharDragStart={handleCharDragStart}
-                onDragOver={(e) => handleGroupDragOver(e, group.id)}
+                onDragOver={(e) => handleGroupDragOver(e, "ungrouped")}
                 onDragLeave={handleGroupDragLeave}
-                onDrop={(e) => handleGroupDrop(e, group.id)}
+                onDrop={(e) => handleGroupDrop(e, "ungrouped")}
               />
-            );
-          })}
+            )}
+          </Stack>
+        )}
 
-          {/* Ungrouped section */}
-          {ungroupedChars.length > 0 && (
-            <GroupSection
-              groupId="ungrouped"
-              label="Ungrouped"
-              characters={ungroupedChars}
-              groupMap={groupMap}
-              expanded={expandedIds.has("ungrouped")}
-              isDragOver={dragOverGroupId === "ungrouped"}
-              projectId={projectId}
-              onToggle={() => toggleExpanded("ungrouped")}
-              onCharClick={(char) =>
-                navigate({
-                  to: `/projects/${projectId}/characters/${char.id}`,
-                })
-              }
-              onCharDragStart={handleCharDragStart}
-              onDragOver={(e) => handleGroupDragOver(e, "ungrouped")}
-              onDragLeave={handleGroupDragLeave}
-              onDrop={(e) => handleGroupDrop(e, "ungrouped")}
+        {/* Create / Edit group modal */}
+        <Modal
+          open={formOpen}
+          onClose={() => setFormOpen(false)}
+          title={editingGroup ? "Edit Group" : "Create Group"}
+          size="sm"
+        >
+          <Stack gap={4}>
+            <Input
+              label="Group Name"
+              placeholder="e.g. Main Cast"
+              value={groupName}
+              onChange={(e) => setGroupName(e.target.value)}
             />
-          )}
-        </Stack>
-      )}
-
-      {/* Create / Edit group modal */}
-      <Modal
-        open={formOpen}
-        onClose={() => setFormOpen(false)}
-        title={editingGroup ? "Edit Group" : "Create Group"}
-        size="sm"
-      >
-        <Stack gap={4}>
-          <Input
-            label="Group Name"
-            placeholder="e.g. Main Cast"
-            value={groupName}
-            onChange={(e) => setGroupName(e.target.value)}
-          />
-          <Button
-            onClick={handleSave}
-            loading={createGroup.isPending || updateGroup.isPending}
-            disabled={!groupName.trim()}
-          >
-            {editingGroup ? "Save Changes" : "Create Group"}
-          </Button>
-        </Stack>
-      </Modal>
-
-      {/* Delete confirmation modal */}
-      <Modal
-        open={deleteTarget !== null}
-        onClose={() => setDeleteTarget(null)}
-        title="Delete Group"
-        size="sm"
-      >
-        <Stack gap={4}>
-          <p className="text-sm text-[var(--color-text-secondary)]">
-            Are you sure you want to delete{" "}
-            <strong>{deleteTarget?.name}</strong>? Characters in this group will
-            become ungrouped.
-          </p>
-          <div className="flex gap-[var(--spacing-2)] justify-end">
-            <Button variant="secondary" onClick={() => setDeleteTarget(null)}>
-              Cancel
-            </Button>
             <Button
-              variant="danger"
-              onClick={handleDelete}
-              loading={deleteGroup.isPending}
+              onClick={handleSave}
+              loading={createGroup.isPending || updateGroup.isPending}
+              disabled={!groupName.trim()}
             >
-              Delete
+              {editingGroup ? "Save Changes" : "Create Group"}
             </Button>
-          </div>
-        </Stack>
-      </Modal>
+          </Stack>
+        </Modal>
 
-      {/* Import confirmation modal */}
-      <ImportConfirmModal
-        open={charImport.importOpen}
-        onClose={charImport.closeImport}
-        names={charImport.importNames}
-        projectId={projectId}
-        existingNames={characters?.map((c) => c.name) ?? []}
-        onConfirm={charImport.handleImportConfirm}
-        loading={charImport.bulkCreatePending}
-      />
-    </Stack>
+        {/* Delete confirmation modal */}
+        <ConfirmDeleteModal
+          open={deleteTarget !== null}
+          onClose={() => setDeleteTarget(null)}
+          title="Delete Group"
+          entityName={deleteTarget?.name ?? ""}
+          warningText="Characters in this group will become ungrouped."
+          onConfirm={handleDelete}
+          loading={deleteGroup.isPending}
+        />
+
+        {/* Import confirmation modal */}
+        <ImportConfirmModal
+          open={charImport.importOpen}
+          onClose={charImport.closeImport}
+          names={charImport.importNames}
+          projectId={projectId}
+          existingNames={characters?.map((c) => c.name) ?? []}
+          onConfirm={charImport.handleImportConfirm}
+          loading={charImport.bulkCreatePending}
+        />
+      </Stack>
     </FileDropZone>
   );
 }
@@ -446,14 +401,8 @@ function GroupSection({
           }
         }}
       >
-        <Chevron
-          size={16}
-          className="text-[var(--color-text-muted)] shrink-0"
-          aria-hidden
-        />
-        <span className="font-medium text-[var(--color-text-primary)] flex-1">
-          {displayName}
-        </span>
+        <Chevron size={16} className="text-[var(--color-text-muted)] shrink-0" aria-hidden />
+        <span className="font-medium text-[var(--color-text-primary)] flex-1">{displayName}</span>
         <span className="text-xs text-[var(--color-text-muted)]">
           {characters.length} {characters.length === 1 ? "character" : "characters"}
         </span>

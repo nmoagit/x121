@@ -33,6 +33,8 @@ export {
   useUpdateCharacter,
   useDeleteCharacter,
 } from "./hooks/use-project-characters";
+export { useGroupSelectOptions } from "./hooks/use-group-select-options";
+export { useGroupMap } from "./hooks/use-group-map";
 
 /* Types */
 export type {
