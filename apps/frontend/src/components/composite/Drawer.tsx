@@ -1,6 +1,6 @@
 import { cn } from "@/lib/cn";
 import { X } from "@/tokens/icons";
-import { useCallback, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import type { ReactNode } from "react";
 import { createPortal } from "react-dom";
 
@@ -41,29 +41,34 @@ export function Drawer({
   children,
 }: DrawerProps) {
   const drawerRef = useRef<HTMLDialogElement>(null);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
 
-  const handleKeyDown = useCallback(
-    (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    },
-    [onClose],
-  );
-
+  // Focus the drawer only when it first opens.
   useEffect(() => {
     if (!open) return;
-
-    document.addEventListener("keydown", handleKeyDown);
-    document.body.style.overflow = "hidden";
 
     requestAnimationFrame(() => {
       drawerRef.current?.focus();
     });
+  }, [open]);
+
+  // Escape key and body scroll lock — stable deps, no focus stealing.
+  useEffect(() => {
+    if (!open) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onCloseRef.current();
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    document.body.style.overflow = "hidden";
 
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
       document.body.style.overflow = "";
     };
-  }, [open, handleKeyDown]);
+  }, [open]);
 
   if (!open) return null;
 
@@ -78,9 +83,9 @@ export function Drawer({
         "bg-[var(--color-surface-overlay)]",
         "animate-[fadeIn_var(--duration-fast)_var(--ease-default)]",
       )}
+      role="presentation"
       onClick={handleBackdropClick}
       onKeyDown={handleBackdropClick}
-      aria-hidden="true"
     >
       <dialog
         ref={drawerRef}

@@ -223,7 +223,11 @@ export function ProjectListPage() {
       {/* Create project drawer */}
       <Drawer
         open={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
+        onClose={() => {
+          setDrawerOpen(false);
+          setNewName("");
+          setNewDescription("");
+        }}
         title="New Project"
         size="sm"
       >

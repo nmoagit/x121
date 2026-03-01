@@ -1,6 +1,6 @@
 import { cn } from "@/lib/cn";
 import { X } from "@/tokens/icons";
-import { useCallback, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import type { ReactNode } from "react";
 import { createPortal } from "react-dom";
 
@@ -24,30 +24,36 @@ const SIZE_CLASSES: Record<ModalSize, string> = {
 export function Modal({ open, onClose, title, size = "md", children }: ModalProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const previousFocusRef = useRef<Element | null>(null);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
 
-  const handleKeyDown = useCallback(
-    (e: KeyboardEvent) => {
+  // Focus the dialog only when it first opens.
+  useEffect(() => {
+    if (!open) return;
+
+    previousFocusRef.current = document.activeElement;
+
+    requestAnimationFrame(() => {
+      dialogRef.current?.focus();
+    });
+  }, [open]);
+
+  // Keyboard handling and body scroll lock — stable deps, no focus stealing.
+  useEffect(() => {
+    if (!open) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
-        onClose();
+        onCloseRef.current();
         return;
       }
       if (e.key === "Tab") {
         trapFocus(e, dialogRef.current);
       }
-    },
-    [onClose],
-  );
+    };
 
-  useEffect(() => {
-    if (!open) return;
-
-    previousFocusRef.current = document.activeElement;
     document.addEventListener("keydown", handleKeyDown);
     document.body.style.overflow = "hidden";
-
-    requestAnimationFrame(() => {
-      dialogRef.current?.focus();
-    });
 
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
@@ -56,7 +62,7 @@ export function Modal({ open, onClose, title, size = "md", children }: ModalProp
         previousFocusRef.current.focus();
       }
     };
-  }, [open, handleKeyDown]);
+  }, [open]);
 
   if (!open) return null;
 
@@ -71,9 +77,9 @@ export function Modal({ open, onClose, title, size = "md", children }: ModalProp
         "bg-[var(--color-surface-overlay)]",
         "animate-[fadeIn_var(--duration-fast)_var(--ease-default)]",
       )}
+      role="presentation"
       onClick={handleBackdropClick}
       onKeyDown={handleBackdropClick}
-      aria-hidden="true"
     >
       <dialog
         ref={dialogRef}

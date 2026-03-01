@@ -105,12 +105,13 @@ pub async fn get_stats(
         }))?;
 
     // Character counts by status.
+    // Statuses: 1=draft, 2=active (ready), 3=archived (complete).
     let char_stats: (i64, i64, i64, i64) = sqlx::query_as(
         "SELECT
             COUNT(*) AS total,
-            COUNT(*) FILTER (WHERE status_id = 3) AS ready,
-            COUNT(*) FILTER (WHERE status_id = 4) AS generating,
-            COUNT(*) FILTER (WHERE status_id = 5) AS complete
+            COUNT(*) FILTER (WHERE status_id = 2) AS ready,
+            COUNT(*) FILTER (WHERE status_id = 1) AS generating,
+            COUNT(*) FILTER (WHERE status_id = 3) AS complete
          FROM characters
          WHERE project_id = $1 AND deleted_at IS NULL",
     )
@@ -118,17 +119,19 @@ pub async fn get_stats(
     .fetch_one(&state.pool)
     .await?;
 
-    // Scene video version counts by approval status.
+    // Scene video version counts by QA approval status.
+    // Join through scenes to reach characters for project filtering.
     let scene_stats: (i64, i64, i64, i64, i64) = sqlx::query_as(
         "SELECT
-            COUNT(*) AS enabled,
-            COUNT(*) FILTER (WHERE svv.status_id >= 2) AS generated,
-            COUNT(*) FILTER (WHERE svv.status_id = 3) AS approved,
-            COUNT(*) FILTER (WHERE svv.status_id = 4) AS rejected,
-            COUNT(*) FILTER (WHERE svv.status_id = 1) AS pending
+            COUNT(*) AS total,
+            COUNT(*) FILTER (WHERE svv.qa_status != 'pending') AS generated,
+            COUNT(*) FILTER (WHERE svv.qa_status = 'approved') AS approved,
+            COUNT(*) FILTER (WHERE svv.qa_status = 'rejected') AS rejected,
+            COUNT(*) FILTER (WHERE svv.qa_status = 'pending') AS pending
          FROM scene_video_versions svv
-         JOIN characters c ON c.id = svv.character_id
-         WHERE c.project_id = $1 AND c.deleted_at IS NULL",
+         JOIN scenes s ON s.id = svv.scene_id
+         JOIN characters c ON c.id = s.character_id
+         WHERE c.project_id = $1 AND c.deleted_at IS NULL AND svv.deleted_at IS NULL",
     )
     .bind(project_id)
     .fetch_one(&state.pool)
