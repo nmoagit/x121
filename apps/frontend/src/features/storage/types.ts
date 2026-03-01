@@ -223,3 +223,23 @@ export interface CreateStorageMigration {
   source_backend_id: number;
   target_backend_id: number;
 }
+
+// ---------------------------------------------------------------------------
+// S3 connection test
+// ---------------------------------------------------------------------------
+
+/** Input payload for the S3 connection test endpoint. */
+export interface TestS3ConnectionInput {
+  bucket: string;
+  region: string;
+  endpoint?: string;
+  access_key_id: string;
+  secret_access_key: string;
+}
+
+/** Response from the S3 connection test endpoint. */
+export interface TestS3ConnectionResponse {
+  success: boolean;
+  message: string;
+  latency_ms: number | null;
+}

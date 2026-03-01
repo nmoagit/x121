@@ -185,6 +185,40 @@ async fn main() {
     );
     tracing::info!("Cloud GPU services started (scaling, monitoring, reconciliation)");
 
+    // --- Storage provider (PRD-122) ---
+    let default_backend = x121_db::repositories::StorageBackendRepo::find_default(&pool).await;
+    let storage_provider: std::sync::Arc<dyn x121_core::storage::StorageProvider> =
+        match &default_backend {
+            Ok(Some(backend)) if backend.backend_type_id == 2 => {
+                // S3 backend
+                let s3_config = serde_json::from_value::<x121_cloud::storage_provider::S3Config>(
+                    backend.config.clone(),
+                )
+                .expect("Invalid S3 config in default storage backend");
+                std::sync::Arc::new(
+                    x121_cloud::storage_provider::S3StorageProvider::new(s3_config)
+                        .await
+                        .expect("Failed to initialize S3 storage provider"),
+                )
+            }
+            _ => {
+                // Local backend (default fallback)
+                let backend_config = default_backend.ok().flatten().map(|b| {
+                    x121_core::storage::factory::StorageBackendConfig {
+                        backend_type: "local".to_string(),
+                        config: b.config.clone(),
+                    }
+                });
+                x121_core::storage::factory::build_provider(
+                    backend_config.as_ref(),
+                    &settings_service,
+                )
+                .expect("Failed to initialize local storage provider")
+            }
+        };
+    let storage = Arc::new(tokio::sync::RwLock::new(storage_provider));
+    tracing::info!("Storage provider initialized");
+
     // --- App state ---
     let state = AppState {
         pool,
@@ -197,6 +231,7 @@ async fn main() {
         settings_service,
         activity_broadcaster: Arc::clone(&activity_broadcaster),
         cloud_registry,
+        storage,
     };
 
     // --- Router ---

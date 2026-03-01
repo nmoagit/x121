@@ -1,9 +1,12 @@
 use std::sync::Arc;
 
+use tokio::sync::RwLock;
+
 use crate::config::ServerConfig;
 use crate::engine::health_aggregator::HealthAggregator;
 use crate::scripting::orchestrator::ScriptOrchestrator;
 use crate::ws::WsManager;
+use x121_core::storage::StorageProvider;
 
 /// Shared application state available to all Axum handlers via `State<AppState>`.
 ///
@@ -30,4 +33,22 @@ pub struct AppState {
     pub activity_broadcaster: Arc<x121_events::ActivityLogBroadcaster>,
     /// Cloud GPU provider registry (PRD-114).
     pub cloud_registry: Arc<x121_cloud::registry::ProviderRegistry>,
+    /// Active storage provider, swappable at runtime (PRD-122).
+    ///
+    /// Wrapped in `RwLock` to allow hot-swapping when the admin changes the
+    /// default backend. Reads are cheap (no contention), writes are rare.
+    pub storage: Arc<RwLock<Arc<dyn StorageProvider>>>,
+}
+
+impl AppState {
+    /// Get a clone of the current storage provider `Arc`.
+    pub async fn storage_provider(&self) -> Arc<dyn StorageProvider> {
+        self.storage.read().await.clone()
+    }
+
+    /// Hot-swap the active storage provider at runtime.
+    pub async fn swap_storage_provider(&self, new_provider: Arc<dyn StorageProvider>) {
+        let mut guard = self.storage.write().await;
+        *guard = new_provider;
+    }
 }

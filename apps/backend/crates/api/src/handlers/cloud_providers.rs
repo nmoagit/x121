@@ -36,13 +36,23 @@ fn get_master_key() -> AppResult<[u8; 32]> {
 async fn ensure_provider_exists(pool: &sqlx::PgPool, id: DbId) -> AppResult<CloudProviderSafe> {
     CloudProviderRepo::find_by_id_safe(pool, id)
         .await?
-        .ok_or_else(|| AppError::Core(CoreError::NotFound { entity: "CloudProvider", id }))
+        .ok_or_else(|| {
+            AppError::Core(CoreError::NotFound {
+                entity: "CloudProvider",
+                id,
+            })
+        })
 }
 
 async fn ensure_instance_exists(pool: &sqlx::PgPool, id: DbId) -> AppResult<CloudInstance> {
     CloudInstanceRepo::find_by_id(pool, id)
         .await?
-        .ok_or_else(|| AppError::Core(CoreError::NotFound { entity: "CloudInstance", id }))
+        .ok_or_else(|| {
+            AppError::Core(CoreError::NotFound {
+                entity: "CloudInstance",
+                id,
+            })
+        })
 }
 
 async fn get_provider_impl(
@@ -134,7 +144,12 @@ pub async fn update_provider(
 
     let provider = CloudProviderRepo::update(&state.pool, id, &input)
         .await?
-        .ok_or_else(|| AppError::Core(CoreError::NotFound { entity: "CloudProvider", id }))?;
+        .ok_or_else(|| {
+            AppError::Core(CoreError::NotFound {
+                entity: "CloudProvider",
+                id,
+            })
+        })?;
 
     Ok(Json(DataResponse { data: provider }))
 }
@@ -150,7 +165,10 @@ pub async fn delete_provider(
         state.cloud_registry.remove(id).await;
         Ok(StatusCode::NO_CONTENT)
     } else {
-        Err(AppError::Core(CoreError::NotFound { entity: "CloudProvider", id }))
+        Err(AppError::Core(CoreError::NotFound {
+            entity: "CloudProvider",
+            id,
+        }))
     }
 }
 
@@ -218,7 +236,12 @@ pub async fn update_gpu_type(
     let _ = ensure_provider_exists(&state.pool, provider_id).await?;
     let gpu_type = CloudGpuTypeRepo::update(&state.pool, gpu_type_id, &input)
         .await?
-        .ok_or_else(|| AppError::Core(CoreError::NotFound { entity: "CloudGpuType", id: gpu_type_id }))?;
+        .ok_or_else(|| {
+            AppError::Core(CoreError::NotFound {
+                entity: "CloudGpuType",
+                id: gpu_type_id,
+            })
+        })?;
     Ok(Json(DataResponse { data: gpu_type }))
 }
 
@@ -266,7 +289,9 @@ pub async fn provision_instance(
         ..Default::default()
     };
 
-    let info = provider.provision_instance(&gpu_type.gpu_id, &config).await?;
+    let info = provider
+        .provision_instance(&gpu_type.gpu_id, &config)
+        .await?;
 
     let create = CreateCloudInstance {
         gpu_type_id: input.gpu_type_id,
@@ -378,7 +403,12 @@ pub async fn update_scaling_rule(
 ) -> AppResult<Json<DataResponse<CloudScalingRule>>> {
     let rule = CloudScalingRuleRepo::update(&state.pool, rule_id, &input)
         .await?
-        .ok_or_else(|| AppError::Core(CoreError::NotFound { entity: "CloudScalingRule", id: rule_id }))?;
+        .ok_or_else(|| {
+            AppError::Core(CoreError::NotFound {
+                entity: "CloudScalingRule",
+                id: rule_id,
+            })
+        })?;
     Ok(Json(DataResponse { data: rule }))
 }
 
@@ -392,7 +422,10 @@ pub async fn delete_scaling_rule(
     if deleted {
         Ok(StatusCode::NO_CONTENT)
     } else {
-        Err(AppError::Core(CoreError::NotFound { entity: "CloudScalingRule", id: rule_id }))
+        Err(AppError::Core(CoreError::NotFound {
+            entity: "CloudScalingRule",
+            id: rule_id,
+        }))
     }
 }
 
@@ -417,7 +450,8 @@ pub async fn get_cost_summary(
     let now = chrono::Utc::now();
     let since = q.since.unwrap_or(now - chrono::Duration::days(30));
     let until = q.until.unwrap_or(now);
-    let summary = CloudCostEventRepo::sum_by_provider_in_range(&state.pool, id, since, until).await?;
+    let summary =
+        CloudCostEventRepo::sum_by_provider_in_range(&state.pool, id, since, until).await?;
     Ok(Json(DataResponse { data: summary }))
 }
 

@@ -3,6 +3,8 @@
 //! Provides admin endpoints for managing storage backends, tiering policies,
 //! and storage migrations. All endpoints require the admin role.
 
+use std::sync::Arc;
+
 use axum::extract::{Path, State};
 use axum::http::StatusCode;
 use axum::response::IntoResponse;
@@ -11,6 +13,7 @@ use serde::Deserialize;
 
 use x121_core::error::CoreError;
 use x121_core::storage;
+use x121_core::storage::StorageProvider as _;
 use x121_core::types::DbId;
 use x121_db::models::status::StorageBackendStatus;
 use x121_db::models::status::StorageMigrationStatus;
@@ -350,4 +353,120 @@ pub async fn rollback_migration(
     let updated = ensure_migration_exists(&state.pool, id).await?;
 
     Ok(Json(DataResponse { data: updated }))
+}
+
+// ---------------------------------------------------------------------------
+// PATCH /admin/storage/backends/{id}/set-default  (PRD-122)
+// ---------------------------------------------------------------------------
+
+/// Set a storage backend as the platform default and hot-swap the runtime provider.
+pub async fn set_default_backend(
+    RequireAdmin(admin): RequireAdmin,
+    State(state): State<AppState>,
+    Path(id): Path<DbId>,
+) -> AppResult<impl IntoResponse> {
+    let backend = ensure_backend_exists(&state.pool, id).await?;
+
+    if backend.status_id != StorageBackendStatus::Active.id() {
+        return Err(AppError::BadRequest(
+            "Cannot set an inactive backend as default".to_string(),
+        ));
+    }
+
+    let updated = StorageBackendRepo::set_default(&state.pool, id).await?;
+
+    // Build a new runtime provider and hot-swap it.
+    let new_provider: Arc<dyn x121_core::storage::StorageProvider> = if updated.backend_type_id == 2
+    {
+        let s3_config = serde_json::from_value::<x121_cloud::storage_provider::S3Config>(
+            updated.config.clone(),
+        )
+        .map_err(|e| AppError::InternalError(format!("Invalid S3 config: {e}")))?;
+        Arc::new(
+            x121_cloud::storage_provider::S3StorageProvider::new(s3_config)
+                .await
+                .map_err(|e| AppError::InternalError(format!("Failed to init S3 provider: {e}")))?,
+        )
+    } else {
+        let backend_config = x121_core::storage::factory::StorageBackendConfig {
+            backend_type: "local".to_string(),
+            config: updated.config.clone(),
+        };
+        x121_core::storage::factory::build_provider(Some(&backend_config), &state.settings_service)
+            .map_err(|e| AppError::InternalError(format!("Failed to init local provider: {e}")))?
+    };
+    state.swap_storage_provider(new_provider).await;
+
+    tracing::info!(
+        backend_id = id,
+        backend_name = %updated.name,
+        admin_id = admin.user_id,
+        "Default storage backend changed",
+    );
+
+    Ok(Json(DataResponse { data: updated }))
+}
+
+// ---------------------------------------------------------------------------
+// POST /admin/storage/test-connection  (PRD-122)
+// ---------------------------------------------------------------------------
+
+/// Request body for the S3 connection test endpoint.
+#[derive(Debug, Deserialize)]
+pub struct TestS3ConnectionRequest {
+    pub bucket: String,
+    pub region: String,
+    pub endpoint: Option<String>,
+    pub access_key_id: String,
+    pub secret_access_key: String,
+}
+
+/// Response body for the S3 connection test endpoint.
+#[derive(Debug, serde::Serialize)]
+pub struct TestS3ConnectionResponse {
+    pub success: bool,
+    pub message: String,
+    pub latency_ms: Option<u64>,
+}
+
+/// Test an S3 connection without persisting any configuration.
+pub async fn test_s3_connection(
+    RequireAdmin(_admin): RequireAdmin,
+    State(_state): State<AppState>,
+    Json(input): Json<TestS3ConnectionRequest>,
+) -> AppResult<impl IntoResponse> {
+    let start = std::time::Instant::now();
+
+    let config = x121_cloud::storage_provider::S3Config {
+        bucket: input.bucket,
+        region: input.region,
+        endpoint: input.endpoint,
+        access_key_id: input.access_key_id,
+        secret_access_key: input.secret_access_key,
+        path_prefix: None,
+    };
+
+    let provider = match x121_cloud::storage_provider::S3StorageProvider::new(config).await {
+        Ok(p) => p,
+        Err(e) => {
+            return Ok(Json(TestS3ConnectionResponse {
+                success: false,
+                message: format!("Failed to initialize S3 client: {e}"),
+                latency_ms: Some(start.elapsed().as_millis() as u64),
+            }));
+        }
+    };
+
+    match provider.test_connection().await {
+        Ok(()) => Ok(Json(TestS3ConnectionResponse {
+            success: true,
+            message: "Connection successful".to_string(),
+            latency_ms: Some(start.elapsed().as_millis() as u64),
+        })),
+        Err(e) => Ok(Json(TestS3ConnectionResponse {
+            success: false,
+            message: format!("{e}"),
+            latency_ms: Some(start.elapsed().as_millis() as u64),
+        })),
+    }
 }

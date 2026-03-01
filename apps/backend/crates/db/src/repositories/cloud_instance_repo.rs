@@ -41,10 +41,7 @@ impl CloudInstanceRepo {
     }
 
     /// Find an instance by ID.
-    pub async fn find_by_id(
-        pool: &PgPool,
-        id: DbId,
-    ) -> Result<Option<CloudInstance>, sqlx::Error> {
+    pub async fn find_by_id(pool: &PgPool, id: DbId) -> Result<Option<CloudInstance>, sqlx::Error> {
         let query = format!("SELECT {COLUMNS} FROM cloud_instances WHERE id = $1");
         sqlx::query_as::<_, CloudInstance>(&query)
             .bind(id)
@@ -148,13 +145,11 @@ impl CloudInstanceRepo {
 
     /// Mark instance as stopped.
     pub async fn mark_stopped(pool: &PgPool, id: DbId) -> Result<(), sqlx::Error> {
-        sqlx::query(
-            "UPDATE cloud_instances SET status_id = $2, stopped_at = NOW() WHERE id = $1",
-        )
-        .bind(id)
-        .bind(CloudInstanceStatus::Stopped.id())
-        .execute(pool)
-        .await?;
+        sqlx::query("UPDATE cloud_instances SET status_id = $2, stopped_at = NOW() WHERE id = $1")
+            .bind(id)
+            .bind(CloudInstanceStatus::Stopped.id())
+            .execute(pool)
+            .await?;
         Ok(())
     }
 

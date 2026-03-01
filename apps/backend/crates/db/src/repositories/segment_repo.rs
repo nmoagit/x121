@@ -202,6 +202,23 @@ impl SegmentRepo {
             .await
     }
 
+    /// Soft-delete all segments for a scene with sequence_index > the given threshold.
+    pub async fn soft_delete_after_sequence(
+        pool: &PgPool,
+        scene_id: DbId,
+        sequence_index: i32,
+    ) -> Result<u64, sqlx::Error> {
+        let result = sqlx::query(
+            "UPDATE segments SET deleted_at = NOW() \
+             WHERE scene_id = $1 AND sequence_index > $2 AND deleted_at IS NULL",
+        )
+        .bind(scene_id)
+        .bind(sequence_index)
+        .execute(pool)
+        .await?;
+        Ok(result.rows_affected())
+    }
+
     /// Get the last completed segment for a scene (for generation resumption).
     ///
     /// A "completed" segment is one with a non-NULL `generation_completed_at`.

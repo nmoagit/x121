@@ -10,3 +10,4 @@ pub mod registry;
 pub mod runpod;
 pub mod services;
 pub mod storage;
+pub mod storage_provider;

@@ -55,9 +55,13 @@ async fn evaluate_all_rules(
         let now = chrono::Utc::now();
         let budget_spent = if rule.budget_limit_cents.is_some() {
             let period_start = now - chrono::Duration::hours(24 * 30); // ~30 day window
-            let summary =
-                CloudCostEventRepo::sum_by_provider_in_range(pool, rule.provider_id, period_start, now)
-                    .await?;
+            let summary = CloudCostEventRepo::sum_by_provider_in_range(
+                pool,
+                rule.provider_id,
+                period_start,
+                now,
+            )
+            .await?;
             summary.total_cost_cents
         } else {
             0
@@ -87,11 +91,9 @@ async fn evaluate_all_rules(
                     "Scaling up"
                 );
                 // Provision instances via provider
-                let gpu_type = x121_db::repositories::CloudGpuTypeRepo::find_by_id(
-                    pool,
-                    rule.gpu_type_id,
-                )
-                .await?;
+                let gpu_type =
+                    x121_db::repositories::CloudGpuTypeRepo::find_by_id(pool, rule.gpu_type_id)
+                        .await?;
                 if let Some(gpu) = gpu_type {
                     for _ in 0..count {
                         let config = x121_core::cloud::ProvisionConfig {

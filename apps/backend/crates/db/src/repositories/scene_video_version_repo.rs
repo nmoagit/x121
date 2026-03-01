@@ -9,7 +9,9 @@ use crate::models::scene_video_version::{
 
 /// Column list shared across queries to avoid repetition.
 const COLUMNS: &str = "id, scene_id, version_number, source, file_path, \
-    file_size_bytes, duration_secs, is_final, notes, deleted_at, created_at, updated_at";
+    file_size_bytes, duration_secs, is_final, notes, \
+    qa_status, qa_reviewed_by, qa_reviewed_at, qa_rejection_reason, qa_notes, \
+    deleted_at, created_at, updated_at";
 
 /// Provides CRUD and version-management operations for scene video versions.
 pub struct SceneVideoVersionRepo;
@@ -88,7 +90,12 @@ impl SceneVideoVersionRepo {
         let query = format!(
             "UPDATE scene_video_versions SET
                 is_final = COALESCE($2, is_final),
-                notes = COALESCE($3, notes)
+                notes = COALESCE($3, notes),
+                qa_status = COALESCE($4, qa_status),
+                qa_reviewed_by = COALESCE($5, qa_reviewed_by),
+                qa_reviewed_at = COALESCE($6, qa_reviewed_at),
+                qa_rejection_reason = COALESCE($7, qa_rejection_reason),
+                qa_notes = COALESCE($8, qa_notes)
              WHERE id = $1 AND deleted_at IS NULL
              RETURNING {COLUMNS}"
         );
@@ -96,6 +103,11 @@ impl SceneVideoVersionRepo {
             .bind(id)
             .bind(input.is_final)
             .bind(&input.notes)
+            .bind(&input.qa_status)
+            .bind(input.qa_reviewed_by)
+            .bind(input.qa_reviewed_at)
+            .bind(&input.qa_rejection_reason)
+            .bind(&input.qa_notes)
             .fetch_optional(pool)
             .await
     }
@@ -122,6 +134,23 @@ impl SceneVideoVersionRepo {
         .execute(pool)
         .await?;
         Ok(result.rows_affected() > 0)
+    }
+
+    /// Soft-delete all versions for a scene with version_number > the given threshold.
+    pub async fn soft_delete_after_version(
+        pool: &PgPool,
+        scene_id: DbId,
+        version_number: i32,
+    ) -> Result<u64, sqlx::Error> {
+        let result = sqlx::query(
+            "UPDATE scene_video_versions SET deleted_at = NOW() \
+             WHERE scene_id = $1 AND version_number > $2 AND deleted_at IS NULL",
+        )
+        .bind(scene_id)
+        .bind(version_number)
+        .execute(pool)
+        .await?;
+        Ok(result.rows_affected())
     }
 
     /// Permanently delete a scene video version by ID. Returns `true` if a row was removed.

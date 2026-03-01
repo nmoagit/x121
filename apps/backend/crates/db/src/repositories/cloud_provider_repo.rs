@@ -3,9 +3,7 @@
 use sqlx::PgPool;
 use x121_core::types::DbId;
 
-use crate::models::cloud_provider::{
-    CloudProvider, CloudProviderSafe, UpdateCloudProvider,
-};
+use crate::models::cloud_provider::{CloudProvider, CloudProviderSafe, UpdateCloudProvider};
 use crate::models::status::StatusId;
 
 /// Column list for `cloud_providers` queries (full, including key material).
@@ -74,9 +72,7 @@ impl CloudProviderRepo {
 
     /// List all providers (safe view).
     pub async fn list(pool: &PgPool) -> Result<Vec<CloudProviderSafe>, sqlx::Error> {
-        let query = format!(
-            "SELECT {SAFE_COLUMNS} FROM cloud_providers ORDER BY name ASC"
-        );
+        let query = format!("SELECT {SAFE_COLUMNS} FROM cloud_providers ORDER BY name ASC");
         sqlx::query_as::<_, CloudProviderSafe>(&query)
             .fetch_all(pool)
             .await
@@ -84,9 +80,8 @@ impl CloudProviderRepo {
 
     /// List active providers.
     pub async fn list_active(pool: &PgPool) -> Result<Vec<CloudProvider>, sqlx::Error> {
-        let query = format!(
-            "SELECT {COLUMNS} FROM cloud_providers WHERE status_id = $1 ORDER BY name ASC"
-        );
+        let query =
+            format!("SELECT {COLUMNS} FROM cloud_providers WHERE status_id = $1 ORDER BY name ASC");
         sqlx::query_as::<_, CloudProvider>(&query)
             .bind(crate::models::status::CloudProviderStatus::Active.id())
             .fetch_all(pool)

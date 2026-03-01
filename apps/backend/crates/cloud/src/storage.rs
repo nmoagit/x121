@@ -6,6 +6,10 @@
 use serde::{Deserialize, Serialize};
 
 /// Configuration for the S3 storage bridge.
+#[deprecated(
+    since = "0.1.0",
+    note = "Use x121_cloud::storage_provider::S3Config instead (PRD-122)"
+)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StorageBridgeConfig {
     pub bucket: String,
@@ -51,6 +55,10 @@ fn generate_presigned_url(
 /// Generate a presigned upload URL (PUT).
 ///
 /// For production use, integrate with the `aws-sdk-s3` crate's presigning API.
+#[deprecated(
+    since = "0.1.0",
+    note = "Use S3StorageProvider::presigned_url instead (PRD-122)"
+)]
 pub fn generate_presigned_upload_url(
     config: &StorageBridgeConfig,
     key: &str,
@@ -60,6 +68,10 @@ pub fn generate_presigned_upload_url(
 }
 
 /// Generate a presigned download URL (GET).
+#[deprecated(
+    since = "0.1.0",
+    note = "Use S3StorageProvider::presigned_url instead (PRD-122)"
+)]
 pub fn generate_presigned_download_url(
     config: &StorageBridgeConfig,
     key: &str,

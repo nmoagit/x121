@@ -96,6 +96,33 @@ impl StorageBackendRepo {
             .await
     }
 
+    /// Find the default storage backend (where `is_default = true`).
+    pub async fn find_default(pool: &PgPool) -> Result<Option<StorageBackend>, sqlx::Error> {
+        let query = format!(
+            "SELECT {BACKEND_COLUMNS} FROM storage_backends WHERE is_default = true LIMIT 1"
+        );
+        sqlx::query_as::<_, StorageBackend>(&query)
+            .fetch_optional(pool)
+            .await
+    }
+
+    /// Set a backend as the platform default, clearing the flag on all others.
+    pub async fn set_default(pool: &PgPool, id: DbId) -> Result<StorageBackend, sqlx::Error> {
+        let mut tx = pool.begin().await?;
+        sqlx::query("UPDATE storage_backends SET is_default = false WHERE is_default = true")
+            .execute(&mut *tx)
+            .await?;
+        let query = format!(
+            "UPDATE storage_backends SET is_default = true WHERE id = $1 RETURNING {BACKEND_COLUMNS}"
+        );
+        let backend = sqlx::query_as::<_, StorageBackend>(&query)
+            .bind(id)
+            .fetch_one(&mut *tx)
+            .await?;
+        tx.commit().await?;
+        Ok(backend)
+    }
+
     /// Update the status of a storage backend.
     pub async fn update_status(
         pool: &PgPool,

@@ -40,6 +40,15 @@ export function SettingsPanel() {
     return data.settings.filter((s) => s.category === activeCategory);
   }, [data?.settings, activeCategory]);
 
+  /** Hide S3-specific settings when storage backend is not "s3". */
+  const s3Enabled =
+    data?.settings?.find((s) => s.key === "storage_backend_type")?.value === "s3";
+
+  const visibleSettings = useMemo(() => {
+    if (s3Enabled) return filteredSettings;
+    return filteredSettings.filter((s) => !s.key.startsWith("s3_"));
+  }, [filteredSettings, s3Enabled]);
+
   return (
     <Stack gap={6}>
       {/* Page header */}
@@ -83,9 +92,9 @@ export function SettingsPanel() {
             Failed to load settings.
           </p>
         </div>
-      ) : filteredSettings.length > 0 ? (
+      ) : visibleSettings.length > 0 ? (
         <div className="grid grid-cols-1 gap-[var(--spacing-4)] lg:grid-cols-2">
-          {filteredSettings.map((s) => (
+          {visibleSettings.map((s) => (
             <SettingRow key={s.key} setting={s} />
           ))}
         </div>

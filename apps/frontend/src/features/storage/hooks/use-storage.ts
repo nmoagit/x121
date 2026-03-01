@@ -12,6 +12,8 @@ import type {
   CreateTieringPolicy,
   StorageBackend,
   StorageMigration,
+  TestS3ConnectionInput,
+  TestS3ConnectionResponse,
   TieringCandidate,
   TieringPolicy,
   UpdateStorageBackend,
@@ -84,6 +86,26 @@ export function useDecommissionBackend() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: storageKeys.backends() });
     },
+  });
+}
+
+/** Set a backend as the system default. */
+export function useSetDefaultBackend() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) =>
+      api.patch<StorageBackend>(`/admin/storage/backends/${id}/set-default`, {}),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: storageKeys.backends() });
+    },
+  });
+}
+
+/** Test S3 credentials / connectivity without persisting a backend. */
+export function useTestS3Connection() {
+  return useMutation({
+    mutationFn: (input: TestS3ConnectionInput) =>
+      api.post<TestS3ConnectionResponse>("/admin/storage/test-connection", input),
   });
 }
 

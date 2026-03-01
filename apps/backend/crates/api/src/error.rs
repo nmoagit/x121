@@ -32,12 +32,21 @@ impl From<x121_core::cloud::CloudProviderError> for AppError {
         use x121_core::cloud::CloudProviderError;
         match err {
             CloudProviderError::AuthError(msg) => AppError::Core(CoreError::Unauthorized(msg)),
-            CloudProviderError::NotFound(msg) => AppError::BadRequest(format!("Not found at provider: {msg}")),
-            CloudProviderError::BudgetExceeded { spent_cents, limit_cents } => {
-                AppError::BadRequest(format!("Budget exceeded: spent {spent_cents} of {limit_cents} cents"))
+            CloudProviderError::NotFound(msg) => {
+                AppError::BadRequest(format!("Not found at provider: {msg}"))
             }
-            CloudProviderError::RateLimited => AppError::BadRequest("Rate limited by provider".into()),
-            CloudProviderError::ProvisionFailed(msg) => AppError::InternalError(format!("Provisioning failed: {msg}")),
+            CloudProviderError::BudgetExceeded {
+                spent_cents,
+                limit_cents,
+            } => AppError::BadRequest(format!(
+                "Budget exceeded: spent {spent_cents} of {limit_cents} cents"
+            )),
+            CloudProviderError::RateLimited => {
+                AppError::BadRequest("Rate limited by provider".into())
+            }
+            CloudProviderError::ProvisionFailed(msg) => {
+                AppError::InternalError(format!("Provisioning failed: {msg}"))
+            }
             _ => AppError::InternalError(err.to_string()),
         }
     }
@@ -77,6 +86,34 @@ impl IntoResponse for AppError {
                         StatusCode::INTERNAL_SERVER_ERROR,
                         "INTERNAL_ERROR",
                         "An internal error occurred".to_string(),
+                    )
+                }
+                CoreError::StorageConnectionFailed(msg) => (
+                    StatusCode::BAD_GATEWAY,
+                    "STORAGE_CONNECTION_FAILED",
+                    msg.clone(),
+                ),
+                CoreError::StorageObjectNotFound(msg) => (
+                    StatusCode::NOT_FOUND,
+                    "STORAGE_OBJECT_NOT_FOUND",
+                    msg.clone(),
+                ),
+                CoreError::StoragePermissionDenied(msg) => (
+                    StatusCode::FORBIDDEN,
+                    "STORAGE_PERMISSION_DENIED",
+                    msg.clone(),
+                ),
+                CoreError::StorageBucketNotFound(msg) => (
+                    StatusCode::BAD_REQUEST,
+                    "STORAGE_BUCKET_NOT_FOUND",
+                    msg.clone(),
+                ),
+                CoreError::StorageIo(msg) => {
+                    tracing::error!(error = %msg, "Storage I/O error");
+                    (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        "STORAGE_IO_ERROR",
+                        "Storage I/O error occurred".to_string(),
                     )
                 }
             },

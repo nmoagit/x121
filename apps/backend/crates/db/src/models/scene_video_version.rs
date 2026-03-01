@@ -16,6 +16,11 @@ pub struct SceneVideoVersion {
     pub duration_secs: Option<f64>,
     pub is_final: bool,
     pub notes: Option<String>,
+    pub qa_status: String,
+    pub qa_reviewed_by: Option<DbId>,
+    pub qa_reviewed_at: Option<Timestamp>,
+    pub qa_rejection_reason: Option<String>,
+    pub qa_notes: Option<String>,
     pub deleted_at: Option<Timestamp>,
     pub created_at: Timestamp,
     pub updated_at: Timestamp,
@@ -38,4 +43,26 @@ pub struct CreateSceneVideoVersion {
 pub struct UpdateSceneVideoVersion {
     pub is_final: Option<bool>,
     pub notes: Option<String>,
+    pub qa_status: Option<String>,
+    pub qa_reviewed_by: Option<DbId>,
+    pub qa_reviewed_at: Option<Timestamp>,
+    pub qa_rejection_reason: Option<String>,
+    pub qa_notes: Option<String>,
+}
+
+/// Request body for rejecting a clip.
+#[derive(Debug, Clone, Deserialize)]
+pub struct RejectClipRequest {
+    pub reason: String,
+    pub notes: Option<String>,
+}
+
+/// Response for a resume-from operation.
+#[derive(Debug, Clone, Serialize)]
+pub struct ResumeFromResponse {
+    pub scene_id: DbId,
+    pub resume_from_version: i32,
+    pub segments_preserved: i32,
+    pub segments_discarded: i32,
+    pub status: String,
 }

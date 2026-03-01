@@ -79,10 +79,7 @@ async fn reconcile_all(
                             .await;
                 }
                 Err(e) => {
-                    warn!(
-                        instance_id = inst.id,
-                        "Reconciliation check failed: {e}"
-                    );
+                    warn!(instance_id = inst.id, "Reconciliation check failed: {e}");
                 }
             }
         }

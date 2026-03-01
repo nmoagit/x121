@@ -11,8 +11,8 @@ pub fn encrypt_api_key(
     plaintext: &str,
     master_key: &[u8; 32],
 ) -> Result<(Vec<u8>, Vec<u8>), CryptoError> {
-    let cipher = Aes256Gcm::new_from_slice(master_key)
-        .map_err(|e| CryptoError::KeyError(e.to_string()))?;
+    let cipher =
+        Aes256Gcm::new_from_slice(master_key).map_err(|e| CryptoError::KeyError(e.to_string()))?;
 
     let mut nonce_bytes = [0u8; 12];
     rand::fill(&mut nonce_bytes);
@@ -35,8 +35,8 @@ pub fn decrypt_api_key(
         return Err(CryptoError::InvalidNonce);
     }
 
-    let cipher = Aes256Gcm::new_from_slice(master_key)
-        .map_err(|e| CryptoError::KeyError(e.to_string()))?;
+    let cipher =
+        Aes256Gcm::new_from_slice(master_key).map_err(|e| CryptoError::KeyError(e.to_string()))?;
 
     let nonce = Nonce::from_slice(nonce_bytes);
 
@@ -58,7 +58,8 @@ pub fn parse_master_key(hex: &str) -> Result<[u8; 32], CryptoError> {
     }
     let mut key = [0u8; 32];
     for (i, chunk) in hex.as_bytes().chunks(2).enumerate() {
-        let s = std::str::from_utf8(chunk).map_err(|_| CryptoError::KeyError("invalid hex".into()))?;
+        let s =
+            std::str::from_utf8(chunk).map_err(|_| CryptoError::KeyError("invalid hex".into()))?;
         key[i] = u8::from_str_radix(s, 16)
             .map_err(|_| CryptoError::KeyError(format!("invalid hex byte: {s}")))?;
     }

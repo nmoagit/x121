@@ -1,9 +1,56 @@
-//! Storage backend constants, validation, and enums (PRD-48).
+//! Storage backend constants, validation, enums, and provider trait (PRD-48, PRD-122).
 //!
 //! Provides tier validation, backend config validation, type/status enums,
-//! and a rough retrieval-time estimator.
+//! a rough retrieval-time estimator, and the `StorageProvider` trait for
+//! pluggable storage backends (local filesystem, S3-compatible, etc.).
+
+pub mod factory;
+pub mod local;
+
+use async_trait::async_trait;
+use chrono::{DateTime, Utc};
 
 use crate::error::CoreError;
+
+// ---------------------------------------------------------------------------
+// StorageProvider trait (PRD-122)
+// ---------------------------------------------------------------------------
+
+/// Metadata for a single stored object.
+#[derive(Debug, Clone, serde::Serialize)]
+pub struct StorageObject {
+    /// Object key (relative path within the storage backend).
+    pub key: String,
+    /// Size in bytes.
+    pub size_bytes: i64,
+    /// Last-modified timestamp, if available.
+    pub last_modified: Option<DateTime<Utc>>,
+    /// ETag / content hash, if available.
+    pub etag: Option<String>,
+}
+
+/// Pluggable storage backend interface.
+///
+/// Implementations live in `local` (filesystem) and the `x121_cloud` crate (S3).
+/// The active provider is held in `AppState` behind an `ArcSwap` so it can be
+/// hot-swapped when the admin changes the default backend.
+#[async_trait]
+pub trait StorageProvider: Send + Sync + 'static {
+    /// Upload `data` to the given `key`, creating parent directories as needed.
+    async fn upload(&self, key: &str, data: &[u8]) -> Result<(), CoreError>;
+    /// Download the full contents of `key`.
+    async fn download(&self, key: &str) -> Result<Vec<u8>, CoreError>;
+    /// Delete the object at `key`.
+    async fn delete(&self, key: &str) -> Result<(), CoreError>;
+    /// Check whether `key` exists.
+    async fn exists(&self, key: &str) -> Result<bool, CoreError>;
+    /// List all objects whose key starts with `prefix`.
+    async fn list(&self, prefix: &str) -> Result<Vec<StorageObject>, CoreError>;
+    /// Generate a presigned (or file://) URL for downloading `key`.
+    async fn presigned_url(&self, key: &str, expiry_secs: u64) -> Result<String, CoreError>;
+    /// Verify that the backend is reachable and writable.
+    async fn test_connection(&self) -> Result<(), CoreError>;
+}
 
 // ---------------------------------------------------------------------------
 // Constants

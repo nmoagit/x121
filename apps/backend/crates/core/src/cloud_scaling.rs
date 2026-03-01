@@ -139,7 +139,10 @@ mod tests {
             min_instances: 1,
             ..base_input()
         };
-        assert_eq!(evaluate_scaling_decision(&input), ScalingAction::ScaleDown(1));
+        assert_eq!(
+            evaluate_scaling_decision(&input),
+            ScalingAction::ScaleDown(1)
+        );
     }
 
     #[test]
@@ -175,7 +178,10 @@ mod tests {
             budget_spent_cents: 1200,
             ..base_input()
         };
-        assert_eq!(evaluate_scaling_decision(&input), ScalingAction::ScaleDown(1));
+        assert_eq!(
+            evaluate_scaling_decision(&input),
+            ScalingAction::ScaleDown(1)
+        );
     }
 
     #[test]

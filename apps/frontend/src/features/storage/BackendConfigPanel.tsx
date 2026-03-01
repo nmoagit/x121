@@ -8,13 +8,13 @@
 import { useState } from "react";
 
 import { Card } from "@/components/composite/Card";
-import { Badge } from "@/components/primitives";
+import { Badge, Button } from "@/components/primitives";
 import { formatBytes } from "@/lib/format";
 import { HardDrive, Plus } from "@/tokens/icons";
 
+import { TierIndicator } from "./TierIndicator";
 import type { StorageBackend, StorageBackendStatusId, StorageBackendTypeId } from "./types";
 import { BACKEND_STATUS_LABELS, BACKEND_STATUS_VARIANT, BACKEND_TYPE_LABELS } from "./types";
-import { TierIndicator } from "./TierIndicator";
 
 /* --------------------------------------------------------------------------
    Helpers
@@ -34,13 +34,19 @@ interface BackendConfigPanelProps {
   backends: StorageBackend[];
   onAdd?: () => void;
   onSelect?: (backend: StorageBackend) => void;
+  onSetDefault?: (backend: StorageBackend) => void;
 }
 
 /* --------------------------------------------------------------------------
    Component
    -------------------------------------------------------------------------- */
 
-export function BackendConfigPanel({ backends, onAdd, onSelect }: BackendConfigPanelProps) {
+export function BackendConfigPanel({
+  backends,
+  onAdd,
+  onSelect,
+  onSetDefault,
+}: BackendConfigPanelProps) {
   const [selectedId, setSelectedId] = useState<number | null>(null);
 
   function handleSelect(backend: StorageBackend) {
@@ -52,26 +58,17 @@ export function BackendConfigPanel({ backends, onAdd, onSelect }: BackendConfigP
     <div className="space-y-[var(--spacing-4)]">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-[var(--color-text-primary)]">
-          Storage Backends
-        </h2>
+        <h2 className="text-lg font-semibold text-[var(--color-text-primary)]">Storage Backends</h2>
         {onAdd && (
-          <button
-            type="button"
-            onClick={onAdd}
-            className="inline-flex items-center gap-[var(--spacing-1)] rounded-[var(--radius-md)] bg-[var(--color-primary)] px-[var(--spacing-3)] py-[var(--spacing-1)] text-sm font-medium text-white hover:opacity-90 transition-opacity"
-          >
-            <Plus size={14} aria-hidden />
+          <Button variant="primary" size="sm" onClick={onAdd} icon={<Plus size={14} />}>
             Add Backend
-          </button>
+          </Button>
         )}
       </div>
 
       {/* Backend cards */}
       {backends.length === 0 ? (
-        <p className="text-sm text-[var(--color-text-muted)]">
-          No storage backends configured.
-        </p>
+        <p className="text-sm text-[var(--color-text-muted)]">No storage backends configured.</p>
       ) : (
         <div className="grid gap-[var(--spacing-3)] sm:grid-cols-2 lg:grid-cols-3">
           {backends.map((backend) => {
@@ -89,9 +86,7 @@ export function BackendConfigPanel({ backends, onAdd, onSelect }: BackendConfigP
                 elevation="sm"
                 padding="none"
                 className={`cursor-pointer transition-shadow hover:shadow-[var(--shadow-md)]${
-                  selectedId === backend.id
-                    ? " ring-2 ring-[var(--color-primary)]"
-                    : ""
+                  selectedId === backend.id ? " ring-2 ring-[var(--color-primary)]" : ""
                 }`}
               >
                 <div
@@ -151,14 +146,27 @@ export function BackendConfigPanel({ backends, onAdd, onSelect }: BackendConfigP
                     </div>
                   )}
 
-                  {/* Default badge */}
-                  {backend.is_default && (
+                  {/* Default badge / Set as default */}
+                  {backend.is_default ? (
                     <div className="mt-[var(--spacing-2)]">
                       <Badge variant="info" size="sm">
                         Default
                       </Badge>
                     </div>
-                  )}
+                  ) : onSetDefault ? (
+                    <div className="mt-[var(--spacing-2)]">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onSetDefault(backend);
+                        }}
+                      >
+                        Set as Default
+                      </Button>
+                    </div>
+                  ) : null}
                 </div>
               </Card>
             );
