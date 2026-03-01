@@ -292,7 +292,7 @@ export function ProjectCharactersTab({ projectId }: ProjectCharactersTabProps) {
             {!showNewGroup ? (
               <button
                 type="button"
-                className="mt-[var(--spacing-1)] text-xs text-[var(--color-text-link)] hover:underline"
+                className="mt-[var(--spacing-1)] text-xs text-[var(--color-action-primary)] hover:text-[var(--color-action-primary-hover)] hover:underline cursor-pointer"
                 onClick={() => setShowNewGroup(true)}
               >
                 + Create new group

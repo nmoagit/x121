@@ -347,7 +347,7 @@ function GroupSection({
         {onEdit && (
           <button
             type="button"
-            className="p-1 rounded-[var(--radius-sm)] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-tertiary)]"
+            className="p-1 rounded-[var(--radius-sm)] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-tertiary)] cursor-pointer"
             onClick={(e) => {
               e.stopPropagation();
               onEdit();
@@ -360,7 +360,7 @@ function GroupSection({
         {onDelete && (
           <button
             type="button"
-            className="p-1 rounded-[var(--radius-sm)] text-[var(--color-text-muted)] hover:text-[var(--color-text-danger)] hover:bg-[var(--color-surface-tertiary)]"
+            className="p-1 rounded-[var(--radius-sm)] text-[var(--color-text-muted)] hover:text-[var(--color-text-danger)] hover:bg-[var(--color-surface-tertiary)] cursor-pointer"
             onClick={(e) => {
               e.stopPropagation();
               onDelete();
