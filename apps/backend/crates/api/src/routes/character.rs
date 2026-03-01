@@ -4,6 +4,7 @@
 //! source images, derived images, image variants, and scenes that
 //! belong to a specific character.
 
+use axum::extract::DefaultBodyLimit;
 use axum::routing::{get, post};
 use axum::Router;
 
@@ -69,6 +70,9 @@ pub fn router() -> Router<AppState> {
                 .delete(derived_image::delete),
         );
 
+    /// 50 MB — generous limit for image uploads and reimports.
+    const IMAGE_BODY_LIMIT: usize = 50 * 1024 * 1024;
+
     let image_variant_routes = Router::new()
         .route(
             "/",
@@ -86,7 +90,8 @@ pub fn router() -> Router<AppState> {
         .route("/{id}/reject", post(image_variant::reject_variant))
         .route("/{id}/export", post(image_variant::export_for_editing))
         .route("/{id}/reimport", post(image_variant::reimport_variant))
-        .route("/{id}/history", get(image_variant::variant_history));
+        .route("/{id}/history", get(image_variant::variant_history))
+        .layer(DefaultBodyLimit::max(IMAGE_BODY_LIMIT));
 
     let scene_routes = Router::new()
         .route("/", get(scene::list_by_character).post(scene::create))

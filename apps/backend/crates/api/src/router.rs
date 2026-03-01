@@ -12,6 +12,7 @@ use axum::Router;
 use tower_http::catch_panic::CatchPanicLayer;
 use tower_http::cors::CorsLayer;
 use tower_http::request_id::{MakeRequestUuid, PropagateRequestIdLayer, SetRequestIdLayer};
+use tower_http::services::ServeDir;
 use tower_http::timeout::TimeoutLayer;
 use tower_http::trace::{DefaultMakeSpan, DefaultOnResponse, TraceLayer};
 use tracing::Level;
@@ -39,6 +40,8 @@ pub fn build_app_router(state: AppState, config: &ServerConfig) -> Router {
         .merge(routes::health::router())
         // API v1 routes.
         .nest("/api/v1", routes::api_routes())
+        // Serve uploaded files (images, etc.) from the storage directory.
+        .nest_service("/storage", ServeDir::new("storage"))
         // -- Middleware stack (applied bottom-up) --
         // Panic recovery: catch panics and return 500 JSON.
         .layer(CatchPanicLayer::new())

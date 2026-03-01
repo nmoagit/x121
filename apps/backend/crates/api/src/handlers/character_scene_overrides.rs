@@ -9,7 +9,7 @@ use axum::Json;
 use x121_core::error::CoreError;
 use x121_core::types::DbId;
 use x121_db::models::character_scene_override::{
-    BulkCharacterSceneOverrides, CharacterSceneOverrideUpdate,
+    BulkCharacterSceneOverrides, ToggleSettingBody,
 };
 use x121_db::repositories::{CharacterRepo, CharacterSceneOverrideRepo};
 
@@ -23,13 +23,14 @@ use crate::state::AppState;
 
 /// GET /api/v1/characters/{character_id}/scene-settings
 ///
-/// List effective scene settings for a character (three-level merge).
-/// The character's `project_id` is resolved automatically.
+/// List effective scene settings for a character (four-level merge).
+/// The character's `project_id` and `group_id` are resolved automatically.
+/// Returns one row per (scene_type, track) pair.
 pub async fn list_effective(
     State(state): State<AppState>,
     Path(character_id): Path<DbId>,
 ) -> AppResult<impl IntoResponse> {
-    // Look up the character to get its project_id
+    // Look up the character to get its project_id and group_id
     let character = CharacterRepo::find_by_id(&state.pool, character_id)
         .await?
         .ok_or(AppError::Core(CoreError::NotFound {
@@ -37,9 +38,13 @@ pub async fn list_effective(
             id: character_id,
         }))?;
 
-    let settings =
-        CharacterSceneOverrideRepo::list_effective(&state.pool, character_id, character.project_id)
-            .await?;
+    let settings = CharacterSceneOverrideRepo::list_effective(
+        &state.pool,
+        character_id,
+        character.project_id,
+        character.group_id,
+    )
+    .await?;
     Ok(Json(DataResponse { data: settings }))
 }
 
@@ -58,16 +63,36 @@ pub async fn bulk_update(
 
 /// PUT /api/v1/characters/{character_id}/scene-settings/{scene_type_id}
 ///
-/// Toggle a single scene override for a character.
+/// Toggle a single scene override for a character (scene_type level, no track).
 pub async fn toggle_single(
     State(state): State<AppState>,
     Path((character_id, scene_type_id)): Path<(DbId, DbId)>,
-    Json(body): Json<CharacterSceneOverrideUpdate>,
+    Json(body): Json<ToggleSettingBody>,
 ) -> AppResult<impl IntoResponse> {
     let setting = CharacterSceneOverrideRepo::upsert(
         &state.pool,
         character_id,
         scene_type_id,
+        None,
+        body.is_enabled,
+    )
+    .await?;
+    Ok(Json(DataResponse { data: setting }))
+}
+
+/// PUT /api/v1/characters/{character_id}/scene-settings/{scene_type_id}/tracks/{track_id}
+///
+/// Toggle a single scene override for a specific track within a scene type.
+pub async fn toggle_single_track(
+    State(state): State<AppState>,
+    Path((character_id, scene_type_id, track_id)): Path<(DbId, DbId, DbId)>,
+    Json(body): Json<ToggleSettingBody>,
+) -> AppResult<impl IntoResponse> {
+    let setting = CharacterSceneOverrideRepo::upsert(
+        &state.pool,
+        character_id,
+        scene_type_id,
+        Some(track_id),
         body.is_enabled,
     )
     .await?;
@@ -76,19 +101,44 @@ pub async fn toggle_single(
 
 /// DELETE /api/v1/characters/{character_id}/scene-settings/{scene_type_id}
 ///
-/// Remove a character scene override (reverts to project/scene_type default).
+/// Remove a character scene override at the scene_type level (no track).
 pub async fn remove_override(
     State(state): State<AppState>,
     Path((character_id, scene_type_id)): Path<(DbId, DbId)>,
 ) -> AppResult<StatusCode> {
+    delete_override(&state, character_id, scene_type_id, None).await
+}
+
+/// DELETE /api/v1/characters/{character_id}/scene-settings/{scene_type_id}/tracks/{track_id}
+///
+/// Remove a character scene override for a specific track.
+pub async fn remove_override_track(
+    State(state): State<AppState>,
+    Path((character_id, scene_type_id, track_id)): Path<(DbId, DbId, DbId)>,
+) -> AppResult<StatusCode> {
+    delete_override(&state, character_id, scene_type_id, Some(track_id)).await
+}
+
+// ---------------------------------------------------------------------------
+// Shared helpers
+// ---------------------------------------------------------------------------
+
+/// Delete a character scene override and return 204 or 404.
+async fn delete_override(
+    state: &AppState,
+    character_id: DbId,
+    scene_type_id: DbId,
+    track_id: Option<DbId>,
+) -> AppResult<StatusCode> {
     let removed =
-        CharacterSceneOverrideRepo::delete(&state.pool, character_id, scene_type_id).await?;
+        CharacterSceneOverrideRepo::delete(&state.pool, character_id, scene_type_id, track_id)
+            .await?;
     if removed {
         Ok(StatusCode::NO_CONTENT)
     } else {
         Err(AppError::Core(CoreError::NotFound {
             entity: "CharacterSceneOverride",
-            id: scene_type_id,
+            id: track_id.unwrap_or(scene_type_id),
         }))
     }
 }

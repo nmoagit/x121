@@ -1,12 +1,12 @@
-//! Route definitions for character scene overrides (PRD-111, PRD-123).
+//! Route definitions for group scene settings.
 
 use axum::routing::{get, put};
 use axum::Router;
 
-use crate::handlers::character_scene_overrides;
+use crate::handlers::group_scene_settings;
 use crate::state::AppState;
 
-/// Routes mounted at `/characters/{character_id}/scene-settings`.
+/// Routes mounted at `/projects/{project_id}/groups/{group_id}/scene-settings`.
 ///
 /// ```text
 /// GET    /                                       -> list_effective
@@ -20,17 +20,16 @@ pub fn router() -> Router<AppState> {
     Router::new()
         .route(
             "/",
-            get(character_scene_overrides::list_effective)
-                .put(character_scene_overrides::bulk_update),
+            get(group_scene_settings::list_effective).put(group_scene_settings::bulk_update),
         )
         .route(
             "/{scene_type_id}",
-            put(character_scene_overrides::toggle_single)
-                .delete(character_scene_overrides::remove_override),
+            put(group_scene_settings::toggle_single)
+                .delete(group_scene_settings::remove_override),
         )
         .route(
             "/{scene_type_id}/tracks/{track_id}",
-            put(character_scene_overrides::toggle_single_track)
-                .delete(character_scene_overrides::remove_override_track),
+            put(group_scene_settings::toggle_single_track)
+                .delete(group_scene_settings::remove_override_track),
         )
 }

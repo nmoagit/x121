@@ -47,6 +47,7 @@ pub mod extensions;
 pub mod failure_analytics;
 pub mod generation;
 pub mod gpu_power;
+pub mod group_scene_settings;
 pub mod hardware;
 pub mod image_qa;
 pub mod image_variant;

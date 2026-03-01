@@ -1,6 +1,6 @@
-//! Character scene override model and DTOs (PRD-111, PRD-123).
+//! Group scene settings model and DTOs.
 //!
-//! Leaf tier of the four-level inheritance chain:
+//! Intermediate tier of the four-level inheritance chain:
 //! scene_type (default) -> project settings -> group settings -> character overrides.
 
 use serde::{Deserialize, Serialize};
@@ -10,11 +10,11 @@ use x121_core::types::{DbId, Timestamp};
 pub use super::project_scene_setting::{SceneSettingUpdate, ToggleSettingBody};
 pub use super::scene_type::EffectiveSceneSetting;
 
-/// A row from the `character_scene_overrides` table.
+/// A row from the `group_scene_settings` table.
 #[derive(Debug, Clone, FromRow, Serialize)]
-pub struct CharacterSceneOverride {
+pub struct GroupSceneSetting {
     pub id: DbId,
-    pub character_id: DbId,
+    pub group_id: DbId,
     pub scene_type_id: DbId,
     pub track_id: Option<DbId>,
     pub is_enabled: bool,
@@ -23,14 +23,14 @@ pub struct CharacterSceneOverride {
 }
 
 /// Type alias for backward compatibility. The effective setting struct is
-/// shared across the project and character tiers.
-pub type EffectiveCharacterSceneSetting = EffectiveSceneSetting;
+/// shared across all tiers.
+pub type EffectiveGroupSceneSetting = EffectiveSceneSetting;
 
-/// Bulk update request for character scene overrides.
+/// Bulk update request for group scene settings.
 #[derive(Debug, Clone, Deserialize)]
-pub struct BulkCharacterSceneOverrides {
-    pub overrides: Vec<CharacterSceneOverrideUpdate>,
+pub struct BulkGroupSceneSettings {
+    pub settings: Vec<GroupSceneSettingUpdate>,
 }
 
-/// Backward-compat alias reusing the shared update shape.
-pub type CharacterSceneOverrideUpdate = SceneSettingUpdate;
+/// Reuse the shared update shape.
+pub type GroupSceneSettingUpdate = SceneSettingUpdate;

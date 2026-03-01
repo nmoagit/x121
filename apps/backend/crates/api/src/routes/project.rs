@@ -34,6 +34,10 @@ use crate::state::AppState;
 /// POST   /{project_id}/groups               -> create (PRD-112)
 /// PUT    /{project_id}/groups/{id}          -> update (PRD-112)
 /// DELETE /{project_id}/groups/{id}          -> delete (PRD-112)
+/// GET    /{project_id}/groups/{id}/scene-settings       -> list_effective
+/// PUT    /{project_id}/groups/{id}/scene-settings       -> bulk_update
+/// PUT    /{project_id}/groups/{id}/scene-settings/{st}  -> toggle_single
+/// DELETE /{project_id}/groups/{id}/scene-settings/{st}  -> remove_override
 ///
 /// GET    /{project_id}/scene-types          -> list_by_project
 /// POST   /{project_id}/scene-types          -> create
@@ -70,6 +74,10 @@ pub fn router() -> Router<AppState> {
         .route(
             "/{id}",
             axum::routing::put(character_group::update).delete(character_group::delete),
+        )
+        .nest(
+            "/{id}/scene-settings",
+            super::group_scene_settings::router(),
         );
 
     let scene_type_routes = Router::new()

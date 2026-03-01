@@ -42,6 +42,7 @@ pub mod extension;
 pub mod failure_pattern;
 pub mod frame_annotation;
 pub mod generation;
+pub mod group_scene_setting;
 pub mod generation_metric;
 pub mod generation_receipt;
 pub mod gpu_power;

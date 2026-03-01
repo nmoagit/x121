@@ -62,12 +62,14 @@ pub struct SceneTypeWithTracks {
     pub tracks: Vec<Track>,
 }
 
-/// Computed effective scene setting, used by both the project and character
-/// tiers of the three-level inheritance chain (PRD-123).
+/// Computed effective scene setting, shared across all tiers of the
+/// four-level inheritance chain (PRD-123):
+/// scene_type -> project -> group -> character.
 ///
 /// The `source` field indicates which tier provided the value:
 /// - `"scene_type"`: default from `scene_types.is_active`
 /// - `"project"`: overridden at the project level
+/// - `"group"`: overridden at the group level
 /// - `"character"`: overridden at the character level
 #[derive(Debug, Clone, FromRow, Serialize)]
 pub struct EffectiveSceneSetting {
@@ -76,6 +78,9 @@ pub struct EffectiveSceneSetting {
     pub slug: String,
     pub is_enabled: bool,
     pub source: String,
+    pub track_id: Option<DbId>,
+    pub track_name: Option<String>,
+    pub track_slug: Option<String>,
 }
 
 /// DTO for creating a new scene type.

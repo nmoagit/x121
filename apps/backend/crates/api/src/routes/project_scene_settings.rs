@@ -9,9 +9,10 @@ use crate::state::AppState;
 /// Routes mounted at `/projects/{project_id}/scene-settings`.
 ///
 /// ```text
-/// GET /                            -> list_effective
-/// PUT /                            -> bulk_update
-/// PUT /{scene_type_id}             -> toggle_single
+/// GET  /                                       -> list_effective
+/// PUT  /                                       -> bulk_update
+/// PUT  /{scene_type_id}                        -> toggle_single
+/// PUT  /{scene_type_id}/tracks/{track_id}      -> toggle_single_track
 /// ```
 pub fn router() -> Router<AppState> {
     Router::new()
@@ -22,5 +23,9 @@ pub fn router() -> Router<AppState> {
         .route(
             "/{scene_type_id}",
             put(project_scene_settings::toggle_single),
+        )
+        .route(
+            "/{scene_type_id}/tracks/{track_id}",
+            put(project_scene_settings::toggle_single_track),
         )
 }

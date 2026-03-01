@@ -1,7 +1,7 @@
 //! Project scene settings model and DTOs (PRD-111, PRD-123).
 //!
-//! Middle tier of the three-level inheritance chain:
-//! scene_type (default) -> project settings -> character overrides.
+//! Second tier of the four-level inheritance chain:
+//! scene_type (default) -> project settings -> group settings -> character overrides.
 
 use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
@@ -15,6 +15,7 @@ pub struct ProjectSceneSetting {
     pub id: DbId,
     pub project_id: DbId,
     pub scene_type_id: DbId,
+    pub track_id: Option<DbId>,
     pub is_enabled: bool,
     pub created_at: Timestamp,
     pub updated_at: Timestamp,
@@ -36,8 +37,15 @@ pub struct BulkProjectSceneSettings {
 #[derive(Debug, Clone, Deserialize)]
 pub struct SceneSettingUpdate {
     pub scene_type_id: DbId,
+    pub track_id: Option<DbId>,
     pub is_enabled: bool,
 }
 
 /// Backward-compat alias.
 pub type ProjectSceneSettingUpdate = SceneSettingUpdate;
+
+/// Body for the single-toggle endpoint where scene_type_id comes from the URL path.
+#[derive(Debug, Clone, Deserialize)]
+pub struct ToggleSettingBody {
+    pub is_enabled: bool,
+}

@@ -375,6 +375,10 @@ pub async fn upload_manual_variant(
         .await
         .map_err(|e| AppError::InternalError(e.to_string()))?;
 
+    // Auto-promote to hero if no hero exists yet for this character+variant_type.
+    let existing_hero = ImageVariantRepo::find_hero(&state.pool, character_id, &vtype).await?;
+    let should_be_hero = existing_hero.is_none();
+
     let input = CreateImageVariant {
         character_id,
         source_image_id: None,
@@ -384,7 +388,7 @@ pub async fn upload_manual_variant(
         file_path: file_path.to_string_lossy().to_string(),
         variant_type: Some(vtype),
         provenance: Some(images::PROVENANCE_MANUAL_UPLOAD.to_string()),
-        is_hero: Some(false),
+        is_hero: Some(should_be_hero),
         file_size_bytes: Some(data.len() as i64),
         width: None,
         height: None,

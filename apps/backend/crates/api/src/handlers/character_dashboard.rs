@@ -33,6 +33,16 @@ pub struct CharacterDashboardData {
     pub readiness: Option<ReadinessSnapshot>,
     pub scene_count: i64,
     pub generation_summary: GenerationSummary,
+    pub scene_assignments: Vec<SceneAssignment>,
+}
+
+/// A scene assigned to this character with status and segment count.
+#[derive(Debug, serde::Serialize, sqlx::FromRow)]
+pub struct SceneAssignment {
+    pub scene_id: DbId,
+    pub scene_name: String,
+    pub status: String,
+    pub segment_count: i64,
 }
 
 /// Image variant counts grouped by status.
@@ -189,6 +199,23 @@ pub async fn get_dashboard(
     .fetch_one(&state.pool)
     .await?;
 
+    // Scene assignments with status and segment count.
+    let scene_assignments = sqlx::query_as::<_, SceneAssignment>(
+        "SELECT
+            sc.id AS scene_id,
+            COALESCE(st.name, 'Unknown') AS scene_name,
+            ss.name AS status,
+            (SELECT COUNT(*) FROM segments seg WHERE seg.scene_id = sc.id) AS segment_count
+         FROM scenes sc
+         LEFT JOIN scene_types st ON st.id = sc.scene_type_id
+         LEFT JOIN scene_statuses ss ON ss.id = sc.status_id
+         WHERE sc.character_id = $1 AND sc.deleted_at IS NULL
+         ORDER BY sc.id",
+    )
+    .bind(character_id)
+    .fetch_all(&state.pool)
+    .await?;
+
     let dashboard = CharacterDashboardData {
         character_id: character.id,
         character_name: character.name,
@@ -209,6 +236,7 @@ pub async fn get_dashboard(
             rejected: segment_counts_row.rejected.unwrap_or(0),
             pending: segment_counts_row.pending.unwrap_or(0),
         },
+        scene_assignments,
     };
 
     Ok(Json(DataResponse { data: dashboard }))

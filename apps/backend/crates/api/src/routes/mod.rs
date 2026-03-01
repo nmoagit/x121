@@ -39,6 +39,7 @@ pub mod external_api;
 pub mod failure_analytics;
 pub mod generation;
 pub mod gpu_power;
+pub mod group_scene_settings;
 pub mod hardware;
 pub mod health;
 pub mod image_qa;
