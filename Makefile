@@ -1,6 +1,6 @@
 MANIFEST := --manifest-path apps/backend/Cargo.toml
 
-.PHONY: build check clippy test fmt fmt-check dev install lint typecheck test-frontend storybook migrate reset-db start stop status
+.PHONY: build check clippy test fmt fmt-check dev install lint typecheck test-frontend storybook migrate reset-db start stop status restart refresh renew
 
 # --- Backend (Rust) ---
 
@@ -60,3 +60,16 @@ stop:
 
 status:
 	./scripts/dev-status.sh
+
+restart:
+	./scripts/dev-stop.sh
+	./scripts/dev-start.sh
+
+refresh:
+	./scripts/dev-stop.sh --keep-db --keep-comfyui
+	./scripts/dev-start.sh --no-db --no-comfyui
+
+renew:
+	./scripts/dev-stop.sh --keep-db --keep-comfyui
+	sqlx migrate run --source apps/db/migrations/
+	./scripts/dev-start.sh --no-db --no-comfyui

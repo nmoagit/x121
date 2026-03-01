@@ -44,6 +44,10 @@ stop_process() {
 
   if [[ ! -f "$pidfile" ]]; then
     warn "$name: no pid file found (not running?)"
+    # Still try to kill by name for backend (cargo run leaves orphan children)
+    if [[ "$name" == "backend" ]]; then
+      pkill -f "x121-api" 2>/dev/null || pkill -f "x121_api" 2>/dev/null || true
+    fi
     return 0
   fi
 
@@ -52,7 +56,8 @@ stop_process() {
 
   if kill -0 "$pid" 2>/dev/null; then
     status "Stopping $name (pid $pid)..."
-    kill "$pid" 2>/dev/null || true
+    # Kill the process group to catch child processes (e.g. cargo run -> x121-api)
+    kill -- -"$pid" 2>/dev/null || kill "$pid" 2>/dev/null || true
 
     # Wait up to 5s for graceful shutdown
     local elapsed=0
@@ -61,14 +66,23 @@ stop_process() {
       elapsed=$((elapsed + 1))
       if [[ $elapsed -ge 5 ]]; then
         warn "$name did not stop gracefully, sending SIGKILL..."
-        kill -9 "$pid" 2>/dev/null || true
+        kill -9 -- -"$pid" 2>/dev/null || kill -9 "$pid" 2>/dev/null || true
         break
       fi
     done
 
+    # For backend, also kill any orphaned x121-api processes
+    if [[ "$name" == "backend" ]]; then
+      pkill -f "x121-api" 2>/dev/null || pkill -f "x121_api" 2>/dev/null || true
+    fi
+
     success "$name stopped"
   else
     warn "$name: process $pid not found (already stopped)"
+    # Clean up orphans for backend
+    if [[ "$name" == "backend" ]]; then
+      pkill -f "x121-api" 2>/dev/null || pkill -f "x121_api" 2>/dev/null || true
+    fi
   fi
 
   rm -f "$pidfile"
