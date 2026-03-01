@@ -17,11 +17,12 @@ import { characterStatusBadgeVariant, characterStatusLabel } from "../types";
 interface CharacterCardProps {
   character: Character;
   group?: CharacterGroup;
+  selected?: boolean;
   onClick: () => void;
   onEdit?: () => void;
 }
 
-export function CharacterCard({ character, group, onClick, onEdit }: CharacterCardProps) {
+export function CharacterCard({ character, group, selected, onClick, onEdit }: CharacterCardProps) {
   const statusLabel = characterStatusLabel(character.status_id);
   const badgeVariant = characterStatusBadgeVariant(character.status_id);
 
@@ -33,6 +34,7 @@ export function CharacterCard({ character, group, onClick, onEdit }: CharacterCa
         "group/card cursor-pointer",
         "transition-shadow duration-[var(--duration-fast)] ease-[var(--ease-default)]",
         "hover:shadow-[var(--shadow-md)]",
+        selected && "ring-2 ring-[var(--color-border-accent)]",
       )}
     >
       <button

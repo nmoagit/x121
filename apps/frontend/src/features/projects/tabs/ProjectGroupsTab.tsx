@@ -13,7 +13,7 @@ import { ConfirmDeleteModal, Modal } from "@/components/composite";
 import { EmptyState, FileDropZone } from "@/components/domain";
 import { Grid, Stack } from "@/components/layout";
 import { Button, Input, LoadingPane } from "@/components/primitives";
-import { ChevronDown, ChevronRight, Edit3, Folder, Plus, Trash2, Upload } from "@/tokens/icons";
+import { Check, ChevronDown, ChevronRight, Edit3, Folder, Plus, Trash2, Upload } from "@/tokens/icons";
 
 import { CharacterCard } from "../components/CharacterCard";
 import { ImportConfirmModal } from "../components/ImportConfirmModal";
@@ -69,6 +69,9 @@ export function ProjectGroupsTab({ projectId }: ProjectGroupsTabProps) {
 
   /* --- drag state --- */
   const [dragOverGroupId, setDragOverGroupId] = useState<number | "ungrouped" | null>(null);
+
+  /* --- multi-select --- */
+  const [selectedCharIds, setSelectedCharIds] = useState<Set<number>>(new Set());
 
   /* --- group -> characters mapping --- */
   const charactersByGroup = useMemo(() => {
@@ -146,11 +149,32 @@ export function ProjectGroupsTab({ projectId }: ProjectGroupsTabProps) {
     });
   }
 
-  /* --- drag and drop --- */
-  const handleCharDragStart = useCallback((e: React.DragEvent, characterId: number) => {
-    e.dataTransfer.setData("text/plain", String(characterId));
-    e.dataTransfer.effectAllowed = "move";
+  /* --- multi-select handler --- */
+  const toggleCharSelection = useCallback((charId: number) => {
+    setSelectedCharIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(charId)) {
+        next.delete(charId);
+      } else {
+        next.add(charId);
+      }
+      return next;
+    });
   }, []);
+
+  /* --- drag and drop --- */
+  const handleCharDragStart = useCallback(
+    (e: React.DragEvent, characterId: number) => {
+      // If the dragged card is selected, drag all selected cards;
+      // otherwise drag only the single card
+      const ids = selectedCharIds.has(characterId)
+        ? [...selectedCharIds]
+        : [characterId];
+      e.dataTransfer.setData("text/plain", ids.join(","));
+      e.dataTransfer.effectAllowed = "move";
+    },
+    [selectedCharIds],
+  );
 
   const handleGroupDragOver = useCallback((e: React.DragEvent, groupId: number | "ungrouped") => {
     e.preventDefault();
@@ -169,17 +193,24 @@ export function ProjectGroupsTab({ projectId }: ProjectGroupsTabProps) {
       e.stopPropagation();
       setDragOverGroupId(null);
 
-      const charIdStr = e.dataTransfer.getData("text/plain");
-      const charId = Number(charIdStr);
-      if (!charId) return;
+      const raw = e.dataTransfer.getData("text/plain");
+      const charIds = raw
+        .split(",")
+        .map(Number)
+        .filter((id) => id > 0);
+      if (charIds.length === 0) return;
 
       const newGroupId = targetGroupId === "ungrouped" ? null : targetGroupId;
 
-      // Find the character to check if it's already in this group
-      const char = characters?.find((c) => c.id === charId);
-      if (!char || char.group_id === newGroupId) return;
+      // Move each character that isn't already in the target group
+      for (const charId of charIds) {
+        const char = characters?.find((c) => c.id === charId);
+        if (!char || char.group_id === newGroupId) continue;
+        moveCharacter.mutate({ characterId: charId, groupId: newGroupId });
+      }
 
-      moveCharacter.mutate({ characterId: charId, groupId: newGroupId });
+      // Clear selection after drop
+      setSelectedCharIds(new Set());
     },
     [characters, moveCharacter],
   );
@@ -216,6 +247,18 @@ export function ProjectGroupsTab({ projectId }: ProjectGroupsTabProps) {
           <Button size="sm" icon={<Plus size={14} />} onClick={openCreate}>
             Create Group
           </Button>
+          {selectedCharIds.size > 0 && (
+            <span className="text-sm text-[var(--color-text-muted)] flex items-center gap-[var(--spacing-2)]">
+              {selectedCharIds.size} selected
+              <button
+                type="button"
+                className="text-xs text-[var(--color-action-primary)] hover:text-[var(--color-action-primary-hover)] hover:underline cursor-pointer"
+                onClick={() => setSelectedCharIds(new Set())}
+              >
+                Clear
+              </button>
+            </span>
+          )}
         </div>
 
         {/* Group sections */}
@@ -249,6 +292,8 @@ export function ProjectGroupsTab({ projectId }: ProjectGroupsTabProps) {
                   onToggle={() => toggleExpanded(group.id)}
                   onEdit={() => openEdit(group)}
                   onDelete={() => setDeleteTarget(group)}
+                  selectedCharIds={selectedCharIds}
+                  onCharSelect={toggleCharSelection}
                   onCharClick={(char) =>
                     navigate({
                       to: `/projects/${projectId}/characters/${char.id}`,
@@ -273,6 +318,8 @@ export function ProjectGroupsTab({ projectId }: ProjectGroupsTabProps) {
                 isDragOver={dragOverGroupId === "ungrouped"}
                 projectId={projectId}
                 onToggle={() => toggleExpanded("ungrouped")}
+                selectedCharIds={selectedCharIds}
+                onCharSelect={toggleCharSelection}
                 onCharClick={(char) =>
                   navigate({
                     to: `/projects/${projectId}/characters/${char.id}`,
@@ -350,6 +397,8 @@ interface GroupSectionProps {
   expanded: boolean;
   isDragOver: boolean;
   projectId: number;
+  selectedCharIds: Set<number>;
+  onCharSelect: (charId: number) => void;
   onToggle: () => void;
   onEdit?: () => void;
   onDelete?: () => void;
@@ -367,6 +416,8 @@ function GroupSection({
   groupMap,
   expanded,
   isDragOver,
+  selectedCharIds,
+  onCharSelect,
   onToggle,
   onEdit,
   onDelete,
@@ -445,20 +496,40 @@ function GroupSection({
             </p>
           ) : (
             <Grid cols={1} gap={3} className="sm:grid-cols-2 lg:grid-cols-3">
-              {characters.map((c) => (
-                <div
-                  key={c.id}
-                  draggable
-                  onDragStart={(e) => onCharDragStart(e, c.id)}
-                  className="cursor-grab active:cursor-grabbing"
-                >
-                  <CharacterCard
-                    character={c}
-                    group={c.group_id ? groupMap.get(c.group_id) : undefined}
-                    onClick={() => onCharClick(c)}
-                  />
-                </div>
-              ))}
+              {characters.map((c) => {
+                const isSelected = selectedCharIds.has(c.id);
+                return (
+                  <div
+                    key={c.id}
+                    draggable
+                    onDragStart={(e) => onCharDragStart(e, c.id)}
+                    className="relative cursor-grab active:cursor-grabbing"
+                  >
+                    {/* Selection checkbox */}
+                    <button
+                      type="button"
+                      className={`absolute top-[var(--spacing-2)] left-[var(--spacing-2)] z-10 w-5 h-5 rounded-[var(--radius-sm)] border flex items-center justify-center cursor-pointer transition-colors ${
+                        isSelected
+                          ? "bg-[var(--color-action-primary)] border-[var(--color-action-primary)] text-white"
+                          : "border-[var(--color-border-default)] bg-[var(--color-surface-primary)] hover:border-[var(--color-border-accent)] text-transparent"
+                      }`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onCharSelect(c.id);
+                      }}
+                      aria-label={`${isSelected ? "Deselect" : "Select"} ${c.name}`}
+                    >
+                      <Check size={12} aria-hidden />
+                    </button>
+                    <CharacterCard
+                      character={c}
+                      group={c.group_id ? groupMap.get(c.group_id) : undefined}
+                      selected={isSelected}
+                      onClick={() => onCharClick(c)}
+                    />
+                  </div>
+                );
+              })}
             </Grid>
           )}
         </div>
