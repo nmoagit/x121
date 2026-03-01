@@ -2,14 +2,16 @@
  * Groups management tab for project detail page.
  *
  * Provides CRUD for character groups with expandable sections showing
- * each group's characters, plus an "Ungrouped" section.
+ * each group's characters as draggable cards, plus an "Ungrouped" section.
+ * Characters can be dragged between groups to reassign them.
  */
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
 
 import { Modal } from "@/components/composite";
 import { EmptyState, FileDropZone } from "@/components/domain";
-import { Stack } from "@/components/layout";
+import { Grid, Stack } from "@/components/layout";
 import { Button, Input, LoadingPane } from "@/components/primitives";
 import {
   ChevronDown,
@@ -19,16 +21,17 @@ import {
   Plus,
   Trash2,
   Upload,
-  User,
 } from "@/tokens/icons";
 
+import { CharacterCard } from "../components/CharacterCard";
+import { ImportConfirmModal } from "../components/ImportConfirmModal";
 import {
   useCharacterGroups,
   useCreateGroup,
   useDeleteGroup,
+  useMoveCharacterToGroup,
   useUpdateGroup,
 } from "../hooks/use-character-groups";
-import { ImportConfirmModal } from "../components/ImportConfirmModal";
 import { useCharacterImport } from "../hooks/use-character-import";
 import { useProjectCharacters } from "../hooks/use-project-characters";
 import type { Character, CharacterGroup } from "../types";
@@ -46,6 +49,8 @@ interface ProjectGroupsTabProps {
    -------------------------------------------------------------------------- */
 
 export function ProjectGroupsTab({ projectId }: ProjectGroupsTabProps) {
+  const navigate = useNavigate();
+
   const { data: groups, isLoading: groupsLoading } =
     useCharacterGroups(projectId);
   const { data: characters, isLoading: charsLoading } =
@@ -54,6 +59,7 @@ export function ProjectGroupsTab({ projectId }: ProjectGroupsTabProps) {
   const createGroup = useCreateGroup(projectId);
   const updateGroup = useUpdateGroup(projectId);
   const deleteGroup = useDeleteGroup(projectId);
+  const moveCharacter = useMoveCharacterToGroup(projectId);
   const charImport = useCharacterImport(projectId);
 
   /* --- search --- */
@@ -72,6 +78,11 @@ export function ProjectGroupsTab({ projectId }: ProjectGroupsTabProps) {
     new Set(),
   );
 
+  /* --- drag state --- */
+  const [dragOverGroupId, setDragOverGroupId] = useState<
+    number | "ungrouped" | null
+  >(null);
+
   /* --- group -> characters mapping --- */
   const charactersByGroup = useMemo(() => {
     const map = new Map<number | "ungrouped", Character[]>();
@@ -88,6 +99,15 @@ export function ProjectGroupsTab({ projectId }: ProjectGroupsTabProps) {
     }
     return map;
   }, [characters]);
+
+  /* --- group lookup map --- */
+  const groupMap = useMemo(() => {
+    const map = new Map<number, CharacterGroup>();
+    if (groups) {
+      for (const g of groups) map.set(g.id, g);
+    }
+    return map;
+  }, [groups]);
 
   /* --- filtered groups --- */
   const filteredGroups = useMemo(() => {
@@ -148,6 +168,48 @@ export function ProjectGroupsTab({ projectId }: ProjectGroupsTabProps) {
     });
   }
 
+  /* --- drag and drop --- */
+  const handleCharDragStart = useCallback(
+    (e: React.DragEvent, characterId: number) => {
+      e.dataTransfer.setData("text/plain", String(characterId));
+      e.dataTransfer.effectAllowed = "move";
+    },
+    [],
+  );
+
+  const handleGroupDragOver = useCallback(
+    (e: React.DragEvent, groupId: number | "ungrouped") => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+      setDragOverGroupId(groupId);
+    },
+    [],
+  );
+
+  const handleGroupDragLeave = useCallback(() => {
+    setDragOverGroupId(null);
+  }, []);
+
+  const handleGroupDrop = useCallback(
+    (e: React.DragEvent, targetGroupId: number | "ungrouped") => {
+      e.preventDefault();
+      setDragOverGroupId(null);
+
+      const charIdStr = e.dataTransfer.getData("text/plain");
+      const charId = Number(charIdStr);
+      if (!charId) return;
+
+      const newGroupId = targetGroupId === "ungrouped" ? null : targetGroupId;
+
+      // Find the character to check if it's already in this group
+      const char = characters?.find((c) => c.id === charId);
+      if (!char || char.group_id === newGroupId) return;
+
+      moveCharacter.mutate({ characterId: charId, groupId: newGroupId });
+    },
+    [characters, moveCharacter],
+  );
+
   const isLoading = groupsLoading || charsLoading;
 
   if (isLoading) {
@@ -203,12 +265,25 @@ export function ProjectGroupsTab({ projectId }: ProjectGroupsTabProps) {
             return (
               <GroupSection
                 key={group.id}
+                groupId={group.id}
                 group={group}
                 characters={chars}
+                groupMap={groupMap}
                 expanded={expanded}
+                isDragOver={dragOverGroupId === group.id}
+                projectId={projectId}
                 onToggle={() => toggleExpanded(group.id)}
                 onEdit={() => openEdit(group)}
                 onDelete={() => setDeleteTarget(group)}
+                onCharClick={(char) =>
+                  navigate({
+                    to: `/projects/${projectId}/characters/${char.id}`,
+                  })
+                }
+                onCharDragStart={handleCharDragStart}
+                onDragOver={(e) => handleGroupDragOver(e, group.id)}
+                onDragLeave={handleGroupDragLeave}
+                onDrop={(e) => handleGroupDrop(e, group.id)}
               />
             );
           })}
@@ -216,10 +291,23 @@ export function ProjectGroupsTab({ projectId }: ProjectGroupsTabProps) {
           {/* Ungrouped section */}
           {ungroupedChars.length > 0 && (
             <GroupSection
+              groupId="ungrouped"
               label="Ungrouped"
               characters={ungroupedChars}
+              groupMap={groupMap}
               expanded={expandedIds.has("ungrouped")}
+              isDragOver={dragOverGroupId === "ungrouped"}
+              projectId={projectId}
               onToggle={() => toggleExpanded("ungrouped")}
+              onCharClick={(char) =>
+                navigate({
+                  to: `/projects/${projectId}/characters/${char.id}`,
+                })
+              }
+              onCharDragStart={handleCharDragStart}
+              onDragOver={(e) => handleGroupDragOver(e, "ungrouped")}
+              onDragLeave={handleGroupDragLeave}
+              onDrop={(e) => handleGroupDrop(e, "ungrouped")}
             />
           )}
         </Stack>
@@ -293,33 +381,58 @@ export function ProjectGroupsTab({ projectId }: ProjectGroupsTabProps) {
 }
 
 /* --------------------------------------------------------------------------
-   GroupSection — expandable group header with character list
+   GroupSection — expandable group header with draggable character cards
    -------------------------------------------------------------------------- */
 
 interface GroupSectionProps {
+  groupId: number | "ungrouped";
   group?: CharacterGroup;
   label?: string;
   characters: Character[];
+  groupMap: Map<number, CharacterGroup>;
   expanded: boolean;
+  isDragOver: boolean;
+  projectId: number;
   onToggle: () => void;
   onEdit?: () => void;
   onDelete?: () => void;
+  onCharClick: (char: Character) => void;
+  onCharDragStart: (e: React.DragEvent, characterId: number) => void;
+  onDragOver: (e: React.DragEvent) => void;
+  onDragLeave: () => void;
+  onDrop: (e: React.DragEvent) => void;
 }
 
 function GroupSection({
   group,
   label,
   characters,
+  groupMap,
   expanded,
+  isDragOver,
   onToggle,
   onEdit,
   onDelete,
+  onCharClick,
+  onCharDragStart,
+  onDragOver,
+  onDragLeave,
+  onDrop,
 }: GroupSectionProps) {
   const displayName = group?.name ?? label ?? "Unknown";
   const Chevron = expanded ? ChevronDown : ChevronRight;
 
   return (
-    <div className="rounded-[var(--radius-md)] border border-[var(--color-border-default)] bg-[var(--color-surface-primary)]">
+    <div
+      className={`rounded-[var(--radius-md)] border bg-[var(--color-surface-primary)] transition-colors ${
+        isDragOver
+          ? "border-[var(--color-border-accent)] bg-[var(--color-surface-secondary)]"
+          : "border-[var(--color-border-default)]"
+      }`}
+      onDragOver={onDragOver}
+      onDragLeave={onDragLeave}
+      onDrop={onDrop}
+    >
       {/* Header */}
       <div
         role="button"
@@ -372,31 +485,30 @@ function GroupSection({
         )}
       </div>
 
-      {/* Expanded character list */}
+      {/* Expanded character cards */}
       {expanded && (
-        <div className="border-t border-[var(--color-border-default)] px-[var(--spacing-3)] py-[var(--spacing-2)]">
+        <div className="border-t border-[var(--color-border-default)] px-[var(--spacing-3)] py-[var(--spacing-3)]">
           {characters.length === 0 ? (
             <p className="text-sm text-[var(--color-text-muted)] py-[var(--spacing-2)]">
               No characters in this group.
             </p>
           ) : (
-            <ul className="divide-y divide-[var(--color-border-default)]">
+            <Grid cols={1} gap={3} className="sm:grid-cols-2 lg:grid-cols-3">
               {characters.map((c) => (
-                <li
+                <div
                   key={c.id}
-                  className="flex items-center gap-[var(--spacing-2)] py-[var(--spacing-2)]"
+                  draggable
+                  onDragStart={(e) => onCharDragStart(e, c.id)}
+                  className="cursor-grab active:cursor-grabbing"
                 >
-                  <User
-                    size={14}
-                    className="text-[var(--color-text-muted)] shrink-0"
-                    aria-hidden
+                  <CharacterCard
+                    character={c}
+                    group={c.group_id ? groupMap.get(c.group_id) : undefined}
+                    onClick={() => onCharClick(c)}
                   />
-                  <span className="text-sm text-[var(--color-text-primary)]">
-                    {c.name}
-                  </span>
-                </li>
+                </div>
               ))}
-            </ul>
+            </Grid>
           )}
         </div>
       )}
