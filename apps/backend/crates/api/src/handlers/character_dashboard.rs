@@ -141,12 +141,13 @@ pub async fn get_dashboard(
     .await?;
 
     // Image variant counts by status.
+    // status_id: 1=pending, 2=approved, 3=rejected (from image_variant_statuses).
     let variant_counts_row = sqlx::query_as::<_, VariantCountsRow>(
         "SELECT
             COUNT(*) AS total,
-            COUNT(*) FILTER (WHERE status = 'approved') AS approved,
-            COUNT(*) FILTER (WHERE status = 'rejected') AS rejected,
-            COUNT(*) FILTER (WHERE status = 'pending') AS pending
+            COUNT(*) FILTER (WHERE status_id = 2) AS approved,
+            COUNT(*) FILTER (WHERE status_id = 3) AS rejected,
+            COUNT(*) FILTER (WHERE status_id = 1) AS pending
          FROM image_variants
          WHERE character_id = $1 AND deleted_at IS NULL",
     )
@@ -173,12 +174,13 @@ pub async fn get_dashboard(
     .await?;
 
     // Segment generation summary across all scenes for this character.
+    // status_id: 1=pending, 5=approved, 6=rejected (from segment_statuses).
     let segment_counts_row = sqlx::query_as::<_, SegmentCountsRow>(
         "SELECT
             COUNT(*) AS total,
-            COUNT(*) FILTER (WHERE seg.status = 'approved') AS approved,
-            COUNT(*) FILTER (WHERE seg.status = 'rejected') AS rejected,
-            COUNT(*) FILTER (WHERE seg.status = 'pending') AS pending
+            COUNT(*) FILTER (WHERE seg.status_id = 5) AS approved,
+            COUNT(*) FILTER (WHERE seg.status_id = 6) AS rejected,
+            COUNT(*) FILTER (WHERE seg.status_id = 1) AS pending
          FROM segments seg
          JOIN scenes sc ON sc.id = seg.scene_id
          WHERE sc.character_id = $1 AND sc.deleted_at IS NULL",
