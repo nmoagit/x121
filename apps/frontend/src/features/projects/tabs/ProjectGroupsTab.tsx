@@ -503,12 +503,12 @@ function GroupSection({
                     key={c.id}
                     draggable
                     onDragStart={(e) => onCharDragStart(e, c.id)}
-                    className="relative cursor-grab active:cursor-grabbing"
+                    className="flex items-center gap-[var(--spacing-2)] cursor-grab active:cursor-grabbing"
                   >
                     {/* Selection checkbox */}
                     <button
                       type="button"
-                      className={`absolute top-[var(--spacing-2)] left-[var(--spacing-2)] z-10 w-5 h-5 rounded-[var(--radius-sm)] border flex items-center justify-center cursor-pointer transition-colors ${
+                      className={`shrink-0 w-5 h-5 rounded-[var(--radius-sm)] border flex items-center justify-center cursor-pointer transition-colors ${
                         isSelected
                           ? "bg-[var(--color-action-primary)] border-[var(--color-action-primary)] text-white"
                           : "border-[var(--color-border-default)] bg-[var(--color-surface-primary)] hover:border-[var(--color-border-accent)] text-transparent"
@@ -521,12 +521,14 @@ function GroupSection({
                     >
                       <Check size={12} aria-hidden />
                     </button>
-                    <CharacterCard
-                      character={c}
-                      group={c.group_id ? groupMap.get(c.group_id) : undefined}
-                      selected={isSelected}
-                      onClick={() => onCharClick(c)}
-                    />
+                    <div className="flex-1 min-w-0">
+                      <CharacterCard
+                        character={c}
+                        group={c.group_id ? groupMap.get(c.group_id) : undefined}
+                        selected={isSelected}
+                        onClick={() => onCharClick(c)}
+                      />
+                    </div>
                   </div>
                 );
               })}
