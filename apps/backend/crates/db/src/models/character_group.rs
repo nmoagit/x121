@@ -17,8 +17,12 @@ pub struct CharacterGroup {
 }
 
 /// DTO for creating a new character group.
+///
+/// `project_id` defaults to `0` if omitted from JSON — the API handler
+/// always overrides it with the value from the URL path.
 #[derive(Debug, Clone, Deserialize)]
 pub struct CreateCharacterGroup {
+    #[serde(default)]
     pub project_id: DbId,
     pub name: String,
     pub sort_order: Option<i32>,
