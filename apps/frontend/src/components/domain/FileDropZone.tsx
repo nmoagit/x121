@@ -64,30 +64,37 @@ function parseCsv(text: string): string[] {
     .filter(Boolean);
 }
 
-/** Recursively read directory entries and collect top-level subfolder names. */
+/**
+ * Read a dropped directory and extract character names.
+ *
+ * - If the directory contains subdirectories, each subdirectory name
+ *   is a character (e.g. dropping `batch5/videos/` yields `carli_nicki`,
+ *   `cj_miles`, etc. from its subfolders).
+ * - If the directory contains only files (no subdirectories), the
+ *   directory's own name is the character (e.g. dropping `carli_nicki/`
+ *   yields `carli_nicki`).
+ */
 async function readDirectoryNames(
   entry: FileSystemDirectoryEntry,
 ): Promise<string[]> {
   return new Promise((resolve) => {
     const reader = entry.createReader();
-    const names: string[] = [];
+    const subfolderNames: string[] = [];
 
     reader.readEntries((entries) => {
       for (const e of entries) {
         if (e.isDirectory) {
-          names.push(e.name);
+          subfolderNames.push(e.name);
         }
       }
-      // If no subdirectories, fall back to file names (without extension)
-      if (names.length === 0) {
-        for (const e of entries) {
-          if (e.isFile) {
-            const stem = e.name.replace(/\.[^.]+$/, "");
-            if (stem) names.push(stem);
-          }
-        }
+
+      if (subfolderNames.length > 0) {
+        // Parent directory with character subfolders
+        resolve(subfolderNames);
+      } else {
+        // Leaf character folder — use the folder's own name
+        resolve([entry.name]);
       }
-      resolve(names);
     });
   });
 }
