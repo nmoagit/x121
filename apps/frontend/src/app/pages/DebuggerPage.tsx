@@ -7,8 +7,8 @@
 
 import { useState } from "react";
 
-import { Stack } from "@/components/layout";
-import { Button, Input, Spinner } from "@/components/primitives";
+import { PageHeader, Stack } from "@/components/layout";
+import { Button, Input, LoadingPane } from "@/components/primitives";
 
 import {
   AbortDialog,
@@ -69,12 +69,10 @@ export function DebuggerPage() {
   return (
     <div className="min-h-full">
       <Stack gap={6}>
-        <div>
-          <h1 className="text-xl font-semibold text-[var(--color-text-primary)]">Job Debugger</h1>
-          <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-            Inspect, pause, resume, and tweak running generation jobs.
-          </p>
-        </div>
+        <PageHeader
+          title="Job Debugger"
+          description="Inspect, pause, resume, and tweak running generation jobs."
+        />
 
         {/* Job ID input */}
         <Stack direction="horizontal" gap={3} align="end">
@@ -94,14 +92,7 @@ export function DebuggerPage() {
         </Stack>
 
         {/* Loading state */}
-        {jobId !== null && stateLoading && (
-          <Stack align="center" gap={3}>
-            <Spinner size="lg" />
-            <p className="text-sm text-[var(--color-text-secondary)]">
-              Loading debug state for job #{jobId}...
-            </p>
-          </Stack>
-        )}
+        {jobId !== null && stateLoading && <LoadingPane />}
 
         {/* Debug UI */}
         {jobId !== null &&

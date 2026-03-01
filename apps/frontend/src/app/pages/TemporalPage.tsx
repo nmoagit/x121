@@ -7,8 +7,8 @@
 
 import { useState } from "react";
 
-import { Stack } from "@/components/layout";
-import { Button, Input, Spinner } from "@/components/primitives";
+import { PageHeader, Stack } from "@/components/layout";
+import { Button, Input, LoadingPane } from "@/components/primitives";
 
 import {
   DriftTrendChart,
@@ -44,14 +44,10 @@ export function TemporalPage() {
   return (
     <div className="min-h-full">
       <Stack gap={6}>
-        <div>
-          <h1 className="text-xl font-semibold text-[var(--color-text-primary)]">
-            Temporal Analysis
-          </h1>
-          <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-            Analyze drift, centering, and grain consistency across scene segments.
-          </p>
-        </div>
+        <PageHeader
+          title="Temporal Analysis"
+          description="Analyze drift, centering, and grain consistency across scene segments."
+        />
 
         {/* Scene selector */}
         <Stack direction="horizontal" gap={3} align="end">
@@ -71,14 +67,7 @@ export function TemporalPage() {
         </Stack>
 
         {/* Loading */}
-        {sceneId !== null && isLoading && (
-          <Stack align="center" gap={3}>
-            <Spinner size="lg" />
-            <p className="text-sm text-[var(--color-text-secondary)]">
-              Loading temporal metrics...
-            </p>
-          </Stack>
-        )}
+        {sceneId !== null && isLoading && <LoadingPane />}
 
         {/* Drift trend chart */}
         {sceneId !== null && !isLoading && (

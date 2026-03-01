@@ -7,8 +7,8 @@
 
 import { useState } from "react";
 
-import { Stack } from "@/components/layout";
-import { Button, Spinner } from "@/components/primitives";
+import { PageHeader, Stack } from "@/components/layout";
+import { Button, LoadingPane, Spinner } from "@/components/primitives";
 
 import {
   BatchDuplicateGrid,
@@ -68,25 +68,13 @@ export function DuplicatesPage() {
   return (
     <div className="min-h-full">
       <Stack gap={6}>
-        <div>
-          <h1 className="text-xl font-semibold text-[var(--color-text-primary)]">
-            Duplicate Detection
-          </h1>
-          <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-            Configure similarity thresholds and resolve flagged duplicate
-            characters.
-          </p>
-        </div>
+        <PageHeader
+          title="Duplicate Detection"
+          description="Configure similarity thresholds and resolve flagged duplicate characters."
+        />
 
         {/* Settings */}
-        {settingsLoading && (
-          <Stack align="center" gap={3}>
-            <Spinner size="lg" />
-            <p className="text-sm text-[var(--color-text-secondary)]">
-              Loading settings...
-            </p>
-          </Stack>
-        )}
+        {settingsLoading && <LoadingPane />}
 
         {settings && (
           <ThresholdSettings

@@ -1,0 +1,41 @@
+/**
+ * Clickable list row with selected state and keyboard accessibility.
+ *
+ * Used in list/detail layouts where clicking a row selects it
+ * (wiki articles, workflow list, onboarding sessions, etc.).
+ */
+
+import type { ReactNode } from "react";
+
+interface SelectableRowProps {
+  /** Whether this row is currently selected. */
+  isSelected: boolean;
+  /** Called when the row is clicked or activated via keyboard. */
+  onSelect: () => void;
+  /** Row content. */
+  children: ReactNode;
+}
+
+export function SelectableRow({
+  isSelected,
+  onSelect,
+  children,
+}: SelectableRowProps) {
+  return (
+    <div
+      className={`flex items-center justify-between rounded border p-3 cursor-pointer transition-colors ${
+        isSelected
+          ? "border-[var(--color-action-primary)] bg-[var(--color-surface-secondary)]"
+          : "border-[var(--color-border-default)] hover:bg-[var(--color-surface-secondary)]"
+      }`}
+      onClick={onSelect}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") onSelect();
+      }}
+    >
+      {children}
+    </div>
+  );
+}

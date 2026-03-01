@@ -7,8 +7,8 @@
 
 import { useState } from "react";
 
-import { Stack } from "@/components/layout";
-import { Button, Input, Spinner } from "@/components/primitives";
+import { PageHeader, Stack } from "@/components/layout";
+import { Button, Input, LoadingPane } from "@/components/primitives";
 
 import { BudgetDashboard, useBudget, useBudgetHistory } from "@/features/budget-quota";
 
@@ -30,14 +30,10 @@ export function BudgetPage() {
   return (
     <div className="min-h-full">
       <Stack gap={6}>
-        <div>
-          <h1 className="text-xl font-semibold text-[var(--color-text-primary)]">
-            Generation Budgets
-          </h1>
-          <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-            View and manage per-project generation budget quotas and consumption.
-          </p>
-        </div>
+        <PageHeader
+          title="Generation Budgets"
+          description="View and manage per-project generation budget quotas and consumption."
+        />
 
         <Stack direction="horizontal" gap={3} align="end">
           <div className="w-48">
@@ -55,11 +51,7 @@ export function BudgetPage() {
           </Button>
         </Stack>
 
-        {projectId !== null && statusLoading && (
-          <Stack align="center" gap={3}>
-            <Spinner size="lg" />
-          </Stack>
-        )}
+        {projectId !== null && statusLoading && <LoadingPane />}
 
         {projectId !== null && status && (
           <BudgetDashboard status={status} history={history ?? []} />

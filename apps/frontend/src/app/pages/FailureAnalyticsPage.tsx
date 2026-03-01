@@ -8,7 +8,7 @@
 
 import { useState } from "react";
 
-import { Stack } from "@/components/layout";
+import { PageHeader, Stack } from "@/components/layout";
 
 import {
   FailureHeatmap,
@@ -31,15 +31,10 @@ export function FailureAnalyticsPage() {
   return (
     <div className="min-h-full">
       <Stack gap={6}>
-        <div>
-          <h1 className="text-xl font-semibold text-[var(--color-text-primary)]">
-            Failure Analytics
-          </h1>
-          <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-            Identify failure patterns across workflows, characters, and scene
-            types.
-          </p>
-        </div>
+        <PageHeader
+          title="Failure Analytics"
+          description="Identify failure patterns across workflows, characters, and scene types."
+        />
 
         {/* Heatmap */}
         <FailureHeatmap />

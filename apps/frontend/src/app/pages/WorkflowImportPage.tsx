@@ -6,7 +6,7 @@
  */
 
 import { useCallback } from "react";
-import { Stack } from "@/components/layout";
+import { PageHeader, Stack } from "@/components/layout";
 
 import {
   ImportWizard,
@@ -36,15 +36,10 @@ export function WorkflowImportPage() {
   return (
     <div className="min-h-full">
       <Stack gap={6}>
-        <div>
-          <h1 className="text-xl font-semibold text-[var(--color-text-primary)]">
-            Import Workflow
-          </h1>
-          <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-            Upload and validate ComfyUI workflow JSON files for use in
-            generation pipelines.
-          </p>
-        </div>
+        <PageHeader
+          title="Import Workflow"
+          description="Upload and validate ComfyUI workflow JSON files for use in generation pipelines."
+        />
 
         <ImportWizard
           onImport={handleImport}

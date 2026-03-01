@@ -7,7 +7,7 @@
 
 import { useState } from "react";
 
-import { Stack } from "@/components/layout";
+import { PageHeader, Stack } from "@/components/layout";
 import { Button, Input } from "@/components/primitives";
 
 import {
@@ -47,14 +47,10 @@ export function ImporterPage() {
   return (
     <div className="min-h-full">
       <Stack gap={6}>
-        <div>
-          <h1 className="text-xl font-semibold text-[var(--color-text-primary)]">
-            Folder Importer
-          </h1>
-          <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-            Import characters and assets from a folder structure into a project.
-          </p>
-        </div>
+        <PageHeader
+          title="Folder Importer"
+          description="Import characters and assets from a folder structure into a project."
+        />
 
         {/* Project selector */}
         <Stack direction="horizontal" gap={3} align="end">

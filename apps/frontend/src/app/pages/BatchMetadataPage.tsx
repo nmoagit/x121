@@ -7,7 +7,7 @@
 
 import { useState } from "react";
 
-import { Stack } from "@/components/layout";
+import { PageHeader, Stack } from "@/components/layout";
 import { Button, Input } from "@/components/primitives";
 
 import { BatchMetadataPanel } from "@/features/batch-metadata";
@@ -30,15 +30,10 @@ export function BatchMetadataPage() {
   return (
     <div className="min-h-full">
       <Stack gap={6}>
-        <div>
-          <h1 className="text-xl font-semibold text-[var(--color-text-primary)]">
-            Batch Metadata Operations
-          </h1>
-          <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-            Perform bulk metadata edits, search-replace, and field operations across multiple
-            characters.
-          </p>
-        </div>
+        <PageHeader
+          title="Batch Metadata Operations"
+          description="Perform bulk metadata edits, search-replace, and field operations across multiple characters."
+        />
 
         {/* Project selector */}
         <Stack direction="horizontal" gap={3} align="end">

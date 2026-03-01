@@ -6,7 +6,7 @@
 
 import { useState } from "react";
 
-import { Stack } from "@/components/layout";
+import { PageHeader, Stack } from "@/components/layout";
 import { Button, Input } from "@/components/primitives";
 
 import { ContactSheetPage as ContactSheet } from "@/features/contact-sheet";
@@ -25,12 +25,10 @@ export function ContactSheetPage() {
   return (
     <div className="min-h-full">
       <Stack gap={6}>
-        <div>
-          <h1 className="text-xl font-semibold text-[var(--color-text-primary)]">Contact Sheet</h1>
-          <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-            View character face grids across scenes for consistency review.
-          </p>
-        </div>
+        <PageHeader
+          title="Contact Sheet"
+          description="View character face grids across scenes for consistency review."
+        />
 
         <Stack direction="horizontal" gap={3} align="end">
           <div className="w-48">

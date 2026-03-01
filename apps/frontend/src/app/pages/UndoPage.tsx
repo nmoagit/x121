@@ -7,7 +7,7 @@
 
 import { useState } from "react";
 
-import { Stack } from "@/components/layout";
+import { PageHeader, Stack } from "@/components/layout";
 import { Button, Input, Select } from "@/components/primitives";
 
 import { HistoryBrowser, StatePreview, useEntityUndo } from "@/features/undo";
@@ -50,12 +50,10 @@ export function UndoPage() {
   return (
     <div className="min-h-full">
       <Stack gap={6}>
-        <div>
-          <h1 className="text-xl font-semibold text-[var(--color-text-primary)]">Undo History</h1>
-          <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-            Browse and navigate the undo/redo tree for any entity.
-          </p>
-        </div>
+        <PageHeader
+          title="Undo History"
+          description="Browse and navigate the undo/redo tree for any entity."
+        />
 
         {/* Entity selector */}
         <Stack direction="horizontal" gap={3} align="end">

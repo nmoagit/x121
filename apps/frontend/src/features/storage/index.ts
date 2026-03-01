@@ -29,6 +29,7 @@ export {
   useDecommissionBackend,
   useMigration,
   useRollbackMigration,
+  useSetDefaultBackend,
   useSimulatePolicy,
   useStartMigration,
   useStorageBackends,

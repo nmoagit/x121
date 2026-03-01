@@ -7,8 +7,8 @@
 
 import { useState } from "react";
 
-import { Stack } from "@/components/layout";
-import { Button, Input } from "@/components/primitives";
+import { PageHeader, Stack } from "@/components/layout";
+import { Button, Input, TabBar } from "@/components/primitives";
 
 import { ExecutionLogViewer, HookManager, HookTestConsole } from "@/features/pipeline-hooks";
 
@@ -35,28 +35,12 @@ export function PipelineHooksPage() {
   return (
     <div className="min-h-full">
       <Stack gap={6}>
-        <div>
-          <h1 className="text-xl font-semibold text-[var(--color-text-primary)]">Pipeline Hooks</h1>
-          <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-            Configure shell, Python, and webhook hooks that run at pipeline stage boundaries.
-          </p>
-        </div>
+        <PageHeader
+          title="Pipeline Hooks"
+          description="Configure shell, Python, and webhook hooks that run at pipeline stage boundaries."
+        />
 
-        {/* Tab bar */}
-        <div className="flex gap-1 border-b border-[var(--color-border-default)]">
-          {TABS.map((tab) => (
-            <Button
-              key={tab.key}
-              type="button"
-              variant={activeTab === tab.key ? "primary" : "ghost"}
-              size="sm"
-              onClick={() => setActiveTab(tab.key)}
-              className="rounded-b-none"
-            >
-              {tab.label}
-            </Button>
-          ))}
-        </div>
+        <TabBar tabs={TABS} activeTab={activeTab} onChange={(k) => setActiveTab(k as TabKey)} />
 
         {/* Tab content */}
         {activeTab === "manage" && <HookManager />}

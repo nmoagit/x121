@@ -7,8 +7,8 @@
 
 import { useState } from "react";
 
-import { Stack } from "@/components/layout";
-import { Button } from "@/components/primitives";
+import { PageHeader, Stack } from "@/components/layout";
+import { TabBar } from "@/components/primitives";
 
 import { SceneCatalogList } from "@/features/scene-catalog/SceneCatalogList";
 import { TrackManager } from "@/features/scene-catalog/TrackManager";
@@ -34,30 +34,12 @@ export function SceneCatalogPage() {
   return (
     <div className="min-h-full">
       <Stack gap={6}>
-        <div>
-          <h1 className="text-xl font-semibold text-[var(--color-text-primary)]">
-            Scene Catalog
-          </h1>
-          <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-            Manage the global scene catalog and track definitions.
-          </p>
-        </div>
+        <PageHeader
+          title="Scene Catalog"
+          description="Manage the global scene catalog and track definitions."
+        />
 
-        {/* Tab bar */}
-        <div className="flex gap-1 border-b border-[var(--color-border-default)]">
-          {TABS.map((tab) => (
-            <Button
-              key={tab.key}
-              type="button"
-              variant={activeTab === tab.key ? "primary" : "ghost"}
-              size="sm"
-              onClick={() => setActiveTab(tab.key)}
-              className="rounded-b-none"
-            >
-              {tab.label}
-            </Button>
-          ))}
-        </div>
+        <TabBar tabs={TABS} activeTab={activeTab} onChange={(k) => setActiveTab(k as TabKey)} />
 
         {/* Tab content */}
         {activeTab === "catalog" && <SceneCatalogList />}
