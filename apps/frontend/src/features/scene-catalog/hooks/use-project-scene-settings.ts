@@ -56,7 +56,7 @@ export function useToggleProjectSceneSetting(projectId: number) {
   return useMutation({
     mutationFn: (update: SceneSettingUpdate) =>
       api.put<EffectiveSceneSetting>(
-        `/projects/${projectId}/scene-settings/${update.scene_catalog_id}`,
+        `/projects/${projectId}/scene-settings/${update.scene_type_id}`,
         { is_enabled: update.is_enabled },
       ),
     onSuccess: () => {

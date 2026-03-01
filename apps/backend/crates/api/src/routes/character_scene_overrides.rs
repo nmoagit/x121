@@ -1,4 +1,4 @@
-//! Route definitions for character scene overrides (PRD-111).
+//! Route definitions for character scene overrides (PRD-111, PRD-123).
 
 use axum::routing::{get, put};
 use axum::Router;
@@ -11,8 +11,8 @@ use crate::state::AppState;
 /// ```text
 /// GET    /                         -> list_effective
 /// PUT    /                         -> bulk_update
-/// PUT    /{scene_catalog_id}       -> toggle_single
-/// DELETE /{scene_catalog_id}       -> remove_override
+/// PUT    /{scene_type_id}          -> toggle_single
+/// DELETE /{scene_type_id}          -> remove_override
 /// ```
 pub fn router() -> Router<AppState> {
     Router::new()
@@ -22,7 +22,7 @@ pub fn router() -> Router<AppState> {
                 .put(character_scene_overrides::bulk_update),
         )
         .route(
-            "/{scene_catalog_id}",
+            "/{scene_type_id}",
             put(character_scene_overrides::toggle_single)
                 .delete(character_scene_overrides::remove_override),
         )

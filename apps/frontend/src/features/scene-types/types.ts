@@ -6,6 +6,8 @@ export interface SceneType {
   id: number;
   project_id: number | null;
   name: string;
+  /** PRD-123: slug absorbed from scene_catalog. */
+  slug: string;
   status_id: number;
   description: string | null;
   workflow_json: unknown | null;
@@ -24,18 +26,31 @@ export interface SceneType {
   generation_params: unknown | null;
   sort_order: number;
   is_active: boolean;
+  /** PRD-123: absorbed from scene_catalog. */
+  has_clothes_off_transition: boolean;
   is_studio_level: boolean;
-  deleted_at: string | null;
-  created_at: string;
-  updated_at: string;
   /** PRD-100: parent scene type for inheritance. */
   parent_scene_type_id: number | null;
   /** PRD-100: depth in the inheritance tree (0 = root). */
   depth: number;
+  generation_strategy: string;
+  expected_chunks: number | null;
+  chunk_output_pattern: string | null;
+  // -- Auto-retry policy (PRD-71) --
+  auto_retry_enabled: boolean;
+  auto_retry_max_attempts: number;
+  auto_retry_trigger_checks: string[] | null;
+  auto_retry_seed_variation: boolean;
+  auto_retry_cfg_jitter: number | null;
+  deleted_at: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface CreateSceneType {
   name: string;
+  /** PRD-123: required slug for unified scene type. */
+  slug: string;
   project_id?: number | null;
   description?: string | null;
   status_id?: number | null;
@@ -55,13 +70,24 @@ export interface CreateSceneType {
   generation_params?: unknown | null;
   sort_order?: number | null;
   is_active?: boolean | null;
+  has_clothes_off_transition?: boolean | null;
   is_studio_level?: boolean | null;
   /** PRD-100: parent scene type for inheritance. */
   parent_scene_type_id?: number | null;
+  generation_strategy?: string | null;
+  expected_chunks?: number | null;
+  chunk_output_pattern?: string | null;
+  // -- Auto-retry policy (PRD-71) --
+  auto_retry_enabled?: boolean | null;
+  auto_retry_max_attempts?: number | null;
+  auto_retry_trigger_checks?: string[] | null;
+  auto_retry_seed_variation?: boolean | null;
+  auto_retry_cfg_jitter?: number | null;
 }
 
 export interface UpdateSceneType {
   name?: string;
+  slug?: string;
   description?: string | null;
   status_id?: number | null;
   workflow_json?: unknown | null;
@@ -80,11 +106,21 @@ export interface UpdateSceneType {
   generation_params?: unknown | null;
   sort_order?: number | null;
   is_active?: boolean | null;
+  has_clothes_off_transition?: boolean | null;
   is_studio_level?: boolean | null;
   /** PRD-100: parent scene type for inheritance. */
   parent_scene_type_id?: number | null;
   /** PRD-100: depth in the inheritance tree. */
   depth?: number | null;
+  generation_strategy?: string | null;
+  expected_chunks?: number | null;
+  chunk_output_pattern?: string | null;
+  // -- Auto-retry policy (PRD-71) --
+  auto_retry_enabled?: boolean | null;
+  auto_retry_max_attempts?: number | null;
+  auto_retry_trigger_checks?: string[] | null;
+  auto_retry_seed_variation?: boolean | null;
+  auto_retry_cfg_jitter?: number | null;
 }
 
 export interface PromptPreviewResponse {

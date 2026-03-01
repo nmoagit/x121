@@ -10,6 +10,7 @@ import { useState } from "react";
 import { Card, CardBody, CardHeader } from "@/components/composite/Card";
 import { Button } from "@/components/primitives/Button";
 import { Input } from "@/components/primitives/Input";
+import { generateSnakeSlug } from "@/lib/format";
 
 import {
   PromptTemplateEditor,
@@ -33,7 +34,9 @@ interface SceneTypeEditorProps {
    -------------------------------------------------------------------------- */
 
 export function SceneTypeEditor({ sceneType, onSave, onCancel }: SceneTypeEditorProps) {
+  const isEdit = sceneType !== undefined;
   const [name, setName] = useState(sceneType?.name ?? "");
+  const [slug, setSlug] = useState(sceneType?.slug ?? "");
   const [description, setDescription] = useState(sceneType?.description ?? "");
   const [targetDuration, setTargetDuration] = useState(
     sceneType?.target_duration_secs?.toString() ?? "",
@@ -62,6 +65,7 @@ export function SceneTypeEditor({ sceneType, onSave, onCancel }: SceneTypeEditor
 
     const data: CreateSceneType = {
       name: name.trim(),
+      slug: slug.trim() || generateSnakeSlug(name.trim()),
       description: description.trim() || null,
       target_duration_secs: targetDuration ? Number.parseInt(targetDuration, 10) : null,
       segment_duration_secs: segmentDuration ? Number.parseInt(segmentDuration, 10) : null,
@@ -90,9 +94,21 @@ export function SceneTypeEditor({ sceneType, onSave, onCancel }: SceneTypeEditor
             <Input
               label="Name"
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) => {
+                setName(e.target.value);
+                if (!isEdit) {
+                  setSlug(generateSnakeSlug(e.target.value));
+                }
+              }}
               placeholder="Scene type name"
               required
+            />
+            <Input
+              label="Slug"
+              value={slug}
+              onChange={(e) => setSlug(e.target.value)}
+              placeholder="auto-generated"
+              disabled={isEdit}
             />
             <div className="flex flex-col gap-1.5">
               <label

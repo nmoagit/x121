@@ -32,7 +32,7 @@ interface ProjectSceneSettingsProps {
 
 interface SettingRowProps {
   setting: EffectiveSceneSetting;
-  onToggle: (sceneCatalogId: number, enabled: boolean) => void;
+  onToggle: (sceneTypeId: number, enabled: boolean) => void;
   isPending: boolean;
 }
 
@@ -46,7 +46,7 @@ function SettingRow({ setting, onToggle, isPending }: SettingRowProps) {
       <td className="px-4 py-3">
         <Toggle
           checked={setting.is_enabled}
-          onChange={(checked) => onToggle(setting.scene_catalog_id, checked)}
+          onChange={(checked) => onToggle(setting.scene_type_id, checked)}
           size="sm"
           disabled={isPending}
         />
@@ -67,9 +67,9 @@ export function ProjectSceneSettings({ projectId }: ProjectSceneSettingsProps) {
   const toggleMutation = useToggleProjectSceneSetting(projectId);
 
   const handleToggle = useCallback(
-    (sceneCatalogId: number, enabled: boolean) => {
+    (sceneTypeId: number, enabled: boolean) => {
       toggleMutation.mutate({
-        scene_catalog_id: sceneCatalogId,
+        scene_type_id: sceneTypeId,
         is_enabled: enabled,
       });
     },
@@ -125,7 +125,7 @@ export function ProjectSceneSettings({ projectId }: ProjectSceneSettingsProps) {
               ) : (
                 settings.map((setting) => (
                   <SettingRow
-                    key={setting.scene_catalog_id}
+                    key={setting.scene_type_id}
                     setting={setting}
                     onToggle={handleToggle}
                     isPending={toggleMutation.isPending}

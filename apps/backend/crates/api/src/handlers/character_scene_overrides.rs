@@ -1,4 +1,4 @@
-//! Handlers for per-character scene overrides (PRD-111).
+//! Handlers for per-character scene overrides (PRD-111, PRD-123).
 //!
 //! Routes nested under `/characters/{character_id}/scene-settings`.
 
@@ -56,39 +56,39 @@ pub async fn bulk_update(
     Ok(Json(DataResponse { data: results }))
 }
 
-/// PUT /api/v1/characters/{character_id}/scene-settings/{scene_catalog_id}
+/// PUT /api/v1/characters/{character_id}/scene-settings/{scene_type_id}
 ///
 /// Toggle a single scene override for a character.
 pub async fn toggle_single(
     State(state): State<AppState>,
-    Path((character_id, scene_catalog_id)): Path<(DbId, DbId)>,
+    Path((character_id, scene_type_id)): Path<(DbId, DbId)>,
     Json(body): Json<CharacterSceneOverrideUpdate>,
 ) -> AppResult<impl IntoResponse> {
     let setting = CharacterSceneOverrideRepo::upsert(
         &state.pool,
         character_id,
-        scene_catalog_id,
+        scene_type_id,
         body.is_enabled,
     )
     .await?;
     Ok(Json(DataResponse { data: setting }))
 }
 
-/// DELETE /api/v1/characters/{character_id}/scene-settings/{scene_catalog_id}
+/// DELETE /api/v1/characters/{character_id}/scene-settings/{scene_type_id}
 ///
-/// Remove a character scene override (reverts to project/catalog default).
+/// Remove a character scene override (reverts to project/scene_type default).
 pub async fn remove_override(
     State(state): State<AppState>,
-    Path((character_id, scene_catalog_id)): Path<(DbId, DbId)>,
+    Path((character_id, scene_type_id)): Path<(DbId, DbId)>,
 ) -> AppResult<StatusCode> {
     let removed =
-        CharacterSceneOverrideRepo::delete(&state.pool, character_id, scene_catalog_id).await?;
+        CharacterSceneOverrideRepo::delete(&state.pool, character_id, scene_type_id).await?;
     if removed {
         Ok(StatusCode::NO_CONTENT)
     } else {
         Err(AppError::Core(CoreError::NotFound {
             entity: "CharacterSceneOverride",
-            id: scene_catalog_id,
+            id: scene_type_id,
         }))
     }
 }

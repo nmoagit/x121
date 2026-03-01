@@ -45,15 +45,15 @@ export interface UpdateSceneCatalogEntry {
 }
 
 export interface EffectiveSceneSetting {
-  scene_catalog_id: number;
+  scene_type_id: number;
   name: string;
   slug: string;
   is_enabled: boolean;
-  source: "catalog" | "project" | "character";
+  source: "scene_type" | "project" | "character";
 }
 
 export interface SceneSettingUpdate {
-  scene_catalog_id: number;
+  scene_type_id: number;
   is_enabled: boolean;
 }
 

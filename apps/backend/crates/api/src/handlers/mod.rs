@@ -94,7 +94,6 @@ pub mod resolution;
 pub mod restitching;
 pub mod review_notes;
 pub mod scene;
-pub mod scene_catalog;
 pub mod scene_type;
 pub mod scene_type_inheritance;
 pub mod scene_video_version;

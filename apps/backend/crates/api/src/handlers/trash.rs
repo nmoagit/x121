@@ -110,7 +110,9 @@ pub async fn purge_one(
 ///
 /// Preview how many rows would be removed by a purge-all, broken down by
 /// entity type, with an estimated byte count from file-bearing tables.
-pub async fn purge_preview(State(state): State<AppState>) -> AppResult<Json<DataResponse<PurgePreview>>> {
+pub async fn purge_preview(
+    State(state): State<AppState>,
+) -> AppResult<Json<DataResponse<PurgePreview>>> {
     let preview = TrashRepo::purge_preview(&state.pool).await?;
     Ok(Json(DataResponse { data: preview }))
 }

@@ -29,7 +29,7 @@ export function useSceneCatalog(includeInactive = false) {
     queryKey: sceneCatalogKeys.list(includeInactive),
     queryFn: () => {
       const params = includeInactive ? "?include_inactive=true" : "";
-      return api.get<SceneCatalogEntry[]>(`/scene-catalog${params}`);
+      return api.get<SceneCatalogEntry[]>(`/scene-types/with-tracks${params}`);
     },
   });
 }
@@ -38,7 +38,7 @@ export function useSceneCatalog(includeInactive = false) {
 export function useSceneCatalogEntry(id: number | null) {
   return useQuery({
     queryKey: sceneCatalogKeys.detail(id ?? 0),
-    queryFn: () => api.get<SceneCatalogEntry>(`/scene-catalog/${id}`),
+    queryFn: () => api.get<SceneCatalogEntry>(`/scene-types/${id}`),
     enabled: id !== null,
   });
 }
@@ -53,7 +53,7 @@ export function useCreateSceneCatalogEntry() {
 
   return useMutation({
     mutationFn: (data: CreateSceneCatalogEntry) =>
-      api.post<SceneCatalogEntry>("/scene-catalog", data),
+      api.post<SceneCatalogEntry>("/scene-types", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: sceneCatalogKeys.all });
     },
@@ -66,7 +66,7 @@ export function useUpdateSceneCatalogEntry(id: number) {
 
   return useMutation({
     mutationFn: (data: UpdateSceneCatalogEntry) =>
-      api.put<SceneCatalogEntry>(`/scene-catalog/${id}`, data),
+      api.put<SceneCatalogEntry>(`/scene-types/${id}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: sceneCatalogKeys.detail(id) });
       queryClient.invalidateQueries({ queryKey: sceneCatalogKeys.lists() });
@@ -79,7 +79,7 @@ export function useDeactivateSceneCatalogEntry() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: number) => api.delete(`/scene-catalog/${id}`),
+    mutationFn: (id: number) => api.delete(`/scene-types/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: sceneCatalogKeys.all });
     },

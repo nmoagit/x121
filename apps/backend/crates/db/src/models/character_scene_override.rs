@@ -1,21 +1,21 @@
-//! Character scene override model and DTOs (PRD-111).
+//! Character scene override model and DTOs (PRD-111, PRD-123).
 //!
 //! Leaf tier of the three-level inheritance chain:
-//! catalog (default) -> project settings -> character overrides.
+//! scene_type (default) -> project settings -> character overrides.
 
 use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
 use x121_core::types::{DbId, Timestamp};
 
 pub use super::project_scene_setting::SceneSettingUpdate;
-pub use super::scene_catalog::EffectiveSceneSetting;
+pub use super::scene_type::EffectiveSceneSetting;
 
 /// A row from the `character_scene_overrides` table.
 #[derive(Debug, Clone, FromRow, Serialize)]
 pub struct CharacterSceneOverride {
     pub id: DbId,
     pub character_id: DbId,
-    pub scene_catalog_id: DbId,
+    pub scene_type_id: DbId,
     pub is_enabled: bool,
     pub created_at: Timestamp,
     pub updated_at: Timestamp,

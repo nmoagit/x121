@@ -16,7 +16,7 @@ import type { EffectiveSceneSetting } from "./types";
 type SettingSource = EffectiveSceneSetting["source"];
 
 const SOURCE_CONFIG: Record<SettingSource, { label: string; variant: BadgeVariant }> = {
-  catalog: { label: "Default", variant: "default" },
+  scene_type: { label: "Default", variant: "default" },
   project: { label: "Project", variant: "info" },
   character: { label: "Character", variant: "warning" },
 };

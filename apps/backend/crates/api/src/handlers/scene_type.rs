@@ -3,11 +3,15 @@
 //! Scene types have two scopes:
 //! - Project-scoped: `/projects/{project_id}/scene-types[/{id}]`
 //! - Studio-level:   `/scene-types[/{id}]`
+//!
+//! After PRD-123 unification, this module also provides track management
+//! endpoints (ported from the former `scene_catalog` handlers).
 
 use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::Json;
+use serde::Deserialize;
 use x121_core::error::CoreError;
 use x121_core::types::DbId;
 use x121_db::models::scene_type::{
@@ -18,8 +22,15 @@ use x121_db::repositories::{CharacterRepo, SceneTypeRepo};
 
 use crate::error::{AppError, AppResult};
 use crate::handlers::scene_type_inheritance::ensure_scene_type_exists;
+use crate::query::IncludeInactiveParams;
 use crate::response::DataResponse;
 use crate::state::AppState;
+
+/// Request body for adding tracks to a scene type.
+#[derive(Debug, Deserialize)]
+pub struct AddTracksRequest {
+    pub track_ids: Vec<DbId>,
+}
 
 // ---------------------------------------------------------------------------
 // Project-scoped handlers
@@ -90,7 +101,9 @@ pub async fn create_studio(
 }
 
 /// GET /api/v1/scene-types
-pub async fn list_studio_level(State(state): State<AppState>) -> AppResult<Json<DataResponse<Vec<SceneType>>>> {
+pub async fn list_studio_level(
+    State(state): State<AppState>,
+) -> AppResult<Json<DataResponse<Vec<SceneType>>>> {
     let scene_types = SceneTypeRepo::list_studio_level(&state.pool).await?;
     Ok(Json(DataResponse { data: scene_types }))
 }
@@ -378,4 +391,58 @@ pub async fn validate_scene_type_config(
             warnings,
         },
     }))
+}
+
+// ---------------------------------------------------------------------------
+// Track management endpoints (PRD-123, ported from scene_catalog)
+// ---------------------------------------------------------------------------
+
+/// GET /api/v1/scene-types/with-tracks?include_inactive=false
+///
+/// List all scene types with their associated tracks.
+pub async fn list_with_tracks(
+    State(state): State<AppState>,
+    Query(params): Query<IncludeInactiveParams>,
+) -> AppResult<impl IntoResponse> {
+    let entries = SceneTypeRepo::list_with_tracks(&state.pool, params.include_inactive).await?;
+    Ok(Json(DataResponse { data: entries }))
+}
+
+/// POST /api/v1/scene-types/{id}/tracks
+///
+/// Add one or more tracks to a scene type.
+pub async fn add_tracks(
+    State(state): State<AppState>,
+    Path(id): Path<DbId>,
+    Json(body): Json<AddTracksRequest>,
+) -> AppResult<impl IntoResponse> {
+    // Verify scene type exists
+    ensure_scene_type_exists(&state.pool, id).await?;
+
+    for track_id in &body.track_ids {
+        SceneTypeRepo::add_track(&state.pool, id, *track_id).await?;
+    }
+
+    let with_tracks = SceneTypeRepo::find_by_id_with_tracks(&state.pool, id)
+        .await?
+        .expect("verified exists");
+    Ok(Json(DataResponse { data: with_tracks }))
+}
+
+/// DELETE /api/v1/scene-types/{id}/tracks/{track_id}
+///
+/// Remove a single track from a scene type.
+pub async fn remove_track(
+    State(state): State<AppState>,
+    Path((id, track_id)): Path<(DbId, DbId)>,
+) -> AppResult<StatusCode> {
+    let removed = SceneTypeRepo::remove_track(&state.pool, id, track_id).await?;
+    if removed {
+        Ok(StatusCode::NO_CONTENT)
+    } else {
+        Err(AppError::Core(CoreError::NotFound {
+            entity: "SceneTypeTrack",
+            id,
+        }))
+    }
 }

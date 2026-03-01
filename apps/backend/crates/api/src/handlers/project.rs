@@ -140,16 +140,18 @@ pub async fn get_stats(
         0.0
     };
 
-    Ok(Json(DataResponse { data: ProjectStats {
-        character_count: char_stats.0,
-        characters_ready: char_stats.1,
-        characters_generating: char_stats.2,
-        characters_complete: char_stats.3,
-        scenes_enabled: scene_stats.0,
-        scenes_generated: scene_stats.1,
-        scenes_approved: scene_stats.2,
-        scenes_rejected: scene_stats.3,
-        scenes_pending: scene_stats.4,
-        delivery_readiness_pct,
-    }}))
+    Ok(Json(DataResponse {
+        data: ProjectStats {
+            character_count: char_stats.0,
+            characters_ready: char_stats.1,
+            characters_generating: char_stats.2,
+            characters_complete: char_stats.3,
+            scenes_enabled: scene_stats.0,
+            scenes_generated: scene_stats.1,
+            scenes_approved: scene_stats.2,
+            scenes_rejected: scene_stats.3,
+            scenes_pending: scene_stats.4,
+            delivery_readiness_pct,
+        },
+    }))
 }

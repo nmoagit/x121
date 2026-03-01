@@ -104,7 +104,6 @@ pub mod review_note;
 pub mod role;
 pub mod scene;
 pub mod scene_artifact;
-pub mod scene_catalog;
 pub mod scene_type;
 pub mod scene_type_override;
 pub mod scene_type_prompt_default;

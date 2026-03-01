@@ -31,7 +31,9 @@ use crate::state::AppState;
 /// GET /api/v1/validation/rule-types
 ///
 /// List all available validation rule types (seeded lookup data).
-pub async fn list_rule_types(State(state): State<AppState>) -> AppResult<Json<DataResponse<Vec<ValidationRuleType>>>> {
+pub async fn list_rule_types(
+    State(state): State<AppState>,
+) -> AppResult<Json<DataResponse<Vec<ValidationRuleType>>>> {
     let types = ValidationRuleRepo::list_rule_types(&state.pool).await?;
     Ok(Json(DataResponse { data: types }))
 }

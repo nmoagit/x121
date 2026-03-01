@@ -1,10 +1,15 @@
 //! Scene type entity model and DTOs.
+//!
+//! After PRD-123 unification, `scene_types` absorbs all columns from the
+//! former `scene_catalog` table (`slug`, `has_clothes_off_transition`) and
+//! becomes the single source of truth for scene definitions.
 
 use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
 use x121_core::types::{DbId, Timestamp};
 
 use crate::models::status::StatusId;
+use crate::models::track::Track;
 
 /// A row from the `scene_types` table.
 #[derive(Debug, Clone, FromRow, Serialize)]
@@ -12,6 +17,7 @@ pub struct SceneType {
     pub id: DbId,
     pub project_id: Option<DbId>,
     pub name: String,
+    pub slug: String,
     pub status_id: StatusId,
     pub workflow_json: Option<serde_json::Value>,
     pub lora_config: Option<serde_json::Value>,
@@ -30,6 +36,7 @@ pub struct SceneType {
     pub generation_params: Option<serde_json::Value>,
     pub sort_order: i32,
     pub is_active: bool,
+    pub has_clothes_off_transition: bool,
     pub is_studio_level: bool,
     pub parent_scene_type_id: Option<DbId>,
     pub depth: i32,
@@ -47,11 +54,36 @@ pub struct SceneType {
     pub updated_at: Timestamp,
 }
 
+/// A scene type enriched with its associated tracks (PRD-123).
+#[derive(Debug, Clone, Serialize)]
+pub struct SceneTypeWithTracks {
+    #[serde(flatten)]
+    pub scene_type: SceneType,
+    pub tracks: Vec<Track>,
+}
+
+/// Computed effective scene setting, used by both the project and character
+/// tiers of the three-level inheritance chain (PRD-123).
+///
+/// The `source` field indicates which tier provided the value:
+/// - `"scene_type"`: default from `scene_types.is_active`
+/// - `"project"`: overridden at the project level
+/// - `"character"`: overridden at the character level
+#[derive(Debug, Clone, FromRow, Serialize)]
+pub struct EffectiveSceneSetting {
+    pub scene_type_id: DbId,
+    pub name: String,
+    pub slug: String,
+    pub is_enabled: bool,
+    pub source: String,
+}
+
 /// DTO for creating a new scene type.
 #[derive(Debug, Clone, Deserialize)]
 pub struct CreateSceneType {
     pub project_id: Option<DbId>,
     pub name: String,
+    pub slug: String,
     /// Defaults to 1 (Draft) if omitted.
     pub status_id: Option<StatusId>,
     pub workflow_json: Option<serde_json::Value>,
@@ -71,6 +103,7 @@ pub struct CreateSceneType {
     pub generation_params: Option<serde_json::Value>,
     pub sort_order: Option<i32>,
     pub is_active: Option<bool>,
+    pub has_clothes_off_transition: Option<bool>,
     pub is_studio_level: Option<bool>,
     pub parent_scene_type_id: Option<DbId>,
     pub generation_strategy: Option<String>,
@@ -88,6 +121,7 @@ pub struct CreateSceneType {
 #[derive(Debug, Clone, Default, Deserialize)]
 pub struct UpdateSceneType {
     pub name: Option<String>,
+    pub slug: Option<String>,
     pub status_id: Option<StatusId>,
     pub workflow_json: Option<serde_json::Value>,
     pub lora_config: Option<serde_json::Value>,
@@ -106,6 +140,7 @@ pub struct UpdateSceneType {
     pub generation_params: Option<serde_json::Value>,
     pub sort_order: Option<i32>,
     pub is_active: Option<bool>,
+    pub has_clothes_off_transition: Option<bool>,
     pub is_studio_level: Option<bool>,
     pub parent_scene_type_id: Option<DbId>,
     pub depth: Option<i32>,

@@ -82,7 +82,6 @@ export const NAV_GROUPS: NavGroupDef[] = [
       { label: "Library", path: "/content/library", icon: Folder },
       { label: "Storyboard", path: "/content/storyboard", icon: Layout },
       { label: "Images", path: "/content/images", icon: Image },
-      { label: "Scene Types", path: "/content/scene-types", icon: Settings },
       { label: "Scene Catalog", path: "/content/scene-catalog", icon: List },
       { label: "Character Dashboard", path: "/content/character-dashboard", icon: Monitor },
       { label: "Contact Sheet", path: "/content/contact-sheet", icon: Image },

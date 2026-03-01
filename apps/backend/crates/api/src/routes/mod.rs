@@ -86,7 +86,6 @@ pub mod resolution;
 pub mod restitching;
 pub mod review_notes;
 pub mod scene;
-pub mod scene_catalog;
 pub mod scene_type;
 pub mod scene_type_inheritance;
 pub mod scripts;
@@ -884,8 +883,7 @@ pub fn api_routes() -> Router<AppState> {
             .merge(qa_rulesets::qa_override_router()))
         // Mixin CRUD (PRD-100).
         .nest("/mixins", scene_type_inheritance::mixin_router())
-        // Scene catalog & tracks (PRD-111).
-        .nest("/scene-catalog", scene_catalog::router())
+        // Tracks (PRD-111).
         .nest("/tracks", track::router())
         // Trash / bin management.
         .nest("/trash", trash::router())

@@ -1,4 +1,4 @@
-//! Handlers for per-project scene settings (PRD-111).
+//! Handlers for per-project scene settings (PRD-111, PRD-123).
 //!
 //! Routes nested under `/projects/{project_id}/scene-settings`.
 
@@ -19,7 +19,7 @@ use crate::state::AppState;
 
 /// GET /api/v1/projects/{project_id}/scene-settings
 ///
-/// List effective scene settings for a project (catalog defaults + overrides).
+/// List effective scene settings for a project (scene_type defaults + overrides).
 pub async fn list_effective(
     State(state): State<AppState>,
     Path(project_id): Path<DbId>,
@@ -41,16 +41,16 @@ pub async fn bulk_update(
     Ok(Json(DataResponse { data: results }))
 }
 
-/// PUT /api/v1/projects/{project_id}/scene-settings/{scene_catalog_id}
+/// PUT /api/v1/projects/{project_id}/scene-settings/{scene_type_id}
 ///
 /// Toggle a single scene setting for a project.
 pub async fn toggle_single(
     State(state): State<AppState>,
-    Path((project_id, scene_catalog_id)): Path<(DbId, DbId)>,
+    Path((project_id, scene_type_id)): Path<(DbId, DbId)>,
     Json(body): Json<ProjectSceneSettingUpdate>,
 ) -> AppResult<impl IntoResponse> {
     let setting =
-        ProjectSceneSettingRepo::upsert(&state.pool, project_id, scene_catalog_id, body.is_enabled)
+        ProjectSceneSettingRepo::upsert(&state.pool, project_id, scene_type_id, body.is_enabled)
             .await?;
     Ok(Json(DataResponse { data: setting }))
 }

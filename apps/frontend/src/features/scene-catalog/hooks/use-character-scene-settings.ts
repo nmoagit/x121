@@ -59,7 +59,7 @@ export function useToggleCharacterSceneSetting(characterId: number) {
   return useMutation({
     mutationFn: (update: SceneSettingUpdate) =>
       api.put<EffectiveSceneSetting>(
-        `/characters/${characterId}/scene-settings/${update.scene_catalog_id}`,
+        `/characters/${characterId}/scene-settings/${update.scene_type_id}`,
         { is_enabled: update.is_enabled },
       ),
     onSuccess: () => {
@@ -75,8 +75,8 @@ export function useRemoveCharacterSceneOverride(characterId: number) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (sceneCatalogId: number) =>
-      api.delete(`/characters/${characterId}/scene-settings/${sceneCatalogId}`),
+    mutationFn: (sceneTypeId: number) =>
+      api.delete(`/characters/${characterId}/scene-settings/${sceneTypeId}`),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: characterSceneSettingKeys.list(characterId),

@@ -33,8 +33,8 @@ interface CharacterSceneOverridesProps {
 
 interface SettingRowProps {
   setting: EffectiveSceneSetting;
-  onToggle: (sceneCatalogId: number, enabled: boolean) => void;
-  onReset: (sceneCatalogId: number) => void;
+  onToggle: (sceneTypeId: number, enabled: boolean) => void;
+  onReset: (sceneTypeId: number) => void;
   isPending: boolean;
 }
 
@@ -50,7 +50,7 @@ function SettingRow({ setting, onToggle, onReset, isPending }: SettingRowProps) 
       <td className="px-4 py-3">
         <Toggle
           checked={setting.is_enabled}
-          onChange={(checked) => onToggle(setting.scene_catalog_id, checked)}
+          onChange={(checked) => onToggle(setting.scene_type_id, checked)}
           size="sm"
           disabled={isPending}
         />
@@ -63,7 +63,7 @@ function SettingRow({ setting, onToggle, onReset, isPending }: SettingRowProps) 
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => onReset(setting.scene_catalog_id)}
+            onClick={() => onReset(setting.scene_type_id)}
             disabled={isPending}
           >
             Reset
@@ -88,9 +88,9 @@ export function CharacterSceneOverrides({ characterId }: CharacterSceneOverrides
   const hasCharacterOverrides = settings?.some((s) => s.source === "character");
 
   const handleToggle = useCallback(
-    (sceneCatalogId: number, enabled: boolean) => {
+    (sceneTypeId: number, enabled: boolean) => {
       toggleMutation.mutate({
-        scene_catalog_id: sceneCatalogId,
+        scene_type_id: sceneTypeId,
         is_enabled: enabled,
       });
     },
@@ -98,8 +98,8 @@ export function CharacterSceneOverrides({ characterId }: CharacterSceneOverrides
   );
 
   const handleReset = useCallback(
-    (sceneCatalogId: number) => {
-      removeMutation.mutate(sceneCatalogId);
+    (sceneTypeId: number) => {
+      removeMutation.mutate(sceneTypeId);
     },
     [removeMutation],
   );
@@ -111,7 +111,7 @@ export function CharacterSceneOverrides({ characterId }: CharacterSceneOverrides
 
     // Remove each character override
     for (const override of overrides) {
-      removeMutation.mutate(override.scene_catalog_id);
+      removeMutation.mutate(override.scene_type_id);
     }
     setShowResetAll(false);
   }, [settings, removeMutation]);
@@ -177,7 +177,7 @@ export function CharacterSceneOverrides({ characterId }: CharacterSceneOverrides
               ) : (
                 settings.map((setting) => (
                   <SettingRow
-                    key={setting.scene_catalog_id}
+                    key={setting.scene_type_id}
                     setting={setting}
                     onToggle={handleToggle}
                     onReset={handleReset}

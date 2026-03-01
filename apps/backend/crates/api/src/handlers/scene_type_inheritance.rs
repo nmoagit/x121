@@ -171,7 +171,9 @@ pub async fn delete_override(
 // ---------------------------------------------------------------------------
 
 /// GET /api/v1/mixins
-pub async fn list_mixins(State(state): State<AppState>) -> AppResult<Json<DataResponse<Vec<Mixin>>>> {
+pub async fn list_mixins(
+    State(state): State<AppState>,
+) -> AppResult<Json<DataResponse<Vec<Mixin>>>> {
     let mixins = MixinRepo::list(&state.pool).await?;
     Ok(Json(DataResponse { data: mixins }))
 }

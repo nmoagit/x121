@@ -156,14 +156,6 @@ const imagesRoute = createRoute({
   ),
 });
 
-const sceneTypesRoute = createRoute({
-  getParentRoute: () => contentLayoutRoute,
-  path: "/content/scene-types",
-  component: lazyRouteComponent(() =>
-    import("@/app/pages/SceneTypesPage").then((m) => ({ default: m.SceneTypesPage })),
-  ),
-});
-
 const sceneCatalogRoute = createRoute({
   getParentRoute: () => contentLayoutRoute,
   path: "/content/scene-catalog",
@@ -738,7 +730,6 @@ export const routeTree = rootRoute.addChildren([
       libraryRoute,
       storyboardRoute,
       imagesRoute,
-      sceneTypesRoute,
       sceneCatalogRoute,
       characterDashboardRoute,
       contactSheetRoute,

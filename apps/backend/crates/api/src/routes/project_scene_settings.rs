@@ -1,4 +1,4 @@
-//! Route definitions for project scene settings (PRD-111).
+//! Route definitions for project scene settings (PRD-111, PRD-123).
 
 use axum::routing::{get, put};
 use axum::Router;
@@ -11,7 +11,7 @@ use crate::state::AppState;
 /// ```text
 /// GET /                            -> list_effective
 /// PUT /                            -> bulk_update
-/// PUT /{scene_catalog_id}          -> toggle_single
+/// PUT /{scene_type_id}             -> toggle_single
 /// ```
 pub fn router() -> Router<AppState> {
     Router::new()
@@ -20,7 +20,7 @@ pub fn router() -> Router<AppState> {
             get(project_scene_settings::list_effective).put(project_scene_settings::bulk_update),
         )
         .route(
-            "/{scene_catalog_id}",
+            "/{scene_type_id}",
             put(project_scene_settings::toggle_single),
         )
 }

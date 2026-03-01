@@ -12,6 +12,7 @@ import type { SceneType } from "../types";
 function makeSceneType(overrides: Partial<SceneType> & { id: number; name: string }): SceneType {
   return {
     project_id: null,
+    slug: overrides.name.toLowerCase().replace(/\s+/g, "_"),
     status_id: 1,
     description: null,
     workflow_json: null,
@@ -30,12 +31,21 @@ function makeSceneType(overrides: Partial<SceneType> & { id: number; name: strin
     generation_params: null,
     sort_order: 0,
     is_active: true,
+    has_clothes_off_transition: false,
     is_studio_level: true,
+    parent_scene_type_id: null,
+    depth: 0,
+    generation_strategy: "platform_orchestrated",
+    expected_chunks: null,
+    chunk_output_pattern: null,
+    auto_retry_enabled: false,
+    auto_retry_max_attempts: 3,
+    auto_retry_trigger_checks: null,
+    auto_retry_seed_variation: true,
+    auto_retry_cfg_jitter: null,
     deleted_at: null,
     created_at: "2026-02-28T00:00:00Z",
     updated_at: "2026-02-28T00:00:00Z",
-    parent_scene_type_id: null,
-    depth: 0,
     ...overrides,
   };
 }
