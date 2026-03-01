@@ -1,14 +1,15 @@
 /**
  * TanStack Query hooks for character-level scene settings (PRD-111).
  *
- * Characters inherit from project settings which inherit from catalog defaults.
- * The effective list merges all three levels.
+ * Characters inherit from group settings, which inherit from project settings,
+ * which inherit from catalog defaults. The effective list merges all four levels.
  */
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { api } from "@/lib/api";
 import type { EffectiveSceneSetting, SceneSettingUpdate } from "../types";
+import { useRemoveSceneOverride, useToggleSceneSetting } from "./scene-setting-mutations";
 
 /* --------------------------------------------------------------------------
    Query key factory
@@ -24,7 +25,7 @@ export const characterSceneSettingKeys = {
    Query hooks
    -------------------------------------------------------------------------- */
 
-/** Fetch effective scene settings for a character (three-level merge). */
+/** Fetch effective scene settings for a character (four-level merge). */
 export function useCharacterSceneSettings(characterId: number | null) {
   return useQuery({
     queryKey: characterSceneSettingKeys.list(characterId ?? 0),
@@ -54,33 +55,16 @@ export function useBulkUpdateCharacterSceneSettings(characterId: number) {
 
 /** Toggle a single scene setting for a character. */
 export function useToggleCharacterSceneSetting(characterId: number) {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (update: SceneSettingUpdate) =>
-      api.put<EffectiveSceneSetting>(
-        `/characters/${characterId}/scene-settings/${update.scene_type_id}`,
-        { is_enabled: update.is_enabled },
-      ),
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: characterSceneSettingKeys.list(characterId),
-      });
-    },
-  });
+  return useToggleSceneSetting(
+    `/characters/${characterId}/scene-settings`,
+    characterSceneSettingKeys.list(characterId),
+  );
 }
 
-/** Remove a character-level override, falling back to project/catalog default. */
+/** Remove a character-level override, falling back to group/project/catalog default. */
 export function useRemoveCharacterSceneOverride(characterId: number) {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (sceneTypeId: number) =>
-      api.delete(`/characters/${characterId}/scene-settings/${sceneTypeId}`),
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: characterSceneSettingKeys.list(characterId),
-      });
-    },
-  });
+  return useRemoveSceneOverride(
+    `/characters/${characterId}/scene-settings`,
+    characterSceneSettingKeys.list(characterId),
+  );
 }

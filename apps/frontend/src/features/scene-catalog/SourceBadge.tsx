@@ -18,6 +18,7 @@ type SettingSource = EffectiveSceneSetting["source"];
 const SOURCE_CONFIG: Record<SettingSource, { label: string; variant: BadgeVariant }> = {
   scene_type: { label: "Default", variant: "default" },
   project: { label: "Project", variant: "info" },
+  group: { label: "Group", variant: "success" },
   character: { label: "Character", variant: "warning" },
 };
 

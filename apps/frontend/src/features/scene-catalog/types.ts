@@ -49,10 +49,10 @@ export interface EffectiveSceneSetting {
   name: string;
   slug: string;
   is_enabled: boolean;
-  source: "scene_type" | "project" | "character";
-  track_id?: number;
-  track_name?: string;
-  track_slug?: string;
+  source: "scene_type" | "project" | "group" | "character";
+  track_id: number | null;
+  track_name: string | null;
+  track_slug: string | null;
 }
 
 /**
@@ -68,6 +68,7 @@ export interface ExpandedSceneSetting extends EffectiveSceneSetting {
 
 export interface SceneSettingUpdate {
   scene_type_id: number;
+  track_id?: number | null;
   is_enabled: boolean;
 }
 
@@ -84,52 +85,56 @@ export interface UpdateTrack {
 }
 
 /* --------------------------------------------------------------------------
-   Cross-join utility: settings × catalog tracks → expanded rows
+   URL helper: build scene-setting toggle/delete URL with optional track
    -------------------------------------------------------------------------- */
 
 /**
- * Expands scene settings by cross-joining with catalog track data.
+ * Builds the API URL for a single scene setting toggle or delete.
  *
- * For each setting, finds the matching catalog entry and creates one
- * ExpandedSceneSetting per active track. Scene types with no tracks
- * produce a single row (no track info).
+ * @param basePath - e.g. `/projects/5/scene-settings` or `/characters/12/scene-settings`
+ * @param sceneTypeId - the scene type to target
+ * @param trackId - optional track qualifier (null targets the scene_type level)
  */
-export function expandSettingsWithTracks(
-  settings: EffectiveSceneSetting[],
-  catalog: SceneCatalogEntry[],
-): ExpandedSceneSetting[] {
-  const catalogBySceneTypeId = new Map<number, SceneCatalogEntry>();
-  for (const entry of catalog) {
-    catalogBySceneTypeId.set(entry.id, entry);
-  }
+export function sceneSettingUrl(
+  basePath: string,
+  sceneTypeId: number,
+  trackId: number | null | undefined,
+): string {
+  const base = `${basePath}/${sceneTypeId}`;
+  return trackId != null ? `${base}/tracks/${trackId}` : base;
+}
 
+/* --------------------------------------------------------------------------
+   Grouping utility: annotate backend-expanded rows with visual group info
+   -------------------------------------------------------------------------- */
+
+/**
+ * Annotates backend-returned per-(scene_type, track) rows with visual
+ * grouping metadata (`isFirstInGroup`, `groupSize`).
+ *
+ * The backend now returns track-expanded data directly, so no cross-join
+ * is needed — this only adds the UI grouping annotations.
+ */
+export function annotateGroups(settings: EffectiveSceneSetting[]): ExpandedSceneSetting[] {
   const rows: ExpandedSceneSetting[] = [];
 
-  for (const setting of settings) {
-    const entry = catalogBySceneTypeId.get(setting.scene_type_id);
-    const activeTracks = entry?.tracks.filter((t) => t.is_active) ?? [];
-
-    if (activeTracks.length === 0) {
-      // No tracks — single row without track info
-      rows.push({
-        ...setting,
-        isFirstInGroup: true,
-        groupSize: 1,
-      });
-    } else {
-      // One row per active track
-      for (let i = 0; i < activeTracks.length; i++) {
-        const track = activeTracks[i]!;
-        rows.push({
-          ...setting,
-          track_id: track.id,
-          track_name: track.name,
-          track_slug: track.slug,
-          isFirstInGroup: i === 0,
-          groupSize: activeTracks.length,
-        });
-      }
+  let i = 0;
+  while (i < settings.length) {
+    const currentId = settings[i]!.scene_type_id;
+    // Count consecutive rows with same scene_type_id
+    let groupSize = 0;
+    for (let j = i; j < settings.length && settings[j]!.scene_type_id === currentId; j++) {
+      groupSize++;
     }
+    // Annotate each row in the group
+    for (let k = 0; k < groupSize; k++) {
+      rows.push({
+        ...settings[i + k]!,
+        isFirstInGroup: k === 0,
+        groupSize,
+      });
+    }
+    i += groupSize;
   }
 
   return rows;

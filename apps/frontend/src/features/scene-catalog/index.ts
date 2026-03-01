@@ -8,8 +8,12 @@ export { SceneCatalogForm } from "./SceneCatalogForm";
 export { TrackManager } from "./TrackManager";
 export { TrackBadge } from "./TrackBadge";
 export { SourceBadge, sourceLabel } from "./SourceBadge";
+export { SceneSettingRow } from "./SceneSettingRow";
+export type { SceneSettingRowProps } from "./SceneSettingRow";
 export { ProjectSceneSettings } from "./ProjectSceneSettings";
 export { CharacterSceneOverrides } from "./CharacterSceneOverrides";
+export { GroupSceneOverrides } from "./GroupSceneOverrides";
+export { SceneSettingOverridesPanel } from "./SceneSettingOverridesPanel";
 
 // Hooks — Scene catalog
 export {
@@ -37,6 +41,14 @@ export {
   useToggleProjectSceneSetting,
 } from "./hooks/use-project-scene-settings";
 
+// Hooks — Group scene settings
+export {
+  groupSceneSettingKeys,
+  useGroupSceneSettings,
+  useToggleGroupSceneSetting,
+  useRemoveGroupSceneOverride,
+} from "./hooks/use-group-scene-settings";
+
 // Hooks — Character scene settings
 export {
   characterSceneSettingKeys,
@@ -46,7 +58,7 @@ export {
   useRemoveCharacterSceneOverride,
 } from "./hooks/use-character-scene-settings";
 
-// Hooks — Expanded settings (settings × tracks cross-join)
+// Hooks — Expanded settings (backend returns track-expanded rows; hook adds group annotations)
 export { useExpandedSettings } from "./hooks/use-expanded-settings";
 
 // Types & utilities
@@ -61,4 +73,4 @@ export type {
   CreateTrack,
   UpdateTrack,
 } from "./types";
-export { expandSettingsWithTracks } from "./types";
+export { annotateGroups, sceneSettingUrl } from "./types";

@@ -6,6 +6,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { api } from "@/lib/api";
 import type { EffectiveSceneSetting, SceneSettingUpdate } from "../types";
+import { useToggleSceneSetting } from "./scene-setting-mutations";
 
 /* --------------------------------------------------------------------------
    Query key factory
@@ -51,18 +52,8 @@ export function useBulkUpdateProjectSceneSettings(projectId: number) {
 
 /** Toggle a single scene setting for a project. */
 export function useToggleProjectSceneSetting(projectId: number) {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (update: SceneSettingUpdate) =>
-      api.put<EffectiveSceneSetting>(
-        `/projects/${projectId}/scene-settings/${update.scene_type_id}`,
-        { is_enabled: update.is_enabled },
-      ),
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: projectSceneSettingKeys.list(projectId),
-      });
-    },
-  });
+  return useToggleSceneSetting(
+    `/projects/${projectId}/scene-settings`,
+    projectSceneSettingKeys.list(projectId),
+  );
 }

@@ -1,8 +1,9 @@
 /**
- * Hook that cross-joins scene settings with catalog tracks.
+ * Hook that annotates scene settings with visual grouping metadata.
  *
- * Encapsulates the repeated pattern:
- *   useMemo(() => expandSettingsWithTracks(settings, catalog), [settings, catalog])
+ * The backend now returns per-(scene_type, track) rows directly, so no
+ * cross-join with the catalog is needed. This hook just adds `isFirstInGroup`
+ * and `groupSize` annotations for table rendering.
  *
  * Used by ProjectSceneSettings, CharacterSceneOverrides, and CharacterScenesTab.
  */
@@ -12,30 +13,20 @@ import { useMemo } from "react";
 import {
   type EffectiveSceneSetting,
   type ExpandedSceneSetting,
-  expandSettingsWithTracks,
+  annotateGroups,
 } from "../types";
-import { useSceneCatalog } from "./use-scene-catalog";
-
-interface UseExpandedSettingsResult {
-  expandedRows: ExpandedSceneSetting[];
-  catalogLoading: boolean;
-}
 
 /**
- * Expand effective scene settings with track data from the catalog.
+ * Annotate effective scene settings with group metadata for table display.
  *
  * @param settings - The effective scene settings from any level (project, character, etc.)
- * @returns expandedRows (one per scene_type x active track) and loading state for the catalog
+ * @returns expandedRows (one per scene_type x track) with group annotations
  */
 export function useExpandedSettings(
   settings: EffectiveSceneSetting[] | undefined,
-): UseExpandedSettingsResult {
-  const { data: catalog, isLoading: catalogLoading } = useSceneCatalog();
-
-  const expandedRows = useMemo(() => {
-    if (!settings || !catalog) return [];
-    return expandSettingsWithTracks(settings, catalog);
-  }, [settings, catalog]);
-
-  return { expandedRows, catalogLoading };
+): ExpandedSceneSetting[] {
+  return useMemo(() => {
+    if (!settings) return [];
+    return annotateGroups(settings);
+  }, [settings]);
 }
