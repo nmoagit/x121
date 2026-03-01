@@ -36,13 +36,18 @@ pub struct CharacterDashboardData {
     pub scene_assignments: Vec<SceneAssignment>,
 }
 
-/// A scene assigned to this character with status and segment count.
+/// An enabled scene_type+track assignment for this character.
 #[derive(Debug, serde::Serialize, sqlx::FromRow)]
 pub struct SceneAssignment {
-    pub scene_id: DbId,
+    pub scene_type_id: DbId,
     pub scene_name: String,
+    pub track_id: DbId,
+    pub track_name: String,
+    pub track_slug: String,
+    pub scene_id: Option<DbId>,
     pub status: String,
     pub segment_count: i64,
+    pub final_video_count: i64,
 }
 
 /// Image variant counts grouped by status.
@@ -80,6 +85,7 @@ struct CharacterRow {
     id: DbId,
     name: String,
     project_id: DbId,
+    group_id: Option<DbId>,
     settings: Option<serde_json::Value>,
 }
 
@@ -130,7 +136,7 @@ pub async fn get_dashboard(
 ) -> AppResult<impl IntoResponse> {
     // Fetch character record.
     let character = sqlx::query_as::<_, CharacterRow>(
-        "SELECT id, name, project_id, settings FROM characters WHERE id = $1 AND deleted_at IS NULL",
+        "SELECT id, name, project_id, group_id, settings FROM characters WHERE id = $1 AND deleted_at IS NULL",
     )
     .bind(character_id)
     .fetch_optional(&state.pool)
@@ -144,7 +150,7 @@ pub async fn get_dashboard(
 
     // Source image count.
     let source_count_row = sqlx::query_as::<_, CountRow>(
-        "SELECT COUNT(*) AS count FROM source_images WHERE character_id = $1 AND deleted_at IS NULL",
+        "SELECT COUNT(*) AS count FROM image_variants WHERE character_id = $1 AND provenance = 'manual_upload' AND deleted_at IS NULL",
     )
     .bind(character_id)
     .fetch_one(&state.pool)
@@ -175,45 +181,62 @@ pub async fn get_dashboard(
         readiness_pct: c.readiness_pct,
     });
 
-    // Scene count for this character.
-    let scene_count_row = sqlx::query_as::<_, CountRow>(
-        "SELECT COUNT(*) AS count FROM scenes WHERE character_id = $1 AND deleted_at IS NULL",
+    // Scene assignments: all enabled scene_type+track combos from 4-level inheritance,
+    // LEFT JOINed to actual scenes and video versions for this character.
+    // $1 = character_id, $2 = project_id, $3 = group_id (nullable)
+    let scene_assignments = sqlx::query_as::<_, SceneAssignment>(
+        "WITH enabled_combos AS (
+            SELECT st.id AS scene_type_id, st.name AS scene_name,
+                   t.id AS track_id, t.name AS track_name, t.slug AS track_slug
+            FROM scene_types st
+            CROSS JOIN tracks t
+            LEFT JOIN project_scene_settings pss
+                ON pss.scene_type_id = st.id AND (pss.track_id = t.id OR pss.track_id IS NULL)
+            LEFT JOIN group_scene_settings gss
+                ON gss.scene_type_id = st.id AND (gss.track_id = t.id OR gss.track_id IS NULL) AND gss.group_id = $3
+            LEFT JOIN character_scene_overrides cso
+                ON cso.scene_type_id = st.id AND (cso.track_id = t.id OR cso.track_id IS NULL) AND cso.character_id = $1
+            WHERE COALESCE(cso.is_enabled, gss.is_enabled, pss.is_enabled, st.is_active)
+        )
+        SELECT
+            ec.scene_type_id,
+            ec.scene_name,
+            ec.track_id,
+            ec.track_name,
+            ec.track_slug,
+            sc.id AS scene_id,
+            COALESCE(ss.name, 'not_started') AS status,
+            (SELECT COUNT(*) FROM scene_video_versions svv
+             WHERE svv.scene_id = sc.id AND svv.deleted_at IS NULL AND svv.is_final = false) AS segment_count,
+            (SELECT COUNT(*) FROM scene_video_versions svv
+             WHERE svv.scene_id = sc.id AND svv.deleted_at IS NULL AND svv.is_final = true) AS final_video_count
+        FROM enabled_combos ec
+        LEFT JOIN scenes sc
+            ON sc.scene_type_id = ec.scene_type_id AND sc.track_id = ec.track_id
+               AND sc.character_id = $1 AND sc.deleted_at IS NULL
+        LEFT JOIN scene_statuses ss ON ss.id = sc.status_id
+        ORDER BY ec.scene_name, ec.track_name",
     )
     .bind(character_id)
-    .fetch_one(&state.pool)
+    .bind(character.project_id)
+    .bind(character.group_id)
+    .fetch_all(&state.pool)
     .await?;
 
-    // Segment generation summary across all scenes for this character.
-    // status_id: 1=pending, 5=approved, 6=rejected (from segment_statuses).
+    // Video version summary across all scene+track combos for this character.
+    // Counts scene_video_versions grouped by qa_status.
     let segment_counts_row = sqlx::query_as::<_, SegmentCountsRow>(
         "SELECT
             COUNT(*) AS total,
-            COUNT(*) FILTER (WHERE seg.status_id = 5) AS approved,
-            COUNT(*) FILTER (WHERE seg.status_id = 6) AS rejected,
-            COUNT(*) FILTER (WHERE seg.status_id = 1) AS pending
-         FROM segments seg
-         JOIN scenes sc ON sc.id = seg.scene_id
-         WHERE sc.character_id = $1 AND sc.deleted_at IS NULL",
+            COUNT(*) FILTER (WHERE svv.qa_status = 'approved') AS approved,
+            COUNT(*) FILTER (WHERE svv.qa_status = 'rejected') AS rejected,
+            COUNT(*) FILTER (WHERE svv.qa_status = 'pending') AS pending
+         FROM scene_video_versions svv
+         JOIN scenes sc ON sc.id = svv.scene_id
+         WHERE sc.character_id = $1 AND sc.deleted_at IS NULL AND svv.deleted_at IS NULL",
     )
     .bind(character_id)
     .fetch_one(&state.pool)
-    .await?;
-
-    // Scene assignments with status and segment count.
-    let scene_assignments = sqlx::query_as::<_, SceneAssignment>(
-        "SELECT
-            sc.id AS scene_id,
-            COALESCE(st.name, 'Unknown') AS scene_name,
-            ss.name AS status,
-            (SELECT COUNT(*) FROM segments seg WHERE seg.scene_id = sc.id) AS segment_count
-         FROM scenes sc
-         LEFT JOIN scene_types st ON st.id = sc.scene_type_id
-         LEFT JOIN scene_statuses ss ON ss.id = sc.status_id
-         WHERE sc.character_id = $1 AND sc.deleted_at IS NULL
-         ORDER BY sc.id",
-    )
-    .bind(character_id)
-    .fetch_all(&state.pool)
     .await?;
 
     let dashboard = CharacterDashboardData {
@@ -229,7 +252,7 @@ pub async fn get_dashboard(
         },
         settings: character.settings.unwrap_or(serde_json::json!({})),
         readiness,
-        scene_count: scene_count_row.count.unwrap_or(0),
+        scene_count: scene_assignments.len() as i64,
         generation_summary: GenerationSummary {
             total_segments: segment_counts_row.total.unwrap_or(0),
             approved: segment_counts_row.approved.unwrap_or(0),

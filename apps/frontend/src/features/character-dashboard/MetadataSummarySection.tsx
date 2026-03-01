@@ -1,11 +1,14 @@
 /**
  * Metadata completeness summary section (PRD-108).
  *
- * Shows a summary of metadata completeness for a character and
- * provides a link to the metadata editor.
+ * Shows a summary of metadata completeness for a character,
+ * using template-driven required field tracking from the API.
  */
 
 import { Badge, Button } from "@/components";
+
+import { useCharacterMetadata } from "../characters/hooks/use-character-detail";
+import { completenessVariant } from "../characters/types";
 
 /* --------------------------------------------------------------------------
    Types
@@ -14,37 +17,10 @@ import { Badge, Button } from "@/components";
 interface MetadataSummarySectionProps {
   /** Character ID for constructing the metadata editor link. */
   characterId: number;
-  /** Current settings object to derive completeness from. */
-  settings: Record<string, unknown>;
   /** Number of source images. */
   sourceImageCount: number;
   /** Called when the user clicks the "Edit Metadata" link. */
   onEditClick?: (characterId: number) => void;
-}
-
-/* --------------------------------------------------------------------------
-   Helpers
-   -------------------------------------------------------------------------- */
-
-const REQUIRED_METADATA_KEYS = [
-  "a2c4_model",
-  "elevenlabs_voice",
-  "avatar_json",
-  "lora_model",
-  "comfyui_workflow",
-];
-
-function computeCompleteness(settings: Record<string, unknown>): {
-  filled: number;
-  total: number;
-  pct: number;
-} {
-  const total = REQUIRED_METADATA_KEYS.length;
-  const filled = REQUIRED_METADATA_KEYS.filter(
-    (key) => settings[key] != null && settings[key] !== "",
-  ).length;
-  const pct = total > 0 ? Math.round((filled / total) * 100) : 0;
-  return { filled, total, pct };
 }
 
 /* --------------------------------------------------------------------------
@@ -53,14 +29,21 @@ function computeCompleteness(settings: Record<string, unknown>): {
 
 export function MetadataSummarySection({
   characterId,
-  settings,
   sourceImageCount,
   onEditClick,
 }: MetadataSummarySectionProps) {
-  const { filled, total, pct } = computeCompleteness(settings);
+  const { data: metadataResponse } = useCharacterMetadata(characterId);
 
-  const variant =
-    pct === 100 ? "success" : pct >= 50 ? "warning" : "danger";
+  // Use completeness from the API response (template-driven)
+  const completeness = (metadataResponse as Record<string, unknown> | undefined)?.completeness as
+    | { total_required: number; filled: number; percentage: number }
+    | undefined;
+
+  const filled = completeness?.filled ?? 0;
+  const total = completeness?.total_required ?? 0;
+  const pct = completeness ? Math.round(completeness.percentage) : 0;
+
+  const variant = completenessVariant(pct);
 
   return (
     <div data-testid="metadata-summary-section" className="flex flex-col gap-2">
@@ -78,7 +61,7 @@ export function MetadataSummarySection({
           data-testid="metadata-completeness-detail"
           className="text-xs text-[var(--color-text-secondary)]"
         >
-          {filled} of {total} settings filled
+          {filled} of {total} required fields filled
         </span>
       </div>
 

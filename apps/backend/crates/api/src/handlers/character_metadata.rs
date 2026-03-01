@@ -3,8 +3,8 @@
 //! Provides endpoints for reading and writing character metadata fields,
 //! completeness calculation, and CSV export/import with diff preview.
 //!
-//! Metadata is stored in the `characters.metadata` JSONB column. This
-//! module does **not** create new tables.
+//! Metadata is stored in the `characters.metadata` JSONB column.
+//! Field definitions come from the metadata template system (PRD-113).
 
 use axum::extract::{Path, State};
 use axum::http::StatusCode;
@@ -14,12 +14,13 @@ use serde::Serialize;
 use x121_core::error::CoreError;
 use x121_core::metadata_editor::{
     build_csv, calculate_completeness, calculate_project_completeness, parse_csv,
-    standard_field_defs, validate_metadata_fields, CompletenessResult, CsvDiffEntry,
-    MetadataFieldDef, MetadataFieldError,
+    standard_field_defs, unflatten_metadata, validate_metadata_fields, CompletenessResult,
+    CsvDiffEntry, FieldCategory, FieldType, MetadataFieldDef, MetadataFieldError,
 };
 use x121_core::types::DbId;
 use x121_db::models::character::Character;
-use x121_db::repositories::CharacterRepo;
+use x121_db::models::metadata_template::MetadataTemplateField;
+use x121_db::repositories::{CharacterRepo, MetadataTemplateFieldRepo, MetadataTemplateRepo};
 
 use crate::error::{AppError, AppResult};
 use crate::response::DataResponse;
@@ -79,6 +80,13 @@ pub struct CsvRecordError {
     pub errors: Vec<MetadataFieldError>,
 }
 
+/// Response for the active template endpoint.
+#[derive(Debug, Serialize)]
+pub struct ActiveTemplateResponse {
+    pub template_name: String,
+    pub fields: Vec<MetadataTemplateField>,
+}
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -91,6 +99,71 @@ fn character_metadata_map(character: &Character) -> serde_json::Map<String, serd
         .and_then(|v| v.as_object())
         .cloned()
         .unwrap_or_default()
+}
+
+/// Convert a DB template field type string to a core `FieldType`.
+fn parse_template_field_type(ft: &str) -> FieldType {
+    match ft {
+        "number" => FieldType::Number,
+        "boolean" | "array" | "object" => FieldType::Text,
+        _ => FieldType::Text,
+    }
+}
+
+/// Derive a `FieldCategory` from a dot-notation field name's sort_order range.
+///
+/// NOTE: The frontend `groupFieldsIntoSections()` in `characters/types.ts`
+/// uses different labels for the same ranges (biographical, appearance,
+/// favorites, sexual_preferences, optional) matching the production schema.
+/// This mapping is only used for the core `MetadataFieldDef` category, which
+/// feeds completeness calculation -- not frontend display.
+fn category_from_sort_order(sort_order: i32) -> FieldCategory {
+    match sort_order {
+        0..=99 => FieldCategory::Biographical,
+        100..=199 => FieldCategory::Physical,
+        200..=299 => FieldCategory::Preferences,
+        300..=399 => FieldCategory::Production,
+        _ => FieldCategory::Preferences,
+    }
+}
+
+/// Load template field definitions from the database.
+///
+/// Tries to find the default template for the given project, falling back
+/// to the global default, and finally to `standard_field_defs()` if no
+/// template exists in the database.
+async fn load_template_fields(
+    pool: &sqlx::PgPool,
+    project_id: Option<DbId>,
+) -> Result<Vec<MetadataFieldDef>, sqlx::Error> {
+    let template = MetadataTemplateRepo::find_default(pool, project_id).await?;
+
+    let Some(template) = template else {
+        return Ok(standard_field_defs());
+    };
+
+    let db_fields = MetadataTemplateFieldRepo::list_by_template(pool, template.id).await?;
+
+    if db_fields.is_empty() {
+        return Ok(standard_field_defs());
+    }
+
+    let defs = db_fields
+        .into_iter()
+        .map(|f| MetadataFieldDef {
+            name: f.field_name,
+            label: f
+                .description
+                .clone()
+                .unwrap_or_else(|| "".to_string()),
+            field_type: parse_template_field_type(&f.field_type),
+            category: category_from_sort_order(f.sort_order),
+            is_required: f.is_required,
+            options: vec![],
+        })
+        .collect();
+
+    Ok(defs)
 }
 
 /// Build a structured response from a character and field definitions.
@@ -142,16 +215,50 @@ pub async fn get_character_metadata(
             id: character_id,
         }))?;
 
-    let fields = standard_field_defs();
+    let fields = load_template_fields(&state.pool, Some(character.project_id)).await?;
     let response = build_metadata_response(&character, &fields);
 
     Ok(Json(DataResponse { data: response }))
 }
 
+/// GET /api/v1/characters/{character_id}/metadata/template
+///
+/// Return the active metadata template and its fields for a character.
+pub async fn get_metadata_template(
+    State(state): State<AppState>,
+    Path(character_id): Path<DbId>,
+) -> AppResult<impl IntoResponse> {
+    let character = CharacterRepo::find_by_id(&state.pool, character_id)
+        .await?
+        .ok_or(AppError::Core(CoreError::NotFound {
+            entity: "Character",
+            id: character_id,
+        }))?;
+
+    let template = MetadataTemplateRepo::find_default(&state.pool, Some(character.project_id))
+        .await?;
+
+    let (template_name, fields) = match template {
+        Some(t) => {
+            let fields =
+                MetadataTemplateFieldRepo::list_by_template(&state.pool, t.id).await?;
+            (t.name, fields)
+        }
+        None => ("Default".to_string(), vec![]),
+    };
+
+    Ok(Json(DataResponse {
+        data: ActiveTemplateResponse {
+            template_name,
+            fields,
+        },
+    }))
+}
+
 /// PUT /api/v1/characters/{character_id}/metadata
 ///
-/// Update metadata fields with validation. Only known fields are accepted.
-/// Returns validation errors if any fields are invalid.
+/// Update metadata fields with validation. Unknown fields (custom fields)
+/// are allowed. Dot-notation keys are unflattened to nested JSON for storage.
 pub async fn update_character_metadata(
     State(state): State<AppState>,
     Path(character_id): Path<DbId>,
@@ -165,7 +272,7 @@ pub async fn update_character_metadata(
             id: character_id,
         }))?;
 
-    let fields = standard_field_defs();
+    let fields = load_template_fields(&state.pool, Some(character.project_id)).await?;
 
     // Validate the incoming updates.
     let validation_errors = validate_metadata_fields(&updates, &fields);
@@ -181,10 +288,22 @@ pub async fn update_character_metadata(
             .into_response());
     }
 
-    // Merge updates into existing metadata.
+    // Unflatten dot-notation keys to nested JSON, then merge into existing.
+    let unflattened = unflatten_metadata(&updates);
     let mut existing = character_metadata_map(&character);
-    for (key, value) in &updates {
-        existing.insert(key.clone(), value.clone());
+    for (key, value) in &unflattened {
+        if let (Some(existing_obj), serde_json::Value::Object(new_obj)) =
+            (existing.get(key).and_then(|v| v.as_object()), &value)
+        {
+            // Deep merge nested objects
+            let mut merged = existing_obj.clone();
+            for (sub_key, sub_val) in new_obj {
+                merged.insert(sub_key.clone(), sub_val.clone());
+            }
+            existing.insert(key.clone(), serde_json::Value::Object(merged));
+        } else {
+            existing.insert(key.clone(), value.clone());
+        }
     }
 
     // Persist via metadata column update.
@@ -223,7 +342,7 @@ pub async fn list_project_metadata(
     Path(project_id): Path<DbId>,
 ) -> AppResult<impl IntoResponse> {
     let characters = CharacterRepo::list_by_project(&state.pool, project_id).await?;
-    let fields = standard_field_defs();
+    let fields = load_template_fields(&state.pool, Some(project_id)).await?;
 
     let responses: Vec<CharacterMetadataResponse> = characters
         .iter()
@@ -247,7 +366,7 @@ pub async fn get_completeness(
             id: character_id,
         }))?;
 
-    let fields = standard_field_defs();
+    let fields = load_template_fields(&state.pool, Some(character.project_id)).await?;
     let metadata = character_metadata_map(&character);
     let result = calculate_completeness(character.id, &metadata, &fields);
 
@@ -262,7 +381,7 @@ pub async fn get_project_completeness(
     Path(project_id): Path<DbId>,
 ) -> AppResult<impl IntoResponse> {
     let characters = CharacterRepo::list_by_project(&state.pool, project_id).await?;
-    let fields = standard_field_defs();
+    let fields = load_template_fields(&state.pool, Some(project_id)).await?;
 
     let character_data: Vec<(i64, serde_json::Map<String, serde_json::Value>)> = characters
         .iter()
@@ -282,7 +401,7 @@ pub async fn export_metadata_csv(
     Path(project_id): Path<DbId>,
 ) -> AppResult<impl IntoResponse> {
     let characters = CharacterRepo::list_by_project(&state.pool, project_id).await?;
-    let fields = standard_field_defs();
+    let fields = load_template_fields(&state.pool, Some(project_id)).await?;
 
     let character_data: Vec<(i64, String, serde_json::Map<String, serde_json::Value>)> = characters
         .iter()
@@ -317,7 +436,7 @@ pub async fn import_metadata_csv_preview(
     let records =
         parse_csv(&body).map_err(|e| AppError::BadRequest(format!("CSV parse error: {e}")))?;
     let characters = CharacterRepo::list_by_project(&state.pool, project_id).await?;
-    let fields = standard_field_defs();
+    let fields = load_template_fields(&state.pool, Some(project_id)).await?;
 
     // Build lookup by character ID.
     let char_by_id: std::collections::HashMap<DbId, &Character> =

@@ -56,6 +56,7 @@ export const SETTING_CATEGORIES = [
   { id: "comfyui", label: "ComfyUI" },
   { id: "auth", label: "Authentication" },
   { id: "system", label: "System" },
+  { id: "templates", label: "Templates" },
 ] as const;
 
 /** Value types that support connection testing (must match backend `SettingValueType::as_str()`). */

@@ -12,10 +12,14 @@ interface AccordionItem {
 interface AccordionProps {
   items: AccordionItem[];
   allowMultiple?: boolean;
+  /** IDs to open on initial render. */
+  defaultOpenIds?: string[];
 }
 
-export function Accordion({ items, allowMultiple = false }: AccordionProps) {
-  const [openIds, setOpenIds] = useState<Set<string>>(new Set());
+export function Accordion({ items, allowMultiple = false, defaultOpenIds }: AccordionProps) {
+  const [openIds, setOpenIds] = useState<Set<string>>(
+    () => new Set(defaultOpenIds ?? []),
+  );
 
   const toggle = useCallback(
     (id: string) => {

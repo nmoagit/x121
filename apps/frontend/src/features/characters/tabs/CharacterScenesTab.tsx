@@ -639,6 +639,27 @@ function SceneCard({ slot, isSelected, onToggleSelect, onGenerate, onVideoDrop, 
 
 function SceneVideoThumbnail({ sceneId, playback }: { sceneId: number; playback: boolean }) {
   const { data: versions } = useSceneVersions(sceneId);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [isVisible, setIsVisible] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  // Lazy-load: only start loading when the card scrolls into view.
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting) {
+          setIsVisible(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "200px" },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   if (!sceneId || !versions || versions.length === 0) {
     return (
@@ -657,14 +678,30 @@ function SceneVideoThumbnail({ sceneId, playback }: { sceneId: number; playback:
   const streamUrl = `${API_BASE_URL}/videos/version/${displayVersion.id}/stream`;
 
   return (
-    <video
-      key={playback ? "play" : "thumb"}
-      src={streamUrl}
-      className="w-full rounded aspect-video object-cover bg-black"
-      muted
-      autoPlay={playback}
-      loop={playback}
-      preload="metadata"
-    />
+    <div ref={containerRef} className="relative w-full rounded aspect-video bg-black overflow-hidden">
+      {/* Spinner overlay — visible until the video has loaded */}
+      {!isLoaded && (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="h-5 w-5 animate-spin rounded-full border-2 border-[var(--color-text-muted)] border-t-transparent" />
+        </div>
+      )}
+
+      {/* Only mount the video element once the card is in the viewport */}
+      {isVisible && (
+        <video
+          key={playback ? "play" : "thumb"}
+          src={streamUrl}
+          className={cn(
+            "w-full h-full object-cover transition-opacity duration-300",
+            isLoaded ? "opacity-100" : "opacity-0",
+          )}
+          muted
+          autoPlay={playback}
+          loop={playback}
+          preload="metadata"
+          onLoadedData={() => setIsLoaded(true)}
+        />
+      )}
+    </div>
   );
 }

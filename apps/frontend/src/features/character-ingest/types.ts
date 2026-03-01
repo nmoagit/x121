@@ -102,36 +102,14 @@ export interface IngestConfirmResult {
 }
 
 /* --------------------------------------------------------------------------
-   Metadata templates
+   Metadata templates (re-exported from canonical sources)
    -------------------------------------------------------------------------- */
 
-export interface MetadataTemplate {
-  id: number;
-  name: string;
-  description: string | null;
-  project_id: number | null;
-  is_default: boolean;
-  version: number;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface MetadataTemplateField {
-  id: number;
-  template_id: number;
-  field_name: string;
-  field_type: string;
-  is_required: boolean;
-  constraints: Record<string, unknown>;
-  description: string | null;
-  sort_order: number;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface MetadataTemplateWithFields extends MetadataTemplate {
-  fields: MetadataTemplateField[];
-}
+export type { MetadataTemplateField } from "@/features/characters/types";
+export type {
+  MetadataTemplate,
+  TemplateWithFields as MetadataTemplateWithFields,
+} from "@/features/settings/hooks/use-metadata-templates";
 
 /* --------------------------------------------------------------------------
    Video specs

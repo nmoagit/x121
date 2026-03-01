@@ -32,6 +32,7 @@ import type { ReadinessState } from "@/features/readiness/types";
 interface CharacterOverviewTabProps {
   character: Character;
   characterId: number;
+  groupName?: string;
 }
 
 /* --------------------------------------------------------------------------
@@ -58,6 +59,7 @@ function StatCard({ label, value }: { label: string; value: string | number }) {
 export function CharacterOverviewTab({
   character,
   characterId,
+  groupName,
 }: CharacterOverviewTabProps) {
   const { data: dashboard, isLoading: dashboardLoading } =
     useCharacterDashboard(characterId);
@@ -103,7 +105,7 @@ export function CharacterOverviewTab({
                 {statusLabel}
               </Badge>
               <span className="text-sm text-[var(--color-text-muted)]">
-                {character.group_id ? `Group #${character.group_id}` : "Ungrouped"}
+                {groupName ?? "Ungrouped"}
               </span>
             </div>
           </div>
@@ -163,7 +165,6 @@ export function CharacterOverviewTab({
         <Card elevation="flat" padding="md">
           <MetadataSummarySection
             characterId={characterId}
-            settings={dashboard.settings}
             sourceImageCount={dashboard.source_image_count}
           />
         </Card>

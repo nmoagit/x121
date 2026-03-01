@@ -47,6 +47,7 @@ export function useToggleGroupSceneSetting(projectId: number, groupId: number) {
   return useToggleSceneSetting(
     `/projects/${projectId}/groups/${groupId}/scene-settings`,
     groupSceneSettingKeys.list(projectId, groupId),
+    "group",
   );
 }
 

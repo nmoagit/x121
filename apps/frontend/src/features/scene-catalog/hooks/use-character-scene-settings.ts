@@ -58,6 +58,7 @@ export function useToggleCharacterSceneSetting(characterId: number) {
   return useToggleSceneSetting(
     `/characters/${characterId}/scene-settings`,
     characterSceneSettingKeys.list(characterId),
+    "character",
   );
 }
 

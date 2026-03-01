@@ -518,16 +518,19 @@ export function ProjectCharactersTab({ projectId }: ProjectCharactersTabProps) {
           open={groupFormOpen}
           onClose={() => setGroupFormOpen(false)}
           title={editingGroup ? `Edit Group — ${editingGroup.name}` : "Create Group"}
-          size={editingGroup ? "lg" : "sm"}
+          size={editingGroup ? "xl" : "sm"}
         >
           <Stack gap={4}>
-            <Input
-              label="Group Name"
-              placeholder="e.g. Main Cast"
-              value={groupNameInput}
-              onChange={(e) => setGroupNameInput(e.target.value)}
-            />
+            <div className="max-w-xs">
+              <Input
+                label="Group Name"
+                placeholder="e.g. Main Cast"
+                value={groupNameInput}
+                onChange={(e) => setGroupNameInput(e.target.value)}
+              />
+            </div>
             <Button
+              className="w-fit"
               onClick={handleSaveGroup}
               loading={createGroup.isPending || updateGroup.isPending}
               disabled={!groupNameInput.trim()}
@@ -536,10 +539,10 @@ export function ProjectCharactersTab({ projectId }: ProjectCharactersTabProps) {
             </Button>
 
             {editingGroup && (
-              <>
-                <hr className="border-[var(--color-border-default)]" />
+              <div className="mt-2">
+                <hr className="border-[var(--color-border-default)] mb-4" />
                 <GroupSceneOverrides projectId={projectId} groupId={editingGroup.id} />
-              </>
+              </div>
             )}
           </Stack>
         </Modal>

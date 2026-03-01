@@ -206,7 +206,12 @@ export function CharacterDetailPage() {
 
       {/* Tab content — key on characterId to reset state when navigating between characters */}
       {activeTab === "overview" && (
-        <CharacterOverviewTab key={characterId} character={character} characterId={characterId} />
+        <CharacterOverviewTab
+          key={characterId}
+          character={character}
+          characterId={characterId}
+          groupName={character.group_id ? groups?.find((g) => g.id === character.group_id)?.name : undefined}
+        />
       )}
       {activeTab === "images" && <CharacterImagesTab key={characterId} characterId={characterId} />}
       {activeTab === "scenes" && <CharacterScenesTab key={characterId} characterId={characterId} projectId={projectId} />}

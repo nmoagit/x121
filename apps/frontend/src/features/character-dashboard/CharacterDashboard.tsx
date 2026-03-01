@@ -96,7 +96,6 @@ export function CharacterDashboard({
       {/* Metadata Summary */}
       <MetadataSummarySection
         characterId={characterId}
-        settings={dashboard.settings as Record<string, unknown>}
         sourceImageCount={dashboard.source_image_count}
         onEditClick={(id) => onNavigate?.(`/characters/${id}/metadata`)}
       />

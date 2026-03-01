@@ -33,6 +33,10 @@ pub fn character_router() -> Router<AppState> {
             "/{character_id}/metadata/completeness",
             get(character_metadata::get_completeness),
         )
+        .route(
+            "/{character_id}/metadata/template",
+            get(character_metadata::get_metadata_template),
+        )
 }
 
 /// Project-scoped metadata routes, nested under

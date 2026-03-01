@@ -12,6 +12,7 @@ import { Spinner } from "@/components/primitives";
 import { Stack } from "@/components/layout";
 import { AlertCircle, Settings } from "@/tokens/icons";
 
+import { MetadataTemplateEditor } from "./components/MetadataTemplateEditor";
 import { RestartBanner } from "./components/RestartBanner";
 import { SettingRow } from "./components/SettingRow";
 import { useSettings } from "./hooks/use-settings";
@@ -77,7 +78,9 @@ export function SettingsPanel() {
       />
 
       {/* Content area */}
-      {isLoading ? (
+      {activeCategory === "templates" ? (
+        <MetadataTemplateEditor />
+      ) : isLoading ? (
         <div className="flex items-center justify-center py-[var(--spacing-8)]">
           <Spinner size="lg" />
         </div>

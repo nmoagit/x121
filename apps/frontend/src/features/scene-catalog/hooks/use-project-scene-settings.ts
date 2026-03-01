@@ -55,5 +55,6 @@ export function useToggleProjectSceneSetting(projectId: number) {
   return useToggleSceneSetting(
     `/projects/${projectId}/scene-settings`,
     projectSceneSettingKeys.list(projectId),
+    "project",
   );
 }

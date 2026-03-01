@@ -7,7 +7,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { api } from "@/lib/api";
-import type { CharacterMetadata, CharacterSettings } from "../types";
+import type {
+  ActiveTemplateResponse,
+  CharacterMetadata,
+  CharacterSettings,
+} from "../types";
 
 /* --------------------------------------------------------------------------
    Query key factory
@@ -18,6 +22,8 @@ export const characterDetailKeys = {
     ["projects", projectId, "characters", characterId, "settings"] as const,
   metadata: (characterId: number) =>
     ["characters", characterId, "metadata"] as const,
+  metadataTemplate: (characterId: number) =>
+    ["characters", characterId, "metadata", "template"] as const,
 };
 
 /* --------------------------------------------------------------------------
@@ -67,6 +73,18 @@ export function useCharacterMetadata(characterId: number) {
     queryKey: characterDetailKeys.metadata(characterId),
     queryFn: () =>
       api.get<CharacterMetadata>(`/characters/${characterId}/metadata`),
+    enabled: characterId > 0,
+  });
+}
+
+/** Fetch active metadata template for a character. */
+export function useMetadataTemplate(characterId: number) {
+  return useQuery({
+    queryKey: characterDetailKeys.metadataTemplate(characterId),
+    queryFn: () =>
+      api.get<ActiveTemplateResponse>(
+        `/characters/${characterId}/metadata/template`,
+      ),
     enabled: characterId > 0,
   });
 }

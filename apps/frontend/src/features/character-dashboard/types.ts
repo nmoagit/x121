@@ -72,10 +72,15 @@ export interface MissingItem {
 
 /** A scene assignment row for the dashboard table. */
 export interface SceneAssignment {
-  scene_id: number;
+  scene_type_id: number;
   scene_name: string;
+  track_id: number;
+  track_name: string;
+  track_slug: string;
+  scene_id: number | null;
   status: string;
   segment_count: number;
+  final_video_count: number;
 }
 
 /* --------------------------------------------------------------------------

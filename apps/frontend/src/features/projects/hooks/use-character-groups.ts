@@ -85,6 +85,9 @@ export function useDeleteGroup(projectId: number) {
       queryClient.invalidateQueries({
         queryKey: characterGroupKeys.all(projectId),
       });
+      queryClient.invalidateQueries({
+        queryKey: ["projects", projectId, "characters"],
+      });
     },
   });
 }

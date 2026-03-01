@@ -80,8 +80,13 @@ impl CharacterGroupRepo {
             .await
     }
 
-    /// Soft-delete a group by ID. Returns `true` if a row was marked deleted.
+    /// Soft-delete a group by ID. Ungroups all characters in the group first,
+    /// then marks the group as deleted. Returns `true` if a row was marked deleted.
     pub async fn soft_delete(pool: &PgPool, id: DbId) -> Result<bool, sqlx::Error> {
+        sqlx::query("UPDATE characters SET group_id = NULL WHERE group_id = $1")
+            .bind(id)
+            .execute(pool)
+            .await?;
         let result = sqlx::query(
             "UPDATE character_groups SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
         )

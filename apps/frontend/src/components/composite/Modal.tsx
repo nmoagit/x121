@@ -117,7 +117,7 @@ export function Modal({ open, onClose, title, size = "md", children }: ModalProp
           <X size={20} aria-hidden="true" />
         </button>
 
-        <div className="overflow-y-auto min-h-0">
+        <div className="overflow-y-auto min-h-0 pl-2 pr-1 scrollbar-thin">
           {children}
         </div>
       </dialog>

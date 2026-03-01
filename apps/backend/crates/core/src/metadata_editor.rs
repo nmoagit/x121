@@ -6,6 +6,7 @@
 //! layer provides.
 
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use std::collections::HashMap;
 
 // ---------------------------------------------------------------------------
@@ -246,6 +247,53 @@ pub fn standard_field_defs() -> Vec<MetadataFieldDef> {
 }
 
 // ---------------------------------------------------------------------------
+// Flatten / unflatten helpers for dot-notation field names
+// ---------------------------------------------------------------------------
+
+/// Flatten nested metadata into dot-notation keys.
+///
+/// `{"appearance": {"hair": "brown"}}` → `{"appearance.hair": "brown"}`
+/// Top-level scalar values are kept as-is.
+pub fn flatten_nested_metadata(
+    value: &serde_json::Map<String, Value>,
+) -> serde_json::Map<String, Value> {
+    let mut flat = serde_json::Map::new();
+    for (key, val) in value {
+        if let Value::Object(inner) = val {
+            for (sub_key, sub_val) in inner {
+                flat.insert(format!("{key}.{sub_key}"), sub_val.clone());
+            }
+        } else {
+            flat.insert(key.clone(), val.clone());
+        }
+    }
+    flat
+}
+
+/// Unflatten dot-notation keys back into nested JSON.
+///
+/// `{"appearance.hair": "brown"}` → `{"appearance": {"hair": "brown"}}`
+/// Keys without a dot are kept at top level.
+pub fn unflatten_metadata(
+    flat: &serde_json::Map<String, Value>,
+) -> serde_json::Map<String, Value> {
+    let mut result = serde_json::Map::new();
+    for (key, val) in flat {
+        if let Some((prefix, suffix)) = key.split_once('.') {
+            let entry = result
+                .entry(prefix.to_string())
+                .or_insert_with(|| Value::Object(serde_json::Map::new()));
+            if let Value::Object(ref mut inner) = entry {
+                inner.insert(suffix.to_string(), val.clone());
+            }
+        } else {
+            result.insert(key.clone(), val.clone());
+        }
+    }
+    result
+}
+
+// ---------------------------------------------------------------------------
 // Completeness calculation
 // ---------------------------------------------------------------------------
 
@@ -280,11 +328,14 @@ fn is_field_filled(value: &serde_json::Value) -> bool {
 /// Calculate completeness for one character given its metadata JSON map.
 ///
 /// `character_id` is included in the result for convenient aggregation.
+/// Metadata is flattened first so dot-notation field names (e.g.
+/// `appearance.hair`) match fields stored in nested JSON.
 pub fn calculate_completeness(
     character_id: i64,
     metadata: &serde_json::Map<String, serde_json::Value>,
     fields: &[MetadataFieldDef],
 ) -> CompletenessResult {
+    let flat = flatten_nested_metadata(metadata);
     let required: Vec<&MetadataFieldDef> = fields.iter().filter(|f| f.is_required).collect();
     let total_required = required.len();
 
@@ -292,7 +343,7 @@ pub fn calculate_completeness(
     let mut missing_fields = Vec::new();
 
     for field in &required {
-        let is_filled = metadata
+        let is_filled = flat
             .get(&field.name)
             .map(is_field_filled)
             .unwrap_or(false);
@@ -355,9 +406,11 @@ pub struct MetadataFieldError {
 /// Validate a metadata update map against field definitions.
 ///
 /// Checks that:
-/// - Only known field names are present.
 /// - Select fields have values within the allowed options.
 /// - Number fields have numeric values.
+///
+/// Unknown fields (not in the template) are allowed — this supports
+/// user-added custom fields. Only type/option violations are flagged.
 ///
 /// Returns an empty vec when all fields pass.
 pub fn validate_metadata_fields(
@@ -370,11 +423,8 @@ pub fn validate_metadata_fields(
     let mut errors = Vec::new();
 
     for (key, value) in updates {
+        // Unknown fields are allowed (custom fields).
         let Some(def) = field_map.get(key.as_str()) else {
-            errors.push(MetadataFieldError {
-                field: key.clone(),
-                message: format!("Unknown metadata field: {key}"),
-            });
             continue;
         };
 
@@ -755,13 +805,13 @@ mod tests {
     }
 
     #[test]
-    fn validate_unknown_field_rejected() {
+    fn validate_unknown_field_allowed_as_custom() {
         let fields = sample_fields();
         let updates =
             make_metadata(&[("nonexistent_field", serde_json::Value::String("x".into()))]);
         let errors = validate_metadata_fields(&updates, &fields);
-        assert_eq!(errors.len(), 1);
-        assert!(errors[0].message.contains("Unknown"));
+        // Unknown fields are allowed (custom fields), so no errors.
+        assert!(errors.is_empty());
     }
 
     #[test]
@@ -957,5 +1007,113 @@ mod tests {
         assert_eq!(FieldCategory::Physical.label(), "Physical Attributes");
         assert_eq!(FieldCategory::Preferences.label(), "Preferences");
         assert_eq!(FieldCategory::Production.label(), "Production");
+    }
+
+    // --- Flatten / unflatten tests ---
+
+    #[test]
+    fn flatten_nested_metadata_works() {
+        let metadata = make_metadata(&[
+            ("name", serde_json::Value::String("Alice".into())),
+            (
+                "appearance",
+                serde_json::json!({"hair": "brown", "eye_color": "blue"}),
+            ),
+        ]);
+        let flat = flatten_nested_metadata(&metadata);
+        assert_eq!(
+            flat.get("appearance.hair").and_then(|v| v.as_str()),
+            Some("brown")
+        );
+        assert_eq!(
+            flat.get("appearance.eye_color").and_then(|v| v.as_str()),
+            Some("blue")
+        );
+        assert_eq!(
+            flat.get("name").and_then(|v| v.as_str()),
+            Some("Alice")
+        );
+        assert!(!flat.contains_key("appearance"));
+    }
+
+    #[test]
+    fn unflatten_metadata_works() {
+        let mut flat = serde_json::Map::new();
+        flat.insert(
+            "appearance.hair".to_string(),
+            serde_json::Value::String("brown".into()),
+        );
+        flat.insert(
+            "appearance.eye_color".to_string(),
+            serde_json::Value::String("blue".into()),
+        );
+        flat.insert(
+            "name".to_string(),
+            serde_json::Value::String("Alice".into()),
+        );
+
+        let nested = unflatten_metadata(&flat);
+        assert_eq!(
+            nested.get("name").and_then(|v| v.as_str()),
+            Some("Alice")
+        );
+        let appearance = nested.get("appearance").and_then(|v| v.as_object()).unwrap();
+        assert_eq!(appearance.get("hair").and_then(|v| v.as_str()), Some("brown"));
+        assert_eq!(
+            appearance.get("eye_color").and_then(|v| v.as_str()),
+            Some("blue")
+        );
+    }
+
+    #[test]
+    fn flatten_unflatten_round_trip() {
+        let mut flat = serde_json::Map::new();
+        flat.insert(
+            "favorites.color".to_string(),
+            serde_json::Value::String("red".into()),
+        );
+        flat.insert(
+            "favorites.food".to_string(),
+            serde_json::Value::String("pizza".into()),
+        );
+        flat.insert("bio".to_string(), serde_json::Value::String("test".into()));
+
+        let nested = unflatten_metadata(&flat);
+        let re_flat = flatten_nested_metadata(&nested);
+        assert_eq!(flat, re_flat);
+    }
+
+    #[test]
+    fn completeness_with_nested_metadata() {
+        // Test that completeness calculation works with dot-notation fields
+        let fields = vec![
+            MetadataFieldDef {
+                name: "bio".into(),
+                label: "Bio".into(),
+                field_type: FieldType::Text,
+                category: FieldCategory::Biographical,
+                is_required: true,
+                options: vec![],
+            },
+            MetadataFieldDef {
+                name: "appearance.hair".into(),
+                label: "Hair".into(),
+                field_type: FieldType::Text,
+                category: FieldCategory::Physical,
+                is_required: true,
+                options: vec![],
+            },
+        ];
+        // Metadata stored in nested format
+        let metadata = make_metadata(&[
+            ("bio", serde_json::Value::String("A hero".into())),
+            (
+                "appearance",
+                serde_json::json!({"hair": "brown"}),
+            ),
+        ]);
+        let result = calculate_completeness(1, &metadata, &fields);
+        assert_eq!(result.filled, 2);
+        assert!((result.percentage - 100.0).abs() < f64::EPSILON);
     }
 }

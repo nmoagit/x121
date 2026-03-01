@@ -41,10 +41,15 @@ const makeGenerationSummary = (
 const makeAssignment = (
   overrides: Partial<SceneAssignment> = {},
 ): SceneAssignment => ({
-  scene_id: 1,
+  scene_type_id: 1,
   scene_name: "Opening Scene",
+  track_id: 1,
+  track_name: "Clothed",
+  track_slug: "clothed",
+  scene_id: 1,
   status: "completed",
   segment_count: 5,
+  final_video_count: 1,
   ...overrides,
 });
 
@@ -194,11 +199,10 @@ describe("PipelineSettingsEditor", () => {
    -------------------------------------------------------------------------- */
 
 describe("MetadataSummarySection", () => {
-  it("renders completeness percentage", () => {
+  it("renders completeness section", () => {
     renderWithProviders(
       <MetadataSummarySection
         characterId={1}
-        settings={{ a2c4_model: "v1", elevenlabs_voice: "v2" }}
         sourceImageCount={3}
       />,
     );
@@ -210,31 +214,10 @@ describe("MetadataSummarySection", () => {
     ).toBeInTheDocument();
   });
 
-  it("shows 100% when all fields filled", () => {
-    const settings = {
-      a2c4_model: "v1",
-      elevenlabs_voice: "v2",
-      avatar_json: "j",
-      lora_model: "m",
-      comfyui_workflow: "w",
-    };
-    renderWithProviders(
-      <MetadataSummarySection
-        characterId={1}
-        settings={settings}
-        sourceImageCount={1}
-      />,
-    );
-    expect(
-      screen.getByTestId("metadata-completeness-badge"),
-    ).toHaveTextContent("100%");
-  });
-
   it("shows source image count", () => {
     renderWithProviders(
       <MetadataSummarySection
         characterId={1}
-        settings={{}}
         sourceImageCount={5}
       />,
     );
@@ -248,7 +231,6 @@ describe("MetadataSummarySection", () => {
     renderWithProviders(
       <MetadataSummarySection
         characterId={42}
-        settings={{}}
         sourceImageCount={0}
         onEditClick={onEdit}
       />,
