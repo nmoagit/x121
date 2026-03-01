@@ -31,8 +31,12 @@ pub struct Character {
 }
 
 /// DTO for creating a new character.
+///
+/// `project_id` defaults to `0` if omitted from JSON — the API handler
+/// always overrides it with the value from the URL path.
 #[derive(Debug, Clone, Deserialize)]
 pub struct CreateCharacter {
+    #[serde(default)]
     pub project_id: DbId,
     pub name: String,
     /// Defaults to 1 (Draft) if omitted.

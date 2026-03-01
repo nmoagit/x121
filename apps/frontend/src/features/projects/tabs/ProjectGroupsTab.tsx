@@ -321,10 +321,17 @@ function GroupSection({
   return (
     <div className="rounded-[var(--radius-md)] border border-[var(--color-border-default)] bg-[var(--color-surface-primary)]">
       {/* Header */}
-      <button
-        type="button"
-        className="flex w-full items-center gap-[var(--spacing-2)] px-[var(--spacing-3)] py-[var(--spacing-2)] text-left hover:bg-[var(--color-surface-secondary)] transition-colors rounded-t-[var(--radius-md)]"
+      <div
+        role="button"
+        tabIndex={0}
+        className="flex w-full items-center gap-[var(--spacing-2)] px-[var(--spacing-3)] py-[var(--spacing-2)] text-left hover:bg-[var(--color-surface-secondary)] transition-colors rounded-t-[var(--radius-md)] cursor-pointer"
         onClick={onToggle}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            onToggle();
+          }
+        }}
       >
         <Chevron
           size={16}
@@ -363,7 +370,7 @@ function GroupSection({
             <Trash2 size={14} aria-hidden />
           </button>
         )}
-      </button>
+      </div>
 
       {/* Expanded character list */}
       {expanded && (
