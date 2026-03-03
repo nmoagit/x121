@@ -20,9 +20,12 @@ use x121_core::metadata_editor::{
 use x121_core::types::DbId;
 use x121_db::models::character::Character;
 use x121_db::models::metadata_template::MetadataTemplateField;
-use x121_db::repositories::{CharacterRepo, MetadataTemplateFieldRepo, MetadataTemplateRepo};
+use x121_db::repositories::{
+    CharacterMetadataVersionRepo, CharacterRepo, MetadataTemplateFieldRepo, MetadataTemplateRepo,
+};
 
 use crate::error::{AppError, AppResult};
+use crate::handlers::character_metadata_version::build_manual_version_input;
 use crate::response::DataResponse;
 use crate::state::AppState;
 
@@ -167,6 +170,10 @@ async fn load_template_fields(
 }
 
 /// Build a structured response from a character and field definitions.
+///
+/// Returns template fields with their current values, plus any extra
+/// metadata keys not covered by the template (custom fields, source
+/// blobs like `_source_bio` / `_source_tov`, etc.).
 fn build_metadata_response(
     character: &Character,
     fields: &[MetadataFieldDef],
@@ -174,7 +181,11 @@ fn build_metadata_response(
     let metadata = character_metadata_map(character);
     let completeness = calculate_completeness(character.id, &metadata, fields);
 
-    let fields_with_values: Vec<MetadataFieldWithValue> = fields
+    // Collect template field names for lookup
+    let template_names: std::collections::HashSet<&str> =
+        fields.iter().map(|d| d.name.as_str()).collect();
+
+    let mut fields_with_values: Vec<MetadataFieldWithValue> = fields
         .iter()
         .map(|def| {
             let value = metadata
@@ -187,6 +198,24 @@ fn build_metadata_response(
             }
         })
         .collect();
+
+    // Append non-template keys (custom fields, _source_bio, _source_tov, etc.)
+    for (key, value) in &metadata {
+        if template_names.contains(key.as_str()) {
+            continue;
+        }
+        fields_with_values.push(MetadataFieldWithValue {
+            definition: MetadataFieldDef {
+                name: key.clone(),
+                label: key.clone(),
+                field_type: FieldType::Text,
+                category: FieldCategory::Preferences,
+                is_required: false,
+                options: vec![],
+            },
+            value: value.clone(),
+        });
+    }
 
     CharacterMetadataResponse {
         character_id: character.id,
@@ -324,6 +353,32 @@ pub async fn update_character_metadata(
         entity: "Character",
         id: character_id,
     }))?;
+
+    // Create a metadata version only if metadata actually changed (dedup).
+    let should_create_version =
+        match CharacterMetadataVersionRepo::find_active(&state.pool, character_id).await {
+            Ok(Some(active)) => active.metadata != new_metadata,
+            _ => true, // No active version or DB error — create one
+        };
+
+    if should_create_version {
+        let metadata_map = new_metadata.as_object();
+        let source_bio = metadata_map.and_then(|m| m.get("_source_bio")).cloned();
+        let source_tov = metadata_map.and_then(|m| m.get("_source_tov")).cloned();
+        let generation_report =
+            x121_core::metadata_transform::build_report_json(&new_metadata);
+
+        let version_input = build_manual_version_input(
+            character_id,
+            new_metadata.clone(),
+            None,
+            generation_report,
+            source_bio,
+            source_tov,
+        );
+        let _ =
+            CharacterMetadataVersionRepo::create_as_active(&state.pool, &version_input).await;
+    }
 
     let result = MetadataUpdateResult {
         status: "updated".to_string(),

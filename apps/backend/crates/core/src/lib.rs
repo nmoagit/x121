@@ -58,6 +58,7 @@ pub mod legacy_import;
 pub mod maintenance;
 pub mod metadata;
 pub mod metadata_editor;
+pub mod metadata_transform;
 pub mod metadata_validator;
 pub mod metric_names;
 pub mod name_parser;

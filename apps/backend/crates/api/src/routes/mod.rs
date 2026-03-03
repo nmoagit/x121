@@ -17,6 +17,7 @@ pub mod character;
 pub mod character_dashboard;
 pub mod character_ingest;
 pub mod character_metadata;
+pub mod character_metadata_version;
 pub mod character_scene_overrides;
 pub mod checkpoints;
 pub mod cloud_providers;
@@ -834,6 +835,7 @@ pub fn api_routes() -> Router<AppState> {
         .nest("/characters", character::router()
             .merge(metadata::character_metadata_router())
             .merge(character_metadata::character_router())
+            .merge(character_metadata_version::router())
             .merge(embedding::embedding_router())
             .merge(readiness::readiness_router())
             .merge(character_dashboard::dashboard_router())
@@ -904,6 +906,8 @@ pub fn api_routes() -> Router<AppState> {
         .nest("/import", importer::router())
         // Video streaming, metadata, and thumbnails.
         .nest("/videos", video::router())
+        // Image variant backfill (admin).
+        .route("/image-variants/backfill-metadata", axum::routing::post(crate::handlers::image_variant::backfill_image_metadata))
         // Background job execution engine (PRD-07, PRD-08, PRD-28, PRD-34, PRD-77).
         .nest("/jobs", jobs::router()
             .merge(checkpoints::checkpoint_routes())

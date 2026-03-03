@@ -486,6 +486,7 @@ When a PRD is completed, some phases may be deferred because they depend on PRDs
 | PRD-29 Phase 8.1: Theme API persistence | PRD-29 (done) | PRD-01, PRD-03 | Both PRD-01 AND PRD-03 are done (also needs Phase 1 above) | S | Connect ThemeProvider to backend API for cross-session persistence (currently localStorage only) | **DONE** — `useThemePersistence` hook syncs with backend API, debounced saves |
 | PRD-02 DRY: Router/middleware extraction | PRD-02 (done) | PRD-03 | PRD-03 is done | S | Extract shared router + middleware builder from main.rs and test helper to eliminate ~100 lines of duplication | **DONE** — DRY-017 resolved, `build_app_router()` in `api/src/router.rs` |
 | PRD-29: GitHub Primer-style token reskin | PRD-29 (done) | None | Anytime | S | Remap color, shadow, radius, and font-family token values in `colors.css` and spacing/animation token files to match GitHub's Primer design language. Component structure unchanged — token values only. | **DONE** — All 4 themes remapped to Primer-derived palette |
+| Port fix_metadata.py to Rust | PRD-113 (done) | None | Anytime | L | Port `scripts/fix_metadata.py` (2,870 lines) to native Rust in `core::metadata_transform`. Currently shelling out to Python for metadata generation. Covers mega-key splitting, compound name joining, embedded value extraction, mixed array parsing, split key-value fixing, and 100+ edge cases. | Pending |
 
 ### Quick Reference: What to pick up after each blocking PRD
 
@@ -574,3 +575,4 @@ PRD-29 → PRD-83 → PRD-35 → PRD-57
 | 2026-02-25 | Added PRD-118 (Live Activity Console & Logging System) to Phase 2 Track C. Terminal-style console, role-based streaming, DB persistence. All deps done. Total: 119 PRDs |
 | 2026-02-25 | Added PRD-119 (Time-Based Job Scheduling) to Phase 11 Track A. Cron-style schedules, calendar UI, off-peak selection, timezone handling. All deps done. Total: 119 PRDs |
 | 2026-02-27 | Added PRD-120 (Scene & Workflow Naming Hierarchy) to new "Standalone — Python Generation Scripts" section. Independent of web app, no deps. Total: 120 PRDs |
+| 2026-03-03 | Added deferred work: Port fix_metadata.py (2,870 lines) to Rust. Currently shelling out to Python subprocess for metadata generation |

@@ -25,6 +25,7 @@ pub mod character_dashboard;
 pub mod character_group;
 pub mod character_ingest;
 pub mod character_metadata;
+pub mod character_metadata_version;
 pub mod character_scene_overrides;
 pub mod checkpoints;
 pub mod cloud_providers;

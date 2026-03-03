@@ -21,6 +21,7 @@ pub mod bulk_operation;
 pub mod character;
 pub mod character_group;
 pub mod character_ingest;
+pub mod character_metadata_version;
 pub mod character_scene_override;
 pub mod character_scene_prompt_override;
 pub mod checkpoint;
