@@ -21,14 +21,14 @@ Source of truth: [`design/design.md`](../design.md)
 | Status | Count |
 |--------|-------|
 | backlog | 0 |
-| planning | 0 |
+| planning | 2 |
 | in-progress | 0 |
 | review | 0 |
-| done | 124 |
+| done | 125 |
 | blocked | 0 |
 | deferred | 0 |
 | maybe | 15 |
-| **Total** | **139** |
+| **Total** | **142** |
 
 ---
 
@@ -89,6 +89,8 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-109 | Scene Video Versioning, External Import & Soft Delete | — | `done` | — | Implemented (2026-02-20). All 7 phases complete: migrations, models, soft delete infra (9 repos), version repo, version API, trash API, delivery integration, integration tests (30 tests). |
 | PRD-113 | Character Ingest Pipeline | 1 | `done` | 2026-02-27 | 3 migrations (5 tables), 4 core modules (name parser, folder scanner, metadata validator, video spec validator), 3 model modules, 3 repo modules, 4 handler modules, 4 route modules, frontend wizard + validation dashboard. 38 core tests. |
 | PRD-122 | Storage Configuration (Local & Cloud S3) | 1 | `done` | 2026-03-01 | StorageProvider trait + LocalStorageProvider (core), S3StorageProvider (cloud crate, aws-sdk-s3), runtime hot-swap via RwLock, 5 CoreError variants, 7 settings, seed migration, set_default/test_s3_connection handlers, frontend S3 field toggle. DRY-627 to DRY-634 audited. |
+| PRD-124 | Speech & TTS Repository | 1 | `planning` | — | Normalized speech text storage per character (speech_types lookup + character_speeches), CRUD API, Speech tab in Character Detail page, bulk CSV/JSON import/export, read-only VoiceID display. Deps: PRD-00, PRD-01, PRD-29, PRD-112. |
+| PRD-125 | LLM-Driven Metadata Refinement Pipeline | 1 | `planning` | — | LLM formatting/enrichment of Bio+ToV, iterative fix_metadata.py execution loop, diff-based approval, outdated dependency chain, source file protection. Deps: PRD-009, PRD-013, PRD-014, PRD-066, PRD-113. |
 
 ## Part 3: Generation & Pipeline Core
 
@@ -145,6 +147,7 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-112 | Project Hub & Management | 1 | `done` | 2026-02-27 | 2 migrations (character_groups, group_id FK), character group model/repo/handlers, project stats endpoint, 25 frontend files (project list, detail with 6 tabs, character workstation with 6 tabs, 3 TanStack Query hook files). |
 | PRD-117 | System Status Footer Bar | 1 | `done` | 2026-02-27 | HealthAggregator background service, status handler, 7 frontend components (StatusFooter, FooterSegment, ServiceHealth, CloudGpu, Job, Workflow, Collapsed). |
 | PRD-118 | Live Activity Console & Logging System | — | `done` | 2026-02-27 | 1 migration (4 tables), core types, ActivityLogBroadcaster, custom tracing::Layer, batch persistence/retention services, WebSocket handler, REST endpoints, Zustand store, dual-mode UI (panel + page). |
+| PRD-126 | Critical Bug Fixes & UX Polish | 1 | `done` | — | 5 bug fixes (import timeout, Select All, empty versions, UTF-8 metadata, DnD groups), 5 UX polish (ignore toggle, show disabled, breadcrumb scroll, header consolidation, wider inputs), 3 import validation fixes (filename mismatch, skip guard, race condition). |
 
 ## Part 5: Workflow Editor & Review
 
@@ -252,3 +255,6 @@ Source of truth: [`design/design.md`](../design.md)
 | 2026-02-28 | Added PRD-122 (Storage Configuration — Local & Cloud S3). StorageProvider trait abstraction, LocalStorageProvider + S3StorageProvider implementations, aws-sdk-s3 integration, S3 settings in admin panel, connection testing, runtime backend switching. Extends PRD-48, PRD-110. Total PRDs: 122 + 15 MAYBEs + 1 done = 138 (2 planning). |
 | 2026-03-01 | Implemented PRD-121 + PRD-122. Both complete: clip QA workflow, storage provider abstraction with S3, runtime hot-swap, 8 DRY findings fixed (DRY-627–634). |
 | 2026-03-01 | Added PRD-123 (Scene Catalog & Scene Types Unification). Absorbs scene_catalog into scene_types: adds slug + has_clothes_off_transition columns, creates scene_type_tracks junction, migrates project_scene_settings/character_scene_overrides FKs from scene_catalog_id to scene_type_id, drops scene_catalog tables, unifies frontend to single "Scene Catalog" page, removes "Scene Types" nav entry. Total PRDs: 124 + 15 MAYBEs = 139. |
+| 2026-03-06 | Added PRD-125 (LLM-Driven Metadata Refinement Pipeline). LLM formatting/enrichment of Bio+ToV data, iterative `fix_metadata.py` execution with quality checking, diff-based human approval, "Outdated" dependency chain (Bio/ToV change flags metadata), source file protection (import never overwrites bio.json/tov.json). Deps: PRD-009, PRD-013, PRD-014, PRD-066, PRD-113. Total PRDs: 125 + 15 MAYBEs = 140. |
+| 2026-03-06 | Added PRD-126 (Critical Bug Fixes & UX Polish). 13 items: import timeout fix, Select All bug, empty versions, UTF-8 metadata, DnD groups, ignore deliverable toggle, show/hide disabled, breadcrumb scroll, header consolidation, wider inputs, filename mismatch warning, import skip guard, import race condition. Deps: PRD-112, PRD-113, PRD-108, PRD-109. Total PRDs: 126 + 15 MAYBEs = 141. |
+| 2026-03-06 | Added PRD-124 (Speech & TTS Repository). Normalized speech text storage per character (speech_types lookup + character_speeches table), CRUD API (8 endpoints), Speech tab in Character Detail page, bulk CSV/JSON import/export, read-only VoiceID display. MVP is text-only; TTS audio generation deferred to post-MVP. Deps: PRD-00, PRD-01, PRD-29, PRD-112. Total PRDs: 127 + 15 MAYBEs = 142. |

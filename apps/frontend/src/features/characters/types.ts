@@ -4,6 +4,23 @@
 
 import type { BadgeVariant } from "@/components/primitives";
 
+/* --------------------------------------------------------------------------
+   Metadata source key constants
+   -------------------------------------------------------------------------- */
+
+/** Reserved metadata key for the raw bio.json source object. */
+export const SOURCE_KEY_BIO = "_source_bio";
+
+/** Reserved metadata key for the raw tov.json source object. */
+export const SOURCE_KEY_TOV = "_source_tov";
+
+/** Set of all reserved source keys (excluded from form rendering). */
+export const SOURCE_KEYS = new Set([SOURCE_KEY_BIO, SOURCE_KEY_TOV]);
+
+/* --------------------------------------------------------------------------
+   Interfaces
+   -------------------------------------------------------------------------- */
+
 export interface CharacterSettings {
   [key: string]: unknown;
 }
@@ -87,6 +104,108 @@ export function groupFieldsIntoSections(fields: MetadataTemplateField[]): Metada
   }
 
   return order.map((k) => sections[k]).filter(Boolean) as MetadataSection[];
+}
+
+/* --------------------------------------------------------------------------
+   Metadata versioning types
+   -------------------------------------------------------------------------- */
+
+/** A versioned metadata snapshot. */
+export interface MetadataVersion {
+  id: number;
+  character_id: number;
+  version_number: number;
+  metadata: Record<string, unknown>;
+  source: "manual" | "generated" | "csv_import" | "json_import";
+  source_bio: Record<string, unknown> | null;
+  source_tov: Record<string, unknown> | null;
+  generation_report: GenerationReport | null;
+  is_active: boolean;
+  notes: string | null;
+  rejection_reason: string | null;
+  outdated_at: string | null;
+  deleted_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+/** Report from the metadata generation engine. */
+export interface GenerationReport {
+  field_count: number;
+  missing: MissingField[];
+  warnings: string[];
+  errors: string[];
+}
+
+/** A field that was expected but missing. */
+export interface MissingField {
+  field: string;
+  category: string;
+}
+
+/* --------------------------------------------------------------------------
+   Speech & TTS types (PRD-124)
+   -------------------------------------------------------------------------- */
+
+export interface SpeechType {
+  id: number;
+  name: string;
+  created_at: string;
+}
+
+export interface CharacterSpeech {
+  id: number;
+  character_id: number;
+  speech_type_id: number;
+  version: number;
+  text: string;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+}
+
+export interface ImportSpeechesResponse {
+  imported: number;
+  created_types: string[];
+  errors: string[];
+}
+
+/* --------------------------------------------------------------------------
+   LLM Refinement types (PRD-125)
+   -------------------------------------------------------------------------- */
+
+export interface RefinementJob {
+  id: number;
+  uuid: string;
+  character_id: number;
+  status: "queued" | "running" | "completed" | "failed";
+  source_bio: Record<string, unknown> | null;
+  source_tov: Record<string, unknown> | null;
+  llm_provider: string;
+  llm_model: string;
+  enrich: boolean;
+  iterations: unknown[];
+  final_metadata: Record<string, unknown> | null;
+  final_report: RefinementReport | null;
+  error: string | null;
+  metadata_version_id: number | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface RefinementReport {
+  changes: FieldChange[];
+  iterations_count: number;
+  warnings: string[];
+  enriched_field_count: number;
+}
+
+export interface FieldChange {
+  field: string;
+  old_value: unknown;
+  new_value: unknown;
+  change_type: "added" | "modified" | "removed" | "enriched";
+  source: "formatted" | "normalized" | "enriched" | "script_corrected";
 }
 
 /** Badge variant for a metadata completeness percentage. */

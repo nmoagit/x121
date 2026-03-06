@@ -96,6 +96,7 @@ export {
   FolderKanban,
   // Gap-fill additions
   Bug,
+  ListFilter,
   Calendar,
   DollarSign,
   FileSearch,
@@ -104,6 +105,8 @@ export {
   TrendingUp,
   Undo2,
   Users,
+  MessageSquare,
+  Sparkles,
   Wand2,
   Wrench,
 } from "lucide-react";

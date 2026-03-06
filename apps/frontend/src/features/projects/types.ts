@@ -117,6 +117,12 @@ export interface DroppedAsset {
 export interface CharacterDropPayload {
   rawName: string;
   assets: DroppedAsset[];
+  /** bio.json source file (used for metadata generation). */
+  bioJson?: File;
+  /** tov.json source file (used for metadata generation). */
+  tovJson?: File;
+  /** metadata.json file (pre-flattened metadata, takes precedence over bio/tov). */
+  metadataJson?: File;
 }
 
 /* --------------------------------------------------------------------------
@@ -166,6 +172,7 @@ export const CHARACTER_TABS = [
   { id: "images", label: "Images" },
   { id: "scenes", label: "Scenes" },
   { id: "metadata", label: "Metadata" },
+  { id: "speech", label: "Speech" },
   { id: "deliverables", label: "Deliverables" },
   { id: "settings", label: "Settings" },
 ] as const;

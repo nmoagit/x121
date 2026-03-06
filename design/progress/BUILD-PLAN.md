@@ -354,6 +354,8 @@ This phase contains no PRD work — only structural setup.
 | 78 | PRD-107 | Character Readiness & State View | M | Frontend | PRD-01, PRD-60 |
 | 79 | PRD-108 | Character Settings Dashboard | M | Frontend | PRD-01, PRD-60, PRD-107 |
 | 80 | PRD-18 | Bulk Data Maintenance (Search/Replace/Re-path) | M | Backend | PRD-01, PRD-20 |
+| 81 | PRD-124 | Speech & TTS Repository | M | Full-Stack | PRD-00, PRD-01, PRD-29, PRD-112 |
+| 125 | PRD-125 | LLM-Driven Metadata Refinement Pipeline | L | Full-Stack | PRD-009, PRD-013, PRD-014, PRD-066, PRD-113 |
 
 ---
 
@@ -460,6 +462,7 @@ This phase contains no PRD work — only structural setup.
 | 108 | PRD-55 | Director's View (Mobile/Tablet Review) | L | Frontend | PRD-03, PRD-29, PRD-35, PRD-36, PRD-38, PRD-52 | DONE |
 | 109 | PRD-89 | Dashboard Widget Customization | M | Frontend | PRD-04, PRD-42, PRD-85 | DONE |
 | 110 | PRD-105 | Platform Setup Wizard | M | Admin | PRD-03, PRD-05, PRD-46, PRD-80, PRD-81 | DONE |
+| 126 | PRD-126 | Critical Bug Fixes & UX Polish | L | Full-Stack | PRD-112, PRD-113, PRD-108, PRD-109 (all done) |
 
 ---
 
@@ -535,13 +538,13 @@ PRD-29 → PRD-83 → PRD-35 → PRD-57
 | 5 | 9 | Generation Core | Video generation loop, QA gates, assembly, cloud GPU |
 | 6 | 9 | Production at Scale | Batch orchestrator, multi-res, storyboards |
 | 7 | 9 | Pipeline Tools | Workflow import, hooks, prompts, branching, generation strategy |
-| 8 | 6 | Bulk Onboarding | CSV import, character dashboards, legacy migration |
+| 8 | 8 | Bulk Onboarding & LLM Refinement | CSV import, character dashboards, legacy migration, LLM metadata refinement, speech repository |
 | 9 | 8 | Advanced Review | Cross-char comparison, QA rulesets, regression testing |
 | 10 | 8 | Reporting & Delivery | Production reports, compliance, lifecycle, sharing |
 | 11 | 10 | Admin Infrastructure | GPU power, budgets, health, webhooks, observability, time scheduling |
 | 12 | 4 | Polish & Hardening | Backup/DR, mobile review, setup wizard, dashboard config |
 | Standalone | 1 | Python Scripts | Scene naming hierarchy for generation script |
-| **Total** | **120** | | |
+| **Total** | **122** | | |
 
 ---
 
@@ -576,3 +579,6 @@ PRD-29 → PRD-83 → PRD-35 → PRD-57
 | 2026-02-25 | Added PRD-119 (Time-Based Job Scheduling) to Phase 11 Track A. Cron-style schedules, calendar UI, off-peak selection, timezone handling. All deps done. Total: 119 PRDs |
 | 2026-02-27 | Added PRD-120 (Scene & Workflow Naming Hierarchy) to new "Standalone — Python Generation Scripts" section. Independent of web app, no deps. Total: 120 PRDs |
 | 2026-03-03 | Added deferred work: Port fix_metadata.py (2,870 lines) to Rust. Currently shelling out to Python subprocess for metadata generation |
+| 2026-03-06 | Added PRD-125 (LLM-Driven Metadata Refinement Pipeline) to Phase 8. LLM formatting/enrichment of Bio+ToV, iterative fix_metadata.py execution, diff-based approval, outdated dependency chain, source file protection. All deps done. Total: 121 PRDs |
+| 2026-03-06 | Added PRD-126 (Critical Bug Fixes & UX Polish) to Phase 12. 13 items across bug fixes, UX polish, and import validation. All deps done (PRD-112, 113, 108, 109). Total: 126 PRDs |
+| 2026-03-06 | Added PRD-124 (Speech & TTS Repository) to Phase 8. Normalized speech text storage, CRUD API, Speech tab, CSV/JSON import/export, read-only VoiceID. All deps done (PRD-00, 01, 29, 112). Total: 122 PRDs in build plan |

@@ -42,6 +42,7 @@ import { CharacterMetadataTab } from "./tabs/CharacterMetadataTab";
 import { CharacterOverviewTab } from "./tabs/CharacterOverviewTab";
 import { CharacterScenesTab } from "./tabs/CharacterScenesTab";
 import { CharacterSettingsTab } from "./tabs/CharacterSettingsTab";
+import { CharacterSpeechTab } from "./tabs/CharacterSpeechTab";
 
 /* --------------------------------------------------------------------------
    Component
@@ -261,6 +262,7 @@ export function CharacterDetailPage() {
         />
       )}
       {activeTab === "metadata" && <CharacterMetadataTab key={characterId} characterId={characterId} projectId={projectId} />}
+      {activeTab === "speech" && <CharacterSpeechTab key={characterId} characterId={characterId} projectId={projectId} />}
       {activeTab === "settings" && (
         <CharacterSettingsTab key={characterId} projectId={projectId} characterId={characterId} />
       )}

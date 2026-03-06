@@ -20,6 +20,7 @@ pub mod character_ingest;
 pub mod character_metadata;
 pub mod character_metadata_version;
 pub mod character_scene_overrides;
+pub mod character_speech;
 pub mod checkpoints;
 pub mod cloud_providers;
 pub mod collaboration;
@@ -83,6 +84,7 @@ pub mod quality_gates;
 pub mod queue;
 pub mod readiness;
 pub mod reclamation;
+pub mod refinement;
 pub mod regression;
 pub mod render_timeline;
 pub mod resolution;
@@ -99,6 +101,7 @@ pub mod session_management;
 pub mod setup_wizard;
 pub mod shared_link;
 pub mod sidecar;
+pub mod speech_type;
 pub mod status;
 pub mod storage;
 pub mod storage_visualizer;
@@ -844,8 +847,10 @@ pub fn api_routes() -> Router<AppState> {
             .merge(poster_frame::character_poster_router())
             .merge(consistency_report::character_consistency_router())
             .merge(contact_sheet::character_contact_sheet_router())
+            .merge(refinement::character_refinement_router())
             .nest("/{character_id}/scene-settings", character_scene_overrides::router())
-            .nest("/{character_id}/deliverable-ignores", character_deliverable_ignore::router()))
+            .nest("/{character_id}/deliverable-ignores", character_deliverable_ignore::router())
+            .nest("/{character_id}/speeches", character_speech::router()))
         // Scene-scoped sub-resources (segments, review queue, generation PRD-24, QA PRD-49, resolution PRD-59, storyboard PRD-62, branching PRD-50).
         .nest("/scenes", scene::router()
             .merge(metadata::scene_metadata_router())
@@ -890,6 +895,8 @@ pub fn api_routes() -> Router<AppState> {
         .nest("/mixins", scene_type_inheritance::mixin_router())
         // Tracks (PRD-111).
         .nest("/tracks", track::router())
+        // Speech types (PRD-124).
+        .nest("/speech-types", speech_type::router())
         // Trash / bin management.
         .nest("/trash", trash::router())
         // Notifications, preferences, and settings.
@@ -1090,4 +1097,6 @@ pub fn api_routes() -> Router<AppState> {
         .nest("/user", directors_view::directors_view_router())
         // Platform Setup Wizard (PRD-105).
         .nest("/admin/setup", setup_wizard::setup_wizard_router())
+        // LLM Refinement Pipeline: top-level job lookup by UUID (PRD-125).
+        .nest("/refinement-jobs", refinement::refinement_job_router())
 }

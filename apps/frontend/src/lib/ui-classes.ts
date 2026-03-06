@@ -17,3 +17,24 @@ export const ICON_ACTION_BTN =
  */
 export const ICON_ACTION_BTN_DANGER =
   "p-1 rounded-[var(--radius-sm)] text-[var(--color-text-muted)] hover:text-[var(--color-text-danger)] hover:bg-[var(--color-surface-tertiary)] cursor-pointer";
+
+/**
+ * Shared chip-container styling used by ChipInput and TagInput.
+ *
+ * Renders a flex-wrap pill bag with a surface background, border, and
+ * focus-within ring. Apply padding separately per component if it differs.
+ */
+/** Section heading text (h3 level) used across feature tabs and panels. */
+export const SECTION_HEADING =
+  "text-base font-semibold text-[var(--color-text-primary)]";
+
+/**
+ * Base textarea styling matching the design system input treatment.
+ * Apply directly to `<textarea>` elements. Add `placeholder:text-[var(--color-text-muted)]`
+ * when the textarea has a placeholder.
+ */
+export const TEXTAREA_BASE =
+  "w-full px-3 py-2 text-sm bg-[var(--color-surface-secondary)] text-[var(--color-text-primary)] border border-[var(--color-border-default)] rounded-[var(--radius-md)] focus:outline-none focus:ring-2 focus:ring-[var(--color-border-focus)]";
+
+export const CHIP_CONTAINER =
+  "flex flex-wrap items-center gap-1.5 bg-[var(--color-surface-secondary)] border border-[var(--color-border-default)] rounded-[var(--radius-md)] focus-within:ring-2 focus-within:ring-[var(--color-border-focus)] focus-within:ring-offset-0 transition-colors duration-150";
