@@ -9,13 +9,16 @@ path = "src/main.rs"
 
 [dependencies]
 x121-core = { workspace = true }
+x121-comfyui = { workspace = true }
 x121-db = { workspace = true }
 x121-events = { workspace = true }
 x121-pipeline = { workspace = true }
 
 tokio = { workspace = true }
+sqlx = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
 dotenvy = { workspace = true }
+chrono = { workspace = true }
