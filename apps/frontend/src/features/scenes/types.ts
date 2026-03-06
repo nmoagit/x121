@@ -24,6 +24,10 @@ export interface SceneVideoVersion {
   file_path: string;
   file_size_bytes: number | null;
   duration_secs: number | null;
+  width: number | null;
+  height: number | null;
+  frame_rate: number | null;
+  preview_path: string | null;
   is_final: boolean;
   notes: string | null;
   qa_status: "pending" | "approved" | "rejected";
@@ -109,6 +113,11 @@ export function sceneStatusLabel(statusId: number): string {
 
 export function sceneStatusBadgeVariant(statusId: number): BadgeVariant {
   return SCENE_STATUS_BADGE[statusId] ?? "default";
+}
+
+/** Returns true if a scene has existing video content (generated, approved, or delivered). */
+export function sceneHasVideo(scene: Scene): boolean {
+  return scene.status_id >= SCENE_STATUS_GENERATED;
 }
 
 // IMPORTANT: Use `formatBytes` from `@/lib/format` for file sizes.

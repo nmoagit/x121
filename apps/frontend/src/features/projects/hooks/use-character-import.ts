@@ -10,34 +10,43 @@
  * - Asset-aware: creates characters + uploads images/videos from folders
  */
 
-import { useCallback, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useCallback, useRef, useState } from "react";
 
 import { useToast } from "@/components/composite/useToast";
 
-import { parseFilename } from "@/features/characters/tabs/matchDroppedVideos";
+import { flattenMetadata } from "@/features/characters/lib/metadata-flatten";
+import { generateMetadata } from "@/features/characters/lib/metadata-transform";
+import {
+  extractCharacterHint,
+  matchesCharacterName,
+  parseFilename,
+} from "@/features/characters/tabs/matchDroppedVideos";
+import { SOURCE_KEY_BIO, SOURCE_KEY_TOV } from "@/features/characters/types";
+import { fetchVariantTypeSet, imageVariantKeys } from "@/features/images/hooks/use-image-variants";
 import { useSceneCatalog } from "@/features/scene-catalog/hooks/use-scene-catalog";
 import { useTracks } from "@/features/scene-catalog/hooks/use-tracks";
 import { sceneKeys } from "@/features/scenes/hooks/useCharacterScenes";
-import { imageVariantKeys } from "@/features/images/hooks/use-image-variants";
-import type { ImageVariant } from "@/features/images/types";
 import type { Scene } from "@/features/scenes/types";
+import { sceneHasVideo } from "@/features/scenes/types";
 import { api } from "@/lib/api";
+import { limitConcurrency } from "@/lib/async-utils";
+import { readFileAsJson } from "@/lib/file-types";
 
-import type { Character, CharacterDropPayload } from "../types";
-import { useBulkCreateCharacters, useProjectCharacters } from "./use-project-characters";
 import {
   createSceneForCharacter,
   importVideoClip,
   uploadImageVariant,
 } from "../lib/bulk-asset-upload";
+import type { Character, CharacterDropPayload } from "../types";
+import { useBulkCreateCharacters, useProjectCharacters } from "./use-project-characters";
 
 /* --------------------------------------------------------------------------
    Progress types
    -------------------------------------------------------------------------- */
 
 export interface ImportProgress {
-  phase: "creating" | "uploading-images" | "importing-videos" | "done";
+  phase: "creating" | "uploading-images" | "uploading-metadata" | "importing-videos" | "done";
   current: number;
   total: number;
   errors: string[];
@@ -94,9 +103,25 @@ export function useCharacterImport(projectId: number) {
       newPayloads: CharacterDropPayload[],
       existingPayloads: CharacterDropPayload[],
       groupId?: number,
+      overwrite = false,
+      skipExisting = false,
     ) => {
+      // Early return if nothing to import
+      if (newPayloads.length === 0 && existingPayloads.length === 0) {
+        setImportOpen(false);
+        addToast({ message: "Nothing to import", variant: "info" });
+        return;
+      }
+
       const errors: string[] = [];
       const nameToIdMap = new Map<string, number>();
+
+      /** Reusable progress updater for limitConcurrency callbacks. */
+      const onProgress = (done: number) => {
+        setImportProgress((prev) =>
+          prev ? { ...prev, current: done, errors: [...errors] } : null,
+        );
+      };
 
       // Phase 1: Create new characters
       const newNames = newPayloads.map((p) => p.rawName);
@@ -141,12 +166,25 @@ export function useCharacterImport(projectId: number) {
 
       // Combine all payloads that have a resolved character ID
       const allPayloads = [...newPayloads, ...existingPayloads];
+
+      // Check for filename-to-character mismatches
+      for (const payload of allPayloads) {
+        const charId = nameToIdMap.get(payload.rawName.toLowerCase());
+        if (!charId) continue;
+        for (const asset of payload.assets) {
+          const hint = extractCharacterHint(asset.file.name);
+          if (hint && !matchesCharacterName(hint, payload.rawName)) {
+            errors.push(
+              `Warning: "${asset.file.name}" may belong to "${hint}", not "${payload.rawName}"`,
+            );
+          }
+        }
+      }
+
       const imageAssets = allPayloads.flatMap((p) => {
         const charId = nameToIdMap.get(p.rawName.toLowerCase());
         if (!charId) return [];
-        return p.assets
-          .filter((a) => a.kind === "image")
-          .map((a) => ({ charId, asset: a }));
+        return p.assets.filter((a) => a.kind === "image").map((a) => ({ charId, asset: a }));
       });
 
       const videoAssets = allPayloads.flatMap((p) => {
@@ -171,15 +209,7 @@ export function useCharacterImport(projectId: number) {
         const uniqueCharIds = [...new Set(imageAssets.map((a) => a.charId))];
         for (const cid of uniqueCharIds) {
           try {
-            const variants = await api.get<ImageVariant[]>(
-              `/characters/${cid}/image-variants`,
-            );
-            const types = new Set(
-              variants
-                .map((v) => v.variant_type?.toLowerCase())
-                .filter((t): t is string => t != null),
-            );
-            existingVariantTypes.set(cid, types);
+            existingVariantTypes.set(cid, await fetchVariantTypeSet(cid));
           } catch {
             // If fetch fails, proceed without skip-check for this character
             existingVariantTypes.set(cid, new Set());
@@ -187,29 +217,27 @@ export function useCharacterImport(projectId: number) {
         }
 
         let skippedImages = 0;
-        for (let i = 0; i < imageAssets.length; i++) {
-          const { charId, asset } = imageAssets[i]!;
-
-          // Skip if this variant_type already exists for the character
+        const imageTasks = imageAssets.map(({ charId, asset }) => () => {
           const existing = existingVariantTypes.get(charId);
-          if (existing?.has(asset.category.toLowerCase())) {
+          if (!overwrite && existing?.has(asset.category.toLowerCase())) {
             skippedImages++;
-            setImportProgress((prev) =>
-              prev ? { ...prev, current: i + 1, errors: [...errors] } : null,
-            );
-            continue;
+            return Promise.resolve("skipped" as const);
           }
-
-          try {
-            await uploadImageVariant(charId, asset.file, asset.category);
-            // Mark as existing so subsequent dupes in the same batch are skipped
+          return uploadImageVariant(charId, asset.file, asset.category).then(() => {
             existing?.add(asset.category.toLowerCase());
-          } catch (err) {
-            errors.push(`Image upload failed for "${asset.file.name}": ${String(err)}`);
+            return "uploaded" as const;
+          });
+        });
+
+        const imageResults = await limitConcurrency(imageTasks, 3, onProgress);
+
+        for (let i = 0; i < imageResults.length; i++) {
+          const r = imageResults[i]!;
+          if (r.status === "rejected") {
+            errors.push(
+              `Image upload failed for "${imageAssets[i]!.asset.file.name}": ${String(r.reason)}`,
+            );
           }
-          setImportProgress((prev) =>
-            prev ? { ...prev, current: i + 1, errors: [...errors] } : null,
-          );
         }
 
         if (skippedImages > 0) {
@@ -219,7 +247,79 @@ export function useCharacterImport(projectId: number) {
         }
       }
 
+      // Phase 3.5: Upload metadata from JSON files
+      const metadataPayloads = allPayloads.filter((p) => {
+        const charId = nameToIdMap.get(p.rawName.toLowerCase());
+        return charId && (p.bioJson || p.tovJson || p.metadataJson);
+      });
+
+      let metadataUploaded = 0;
+      let skippedMetadata = 0;
+      if (metadataPayloads.length > 0) {
+        setImportProgress({
+          phase: "uploading-metadata",
+          current: 0,
+          total: metadataPayloads.length,
+          errors,
+        });
+
+        const metadataTasks = metadataPayloads.map((payload) => async () => {
+          const charId = nameToIdMap.get(payload.rawName.toLowerCase())!;
+
+          // Skip if character already has metadata and skipExisting is on
+          if (skipExisting) {
+            const existing = characters?.find((c) => c.id === charId);
+            if (existing?.metadata && Object.keys(existing.metadata).length > 0) {
+              skippedMetadata++;
+              return "skipped" as const;
+            }
+          }
+
+          const draft: Record<string, unknown> = {};
+
+          // Parse all available JSON files
+          const [bioData, tovData, metaData] = await Promise.all([
+            payload.bioJson ? readFileAsJson(payload.bioJson) : null,
+            payload.tovJson ? readFileAsJson(payload.tovJson) : null,
+            payload.metadataJson ? readFileAsJson(payload.metadataJson) : null,
+          ]);
+
+          // bio.json + tov.json → generate + flatten (lower priority)
+          if (bioData || tovData) {
+            const generated = generateMetadata(bioData, tovData, payload.rawName);
+            const flat = flattenMetadata(generated);
+            Object.assign(draft, flat);
+          }
+
+          // metadata.json → flatten and merge (higher priority, overwrites bio/tov keys)
+          if (metaData) {
+            const flat = flattenMetadata(metaData);
+            Object.assign(draft, flat);
+          }
+
+          // Store raw sources (matching CharacterMetadataTab pattern)
+          if (bioData) draft[SOURCE_KEY_BIO] = bioData;
+          if (tovData) draft[SOURCE_KEY_TOV] = tovData;
+
+          await api.put(`/characters/${charId}/metadata`, draft);
+          metadataUploaded++;
+          return "uploaded" as const;
+        });
+
+        const metadataResults = await limitConcurrency(metadataTasks, 3, onProgress);
+
+        for (let i = 0; i < metadataResults.length; i++) {
+          const r = metadataResults[i]!;
+          if (r.status === "rejected") {
+            errors.push(
+              `Metadata upload failed for "${metadataPayloads[i]!.rawName}": ${String(r.reason)}`,
+            );
+          }
+        }
+      }
+
       // Phase 4: Import videos
+      let skippedVideos = 0;
       if (videoAssets.length > 0) {
         setImportProgress({
           phase: "importing-videos",
@@ -230,54 +330,52 @@ export function useCharacterImport(projectId: number) {
 
         const trackSlugs = tracks?.map((t) => t.slug) ?? [];
 
-        for (let i = 0; i < videoAssets.length; i++) {
-          const { charId, asset, charName } = videoAssets[i]!;
-          try {
-            const parsed = parseFilename(asset.file.name, trackSlugs);
+        const videoTasks = videoAssets.map(({ charId, asset, charName }) => async () => {
+          const parsed = parseFilename(asset.file.name, trackSlugs);
 
-            // Look up scene_type_id from catalog by slug
-            const sceneType = sceneCatalog?.find(
-              (st) => st.slug === parsed.sceneSlug,
-            );
-            if (!sceneType) {
-              errors.push(
-                `No scene type "${parsed.sceneSlug}" for video "${asset.file.name}" (${charName})`,
-              );
-              continue;
-            }
-
-            // Look up track_id
-            const track = tracks?.find((t) => t.slug === parsed.trackSlug) ?? null;
-            const trackId = track?.id ?? null;
-
-            // Find existing scene or create one
-            const existingScenes = await api.get<Scene[]>(
-              `/characters/${charId}/scenes`,
-            );
-            let scene = existingScenes.find(
-              (s) =>
-                s.scene_type_id === sceneType.id && s.track_id === trackId,
-            );
-
-            if (!scene) {
-              const sceneId = await createSceneForCharacter(
-                charId,
-                sceneType.id,
-                trackId,
-                null,
-              );
-              scene = { id: sceneId } as Scene;
-            }
-
-            await importVideoClip(scene.id, asset.file);
-          } catch (err) {
+          // Look up scene_type_id from catalog by slug
+          const sceneType = sceneCatalog?.find((st) => st.slug === parsed.sceneSlug);
+          if (!sceneType) {
             errors.push(
-              `Video import failed for "${asset.file.name}" (${charName}): ${String(err)}`,
+              `No scene type "${parsed.sceneSlug}" for video "${asset.file.name}" (${charName})`,
+            );
+            return "skipped" as const;
+          }
+
+          // Look up track_id
+          const track = tracks?.find((t) => t.slug === parsed.trackSlug) ?? null;
+          const trackId = track?.id ?? null;
+
+          // Find existing scene or create one
+          const existingScenes = await api.get<Scene[]>(`/characters/${charId}/scenes`);
+          let scene = existingScenes.find(
+            (s) => s.scene_type_id === sceneType.id && s.track_id === trackId,
+          );
+
+          // Skip if scene already has video and skipExisting is on
+          if (skipExisting && scene && sceneHasVideo(scene)) {
+            skippedVideos++;
+            return "skipped" as const;
+          }
+
+          if (!scene) {
+            const sceneId = await createSceneForCharacter(charId, sceneType.id, trackId, null);
+            scene = { id: sceneId } as Scene;
+          }
+
+          await importVideoClip(scene.id, asset.file);
+          return "uploaded" as const;
+        });
+
+        const videoResults = await limitConcurrency(videoTasks, 2, onProgress);
+
+        for (let i = 0; i < videoResults.length; i++) {
+          const r = videoResults[i]!;
+          if (r.status === "rejected") {
+            errors.push(
+              `Video import failed for "${videoAssets[i]!.asset.file.name}" (${videoAssets[i]!.charName}): ${String(r.reason)}`,
             );
           }
-          setImportProgress((prev) =>
-            prev ? { ...prev, current: i + 1, errors: [...errors] } : null,
-          );
         }
       }
 
@@ -313,7 +411,10 @@ export function useCharacterImport(projectId: number) {
       if (created > 0) parts.push(`${created} character${created > 1 ? "s" : ""} created`);
       if (existingCount > 0) parts.push(`${existingCount} existing updated`);
       if (imgCount > 0) parts.push(`${imgCount} image${imgCount > 1 ? "s" : ""} uploaded`);
+      if (metadataUploaded > 0) parts.push(`${metadataUploaded} metadata uploaded`);
       if (vidCount > 0) parts.push(`${vidCount} video${vidCount > 1 ? "s" : ""} imported`);
+      if (skippedMetadata > 0) parts.push(`${skippedMetadata} metadata skipped`);
+      if (skippedVideos > 0) parts.push(`${skippedVideos} video${skippedVideos > 1 ? "s" : ""} skipped`);
 
       if (errors.length > 0) {
         addToast({

@@ -89,10 +89,10 @@ export function PipelineSettingsEditor({
           <div
             key={key}
             data-testid={`setting-row-${key}`}
-            className="flex items-center gap-2"
+            className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-2"
           >
             <label
-              className="w-40 text-xs text-[var(--color-text-secondary)]"
+              className="w-40 shrink-0 text-xs text-[var(--color-text-secondary)]"
               data-testid={`setting-label-${key}`}
             >
               {snakeCaseToTitle(key)}
@@ -103,7 +103,7 @@ export function PipelineSettingsEditor({
               onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                 handleChange(key, e.target.value)
               }
-              className="flex-1 text-sm"
+              className="min-w-[320px] flex-1 text-sm"
             />
           </div>
         ))}

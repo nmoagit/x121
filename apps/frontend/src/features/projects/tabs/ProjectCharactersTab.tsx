@@ -21,6 +21,8 @@ import {
   ChevronDown,
   ChevronRight,
   Edit3,
+  Eye,
+  EyeOff,
   Folder,
   Plus,
   Trash2,
@@ -58,6 +60,9 @@ import type { Character, CharacterGroup, UpdateCharacter } from "../types";
 const INLINE_LINK_BTN =
   "text-xs text-[var(--color-action-primary)] hover:text-[var(--color-action-primary-hover)] hover:underline cursor-pointer";
 
+/** localStorage key for the show/hide disabled characters toggle. */
+const SHOW_DISABLED_KEY = "x121.project.showDisabled";
+
 /* --------------------------------------------------------------------------
    Component
    -------------------------------------------------------------------------- */
@@ -88,6 +93,22 @@ export function ProjectCharactersTab({ projectId }: ProjectCharactersTabProps) {
   /* --- search & filter --- */
   const [searchQuery, setSearchQuery] = useState("");
   const [groupFilter, setGroupFilter] = useState("");
+
+  const [showDisabled, setShowDisabled] = useState<boolean>(() => {
+    try {
+      const stored = localStorage.getItem(SHOW_DISABLED_KEY);
+      return stored === null ? true : stored === "true";
+    } catch {
+      return true;
+    }
+  });
+  const toggleShowDisabled = useCallback(() => {
+    setShowDisabled((prev) => {
+      const next = !prev;
+      try { localStorage.setItem(SHOW_DISABLED_KEY, String(next)); } catch { /* ignore */ }
+      return next;
+    });
+  }, []);
 
   /* --- create character modal --- */
   const [charModalOpen, setCharModalOpen] = useState(false);
@@ -135,6 +156,7 @@ export function ProjectCharactersTab({ projectId }: ProjectCharactersTabProps) {
 
   /* --- drag state --- */
   const [dragOverGroupId, setDragOverGroupId] = useState<number | "ungrouped" | null>(null);
+  const dragCounterRef = useRef<Map<number | "ungrouped", number>>(new Map());
 
   /* --- multi-select --- */
   const [selectedCharIds, setSelectedCharIds] = useState<Set<number>>(new Set());
@@ -164,6 +186,9 @@ export function ProjectCharactersTab({ projectId }: ProjectCharactersTabProps) {
     if (!characters) return map;
 
     let filtered = [...characters];
+    if (!showDisabled) {
+      filtered = filtered.filter((c) => c.status_id !== null);
+    }
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
       filtered = filtered.filter((c) => c.name.toLowerCase().includes(q));
@@ -175,8 +200,12 @@ export function ProjectCharactersTab({ projectId }: ProjectCharactersTabProps) {
       if (arr) arr.push(c);
       else map.set(key, [c]);
     }
+    // Sort characters alphabetically within each group
+    for (const chars of map.values()) {
+      chars.sort((a, b) => a.name.localeCompare(b.name));
+    }
     return map;
-  }, [characters, searchQuery]);
+  }, [characters, searchQuery, showDisabled]);
 
   /* --- filtered groups for display --- */
   const filteredGroups = useMemo(() => {
@@ -195,6 +224,18 @@ export function ProjectCharactersTab({ projectId }: ProjectCharactersTabProps) {
     return count;
   }, [charactersByGroup]);
 
+  /* --- quick-nav entries --- */
+  const quickNavEntries = useMemo(() => {
+    const entries: { id: number | "ungrouped"; name: string }[] = [];
+    for (const g of filteredGroups) {
+      entries.push({ id: g.id, name: g.name });
+    }
+    if (showUngrouped) {
+      entries.push({ id: "ungrouped", name: "Ungrouped" });
+    }
+    return entries;
+  }, [filteredGroups, showUngrouped]);
+
   /* --- drag and drop --- */
   const handleCharDragStart = useCallback(
     (e: React.DragEvent, characterId: number) => {
@@ -207,21 +248,40 @@ export function ProjectCharactersTab({ projectId }: ProjectCharactersTabProps) {
     [selectedCharIds],
   );
 
-  const handleGroupDragOver = useCallback((e: React.DragEvent, groupId: number | "ungrouped") => {
+  const handleGroupDragOver = useCallback((e: React.DragEvent) => {
+    // Let file drops bubble to FileDropZone
+    if (e.dataTransfer.types.includes("Files")) return;
     e.preventDefault();
     e.stopPropagation();
     e.dataTransfer.dropEffect = "move";
-    setDragOverGroupId(groupId);
   }, []);
 
-  const handleGroupDragLeave = useCallback(() => {
-    setDragOverGroupId(null);
+  const handleGroupDragEnter = useCallback((e: React.DragEvent, groupId: number | "ungrouped") => {
+    if (e.dataTransfer.types.includes("Files")) return;
+    e.preventDefault();
+    const counter = (dragCounterRef.current.get(groupId) ?? 0) + 1;
+    dragCounterRef.current.set(groupId, counter);
+    if (counter === 1) {
+      setDragOverGroupId(groupId);
+    }
+  }, []);
+
+  const handleGroupDragLeave = useCallback((_e: React.DragEvent, groupId: number | "ungrouped") => {
+    const counter = (dragCounterRef.current.get(groupId) ?? 1) - 1;
+    dragCounterRef.current.set(groupId, counter);
+    if (counter <= 0) {
+      dragCounterRef.current.set(groupId, 0);
+      setDragOverGroupId((prev) => (prev === groupId ? null : prev));
+    }
   }, []);
 
   const handleGroupDrop = useCallback(
     (e: React.DragEvent, targetGroupId: number | "ungrouped") => {
+      // Let file drops bubble to FileDropZone
+      if (e.dataTransfer.types.includes("Files")) return;
       e.preventDefault();
       e.stopPropagation();
+      dragCounterRef.current.set(targetGroupId, 0);
       setDragOverGroupId(null);
 
       const raw = e.dataTransfer.getData("text/plain");
@@ -347,6 +407,14 @@ export function ProjectCharactersTab({ projectId }: ProjectCharactersTabProps) {
           <Button
             size="sm"
             variant="secondary"
+            icon={showDisabled ? <Eye size={14} /> : <EyeOff size={14} />}
+            onClick={toggleShowDisabled}
+          >
+            {showDisabled ? "Show Disabled" : "Hide Disabled"}
+          </Button>
+          <Button
+            size="sm"
+            variant="secondary"
             icon={<Upload size={14} />}
             onClick={charImport.browseFolder}
           >
@@ -371,6 +439,27 @@ export function ProjectCharactersTab({ projectId }: ProjectCharactersTabProps) {
             </span>
           )}
         </div>
+
+        {/* Group quick-nav */}
+        {quickNavEntries.length >= 2 && (
+          <div className="flex flex-wrap items-center gap-[var(--spacing-2)]">
+            <span className="text-xs text-[var(--color-text-muted)]">Jump to:</span>
+            {quickNavEntries.map((entry) => (
+              <button
+                key={entry.id}
+                type="button"
+                className={INLINE_LINK_BTN}
+                onClick={() =>
+                  document
+                    .getElementById(entry.id === "ungrouped" ? "group-ungrouped" : `group-${entry.id}`)
+                    ?.scrollIntoView({ behavior: "smooth", block: "start" })
+                }
+              >
+                {entry.name}
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* Content */}
         {totalFiltered === 0 ? (
@@ -399,6 +488,7 @@ export function ProjectCharactersTab({ projectId }: ProjectCharactersTabProps) {
               return (
                 <GroupSection
                   key={group.id}
+                  sectionId={`group-${group.id}`}
                   group={group}
                   characters={chars}
                   avatarMap={avatarMap}
@@ -416,16 +506,18 @@ export function ProjectCharactersTab({ projectId }: ProjectCharactersTabProps) {
                   }
                   onCharEdit={setEditingChar}
                   onCharDragStart={handleCharDragStart}
-                  onDragOver={(e) => handleGroupDragOver(e, group.id)}
-                  onDragLeave={handleGroupDragLeave}
+                  onDragEnter={(e) => handleGroupDragEnter(e, group.id)}
+                  onDragOver={handleGroupDragOver}
+                  onDragLeave={(e) => handleGroupDragLeave(e, group.id)}
                   onDrop={(e) => handleGroupDrop(e, group.id)}
                 />
               );
             })}
 
-            {/* Ungrouped section */}
-            {showUngrouped && ungroupedChars.length > 0 && (
+            {/* Ungrouped section — always visible as a drop target */}
+            {showUngrouped && (
               <GroupSection
+                sectionId="group-ungrouped"
                 label="Ungrouped"
                 characters={ungroupedChars}
                 avatarMap={avatarMap}
@@ -441,8 +533,9 @@ export function ProjectCharactersTab({ projectId }: ProjectCharactersTabProps) {
                 }
                 onCharEdit={setEditingChar}
                 onCharDragStart={handleCharDragStart}
-                onDragOver={(e) => handleGroupDragOver(e, "ungrouped")}
-                onDragLeave={handleGroupDragLeave}
+                onDragEnter={(e) => handleGroupDragEnter(e, "ungrouped")}
+                onDragOver={handleGroupDragOver}
+                onDragLeave={(e) => handleGroupDragLeave(e, "ungrouped")}
                 onDrop={(e) => handleGroupDrop(e, "ungrouped")}
               />
             )}
@@ -586,6 +679,7 @@ export function ProjectCharactersTab({ projectId }: ProjectCharactersTabProps) {
           payloads={charImport.importPayloads.length > 0 ? charImport.importPayloads : undefined}
           projectId={projectId}
           existingNames={characters?.map((c) => c.name) ?? []}
+          characters={characters ?? []}
           onConfirm={charImport.handleImportConfirm}
           onConfirmWithAssets={charImport.handleImportConfirmWithAssets}
           loading={charImport.bulkCreatePending}
@@ -600,6 +694,8 @@ export function ProjectCharactersTab({ projectId }: ProjectCharactersTabProps) {
    -------------------------------------------------------------------------- */
 
 interface GroupSectionProps {
+  /** HTML id for scroll-to-group anchoring. */
+  sectionId?: string;
   group?: CharacterGroup;
   label?: string;
   characters: Character[];
@@ -616,12 +712,14 @@ interface GroupSectionProps {
   onCharClick: (char: Character) => void;
   onCharEdit: (char: Character) => void;
   onCharDragStart: (e: React.DragEvent, characterId: number) => void;
+  onDragEnter: (e: React.DragEvent) => void;
   onDragOver: (e: React.DragEvent) => void;
-  onDragLeave: () => void;
+  onDragLeave: (e: React.DragEvent) => void;
   onDrop: (e: React.DragEvent) => void;
 }
 
 function GroupSection({
+  sectionId,
   group,
   label,
   characters,
@@ -637,6 +735,7 @@ function GroupSection({
   onCharClick,
   onCharEdit,
   onCharDragStart,
+  onDragEnter,
   onDragOver,
   onDragLeave,
   onDrop,
@@ -646,12 +745,14 @@ function GroupSection({
 
   return (
     <div
+      id={sectionId}
       className={cn(
         "rounded-[var(--radius-md)] border bg-[var(--color-surface-primary)] transition-colors",
         isDragOver
-          ? "border-[var(--color-border-accent)] bg-[var(--color-surface-secondary)]"
+          ? "border-[var(--color-border-accent)] ring-2 ring-[var(--color-action-primary)] bg-[var(--color-surface-secondary)]"
           : "border-[var(--color-border-default)]",
       )}
+      onDragEnter={onDragEnter}
       onDragOver={onDragOver}
       onDragLeave={onDragLeave}
       onDrop={onDrop}

@@ -10,6 +10,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useQueries } from "@tanstack/react-query";
 
 import { Card } from "@/components/composite/Card";
 import { useToast } from "@/components/composite/useToast";
@@ -17,28 +18,36 @@ import { EmptyState } from "@/components/domain";
 import { Grid } from "@/components/layout";
 import { Badge, Button, LoadingPane } from "@/components/primitives";
 import { Checkbox } from "@/components/primitives/Checkbox";
-import { API_BASE_URL } from "@/lib/api";
+import { useSetToggle } from "@/hooks/useSetToggle";
+import { getStreamUrl } from "@/features/video-player";
+import { api } from "@/lib/api";
 import { cn } from "@/lib/cn";
-import { AlertCircle, Pause, Play, Upload, Video } from "@/tokens/icons";
+import { AlertCircle, EyeOff, Pause, Play, Upload, Video } from "@/tokens/icons";
 
 import { useBatchGenerate } from "@/features/generation/hooks/use-generation";
 import { useImageVariants } from "@/features/images/hooks/use-image-variants";
 import { findVariantForTrack } from "@/features/images/utils";
 import { sourceLabel } from "@/features/scene-catalog/SourceBadge";
 import { TrackBadge } from "@/features/scene-catalog/TrackBadge";
-import { useCharacterSceneSettings } from "@/features/scene-catalog/hooks/use-character-scene-settings";
+import {
+  useCharacterSceneSettings,
+  useToggleCharacterSceneSetting,
+} from "@/features/scene-catalog/hooks/use-character-scene-settings";
 import { useExpandedSettings } from "@/features/scene-catalog/hooks/use-expanded-settings";
 import { useTracks } from "@/features/scene-catalog/hooks/use-tracks";
 import type { ExpandedSceneSetting } from "@/features/scene-catalog/types";
 import { useCharacterScenes, useCreateScene } from "@/features/scenes/hooks/useCharacterScenes";
-import { useBulkImportClip, useSceneVersions } from "@/features/scenes/hooks/useClipManagement";
+import { clipKeys, useBulkImportClip, useSceneVersions } from "@/features/scenes/hooks/useClipManagement";
 import {
   SCENE_STATUS_GENERATING,
+  sceneHasVideo,
   sceneStatusBadgeVariant,
   sceneStatusLabel,
 } from "@/features/scenes/types";
-import type { Scene } from "@/features/scenes/types";
+import type { Scene, SceneVideoVersion } from "@/features/scenes/types";
 
+import { GenerateConfirmModal } from "./GenerateConfirmModal";
+import type { GenerateCandidate } from "./GenerateConfirmModal";
 import { ImportPreviewModal } from "./ImportPreviewModal";
 import { MediaPlaceholder } from "./MediaPlaceholder";
 import { matchDroppedVideos } from "./matchDroppedVideos";
@@ -77,9 +86,10 @@ export function CharacterScenesTab({ characterId }: CharacterScenesTabProps) {
   const batchGenerate = useBatchGenerate();
   const createScene = useCreateScene(characterId);
   const bulkImport = useBulkImportClip();
+  const toggleSetting = useToggleCharacterSceneSetting(characterId);
   const { addToast } = useToast();
 
-  const [selected, setSelected] = useState<Set<number>>(new Set());
+  const [selected, toggleSelectItem, setSelected] = useSetToggle<number>();
   const [dragOver, setDragOver] = useState(false);
   const [importing, setImporting] = useState(false);
   const [pendingImport, setPendingImport] = useState<MatchResult | null>(null);
@@ -87,6 +97,12 @@ export function CharacterScenesTab({ characterId }: CharacterScenesTabProps) {
   const [playback, setPlayback] = useState(true);
   /** Timestamp of last drop — used to ignore residual pointer events that close the modal. */
   const dropTimestampRef = useRef(0);
+
+  /* --- generate confirmation modal state --- */
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmCandidates, setConfirmCandidates] = useState<GenerateCandidate[]>([]);
+  /** Stores auto-created scene IDs from "Generate All" so they can be included in the batch. */
+  const pendingAutoCreatedRef = useRef<number[]>([]);
 
   /* --- prevent browser default file-drop navigation --- */
   useEffect(() => {
@@ -158,11 +174,43 @@ export function CharacterScenesTab({ characterId }: CharacterScenesTabProps) {
     return [...ids];
   }, [slots]);
 
+  /* --- batch-fetch version counts for all existing scenes --- */
+  const sceneIds = useMemo(
+    () => slots.filter((s) => s.scene !== null).map((s) => s.scene!.id),
+    [slots],
+  );
+  const versionQueries = useQueries({
+    queries: sceneIds.map((id) => ({
+      queryKey: clipKeys.list(id),
+      queryFn: () => api.get<SceneVideoVersion[]>(`/scenes/${id}/versions`),
+      enabled: id > 0,
+    })),
+  });
+  /** Set of scene IDs that have at least one video version. */
+  const scenesWithVideo = useMemo(() => {
+    const set = new Set<number>();
+    for (let i = 0; i < sceneIds.length; i++) {
+      const data = versionQueries[i]?.data;
+      if (data && data.length > 0) set.add(sceneIds[i]!);
+    }
+    return set;
+  }, [sceneIds, versionQueries]);
+
   /* --- can any slot actually generate? (must have seed image) --- */
   const canGenerateAny = useMemo(
     () => slots.some((s) => s.missingVariant === null),
     [slots],
   );
+
+  /* --- scenes without any video versions --- */
+  const missingSceneIds = useMemo(() => {
+    const ids: number[] = [];
+    for (const slot of slots) {
+      if (!slot.scene || slot.missingVariant) continue;
+      if (!scenesWithVideo.has(slot.scene.id)) ids.push(slot.scene.id);
+    }
+    return ids;
+  }, [slots, scenesWithVideo]);
 
   /* --- drag-and-drop: match files and show preview modal --- */
   const handleDrop = useCallback(
@@ -272,18 +320,6 @@ export function CharacterScenesTab({ characterId }: CharacterScenesTabProps) {
   const allSelected = selectableCount > 0 && selected.size === selectableCount;
   const someSelected = selected.size > 0 && !allSelected;
 
-  function toggleSelect(sceneId: number) {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(sceneId)) {
-        next.delete(sceneId);
-      } else {
-        next.add(sceneId);
-      }
-      return next;
-    });
-  }
-
   function toggleSelectAll() {
     if (allSelected) {
       setSelected(new Set());
@@ -292,9 +328,34 @@ export function CharacterScenesTab({ characterId }: CharacterScenesTabProps) {
     }
   }
 
+  /* --- build candidates list from a set of scene IDs --- */
+  function buildCandidates(sceneIds: number[]): GenerateCandidate[] {
+    return sceneIds
+      .map((id) => {
+        const slot = slots.find((s) => s.scene?.id === id);
+        if (!slot?.scene) return null;
+        return {
+          sceneId: id,
+          sceneName: slot.row.name,
+          trackName: slot.row.track_name ?? null,
+          hasVideo: sceneHasVideo(slot.scene),
+        } satisfies GenerateCandidate;
+      })
+      .filter((c): c is GenerateCandidate => c !== null);
+  }
+
   function handleBatchGenerate() {
     if (selected.size === 0) return;
-    batchGenerate.mutate({ scene_ids: [...selected] });
+    const candidates = buildCandidates([...selected]);
+    const hasExisting = candidates.some((c) => c.hasVideo);
+    if (hasExisting) {
+      pendingAutoCreatedRef.current = [];
+      setConfirmCandidates(candidates);
+      setConfirmOpen(true);
+    } else {
+      // No existing video — generate directly
+      batchGenerate.mutate({ scene_ids: [...selected] });
+    }
   }
 
   async function handleGenerateAll() {
@@ -328,11 +389,33 @@ export function CharacterScenesTab({ characterId }: CharacterScenesTabProps) {
       return;
     }
 
+    const candidates = buildCandidates(sceneIds);
+    const hasExisting = candidates.some((c) => c.hasVideo);
+    if (hasExisting) {
+      // Store auto-created IDs so they're included even if user deselects overrides
+      pendingAutoCreatedRef.current = sceneIds.filter(
+        (id) => !selectableSceneIds.includes(id),
+      );
+      setConfirmCandidates(candidates);
+      setConfirmOpen(true);
+    } else {
+      batchGenerate.mutate({ scene_ids: sceneIds });
+    }
+  }
+
+  function handleConfirmGenerate(sceneIds: number[]) {
+    setConfirmOpen(false);
+    setConfirmCandidates([]);
+    if (sceneIds.length === 0) return;
     batchGenerate.mutate({ scene_ids: sceneIds });
   }
 
   function handleSingleGenerate(sceneId: number) {
     batchGenerate.mutate({ scene_ids: [sceneId] });
+  }
+
+  function handleSelectMissing() {
+    setSelected(new Set(missingSceneIds));
   }
 
   async function handleSceneVideoDrop(slot: SceneSlot, file: File) {
@@ -364,6 +447,14 @@ export function CharacterScenesTab({ characterId }: CharacterScenesTabProps) {
     }
   }
 
+  function handleDisableSlot(slot: SceneSlot) {
+    toggleSetting.mutate({
+      scene_type_id: slot.row.scene_type_id,
+      track_id: slot.row.track_id ?? null,
+      is_enabled: false,
+    });
+  }
+
   const isDisabled = importing || batchGenerate.isPending;
 
   return (
@@ -391,6 +482,14 @@ export function CharacterScenesTab({ characterId }: CharacterScenesTabProps) {
               onChange={toggleSelectAll}
               label="Select all"
             />
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={handleSelectMissing}
+              disabled={isDisabled || missingSceneIds.length === 0}
+            >
+              Select Missing
+            </Button>
             {selected.size > 0 && (
               <>
                 <span className="text-sm text-[var(--color-text-muted)]">
@@ -457,9 +556,10 @@ export function CharacterScenesTab({ characterId }: CharacterScenesTabProps) {
             key={`${slot.row.scene_type_id}-${slot.row.track_id ?? "none"}`}
             slot={slot}
             isSelected={slot.scene !== null && selected.has(slot.scene.id)}
-            onToggleSelect={toggleSelect}
+            onToggleSelect={toggleSelectItem}
             onGenerate={handleSingleGenerate}
             onVideoDrop={handleSceneVideoDrop}
+            onDisable={handleDisableSlot}
             generating={isDisabled}
             playback={playback}
           />
@@ -480,6 +580,18 @@ export function CharacterScenesTab({ characterId }: CharacterScenesTabProps) {
         onConfirm={handleConfirmImport}
         importing={importing}
       />
+
+      {/* Generate confirmation modal — warns about existing videos */}
+      <GenerateConfirmModal
+        open={confirmOpen}
+        onClose={() => {
+          setConfirmOpen(false);
+          setConfirmCandidates([]);
+        }}
+        candidates={confirmCandidates}
+        onConfirm={handleConfirmGenerate}
+        loading={batchGenerate.isPending}
+      />
     </div>
   );
 }
@@ -494,11 +606,12 @@ interface SceneCardProps {
   onToggleSelect: (sceneId: number) => void;
   onGenerate: (sceneId: number) => void;
   onVideoDrop: (slot: SceneSlot, file: File) => void;
+  onDisable: (slot: SceneSlot) => void;
   generating: boolean;
   playback: boolean;
 }
 
-function SceneCard({ slot, isSelected, onToggleSelect, onGenerate, onVideoDrop, generating, playback }: SceneCardProps) {
+function SceneCard({ slot, isSelected, onToggleSelect, onGenerate, onVideoDrop, onDisable, generating, playback }: SceneCardProps) {
   const { row, scene } = slot;
   const isPlaceholder = scene === null;
   const hasSeedImage = slot.missingVariant === null;
@@ -536,61 +649,94 @@ function SceneCard({ slot, isSelected, onToggleSelect, onGenerate, onVideoDrop, 
 
   return (
     <Card
-      padding="md"
+      padding="none"
       className={cn(
-        "transition-colors",
+        "group/card transition-colors overflow-hidden",
         isPlaceholder && !dragOver && "opacity-60 border-dashed",
         dragOver && "ring-2 ring-[var(--color-action-primary)] bg-[var(--color-surface-secondary)]",
       )}
     >
       <div
-        className="flex flex-col gap-[var(--spacing-3)]"
+        className="flex flex-col"
         onDrop={handleDrop}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
       >
-        {/* Header: checkbox + title + track badge */}
-        <div className="flex items-center gap-[var(--spacing-2)] min-w-0">
+        {/* Video preview / drop target — with overlay checkbox */}
+        <div className="relative">
+          {dragOver ? (
+            <div className="flex flex-col items-center justify-center border-2 border-dashed border-[var(--color-action-primary)] aspect-video">
+              <Upload size={24} className="text-[var(--color-action-primary)]" />
+              <span className="text-xs text-[var(--color-action-primary)] mt-1">Drop video here</span>
+            </div>
+          ) : (
+            <SceneVideoThumbnail sceneId={scene?.id ?? 0} playback={playback} />
+          )}
+
+          {/* Checkbox overlay — top-left, visible on hover or when selected */}
           {scene && hasSeedImage && (
-            <Checkbox checked={isSelected} onChange={() => onToggleSelect(scene.id)} />
+            <div
+              className={cn(
+                "absolute top-[var(--spacing-2)] left-[var(--spacing-2)] transition-opacity",
+                isSelected ? "opacity-100" : "opacity-0 group-hover/card:opacity-100",
+              )}
+            >
+              <Checkbox checked={isSelected} onChange={() => onToggleSelect(scene.id)} />
+            </div>
           )}
-          <span className="text-sm font-medium text-[var(--color-text-primary)] truncate">
-            {row.name}
-          </span>
-          {row.track_slug && (
-            <span className="shrink-0 ml-auto">
-              <TrackBadge name={row.track_name ?? ""} slug={row.track_slug} />
-            </span>
-          )}
-        </div>
 
-        {/* Video preview / drop target */}
-        {dragOver ? (
-          <div className="flex flex-col items-center justify-center rounded border-2 border-dashed border-[var(--color-action-primary)] aspect-video">
-            <Upload size={24} className="text-[var(--color-action-primary)]" />
-            <span className="text-xs text-[var(--color-action-primary)] mt-1">Drop video here</span>
-          </div>
-        ) : (
-          <SceneVideoThumbnail sceneId={scene?.id ?? 0} playback={playback} />
-        )}
-
-        {/* Status row */}
-        <div className="flex items-center gap-[var(--spacing-2)]">
-          <Badge
-            variant={isPlaceholder ? "default" : sceneStatusBadgeVariant(scene.status_id)}
-            size="sm"
+          {/* Disable button — top-right, visible on hover */}
+          <button
+            type="button"
+            title="Disable this scene"
+            className="absolute top-[var(--spacing-2)] right-[var(--spacing-2)] opacity-0 group-hover/card:opacity-100 transition-opacity p-1 rounded bg-black/60 hover:bg-black/80 text-white"
+            onClick={() => onDisable(slot)}
           >
-            {isPlaceholder ? "Not Started" : sceneStatusLabel(scene.status_id)}
-          </Badge>
-          <span className="text-xs text-[var(--color-text-muted)]">
-            Source: {sourceLabel(row.source)}
-          </span>
+            <EyeOff size={14} />
+          </button>
+
+          {/* Missing seed image warning — overlays bottom of preview */}
+          {slot.missingVariant && (
+            <div className="absolute bottom-0 inset-x-0 flex items-center gap-[var(--spacing-1)] px-[var(--spacing-2)] py-[var(--spacing-1)] bg-[var(--color-action-danger)]/90 text-white text-xs">
+              <AlertCircle size={12} className="shrink-0" />
+              <span className="truncate">Missing seed image: {slot.missingVariant}</span>
+            </div>
+          )}
         </div>
 
-        {/* Segment progress — fixed height so cards don't shift */}
-        <div className="space-y-1 h-[3rem]">
-          {estimated > 0 ? (
-            <>
+        {/* Content below video */}
+        <div className="flex flex-col gap-[var(--spacing-2)] px-[var(--spacing-3)] py-[var(--spacing-2)]">
+          {/* Header: title + track badge */}
+          <div className="flex items-center gap-[var(--spacing-2)] min-w-0">
+            <span className="text-sm font-medium text-[var(--color-text-primary)] truncate">
+              {row.name}
+            </span>
+            <span className="shrink-0 ml-auto inline-flex items-center gap-[var(--spacing-1)]">
+              {row.track_slug && (
+                <TrackBadge name={row.track_name ?? ""} slug={row.track_slug} />
+              )}
+              {row.has_clothes_off_transition && (
+                <TrackBadge name="Clothes Off" slug="clothes_off" />
+              )}
+            </span>
+          </div>
+
+          {/* Status row */}
+          <div className="flex items-center gap-[var(--spacing-2)]">
+            <Badge
+              variant={isPlaceholder ? "default" : sceneStatusBadgeVariant(scene.status_id)}
+              size="sm"
+            >
+              {isPlaceholder ? "Not Started" : sceneStatusLabel(scene.status_id)}
+            </Badge>
+            <span className="text-xs text-[var(--color-text-muted)]">
+              Source: {sourceLabel(row.source)}
+            </span>
+          </div>
+
+          {/* Segment progress */}
+          {estimated > 0 && (
+            <div className="space-y-1">
               <span className="text-xs text-[var(--color-text-muted)]">
                 Segments: {completed} / {estimated}
               </span>
@@ -601,33 +747,21 @@ function SceneCard({ slot, isSelected, onToggleSelect, onGenerate, onVideoDrop, 
                 />
               </div>
               <span className="text-xs text-[var(--color-text-muted)]">{pct}%</span>
-            </>
-          ) : (
-            <span className="text-xs text-[var(--color-text-muted)]">No segments yet</span>
-          )}
-        </div>
-
-        {/* Missing seed image warning — fixed height so layout stays stable */}
-        <div className="h-5">
-          {slot.missingVariant && (
-            <div className="flex items-center gap-[var(--spacing-1)] text-xs text-[var(--color-action-danger)]">
-              <AlertCircle size={12} className="shrink-0" />
-              <span className="truncate">Missing seed image: {slot.missingVariant}</span>
             </div>
           )}
-        </div>
 
-        {/* Generate button — disabled when no seed image */}
-        <Button
-          size="sm"
-          variant="secondary"
-          disabled={isPlaceholder || isGenerating || generating || !hasSeedImage}
-          onClick={() => scene && onGenerate(scene.id)}
-          icon={<Play size={14} />}
-          className="w-full"
-        >
-          {isGenerating ? "Generating\u2026" : "Generate"}
-        </Button>
+          {/* Generate button — disabled when no seed image */}
+          <Button
+            size="sm"
+            variant="secondary"
+            disabled={isPlaceholder || isGenerating || generating || !hasSeedImage}
+            onClick={() => scene && onGenerate(scene.id)}
+            icon={<Play size={14} />}
+            className="w-full"
+          >
+            {isGenerating ? "Generating\u2026" : "Generate"}
+          </Button>
+        </div>
       </div>
     </Card>
   );
@@ -643,8 +777,13 @@ function SceneVideoThumbnail({ sceneId, playback }: { sceneId: number; playback:
   const [isVisible, setIsVisible] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
 
+  const hasVersions = !!versions && versions.length > 0;
+
   // Lazy-load: only start loading when the card scrolls into view.
+  // Re-run when hasVersions changes so the observer attaches after the
+  // early-return gate below stops blocking the ref-bearing div.
   useEffect(() => {
+    if (!hasVersions) return;
     const el = containerRef.current;
     if (!el) return;
 
@@ -659,9 +798,9 @@ function SceneVideoThumbnail({ sceneId, playback }: { sceneId: number; playback:
     );
     observer.observe(el);
     return () => observer.disconnect();
-  }, []);
+  }, [hasVersions]);
 
-  if (!sceneId || !versions || versions.length === 0) {
+  if (!sceneId || !hasVersions) {
     return (
       <MediaPlaceholder
         icon={<Video size={24} className="text-[var(--color-text-muted)]" />}
@@ -675,7 +814,7 @@ function SceneVideoThumbnail({ sceneId, playback }: { sceneId: number; playback:
     versions.find((v) => v.is_final) ??
     versions.reduce((a, b) => (a.version_number > b.version_number ? a : b));
 
-  const streamUrl = `${API_BASE_URL}/videos/version/${displayVersion.id}/stream`;
+  const streamUrl = getStreamUrl("version", displayVersion.id, "proxy");
 
   return (
     <div ref={containerRef} className="relative w-full rounded aspect-video bg-black overflow-hidden">

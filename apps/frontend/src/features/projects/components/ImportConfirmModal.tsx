@@ -11,11 +11,16 @@
 
 import { useEffect, useMemo, useState } from "react";
 
+import { useSetToggle } from "@/hooks/useSetToggle";
+
 import { Modal } from "@/components/composite";
 import { Stack } from "@/components/layout";
 import { Badge, Button, Checkbox, Select, Toggle } from "@/components/primitives";
 
-import type { CharacterDropPayload } from "../types";
+import { SOURCE_KEY_BIO, SOURCE_KEY_TOV } from "@/features/characters/types";
+
+import type { Character, CharacterDropPayload } from "../types";
+import { useDuplicateAssetInfo } from "../hooks/use-duplicate-asset-info";
 import { useGroupSelectOptions } from "../hooks/use-group-select-options";
 
 /* --------------------------------------------------------------------------
@@ -32,6 +37,8 @@ interface ImportConfirmModalProps {
   projectId: number;
   /** Names of characters that already exist (case-insensitive match). */
   existingNames?: string[];
+  /** Full character objects for metadata presence checks + ID lookup. */
+  characters?: Character[];
   /** Legacy callback — names only. */
   onConfirm: (names: string[], groupId?: number) => void;
   /** Asset-aware callback. When provided, used instead of onConfirm. */
@@ -39,6 +46,8 @@ interface ImportConfirmModalProps {
     newPayloads: CharacterDropPayload[],
     existingPayloads: CharacterDropPayload[],
     groupId?: number,
+    overwrite?: boolean,
+    skipExisting?: boolean,
   ) => void;
   loading?: boolean;
 }
@@ -98,6 +107,119 @@ export function normalizeCharacterName(raw: string): string {
 }
 
 /* --------------------------------------------------------------------------
+   Diff badge helpers
+   -------------------------------------------------------------------------- */
+
+/** Image diff badges: shows new/exists breakdown for duplicate rows. */
+function DiffBadges({
+  isDuplicate,
+  overwrite,
+  payload,
+  displayName,
+  duplicateCharMap,
+  variantMap,
+  variantLoading,
+  totalImages,
+}: {
+  isDuplicate: boolean;
+  overwrite: boolean;
+  payload?: CharacterDropPayload;
+  displayName: string;
+  duplicateCharMap: Map<string, Character>;
+  variantMap: Map<number, Set<string>>;
+  variantLoading: boolean;
+  totalImages: number;
+}) {
+  // Non-duplicate, overwrite on, or still loading: show simple total count
+  if (!isDuplicate || !payload || overwrite || variantLoading) {
+    return (
+      <Badge variant="info" size="sm">
+        {totalImages} {totalImages === 1 ? "image" : "images"}
+      </Badge>
+    );
+  }
+
+  // Compute new vs existing counts
+  const char = duplicateCharMap.get(displayName.toLowerCase());
+  const existingTypes = char ? variantMap.get(char.id) : undefined;
+  if (!existingTypes || existingTypes.size === 0) {
+    return (
+      <Badge variant="info" size="sm">
+        {totalImages} new
+      </Badge>
+    );
+  }
+
+  const imageAssets = payload.assets.filter((a) => a.kind === "image");
+  let newCount = 0;
+  let existCount = 0;
+  for (const a of imageAssets) {
+    if (existingTypes.has(a.category.toLowerCase())) {
+      existCount++;
+    } else {
+      newCount++;
+    }
+  }
+
+  return (
+    <>
+      {newCount > 0 && (
+        <Badge variant="info" size="sm">
+          {newCount} new
+        </Badge>
+      )}
+      {existCount > 0 && (
+        <Badge variant="default" size="sm">
+          {existCount} {existCount === 1 ? "exists" : "exist"}
+        </Badge>
+      )}
+    </>
+  );
+}
+
+/** Metadata diff badges: shows new/exists per json file for duplicate rows. */
+function MetadataDiffBadges({
+  isDuplicate,
+  payload,
+  displayName,
+  duplicateCharMap,
+}: {
+  isDuplicate: boolean;
+  payload?: CharacterDropPayload;
+  displayName: string;
+  duplicateCharMap: Map<string, Character>;
+}) {
+  if (!isDuplicate || !payload) {
+    const count = [payload?.bioJson, payload?.tovJson, payload?.metadataJson].filter(Boolean).length;
+    return (
+      <Badge variant="success" size="sm">
+        {count} json
+      </Badge>
+    );
+  }
+
+  const char = duplicateCharMap.get(displayName.toLowerCase());
+  const meta = char?.metadata;
+  const hasBio = meta && SOURCE_KEY_BIO in meta;
+  const hasTov = meta && SOURCE_KEY_TOV in meta;
+
+  const badges: { label: string; isNew: boolean }[] = [];
+  if (payload.bioJson) badges.push({ label: "bio", isNew: !hasBio });
+  if (payload.tovJson) badges.push({ label: "tov", isNew: !hasTov });
+  if (payload.metadataJson) badges.push({ label: "meta", isNew: true }); // metadata.json always overwrites
+
+  return (
+    <>
+      {badges.map((b) => (
+        <Badge key={b.label} variant={b.isNew ? "success" : "default"} size="sm">
+          {b.label} {b.isNew ? "new" : "exists"}
+        </Badge>
+      ))}
+    </>
+  );
+}
+
+/* --------------------------------------------------------------------------
    Component
    -------------------------------------------------------------------------- */
 
@@ -108,6 +230,7 @@ export function ImportConfirmModal({
   payloads,
   projectId,
   existingNames = [],
+  characters = [],
   onConfirm,
   onConfirmWithAssets,
   loading,
@@ -125,8 +248,10 @@ export function ImportConfirmModal({
   );
   const [normalize, setNormalize] = useState(true);
   const [groupId, setGroupId] = useState("");
+  const [overwrite, setOverwrite] = useState(false);
   /** Existing characters whose assets should be uploaded. */
-  const [checkedExistingAssets, setCheckedExistingAssets] = useState<Set<number>>(new Set());
+  const [checkedExistingAssets, toggleExistingAssets, setCheckedExistingAssets] = useSetToggle<number>();
+  const [importMissing, setImportMissing] = useState(false);
 
   const displayNames = useMemo(
     () => (normalize ? effectiveNames.map(normalizeCharacterName) : effectiveNames),
@@ -142,6 +267,15 @@ export function ImportConfirmModal({
     return set;
   }, [existingNames]);
 
+  // Map lowercase display name → Character for duplicate rows
+  const duplicateCharMap = useMemo(() => {
+    const map = new Map<string, Character>();
+    for (const c of characters) {
+      map.set(c.name.toLowerCase(), c);
+    }
+    return map;
+  }, [characters]);
+
   // Compute which indices are duplicates (against existing + title-case)
   const duplicateIndices = useMemo(() => {
     const dupes = new Set<number>();
@@ -155,14 +289,54 @@ export function ImportConfirmModal({
 
   const duplicateCount = duplicateIndices.size;
 
+  // Unique non-null group IDs from characters that match duplicate names
+  const existingGroups = useMemo(() => {
+    const groupIds = new Set<number>();
+    for (const idx of duplicateIndices) {
+      const name = displayNames[idx]!;
+      const char = duplicateCharMap.get(name.toLowerCase());
+      if (char?.group_id != null) groupIds.add(char.group_id);
+    }
+    return [...groupIds];
+  }, [duplicateIndices, displayNames, duplicateCharMap]);
+
+  const hasNewCharacters = effectiveNames.length - duplicateCount > 0;
+
+  // IDs of duplicate characters for fetching existing variant data
+  const duplicateCharIds = useMemo(() => {
+    const ids: number[] = [];
+    for (const idx of duplicateIndices) {
+      const name = displayNames[idx]!;
+      const char = duplicateCharMap.get(name.toLowerCase());
+      if (char) ids.push(char.id);
+    }
+    return ids;
+  }, [duplicateIndices, displayNames, duplicateCharMap]);
+
+  const { variantMap, loading: variantLoading } = useDuplicateAssetInfo(open, duplicateCharIds);
+
   // Asset counts per character (only in asset-aware mode)
   const assetCounts = useMemo(() => {
     if (!payloads) return null;
     return payloads.map((p) => ({
       images: p.assets.filter((a) => a.kind === "image").length,
       videos: p.assets.filter((a) => a.kind === "video").length,
+      metadata: [p.bioJson, p.tovJson, p.metadataJson].filter(Boolean).length,
     }));
   }, [payloads]);
+
+  // Duplicate indices that have importable assets
+  const duplicatesWithAssets = useMemo(() => {
+    if (!assetCounts) return new Set<number>();
+    const result = new Set<number>();
+    for (const idx of duplicateIndices) {
+      const c = assetCounts[idx];
+      if (c && (c.images > 0 || c.videos > 0 || c.metadata > 0)) {
+        result.add(idx);
+      }
+    }
+    return result;
+  }, [duplicateIndices, assetCounts]);
 
   // Reset checked set when names change — auto-uncheck duplicates
   useEffect(() => {
@@ -177,7 +351,24 @@ export function ImportConfirmModal({
     }
     setChecked(initial);
     setCheckedExistingAssets(new Set());
+    setImportMissing(false);
   }, [effectiveNames, existingSet, normalize]);
+
+  // Pre-fill group selector when all duplicates share a single group
+  useEffect(() => {
+    if (existingGroups.length === 1) {
+      setGroupId(String(existingGroups[0]));
+    }
+  }, [existingGroups]);
+
+  // When "Import missing" or "Overwrite" is toggled, auto-select all duplicates with assets
+  useEffect(() => {
+    if (importMissing || overwrite) {
+      setCheckedExistingAssets(new Set(duplicatesWithAssets));
+    } else {
+      setCheckedExistingAssets(new Set());
+    }
+  }, [importMissing, overwrite, duplicatesWithAssets]);
 
   // Count only non-duplicate selected items
   const selectedCount = [...checked].filter(
@@ -190,18 +381,6 @@ export function ImportConfirmModal({
     // Don't allow checking duplicates for creation
     if (duplicateIndices.has(idx)) return;
     setChecked((prev) => {
-      const next = new Set(prev);
-      if (next.has(idx)) {
-        next.delete(idx);
-      } else {
-        next.add(idx);
-      }
-      return next;
-    });
-  }
-
-  function toggleExistingAssets(idx: number) {
-    setCheckedExistingAssets((prev) => {
       const next = new Set(prev);
       if (next.has(idx)) {
         next.delete(idx);
@@ -254,6 +433,8 @@ export function ImportConfirmModal({
         newPayloads,
         existingPayloads,
         groupId ? Number(groupId) : undefined,
+        importMissing ? false : overwrite,
+        importMissing,
       );
     } else {
       // Legacy name-only path
@@ -272,20 +453,48 @@ export function ImportConfirmModal({
       <Stack gap={4}>
         {/* Options bar */}
         <div className="flex flex-wrap items-end gap-[var(--spacing-3)]">
-          <div className="w-[200px]">
-            <Select
-              label="Assign to group"
-              options={groupOptions}
-              value={groupId}
-              onChange={setGroupId}
-            />
-          </div>
+          {existingGroups.length > 1 ? (
+            <div className="w-[200px]">
+              <label className="block text-xs font-medium text-[var(--color-text-muted)] mb-[var(--spacing-1)]">
+                Assign to group
+              </label>
+              <span className="text-sm text-[var(--color-text-secondary)]">
+                (multiple groups)
+              </span>
+            </div>
+          ) : (
+            <div className="w-[200px]">
+              <Select
+                label="Assign to group"
+                options={groupOptions}
+                value={groupId}
+                onChange={setGroupId}
+                disabled={existingGroups.length === 1 && !hasNewCharacters}
+              />
+            </div>
+          )}
           <Toggle
             checked={normalize}
             onChange={setNormalize}
             label="Normalize names"
             size="sm"
           />
+          {duplicatesWithAssets.size > 0 && payloads && (
+            <Toggle
+              checked={importMissing}
+              onChange={setImportMissing}
+              label="Import missing"
+              size="sm"
+            />
+          )}
+          {duplicateCount > 0 && payloads && !importMissing && (
+            <Toggle
+              checked={overwrite}
+              onChange={setOverwrite}
+              label="Overwrite existing"
+              size="sm"
+            />
+          )}
         </div>
 
         {/* Duplicate warning */}
@@ -295,7 +504,11 @@ export function ImportConfirmModal({
               {duplicateCount} {duplicateCount === 1 ? "name" : "names"} already{" "}
               {duplicateCount === 1 ? "exists" : "exist"}.
               {payloads
-                ? " Toggle 'Upload assets' to add files to existing characters."
+                ? importMissing
+                  ? " Missing assets will be imported to existing characters."
+                  : overwrite
+                    ? " Existing assets will be overwritten."
+                    : " Toggle 'Upload assets' to add files to existing characters."
                 : " Duplicates will be skipped."}
             </p>
           </div>
@@ -309,41 +522,67 @@ export function ImportConfirmModal({
               checked={importableCount > 0 && selectedCount === importableCount}
               indeterminate={selectedCount > 0 && selectedCount < importableCount}
               onChange={toggleAll}
-              label={`Select all (${importableCount})`}
+              disabled={importableCount === 0}
+              label={importableCount === 0 ? "All characters already exist" : `Select all (${importableCount})`}
             />
           </div>
 
           {displayNames.map((name, idx) => {
             const isDuplicate = duplicateIndices.has(idx);
             const counts = assetCounts?.[idx];
-            const hasAssets = counts && (counts.images > 0 || counts.videos > 0);
+            const hasAssets = counts && (counts.images > 0 || counts.videos > 0 || counts.metadata > 0);
+            const bulkMode = importMissing || overwrite;
 
             return (
               <div
                 key={idx}
                 className={`flex items-center gap-[var(--spacing-2)] px-[var(--spacing-3)] py-[var(--spacing-1)] ${
-                  isDuplicate && !checkedExistingAssets.has(idx)
+                  isDuplicate && !checkedExistingAssets.has(idx) && !(bulkMode && hasAssets)
                     ? "opacity-50"
                     : "hover:bg-[var(--color-surface-secondary)]"
                 }`}
               >
-                <Checkbox
-                  checked={isDuplicate ? false : checked.has(idx)}
-                  onChange={() => toggleItem(idx)}
-                  disabled={isDuplicate}
-                  label={name}
-                />
+                {/* Duplicate with assets in bulk mode: togglable checkbox */}
+                {isDuplicate && hasAssets && bulkMode ? (
+                  <Checkbox
+                    checked={checkedExistingAssets.has(idx)}
+                    onChange={() => toggleExistingAssets(idx)}
+                    label={name}
+                  />
+                ) : (
+                  <Checkbox
+                    checked={isDuplicate ? false : checked.has(idx)}
+                    onChange={() => toggleItem(idx)}
+                    disabled={isDuplicate}
+                    label={name}
+                  />
+                )}
 
-                {/* Asset count badges */}
+                {/* Asset count / diff badges */}
                 {counts && counts.images > 0 && (
-                  <Badge variant="info" size="sm">
-                    {counts.images} {counts.images === 1 ? "image" : "images"}
-                  </Badge>
+                  <DiffBadges
+                    isDuplicate={isDuplicate}
+                    overwrite={overwrite}
+                    payload={payloads?.[idx]}
+                    displayName={name}
+                    duplicateCharMap={duplicateCharMap}
+                    variantMap={variantMap}
+                    variantLoading={variantLoading}
+                    totalImages={counts.images}
+                  />
                 )}
                 {counts && counts.videos > 0 && (
                   <Badge variant="default" size="sm">
                     {counts.videos} {counts.videos === 1 ? "video" : "videos"}
                   </Badge>
+                )}
+                {counts && counts.metadata > 0 && (
+                  <MetadataDiffBadges
+                    isDuplicate={isDuplicate}
+                    payload={payloads?.[idx]}
+                    displayName={name}
+                    duplicateCharMap={duplicateCharMap}
+                  />
                 )}
 
                 {isDuplicate && !hasAssets && (
@@ -352,8 +591,8 @@ export function ImportConfirmModal({
                   </span>
                 )}
 
-                {/* Upload assets toggle for existing characters with assets */}
-                {isDuplicate && hasAssets && (
+                {/* Upload assets toggle for existing characters with assets (non-bulk mode) */}
+                {isDuplicate && hasAssets && !bulkMode && (
                   <div className="ml-auto shrink-0 flex items-center gap-[var(--spacing-2)]">
                     <span className="text-xs text-[var(--color-text-warning)]">
                       exists
@@ -365,6 +604,11 @@ export function ImportConfirmModal({
                       size="sm"
                     />
                   </div>
+                )}
+                {isDuplicate && hasAssets && bulkMode && (
+                  <span className="ml-auto shrink-0 text-xs text-[var(--color-text-success)]">
+                    {importMissing ? "import missing" : "overwrite"}
+                  </span>
                 )}
               </div>
             );

@@ -1,205 +1,720 @@
 /**
- * Character deliverables tab — approved variants and final videos (PRD-112).
+ * Character deliverables tab — metadata, approved images, and video clips (PRD-112).
+ *
+ * Three sections in a uniform compact-row format:
+ * 1. Metadata — summary card with download button
+ * 2. Images — approved variants grouped by scene slot
+ * 3. Scene Videos — clips grouped by scene slot
+ *
+ * Scene slots come from the character's effective scene settings (four-level merge).
+ * Scenes/variants are matched to slots via (scene_type_id, track_id).
  */
 
+import { useCallback, useMemo, useRef, useState, type ReactNode } from "react";
 import { Card } from "@/components/composite";
 import { EmptyState } from "@/components/domain";
-import { Grid, Stack } from "@/components/layout";
-import { Badge, Button, LoadingPane, Spinner } from "@/components/primitives";
-import { Download, Video, Image } from "@/tokens/icons";
+import { Stack } from "@/components/layout";
+import { Badge, Button, Checkbox, LoadingPane } from "@/components/primitives";
+import { useClickOutside } from "@/hooks/useClickOutside";
+import { cn } from "@/lib/cn";
+import { useSetToggle } from "@/hooks/useSetToggle";
+import { ChevronDown, ChevronRight, Download, EyeOff, FileText, ListFilter, Image, Video } from "@/tokens/icons";
 
+import {
+  useCharacterMetadata,
+  useCharacterSettings,
+  useUpdateCharacterSettings,
+} from "@/features/characters/hooks/use-character-detail";
+import {
+  isIgnored,
+  useAddDeliverableIgnore,
+  useDeliverableIgnores,
+  useRemoveDeliverableIgnore,
+} from "@/features/characters/hooks/use-deliverable-ignores";
+import type { DeliverableIgnore } from "@/features/characters/hooks/use-deliverable-ignores";
+import { generateAvatarJson } from "@/features/characters/lib/avatar-json-transform";
+import { SOURCE_KEYS } from "@/features/characters/types";
 import { useImageVariants } from "@/features/images/hooks/use-image-variants";
-import { IMAGE_VARIANT_STATUS } from "@/features/images/types";
-import type { ImageVariant } from "@/features/images/types";
+import { IMAGE_VARIANT_STATUS, PROVENANCE_LABEL } from "@/features/images/types";
+import type { ImageVariant, Provenance } from "@/features/images/types";
 import { variantImageUrl } from "@/features/images/utils";
+import { useCharacterSceneSettings } from "@/features/scene-catalog/hooks/use-character-scene-settings";
+import { useExpandedSettings } from "@/features/scene-catalog/hooks/use-expanded-settings";
+import type { ExpandedSceneSetting } from "@/features/scene-catalog/types";
 import { useCharacterScenes } from "@/features/scenes/hooks/useCharacterScenes";
 import { useSceneVersions } from "@/features/scenes/hooks/useClipManagement";
 import type { Scene, SceneVideoVersion } from "@/features/scenes/types";
+import { formatDuration } from "@/features/video-player/frame-utils";
+import { CLOTHES_OFF_SUFFIX, getExtension } from "@/lib/file-types";
+import { downloadJson } from "@/lib/file-utils";
+import { formatBytes, generateSnakeSlug } from "@/lib/format";
+import { SECTION_HEADING } from "@/lib/ui-classes";
 
 /* --------------------------------------------------------------------------
-   Sub-components
+   Constants
    -------------------------------------------------------------------------- */
 
-function ApprovedVariantCard({ variant }: { variant: ImageVariant }) {
+const SECTION_KEYS = ["metadata", "images", "scene-videos"] as const;
+type SectionKey = (typeof SECTION_KEYS)[number];
+
+const SECTION_LABELS: Record<SectionKey, string> = {
+  metadata: "Metadata",
+  images: "Images",
+  "scene-videos": "Scene Videos",
+};
+
+/* --------------------------------------------------------------------------
+   Helpers
+   -------------------------------------------------------------------------- */
+
+/** Build the "SceneName — TrackName" display label for a slot.
+ *  When the scene has the clothes-off transition flag, the track label
+ *  is replaced with "Clothes-off" (e.g. "Boobs — Clothes-off"). */
+function slotLabel(slot: ExpandedSceneSetting): string {
+  if (slot.has_clothes_off_transition) return `${slot.name} — Clothes-off`;
+  return slot.track_name ? `${slot.name} — ${slot.track_name}` : slot.name;
+}
+
+/**
+ * Compute the expected delivery filename for a seed image track.
+ *
+ * Mirrors the backend naming engine's `delivery_image` template:
+ * `{variant_label}.{ext}` where variant_label is the track slug.
+ */
+function expectedImageFilename(trackSlug: string, ext = "png"): string {
+  return `${trackSlug}.${ext}`;
+}
+
+/**
+ * Compute the expected delivery filename for a scene video slot.
+ *
+ * Mirrors the backend naming engine's `delivery_video` template:
+ * `{variant_prefix}{scene_type_slug}{clothes_off_suffix}{index_suffix}.mp4`
+ *
+ * - variant_prefix: "topless_" for topless track, empty for clothed
+ * - scene_type_slug: scene type name lowercased, spaces → underscores
+ * - clothes_off_suffix: "_clothes_off" when scene type has the transition flag
+ * - index_suffix is omitted from expected names
+ */
+function expectedVideoFilename(slot: ExpandedSceneSetting): string {
+  const sceneSlug = slot.name.toLowerCase().replace(/\s+/g, "_");
+  const prefix = slot.track_slug === "topless" ? "topless_" : "";
+  const clothesOff = slot.has_clothes_off_transition ? CLOTHES_OFF_SUFFIX : "";
+  return `${prefix}${sceneSlug}${clothesOff}.mp4`;
+}
+
+/* --------------------------------------------------------------------------
+   Section filter dropdown
+   -------------------------------------------------------------------------- */
+
+function SectionFilter({
+  visible,
+  onToggle,
+}: {
+  visible: Set<SectionKey>;
+  onToggle: (key: SectionKey) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const close = useCallback(() => setOpen(false), []);
+  useClickOutside(containerRef, close, open);
+
   return (
-    <Card elevation="sm" padding="sm">
-      <Stack gap={2}>
-        {variant.file_path ? (
-          <img
-            src={variantImageUrl(variant.file_path)}
-            alt={variant.variant_label}
-            className="h-32 w-full rounded-[var(--radius-sm)] object-cover"
-          />
-        ) : (
-          <div className="flex h-32 items-center justify-center rounded-[var(--radius-sm)] bg-[var(--color-surface-secondary)] text-[var(--color-text-muted)]">
-            No image
-          </div>
-        )}
-        <p className="truncate text-sm font-medium text-[var(--color-text-primary)]">
-          {variant.variant_label}
-        </p>
-        <div className="flex items-center gap-[var(--spacing-1)]">
-          <Badge variant="success" size="sm">
-            {variant.is_hero ? "Hero" : "Approved"}
-          </Badge>
-          {variant.variant_type && (
-            <Badge variant="info" size="sm">
-              {variant.variant_type}
-            </Badge>
-          )}
+    <div ref={containerRef} className="relative inline-flex">
+      <Button
+        variant="secondary"
+        size="sm"
+        icon={<ListFilter size={14} />}
+        onClick={() => setOpen((p) => !p)}
+      >
+        Sections ({visible.size}/{SECTION_KEYS.length})
+      </Button>
+      {open && (
+        <div className="absolute top-full right-0 mt-1 z-50 min-w-[180px] bg-[var(--color-surface-secondary)] border border-[var(--color-border-default)] rounded-[var(--radius-md)] shadow-[var(--shadow-md)] py-2 px-3">
+          <Stack gap={2}>
+            {SECTION_KEYS.map((key) => (
+              <Checkbox
+                key={key}
+                checked={visible.has(key)}
+                onChange={() => onToggle(key)}
+                label={SECTION_LABELS[key]}
+              />
+            ))}
+          </Stack>
         </div>
-        {variant.file_path && (
+      )}
+    </div>
+  );
+}
+
+/* --------------------------------------------------------------------------
+   Row components
+   -------------------------------------------------------------------------- */
+
+/** Grid-based row layout: icon | title | filename | badges/meta | actions.
+ *  Fixed column widths for icon, title, and filename ensure vertical alignment. */
+const ROW_GRID =
+  "grid items-center rounded-[var(--radius-sm)] border border-[var(--color-border-primary)] px-[var(--spacing-3)] py-[var(--spacing-2)] text-sm";
+const ROW_GRID_COLS =
+  "grid-cols-[16px_minmax(100px,160px)_minmax(120px,200px)_1fr_auto]";
+const ROW_CLASS = `${ROW_GRID} ${ROW_GRID_COLS} gap-x-[var(--spacing-3)]`;
+
+const PLACEHOLDER_GRID =
+  "grid items-center rounded-[var(--radius-sm)] border border-dashed border-[var(--color-border-secondary)] px-[var(--spacing-3)] py-[var(--spacing-2)] text-sm text-[var(--color-text-muted)]";
+const PLACEHOLDER_CLASS = `${PLACEHOLDER_GRID} ${ROW_GRID_COLS} gap-x-[var(--spacing-3)]`;
+
+/** Shared cell classes. */
+const ROW_ICON_CLASS = "shrink-0 text-[var(--color-text-muted)]";
+const ROW_TITLE_CLASS = "min-w-0 truncate font-medium text-sm text-[var(--color-text-primary)]";
+const ROW_TITLE_MUTED_CLASS = "min-w-0 truncate font-medium text-sm text-[var(--color-text-muted)]";
+const ROW_FILENAME_CLASS = "min-w-0 truncate text-xs font-mono text-[var(--color-text-muted)]";
+const ROW_META_CLASS = "flex items-center gap-[var(--spacing-2)] min-w-0 flex-wrap";
+
+function ImageRow({ title, expectedFilename, variant }: { title: string; expectedFilename: string; variant: ImageVariant }) {
+  return (
+    <div className={ROW_CLASS}>
+      <Image size={14} className={ROW_ICON_CLASS} />
+      <span className={ROW_TITLE_CLASS}>{title}</span>
+      <span className={ROW_FILENAME_CLASS}>{expectedFilename}</span>
+      <div className={ROW_META_CLASS}>
+        <Badge variant="default" size="sm">v{variant.version}</Badge>
+        <Badge variant="info" size="sm">
+          {variant.provenance === "manual_upload"
+            ? "Imported"
+            : (PROVENANCE_LABEL[variant.provenance as Provenance] ?? variant.provenance)}
+        </Badge>
+        {variant.format && (
+          <span className="text-[var(--color-text-muted)]">{variant.format.toUpperCase()}</span>
+        )}
+        {variant.width != null && variant.height != null && (
+          <span className="text-[var(--color-text-muted)]">
+            {variant.width}&times;{variant.height}
+          </span>
+        )}
+        {variant.file_size_bytes != null && (
+          <span className="text-[var(--color-text-muted)]">{formatBytes(variant.file_size_bytes)}</span>
+        )}
+      </div>
+      <div className="shrink-0 justify-self-end">
+        <Button
+          variant="ghost"
+          size="sm"
+          icon={<Download size={14} />}
+          onClick={() => window.open(variantImageUrl(variant.file_path), "_blank")}
+        >
+          Download
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function VideoRow({ title, expectedFilename, clip }: { title: string; expectedFilename: string; clip: SceneVideoVersion }) {
+  const ext = getExtension(clip.file_path);
+
+  return (
+    <div className={ROW_CLASS}>
+      <Video size={14} className={ROW_ICON_CLASS} />
+      <span className={ROW_TITLE_CLASS}>{title}</span>
+      <span className={ROW_FILENAME_CLASS}>{expectedFilename}</span>
+      <div className={ROW_META_CLASS}>
+        <Badge variant="default" size="sm">v{clip.version_number}</Badge>
+        <Badge variant="info" size="sm">
+          {clip.source === "generated" ? "Generated" : "Imported"}
+        </Badge>
+        {clip.width != null && clip.height != null && (
+          <span className="text-[var(--color-text-muted)]">{clip.width}x{clip.height}</span>
+        )}
+        {clip.duration_secs != null && (
+          <span className="text-[var(--color-text-muted)]">{formatDuration(clip.duration_secs)}</span>
+        )}
+        {clip.frame_rate != null && (
+          <span className="text-[var(--color-text-muted)]">{clip.frame_rate}fps</span>
+        )}
+        {ext && <span className="text-[var(--color-text-muted)]">{ext}</span>}
+        {clip.file_size_bytes != null && (
+          <span className="text-[var(--color-text-muted)]">{formatBytes(clip.file_size_bytes)}</span>
+        )}
+        {clip.is_final && <Badge variant="success" size="sm">Final</Badge>}
+      </div>
+      <div className="shrink-0 justify-self-end">
+        {clip.file_path && (
           <Button
             variant="ghost"
             size="sm"
             icon={<Download size={14} />}
-            onClick={() => window.open(variantImageUrl(variant.file_path), "_blank")}
+            onClick={() => window.open(clip.file_path, "_blank")}
           >
             Download
           </Button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function PlaceholderRow({
+  icon,
+  title,
+  text,
+  ignored,
+  onToggleIgnore,
+}: {
+  icon?: ReactNode;
+  title?: string;
+  text: string;
+  ignored?: DeliverableIgnore;
+  onToggleIgnore?: () => void;
+}) {
+  return (
+    <div className={cn(PLACEHOLDER_CLASS, ignored && "opacity-50")}>
+      <span className={ROW_ICON_CLASS}>{icon}</span>
+      <span className={ROW_TITLE_MUTED_CLASS}>{title ?? ""}</span>
+      <span className={cn(ROW_FILENAME_CLASS, ignored && "line-through")}>{text}</span>
+      <div className={ROW_META_CLASS}>
+        {ignored && <Badge variant="default" size="sm">Ignored</Badge>}
+      </div>
+      <div className="shrink-0 justify-self-end">
+        {onToggleIgnore && (
+          <Button
+            variant="ghost"
+            size="sm"
+            icon={<EyeOff size={14} />}
+            onClick={onToggleIgnore}
+          >
+            {ignored ? "Un-ignore" : "Ignore"}
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* --------------------------------------------------------------------------
+   Scene-slot grouped sections
+   -------------------------------------------------------------------------- */
+
+function SeedImageSlot({
+  label,
+  trackSlug,
+  variants,
+}: {
+  label: string;
+  trackSlug: string;
+  variants: ImageVariant[];
+}) {
+  // Match variants by track slug. Include hero, approved, or generated variants
+  // (uploaded images arrive as Generated, not Approved).
+  const matched = variants.filter(
+    (v) =>
+      v.variant_type?.toLowerCase() === trackSlug.toLowerCase() &&
+      (v.is_hero ||
+        v.status_id === IMAGE_VARIANT_STATUS.APPROVED ||
+        v.status_id === IMAGE_VARIANT_STATUS.GENERATED),
+  );
+
+  const expectedName = expectedImageFilename(trackSlug);
+
+  if (matched.length === 0) {
+    return (
+      <PlaceholderRow
+        icon={<Image size={14} className={ROW_ICON_CLASS} />}
+        title={label}
+        text={expectedName}
+      />
+    );
+  }
+
+  return (
+    <>
+      {matched.map((v) => (
+        <ImageRow key={v.id} title={label} expectedFilename={expectedName} variant={v} />
+      ))}
+    </>
+  );
+}
+
+function VideoSlot({
+  slot,
+  scenes,
+  ignored,
+  onToggleIgnore,
+}: {
+  slot: ExpandedSceneSetting;
+  scenes: Scene[];
+  ignored?: DeliverableIgnore;
+  onToggleIgnore?: () => void;
+}) {
+  const title = slotLabel(slot);
+  const expectedName = expectedVideoFilename(slot);
+  const matched = scenes.filter(
+    (s) =>
+      s.scene_type_id === slot.scene_type_id &&
+      s.track_id === (slot.track_id ?? null),
+  );
+
+  if (matched.length === 0) {
+    return (
+      <PlaceholderRow
+        icon={<Video size={14} className={ROW_ICON_CLASS} />}
+        title={title}
+        text={expectedName}
+        ignored={ignored}
+        onToggleIgnore={onToggleIgnore}
+      />
+    );
+  }
+
+  // Pick the most recent scene (highest id = latest import).
+  const latestScene = matched.reduce((a, b) => (b.id > a.id ? b : a));
+
+  // Deliverables show only the single best clip from the latest scene.
+  return <BestClipRow title={title} expectedFilename={expectedName} sceneId={latestScene.id} />;
+}
+
+/**
+ * Fetch versions for a scene and display only the single best clip.
+ * Priority: latest final clip > latest non-final clip.
+ */
+function BestClipRow({ title, expectedFilename, sceneId }: { title: string; expectedFilename: string; sceneId: number }) {
+  const { data: clips, isLoading } = useSceneVersions(sceneId);
+
+  if (isLoading) {
+    return <PlaceholderRow icon={<Video size={14} className={ROW_ICON_CLASS} />} title={title} text="Loading clips..." />;
+  }
+
+  const list = clips ?? [];
+  if (list.length === 0) {
+    return <PlaceholderRow icon={<Video size={14} className={ROW_ICON_CLASS} />} title={title} text="No clips" />;
+  }
+
+  // Pick the best clip: prefer final, then latest by version_number.
+  const finals = list.filter((c) => c.is_final);
+  const best =
+    finals.length > 0
+      ? finals.reduce((a, b) => (b.version_number > a.version_number ? b : a))
+      : list.reduce((a, b) => (b.version_number > a.version_number ? b : a));
+
+  return <VideoRow title={title} expectedFilename={expectedFilename} clip={best} />;
+}
+
+/* --------------------------------------------------------------------------
+   Metadata section
+   -------------------------------------------------------------------------- */
+
+function MetadataSection({
+  characterId,
+  projectId,
+  characterName,
+  projectName,
+}: {
+  characterId: number;
+  projectId: number;
+  characterName: string;
+  projectName: string;
+}) {
+  const { data: metadata, isLoading: metaLoading } = useCharacterMetadata(characterId);
+  const { data: settings, isLoading: settingsLoading } = useCharacterSettings(projectId, characterId);
+  const updateSettings = useUpdateCharacterSettings(projectId, characterId);
+
+  const [avatarExpanded, setAvatarExpanded] = useState(false);
+
+  // Extract actual field values from the template-driven API response.
+  // The response shape is { character_id, character_name, fields: [{ name, value, ... }], completeness }.
+  const fields = (metadata as Record<string, unknown> | undefined)?.fields as
+    | Array<{ name: string; value: unknown }>
+    | undefined;
+
+  // Build a plain object for download (field name → value, excluding source keys).
+  // Must be called before the early return to satisfy the Rules of Hooks.
+  const downloadPayload = useMemo(() => {
+    if (!fields) return null;
+    const obj: Record<string, unknown> = {};
+    for (const f of fields) {
+      if (f.value != null) obj[f.name] = f.value;
+    }
+    return Object.keys(obj).length > 0 ? obj : null;
+  }, [fields]);
+
+  const isLoading = metaLoading || settingsLoading;
+  if (isLoading) return <LoadingPane />;
+
+  const fieldEntries = (fields ?? []).filter(
+    (f) => f.value != null && f.value !== "" && !SOURCE_KEYS.has(f.name),
+  );
+  const sourceEntries = (fields ?? []).filter(
+    (f) => f.value != null && SOURCE_KEYS.has(f.name),
+  );
+  const hasBioSource = sourceEntries.some((f) => f.name === "_source_bio");
+  const hasTovSource = sourceEntries.some((f) => f.name === "_source_tov");
+  const hasMetadata = fieldEntries.length > 0;
+
+  const avatarJson = settings?.avatar_json as Record<string, unknown> | undefined;
+  const hasAvatarJson = avatarJson != null;
+  const expectedFilenameAvatar = `${generateSnakeSlug(projectName)}_${generateSnakeSlug(characterName)}.json`;
+
+  function handleGenerate() {
+    if (!downloadPayload) return;
+    const result = generateAvatarJson(downloadPayload, settings ?? {});
+    updateSettings.mutate({ avatar_json: result });
+  }
+
+  function handleDownloadAvatar() {
+    if (!avatarJson) return;
+    downloadJson(avatarJson, expectedFilenameAvatar);
+  }
+
+  return (
+    <Card elevation="flat" padding="md">
+      <Stack gap={3}>
+        <h3 className={SECTION_HEADING}>
+          Metadata
+        </h3>
+        {/* Cleaned Metadata row */}
+        {!hasMetadata ? (
+          <PlaceholderRow icon={<FileText size={14} />} title="Cleaned Metadata" text="No metadata yet" />
+        ) : (
+          <div className={ROW_CLASS}>
+            <FileText size={14} className={ROW_ICON_CLASS} />
+            <span className={ROW_TITLE_CLASS}>Cleaned Metadata</span>
+            <span className={ROW_FILENAME_CLASS}>metadata.json</span>
+            <div className={ROW_META_CLASS}>
+              <Badge variant="default" size="sm">{fieldEntries.length} fields</Badge>
+              {hasBioSource && <Badge variant="info" size="sm">Bio source</Badge>}
+              {hasTovSource && <Badge variant="info" size="sm">ToV source</Badge>}
+            </div>
+            <div className="shrink-0 justify-self-end">
+              <Button
+                variant="ghost"
+                size="sm"
+                icon={<Download size={14} />}
+                onClick={() => downloadPayload && downloadJson(downloadPayload, `character-${characterId}-metadata.json`)}
+              >
+                Download JSON
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Avatar JSON row */}
+        {!hasAvatarJson ? (
+          <div className={PLACEHOLDER_CLASS}>
+            <span className={ROW_ICON_CLASS}><FileText size={14} /></span>
+            <span className={ROW_TITLE_MUTED_CLASS}>Avatar JSON</span>
+            <span className={ROW_FILENAME_CLASS}>Not generated</span>
+            <span />
+            <div className="shrink-0 justify-self-end">
+              {hasMetadata && (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  disabled={!downloadPayload || updateSettings.isPending}
+                  onClick={handleGenerate}
+                >
+                  Generate
+                </Button>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className={ROW_CLASS}>
+            <FileText size={14} className={ROW_ICON_CLASS} />
+            <span className={ROW_TITLE_CLASS}>Avatar JSON</span>
+            <span className={ROW_FILENAME_CLASS}>{expectedFilenameAvatar}</span>
+            <div className={ROW_META_CLASS}>
+              <Badge variant="success" size="sm">Generated</Badge>
+            </div>
+            <div className="shrink-0 justify-self-end flex items-center gap-[var(--spacing-2)]">
+              <Button
+                variant="secondary"
+                size="sm"
+                disabled={!downloadPayload || updateSettings.isPending}
+                onClick={handleGenerate}
+              >
+                Regenerate
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                icon={<Download size={14} />}
+                onClick={handleDownloadAvatar}
+              >
+                Download
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                icon={avatarExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                onClick={() => setAvatarExpanded((p) => !p)}
+                aria-label={avatarExpanded ? "Collapse raw JSON" : "Expand raw JSON"}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Collapsible raw JSON preview */}
+        {hasAvatarJson && avatarExpanded && (
+          <pre className="text-xs font-mono bg-[var(--color-surface-tertiary)] border border-[var(--color-border-secondary)] rounded-[var(--radius-sm)] p-[var(--spacing-3)] overflow-auto max-h-80 text-[var(--color-text-secondary)]">
+            {JSON.stringify(avatarJson, null, 2)}
+          </pre>
         )}
       </Stack>
     </Card>
   );
 }
 
-function SceneFinalClips({ scene }: { scene: Scene }) {
-  const { data: clips, isLoading } = useSceneVersions(scene.id);
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center gap-[var(--spacing-2)] py-[var(--spacing-2)]">
-        <Spinner size="sm" />
-        <span className="text-sm text-[var(--color-text-muted)]">
-          Loading clips...
-        </span>
-      </div>
-    );
-  }
-
-  const finalClips = clips?.filter((c: SceneVideoVersion) => c.is_final) ?? [];
-
-  if (finalClips.length === 0) {
-    return (
-      <p className="text-sm text-[var(--color-text-muted)] py-[var(--spacing-2)]">
-        No final clips for Scene #{scene.id}
-      </p>
-    );
-  }
-
-  return (
-    <Stack gap={2}>
-      <h4 className="text-sm font-medium text-[var(--color-text-secondary)]">
-        Scene #{scene.id}
-      </h4>
-      {finalClips.map((clip) => (
-        <Card key={clip.id} elevation="flat" padding="sm">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-[var(--spacing-2)]">
-              <Video size={16} className="text-[var(--color-text-muted)]" />
-              <span className="text-sm text-[var(--color-text-primary)]">
-                Version {clip.version_number}
-              </span>
-              <Badge variant="success" size="sm">
-                Final
-              </Badge>
-              {clip.duration_secs != null && (
-                <span className="text-xs text-[var(--color-text-muted)]">
-                  {clip.duration_secs.toFixed(1)}s
-                </span>
-              )}
-            </div>
-            {clip.file_path && (
-              <Button
-                variant="ghost"
-                size="sm"
-                icon={<Download size={14} />}
-                onClick={() => window.open(clip.file_path, "_blank")}
-              >
-                Download
-              </Button>
-            )}
-          </div>
-        </Card>
-      ))}
-    </Stack>
-  );
-}
-
 /* --------------------------------------------------------------------------
-   Component
+   Main component
    -------------------------------------------------------------------------- */
 
 interface CharacterDeliverablesTabProps {
   characterId: number;
+  projectId: number;
+  characterName: string;
+  projectName: string;
 }
 
 export function CharacterDeliverablesTab({
   characterId,
+  projectId,
+  characterName,
+  projectName,
 }: CharacterDeliverablesTabProps) {
   const { data: variants, isLoading: variantsLoading } =
     useImageVariants(characterId);
   const { data: scenes, isLoading: scenesLoading } =
     useCharacterScenes(characterId);
+  const { data: settings, isLoading: settingsLoading } =
+    useCharacterSceneSettings(characterId);
+  const { data: ignores } = useDeliverableIgnores(characterId);
+  const addIgnore = useAddDeliverableIgnore(characterId);
+  const removeIgnore = useRemoveDeliverableIgnore(characterId);
 
-  const isLoading = variantsLoading || scenesLoading;
+  const [showIgnored, setShowIgnored] = useState(true);
 
-  if (isLoading) {
-    return <LoadingPane />;
+  const slots = useExpandedSettings(settings);
+  const enabledSlots = slots.filter((s) => s.is_enabled);
+
+  /** Unique seed-image tracks (e.g. "Clothed", "Topless") derived from enabled slots. */
+  const seedTracks = useMemo(() => {
+    const seen = new Map<string, string>(); // slug → display name
+    for (const slot of enabledSlots) {
+      const slug = slot.track_slug ?? "default";
+      if (!seen.has(slug)) {
+        seen.set(slug, slot.track_name ?? "Default");
+      }
+    }
+    return [...seen.entries()].map(([slug, name]) => ({ slug, name }));
+  }, [enabledSlots]);
+
+
+  // Section filter state — all visible by default
+  const [visibleSections, toggleSection] = useSetToggle<SectionKey>(SECTION_KEYS);
+
+  function toggleIgnore(sceneTypeId: number, trackId: number | null) {
+    const existing = isIgnored(ignores, sceneTypeId, trackId);
+    if (existing) {
+      removeIgnore.mutate(existing.uuid);
+    } else {
+      addIgnore.mutate({ scene_type_id: sceneTypeId, track_id: trackId });
+    }
   }
 
-  const approvedVariants =
-    variants?.filter(
-      (v) =>
-        v.is_hero ||
-        v.status_id === IMAGE_VARIANT_STATUS.APPROVED,
-    ) ?? [];
+  /** Slots filtered by ignore visibility toggle. */
+  const visibleSlots = showIgnored
+    ? enabledSlots
+    : enabledSlots.filter((s) => !isIgnored(ignores, s.scene_type_id, s.track_id ?? null));
+
+  const isLoading = variantsLoading || scenesLoading || settingsLoading;
+
+  if (isLoading) return <LoadingPane />;
 
   return (
     <Stack gap={6}>
-      {/* Approved Images */}
-      <Card elevation="flat" padding="md">
-        <Stack gap={3}>
-          <h3 className="text-base font-semibold text-[var(--color-text-primary)]">
-            Approved Images
-          </h3>
-          {approvedVariants.length === 0 ? (
-            <EmptyState
-              icon={<Image size={32} />}
-              title="No approved images"
-              description="Approve image variants to see them here."
-            />
-          ) : (
-            <Grid cols={3} gap={4}>
-              {approvedVariants.map((v) => (
-                <ApprovedVariantCard key={v.id} variant={v} />
-              ))}
-            </Grid>
-          )}
-        </Stack>
-      </Card>
+      {/* Section filter */}
+      <div className="flex items-center justify-end gap-[var(--spacing-2)]">
+        <Button
+          variant="secondary"
+          size="sm"
+          icon={<EyeOff size={14} />}
+          onClick={() => setShowIgnored((p) => !p)}
+        >
+          {showIgnored ? "Hide Ignored" : "Show Ignored"}
+        </Button>
+        <SectionFilter visible={visibleSections} onToggle={toggleSection} />
+      </div>
 
-      {/* Final Videos */}
-      <Card elevation="flat" padding="md">
-        <Stack gap={3}>
-          <h3 className="text-base font-semibold text-[var(--color-text-primary)]">
-            Final Videos
-          </h3>
-          {!scenes?.length ? (
-            <EmptyState
-              icon={<Video size={32} />}
-              title="No scenes"
-              description="Create scenes and mark clips as final to see them here."
-            />
-          ) : (
-            <Stack gap={4}>
-              {scenes.map((scene) => (
-                <SceneFinalClips key={scene.id} scene={scene} />
-              ))}
-            </Stack>
-          )}
-        </Stack>
-      </Card>
+      {/* Section 1: Metadata */}
+      {visibleSections.has("metadata") && (
+        <MetadataSection
+          characterId={characterId}
+          projectId={projectId}
+          characterName={characterName}
+          projectName={projectName}
+        />
+      )}
+
+      {/* Section 2: Images (seed images only — one per track) */}
+      {visibleSections.has("images") && (
+        <Card elevation="flat" padding="md">
+          <Stack gap={3}>
+            <h3 className={SECTION_HEADING}>
+              Images
+            </h3>
+            {seedTracks.length === 0 ? (
+              <EmptyState
+                icon={<Image size={32} />}
+                title="No scene slots"
+                description="Enable scene settings to see expected image deliverables."
+              />
+            ) : (
+              <Stack gap={4}>
+                {seedTracks.map((track) => (
+                  <SeedImageSlot
+                    key={track.slug}
+                    label={track.name}
+                    trackSlug={track.slug}
+                    variants={variants ?? []}
+                  />
+                ))}
+              </Stack>
+            )}
+          </Stack>
+        </Card>
+      )}
+
+      {/* Section 3: Scene Videos */}
+      {visibleSections.has("scene-videos") && (
+        <Card elevation="flat" padding="md">
+          <Stack gap={3}>
+            <h3 className={SECTION_HEADING}>
+              Scene Videos
+            </h3>
+            {visibleSlots.length === 0 ? (
+              <EmptyState
+                icon={<Video size={32} />}
+                title="No scene slots"
+                description={enabledSlots.length > 0 ? "All slots are ignored." : "Enable scene settings to see expected video deliverables."}
+              />
+            ) : (
+              <Stack gap={4}>
+                {visibleSlots.map((slot) => {
+                  const ig = isIgnored(ignores, slot.scene_type_id, slot.track_id ?? null);
+                  return (
+                    <VideoSlot
+                      key={`${slot.scene_type_id}-${slot.track_id ?? "none"}`}
+                      slot={slot}
+                      scenes={scenes ?? []}
+                      ignored={ig}
+                      onToggleIgnore={() => toggleIgnore(slot.scene_type_id, slot.track_id ?? null)}
+                    />
+                  );
+                })}
+              </Stack>
+            )}
+          </Stack>
+        </Card>
+      )}
     </Stack>
   );
 }

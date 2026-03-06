@@ -9,7 +9,7 @@ use crate::models::scene_video_version::{
 
 /// Column list shared across queries to avoid repetition.
 const COLUMNS: &str = "id, scene_id, version_number, source, file_path, \
-    file_size_bytes, duration_secs, is_final, notes, \
+    file_size_bytes, duration_secs, width, height, frame_rate, preview_path, is_final, notes, \
     qa_status, qa_reviewed_by, qa_reviewed_at, qa_rejection_reason, qa_notes, \
     deleted_at, created_at, updated_at";
 
@@ -162,6 +162,65 @@ impl SceneVideoVersionRepo {
         Ok(result.rows_affected() > 0)
     }
 
+    /// Set video metadata (duration, resolution, frame rate) extracted via ffprobe.
+    pub async fn set_video_metadata(
+        pool: &PgPool,
+        id: DbId,
+        duration_secs: f64,
+        width: i32,
+        height: i32,
+        frame_rate: f64,
+    ) -> Result<bool, sqlx::Error> {
+        let result = sqlx::query(
+            "UPDATE scene_video_versions \
+             SET duration_secs = $2, width = $3, height = $4, frame_rate = $5 \
+             WHERE id = $1 AND deleted_at IS NULL",
+        )
+        .bind(id)
+        .bind(duration_secs)
+        .bind(width)
+        .bind(height)
+        .bind(frame_rate)
+        .execute(pool)
+        .await?;
+        Ok(result.rows_affected() > 0)
+    }
+
+    /// List all versions that have no duration_secs. Useful for backfilling
+    /// duration metadata on existing data. Limited to avoid OOM on large datasets.
+    pub async fn list_missing_duration(
+        pool: &PgPool,
+        limit: i64,
+    ) -> Result<Vec<SceneVideoVersion>, sqlx::Error> {
+        let query = format!(
+            "SELECT {COLUMNS} FROM scene_video_versions \
+             WHERE (duration_secs IS NULL OR width IS NULL OR frame_rate IS NULL) \
+             AND deleted_at IS NULL \
+             ORDER BY id ASC LIMIT $1"
+        );
+        sqlx::query_as::<_, SceneVideoVersion>(&query)
+            .bind(limit)
+            .fetch_all(pool)
+            .await
+    }
+
+    /// Set the preview_path for a scene video version. Returns `true` if a row was updated.
+    pub async fn set_preview_path(
+        pool: &PgPool,
+        id: DbId,
+        path: &str,
+    ) -> Result<bool, sqlx::Error> {
+        let result = sqlx::query(
+            "UPDATE scene_video_versions SET preview_path = $2 \
+             WHERE id = $1 AND deleted_at IS NULL",
+        )
+        .bind(id)
+        .bind(path)
+        .execute(pool)
+        .await?;
+        Ok(result.rows_affected() > 0)
+    }
+
     // ── Version-specific operations ──────────────────────────────────
 
     /// Get the next version number for a scene (max existing + 1, or 1 if none).
@@ -275,10 +334,29 @@ impl SceneVideoVersionRepo {
         Ok(version)
     }
 
-    /// Find scene IDs in a project that have no final video version.
+    /// List all versions that have a video file but no preview. Useful for
+    /// backfilling previews on existing data. Limited to avoid OOM on large datasets.
+    pub async fn list_missing_previews(
+        pool: &PgPool,
+        limit: i64,
+    ) -> Result<Vec<SceneVideoVersion>, sqlx::Error> {
+        let query = format!(
+            "SELECT {COLUMNS} FROM scene_video_versions \
+             WHERE preview_path IS NULL AND deleted_at IS NULL \
+             ORDER BY id ASC LIMIT $1"
+        );
+        sqlx::query_as::<_, SceneVideoVersion>(&query)
+            .bind(limit)
+            .fetch_all(pool)
+            .await
+    }
+
+    /// Find scene IDs in a project that have no final video version with
+    /// actual content (non-empty file).
     ///
-    /// Useful for delivery validation (e.g. ensuring every scene has been
-    /// finalized before packaging).
+    /// A version is considered "empty" if `file_size_bytes` is NULL or 0.
+    /// Empty versions are excluded so they are not treated as completed
+    /// deliverables.
     pub async fn find_scenes_missing_final(
         pool: &PgPool,
         project_id: DbId,
@@ -292,12 +370,36 @@ impl SceneVideoVersionRepo {
                AND c.deleted_at IS NULL \
                AND NOT EXISTS ( \
                    SELECT 1 FROM scene_video_versions v \
-                   WHERE v.scene_id = s.id AND v.is_final = true AND v.deleted_at IS NULL \
+                   WHERE v.scene_id = s.id \
+                     AND v.is_final = true \
+                     AND v.deleted_at IS NULL \
+                     AND v.file_size_bytes IS NOT NULL \
+                     AND v.file_size_bytes > 0 \
                )",
         )
         .bind(project_id)
         .fetch_all(pool)
         .await?;
         Ok(rows.into_iter().map(|r| r.0).collect())
+    }
+
+    /// Count non-empty video versions for a scene (versions with actual file content).
+    ///
+    /// Excludes soft-deleted versions and versions where `file_size_bytes` is NULL or 0.
+    pub async fn count_non_empty_versions(
+        pool: &PgPool,
+        scene_id: DbId,
+    ) -> Result<i64, sqlx::Error> {
+        let row: (i64,) = sqlx::query_as(
+            "SELECT COUNT(*) FROM scene_video_versions \
+             WHERE scene_id = $1 \
+               AND deleted_at IS NULL \
+               AND file_size_bytes IS NOT NULL \
+               AND file_size_bytes > 0",
+        )
+        .bind(scene_id)
+        .fetch_one(pool)
+        .await?;
+        Ok(row.0)
     }
 }

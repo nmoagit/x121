@@ -15,6 +15,9 @@ import { Badge, Button, LoadingPane } from "@/components/primitives";
 import { ICON_ACTION_BTN } from "@/lib/ui-classes";
 import { AlertCircle, ChevronLeft, ChevronRight, Edit3, User } from "@/tokens/icons";
 
+import { useCharacterDashboard } from "@/features/character-dashboard";
+import { useImageVariants } from "@/features/images/hooks/use-image-variants";
+import { pickAvatarUrl } from "@/features/images/utils";
 import { CharacterEditModal } from "@/features/projects/components/CharacterEditModal";
 import { useCharacterGroups } from "@/features/projects/hooks/use-character-groups";
 import {
@@ -30,6 +33,8 @@ import {
   characterStatusBadgeVariant,
   characterStatusLabel,
 } from "@/features/projects/types";
+import { ReadinessStateBadge } from "@/features/readiness/ReadinessStateBadge";
+import type { ReadinessState } from "@/features/readiness/types";
 
 import { CharacterDeliverablesTab } from "./tabs/CharacterDeliverablesTab";
 import { CharacterImagesTab } from "./tabs/CharacterImagesTab";
@@ -57,6 +62,8 @@ export function CharacterDetailPage() {
   const { data: character, isLoading, error } = useCharacter(projectId, characterId);
   const { data: characters } = useProjectCharacters(projectId);
   const { data: groups } = useCharacterGroups(projectId);
+  const { data: variants } = useImageVariants(characterId);
+  const { data: dashboard } = useCharacterDashboard(characterId);
   const updateCharacter = useUpdateCharacter(projectId);
   const deleteCharacter = useDeleteCharacter(projectId);
 
@@ -76,14 +83,16 @@ export function CharacterDetailPage() {
     if (!characters || characters.length === 0) {
       return { prevId: null, nextId: null, currentIndex: -1, totalCount: 0 };
     }
-    const groupOrder = new Map<number, number>();
+    const groupNameMap = new Map<number, string>();
     if (groups) {
-      for (const g of groups) groupOrder.set(g.id, g.sort_order);
+      for (const g of groups) groupNameMap.set(g.id, g.name);
     }
     const sorted = [...characters].sort((a, b) => {
-      const aGroup = a.group_id != null ? (groupOrder.get(a.group_id) ?? 0) : Number.MAX_SAFE_INTEGER;
-      const bGroup = b.group_id != null ? (groupOrder.get(b.group_id) ?? 0) : Number.MAX_SAFE_INTEGER;
-      if (aGroup !== bGroup) return aGroup - bGroup;
+      // Sort by group name alphabetically first; ungrouped characters go last
+      const aName = a.group_id != null ? (groupNameMap.get(a.group_id) ?? "") : "\uffff";
+      const bName = b.group_id != null ? (groupNameMap.get(b.group_id) ?? "") : "\uffff";
+      const groupCmp = aName.localeCompare(bName);
+      if (groupCmp !== 0) return groupCmp;
       return a.name.localeCompare(b.name);
     });
     const idx = sorted.findIndex((c) => c.id === characterId);
@@ -134,6 +143,10 @@ export function CharacterDetailPage() {
 
   const statusLabel = characterStatusLabel(character.status_id);
   const badgeVariant = characterStatusBadgeVariant(character.status_id);
+  const avatarUrl = pickAvatarUrl(variants ?? []);
+  const groupName = character.group_id
+    ? groups?.find((g) => g.id === character.group_id)?.name
+    : undefined;
 
   return (
     <Stack gap={6}>
@@ -156,11 +169,35 @@ export function CharacterDetailPage() {
 
       {/* Header */}
       <div className="flex items-center gap-[var(--spacing-2)]">
-        <User size={24} className="text-[var(--color-text-muted)]" aria-hidden />
+        {avatarUrl ? (
+          <button
+            type="button"
+            className="h-8 w-8 rounded-full overflow-hidden cursor-pointer"
+            onClick={() => setActiveTab("images")}
+            aria-label="View images"
+          >
+            <img
+              src={avatarUrl}
+              alt={character.name}
+              className="h-8 w-8 rounded-full object-cover"
+            />
+          </button>
+        ) : (
+          <User size={24} className="text-[var(--color-text-muted)]" aria-hidden />
+        )}
         <h1 className="text-xl font-semibold text-[var(--color-text-primary)]">{character.name}</h1>
         <Badge variant={badgeVariant} size="sm">
           {statusLabel}
         </Badge>
+        <span className="text-sm text-[var(--color-text-muted)]">
+          {groupName ?? "Ungrouped"}
+        </span>
+        {dashboard?.readiness && (
+          <ReadinessStateBadge
+            state={dashboard.readiness.state as ReadinessState}
+            missingItems={dashboard.readiness.missing_items}
+          />
+        )}
         <button
           type="button"
           className={ICON_ACTION_BTN}
@@ -210,13 +247,20 @@ export function CharacterDetailPage() {
           key={characterId}
           character={character}
           characterId={characterId}
-          groupName={character.group_id ? groups?.find((g) => g.id === character.group_id)?.name : undefined}
         />
       )}
       {activeTab === "images" && <CharacterImagesTab key={characterId} characterId={characterId} />}
       {activeTab === "scenes" && <CharacterScenesTab key={characterId} characterId={characterId} projectId={projectId} />}
-      {activeTab === "deliverables" && <CharacterDeliverablesTab key={characterId} characterId={characterId} />}
-      {activeTab === "metadata" && <CharacterMetadataTab key={characterId} characterId={characterId} />}
+      {activeTab === "deliverables" && (
+        <CharacterDeliverablesTab
+          key={characterId}
+          characterId={characterId}
+          projectId={projectId}
+          characterName={character.name}
+          projectName={project?.name ?? ""}
+        />
+      )}
+      {activeTab === "metadata" && <CharacterMetadataTab key={characterId} characterId={characterId} projectId={projectId} />}
       {activeTab === "settings" && (
         <CharacterSettingsTab key={characterId} projectId={projectId} characterId={characterId} />
       )}

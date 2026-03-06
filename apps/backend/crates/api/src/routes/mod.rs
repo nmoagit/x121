@@ -15,6 +15,7 @@ pub mod budget_quota;
 pub mod bug_reports;
 pub mod character;
 pub mod character_dashboard;
+pub mod character_deliverable_ignore;
 pub mod character_ingest;
 pub mod character_metadata;
 pub mod character_metadata_version;
@@ -843,7 +844,8 @@ pub fn api_routes() -> Router<AppState> {
             .merge(poster_frame::character_poster_router())
             .merge(consistency_report::character_consistency_router())
             .merge(contact_sheet::character_contact_sheet_router())
-            .nest("/{character_id}/scene-settings", character_scene_overrides::router()))
+            .nest("/{character_id}/scene-settings", character_scene_overrides::router())
+            .nest("/{character_id}/deliverable-ignores", character_deliverable_ignore::router()))
         // Scene-scoped sub-resources (segments, review queue, generation PRD-24, QA PRD-49, resolution PRD-59, storyboard PRD-62, branching PRD-50).
         .nest("/scenes", scene::router()
             .merge(metadata::scene_metadata_router())

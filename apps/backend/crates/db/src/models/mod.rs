@@ -19,6 +19,7 @@ pub mod budget_quota;
 pub mod bug_report;
 pub mod bulk_operation;
 pub mod character;
+pub mod character_deliverable_ignore;
 pub mod character_group;
 pub mod character_ingest;
 pub mod character_metadata_version;

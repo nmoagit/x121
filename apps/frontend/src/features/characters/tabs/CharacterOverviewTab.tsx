@@ -2,10 +2,11 @@
  * Character overview tab showing identity, stats, and completeness (PRD-112).
  */
 
+import { useMemo } from "react";
+
 import { Card } from "@/components/composite";
 import { Grid, Stack } from "@/components/layout";
-import { Badge, LoadingPane } from "@/components/primitives";
-import { User } from "@/tokens/icons";
+import { LoadingPane, Tooltip } from "@/components/primitives";
 
 import {
   deriveMissingItems,
@@ -15,13 +16,9 @@ import {
   SceneAssignmentsSection,
   useCharacterDashboard,
 } from "@/features/character-dashboard";
-import { useImageVariants } from "@/features/images/hooks/use-image-variants";
-import { pickAvatarUrl } from "@/features/images/utils";
 import type { Character } from "@/features/projects/types";
-import {
-  characterStatusBadgeVariant,
-  characterStatusLabel,
-} from "@/features/projects/types";
+import { useCharacterSceneSettings } from "@/features/scene-catalog/hooks/use-character-scene-settings";
+import { useExpandedSettings } from "@/features/scene-catalog/hooks/use-expanded-settings";
 import { ReadinessStateBadge } from "@/features/readiness/ReadinessStateBadge";
 import type { ReadinessState } from "@/features/readiness/types";
 
@@ -32,12 +29,14 @@ import type { ReadinessState } from "@/features/readiness/types";
 interface CharacterOverviewTabProps {
   character: Character;
   characterId: number;
-  groupName?: string;
 }
 
 /* --------------------------------------------------------------------------
    Sub-components
    -------------------------------------------------------------------------- */
+
+/** Total source images needed (clothed + topless tracks). */
+const TOTAL_SOURCE_IMAGES_NEEDED = 2;
 
 function StatCard({ label, value }: { label: string; value: string | number }) {
   return (
@@ -52,6 +51,39 @@ function StatCard({ label, value }: { label: string; value: string | number }) {
   );
 }
 
+/** Stat card showing N/M ratio, green when complete. */
+function RatioStatCard({
+  label,
+  current,
+  total,
+  tooltip,
+}: {
+  label: string;
+  current: number;
+  total: number;
+  tooltip: string;
+}) {
+  const isComplete = current >= total && total > 0;
+  return (
+    <Card elevation="flat" padding="md">
+      <dt className="text-xs text-[var(--color-text-muted)] mb-[var(--spacing-1)]">
+        {label}
+      </dt>
+      <Tooltip content={tooltip} side="bottom">
+        <dd
+          className={`text-lg font-semibold cursor-help ${
+            isComplete
+              ? "text-[var(--color-status-success)]"
+              : "text-[var(--color-text-primary)]"
+          }`}
+        >
+          {current}/{total}
+        </dd>
+      </Tooltip>
+    </Card>
+  );
+}
+
 /* --------------------------------------------------------------------------
    Component
    -------------------------------------------------------------------------- */
@@ -59,17 +91,31 @@ function StatCard({ label, value }: { label: string; value: string | number }) {
 export function CharacterOverviewTab({
   character,
   characterId,
-  groupName,
 }: CharacterOverviewTabProps) {
   const { data: dashboard, isLoading: dashboardLoading } =
     useCharacterDashboard(characterId);
-  const { data: variants } = useImageVariants(characterId);
+  const { data: sceneSettings, isLoading: settingsLoading } =
+    useCharacterSceneSettings(characterId);
+  const expandedSettings = useExpandedSettings(sceneSettings);
 
-  const statusLabel = characterStatusLabel(character.status_id);
-  const badgeVariant = characterStatusBadgeVariant(character.status_id);
-  const avatarUrl = pickAvatarUrl(variants ?? []);
+  /** Set of enabled scene_type+track keys from the effective scene settings. */
+  const enabledKeys = useMemo(() => {
+    const keys = new Set<string>();
+    for (const s of expandedSettings) {
+      if (s.is_enabled) {
+        keys.add(`${s.scene_type_id}-${s.track_id ?? 0}`);
+      }
+    }
+    return keys;
+  }, [expandedSettings]);
 
-  if (dashboardLoading) {
+  /** Dashboard assignments filtered to only enabled scene+track combos. */
+  const activeAssignments = useMemo(() => {
+    const raw = dashboard?.scene_assignments ?? [];
+    return raw.filter((a) => enabledKeys.has(`${a.scene_type_id}-${a.track_id ?? 0}`));
+  }, [dashboard?.scene_assignments, enabledKeys]);
+
+  if (dashboardLoading || settingsLoading) {
     return <LoadingPane />;
   }
 
@@ -82,51 +128,33 @@ export function CharacterOverviewTab({
 
   return (
     <Stack gap={4}>
-      {/* Identity card */}
-      <Card elevation="flat" padding="md">
-        <div className="flex items-center gap-[var(--spacing-3)]">
-          {avatarUrl ? (
-            <img
-              src={avatarUrl}
-              alt={character.name}
-              className="h-16 w-16 rounded-full object-cover"
-            />
-          ) : (
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[var(--color-surface-secondary)]">
-              <User size={32} className="text-[var(--color-text-muted)]" />
-            </div>
-          )}
-          <div className="flex flex-col gap-[var(--spacing-1)]">
-            <h2 className="text-lg font-semibold text-[var(--color-text-primary)]">
-              {character.name}
-            </h2>
-            <div className="flex items-center gap-[var(--spacing-2)]">
-              <Badge variant={badgeVariant} size="sm">
-                {statusLabel}
-              </Badge>
-              <span className="text-sm text-[var(--color-text-muted)]">
-                {groupName ?? "Ungrouped"}
-              </span>
-            </div>
-          </div>
-        </div>
-      </Card>
-
       {/* Stats grid */}
-      {dashboard && (
-        <Grid cols={2} gap={3}>
-          <StatCard
-            label="Source Images"
-            value={dashboard.source_image_count}
-          />
-          <StatCard
-            label="Variants"
-            value={`${dashboard.variant_counts.approved} / ${dashboard.variant_counts.total}`}
-          />
-          <StatCard label="Scenes" value={dashboard.scene_count} />
-          <StatCard label="Metadata Fields" value={metadataFieldCount} />
-        </Grid>
-      )}
+      {dashboard && (() => {
+        const scenesAssigned = activeAssignments.length;
+        const scenesWithFinalVideo = activeAssignments.filter((a) => a.final_video_count > 0).length;
+
+        return (
+          <Grid cols={2} gap={3}>
+            <RatioStatCard
+              label="Source Images"
+              current={dashboard.source_image_count}
+              total={TOTAL_SOURCE_IMAGES_NEEDED}
+              tooltip={`${dashboard.source_image_count} provided / ${TOTAL_SOURCE_IMAGES_NEEDED} needed (clothed + topless)`}
+            />
+            <StatCard
+              label="Variants"
+              value={`${dashboard.variant_counts.approved} / ${dashboard.variant_counts.total}`}
+            />
+            <RatioStatCard
+              label="Scenes"
+              current={scenesWithFinalVideo}
+              total={scenesAssigned}
+              tooltip={`${scenesWithFinalVideo} with final video / ${scenesAssigned} assigned`}
+            />
+            <StatCard label="Metadata Fields" value={metadataFieldCount} />
+          </Grid>
+        );
+      })()}
 
       {/* Completeness */}
       {dashboard?.readiness && (
@@ -174,8 +202,8 @@ export function CharacterOverviewTab({
       {dashboard && (
         <Card elevation="flat" padding="md">
           <SceneAssignmentsSection
-            assignments={dashboard.scene_assignments ?? []}
-            sceneCount={dashboard.scene_count}
+            assignments={activeAssignments}
+            sceneCount={activeAssignments.length}
           />
         </Card>
       )}

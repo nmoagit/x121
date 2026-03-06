@@ -22,6 +22,7 @@ pub mod budget_quota;
 pub mod bug_reports;
 pub mod character;
 pub mod character_dashboard;
+pub mod character_deliverable_ignore;
 pub mod character_group;
 pub mod character_ingest;
 pub mod character_metadata;
