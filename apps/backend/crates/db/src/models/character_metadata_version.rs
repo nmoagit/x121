@@ -18,6 +18,8 @@ pub struct CharacterMetadataVersion {
     pub is_active: bool,
     pub notes: Option<String>,
     pub rejection_reason: Option<String>,
+    pub outdated_at: Option<Timestamp>,
+    pub outdated_reason: Option<String>,
     pub deleted_at: Option<Timestamp>,
     pub created_at: Timestamp,
     pub updated_at: Timestamp,

@@ -55,6 +55,7 @@ pub mod job_events;
 pub mod job_scheduling;
 pub mod job_status;
 pub mod legacy_import;
+pub mod llm_refinement;
 pub mod maintenance;
 pub mod metadata;
 pub mod metadata_editor;

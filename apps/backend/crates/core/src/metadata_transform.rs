@@ -23,6 +23,8 @@ pub const SOURCE_GENERATED: &str = "generated";
 pub const SOURCE_CSV_IMPORT: &str = "csv_import";
 /// Metadata version source: created via JSON file import.
 pub const SOURCE_JSON_IMPORT: &str = "json_import";
+/// Metadata version source: created via LLM refinement pipeline (PRD-125).
+pub const SOURCE_LLM_REFINED: &str = "llm_refined";
 
 // ---------------------------------------------------------------------------
 // Public types
@@ -101,14 +103,12 @@ pub fn remove_emojis(text: &str) -> String {
 // ---------------------------------------------------------------------------
 
 /// Regex for `{bot_name}` placeholder (case-insensitive).
-static BOT_NAME_RE: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r"(?i)\{bot_name\}").expect("invalid bot_name regex")
-});
+static BOT_NAME_RE: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"(?i)\{bot_name\}").expect("invalid bot_name regex"));
 
 /// Regex for `{user_name}` placeholder (case-insensitive).
-static USER_NAME_RE: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r"(?i)\{user_name\}").expect("invalid user_name regex")
-});
+static USER_NAME_RE: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"(?i)\{user_name\}").expect("invalid user_name regex"));
 
 /// Extract a biography string from a tone-of-voice JSON, replacing
 /// `{bot_name}` placeholders with the character name.
@@ -325,7 +325,11 @@ const EXPECTED_FIELDS: &[(&str, &[&str])] = &[
     ),
     (
         "appearance",
-        &["appearance.hair", "appearance.eye_color", "appearance.body_type"],
+        &[
+            "appearance.hair",
+            "appearance.eye_color",
+            "appearance.body_type",
+        ],
     ),
     (
         "favorites",
@@ -339,10 +343,7 @@ const EXPECTED_FIELDS: &[(&str, &[&str])] = &[
     ),
     (
         "sexual_preferences",
-        &[
-            "sexual_preferences.positions",
-            "sexual_preferences.kinks",
-        ],
+        &["sexual_preferences.positions", "sexual_preferences.kinks"],
     ),
     (
         "optional",
@@ -367,11 +368,13 @@ pub fn find_missing_fields(metadata: &Map<String, Value>) -> Vec<MissingField> {
                     .get(parent)
                     .and_then(Value::as_object)
                     .and_then(|obj| obj.get(child))
-                    .map_or(false, |v| !v.is_null() && v.as_str().map_or(true, |s| !s.is_empty()))
+                    .map_or(false, |v| {
+                        !v.is_null() && v.as_str().map_or(true, |s| !s.is_empty())
+                    })
             } else {
-                metadata
-                    .get(field_path)
-                    .map_or(false, |v| !v.is_null() && v.as_str().map_or(true, |s| !s.is_empty()))
+                metadata.get(field_path).map_or(false, |v| {
+                    !v.is_null() && v.as_str().map_or(true, |s| !s.is_empty())
+                })
             };
 
             if !present {
@@ -416,10 +419,7 @@ pub fn generate_metadata(input: &MetadataInput) -> MetadataResult {
     // Apply {bot_name}/{user_name} placeholder replacement to merged values.
     if let Some(tov) = tov_map {
         for (key, val) in tov {
-            if !val.is_null()
-                && !source.contains_key(key.as_str())
-                && key != TOV_DESCRIPTION_KEY
-            {
+            if !val.is_null() && !source.contains_key(key.as_str()) && key != TOV_DESCRIPTION_KEY {
                 let processed = match val.as_str() {
                     Some(s) => {
                         let r = BOT_NAME_RE.replace_all(s, input.name.as_str());
@@ -441,7 +441,8 @@ pub fn generate_metadata(input: &MetadataInput) -> MetadataResult {
     }
 
     if input.name.is_empty() {
-        warnings.push("No character name provided — {bot_name} placeholders will be empty".to_string());
+        warnings
+            .push("No character name provided — {bot_name} placeholders will be empty".to_string());
     }
 
     let metadata_map = transform_to_schema(&source, tov_bio.as_deref());
@@ -497,7 +498,9 @@ pub fn build_report_json(metadata: &Value) -> Option<Value> {
 /// compound name joining, embedded value extraction, etc.) that the Rust
 /// `generate_metadata` function does not yet cover. This function sends the
 /// input as JSON to the script's `--stdin` mode and parses the result.
-pub fn generate_metadata_via_python(input: &MetadataInput) -> Result<MetadataResult, crate::error::CoreError> {
+pub fn generate_metadata_via_python(
+    input: &MetadataInput,
+) -> Result<MetadataResult, crate::error::CoreError> {
     use std::io::Write;
     use std::process::{Command, Stdio};
 
@@ -508,8 +511,9 @@ pub fn generate_metadata_via_python(input: &MetadataInput) -> Result<MetadataRes
         "name": input.name,
     });
 
-    let payload_str = serde_json::to_string(&payload)
-        .map_err(|e| crate::error::CoreError::Internal(format!("Failed to serialize metadata input: {e}")))?;
+    let payload_str = serde_json::to_string(&payload).map_err(|e| {
+        crate::error::CoreError::Internal(format!("Failed to serialize metadata input: {e}"))
+    })?;
 
     let mut child = Command::new("python3")
         .args(["scripts/fix_metadata.py", "--stdin"])
@@ -521,27 +525,32 @@ pub fn generate_metadata_via_python(input: &MetadataInput) -> Result<MetadataRes
 
     // Write payload to stdin
     if let Some(ref mut stdin) = child.stdin {
-        stdin.write_all(payload_str.as_bytes())
-            .map_err(|e| crate::error::CoreError::Internal(format!("Failed to write to python stdin: {e}")))?;
+        stdin.write_all(payload_str.as_bytes()).map_err(|e| {
+            crate::error::CoreError::Internal(format!("Failed to write to python stdin: {e}"))
+        })?;
     }
     // Drop stdin to signal EOF
     drop(child.stdin.take());
 
-    let output = child.wait_with_output()
-        .map_err(|e| crate::error::CoreError::Internal(format!("Failed to wait for python process: {e}")))?;
+    let output = child.wait_with_output().map_err(|e| {
+        crate::error::CoreError::Internal(format!("Failed to wait for python process: {e}"))
+    })?;
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(crate::error::CoreError::Internal(
-            format!("Python metadata transform failed (exit {}): {}", output.status, stderr),
-        ));
+        return Err(crate::error::CoreError::Internal(format!(
+            "Python metadata transform failed (exit {}): {}",
+            output.status, stderr
+        )));
     }
 
     let stdout = String::from_utf8_lossy(&output.stdout);
-    let metadata: Value = serde_json::from_str(&stdout)
-        .map_err(|e| crate::error::CoreError::Internal(
-            format!("Failed to parse Python output as JSON: {e}\nOutput: {}", &stdout[..stdout.len().min(500)]),
-        ))?;
+    let metadata: Value = serde_json::from_str(&stdout).map_err(|e| {
+        crate::error::CoreError::Internal(format!(
+            "Failed to parse Python output as JSON: {e}\nOutput: {}",
+            &stdout[..stdout.len().min(500)]
+        ))
+    })?;
 
     let metadata_map = metadata.as_object().ok_or_else(|| {
         crate::error::CoreError::Internal("Python metadata output is not a JSON object".to_string())
@@ -633,19 +642,10 @@ mod tests {
         assert_eq!(meta.get("gender").unwrap(), "Female");
         assert_eq!(meta.get("age").unwrap(), "25");
         assert_eq!(
-            meta.get("appearance")
-                .unwrap()
-                .get("hair")
-                .unwrap(),
+            meta.get("appearance").unwrap().get("hair").unwrap(),
             "Blonde"
         );
-        assert_eq!(
-            meta.get("favorites")
-                .unwrap()
-                .get("food")
-                .unwrap(),
-            "Pizza"
-        );
+        assert_eq!(meta.get("favorites").unwrap().get("food").unwrap(), "Pizza");
         assert_eq!(meta.get("hobbies").unwrap(), "Reading, hiking");
     }
 
@@ -717,7 +717,11 @@ mod tests {
         };
 
         let result = generate_metadata(&input);
-        assert!(result.report.warnings.iter().any(|w| w.contains("No bio.json or tov.json")));
+        assert!(result
+            .report
+            .warnings
+            .iter()
+            .any(|w| w.contains("No bio.json or tov.json")));
         assert!(result.report.errors.iter().any(|e| e.contains("empty")));
     }
 

@@ -100,6 +100,7 @@ pub mod readiness_cache;
 pub mod readiness_criteria;
 pub mod recent_item;
 pub mod reclamation;
+pub mod refinement_job;
 pub mod regression;
 pub mod render_timeline;
 pub mod resolution_tier;

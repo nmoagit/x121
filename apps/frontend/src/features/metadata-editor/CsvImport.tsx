@@ -11,6 +11,7 @@ import { Card } from "@/components/composite/Card";
 import { Modal } from "@/components/composite/Modal";
 import { Button } from "@/components/primitives";
 import { Stack } from "@/components/layout";
+import { formatValue } from "@/lib/format";
 
 import { useImportMetadataCsv } from "./hooks/use-metadata-editor";
 import type { CsvImportPreview } from "./types";
@@ -213,14 +214,4 @@ export function CsvImport({ projectId }: CsvImportProps) {
       )}
     </>
   );
-}
-
-/* --------------------------------------------------------------------------
-   Helpers
-   -------------------------------------------------------------------------- */
-
-function formatValue(value: unknown): string {
-  if (value == null) return "(empty)";
-  if (Array.isArray(value)) return value.join(", ");
-  return String(value);
 }

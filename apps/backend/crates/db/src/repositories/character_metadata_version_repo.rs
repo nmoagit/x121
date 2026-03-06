@@ -10,7 +10,7 @@ use crate::models::character_metadata_version::{
 /// Column list shared across queries to avoid repetition.
 const COLUMNS: &str = "id, character_id, version_number, metadata, source, \
     source_bio, source_tov, generation_report, is_active, notes, \
-    rejection_reason, deleted_at, created_at, updated_at";
+    rejection_reason, outdated_at, outdated_reason, deleted_at, created_at, updated_at";
 
 /// Provides CRUD and version-management operations for character metadata versions.
 pub struct CharacterMetadataVersionRepo;
@@ -162,6 +162,19 @@ impl CharacterMetadataVersionRepo {
 
         tx.commit().await?;
         Ok(result)
+    }
+
+    /// Clear the outdated marker on a version. Returns `true` if a row was updated.
+    pub async fn clear_outdated(pool: &PgPool, id: DbId) -> Result<bool, sqlx::Error> {
+        let result = sqlx::query(
+            "UPDATE character_metadata_versions \
+             SET outdated_at = NULL, outdated_reason = NULL \
+             WHERE id = $1 AND deleted_at IS NULL",
+        )
+        .bind(id)
+        .execute(pool)
+        .await?;
+        Ok(result.rows_affected() > 0)
     }
 
     /// Create a new version and automatically mark it as active, un-marking any

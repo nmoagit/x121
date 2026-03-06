@@ -51,4 +51,25 @@ impl AppState {
         let mut guard = self.storage.write().await;
         *guard = new_provider;
     }
+
+    /// Resolve a file path or storage key to an absolute filesystem path.
+    ///
+    /// If `path` is already absolute it is returned as-is. Otherwise it is
+    /// treated as a storage key and resolved through the active storage
+    /// provider (for local storage this prepends the configured root).
+    ///
+    /// Used for reading files via ffprobe, ffmpeg, image processing, etc.
+    pub async fn resolve_to_path(
+        &self,
+        path: &str,
+    ) -> Result<std::path::PathBuf, crate::error::AppError> {
+        if std::path::Path::new(path).is_absolute() {
+            return Ok(std::path::PathBuf::from(path));
+        }
+        let provider = self.storage_provider().await;
+        // CoreError implements Into<AppError> via the From impl on AppError.
+        let url = provider.presigned_url(path, 3600).await?;
+        let abs = url.strip_prefix("file://").unwrap_or(&url);
+        Ok(std::path::PathBuf::from(abs))
+    }
 }

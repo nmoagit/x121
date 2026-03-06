@@ -274,9 +274,7 @@ pub fn flatten_nested_metadata(
 ///
 /// `{"appearance.hair": "brown"}` → `{"appearance": {"hair": "brown"}}`
 /// Keys without a dot are kept at top level.
-pub fn unflatten_metadata(
-    flat: &serde_json::Map<String, Value>,
-) -> serde_json::Map<String, Value> {
+pub fn unflatten_metadata(flat: &serde_json::Map<String, Value>) -> serde_json::Map<String, Value> {
     let mut result = serde_json::Map::new();
     for (key, val) in flat {
         if let Some((prefix, suffix)) = key.split_once('.') {
@@ -343,10 +341,7 @@ pub fn calculate_completeness(
     let mut missing_fields = Vec::new();
 
     for field in &required {
-        let is_filled = flat
-            .get(&field.name)
-            .map(is_field_filled)
-            .unwrap_or(false);
+        let is_filled = flat.get(&field.name).map(is_field_filled).unwrap_or(false);
         if is_filled {
             filled += 1;
         } else {
@@ -1029,10 +1024,7 @@ mod tests {
             flat.get("appearance.eye_color").and_then(|v| v.as_str()),
             Some("blue")
         );
-        assert_eq!(
-            flat.get("name").and_then(|v| v.as_str()),
-            Some("Alice")
-        );
+        assert_eq!(flat.get("name").and_then(|v| v.as_str()), Some("Alice"));
         assert!(!flat.contains_key("appearance"));
     }
 
@@ -1053,12 +1045,15 @@ mod tests {
         );
 
         let nested = unflatten_metadata(&flat);
+        assert_eq!(nested.get("name").and_then(|v| v.as_str()), Some("Alice"));
+        let appearance = nested
+            .get("appearance")
+            .and_then(|v| v.as_object())
+            .unwrap();
         assert_eq!(
-            nested.get("name").and_then(|v| v.as_str()),
-            Some("Alice")
+            appearance.get("hair").and_then(|v| v.as_str()),
+            Some("brown")
         );
-        let appearance = nested.get("appearance").and_then(|v| v.as_object()).unwrap();
-        assert_eq!(appearance.get("hair").and_then(|v| v.as_str()), Some("brown"));
         assert_eq!(
             appearance.get("eye_color").and_then(|v| v.as_str()),
             Some("blue")
@@ -1107,10 +1102,7 @@ mod tests {
         // Metadata stored in nested format
         let metadata = make_metadata(&[
             ("bio", serde_json::Value::String("A hero".into())),
-            (
-                "appearance",
-                serde_json::json!({"hair": "brown"}),
-            ),
+            ("appearance", serde_json::json!({"hair": "brown"})),
         ]);
         let result = calculate_completeness(1, &metadata, &fields);
         assert_eq!(result.filled, 2);

@@ -116,7 +116,7 @@ export interface MetadataVersion {
   character_id: number;
   version_number: number;
   metadata: Record<string, unknown>;
-  source: "manual" | "generated" | "csv_import" | "json_import";
+  source: "manual" | "generated" | "csv_import" | "json_import" | "llm_refined";
   source_bio: Record<string, unknown> | null;
   source_tov: Record<string, unknown> | null;
   generation_report: GenerationReport | null;
@@ -124,6 +124,7 @@ export interface MetadataVersion {
   notes: string | null;
   rejection_reason: string | null;
   outdated_at: string | null;
+  outdated_reason: string | null;
   deleted_at: string | null;
   created_at: string;
   updated_at: string;

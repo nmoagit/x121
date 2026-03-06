@@ -187,22 +187,11 @@ pub async fn generate_version(
     let report_json = serde_json::to_value(&result.report)
         .map_err(|e| AppError::InternalError(format!("Failed to serialize report: {e}")))?;
 
-    // Inject _source_bio/_source_tov into metadata blob so they persist
-    // in characters.metadata after sync. Without this, the source data
-    // only lives in the version columns and the frontend can't display it.
-    let mut metadata_with_sources = result.metadata.clone();
-    if let Some(map) = metadata_with_sources.as_object_mut() {
-        if let Some(ref bio) = body.bio_json {
-            map.insert("_source_bio".to_string(), bio.clone());
-        }
-        if let Some(ref tov) = body.tov_json {
-            map.insert("_source_tov".to_string(), tov.clone());
-        }
-    }
-
+    // Source data lives in the version's source_bio/source_tov columns,
+    // NOT embedded in the metadata blob. The delivered metadata.json is clean.
     let create_input = CreateCharacterMetadataVersion {
         character_id,
-        metadata: metadata_with_sources.clone(),
+        metadata: result.metadata.clone(),
         source: SOURCE_GENERATED.to_string(),
         source_bio: body.bio_json,
         source_tov: body.tov_json,
@@ -215,7 +204,7 @@ pub async fn generate_version(
         &state.pool,
         character_id,
         &create_input,
-        &metadata_with_sources,
+        &result.metadata,
         body.activate.unwrap_or(false),
     )
     .await?;
@@ -236,8 +225,14 @@ pub async fn create_manual_version(
     // Build a completeness report for this version
     let report_json = metadata_transform::build_report_json(&body.metadata);
 
-    let mut create_input =
-        build_manual_version_input(character_id, body.metadata.clone(), body.notes, report_json, None, None);
+    let mut create_input = build_manual_version_input(
+        character_id,
+        body.metadata.clone(),
+        body.notes,
+        report_json,
+        None,
+        None,
+    );
 
     // Allow callers to override source (e.g. json_import, csv_import)
     if let Some(ref src) = body.source {
@@ -263,15 +258,14 @@ pub async fn activate_version(
     State(state): State<AppState>,
     Path((character_id, version_id)): Path<(DbId, DbId)>,
 ) -> AppResult<impl IntoResponse> {
-    let version =
-        CharacterMetadataVersionRepo::set_active(&state.pool, character_id, version_id)
-            .await?
-            .ok_or_else(|| {
-                AppError::Core(CoreError::NotFound {
-                    entity: "CharacterMetadataVersion",
-                    id: version_id,
-                })
-            })?;
+    let version = CharacterMetadataVersionRepo::set_active(&state.pool, character_id, version_id)
+        .await?
+        .ok_or_else(|| {
+            AppError::Core(CoreError::NotFound {
+                entity: "CharacterMetadataVersion",
+                id: version_id,
+            })
+        })?;
 
     sync_to_character(&state.pool, character_id, &version.metadata).await?;
 
