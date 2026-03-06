@@ -11,7 +11,7 @@ use x121_comfyui::events::ComfyUIEvent;
 use x121_comfyui::manager::ComfyUIManager;
 use x121_core::storage::StorageProvider;
 use x121_core::types::DbId;
-use x121_db::repositories::{ComfyUIInstanceRepo, SegmentRepo};
+use x121_db::repositories::{ComfyUIInstanceRepo, RetryAttemptRepo, SegmentRepo};
 
 use x121_core::generation::SYSTEM_USER_ID;
 use x121_pipeline::{completion_handler, loop_driver};
@@ -27,7 +27,7 @@ pub async fn run(
 
     // Also check for scenes that are marked as generating but have no active segment.
     // This handles the case where the worker restarts while generation was in progress.
-    if let Err(e) = resume_stalled_scenes(&pool, &comfyui).await {
+    if let Err(e) = resume_stalled_scenes(&pool, &comfyui, &storage).await {
         tracing::error!(error = %e, "Failed to resume stalled scenes");
     }
 
@@ -74,12 +74,9 @@ async fn handle_event(
                 platform_job_id,
                 %prompt_id,
                 %error,
-                "Generation failed — segment will be marked as failed",
+                "Generation failed — checking auto-retry",
             );
-            // Mark the segment as failed via the job's parameters.
-            if let Err(e) = mark_segment_failed(pool, platform_job_id).await {
-                tracing::error!(error = %e, "Failed to mark segment as failed");
-            }
+            handle_generation_error(pool, comfyui, storage, platform_job_id, &error).await;
         }
         ComfyUIEvent::GenerationProgress {
             platform_job_id,
@@ -154,7 +151,9 @@ async fn handle_generation_completed(
     };
 
     // Evaluate stop decision and continue or finalize.
-    match loop_driver::evaluate_and_continue(pool, comfyui, &completion, SYSTEM_USER_ID).await {
+    match loop_driver::evaluate_and_continue(pool, comfyui, storage, &completion, SYSTEM_USER_ID)
+        .await
+    {
         Ok(loop_driver::LoopOutcome::NextSubmitted {
             segment_id,
             job_id,
@@ -217,6 +216,117 @@ async fn build_api_for_instance(
     Ok(ComfyUIApi::new(instance.api_url))
 }
 
+/// Handle a failed generation: mark as failed, then attempt auto-retry
+/// if the scene type's policy allows it.
+async fn handle_generation_error(
+    pool: &sqlx::PgPool,
+    comfyui: &Arc<ComfyUIManager>,
+    storage: &Arc<dyn StorageProvider>,
+    platform_job_id: DbId,
+    error_msg: &str,
+) {
+    let (segment_id, scene_id) = match lookup_segment_from_job(pool, platform_job_id).await {
+        Ok(ids) => ids,
+        Err(e) => {
+            tracing::error!(error = %e, "Failed to look up segment for failed job");
+            return;
+        }
+    };
+
+    // Mark the segment as failed.
+    if let Err(e) = mark_segment_failed(pool, platform_job_id).await {
+        tracing::error!(error = %e, "Failed to mark segment as failed");
+        return;
+    }
+
+    // Check auto-retry policy on the scene type.
+    let (_scene, scene_type) = match x121_pipeline::load_scene_and_type(pool, scene_id).await {
+        Ok(pair) => pair,
+        Err(e) => {
+            tracing::error!(error = %e, "Failed to load scene type for retry check");
+            return;
+        }
+    };
+
+    if !scene_type.auto_retry_enabled {
+        tracing::info!(scene_id, segment_id, "Auto-retry disabled — not retrying");
+        return;
+    }
+
+    // Count existing retry attempts for this segment.
+    let attempt_count = match RetryAttemptRepo::count_by_segment(pool, segment_id).await {
+        Ok(c) => c,
+        Err(e) => {
+            tracing::error!(error = %e, "Failed to count retry attempts");
+            return;
+        }
+    };
+
+    if attempt_count >= scene_type.auto_retry_max_attempts as i64 {
+        tracing::warn!(
+            scene_id,
+            segment_id,
+            attempt_count,
+            max = scene_type.auto_retry_max_attempts,
+            "Max retry attempts reached — not retrying",
+        );
+        return;
+    }
+
+    // Record the retry attempt.
+    let _ = RetryAttemptRepo::create(
+        pool,
+        &x121_db::models::retry_attempt::CreateRetryAttempt {
+            segment_id,
+            attempt_number: (attempt_count + 1) as i32,
+            seed: chrono::Utc::now().timestamp_millis(),
+            parameters: serde_json::json!({}),
+            original_parameters: serde_json::json!({ "error": error_msg }),
+        },
+    )
+    .await;
+
+    // Determine the segment index from the segment record.
+    let segment = match x121_db::repositories::SegmentRepo::find_by_id(pool, segment_id).await {
+        Ok(Some(s)) => s,
+        _ => return,
+    };
+
+    tracing::info!(
+        scene_id,
+        segment_id,
+        attempt = attempt_count + 1,
+        "Auto-retrying failed segment",
+    );
+
+    // Re-submit the same segment index.
+    match x121_pipeline::submitter::submit_segment(
+        pool,
+        comfyui,
+        storage,
+        scene_id,
+        segment.sequence_index as u32,
+        SYSTEM_USER_ID,
+    )
+    .await
+    {
+        Ok(result) => {
+            tracing::info!(
+                scene_id,
+                new_segment_id = result.segment_id,
+                "Retry segment submitted",
+            );
+        }
+        Err(e) => {
+            tracing::error!(
+                scene_id,
+                error = %e,
+                "Failed to submit retry segment",
+            );
+        }
+    }
+}
+
 /// Mark a segment as failed when generation errors occur.
 async fn mark_segment_failed(
     pool: &sqlx::PgPool,
@@ -240,6 +350,7 @@ async fn mark_segment_failed(
 async fn resume_stalled_scenes(
     pool: &sqlx::PgPool,
     comfyui: &Arc<ComfyUIManager>,
+    storage: &Arc<dyn StorageProvider>,
 ) -> Result<(), x121_pipeline::PipelineError> {
     use x121_db::repositories::SceneRepo;
 
@@ -284,6 +395,7 @@ async fn resume_stalled_scenes(
         match x121_pipeline::submitter::submit_segment(
             pool,
             comfyui,
+            storage,
             scene.id,
             next_index as u32,
             SYSTEM_USER_ID,

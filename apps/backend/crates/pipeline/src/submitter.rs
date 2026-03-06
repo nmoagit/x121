@@ -1,11 +1,12 @@
 //! Submit a segment's workflow to ComfyUI for generation.
 //!
-//! Orchestrates: load context → build workflow → create DB records →
-//! submit to ComfyUI instance via the manager.
+//! Orchestrates: load context → upload seed image → build workflow →
+//! create DB records → submit to ComfyUI instance via the manager.
 
 use std::sync::Arc;
 
 use x121_comfyui::manager::ComfyUIManager;
+use x121_core::storage::StorageProvider;
 use x121_core::types::DbId;
 use x121_db::models::generation::SegmentJobParams;
 use x121_db::models::segment::CreateSegment;
@@ -29,27 +30,65 @@ pub struct SubmissionResult {
 /// Submit a single segment for generation.
 ///
 /// 1. Loads the generation context (scene type, seed image, prompts).
-/// 2. Builds the ComfyUI workflow JSON.
-/// 3. Creates a segment row in `pending` status.
-/// 4. Creates a platform job to track the execution.
-/// 5. Submits the workflow to a ComfyUI instance.
+/// 2. Reads the seed image from storage and uploads it to ComfyUI.
+/// 3. Builds the ComfyUI workflow JSON.
+/// 4. Creates a segment row in `pending` status.
+/// 5. Creates a platform job to track the execution.
+/// 6. Submits the workflow to a ComfyUI instance.
 ///
 /// The caller (loop driver) is responsible for choosing when to call this.
 pub async fn submit_segment(
     pool: &sqlx::PgPool,
     comfyui: &Arc<ComfyUIManager>,
+    storage: &Arc<dyn StorageProvider>,
     scene_id: DbId,
     segment_index: u32,
     user_id: DbId,
 ) -> Result<SubmissionResult, PipelineError> {
-    // 1. Load context and build workflow.
+    // 1. Load context.
     let ctx = context_loader::load_generation_context(pool, scene_id, segment_index).await?;
+
+    // 2. Pick an instance early so we can upload the seed image to it.
+    let instance_id = pick_instance(comfyui).await?;
+    let api = comfyui
+        .api_for_instance(instance_id)
+        .await
+        .ok_or_else(|| PipelineError::ComfyUI("Instance disconnected after selection".into()))?;
+
+    // 3. Upload seed image to ComfyUI.
+    let seed_filename = std::path::Path::new(&ctx.seed_image_path)
+        .file_name()
+        .map(|f| f.to_string_lossy().to_string())
+        .unwrap_or_else(|| format!("seed_{scene_id}_{segment_index}.png"));
+
+    let image_bytes = storage.download(&ctx.seed_image_path).await.map_err(|e| {
+        PipelineError::Download(format!(
+            "Failed to read seed image '{}': {e}",
+            ctx.seed_image_path
+        ))
+    })?;
+
+    let upload_result = api
+        .upload_image(&seed_filename, image_bytes, true)
+        .await
+        .map_err(|e| PipelineError::ComfyUI(format!("Failed to upload seed image: {e}")))?;
+
+    tracing::debug!(
+        scene_id,
+        segment_index,
+        comfyui_filename = %upload_result.name,
+        "Seed image uploaded to ComfyUI",
+    );
+
+    // 4. Build workflow (uses the seed_image_path which the workflow_builder
+    //    maps to the LoadImage node's `image` field — the filename on ComfyUI
+    //    matches what we uploaded).
     let workflow = build_workflow(&ctx)?;
 
-    // 2. Determine seed frame path for the segment record.
+    // 5. Determine seed frame path for the segment record.
     let seed_frame_path = ctx.seed_image_path.clone();
 
-    // 3. Create segment row.
+    // 6. Create segment row.
     let segment = SegmentRepo::create(
         pool,
         &CreateSegment {
@@ -74,7 +113,7 @@ pub async fn submit_segment(
     .await
     .map_err(PipelineError::Database)?;
 
-    // 4. Create a platform job to track this execution.
+    // 7. Create a platform job to track this execution.
     let job = JobRepo::submit(
         pool,
         user_id,
@@ -95,8 +134,7 @@ pub async fn submit_segment(
     .await
     .map_err(PipelineError::Database)?;
 
-    // 5. Pick an available ComfyUI instance and submit.
-    let instance_id = pick_instance(comfyui).await?;
+    // 8. Submit the workflow to ComfyUI.
     let prompt_id = comfyui
         .submit_workflow(instance_id, &workflow, job.id)
         .await

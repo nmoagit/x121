@@ -40,31 +40,30 @@ pub async fn handle_completion(
     scene_id: DbId,
     prompt_id: &str,
 ) -> Result<CompletionResult, PipelineError> {
-    // 1. Get execution history to find output filenames.
+    // 1. Get execution history to find output file info.
     let history = api
         .get_history(prompt_id)
         .await
         .map_err(|e| PipelineError::Download(format!("Failed to get history: {e}")))?;
 
-    let output_filename = ComfyUIApi::extract_output_filename(&history, prompt_id)
+    let output_info = ComfyUIApi::extract_output_info(&history, prompt_id)
         .map_err(PipelineError::Download)?;
 
-    // 2. Download the output video from ComfyUI.
+    // 2. Download the output video from ComfyUI (with subfolder + type).
     let video_bytes = api
-        .download_output(&output_filename)
+        .download_output(&output_info)
         .await
         .map_err(|e| PipelineError::Download(format!("Failed to download output: {e}")))?;
 
     // 3. Store via StorageProvider.
-    let storage_key = format!("segments/{scene_id}/{segment_id}/{output_filename}");
+    let storage_key = format!("segments/{scene_id}/{segment_id}/{}", output_info.filename);
     storage
         .upload(&storage_key, &video_bytes)
         .await
         .map_err(|e| PipelineError::Download(format!("Failed to store output: {e}")))?;
 
-    // 4. Compute duration (placeholder — real implementation uses ffprobe).
-    // TODO: Wire up x121_core::ffmpeg::probe_video + parse_duration to get real duration.
-    let duration_secs = 5.0; // Default segment duration assumption.
+    // 4. Compute duration via ffprobe on the stored file.
+    let duration_secs = probe_stored_duration(storage, &storage_key, &video_bytes).await;
 
     // 5. Get previous cumulative duration.
     let segment = SegmentRepo::find_by_id(pool, segment_id)
@@ -124,6 +123,48 @@ pub async fn handle_completion(
     })
 }
 
+/// Try to get real duration via ffprobe by writing bytes to a temp file.
+///
+/// Falls back to a default estimate if ffprobe is unavailable or fails.
+async fn probe_stored_duration(
+    _storage: &Arc<dyn StorageProvider>,
+    _storage_key: &str,
+    video_bytes: &[u8],
+) -> f64 {
+    use std::path::Path;
+
+    const DEFAULT_DURATION: f64 = 5.0;
+
+    // Write to a temp file for ffprobe (it needs a file path).
+    let tmp_dir = std::env::temp_dir().join("x121_probe");
+    if tokio::fs::create_dir_all(&tmp_dir).await.is_err() {
+        return DEFAULT_DURATION;
+    }
+
+    let tmp_path = tmp_dir.join(format!("probe_{}.mp4", uuid::Uuid::new_v4()));
+    if tokio::fs::write(&tmp_path, video_bytes).await.is_err() {
+        return DEFAULT_DURATION;
+    }
+
+    let result = x121_core::ffmpeg::probe_video(Path::new(&tmp_path)).await;
+    let _ = tokio::fs::remove_file(&tmp_path).await;
+
+    match result {
+        Ok(probe) => {
+            let dur = x121_core::ffmpeg::parse_duration(&probe);
+            if dur > 0.0 {
+                dur
+            } else {
+                DEFAULT_DURATION
+            }
+        }
+        Err(e) => {
+            tracing::warn!(error = %e, "ffprobe failed, using default duration");
+            DEFAULT_DURATION
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use x121_comfyui::api::ComfyUIApi;
@@ -174,6 +215,27 @@ mod tests {
         let history = serde_json::json!({});
         let err = ComfyUIApi::extract_output_filename(&history, "missing").unwrap_err();
         assert!(err.contains("No history entry"));
+    }
+
+    #[test]
+    fn extract_output_info_includes_subfolder() {
+        let history = serde_json::json!({
+            "test-001": {
+                "outputs": {
+                    "7": {
+                        "gifs": [{
+                            "filename": "video_001.mp4",
+                            "subfolder": "animations",
+                            "type": "output"
+                        }]
+                    }
+                }
+            }
+        });
+        let info = ComfyUIApi::extract_output_info(&history, "test-001").unwrap();
+        assert_eq!(info.filename, "video_001.mp4");
+        assert_eq!(info.subfolder, "animations");
+        assert_eq!(info.file_type, "output");
     }
 }
 

@@ -3,7 +3,7 @@
 //! Wraps the ComfyUI HTTP API (workflow submission, cancellation,
 //! interruption, history retrieval) using [`reqwest`].
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 /// HTTP client for a single ComfyUI instance.
 pub struct ComfyUIApi {
@@ -19,6 +19,46 @@ pub struct SubmitResponse {
     pub prompt_id: String,
     /// Position in the execution queue.
     pub number: i32,
+}
+
+/// Full information about an output file from ComfyUI history.
+///
+/// ComfyUI outputs include `filename`, `subfolder`, and `type` fields.
+/// All three are needed to download via the `/view` endpoint.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct OutputFileInfo {
+    pub filename: String,
+    /// Subfolder within the output directory (often empty string).
+    pub subfolder: String,
+    /// Output type — typically `"output"` or `"temp"`.
+    #[serde(rename = "type")]
+    pub file_type: String,
+}
+
+/// System stats returned by ComfyUI's `GET /system_stats` endpoint.
+#[derive(Debug, Deserialize)]
+pub struct SystemStats {
+    pub system: SystemInfo,
+}
+
+/// System information from the stats endpoint.
+#[derive(Debug, Deserialize)]
+pub struct SystemInfo {
+    pub os: Option<String>,
+    pub python_version: Option<String>,
+    pub embedded_python: Option<bool>,
+}
+
+/// Response from `POST /upload/image`.
+#[derive(Debug, Deserialize)]
+pub struct UploadImageResponse {
+    /// The filename as stored on the ComfyUI server.
+    pub name: String,
+    /// Subfolder within the input directory.
+    pub subfolder: Option<String>,
+    /// File type — typically `"input"`.
+    #[serde(rename = "type")]
+    pub file_type: Option<String>,
 }
 
 /// Errors from the ComfyUI REST API layer.
@@ -134,31 +174,91 @@ impl ComfyUIApi {
 
     /// Download an output file from ComfyUI's `/view` endpoint.
     ///
-    /// ComfyUI serves generated files at `GET /view?filename=<name>&type=output`.
+    /// ComfyUI serves generated files at `GET /view?filename=<name>&subfolder=<sub>&type=<type>`.
     /// Returns the raw bytes of the file.
-    pub async fn download_output(&self, filename: &str) -> Result<Vec<u8>, ComfyUIApiError> {
+    pub async fn download_output(&self, info: &OutputFileInfo) -> Result<Vec<u8>, ComfyUIApiError> {
         let response = self
             .client
             .get(format!("{}/view", self.api_url))
-            .query(&[("filename", filename), ("type", "output")])
+            .query(&[
+                ("filename", info.filename.as_str()),
+                ("subfolder", info.subfolder.as_str()),
+                ("type", info.file_type.as_str()),
+            ])
             .send()
             .await?;
         let response = Self::ensure_success(response).await?;
         Ok(response.bytes().await?.to_vec())
     }
 
+    /// Upload an image to ComfyUI via `POST /upload/image`.
+    ///
+    /// Used to upload seed images before submitting a workflow that
+    /// references them via a `LoadImage` node. Returns the server-side
+    /// filename (which may differ from the original if renamed).
+    pub async fn upload_image(
+        &self,
+        filename: &str,
+        image_bytes: Vec<u8>,
+        overwrite: bool,
+    ) -> Result<UploadImageResponse, ComfyUIApiError> {
+        let part = reqwest::multipart::Part::bytes(image_bytes)
+            .file_name(filename.to_string())
+            .mime_str("image/png")
+            .unwrap_or_else(|_| {
+                reqwest::multipart::Part::bytes(vec![]).file_name(filename.to_string())
+            });
+
+        let form = reqwest::multipart::Form::new()
+            .part("image", part)
+            .text("overwrite", if overwrite { "true" } else { "false" });
+
+        let response = self
+            .client
+            .post(format!("{}/upload/image", self.api_url))
+            .multipart(form)
+            .send()
+            .await?;
+
+        Self::parse_response(response).await
+    }
+
+    /// Check if ComfyUI is alive and responsive via `GET /system_stats`.
+    pub async fn health_check(&self) -> Result<SystemStats, ComfyUIApiError> {
+        let response = self
+            .client
+            .get(format!("{}/system_stats", self.api_url))
+            .send()
+            .await?;
+        Self::parse_response(response).await
+    }
+
+    /// Clear the entire execution queue via `POST /queue`.
+    ///
+    /// Sends `{"clear": true}` to remove all pending items from the queue.
+    pub async fn clear_queue(&self) -> Result<(), ComfyUIApiError> {
+        let body = serde_json::json!({ "clear": true });
+        let response = self
+            .client
+            .post(format!("{}/queue", self.api_url))
+            .json(&body)
+            .send()
+            .await?;
+        Self::check_status(response).await
+    }
+
     // ---- public utilities ----
 
-    /// Extract the first output filename from a ComfyUI history response.
+    /// Extract the first output file info from a ComfyUI history response.
     ///
-    /// History format: `{ "<prompt_id>": { "outputs": { "<node_id>": { "gifs"|"videos"|"images": [{ "filename": "..." }] } } } }`
+    /// History format: `{ "<prompt_id>": { "outputs": { "<node_id>": { "gifs"|"videos"|"images": [{ "filename": "...", "subfolder": "...", "type": "..." }] } } } }`
     ///
-    /// Returns an error string if the prompt ID is missing or no output files
-    /// are found.
-    pub fn extract_output_filename(
+    /// Returns full [`OutputFileInfo`] including subfolder and type, which
+    /// are needed for the `/view` download endpoint.
+    pub fn extract_output_info(
         history: &serde_json::Value,
         prompt_id: &str,
-    ) -> Result<String, String> {
+    ) -> Result<OutputFileInfo, String> {
         let prompt_data = history
             .get(prompt_id)
             .ok_or_else(|| format!("No history entry for prompt {prompt_id}"))?;
@@ -173,7 +273,19 @@ impl ComfyUIApi {
                 if let Some(files) = node_output.get(*key).and_then(|v| v.as_array()) {
                     if let Some(first) = files.first() {
                         if let Some(filename) = first.get("filename").and_then(|f| f.as_str()) {
-                            return Ok(filename.to_string());
+                            return Ok(OutputFileInfo {
+                                filename: filename.to_string(),
+                                subfolder: first
+                                    .get("subfolder")
+                                    .and_then(|s| s.as_str())
+                                    .unwrap_or("")
+                                    .to_string(),
+                                file_type: first
+                                    .get("type")
+                                    .and_then(|t| t.as_str())
+                                    .unwrap_or("output")
+                                    .to_string(),
+                            });
                         }
                     }
                 }
@@ -181,6 +293,14 @@ impl ComfyUIApi {
         }
 
         Err("No output files found in ComfyUI history".to_string())
+    }
+
+    /// Backwards-compatible wrapper that returns only the filename.
+    pub fn extract_output_filename(
+        history: &serde_json::Value,
+        prompt_id: &str,
+    ) -> Result<String, String> {
+        Self::extract_output_info(history, prompt_id).map(|info| info.filename)
     }
 
     // ---- private helpers ----

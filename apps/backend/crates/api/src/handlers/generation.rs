@@ -117,10 +117,13 @@ use x121_core::generation::SYSTEM_USER_ID;
 fn submit_first_segment(state: &AppState, scene_id: DbId) {
     let pool = state.pool.clone();
     let comfyui = state.comfyui_manager.clone();
+    let storage = state.storage.clone();
     tokio::spawn(async move {
+        let storage = storage.read().await.clone();
         match x121_pipeline::submitter::submit_segment(
             &pool,
             &comfyui,
+            &storage,
             scene_id,
             0, // segment index 0
             SYSTEM_USER_ID,

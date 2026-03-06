@@ -81,6 +81,17 @@ impl ComfyUIManager {
         self.connections.read().await.keys().copied().collect()
     }
 
+    /// Get the API client for a specific instance.
+    ///
+    /// Returns `None` if the instance is not connected.
+    pub async fn api_for_instance(&self, instance_id: DbId) -> Option<Arc<ComfyUIApi>> {
+        self.connections
+            .read()
+            .await
+            .get(&instance_id)
+            .map(|m| Arc::clone(&m.api))
+    }
+
     /// Submit a workflow to a specific ComfyUI instance.
     ///
     /// Records an execution mapping in the database so that incoming

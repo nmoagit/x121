@@ -7,6 +7,7 @@ use std::sync::Arc;
 
 use x121_comfyui::manager::ComfyUIManager;
 use x121_core::generation::{self, StopDecision};
+use x121_core::storage::StorageProvider;
 use x121_core::types::DbId;
 use x121_db::repositories::SceneRepo;
 
@@ -38,6 +39,7 @@ pub enum LoopOutcome {
 pub async fn evaluate_and_continue(
     pool: &sqlx::PgPool,
     comfyui: &Arc<ComfyUIManager>,
+    storage: &Arc<dyn StorageProvider>,
     completion: &CompletionResult,
     user_id: DbId,
 ) -> Result<LoopOutcome, PipelineError> {
@@ -72,6 +74,7 @@ pub async fn evaluate_and_continue(
             let result = submitter::submit_segment(
                 pool,
                 comfyui,
+                storage,
                 completion.scene_id,
                 next_index,
                 user_id,
