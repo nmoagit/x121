@@ -41,6 +41,10 @@ pub async fn start_generation(
     let (estimated, boundary_mode) =
         init_scene_generation(&state, scene_id, input.boundary_mode).await?;
 
+    // Submit the first segment (index 0) to ComfyUI in the background.
+    // The worker's event loop will handle completions and drive the loop.
+    submit_first_segment(&state, scene_id);
+
     Ok(Json(DataResponse {
         data: StartGenerationResponse {
             scene_id,
@@ -102,6 +106,48 @@ async fn init_scene_generation(
 
     let mode = boundary_mode.unwrap_or_else(|| generation::BOUNDARY_AUTO.to_string());
     Ok((estimated, mode))
+}
+
+/// Default system user ID for generation jobs.
+///
+/// In a full multi-user system this would come from the authenticated session.
+const SYSTEM_USER_ID: DbId = 1;
+
+/// Spawn a background task to submit segment 0 to ComfyUI.
+///
+/// Fire-and-forget: the API returns immediately while the submission
+/// happens asynchronously. Errors are logged but don't fail the response.
+fn submit_first_segment(state: &AppState, scene_id: DbId) {
+    let pool = state.pool.clone();
+    let comfyui = state.comfyui_manager.clone();
+    tokio::spawn(async move {
+        match x121_pipeline::submitter::submit_segment(
+            &pool,
+            &comfyui,
+            scene_id,
+            0, // segment index 0
+            SYSTEM_USER_ID,
+        )
+        .await
+        {
+            Ok(result) => {
+                tracing::info!(
+                    scene_id,
+                    segment_id = result.segment_id,
+                    job_id = result.job_id,
+                    prompt_id = %result.prompt_id,
+                    "First segment submitted to ComfyUI",
+                );
+            }
+            Err(e) => {
+                tracing::error!(
+                    scene_id,
+                    error = %e,
+                    "Failed to submit first segment to ComfyUI",
+                );
+            }
+        }
+    });
 }
 
 /// GET /api/v1/scenes/{id}/progress
@@ -231,7 +277,10 @@ pub async fn batch_generate(
 
     for &scene_id in &input.scene_ids {
         match init_scene_generation(&state, scene_id, None).await {
-            Ok(_) => started.push(scene_id),
+            Ok(_) => {
+                submit_first_segment(&state, scene_id);
+                started.push(scene_id);
+            }
             Err(e) => {
                 errors.push(BatchGenerateError {
                     scene_id,
