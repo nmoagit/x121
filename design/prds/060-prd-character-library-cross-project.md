@@ -104,3 +104,47 @@ This check is **blocking** — no PR should be merged without a DRY-GUY audit of
 
 ## 12. Version History
 - **v1.0** (2026-02-18): Initial PRD generation from master specification
+- **v1.1** (2026-03-06): Amendment — Requirements gap fill (Reqs A.1-A.2).
+
+---
+
+## Amendment (2026-03-06): Requirements Gap Fill
+
+The following requirements were identified during a stakeholder requirements review and address gaps in the original PRD. They do not modify any existing requirements.
+
+### Requirement A.1: Scene Type & Track Filtering
+
+**Description:** The global library must support filtering by Scene Type and Track in addition to the existing name, tags, and visual similarity browsing capabilities.
+
+**Acceptance Criteria:**
+- [ ] The library browser UI (Task 3.2) includes filter controls for Scene Type and Track
+- [ ] Scene Type filter shows all scene types from the scene catalog (PRD-111) as a multi-select dropdown or checkbox list
+- [ ] Track filter shows all tracks (from PRD-111 track system) as a multi-select dropdown or checkbox list
+- [ ] Filters are additive — selecting Scene Type "Greeting" and Track "Standard" returns characters that have approved content for a Greeting scene in the Standard track
+- [ ] Filtering queries the cross-project scene data: a character matches if any of its project instances have an approved final version for the selected scene type/track combination
+- [ ] Filters can be combined with the existing name and tag search (AND logic between filter types)
+- [ ] Clear all filters action resets to unfiltered view
+- [ ] Filter selections are reflected in the URL query string for shareability
+
+**Technical Notes:**
+- Requires a backend query that joins `library_characters` -> `project_character_links` -> `characters` -> `scenes` -> `scene_types` and optionally `scene_video_versions` (for approved status)
+- API: `GET /api/v1/library/characters?scene_type_ids=1,2&track_ids=3` with comma-separated ID lists
+- Consider caching or materialized views for performance if the join chain is expensive
+
+### Requirement A.2: Read-Only Gallery Mode
+
+**Description:** The global library is a read-only gallery by default. Users can browse and filter assets but cannot edit them directly. A "Go to Character" button on each asset card provides quick navigation to the character's edit page.
+
+**Acceptance Criteria:**
+- [ ] The library browser (Task 3.2) displays character assets in a gallery/grid layout without inline edit controls
+- [ ] No edit, delete, rename, or metadata modification actions are available directly in the library view
+- [ ] Each character card in the library includes a "Go to Character" button (or link icon) that navigates to the character's detail page in its source project (`/projects/:projectId/characters/:characterId`)
+- [ ] If a character exists in multiple projects, the "Go to Character" action shows a dropdown or popover listing all projects with a link to each
+- [ ] The library profile/detail view (Req 1.5 cross-project visibility) is also read-only — displays metadata, variants, and project usage but no edit controls
+- [ ] The only write action available from the library is "Import to Project" (Req 1.2) which creates a new project-level copy, not an in-place edit
+- [ ] Admin users with library management permissions (PRD-060 Req 2.1, post-MVP) will get edit controls in a future phase — the gallery mode is the default for all users in MVP
+
+**Technical Notes:**
+- This simplifies the MVP library UI — no need for inline editing, validation, or save flows
+- The "Go to Character" navigation uses the `project_character_links` table to resolve which project(s) contain the character
+- Reuse the existing `CharacterCard` component from PRD-112 in read-only mode (no action buttons except "Go to Character" and "Import")

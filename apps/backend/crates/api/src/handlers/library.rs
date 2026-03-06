@@ -3,10 +3,11 @@
 //! Provides endpoints for managing library characters, importing them into
 //! projects, viewing cross-project usage, and managing field links.
 
-use axum::extract::{Path, State};
+use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::Json;
+use serde::Deserialize;
 
 use x121_core::character_library;
 use x121_core::error::CoreError;
@@ -20,6 +21,7 @@ use x121_db::repositories::{CharacterRepo, LibraryCharacterRepo, ProjectCharacte
 
 use crate::error::{AppError, AppResult};
 use crate::middleware::auth::AuthUser;
+use crate::query::parse_id_list;
 use crate::response::DataResponse;
 use crate::state::AppState;
 
@@ -46,13 +48,33 @@ async fn ensure_library_character_exists(
 // GET /library/characters
 // ---------------------------------------------------------------------------
 
+/// Optional filter query params for the library character list endpoint.
+#[derive(Debug, Deserialize)]
+pub struct LibraryFilterParams {
+    /// Comma-separated scene type IDs.
+    pub scene_type_ids: Option<String>,
+    /// Comma-separated track IDs.
+    pub track_ids: Option<String>,
+}
+
 /// List all library characters visible to the authenticated user.
 /// Includes all published characters plus unpublished ones owned by the user.
+/// Supports optional `scene_type_ids` and `track_ids` query filters.
 pub async fn list_library_characters(
     auth: AuthUser,
     State(state): State<AppState>,
+    Query(params): Query<LibraryFilterParams>,
 ) -> AppResult<impl IntoResponse> {
-    let items = LibraryCharacterRepo::list(&state.pool, auth.user_id).await?;
+    let scene_type_ids = params.scene_type_ids.as_deref().map(parse_id_list);
+    let track_ids = params.track_ids.as_deref().map(parse_id_list);
+
+    let items = LibraryCharacterRepo::list_filtered(
+        &state.pool,
+        auth.user_id,
+        scene_type_ids.as_deref(),
+        track_ids.as_deref(),
+    )
+    .await?;
     tracing::debug!(count = items.len(), "Listed library characters");
     Ok(Json(DataResponse { data: items }))
 }

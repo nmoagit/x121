@@ -4,6 +4,7 @@
 //! handler modules are extracted here to avoid duplication.
 
 use serde::Deserialize;
+use x121_core::types::DbId;
 
 use crate::error::{AppError, AppResult};
 
@@ -57,4 +58,18 @@ pub fn parse_date(s: &Option<String>, fallback: chrono::NaiveDate) -> AppResult<
             .map_err(|_| AppError::BadRequest("Invalid date format, expected YYYY-MM-DD".into())),
         None => Ok(fallback),
     }
+}
+
+// ---------------------------------------------------------------------------
+// ID list parsing
+// ---------------------------------------------------------------------------
+
+/// Parse a comma-separated string of IDs into a `Vec<DbId>`.
+///
+/// Used by query parameters that accept multiple IDs as a comma-separated
+/// string, e.g. `?scene_type_ids=1,2,3`. Invalid entries are silently skipped.
+pub fn parse_id_list(raw: &str) -> Vec<DbId> {
+    raw.split(',')
+        .filter_map(|s| s.trim().parse::<DbId>().ok())
+        .collect()
 }

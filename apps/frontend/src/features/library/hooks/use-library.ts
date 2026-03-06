@@ -22,24 +22,45 @@ import type {
    Query Keys
    -------------------------------------------------------------------------- */
 
+/** Optional filters for the library character list. */
+export interface LibraryFilters {
+  sceneTypeIds?: number[];
+  trackIds?: number[];
+}
+
 export const libraryKeys = {
   all: ["library-characters"] as const,
-  list: () => [...libraryKeys.all, "list"] as const,
+  lists: () => [...libraryKeys.all, "list"] as const,
+  list: (filters?: LibraryFilters) => [...libraryKeys.lists(), filters ?? {}] as const,
   detail: (id: number) => [...libraryKeys.all, "detail", id] as const,
   usage: (id: number) => [...libraryKeys.all, "usage", id] as const,
-  projectLinks: (projectId: number) =>
-    [...libraryKeys.all, "project-links", projectId] as const,
+  projectLinks: (projectId: number) => [...libraryKeys.all, "project-links", projectId] as const,
 };
 
 /* --------------------------------------------------------------------------
    Queries
    -------------------------------------------------------------------------- */
 
-/** Fetch all library characters visible to the current user. */
-export function useLibraryCharacters() {
+/** Build query string from library filters. */
+function buildLibraryQueryString(filters?: LibraryFilters): string {
+  if (!filters) return "";
+  const params = new URLSearchParams();
+  if (filters.sceneTypeIds?.length) {
+    params.set("scene_type_ids", filters.sceneTypeIds.join(","));
+  }
+  if (filters.trackIds?.length) {
+    params.set("track_ids", filters.trackIds.join(","));
+  }
+  const qs = params.toString();
+  return qs ? `?${qs}` : "";
+}
+
+/** Fetch all library characters visible to the current user, with optional filters. */
+export function useLibraryCharacters(filters?: LibraryFilters) {
   return useQuery({
-    queryKey: libraryKeys.list(),
-    queryFn: () => api.get<LibraryCharacter[]>("/library/characters"),
+    queryKey: libraryKeys.list(filters),
+    queryFn: () =>
+      api.get<LibraryCharacter[]>(`/library/characters${buildLibraryQueryString(filters)}`),
   });
 }
 
@@ -56,8 +77,7 @@ export function useLibraryCharacter(id: number) {
 export function useLibraryUsage(id: number) {
   return useQuery({
     queryKey: libraryKeys.usage(id),
-    queryFn: () =>
-      api.get<LibraryUsageEntry[]>(`/library/characters/${id}/usage`),
+    queryFn: () => api.get<LibraryUsageEntry[]>(`/library/characters/${id}/usage`),
     enabled: id > 0,
   });
 }
@@ -67,9 +87,7 @@ export function useProjectLinks(projectId: number) {
   return useQuery({
     queryKey: libraryKeys.projectLinks(projectId),
     queryFn: () =>
-      api.get<ProjectCharacterLink[]>(
-        `/library/characters/projects/${projectId}/links`,
-      ),
+      api.get<ProjectCharacterLink[]>(`/library/characters/projects/${projectId}/links`),
     enabled: projectId > 0,
   });
 }
@@ -86,7 +104,7 @@ export function useCreateLibraryCharacter() {
     mutationFn: (input: CreateLibraryCharacter) =>
       api.post<LibraryCharacter>("/library/characters", input),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: libraryKeys.list() });
+      queryClient.invalidateQueries({ queryKey: libraryKeys.lists() });
     },
   });
 }
@@ -99,7 +117,7 @@ export function useUpdateLibraryCharacter() {
     mutationFn: ({ id, ...input }: UpdateLibraryCharacter & { id: number }) =>
       api.put<LibraryCharacter>(`/library/characters/${id}`, input),
     onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({ queryKey: libraryKeys.list() });
+      queryClient.invalidateQueries({ queryKey: libraryKeys.lists() });
       queryClient.invalidateQueries({
         queryKey: libraryKeys.detail(variables.id),
       });
@@ -114,7 +132,7 @@ export function useDeleteLibraryCharacter() {
   return useMutation({
     mutationFn: (id: number) => api.delete(`/library/characters/${id}`),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: libraryKeys.list() });
+      queryClient.invalidateQueries({ queryKey: libraryKeys.lists() });
     },
   });
 }
@@ -124,14 +142,8 @@ export function useImportToProject() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({
-      libraryId,
-      ...input
-    }: ImportCharacterRequest & { libraryId: number }) =>
-      api.post<ProjectCharacterLink>(
-        `/library/characters/${libraryId}/import`,
-        input,
-      ),
+    mutationFn: ({ libraryId, ...input }: ImportCharacterRequest & { libraryId: number }) =>
+      api.post<ProjectCharacterLink>(`/library/characters/${libraryId}/import`, input),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({
         queryKey: libraryKeys.usage(variables.libraryId),
@@ -155,11 +167,7 @@ export function useUpdateLinkFields() {
       linkId: number;
       linkedFields: string[];
       projectId: number;
-    }) =>
-      api.put<ProjectCharacterLink>(
-        `/library/characters/links/${linkId}`,
-        linkedFields,
-      ),
+    }) => api.put<ProjectCharacterLink>(`/library/characters/links/${linkId}`, linkedFields),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({
         queryKey: libraryKeys.projectLinks(variables.projectId),

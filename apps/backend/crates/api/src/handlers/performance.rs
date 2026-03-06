@@ -18,6 +18,7 @@ use x121_db::repositories::{PerformanceAlertRepo, PerformanceMetricRepo};
 
 use crate::error::{AppError, AppResult};
 use crate::middleware::rbac::RequireAdmin;
+use crate::query::parse_id_list;
 use crate::response::DataResponse;
 use crate::state::AppState;
 
@@ -227,11 +228,7 @@ pub async fn compare_workflows(
     let from = parse_from(&params.from, 30)?;
     let to = parse_to(&params.to)?;
 
-    let workflow_ids: Vec<DbId> = params
-        .workflows
-        .split(',')
-        .filter_map(|s| s.trim().parse::<DbId>().ok())
-        .collect();
+    let workflow_ids = parse_id_list(&params.workflows);
 
     if workflow_ids.len() < 2 {
         return Err(AppError::BadRequest(

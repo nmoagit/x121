@@ -186,3 +186,52 @@ pub async fn import_to_project(pool: &sqlx::PgPool, library_id: DbId, project_id
 ## Version History
 
 - **v1.0** (2026-02-18): Initial task list creation from PRD-060 v1.0
+- **v1.1** (2026-03-06): Added Phase 5 — Amendment tasks (A.1-A.2)
+
+---
+
+## Phase 5: Amendment — Requirements Gap Fill (2026-03-06)
+
+Tasks in this phase implement the requirements added in the PRD-060 Amendment (2026-03-06).
+
+### Task 5.1: Scene Type & Track Filtering — Backend (Req A.1)
+**Files:**
+- `apps/backend/crates/db/src/repositories/library_character_repo.rs` (modify)
+- `apps/backend/crates/api/src/handlers/library.rs` (modify)
+
+Add query support for filtering library characters by scene type and track.
+
+**Acceptance Criteria:**
+- [ ] API: `GET /api/v1/library/characters` accepts optional `scene_type_ids` and `track_ids` query parameters (comma-separated)
+- [ ] Query joins `library_characters` -> `project_character_links` -> `characters` -> `scenes` -> `scene_types` to find matches
+- [ ] A character matches if any of its project instances have content for the selected scene type/track
+- [ ] Filters combine with existing name/tag search via AND logic
+- [ ] Returns distinct library characters (no duplicates from multiple project instances)
+- [ ] Performance: query completes in <500ms for libraries with 500+ characters
+
+### Task 5.2: Scene Type & Track Filtering — Frontend (Req A.1)
+**Files:**
+- `apps/frontend/src/features/library/components/CharacterLibraryBrowser.tsx` (modify)
+- `apps/frontend/src/features/library/hooks/use-library-characters.ts` (modify)
+
+**Acceptance Criteria:**
+- [ ] Scene Type multi-select filter populated from scene catalog (PRD-111)
+- [ ] Track multi-select filter populated from track system (PRD-111)
+- [ ] Filters are additive and combinable with name/tag search
+- [ ] "Clear All Filters" action resets to unfiltered view
+- [ ] Filter selections reflected in URL query string for shareability
+- [ ] Hook passes `scene_type_ids` and `track_ids` to API call
+
+### Task 5.3: Read-Only Gallery Mode (Req A.2)
+**Files:**
+- `apps/frontend/src/features/library/components/CharacterLibraryBrowser.tsx` (modify)
+- `apps/frontend/src/features/library/components/LibraryCharacterCard.tsx` (new or modify)
+
+**Acceptance Criteria:**
+- [ ] Library browser displays character assets in gallery/grid layout without inline edit controls
+- [ ] No edit, delete, rename, or metadata modification actions in the library view
+- [ ] Each card has a "Go to Character" button navigating to the character's project detail page
+- [ ] If character exists in multiple projects, "Go to Character" shows a dropdown/popover listing all projects with links
+- [ ] Library profile/detail view is read-only (metadata, variants, usage displayed but not editable)
+- [ ] Only write action available is "Import to Project" (Req 1.2)
+- [ ] Reuses `CharacterCard` from PRD-112 in read-only mode (no action buttons except "Go to Character" and "Import")

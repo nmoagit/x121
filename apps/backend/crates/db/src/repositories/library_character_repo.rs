@@ -72,6 +72,81 @@ impl LibraryCharacterRepo {
             .await
     }
 
+    /// List library characters with optional scene-type and track filters.
+    ///
+    /// When `scene_type_ids` or `track_ids` are provided, only library characters
+    /// that have linked project characters with scenes matching those filters are
+    /// returned. Both filters use AND logic when both are present.
+    pub async fn list_filtered(
+        pool: &PgPool,
+        user_id: DbId,
+        scene_type_ids: Option<&[DbId]>,
+        track_ids: Option<&[DbId]>,
+    ) -> Result<Vec<LibraryCharacter>, sqlx::Error> {
+        // Fast path: no filters — delegate to the simple list.
+        if scene_type_ids.is_none() && track_ids.is_none() {
+            return Self::list(pool, user_id).await;
+        }
+
+        // Build a dynamic query with optional joins and filters.
+        // Prefix each column with `lc.` for the DISTINCT join query.
+        let prefixed_cols = LC_COLUMNS
+            .split(", ")
+            .map(|c| format!("lc.{c}"))
+            .collect::<Vec<_>>()
+            .join(", ");
+        let mut sql = format!("SELECT DISTINCT {prefixed_cols} FROM library_characters lc");
+
+        // Join through project_character_links → scenes when filters are active.
+        sql.push_str(
+            " JOIN project_character_links pcl ON pcl.library_character_id = lc.id \
+             JOIN scenes s ON s.character_id = pcl.project_character_id"
+        );
+
+        sql.push_str(" WHERE (lc.is_published = true OR lc.created_by_id = $1)");
+
+        let mut param_idx = 2u32;
+
+        if scene_type_ids.is_some() {
+            sql.push_str(&format!(" AND s.scene_type_id = ANY(${param_idx})"));
+            param_idx += 1;
+        }
+
+        if track_ids.is_some() {
+            sql.push_str(&format!(" AND s.track_id = ANY(${param_idx})"));
+        }
+
+        sql.push_str(" ORDER BY lc.name ASC");
+
+        // We need to bind dynamically based on which filters are present.
+        // sqlx requires static bind counts, so we branch.
+        match (scene_type_ids, track_ids) {
+            (Some(st_ids), Some(tr_ids)) => {
+                sqlx::query_as::<_, LibraryCharacter>(&sql)
+                    .bind(user_id)
+                    .bind(st_ids)
+                    .bind(tr_ids)
+                    .fetch_all(pool)
+                    .await
+            }
+            (Some(st_ids), None) => {
+                sqlx::query_as::<_, LibraryCharacter>(&sql)
+                    .bind(user_id)
+                    .bind(st_ids)
+                    .fetch_all(pool)
+                    .await
+            }
+            (None, Some(tr_ids)) => {
+                sqlx::query_as::<_, LibraryCharacter>(&sql)
+                    .bind(user_id)
+                    .bind(tr_ids)
+                    .fetch_all(pool)
+                    .await
+            }
+            (None, None) => unreachable!("fast path handles this case"),
+        }
+    }
+
     /// Update a library character. Only non-`None` fields in `input` are applied.
     pub async fn update(
         pool: &PgPool,
