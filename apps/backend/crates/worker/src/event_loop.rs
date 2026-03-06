@@ -6,12 +6,11 @@
 use std::sync::Arc;
 
 use tokio::sync::broadcast;
-use x121_comfyui::api::ComfyUIApi;
 use x121_comfyui::events::ComfyUIEvent;
 use x121_comfyui::manager::ComfyUIManager;
 use x121_core::storage::StorageProvider;
 use x121_core::types::DbId;
-use x121_db::repositories::{ComfyUIInstanceRepo, RetryAttemptRepo, SegmentRepo};
+use x121_db::repositories::{RetryAttemptRepo, SegmentRepo};
 
 use x121_core::generation::SYSTEM_USER_ID;
 use x121_pipeline::{completion_handler, loop_driver};
@@ -123,11 +122,12 @@ async fn handle_generation_completed(
         }
     };
 
-    // Build a ComfyUI API client for this instance to download outputs.
-    let api = match build_api_for_instance(pool, instance_id).await {
-        Ok(api) => api,
-        Err(e) => {
-            tracing::error!(instance_id, error = %e, "Failed to build API client");
+    // Get the cached ComfyUI API client for this instance from the manager
+    // (avoids a redundant DB lookup + new HTTP client allocation).
+    let api = match comfyui.api_for_instance(instance_id).await {
+        Some(api) => api,
+        None => {
+            tracing::error!(instance_id, "ComfyUI instance not connected — cannot download output");
             return;
         }
     };
@@ -197,23 +197,6 @@ async fn lookup_segment_from_job(
         })?;
 
     Ok((params.segment_id, params.scene_id))
-}
-
-/// Build a `ComfyUIApi` client for a specific instance.
-async fn build_api_for_instance(
-    pool: &sqlx::PgPool,
-    instance_id: DbId,
-) -> Result<ComfyUIApi, x121_pipeline::PipelineError> {
-    let instance = ComfyUIInstanceRepo::find_by_id(pool, instance_id)
-        .await
-        .map_err(x121_pipeline::PipelineError::Database)?
-        .ok_or_else(|| {
-            x121_pipeline::PipelineError::MissingConfig(format!(
-                "ComfyUI instance {instance_id} not found"
-            ))
-        })?;
-
-    Ok(ComfyUIApi::new(instance.api_url))
 }
 
 /// Handle a failed generation: mark as failed, then attempt auto-retry
