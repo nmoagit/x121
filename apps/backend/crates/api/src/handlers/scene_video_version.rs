@@ -16,7 +16,8 @@ use x121_db::models::scene_video_version::{
     CreateSceneVideoVersion, RejectClipRequest, ResumeFromResponse, SceneVideoVersion,
     UpdateSceneVideoVersion,
 };
-use x121_db::repositories::{SceneVideoVersionRepo, SegmentRepo};
+use x121_db::models::scene_video_version_artifact::SceneVideoVersionArtifact;
+use x121_db::repositories::{SceneVideoVersionArtifactRepo, SceneVideoVersionRepo, SegmentRepo};
 
 use crate::error::{AppError, AppResult};
 use crate::middleware::auth::AuthUser;
@@ -105,7 +106,9 @@ pub async fn generate_preview_for_version(
         return None;
     }
 
-    if let Err(e) = SceneVideoVersionRepo::set_preview_path(&state.pool, version.id, &preview_key).await {
+    if let Err(e) =
+        SceneVideoVersionRepo::set_preview_path(&state.pool, version.id, &preview_key).await
+    {
         tracing::warn!(version_id = version.id, error = %e, "Failed to save preview_path");
         return None;
     }
@@ -123,10 +126,7 @@ pub async fn generate_preview_for_version(
 ///
 /// Returns `true` on success, `false` on any failure.
 /// Best-effort — callers should not fail the parent operation on `false`.
-pub async fn extract_and_set_video_metadata(
-    state: &AppState,
-    version: &SceneVideoVersion,
-) -> bool {
+pub async fn extract_and_set_video_metadata(state: &AppState, version: &SceneVideoVersion) -> bool {
     let abs_source = match state.resolve_to_path(&version.file_path).await {
         Ok(path) => path,
         Err(e) => {
@@ -152,7 +152,12 @@ pub async fn extract_and_set_video_metadata(
     let frame_rate = ffmpeg::parse_framerate(&probe);
 
     match SceneVideoVersionRepo::set_video_metadata(
-        &state.pool, version.id, duration, width, height, frame_rate,
+        &state.pool,
+        version.id,
+        duration,
+        width,
+        height,
+        frame_rate,
     )
     .await
     {
@@ -325,6 +330,7 @@ pub async fn import_video(
         duration_secs: None, // would require ffprobe to determine
         is_final: Some(true),
         notes,
+        generation_snapshot: None,
     };
 
     let version = SceneVideoVersionRepo::create_as_final(&state.pool, &input).await?;
@@ -409,6 +415,18 @@ pub async fn reject_clip(
 
     tracing::info!(user_id = auth.user_id, version_id = id, "Clip rejected");
     Ok(Json(DataResponse { data: updated }))
+}
+
+/// GET /api/v1/scenes/{scene_id}/versions/{id}/artifacts
+///
+/// List all pipeline artifacts for a specific scene video version.
+pub async fn list_artifacts(
+    State(state): State<AppState>,
+    Path((_scene_id, id)): Path<(DbId, DbId)>,
+) -> AppResult<Json<DataResponse<Vec<SceneVideoVersionArtifact>>>> {
+    let _version = ensure_version_exists(&state.pool, id).await?;
+    let artifacts = SceneVideoVersionArtifactRepo::list_by_version(&state.pool, id).await?;
+    Ok(Json(DataResponse { data: artifacts }))
 }
 
 /// POST /api/v1/scenes/{scene_id}/versions/{id}/resume-from

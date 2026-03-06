@@ -1,10 +1,10 @@
 # X121 Platform — Build Plan
 
-Optimal build order for all 127 PRDs, organized into dependency-ordered phases.
+Optimal build order for all 128 PRDs, organized into dependency-ordered phases.
 Each phase can begin only after all prior phases are complete. PRDs within a phase
 can be built **in parallel** (dependencies are satisfied by earlier phases).
 
-> **All 127 PRDs are complete as of 2026-03-06.** This document is retained as the authoritative record of the build order and dependency structure.
+> **All 128 PRDs are complete as of 2026-03-06.** This document is retained as the authoritative record of the build order and dependency structure.
 
 > **Source of truth:** Cross-Reference Map in [`design/design.md`](../design.md) (Appendix)
 > **Status tracking:** [`PRD-STATUS.md`](./PRD-STATUS.md)
@@ -465,6 +465,7 @@ This phase contains no PRD work — only structural setup.
 | 109 | PRD-89 | Dashboard Widget Customization | M | Frontend | PRD-04, PRD-42, PRD-85 | DONE |
 | 110 | PRD-105 | Platform Setup Wizard | M | Admin | PRD-03, PRD-05, PRD-46, PRD-80, PRD-81 | DONE |
 | 126 | PRD-126 | Critical Bug Fixes & UX Polish | L | Full-Stack | PRD-112, PRD-113, PRD-108, PRD-109 (all done) |
+| 127 | PRD-127 | ComfyUI Output Handling & Artifact Storage | M | Full-Stack | PRD-03, PRD-24, PRD-47, PRD-109 (all done) | **DONE** |
 
 ---
 
@@ -584,3 +585,4 @@ PRD-29 → PRD-83 → PRD-35 → PRD-57
 | 2026-03-06 | Added PRD-125 (LLM-Driven Metadata Refinement Pipeline) to Phase 8. LLM formatting/enrichment of Bio+ToV, iterative fix_metadata.py execution, diff-based approval, outdated dependency chain, source file protection. All deps done. Total: 121 PRDs |
 | 2026-03-06 | Added PRD-126 (Critical Bug Fixes & UX Polish) to Phase 12. 13 items across bug fixes, UX polish, and import validation. All deps done (PRD-112, 113, 108, 109). Total: 126 PRDs |
 | 2026-03-06 | Added PRD-124 (Speech & TTS Repository) to Phase 8. Normalized speech text storage, CRUD API, Speech tab, CSV/JSON import/export, read-only VoiceID. All deps done (PRD-00, 01, 29, 112). Total: 122 PRDs in build plan |
+| 2026-03-06 | Added PRD-127 (ComfyUI Output Handling & Artifact Storage) to Phase 12. Pipeline output classifier, generation snapshot, version creator, artifacts table, ArtifactTimeline UI. All deps done (PRD-03, 24, 47, 109). Total: 128 PRDs |

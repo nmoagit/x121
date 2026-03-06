@@ -2,8 +2,8 @@
 //!
 //! When ComfyUI signals that a workflow has finished, this module:
 //! 1. Retrieves the execution history (output filenames).
-//! 2. Downloads the generated video from ComfyUI.
-//! 3. Stores it via the StorageProvider.
+//! 2. Classifies all outputs (Final vs Intermediate).
+//! 3. Downloads and stores the final video and intermediate artifacts.
 //! 4. Updates the segment record with output paths and duration.
 //! 5. Increments the scene's completed segment count.
 
@@ -16,6 +16,20 @@ use x121_db::models::generation::UpdateSegmentGeneration;
 use x121_db::repositories::{SceneRepo, SegmentRepo};
 
 use crate::error::PipelineError;
+use crate::output_classifier::{self, ClassifiedOutput, OutputRole};
+
+/// A downloaded artifact with its storage path and metadata.
+#[derive(Debug)]
+pub struct DownloadedArtifact {
+    /// Classification info for this artifact.
+    pub classified: ClassifiedOutput,
+    /// Storage key where the file was persisted.
+    pub storage_key: String,
+    /// Size of the downloaded file in bytes.
+    pub file_size_bytes: i64,
+    /// Duration in seconds (only meaningful for video outputs).
+    pub duration_secs: Option<f64>,
+}
 
 /// Information about a completed segment, returned to the loop driver.
 #[derive(Debug)]
@@ -25,6 +39,8 @@ pub struct CompletionResult {
     pub output_video_path: String,
     pub duration_secs: f64,
     pub cumulative_duration_secs: f64,
+    /// All downloaded artifacts (Final + Intermediate).
+    pub downloaded_artifacts: Vec<DownloadedArtifact>,
 }
 
 /// Process a completed segment generation.
@@ -32,6 +48,9 @@ pub struct CompletionResult {
 /// `prompt_id` is the ComfyUI execution identifier.
 /// `api` is the ComfyUI REST client for fetching history/outputs.
 /// `storage` is the pluggable storage backend for persisting the video.
+/// `workflow` is the submitted workflow JSON, used for output classification.
+/// Pass `serde_json::Value::Null` if the workflow is unavailable (falls back
+/// to single-output extraction).
 pub async fn handle_completion(
     pool: &sqlx::PgPool,
     api: &ComfyUIApi,
@@ -39,6 +58,7 @@ pub async fn handle_completion(
     segment_id: DbId,
     scene_id: DbId,
     prompt_id: &str,
+    workflow: &serde_json::Value,
 ) -> Result<CompletionResult, PipelineError> {
     // 1. Get execution history to find output file info.
     let history = api
@@ -46,48 +66,79 @@ pub async fn handle_completion(
         .await
         .map_err(|e| PipelineError::Download(format!("Failed to get history: {e}")))?;
 
-    let output_info = ComfyUIApi::extract_output_info(&history, prompt_id)
-        .map_err(PipelineError::Download)?;
+    // 2. Classify all outputs.
+    let classified = output_classifier::classify_outputs(&history, prompt_id, workflow)?;
 
-    // 2. Download the output video from ComfyUI (with subfolder + type).
+    // 3. Find the Final output and download it.
+    let final_output = classified
+        .iter()
+        .find(|o| o.role == OutputRole::Final)
+        .ok_or_else(|| {
+            PipelineError::Download("No Final output found in classified outputs".to_string())
+        })?;
+
     let video_bytes = api
-        .download_output(&output_info)
+        .download_output(&final_output.file_info)
         .await
-        .map_err(|e| PipelineError::Download(format!("Failed to download output: {e}")))?;
+        .map_err(|e| PipelineError::Download(format!("Failed to download final output: {e}")))?;
 
-    // 3. Store via StorageProvider.
-    let storage_key = format!("segments/{scene_id}/{segment_id}/{}", output_info.filename);
+    let storage_key = format!(
+        "segments/{scene_id}/{segment_id}/{}",
+        final_output.file_info.filename
+    );
     storage
         .upload(&storage_key, &video_bytes)
         .await
         .map_err(|e| PipelineError::Download(format!("Failed to store output: {e}")))?;
 
+    let file_size_bytes = video_bytes.len() as i64;
+
     // 4. Compute duration via ffprobe on the stored file.
     let duration_secs = probe_stored_duration(storage, &storage_key, &video_bytes).await;
 
-    // 5. Get previous cumulative duration.
+    // 5. Build the artifacts list, starting with the Final output.
+    let mut downloaded_artifacts = vec![DownloadedArtifact {
+        classified: final_output.clone(),
+        storage_key: storage_key.clone(),
+        file_size_bytes,
+        duration_secs: Some(duration_secs),
+    }];
+
+    // 6. Download intermediate artifacts (best-effort — errors are logged, not fatal).
+    for output in classified
+        .iter()
+        .filter(|o| o.role == OutputRole::Intermediate)
+    {
+        match download_intermediate(api, storage, segment_id, output).await {
+            Ok(artifact) => downloaded_artifacts.push(artifact),
+            Err(e) => {
+                tracing::warn!(
+                    node_id = %output.node_id,
+                    label = %output.label,
+                    error = %e,
+                    "Failed to download intermediate artifact — skipping",
+                );
+            }
+        }
+    }
+
+    // 7. Get previous cumulative duration.
     let segment = SegmentRepo::find_by_id(pool, segment_id)
         .await
         .map_err(PipelineError::Database)?
-        .ok_or_else(|| {
-            PipelineError::MissingConfig(format!("Segment {segment_id} not found"))
-        })?;
+        .ok_or_else(|| PipelineError::MissingConfig(format!("Segment {segment_id} not found")))?;
 
     let prev_cumulative = if segment.sequence_index > 0 {
-        let prev = SegmentRepo::find_by_scene_and_index(
-            pool,
-            scene_id,
-            segment.sequence_index - 1,
-        )
-        .await
-        .map_err(PipelineError::Database)?;
+        let prev = SegmentRepo::find_by_scene_and_index(pool, scene_id, segment.sequence_index - 1)
+            .await
+            .map_err(PipelineError::Database)?;
         prev.and_then(|s| s.cumulative_duration_secs).unwrap_or(0.0)
     } else {
         0.0
     };
     let cumulative = prev_cumulative + duration_secs;
 
-    // 6. Update segment with results.
+    // 8. Update segment with results.
     let update = UpdateSegmentGeneration {
         duration_secs: Some(duration_secs),
         cumulative_duration_secs: Some(cumulative),
@@ -99,7 +150,7 @@ pub async fn handle_completion(
         .await
         .map_err(PipelineError::Database)?;
 
-    // 7. Increment scene's completed segment count.
+    // 9. Increment scene's completed segment count.
     SceneRepo::increment_completed_segments(pool, scene_id)
         .await
         .map_err(PipelineError::Database)?;
@@ -111,6 +162,7 @@ pub async fn handle_completion(
         duration_secs,
         cumulative,
         output = %storage_key,
+        artifact_count = downloaded_artifacts.len(),
         "Segment generation completed",
     );
 
@@ -120,6 +172,38 @@ pub async fn handle_completion(
         output_video_path: storage_key,
         duration_secs,
         cumulative_duration_secs: cumulative,
+        downloaded_artifacts,
+    })
+}
+
+/// Download and store a single intermediate artifact.
+async fn download_intermediate(
+    api: &ComfyUIApi,
+    storage: &Arc<dyn StorageProvider>,
+    segment_id: DbId,
+    output: &ClassifiedOutput,
+) -> Result<DownloadedArtifact, PipelineError> {
+    let bytes = api
+        .download_output(&output.file_info)
+        .await
+        .map_err(|e| PipelineError::Download(format!("Failed to download artifact: {e}")))?;
+
+    let storage_key = format!(
+        "artifacts/{segment_id}/{}/{}",
+        output.node_id, output.file_info.filename,
+    );
+    storage
+        .upload(&storage_key, &bytes)
+        .await
+        .map_err(|e| PipelineError::Download(format!("Failed to store artifact: {e}")))?;
+
+    let file_size_bytes = bytes.len() as i64;
+
+    Ok(DownloadedArtifact {
+        classified: output.clone(),
+        storage_key,
+        file_size_bytes,
+        duration_secs: None,
     })
 }
 
@@ -238,4 +322,3 @@ mod tests {
         assert_eq!(info.file_type, "output");
     }
 }
-

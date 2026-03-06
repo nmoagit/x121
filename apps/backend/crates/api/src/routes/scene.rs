@@ -30,6 +30,7 @@ const IMPORT_BODY_LIMIT: usize = 500 * 1024 * 1024;
 /// PUT    /{scene_id}/versions/{id}/set-final set_final
 /// PUT    /{scene_id}/versions/{id}/approve   approve_clip
 /// PUT    /{scene_id}/versions/{id}/reject    reject_clip
+/// GET    /{scene_id}/versions/{id}/artifacts list_artifacts
 /// POST   /{scene_id}/versions/{id}/resume-from resume_from_clip
 /// ```
 pub fn router() -> Router<AppState> {
@@ -49,6 +50,7 @@ pub fn router() -> Router<AppState> {
         .route("/{id}/set-final", put(version::set_final))
         .route("/{id}/approve", put(version::approve_clip))
         .route("/{id}/reject", put(version::reject_clip))
+        .route("/{id}/artifacts", get(version::list_artifacts))
         .route("/{id}/resume-from", post(version::resume_from_clip))
         .layer(DefaultBodyLimit::max(IMPORT_BODY_LIMIT));
 

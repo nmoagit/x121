@@ -41,6 +41,7 @@ pub struct CreateSceneVideoVersion {
     pub duration_secs: Option<f64>,
     pub is_final: Option<bool>,
     pub notes: Option<String>,
+    pub generation_snapshot: Option<serde_json::Value>,
 }
 
 /// DTO for updating a scene video version. All fields optional.

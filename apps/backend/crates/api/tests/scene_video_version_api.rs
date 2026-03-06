@@ -123,6 +123,7 @@ fn new_version(scene_id: i64) -> CreateSceneVideoVersion {
         duration_secs: Some(10.0),
         is_final: None,
         notes: None,
+        generation_snapshot: None,
     }
 }
 

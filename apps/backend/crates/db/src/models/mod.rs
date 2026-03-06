@@ -116,6 +116,7 @@ pub mod scene_type_override;
 pub mod scene_type_prompt_default;
 pub mod scene_type_qa_override;
 pub mod scene_video_version;
+pub mod scene_video_version_artifact;
 pub mod scheduling;
 pub mod script;
 pub mod search;

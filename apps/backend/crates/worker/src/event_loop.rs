@@ -60,8 +60,15 @@ async fn handle_event(
             prompt_id,
             ..
         } => {
-            handle_generation_completed(pool, comfyui, storage, instance_id, platform_job_id, &prompt_id)
-                .await;
+            handle_generation_completed(
+                pool,
+                comfyui,
+                storage,
+                instance_id,
+                platform_job_id,
+                &prompt_id,
+            )
+            .await;
         }
         ComfyUIEvent::GenerationError {
             platform_job_id,
@@ -127,14 +134,26 @@ async fn handle_generation_completed(
     let api = match comfyui.api_for_instance(instance_id).await {
         Some(api) => api,
         None => {
-            tracing::error!(instance_id, "ComfyUI instance not connected — cannot download output");
+            tracing::error!(
+                instance_id,
+                "ComfyUI instance not connected — cannot download output"
+            );
             return;
         }
     };
 
     // Process completion: download output, store, update DB.
+    // Pass Null workflow — the event loop doesn't have the submitted workflow
+    // available. classify_outputs handles this gracefully by falling back to
+    // single-output extraction.
     let completion = match completion_handler::handle_completion(
-        pool, &api, storage, segment_id, scene_id, prompt_id,
+        pool,
+        &api,
+        storage,
+        segment_id,
+        scene_id,
+        prompt_id,
+        &serde_json::Value::Null,
     )
     .await
     {

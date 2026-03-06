@@ -28,11 +28,11 @@ impl SceneVideoVersionRepo {
     ) -> Result<SceneVideoVersion, sqlx::Error> {
         let query = format!(
             "INSERT INTO scene_video_versions
-                (scene_id, version_number, source, file_path, file_size_bytes, duration_secs, is_final, notes)
+                (scene_id, version_number, source, file_path, file_size_bytes, duration_secs, is_final, notes, generation_snapshot)
              VALUES (
                 $1,
                 (SELECT COALESCE(MAX(version_number), 0) + 1 FROM scene_video_versions WHERE scene_id = $1),
-                $2, $3, $4, $5, COALESCE($6, false), $7
+                $2, $3, $4, $5, COALESCE($6, false), $7, $8
              )
              RETURNING {COLUMNS}"
         );
@@ -44,6 +44,7 @@ impl SceneVideoVersionRepo {
             .bind(input.duration_secs)
             .bind(input.is_final)
             .bind(&input.notes)
+            .bind(&input.generation_snapshot)
             .fetch_one(pool)
             .await
     }
@@ -315,8 +316,8 @@ impl SceneVideoVersionRepo {
         // Insert new version as final
         let query = format!(
             "INSERT INTO scene_video_versions
-                (scene_id, version_number, source, file_path, file_size_bytes, duration_secs, is_final, notes)
-             VALUES ($1, $2, $3, $4, $5, $6, true, $7)
+                (scene_id, version_number, source, file_path, file_size_bytes, duration_secs, is_final, notes, generation_snapshot)
+             VALUES ($1, $2, $3, $4, $5, $6, true, $7, $8)
              RETURNING {COLUMNS}"
         );
         let version = sqlx::query_as::<_, SceneVideoVersion>(&query)
@@ -327,6 +328,7 @@ impl SceneVideoVersionRepo {
             .bind(input.file_size_bytes)
             .bind(input.duration_secs)
             .bind(&input.notes)
+            .bind(&input.generation_snapshot)
             .fetch_one(&mut *tx)
             .await?;
 

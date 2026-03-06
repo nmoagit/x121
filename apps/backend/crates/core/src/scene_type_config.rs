@@ -86,6 +86,15 @@ pub enum ClipPosition {
 }
 
 impl ClipPosition {
+    /// Return the database/API string representation of this clip position.
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::FullClip => CLIP_FULL,
+            Self::StartClip => CLIP_START,
+            Self::ContinuationClip => CLIP_CONTINUATION,
+        }
+    }
+
     pub fn parse(s: &str) -> Result<Self, String> {
         match s {
             CLIP_FULL => Ok(Self::FullClip),

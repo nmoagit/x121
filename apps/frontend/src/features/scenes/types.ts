@@ -15,6 +15,10 @@ export interface Scene {
   deleted_at: string | null;
   created_at: string;
   updated_at: string;
+  /** Best video version ID (final preferred, else highest version_number). */
+  latest_version_id: number | null;
+  /** Total number of non-deleted video versions. */
+  version_count: number;
 }
 
 export interface SceneVideoVersion {
@@ -36,10 +40,42 @@ export interface SceneVideoVersion {
   qa_reviewed_at: string | null;
   qa_rejection_reason: string | null;
   qa_notes: string | null;
+  generation_snapshot: Record<string, unknown> | null;
   deleted_at: string | null;
   created_at: string;
   updated_at: string;
 }
+
+export interface SceneVideoVersionArtifact {
+  id: number;
+  version_id: number;
+  role: "final" | "intermediate";
+  label: string;
+  node_id: string | null;
+  file_path: string;
+  file_size_bytes: number | null;
+  duration_secs: number | null;
+  width: number | null;
+  height: number | null;
+  sort_order: number;
+  created_at: string;
+}
+
+/* --------------------------------------------------------------------------
+   Artifact role helpers (shared by ArtifactTimeline card + modal)
+   -------------------------------------------------------------------------- */
+
+type ArtifactRole = SceneVideoVersionArtifact["role"];
+
+export const ARTIFACT_ROLE_VARIANT: Record<ArtifactRole, BadgeVariant> = {
+  final: "success",
+  intermediate: "info",
+};
+
+export const ARTIFACT_ROLE_LABEL: Record<ArtifactRole, string> = {
+  final: "Final",
+  intermediate: "Intermediate",
+};
 
 export interface RejectClipInput {
   reason: string;

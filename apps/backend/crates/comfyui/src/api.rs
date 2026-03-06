@@ -295,6 +295,59 @@ impl ComfyUIApi {
         Err("No output files found in ComfyUI history".to_string())
     }
 
+    /// Extract all output files from a ComfyUI history response, keyed by
+    /// node ID.
+    ///
+    /// Iterates ALL nodes in `history[prompt_id].outputs` and ALL file arrays
+    /// (`gifs`, `videos`, `images`), returning every output file paired with
+    /// its source node ID.
+    pub fn extract_all_output_infos(
+        history: &serde_json::Value,
+        prompt_id: &str,
+    ) -> Result<Vec<(String, OutputFileInfo)>, String> {
+        let prompt_data = history
+            .get(prompt_id)
+            .ok_or_else(|| format!("No history entry for prompt {prompt_id}"))?;
+
+        let outputs = prompt_data
+            .get("outputs")
+            .and_then(|o| o.as_object())
+            .ok_or_else(|| "No outputs in history".to_string())?;
+
+        let mut results = Vec::new();
+
+        for (node_id, node_output) in outputs {
+            for key in &["gifs", "videos", "images"] {
+                if let Some(files) = node_output.get(*key).and_then(|v| v.as_array()) {
+                    for file_obj in files {
+                        if let Some(filename) = file_obj.get("filename").and_then(|f| f.as_str()) {
+                            let info = OutputFileInfo {
+                                filename: filename.to_string(),
+                                subfolder: file_obj
+                                    .get("subfolder")
+                                    .and_then(|s| s.as_str())
+                                    .unwrap_or("")
+                                    .to_string(),
+                                file_type: file_obj
+                                    .get("type")
+                                    .and_then(|t| t.as_str())
+                                    .unwrap_or("output")
+                                    .to_string(),
+                            };
+                            results.push((node_id.clone(), info));
+                        }
+                    }
+                }
+            }
+        }
+
+        if results.is_empty() {
+            return Err("No output files found in ComfyUI history".to_string());
+        }
+
+        Ok(results)
+    }
+
     /// Backwards-compatible wrapper that returns only the filename.
     pub fn extract_output_filename(
         history: &serde_json::Value,

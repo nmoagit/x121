@@ -24,7 +24,7 @@ Source of truth: [`design/design.md`](../design.md)
 | planning | 0 |
 | in-progress | 0 |
 | review | 0 |
-| done | 127 |
+| done | 128 |
 | blocked | 0 |
 | deferred | 0 |
 | maybe | 15 |
@@ -130,6 +130,7 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-108 | Character Settings Dashboard | — | `done` | 2026-02-23 | Core character_dashboard module (settings merge, label builders), API handlers (get_dashboard, patch_settings), frontend feature (CharacterDashboard, MetadataSummarySection, PipelineSettingsEditor), 27 tests. |
 | PRD-120 | Scene & Workflow Naming Hierarchy (Generation Script) | — | `done` | 2026-03-01 | Python generation script only. Three-level hierarchy (WORKFLOWS, SCENE_TYPES, derived SCENES), display names in all output, dual-level filtering (type + scene), --list-scenes flag, 26 unit tests. Independent of web app. |
 | PRD-123 | Scene Catalog & Scene Types Unification | 1 | `done` | — | Absorbs scene_catalog into scene_types. Adds slug + has_clothes_off_transition to scene_types, creates scene_type_tracks junction, migrates project_scene_settings and character_scene_overrides FKs, drops scene_catalog tables, unifies frontend to single "Scene Catalog" page. |
+| PRD-127 | ComfyUI Output Handling & Artifact Storage | 1 | `done` | 2026-03-06 | Migration (scene_video_version_artifacts), artifact model/repo, output_classifier module (node title convention `[final]`/`[intermediate]`, positional fallback, 7 tests), snapshot builder (2 tests), version_creator, extended completion_handler for multi-output download, generation_snapshot on CreateSceneVideoVersion, artifacts API endpoint, frontend ArtifactTimeline component in ClipCard. Supports all 3 workflow patterns (multi-segment, single-output, single+intermediates). Deps: PRD-005, PRD-024, PRD-001. |
 
 ## Part 4: Design System & UX Patterns
 
@@ -258,3 +259,4 @@ Source of truth: [`design/design.md`](../design.md)
 | 2026-03-06 | Added PRD-125 (LLM-Driven Metadata Refinement Pipeline). LLM formatting/enrichment of Bio+ToV data, iterative `fix_metadata.py` execution with quality checking, diff-based human approval, "Outdated" dependency chain (Bio/ToV change flags metadata), source file protection (import never overwrites bio.json/tov.json). Deps: PRD-009, PRD-013, PRD-014, PRD-066, PRD-113. Total PRDs: 125 + 15 MAYBEs = 140. |
 | 2026-03-06 | Added PRD-126 (Critical Bug Fixes & UX Polish). 13 items: import timeout fix, Select All bug, empty versions, UTF-8 metadata, DnD groups, ignore deliverable toggle, show/hide disabled, breadcrumb scroll, header consolidation, wider inputs, filename mismatch warning, import skip guard, import race condition. Deps: PRD-112, PRD-113, PRD-108, PRD-109. Total PRDs: 126 + 15 MAYBEs = 141. |
 | 2026-03-06 | Added PRD-124 (Speech & TTS Repository). Normalized speech text storage per character (speech_types lookup + character_speeches table), CRUD API (8 endpoints), Speech tab in Character Detail page, bulk CSV/JSON import/export, read-only VoiceID display. MVP is text-only; TTS audio generation deferred to post-MVP. Deps: PRD-00, PRD-01, PRD-29, PRD-112. Total PRDs: 127 + 15 MAYBEs = 142. |
+| 2026-03-06 | Added + implemented PRD-127 (ComfyUI Output Handling & Artifact Storage). Unified pipeline output handling for all ComfyUI workflow patterns. Migration (artifacts table), output classifier with node title convention, snapshot builder, version creator, multi-output completion handler, artifacts API endpoint, frontend ArtifactTimeline in ClipCard. 18 pipeline tests. Total PRDs: 128 + 15 MAYBEs = 143. |
