@@ -1,8 +1,10 @@
 # X121 Platform — Build Plan
 
-Optimal build order for all 120 PRDs, organized into dependency-ordered phases.
+Optimal build order for all 127 PRDs, organized into dependency-ordered phases.
 Each phase can begin only after all prior phases are complete. PRDs within a phase
 can be built **in parallel** (dependencies are satisfied by earlier phases).
+
+> **All 127 PRDs are complete as of 2026-03-06.** This document is retained as the authoritative record of the build order and dependency structure.
 
 > **Source of truth:** Cross-Reference Map in [`design/design.md`](../design.md) (Appendix)
 > **Status tracking:** [`PRD-STATUS.md`](./PRD-STATUS.md)
@@ -110,256 +112,256 @@ This phase contains no PRD work — only structural setup.
 
 ---
 
-## Phase 0 — Platform Skeleton
+## Phase 0 — Platform Skeleton ✅
 
 **Goal:** Establish the three foundational pillars that everything else builds on.
 **Milestone:** Database runs, Rust backend serves requests, Design System renders components.
 
-| # | PRD | Title | Effort | Notes |
-|---|-----|-------|--------|-------|
-| 1 | PRD-00 | Database Normalization & Strict Integrity | M | 3NF schema, lookup tables, FK constraints. Must be first. |
-| 2 | PRD-02 | Backend Foundation (Rust/Axum) | L | Axum, SQLx, Tokio. HTTP + WebSocket server shell. |
-| 3 | PRD-29 | Design System & Shared Component Library | L | Token architecture, primitives, theme system, Storybook. |
+| # | PRD | Title | Effort | Notes | Status |
+|---|-----|-------|--------|-------|--------|
+| 1 | PRD-00 | Database Normalization & Strict Integrity | M | 3NF schema, lookup tables, FK constraints. Must be first. | **DONE** |
+| 2 | PRD-02 | Backend Foundation (Rust/Axum) | L | Axum, SQLx, Tokio. HTTP + WebSocket server shell. | **DONE** |
+| 3 | PRD-29 | Design System & Shared Component Library | L | Token architecture, primitives, theme system, Storybook. | **DONE** |
 
 **Parallel tracks:** PRD-00 + PRD-02 (backend team) || PRD-29 (frontend team)
 **Dependencies satisfied:** None required.
 
 ---
 
-## Phase 1 — Core Services & Playback
+## Phase 1 — Core Services & Playback ✅
 
 **Goal:** Data model, ComfyUI bridge, event backbone, hardware monitoring, video player.
 **Milestone:** Can store entities in DB, connect to ComfyUI, emit/subscribe events, play video.
 
-| # | PRD | Title | Effort | Track | Depends On |
-|---|-----|-------|--------|-------|------------|
-| 4 | PRD-01 | Project, Character & Scene Data Model | L | Backend | PRD-00 |
-| 5 | PRD-05 | ComfyUI WebSocket Bridge | M | Backend | PRD-02 |
-| 6 | PRD-06 | Hardware Monitoring & Direct Control | M | Backend | PRD-02 |
-| 7 | PRD-09 | Multi-Runtime Script Orchestrator | M | Backend | PRD-02 |
-| 8 | PRD-10 | Event Bus & Notification System | M | Backend | PRD-02 |
-| 9 | PRD-83 | Video Playback Engine & Codec Support | L | Frontend | PRD-29 |
+| # | PRD | Title | Effort | Track | Depends On | Status |
+|---|-----|-------|--------|-------|------------|--------|
+| 4 | PRD-01 | Project, Character & Scene Data Model | L | Backend | PRD-00 | **DONE** |
+| 5 | PRD-05 | ComfyUI WebSocket Bridge | M | Backend | PRD-02 | **DONE** |
+| 6 | PRD-06 | Hardware Monitoring & Direct Control | M | Backend | PRD-02 | **DONE** |
+| 7 | PRD-09 | Multi-Runtime Script Orchestrator | M | Backend | PRD-02 | **DONE** |
+| 8 | PRD-10 | Event Bus & Notification System | M | Backend | PRD-02 | **DONE** |
+| 9 | PRD-83 | Video Playback Engine & Codec Support | L | Frontend | PRD-29 | **DONE** |
 
 **Parallel tracks:** PRD-01 (data) || PRD-05 + PRD-06 + PRD-09 + PRD-10 (infra) || PRD-83 (frontend)
 
 ---
 
-## Phase 2 — Auth, Validation, Assets & UI Framework
+## Phase 2 — Auth, Validation, Assets & UI Framework ✅
 
 **Goal:** User auth, data validation, asset tracking, tags, and the UI shell components.
 **Milestone:** Users can log in, data is validated on ingest, assets are tracked, UI layout works.
 
 ### Track A — Backend Core
 
-| # | PRD | Title | Effort | Depends On |
-|---|-----|-------|--------|------------|
-| 10 | PRD-03 | User Identity & RBAC | M | PRD-01, PRD-02 |
-| 11 | PRD-07 | Parallel Task Execution Engine | M | PRD-02, PRD-05 |
-| 12 | PRD-14 | Data Validation & Import Integrity | M | PRD-00, PRD-01 |
-| 13 | PRD-15 | Intelligent & Deferred Disk Reclamation | M | PRD-01 |
-| 14 | PRD-17 | Asset Registry & Dependency Mapping | M | PRD-01 |
-| 15 | PRD-22 | Source Image Quality Assurance | M | PRD-01 |
-| 16 | PRD-47 | Tagging & Custom Labels | S | PRD-01 |
-| 17 | PRD-109 | Scene Video Versioning, Import & Soft Delete | L | PRD-00, PRD-01, PRD-02 |
-| 18 | PRD-111 | Scene Catalog & Track Management | M | PRD-00, PRD-01, PRD-02, PRD-29 |
-| 19 | PRD-113 | Character Ingest Pipeline | L | PRD-00, PRD-01, PRD-02, PRD-14 |
-| 20 | PRD-116 | Dynamic File & Entity Naming Engine | M | PRD-01, PRD-02, PRD-29 |
+| # | PRD | Title | Effort | Depends On | Status |
+|---|-----|-------|--------|------------|--------|
+| 10 | PRD-03 | User Identity & RBAC | M | PRD-01, PRD-02 | **DONE** |
+| 11 | PRD-07 | Parallel Task Execution Engine | M | PRD-02, PRD-05 | **DONE** |
+| 12 | PRD-14 | Data Validation & Import Integrity | M | PRD-00, PRD-01 | **DONE** |
+| 13 | PRD-15 | Intelligent & Deferred Disk Reclamation | M | PRD-01 | **DONE** |
+| 14 | PRD-17 | Asset Registry & Dependency Mapping | M | PRD-01 | **DONE** |
+| 15 | PRD-22 | Source Image Quality Assurance | M | PRD-01 | **DONE** |
+| 16 | PRD-47 | Tagging & Custom Labels | S | PRD-01 | **DONE** |
+| 17 | PRD-109 | Scene Video Versioning, Import & Soft Delete | L | PRD-00, PRD-01, PRD-02 | **DONE** |
+| 18 | PRD-111 | Scene Catalog & Track Management | M | PRD-00, PRD-01, PRD-02, PRD-29 | **DONE** |
+| 19 | PRD-113 | Character Ingest Pipeline | L | PRD-00, PRD-01, PRD-02, PRD-14 | **DONE** |
+| 20 | PRD-116 | Dynamic File & Entity Naming Engine | M | PRD-01, PRD-02, PRD-29 | **DONE** |
 
 ### Track B — UI Framework & Shell
 
-| # | PRD | Title | Effort | Depends On |
-|---|-----|-------|--------|------------|
-| 17 | PRD-30 | Modular Layout & Panel Management | M | PRD-29 |
-| 18 | PRD-32 | Progressive Disclosure & UX Intelligence | S | PRD-29 |
-| 19 | PRD-36 | Cinema Mode & Sync-Play Grid | M | PRD-29 |
-| 20 | PRD-37 | QA Visual Aids (Ghosting, ROI, Jog Dial) | M | PRD-29, PRD-83 |
-| 21 | PRD-52 | Keyboard Shortcut System & Presets | M | PRD-29 |
-| 22 | PRD-110 | Admin Platform Settings Panel | M | PRD-00, PRD-02 |
-| 23 | PRD-112 | Project Hub & Management | M | PRD-00, PRD-01, PRD-02, PRD-29 |
-| 24 | PRD-117 | System Status Footer Bar | M | PRD-02, PRD-10, PRD-29 |
+| # | PRD | Title | Effort | Depends On | Status |
+|---|-----|-------|--------|------------|--------|
+| 17 | PRD-30 | Modular Layout & Panel Management | M | PRD-29 | **DONE** |
+| 18 | PRD-32 | Progressive Disclosure & UX Intelligence | S | PRD-29 | **DONE** |
+| 19 | PRD-36 | Cinema Mode & Sync-Play Grid | M | PRD-29 | **DONE** |
+| 20 | PRD-37 | QA Visual Aids (Ghosting, ROI, Jog Dial) | M | PRD-29, PRD-83 | **DONE** |
+| 21 | PRD-52 | Keyboard Shortcut System & Presets | M | PRD-29 | **DONE** |
+| 22 | PRD-110 | Admin Platform Settings Panel | M | PRD-00, PRD-02 | **DONE** |
+| 23 | PRD-112 | Project Hub & Management | M | PRD-00, PRD-01, PRD-02, PRD-29 | **DONE** |
+| 24 | PRD-117 | System Status Footer Bar | M | PRD-02, PRD-10, PRD-29 | **DONE** |
 
 ### Track C — Monitoring Dashboards
 
-| # | PRD | Title | Effort | Depends On |
-|---|-----|-------|--------|------------|
-| 22 | PRD-41 | Performance & Benchmarking Dashboard | M | PRD-10 |
-| 23 | PRD-42 | Studio Pulse Dashboard | M | PRD-10 |
-| 24 | PRD-54 | Background Job Tray | S | PRD-10 |
-| 25 | PRD-85 | UI Plugin / Extension Architecture | L | PRD-02, PRD-10, PRD-29 |
-| 26 | PRD-118 | Live Activity Console & Logging System | L | PRD-02, PRD-10, PRD-29 |
+| # | PRD | Title | Effort | Depends On | Status |
+|---|-----|-------|--------|------------|--------|
+| 22 | PRD-41 | Performance & Benchmarking Dashboard | M | PRD-10 | **DONE** |
+| 23 | PRD-42 | Studio Pulse Dashboard | M | PRD-10 | **DONE** |
+| 24 | PRD-54 | Background Job Tray | S | PRD-10 | **DONE** |
+| 25 | PRD-85 | UI Plugin / Extension Architecture | L | PRD-02, PRD-10, PRD-29 | **DONE** |
+| 26 | PRD-118 | Live Activity Console & Logging System | L | PRD-02, PRD-10, PRD-29 | **DONE** |
 
 ---
 
-## Phase 3 — Workspace, Jobs, API & Data Management
+## Phase 3 — Workspace, Jobs, API & Data Management ✅
 
 **Goal:** Session persistence, job queue, API layer, collaboration, search, image pipeline entry point.
 **Milestone:** Jobs can be queued and scheduled, API is accessible, search works, images can be managed.
 
 ### Track A — Backend Services
 
-| # | PRD | Title | Effort | Depends On |
-|---|-----|-------|--------|------------|
-| 26 | PRD-04 | Session & Workspace Persistence | M | PRD-01, PRD-03 |
-| 27 | PRD-08 | Queue Management & Job Scheduling | L | PRD-07 |
-| 28 | PRD-11 | Real-time Collaboration Layer | M | PRD-02, PRD-03, PRD-10 |
-| 29 | PRD-12 | External API & Webhooks | L | PRD-02, PRD-03 |
-| 30 | PRD-28 | Pipeline Error Recovery & Checkpointing | M | PRD-07 |
-| 31 | PRD-45 | Audit Logging & Compliance | M | PRD-01, PRD-03 |
+| # | PRD | Title | Effort | Depends On | Status |
+|---|-----|-------|--------|------------|--------|
+| 26 | PRD-04 | Session & Workspace Persistence | M | PRD-01, PRD-03 | **DONE** |
+| 27 | PRD-08 | Queue Management & Job Scheduling | L | PRD-07 | **DONE** |
+| 28 | PRD-11 | Real-time Collaboration Layer | M | PRD-02, PRD-03, PRD-10 | **DONE** |
+| 29 | PRD-12 | External API & Webhooks | L | PRD-02, PRD-03 | **DONE** |
+| 30 | PRD-28 | Pipeline Error Recovery & Checkpointing | M | PRD-07 | **DONE** |
+| 31 | PRD-45 | Audit Logging & Compliance | M | PRD-01, PRD-03 | **DONE** |
 
 ### Track B — Data & Storage
 
-| # | PRD | Title | Effort | Depends On |
-|---|-----|-------|--------|------------|
-| 32 | PRD-13 | Dual-Metadata System (JSON) | M | PRD-01, PRD-14 |
-| 33 | PRD-16 | Folder-to-Entity Bulk Importer | M | PRD-01, PRD-14 |
-| 34 | PRD-20 | Search & Discovery Engine | L | PRD-00, PRD-01, PRD-47 |
-| 35 | PRD-21 | Source Image Management & Variant Generation | L | PRD-01, PRD-22 |
-| 36 | PRD-66 | Character Metadata Editor | M | PRD-01, PRD-14 |
+| # | PRD | Title | Effort | Depends On | Status |
+|---|-----|-------|--------|------------|--------|
+| 32 | PRD-13 | Dual-Metadata System (JSON) | M | PRD-01, PRD-14 | **DONE** |
+| 33 | PRD-16 | Folder-to-Entity Bulk Importer | M | PRD-01, PRD-14 | **DONE** |
+| 34 | PRD-20 | Search & Discovery Engine | L | PRD-00, PRD-01, PRD-47 | **DONE** |
+| 35 | PRD-21 | Source Image Management & Variant Generation | L | PRD-01, PRD-22 | **DONE** |
+| 36 | PRD-66 | Character Metadata Editor | M | PRD-01, PRD-14 | **DONE** |
 
 ### Track C — UI
 
-| # | PRD | Title | Effort | Depends On |
-|---|-----|-------|--------|------------|
-| 37 | PRD-33 | Node-Based Workflow Canvas | L | PRD-29, PRD-05 |
-| 38 | PRD-35 | One-Key Approval & Finalization Flow | M | PRD-03, PRD-83 |
-| 39 | PRD-44 | Bug Reporting & App Config Export | S | PRD-02, PRD-29 |
-| 40 | PRD-53 | First-Run Experience & Onboarding | M | PRD-03, PRD-42 |
+| # | PRD | Title | Effort | Depends On | Status |
+|---|-----|-------|--------|------------|--------|
+| 37 | PRD-33 | Node-Based Workflow Canvas | L | PRD-29, PRD-05 | **DONE** |
+| 38 | PRD-35 | One-Key Approval & Finalization Flow | M | PRD-03, PRD-83 | **DONE** |
+| 39 | PRD-44 | Bug Reporting & App Config Export | S | PRD-02, PRD-29 | **DONE** |
+| 40 | PRD-53 | First-Run Experience & Onboarding | M | PRD-03, PRD-42 | **DONE** |
 
 ---
 
-## Phase 4 — Scene Config, Workers, Embeddings & Collaboration
+## Phase 4 — Scene Config, Workers, Embeddings & Collaboration ✅
 
 **Goal:** Scene types defined, worker pool managed, character embeddings, review collaboration.
 **Milestone:** Scene types can be configured, workers registered, faces embedded, reviews threaded.
 
 ### Track A — Generation Infrastructure
 
-| # | PRD | Title | Effort | Depends On |
-|---|-----|-------|--------|------------|
-| 41 | PRD-23 | Scene Type Configuration | L | PRD-01, PRD-17, PRD-21 |
-| 42 | PRD-46 | Worker Pool Management | L | PRD-02, PRD-07, PRD-08 |
-| 43 | PRD-76 | Character Identity Embedding | M | PRD-01, PRD-20, PRD-22 |
+| # | PRD | Title | Effort | Depends On | Status |
+|---|-----|-------|--------|------------|--------|
+| 41 | PRD-23 | Scene Type Configuration | L | PRD-01, PRD-17, PRD-21 | **DONE** |
+| 42 | PRD-46 | Worker Pool Management | L | PRD-02, PRD-07, PRD-08 | **DONE** |
+| 43 | PRD-76 | Character Identity Embedding | M | PRD-01, PRD-20, PRD-22 | **DONE** |
 
 ### Track B — Data & Storage
 
-| # | PRD | Title | Effort | Depends On |
-|---|-----|-------|--------|------------|
-| 44 | PRD-48 | External & Tiered Storage | M | PRD-15 |
-| 45 | PRD-51 | Undo/Redo Architecture | L | PRD-04, PRD-47 |
-| 46 | PRD-60 | Character Library (Cross-Project) | L | PRD-01, PRD-03, PRD-20, PRD-21 |
+| # | PRD | Title | Effort | Depends On | Status |
+|---|-----|-------|--------|------------|--------|
+| 44 | PRD-48 | External & Tiered Storage | M | PRD-15 | **DONE** |
+| 45 | PRD-51 | Undo/Redo Architecture | L | PRD-04, PRD-47 | **DONE** |
+| 46 | PRD-60 | Character Library (Cross-Project) | L | PRD-01, PRD-03, PRD-20, PRD-21 | **DONE** |
 
 ### Track C — UI & Review
 
-| # | PRD | Title | Effort | Depends On |
-|---|-----|-------|--------|------------|
-| 47 | PRD-31 | Command Palette & Navigation (Cmd+K) | M | PRD-20, PRD-52 |
-| 48 | PRD-34 | Interactive Debugger (Mid-Run Control) | M | PRD-05, PRD-33 |
-| 49 | PRD-38 | Collaborative Review (Notes, Memos, Issues) | M | PRD-10, PRD-11 |
+| # | PRD | Title | Effort | Depends On | Status |
+|---|-----|-------|--------|------------|--------|
+| 47 | PRD-31 | Command Palette & Navigation (Cmd+K) | M | PRD-20, PRD-52 | **DONE** |
+| 48 | PRD-34 | Interactive Debugger (Mid-Run Control) | M | PRD-05, PRD-33 | **DONE** |
+| 49 | PRD-38 | Collaborative Review (Notes, Memos, Issues) | M | PRD-10, PRD-11 | **DONE** |
 
 ---
 
-## Phase 5 — Video Generation Core
+## Phase 5 — Video Generation Core ✅
 
 **Goal:** The actual video generation pipeline — recursive generation, quality gates, assembly.
 **Milestone:** Can generate multi-segment videos, auto-QA runs, scenes assembled for delivery.
 
 ### Track A — Pipeline
 
-| # | PRD | Title | Effort | Depends On |
-|---|-----|-------|--------|------------|
-| 50 | PRD-24 | Recursive Video Generation Loop | XL | PRD-05, PRD-07, PRD-21, PRD-23, PRD-28 |
-| 51 | PRD-27 | Template & Preset System | M | PRD-23, PRD-33 |
+| # | PRD | Title | Effort | Depends On | Status |
+|---|-----|-------|--------|------------|--------|
+| 50 | PRD-24 | Recursive Video Generation Loop | XL | PRD-05, PRD-07, PRD-21, PRD-23, PRD-28 | **DONE** |
+| 51 | PRD-27 | Template & Preset System | M | PRD-23, PRD-33 | **DONE** |
 
 ### Track B — Post-Generation
 
-| # | PRD | Title | Effort | Depends On |
-|---|-----|-------|--------|------------|
-| 52 | PRD-39 | Scene Assembler & Delivery Packaging | L | PRD-01, PRD-24, PRD-35 |
-| 53 | PRD-49 | Automated Quality Gates | L | PRD-24, PRD-28, PRD-10 |
+| # | PRD | Title | Effort | Depends On | Status |
+|---|-----|-------|--------|------------|--------|
+| 52 | PRD-39 | Scene Assembler & Delivery Packaging | L | PRD-01, PRD-24, PRD-35 | **DONE** |
+| 53 | PRD-49 | Automated Quality Gates | L | PRD-24, PRD-28, PRD-10 | **DONE** |
 
 ### Track C — Supporting Features
 
-| # | PRD | Title | Effort | Depends On |
-|---|-----|-------|--------|------------|
-| 54 | PRD-43 | System Integrity & Repair Tools | M | PRD-17, PRD-46 |
-| 55 | PRD-56 | Studio Wiki & Contextual Help | M | PRD-20, PRD-42 |
-| 56 | PRD-79 | Character Duplicate Detection | M | PRD-01, PRD-20, PRD-76 |
-| 57 | PRD-104 | Model & LoRA Download Manager | M | PRD-17, PRD-46 |
-| 58 | PRD-114 | Cloud GPU Provider Integration (RunPod) | XL | PRD-02, PRD-05, PRD-07, PRD-08, PRD-46 |
+| # | PRD | Title | Effort | Depends On | Status |
+|---|-----|-------|--------|------------|--------|
+| 54 | PRD-43 | System Integrity & Repair Tools | M | PRD-17, PRD-46 | **DONE** |
+| 55 | PRD-56 | Studio Wiki & Contextual Help | M | PRD-20, PRD-42 | **DONE** |
+| 56 | PRD-79 | Character Duplicate Detection | M | PRD-01, PRD-20, PRD-76 | **DONE** |
+| 57 | PRD-104 | Model & LoRA Download Manager | M | PRD-17, PRD-46 | **DONE** |
+| 58 | PRD-114 | Cloud GPU Provider Integration (RunPod) | XL | PRD-02, PRD-05, PRD-07, PRD-08, PRD-46 | **DONE** |
 
 **Critical path:** PRD-24 (Generation Loop) is the highest-risk, highest-effort item in the entire project. Consider starting a spike/prototype in Phase 4.
 
 ---
 
-## Phase 6 — Production at Scale
+## Phase 6 — Production at Scale ✅
 
 **Goal:** Batch orchestration, scene previews, cost estimation, multi-resolution, storyboards.
 **Milestone:** Can run full production batches, estimate costs, preview cheaply, review storyboards.
 
 ### Track A — Orchestration
 
-| # | PRD | Title | Effort | Depends On |
-|---|-----|-------|--------|------------|
-| 58 | PRD-57 | Batch Production Orchestrator | XL | PRD-01, PRD-08, PRD-10, PRD-21, PRD-23, PRD-24, PRD-35, PRD-39, PRD-42, PRD-46 |
-| 59 | PRD-25 | Incremental Re-stitching & Smoothing | M | PRD-24 |
-| 60 | PRD-26 | Temporal Continuity (Normalization & Sync) | M | PRD-24, PRD-76 |
+| # | PRD | Title | Effort | Depends On | Status |
+|---|-----|-------|--------|------------|--------|
+| 58 | PRD-57 | Batch Production Orchestrator | XL | PRD-01, PRD-08, PRD-10, PRD-21, PRD-23, PRD-24, PRD-35, PRD-39, PRD-42, PRD-46 | **DONE** |
+| 59 | PRD-25 | Incremental Re-stitching & Smoothing | M | PRD-24 | **DONE** |
+| 60 | PRD-26 | Temporal Continuity (Normalization & Sync) | M | PRD-24, PRD-76 | **DONE** |
 
 ### Track B — Efficiency
 
-| # | PRD | Title | Effort | Depends On |
-|---|-----|-------|--------|------------|
-| 61 | PRD-58 | Scene Preview & Quick Test | M | PRD-21, PRD-23, PRD-24, PRD-36 |
-| 62 | PRD-59 | Multi-Resolution Pipeline | M | PRD-24, PRD-36, PRD-39 |
-| 63 | PRD-61 | Cost & Resource Estimation | M | PRD-08, PRD-41, PRD-46, PRD-57 |
+| # | PRD | Title | Effort | Depends On | Status |
+|---|-----|-------|--------|------------|--------|
+| 61 | PRD-58 | Scene Preview & Quick Test | M | PRD-21, PRD-23, PRD-24, PRD-36 | **DONE** |
+| 62 | PRD-59 | Multi-Resolution Pipeline | M | PRD-24, PRD-36, PRD-39 | **DONE** |
+| 63 | PRD-61 | Cost & Resource Estimation | M | PRD-08, PRD-41, PRD-46, PRD-57 | **DONE** |
 
 ### Track C — Visual Review
 
-| # | PRD | Title | Effort | Depends On |
-|---|-----|-------|--------|------------|
-| 64 | PRD-62 | Storyboard View & Scene Thumbnails | M | PRD-24, PRD-36, PRD-57 |
-| 65 | PRD-69 | Generation Provenance & Asset Versioning | M | PRD-01, PRD-17, PRD-21, PRD-24 |
-| 66 | PRD-78 | Segment Trimming & Frame-Level Editing | M | PRD-24, PRD-35 |
+| # | PRD | Title | Effort | Depends On | Status |
+|---|-----|-------|--------|------------|--------|
+| 64 | PRD-62 | Storyboard View & Scene Thumbnails | M | PRD-24, PRD-36, PRD-57 | **DONE** |
+| 65 | PRD-69 | Generation Provenance & Asset Versioning | M | PRD-01, PRD-17, PRD-21, PRD-24 | **DONE** |
+| 66 | PRD-78 | Segment Trimming & Frame-Level Editing | M | PRD-24, PRD-35 | **DONE** |
 
 ---
 
-## Phase 7 — Advanced Pipeline & Workflow Tools
+## Phase 7 — Advanced Pipeline & Workflow Tools ✅
 
 **Goal:** Workflow import/validation, pipeline hooks, prompt editing, project templates.
 **Milestone:** Workflows are validated before use, hooks extend the pipeline, prompts are versioned.
 
-| # | PRD | Title | Effort | Track | Depends On |
-|---|-----|-------|--------|-------|------------|
-| 67 | PRD-63 | Prompt Editor & Versioning | M | Frontend | PRD-23, PRD-58 |
-| 68 | PRD-75 | ComfyUI Workflow Import & Validation | L | Backend | PRD-17, PRD-23, PRD-43, PRD-46 |
-| 69 | PRD-77 | Pipeline Stage Hooks (Custom Scripts) | M | Backend | PRD-09, PRD-10, PRD-75 |
-| 70 | PRD-74 | Project Configuration Templates | M | Backend | PRD-23, PRD-27 |
-| 71 | PRD-64 | Failure Pattern Tracking & Insights | M | Data | PRD-17, PRD-41, PRD-49 |
-| 72 | PRD-50 | Content Branching & Exploration | L | Backend | PRD-01, PRD-15, PRD-36 |
-| 73 | PRD-70 | On-Frame Annotation & Markup | M | Frontend | PRD-38, PRD-29 |
-| 74 | PRD-95 | Production Notes & Internal Comments | M | Frontend | PRD-10, PRD-20, PRD-38 |
+| # | PRD | Title | Effort | Track | Depends On | Status |
+|---|-----|-------|--------|-------|------------|--------|
+| 67 | PRD-63 | Prompt Editor & Versioning | M | Frontend | PRD-23, PRD-58 | **DONE** |
+| 68 | PRD-75 | ComfyUI Workflow Import & Validation | L | Backend | PRD-17, PRD-23, PRD-43, PRD-46 | **DONE** |
+| 69 | PRD-77 | Pipeline Stage Hooks (Custom Scripts) | M | Backend | PRD-09, PRD-10, PRD-75 | **DONE** |
+| 70 | PRD-74 | Project Configuration Templates | M | Backend | PRD-23, PRD-27 | **DONE** |
+| 71 | PRD-64 | Failure Pattern Tracking & Insights | M | Data | PRD-17, PRD-41, PRD-49 | **DONE** |
+| 72 | PRD-50 | Content Branching & Exploration | L | Backend | PRD-01, PRD-15, PRD-36 | **DONE** |
+| 73 | PRD-70 | On-Frame Annotation & Markup | M | Frontend | PRD-38, PRD-29 | **DONE** |
+| 74 | PRD-95 | Production Notes & Internal Comments | M | Frontend | PRD-10, PRD-20, PRD-38 | **DONE** |
 | 75 | PRD-115 | Generation Strategy & Workflow Prompt Management | L | Full-Stack | PRD-23, PRD-24, PRD-63, PRD-75 | **DONE** 2026-02-28 |
 
 ---
 
-## Phase 8 — Onboarding, Bulk Ops & Character Dashboards
+## Phase 8 — Onboarding, Bulk Ops & Character Dashboards ✅
 
 **Goal:** Bulk character workflows, batch metadata, character readiness views.
 **Milestone:** Can onboard characters in bulk via CSV, see readiness state, manage metadata at scale.
 
-| # | PRD | Title | Effort | Track | Depends On |
-|---|-----|-------|--------|-------|------------|
-| 75 | PRD-67 | Bulk Character Onboarding Wizard | L | Frontend | PRD-21, PRD-22, PRD-23, PRD-46, PRD-57, PRD-60, PRD-61, PRD-66 |
-| 76 | PRD-88 | Batch Metadata Operations | M | Backend | PRD-45, PRD-51, PRD-60, PRD-66 |
-| 77 | PRD-86 | Legacy Data Import & Migration Toolkit | L | Backend | PRD-01, PRD-60, PRD-66, PRD-76, PRD-79 |
-| 78 | PRD-107 | Character Readiness & State View | M | Frontend | PRD-01, PRD-60 |
-| 79 | PRD-108 | Character Settings Dashboard | M | Frontend | PRD-01, PRD-60, PRD-107 |
-| 80 | PRD-18 | Bulk Data Maintenance (Search/Replace/Re-path) | M | Backend | PRD-01, PRD-20 |
-| 81 | PRD-124 | Speech & TTS Repository | M | Full-Stack | PRD-00, PRD-01, PRD-29, PRD-112 |
-| 125 | PRD-125 | LLM-Driven Metadata Refinement Pipeline | L | Full-Stack | PRD-009, PRD-013, PRD-014, PRD-066, PRD-113 |
+| # | PRD | Title | Effort | Track | Depends On | Status |
+|---|-----|-------|--------|-------|------------|--------|
+| 75 | PRD-67 | Bulk Character Onboarding Wizard | L | Frontend | PRD-21, PRD-22, PRD-23, PRD-46, PRD-57, PRD-60, PRD-61, PRD-66 | **DONE** |
+| 76 | PRD-88 | Batch Metadata Operations | M | Backend | PRD-45, PRD-51, PRD-60, PRD-66 | **DONE** |
+| 77 | PRD-86 | Legacy Data Import & Migration Toolkit | L | Backend | PRD-01, PRD-60, PRD-66, PRD-76, PRD-79 | **DONE** |
+| 78 | PRD-107 | Character Readiness & State View | M | Frontend | PRD-01, PRD-60 | **DONE** |
+| 79 | PRD-108 | Character Settings Dashboard | M | Frontend | PRD-01, PRD-60, PRD-107 | **DONE** |
+| 80 | PRD-18 | Bulk Data Maintenance (Search/Replace/Re-path) | M | Backend | PRD-01, PRD-20 | **DONE** |
+| 81 | PRD-124 | Speech & TTS Repository | M | Full-Stack | PRD-00, PRD-01, PRD-29, PRD-112 | **DONE** |
+| 125 | PRD-125 | LLM-Driven Metadata Refinement Pipeline | L | Full-Stack | PRD-009, PRD-013, PRD-014, PRD-066, PRD-113 | **DONE** |
 
 ---
 
-## Phase 9 — Advanced Review & Comparison
+## Phase 9 — Advanced Review & Comparison ✅
 
 **Goal:** Cross-character comparison, batch review, scene type QA, smart retry.
 **Milestone:** Can compare scenes across characters, review in bulk, auto-retry failures.
@@ -389,7 +391,7 @@ This phase contains no PRD work — only structural setup.
 
 ---
 
-## Phase 10 — Reporting, Delivery & Lifecycle
+## Phase 10 — Reporting, Delivery & Lifecycle ✅
 
 **Goal:** Production reports, compliance checks, project lifecycle, external sharing.
 **Milestone:** Full production reporting, compliant delivery packages, projects can be archived.
@@ -419,7 +421,7 @@ This phase contains no PRD work — only structural setup.
 
 ---
 
-## Phase 11 — Advanced Infrastructure & Admin
+## Phase 11 — Advanced Infrastructure & Admin ✅
 
 **Goal:** GPU power management, budgets, advanced scheduling, system health, backups.
 **Milestone:** GPU fleet is power-managed, budgets enforced, system health visible, backups automated.
@@ -451,7 +453,7 @@ This phase contains no PRD work — only structural setup.
 
 ---
 
-## Phase 12 — Polish, Recovery & Final Features
+## Phase 12 — Polish, Recovery & Final Features ✅
 
 **Goal:** Backup/DR, platform setup wizard, dashboard customization, mobile review, remaining polish.
 **Milestone:** Platform is production-hardened with disaster recovery, setup wizard, and full UX polish.
@@ -466,7 +468,7 @@ This phase contains no PRD work — only structural setup.
 
 ---
 
-## Standalone — Python Generation Scripts
+## Standalone — Python Generation Scripts ✅
 
 **Goal:** Improvements to the standalone Python generation scripts (`scripts/python/`). These are independent of the web application and have no Rust/React/DB dependencies. Can be done at any time.
 
@@ -544,7 +546,7 @@ PRD-29 → PRD-83 → PRD-35 → PRD-57
 | 11 | 10 | Admin Infrastructure | GPU power, budgets, health, webhooks, observability, time scheduling |
 | 12 | 4 | Polish & Hardening | Backup/DR, mobile review, setup wizard, dashboard config |
 | Standalone | 1 | Python Scripts | Scene naming hierarchy for generation script |
-| **Total** | **122** | | |
+| **Total** | **127** | | |
 
 ---
 

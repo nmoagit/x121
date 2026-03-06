@@ -1,17 +1,21 @@
 # Frontend Wiring Status
 
-Tracks which completed PRDs have frontend features that are accessible via routes/navigation
-versus those that are implemented but unreachable by users.
+Tracks which completed PRDs have frontend features accessible via routes/navigation
+versus those that are implemented but need integration into host pages.
 
-**Last updated:** 2026-03-01
+**Last updated:** 2026-03-06
+
+**All 127 PRDs are complete.** No PRDs remain in planning.
 
 ## Summary
 
 | Category | Count |
 |----------|-------|
-| Routed (accessible via sidebar/nav) | 70 |
-| Correctly unrouted (overlays/framework/embedded) | 12 |
-| Missing routes (should be wired up) | 9 |
+| Routed (accessible via sidebar/nav) | 71 |
+| Correctly unrouted (overlays/framework/embedded) | 13 |
+| Missing routes (need host-page integration) | 29 |
+| No frontend (backend/script only) | 14 |
+| **Total** | **127** |
 
 ---
 
@@ -29,9 +33,8 @@ These features have routes in `router.tsx` and entries in `navigation.ts`.
 | `/content/library` | `library` | PRD-60 |
 | `/content/storyboard` | `storyboard` | PRD-62 |
 | `/content/images` | `images` | PRD-21 |
-| `/content/scene-types` | `scene-types` | PRD-23 |
+| `/content/scene-catalog` | `scene-catalog` | PRD-23, PRD-111 |
 | `/content/character-dashboard` | `character-dashboard` | PRD-108 |
-| `/content/scene-catalog` | `scene-catalog` | PRD-111 |
 | `/content/contact-sheet` | `contact-sheet` | PRD-103 |
 | `/content/duplicates` | `duplicates` | PRD-79 |
 | `/production/queue` | `queue` | PRD-08 |
@@ -66,7 +69,7 @@ These features have routes in `router.tsx` and entries in `navigation.ts`.
 | `/admin/integrity` | `integrity` | PRD-43 |
 | `/admin/audit` | `audit` | PRD-45 |
 | `/admin/reclamation` | `admin` | PRD-15 |
-| `/admin/storage` | `storage` | PRD-48 |
+| `/admin/storage` | `storage` | PRD-48, PRD-122 |
 | `/admin/downloads` | `downloads` | PRD-104 |
 | `/admin/api-keys` | `api-keys` | PRD-12 |
 | `/admin/extensions` | `extensions` | PRD-85 |
@@ -76,7 +79,7 @@ These features have routes in `router.tsx` and entries in `navigation.ts`.
 | `/admin/naming` | `naming-rules` | PRD-116 |
 | `/admin/readiness` | `readiness` | PRD-107 |
 | `/admin/settings` | `settings` | PRD-110 |
-| `/admin/themes` | `admin/TokenEditor` | PRD-29 (Phase 7) |
+| `/admin/themes` | `admin/TokenEditor` | PRD-29 |
 | `/admin/cloud-gpus` | `admin/cloud-gpus` | PRD-114 |
 | `/admin/job-scheduling` | `job-scheduling` | PRD-119 |
 | `/admin/session-management` | `session-management` | PRD-98 |
@@ -99,12 +102,12 @@ These features have routes in `router.tsx` and entries in `navigation.ts`.
 
 ## Correctly Unrouted (Overlays / Framework / Embedded Widgets)
 
-These features are designed to be embedded in other views, used as overlays, or provide
-framework-level functionality. They do NOT need their own routes.
+These features are designed as overlays, framework-level utilities, or global widgets.
+They do NOT need their own routes.
 
 | Feature Dir | PRD | Reason |
 |-------------|-----|--------|
-| `bug-report` | PRD-44 | Modal/dialog triggered from UI, not a page |
+| `bug-report` | PRD-44 | Modal/dialog triggered from UI |
 | `collaboration` | PRD-11 | Presence indicators and lock badges embedded in entity views |
 | `command-palette` | PRD-31 | Global Cmd+K overlay |
 | `job-tray` | PRD-54 | Background job notification tray (global overlay) |
@@ -113,104 +116,83 @@ framework-level functionality. They do NOT need their own routes.
 | `progressive-disclosure` | PRD-32 | Focus mode, advanced drawers (framework component) |
 | `qa-aids` | PRD-37 | Ghosting, ROI, jog dial tools embedded in review player |
 | `video-player` | PRD-83 | Video playback engine embedded in review/cinema views |
-| `workspace` | PRD-04 | Session/workspace persistence (store/framework, not a page) |
-| `footer` | PRD-117 | System status footer bar (global widget in AppShell, not a page) |
+| `workspace` | PRD-04 | Session/workspace persistence (store/framework) |
+| `footer` | PRD-117 | System status footer bar (global widget in AppShell) |
 | `setup-wizard` | PRD-105 | Platform setup wizard (first-run overlay flow) |
+| — | PRD-126 | Bug fixes & UX polish (cross-cutting, no standalone UI) |
 
 ---
 
-## Missing Routes (Should Be Wired Up)
+## Missing Routes (Need Host-Page Integration)
 
-These features are implemented but designed as embedded components, not standalone pages.
-They need integration into existing host pages.
+These features are implemented as embedded components. They need integration into
+existing host pages, not standalone routes.
 
-### Embedded in existing pages (need integration, not standalone routes)
-
-| Feature Dir | PRD | Title | Embed Location | Status |
-|-------------|-----|-------|----------------|--------|
-| `embedding` | PRD-76 | Character identity embeddings | Character detail / Character Dashboard | `todo` |
-| `estimation` | PRD-61 | Cost & resource estimation | Generation page, Batch production page | `todo` |
-| `metadata` | PRD-13 | Metadata viewer/editor | Scene/character detail views | `todo` |
-| `metadata-editor` | PRD-66 | Character metadata editor | Character detail / Character Dashboard | `todo` |
-| `provenance` | PRD-69 | Generation provenance viewer | Generation page, asset detail views | `todo` |
-| `resolution` | PRD-59 | Multi-resolution tier controls | Generation page, Scene type editor | `todo` |
-| `restitching` | PRD-25 | Segment re-stitching controls | Scene detail, segment views | `todo` |
-| `review` | PRD-35 | Approval/finalization flow | Review Notes, QA Gates pages | `todo` |
-| `trimming` | PRD-78 | Segment trimming editor | Scene detail, segment views | `todo` |
+| Feature Dir | PRD | Title | Embed Location |
+|-------------|-----|-------|----------------|
+| `embedding` | PRD-76 | Character identity embeddings | Character detail / Character Dashboard |
+| `estimation` | PRD-61 | Cost & resource estimation | Generation page, Batch production page |
+| `metadata` | PRD-13 | Metadata viewer/editor | Scene/character detail views |
+| `metadata-editor` | PRD-66 | Character metadata editor | Character detail / Character Dashboard |
+| `provenance` | PRD-69 | Generation provenance viewer | Generation page, asset detail views |
+| `resolution` | PRD-59 | Multi-resolution tier controls | Generation page, Scene type editor |
+| `restitching` | PRD-25 | Segment re-stitching controls | Scene detail, segment views |
+| `review` | PRD-35 | Approval/finalization flow | Review Notes, QA Gates pages |
+| `trimming` | PRD-78 | Segment trimming editor | Scene detail, segment views |
+| `sidecar` | PRD-40 | VFX sidecar & dataset export | Production / delivery pages |
+| `directors-view` | PRD-55 | Director's view (mobile/tablet) | Responsive layout variant |
+| `regression` | PRD-65 | Workflow regression testing | Tools section |
+| `comparison` | PRD-68 | Cross-character scene comparison | Review section |
+| `auto-retry` | PRD-71 | Smart auto-retry UI | Job/queue views |
+| `project-lifecycle` | PRD-72 | Project lifecycle & archival | Projects pages (extends) |
+| `reports` | PRD-73 | Production reporting & data export | Production section |
+| `system-health` | PRD-80 | System health page | Admin section |
+| `sensitivity` | PRD-82 | Content sensitivity controls | Settings or embedded |
+| `qa-rulesets` | PRD-91 | Custom QA rulesets per scene type | Review section |
+| `batch-review` | PRD-92 | Batch review & approval workflows | Review section |
+| `consistency` | PRD-94 | Character consistency report | Content section |
+| `poster-frame` | PRD-96 | Poster frame & thumbnail selection | Scene/video views |
+| `scene-types` | PRD-100 | Scene type inheritance & composition | Scene catalog page (extends) |
+| `segment-comparison` | PRD-101 | Segment regeneration comparison | Segment views |
+| `compliance` | PRD-102 | Video compliance checker | Production section |
+| `prompt-management` | PRD-115 | Generation strategy & workflow prompts | Tools section |
+| `scenes` | PRD-121 | SVI clip management | Scene detail (ClipGallery embedded) |
+| `characters` | PRD-124 | Speech & TTS repository | Character detail page (Speech tab) |
+| `characters` | PRD-125 | LLM-driven metadata refinement | Character detail page (Metadata tab) |
 
 ---
 
-## PRDs Still in Planning (No Frontend Yet)
+## No Frontend (Backend / Script Only)
 
-These PRDs are not yet implemented. When completed, their frontend features must be
-added to this tracker and wired into the router.
+These PRDs have no frontend component or their frontend is entirely contained
+within other PRDs' pages.
 
-### High Priority
-
-| PRD | Title | Expected Route/Location |
-|-----|-------|------------------------|
-| ~~PRD-111~~ | ~~Scene Catalog & Track Management~~ | Routed at `/content/scene-catalog` |
-| ~~PRD-112~~ | ~~Project Hub & Management~~ | Routed at `/projects`, `/projects/$projectId`, `/projects/$projectId/characters/$characterId` |
-| ~~PRD-113~~ | ~~Character Ingest Pipeline~~ | Routed at `/tools/character-ingest` |
-| ~~PRD-114~~ | ~~Cloud GPU Provider Integration~~ | Routed at `/admin/cloud-gpus` |
-| PRD-115 | Generation Strategy & Workflow Prompt Management | `/tools/generation-strategy` |
-| ~~PRD-116~~ | ~~Dynamic File & Entity Naming Engine~~ | Routed at `/admin/naming` |
-| ~~PRD-117~~ | ~~System Status Footer Bar~~ | Global footer (correctly unrouted) |
-| ~~PRD-118~~ | ~~Live Activity Console & Logging System~~ | Routed at `/tools/activity-console` |
-| ~~PRD-119~~ | ~~Time-Based Job Scheduling~~ | Routed at `/admin/job-scheduling` |
-
-### Standard Priority
-
-| PRD | Title | Expected Route/Location |
-|-----|-------|------------------------|
-| ~~PRD-19~~ | ~~Disk Space Visualizer (Treemap)~~ | Routed at `/admin/disk-usage` |
-| PRD-40 | VFX Sidecar & Dataset Export | `/production/export` |
-| PRD-55 | Director's View (Mobile/Tablet) | Responsive layout variant |
-| PRD-65 | Workflow Regression Testing | `/tools/regression-tests` |
-| PRD-68 | Cross-Character Scene Comparison | `/review/comparison` |
-| PRD-71 | Smart Auto-Retry | Embedded in job/queue views |
-| PRD-72 | Project Lifecycle & Archival | `/projects` (extends) |
-| PRD-73 | Production Reporting & Data Export | `/production/reports` |
-| PRD-80 | System Health Page | `/admin/health` |
-| ~~PRD-81~~ | ~~Backup & Disaster Recovery~~ | Routed at `/admin/backups` |
-| PRD-82 | Content Sensitivity Controls | Settings or embedded |
-| ~~PRD-84~~ | ~~External Review / Shareable Preview Links~~ | Routed at `/review/share/$token` |
-| ~~PRD-87~~ | ~~GPU Power Management & Idle Scheduling~~ | Routed at `/admin/gpu-scheduling` |
-| ~~PRD-89~~ | ~~Dashboard Widget Customization~~ | Routed at `/dashboard/customize` |
-| ~~PRD-90~~ | ~~Render Queue Timeline / Gantt View~~ | Routed at `/production/render-timeline` |
-| PRD-91 | Custom QA Rulesets per Scene Type | `/review/qa-rules` |
-| PRD-92 | Batch Review & Approval Workflows | `/review/batch` |
-| ~~PRD-93~~ | ~~Generation Budget & Quota Management~~ | Routed at `/admin/budgets` |
-| PRD-94 | Character Consistency Report | `/content/consistency` |
-| PRD-96 | Poster Frame & Thumbnail Selection | Embedded in scene/video views |
-| ~~PRD-97~~ | ~~Job Dependency Chains & Triggered Workflows~~ | Routed at `/admin/trigger-workflows` |
-| ~~PRD-98~~ | ~~Session Management & Active Users~~ | Routed at `/admin/session-management` |
-| ~~PRD-99~~ | ~~Webhook & Integration Testing Console~~ | Routed at `/admin/webhook-testing` |
-| PRD-100 | Scene Type Inheritance & Composition | `/content/scene-types` (extends) |
-| PRD-101 | Segment Regeneration Comparison | Embedded in segment views |
-| PRD-102 | Video Compliance Checker | `/production/compliance` |
-| ~~PRD-103~~ | ~~Character Face Contact Sheet~~ | Routed at `/content/contact-sheet` |
-| ~~PRD-104~~ | ~~Model & LoRA Download Manager~~ | Already routed at `/admin/downloads` |
-| ~~PRD-105~~ | ~~Platform Setup Wizard~~ | Correctly unrouted (first-run overlay) |
-| ~~PRD-106~~ | ~~API Usage & Observability Dashboard~~ | Routed at `/admin/api-observability` |
-| ~~PRD-110~~ | ~~Admin Platform Settings Panel~~ | Routed at `/admin/settings` |
+| PRD | Title | Reason |
+|-----|-------|--------|
+| PRD-00 | Database Schema | Backend only |
+| PRD-02 | REST API Scaffold | Backend only |
+| PRD-03 | Video Processing Pipeline | Backend only |
+| PRD-05 | Authentication & Authorization | Auth framework (login page is PRD-12) |
+| PRD-07 | Event System (SSE) | Backend only |
+| PRD-09 | Metadata Engine | Backend only |
+| PRD-10 | Storage Layer | Backend only |
+| PRD-14 | Character Import Pipeline | Backend only |
+| PRD-17 | Seed Image Management | Backend only (UI in PRD-21) |
+| PRD-22 | Thumbnail Pipeline | Backend only |
+| PRD-47 | ComfyUI Integration | Backend only |
+| PRD-109 | Scene Video Version Pipeline | Backend only (UI in PRD-111) |
+| PRD-120 | Scene & Workflow Naming Hierarchy | Python generation script only |
+| PRD-123 | Scene Catalog & Scene Types Unification | Backend migration + UI absorbed into PRD-111 route |
 
 ---
 
 ## Maintenance Instructions
 
-**When completing a PRD that includes frontend work:**
-
-1. Add the feature to the appropriate section above (Routed, Correctly Unrouted, or Missing Routes)
-2. If the feature needs a route, add it to `router.tsx` and `navigation.ts`
-3. Move the entry from "PRDs Still in Planning" to the correct wired-up section
-4. Update the Summary counts at the top
-5. Update the "Last updated" date
-
-**When wiring up a missing route:**
+**When wiring up a missing-route feature:**
 
 1. Add the route to `apps/frontend/src/app/router.tsx`
 2. Add the nav entry to `apps/frontend/src/app/navigation.ts`
 3. Create a page wrapper in `apps/frontend/src/app/pages/` if needed
 4. Move the entry from "Missing Routes" to "Routed Features"
-5. Mark status as `done` and update counts
+5. Update the Summary counts at the top
+6. Update the "Last updated" date

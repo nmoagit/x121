@@ -21,10 +21,10 @@ Source of truth: [`design/design.md`](../design.md)
 | Status | Count |
 |--------|-------|
 | backlog | 0 |
-| planning | 2 |
+| planning | 0 |
 | in-progress | 0 |
 | review | 0 |
-| done | 125 |
+| done | 127 |
 | blocked | 0 |
 | deferred | 0 |
 | maybe | 15 |
@@ -174,7 +174,7 @@ Source of truth: [`design/design.md`](../design.md)
 
 | PRD | Title | Priority | Status | Owner | Notes |
 |-----|-------|----------|--------|-------|-------|
-| PRD-39 | Scene Assembler & Delivery Packaging | — | `done` | 2026-02-22 | |
+| PRD-39 | Scene Assembler & Delivery Packaging | — | `done` | 2026-02-22 | Amendments A.1–A.4 (2026-03-06): delivery destinations (local/S3/Google Drive), auto-deliver on final approval, delivery error logs with viewer, per-character delivery status tracking with badges. |
 | PRD-40 | VFX Sidecar & Dataset Export | — | `done` | 2026-02-28 | |
 | PRD-41 | Performance & Benchmarking Dashboard | — | `done` | — | |
 | PRD-42 | Studio Pulse Dashboard | — | `done` | — | |
