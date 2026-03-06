@@ -15,6 +15,7 @@ export interface Project {
   name: string;
   description: string | null;
   status: string;
+  auto_deliver_on_final: boolean;
   deleted_at: string | null;
   created_at: string;
   updated_at: string;
@@ -29,6 +30,7 @@ export interface UpdateProject {
   name?: string;
   description?: string;
   status?: string;
+  auto_deliver_on_final?: boolean;
 }
 
 /* --------------------------------------------------------------------------

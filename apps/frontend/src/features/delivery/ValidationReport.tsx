@@ -9,6 +9,7 @@ import { useState } from "react";
 
 import { Badge, Button } from "@/components";
 import { cn } from "@/lib/cn";
+import { SECTION_HEADING } from "@/lib/ui-classes";
 
 import { useDeliveryValidation } from "./hooks/use-delivery";
 import { SEVERITY_COLORS } from "./types";
@@ -33,7 +34,7 @@ export function ValidationReport({ projectId, initialData }: ValidationReportPro
   return (
     <div data-testid="validation-report" className="space-y-4">
       <div className="flex items-center gap-3">
-        <h3 className="text-base font-semibold text-[var(--color-text-primary)]">
+        <h3 className={SECTION_HEADING}>
           Delivery Validation
         </h3>
         <Button

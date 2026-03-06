@@ -143,3 +143,89 @@ This check is **blocking** — no PR should be merged without a DRY-GUY audit of
 
 ## 12. Version History
 - **v1.0** (2026-02-18): Initial PRD generation from master specification
+- **v1.1** (2026-03-06): Amendment — Requirements gap fill (Reqs A.1-A.4).
+
+---
+
+## Amendment (2026-03-06): Requirements Gap Fill
+
+The following requirements were identified during a stakeholder requirements review and address gaps in the original PRD. They do not modify any existing requirements.
+
+### Requirement A.1: Google Drive Destination
+
+**Description:** Support Google Drive as a delivery destination alongside S3. Destinations should be configurable at the Project Level, allowing different projects to sync to different client folders.
+
+**Acceptance Criteria:**
+- [ ] New `delivery_destinations` table (or extension of project settings) storing destination type and configuration per project
+- [ ] Supported destination types: `local` (default/existing), `s3`, `google_drive`
+- [ ] Google Drive configuration fields: OAuth credentials reference, target folder ID, shared drive ID (optional)
+- [ ] S3 configuration fields: bucket name, prefix path, region, credentials reference
+- [ ] Each project can have one or more configured delivery destinations
+- [ ] The delivery packaging pipeline (Req 1.7) supports uploading the delivery package to the configured destination(s) after local assembly
+- [ ] Upload progress is tracked and displayed in the Delivery tab
+- [ ] Configuration UI on the Project Configuration tab (PRD-112 Req 1.8) allows adding/editing/removing delivery destinations
+- [ ] Credentials are stored securely (encrypted at rest) and never exposed in API responses
+
+**Technical Notes:**
+- MVP: Implement local + Google Drive. S3 can follow as a post-MVP enhancement.
+- Use the Google Drive API v3 with service account or OAuth2 refresh tokens
+- Consider a `delivery_destination_types` lookup table for extensibility
+- Database schema: `delivery_destinations` with `id BIGSERIAL`, `project_id BIGINT`, `destination_type TEXT`, `config JSONB`, `created_at`, `updated_at`
+
+### Requirement A.2: Automated Delivery Triggers
+
+**Description:** Add an option to "Auto-Deliver on Final Approval." Once the QA checklist is completed and the character is marked "Final," the system automatically initiates the transfer to the configured destination.
+
+**Acceptance Criteria:**
+- [ ] Project-level setting: `auto_deliver_on_final BOOLEAN DEFAULT false` (stored in project settings or `delivery_destinations` config)
+- [ ] When enabled and a character's status changes to "Final/Approved":
+  1. The system checks if all enabled scenes for that character have approved final versions
+  2. If complete, the system automatically triggers delivery packaging for that character
+  3. The packaged output is uploaded to the project's configured delivery destination(s)
+- [ ] Auto-delivery is per-character (not waiting for the entire project to be complete)
+- [ ] Auto-delivery creates a `delivery_exports` record with a source indicator of "auto" (vs. "manual")
+- [ ] A notification or activity log entry is created when auto-delivery triggers (e.g., "Auto-delivered Character X to Google Drive")
+- [ ] Auto-delivery failures are logged and surfaced in the Delivery tab error log (Req A.3)
+- [ ] The setting can be toggled on/off from the Project Configuration tab or Delivery tab
+
+**Technical Notes:**
+- Implement as an event handler that listens for character status changes
+- Should be async/background — the status change API response should not wait for delivery to complete
+- Reuses the existing assembly and packaging pipeline from Reqs 1.1-1.7
+
+### Requirement A.3: Delivery Error Logs
+
+**Description:** Provide a clear, dedicated error log for delivery operations (e.g., "Google Drive: Permission Denied", "S3: Bucket Not Found"). Errors should be viewable from the Project Hub delivery tab.
+
+**Acceptance Criteria:**
+- [ ] New `delivery_logs` table recording all delivery operation events (successes and failures)
+  - Columns: `id BIGSERIAL`, `delivery_export_id BIGINT` (FK), `project_id BIGINT` (FK), `log_level TEXT` (info, warning, error), `message TEXT`, `details JSONB`, `created_at TIMESTAMPTZ`
+- [ ] Every delivery operation (upload, validation, packaging) logs its outcome to this table
+- [ ] Error entries include actionable details: destination type, error code, error message from the remote service, affected file/character
+- [ ] The Delivery tab (PRD-112 Req 1.7) includes a "Delivery Log" section or sub-tab showing recent log entries
+- [ ] Log entries are filterable by level (all, errors only, warnings only) and by date range
+- [ ] Error entries are visually distinct (red/error styling) from informational entries
+- [ ] API endpoint: `GET /api/v1/projects/{id}/delivery-logs?level={level}&limit={limit}`
+- [ ] Log entries older than a configurable retention period (default 90 days) are automatically purged
+
+**Technical Notes:**
+- This is separate from the general application log — it is a user-facing, structured delivery audit trail
+- The `details` JSONB field can store the full error response from external services for debugging
+
+### Requirement A.4: Delivery Status Tracking
+
+**Description:** Add a "Delivered" column/badge to the Project Overview to track which characters have successfully reached the final destination.
+
+**Acceptance Criteria:**
+- [ ] The Project Overview tab (PRD-112 Req 1.3) progress summary includes a "Delivered" count: "X of Y characters delivered"
+- [ ] The Characters tab (PRD-112 Req 1.4) character cards show a "Delivered" badge when the character has been successfully delivered to at least one configured destination
+- [ ] The Production tab matrix (PRD-112 Req 1.6) includes delivery status per character as an additional summary column
+- [ ] Delivery status per character is derived from `delivery_exports` records — a character is "delivered" if a successful export containing that character exists
+- [ ] The "Delivered" badge is distinct from "Approved" — a character can be approved but not yet delivered
+- [ ] If a character is re-generated or re-approved after delivery, the "Delivered" badge changes to "Needs Re-delivery" to indicate the delivered version is stale
+- [ ] API endpoint: `GET /api/v1/projects/{id}/delivery-status` returns per-character delivery state
+
+**Technical Notes:**
+- Delivery status is computed from `delivery_exports` joined with `delivery_logs` (for success confirmation)
+- "Needs Re-delivery" is determined by comparing the character's `updated_at` (or latest version `created_at`) against the last successful delivery timestamp
+- This is a read-only/computed status, not a stored field on the character

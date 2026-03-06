@@ -14,6 +14,7 @@ pub struct Project {
     pub description: Option<String>,
     pub status_id: StatusId,
     pub retention_days: Option<i32>,
+    pub auto_deliver_on_final: bool,
     pub deleted_at: Option<Timestamp>,
     pub created_at: Timestamp,
     pub updated_at: Timestamp,
@@ -36,4 +37,5 @@ pub struct UpdateProject {
     pub description: Option<String>,
     pub status_id: Option<StatusId>,
     pub retention_days: Option<i32>,
+    pub auto_deliver_on_final: Option<bool>,
 }

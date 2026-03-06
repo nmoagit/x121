@@ -8,6 +8,7 @@
 import { Badge, Button } from "@/components";
 import { cn } from "@/lib/cn";
 import { formatBytes, formatDateTime } from "@/lib/format";
+import { SECTION_HEADING } from "@/lib/ui-classes";
 
 import { useDeliveryExports } from "./hooks/use-delivery";
 import { EXPORT_STATUS_LABELS, EXPORT_STATUS_VARIANT } from "./types";
@@ -40,7 +41,7 @@ export function ExportHistory({ projectId, onReExport }: ExportHistoryProps) {
 
   return (
     <div data-testid="export-history" className="space-y-2">
-      <h3 className="text-base font-semibold text-[var(--color-text-primary)]">
+      <h3 className={SECTION_HEADING}>
         Export History
       </h3>
 

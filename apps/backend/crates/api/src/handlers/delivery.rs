@@ -23,15 +23,24 @@ use x121_db::models::watermark_setting::{
     CreateWatermarkSetting, UpdateWatermarkSetting, WatermarkSetting,
 };
 use x121_db::repositories::{
-    CharacterRepo, DeliveryExportRepo, OutputFormatProfileRepo, SceneVideoVersionRepo,
-    WatermarkSettingRepo,
+    CharacterRepo, DeliveryExportRepo, OutputFormatProfileRepo, ProjectDeliveryLogRepo,
+    SceneVideoVersionRepo, WatermarkSettingRepo,
 };
+
+use serde::Deserialize;
 
 use crate::error::{AppError, AppResult};
 use crate::middleware::auth::AuthUser;
 use crate::query::PaginationParams;
 use crate::response::DataResponse;
 use crate::state::AppState;
+
+/// Query parameters for delivery log listing.
+#[derive(Debug, Deserialize)]
+pub struct DeliveryLogQueryParams {
+    pub level: Option<String>,
+    pub limit: Option<i64>,
+}
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -441,4 +450,48 @@ pub async fn delete_watermark(
             id,
         }))
     }
+}
+
+// ===========================================================================
+// DELIVERY LOG HANDLERS (PRD-39 Amendment A.3)
+// ===========================================================================
+
+// ---------------------------------------------------------------------------
+// GET /projects/{project_id}/delivery-logs
+// ---------------------------------------------------------------------------
+
+/// List delivery logs for a project with optional level filter.
+pub async fn list_delivery_logs(
+    State(state): State<AppState>,
+    Path(project_id): Path<DbId>,
+    Query(params): Query<DeliveryLogQueryParams>,
+) -> AppResult<impl IntoResponse> {
+    let limit = clamp_limit(params.limit, 100, 1000);
+    let items = ProjectDeliveryLogRepo::list_for_project(
+        &state.pool,
+        project_id,
+        params.level.as_deref(),
+        limit,
+    )
+    .await?;
+    tracing::debug!(count = items.len(), project_id, "Listed delivery logs");
+    Ok(Json(DataResponse { data: items }))
+}
+
+// ===========================================================================
+// DELIVERY STATUS HANDLER (PRD-39 Amendment A.4)
+// ===========================================================================
+
+// ---------------------------------------------------------------------------
+// GET /projects/{project_id}/delivery-status
+// ---------------------------------------------------------------------------
+
+/// Get per-character delivery status for a project.
+pub async fn get_delivery_status(
+    State(state): State<AppState>,
+    Path(project_id): Path<DbId>,
+) -> AppResult<impl IntoResponse> {
+    let statuses = DeliveryExportRepo::delivery_status_by_project(&state.pool, project_id).await?;
+    tracing::debug!(count = statuses.len(), project_id, "Computed delivery status");
+    Ok(Json(DataResponse { data: statuses }))
 }

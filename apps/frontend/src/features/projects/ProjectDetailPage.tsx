@@ -110,7 +110,7 @@ export function ProjectDetailPage() {
         <ProjectCharactersTab projectId={id} scrollToGroupId={scrollToGroupId} />
       )}
       {activeTab === "production" && <ProjectProductionTab projectId={id} />}
-      {activeTab === "delivery" && <ProjectDeliveryTab />}
+      {activeTab === "delivery" && <ProjectDeliveryTab projectId={id} />}
       {activeTab === "settings" && <ProjectSettingsTab projectId={id} />}
     </Stack>
   );

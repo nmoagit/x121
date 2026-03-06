@@ -70,7 +70,7 @@ Source of truth: [`design/design.md`](../design.md)
 
 | PRD | Title | Priority | Status | Owner | Notes |
 |-----|-------|----------|--------|-------|-------|
-| PRD-13 | Dual-Metadata System (JSON) | — | `done` | 2026-02-21 | Phase 3 Group 4 |
+| PRD-13 | Dual-Metadata System (JSON) | — | `done` | 2026-02-21 | Phase 3 Group 4. Amendments A.1–A.4 (2026-03-06): outdated dependency chain (auto-flag on Bio/ToV change), import safeguard (source key protection), age field as text, VoiceID approval gate. |
 | PRD-14 | Data Validation & Import Integrity | — | `done` | 2026-02-20 | Validation engine (8 rule types), import preview/commit, report export (JSON/CSV), 12 integration tests, 33 unit tests. |
 | PRD-15 | Intelligent & Deferred Disk Reclamation | — | `done` | 2026-02-21 | Protection rules, policies, trash queue, reclamation engine, admin dashboard, 6 tests. |
 | PRD-16 | Folder-to-Entity Bulk Importer | — | `done` | 2026-02-21 | Phase 3 Group 4 |
@@ -86,11 +86,11 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-86 | Legacy Data Import & Migration Toolkit | — | `done` | 2026-02-23 | Migrations 000028-000029, core legacy_import module (scanner, mapper, gap analysis), API handlers, frontend feature (legacy-import wizard). |
 | PRD-88 | Batch Metadata Operations | — | `done` | 2026-02-23 | Migration 000032, core batch_metadata module (validators, undo logic), status enum, API handlers, frontend feature (batch-metadata panel), 19 tests. |
 | PRD-104 | Model & LoRA Download Manager | — | `done` | 2026-02-23 | 3 migrations (model_downloads, api_tokens, placement_rules), core module (16 tests), 3 repos, 13 API endpoints, frontend feature (9 tests). |
-| PRD-109 | Scene Video Versioning, External Import & Soft Delete | — | `done` | — | Implemented (2026-02-20). All 7 phases complete: migrations, models, soft delete infra (9 repos), version repo, version API, trash API, delivery integration, integration tests (30 tests). |
+| PRD-109 | Scene Video Versioning, External Import & Soft Delete | — | `done` | — | Implemented (2026-02-20). All 7 phases complete: migrations, models, soft delete infra (9 repos), version repo, version API, trash API, delivery integration, integration tests (30 tests). Amendments A.1–A.3 (2026-03-06): generation_snapshot JSONB column, SequencePlayer for clip playback, empty file validation + warning badges. |
 | PRD-113 | Character Ingest Pipeline | 1 | `done` | 2026-02-27 | 3 migrations (5 tables), 4 core modules (name parser, folder scanner, metadata validator, video spec validator), 3 model modules, 3 repo modules, 4 handler modules, 4 route modules, frontend wizard + validation dashboard. 38 core tests. |
 | PRD-122 | Storage Configuration (Local & Cloud S3) | 1 | `done` | 2026-03-01 | StorageProvider trait + LocalStorageProvider (core), S3StorageProvider (cloud crate, aws-sdk-s3), runtime hot-swap via RwLock, 5 CoreError variants, 7 settings, seed migration, set_default/test_s3_connection handlers, frontend S3 field toggle. DRY-627 to DRY-634 audited. |
-| PRD-124 | Speech & TTS Repository | 1 | `planning` | — | Normalized speech text storage per character (speech_types lookup + character_speeches), CRUD API, Speech tab in Character Detail page, bulk CSV/JSON import/export, read-only VoiceID display. Deps: PRD-00, PRD-01, PRD-29, PRD-112. |
-| PRD-125 | LLM-Driven Metadata Refinement Pipeline | 1 | `planning` | — | LLM formatting/enrichment of Bio+ToV, iterative fix_metadata.py execution loop, diff-based approval, outdated dependency chain, source file protection. Deps: PRD-009, PRD-013, PRD-014, PRD-066, PRD-113. |
+| PRD-124 | Speech & TTS Repository | 1 | `done` | 2026-03-06 | Normalized speech text storage per character (speech_types lookup + character_speeches), CRUD API, Speech tab in Character Detail page, bulk CSV/JSON import/export, read-only VoiceID display. Deps: PRD-00, PRD-01, PRD-29, PRD-112. |
+| PRD-125 | LLM-Driven Metadata Refinement Pipeline | 1 | `done` | 2026-03-06 | LLM formatting/enrichment of Bio+ToV, iterative fix_metadata.py execution loop, diff-based approval, outdated dependency chain, source file protection. Deps: PRD-009, PRD-013, PRD-014, PRD-066, PRD-113. |
 
 ## Part 3: Generation & Pipeline Core
 
@@ -144,7 +144,7 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-53 | First-Run Experience & Onboarding | — | `done` | 2026-02-21 | User onboarding state, guided tours, contextual hints, checklist, onboarding gate, 10 core tests. DRY-191 to DRY-200 audited. |
 | PRD-54 | Background Job Tray | — | `done` | — | |
 | PRD-82 | Content Sensitivity Controls | — | `done` | 2026-02-28 | Migration (2 tables), core module (blur level enforcement, 7 tests), model/repo (upsert pattern), 4 API endpoints (user+admin), frontend provider (context+localStorage+API sync), BlurredMedia component, WatermarkOverlay, ScreenShareMode (Ctrl+Shift+S shortcut), admin defaults UI, 18 frontend tests. DRY-453 to DRY-459 watch. |
-| PRD-112 | Project Hub & Management | 1 | `done` | 2026-02-27 | 2 migrations (character_groups, group_id FK), character group model/repo/handlers, project stats endpoint, 25 frontend files (project list, detail with 6 tabs, character workstation with 6 tabs, 3 TanStack Query hook files). |
+| PRD-112 | Project Hub & Management | 1 | `done` | 2026-02-27 | 2 migrations (character_groups, group_id FK), character group model/repo/handlers, project stats endpoint, 25 frontend files (project list, detail with 6 tabs, character workstation with 6 tabs, 3 TanStack Query hook files). Amendments A.1–A.5 (2026-03-06): Queue Outstanding modal with blocking reasons, Force Override toggle, archived exclusion from pipeline, show/hide disabled toggle, breadcrumb auto-scroll to group. |
 | PRD-117 | System Status Footer Bar | 1 | `done` | 2026-02-27 | HealthAggregator background service, status handler, 7 frontend components (StatusFooter, FooterSegment, ServiceHealth, CloudGpu, Job, Workflow, Collapsed). |
 | PRD-118 | Live Activity Console & Logging System | — | `done` | 2026-02-27 | 1 migration (4 tables), core types, ActivityLogBroadcaster, custom tracing::Layer, batch persistence/retention services, WebSocket handler, REST endpoints, Zustand store, dual-mode UI (panel + page). |
 | PRD-126 | Critical Bug Fixes & UX Polish | 1 | `done` | — | 5 bug fixes (import timeout, Select All, empty versions, UTF-8 metadata, DnD groups), 5 UX polish (ignore toggle, show disabled, breadcrumb scroll, header consolidation, wider inputs), 3 import validation fixes (filename mismatch, skip guard, race condition). |

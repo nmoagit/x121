@@ -40,6 +40,7 @@ pub mod contact_sheet;
 pub mod dashboard;
 pub mod dashboard_customization;
 pub mod delivery;
+pub mod delivery_destination;
 pub mod derived_image;
 pub mod directors_view;
 pub mod downloads;

@@ -18,6 +18,8 @@
 //! GET    /{project_id}/delivery-validation      validate_delivery
 //! GET    /{project_id}/exports                  list_exports
 //! GET    /{project_id}/exports/{export_id}      get_export
+//! GET    /{project_id}/delivery-logs            list_delivery_logs
+//! GET    /{project_id}/delivery-status          get_delivery_status
 //!
 //! WATERMARK SETTINGS:
 //! GET    /                              list_watermarks
@@ -60,6 +62,16 @@ pub fn export_router() -> Router<AppState> {
         .route(
             "/{project_id}/exports/{export_id}",
             get(delivery::get_export),
+        )
+        // Delivery logs (PRD-39 Amendment A.3).
+        .route(
+            "/{project_id}/delivery-logs",
+            get(delivery::list_delivery_logs),
+        )
+        // Per-character delivery status (PRD-39 Amendment A.4).
+        .route(
+            "/{project_id}/delivery-status",
+            get(delivery::get_delivery_status),
         )
 }
 

@@ -8,6 +8,7 @@
 import { useState } from "react";
 
 import { Badge, Button, Checkbox, Select } from "@/components";
+import { SECTION_HEADING } from "@/lib/ui-classes";
 
 import { useOutputFormatProfiles, useStartAssembly } from "./hooks/use-delivery";
 import { EXPORT_STATUS_LABELS, EXPORT_STATUS_VARIANT } from "./types";
@@ -58,7 +59,7 @@ export function ExportPanel({
 
   return (
     <div data-testid="export-panel" className="space-y-4">
-      <h3 className="text-base font-semibold text-[var(--color-text-primary)]">
+      <h3 className={SECTION_HEADING}>
         Export Delivery
       </h3>
 

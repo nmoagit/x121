@@ -32,6 +32,7 @@ pub mod contact_sheet;
 pub mod dashboard;
 pub mod dashboard_customization;
 pub mod delivery;
+pub mod delivery_destination;
 pub mod directors_view;
 pub mod downloads;
 pub mod duplicates;
@@ -822,6 +823,7 @@ pub fn api_routes() -> Router<AppState> {
         .nest("/projects", project::router()
             .merge(metadata::project_metadata_router())
             .merge(delivery::export_router())
+            .merge(delivery_destination::router())
             .merge(quality_gates::threshold_router())
             .merge(temporal::project_temporal_router())
             .merge(project_config::project_export_router())

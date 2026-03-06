@@ -7,6 +7,12 @@ import { Badge } from "@/components/primitives";
 import { cn } from "@/lib/cn";
 import { Check, Edit3, User } from "@/tokens/icons";
 
+import type { CharacterDeliveryStatus } from "@/features/delivery";
+import {
+  DELIVERY_STATUS_LABELS,
+  DELIVERY_STATUS_VARIANT,
+} from "@/features/delivery";
+
 import type { Character, CharacterGroup } from "../types";
 import { characterStatusBadgeVariant, characterStatusLabel } from "../types";
 
@@ -19,12 +25,13 @@ interface CharacterCardProps {
   group?: CharacterGroup;
   avatarUrl?: string | null;
   selected?: boolean;
+  deliveryStatus?: CharacterDeliveryStatus;
   onSelect?: (charId: number) => void;
   onClick: () => void;
   onEdit?: () => void;
 }
 
-export function CharacterCard({ character, group, avatarUrl, selected, onSelect, onClick, onEdit }: CharacterCardProps) {
+export function CharacterCard({ character, group, avatarUrl, selected, deliveryStatus, onSelect, onClick, onEdit }: CharacterCardProps) {
   const statusLabel = characterStatusLabel(character.status_id);
   const badgeVariant = characterStatusBadgeVariant(character.status_id);
 
@@ -126,6 +133,16 @@ export function CharacterCard({ character, group, avatarUrl, selected, onSelect,
             <p className="mt-0.5 text-xs text-[var(--color-text-muted)] truncate">
               {group.name}
             </p>
+          )}
+          {deliveryStatus && deliveryStatus.status !== "not_delivered" && (
+            <div className="mt-1">
+              <Badge
+                variant={DELIVERY_STATUS_VARIANT[deliveryStatus.status]}
+                size="sm"
+              >
+                {DELIVERY_STATUS_LABELS[deliveryStatus.status]}
+              </Badge>
+            </div>
           )}
         </div>
       </button>

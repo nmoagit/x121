@@ -144,6 +144,53 @@ export interface UpdateWatermarkSetting {
 }
 
 /* --------------------------------------------------------------------------
+   Delivery log types (PRD-39 Amendment A.3)
+   -------------------------------------------------------------------------- */
+
+/** A delivery log entry from the server. */
+export interface DeliveryLog {
+  id: number;
+  delivery_export_id: number | null;
+  project_id: number;
+  log_level: "info" | "warning" | "error";
+  message: string;
+  details: Record<string, unknown> | null;
+  created_at: string;
+}
+
+/* --------------------------------------------------------------------------
+   Delivery status types (PRD-39 Amendment A.4)
+   -------------------------------------------------------------------------- */
+
+/** Per-character delivery status. */
+export interface CharacterDeliveryStatus {
+  character_id: number;
+  character_name: string;
+  status: "delivered" | "needs_redelivery" | "not_delivered";
+  last_delivered_at: string | null;
+}
+
+/** Map delivery status to Badge variant. */
+export const DELIVERY_STATUS_VARIANT: Record<
+  CharacterDeliveryStatus["status"],
+  BadgeVariant
+> = {
+  delivered: "success",
+  needs_redelivery: "warning",
+  not_delivered: "default",
+};
+
+/** Map delivery status to display label. */
+export const DELIVERY_STATUS_LABELS: Record<
+  CharacterDeliveryStatus["status"],
+  string
+> = {
+  delivered: "Delivered",
+  needs_redelivery: "Needs Re-delivery",
+  not_delivered: "Not Delivered",
+};
+
+/* --------------------------------------------------------------------------
    Constants
    -------------------------------------------------------------------------- */
 
@@ -151,6 +198,13 @@ export interface UpdateWatermarkSetting {
 export const SEVERITY_COLORS: Record<"error" | "warning", BadgeVariant> = {
   error: "danger",
   warning: "warning",
+};
+
+/** Map log level to Badge variant (superset of SEVERITY_COLORS with "info"). */
+export const LOG_LEVEL_BADGE_VARIANT: Record<string, BadgeVariant> = {
+  error: "danger",
+  warning: "warning",
+  info: "info",
 };
 
 /** Export status labels keyed by status_id. */
@@ -173,4 +227,44 @@ export const EXPORT_STATUS_VARIANT: Record<number, BadgeVariant> = {
   5: "warning",
   6: "success",
   7: "danger",
+};
+
+/* --------------------------------------------------------------------------
+   Delivery destination types (PRD-039 Amendment A.1)
+   -------------------------------------------------------------------------- */
+
+/** A delivery destination record from the server. */
+export interface DeliveryDestination {
+  id: number;
+  project_id: number;
+  destination_type_id: number;
+  label: string;
+  config: Record<string, unknown>;
+  is_enabled: boolean;
+  deleted_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+/** Create payload for a new delivery destination. */
+export interface CreateDeliveryDestination {
+  destination_type_id: number;
+  label: string;
+  config?: Record<string, unknown>;
+  is_enabled?: boolean;
+}
+
+/** Update payload for an existing delivery destination. */
+export interface UpdateDeliveryDestination {
+  label?: string;
+  destination_type_id?: number;
+  config?: Record<string, unknown>;
+  is_enabled?: boolean;
+}
+
+/** Map destination type IDs to human-readable labels. */
+export const DESTINATION_TYPE_LABELS: Record<number, string> = {
+  1: "Local",
+  2: "S3",
+  3: "Google Drive",
 };

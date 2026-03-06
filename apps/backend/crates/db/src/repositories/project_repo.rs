@@ -7,7 +7,7 @@ use crate::models::project::{CreateProject, Project, UpdateProject};
 
 /// Column list shared across queries to avoid repetition.
 const COLUMNS: &str =
-    "id, name, description, status_id, retention_days, deleted_at, created_at, updated_at";
+    "id, name, description, status_id, retention_days, auto_deliver_on_final, deleted_at, created_at, updated_at";
 
 /// Provides CRUD operations for projects.
 pub struct ProjectRepo;
@@ -61,7 +61,8 @@ impl ProjectRepo {
                 name = COALESCE($2, name),
                 description = COALESCE($3, description),
                 status_id = COALESCE($4, status_id),
-                retention_days = COALESCE($5, retention_days)
+                retention_days = COALESCE($5, retention_days),
+                auto_deliver_on_final = COALESCE($6, auto_deliver_on_final)
              WHERE id = $1 AND deleted_at IS NULL
              RETURNING {COLUMNS}"
         );
@@ -71,6 +72,7 @@ impl ProjectRepo {
             .bind(&input.description)
             .bind(input.status_id)
             .bind(input.retention_days)
+            .bind(input.auto_deliver_on_final)
             .fetch_optional(pool)
             .await
     }

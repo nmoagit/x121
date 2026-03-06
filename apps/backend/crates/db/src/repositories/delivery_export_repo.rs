@@ -140,6 +140,44 @@ impl DeliveryExportRepo {
             .await
     }
 
+    /// Compute per-character delivery status for a project.
+    ///
+    /// Joins characters with completed delivery exports to determine
+    /// which characters have been delivered, which need re-delivery
+    /// (updated_at > last export), and which have never been delivered.
+    pub async fn delivery_status_by_project(
+        pool: &PgPool,
+        project_id: DbId,
+    ) -> Result<Vec<crate::models::delivery_export::CharacterDeliveryStatus>, sqlx::Error> {
+        let completed = EXPORT_STATUS_ID_COMPLETED;
+        sqlx::query_as::<_, crate::models::delivery_export::CharacterDeliveryStatus>(
+            &format!(
+                "SELECT \
+                    c.id AS character_id, \
+                    c.name AS character_name, \
+                    CASE \
+                        WHEN de.completed_at IS NULL THEN 'not_delivered' \
+                        WHEN c.updated_at > de.completed_at THEN 'needs_redelivery' \
+                        ELSE 'delivered' \
+                    END AS status, \
+                    de.completed_at AS last_delivered_at \
+                 FROM characters c \
+                 LEFT JOIN LATERAL ( \
+                    SELECT completed_at \
+                    FROM delivery_exports \
+                    WHERE project_id = $1 AND status_id = {completed} \
+                    ORDER BY completed_at DESC \
+                    LIMIT 1 \
+                 ) de ON TRUE \
+                 WHERE c.project_id = $1 AND c.deleted_at IS NULL \
+                 ORDER BY c.name"
+            ),
+        )
+        .bind(project_id)
+        .fetch_all(pool)
+        .await
+    }
+
     /// Store validation results JSON on a delivery export.
     pub async fn set_validation_results(
         pool: &PgPool,

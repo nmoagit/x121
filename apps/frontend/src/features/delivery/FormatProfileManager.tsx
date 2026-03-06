@@ -8,6 +8,7 @@ import { useState } from "react";
 
 import { Badge, Button, Input } from "@/components";
 import { cn } from "@/lib/cn";
+import { SECTION_HEADING } from "@/lib/ui-classes";
 
 import {
   useCreateProfile,
@@ -59,7 +60,7 @@ export function FormatProfileManager() {
   return (
     <div data-testid="format-profile-manager" className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-base font-semibold text-[var(--color-text-primary)]">
+        <h3 className={SECTION_HEADING}>
           Output Format Profiles
         </h3>
         {!showForm && (

@@ -589,3 +589,141 @@ Display validation results with actionable items.
 
 ## Version History
 - **v1.0** (2026-02-18): Initial task list creation from PRD-039
+- **v1.1** (2026-03-06): Added Phase 7 — Amendment tasks (A.1-A.4)
+
+---
+
+## Phase 7: Amendment — Requirements Gap Fill (2026-03-06)
+
+Tasks in this phase implement the requirements added in the PRD-039 Amendment (2026-03-06).
+
+### Task 7.1: Delivery Destinations Table & Model (Req A.1)
+**Files:**
+- `apps/db/migrations/YYYYMMDD_create_delivery_destinations.sql` (new)
+- `apps/backend/crates/db/src/models/delivery_destination.rs` (new)
+- `apps/backend/crates/db/src/repositories/delivery_destination_repo.rs` (new)
+
+```sql
+CREATE TABLE delivery_destinations (
+    id BIGSERIAL PRIMARY KEY,
+    project_id BIGINT NOT NULL REFERENCES projects(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    destination_type TEXT NOT NULL CHECK (destination_type IN ('local', 's3', 'google_drive')),
+    name TEXT NOT NULL,
+    config JSONB NOT NULL DEFAULT '{}',
+    is_active BOOLEAN NOT NULL DEFAULT true,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_delivery_destinations_project_id ON delivery_destinations(project_id);
+CREATE TRIGGER set_updated_at BEFORE UPDATE ON delivery_destinations
+    FOR EACH ROW EXECUTE FUNCTION trigger_set_updated_at();
+```
+
+**Acceptance Criteria:**
+- [ ] Table created with BIGSERIAL PK, project FK, type CHECK constraint
+- [ ] Config JSONB stores destination-specific settings (credentials ref, folder ID, bucket, etc.)
+- [ ] Model struct: `DeliveryDestination`, `CreateDeliveryDestination`, `UpdateDeliveryDestination`
+- [ ] Repo with CRUD: `create`, `find_by_id`, `list_by_project`, `update`, `soft_delete`
+- [ ] Credentials stored securely — never exposed in API list responses (config field redacted)
+
+### Task 7.2: Google Drive Upload Service (Req A.1)
+**Files:**
+- `apps/backend/crates/core/src/delivery/google_drive.rs` (new)
+
+**Acceptance Criteria:**
+- [ ] Service accepts a local file/directory path and a Google Drive folder ID
+- [ ] Authenticates via service account or OAuth2 refresh token from config
+- [ ] Uploads files to the specified Google Drive folder
+- [ ] Returns upload result with file ID, URL, and size
+- [ ] Handles errors: permission denied, quota exceeded, folder not found
+- [ ] Progress callback for large uploads
+- [ ] Integration test with mock or test Drive folder
+
+### Task 7.3: Delivery Destination API & UI (Req A.1)
+**Files:**
+- `apps/backend/crates/api/src/handlers/delivery_destination.rs` (new)
+- `apps/backend/crates/api/src/routes/delivery.rs` (modify)
+- `apps/frontend/src/features/projects/tabs/ProjectConfigTab.tsx` (modify)
+
+**Acceptance Criteria:**
+- [ ] CRUD endpoints: `GET/POST /api/v1/projects/{id}/delivery-destinations`, `PUT/DELETE .../delivery-destinations/{destId}`
+- [ ] Configuration UI on Project Configuration tab for adding/editing/removing destinations
+- [ ] Form fields vary by destination type (Google Drive: folder ID, credentials; S3: bucket, region, prefix)
+- [ ] Credentials input masked in UI and redacted in GET responses
+- [ ] Delivery tab (PRD-112 Req 1.7) shows configured destinations with status
+
+### Task 7.4: Automated Delivery Trigger (Req A.2)
+**Files:**
+- `apps/backend/crates/core/src/delivery/auto_deliver.rs` (new)
+- `apps/backend/crates/api/src/handlers/character.rs` (modify)
+
+**Acceptance Criteria:**
+- [ ] Project setting: `auto_deliver_on_final` (stored in project settings JSONB or delivery_destinations config)
+- [ ] When character status changes to "Final/Approved" and setting is enabled:
+  - System checks all enabled scenes have approved final versions
+  - If complete, triggers async delivery packaging and upload to configured destination(s)
+- [ ] Delivery is per-character, not waiting for full project completion
+- [ ] `delivery_exports` record created with `source = 'auto'`
+- [ ] Activity log entry recorded for auto-delivery
+- [ ] Failures logged to delivery error log (Task 7.5)
+- [ ] Toggle available on Project Configuration tab and Delivery tab
+
+### Task 7.5: Delivery Error Logs Table & API (Req A.3)
+**Files:**
+- `apps/db/migrations/YYYYMMDD_create_delivery_logs.sql` (new)
+- `apps/backend/crates/db/src/models/delivery_log.rs` (new)
+- `apps/backend/crates/db/src/repositories/delivery_log_repo.rs` (new)
+- `apps/backend/crates/api/src/handlers/delivery_log.rs` (new)
+
+```sql
+CREATE TABLE delivery_logs (
+    id BIGSERIAL PRIMARY KEY,
+    delivery_export_id BIGINT REFERENCES delivery_exports(id) ON DELETE CASCADE,
+    project_id BIGINT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+    log_level TEXT NOT NULL CHECK (log_level IN ('info', 'warning', 'error')),
+    message TEXT NOT NULL,
+    details JSONB,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_delivery_logs_project_id ON delivery_logs(project_id);
+CREATE INDEX idx_delivery_logs_export_id ON delivery_logs(delivery_export_id);
+CREATE INDEX idx_delivery_logs_level ON delivery_logs(log_level);
+```
+
+**Acceptance Criteria:**
+- [ ] Table created with proper FKs and indexes
+- [ ] Every delivery operation (upload, validation, packaging) logs its outcome
+- [ ] Error entries include: destination type, error code, error message, affected file/character
+- [ ] API endpoint: `GET /api/v1/projects/{id}/delivery-logs?level={level}&limit={limit}`
+- [ ] Filterable by level and date range
+- [ ] Auto-purge entries older than 90 days (configurable)
+
+### Task 7.6: Delivery Error Log UI (Req A.3)
+**Files:**
+- `apps/frontend/src/features/projects/components/DeliveryLogPanel.tsx` (new)
+- `apps/frontend/src/features/projects/tabs/ProjectDeliveryTab.tsx` (modify)
+
+**Acceptance Criteria:**
+- [ ] "Delivery Log" section/sub-tab in the Delivery tab
+- [ ] Shows recent log entries with timestamp, level, message
+- [ ] Error entries visually distinct (red/error styling)
+- [ ] Filter controls: all / errors only / warnings only
+- [ ] Entries include actionable details (destination, error code, affected entity)
+
+### Task 7.7: Delivery Status Tracking (Req A.4)
+**Files:**
+- `apps/backend/crates/api/src/handlers/delivery.rs` (modify)
+- `apps/frontend/src/features/projects/tabs/ProjectOverviewTab.tsx` (modify)
+- `apps/frontend/src/features/projects/tabs/ProjectCharactersTab.tsx` (modify)
+- `apps/frontend/src/features/projects/hooks/use-delivery-status.ts` (new)
+
+**Acceptance Criteria:**
+- [ ] New API endpoint: `GET /api/v1/projects/{id}/delivery-status` returns per-character delivery state
+- [ ] Project Overview shows "Delivered" count: "X of Y characters delivered"
+- [ ] Character cards show "Delivered" badge when successfully delivered to at least one destination
+- [ ] Production matrix includes delivery status as additional summary column
+- [ ] "Needs Re-delivery" badge shown when character updated/re-approved after last successful delivery
+- [ ] Delivery status computed from `delivery_exports` + `delivery_logs` (not a stored field)
+- [ ] Hook: `useDeliveryStatus(projectId)` fetches and caches per-character delivery state

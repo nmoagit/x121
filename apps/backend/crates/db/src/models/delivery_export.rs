@@ -68,3 +68,12 @@ pub struct ValidationIssueDto {
     pub message: String,
     pub entity_id: Option<DbId>,
 }
+
+/// Per-character delivery status computed from export history.
+#[derive(Debug, Clone, FromRow, Serialize)]
+pub struct CharacterDeliveryStatus {
+    pub character_id: DbId,
+    pub character_name: String,
+    pub status: String,
+    pub last_delivered_at: Option<Timestamp>,
+}
