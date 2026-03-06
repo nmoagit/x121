@@ -946,3 +946,75 @@ Update existing tests that reference `delete` to use `soft_delete`, and verify t
 ## Version History
 
 - **v1.0** (2026-02-20): Initial task list creation from PRD-109
+- **v1.1** (2026-03-06): Added Phase 8 — Amendment tasks (A.1-A.3)
+
+---
+
+## Phase 8: Amendment — Requirements Gap Fill (2026-03-06)
+
+Tasks in this phase implement the requirements added in the PRD-109 Amendment (2026-03-06).
+
+### Task 8.1: Add `generation_snapshot` JSONB column (Req A.1)
+**File:** `apps/db/migrations/YYYYMMDD_add_generation_snapshot_to_scene_video_versions.sql`
+
+Add a nullable JSONB column to store the exact workflow configuration used at generation time.
+
+```sql
+ALTER TABLE scene_video_versions
+    ADD COLUMN generation_snapshot JSONB;
+
+COMMENT ON COLUMN scene_video_versions.generation_snapshot IS
+    'Read-only snapshot of generation parameters (workflow_id, prompts, seed, model, lora, config). NULL for imported versions.';
+```
+
+**Acceptance Criteria:**
+- [ ] Column added with `DEFAULT NULL` — existing rows unaffected
+- [ ] Migration runs cleanly on populated database
+- [ ] Column is JSONB (not TEXT) for queryability
+
+### Task 8.2: Update `SceneVideoVersion` model and repo for snapshot (Req A.1)
+**Files:**
+- `apps/backend/crates/db/src/models/scene_video_version.rs` (modify)
+- `apps/backend/crates/db/src/repositories/scene_video_version_repo.rs` (modify)
+
+**Acceptance Criteria:**
+- [ ] `SceneVideoVersion` struct gains `pub generation_snapshot: Option<serde_json::Value>`
+- [ ] `CreateSceneVideoVersion` DTO gains `pub generation_snapshot: Option<serde_json::Value>`
+- [ ] `COLUMNS` const updated to include `generation_snapshot`
+- [ ] `create` and `create_as_final` INSERT statements include the snapshot column
+- [ ] `UpdateSceneVideoVersion` does NOT include `generation_snapshot` (immutable after creation)
+- [ ] Snapshot is returned in `find_by_id` and `list_by_scene` responses
+- [ ] All code compiles and existing tests pass
+
+### Task 8.3: Play Sequence to This Point — Frontend (Req A.2)
+**Files:**
+- `apps/frontend/src/features/scenes/components/SequencePlayer.tsx` (new)
+- `apps/frontend/src/features/scenes/hooks/use-scene-sequence.ts` (new)
+
+Build a frontend-only sequential playback feature for QA review.
+
+**Acceptance Criteria:**
+- [ ] "Play Sequence to This Point" action available on each scene in the QA/review modal
+- [ ] Hook fetches all final versions for the character's scenes, ordered by scene sort order
+- [ ] Builds a playlist from scene 1 through the selected scene
+- [ ] Playback is sequential — auto-advances on clip end
+- [ ] Progress indicator shows current position: "Playing scene X of Y"
+- [ ] Pause, resume, and stop controls available
+- [ ] Scenes with no final version are skipped with a visual indicator
+- [ ] Reuses PRD-83 video player component
+
+### Task 8.4: Version Completeness Validation (Req A.3)
+**Files:**
+- `apps/backend/crates/db/src/repositories/scene_video_version_repo.rs` (modify)
+- `apps/backend/crates/api/src/handlers/scene_video_version.rs` (modify)
+
+Add validation that rejects empty or missing video files during version creation.
+
+**Acceptance Criteria:**
+- [ ] `create_as_final` validates `file_path` exists on disk and `file_size_bytes > 0`
+- [ ] `import_video` handler validates uploaded file has non-zero size before saving
+- [ ] Returns `400 Bad Request` with descriptive error if validation fails
+- [ ] Delivery validation (PRD-039 / Req 1.8) checks `file_size_bytes > 0` on all final versions
+- [ ] Scenes with zero-size final versions reported as "incomplete" in delivery validation
+- [ ] Frontend version list shows warning badge on versions with `file_size_bytes = 0`
+- [ ] Unit test: creating a version with empty file path or zero size is rejected

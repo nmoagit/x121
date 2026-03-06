@@ -11,7 +11,7 @@ use axum::http::header::{self, HeaderMap, HeaderValue};
 use axum::http::StatusCode;
 use axum::response::Response;
 use axum::Json;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use tokio::io::{AsyncReadExt, AsyncSeekExt};
 use tokio_util::io::ReaderStream;
 use x121_core::error::CoreError;
@@ -22,6 +22,9 @@ use x121_db::models::video::{CreateVideoThumbnail, VideoMetadata};
 use x121_db::repositories::{SceneVideoVersionRepo, SegmentRepo, VideoThumbnailRepo};
 
 use crate::error::{AppError, AppResult};
+use crate::handlers::scene_video_version::{
+    extract_and_set_video_metadata, generate_preview_for_version,
+};
 use crate::state::AppState;
 
 /// Default thumbnail dimensions.
@@ -88,24 +91,6 @@ async fn resolve_video_path(
     }
 }
 
-/// Resolve a video file path to an absolute filesystem path.
-///
-/// If the path from the database is already absolute, returns it as-is.
-/// Otherwise treats it as a storage key and resolves through the storage
-/// provider (for local storage this prepends the storage root).
-async fn resolve_to_absolute(
-    state: &AppState,
-    file_path: &str,
-) -> AppResult<std::path::PathBuf> {
-    if std::path::Path::new(file_path).is_absolute() {
-        return Ok(std::path::PathBuf::from(file_path));
-    }
-    let provider = state.storage_provider().await;
-    let url = provider.presigned_url(file_path, 3600).await?;
-    let abs = url.strip_prefix("file://").unwrap_or(&url);
-    Ok(std::path::PathBuf::from(abs))
-}
-
 /// Guess a Content-Type from a file extension.
 fn content_type_for_extension(path: &str) -> &'static str {
     let ext = path.rsplit('.').next().unwrap_or("").to_lowercase();
@@ -161,11 +146,25 @@ fn parse_range_header(range: &str) -> Option<(u64, Option<u64>)> {
 pub async fn stream_video(
     State(state): State<AppState>,
     Path((source_type, source_id)): Path<(String, DbId)>,
-    Query(_params): Query<StreamParams>,
+    Query(params): Query<StreamParams>,
     headers: HeaderMap,
 ) -> AppResult<Response> {
-    let file_path = resolve_video_path(&state.pool, &source_type, source_id).await?;
-    let path = resolve_to_absolute(&state, &file_path).await?;
+    // When proxy quality is requested for a version source, try the preview file first.
+    let file_path = if params.quality.as_deref() == Some("proxy")
+        && source_type == video_sources::VIDEO_SOURCE_VERSION
+    {
+        let version = SceneVideoVersionRepo::find_by_id(&state.pool, source_id)
+            .await?
+            .ok_or(AppError::Core(CoreError::NotFound {
+                entity: "SceneVideoVersion",
+                id: source_id,
+            }))?;
+        version.preview_path.unwrap_or(version.file_path)
+    } else {
+        resolve_video_path(&state.pool, &source_type, source_id).await?
+    };
+
+    let path = state.resolve_to_path(&file_path).await?;
 
     if !path.exists() {
         return Err(AppError::Core(CoreError::NotFound {
@@ -249,7 +248,7 @@ pub async fn get_metadata(
     Path((source_type, source_id)): Path<(String, DbId)>,
 ) -> AppResult<Json<VideoMetadata>> {
     let file_path = resolve_video_path(&state.pool, &source_type, source_id).await?;
-    let path = resolve_to_absolute(&state, &file_path).await?;
+    let path = state.resolve_to_path(&file_path).await?;
 
     let probe = ffmpeg::probe_video(&path)
         .await
@@ -258,7 +257,10 @@ pub async fn get_metadata(
     let (width, height) = ffmpeg::parse_resolution(&probe);
     let audio_tracks = ffmpeg::parse_audio_tracks(&probe);
 
-    let file_size = tokio::fs::metadata(&path).await.ok().map(|m| m.len() as i64);
+    let file_size = tokio::fs::metadata(&path)
+        .await
+        .ok()
+        .map(|m| m.len() as i64);
 
     let metadata = VideoMetadata {
         duration_seconds: ffmpeg::parse_duration(&probe),
@@ -292,7 +294,7 @@ pub async fn get_thumbnail(
 
     // Not cached — extract on-the-fly.
     let file_path = resolve_video_path(&state.pool, &source_type, source_id).await?;
-    let video_path = resolve_to_absolute(&state, &file_path).await?;
+    let video_path = state.resolve_to_path(&file_path).await?;
 
     // Determine the timestamp from the frame number by probing framerate.
     let probe = ffmpeg::probe_video(&video_path)
@@ -350,7 +352,7 @@ pub async fn generate_thumbnails(
     Json<Vec<x121_db::models::video::VideoThumbnail>>,
 )> {
     let file_path = resolve_video_path(&state.pool, &source_type, source_id).await?;
-    let video_path = resolve_to_absolute(&state, &file_path).await?;
+    let video_path = state.resolve_to_path(&file_path).await?;
 
     let interval = params.interval_seconds.unwrap_or(DEFAULT_INTERVAL_SECS);
     let width = params.width.unwrap_or(THUMB_WIDTH);
@@ -380,6 +382,97 @@ pub async fn generate_thumbnails(
     let thumbnails = VideoThumbnailRepo::create_batch(&state.pool, &inputs).await?;
 
     Ok((StatusCode::CREATED, Json(thumbnails)))
+}
+
+/// Response body for the backfill-previews endpoint.
+#[derive(Debug, Serialize)]
+pub struct BackfillPreviewsResponse {
+    pub processed: usize,
+    pub succeeded: usize,
+    pub failed: usize,
+}
+
+/// POST /api/v1/videos/generate-previews
+///
+/// Backfill low-res preview files for existing scene video versions that don't
+/// have one yet. Processes up to `limit` rows (default 50) per call.
+pub async fn generate_previews(
+    State(state): State<AppState>,
+    Query(params): Query<GeneratePreviewsParams>,
+) -> AppResult<Json<BackfillPreviewsResponse>> {
+    let limit = params.limit.unwrap_or(50).min(200) as i64;
+
+    let versions = SceneVideoVersionRepo::list_missing_previews(&state.pool, limit).await?;
+
+    let total = versions.len();
+    let mut succeeded = 0usize;
+    let mut failed = 0usize;
+
+    for version in &versions {
+        match generate_preview_for_version(&state, version).await {
+            Some(_) => succeeded += 1,
+            None => failed += 1,
+        }
+    }
+
+    tracing::info!(
+        total,
+        succeeded,
+        failed,
+        "Backfill preview generation complete"
+    );
+
+    Ok(Json(BackfillPreviewsResponse {
+        processed: total,
+        succeeded,
+        failed,
+    }))
+}
+
+#[derive(Debug, Deserialize)]
+pub struct GeneratePreviewsParams {
+    pub limit: Option<u32>,
+}
+
+/// Response body for backfill-metadata endpoints.
+#[derive(Debug, Serialize)]
+pub struct BackfillMetadataResponse {
+    pub processed: usize,
+    pub succeeded: usize,
+    pub failed: usize,
+}
+
+/// POST /api/v1/videos/backfill-metadata
+///
+/// Backfill duration_secs for existing scene video versions that don't have it
+/// yet. Processes up to `limit` rows (default 50) per call.
+pub async fn backfill_video_metadata(
+    State(state): State<AppState>,
+    Query(params): Query<GeneratePreviewsParams>,
+) -> AppResult<Json<BackfillMetadataResponse>> {
+    let limit = params.limit.unwrap_or(50).min(200) as i64;
+
+    let versions = SceneVideoVersionRepo::list_missing_duration(&state.pool, limit).await?;
+
+    let total = versions.len();
+    let mut succeeded = 0usize;
+    let mut failed = 0usize;
+
+    for version in &versions {
+        if extract_and_set_video_metadata(&state, version).await {
+            succeeded += 1;
+        } else {
+            failed += 1;
+        }
+    }
+
+    tracing::info!(total, succeeded, failed, "Backfill video metadata complete");
+
+    Ok(Json(BackfillMetadataResponse {
+        processed: total,
+        succeeded,
+        failed,
+    }))
 }
 
 /// Serve an image file as a response.

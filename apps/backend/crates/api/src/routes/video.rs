@@ -4,7 +4,9 @@
 //! `source_type` (segment | version) and `source_id`.
 //!
 //! ```text
-//! GET  /{source_type}/{source_id}/stream                stream_video
+//! POST /generate-previews                                generate_previews
+//! POST /backfill-metadata                                backfill_video_metadata
+//! GET  /{source_type}/{source_id}/stream                 stream_video
 //! GET  /{source_type}/{source_id}/metadata               get_metadata
 //! GET  /{source_type}/{source_id}/thumbnails/{frame}     get_thumbnail
 //! POST /{source_type}/{source_id}/thumbnails             generate_thumbnails
@@ -18,6 +20,8 @@ use crate::state::AppState;
 
 pub fn router() -> Router<AppState> {
     Router::new()
+        .route("/generate-previews", post(video::generate_previews))
+        .route("/backfill-metadata", post(video::backfill_video_metadata))
         .route(
             "/{source_type}/{source_id}/stream",
             get(video::stream_video),

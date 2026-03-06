@@ -1,9 +1,10 @@
+import { Badge } from "@/components/primitives";
 import { Button } from "@/components/primitives/Button";
 import { formatDuration } from "@/features/video-player/frame-utils";
 import { formatBytes } from "@/lib/format";
-import { Clapperboard, RotateCcw, Star, Upload } from "lucide-react";
+import { Clapperboard, RotateCcw, Star, Upload } from "@/tokens/icons";
 import { ClipQAActions } from "./ClipQAActions";
-import type { SceneVideoVersion } from "./types";
+import { type SceneVideoVersion, isEmptyClip } from "./types";
 
 interface ClipCardProps {
   clip: SceneVideoVersion;
@@ -66,6 +67,9 @@ export function ClipCard({
             >
               <Star size={12} /> Final
             </span>
+          )}
+          {isEmptyClip(clip) && (
+            <Badge variant="warning" size="sm">Empty file</Badge>
           )}
         </div>
         <div className="flex items-center gap-3 text-xs text-[var(--color-text-muted)]">

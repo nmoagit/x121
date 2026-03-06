@@ -11,7 +11,7 @@ use crate::models::scene_video_version::{
 const COLUMNS: &str = "id, scene_id, version_number, source, file_path, \
     file_size_bytes, duration_secs, width, height, frame_rate, preview_path, is_final, notes, \
     qa_status, qa_reviewed_by, qa_reviewed_at, qa_rejection_reason, qa_notes, \
-    deleted_at, created_at, updated_at";
+    generation_snapshot, deleted_at, created_at, updated_at";
 
 /// Provides CRUD and version-management operations for scene video versions.
 pub struct SceneVideoVersionRepo;

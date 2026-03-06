@@ -303,3 +303,69 @@ CREATE INDEX idx_scene_video_versions_scene_id
 ## 11. Version History
 
 - **v1.0** (2026-02-20): Initial PRD creation
+- **v1.1** (2026-03-06): Amendment — Requirements gap fill (Reqs A.1-A.3).
+
+---
+
+## Amendment (2026-03-06): Requirements Gap Fill
+
+The following requirements were identified during a stakeholder requirements review and address gaps in the original PRD. They do not modify any existing requirements.
+
+### Requirement A.1: Workflow Snapshot Preservation
+
+**Description:** Each version must store the exact workflow ID, prompts, seed, and configuration used at the time of generation as a read-only JSON snapshot. This ensures the integrity of the version history and allows exact reproduction or auditing of any version.
+
+**Acceptance Criteria:**
+- [ ] `scene_video_versions` table gains a new column: `generation_snapshot JSONB` (nullable — null for imported versions)
+- [ ] For `source = 'generated'` versions, the snapshot is populated at creation time with at minimum:
+  - `workflow_id` — the ComfyUI workflow identifier used
+  - `prompts` — the full prompt text(s) sent to the generation pipeline
+  - `seed` — the random seed used for generation
+  - `model` — the model identifier (checkpoint name/version)
+  - `lora` — array of LoRA identifiers and weights applied
+  - `configuration` — any additional pipeline parameters (CFG scale, steps, sampler, scheduler, etc.)
+- [ ] The snapshot is immutable after creation — no API endpoint allows modification of the `generation_snapshot` field
+- [ ] The snapshot is included in the `GET /api/v1/scenes/{scene_id}/versions/{id}` response
+- [ ] The snapshot is included in the version list response (`GET /api/v1/scenes/{scene_id}/versions`)
+- [ ] For `source = 'imported'` versions, `generation_snapshot` is `null`
+- [ ] Migration adds the column with `DEFAULT NULL` to avoid breaking existing rows
+
+**Technical Notes:**
+- The pipeline (PRD-24) must pass generation parameters to `create_as_final` when creating a version
+- JSONB allows flexible schema evolution as pipeline parameters change over time
+- Relates to PRD-069 (Generation Provenance) — this snapshot is the version-level complement to segment-level provenance
+
+### Requirement A.2: Play Sequence to This Point
+
+**Description:** The QA modal must support a "Play Sequence to This Point" playback mode that plays all clips from clip 1 through the selected clip sequentially, allowing reviewers to check flow and transitions between scenes.
+
+**Acceptance Criteria:**
+- [ ] In the scene version review UI (QA modal or inline player), a "Play Sequence to This Point" button or menu option is available for any selected scene/clip
+- [ ] Activating this mode assembles a playback playlist of all scene clips for the character, ordered by scene sort order, from the first scene through and including the selected scene
+- [ ] Each clip in the playlist uses the current final version (PRD-109 `is_final = true`) for that scene
+- [ ] Playback is sequential — when one clip ends, the next begins automatically without user interaction
+- [ ] A progress indicator shows the current position within the sequence (e.g., "Playing scene 5 of 12")
+- [ ] The user can pause, resume, or stop the sequence at any point
+- [ ] If a scene in the sequence has no final version, it is skipped with a visual indicator (e.g., "Scene X: no version available")
+
+**Technical Notes:**
+- This is a frontend-only feature — no new backend endpoint needed; the frontend fetches all final versions for the character's scenes and builds the playlist client-side
+- Reuses the video player component from PRD-83
+- Scene ordering comes from the scene sort order or scene type catalog order
+
+### Requirement A.3: Version Completeness Validation
+
+**Description:** A version must not be treated as a completed deliverable if it contains no video data (empty version). The system must validate that a version has actual video content before marking it as complete.
+
+**Acceptance Criteria:**
+- [ ] When creating a version via `create_as_final` or `import_video`, the system validates that the file at `file_path` exists and has a non-zero file size
+- [ ] If `file_size_bytes` is 0 or `file_path` does not exist on disk, the creation is rejected with a `400 Bad Request` error and a descriptive message
+- [ ] The delivery validation endpoint (PRD-039 / PRD-109 Req 1.8) checks that all final versions have `file_size_bytes > 0`
+- [ ] Scenes whose final version has `file_size_bytes = 0` are reported as "incomplete" in delivery validation, not as "complete"
+- [ ] The version list UI displays a warning badge on versions with zero file size or missing files
+- [ ] A periodic health check or on-demand validation can scan all final versions and report any with missing or empty files
+
+**Technical Notes:**
+- Add file existence and size validation in `SceneVideoVersionRepo::create_as_final` and the `import_video` handler
+- Extend `DeliveryValidator` (PRD-039) to include file size checks on final versions
+- Consider a background job for periodic integrity checks (post-MVP)

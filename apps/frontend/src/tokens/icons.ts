@@ -16,6 +16,7 @@ export {
   ArrowLeft,
   ArrowRight,
   // Actions
+  RotateCcw,
   Plus,
   Minus,
   Trash2,
@@ -26,6 +27,7 @@ export {
   Save,
   RefreshCw,
   // Status
+  Star,
   Check,
   AlertCircle,
   AlertTriangle,
@@ -33,6 +35,7 @@ export {
   XCircle,
   Loader2,
   // Media
+  Clapperboard,
   File,
   FileText,
   Folder,

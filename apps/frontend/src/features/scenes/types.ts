@@ -1,4 +1,5 @@
 import type { BadgeVariant } from "@/components/primitives/Badge";
+import type { ExpandedSceneSetting } from "@/features/scene-catalog/types";
 
 export interface Scene {
   id: number;
@@ -118,6 +119,38 @@ export function sceneStatusBadgeVariant(statusId: number): BadgeVariant {
 /** Returns true if a scene has existing video content (generated, approved, or delivered). */
 export function sceneHasVideo(scene: Scene): boolean {
   return scene.status_id >= SCENE_STATUS_GENERATED;
+}
+
+/* --------------------------------------------------------------------------
+   Clip helpers (shared by CharacterDeliverablesTab, SequencePlayer, ClipCard)
+   -------------------------------------------------------------------------- */
+
+/**
+ * Build the "SceneName -- TrackName" display label for a scene slot.
+ * When the slot has the clothes-off transition flag, the track label
+ * is replaced with "Clothes-off".
+ */
+export function slotLabel(slot: ExpandedSceneSetting): string {
+  if (slot.has_clothes_off_transition) return `${slot.name} \u2014 Clothes-off`;
+  return slot.track_name ? `${slot.name} \u2014 ${slot.track_name}` : slot.name;
+}
+
+/**
+ * Pick the best final clip from a list of versions.
+ * Returns the final clip with the highest version_number, or null if none are final.
+ */
+export function pickFinalClip(clips: SceneVideoVersion[]): SceneVideoVersion | null {
+  const finals = clips.filter((c) => c.is_final);
+  if (finals.length === 0) return null;
+  return finals.reduce((a, b) => (b.version_number > a.version_number ? b : a));
+}
+
+/**
+ * Returns true if a clip has no actual file content (empty or missing file_size_bytes).
+ * Used to render the "Empty file" warning badge.
+ */
+export function isEmptyClip(clip: SceneVideoVersion): boolean {
+  return clip.file_size_bytes === 0 || clip.file_size_bytes == null;
 }
 
 // IMPORTANT: Use `formatBytes` from `@/lib/format` for file sizes.

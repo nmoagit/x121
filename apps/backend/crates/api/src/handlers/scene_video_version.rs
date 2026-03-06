@@ -10,6 +10,7 @@ use x121_core::clip_qa::{
     CLIP_QA_APPROVED, CLIP_QA_REJECTED, CLIP_SOURCE_IMPORTED, RESUME_STATUS_READY,
 };
 use x121_core::error::CoreError;
+use x121_core::ffmpeg;
 use x121_core::types::DbId;
 use x121_db::models::scene_video_version::{
     CreateSceneVideoVersion, RejectClipRequest, ResumeFromResponse, SceneVideoVersion,
@@ -42,6 +43,139 @@ async fn ensure_version_exists(pool: &sqlx::PgPool, id: DbId) -> AppResult<Scene
                 id,
             })
         })
+}
+
+/// Generate a low-res preview for a scene video version (best-effort).
+///
+/// Transcodes to a temp file, then uploads via the storage provider so the
+/// preview lands in the configured storage location regardless of backend
+/// (local filesystem, S3, etc.).
+///
+/// Returns the storage key of the generated preview, or `None` if generation
+/// failed. This is intentionally fire-and-forget — callers should not fail
+/// the parent operation if preview generation fails.
+pub async fn generate_preview_for_version(
+    state: &AppState,
+    version: &SceneVideoVersion,
+) -> Option<String> {
+    let preview_key = format!(
+        "previews/scene_{}_{}.mp4",
+        version.scene_id,
+        chrono::Utc::now().timestamp_millis()
+    );
+
+    // Resolve the source video to a local path for ffmpeg to read.
+    let abs_source = match state.resolve_to_path(&version.file_path).await {
+        Ok(path) => path,
+        Err(e) => {
+            tracing::warn!(version_id = version.id, error = %e, "Failed to resolve source for preview");
+            return None;
+        }
+    };
+    let provider = state.storage_provider().await;
+
+    // Transcode to a temp file, then upload through the storage provider.
+    let tmp_dir = std::env::temp_dir().join("x121_previews");
+    let tmp_path = tmp_dir.join(format!("preview_{}.mp4", version.id));
+
+    let result = match ffmpeg::transcode_preview(&abs_source, &tmp_path, 640, 360).await {
+        Ok(r) => r,
+        Err(e) => {
+            tracing::warn!(version_id = version.id, error = %e, "Preview transcode failed");
+            let _ = tokio::fs::remove_file(&tmp_path).await;
+            return None;
+        }
+    };
+
+    // Read the transcoded file and upload via the storage provider.
+    let data = match tokio::fs::read(&tmp_path).await {
+        Ok(d) => d,
+        Err(e) => {
+            tracing::warn!(version_id = version.id, error = %e, "Failed to read temp preview file");
+            let _ = tokio::fs::remove_file(&tmp_path).await;
+            return None;
+        }
+    };
+
+    // Clean up temp file before uploading.
+    let _ = tokio::fs::remove_file(&tmp_path).await;
+
+    if let Err(e) = provider.upload(&preview_key, &data).await {
+        tracing::warn!(version_id = version.id, error = %e, "Failed to upload preview to storage");
+        return None;
+    }
+
+    if let Err(e) = SceneVideoVersionRepo::set_preview_path(&state.pool, version.id, &preview_key).await {
+        tracing::warn!(version_id = version.id, error = %e, "Failed to save preview_path");
+        return None;
+    }
+
+    tracing::info!(
+        version_id = version.id,
+        preview_size = result.file_size,
+        "Generated video preview"
+    );
+    Some(preview_key)
+}
+
+/// Extract video metadata (duration, resolution, frame rate) via ffprobe
+/// and persist it to the database.
+///
+/// Returns `true` on success, `false` on any failure.
+/// Best-effort — callers should not fail the parent operation on `false`.
+pub async fn extract_and_set_video_metadata(
+    state: &AppState,
+    version: &SceneVideoVersion,
+) -> bool {
+    let abs_source = match state.resolve_to_path(&version.file_path).await {
+        Ok(path) => path,
+        Err(e) => {
+            tracing::warn!(version_id = version.id, error = %e, "Failed to resolve source for metadata");
+            return false;
+        }
+    };
+
+    let probe = match ffmpeg::probe_video(&abs_source).await {
+        Ok(p) => p,
+        Err(e) => {
+            tracing::warn!(version_id = version.id, error = %e, "ffprobe failed for metadata");
+            return false;
+        }
+    };
+
+    let duration = ffmpeg::parse_duration(&probe);
+    if duration <= 0.0 {
+        return false;
+    }
+
+    let (width, height) = ffmpeg::parse_resolution(&probe);
+    let frame_rate = ffmpeg::parse_framerate(&probe);
+
+    match SceneVideoVersionRepo::set_video_metadata(
+        &state.pool, version.id, duration, width, height, frame_rate,
+    )
+    .await
+    {
+        Ok(true) => {
+            tracing::info!(
+                version_id = version.id,
+                duration,
+                width,
+                height,
+                frame_rate,
+                "Extracted video metadata"
+            );
+            true
+        }
+        Ok(false) => {
+            tracing::warn!(version_id = version.id, "set_video_metadata matched no row");
+            false
+        }
+        Err(e) => {
+            tracing::warn!(version_id = version.id, error = %e, "Failed to save video metadata");
+            false
+        }
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -158,6 +292,13 @@ pub async fn import_video(
     let (filename, data) =
         file_data.ok_or_else(|| AppError::BadRequest("Missing required 'file' field".into()))?;
 
+    // Reject empty files — zero-byte uploads are not valid deliverables.
+    if data.is_empty() {
+        return Err(AppError::BadRequest(
+            "Uploaded video file is empty (0 bytes)".to_string(),
+        ));
+    }
+
     // Validate file extension
     let ext = filename.rsplit('.').next().unwrap_or("").to_lowercase();
     if !SUPPORTED_VIDEO_EXTENSIONS.contains(&ext.as_str()) {
@@ -187,6 +328,18 @@ pub async fn import_video(
     };
 
     let version = SceneVideoVersionRepo::create_as_final(&state.pool, &input).await?;
+
+    // Best-effort: generate a low-res preview copy for card thumbnails.
+    generate_preview_for_version(&state, &version).await;
+
+    // Best-effort: extract duration via ffprobe and persist it.
+    extract_and_set_video_metadata(&state, &version).await;
+
+    // Re-fetch version to include the preview_path and duration in the response.
+    let version = SceneVideoVersionRepo::find_by_id(&state.pool, version.id)
+        .await?
+        .unwrap_or(version);
+
     Ok((StatusCode::CREATED, Json(DataResponse { data: version })))
 }
 

@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 
-import { api } from "@/lib/api";
+import { api, API_BASE_URL } from "@/lib/api";
 import { detectCodecCapabilities } from "../codec-detector";
 import type { CodecCapability, SourceType, VideoMetadata } from "../types";
 
@@ -47,7 +47,7 @@ export function getStreamUrl(
   sourceId: number,
   quality: "proxy" | "full" = "proxy",
 ): string {
-  return `/api/v1/videos/${sourceType}/${sourceId}/stream?quality=${quality}`;
+  return `${API_BASE_URL}/videos/${sourceType}/${sourceId}/stream?quality=${quality}`;
 }
 
 /** Build the thumbnail URL for a specific frame. */
@@ -56,5 +56,5 @@ export function getThumbnailUrl(
   sourceId: number,
   frame: number,
 ): string {
-  return `/api/v1/videos/${sourceType}/${sourceId}/thumbnails/${frame}`;
+  return `${API_BASE_URL}/videos/${sourceType}/${sourceId}/thumbnails/${frame}`;
 }
