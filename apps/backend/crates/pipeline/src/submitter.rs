@@ -7,6 +7,7 @@ use std::sync::Arc;
 
 use x121_comfyui::manager::ComfyUIManager;
 use x121_core::types::DbId;
+use x121_db::models::generation::SegmentJobParams;
 use x121_db::models::segment::CreateSegment;
 use x121_db::repositories::{JobRepo, SegmentRepo};
 
@@ -78,12 +79,13 @@ pub async fn submit_segment(
         pool,
         user_id,
         &x121_db::models::job::SubmitJob {
-            job_type: "segment_generation".to_string(),
-            parameters: serde_json::json!({
-                "scene_id": scene_id,
-                "segment_id": segment.id,
-                "segment_index": segment_index,
-            }),
+            job_type: x121_core::generation::JOB_TYPE_SEGMENT_GENERATION.to_string(),
+            parameters: serde_json::to_value(SegmentJobParams {
+                scene_id,
+                segment_id: segment.id,
+                segment_index,
+            })
+            .expect("SegmentJobParams serialization cannot fail"),
             priority: None,
             estimated_duration_secs: None,
             scheduled_start_at: None,

@@ -46,7 +46,8 @@ pub async fn handle_completion(
         .await
         .map_err(|e| PipelineError::Download(format!("Failed to get history: {e}")))?;
 
-    let output_filename = extract_output_filename(&history, prompt_id)?;
+    let output_filename = ComfyUIApi::extract_output_filename(&history, prompt_id)
+        .map_err(PipelineError::Download)?;
 
     // 2. Download the output video from ComfyUI.
     let video_bytes = api
@@ -91,16 +92,9 @@ pub async fn handle_completion(
     let update = UpdateSegmentGeneration {
         duration_secs: Some(duration_secs),
         cumulative_duration_secs: Some(cumulative),
-        boundary_frame_index: None,
-        boundary_selection_mode: None,
-        generation_started_at: None,
         generation_completed_at: Some(chrono::Utc::now()),
-        worker_id: None,
-        prompt_type: None,
-        prompt_text: None,
-        seed_frame_path: None,
-        last_frame_path: None, // TODO: extract last frame via ffmpeg
         output_video_path: Some(storage_key.clone()),
+        ..Default::default()
     };
     SegmentRepo::update_generation_state(pool, segment_id, &update)
         .await

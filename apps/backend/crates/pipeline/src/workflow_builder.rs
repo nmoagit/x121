@@ -8,6 +8,7 @@ use std::path::Path;
 use x121_core::prompt_resolution::ResolvedPromptSlot;
 use x121_core::scene_type_config::ClipPosition;
 use x121_core::types::DbId;
+use x121_core::workflow_import::LOAD_IMAGE_CLASSES;
 
 use crate::error::PipelineError;
 
@@ -27,9 +28,6 @@ pub struct GenerationContext {
     /// Optional LoRA configuration.
     pub lora_config: Option<serde_json::Value>,
 }
-
-/// Node class types that load the seed image in ComfyUI workflows.
-const LOAD_IMAGE_CLASSES: &[&str] = &["LoadImage", "LoadImageFromPath"];
 
 /// Build a ready-to-submit ComfyUI workflow from the generation context.
 ///

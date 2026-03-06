@@ -13,13 +13,8 @@ use x121_core::storage::StorageProvider;
 use x121_core::types::DbId;
 use x121_db::repositories::{ComfyUIInstanceRepo, SegmentRepo};
 
+use x121_core::generation::SYSTEM_USER_ID;
 use x121_pipeline::{completion_handler, loop_driver};
-
-/// Default user ID for system-initiated operations.
-///
-/// In a full multi-user system, the user who started the generation
-/// would be tracked. For now, use a system user ID.
-const SYSTEM_USER_ID: DbId = 1;
 
 /// Run the event processing loop until the broadcast channel closes.
 pub async fn run(
@@ -195,23 +190,14 @@ async fn lookup_segment_from_job(
             x121_pipeline::PipelineError::MissingConfig(format!("Job {job_id} not found"))
         })?;
 
-    let segment_id = job
-        .parameters
-        .get("segment_id")
-        .and_then(|v| v.as_i64())
-        .ok_or_else(|| {
-            x121_pipeline::PipelineError::MissingConfig("Job missing segment_id parameter".into())
+    let params: x121_db::models::generation::SegmentJobParams =
+        serde_json::from_value(job.parameters).map_err(|e| {
+            x121_pipeline::PipelineError::MissingConfig(format!(
+                "Failed to parse SegmentJobParams: {e}"
+            ))
         })?;
 
-    let scene_id = job
-        .parameters
-        .get("scene_id")
-        .and_then(|v| v.as_i64())
-        .ok_or_else(|| {
-            x121_pipeline::PipelineError::MissingConfig("Job missing scene_id parameter".into())
-        })?;
-
-    Ok((segment_id, scene_id))
+    Ok((params.segment_id, params.scene_id))
 }
 
 /// Build a `ComfyUIApi` client for a specific instance.
@@ -239,18 +225,8 @@ async fn mark_segment_failed(
     let (segment_id, _scene_id) = lookup_segment_from_job(pool, job_id).await?;
 
     let update = x121_db::models::generation::UpdateSegmentGeneration {
-        duration_secs: None,
-        cumulative_duration_secs: None,
-        boundary_frame_index: None,
-        boundary_selection_mode: None,
-        generation_started_at: None,
         generation_completed_at: Some(chrono::Utc::now()),
-        worker_id: None,
-        prompt_type: None,
-        prompt_text: None,
-        seed_frame_path: None,
-        last_frame_path: None,
-        output_video_path: None,
+        ..Default::default()
     };
     SegmentRepo::update_generation_state(pool, segment_id, &update)
         .await

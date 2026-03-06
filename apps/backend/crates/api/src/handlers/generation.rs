@@ -108,10 +108,7 @@ async fn init_scene_generation(
     Ok((estimated, mode))
 }
 
-/// Default system user ID for generation jobs.
-///
-/// In a full multi-user system this would come from the authenticated session.
-const SYSTEM_USER_ID: DbId = 1;
+use x121_core::generation::SYSTEM_USER_ID;
 
 /// Spawn a background task to submit segment 0 to ComfyUI.
 ///
@@ -234,18 +231,9 @@ pub async fn select_boundary_frame(
         }))?;
 
     let update = UpdateSegmentGeneration {
-        duration_secs: None,
-        cumulative_duration_secs: None,
         boundary_frame_index: Some(input.frame_index),
         boundary_selection_mode: Some(generation::BOUNDARY_MANUAL.to_string()),
-        generation_started_at: None,
-        generation_completed_at: None,
-        worker_id: None,
-        prompt_type: None,
-        prompt_text: None,
-        seed_frame_path: None,
-        last_frame_path: None,
-        output_video_path: None,
+        ..Default::default()
     };
 
     SegmentRepo::update_generation_state(&state.pool, segment_id, &update).await?;

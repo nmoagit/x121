@@ -8,6 +8,18 @@ use crate::error::CoreError;
 use crate::scene_type_config::ClipPosition;
 
 // ---------------------------------------------------------------------------
+// System defaults
+// ---------------------------------------------------------------------------
+
+/// Default user ID for system-initiated operations (generation loop, worker
+/// resumption).  In a full multi-user system the initiating user would be
+/// propagated through the pipeline.
+pub const SYSTEM_USER_ID: i64 = 1;
+
+/// Job type string used when creating platform jobs for segment generation.
+pub const JOB_TYPE_SEGMENT_GENERATION: &str = "segment_generation";
+
+// ---------------------------------------------------------------------------
 // Boundary selection modes
 // ---------------------------------------------------------------------------
 

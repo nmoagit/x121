@@ -12,7 +12,7 @@ use x121_core::types::{DbId, Timestamp};
 // ---------------------------------------------------------------------------
 
 /// Fields that the generation loop updates on a segment.
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Default, Deserialize)]
 pub struct UpdateSegmentGeneration {
     pub duration_secs: Option<f64>,
     pub cumulative_duration_secs: Option<f64>,
@@ -26,6 +26,18 @@ pub struct UpdateSegmentGeneration {
     pub seed_frame_path: Option<String>,
     pub last_frame_path: Option<String>,
     pub output_video_path: Option<String>,
+}
+
+/// Typed parameters stored in `jobs.parameters` for segment generation jobs.
+///
+/// Serialize when creating the job, deserialize when looking up the segment
+/// from a completed job.  Avoids stringly-typed `serde_json::json!` / manual
+/// `.get("field").and_then(|v| v.as_i64())` on both sides.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SegmentJobParams {
+    pub scene_id: DbId,
+    pub segment_id: DbId,
+    pub segment_index: u32,
 }
 
 // ---------------------------------------------------------------------------

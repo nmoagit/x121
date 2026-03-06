@@ -59,7 +59,13 @@ const KSAMPLER_ADVANCED_CLASS: &str = "KSamplerAdvanced";
 const CLIP_TEXT_ENCODE_CLASS: &str = "CLIPTextEncode";
 
 /// Load image node class type.
-const LOAD_IMAGE_CLASS: &str = "LoadImage";
+pub const LOAD_IMAGE_CLASS: &str = "LoadImage";
+
+/// Load image from path node class type (alternative loader).
+pub const LOAD_IMAGE_FROM_PATH_CLASS: &str = "LoadImageFromPath";
+
+/// All node class types that load a seed image in ComfyUI workflows.
+pub const LOAD_IMAGE_CLASSES: &[&str] = &[LOAD_IMAGE_CLASS, LOAD_IMAGE_FROM_PATH_CLASS];
 
 /// Load checkpoint node class type.
 const LOAD_CHECKPOINT_CLASS: &str = "CheckpointLoaderSimple";
