@@ -12,7 +12,7 @@ import { useMemo } from "react";
 import { api } from "@/lib/api";
 import { imageVariantKeys } from "@/features/images/hooks/use-image-variants";
 import type { ImageVariant } from "@/features/images/types";
-import { pickAvatarUrl } from "@/features/images/utils";
+import { pickAvatarThumbnailUrl } from "@/features/images/utils";
 
 export function useCharacterAvatars(characterIds: number[]): Map<number, string> {
   const results = useQueries({
@@ -29,7 +29,7 @@ export function useCharacterAvatars(characterIds: number[]): Map<number, string>
     for (let i = 0; i < characterIds.length; i++) {
       const variants = results[i]?.data;
       if (variants) {
-        const url = pickAvatarUrl(variants);
+        const url = pickAvatarThumbnailUrl(variants, 256);
         if (url) map.set(characterIds[i]!, url);
       }
     }

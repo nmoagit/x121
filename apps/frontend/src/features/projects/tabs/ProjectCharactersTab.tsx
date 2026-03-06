@@ -32,10 +32,13 @@ import {
   User,
 } from "@/tokens/icons";
 
+import { variantThumbnailUrl } from "@/features/images/utils";
+import { AlertTriangle } from "@/tokens/icons";
+
 import { CharacterCard } from "../components/CharacterCard";
+import { useCharacterDeliverables } from "../hooks/use-character-deliverables";
 import { CharacterEditModal } from "../components/CharacterEditModal";
 import { ImportConfirmModal } from "../components/ImportConfirmModal";
-import { useCharacterAvatars } from "../hooks/use-character-avatars";
 import {
   useCharacterGroups,
   useCreateGroup,
@@ -52,10 +55,13 @@ import {
   useProjectCharacters,
   useUpdateCharacter,
 } from "../hooks/use-project-characters";
-import type { Character, CharacterGroup, UpdateCharacter } from "../types";
+import type { Character, CharacterGroup, SectionKey, SectionReadiness, UpdateCharacter } from "../types";
+import { computeSectionReadiness } from "../types";
 
 /** localStorage key for the show/hide disabled characters toggle. */
 const SHOW_DISABLED_KEY = "x121.project.showDisabled";
+/** localStorage key for audit view toggle. */
+const AUDIT_VIEW_KEY = "x121.project.auditView";
 
 /* --------------------------------------------------------------------------
    Component
@@ -83,8 +89,17 @@ export function ProjectCharactersTab({ projectId, scrollToGroupId }: ProjectChar
 
   const groupMap = useGroupMap(groups);
   const { options: modalGroupOptions } = useGroupSelectOptions(projectId);
-  const characterIds = useMemo(() => (characters ?? []).map((c) => c.id), [characters]);
-  const avatarMap = useCharacterAvatars(characterIds);
+
+  /** Build avatar URL map from hero_variant_id included in character response. */
+  const avatarMap = useMemo(() => {
+    const map = new Map<number, string>();
+    for (const c of characters ?? []) {
+      if (c.hero_variant_id) {
+        map.set(c.id, variantThumbnailUrl(c.hero_variant_id, 512));
+      }
+    }
+    return map;
+  }, [characters]);
 
   /* --- search & filter --- */
   const [searchQuery, setSearchQuery] = useState("");
@@ -105,6 +120,43 @@ export function ProjectCharactersTab({ projectId, scrollToGroupId }: ProjectChar
       return next;
     });
   }, []);
+
+  /* --- audit view (shows blocking reasons on character cards) --- */
+  const [auditView, setAuditView] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem(AUDIT_VIEW_KEY) === "true";
+    } catch {
+      return false;
+    }
+  });
+  const toggleAuditView = useCallback(() => {
+    setAuditView((prev) => {
+      const next = !prev;
+      try { localStorage.setItem(AUDIT_VIEW_KEY, String(next)); } catch { /* ignore */ }
+      return next;
+    });
+  }, []);
+
+  const { data: deliverables } = useCharacterDeliverables(projectId);
+  const blockingMap = useMemo(() => {
+    const map = new Map<number, string[]>();
+    if (!deliverables) return map;
+    for (const d of deliverables) {
+      if (d.blocking_reasons.length > 0) {
+        map.set(d.id, d.blocking_reasons);
+      }
+    }
+    return map;
+  }, [deliverables]);
+
+  const sectionReadinessMap = useMemo(() => {
+    const map = new Map<number, Record<SectionKey, SectionReadiness>>();
+    if (!deliverables) return map;
+    for (const d of deliverables) {
+      map.set(d.id, computeSectionReadiness(d));
+    }
+    return map;
+  }, [deliverables]);
 
   /* --- create character modal --- */
   const [charModalOpen, setCharModalOpen] = useState(false);
@@ -431,6 +483,14 @@ export function ProjectCharactersTab({ projectId, scrollToGroupId }: ProjectChar
           </Button>
           <Button
             size="sm"
+            variant={auditView ? "primary" : "secondary"}
+            icon={<AlertTriangle size={14} />}
+            onClick={toggleAuditView}
+          >
+            {auditView ? "Audit View" : "Gallery View"}
+          </Button>
+          <Button
+            size="sm"
             variant="secondary"
             icon={<Upload size={14} />}
             onClick={charImport.browseFolder}
@@ -510,6 +570,8 @@ export function ProjectCharactersTab({ projectId, scrollToGroupId }: ProjectChar
                   characters={chars}
                   avatarMap={avatarMap}
                   groupMap={groupMap}
+                  blockingMap={auditView ? blockingMap : undefined}
+                  sectionReadinessMap={sectionReadinessMap}
                   expanded={expanded}
                   isDragOver={dragOverGroupId === group.id}
                   projectId={projectId}
@@ -539,6 +601,8 @@ export function ProjectCharactersTab({ projectId, scrollToGroupId }: ProjectChar
                 characters={ungroupedChars}
                 avatarMap={avatarMap}
                 groupMap={groupMap}
+                blockingMap={auditView ? blockingMap : undefined}
+                sectionReadinessMap={sectionReadinessMap}
                 expanded={!collapsedIds.has("ungrouped")}
                 isDragOver={dragOverGroupId === "ungrouped"}
                 projectId={projectId}
@@ -718,6 +782,8 @@ interface GroupSectionProps {
   characters: Character[];
   avatarMap: Map<number, string>;
   groupMap: Map<number, CharacterGroup>;
+  blockingMap?: Map<number, string[]>;
+  sectionReadinessMap?: Map<number, Record<SectionKey, SectionReadiness>>;
   expanded: boolean;
   isDragOver: boolean;
   projectId: number;
@@ -742,8 +808,11 @@ function GroupSection({
   characters,
   avatarMap,
   groupMap,
+  blockingMap,
+  sectionReadinessMap,
   expanded,
   isDragOver,
+  projectId,
   selectedCharIds,
   onCharSelect,
   onToggle,
@@ -828,7 +897,7 @@ function GroupSection({
               No characters in this group. Drag characters here to add them.
             </p>
           ) : (
-            <Grid cols={2} gap={3} className="sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+            <Grid cols={2} gap={3} className="sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6">
               {characters.map((c) => (
                 <div
                   key={c.id}
@@ -841,6 +910,9 @@ function GroupSection({
                     group={c.group_id ? groupMap.get(c.group_id) : undefined}
                     avatarUrl={avatarMap.get(c.id)}
                     selected={selectedCharIds.has(c.id)}
+                    blockingReasons={blockingMap?.get(c.id)}
+                    sectionReadiness={sectionReadinessMap?.get(c.id)}
+                    projectId={projectId}
                     onSelect={onCharSelect}
                     onClick={() => onCharClick(c)}
                     onEdit={() => onCharEdit(c)}

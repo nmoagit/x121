@@ -6,12 +6,26 @@ use axum::Json;
 use serde::Serialize;
 use x121_core::error::CoreError;
 use x121_core::types::DbId;
+use x121_db::models::character::CharacterDeliverableRow;
 use x121_db::models::project::{CreateProject, Project, UpdateProject};
-use x121_db::repositories::ProjectRepo;
+use x121_db::repositories::{CharacterRepo, ProjectRepo};
 
 use crate::error::{AppError, AppResult};
 use crate::response::DataResponse;
 use crate::state::AppState;
+
+/// Verify a project exists, returning an `AppError::NotFound` if not.
+///
+/// Shared by `get_stats`, `get_character_deliverables`, and any future
+/// project-scoped handlers in this file.
+async fn ensure_project_exists(pool: &sqlx::PgPool, id: DbId) -> AppResult<Project> {
+    ProjectRepo::find_by_id(pool, id)
+        .await?
+        .ok_or(AppError::Core(CoreError::NotFound {
+            entity: "Project",
+            id,
+        }))
+}
 
 /// POST /api/v1/projects
 pub async fn create(
@@ -97,23 +111,20 @@ pub async fn get_stats(
     Path(project_id): Path<DbId>,
 ) -> AppResult<Json<DataResponse<ProjectStats>>> {
     // Verify project exists.
-    let _project = ProjectRepo::find_by_id(&state.pool, project_id)
-        .await?
-        .ok_or(AppError::Core(CoreError::NotFound {
-            entity: "Project",
-            id: project_id,
-        }))?;
+    let _project = ensure_project_exists(&state.pool, project_id).await?;
 
     // Character counts by status.
-    // Statuses: 1=draft, 2=active (ready), 3=archived (complete).
+    // Statuses: 1=draft, 2=active (ready), 3=archived.
+    // Archived characters (status_id = 3) are excluded from all counts
+    // to prevent "ghost" tasks cluttering the PM's view.
     let char_stats: (i64, i64, i64, i64) = sqlx::query_as(
         "SELECT
             COUNT(*) AS total,
             COUNT(*) FILTER (WHERE status_id = 2) AS ready,
             COUNT(*) FILTER (WHERE status_id = 1) AS generating,
-            COUNT(*) FILTER (WHERE status_id = 3) AS complete
+            0::bigint AS complete
          FROM characters
-         WHERE project_id = $1 AND deleted_at IS NULL",
+         WHERE project_id = $1 AND deleted_at IS NULL AND status_id != 3",
     )
     .bind(project_id)
     .fetch_one(&state.pool)
@@ -121,6 +132,7 @@ pub async fn get_stats(
 
     // Scene video version counts by QA approval status.
     // Join through scenes to reach characters for project filtering.
+    // Excludes archived characters (status_id = 3).
     let scene_stats: (i64, i64, i64, i64, i64) = sqlx::query_as(
         "SELECT
             COUNT(*) AS total,
@@ -131,7 +143,8 @@ pub async fn get_stats(
          FROM scene_video_versions svv
          JOIN scenes s ON s.id = svv.scene_id
          JOIN characters c ON c.id = s.character_id
-         WHERE c.project_id = $1 AND c.deleted_at IS NULL AND svv.deleted_at IS NULL",
+         WHERE c.project_id = $1 AND c.deleted_at IS NULL AND c.status_id != 3
+           AND svv.deleted_at IS NULL",
     )
     .bind(project_id)
     .fetch_one(&state.pool)
@@ -157,4 +170,22 @@ pub async fn get_stats(
             delivery_readiness_pct,
         },
     }))
+}
+
+// ---------------------------------------------------------------------------
+// Per-character deliverable status (Requirements gap: Stage 1.3)
+// ---------------------------------------------------------------------------
+
+/// GET /api/v1/projects/{id}/character-deliverables
+///
+/// Returns per-character deliverable status for the project overview grid.
+pub async fn get_character_deliverables(
+    State(state): State<AppState>,
+    Path(project_id): Path<DbId>,
+) -> AppResult<Json<DataResponse<Vec<CharacterDeliverableRow>>>> {
+    // Verify project exists.
+    let _project = ensure_project_exists(&state.pool, project_id).await?;
+
+    let rows = CharacterRepo::list_deliverable_status(&state.pool, project_id).await?;
+    Ok(Json(DataResponse { data: rows }))
 }

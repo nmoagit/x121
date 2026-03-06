@@ -3,7 +3,9 @@
 use sqlx::PgPool;
 use x121_core::types::DbId;
 
-use crate::models::character::{Character, CreateCharacter, UpdateCharacter};
+use crate::models::character::{
+    Character, CharacterDeliverableRow, CharacterWithAvatar, CreateCharacter, UpdateCharacter,
+};
 
 /// Column list shared across queries to avoid repetition.
 ///
@@ -102,6 +104,47 @@ impl CharacterRepo {
             .bind(project_id)
             .fetch_all(pool)
             .await
+    }
+
+    /// List characters for a project with the best avatar variant ID per character.
+    ///
+    /// Uses a LATERAL subquery to pick the single best variant per character:
+    /// clothed hero > any hero > clothed approved > any approved.
+    /// This eliminates the N+1 query pattern where the frontend fetches
+    /// all variants for each character just to find the avatar.
+    pub async fn list_by_project_with_avatar(
+        pool: &PgPool,
+        project_id: DbId,
+    ) -> Result<Vec<CharacterWithAvatar>, sqlx::Error> {
+        // Prefix COLUMNS with table alias c.
+        let cols = COLUMNS
+            .split(", ")
+            .map(|c| format!("c.{c}"))
+            .collect::<Vec<_>>()
+            .join(", ");
+        sqlx::query_as::<_, CharacterWithAvatar>(&format!(
+            "SELECT {cols}, av.id AS hero_variant_id
+                 FROM characters c
+                 LEFT JOIN LATERAL (
+                     SELECT iv.id
+                     FROM image_variants iv
+                     WHERE iv.character_id = c.id
+                       AND iv.deleted_at IS NULL
+                       AND iv.file_path IS NOT NULL
+                       AND (iv.is_hero = true OR iv.status_id = 2)
+                     ORDER BY
+                         iv.is_hero DESC,
+                         CASE WHEN lower(iv.variant_type) = 'clothed' THEN 0 ELSE 1 END,
+                         iv.status_id = 2 DESC,
+                         iv.id DESC
+                     LIMIT 1
+                 ) av ON true
+                 WHERE c.project_id = $1 AND c.deleted_at IS NULL
+                 ORDER BY c.name ASC"
+        ))
+        .bind(project_id)
+        .fetch_all(pool)
+        .await
     }
 
     /// Update a character. Only non-`None` fields in `input` are applied.
@@ -231,5 +274,76 @@ impl CharacterRepo {
             .bind(patch)
             .fetch_optional(pool)
             .await
+    }
+
+    /// Per-character deliverable status for a project.
+    ///
+    /// Single query with LEFT JOINs + aggregates across image_variants, scenes,
+    /// scene_video_versions, and character_metadata_versions. Excludes archived
+    /// characters (status_id = 3).
+    pub async fn list_deliverable_status(
+        pool: &PgPool,
+        project_id: DbId,
+    ) -> Result<Vec<CharacterDeliverableRow>, sqlx::Error> {
+        sqlx::query_as::<_, CharacterDeliverableRow>(
+            "SELECT
+                c.id,
+                c.name,
+                c.group_id,
+                c.status_id,
+                COALESCE(img.total, 0) AS images_count,
+                COALESCE(img.approved, 0) AS images_approved,
+                COALESCE(sc.total, 0) AS scenes_total,
+                COALESCE(sc.with_video, 0) AS scenes_with_video,
+                COALESCE(meta.has_active, false) AS has_active_metadata,
+                COALESCE(
+                    c.settings->>'elevenlabs_voice' IS NOT NULL
+                    AND LENGTH(c.settings->>'elevenlabs_voice') > 0,
+                    false
+                ) AS has_voice_id,
+                -- Build blocking_reasons array
+                ARRAY_REMOVE(ARRAY[
+                    CASE WHEN COALESCE(img.total, 0) = 0 THEN 'Missing Seed Image' END,
+                    CASE WHEN COALESCE(img.approved, 0) = 0 AND COALESCE(img.total, 0) > 0 THEN 'No Approved Images' END,
+                    CASE WHEN COALESCE(sc.total, 0) = 0 THEN 'No Scenes' END,
+                    CASE WHEN NOT COALESCE(meta.has_active, false) THEN 'Missing Metadata' END
+                ], NULL) AS blocking_reasons,
+                -- Readiness: ratio of scenes with at least one video version
+                CASE WHEN COALESCE(sc.total, 0) > 0
+                    THEN ROUND((COALESCE(sc.with_video, 0)::numeric / sc.total::numeric) * 100, 1)::float8
+                    ELSE 0.0
+                END AS readiness_pct
+             FROM characters c
+             LEFT JOIN LATERAL (
+                 SELECT
+                     COUNT(*) AS total,
+                     COUNT(*) FILTER (WHERE iv.status_id = 2) AS approved
+                 FROM image_variants iv
+                 WHERE iv.character_id = c.id AND iv.deleted_at IS NULL
+             ) img ON true
+             LEFT JOIN LATERAL (
+                 SELECT
+                     COUNT(*) AS total,
+                     COUNT(*) FILTER (WHERE EXISTS (
+                         SELECT 1 FROM scene_video_versions svv
+                         WHERE svv.scene_id = s.id AND svv.deleted_at IS NULL
+                     )) AS with_video
+                 FROM scenes s
+                 WHERE s.character_id = c.id
+             ) sc ON true
+             LEFT JOIN LATERAL (
+                 SELECT EXISTS (
+                     SELECT 1 FROM character_metadata_versions cmv
+                     WHERE cmv.character_id = c.id
+                       AND cmv.is_active = true
+                       AND cmv.deleted_at IS NULL
+                 ) AS has_active
+             ) meta ON true
+             WHERE c.project_id = $1 AND c.deleted_at IS NULL AND c.status_id != 3
+             ORDER BY c.name ASC",
+        )
+        .bind(project_id)
+        .fetch_all(pool)
+        .await
     }
 }

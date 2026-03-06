@@ -18,6 +18,7 @@ use crate::state::AppState;
 /// PUT    /{id}                              -> update
 /// DELETE /{id}                              -> delete
 /// GET    /{id}/stats                        -> get_stats (PRD-112)
+/// GET    /{id}/character-deliverables       -> get_character_deliverables
 ///
 /// GET    /{project_id}/characters           -> list_by_project
 /// POST   /{project_id}/characters           -> create
@@ -101,6 +102,10 @@ pub fn router() -> Router<AppState> {
                 .delete(project::delete),
         )
         .route("/{id}/stats", get(project::get_stats))
+        .route(
+            "/{id}/character-deliverables",
+            get(project::get_character_deliverables),
+        )
         .nest("/{project_id}/characters", character_routes)
         .nest("/{project_id}/groups", group_routes)
         .nest("/{project_id}/scene-types", scene_type_routes)

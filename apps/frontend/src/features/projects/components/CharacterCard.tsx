@@ -13,8 +13,9 @@ import {
   DELIVERY_STATUS_VARIANT,
 } from "@/features/delivery";
 
-import type { Character, CharacterGroup } from "../types";
+import type { Character, CharacterGroup, SectionKey, SectionReadiness } from "../types";
 import { characterStatusBadgeVariant, characterStatusLabel } from "../types";
+import { ReadinessIndicators } from "./ReadinessIndicators";
 
 /* --------------------------------------------------------------------------
    Component
@@ -26,12 +27,15 @@ interface CharacterCardProps {
   avatarUrl?: string | null;
   selected?: boolean;
   deliveryStatus?: CharacterDeliveryStatus;
+  blockingReasons?: string[];
+  sectionReadiness?: Record<SectionKey, SectionReadiness>;
+  projectId?: number;
   onSelect?: (charId: number) => void;
   onClick: () => void;
   onEdit?: () => void;
 }
 
-export function CharacterCard({ character, group, avatarUrl, selected, deliveryStatus, onSelect, onClick, onEdit }: CharacterCardProps) {
+export function CharacterCard({ character, group, avatarUrl, selected, deliveryStatus, blockingReasons, sectionReadiness, projectId, onSelect, onClick, onEdit }: CharacterCardProps) {
   const statusLabel = characterStatusLabel(character.status_id);
   const badgeVariant = characterStatusBadgeVariant(character.status_id);
 
@@ -59,6 +63,7 @@ export function CharacterCard({ character, group, avatarUrl, selected, deliveryS
               src={avatarUrl}
               alt={character.name}
               className="absolute inset-0 w-full h-full object-cover"
+              loading="lazy"
             />
           ) : (
             <div className="absolute inset-0 flex items-center justify-center">
@@ -120,29 +125,45 @@ export function CharacterCard({ character, group, avatarUrl, selected, deliveryS
         </div>
 
         {/* Info area */}
-        <div className="px-[var(--spacing-3)] py-[var(--spacing-2)]">
-          <div className="flex items-center justify-between gap-[var(--spacing-2)]">
-            <h3 className="text-sm font-semibold text-[var(--color-text-primary)] truncate">
-              {character.name}
-            </h3>
-            <Badge variant={badgeVariant} size="sm">
-              {statusLabel}
-            </Badge>
-          </div>
-          {group && (
-            <p className="mt-0.5 text-xs text-[var(--color-text-muted)] truncate">
-              {group.name}
-            </p>
-          )}
-          {deliveryStatus && deliveryStatus.status !== "not_delivered" && (
-            <div className="mt-1">
-              <Badge
-                variant={DELIVERY_STATUS_VARIANT[deliveryStatus.status]}
-                size="sm"
-              >
-                {DELIVERY_STATUS_LABELS[deliveryStatus.status]}
+        <div className="flex px-[var(--spacing-3)] py-[var(--spacing-2)] gap-[var(--spacing-2)]">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center justify-between gap-[var(--spacing-2)]">
+              <h3 className="text-sm font-semibold text-[var(--color-text-primary)] truncate">
+                {character.name}
+              </h3>
+              <Badge variant={badgeVariant} size="sm">
+                {statusLabel}
               </Badge>
             </div>
+            {group && (
+              <p className="mt-0.5 text-xs text-[var(--color-text-muted)] truncate">
+                {group.name}
+              </p>
+            )}
+            {deliveryStatus && deliveryStatus.status !== "not_delivered" && (
+              <div className="mt-1">
+                <Badge
+                  variant={DELIVERY_STATUS_VARIANT[deliveryStatus.status]}
+                  size="sm"
+                >
+                  {DELIVERY_STATUS_LABELS[deliveryStatus.status]}
+                </Badge>
+              </div>
+            )}
+            {blockingReasons && blockingReasons.length > 0 && (
+              <div className="mt-1 flex flex-wrap gap-1">
+                {blockingReasons.map((reason) => (
+                  <Badge key={reason} variant="danger" size="sm">{reason}</Badge>
+                ))}
+              </div>
+            )}
+          </div>
+          {sectionReadiness && projectId != null && (
+            <ReadinessIndicators
+              readiness={sectionReadiness}
+              projectId={projectId}
+              characterId={character.id}
+            />
           )}
         </div>
       </button>

@@ -97,6 +97,8 @@ export {
   ArrowDown,
   // Projects
   FolderKanban,
+  Film,
+  Mic,
   // Gap-fill additions
   Bug,
   ListFilter,

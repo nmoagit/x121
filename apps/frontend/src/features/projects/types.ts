@@ -51,6 +51,25 @@ export interface ProjectStats {
 }
 
 /* --------------------------------------------------------------------------
+   Character deliverable status (per-character readiness grid)
+   -------------------------------------------------------------------------- */
+
+export interface CharacterDeliverableRow {
+  id: number;
+  name: string;
+  group_id: number | null;
+  status_id: number;
+  images_count: number;
+  images_approved: number;
+  scenes_total: number;
+  scenes_with_video: number;
+  has_active_metadata: boolean;
+  has_voice_id: boolean;
+  blocking_reasons: string[];
+  readiness_pct: number;
+}
+
+/* --------------------------------------------------------------------------
    Character groups
    -------------------------------------------------------------------------- */
 
@@ -89,6 +108,8 @@ export interface Character {
   deleted_at: string | null;
   created_at: string;
   updated_at: string;
+  /** Best avatar variant ID (hero clothed > hero > approved clothed > approved). */
+  hero_variant_id: number | null;
 }
 
 export interface CreateCharacter {
@@ -220,4 +241,58 @@ export function characterStatusBadgeVariant(statusId: number | null): BadgeVaria
   if (statusId === null) return "default";
   const color = STATUS_COLORS[statusId] ?? "gray";
   return COLOR_TO_VARIANT[color] ?? "default";
+}
+
+/* --------------------------------------------------------------------------
+   Section readiness indicators (PRD-128)
+   -------------------------------------------------------------------------- */
+
+/** Per-section readiness state. */
+export type SectionState = "not_started" | "partial" | "complete" | "error";
+
+/** Readiness data for a single section. */
+export interface SectionReadiness {
+  state: SectionState;
+  label: string;
+  tooltip: string;
+}
+
+/** The four tracked sections in workflow order. */
+export type SectionKey = "metadata" | "images" | "scenes" | "speech";
+
+/** CSS color variable for each section state. */
+export const SECTION_STATE_BG: Record<SectionState, string> = {
+  not_started: "var(--color-text-muted)",
+  partial: "var(--color-status-warning)",
+  complete: "var(--color-status-success)",
+  error: "var(--color-status-danger)",
+};
+
+/** Compute per-section readiness from a deliverable row. */
+export function computeSectionReadiness(
+  row: CharacterDeliverableRow,
+): Record<SectionKey, SectionReadiness> {
+  const metadata: SectionReadiness = row.has_active_metadata
+    ? { state: "complete", label: "Metadata", tooltip: "Metadata: Complete" }
+    : { state: "not_started", label: "Metadata", tooltip: "Metadata: Not started" };
+
+  const images: SectionReadiness =
+    row.images_count === 0
+      ? { state: "not_started", label: "Images", tooltip: "Images: No seed images" }
+      : row.images_approved === 0
+        ? { state: "partial", label: "Images", tooltip: `Images: ${row.images_count} uploaded, 0 approved` }
+        : { state: "complete", label: "Images", tooltip: `Images: ${row.images_approved}/${row.images_count} approved` };
+
+  const scenes: SectionReadiness =
+    row.scenes_total === 0
+      ? { state: "not_started", label: "Scenes", tooltip: "Scenes: No scenes assigned" }
+      : row.scenes_with_video < row.scenes_total
+        ? { state: "partial", label: "Scenes", tooltip: `Scenes: ${row.scenes_with_video}/${row.scenes_total} with video` }
+        : { state: "complete", label: "Scenes", tooltip: `Scenes: ${row.scenes_with_video}/${row.scenes_total} complete` };
+
+  const speech: SectionReadiness = row.has_voice_id
+    ? { state: "complete", label: "Speech", tooltip: "Speech: Voice configured" }
+    : { state: "not_started", label: "Speech", tooltip: "Speech: Not configured" };
+
+  return { metadata, images, scenes, speech };
 }

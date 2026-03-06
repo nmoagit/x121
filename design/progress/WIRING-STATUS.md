@@ -5,17 +5,17 @@ versus those that are implemented but need integration into host pages.
 
 **Last updated:** 2026-03-06
 
-**All 128 PRDs are complete.** No PRDs remain in planning.
+**All 129 PRDs are complete.** No PRDs remain in planning.
 
 ## Summary
 
 | Category | Count |
 |----------|-------|
 | Routed (accessible via sidebar/nav) | 71 |
-| Correctly unrouted (overlays/framework/embedded) | 14 |
+| Correctly unrouted (overlays/framework/embedded) | 15 |
 | Missing routes (need host-page integration) | 29 |
 | No frontend (backend/script only) | 14 |
-| **Total** | **128** |
+| **Total** | **129** |
 
 ---
 
@@ -121,6 +121,7 @@ They do NOT need their own routes.
 | `setup-wizard` | PRD-105 | Platform setup wizard (first-run overlay flow) |
 | — | PRD-126 | Bug fixes & UX polish (cross-cutting, no standalone UI) |
 | `scenes` | PRD-127 | ArtifactTimeline embedded in ClipCard (scene detail page) |
+| `projects` | PRD-128 | ReadinessIndicators embedded in CharacterCard (project character grid) |
 
 ---
 
