@@ -45,6 +45,7 @@ export function useFooterStatus(): FooterStatus {
     queryKey: ["status", "footer"],
     queryFn: () => api.get<FooterStatusData>("/status/footer"),
     refetchInterval: POLL_INTERVAL_MS,
+    enabled: user != null,
   });
 
   return {

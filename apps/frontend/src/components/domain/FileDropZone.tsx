@@ -16,7 +16,7 @@ import type { ReactNode } from "react";
 
 import type { CharacterDropPayload, DroppedAsset } from "@/features/projects/types";
 import { cn } from "@/lib/cn";
-import { isImageFile, isVideoFile, stripExtension } from "@/lib/file-types";
+import { isImageFile, isVideoFile, readFileText, stripExtension } from "@/lib/file-types";
 
 /* --------------------------------------------------------------------------
    Props
@@ -73,16 +73,6 @@ function parseCsv(text: string): string[] {
 /* --------------------------------------------------------------------------
    Helpers — directory reading
    -------------------------------------------------------------------------- */
-
-/** Read a File's text content. */
-function readFileText(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = () => reject(reader.error);
-    reader.readAsText(file);
-  });
-}
 
 /**
  * Read all entries from a directory reader, handling the browser quirk
@@ -147,9 +137,21 @@ function classifyCharacterFiles(
   files: File[],
 ): CharacterDropPayload {
   const assets: DroppedAsset[] = [];
+  let bioJson: File | undefined;
+  let tovJson: File | undefined;
+  let metadataJson: File | undefined;
 
   for (const file of files) {
-    if (isImageFile(file.name)) {
+    const lower = file.name.toLowerCase();
+
+    // Collect known JSON metadata files
+    if (lower === "bio.json") {
+      bioJson = file;
+    } else if (lower === "tov.json") {
+      tovJson = file;
+    } else if (lower === "metadata.json") {
+      metadataJson = file;
+    } else if (isImageFile(file.name)) {
       assets.push({
         file,
         category: filenameStem(file.name),
@@ -162,10 +164,9 @@ function classifyCharacterFiles(
         kind: "video",
       });
     }
-    // Ignore other file types
   }
 
-  return { rawName: characterName, assets };
+  return { rawName: characterName, assets, bioJson, tovJson, metadataJson };
 }
 
 /**

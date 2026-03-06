@@ -17,6 +17,71 @@ from pathlib import Path
 from collections import defaultdict
 
 
+# ---------------------------------------------------------------------------
+# Emoji removal (ported from batch_fix_metadata.py)
+# ---------------------------------------------------------------------------
+
+_EMOJI_RE = re.compile(
+    "["
+    "\U0001F600-\U0001F64F"   # emoticons
+    "\U0001F300-\U0001F5FF"   # symbols & pictographs
+    "\U0001F680-\U0001F6FF"   # transport & map symbols
+    "\U0001F1E0-\U0001F1FF"   # flags
+    "\U00002702-\U000027B0"   # dingbats
+    "\U000024C2-\U0001F251"   # enclosed characters
+    "\U0001F900-\U0001F9FF"   # supplemental symbols
+    "\U0001FA00-\U0001FA6F"   # chess symbols
+    "\U0001FA70-\U0001FAFF"   # symbols and pictographs extended-a
+    "\U00002600-\U000026FF"   # misc symbols
+    "\U0001F700-\U0001F77F"   # alchemical symbols
+    "]+",
+    flags=re.UNICODE,
+)
+
+
+def remove_emojis(text: str) -> str:
+    """Remove emojis and emoji-related text from a string."""
+    text = _EMOJI_RE.sub("", text)
+
+    # Remove emoji reference phrases and everything after them.
+    # Order matters: more specific patterns (with "Her") first, then bare patterns.
+    # All patterns include optional leading "and" and "her" to avoid orphaned words.
+
+    # "Her fav/favorite emojis are/is" patterns
+    text = re.sub(r",?\s*(?:and\s+)?Her\s+fav\s+emoji[s]?\s*(is|are|:)?.*$", "", text, flags=re.IGNORECASE)
+    text = re.sub(r",?\s*(?:and\s+)?Her\s+favorite\s+emoji[s]?\s*(is|are|:)?.*$", "", text, flags=re.IGNORECASE)
+
+    # Bare "Fav/Favorite emoji(s):" patterns (with optional "her" to avoid orphaning)
+    text = re.sub(r",?\s*(?:and\s+)?(?:her\s+)?Fav\s+emoji[s]?[:\s].*$", "", text, flags=re.IGNORECASE)
+    text = re.sub(r",?\s*(?:and\s+)?(?:her\s+)?Favorite\s+emoji[s]?[:\s].*$", "", text, flags=re.IGNORECASE)
+
+    # Remove standalone "Fav emojis" at end (if emojis were removed leaving just the phrase)
+    text = re.sub(r"\s*Fav\s+emoji[s]?\s*$", "", text, flags=re.IGNORECASE)
+
+    # Remove trailing "Her" that might be left over from partial cleanup
+    text = re.sub(r"\s+Her\s*$", "", text, flags=re.IGNORECASE)
+
+    # Clean up any trailing whitespace or comma artifacts (preserve periods as valid endings)
+    text = text.rstrip(" ,")
+    # Remove orphaned conjunction comma before closing quote
+    text = re.sub(r""",['"'\u2018\u2019\u201c\u201d]\s*$""", lambda m: m.group(0)[1:], text)
+    # Remove variation selectors (U+FE0F) that survive emoji removal
+    text = text.replace("\uFE0F", "").strip()
+
+    return text
+
+
+def _strip_emojis_deep(value):
+    """Recursively strip emojis from all string values in a JSON structure."""
+    if isinstance(value, str):
+        return remove_emojis(value)
+    if isinstance(value, list):
+        return [_strip_emojis_deep(item) for item in value]
+    if isinstance(value, dict):
+        return {k: _strip_emojis_deep(v) for k, v in value.items()}
+    return value
+
+
 # Categories that should be extracted from mixed arrays
 # These are all "favorites" categories that need the favorite_ prefix
 FAVORITE_CATEGORIES = [
@@ -2000,7 +2065,7 @@ def get_default_value(key: str) -> any:
 # order_dict() deep-merges actual data onto this template so every output
 # has the same key structure regardless of what source data is available.
 MASTER_SCHEMA = {
-    "VoiceProvider": "",
+    "VoiceProvider": "ElevenLabs",
     "VoiceID": "",
     "bio": "",
     "gender": "",
@@ -2077,7 +2142,7 @@ def transform_to_new_schema(data: dict) -> dict:
     result = {}
 
     # Copy basic fields
-    result["VoiceProvider"] = data.get("VoiceProvider", "")
+    result["VoiceProvider"] = data.get("VoiceProvider", "ElevenLabs") or "ElevenLabs"
     result["VoiceID"] = data.get("VoiceID", "")
     # Check for bio or description (tov files use description)
     result["bio"] = data.get("bio", "") or data.get("description", "")
@@ -2593,9 +2658,11 @@ def order_dict(data: dict) -> dict:
     """
     Merge data onto MASTER_SCHEMA so every output has the same key structure.
     Missing keys get default empty values from the schema. Dict insertion order
-    from MASTER_SCHEMA defines field ordering.
+    from MASTER_SCHEMA defines field ordering. Emojis are stripped from all
+    string values.
     """
-    return _deep_merge(MASTER_SCHEMA, data)
+    merged = _deep_merge(MASTER_SCHEMA, data)
+    return _strip_emojis_deep(merged)
 
 
 def transform_xena_to_schema(data: dict) -> dict:
@@ -2603,7 +2670,7 @@ def transform_xena_to_schema(data: dict) -> dict:
     result = {}
 
     # Basic fields
-    result["VoiceProvider"] = data.get("VoiceProvider", "")
+    result["VoiceProvider"] = data.get("VoiceProvider", "ElevenLabs") or "ElevenLabs"
     result["VoiceID"] = data.get("VoiceID", "")
     result["bio"] = data.get("bio", "")
 
@@ -2897,18 +2964,38 @@ def process_stdin():
     if bio and isinstance(bio, dict):
         bio = fix_json(bio)
 
-    # Step 2: Extract bio text from tov (description/bio/backstory fallback)
+    # Step 2: Extract bio text from tov using the full batch_fix_metadata logic.
+    # Handles: description/bio/backstory keys, malformed tov where bio text is
+    # stored as a KEY name (underscores as spaces, array values as continuation),
+    # {bot_name}/{user_name} placeholder replacement, and emoji removal.
     tov_bio = None
-    tov_bio_keys = ("description", "bio", "backstory")
-    if isinstance(tov, dict):
-        for key in tov_bio_keys:
-            val = tov.get(key, "")
-            if val and isinstance(val, str):
-                # Replace {bot_name}/{user_name} placeholders
-                val = re.sub(r"\{bot_name\}", name, val, flags=re.IGNORECASE)
-                val = re.sub(r"\{user_name\}", "you", val, flags=re.IGNORECASE)
-                tov_bio = val
-                break
+    if isinstance(tov, dict) and tov:
+        description = tov.get("description", "") or tov.get("bio", "") or tov.get("backstory", "")
+
+        # If no standard key, check for malformed format where bio is a key name
+        if not description:
+            for key in tov:
+                if "{bot_name}" in key or len(key) > 80:
+                    # Reconstruct text from key name (underscores -> spaces) + array values
+                    text = key.replace("{bot_name}", "\x00BOTNAME\x00")
+                    text = text.replace("_", " ")
+                    text = text.replace("\x00BOTNAME\x00", "{bot_name}")
+                    text = text.replace(" ,", ",").replace("  ", " ")
+                    val = tov[key]
+                    if isinstance(val, list) and val:
+                        continuation_parts = [
+                            item.strip() for item in val
+                            if isinstance(item, str) and item.strip()
+                        ]
+                        if continuation_parts:
+                            text = text.rstrip(".") + ". " + " ".join(continuation_parts)
+                    description = text
+                    break
+
+        if description:
+            bio_text = re.sub(r"(?i)\{bot_name\}", name, description)
+            bio_text = re.sub(r"(?i)\{user_name\}", "you", bio_text)
+            tov_bio = remove_emojis(bio_text)
 
     # Step 3: Merge tov fields into bio (skip description/bio/backstory —
     # those are handled via tov_bio extraction above)

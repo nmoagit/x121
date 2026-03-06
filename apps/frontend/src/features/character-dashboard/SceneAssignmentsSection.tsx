@@ -107,6 +107,9 @@ export function SceneAssignmentsSection({
                     <span className="inline-flex items-center gap-1.5">
                       {a.scene_name}
                       <TrackBadge name={a.track_name} slug={a.track_slug} />
+                      {a.has_clothes_off_transition && (
+                        <TrackBadge name="Clothes Off" slug="clothes_off" />
+                      )}
                     </span>
                   </td>
                   <td className="py-1">

@@ -7,7 +7,7 @@ use axum::extract::{Multipart, Path, Query, State};
 use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::Json;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use x121_core::error::CoreError;
 use x121_core::images;
 use x121_core::types::DbId;
@@ -279,6 +279,10 @@ pub async fn reimport_variant(
         .await
         .map_err(|e| AppError::InternalError(e.to_string()))?;
 
+    let (width, height) = images::image_dimensions(&data)
+        .map(|(w, h)| (Some(w as i32), Some(h as i32)))
+        .unwrap_or((None, None));
+
     let input = CreateImageVariant {
         character_id,
         source_image_id: original.source_image_id,
@@ -290,8 +294,8 @@ pub async fn reimport_variant(
         provenance: Some(images::PROVENANCE_MANUALLY_EDITED.to_string()),
         is_hero: Some(false),
         file_size_bytes: Some(data.len() as i64),
-        width: None,
-        height: None,
+        width,
+        height,
         format: Some(ext),
         version: Some(original.version + 1),
         parent_variant_id: Some(id),
@@ -367,8 +371,8 @@ pub async fn upload_manual_variant(
     let storage_dir = ensure_variant_dir().await?;
 
     let stored_filename = format!(
-        "variant_{character_id}_manual_{}.{ext}",
-        chrono::Utc::now().timestamp()
+        "variant_{character_id}_{vtype}_{}.{ext}",
+        chrono::Utc::now().timestamp_millis()
     );
     let file_path = storage_dir.join(&stored_filename);
     tokio::fs::write(&file_path, &data)
@@ -378,6 +382,10 @@ pub async fn upload_manual_variant(
     // Auto-promote to hero if no hero exists yet for this character+variant_type.
     let existing_hero = ImageVariantRepo::find_hero(&state.pool, character_id, &vtype).await?;
     let should_be_hero = existing_hero.is_none();
+
+    let (width, height) = images::image_dimensions(&data)
+        .map(|(w, h)| (Some(w as i32), Some(h as i32)))
+        .unwrap_or((None, None));
 
     let input = CreateImageVariant {
         character_id,
@@ -390,8 +398,8 @@ pub async fn upload_manual_variant(
         provenance: Some(images::PROVENANCE_MANUAL_UPLOAD.to_string()),
         is_hero: Some(should_be_hero),
         file_size_bytes: Some(data.len() as i64),
-        width: None,
-        height: None,
+        width,
+        height,
         format: Some(ext),
         version: Some(1),
         parent_variant_id: None,
@@ -470,4 +478,79 @@ pub async fn generate_variants(
     // "generating" status ready for the completion callback.
 
     Ok((StatusCode::CREATED, Json(DataResponse { data: variants })))
+}
+
+// ---------------------------------------------------------------------------
+// Backfill
+// ---------------------------------------------------------------------------
+
+#[derive(Debug, Deserialize)]
+pub struct BackfillParams {
+    pub limit: Option<u32>,
+}
+
+/// Response body for backfill-metadata.
+#[derive(Debug, Serialize)]
+pub struct BackfillMetadataResponse {
+    pub processed: usize,
+    pub succeeded: usize,
+    pub failed: usize,
+}
+
+/// POST /api/v1/image-variants/backfill-metadata
+///
+/// Backfill width/height for existing image variants that don't have dimensions
+/// yet. Reads image file bytes, extracts header dimensions, and updates the DB.
+/// Processes up to `limit` rows (default 50) per call.
+pub async fn backfill_image_metadata(
+    State(state): State<AppState>,
+    Query(params): Query<BackfillParams>,
+) -> AppResult<Json<BackfillMetadataResponse>> {
+    let limit = params.limit.unwrap_or(50).min(200) as i64;
+
+    let variants = ImageVariantRepo::list_missing_dimensions(&state.pool, limit).await?;
+
+    let total = variants.len();
+    let mut succeeded = 0usize;
+    let mut failed = 0usize;
+
+    for variant in &variants {
+        // Resolve the file path to read bytes.
+        let abs_path = match state.resolve_to_path(&variant.file_path).await {
+            Ok(p) => p,
+            Err(_) => {
+                failed += 1;
+                continue;
+            }
+        };
+
+        let data = match tokio::fs::read(&abs_path).await {
+            Ok(d) => d,
+            Err(_) => {
+                failed += 1;
+                continue;
+            }
+        };
+
+        let (w, h) = match images::image_dimensions(&data) {
+            Some(dims) => dims,
+            None => {
+                failed += 1;
+                continue;
+            }
+        };
+
+        match ImageVariantRepo::set_dimensions(&state.pool, variant.id, w as i32, h as i32).await {
+            Ok(true) => succeeded += 1,
+            _ => failed += 1,
+        }
+    }
+
+    tracing::info!(total, succeeded, failed, "Backfill image metadata complete");
+
+    Ok(Json(BackfillMetadataResponse {
+        processed: total,
+        succeeded,
+        failed,
+    }))
 }

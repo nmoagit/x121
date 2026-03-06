@@ -77,12 +77,10 @@ impl CharacterDeliverableIgnoreRepo {
         pool: &PgPool,
         uuid: sqlx::types::Uuid,
     ) -> Result<bool, sqlx::Error> {
-        let result = sqlx::query(
-            "DELETE FROM character_deliverable_ignores WHERE uuid = $1",
-        )
-        .bind(uuid)
-        .execute(pool)
-        .await?;
+        let result = sqlx::query("DELETE FROM character_deliverable_ignores WHERE uuid = $1")
+            .bind(uuid)
+            .execute(pool)
+            .await?;
         Ok(result.rows_affected() > 0)
     }
 

@@ -212,6 +212,7 @@ pub fn tokens_for_category(category: &str) -> Vec<&'static str> {
         "test_shot" => vec!["character_slug", "scene_type_slug", "sequence"],
         "chunk_artifact" => vec!["sequence", "character_slug", "scene_type_slug"],
         "delivery_zip" => vec!["project_slug", "date_compact"],
+        "avatar_json" => vec!["project_slug", "character_slug"],
         _ => vec![],
     }
 }

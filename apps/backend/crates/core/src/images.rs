@@ -1,5 +1,7 @@
 //! Image management constants and validation (PRD-21).
 
+use std::io::Cursor;
+
 /// Supported image file formats for source images and variants.
 pub const VALID_IMAGE_FORMATS: &[&str] = &["png", "jpeg", "jpg", "webp"];
 
@@ -30,6 +32,17 @@ pub fn is_valid_image_format(format: &str) -> bool {
     VALID_IMAGE_FORMATS.contains(&lower.as_str())
 }
 
+/// Extract image dimensions (width, height) from raw bytes.
+///
+/// Uses header-only parsing — does not decode the full pixel data.
+/// Returns `None` if the format is unrecognised or the header is corrupt.
+pub fn image_dimensions(data: &[u8]) -> Option<(u32, u32)> {
+    let reader = image::ImageReader::new(Cursor::new(data))
+        .with_guessed_format()
+        .ok()?;
+    reader.into_dimensions().ok()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -54,6 +67,36 @@ mod tests {
         assert!(!is_valid_image_format("bmp"));
         assert!(!is_valid_image_format("tiff"));
         assert!(!is_valid_image_format(""));
+    }
+
+    #[test]
+    fn image_dimensions_returns_none_for_garbage() {
+        assert!(image_dimensions(b"not an image").is_none());
+        assert!(image_dimensions(&[]).is_none());
+    }
+
+    #[test]
+    fn image_dimensions_parses_minimal_png() {
+        // Minimal 1x1 white PNG (67 bytes)
+        let png: &[u8] = &[
+            0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, // PNG sig
+            0x00, 0x00, 0x00, 0x0D, // IHDR length
+            0x49, 0x48, 0x44, 0x52, // "IHDR"
+            0x00, 0x00, 0x00, 0x01, // width=1
+            0x00, 0x00, 0x00, 0x01, // height=1
+            0x08, 0x02, // 8-bit RGB
+            0x00, 0x00, 0x00, // compression, filter, interlace
+            0x90, 0x77, 0x53, 0xDE, // IHDR CRC
+            0x00, 0x00, 0x00, 0x0C, // IDAT length
+            0x49, 0x44, 0x41, 0x54, // "IDAT"
+            0x08, 0xD7, 0x63, 0xF8, 0xCF, 0xC0, 0x00, 0x00, 0x00, 0x02, 0x00, 0x01, 0xE2, 0x21,
+            0xBC, 0x33, // IDAT CRC
+            0x00, 0x00, 0x00, 0x00, // IEND length
+            0x49, 0x45, 0x4E, 0x44, // "IEND"
+            0xAE, 0x42, 0x60, 0x82, // IEND CRC
+        ];
+        let dims = image_dimensions(png);
+        assert_eq!(dims, Some((1, 1)));
     }
 
     #[test]

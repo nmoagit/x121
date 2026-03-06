@@ -8,9 +8,7 @@ use axum::response::IntoResponse;
 use axum::Json;
 use x121_core::error::CoreError;
 use x121_core::types::DbId;
-use x121_db::models::character_scene_override::{
-    BulkCharacterSceneOverrides, ToggleSettingBody,
-};
+use x121_db::models::character_scene_override::{BulkCharacterSceneOverrides, ToggleSettingBody};
 use x121_db::repositories::{CharacterRepo, CharacterSceneOverrideRepo};
 
 use crate::error::{AppError, AppResult};

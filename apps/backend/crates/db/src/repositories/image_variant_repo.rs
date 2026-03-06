@@ -230,6 +230,42 @@ impl ImageVariantRepo {
             .await
     }
 
+    /// Set width and height for an image variant. Returns `true` if a row was updated.
+    pub async fn set_dimensions(
+        pool: &PgPool,
+        id: DbId,
+        width: i32,
+        height: i32,
+    ) -> Result<bool, sqlx::Error> {
+        let result = sqlx::query(
+            "UPDATE image_variants SET width = $2, height = $3 \
+             WHERE id = $1 AND deleted_at IS NULL",
+        )
+        .bind(id)
+        .bind(width)
+        .bind(height)
+        .execute(pool)
+        .await?;
+        Ok(result.rows_affected() > 0)
+    }
+
+    /// List all variants that have no width (dimensions missing). Useful for
+    /// backfilling image metadata on existing data. Limited to avoid OOM.
+    pub async fn list_missing_dimensions(
+        pool: &PgPool,
+        limit: i64,
+    ) -> Result<Vec<ImageVariant>, sqlx::Error> {
+        let query = format!(
+            "SELECT {COLUMNS} FROM image_variants \
+             WHERE width IS NULL AND deleted_at IS NULL \
+             ORDER BY id ASC LIMIT $1"
+        );
+        sqlx::query_as::<_, ImageVariant>(&query)
+            .bind(limit)
+            .fetch_all(pool)
+            .await
+    }
+
     /// Soft-delete an image variant by ID. Returns `true` if a row was marked deleted.
     pub async fn soft_delete(pool: &PgPool, id: DbId) -> Result<bool, sqlx::Error> {
         let result = sqlx::query(

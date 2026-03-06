@@ -42,8 +42,7 @@ pub async fn list_effective(
         }));
     }
 
-    let settings =
-        GroupSceneSettingRepo::list_effective(&state.pool, group_id, project_id).await?;
+    let settings = GroupSceneSettingRepo::list_effective(&state.pool, group_id, project_id).await?;
     Ok(Json(DataResponse { data: settings }))
 }
 

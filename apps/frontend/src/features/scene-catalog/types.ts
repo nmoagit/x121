@@ -53,6 +53,7 @@ export interface EffectiveSceneSetting {
   track_id: number | null;
   track_name: string | null;
   track_slug: string | null;
+  has_clothes_off_transition: boolean;
 }
 
 /**

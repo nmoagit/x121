@@ -47,6 +47,9 @@ export const PROVENANCE_LABEL: Record<Provenance, string> = {
   [PROVENANCE.MANUAL_UPLOAD]: "Manual Upload",
 };
 
+/** Preferred variant type for avatars and default track assignment. */
+export const PREFERRED_VARIANT_TYPE = "clothed";
+
 /* --------------------------------------------------------------------------
    Entities
    -------------------------------------------------------------------------- */

@@ -50,6 +50,24 @@ pub const EXPORT_STATUS_ID_COMPLETED: i16 = 6;
 pub const EXPORT_STATUS_ID_FAILED: i16 = 7;
 
 // ---------------------------------------------------------------------------
+// Delivery destination type IDs (match seed data in migration 000005)
+// ---------------------------------------------------------------------------
+
+/// Destination type ID for local filesystem delivery.
+pub const DEST_TYPE_ID_LOCAL: i16 = 1;
+/// Destination type ID for S3 delivery.
+pub const DEST_TYPE_ID_S3: i16 = 2;
+/// Destination type ID for Google Drive delivery.
+pub const DEST_TYPE_ID_GOOGLE_DRIVE: i16 = 3;
+
+/// Delivery log levels.
+pub const LOG_LEVEL_INFO: &str = "info";
+pub const LOG_LEVEL_WARNING: &str = "warning";
+pub const LOG_LEVEL_ERROR: &str = "error";
+
+pub const VALID_LOG_LEVELS: &[&str] = &[LOG_LEVEL_INFO, LOG_LEVEL_WARNING, LOG_LEVEL_ERROR];
+
+// ---------------------------------------------------------------------------
 // Known codecs, containers, pixel formats
 // ---------------------------------------------------------------------------
 

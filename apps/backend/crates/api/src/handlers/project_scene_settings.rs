@@ -50,9 +50,14 @@ pub async fn toggle_single(
     Path((project_id, scene_type_id)): Path<(DbId, DbId)>,
     Json(body): Json<ToggleSettingBody>,
 ) -> AppResult<impl IntoResponse> {
-    let setting =
-        ProjectSceneSettingRepo::upsert(&state.pool, project_id, scene_type_id, None, body.is_enabled)
-            .await?;
+    let setting = ProjectSceneSettingRepo::upsert(
+        &state.pool,
+        project_id,
+        scene_type_id,
+        None,
+        body.is_enabled,
+    )
+    .await?;
     Ok(Json(DataResponse { data: setting }))
 }
 

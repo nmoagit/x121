@@ -144,12 +144,20 @@ async fn update_inner(
     id: DbId,
     input: UpdateSceneType,
 ) -> AppResult<Json<DataResponse<SceneType>>> {
+    let track_ids = input.track_ids.clone();
+
     let scene_type = SceneTypeRepo::update(&state.pool, id, &input)
         .await?
         .ok_or(AppError::Core(CoreError::NotFound {
             entity: "SceneType",
             id,
         }))?;
+
+    // Sync track associations if provided
+    if let Some(ids) = track_ids {
+        SceneTypeRepo::set_tracks(&state.pool, id, &ids).await?;
+    }
+
     Ok(Json(DataResponse { data: scene_type }))
 }
 

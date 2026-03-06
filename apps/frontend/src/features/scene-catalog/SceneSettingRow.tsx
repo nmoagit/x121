@@ -44,11 +44,16 @@ export function SceneSettingRow({ row, onToggle, isPending, actions }: SceneSett
 
       {/* Track badge */}
       <td className="px-4 py-3">
-        {row.track_slug ? (
-          <TrackBadge name={row.track_name ?? ""} slug={row.track_slug} />
-        ) : (
-          <span className="text-xs text-[var(--color-text-muted)]">-</span>
-        )}
+        <span className="inline-flex items-center gap-1">
+          {row.track_slug ? (
+            <TrackBadge name={row.track_name ?? ""} slug={row.track_slug} />
+          ) : (
+            <span className="text-xs text-[var(--color-text-muted)]">-</span>
+          )}
+          {row.has_clothes_off_transition && (
+            <TrackBadge name="Clothes Off" slug="clothes_off" />
+          )}
+        </span>
       </td>
 
       {/* Toggle */}

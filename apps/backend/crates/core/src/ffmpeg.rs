@@ -29,6 +29,15 @@ pub enum FfmpegError {
     VideoNotFound(String),
 }
 
+/// Result of a preview transcode operation.
+#[derive(Debug, Clone)]
+pub struct TranscodePreviewResult {
+    /// Path to the generated preview file.
+    pub output_path: String,
+    /// File size in bytes of the preview.
+    pub file_size: u64,
+}
+
 /// Result of a thumbnail extraction.
 #[derive(Debug, Clone)]
 pub struct ThumbnailResult {
@@ -221,6 +230,79 @@ pub async fn extract_thumbnails_at_interval(
     }
 
     Ok(results)
+}
+
+/// Transcode a video to a low-resolution preview copy.
+///
+/// Produces an H.264 baseline file capped at `max_width × max_height` with
+/// `faststart` for progressive streaming. Intended for card-level previews
+/// in the UI (~200-500 KB per clip at CRF 28).
+pub async fn transcode_preview(
+    video_path: &Path,
+    output_path: &Path,
+    max_width: i32,
+    max_height: i32,
+) -> Result<TranscodePreviewResult, FfmpegError> {
+    if !video_path.exists() {
+        return Err(FfmpegError::VideoNotFound(
+            video_path.to_string_lossy().to_string(),
+        ));
+    }
+
+    // Ensure parent directory exists.
+    if let Some(parent) = output_path.parent() {
+        tokio::fs::create_dir_all(parent).await?;
+    }
+
+    let vf = format!(
+        "scale='min({max_width},iw)':'min({max_height},ih)':force_original_aspect_ratio=decrease,\
+         pad=ceil(iw/2)*2:ceil(ih/2)*2"
+    );
+
+    let output = tokio::process::Command::new("ffmpeg")
+        .args(["-y", "-i"])
+        .arg(video_path)
+        .args(["-vf", &vf])
+        .args([
+            "-c:v",
+            "libx264",
+            "-preset",
+            "fast",
+            "-crf",
+            "28",
+            "-profile:v",
+            "baseline",
+            "-level",
+            "3.1",
+            "-c:a",
+            "aac",
+            "-b:a",
+            "64k",
+            "-ac",
+            "1",
+            "-movflags",
+            "+faststart",
+            "-threads",
+            "2",
+        ])
+        .arg(output_path)
+        .output()
+        .await
+        .map_err(FfmpegError::NotFound)?;
+
+    if !output.status.success() {
+        return Err(FfmpegError::ExecutionFailed {
+            exit_code: output.status.code(),
+            stderr: String::from_utf8_lossy(&output.stderr).to_string(),
+        });
+    }
+
+    let metadata = tokio::fs::metadata(output_path).await?;
+
+    Ok(TranscodePreviewResult {
+        output_path: output_path.to_string_lossy().to_string(),
+        file_size: metadata.len(),
+    })
 }
 
 // ---------------------------------------------------------------------------

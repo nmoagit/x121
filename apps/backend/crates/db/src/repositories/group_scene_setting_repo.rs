@@ -36,7 +36,7 @@ impl GroupSceneSettingRepo {
         project_id: DbId,
     ) -> Result<Vec<EffectiveGroupSceneSetting>, sqlx::Error> {
         sqlx::query_as::<_, EffectiveGroupSceneSetting>(
-            "SELECT scene_type_id, name, slug, is_enabled, source, track_id, track_name, track_slug FROM ( \
+            "SELECT scene_type_id, name, slug, is_enabled, source, track_id, track_name, track_slug, has_clothes_off_transition FROM ( \
                  SELECT \
                      st.id AS scene_type_id, \
                      st.name, \
@@ -50,6 +50,7 @@ impl GroupSceneSettingRepo {
                      t.id   AS track_id, \
                      t.name AS track_name, \
                      t.slug AS track_slug, \
+                     st.has_clothes_off_transition, \
                      st.sort_order AS st_sort, \
                      t.sort_order  AS t_sort \
                  FROM scene_types st \
@@ -78,6 +79,7 @@ impl GroupSceneSettingRepo {
                      NULL::BIGINT AS track_id, \
                      NULL::TEXT   AS track_name, \
                      NULL::TEXT   AS track_slug, \
+                     st.has_clothes_off_transition, \
                      st.sort_order AS st_sort, \
                      NULL::INT     AS t_sort \
                  FROM scene_types st \

@@ -1,6 +1,7 @@
+import { useClickOutside } from "@/hooks/useClickOutside";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/cn";
-import { useClickOutside } from "@/hooks/useClickOutside";
+import { CHIP_CONTAINER } from "@/lib/ui-classes";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { TagChip } from "./TagChip";
 import type { TagInfo, TagWithCount } from "./TagChip";
@@ -139,16 +140,7 @@ export function TagInput({
 
   return (
     <div ref={containerRef} className={cn("relative", className)}>
-      <div
-        className={cn(
-          "flex flex-wrap items-center gap-1.5 p-2",
-          "bg-[var(--color-surface-secondary)]",
-          "border border-[var(--color-border-default)] rounded-[var(--radius-md)]",
-          "focus-within:ring-2 focus-within:ring-[var(--color-border-focus)] focus-within:ring-offset-0",
-          "transition-colors duration-150",
-        )}
-        onClick={() => inputRef.current?.focus()}
-      >
+      <div className={cn(CHIP_CONTAINER, "p-2")} onClick={() => inputRef.current?.focus()}>
         {existingTags.map((tag) => (
           <TagChip key={tag.id} tag={tag} size="sm" onRemove={() => removeTag(tag.id)} />
         ))}

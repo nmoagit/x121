@@ -8,6 +8,7 @@ aes-gcm = { workspace = true }
 async-trait = { workspace = true }
 chrono = { workspace = true }
 hmac = { workspace = true }
+image = { workspace = true }
 rand = { workspace = true }
 regex = { workspace = true }
 serde = { workspace = true }

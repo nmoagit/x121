@@ -24,8 +24,7 @@ pub fn router() -> Router<AppState> {
         )
         .route(
             "/{scene_type_id}",
-            put(group_scene_settings::toggle_single)
-                .delete(group_scene_settings::remove_override),
+            put(group_scene_settings::toggle_single).delete(group_scene_settings::remove_override),
         )
         .route(
             "/{scene_type_id}/tracks/{track_id}",

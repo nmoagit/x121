@@ -3,7 +3,7 @@
  */
 
 import type { ImageVariant } from "./types";
-import { IMAGE_VARIANT_STATUS } from "./types";
+import { IMAGE_VARIANT_STATUS, PREFERRED_VARIANT_TYPE } from "./types";
 
 /**
  * Convert a relative storage path (e.g. `storage/variants/foo.png`) to
@@ -19,19 +19,25 @@ export function variantImageUrl(filePath: string): string {
 /**
  * Pick the best avatar URL from a set of image variants.
  *
- * Priority: hero variant with file_path > approved variant with file_path.
+ * Priority: clothed hero > any hero > clothed approved > any approved.
  * Returns null when no suitable variant is found.
  */
 export function pickAvatarUrl(
-  variants: Pick<ImageVariant, "is_hero" | "status_id" | "file_path">[],
+  variants: Pick<ImageVariant, "is_hero" | "status_id" | "file_path" | "variant_type">[],
 ): string | null {
   if (variants.length === 0) return null;
-  const hero = variants.find((v) => v.is_hero && v.file_path);
-  if (hero) return variantImageUrl(hero.file_path);
-  const approved = variants.find(
+
+  const heroes = variants.filter((v) => v.is_hero && v.file_path);
+  const clothedHero = heroes.find((v) => v.variant_type?.toLowerCase() === PREFERRED_VARIANT_TYPE);
+  if (clothedHero) return variantImageUrl(clothedHero.file_path);
+  if (heroes.length > 0) return variantImageUrl(heroes[0]!.file_path);
+
+  const approved = variants.filter(
     (v) => v.status_id === IMAGE_VARIANT_STATUS.APPROVED && v.file_path,
   );
-  return approved ? variantImageUrl(approved.file_path) : null;
+  const clothedApproved = approved.find((v) => v.variant_type?.toLowerCase() === PREFERRED_VARIANT_TYPE);
+  if (clothedApproved) return variantImageUrl(clothedApproved.file_path);
+  return approved.length > 0 ? variantImageUrl(approved[0]!.file_path) : null;
 }
 
 /** Find the hero variant matching a track slug (case-insensitive). */

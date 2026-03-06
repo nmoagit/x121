@@ -269,7 +269,7 @@ pub async fn export_speeches(
             .unwrap_or_else(|| format!("unknown_{id}"))
     };
 
-    match body.format.as_str() {
+    let data: serde_json::Value = match body.format.as_str() {
         "json" => {
             let items: Vec<ExportJsonEntry> = speeches
                 .iter()
@@ -279,7 +279,7 @@ pub async fn export_speeches(
                     version: s.version,
                 })
                 .collect();
-            Ok(Json(DataResponse { data: items }))
+            serde_json::to_value(items).unwrap_or_default()
         }
         "csv" => {
             let mut csv = String::new();
@@ -291,14 +291,15 @@ pub async fn export_speeches(
                     escaped_text
                 ));
             }
-            Ok(Json(DataResponse {
-                data: serde_json::Value::String(csv),
-            }))
+            serde_json::Value::String(csv)
         }
-        _ => Err(AppError::BadRequest(
-            "format must be 'json' or 'csv'".to_string(),
-        )),
-    }
+        _ => {
+            return Err(AppError::BadRequest(
+                "format must be 'json' or 'csv'".to_string(),
+            ));
+        }
+    };
+    Ok(Json(DataResponse { data }))
 }
 
 // ---------------------------------------------------------------------------

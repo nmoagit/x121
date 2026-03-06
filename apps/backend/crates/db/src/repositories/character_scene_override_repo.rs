@@ -15,7 +15,8 @@ use crate::models::character_scene_override::{
 };
 
 /// Column list for the `character_scene_overrides` table.
-const COLUMNS: &str = "id, character_id, scene_type_id, track_id, is_enabled, created_at, updated_at";
+const COLUMNS: &str =
+    "id, character_id, scene_type_id, track_id, is_enabled, created_at, updated_at";
 
 /// Provides data access for per-character scene overrides.
 pub struct CharacterSceneOverrideRepo;
@@ -41,7 +42,7 @@ impl CharacterSceneOverrideRepo {
         group_id: Option<DbId>,
     ) -> Result<Vec<EffectiveCharacterSceneSetting>, sqlx::Error> {
         sqlx::query_as::<_, EffectiveCharacterSceneSetting>(
-            "SELECT scene_type_id, name, slug, is_enabled, source, track_id, track_name, track_slug FROM ( \
+            "SELECT scene_type_id, name, slug, is_enabled, source, track_id, track_name, track_slug, has_clothes_off_transition FROM ( \
                  SELECT \
                      st.id AS scene_type_id, \
                      st.name, \
@@ -56,6 +57,7 @@ impl CharacterSceneOverrideRepo {
                      t.id   AS track_id, \
                      t.name AS track_name, \
                      t.slug AS track_slug, \
+                     st.has_clothes_off_transition, \
                      st.sort_order AS st_sort, \
                      t.sort_order  AS t_sort \
                  FROM scene_types st \
@@ -89,6 +91,7 @@ impl CharacterSceneOverrideRepo {
                      NULL::BIGINT AS track_id, \
                      NULL::TEXT   AS track_name, \
                      NULL::TEXT   AS track_slug, \
+                     st.has_clothes_off_transition, \
                      st.sort_order AS st_sort, \
                      NULL::INT     AS t_sort \
                  FROM scene_types st \

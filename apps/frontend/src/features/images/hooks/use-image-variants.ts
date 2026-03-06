@@ -37,6 +37,21 @@ function variantBasePath(characterId: number): string {
   return `/characters/${characterId}/image-variants`;
 }
 
+/**
+ * Fetch existing variant_type strings for a character as a lowercase Set.
+ *
+ * Shared by the bulk import hook (skip existing) and the duplicate asset
+ * info hook (diff badge display).
+ */
+export async function fetchVariantTypeSet(characterId: number): Promise<Set<string>> {
+  const variants = await api.get<ImageVariant[]>(variantBasePath(characterId));
+  return new Set(
+    variants
+      .map((v) => v.variant_type?.toLowerCase())
+      .filter((t): t is string => t != null),
+  );
+}
+
 /* --------------------------------------------------------------------------
    Query hooks
    -------------------------------------------------------------------------- */

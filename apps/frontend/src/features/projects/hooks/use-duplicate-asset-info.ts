@@ -1,0 +1,63 @@
+/**
+ * Hook that fetches existing image variant types for duplicate characters.
+ *
+ * Used by ImportConfirmModal to show diff badges (new vs existing) when
+ * uploading assets to characters that already exist in the project.
+ */
+
+import { useEffect, useState } from "react";
+
+import { fetchVariantTypeSet } from "@/features/images/hooks/use-image-variants";
+
+/**
+ * Fetches existing variant types for a set of duplicate character IDs.
+ *
+ * Only runs when `open` is true and `duplicateCharacterIds` is non-empty.
+ * Failed fetches produce empty Sets so everything looks "new" (graceful fallback).
+ */
+export function useDuplicateAssetInfo(
+  open: boolean,
+  duplicateCharacterIds: number[],
+): {
+  variantMap: Map<number, Set<string>>;
+  loading: boolean;
+} {
+  const [variantMap, setVariantMap] = useState<Map<number, Set<string>>>(new Map());
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!open || duplicateCharacterIds.length === 0) {
+      setVariantMap(new Map());
+      return;
+    }
+
+    let cancelled = false;
+
+    async function fetchVariants() {
+      setLoading(true);
+      const map = new Map<number, Set<string>>();
+
+      await Promise.all(
+        duplicateCharacterIds.map(async (charId) => {
+          try {
+            map.set(charId, await fetchVariantTypeSet(charId));
+          } catch {
+            map.set(charId, new Set());
+          }
+        }),
+      );
+
+      if (!cancelled) {
+        setVariantMap(map);
+        setLoading(false);
+      }
+    }
+
+    fetchVariants();
+    return () => {
+      cancelled = true;
+    };
+  }, [open, duplicateCharacterIds.join(",")]);
+
+  return { variantMap, loading };
+}

@@ -5,6 +5,7 @@ export { Button } from "./Button";
 export { Checkbox } from "./Checkbox";
 export { Input } from "./Input";
 export { LoadingPane } from "./LoadingPane";
+export { RemovableChip } from "./RemovableChip";
 export { Select } from "./Select";
 export { SelectableRow } from "./SelectableRow";
 export { Spinner } from "./Spinner";

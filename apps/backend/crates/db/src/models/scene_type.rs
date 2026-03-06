@@ -81,6 +81,7 @@ pub struct EffectiveSceneSetting {
     pub track_id: Option<DbId>,
     pub track_name: Option<String>,
     pub track_slug: Option<String>,
+    pub has_clothes_off_transition: bool,
 }
 
 /// DTO for creating a new scene type.
@@ -158,6 +159,9 @@ pub struct UpdateSceneType {
     pub auto_retry_trigger_checks: Option<Vec<String>>,
     pub auto_retry_seed_variation: Option<bool>,
     pub auto_retry_cfg_jitter: Option<f64>,
+    /// When provided, replaces all track associations atomically.
+    #[serde(default)]
+    pub track_ids: Option<Vec<DbId>>,
 }
 
 /// Query params for prompt preview endpoint.
