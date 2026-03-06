@@ -77,6 +77,7 @@ export interface SceneAssignment {
   track_id: number;
   track_name: string;
   track_slug: string;
+  has_clothes_off_transition: boolean;
   scene_id: number | null;
   status: string;
   segment_count: number;

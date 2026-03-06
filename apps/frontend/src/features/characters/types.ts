@@ -5,6 +5,29 @@
 import type { BadgeVariant } from "@/components/primitives";
 
 /* --------------------------------------------------------------------------
+   Pipeline settings key constants
+   -------------------------------------------------------------------------- */
+
+/** Settings JSONB key for the ElevenLabs VoiceID. */
+export const SETTING_KEY_VOICE = "elevenlabs_voice";
+
+/** Check whether a character's settings contain a non-empty VoiceID. */
+export function hasVoiceId(settings: Record<string, unknown> | null | undefined): boolean {
+  if (!settings) return false;
+  const voice = settings[SETTING_KEY_VOICE];
+  return typeof voice === "string" && voice.length > 0;
+}
+
+/**
+ * Extract the VoiceID string from character settings, or null if missing.
+ */
+export function getVoiceId(settings: Record<string, unknown> | null | undefined): string | null {
+  if (!settings) return null;
+  const voice = settings[SETTING_KEY_VOICE];
+  return typeof voice === "string" && voice.length > 0 ? voice : null;
+}
+
+/* --------------------------------------------------------------------------
    Metadata source key constants
    -------------------------------------------------------------------------- */
 

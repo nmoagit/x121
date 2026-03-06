@@ -44,6 +44,7 @@ pub struct SceneAssignment {
     pub track_id: DbId,
     pub track_name: String,
     pub track_slug: String,
+    pub has_clothes_off_transition: bool,
     pub scene_id: Option<DbId>,
     pub status: String,
     pub segment_count: i64,
@@ -187,7 +188,8 @@ pub async fn get_dashboard(
     let scene_assignments = sqlx::query_as::<_, SceneAssignment>(
         "WITH enabled_combos AS (
             SELECT st.id AS scene_type_id, st.name AS scene_name,
-                   t.id AS track_id, t.name AS track_name, t.slug AS track_slug
+                   t.id AS track_id, t.name AS track_name, t.slug AS track_slug,
+                   st.has_clothes_off_transition
             FROM scene_types st
             CROSS JOIN tracks t
             LEFT JOIN project_scene_settings pss
@@ -204,6 +206,7 @@ pub async fn get_dashboard(
             ec.track_id,
             ec.track_name,
             ec.track_slug,
+            ec.has_clothes_off_transition,
             sc.id AS scene_id,
             COALESCE(ss.name, 'not_started') AS status,
             (SELECT COUNT(*) FROM scene_video_versions svv

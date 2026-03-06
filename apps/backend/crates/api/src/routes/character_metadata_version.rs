@@ -10,6 +10,7 @@
 //! DELETE /{character_id}/metadata/versions/{version_id}     -> delete_version
 //! PUT    /{character_id}/metadata/versions/{version_id}/activate -> activate_version
 //! PUT    /{character_id}/metadata/versions/{version_id}/reject   -> reject_version
+//! POST   /{character_id}/metadata/mark-outdated                -> mark_metadata_outdated
 //! ```
 
 use axum::routing::{get, post, put};
@@ -43,5 +44,9 @@ pub fn router() -> Router<AppState> {
         .route(
             "/{character_id}/metadata/versions/{version_id}/reject",
             put(character_metadata_version::reject_version),
+        )
+        .route(
+            "/{character_id}/metadata/mark-outdated",
+            post(character_metadata_version::mark_metadata_outdated),
         )
 }

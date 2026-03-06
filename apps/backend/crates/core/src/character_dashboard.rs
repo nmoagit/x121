@@ -10,10 +10,15 @@ use serde::{Deserialize, Serialize};
 // Constants
 // ---------------------------------------------------------------------------
 
+/// Pipeline settings key for the ElevenLabs VoiceID.
+///
+/// Used by the VoiceID approval gate (PRD-013 A.4) and readiness checks.
+pub const SETTING_KEY_VOICE: &str = "elevenlabs_voice";
+
 /// Known pipeline settings keys and their human-readable labels.
 const KNOWN_SETTING_LABELS: &[(&str, &str)] = &[
     ("a2c4_model", "A2C4 Model"),
-    ("elevenlabs_voice", "ElevenLabs Voice"),
+    (SETTING_KEY_VOICE, "ElevenLabs Voice"),
     ("avatar_json", "Avatar JSON"),
     ("lora_model", "LoRA Model"),
     ("comfyui_workflow", "ComfyUI Workflow"),

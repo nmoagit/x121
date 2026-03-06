@@ -32,6 +32,7 @@ import {
   useCreateManualVersion,
   useDeleteVersion,
   useGenerateMetadata,
+  useMarkOutdated,
   useMetadataVersions,
   useRejectVersion,
 } from "../hooks/use-metadata-versions";
@@ -44,6 +45,7 @@ import {
 } from "../hooks/use-refinement";
 import { flattenMetadata, unflattenMetadata } from "../lib/metadata-flatten";
 import {
+  SETTING_KEY_VOICE,
   SOURCE_KEYS,
   SOURCE_KEY_BIO,
   SOURCE_KEY_TOV,
@@ -87,6 +89,7 @@ export function CharacterMetadataTab({ characterId, projectId }: CharacterMetada
   const approveRefinement = useApproveRefinement(characterId);
   const rejectRefinement = useRejectRefinement(characterId);
   const clearOutdated = useClearOutdated(characterId);
+  const markOutdated = useMarkOutdated(characterId);
 
   // Version UI state
   const [rejectTarget, setRejectTarget] = useState<MetadataVersion | null>(null);
@@ -108,7 +111,8 @@ export function CharacterMetadataTab({ characterId, projectId }: CharacterMetada
   const [confirmTarget, setConfirmTarget] = useState<"metadata" | "bio" | "tov" | "avatar" | null>(null);
   const advancedRef = useRef<HTMLTextAreaElement>(null);
 
-  // Wrap bio/tov setters to persist source data in draft AND immediately save to DB
+  // Wrap bio/tov setters to persist source data in draft AND immediately save to DB.
+  // When a new source file is uploaded, mark active versions as outdated (PRD-013 A.1).
   const setBioJson = useCallback((data: Record<string, unknown> | null) => {
     setBioJsonState(data);
     setDraft((prev) => {
@@ -121,7 +125,11 @@ export function CharacterMetadataTab({ characterId, projectId }: CharacterMetada
     updateMetadata.mutate(
       data ? { [SOURCE_KEY_BIO]: data } : { [SOURCE_KEY_BIO]: null },
     );
-  }, [updateMetadata]);
+    // Flag active versions as outdated when a new bio file is uploaded
+    if (data) {
+      markOutdated.mutate("Bio source file updated");
+    }
+  }, [updateMetadata, markOutdated]);
 
   const setTovJson = useCallback((data: Record<string, unknown> | null) => {
     setTovJsonState(data);
@@ -135,7 +143,11 @@ export function CharacterMetadataTab({ characterId, projectId }: CharacterMetada
     updateMetadata.mutate(
       data ? { [SOURCE_KEY_TOV]: data } : { [SOURCE_KEY_TOV]: null },
     );
-  }, [updateMetadata]);
+    // Flag active versions as outdated when a new tov file is uploaded
+    if (data) {
+      markOutdated.mutate("ToV source file updated");
+    }
+  }, [updateMetadata, markOutdated]);
 
   /** Handle metadata.json dropped anywhere on the tab — show confirmation first. */
   const handleMetadataDrop = useCallback(
@@ -155,8 +167,13 @@ export function CharacterMetadataTab({ characterId, projectId }: CharacterMetada
 
   const handleConfirmImport = useCallback(() => {
     if (!pendingImport) return;
+    // Strip source keys so imported JSON never overwrites bio/tov source data
+    const sanitized: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(pendingImport)) {
+      if (!SOURCE_KEYS.has(key)) sanitized[key] = value;
+    }
     createVersion.mutate(
-      { metadata: pendingImport, source: "json_import", activate: true },
+      { metadata: sanitized, source: "json_import", activate: true },
       { onSuccess: () => setPendingImport(null) },
     );
   }, [pendingImport, createVersion]);
@@ -662,11 +679,11 @@ export function CharacterMetadataTab({ characterId, projectId }: CharacterMetada
             disabled={
               Object.keys(draft).filter((k) => !SOURCE_KEYS.has(k)).length === 0 ||
               !settings?.a2c4_model ||
-              !settings?.elevenlabs_voice ||
+              !settings?.[SETTING_KEY_VOICE] ||
               updateSettings.isPending
             }
             title={
-              !settings?.a2c4_model || !settings?.elevenlabs_voice
+              !settings?.a2c4_model || !settings?.[SETTING_KEY_VOICE]
                 ? "Requires metadata, a2c4 model, and ElevenLabs voice in Pipeline Settings"
                 : undefined
             }
@@ -865,8 +882,11 @@ export function CharacterMetadataTab({ characterId, projectId }: CharacterMetada
         <Modal open onClose={() => setPendingImport(null)} title="Import Metadata" size="sm">
           <Stack gap={4}>
             <p className="text-sm text-[var(--color-text-secondary)]">
-              Import <strong>{Object.keys(pendingImport).length} fields</strong> as a new metadata
+              Import <strong>{Object.keys(pendingImport).filter((k) => !SOURCE_KEYS.has(k)).length} fields</strong> as a new metadata
               version? This will activate it and replace the current metadata.
+            </p>
+            <p className="text-xs text-[var(--color-text-muted)]">
+              Your Bio and ToV source files will not be affected.
             </p>
             <div className="flex gap-[var(--spacing-2)] justify-end">
               <Button variant="secondary" onClick={() => setPendingImport(null)}>

@@ -36,6 +36,7 @@ import {
   useSpeechTypes,
   useUpdateSpeech,
 } from "../hooks/use-character-speeches";
+import { getVoiceId } from "../types";
 import type { CharacterSpeech, ImportSpeechesResponse } from "../types";
 import { AddSpeechModal } from "./AddSpeechModal";
 import { SpeechImportModal } from "./SpeechImportModal";
@@ -71,7 +72,7 @@ export function CharacterSpeechTab({ characterId, projectId }: CharacterSpeechTa
   const [editText, setEditText] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<CharacterSpeech | null>(null);
 
-  const voiceId = (settings?.elevenlabs_voice as string) ?? null;
+  const voiceId = getVoiceId(settings as Record<string, unknown> | null);
 
   /* --- group speeches by type --- */
   const typeMap = useMemo(() => {

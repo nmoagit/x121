@@ -6,7 +6,9 @@ import { useMemo } from "react";
 
 import { Card } from "@/components/composite";
 import { Grid, Stack } from "@/components/layout";
-import { LoadingPane, Tooltip } from "@/components/primitives";
+import { Badge, LoadingPane, Tooltip } from "@/components/primitives";
+import { AlertTriangle, Check } from "@/tokens/icons";
+import { getVoiceId } from "../types";
 
 import {
   deriveMissingItems,
@@ -153,6 +155,42 @@ export function CharacterOverviewTab({
             />
             <StatCard label="Metadata Fields" value={metadataFieldCount} />
           </Grid>
+        );
+      })()}
+
+      {/* VoiceID status */}
+      {(() => {
+        const voiceId = getVoiceId(character.settings as Record<string, unknown> | null);
+
+        return (
+          <Card elevation="flat" padding="md">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-[var(--color-text-primary)]">
+                VoiceID
+              </h3>
+              {voiceId ? (
+                <div className="flex items-center gap-[var(--spacing-2)]">
+                  <Badge variant="success">
+                    <Check size={12} className="mr-1 inline" />
+                    Configured
+                  </Badge>
+                  <span className="text-xs text-[var(--color-text-muted)] font-mono">
+                    {voiceId}
+                  </span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-[var(--spacing-2)]">
+                  <Badge variant="warning">
+                    <AlertTriangle size={12} className="mr-1 inline" />
+                    Missing
+                  </Badge>
+                  <span className="text-xs text-[var(--color-text-muted)]">
+                    Configure in Settings tab to activate character
+                  </span>
+                </div>
+              )}
+            </div>
+          </Card>
         );
       })()}
 

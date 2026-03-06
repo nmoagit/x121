@@ -103,6 +103,10 @@ export function useUpdateCharacterMetadata(characterId: number) {
       queryClient.invalidateQueries({
         queryKey: characterDetailKeys.metadata(characterId),
       });
+      // Also refresh the version list so new/deduped versions appear immediately.
+      queryClient.invalidateQueries({
+        queryKey: ["characters", characterId, "metadata", "versions"],
+      });
     },
   });
 }

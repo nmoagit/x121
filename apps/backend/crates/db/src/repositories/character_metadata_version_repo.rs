@@ -164,6 +164,27 @@ impl CharacterMetadataVersionRepo {
         Ok(result)
     }
 
+    /// Mark all active versions for a character as outdated.
+    ///
+    /// Only targets active, non-deleted versions that are not already outdated.
+    /// Returns the number of rows affected.
+    pub async fn mark_outdated_for_character(
+        pool: &PgPool,
+        character_id: DbId,
+        reason: &str,
+    ) -> Result<u64, sqlx::Error> {
+        let result = sqlx::query(
+            "UPDATE character_metadata_versions \
+             SET outdated_at = NOW(), outdated_reason = $2 \
+             WHERE character_id = $1 AND is_active = true AND outdated_at IS NULL AND deleted_at IS NULL",
+        )
+        .bind(character_id)
+        .bind(reason)
+        .execute(pool)
+        .await?;
+        Ok(result.rows_affected())
+    }
+
     /// Clear the outdated marker on a version. Returns `true` if a row was updated.
     pub async fn clear_outdated(pool: &PgPool, id: DbId) -> Result<bool, sqlx::Error> {
         let result = sqlx::query(

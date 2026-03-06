@@ -46,6 +46,7 @@ const makeAssignment = (
   track_id: 1,
   track_name: "Clothed",
   track_slug: "clothed",
+  has_clothes_off_transition: false,
   scene_id: 1,
   status: "completed",
   segment_count: 5,

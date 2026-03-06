@@ -129,6 +129,12 @@ export interface CharacterDropPayload {
    Constants
    -------------------------------------------------------------------------- */
 
+/** Character status_id for Draft. */
+export const CHARACTER_STATUS_ID_DRAFT = 1;
+
+/** Character status_id for Active (VoiceID gate, PRD-013 A.4). */
+export const CHARACTER_STATUS_ID_ACTIVE = 2;
+
 /** Character status_id for Archived (used to exclude from production queues, A.3). */
 export const CHARACTER_STATUS_ID_ARCHIVED = 3;
 

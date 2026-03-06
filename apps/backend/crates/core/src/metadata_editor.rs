@@ -101,7 +101,7 @@ pub fn standard_field_defs() -> Vec<MetadataFieldDef> {
         MetadataFieldDef {
             name: "age".into(),
             label: "Age".into(),
-            field_type: FieldType::Number,
+            field_type: FieldType::Text,
             category: FieldCategory::Biographical,
             is_required: false,
             options: vec![],
@@ -793,7 +793,7 @@ mod tests {
         let fields = sample_fields();
         let updates = make_metadata(&[
             ("full_name", serde_json::Value::String("Alice".into())),
-            ("age", serde_json::json!(25)),
+            ("age", serde_json::json!("25")),
         ]);
         let errors = validate_metadata_fields(&updates, &fields);
         assert!(errors.is_empty());
@@ -811,8 +811,16 @@ mod tests {
 
     #[test]
     fn validate_number_field_rejects_string() {
-        let fields = sample_fields();
-        let updates = make_metadata(&[("age", serde_json::Value::String("not a number".into()))]);
+        // Use a custom Number field since "age" is now Text.
+        let fields = vec![MetadataFieldDef {
+            name: "score".into(),
+            label: "Score".into(),
+            field_type: FieldType::Number,
+            category: FieldCategory::Production,
+            is_required: false,
+            options: vec![],
+        }];
+        let updates = make_metadata(&[("score", serde_json::Value::String("not a number".into()))]);
         let errors = validate_metadata_fields(&updates, &fields);
         assert_eq!(errors.len(), 1);
         assert!(errors[0].message.contains("number"));
@@ -870,7 +878,7 @@ mod tests {
                 make_metadata(&[
                     ("full_name", serde_json::Value::String("Alice".into())),
                     ("description", serde_json::Value::String("The hero".into())),
-                    ("age", serde_json::json!(25)),
+                    ("age", serde_json::json!("25")),
                     (
                         "personality_traits",
                         serde_json::json!(["Creative", "Empathetic"]),

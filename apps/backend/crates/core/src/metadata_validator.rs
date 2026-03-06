@@ -259,15 +259,21 @@ mod tests {
             },
             TemplateField {
                 field_name: "age".to_string(),
-                field_type: "number".to_string(),
+                field_type: "string".to_string(),
                 is_required: false,
-                constraints: json!({"min": 0, "max": 200}),
+                constraints: json!({}),
             },
             TemplateField {
                 field_name: "gender".to_string(),
                 field_type: "string".to_string(),
                 is_required: false,
                 constraints: json!({"enum": ["male", "female", "non-binary", "other"]}),
+            },
+            TemplateField {
+                field_name: "score".to_string(),
+                field_type: "number".to_string(),
+                is_required: false,
+                constraints: json!({"min": 0, "max": 200}),
             },
             TemplateField {
                 field_name: "active".to_string(),
@@ -282,8 +288,9 @@ mod tests {
     fn valid_metadata_passes() {
         let metadata: serde_json::Map<String, serde_json::Value> = serde_json::from_value(json!({
             "name": "Test Character",
-            "age": 25,
+            "age": "25",
             "gender": "female",
+            "score": 50,
             "active": true,
         }))
         .unwrap();
@@ -297,7 +304,7 @@ mod tests {
     #[test]
     fn missing_required_field() {
         let metadata: serde_json::Map<String, serde_json::Value> = serde_json::from_value(json!({
-            "age": 25,
+            "age": "25",
         }))
         .unwrap();
 
@@ -323,7 +330,7 @@ mod tests {
     fn number_below_min() {
         let metadata: serde_json::Map<String, serde_json::Value> = serde_json::from_value(json!({
             "name": "Test",
-            "age": -5,
+            "score": -5,
         }))
         .unwrap();
 
@@ -336,7 +343,7 @@ mod tests {
     fn number_above_max() {
         let metadata: serde_json::Map<String, serde_json::Value> = serde_json::from_value(json!({
             "name": "Test",
-            "age": 999,
+            "score": 999,
         }))
         .unwrap();
 

@@ -912,3 +912,85 @@ Test API endpoints return correct responses.
 
 ## Version History
 - **v1.0** (2026-02-18): Initial task list creation from PRD
+- **v1.1** (2026-03-06): Added Phase 8 — Amendment tasks (A.1-A.4)
+
+---
+
+## Phase 8: Amendment — Requirements Gap Fill (2026-03-06)
+
+Tasks in this phase implement the requirements added in the PRD-013 Amendment (2026-03-06).
+
+### Task 8.1: Outdated Dependency Chain — Database & Service (Req A.1)
+**Files:**
+- `apps/db/migrations/YYYYMMDD_add_is_outdated_to_metadata_generations.sql` (new)
+- `apps/backend/crates/db/src/repositories/metadata_generation_repo.rs` (modify or new)
+- `apps/backend/crates/core/src/metadata/sync.rs` (modify)
+
+Add an `is_outdated` flag to metadata generation records and implement automatic flagging when Bio/ToV files are updated.
+
+```sql
+ALTER TABLE metadata_generations
+    ADD COLUMN is_outdated BOOLEAN NOT NULL DEFAULT false;
+```
+
+**Acceptance Criteria:**
+- [ ] `is_outdated BOOLEAN NOT NULL DEFAULT false` column added to `metadata_generations`
+- [ ] When `bio.json` is saved/uploaded for a character, all Active Metadata versions depending on that Bio are flagged `is_outdated = true`
+- [ ] When `tov.json` is saved/uploaded, same flagging logic applies
+- [ ] Flagging is automatic (triggered by the Bio/ToV save handlers)
+- [ ] `find_stale_character_metadata` (Task 3.1) includes `is_outdated = true` records in its report
+- [ ] API returns `is_outdated` field in metadata generation responses
+
+### Task 8.2: Outdated Flag — Manual Clear & UI (Req A.1)
+**Files:**
+- `apps/backend/crates/api/src/handlers/metadata.rs` (modify)
+- `apps/frontend/src/features/characters/tabs/CharacterMetadataTab.tsx` (modify)
+
+**Acceptance Criteria:**
+- [ ] New API endpoint: `PUT /api/v1/characters/{id}/metadata/clear-outdated` sets `is_outdated = false` on the current metadata version
+- [ ] "Outdated" warning badge displayed on the Metadata tab when `is_outdated = true`
+- [ ] "Mark as Current" button calls the clear-outdated endpoint
+- [ ] Delivery validation warns (non-blocking) when delivering with outdated metadata
+- [ ] Badge disappears after clearing
+
+### Task 8.3: Metadata Import Safeguard (Req A.2)
+**Files:**
+- `apps/backend/crates/api/src/handlers/metadata.rs` (modify)
+- `apps/backend/crates/core/src/metadata/generator.rs` (modify)
+- `apps/frontend/src/features/characters/tabs/MetadataJsonDropZone.tsx` (modify)
+
+**Acceptance Criteria:**
+- [ ] Metadata import/upload creates a new metadata version only — never writes to `bio.json` or `tov.json`
+- [ ] Service layer explicitly protects Bio/ToV file paths from overwrite
+- [ ] Frontend shows informational message: "Importing metadata will create a new version. Your Bio and ToV files will not be affected."
+- [ ] Integration test: import metadata JSON, verify `bio.json` and `tov.json` file contents and timestamps unchanged
+- [ ] API import endpoint has no code path that touches Bio/ToV files
+
+### Task 8.4: Age Field as Text Type (Req A.3)
+**Files:**
+- `apps/backend/crates/core/src/metadata/character_schema.rs` (modify)
+- `apps/frontend/src/features/characters/tabs/MetadataFieldInput.tsx` (modify)
+
+**Acceptance Criteria:**
+- [ ] `age` field in `BiographicalData` (or equivalent struct) typed as `Option<String>`, not numeric
+- [ ] Character metadata form renders age as text input, not number input
+- [ ] Values like "20s", "Mature", "Early 30s" accepted without validation error
+- [ ] JSON schema for `character_metadata.json` specifies `age` as `type: "string"`
+- [ ] Existing numeric age values (e.g., `"25"`) remain valid as strings
+- [ ] No numeric-only validation applied to the age field
+
+### Task 8.5: VoiceID Approval Gate (Req A.4)
+**Files:**
+- `apps/backend/crates/api/src/handlers/character.rs` (modify)
+- `apps/backend/crates/core/src/readiness.rs` (modify or new)
+- `apps/frontend/src/features/characters/tabs/CharacterOverviewTab.tsx` (modify)
+- `apps/frontend/src/features/characters/tabs/CharacterSettingsTab.tsx` (modify)
+
+**Acceptance Criteria:**
+- [ ] Character readiness checklist (PRD-107) includes "VoiceID configured" as a required criterion
+- [ ] Status change to "Final" or "Approved" blocked if `voice_id` is null/empty in character settings
+- [ ] API returns `422 Unprocessable Entity` with message "VoiceID is required for Final/Approved status"
+- [ ] Frontend status change control disabled with tooltip when VoiceID is missing
+- [ ] Readiness checklist on Overview tab shows VoiceID status with link to Settings tab
+- [ ] Delivery validation checks VoiceID presence for all characters
+- [ ] Gate enforced at backend service layer, not just frontend

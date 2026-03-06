@@ -233,12 +233,14 @@ export function generateMetadata(
   const tovBio = tov ? extractBioFromTov(tov, name) : null;
   const source = bio ?? {};
 
-  // If we have ToV data, merge relevant fields into source
+  // If we have ToV data, merge ALL fields into source (not just optional).
+  // Skip bio-extraction keys — those are handled by extractBioFromTov
+  // which does {bot_name} placeholder replacement.
   if (tov) {
-    // ToV may contain personality, backstory, etc. that supplement bio
-    for (const key of Object.keys(OPTIONAL_MAP)) {
-      if (tov[key] && !source[key]) {
-        source[key] = tov[key];
+    const tovBioKeys = new Set(["description", "bio", "backstory"]);
+    for (const [key, val] of Object.entries(tov)) {
+      if (val != null && !source[key] && !tovBioKeys.has(key)) {
+        source[key] = val;
       }
     }
   }

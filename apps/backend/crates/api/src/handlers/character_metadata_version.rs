@@ -49,6 +49,12 @@ pub struct RejectRequest {
     pub reason: String,
 }
 
+/// Body for marking active versions as outdated.
+#[derive(Debug, Deserialize)]
+pub struct MarkOutdatedRequest {
+    pub reason: String,
+}
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -335,5 +341,24 @@ pub async fn delete_version(
     }
 
     CharacterMetadataVersionRepo::soft_delete(&state.pool, version_id).await?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
+/// POST /api/v1/characters/{character_id}/metadata/mark-outdated
+///
+/// Mark all active metadata versions for the character as outdated.
+/// Called when Bio or ToV source files are updated.
+pub async fn mark_metadata_outdated(
+    State(state): State<AppState>,
+    Path(character_id): Path<DbId>,
+    Json(body): Json<MarkOutdatedRequest>,
+) -> AppResult<StatusCode> {
+    ensure_character_exists(&state.pool, character_id).await?;
+    CharacterMetadataVersionRepo::mark_outdated_for_character(
+        &state.pool,
+        character_id,
+        &body.reason,
+    )
+    .await?;
     Ok(StatusCode::NO_CONTENT)
 }

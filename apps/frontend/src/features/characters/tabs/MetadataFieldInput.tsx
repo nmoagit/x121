@@ -1,5 +1,8 @@
 /**
  * Renders a single metadata field input based on its type.
+ *
+ * Handles runtime type detection for arrays and nested objects that come
+ * from flattened metadata (e.g. after dropping a metadata.json file).
  */
 
 import { Input, Select, Toggle } from "@/components/primitives";
@@ -8,6 +11,7 @@ import { ICON_ACTION_BTN_DANGER } from "@/lib/ui-classes";
 import { Trash2 } from "@/tokens/icons";
 
 import type { MetadataTemplateField } from "../types";
+import { ChipInput } from "./ChipInput";
 
 interface MetadataFieldInputProps {
   field: MetadataTemplateField;
@@ -23,9 +27,119 @@ function fieldLabel(field: MetadataTemplateField): string {
   return snakeCaseToTitle(name);
 }
 
+/** Coerce array elements to strings for ChipInput. */
+function toStringArray(arr: unknown[]): string[] {
+  return arr.map((item) => (typeof item === "string" ? item : String(item)));
+}
+
 export function MetadataFieldInput({ field, value, onChange, onDelete }: MetadataFieldInputProps) {
   const label = fieldLabel(field);
   const displayLabel = field.is_required ? `${label} *` : label;
+
+  // --- Runtime type detection (takes precedence over template field_type) ---
+
+  // Array → chip input
+  if (Array.isArray(value)) {
+    return (
+      <div className="flex items-center gap-[var(--spacing-2)]">
+        <div className="flex-1">
+          <ChipInput
+            label={displayLabel}
+            values={toStringArray(value)}
+            onChange={(vals) => onChange(field.field_name, vals)}
+          />
+        </div>
+        {onDelete && !field.is_required && (
+          <DeleteButton fieldName={field.field_name} onDelete={onDelete} />
+        )}
+      </div>
+    );
+  }
+
+  // Non-null object → render sub-fields
+  if (value != null && typeof value === "object") {
+    const obj = value as Record<string, unknown>;
+    const subKeys = Object.keys(obj);
+    return (
+      <div className="col-span-full flex flex-col gap-2 rounded-[var(--radius-md)] border border-[var(--color-border-default)] p-3">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-semibold text-[var(--color-text-secondary)]">
+            {displayLabel}
+          </span>
+          {onDelete && !field.is_required && (
+            <DeleteButton fieldName={field.field_name} onDelete={onDelete} />
+          )}
+        </div>
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+          {subKeys.map((subKey) => {
+            const subValue = obj[subKey];
+            const subLabel = snakeCaseToTitle(subKey);
+
+            // Sub-value is array → chip input
+            if (Array.isArray(subValue)) {
+              return (
+                <ChipInput
+                  key={subKey}
+                  label={subLabel}
+                  values={toStringArray(subValue)}
+                  onChange={(vals) =>
+                    onChange(field.field_name, { ...obj, [subKey]: vals })
+                  }
+                />
+              );
+            }
+
+            // Sub-value is boolean → toggle
+            if (typeof subValue === "boolean") {
+              return (
+                <Toggle
+                  key={subKey}
+                  label={subLabel}
+                  checked={subValue}
+                  onChange={(checked) =>
+                    onChange(field.field_name, { ...obj, [subKey]: checked })
+                  }
+                />
+              );
+            }
+
+            // Sub-value is number → number input
+            if (typeof subValue === "number") {
+              return (
+                <Input
+                  key={subKey}
+                  label={subLabel}
+                  type="number"
+                  value={String(subValue)}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                    onChange(field.field_name, {
+                      ...obj,
+                      [subKey]: e.target.value ? Number(e.target.value) : null,
+                    })
+                  }
+                />
+              );
+            }
+
+            // Default: string input
+            return (
+              <Input
+                key={subKey}
+                label={subLabel}
+                value={subValue != null ? String(subValue) : ""}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  onChange(field.field_name, { ...obj, [subKey]: e.target.value })
+                }
+              />
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  // --- Standard scalar rendering below ---
+
   const strValue = value != null ? String(value) : "";
 
   // Check for enum constraints
@@ -82,7 +196,6 @@ export function MetadataFieldInput({ field, value, onChange, onDelete }: Metadat
       );
 
     default:
-      // string, array, object — all rendered as text input
       return (
         <div className="flex items-center gap-[var(--spacing-2)]">
           <div className="flex-1">
