@@ -9,9 +9,9 @@ use std::collections::HashMap;
 use x121_core::generation;
 use x121_core::prompt_resolution;
 use x121_core::types::DbId;
-use x121_db::repositories::{ImageVariantRepo, SceneRepo, SceneTypeRepo, SegmentRepo};
+use x121_db::repositories::{ImageVariantRepo, SegmentRepo};
 
-use crate::error::PipelineError;
+use crate::error::{load_scene_and_type, PipelineError};
 use crate::workflow_builder::GenerationContext;
 
 /// Load everything needed to build a ComfyUI workflow for one segment.
@@ -20,20 +20,8 @@ pub async fn load_generation_context(
     scene_id: DbId,
     segment_index: u32,
 ) -> Result<GenerationContext, PipelineError> {
-    // 1. Load the scene.
-    let scene = SceneRepo::find_by_id(pool, scene_id)
-        .await?
-        .ok_or_else(|| PipelineError::MissingConfig(format!("Scene {scene_id} not found")))?;
-
-    // 2. Load the scene type for workflow template and config.
-    let scene_type = SceneTypeRepo::find_by_id(pool, scene.scene_type_id)
-        .await?
-        .ok_or_else(|| {
-            PipelineError::MissingConfig(format!(
-                "SceneType {} not found",
-                scene.scene_type_id
-            ))
-        })?;
+    // 1. Load the scene and scene type.
+    let (scene, scene_type) = load_scene_and_type(pool, scene_id).await?;
 
     let workflow_template = scene_type.workflow_json.ok_or_else(|| {
         PipelineError::MissingConfig(format!(

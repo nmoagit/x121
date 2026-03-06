@@ -8,10 +8,10 @@ use std::sync::Arc;
 use x121_comfyui::manager::ComfyUIManager;
 use x121_core::generation::{self, StopDecision};
 use x121_core::types::DbId;
-use x121_db::repositories::{SceneRepo, SceneTypeRepo};
+use x121_db::repositories::SceneRepo;
 
 use crate::completion_handler::CompletionResult;
-use crate::error::PipelineError;
+use crate::error::{load_scene_and_type, PipelineError};
 use crate::submitter;
 
 /// Outcome of evaluating the loop after a segment completes.
@@ -42,19 +42,7 @@ pub async fn evaluate_and_continue(
     user_id: DbId,
 ) -> Result<LoopOutcome, PipelineError> {
     // Load scene and scene type for target duration.
-    let scene = SceneRepo::find_by_id(pool, completion.scene_id)
-        .await
-        .map_err(PipelineError::Database)?
-        .ok_or_else(|| {
-            PipelineError::MissingConfig(format!("Scene {} not found", completion.scene_id))
-        })?;
-
-    let scene_type = SceneTypeRepo::find_by_id(pool, scene.scene_type_id)
-        .await
-        .map_err(PipelineError::Database)?
-        .ok_or_else(|| {
-            PipelineError::MissingConfig(format!("SceneType {} not found", scene.scene_type_id))
-        })?;
+    let (scene, scene_type) = load_scene_and_type(pool, completion.scene_id).await?;
 
     let target_duration = scene_type
         .target_duration_secs

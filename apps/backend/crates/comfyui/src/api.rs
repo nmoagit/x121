@@ -147,6 +147,42 @@ impl ComfyUIApi {
         Ok(response.bytes().await?.to_vec())
     }
 
+    // ---- public utilities ----
+
+    /// Extract the first output filename from a ComfyUI history response.
+    ///
+    /// History format: `{ "<prompt_id>": { "outputs": { "<node_id>": { "gifs"|"videos"|"images": [{ "filename": "..." }] } } } }`
+    ///
+    /// Returns an error string if the prompt ID is missing or no output files
+    /// are found.
+    pub fn extract_output_filename(
+        history: &serde_json::Value,
+        prompt_id: &str,
+    ) -> Result<String, String> {
+        let prompt_data = history
+            .get(prompt_id)
+            .ok_or_else(|| format!("No history entry for prompt {prompt_id}"))?;
+
+        let outputs = prompt_data
+            .get("outputs")
+            .and_then(|o| o.as_object())
+            .ok_or_else(|| "No outputs in history".to_string())?;
+
+        for (_node_id, node_output) in outputs {
+            for key in &["gifs", "videos", "images"] {
+                if let Some(files) = node_output.get(*key).and_then(|v| v.as_array()) {
+                    if let Some(first) = files.first() {
+                        if let Some(filename) = first.get("filename").and_then(|f| f.as_str()) {
+                            return Ok(filename.to_string());
+                        }
+                    }
+                }
+            }
+        }
+
+        Err("No output files found in ComfyUI history".to_string())
+    }
+
     // ---- private helpers ----
 
     /// Ensure the response has a success status code. Returns the

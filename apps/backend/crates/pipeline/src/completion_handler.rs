@@ -63,7 +63,7 @@ pub async fn handle_completion(
         .map_err(|e| PipelineError::Download(format!("Failed to store output: {e}")))?;
 
     // 4. Compute duration (placeholder — real implementation uses ffprobe).
-    // TODO: Use x121_core::ffmpeg::probe_duration once available.
+    // TODO: Wire up x121_core::ffmpeg::probe_video + parse_duration to get real duration.
     let duration_secs = 5.0; // Default segment duration assumption.
 
     // 5. Get previous cumulative duration.
@@ -124,44 +124,9 @@ pub async fn handle_completion(
     })
 }
 
-/// Extract the output video filename from ComfyUI history JSON.
-///
-/// History format: `{ "<prompt_id>": { "outputs": { "<node_id>": { "gifs": [{ "filename": "..." }] } } } }`
-/// Also checks for `"videos"` and `"images"` keys as ComfyUI varies by workflow.
-fn extract_output_filename(
-    history: &serde_json::Value,
-    prompt_id: &str,
-) -> Result<String, PipelineError> {
-    let prompt_data = history
-        .get(prompt_id)
-        .ok_or_else(|| PipelineError::Download(format!("No history entry for prompt {prompt_id}")))?;
-
-    let outputs = prompt_data
-        .get("outputs")
-        .and_then(|o| o.as_object())
-        .ok_or_else(|| PipelineError::Download("No outputs in history".to_string()))?;
-
-    // Search output nodes for video/gif/image files.
-    for (_node_id, node_output) in outputs {
-        for key in &["gifs", "videos", "images"] {
-            if let Some(files) = node_output.get(*key).and_then(|v| v.as_array()) {
-                if let Some(first) = files.first() {
-                    if let Some(filename) = first.get("filename").and_then(|f| f.as_str()) {
-                        return Ok(filename.to_string());
-                    }
-                }
-            }
-        }
-    }
-
-    Err(PipelineError::Download(
-        "No output files found in ComfyUI history".to_string(),
-    ))
-}
-
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use x121_comfyui::api::ComfyUIApi;
 
     #[test]
     fn extract_gifs_output() {
@@ -174,7 +139,7 @@ mod tests {
                 }
             }
         });
-        let result = extract_output_filename(&history, "abc-123").unwrap();
+        let result = ComfyUIApi::extract_output_filename(&history, "abc-123").unwrap();
         assert_eq!(result, "output_00001.mp4");
     }
 
@@ -189,7 +154,7 @@ mod tests {
                 }
             }
         });
-        let result = extract_output_filename(&history, "def-456").unwrap();
+        let result = ComfyUIApi::extract_output_filename(&history, "def-456").unwrap();
         assert_eq!(result, "scene_video.webm");
     }
 
@@ -200,15 +165,15 @@ mod tests {
                 "outputs": {}
             }
         });
-        let err = extract_output_filename(&history, "ghi-789").unwrap_err();
-        assert!(err.to_string().contains("No output files"));
+        let err = ComfyUIApi::extract_output_filename(&history, "ghi-789").unwrap_err();
+        assert!(err.contains("No output files"));
     }
 
     #[test]
     fn extract_fails_when_no_prompt() {
         let history = serde_json::json!({});
-        let err = extract_output_filename(&history, "missing").unwrap_err();
-        assert!(err.to_string().contains("No history entry"));
+        let err = ComfyUIApi::extract_output_filename(&history, "missing").unwrap_err();
+        assert!(err.contains("No history entry"));
     }
 }
 

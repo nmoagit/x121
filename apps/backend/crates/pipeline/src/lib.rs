@@ -10,5 +10,5 @@ pub mod loop_driver;
 pub mod submitter;
 pub mod workflow_builder;
 
-pub use error::PipelineError;
+pub use error::{load_scene_and_type, PipelineError};
 pub use workflow_builder::{build_workflow, GenerationContext};
