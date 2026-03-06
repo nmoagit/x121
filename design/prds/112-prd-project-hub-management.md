@@ -623,3 +623,91 @@ This check is **blocking** — no PR should be merged without a DRY-GUY audit of
 - **v1.4** (2026-02-24): Project as output hub. Added: Overview tab with project dashboard (Req 1.3), Production tab with character × scene matrix (Req 1.6), Delivery tab with packaging and validation (Req 1.7). Character cards now use status-driven color coding (Req 1.4). Added production/delivery hooks.
 - **v1.5** (2026-02-24): Complete character workstation. Added: Assets tab for external tool clips — txrs_refined, mesh_refined, mouth_refined, smiles_refined (Req 1.17). Dedicated Metadata tab with JSON + pretty-printed dual view (Req 1.18). Settings tab expanded with named character attributes — x121 status, a2c4 model, ElevenLabs voice — extensible via JSONB (Req 1.19). Delivery tab gains external handoff to final processing tool (Req 1.7). Total: 20 MVP requirements + 2 post-MVP.
 - **v1.6** (2026-02-24): Character groups. Characters organized into collapsible groups within a project (replacing ad-hoc batch numbering). New `character_groups` table. Expanded character creation actions: manual, CSV/text, library import, folder import (PRD-113). New group API endpoints and hooks. Folder import and metadata generation pipeline split to PRD-113.
+- **v1.7** (2026-03-06): Amendment — Requirements gap fill (Reqs A.1-A.5).
+
+---
+
+## Amendment (2026-03-06): Requirements Gap Fill
+
+The following requirements were identified during a stakeholder requirements review and address gaps in the original PRD. They do not modify any existing requirements.
+
+### Requirement A.1: Intelligent Job Queueing Modal
+
+**Description:** A "Queue Outstanding" action triggers a modal that automatically filters out blocked items. Non-blocked items are pre-selected. Blocked items are visible but greyed out with the blocking reason displayed.
+
+**Acceptance Criteria:**
+- [ ] "Queue Outstanding" button available on the Project Detail Production tab and Character Detail Scenes tab
+- [ ] Modal loads the list of all ungenerated/pending scene-character combinations for the current scope (project or character)
+- [ ] Each item is checked against blocking conditions (e.g., missing face embedding, missing hero image, incomplete readiness checklist per PRD-107)
+- [ ] Non-blocked items are pre-selected with checkboxes enabled
+- [ ] Blocked items are displayed but greyed out with a short blocking reason label (e.g., "Missing face embedding", "No hero image set")
+- [ ] User can deselect non-blocked items before confirming
+- [ ] "Queue Selected" button submits only the selected (non-blocked) items for generation
+- [ ] Modal shows a summary count: "X of Y items ready to queue (Z blocked)"
+
+**Technical Notes:**
+- Reuse readiness evaluation logic from PRD-107 to determine blocking reasons
+- Modal component should accept a scope parameter (project-level or character-level)
+
+### Requirement A.2: Force Override Toggle
+
+**Description:** The queueing modal (Req A.1) includes a "Force Override" toggle that allows re-generation of assets that already have an existing version.
+
+**Acceptance Criteria:**
+- [ ] Toggle labeled "Force Override" or "Include Already Generated" is present in the queueing modal
+- [ ] When disabled (default), items that already have a final version (PRD-109) are excluded from the list
+- [ ] When enabled, items with existing versions appear in the list and can be selected for re-generation
+- [ ] Items with existing versions show a visual indicator (e.g., "v2 exists") so the user is aware they are re-generating
+- [ ] Re-generation creates a new version (PRD-109 auto-versioning) rather than overwriting the existing one
+- [ ] Toggle state is not persisted — resets to disabled each time the modal opens
+
+**Technical Notes:**
+- Queries `scene_video_versions` to determine which scenes already have a final version
+- Integrates with PRD-109 Req 1.2 (auto-versioning on generation)
+
+### Requirement A.3: Archive/Hidden Exclusion
+
+**Description:** Characters marked as Archived or Hidden must be completely excluded from pipeline calculations and the deliverables tracking grid.
+
+**Acceptance Criteria:**
+- [ ] Characters with status "archived" or "hidden" are excluded from the Production tab matrix (Req 1.6)
+- [ ] Excluded characters do not count toward project progress summary stats (Req 1.3)
+- [ ] Excluded characters do not appear in the Delivery tab readiness calculations (Req 1.7)
+- [ ] Excluded characters are not included in batch generation runs triggered from the project level
+- [ ] The Characters tab (Req 1.4) still shows archived/hidden characters but with a visual distinction (greyed out, strikethrough, or badge) — they are excluded from pipeline, not from browsing
+- [ ] Delivery validation (PRD-039) skips archived/hidden characters when checking completeness
+
+**Technical Notes:**
+- Backend stats and matrix endpoints must accept a filter parameter to exclude archived/hidden statuses
+- Frontend hooks should pass the exclusion filter by default for pipeline-related queries
+
+### Requirement A.4: Show/Hide Disabled Characters
+
+**Description:** Add a toggle in the project character list header to show/hide disabled (archived/hidden) characters.
+
+**Acceptance Criteria:**
+- [ ] Toggle control in the Characters tab (Req 1.4) header area, labeled "Show Disabled" or equivalent
+- [ ] When toggled off (default), characters with status "archived" or "hidden" are not displayed in the character grid
+- [ ] When toggled on, archived/hidden characters appear with a visual distinction (greyed out card, muted colors, status badge)
+- [ ] Toggle state is persisted in URL search params (e.g., `?showDisabled=true`) so it survives page refresh
+- [ ] Character count in the tab header reflects the visible count, with a parenthetical for hidden count if any (e.g., "Characters (24)" or "Characters (24 + 6 disabled)")
+
+**Technical Notes:**
+- This is a frontend-only filter — the API returns all characters; filtering happens client-side
+- Reuses the status-driven card color system from Req 1.4
+
+### Requirement A.5: Breadcrumb Auto-Scroll
+
+**Description:** Clicking a group name in the breadcrumb navigates to the project page and auto-scrolls to that group's section.
+
+**Acceptance Criteria:**
+- [ ] When viewing a character detail page within a group, the breadcrumb shows: Projects > {Project Name} > {Group Name} > {Character Name}
+- [ ] Clicking {Group Name} in the breadcrumb navigates to `/projects/:id?tab=characters&group={groupId}`
+- [ ] On the Characters tab, the specified group section scrolls into view using `scrollIntoView` or equivalent
+- [ ] If the group section is collapsed, it is automatically expanded before scrolling
+- [ ] Scroll behavior is smooth (not instant jump)
+- [ ] If no group parameter is present in the URL, no auto-scroll occurs (normal behavior)
+
+**Technical Notes:**
+- Each group section element should have an `id` attribute matching the group ID for scroll targeting
+- Use `useEffect` or `useLayoutEffect` to trigger scroll after the characters tab renders

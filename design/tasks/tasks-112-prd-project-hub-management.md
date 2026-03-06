@@ -1050,3 +1050,90 @@ Update the wiring status to reflect the new routes and navigation items.
 ## Version History
 
 - **v1.0** (2026-02-25): Initial task list creation from PRD-112
+- **v1.1** (2026-03-06): Added Phase 9 — Amendment tasks (A.1-A.5)
+
+---
+
+## Phase 9: Amendment — Requirements Gap Fill (2026-03-06)
+
+Tasks in this phase implement the requirements added in the PRD-112 Amendment (2026-03-06).
+
+### Task 9.1: Intelligent Job Queueing Modal (Req A.1)
+**Files:**
+- `apps/frontend/src/features/projects/components/QueueOutstandingModal.tsx` (new)
+- `apps/frontend/src/features/projects/hooks/use-queue-outstanding.ts` (new)
+
+Build a modal triggered by a "Queue Outstanding" button on the Production tab and Character Scenes tab. The modal:
+1. Fetches all ungenerated scene-character combinations for the given scope (project or character)
+2. Evaluates each item against blocking conditions using PRD-107 readiness logic
+3. Renders non-blocked items as pre-selected checkboxes, blocked items as greyed-out rows with blocking reason
+4. Submits selected items for generation on confirm
+
+**Acceptance Criteria:**
+- [ ] "Queue Outstanding" button present on Production tab and Character Scenes tab
+- [ ] Modal fetches and categorizes items into blocked/non-blocked
+- [ ] Blocked items display the specific blocking reason (e.g., "Missing face embedding")
+- [ ] Non-blocked items are pre-selected; user can deselect
+- [ ] Summary count: "X of Y items ready to queue (Z blocked)"
+- [ ] "Queue Selected" submits only selected non-blocked items for generation
+- [ ] Modal accepts a `scope` prop: `{ type: 'project', id: DbId }` or `{ type: 'character', id: DbId }`
+
+### Task 9.2: Force Override Toggle (Req A.2)
+**Files:**
+- `apps/frontend/src/features/projects/components/QueueOutstandingModal.tsx` (modify)
+
+Extend the queueing modal from Task 9.1 with a "Force Override" toggle.
+
+**Acceptance Criteria:**
+- [ ] Toggle labeled "Include Already Generated" in the modal header/toolbar
+- [ ] Default state: off — items with existing final versions (PRD-109) are excluded
+- [ ] When toggled on: items with existing versions appear in the list, selectable, with a version indicator (e.g., "v2 exists")
+- [ ] Re-generation creates a new version via PRD-109 auto-versioning, not an overwrite
+- [ ] Toggle resets to off each time the modal opens
+- [ ] Hook queries `scene_video_versions` to determine existing version status
+
+### Task 9.3: Archive/Hidden Exclusion Logic (Req A.3)
+**Files:**
+- `apps/frontend/src/features/projects/hooks/use-project-stats.ts` (modify)
+- `apps/frontend/src/features/projects/tabs/ProjectProductionTab.tsx` (modify)
+- `apps/frontend/src/features/projects/tabs/ProjectDeliveryTab.tsx` (modify)
+- `apps/frontend/src/features/projects/tabs/ProjectOverviewTab.tsx` (modify)
+
+Ensure archived/hidden characters are excluded from all pipeline calculations and delivery tracking.
+
+**Acceptance Criteria:**
+- [ ] Project stats hook excludes characters with status "archived" or "hidden" from progress counts
+- [ ] Production matrix excludes archived/hidden characters from rows
+- [ ] Delivery readiness calculations skip archived/hidden characters
+- [ ] Batch generation triggered at project level does not include archived/hidden characters
+- [ ] Characters tab still shows them (with visual distinction) per Task 9.4
+- [ ] Backend stats endpoint accepts `exclude_statuses` query parameter (or frontend filters client-side)
+
+### Task 9.4: Show/Hide Disabled Characters Toggle (Req A.4)
+**Files:**
+- `apps/frontend/src/features/projects/tabs/ProjectCharactersTab.tsx` (modify)
+
+Add a toggle to the Characters tab header for showing/hiding disabled characters.
+
+**Acceptance Criteria:**
+- [ ] Toggle control in Characters tab header labeled "Show Disabled"
+- [ ] Default: off — archived/hidden characters not displayed
+- [ ] When on: archived/hidden characters shown with greyed-out styling and status badge
+- [ ] Toggle state persisted in URL search params (`?showDisabled=true`)
+- [ ] Character count in tab header shows visible count + disabled count (e.g., "Characters (24 + 6 disabled)")
+- [ ] Filtering is client-side (API returns all; toggle controls display)
+
+### Task 9.5: Breadcrumb Auto-Scroll to Group (Req A.5)
+**Files:**
+- `apps/frontend/src/features/characters/CharacterDetailPage.tsx` (modify breadcrumb)
+- `apps/frontend/src/features/projects/tabs/ProjectCharactersTab.tsx` (modify scroll logic)
+
+**Acceptance Criteria:**
+- [ ] Breadcrumb shows: Projects > {Project Name} > {Group Name} > {Character Name} when character belongs to a group
+- [ ] Clicking {Group Name} navigates to `/projects/:id?tab=characters&group={groupId}`
+- [ ] Characters tab reads `group` URL param and scrolls the matching group section into view
+- [ ] Collapsed group sections expand automatically before scrolling
+- [ ] Smooth scroll behavior
+- [ ] No auto-scroll when `group` param is absent
+- [ ] Each group section has an `id` attribute for scroll targeting (e.g., `id="group-{groupId}"`)
+- [ ] Uses `useEffect` to trigger scroll after render
