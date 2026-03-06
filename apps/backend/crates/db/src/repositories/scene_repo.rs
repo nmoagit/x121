@@ -159,6 +159,18 @@ impl SceneRepo {
         Ok(result.rows_affected() > 0)
     }
 
+    /// List all scenes that are actively generating (started but not completed).
+    pub async fn list_generating(pool: &PgPool) -> Result<Vec<Scene>, sqlx::Error> {
+        let query = format!(
+            "SELECT {COLUMNS} FROM scenes
+             WHERE generation_started_at IS NOT NULL
+               AND generation_completed_at IS NULL
+               AND deleted_at IS NULL
+             ORDER BY generation_started_at ASC"
+        );
+        sqlx::query_as::<_, Scene>(&query).fetch_all(pool).await
+    }
+
     // -- Generation-specific methods (PRD-24) ---------------------------------
 
     /// Update only generation-specific fields on a scene.

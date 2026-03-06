@@ -127,6 +127,26 @@ impl ComfyUIApi {
         Self::parse_response(response).await
     }
 
+    /// Get the base API URL for this instance.
+    pub fn api_url(&self) -> &str {
+        &self.api_url
+    }
+
+    /// Download an output file from ComfyUI's `/view` endpoint.
+    ///
+    /// ComfyUI serves generated files at `GET /view?filename=<name>&type=output`.
+    /// Returns the raw bytes of the file.
+    pub async fn download_output(&self, filename: &str) -> Result<Vec<u8>, ComfyUIApiError> {
+        let response = self
+            .client
+            .get(format!("{}/view", self.api_url))
+            .query(&[("filename", filename), ("type", "output")])
+            .send()
+            .await?;
+        let response = Self::ensure_success(response).await?;
+        Ok(response.bytes().await?.to_vec())
+    }
+
     // ---- private helpers ----
 
     /// Ensure the response has a success status code. Returns the

@@ -219,6 +219,55 @@ impl SegmentRepo {
         Ok(result.rows_affected())
     }
 
+    /// Find a segment by scene ID and sequence index.
+    pub async fn find_by_scene_and_index(
+        pool: &PgPool,
+        scene_id: DbId,
+        sequence_index: i32,
+    ) -> Result<Option<Segment>, sqlx::Error> {
+        let query = format!(
+            "SELECT {COLUMNS} FROM segments
+             WHERE scene_id = $1 AND sequence_index = $2 AND deleted_at IS NULL"
+        );
+        sqlx::query_as::<_, Segment>(&query)
+            .bind(scene_id)
+            .bind(sequence_index)
+            .fetch_optional(pool)
+            .await
+    }
+
+    /// Find the currently generating segment for a scene (started but not completed).
+    pub async fn find_active_for_scene(
+        pool: &PgPool,
+        scene_id: DbId,
+    ) -> Result<Option<Segment>, sqlx::Error> {
+        let query = format!(
+            "SELECT {COLUMNS} FROM segments
+             WHERE scene_id = $1
+               AND generation_started_at IS NOT NULL
+               AND generation_completed_at IS NULL
+               AND deleted_at IS NULL"
+        );
+        sqlx::query_as::<_, Segment>(&query)
+            .bind(scene_id)
+            .fetch_optional(pool)
+            .await
+    }
+
+    /// Get the next sequence index for a scene (MAX + 1, or 0 if none).
+    pub async fn next_sequence_index(
+        pool: &PgPool,
+        scene_id: DbId,
+    ) -> Result<i32, sqlx::Error> {
+        let row: (Option<i32>,) = sqlx::query_as(
+            "SELECT MAX(sequence_index) FROM segments WHERE scene_id = $1 AND deleted_at IS NULL",
+        )
+        .bind(scene_id)
+        .fetch_one(pool)
+        .await?;
+        Ok(row.0.map_or(0, |max| max + 1))
+    }
+
     /// Get the last completed segment for a scene (for generation resumption).
     ///
     /// A "completed" segment is one with a non-NULL `generation_completed_at`.
