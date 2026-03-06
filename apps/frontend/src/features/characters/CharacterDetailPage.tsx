@@ -160,10 +160,24 @@ export function CharacterDetailPage() {
         <Link
           to="/projects/$projectId"
           params={{ projectId: String(projectId) }}
+          search={{ tab: undefined, group: undefined }}
           className="hover:text-[var(--color-text-primary)] transition-colors"
         >
           {project?.name ?? `Project ${projectId}`}
         </Link>
+        {groupName && character.group_id != null && (
+          <>
+            <ChevronRight size={14} aria-hidden />
+            <Link
+              to="/projects/$projectId"
+              params={{ projectId: String(projectId) }}
+              search={{ tab: "characters", group: String(character.group_id) }}
+              className="hover:text-[var(--color-text-primary)] transition-colors"
+            >
+              {groupName}
+            </Link>
+          </>
+        )}
         <ChevronRight size={14} aria-hidden />
         <span className="text-[var(--color-text-primary)] font-medium">{character.name}</span>
       </nav>

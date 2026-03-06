@@ -129,6 +129,9 @@ export interface CharacterDropPayload {
    Constants
    -------------------------------------------------------------------------- */
 
+/** Character status_id for Archived (used to exclude from production queues, A.3). */
+export const CHARACTER_STATUS_ID_ARCHIVED = 3;
+
 /** Status ID to human-readable label mapping. */
 export const STATUS_LABELS: Record<number, string> = {
   1: "Draft",

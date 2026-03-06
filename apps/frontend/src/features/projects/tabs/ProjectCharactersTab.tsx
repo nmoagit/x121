@@ -9,6 +9,8 @@
 import { useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import { useSetToggle } from "@/hooks/useSetToggle";
+
 import { ConfirmDeleteModal, Modal } from "@/components/composite";
 import { EmptyState, FileDropZone } from "@/components/domain";
 import { Grid, Stack } from "@/components/layout";
@@ -16,7 +18,7 @@ import { Button, Input, LoadingPane, Select } from "@/components/primitives";
 import { GroupSceneOverrides } from "@/features/scene-catalog";
 import { cn } from "@/lib/cn";
 import { toSelectOptions } from "@/lib/select-utils";
-import { ICON_ACTION_BTN, ICON_ACTION_BTN_DANGER } from "@/lib/ui-classes";
+import { ICON_ACTION_BTN, ICON_ACTION_BTN_DANGER, INLINE_LINK_BTN } from "@/lib/ui-classes";
 import {
   ChevronDown,
   ChevronRight,
@@ -52,14 +54,6 @@ import {
 } from "../hooks/use-project-characters";
 import type { Character, CharacterGroup, UpdateCharacter } from "../types";
 
-/* --------------------------------------------------------------------------
-   Shared class strings
-   -------------------------------------------------------------------------- */
-
-/** Inline text-link style for small action buttons (e.g. "Clear", "+ Create new group"). */
-const INLINE_LINK_BTN =
-  "text-xs text-[var(--color-action-primary)] hover:text-[var(--color-action-primary-hover)] hover:underline cursor-pointer";
-
 /** localStorage key for the show/hide disabled characters toggle. */
 const SHOW_DISABLED_KEY = "x121.project.showDisabled";
 
@@ -69,9 +63,11 @@ const SHOW_DISABLED_KEY = "x121.project.showDisabled";
 
 interface ProjectCharactersTabProps {
   projectId: number;
+  /** When provided, auto-expand and scroll to the group section on mount. */
+  scrollToGroupId?: string;
 }
 
-export function ProjectCharactersTab({ projectId }: ProjectCharactersTabProps) {
+export function ProjectCharactersTab({ projectId, scrollToGroupId }: ProjectCharactersTabProps) {
   const navigate = useNavigate();
 
   const { data: characters, isLoading: charsLoading } = useProjectCharacters(projectId);
@@ -145,6 +141,36 @@ export function ProjectCharactersTab({ projectId }: ProjectCharactersTabProps) {
     sessionStorage.setItem(storageKey, JSON.stringify([...collapsedRef.current]));
   }, [collapsedIds, storageKey]);
 
+  /* --- auto-scroll to group from URL param --- */
+  const scrolledRef = useRef(false);
+  useEffect(() => {
+    if (!scrollToGroupId || scrolledRef.current) return;
+    scrolledRef.current = true;
+
+    // Determine the group key and section element id
+    const groupKey: number | "ungrouped" =
+      scrollToGroupId === "ungrouped" ? "ungrouped" : Number(scrollToGroupId);
+    const sectionElId =
+      scrollToGroupId === "ungrouped" ? "group-ungrouped" : `group-${scrollToGroupId}`;
+
+    // Expand the group if it is collapsed
+    setCollapsedIds((prev) => {
+      if (prev.has(groupKey)) {
+        const next = new Set(prev);
+        next.delete(groupKey);
+        return next;
+      }
+      return prev;
+    });
+
+    // Scroll after a short delay to allow expansion render
+    requestAnimationFrame(() => {
+      document
+        .getElementById(sectionElId)
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }, [scrollToGroupId]);
+
   function toggleExpanded(id: number | "ungrouped") {
     setCollapsedIds((prev) => {
       const next = new Set(prev);
@@ -159,16 +185,7 @@ export function ProjectCharactersTab({ projectId }: ProjectCharactersTabProps) {
   const dragCounterRef = useRef<Map<number | "ungrouped", number>>(new Map());
 
   /* --- multi-select --- */
-  const [selectedCharIds, setSelectedCharIds] = useState<Set<number>>(new Set());
-
-  const toggleCharSelection = useCallback((charId: number) => {
-    setSelectedCharIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(charId)) next.delete(charId);
-      else next.add(charId);
-      return next;
-    });
-  }, []);
+  const [selectedCharIds, toggleCharSelection, setSelectedCharIds] = useSetToggle<number>();
 
   /* --- group filter options --- */
   const groupOptions = useMemo(

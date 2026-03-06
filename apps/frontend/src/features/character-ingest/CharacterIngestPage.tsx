@@ -38,7 +38,7 @@ export function CharacterIngestPage() {
   function handleComplete(characterIds: number[]) {
     setShowWizard(false);
     if (characterIds.length > 0) {
-      navigate({ to: "/projects/$projectId", params: { projectId: String(projectId) } });
+      navigate({ to: "/projects/$projectId", params: { projectId: String(projectId) }, search: { tab: undefined, group: undefined } });
     }
   }
 
@@ -72,8 +72,8 @@ export function CharacterIngestPage() {
               onCancel={() => setShowWizard(false)}
             />
           ) : (
-            <div className="flex flex-col items-center justify-center gap-4 rounded-lg border border-dashed p-12 text-center">
-              <p className="text-muted-foreground">
+            <div className="flex flex-col items-center justify-center gap-4 rounded-lg border border-dashed border-[var(--color-border-default)] p-12 text-center">
+              <p className="text-[var(--color-text-muted)]">
                 Import characters from folder structures or text lists.
               </p>
               <Button variant="secondary" onClick={() => setShowWizard(true)}>

@@ -5,22 +5,22 @@
  * Active tab is managed via URL search param `?tab=`.
  */
 
+import { Link, useParams, useSearch } from "@tanstack/react-router";
 import { useState } from "react";
-import { Link, useParams } from "@tanstack/react-router";
 
 import { Tabs } from "@/components/composite";
-import { Badge, LoadingPane } from "@/components/primitives";
-import { Stack } from "@/components/layout";
 import { EmptyState } from "@/components/domain";
-import { AlertCircle, ChevronRight, FolderKanban } from "@/tokens/icons";
+import { Stack } from "@/components/layout";
+import { Badge, LoadingPane } from "@/components/primitives";
 import { formatDate } from "@/lib/format";
+import { AlertCircle, ChevronRight, FolderKanban } from "@/tokens/icons";
 
 import { useProject, useProjectStats } from "./hooks/use-projects";
-import { ProjectOverviewTab } from "./tabs/ProjectOverviewTab";
 import { ProjectCharactersTab } from "./tabs/ProjectCharactersTab";
-import { ProjectProductionTab } from "./tabs/ProjectProductionTab";
-import { ProjectDeliveryTab } from "./tabs/ProjectDeliveryTab";
 import { ProjectSettingsTab } from "./tabs/ProjectConfigTab";
+import { ProjectDeliveryTab } from "./tabs/ProjectDeliveryTab";
+import { ProjectOverviewTab } from "./tabs/ProjectOverviewTab";
+import { ProjectProductionTab } from "./tabs/ProjectProductionTab";
 import { PROJECT_STATUS_BADGE_VARIANT, PROJECT_STATUS_LABELS, PROJECT_TABS } from "./types";
 
 /* --------------------------------------------------------------------------
@@ -31,10 +31,19 @@ export function ProjectDetailPage() {
   const { projectId } = useParams({ strict: false }) as { projectId: string };
   const id = Number(projectId);
 
+  const { tab: tabParam, group: groupParam } = useSearch({ strict: false }) as {
+    tab?: string;
+    group?: string;
+  };
+
   const { data: project, isLoading, error } = useProject(id);
   const { data: stats } = useProjectStats(id);
 
-  const [activeTab, setActiveTab] = useState<string>(PROJECT_TABS[0].id);
+  const validTabIds = PROJECT_TABS.map((t) => t.id) as readonly string[];
+  const initialTab = tabParam && validTabIds.includes(tabParam) ? tabParam : PROJECT_TABS[0].id;
+  const [activeTab, setActiveTab] = useState<string>(initialTab);
+
+  const scrollToGroupId = activeTab === "characters" && groupParam ? groupParam : undefined;
 
   if (isLoading) {
     return <LoadingPane />;
@@ -57,27 +66,18 @@ export function ProjectDetailPage() {
     <Stack gap={6}>
       {/* Breadcrumb */}
       <nav className="flex items-center gap-[var(--spacing-1)] text-sm text-[var(--color-text-muted)]">
-        <Link
-          to="/projects"
-          className="hover:text-[var(--color-text-primary)] transition-colors"
-        >
+        <Link to="/projects" className="hover:text-[var(--color-text-primary)] transition-colors">
           Projects
         </Link>
         <ChevronRight size={14} aria-hidden />
-        <span className="text-[var(--color-text-primary)] font-medium">
-          {project.name}
-        </span>
+        <span className="text-[var(--color-text-primary)] font-medium">{project.name}</span>
       </nav>
 
       {/* Header */}
       <div className="flex items-start justify-between gap-[var(--spacing-4)]">
         <div>
           <div className="flex items-center gap-[var(--spacing-2)]">
-            <FolderKanban
-              size={24}
-              className="text-[var(--color-text-muted)]"
-              aria-hidden
-            />
+            <FolderKanban size={24} className="text-[var(--color-text-muted)]" aria-hidden />
             <h1 className="text-xl font-semibold text-[var(--color-text-primary)]">
               {project.name}
             </h1>
@@ -86,9 +86,7 @@ export function ProjectDetailPage() {
             </Badge>
           </div>
           {project.description && (
-            <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-              {project.description}
-            </p>
+            <p className="mt-1 text-sm text-[var(--color-text-muted)]">{project.description}</p>
           )}
           <p className="mt-1 text-xs text-[var(--color-text-muted)]">
             Created {formatDate(project.created_at)}
@@ -108,8 +106,10 @@ export function ProjectDetailPage() {
 
       {/* Tab content */}
       {activeTab === "overview" && <ProjectOverviewTab projectId={id} stats={stats} />}
-      {activeTab === "characters" && <ProjectCharactersTab projectId={id} />}
-      {activeTab === "production" && <ProjectProductionTab />}
+      {activeTab === "characters" && (
+        <ProjectCharactersTab projectId={id} scrollToGroupId={scrollToGroupId} />
+      )}
+      {activeTab === "production" && <ProjectProductionTab projectId={id} />}
       {activeTab === "delivery" && <ProjectDeliveryTab />}
       {activeTab === "settings" && <ProjectSettingsTab projectId={id} />}
     </Stack>

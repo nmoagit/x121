@@ -36,5 +36,12 @@ export const SECTION_HEADING =
 export const TEXTAREA_BASE =
   "w-full px-3 py-2 text-sm bg-[var(--color-surface-secondary)] text-[var(--color-text-primary)] border border-[var(--color-border-default)] rounded-[var(--radius-md)] focus:outline-none focus:ring-2 focus:ring-[var(--color-border-focus)]";
 
+/**
+ * Inline text-link style for small action buttons (e.g. "Clear", "+ Create new group").
+ * Primary-coloured text with hover underline.
+ */
+export const INLINE_LINK_BTN =
+  "text-xs text-[var(--color-action-primary)] hover:text-[var(--color-action-primary-hover)] hover:underline cursor-pointer";
+
 export const CHIP_CONTAINER =
   "flex flex-wrap items-center gap-1.5 bg-[var(--color-surface-secondary)] border border-[var(--color-border-default)] rounded-[var(--radius-md)] focus-within:ring-2 focus-within:ring-[var(--color-border-focus)] focus-within:ring-offset-0 transition-colors duration-150";
