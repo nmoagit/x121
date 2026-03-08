@@ -8,7 +8,7 @@ import {
   useSubmitForRereview,
   useCharacterReviewHistory,
 } from "./hooks/use-character-review";
-import type { CharacterReviewStatus } from "./types";
+import { REVIEW_STATUS_MAP } from "./types";
 import { useAuthStore } from "@/stores/auth-store";
 
 interface CharacterReviewControlsProps {
@@ -17,16 +17,6 @@ interface CharacterReviewControlsProps {
   assignmentId?: number;
   assignedReviewerUserId?: number;
 }
-
-const STATUS_MAP: Record<number, CharacterReviewStatus> = {
-  1: "unassigned",
-  2: "assigned",
-  3: "in_review",
-  4: "approved",
-  5: "rejected",
-  6: "rework",
-  7: "re_queued",
-};
 
 export function CharacterReviewControls({
   characterId,
@@ -43,7 +33,7 @@ export function CharacterReviewControls({
   const [decisionType, setDecisionType] = useState<"approved" | "rejected">("approved");
   const [comment, setComment] = useState("");
 
-  const status = STATUS_MAP[reviewStatusId] ?? "unassigned";
+  const status = REVIEW_STATUS_MAP[reviewStatusId] ?? "unassigned";
   const isAssignedReviewer = user?.id === assignedReviewerUserId;
   const isAdmin = user?.role === "admin";
   const canReview = isAssignedReviewer || isAdmin;

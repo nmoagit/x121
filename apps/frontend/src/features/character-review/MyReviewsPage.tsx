@@ -5,6 +5,7 @@ import { Spinner } from "@/components/primitives";
 import { ReviewStatusBadge } from "./ReviewStatusBadge";
 import { useMyReviewQueue, useStartReview } from "./hooks/use-character-review";
 import type { ReviewQueueCharacter } from "./types";
+import { formatDate } from "@/lib/format";
 
 type SortField = "assigned_at" | "character_name" | "project_name";
 
@@ -114,11 +115,11 @@ function QueueRow({ item, onNavigate, onStart, isStarting }: QueueRowProps) {
           {item.scene_count} scene{item.scene_count !== 1 ? "s" : ""}
         </div>
         <div className="text-sm text-text-muted">
-          {new Date(item.assigned_at).toLocaleDateString()}
+          {formatDate(item.assigned_at)}
         </div>
         {item.deadline && (
           <div className="text-sm text-action-danger">
-            Due {new Date(item.deadline).toLocaleDateString()}
+            Due {formatDate(item.deadline)}
           </div>
         )}
         <Button

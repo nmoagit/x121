@@ -7,6 +7,7 @@ import {
   useAutoAllocate,
 } from "./hooks/use-character-review";
 import type { ReviewerWorkload, AutoAllocatePreview, ProposedAssignment } from "./types";
+import { formatDate } from "@/lib/format";
 
 interface AssignmentDashboardProps {
   projectId: number;
@@ -156,7 +157,7 @@ function AssignmentsTable({ assignments }: { assignments: CharacterReviewAssignm
                   <td className="py-2 px-3 text-text-muted">{a.review_round}</td>
                   <td className="py-2 px-3 text-text-primary capitalize">{a.status}</td>
                   <td className="py-2 px-3 text-text-muted">
-                    {new Date(a.created_at).toLocaleDateString()}
+                    {formatDate(a.created_at)}
                   </td>
                 </tr>
               ))}

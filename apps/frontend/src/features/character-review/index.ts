@@ -6,3 +6,4 @@ export { CharacterReviewControls } from "./CharacterReviewControls";
 export { CharacterReviewAuditLog } from "./CharacterReviewAuditLog";
 export { AssignmentDashboard } from "./AssignmentDashboard";
 export { ProjectAuditLogPanel } from "./ProjectAuditLogPanel";
+export { ReviewAuditRow } from "./ReviewAuditRow";

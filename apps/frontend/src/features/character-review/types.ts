@@ -102,3 +102,39 @@ export interface AuditLogFilters {
   from_date?: string;
   to_date?: string;
 }
+
+/* ------------------------------------------------------------------ */
+/*  Shared constants                                                    */
+/* ------------------------------------------------------------------ */
+
+import {
+  CheckCircle,
+  XCircle,
+  UserPlus,
+  Play,
+  RefreshCw,
+  ArrowRightLeft,
+} from "@/tokens/icons";
+
+export const REVIEW_STATUS_MAP: Record<number, CharacterReviewStatus> = {
+  1: "unassigned",
+  2: "assigned",
+  3: "in_review",
+  4: "approved",
+  5: "rejected",
+  6: "rework",
+  7: "re_queued",
+};
+
+export const REVIEW_ACTION_CONFIG: Record<
+  string,
+  { icon: typeof CheckCircle; label: string; color: string }
+> = {
+  assigned: { icon: UserPlus, label: "Assigned", color: "text-blue-400" },
+  reassigned: { icon: ArrowRightLeft, label: "Reassigned", color: "text-yellow-400" },
+  review_started: { icon: Play, label: "Review Started", color: "text-yellow-400" },
+  approved: { icon: CheckCircle, label: "Approved", color: "text-green-400" },
+  rejected: { icon: XCircle, label: "Rejected", color: "text-red-400" },
+  rework_submitted: { icon: RefreshCw, label: "Submitted for Re-review", color: "text-blue-400" },
+  re_queued: { icon: RefreshCw, label: "Re-queued", color: "text-blue-400" },
+};

@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
+import { downloadBlob } from "@/lib/file-utils";
 import type {
   CharacterReviewAssignment,
   ReviewQueueCharacter,
@@ -11,6 +12,26 @@ import type {
   AutoAllocateRequest,
   AuditLogFilters,
 } from "../types";
+
+/* ------------------------------------------------------------------ */
+/*  Helpers                                                             */
+/* ------------------------------------------------------------------ */
+
+function buildAuditFilterParams(filters?: AuditLogFilters): string {
+  const params = new URLSearchParams();
+  if (filters?.reviewer_user_id) params.set("reviewer_user_id", String(filters.reviewer_user_id));
+  if (filters?.action) params.set("action", filters.action);
+  if (filters?.from_date) params.set("from_date", filters.from_date);
+  if (filters?.to_date) params.set("to_date", filters.to_date);
+  const qs = params.toString();
+  return qs ? `?${qs}` : "";
+}
+
+function invalidateReviewQueries(qc: ReturnType<typeof useQueryClient>, projectId: number) {
+  qc.invalidateQueries({ queryKey: KEYS.assignments(projectId) });
+  qc.invalidateQueries({ queryKey: KEYS.workload(projectId) });
+  qc.invalidateQueries({ queryKey: KEYS.myQueue });
+}
 
 const KEYS = {
   myQueue: ["character-review", "my-queue"] as const,
@@ -74,18 +95,10 @@ export function useProjectAuditLog(
 ) {
   return useQuery({
     queryKey: KEYS.auditLog(projectId, filters),
-    queryFn: () => {
-      const params = new URLSearchParams();
-      if (filters?.reviewer_user_id)
-        params.set("reviewer_user_id", String(filters.reviewer_user_id));
-      if (filters?.action) params.set("action", filters.action);
-      if (filters?.from_date) params.set("from_date", filters.from_date);
-      if (filters?.to_date) params.set("to_date", filters.to_date);
-      const qs = params.toString();
-      return api.get<ReviewAuditEntry[]>(
-        `/projects/${projectId}/review/audit-log${qs ? `?${qs}` : ""}`,
-      );
-    },
+    queryFn: () =>
+      api.get<ReviewAuditEntry[]>(
+        `/projects/${projectId}/review/audit-log${buildAuditFilterParams(filters)}`,
+      ),
   });
 }
 
@@ -98,11 +111,7 @@ export function useAssignCharacters(projectId: number) {
   return useMutation({
     mutationFn: (req: CreateAssignmentRequest) =>
       api.post(`/projects/${projectId}/review/assignments`, req),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: KEYS.assignments(projectId) });
-      qc.invalidateQueries({ queryKey: KEYS.workload(projectId) });
-      qc.invalidateQueries({ queryKey: KEYS.myQueue });
-    },
+    onSuccess: () => invalidateReviewQueries(qc, projectId),
   });
 }
 
@@ -121,9 +130,7 @@ export function useAutoAllocate(projectId: number) {
     },
     onSuccess: (_, vars) => {
       if (!vars.preview) {
-        qc.invalidateQueries({ queryKey: KEYS.assignments(projectId) });
-        qc.invalidateQueries({ queryKey: KEYS.workload(projectId) });
-        qc.invalidateQueries({ queryKey: KEYS.myQueue });
+        invalidateReviewQueries(qc, projectId);
       }
     },
   });
@@ -140,11 +147,7 @@ export function useReassign(projectId: number) {
         `/projects/${projectId}/review/assignments/${req.assignmentId}`,
         { new_reviewer_user_id: req.new_reviewer_user_id },
       ),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: KEYS.assignments(projectId) });
-      qc.invalidateQueries({ queryKey: KEYS.workload(projectId) });
-      qc.invalidateQueries({ queryKey: KEYS.myQueue });
-    },
+    onSuccess: () => invalidateReviewQueries(qc, projectId),
   });
 }
 
@@ -190,23 +193,10 @@ export function useSubmitForRereview() {
 
 export function useExportAuditLog(projectId: number) {
   return async (filters?: AuditLogFilters) => {
-    const params = new URLSearchParams();
-    if (filters?.reviewer_user_id)
-      params.set("reviewer_user_id", String(filters.reviewer_user_id));
-    if (filters?.action) params.set("action", filters.action);
-    if (filters?.from_date) params.set("from_date", filters.from_date);
-    if (filters?.to_date) params.set("to_date", filters.to_date);
-    const qs = params.toString();
-
     const response = await api.raw(
-      `/projects/${projectId}/review/audit-log/export${qs ? `?${qs}` : ""}`,
+      `/projects/${projectId}/review/audit-log/export${buildAuditFilterParams(filters)}`,
     );
     const blob = await response.blob();
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "review-audit-log.csv";
-    a.click();
-    URL.revokeObjectURL(url);
+    downloadBlob(blob, "review-audit-log.csv");
   };
 }

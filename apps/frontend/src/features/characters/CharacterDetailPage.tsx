@@ -35,8 +35,7 @@ import {
 } from "@/features/projects/types";
 import { ReadinessStateBadge } from "@/features/readiness/ReadinessStateBadge";
 import type { ReadinessState } from "@/features/readiness/types";
-import { ReviewStatusBadge, CharacterReviewControls, CharacterReviewAuditLog } from "@/features/character-review";
-import type { CharacterReviewStatus } from "@/features/character-review";
+import { ReviewStatusBadge, CharacterReviewControls, CharacterReviewAuditLog, REVIEW_STATUS_MAP } from "@/features/character-review";
 
 import { CharacterDeliverablesTab } from "./tabs/CharacterDeliverablesTab";
 import { CharacterImagesTab } from "./tabs/CharacterImagesTab";
@@ -45,16 +44,6 @@ import { CharacterOverviewTab } from "./tabs/CharacterOverviewTab";
 import { CharacterScenesTab } from "./tabs/CharacterScenesTab";
 import { CharacterSettingsTab } from "./tabs/CharacterSettingsTab";
 import { CharacterSpeechTab } from "./tabs/CharacterSpeechTab";
-
-const REVIEW_STATUS_MAP: Record<number, CharacterReviewStatus> = {
-  1: "unassigned",
-  2: "assigned",
-  3: "in_review",
-  4: "approved",
-  5: "rejected",
-  6: "rework",
-  7: "re_queued",
-};
 
 /* --------------------------------------------------------------------------
    Component
