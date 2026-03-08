@@ -249,6 +249,19 @@ define_status_enum! {
     }
 }
 
+define_status_enum! {
+    /// Character review workflow status (PRD-129).
+    CharacterReviewStatusId {
+        Unassigned = 1,
+        Assigned = 2,
+        InReview = 3,
+        Approved = 4,
+        Rejected = 5,
+        Rework = 6,
+        ReQueued = 7,
+    }
+}
+
 // NOTE: EmbeddingStatus lives in `x121_core::embedding::EmbeddingStatus`
 // (the canonical source) because the core crate needs it for domain logic
 // (`classify_extraction_result`). It provides `id()`, `from_id()`, and `label()`.

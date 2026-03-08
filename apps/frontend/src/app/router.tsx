@@ -163,11 +163,11 @@ const imagesRoute = createRoute({
   ),
 });
 
-const sceneCatalogRoute = createRoute({
+const sceneCatalogueRoute = createRoute({
   getParentRoute: () => contentLayoutRoute,
-  path: "/content/scene-catalog",
+  path: "/content/scene-catalogue",
   component: lazyRouteComponent(() =>
-    import("@/app/pages/SceneCatalogPage").then((m) => ({ default: m.SceneCatalogPage })),
+    import("@/app/pages/SceneCataloguePage").then((m) => ({ default: m.SceneCataloguePage })),
   ),
 });
 
@@ -279,6 +279,24 @@ const reviewLayoutRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   id: "review",
   component: Outlet,
+});
+
+const myReviewsRoute = createRoute({
+  getParentRoute: () => reviewLayoutRoute,
+  path: "/review/my-reviews",
+  component: lazyRouteComponent(() =>
+    import("@/app/pages/MyReviewsPage").then((m) => ({ default: m.MyReviewsPage })),
+  ),
+});
+
+const assignmentDashboardRoute = createRoute({
+  getParentRoute: () => projectsLayoutRoute,
+  path: "/projects/$projectId/review-assignments",
+  component: lazyRouteComponent(() =>
+    import("@/app/pages/AssignmentDashboardPage").then((m) => ({
+      default: m.AssignmentDashboardPage,
+    })),
+  ),
 });
 
 const annotationsRoute = createRoute({
@@ -675,6 +693,16 @@ const adminImporterRoute = createRoute({
   ),
 });
 
+const adminConfigImportRoute = createRoute({
+  getParentRoute: () => adminLayoutRoute,
+  path: "/admin/config-import",
+  component: lazyRouteComponent(() =>
+    import("@/app/pages/AdminConfigImportPage").then((m) => ({
+      default: m.AdminConfigImportPage,
+    })),
+  ),
+});
+
 /* --------------------------------------------------------------------------
    Settings routes
    -------------------------------------------------------------------------- */
@@ -729,6 +757,7 @@ export const routeTree = rootRoute.addChildren([
       projectListRoute,
       projectDetailRoute,
       characterDetailRoute,
+      assignmentDashboardRoute,
     ]),
 
     contentLayoutRoute.addChildren([
@@ -737,7 +766,7 @@ export const routeTree = rootRoute.addChildren([
       libraryRoute,
       storyboardRoute,
       imagesRoute,
-      sceneCatalogRoute,
+      sceneCatalogueRoute,
       characterDashboardRoute,
       contactSheetRoute,
       duplicatesRoute,
@@ -755,6 +784,7 @@ export const routeTree = rootRoute.addChildren([
     ]),
 
     reviewLayoutRoute.addChildren([
+      myReviewsRoute,
       annotationsRoute,
       reviewNotesRoute,
       productionNotesRoute,
@@ -807,6 +837,7 @@ export const routeTree = rootRoute.addChildren([
       adminDiskUsageRoute,
       adminFailureAnalyticsRoute,
       adminImporterRoute,
+      adminConfigImportRoute,
     ]),
 
     settingsLayoutRoute.addChildren([shortcutsRoute, wikiRoute]),

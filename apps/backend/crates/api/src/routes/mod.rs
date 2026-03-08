@@ -19,6 +19,7 @@ pub mod character_deliverable_ignore;
 pub mod character_ingest;
 pub mod character_metadata;
 pub mod character_metadata_version;
+pub mod character_review;
 pub mod character_scene_overrides;
 pub mod character_speech;
 pub mod checkpoints;
@@ -737,6 +738,8 @@ use crate::ws;
 /// /scene-types/{id}/prompt-defaults                              list prompt defaults (GET, PRD-115)
 /// /scene-types/{id}/prompt-defaults/{slot_id}                    upsert prompt default (PUT, PRD-115)
 /// /characters/{id}/scenes/{scene_type_id}/prompt-overrides       get, upsert overrides (GET, PUT, PRD-115)
+/// /projects/{id}/scenes/{scene_type_id}/prompt-overrides         get, upsert project overrides (GET, PUT, PRD-115)
+/// /projects/{pid}/groups/{gid}/scenes/{stid}/prompt-overrides    get, upsert group overrides (GET, PUT, PRD-115)
 /// /prompts/resolve                                               resolve prompt preview (POST, PRD-115)
 /// /prompt-fragments                                              list, create (GET, POST, PRD-115)
 /// /prompt-fragments/{id}                                         update, delete (PUT, DELETE, PRD-115)
@@ -798,7 +801,7 @@ pub fn api_routes() -> Router<AppState> {
         .nest("/user/layouts", layouts::user_router())
         // Admin layout preset management (PRD-30).
         .nest("/admin/layout-presets", layouts::admin_router())
-        // Studio Pulse Dashboard: widget data endpoints (PRD-42) + widget catalog (PRD-89).
+        // Studio Pulse Dashboard: widget data endpoints (PRD-42) + widget catalogue (PRD-89).
         .nest("/dashboard", dashboard::router()
             .merge(dashboard_customization::dashboard_catalog_router()))
         // User-facing dashboard configuration (PRD-42) + presets & customization (PRD-89).
@@ -834,9 +837,11 @@ pub fn api_routes() -> Router<AppState> {
             .merge(sidecar::dataset_export_project_router())
             .merge(project_lifecycle::project_lifecycle_router())
             .merge(project_lifecycle::bulk_lifecycle_router())
+            .merge(prompt_management::project_prompt_override_router())
             .nest("/{project_id}/characters", character_metadata::project_router())
             .nest("/{project_id}/ingest", character_ingest::router())
-            .nest("/{project_id}/scene-settings", project_scene_settings::router()))
+            .nest("/{project_id}/scene-settings", project_scene_settings::router())
+            .nest("/{project_id}/review", character_review::project_review_router()))
         // Character-scoped sub-resources (images, scenes, metadata editor, face embedding, readiness, dashboard PRD-108, prompt overrides PRD-115).
         .nest("/characters", character::router()
             .merge(metadata::character_metadata_router())
@@ -850,6 +855,7 @@ pub fn api_routes() -> Router<AppState> {
             .merge(consistency_report::character_consistency_router())
             .merge(contact_sheet::character_contact_sheet_router())
             .merge(refinement::character_refinement_router())
+            .merge(character_review::character_review_router())
             .nest("/{character_id}/scene-settings", character_scene_overrides::router())
             .nest("/{character_id}/deliverable-ignores", character_deliverable_ignore::router())
             .nest("/{character_id}/speeches", character_speech::router()))
@@ -917,8 +923,10 @@ pub fn api_routes() -> Router<AppState> {
         .nest("/import", importer::router())
         // Video streaming, metadata, and thumbnails.
         .nest("/videos", video::router())
-        // Image variant backfill (admin).
+        // Image variant utilities.
         .route("/image-variants/backfill-metadata", axum::routing::post(crate::handlers::image_variant::backfill_image_metadata))
+        .route("/image-variants/backfill-thumbnails", axum::routing::post(crate::handlers::image_variant::backfill_thumbnails))
+        .route("/image-variants/{id}/thumbnail", axum::routing::get(crate::handlers::image_variant::thumbnail))
         // Background job execution engine (PRD-07, PRD-08, PRD-28, PRD-34, PRD-77).
         .nest("/jobs", jobs::router()
             .merge(checkpoints::checkpoint_routes())
@@ -1074,6 +1082,8 @@ pub fn api_routes() -> Router<AppState> {
         .nest("/shared-links", shared_link::authenticated_router())
         // Batch Review & Approval Workflows (PRD-92).
         .nest("/batch-review", batch_review::batch_review_router())
+        // Character Review Allocation: reviewer queue and decision endpoints (PRD-129).
+        .nest("/review/character-assignments", character_review::reviewer_router())
         // Shareable Preview Links: public external review (PRD-84, no auth).
         .nest("/review", shared_link::public_router())
         // Time-based job scheduling (PRD-119).

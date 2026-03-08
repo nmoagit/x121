@@ -122,6 +122,7 @@ They do NOT need their own routes.
 | — | PRD-126 | Bug fixes & UX polish (cross-cutting, no standalone UI) |
 | `scenes` | PRD-127 | ArtifactTimeline embedded in ClipCard (scene detail page) |
 | `projects` | PRD-128 | ReadinessIndicators embedded in CharacterCard (project character grid) |
+| `character-review` | PRD-129 | `/review/my-reviews` (MyReviewsPage), `/projects/$projectId/review-assignments` (AssignmentDashboard), Review tab + controls in CharacterDetailPage |
 
 ---
 

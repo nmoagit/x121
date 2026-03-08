@@ -35,6 +35,8 @@ import {
 } from "@/features/projects/types";
 import { ReadinessStateBadge } from "@/features/readiness/ReadinessStateBadge";
 import type { ReadinessState } from "@/features/readiness/types";
+import { ReviewStatusBadge, CharacterReviewControls, CharacterReviewAuditLog } from "@/features/character-review";
+import type { CharacterReviewStatus } from "@/features/character-review";
 
 import { CharacterDeliverablesTab } from "./tabs/CharacterDeliverablesTab";
 import { CharacterImagesTab } from "./tabs/CharacterImagesTab";
@@ -43,6 +45,16 @@ import { CharacterOverviewTab } from "./tabs/CharacterOverviewTab";
 import { CharacterScenesTab } from "./tabs/CharacterScenesTab";
 import { CharacterSettingsTab } from "./tabs/CharacterSettingsTab";
 import { CharacterSpeechTab } from "./tabs/CharacterSpeechTab";
+
+const REVIEW_STATUS_MAP: Record<number, CharacterReviewStatus> = {
+  1: "unassigned",
+  2: "assigned",
+  3: "in_review",
+  4: "approved",
+  5: "rejected",
+  6: "rework",
+  7: "re_queued",
+};
 
 /* --------------------------------------------------------------------------
    Component
@@ -207,6 +219,12 @@ export function CharacterDetailPage() {
         <span className="text-sm text-[var(--color-text-muted)]">
           {groupName ?? "Ungrouped"}
         </span>
+        {character.review_status_id > 1 && (
+          <ReviewStatusBadge
+            status={REVIEW_STATUS_MAP[character.review_status_id] ?? "unassigned"}
+            size="sm"
+          />
+        )}
         {dashboard?.readiness && (
           <ReadinessStateBadge
             state={dashboard.readiness.state as ReadinessState}
@@ -277,8 +295,9 @@ export function CharacterDetailPage() {
       )}
       {activeTab === "metadata" && <CharacterMetadataTab key={characterId} characterId={characterId} projectId={projectId} />}
       {activeTab === "speech" && <CharacterSpeechTab key={characterId} characterId={characterId} projectId={projectId} />}
+      {activeTab === "review" && <CharacterReviewAuditLog key={characterId} characterId={characterId} />}
       {activeTab === "settings" && (
-        <CharacterSettingsTab key={characterId} projectId={projectId} characterId={characterId} />
+        <CharacterSettingsTab key={characterId} projectId={projectId} characterId={characterId} characterName={character.name} />
       )}
 
       {/* Edit character modal */}
@@ -299,6 +318,12 @@ export function CharacterDetailPage() {
         entityName={character.name}
         onConfirm={handleDelete}
         loading={deleteCharacter.isPending}
+      />
+
+      {/* Review controls sticky footer */}
+      <CharacterReviewControls
+        characterId={characterId}
+        reviewStatusId={character.review_status_id}
       />
     </Stack>
   );

@@ -40,8 +40,8 @@ pub fn build_app_router(state: AppState, config: &ServerConfig) -> Router {
         .merge(routes::health::router())
         // API v1 routes.
         .nest("/api/v1", routes::api_routes())
-        // Serve uploaded files (images, etc.) from the storage directory.
-        .nest_service("/storage", ServeDir::new("storage"))
+        // Serve uploaded files (images, etc.) from the configured storage root.
+        .nest_service("/storage", ServeDir::new(&config.storage_root))
         // -- Middleware stack (applied bottom-up) --
         // Panic recovery: catch panics and return 500 JSON.
         .layer(CatchPanicLayer::new())

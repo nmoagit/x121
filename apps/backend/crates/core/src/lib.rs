@@ -88,6 +88,7 @@ pub mod resolution;
 pub mod restart_status;
 pub mod restitching;
 pub mod review;
+pub mod review_allocation;
 pub mod roles;
 pub mod scene_type_config;
 pub mod scene_type_inheritance;

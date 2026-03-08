@@ -84,7 +84,7 @@ export const NAV_GROUPS: NavGroupDef[] = [
       { label: "Library", path: "/content/library", icon: Folder },
       { label: "Storyboard", path: "/content/storyboard", icon: Layout },
       { label: "Images", path: "/content/images", icon: Image },
-      { label: "Scene Catalog", path: "/content/scene-catalog", icon: List },
+      { label: "Scene Catalogue", path: "/content/scene-catalogue", icon: List },
       { label: "Character Dashboard", path: "/content/character-dashboard", icon: Monitor },
       { label: "Contact Sheet", path: "/content/contact-sheet", icon: Image },
       { label: "Duplicates", path: "/content/duplicates", icon: FileSearch },
@@ -106,6 +106,7 @@ export const NAV_GROUPS: NavGroupDef[] = [
   {
     label: "Review",
     items: [
+      { label: "My Reviews", path: "/review/my-reviews", icon: Users },
       { label: "Annotations", path: "/review/annotations", icon: Edit3 },
       { label: "Notes", path: "/review/notes", icon: File },
       { label: "Production Notes", path: "/review/production-notes", icon: File },
@@ -163,6 +164,7 @@ export const NAV_GROUPS: NavGroupDef[] = [
       { label: "Disk Usage", path: "/admin/disk-usage", icon: HardDrive },
       { label: "Failure Analytics", path: "/admin/failure-analytics", icon: TrendingUp },
       { label: "Importer", path: "/admin/importer", icon: Upload },
+      { label: "Config Import", path: "/admin/config-import", icon: Upload },
     ],
   },
   {

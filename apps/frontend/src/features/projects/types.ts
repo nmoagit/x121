@@ -63,6 +63,7 @@ export interface CharacterDeliverableRow {
   images_approved: number;
   scenes_total: number;
   scenes_with_video: number;
+  scenes_approved: number;
   has_active_metadata: boolean;
   has_voice_id: boolean;
   blocking_reasons: string[];
@@ -108,6 +109,7 @@ export interface Character {
   deleted_at: string | null;
   created_at: string;
   updated_at: string;
+  review_status_id: number;
   /** Best avatar variant ID (hero clothed > hero > approved clothed > approved). */
   hero_variant_id: number | null;
 }
@@ -206,6 +208,7 @@ export const CHARACTER_TABS = [
   { id: "metadata", label: "Metadata" },
   { id: "speech", label: "Speech" },
   { id: "deliverables", label: "Deliverables" },
+  { id: "review", label: "Review" },
   { id: "settings", label: "Settings" },
 ] as const;
 
@@ -263,9 +266,9 @@ export type SectionKey = "metadata" | "images" | "scenes" | "speech";
 /** CSS color variable for each section state. */
 export const SECTION_STATE_BG: Record<SectionState, string> = {
   not_started: "var(--color-text-muted)",
-  partial: "var(--color-status-warning)",
-  complete: "var(--color-status-success)",
-  error: "var(--color-status-danger)",
+  partial: "var(--color-action-warning)",
+  complete: "var(--color-action-success)",
+  error: "var(--color-action-danger)",
 };
 
 /** Compute per-section readiness from a deliverable row. */
@@ -286,9 +289,11 @@ export function computeSectionReadiness(
   const scenes: SectionReadiness =
     row.scenes_total === 0
       ? { state: "not_started", label: "Scenes", tooltip: "Scenes: No scenes assigned" }
-      : row.scenes_with_video < row.scenes_total
-        ? { state: "partial", label: "Scenes", tooltip: `Scenes: ${row.scenes_with_video}/${row.scenes_total} with video` }
-        : { state: "complete", label: "Scenes", tooltip: `Scenes: ${row.scenes_with_video}/${row.scenes_total} complete` };
+      : row.scenes_approved >= row.scenes_total
+        ? { state: "complete", label: "Scenes", tooltip: `Scenes: ${row.scenes_approved}/${row.scenes_total} approved` }
+        : row.scenes_with_video > 0
+          ? { state: "partial", label: "Scenes", tooltip: `Scenes: ${row.scenes_approved}/${row.scenes_with_video} approved, ${row.scenes_with_video}/${row.scenes_total} with video` }
+          : { state: "not_started", label: "Scenes", tooltip: `Scenes: 0/${row.scenes_total} with video` };
 
   const speech: SectionReadiness = row.has_voice_id
     ? { state: "complete", label: "Speech", tooltip: "Speech: Voice configured" }

@@ -4,7 +4,8 @@ use sqlx::PgPool;
 use x121_core::types::DbId;
 
 use crate::models::character::{
-    Character, CharacterDeliverableRow, CharacterWithAvatar, CreateCharacter, UpdateCharacter,
+    Character, CharacterDeliverableRow, CharacterWithAvatar, CreateCharacter, LibraryCharacterRow,
+    UpdateCharacter,
 };
 
 /// Column list shared across queries to avoid repetition.
@@ -14,7 +15,7 @@ use crate::models::character::{
 /// existing INSERT queries remain valid.
 const COLUMNS: &str =
     "id, project_id, name, status_id, metadata, settings, group_id, deleted_at, created_at, updated_at, \
-     face_detection_confidence, face_bounding_box, embedding_status_id, embedding_extracted_at";
+     face_detection_confidence, face_bounding_box, embedding_status_id, embedding_extracted_at, review_status_id";
 
 /// Provides CRUD operations for characters plus settings helpers.
 pub struct CharacterRepo;
@@ -276,6 +277,100 @@ impl CharacterRepo {
             .await
     }
 
+    /// List all characters across all projects for the library browser.
+    ///
+    /// Returns enriched rows with project name, group name, hero variant,
+    /// and scene count. Supports optional text search and scene-type / track
+    /// filtering.
+    pub async fn list_all_for_library(
+        pool: &PgPool,
+        search: Option<&str>,
+        scene_type_id: Option<DbId>,
+        track_id: Option<DbId>,
+    ) -> Result<Vec<LibraryCharacterRow>, sqlx::Error> {
+        // Build optional WHERE clauses.
+        let mut conditions = vec!["c.deleted_at IS NULL".to_string()];
+        let mut bind_idx: usize = 1;
+
+        if search.is_some() {
+            conditions.push(format!(
+                "(c.name ILIKE '%' || ${bind_idx} || '%' \
+                 OR p.name ILIKE '%' || ${bind_idx} || '%' \
+                 OR g.name ILIKE '%' || ${bind_idx} || '%')"
+            ));
+            bind_idx += 1;
+        }
+
+        if scene_type_id.is_some() {
+            conditions.push(format!(
+                "EXISTS (SELECT 1 FROM scenes s WHERE s.character_id = c.id AND s.scene_type_id = ${bind_idx})"
+            ));
+            bind_idx += 1;
+        }
+
+        if track_id.is_some() {
+            conditions.push(format!(
+                "EXISTS (SELECT 1 FROM scenes s WHERE s.character_id = c.id AND s.track_id = ${bind_idx})"
+            ));
+            bind_idx += 1;
+        }
+
+        let _ = bind_idx; // suppress unused warning
+
+        let where_clause = conditions.join(" AND ");
+
+        let sql = format!(
+            "SELECT
+                c.id,
+                c.name,
+                c.project_id,
+                p.name AS project_name,
+                g.name AS group_name,
+                av.id AS hero_variant_id,
+                COALESCE(sc.cnt, 0) AS scene_count,
+                c.status_id,
+                c.created_at
+             FROM characters c
+             JOIN projects p ON p.id = c.project_id
+             LEFT JOIN character_groups g ON g.id = c.group_id
+             LEFT JOIN LATERAL (
+                 SELECT iv.id
+                 FROM image_variants iv
+                 WHERE iv.character_id = c.id
+                   AND iv.deleted_at IS NULL
+                   AND iv.file_path IS NOT NULL
+                   AND (iv.is_hero = true OR iv.status_id = 2)
+                 ORDER BY
+                     iv.is_hero DESC,
+                     CASE WHEN lower(iv.variant_type) = 'clothed' THEN 0 ELSE 1 END,
+                     iv.status_id = 2 DESC,
+                     iv.id DESC
+                 LIMIT 1
+             ) av ON true
+             LEFT JOIN LATERAL (
+                 SELECT COUNT(*) AS cnt
+                 FROM scenes s
+                 WHERE s.character_id = c.id
+             ) sc ON true
+             WHERE {where_clause}
+             ORDER BY c.name ASC"
+        );
+
+        let mut q = sqlx::query_as::<_, LibraryCharacterRow>(&sql);
+
+        if let Some(s) = search {
+            q = q.bind(s);
+        }
+        if let Some(st) = scene_type_id {
+            q = q.bind(st);
+        }
+        if let Some(t) = track_id {
+            q = q.bind(t);
+        }
+
+        q.fetch_all(pool).await
+    }
+
     /// Per-character deliverable status for a project.
     ///
     /// Single query with LEFT JOINs + aggregates across image_variants, scenes,
@@ -295,6 +390,7 @@ impl CharacterRepo {
                 COALESCE(img.approved, 0) AS images_approved,
                 COALESCE(sc.total, 0) AS scenes_total,
                 COALESCE(sc.with_video, 0) AS scenes_with_video,
+                COALESCE(sc.vid_approved, 0) AS scenes_approved,
                 COALESCE(meta.has_active, false) AS has_active_metadata,
                 COALESCE(
                     c.settings->>'elevenlabs_voice' IS NOT NULL
@@ -306,13 +402,21 @@ impl CharacterRepo {
                     CASE WHEN COALESCE(img.total, 0) = 0 THEN 'Missing Seed Image' END,
                     CASE WHEN COALESCE(img.approved, 0) = 0 AND COALESCE(img.total, 0) > 0 THEN 'No Approved Images' END,
                     CASE WHEN COALESCE(sc.total, 0) = 0 THEN 'No Scenes' END,
+                    CASE WHEN COALESCE(sc.with_video, 0) > 0 AND COALESCE(sc.vid_approved, 0) < COALESCE(sc.with_video, 0) THEN 'Videos Not Approved' END,
                     CASE WHEN NOT COALESCE(meta.has_active, false) THEN 'Missing Metadata' END
                 ], NULL) AS blocking_reasons,
-                -- Readiness: ratio of scenes with at least one video version
-                CASE WHEN COALESCE(sc.total, 0) > 0
-                    THEN ROUND((COALESCE(sc.with_video, 0)::numeric / sc.total::numeric) * 100, 1)::float8
-                    ELSE 0.0
-                END AS readiness_pct
+                -- Readiness: average of 3 sections (metadata, images, scenes).
+                -- Speech is tracked but not blocking, so excluded from the percentage.
+                -- Metadata/images: 0 or 1 (binary).
+                -- Scenes: ratio of approved to total (proportional progress).
+                ROUND(
+                    ((CASE WHEN COALESCE(meta.has_active, false) THEN 1.0 ELSE 0.0 END
+                    + CASE WHEN COALESCE(img.approved, 0) > 0 THEN 1.0 ELSE 0.0 END
+                    + CASE WHEN COALESCE(sc.total, 0) > 0
+                           THEN COALESCE(sc.vid_approved, 0)::numeric / sc.total
+                           ELSE 0.0 END
+                    ) / 3.0 * 100)::numeric
+                , 1)::float8 AS readiness_pct
              FROM characters c
              LEFT JOIN LATERAL (
                  SELECT
@@ -327,7 +431,12 @@ impl CharacterRepo {
                      COUNT(*) FILTER (WHERE EXISTS (
                          SELECT 1 FROM scene_video_versions svv
                          WHERE svv.scene_id = s.id AND svv.deleted_at IS NULL
-                     )) AS with_video
+                     )) AS with_video,
+                     COUNT(*) FILTER (WHERE EXISTS (
+                         SELECT 1 FROM scene_video_versions svv
+                         WHERE svv.scene_id = s.id AND svv.deleted_at IS NULL
+                           AND svv.qa_status = 'approved'
+                     )) AS vid_approved
                  FROM scenes s
                  WHERE s.character_id = c.id
              ) sc ON true

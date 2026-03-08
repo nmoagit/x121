@@ -28,6 +28,8 @@ pub struct Character {
     pub face_bounding_box: Option<serde_json::Value>,
     pub embedding_status_id: StatusId,
     pub embedding_extracted_at: Option<Timestamp>,
+    /// Review workflow status (PRD-129). References `character_review_statuses`.
+    pub review_status_id: StatusId,
 }
 
 /// A character row enriched with the best avatar variant ID.
@@ -50,6 +52,8 @@ pub struct CharacterWithAvatar {
     pub face_bounding_box: Option<serde_json::Value>,
     pub embedding_status_id: StatusId,
     pub embedding_extracted_at: Option<Timestamp>,
+    /// Review workflow status (PRD-129). References `character_review_statuses`.
+    pub review_status_id: StatusId,
     /// The ID of the best avatar variant (hero clothed > hero any > approved clothed > approved any).
     /// `None` when the character has no suitable image variants.
     pub hero_variant_id: Option<DbId>,
@@ -70,10 +74,28 @@ pub struct CharacterDeliverableRow {
     pub images_approved: i64,
     pub scenes_total: i64,
     pub scenes_with_video: i64,
+    pub scenes_approved: i64,
     pub has_active_metadata: bool,
     pub has_voice_id: bool,
     pub blocking_reasons: Vec<String>,
     pub readiness_pct: f64,
+}
+
+/// A character row enriched with project context for the library browser.
+///
+/// Returned by `CharacterRepo::list_all_for_library` to provide a cross-project
+/// read-only browsing view of all characters.
+#[derive(Debug, Clone, FromRow, Serialize)]
+pub struct LibraryCharacterRow {
+    pub id: DbId,
+    pub name: String,
+    pub project_id: DbId,
+    pub project_name: String,
+    pub group_name: Option<String>,
+    pub hero_variant_id: Option<DbId>,
+    pub scene_count: i64,
+    pub status_id: StatusId,
+    pub created_at: Timestamp,
 }
 
 /// DTO for creating a new character.

@@ -18,6 +18,8 @@ pub struct Project {
     pub deleted_at: Option<Timestamp>,
     pub created_at: Timestamp,
     pub updated_at: Timestamp,
+    /// Optional threshold for auto-triggering character review (PRD-129).
+    pub review_trigger_threshold: Option<i16>,
 }
 
 /// DTO for creating a new project.

@@ -7,7 +7,8 @@ use crate::models::project::{CreateProject, Project, UpdateProject};
 
 /// Column list shared across queries to avoid repetition.
 const COLUMNS: &str =
-    "id, name, description, status_id, retention_days, auto_deliver_on_final, deleted_at, created_at, updated_at";
+    "id, name, description, status_id, retention_days, auto_deliver_on_final, deleted_at, created_at, updated_at, \
+     review_trigger_threshold";
 
 /// Provides CRUD operations for projects.
 pub struct ProjectRepo;
