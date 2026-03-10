@@ -7,6 +7,7 @@ edition.workspace = true
 x121-core = { workspace = true }
 x121-comfyui = { workspace = true }
 x121-db = { workspace = true }
+x121-events = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 sqlx = { workspace = true }

@@ -25,6 +25,9 @@ pub const PRIORITY_BACKGROUND: i32 = -10;
 /// The state machine is intentionally duplicated from the `db` crate's
 /// `JobStatus` enum because `core` must have zero internal deps.
 pub mod state_machine {
+    /// Status ID for Held (PRD-132).
+    pub const JOB_STATUS_ID_HELD: i16 = 10;
+
     /// Returns the set of valid target status IDs reachable from `from_status`.
     ///
     /// Terminal states (Completed=3, Failed=4, Cancelled=5) return an empty
@@ -33,8 +36,8 @@ pub mod state_machine {
         match from_status {
             // Scheduled -> Pending, Cancelled
             7 => &[1, 5],
-            // Pending -> Dispatched, Paused, Cancelled
-            1 => &[9, 8, 5],
+            // Pending -> Dispatched, Paused, Cancelled, Held
+            1 => &[9, 8, 5, 10],
             // Dispatched -> Running, Failed, Cancelled
             9 => &[2, 4, 5],
             // Running -> Completed, Failed, Cancelled, Paused
@@ -43,6 +46,8 @@ pub mod state_machine {
             8 => &[1, 5],
             // Retrying -> Pending
             6 => &[1],
+            // Held -> Pending, Cancelled (PRD-132)
+            10 => &[1, 5],
             // Terminal states: Completed, Failed, Cancelled
             3 | 4 | 5 => &[],
             // Unknown status: no transitions allowed
@@ -80,6 +85,7 @@ pub mod state_machine {
             7 => "Scheduled",
             8 => "Paused",
             9 => "Dispatched",
+            10 => "Held",
             _ => "Unknown",
         }
     }
@@ -219,6 +225,35 @@ mod tests {
     #[test]
     fn dispatched_to_paused_invalid() {
         assert!(!can_transition(9, 8));
+    }
+
+    // -----------------------------------------------------------------------
+    // Held status transitions (PRD-132)
+    // -----------------------------------------------------------------------
+
+    #[test]
+    fn pending_to_held() {
+        assert!(can_transition(1, 10));
+    }
+
+    #[test]
+    fn held_to_pending() {
+        assert!(can_transition(10, 1));
+    }
+
+    #[test]
+    fn held_to_cancelled() {
+        assert!(can_transition(10, 5));
+    }
+
+    #[test]
+    fn held_to_running_invalid() {
+        assert!(!can_transition(10, 2));
+    }
+
+    #[test]
+    fn held_status_id_constant() {
+        assert_eq!(JOB_STATUS_ID_HELD, 10);
     }
 
     // -----------------------------------------------------------------------

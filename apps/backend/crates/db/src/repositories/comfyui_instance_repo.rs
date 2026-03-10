@@ -9,7 +9,7 @@ use crate::models::comfyui::{ComfyUIInstance, ComfyUIInstanceStatus};
 const COLUMNS: &str = "\
     id, name, ws_url, api_url, status_id, \
     last_connected_at, last_disconnected_at, reconnect_attempts, \
-    is_enabled, metadata, cloud_instance_id, created_at, updated_at";
+    is_enabled, drain_mode, metadata, cloud_instance_id, created_at, updated_at";
 
 /// Column list for `comfyui_instance_statuses` queries.
 const STATUS_COLUMNS: &str = "id, name, description, created_at, updated_at";
@@ -56,6 +56,22 @@ impl ComfyUIInstanceRepo {
     pub async fn list_enabled(pool: &PgPool) -> Result<Vec<ComfyUIInstance>, sqlx::Error> {
         let query = format!(
             "SELECT {COLUMNS} FROM comfyui_instances WHERE is_enabled = true ORDER BY id ASC"
+        );
+        sqlx::query_as::<_, ComfyUIInstance>(&query)
+            .fetch_all(pool)
+            .await
+    }
+
+    /// List all enabled instances that are not in drain mode (PRD-132).
+    ///
+    /// Used by the allocator to find instances eligible for new job dispatch.
+    pub async fn list_enabled_non_draining(
+        pool: &PgPool,
+    ) -> Result<Vec<ComfyUIInstance>, sqlx::Error> {
+        let query = format!(
+            "SELECT {COLUMNS} FROM comfyui_instances \
+             WHERE is_enabled = true AND drain_mode = false \
+             ORDER BY id ASC"
         );
         sqlx::query_as::<_, ComfyUIInstance>(&query)
             .fetch_all(pool)
@@ -207,6 +223,36 @@ impl ComfyUIInstanceRepo {
         .execute(pool)
         .await?;
         Ok(result.rows_affected() > 0)
+    }
+
+    /// Set or clear drain mode on an instance (PRD-132).
+    ///
+    /// Returns `true` if a row was updated, `false` if the instance was not found.
+    pub async fn set_drain_mode(pool: &PgPool, id: DbId, drain: bool) -> Result<bool, sqlx::Error> {
+        let result = sqlx::query(
+            "UPDATE comfyui_instances SET drain_mode = $2, updated_at = NOW() WHERE id = $1",
+        )
+        .bind(id)
+        .bind(drain)
+        .execute(pool)
+        .await?;
+        Ok(result.rows_affected() > 0)
+    }
+
+    /// Count active (pending/dispatched/running) jobs assigned to an instance (PRD-132).
+    pub async fn count_active_jobs(pool: &PgPool, instance_id: DbId) -> Result<i64, sqlx::Error> {
+        let count: (i64,) = sqlx::query_as(
+            "SELECT COUNT(*) FROM jobs \
+             WHERE comfyui_instance_id = $1 \
+               AND status_id IN ($2, $3, $4)",
+        )
+        .bind(instance_id)
+        .bind(1_i16) // Pending
+        .bind(9_i16) // Dispatched
+        .bind(2_i16) // Running
+        .fetch_one(pool)
+        .await?;
+        Ok(count.0)
     }
 
     /// Increment the reconnect attempt counter for an instance.

@@ -7,6 +7,7 @@ use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::Json;
+use x121_core::activity::{ActivityLogEntry, ActivityLogLevel, ActivityLogSource};
 use x121_core::error::CoreError;
 use x121_core::roles::ROLE_ADMIN;
 use x121_core::types::DbId;
@@ -159,7 +160,41 @@ pub async fn cancel_job(
         }
     }
 
+    // If the job was actively Running on a ComfyUI instance, interrupt the GPU.
+    if job.status_id == JobStatus::Running.id() {
+        if let Some(instance_id) = job.comfyui_instance_id {
+            if let Err(e) = state.comfyui_manager.interrupt_instance(instance_id).await {
+                tracing::warn!(
+                    job_id,
+                    instance_id,
+                    error = %e,
+                    "Failed to interrupt ComfyUI instance (job already cancelled)",
+                );
+            }
+        }
+    }
+
+    // Log the cancellation transition.
+    let _ = JobRepo::transition_state(
+        &state.pool,
+        job_id,
+        JobStatus::Cancelled.id(),
+        Some(auth.user_id),
+        Some("Cancelled by user"),
+    )
+    .await;
+
     tracing::info!(job_id, user_id = auth.user_id, "Job cancelled");
+
+    state.activity_broadcaster.publish(
+        ActivityLogEntry::curated(
+            ActivityLogLevel::Info,
+            ActivityLogSource::Api,
+            format!("Job {job_id} cancelled"),
+        )
+        .with_user(auth.user_id)
+        .with_job(job_id),
+    );
 
     Ok(StatusCode::NO_CONTENT)
 }

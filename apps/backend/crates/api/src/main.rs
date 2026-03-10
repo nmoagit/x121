@@ -260,9 +260,10 @@ async fn main() {
         let pool = pool.clone();
         let comfyui = Arc::clone(&comfyui_manager);
         let storage_for_events = storage_provider.clone();
+        let broadcaster_for_events = Some(Arc::clone(&activity_broadcaster));
         tokio::spawn(async move {
             tokio::select! {
-                _ = x121_worker::event_loop::run(pool, comfyui, storage_for_events, comfyui_event_rx) => {}
+                _ = x121_worker::event_loop::run(pool, comfyui, storage_for_events, comfyui_event_rx, broadcaster_for_events) => {}
                 _ = generation_event_cancel_clone.cancelled() => {}
             }
         })

@@ -112,6 +112,8 @@ define_status_enum! {
         Scheduled = 7,
         Paused = 8,
         Dispatched = 9,
+        /// Job is held by admin and will not be dispatched (PRD-132).
+        Held = 10,
     }
 }
 
@@ -317,6 +319,7 @@ mod tests {
         assert_eq!(JobStatus::Scheduled.id(), 7);
         assert_eq!(JobStatus::Paused.id(), 8);
         assert_eq!(JobStatus::Dispatched.id(), 9);
+        assert_eq!(JobStatus::Held.id(), 10);
     }
 
     #[test]

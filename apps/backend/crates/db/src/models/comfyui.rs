@@ -18,6 +18,8 @@ pub struct ComfyUIInstance {
     pub last_disconnected_at: Option<Timestamp>,
     pub reconnect_attempts: i32,
     pub is_enabled: bool,
+    /// When true, the instance finishes current jobs but accepts no new ones (PRD-132).
+    pub drain_mode: bool,
     pub metadata: serde_json::Value,
     pub cloud_instance_id: Option<DbId>,
     pub created_at: Timestamp,

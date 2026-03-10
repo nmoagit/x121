@@ -7,8 +7,33 @@ use sqlx::PgPool;
 use x121_core::scheduling::state_machine;
 use x121_core::types::DbId;
 
+use serde::Deserialize;
+
 use crate::models::job::{Job, JobListQuery, QueuedJobView, SubmitJob};
 use crate::models::status::{JobStatus, StatusId};
+
+/// Filter criteria for bulk-cancelling jobs (PRD-132 Phase 6).
+#[derive(Debug, Default, Deserialize)]
+pub struct BulkCancelFilter {
+    pub scene_id: Option<DbId>,
+    pub character_id: Option<DbId>,
+    pub project_id: Option<DbId>,
+    pub submitted_by: Option<DbId>,
+    pub status_ids: Option<Vec<StatusId>>,
+}
+
+/// Filter criteria for the admin queue list (PRD-132 Phase 7).
+#[derive(Debug, Default, Deserialize)]
+pub struct AdminQueueFilter {
+    pub status_ids: Option<Vec<StatusId>>,
+    pub instance_id: Option<DbId>,
+    pub job_type: Option<String>,
+    pub submitted_by: Option<DbId>,
+    pub sort_by: Option<String>,
+    pub sort_dir: Option<String>,
+    pub limit: Option<i64>,
+    pub offset: Option<i64>,
+}
 
 /// Column list for `jobs` queries (includes PRD-08 scheduling + PRD-28 diagnostics).
 const COLUMNS: &str = "\
@@ -20,6 +45,7 @@ const COLUMNS: &str = "\
     scheduled_start_at, is_off_peak_only, is_paused, paused_at, resumed_at, queue_position, \
     failure_stage_index, failure_stage_name, failure_diagnostics, \
     last_checkpoint_id, resumed_from_checkpoint_id, original_job_id, \
+    comfyui_instance_id, \
     created_at, updated_at";
 
 /// Columns for the lightweight queue view.
@@ -384,6 +410,378 @@ impl JobRepo {
             .bind(checkpoint_id)
             .fetch_one(pool)
             .await
+    }
+
+    /// Count active (pending/dispatched/running) jobs per ComfyUI instance (PRD-132).
+    ///
+    /// Returns a Vec of `(instance_id, active_job_count)` pairs for the given instance IDs.
+    /// Instances with zero active jobs are included with count 0.
+    pub async fn active_jobs_by_instance(
+        pool: &PgPool,
+        instance_ids: &[DbId],
+    ) -> Result<Vec<(DbId, i64)>, sqlx::Error> {
+        if instance_ids.is_empty() {
+            return Ok(Vec::new());
+        }
+
+        // Query counts for instances that have active jobs.
+        let rows: Vec<(DbId, i64)> = sqlx::query_as(
+            "SELECT comfyui_instance_id, COUNT(*) \
+             FROM jobs \
+             WHERE comfyui_instance_id = ANY($1) \
+               AND status_id IN ($2, $3, $4) \
+             GROUP BY comfyui_instance_id",
+        )
+        .bind(instance_ids)
+        .bind(JobStatus::Pending.id())
+        .bind(JobStatus::Dispatched.id())
+        .bind(JobStatus::Running.id())
+        .fetch_all(pool)
+        .await?;
+
+        // Build result including zero-count instances.
+        let mut result: Vec<(DbId, i64)> = instance_ids.iter().map(|&id| (id, 0)).collect();
+        for (instance_id, count) in rows {
+            if let Some(entry) = result.iter_mut().find(|(id, _)| *id == instance_id) {
+                entry.1 = count;
+            }
+        }
+
+        Ok(result)
+    }
+
+    // -----------------------------------------------------------------------
+    // Phase 6: Admin queue manipulation (PRD-132)
+    // -----------------------------------------------------------------------
+
+    /// Get the minimum priority across all non-terminal jobs.
+    ///
+    /// Used by `move-to-front` to set a priority lower than all others,
+    /// ensuring the job is dispatched first.
+    pub async fn min_priority(pool: &PgPool) -> Result<i32, sqlx::Error> {
+        let min: Option<i32> = sqlx::query_scalar(
+            "SELECT MIN(priority) FROM jobs \
+             WHERE status_id NOT IN ($1, $2, $3)",
+        )
+        .bind(TERMINAL_STATUSES[0])
+        .bind(TERMINAL_STATUSES[1])
+        .bind(TERMINAL_STATUSES[2])
+        .fetch_one(pool)
+        .await?;
+        Ok(min.unwrap_or(0))
+    }
+
+    /// Bulk-cancel jobs matching the given filter criteria.
+    ///
+    /// Only cancels non-terminal jobs. Returns the number of cancelled rows.
+    pub async fn bulk_cancel(pool: &PgPool, filter: &BulkCancelFilter) -> Result<u64, sqlx::Error> {
+        // Build dynamic WHERE clause.
+        let mut conditions: Vec<String> = vec![
+            // Always exclude terminal statuses.
+            format!(
+                "status_id NOT IN ({}, {}, {})",
+                TERMINAL_STATUSES[0], TERMINAL_STATUSES[1], TERMINAL_STATUSES[2]
+            ),
+        ];
+        let mut bind_idx: u32 = 2; // $1 is the cancelled status_id
+
+        if filter.scene_id.is_some() {
+            conditions.push(format!("(parameters->>'scene_id')::BIGINT = ${bind_idx}"));
+            bind_idx += 1;
+        }
+        if filter.character_id.is_some() {
+            conditions.push(format!(
+                "(parameters->>'character_id')::BIGINT = ${bind_idx}"
+            ));
+            bind_idx += 1;
+        }
+        if filter.project_id.is_some() {
+            conditions.push(format!("(parameters->>'project_id')::BIGINT = ${bind_idx}"));
+            bind_idx += 1;
+        }
+        if filter.submitted_by.is_some() {
+            conditions.push(format!("submitted_by = ${bind_idx}"));
+            bind_idx += 1;
+        }
+        if let Some(ref status_ids) = filter.status_ids {
+            if !status_ids.is_empty() {
+                conditions.push(format!("status_id = ANY(${bind_idx})"));
+                bind_idx += 1;
+            }
+        }
+        let _ = bind_idx; // suppress unused warning
+
+        let where_clause = conditions.join(" AND ");
+        let query =
+            format!("UPDATE jobs SET status_id = $1, completed_at = NOW() WHERE {where_clause}");
+
+        let mut q = sqlx::query(&query).bind(JobStatus::Cancelled.id());
+
+        if let Some(sid) = filter.scene_id {
+            q = q.bind(sid);
+        }
+        if let Some(cid) = filter.character_id {
+            q = q.bind(cid);
+        }
+        if let Some(pid) = filter.project_id {
+            q = q.bind(pid);
+        }
+        if let Some(uid) = filter.submitted_by {
+            q = q.bind(uid);
+        }
+        if let Some(ref status_ids) = filter.status_ids {
+            if !status_ids.is_empty() {
+                q = q.bind(status_ids);
+            }
+        }
+
+        let result = q.execute(pool).await?;
+        Ok(result.rows_affected())
+    }
+
+    /// Clear instance assignments for pending/held jobs assigned to a specific instance.
+    ///
+    /// Used by `redistribute` to re-pool jobs from an instance being taken offline.
+    pub async fn redistribute_from_instance(
+        pool: &PgPool,
+        instance_id: DbId,
+    ) -> Result<u64, sqlx::Error> {
+        let result = sqlx::query(
+            "UPDATE jobs \
+             SET comfyui_instance_id = NULL \
+             WHERE comfyui_instance_id = $1 \
+               AND status_id IN ($2, $3)",
+        )
+        .bind(instance_id)
+        .bind(JobStatus::Pending.id())
+        .bind(JobStatus::Held.id())
+        .execute(pool)
+        .await?;
+        Ok(result.rows_affected())
+    }
+
+    // -----------------------------------------------------------------------
+    // Phase 7: Queue statistics (PRD-132)
+    // -----------------------------------------------------------------------
+
+    /// Count jobs grouped by status.
+    pub async fn counts_by_status(pool: &PgPool) -> Result<Vec<(StatusId, i64)>, sqlx::Error> {
+        sqlx::query_as("SELECT status_id, COUNT(*) FROM jobs GROUP BY status_id ORDER BY status_id")
+            .fetch_all(pool)
+            .await
+    }
+
+    /// Average wait time (submitted_at to started_at) in seconds for recently completed jobs.
+    pub async fn avg_wait_time_secs(pool: &PgPool, limit: i64) -> Result<Option<f64>, sqlx::Error> {
+        sqlx::query_scalar(
+            "SELECT AVG(EXTRACT(EPOCH FROM started_at - submitted_at))::DOUBLE PRECISION \
+             FROM ( \
+                 SELECT started_at, submitted_at FROM jobs \
+                 WHERE status_id = $1 AND started_at IS NOT NULL \
+                 ORDER BY completed_at DESC LIMIT $2 \
+             ) sub",
+        )
+        .bind(JobStatus::Completed.id())
+        .bind(limit)
+        .fetch_one(pool)
+        .await
+    }
+
+    /// Average execution time (started_at to completed_at) in seconds for recently completed jobs.
+    pub async fn avg_execution_time_secs(
+        pool: &PgPool,
+        limit: i64,
+    ) -> Result<Option<f64>, sqlx::Error> {
+        sqlx::query_scalar(
+            "SELECT AVG(EXTRACT(EPOCH FROM completed_at - started_at))::DOUBLE PRECISION \
+             FROM ( \
+                 SELECT started_at, completed_at FROM jobs \
+                 WHERE status_id = $1 AND started_at IS NOT NULL AND completed_at IS NOT NULL \
+                 ORDER BY completed_at DESC LIMIT $2 \
+             ) sub",
+        )
+        .bind(JobStatus::Completed.id())
+        .bind(limit)
+        .fetch_one(pool)
+        .await
+    }
+
+    /// Count jobs completed in the last hour (throughput metric).
+    pub async fn completed_in_last_hour(pool: &PgPool) -> Result<i64, sqlx::Error> {
+        let count: Option<i64> = sqlx::query_scalar(
+            "SELECT COUNT(*) FROM jobs \
+             WHERE status_id = $1 AND completed_at >= NOW() - INTERVAL '1 hour'",
+        )
+        .bind(JobStatus::Completed.id())
+        .fetch_one(pool)
+        .await?;
+        Ok(count.unwrap_or(0))
+    }
+
+    /// Count active jobs per ComfyUI instance (for per-worker load stats).
+    ///
+    /// Returns `(instance_id, count)` for all instances that have active jobs.
+    pub async fn per_worker_load(pool: &PgPool) -> Result<Vec<(DbId, i64)>, sqlx::Error> {
+        sqlx::query_as(
+            "SELECT comfyui_instance_id, COUNT(*) \
+             FROM jobs \
+             WHERE comfyui_instance_id IS NOT NULL \
+               AND status_id IN ($1, $2, $3) \
+             GROUP BY comfyui_instance_id",
+        )
+        .bind(JobStatus::Pending.id())
+        .bind(JobStatus::Dispatched.id())
+        .bind(JobStatus::Running.id())
+        .fetch_all(pool)
+        .await
+    }
+
+    /// List all jobs with rich filtering for the admin queue view.
+    ///
+    /// Unlike `list_all`, this supports filtering by multiple status IDs,
+    /// instance ID, job type, submitted_by, and custom sort ordering.
+    pub async fn list_admin_queue(
+        pool: &PgPool,
+        filter: &AdminQueueFilter,
+    ) -> Result<Vec<Job>, sqlx::Error> {
+        let limit = filter.limit.unwrap_or(DEFAULT_LIMIT).min(MAX_LIMIT);
+        let offset = filter.offset.unwrap_or(0);
+
+        let mut conditions: Vec<String> = Vec::new();
+        let mut bind_idx: u32 = 1;
+
+        if let Some(ref status_ids) = filter.status_ids {
+            if !status_ids.is_empty() {
+                conditions.push(format!("status_id = ANY(${bind_idx})"));
+                bind_idx += 1;
+            }
+        }
+        if filter.instance_id.is_some() {
+            conditions.push(format!("comfyui_instance_id = ${bind_idx}"));
+            bind_idx += 1;
+        }
+        if filter.job_type.is_some() {
+            conditions.push(format!("job_type = ${bind_idx}"));
+            bind_idx += 1;
+        }
+        if filter.submitted_by.is_some() {
+            conditions.push(format!("submitted_by = ${bind_idx}"));
+            bind_idx += 1;
+        }
+
+        let where_clause = if conditions.is_empty() {
+            String::new()
+        } else {
+            format!("WHERE {}", conditions.join(" AND "))
+        };
+
+        // Determine sort column and direction.
+        let sort_col = match filter.sort_by.as_deref() {
+            Some("priority") => "priority",
+            Some("status_id") => "status_id",
+            Some("job_type") => "job_type",
+            _ => "submitted_at",
+        };
+        let sort_dir = match filter.sort_dir.as_deref() {
+            Some("asc") => "ASC",
+            _ => "DESC",
+        };
+
+        let query = format!(
+            "SELECT {COLUMNS} FROM jobs \
+             {where_clause} \
+             ORDER BY {sort_col} {sort_dir} \
+             LIMIT ${bind_idx} OFFSET ${}",
+            bind_idx + 1,
+        );
+
+        let mut q = sqlx::query_as::<_, Job>(&query);
+
+        if let Some(ref status_ids) = filter.status_ids {
+            if !status_ids.is_empty() {
+                q = q.bind(status_ids);
+            }
+        }
+        if let Some(iid) = filter.instance_id {
+            q = q.bind(iid);
+        }
+        if let Some(ref jt) = filter.job_type {
+            q = q.bind(jt);
+        }
+        if let Some(uid) = filter.submitted_by {
+            q = q.bind(uid);
+        }
+
+        q = q.bind(limit).bind(offset);
+        q.fetch_all(pool).await
+    }
+
+    /// Assign a ComfyUI instance to a job (PRD-132).
+    ///
+    /// Called when dispatching a job to a specific ComfyUI instance.
+    pub async fn assign_instance(
+        pool: &PgPool,
+        job_id: DbId,
+        instance_id: DbId,
+    ) -> Result<(), sqlx::Error> {
+        sqlx::query("UPDATE jobs SET comfyui_instance_id = $2 WHERE id = $1")
+            .bind(job_id)
+            .bind(instance_id)
+            .execute(pool)
+            .await?;
+        Ok(())
+    }
+
+    /// Reassign a job to a different ComfyUI instance (PRD-132).
+    ///
+    /// Resets the job status to Pending, clears (or sets) the ComfyUI instance,
+    /// and logs the transition with from/to instance IDs in the reason.
+    pub async fn reassign(
+        pool: &PgPool,
+        job_id: DbId,
+        from_instance_id: Option<DbId>,
+        to_instance_id: Option<DbId>,
+        triggered_by: DbId,
+    ) -> Result<(), sqlx::Error> {
+        // 1. Get current status for transition logging.
+        let job = Self::find_by_id(pool, job_id)
+            .await?
+            .ok_or(sqlx::Error::RowNotFound)?;
+
+        // 2. Reset to Pending and update instance assignment.
+        let query = format!(
+            "UPDATE jobs \
+             SET status_id = $2, comfyui_instance_id = $3, \
+                 worker_id = NULL, claimed_at = NULL, started_at = NULL \
+             WHERE id = $1 \
+             RETURNING {COLUMNS}"
+        );
+        sqlx::query_as::<_, Job>(&query)
+            .bind(job_id)
+            .bind(JobStatus::Pending.id())
+            .bind(to_instance_id)
+            .fetch_one(pool)
+            .await?;
+
+        // 3. Log the transition.
+        let reason = format!(
+            "Reassigned: instance {:?} -> {:?}",
+            from_instance_id, to_instance_id
+        );
+        sqlx::query(
+            "INSERT INTO job_state_transitions \
+                 (job_id, from_status_id, to_status_id, triggered_by, reason) \
+             VALUES ($1, $2, $3, $4, $5)",
+        )
+        .bind(job_id)
+        .bind(job.status_id)
+        .bind(JobStatus::Pending.id())
+        .bind(Some(triggered_by))
+        .bind(&reason)
+        .execute(pool)
+        .await?;
+
+        Ok(())
     }
 
     /// Update priority for a job (admin reorder).

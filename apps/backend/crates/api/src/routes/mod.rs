@@ -49,6 +49,7 @@ pub mod hardware;
 pub mod health;
 pub mod image_qa;
 pub mod importer;
+pub mod infrastructure;
 pub mod integrity;
 pub mod job_debug;
 pub mod job_scheduling;
@@ -121,6 +122,7 @@ pub mod undo_tree;
 pub mod validation;
 pub mod validation_dashboard;
 pub mod video;
+pub mod video_settings;
 pub mod video_spec;
 pub mod webhook_testing;
 pub mod wiki;
@@ -838,6 +840,7 @@ pub fn api_routes() -> Router<AppState> {
             .merge(project_lifecycle::project_lifecycle_router())
             .merge(project_lifecycle::bulk_lifecycle_router())
             .merge(prompt_management::project_prompt_override_router())
+            .merge(video_settings::project_video_settings_router())
             .nest("/{project_id}/characters", character_metadata::project_router())
             .nest("/{project_id}/ingest", character_ingest::router())
             .nest("/{project_id}/scene-settings", project_scene_settings::router())
@@ -856,6 +859,7 @@ pub fn api_routes() -> Router<AppState> {
             .merge(contact_sheet::character_contact_sheet_router())
             .merge(refinement::character_refinement_router())
             .merge(character_review::character_review_router())
+            .merge(video_settings::character_video_settings_router())
             .nest("/{character_id}/scene-settings", character_scene_overrides::router())
             .nest("/{character_id}/deliverable-ignores", character_deliverable_ignore::router())
             .nest("/{character_id}/speeches", character_speech::router()))
@@ -898,7 +902,8 @@ pub fn api_routes() -> Router<AppState> {
             .merge(scene_type_inheritance::inheritance_router())
             .merge(prompt_management::scene_type_prompt_default_router())
             .merge(auto_retry::retry_policy_router())
-            .merge(qa_rulesets::qa_override_router()))
+            .merge(qa_rulesets::qa_override_router())
+            .merge(video_settings::scene_type_video_settings_router()))
         // Mixin CRUD (PRD-100).
         .nest("/mixins", scene_type_inheritance::mixin_router())
         // Tracks (PRD-111).
@@ -1056,6 +1061,10 @@ pub fn api_routes() -> Router<AppState> {
         .nest("/readiness-criteria", readiness::readiness_criteria_router())
         // System status footer (PRD-117).
         .nest("/status", status::router())
+        // Generation infrastructure: RunPod pods, ComfyUI instances.
+        .nest("/admin/infrastructure", infrastructure::router())
+        // Job management admin: reassign, drain, instances (PRD-132).
+        .nest("/admin", jobs::admin_router())
         // System Health Page: service health, uptime, alerts (PRD-80).
         .nest("/admin/health", system_health::router())
         // API Observability Dashboard: metrics, alerts, rate limits (PRD-106).

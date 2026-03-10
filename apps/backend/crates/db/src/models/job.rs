@@ -43,6 +43,8 @@ pub struct Job {
     pub last_checkpoint_id: Option<DbId>,
     pub resumed_from_checkpoint_id: Option<DbId>,
     pub original_job_id: Option<DbId>,
+    /// ComfyUI instance assigned to this job (PRD-132).
+    pub comfyui_instance_id: Option<DbId>,
     pub created_at: Timestamp,
     pub updated_at: Timestamp,
 }

@@ -187,6 +187,26 @@ impl ComfyUIManager {
         Ok(response.prompt_id)
     }
 
+    /// Interrupt the currently running execution on a specific instance (PRD-132).
+    ///
+    /// Sends `POST /interrupt` to the instance's ComfyUI API. This stops
+    /// whatever is executing immediately without targeting a specific prompt.
+    pub async fn interrupt_instance(&self, instance_id: DbId) -> Result<(), ComfyUIManagerError> {
+        let conns = self.connections.read().await;
+        let managed = conns
+            .get(&instance_id)
+            .ok_or(ComfyUIManagerError::InstanceNotFound(instance_id))?;
+
+        managed
+            .api
+            .interrupt()
+            .await
+            .map_err(|e| ComfyUIManagerError::InterruptFailed(e.to_string()))?;
+
+        tracing::info!(instance_id, "Interrupted ComfyUI instance");
+        Ok(())
+    }
+
     /// Cancel a running or queued job by its platform job ID.
     pub async fn cancel_job(&self, platform_job_id: DbId) -> Result<(), ComfyUIManagerError> {
         let execution = ComfyUIExecutionRepo::find_by_platform_job_id(&self.pool, platform_job_id)
@@ -511,6 +531,10 @@ pub enum ComfyUIManagerError {
     /// The cancellation HTTP call failed.
     #[error("Failed to cancel execution: {0}")]
     CancelFailed(String),
+
+    /// The interrupt HTTP call failed.
+    #[error("Failed to interrupt instance: {0}")]
+    InterruptFailed(String),
 
     /// A database query failed.
     #[error("Database error: {0}")]

@@ -8,11 +8,14 @@ use std::sync::Arc;
 use tokio::sync::broadcast;
 use x121_comfyui::events::ComfyUIEvent;
 use x121_comfyui::manager::ComfyUIManager;
+use x121_core::activity::{ActivityLogEntry, ActivityLogLevel, ActivityLogSource};
 use x121_core::storage::StorageProvider;
 use x121_core::types::DbId;
-use x121_db::repositories::{RetryAttemptRepo, SegmentRepo};
+use x121_db::repositories::{RetryAttemptRepo, SegmentRepo, WorkflowRepo};
+use x121_events::ActivityLogBroadcaster;
 
 use x121_core::generation::SYSTEM_USER_ID;
+use x121_db::repositories::ComfyUIInstanceRepo;
 use x121_pipeline::{completion_handler, loop_driver};
 
 /// Run the event processing loop until the broadcast channel closes.
@@ -21,6 +24,7 @@ pub async fn run(
     comfyui: Arc<ComfyUIManager>,
     storage: Arc<dyn StorageProvider>,
     mut event_rx: broadcast::Receiver<ComfyUIEvent>,
+    broadcaster: Option<Arc<ActivityLogBroadcaster>>,
 ) {
     tracing::info!("Event loop started — listening for ComfyUI events");
 
@@ -33,7 +37,7 @@ pub async fn run(
     loop {
         match event_rx.recv().await {
             Ok(event) => {
-                handle_event(&pool, &comfyui, &storage, event).await;
+                handle_event(&pool, &comfyui, &storage, event, &broadcaster).await;
             }
             Err(broadcast::error::RecvError::Lagged(count)) => {
                 tracing::warn!(count, "Dropped {count} events due to lag");
@@ -52,6 +56,7 @@ async fn handle_event(
     comfyui: &Arc<ComfyUIManager>,
     storage: &Arc<dyn StorageProvider>,
     event: ComfyUIEvent,
+    broadcaster: &Option<Arc<ActivityLogBroadcaster>>,
 ) {
     match event {
         ComfyUIEvent::GenerationCompleted {
@@ -60,6 +65,17 @@ async fn handle_event(
             prompt_id,
             ..
         } => {
+            if let Some(b) = broadcaster {
+                b.publish(
+                    ActivityLogEntry::curated(
+                        ActivityLogLevel::Info,
+                        ActivityLogSource::Worker,
+                        format!("Job {platform_job_id} completed"),
+                    )
+                    .with_job(platform_job_id)
+                    .with_entity("comfyui_instance", instance_id),
+                );
+            }
             handle_generation_completed(
                 pool,
                 comfyui,
@@ -69,6 +85,7 @@ async fn handle_event(
                 &prompt_id,
             )
             .await;
+            check_drain_completion(pool, instance_id, broadcaster).await;
         }
         ComfyUIEvent::GenerationError {
             platform_job_id,
@@ -82,6 +99,16 @@ async fn handle_event(
                 %error,
                 "Generation failed — checking auto-retry",
             );
+            if let Some(b) = broadcaster {
+                b.publish(
+                    ActivityLogEntry::curated(
+                        ActivityLogLevel::Error,
+                        ActivityLogSource::Worker,
+                        format!("Job {platform_job_id} failed: {error}"),
+                    )
+                    .with_job(platform_job_id),
+                );
+            }
             handle_generation_error(pool, comfyui, storage, platform_job_id, &error).await;
         }
         ComfyUIEvent::GenerationProgress {
@@ -98,12 +125,37 @@ async fn handle_event(
             );
         }
         ComfyUIEvent::InstanceConnected { instance_id } => {
-            tracing::info!(instance_id, "ComfyUI instance connected");
+            tracing::info!(
+                instance_id,
+                "ComfyUI instance connected — triggering workflow auto-validation"
+            );
+            let pool_clone = pool.clone();
+            let comfyui_clone = Arc::clone(comfyui);
+            tokio::spawn(async move {
+                auto_validate_workflows(&pool_clone, &comfyui_clone).await;
+            });
         }
         ComfyUIEvent::InstanceDisconnected { instance_id } => {
             tracing::warn!(instance_id, "ComfyUI instance disconnected");
         }
-        ComfyUIEvent::GenerationCancelled { .. } => {}
+        ComfyUIEvent::GenerationCancelled {
+            platform_job_id,
+            instance_id,
+            ..
+        } => {
+            if let Some(b) = broadcaster {
+                b.publish(
+                    ActivityLogEntry::curated(
+                        ActivityLogLevel::Info,
+                        ActivityLogSource::Worker,
+                        format!("Job {platform_job_id} cancelled"),
+                    )
+                    .with_job(platform_job_id),
+                );
+            }
+            handle_generation_cancelled(pool, platform_job_id).await;
+            check_drain_completion(pool, instance_id, broadcaster).await;
+        }
     }
 }
 
@@ -241,6 +293,14 @@ async fn handle_generation_error(
         return;
     }
 
+    x121_pipeline::gen_log::log(
+        pool,
+        scene_id,
+        "error",
+        format!("Generation failed: {error_msg}"),
+    )
+    .await;
+
     // Check auto-retry policy on the scene type.
     let (_scene, scene_type) = match x121_pipeline::load_scene_and_type(pool, scene_id).await {
         Ok(pair) => pair,
@@ -272,6 +332,13 @@ async fn handle_generation_error(
             max = scene_type.auto_retry_max_attempts,
             "Max retry attempts reached — not retrying",
         );
+        x121_pipeline::gen_log::log(
+            pool,
+            scene_id,
+            "error",
+            "Max retry attempts reached \u{2014} generation stopped",
+        )
+        .await;
         return;
     }
 
@@ -301,6 +368,19 @@ async fn handle_generation_error(
         "Auto-retrying failed segment",
     );
 
+    x121_pipeline::gen_log::log(
+        pool,
+        scene_id,
+        "warn",
+        format!(
+            "Auto-retrying segment {} (attempt {}/{})",
+            segment.sequence_index,
+            attempt_count + 1,
+            scene_type.auto_retry_max_attempts,
+        ),
+    )
+    .await;
+
     // Re-submit the same segment index.
     match x121_pipeline::submitter::submit_segment(
         pool,
@@ -327,6 +407,73 @@ async fn handle_generation_error(
             );
         }
     }
+}
+
+/// Handle a cancelled generation: revert scene to Pending, mark segment as cancelled.
+async fn handle_generation_cancelled(pool: &sqlx::PgPool, platform_job_id: DbId) {
+    let (segment_id, scene_id) = match lookup_segment_from_job(pool, platform_job_id).await {
+        Ok(ids) => ids,
+        Err(e) => {
+            tracing::error!(error = %e, "Failed to look up segment for cancelled job");
+            return;
+        }
+    };
+
+    // Mark the segment as completed (cancelled).
+    let update = x121_db::models::generation::UpdateSegmentGeneration {
+        generation_completed_at: Some(chrono::Utc::now()),
+        ..Default::default()
+    };
+    if let Err(e) = SegmentRepo::update_generation_state(pool, segment_id, &update).await {
+        tracing::error!(segment_id, error = %e, "Failed to update cancelled segment");
+    }
+
+    // Determine restore status: Generated if scene has videos, else Pending.
+    let restore_status = {
+        let has_videos =
+            x121_db::repositories::SceneVideoVersionRepo::list_by_scene(pool, scene_id)
+                .await
+                .map(|v| !v.is_empty())
+                .unwrap_or(false);
+        if has_videos {
+            x121_db::models::status::SceneStatus::Generated.id()
+        } else {
+            x121_db::models::status::SceneStatus::Pending.id()
+        }
+    };
+
+    // Revert scene from Generating back to its prior state.
+    let scene_update = x121_db::models::generation::UpdateSceneGeneration {
+        status_id: Some(restore_status),
+        generation_completed_at: None,
+        total_segments_estimated: None,
+        total_segments_completed: None,
+        actual_duration_secs: None,
+        transition_segment_index: None,
+        generation_started_at: None,
+    };
+    if let Err(e) =
+        x121_db::repositories::SceneRepo::update_generation_state(pool, scene_id, &scene_update)
+            .await
+    {
+        tracing::error!(scene_id, error = %e, "Failed to revert scene to Pending");
+    }
+
+    let status_label = if restore_status == x121_db::models::status::SceneStatus::Generated.id() {
+        "generated"
+    } else {
+        "pending"
+    };
+
+    x121_pipeline::gen_log::log(
+        pool,
+        scene_id,
+        "warn",
+        format!("Generation cancelled by user — scene reverted to {status_label}"),
+    )
+    .await;
+
+    tracing::info!(scene_id, segment_id, platform_job_id, %status_label, "Generation cancelled — scene reverted");
 }
 
 /// Mark a segment as failed when generation errors occur.
@@ -422,4 +569,190 @@ async fn resume_stalled_scenes(
     }
 
     Ok(())
+}
+
+/// Check if an instance is draining and has completed all active jobs (PRD-132).
+///
+/// Called after job completion or cancellation. If the instance has
+/// `drain_mode = true` and zero remaining active jobs, logs that the
+/// worker has fully drained.
+async fn check_drain_completion(
+    pool: &sqlx::PgPool,
+    instance_id: DbId,
+    broadcaster: &Option<Arc<ActivityLogBroadcaster>>,
+) {
+    let instance = match ComfyUIInstanceRepo::find_by_id(pool, instance_id).await {
+        Ok(Some(inst)) => inst,
+        _ => return,
+    };
+
+    if !instance.drain_mode {
+        return;
+    }
+
+    let active_count = match ComfyUIInstanceRepo::count_active_jobs(pool, instance_id).await {
+        Ok(count) => count,
+        Err(e) => {
+            tracing::warn!(
+                instance_id,
+                error = %e,
+                "Failed to count active jobs for drain check",
+            );
+            return;
+        }
+    };
+
+    if active_count == 0 {
+        tracing::info!(
+            instance_id,
+            name = %instance.name,
+            "Worker drained — instance has no remaining active jobs",
+        );
+        if let Some(b) = broadcaster {
+            b.publish(
+                ActivityLogEntry::curated(
+                    ActivityLogLevel::Info,
+                    ActivityLogSource::Worker,
+                    format!(
+                        "Worker drain completed (instance {} '{}')",
+                        instance_id, instance.name
+                    ),
+                )
+                .with_entity("comfyui_instance", instance_id),
+            );
+        }
+    } else {
+        tracing::debug!(
+            instance_id,
+            active_count,
+            "Instance draining — {} jobs remaining",
+            active_count,
+        );
+    }
+}
+
+/// Validate all workflows against the live ComfyUI instance.
+///
+/// Called when a ComfyUI instance connects. Fetches the available node
+/// types once, then iterates every workflow, validates its nodes against
+/// the live set, and stores the results.
+async fn auto_validate_workflows(pool: &sqlx::PgPool, comfyui: &Arc<ComfyUIManager>) {
+    use x121_core::workflow_import::{
+        self, ModelValidationResult, NodeValidationResult, ValidationResult, ValidationSource,
+        WORKFLOW_STATUS_ID_VALIDATED,
+    };
+
+    // Get an API client for any connected instance.
+    let api = match comfyui.get_any_api().await {
+        Some(api) => api,
+        None => {
+            tracing::warn!("No ComfyUI instance available for auto-validation");
+            return;
+        }
+    };
+
+    // Fetch available node types once (expensive call).
+    let available_nodes = match api.get_available_node_types().await {
+        Ok(nodes) => nodes,
+        Err(e) => {
+            tracing::error!(error = %e, "Failed to fetch object_info for auto-validation");
+            return;
+        }
+    };
+
+    tracing::info!(
+        node_count = available_nodes.len(),
+        "Fetched ComfyUI node types for auto-validation"
+    );
+
+    // List all workflow IDs.
+    let workflow_ids = match WorkflowRepo::list_all_ids(pool).await {
+        Ok(ids) => ids,
+        Err(e) => {
+            tracing::error!(error = %e, "Failed to list workflow IDs for auto-validation");
+            return;
+        }
+    };
+
+    if workflow_ids.is_empty() {
+        tracing::info!("No workflows to auto-validate");
+        return;
+    }
+
+    tracing::info!(count = workflow_ids.len(), "Auto-validating workflows");
+
+    let mut validated = 0u32;
+    let mut failed = 0u32;
+
+    for wf_id in workflow_ids {
+        let workflow = match WorkflowRepo::find_by_id(pool, wf_id).await {
+            Ok(Some(w)) => w,
+            Ok(None) => continue,
+            Err(e) => {
+                tracing::warn!(workflow_id = wf_id, error = %e, "Failed to load workflow");
+                failed += 1;
+                continue;
+            }
+        };
+
+        let parsed = match workflow_import::parse_workflow(&workflow.json_content) {
+            Ok(p) => p,
+            Err(e) => {
+                tracing::warn!(workflow_id = wf_id, error = %e, "Failed to parse workflow JSON");
+                failed += 1;
+                continue;
+            }
+        };
+
+        // Validate nodes against the live set.
+        let mut seen = Vec::new();
+        let mut node_results = Vec::new();
+        for node in &parsed.nodes {
+            if !seen.contains(&node.class_type) {
+                seen.push(node.class_type.clone());
+                node_results.push(NodeValidationResult {
+                    node_type: node.class_type.clone(),
+                    present: available_nodes.contains(&node.class_type),
+                });
+            }
+        }
+
+        let model_results: Vec<ModelValidationResult> = parsed
+            .referenced_models
+            .iter()
+            .chain(parsed.referenced_loras.iter())
+            .map(|name| ModelValidationResult {
+                model_name: name.clone(),
+                found_in_registry: false,
+            })
+            .collect();
+
+        let overall_valid = node_results.iter().all(|r| r.present);
+
+        let validation = ValidationResult {
+            node_results,
+            model_results,
+            overall_valid,
+            validation_source: ValidationSource::Live,
+        };
+
+        let validation_json = match serde_json::to_value(&validation) {
+            Ok(v) => v,
+            Err(_) => continue,
+        };
+
+        if let Err(e) = WorkflowRepo::update_validation(pool, wf_id, &validation_json).await {
+            tracing::warn!(workflow_id = wf_id, error = %e, "Failed to store validation results");
+            failed += 1;
+            continue;
+        }
+
+        if overall_valid {
+            let _ = WorkflowRepo::update_status(pool, wf_id, WORKFLOW_STATUS_ID_VALIDATED).await;
+        }
+
+        validated += 1;
+    }
+
+    tracing::info!(validated, failed, "Auto-validation complete");
 }

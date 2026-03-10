@@ -703,6 +703,16 @@ const adminConfigImportRoute = createRoute({
   ),
 });
 
+const adminQueueRoute = createRoute({
+  getParentRoute: () => adminLayoutRoute,
+  path: "/admin/queue",
+  component: lazyRouteComponent(() =>
+    import("@/app/pages/QueueManagerPage").then((m) => ({
+      default: m.QueueManagerPage,
+    })),
+  ),
+});
+
 const adminInfrastructureRoute = createRoute({
   getParentRoute: () => adminLayoutRoute,
   path: "/admin/infrastructure",
@@ -846,6 +856,7 @@ export const routeTree = rootRoute.addChildren([
       adminFailureAnalyticsRoute,
       adminImporterRoute,
       adminConfigImportRoute,
+      adminQueueRoute,
       adminInfrastructureRoute,
     ]),
 

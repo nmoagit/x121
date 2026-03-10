@@ -7,15 +7,21 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { api } from "@/lib/api";
+import { toastStore } from "@/components/composite/useToast";
 import type {
+  BulkCancelFilter,
+  FullQueueJob,
   GpuQuota,
   JobStateTransition,
+  QueueJobFilter,
+  QueueStats,
   QueueStatus,
   QuotaStatus,
   SchedulingPolicy,
   SetGpuQuotaInput,
   UpsertSchedulingPolicyInput,
 } from "../types";
+import type { ComfyUIInstanceInfo } from "@/features/generation/hooks/use-infrastructure";
 
 /* --------------------------------------------------------------------------
    Query keys
@@ -28,6 +34,10 @@ export const queueKeys = {
   policies: () => [...queueKeys.all, "policies"] as const,
   transitions: (jobId: number) =>
     [...queueKeys.all, "transitions", jobId] as const,
+  adminJobs: (filter: QueueJobFilter) =>
+    [...queueKeys.all, "admin-jobs", filter] as const,
+  stats: () => [...queueKeys.all, "stats"] as const,
+  workerInstances: () => [...queueKeys.all, "worker-instances"] as const,
 };
 
 /* --------------------------------------------------------------------------
@@ -84,6 +94,18 @@ export function useResumeJob() {
 
   return useMutation({
     mutationFn: (jobId: number) => api.post<unknown>(`/jobs/${jobId}/resume`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queueKeys.status() });
+    },
+  });
+}
+
+/** Cancel a pending or running job. */
+export function useCancelJob() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (jobId: number) => api.post<unknown>(`/jobs/${jobId}/cancel`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queueKeys.status() });
     },
@@ -185,5 +207,191 @@ export function useUpdateSchedulingPolicy() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queueKeys.policies() });
     },
+  });
+}
+
+/* --------------------------------------------------------------------------
+   Admin: queue jobs (filtered listing)
+   -------------------------------------------------------------------------- */
+
+/** Admin polling interval: 5 seconds. */
+const ADMIN_POLL_MS = 5_000;
+
+/** Fetches queue jobs with admin-level filters and pagination. */
+export function useAdminQueueJobs(filter: QueueJobFilter) {
+  const params = new URLSearchParams();
+  if (filter.status_ids?.length)
+    params.set("status_ids", filter.status_ids.join(","));
+  if (filter.instance_id != null)
+    params.set("instance_id", String(filter.instance_id));
+  if (filter.job_type) params.set("job_type", filter.job_type);
+  if (filter.submitted_by != null)
+    params.set("submitted_by", String(filter.submitted_by));
+  if (filter.sort_by) params.set("sort_by", filter.sort_by);
+  if (filter.sort_dir) params.set("sort_dir", filter.sort_dir);
+  if (filter.limit != null) params.set("limit", String(filter.limit));
+  if (filter.offset != null) params.set("offset", String(filter.offset));
+
+  const qs = params.toString();
+  const path = `/admin/queue/jobs${qs ? `?${qs}` : ""}`;
+
+  return useQuery({
+    queryKey: queueKeys.adminJobs(filter),
+    queryFn: () => api.get<FullQueueJob[]>(path),
+    refetchInterval: ADMIN_POLL_MS,
+  });
+}
+
+/* --------------------------------------------------------------------------
+   Admin: queue stats
+   -------------------------------------------------------------------------- */
+
+/** Fetches aggregate queue statistics with 5-second polling. */
+export function useQueueStats() {
+  return useQuery({
+    queryKey: queueKeys.stats(),
+    queryFn: () => api.get<QueueStats>("/admin/queue/stats"),
+    refetchInterval: ADMIN_POLL_MS,
+  });
+}
+
+/* --------------------------------------------------------------------------
+   Admin: single-job actions
+   -------------------------------------------------------------------------- */
+
+/** Hold a job (prevent it from being dispatched). */
+export function useHoldJob() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (jobId: number) =>
+      api.post<unknown>(`/admin/jobs/${jobId}/hold`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queueKeys.all });
+      toastStore.addToast({ message: "Job held", variant: "success" });
+    },
+  });
+}
+
+/** Release a held job back into the queue. */
+export function useReleaseJob() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (jobId: number) =>
+      api.post<unknown>(`/admin/jobs/${jobId}/release`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queueKeys.all });
+      toastStore.addToast({ message: "Job released", variant: "success" });
+    },
+  });
+}
+
+/** Move a job to the front of the queue. */
+export function useMoveToFront() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (jobId: number) =>
+      api.post<unknown>(`/admin/jobs/${jobId}/move-to-front`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queueKeys.all });
+      toastStore.addToast({ message: "Job moved to front", variant: "success" });
+    },
+  });
+}
+
+/** Reassign a job to a different ComfyUI instance. */
+export function useReassignJob() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      jobId,
+      instanceId,
+    }: {
+      jobId: number;
+      instanceId: number;
+    }) =>
+      api.post<unknown>(`/admin/jobs/${jobId}/reassign`, {
+        instance_id: instanceId,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queueKeys.all });
+      toastStore.addToast({ message: "Job reassigned", variant: "success" });
+    },
+  });
+}
+
+/* --------------------------------------------------------------------------
+   Admin: bulk operations
+   -------------------------------------------------------------------------- */
+
+/** Cancel multiple jobs matching a filter. */
+export function useBulkCancel() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (filter: BulkCancelFilter) =>
+      api.post<{ cancelled_count: number }>("/admin/jobs/bulk-cancel", filter),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: queueKeys.all });
+      toastStore.addToast({ message: `Cancelled ${data.cancelled_count} jobs`, variant: "success" });
+    },
+  });
+}
+
+/** Redistribute queued jobs across available workers. */
+export function useRedistributeQueue() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () => api.post<unknown>("/admin/jobs/redistribute"),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queueKeys.all });
+      toastStore.addToast({ message: "Queue redistributed", variant: "success" });
+    },
+  });
+}
+
+/* --------------------------------------------------------------------------
+   Admin: worker management
+   -------------------------------------------------------------------------- */
+
+/** Put a ComfyUI instance into drain mode (finish current, accept no new). */
+export function useDrainWorker() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (instanceId: number) =>
+      api.post<unknown>(`/admin/comfyui/${instanceId}/drain`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queueKeys.all });
+      toastStore.addToast({ message: "Worker draining", variant: "success" });
+    },
+  });
+}
+
+/** Remove a ComfyUI instance from drain mode. */
+export function useUndrainWorker() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (instanceId: number) =>
+      api.post<unknown>(`/admin/comfyui/${instanceId}/undrain`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queueKeys.all });
+      toastStore.addToast({ message: "Worker undrained", variant: "success" });
+    },
+  });
+}
+
+/** Fetch all ComfyUI worker instances (admin view). */
+export function useWorkerInstances() {
+  return useQuery({
+    queryKey: queueKeys.workerInstances(),
+    queryFn: () =>
+      api.get<ComfyUIInstanceInfo[]>("/admin/comfyui/instances"),
+    refetchInterval: ADMIN_POLL_MS,
   });
 }
