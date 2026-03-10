@@ -467,6 +467,9 @@ This phase contains no PRD work — only structural setup.
 | 126 | PRD-126 | Critical Bug Fixes & UX Polish | L | Full-Stack | PRD-112, PRD-113, PRD-108, PRD-109 (all done) |
 | 127 | PRD-127 | ComfyUI Output Handling & Artifact Storage | M | Full-Stack | PRD-03, PRD-24, PRD-47, PRD-109 (all done) | **DONE** |
 | 128 | PRD-128 | Character Readiness Indicators | S | Full-Stack | PRD-112, PRD-108 (all done) | **DONE** |
+| 130 | PRD-130 | Unified Cloud & ComfyUI Orchestration | XL | Backend | PRD-02, PRD-05, PRD-114 (all done) | **DONE** |
+| 131 | PRD-131 | Infrastructure Control Panel | L | Full-Stack | PRD-02, PRD-05, PRD-114, PRD-130 | **DONE** |
+| 132 | PRD-132 | Queue Manager & Intelligent Job Allocation | L | Full-Stack | PRD-07, PRD-08, PRD-05, PRD-46 (all done) | Planning |
 
 ---
 
@@ -588,3 +591,6 @@ PRD-29 → PRD-83 → PRD-35 → PRD-57
 | 2026-03-06 | Added PRD-124 (Speech & TTS Repository) to Phase 8. Normalized speech text storage, CRUD API, Speech tab, CSV/JSON import/export, read-only VoiceID. All deps done (PRD-00, 01, 29, 112). Total: 122 PRDs in build plan |
 | 2026-03-06 | Added PRD-127 (ComfyUI Output Handling & Artifact Storage) to Phase 12. Pipeline output classifier, generation snapshot, version creator, artifacts table, ArtifactTimeline UI. All deps done (PRD-03, 24, 47, 109). Total: 128 PRDs |
 | 2026-03-06 | Added PRD-128 (Character Readiness Indicators) to Phase 12. Per-section indicator circles on character cards, extended deliverable query with voice ID, ReadinessIndicators component. All deps done (PRD-112, 108). Total: 129 PRDs |
+| 2026-03-10 | Added PRD-130 (Unified Cloud & ComfyUI Orchestration) to Phase 12. Unifies PodOrchestrator with cloud provider DB infrastructure. Full lifecycle automation, multi-instance, auto-scaling. All deps done (PRD-02, 05, 114). Total: 130 PRDs |
+| 2026-03-10 | Added PRD-131 (Infrastructure Control Panel) to Phase 12. Unified operational dashboard, bulk ops, orphan cleanup, connection recovery. Deps on PRD-130 (planning). Total: 131 PRDs |
+| 2026-03-10 | Added PRD-132 (Queue Manager & Intelligent Job Allocation) to Phase 12. Full queue visibility, job reassignment, drain mode, intelligent allocation. All deps done (PRD-07, 08, 05, 46). Total: 132 PRDs |

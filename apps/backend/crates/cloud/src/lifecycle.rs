@@ -149,6 +149,62 @@ impl LifecycleBridge {
         Ok(ready)
     }
 
+    /// Spawn the full startup sequence as a fire-and-forget background task.
+    ///
+    /// This is a convenience wrapper around [`build_orchestrator`] +
+    /// [`startup`] that logs errors and never blocks the caller. Use
+    /// this from handlers and the scaling service instead of inlining
+    /// the same `tokio::spawn { build_orchestrator → startup }` pattern.
+    pub fn spawn_startup(
+        self: &Arc<Self>,
+        cloud_instance_id: DbId,
+        provider_id: DbId,
+        external_id: String,
+    ) {
+        let bridge = Arc::clone(self);
+        tokio::spawn(async move {
+            tracing::info!(
+                cloud_instance_id,
+                external_id = %external_id,
+                "Starting lifecycle startup (background)"
+            );
+
+            let orchestrator = match bridge.build_orchestrator(provider_id).await {
+                Ok(o) => o,
+                Err(e) => {
+                    tracing::error!(
+                        cloud_instance_id,
+                        provider_id,
+                        error = %e,
+                        "Failed to build orchestrator for lifecycle startup"
+                    );
+                    return;
+                }
+            };
+
+            match bridge
+                .startup(cloud_instance_id, &orchestrator, &external_id)
+                .await
+            {
+                Ok(ready) => {
+                    tracing::info!(
+                        cloud_instance_id,
+                        pod_id = %ready.pod_id,
+                        "Lifecycle startup succeeded"
+                    );
+                }
+                Err(e) => {
+                    tracing::error!(
+                        cloud_instance_id,
+                        external_id = %external_id,
+                        error = %e,
+                        "Lifecycle startup failed"
+                    );
+                }
+            }
+        });
+    }
+
     /// Execute the full teardown sequence for a cloud instance.
     ///
     /// 1. Find and disable the `comfyui_instances` row linked to this

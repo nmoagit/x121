@@ -3,6 +3,8 @@
 //! Wraps the ComfyUI HTTP API (workflow submission, cancellation,
 //! interruption, history retrieval) using [`reqwest`].
 
+use std::collections::{HashMap, HashSet};
+
 use serde::{Deserialize, Serialize};
 
 /// HTTP client for a single ComfyUI instance.
@@ -221,6 +223,30 @@ impl ComfyUIApi {
             .await?;
 
         Self::parse_response(response).await
+    }
+
+    /// Fetch all available node types from ComfyUI via `GET /object_info`.
+    ///
+    /// Returns a map of node class type names to their definitions.
+    /// This is used for live validation of workflow node types.
+    pub async fn get_object_info(
+        &self,
+    ) -> Result<HashMap<String, serde_json::Value>, ComfyUIApiError> {
+        let response = self
+            .client
+            .get(format!("{}/object_info", self.api_url))
+            .send()
+            .await?;
+        Self::parse_response(response).await
+    }
+
+    /// Fetch just the set of available node type names from ComfyUI.
+    ///
+    /// Lighter wrapper around [`get_object_info`] that discards the node
+    /// definitions and returns only the class type names.
+    pub async fn get_available_node_types(&self) -> Result<HashSet<String>, ComfyUIApiError> {
+        let info = self.get_object_info().await?;
+        Ok(info.into_keys().collect())
     }
 
     /// Check if ComfyUI is alive and responsive via `GET /system_stats`.

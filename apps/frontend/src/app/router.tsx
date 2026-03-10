@@ -703,6 +703,14 @@ const adminConfigImportRoute = createRoute({
   ),
 });
 
+const adminInfrastructureRoute = createRoute({
+  getParentRoute: () => adminLayoutRoute,
+  path: "/admin/infrastructure",
+  component: lazyRouteComponent(() =>
+    import("@/app/pages/InfrastructureControlPanelPage"),
+  ),
+});
+
 /* --------------------------------------------------------------------------
    Settings routes
    -------------------------------------------------------------------------- */
@@ -838,6 +846,7 @@ export const routeTree = rootRoute.addChildren([
       adminFailureAnalyticsRoute,
       adminImporterRoute,
       adminConfigImportRoute,
+      adminInfrastructureRoute,
     ]),
 
     settingsLayoutRoute.addChildren([shortcutsRoute, wikiRoute]),

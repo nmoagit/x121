@@ -131,8 +131,7 @@ async fn evaluate_all_rules(
                                         // Spawn lifecycle startup in the background.
                                         // This is a long-running operation (~3 min) and
                                         // must not block the scaling loop.
-                                        spawn_lifecycle_startup(
-                                            Arc::clone(lifecycle_bridge),
+                                        lifecycle_bridge.spawn_startup(
                                             instance.id,
                                             rule.provider_id,
                                             provision_info.external_id,
@@ -197,61 +196,6 @@ async fn evaluate_all_rules(
     }
 
     Ok(())
-}
-
-/// Spawn a background task that runs the full lifecycle startup sequence
-/// (SSH bootstrap + ComfyUI registration + WebSocket connection) for a
-/// newly provisioned cloud instance.
-///
-/// This is intentionally fire-and-forget — the scaling loop must not block
-/// while waiting for the ~3 minute startup sequence.
-fn spawn_lifecycle_startup(
-    bridge: Arc<LifecycleBridge>,
-    cloud_instance_id: x121_core::types::DbId,
-    provider_id: x121_core::types::DbId,
-    external_id: String,
-) {
-    tokio::spawn(async move {
-        info!(
-            cloud_instance_id,
-            external_id = %external_id,
-            "Starting lifecycle startup (background)"
-        );
-
-        let orchestrator = match bridge.build_orchestrator(provider_id).await {
-            Ok(o) => o,
-            Err(e) => {
-                warn!(
-                    cloud_instance_id,
-                    provider_id,
-                    error = %e,
-                    "Failed to build orchestrator for lifecycle startup"
-                );
-                return;
-            }
-        };
-
-        match bridge
-            .startup(cloud_instance_id, &orchestrator, &external_id)
-            .await
-        {
-            Ok(ready) => {
-                info!(
-                    cloud_instance_id,
-                    pod_id = %ready.pod_id,
-                    "Lifecycle startup succeeded"
-                );
-            }
-            Err(e) => {
-                warn!(
-                    cloud_instance_id,
-                    external_id = %external_id,
-                    error = %e,
-                    "Lifecycle startup failed"
-                );
-            }
-        }
-    });
 }
 
 /// Run lifecycle teardown then terminate each instance, recording results.

@@ -317,30 +317,9 @@ pub async fn provision_instance(
 
     // When auto_start is requested, spawn the full lifecycle startup in background.
     if input.auto_start {
-        let bridge = Arc::clone(&state.lifecycle_bridge);
-        let cloud_instance_id = instance.id;
-        let provider_id = id;
-        let external_id = instance.external_id.clone();
-        tokio::spawn(async move {
-            match bridge.build_orchestrator(provider_id).await {
-                Ok(orch) => {
-                    if let Err(e) = bridge.startup(cloud_instance_id, &orch, &external_id).await {
-                        tracing::error!(
-                            cloud_instance_id,
-                            error = %e,
-                            "Auto-start lifecycle failed"
-                        );
-                    }
-                }
-                Err(e) => {
-                    tracing::error!(
-                        provider_id,
-                        error = %e,
-                        "Failed to build orchestrator for auto-start"
-                    );
-                }
-            }
-        });
+        state
+            .lifecycle_bridge
+            .spawn_startup(instance.id, id, instance.external_id.clone());
     }
 
     Ok((StatusCode::CREATED, Json(DataResponse { data: instance })))
@@ -366,28 +345,9 @@ pub async fn start_instance(
     .await?;
 
     // Spawn lifecycle startup in background.
-    let bridge = Arc::clone(&state.lifecycle_bridge);
-    let external_id = inst.external_id.clone();
-    tokio::spawn(async move {
-        match bridge.build_orchestrator(provider_id).await {
-            Ok(orch) => {
-                if let Err(e) = bridge.startup(inst_id, &orch, &external_id).await {
-                    tracing::error!(
-                        cloud_instance_id = inst_id,
-                        error = %e,
-                        "Lifecycle startup failed after start_instance"
-                    );
-                }
-            }
-            Err(e) => {
-                tracing::error!(
-                    provider_id,
-                    error = %e,
-                    "Failed to build orchestrator for start_instance lifecycle"
-                );
-            }
-        }
-    });
+    state
+        .lifecycle_bridge
+        .spawn_startup(inst_id, provider_id, inst.external_id.clone());
 
     Ok(StatusCode::ACCEPTED)
 }

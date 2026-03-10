@@ -8,7 +8,9 @@ use std::sync::Arc;
 
 use sqlx::PgPool;
 use tracing::{info, warn};
+use x121_core::activity::{ActivityLogEntry, ActivityLogLevel, ActivityLogSource};
 use x121_core::cloud::InstanceStatus;
+use x121_events::ActivityLogBroadcaster;
 
 use crate::registry::ProviderRegistry;
 
@@ -18,6 +20,7 @@ const DEFAULT_INTERVAL_SECS: u64 = 300; // Every 5 minutes
 pub fn spawn_reconciliation_service(
     pool: PgPool,
     registry: Arc<ProviderRegistry>,
+    activity: Option<Arc<ActivityLogBroadcaster>>,
     interval_secs: Option<u64>,
 ) -> tokio::task::JoinHandle<()> {
     super::spawn_periodic_service(
@@ -26,13 +29,32 @@ pub fn spawn_reconciliation_service(
         registry,
         interval_secs,
         DEFAULT_INTERVAL_SECS,
-        |pool, registry| async move { reconcile_all(&pool, &registry).await },
+        move |pool, registry| {
+            let activity = activity.clone();
+            async move { reconcile_all(&pool, &registry, activity.as_deref()).await }
+        },
     )
+}
+
+/// Publish a curated infrastructure activity log entry if a broadcaster is available.
+fn emit_reconcile(
+    activity: Option<&ActivityLogBroadcaster>,
+    level: ActivityLogLevel,
+    message: impl Into<String>,
+    fields: serde_json::Value,
+) {
+    if let Some(broadcaster) = activity {
+        broadcaster.publish(
+            ActivityLogEntry::curated(level, ActivityLogSource::Infrastructure, message)
+                .with_fields(fields),
+        );
+    }
 }
 
 async fn reconcile_all(
     pool: &PgPool,
     registry: &ProviderRegistry,
+    activity: Option<&ActivityLogBroadcaster>,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     use x121_db::models::status::CloudInstanceStatus as DbStatus;
     use x121_db::repositories::CloudInstanceRepo;
@@ -59,6 +81,19 @@ async fn reconcile_all(
                             external_id = inst.external_id,
                             "Reconciling: marking as terminated (provider reports terminated)"
                         );
+                        emit_reconcile(
+                            activity,
+                            ActivityLogLevel::Warn,
+                            format!(
+                                "Instance state corrected: {} marked terminated (provider reports terminated)",
+                                inst.external_id
+                            ),
+                            serde_json::json!({
+                                "instance_id": inst.id,
+                                "external_id": inst.external_id,
+                                "provider_id": pid,
+                            }),
+                        );
                         let _ = CloudInstanceRepo::mark_terminated(
                             pool,
                             inst.id,
@@ -73,6 +108,19 @@ async fn reconcile_all(
                         instance_id = inst.id,
                         external_id = inst.external_id,
                         "Reconciling: instance not found at provider, marking terminated"
+                    );
+                    emit_reconcile(
+                        activity,
+                        ActivityLogLevel::Warn,
+                        format!(
+                            "Orphan detected: instance {} not found at provider",
+                            inst.external_id
+                        ),
+                        serde_json::json!({
+                            "instance_id": inst.id,
+                            "external_id": inst.external_id,
+                            "provider_id": pid,
+                        }),
                     );
                     let _ =
                         CloudInstanceRepo::mark_terminated(pool, inst.id, inst.total_cost_cents)

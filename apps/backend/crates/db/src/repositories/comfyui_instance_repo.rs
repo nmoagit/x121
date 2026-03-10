@@ -134,25 +134,15 @@ impl ComfyUIInstanceRepo {
     /// Upsert an instance by name — insert if not exists, update URLs if it does.
     ///
     /// Used by the pod orchestrator to register a RunPod pod's ComfyUI
-    /// endpoints after the pod is ready.
+    /// endpoints after the pod is ready. Delegates to
+    /// [`upsert_by_name_with_cloud`] with `cloud_instance_id = None`.
     pub async fn upsert_by_name(
         pool: &PgPool,
         name: &str,
         ws_url: &str,
         api_url: &str,
     ) -> Result<ComfyUIInstance, sqlx::Error> {
-        let query = format!(
-            "INSERT INTO comfyui_instances (name, ws_url, api_url, status_id, is_enabled) \
-             VALUES ($1, $2, $3, 2, true) \
-             ON CONFLICT (name) DO UPDATE SET ws_url = $2, api_url = $3, is_enabled = true, updated_at = NOW() \
-             RETURNING {COLUMNS}"
-        );
-        sqlx::query_as::<_, ComfyUIInstance>(&query)
-            .bind(name)
-            .bind(ws_url)
-            .bind(api_url)
-            .fetch_one(pool)
-            .await
+        Self::upsert_by_name_with_cloud(pool, name, ws_url, api_url, None).await
     }
 
     /// Upsert an instance by name with an optional link to a cloud instance.
@@ -206,6 +196,17 @@ impl ComfyUIInstanceRepo {
         .execute(pool)
         .await?;
         Ok(result.rows_affected())
+    }
+
+    /// Disable a single instance by ID.
+    pub async fn disable_by_id(pool: &PgPool, id: DbId) -> Result<bool, sqlx::Error> {
+        let result = sqlx::query(
+            "UPDATE comfyui_instances SET is_enabled = false WHERE id = $1 AND is_enabled = true",
+        )
+        .bind(id)
+        .execute(pool)
+        .await?;
+        Ok(result.rows_affected() > 0)
     }
 
     /// Increment the reconnect attempt counter for an instance.

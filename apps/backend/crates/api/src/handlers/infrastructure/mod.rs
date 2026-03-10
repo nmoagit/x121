@@ -3,14 +3,32 @@
 //! Provides admin endpoints to manage RunPod pods, ComfyUI instances,
 //! and the generation event loop from within the application.
 
+mod bulk_ops;
+mod instance_ops;
+mod orphan_cleanup;
+mod orphan_scan;
+
+pub use bulk_ops::{bulk_start, bulk_stop, bulk_terminate};
+pub use instance_ops::{force_reconnect_instance, reset_state, restart_comfyui};
+pub use orphan_cleanup::cleanup_orphans;
+pub use orphan_scan::scan_orphans;
+
+use std::sync::Arc;
+
 use axum::extract::State;
 use axum::Json;
 use serde::{Deserialize, Serialize};
 use x121_cloud::runpod::orchestrator::PodOrchestrator;
+use x121_core::cloud::CloudGpuProvider;
+use x121_core::error::CoreError;
+use x121_core::types::DbId;
 use x121_db::repositories::{CloudInstanceRepo, CloudProviderRepo, ComfyUIInstanceRepo};
 
-use crate::error::AppError;
+use x121_core::activity::{ActivityLogEntry, ActivityLogLevel, ActivityLogSource};
+
+use crate::error::{AppError, AppResult};
 use crate::middleware::rbac::RequireAdmin;
+use crate::response::DataResponse;
 use crate::state::AppState;
 
 /* --------------------------------------------------------------------------
@@ -64,6 +82,119 @@ pub struct PodStopRequest {
     pub pod_id: Option<String>,
 }
 
+/// Result of an orphan scan across all cloud providers.
+#[derive(Serialize)]
+pub struct OrphanScanResult {
+    /// Instances at the provider that have no corresponding `cloud_instances` row.
+    pub cloud_orphans: Vec<CloudOrphan>,
+    /// DB rows marked as running/starting but the provider reports them as terminated or not found.
+    pub db_orphans: Vec<DbOrphan>,
+    /// ComfyUI instances linked to cloud instances that no longer exist.
+    pub comfyui_orphans: Vec<ComfyuiOrphan>,
+}
+
+/// A provider-side instance with no matching DB record.
+#[derive(Serialize)]
+pub struct CloudOrphan {
+    pub external_id: String,
+    pub name: Option<String>,
+    pub provider_id: i64,
+    pub provider_name: String,
+    pub status: String,
+    pub cost_per_hour_cents: Option<i64>,
+}
+
+/// A DB cloud_instance row whose provider-side state contradicts the DB.
+#[derive(Serialize)]
+pub struct DbOrphan {
+    pub instance_id: i64,
+    pub external_id: String,
+    pub db_status: String,
+    pub actual_status: String,
+    pub provider_id: i64,
+}
+
+/// A ComfyUI instance linked to a non-existent or terminated cloud instance.
+#[derive(Serialize)]
+pub struct ComfyuiOrphan {
+    pub comfyui_instance_id: i64,
+    pub name: String,
+    pub cloud_instance_id: Option<i64>,
+    pub reason: String,
+}
+
+/* --------------------------------------------------------------------------
+Shared helpers
+-------------------------------------------------------------------------- */
+
+/// Resolve a cloud instance by ID, returning an error if not found.
+async fn load_cloud_instance(
+    pool: &sqlx::PgPool,
+    id: DbId,
+) -> AppResult<x121_db::models::cloud_provider::CloudInstance> {
+    CloudInstanceRepo::find_by_id(pool, id)
+        .await?
+        .ok_or_else(|| {
+            AppError::Core(CoreError::NotFound {
+                entity: "CloudInstance",
+                id,
+            })
+        })
+}
+
+/// Resolve the provider implementation from the registry.
+async fn resolve_provider(
+    state: &AppState,
+    provider_id: DbId,
+) -> AppResult<Arc<dyn CloudGpuProvider>> {
+    state.cloud_registry.get(provider_id).await.ok_or_else(|| {
+        AppError::Core(CoreError::NotFound {
+            entity: "CloudProvider (runtime)",
+            id: provider_id,
+        })
+    })
+}
+
+/// Publish a curated infrastructure activity log entry.
+fn emit_infra(state: &AppState, level: ActivityLogLevel, message: impl Into<String>) {
+    state
+        .activity_broadcaster
+        .publish(ActivityLogEntry::curated(
+            level,
+            ActivityLogSource::Infrastructure,
+            message,
+        ));
+}
+
+/// Publish a curated infrastructure activity log entry with structured fields.
+fn emit_infra_fields(
+    state: &AppState,
+    level: ActivityLogLevel,
+    message: impl Into<String>,
+    fields: serde_json::Value,
+) {
+    state.activity_broadcaster.publish(
+        ActivityLogEntry::curated(level, ActivityLogSource::Infrastructure, message)
+            .with_fields(fields),
+    );
+}
+
+/// Map a cloud instance status_id to a human-readable name.
+fn cloud_instance_status_name(status_id: i16) -> String {
+    match status_id {
+        1 => "provisioning",
+        2 => "starting",
+        3 => "running",
+        4 => "stopping",
+        5 => "stopped",
+        6 => "terminating",
+        7 => "terminated",
+        8 => "error",
+        _ => "unknown",
+    }
+    .to_string()
+}
+
 /* --------------------------------------------------------------------------
 Handlers
 -------------------------------------------------------------------------- */
@@ -72,7 +203,7 @@ Handlers
 pub async fn get_status(
     RequireAdmin(_admin): RequireAdmin,
     State(state): State<AppState>,
-) -> Result<Json<serde_json::Value>, AppError> {
+) -> Result<Json<DataResponse<InfrastructureStatus>>, AppError> {
     let instances = ComfyUIInstanceRepo::list(&state.pool)
         .await
         .unwrap_or_default();
@@ -99,7 +230,7 @@ pub async fn get_status(
         connected_count: connected_ids.len(),
     };
 
-    Ok(Json(serde_json::json!({ "data": status })))
+    Ok(Json(DataResponse { data: status }))
 }
 
 /// POST /admin/infrastructure/pod/start
@@ -110,7 +241,7 @@ pub async fn get_status(
 pub async fn start_pod(
     RequireAdmin(_admin): RequireAdmin,
     State(state): State<AppState>,
-) -> Result<Json<serde_json::Value>, AppError> {
+) -> Result<Json<DataResponse<PodStartResult>>, AppError> {
     // Try the lifecycle bridge path first: look for a RunPod provider in DB.
     let runpod_providers = CloudProviderRepo::find_by_type(&state.pool, "runpod").await?;
 
@@ -156,7 +287,7 @@ pub async fn start_pod(
             manager_refreshed: !connected.is_empty(),
         };
 
-        return Ok(Json(serde_json::json!({ "data": result })));
+        return Ok(Json(DataResponse { data: result }));
     }
 
     // No RunPod provider in DB — fall back to legacy env-based path.
@@ -164,7 +295,9 @@ pub async fn start_pod(
 }
 
 /// Legacy start_pod implementation using the env-based `PodOrchestrator`.
-async fn start_pod_legacy(state: &AppState) -> Result<Json<serde_json::Value>, AppError> {
+async fn start_pod_legacy(
+    state: &AppState,
+) -> Result<Json<DataResponse<PodStartResult>>, AppError> {
     let orchestrator = state
         .pod_orchestrator
         .as_ref()
@@ -206,7 +339,7 @@ async fn start_pod_legacy(state: &AppState) -> Result<Json<serde_json::Value>, A
         manager_refreshed: !connected.is_empty(),
     };
 
-    Ok(Json(serde_json::json!({ "data": result })))
+    Ok(Json(DataResponse { data: result }))
 }
 
 /// POST /admin/infrastructure/pod/stop
@@ -217,7 +350,13 @@ pub async fn stop_pod(
     RequireAdmin(_admin): RequireAdmin,
     State(state): State<AppState>,
     Json(body): Json<PodStopRequest>,
-) -> Result<Json<serde_json::Value>, AppError> {
+) -> Result<Json<DataResponse<PodStopResult>>, AppError> {
+    emit_infra(
+        &state,
+        ActivityLogLevel::Info,
+        "Instance stop/terminate requested",
+    );
+
     // Resolve pod ID from request body or from DB.
     let pod_id = if let Some(id) = body.pod_id {
         id
@@ -287,14 +426,14 @@ pub async fn stop_pod(
         instances_disabled: disabled,
     };
 
-    Ok(Json(serde_json::json!({ "data": result })))
+    Ok(Json(DataResponse { data: result }))
 }
 
 /// GET /admin/infrastructure/gpu-types
 pub async fn list_gpu_types(
     RequireAdmin(_admin): RequireAdmin,
     State(state): State<AppState>,
-) -> Result<Json<serde_json::Value>, AppError> {
+) -> Result<Json<DataResponse<Vec<x121_core::cloud::GpuTypeInfo>>>, AppError> {
     let orchestrator = state
         .pod_orchestrator
         .as_ref()
@@ -302,22 +441,22 @@ pub async fn list_gpu_types(
 
     let gpu_types = orchestrator.list_gpu_types().await?;
 
-    Ok(Json(serde_json::json!({ "data": gpu_types })))
+    Ok(Json(DataResponse { data: gpu_types }))
 }
 
 /// POST /admin/infrastructure/comfyui/refresh
 pub async fn refresh_instances(
     RequireAdmin(_admin): RequireAdmin,
     State(state): State<AppState>,
-) -> Result<Json<serde_json::Value>, AppError> {
+) -> Result<Json<DataResponse<RefreshResult>>, AppError> {
     state.comfyui_manager.refresh_instances().await;
     tokio::time::sleep(std::time::Duration::from_secs(2)).await;
 
     let connected = state.comfyui_manager.connected_instance_ids().await;
 
-    Ok(Json(serde_json::json!({
-        "data": RefreshResult {
+    Ok(Json(DataResponse {
+        data: RefreshResult {
             connected_count: connected.len(),
-        }
-    })))
+        },
+    }))
 }

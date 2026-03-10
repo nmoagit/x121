@@ -3,9 +3,9 @@
 Tracks which completed PRDs have frontend features accessible via routes/navigation
 versus those that are implemented but need integration into host pages.
 
-**Last updated:** 2026-03-06
+**Last updated:** 2026-03-10
 
-**All 129 PRDs are complete.** No PRDs remain in planning.
+**131 of 132 PRDs are complete.** PRD-132 is in planning.
 
 ## Summary
 

@@ -218,6 +218,15 @@ impl CloudInstanceRepo {
             .await
     }
 
+    /// Delete a cloud instance row by ID. Used for orphan cleanup.
+    pub async fn delete(pool: &PgPool, id: DbId) -> Result<bool, sqlx::Error> {
+        let result = sqlx::query("DELETE FROM cloud_instances WHERE id = $1")
+            .bind(id)
+            .execute(pool)
+            .await?;
+        Ok(result.rows_affected() > 0)
+    }
+
     /// List all active instances across all providers (for global emergency stop).
     pub async fn list_all_active(pool: &PgPool) -> Result<Vec<CloudInstance>, sqlx::Error> {
         let query = format!(

@@ -54,6 +54,7 @@ pub enum ActivityLogSource {
     Worker,
     Agent,
     Pipeline,
+    Infrastructure,
 }
 
 impl ActivityLogSource {
@@ -65,6 +66,7 @@ impl ActivityLogSource {
             Self::Worker => "worker",
             Self::Agent => "agent",
             Self::Pipeline => "pipeline",
+            Self::Infrastructure => "infrastructure",
         }
     }
 
@@ -76,6 +78,7 @@ impl ActivityLogSource {
             "worker" => Some(Self::Worker),
             "agent" => Some(Self::Agent),
             "pipeline" => Some(Self::Pipeline),
+            "infrastructure" => Some(Self::Infrastructure),
             _ => None,
         }
     }
@@ -88,6 +91,8 @@ impl ActivityLogSource {
             Self::Worker
         } else if target.starts_with("x121_pipeline") || target.contains("pipeline") {
             Self::Pipeline
+        } else if target.starts_with("x121_cloud") || target.contains("cloud") {
+            Self::Infrastructure
         } else {
             Self::Api
         }
@@ -273,6 +278,7 @@ mod tests {
         assert_eq!(ActivityLogSource::Worker.as_str(), "worker");
         assert_eq!(ActivityLogSource::Agent.as_str(), "agent");
         assert_eq!(ActivityLogSource::Pipeline.as_str(), "pipeline");
+        assert_eq!(ActivityLogSource::Infrastructure.as_str(), "infrastructure");
     }
 
     #[test]
@@ -306,6 +312,10 @@ mod tests {
         assert_eq!(
             ActivityLogSource::from_target("x121_pipeline::stage"),
             ActivityLogSource::Pipeline
+        );
+        assert_eq!(
+            ActivityLogSource::from_target("x121_cloud::orchestrator"),
+            ActivityLogSource::Infrastructure
         );
         assert_eq!(
             ActivityLogSource::from_target("x121_api::handlers"),

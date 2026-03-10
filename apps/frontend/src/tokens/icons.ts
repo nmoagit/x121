@@ -51,6 +51,7 @@ export {
   VolumeX,
   // Layout / Panels
   GripVertical,
+  LayoutGrid,
   Layout,
   Maximize2,
   Minimize2,
@@ -114,6 +115,17 @@ export {
   Sparkles,
   Wand2,
   Wrench,
+  // Character Review
+  CheckCircle,
+  UserPlus,
+  ArrowRightLeft,
+  // Infrastructure
+  Wifi,
+  WifiOff,
+  RotateCw,
+  ScanSearch,
+  Shield,
+  CircleDot,
 } from "lucide-react";
 
 /** Standard icon size tokens (px values matching design grid) */

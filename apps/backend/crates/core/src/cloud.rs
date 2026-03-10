@@ -60,6 +60,18 @@ pub trait CloudGpuProvider: Send + Sync {
 
     /// Health check against the provider API.
     async fn health_check(&self) -> Result<ProviderHealth, CloudProviderError>;
+
+    /// List all instances currently known to the provider.
+    ///
+    /// Returns every instance (running, stopped, etc.) that exists at the
+    /// provider level. Used for orphan detection — comparing provider-side
+    /// state against the local database.
+    ///
+    /// Default implementation returns an empty list so existing providers
+    /// compile without changes.
+    async fn list_all_instances(&self) -> Result<Vec<InstanceInfo>, CloudProviderError> {
+        Ok(vec![])
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -76,6 +88,8 @@ pub struct ProvisionConfig {
     pub docker_image: Option<String>,
     pub env_vars: std::collections::HashMap<String, String>,
     pub template_id: Option<String>,
+    /// Container disk size in GB (required when no network volume is attached).
+    pub container_disk_gb: Option<u32>,
 }
 
 impl Default for ProvisionConfig {
@@ -88,6 +102,7 @@ impl Default for ProvisionConfig {
             docker_image: None,
             env_vars: std::collections::HashMap::new(),
             template_id: None,
+            container_disk_gb: None,
         }
     }
 }

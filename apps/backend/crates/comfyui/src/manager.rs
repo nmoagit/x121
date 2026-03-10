@@ -14,8 +14,10 @@ use std::sync::Arc;
 
 use tokio::sync::{broadcast, RwLock};
 use tokio_util::sync::CancellationToken;
+use x121_core::activity::{ActivityLogEntry, ActivityLogLevel, ActivityLogSource};
 use x121_core::types::DbId;
 use x121_db::repositories::{ComfyUIExecutionRepo, ComfyUIInstanceRepo};
+use x121_events::ActivityLogBroadcaster;
 
 use crate::api::ComfyUIApi;
 use crate::client::ComfyUIClient;
@@ -37,6 +39,8 @@ pub struct ComfyUIManager {
     event_tx: broadcast::Sender<ComfyUIEvent>,
     /// Master cancellation token -- cancelled during shutdown.
     cancel: CancellationToken,
+    /// Optional activity log broadcaster for curated connection events.
+    activity: Option<Arc<ActivityLogBroadcaster>>,
 }
 
 /// Internal bookkeeping for a single ComfyUI instance.
@@ -54,6 +58,14 @@ impl ComfyUIManager {
     ///
     /// Returns a shared handle that is safe to clone into Axum state.
     pub async fn start(pool: sqlx::PgPool) -> Arc<Self> {
+        Self::start_with_activity(pool, None).await
+    }
+
+    /// Load enabled instances and connect, with an optional activity broadcaster.
+    pub async fn start_with_activity(
+        pool: sqlx::PgPool,
+        activity: Option<Arc<ActivityLogBroadcaster>>,
+    ) -> Arc<Self> {
         let (event_tx, _) = broadcast::channel(EVENT_CHANNEL_CAPACITY);
         let cancel = CancellationToken::new();
 
@@ -62,10 +74,37 @@ impl ComfyUIManager {
             pool,
             event_tx,
             cancel,
+            activity,
         });
 
         manager.load_and_connect().await;
         manager
+    }
+
+    /// Publish a curated activity log entry if a broadcaster is configured.
+    fn emit(&self, level: ActivityLogLevel, message: impl Into<String>) {
+        if let Some(ref broadcaster) = self.activity {
+            broadcaster.publish(ActivityLogEntry::curated(
+                level,
+                ActivityLogSource::Comfyui,
+                message,
+            ));
+        }
+    }
+
+    /// Publish a curated activity log entry with structured fields.
+    fn emit_with_fields(
+        &self,
+        level: ActivityLogLevel,
+        message: impl Into<String>,
+        fields: serde_json::Value,
+    ) {
+        if let Some(ref broadcaster) = self.activity {
+            broadcaster.publish(
+                ActivityLogEntry::curated(level, ActivityLogSource::Comfyui, message)
+                    .with_fields(fields),
+            );
+        }
     }
 
     /// Subscribe to platform-level ComfyUI events.
@@ -89,6 +128,20 @@ impl ComfyUIManager {
             .read()
             .await
             .get(&instance_id)
+            .map(|m| Arc::clone(&m.api))
+    }
+
+    /// Get an API client for any connected instance.
+    ///
+    /// Used for operations that don't target a specific instance, such as
+    /// querying available node types for workflow validation.
+    /// Returns `None` if no instances are connected.
+    pub async fn get_any_api(&self) -> Option<Arc<ComfyUIApi>> {
+        self.connections
+            .read()
+            .await
+            .values()
+            .next()
             .map(|m| Arc::clone(&m.api))
     }
 
@@ -165,6 +218,62 @@ impl ComfyUIManager {
         Ok(())
     }
 
+    /// Force-reconnect a specific ComfyUI instance.
+    ///
+    /// Cancels the existing connection task for the given instance, looks up
+    /// fresh connection details from the database, and spawns a new connection
+    /// task with a reset backoff.
+    ///
+    /// Returns an error if the instance is not found in the database.
+    pub async fn force_reconnect(&self, instance_id: DbId) -> Result<(), ComfyUIManagerError> {
+        // 1. Cancel and remove the existing connection task (if any).
+        if let Some(managed) = self.connections.write().await.remove(&instance_id) {
+            tracing::info!(
+                instance_id,
+                "Cancelling existing connection task for reconnect"
+            );
+            managed.cancel.cancel();
+            let _ =
+                tokio::time::timeout(std::time::Duration::from_secs(5), managed.task_handle).await;
+        }
+
+        // 2. Look up instance from DB to get fresh ws_url / api_url.
+        let instance = ComfyUIInstanceRepo::find_by_id(&self.pool, instance_id)
+            .await
+            .map_err(|e| ComfyUIManagerError::DatabaseError(e.to_string()))?
+            .ok_or(ComfyUIManagerError::InstanceNotFound(instance_id))?;
+
+        if !instance.is_enabled {
+            return Err(ComfyUIManagerError::InstanceNotFound(instance_id));
+        }
+
+        // 3. Emit activity log before spawning (values are moved into spawn_connection).
+        self.emit_with_fields(
+            ActivityLogLevel::Info,
+            format!("Force reconnect triggered for instance {}", instance.name),
+            serde_json::json!({
+                "instance_id": instance_id,
+                "name": &instance.name,
+                "ws_url": &instance.ws_url,
+            }),
+        );
+
+        // 4. Spawn a new connection task.
+        self.spawn_connection(
+            instance.id,
+            instance.name,
+            instance.ws_url,
+            instance.api_url,
+        )
+        .await;
+
+        tracing::info!(
+            instance_id,
+            "Force reconnect initiated — new connection task spawned"
+        );
+        Ok(())
+    }
+
     /// Gracefully shut down all connection tasks.
     ///
     /// Cancels the master token, then waits up to 5 seconds per task
@@ -182,6 +291,46 @@ impl ComfyUIManager {
         }
 
         tracing::info!("ComfyUI manager shut down complete");
+    }
+
+    /// Reload enabled instances from the database, spawning connection
+    /// tasks for any newly discovered instances.
+    ///
+    /// This is useful when the worker process registers a new ComfyUI
+    /// instance (e.g. a RunPod pod) after the API server has started.
+    pub async fn refresh_instances(&self) {
+        let instances = match ComfyUIInstanceRepo::list_enabled(&self.pool).await {
+            Ok(list) => list,
+            Err(e) => {
+                tracing::error!(error = %e, "Failed to refresh ComfyUI instances");
+                return;
+            }
+        };
+
+        let conns = self.connections.read().await;
+        let existing_ids: Vec<DbId> = conns.keys().copied().collect();
+        drop(conns);
+
+        let mut added = 0usize;
+        for instance in instances {
+            if !existing_ids.contains(&instance.id) {
+                self.spawn_connection(
+                    instance.id,
+                    instance.name.clone(),
+                    instance.ws_url.clone(),
+                    instance.api_url.clone(),
+                )
+                .await;
+                added += 1;
+            }
+        }
+
+        if added > 0 {
+            tracing::info!(
+                added,
+                "Refreshed ComfyUI instances — new connections spawned"
+            );
+        }
     }
 
     // ---- private helpers ----
@@ -227,9 +376,19 @@ impl ComfyUIManager {
         let cancel_clone = instance_cancel.clone();
         let client_clone = Arc::clone(&client);
 
+        let activity_clone = self.activity.clone();
         let task_handle = tokio::spawn(async move {
             tracing::info!(instance_id, name = %name, "Starting connection task");
-            run_connection_loop(&client_clone, instance_id, &pool, &event_tx, &cancel_clone).await;
+            run_connection_loop(
+                &client_clone,
+                instance_id,
+                &name,
+                &pool,
+                &event_tx,
+                &cancel_clone,
+                activity_clone.as_deref(),
+            )
+            .await;
             tracing::info!(instance_id, "Connection task exited");
         });
 
@@ -250,9 +409,11 @@ impl ComfyUIManager {
 async fn run_connection_loop(
     client: &ComfyUIClient,
     instance_id: DbId,
+    instance_name: &str,
     pool: &sqlx::PgPool,
     event_tx: &broadcast::Sender<ComfyUIEvent>,
     cancel: &CancellationToken,
+    activity: Option<&ActivityLogBroadcaster>,
 ) {
     let reconnect_config = ReconnectConfig::default();
 
@@ -279,6 +440,21 @@ async fn run_connection_loop(
         }
         let _ = event_tx.send(ComfyUIEvent::InstanceConnected { instance_id });
 
+        if let Some(broadcaster) = activity {
+            broadcaster.publish(
+                ActivityLogEntry::curated(
+                    ActivityLogLevel::Info,
+                    ActivityLogSource::Comfyui,
+                    format!("WebSocket connected to {instance_name}"),
+                )
+                .with_fields(serde_json::json!({
+                    "instance_id": instance_id,
+                    "name": instance_name,
+                    "ws_url": client.ws_url(),
+                })),
+            );
+        }
+
         // Process messages until the connection drops.
         let mut ws_stream = conn.ws_stream;
         process_messages(&mut ws_stream, instance_id, pool, event_tx).await;
@@ -289,7 +465,23 @@ async fn run_connection_loop(
         }
         let _ = event_tx.send(ComfyUIEvent::InstanceDisconnected { instance_id });
 
-        if cancel.is_cancelled() {
+        let will_reconnect = !cancel.is_cancelled();
+        if let Some(broadcaster) = activity {
+            broadcaster.publish(
+                ActivityLogEntry::curated(
+                    ActivityLogLevel::Warn,
+                    ActivityLogSource::Comfyui,
+                    format!("WebSocket disconnected from {instance_name}"),
+                )
+                .with_fields(serde_json::json!({
+                    "instance_id": instance_id,
+                    "name": instance_name,
+                    "will_reconnect": will_reconnect,
+                })),
+            );
+        }
+
+        if !will_reconnect {
             return;
         }
 

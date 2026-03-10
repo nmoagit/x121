@@ -81,7 +81,11 @@ async fn main() {
         });
 
     // --- ComfyUI manager ---
-    let comfyui_manager = x121_comfyui::manager::ComfyUIManager::start(pool.clone()).await;
+    let comfyui_manager = x121_comfyui::manager::ComfyUIManager::start_with_activity(
+        pool.clone(),
+        Some(Arc::clone(&activity_broadcaster)),
+    )
+    .await;
     tracing::info!("ComfyUI manager started");
 
     // --- Event bus ---
@@ -210,6 +214,7 @@ async fn main() {
     let _reconciliation_handle = x121_cloud::services::reconciliation::spawn_reconciliation_service(
         pool.clone(),
         Arc::clone(&cloud_registry),
+        Some(Arc::clone(&activity_broadcaster)),
         None,
     );
     tracing::info!("Cloud GPU services started (scaling, monitoring, reconciliation)");
