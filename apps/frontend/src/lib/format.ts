@@ -205,7 +205,7 @@ export function generateSlug(title: string): string {
  * Generate an underscore-delimited slug (snake_case) from a name.
  *
  * Used for entity slugs that follow the database convention (e.g. tracks,
- * scene catalog entries) where the slug column uses underscores.
+ * scene catalogue entries) where the slug column uses underscores.
  */
 export function generateSnakeSlug(name: string): string {
   return name

@@ -6,12 +6,12 @@
  */
 
 import { cn } from "@/lib/cn";
-import { Clock, Pause, Play } from "@/tokens/icons";
+import { Clock, Pause, Play, XCircle } from "@/tokens/icons";
 import { iconSizes } from "@/tokens/icons";
 import { Badge, Button, Spinner } from "@/components/primitives";
 import { Stack } from "@/components/layout";
 
-import { useQueueStatus, usePauseJob, useResumeJob } from "./hooks/use-queue";
+import { useQueueStatus, usePauseJob, useResumeJob, useCancelJob } from "./hooks/use-queue";
 import { priorityLabel, priorityColor } from "./types";
 import type { QueuedJob } from "./types";
 
@@ -36,6 +36,7 @@ function formatWait(secs: number): string {
 function QueueJobRow({ job }: { job: QueuedJob }) {
   const pauseJob = usePauseJob();
   const resumeJob = useResumeJob();
+  const cancelJob = useCancelJob();
 
   return (
     <div
@@ -96,6 +97,16 @@ function QueueJobRow({ job }: { job: QueuedJob }) {
               Pause
             </Button>
           )}
+          <Button
+            variant="ghost"
+            size="sm"
+            icon={<XCircle size={iconSizes.sm} />}
+            aria-label={`Cancel ${job.job_type}`}
+            onClick={() => cancelJob.mutate(job.id)}
+            disabled={cancelJob.isPending}
+          >
+            Cancel
+          </Button>
         </Stack>
       </Stack>
     </div>

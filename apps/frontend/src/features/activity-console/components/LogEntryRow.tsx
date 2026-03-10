@@ -12,25 +12,11 @@ import { ChevronRight } from "@/tokens/icons";
 import { cn } from "@/lib/cn";
 
 import type { ActivityLogEntry } from "../types";
-import { LEVEL_BADGE_VARIANT, LEVEL_LABELS, SOURCE_LABELS } from "../types";
+import { formatLogTime, LEVEL_BADGE_VARIANT, LEVEL_LABELS, SOURCE_LABELS } from "../types";
 
 /* --------------------------------------------------------------------------
    Helpers
    -------------------------------------------------------------------------- */
-
-/** Format ISO timestamp to HH:MM:SS.mmm for compact display. */
-function formatTime(iso: string): string {
-  try {
-    const d = new Date(iso);
-    const hh = String(d.getHours()).padStart(2, "0");
-    const mm = String(d.getMinutes()).padStart(2, "0");
-    const ss = String(d.getSeconds()).padStart(2, "0");
-    const ms = String(d.getMilliseconds()).padStart(3, "0");
-    return `${hh}:${mm}:${ss}.${ms}`;
-  } catch {
-    return iso;
-  }
-}
 
 /** Check if the entry has non-empty fields worth showing. */
 function hasFields(entry: ActivityLogEntry): boolean {
@@ -94,7 +80,7 @@ export function LogEntryRow({ entry }: LogEntryRowProps) {
 
         {/* Timestamp */}
         <span className="shrink-0 text-[var(--color-text-muted)]">
-          {formatTime(entry.timestamp)}
+          {formatLogTime(entry.timestamp, true)}
         </span>
 
         {/* Level badge */}

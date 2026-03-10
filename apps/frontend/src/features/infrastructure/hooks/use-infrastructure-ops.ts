@@ -25,6 +25,70 @@ import { infraKeys } from "./use-all-instances";
 const BASE = "/admin/infrastructure";
 
 /* --------------------------------------------------------------------------
+   Shared bulk mutation factory (DRY-730)
+   -------------------------------------------------------------------------- */
+
+/**
+ * Creates a bulk mutation hook for a given endpoint and verb label.
+ * All bulk operations share the same request/response shape and
+ * success/error toast pattern.
+ */
+function useBulkMutation(endpoint: string, verb: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (request: BulkRequest) =>
+      api.post<BulkResult>(`${BASE}/bulk/${endpoint}`, request),
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: infraKeys.all });
+      const succeeded = result.results.filter((r) => r.success).length;
+      const failed = result.results.length - succeeded;
+      toastStore.addToast({
+        message:
+          failed > 0
+            ? `${verb} ${succeeded} instance(s), ${failed} failed`
+            : `${verb} ${succeeded} instance(s)`,
+        variant: failed > 0 ? "warning" : "success",
+      });
+    },
+    onError: (error: Error) => {
+      toastStore.addToast({
+        message: `Bulk ${endpoint} failed: ${error.message}`,
+        variant: "error",
+        duration: 8000,
+      });
+    },
+  });
+}
+
+/* --------------------------------------------------------------------------
+   Shared per-instance mutation factory
+   -------------------------------------------------------------------------- */
+
+function useInstanceMutation(pathSuffix: string, successLabel: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (instanceId: number) =>
+      api.post<void>(`${BASE}/cloud-instances/${instanceId}/${pathSuffix}`),
+    onSuccess: (_data, instanceId) => {
+      queryClient.invalidateQueries({ queryKey: infraKeys.all });
+      toastStore.addToast({
+        message: `${successLabel} for instance ${instanceId}`,
+        variant: "success",
+      });
+    },
+    onError: (error: Error) => {
+      toastStore.addToast({
+        message: `${successLabel} failed: ${error.message}`,
+        variant: "error",
+        duration: 8000,
+      });
+    },
+  });
+}
+
+/* --------------------------------------------------------------------------
    Orphan scanning & cleanup
    -------------------------------------------------------------------------- */
 
@@ -100,170 +164,39 @@ export function useOrphanCleanup() {
 }
 
 /* --------------------------------------------------------------------------
-   Bulk operations
+   Bulk operations (DRY-730: all share useBulkMutation)
    -------------------------------------------------------------------------- */
 
 /** Start multiple cloud instances in bulk. */
 export function useBulkStart() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (request: BulkRequest) =>
-      api.post<BulkResult>(`${BASE}/bulk/start`, request),
-    onSuccess: (result) => {
-      queryClient.invalidateQueries({ queryKey: infraKeys.all });
-      const succeeded = result.results.filter((r) => r.success).length;
-      const failed = result.results.length - succeeded;
-      toastStore.addToast({
-        message:
-          failed > 0
-            ? `Started ${succeeded} instance(s), ${failed} failed`
-            : `Started ${succeeded} instance(s)`,
-        variant: failed > 0 ? "warning" : "success",
-      });
-    },
-    onError: (error: Error) => {
-      toastStore.addToast({
-        message: `Bulk start failed: ${error.message}`,
-        variant: "error",
-        duration: 8000,
-      });
-    },
-  });
+  return useBulkMutation("start", "Started");
 }
 
 /** Stop multiple cloud instances in bulk. */
 export function useBulkStop() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (request: BulkRequest) =>
-      api.post<BulkResult>(`${BASE}/bulk/stop`, request),
-    onSuccess: (result) => {
-      queryClient.invalidateQueries({ queryKey: infraKeys.all });
-      const succeeded = result.results.filter((r) => r.success).length;
-      const failed = result.results.length - succeeded;
-      toastStore.addToast({
-        message:
-          failed > 0
-            ? `Stopped ${succeeded} instance(s), ${failed} failed`
-            : `Stopped ${succeeded} instance(s)`,
-        variant: failed > 0 ? "warning" : "success",
-      });
-    },
-    onError: (error: Error) => {
-      toastStore.addToast({
-        message: `Bulk stop failed: ${error.message}`,
-        variant: "error",
-        duration: 8000,
-      });
-    },
-  });
+  return useBulkMutation("stop", "Stopped");
 }
 
 /** Terminate multiple cloud instances in bulk. */
 export function useBulkTerminate() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (request: BulkRequest) =>
-      api.post<BulkResult>(`${BASE}/bulk/terminate`, request),
-    onSuccess: (result) => {
-      queryClient.invalidateQueries({ queryKey: infraKeys.all });
-      const succeeded = result.results.filter((r) => r.success).length;
-      const failed = result.results.length - succeeded;
-      toastStore.addToast({
-        message:
-          failed > 0
-            ? `Terminated ${succeeded} instance(s), ${failed} failed`
-            : `Terminated ${succeeded} instance(s)`,
-        variant: failed > 0 ? "warning" : "success",
-      });
-    },
-    onError: (error: Error) => {
-      toastStore.addToast({
-        message: `Bulk terminate failed: ${error.message}`,
-        variant: "error",
-        duration: 8000,
-      });
-    },
-  });
+  return useBulkMutation("terminate", "Terminated");
 }
 
 /* --------------------------------------------------------------------------
-   Per-instance operations
+   Per-instance operations (shared factory)
    -------------------------------------------------------------------------- */
 
 /** Restart ComfyUI process on a specific cloud instance. */
 export function useRestartComfyui() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (instanceId: number) =>
-      api.post<void>(`${BASE}/cloud-instances/${instanceId}/restart-comfyui`),
-    onSuccess: (_data, instanceId) => {
-      queryClient.invalidateQueries({ queryKey: infraKeys.all });
-      toastStore.addToast({
-        message: `ComfyUI restart initiated for instance ${instanceId}`,
-        variant: "success",
-      });
-    },
-    onError: (error: Error) => {
-      toastStore.addToast({
-        message: `ComfyUI restart failed: ${error.message}`,
-        variant: "error",
-        duration: 8000,
-      });
-    },
-  });
+  return useInstanceMutation("restart-comfyui", "ComfyUI restart initiated");
 }
 
 /** Force reconnect a cloud instance's ComfyUI websocket. */
 export function useForceReconnect() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (instanceId: number) =>
-      api.post<void>(
-        `${BASE}/cloud-instances/${instanceId}/force-reconnect`,
-      ),
-    onSuccess: (_data, instanceId) => {
-      queryClient.invalidateQueries({ queryKey: infraKeys.all });
-      toastStore.addToast({
-        message: `Force reconnect initiated for instance ${instanceId}`,
-        variant: "success",
-      });
-    },
-    onError: (error: Error) => {
-      toastStore.addToast({
-        message: `Force reconnect failed: ${error.message}`,
-        variant: "error",
-        duration: 8000,
-      });
-    },
-  });
+  return useInstanceMutation("force-reconnect", "Force reconnect initiated");
 }
 
 /** Reset a cloud instance's state back to initial. */
 export function useResetState() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (instanceId: number) =>
-      api.post<void>(`${BASE}/cloud-instances/${instanceId}/reset-state`),
-    onSuccess: (_data, instanceId) => {
-      queryClient.invalidateQueries({ queryKey: infraKeys.all });
-      toastStore.addToast({
-        message: `State reset for instance ${instanceId}`,
-        variant: "success",
-      });
-    },
-    onError: (error: Error) => {
-      toastStore.addToast({
-        message: `State reset failed: ${error.message}`,
-        variant: "error",
-        duration: 8000,
-      });
-    },
-  });
+  return useInstanceMutation("reset-state", "State reset");
 }

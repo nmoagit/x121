@@ -37,6 +37,7 @@ export type {
 export {
   ALL_LEVELS,
   ALL_SOURCES,
+  formatLogTime,
   LEVEL_BADGE_VARIANT,
   LEVEL_ID_MAP,
   LEVEL_LABELS,

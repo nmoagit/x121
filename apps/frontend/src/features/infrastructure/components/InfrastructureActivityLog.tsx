@@ -12,6 +12,7 @@ import { CollapsibleSection } from "@/components/composite/CollapsibleSection";
 import { cn } from "@/lib/cn";
 
 import {
+  formatLogTime,
   useActivityConsoleStore,
   useActivityLogStream,
 } from "@/features/activity-console";
@@ -35,22 +36,6 @@ const INFRA_SOURCES: ReadonlySet<ActivityLogSource> = new Set([
 const MAX_VISIBLE_ENTRIES = 200;
 
 /* --------------------------------------------------------------------------
-   Helpers
-   -------------------------------------------------------------------------- */
-
-function formatTime(iso: string): string {
-  try {
-    const d = new Date(iso);
-    const hh = String(d.getHours()).padStart(2, "0");
-    const mm = String(d.getMinutes()).padStart(2, "0");
-    const ss = String(d.getSeconds()).padStart(2, "0");
-    return `${hh}:${mm}:${ss}`;
-  } catch {
-    return iso;
-  }
-}
-
-/* --------------------------------------------------------------------------
    Sub-component: compact log row
    -------------------------------------------------------------------------- */
 
@@ -67,7 +52,7 @@ function InfraLogRow({ entry }: { entry: ActivityLogEntry }) {
       )}
     >
       <span className="shrink-0 text-[var(--color-text-muted)]">
-        {formatTime(entry.timestamp)}
+        {formatLogTime(entry.timestamp)}
       </span>
       <Badge size="sm" variant={LEVEL_BADGE_VARIANT[entry.level]}>
         {LEVEL_LABELS[entry.level]}

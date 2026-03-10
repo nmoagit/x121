@@ -469,7 +469,7 @@ This phase contains no PRD work — only structural setup.
 | 128 | PRD-128 | Character Readiness Indicators | S | Full-Stack | PRD-112, PRD-108 (all done) | **DONE** |
 | 130 | PRD-130 | Unified Cloud & ComfyUI Orchestration | XL | Backend | PRD-02, PRD-05, PRD-114 (all done) | **DONE** |
 | 131 | PRD-131 | Infrastructure Control Panel | L | Full-Stack | PRD-02, PRD-05, PRD-114, PRD-130 | **DONE** |
-| 132 | PRD-132 | Queue Manager & Intelligent Job Allocation | L | Full-Stack | PRD-07, PRD-08, PRD-05, PRD-46 (all done) | Planning |
+| 132 | PRD-132 | Queue Manager & Intelligent Job Allocation | L | Full-Stack | PRD-07, PRD-08, PRD-05, PRD-46 (all done) | **DONE** |
 
 ---
 

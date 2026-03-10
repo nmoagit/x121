@@ -1,33 +1,26 @@
 /**
  * Multi-select state management for cloud instances (PRD-131).
  *
- * Simple React state hook — no external dependencies.
+ * Built on top of the shared `useSetToggle` hook (DRY-731).
  */
 
-import { useCallback, useState } from "react";
+import { useCallback } from "react";
+
+import { useSetToggle } from "@/hooks/useSetToggle";
 
 export function useInstanceSelection() {
-  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [selectedIds, toggle, setSelectedIds] = useSetToggle<number>();
 
-  const toggle = useCallback((id: number) => {
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
-      return next;
-    });
-  }, []);
-
-  const selectAll = useCallback((ids: number[]) => {
-    setSelectedIds(new Set(ids));
-  }, []);
+  const selectAll = useCallback(
+    (ids: number[]) => {
+      setSelectedIds(new Set(ids));
+    },
+    [setSelectedIds],
+  );
 
   const deselectAll = useCallback(() => {
     setSelectedIds(new Set());
-  }, []);
+  }, [setSelectedIds]);
 
   const isSelected = useCallback(
     (id: number) => selectedIds.has(id),

@@ -188,3 +188,27 @@ export const SOURCE_ACCENT_CLASSES: Record<ActivityLogSource, string> = {
   agent: "border-l-orange-500",
   pipeline: "border-l-teal-500",
 };
+
+/* --------------------------------------------------------------------------
+   Formatting helpers (DRY-732)
+   -------------------------------------------------------------------------- */
+
+/**
+ * Format ISO timestamp to HH:MM:SS (or HH:MM:SS.mmm when `includeMs` is true).
+ * Used by LogEntryRow, InfrastructureActivityLog, and GenerationTerminal.
+ */
+export function formatLogTime(iso: string, includeMs = false): string {
+  try {
+    const d = new Date(iso);
+    const hh = String(d.getHours()).padStart(2, "0");
+    const mm = String(d.getMinutes()).padStart(2, "0");
+    const ss = String(d.getSeconds()).padStart(2, "0");
+    if (includeMs) {
+      const ms = String(d.getMilliseconds()).padStart(3, "0");
+      return `${hh}:${mm}:${ss}.${ms}`;
+    }
+    return `${hh}:${mm}:${ss}`;
+  } catch {
+    return iso;
+  }
+}
