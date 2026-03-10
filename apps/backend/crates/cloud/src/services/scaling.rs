@@ -1,6 +1,9 @@
-//! Auto-scaling background service (PRD-114).
+//! Auto-scaling background service (PRD-114, PRD-130 Phase 6).
 //!
 //! Periodically evaluates scaling rules and provisions/terminates instances.
+//! When scaling up, spawns a background lifecycle startup (SSH + ComfyUI
+//! registration) via [`LifecycleBridge`]. When scaling down, runs lifecycle
+//! teardown before termination.
 
 use std::sync::Arc;
 
@@ -8,30 +11,41 @@ use sqlx::PgPool;
 use tracing::{info, warn};
 use x121_core::cloud_scaling::{evaluate_scaling_decision, ScalingAction, ScalingInput};
 
+use crate::lifecycle::LifecycleBridge;
 use crate::registry::ProviderRegistry;
 
 /// Default evaluation interval.
 const DEFAULT_INTERVAL_SECS: u64 = 30;
 
 /// Spawn the auto-scaling service as a background task.
+///
+/// The `lifecycle_bridge` is used to run the full startup sequence
+/// (SSH + ComfyUI + WebSocket) after provisioning and full teardown
+/// before termination.
 pub fn spawn_scaling_service(
     pool: PgPool,
     registry: Arc<ProviderRegistry>,
+    lifecycle_bridge: Arc<LifecycleBridge>,
     interval_secs: Option<u64>,
 ) -> tokio::task::JoinHandle<()> {
+    let bridge = Arc::clone(&lifecycle_bridge);
     super::spawn_periodic_service(
         "Scaling",
         pool,
         registry,
         interval_secs,
         DEFAULT_INTERVAL_SECS,
-        |pool, registry| async move { evaluate_all_rules(&pool, &registry).await },
+        move |pool, registry| {
+            let bridge = Arc::clone(&bridge);
+            async move { evaluate_all_rules(&pool, &registry, &bridge).await }
+        },
     )
 }
 
 async fn evaluate_all_rules(
     pool: &PgPool,
     registry: &ProviderRegistry,
+    lifecycle_bridge: &Arc<LifecycleBridge>,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     use x121_db::repositories::{
         CloudCostEventRepo, CloudInstanceRepo, CloudScalingRuleRepo, JobRepo,
@@ -90,7 +104,7 @@ async fn evaluate_all_rules(
                     count,
                     "Scaling up"
                 );
-                // Provision instances via provider
+                // Provision instances via provider API, then spawn lifecycle startup.
                 let gpu_type =
                     x121_db::repositories::CloudGpuTypeRepo::find_by_id(pool, rule.gpu_type_id)
                         .await?;
@@ -101,17 +115,36 @@ async fn evaluate_all_rules(
                             ..Default::default()
                         };
                         match provider.provision_instance(&gpu.gpu_id, &config).await {
-                            Ok(info) => {
+                            Ok(provision_info) => {
                                 let create = x121_db::models::cloud_provider::CreateCloudInstance {
                                     gpu_type_id: rule.gpu_type_id,
-                                    external_id: info.external_id,
-                                    name: info.name,
+                                    external_id: provision_info.external_id.clone(),
+                                    name: provision_info.name,
                                     gpu_count: Some(1),
-                                    cost_per_hour_cents: info.cost_per_hour_cents as i32,
+                                    cost_per_hour_cents: provision_info.cost_per_hour_cents as i32,
                                     metadata: None,
                                 };
-                                let _ = CloudInstanceRepo::create(pool, rule.provider_id, &create)
-                                    .await;
+                                match CloudInstanceRepo::create(pool, rule.provider_id, &create)
+                                    .await
+                                {
+                                    Ok(instance) => {
+                                        // Spawn lifecycle startup in the background.
+                                        // This is a long-running operation (~3 min) and
+                                        // must not block the scaling loop.
+                                        spawn_lifecycle_startup(
+                                            Arc::clone(lifecycle_bridge),
+                                            instance.id,
+                                            rule.provider_id,
+                                            provision_info.external_id,
+                                        );
+                                    }
+                                    Err(e) => {
+                                        warn!(
+                                            provider_id = rule.provider_id,
+                                            "Failed to record provisioned instance: {e}"
+                                        );
+                                    }
+                                }
                             }
                             Err(e) => {
                                 warn!(
@@ -131,24 +164,30 @@ async fn evaluate_all_rules(
                     count,
                     "Scaling down"
                 );
-                // Terminate the oldest idle instances
+                // Terminate the oldest idle instances with lifecycle teardown.
                 let instances =
                     CloudInstanceRepo::list_active_by_provider(pool, rule.provider_id).await?;
-                let to_terminate: Vec<_> = instances
+                let to_teardown: Vec<_> = instances
                     .into_iter()
                     .filter(|i| i.gpu_type_id == rule.gpu_type_id)
                     .rev() // oldest first
                     .take(count as usize)
                     .collect();
 
-                let (ok, fail) =
-                    super::terminate_and_record(provider.as_ref(), pool, &to_terminate).await;
+                let (ok, fail) = teardown_and_terminate(
+                    lifecycle_bridge,
+                    provider.as_ref(),
+                    pool,
+                    rule.provider_id,
+                    &to_teardown,
+                )
+                .await;
                 if fail > 0 {
                     warn!(
                         provider_id = rule.provider_id,
                         terminated = ok,
                         failed = fail,
-                        "Some scale-down terminations failed"
+                        "Some scale-down teardowns failed"
                     );
                 }
                 let _ = CloudScalingRuleRepo::touch_last_scaled(pool, rule.id).await;
@@ -158,4 +197,122 @@ async fn evaluate_all_rules(
     }
 
     Ok(())
+}
+
+/// Spawn a background task that runs the full lifecycle startup sequence
+/// (SSH bootstrap + ComfyUI registration + WebSocket connection) for a
+/// newly provisioned cloud instance.
+///
+/// This is intentionally fire-and-forget — the scaling loop must not block
+/// while waiting for the ~3 minute startup sequence.
+fn spawn_lifecycle_startup(
+    bridge: Arc<LifecycleBridge>,
+    cloud_instance_id: x121_core::types::DbId,
+    provider_id: x121_core::types::DbId,
+    external_id: String,
+) {
+    tokio::spawn(async move {
+        info!(
+            cloud_instance_id,
+            external_id = %external_id,
+            "Starting lifecycle startup (background)"
+        );
+
+        let orchestrator = match bridge.build_orchestrator(provider_id).await {
+            Ok(o) => o,
+            Err(e) => {
+                warn!(
+                    cloud_instance_id,
+                    provider_id,
+                    error = %e,
+                    "Failed to build orchestrator for lifecycle startup"
+                );
+                return;
+            }
+        };
+
+        match bridge
+            .startup(cloud_instance_id, &orchestrator, &external_id)
+            .await
+        {
+            Ok(ready) => {
+                info!(
+                    cloud_instance_id,
+                    pod_id = %ready.pod_id,
+                    "Lifecycle startup succeeded"
+                );
+            }
+            Err(e) => {
+                warn!(
+                    cloud_instance_id,
+                    external_id = %external_id,
+                    error = %e,
+                    "Lifecycle startup failed"
+                );
+            }
+        }
+    });
+}
+
+/// Run lifecycle teardown then terminate each instance, recording results.
+///
+/// Returns `(terminated_count, failed_count)`.
+async fn teardown_and_terminate(
+    bridge: &Arc<LifecycleBridge>,
+    provider: &dyn x121_core::cloud::CloudGpuProvider,
+    pool: &PgPool,
+    provider_id: x121_core::types::DbId,
+    instances: &[x121_db::models::cloud_provider::CloudInstance],
+) -> (u32, u32) {
+    use x121_db::repositories::CloudInstanceRepo;
+
+    let mut terminated = 0u32;
+    let mut failed = 0u32;
+
+    // Build orchestrator once for all teardowns (same provider).
+    let orchestrator = match bridge.build_orchestrator(provider_id).await {
+        Ok(o) => Some(o),
+        Err(e) => {
+            warn!(
+                provider_id,
+                error = %e,
+                "Failed to build orchestrator for teardown — falling back to direct termination"
+            );
+            None
+        }
+    };
+
+    for inst in instances {
+        // Run lifecycle teardown if we have an orchestrator.
+        if let Some(ref orch) = orchestrator {
+            if let Err(e) = bridge.teardown(inst.id, orch, &inst.external_id).await {
+                warn!(
+                    cloud_instance_id = inst.id,
+                    external_id = %inst.external_id,
+                    error = %e,
+                    "Lifecycle teardown failed — proceeding with direct termination"
+                );
+            }
+        }
+
+        // Terminate via provider API (handles the actual cloud-side shutdown).
+        match provider.terminate_instance(&inst.external_id).await {
+            Ok(()) => {
+                let _ =
+                    CloudInstanceRepo::mark_terminated(pool, inst.id, inst.total_cost_cents).await;
+                terminated += 1;
+            }
+            Err(e) => {
+                warn!(
+                    cloud_instance_id = inst.id,
+                    external_id = %inst.external_id,
+                    error = %e,
+                    "Failed to terminate instance"
+                );
+                failed += 1;
+            }
+        }
+    }
+
+    (terminated, failed)
 }

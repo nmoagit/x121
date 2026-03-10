@@ -6,8 +6,10 @@
 //! - Background services (scaling, monitoring, reconciliation)
 //! - S3 file transfer bridge
 
+pub mod lifecycle;
 pub mod registry;
 pub mod runpod;
+pub mod seed;
 pub mod services;
 pub mod storage;
 pub mod storage_provider;

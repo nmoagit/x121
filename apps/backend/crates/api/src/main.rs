@@ -54,11 +54,31 @@ async fn main() {
         .expect("Failed to run database migrations");
     tracing::info!("Database migrations applied");
 
+    // --- Env-to-DB seed migration (PRD-130) ---
+    if let Ok(master_hex) = std::env::var("CLOUD_ENCRYPTION_KEY") {
+        if let Ok(master_key) = x121_core::crypto::parse_master_key(&master_hex) {
+            match x121_cloud::seed::seed_provider_from_env(&pool, &master_key).await {
+                Ok(Some(id)) => tracing::info!(provider_id = id, "Seeded RunPod provider from env"),
+                Ok(None) => {}
+                Err(e) => tracing::warn!(error = %e, "Failed to seed cloud provider from env"),
+            }
+        }
+    }
+
     // --- WebSocket manager ---
     let ws_manager = Arc::new(ws::WsManager::new());
 
     // --- Heartbeat ---
     let heartbeat_handle = ws::start_heartbeat(Arc::clone(&ws_manager));
+
+    // --- RunPod pod orchestrator (if configured) ---
+    let pod_orchestrator =
+        x121_cloud::runpod::orchestrator::PodOrchestratorConfig::from_env().map(|config| {
+            tracing::info!("RunPod configured — pod orchestrator available");
+            Arc::new(x121_cloud::runpod::orchestrator::PodOrchestrator::new(
+                config,
+            ))
+        });
 
     // --- ComfyUI manager ---
     let comfyui_manager = x121_comfyui::manager::ComfyUIManager::start(pool.clone()).await;
@@ -167,10 +187,19 @@ async fn main() {
         }
     }
 
-    // Spawn cloud background services (PRD-114).
+    // --- Lifecycle bridge (PRD-130) ---
+    // Created before cloud services so the scaling service can use it.
+    let lifecycle_bridge = Arc::new(x121_cloud::lifecycle::LifecycleBridge::new(
+        pool.clone(),
+        Arc::clone(&comfyui_manager),
+    ));
+    tracing::info!("Lifecycle bridge initialized");
+
+    // Spawn cloud background services (PRD-114, PRD-130 Phase 6).
     let _scaling_handle = x121_cloud::services::scaling::spawn_scaling_service(
         pool.clone(),
         Arc::clone(&cloud_registry),
+        Arc::clone(&lifecycle_bridge),
         None,
     );
     let _monitoring_handle = x121_cloud::services::monitoring::spawn_monitoring_service(
@@ -216,6 +245,25 @@ async fn main() {
                 .expect("Failed to initialize local storage provider")
             }
         };
+    // --- Generation event loop (processes ComfyUI completions) ---
+    // Embedded from x121-worker — runs as a background task so the API
+    // server handles both HTTP requests and generation event processing.
+    let comfyui_event_rx = comfyui_manager.subscribe();
+    let generation_event_cancel = tokio_util::sync::CancellationToken::new();
+    let generation_event_cancel_clone = generation_event_cancel.clone();
+    let generation_event_handle = {
+        let pool = pool.clone();
+        let comfyui = Arc::clone(&comfyui_manager);
+        let storage_for_events = storage_provider.clone();
+        tokio::spawn(async move {
+            tokio::select! {
+                _ = x121_worker::event_loop::run(pool, comfyui, storage_for_events, comfyui_event_rx) => {}
+                _ = generation_event_cancel_clone.cancelled() => {}
+            }
+        })
+    };
+    tracing::info!("Generation event loop started (embedded)");
+
     let storage = Arc::new(tokio::sync::RwLock::new(storage_provider));
     tracing::info!("Storage provider initialized");
 
@@ -232,6 +280,8 @@ async fn main() {
         activity_broadcaster: Arc::clone(&activity_broadcaster),
         cloud_registry,
         storage,
+        lifecycle_bridge,
+        pod_orchestrator,
     };
 
     // --- Router ---
@@ -255,6 +305,11 @@ async fn main() {
 
     // --- Post-shutdown cleanup ---
     tracing::info!("Server stopped accepting connections, cleaning up");
+
+    // Stop the generation event loop.
+    generation_event_cancel.cancel();
+    let _ = tokio::time::timeout(Duration::from_secs(5), generation_event_handle).await;
+    tracing::info!("Generation event loop stopped");
 
     // Shut down ComfyUI connections first (they may have in-flight work).
     comfyui_manager.shutdown().await;

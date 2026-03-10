@@ -170,6 +170,36 @@ impl CloudInstanceRepo {
         Ok(())
     }
 
+    /// Update status to Running and set `started_at` timestamp.
+    pub async fn mark_running(pool: &PgPool, id: DbId) -> Result<(), sqlx::Error> {
+        sqlx::query(
+            "UPDATE cloud_instances \
+             SET status_id = $2, started_at = COALESCE(started_at, NOW()) \
+             WHERE id = $1",
+        )
+        .bind(id)
+        .bind(CloudInstanceStatus::Running.id())
+        .execute(pool)
+        .await?;
+        Ok(())
+    }
+
+    /// Update status to Error and store an error message in metadata.
+    pub async fn mark_errored(pool: &PgPool, id: DbId, error_msg: &str) -> Result<(), sqlx::Error> {
+        sqlx::query(
+            "UPDATE cloud_instances \
+             SET status_id = $2, \
+                 metadata = jsonb_set(COALESCE(metadata, '{}'::jsonb), '{error}', to_jsonb($3::text)) \
+             WHERE id = $1",
+        )
+        .bind(id)
+        .bind(CloudInstanceStatus::Error.id())
+        .bind(error_msg)
+        .execute(pool)
+        .await?;
+        Ok(())
+    }
+
     /// List all non-terminated instances for a provider (for emergency stop).
     pub async fn list_active_by_provider(
         pool: &PgPool,

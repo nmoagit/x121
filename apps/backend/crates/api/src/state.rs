@@ -6,6 +6,7 @@ use crate::config::ServerConfig;
 use crate::engine::health_aggregator::HealthAggregator;
 use crate::scripting::orchestrator::ScriptOrchestrator;
 use crate::ws::WsManager;
+use x121_cloud::runpod::orchestrator::PodOrchestrator;
 use x121_core::storage::StorageProvider;
 
 /// Shared application state available to all Axum handlers via `State<AppState>`.
@@ -38,6 +39,10 @@ pub struct AppState {
     /// Wrapped in `RwLock` to allow hot-swapping when the admin changes the
     /// default backend. Reads are cheap (no contention), writes are rare.
     pub storage: Arc<RwLock<Arc<dyn StorageProvider>>>,
+    /// Unified cloud ↔ ComfyUI lifecycle bridge (PRD-130).
+    pub lifecycle_bridge: Arc<x121_cloud::lifecycle::LifecycleBridge>,
+    /// RunPod pod orchestrator (None if RunPod is not configured).
+    pub pod_orchestrator: Option<Arc<PodOrchestrator>>,
 }
 
 impl AppState {

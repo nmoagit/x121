@@ -5,6 +5,7 @@ edition.workspace = true
 
 [dependencies]
 x121-core = { workspace = true }
+x121-comfyui = { workspace = true }
 x121-db = { workspace = true }
 reqwest = { workspace = true }
 serde = { workspace = true }

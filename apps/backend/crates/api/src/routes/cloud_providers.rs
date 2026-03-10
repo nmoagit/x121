@@ -32,6 +32,11 @@ pub fn router() -> Router<AppState> {
             "/{id}/test-connection",
             post(cloud_providers::test_connection),
         )
+        // Alias for test-connection used by some admin UI flows.
+        .route(
+            "/{id}/validate",
+            post(cloud_providers::test_connection),
+        )
         // GPU Types
         .route("/{id}/gpu-types", get(cloud_providers::list_gpu_types))
         .route(

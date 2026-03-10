@@ -19,6 +19,7 @@ pub struct ComfyUIInstance {
     pub reconnect_attempts: i32,
     pub is_enabled: bool,
     pub metadata: serde_json::Value,
+    pub cloud_instance_id: Option<DbId>,
     pub created_at: Timestamp,
     pub updated_at: Timestamp,
 }
