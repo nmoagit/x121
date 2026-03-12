@@ -2,7 +2,7 @@
  * TanStack Query hooks for character-level scene settings (PRD-111).
  *
  * Characters inherit from group settings, which inherit from project settings,
- * which inherit from catalog defaults. The effective list merges all four levels.
+ * which inherit from catalogue defaults. The effective list merges all four levels.
  */
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -62,7 +62,7 @@ export function useToggleCharacterSceneSetting(characterId: number) {
   );
 }
 
-/** Remove a character-level override, falling back to group/project/catalog default. */
+/** Remove a character-level override, falling back to group/project/catalogue default. */
 export function useRemoveCharacterSceneOverride(characterId: number) {
   return useRemoveSceneOverride(
     `/characters/${characterId}/scene-settings`,

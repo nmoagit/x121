@@ -109,11 +109,11 @@ function TrackRow({ track }: TrackRowProps) {
   if (editing) {
     return (
       <tr className="border-b border-[var(--color-border-default)]">
-        <td className="px-4 py-3">
+        <td className="px-3 py-1.5">
           <Input value={name} onChange={(e) => setName(e.target.value)} className="text-sm" />
         </td>
-        <td className="px-4 py-3 text-sm text-[var(--color-text-muted)]">{track.slug}</td>
-        <td className="px-4 py-3">
+        <td className="px-3 py-1.5 text-xs text-[var(--color-text-muted)]">{track.slug}</td>
+        <td className="px-3 py-1.5">
           <Input
             type="number"
             min={0}
@@ -122,12 +122,12 @@ function TrackRow({ track }: TrackRowProps) {
             className="w-20 text-sm"
           />
         </td>
-        <td className="px-4 py-3">
+        <td className="px-3 py-1.5">
           <Badge variant={track.is_active ? "success" : "default"} size="sm">
             {track.is_active ? "Active" : "Inactive"}
           </Badge>
         </td>
-        <td className="px-4 py-3">
+        <td className="px-3 py-1.5">
           <div className="flex gap-2">
             <Button
               variant="primary"
@@ -149,15 +149,15 @@ function TrackRow({ track }: TrackRowProps) {
 
   return (
     <tr className="border-b border-[var(--color-border-default)]">
-      <td className="px-4 py-3 text-sm font-medium text-[var(--color-text-primary)]">
+      <td className="px-3 py-1.5 text-xs font-medium text-[var(--color-text-primary)]">
         {track.name}
       </td>
-      <td className="px-4 py-3 text-sm text-[var(--color-text-muted)]">{track.slug}</td>
-      <td className="px-4 py-3 text-sm text-[var(--color-text-secondary)]">{track.sort_order}</td>
-      <td className="px-4 py-3">
+      <td className="px-3 py-1.5 text-xs text-[var(--color-text-muted)]">{track.slug}</td>
+      <td className="px-3 py-1.5 text-xs text-[var(--color-text-secondary)]">{track.sort_order}</td>
+      <td className="px-3 py-1.5">
         <Toggle checked={track.is_active} onChange={handleToggleActive} size="sm" />
       </td>
-      <td className="px-4 py-3">
+      <td className="px-3 py-1.5">
         <Button variant="ghost" size="sm" onClick={() => setEditing(true)}>
           Edit
         </Button>
@@ -205,19 +205,19 @@ export function TrackManager() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-[var(--color-border-default)]">
-                <th className="px-4 py-3 text-left font-medium text-[var(--color-text-muted)]">
+                <th className="px-3 py-1.5 text-left text-xs font-medium text-[var(--color-text-muted)]">
                   Name
                 </th>
-                <th className="px-4 py-3 text-left font-medium text-[var(--color-text-muted)]">
+                <th className="px-3 py-1.5 text-left text-xs font-medium text-[var(--color-text-muted)]">
                   Slug
                 </th>
-                <th className="px-4 py-3 text-left font-medium text-[var(--color-text-muted)]">
+                <th className="px-3 py-1.5 text-left text-xs font-medium text-[var(--color-text-muted)]">
                   Order
                 </th>
-                <th className="px-4 py-3 text-left font-medium text-[var(--color-text-muted)]">
+                <th className="px-3 py-1.5 text-left text-xs font-medium text-[var(--color-text-muted)]">
                   Active
                 </th>
-                <th className="px-4 py-3 text-left font-medium text-[var(--color-text-muted)]">
+                <th className="px-3 py-1.5 text-left text-xs font-medium text-[var(--color-text-muted)]">
                   Actions
                 </th>
               </tr>
@@ -227,7 +227,7 @@ export function TrackManager() {
                 <tr>
                   <td
                     colSpan={5}
-                    className="px-4 py-8 text-center text-sm text-[var(--color-text-muted)]"
+                    className="px-4 py-8 text-center text-xs text-[var(--color-text-muted)]"
                   >
                     No tracks defined. Click "Add Track" to create one.
                   </td>

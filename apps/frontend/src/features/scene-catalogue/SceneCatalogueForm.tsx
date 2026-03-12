@@ -1,5 +1,5 @@
 /**
- * Drawer form for creating/editing scene catalog entries (PRD-111).
+ * Drawer form for creating/editing scene catalogue entries (PRD-111).
  *
  * Includes name, slug (auto-generated on create, readonly on edit),
  * description, clothes-off transition toggle, track assignment checkboxes,
@@ -8,21 +8,21 @@
 
 import { useCallback, useState } from "react";
 
-import { Drawer } from "@/components/composite/Drawer";
+import { Modal } from "@/components/composite/Modal";
 import { Stack } from "@/components/layout";
 import { Button, Checkbox, Input, Toggle } from "@/components/primitives";
 import { generateSnakeSlug } from "@/lib/format";
 
-import { useCreateSceneCatalogEntry, useUpdateSceneCatalogEntry } from "./hooks/use-scene-catalog";
+import { useCreateSceneCatalogueEntry, useUpdateSceneCatalogueEntry } from "./hooks/use-scene-catalogue";
 import { useTracks } from "./hooks/use-tracks";
-import type { CreateSceneCatalogEntry, SceneCatalogEntry } from "./types";
+import type { CreateSceneCatalogueEntry, SceneCatalogueEntry } from "./types";
 
 /* --------------------------------------------------------------------------
    Props
    -------------------------------------------------------------------------- */
 
-interface SceneCatalogFormProps {
-  entry?: SceneCatalogEntry;
+interface SceneCatalogueFormProps {
+  entry?: SceneCatalogueEntry;
   open: boolean;
   onClose: () => void;
 }
@@ -31,7 +31,7 @@ interface SceneCatalogFormProps {
    Component
    -------------------------------------------------------------------------- */
 
-export function SceneCatalogForm({ entry, open, onClose }: SceneCatalogFormProps) {
+export function SceneCatalogueForm({ entry, open, onClose }: SceneCatalogueFormProps) {
   const isEdit = entry !== undefined;
 
   const [name, setName] = useState(entry?.name ?? "");
@@ -44,8 +44,8 @@ export function SceneCatalogForm({ entry, open, onClose }: SceneCatalogFormProps
   );
 
   const { data: tracks } = useTracks();
-  const createMutation = useCreateSceneCatalogEntry();
-  const updateMutation = useUpdateSceneCatalogEntry(entry?.id ?? 0);
+  const createMutation = useCreateSceneCatalogueEntry();
+  const updateMutation = useUpdateSceneCatalogueEntry(entry?.id ?? 0);
 
   const isPending = createMutation.isPending || updateMutation.isPending;
   const isNameEmpty = name.trim() === "";
@@ -89,7 +89,7 @@ export function SceneCatalogForm({ entry, open, onClose }: SceneCatalogFormProps
           { onSuccess: () => onClose() },
         );
       } else {
-        const data: CreateSceneCatalogEntry = {
+        const data: CreateSceneCatalogueEntry = {
           name: name.trim(),
           slug: slug.trim(),
           description: description.trim() || null,
@@ -117,7 +117,7 @@ export function SceneCatalogForm({ entry, open, onClose }: SceneCatalogFormProps
   );
 
   return (
-    <Drawer open={open} onClose={onClose} title={isEdit ? "Edit Scene" : "Add Scene"} size="md">
+    <Modal open={open} onClose={onClose} title={isEdit ? "Edit Scene" : "Add Scene"} size="md">
       <form onSubmit={handleSubmit}>
         <Stack gap={5}>
           <Input
@@ -138,13 +138,13 @@ export function SceneCatalogForm({ entry, open, onClose }: SceneCatalogFormProps
 
           <div className="flex flex-col gap-1.5">
             <label
-              htmlFor="catalog-description"
+              htmlFor="catalogue-description"
               className="text-sm font-medium text-[var(--color-text-secondary)]"
             >
               Description
             </label>
             <textarea
-              id="catalog-description"
+              id="catalogue-description"
               rows={3}
               className="w-full px-3 py-2 text-sm bg-[var(--color-surface-secondary)] text-[var(--color-text-primary)] border border-[var(--color-border-default)] rounded-[var(--radius-md)] resize-y focus:outline-none focus:ring-2 focus:ring-[var(--color-border-focus)]"
               value={description}
@@ -199,6 +199,6 @@ export function SceneCatalogForm({ entry, open, onClose }: SceneCatalogFormProps
           </div>
         </Stack>
       </form>
-    </Drawer>
+    </Modal>
   );
 }

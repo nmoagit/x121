@@ -7,7 +7,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import type { CreateTrack, Track, UpdateTrack } from "../types";
 
-import { sceneCatalogKeys } from "./use-scene-catalog";
+import { sceneCatalogueKeys } from "./use-scene-catalogue";
 
 /* --------------------------------------------------------------------------
    Query key factory
@@ -58,8 +58,8 @@ export function useUpdateTrack(id: number) {
     mutationFn: (data: UpdateTrack) => api.put<Track>(`/tracks/${id}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: trackKeys.all });
-      // Track names may appear in catalog entries, so invalidate those too.
-      queryClient.invalidateQueries({ queryKey: sceneCatalogKeys.all });
+      // Track names may appear in catalogue entries, so invalidate those too.
+      queryClient.invalidateQueries({ queryKey: sceneCatalogueKeys.all });
     },
   });
 }

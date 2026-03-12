@@ -1,5 +1,5 @@
 /**
- * WidgetCatalog -- slide-out panel listing available widgets grouped
+ * WidgetCatalogue -- slide-out panel listing available widgets grouped
  * by category (PRD-89).
  *
  * Each widget shows name, description, and default size. Clicking a
@@ -118,19 +118,19 @@ function WidgetCard({
    Main component
    -------------------------------------------------------------------------- */
 
-interface WidgetCatalogProps {
+interface WidgetCatalogueProps {
   open: boolean;
   onClose: () => void;
   widgets: WidgetDefinition[];
   onAddWidget: (widget: WidgetDefinition) => void;
 }
 
-export function WidgetCatalog({
+export function WidgetCatalogue({
   open,
   onClose,
   widgets,
   onAddWidget,
-}: WidgetCatalogProps) {
+}: WidgetCatalogueProps) {
   const [activeCategory, setActiveCategory] = useState<WidgetCategory | null>(
     null,
   );
@@ -140,8 +140,8 @@ export function WidgetCatalog({
     : widgets;
 
   return (
-    <Drawer open={open} onClose={onClose} title="Widget Catalog" size="md">
-      <div data-testid="widget-catalog">
+    <Drawer open={open} onClose={onClose} title="Widget Catalogue" size="md">
+      <div data-testid="widget-catalogue">
         <CategoryFilter active={activeCategory} onChange={setActiveCategory} />
 
         {filtered.length === 0 ? (

@@ -1,5 +1,5 @@
 /**
- * Scene catalog & track management types (PRD-111).
+ * Scene catalogue & track management types (PRD-111).
  */
 
 export interface Track {
@@ -12,7 +12,7 @@ export interface Track {
   updated_at: string;
 }
 
-export interface SceneCatalogEntry {
+export interface SceneCatalogueEntry {
   id: number;
   name: string;
   slug: string;
@@ -25,7 +25,7 @@ export interface SceneCatalogEntry {
   updated_at: string;
 }
 
-export interface CreateSceneCatalogEntry {
+export interface CreateSceneCatalogueEntry {
   name: string;
   slug: string;
   description?: string | null;
@@ -35,7 +35,7 @@ export interface CreateSceneCatalogEntry {
   track_ids: number[];
 }
 
-export interface UpdateSceneCatalogEntry {
+export interface UpdateSceneCatalogueEntry {
   name?: string;
   description?: string | null;
   has_clothes_off_transition?: boolean;
@@ -57,7 +57,7 @@ export interface EffectiveSceneSetting {
 }
 
 /**
- * An EffectiveSceneSetting expanded with track info from the catalog cross-join.
+ * An EffectiveSceneSetting expanded with track info from the catalogue cross-join.
  * Each enabled scene_type generates one row per associated track.
  */
 export interface ExpandedSceneSetting extends EffectiveSceneSetting {
@@ -71,6 +71,39 @@ export interface SceneSettingUpdate {
   scene_type_id: number;
   track_id?: number | null;
   is_enabled: boolean;
+}
+
+/* --------------------------------------------------------------------------
+   Per-(scene_type, track) workflow & prompt configuration
+   -------------------------------------------------------------------------- */
+
+export interface SceneTypeTrackConfig {
+  id: number;
+  scene_type_id: number;
+  track_id: number;
+  is_clothes_off: boolean;
+  track_name?: string;
+  track_slug?: string;
+  workflow_id: number | null;
+  prompt_template: string | null;
+  negative_prompt_template: string | null;
+  prompt_start_clip: string | null;
+  negative_prompt_start_clip: string | null;
+  prompt_continuation_clip: string | null;
+  negative_prompt_continuation_clip: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface UpsertTrackConfig {
+  is_clothes_off?: boolean;
+  workflow_id?: number | null;
+  prompt_template?: string | null;
+  negative_prompt_template?: string | null;
+  prompt_start_clip?: string | null;
+  negative_prompt_start_clip?: string | null;
+  prompt_continuation_clip?: string | null;
+  negative_prompt_continuation_clip?: string | null;
 }
 
 export interface CreateTrack {

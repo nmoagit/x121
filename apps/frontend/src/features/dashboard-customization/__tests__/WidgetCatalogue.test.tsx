@@ -1,5 +1,5 @@
 /**
- * Tests for WidgetCatalog component (PRD-89).
+ * Tests for WidgetCatalogue component (PRD-89).
  */
 
 import { fireEvent, screen } from "@testing-library/react";
@@ -7,7 +7,7 @@ import { describe, expect, test, vi } from "vitest";
 
 import { renderWithProviders } from "@/lib/test-utils";
 
-import { WidgetCatalog } from "../WidgetCatalog";
+import { WidgetCatalogue } from "../WidgetCatalogue";
 import type { WidgetDefinition } from "../types";
 
 /* --------------------------------------------------------------------------
@@ -57,13 +57,13 @@ const sampleWidgets: WidgetDefinition[] = [
    Tests
    -------------------------------------------------------------------------- */
 
-describe("WidgetCatalog", () => {
+describe("WidgetCatalogue", () => {
   const onClose = vi.fn();
   const onAddWidget = vi.fn();
 
   test("renders widget list when open", () => {
     renderWithProviders(
-      <WidgetCatalog
+      <WidgetCatalogue
         open={true}
         onClose={onClose}
         widgets={sampleWidgets}
@@ -71,7 +71,7 @@ describe("WidgetCatalog", () => {
       />,
     );
 
-    expect(screen.getByTestId("widget-catalog")).toBeInTheDocument();
+    expect(screen.getByTestId("widget-catalogue")).toBeInTheDocument();
     expect(screen.getByText("CPU Monitor")).toBeInTheDocument();
     expect(screen.getByText("Task List")).toBeInTheDocument();
     expect(screen.getByText("Render Stats")).toBeInTheDocument();
@@ -79,7 +79,7 @@ describe("WidgetCatalog", () => {
 
   test("does not render when closed", () => {
     renderWithProviders(
-      <WidgetCatalog
+      <WidgetCatalogue
         open={false}
         onClose={onClose}
         widgets={sampleWidgets}
@@ -87,12 +87,12 @@ describe("WidgetCatalog", () => {
       />,
     );
 
-    expect(screen.queryByTestId("widget-catalog")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("widget-catalogue")).not.toBeInTheDocument();
   });
 
   test("shows category filter buttons", () => {
     renderWithProviders(
-      <WidgetCatalog
+      <WidgetCatalogue
         open={true}
         onClose={onClose}
         widgets={sampleWidgets}
@@ -110,7 +110,7 @@ describe("WidgetCatalog", () => {
 
   test("filters widgets by category", () => {
     renderWithProviders(
-      <WidgetCatalog
+      <WidgetCatalogue
         open={true}
         onClose={onClose}
         widgets={sampleWidgets}
@@ -131,7 +131,7 @@ describe("WidgetCatalog", () => {
 
   test("shows widget dimensions", () => {
     renderWithProviders(
-      <WidgetCatalog
+      <WidgetCatalogue
         open={true}
         onClose={onClose}
         widgets={sampleWidgets}
@@ -146,7 +146,7 @@ describe("WidgetCatalog", () => {
 
   test("shows empty state for filtered category with no widgets", () => {
     renderWithProviders(
-      <WidgetCatalog
+      <WidgetCatalogue
         open={true}
         onClose={onClose}
         widgets={sampleWidgets}

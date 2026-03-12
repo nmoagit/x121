@@ -95,7 +95,7 @@ export function SceneSettingOverridesPanel({
             Scene Settings
           </h3>
           <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-            Override scene settings for this {entityLabel}. Inherits from project and catalog
+            Override scene settings for this {entityLabel}. Inherits from project and catalogue
             defaults.
           </p>
         </div>
@@ -175,7 +175,7 @@ export function SceneSettingOverridesPanel({
         <Stack gap={4}>
           <p className="text-sm text-[var(--color-text-secondary)]">
             This will remove all {entityLabel}-level scene setting overrides. Settings will fall
-            back to project and catalog defaults.
+            back to project and catalogue defaults.
           </p>
           <div className="flex justify-end gap-2">
             <Button variant="secondary" size="sm" onClick={() => setShowResetAll(false)}>

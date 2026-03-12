@@ -2,7 +2,7 @@
  * Hook that annotates scene settings with visual grouping metadata.
  *
  * The backend now returns per-(scene_type, track) rows directly, so no
- * cross-join with the catalog is needed. This hook just adds `isFirstInGroup`
+ * cross-join with the catalogue is needed. This hook just adds `isFirstInGroup`
  * and `groupSize` annotations for table rendering.
  *
  * Used by ProjectSceneSettings, CharacterSceneOverrides, and CharacterScenesTab.

@@ -1,7 +1,7 @@
 /**
  * TanStack Query hooks for group-level scene settings.
  *
- * Groups inherit from project settings which inherit from catalog defaults.
+ * Groups inherit from project settings which inherit from catalogue defaults.
  * The effective list merges all three levels (scene_type → project → group).
  */
 
@@ -51,7 +51,7 @@ export function useToggleGroupSceneSetting(projectId: number, groupId: number) {
   );
 }
 
-/** Remove a group-level override, falling back to project/catalog default. */
+/** Remove a group-level override, falling back to project/catalogue default. */
 export function useRemoveGroupSceneOverride(projectId: number, groupId: number) {
   return useRemoveSceneOverride(
     `/projects/${projectId}/groups/${groupId}/scene-settings`,

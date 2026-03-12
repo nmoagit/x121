@@ -9,7 +9,6 @@
 import { useCallback } from "react";
 
 import { Card } from "@/components/composite/Card";
-import { Stack } from "@/components/layout";
 import { LoadingPane } from "@/components/primitives";
 
 import { SceneSettingRow } from "./SceneSettingRow";
@@ -52,29 +51,21 @@ export function ProjectSceneSettings({ projectId }: ProjectSceneSettingsProps) {
   }
 
   return (
-    <Stack gap={4}>
-      <div>
-        <h3 className="text-base font-semibold text-[var(--color-text-primary)]">Scene Settings</h3>
-        <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-          Enable or disable scenes for this project. Overrides will be marked as "project".
-        </p>
-      </div>
-
-      <Card elevation="sm" padding="none">
+    <Card elevation="sm" padding="none">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-[var(--color-border-default)]">
-                <th className="px-4 py-3 text-left font-medium text-[var(--color-text-muted)]">
+                <th className="px-3 py-1.5 text-left text-xs font-medium text-[var(--color-text-muted)]">
                   Scene
                 </th>
-                <th className="px-4 py-3 text-left font-medium text-[var(--color-text-muted)]">
+                <th className="px-3 py-1.5 text-left text-xs font-medium text-[var(--color-text-muted)]">
                   Track
                 </th>
-                <th className="px-4 py-3 text-left font-medium text-[var(--color-text-muted)]">
+                <th className="px-3 py-1.5 text-left text-xs font-medium text-[var(--color-text-muted)]">
                   Enabled
                 </th>
-                <th className="px-4 py-3 text-left font-medium text-[var(--color-text-muted)]">
+                <th className="px-3 py-1.5 text-left text-xs font-medium text-[var(--color-text-muted)]">
                   Source
                 </th>
               </tr>
@@ -84,9 +75,9 @@ export function ProjectSceneSettings({ projectId }: ProjectSceneSettingsProps) {
                 <tr>
                   <td
                     colSpan={4}
-                    className="px-4 py-8 text-center text-sm text-[var(--color-text-muted)]"
+                    className="px-3 py-6 text-center text-xs text-[var(--color-text-muted)]"
                   >
-                    No scene settings available. Add scenes to the catalog first.
+                    No scene settings available. Add scenes to the catalogue first.
                   </td>
                 </tr>
               ) : (
@@ -103,6 +94,5 @@ export function ProjectSceneSettings({ projectId }: ProjectSceneSettingsProps) {
           </table>
         </div>
       </Card>
-    </Stack>
   );
 }

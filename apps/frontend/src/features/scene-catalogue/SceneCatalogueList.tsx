@@ -1,7 +1,7 @@
 /**
- * Scene catalog list view (PRD-111).
+ * Scene catalogue list view (PRD-111).
  *
- * Displays all catalog entries in a table with track badges,
+ * Displays all catalogue entries in a table with track badges,
  * active/inactive status, and edit/deactivate actions.
  */
 
@@ -12,34 +12,34 @@ import { Stack } from "@/components/layout";
 import { Badge, Button, Spinner, Toggle } from "@/components/primitives";
 import { Plus } from "@/tokens/icons";
 
-import { SceneCatalogForm } from "./SceneCatalogForm";
+import { SceneCatalogueForm } from "./SceneCatalogueForm";
 import { TrackBadge } from "./TrackBadge";
-import { useDeactivateSceneCatalogEntry, useSceneCatalog } from "./hooks/use-scene-catalog";
-import type { SceneCatalogEntry } from "./types";
+import { useDeactivateSceneCatalogueEntry, useSceneCatalogue } from "./hooks/use-scene-catalogue";
+import type { SceneCatalogueEntry } from "./types";
 
 /* --------------------------------------------------------------------------
    Entry row
    -------------------------------------------------------------------------- */
 
 interface EntryRowProps {
-  entry: SceneCatalogEntry;
-  onEdit: (entry: SceneCatalogEntry) => void;
-  onDeactivate: (entry: SceneCatalogEntry) => void;
+  entry: SceneCatalogueEntry;
+  onEdit: (entry: SceneCatalogueEntry) => void;
+  onDeactivate: (entry: SceneCatalogueEntry) => void;
 }
 
 function EntryRow({ entry, onEdit, onDeactivate }: EntryRowProps) {
   return (
     <tr className="border-b border-[var(--color-border-default)]">
-      <td className="px-4 py-3">
+      <td className="px-3 py-1.5">
         <div className="flex flex-col">
-          <span className="text-sm font-medium text-[var(--color-text-primary)]">{entry.name}</span>
+          <span className="text-xs font-medium text-[var(--color-text-primary)]">{entry.name}</span>
           <span className="text-xs text-[var(--color-text-muted)] mt-0.5">{entry.slug}</span>
         </div>
       </td>
-      <td className="px-4 py-3 text-sm text-[var(--color-text-secondary)]">
+      <td className="px-3 py-1.5 text-xs text-[var(--color-text-secondary)]">
         {entry.description ?? "\u2014"}
       </td>
-      <td className="px-4 py-3">
+      <td className="px-3 py-1.5">
         <div className="flex flex-wrap gap-1">
           {entry.tracks.length === 0 ? (
             <span className="text-xs text-[var(--color-text-muted)]">None</span>
@@ -50,7 +50,7 @@ function EntryRow({ entry, onEdit, onDeactivate }: EntryRowProps) {
           )}
         </div>
       </td>
-      <td className="px-4 py-3 text-center">
+      <td className="px-3 py-1.5 text-center">
         {entry.has_clothes_off_transition ? (
           <Badge variant="warning" size="sm">
             Yes
@@ -59,20 +59,28 @@ function EntryRow({ entry, onEdit, onDeactivate }: EntryRowProps) {
           <span className="text-xs text-[var(--color-text-muted)]">No</span>
         )}
       </td>
-      <td className="px-4 py-3">
+      <td className="px-3 py-1.5">
         <Badge variant={entry.is_active ? "success" : "default"} size="sm">
           {entry.is_active ? "Active" : "Inactive"}
         </Badge>
       </td>
-      <td className="px-4 py-3">
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" onClick={() => onEdit(entry)}>
+      <td className="px-3 py-1.5">
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => onEdit(entry)}
+            className="rounded px-2 py-0.5 text-xs text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-secondary)]"
+          >
             Edit
-          </Button>
+          </button>
           {entry.is_active && (
-            <Button variant="danger" size="sm" onClick={() => onDeactivate(entry)}>
+            <button
+              type="button"
+              onClick={() => onDeactivate(entry)}
+              className="rounded px-2 py-0.5 text-xs text-[var(--color-action-danger)] hover:bg-[var(--color-action-danger)]/10"
+            >
               Deactivate
-            </Button>
+            </button>
           )}
         </div>
       </td>
@@ -84,16 +92,16 @@ function EntryRow({ entry, onEdit, onDeactivate }: EntryRowProps) {
    Main component
    -------------------------------------------------------------------------- */
 
-export function SceneCatalogList() {
+export function SceneCatalogueList() {
   const [showInactive, setShowInactive] = useState(false);
-  const { data: entries, isLoading } = useSceneCatalog(showInactive);
-  const deactivateMutation = useDeactivateSceneCatalogEntry();
+  const { data: entries, isLoading } = useSceneCatalogue(showInactive);
+  const deactivateMutation = useDeactivateSceneCatalogueEntry();
 
   const [formOpen, setFormOpen] = useState(false);
-  const [editEntry, setEditEntry] = useState<SceneCatalogEntry | undefined>();
-  const [deactivateTarget, setDeactivateTarget] = useState<SceneCatalogEntry | null>(null);
+  const [editEntry, setEditEntry] = useState<SceneCatalogueEntry | undefined>();
+  const [deactivateTarget, setDeactivateTarget] = useState<SceneCatalogueEntry | null>(null);
 
-  const handleEdit = useCallback((entry: SceneCatalogEntry) => {
+  const handleEdit = useCallback((entry: SceneCatalogueEntry) => {
     setEditEntry(entry);
     setFormOpen(true);
   }, []);
@@ -129,7 +137,7 @@ export function SceneCatalogList() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-base font-semibold text-[var(--color-text-primary)]">
-            Scene Catalog
+            Scene Catalogue
           </h2>
           <p className="mt-1 text-sm text-[var(--color-text-muted)]">
             Define scene types available across projects.
@@ -154,22 +162,22 @@ export function SceneCatalogList() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-[var(--color-border-default)]">
-                <th className="px-4 py-3 text-left font-medium text-[var(--color-text-muted)]">
+                <th className="px-3 py-1.5 text-left text-xs font-medium text-[var(--color-text-muted)]">
                   Name
                 </th>
-                <th className="px-4 py-3 text-left font-medium text-[var(--color-text-muted)]">
+                <th className="px-3 py-1.5 text-left text-xs font-medium text-[var(--color-text-muted)]">
                   Description
                 </th>
-                <th className="px-4 py-3 text-left font-medium text-[var(--color-text-muted)]">
+                <th className="px-3 py-1.5 text-left text-xs font-medium text-[var(--color-text-muted)]">
                   Tracks
                 </th>
-                <th className="px-4 py-3 text-center font-medium text-[var(--color-text-muted)]">
+                <th className="px-3 py-1.5 text-center text-xs font-medium text-[var(--color-text-muted)]">
                   Clothes Off
                 </th>
-                <th className="px-4 py-3 text-left font-medium text-[var(--color-text-muted)]">
+                <th className="px-3 py-1.5 text-left text-xs font-medium text-[var(--color-text-muted)]">
                   Status
                 </th>
-                <th className="px-4 py-3 text-left font-medium text-[var(--color-text-muted)]">
+                <th className="px-3 py-1.5 text-left text-xs font-medium text-[var(--color-text-muted)]">
                   Actions
                 </th>
               </tr>
@@ -179,9 +187,9 @@ export function SceneCatalogList() {
                 <tr>
                   <td
                     colSpan={6}
-                    className="px-4 py-8 text-center text-sm text-[var(--color-text-muted)]"
+                    className="px-3 py-6 text-center text-xs text-[var(--color-text-muted)]"
                   >
-                    No scene catalog entries. Click "Add Scene" to create one.
+                    No scene catalogue entries. Click "Add Scene" to create one.
                   </td>
                 </tr>
               ) : (
@@ -200,7 +208,7 @@ export function SceneCatalogList() {
       </Card>
 
       {/* Create/Edit drawer */}
-      <SceneCatalogForm
+      <SceneCatalogueForm
         key={editEntry?.id ?? "new"}
         entry={editEntry}
         open={formOpen}

@@ -34,16 +34,16 @@ export function SceneSettingRow({ row, onToggle, isPending, actions }: SceneSett
   return (
     <tr className="border-b border-[var(--color-border-default)]">
       {/* Scene name -- only shown on first row of each scene_type group */}
-      <td className="px-4 py-3">
+      <td className="px-3 py-1.5">
         {row.isFirstInGroup ? (
-          <span className="text-sm font-medium text-[var(--color-text-primary)]">{row.name}</span>
+          <span className="text-xs font-medium text-[var(--color-text-primary)]">{row.name}</span>
         ) : (
           <span />
         )}
       </td>
 
       {/* Track badge */}
-      <td className="px-4 py-3">
+      <td className="px-3 py-1.5">
         <span className="inline-flex items-center gap-1">
           {row.track_slug ? (
             <TrackBadge name={row.track_name ?? ""} slug={row.track_slug} />
@@ -57,7 +57,7 @@ export function SceneSettingRow({ row, onToggle, isPending, actions }: SceneSett
       </td>
 
       {/* Toggle */}
-      <td className="px-4 py-3">
+      <td className="px-3 py-1.5">
         <Toggle
           checked={row.is_enabled}
           onChange={(checked) => onToggle(row.scene_type_id, row.track_id, checked)}
@@ -67,12 +67,12 @@ export function SceneSettingRow({ row, onToggle, isPending, actions }: SceneSett
       </td>
 
       {/* Source badge */}
-      <td className="px-4 py-3">
+      <td className="px-3 py-1.5">
         <SourceBadge source={row.source} />
       </td>
 
       {/* Optional actions column */}
-      {actions !== undefined && <td className="px-4 py-3">{actions}</td>}
+      {actions !== undefined && <td className="px-3 py-1.5">{actions}</td>}
     </tr>
   );
 }

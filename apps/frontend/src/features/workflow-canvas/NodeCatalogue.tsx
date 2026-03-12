@@ -1,5 +1,5 @@
 /**
- * Node catalog sidebar component (PRD-33).
+ * Node catalogue sidebar component (PRD-33).
  *
  * Displays available node types organised by category with search/filter.
  * Nodes can be added to the canvas by clicking (drag-and-drop will be
@@ -8,13 +8,13 @@
 
 import { useMemo, useState } from "react";
 
-import type { CanvasNode, NodeCatalogEntry, NodeType } from "./types";
+import type { CanvasNode, NodeCatalogueEntry, NodeType } from "./types";
 
 /* --------------------------------------------------------------------------
-   Catalog data
+   Catalogue data
    -------------------------------------------------------------------------- */
 
-const CATALOG_ENTRIES: NodeCatalogEntry[] = [
+const CATALOG_ENTRIES: NodeCatalogueEntry[] = [
   {
     type: "loader",
     label: "Checkpoint Loader",
@@ -127,7 +127,7 @@ const CATEGORIES = [
    Props
    -------------------------------------------------------------------------- */
 
-interface NodeCatalogProps {
+interface NodeCatalogueProps {
   onAddNode: (node: CanvasNode) => void;
 }
 
@@ -137,7 +137,7 @@ interface NodeCatalogProps {
 
 let nextNodeId = 1;
 
-export function NodeCatalog({ onAddNode }: NodeCatalogProps) {
+export function NodeCatalogue({ onAddNode }: NodeCatalogueProps) {
   const [search, setSearch] = useState("");
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
 
@@ -152,7 +152,7 @@ export function NodeCatalog({ onAddNode }: NodeCatalogProps) {
     );
   }, [search]);
 
-  const handleAdd = (entry: NodeCatalogEntry) => {
+  const handleAdd = (entry: NodeCatalogueEntry) => {
     const id = `node_${nextNodeId++}`;
     const node: CanvasNode = {
       id,
@@ -176,12 +176,12 @@ export function NodeCatalog({ onAddNode }: NodeCatalogProps) {
   return (
     <div
       className="flex w-60 flex-col border-r border-[var(--color-text-muted)] bg-[var(--color-surface-primary)]"
-      data-testid="node-catalog"
+      data-testid="node-catalogue"
     >
       {/* Header */}
       <div className="border-b border-[var(--color-text-muted)] px-3 py-2">
         <h3 className="text-sm font-semibold text-[var(--color-text-primary)]">
-          Node Catalog
+          Node Catalogue
         </h3>
       </div>
 
@@ -222,7 +222,7 @@ export function NodeCatalog({ onAddNode }: NodeCatalogProps) {
                     type="button"
                     className="flex w-full items-center gap-2 px-4 py-1.5 text-left text-sm text-[var(--color-text-primary)] hover:bg-[var(--color-surface-secondary)]"
                     onClick={() => handleAdd(entry)}
-                    data-testid={`catalog-entry-${entry.type}`}
+                    data-testid={`catalogue-entry-${entry.type}`}
                   >
                     <span className="h-2 w-2 rounded-full bg-[var(--color-action-primary)]" />
                     {entry.label}
