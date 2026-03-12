@@ -169,15 +169,11 @@ async fn stop_one(state: &AppState, id: DbId, force: bool) -> Result<(), AppErro
         .build_orchestrator(inst.provider_id)
         .await?;
 
-    if force {
-        orch.terminate_pod(&inst.external_id).await?;
-        CloudInstanceRepo::mark_terminated(&state.pool, id, inst.total_cost_cents).await?;
-    } else {
-        state
-            .lifecycle_bridge
-            .teardown(id, &orch, &inst.external_id)
-            .await?;
-    }
+    // force=true means terminate, force=false means graceful stop
+    state
+        .lifecycle_bridge
+        .teardown(id, &orch, &inst.external_id, force)
+        .await?;
     Ok(())
 }
 
@@ -191,7 +187,7 @@ async fn terminate_one(state: &AppState, id: DbId) -> Result<(), AppError> {
 
     if let Err(e) = state
         .lifecycle_bridge
-        .teardown(id, &orch, &inst.external_id)
+        .teardown(id, &orch, &inst.external_id, true)
         .await
     {
         tracing::warn!(
@@ -201,8 +197,7 @@ async fn terminate_one(state: &AppState, id: DbId) -> Result<(), AppError> {
         );
         let provider = resolve_provider(state, inst.provider_id).await?;
         provider.terminate_instance(&inst.external_id).await?;
+        CloudInstanceRepo::mark_terminated(&state.pool, id, inst.total_cost_cents).await?;
     }
-
-    CloudInstanceRepo::mark_terminated(&state.pool, id, inst.total_cost_cents).await?;
     Ok(())
 }

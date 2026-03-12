@@ -45,9 +45,9 @@ impl From<x121_core::cloud::CloudProviderError> for AppError {
                 AppError::BadRequest("Rate limited by provider".into())
             }
             CloudProviderError::ProvisionFailed(msg) => {
-                AppError::InternalError(format!("Provisioning failed: {msg}"))
+                AppError::BadRequest(format!("Provisioning failed: {msg}"))
             }
-            _ => AppError::InternalError(err.to_string()),
+            _ => AppError::BadRequest(err.to_string()),
         }
     }
 }

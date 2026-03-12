@@ -21,7 +21,6 @@ use x121_db::repositories::{CharacterRepo, LibraryCharacterRepo, ProjectCharacte
 
 use crate::error::{AppError, AppResult};
 use crate::middleware::auth::AuthUser;
-use crate::query::parse_id_list;
 use crate::response::DataResponse;
 use crate::state::AppState;
 
@@ -51,28 +50,27 @@ async fn ensure_library_character_exists(
 /// Optional filter query params for the library character list endpoint.
 #[derive(Debug, Deserialize)]
 pub struct LibraryFilterParams {
-    /// Comma-separated scene type IDs.
-    pub scene_type_ids: Option<String>,
-    /// Comma-separated track IDs.
-    pub track_ids: Option<String>,
+    /// Text search on character name (ILIKE).
+    pub search: Option<String>,
+    /// Filter to characters that have scenes with this scene type.
+    pub scene_type_id: Option<DbId>,
+    /// Filter to characters that have scenes on this track.
+    pub track_id: Option<DbId>,
 }
 
-/// List all library characters visible to the authenticated user.
-/// Includes all published characters plus unpublished ones owned by the user.
-/// Supports optional `scene_type_ids` and `track_ids` query filters.
+/// List all characters across all projects for the library browser.
+///
+/// Returns enriched rows with project name, group name, hero variant,
+/// and scene count. No longer queries the `library_characters` table.
 pub async fn list_library_characters(
-    auth: AuthUser,
     State(state): State<AppState>,
     Query(params): Query<LibraryFilterParams>,
 ) -> AppResult<impl IntoResponse> {
-    let scene_type_ids = params.scene_type_ids.as_deref().map(parse_id_list);
-    let track_ids = params.track_ids.as_deref().map(parse_id_list);
-
-    let items = LibraryCharacterRepo::list_filtered(
+    let items = CharacterRepo::list_all_for_library(
         &state.pool,
-        auth.user_id,
-        scene_type_ids.as_deref(),
-        track_ids.as_deref(),
+        params.search.as_deref(),
+        params.scene_type_id,
+        params.track_id,
     )
     .await?;
     tracing::debug!(count = items.len(), "Listed library characters");

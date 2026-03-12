@@ -79,6 +79,16 @@ pub fn router() -> Router<AppState> {
             axum::routing::put(cloud_providers::update_scaling_rule)
                 .delete(cloud_providers::delete_scaling_rule),
         )
+        // Scaling reset (clear history + cooldown)
+        .route(
+            "/{id}/scaling-reset",
+            post(cloud_providers::reset_scaling),
+        )
+        // Scaling Events (audit log)
+        .route(
+            "/{id}/scaling-events",
+            get(cloud_providers::list_scaling_events),
+        )
         // Cost
         .route("/{id}/cost-summary", get(cloud_providers::get_cost_summary))
         .route("/{id}/cost-events", get(cloud_providers::list_cost_events))

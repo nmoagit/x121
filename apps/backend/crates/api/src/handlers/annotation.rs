@@ -11,13 +11,17 @@ use serde::Deserialize;
 
 use x121_core::annotation::{validate_annotations_json, validate_frame_number};
 use x121_core::error::CoreError;
+use x121_core::search::{clamp_limit, clamp_offset};
 use x121_core::types::DbId;
-use x121_db::models::frame_annotation::{CreateFrameAnnotation, UpdateFrameAnnotation};
-use x121_db::repositories::FrameAnnotationRepo;
+use x121_db::models::frame_annotation::{
+    CreateFrameAnnotation, CreateVersionAnnotation, UpdateFrameAnnotation,
+};
+use x121_db::repositories::{FrameAnnotationRepo, SceneVideoVersionRepo};
 
 use crate::error::{AppError, AppResult};
 use crate::handlers::segment::ensure_segment_exists;
 use crate::middleware::auth::AuthUser;
+use crate::query::PaginationParams;
 use crate::response::DataResponse;
 use crate::state::AppState;
 
@@ -30,6 +34,17 @@ Query filters
 pub struct AnnotationListFilters {
     pub user_id: Option<DbId>,
     pub frame_number: Option<i32>,
+}
+
+/// Query parameters for browsing all annotated items.
+#[derive(Debug, Deserialize)]
+pub struct AnnotationBrowseParams {
+    pub project_id: Option<DbId>,
+    pub character_id: Option<DbId>,
+    pub sort: Option<String>,
+    pub sort_dir: Option<String>,
+    #[serde(flatten)]
+    pub pagination: PaginationParams,
 }
 
 /* --------------------------------------------------------------------------
@@ -198,4 +213,121 @@ pub async fn export_frame(
         .collect();
 
     Ok(Json(DataResponse { data: all_objects }))
+}
+
+/* --------------------------------------------------------------------------
+Browse all annotated items
+-------------------------------------------------------------------------- */
+
+/// GET /annotations/browse
+///
+/// Browse all annotated items with full context (character, scene, project).
+pub async fn browse_annotations(
+    _auth: AuthUser,
+    State(state): State<AppState>,
+    Query(params): Query<AnnotationBrowseParams>,
+) -> AppResult<impl IntoResponse> {
+    let sort = params.sort.as_deref().unwrap_or("created_at");
+    let sort_dir = params.sort_dir.as_deref().unwrap_or("desc");
+    let limit = clamp_limit(params.pagination.limit, 100, 500);
+    let offset = clamp_offset(params.pagination.offset);
+
+    let items = FrameAnnotationRepo::browse(
+        &state.pool,
+        params.project_id,
+        params.character_id,
+        sort,
+        sort_dir,
+        limit,
+        offset,
+    )
+    .await?;
+
+    Ok(Json(DataResponse { data: items }))
+}
+
+/* --------------------------------------------------------------------------
+Version-scoped annotation handlers (clip review)
+-------------------------------------------------------------------------- */
+
+/// GET /scenes/{scene_id}/versions/{id}/annotations
+///
+/// List all annotations for a video version, ordered by frame number.
+pub async fn list_version_annotations(
+    _auth: AuthUser,
+    State(state): State<AppState>,
+    Path((_scene_id, version_id)): Path<(DbId, DbId)>,
+) -> AppResult<impl IntoResponse> {
+    let annotations = FrameAnnotationRepo::list_by_version(&state.pool, version_id).await?;
+    Ok(Json(DataResponse { data: annotations }))
+}
+
+/// PUT /scenes/{scene_id}/versions/{id}/annotations/{frame}
+///
+/// Upsert annotations for a specific frame on a video version.
+/// Replaces all existing annotations for that version+frame.
+/// Send an empty `annotations_json` array to clear annotations for the frame.
+pub async fn upsert_version_annotation(
+    auth: AuthUser,
+    State(state): State<AppState>,
+    Path((_scene_id, version_id, frame)): Path<(DbId, DbId, i32)>,
+    Json(input): Json<CreateVersionAnnotation>,
+) -> AppResult<impl IntoResponse> {
+    // Ensure the version exists.
+    SceneVideoVersionRepo::find_by_id(&state.pool, version_id)
+        .await?
+        .ok_or_else(|| {
+            AppError::Core(CoreError::NotFound {
+                entity: "SceneVideoVersion",
+                id: version_id,
+            })
+        })?;
+
+    validate_frame_number(frame).map_err(AppError::Core)?;
+    validate_annotations_json(&input.annotations_json).map_err(AppError::Core)?;
+
+    let result = FrameAnnotationRepo::upsert_version_frame(
+        &state.pool,
+        version_id,
+        auth.user_id,
+        frame,
+        &input.annotations_json,
+    )
+    .await?;
+
+    tracing::info!(
+        user_id = auth.user_id,
+        version_id,
+        frame_number = frame,
+        "Version annotation upserted"
+    );
+
+    match result {
+        Some(annotation) => Ok(Json(DataResponse {
+            data: Some(annotation),
+        })),
+        None => Ok(Json(DataResponse { data: None })),
+    }
+}
+
+/// DELETE /scenes/{scene_id}/versions/{id}/annotations/{frame}
+///
+/// Delete all annotations for a specific frame on a video version.
+pub async fn delete_version_frame_annotations(
+    auth: AuthUser,
+    State(state): State<AppState>,
+    Path((_scene_id, version_id, frame)): Path<(DbId, DbId, i32)>,
+) -> AppResult<impl IntoResponse> {
+    let deleted =
+        FrameAnnotationRepo::delete_by_version_and_frame(&state.pool, version_id, frame).await?;
+
+    tracing::info!(
+        user_id = auth.user_id,
+        version_id,
+        frame_number = frame,
+        rows_deleted = deleted,
+        "Version frame annotations deleted"
+    );
+
+    Ok(StatusCode::NO_CONTENT)
 }

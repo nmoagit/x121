@@ -12,6 +12,8 @@ use axum::http::StatusCode;
 use axum::response::Response;
 use axum::Json;
 use serde::{Deserialize, Serialize};
+
+use crate::response::DataResponse;
 use tokio::io::{AsyncReadExt, AsyncSeekExt};
 use tokio_util::io::ReaderStream;
 use x121_core::error::CoreError;
@@ -107,14 +109,22 @@ fn content_type_for_extension(path: &str) -> &'static str {
     }
 }
 
-/// Base directory for thumbnail storage.
-const THUMBNAIL_STORAGE_DIR: &str = "storage/thumbnails";
+/// Storage key prefix for video thumbnails.
+const THUMBNAIL_KEY_PREFIX: &str = "thumbnails";
 
-/// Build the thumbnail storage path for a given source.
-fn thumbnail_dir(source_type: &str, source_id: DbId) -> std::path::PathBuf {
-    std::path::PathBuf::from(THUMBNAIL_STORAGE_DIR)
-        .join(source_type)
-        .join(source_id.to_string())
+/// Build the storage key for a thumbnail directory.
+fn thumbnail_key(source_type: &str, source_id: DbId) -> String {
+    format!("{THUMBNAIL_KEY_PREFIX}/{source_type}/{source_id}")
+}
+
+/// Resolve thumbnail directory to an absolute path via the storage provider.
+async fn resolve_thumbnail_dir(
+    state: &AppState,
+    source_type: &str,
+    source_id: DbId,
+) -> Result<std::path::PathBuf, crate::error::AppError> {
+    let key = thumbnail_key(source_type, source_id);
+    state.resolve_to_path(&key).await
 }
 
 /// Parse a `Range: bytes=START-END` header value.
@@ -246,7 +256,7 @@ pub async fn stream_video(
 pub async fn get_metadata(
     State(state): State<AppState>,
     Path((source_type, source_id)): Path<(String, DbId)>,
-) -> AppResult<Json<VideoMetadata>> {
+) -> AppResult<Json<DataResponse<VideoMetadata>>> {
     let file_path = resolve_video_path(&state.pool, &source_type, source_id).await?;
     let path = state.resolve_to_path(&file_path).await?;
 
@@ -273,7 +283,7 @@ pub async fn get_metadata(
         audio_tracks,
     };
 
-    Ok(Json(metadata))
+    Ok(Json(DataResponse { data: metadata }))
 }
 
 /// GET /api/v1/videos/{source_type}/{source_id}/thumbnails/{frame}
@@ -307,16 +317,17 @@ pub async fn get_thumbnail(
         frame as f64
     };
 
-    let thumb_dir = thumbnail_dir(&source_type, source_id);
+    let thumb_dir = resolve_thumbnail_dir(&state, &source_type, source_id).await?;
     tokio::fs::create_dir_all(&thumb_dir)
         .await
         .map_err(|e| AppError::InternalError(e.to_string()))?;
 
-    let thumb_path = thumb_dir.join(format!("frame_{frame:06}.jpg"));
+    let thumb_filename = format!("frame_{frame:06}.jpg");
+    let thumb_abs_path = thumb_dir.join(&thumb_filename);
 
     ffmpeg::extract_frame_thumbnail(
         &video_path,
-        &thumb_path,
+        &thumb_abs_path,
         timestamp,
         THUMB_WIDTH,
         THUMB_HEIGHT,
@@ -324,19 +335,23 @@ pub async fn get_thumbnail(
     .await
     .map_err(|e| AppError::InternalError(e.to_string()))?;
 
-    // Store in database for future cache hits.
+    // Store storage key (not absolute path) in database.
+    let thumb_storage_key = format!(
+        "{}/{thumb_filename}",
+        thumbnail_key(&source_type, source_id)
+    );
     let input = CreateVideoThumbnail {
         source_type: source_type.clone(),
         source_id,
         frame_number: frame,
-        thumbnail_path: thumb_path.to_string_lossy().to_string(),
+        thumbnail_path: thumb_storage_key,
         interval_seconds: None,
         width: THUMB_WIDTH,
         height: THUMB_HEIGHT,
     };
     let _ = VideoThumbnailRepo::create(&state.pool, &input).await;
 
-    serve_image_file(&thumb_path.to_string_lossy()).await
+    serve_image_file(&thumb_abs_path.to_string_lossy()).await
 }
 
 /// POST /api/v1/videos/{source_type}/{source_id}/thumbnails
@@ -358,24 +373,32 @@ pub async fn generate_thumbnails(
     let width = params.width.unwrap_or(THUMB_WIDTH);
     let height = params.height.unwrap_or(THUMB_HEIGHT);
 
-    let thumb_dir = thumbnail_dir(&source_type, source_id);
+    let thumb_dir = resolve_thumbnail_dir(&state, &source_type, source_id).await?;
 
     let results =
         ffmpeg::extract_thumbnails_at_interval(&video_path, &thumb_dir, interval, width, height)
             .await
             .map_err(|e| AppError::InternalError(e.to_string()))?;
 
-    // Convert to create DTOs.
+    // Convert to create DTOs — store storage keys, not absolute paths.
+    let key_prefix = thumbnail_key(&source_type, source_id);
     let inputs: Vec<CreateVideoThumbnail> = results
         .iter()
-        .map(|r| CreateVideoThumbnail {
-            source_type: source_type.clone(),
-            source_id,
-            frame_number: r.frame_number,
-            thumbnail_path: r.output_path.clone(),
-            interval_seconds: Some(interval),
-            width: r.width,
-            height: r.height,
+        .map(|r| {
+            // r.output_path is absolute; extract just the filename.
+            let filename = std::path::Path::new(&r.output_path)
+                .file_name()
+                .and_then(|f| f.to_str())
+                .unwrap_or(&r.output_path);
+            CreateVideoThumbnail {
+                source_type: source_type.clone(),
+                source_id,
+                frame_number: r.frame_number,
+                thumbnail_path: format!("{key_prefix}/{filename}"),
+                interval_seconds: Some(interval),
+                width: r.width,
+                height: r.height,
+            }
         })
         .collect();
 

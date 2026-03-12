@@ -96,7 +96,10 @@ pub async fn import_workflow(
         description: body.description.clone(),
         json_content: body.json_content.clone(),
         discovered_params_json: discovered_json.clone(),
-        imported_from: Some("comfyui_json".to_string()),
+        imported_from: body
+            .source_filename
+            .clone()
+            .or_else(|| Some("comfyui_json".to_string())),
         imported_by: Some(auth.user_id),
     };
 
@@ -242,7 +245,10 @@ pub async fn delete_workflow(
 
 /// Run node and model validation on a workflow.
 ///
-/// Checks that all node class types and referenced models are known.
+/// First attempts live validation against a connected ComfyUI instance
+/// (queries `GET /object_info` for available node types). If no instance
+/// is connected, falls back to the static built-in node list.
+///
 /// Stores validation results on the workflow record.
 pub async fn validate_workflow(
     State(state): State<AppState>,
@@ -252,19 +258,53 @@ pub async fn validate_workflow(
 
     let parsed = workflow_import::parse_workflow(&workflow.json_content)?;
 
-    // Build validation results.
-    // In a production system, this would check against actual worker
-    // capabilities. For now, we mark standard nodes as present and
-    // models as found_in_registry = false (requires worker verification).
+    // Try live validation against a connected ComfyUI instance.
+    let (available_nodes, validation_source) = match state.comfyui_manager.get_any_api().await {
+        Some(api) => match api.get_available_node_types().await {
+            Ok(node_types) => {
+                tracing::info!(
+                    workflow_id = id,
+                    node_count = node_types.len(),
+                    "Live validation against ComfyUI instance"
+                );
+                (Some(node_types), workflow_import::ValidationSource::Live)
+            }
+            Err(e) => {
+                tracing::warn!(
+                    workflow_id = id,
+                    error = %e,
+                    "Failed to query ComfyUI object_info, falling back to static list"
+                );
+                (None, workflow_import::ValidationSource::Static)
+            }
+        },
+        None => {
+            tracing::info!(
+                workflow_id = id,
+                "No ComfyUI instance connected, using static node list"
+            );
+            (None, workflow_import::ValidationSource::Static)
+        }
+    };
+
+    // Build node validation results.
     let node_results: Vec<workflow_import::NodeValidationResult> = {
         let mut seen = Vec::new();
         let mut results = Vec::new();
         for node in &parsed.nodes {
             if !seen.contains(&node.class_type) {
                 seen.push(node.class_type.clone());
+                let present = match &available_nodes {
+                    // Live: check against actual ComfyUI instance
+                    Some(live_nodes) => live_nodes.contains(&node.class_type),
+                    // Static: can't verify custom nodes without ComfyUI,
+                    // so assume all nodes are present. The validation_source
+                    // field tells the UI this wasn't a real check.
+                    None => true,
+                };
                 results.push(workflow_import::NodeValidationResult {
                     node_type: node.class_type.clone(),
-                    present: !parsed.referenced_custom_nodes.contains(&node.class_type),
+                    present,
                 });
             }
         }
@@ -277,17 +317,20 @@ pub async fn validate_workflow(
         .chain(parsed.referenced_loras.iter())
         .map(|name| workflow_import::ModelValidationResult {
             model_name: name.clone(),
-            found_in_registry: false, // Requires worker verification.
+            found_in_registry: false, // Requires worker filesystem check.
         })
         .collect();
 
     let all_nodes_valid = node_results.iter().all(|r| r.present);
-    let overall_valid = all_nodes_valid; // Models require worker check.
+    let all_models_valid = model_results.iter().all(|r| r.found_in_registry);
+    let overall_valid = all_nodes_valid && all_models_valid;
+    let is_live = matches!(validation_source, workflow_import::ValidationSource::Live);
 
     let validation = workflow_import::ValidationResult {
         node_results,
         model_results,
         overall_valid,
+        validation_source,
     };
 
     let validation_json = serde_json::to_value(&validation).map_err(|e| {
@@ -296,12 +339,18 @@ pub async fn validate_workflow(
 
     WorkflowRepo::update_validation(&state.pool, id, &validation_json).await?;
 
-    // If all nodes are valid, upgrade status to validated.
-    if overall_valid {
+    // Only upgrade status to validated when using live validation (actual ComfyUI check).
+    // Static validation assumes all nodes are present, so it can't confirm validity.
+    if overall_valid && is_live {
         WorkflowRepo::update_status(&state.pool, id, WORKFLOW_STATUS_ID_VALIDATED).await?;
     }
 
-    tracing::info!(workflow_id = id, overall_valid, "Workflow validated");
+    tracing::info!(
+        workflow_id = id,
+        overall_valid,
+        source = ?validation.validation_source,
+        "Workflow validated"
+    );
 
     Ok(Json(DataResponse { data: validation }))
 }

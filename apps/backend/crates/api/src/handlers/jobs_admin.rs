@@ -133,13 +133,13 @@ pub struct InstanceWithJobCount {
 
 /// GET /api/v1/admin/comfyui/instances
 ///
-/// Returns all ComfyUI instances with their active job counts.
-/// Used by the reassignment UI to show available targets.
+/// Returns enabled ComfyUI instances with their active job counts.
+/// Terminated/disabled instances are excluded.
 pub async fn list_comfyui_instances(
     RequireAdmin(_admin): RequireAdmin,
     State(state): State<AppState>,
 ) -> AppResult<impl IntoResponse> {
-    let instances = ComfyUIInstanceRepo::list(&state.pool).await?;
+    let instances = ComfyUIInstanceRepo::list_enabled(&state.pool).await?;
 
     let instance_ids: Vec<DbId> = instances.iter().map(|i| i.id).collect();
     let job_counts = JobRepo::active_jobs_by_instance(&state.pool, &instance_ids).await?;

@@ -492,6 +492,10 @@ pub async fn get_delivery_status(
     Path(project_id): Path<DbId>,
 ) -> AppResult<impl IntoResponse> {
     let statuses = DeliveryExportRepo::delivery_status_by_project(&state.pool, project_id).await?;
-    tracing::debug!(count = statuses.len(), project_id, "Computed delivery status");
+    tracing::debug!(
+        count = statuses.len(),
+        project_id,
+        "Computed delivery status"
+    );
     Ok(Json(DataResponse { data: statuses }))
 }

@@ -8,6 +8,15 @@ use axum::Router;
 use crate::handlers::annotation;
 use crate::state::AppState;
 
+/// Top-level annotation routes (browse).
+///
+/// ```text
+/// GET /browse    browse_annotations (?project_id, ?character_id, ?sort, ?sort_dir, ?limit, ?offset)
+/// ```
+pub fn annotation_browse_router() -> Router<AppState> {
+    Router::new().route("/browse", get(annotation::browse_annotations))
+}
+
 /// Segment-scoped annotation routes, merged into `/segments`.
 ///
 /// ```text

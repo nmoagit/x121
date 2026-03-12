@@ -383,7 +383,7 @@ pub async fn stop_pod(
                 Ok(orch) => {
                     if let Err(e) = state
                         .lifecycle_bridge
-                        .teardown(cloud_inst.id, &orch, &pod_id)
+                        .teardown(cloud_inst.id, &orch, &pod_id, false)
                         .await
                     {
                         tracing::warn!(

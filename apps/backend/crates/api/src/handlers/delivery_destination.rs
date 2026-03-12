@@ -49,7 +49,11 @@ pub async fn list(
     Path(project_id): Path<DbId>,
 ) -> AppResult<impl IntoResponse> {
     let items = DeliveryDestinationRepo::list_for_project(&state.pool, project_id).await?;
-    tracing::debug!(count = items.len(), project_id, "Listed delivery destinations");
+    tracing::debug!(
+        count = items.len(),
+        project_id,
+        "Listed delivery destinations"
+    );
     Ok(Json(DataResponse { data: items }))
 }
 

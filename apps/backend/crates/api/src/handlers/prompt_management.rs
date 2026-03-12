@@ -14,17 +14,20 @@ use x121_core::error::CoreError;
 use x121_core::prompt_resolution::{self, FragmentEntry, PromptSlotInput};
 use x121_core::types::DbId;
 use x121_db::models::character_scene_prompt_override::CreateCharacterScenePromptOverride;
+use x121_db::models::group_prompt_override::CreateGroupPromptOverride;
+use x121_db::models::project_prompt_override::CreateProjectPromptOverride;
 use x121_db::models::prompt_fragment::{
     CreatePromptFragment, PromptFragmentListParams, UpdatePromptFragment,
 };
 use x121_db::models::scene_type_prompt_default::CreateSceneTypePromptDefault;
 use x121_db::models::workflow_prompt_slot::UpdateWorkflowPromptSlot;
 use x121_db::repositories::{
-    CharacterScenePromptOverrideRepo, PromptFragmentRepo, SceneTypePromptDefaultRepo,
-    WorkflowPromptSlotRepo,
+    CharacterScenePromptOverrideRepo, GroupPromptOverrideRepo, ProjectPromptOverrideRepo,
+    PromptFragmentRepo, SceneTypePromptDefaultRepo, WorkflowPromptSlotRepo,
 };
 
 use crate::error::{AppError, AppResult};
+use crate::response::DataResponse;
 use crate::state::AppState;
 
 // ---------------------------------------------------------------------------
@@ -48,6 +51,7 @@ pub struct UpsertOverrideRequest {
 pub struct SlotOverride {
     pub prompt_slot_id: DbId,
     pub fragments: serde_json::Value,
+    pub override_text: Option<String>,
     pub notes: Option<String>,
 }
 
@@ -58,6 +62,8 @@ pub struct ResolvePromptRequest {
     pub scene_type_id: DbId,
     pub character_id: DbId,
     pub slot_id: Option<DbId>,
+    pub project_id: Option<DbId>,
+    pub group_id: Option<DbId>,
 }
 
 /// Query parameters for listing prompt fragments.
@@ -97,9 +103,9 @@ async fn ensure_slot_exists(
 pub async fn list_prompt_slots(
     State(state): State<AppState>,
     Path(workflow_id): Path<DbId>,
-) -> AppResult<Json<Vec<x121_db::models::workflow_prompt_slot::WorkflowPromptSlot>>> {
+) -> AppResult<Json<DataResponse<Vec<x121_db::models::workflow_prompt_slot::WorkflowPromptSlot>>>> {
     let slots = WorkflowPromptSlotRepo::list_by_workflow(&state.pool, workflow_id).await?;
-    Ok(Json(slots))
+    Ok(Json(DataResponse { data: slots }))
 }
 
 /// PUT /api/v1/workflows/{workflow_id}/prompt-slots/{slot_id}
@@ -109,7 +115,7 @@ pub async fn update_prompt_slot(
     State(state): State<AppState>,
     Path((workflow_id, slot_id)): Path<(DbId, DbId)>,
     Json(input): Json<UpdateWorkflowPromptSlot>,
-) -> AppResult<Json<x121_db::models::workflow_prompt_slot::WorkflowPromptSlot>> {
+) -> AppResult<Json<DataResponse<x121_db::models::workflow_prompt_slot::WorkflowPromptSlot>>> {
     // Verify the slot exists and belongs to the workflow.
     let existing = ensure_slot_exists(&state.pool, slot_id).await?;
 
@@ -126,7 +132,7 @@ pub async fn update_prompt_slot(
             id: slot_id,
         }))?;
 
-    Ok(Json(updated))
+    Ok(Json(DataResponse { data: updated }))
 }
 
 // ---------------------------------------------------------------------------
@@ -139,10 +145,12 @@ pub async fn update_prompt_slot(
 pub async fn list_prompt_defaults(
     State(state): State<AppState>,
     Path(scene_type_id): Path<DbId>,
-) -> AppResult<Json<Vec<x121_db::models::scene_type_prompt_default::SceneTypePromptDefault>>> {
+) -> AppResult<
+    Json<DataResponse<Vec<x121_db::models::scene_type_prompt_default::SceneTypePromptDefault>>>,
+> {
     let defaults =
         SceneTypePromptDefaultRepo::list_by_scene_type(&state.pool, scene_type_id).await?;
-    Ok(Json(defaults))
+    Ok(Json(DataResponse { data: defaults }))
 }
 
 /// PUT /api/v1/scene-types/{id}/prompt-defaults/{slot_id}
@@ -152,14 +160,15 @@ pub async fn upsert_prompt_default(
     State(state): State<AppState>,
     Path((scene_type_id, slot_id)): Path<(DbId, DbId)>,
     Json(body): Json<UpsertPromptDefaultRequest>,
-) -> AppResult<Json<x121_db::models::scene_type_prompt_default::SceneTypePromptDefault>> {
+) -> AppResult<Json<DataResponse<x121_db::models::scene_type_prompt_default::SceneTypePromptDefault>>>
+{
     let input = CreateSceneTypePromptDefault {
         scene_type_id,
         prompt_slot_id: slot_id,
         prompt_text: body.prompt_text,
     };
     let result = SceneTypePromptDefaultRepo::upsert(&state.pool, &input).await?;
-    Ok(Json(result))
+    Ok(Json(DataResponse { data: result }))
 }
 
 // ---------------------------------------------------------------------------
@@ -173,7 +182,11 @@ pub async fn get_character_scene_overrides(
     State(state): State<AppState>,
     Path((character_id, scene_type_id)): Path<(DbId, DbId)>,
 ) -> AppResult<
-    Json<Vec<x121_db::models::character_scene_prompt_override::CharacterScenePromptOverride>>,
+    Json<
+        DataResponse<
+            Vec<x121_db::models::character_scene_prompt_override::CharacterScenePromptOverride>,
+        >,
+    >,
 > {
     let overrides = CharacterScenePromptOverrideRepo::list_by_character_and_scene_type(
         &state.pool,
@@ -181,7 +194,7 @@ pub async fn get_character_scene_overrides(
         scene_type_id,
     )
     .await?;
-    Ok(Json(overrides))
+    Ok(Json(DataResponse { data: overrides }))
 }
 
 /// PUT /api/v1/characters/{character_id}/scenes/{scene_type_id}/prompt-overrides
@@ -193,7 +206,11 @@ pub async fn upsert_character_scene_overrides(
     Path((character_id, scene_type_id)): Path<(DbId, DbId)>,
     Json(body): Json<UpsertOverrideRequest>,
 ) -> AppResult<
-    Json<Vec<x121_db::models::character_scene_prompt_override::CharacterScenePromptOverride>>,
+    Json<
+        DataResponse<
+            Vec<x121_db::models::character_scene_prompt_override::CharacterScenePromptOverride>,
+        >,
+    >,
 > {
     for slot_override in &body.overrides {
         let input = CreateCharacterScenePromptOverride {
@@ -201,6 +218,7 @@ pub async fn upsert_character_scene_overrides(
             scene_type_id,
             prompt_slot_id: slot_override.prompt_slot_id,
             fragments: slot_override.fragments.clone(),
+            override_text: slot_override.override_text.clone(),
             notes: slot_override.notes.clone(),
             created_by: None,
         };
@@ -217,7 +235,30 @@ pub async fn upsert_character_scene_overrides(
         scene_type_id,
     )
     .await?;
-    Ok(Json(overrides))
+    Ok(Json(DataResponse { data: overrides }))
+}
+
+/// Build both a fragment map and an override_text map from override rows.
+fn extract_override_maps<'a>(
+    rows: impl Iterator<Item = (i64, &'a serde_json::Value, &'a Option<String>)>,
+) -> (HashMap<i64, Vec<FragmentEntry>>, HashMap<i64, String>) {
+    let mut fragment_map: HashMap<i64, Vec<FragmentEntry>> = HashMap::new();
+    let mut text_map: HashMap<i64, String> = HashMap::new();
+
+    for (slot_id, fragments, override_text) in rows {
+        let entries: Vec<FragmentEntry> =
+            serde_json::from_value(fragments.clone()).unwrap_or_default();
+        if !entries.is_empty() {
+            fragment_map.insert(slot_id, entries);
+        }
+        if let Some(text) = override_text {
+            if !text.is_empty() {
+                text_map.insert(slot_id, text.clone());
+            }
+        }
+    }
+
+    (fragment_map, text_map)
 }
 
 /// Iterate over fragments JSONB and increment usage for `fragment_ref` entries.
@@ -238,6 +279,116 @@ async fn increment_fragment_refs(
 }
 
 // ---------------------------------------------------------------------------
+// Project-Level Prompt Overrides
+// ---------------------------------------------------------------------------
+
+/// GET /api/v1/projects/{project_id}/scenes/{scene_type_id}/prompt-overrides
+///
+/// List all prompt overrides for a project + scene type combination.
+pub async fn get_project_prompt_overrides(
+    State(state): State<AppState>,
+    Path((project_id, scene_type_id)): Path<(DbId, DbId)>,
+) -> AppResult<
+    Json<DataResponse<Vec<x121_db::models::project_prompt_override::ProjectPromptOverride>>>,
+> {
+    let overrides = ProjectPromptOverrideRepo::list_by_project_and_scene_type(
+        &state.pool,
+        project_id,
+        scene_type_id,
+    )
+    .await?;
+    Ok(Json(DataResponse { data: overrides }))
+}
+
+/// PUT /api/v1/projects/{project_id}/scenes/{scene_type_id}/prompt-overrides
+///
+/// Upsert prompt overrides for a project + scene type. For each override,
+/// also increments usage counters on referenced fragments.
+pub async fn upsert_project_prompt_overrides(
+    State(state): State<AppState>,
+    Path((project_id, scene_type_id)): Path<(DbId, DbId)>,
+    Json(body): Json<UpsertOverrideRequest>,
+) -> AppResult<
+    Json<DataResponse<Vec<x121_db::models::project_prompt_override::ProjectPromptOverride>>>,
+> {
+    for slot_override in &body.overrides {
+        let input = CreateProjectPromptOverride {
+            project_id,
+            scene_type_id,
+            prompt_slot_id: slot_override.prompt_slot_id,
+            fragments: slot_override.fragments.clone(),
+            override_text: slot_override.override_text.clone(),
+            notes: slot_override.notes.clone(),
+            created_by: None,
+        };
+        ProjectPromptOverrideRepo::upsert(&state.pool, &input).await?;
+
+        // Increment usage for any fragment_ref entries.
+        increment_fragment_refs(&state.pool, &slot_override.fragments).await?;
+    }
+
+    // Return the full set of overrides for the project+scene_type.
+    let overrides = ProjectPromptOverrideRepo::list_by_project_and_scene_type(
+        &state.pool,
+        project_id,
+        scene_type_id,
+    )
+    .await?;
+    Ok(Json(DataResponse { data: overrides }))
+}
+
+// ---------------------------------------------------------------------------
+// Group-Level Prompt Overrides
+// ---------------------------------------------------------------------------
+
+/// GET /api/v1/projects/{project_id}/groups/{group_id}/scenes/{scene_type_id}/prompt-overrides
+///
+/// List all prompt overrides for a group + scene type combination.
+pub async fn get_group_prompt_overrides(
+    State(state): State<AppState>,
+    Path((_project_id, group_id, scene_type_id)): Path<(DbId, DbId, DbId)>,
+) -> AppResult<Json<DataResponse<Vec<x121_db::models::group_prompt_override::GroupPromptOverride>>>>
+{
+    let overrides =
+        GroupPromptOverrideRepo::list_by_group_and_scene_type(&state.pool, group_id, scene_type_id)
+            .await?;
+    Ok(Json(DataResponse { data: overrides }))
+}
+
+/// PUT /api/v1/projects/{project_id}/groups/{group_id}/scenes/{scene_type_id}/prompt-overrides
+///
+/// Upsert prompt overrides for a group + scene type. For each override,
+/// also increments usage counters on referenced fragments.
+pub async fn upsert_group_prompt_overrides(
+    State(state): State<AppState>,
+    Path((_project_id, group_id, scene_type_id)): Path<(DbId, DbId, DbId)>,
+    Json(body): Json<UpsertOverrideRequest>,
+) -> AppResult<Json<DataResponse<Vec<x121_db::models::group_prompt_override::GroupPromptOverride>>>>
+{
+    for slot_override in &body.overrides {
+        let input = CreateGroupPromptOverride {
+            group_id,
+            scene_type_id,
+            prompt_slot_id: slot_override.prompt_slot_id,
+            fragments: slot_override.fragments.clone(),
+            override_text: slot_override.override_text.clone(),
+            notes: slot_override.notes.clone(),
+            created_by: None,
+        };
+        GroupPromptOverrideRepo::upsert(&state.pool, &input).await?;
+
+        // Increment usage for any fragment_ref entries.
+        increment_fragment_refs(&state.pool, &slot_override.fragments).await?;
+    }
+
+    // Return the full set of overrides for the group+scene_type.
+    let overrides =
+        GroupPromptOverrideRepo::list_by_group_and_scene_type(&state.pool, group_id, scene_type_id)
+            .await?;
+    Ok(Json(DataResponse { data: overrides }))
+}
+
+// ---------------------------------------------------------------------------
 // Prompt Resolution
 // ---------------------------------------------------------------------------
 
@@ -248,7 +399,7 @@ async fn increment_fragment_refs(
 pub async fn resolve_prompt_preview(
     State(state): State<AppState>,
     Json(body): Json<ResolvePromptRequest>,
-) -> AppResult<Json<Vec<prompt_resolution::ResolvedPromptSlot>>> {
+) -> AppResult<Json<DataResponse<Vec<prompt_resolution::ResolvedPromptSlot>>>> {
     // 1. Get workflow prompt slots.
     let slots = WorkflowPromptSlotRepo::list_by_workflow(&state.pool, body.workflow_id).await?;
 
@@ -270,28 +421,45 @@ pub async fn resolve_prompt_preview(
     // 3. Character metadata (empty for now -- character metadata system from another PRD).
     let character_metadata: HashMap<String, String> = HashMap::new();
 
-    // 4. Character+scene overrides -> HashMap<slot_id, Vec<FragmentEntry>>.
-    let overrides = CharacterScenePromptOverrideRepo::list_by_character_and_scene_type(
+    // 4. Project-level overrides -> fragment map + override_text map.
+    let (project_fragment_overrides, project_override_texts) =
+        if let Some(project_id) = body.project_id {
+            let rows = ProjectPromptOverrideRepo::list_by_project_and_scene_type(
+                &state.pool,
+                project_id,
+                body.scene_type_id,
+            )
+            .await?;
+            extract_override_maps(rows.iter().map(|o| (o.prompt_slot_id, &o.fragments, &o.override_text)))
+        } else {
+            (HashMap::new(), HashMap::new())
+        };
+
+    // 5. Group-level overrides -> fragment map + override_text map.
+    let (group_fragment_overrides, group_override_texts) =
+        if let Some(group_id) = body.group_id {
+            let rows = GroupPromptOverrideRepo::list_by_group_and_scene_type(
+                &state.pool,
+                group_id,
+                body.scene_type_id,
+            )
+            .await?;
+            extract_override_maps(rows.iter().map(|o| (o.prompt_slot_id, &o.fragments, &o.override_text)))
+        } else {
+            (HashMap::new(), HashMap::new())
+        };
+
+    // 6. Character+scene overrides -> fragment map + override_text map.
+    let char_rows = CharacterScenePromptOverrideRepo::list_by_character_and_scene_type(
         &state.pool,
         body.character_id,
         body.scene_type_id,
     )
     .await?;
+    let (character_fragment_overrides, character_override_texts) =
+        extract_override_maps(char_rows.iter().map(|o| (o.prompt_slot_id, &o.fragments, &o.override_text)));
 
-    let fragment_overrides: HashMap<i64, Vec<FragmentEntry>> = overrides
-        .into_iter()
-        .filter_map(|o| {
-            let entries: Vec<FragmentEntry> =
-                serde_json::from_value(o.fragments).unwrap_or_default();
-            if entries.is_empty() {
-                None
-            } else {
-                Some((o.prompt_slot_id, entries))
-            }
-        })
-        .collect();
-
-    // 5. Convert slots to PromptSlotInput.
+    // 7. Convert slots to PromptSlotInput.
     let prompt_slot_inputs: Vec<PromptSlotInput> = slots
         .iter()
         .map(|s| PromptSlotInput {
@@ -305,12 +473,17 @@ pub async fn resolve_prompt_preview(
         })
         .collect();
 
-    // 6. Resolve.
-    let mut resolved = prompt_resolution::resolve_prompts(
+    // 8. Resolve.
+    let mut resolved = prompt_resolution::resolve_prompts_with_overrides(
         &prompt_slot_inputs,
         &scene_type_defaults,
         &character_metadata,
-        &fragment_overrides,
+        &project_fragment_overrides,
+        &group_fragment_overrides,
+        &character_fragment_overrides,
+        &project_override_texts,
+        &group_override_texts,
+        &character_override_texts,
         None,
     );
 
@@ -319,7 +492,7 @@ pub async fn resolve_prompt_preview(
         resolved.retain(|r| r.slot_id == slot_id);
     }
 
-    Ok(Json(resolved))
+    Ok(Json(DataResponse { data: resolved }))
 }
 
 // ---------------------------------------------------------------------------
@@ -332,7 +505,7 @@ pub async fn resolve_prompt_preview(
 pub async fn list_fragments(
     State(state): State<AppState>,
     Query(params): Query<FragmentListParams>,
-) -> AppResult<Json<Vec<x121_db::models::prompt_fragment::PromptFragment>>> {
+) -> AppResult<Json<DataResponse<Vec<x121_db::models::prompt_fragment::PromptFragment>>>> {
     let repo_params = PromptFragmentListParams {
         search: params.search,
         category: params.category,
@@ -353,7 +526,7 @@ pub async fn list_fragments(
         fragments.truncate(limit);
     }
 
-    Ok(Json(fragments))
+    Ok(Json(DataResponse { data: fragments }))
 }
 
 /// POST /api/v1/prompt-fragments
@@ -364,10 +537,10 @@ pub async fn create_fragment(
     Json(input): Json<CreatePromptFragment>,
 ) -> AppResult<(
     StatusCode,
-    Json<x121_db::models::prompt_fragment::PromptFragment>,
+    Json<DataResponse<x121_db::models::prompt_fragment::PromptFragment>>,
 )> {
     let fragment = PromptFragmentRepo::create(&state.pool, &input).await?;
-    Ok((StatusCode::CREATED, Json(fragment)))
+    Ok((StatusCode::CREATED, Json(DataResponse { data: fragment })))
 }
 
 /// PUT /api/v1/prompt-fragments/{id}
@@ -377,14 +550,14 @@ pub async fn update_fragment(
     State(state): State<AppState>,
     Path(id): Path<DbId>,
     Json(input): Json<UpdatePromptFragment>,
-) -> AppResult<Json<x121_db::models::prompt_fragment::PromptFragment>> {
+) -> AppResult<Json<DataResponse<x121_db::models::prompt_fragment::PromptFragment>>> {
     let fragment = PromptFragmentRepo::update(&state.pool, id, &input)
         .await?
         .ok_or(AppError::Core(CoreError::NotFound {
             entity: "PromptFragment",
             id,
         }))?;
-    Ok(Json(fragment))
+    Ok(Json(DataResponse { data: fragment }))
 }
 
 /// DELETE /api/v1/prompt-fragments/{id}

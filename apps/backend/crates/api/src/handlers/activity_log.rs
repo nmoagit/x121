@@ -402,7 +402,7 @@ async fn handle_activity_ws(socket: WebSocket, state: AppState, auth: AuthUser) 
     let mut rx = state.activity_broadcaster.subscribe();
     let (mut sink, mut stream) = socket.split();
 
-    // Default filter: all levels, all sources, curated mode.
+    // Default filter: all levels, all sources, no mode restriction (show everything).
     let mut filter = WsFilter {
         levels: vec![
             ActivityLogLevel::Info,
@@ -410,7 +410,7 @@ async fn handle_activity_ws(socket: WebSocket, state: AppState, auth: AuthUser) 
             ActivityLogLevel::Error,
         ],
         sources: vec![],
-        mode: Some(ActivityLogCategory::Curated),
+        mode: None,
         entity_type: None,
         entity_id: None,
         search: None,

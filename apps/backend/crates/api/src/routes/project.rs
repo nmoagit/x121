@@ -39,6 +39,8 @@ use crate::state::AppState;
 /// PUT    /{project_id}/groups/{id}/scene-settings       -> bulk_update
 /// PUT    /{project_id}/groups/{id}/scene-settings/{st}  -> toggle_single
 /// DELETE /{project_id}/groups/{id}/scene-settings/{st}  -> remove_override
+/// GET    /{project_id}/groups/{id}/scenes/{st}/prompt-overrides  -> get_group_prompt_overrides
+/// PUT    /{project_id}/groups/{id}/scenes/{st}/prompt-overrides  -> upsert_group_prompt_overrides
 ///
 /// GET    /{project_id}/scene-types          -> list_by_project
 /// POST   /{project_id}/scene-types          -> create
@@ -76,6 +78,8 @@ pub fn router() -> Router<AppState> {
             "/{id}",
             axum::routing::put(character_group::update).delete(character_group::delete),
         )
+        .merge(super::prompt_management::group_prompt_override_router())
+        .merge(super::video_settings::group_video_settings_router())
         .nest(
             "/{id}/scene-settings",
             super::group_scene_settings::router(),

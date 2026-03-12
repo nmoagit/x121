@@ -7,13 +7,15 @@
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, Duration as ChronoDuration, Utc};
 use serde::Serialize;
 use sqlx::PgPool;
 use tokio::sync::RwLock;
 
 use x121_core::system_health::{STATUS_DEGRADED, STATUS_DOWN, STATUS_HEALTHY};
-use x121_db::repositories::WorkerRepo;
+use x121_db::repositories::{
+    CloudCostEventRepo, CloudInstanceRepo, CloudScalingRuleRepo, ProductionRunRepo, WorkerRepo,
+};
 
 /// How often the background task refreshes the cached snapshot.
 const POLL_INTERVAL: Duration = Duration::from_secs(30);
@@ -36,18 +38,18 @@ pub struct ServiceStatus {
     pub detail: Option<String>,
 }
 
-/// Cached cloud GPU summary. Stubbed until PRD-114 lands.
+/// Cached cloud GPU summary.
 #[derive(Debug, Clone, Serialize)]
 pub struct CloudGpuStatus {
     /// Number of active GPU pods.
     pub active_pods: u32,
     /// Total cost per hour in cents.
     pub cost_per_hour_cents: u32,
-    /// One of `"within_budget"`, `"approaching_cap"`, or `"exceeded"`.
+    /// One of `"ok"`, `"warning"`, or `"exceeded"`.
     pub budget_status: &'static str,
 }
 
-/// Cached workflow summary. Stubbed until PRD-07 workflows are fully wired.
+/// Cached workflow summary.
 #[derive(Debug, Clone, Serialize)]
 pub struct WorkflowStatus {
     /// Number of active (in-flight) workflows.
@@ -72,7 +74,7 @@ pub struct FooterServices {
 pub struct FooterSnapshot {
     /// Individual service statuses (admin-only).
     pub services: FooterServices,
-    /// Cloud GPU summary (admin-only, stubbed).
+    /// Cloud GPU summary (admin-only).
     pub cloud_gpu: CloudGpuStatus,
     /// Workflow summary.
     pub workflows: WorkflowStatus,
@@ -128,23 +130,17 @@ impl HealthAggregator {
         let comfyui_status = probe_comfyui(comfyui).await;
         let workers_status = probe_workers(pool).await;
 
+        let cloud_gpu = probe_cloud_gpu(pool).await;
+        let workflows = probe_workflows(pool).await;
+
         let new_snapshot = FooterSnapshot {
             services: FooterServices {
                 comfyui: comfyui_status,
                 database: db_status,
                 workers: workers_status,
             },
-            // Stubbed until PRD-114 (RunPod cloud GPU integration).
-            cloud_gpu: CloudGpuStatus {
-                active_pods: 0,
-                cost_per_hour_cents: 0,
-                budget_status: "within_budget",
-            },
-            // Stubbed until workflow orchestration is fully wired.
-            workflows: WorkflowStatus {
-                active: 0,
-                current_stage: None,
-            },
+            cloud_gpu,
+            workflows,
         };
 
         *self.snapshot.write().await = new_snapshot;
@@ -242,6 +238,99 @@ async fn probe_workers(pool: &PgPool) -> ServiceStatus {
     }
 }
 
+/// Probe cloud GPU instances and budget status.
+async fn probe_cloud_gpu(pool: &PgPool) -> CloudGpuStatus {
+    // Get active instance count and total cost/hour
+    let (active_pods, cost_per_hour_cents) = match CloudInstanceRepo::active_summary(pool).await {
+        Ok((count, cost)) => (count as u32, cost as u32),
+        Err(e) => {
+            tracing::warn!(error = %e, "Cloud GPU probe failed");
+            return CloudGpuStatus {
+                active_pods: 0,
+                cost_per_hour_cents: 0,
+                budget_status: "ok",
+            };
+        }
+    };
+
+    // Determine budget status from scaling rules
+    let budget_status = match CloudScalingRuleRepo::list_enabled(pool).await {
+        Ok(rules) => {
+            let mut total_budget: i64 = 0;
+            let mut total_spent: i64 = 0;
+            let mut has_budget = false;
+            let now = chrono::Utc::now();
+            let period_start = now - ChronoDuration::hours(24 * 30);
+
+            for rule in &rules {
+                if let Some(limit) = rule.budget_limit_cents {
+                    has_budget = true;
+                    total_budget += limit;
+                    if let Ok(summary) = CloudCostEventRepo::sum_by_provider_in_range(
+                        pool,
+                        rule.provider_id,
+                        period_start,
+                        now,
+                    )
+                    .await
+                    {
+                        total_spent += summary.total_cost_cents;
+                    }
+                }
+            }
+
+            if !has_budget || total_budget == 0 {
+                "ok"
+            } else if total_spent >= total_budget {
+                "exceeded"
+            } else if total_spent >= total_budget * 8 / 10 {
+                "warning"
+            } else {
+                "ok"
+            }
+        }
+        Err(_) => "ok",
+    };
+
+    CloudGpuStatus {
+        active_pods,
+        cost_per_hour_cents,
+        budget_status,
+    }
+}
+
+/// Probe active production runs and running jobs for workflow status.
+async fn probe_workflows(pool: &PgPool) -> WorkflowStatus {
+    let active = match ProductionRunRepo::active_run_count(pool).await {
+        Ok(count) => count as u32,
+        Err(e) => {
+            tracing::warn!(error = %e, "Workflow probe failed");
+            0
+        }
+    };
+
+    // Determine current stage from job queue state
+    let current_stage = match x121_db::repositories::JobRepo::queue_counts(pool).await {
+        Ok((pending, running, _scheduled)) => {
+            if running > 0 {
+                Some(format!(
+                    "Generating ({running} running, {pending} queued)"
+                ))
+            } else if pending > 0 {
+                Some(format!("Queued ({pending} pending)"))
+            } else {
+                None
+            }
+        }
+        Err(_) => None,
+    };
+
+    WorkflowStatus {
+        active,
+        current_stage,
+    }
+}
+
 // ---------------------------------------------------------------------------
 // Initial state
 // ---------------------------------------------------------------------------
@@ -265,7 +354,7 @@ fn initial_snapshot() -> FooterSnapshot {
         cloud_gpu: CloudGpuStatus {
             active_pods: 0,
             cost_per_hour_cents: 0,
-            budget_status: "within_budget",
+            budget_status: "ok",
         },
         workflows: WorkflowStatus {
             active: 0,

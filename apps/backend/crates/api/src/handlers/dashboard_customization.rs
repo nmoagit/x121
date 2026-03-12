@@ -1,7 +1,7 @@
 //! Handlers for Dashboard Widget Customization (PRD-89).
 //!
 //! User endpoints for managing dashboard presets, preset sharing/importing,
-//! and resolving effective layouts. Admin endpoints for the widget catalog
+//! and resolving effective layouts. Admin endpoints for the widget catalogue
 //! and role-based default layouts.
 
 use axum::extract::{Path, Query, State};
@@ -340,13 +340,13 @@ pub async fn import_preset(
 }
 
 // ===========================================================================
-// Admin: Widget Catalog
+// Admin: Widget Catalogue
 // ===========================================================================
 
-/// `GET /dashboard/widget-catalog` -- return native + extension widgets.
-pub async fn get_widget_catalog(_auth: AuthUser) -> AppResult<impl IntoResponse> {
-    let catalog = dashboard_customization::get_native_widget_catalog();
-    Ok(Json(DataResponse { data: catalog }))
+/// `GET /dashboard/widget-catalogue` -- return native + extension widgets.
+pub async fn get_widget_catalogue(_auth: AuthUser) -> AppResult<impl IntoResponse> {
+    let catalogue = dashboard_customization::get_native_widget_catalogue();
+    Ok(Json(DataResponse { data: catalogue }))
 }
 
 // ===========================================================================

@@ -12,7 +12,9 @@ use axum::Json;
 use x121_core::character_dashboard::SETTING_KEY_VOICE;
 use x121_core::error::CoreError;
 use x121_core::types::DbId;
-use x121_db::models::character::{Character, CreateCharacter, UpdateCharacter};
+use x121_db::models::character::{
+    Character, CharacterWithAvatar, CreateCharacter, UpdateCharacter,
+};
 use x121_db::repositories::CharacterRepo;
 
 use crate::error::{AppError, AppResult};
@@ -54,11 +56,14 @@ pub async fn bulk_create(
 }
 
 /// GET /api/v1/projects/{project_id}/characters
+///
+/// Returns characters with their best avatar variant ID pre-resolved,
+/// eliminating the N+1 query pattern on the frontend.
 pub async fn list_by_project(
     State(state): State<AppState>,
     Path(project_id): Path<DbId>,
-) -> AppResult<Json<DataResponse<Vec<Character>>>> {
-    let characters = CharacterRepo::list_by_project(&state.pool, project_id).await?;
+) -> AppResult<Json<DataResponse<Vec<CharacterWithAvatar>>>> {
+    let characters = CharacterRepo::list_by_project_with_avatar(&state.pool, project_id).await?;
     Ok(Json(DataResponse { data: characters }))
 }
 
@@ -100,9 +105,9 @@ pub async fn update(
             .is_some_and(|s| !s.is_empty());
 
         if !has_voice {
-            return Err(AppError::Core(CoreError::Validation(
-                format!("VoiceID ({SETTING_KEY_VOICE}) is required before activating a character"),
-            )));
+            return Err(AppError::Core(CoreError::Validation(format!(
+                "VoiceID ({SETTING_KEY_VOICE}) is required before activating a character"
+            ))));
         }
     }
 

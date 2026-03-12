@@ -19,16 +19,17 @@ use crate::error::{AppError, AppResult};
 use crate::response::DataResponse;
 use crate::state::AppState;
 
-/// Directory for storing variant image files.
-const VARIANT_STORAGE_DIR: &str = "storage/variants";
+/// Storage key prefix for variant image files.
+const VARIANT_KEY_PREFIX: &str = "variants";
 
-/// Return the path to the variant storage directory, creating it lazily.
-async fn ensure_variant_dir() -> AppResult<std::path::PathBuf> {
-    let dir = std::path::PathBuf::from(VARIANT_STORAGE_DIR);
-    tokio::fs::create_dir_all(&dir)
+/// Return the absolute path to the variant storage directory, creating it lazily.
+/// Uses the storage provider root so files go to the configured STORAGE_ROOT.
+async fn ensure_variant_dir(state: &AppState) -> AppResult<std::path::PathBuf> {
+    let abs = state.resolve_to_path(VARIANT_KEY_PREFIX).await?;
+    tokio::fs::create_dir_all(&abs)
         .await
         .map_err(|e| AppError::InternalError(e.to_string()))?;
-    Ok(dir)
+    Ok(abs)
 }
 
 // ---------------------------------------------------------------------------
@@ -267,17 +268,20 @@ pub async fn reimport_variant(
     }
 
     // Store file
-    let storage_dir = ensure_variant_dir().await?;
+    let storage_dir = ensure_variant_dir(&state).await?;
 
     let stored_filename = format!(
         "variant_{character_id}_{id}_v{}_{}.{ext}",
         original.version + 1,
         chrono::Utc::now().timestamp()
     );
-    let file_path = storage_dir.join(&stored_filename);
-    tokio::fs::write(&file_path, &data)
+    let abs_path = storage_dir.join(&stored_filename);
+    tokio::fs::write(&abs_path, &data)
         .await
         .map_err(|e| AppError::InternalError(e.to_string()))?;
+
+    // Store the storage key (not absolute path) in the DB.
+    let storage_key = format!("{VARIANT_KEY_PREFIX}/{stored_filename}");
 
     let (width, height) = images::image_dimensions(&data)
         .map(|(w, h)| (Some(w as i32), Some(h as i32)))
@@ -289,7 +293,7 @@ pub async fn reimport_variant(
         derived_image_id: original.derived_image_id,
         variant_label: original.variant_label.clone(),
         status_id: Some(ImageVariantStatus::Generated.id()),
-        file_path: file_path.to_string_lossy().to_string(),
+        file_path: storage_key,
         variant_type: original.variant_type.clone(),
         provenance: Some(images::PROVENANCE_MANUALLY_EDITED.to_string()),
         is_hero: Some(false),
@@ -368,16 +372,19 @@ pub async fn upload_manual_variant(
     }
 
     // Store file
-    let storage_dir = ensure_variant_dir().await?;
+    let storage_dir = ensure_variant_dir(&state).await?;
 
     let stored_filename = format!(
         "variant_{character_id}_{vtype}_{}.{ext}",
         chrono::Utc::now().timestamp_millis()
     );
-    let file_path = storage_dir.join(&stored_filename);
-    tokio::fs::write(&file_path, &data)
+    let abs_path = storage_dir.join(&stored_filename);
+    tokio::fs::write(&abs_path, &data)
         .await
         .map_err(|e| AppError::InternalError(e.to_string()))?;
+
+    // Store the storage key (not absolute path) in the DB.
+    let storage_key = format!("{VARIANT_KEY_PREFIX}/{stored_filename}");
 
     // Auto-promote to hero if no hero exists yet for this character+variant_type.
     let existing_hero = ImageVariantRepo::find_hero(&state.pool, character_id, &vtype).await?;
@@ -393,7 +400,7 @@ pub async fn upload_manual_variant(
         derived_image_id: None,
         variant_label: vlabel,
         status_id: Some(ImageVariantStatus::Generated.id()),
-        file_path: file_path.to_string_lossy().to_string(),
+        file_path: storage_key,
         variant_type: Some(vtype),
         provenance: Some(images::PROVENANCE_MANUAL_UPLOAD.to_string()),
         is_hero: Some(should_be_hero),
@@ -425,6 +432,83 @@ pub async fn variant_history(
         }));
     }
     Ok(Json(DataResponse { data: chain }))
+}
+
+/// GET /api/v1/image-variants/{id}/thumbnail
+///
+/// Serve a resized JPEG thumbnail for the given image variant.
+/// Accepts `?size=N` (default 256, max 1024). Thumbnails are cached
+/// to disk alongside the original so subsequent requests are fast.
+pub async fn thumbnail(
+    State(state): State<AppState>,
+    Path(id): Path<DbId>,
+    Query(params): Query<ThumbnailParams>,
+) -> AppResult<impl IntoResponse> {
+    let size = params.size.unwrap_or(256).min(1024).max(32);
+
+    let variant = ImageVariantRepo::find_by_id(&state.pool, id)
+        .await?
+        .ok_or(AppError::Core(CoreError::NotFound {
+            entity: "ImageVariant",
+            id,
+        }))?;
+
+    if variant.file_path.is_empty() {
+        return Err(AppError::Core(CoreError::NotFound {
+            entity: "ImageVariant",
+            id,
+        }));
+    }
+
+    let original_path = state.resolve_to_path(&variant.file_path).await?;
+
+    // Build cache path: same dir, `{stem}_thumb{size}.jpg`
+    let stem = original_path
+        .file_stem()
+        .and_then(|s| s.to_str())
+        .unwrap_or("img");
+    let cache_name = format!("{stem}_thumb{size}.jpg");
+    let cache_path = original_path.with_file_name(&cache_name);
+
+    // Serve from cache if it exists
+    if cache_path.exists() {
+        let bytes = tokio::fs::read(&cache_path)
+            .await
+            .map_err(|e| AppError::InternalError(e.to_string()))?;
+        return Ok((
+            [
+                (axum::http::header::CONTENT_TYPE, "image/jpeg"),
+                (axum::http::header::CACHE_CONTROL, "public, max-age=86400"),
+            ],
+            bytes,
+        )
+            .into_response());
+    }
+
+    // Generate thumbnail
+    let data = tokio::fs::read(&original_path)
+        .await
+        .map_err(|e| AppError::InternalError(e.to_string()))?;
+
+    let thumb_bytes = images::generate_thumbnail(&data, size as u32)
+        .ok_or_else(|| AppError::InternalError("Failed to generate thumbnail".into()))?;
+
+    // Cache to disk (best-effort)
+    let _ = tokio::fs::write(&cache_path, &thumb_bytes).await;
+
+    Ok((
+        [
+            (axum::http::header::CONTENT_TYPE, "image/jpeg"),
+            (axum::http::header::CACHE_CONTROL, "public, max-age=86400"),
+        ],
+        thumb_bytes,
+    )
+        .into_response())
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ThumbnailParams {
+    pub size: Option<u16>,
 }
 
 /// POST /api/v1/characters/{character_id}/image-variants/generate
@@ -494,6 +578,99 @@ pub struct BackfillParams {
 pub struct BackfillMetadataResponse {
     pub processed: usize,
     pub succeeded: usize,
+    pub failed: usize,
+}
+
+/// POST /api/v1/image-variants/backfill-thumbnails
+///
+/// Pre-generate 256px thumbnails for all image variants that have files.
+/// Skips variants whose cached thumbnail already exists on disk.
+/// Processes up to `limit` rows (default 100) per call starting at `offset`.
+pub async fn backfill_thumbnails(
+    State(state): State<AppState>,
+    Query(params): Query<BackfillThumbnailParams>,
+) -> AppResult<Json<BackfillThumbnailResponse>> {
+    let size: u32 = params.size.unwrap_or(256).min(512).max(32) as u32;
+    let limit = params.limit.unwrap_or(100).min(500) as i64;
+    let offset = params.offset.unwrap_or(0) as i64;
+
+    let variants = ImageVariantRepo::list_with_files(&state.pool, limit, offset).await?;
+
+    let total = variants.len();
+    let mut generated = 0usize;
+    let mut skipped = 0usize;
+    let mut failed = 0usize;
+
+    for variant in &variants {
+        let original_path = match state.resolve_to_path(&variant.file_path).await {
+            Ok(p) => p,
+            Err(_) => {
+                failed += 1;
+                continue;
+            }
+        };
+
+        // Build cache path
+        let stem = original_path
+            .file_stem()
+            .and_then(|s| s.to_str())
+            .unwrap_or("img");
+        let cache_name = format!("{stem}_thumb{size}.jpg");
+        let cache_path = original_path.with_file_name(&cache_name);
+
+        // Skip if already cached
+        if cache_path.exists() {
+            skipped += 1;
+            continue;
+        }
+
+        // Read and generate
+        let data = match tokio::fs::read(&original_path).await {
+            Ok(d) => d,
+            Err(_) => {
+                failed += 1;
+                continue;
+            }
+        };
+
+        match images::generate_thumbnail(&data, size) {
+            Some(thumb_bytes) => match tokio::fs::write(&cache_path, &thumb_bytes).await {
+                Ok(_) => generated += 1,
+                Err(_) => failed += 1,
+            },
+            None => failed += 1,
+        }
+    }
+
+    tracing::info!(
+        total,
+        generated,
+        skipped,
+        failed,
+        size,
+        "Backfill thumbnails complete"
+    );
+
+    Ok(Json(BackfillThumbnailResponse {
+        processed: total,
+        generated,
+        skipped,
+        failed,
+    }))
+}
+
+#[derive(Debug, Deserialize)]
+pub struct BackfillThumbnailParams {
+    pub size: Option<u16>,
+    pub limit: Option<u32>,
+    pub offset: Option<u32>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct BackfillThumbnailResponse {
+    pub processed: usize,
+    pub generated: usize,
+    pub skipped: usize,
     pub failed: usize,
 }
 

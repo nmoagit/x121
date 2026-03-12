@@ -9,7 +9,7 @@ use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::Json;
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use x121_core::batch_production::{
     self, MatrixConfig, RUN_STATUS_ID_COMPLETED, RUN_STATUS_ID_DRAFT, RUN_STATUS_ID_FAILED,
@@ -23,7 +23,7 @@ use x121_db::models::production_run::{
     ProductionRun, ProductionRunProgress, ResubmitResponse, SubmitCellsRequest,
     SubmitCellsResponse,
 };
-use x121_db::repositories::ProductionRunRepo;
+use x121_db::repositories::{CharacterSceneOverrideRepo, ProductionRunRepo};
 
 use crate::error::{AppError, AppResult};
 use crate::middleware::auth::AuthUser;
@@ -77,7 +77,53 @@ pub async fn create_run(
     };
     batch_production::validate_matrix_config(&config)?;
 
-    let total_cells = (body.character_ids.len() * body.scene_type_ids.len()) as i32;
+    // Build the set of requested scene_type_ids for filtering.
+    let requested_scene_types: std::collections::HashSet<DbId> =
+        body.scene_type_ids.iter().copied().collect();
+
+    // For each character, resolve the enabled (scene_type, track) pairs via the
+    // four-level inheritance chain, then filter to requested scene_type_ids.
+    let mut cells: Vec<CreateProductionRunCell> = Vec::new();
+    for &cid in &body.character_ids {
+        let settings = CharacterSceneOverrideRepo::list_effective(
+            &state.pool,
+            cid,
+            body.project_id,
+            None, // group_id not known at run level
+        )
+        .await?;
+
+        for s in settings {
+            if !s.is_enabled {
+                continue;
+            }
+            if !requested_scene_types.contains(&s.scene_type_id) {
+                continue;
+            }
+            cells.push(CreateProductionRunCell {
+                run_id: 0, // placeholder — set after run creation
+                character_id: cid,
+                scene_type_id: s.scene_type_id,
+                track_id: s.track_id,
+                variant_label: "default".to_string(),
+            });
+        }
+    }
+
+    // Deduplicate: one cell per (character_id, scene_type_id, track_id).
+    cells.sort_by(|a, b| {
+        a.character_id
+            .cmp(&b.character_id)
+            .then(a.scene_type_id.cmp(&b.scene_type_id))
+            .then(a.track_id.cmp(&b.track_id))
+    });
+    cells.dedup_by(|a, b| {
+        a.character_id == b.character_id
+            && a.scene_type_id == b.scene_type_id
+            && a.track_id == b.track_id
+    });
+
+    let total_cells = cells.len() as i32;
 
     let matrix_config_json =
         serde_json::to_value(&config).map_err(|e| AppError::InternalError(e.to_string()))?;
@@ -95,28 +141,51 @@ pub async fn create_run(
 
     let run = ProductionRunRepo::create(&state.pool, &input).await?;
 
-    // Generate cells for the matrix (character x scene_type, default variant).
-    let cells: Vec<CreateProductionRunCell> = body
-        .character_ids
-        .iter()
-        .flat_map(|&cid| {
-            body.scene_type_ids
-                .iter()
-                .map(move |&stid| CreateProductionRunCell {
-                    run_id: run.id,
-                    character_id: cid,
-                    scene_type_id: stid,
-                    variant_label: "default".to_string(),
-                })
-        })
-        .collect();
+    // Set the actual run_id on all cells.
+    for cell in &mut cells {
+        cell.run_id = run.id;
+    }
 
     ProductionRunRepo::create_cells_batch(&state.pool, &cells).await?;
+
+    // Retrospective: check for existing scenes and pre-mark cells.
+    let mut completed_count = 0i32;
+    let mut in_progress_count = 0i32;
+    if body.retrospective {
+        // Mark cells with approved scenes as completed.
+        let approved =
+            ProductionRunRepo::find_cells_with_approved_scenes(&state.pool, run.id).await?;
+        completed_count = approved.len() as i32;
+        if !approved.is_empty() {
+            ProductionRunRepo::mark_cells_completed_with_scene(&state.pool, &approved).await?;
+            ProductionRunRepo::set_completed_cells(&state.pool, run.id, completed_count).await?;
+        }
+
+        // Mark cells with in-progress scenes (have video versions but none approved) as in-progress.
+        let in_progress =
+            ProductionRunRepo::find_cells_with_in_progress_scenes(&state.pool, run.id).await?;
+        in_progress_count = in_progress.len() as i32;
+        if !in_progress.is_empty() {
+            ProductionRunRepo::mark_cells_in_progress_with_scene(&state.pool, &in_progress)
+                .await?;
+        }
+    }
+
+    // Re-fetch the run to get the updated counts.
+    let run = if completed_count > 0 || in_progress_count > 0 {
+        ProductionRunRepo::find_by_id(&state.pool, run.id)
+            .await?
+            .unwrap_or(run)
+    } else {
+        run
+    };
 
     tracing::info!(
         run_id = run.id,
         project_id = body.project_id,
         total_cells,
+        retrospective_completed = completed_count,
+        retrospective_in_progress = in_progress_count,
         user_id = auth.user_id,
         "Production run created"
     );
@@ -163,20 +232,114 @@ pub async fn get_run(
 // GET /production-runs/{id}/matrix
 // ---------------------------------------------------------------------------
 
-/// Get the matrix state (all cells) for a production run.
+/// Get the matrix state (all cells) for a production run, enriched with names.
 pub async fn get_matrix(
     State(state): State<AppState>,
     Path(id): Path<DbId>,
 ) -> AppResult<impl IntoResponse> {
     ensure_run_exists(&state.pool, id).await?;
 
-    let cells = ProductionRunRepo::list_cells_by_run(&state.pool, id).await?;
+    // Live-refresh stale not_started cells before returning the matrix.
+    let (completed, in_progress) =
+        ProductionRunRepo::refresh_stale_cells(&state.pool, id).await?;
+    if completed > 0 || in_progress > 0 {
+        tracing::debug!(
+            run_id = id,
+            refreshed_completed = completed,
+            refreshed_in_progress = in_progress,
+            "Refreshed stale matrix cells"
+        );
+    }
+
+    let cells = ProductionRunRepo::list_matrix_cells(&state.pool, id).await?;
     tracing::debug!(
         run_id = id,
         cell_count = cells.len(),
         "Fetched matrix cells"
     );
     Ok(Json(DataResponse { data: cells }))
+}
+
+// ---------------------------------------------------------------------------
+// GET /production-runs/enabled-scene-types
+// ---------------------------------------------------------------------------
+
+/// Query params for enabled scene types endpoint.
+#[derive(Debug, Deserialize)]
+pub struct EnabledSceneTypesParams {
+    pub project_id: DbId,
+    pub character_ids: String, // Comma-separated
+}
+
+/// A scene type (+track) that is enabled for a character.
+#[derive(Debug, Serialize)]
+struct EnabledSceneTypeEntry {
+    character_id: DbId,
+    scene_type_id: DbId,
+    scene_type_name: String,
+    track_id: Option<DbId>,
+    track_name: Option<String>,
+}
+
+/// Get the enabled scene types for each character in the request.
+///
+/// Returns a flat list of `(character_id, scene_type_id, scene_type_name)`
+/// entries, one per enabled scene type per character.
+pub async fn enabled_scene_types(
+    State(state): State<AppState>,
+    Query(params): Query<EnabledSceneTypesParams>,
+) -> AppResult<impl IntoResponse> {
+    let char_ids: Vec<DbId> = params
+        .character_ids
+        .split(',')
+        .filter_map(|s| s.trim().parse().ok())
+        .collect();
+
+    if char_ids.is_empty() {
+        return Ok(Json(DataResponse {
+            data: Vec::<EnabledSceneTypeEntry>::new(),
+        }));
+    }
+
+    // For each character, get effective scene settings and collect enabled scene types.
+    // group_id is not known here — pass None to skip the group tier.
+    let mut entries = Vec::new();
+    for &cid in &char_ids {
+        let settings = CharacterSceneOverrideRepo::list_effective(
+            &state.pool,
+            cid,
+            params.project_id,
+            None,
+        )
+        .await?;
+
+        for s in settings {
+            if s.is_enabled {
+                entries.push(EnabledSceneTypeEntry {
+                    character_id: cid,
+                    scene_type_id: s.scene_type_id,
+                    scene_type_name: s.name.clone(),
+                    track_id: s.track_id,
+                    track_name: s.track_name.clone(),
+                });
+            }
+        }
+    }
+
+    // Deduplicate: one entry per (character_id, scene_type_id, track_id)
+    entries.sort_by(|a, b| {
+        a.character_id
+            .cmp(&b.character_id)
+            .then(a.scene_type_id.cmp(&b.scene_type_id))
+            .then(a.track_id.cmp(&b.track_id))
+    });
+    entries.dedup_by(|a, b| {
+        a.character_id == b.character_id
+            && a.scene_type_id == b.scene_type_id
+            && a.track_id == b.track_id
+    });
+
+    Ok(Json(DataResponse { data: entries }))
 }
 
 // ---------------------------------------------------------------------------
@@ -371,6 +534,153 @@ pub async fn get_progress(
     };
 
     Ok(Json(DataResponse { data: progress }))
+}
+
+// ---------------------------------------------------------------------------
+// POST /production-runs/{id}/cancel
+// ---------------------------------------------------------------------------
+
+/// Cancel a production run (set status to cancelled).
+pub async fn cancel_run(
+    State(state): State<AppState>,
+    auth: AuthUser,
+    Path(id): Path<DbId>,
+) -> AppResult<impl IntoResponse> {
+    let run = ensure_run_exists(&state.pool, id).await?;
+
+    // Only draft or in-progress runs can be cancelled.
+    if run.status_id == RUN_STATUS_ID_COMPLETED {
+        return Err(AppError::Core(CoreError::Validation(
+            "Cannot cancel a completed run".to_string(),
+        )));
+    }
+
+    ProductionRunRepo::update_status(
+        &state.pool,
+        id,
+        batch_production::RUN_STATUS_ID_CANCELLED,
+    )
+    .await?;
+
+    tracing::info!(run_id = id, user_id = auth.user_id, "Production run cancelled");
+
+    Ok(Json(DataResponse {
+        data: serde_json::json!({ "run_id": id, "status": "cancelled" }),
+    }))
+}
+
+// ---------------------------------------------------------------------------
+// POST /production-runs/{id}/cells/cancel
+// ---------------------------------------------------------------------------
+
+/// Request body for cancelling specific cells.
+#[derive(Debug, Deserialize)]
+pub struct CellIdsRequest {
+    pub cell_ids: Vec<DbId>,
+}
+
+/// Cancel specific cells in a production run (set status to cancelled).
+pub async fn cancel_cells(
+    State(state): State<AppState>,
+    Path(id): Path<DbId>,
+    Json(body): Json<CellIdsRequest>,
+) -> AppResult<impl IntoResponse> {
+    ensure_run_exists(&state.pool, id).await?;
+
+    let mut cancelled = 0usize;
+    for &cell_id in &body.cell_ids {
+        if let Some(_cell) = ProductionRunRepo::update_cell_status(
+            &state.pool,
+            cell_id,
+            batch_production::RUN_STATUS_ID_CANCELLED,
+            None,
+            None,
+        )
+        .await?
+        {
+            cancelled += 1;
+        }
+    }
+
+    tracing::info!(run_id = id, cancelled, "Cells cancelled");
+    Ok(Json(DataResponse {
+        data: serde_json::json!({ "run_id": id, "cancelled": cancelled }),
+    }))
+}
+
+// ---------------------------------------------------------------------------
+// DELETE /production-runs/{id}/cells
+// ---------------------------------------------------------------------------
+
+/// Delete specific cells from a production run.
+pub async fn delete_cells(
+    State(state): State<AppState>,
+    Path(id): Path<DbId>,
+    Json(body): Json<CellIdsRequest>,
+) -> AppResult<impl IntoResponse> {
+    let run = ensure_run_exists(&state.pool, id).await?;
+
+    let deleted = ProductionRunRepo::delete_cells(&state.pool, id, &body.cell_ids).await?;
+
+    // Update total_cells on the run.
+    let new_total = run.total_cells - deleted as i32;
+    ProductionRunRepo::set_total_cells(&state.pool, id, new_total).await?;
+
+    tracing::info!(run_id = id, deleted, "Cells deleted");
+    Ok(Json(DataResponse {
+        data: serde_json::json!({ "run_id": id, "deleted": deleted }),
+    }))
+}
+
+// ---------------------------------------------------------------------------
+// POST /production-runs/{id}/characters/{character_id}/delete
+// ---------------------------------------------------------------------------
+
+/// Cancel all cells for a specific character in a production run.
+pub async fn cancel_character_cells(
+    State(state): State<AppState>,
+    Path((id, character_id)): Path<(DbId, DbId)>,
+) -> AppResult<impl IntoResponse> {
+    ensure_run_exists(&state.pool, id).await?;
+
+    let cancelled =
+        ProductionRunRepo::cancel_character_cells(&state.pool, id, character_id).await?;
+
+    tracing::info!(run_id = id, character_id, cancelled, "Character cells cancelled");
+    Ok(Json(DataResponse {
+        data: serde_json::json!({ "run_id": id, "character_id": character_id, "cancelled": cancelled }),
+    }))
+}
+
+/// Delete all cells for a specific character in a production run.
+pub async fn delete_character_cells(
+    State(state): State<AppState>,
+    Path((id, character_id)): Path<(DbId, DbId)>,
+) -> AppResult<impl IntoResponse> {
+    let run = ensure_run_exists(&state.pool, id).await?;
+
+    let deleted =
+        ProductionRunRepo::delete_character_cells(&state.pool, id, character_id).await?;
+
+    // Update total_cells on the run.
+    let new_total = run.total_cells - deleted as i32;
+    ProductionRunRepo::set_total_cells(&state.pool, id, new_total).await?;
+
+    // Also update matrix_config to remove this character_id.
+    if let Ok(mut config) = serde_json::from_value::<MatrixConfig>(run.matrix_config.clone()) {
+        config.character_ids.retain(|&cid| cid != character_id);
+        let _ = ProductionRunRepo::update_matrix_config(
+            &state.pool,
+            id,
+            serde_json::to_value(&config).unwrap_or(run.matrix_config),
+        )
+        .await;
+    }
+
+    tracing::info!(run_id = id, character_id, deleted, "Character cells deleted");
+    Ok(Json(DataResponse {
+        data: serde_json::json!({ "run_id": id, "character_id": character_id, "deleted": deleted }),
+    }))
 }
 
 // ---------------------------------------------------------------------------

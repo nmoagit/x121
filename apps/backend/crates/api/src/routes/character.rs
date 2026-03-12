@@ -91,6 +91,7 @@ pub fn router() -> Router<AppState> {
         .route("/{id}/export", post(image_variant::export_for_editing))
         .route("/{id}/reimport", post(image_variant::reimport_variant))
         .route("/{id}/history", get(image_variant::variant_history))
+        .route("/{id}/thumbnail", get(image_variant::thumbnail))
         .layer(DefaultBodyLimit::max(IMAGE_BODY_LIMIT));
 
     let scene_routes = Router::new()

@@ -12,6 +12,11 @@ use state::AppState;
 
 #[tokio::main]
 async fn main() {
+    // Install rustls CryptoProvider before any TLS usage (required by rustls 0.23+)
+    rustls::crypto::ring::default_provider()
+        .install_default()
+        .expect("Failed to install rustls CryptoProvider");
+
     dotenvy::dotenv().ok();
 
     // --- Activity log broadcaster (PRD-118) ---
@@ -26,7 +31,7 @@ async fn main() {
     tracing_subscriber::registry()
         .with(
             tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| "x121_api=debug,tower_http=debug".into()),
+                .unwrap_or_else(|_| "x121_api=debug,x121_comfyui=info,x121_cloud=info,x121_pipeline=info,tower_http=info".into()),
         )
         .with(tracing_subscriber::fmt::layer())
         .with(activity_tracing_layer)
@@ -204,6 +209,7 @@ async fn main() {
         pool.clone(),
         Arc::clone(&cloud_registry),
         Arc::clone(&lifecycle_bridge),
+        Arc::clone(&activity_broadcaster),
         None,
     );
     let _monitoring_handle = x121_cloud::services::monitoring::spawn_monitoring_service(
@@ -261,6 +267,7 @@ async fn main() {
         let comfyui = Arc::clone(&comfyui_manager);
         let storage_for_events = storage_provider.clone();
         let broadcaster_for_events = Some(Arc::clone(&activity_broadcaster));
+        x121_pipeline::gen_log::init_broadcaster(Arc::clone(&activity_broadcaster));
         tokio::spawn(async move {
             tokio::select! {
                 _ = x121_worker::event_loop::run(pool, comfyui, storage_for_events, comfyui_event_rx, broadcaster_for_events) => {}

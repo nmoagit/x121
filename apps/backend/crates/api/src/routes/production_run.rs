@@ -30,6 +30,10 @@ pub fn router() -> Router<AppState> {
             "/{id}",
             get(production_run::get_run).delete(production_run::delete_run),
         )
+        .route(
+            "/enabled-scene-types",
+            get(production_run::enabled_scene_types),
+        )
         .route("/{id}/matrix", get(production_run::get_matrix))
         .route("/{id}/submit", post(production_run::submit_cells))
         .route(
@@ -37,5 +41,22 @@ pub fn router() -> Router<AppState> {
             post(production_run::resubmit_failed),
         )
         .route("/{id}/deliver", post(production_run::deliver_run))
+        .route("/{id}/cancel", post(production_run::cancel_run))
+        .route(
+            "/{id}/cells/cancel",
+            post(production_run::cancel_cells),
+        )
+        .route(
+            "/{id}/cells/delete",
+            post(production_run::delete_cells),
+        )
         .route("/{id}/progress", get(production_run::get_progress))
+        .route(
+            "/{id}/characters/{character_id}/cancel",
+            post(production_run::cancel_character_cells),
+        )
+        .route(
+            "/{id}/characters/{character_id}/delete",
+            post(production_run::delete_character_cells),
+        )
 }

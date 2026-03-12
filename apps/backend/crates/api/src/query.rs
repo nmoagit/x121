@@ -20,7 +20,7 @@ pub struct PaginationParams {
 
 /// Query parameters for list endpoints that support an `include_inactive` flag.
 ///
-/// Used by tracks, scene catalog, and any other entity with soft-deactivation.
+/// Used by tracks, scene-catalogue, and any other entity with soft-deactivation.
 #[derive(Debug, Deserialize)]
 pub struct IncludeInactiveParams {
     #[serde(default)]

@@ -6,22 +6,46 @@
 //! - `POST  /scenes/batch-generate`            — batch start generation
 //! - `POST  /segments/{id}/select-boundary-frame` — manual boundary frame selection
 
-use axum::extract::{Path, State};
+use axum::extract::{Path, Query, State};
 use axum::response::IntoResponse;
 use axum::Json;
 use x121_core::error::CoreError;
 use x121_core::generation;
+use x121_core::search::{clamp_limit, clamp_offset};
 use x121_core::types::DbId;
+use x121_core::video_settings::{self, VideoSettingsLayer};
 use x121_db::models::generation::{
     BatchGenerateError, BatchGenerateRequest, BatchGenerateResponse, GenerationProgress,
     SelectBoundaryFrameRequest, SelectBoundaryFrameResponse, StartGenerationRequest,
     StartGenerationResponse, UpdateSceneGeneration, UpdateSegmentGeneration,
 };
-use x121_db::repositories::{SceneRepo, SceneTypeRepo, SegmentRepo};
+use x121_db::models::status::SceneStatus;
+use x121_db::models::status::StatusId;
+use x121_db::repositories::{
+    CharacterRepo, ImageVariantRepo, SceneGenerationLogRepo, SceneRepo, SceneTypeRepo,
+    SceneVideoVersionRepo, SegmentRepo, TrackRepo, VideoSettingsRepo,
+};
 
 use crate::error::{AppError, AppResult};
 use crate::response::DataResponse;
 use crate::state::AppState;
+
+/// Determine the correct status to restore a scene to after cancellation/failure.
+///
+/// If the scene has existing video versions → Generated (3).
+/// Otherwise → Pending (1).
+async fn resolve_restore_status(pool: &sqlx::PgPool, scene_id: DbId) -> StatusId {
+    let has_videos = SceneVideoVersionRepo::list_by_scene(pool, scene_id)
+        .await
+        .map(|v| !v.is_empty())
+        .unwrap_or(false);
+
+    if has_videos {
+        SceneStatus::Generated.id()
+    } else {
+        SceneStatus::Pending.id()
+    }
+}
 
 /// POST /api/v1/scenes/{id}/generate
 ///
@@ -38,8 +62,21 @@ pub async fn start_generation(
         generation::validate_boundary_mode(mode).map_err(AppError::Core)?;
     }
 
+    // Clear old logs and segments from any previous generation run.
+    let _ = SceneGenerationLogRepo::delete_for_scene(&state.pool, scene_id).await;
+    let _ = SegmentRepo::delete_for_scene(&state.pool, scene_id).await;
+
     let (estimated, boundary_mode) =
         init_scene_generation(&state, scene_id, input.boundary_mode).await?;
+
+    x121_pipeline::gen_log::log(&state.pool, scene_id, "info", "Starting video generation").await;
+    x121_pipeline::gen_log::log(
+        &state.pool,
+        scene_id,
+        "info",
+        format!("Generation started \u{2014} {estimated} segments estimated"),
+    )
+    .await;
 
     // Submit the first segment (index 0) to ComfyUI in the background.
     // The worker's event loop will handle completions and drive the loop.
@@ -83,11 +120,71 @@ async fn init_scene_generation(
             id: scene.scene_type_id,
         }))?;
 
-    let target_duration = scene_type.target_duration_secs.map(|d| d as f64);
+    // Resolve video settings through the 4-level hierarchy.
+    let scene_type_layer = VideoSettingsLayer {
+        target_duration_secs: scene_type.target_duration_secs,
+        target_fps: scene_type.target_fps,
+        target_resolution: scene_type.target_resolution.clone(),
+    };
+
+    let character = CharacterRepo::find_by_id(&state.pool, scene.character_id)
+        .await?
+        .ok_or(AppError::Core(CoreError::NotFound {
+            entity: "Character",
+            id: scene.character_id,
+        }))?;
+
+    let (project_layer, group_layer, char_layer) = VideoSettingsRepo::load_hierarchy_layers(
+        &state.pool,
+        character.project_id,
+        character.group_id,
+        scene.character_id,
+        scene.scene_type_id,
+    )
+    .await?;
+
+    let is_idle = scene_type.name.to_lowercase() == "idle";
+    let resolved = video_settings::resolve_video_settings(
+        &scene_type_layer,
+        project_layer.as_ref(),
+        group_layer.as_ref(),
+        char_layer.as_ref(),
+        is_idle,
+    );
+
+    let target_duration = Some(resolved.duration_secs as f64);
+
+    // Auto-resolve seed image variant if not set.
+    let has_seed = if scene.image_variant_id.is_some() {
+        true
+    } else {
+        // Determine variant type from the scene's track (e.g. "clothed", "topless").
+        let variant_type = if let Some(track_id) = scene.track_id {
+            TrackRepo::find_by_id(&state.pool, track_id)
+                .await?
+                .map(|t| t.slug)
+        } else {
+            None
+        };
+
+        if let Some(ref vt) = variant_type {
+            if let Some(variant) =
+                ImageVariantRepo::find_hero(&state.pool, scene.character_id, vt).await?
+            {
+                // Assign the resolved variant to the scene.
+                SceneRepo::update_image_variant(&state.pool, scene_id, variant.id).await?;
+                tracing::info!(scene_id, variant_id = variant.id, variant_type = %vt, "Auto-assigned seed image variant");
+                true
+            } else {
+                false
+            }
+        } else {
+            false
+        }
+    };
 
     // A seed variant must be set for AI generation.
-    generation::validate_generation_start(scene.image_variant_id.is_some(), target_duration)
-        .map_err(AppError::Core)?;
+    generation::validate_generation_start(has_seed, target_duration).map_err(AppError::Core)?;
 
     let estimated = generation::estimate_segments(
         target_duration.unwrap_or(generation::DEFAULT_SEGMENT_DURATION_SECS),
@@ -95,8 +192,9 @@ async fn init_scene_generation(
     );
 
     let update = UpdateSceneGeneration {
+        status_id: Some(SceneStatus::Generating.id()),
         total_segments_estimated: Some(estimated as i32),
-        total_segments_completed: None,
+        total_segments_completed: Some(0),
         actual_duration_secs: None,
         transition_segment_index: None,
         generation_started_at: Some(chrono::Utc::now()),
@@ -120,6 +218,15 @@ fn submit_first_segment(state: &AppState, scene_id: DbId) {
     let storage = state.storage.clone();
     tokio::spawn(async move {
         let storage = storage.read().await.clone();
+
+        x121_pipeline::gen_log::log(
+            &pool,
+            scene_id,
+            "info",
+            "Submitting first segment to ComfyUI...",
+        )
+        .await;
+
         match x121_pipeline::submitter::submit_segment(
             &pool,
             &comfyui,
@@ -139,12 +246,63 @@ fn submit_first_segment(state: &AppState, scene_id: DbId) {
                     "First segment submitted to ComfyUI",
                 );
             }
+            Err(x121_pipeline::PipelineError::NoInstances) => {
+                // No instances available — keep scene in Generating state.
+                // The job stays Pending and the worker dispatcher will pick it
+                // up once an instance comes online.
+                tracing::warn!(
+                    scene_id,
+                    "No ComfyUI instances available — job queued for deferred dispatch",
+                );
+                x121_pipeline::gen_log::log(
+                    &pool,
+                    scene_id,
+                    "warn",
+                    "No ComfyUI instances available — requesting instance startup. \
+                     Generation will begin automatically once an instance is ready.",
+                )
+                .await;
+            }
             Err(e) => {
                 tracing::error!(
                     scene_id,
                     error = %e,
                     "Failed to submit first segment to ComfyUI",
                 );
+                // Write error to the generation log so the user can see it in the UI.
+                x121_pipeline::gen_log::log(
+                    &pool,
+                    scene_id,
+                    "error",
+                    format!("Failed to submit segment: {e}"),
+                )
+                .await;
+
+                // Revert scene to its appropriate prior status.
+                let restore_status = resolve_restore_status(&pool, scene_id).await;
+                let update = UpdateSceneGeneration {
+                    status_id: Some(restore_status),
+                    total_segments_estimated: None,
+                    total_segments_completed: None,
+                    actual_duration_secs: None,
+                    transition_segment_index: None,
+                    generation_started_at: None,
+                    generation_completed_at: None,
+                };
+                let _ = SceneRepo::update_generation_state(&pool, scene_id, &update).await;
+
+                let status_label = if restore_status == SceneStatus::Generated.id() {
+                    "generated"
+                } else {
+                    "pending"
+                };
+                x121_pipeline::gen_log::log(
+                    &pool,
+                    scene_id,
+                    "warn",
+                    format!("Scene reverted to {status_label} — fix the issue and retry"),
+                )
+                .await;
             }
         }
     });
@@ -267,8 +425,26 @@ pub async fn batch_generate(
     let mut errors = Vec::new();
 
     for &scene_id in &input.scene_ids {
+        // Clear old logs and segments before starting.
+        let _ = SceneGenerationLogRepo::delete_for_scene(&state.pool, scene_id).await;
+        let _ = SegmentRepo::delete_for_scene(&state.pool, scene_id).await;
+
         match init_scene_generation(&state, scene_id, None).await {
-            Ok(_) => {
+            Ok((_estimated, _)) => {
+                x121_pipeline::gen_log::log(
+                    &state.pool,
+                    scene_id,
+                    "info",
+                    "Starting video generation",
+                )
+                .await;
+                x121_pipeline::gen_log::log(
+                    &state.pool,
+                    scene_id,
+                    "info",
+                    format!("Generation started \u{2014} {_estimated} segments estimated"),
+                )
+                .await;
                 submit_first_segment(&state, scene_id);
                 started.push(scene_id);
             }
@@ -284,4 +460,157 @@ pub async fn batch_generate(
     Ok(Json(DataResponse {
         data: BatchGenerateResponse { started, errors },
     }))
+}
+
+// ---------------------------------------------------------------------------
+// Cancel generation
+// ---------------------------------------------------------------------------
+
+/// POST /api/v1/scenes/{id}/cancel-generation
+///
+/// Cancels an in-progress generation: reverts the scene to `Pending`,
+/// cancels any active jobs, and logs the cancellation.
+/// Also handles stale scenes stuck in `Generating` with no active jobs.
+pub async fn cancel_generation(
+    State(state): State<AppState>,
+    Path(scene_id): Path<DbId>,
+) -> AppResult<impl IntoResponse> {
+    use x121_db::models::status::JobStatus;
+    use x121_db::repositories::JobRepo;
+
+    let scene = SceneRepo::find_by_id(&state.pool, scene_id)
+        .await?
+        .ok_or(AppError::Core(CoreError::NotFound {
+            entity: "Scene",
+            id: scene_id,
+        }))?;
+
+    if scene.status_id != SceneStatus::Generating.id() {
+        return Err(AppError::BadRequest(
+            "Scene is not currently generating".to_string(),
+        ));
+    }
+
+    // Cancel any pending/running jobs for this scene.
+    // Scan recent non-terminal jobs whose parameters reference this scene.
+    let jobs = JobRepo::list_all(
+        &state.pool,
+        &x121_db::models::job::JobListQuery {
+            status_id: None,
+            limit: Some(100),
+            offset: None,
+        },
+    )
+    .await?;
+
+    let mut cancelled_jobs = 0u32;
+    for job in jobs {
+        // Skip terminal jobs.
+        if job.status_id == JobStatus::Completed.id()
+            || job.status_id == JobStatus::Failed.id()
+            || job.status_id == JobStatus::Cancelled.id()
+        {
+            continue;
+        }
+
+        if let Ok(params) = serde_json::from_value::<x121_db::models::generation::SegmentJobParams>(
+            job.parameters.clone(),
+        ) {
+            if params.scene_id == scene_id {
+                let _ = JobRepo::cancel(&state.pool, job.id).await;
+                // Also send cancel signal to ComfyUI if running.
+                if job.worker_id.is_some() {
+                    let _ = state.comfyui_manager.cancel_job(job.id).await;
+                }
+                cancelled_jobs += 1;
+            }
+        }
+    }
+
+    // Revert scene to its appropriate prior status (Generated if has videos, else Pending).
+    let restore_status = resolve_restore_status(&state.pool, scene_id).await;
+    let update = UpdateSceneGeneration {
+        status_id: Some(restore_status),
+        total_segments_estimated: None,
+        total_segments_completed: None,
+        actual_duration_secs: None,
+        transition_segment_index: None,
+        generation_started_at: None,
+        generation_completed_at: None,
+    };
+    SceneRepo::update_generation_state(&state.pool, scene_id, &update).await?;
+
+    let restore_label = if restore_status == SceneStatus::Generated.id() {
+        "generated"
+    } else {
+        "pending"
+    };
+
+    x121_pipeline::gen_log::log(
+        &state.pool,
+        scene_id,
+        "warn",
+        format!("Generation cancelled — {cancelled_jobs} job(s) cancelled, scene reverted to {restore_label}"),
+    )
+    .await;
+
+    Ok(Json(DataResponse {
+        data: serde_json::json!({
+            "scene_id": scene_id,
+            "status": restore_label,
+            "cancelled_jobs": cancelled_jobs,
+        }),
+    }))
+}
+
+// ---------------------------------------------------------------------------
+// Generation log
+// ---------------------------------------------------------------------------
+
+/// GET /api/v1/scenes/{id}/generation-log
+///
+/// Returns terminal-style log entries produced during video generation.
+pub async fn get_generation_log(
+    State(state): State<AppState>,
+    Path(scene_id): Path<DbId>,
+    Query(params): Query<crate::query::PaginationParams>,
+) -> AppResult<impl IntoResponse> {
+    // Verify scene exists.
+    let _scene = SceneRepo::find_by_id(&state.pool, scene_id)
+        .await?
+        .ok_or(AppError::Core(CoreError::NotFound {
+            entity: "Scene",
+            id: scene_id,
+        }))?;
+
+    let limit = clamp_limit(params.limit, 100, 500);
+    let offset = clamp_offset(params.offset);
+    let logs = SceneGenerationLogRepo::list_for_scene(&state.pool, scene_id, limit, offset).await?;
+
+    Ok(Json(DataResponse { data: logs }))
+}
+
+/// GET /api/v1/generation-logs
+///
+/// Returns the most recent generation log entries across all scenes.
+/// Used by the activity console for a global view of generation activity.
+pub async fn list_all_generation_logs(
+    State(state): State<AppState>,
+    Query(params): Query<crate::query::PaginationParams>,
+) -> AppResult<impl IntoResponse> {
+    let limit = clamp_limit(params.limit, 200, 500);
+    let offset = clamp_offset(params.offset);
+    let logs = SceneGenerationLogRepo::list_recent(&state.pool, limit, offset).await?;
+    Ok(Json(DataResponse { data: logs }))
+}
+
+/// DELETE /api/v1/scenes/{id}/generation-log
+///
+/// Clears all generation log entries for a scene.
+pub async fn clear_generation_log(
+    State(state): State<AppState>,
+    Path(scene_id): Path<DbId>,
+) -> AppResult<impl IntoResponse> {
+    let _ = SceneGenerationLogRepo::delete_for_scene(&state.pool, scene_id).await;
+    Ok(axum::http::StatusCode::NO_CONTENT)
 }

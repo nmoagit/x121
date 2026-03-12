@@ -20,6 +20,8 @@ pub struct ServerConfig {
     pub shutdown_timeout_secs: u64,
     /// JWT token configuration (secret, expiry durations).
     pub jwt: JwtConfig,
+    /// Root directory for file storage (default: `storage`).
+    pub storage_root: String,
 }
 
 impl ServerConfig {
@@ -59,6 +61,8 @@ impl ServerConfig {
 
         let jwt = JwtConfig::from_env();
 
+        let storage_root = std::env::var("STORAGE_ROOT").unwrap_or_else(|_| "storage".into());
+
         Self {
             host,
             port,
@@ -66,6 +70,7 @@ impl ServerConfig {
             request_timeout_secs,
             shutdown_timeout_secs,
             jwt,
+            storage_root,
         }
     }
 }

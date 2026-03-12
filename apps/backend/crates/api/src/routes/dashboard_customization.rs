@@ -12,8 +12,8 @@
 //! POST   /presets/{id}/share           share_preset
 //! POST   /presets/import/{share_token} import_preset
 //!
-//! DASHBOARD CATALOG (mounted at /dashboard):
-//! GET    /widget-catalog               get_widget_catalog
+//! DASHBOARD CATALOGUE (mounted at /dashboard):
+//! GET    /widget-catalogue               get_widget_catalogue
 //!
 //! ADMIN DASHBOARD (mounted at /admin/dashboard):
 //! GET    /role-defaults                list_role_defaults
@@ -54,11 +54,11 @@ pub fn user_dashboard_router() -> Router<AppState> {
         )
 }
 
-/// Dashboard catalog routes -- merged into `/dashboard`.
+/// Dashboard catalogue routes -- merged into `/dashboard`.
 pub fn dashboard_catalog_router() -> Router<AppState> {
     Router::new().route(
-        "/widget-catalog",
-        get(dashboard_customization::get_widget_catalog),
+        "/widget-catalogue",
+        get(dashboard_customization::get_widget_catalogue),
     )
 }
 

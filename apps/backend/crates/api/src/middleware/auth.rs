@@ -34,21 +34,32 @@ impl FromRequestParts<AppState> for AuthUser {
         parts: &mut Parts,
         state: &AppState,
     ) -> Result<Self, Self::Rejection> {
-        let auth_header = parts
+        // Try Authorization header first, then fall back to ?token= query param
+        // (needed for WebSocket connections which can't set custom headers).
+        let token = if let Some(auth_header) = parts
             .headers
             .get("authorization")
             .and_then(|v| v.to_str().ok())
-            .ok_or_else(|| {
+        {
+            auth_header.strip_prefix("Bearer ").ok_or_else(|| {
                 AppError::Core(CoreError::Unauthorized(
-                    "Missing Authorization header".into(),
+                    "Invalid Authorization format. Expected: Bearer <token>".into(),
                 ))
-            })?;
-
-        let token = auth_header.strip_prefix("Bearer ").ok_or_else(|| {
-            AppError::Core(CoreError::Unauthorized(
-                "Invalid Authorization format. Expected: Bearer <token>".into(),
-            ))
-        })?;
+            })?
+        } else if let Some(query) = parts.uri.query() {
+            query
+                .split('&')
+                .find_map(|pair| pair.strip_prefix("token="))
+                .ok_or_else(|| {
+                    AppError::Core(CoreError::Unauthorized(
+                        "Missing Authorization header or token query parameter".into(),
+                    ))
+                })?
+        } else {
+            return Err(AppError::Core(CoreError::Unauthorized(
+                "Missing Authorization header".into(),
+            )));
+        };
 
         let claims = validate_token(token, &state.config.jwt).map_err(|_| {
             AppError::Core(CoreError::Unauthorized("Invalid or expired token".into()))

@@ -18,16 +18,18 @@ use crate::handlers::generation;
 use crate::state::AppState;
 
 /// Routes merged into the `/scenes` nest.
-///
-/// ```text
-/// POST /{id}/generate
-/// GET  /{id}/progress
-/// POST /batch-generate
-/// ```
 pub fn generation_scene_router() -> Router<AppState> {
     Router::new()
         .route("/{id}/generate", post(generation::start_generation))
+        .route(
+            "/{id}/cancel-generation",
+            post(generation::cancel_generation),
+        )
         .route("/{id}/progress", get(generation::get_progress))
+        .route(
+            "/{id}/generation-log",
+            get(generation::get_generation_log).delete(generation::clear_generation_log),
+        )
         .route("/batch-generate", post(generation::batch_generate))
 }
 

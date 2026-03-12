@@ -17,7 +17,10 @@ use x121_db::models::scene_video_version::{
     UpdateSceneVideoVersion,
 };
 use x121_db::models::scene_video_version_artifact::SceneVideoVersionArtifact;
-use x121_db::repositories::{SceneVideoVersionArtifactRepo, SceneVideoVersionRepo, SegmentRepo};
+use x121_db::models::status::SceneStatus;
+use x121_db::repositories::{
+    SceneRepo, SceneVideoVersionArtifactRepo, SceneVideoVersionRepo, SegmentRepo,
+};
 
 use crate::error::{AppError, AppResult};
 use crate::middleware::auth::AuthUser;
@@ -322,18 +325,33 @@ pub async fn import_video(
 
     let file_size = data.len() as i64;
 
+    // If the scene already has a final version that is approved, keep it as final
+    // and create the new version as non-final. The user can manually promote the
+    // new version to final if desired.
+    let existing_final = SceneVideoVersionRepo::find_final_for_scene(&state.pool, scene_id).await?;
+    let has_approved_final = existing_final
+        .as_ref()
+        .is_some_and(|v| v.qa_status == CLIP_QA_APPROVED);
+
     let input = CreateSceneVideoVersion {
         scene_id,
         source: CLIP_SOURCE_IMPORTED.to_string(),
         file_path: storage_key,
         file_size_bytes: Some(file_size),
         duration_secs: None, // would require ffprobe to determine
-        is_final: Some(true),
+        is_final: Some(!has_approved_final),
         notes,
         generation_snapshot: None,
     };
 
-    let version = SceneVideoVersionRepo::create_as_final(&state.pool, &input).await?;
+    let version = if has_approved_final {
+        SceneVideoVersionRepo::create(&state.pool, &input).await?
+    } else {
+        SceneVideoVersionRepo::create_as_final(&state.pool, &input).await?
+    };
+
+    // Update scene status to Generated (has video content).
+    SceneRepo::set_status(&state.pool, scene_id, SceneStatus::Generated.id()).await?;
 
     // Best-effort: generate a low-res preview copy for card thumbnails.
     generate_preview_for_version(&state, &version).await;
@@ -352,10 +370,11 @@ pub async fn import_video(
 /// PUT /api/v1/scenes/{scene_id}/versions/{id}/approve
 ///
 /// Sets the clip's `qa_status` to `"approved"`, recording the reviewer and timestamp.
+/// Also updates the parent scene's status to Approved.
 pub async fn approve_clip(
     auth: AuthUser,
     State(state): State<AppState>,
-    Path((_scene_id, id)): Path<(DbId, DbId)>,
+    Path((scene_id, id)): Path<(DbId, DbId)>,
 ) -> AppResult<Json<DataResponse<SceneVideoVersion>>> {
     let _version = ensure_version_exists(&state.pool, id).await?;
 
@@ -378,6 +397,9 @@ pub async fn approve_clip(
             })
         })?;
 
+    // Update parent scene status to Approved
+    SceneRepo::set_status(&state.pool, scene_id, SceneStatus::Approved.id()).await?;
+
     tracing::info!(user_id = auth.user_id, version_id = id, "Clip approved");
     Ok(Json(DataResponse { data: updated }))
 }
@@ -386,10 +408,12 @@ pub async fn approve_clip(
 ///
 /// Sets the clip's `qa_status` to `"rejected"`, recording the reviewer, timestamp,
 /// rejection reason, and optional notes.
+/// If all clips for the scene are now rejected, sets the scene status to Rejected.
+/// Otherwise reverts to Generated.
 pub async fn reject_clip(
     auth: AuthUser,
     State(state): State<AppState>,
-    Path((_scene_id, id)): Path<(DbId, DbId)>,
+    Path((scene_id, id)): Path<(DbId, DbId)>,
     Json(input): Json<RejectClipRequest>,
 ) -> AppResult<Json<DataResponse<SceneVideoVersion>>> {
     let _version = ensure_version_exists(&state.pool, id).await?;
@@ -412,6 +436,19 @@ pub async fn reject_clip(
                 id,
             })
         })?;
+
+    // Check if any non-rejected clip remains; if not, mark scene as Rejected.
+    let remaining = SceneVideoVersionRepo::list_by_scene(&state.pool, scene_id).await?;
+    let has_approved = remaining.iter().any(|v| v.qa_status == CLIP_QA_APPROVED);
+    let all_rejected = remaining.iter().all(|v| v.qa_status == CLIP_QA_REJECTED);
+
+    if has_approved {
+        SceneRepo::set_status(&state.pool, scene_id, SceneStatus::Approved.id()).await?;
+    } else if all_rejected {
+        SceneRepo::set_status(&state.pool, scene_id, SceneStatus::Rejected.id()).await?;
+    } else {
+        SceneRepo::set_status(&state.pool, scene_id, SceneStatus::Generated.id()).await?;
+    }
 
     tracing::info!(user_id = auth.user_id, version_id = id, "Clip rejected");
     Ok(Json(DataResponse { data: updated }))

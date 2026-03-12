@@ -8,7 +8,7 @@ use axum::http::StatusCode;
 use axum::Json;
 use x121_core::error::CoreError;
 use x121_core::types::DbId;
-use x121_db::models::scene::{CreateScene, Scene, UpdateScene};
+use x121_db::models::scene::{CreateScene, Scene, SceneWithVersion, UpdateScene};
 use x121_db::repositories::SceneRepo;
 
 use crate::error::{AppError, AppResult};
@@ -29,11 +29,14 @@ pub async fn create(
 }
 
 /// GET /api/v1/characters/{character_id}/scenes
+///
+/// Returns scenes with their best video version ID and version count,
+/// eliminating the N+1 query pattern on the frontend.
 pub async fn list_by_character(
     State(state): State<AppState>,
     Path(character_id): Path<DbId>,
-) -> AppResult<Json<DataResponse<Vec<Scene>>>> {
-    let scenes = SceneRepo::list_by_character(&state.pool, character_id).await?;
+) -> AppResult<Json<DataResponse<Vec<SceneWithVersion>>>> {
+    let scenes = SceneRepo::list_by_character_with_versions(&state.pool, character_id).await?;
     Ok(Json(DataResponse { data: scenes }))
 }
 

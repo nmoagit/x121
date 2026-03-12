@@ -62,6 +62,34 @@ pub fn character_prompt_override_router() -> Router<AppState> {
     )
 }
 
+/// Project-level prompt override routes (merged into `/projects`).
+///
+/// ```text
+/// GET  /{project_id}/scenes/{scene_type_id}/prompt-overrides  -> get_project_prompt_overrides
+/// PUT  /{project_id}/scenes/{scene_type_id}/prompt-overrides  -> upsert_project_prompt_overrides
+/// ```
+pub fn project_prompt_override_router() -> Router<AppState> {
+    Router::new().route(
+        "/{project_id}/scenes/{scene_type_id}/prompt-overrides",
+        get(prompt_management::get_project_prompt_overrides)
+            .put(prompt_management::upsert_project_prompt_overrides),
+    )
+}
+
+/// Group-level prompt override routes (merged into group routes under `/projects/{project_id}/groups`).
+///
+/// ```text
+/// GET  /{group_id}/scenes/{scene_type_id}/prompt-overrides  -> get_group_prompt_overrides
+/// PUT  /{group_id}/scenes/{scene_type_id}/prompt-overrides  -> upsert_group_prompt_overrides
+/// ```
+pub fn group_prompt_override_router() -> Router<AppState> {
+    Router::new().route(
+        "/{group_id}/scenes/{scene_type_id}/prompt-overrides",
+        get(prompt_management::get_group_prompt_overrides)
+            .put(prompt_management::upsert_group_prompt_overrides),
+    )
+}
+
 /// Prompt resolution route (mounted at `/prompts`).
 ///
 /// ```text

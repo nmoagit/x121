@@ -912,6 +912,8 @@ pub fn api_routes() -> Router<AppState> {
         .nest("/speech-types", speech_type::router())
         // Trash / bin management.
         .nest("/trash", trash::router())
+        // Annotation browsing (cross-project annotation overview).
+        .nest("/annotations", annotation::annotation_browse_router())
         // Notifications, preferences, and settings.
         .nest("/notifications", notification::router())
         // Image quality assurance (check types, QA runs, thresholds).
@@ -1074,6 +1076,8 @@ pub fn api_routes() -> Router<AppState> {
         .nest("/admin/settings", platform_settings::router())
         // Dynamic naming engine (PRD-116).
         .nest("/admin/naming", naming::router())
+        // Global generation logs (all scenes) for the activity console.
+        .route("/generation-logs", get(handlers::generation::list_all_generation_logs))
         // Activity logs: query and export (PRD-118).
         .nest("/activity-logs", activity_log::router())
         // Activity logs: admin settings and purge (PRD-118).

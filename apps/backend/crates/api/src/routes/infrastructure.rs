@@ -19,15 +19,15 @@ pub fn router() -> Router<AppState> {
         .route("/bulk/stop", post(infrastructure::bulk_stop))
         .route("/bulk/terminate", post(infrastructure::bulk_terminate))
         .route(
-            "/cloud-instances/:id/restart-comfyui",
+            "/cloud-instances/{id}/restart-comfyui",
             post(infrastructure::restart_comfyui),
         )
         .route(
-            "/cloud-instances/:id/force-reconnect",
+            "/cloud-instances/{id}/force-reconnect",
             post(infrastructure::force_reconnect_instance),
         )
         .route(
-            "/cloud-instances/:id/reset-state",
+            "/cloud-instances/{id}/reset-state",
             post(infrastructure::reset_state),
         )
 }

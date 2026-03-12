@@ -15,7 +15,7 @@ use x121_core::types::DbId;
 use x121_db::models::cloud_provider::*;
 use x121_db::repositories::{
     CloudCostEventRepo, CloudGpuTypeRepo, CloudInstanceRepo, CloudProviderRepo,
-    CloudScalingRuleRepo,
+    CloudScalingEventRepo, CloudScalingRuleRepo,
 };
 
 use crate::error::{AppError, AppResult};
@@ -260,15 +260,25 @@ pub async fn update_gpu_type(
 // Instances
 // ---------------------------------------------------------------------------
 
-/// GET /admin/cloud-providers/:id/instances
+/// GET /admin/cloud-providers/:id/instances?include_archived=true
 pub async fn list_instances(
     RequireAdmin(_admin): RequireAdmin,
     State(state): State<AppState>,
     Path(id): Path<DbId>,
+    Query(params): Query<ListInstancesParams>,
 ) -> AppResult<Json<DataResponse<Vec<CloudInstance>>>> {
     let _ = ensure_provider_exists(&state.pool, id).await?;
-    let instances = CloudInstanceRepo::list_by_provider(&state.pool, id).await?;
+    let instances = if params.include_archived.unwrap_or(false) {
+        CloudInstanceRepo::list_by_provider(&state.pool, id).await?
+    } else {
+        CloudInstanceRepo::list_active_by_provider(&state.pool, id).await?
+    };
     Ok(Json(DataResponse { data: instances }))
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ListInstancesParams {
+    pub include_archived: Option<bool>,
 }
 
 /// POST /admin/cloud-providers/:id/instances/provision
@@ -304,13 +314,26 @@ pub async fn provision_instance(
         .provision_instance(&gpu_type.gpu_id, &config)
         .await?;
 
+    // Use cost from provision response; fall back to GPU type's synced cost.
+    let cost_cents = if info.cost_per_hour_cents > 0 {
+        info.cost_per_hour_cents as i32
+    } else {
+        gpu_type.cost_per_hour_cents
+    };
+
+    // Store container disk size in metadata for cost calculations.
+    let container_disk_gb = config.container_disk_gb.unwrap_or(20);
+    let metadata = Some(serde_json::json!({
+        "container_disk_gb": container_disk_gb,
+    }));
+
     let create = CreateCloudInstance {
         gpu_type_id: input.gpu_type_id,
         external_id: info.external_id,
         name: info.name,
         gpu_count: Some(config.gpu_count as i16),
-        cost_per_hour_cents: info.cost_per_hour_cents as i32,
-        metadata: None,
+        cost_per_hour_cents: cost_cents,
+        metadata,
     };
 
     let instance = CloudInstanceRepo::create(&state.pool, id, &create).await?;
@@ -368,7 +391,7 @@ pub async fn stop_instance(
         Ok(orch) => {
             if let Err(e) = state
                 .lifecycle_bridge
-                .teardown(inst_id, &orch, &inst.external_id)
+                .teardown(inst_id, &orch, &inst.external_id, false)
                 .await
             {
                 tracing::warn!(
@@ -410,18 +433,13 @@ pub async fn terminate_instance(
 ) -> AppResult<StatusCode> {
     let inst = ensure_instance_exists(&state.pool, inst_id).await?;
 
-    // Teardown: disconnect ComfyUI and disable the linked instance row.
+    // Teardown with terminate=true: disconnects ComfyUI, terminates the pod,
+    // and marks the DB row as terminated.
     match state.lifecycle_bridge.build_orchestrator(provider_id).await {
         Ok(orch) => {
-            // teardown calls stop_or_terminate_pod internally, but we still
-            // need to call the provider's terminate_instance separately since
-            // teardown uses the orchestrator (which may just stop the pod).
-            // So we only do the ComfyUI teardown part here, then terminate.
-            // Since teardown also stops the pod, we skip that and just do the
-            // ComfyUI cleanup manually.
             if let Err(e) = state
                 .lifecycle_bridge
-                .teardown(inst_id, &orch, &inst.external_id)
+                .teardown(inst_id, &orch, &inst.external_id, true)
                 .await
             {
                 tracing::warn!(
@@ -429,9 +447,9 @@ pub async fn terminate_instance(
                     error = %e,
                     "Lifecycle teardown failed during terminate; proceeding with provider terminate"
                 );
-                // Fall back to direct terminate.
                 let provider = get_provider_impl(&state, provider_id).await?;
                 provider.terminate_instance(&inst.external_id).await?;
+                CloudInstanceRepo::mark_terminated(&state.pool, inst_id, inst.total_cost_cents).await?;
             }
         }
         Err(e) => {
@@ -442,10 +460,9 @@ pub async fn terminate_instance(
             );
             let provider = get_provider_impl(&state, provider_id).await?;
             provider.terminate_instance(&inst.external_id).await?;
+            CloudInstanceRepo::mark_terminated(&state.pool, inst_id, inst.total_cost_cents).await?;
         }
     }
-
-    CloudInstanceRepo::mark_terminated(&state.pool, inst_id, inst.total_cost_cents).await?;
     Ok(StatusCode::NO_CONTENT)
 }
 
@@ -521,6 +538,50 @@ pub async fn delete_scaling_rule(
             id: rule_id,
         }))
     }
+}
+
+/// GET /admin/cloud-providers/:id/scaling-events?limit=100
+///
+/// Returns the most recent scaling decision audit log for a provider.
+pub async fn list_scaling_events(
+    RequireAdmin(_admin): RequireAdmin,
+    State(state): State<AppState>,
+    Path(id): Path<DbId>,
+    Query(params): Query<ScalingEventQuery>,
+) -> AppResult<Json<DataResponse<Vec<CloudScalingEvent>>>> {
+    let _ = ensure_provider_exists(&state.pool, id).await?;
+    let limit = params.limit.unwrap_or(100).min(500);
+    let events = CloudScalingEventRepo::list_by_provider(&state.pool, id, limit).await?;
+    Ok(Json(DataResponse { data: events }))
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ScalingEventQuery {
+    pub limit: Option<i64>,
+}
+
+/// POST /admin/cloud-providers/:id/scaling-reset
+///
+/// Clears all scaling decision history for a provider and resets the cooldown
+/// on all its scaling rules so the next evaluation can act immediately.
+pub async fn reset_scaling(
+    RequireAdmin(admin): RequireAdmin,
+    State(state): State<AppState>,
+    Path(id): Path<DbId>,
+) -> AppResult<StatusCode> {
+    let _ = ensure_provider_exists(&state.pool, id).await?;
+
+    let deleted = CloudScalingEventRepo::delete_by_provider(&state.pool, id).await?;
+    CloudScalingRuleRepo::reset_cooldown_by_provider(&state.pool, id).await?;
+
+    tracing::info!(
+        provider_id = id,
+        deleted_events = deleted,
+        admin_id = admin.user_id,
+        "Scaling history reset and cooldown cleared",
+    );
+
+    Ok(StatusCode::NO_CONTENT)
 }
 
 // ---------------------------------------------------------------------------
