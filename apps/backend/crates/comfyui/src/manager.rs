@@ -10,6 +10,7 @@
 //! channel. Call [`ComfyUIManager::subscribe`] to receive them.
 
 use std::collections::HashMap;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 
 use tokio::sync::{broadcast, RwLock};
@@ -51,6 +52,12 @@ struct ManagedInstance {
     task_handle: tokio::task::JoinHandle<()>,
     /// Per-instance cancellation token (child of the master token).
     cancel: CancellationToken,
+    /// Whether the WebSocket is currently connected (set by the connection loop).
+    connected: Arc<AtomicBool>,
+    /// The client_id used by the current WebSocket connection. Updated by the
+    /// connection loop on each (re)connect. Workflow submissions must use this
+    /// same client_id so ComfyUI routes messages back to our WebSocket listener.
+    ws_client_id: Arc<std::sync::RwLock<String>>,
 }
 
 impl ComfyUIManager {
@@ -114,10 +121,16 @@ impl ComfyUIManager {
 
     /// Return the IDs of all currently connected instances.
     ///
-    /// Used by the job dispatcher to determine which workers are available
-    /// for job assignment.
+    /// Only includes instances whose WebSocket is actively connected,
+    /// not those that are spawned but still in the reconnect loop.
     pub async fn connected_instance_ids(&self) -> Vec<DbId> {
-        self.connections.read().await.keys().copied().collect()
+        self.connections
+            .read()
+            .await
+            .iter()
+            .filter(|(_, m)| m.connected.load(Ordering::Relaxed))
+            .map(|(id, _)| *id)
+            .collect()
     }
 
     /// Get the API client for a specific instance.
@@ -160,7 +173,19 @@ impl ComfyUIManager {
             .get(&instance_id)
             .ok_or(ComfyUIManagerError::InstanceNotFound(instance_id))?;
 
-        let client_id = uuid::Uuid::new_v4().to_string();
+        // Use the same client_id as the WebSocket connection so ComfyUI
+        // routes execution messages back to our listener.
+        let client_id = managed
+            .ws_client_id
+            .read()
+            .unwrap_or_else(|e| e.into_inner())
+            .clone();
+
+        if client_id.is_empty() {
+            return Err(ComfyUIManagerError::SubmitFailed(
+                "WebSocket not connected — no client_id available".to_string(),
+            ));
+        }
 
         let response = managed
             .api
@@ -395,6 +420,10 @@ impl ComfyUIManager {
         let event_tx = self.event_tx.clone();
         let cancel_clone = instance_cancel.clone();
         let client_clone = Arc::clone(&client);
+        let connected = Arc::new(AtomicBool::new(false));
+        let connected_clone = Arc::clone(&connected);
+        let ws_client_id = Arc::new(std::sync::RwLock::new(String::new()));
+        let ws_client_id_clone = Arc::clone(&ws_client_id);
 
         let activity_clone = self.activity.clone();
         let task_handle = tokio::spawn(async move {
@@ -407,6 +436,8 @@ impl ComfyUIManager {
                 &event_tx,
                 &cancel_clone,
                 activity_clone.as_deref(),
+                &connected_clone,
+                &ws_client_id_clone,
             )
             .await;
             tracing::info!(instance_id, "Connection task exited");
@@ -417,6 +448,8 @@ impl ComfyUIManager {
             api,
             task_handle,
             cancel: instance_cancel,
+            connected,
+            ws_client_id,
         };
 
         self.connections.write().await.insert(instance_id, managed);
@@ -434,6 +467,8 @@ async fn run_connection_loop(
     event_tx: &broadcast::Sender<ComfyUIEvent>,
     cancel: &CancellationToken,
     activity: Option<&ActivityLogBroadcaster>,
+    connected: &AtomicBool,
+    shared_client_id: &std::sync::RwLock<String>,
 ) {
     let reconnect_config = ReconnectConfig::default();
 
@@ -454,7 +489,13 @@ async fn run_connection_loop(
             }
         };
 
-        // Record the connection in the database.
+        // Publish the WebSocket client_id so submit_workflow uses the same one.
+        if let Ok(mut id) = shared_client_id.write() {
+            *id = conn.client_id.clone();
+        }
+
+        // Mark as connected and record in the database.
+        connected.store(true, Ordering::Relaxed);
         if let Err(e) = ComfyUIInstanceRepo::record_connection(pool, instance_id).await {
             tracing::error!(instance_id, error = %e, "Failed to record connection");
         }
@@ -475,11 +516,18 @@ async fn run_connection_loop(
             );
         }
 
+        // Check for executions that completed while we were disconnected.
+        recover_missed_completions(instance_id, pool, event_tx, client).await;
+
         // Process messages until the connection drops.
         let mut ws_stream = conn.ws_stream;
         process_messages(&mut ws_stream, instance_id, pool, event_tx).await;
 
-        // The connection has dropped.
+        // The connection has dropped — clear the shared client_id.
+        if let Ok(mut id) = shared_client_id.write() {
+            id.clear();
+        }
+        connected.store(false, Ordering::Relaxed);
         if let Err(e) = ComfyUIInstanceRepo::record_disconnection(pool, instance_id).await {
             tracing::error!(instance_id, error = %e, "Failed to record disconnection");
         }
@@ -509,6 +557,159 @@ async fn run_connection_loop(
         match reconnect_loop(client, &reconnect_config, cancel).await {
             Some(_) => continue, // loop back to process messages
             None => return,      // cancelled
+        }
+    }
+}
+
+/// Check for executions that completed on ComfyUI while we were disconnected.
+///
+/// Queries the database for any executions in "submitted" or "running" status
+/// on this instance, then checks ComfyUI's history API to see if they've
+/// actually finished. If so, emits the appropriate completion or error event
+/// so the event loop can process them.
+async fn recover_missed_completions(
+    instance_id: DbId,
+    pool: &sqlx::PgPool,
+    event_tx: &broadcast::Sender<ComfyUIEvent>,
+    client: &ComfyUIClient,
+) {
+    // Find outstanding executions for this instance.
+    let rows: Vec<(i64, String)> = match sqlx::query_as(
+        "SELECT id, comfyui_prompt_id FROM comfyui_executions \
+         WHERE instance_id = $1 AND status IN ('submitted', 'running') \
+         ORDER BY id",
+    )
+    .bind(instance_id)
+    .fetch_all(pool)
+    .await
+    {
+        Ok(r) => r,
+        Err(e) => {
+            tracing::warn!(instance_id, error = %e, "Failed to query outstanding executions");
+            return;
+        }
+    };
+
+    if rows.is_empty() {
+        return;
+    }
+
+    tracing::info!(
+        instance_id,
+        count = rows.len(),
+        "Checking {} outstanding execution(s) after reconnect",
+        rows.len(),
+    );
+
+    let api = crate::api::ComfyUIApi::new(client.api_url().to_string());
+
+    for (exec_id, prompt_id) in &rows {
+        match api.get_history(prompt_id).await {
+            Ok(history) => {
+                if let Some(entry) = history.get(prompt_id.as_str()) {
+                    // Check if there's a status field indicating completion.
+                    let status_info = entry.get("status");
+                    let completed = status_info
+                        .and_then(|s| s.get("completed"))
+                        .and_then(|v| v.as_bool())
+                        .unwrap_or(false);
+                    let status_msg = status_info
+                        .and_then(|s| s.get("status_str"))
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("");
+
+                    // Also check if outputs exist (non-empty outputs means it completed).
+                    let has_outputs = entry
+                        .get("outputs")
+                        .and_then(|o| o.as_object())
+                        .map(|o| !o.is_empty())
+                        .unwrap_or(false);
+
+                    if completed || has_outputs {
+                        // Check for error status
+                        if status_msg == "error" {
+                            let error_msg = entry
+                                .pointer("/status/messages")
+                                .and_then(|m| m.as_array())
+                                .and_then(|arr| {
+                                    arr.iter().find_map(|msg| {
+                                        let msg_type = msg.as_array()?.first()?.as_str()?;
+                                        if msg_type == "execution_error" {
+                                            msg.as_array()?.get(1)?.get("exception_message")?.as_str().map(|s| s.to_string())
+                                        } else {
+                                            None
+                                        }
+                                    })
+                                })
+                                .unwrap_or_else(|| "Unknown error".to_string());
+
+                            tracing::warn!(
+                                instance_id,
+                                exec_id,
+                                %prompt_id,
+                                "Recovered missed execution error: {error_msg}",
+                            );
+
+                            if let Err(e) = ComfyUIExecutionRepo::mark_failed(pool, prompt_id, &error_msg).await {
+                                tracing::error!(error = %e, "Failed to mark recovered execution as failed");
+                            }
+
+                            if let Ok(Some(exec)) = ComfyUIExecutionRepo::find_by_prompt_id(pool, prompt_id).await {
+                                let _ = event_tx.send(ComfyUIEvent::GenerationError {
+                                    instance_id,
+                                    platform_job_id: exec.platform_job_id,
+                                    prompt_id: prompt_id.clone(),
+                                    error: error_msg,
+                                });
+                            }
+                        } else {
+                            tracing::info!(
+                                instance_id,
+                                exec_id,
+                                %prompt_id,
+                                "Recovered missed completion from history",
+                            );
+
+                            if let Err(e) = ComfyUIExecutionRepo::mark_completed(pool, prompt_id).await {
+                                tracing::error!(error = %e, "Failed to mark recovered execution as completed");
+                            }
+
+                            if let Ok(Some(exec)) = ComfyUIExecutionRepo::find_by_prompt_id(pool, prompt_id).await {
+                                let _ = event_tx.send(ComfyUIEvent::GenerationCompleted {
+                                    instance_id,
+                                    platform_job_id: exec.platform_job_id,
+                                    prompt_id: prompt_id.clone(),
+                                    outputs: serde_json::Value::Null,
+                                });
+                            }
+                        }
+                    } else {
+                        tracing::debug!(
+                            instance_id,
+                            exec_id,
+                            %prompt_id,
+                            "Execution still in progress on ComfyUI",
+                        );
+                    }
+                } else {
+                    // No history entry — ComfyUI may have restarted and lost it.
+                    tracing::warn!(
+                        instance_id,
+                        exec_id,
+                        %prompt_id,
+                        "No history found on ComfyUI — execution may have been lost",
+                    );
+                }
+            }
+            Err(e) => {
+                tracing::warn!(
+                    instance_id,
+                    exec_id,
+                    %prompt_id,
+                    error = %e,
+                    "Failed to check execution history",
+                );
+            }
         }
     }
 }

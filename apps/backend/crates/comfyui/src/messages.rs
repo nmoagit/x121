@@ -40,6 +40,11 @@ pub enum ComfyUIMessage {
     /// Execution failed with an error.
     #[serde(rename = "execution_error")]
     ExecutionError(ErrorData),
+
+    /// Per-node progress state (newer ComfyUI versions).
+    /// Contains running/finished state for each node in the workflow.
+    #[serde(rename = "progress_state")]
+    ProgressState(ProgressStateData),
 }
 
 /// Queue status information.
@@ -110,6 +115,23 @@ pub struct ErrorData {
     pub node_id: String,
     pub exception_message: String,
     pub exception_type: String,
+}
+
+/// Per-node progress state from newer ComfyUI versions.
+#[derive(Debug, Clone, Deserialize)]
+pub struct ProgressStateData {
+    pub prompt_id: String,
+    /// Map of node_id → node progress state.
+    pub nodes: std::collections::HashMap<String, NodeProgressState>,
+}
+
+/// Progress state for a single node.
+#[derive(Debug, Clone, Deserialize)]
+pub struct NodeProgressState {
+    pub value: f64,
+    pub max: f64,
+    pub state: String,
+    pub node_id: String,
 }
 
 /// Parse a ComfyUI WebSocket text message into a typed enum.

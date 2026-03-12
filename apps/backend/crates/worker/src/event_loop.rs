@@ -3,6 +3,7 @@
 //! Listens to the broadcast channel from the ComfyUI manager and
 //! dispatches completion/error events to the pipeline handlers.
 
+use std::collections::HashMap;
 use std::sync::Arc;
 
 use tokio::sync::broadcast;
@@ -11,12 +12,20 @@ use x121_comfyui::manager::ComfyUIManager;
 use x121_core::activity::{ActivityLogEntry, ActivityLogLevel, ActivityLogSource};
 use x121_core::storage::StorageProvider;
 use x121_core::types::DbId;
-use x121_db::repositories::{RetryAttemptRepo, SegmentRepo, WorkflowRepo};
+use x121_db::repositories::{JobRepo, RetryAttemptRepo, SegmentRepo, WorkflowRepo};
 use x121_events::ActivityLogBroadcaster;
 
 use x121_core::generation::SYSTEM_USER_ID;
 use x121_db::repositories::ComfyUIInstanceRepo;
-use x121_pipeline::{completion_handler, loop_driver};
+use x121_pipeline::{completion_handler, create_version_from_completion, loop_driver};
+
+/// How often to check for stuck scenes whose executions completed
+/// but whose completion events were lost (e.g. due to WS disconnection).
+const RECONCILIATION_INTERVAL: std::time::Duration = std::time::Duration::from_secs(60);
+
+/// How often to check for pending unassigned jobs and dispatch them
+/// to newly available ComfyUI instances.
+const DISPATCH_INTERVAL: std::time::Duration = std::time::Duration::from_secs(10);
 
 /// Run the event processing loop until the broadcast channel closes.
 pub async fn run(
@@ -34,20 +43,47 @@ pub async fn run(
         tracing::error!(error = %e, "Failed to resume stalled scenes");
     }
 
+    let mut reconcile_interval = tokio::time::interval(RECONCILIATION_INTERVAL);
+    // Don't fire immediately — the startup check above already handles that.
+    reconcile_interval.tick().await;
+
+    let mut dispatch_interval = tokio::time::interval(DISPATCH_INTERVAL);
+    dispatch_interval.tick().await;
+
+    // Track per-job progress so we only log when the executing node changes
+    // (avoids spamming DB with every percentage tick).
+    let mut progress_tracker: HashMap<DbId, ProgressState> = HashMap::new();
+
     loop {
-        match event_rx.recv().await {
-            Ok(event) => {
-                handle_event(&pool, &comfyui, &storage, event, &broadcaster).await;
+        tokio::select! {
+            event_result = event_rx.recv() => {
+                match event_result {
+                    Ok(event) => {
+                        handle_event(&pool, &comfyui, &storage, event, &broadcaster, &mut progress_tracker).await;
+                    }
+                    Err(broadcast::error::RecvError::Lagged(count)) => {
+                        tracing::warn!(count, "Dropped {count} events due to lag");
+                    }
+                    Err(broadcast::error::RecvError::Closed) => {
+                        tracing::info!("Event channel closed — exiting event loop");
+                        break;
+                    }
+                }
             }
-            Err(broadcast::error::RecvError::Lagged(count)) => {
-                tracing::warn!(count, "Dropped {count} events due to lag");
+            _ = reconcile_interval.tick() => {
+                reconcile_stuck_scenes(&pool, &comfyui, &storage, &broadcaster).await;
             }
-            Err(broadcast::error::RecvError::Closed) => {
-                tracing::info!("Event channel closed — exiting event loop");
-                break;
+            _ = dispatch_interval.tick() => {
+                dispatch_pending(&pool, &comfyui, &storage, &broadcaster).await;
             }
         }
     }
+}
+
+/// Per-job progress state for deduplicating log writes.
+struct ProgressState {
+    scene_id: DbId,
+    last_node: Option<String>,
 }
 
 /// Dispatch a single ComfyUI event.
@@ -57,6 +93,7 @@ async fn handle_event(
     storage: &Arc<dyn StorageProvider>,
     event: ComfyUIEvent,
     broadcaster: &Option<Arc<ActivityLogBroadcaster>>,
+    progress_tracker: &mut HashMap<DbId, ProgressState>,
 ) {
     match event {
         ComfyUIEvent::GenerationCompleted {
@@ -76,6 +113,7 @@ async fn handle_event(
                     .with_entity("comfyui_instance", instance_id),
                 );
             }
+            progress_tracker.remove(&platform_job_id);
             handle_generation_completed(
                 pool,
                 comfyui,
@@ -85,6 +123,10 @@ async fn handle_event(
                 &prompt_id,
             )
             .await;
+            // Mark the job as completed in the jobs table so the queue reflects the outcome.
+            if let Err(e) = JobRepo::complete(pool, platform_job_id, &serde_json::json!({ "prompt_id": prompt_id })).await {
+                tracing::error!(job_id = platform_job_id, error = %e, "Failed to mark job as completed");
+            }
             check_drain_completion(pool, instance_id, broadcaster).await;
         }
         ComfyUIEvent::GenerationError {
@@ -109,6 +151,11 @@ async fn handle_event(
                     .with_job(platform_job_id),
                 );
             }
+            progress_tracker.remove(&platform_job_id);
+            // Mark the job as failed in the jobs table so the queue reflects the error.
+            if let Err(e) = JobRepo::fail(pool, platform_job_id, &error, None).await {
+                tracing::error!(job_id = platform_job_id, error = %e, "Failed to mark job as failed");
+            }
             handle_generation_error(pool, comfyui, storage, platform_job_id, &error).await;
         }
         ComfyUIEvent::GenerationProgress {
@@ -123,12 +170,72 @@ async fn handle_event(
                 node = ?current_node,
                 "Generation progress",
             );
+
+            // Log node transitions to scene_generation_logs so the UI terminal
+            // shows real-time execution progress during ComfyUI processing.
+            if let Some(ref node) = current_node {
+                let state = progress_tracker.get(&platform_job_id);
+                let node_changed = state
+                    .map(|s| s.last_node.as_deref() != Some(node.as_str()))
+                    .unwrap_or(true);
+
+                if node_changed {
+                    // Resolve scene_id from job (cached after first lookup).
+                    let scene_id = if let Some(s) = state {
+                        Some(s.scene_id)
+                    } else {
+                        match lookup_segment_from_job(pool, platform_job_id).await {
+                            Ok((_seg_id, sid)) => {
+                                progress_tracker.insert(platform_job_id, ProgressState {
+                                    scene_id: sid,
+                                    last_node: None,
+                                });
+                                Some(sid)
+                            }
+                            Err(_) => None,
+                        }
+                    };
+
+                    if let Some(sid) = scene_id {
+                        x121_pipeline::gen_log::log(
+                            pool,
+                            sid,
+                            "info",
+                            format!("[Job {platform_job_id}] Executing node: {node} ({percent}%)"),
+                        ).await;
+
+                        if let Some(s) = progress_tracker.get_mut(&platform_job_id) {
+                            s.last_node = Some(node.clone());
+                        }
+                    }
+                }
+            }
         }
         ComfyUIEvent::InstanceConnected { instance_id } => {
             tracing::info!(
                 instance_id,
                 "ComfyUI instance connected — triggering workflow auto-validation"
             );
+            if let Some(b) = broadcaster {
+                b.publish(
+                    ActivityLogEntry::curated(
+                        ActivityLogLevel::Info,
+                        ActivityLogSource::Worker,
+                        format!("ComfyUI instance {instance_id} connected"),
+                    )
+                    .with_entity("comfyui_instance", instance_id),
+                );
+            }
+            // Dispatch any pending jobs that were queued while no instances were available.
+            {
+                let pool_clone = pool.clone();
+                let comfyui_clone = Arc::clone(comfyui);
+                let storage_clone = Arc::clone(storage);
+                let broadcaster_clone = broadcaster.clone();
+                tokio::spawn(async move {
+                    dispatch_pending(&pool_clone, &comfyui_clone, &storage_clone, &broadcaster_clone).await;
+                });
+            }
             let pool_clone = pool.clone();
             let comfyui_clone = Arc::clone(comfyui);
             tokio::spawn(async move {
@@ -137,6 +244,16 @@ async fn handle_event(
         }
         ComfyUIEvent::InstanceDisconnected { instance_id } => {
             tracing::warn!(instance_id, "ComfyUI instance disconnected");
+            if let Some(b) = broadcaster {
+                b.publish(
+                    ActivityLogEntry::curated(
+                        ActivityLogLevel::Warn,
+                        ActivityLogSource::Worker,
+                        format!("ComfyUI instance {instance_id} disconnected"),
+                    )
+                    .with_entity("comfyui_instance", instance_id),
+                );
+            }
         }
         ComfyUIEvent::GenerationCancelled {
             platform_job_id,
@@ -152,6 +269,11 @@ async fn handle_event(
                     )
                     .with_job(platform_job_id),
                 );
+            }
+            progress_tracker.remove(&platform_job_id);
+            // Mark the job as cancelled in the jobs table so the queue reflects it.
+            if let Err(e) = JobRepo::cancel(pool, platform_job_id).await {
+                tracing::error!(job_id = platform_job_id, error = %e, "Failed to mark job as cancelled");
             }
             handle_generation_cancelled(pool, platform_job_id).await;
             check_drain_completion(pool, instance_id, broadcaster).await;
@@ -220,6 +342,21 @@ async fn handle_generation_completed(
             return;
         }
     };
+
+    // Create the scene video version + artifact records so the UI can display the output.
+    match create_version_from_completion(pool, scene_id, &completion, None).await {
+        Ok(version) => {
+            tracing::info!(
+                version_id = version.id,
+                scene_id,
+                version_number = version.version_number,
+                "Created scene video version from pipeline completion",
+            );
+        }
+        Err(e) => {
+            tracing::error!(scene_id, error = %e, "Failed to create scene video version");
+        }
+    }
 
     // Evaluate stop decision and continue or finalize.
     match loop_driver::evaluate_and_continue(pool, comfyui, storage, &completion, SYSTEM_USER_ID)
@@ -297,7 +434,7 @@ async fn handle_generation_error(
         pool,
         scene_id,
         "error",
-        format!("Generation failed: {error_msg}"),
+        format!("[Job {platform_job_id}] Generation failed: {error_msg}"),
     )
     .await;
 
@@ -469,7 +606,7 @@ async fn handle_generation_cancelled(pool: &sqlx::PgPool, platform_job_id: DbId)
         pool,
         scene_id,
         "warn",
-        format!("Generation cancelled by user — scene reverted to {status_label}"),
+        format!("[Job {platform_job_id}] Generation cancelled — scene reverted to {status_label}"),
     )
     .await;
 
@@ -569,6 +706,84 @@ async fn resume_stalled_scenes(
     }
 
     Ok(())
+}
+
+/// Periodic reconciliation: find scenes stuck in "generating" where the
+/// ComfyUI execution already completed but the completion event was lost.
+///
+/// For each stuck scene, triggers the normal completion flow so that
+/// video versions are created and the scene is finalized.
+async fn reconcile_stuck_scenes(
+    pool: &sqlx::PgPool,
+    comfyui: &Arc<ComfyUIManager>,
+    storage: &Arc<dyn StorageProvider>,
+    broadcaster: &Option<Arc<ActivityLogBroadcaster>>,
+) {
+    // Find scenes in "generating" state where the most recent job's
+    // ComfyUI execution already completed but the segment was never finalized.
+    // The join path is: scenes → jobs (via parameters JSON) → comfyui_executions.
+    let stuck: Vec<(DbId, DbId, DbId, String)> = match sqlx::query_as(
+        "SELECT s.id AS scene_id,
+                j.id AS job_id,
+                ce.instance_id,
+                ce.comfyui_prompt_id
+         FROM scenes s
+         JOIN jobs j ON (j.parameters->>'scene_id')::bigint = s.id
+         JOIN comfyui_executions ce ON ce.platform_job_id = j.id
+         JOIN segments seg ON seg.id = (j.parameters->>'segment_id')::bigint
+         WHERE s.status_id = 2                     -- generating
+           AND s.deleted_at IS NULL
+           AND ce.status = 'completed'
+           AND seg.generation_completed_at IS NULL  -- segment not finalized
+         ORDER BY s.id"
+    )
+    .fetch_all(pool)
+    .await
+    {
+        Ok(rows) => rows,
+        Err(e) => {
+            tracing::warn!(error = %e, "Reconciliation query failed");
+            return;
+        }
+    };
+
+    if stuck.is_empty() {
+        return;
+    }
+
+    tracing::info!(
+        count = stuck.len(),
+        "Reconciliation found {} stuck scene(s) with completed executions",
+        stuck.len(),
+    );
+
+    for (scene_id, job_id, instance_id, prompt_id) in &stuck {
+        tracing::info!(
+            scene_id,
+            job_id,
+            instance_id,
+            %prompt_id,
+            "Reconciling stuck scene — triggering completion flow",
+        );
+
+        if let Some(b) = broadcaster {
+            b.publish(
+                ActivityLogEntry::curated(
+                    ActivityLogLevel::Warn,
+                    ActivityLogSource::Worker,
+                    format!(
+                        "Auto-reconciling stuck scene {scene_id} (job {job_id}) — completion event was lost"
+                    ),
+                )
+                .with_job(*job_id)
+                .with_entity("scene", *scene_id),
+            );
+        }
+
+        // Process through the normal completion handler.
+        handle_generation_completed(pool, comfyui, storage, *instance_id, *job_id, prompt_id)
+            .await;
+    }
 }
 
 /// Check if an instance is draining and has completed all active jobs (PRD-132).
@@ -755,4 +970,33 @@ async fn auto_validate_workflows(pool: &sqlx::PgPool, comfyui: &Arc<ComfyUIManag
     }
 
     tracing::info!(validated, failed, "Auto-validation complete");
+}
+
+/// Dispatch pending unassigned jobs to available ComfyUI instances.
+///
+/// Called on a 10-second interval and immediately when a new instance connects.
+async fn dispatch_pending(
+    pool: &sqlx::PgPool,
+    comfyui: &Arc<ComfyUIManager>,
+    storage: &Arc<dyn StorageProvider>,
+    broadcaster: &Option<Arc<ActivityLogBroadcaster>>,
+) {
+    match x121_pipeline::dispatch_pending_jobs(pool, comfyui, storage).await {
+        Ok(0) => {} // nothing to dispatch or no instances — silent
+        Ok(count) => {
+            tracing::info!(count, "Dispatched {count} deferred job(s) to ComfyUI");
+            if let Some(b) = broadcaster {
+                b.publish(
+                    ActivityLogEntry::curated(
+                        ActivityLogLevel::Info,
+                        ActivityLogSource::Worker,
+                        format!("Dispatched {count} deferred job(s) — instance now available"),
+                    ),
+                );
+            }
+        }
+        Err(e) => {
+            tracing::error!(error = %e, "Failed to dispatch pending jobs");
+        }
+    }
 }
