@@ -5,10 +5,13 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { api } from "@/lib/api";
+import { toastStore } from "@/components/composite/useToast";
 import type {
   CharacterScenePromptOverride,
   CreatePromptFragment,
   FragmentListParams,
+  GroupPromptOverride,
+  ProjectPromptOverride,
   PromptFragment,
   ResolvePromptRequest,
   ResolvedPromptSlot,
@@ -37,6 +40,18 @@ export const promptOverrideKeys = {
   all: ["character-scene-overrides"] as const,
   byCharacterScene: (characterId: number, sceneTypeId: number) =>
     [...promptOverrideKeys.all, characterId, sceneTypeId] as const,
+};
+
+export const projectPromptOverrideKeys = {
+  all: ["project-prompt-overrides"] as const,
+  byProjectScene: (projectId: number, sceneTypeId: number) =>
+    [...projectPromptOverrideKeys.all, projectId, sceneTypeId] as const,
+};
+
+export const groupPromptOverrideKeys = {
+  all: ["group-prompt-overrides"] as const,
+  byGroupScene: (groupId: number, sceneTypeId: number) =>
+    [...groupPromptOverrideKeys.all, groupId, sceneTypeId] as const,
 };
 
 export const promptFragmentKeys = {
@@ -186,6 +201,10 @@ export function useUpsertCharacterSceneOverrides() {
         queryKey: promptOverrideKeys.byCharacterScene(variables.characterId, variables.sceneTypeId),
       });
       queryClient.invalidateQueries({ queryKey: promptPreviewKeys.all });
+      toastStore.addToast({ message: "Prompt overrides saved", variant: "success" });
+    },
+    onError: (error: Error) => {
+      toastStore.addToast({ message: `Failed to save overrides: ${error.message}`, variant: "error", duration: 8000 });
     },
   });
 }
@@ -249,6 +268,102 @@ export function useUnpinFragment() {
       api.delete(`/prompt-fragments/${fragmentId}/pin/${sceneTypeId}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: promptFragmentKeys.all });
+    },
+  });
+}
+
+/* --------------------------------------------------------------------------
+   Project prompt override hooks
+   -------------------------------------------------------------------------- */
+
+/** Fetch project+scene prompt overrides. */
+export function useProjectPromptOverrides(projectId: number, sceneTypeId: number) {
+  return useQuery({
+    queryKey: projectPromptOverrideKeys.byProjectScene(projectId, sceneTypeId),
+    queryFn: () =>
+      api.get<ProjectPromptOverride[]>(
+        `/projects/${projectId}/scenes/${sceneTypeId}/prompt-overrides`,
+      ),
+    enabled: projectId > 0 && sceneTypeId > 0,
+  });
+}
+
+/** Upsert all project+scene prompt overrides. */
+export function useUpsertProjectPromptOverrides() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      projectId,
+      sceneTypeId,
+      overrides,
+    }: {
+      projectId: number;
+      sceneTypeId: number;
+      overrides: SlotOverride[];
+    }) =>
+      api.put<ProjectPromptOverride[]>(
+        `/projects/${projectId}/scenes/${sceneTypeId}/prompt-overrides`,
+        { overrides },
+      ),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: projectPromptOverrideKeys.byProjectScene(variables.projectId, variables.sceneTypeId),
+      });
+      queryClient.invalidateQueries({ queryKey: promptPreviewKeys.all });
+      toastStore.addToast({ message: "Project prompt overrides saved", variant: "success" });
+    },
+    onError: (error: Error) => {
+      toastStore.addToast({ message: `Failed to save overrides: ${error.message}`, variant: "error", duration: 8000 });
+    },
+  });
+}
+
+/* --------------------------------------------------------------------------
+   Group prompt override hooks
+   -------------------------------------------------------------------------- */
+
+/** Fetch group+scene prompt overrides. */
+export function useGroupPromptOverrides(projectId: number, groupId: number, sceneTypeId: number) {
+  return useQuery({
+    queryKey: groupPromptOverrideKeys.byGroupScene(groupId, sceneTypeId),
+    queryFn: () =>
+      api.get<GroupPromptOverride[]>(
+        `/projects/${projectId}/groups/${groupId}/scenes/${sceneTypeId}/prompt-overrides`,
+      ),
+    enabled: projectId > 0 && groupId > 0 && sceneTypeId > 0,
+  });
+}
+
+/** Upsert all group+scene prompt overrides. */
+export function useUpsertGroupPromptOverrides() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      projectId,
+      groupId,
+      sceneTypeId,
+      overrides,
+    }: {
+      projectId: number;
+      groupId: number;
+      sceneTypeId: number;
+      overrides: SlotOverride[];
+    }) =>
+      api.put<GroupPromptOverride[]>(
+        `/projects/${projectId}/groups/${groupId}/scenes/${sceneTypeId}/prompt-overrides`,
+        { overrides },
+      ),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: groupPromptOverrideKeys.byGroupScene(variables.groupId, variables.sceneTypeId),
+      });
+      queryClient.invalidateQueries({ queryKey: promptPreviewKeys.all });
+      toastStore.addToast({ message: "Group prompt overrides saved", variant: "success" });
+    },
+    onError: (error: Error) => {
+      toastStore.addToast({ message: `Failed to save overrides: ${error.message}`, variant: "error", duration: 8000 });
     },
   });
 }

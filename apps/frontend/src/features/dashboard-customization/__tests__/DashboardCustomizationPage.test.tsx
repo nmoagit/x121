@@ -56,7 +56,7 @@ const mockEditorState = {
   ],
   activeSettings: {},
   widgetMap: mockWidgetMap,
-  catalog: [...mockWidgetMap.values()],
+  catalogue: [...mockWidgetMap.values()],
   presets: [],
   catalogOpen: false,
   settingsInstanceId: null,
@@ -108,7 +108,7 @@ describe("DashboardCustomizationPage", () => {
     expect(screen.getByTestId("grid-item-inst_2")).toBeInTheDocument();
   });
 
-  test("renders widget names from catalog", () => {
+  test("renders widget names from catalogue", () => {
     renderWithProviders(<DashboardCustomizationPage />);
 
     expect(screen.getByText("CPU Monitor")).toBeInTheDocument();

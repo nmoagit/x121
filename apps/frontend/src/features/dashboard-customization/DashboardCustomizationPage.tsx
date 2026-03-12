@@ -2,17 +2,18 @@
  * DashboardCustomizationPage -- main container for the customizable
  * dashboard experience (PRD-89).
  *
- * Coordinates all sub-components (LayoutEditor, WidgetCatalog,
+ * Coordinates all sub-components (LayoutEditor, WidgetCatalogue,
  * WidgetSettingsPanel, PresetManager, EditModeControls).
  */
 
 import { Spinner } from "@/components/primitives";
+import { useSetPageTitle } from "@/hooks/useSetPageTitle";
 
 import { useDashboardEditor } from "./hooks/use-dashboard-editor";
 import { EditModeControls } from "./EditModeControls";
 import { LayoutEditor } from "./LayoutEditor";
 import { PresetManager } from "./PresetManager";
-import { WidgetCatalog } from "./WidgetCatalog";
+import { WidgetCatalogue } from "./WidgetCatalogue";
 import { WidgetSettingsPanel } from "./WidgetSettingsPanel";
 
 /* --------------------------------------------------------------------------
@@ -20,6 +21,8 @@ import { WidgetSettingsPanel } from "./WidgetSettingsPanel";
    -------------------------------------------------------------------------- */
 
 export function DashboardCustomizationPage() {
+  useSetPageTitle("Customize Dashboard");
+
   const editor = useDashboardEditor();
 
   if (editor.dashLoading) {
@@ -35,11 +38,8 @@ export function DashboardCustomizationPage() {
 
   return (
     <div data-testid="dashboard-customization-page" className="flex flex-col gap-4">
-      {/* Header bar */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold text-[var(--color-text-primary)]">
-          Dashboard
-        </h1>
+      {/* Action bar */}
+      <div className="flex items-center justify-end">
         <div className="flex items-center gap-3">
           <PresetManager
             presets={editor.presets}
@@ -70,11 +70,11 @@ export function DashboardCustomizationPage() {
         onOpenSettings={editor.setSettingsInstanceId}
       />
 
-      {/* Widget catalog drawer */}
-      <WidgetCatalog
+      {/* Widget catalogue drawer */}
+      <WidgetCatalogue
         open={editor.catalogOpen}
         onClose={() => editor.setCatalogOpen(false)}
-        widgets={editor.catalog}
+        widgets={editor.catalogue}
         onAddWidget={editor.handleAddWidget}
       />
 

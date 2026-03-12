@@ -73,7 +73,7 @@ export function ActivityConsolePanel() {
   }, []);
 
   return (
-    <div className="flex flex-col h-full bg-[var(--color-surface-primary)] border border-[var(--color-border-default)] rounded-[var(--radius-lg)] overflow-hidden">
+    <div className="flex flex-col h-full bg-[var(--color-surface-primary)] overflow-hidden">
       {/* Filter toolbar */}
       <ConsoleFilterToolbar />
 
@@ -117,7 +117,7 @@ export function ActivityConsolePanel() {
       <div
         ref={scrollRef}
         onScroll={handleScroll}
-        className="flex-1 overflow-y-auto min-h-0"
+        className="flex-1 overflow-y-auto min-h-0 scrollbar-thin"
       >
         {entries.length === 0 ? (
           <div className="flex items-center justify-center h-full">

@@ -6,7 +6,7 @@
  * Backend route mounts:
  * - /user/dashboard              -> user dashboard CRUD
  * - /user/dashboard/presets      -> preset management
- * - /dashboard/widget-catalog    -> available widgets
+ * - /dashboard/widget-catalogue    -> available widgets
  * - /admin/dashboard/role-defaults -> admin role defaults
  */
 
@@ -33,7 +33,7 @@ export const dashboardKeys = {
   layout: () => [...dashboardKeys.all, "layout"] as const,
   presets: () => [...dashboardKeys.all, "presets"] as const,
   preset: (id: number) => [...dashboardKeys.all, "preset", id] as const,
-  widgetCatalog: () => [...dashboardKeys.all, "widget-catalog"] as const,
+  widgetCatalogue: () => [...dashboardKeys.all, "widget-catalogue"] as const,
   roleDefaults: () => [...dashboardKeys.all, "role-defaults"] as const,
   roleDefault: (role: string) =>
     [...dashboardKeys.all, "role-default", role] as const,
@@ -158,15 +158,15 @@ export function useImportPreset() {
 }
 
 /* --------------------------------------------------------------------------
-   Widget catalog
+   Widget catalogue
    -------------------------------------------------------------------------- */
 
-/** GET /dashboard/widget-catalog -- list all available widgets. */
-export function useWidgetCatalog() {
+/** GET /dashboard/widget-catalogue -- list all available widgets. */
+export function useWidgetCatalogue() {
   return useQuery({
-    queryKey: dashboardKeys.widgetCatalog(),
-    queryFn: () => api.get<WidgetDefinition[]>("/dashboard/widget-catalog"),
-    staleTime: 5 * 60 * 1000, // 5 minutes — catalog changes rarely
+    queryKey: dashboardKeys.widgetCatalogue(),
+    queryFn: () => api.get<WidgetDefinition[]>("/dashboard/widget-catalogue"),
+    staleTime: 5 * 60 * 1000, // 5 minutes — catalogue changes rarely
   });
 }
 

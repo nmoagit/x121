@@ -1,7 +1,7 @@
 /**
  * EditModeControls -- toolbar for dashboard edit mode (PRD-89).
  *
- * Provides toggle for edit mode, "Add Widget" (opens catalog),
+ * Provides toggle for edit mode, "Add Widget" (opens catalogue),
  * "Save", and "Cancel" actions.
  */
 

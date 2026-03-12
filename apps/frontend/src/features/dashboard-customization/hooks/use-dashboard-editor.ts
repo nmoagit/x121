@@ -16,7 +16,7 @@ import {
   usePresets,
   useSaveDashboard,
   useSharePreset,
-  useWidgetCatalog,
+  useWidgetCatalogue,
 } from "./use-dashboard-customization";
 import type { LayoutItem, WidgetDefinition } from "../types";
 
@@ -37,7 +37,7 @@ export function useDashboardEditor() {
   /* -- Remote data -------------------------------------------------------- */
   const { data: dashboard, isLoading: dashLoading } = useDashboard();
   const { data: presets = [] } = usePresets();
-  const { data: catalog = [] } = useWidgetCatalog();
+  const { data: catalogue = [] } = useWidgetCatalogue();
 
   /* -- Mutations ---------------------------------------------------------- */
   const saveDashboard = useSaveDashboard();
@@ -66,11 +66,11 @@ export function useDashboardEditor() {
 
   const widgetMap = useMemo(() => {
     const map = new Map<string, WidgetDefinition>();
-    for (const w of catalog) {
+    for (const w of catalogue) {
       map.set(w.id, w);
     }
     return map;
-  }, [catalog]);
+  }, [catalogue]);
 
   const settingsWidget = settingsInstanceId
     ? widgetMap.get(
@@ -143,7 +143,7 @@ export function useDashboardEditor() {
     activeLayout,
     activeSettings,
     widgetMap,
-    catalog,
+    catalogue,
     presets,
     catalogOpen,
     settingsInstanceId,

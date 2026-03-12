@@ -6,6 +6,7 @@
 
 // Types
 export type {
+  AnnotatedItem,
   AnnotationLayer,
   AnnotationSummary as AnnotationSummaryData,
   CreateFrameAnnotation,
@@ -28,6 +29,7 @@ export {
 export {
   annotationKeys,
   useAnnotations,
+  useAnnotationsBrowse,
   useAnnotationsByFrame,
   useAnnotationSummary,
   useCreateAnnotation,

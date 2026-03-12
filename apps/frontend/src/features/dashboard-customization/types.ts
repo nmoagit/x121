@@ -11,7 +11,7 @@ export type WidgetCategory = "monitoring" | "productivity" | "reporting" | "syst
 
 /* -- Widget definition ----------------------------------------------------- */
 
-/** A widget available in the catalog (native or extension-provided). */
+/** A widget available in the catalogue (native or extension-provided). */
 export interface WidgetDefinition {
   id: string;
   name: string;

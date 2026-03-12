@@ -82,6 +82,7 @@ const OVERRIDE_WITH_FRAGMENTS: CharacterScenePromptOverride = {
     { type: "fragment_ref", fragment_id: 10, text: "high quality" },
     { type: "inline", text: "custom addition" },
   ],
+  override_text: null,
   notes: "Test notes",
   created_by: null,
   created_at: "2026-01-01T00:00:00Z",

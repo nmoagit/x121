@@ -5,7 +5,7 @@ export { LayoutEditor } from "./LayoutEditor";
 export { PresetImportDialog } from "./PresetImportDialog";
 export { PresetManager } from "./PresetManager";
 export { RoleDefaultsAdmin } from "./RoleDefaultsAdmin";
-export { WidgetCatalog } from "./WidgetCatalog";
+export { WidgetCatalogue } from "./WidgetCatalogue";
 export { WidgetSettingsPanel } from "./WidgetSettingsPanel";
 
 // Hooks
@@ -23,7 +23,7 @@ export {
   useSharePreset,
   useUpdatePreset,
   useUpdateRoleDefault,
-  useWidgetCatalog,
+  useWidgetCatalogue,
 } from "./hooks/use-dashboard-customization";
 
 // Types

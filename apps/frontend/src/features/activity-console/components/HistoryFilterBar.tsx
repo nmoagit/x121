@@ -1,12 +1,12 @@
 /**
- * Filter controls for the history tab (PRD-118).
+ * Compact filter toolbar for the history tab (PRD-118).
  *
- * Date range pickers, search input, level/source selectors,
- * and an export button.
+ * Matches the ConsoleFilterToolbar layout: single row of inline
+ * controls with level/source badge toggles, search, and date inputs.
  */
 
-import { Badge, Button, Input } from "@/components/primitives";
-import { Download } from "@/tokens/icons";
+import { Badge, Input } from "@/components/primitives";
+import { Search } from "@/tokens/icons";
 
 import type { ActivityLogLevel, ActivityLogSource } from "../types";
 import {
@@ -27,13 +27,11 @@ interface HistoryFilterBarProps {
   searchText: string;
   selectedLevel: ActivityLogLevel | "";
   selectedSource: ActivityLogSource | "";
-  canExport: boolean;
   onFromChange: (value: string) => void;
   onToChange: (value: string) => void;
   onSearchChange: (value: string) => void;
   onLevelChange: (value: ActivityLogLevel | "") => void;
   onSourceChange: (value: ActivityLogSource | "") => void;
-  onExport: () => void;
 }
 
 /* --------------------------------------------------------------------------
@@ -46,101 +44,93 @@ export function HistoryFilterBar({
   searchText,
   selectedLevel,
   selectedSource,
-  canExport,
   onFromChange,
   onToChange,
   onSearchChange,
   onLevelChange,
   onSourceChange,
-  onExport,
 }: HistoryFilterBarProps) {
   return (
-    <div className="flex flex-wrap items-end gap-[var(--spacing-3)]">
-      <div className="w-48">
-        <Input
-          label="From"
+    <div className="flex flex-wrap items-center gap-[var(--spacing-3)] px-[var(--spacing-3)] py-[var(--spacing-2)] border-b border-[var(--color-border-default)] bg-[var(--color-surface-secondary)]">
+      {/* Level toggles */}
+      <div className="flex items-center gap-1">
+        <span className="text-xs font-medium text-[var(--color-text-muted)] mr-1">Level</span>
+        <button type="button" onClick={() => onLevelChange("")} className="transition-opacity duration-[var(--duration-fast)]">
+          <Badge size="sm" variant={selectedLevel === "" ? "info" : "default"}>
+            All
+          </Badge>
+        </button>
+        {ALL_LEVELS.map((level) => (
+          <button key={level} type="button" onClick={() => onLevelChange(level)} className="transition-opacity duration-[var(--duration-fast)]">
+            <Badge
+              size="sm"
+              variant={selectedLevel === level ? LEVEL_BADGE_VARIANT[level] : "default"}
+            >
+              {LEVEL_LABELS[level]}
+            </Badge>
+          </button>
+        ))}
+      </div>
+
+      {/* Separator */}
+      <div className="w-px h-5 bg-[var(--color-border-default)]" />
+
+      {/* Source toggles */}
+      <div className="flex items-center gap-1">
+        <span className="text-xs font-medium text-[var(--color-text-muted)] mr-1">Source</span>
+        <button type="button" onClick={() => onSourceChange("")} className="transition-opacity duration-[var(--duration-fast)]">
+          <Badge size="sm" variant={selectedSource === "" ? "info" : "default"}>
+            All
+          </Badge>
+        </button>
+        {ALL_SOURCES.map((source) => (
+          <button key={source} type="button" onClick={() => onSourceChange(source)} className="transition-opacity duration-[var(--duration-fast)]">
+            <Badge
+              size="sm"
+              variant={selectedSource === source ? "info" : "default"}
+            >
+              {SOURCE_LABELS[source]}
+            </Badge>
+          </button>
+        ))}
+      </div>
+
+      {/* Separator */}
+      <div className="w-px h-5 bg-[var(--color-border-default)]" />
+
+      {/* Date range — compact inline inputs without labels */}
+      <div className="flex items-center gap-1">
+        <span className="text-xs font-medium text-[var(--color-text-muted)] mr-1">From</span>
+        <input
           type="datetime-local"
           value={fromDate}
           onChange={(e) => onFromChange(e.target.value)}
-          className="!text-sm"
+          className="h-7 px-1.5 text-xs rounded-[var(--radius-sm)] border border-[var(--color-border-default)] bg-[var(--color-surface-primary)] text-[var(--color-text-primary)] outline-none focus:border-[var(--color-action-primary)]"
         />
-      </div>
-      <div className="w-48">
-        <Input
-          label="To"
+        <span className="text-xs font-medium text-[var(--color-text-muted)] mx-1">To</span>
+        <input
           type="datetime-local"
           value={toDate}
           onChange={(e) => onToChange(e.target.value)}
-          className="!text-sm"
+          className="h-7 px-1.5 text-xs rounded-[var(--radius-sm)] border border-[var(--color-border-default)] bg-[var(--color-surface-primary)] text-[var(--color-text-primary)] outline-none focus:border-[var(--color-action-primary)]"
         />
-      </div>
-      <div className="w-48">
-        <Input
-          label="Search"
-          placeholder="Filter messages..."
-          value={searchText}
-          onChange={(e) => onSearchChange(e.target.value)}
-          className="!text-sm"
-        />
-      </div>
-
-      {/* Level filter */}
-      <div className="flex flex-col gap-1.5">
-        <span className="text-sm font-medium text-[var(--color-text-secondary)]">Level</span>
-        <div className="flex items-center gap-1">
-          <button type="button" onClick={() => onLevelChange("")}>
-            <Badge size="sm" variant={selectedLevel === "" ? "info" : "default"}>
-              All
-            </Badge>
-          </button>
-          {ALL_LEVELS.map((level) => (
-            <button key={level} type="button" onClick={() => onLevelChange(level)}>
-              <Badge
-                size="sm"
-                variant={selectedLevel === level ? LEVEL_BADGE_VARIANT[level] : "default"}
-              >
-                {LEVEL_LABELS[level]}
-              </Badge>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Source filter */}
-      <div className="flex flex-col gap-1.5">
-        <span className="text-sm font-medium text-[var(--color-text-secondary)]">Source</span>
-        <div className="flex items-center gap-1">
-          <button type="button" onClick={() => onSourceChange("")}>
-            <Badge size="sm" variant={selectedSource === "" ? "info" : "default"}>
-              All
-            </Badge>
-          </button>
-          {ALL_SOURCES.map((source) => (
-            <button key={source} type="button" onClick={() => onSourceChange(source)}>
-              <Badge
-                size="sm"
-                variant={selectedSource === source ? "info" : "default"}
-              >
-                {SOURCE_LABELS[source]}
-              </Badge>
-            </button>
-          ))}
-        </div>
       </div>
 
       {/* Spacer */}
       <div className="flex-1" />
 
-      {/* Export */}
-      <Button
-        variant="secondary"
-        size="sm"
-        onClick={onExport}
-        disabled={!canExport}
-        icon={<Download size={14} />}
-      >
-        Export JSON
-      </Button>
+      {/* Search */}
+      <div className="w-56">
+        <Input
+          placeholder="Search logs..."
+          value={searchText}
+          onChange={(e) => onSearchChange(e.target.value)}
+          className="!py-1 !text-sm"
+        />
+      </div>
+
+      {/* Search icon (decorative) */}
+      <Search size={16} className="text-[var(--color-text-muted)]" aria-hidden />
     </div>
   );
 }

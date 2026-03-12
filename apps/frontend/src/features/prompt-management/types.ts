@@ -53,6 +53,7 @@ export interface CharacterScenePromptOverride {
   scene_type_id: number;
   prompt_slot_id: number;
   fragments: FragmentEntry[];
+  override_text: string | null;
   notes: string | null;
   created_by: number | null;
   created_at: string;
@@ -106,7 +107,7 @@ export interface ResolvedPromptSlot {
   slot_label: string;
   slot_type: "positive" | "negative";
   resolved_text: string;
-  source: "workflow_default" | "scene_type_default" | "with_fragments";
+  source: "workflow_default" | "scene_type_default" | "full_override" | "with_fragments";
   unresolved_placeholders: string[];
   applied_fragments: AppliedFragment[];
 }
@@ -123,6 +124,7 @@ export interface AppliedFragment {
 
 export interface SlotDraft {
   fragments: FragmentEntry[];
+  override_text: string;
   notes: string;
 }
 
@@ -133,6 +135,7 @@ export interface SlotDraft {
 export interface SlotOverride {
   prompt_slot_id: number;
   fragments: FragmentEntry[];
+  override_text?: string;
   notes?: string;
 }
 
@@ -149,4 +152,34 @@ export interface FragmentListParams {
   scene_type_id?: number;
   limit?: number;
   offset?: number;
+}
+
+/* --------------------------------------------------------------------------
+   Project / group prompt overrides (3-level hierarchy)
+   -------------------------------------------------------------------------- */
+
+export interface ProjectPromptOverride {
+  id: number;
+  project_id: number;
+  scene_type_id: number;
+  prompt_slot_id: number;
+  fragments: FragmentEntry[];
+  override_text: string | null;
+  notes: string | null;
+  created_by: number | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface GroupPromptOverride {
+  id: number;
+  group_id: number;
+  scene_type_id: number;
+  prompt_slot_id: number;
+  fragments: FragmentEntry[];
+  override_text: string | null;
+  notes: string | null;
+  created_by: number | null;
+  created_at: string;
+  updated_at: string;
 }

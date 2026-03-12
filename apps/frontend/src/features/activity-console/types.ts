@@ -12,7 +12,7 @@ import type { BadgeVariant } from "@/components/primitives";
    -------------------------------------------------------------------------- */
 
 export type ActivityLogLevel = "debug" | "info" | "warn" | "error";
-export type ActivityLogSource = "api" | "comfyui" | "worker" | "agent" | "pipeline";
+export type ActivityLogSource = "api" | "comfyui" | "worker" | "agent" | "pipeline" | "infrastructure";
 export type ActivityLogCategory = "curated" | "verbose";
 
 /** A single activity log entry from WebSocket or REST API. */
@@ -128,6 +128,7 @@ export const SOURCE_ID_MAP: Record<number, ActivityLogSource> = {
   3: "worker",
   4: "agent",
   5: "pipeline",
+  6: "infrastructure",
 };
 
 /* --------------------------------------------------------------------------
@@ -171,6 +172,7 @@ export const SOURCE_LABELS: Record<ActivityLogSource, string> = {
   worker: "Worker",
   agent: "Agent",
   pipeline: "Pipeline",
+  infrastructure: "Infra",
 };
 
 export const LEVEL_LABELS: Record<ActivityLogLevel, string> = {
@@ -187,6 +189,7 @@ export const SOURCE_ACCENT_CLASSES: Record<ActivityLogSource, string> = {
   worker: "border-l-green-500",
   agent: "border-l-orange-500",
   pipeline: "border-l-teal-500",
+  infrastructure: "border-l-yellow-500",
 };
 
 /* --------------------------------------------------------------------------
@@ -194,20 +197,23 @@ export const SOURCE_ACCENT_CLASSES: Record<ActivityLogSource, string> = {
    -------------------------------------------------------------------------- */
 
 /**
- * Format ISO timestamp to HH:MM:SS (or HH:MM:SS.mmm when `includeMs` is true).
+ * Format ISO timestamp to "MMM DD HH:MM:SS" (or with .mmm when `includeMs` is true).
  * Used by LogEntryRow, InfrastructureActivityLog, and GenerationTerminal.
  */
 export function formatLogTime(iso: string, includeMs = false): string {
   try {
     const d = new Date(iso);
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const mon = months[d.getMonth()];
+    const day = String(d.getDate()).padStart(2, "0");
     const hh = String(d.getHours()).padStart(2, "0");
     const mm = String(d.getMinutes()).padStart(2, "0");
     const ss = String(d.getSeconds()).padStart(2, "0");
     if (includeMs) {
       const ms = String(d.getMilliseconds()).padStart(3, "0");
-      return `${hh}:${mm}:${ss}.${ms}`;
+      return `${mon} ${day} ${hh}:${mm}:${ss}.${ms}`;
     }
-    return `${hh}:${mm}:${ss}`;
+    return `${mon} ${day} ${hh}:${mm}:${ss}`;
   } catch {
     return iso;
   }

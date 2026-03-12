@@ -7,6 +7,7 @@ export { ImportWizard } from "./ImportWizard";
 export { ParameterEditor } from "./ParameterEditor";
 export { ValidationResults } from "./ValidationResults";
 export { VersionDiff } from "./VersionDiff";
+export { WorkflowDetailPanel } from "./WorkflowDetailPanel";
 
 // Hooks
 export {

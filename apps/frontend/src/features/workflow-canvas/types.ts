@@ -158,11 +158,11 @@ export interface ComfyUIParseResult {
 }
 
 // ---------------------------------------------------------------------------
-// Node catalog
+// Node catalogue
 // ---------------------------------------------------------------------------
 
-/** Entry in the node catalog sidebar. */
-export interface NodeCatalogEntry {
+/** Entry in the node catalogue sidebar. */
+export interface NodeCatalogueEntry {
   type: NodeType;
   label: string;
   category: "Input" | "Sampler" | "ControlNet" | "VAE" | "Output" | "Utility";

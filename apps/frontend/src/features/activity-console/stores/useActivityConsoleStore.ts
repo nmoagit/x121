@@ -62,7 +62,7 @@ export const useActivityConsoleStore = create<ActivityConsoleState>((set) => ({
   isOpen: false,
   levels: new Set<ActivityLogLevel>(["info", "warn", "error"]),
   sources: new Set<ActivityLogSource>(),
-  mode: "curated",
+  mode: "verbose",
   entityFilter: null,
   searchText: "",
   entries: [],

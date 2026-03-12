@@ -9,13 +9,7 @@
    Drawing tools
    -------------------------------------------------------------------------- */
 
-export type DrawingTool =
-  | "pen"
-  | "circle"
-  | "rectangle"
-  | "arrow"
-  | "highlight"
-  | "text";
+export type DrawingTool = "pen" | "circle" | "rectangle" | "arrow" | "highlight" | "text";
 
 /** All available drawing tool values. */
 export const DRAWING_TOOLS: DrawingTool[] = [
@@ -109,6 +103,31 @@ export interface AnnotationLayer {
   userName: string;
   visible: boolean;
   annotations: FrameAnnotation[];
+}
+
+/* --------------------------------------------------------------------------
+   Annotated item (browse view)
+   -------------------------------------------------------------------------- */
+
+/** A browseable annotated item with full context from the browse endpoint. */
+export interface AnnotatedItem {
+  annotation_id: number;
+  version_id: number | null;
+  segment_id: number | null;
+  frame_number: number;
+  annotation_count: number;
+  character_id: number;
+  character_name: string;
+  scene_id: number;
+  scene_type_name: string;
+  scene_status_id: number;
+  project_id: number;
+  project_name: string;
+  file_path: string | null;
+  preview_path: string | null;
+  created_at: string;
+  updated_at: string;
+  user_id: number;
 }
 
 /* --------------------------------------------------------------------------

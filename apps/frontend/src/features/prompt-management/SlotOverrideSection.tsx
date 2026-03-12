@@ -19,6 +19,7 @@ export interface SlotOverrideSectionProps {
   sceneTypeId: number;
   onAddFragment: (fragment: PromptFragment) => void;
   onRemoveFragment: (index: number) => void;
+  onOverrideTextChange?: (text: string) => void;
   onNotesChange: (notes: string) => void;
 }
 
@@ -33,8 +34,11 @@ export function SlotOverrideSection({
   sceneTypeId,
   onAddFragment,
   onRemoveFragment,
+  onOverrideTextChange,
   onNotesChange,
 }: SlotOverrideSectionProps) {
+  const hasOverride = !!draft.override_text;
+
   return (
     <div
       className={cn(
@@ -49,14 +53,58 @@ export function SlotOverrideSection({
 
       {/* Base text (read-only) */}
       <div className="mb-3">
-        <span className="text-xs text-[var(--color-text-muted)]">Base prompt:</span>
+        <div className="flex items-center justify-between">
+          <span className="text-xs text-[var(--color-text-muted)]">
+            {hasOverride ? "Original prompt (overridden):" : "Base prompt:"}
+          </span>
+          {onOverrideTextChange && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                if (hasOverride) {
+                  onOverrideTextChange("");
+                } else {
+                  onOverrideTextChange(baseText);
+                }
+              }}
+              data-testid={`toggle-override-${slot.id}`}
+            >
+              {hasOverride ? "Use Original" : "Override"}
+            </Button>
+          )}
+        </div>
         <p
-          className="text-sm text-[var(--color-text-secondary)] mt-1 whitespace-pre-wrap"
+          className={cn(
+            "text-sm mt-1 whitespace-pre-wrap",
+            hasOverride
+              ? "text-[var(--color-text-muted)] line-through"
+              : "text-[var(--color-text-secondary)]",
+          )}
           data-testid={`base-text-${slot.id}`}
         >
           {baseText || "(no default)"}
         </p>
       </div>
+
+      {/* Full override textarea */}
+      {hasOverride && onOverrideTextChange && (
+        <div className="mb-3">
+          <span className="text-xs text-[var(--color-text-muted)]">Override prompt:</span>
+          <textarea
+            className={cn(
+              "mt-1 w-full rounded-[var(--radius-sm)] border border-[var(--color-border-default)]",
+              "bg-[var(--color-surface-secondary)] p-2 text-sm text-[var(--color-text-primary)]",
+              "focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)]",
+              "min-h-[80px] resize-y",
+            )}
+            value={draft.override_text}
+            onChange={(e) => onOverrideTextChange(e.target.value)}
+            placeholder="Enter full prompt override..."
+            data-testid={`override-text-${slot.id}`}
+          />
+        </div>
+      )}
 
       {/* Fragment list */}
       {draft.fragments.length > 0 && (

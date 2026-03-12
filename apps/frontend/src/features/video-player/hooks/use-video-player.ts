@@ -67,6 +67,7 @@ export function useVideoPlayer(options: UseVideoPlayerOptions): VideoPlayerContr
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const animFrameRef = useRef<number>(0);
+  const lastReportedFrameRef = useRef(-1);
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentFrame, setCurrentFrame] = useState(0);
@@ -87,13 +88,13 @@ export function useVideoPlayer(options: UseVideoPlayerOptions): VideoPlayerContr
 
     if (framerate > 0) {
       const frame = secondsToFrame(time, framerate);
-      setCurrentFrame((prev) => {
-        if (prev !== frame) {
-          onFrameChange?.(frame);
-          return frame;
-        }
-        return prev;
-      });
+      // Set local state (React bails out if value is unchanged)
+      setCurrentFrame(frame);
+      // Fire callback outside the updater to avoid side effects in setState
+      if (frame !== lastReportedFrameRef.current) {
+        lastReportedFrameRef.current = frame;
+        onFrameChange?.(frame);
+      }
     }
 
     if (!video.paused) {

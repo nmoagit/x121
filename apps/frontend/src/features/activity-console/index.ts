@@ -5,6 +5,7 @@
 // Components
 export { ActivityConsolePage } from "./ActivityConsolePage";
 export { ActivityConsolePanel } from "./ActivityConsolePanel";
+export { FilteredActivityLog } from "./components/FilteredActivityLog";
 
 // Hooks
 export {

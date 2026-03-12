@@ -49,11 +49,25 @@ export function ValidationResults({ workflowId }: ValidationResultsProps) {
       {/* Overall summary */}
       <div className="flex items-center gap-2">
         <span className="text-sm font-medium">Overall Status:</span>
+        {validation.validation_source === "live" ? (
+          <Badge
+            data-testid="overall-badge"
+            variant={validation.overall_valid ? "success" : "danger"}
+          >
+            {validation.overall_valid ? "Pass" : "Fail"}
+          </Badge>
+        ) : (
+          <Badge data-testid="overall-badge" variant="warning">
+            Unverified
+          </Badge>
+        )}
         <Badge
-          data-testid="overall-badge"
-          variant={validation.overall_valid ? "success" : "danger"}
+          data-testid="source-badge"
+          variant={validation.validation_source === "live" ? "info" : "warning"}
         >
-          {validation.overall_valid ? "Pass" : "Fail"}
+          {validation.validation_source === "live"
+            ? "Validated against ComfyUI"
+            : "Connect ComfyUI to verify"}
         </Badge>
       </div>
 
@@ -64,24 +78,32 @@ export function ValidationResults({ workflowId }: ValidationResultsProps) {
             Node Types ({validation.node_results.length})
           </h4>
           <div className="space-y-1">
-            {validation.node_results.map((nr) => (
-              <div
-                key={nr.node_type}
-                data-testid={`node-${nr.node_type}`}
-                className="flex items-center gap-2 text-sm"
-              >
-                <span
-                  className={
-                    nr.present
-                      ? "text-[var(--color-action-success)]"
-                      : "text-[var(--color-action-danger)]"
-                  }
+            {validation.node_results.map((nr) => {
+              const isLive = validation.validation_source === "live";
+              let icon: string;
+              let colorClass: string;
+
+              if (isLive) {
+                icon = nr.present ? "\u2713" : "\u2717";
+                colorClass = nr.present
+                  ? "text-[var(--color-action-success)]"
+                  : "text-[var(--color-action-danger)]";
+              } else {
+                icon = "\u2014";
+                colorClass = "text-[var(--color-text-muted)]";
+              }
+
+              return (
+                <div
+                  key={nr.node_type}
+                  data-testid={`node-${nr.node_type}`}
+                  className="flex items-center gap-2 text-sm"
                 >
-                  {nr.present ? "\u2713" : "\u2717"}
-                </span>
-                <span>{nr.node_type}</span>
-              </div>
-            ))}
+                  <span className={colorClass}>{icon}</span>
+                  <span>{nr.node_type}</span>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}

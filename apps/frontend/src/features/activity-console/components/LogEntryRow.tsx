@@ -84,7 +84,7 @@ export function LogEntryRow({ entry }: LogEntryRowProps) {
         </span>
 
         {/* Level badge */}
-        <Badge size="sm" variant={LEVEL_BADGE_VARIANT[entry.level]}>
+        <Badge size="sm" variant={LEVEL_BADGE_VARIANT[entry.level]} className="min-w-[3.25rem] justify-center">
           {LEVEL_LABELS[entry.level]}
         </Badge>
 

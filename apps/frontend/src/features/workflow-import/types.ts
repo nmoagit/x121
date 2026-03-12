@@ -18,6 +18,7 @@ export interface Workflow {
   json_content: Record<string, unknown>;
   discovered_params_json: DiscoveredParameter[] | null;
   validation_results_json: ValidationResult | null;
+  last_validated_at: string | null;
   imported_from: string | null;
   imported_by: number | null;
   created_at: string;
@@ -45,6 +46,8 @@ export interface ImportWorkflowRequest {
   name: string;
   description?: string | null;
   json_content: Record<string, unknown>;
+  /** Original filename if imported from a file upload. */
+  source_filename?: string | null;
 }
 
 /* --------------------------------------------------------------------------
@@ -100,11 +103,16 @@ export interface ModelValidationResult {
   found_in_registry: boolean;
 }
 
+/** How validation was performed. */
+export type ValidationSource = "live" | "static";
+
 /** Aggregate validation result for a workflow. */
 export interface ValidationResult {
   node_results: NodeValidationResult[];
   model_results: ModelValidationResult[];
   overall_valid: boolean;
+  /** Whether validation was against a live ComfyUI instance or the static node list. */
+  validation_source: ValidationSource;
 }
 
 /* --------------------------------------------------------------------------
