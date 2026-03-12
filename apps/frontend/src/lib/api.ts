@@ -25,9 +25,21 @@ export class ApiRequestError extends Error {
     public status: number,
     public error: ApiError,
   ) {
-    super(error.message);
+    super(error?.message ?? String(error));
     this.name = "ApiRequestError";
   }
+}
+
+/** Normalize backend error envelope into ApiError.
+ *  Backend returns `{ error: "message", code: "CODE" }` (flat strings). */
+function parseApiError(body: Record<string, unknown>, fallback: string): ApiError {
+  if (typeof body.error === "object" && body.error !== null) {
+    return body.error as ApiError;
+  }
+  return {
+    code: (body.code as string) ?? "UNKNOWN",
+    message: (body.error as string) ?? fallback,
+  };
 }
 
 /* --------------------------------------------------------------------------
@@ -86,9 +98,10 @@ async function request<T>(path: string, options?: RequestInit, isRetry = false):
 
   if (!response.ok) {
     const body = await response.json().catch(() => ({
-      error: { code: "UNKNOWN", message: response.statusText },
+      error: response.statusText,
+      code: "UNKNOWN",
     }));
-    throw new ApiRequestError(response.status, body.error);
+    throw new ApiRequestError(response.status, parseApiError(body, response.statusText));
   }
 
   if (response.status === 204) {
@@ -119,9 +132,10 @@ async function rawRequest(path: string, options?: RequestInit): Promise<Response
 
   if (!response.ok) {
     const body = await response.json().catch(() => ({
-      error: { code: "UNKNOWN", message: response.statusText },
+      error: response.statusText,
+      code: "UNKNOWN",
     }));
-    throw new ApiRequestError(response.status, body.error);
+    throw new ApiRequestError(response.status, parseApiError(body, response.statusText));
   }
 
   return response;

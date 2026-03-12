@@ -18,6 +18,8 @@ interface DropdownProps {
   items: DropdownItem[];
   onSelect: (value: string) => void;
   align?: DropdownAlign;
+  /** Optional header content rendered above the menu items. */
+  header?: ReactNode;
 }
 
 const ALIGN_CLASSES: Record<DropdownAlign, string> = {
@@ -25,7 +27,7 @@ const ALIGN_CLASSES: Record<DropdownAlign, string> = {
   right: "right-0",
 };
 
-export function Dropdown({ trigger, items, onSelect, align = "left" }: DropdownProps) {
+export function Dropdown({ trigger, items, onSelect, align = "left", header }: DropdownProps) {
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -93,15 +95,16 @@ export function Dropdown({ trigger, items, onSelect, align = "left" }: DropdownP
 
   return (
     <div ref={containerRef} className="relative inline-flex" onKeyDown={handleKeyDown}>
-      <button
-        type="button"
+      <div
+        role="button"
+        tabIndex={0}
         onClick={() => setOpen((prev) => !prev)}
         aria-haspopup="menu"
         aria-expanded={open}
-        className="inline-flex"
+        className="inline-flex cursor-pointer"
       >
         {trigger}
-      </button>
+      </div>
 
       {open && (
         <div
@@ -117,6 +120,11 @@ export function Dropdown({ trigger, items, onSelect, align = "left" }: DropdownP
             ALIGN_CLASSES[align],
           )}
         >
+          {header && (
+            <div className="border-b border-[var(--color-border-default)] px-3 py-2">
+              {header}
+            </div>
+          )}
           {items.map((item, index) => (
             <button
               key={item.value}

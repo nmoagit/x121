@@ -67,6 +67,20 @@ export function formatDuration(ms: number): string {
 }
 
 /**
+ * Format a duration given in **seconds** (nullable) for display.
+ *
+ * Returns `"--"` for null/zero/negative values. Delegates to `formatDuration`
+ * for the actual formatting after converting seconds to milliseconds.
+ *
+ * This eliminates the repeated `formatDuration(secs * 1000)` pattern found
+ * across queue stats, generation progress, and dashboard widgets.
+ */
+export function formatDurationSecs(secs: number | null | undefined): string {
+  if (secs == null || secs <= 0) return "--";
+  return formatDuration(secs * 1000);
+}
+
+/**
  * Format an arbitrary value for display in UI (diffs, tables, previews).
  *
  * - `null`/`undefined` -> `"(none)"`
@@ -151,6 +165,20 @@ export function formatPercent(value: number, decimals = 1): string {
  */
 export function formatCents(cents: number): string {
   return `$${(cents / 100).toFixed(2)}`;
+}
+
+/** Human-friendly relative time (e.g. "3 min ago", "2 hours ago"). */
+export function formatRelative(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  const secs = Math.floor(diff / 1000);
+  if (secs < 60) return `${secs}s ago`;
+  const mins = Math.floor(secs / 60);
+  if (mins < 60) return `${mins} min ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days}d ago`;
+  return formatDateTime(iso);
 }
 
 /**

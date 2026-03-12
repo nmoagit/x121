@@ -2,7 +2,7 @@
  * Simple button-based tab bar.
  *
  * Renders a horizontal strip of tabs with an active indicator,
- * used at the top of tabbed pages (workflows, readiness, scene catalog, etc.).
+ * used at the top of tabbed pages (workflows, readiness, scene catalogue, etc.).
  */
 
 import { Button } from "@/components/primitives/Button";

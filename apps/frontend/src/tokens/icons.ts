@@ -11,6 +11,8 @@ export {
   ChevronLeft,
   ChevronUp,
   Menu,
+  PanelLeftClose,
+  PanelLeftOpen,
   X,
   Search,
   ArrowLeft,
@@ -65,6 +67,7 @@ export {
   EyeOff,
   Moon,
   Sun,
+  SunMoon,
   Monitor,
   Palette,
   // Job / Activity

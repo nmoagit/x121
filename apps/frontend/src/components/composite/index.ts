@@ -1,6 +1,8 @@
 export { Accordion } from "./Accordion";
 export { AdvancedDrawer } from "./AdvancedDrawer";
 export { Card, CardHeader, CardBody, CardFooter } from "./Card";
+export { CollapsibleSection } from "./CollapsibleSection";
+export { ConfigToolbar } from "./ConfigToolbar";
 export { ConfirmDeleteModal } from "./ConfirmDeleteModal";
 export { Drawer } from "./Drawer";
 export { Dropdown } from "./Dropdown";

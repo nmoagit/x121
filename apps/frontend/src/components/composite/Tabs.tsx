@@ -15,9 +15,11 @@ interface TabsProps {
   onTabChange: (tabId: string) => void;
   /** Visual style variant. Defaults to "underline". */
   variant?: "underline" | "pill";
+  /** Size variant. "sm" uses compact padding suitable for toolbars/footers. */
+  size?: "default" | "sm";
 }
 
-export function Tabs({ tabs, activeTab, onTabChange, variant = "underline" }: TabsProps) {
+export function Tabs({ tabs, activeTab, onTabChange, variant = "underline", size = "default" }: TabsProps) {
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
       const currentIndex = tabs.findIndex((t) => t.id === activeTab);
@@ -42,6 +44,7 @@ export function Tabs({ tabs, activeTab, onTabChange, variant = "underline" }: Ta
   );
 
   const isPill = variant === "pill";
+  const isSmall = size === "sm";
 
   return (
     <div
@@ -49,7 +52,10 @@ export function Tabs({ tabs, activeTab, onTabChange, variant = "underline" }: Ta
       className={cn(
         "flex",
         isPill
-          ? "gap-[var(--spacing-1)] rounded-[var(--radius-lg)] bg-[var(--color-surface-secondary)] p-[var(--spacing-1)]"
+          ? cn(
+              "rounded-[var(--radius-lg)] bg-[var(--color-surface-secondary)]",
+              isSmall ? "gap-0.5 p-0.5 rounded-[var(--radius-md)]" : "gap-[var(--spacing-1)] p-[var(--spacing-1)]",
+            )
           : "border-b border-[var(--color-border-default)]",
       )}
       onKeyDown={handleKeyDown}
@@ -68,18 +74,21 @@ export function Tabs({ tabs, activeTab, onTabChange, variant = "underline" }: Ta
             disabled={tab.disabled}
             onClick={() => onTabChange(tab.id)}
             className={cn(
-              "inline-flex items-center gap-2 text-sm font-medium cursor-pointer",
+              "inline-flex items-center cursor-pointer",
               "transition-colors duration-[var(--duration-fast)] ease-[var(--ease-default)]",
               "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-border-focus)]",
+              isSmall ? "gap-1 text-xs font-medium" : "gap-2 text-sm font-medium",
               isPill
                 ? cn(
-                    "px-[var(--spacing-3)] py-[var(--spacing-2)] rounded-[var(--radius-md)]",
+                    isSmall
+                      ? "px-2 py-0.5 rounded-[var(--radius-sm)]"
+                      : "px-[var(--spacing-3)] py-[var(--spacing-2)] rounded-[var(--radius-md)]",
                     isActive
                       ? "bg-[var(--color-surface-primary)] text-[var(--color-text-primary)] shadow-[var(--shadow-sm)]"
                       : "text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]",
                   )
                 : cn(
-                    "px-4 py-2.5 border-b-2 -mb-px",
+                    isSmall ? "px-2.5 py-1 border-b-2 -mb-px" : "px-4 py-2.5 border-b-2 -mb-px",
                     isActive
                       ? "border-[var(--color-action-primary)] text-[var(--color-action-primary)]"
                       : "border-transparent text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:border-[var(--color-border-default)]",

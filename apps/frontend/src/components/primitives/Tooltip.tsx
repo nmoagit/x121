@@ -1,5 +1,6 @@
+import { createPortal } from "react-dom";
 import { cn } from "@/lib/cn";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 
 /** Placement direction for tooltips, hints, and popovers. */
@@ -25,16 +26,43 @@ export const PLACEMENT_CLASSES: Record<Placement, string> = {
   right: "left-full top-1/2 -translate-y-1/2 ml-2",
 };
 
-/** @deprecated Renamed to `PLACEMENT_CLASSES`. */
-const POSITION_CLASSES = PLACEMENT_CLASSES;
+const TOOLTIP_GAP = 8;
+
+function computePosition(rect: DOMRect, side: Placement): { top: number; left: number } {
+  switch (side) {
+    case "top":
+      return { top: rect.top - TOOLTIP_GAP, left: rect.left + rect.width / 2 };
+    case "bottom":
+      return { top: rect.bottom + TOOLTIP_GAP, left: rect.left + rect.width / 2 };
+    case "left":
+      return { top: rect.top + rect.height / 2, left: rect.left - TOOLTIP_GAP };
+    case "right":
+      return { top: rect.top + rect.height / 2, left: rect.right + TOOLTIP_GAP };
+  }
+}
+
+const TRANSFORM: Record<Placement, string> = {
+  top: "translate(-50%, -100%)",
+  bottom: "translate(-50%, 0)",
+  left: "translate(-100%, -50%)",
+  right: "translate(0, -50%)",
+};
 
 export function Tooltip({ content, children, side = "top", delay = DEFAULT_DELAY }: TooltipProps) {
   const [visible, setVisible] = useState(false);
+  const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const triggerRef = useRef<HTMLSpanElement>(null);
 
   const show = useCallback(() => {
-    timerRef.current = setTimeout(() => setVisible(true), delay);
-  }, [delay]);
+    timerRef.current = setTimeout(() => {
+      if (triggerRef.current) {
+        const rect = triggerRef.current.getBoundingClientRect();
+        setPos(computePosition(rect, side));
+      }
+      setVisible(true);
+    }, delay);
+  }, [delay, side]);
 
   const hide = useCallback(() => {
     if (timerRef.current) {
@@ -42,10 +70,18 @@ export function Tooltip({ content, children, side = "top", delay = DEFAULT_DELAY
       timerRef.current = null;
     }
     setVisible(false);
+    setPos(null);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
   }, []);
 
   return (
     <span
+      ref={triggerRef}
       className="relative inline-flex"
       onMouseEnter={show}
       onMouseLeave={hide}
@@ -54,20 +90,28 @@ export function Tooltip({ content, children, side = "top", delay = DEFAULT_DELAY
     >
       {children}
 
-      <span
-        role="tooltip"
-        className={cn(
-          "absolute z-50 whitespace-nowrap pointer-events-none",
-          "px-2.5 py-1.5 text-sm rounded-[var(--radius-md)]",
-          "bg-[var(--color-surface-overlay)] text-[var(--color-text-primary)]",
-          "shadow-[var(--shadow-md)]",
-          "transition-opacity duration-[var(--duration-fast)] ease-[var(--ease-default)]",
-          POSITION_CLASSES[side],
-          visible ? "opacity-100" : "opacity-0",
-        )}
-      >
-        {content}
-      </span>
+      {visible && pos && createPortal(
+        <span
+          role="tooltip"
+          style={{
+            position: "fixed",
+            top: pos.top,
+            left: pos.left,
+            transform: TRANSFORM[side],
+            zIndex: 9999,
+          }}
+          className={cn(
+            "whitespace-nowrap pointer-events-none",
+            "px-2.5 py-1.5 text-xs rounded-[var(--radius-md)]",
+            "bg-[var(--color-surface-overlay)] text-[var(--color-text-primary)]",
+            "shadow-[var(--shadow-md)]",
+            "animate-[fadeIn_var(--duration-fast)_var(--ease-default)]",
+          )}
+        >
+          {content}
+        </span>,
+        document.body,
+      )}
     </span>
   );
 }

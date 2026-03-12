@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
 
 /* --------------------------------------------------------------------------
    Types
@@ -56,7 +57,9 @@ const INITIAL_STATE: AuthState = {
    Store
    -------------------------------------------------------------------------- */
 
-export const useAuthStore = create<AuthStore>((set, get) => ({
+export const useAuthStore = create<AuthStore>()(
+  persist(
+    (set, get) => ({
   ...INITIAL_STATE,
 
   login: async (username: string, password: string) => {
@@ -146,4 +149,15 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   setLoading: (loading: boolean) => set({ isLoading: loading }),
 
   clearAuth: () => set({ ...INITIAL_STATE }),
-}));
+}),
+    {
+      name: "x121-auth",
+      partialize: (state) => ({
+        user: state.user,
+        accessToken: state.accessToken,
+        refreshToken: state.refreshToken,
+        isAuthenticated: state.isAuthenticated,
+      }),
+    },
+  ),
+);

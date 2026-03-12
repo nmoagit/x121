@@ -1,35 +1,37 @@
 /**
- * Simple page title + description header.
+ * Page title sync + optional actions bar.
  *
- * Renders a consistent page heading used at the top of standalone pages.
- * Optionally includes an actions slot for buttons/controls beside the title.
+ * Sets the global page title (shown in the top header bar) and optionally
+ * renders an actions row. Does NOT render the title visually — the header
+ * bar handles that.
  */
 
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
+
+import { usePageTitle } from "@/app/usePageTitle";
 
 interface PageHeaderProps {
-  /** Page title. */
+  /** Page title (displayed in header bar). */
   title: string;
-  /** Short description shown below the title. */
+  /** Short description (displayed in header bar beside title). */
   description?: string;
-  /** Optional actions rendered to the right of the title block. */
+  /** Optional actions rendered as a standalone row. */
   actions?: ReactNode;
 }
 
 export function PageHeader({ title, description, actions }: PageHeaderProps) {
+  const setPageTitle = usePageTitle((s) => s.setPageTitle);
+
+  useEffect(() => {
+    setPageTitle(title, description);
+    return () => setPageTitle("", "");
+  }, [title, description, setPageTitle]);
+
+  if (!actions) return null;
+
   return (
-    <div className="flex items-start justify-between gap-4">
-      <div>
-        <h1 className="text-xl font-semibold text-[var(--color-text-primary)]">
-          {title}
-        </h1>
-        {description && (
-          <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-            {description}
-          </p>
-        )}
-      </div>
-      {actions && <div className="shrink-0">{actions}</div>}
+    <div className="flex items-center justify-end gap-4">
+      {actions}
     </div>
   );
 }

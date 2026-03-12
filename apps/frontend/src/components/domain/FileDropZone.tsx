@@ -14,7 +14,7 @@
 import { useCallback, useRef, useState } from "react";
 import type { ReactNode } from "react";
 
-import type { CharacterDropPayload, DroppedAsset } from "@/features/projects/types";
+import type { CharacterDropPayload, DroppedAsset, FolderDropResult } from "@/features/projects/types";
 import { cn } from "@/lib/cn";
 import { isImageFile, isVideoFile, readFileText, stripExtension } from "@/lib/file-types";
 
@@ -26,7 +26,7 @@ interface FileDropZoneProps {
   children: ReactNode;
   onNamesDropped: (names: string[]) => void;
   /** When provided and directories are dropped, called instead of onNamesDropped. */
-  onFolderDropped?: (payloads: CharacterDropPayload[]) => void;
+  onFolderDropped?: (result: FolderDropResult) => void;
   /** Optional ref callback to receive the browseFolder function. */
   browseFolderRef?: React.MutableRefObject<(() => void) | null>;
 }
@@ -126,6 +126,11 @@ async function collectFilesFromDirectory(
   return files;
 }
 
+/** Get the webkitRelativePath from a File (non-standard property). */
+function relativePath(file: File): string {
+  return relativePath(file);
+}
+
 /** Strip extension from a filename and return the lowercased stem. */
 function filenameStem(filename: string): string {
   return stripExtension(filename).toLowerCase();
@@ -170,30 +175,86 @@ function classifyCharacterFiles(
 }
 
 /**
- * Read a dropped directory and produce CharacterDropPayloads.
+ * Read a dropped directory and detect its structure.
  *
- * - If the directory contains subdirectories, each subdirectory is a character.
- * - If the directory contains only files, the directory itself is a character.
+ * Detects three structures:
+ * - Flat: single character folder or batch (subdirs with only files)
+ * - Grouped: subdirs contain sub-subdirs ({group}/{character}/*.*)
+ * - Project: same as grouped but top-level dir name is a potential project name
  */
-async function readDirectoryPayloads(
+async function readDirectoryStructure(
   entry: FileSystemDirectoryEntry,
-): Promise<CharacterDropPayload[]> {
+): Promise<FolderDropResult> {
   const entries = await readAllEntries(entry.createReader());
-  const subdirs = entries.filter((e) => e.isDirectory);
+  const subdirs = entries.filter((e) => e.isDirectory) as FileSystemDirectoryEntry[];
 
-  if (subdirs.length > 0) {
-    // Parent directory with character subfolders
-    const payloads: CharacterDropPayload[] = [];
-    for (const sub of subdirs) {
-      const files = await collectFilesFromDirectory(sub as FileSystemDirectoryEntry);
-      payloads.push(classifyCharacterFiles(sub.name, files));
-    }
-    return payloads;
+  // No subdirs → flat single character folder
+  if (subdirs.length === 0) {
+    const files = await collectFilesFromDirectory(entry);
+    const payload = classifyCharacterFiles(entry.name, files);
+    return {
+      structure: "flat",
+      groupedPayloads: new Map([["", [payload]]]),
+    };
   }
 
-  // Leaf character folder — collect files from it directly
-  const files = await collectFilesFromDirectory(entry);
-  return [classifyCharacterFiles(entry.name, files)];
+  // Peek into each subdir to check for sub-subdirectories
+  const subdirEntryMap = new Map<string, FileSystemEntry[]>();
+  let subdirsWithChildren = 0;
+
+  for (const sub of subdirs) {
+    const subEntries = await readAllEntries(sub.createReader());
+    subdirEntryMap.set(sub.name, subEntries);
+    if (subEntries.some((e) => e.isDirectory)) {
+      subdirsWithChildren++;
+    }
+  }
+
+  // No subdirs have sub-subdirs → flat batch (backward compatible)
+  if (subdirsWithChildren === 0) {
+    const payloads: CharacterDropPayload[] = [];
+    for (const sub of subdirs) {
+      const files = await collectFilesFromDirectory(sub);
+      payloads.push(classifyCharacterFiles(sub.name, files));
+    }
+    return {
+      structure: "flat",
+      groupedPayloads: new Map([["", payloads]]),
+    };
+  }
+
+  // Majority have sub-subdirs → grouped structure
+  // Each top-level subdir = group, each sub-subdir = character
+  const groupedPayloads = new Map<string, CharacterDropPayload[]>();
+
+  for (const sub of subdirs) {
+    const subEntries = subdirEntryMap.get(sub.name) ?? [];
+    const charDirs = subEntries.filter((e) => e.isDirectory) as FileSystemDirectoryEntry[];
+
+    if (charDirs.length === 0) {
+      // Subdir has only files → treat as ungrouped character
+      const files = await collectFilesFromDirectory(sub);
+      const payload = classifyCharacterFiles(sub.name, files);
+      const ungrouped = groupedPayloads.get("") ?? [];
+      ungrouped.push(payload);
+      groupedPayloads.set("", ungrouped);
+    } else {
+      const payloads: CharacterDropPayload[] = [];
+      for (const charDir of charDirs) {
+        const files = await collectFilesFromDirectory(charDir);
+        const payload = classifyCharacterFiles(charDir.name, files);
+        payload.groupName = sub.name;
+        payloads.push(payload);
+      }
+      groupedPayloads.set(sub.name, payloads);
+    }
+  }
+
+  return {
+    structure: "grouped",
+    detectedProjectName: entry.name,
+    groupedPayloads,
+  };
 }
 
 /**
@@ -225,7 +286,7 @@ function namesFromFolderFiles(files: FileList): string[] {
     const file = files[i];
     if (!file) continue;
     const rel =
-      (file as File & { webkitRelativePath?: string }).webkitRelativePath ?? "";
+      relativePath(file);
     const parts = rel.split("/");
     if (parts.length >= 3 && parts[1]) {
       folderNames.add(parts[1]);
@@ -239,9 +300,82 @@ function namesFromFolderFiles(files: FileList): string[] {
   return [...new Set(fileNames)];
 }
 
-/** Build CharacterDropPayloads from browse-folder file picker results. */
-function payloadsFromFolderFiles(files: FileList): CharacterDropPayload[] {
-  // Group files by character folder name
+/** Get root folder name from a FileList with webkitRelativePath. */
+function getRootFolderName(files: FileList): string {
+  const first = files[0];
+  if (!first) return "";
+  const rel = (first as File & { webkitRelativePath?: string }).webkitRelativePath ?? "";
+  return rel.split("/")[0] ?? "";
+}
+
+/**
+ * Build a FolderDropResult from browse-folder file picker results.
+ *
+ * Detects structure depth from webkitRelativePath segment count:
+ * - depth ≤ 3: flat (Root/[Character/]file.ext)
+ * - depth ≥ 4: grouped (Root/Group/Character/file.ext)
+ */
+function folderResultFromFiles(files: FileList): FolderDropResult {
+  // Determine max depth from webkitRelativePath segments
+  let maxDepth = 0;
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    if (!file) continue;
+    const rel = relativePath(file);
+    const depth = rel.split("/").length;
+    if (depth > maxDepth) maxDepth = depth;
+  }
+
+  // depth ≤ 3: flat mode (backward compatible)
+  if (maxDepth < 4) {
+    const payloads = flatPayloadsFromFiles(files);
+    return {
+      structure: "flat",
+      groupedPayloads: new Map([["", payloads]]),
+    };
+  }
+
+  // depth ≥ 4: grouped mode (Root/Group/Character/file.ext)
+  const rootName = getRootFolderName(files);
+  const groupCharFiles = new Map<string, Map<string, File[]>>();
+
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    if (!file) continue;
+    const rel = relativePath(file);
+    const parts = rel.split("/");
+
+    if (parts.length >= 4) {
+      // parts[0] = root, parts[1] = group, parts[2] = character, parts[3+] = file path
+      const groupName = parts[1]!;
+      const charName = parts[2]!;
+      if (!groupCharFiles.has(groupName)) groupCharFiles.set(groupName, new Map());
+      const charMap = groupCharFiles.get(groupName)!;
+      if (!charMap.has(charName)) charMap.set(charName, []);
+      charMap.get(charName)!.push(file);
+    }
+  }
+
+  const groupedPayloads = new Map<string, CharacterDropPayload[]>();
+  for (const [groupName, charMap] of groupCharFiles) {
+    const payloads: CharacterDropPayload[] = [];
+    for (const [charName, charFiles] of charMap) {
+      const payload = classifyCharacterFiles(charName, charFiles);
+      payload.groupName = groupName;
+      payloads.push(payload);
+    }
+    groupedPayloads.set(groupName, payloads);
+  }
+
+  return {
+    structure: "grouped",
+    detectedProjectName: rootName,
+    groupedPayloads,
+  };
+}
+
+/** Build flat CharacterDropPayloads from browse-folder results (depth ≤ 3). */
+function flatPayloadsFromFiles(files: FileList): CharacterDropPayload[] {
   const charFilesMap = new Map<string, File[]>();
   let hasSubdirs = false;
 
@@ -249,38 +383,25 @@ function payloadsFromFolderFiles(files: FileList): CharacterDropPayload[] {
     const file = files[i];
     if (!file) continue;
     const rel =
-      (file as File & { webkitRelativePath?: string }).webkitRelativePath ?? "";
+      relativePath(file);
     const parts = rel.split("/");
 
     if (parts.length >= 3 && parts[1]) {
-      // parts[0] = root folder, parts[1] = character subfolder
       hasSubdirs = true;
       const charName = parts[1];
       const arr = charFilesMap.get(charName);
-      if (arr) {
-        arr.push(file);
-      } else {
-        charFilesMap.set(charName, [file]);
-      }
+      if (arr) arr.push(file);
+      else charFilesMap.set(charName, [file]);
     } else if (parts.length === 2 && parts[0]) {
-      // Direct files in root folder — character name is the root folder
       const charName = parts[0];
       const arr = charFilesMap.get(charName);
-      if (arr) {
-        arr.push(file);
-      } else {
-        charFilesMap.set(charName, [file]);
-      }
+      if (arr) arr.push(file);
+      else charFilesMap.set(charName, [file]);
     }
   }
 
-  // If there were subdirectories, use subfolder names as character names
-  // If not, the root folder is the character name (single char folder was picked)
   if (!hasSubdirs) {
-    // All files belong to a single character folder
-    const rootName = files[0]
-      ? ((files[0] as File & { webkitRelativePath?: string }).webkitRelativePath ?? "").split("/")[0] ?? ""
-      : "";
+    const rootName = getRootFolderName(files);
     if (rootName) {
       const allFiles: File[] = [];
       for (let i = 0; i < files.length; i++) {
@@ -325,8 +446,12 @@ export function FileDropZone({
       if (!e.target.files?.length) return;
 
       if (onFolderDropped) {
-        const payloads = payloadsFromFolderFiles(e.target.files);
-        if (payloads.length > 0) onFolderDropped(payloads);
+        const result = folderResultFromFiles(e.target.files);
+        const totalPayloads = [...result.groupedPayloads.values()].reduce(
+          (sum, p) => sum + p.length,
+          0,
+        );
+        if (totalPayloads > 0) onFolderDropped(result);
       } else {
         const names = namesFromFolderFiles(e.target.files);
         const unique = [...new Set(names)];
@@ -380,22 +505,43 @@ export function FileDropZone({
 
       // Asset-aware directory path
       if (dirEntries.length > 0 && onFolderDropped) {
-        const allPayloads: CharacterDropPayload[] = [];
-        for (const dirEntry of dirEntries) {
-          const payloads = await readDirectoryPayloads(dirEntry);
-          allPayloads.push(...payloads);
-        }
-
-        // Deduplicate by rawName, keeping first occurrence
-        const seen = new Set<string>();
-        const unique = allPayloads.filter((p) => {
-          if (seen.has(p.rawName)) return false;
-          seen.add(p.rawName);
-          return true;
-        });
-
-        if (unique.length > 0) {
-          onFolderDropped(unique);
+        if (dirEntries.length === 1) {
+          // Single directory — detect structure
+          const result = await readDirectoryStructure(dirEntries[0]!);
+          // Deduplicate by rawName within each group
+          for (const [key, payloads] of result.groupedPayloads) {
+            const seen = new Set<string>();
+            result.groupedPayloads.set(
+              key,
+              payloads.filter((p) => {
+                if (seen.has(p.rawName)) return false;
+                seen.add(p.rawName);
+                return true;
+              }),
+            );
+          }
+          onFolderDropped(result);
+        } else {
+          // Multiple directories dropped — merge all as flat
+          const allPayloads: CharacterDropPayload[] = [];
+          for (const dirEntry of dirEntries) {
+            const result = await readDirectoryStructure(dirEntry);
+            for (const payloads of result.groupedPayloads.values()) {
+              allPayloads.push(...payloads);
+            }
+          }
+          const seen = new Set<string>();
+          const unique = allPayloads.filter((p) => {
+            if (seen.has(p.rawName)) return false;
+            seen.add(p.rawName);
+            return true;
+          });
+          if (unique.length > 0) {
+            onFolderDropped({
+              structure: "flat",
+              groupedPayloads: new Map([["", unique]]),
+            });
+          }
         }
         return;
       }

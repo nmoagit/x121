@@ -38,4 +38,10 @@ export function useToast() {
   return { toasts, addToast, removeToast };
 }
 
+/** Non-hook access for use outside React (e.g. global error handlers). */
+export const toastStore = {
+  addToast: (toast: Omit<Toast, "id">) => useToastStore.getState().addToast(toast),
+  removeToast: (id: string) => useToastStore.getState().removeToast(id),
+};
+
 export type { Toast };

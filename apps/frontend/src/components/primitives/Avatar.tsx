@@ -16,13 +16,16 @@ const SIZE_CLASSES: Record<AvatarSize, string> = {
   lg: "w-10 h-10 text-base",
 };
 
-/** Deterministic hue from a string — used for fallback background color. */
+/**
+ * Deterministic hue from a string — used for fallback background color.
+ * Biased toward the blue range (200-260) for a cohesive look.
+ */
 function nameToHue(name: string): number {
   let hash = 0;
   for (let i = 0; i < name.length; i++) {
     hash = name.charCodeAt(i) + ((hash << 5) - hash);
   }
-  return Math.abs(hash) % 360;
+  return 200 + (Math.abs(hash) % 60);
 }
 
 /** Extract up to two initials from a name string. */
