@@ -166,6 +166,16 @@ pub struct ModelValidationResult {
     pub found_in_registry: bool,
 }
 
+/// How validation was performed.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "snake_case")]
+pub enum ValidationSource {
+    /// Validated against the live ComfyUI instance.
+    Live,
+    /// Validated against the static built-in node list (ComfyUI was offline).
+    Static,
+}
+
 /// Aggregate validation result for a workflow.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ValidationResult {
@@ -175,6 +185,13 @@ pub struct ValidationResult {
     pub model_results: Vec<ModelValidationResult>,
     /// Whether the workflow passed all validation checks.
     pub overall_valid: bool,
+    /// How validation was performed (live against ComfyUI or static list).
+    #[serde(default = "default_validation_source")]
+    pub validation_source: ValidationSource,
+}
+
+fn default_validation_source() -> ValidationSource {
+    ValidationSource::Static
 }
 
 // ---------------------------------------------------------------------------

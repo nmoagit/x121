@@ -1,10 +1,13 @@
 //! Centralized prompt resolution engine (PRD-115).
 //!
-//! Resolves prompt slots through a four-layer hierarchy:
+//! Resolves prompt slots through a seven-layer hierarchy:
 //! 1. **Workflow default** -- `workflow_prompt_slots.default_text`
 //! 2. **Scene-type override** -- `scene_type_prompt_defaults.prompt_text` (wins if set)
+//! 2b. **Full text override** -- `override_text` from project/group/character (most specific wins, replaces base entirely)
 //! 3. **Placeholder substitution** -- `{character_name}`, `{hair_color}`, etc.
-//! 4. **Fragment append** -- `character_scene_prompt_overrides.fragments` (additive)
+//! 4. **Project-level fragments** -- `project_prompt_overrides.fragments` (append)
+//! 5. **Group-level fragments** -- `group_prompt_overrides.fragments` (append, after project)
+//! 6. **Character-level fragments** -- `character_scene_prompt_overrides.fragments` (append, after group)
 //!
 //! Reuses [`crate::scene_type_config::resolve_prompt_template`] for placeholder
 //! substitution to avoid duplicating regex logic.
@@ -34,6 +37,8 @@ pub enum PromptSource {
     WorkflowDefault,
     /// Text was overridden by a scene-type prompt default.
     SceneTypeDefault,
+    /// Text was fully replaced by an `override_text` from project/group/character.
+    FullOverride,
     /// Fragments were appended to the base text.
     WithFragments,
 }
@@ -102,15 +107,52 @@ pub struct ResolvedPromptSlot {
 ///   `scene_type_prompt_defaults`.
 /// * `character_metadata` -- map of placeholder key -> value from character
 ///   metadata (e.g. `character_name -> "Chloe"`).
-/// * `fragment_overrides` -- map of `slot_id -> ordered fragments` from
-///   `character_scene_prompt_overrides`.
+/// * `project_fragment_overrides` -- map of `slot_id -> ordered fragments` from
+///   `project_prompt_overrides` (broadest scope).
+/// * `group_fragment_overrides` -- map of `slot_id -> ordered fragments` from
+///   `group_prompt_overrides` (mid scope).
+/// * `character_fragment_overrides` -- map of `slot_id -> ordered fragments` from
+///   `character_scene_prompt_overrides` (narrowest scope).
 /// * `fragment_separator` -- separator for joining fragments (defaults to
 ///   [`DEFAULT_FRAGMENT_SEPARATOR`]).
 pub fn resolve_prompts(
     prompt_slots: &[PromptSlotInput],
     scene_type_defaults: &HashMap<i64, String>,
     character_metadata: &HashMap<String, String>,
-    fragment_overrides: &HashMap<i64, Vec<FragmentEntry>>,
+    project_fragment_overrides: &HashMap<i64, Vec<FragmentEntry>>,
+    group_fragment_overrides: &HashMap<i64, Vec<FragmentEntry>>,
+    character_fragment_overrides: &HashMap<i64, Vec<FragmentEntry>>,
+    fragment_separator: Option<&str>,
+) -> Vec<ResolvedPromptSlot> {
+    resolve_prompts_with_overrides(
+        prompt_slots,
+        scene_type_defaults,
+        character_metadata,
+        project_fragment_overrides,
+        group_fragment_overrides,
+        character_fragment_overrides,
+        &HashMap::new(),
+        &HashMap::new(),
+        &HashMap::new(),
+        fragment_separator,
+    )
+}
+
+/// Like [`resolve_prompts`] but also accepts full-text override maps.
+///
+/// When `override_text` is set at any level, the most specific one
+/// (character > group > project) replaces the base prompt entirely.
+/// Fragments still append on top.
+pub fn resolve_prompts_with_overrides(
+    prompt_slots: &[PromptSlotInput],
+    scene_type_defaults: &HashMap<i64, String>,
+    character_metadata: &HashMap<String, String>,
+    project_fragment_overrides: &HashMap<i64, Vec<FragmentEntry>>,
+    group_fragment_overrides: &HashMap<i64, Vec<FragmentEntry>>,
+    character_fragment_overrides: &HashMap<i64, Vec<FragmentEntry>>,
+    project_override_texts: &HashMap<i64, String>,
+    group_override_texts: &HashMap<i64, String>,
+    character_override_texts: &HashMap<i64, String>,
     fragment_separator: Option<&str>,
 ) -> Vec<ResolvedPromptSlot> {
     let separator = fragment_separator.unwrap_or(DEFAULT_FRAGMENT_SEPARATOR);
@@ -122,40 +164,78 @@ pub fn resolve_prompts(
                 slot,
                 scene_type_defaults,
                 character_metadata,
-                fragment_overrides,
+                project_fragment_overrides,
+                group_fragment_overrides,
+                character_fragment_overrides,
+                project_override_texts,
+                group_override_texts,
+                character_override_texts,
                 separator,
             )
         })
         .collect()
 }
 
-/// Resolve a single prompt slot through the four-layer hierarchy.
+/// Resolve a single prompt slot through the hierarchy.
 fn resolve_single_slot(
     slot: &PromptSlotInput,
     scene_type_defaults: &HashMap<i64, String>,
     character_metadata: &HashMap<String, String>,
-    fragment_overrides: &HashMap<i64, Vec<FragmentEntry>>,
+    project_fragment_overrides: &HashMap<i64, Vec<FragmentEntry>>,
+    group_fragment_overrides: &HashMap<i64, Vec<FragmentEntry>>,
+    character_fragment_overrides: &HashMap<i64, Vec<FragmentEntry>>,
+    project_override_texts: &HashMap<i64, String>,
+    group_override_texts: &HashMap<i64, String>,
+    character_override_texts: &HashMap<i64, String>,
     separator: &str,
 ) -> ResolvedPromptSlot {
-    // Layer 1 & 2: Pick base text.
-    let (base_text, base_source) = pick_base_text(slot, scene_type_defaults);
+    // Layer 1 & 2: Pick base text (workflow default or scene-type default).
+    let (mut base_text, mut base_source) = pick_base_text(slot, scene_type_defaults);
+
+    // Layer 2b: Full-text override — most specific level wins.
+    // Character > Group > Project precedence.
+    if let Some(text) = character_override_texts.get(&slot.slot_id) {
+        base_text = text.clone();
+        base_source = PromptSource::FullOverride;
+    } else if let Some(text) = group_override_texts.get(&slot.slot_id) {
+        base_text = text.clone();
+        base_source = PromptSource::FullOverride;
+    } else if let Some(text) = project_override_texts.get(&slot.slot_id) {
+        base_text = text.clone();
+        base_source = PromptSource::FullOverride;
+    }
 
     // Layer 3: Resolve placeholders in base text.
     let resolved_base = resolve_prompt_template(&base_text, character_metadata);
 
-    // Layer 4: Append fragments (if any).
-    let (final_text, source, applied_fragments) = apply_fragments(
-        &resolved_base.text,
-        base_source,
-        slot.slot_id,
-        fragment_overrides,
-        character_metadata,
-        separator,
-    );
+    // Layers 4-6: Append fragments in order: project -> group -> character.
+    let override_layers = [
+        project_fragment_overrides,
+        group_fragment_overrides,
+        character_fragment_overrides,
+    ];
+
+    let mut current_text = resolved_base.text;
+    let mut current_source = base_source;
+    let mut all_applied_fragments = Vec::new();
+
+    for layer in &override_layers {
+        let (text, source, fragments) = apply_fragments(
+            &current_text,
+            current_source.clone(),
+            slot.slot_id,
+            layer,
+            character_metadata,
+            separator,
+        );
+        current_text = text;
+        current_source = source;
+        all_applied_fragments.extend(fragments);
+    }
 
     // Collect all unresolved placeholders from the final text.
     let unresolved =
-        resolve_prompt_template(&final_text, character_metadata).unresolved_placeholders;
+        resolve_prompt_template(&current_text, character_metadata).unresolved_placeholders;
 
     ResolvedPromptSlot {
         slot_id: slot.slot_id,
@@ -163,10 +243,10 @@ fn resolve_single_slot(
         input_name: slot.input_name.clone(),
         slot_label: slot.slot_label.clone(),
         slot_type: slot.slot_type.clone(),
-        resolved_text: final_text,
-        source,
+        resolved_text: current_text,
+        source: current_source,
         unresolved_placeholders: unresolved,
-        applied_fragments,
+        applied_fragments: all_applied_fragments,
     }
 }
 
@@ -254,6 +334,8 @@ mod tests {
             &HashMap::new(),
             &HashMap::new(),
             &HashMap::new(),
+            &HashMap::new(),
+            &HashMap::new(),
             None,
         );
 
@@ -276,6 +358,8 @@ mod tests {
             &scene_defaults,
             &HashMap::new(),
             &HashMap::new(),
+            &HashMap::new(),
+            &HashMap::new(),
             None,
         );
 
@@ -296,7 +380,15 @@ mod tests {
             ("hair_color".to_string(), "blonde".to_string()),
         ]);
 
-        let result = resolve_prompts(&slots, &HashMap::new(), &metadata, &HashMap::new(), None);
+        let result = resolve_prompts(
+            &slots,
+            &HashMap::new(),
+            &metadata,
+            &HashMap::new(),
+            &HashMap::new(),
+            &HashMap::new(),
+            None,
+        );
 
         assert_eq!(result[0].resolved_text, "photo of Chloe with blonde hair");
         assert!(result[0].unresolved_placeholders.is_empty());
@@ -323,7 +415,15 @@ mod tests {
             ],
         )]);
 
-        let result = resolve_prompts(&slots, &HashMap::new(), &HashMap::new(), &fragments, None);
+        let result = resolve_prompts(
+            &slots,
+            &HashMap::new(),
+            &HashMap::new(),
+            &HashMap::new(),
+            &HashMap::new(),
+            &fragments,
+            None,
+        );
 
         assert_eq!(
             result[0].resolved_text,
@@ -355,7 +455,15 @@ mod tests {
             }],
         )]);
 
-        let result = resolve_prompts(&slots, &HashMap::new(), &metadata, &fragments, None);
+        let result = resolve_prompts(
+            &slots,
+            &HashMap::new(),
+            &metadata,
+            &HashMap::new(),
+            &HashMap::new(),
+            &fragments,
+            None,
+        );
 
         assert_eq!(
             result[0].resolved_text,
@@ -374,7 +482,15 @@ mod tests {
         )];
         let metadata = HashMap::from([("character_name".to_string(), "Chloe".to_string())]);
 
-        let result = resolve_prompts(&slots, &HashMap::new(), &metadata, &HashMap::new(), None);
+        let result = resolve_prompts(
+            &slots,
+            &HashMap::new(),
+            &metadata,
+            &HashMap::new(),
+            &HashMap::new(),
+            &HashMap::new(),
+            None,
+        );
 
         assert_eq!(result[0].resolved_text, "photo of Chloe in {unknown_key}");
         assert_eq!(result[0].unresolved_placeholders, vec!["unknown_key"]);
@@ -399,7 +515,15 @@ mod tests {
             }],
         )]);
 
-        let result = resolve_prompts(&slots, &scene_defaults, &HashMap::new(), &fragments, None);
+        let result = resolve_prompts(
+            &slots,
+            &scene_defaults,
+            &HashMap::new(),
+            &HashMap::new(),
+            &HashMap::new(),
+            &fragments,
+            None,
+        );
 
         assert_eq!(result.len(), 3);
 
@@ -420,7 +544,15 @@ mod tests {
 
     #[test]
     fn test_empty_inputs() {
-        let result = resolve_prompts(&[], &HashMap::new(), &HashMap::new(), &HashMap::new(), None);
+        let result = resolve_prompts(
+            &[],
+            &HashMap::new(),
+            &HashMap::new(),
+            &HashMap::new(),
+            &HashMap::new(),
+            &HashMap::new(),
+            None,
+        );
         assert!(result.is_empty());
     }
 
@@ -432,7 +564,15 @@ mod tests {
         slot.is_user_editable = false;
 
         let metadata = HashMap::from([("character_name".to_string(), "Chloe".to_string())]);
-        let result = resolve_prompts(&[slot], &HashMap::new(), &metadata, &HashMap::new(), None);
+        let result = resolve_prompts(
+            &[slot],
+            &HashMap::new(),
+            &metadata,
+            &HashMap::new(),
+            &HashMap::new(),
+            &HashMap::new(),
+            None,
+        );
 
         assert_eq!(result[0].resolved_text, "system prompt with Chloe");
         assert!(result[0].unresolved_placeholders.is_empty());
@@ -463,6 +603,8 @@ mod tests {
             &slots,
             &HashMap::new(),
             &HashMap::new(),
+            &HashMap::new(),
+            &HashMap::new(),
             &fragments,
             Some(" | "),
         );
@@ -477,6 +619,8 @@ mod tests {
         let slots = vec![make_slot(1, None)];
         let result = resolve_prompts(
             &slots,
+            &HashMap::new(),
+            &HashMap::new(),
             &HashMap::new(),
             &HashMap::new(),
             &HashMap::new(),
@@ -501,7 +645,15 @@ mod tests {
             }],
         )]);
 
-        let result = resolve_prompts(&slots, &scene_defaults, &metadata, &fragments, None);
+        let result = resolve_prompts(
+            &slots,
+            &scene_defaults,
+            &metadata,
+            &HashMap::new(),
+            &HashMap::new(),
+            &fragments,
+            None,
+        );
 
         assert_eq!(result[0].resolved_text, "scene Alice, extra detail");
         assert_eq!(result[0].source, PromptSource::WithFragments);
@@ -514,10 +666,210 @@ mod tests {
         let slots = vec![make_slot(1, Some("base text"))];
         let fragments = HashMap::from([(1_i64, Vec::new())]);
 
-        let result = resolve_prompts(&slots, &HashMap::new(), &HashMap::new(), &fragments, None);
+        let result = resolve_prompts(
+            &slots,
+            &HashMap::new(),
+            &HashMap::new(),
+            &HashMap::new(),
+            &HashMap::new(),
+            &fragments,
+            None,
+        );
 
         // Empty fragment list should not change source to WithFragments
         assert_eq!(result[0].source, PromptSource::WorkflowDefault);
         assert_eq!(result[0].resolved_text, "base text");
+    }
+
+    // -- Multi-level resolution --
+
+    #[test]
+    fn test_multi_level_resolution() {
+        let slots = vec![make_slot(1, Some("base prompt"))];
+
+        let project_fragments = HashMap::from([(
+            1_i64,
+            vec![FragmentEntry {
+                entry_type: "inline".to_string(),
+                fragment_id: None,
+                text: "project style".to_string(),
+            }],
+        )]);
+
+        let group_fragments = HashMap::from([(
+            1_i64,
+            vec![FragmentEntry {
+                entry_type: "inline".to_string(),
+                fragment_id: None,
+                text: "group tone".to_string(),
+            }],
+        )]);
+
+        let character_fragments = HashMap::from([(
+            1_i64,
+            vec![FragmentEntry {
+                entry_type: "fragment_ref".to_string(),
+                fragment_id: Some(99),
+                text: "character detail".to_string(),
+            }],
+        )]);
+
+        let result = resolve_prompts(
+            &slots,
+            &HashMap::new(),
+            &HashMap::new(),
+            &project_fragments,
+            &group_fragments,
+            &character_fragments,
+            None,
+        );
+
+        assert_eq!(
+            result[0].resolved_text,
+            "base prompt, project style, group tone, character detail"
+        );
+        assert_eq!(result[0].source, PromptSource::WithFragments);
+        assert_eq!(result[0].applied_fragments.len(), 3);
+        assert_eq!(result[0].applied_fragments[0].text, "project style");
+        assert_eq!(result[0].applied_fragments[1].text, "group tone");
+        assert_eq!(result[0].applied_fragments[2].text, "character detail");
+        assert_eq!(result[0].applied_fragments[2].fragment_id, Some(99));
+    }
+
+    #[test]
+    fn test_partial_level_resolution() {
+        let slots = vec![make_slot(1, Some("base"))];
+
+        // Only project and character levels, no group.
+        let project_fragments = HashMap::from([(
+            1_i64,
+            vec![FragmentEntry {
+                entry_type: "inline".to_string(),
+                fragment_id: None,
+                text: "proj".to_string(),
+            }],
+        )]);
+
+        let character_fragments = HashMap::from([(
+            1_i64,
+            vec![FragmentEntry {
+                entry_type: "inline".to_string(),
+                fragment_id: None,
+                text: "char".to_string(),
+            }],
+        )]);
+
+        let result = resolve_prompts(
+            &slots,
+            &HashMap::new(),
+            &HashMap::new(),
+            &project_fragments,
+            &HashMap::new(),
+            &character_fragments,
+            None,
+        );
+
+        assert_eq!(result[0].resolved_text, "base, proj, char");
+        assert_eq!(result[0].applied_fragments.len(), 2);
+    }
+
+    // -- Full override tests --
+
+    #[test]
+    fn test_full_override_replaces_base() {
+        let slots = vec![make_slot(1, Some("original base prompt"))];
+        let character_overrides = HashMap::from([(1_i64, "completely new prompt".to_string())]);
+
+        let result = resolve_prompts_with_overrides(
+            &slots,
+            &HashMap::new(),
+            &HashMap::new(),
+            &HashMap::new(),
+            &HashMap::new(),
+            &HashMap::new(),
+            &HashMap::new(),
+            &HashMap::new(),
+            &character_overrides,
+            None,
+        );
+
+        assert_eq!(result[0].resolved_text, "completely new prompt");
+        assert_eq!(result[0].source, PromptSource::FullOverride);
+    }
+
+    #[test]
+    fn test_full_override_with_fragments() {
+        let slots = vec![make_slot(1, Some("original base"))];
+        let character_overrides = HashMap::from([(1_i64, "overridden base".to_string())]);
+        let character_fragments = HashMap::from([(
+            1_i64,
+            vec![FragmentEntry {
+                entry_type: "inline".to_string(),
+                fragment_id: None,
+                text: "extra detail".to_string(),
+            }],
+        )]);
+
+        let result = resolve_prompts_with_overrides(
+            &slots,
+            &HashMap::new(),
+            &HashMap::new(),
+            &HashMap::new(),
+            &HashMap::new(),
+            &character_fragments,
+            &HashMap::new(),
+            &HashMap::new(),
+            &character_overrides,
+            None,
+        );
+
+        assert_eq!(result[0].resolved_text, "overridden base, extra detail");
+        assert_eq!(result[0].source, PromptSource::WithFragments);
+    }
+
+    #[test]
+    fn test_character_override_wins_over_project() {
+        let slots = vec![make_slot(1, Some("workflow default"))];
+        let project_overrides = HashMap::from([(1_i64, "project override".to_string())]);
+        let character_overrides = HashMap::from([(1_i64, "character override".to_string())]);
+
+        let result = resolve_prompts_with_overrides(
+            &slots,
+            &HashMap::new(),
+            &HashMap::new(),
+            &HashMap::new(),
+            &HashMap::new(),
+            &HashMap::new(),
+            &project_overrides,
+            &HashMap::new(),
+            &character_overrides,
+            None,
+        );
+
+        assert_eq!(result[0].resolved_text, "character override");
+        assert_eq!(result[0].source, PromptSource::FullOverride);
+    }
+
+    #[test]
+    fn test_full_override_with_placeholders() {
+        let slots = vec![make_slot(1, Some("ignored"))];
+        let metadata = HashMap::from([("character_name".to_string(), "Alice".to_string())]);
+        let character_overrides =
+            HashMap::from([(1_i64, "{character_name} wearing jeans".to_string())]);
+
+        let result = resolve_prompts_with_overrides(
+            &slots,
+            &HashMap::new(),
+            &metadata,
+            &HashMap::new(),
+            &HashMap::new(),
+            &HashMap::new(),
+            &HashMap::new(),
+            &HashMap::new(),
+            &character_overrides,
+            None,
+        );
+
+        assert_eq!(result[0].resolved_text, "Alice wearing jeans");
     }
 }

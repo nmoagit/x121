@@ -281,6 +281,19 @@ pub static SETTINGS_REGISTRY: &[SettingDefinition] = &[
         sensitive: false,
         validation_regex: None,
     },
+    // -- System (deliverables) --
+    SettingDefinition {
+        key: "blocking_deliverables",
+        category: CATEGORY_SYSTEM,
+        label: "Blocking Deliverables",
+        description: "Comma-separated list of deliverable sections that must be complete for a character to be considered done. Valid values: metadata, images, scenes, speech. Projects inherit this default unless overridden.",
+        value_type: SettingValueType::CommaSeparatedList,
+        env_var: None,
+        default_value: Some("metadata,images,scenes"),
+        requires_restart: false,
+        sensitive: false,
+        validation_regex: None,
+    },
     // -- System (logging) --
     SettingDefinition {
         key: "rust_log",

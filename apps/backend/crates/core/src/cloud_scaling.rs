@@ -17,6 +17,15 @@ pub enum ScalingAction {
     NoChange,
 }
 
+/// A scaling decision with a human-readable reason explaining why.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ScalingDecision {
+    pub action: ScalingAction,
+    pub reason: String,
+    /// Cooldown remaining at decision time (0 if not in cooldown).
+    pub cooldown_remaining_secs: i64,
+}
+
 /// Inputs for a scaling decision.
 #[derive(Debug, Clone)]
 pub struct ScalingInput {
@@ -44,13 +53,29 @@ pub struct ScalingInput {
 
 /// Evaluate whether to scale up, scale down, or do nothing.
 pub fn evaluate_scaling_decision(input: &ScalingInput) -> ScalingAction {
+    evaluate_scaling_decision_with_reason(input).action
+}
+
+/// Evaluate scaling with a human-readable reason for the decision.
+pub fn evaluate_scaling_decision_with_reason(input: &ScalingInput) -> ScalingDecision {
     // Check cooldown
-    if let Some(last) = input.last_scaled_at {
+    let cooldown_remaining = if let Some(last) = input.last_scaled_at {
         let elapsed = (input.now - last).num_seconds();
-        if elapsed < input.cooldown_secs as i64 {
-            return ScalingAction::NoChange;
+        let remaining = input.cooldown_secs as i64 - elapsed;
+        if remaining > 0 {
+            return ScalingDecision {
+                action: ScalingAction::NoChange,
+                reason: format!(
+                    "Cooldown active — {remaining}s remaining (last scaled {}s ago)",
+                    elapsed,
+                ),
+                cooldown_remaining_secs: remaining,
+            };
         }
-    }
+        0
+    } else {
+        0
+    };
 
     // Check budget
     if let Some(limit) = input.budget_limit_cents {
@@ -59,36 +84,92 @@ pub fn evaluate_scaling_decision(input: &ScalingInput) -> ScalingAction {
             if input.current_count > 0 && input.current_count > input.min_instances {
                 let excess = input.current_count - input.min_instances;
                 if excess > 0 {
-                    return ScalingAction::ScaleDown(excess);
+                    return ScalingDecision {
+                        action: ScalingAction::ScaleDown(excess),
+                        reason: format!(
+                            "Budget exhausted ({} of {} cents spent) — scaling down {} to minimum",
+                            input.budget_spent_cents, limit, excess,
+                        ),
+                        cooldown_remaining_secs: cooldown_remaining,
+                    };
                 }
             }
-            return ScalingAction::NoChange;
+            return ScalingDecision {
+                action: ScalingAction::NoChange,
+                reason: format!(
+                    "Budget exhausted ({} of {} cents spent) — already at minimum",
+                    input.budget_spent_cents, limit,
+                ),
+                cooldown_remaining_secs: cooldown_remaining,
+            };
         }
     }
 
     // Scale up: queue exceeds threshold and we haven't hit max
     if input.queue_depth >= input.queue_threshold && input.current_count < input.max_instances {
-        // Scale up by 1 at a time to avoid over-provisioning
         let can_add = input.max_instances - input.current_count;
         let needed = 1u16.min(can_add);
         if needed > 0 {
-            return ScalingAction::ScaleUp(needed);
+            return ScalingDecision {
+                action: ScalingAction::ScaleUp(needed),
+                reason: format!(
+                    "Queue depth ({}) >= threshold ({}) with {}/{} instances — scaling up {}",
+                    input.queue_depth, input.queue_threshold,
+                    input.current_count, input.max_instances, needed,
+                ),
+                cooldown_remaining_secs: cooldown_remaining,
+            };
         }
     }
 
     // Scale down: queue is empty and we're above minimum
     if input.queue_depth == 0 && input.current_count > input.min_instances {
-        // Scale down by 1 at a time for graceful drain
-        return ScalingAction::ScaleDown(1);
+        return ScalingDecision {
+            action: ScalingAction::ScaleDown(1),
+            reason: format!(
+                "Queue empty with {} instances (min {}) — scaling down 1",
+                input.current_count, input.min_instances,
+            ),
+            cooldown_remaining_secs: cooldown_remaining,
+        };
     }
 
     // Enforce minimum
     if input.current_count < input.min_instances {
         let deficit = input.min_instances - input.current_count;
-        return ScalingAction::ScaleUp(deficit);
+        return ScalingDecision {
+            action: ScalingAction::ScaleUp(deficit),
+            reason: format!(
+                "Below minimum instances ({}/{}) — scaling up {}",
+                input.current_count, input.min_instances, deficit,
+            ),
+            cooldown_remaining_secs: cooldown_remaining,
+        };
     }
 
-    ScalingAction::NoChange
+    // Why no change?
+    let reason = if input.queue_depth > 0 && input.current_count >= input.max_instances {
+        format!(
+            "Queue has {} pending jobs but already at max instances ({}/{})",
+            input.queue_depth, input.current_count, input.max_instances,
+        )
+    } else if input.queue_depth < input.queue_threshold {
+        format!(
+            "Queue depth ({}) below threshold ({}) — no action needed",
+            input.queue_depth, input.queue_threshold,
+        )
+    } else {
+        format!(
+            "Stable — {} instances, {} pending jobs",
+            input.current_count, input.queue_depth,
+        )
+    };
+
+    ScalingDecision {
+        action: ScalingAction::NoChange,
+        reason,
+        cooldown_remaining_secs: cooldown_remaining,
+    }
 }
 
 #[cfg(test)]

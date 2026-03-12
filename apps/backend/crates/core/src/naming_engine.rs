@@ -345,8 +345,12 @@ fn build_token_map(ctx: &NamingContext) -> HashMap<String, String> {
         );
     }
 
-    // clothes_off_suffix: "_clothes_off" when true, empty otherwise
-    let suffix = if ctx.is_clothes_off {
+    // clothes_off_suffix: "_clothes_off" only when is_clothes_off=true AND
+    // variant is clothed (or unset). A topless variant cannot have a clothes_off
+    // transition — the character is already unclothed. The clothes_off suffix
+    // means "started clothed, ended with clothes off".
+    let is_clothed_variant = !matches!(ctx.variant_label.as_deref(), Some("topless"));
+    let suffix = if ctx.is_clothes_off && is_clothed_variant {
         "_clothes_off".to_string()
     } else {
         String::new()
@@ -524,10 +528,20 @@ mod tests {
     }
 
     #[test]
-    fn compat_topless_clothes_off_indexed() {
+    fn compat_topless_ignores_clothes_off() {
+        // Topless variant cannot have clothes_off — character is already unclothed.
+        // The clothes_off suffix is silently dropped for non-clothed variants.
         let ctx = scene_ctx("topless", "Slow Walk", true, Some(1));
         let result = resolve_template(SCENE_VIDEO_TEMPLATE, &ctx).unwrap();
-        assert_eq!(result.filename, "topless_slow_walk_clothes_off_1.mp4");
+        assert_eq!(result.filename, "topless_slow_walk_1.mp4");
+    }
+
+    #[test]
+    fn compat_clothed_clothes_off_indexed() {
+        // Clothed variant CAN have clothes_off — "started clothed, ended clothes off".
+        let ctx = scene_ctx("clothed", "Slow Walk", true, Some(1));
+        let result = resolve_template(SCENE_VIDEO_TEMPLATE, &ctx).unwrap();
+        assert_eq!(result.filename, "slow_walk_clothes_off_1.mp4");
     }
 
     #[test]

@@ -115,6 +115,7 @@ pub mod trimming;
 pub mod types;
 pub mod undo;
 pub mod validation;
+pub mod video_settings;
 pub mod video_sources;
 pub mod video_spec_validator;
 pub mod webhook_testing;

@@ -1,6 +1,6 @@
 //! Dashboard Widget Customization pure logic (PRD-89).
 //!
-//! Provides widget catalog, layout validation, overlap detection,
+//! Provides widget catalogue, layout validation, overlap detection,
 //! basic widget settings validation, share token generation, and
 //! layout priority resolution. All functions are pure (no I/O).
 
@@ -44,7 +44,7 @@ pub enum WidgetCategory {
 // Widget definition
 // ---------------------------------------------------------------------------
 
-/// Describes a single widget type available in the catalog.
+/// Describes a single widget type available in the catalogue.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WidgetDefinition {
     /// Unique widget type identifier (e.g. "active-tasks").
@@ -299,11 +299,11 @@ pub fn resolve_layout_priority(
 }
 
 // ---------------------------------------------------------------------------
-// Native widget catalog
+// Native widget catalogue
 // ---------------------------------------------------------------------------
 
-/// Return the full catalog of native (built-in) dashboard widgets.
-pub fn get_native_widget_catalog() -> Vec<WidgetDefinition> {
+/// Return the full catalogue of native (built-in) dashboard widgets.
+pub fn get_native_widget_catalogue() -> Vec<WidgetDefinition> {
     vec![
         WidgetDefinition {
             id: "active-tasks".to_string(),
@@ -487,35 +487,35 @@ mod tests {
         assert_eq!(cat, WidgetCategory::Productivity);
     }
 
-    // -- get_native_widget_catalog -------------------------------------------
+    // -- get_native_widget_catalogue -------------------------------------------
 
     #[test]
     fn native_catalog_has_10_widgets() {
-        let catalog = get_native_widget_catalog();
-        assert_eq!(catalog.len(), 10);
+        let catalogue = get_native_widget_catalogue();
+        assert_eq!(catalogue.len(), 10);
     }
 
     #[test]
     fn native_catalog_ids_are_unique() {
-        let catalog = get_native_widget_catalog();
-        let mut ids: Vec<&str> = catalog.iter().map(|w| w.id.as_str()).collect();
+        let catalogue = get_native_widget_catalogue();
+        let mut ids: Vec<&str> = catalogue.iter().map(|w| w.id.as_str()).collect();
         ids.sort();
         ids.dedup();
-        assert_eq!(ids.len(), catalog.len());
+        assert_eq!(ids.len(), catalogue.len());
     }
 
     #[test]
     fn native_catalog_all_native_source() {
-        let catalog = get_native_widget_catalog();
-        for widget in &catalog {
+        let catalogue = get_native_widget_catalogue();
+        for widget in &catalogue {
             assert_eq!(widget.source, "native");
         }
     }
 
     #[test]
     fn native_catalog_min_sizes_positive() {
-        let catalog = get_native_widget_catalog();
-        for widget in &catalog {
+        let catalogue = get_native_widget_catalogue();
+        for widget in &catalogue {
             assert!(widget.min_width > 0, "Widget {} min_width <= 0", widget.id);
             assert!(
                 widget.min_height > 0,
@@ -527,8 +527,8 @@ mod tests {
 
     #[test]
     fn native_catalog_default_at_least_min() {
-        let catalog = get_native_widget_catalog();
-        for widget in &catalog {
+        let catalogue = get_native_widget_catalogue();
+        for widget in &catalogue {
             assert!(
                 widget.default_width >= widget.min_width,
                 "Widget {} default_width < min_width",

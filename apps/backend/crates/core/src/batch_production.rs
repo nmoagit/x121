@@ -47,6 +47,7 @@ pub const RUN_STATUS_ID_IN_PROGRESS: i64 = 2;
 pub const RUN_STATUS_ID_COMPLETED: i64 = 3;
 pub const RUN_STATUS_ID_FAILED: i64 = 4;
 pub const RUN_STATUS_ID_DELIVERED: i64 = 3;
+pub const RUN_STATUS_ID_CANCELLED: i64 = 5;
 
 // ---------------------------------------------------------------------------
 // Cell status enum

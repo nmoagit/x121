@@ -43,6 +43,23 @@ pub fn image_dimensions(data: &[u8]) -> Option<(u32, u32)> {
     reader.into_dimensions().ok()
 }
 
+/// Generate a JPEG thumbnail from raw image bytes.
+///
+/// Resizes the image so the longest edge is at most `max_edge` pixels,
+/// preserving aspect ratio. Returns JPEG bytes at quality 80.
+/// Returns `None` if the image cannot be decoded.
+pub fn generate_thumbnail(data: &[u8], max_edge: u32) -> Option<Vec<u8>> {
+    let reader = image::ImageReader::new(Cursor::new(data))
+        .with_guessed_format()
+        .ok()?;
+    let img = reader.decode().ok()?;
+    let thumb = img.thumbnail(max_edge, max_edge);
+    let mut buf = Vec::new();
+    let encoder = image::codecs::jpeg::JpegEncoder::new_with_quality(&mut buf, 80);
+    thumb.write_with_encoder(encoder).ok()?;
+    Some(buf)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
