@@ -3,12 +3,17 @@ name = "x121-worker"
 version.workspace = true
 edition.workspace = true
 
+[lib]
+name = "x121_worker"
+path = "src/lib.rs"
+
 [[bin]]
 name = "x121-worker"
 path = "src/main.rs"
 
 [dependencies]
 x121-core = { workspace = true }
+x121-cloud = { workspace = true }
 x121-comfyui = { workspace = true }
 x121-db = { workspace = true }
 x121-events = { workspace = true }

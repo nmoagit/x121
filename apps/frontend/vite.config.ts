@@ -14,6 +14,12 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
+      "/x121/api/v1/ws": {
+        target: "http://localhost:3000",
+        changeOrigin: true,
+        rewrite: (p) => p.replace(/^\/x121/, ""),
+        ws: true,
+      },
       "/x121/api": {
         target: "http://localhost:3000",
         changeOrigin: true,

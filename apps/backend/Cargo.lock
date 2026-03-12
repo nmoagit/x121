@@ -4752,6 +4752,7 @@ dependencies = [
  "jsonwebtoken",
  "libc",
  "reqwest",
+ "rustls 0.23.36",
  "serde",
  "serde_json",
  "sha2",
@@ -4772,6 +4773,7 @@ dependencies = [
  "x121-db",
  "x121-events",
  "x121-pipeline",
+ "x121-worker",
 ]
 
 [[package]]
@@ -4790,8 +4792,10 @@ dependencies = [
  "thiserror 2.0.18",
  "tokio",
  "tracing",
+ "x121-comfyui",
  "x121-core",
  "x121-db",
+ "x121-events",
 ]
 
 [[package]]
@@ -4812,6 +4816,7 @@ dependencies = [
  "uuid",
  "x121-core",
  "x121-db",
+ "x121-events",
 ]
 
 [[package]]
@@ -4881,6 +4886,7 @@ dependencies = [
  "x121-comfyui",
  "x121-core",
  "x121-db",
+ "x121-events",
 ]
 
 [[package]]
@@ -4895,6 +4901,7 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-subscriber",
+ "x121-cloud",
  "x121-comfyui",
  "x121-core",
  "x121-db",

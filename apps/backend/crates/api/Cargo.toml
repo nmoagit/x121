@@ -18,6 +18,7 @@ x121-comfyui = { workspace = true }
 x121-db = { workspace = true }
 x121-events = { workspace = true }
 x121-pipeline = { workspace = true }
+x121-worker = { path = "../worker" }
 
 axum = { workspace = true }
 tokio = { workspace = true }
@@ -39,6 +40,7 @@ sha2 = { workspace = true }
 tokio-util = { workspace = true }
 tokio-tungstenite = { workspace = true }
 reqwest = { workspace = true }
+rustls = { version = "0.23", default-features = false, features = ["ring"] }
 libc = { workspace = true }
 
 [dev-dependencies]

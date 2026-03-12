@@ -83,6 +83,25 @@ echo -e "${BOLD}  X121 Dev Environment${NC}"
 echo -e "  ========================="
 echo ""
 
+# --- Docker (ensure Docker Desktop is running) ---------------------------------
+
+if [[ "$START_DB" == true ]]; then
+  if ! docker info >/dev/null 2>&1; then
+    status "Docker not running — starting Docker Desktop..."
+    /mnt/c/Program\ Files/Docker/Docker/Docker\ Desktop.exe &>/dev/null &
+    elapsed=0
+    while ! docker info >/dev/null 2>&1; do
+      sleep 2
+      elapsed=$((elapsed + 2))
+      if [[ $elapsed -ge 60 ]]; then
+        fail "Docker Desktop did not start within 60s"
+        exit 1
+      fi
+    done
+    success "Docker Desktop ready (took ~${elapsed}s)"
+  fi
+fi
+
 # --- Postgres ------------------------------------------------------------------
 
 if [[ "$START_DB" == true ]]; then
