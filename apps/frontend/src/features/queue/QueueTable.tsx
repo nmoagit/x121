@@ -6,10 +6,12 @@
  */
 
 import { useEffect, useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
 
 import { Badge, Checkbox, Spinner, Tooltip } from "@/components/primitives";
+import { Image, Play } from "@/tokens/icons";
 import { cn } from "@/lib/cn";
-import { formatDateTime, formatDuration } from "@/lib/format";
+import { formatDateTime, formatDuration, formatDurationSecs } from "@/lib/format";
 
 import { useAdminQueueJobs } from "./hooks/use-queue";
 import { JobActionMenu } from "./JobActions";
@@ -50,11 +52,47 @@ function DurationCell({ job }: { job: FullQueueJob }) {
   if (job.actual_duration_secs != null) {
     return (
       <span className="text-xs text-[var(--color-text-muted)]">
-        {formatDuration(job.actual_duration_secs * 1000)}
+        {formatDurationSecs(job.actual_duration_secs)}
       </span>
     );
   }
   return <span className="text-xs text-[var(--color-text-muted)]">--</span>;
+}
+
+/* --------------------------------------------------------------------------
+   Target cell — adapts based on job_kind
+   -------------------------------------------------------------------------- */
+
+function KindIcon({ kind }: { kind: string | null }) {
+  if (kind === "image") return <Image size={12} className="shrink-0 text-[var(--color-text-muted)]" />;
+  return <Play size={12} className="shrink-0 text-[var(--color-text-muted)]" />;
+}
+
+function TargetCell({ job }: { job: FullQueueJob }) {
+  if (job.job_kind === "image") {
+    const source = job.source_variant_type ?? "?";
+    const target = job.target_variant_type ?? "?";
+    return (
+      <span className="inline-flex items-center gap-1 text-sm">
+        <KindIcon kind="image" />
+        <span className="text-[var(--color-text-muted)]">{source}</span>
+        <span className="text-[var(--color-text-muted)]">{"\u2192"}</span>
+        <span className="text-[var(--color-text-primary)]">{target}</span>
+      </span>
+    );
+  }
+
+  const scene = job.scene_type_name ?? "--";
+  const track = job.track_name;
+  return (
+    <span className="inline-flex items-center gap-1 text-sm">
+      <KindIcon kind={job.job_kind} />
+      <span className="text-[var(--color-text-secondary)]">{scene}</span>
+      {track && (
+        <span className="text-xs text-[var(--color-text-muted)]">/ {track}</span>
+      )}
+    </span>
+  );
 }
 
 /* --------------------------------------------------------------------------
@@ -65,11 +103,13 @@ interface JobRowProps {
   job: FullQueueJob;
   selected: boolean;
   onToggle: (id: number) => void;
+  onNavigate: (job: FullQueueJob) => void;
 }
 
-function JobRow({ job, selected, onToggle }: JobRowProps) {
+function JobRow({ job, selected, onToggle, onNavigate }: JobRowProps) {
   const label = statusLabel(job.status_id);
   const variant = statusColor(job.status_id);
+  const canNavigate = job.character_id != null && job.project_id != null;
 
   const errorContent = job.error_message ? (
     <Tooltip content={job.error_message} side="left">
@@ -89,16 +129,21 @@ function JobRow({ job, selected, onToggle }: JobRowProps) {
         "border-b border-[var(--color-border-default)] last:border-b-0",
         "hover:bg-[var(--color-surface-tertiary)]/50 transition-colors",
         selected && "bg-[var(--color-action-primary)]/5",
+        canNavigate && "cursor-pointer",
       )}
+      onClick={() => canNavigate && onNavigate(job)}
     >
-      <td className="px-3 py-2">
+      <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
         <Checkbox checked={selected} onChange={() => onToggle(job.id)} />
       </td>
       <td className="px-3 py-2 text-xs font-mono text-[var(--color-text-muted)]">
         #{job.id}
       </td>
       <td className="px-3 py-2 text-sm text-[var(--color-text-primary)]">
-        {job.job_type}
+        {job.character_name ?? "--"}
+      </td>
+      <td className="px-3 py-2">
+        <TargetCell job={job} />
       </td>
       <td className="px-3 py-2">{errorContent}</td>
       <td className="px-3 py-2 text-xs text-[var(--color-text-muted)]">
@@ -113,7 +158,7 @@ function JobRow({ job, selected, onToggle }: JobRowProps) {
       <td className="px-3 py-2">
         <DurationCell job={job} />
       </td>
-      <td className="px-3 py-2">
+      <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
         <JobActionMenu job={job} />
       </td>
     </tr>
@@ -178,6 +223,22 @@ export function QueueTable({
   onSelectAll,
 }: QueueTableProps) {
   const { data: jobs, isLoading } = useAdminQueueJobs(filter);
+  const navigate = useNavigate();
+
+  function handleNavigateToJob(job: FullQueueJob) {
+    if (job.project_id == null || job.character_id == null) return;
+    if (job.job_kind === "image") {
+      navigate({
+        to: `/projects/${job.project_id}/characters/${job.character_id}`,
+        search: { tab: "overview" },
+      });
+    } else {
+      navigate({
+        to: `/projects/${job.project_id}/characters/${job.character_id}`,
+        search: { tab: "scenes", scene: String(job.scene_id) },
+      });
+    }
+  }
 
   if (isLoading) {
     return (
@@ -215,7 +276,12 @@ export function QueueTable({
               />
             </th>
             <SortHeader label="ID" field="id" filter={filter} onChange={onFilterChange} />
-            <SortHeader label="Type" field="job_type" filter={filter} onChange={onFilterChange} />
+            <th className="px-3 py-2 text-left text-xs font-medium text-[var(--color-text-muted)]">
+              Character
+            </th>
+            <th className="px-3 py-2 text-left text-xs font-medium text-[var(--color-text-muted)]">
+              Target
+            </th>
             <SortHeader label="Status" field="status_id" filter={filter} onChange={onFilterChange} />
             <SortHeader label="Priority" field="priority" filter={filter} onChange={onFilterChange} />
             <th className="px-3 py-2 text-left text-xs font-medium text-[var(--color-text-muted)]">
@@ -237,6 +303,7 @@ export function QueueTable({
               job={job}
               selected={selectedIds.has(job.id)}
               onToggle={onToggleSelect}
+              onNavigate={handleNavigateToJob}
             />
           ))}
         </tbody>

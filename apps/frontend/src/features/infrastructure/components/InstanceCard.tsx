@@ -58,7 +58,14 @@ export function InstanceCard({
         {/* Info grid */}
         <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
           <InfoRow label="Provider" value={instance.provider_name} />
-          <InfoRow label="GPU" value={instance.gpu_type ?? "N/A"} />
+          <InfoRow
+            label="GPU"
+            value={
+              instance.gpu_type
+                ? `${instance.gpu_type}${instance.gpu_count > 1 ? ` ×${instance.gpu_count}` : ""}`
+                : "N/A"
+            }
+          />
           <InfoRow label="External ID" value={instance.external_id} mono />
           <InfoRow
             label="IP"
@@ -94,9 +101,12 @@ export function InstanceCard({
           <div className="flex items-center gap-1 text-[var(--color-text-muted)]">
             <DollarSign size={12} />
             <span>
-              {formatCents(sessionCostCents)} session
-              {instance.total_cost_cents != null && (
-                <> / {formatCents(instance.total_cost_cents)} total</>
+              {instance.cost_per_hour_cents && instance.cost_per_hour_cents > 0
+                ? `${formatCents(instance.cost_per_hour_cents)}/hr`
+                : "N/A"}
+              {sessionCostCents > 0 && <> · {formatCents(sessionCostCents)} session</>}
+              {instance.total_cost_cents != null && instance.total_cost_cents > 0 && (
+                <> · {formatCents(instance.total_cost_cents)} total</>
               )}
             </span>
           </div>

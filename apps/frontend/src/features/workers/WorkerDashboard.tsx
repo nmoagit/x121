@@ -10,6 +10,7 @@ import { useState } from "react";
 
 import { Spinner, StatBadge } from "@/components/primitives";
 import { Stack } from "@/components/layout";
+import { useSetPageTitle } from "@/hooks/useSetPageTitle";
 import { AlertCircle, Server } from "@/tokens/icons";
 
 import {
@@ -28,6 +29,8 @@ import { WorkerDetailPanel } from "./WorkerDetailPanel";
    -------------------------------------------------------------------------- */
 
 export function WorkerDashboard() {
+  useSetPageTitle("Workers", "Manage GPU workers, monitor health, and control fleet capacity.");
+
   const { data: workers, isLoading, error } = useWorkers();
   const { data: stats } = useFleetStats();
   const [selectedWorker, setSelectedWorker] = useState<Worker | null>(null);
@@ -41,19 +44,6 @@ export function WorkerDashboard() {
       {/* Main content */}
       <div className="flex-1 overflow-auto">
         <Stack gap={6}>
-          {/* Page header */}
-          <div>
-            <div className="flex items-center gap-[var(--spacing-2)]">
-              <Server size={24} className="text-[var(--color-text-muted)]" aria-hidden />
-              <h1 className="text-xl font-semibold text-[var(--color-text-primary)]">
-                Worker Pool
-              </h1>
-            </div>
-            <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-              Manage GPU workers, monitor health, and control fleet capacity.
-            </p>
-          </div>
-
           {/* Fleet stats */}
           {stats && (
             <div className="grid grid-cols-2 gap-[var(--spacing-3)] sm:grid-cols-3 lg:grid-cols-7">

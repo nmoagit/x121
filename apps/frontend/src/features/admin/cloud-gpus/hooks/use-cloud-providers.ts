@@ -106,6 +106,20 @@ export interface EmergencyStopResult {
   provider_disabled: boolean;
 }
 
+export interface CloudScalingEvent {
+  id: number;
+  rule_id: number;
+  provider_id: number;
+  action: string;
+  reason: string;
+  instances_changed: number;
+  queue_depth: number;
+  current_count: number;
+  budget_spent_cents: number;
+  cooldown_remaining_secs: number;
+  created_at: string;
+}
+
 // ---------------------------------------------------------------------------
 // Query key factory
 // ---------------------------------------------------------------------------
@@ -120,6 +134,7 @@ const cloudKeys = {
   scalingRules: (providerId: number) => [...cloudKeys.all, "scaling-rules", providerId] as const,
   costSummary: (providerId: number) => [...cloudKeys.all, "cost-summary", providerId] as const,
   costEvents: (providerId: number) => [...cloudKeys.all, "cost-events", providerId] as const,
+  scalingEvents: (providerId: number) => [...cloudKeys.all, "scaling-events", providerId] as const,
 };
 
 const BASE = "/admin/cloud-providers";
@@ -251,7 +266,11 @@ export function useProvisionInstance(providerId: number) {
       volume_mount_path?: string;
       docker_image?: string;
       template_id?: string;
-    }) => api.post<CloudInstance>(`${BASE}/${providerId}/instances/provision`, data),
+      auto_start?: boolean;
+    }) => api.post<CloudInstance>(`${BASE}/${providerId}/instances/provision`, {
+      auto_start: true,
+      ...data,
+    }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: cloudKeys.instances(providerId) });
       qc.invalidateQueries({ queryKey: cloudKeys.dashboard() });
@@ -340,6 +359,34 @@ export function useDeleteScalingRule(providerId: number) {
     mutationFn: (ruleId: number) =>
       api.delete<void>(`${BASE}/${providerId}/scaling-rules/${ruleId}`),
     onSuccess: () => {
+      qc.invalidateQueries({ queryKey: cloudKeys.scalingRules(providerId) });
+    },
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Scaling Events (audit log)
+// ---------------------------------------------------------------------------
+
+export function useScalingEvents(providerId: number | null) {
+  return useQuery({
+    queryKey: cloudKeys.scalingEvents(providerId ?? 0),
+    queryFn: () => api.get<CloudScalingEvent[]>(`${BASE}/${providerId}/scaling-events?limit=100`),
+    enabled: providerId !== null,
+    refetchInterval: 30_000,
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Scaling Reset
+// ---------------------------------------------------------------------------
+
+export function useResetScaling(providerId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.post<void>(`${BASE}/${providerId}/scaling-reset`, {}),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: cloudKeys.scalingEvents(providerId) });
       qc.invalidateQueries({ queryKey: cloudKeys.scalingRules(providerId) });
     },
   });

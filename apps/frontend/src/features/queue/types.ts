@@ -4,7 +4,19 @@
  * These types mirror the backend API response shapes.
  */
 
-import type { BadgeVariant } from "@/components/primitives/Badge";
+import {
+  JOB_STATUS_ID_PENDING,
+  JOB_STATUS_ID_RUNNING,
+  JOB_STATUS_ID_COMPLETED,
+  JOB_STATUS_ID_FAILED,
+  JOB_STATUS_ID_CANCELLED,
+  JOB_STATUS_ID_RETRYING,
+  JOB_STATUS_ID_SCHEDULED,
+  JOB_STATUS_ID_PAUSED,
+  JOB_STATUS_ID_HELD,
+  jobStatusLabel,
+  jobStatusBadgeVariant,
+} from "@/lib/job-status";
 
 /* --------------------------------------------------------------------------
    Queue status
@@ -123,6 +135,17 @@ export interface FullQueueJob {
   is_paused: boolean;
   progress_percent: number;
   parameters: Record<string, unknown>;
+  // Enriched context from backend JOINs.
+  scene_id: number | null;
+  character_id: number | null;
+  project_id: number | null;
+  character_name: string | null;
+  scene_type_name: string | null;
+  track_name: string | null;
+  // Job kind discriminator + image-generation context.
+  job_kind: "scene" | "image" | "other" | null;
+  source_variant_type: string | null;
+  target_variant_type: string | null;
 }
 
 /* --------------------------------------------------------------------------
@@ -190,52 +213,24 @@ export function priorityColor(priority: number): string {
 }
 
 /* --------------------------------------------------------------------------
-   Job status constants & helpers (match backend status lookup table)
+   Job status constants & helpers — re-exported from canonical source
    -------------------------------------------------------------------------- */
 
-export const JOB_STATUS_PENDING = 1;
-export const JOB_STATUS_QUEUED = 2;
-export const JOB_STATUS_RUNNING = 3;
-export const JOB_STATUS_COMPLETED = 4;
-export const JOB_STATUS_FAILED = 5;
-export const JOB_STATUS_CANCELLED = 6;
-export const JOB_STATUS_PAUSED = 7;
-export const JOB_STATUS_SCHEDULED = 8;
-export const JOB_STATUS_RETRYING = 9;
-export const JOB_STATUS_HELD = 10;
+/** @deprecated Use JOB_STATUS_ID_PENDING from @/lib/job-status */
+export const JOB_STATUS_PENDING = JOB_STATUS_ID_PENDING;
+/** Note: "Queued" is mapped to Running (id=2) in the backend seed data. */
+export const JOB_STATUS_QUEUED = JOB_STATUS_ID_RUNNING;
+export const JOB_STATUS_RUNNING = JOB_STATUS_ID_RUNNING;
+export const JOB_STATUS_COMPLETED = JOB_STATUS_ID_COMPLETED;
+export const JOB_STATUS_FAILED = JOB_STATUS_ID_FAILED;
+export const JOB_STATUS_CANCELLED = JOB_STATUS_ID_CANCELLED;
+export const JOB_STATUS_PAUSED = JOB_STATUS_ID_PAUSED;
+export const JOB_STATUS_SCHEDULED = JOB_STATUS_ID_SCHEDULED;
+export const JOB_STATUS_RETRYING = JOB_STATUS_ID_RETRYING;
+export const JOB_STATUS_HELD = JOB_STATUS_ID_HELD;
 
-const STATUS_LABELS: Record<number, string> = {
-  [JOB_STATUS_PENDING]: "Pending",
-  [JOB_STATUS_QUEUED]: "Queued",
-  [JOB_STATUS_RUNNING]: "Running",
-  [JOB_STATUS_COMPLETED]: "Completed",
-  [JOB_STATUS_FAILED]: "Failed",
-  [JOB_STATUS_CANCELLED]: "Cancelled",
-  [JOB_STATUS_PAUSED]: "Paused",
-  [JOB_STATUS_SCHEDULED]: "Scheduled",
-  [JOB_STATUS_RETRYING]: "Retrying",
-  [JOB_STATUS_HELD]: "Held",
-};
+/** Map a job status ID to a human-readable label. Delegates to canonical source. */
+export const statusLabel = jobStatusLabel;
 
-/** Map a job status ID to a human-readable label. */
-export function statusLabel(statusId: number): string {
-  return STATUS_LABELS[statusId] ?? `Unknown (${statusId})`;
-}
-
-const STATUS_COLORS: Record<number, BadgeVariant> = {
-  [JOB_STATUS_PENDING]: "default",
-  [JOB_STATUS_QUEUED]: "info",
-  [JOB_STATUS_RUNNING]: "info",
-  [JOB_STATUS_COMPLETED]: "success",
-  [JOB_STATUS_FAILED]: "danger",
-  [JOB_STATUS_CANCELLED]: "default",
-  [JOB_STATUS_PAUSED]: "warning",
-  [JOB_STATUS_SCHEDULED]: "default",
-  [JOB_STATUS_RETRYING]: "warning",
-  [JOB_STATUS_HELD]: "warning",
-};
-
-/** Map a job status ID to a badge variant for consistent styling. */
-export function statusColor(statusId: number): BadgeVariant {
-  return STATUS_COLORS[statusId] ?? "default";
-}
+/** Map a job status ID to a badge variant for consistent styling. Delegates to canonical source. */
+export const statusColor = jobStatusBadgeVariant;

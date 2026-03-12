@@ -13,7 +13,8 @@
 import { useCallback, useState } from "react";
 
 import { CollapsibleSection } from "@/components/composite/CollapsibleSection";
-import { Stack } from "@/components/layout";
+import { useSetPageTitle } from "@/hooks/useSetPageTitle";
+import { useSetToggle } from "@/hooks/useSetToggle";
 
 import { useQueueStats } from "./hooks/use-queue";
 import { QueueStatsPanel } from "./QueueStatsPanel";
@@ -38,39 +39,22 @@ const DEFAULT_FILTER: QueueJobFilter = {
    -------------------------------------------------------------------------- */
 
 export function QueueManagerPage() {
-  const [filter, setFilter] = useState<QueueJobFilter>(DEFAULT_FILTER);
-  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
-  const { data: stats } = useQueueStats();
+  useSetPageTitle("Queue Manager");
 
-  const handleToggleSelect = useCallback((id: number) => {
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
-      return next;
-    });
-  }, []);
+  const [filter, setFilter] = useState<QueueJobFilter>(DEFAULT_FILTER);
+  const [selectedIds, handleToggleSelect, setSelectedIds] = useSetToggle<number>();
+  const { data: stats } = useQueueStats();
 
   const handleSelectAll = useCallback((ids: number[]) => {
     setSelectedIds(new Set(ids));
-  }, []);
+  }, [setSelectedIds]);
 
   const handleClearSelection = useCallback(() => {
     setSelectedIds(new Set());
-  }, []);
+  }, [setSelectedIds]);
 
   return (
     <div className="space-y-6">
-      {/* Page header */}
-      <Stack direction="horizontal" gap={2} align="center">
-        <h1 className="text-2xl font-semibold text-[var(--color-text-primary)]">
-          Queue Manager
-        </h1>
-      </Stack>
-
       {/* Stats panel */}
       <QueueStatsPanel />
 

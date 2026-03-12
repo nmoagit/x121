@@ -333,7 +333,7 @@ export function useBulkCancel() {
 
   return useMutation({
     mutationFn: (filter: BulkCancelFilter) =>
-      api.post<{ cancelled_count: number }>("/admin/jobs/bulk-cancel", filter),
+      api.post<{ cancelled_count: number }>("/admin/jobs/bulk-cancel", { filter }),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: queueKeys.all });
       toastStore.addToast({ message: `Cancelled ${data.cancelled_count} jobs`, variant: "success" });

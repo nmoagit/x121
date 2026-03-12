@@ -11,8 +11,11 @@ import type { ComfyuiConnectionStatus } from "../types";
 
 const STATUS_BADGE: Record<string, BadgeVariant> = {
   provisioning: "info",
+  starting: "info",
   running: "success",
+  stopping: "warning",
   stopped: "default",
+  terminating: "warning",
   terminated: "default",
   error: "danger",
   unknown: "warning",
@@ -65,6 +68,6 @@ export function calculateUptimeMs(startedAt: string | null): number {
 const STUCK_THRESHOLD_MS = 10 * 60 * 1000;
 
 export function isStuck(statusName: string, createdAt: string): boolean {
-  if (statusName !== "provisioning") return false;
+  if (statusName !== "provisioning" && statusName !== "starting") return false;
   return Date.now() - new Date(createdAt).getTime() > STUCK_THRESHOLD_MS;
 }

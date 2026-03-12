@@ -10,6 +10,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import { api } from "@/lib/api";
 import type {
+  CloudGpuType,
   CloudInstance,
   CloudProvider,
 } from "@/features/admin/cloud-gpus/hooks/use-cloud-providers";
@@ -38,26 +39,32 @@ function resolveComfyuiStatus(
     return { status: "not_registered", comfyuiInstanceId: null };
   }
 
-  const match = infraStatus.comfyui_instances.find((ci) =>
-    ci.api_url.includes(instance.ip_address ?? "__no_ip__"),
-  );
+  // Match by cloud_instance_id (most reliable), then by IP or external_id in URL.
+  const match =
+    infraStatus.comfyui_instances.find(
+      (ci) => ci.cloud_instance_id != null && ci.cloud_instance_id === instance.id,
+    ) ??
+    infraStatus.comfyui_instances.find(
+      (ci) =>
+        (instance.ip_address && ci.api_url.includes(instance.ip_address)) ||
+        ci.api_url.includes(instance.external_id),
+    );
 
   if (!match) {
     return { status: "not_registered", comfyuiInstanceId: null };
   }
 
-  if (match.last_connected_at && !match.last_disconnected_at) {
-    return { status: "connected", comfyuiInstanceId: match.id };
-  }
-
-  if (
-    match.last_disconnected_at &&
-    match.last_connected_at &&
-    match.last_disconnected_at > match.last_connected_at
-  ) {
+  // Determine connection state from timestamps.
+  if (match.last_connected_at) {
+    // Connected if no disconnect, or last connect is more recent than last disconnect.
+    if (!match.last_disconnected_at || match.last_connected_at > match.last_disconnected_at) {
+      return { status: "connected", comfyuiInstanceId: match.id };
+    }
+    // Disconnected: last_disconnected_at > last_connected_at.
     return { status: "disconnected", comfyuiInstanceId: match.id };
   }
 
+  // Never connected — enabled means it's trying to connect.
   if (match.is_enabled) {
     return { status: "reconnecting", comfyuiInstanceId: match.id };
   }
@@ -73,11 +80,14 @@ function enrichInstance(
   instance: CloudInstance,
   provider: CloudProvider,
   infraStatus: InfrastructureStatus | null,
+  gpuTypeMap: Map<number, CloudGpuType>,
 ): EnrichedInstance {
   const { status: comfyuiStatus, comfyuiInstanceId } = resolveComfyuiStatus(
     instance,
     infraStatus,
   );
+
+  const gpuType = gpuTypeMap.get(instance.gpu_type_id);
 
   return {
     id: instance.id,
@@ -86,7 +96,7 @@ function enrichInstance(
     provider_id: provider.id,
     provider_name: provider.name,
     provider_type: provider.provider_type,
-    gpu_type: null, // GPU type name not available on CloudInstance; resolved by UI if needed
+    gpu_type: gpuType?.name ?? null,
     gpu_count: instance.gpu_count,
     status_id: instance.status_id,
     status_name: resolveStatusName(instance.status_id),
@@ -109,10 +119,13 @@ function enrichInstance(
 
 const STATUS_NAMES: Record<number, string> = {
   1: "provisioning",
-  2: "running",
-  3: "stopped",
-  4: "terminated",
-  5: "error",
+  2: "starting",
+  3: "running",
+  4: "stopping",
+  5: "stopped",
+  6: "terminating",
+  7: "terminated",
+  8: "error",
 };
 
 function resolveStatusName(statusId: number): string {
@@ -123,14 +136,18 @@ function resolveStatusName(statusId: number): string {
    Main hook
    -------------------------------------------------------------------------- */
 
-/** Fetch all instances across all providers, enriched with ComfyUI status. Auto-refreshes every 10s. */
-export function useAllInstances(): {
+/** Result from the combined instances + providers query. */
+export interface AllInstancesResult {
   instances: EnrichedInstance[];
+  providers: CloudProvider[];
   isLoading: boolean;
   error: Error | null;
-} {
+}
+
+/** Fetch all instances across all providers, enriched with ComfyUI status. Auto-refreshes every 10s. */
+export function useAllInstances(includeArchived = false): AllInstancesResult {
   const { data, isLoading, error } = useQuery({
-    queryKey: infraKeys.allInstances(),
+    queryKey: [...infraKeys.allInstances(), { includeArchived }],
     queryFn: async () => {
       const [providers, infraStatus] = await Promise.all([
         api.get<CloudProvider[]>("/admin/cloud-providers"),
@@ -140,27 +157,44 @@ export function useAllInstances(): {
       ]);
 
       if (providers.length === 0) {
-        return [] as EnrichedInstance[];
+        return { instances: [] as EnrichedInstance[], providers: [] as CloudProvider[] };
       }
 
+      const suffix = includeArchived ? "?include_archived=true" : "";
       const instancesByProvider = await Promise.all(
-        providers.map((p) =>
-          api
-            .get<CloudInstance[]>(`/admin/cloud-providers/${p.id}/instances`)
-            .then((instances) => ({ provider: p, instances }))
-            .catch(() => ({ provider: p, instances: [] as CloudInstance[] })),
-        ),
+        providers.map(async (p) => {
+          const [instances, gpuTypes] = await Promise.all([
+            api
+              .get<CloudInstance[]>(`/admin/cloud-providers/${p.id}/instances${suffix}`)
+              .catch(() => [] as CloudInstance[]),
+            api
+              .get<CloudGpuType[]>(`/admin/cloud-providers/${p.id}/gpu-types`)
+              .catch(() => [] as CloudGpuType[]),
+          ]);
+          return { provider: p, instances, gpuTypes };
+        }),
       );
 
-      return instancesByProvider.flatMap(({ provider, instances }) =>
-        instances.map((inst) => enrichInstance(inst, provider, infraStatus)),
+      // Build a global GPU type lookup map.
+      const gpuTypeMap = new Map<number, CloudGpuType>();
+      for (const { gpuTypes } of instancesByProvider) {
+        for (const gt of gpuTypes) {
+          gpuTypeMap.set(gt.id, gt);
+        }
+      }
+
+      const instances = instancesByProvider.flatMap(({ provider, instances: insts }) =>
+        insts.map((inst) => enrichInstance(inst, provider, infraStatus, gpuTypeMap)),
       );
+
+      return { instances, providers };
     },
     refetchInterval: 10_000,
   });
 
   return {
-    instances: data ?? [],
+    instances: data?.instances ?? [],
+    providers: data?.providers ?? [],
     isLoading,
     error: error as Error | null,
   };

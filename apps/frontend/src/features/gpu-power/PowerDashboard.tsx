@@ -9,6 +9,7 @@ import { useMemo, useState } from "react";
 
 import { Spinner, StatBadge } from "@/components/primitives";
 import { Stack } from "@/components/layout";
+import { useSetPageTitle } from "@/hooks/useSetPageTitle";
 import { daysAgoDate } from "@/lib/format";
 import { AlertCircle, Power } from "@/tokens/icons";
 
@@ -27,6 +28,7 @@ import { WorkerPowerCard } from "./WorkerPowerCard";
    -------------------------------------------------------------------------- */
 
 export function PowerDashboard() {
+  useSetPageTitle("GPU Scheduling", "Monitor power states, manage schedules, and track energy consumption.");
   const { data: statuses, isLoading, error } = useFleetPowerStatus();
   const { data: fleetSettings } = useFleetPowerSettings();
   const updateFleetSettings = useUpdateFleetSettings();
@@ -54,24 +56,6 @@ export function PowerDashboard() {
   return (
     <div className="overflow-auto">
       <Stack gap={6}>
-        {/* Page header */}
-        <div>
-          <div className="flex items-center gap-[var(--spacing-2)]">
-            <Power
-              size={24}
-              className="text-[var(--color-text-muted)]"
-              aria-hidden
-            />
-            <h1 className="text-xl font-semibold text-[var(--color-text-primary)]">
-              GPU Power Management
-            </h1>
-          </div>
-          <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-            Monitor power states, manage schedules, and track energy
-            consumption.
-          </p>
-        </div>
-
         {/* Fleet power state stats */}
         {statuses && (
           <div className="grid grid-cols-2 gap-[var(--spacing-3)] sm:grid-cols-3 lg:grid-cols-5">

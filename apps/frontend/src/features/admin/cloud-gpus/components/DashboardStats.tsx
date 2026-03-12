@@ -21,7 +21,7 @@ export function DashboardStats({ stats }: Props) {
       {cards.map((c) => (
         <div
           key={c.label}
-          className="rounded-lg border border-[var(--color-border-default)] bg-[var(--color-surface-primary)] p-4"
+          className="rounded-[var(--radius-lg)] border border-[var(--color-border-default)] bg-[var(--color-surface-primary)] p-4"
         >
           <p className="text-xs font-medium uppercase tracking-wider text-[var(--color-text-muted)]">
             {c.label}

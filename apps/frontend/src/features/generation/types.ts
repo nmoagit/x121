@@ -78,3 +78,17 @@ export interface BatchGenerateResponse {
   started: number[];
   errors: Array<{ scene_id: number; error: string }>;
 }
+
+/* --------------------------------------------------------------------------
+   Generation log (terminal viewer)
+   -------------------------------------------------------------------------- */
+
+/** A single generation log entry from the backend. */
+export interface GenerationLogEntry {
+  id: number;
+  scene_id: number;
+  level: "info" | "warn" | "error" | "success";
+  message: string;
+  metadata: Record<string, unknown> | null;
+  created_at: string;
+}

@@ -5,7 +5,7 @@
  * a percentage indicator, and an ETA.
  */
 
-import { formatDuration } from "@/lib/format";
+import { formatDurationSecs } from "@/lib/format";
 
 import type { GenerationProgress, SegmentStatus } from "./types";
 
@@ -32,11 +32,6 @@ interface GenerationProgressBarProps {
 /* --------------------------------------------------------------------------
    Helpers
    -------------------------------------------------------------------------- */
-
-/** Convert seconds to ms and format via the shared `formatDuration` utility. */
-function formatSecs(secs: number): string {
-  return formatDuration(secs * 1000);
-}
 
 function segmentStatus(index: number, completed: number): SegmentStatus {
   if (index < completed) return "completed";
@@ -92,8 +87,8 @@ export function GenerationProgressBar({
       <div className="flex items-center justify-between text-xs text-[var(--color-text-secondary)]">
         {/* Duration counter */}
         <span data-testid="duration-counter">
-          {formatSecs(cumulative_duration)}
-          {target_duration != null && ` / ${formatSecs(target_duration)} target`}
+          {formatDurationSecs(cumulative_duration)}
+          {target_duration != null && ` / ${formatDurationSecs(target_duration)} target`}
         </span>
 
         {/* Percentage */}
@@ -104,7 +99,7 @@ export function GenerationProgressBar({
         {/* ETA */}
         {estimated_remaining_secs != null && !isComplete && (
           <span data-testid="eta-display">
-            ~{formatSecs(estimated_remaining_secs)} remaining
+            ~{formatDurationSecs(estimated_remaining_secs)} remaining
           </span>
         )}
       </div>

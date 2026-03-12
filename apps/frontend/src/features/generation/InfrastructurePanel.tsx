@@ -20,7 +20,7 @@ export function InfrastructurePanel() {
   const isConnected = connectedCount > 0;
 
   return (
-    <div className="rounded-lg border border-[var(--color-border-default)] overflow-hidden">
+    <div className="rounded-[var(--radius-lg)] border border-[var(--color-border-default)] overflow-hidden">
       <div className="flex items-center justify-between px-[var(--spacing-3)] py-[var(--spacing-2)] bg-[var(--color-surface-tertiary)]">
         <div className="flex items-center gap-[var(--spacing-2)]">
           <Server size={14} className="text-[var(--color-text-muted)]" />

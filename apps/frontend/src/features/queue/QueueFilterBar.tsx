@@ -16,7 +16,6 @@ import { useWorkerInstances } from "./hooks/use-queue";
 import type { QueueJobFilter } from "./types";
 import {
   JOB_STATUS_PENDING,
-  JOB_STATUS_QUEUED,
   JOB_STATUS_RUNNING,
   JOB_STATUS_COMPLETED,
   JOB_STATUS_FAILED,
@@ -32,7 +31,6 @@ import {
 
 const FILTERABLE_STATUSES = [
   JOB_STATUS_PENDING,
-  JOB_STATUS_QUEUED,
   JOB_STATUS_RUNNING,
   JOB_STATUS_COMPLETED,
   JOB_STATUS_FAILED,
@@ -44,6 +42,7 @@ const FILTERABLE_STATUSES = [
 const JOB_TYPES = [
   { label: "All Types", value: "" },
   { label: "Generation", value: "generation" },
+  { label: "Image Generation", value: "image_generation" },
   { label: "Upscale", value: "upscale" },
   { label: "Preview", value: "preview" },
 ] as const;

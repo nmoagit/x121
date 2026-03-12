@@ -7,19 +7,10 @@
 
 import { StatBadge } from "@/components/primitives";
 import { cn } from "@/lib/cn";
-import { formatDuration } from "@/lib/format";
+import { formatDurationSecs } from "@/lib/format";
 
 import { useQueueStats } from "./hooks/use-queue";
 import type { WorkerLoad } from "./types";
-
-/* --------------------------------------------------------------------------
-   Helpers
-   -------------------------------------------------------------------------- */
-
-function formatSecs(secs: number | null): string {
-  if (secs == null || secs <= 0) return "--";
-  return formatDuration(secs * 1000);
-}
 
 /* --------------------------------------------------------------------------
    Sub-component: worker load bar
@@ -78,8 +69,8 @@ export function QueueStatsPanel() {
           label="Throughput"
           value={`${stats?.throughput_per_hour?.toFixed(1) ?? "0"}/hr`}
         />
-        <StatBadge label="Avg Wait" value={formatSecs(stats?.avg_wait_secs ?? null)} />
-        <StatBadge label="Avg Execution" value={formatSecs(stats?.avg_execution_secs ?? null)} />
+        <StatBadge label="Avg Wait" value={formatDurationSecs(stats?.avg_wait_secs ?? null)} />
+        <StatBadge label="Avg Execution" value={formatDurationSecs(stats?.avg_execution_secs ?? null)} />
       </div>
 
       {/* Per-worker load bars */}
