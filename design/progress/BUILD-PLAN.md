@@ -594,3 +594,13 @@ PRD-29 → PRD-83 → PRD-35 → PRD-57
 | 2026-03-10 | Added PRD-130 (Unified Cloud & ComfyUI Orchestration) to Phase 12. Unifies PodOrchestrator with cloud provider DB infrastructure. Full lifecycle automation, multi-instance, auto-scaling. All deps done (PRD-02, 05, 114). Total: 130 PRDs |
 | 2026-03-10 | Added PRD-131 (Infrastructure Control Panel) to Phase 12. Unified operational dashboard, bulk ops, orphan cleanup, connection recovery. Deps on PRD-130 (planning). Total: 131 PRDs |
 | 2026-03-10 | Added PRD-132 (Queue Manager & Intelligent Job Allocation) to Phase 12. Full queue visibility, job reassignment, drain mode, intelligent allocation. All deps done (PRD-07, 08, 05, 46). Total: 132 PRDs |
+
+---
+
+## Future Ideas (Backlog)
+
+Features and improvements to consider for future development. Not yet scoped into PRDs.
+
+| # | Title | Description | Deps |
+|---|-------|-------------|------|
+| F-01 | Pod Log Streaming | Live log viewer in the infrastructure panel that SSHes into running pods and streams ComfyUI logs to the frontend via SSE/WebSocket | PRD-130, PRD-131 |

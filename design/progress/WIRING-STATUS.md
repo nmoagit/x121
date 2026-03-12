@@ -6,16 +6,17 @@ versus those that are implemented but need integration into host pages.
 **Last updated:** 2026-03-10
 
 **132 of 132 PRDs are complete.** All PRDs implemented.
+**All 132 PRDs have frontend navigation or are correctly unrouted.**
 
 ## Summary
 
 | Category | Count |
 |----------|-------|
-| Routed (accessible via sidebar/nav) | 71 |
+| Routed (accessible via sidebar/nav) | 73 |
 | Correctly unrouted (overlays/framework/embedded) | 15 |
 | Missing routes (need host-page integration) | 29 |
-| No frontend (backend/script only) | 14 |
-| **Total** | **129** |
+| No frontend (backend/script only) | 15 |
+| **Total** | **132** |
 
 ---
 
@@ -80,6 +81,8 @@ These features have routes in `router.tsx` and entries in `navigation.ts`.
 | `/admin/readiness` | `readiness` | PRD-107 |
 | `/admin/settings` | `settings` | PRD-110 |
 | `/admin/themes` | `admin/TokenEditor` | PRD-29 |
+| `/admin/infrastructure` | `infrastructure` | PRD-131 |
+| `/admin/queue` | `queue` | PRD-132 |
 | `/admin/cloud-gpus` | `admin/cloud-gpus` | PRD-114 |
 | `/admin/job-scheduling` | `job-scheduling` | PRD-119 |
 | `/admin/session-management` | `session-management` | PRD-98 |
@@ -186,6 +189,7 @@ within other PRDs' pages.
 | PRD-109 | Scene Video Version Pipeline | Backend only (UI in PRD-111) |
 | PRD-120 | Scene & Workflow Naming Hierarchy | Python generation script only |
 | PRD-123 | Scene Catalog & Scene Types Unification | Backend migration + UI absorbed into PRD-111 route |
+| PRD-130 | Unified Cloud & ComfyUI Orchestration | Backend only (UI in PRD-131) |
 
 ---
 
