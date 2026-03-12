@@ -87,6 +87,14 @@ mod tests {
             ],
             generation_params: Some(serde_json::json!({"3.cfg": 7.5})),
             lora_config: None,
+            resolved_video_settings: x121_core::video_settings::ResolvedVideoSettings {
+                duration_secs: 16,
+                duration_source: x121_core::video_settings::VideoSettingSource::SystemDefault,
+                fps: 30,
+                fps_source: x121_core::video_settings::VideoSettingSource::SystemDefault,
+                resolution: "720p".to_string(),
+                resolution_source: x121_core::video_settings::VideoSettingSource::SystemDefault,
+            },
         }
     }
 

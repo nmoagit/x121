@@ -12,6 +12,7 @@ use x121_db::repositories::{SceneVideoVersionArtifactRepo, SceneVideoVersionRepo
 
 use crate::completion_handler::{CompletionResult, DownloadedArtifact};
 use crate::error::PipelineError;
+use crate::gen_log;
 use crate::output_classifier::OutputRole;
 
 /// Create a `scene_video_version` from a completed pipeline run.
@@ -88,6 +89,13 @@ pub async fn create_version_from_completion(
         artifact_count = intermediate_artifacts.len(),
         "Created scene video version from pipeline completion",
     );
+    gen_log::log(
+        pool,
+        scene_id,
+        "success",
+        format!("Created video version v{}", version.version_number),
+    )
+    .await;
 
     Ok(version)
 }

@@ -16,6 +16,7 @@ use x121_db::models::generation::UpdateSegmentGeneration;
 use x121_db::repositories::{SceneRepo, SegmentRepo};
 
 use crate::error::PipelineError;
+use crate::gen_log;
 use crate::output_classifier::{self, ClassifiedOutput, OutputRole};
 
 /// A downloaded artifact with its storage path and metadata.
@@ -66,8 +67,37 @@ pub async fn handle_completion(
         .await
         .map_err(|e| PipelineError::Download(format!("Failed to get history: {e}")))?;
 
+    gen_log::log(
+        pool,
+        scene_id,
+        "info",
+        "Fetched execution history from ComfyUI",
+    )
+    .await;
+
     // 2. Classify all outputs.
     let classified = output_classifier::classify_outputs(&history, prompt_id, workflow)?;
+
+    let final_count = classified
+        .iter()
+        .filter(|o| o.role == OutputRole::Final)
+        .count();
+    let intermediate_count = classified
+        .iter()
+        .filter(|o| o.role == OutputRole::Intermediate)
+        .count();
+    gen_log::log(
+        pool,
+        scene_id,
+        "info",
+        format!(
+            "Classified {} outputs ({} final, {} intermediate)",
+            classified.len(),
+            final_count,
+            intermediate_count
+        ),
+    )
+    .await;
 
     // 3. Find the Final output and download it.
     let final_output = classified
@@ -92,9 +122,18 @@ pub async fn handle_completion(
         .map_err(|e| PipelineError::Download(format!("Failed to store output: {e}")))?;
 
     let file_size_bytes = video_bytes.len() as i64;
+    gen_log::log(pool, scene_id, "info", "Downloaded output video").await;
+    gen_log::log(
+        pool,
+        scene_id,
+        "info",
+        format!("Stored video to {storage_key}"),
+    )
+    .await;
 
     // 4. Compute duration via ffprobe on the stored file.
-    let duration_secs = probe_stored_duration(storage, &storage_key, &video_bytes).await;
+    let duration_secs =
+        probe_stored_duration(pool, scene_id, storage, &storage_key, &video_bytes).await;
 
     // 5. Build the artifacts list, starting with the Final output.
     let mut downloaded_artifacts = vec![DownloadedArtifact {
@@ -155,6 +194,53 @@ pub async fn handle_completion(
         .await
         .map_err(PipelineError::Database)?;
 
+    // 10. Re-estimate total segments based on actual segment duration.
+    //     The initial estimate uses DEFAULT_SEGMENT_DURATION_SECS (5s) which
+    //     may be far off from what the model actually produces. After the first
+    //     segment, re-estimate using the average actual duration so far.
+    if duration_secs > 0.0 {
+        let scene = SceneRepo::find_by_id(pool, scene_id)
+            .await
+            .map_err(PipelineError::Database)?;
+        if let Some(scene) = scene {
+            if let Some(target) = scene.total_segments_estimated {
+                let completed_count = scene.total_segments_completed.max(1) as f64;
+                let avg_duration = cumulative / completed_count;
+                let scene_type = x121_db::repositories::SceneTypeRepo::find_by_id(
+                    pool,
+                    scene.scene_type_id,
+                )
+                .await
+                .map_err(PipelineError::Database)?;
+                if let Some(st) = scene_type {
+                    let target_dur = st.target_duration_secs.map(|d| d as f64).unwrap_or(16.0);
+                    let remaining = (target_dur - cumulative).max(0.0);
+                    let new_estimate =
+                        scene.total_segments_completed + (remaining / avg_duration).ceil() as i32;
+                    if new_estimate != target {
+                        let update = x121_db::models::generation::UpdateSceneGeneration {
+                            status_id: None,
+                            total_segments_estimated: Some(new_estimate),
+                            total_segments_completed: None,
+                            actual_duration_secs: None,
+                            transition_segment_index: None,
+                            generation_started_at: None,
+                            generation_completed_at: None,
+                        };
+                        let _ = SceneRepo::update_generation_state(pool, scene_id, &update).await;
+                        tracing::info!(
+                            scene_id,
+                            old_estimate = target,
+                            new_estimate,
+                            avg_segment_duration = avg_duration,
+                            "Re-estimated total segments based on actual duration",
+                        );
+                    }
+                }
+            }
+        }
+    }
+
     tracing::info!(
         segment_id,
         scene_id,
@@ -211,6 +297,8 @@ async fn download_intermediate(
 ///
 /// Falls back to a default estimate if ffprobe is unavailable or fails.
 async fn probe_stored_duration(
+    pool: &sqlx::PgPool,
+    scene_id: DbId,
     _storage: &Arc<dyn StorageProvider>,
     _storage_key: &str,
     video_bytes: &[u8],
@@ -244,6 +332,13 @@ async fn probe_stored_duration(
         }
         Err(e) => {
             tracing::warn!(error = %e, "ffprobe failed, using default duration");
+            gen_log::log(
+                pool,
+                scene_id,
+                "warn",
+                "Warning: ffprobe failed \u{2014} using default duration",
+            )
+            .await;
             DEFAULT_DURATION
         }
     }

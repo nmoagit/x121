@@ -192,6 +192,18 @@ pub async fn submit_segment_with_broadcaster(
                 prompt_id,
             })
         }
+        Err(PipelineError::NoInstances) => {
+            // Leave the job as Pending so the dispatcher can pick it up
+            // once an instance becomes available.
+            gen_log::log(
+                pool,
+                scene_id,
+                "warn",
+                format!("Job #{} waiting for a ComfyUI instance to come online", job.id),
+            )
+            .await;
+            Err(PipelineError::NoInstances)
+        }
         Err(e) => {
             // Mark the job as failed so the user sees the error in the queue.
             let _ = JobRepo::fail(pool, job.id, &e.to_string(), None).await;
@@ -269,6 +281,11 @@ async fn submit_to_comfyui(
         .await
         .map_err(|e| PipelineError::ComfyUI(e.to_string()))?;
 
+    // Mark the job as running now that ComfyUI has accepted it.
+    if let Err(e) = JobRepo::mark_started(pool, job.id).await {
+        tracing::warn!(job_id = job.id, error = %e, "Failed to mark job as started");
+    }
+
     tracing::info!(
         scene_id,
         segment_id = segment.id,
@@ -313,9 +330,7 @@ async fn pick_instance(
 
         connected_ids = comfyui.connected_instance_ids().await;
         if connected_ids.is_empty() {
-            return Err(PipelineError::ComfyUI(
-                "No ComfyUI instances connected".to_string(),
-            ));
+            return Err(PipelineError::NoInstances);
         }
     }
 
@@ -347,4 +362,117 @@ async fn pick_instance(
         .min_by_key(|&(id, count)| (count, id))
         .map(|(id, _)| id)
         .ok_or_else(|| PipelineError::ComfyUI("No eligible ComfyUI instances found".to_string()))
+}
+
+/// Dispatch pending jobs that have no ComfyUI instance assigned.
+///
+/// Called periodically by the worker event loop and on `InstanceConnected`
+/// events. For each unassigned pending job, attempts to pick an instance,
+/// upload the seed image, build the workflow, and submit to ComfyUI.
+///
+/// If no instances are available yet, returns early without failing jobs.
+pub async fn dispatch_pending_jobs(
+    pool: &sqlx::PgPool,
+    comfyui: &Arc<ComfyUIManager>,
+    storage: &Arc<dyn StorageProvider>,
+) -> Result<u32, PipelineError> {
+    let jobs = JobRepo::list_pending_unassigned(pool)
+        .await
+        .map_err(PipelineError::Database)?;
+
+    if jobs.is_empty() {
+        return Ok(0);
+    }
+
+    // Check if any instances are available before iterating.
+    let connected = comfyui.connected_instance_ids().await;
+    if connected.is_empty() {
+        tracing::debug!(
+            pending_count = jobs.len(),
+            "Dispatch: {} pending job(s) waiting but no instances connected",
+            jobs.len(),
+        );
+        return Ok(0);
+    }
+
+    tracing::info!(
+        pending_count = jobs.len(),
+        "Dispatching {} pending unassigned job(s)",
+        jobs.len(),
+    );
+
+    let mut dispatched = 0u32;
+
+    for job in &jobs {
+        let params: x121_db::models::generation::SegmentJobParams =
+            match serde_json::from_value(job.parameters.clone()) {
+                Ok(p) => p,
+                Err(e) => {
+                    tracing::warn!(job_id = job.id, error = %e, "Invalid job params — skipping");
+                    continue;
+                }
+            };
+
+        match submit_to_comfyui(
+            pool,
+            comfyui,
+            storage,
+            &context_loader::load_generation_context(pool, params.scene_id, params.segment_index)
+                .await?,
+            &SegmentRepo::find_by_id(pool, params.segment_id)
+                .await
+                .map_err(PipelineError::Database)?
+                .ok_or_else(|| {
+                    PipelineError::MissingConfig(format!("Segment {} not found", params.segment_id))
+                })?,
+            job,
+            params.scene_id,
+            params.segment_index,
+        )
+        .await
+        {
+            Ok(prompt_id) => {
+                tracing::info!(
+                    job_id = job.id,
+                    scene_id = params.scene_id,
+                    %prompt_id,
+                    "Dispatched deferred job to ComfyUI",
+                );
+                gen_log::log(
+                    pool,
+                    params.scene_id,
+                    "success",
+                    format!(
+                        "Instance available — submitted segment {} to ComfyUI (prompt_id: {prompt_id})",
+                        params.segment_index,
+                    ),
+                )
+                .await;
+                dispatched += 1;
+            }
+            Err(PipelineError::NoInstances) => {
+                // Instance went away between the connected check and pick.
+                // Stop trying — next tick will retry.
+                tracing::debug!("Instance disconnected during dispatch — will retry");
+                break;
+            }
+            Err(e) => {
+                tracing::error!(
+                    job_id = job.id,
+                    error = %e,
+                    "Failed to dispatch deferred job — marking as failed",
+                );
+                let _ = JobRepo::fail(pool, job.id, &e.to_string(), None).await;
+                gen_log::log(
+                    pool,
+                    params.scene_id,
+                    "error",
+                    format!("Failed to dispatch job #{}: {e}", job.id),
+                )
+                .await;
+            }
+        }
+    }
+
+    Ok(dispatched)
 }

@@ -1,15 +1,19 @@
 //! Load generation context from the database.
 //!
 //! Fetches all data needed to build a ComfyUI workflow for a given scene
-//! and segment index: scene type, image variant, previous segment, and
-//! resolved prompts.
+//! and segment index: scene type, image variant, previous segment,
+//! resolved prompts, and resolved video settings.
 
 use std::collections::HashMap;
 
 use x121_core::generation;
 use x121_core::prompt_resolution;
 use x121_core::types::DbId;
-use x121_db::repositories::{ImageVariantRepo, SegmentRepo};
+use x121_core::video_settings::{self, VideoSettingsLayer};
+use x121_db::repositories::{
+    CharacterRepo, ImageVariantRepo, SceneTypeTrackConfigRepo, SegmentRepo, VideoSettingsRepo,
+    WorkflowRepo,
+};
 
 use crate::error::{load_scene_and_type, PipelineError};
 use crate::workflow_builder::GenerationContext;
@@ -23,14 +27,41 @@ pub async fn load_generation_context(
     // 1. Load the scene and scene type.
     let (scene, scene_type) = load_scene_and_type(pool, scene_id).await?;
 
-    let workflow_template = scene_type.workflow_json.ok_or_else(|| {
-        PipelineError::MissingConfig(format!(
-            "SceneType {} has no workflow_json configured",
-            scene.scene_type_id
-        ))
-    })?;
+    // Resolve workflow. Priority:
+    // 1. Track config workflow (scene_type_track_configs — per scene_type × track)
+    // 2. Scene type's linked workflow (scene_types.workflow_id)
+    // 3. Scene type's inline workflow JSON (scene_types.workflow_json)
+    let resolved_workflow_id = if let Some(track_id) = scene.track_id {
+        // Check track config first.
+        let track_config = SceneTypeTrackConfigRepo::find_by_scene_type_and_track(
+            pool,
+            scene.scene_type_id,
+            track_id,
+            false, // TODO: resolve is_clothes_off from scene context
+        )
+        .await?;
+        track_config
+            .and_then(|c| c.workflow_id)
+            .or(scene_type.workflow_id)
+    } else {
+        scene_type.workflow_id
+    };
 
-    // 3. Determine the seed image path.
+    let workflow_template = if let Some(wf_id) = resolved_workflow_id {
+        let workflow = WorkflowRepo::find_by_id(pool, wf_id)
+            .await?
+            .ok_or_else(|| PipelineError::MissingConfig(format!("Workflow {wf_id} not found")))?;
+        workflow.json_content
+    } else if let Some(ref json) = scene_type.workflow_json {
+        json.clone()
+    } else {
+        return Err(PipelineError::MissingConfig(format!(
+            "No workflow configured for SceneType {} (checked track config, scene_type.workflow_id, and workflow_json)",
+            scene.scene_type_id
+        )));
+    };
+
+    // 2. Determine the seed image path.
     let seed_image_path = if segment_index == 0 {
         // First segment: use the image variant assigned to the scene.
         let variant_id = scene.image_variant_id.ok_or_else(|| {
@@ -47,14 +78,13 @@ pub async fn load_generation_context(
     } else {
         // Continuation: use the previous segment's last frame.
         let prev_index = (segment_index - 1) as i32;
-        let prev_segment =
-            SegmentRepo::find_by_scene_and_index(pool, scene_id, prev_index)
-                .await?
-                .ok_or_else(|| {
-                    PipelineError::MissingConfig(format!(
-                        "Previous segment (index {prev_index}) not found for scene {scene_id}"
-                    ))
-                })?;
+        let prev_segment = SegmentRepo::find_by_scene_and_index(pool, scene_id, prev_index)
+            .await?
+            .ok_or_else(|| {
+                PipelineError::MissingConfig(format!(
+                    "Previous segment (index {prev_index}) not found for scene {scene_id}"
+                ))
+            })?;
         prev_segment.last_frame_path.ok_or_else(|| {
             PipelineError::MissingConfig(format!(
                 "Previous segment (index {prev_index}) has no last_frame_path"
@@ -62,21 +92,56 @@ pub async fn load_generation_context(
         })?
     };
 
-    // 4. Determine clip position and segment estimate.
-    let target_duration = scene_type.target_duration_secs.map(|d| d as f64);
-    let estimated_total = generation::estimate_segments(
-        target_duration.unwrap_or(generation::DEFAULT_SEGMENT_DURATION_SECS),
-        generation::DEFAULT_SEGMENT_DURATION_SECS,
+    // 3. Resolve video settings through the 4-level hierarchy.
+    let scene_type_layer = VideoSettingsLayer {
+        target_duration_secs: scene_type.target_duration_secs,
+        target_fps: scene_type.target_fps,
+        target_resolution: scene_type.target_resolution.clone(),
+    };
+
+    // Load character for project_id and group_id.
+    let character = CharacterRepo::find_by_id(pool, scene.character_id)
+        .await?
+        .ok_or_else(|| {
+            PipelineError::MissingConfig(format!(
+                "Character {} not found for scene {scene_id}",
+                scene.character_id
+            ))
+        })?;
+
+    let (project_layer, group_layer, char_layer) = VideoSettingsRepo::load_hierarchy_layers(
+        pool,
+        character.project_id,
+        character.group_id,
+        scene.character_id,
+        scene.scene_type_id,
+    )
+    .await?;
+
+    let is_idle = scene_type.name.to_lowercase() == "idle";
+    let resolved_video_settings = video_settings::resolve_video_settings(
+        &scene_type_layer,
+        project_layer.as_ref(),
+        group_layer.as_ref(),
+        char_layer.as_ref(),
+        is_idle,
     );
+
+    // 4. Determine clip position and segment estimate using resolved duration.
+    let target_duration = resolved_video_settings.duration_secs as f64;
+    let estimated_total =
+        generation::estimate_segments(target_duration, generation::DEFAULT_SEGMENT_DURATION_SECS);
     let clip_position = generation::determine_clip_position(segment_index, estimated_total);
 
     // 5. Resolve prompts (MVP: empty overrides — will be wired to real data later).
     let resolved_prompts = prompt_resolution::resolve_prompts(
-        &[],                    // prompt_slots — will load from workflow_prompt_slots later
-        &HashMap::new(),        // scene_type_defaults
-        &HashMap::new(),        // character_metadata
-        &HashMap::new(),        // fragment_overrides
-        None,                   // fragment_separator
+        &[],             // prompt_slots — will load from workflow_prompt_slots later
+        &HashMap::new(), // scene_type_defaults
+        &HashMap::new(), // character_metadata
+        &HashMap::new(), // project_fragment_overrides
+        &HashMap::new(), // group_fragment_overrides
+        &HashMap::new(), // character_fragment_overrides
+        None,            // fragment_separator
     );
 
     Ok(GenerationContext {
@@ -88,5 +153,6 @@ pub async fn load_generation_context(
         resolved_prompts,
         generation_params: scene_type.generation_params,
         lora_config: scene_type.lora_config,
+        resolved_video_settings,
     })
 }

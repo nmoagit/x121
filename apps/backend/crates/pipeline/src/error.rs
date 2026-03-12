@@ -32,6 +32,14 @@ pub enum PipelineError {
     /// ComfyUI manager or API error.
     #[error("ComfyUI error: {0}")]
     ComfyUI(String),
+
+    /// No ComfyUI instances are currently connected.
+    ///
+    /// Unlike other errors, this is a transient condition: the job should
+    /// remain `Pending` (not `Failed`) so the dispatcher can pick it up
+    /// once an instance becomes available.
+    #[error("No ComfyUI instances available — job queued for dispatch")]
+    NoInstances,
 }
 
 // ---------------------------------------------------------------------------
@@ -54,10 +62,7 @@ pub async fn load_scene_and_type(
     let scene_type = SceneTypeRepo::find_by_id(pool, scene.scene_type_id)
         .await?
         .ok_or_else(|| {
-            PipelineError::MissingConfig(format!(
-                "SceneType {} not found",
-                scene.scene_type_id
-            ))
+            PipelineError::MissingConfig(format!("SceneType {} not found", scene.scene_type_id))
         })?;
 
     Ok((scene, scene_type))

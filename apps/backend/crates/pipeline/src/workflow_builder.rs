@@ -8,6 +8,7 @@ use std::path::Path;
 use x121_core::prompt_resolution::ResolvedPromptSlot;
 use x121_core::scene_type_config::ClipPosition;
 use x121_core::types::DbId;
+use x121_core::video_settings::ResolvedVideoSettings;
 use x121_core::workflow_import::LOAD_IMAGE_CLASSES;
 
 use crate::error::PipelineError;
@@ -27,6 +28,8 @@ pub struct GenerationContext {
     pub generation_params: Option<serde_json::Value>,
     /// Optional LoRA configuration.
     pub lora_config: Option<serde_json::Value>,
+    /// Resolved video settings from the 4-level hierarchy.
+    pub resolved_video_settings: ResolvedVideoSettings,
 }
 
 /// Build a ready-to-submit ComfyUI workflow from the generation context.
@@ -97,10 +100,7 @@ fn inject_prompts(workflow: &mut serde_json::Value, prompts: &[ResolvedPromptSlo
 /// Apply generation parameter overrides.
 ///
 /// Parameters are formatted as `{"node_id.input_name": value}`.
-fn apply_generation_params(
-    workflow: &mut serde_json::Value,
-    params: &Option<serde_json::Value>,
-) {
+fn apply_generation_params(workflow: &mut serde_json::Value, params: &Option<serde_json::Value>) {
     let Some(params) = params.as_ref().and_then(|p| p.as_object()) else {
         return;
     };
@@ -178,6 +178,14 @@ mod tests {
             resolved_prompts: vec![],
             generation_params: None,
             lora_config: None,
+            resolved_video_settings: x121_core::video_settings::ResolvedVideoSettings {
+                duration_secs: 16,
+                duration_source: x121_core::video_settings::VideoSettingSource::SystemDefault,
+                fps: 30,
+                fps_source: x121_core::video_settings::VideoSettingSource::SystemDefault,
+                resolution: "720p".to_string(),
+                resolution_source: x121_core::video_settings::VideoSettingSource::SystemDefault,
+            },
         };
 
         let result = build_workflow(&ctx).unwrap();
@@ -203,6 +211,14 @@ mod tests {
             resolved_prompts: vec![],
             generation_params: None,
             lora_config: None,
+            resolved_video_settings: x121_core::video_settings::ResolvedVideoSettings {
+                duration_secs: 16,
+                duration_source: x121_core::video_settings::VideoSettingSource::SystemDefault,
+                fps: 30,
+                fps_source: x121_core::video_settings::VideoSettingSource::SystemDefault,
+                resolution: "720p".to_string(),
+                resolution_source: x121_core::video_settings::VideoSettingSource::SystemDefault,
+            },
         };
 
         let err = build_workflow(&ctx).unwrap_err();
@@ -220,6 +236,14 @@ mod tests {
             resolved_prompts: vec![make_resolved_slot("5", "text", "a portrait of Alice")],
             generation_params: None,
             lora_config: None,
+            resolved_video_settings: x121_core::video_settings::ResolvedVideoSettings {
+                duration_secs: 16,
+                duration_source: x121_core::video_settings::VideoSettingSource::SystemDefault,
+                fps: 30,
+                fps_source: x121_core::video_settings::VideoSettingSource::SystemDefault,
+                resolution: "720p".to_string(),
+                resolution_source: x121_core::video_settings::VideoSettingSource::SystemDefault,
+            },
         };
 
         let result = build_workflow(&ctx).unwrap();
@@ -241,6 +265,14 @@ mod tests {
                 "3.steps": 20
             })),
             lora_config: None,
+            resolved_video_settings: x121_core::video_settings::ResolvedVideoSettings {
+                duration_secs: 16,
+                duration_source: x121_core::video_settings::VideoSettingSource::SystemDefault,
+                fps: 30,
+                fps_source: x121_core::video_settings::VideoSettingSource::SystemDefault,
+                resolution: "720p".to_string(),
+                resolution_source: x121_core::video_settings::VideoSettingSource::SystemDefault,
+            },
         };
 
         let result = build_workflow(&ctx).unwrap();

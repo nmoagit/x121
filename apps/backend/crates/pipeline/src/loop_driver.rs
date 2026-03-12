@@ -13,6 +13,7 @@ use x121_db::repositories::SceneRepo;
 
 use crate::completion_handler::CompletionResult;
 use crate::error::{load_scene_and_type, PipelineError};
+use crate::gen_log;
 use crate::submitter;
 
 /// Outcome of evaluating the loop after a segment completes.
@@ -25,10 +26,7 @@ pub enum LoopOutcome {
         prompt_id: String,
     },
     /// The scene has reached its target duration and generation is complete.
-    SceneComplete {
-        scene_id: DbId,
-        total_duration: f64,
-    },
+    SceneComplete { scene_id: DbId, total_duration: f64 },
 }
 
 /// Evaluate whether to continue generating after a segment completes.
@@ -62,6 +60,17 @@ pub async fn evaluate_and_continue(
         StopDecision::Continue => {
             // Determine next segment index.
             let next_index = (scene.total_segments_completed + 1) as u32;
+
+            gen_log::log(
+                pool,
+                completion.scene_id,
+                "info",
+                format!(
+                    "Segment complete ({:.1}s / {:.1}s) \u{2014} continuing generation",
+                    completion.cumulative_duration_secs, target_duration
+                ),
+            )
+            .await;
 
             tracing::info!(
                 scene_id = completion.scene_id,
@@ -103,6 +112,18 @@ pub async fn evaluate_and_continue(
             )
             .await
             .map_err(PipelineError::Database)?;
+
+            gen_log::log(
+                pool,
+                completion.scene_id,
+                "success",
+                format!(
+                    "Generation complete! Total duration: {:.1}s ({} segments)",
+                    completion.cumulative_duration_secs,
+                    scene.total_segments_completed + 1,
+                ),
+            )
+            .await;
 
             Ok(LoopOutcome::SceneComplete {
                 scene_id: completion.scene_id,
