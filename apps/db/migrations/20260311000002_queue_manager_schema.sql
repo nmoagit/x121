@@ -3,8 +3,8 @@
 -- and reassignment tracking on job_state_transitions.
 
 -- Add held status to job_statuses lookup table
-INSERT INTO job_statuses (id, name, description)
-VALUES (10, 'held', 'Job is held by admin and will not be dispatched')
+INSERT INTO job_statuses (id, name, label)
+VALUES (10, 'held', 'Held')
 ON CONFLICT (id) DO NOTHING;
 
 -- Add drain_mode to comfyui_instances

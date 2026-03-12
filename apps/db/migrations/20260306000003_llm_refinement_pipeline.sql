@@ -8,20 +8,6 @@ ALTER TABLE character_metadata_versions
     ADD COLUMN IF NOT EXISTS outdated_at TIMESTAMPTZ,
     ADD COLUMN IF NOT EXISTS outdated_reason TEXT;
 
--- Refinement job status category group (useful for UI dropdowns)
-INSERT INTO category_groups (name, description)
-VALUES ('refinement_job_statuses', 'Status values for LLM refinement jobs')
-ON CONFLICT (name) DO NOTHING;
-
-INSERT INTO category_values (group_id, value, sort_order)
-SELECT g.id, v.value, v.sort_order
-FROM category_groups g
-CROSS JOIN (VALUES
-    ('queued', 1), ('running', 2), ('completed', 3), ('failed', 4)
-) AS v(value, sort_order)
-WHERE g.name = 'refinement_job_statuses'
-ON CONFLICT DO NOTHING;
-
 -- Refinement jobs table
 CREATE TABLE refinement_jobs (
     id                  BIGSERIAL   PRIMARY KEY,
