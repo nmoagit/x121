@@ -128,7 +128,7 @@ export function CharacterReviewControls({
               )}
             </label>
             <textarea
-              className="w-full bg-surface-secondary text-text-primary border border-border-primary rounded-lg p-3 text-sm min-h-[100px]"
+              className="w-full bg-surface-secondary text-text-primary border border-border-primary rounded-[var(--radius-lg)] p-3 text-sm min-h-[100px]"
               placeholder={
                 decisionType === "rejected"
                   ? "Explain what needs to be fixed..."

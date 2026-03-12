@@ -7,7 +7,7 @@
  */
 
 import { Badge, Button } from "@/components/primitives";
-import type { ExpandedSceneSetting } from "@/features/scene-catalog/types";
+import type { ExpandedSceneSetting } from "@/features/scene-catalogue/types";
 import { clipKeys } from "@/features/scenes/hooks/useClipManagement";
 import { type Scene, type SceneVideoVersion, pickFinalClip, slotLabel } from "@/features/scenes/types";
 import { formatDuration } from "@/features/video-player/frame-utils";

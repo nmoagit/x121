@@ -16,6 +16,7 @@ import { useSetToggle } from "@/hooks/useSetToggle";
 import { Modal } from "@/components/composite";
 import { Stack } from "@/components/layout";
 import { Badge, Button, Checkbox, Select, Toggle } from "@/components/primitives";
+import { cn } from "@/lib/cn";
 
 import { SOURCE_KEY_BIO, SOURCE_KEY_TOV } from "@/features/characters/types";
 
@@ -50,6 +51,12 @@ interface ImportConfirmModalProps {
     skipExisting?: boolean,
   ) => void;
   loading?: boolean;
+  /** Detected project name from folder structure (for grouped imports). */
+  detectedProjectName?: string;
+  /** Current project name for matching against detectedProjectName. */
+  projectName?: string;
+  /** Names of existing groups for "exists" / "will be created" badges. */
+  existingGroupNames?: string[];
 }
 
 /* --------------------------------------------------------------------------
@@ -234,8 +241,38 @@ export function ImportConfirmModal({
   onConfirm,
   onConfirmWithAssets,
   loading,
+  detectedProjectName,
+  projectName,
+  existingGroupNames = [],
 }: ImportConfirmModalProps) {
   const { options: groupOptions } = useGroupSelectOptions(projectId);
+
+  // Grouped import detection
+  const isGroupedImport = payloads?.some((p) => p.groupName) ?? false;
+
+  const existingGroupNameSet = useMemo(() => {
+    const set = new Set<string>();
+    for (const n of existingGroupNames) set.add(n.toLowerCase());
+    return set;
+  }, [existingGroupNames]);
+
+  // Group indices by groupName for grouped rendering
+  const groupedIndices = useMemo(() => {
+    if (!isGroupedImport || !payloads) return null;
+    const map = new Map<string, number[]>();
+    for (let i = 0; i < payloads.length; i++) {
+      const gName = payloads[i]!.groupName ?? "";
+      const arr = map.get(gName) ?? [];
+      arr.push(i);
+      map.set(gName, arr);
+    }
+    return map;
+  }, [payloads, isGroupedImport]);
+
+  const projectNameMatch =
+    detectedProjectName && projectName
+      ? detectedProjectName.toLowerCase() === projectName.toLowerCase()
+      : undefined;
 
   // Derive effective names from payloads or raw names
   const effectiveNames = useMemo(
@@ -448,12 +485,139 @@ export function ImportConfirmModal({
   const importableCount = effectiveNames.length - duplicateCount;
   const totalActionCount = selectedCount + existingAssetsCount;
 
+  /** Render a single character row (shared by flat and grouped views). */
+  const renderCharacterRow = (idx: number) => {
+    const name = displayNames[idx]!;
+    const isDuplicate = duplicateIndices.has(idx);
+    const counts = assetCounts?.[idx];
+    const hasAssets = counts && (counts.images > 0 || counts.videos > 0 || counts.metadata > 0);
+    const bulkMode = importMissing || overwrite;
+
+    return (
+      <div
+        key={idx}
+        className={`flex items-center gap-[var(--spacing-2)] px-[var(--spacing-3)] py-[var(--spacing-1)] ${
+          isDuplicate && !checkedExistingAssets.has(idx) && !(bulkMode && hasAssets)
+            ? "opacity-50"
+            : "hover:bg-[var(--color-surface-secondary)]"
+        }`}
+      >
+        {isDuplicate && hasAssets && bulkMode ? (
+          <Checkbox
+            checked={checkedExistingAssets.has(idx)}
+            onChange={() => toggleExistingAssets(idx)}
+            label={name}
+          />
+        ) : (
+          <Checkbox
+            checked={isDuplicate ? false : checked.has(idx)}
+            onChange={() => toggleItem(idx)}
+            disabled={isDuplicate}
+            label={name}
+          />
+        )}
+
+        {counts && counts.images > 0 && (
+          <DiffBadges
+            isDuplicate={isDuplicate}
+            overwrite={overwrite}
+            payload={payloads?.[idx]}
+            displayName={name}
+            duplicateCharMap={duplicateCharMap}
+            variantMap={variantMap}
+            variantLoading={variantLoading}
+            totalImages={counts.images}
+          />
+        )}
+        {counts && counts.videos > 0 && (
+          <Badge variant="default" size="sm">
+            {counts.videos} {counts.videos === 1 ? "video" : "videos"}
+          </Badge>
+        )}
+        {counts && counts.metadata > 0 && (
+          <MetadataDiffBadges
+            isDuplicate={isDuplicate}
+            payload={payloads?.[idx]}
+            displayName={name}
+            duplicateCharMap={duplicateCharMap}
+          />
+        )}
+
+        {isDuplicate && !hasAssets && (
+          <span className="text-xs text-[var(--color-text-warning)] ml-auto shrink-0">
+            already exists
+          </span>
+        )}
+
+        {isDuplicate && hasAssets && !bulkMode && (
+          <div className="ml-auto shrink-0 flex items-center gap-[var(--spacing-2)]">
+            <span className="text-xs text-[var(--color-text-warning)]">
+              exists
+            </span>
+            <Toggle
+              checked={checkedExistingAssets.has(idx)}
+              onChange={() => toggleExistingAssets(idx)}
+              label="Upload assets"
+              size="sm"
+            />
+          </div>
+        )}
+        {isDuplicate && hasAssets && bulkMode && (
+          <span className="ml-auto shrink-0 text-xs text-[var(--color-text-success)]">
+            {importMissing ? "import missing" : "overwrite"}
+          </span>
+        )}
+      </div>
+    );
+  };
+
   return (
     <Modal open={open} onClose={onClose} title="Import Characters" size="lg">
       <Stack gap={4}>
+        {/* Project detection banner (grouped imports only) */}
+        {isGroupedImport && detectedProjectName && (
+          <div
+            className={cn(
+              "rounded-[var(--radius-md)] border px-[var(--spacing-3)] py-[var(--spacing-2)]",
+              projectNameMatch
+                ? "border-[var(--color-border-success)] bg-[var(--color-surface-success)]"
+                : projectNameMatch === false
+                  ? "border-[var(--color-border-warning)] bg-[var(--color-surface-warning)]"
+                  : "border-[var(--color-border-default)] bg-[var(--color-surface-secondary)]",
+            )}
+          >
+            <p
+              className={cn(
+                "text-sm",
+                projectNameMatch
+                  ? "text-[var(--color-text-success)]"
+                  : projectNameMatch === false
+                    ? "text-[var(--color-text-warning)]"
+                    : "text-[var(--color-text-secondary)]",
+              )}
+            >
+              {projectNameMatch
+                ? `Folder matches project "${detectedProjectName}"`
+                : projectNameMatch === false
+                  ? `Folder "${detectedProjectName}" does not match current project "${projectName}"`
+                  : `Importing from "${detectedProjectName}"`}
+            </p>
+          </div>
+        )}
+
         {/* Options bar */}
         <div className="flex flex-wrap items-end gap-[var(--spacing-3)]">
-          {existingGroups.length > 1 ? (
+          {/* Group selector — hidden for grouped imports (groups from folder structure) */}
+          {isGroupedImport ? (
+            <div className="w-[200px]">
+              <label className="block text-xs font-medium text-[var(--color-text-muted)] mb-[var(--spacing-1)]">
+                Groups
+              </label>
+              <span className="text-sm text-[var(--color-text-secondary)]">
+                from folder structure
+              </span>
+            </div>
+          ) : existingGroups.length > 1 ? (
             <div className="w-[200px]">
               <label className="block text-xs font-medium text-[var(--color-text-muted)] mb-[var(--spacing-1)]">
                 Assign to group
@@ -527,92 +691,33 @@ export function ImportConfirmModal({
             />
           </div>
 
-          {displayNames.map((name, idx) => {
-            const isDuplicate = duplicateIndices.has(idx);
-            const counts = assetCounts?.[idx];
-            const hasAssets = counts && (counts.images > 0 || counts.videos > 0 || counts.metadata > 0);
-            const bulkMode = importMissing || overwrite;
-
-            return (
-              <div
-                key={idx}
-                className={`flex items-center gap-[var(--spacing-2)] px-[var(--spacing-3)] py-[var(--spacing-1)] ${
-                  isDuplicate && !checkedExistingAssets.has(idx) && !(bulkMode && hasAssets)
-                    ? "opacity-50"
-                    : "hover:bg-[var(--color-surface-secondary)]"
-                }`}
-              >
-                {/* Duplicate with assets in bulk mode: togglable checkbox */}
-                {isDuplicate && hasAssets && bulkMode ? (
-                  <Checkbox
-                    checked={checkedExistingAssets.has(idx)}
-                    onChange={() => toggleExistingAssets(idx)}
-                    label={name}
-                  />
-                ) : (
-                  <Checkbox
-                    checked={isDuplicate ? false : checked.has(idx)}
-                    onChange={() => toggleItem(idx)}
-                    disabled={isDuplicate}
-                    label={name}
-                  />
-                )}
-
-                {/* Asset count / diff badges */}
-                {counts && counts.images > 0 && (
-                  <DiffBadges
-                    isDuplicate={isDuplicate}
-                    overwrite={overwrite}
-                    payload={payloads?.[idx]}
-                    displayName={name}
-                    duplicateCharMap={duplicateCharMap}
-                    variantMap={variantMap}
-                    variantLoading={variantLoading}
-                    totalImages={counts.images}
-                  />
-                )}
-                {counts && counts.videos > 0 && (
+          {isGroupedImport && groupedIndices ? (
+            /* Grouped view — characters organized under group headers */
+            [...groupedIndices.entries()].map(([groupName, indices]) => (
+              <div key={groupName}>
+                <div className="px-[var(--spacing-3)] py-[var(--spacing-2)] bg-[var(--color-surface-secondary)] border-b border-[var(--color-border-default)] flex items-center gap-[var(--spacing-2)]">
+                  <span className="font-medium text-sm text-[var(--color-text-primary)]">
+                    {groupName || "Ungrouped"}
+                  </span>
                   <Badge variant="default" size="sm">
-                    {counts.videos} {counts.videos === 1 ? "video" : "videos"}
+                    {indices.length}
                   </Badge>
-                )}
-                {counts && counts.metadata > 0 && (
-                  <MetadataDiffBadges
-                    isDuplicate={isDuplicate}
-                    payload={payloads?.[idx]}
-                    displayName={name}
-                    duplicateCharMap={duplicateCharMap}
-                  />
-                )}
-
-                {isDuplicate && !hasAssets && (
-                  <span className="text-xs text-[var(--color-text-warning)] ml-auto shrink-0">
-                    already exists
-                  </span>
-                )}
-
-                {/* Upload assets toggle for existing characters with assets (non-bulk mode) */}
-                {isDuplicate && hasAssets && !bulkMode && (
-                  <div className="ml-auto shrink-0 flex items-center gap-[var(--spacing-2)]">
-                    <span className="text-xs text-[var(--color-text-warning)]">
-                      exists
-                    </span>
-                    <Toggle
-                      checked={checkedExistingAssets.has(idx)}
-                      onChange={() => toggleExistingAssets(idx)}
-                      label="Upload assets"
+                  {groupName && (
+                    <Badge
+                      variant={existingGroupNameSet.has(groupName.toLowerCase()) ? "success" : "info"}
                       size="sm"
-                    />
-                  </div>
-                )}
-                {isDuplicate && hasAssets && bulkMode && (
-                  <span className="ml-auto shrink-0 text-xs text-[var(--color-text-success)]">
-                    {importMissing ? "import missing" : "overwrite"}
-                  </span>
-                )}
+                    >
+                      {existingGroupNameSet.has(groupName.toLowerCase()) ? "Exists" : "New group"}
+                    </Badge>
+                  )}
+                </div>
+                {indices.map((idx) => renderCharacterRow(idx))}
               </div>
-            );
-          })}
+            ))
+          ) : (
+            /* Flat view — simple character list */
+            displayNames.map((_, idx) => renderCharacterRow(idx))
+          )}
         </div>
 
         {/* Footer */}

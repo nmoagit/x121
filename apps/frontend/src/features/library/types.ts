@@ -2,20 +2,20 @@
  * Character library feature types (PRD-60).
  */
 
-/** A library character record from the server. */
+/** A library character record from the server (cross-project browser view). */
 export interface LibraryCharacter {
   id: number;
   name: string;
-  source_character_id: number | null;
-  source_project_id: number | null;
-  master_metadata: Record<string, unknown>;
-  tags: string[];
-  description: string | null;
-  thumbnail_path: string | null;
-  is_published: boolean;
-  created_by_id: number;
+  project_id: number;
+  project_name: string;
+  group_name: string | null;
+  hero_variant_id: number | null;
+  scene_count: number;
+  image_count: number;
+  clip_count: number;
+  has_metadata: boolean;
+  status_id: number;
   created_at: string;
-  updated_at: string;
 }
 
 /** Create payload for a new library character. */

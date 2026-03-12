@@ -46,7 +46,7 @@ export function MissingItemsBanner({
   return (
     <div
       data-testid="missing-items-banner"
-      className="rounded-lg border border-[var(--color-border-warning)] bg-[var(--color-bg-warning)] p-4"
+      className="rounded-[var(--radius-lg)] border border-[var(--color-border-warning)] bg-[var(--color-bg-warning)] p-4"
     >
       <p
         data-testid="missing-items-count"

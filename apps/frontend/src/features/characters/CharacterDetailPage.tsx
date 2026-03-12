@@ -12,6 +12,7 @@ import { ConfirmDeleteModal, Tabs } from "@/components/composite";
 import { EmptyState } from "@/components/domain";
 import { Stack } from "@/components/layout";
 import { Badge, Button, LoadingPane } from "@/components/primitives";
+import { useSetPageTitle } from "@/hooks/useSetPageTitle";
 import { ICON_ACTION_BTN } from "@/lib/ui-classes";
 import { AlertCircle, ChevronLeft, ChevronRight, Edit3, User } from "@/tokens/icons";
 
@@ -58,7 +59,7 @@ export function CharacterDetailPage() {
   const characterId = Number(params.characterId);
 
   const navigate = useNavigate();
-  const { tab: tabParam } = useSearch({ strict: false }) as { tab?: string };
+  const { tab: tabParam, scene: sceneParam, scene_type: sceneTypeParam, track: trackParam } = useSearch({ strict: false }) as { tab?: string; scene?: string; scene_type?: string; track?: string };
 
   const { data: project } = useProject(projectId);
   const { data: character, isLoading, error } = useCharacter(projectId, characterId);
@@ -69,6 +70,8 @@ export function CharacterDetailPage() {
   const updateCharacter = useUpdateCharacter(projectId);
   const deleteCharacter = useDeleteCharacter(projectId);
 
+  useSetPageTitle(character?.name ?? "Character");
+
   const validTabIds = CHARACTER_TABS.map((t) => t.id) as readonly string[];
   const activeTab = tabParam && validTabIds.includes(tabParam) ? tabParam : CHARACTER_TABS[0].id;
 
@@ -76,7 +79,6 @@ export function CharacterDetailPage() {
     navigate({
       to: `/projects/${projectId}/characters/${characterId}`,
       search: { tab },
-      replace: true,
     });
   }
 
@@ -109,6 +111,13 @@ export function CharacterDetailPage() {
   function navigateToCharacter(targetId: number) {
     navigate({ to: `/projects/${projectId}/characters/${targetId}`, search: { tab: activeTab } });
   }
+
+  /* --- scene focus state (auto-open scene detail modal) --- */
+  const [focusSceneId, setFocusSceneId] = useState<number | undefined>(
+    sceneParam ? Number(sceneParam) : undefined,
+  );
+  const focusSceneTypeId = sceneTypeParam ? Number(sceneTypeParam) : undefined;
+  const focusTrackId = trackParam ? Number(trackParam) : undefined;
 
   /* --- edit/delete modal state --- */
   const [editOpen, setEditOpen] = useState(false);
@@ -201,13 +210,17 @@ export function CharacterDetailPage() {
         ) : (
           <User size={24} className="text-[var(--color-text-muted)]" aria-hidden />
         )}
-        <h1 className="text-xl font-semibold text-[var(--color-text-primary)]">{character.name}</h1>
         <Badge variant={badgeVariant} size="sm">
           {statusLabel}
         </Badge>
-        <span className="text-sm text-[var(--color-text-muted)]">
+        <Link
+          to="/projects/$projectId"
+          params={{ projectId: String(projectId) }}
+          search={{ tab: "characters", group: character.group_id != null ? String(character.group_id) : undefined }}
+          className="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
+        >
           {groupName ?? "Ungrouped"}
-        </span>
+        </Link>
         {character.review_status_id > 1 && (
           <ReviewStatusBadge
             status={REVIEW_STATUS_MAP[character.review_status_id] ?? "unassigned"}
@@ -269,10 +282,11 @@ export function CharacterDetailPage() {
           key={characterId}
           character={character}
           characterId={characterId}
+          onSceneClick={(sceneId) => { setFocusSceneId(sceneId); setActiveTab("scenes"); }}
         />
       )}
       {activeTab === "images" && <CharacterImagesTab key={characterId} characterId={characterId} />}
-      {activeTab === "scenes" && <CharacterScenesTab key={characterId} characterId={characterId} projectId={projectId} />}
+      {activeTab === "scenes" && <CharacterScenesTab key={characterId} characterId={characterId} projectId={projectId} focusSceneId={focusSceneId} focusSceneTypeId={focusSceneTypeId} focusTrackId={focusTrackId} />}
       {activeTab === "deliverables" && (
         <CharacterDeliverablesTab
           key={characterId}

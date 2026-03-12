@@ -7,6 +7,7 @@ import {
   useAutoAllocate,
 } from "./hooks/use-character-review";
 import type { ReviewerWorkload, AutoAllocatePreview, ProposedAssignment } from "./types";
+import { useSetPageTitle } from "@/hooks/useSetPageTitle";
 import { formatDate } from "@/lib/format";
 
 interface AssignmentDashboardProps {
@@ -14,6 +15,7 @@ interface AssignmentDashboardProps {
 }
 
 export function AssignmentDashboard({ projectId }: AssignmentDashboardProps) {
+  useSetPageTitle("Review Assignments");
   const { data: workloadData, isPending: workloadPending } = useReviewerWorkload(projectId);
   const { data: assignmentData } = useProjectAssignments(projectId);
   const autoAllocate = useAutoAllocate(projectId);
@@ -44,8 +46,7 @@ export function AssignmentDashboard({ projectId }: AssignmentDashboardProps) {
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-text-primary">Review Assignments</h1>
+      <div className="flex items-center justify-end">
         <Button variant="primary" onClick={handlePreview} disabled={autoAllocate.isPending}>
           Auto-Allocate
         </Button>
@@ -98,7 +99,7 @@ function WorkloadSection({ workload }: { workload: ReviewerWorkload[] }) {
                 : 0;
 
             return (
-              <div key={w.reviewer_user_id} className="bg-surface-secondary rounded-lg p-3">
+              <div key={w.reviewer_user_id} className="bg-surface-secondary rounded-[var(--radius-lg)] p-3">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-medium text-text-primary">
                     {w.reviewer_username}

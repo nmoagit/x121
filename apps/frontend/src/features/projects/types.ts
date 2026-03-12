@@ -16,6 +16,8 @@ export interface Project {
   description: string | null;
   status: string;
   auto_deliver_on_final: boolean;
+  /** Which deliverable sections must be complete. NULL = inherit studio default. */
+  blocking_deliverables: string[] | null;
   deleted_at: string | null;
   created_at: string;
   updated_at: string;
@@ -31,6 +33,7 @@ export interface UpdateProject {
   description?: string;
   status?: string;
   auto_deliver_on_final?: boolean;
+  blocking_deliverables?: string[];
 }
 
 /* --------------------------------------------------------------------------
@@ -141,6 +144,8 @@ export interface DroppedAsset {
 /** All files for one character, parsed from a folder drop. */
 export interface CharacterDropPayload {
   rawName: string;
+  /** Group name derived from folder structure (grouped/project imports). */
+  groupName?: string;
   assets: DroppedAsset[];
   /** bio.json source file (used for metadata generation). */
   bioJson?: File;
@@ -148,6 +153,16 @@ export interface CharacterDropPayload {
   tovJson?: File;
   /** metadata.json file (pre-flattened metadata, takes precedence over bio/tov). */
   metadataJson?: File;
+}
+
+/** Result from folder structure detection in FileDropZone. */
+export interface FolderDropResult {
+  /** Detected folder structure depth. */
+  structure: "flat" | "grouped" | "project";
+  /** Top-level folder name (potential project name for grouped/project imports). */
+  detectedProjectName?: string;
+  /** Characters grouped by group name. Empty string key = ungrouped (flat). */
+  groupedPayloads: Map<string, CharacterDropPayload[]>;
 }
 
 /* --------------------------------------------------------------------------
@@ -282,9 +297,9 @@ export function computeSectionReadiness(
   const images: SectionReadiness =
     row.images_count === 0
       ? { state: "not_started", label: "Images", tooltip: "Images: No seed images" }
-      : row.images_approved === 0
-        ? { state: "partial", label: "Images", tooltip: `Images: ${row.images_count} uploaded, 0 approved` }
-        : { state: "complete", label: "Images", tooltip: `Images: ${row.images_approved}/${row.images_count} approved` };
+      : row.images_approved >= row.images_count
+        ? { state: "complete", label: "Images", tooltip: `Images: ${row.images_approved}/${row.images_count} approved` }
+        : { state: "partial", label: "Images", tooltip: `Images: ${row.images_approved}/${row.images_count} approved` };
 
   const scenes: SectionReadiness =
     row.scenes_total === 0

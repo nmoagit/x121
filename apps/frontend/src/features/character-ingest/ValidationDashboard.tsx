@@ -81,7 +81,7 @@ export function ValidationDashboard({ projectId }: ValidationDashboardProps) {
 
       {/* Sessions list */}
       {sessions && sessions.length > 0 ? (
-        <div className="overflow-x-auto rounded-md border">
+        <div className="overflow-x-auto rounded-[var(--radius-md)] border">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b bg-muted/50">

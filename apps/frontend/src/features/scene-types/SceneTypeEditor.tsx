@@ -10,7 +10,12 @@ import { useState } from "react";
 import { Card, CardBody, CardHeader } from "@/components/composite/Card";
 import { Button } from "@/components/primitives/Button";
 import { Input } from "@/components/primitives/Input";
+import { Select } from "@/components/primitives/Select";
+import { FPS_OPTIONS, RESOLUTION_OPTIONS } from "@/features/video-settings/types";
 import { generateSnakeSlug } from "@/lib/format";
+import { SECTION_HEADING } from "@/lib/ui-classes";
+
+import { useWorkflows } from "@/features/workflow-import";
 
 import {
   PromptTemplateEditor,
@@ -35,11 +40,21 @@ interface SceneTypeEditorProps {
 
 export function SceneTypeEditor({ sceneType, onSave, onCancel }: SceneTypeEditorProps) {
   const isEdit = sceneType !== undefined;
+  const { data: workflows } = useWorkflows();
   const [name, setName] = useState(sceneType?.name ?? "");
+  const [workflowId, setWorkflowId] = useState(
+    sceneType?.workflow_id?.toString() ?? "",
+  );
   const [slug, setSlug] = useState(sceneType?.slug ?? "");
   const [description, setDescription] = useState(sceneType?.description ?? "");
   const [targetDuration, setTargetDuration] = useState(
     sceneType?.target_duration_secs?.toString() ?? "",
+  );
+  const [targetFps, setTargetFps] = useState(
+    sceneType?.target_fps?.toString() ?? "",
+  );
+  const [targetResolution, setTargetResolution] = useState(
+    sceneType?.target_resolution ?? "",
   );
   const [segmentDuration, setSegmentDuration] = useState(
     sceneType?.segment_duration_secs?.toString() ?? "",
@@ -67,7 +82,10 @@ export function SceneTypeEditor({ sceneType, onSave, onCancel }: SceneTypeEditor
       name: name.trim(),
       slug: slug.trim() || generateSnakeSlug(name.trim()),
       description: description.trim() || null,
+      workflow_id: workflowId ? Number(workflowId) : null,
       target_duration_secs: targetDuration ? Number.parseInt(targetDuration, 10) : null,
+      target_fps: targetFps ? Number.parseInt(targetFps, 10) : null,
+      target_resolution: targetResolution || null,
       segment_duration_secs: segmentDuration ? Number.parseInt(segmentDuration, 10) : null,
       duration_tolerance_secs: durationTolerance ? Number.parseInt(durationTolerance, 10) : null,
       sort_order: sortOrder ? Number.parseInt(sortOrder, 10) : null,
@@ -87,7 +105,7 @@ export function SceneTypeEditor({ sceneType, onSave, onCancel }: SceneTypeEditor
       {/* Basic Info */}
       <Card>
         <CardHeader>
-          <h3 className="text-base font-semibold text-[var(--color-text-primary)]">Basic Info</h3>
+          <h3 className={SECTION_HEADING}>Basic Info</h3>
         </CardHeader>
         <CardBody>
           <div className="flex flex-col gap-4">
@@ -126,6 +144,18 @@ export function SceneTypeEditor({ sceneType, onSave, onCancel }: SceneTypeEditor
                 placeholder="Optional description"
               />
             </div>
+            <Select
+              label="Workflow"
+              value={workflowId}
+              onChange={(val) => setWorkflowId(val)}
+              options={[
+                { value: "", label: "None (no workflow)" },
+                ...(workflows ?? []).map((w) => ({
+                  value: String(w.id),
+                  label: w.name,
+                })),
+              ]}
+            />
           </div>
         </CardBody>
       </Card>
@@ -133,7 +163,7 @@ export function SceneTypeEditor({ sceneType, onSave, onCancel }: SceneTypeEditor
       {/* Prompts */}
       <Card>
         <CardHeader>
-          <h3 className="text-base font-semibold text-[var(--color-text-primary)]">
+          <h3 className={SECTION_HEADING}>
             Prompt Templates
           </h3>
         </CardHeader>
@@ -142,37 +172,65 @@ export function SceneTypeEditor({ sceneType, onSave, onCancel }: SceneTypeEditor
         </CardBody>
       </Card>
 
-      {/* Duration */}
+      {/* Video & Duration */}
       <Card>
         <CardHeader>
-          <h3 className="text-base font-semibold text-[var(--color-text-primary)]">Duration</h3>
+          <h3 className={SECTION_HEADING}>Video & Duration</h3>
         </CardHeader>
         <CardBody>
-          <div className="grid grid-cols-3 gap-4">
-            <Input
-              label="Target (secs)"
-              type="number"
-              min={1}
-              value={targetDuration}
-              onChange={(e) => setTargetDuration(e.target.value)}
-              placeholder="e.g. 30"
-            />
-            <Input
-              label="Segment (secs)"
-              type="number"
-              min={1}
-              value={segmentDuration}
-              onChange={(e) => setSegmentDuration(e.target.value)}
-              placeholder="e.g. 5"
-            />
-            <Input
-              label="Tolerance (secs)"
-              type="number"
-              min={0}
-              value={durationTolerance}
-              onChange={(e) => setDurationTolerance(e.target.value)}
-              placeholder="2"
-            />
+          <div className="flex flex-col gap-4">
+            <div className="grid grid-cols-3 gap-4">
+              <Input
+                label="Target Duration (s)"
+                type="number"
+                min={1}
+                value={targetDuration}
+                onChange={(e) => setTargetDuration(e.target.value)}
+                placeholder="e.g. 30"
+              />
+              <Select
+                label="FPS"
+                value={targetFps}
+                onChange={(val) => setTargetFps(val)}
+                options={[
+                  { value: "", label: "Not set" },
+                  ...FPS_OPTIONS.map((fps) => ({
+                    value: String(fps),
+                    label: `${fps} fps`,
+                  })),
+                ]}
+              />
+              <Select
+                label="Resolution"
+                value={targetResolution}
+                onChange={(val) => setTargetResolution(val)}
+                options={[
+                  { value: "", label: "Not set" },
+                  ...RESOLUTION_OPTIONS.map((r) => ({
+                    value: r.value,
+                    label: r.label,
+                  })),
+                ]}
+              />
+            </div>
+            <div className="grid grid-cols-3 gap-4">
+              <Input
+                label="Segment (secs)"
+                type="number"
+                min={1}
+                value={segmentDuration}
+                onChange={(e) => setSegmentDuration(e.target.value)}
+                placeholder="e.g. 5"
+              />
+              <Input
+                label="Tolerance (secs)"
+                type="number"
+                min={0}
+                value={durationTolerance}
+                onChange={(e) => setDurationTolerance(e.target.value)}
+                placeholder="2"
+              />
+            </div>
           </div>
         </CardBody>
       </Card>
@@ -180,7 +238,7 @@ export function SceneTypeEditor({ sceneType, onSave, onCancel }: SceneTypeEditor
       {/* Advanced */}
       <Card>
         <CardHeader>
-          <h3 className="text-base font-semibold text-[var(--color-text-primary)]">Advanced</h3>
+          <h3 className={SECTION_HEADING}>Advanced</h3>
         </CardHeader>
         <CardBody>
           <div className="grid grid-cols-2 gap-4">

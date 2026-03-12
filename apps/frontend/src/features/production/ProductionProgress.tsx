@@ -97,7 +97,7 @@ interface StatCardProps {
 
 function StatCard({ label, value, variant }: StatCardProps) {
   return (
-    <div className="rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-surface-secondary)] p-3 text-center">
+    <div className="rounded-[var(--radius-lg)] border border-[var(--color-border-subtle)] bg-[var(--color-surface-secondary)] p-3 text-center">
       <p className="text-2xl font-semibold text-[var(--color-text-primary)]">
         {value}
       </p>

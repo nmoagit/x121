@@ -11,11 +11,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { useSetToggle } from "@/hooks/useSetToggle";
 
-import { ConfirmDeleteModal, Modal } from "@/components/composite";
+import { CollapsibleSection, ConfirmDeleteModal, ConfigToolbar, Modal } from "@/components/composite";
 import { EmptyState, FileDropZone } from "@/components/domain";
 import { Grid, Stack } from "@/components/layout";
 import { Button, Input, LoadingPane, Select } from "@/components/primitives";
-import { GroupSceneOverrides } from "@/features/scene-catalog";
+import { useExportGroupSettings, useConfigImport } from "@/features/config-io";
+import { GroupPromptOverrides } from "@/features/prompt-management";
+import { GroupSceneOverrides, GroupWorkflowOverrides } from "@/features/scene-catalogue";
 import { cn } from "@/lib/cn";
 import { toSelectOptions } from "@/lib/select-utils";
 import { ICON_ACTION_BTN, ICON_ACTION_BTN_DANGER, INLINE_LINK_BTN } from "@/lib/ui-classes";
@@ -69,11 +71,15 @@ const AUDIT_VIEW_KEY = "x121.project.auditView";
 
 interface ProjectCharactersTabProps {
   projectId: number;
+  /** Project name for folder import project-name matching. */
+  projectName?: string;
   /** When provided, auto-expand and scroll to the group section on mount. */
   scrollToGroupId?: string;
+  /** Which deliverable sections are blocking for character completion. */
+  blockingDeliverables?: string[];
 }
 
-export function ProjectCharactersTab({ projectId, scrollToGroupId }: ProjectCharactersTabProps) {
+export function ProjectCharactersTab({ projectId, projectName, scrollToGroupId, blockingDeliverables }: ProjectCharactersTabProps) {
   const navigate = useNavigate();
 
   const { data: characters, isLoading: charsLoading } = useProjectCharacters(projectId);
@@ -86,6 +92,8 @@ export function ProjectCharactersTab({ projectId, scrollToGroupId }: ProjectChar
   const deleteGroup = useDeleteGroup(projectId);
   const moveCharacter = useMoveCharacterToGroup(projectId);
   const charImport = useCharacterImport(projectId);
+  const groupExport = useExportGroupSettings();
+  const groupImport = useConfigImport();
 
   const groupMap = useGroupMap(groups);
   const { options: modalGroupOptions } = useGroupSelectOptions(projectId);
@@ -95,7 +103,7 @@ export function ProjectCharactersTab({ projectId, scrollToGroupId }: ProjectChar
     const map = new Map<number, string>();
     for (const c of characters ?? []) {
       if (c.hero_variant_id) {
-        map.set(c.id, variantThumbnailUrl(c.hero_variant_id, 512));
+        map.set(c.id, variantThumbnailUrl(c.hero_variant_id, 1024));
       }
     }
     return map;
@@ -304,6 +312,23 @@ export function ProjectCharactersTab({ projectId, scrollToGroupId }: ProjectChar
     }
     return entries;
   }, [filteredGroups, showUngrouped]);
+
+  /* --- group select all --- */
+  const handleSelectAll = useCallback(
+    (charIds: number[]) => {
+      if (charIds.length === 0) {
+        // Deselect: clear all (could also be scoped, but clearing is simpler UX)
+        setSelectedCharIds(new Set());
+      } else {
+        setSelectedCharIds((prev) => {
+          const next = new Set(prev);
+          for (const id of charIds) next.add(id);
+          return next;
+        });
+      }
+    },
+    [],
+  );
 
   /* --- drag and drop --- */
   const handleCharDragStart = useCallback(
@@ -572,6 +597,7 @@ export function ProjectCharactersTab({ projectId, scrollToGroupId }: ProjectChar
                   groupMap={groupMap}
                   blockingMap={auditView ? blockingMap : undefined}
                   sectionReadinessMap={sectionReadinessMap}
+                  blockingDeliverables={blockingDeliverables}
                   expanded={expanded}
                   isDragOver={dragOverGroupId === group.id}
                   projectId={projectId}
@@ -580,6 +606,7 @@ export function ProjectCharactersTab({ projectId, scrollToGroupId }: ProjectChar
                   onDelete={() => setGroupDeleteTarget(group)}
                   selectedCharIds={selectedCharIds}
                   onCharSelect={toggleCharSelection}
+                  onSelectAll={handleSelectAll}
                   onCharClick={(char) =>
                     navigate({ to: `/projects/${projectId}/characters/${char.id}` })
                   }
@@ -603,12 +630,14 @@ export function ProjectCharactersTab({ projectId, scrollToGroupId }: ProjectChar
                 groupMap={groupMap}
                 blockingMap={auditView ? blockingMap : undefined}
                 sectionReadinessMap={sectionReadinessMap}
+                blockingDeliverables={blockingDeliverables}
                 expanded={!collapsedIds.has("ungrouped")}
                 isDragOver={dragOverGroupId === "ungrouped"}
                 projectId={projectId}
                 onToggle={() => toggleExpanded("ungrouped")}
                 selectedCharIds={selectedCharIds}
                 onCharSelect={toggleCharSelection}
+                onSelectAll={handleSelectAll}
                 onCharClick={(char) =>
                   navigate({ to: `/projects/${projectId}/characters/${char.id}` })
                 }
@@ -692,7 +721,7 @@ export function ProjectCharactersTab({ projectId, scrollToGroupId }: ProjectChar
           open={groupFormOpen}
           onClose={() => setGroupFormOpen(false)}
           title={editingGroup ? `Edit Group — ${editingGroup.name}` : "Create Group"}
-          size={editingGroup ? "xl" : "sm"}
+          size={editingGroup ? "3xl" : "sm"}
         >
           <Stack gap={4}>
             <div className="max-w-xs">
@@ -715,7 +744,25 @@ export function ProjectCharactersTab({ projectId, scrollToGroupId }: ProjectChar
             {editingGroup && (
               <div className="mt-2">
                 <hr className="border-[var(--color-border-default)] mb-4" />
-                <GroupSceneOverrides projectId={projectId} groupId={editingGroup.id} />
+                <div className="flex justify-end mb-3">
+                  <ConfigToolbar
+                    onExport={() => groupExport.exportConfig(projectId, editingGroup.id, editingGroup.name)}
+                    onImport={(file) => groupImport.importFile(file)}
+                    exporting={groupExport.exporting}
+                    importing={groupImport.importing}
+                  />
+                </div>
+                <Stack gap={4}>
+                  <CollapsibleSection card title="Scene Settings" description="Override scene settings for this group.">
+                    <GroupSceneOverrides projectId={projectId} groupId={editingGroup.id} />
+                  </CollapsibleSection>
+                  <CollapsibleSection card title="Workflow Assignments" description="Assign workflows per scene and track.">
+                    <GroupWorkflowOverrides projectId={projectId} groupId={editingGroup.id} />
+                  </CollapsibleSection>
+                  <CollapsibleSection card title="Prompt Overrides" description="Override prompt templates for this group.">
+                    <GroupPromptOverrides projectId={projectId} groupId={editingGroup.id} />
+                  </CollapsibleSection>
+                </Stack>
               </div>
             )}
           </Stack>
@@ -764,6 +811,9 @@ export function ProjectCharactersTab({ projectId, scrollToGroupId }: ProjectChar
           onConfirm={charImport.handleImportConfirm}
           onConfirmWithAssets={charImport.handleImportConfirmWithAssets}
           loading={charImport.bulkCreatePending}
+          detectedProjectName={charImport.importResult?.detectedProjectName}
+          projectName={projectName}
+          existingGroupNames={groups?.map((g) => g.name) ?? []}
         />
       </Stack>
     </FileDropZone>
@@ -784,11 +834,13 @@ interface GroupSectionProps {
   groupMap: Map<number, CharacterGroup>;
   blockingMap?: Map<number, string[]>;
   sectionReadinessMap?: Map<number, Record<SectionKey, SectionReadiness>>;
+  blockingDeliverables?: string[];
   expanded: boolean;
   isDragOver: boolean;
   projectId: number;
   selectedCharIds: Set<number>;
   onCharSelect: (charId: number) => void;
+  onSelectAll: (charIds: number[]) => void;
   onToggle: () => void;
   onEdit?: () => void;
   onDelete?: () => void;
@@ -810,11 +862,13 @@ function GroupSection({
   groupMap,
   blockingMap,
   sectionReadinessMap,
+  blockingDeliverables,
   expanded,
   isDragOver,
   projectId,
   selectedCharIds,
   onCharSelect,
+  onSelectAll,
   onToggle,
   onEdit,
   onDelete,
@@ -828,6 +882,8 @@ function GroupSection({
 }: GroupSectionProps) {
   const displayName = group?.name ?? label ?? "Unknown";
   const Chevron = expanded ? ChevronDown : ChevronRight;
+  const charIds = characters.map((c) => c.id);
+  const allSelected = characters.length > 0 && charIds.every((id) => selectedCharIds.has(id));
 
   return (
     <div
@@ -861,6 +917,19 @@ function GroupSection({
         <span className="text-xs text-[var(--color-text-muted)]">
           {characters.length} {characters.length === 1 ? "character" : "characters"}
         </span>
+        {characters.length > 0 && (
+          <button
+            type="button"
+            className={INLINE_LINK_BTN}
+            onClick={(e) => {
+              e.stopPropagation();
+              onSelectAll(allSelected ? [] : charIds);
+            }}
+            aria-label={allSelected ? `Deselect all in ${displayName}` : `Select all in ${displayName}`}
+          >
+            {allSelected ? "Deselect All" : "Select All"}
+          </button>
+        )}
         {onEdit && (
           <button
             type="button"
@@ -897,7 +966,7 @@ function GroupSection({
               No characters in this group. Drag characters here to add them.
             </p>
           ) : (
-            <Grid cols={2} gap={3} className="sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6">
+            <Grid cols={2} gap={3} className="sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
               {characters.map((c) => (
                 <div
                   key={c.id}
@@ -909,9 +978,11 @@ function GroupSection({
                     character={c}
                     group={c.group_id ? groupMap.get(c.group_id) : undefined}
                     avatarUrl={avatarMap.get(c.id)}
+                    heroVariantId={c.hero_variant_id}
                     selected={selectedCharIds.has(c.id)}
                     blockingReasons={blockingMap?.get(c.id)}
                     sectionReadiness={sectionReadinessMap?.get(c.id)}
+                    blockingDeliverables={blockingDeliverables}
                     projectId={projectId}
                     onSelect={onCharSelect}
                     onClick={() => onCharClick(c)}

@@ -5,15 +5,17 @@
  * Active tab is managed via URL search param `?tab=`.
  */
 
-import { Link, useParams, useSearch } from "@tanstack/react-router";
-import { useState } from "react";
+import { Link, useNavigate, useParams, useSearch } from "@tanstack/react-router";
+import { useMemo } from "react";
 
 import { Tabs } from "@/components/composite";
 import { EmptyState } from "@/components/domain";
 import { Stack } from "@/components/layout";
 import { Badge, LoadingPane } from "@/components/primitives";
+import { useSetting } from "@/features/settings/hooks/use-settings";
 import { formatDate } from "@/lib/format";
-import { AlertCircle, ChevronRight, FolderKanban } from "@/tokens/icons";
+import { useSetPageTitle } from "@/hooks/useSetPageTitle";
+import { AlertCircle, ChevronRight, Users } from "@/tokens/icons";
 
 import { useProject, useProjectStats } from "./hooks/use-projects";
 import { ProjectCharactersTab } from "./tabs/ProjectCharactersTab";
@@ -31,6 +33,7 @@ export function ProjectDetailPage() {
   const { projectId } = useParams({ strict: false }) as { projectId: string };
   const id = Number(projectId);
 
+  const navigate = useNavigate();
   const { tab: tabParam, group: groupParam } = useSearch({ strict: false }) as {
     tab?: string;
     group?: string;
@@ -38,12 +41,28 @@ export function ProjectDetailPage() {
 
   const { data: project, isLoading, error } = useProject(id);
   const { data: stats } = useProjectStats(id);
+  const { data: studioSetting } = useSetting("blocking_deliverables");
+
+  useSetPageTitle(project?.name ?? "Project");
 
   const validTabIds = PROJECT_TABS.map((t) => t.id) as readonly string[];
-  const initialTab = tabParam && validTabIds.includes(tabParam) ? tabParam : PROJECT_TABS[0].id;
-  const [activeTab, setActiveTab] = useState<string>(initialTab);
+  const activeTab = tabParam && validTabIds.includes(tabParam) ? tabParam : PROJECT_TABS[0].id;
+
+  function setActiveTab(tab: string) {
+    navigate({
+      to: `/projects/${projectId}`,
+      search: { tab },
+    });
+  }
 
   const scrollToGroupId = activeTab === "characters" && groupParam ? groupParam : undefined;
+
+  /** Resolved blocking deliverables: project override > studio setting > hardcoded default. */
+  const resolvedBlockingDeliverables = useMemo(() => {
+    if (project?.blocking_deliverables) return project.blocking_deliverables;
+    if (studioSetting?.value) return studioSetting.value.split(",").map((s) => s.trim()).filter(Boolean);
+    return ["metadata", "images", "scenes"];
+  }, [project?.blocking_deliverables, studioSetting?.value]);
 
   if (isLoading) {
     return <LoadingPane />;
@@ -77,10 +96,6 @@ export function ProjectDetailPage() {
       <div className="flex items-start justify-between gap-[var(--spacing-4)]">
         <div>
           <div className="flex items-center gap-[var(--spacing-2)]">
-            <FolderKanban size={24} className="text-[var(--color-text-muted)]" aria-hidden />
-            <h1 className="text-xl font-semibold text-[var(--color-text-primary)]">
-              {project.name}
-            </h1>
             <Badge variant={variant} size="sm">
               {statusLabel}
             </Badge>
@@ -94,6 +109,14 @@ export function ProjectDetailPage() {
             Updated {formatDate(project.updated_at)}
           </p>
         </div>
+        <Link
+          to="/projects/$projectId/review-assignments"
+          params={{ projectId: String(id) }}
+          className="inline-flex items-center gap-[var(--spacing-1)] rounded-[var(--radius-md)] border border-[var(--color-border-default)] bg-[var(--color-surface-primary)] px-3 py-1.5 text-sm text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-secondary)] transition-colors"
+        >
+          <Users size={14} />
+          Review Assignments
+        </Link>
       </div>
 
       {/* Tabs */}
@@ -107,11 +130,11 @@ export function ProjectDetailPage() {
       {/* Tab content */}
       {activeTab === "overview" && <ProjectOverviewTab projectId={id} stats={stats} />}
       {activeTab === "characters" && (
-        <ProjectCharactersTab projectId={id} scrollToGroupId={scrollToGroupId} />
+        <ProjectCharactersTab projectId={id} projectName={project.name} scrollToGroupId={scrollToGroupId} blockingDeliverables={resolvedBlockingDeliverables} />
       )}
       {activeTab === "production" && <ProjectProductionTab projectId={id} />}
       {activeTab === "delivery" && <ProjectDeliveryTab projectId={id} />}
-      {activeTab === "settings" && <ProjectSettingsTab projectId={id} />}
+      {activeTab === "settings" && <ProjectSettingsTab projectId={id} projectName={project.name} />}
     </Stack>
   );
 }

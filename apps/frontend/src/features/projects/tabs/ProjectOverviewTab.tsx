@@ -4,7 +4,9 @@
 
 import { Card } from "@/components/composite";
 import { Stack } from "@/components/layout";
+import { SECTION_HEADING } from "@/lib/ui-classes";
 
+import { CharacterDeliverablesGrid } from "../components/CharacterDeliverablesGrid";
 import type { ProjectStats } from "../types";
 
 /* --------------------------------------------------------------------------
@@ -38,7 +40,7 @@ interface ProjectOverviewTabProps {
   stats?: ProjectStats;
 }
 
-export function ProjectOverviewTab({ stats }: ProjectOverviewTabProps) {
+export function ProjectOverviewTab({ projectId, stats }: ProjectOverviewTabProps) {
   if (!stats) {
     return (
       <p className="text-sm text-[var(--color-text-muted)] py-[var(--spacing-4)]">
@@ -51,7 +53,7 @@ export function ProjectOverviewTab({ stats }: ProjectOverviewTabProps) {
     <Stack gap={6}>
       {/* Character stats */}
       <div>
-        <h2 className="text-base font-semibold text-[var(--color-text-primary)] mb-[var(--spacing-3)]">
+        <h2 className={`${SECTION_HEADING} mb-[var(--spacing-3)]`}>
           Characters
         </h2>
         <div className="grid grid-cols-2 gap-[var(--spacing-3)] sm:grid-cols-4">
@@ -64,7 +66,7 @@ export function ProjectOverviewTab({ stats }: ProjectOverviewTabProps) {
 
       {/* Scene stats */}
       <div>
-        <h2 className="text-base font-semibold text-[var(--color-text-primary)] mb-[var(--spacing-3)]">
+        <h2 className={`${SECTION_HEADING} mb-[var(--spacing-3)]`}>
           Scenes
         </h2>
         <div className="grid grid-cols-2 gap-[var(--spacing-3)] sm:grid-cols-5">
@@ -78,15 +80,23 @@ export function ProjectOverviewTab({ stats }: ProjectOverviewTabProps) {
 
       {/* Delivery readiness */}
       <div>
-        <h2 className="text-base font-semibold text-[var(--color-text-primary)] mb-[var(--spacing-3)]">
+        <h2 className={`${SECTION_HEADING} mb-[var(--spacing-3)]`}>
           Delivery Readiness
         </h2>
         <div className="grid grid-cols-1 gap-[var(--spacing-3)] sm:grid-cols-2">
           <StatItem
             label="Overall Readiness"
-            value={`${stats.delivery_readiness_pct}%`}
+            value={`${stats.delivery_readiness_pct.toFixed(1)}%`}
           />
         </div>
+      </div>
+
+      {/* Per-character deliverables grid */}
+      <div>
+        <h2 className={`${SECTION_HEADING} mb-[var(--spacing-3)]`}>
+          Character Deliverables
+        </h2>
+        <CharacterDeliverablesGrid projectId={projectId} />
       </div>
     </Stack>
   );

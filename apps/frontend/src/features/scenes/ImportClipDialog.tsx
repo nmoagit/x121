@@ -93,7 +93,7 @@ export function ImportClipDialog({ isOpen, onClose, sceneId, onSuccess }: Import
           }}
           onDragLeave={() => setDragOver(false)}
           onDrop={handleDrop}
-          className="flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed p-8 transition-colors"
+          className="flex flex-col items-center justify-center gap-2 rounded-[var(--radius-lg)] border-2 border-dashed p-8 transition-colors"
           style={{
             borderColor: dragOver ? "var(--color-action-primary)" : "var(--color-border-default)",
             backgroundColor: dragOver

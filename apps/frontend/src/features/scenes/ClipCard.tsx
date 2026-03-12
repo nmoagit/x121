@@ -1,8 +1,9 @@
 import { Badge } from "@/components/primitives";
 import { Button } from "@/components/primitives/Button";
+import { getStreamUrl } from "@/features/video-player";
 import { formatDuration } from "@/features/video-player/frame-utils";
 import { formatBytes, formatDate } from "@/lib/format";
-import { ChevronDown, ChevronRight, Clapperboard, Layers, RotateCcw, Star, Upload } from "@/tokens/icons";
+import { ChevronDown, ChevronRight, Clapperboard, Edit3, Layers, Play, RotateCcw, Star, Trash2, Upload } from "@/tokens/icons";
 import { useState } from "react";
 import { ArtifactTimeline } from "./ArtifactTimeline";
 import { ClipQAActions } from "./ClipQAActions";
@@ -14,10 +15,14 @@ interface ClipCardProps {
   onApprove: (clipId: number) => void;
   onReject: (clipId: number) => void;
   onSetFinal: (clipId: number) => void;
+  onDelete?: (clipId: number) => void;
   onResumeFrom?: (clipId: number) => void;
   showResumeButton: boolean;
   isApproving?: boolean;
   isRejecting?: boolean;
+  isDeleting?: boolean;
+  /** Number of annotated frames on this clip (0 = no annotations). */
+  annotationCount?: number;
 }
 
 export function ClipCard({
@@ -26,32 +31,48 @@ export function ClipCard({
   onApprove,
   onReject,
   onSetFinal,
+  onDelete,
   onResumeFrom,
   showResumeButton,
   isApproving,
   isRejecting,
+  isDeleting,
+  annotationCount = 0,
 }: ClipCardProps) {
   const [showSnapshot, setShowSnapshot] = useState(false);
   const [showArtifacts, setShowArtifacts] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const sourceIcon = clip.source === "imported" ? <Upload size={14} /> : <Clapperboard size={14} />;
   const sourceLabel = clip.source === "imported" ? "Imported" : "Generated";
   const hasSnapshot = clip.generation_snapshot != null && Object.keys(clip.generation_snapshot).length > 0;
 
   return (
     <div
-      className="rounded-lg border transition-colors
-        border-[var(--color-border-default)] bg-[var(--color-surface-primary)]
-        hover:bg-[var(--color-surface-secondary)]"
+      className={`rounded-[var(--radius-lg)] border transition-colors bg-[var(--color-surface-primary)] hover:bg-[var(--color-surface-secondary)] ${
+        clip.qa_status === "approved"
+          ? "border-[var(--color-action-success)]"
+          : clip.qa_status === "rejected"
+            ? "border-[var(--color-action-danger)]"
+            : "border-[var(--color-border-default)]"
+      }`}
     >
     <div className="flex items-center gap-4 p-4">
-      {/* Clickable play area */}
+      {/* Clickable play area with video thumbnail */}
       <button
         type="button"
         onClick={() => onPlay(clip)}
-        className="flex h-16 w-24 shrink-0 items-center justify-center rounded
+        className="group/play relative h-16 w-24 shrink-0 rounded overflow-hidden
           bg-[var(--color-surface-tertiary)]"
       >
-        <Clapperboard size={24} className="text-[var(--color-text-muted)]" />
+        <video
+          src={getStreamUrl("version", clip.id, "proxy")}
+          className="absolute inset-0 w-full h-full object-cover"
+          preload="metadata"
+          muted
+        />
+        <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover/play:opacity-100 transition-opacity">
+          <Play size={20} className="text-white" />
+        </div>
       </button>
 
       {/* Metadata */}
@@ -77,6 +98,11 @@ export function ClipCard({
           {isEmptyClip(clip) && (
             <Badge variant="warning" size="sm">Empty file</Badge>
           )}
+          {annotationCount > 0 && (
+            <span className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs bg-[var(--color-action-warning)] text-[var(--color-text-inverse)]">
+              <Edit3 size={10} /> {annotationCount} annotated
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-3 text-xs text-[var(--color-text-muted)]">
           <span>{clip.file_size_bytes != null ? formatBytes(clip.file_size_bytes) : "\u2014"}</span>
@@ -87,6 +113,11 @@ export function ClipCard({
 
       {/* QA Actions */}
       <div className="flex items-center gap-2">
+        {!clip.is_final && clip.qa_status !== "rejected" && (
+          <Button variant="ghost" size="sm" onClick={() => onSetFinal(clip.id)}>
+            Set Final
+          </Button>
+        )}
         <ClipQAActions
           clip={clip}
           onApprove={onApprove}
@@ -94,11 +125,6 @@ export function ClipCard({
           isApproving={isApproving}
           isRejecting={isRejecting}
         />
-        {!clip.is_final && clip.qa_status !== "rejected" && (
-          <Button variant="ghost" size="sm" onClick={() => onSetFinal(clip.id)}>
-            Set Final
-          </Button>
-        )}
         {showResumeButton && onResumeFrom && (
           <Button
             variant="secondary"
@@ -108,6 +134,43 @@ export function ClipCard({
           >
             Resume
           </Button>
+        )}
+        {onDelete && (
+          clip.is_final ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled
+              icon={<Trash2 size={14} />}
+              title="Cannot delete final clip"
+            />
+          ) : confirmDelete ? (
+            <span className="flex items-center gap-1">
+              <Button
+                variant="danger"
+                size="sm"
+                onClick={() => { onDelete(clip.id); setConfirmDelete(false); }}
+                disabled={isDeleting}
+              >
+                {isDeleting ? "Deleting..." : "Confirm"}
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setConfirmDelete(false)}
+              >
+                Cancel
+              </Button>
+            </span>
+          ) : (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setConfirmDelete(true)}
+              icon={<Trash2 size={14} />}
+              title="Delete clip"
+            />
+          )
         )}
       </div>
     </div>

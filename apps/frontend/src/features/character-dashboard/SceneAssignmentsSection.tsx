@@ -6,7 +6,7 @@
  */
 
 import { Badge } from "@/components";
-import { TrackBadge } from "@/features/scene-catalog";
+import { TrackBadge } from "@/features/scene-catalogue";
 
 import type { SceneAssignment } from "./types";
 
@@ -29,10 +29,12 @@ interface SceneAssignmentsSectionProps {
 
 const STATUS_VARIANTS: Record<string, "success" | "warning" | "danger" | "default"> = {
   completed: "success",
+  approved: "success",
   in_progress: "warning",
   pending: "default",
   not_started: "default",
   failed: "danger",
+  rejected: "danger",
 };
 
 function formatVideoCount(a: SceneAssignment): string {
@@ -72,17 +74,26 @@ export function SceneAssignmentsSection({
       ) : (
         <table
           data-testid="assignments-table"
-          className="w-full text-xs"
+          className="w-full text-xs table-fixed"
         >
+          <colgroup>
+            <col className="w-[40%]" />
+            <col className="w-[25%]" />
+            <col className="w-[20%]" />
+            <col className="w-[15%]" />
+          </colgroup>
           <thead>
             <tr className="border-b border-[var(--color-border-default)]">
-              <th className="py-1 text-left text-[var(--color-text-secondary)]">
+              <th className="py-1.5 pr-2 text-left text-[var(--color-text-secondary)]">
                 Scene
               </th>
-              <th className="py-1 text-left text-[var(--color-text-secondary)]">
+              <th className="py-1.5 pr-2 text-left text-[var(--color-text-secondary)]">
+                Track
+              </th>
+              <th className="py-1.5 pr-2 text-left text-[var(--color-text-secondary)]">
                 Status
               </th>
-              <th className="py-1 text-right text-[var(--color-text-secondary)]">
+              <th className="py-1.5 text-right text-[var(--color-text-secondary)]">
                 Videos
               </th>
             </tr>
@@ -103,16 +114,18 @@ export function SceneAssignmentsSection({
                   }
                   onClick={() => clickable && a.scene_id != null && onSceneClick?.(a.scene_id)}
                 >
-                  <td className="py-1 text-[var(--color-text-primary)]">
-                    <span className="inline-flex items-center gap-1.5">
-                      {a.scene_name}
+                  <td className="py-1.5 pr-2 text-[var(--color-text-primary)] truncate">
+                    {a.scene_name}
+                  </td>
+                  <td className="py-1.5 pr-2">
+                    <span className="inline-flex items-center gap-1">
                       <TrackBadge name={a.track_name} slug={a.track_slug} />
                       {a.has_clothes_off_transition && (
                         <TrackBadge name="Clothes Off" slug="clothes_off" />
                       )}
                     </span>
                   </td>
-                  <td className="py-1">
+                  <td className="py-1.5 pr-2">
                     <Badge
                       variant={STATUS_VARIANTS[a.status] ?? "default"}
                       size="sm"
@@ -120,7 +133,7 @@ export function SceneAssignmentsSection({
                       {a.status.replace(/_/g, " ")}
                     </Badge>
                   </td>
-                  <td className="py-1 text-right text-[var(--color-text-secondary)]">
+                  <td className="py-1.5 text-right text-[var(--color-text-secondary)]">
                     {formatVideoCount(a)}
                   </td>
                 </tr>

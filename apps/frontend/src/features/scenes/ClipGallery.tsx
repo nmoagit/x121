@@ -1,14 +1,21 @@
+import { useMemo, useState } from "react";
+
 import { EmptyState } from "@/components/domain/EmptyState";
 import { Button } from "@/components/primitives/Button";
 import { Spinner } from "@/components/primitives/Spinner";
-import { Upload } from "lucide-react";
-import { useMemo, useState } from "react";
+import { Play, Upload } from "@/tokens/icons";
+
+import { GenerationTerminal } from "@/features/generation/GenerationTerminal";
+import { InfrastructurePanel } from "@/features/generation/InfrastructurePanel";
+
 import { ClipCard } from "./ClipCard";
+import { ClipPlaybackModal } from "./ClipPlaybackModal";
 import { ClipRejectionDialog } from "./ClipRejectionDialog";
 import { ImportClipDialog } from "./ImportClipDialog";
 import { ResumeFromDialog } from "./ResumeFromDialog";
 import {
   useApproveClip,
+  useDeleteClip,
   useRejectClip,
   useResumeFromClip,
   useSceneVersions,
@@ -18,15 +25,26 @@ import type { SceneVideoVersion } from "./types";
 
 interface ClipGalleryProps {
   sceneId: number;
+  onGenerate?: () => void;
+  generateLoading?: boolean;
+  generateDisabled?: boolean;
+  /** Reason generation is disabled — shown as tooltip. */
+  generateDisabledReason?: string;
+  /** Whether the scene is currently generating — enables real-time log polling. */
+  isGenerating?: boolean;
+  /** Extra actions rendered on the left side of the toolbar, after the title. */
+  leftActions?: React.ReactNode;
 }
 
-export function ClipGallery({ sceneId }: ClipGalleryProps) {
+export function ClipGallery({ sceneId, onGenerate, generateLoading, generateDisabled, generateDisabledReason, isGenerating, leftActions }: ClipGalleryProps) {
   const { data: clips, isLoading, isError, refetch } = useSceneVersions(sceneId);
   const approveMutation = useApproveClip(sceneId);
   const rejectMutation = useRejectClip(sceneId);
   const setFinalMutation = useSetFinalClip(sceneId);
   const resumeFromMutation = useResumeFromClip(sceneId);
+  const deleteMutation = useDeleteClip(sceneId);
 
+  const [playingClip, setPlayingClip] = useState<SceneVideoVersion | null>(null);
   const [rejectingClipId, setRejectingClipId] = useState<number | null>(null);
   const [resumeClip, setResumeClip] = useState<SceneVideoVersion | null>(null);
   const [showImport, setShowImport] = useState(false);
@@ -74,7 +92,7 @@ export function ClipGallery({ sceneId }: ClipGalleryProps) {
   return (
     <div className="flex flex-col gap-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center gap-[var(--spacing-2)]">
         <h3 className="text-lg font-semibold text-[var(--color-text-primary)]">
           Clips{" "}
           {clips && clips.length > 0 && (
@@ -83,15 +101,36 @@ export function ClipGallery({ sceneId }: ClipGalleryProps) {
             </span>
           )}
         </h3>
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={() => setShowImport(true)}
-          icon={<Upload size={14} />}
-        >
-          Import Clip
-        </Button>
+        {leftActions}
+        <div className="flex-1" />
+        <div className="flex items-center gap-[var(--spacing-2)]">
+          {onGenerate && (
+            <span title={generateDisabled && generateDisabledReason ? generateDisabledReason : undefined}>
+              <Button
+                size="sm"
+                onClick={onGenerate}
+                loading={generateLoading}
+                disabled={generateDisabled}
+                icon={<Play size={14} />}
+              >
+                Generate New
+              </Button>
+            </span>
+          )}
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => setShowImport(true)}
+            icon={<Upload size={14} />}
+          >
+            Import Clip
+          </Button>
+        </div>
       </div>
+
+      {/* Generation infrastructure + terminal */}
+      <InfrastructurePanel />
+      <GenerationTerminal sceneId={sceneId} isGenerating={isGenerating ?? false} />
 
       {/* Clip list or empty state */}
       {!clips?.length ? (
@@ -105,12 +144,12 @@ export function ClipGallery({ sceneId }: ClipGalleryProps) {
             <ClipCard
               key={clip.id}
               clip={clip}
-              onPlay={() => {
-                /* video playback - future enhancement */
-              }}
+              onPlay={(c) => setPlayingClip(c)}
               onApprove={(id) => approveMutation.mutate(id)}
               onReject={(id) => setRejectingClipId(id)}
               onSetFinal={(id) => setFinalMutation.mutate(id)}
+              onDelete={(id) => deleteMutation.mutate(id)}
+              isDeleting={deleteMutation.isPending && deleteMutation.variables === clip.id}
               onResumeFrom={(id) => {
                 const c = clips.find((x) => x.id === id);
                 if (c) setResumeClip(c);
@@ -120,6 +159,7 @@ export function ClipGallery({ sceneId }: ClipGalleryProps) {
               isRejecting={
                 rejectMutation.isPending && rejectMutation.variables?.versionId === clip.id
               }
+              annotationCount={clip.annotation_count}
             />
           ))}
         </div>
@@ -163,6 +203,12 @@ export function ClipGallery({ sceneId }: ClipGalleryProps) {
         onClose={() => setShowImport(false)}
         sceneId={sceneId}
         onSuccess={() => {}}
+      />
+
+      {/* Clip playback modal */}
+      <ClipPlaybackModal
+        clip={playingClip}
+        onClose={() => setPlayingClip(null)}
       />
     </div>
   );

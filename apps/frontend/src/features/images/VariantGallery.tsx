@@ -27,7 +27,8 @@ import {
   type ImageVariantStatusId,
   type Provenance,
 } from "./types";
-import { variantImageUrl } from "./utils";
+import { ProgressiveImage } from "@/components/primitives";
+import { variantImageUrl, variantThumbnailUrl } from "./utils";
 
 /* --------------------------------------------------------------------------
    Helpers
@@ -81,42 +82,45 @@ function VariantCard({
     variant.status_id === IMAGE_VARIANT_STATUS.PENDING;
 
   return (
-    <Card elevation="sm" padding="sm">
-      <Stack gap={2}>
-        {/* Image preview */}
-        <div
-          role="button"
-          tabIndex={0}
-          onClick={() => onPreview(variant)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") onPreview(variant);
-          }}
-          className="relative cursor-pointer overflow-hidden rounded-[var(--radius-sm)] bg-[var(--color-surface-secondary)]"
-        >
-          {isGenerating ? (
-            <div className="flex h-32 items-center justify-center">
-              <Spinner size="md" />
-            </div>
-          ) : variant.file_path ? (
-            <img
-              src={variantImageUrl(variant.file_path)}
-              alt={variant.variant_label}
-              className="h-32 w-full object-cover"
-            />
-          ) : (
-            <div className="flex h-32 items-center justify-center text-[var(--color-text-muted)]">
-              No image
-            </div>
-          )}
+    <Card elevation="sm" padding="none" className="group/card overflow-hidden">
+      {/* Image preview */}
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={() => onPreview(variant)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") onPreview(variant);
+        }}
+        className="relative cursor-pointer bg-[var(--color-surface-secondary)]"
+      >
+        {isGenerating ? (
+          <div className="flex aspect-video items-center justify-center">
+            <Spinner size="md" />
+          </div>
+        ) : variant.file_path ? (
+          <ProgressiveImage
+            lowSrc={variantThumbnailUrl(variant.id, 128)}
+            highSrc={variantThumbnailUrl(variant.id, 1024)}
+            alt={variant.variant_label}
+            className="w-full aspect-video object-cover"
+            loading="lazy"
+          />
+        ) : (
+          <div className="flex aspect-video items-center justify-center text-[var(--color-text-muted)]">
+            No image
+          </div>
+        )}
 
-          {/* Hero indicator */}
-          {variant.is_hero && (
-            <div className="absolute top-1 right-1 rounded-full bg-[var(--color-action-success)] p-1">
-              <Check size={12} className="text-white" />
-            </div>
-          )}
-        </div>
+        {/* Hero indicator */}
+        {variant.is_hero && (
+          <div className="absolute top-1 right-1 rounded-full bg-[var(--color-action-success)] p-1">
+            <Check size={12} className="text-white" />
+          </div>
+        )}
+      </div>
 
+      {/* Content below image */}
+      <div className="flex flex-col gap-[var(--spacing-1)] px-[var(--spacing-3)] py-[var(--spacing-2)]">
         {/* Label */}
         <p className="truncate text-sm font-medium text-[var(--color-text-primary)]">
           {variant.variant_label}
@@ -186,7 +190,7 @@ function VariantCard({
             Delete
           </Button>
         </div>
-      </Stack>
+      </div>
     </Card>
   );
 }

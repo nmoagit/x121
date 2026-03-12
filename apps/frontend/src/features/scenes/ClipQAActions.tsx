@@ -1,5 +1,5 @@
 import { Button } from "@/components/primitives/Button";
-import { Check, X } from "lucide-react";
+import { Check, X } from "@/tokens/icons";
 import type { SceneVideoVersion } from "./types";
 
 interface ClipQAActionsProps {

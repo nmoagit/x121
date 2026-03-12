@@ -13,9 +13,9 @@ import { Badge, Button } from "@/components/primitives";
 import { Tooltip } from "@/components/primitives/Tooltip";
 import { Image as ImageIcon, Upload, Wand2 } from "@/tokens/icons";
 
-import { TrackBadge } from "@/features/scene-catalog/TrackBadge";
+import { TrackBadge } from "@/features/scene-catalogue/TrackBadge";
 import { MediaPlaceholder } from "./MediaPlaceholder";
-import type { Track } from "@/features/scene-catalog/types";
+import type { Track } from "@/features/scene-catalogue/types";
 import {
   IMAGE_ACCEPT_STRING,
   IMAGE_VARIANT_STATUS_LABEL,
@@ -105,31 +105,21 @@ export function TrackImageCard({
 
   return (
     <Card
-      padding="md"
+      padding="none"
       className={cn(
-        "transition-colors",
+        "group/card transition-colors overflow-hidden",
         dragOver && "ring-2 ring-[var(--color-action-primary)] bg-[var(--color-surface-secondary)]",
       )}
     >
       <div
-        className="flex flex-col gap-[var(--spacing-3)]"
+        className="flex flex-col"
         onDrop={handleDrop}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
       >
-        {/* Header: track name + badge */}
-        <div className="flex items-center gap-[var(--spacing-2)] min-w-0">
-          <span className="text-sm font-medium text-[var(--color-text-primary)] truncate">
-            {track.name}
-          </span>
-          <span className="shrink-0 ml-auto">
-            <TrackBadge name={track.name} slug={track.slug} />
-          </span>
-        </div>
-
         {/* Image preview / drop target */}
         {dragOver ? (
-          <div className="flex flex-col items-center justify-center rounded border-2 border-dashed border-[var(--color-action-primary)] aspect-video">
+          <div className="flex flex-col items-center justify-center border-2 border-dashed border-[var(--color-action-primary)] aspect-video">
             <Upload size={24} className="text-[var(--color-action-primary)]" />
             <span className="text-xs text-[var(--color-action-primary)] mt-1">Drop image here</span>
           </div>
@@ -137,7 +127,7 @@ export function TrackImageCard({
           <img
             src={variantImageUrl(heroVariant.file_path)}
             alt={`${track.name} seed image`}
-            className="w-full rounded aspect-video object-cover bg-black"
+            className="w-full aspect-video object-cover bg-black"
           />
         ) : (
           <MediaPlaceholder
@@ -146,36 +136,49 @@ export function TrackImageCard({
           />
         )}
 
-        {/* Status + provenance badges */}
-        {heroVariant && (
-          <div className="flex items-center gap-[var(--spacing-2)]">
-            <Badge variant="default" size="sm">
-              {IMAGE_VARIANT_STATUS_LABEL[heroVariant.status_id]}
-            </Badge>
-            <Badge variant="default" size="sm">
-              {PROVENANCE_LABEL[heroVariant.provenance]}
-            </Badge>
+        {/* Content below image */}
+        <div className="flex flex-col gap-[var(--spacing-2)] px-[var(--spacing-3)] py-[var(--spacing-2)]">
+          {/* Header: track name + badge */}
+          <div className="flex items-center gap-[var(--spacing-2)] min-w-0">
+            <span className="text-sm font-medium text-[var(--color-text-primary)] truncate">
+              {track.name}
+            </span>
+            <span className="shrink-0 ml-auto">
+              <TrackBadge name={track.name} slug={track.slug} />
+            </span>
           </div>
-        )}
 
-        {/* Action buttons */}
-        <div className="flex items-center gap-[var(--spacing-2)]">
-          <Button
-            size="sm"
-            variant="secondary"
-            onClick={() => fileInputRef.current?.click()}
-            icon={<Upload size={14} />}
-          >
-            Upload
-          </Button>
+          {/* Status + provenance badges */}
+          {heroVariant && (
+            <div className="flex items-center gap-[var(--spacing-2)]">
+              <Badge variant="default" size="sm">
+                {IMAGE_VARIANT_STATUS_LABEL[heroVariant.status_id]}
+              </Badge>
+              <Badge variant="default" size="sm">
+                {PROVENANCE_LABEL[heroVariant.provenance]}
+              </Badge>
+            </div>
+          )}
 
-          {generateButton && (generateEnabled ? (
-            generateButton
-          ) : (
-            <Tooltip content={generateDisabledReason ?? "Cannot generate"}>
-              {generateButton}
-            </Tooltip>
-          ))}
+          {/* Action buttons */}
+          <div className="flex items-center gap-[var(--spacing-2)]">
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => fileInputRef.current?.click()}
+              icon={<Upload size={14} />}
+            >
+              Upload
+            </Button>
+
+            {generateButton && (generateEnabled ? (
+              generateButton
+            ) : (
+              <Tooltip content={generateDisabledReason ?? "Cannot generate"}>
+                {generateButton}
+              </Tooltip>
+            ))}
+          </div>
         </div>
 
         {/* Hidden file input */}

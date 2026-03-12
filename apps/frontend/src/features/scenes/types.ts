@@ -1,5 +1,5 @@
 import type { BadgeVariant } from "@/components/primitives/Badge";
-import type { ExpandedSceneSetting } from "@/features/scene-catalog/types";
+import type { ExpandedSceneSetting } from "@/features/scene-catalogue/types";
 
 export interface Scene {
   id: number;
@@ -44,6 +44,8 @@ export interface SceneVideoVersion {
   deleted_at: string | null;
   created_at: string;
   updated_at: string;
+  /** Number of annotated frames on this version (computed by backend). */
+  annotation_count: number;
 }
 
 export interface SceneVideoVersionArtifact {
@@ -129,7 +131,7 @@ export const SCENE_STATUS_DELIVERED = 6;
 const SCENE_STATUS_LABELS: Record<number, string> = {
   1: "Pending",
   2: "Generating",
-  3: "Generated",
+  3: "Review",
   4: "Approved",
   5: "Rejected",
   6: "Delivered",

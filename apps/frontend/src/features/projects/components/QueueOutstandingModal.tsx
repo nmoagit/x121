@@ -27,8 +27,8 @@ import { CHARACTER_STATUS_ID_ARCHIVED, type Character } from "../types";
 
 import { useBatchGenerate } from "@/features/generation/hooks/use-generation";
 import type { CharacterReadinessCache } from "@/features/readiness/types";
-import { useProjectSceneSettings } from "@/features/scene-catalog/hooks/use-project-scene-settings";
-import type { EffectiveSceneSetting } from "@/features/scene-catalog/types";
+import { useProjectSceneSettings } from "@/features/scene-catalogue/hooks/use-project-scene-settings";
+import type { EffectiveSceneSetting } from "@/features/scene-catalogue/types";
 import type { Scene, SceneVideoVersion } from "@/features/scenes/types";
 
 /* --------------------------------------------------------------------------
@@ -112,10 +112,14 @@ export function QueueOutstandingModal({
 }: QueueOutstandingModalProps) {
   /* --- toggle state (A.2) --- */
   const [includeGenerated, setIncludeGenerated] = useState(false);
+  const [forceOverride, setForceOverride] = useState(false);
 
   /* --- reset toggle when modal opens --- */
   useEffect(() => {
-    if (open) setIncludeGenerated(false);
+    if (open) {
+      setIncludeGenerated(false);
+      setForceOverride(false);
+    }
   }, [open]);
 
   /* --- fetch project characters --- */
@@ -247,18 +251,20 @@ export function QueueOutstandingModal({
     // Auto-select all non-blocked items
     const initial = new Set<string>();
     for (const item of visibleItems) {
-      if (!item.blockingReason) {
+      if (!isItemBlocked(item)) {
         initial.add(item.key);
       }
     }
     setSelected(initial);
-  }, [open, visibleItems, setSelected]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, visibleItems, setSelected, forceOverride]);
 
   /* --- counts --- */
-  const blockedCount = visibleItems.filter((i) => i.blockingReason !== null).length;
+  const isItemBlocked = (item: QueueItem) => !forceOverride && item.blockingReason !== null;
+  const blockedCount = visibleItems.filter((i) => isItemBlocked(i)).length;
   const readyCount = visibleItems.length - blockedCount;
   const selectedCount = [...selected].filter((key) =>
-    visibleItems.some((i) => i.key === key && !i.blockingReason),
+    visibleItems.some((i) => i.key === key && !isItemBlocked(i)),
   ).length;
 
   /* --- batch generate mutation --- */
@@ -270,7 +276,7 @@ export function QueueOutstandingModal({
     const sceneIds: number[] = [];
     for (const item of visibleItems) {
       if (!selected.has(item.key)) continue;
-      if (item.blockingReason) continue;
+      if (isItemBlocked(item)) continue;
       if (item.scene) {
         sceneIds.push(item.scene.id);
       }
@@ -292,7 +298,7 @@ export function QueueOutstandingModal({
 
   /* --- toggle all --- */
   function toggleAll() {
-    const selectableKeys = visibleItems.filter((i) => !i.blockingReason).map((i) => i.key);
+    const selectableKeys = visibleItems.filter((i) => !isItemBlocked(i)).map((i) => i.key);
 
     const allChecked = selectableKeys.every((k) => selected.has(k));
     if (allChecked) {
@@ -302,7 +308,7 @@ export function QueueOutstandingModal({
     }
   }
 
-  const selectableCount = visibleItems.filter((i) => !i.blockingReason).length;
+  const selectableCount = visibleItems.filter((i) => !isItemBlocked(i)).length;
   const allSelected = selectableCount > 0 && selectedCount === selectableCount;
   const someSelected = selectedCount > 0 && !allSelected;
 
@@ -314,17 +320,31 @@ export function QueueOutstandingModal({
       <Stack gap={4}>
         {/* Controls bar */}
         <div className="flex items-center justify-between gap-[var(--spacing-3)]">
-          <Toggle
-            checked={includeGenerated}
-            onChange={setIncludeGenerated}
-            label="Include Already Generated"
-            size="sm"
-          />
+          <div className="flex items-center gap-[var(--spacing-4)]">
+            <Toggle
+              checked={includeGenerated}
+              onChange={setIncludeGenerated}
+              label="Include Already Generated"
+              size="sm"
+            />
+            <Toggle
+              checked={forceOverride}
+              onChange={setForceOverride}
+              label="Force Override"
+              size="sm"
+            />
+          </div>
           <span className="text-sm text-[var(--color-text-muted)]">
             {readyCount} of {visibleItems.length} ready to queue
             {blockedCount > 0 && ` (${blockedCount} blocked)`}
           </span>
         </div>
+
+        {forceOverride && (
+          <p className="text-xs text-[var(--color-action-danger)]">
+            Forcing blocked items may produce errors. Proceed with caution.
+          </p>
+        )}
 
         {/* Loading state */}
         {isLoading && <LoadingPane />}
@@ -356,20 +376,20 @@ export function QueueOutstandingModal({
             </div>
 
             {visibleItems.map((item) => {
-              const isBlocked = item.blockingReason !== null;
-              const isChecked = !isBlocked && selected.has(item.key);
+              const blocked = isItemBlocked(item);
+              const isChecked = !blocked && selected.has(item.key);
 
               return (
                 <div
                   key={item.key}
                   className={`flex items-center gap-[var(--spacing-2)] px-[var(--spacing-3)] py-[var(--spacing-1.5)] ${
-                    isBlocked ? "opacity-50" : "hover:bg-[var(--color-surface-secondary)]"
+                    blocked ? "opacity-50" : "hover:bg-[var(--color-surface-secondary)]"
                   }`}
                 >
                   <Checkbox
                     checked={isChecked}
                     onChange={() => toggleSelected(item.key)}
-                    disabled={isBlocked}
+                    disabled={blocked}
                     label={`${item.character.name} - ${item.setting.name}${item.setting.track_name ? ` (${item.setting.track_name})` : ""}`}
                   />
 
@@ -388,14 +408,14 @@ export function QueueOutstandingModal({
                     )}
 
                     {/* Blocking reason */}
-                    {isBlocked && (
-                      <Badge variant="warning" size="sm">
+                    {item.blockingReason !== null && (
+                      <Badge variant={forceOverride ? "info" : "warning"} size="sm">
                         {item.blockingReason}
                       </Badge>
                     )}
 
                     {/* No scene yet */}
-                    {!item.scene && !isBlocked && (
+                    {!item.scene && !blocked && (
                       <Badge variant="info" size="sm">
                         New
                       </Badge>

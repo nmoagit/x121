@@ -11,6 +11,7 @@ import { api } from "@/lib/api";
 
 import type {
   CreateProductionRunRequest,
+  EnabledSceneTypeEntry,
   ProductionRun,
   ProductionRunCell,
   ProductionRunProgress,
@@ -28,6 +29,8 @@ export const productionKeys = {
   detail: (id: number) => ["production-runs", "detail", id] as const,
   matrix: (id: number) => ["production-runs", "matrix", id] as const,
   progress: (id: number) => ["production-runs", "progress", id] as const,
+  enabledSceneTypes: (projectId: number, characterIds: number[]) =>
+    ["production-runs", "enabled-scene-types", { projectId, characterIds }] as const,
 };
 
 /* --------------------------------------------------------------------------
@@ -73,6 +76,18 @@ export function useProductionProgress(runId: number) {
       api.get<ProductionRunProgress>(`/production-runs/${runId}/progress`),
     enabled: runId > 0,
     refetchInterval: 10_000, // Poll every 10s for live progress
+  });
+}
+
+/** Fetch enabled scene types for a set of characters in a project. */
+export function useEnabledSceneTypes(projectId: number, characterIds: number[]) {
+  return useQuery({
+    queryKey: productionKeys.enabledSceneTypes(projectId, characterIds),
+    queryFn: () =>
+      api.get<EnabledSceneTypeEntry[]>(
+        `/production-runs/enabled-scene-types?project_id=${projectId}&character_ids=${characterIds.join(",")}`,
+      ),
+    enabled: projectId > 0 && characterIds.length > 0,
   });
 }
 
@@ -147,6 +162,80 @@ export function useDeliverRun(runId: number) {
       });
       queryClient.invalidateQueries({
         queryKey: productionKeys.progress(runId),
+      });
+    },
+  });
+}
+
+/** Cancel specific cells in a production run. */
+export function useCancelCells(runId: number) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (cellIds: number[]) =>
+      api.post(`/production-runs/${runId}/cells/cancel`, { cell_ids: cellIds }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: productionKeys.matrix(runId) });
+      queryClient.invalidateQueries({ queryKey: productionKeys.progress(runId) });
+    },
+  });
+}
+
+/** Delete specific cells from a production run. */
+export function useDeleteCells(runId: number, projectId: number) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (cellIds: number[]) =>
+      api.post(`/production-runs/${runId}/cells/delete`, { cell_ids: cellIds }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: productionKeys.matrix(runId) });
+      queryClient.invalidateQueries({ queryKey: productionKeys.progress(runId) });
+      queryClient.invalidateQueries({ queryKey: productionKeys.list(projectId) });
+    },
+  });
+}
+
+/** Cancel all cells for a character in a production run. */
+export function useCancelCharacterCells(runId: number) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (characterId: number) =>
+      api.post(`/production-runs/${runId}/characters/${characterId}/cancel`, {}),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: productionKeys.matrix(runId) });
+      queryClient.invalidateQueries({ queryKey: productionKeys.progress(runId) });
+    },
+  });
+}
+
+/** Delete all cells for a character in a production run. */
+export function useDeleteCharacterCells(runId: number, projectId: number) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (characterId: number) =>
+      api.post(`/production-runs/${runId}/characters/${characterId}/delete`, {}),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: productionKeys.matrix(runId) });
+      queryClient.invalidateQueries({ queryKey: productionKeys.progress(runId) });
+      queryClient.invalidateQueries({ queryKey: productionKeys.detail(runId) });
+      queryClient.invalidateQueries({ queryKey: productionKeys.list(projectId) });
+    },
+  });
+}
+
+/** Cancel a production run. */
+export function useCancelProductionRun(projectId: number) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: number) =>
+      api.post(`/production-runs/${id}/cancel`, {}),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: productionKeys.list(projectId),
       });
     },
   });

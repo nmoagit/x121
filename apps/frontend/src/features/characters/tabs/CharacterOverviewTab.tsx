@@ -19,8 +19,8 @@ import {
   useCharacterDashboard,
 } from "@/features/character-dashboard";
 import type { Character } from "@/features/projects/types";
-import { useCharacterSceneSettings } from "@/features/scene-catalog/hooks/use-character-scene-settings";
-import { useExpandedSettings } from "@/features/scene-catalog/hooks/use-expanded-settings";
+import { useCharacterSceneSettings } from "@/features/scene-catalogue/hooks/use-character-scene-settings";
+import { useExpandedSettings } from "@/features/scene-catalogue/hooks/use-expanded-settings";
 import { ReadinessStateBadge } from "@/features/readiness/ReadinessStateBadge";
 import type { ReadinessState } from "@/features/readiness/types";
 
@@ -31,6 +31,8 @@ import type { ReadinessState } from "@/features/readiness/types";
 interface CharacterOverviewTabProps {
   character: Character;
   characterId: number;
+  /** Called when a scene assignment row is clicked — navigate to scenes tab. */
+  onSceneClick?: (sceneId: number) => void;
 }
 
 /* --------------------------------------------------------------------------
@@ -93,6 +95,7 @@ function RatioStatCard({
 export function CharacterOverviewTab({
   character,
   characterId,
+  onSceneClick,
 }: CharacterOverviewTabProps) {
   const { data: dashboard, isLoading: dashboardLoading } =
     useCharacterDashboard(characterId);
@@ -242,6 +245,7 @@ export function CharacterOverviewTab({
           <SceneAssignmentsSection
             assignments={activeAssignments}
             sceneCount={activeAssignments.length}
+            onSceneClick={onSceneClick}
           />
         </Card>
       )}

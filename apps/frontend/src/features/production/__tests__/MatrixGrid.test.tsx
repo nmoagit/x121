@@ -11,9 +11,9 @@ const characters = [
   { id: 2, name: "Kai" },
 ];
 
-const sceneTypes = [
-  { id: 10, name: "Dance" },
-  { id: 20, name: "Idle" },
+const columns = [
+  { scene_type_id: 10, scene_type_name: "Dance", track_id: null, track_name: null },
+  { scene_type_id: 20, scene_type_name: "Idle", track_id: null, track_name: null },
 ];
 
 function makeCell(
@@ -28,6 +28,7 @@ function makeCell(
     run_id: 1,
     character_id: characterId,
     scene_type_id: sceneTypeId,
+    track_id: null,
     variant_label: "default",
     status_id: statusId,
     scene_id: null,
@@ -52,7 +53,7 @@ describe("MatrixGrid", () => {
       <MatrixGrid
         cells={cells}
         characters={characters}
-        sceneTypes={sceneTypes}
+        columns={columns}
       />,
     );
 
@@ -65,7 +66,7 @@ describe("MatrixGrid", () => {
       <MatrixGrid
         cells={cells}
         characters={characters}
-        sceneTypes={sceneTypes}
+        columns={columns}
       />,
     );
 
@@ -78,7 +79,7 @@ describe("MatrixGrid", () => {
       <MatrixGrid
         cells={cells}
         characters={characters}
-        sceneTypes={sceneTypes}
+        columns={columns}
       />,
     );
 
@@ -93,7 +94,7 @@ describe("MatrixGrid", () => {
       <MatrixGrid
         cells={cells}
         characters={characters}
-        sceneTypes={sceneTypes}
+        columns={columns}
       />,
     );
 
@@ -109,7 +110,7 @@ describe("MatrixGrid", () => {
       <MatrixGrid
         cells={cells}
         characters={characters}
-        sceneTypes={sceneTypes}
+        columns={columns}
         onToggleCell={onToggle}
       />,
     );
@@ -123,7 +124,7 @@ describe("MatrixGrid", () => {
       <MatrixGrid
         cells={cells}
         characters={characters}
-        sceneTypes={sceneTypes}
+        columns={columns}
       />,
     );
 

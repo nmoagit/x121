@@ -15,7 +15,7 @@
  * 5. Match against expanded slots by (slug, track_slug)
  */
 
-import type { ExpandedSceneSetting } from "@/features/scene-catalog/types";
+import type { ExpandedSceneSetting } from "@/features/scene-catalogue/types";
 import { CLOTHES_OFF_SUFFIX, isVideoFile, stripExtension } from "@/lib/file-types";
 
 /** Default track for files with no track prefix in the filename. */

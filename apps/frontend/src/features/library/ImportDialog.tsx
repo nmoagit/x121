@@ -12,7 +12,6 @@ import { cn } from "@/lib/cn";
 
 import { useImportToProject } from "./hooks/use-library";
 import type { LibraryCharacter } from "./types";
-import { NON_LINKABLE_FIELDS } from "./types";
 
 interface ImportDialogProps {
   open: boolean;
@@ -31,13 +30,8 @@ export function ImportDialog({
 }: ImportDialogProps) {
   const importMutation = useImportToProject();
 
-  // Derive linkable fields from the character's master_metadata keys.
-  const linkableFields = useMemo(() => {
-    const keys = Object.keys(character.master_metadata);
-    return keys.filter(
-      (key) => !NON_LINKABLE_FIELDS.includes(key as (typeof NON_LINKABLE_FIELDS)[number]),
-    );
-  }, [character.master_metadata]);
+  // No linkable fields in the cross-project browser view.
+  const linkableFields: string[] = useMemo(() => [], []);
 
   const [selectedFields, setSelectedFields] = useState<Set<string>>(
     () => new Set(linkableFields),

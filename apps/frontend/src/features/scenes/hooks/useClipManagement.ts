@@ -1,6 +1,7 @@
 import { api } from "@/lib/api";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { RejectClipInput, ResumeFromResponse, SceneVideoVersion } from "../types";
+import { sceneKeys } from "./useCharacterScenes";
 
 export const clipKeys = {
   all: ["scene-versions"] as const,
@@ -32,6 +33,7 @@ export function useApproveClip(sceneId: number) {
       api.put<SceneVideoVersion>(`/scenes/${sceneId}/versions/${versionId}/approve`, {}),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: clipKeys.list(sceneId) });
+      queryClient.invalidateQueries({ queryKey: sceneKeys.all });
     },
   });
 }
@@ -48,6 +50,7 @@ export function useRejectClip(sceneId: number) {
     }) => api.put<SceneVideoVersion>(`/scenes/${sceneId}/versions/${versionId}/reject`, input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: clipKeys.list(sceneId) });
+      queryClient.invalidateQueries({ queryKey: sceneKeys.all });
     },
   });
 }
@@ -59,6 +62,7 @@ export function useSetFinalClip(sceneId: number) {
       api.put<SceneVideoVersion>(`/scenes/${sceneId}/versions/${versionId}/set-final`, {}),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: clipKeys.list(sceneId) });
+      queryClient.invalidateQueries({ queryKey: sceneKeys.all });
     },
   });
 }
@@ -70,6 +74,7 @@ export function useResumeFromClip(sceneId: number) {
       api.post<ResumeFromResponse>(`/scenes/${sceneId}/versions/${versionId}/resume-from`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: clipKeys.list(sceneId) });
+      queryClient.invalidateQueries({ queryKey: sceneKeys.all });
     },
   });
 }
@@ -86,6 +91,18 @@ export function postClipImport(sceneId: number, file: File, notes?: string) {
   });
 }
 
+export function useDeleteClip(sceneId: number) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (versionId: number) =>
+      api.delete(`/scenes/${sceneId}/versions/${versionId}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: clipKeys.list(sceneId) });
+      queryClient.invalidateQueries({ queryKey: sceneKeys.all });
+    },
+  });
+}
+
 export function useImportClip(sceneId: number) {
   const queryClient = useQueryClient();
   return useMutation({
@@ -93,6 +110,7 @@ export function useImportClip(sceneId: number) {
       postClipImport(sceneId, file, notes),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: clipKeys.list(sceneId) });
+      queryClient.invalidateQueries({ queryKey: sceneKeys.all });
     },
   });
 }

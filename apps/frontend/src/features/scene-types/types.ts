@@ -6,9 +6,11 @@ export interface SceneType {
   id: number;
   project_id: number | null;
   name: string;
-  /** PRD-123: slug absorbed from scene_catalog. */
+  /** PRD-123: slug absorbed from scene_catalogue. */
   slug: string;
   status_id: number;
+  /** Registered workflow from the workflows registry. */
+  workflow_id: number | null;
   description: string | null;
   workflow_json: unknown | null;
   lora_config: unknown | null;
@@ -20,13 +22,15 @@ export interface SceneType {
   prompt_continuation_clip: string | null;
   negative_prompt_continuation_clip: string | null;
   target_duration_secs: number | null;
+  target_fps: number | null;
+  target_resolution: string | null;
   segment_duration_secs: number | null;
   duration_tolerance_secs: number;
   transition_segment_index: number | null;
   generation_params: unknown | null;
   sort_order: number;
   is_active: boolean;
-  /** PRD-123: absorbed from scene_catalog. */
+  /** PRD-123: absorbed from scene_catalogue. */
   has_clothes_off_transition: boolean;
   is_studio_level: boolean;
   /** PRD-100: parent scene type for inheritance. */
@@ -54,6 +58,8 @@ export interface CreateSceneType {
   project_id?: number | null;
   description?: string | null;
   status_id?: number | null;
+  /** Registered workflow from the workflows registry. */
+  workflow_id?: number | null;
   workflow_json?: unknown | null;
   lora_config?: unknown | null;
   model_config?: unknown | null;
@@ -64,6 +70,8 @@ export interface CreateSceneType {
   prompt_continuation_clip?: string | null;
   negative_prompt_continuation_clip?: string | null;
   target_duration_secs?: number | null;
+  target_fps?: number | null;
+  target_resolution?: string | null;
   segment_duration_secs?: number | null;
   duration_tolerance_secs?: number | null;
   transition_segment_index?: number | null;
@@ -90,6 +98,8 @@ export interface UpdateSceneType {
   slug?: string;
   description?: string | null;
   status_id?: number | null;
+  /** Registered workflow from the workflows registry. */
+  workflow_id?: number | null;
   workflow_json?: unknown | null;
   lora_config?: unknown | null;
   model_config?: unknown | null;
@@ -100,6 +110,8 @@ export interface UpdateSceneType {
   prompt_continuation_clip?: string | null;
   negative_prompt_continuation_clip?: string | null;
   target_duration_secs?: number | null;
+  target_fps?: number | null;
+  target_resolution?: string | null;
   segment_duration_secs?: number | null;
   duration_tolerance_secs?: number | null;
   transition_segment_index?: number | null;

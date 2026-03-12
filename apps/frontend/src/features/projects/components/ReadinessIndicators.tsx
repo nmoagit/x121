@@ -38,7 +38,7 @@ export function ReadinessIndicators({ readiness, projectId, characterId }: Readi
   const navigate = useNavigate();
 
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex flex-col gap-1 rounded-full bg-black/20 p-0.5 backdrop-blur-sm">
       {SECTIONS.map(({ key, Icon, tab }) => {
         const section = readiness[key];
         const bg = SECTION_STATE_BG[section.state];
@@ -46,8 +46,9 @@ export function ReadinessIndicators({ readiness, projectId, characterId }: Readi
 
         return (
           <Tooltip key={key} content={section.tooltip} side="left">
-            <button
-              type="button"
+            <span
+              role="button"
+              tabIndex={0}
               aria-label={section.tooltip}
               className="flex items-center justify-center w-6 h-6 rounded-full cursor-pointer transition-transform hover:scale-110"
               style={{ backgroundColor: bg }}
@@ -59,13 +60,23 @@ export function ReadinessIndicators({ readiness, projectId, characterId }: Readi
                   search: { tab },
                 });
               }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  navigate({
+                    to: `/projects/${projectId}/characters/${characterId}`,
+                    search: { tab },
+                  });
+                }
+              }}
             >
               <Icon
                 size={12}
                 className={isGrey ? "text-[var(--color-surface-primary)]" : "text-white"}
                 aria-hidden
               />
-            </button>
+            </span>
           </Tooltip>
         );
       })}

@@ -1,21 +1,36 @@
 /**
  * Matrix grid component for visualizing production run cells (PRD-57).
  *
- * Displays characters as rows and scene types as columns. Each cell is
- * color-coded by status, supports checkbox selection for partial
- * submission, and shows blocking reasons on hover.
+ * Displays characters as rows and scene_type+track pairs as columns.
+ * Each cell is color-coded by status, supports checkbox selection for
+ * partial submission, and shows blocking reasons on hover.
+ *
+ * Columns are capped at 6 per row; additional columns wrap into
+ * subsequent grids below.
  */
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
-import { Badge } from "@/components";
 
 import {
   CELL_STATUS_BY_ID,
   CELL_STATUS_LABELS,
   CELL_STATUS_VARIANT,
 } from "./types";
+import type { BadgeVariant } from "@/components";
 import type { CellStatus, ProductionRunCell } from "./types";
+
+/* Badge-like label without rounding, sized for compact matrix cells. */
+const MATRIX_BADGE_CLASSES: Record<BadgeVariant, string> = {
+  default: "bg-[var(--color-surface-tertiary)] text-[var(--color-text-secondary)]",
+  success: "bg-[var(--color-action-success)]/15 text-[var(--color-action-success)]",
+  warning: "bg-[var(--color-action-warning)]/15 text-[var(--color-action-warning)]",
+  danger: "bg-[var(--color-action-danger)]/15 text-[var(--color-action-danger)]",
+  info: "bg-[var(--color-action-primary)]/15 text-[var(--color-action-primary)]",
+};
+
+/** Minimum width for each matrix cell (px). */
+const CELL_MAX_WIDTH = 80;
 
 /* --------------------------------------------------------------------------
    Types
@@ -26,9 +41,12 @@ interface Character {
   name: string;
 }
 
-interface SceneType {
-  id: number;
-  name: string;
+/** A column in the matrix — scene type optionally narrowed to a track. */
+interface MatrixColumn {
+  scene_type_id: number;
+  scene_type_name: string;
+  track_id: number | null;
+  track_name: string | null;
 }
 
 interface MatrixGridProps {
@@ -36,14 +54,24 @@ interface MatrixGridProps {
   cells: ProductionRunCell[];
   /** Characters (rows). */
   characters: Character[];
-  /** Scene types (columns). */
-  sceneTypes: SceneType[];
+  /** Scene type + track columns. */
+  columns: MatrixColumn[];
   /** Currently selected cell IDs for submission. */
   selectedCellIds?: Set<number>;
   /** Toggle a cell's selection state. */
   onToggleCell?: (cellId: number) => void;
-  /** Navigate to a cell's detail view. */
+  /** Navigate to a character's detail page. */
+  onCharacterClick?: (characterId: number) => void;
+  /** Navigate to a cell's scene detail. */
   onCellClick?: (cell: ProductionRunCell) => void;
+  /** Cancel a cell. */
+  onCancelCell?: (cellId: number) => void;
+  /** Delete a cell. */
+  onDeleteCell?: (cellId: number) => void;
+  /** Cancel all cells for a character. */
+  onCancelCharacter?: (characterId: number) => void;
+  /** Delete all cells for a character (remove character from run). */
+  onDeleteCharacter?: (characterId: number) => void;
 }
 
 /* --------------------------------------------------------------------------
@@ -51,7 +79,12 @@ interface MatrixGridProps {
    -------------------------------------------------------------------------- */
 
 function getCellStatus(cell: ProductionRunCell): CellStatus {
-  return CELL_STATUS_BY_ID[cell.status_id] ?? "not_started";
+  const base = CELL_STATUS_BY_ID[cell.status_id] ?? "not_started";
+  // Not started + no seed image → "no_seed"
+  if (base === "not_started" && cell.has_seed === false) return "no_seed";
+  // status_id=2 with a linked scene means "has video, pending review" not "queued for generation"
+  if (base === "queued" && cell.scene_id != null) return "in_progress";
+  return base;
 }
 
 function getCellColorClass(status: CellStatus): string {
@@ -61,17 +94,23 @@ function getCellColorClass(status: CellStatus): string {
       return "bg-green-900/30 border-green-700/50";
     case "generating":
     case "queued":
+    case "in_progress":
       return "bg-blue-900/30 border-blue-700/50";
     case "qa_review":
       return "bg-yellow-900/30 border-yellow-700/50";
     case "failed":
     case "rejected":
       return "bg-red-900/30 border-red-700/50";
+    case "no_seed":
     case "blocked":
       return "bg-orange-900/30 border-orange-700/50";
     default:
       return "bg-[var(--color-surface-secondary)] border-[var(--color-border-subtle)]";
   }
+}
+
+function columnKey(col: MatrixColumn): string {
+  return `${col.scene_type_id}-${col.track_id ?? "null"}`;
 }
 
 /* --------------------------------------------------------------------------
@@ -81,101 +120,217 @@ function getCellColorClass(status: CellStatus): string {
 export function MatrixGrid({
   cells,
   characters,
-  sceneTypes,
+  columns,
   selectedCellIds,
   onToggleCell,
+  onCharacterClick,
   onCellClick,
+  onCancelCell,
+  onDeleteCell,
+  onCancelCharacter,
+  onDeleteCharacter,
 }: MatrixGridProps) {
   const [hoveredCellId, setHoveredCellId] = useState<number | null>(null);
+  const [hoveredCharId, setHoveredCharId] = useState<number | null>(null);
 
-  // Build a lookup map: (character_id, scene_type_id) -> cell
-  const cellMap = new Map<string, ProductionRunCell>();
-  for (const cell of cells) {
-    const key = `${cell.character_id}-${cell.scene_type_id}`;
-    cellMap.set(key, cell);
-  }
+  // Build a lookup map: (character_id, scene_type_id, track_id) -> cell
+  const cellMap = useMemo(() => {
+    const map = new Map<string, ProductionRunCell>();
+    for (const cell of cells) {
+      const key = `${cell.character_id}-${cell.scene_type_id}-${cell.track_id ?? "null"}`;
+      map.set(key, cell);
+    }
+    return map;
+  }, [cells]);
+
+  const hasCharActions = !!(onCancelCharacter || onDeleteCharacter);
 
   return (
     <div data-testid="matrix-grid" className="overflow-auto">
-      <table className="w-full border-collapse text-sm">
+      <table className="border-collapse text-sm">
         <thead>
           <tr>
-            <th className="sticky left-0 z-10 bg-[var(--color-surface-primary)] p-2 text-left text-xs font-medium text-[var(--color-text-muted)]">
+            <th className="sticky left-0 z-10 bg-[var(--color-surface-primary)] p-2 text-left text-xs font-medium text-[var(--color-text-muted)] whitespace-nowrap">
               Character
             </th>
-            {sceneTypes.map((st) => (
-              <th
-                key={st.id}
-                className="p-2 text-center text-xs font-medium text-[var(--color-text-muted)]"
-              >
-                {st.name}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {characters.map((char) => (
-            <tr key={char.id}>
-              <td className="sticky left-0 z-10 bg-[var(--color-surface-primary)] p-2 font-medium text-[var(--color-text-primary)]">
-                {char.name}
-              </td>
-              {sceneTypes.map((st) => {
-                const key = `${char.id}-${st.id}`;
-                const cell = cellMap.get(key);
-
-                if (!cell) {
-                  return (
-                    <td key={st.id} className="p-1">
-                      <div className="h-10 rounded border border-dashed border-[var(--color-border-subtle)]" />
-                    </td>
-                  );
-                }
-
-                const status = getCellStatus(cell);
-                const isSelected = selectedCellIds?.has(cell.id) ?? false;
-                const isHovered = hoveredCellId === cell.id;
-
-                return (
-                  <td key={st.id} className="p-1">
-                    <div
-                      data-testid={`matrix-cell-${cell.id}`}
-                      className={`relative flex h-10 cursor-pointer items-center justify-center rounded border ${getCellColorClass(status)} transition-colors hover:brightness-110`}
-                      onMouseEnter={() => setHoveredCellId(cell.id)}
-                      onMouseLeave={() => setHoveredCellId(null)}
-                      onClick={() => onCellClick?.(cell)}
-                    >
-                      {/* Checkbox for selection */}
-                      {onToggleCell && (
-                        <input
-                          type="checkbox"
-                          checked={isSelected}
-                          onChange={(e) => {
-                            e.stopPropagation();
-                            onToggleCell(cell.id);
-                          }}
-                          onClick={(e) => e.stopPropagation()}
-                          className="absolute left-1 top-1 h-3 w-3"
-                        />
-                      )}
-
-                      <Badge variant={CELL_STATUS_VARIANT[status]}>
-                        {CELL_STATUS_LABELS[status]}
-                      </Badge>
-
-                      {/* Blocking reason tooltip */}
-                      {isHovered && cell.blocking_reason && (
-                        <div className="absolute -top-8 left-1/2 z-20 -translate-x-1/2 whitespace-nowrap rounded bg-[var(--color-surface-primary)] px-2 py-1 text-xs text-[var(--color-text-muted)] shadow-lg">
-                          {cell.blocking_reason}
-                        </div>
-                      )}
-                    </div>
-                  </td>
-                );
-              })}
+            {columns.map((col) => (
+                  <th
+                    key={columnKey(col)}
+                    style={{ maxWidth: CELL_MAX_WIDTH }}
+                    className="p-2 text-center text-xs font-medium text-[var(--color-text-muted)] whitespace-nowrap"
+                  >
+                    <div>{col.scene_type_name}</div>
+                    {col.track_name && (
+                      <div className="text-[10px] font-normal text-[var(--color-text-muted)] opacity-70">
+                        {col.track_name}
+                      </div>
+                    )}
+                  </th>
+              ))}
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {characters.map((char) => (
+              <tr key={char.id}>
+                <td className="sticky left-0 z-10 bg-[var(--color-surface-primary)] p-0 font-medium text-[var(--color-text-primary)] whitespace-nowrap">
+                  <div
+                    onMouseEnter={() => setHoveredCharId(char.id)}
+                    onMouseLeave={() => setHoveredCharId(null)}
+                  >
+                    {hasCharActions && (
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "center",
+                          visibility: hoveredCharId === char.id ? "visible" : "hidden",
+                          padding: "2px 8px 0",
+                        }}
+                      >
+                        {onCancelCharacter && (
+                          <button
+                            type="button"
+                            style={{ paddingRight: 2 }}
+                            className="text-[10px] font-medium text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
+                            onClick={() => onCancelCharacter(char.id)}
+                          >
+                            <span className="inline-block rounded bg-[var(--color-surface-primary)] px-1.5 py-0.5 shadow border border-[var(--color-border-default)]">
+                              Cancel
+                            </span>
+                          </button>
+                        )}
+                        {onDeleteCharacter && (
+                          <button
+                            type="button"
+                            style={{ paddingLeft: 2 }}
+                            className="text-[10px] font-medium text-red-400 hover:text-red-300"
+                            onClick={() => onDeleteCharacter(char.id)}
+                          >
+                            <span className="inline-block rounded bg-[var(--color-surface-primary)] px-1.5 py-0.5 shadow border border-[var(--color-border-default)]">
+                              Remove
+                            </span>
+                          </button>
+                        )}
+                      </div>
+                    )}
+                    <div
+                      style={{ padding: "4px 8px 8px", cursor: onCharacterClick ? "pointer" : undefined }}
+                      className={onCharacterClick ? "hover:text-[var(--color-action-primary)] hover:underline" : ""}
+                      onClick={onCharacterClick ? () => onCharacterClick(char.id) : undefined}
+                    >
+                      {char.name}
+                    </div>
+                  </div>
+                </td>
+                {columns.map((col) => {
+                    const key = `${char.id}-${col.scene_type_id}-${col.track_id ?? "null"}`;
+                    const cell = cellMap.get(key);
+
+                    if (!cell) {
+                      return (
+                        <td
+                          key={columnKey(col)}
+                          style={{ maxWidth: CELL_MAX_WIDTH }}
+                          className="p-1"
+                        >
+                          <div className="h-10 rounded border border-dashed border-[var(--color-border-subtle)]" />
+                        </td>
+                      );
+                    }
+
+                    const status = getCellStatus(cell);
+                    const isSelected = selectedCellIds?.has(cell.id) ?? false;
+                    const isHovered = hoveredCellId === cell.id;
+                    const canCancel = cell.status_id === 1 || cell.status_id === 2;
+
+                    const hasCellActions = !!(onCancelCell || onDeleteCell);
+
+                    return (
+                      <td
+                        key={columnKey(col)}
+                        style={{ maxWidth: CELL_MAX_WIDTH }}
+                        className="p-1"
+                      >
+                        <div
+                          onMouseEnter={() => setHoveredCellId(cell.id)}
+                          onMouseLeave={() => setHoveredCellId(null)}
+                        >
+                          {/* Cell actions — always rendered, visibility toggled */}
+                          {hasCellActions && (
+                            <div
+                              style={{
+                                display: "flex",
+                                justifyContent: "center",
+                                visibility: isHovered ? "visible" : "hidden",
+                                padding: "0 0 2px",
+                              }}
+                            >
+                              {onCancelCell && canCancel && (
+                                <button
+                                  type="button"
+                                  style={{ paddingRight: 2 }}
+                                  className="text-[10px] font-medium text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
+                                  onClick={(e) => { e.stopPropagation(); onCancelCell(cell.id); }}
+                                >
+                                  <span className="inline-block rounded bg-[var(--color-surface-primary)] px-1.5 py-0.5 shadow border border-[var(--color-border-default)]">
+                                    Cancel
+                                  </span>
+                                </button>
+                              )}
+                              {onDeleteCell && (
+                                <button
+                                  type="button"
+                                  style={{ paddingLeft: 2 }}
+                                  className="text-[10px] font-medium text-red-400 hover:text-red-300"
+                                  onClick={(e) => { e.stopPropagation(); onDeleteCell(cell.id); }}
+                                >
+                                  <span className="inline-block rounded bg-[var(--color-surface-primary)] px-1.5 py-0.5 shadow border border-[var(--color-border-default)]">
+                                    Delete
+                                  </span>
+                                </button>
+                              )}
+                            </div>
+                          )}
+
+                          <div
+                            data-testid={`matrix-cell-${cell.id}`}
+                            className={`relative flex h-10 cursor-pointer items-center justify-center rounded border ${getCellColorClass(status)} transition-colors hover:brightness-110`}
+                            onClick={() => onCellClick?.(cell)}
+                          >
+                            {/* Checkbox for selection — hidden for no_seed cells */}
+                            {onToggleCell && status !== "no_seed" && (
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={(e) => {
+                                  e.stopPropagation();
+                                  onToggleCell(cell.id);
+                                }}
+                                onClick={(e) => e.stopPropagation()}
+                                className="absolute left-1 top-1 h-3 w-3"
+                              />
+                            )}
+
+                            <span
+                              className={`inline-flex items-center px-1 py-px text-[10px] font-medium leading-tight whitespace-nowrap ${MATRIX_BADGE_CLASSES[CELL_STATUS_VARIANT[status]]}`}
+                            >
+                              {CELL_STATUS_LABELS[status]}
+                            </span>
+
+                            {/* Blocking reason tooltip */}
+                            {isHovered && cell.blocking_reason && (
+                              <div className="absolute -bottom-7 left-1/2 z-20 -translate-x-1/2 whitespace-nowrap rounded bg-[var(--color-surface-primary)] px-2 py-1 text-xs text-[var(--color-text-muted)] shadow-lg">
+                                {cell.blocking_reason}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+                    );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
     </div>
   );
 }

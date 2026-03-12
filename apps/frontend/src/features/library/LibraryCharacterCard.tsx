@@ -1,47 +1,103 @@
 /**
- * Card component for displaying a single library character (PRD-60).
+ * Card and row components for displaying characters in the library browser.
  *
- * Read-only gallery mode (Amendment A.2): each card shows a "Go to Character"
- * link that navigates to the character's edit page. If the character exists
- * in multiple projects, a dropdown lets the user pick which project.
+ * Both variants are clickable and trigger onSelect to open the preview modal.
  */
 
-import { useCallback, useRef, useState } from "react";
-
-import { Link } from "@tanstack/react-router";
-
-import { Badge, Button } from "@/components";
-import { useClickOutside } from "@/hooks/useClickOutside";
+import { Badge, ProgressiveImage } from "@/components/primitives";
+import { Card } from "@/components/composite";
+import { variantThumbnailUrl } from "@/features/images/utils";
 import { cn } from "@/lib/cn";
-import { ArrowRight, ChevronDown, Layers, User } from "@/tokens/icons";
+import { Check, Film, Image, Minus, User, Video } from "@/tokens/icons";
 
-import type { LibraryCharacter, LibraryUsageEntry } from "./types";
+import type { LibraryCharacter } from "./types";
 
 interface LibraryCharacterCardProps {
   character: LibraryCharacter;
-  usageCount?: number;
-  usage?: LibraryUsageEntry[];
   onSelect?: (character: LibraryCharacter) => void;
-  onImport?: (character: LibraryCharacter) => void;
 }
 
 export function LibraryCharacterCard({
   character,
-  usageCount = 0,
-  usage = [],
   onSelect,
-  onImport,
 }: LibraryCharacterCardProps) {
+  const hasAvatar = character.hero_variant_id != null;
+
   return (
-    <div
+    <Card
+      elevation="sm"
+      padding="none"
       className={cn(
-        "rounded-[var(--radius-lg)] p-4 flex flex-col",
-        "bg-[var(--color-surface-primary)]",
-        "border border-[var(--color-border-default)]",
-        "hover:border-[var(--color-border-hover)]",
-        "transition-colors cursor-pointer",
+        "group/card cursor-pointer overflow-hidden",
+        "transition-shadow duration-[var(--duration-fast)] ease-[var(--ease-default)]",
+        "hover:shadow-[var(--shadow-md)]",
       )}
       data-testid={`library-card-${character.id}`}
+    >
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={() => onSelect?.(character)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            onSelect?.(character);
+          }
+        }}
+        className="w-full text-left"
+      >
+        {/* Avatar area */}
+        <div className="relative aspect-[4/3] bg-[var(--color-surface-tertiary)] overflow-hidden">
+          {hasAvatar ? (
+            <ProgressiveImage
+              lowSrc={variantThumbnailUrl(character.hero_variant_id!, 128)}
+              highSrc={variantThumbnailUrl(character.hero_variant_id!, 1024)}
+              alt={character.name}
+              className="absolute inset-0 w-full h-full object-cover"
+              loading="lazy"
+            />
+          ) : (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <User size={48} className="text-[var(--color-text-muted)] opacity-30" />
+            </div>
+          )}
+        </div>
+
+        {/* Info area */}
+        <div className="px-[var(--spacing-3)] py-[var(--spacing-2)]">
+          <div className="flex items-center justify-between gap-1">
+            <h4 className="text-sm font-semibold text-[var(--color-text-primary)] truncate">
+              {character.name}
+            </h4>
+            <Badge variant="default" size="sm">
+              <Film size={12} aria-hidden className="mr-1" />
+              {character.scene_count}
+            </Badge>
+          </div>
+          <p className="mt-0.5 text-xs text-[var(--color-text-muted)] truncate">
+            {character.project_name}
+            {character.group_name && ` / ${character.group_name}`}
+          </p>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+/* --------------------------------------------------------------------------
+   Row view variant
+   -------------------------------------------------------------------------- */
+
+export function LibraryCharacterRow({
+  character,
+  onSelect,
+}: LibraryCharacterCardProps) {
+  const hasAvatar = character.hero_variant_id != null;
+
+  return (
+    <div
+      role="button"
+      tabIndex={0}
       onClick={() => onSelect?.(character)}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
@@ -49,205 +105,75 @@ export function LibraryCharacterCard({
           onSelect?.(character);
         }
       }}
-      role="button"
-      tabIndex={0}
+      className={cn(
+        "flex items-center gap-4 px-3 py-2 rounded-[var(--radius-md)]",
+        "bg-[var(--color-surface-primary)] border border-[var(--color-border-default)]",
+        "hover:border-[var(--color-border-hover)] hover:shadow-sm",
+        "transition-colors cursor-pointer",
+      )}
+      data-testid={`library-row-${character.id}`}
     >
-      {/* Thumbnail */}
-      <div
-        className={cn(
-          "flex items-center justify-center mb-3 rounded-[var(--radius-md)]",
-          "bg-[var(--color-surface-tertiary)] h-32 overflow-hidden",
-        )}
-      >
-        {character.thumbnail_path ? (
-          <img
-            src={character.thumbnail_path}
+      {/* Avatar thumbnail */}
+      <div className="shrink-0 w-10 h-10 rounded-[var(--radius-sm)] bg-[var(--color-surface-tertiary)] overflow-hidden relative">
+        {hasAvatar ? (
+          <ProgressiveImage
+            lowSrc={variantThumbnailUrl(character.hero_variant_id!, 64)}
+            highSrc={variantThumbnailUrl(character.hero_variant_id!, 128)}
             alt={character.name}
-            className="h-full w-full object-cover"
+            className="absolute inset-0 w-full h-full object-cover"
+            loading="lazy"
           />
         ) : (
-          <User
-            size={32}
-            className="text-[var(--color-text-muted)]"
-            aria-hidden="true"
-          />
+          <div className="w-full h-full flex items-center justify-center">
+            <User size={18} className="text-[var(--color-text-muted)] opacity-30" />
+          </div>
         )}
       </div>
 
-      {/* Name and status */}
-      <div className="flex items-start justify-between gap-2 mb-2">
-        <h4 className="text-sm font-medium text-[var(--color-text-primary)] truncate">
+      {/* Name + project */}
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium text-[var(--color-text-primary)] truncate">
           {character.name}
-        </h4>
-        {character.is_published && (
-          <Badge variant="success" size="sm">
-            Published
-          </Badge>
-        )}
-      </div>
-
-      {/* Description */}
-      {character.description && (
-        <p className="text-xs text-[var(--color-text-muted)] line-clamp-2 mb-2">
-          {character.description}
         </p>
-      )}
-
-      {/* Tags */}
-      {character.tags.length > 0 && (
-        <div className="flex flex-wrap gap-1 mb-3">
-          {character.tags.slice(0, 3).map((tag) => (
-            <Badge key={tag} variant="default" size="sm">
-              {tag}
-            </Badge>
-          ))}
-          {character.tags.length > 3 && (
-            <span className="text-xs text-[var(--color-text-muted)]">
-              +{character.tags.length - 3}
-            </span>
-          )}
-        </div>
-      )}
-
-      {/* Footer: usage count + go-to / import actions */}
-      <div className="flex items-center justify-between mt-auto pt-2 border-t border-[var(--color-border-default)]">
-        <span
-          className="flex items-center gap-1 text-xs text-[var(--color-text-muted)]"
-          data-testid="usage-count"
-        >
-          <Layers size={14} aria-hidden="true" />
-          {usageCount} project{usageCount !== 1 ? "s" : ""}
-        </span>
-
-        <div className="flex items-center gap-2">
-          <GoToCharacterButton usage={usage} />
-          {onImport && (
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={(e) => {
-                e.stopPropagation();
-                onImport(character);
-              }}
-              data-testid="import-button"
-            >
-              Import
-            </Button>
-          )}
-        </div>
+        <p className="text-xs text-[var(--color-text-muted)] truncate">
+          {character.project_name}
+          {character.group_name && ` / ${character.group_name}`}
+        </p>
       </div>
-    </div>
-  );
-}
 
-/* --------------------------------------------------------------------------
-   Go to Character — handles 0, 1, or many projects
-   -------------------------------------------------------------------------- */
-
-function GoToCharacterButton({ usage }: { usage: LibraryUsageEntry[] }) {
-  const [open, setOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-
-  const close = useCallback(() => setOpen(false), []);
-  useClickOutside(dropdownRef, close, open);
-
-  // No project usage — disabled state
-  if (usage.length === 0) {
-    return (
-      <span
-        className="text-xs text-[var(--color-text-disabled)] select-none"
-        data-testid="go-to-character-disabled"
-      >
-        Not in any project
-      </span>
-    );
-  }
-
-  // Single project — direct link
-  if (usage.length === 1) {
-    const entry = usage[0] as LibraryUsageEntry;
-    return (
-      <Link
-        to="/projects/$projectId/characters/$characterId"
-        params={{
-          projectId: String(entry.project_id),
-          characterId: String(entry.project_character_id),
-        }}
-        search={{ tab: undefined }}
-        onClick={(e) => e.stopPropagation()}
-        data-testid="go-to-character-link"
-      >
-        <Button variant="ghost" size="sm" tabIndex={-1}>
-          Go to Character
-          <ArrowRight size={14} aria-hidden="true" />
-        </Button>
-      </Link>
-    );
-  }
-
-  // Multiple projects — dropdown
-  return (
-    <div ref={dropdownRef} className="relative">
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={(e) => {
-          e.stopPropagation();
-          setOpen((prev) => !prev);
-        }}
-        data-testid="go-to-character-dropdown-trigger"
-      >
-        Go to Character
-        <Badge variant="default" size="sm">
-          {usage.length}
-        </Badge>
-        <ChevronDown
-          size={14}
+      {/* Stats */}
+      <div className="flex items-center gap-3 shrink-0">
+        <span title="Images">
+          <Badge variant="default" size="sm">
+            <Image size={12} aria-hidden className="mr-1" />
+            {character.image_count}
+          </Badge>
+        </span>
+        <span title="Scenes">
+          <Badge variant="default" size="sm">
+            <Film size={12} aria-hidden className="mr-1" />
+            {character.scene_count}
+          </Badge>
+        </span>
+        <span title="Clips">
+          <Badge variant="default" size="sm">
+            <Video size={12} aria-hidden className="mr-1" />
+            {character.clip_count}
+          </Badge>
+        </span>
+        <span
+          title={character.has_metadata ? "Metadata present" : "No metadata"}
           className={cn(
-            "transition-transform",
-            open && "rotate-180",
+            "flex items-center gap-0.5 text-[10px] font-medium",
+            character.has_metadata
+              ? "text-[var(--color-status-success)]"
+              : "text-[var(--color-text-muted)]",
           )}
-          aria-hidden="true"
-        />
-      </Button>
-
-      {open && (
-        <div
-          className={cn(
-            "absolute right-0 top-full z-50 mt-1 min-w-48",
-            "rounded-[var(--radius-md)] border border-[var(--color-border-default)]",
-            "bg-[var(--color-surface-primary)] shadow-lg",
-            "py-1",
-          )}
-          data-testid="go-to-character-dropdown"
         >
-          {usage.map((entry) => (
-            <Link
-              key={entry.link_id}
-              to="/projects/$projectId/characters/$characterId"
-              params={{
-                projectId: String(entry.project_id),
-                characterId: String(entry.project_character_id),
-              }}
-              search={{ tab: undefined }}
-              onClick={(e) => e.stopPropagation()}
-              className={cn(
-                "flex items-center justify-between gap-3 px-3 py-2",
-                "text-sm text-[var(--color-text-primary)]",
-                "hover:bg-[var(--color-surface-hover)]",
-                "transition-colors",
-              )}
-            >
-              <span className="truncate">{entry.project_name}</span>
-              <ArrowRight
-                size={14}
-                className="shrink-0 text-[var(--color-text-muted)]"
-                aria-hidden="true"
-              />
-            </Link>
-          ))}
-        </div>
-      )}
+          {character.has_metadata ? <Check size={12} /> : <Minus size={12} />}
+          Meta
+        </span>
+      </div>
     </div>
   );
 }

@@ -17,8 +17,8 @@ import {
 import { PROVENANCE } from "@/features/images/types";
 import type { ImageVariant } from "@/features/images/types";
 import { findVariantForTrack } from "@/features/images/utils";
-import { useTracks } from "@/features/scene-catalog/hooks/use-tracks";
-import type { Track } from "@/features/scene-catalog/types";
+import { useTracks } from "@/features/scene-catalogue/hooks/use-tracks";
+import type { Track } from "@/features/scene-catalogue/types";
 
 interface TrackImageDatum {
   track: Track;

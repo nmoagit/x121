@@ -12,12 +12,20 @@ export const sceneKeys = {
     [...sceneKeys.all, "character", characterId] as const,
 };
 
-export function useCharacterScenes(characterId: number) {
+/**
+ * Fetch scenes for a character.
+ *
+ * When `hasGenerating` is true the query polls every 3 seconds so that
+ * status transitions (e.g. generating → generated) are picked up promptly
+ * without waiting for the default staleTime.
+ */
+export function useCharacterScenes(characterId: number, hasGenerating = false) {
   return useQuery({
     queryKey: sceneKeys.byCharacter(characterId),
     queryFn: () =>
       api.get<Scene[]>(`/characters/${characterId}/scenes`),
     enabled: characterId > 0,
+    refetchInterval: hasGenerating ? 3000 : false,
   });
 }
 

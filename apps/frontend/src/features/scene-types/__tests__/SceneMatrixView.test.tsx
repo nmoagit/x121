@@ -3,51 +3,19 @@ import { describe, expect, it } from "vitest";
 import { renderWithProviders } from "@/lib/test-utils";
 
 import { SceneMatrixView } from "../SceneMatrixView";
-import type { MatrixCell, SceneType } from "../types";
+import type { MatrixCell } from "../types";
+
+import { makeSceneType } from "./fixtures";
 
 /* --------------------------------------------------------------------------
    Fixtures
    -------------------------------------------------------------------------- */
 
-const MOCK_SCENE_TYPE: SceneType = {
+const MOCK_SCENE_TYPE = makeSceneType({
   id: 1,
-  project_id: null,
   name: "Close-up Portrait",
-  slug: "close_up_portrait",
-  status_id: 1,
-  description: null,
-  workflow_json: null,
-  lora_config: null,
-  model_config: null,
   prompt_template: "Photo of {character_name}",
-  negative_prompt_template: null,
-  prompt_start_clip: null,
-  negative_prompt_start_clip: null,
-  prompt_continuation_clip: null,
-  negative_prompt_continuation_clip: null,
-  target_duration_secs: null,
-  segment_duration_secs: null,
-  duration_tolerance_secs: 2,
-  transition_segment_index: null,
-  generation_params: null,
-  sort_order: 0,
-  is_active: true,
-  has_clothes_off_transition: false,
-  is_studio_level: true,
-  parent_scene_type_id: null,
-  depth: 0,
-  generation_strategy: "platform_orchestrated",
-  expected_chunks: null,
-  chunk_output_pattern: null,
-  auto_retry_enabled: false,
-  auto_retry_max_attempts: 3,
-  auto_retry_trigger_checks: null,
-  auto_retry_seed_variation: true,
-  auto_retry_cfg_jitter: null,
-  deleted_at: null,
-  created_at: "2026-02-21T00:00:00Z",
-  updated_at: "2026-02-21T00:00:00Z",
-};
+});
 
 const MOCK_CHARACTERS = [
   { id: 1, name: "Alice" },

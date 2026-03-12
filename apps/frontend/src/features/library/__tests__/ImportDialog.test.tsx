@@ -1,4 +1,4 @@
-import { fireEvent, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import { renderWithProviders } from "@/lib/test-utils";
@@ -9,16 +9,16 @@ import type { LibraryCharacter } from "../types";
 const MOCK_CHARACTER: LibraryCharacter = {
   id: 1,
   name: "Alice",
-  source_character_id: null,
-  source_project_id: null,
-  master_metadata: { hair: "blonde", eyes: "blue", height: "170cm" },
-  tags: ["hero"],
-  description: "A brave adventurer",
-  thumbnail_path: null,
-  is_published: true,
-  created_by_id: 1,
+  project_id: 10,
+  project_name: "Fantasy Project",
+  group_name: null,
+  hero_variant_id: null,
+  scene_count: 3,
+  image_count: 5,
+  clip_count: 2,
+  has_metadata: true,
+  status_id: 1,
   created_at: "2026-02-22T10:00:00Z",
-  updated_at: "2026-02-22T10:00:00Z",
 };
 
 vi.mock("@/lib/api", () => ({
@@ -29,7 +29,7 @@ vi.mock("@/lib/api", () => ({
       project_id: 5,
       library_character_id: 1,
       project_character_id: 42,
-      linked_fields: ["hair", "eyes", "height"],
+      linked_fields: [],
       imported_at: "2026-02-22T12:00:00Z",
       created_at: "2026-02-22T12:00:00Z",
       updated_at: "2026-02-22T12:00:00Z",
@@ -58,7 +58,7 @@ describe("ImportDialog", () => {
     expect(screen.getByText("My Project")).toBeInTheDocument();
   });
 
-  it("shows linkable metadata fields", () => {
+  it("shows no linkable fields message for cross-project characters", () => {
     renderWithProviders(
       <ImportDialog
         open={true}
@@ -68,27 +68,8 @@ describe("ImportDialog", () => {
       />,
     );
 
-    expect(screen.getByTestId("field-list")).toBeInTheDocument();
-    expect(screen.getByText("hair")).toBeInTheDocument();
-    expect(screen.getByText("eyes")).toBeInTheDocument();
-    expect(screen.getByText("height")).toBeInTheDocument();
-  });
-
-  it("has a toggle all button", () => {
-    renderWithProviders(
-      <ImportDialog
-        open={true}
-        onClose={onClose}
-        character={MOCK_CHARACTER}
-        projectId={5}
-      />,
-    );
-
-    const toggleBtn = screen.getByTestId("toggle-all-fields");
-    expect(toggleBtn).toHaveTextContent("Deselect all");
-
-    fireEvent.click(toggleBtn);
-    expect(toggleBtn).toHaveTextContent("Select all");
+    // No linkable fields in the new cross-project view.
+    expect(screen.getByText(/No linkable metadata fields/)).toBeInTheDocument();
   });
 
   it("has import and cancel buttons", () => {

@@ -1,121 +1,58 @@
 /**
  * Character library browser grid with search/filter (PRD-60).
  *
- * Displays all library characters the current user can see,
- * with search filtering, scene type/track filtering, and an import callback.
+ * Displays all characters across all projects in a read-only browsing view,
+ * with debounced server-side search (name, project, group), grid/list toggle,
+ * and a character preview modal.
  */
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { Button, Input, Select, Spinner } from "@/components";
-import { useSceneCatalog } from "@/features/scene-catalog/hooks/use-scene-catalog";
-import { useTracks } from "@/features/scene-catalog/hooks/use-tracks";
+import { Input, Spinner } from "@/components";
 import { cn } from "@/lib/cn";
-import { toSelectOptions } from "@/lib/select-utils";
-import { Search, X } from "@/tokens/icons";
+import { LayoutGrid, List, Search } from "@/tokens/icons";
 
-import { LibraryCharacterCard } from "./LibraryCharacterCard";
-import { type LibraryFilters, useLibraryCharacters, useLibraryUsage } from "./hooks/use-library";
+import { LibraryCharacterCard, LibraryCharacterRow } from "./LibraryCharacterCard";
+import { LibraryCharacterModal } from "./LibraryCharacterModal";
+import { type LibraryFilters, useLibraryCharacters } from "./hooks/use-library";
 import type { LibraryCharacter } from "./types";
 
-interface CharacterLibraryBrowserProps {
-  onSelect?: (character: LibraryCharacter) => void;
-  onImport?: (character: LibraryCharacter) => void;
-}
+const DEBOUNCE_MS = 300;
 
-/** Wrapper that pre-fetches usage data for a single card. */
-function LibraryCardWithUsage({
-  character,
-  onSelect,
-  onImport,
-}: {
-  character: LibraryCharacter;
-  onSelect?: (character: LibraryCharacter) => void;
-  onImport?: (character: LibraryCharacter) => void;
-}) {
-  const { data: usage } = useLibraryUsage(character.id);
-  return (
-    <LibraryCharacterCard
-      character={character}
-      usageCount={usage?.length ?? 0}
-      usage={usage ?? []}
-      onSelect={onSelect}
-      onImport={onImport}
-    />
-  );
-}
+type ViewMode = "grid" | "list";
 
-export function CharacterLibraryBrowser({ onSelect, onImport }: CharacterLibraryBrowserProps) {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedSceneTypeId, setSelectedSceneTypeId] = useState("");
-  const [selectedTrackId, setSelectedTrackId] = useState("");
+export function CharacterLibraryBrowser() {
+  const [searchInput, setSearchInput] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [viewMode, setViewMode] = useState<ViewMode>("grid");
+  const [selectedCharacter, setSelectedCharacter] = useState<LibraryCharacter | null>(null);
 
-  // Build API-level filters from selected IDs.
+  // Debounce the search input
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchInput);
+    }, DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
+
+  // Build API-level filters from debounced search.
   const filters: LibraryFilters | undefined = useMemo(() => {
-    const sceneTypeIds = selectedSceneTypeId ? [Number(selectedSceneTypeId)] : undefined;
-    const trackIds = selectedTrackId ? [Number(selectedTrackId)] : undefined;
-    if (!sceneTypeIds && !trackIds) return undefined;
-    return { sceneTypeIds, trackIds };
-  }, [selectedSceneTypeId, selectedTrackId]);
+    const search = debouncedSearch.trim() || undefined;
+    if (!search) return undefined;
+    return { search };
+  }, [debouncedSearch]);
 
   const { data: characters, isLoading, error } = useLibraryCharacters(filters);
 
-  // Fetch scene types and tracks for the filter dropdowns.
-  const { data: sceneCatalog } = useSceneCatalog();
-  const { data: tracks } = useTracks();
-
-  const sceneTypeOptions = useMemo(
-    () => toSelectOptions(sceneCatalog?.filter((st) => st.is_active)),
-    [sceneCatalog],
-  );
-
-  const trackOptions = useMemo(
-    () => toSelectOptions(tracks?.filter((t) => t.is_active)),
-    [tracks],
-  );
-
-  const hasActiveFilters = selectedSceneTypeId || selectedTrackId;
-
-  const clearFilters = useCallback(() => {
-    setSelectedSceneTypeId("");
-    setSelectedTrackId("");
+  const handleSelect = useCallback((character: LibraryCharacter) => {
+    setSelectedCharacter(character);
   }, []);
 
-  // Client-side text search on top of server-filtered results.
-  const filtered = useMemo(() => {
-    if (!characters) return [];
-    if (!searchQuery.trim()) return characters;
-    const query = searchQuery.toLowerCase();
-    return characters.filter(
-      (c) =>
-        c.name.toLowerCase().includes(query) ||
-        c.description?.toLowerCase().includes(query) ||
-        c.tags.some((t) => t.toLowerCase().includes(query)),
-    );
-  }, [characters, searchQuery]);
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-12" data-testid="library-loading">
-        <Spinner size="md" />
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div
-        className="text-sm text-[var(--color-status-error)] text-center py-8"
-        data-testid="library-error"
-      >
-        Failed to load library characters.
-      </div>
-    );
-  }
+  const resultCount = characters?.length ?? 0;
 
   return (
     <div data-testid="library-browser">
-      {/* Search bar */}
+      {/* Search bar — always rendered to preserve focus */}
       <div className="mb-4">
         <div className="relative">
           <Search
@@ -124,50 +61,72 @@ export function CharacterLibraryBrowser({ onSelect, onImport }: CharacterLibrary
             aria-hidden="true"
           />
           <Input
-            placeholder="Search library characters..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search by name, project, or group..."
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
             className="pl-9"
             data-testid="library-search"
           />
         </div>
       </div>
 
-      {/* Scene Type & Track filters */}
-      <div className="flex flex-wrap items-end gap-3 mb-4">
-        <div className="min-w-[180px]">
-          <Select
-            label="Scene Type"
-            placeholder="All scene types"
-            options={sceneTypeOptions}
-            value={selectedSceneTypeId}
-            onChange={setSelectedSceneTypeId}
-          />
+      {/* Results count + view toggle */}
+      {!isLoading && !error && (
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-xs text-[var(--color-text-muted)]">
+            {resultCount} character{resultCount !== 1 ? "s" : ""}
+            {debouncedSearch && " matching"}
+          </p>
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => setViewMode("grid")}
+              className={cn(
+                "p-1.5 rounded-[var(--radius-sm)] transition-colors",
+                viewMode === "grid"
+                  ? "bg-[var(--color-surface-tertiary)] text-[var(--color-text-primary)]"
+                  : "text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]",
+              )}
+              aria-label="Grid view"
+            >
+              <LayoutGrid size={16} />
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode("list")}
+              className={cn(
+                "p-1.5 rounded-[var(--radius-sm)] transition-colors",
+                viewMode === "list"
+                  ? "bg-[var(--color-surface-tertiary)] text-[var(--color-text-primary)]"
+                  : "text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]",
+              )}
+              aria-label="List view"
+            >
+              <List size={16} />
+            </button>
+          </div>
         </div>
-        <div className="min-w-[180px]">
-          <Select
-            label="Track"
-            placeholder="All tracks"
-            options={trackOptions}
-            value={selectedTrackId}
-            onChange={setSelectedTrackId}
-          />
+      )}
+
+      {/* Loading */}
+      {isLoading && (
+        <div className="flex items-center justify-center py-12" data-testid="library-loading">
+          <Spinner size="md" />
         </div>
-        {hasActiveFilters && (
-          <Button variant="ghost" size="sm" icon={<X />} onClick={clearFilters}>
-            Clear Filters
-          </Button>
-        )}
-      </div>
+      )}
 
-      {/* Results count */}
-      <p className="text-xs text-[var(--color-text-muted)] mb-3">
-        {filtered.length} character{filtered.length !== 1 ? "s" : ""}
-        {(searchQuery || hasActiveFilters) && " matching"}
-      </p>
+      {/* Error */}
+      {error && (
+        <div
+          className="text-sm text-[var(--color-status-error)] text-center py-8"
+          data-testid="library-error"
+        >
+          Failed to load library characters.
+        </div>
+      )}
 
-      {/* Grid */}
-      {filtered.length === 0 ? (
+      {/* Grid / List */}
+      {!isLoading && !error && resultCount === 0 && (
         <div
           className={cn(
             "text-sm text-[var(--color-text-muted)] text-center py-12",
@@ -176,24 +135,46 @@ export function CharacterLibraryBrowser({ onSelect, onImport }: CharacterLibrary
           )}
           data-testid="library-empty"
         >
-          {searchQuery || hasActiveFilters
-            ? "No characters match your filters."
-            : "No library characters yet."}
+          {debouncedSearch
+            ? "No characters match your search."
+            : "No characters found."}
         </div>
-      ) : (
+      )}
+
+      {!isLoading && !error && resultCount > 0 && viewMode === "grid" && (
         <div
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
+          className="grid grid-cols-2 sm:grid-cols-5 lg:grid-cols-5 xl:grid-cols-6 gap-4"
           data-testid="library-grid"
         >
-          {filtered.map((character) => (
-            <LibraryCardWithUsage
+          {characters?.map((character) => (
+            <LibraryCharacterCard
               key={character.id}
               character={character}
-              onSelect={onSelect}
-              onImport={onImport}
+              onSelect={handleSelect}
             />
           ))}
         </div>
+      )}
+
+      {!isLoading && !error && resultCount > 0 && viewMode === "list" && (
+        <div className="flex flex-col gap-1" data-testid="library-list">
+          {characters?.map((character) => (
+            <LibraryCharacterRow
+              key={character.id}
+              character={character}
+              onSelect={handleSelect}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Character preview modal */}
+      {selectedCharacter && (
+        <LibraryCharacterModal
+          character={selectedCharacter}
+          open
+          onClose={() => setSelectedCharacter(null)}
+        />
       )}
     </div>
   );

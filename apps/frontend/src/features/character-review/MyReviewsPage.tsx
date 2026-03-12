@@ -5,6 +5,7 @@ import { Spinner } from "@/components/primitives";
 import { ReviewStatusBadge } from "./ReviewStatusBadge";
 import { useMyReviewQueue, useStartReview } from "./hooks/use-character-review";
 import type { ReviewQueueCharacter } from "./types";
+import { useSetPageTitle } from "@/hooks/useSetPageTitle";
 import { formatDate } from "@/lib/format";
 
 type SortField = "assigned_at" | "character_name" | "project_name";
@@ -18,6 +19,8 @@ function sortQueue(items: ReviewQueueCharacter[], sortBy: SortField): ReviewQueu
 }
 
 export function MyReviewsPage() {
+  useSetPageTitle("My Reviews");
+
   const { data, isPending, isError } = useMyReviewQueue();
   const startReview = useStartReview();
   const navigate = useNavigate();
@@ -31,8 +34,7 @@ export function MyReviewsPage() {
 
   return (
     <div className="p-6 space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-text-primary">My Reviews</h1>
+      <div className="flex items-center justify-end">
         <div className="flex items-center gap-2">
           <span className="text-sm text-text-muted">Sort by:</span>
           <select
@@ -64,7 +66,7 @@ export function MyReviewsPage() {
                     projectId: String(item.project_id),
                     characterId: String(item.character_id),
                   },
-                  search: { tab: undefined },
+                  search: { tab: undefined, scene: undefined },
                 })
               }
               onStart={() => startReview.mutate(item.assignment_id)}
@@ -89,7 +91,7 @@ interface QueueRowProps {
 function QueueRow({ item, onNavigate, onStart, isStarting }: QueueRowProps) {
   return (
     <div
-      className="flex items-center justify-between p-4 bg-surface-secondary rounded-lg border border-border-primary hover:border-action-primary cursor-pointer transition-colors"
+      className="flex items-center justify-between p-4 bg-surface-secondary rounded-[var(--radius-lg)] border border-border-primary hover:border-action-primary cursor-pointer transition-colors"
       role="button"
       tabIndex={0}
       onClick={onNavigate}

@@ -10,6 +10,7 @@ import { EmptyState } from "@/components/domain";
 import { Grid } from "@/components/layout";
 import { Button, Input, LoadingPane, Select, Toggle } from "@/components/primitives";
 import { Stack } from "@/components/layout";
+import { useSetPageTitle } from "@/hooks/useSetPageTitle";
 import { FolderKanban, Plus } from "@/tokens/icons";
 
 import { ProjectCard } from "./components/ProjectCard";
@@ -40,6 +41,8 @@ const STATUS_FILTER_OPTIONS = [
    -------------------------------------------------------------------------- */
 
 export function ProjectListPage() {
+  useSetPageTitle("Projects", "Manage characters, scenes, and delivery across projects.");
+
   const navigate = useNavigate();
   const { data: projects, isLoading, error } = useProjects();
   const createProject = useCreateProject();
@@ -120,24 +123,8 @@ export function ProjectListPage() {
 
   return (
     <Stack gap={6}>
-      {/* Page header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <div className="flex items-center gap-[var(--spacing-2)]">
-            <FolderKanban
-              size={24}
-              className="text-[var(--color-text-muted)]"
-              aria-hidden
-            />
-            <h1 className="text-xl font-semibold text-[var(--color-text-primary)]">
-              Projects
-            </h1>
-          </div>
-          <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-            Manage characters, scenes, and delivery across projects.
-          </p>
-        </div>
-
+      {/* Page header actions */}
+      <div className="flex items-center justify-end">
         <Button
           icon={<Plus size={16} />}
           onClick={() => setModalOpen(true)}

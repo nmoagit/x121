@@ -24,8 +24,8 @@ import {
 } from "@/features/characters/tabs/matchDroppedVideos";
 import { SOURCE_KEY_BIO, SOURCE_KEY_TOV } from "@/features/characters/types";
 import { fetchVariantTypeSet, imageVariantKeys } from "@/features/images/hooks/use-image-variants";
-import { useSceneCatalog } from "@/features/scene-catalog/hooks/use-scene-catalog";
-import { useTracks } from "@/features/scene-catalog/hooks/use-tracks";
+import { useSceneCatalogue } from "@/features/scene-catalogue/hooks/use-scene-catalogue";
+import { useTracks } from "@/features/scene-catalogue/hooks/use-tracks";
 import { sceneKeys } from "@/features/scenes/hooks/useCharacterScenes";
 import type { Scene } from "@/features/scenes/types";
 import { sceneHasVideo } from "@/features/scenes/types";
@@ -38,7 +38,7 @@ import {
   importVideoClip,
   uploadImageVariant,
 } from "../lib/bulk-asset-upload";
-import type { Character, CharacterDropPayload } from "../types";
+import type { Character, CharacterDropPayload, CharacterGroup, FolderDropResult } from "../types";
 import { useBulkCreateCharacters, useProjectCharacters } from "./use-project-characters";
 
 /* --------------------------------------------------------------------------
@@ -61,11 +61,12 @@ export function useCharacterImport(projectId: number) {
   const { addToast } = useToast();
   const bulkCreate = useBulkCreateCharacters(projectId);
   const { data: characters } = useProjectCharacters(projectId);
-  const { data: sceneCatalog } = useSceneCatalog();
+  const { data: sceneCatalogue } = useSceneCatalogue();
   const { data: tracks } = useTracks();
 
   const [importNames, setImportNames] = useState<string[]>([]);
   const [importPayloads, setImportPayloads] = useState<CharacterDropPayload[]>([]);
+  const [importResult, setImportResult] = useState<FolderDropResult | null>(null);
   const [importOpen, setImportOpen] = useState(false);
   const [importProgress, setImportProgress] = useState<ImportProgress | null>(null);
   const browseFolderRef = useRef<(() => void) | null>(null);
@@ -92,9 +93,15 @@ export function useCharacterImport(projectId: number) {
 
   /* --- Asset-aware handlers --- */
 
-  function handleFolderDrop(payloads: CharacterDropPayload[]) {
-    setImportPayloads(payloads);
-    setImportNames(payloads.map((p) => p.rawName));
+  function handleFolderDrop(result: FolderDropResult) {
+    setImportResult(result);
+    // Flatten all grouped payloads for the modal's character list
+    const allPayloads: CharacterDropPayload[] = [];
+    for (const payloads of result.groupedPayloads.values()) {
+      allPayloads.push(...payloads);
+    }
+    setImportPayloads(allPayloads);
+    setImportNames(allPayloads.map((p) => p.rawName));
     setImportOpen(true);
   }
 
@@ -113,6 +120,11 @@ export function useCharacterImport(projectId: number) {
         return;
       }
 
+      const totalCount = newPayloads.length + existingPayloads.length;
+      console.info(
+        `[Import] Starting import of ${totalCount} character(s) for project ${projectId}`,
+      );
+
       const errors: string[] = [];
       const nameToIdMap = new Map<string, number>();
 
@@ -123,11 +135,63 @@ export function useCharacterImport(projectId: number) {
         );
       };
 
+      // Phase 0: Create missing groups (for grouped/project imports)
+      const groupNameToId = new Map<string, number>();
+      const uniqueGroupNames = [
+        ...new Set(
+          [...newPayloads, ...existingPayloads]
+            .filter((p) => p.groupName)
+            .map((p) => p.groupName!),
+        ),
+      ];
+
+      if (uniqueGroupNames.length > 0) {
+        console.info(
+          `[Import] Phase 0: Resolving ${uniqueGroupNames.length} group(s): ${uniqueGroupNames.join(", ")}`,
+        );
+        const existingGroups = await api.get<CharacterGroup[]>(
+          `/projects/${projectId}/groups`,
+        );
+        for (const g of existingGroups) {
+          groupNameToId.set(g.name.toLowerCase(), g.id);
+        }
+        let groupsCreated = 0;
+        let groupsExisted = 0;
+        for (const name of uniqueGroupNames) {
+          if (!groupNameToId.has(name.toLowerCase())) {
+            try {
+              const created = await api.post<CharacterGroup>(
+                `/projects/${projectId}/groups`,
+                { name },
+              );
+              groupNameToId.set(name.toLowerCase(), created.id);
+              groupsCreated++;
+              console.info(`[Import] Created group "${name}" (id=${created.id})`);
+            } catch (err) {
+              const msg = `Failed to create group "${name}": ${String(err)}`;
+              errors.push(msg);
+              console.warn(`[Import] ${msg}`);
+              addToast({ message: msg, variant: "error" });
+            }
+          } else {
+            groupsExisted++;
+          }
+        }
+        if (groupsCreated > 0 || groupsExisted > 0) {
+          console.info(
+            `[Import] Groups: ${groupsCreated} created, ${groupsExisted} already existed`,
+          );
+        }
+      }
+
       // Phase 1: Create new characters
       const newNames = newPayloads.map((p) => p.rawName);
       let createdCharacters: Character[] = [];
 
       if (newNames.length > 0) {
+        console.info(
+          `[Import] Phase 1: Creating ${newNames.length} character(s)`,
+        );
         setImportProgress({
           phase: "creating",
           current: 0,
@@ -135,20 +199,56 @@ export function useCharacterImport(projectId: number) {
           errors: [],
         });
 
-        try {
-          createdCharacters = await bulkCreate.mutateAsync({
-            names: newNames,
-            group_id: groupId,
-          });
-          for (const char of createdCharacters) {
-            nameToIdMap.set(char.name.toLowerCase(), char.id);
+        // Check if payloads have group assignments from folder structure
+        const hasGroupAssignments = newPayloads.some((p) => p.groupName);
+
+        if (hasGroupAssignments) {
+          // Per-group bulk creation
+          const byGroup = new Map<number | undefined, string[]>();
+          for (const p of newPayloads) {
+            const gId = p.groupName
+              ? groupNameToId.get(p.groupName.toLowerCase())
+              : groupId;
+            const arr = byGroup.get(gId) ?? [];
+            arr.push(p.rawName);
+            byGroup.set(gId, arr);
           }
-        } catch (err) {
-          errors.push(`Failed to create characters: ${String(err)}`);
-          setImportProgress(null);
-          setImportOpen(false);
-          addToast({ message: "Character import failed", variant: "error" });
-          return;
+
+          try {
+            for (const [gId, names] of byGroup) {
+              const created = await bulkCreate.mutateAsync({
+                names,
+                group_id: gId,
+              });
+              for (const char of created) {
+                nameToIdMap.set(char.name.toLowerCase(), char.id);
+              }
+              createdCharacters.push(...created);
+            }
+          } catch (err) {
+            errors.push(`Failed to create characters: ${String(err)}`);
+            setImportProgress(null);
+            setImportOpen(false);
+            addToast({ message: "Character import failed", variant: "error" });
+            return;
+          }
+        } else {
+          // Single bulk creation (existing behavior)
+          try {
+            createdCharacters = await bulkCreate.mutateAsync({
+              names: newNames,
+              group_id: groupId,
+            });
+            for (const char of createdCharacters) {
+              nameToIdMap.set(char.name.toLowerCase(), char.id);
+            }
+          } catch (err) {
+            errors.push(`Failed to create characters: ${String(err)}`);
+            setImportProgress(null);
+            setImportOpen(false);
+            addToast({ message: "Character import failed", variant: "error" });
+            return;
+          }
         }
       }
 
@@ -195,8 +295,13 @@ export function useCharacterImport(projectId: number) {
           .map((a) => ({ charId, asset: a, charName: p.rawName }));
       });
 
+      console.info(
+        `[Import] Phase 1 complete: ${createdCharacters.length} character(s) created`,
+      );
+
       // Phase 3: Upload images (skip variant_types that already exist)
       if (imageAssets.length > 0) {
+        console.info(`[Import] Phase 2: Uploading ${imageAssets.length} image(s)`);
         setImportProgress({
           phase: "uploading-images",
           current: 0,
@@ -255,7 +360,11 @@ export function useCharacterImport(projectId: number) {
 
       let metadataUploaded = 0;
       let skippedMetadata = 0;
+      let invalidJsonCount = 0;
       if (metadataPayloads.length > 0) {
+        console.info(
+          `[Import] Phase 3: Uploading metadata for ${metadataPayloads.length} character(s)`,
+        );
         setImportProgress({
           phase: "uploading-metadata",
           current: 0,
@@ -277,12 +386,32 @@ export function useCharacterImport(projectId: number) {
 
           const draft: Record<string, unknown> = {};
 
-          // Parse all available JSON files
+          // Parse all available JSON files with validation
           const [bioData, tovData, metaData] = await Promise.all([
             payload.bioJson ? readFileAsJson(payload.bioJson) : null,
             payload.tovJson ? readFileAsJson(payload.tovJson) : null,
             payload.metadataJson ? readFileAsJson(payload.metadataJson) : null,
           ]);
+
+          // Validate JSON parse results — report invalid files
+          if (payload.bioJson && bioData === null) {
+            const msg = `Invalid JSON: bio.json for "${payload.rawName}" — file skipped`;
+            errors.push(msg);
+            console.warn(`[Import] ${msg}`);
+            invalidJsonCount++;
+          }
+          if (payload.tovJson && tovData === null) {
+            const msg = `Invalid JSON: tov.json for "${payload.rawName}" — file skipped`;
+            errors.push(msg);
+            console.warn(`[Import] ${msg}`);
+            invalidJsonCount++;
+          }
+          if (payload.metadataJson && metaData === null) {
+            const msg = `Invalid JSON: metadata.json for "${payload.rawName}" — file skipped`;
+            errors.push(msg);
+            console.warn(`[Import] ${msg}`);
+            invalidJsonCount++;
+          }
 
           // bio.json + tov.json → generate + flatten (lower priority)
           if (bioData || tovData) {
@@ -295,6 +424,11 @@ export function useCharacterImport(projectId: number) {
           if (metaData) {
             const flat = flattenMetadata(metaData);
             Object.assign(draft, flat);
+          }
+
+          // If no valid JSON data at all, skip the API call
+          if (Object.keys(draft).length === 0 && !bioData && !tovData) {
+            return "skipped" as const;
           }
 
           // Store raw sources (matching CharacterMetadataTab pattern)
@@ -316,11 +450,19 @@ export function useCharacterImport(projectId: number) {
             );
           }
         }
+
+        if (invalidJsonCount > 0) {
+          addToast({
+            message: `${invalidJsonCount} JSON file${invalidJsonCount > 1 ? "s" : ""} failed validation and ${invalidJsonCount > 1 ? "were" : "was"} skipped`,
+            variant: "warning",
+          });
+        }
       }
 
       // Phase 4: Import videos
       let skippedVideos = 0;
       if (videoAssets.length > 0) {
+        console.info(`[Import] Phase 4: Importing ${videoAssets.length} video(s)`);
         setImportProgress({
           phase: "importing-videos",
           current: 0,
@@ -333,8 +475,8 @@ export function useCharacterImport(projectId: number) {
         const videoTasks = videoAssets.map(({ charId, asset, charName }) => async () => {
           const parsed = parseFilename(asset.file.name, trackSlugs);
 
-          // Look up scene_type_id from catalog by slug
-          const sceneType = sceneCatalog?.find((st) => st.slug === parsed.sceneSlug);
+          // Look up scene_type_id from catalogue by slug
+          const sceneType = sceneCatalogue?.find((st) => st.slug === parsed.sceneSlug);
           if (!sceneType) {
             errors.push(
               `No scene type "${parsed.sceneSlug}" for video "${asset.file.name}" (${charName})`,
@@ -392,6 +534,9 @@ export function useCharacterImport(projectId: number) {
         queryClient.invalidateQueries({
           queryKey: ["projects", projectId, "characters"],
         }),
+        queryClient.invalidateQueries({
+          queryKey: ["projects", projectId, "groups"],
+        }),
         queryClient.invalidateQueries({ queryKey: imageVariantKeys.all }),
         queryClient.invalidateQueries({ queryKey: sceneKeys.all }),
       ]);
@@ -399,6 +544,7 @@ export function useCharacterImport(projectId: number) {
       setImportOpen(false);
       setImportNames([]);
       setImportPayloads([]);
+      setImportResult(null);
       setImportProgress(null);
 
       // Summary toast
@@ -415,6 +561,10 @@ export function useCharacterImport(projectId: number) {
       if (vidCount > 0) parts.push(`${vidCount} video${vidCount > 1 ? "s" : ""} imported`);
       if (skippedMetadata > 0) parts.push(`${skippedMetadata} metadata skipped`);
       if (skippedVideos > 0) parts.push(`${skippedVideos} video${skippedVideos > 1 ? "s" : ""} skipped`);
+      if (uniqueGroupNames.length > 0) parts.push(`${uniqueGroupNames.length} group${uniqueGroupNames.length > 1 ? "s" : ""} resolved`);
+      if (invalidJsonCount > 0) parts.push(`${invalidJsonCount} invalid JSON${invalidJsonCount > 1 ? "s" : ""} skipped`);
+
+      console.info(`[Import] Complete: ${parts.join(", ")}${errors.length > 0 ? ` (${errors.length} error${errors.length > 1 ? "s" : ""})` : ""}`);
 
       if (errors.length > 0) {
         addToast({
@@ -425,7 +575,7 @@ export function useCharacterImport(projectId: number) {
         addToast({ message: parts.join(", "), variant: "success" });
       }
     },
-    [bulkCreate, characters, sceneCatalog, tracks, projectId, queryClient],
+    [bulkCreate, characters, sceneCatalogue, tracks, projectId, queryClient],
   );
 
   function closeImport() {
@@ -441,6 +591,7 @@ export function useCharacterImport(projectId: number) {
   return {
     importNames,
     importPayloads,
+    importResult,
     importOpen,
     importProgress,
     handleImportDrop,

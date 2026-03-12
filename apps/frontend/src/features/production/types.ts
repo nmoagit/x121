@@ -34,12 +34,13 @@ export interface MatrixConfig {
   scene_type_ids: number[];
 }
 
-/** A production run cell from the server. */
+/** A production run cell from the server (matrix endpoint includes names). */
 export interface ProductionRunCell {
   id: number;
   run_id: number;
   character_id: number;
   scene_type_id: number;
+  track_id: number | null;
   variant_label: string;
   status_id: number;
   scene_id: number | null;
@@ -48,6 +49,12 @@ export interface ProductionRunCell {
   error_message: string | null;
   created_at: string;
   updated_at: string;
+  /** Scene type name — present in matrix response. */
+  scene_type_name?: string;
+  /** Track name — present in matrix response when track_id is set. */
+  track_name?: string | null;
+  /** Whether a matching seed image exists for this character + track. */
+  has_seed?: boolean;
 }
 
 /* --------------------------------------------------------------------------
@@ -63,6 +70,17 @@ export interface CreateProductionRunRequest {
   scene_type_ids: number[];
   estimated_gpu_hours?: number | null;
   estimated_disk_gb?: number | null;
+  /** When true, check for existing approved scenes and pre-mark those cells as completed. */
+  retrospective?: boolean;
+}
+
+/** An entry from the enabled-scene-types endpoint. */
+export interface EnabledSceneTypeEntry {
+  character_id: number;
+  scene_type_id: number;
+  scene_type_name: string;
+  track_id: number | null;
+  track_name: string | null;
 }
 
 /** Request body for submitting cells. */
@@ -87,8 +105,10 @@ export interface ProductionRunProgress {
 
 export type CellStatus =
   | "not_started"
+  | "no_seed"
   | "blocked"
   | "queued"
+  | "in_progress"
   | "generating"
   | "qa_review"
   | "approved"
@@ -103,8 +123,10 @@ export type CellStatus =
 /** Cell status labels for display. */
 export const CELL_STATUS_LABELS: Record<CellStatus, string> = {
   not_started: "Not Started",
+  no_seed: "No Seed",
   blocked: "Blocked",
   queued: "Queued",
+  in_progress: "In Progress",
   generating: "Generating",
   qa_review: "QA Review",
   approved: "Approved",
@@ -116,8 +138,10 @@ export const CELL_STATUS_LABELS: Record<CellStatus, string> = {
 /** Cell status to Badge variant mapping. */
 export const CELL_STATUS_VARIANT: Record<CellStatus, BadgeVariant> = {
   not_started: "default",
+  no_seed: "warning",
   blocked: "warning",
   queued: "info",
+  in_progress: "info",
   generating: "info",
   qa_review: "warning",
   approved: "success",

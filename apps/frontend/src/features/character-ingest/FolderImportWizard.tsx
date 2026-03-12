@@ -171,7 +171,7 @@ export function FolderImportWizard({
                 names, and mixed-case names are all accepted.
               </p>
               <textarea
-                className="min-h-[200px] w-full rounded-md border border-input bg-background px-3 py-2 font-mono text-sm"
+                className="min-h-[200px] w-full rounded-[var(--radius-md)] border border-input bg-background px-3 py-2 font-mono text-sm"
                 placeholder={"aj_riley\nmr_simons\ntesa_von_doom\nxena"}
                 value={textInput}
                 onChange={(e) => setTextInput(e.target.value)}
@@ -332,7 +332,7 @@ function ConfirmPreview({ entries }: { entries: CharacterIngestEntry[] }) {
           </>
         )}
       </p>
-      <div className="max-h-48 overflow-y-auto rounded-md border p-3">
+      <div className="max-h-48 overflow-y-auto rounded-[var(--radius-md)] border p-3">
         {included.map((entry) => (
           <div key={entry.id} className="flex items-center gap-2 py-1">
             <span>{entry.confirmed_name ?? entry.parsed_name}</span>
