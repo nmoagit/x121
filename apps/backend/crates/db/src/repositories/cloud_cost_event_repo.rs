@@ -79,7 +79,7 @@ impl CloudCostEventRepo {
     ) -> Result<ProviderCostSummary, sqlx::Error> {
         sqlx::query_as::<_, ProviderCostSummary>(
             "SELECT \
-                COALESCE(SUM(amount_cents), 0) AS total_cost_cents, \
+                COALESCE(SUM(amount_cents), 0)::BIGINT AS total_cost_cents, \
                 COUNT(*) AS event_count \
              FROM cloud_cost_events \
              WHERE provider_id = $1 AND created_at >= $2 AND created_at <= $3",

@@ -109,6 +109,22 @@ pub struct CloudCostEvent {
     pub created_at: Timestamp,
 }
 
+/// A row from the `cloud_scaling_events` audit table.
+#[derive(Debug, Clone, FromRow, Serialize)]
+pub struct CloudScalingEvent {
+    pub id: DbId,
+    pub rule_id: DbId,
+    pub provider_id: DbId,
+    pub action: String,
+    pub reason: String,
+    pub instances_changed: i16,
+    pub queue_depth: i32,
+    pub current_count: i16,
+    pub budget_spent_cents: i64,
+    pub cooldown_remaining_secs: i32,
+    pub created_at: Timestamp,
+}
+
 // ---------------------------------------------------------------------------
 // Create / Update DTOs
 // ---------------------------------------------------------------------------
@@ -188,6 +204,20 @@ pub struct UpdateCloudScalingRule {
     pub cooldown_secs: Option<i32>,
     pub budget_limit_cents: Option<i64>,
     pub enabled: Option<bool>,
+}
+
+/// DTO for recording a scaling decision event.
+#[derive(Debug, Clone)]
+pub struct CreateCloudScalingEvent {
+    pub rule_id: DbId,
+    pub provider_id: DbId,
+    pub action: String,
+    pub reason: String,
+    pub instances_changed: i16,
+    pub queue_depth: i32,
+    pub current_count: i16,
+    pub budget_spent_cents: i64,
+    pub cooldown_remaining_secs: i32,
 }
 
 /// DTO for recording a cost event.

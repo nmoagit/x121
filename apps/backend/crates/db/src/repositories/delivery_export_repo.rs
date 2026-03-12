@@ -150,9 +150,8 @@ impl DeliveryExportRepo {
         project_id: DbId,
     ) -> Result<Vec<crate::models::delivery_export::CharacterDeliveryStatus>, sqlx::Error> {
         let completed = EXPORT_STATUS_ID_COMPLETED;
-        sqlx::query_as::<_, crate::models::delivery_export::CharacterDeliveryStatus>(
-            &format!(
-                "SELECT \
+        sqlx::query_as::<_, crate::models::delivery_export::CharacterDeliveryStatus>(&format!(
+            "SELECT \
                     c.id AS character_id, \
                     c.name AS character_name, \
                     CASE \
@@ -171,8 +170,7 @@ impl DeliveryExportRepo {
                  ) de ON TRUE \
                  WHERE c.project_id = $1 AND c.deleted_at IS NULL \
                  ORDER BY c.name"
-            ),
-        )
+        ))
         .bind(project_id)
         .fetch_all(pool)
         .await

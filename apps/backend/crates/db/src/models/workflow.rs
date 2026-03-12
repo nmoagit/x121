@@ -22,6 +22,7 @@ pub struct Workflow {
     pub json_content: serde_json::Value,
     pub discovered_params_json: Option<serde_json::Value>,
     pub validation_results_json: Option<serde_json::Value>,
+    pub last_validated_at: Option<Timestamp>,
     pub imported_from: Option<String>,
     pub imported_by: Option<DbId>,
     pub created_at: Timestamp,
@@ -66,4 +67,6 @@ pub struct ImportWorkflowRequest {
     pub name: String,
     pub description: Option<String>,
     pub json_content: serde_json::Value,
+    /// Original filename if imported from a file upload.
+    pub source_filename: Option<String>,
 }

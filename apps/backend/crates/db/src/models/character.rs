@@ -94,6 +94,9 @@ pub struct LibraryCharacterRow {
     pub group_name: Option<String>,
     pub hero_variant_id: Option<DbId>,
     pub scene_count: i64,
+    pub image_count: i64,
+    pub clip_count: i64,
+    pub has_metadata: bool,
     pub status_id: StatusId,
     pub created_at: Timestamp,
 }

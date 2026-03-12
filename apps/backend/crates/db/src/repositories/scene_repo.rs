@@ -4,7 +4,7 @@ use sqlx::PgPool;
 use x121_core::types::DbId;
 
 use crate::models::generation::UpdateSceneGeneration;
-use crate::models::scene::{CreateScene, Scene, UpdateScene};
+use crate::models::scene::{CreateScene, Scene, SceneWithVersion, UpdateScene};
 
 /// Column list shared across queries to avoid repetition.
 const COLUMNS: &str = "id, character_id, scene_type_id, image_variant_id, track_id, \
@@ -77,6 +77,46 @@ impl SceneRepo {
             .await
     }
 
+    /// List scenes for a character with the best video version ID and version count.
+    ///
+    /// Uses a LATERAL subquery to pick the best version per scene:
+    /// final with highest version_number > highest version_number.
+    /// This eliminates the N+1 query pattern where the frontend fetches
+    /// video versions for each scene individually.
+    pub async fn list_by_character_with_versions(
+        pool: &PgPool,
+        character_id: DbId,
+    ) -> Result<Vec<SceneWithVersion>, sqlx::Error> {
+        let cols = COLUMNS
+            .split(", ")
+            .map(|c| format!("s.{}", c.trim()))
+            .collect::<Vec<_>>()
+            .join(", ");
+        sqlx::query_as::<_, SceneWithVersion>(&format!(
+            "SELECT {cols},
+                        lv.id AS latest_version_id,
+                        COALESCE(vc.cnt, 0) AS version_count
+                 FROM scenes s
+                 LEFT JOIN LATERAL (
+                     SELECT v.id
+                     FROM scene_video_versions v
+                     WHERE v.scene_id = s.id AND v.deleted_at IS NULL
+                     ORDER BY v.is_final DESC, v.version_number DESC
+                     LIMIT 1
+                 ) lv ON true
+                 LEFT JOIN LATERAL (
+                     SELECT COUNT(*) AS cnt
+                     FROM scene_video_versions v
+                     WHERE v.scene_id = s.id AND v.deleted_at IS NULL
+                 ) vc ON true
+                 WHERE s.character_id = $1 AND s.deleted_at IS NULL
+                 ORDER BY s.created_at ASC"
+        ))
+        .bind(character_id)
+        .fetch_all(pool)
+        .await
+    }
+
     /// Update a scene. Only non-`None` fields in `input` are applied.
     ///
     /// Returns `None` if no row with the given `id` exists.
@@ -114,6 +154,17 @@ impl SceneRepo {
             .bind(input.generation_completed_at)
             .fetch_optional(pool)
             .await
+    }
+
+    /// Update only the `status_id` of a scene. Returns `true` if a row was updated.
+    pub async fn set_status(pool: &PgPool, id: DbId, status_id: i16) -> Result<bool, sqlx::Error> {
+        let result =
+            sqlx::query("UPDATE scenes SET status_id = $2 WHERE id = $1 AND deleted_at IS NULL")
+                .bind(id)
+                .bind(status_id)
+                .execute(pool)
+                .await?;
+        Ok(result.rows_affected() > 0)
     }
 
     /// Find a scene by ID, including soft-deleted rows. Used for parent-check on restore.
@@ -181,17 +232,19 @@ impl SceneRepo {
     ) -> Result<Option<Scene>, sqlx::Error> {
         let query = format!(
             "UPDATE scenes SET
-                total_segments_estimated = COALESCE($2, total_segments_estimated),
-                total_segments_completed = COALESCE($3, total_segments_completed),
-                actual_duration_secs = COALESCE($4, actual_duration_secs),
-                transition_segment_index = COALESCE($5, transition_segment_index),
-                generation_started_at = COALESCE($6, generation_started_at),
-                generation_completed_at = COALESCE($7, generation_completed_at)
+                status_id = COALESCE($2, status_id),
+                total_segments_estimated = COALESCE($3, total_segments_estimated),
+                total_segments_completed = COALESCE($4, total_segments_completed),
+                actual_duration_secs = COALESCE($5, actual_duration_secs),
+                transition_segment_index = COALESCE($6, transition_segment_index),
+                generation_started_at = COALESCE($7, generation_started_at),
+                generation_completed_at = COALESCE($8, generation_completed_at)
              WHERE id = $1 AND deleted_at IS NULL
              RETURNING {COLUMNS}"
         );
         sqlx::query_as::<_, Scene>(&query)
             .bind(id)
+            .bind(input.status_id)
             .bind(input.total_segments_estimated)
             .bind(input.total_segments_completed)
             .bind(input.actual_duration_secs)
@@ -200,6 +253,22 @@ impl SceneRepo {
             .bind(input.generation_completed_at)
             .fetch_optional(pool)
             .await
+    }
+
+    /// Set the image_variant_id for a scene (auto-resolve seed image).
+    pub async fn update_image_variant(
+        pool: &PgPool,
+        scene_id: DbId,
+        variant_id: DbId,
+    ) -> Result<bool, sqlx::Error> {
+        let result = sqlx::query(
+            "UPDATE scenes SET image_variant_id = $2 WHERE id = $1 AND deleted_at IS NULL",
+        )
+        .bind(scene_id)
+        .bind(variant_id)
+        .execute(pool)
+        .await?;
+        Ok(result.rows_affected() > 0)
     }
 
     /// Atomically increment `total_segments_completed` by 1.
@@ -228,6 +297,7 @@ impl SceneRepo {
     ) -> Result<Option<Scene>, sqlx::Error> {
         let query = format!(
             "UPDATE scenes SET
+                status_id = 3,
                 generation_completed_at = NOW(),
                 actual_duration_secs = $2
              WHERE id = $1 AND deleted_at IS NULL

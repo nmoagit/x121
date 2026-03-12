@@ -8,7 +8,7 @@ use crate::models::project::{CreateProject, Project, UpdateProject};
 /// Column list shared across queries to avoid repetition.
 const COLUMNS: &str =
     "id, name, description, status_id, retention_days, auto_deliver_on_final, deleted_at, created_at, updated_at, \
-     review_trigger_threshold";
+     review_trigger_threshold, blocking_deliverables";
 
 /// Provides CRUD operations for projects.
 pub struct ProjectRepo;
@@ -57,13 +57,26 @@ impl ProjectRepo {
         id: DbId,
         input: &UpdateProject,
     ) -> Result<Option<Project>, sqlx::Error> {
+        // blocking_deliverables: None = don't change, Some([]) = reset to NULL (inherit),
+        // Some([...]) = set override.
+        let bd_value: Option<Vec<String>> = match &input.blocking_deliverables {
+            None => None,                    // field absent → keep existing
+            Some(v) if v.is_empty() => None, // empty array → will set NULL
+            Some(v) => Some(v.clone()),      // non-empty → set override
+        };
+        let bd_set_null = matches!(&input.blocking_deliverables, Some(v) if v.is_empty());
+
         let query = format!(
             "UPDATE projects SET
                 name = COALESCE($2, name),
                 description = COALESCE($3, description),
                 status_id = COALESCE($4, status_id),
                 retention_days = COALESCE($5, retention_days),
-                auto_deliver_on_final = COALESCE($6, auto_deliver_on_final)
+                auto_deliver_on_final = COALESCE($6, auto_deliver_on_final),
+                blocking_deliverables = CASE
+                    WHEN $8 THEN NULL
+                    ELSE COALESCE($7, blocking_deliverables)
+                END
              WHERE id = $1 AND deleted_at IS NULL
              RETURNING {COLUMNS}"
         );
@@ -74,6 +87,8 @@ impl ProjectRepo {
             .bind(input.status_id)
             .bind(input.retention_days)
             .bind(input.auto_deliver_on_final)
+            .bind(&bd_value)
+            .bind(bd_set_null)
             .fetch_optional(pool)
             .await
     }

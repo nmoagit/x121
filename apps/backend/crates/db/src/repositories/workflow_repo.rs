@@ -9,7 +9,7 @@ use crate::models::workflow::{CreateWorkflow, UpdateWorkflow, Workflow};
 /// Column list for workflows queries.
 const COLUMNS: &str = "id, name, description, current_version, status_id, \
     json_content, discovered_params_json, validation_results_json, \
-    imported_from, imported_by, created_at, updated_at";
+    last_validated_at, imported_from, imported_by, created_at, updated_at";
 
 /// Provides CRUD operations for workflows.
 pub struct WorkflowRepo;
@@ -135,11 +135,13 @@ impl WorkflowRepo {
         id: DbId,
         results: &serde_json::Value,
     ) -> Result<bool, sqlx::Error> {
-        let result = sqlx::query("UPDATE workflows SET validation_results_json = $1 WHERE id = $2")
-            .bind(results)
-            .bind(id)
-            .execute(pool)
-            .await?;
+        let result = sqlx::query(
+            "UPDATE workflows SET validation_results_json = $1, last_validated_at = NOW() WHERE id = $2",
+        )
+        .bind(results)
+        .bind(id)
+        .execute(pool)
+        .await?;
         Ok(result.rows_affected() > 0)
     }
 
@@ -150,6 +152,14 @@ impl WorkflowRepo {
             .execute(pool)
             .await?;
         Ok(result.rows_affected() > 0)
+    }
+
+    /// List all workflow IDs (for bulk operations like auto-validation).
+    pub async fn list_all_ids(pool: &PgPool) -> Result<Vec<DbId>, sqlx::Error> {
+        let rows: Vec<(DbId,)> = sqlx::query_as("SELECT id FROM workflows ORDER BY id")
+            .fetch_all(pool)
+            .await?;
+        Ok(rows.into_iter().map(|(id,)| id).collect())
     }
 
     /// Count total workflows.

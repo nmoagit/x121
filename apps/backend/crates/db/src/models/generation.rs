@@ -7,6 +7,8 @@
 use serde::{Deserialize, Serialize};
 use x121_core::types::{DbId, Timestamp};
 
+use crate::models::status::StatusId;
+
 // ---------------------------------------------------------------------------
 // Segment generation update
 // ---------------------------------------------------------------------------
@@ -47,6 +49,7 @@ pub struct SegmentJobParams {
 /// Fields that the generation loop updates on a scene.
 #[derive(Debug, Clone, Deserialize)]
 pub struct UpdateSceneGeneration {
+    pub status_id: Option<StatusId>,
     pub total_segments_estimated: Option<i32>,
     pub total_segments_completed: Option<i32>,
     pub actual_duration_secs: Option<f64>,

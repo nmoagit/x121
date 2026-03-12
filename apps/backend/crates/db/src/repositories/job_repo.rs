@@ -7,12 +7,38 @@ use sqlx::PgPool;
 use x121_core::scheduling::state_machine;
 use x121_core::types::DbId;
 
-use serde::Deserialize;
+use serde::{Deserialize, Deserializer};
 
-use crate::models::job::{Job, JobListQuery, QueuedJobView, SubmitJob};
+use crate::models::job::{AdminQueueJob, Job, JobListQuery, QueuedJobView, SubmitJob};
 use crate::models::status::{JobStatus, StatusId};
 
+/// Deserialize a comma-separated string (e.g. `"1,2,5"`) into `Option<Vec<T>>`.
+///
+/// Handles both single values (`"2"`) and CSV (`"1,2,5"`), which
+/// `serde_urlencoded` cannot do natively for `Vec<T>`.
+fn csv_to_vec<'de, D, T>(deserializer: D) -> Result<Option<Vec<T>>, D::Error>
+where
+    D: Deserializer<'de>,
+    T: std::str::FromStr,
+    T::Err: std::fmt::Display,
+{
+    let opt: Option<String> = Option::deserialize(deserializer)?;
+    match opt {
+        None => Ok(None),
+        Some(s) if s.is_empty() => Ok(None),
+        Some(s) => {
+            let items: Vec<T> = s
+                .split(',')
+                .map(|v| v.trim().parse::<T>().map_err(serde::de::Error::custom))
+                .collect::<Result<_, _>>()?;
+            Ok(Some(items))
+        }
+    }
+}
+
 /// Filter criteria for bulk-cancelling jobs (PRD-132 Phase 6).
+///
+/// Deserialized from JSON body — no custom deserializer needed.
 #[derive(Debug, Default, Deserialize)]
 pub struct BulkCancelFilter {
     pub scene_id: Option<DbId>,
@@ -25,6 +51,7 @@ pub struct BulkCancelFilter {
 /// Filter criteria for the admin queue list (PRD-132 Phase 7).
 #[derive(Debug, Default, Deserialize)]
 pub struct AdminQueueFilter {
+    #[serde(default, deserialize_with = "csv_to_vec")]
     pub status_ids: Option<Vec<StatusId>>,
     pub instance_id: Option<DbId>,
     pub job_type: Option<String>,
@@ -539,6 +566,24 @@ impl JobRepo {
         Ok(result.rows_affected())
     }
 
+    /// List pending jobs that have not been assigned to a ComfyUI instance.
+    ///
+    /// These are jobs created when no instances were available. The dispatcher
+    /// calls this periodically to retry them once an instance comes online.
+    pub async fn list_pending_unassigned(pool: &PgPool) -> Result<Vec<Job>, sqlx::Error> {
+        let query = format!(
+            "SELECT {COLUMNS} FROM jobs \
+             WHERE status_id = $1 \
+               AND comfyui_instance_id IS NULL \
+               AND is_paused = false \
+             ORDER BY priority DESC, submitted_at ASC"
+        );
+        sqlx::query_as::<_, Job>(&query)
+            .bind(JobStatus::Pending.id())
+            .fetch_all(pool)
+            .await
+    }
+
     /// Clear instance assignments for pending/held jobs assigned to a specific instance.
     ///
     /// Used by `redistribute` to re-pool jobs from an instance being taken offline.
@@ -638,12 +683,13 @@ impl JobRepo {
 
     /// List all jobs with rich filtering for the admin queue view.
     ///
-    /// Unlike `list_all`, this supports filtering by multiple status IDs,
-    /// instance ID, job type, submitted_by, and custom sort ordering.
+    /// Returns enriched [`AdminQueueJob`] rows that include resolved scene
+    /// context (character name, scene type name, track name) via LEFT JOINs
+    /// on `parameters->>'scene_id'`.
     pub async fn list_admin_queue(
         pool: &PgPool,
         filter: &AdminQueueFilter,
-    ) -> Result<Vec<Job>, sqlx::Error> {
+    ) -> Result<Vec<AdminQueueJob>, sqlx::Error> {
         let limit = filter.limit.unwrap_or(DEFAULT_LIMIT).min(MAX_LIMIT);
         let offset = filter.offset.unwrap_or(0);
 
@@ -652,20 +698,20 @@ impl JobRepo {
 
         if let Some(ref status_ids) = filter.status_ids {
             if !status_ids.is_empty() {
-                conditions.push(format!("status_id = ANY(${bind_idx})"));
+                conditions.push(format!("j.status_id = ANY(${bind_idx})"));
                 bind_idx += 1;
             }
         }
         if filter.instance_id.is_some() {
-            conditions.push(format!("comfyui_instance_id = ${bind_idx}"));
+            conditions.push(format!("j.comfyui_instance_id = ${bind_idx}"));
             bind_idx += 1;
         }
         if filter.job_type.is_some() {
-            conditions.push(format!("job_type = ${bind_idx}"));
+            conditions.push(format!("j.job_type = ${bind_idx}"));
             bind_idx += 1;
         }
         if filter.submitted_by.is_some() {
-            conditions.push(format!("submitted_by = ${bind_idx}"));
+            conditions.push(format!("j.submitted_by = ${bind_idx}"));
             bind_idx += 1;
         }
 
@@ -677,25 +723,50 @@ impl JobRepo {
 
         // Determine sort column and direction.
         let sort_col = match filter.sort_by.as_deref() {
-            Some("priority") => "priority",
-            Some("status_id") => "status_id",
-            Some("job_type") => "job_type",
-            _ => "submitted_at",
+            Some("priority") => "j.priority",
+            Some("status_id") => "j.status_id",
+            Some("job_type") => "j.job_type",
+            _ => "j.submitted_at",
         };
         let sort_dir = match filter.sort_dir.as_deref() {
             Some("asc") => "ASC",
             _ => "DESC",
         };
 
+        // Prefix all job columns with j. for the aliased query.
+        let j_columns = COLUMNS
+            .split(", ")
+            .map(|c| format!("j.{c}"))
+            .collect::<Vec<_>>()
+            .join(", ");
+
         let query = format!(
-            "SELECT {COLUMNS} FROM jobs \
+            "SELECT {j_columns}, \
+                    s.id AS scene_id, \
+                    COALESCE(s.character_id, (j.parameters->>'character_id')::BIGINT) AS character_id, \
+                    ch.project_id, \
+                    ch.name AS character_name, \
+                    st.name AS scene_type_name, \
+                    t.name AS track_name, \
+                    CASE \
+                      WHEN j.parameters->>'scene_id' IS NOT NULL THEN 'scene' \
+                      WHEN j.parameters->>'source_variant_type' IS NOT NULL THEN 'image' \
+                      ELSE 'other' \
+                    END AS job_kind, \
+                    j.parameters->>'source_variant_type' AS source_variant_type, \
+                    j.parameters->>'target_variant_type' AS target_variant_type \
+             FROM jobs j \
+             LEFT JOIN scenes s ON s.id = (j.parameters->>'scene_id')::BIGINT \
+             LEFT JOIN characters ch ON ch.id = COALESCE(s.character_id, (j.parameters->>'character_id')::BIGINT) \
+             LEFT JOIN scene_types st ON st.id = s.scene_type_id \
+             LEFT JOIN tracks t ON t.id = s.track_id \
              {where_clause} \
              ORDER BY {sort_col} {sort_dir} \
              LIMIT ${bind_idx} OFFSET ${}",
             bind_idx + 1,
         );
 
-        let mut q = sqlx::query_as::<_, Job>(&query);
+        let mut q = sqlx::query_as::<_, AdminQueueJob>(&query);
 
         if let Some(ref status_ids) = filter.status_ids {
             if !status_ids.is_empty() {

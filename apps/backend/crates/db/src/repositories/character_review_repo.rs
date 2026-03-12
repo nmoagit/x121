@@ -582,7 +582,7 @@ impl CharacterReviewRepo {
     // Reviewer list
     // -----------------------------------------------------------------------
 
-    /// List users with the 'reviewer' role, with their latest assignment date.
+    /// List users eligible to review (reviewer or admin role), with their latest assignment date.
     pub async fn list_reviewers(
         pool: &PgPool,
     ) -> Result<Vec<(DbId, String, Option<Timestamp>)>, sqlx::Error> {
@@ -594,7 +594,7 @@ impl CharacterReviewRepo {
              FROM users u
              JOIN roles r ON r.id = u.role_id
              LEFT JOIN character_review_assignments cra ON cra.reviewer_user_id = u.id
-             WHERE r.name = 'reviewer' AND u.is_active = true
+             WHERE r.name IN ('reviewer', 'admin') AND u.is_active = true
              GROUP BY u.id, u.username
              ORDER BY u.username ASC",
         )

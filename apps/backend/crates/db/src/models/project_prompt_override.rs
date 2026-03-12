@@ -1,18 +1,22 @@
-//! Character scene prompt override model and DTOs (PRD-115).
+//! Project-level prompt override model and DTOs.
+//!
+//! Stores additive prompt fragments at the project scope, sitting between
+//! scene-type defaults and group/character overrides in the resolution
+//! hierarchy.
 
 use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
 use x121_core::types::{DbId, Timestamp};
 
-/// A row from the `character_scene_prompt_overrides` table.
+/// A row from the `project_prompt_overrides` table.
 ///
-/// Stores additive prompt fragments for a specific character + scene type +
+/// Stores additive prompt fragments for a specific project + scene type +
 /// prompt slot combination. The `fragments` JSONB array contains entries of
 /// the form `{ "type": "inline"|"fragment_ref", "fragment_id": ..., "text": ... }`.
 #[derive(Debug, Clone, FromRow, Serialize)]
-pub struct CharacterScenePromptOverride {
+pub struct ProjectPromptOverride {
     pub id: DbId,
-    pub character_id: DbId,
+    pub project_id: DbId,
     pub scene_type_id: DbId,
     pub prompt_slot_id: DbId,
     pub fragments: serde_json::Value,
@@ -23,10 +27,10 @@ pub struct CharacterScenePromptOverride {
     pub updated_at: Timestamp,
 }
 
-/// DTO for creating (or upserting) a character scene prompt override.
+/// DTO for creating (or upserting) a project prompt override.
 #[derive(Debug, Clone, Deserialize)]
-pub struct CreateCharacterScenePromptOverride {
-    pub character_id: DbId,
+pub struct CreateProjectPromptOverride {
+    pub project_id: DbId,
     pub scene_type_id: DbId,
     pub prompt_slot_id: DbId,
     pub fragments: serde_json::Value,
@@ -35,9 +39,9 @@ pub struct CreateCharacterScenePromptOverride {
     pub created_by: Option<DbId>,
 }
 
-/// DTO for updating an existing character scene prompt override.
+/// DTO for updating an existing project prompt override.
 #[derive(Debug, Clone, Deserialize)]
-pub struct UpdateCharacterScenePromptOverride {
+pub struct UpdateProjectPromptOverride {
     pub fragments: Option<serde_json::Value>,
     pub override_text: Option<String>,
     pub notes: Option<String>,

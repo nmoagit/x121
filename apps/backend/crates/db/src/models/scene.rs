@@ -32,6 +32,37 @@ pub struct Scene {
     pub updated_at: Timestamp,
 }
 
+/// A scene row enriched with the latest video version info.
+///
+/// Returned by `list_by_character_with_versions` to avoid N+1 queries
+/// when the frontend needs to show video thumbnails in the scene grid.
+#[derive(Debug, Clone, FromRow, Serialize)]
+pub struct SceneWithVersion {
+    pub id: DbId,
+    pub character_id: DbId,
+    pub scene_type_id: DbId,
+    pub image_variant_id: Option<DbId>,
+    pub track_id: Option<DbId>,
+    pub status_id: StatusId,
+    pub transition_mode: String,
+    pub total_segments_estimated: Option<i32>,
+    pub total_segments_completed: i32,
+    pub actual_duration_secs: Option<f64>,
+    pub transition_segment_index: Option<i32>,
+    pub generation_started_at: Option<Timestamp>,
+    pub generation_completed_at: Option<Timestamp>,
+    pub resolution_tier_id: Option<DbId>,
+    pub upscaled_from_scene_id: Option<DbId>,
+    pub deleted_at: Option<Timestamp>,
+    pub created_at: Timestamp,
+    pub updated_at: Timestamp,
+    /// The ID of the best video version (final preferred, else highest version_number).
+    /// `None` when the scene has no video versions.
+    pub latest_version_id: Option<DbId>,
+    /// Total number of non-deleted video versions for this scene.
+    pub version_count: i64,
+}
+
 /// DTO for creating a new scene.
 #[derive(Debug, Clone, Deserialize)]
 pub struct CreateScene {

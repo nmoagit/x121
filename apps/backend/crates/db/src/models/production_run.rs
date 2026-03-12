@@ -32,6 +32,7 @@ pub struct ProductionRunCell {
     pub run_id: DbId,
     pub character_id: DbId,
     pub scene_type_id: DbId,
+    pub track_id: Option<DbId>,
     pub variant_label: String,
     pub status_id: DbId,
     pub scene_id: Option<DbId>,
@@ -40,6 +41,30 @@ pub struct ProductionRunCell {
     pub error_message: Option<String>,
     pub created_at: Timestamp,
     pub updated_at: Timestamp,
+}
+
+/// Enriched cell for the matrix view — includes scene type and track names.
+#[derive(Debug, Clone, FromRow, Serialize)]
+pub struct ProductionRunMatrixCell {
+    pub id: DbId,
+    pub run_id: DbId,
+    pub character_id: DbId,
+    pub scene_type_id: DbId,
+    pub track_id: Option<DbId>,
+    pub variant_label: String,
+    pub status_id: DbId,
+    pub scene_id: Option<DbId>,
+    pub job_id: Option<DbId>,
+    pub blocking_reason: Option<String>,
+    pub error_message: Option<String>,
+    pub created_at: Timestamp,
+    pub updated_at: Timestamp,
+    /// Joined from scene_types.name
+    pub scene_type_name: String,
+    /// Joined from tracks.name (NULL when no track)
+    pub track_name: Option<String>,
+    /// Whether a matching seed image (image_variant) exists for this character + track.
+    pub has_seed: bool,
 }
 
 /// DTO for creating a new production run.
@@ -61,6 +86,7 @@ pub struct CreateProductionRunCell {
     pub run_id: DbId,
     pub character_id: DbId,
     pub scene_type_id: DbId,
+    pub track_id: Option<DbId>,
     pub variant_label: String,
 }
 
@@ -74,6 +100,9 @@ pub struct CreateProductionRunRequest {
     pub scene_type_ids: Vec<DbId>,
     pub estimated_gpu_hours: Option<f64>,
     pub estimated_disk_gb: Option<f64>,
+    /// When true, check for existing approved scenes and pre-mark those cells as completed.
+    #[serde(default)]
+    pub retrospective: bool,
 }
 
 /// Request body for submitting cells (all or a subset).

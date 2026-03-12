@@ -70,7 +70,10 @@ impl SceneVideoVersionRepo {
         scene_id: DbId,
     ) -> Result<Vec<SceneVideoVersion>, sqlx::Error> {
         let query = format!(
-            "SELECT {COLUMNS} FROM scene_video_versions
+            "SELECT {COLUMNS},
+                    COALESCE((SELECT COUNT(*) FROM frame_annotations fa
+                              WHERE fa.version_id = scene_video_versions.id), 0) AS annotation_count
+             FROM scene_video_versions
              WHERE scene_id = $1 AND deleted_at IS NULL
              ORDER BY version_number DESC"
         );

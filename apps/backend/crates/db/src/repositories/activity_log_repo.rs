@@ -89,7 +89,7 @@ impl ActivityLogRepo {
         pool: &PgPool,
         params: &ActivityLogQuery,
     ) -> Result<Vec<ActivityLog>, sqlx::Error> {
-        let limit = clamp_limit(params.limit, 25, 100);
+        let limit = clamp_limit(params.limit, 25, 1000);
         let offset = clamp_offset(params.offset);
 
         let (where_clause, bind_values, bind_idx) = build_activity_filter(params, pool).await?;

@@ -100,7 +100,7 @@ impl LibraryCharacterRepo {
         // Join through project_character_links → scenes when filters are active.
         sql.push_str(
             " JOIN project_character_links pcl ON pcl.library_character_id = lc.id \
-             JOIN scenes s ON s.character_id = pcl.project_character_id"
+             JOIN scenes s ON s.character_id = pcl.project_character_id",
         );
 
         sql.push_str(" WHERE (lc.is_published = true OR lc.created_by_id = $1)");

@@ -4,6 +4,7 @@ use sqlx::PgPool;
 use x121_core::types::DbId;
 
 use crate::models::comfyui::{ComfyUIInstance, ComfyUIInstanceStatus};
+use crate::models::status::JobStatus;
 
 /// Column list for `comfyui_instances` queries.
 const COLUMNS: &str = "\
@@ -247,9 +248,9 @@ impl ComfyUIInstanceRepo {
                AND status_id IN ($2, $3, $4)",
         )
         .bind(instance_id)
-        .bind(1_i16) // Pending
-        .bind(9_i16) // Dispatched
-        .bind(2_i16) // Running
+        .bind(JobStatus::Pending.id())
+        .bind(JobStatus::Dispatched.id())
+        .bind(JobStatus::Running.id())
         .fetch_one(pool)
         .await?;
         Ok(count.0)

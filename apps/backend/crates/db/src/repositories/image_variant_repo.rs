@@ -266,6 +266,25 @@ impl ImageVariantRepo {
             .await
     }
 
+    /// List image variants that have a non-empty file_path, ordered by ID.
+    /// Used by backfill operations that need to process all variants with files.
+    pub async fn list_with_files(
+        pool: &PgPool,
+        limit: i64,
+        offset: i64,
+    ) -> Result<Vec<ImageVariant>, sqlx::Error> {
+        let query = format!(
+            "SELECT {COLUMNS} FROM image_variants \
+             WHERE file_path != '' AND deleted_at IS NULL \
+             ORDER BY id ASC LIMIT $1 OFFSET $2"
+        );
+        sqlx::query_as::<_, ImageVariant>(&query)
+            .bind(limit)
+            .bind(offset)
+            .fetch_all(pool)
+            .await
+    }
+
     /// Soft-delete an image variant by ID. Returns `true` if a row was marked deleted.
     pub async fn soft_delete(pool: &PgPool, id: DbId) -> Result<bool, sqlx::Error> {
         let result = sqlx::query(

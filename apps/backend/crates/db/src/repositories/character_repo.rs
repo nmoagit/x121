@@ -328,6 +328,9 @@ impl CharacterRepo {
                 g.name AS group_name,
                 av.id AS hero_variant_id,
                 COALESCE(sc.cnt, 0) AS scene_count,
+                COALESCE(ic.cnt, 0) AS image_count,
+                COALESCE(cc.cnt, 0) AS clip_count,
+                (c.metadata IS NOT NULL AND c.metadata != '{{}}'::jsonb) AS has_metadata,
                 c.status_id,
                 c.created_at
              FROM characters c
@@ -352,6 +355,18 @@ impl CharacterRepo {
                  FROM scenes s
                  WHERE s.character_id = c.id
              ) sc ON true
+             LEFT JOIN LATERAL (
+                 SELECT COUNT(*) AS cnt
+                 FROM image_variants iv
+                 WHERE iv.character_id = c.id
+                   AND iv.deleted_at IS NULL
+             ) ic ON true
+             LEFT JOIN LATERAL (
+                 SELECT COUNT(*) AS cnt
+                 FROM scene_video_versions svv
+                 JOIN scenes s ON s.id = svv.scene_id
+                 WHERE s.character_id = c.id
+             ) cc ON true
              WHERE {where_clause}
              ORDER BY c.name ASC"
         );
@@ -400,7 +415,7 @@ impl CharacterRepo {
                 -- Build blocking_reasons array
                 ARRAY_REMOVE(ARRAY[
                     CASE WHEN COALESCE(img.total, 0) = 0 THEN 'Missing Seed Image' END,
-                    CASE WHEN COALESCE(img.approved, 0) = 0 AND COALESCE(img.total, 0) > 0 THEN 'No Approved Images' END,
+                    CASE WHEN COALESCE(img.total, 0) > 0 AND COALESCE(img.approved, 0) < COALESCE(img.total, 0) THEN 'Images Not Approved' END,
                     CASE WHEN COALESCE(sc.total, 0) = 0 THEN 'No Scenes' END,
                     CASE WHEN COALESCE(sc.with_video, 0) > 0 AND COALESCE(sc.vid_approved, 0) < COALESCE(sc.with_video, 0) THEN 'Videos Not Approved' END,
                     CASE WHEN NOT COALESCE(meta.has_active, false) THEN 'Missing Metadata' END
@@ -411,7 +426,9 @@ impl CharacterRepo {
                 -- Scenes: ratio of approved to total (proportional progress).
                 ROUND(
                     ((CASE WHEN COALESCE(meta.has_active, false) THEN 1.0 ELSE 0.0 END
-                    + CASE WHEN COALESCE(img.approved, 0) > 0 THEN 1.0 ELSE 0.0 END
+                    + CASE WHEN COALESCE(img.total, 0) > 0
+                           THEN COALESCE(img.approved, 0)::numeric / img.total
+                           ELSE 0.0 END
                     + CASE WHEN COALESCE(sc.total, 0) > 0
                            THEN COALESCE(sc.vid_approved, 0)::numeric / sc.total
                            ELSE 0.0 END

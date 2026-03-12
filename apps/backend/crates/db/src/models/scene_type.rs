@@ -19,6 +19,7 @@ pub struct SceneType {
     pub name: String,
     pub slug: String,
     pub status_id: StatusId,
+    pub workflow_id: Option<DbId>,
     pub workflow_json: Option<serde_json::Value>,
     pub lora_config: Option<serde_json::Value>,
     pub prompt_template: Option<String>,
@@ -49,6 +50,8 @@ pub struct SceneType {
     pub auto_retry_trigger_checks: Option<Vec<String>>,
     pub auto_retry_seed_variation: bool,
     pub auto_retry_cfg_jitter: Option<f64>,
+    pub target_fps: Option<i32>,
+    pub target_resolution: Option<String>,
     pub deleted_at: Option<Timestamp>,
     pub created_at: Timestamp,
     pub updated_at: Timestamp,
@@ -92,6 +95,7 @@ pub struct CreateSceneType {
     pub slug: String,
     /// Defaults to 1 (Draft) if omitted.
     pub status_id: Option<StatusId>,
+    pub workflow_id: Option<DbId>,
     pub workflow_json: Option<serde_json::Value>,
     pub lora_config: Option<serde_json::Value>,
     pub prompt_template: Option<String>,
@@ -121,6 +125,8 @@ pub struct CreateSceneType {
     pub auto_retry_trigger_checks: Option<Vec<String>>,
     pub auto_retry_seed_variation: Option<bool>,
     pub auto_retry_cfg_jitter: Option<f64>,
+    pub target_fps: Option<i32>,
+    pub target_resolution: Option<String>,
 }
 
 /// DTO for updating an existing scene type. All fields are optional.
@@ -129,6 +135,7 @@ pub struct UpdateSceneType {
     pub name: Option<String>,
     pub slug: Option<String>,
     pub status_id: Option<StatusId>,
+    pub workflow_id: Option<DbId>,
     pub workflow_json: Option<serde_json::Value>,
     pub lora_config: Option<serde_json::Value>,
     pub prompt_template: Option<String>,
@@ -159,6 +166,8 @@ pub struct UpdateSceneType {
     pub auto_retry_trigger_checks: Option<Vec<String>>,
     pub auto_retry_seed_variation: Option<bool>,
     pub auto_retry_cfg_jitter: Option<f64>,
+    pub target_fps: Option<i32>,
+    pub target_resolution: Option<String>,
     /// When provided, replaces all track associations atomically.
     #[serde(default)]
     pub track_ids: Option<Vec<DbId>>,

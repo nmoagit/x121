@@ -10,7 +10,7 @@ use crate::models::character_scene_prompt_override::{
 
 /// Column list for the `character_scene_prompt_overrides` table.
 const COLUMNS: &str = "id, character_id, scene_type_id, prompt_slot_id, fragments, \
-    notes, created_by, created_at, updated_at";
+    override_text, notes, created_by, created_at, updated_at";
 
 /// Provides data access for character scene prompt overrides.
 pub struct CharacterScenePromptOverrideRepo;
@@ -26,10 +26,11 @@ impl CharacterScenePromptOverrideRepo {
     ) -> Result<CharacterScenePromptOverride, sqlx::Error> {
         let query = format!(
             "INSERT INTO character_scene_prompt_overrides
-                (character_id, scene_type_id, prompt_slot_id, fragments, notes, created_by)
-             VALUES ($1, $2, $3, $4, $5, $6)
+                (character_id, scene_type_id, prompt_slot_id, fragments, override_text, notes, created_by)
+             VALUES ($1, $2, $3, $4, $5, $6, $7)
              ON CONFLICT (character_id, scene_type_id, prompt_slot_id)
              DO UPDATE SET fragments = EXCLUDED.fragments,
+                           override_text = EXCLUDED.override_text,
                            notes = EXCLUDED.notes
              RETURNING {COLUMNS}"
         );
@@ -38,6 +39,7 @@ impl CharacterScenePromptOverrideRepo {
             .bind(input.scene_type_id)
             .bind(input.prompt_slot_id)
             .bind(&input.fragments)
+            .bind(&input.override_text)
             .bind(&input.notes)
             .bind(input.created_by)
             .fetch_one(pool)
@@ -121,13 +123,15 @@ impl CharacterScenePromptOverrideRepo {
         let query = format!(
             "UPDATE character_scene_prompt_overrides SET
                 fragments = COALESCE($2, fragments),
-                notes = COALESCE($3, notes)
+                override_text = COALESCE($3, override_text),
+                notes = COALESCE($4, notes)
              WHERE id = $1
              RETURNING {COLUMNS}"
         );
         sqlx::query_as::<_, CharacterScenePromptOverride>(&query)
             .bind(id)
             .bind(&input.fragments)
+            .bind(&input.override_text)
             .bind(&input.notes)
             .fetch_optional(pool)
             .await

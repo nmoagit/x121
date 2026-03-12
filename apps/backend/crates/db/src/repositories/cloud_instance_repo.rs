@@ -116,7 +116,7 @@ impl CloudInstanceRepo {
         Ok(())
     }
 
-    /// Update instance network info (after provision completes).
+    /// Update instance network info (IP and SSH port).
     pub async fn update_network(
         pool: &PgPool,
         id: DbId,
@@ -124,7 +124,9 @@ impl CloudInstanceRepo {
         ssh_port: Option<i32>,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "UPDATE cloud_instances SET ip_address = $2, ssh_port = $3, started_at = NOW() WHERE id = $1",
+            "UPDATE cloud_instances \
+             SET ip_address = $2, ssh_port = $3 \
+             WHERE id = $1",
         )
         .bind(id)
         .bind(ip_address)
@@ -171,16 +173,43 @@ impl CloudInstanceRepo {
     }
 
     /// Update status to Running and set `started_at` timestamp.
-    pub async fn mark_running(pool: &PgPool, id: DbId) -> Result<(), sqlx::Error> {
-        sqlx::query(
-            "UPDATE cloud_instances \
-             SET status_id = $2, started_at = COALESCE(started_at, NOW()) \
-             WHERE id = $1",
-        )
-        .bind(id)
-        .bind(CloudInstanceStatus::Running.id())
-        .execute(pool)
-        .await?;
+    ///
+    /// If `uptime_secs` is provided, back-calculates `started_at` from
+    /// `NOW() - uptime_secs` to match the provider's actual start time.
+    /// Otherwise falls back to `NOW()` if `started_at` is not already set.
+    pub async fn mark_running(
+        pool: &PgPool,
+        id: DbId,
+        uptime_secs: Option<f64>,
+    ) -> Result<(), sqlx::Error> {
+        match uptime_secs {
+            Some(secs) => {
+                // Always set started_at from provider's actual uptime — this is
+                // more accurate than COALESCE(started_at, NOW()) which preserves
+                // stale values from previous startup attempts.
+                sqlx::query(
+                    "UPDATE cloud_instances \
+                     SET status_id = $2, started_at = NOW() - ($3 || ' seconds')::interval \
+                     WHERE id = $1",
+                )
+                .bind(id)
+                .bind(CloudInstanceStatus::Running.id())
+                .bind(secs.to_string())
+                .execute(pool)
+                .await?;
+            }
+            None => {
+                sqlx::query(
+                    "UPDATE cloud_instances \
+                     SET status_id = $2, started_at = COALESCE(started_at, NOW()) \
+                     WHERE id = $1",
+                )
+                .bind(id)
+                .bind(CloudInstanceStatus::Running.id())
+                .execute(pool)
+                .await?;
+            }
+        }
         Ok(())
     }
 
@@ -200,20 +229,21 @@ impl CloudInstanceRepo {
         Ok(())
     }
 
-    /// List all non-terminated instances for a provider (for emergency stop).
+    /// List all non-archived instances for a provider.
+    /// Excludes only terminated instances — error instances remain visible
+    /// so admins can diagnose and take action.
     pub async fn list_active_by_provider(
         pool: &PgPool,
         provider_id: DbId,
     ) -> Result<Vec<CloudInstance>, sqlx::Error> {
         let query = format!(
             "SELECT {COLUMNS} FROM cloud_instances \
-             WHERE provider_id = $1 AND status_id NOT IN ($2, $3) \
+             WHERE provider_id = $1 AND status_id != $2 \
              ORDER BY created_at DESC"
         );
         sqlx::query_as::<_, CloudInstance>(&query)
             .bind(provider_id)
             .bind(CloudInstanceStatus::Terminated.id())
-            .bind(CloudInstanceStatus::Error.id())
             .fetch_all(pool)
             .await
     }
@@ -225,6 +255,43 @@ impl CloudInstanceRepo {
             .execute(pool)
             .await?;
         Ok(result.rows_affected() > 0)
+    }
+
+    /// List stopped instances for a specific provider + GPU type.
+    ///
+    /// Used by the auto-scaler to prefer resuming stopped pods before
+    /// provisioning new ones — resuming is faster and avoids the overhead
+    /// of a cold-start provisioning cycle.
+    pub async fn list_stopped_by_gpu_type(
+        pool: &PgPool,
+        provider_id: DbId,
+        gpu_type_id: DbId,
+    ) -> Result<Vec<CloudInstance>, sqlx::Error> {
+        let query = format!(
+            "SELECT {COLUMNS} FROM cloud_instances \
+             WHERE provider_id = $1 AND gpu_type_id = $2 AND status_id = $3 \
+             ORDER BY stopped_at DESC NULLS LAST"
+        );
+        sqlx::query_as::<_, CloudInstance>(&query)
+            .bind(provider_id)
+            .bind(gpu_type_id)
+            .bind(CloudInstanceStatus::Stopped.id())
+            .fetch_all(pool)
+            .await
+    }
+
+    /// Aggregate active (non-terminated, non-error) instance count and total cost/hour.
+    pub async fn active_summary(pool: &PgPool) -> Result<(i64, i64), sqlx::Error> {
+        let row: (i64, i64) = sqlx::query_as(
+            "SELECT COUNT(*), COALESCE(SUM(cost_per_hour_cents), 0)::BIGINT \
+             FROM cloud_instances \
+             WHERE status_id NOT IN ($1, $2)",
+        )
+        .bind(CloudInstanceStatus::Terminated.id())
+        .bind(CloudInstanceStatus::Error.id())
+        .fetch_one(pool)
+        .await?;
+        Ok(row)
     }
 
     /// List all active instances across all providers (for global emergency stop).

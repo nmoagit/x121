@@ -29,6 +29,9 @@ pub struct SceneVideoVersion {
     pub deleted_at: Option<Timestamp>,
     pub created_at: Timestamp,
     pub updated_at: Timestamp,
+    /// Number of annotated frames on this version (computed, not stored).
+    #[sqlx(default)]
+    pub annotation_count: i64,
 }
 
 /// DTO for creating a new scene video version.

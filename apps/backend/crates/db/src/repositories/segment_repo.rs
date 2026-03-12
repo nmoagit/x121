@@ -255,10 +255,7 @@ impl SegmentRepo {
     }
 
     /// Get the next sequence index for a scene (MAX + 1, or 0 if none).
-    pub async fn next_sequence_index(
-        pool: &PgPool,
-        scene_id: DbId,
-    ) -> Result<i32, sqlx::Error> {
+    pub async fn next_sequence_index(pool: &PgPool, scene_id: DbId) -> Result<i32, sqlx::Error> {
         let row: (Option<i32>,) = sqlx::query_as(
             "SELECT MAX(sequence_index) FROM segments WHERE scene_id = $1 AND deleted_at IS NULL",
         )
@@ -287,5 +284,14 @@ impl SegmentRepo {
             .bind(scene_id)
             .fetch_optional(pool)
             .await
+    }
+
+    /// Delete all segments for a scene (used when re-starting generation).
+    pub async fn delete_for_scene(pool: &PgPool, scene_id: DbId) -> Result<u64, sqlx::Error> {
+        let result = sqlx::query("DELETE FROM segments WHERE scene_id = $1")
+            .bind(scene_id)
+            .execute(pool)
+            .await?;
+        Ok(result.rows_affected())
     }
 }

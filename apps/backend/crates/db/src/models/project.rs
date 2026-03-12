@@ -20,6 +20,9 @@ pub struct Project {
     pub updated_at: Timestamp,
     /// Optional threshold for auto-triggering character review (PRD-129).
     pub review_trigger_threshold: Option<i16>,
+    /// Which deliverable sections must be complete for a character to be "done".
+    /// NULL = inherit from platform_settings default. When set, overrides studio default.
+    pub blocking_deliverables: Option<Vec<String>>,
 }
 
 /// DTO for creating a new project.
@@ -40,4 +43,5 @@ pub struct UpdateProject {
     pub status_id: Option<StatusId>,
     pub retention_days: Option<i32>,
     pub auto_deliver_on_final: Option<bool>,
+    pub blocking_deliverables: Option<Vec<String>>,
 }

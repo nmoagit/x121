@@ -10,7 +10,8 @@ use crate::models::scene_type::{CreateSceneType, SceneType, SceneTypeWithTracks,
 use crate::models::track::Track;
 
 /// Column list shared across queries to avoid repetition.
-const COLUMNS: &str = "id, project_id, name, slug, status_id, workflow_json, lora_config, \
+const COLUMNS: &str =
+    "id, project_id, name, slug, status_id, workflow_id, workflow_json, lora_config, \
     prompt_template, description, model_config, negative_prompt_template, \
     prompt_start_clip, negative_prompt_start_clip, \
     prompt_continuation_clip, negative_prompt_continuation_clip, \
@@ -21,6 +22,7 @@ const COLUMNS: &str = "id, project_id, name, slug, status_id, workflow_json, lor
     generation_strategy, expected_chunks, chunk_output_pattern, \
     auto_retry_enabled, auto_retry_max_attempts, auto_retry_trigger_checks, \
     auto_retry_seed_variation, auto_retry_cfg_jitter, \
+    target_fps, target_resolution, \
     deleted_at, created_at, updated_at";
 
 /// Column list for the `tracks` table (used in JOIN queries).
@@ -43,7 +45,7 @@ impl SceneTypeRepo {
     pub async fn create(pool: &PgPool, input: &CreateSceneType) -> Result<SceneType, sqlx::Error> {
         let query = format!(
             "INSERT INTO scene_types
-                (project_id, name, slug, status_id, workflow_json, lora_config,
+                (project_id, name, slug, status_id, workflow_id, workflow_json, lora_config,
                  prompt_template, description, model_config, negative_prompt_template,
                  prompt_start_clip, negative_prompt_start_clip,
                  prompt_continuation_clip, negative_prompt_continuation_clip,
@@ -56,17 +58,19 @@ impl SceneTypeRepo {
                  generation_strategy, expected_chunks, chunk_output_pattern,
                  auto_retry_enabled, auto_retry_max_attempts,
                  auto_retry_trigger_checks, auto_retry_seed_variation,
-                 auto_retry_cfg_jitter)
-             VALUES ($1, $2, $3, COALESCE($4, 1), $5, $6, $7, $8, $9, $10,
-                     $11, $12, $13, $14, $15, $16,
-                     COALESCE($17, 2),
-                     $18,
-                     $19, COALESCE($20, 0), COALESCE($21, true),
-                     COALESCE($22, false), COALESCE($23, false),
-                     $24,
-                     COALESCE($25, 'platform_orchestrated'), $26, $27,
-                     COALESCE($28, false), COALESCE($29, 3),
-                     $30, COALESCE($31, true), $32)
+                 auto_retry_cfg_jitter,
+                 target_fps, target_resolution)
+             VALUES ($1, $2, $3, COALESCE($4, 1), $5, $6, $7, $8, $9, $10, $11,
+                     $12, $13, $14, $15, $16, $17,
+                     COALESCE($18, 2),
+                     $19,
+                     $20, COALESCE($21, 0), COALESCE($22, true),
+                     COALESCE($23, false), COALESCE($24, false),
+                     $25,
+                     COALESCE($26, 'platform_orchestrated'), $27, $28,
+                     COALESCE($29, false), COALESCE($30, 3),
+                     $31, COALESCE($32, true), $33,
+                     $34, $35)
              RETURNING {COLUMNS}"
         );
         sqlx::query_as::<_, SceneType>(&query)
@@ -74,34 +78,37 @@ impl SceneTypeRepo {
             .bind(&input.name)              // $2
             .bind(&input.slug)              // $3
             .bind(input.status_id)          // $4
-            .bind(&input.workflow_json)     // $5
-            .bind(&input.lora_config)       // $6
-            .bind(&input.prompt_template)   // $7
-            .bind(&input.description)       // $8
-            .bind(&input.model_config)      // $9
-            .bind(&input.negative_prompt_template) // $10
-            .bind(&input.prompt_start_clip)        // $11
-            .bind(&input.negative_prompt_start_clip) // $12
-            .bind(&input.prompt_continuation_clip)   // $13
-            .bind(&input.negative_prompt_continuation_clip) // $14
-            .bind(input.target_duration_secs)  // $15
-            .bind(input.segment_duration_secs) // $16
-            .bind(input.duration_tolerance_secs)   // $17
-            .bind(input.transition_segment_index)  // $18
-            .bind(&input.generation_params)  // $19
-            .bind(input.sort_order)          // $20
-            .bind(input.is_active)           // $21
-            .bind(input.has_clothes_off_transition) // $22
-            .bind(input.is_studio_level)     // $23
-            .bind(input.parent_scene_type_id) // $24
-            .bind(&input.generation_strategy) // $25
-            .bind(input.expected_chunks)     // $26
-            .bind(&input.chunk_output_pattern) // $27
-            .bind(input.auto_retry_enabled)  // $28
-            .bind(input.auto_retry_max_attempts) // $29
-            .bind(&input.auto_retry_trigger_checks) // $30
-            .bind(input.auto_retry_seed_variation)   // $31
-            .bind(input.auto_retry_cfg_jitter) // $32
+            .bind(input.workflow_id)        // $5
+            .bind(&input.workflow_json)     // $6
+            .bind(&input.lora_config)       // $7
+            .bind(&input.prompt_template)   // $8
+            .bind(&input.description)       // $9
+            .bind(&input.model_config)      // $10
+            .bind(&input.negative_prompt_template) // $11
+            .bind(&input.prompt_start_clip)        // $12
+            .bind(&input.negative_prompt_start_clip) // $13
+            .bind(&input.prompt_continuation_clip)   // $14
+            .bind(&input.negative_prompt_continuation_clip) // $15
+            .bind(input.target_duration_secs)  // $16
+            .bind(input.segment_duration_secs) // $17
+            .bind(input.duration_tolerance_secs)   // $18
+            .bind(input.transition_segment_index)  // $19
+            .bind(&input.generation_params)  // $20
+            .bind(input.sort_order)          // $21
+            .bind(input.is_active)           // $22
+            .bind(input.has_clothes_off_transition) // $23
+            .bind(input.is_studio_level)     // $24
+            .bind(input.parent_scene_type_id) // $25
+            .bind(&input.generation_strategy) // $26
+            .bind(input.expected_chunks)     // $27
+            .bind(&input.chunk_output_pattern) // $28
+            .bind(input.auto_retry_enabled)  // $29
+            .bind(input.auto_retry_max_attempts) // $30
+            .bind(&input.auto_retry_trigger_checks) // $31
+            .bind(input.auto_retry_seed_variation)   // $32
+            .bind(input.auto_retry_cfg_jitter) // $33
+            .bind(input.target_fps)            // $34
+            .bind(&input.target_resolution)    // $35
             .fetch_one(pool)
             .await
     }
@@ -186,35 +193,38 @@ impl SceneTypeRepo {
                 name = COALESCE($2, name),
                 slug = COALESCE($3, slug),
                 status_id = COALESCE($4, status_id),
-                workflow_json = COALESCE($5, workflow_json),
-                lora_config = COALESCE($6, lora_config),
-                prompt_template = COALESCE($7, prompt_template),
-                description = COALESCE($8, description),
-                model_config = COALESCE($9, model_config),
-                negative_prompt_template = COALESCE($10, negative_prompt_template),
-                prompt_start_clip = COALESCE($11, prompt_start_clip),
-                negative_prompt_start_clip = COALESCE($12, negative_prompt_start_clip),
-                prompt_continuation_clip = COALESCE($13, prompt_continuation_clip),
-                negative_prompt_continuation_clip = COALESCE($14, negative_prompt_continuation_clip),
-                target_duration_secs = COALESCE($15, target_duration_secs),
-                segment_duration_secs = COALESCE($16, segment_duration_secs),
-                duration_tolerance_secs = COALESCE($17, duration_tolerance_secs),
-                transition_segment_index = COALESCE($18, transition_segment_index),
-                generation_params = COALESCE($19, generation_params),
-                sort_order = COALESCE($20, sort_order),
-                is_active = COALESCE($21, is_active),
-                has_clothes_off_transition = COALESCE($22, has_clothes_off_transition),
-                is_studio_level = COALESCE($23, is_studio_level),
-                parent_scene_type_id = COALESCE($24, parent_scene_type_id),
-                depth = COALESCE($25, depth),
-                generation_strategy = COALESCE($26, generation_strategy),
-                expected_chunks = COALESCE($27, expected_chunks),
-                chunk_output_pattern = COALESCE($28, chunk_output_pattern),
-                auto_retry_enabled = COALESCE($29, auto_retry_enabled),
-                auto_retry_max_attempts = COALESCE($30, auto_retry_max_attempts),
-                auto_retry_trigger_checks = COALESCE($31, auto_retry_trigger_checks),
-                auto_retry_seed_variation = COALESCE($32, auto_retry_seed_variation),
-                auto_retry_cfg_jitter = COALESCE($33, auto_retry_cfg_jitter)
+                workflow_id = COALESCE($5, workflow_id),
+                workflow_json = COALESCE($6, workflow_json),
+                lora_config = COALESCE($7, lora_config),
+                prompt_template = COALESCE($8, prompt_template),
+                description = COALESCE($9, description),
+                model_config = COALESCE($10, model_config),
+                negative_prompt_template = COALESCE($11, negative_prompt_template),
+                prompt_start_clip = COALESCE($12, prompt_start_clip),
+                negative_prompt_start_clip = COALESCE($13, negative_prompt_start_clip),
+                prompt_continuation_clip = COALESCE($14, prompt_continuation_clip),
+                negative_prompt_continuation_clip = COALESCE($15, negative_prompt_continuation_clip),
+                target_duration_secs = COALESCE($16, target_duration_secs),
+                segment_duration_secs = COALESCE($17, segment_duration_secs),
+                duration_tolerance_secs = COALESCE($18, duration_tolerance_secs),
+                transition_segment_index = COALESCE($19, transition_segment_index),
+                generation_params = COALESCE($20, generation_params),
+                sort_order = COALESCE($21, sort_order),
+                is_active = COALESCE($22, is_active),
+                has_clothes_off_transition = COALESCE($23, has_clothes_off_transition),
+                is_studio_level = COALESCE($24, is_studio_level),
+                parent_scene_type_id = COALESCE($25, parent_scene_type_id),
+                depth = COALESCE($26, depth),
+                generation_strategy = COALESCE($27, generation_strategy),
+                expected_chunks = COALESCE($28, expected_chunks),
+                chunk_output_pattern = COALESCE($29, chunk_output_pattern),
+                auto_retry_enabled = COALESCE($30, auto_retry_enabled),
+                auto_retry_max_attempts = COALESCE($31, auto_retry_max_attempts),
+                auto_retry_trigger_checks = COALESCE($32, auto_retry_trigger_checks),
+                auto_retry_seed_variation = COALESCE($33, auto_retry_seed_variation),
+                auto_retry_cfg_jitter = COALESCE($34, auto_retry_cfg_jitter),
+                target_fps = COALESCE($35, target_fps),
+                target_resolution = COALESCE($36, target_resolution)
              WHERE id = $1 AND deleted_at IS NULL
              RETURNING {COLUMNS}"
         );
@@ -223,35 +233,38 @@ impl SceneTypeRepo {
             .bind(&input.name)               // $2
             .bind(&input.slug)               // $3
             .bind(input.status_id)           // $4
-            .bind(&input.workflow_json)      // $5
-            .bind(&input.lora_config)        // $6
-            .bind(&input.prompt_template)    // $7
-            .bind(&input.description)        // $8
-            .bind(&input.model_config)       // $9
-            .bind(&input.negative_prompt_template) // $10
-            .bind(&input.prompt_start_clip)        // $11
-            .bind(&input.negative_prompt_start_clip) // $12
-            .bind(&input.prompt_continuation_clip)   // $13
-            .bind(&input.negative_prompt_continuation_clip) // $14
-            .bind(input.target_duration_secs)  // $15
-            .bind(input.segment_duration_secs) // $16
-            .bind(input.duration_tolerance_secs)   // $17
-            .bind(input.transition_segment_index)  // $18
-            .bind(&input.generation_params)  // $19
-            .bind(input.sort_order)          // $20
-            .bind(input.is_active)           // $21
-            .bind(input.has_clothes_off_transition) // $22
-            .bind(input.is_studio_level)     // $23
-            .bind(input.parent_scene_type_id) // $24
-            .bind(input.depth)               // $25
-            .bind(&input.generation_strategy) // $26
-            .bind(input.expected_chunks)     // $27
-            .bind(&input.chunk_output_pattern) // $28
-            .bind(input.auto_retry_enabled)  // $29
-            .bind(input.auto_retry_max_attempts) // $30
-            .bind(&input.auto_retry_trigger_checks) // $31
-            .bind(input.auto_retry_seed_variation)   // $32
-            .bind(input.auto_retry_cfg_jitter) // $33
+            .bind(input.workflow_id)         // $5
+            .bind(&input.workflow_json)      // $6
+            .bind(&input.lora_config)        // $7
+            .bind(&input.prompt_template)    // $8
+            .bind(&input.description)        // $9
+            .bind(&input.model_config)       // $10
+            .bind(&input.negative_prompt_template) // $11
+            .bind(&input.prompt_start_clip)        // $12
+            .bind(&input.negative_prompt_start_clip) // $13
+            .bind(&input.prompt_continuation_clip)   // $14
+            .bind(&input.negative_prompt_continuation_clip) // $15
+            .bind(input.target_duration_secs)  // $16
+            .bind(input.segment_duration_secs) // $17
+            .bind(input.duration_tolerance_secs)   // $18
+            .bind(input.transition_segment_index)  // $19
+            .bind(&input.generation_params)  // $20
+            .bind(input.sort_order)          // $21
+            .bind(input.is_active)           // $22
+            .bind(input.has_clothes_off_transition) // $23
+            .bind(input.is_studio_level)     // $24
+            .bind(input.parent_scene_type_id) // $25
+            .bind(input.depth)               // $26
+            .bind(&input.generation_strategy) // $27
+            .bind(input.expected_chunks)     // $28
+            .bind(&input.chunk_output_pattern) // $29
+            .bind(input.auto_retry_enabled)  // $30
+            .bind(input.auto_retry_max_attempts) // $31
+            .bind(&input.auto_retry_trigger_checks) // $32
+            .bind(input.auto_retry_seed_variation)   // $33
+            .bind(input.auto_retry_cfg_jitter) // $34
+            .bind(input.target_fps)            // $35
+            .bind(&input.target_resolution)    // $36
             .fetch_optional(pool)
             .await
     }
