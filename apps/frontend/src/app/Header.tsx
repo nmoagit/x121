@@ -1,8 +1,8 @@
+import { usePageTitle } from "@/app/usePageTitle";
 import { UserMenu } from "@/app/UserMenu";
 import { useSidebar } from "@/app/useSidebar";
 import { cn } from "@/lib/cn";
-import { useTheme } from "@/theme";
-import { Menu, Moon, Sun } from "@/tokens/icons";
+import { Menu } from "@/tokens/icons";
 
 /** Shared icon-button styling used by header toolbar buttons. */
 const ICON_BTN = [
@@ -12,54 +12,47 @@ const ICON_BTN = [
 ].join(" ");
 
 export function Header() {
-  const { toggle, openMobile } = useSidebar();
-  const { colorScheme, setColorScheme } = useTheme();
-
-  const toggleTheme = () => {
-    setColorScheme(colorScheme === "dark" ? "light" : "dark");
-  };
+  const { openMobile } = useSidebar();
+  const title = usePageTitle((s) => s.title);
+  const description = usePageTitle((s) => s.description);
 
   return (
     <header
       className={cn(
-        "flex h-12 shrink-0 items-center justify-between gap-4 border-b px-4",
-        "border-[var(--color-border-default)] bg-[var(--color-surface-primary)]",
+        "flex h-11 shrink-0 items-center justify-between gap-4 border-b px-4",
+        "border-[var(--color-border-default)] bg-[var(--color-surface-secondary)]",
       )}
     >
-      {/* Left: sidebar toggles */}
-      <div className="flex items-center gap-2">
-        {/* Mobile hamburger */}
+      {/* Left: mobile hamburger + page title */}
+      <div className="flex items-center gap-2 min-w-0">
         <button
           type="button"
           onClick={openMobile}
           className={cn(ICON_BTN, "lg:hidden")}
           aria-label="Open menu"
         >
-          <Menu size={20} />
+          <Menu size={18} />
         </button>
 
-        {/* Desktop collapse toggle */}
-        <button
-          type="button"
-          onClick={toggle}
-          className={cn(ICON_BTN, "hidden lg:flex")}
-          aria-label="Toggle sidebar"
-        >
-          <Menu size={20} />
-        </button>
+        {title && (
+          <div className="flex items-baseline gap-2 min-w-0 truncate">
+            <span className="text-sm font-medium text-[var(--color-text-primary)] shrink-0">
+              {title}
+            </span>
+            {description && (
+              <>
+                <span className="text-[var(--color-text-muted)] text-xs hidden sm:inline">—</span>
+                <span className="text-xs text-[var(--color-text-muted)] truncate hidden sm:inline">
+                  {description}
+                </span>
+              </>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* Right: theme + user */}
-      <div className="flex items-center gap-2">
-        <button
-          type="button"
-          onClick={toggleTheme}
-          className={ICON_BTN}
-          aria-label={colorScheme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-        >
-          {colorScheme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
-        </button>
-
+      {/* Right: user menu */}
+      <div className="flex items-center gap-2 shrink-0">
         <UserMenu />
       </div>
     </header>

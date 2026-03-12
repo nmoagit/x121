@@ -8,14 +8,17 @@ import { ChevronDown } from "@/tokens/icons";
 interface NavGroupProps {
   group: NavGroupDef;
   collapsed: boolean;
+  /** When true, omit the top divider in collapsed mode (first group). */
+  first?: boolean;
 }
 
-export function NavGroup({ group, collapsed }: NavGroupProps) {
+export function NavGroup({ group, collapsed, first }: NavGroupProps) {
   const [open, setOpen] = useState(true);
 
   if (collapsed) {
     return (
-      <div className="space-y-0.5">
+      <div className="space-y-px">
+        {!first && <div className="mx-1 my-1 border-t border-[var(--color-border-default)]" />}
         {group.items.map((item) => (
           <NavItem key={item.path} item={item} collapsed />
         ))}
@@ -29,14 +32,14 @@ export function NavGroup({ group, collapsed }: NavGroupProps) {
         type="button"
         onClick={() => setOpen((prev) => !prev)}
         className={cn(
-          "flex w-full items-center justify-between px-3 py-1.5 text-xs font-semibold uppercase tracking-wider",
+          "flex w-full items-center justify-between px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider",
           "text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)]",
           "transition-colors duration-[var(--duration-fast)]",
         )}
       >
         <span>{group.label}</span>
         <ChevronDown
-          size={14}
+          size={12}
           aria-hidden="true"
           className={cn(
             "transition-transform duration-[var(--duration-fast)]",
@@ -46,7 +49,7 @@ export function NavGroup({ group, collapsed }: NavGroupProps) {
       </button>
 
       {open && (
-        <div className="mt-0.5 space-y-0.5">
+        <div className="mt-px space-y-px">
           {group.items.map((item) => (
             <NavItem key={item.path} item={item} collapsed={false} />
           ))}

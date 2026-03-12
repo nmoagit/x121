@@ -51,7 +51,7 @@ export function FailureAnalyticsPage() {
                   key={pattern.id}
                   type="button"
                   onClick={() => setSelectedPattern(pattern)}
-                  className={`rounded-md border px-3 py-1.5 text-xs transition-colors ${
+                  className={`rounded-[var(--radius-md)] border px-3 py-1.5 text-xs transition-colors ${
                     selectedPattern?.id === pattern.id
                       ? "border-[var(--color-border-accent)] bg-[var(--color-surface-secondary)]"
                       : "border-[var(--color-border-default)] hover:bg-[var(--color-surface-secondary)]"

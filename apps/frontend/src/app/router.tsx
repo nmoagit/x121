@@ -107,6 +107,7 @@ const characterDetailRoute = createRoute({
   path: "/projects/$projectId/characters/$characterId",
   validateSearch: (search: Record<string, unknown>) => ({
     tab: typeof search.tab === "string" ? search.tab : undefined,
+    scene: typeof search.scene === "string" ? search.scene : undefined,
   }),
   component: lazyRouteComponent(() =>
     import("@/features/characters").then((m) => ({ default: m.CharacterDetailPage })),

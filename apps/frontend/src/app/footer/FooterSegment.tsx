@@ -41,7 +41,7 @@ const SEGMENT_CLASSES = cn(
   "text-[var(--color-text-muted)]",
   "transition-colors duration-150",
   "hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-tertiary)]",
-  "rounded-sm",
+  "rounded-[var(--radius-sm)]",
 );
 
 export function FooterSegment({ href, onClick, children, className, label }: FooterSegmentProps) {

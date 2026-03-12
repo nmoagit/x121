@@ -1,9 +1,10 @@
 import { SearchBar } from "@/features/search";
+import { useSetPageTitle } from "@/hooks/useSetPageTitle";
 
 export function SearchPage() {
+  useSetPageTitle("Search");
   return (
     <div>
-      <h1 className="mb-6 text-2xl font-semibold text-[var(--color-text-primary)]">Search</h1>
       <SearchBar />
     </div>
   );

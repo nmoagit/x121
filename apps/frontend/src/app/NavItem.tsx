@@ -17,16 +17,18 @@ export function NavItem({ item, collapsed }: NavItemProps) {
     <Link
       to={item.path}
       className={cn(
-        "flex items-center gap-3 rounded-[var(--radius-md)] px-3 py-2 text-sm font-medium",
+        "flex items-center gap-2 rounded-[var(--radius-sm)] px-2 py-[3px] text-[13px] font-normal",
         "transition-colors duration-[var(--duration-fast)]",
         isActive
           ? "bg-[var(--color-action-primary)] text-[var(--color-action-primary-text)]"
-          : "text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-tertiary)] hover:text-[var(--color-text-primary)]",
-        collapsed && "justify-center px-2",
+          : item.prominent
+            ? "text-[var(--color-text-primary)] hover:bg-[var(--color-surface-tertiary)]"
+            : "text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-tertiary)] hover:text-[var(--color-text-primary)]",
+        collapsed && "justify-center px-0 w-8 mx-auto",
       )}
       aria-current={isActive ? "page" : undefined}
     >
-      <item.icon size={18} aria-hidden="true" className="shrink-0" />
+      <item.icon size={15} aria-hidden="true" className="shrink-0" />
       {!collapsed && <span className="truncate">{item.label}</span>}
     </Link>
   );

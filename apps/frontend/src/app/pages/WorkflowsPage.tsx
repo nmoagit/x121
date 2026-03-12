@@ -2,25 +2,40 @@
  * Workflows management page (PRD-75, PRD-33).
  *
  * Provides a tabbed interface:
- * - "Workflows" tab: lists all workflows with select-to-view canvas
+ * - "Workflows" tab: lists all workflows with CRUD + canvas preview
  * - "Import" tab: renders the ImportWizard for adding new workflows
  */
 
 import { useCallback, useState } from "react";
 
-import { PageHeader, Stack } from "@/components/layout";
-import { Badge, Button, LoadingPane, SelectableRow, TabBar } from "@/components/primitives";
+import { ConfirmDeleteModal, ConfigToolbar, Modal } from "@/components/composite";
 import { EmptyState } from "@/components/domain";
+import { PageHeader, Stack } from "@/components/layout";
+import {
+  Badge,
+  Button,
+  Input,
+  LoadingPane,
+  Select,
+  SelectableRow,
+  TabBar,
+} from "@/components/primitives";
+import { ChevronLeft, ChevronRight, Edit3, Trash2 } from "@/tokens/icons";
 
 import {
   ImportWizard,
+  useDeleteWorkflow,
   useImportWorkflow,
+  useUpdateWorkflow,
   useValidateWorkflow,
   useWorkflows,
+  WORKFLOW_STATUS,
+  workflowStatusLabel,
+  workflowStatusVariant,
 } from "@/features/workflow-import";
 import type { ImportWorkflowRequest, Workflow } from "@/features/workflow-import";
-import { workflowStatusLabel, workflowStatusVariant } from "@/features/workflow-import";
-import { WorkflowCanvas } from "@/features/workflow-canvas/WorkflowCanvas";
+import { WorkflowDetailPanel } from "@/features/workflow-import/WorkflowDetailPanel";
+import { useExportWorkflow, useConfigImport } from "@/features/config-io";
 
 /* --------------------------------------------------------------------------
    Tab types
@@ -34,6 +49,18 @@ const TABS: { key: TabKey; label: string }[] = [
 ];
 
 /* --------------------------------------------------------------------------
+   Status options for the select dropdown
+   -------------------------------------------------------------------------- */
+
+const STATUS_OPTIONS = [
+  { value: String(WORKFLOW_STATUS.DRAFT), label: "Draft" },
+  { value: String(WORKFLOW_STATUS.VALIDATED), label: "Validated" },
+  { value: String(WORKFLOW_STATUS.TESTED), label: "Tested" },
+  { value: String(WORKFLOW_STATUS.PRODUCTION), label: "Production" },
+  { value: String(WORKFLOW_STATUS.DEPRECATED), label: "Deprecated" },
+];
+
+/* --------------------------------------------------------------------------
    Workflow list item
    -------------------------------------------------------------------------- */
 
@@ -41,25 +68,114 @@ function WorkflowRow({
   workflow,
   isSelected,
   onSelect,
+  onEdit,
+  onDelete,
 }: {
   workflow: Workflow;
   isSelected: boolean;
   onSelect: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
 }) {
   return (
     <SelectableRow isSelected={isSelected} onSelect={onSelect}>
-      <div className="flex items-center gap-3 min-w-0">
+      <div className="grid w-full grid-cols-[minmax(0,1fr)_auto_auto_auto_auto] items-center gap-2">
         <span className="truncate text-sm font-medium text-[var(--color-text-primary)]">
           {workflow.name}
         </span>
         <Badge variant={workflowStatusVariant(workflow.status_id)} size="sm">
           {workflowStatusLabel(workflow.status_id)}
         </Badge>
+        <span className="text-xs text-[var(--color-text-muted)]">
+          v{workflow.current_version}
+        </span>
+        <Button
+          variant="ghost"
+          size="sm"
+          icon={<Edit3 size={14} />}
+          onClick={(e) => {
+            e.stopPropagation();
+            onEdit();
+          }}
+          aria-label="Edit workflow"
+        />
+        <Button
+          variant="ghost"
+          size="sm"
+          icon={<Trash2 size={14} />}
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete();
+          }}
+          aria-label="Delete workflow"
+        />
       </div>
-      <span className="shrink-0 text-xs text-[var(--color-text-muted)]">
-        v{workflow.current_version}
-      </span>
     </SelectableRow>
+  );
+}
+
+/* --------------------------------------------------------------------------
+   Edit Workflow Modal
+   -------------------------------------------------------------------------- */
+
+function EditWorkflowModal({
+  workflow,
+  onClose,
+}: {
+  workflow: Workflow;
+  onClose: () => void;
+}) {
+  const [name, setName] = useState(workflow.name);
+  const [description, setDescription] = useState(workflow.description ?? "");
+  const [statusId, setStatusId] = useState(String(workflow.status_id));
+  const updateMutation = useUpdateWorkflow();
+
+  const handleSave = () => {
+    updateMutation.mutate(
+      {
+        id: workflow.id,
+        name,
+        description: description || null,
+        status_id: Number(statusId),
+      },
+      { onSuccess: onClose },
+    );
+  };
+
+  return (
+    <Modal open onClose={onClose} title="Edit Workflow" size="md">
+      <Stack gap={4}>
+        <Input
+          label="Name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+        />
+        <Input
+          label="Description"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+        />
+        <Select
+          label="Status"
+          value={statusId}
+          onChange={(val) => setStatusId(val)}
+          options={STATUS_OPTIONS}
+        />
+        <div className="flex gap-[var(--spacing-2)] justify-end">
+          <Button variant="secondary" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            onClick={handleSave}
+            loading={updateMutation.isPending}
+            disabled={!name.trim()}
+          >
+            Save
+          </Button>
+        </div>
+      </Stack>
+    </Modal>
   );
 }
 
@@ -70,10 +186,17 @@ function WorkflowRow({
 export function WorkflowsPage() {
   const [activeTab, setActiveTab] = useState<TabKey>("list");
   const [selectedWorkflowId, setSelectedWorkflowId] = useState<number | null>(null);
+  const [listCollapsed, setListCollapsed] = useState(false);
+  const [editingWorkflow, setEditingWorkflow] = useState<Workflow | null>(null);
+  const [deletingWorkflow, setDeletingWorkflow] = useState<Workflow | null>(null);
 
   const { data: workflows, isLoading } = useWorkflows();
+  const selectedWorkflow = workflows?.find((w) => w.id === selectedWorkflowId) ?? null;
   const importMutation = useImportWorkflow();
   const validateMutation = useValidateWorkflow();
+  const deleteMutation = useDeleteWorkflow();
+  const workflowExport = useExportWorkflow();
+  const workflowImport = useConfigImport();
 
   const handleImport = useCallback(
     (input: ImportWorkflowRequest) => importMutation.mutateAsync(input),
@@ -93,13 +216,35 @@ export function WorkflowsPage() {
     [],
   );
 
+  const handleDeleteConfirm = useCallback(() => {
+    if (!deletingWorkflow) return;
+    deleteMutation.mutate(deletingWorkflow.id, {
+      onSuccess: () => {
+        if (selectedWorkflowId === deletingWorkflow.id) {
+          setSelectedWorkflowId(null);
+        }
+        setDeletingWorkflow(null);
+      },
+    });
+  }, [deletingWorkflow, deleteMutation, selectedWorkflowId]);
+
   return (
     <div className="min-h-full">
       <Stack gap={6}>
-        <PageHeader
-          title="Workflows"
-          description="Import, manage, and configure ComfyUI workflows for generation pipelines."
-        />
+        <div className="flex items-start justify-between">
+          <PageHeader
+            title="Workflows"
+            description="Import, manage, and configure ComfyUI workflows for generation pipelines."
+          />
+          {selectedWorkflow && (
+            <ConfigToolbar
+              onExport={() => workflowExport.exportConfig(selectedWorkflow.id, selectedWorkflow.name)}
+              onImport={(file) => workflowImport.importFile(file)}
+              exporting={workflowExport.exporting}
+              importing={workflowImport.importing}
+            />
+          )}
+        </div>
 
         <TabBar tabs={TABS} activeTab={activeTab} onChange={(k) => setActiveTab(k as TabKey)} />
 
@@ -121,27 +266,46 @@ export function WorkflowsPage() {
             )}
 
             {!isLoading && workflows && workflows.length > 0 && (
-              <div className="grid grid-cols-1 gap-6 lg:grid-cols-[320px_1fr]">
-                {/* Workflow list */}
-                <Stack gap={2}>
-                  {workflows.map((w) => (
-                    <WorkflowRow
-                      key={w.id}
-                      workflow={w}
-                      isSelected={w.id === selectedWorkflowId}
-                      onSelect={() => setSelectedWorkflowId(w.id)}
-                    />
-                  ))}
-                </Stack>
+              <div className="flex gap-6">
+                {/* Workflow list — collapsible */}
+                <div
+                  className={`shrink-0 transition-[width] duration-200 ${
+                    listCollapsed ? "w-0 overflow-hidden" : "w-[320px]"
+                  }`}
+                >
+                  <Stack gap={2}>
+                    {workflows.map((w) => (
+                      <WorkflowRow
+                        key={w.id}
+                        workflow={w}
+                        isSelected={w.id === selectedWorkflowId}
+                        onSelect={() => setSelectedWorkflowId(w.id)}
+                        onEdit={() => setEditingWorkflow(w)}
+                        onDelete={() => setDeletingWorkflow(w)}
+                      />
+                    ))}
+                  </Stack>
+                </div>
 
-                {/* Canvas area */}
-                <div className="min-h-[500px] rounded border border-[var(--color-border-default)]">
-                  {selectedWorkflowId ? (
-                    <WorkflowCanvas workflowId={selectedWorkflowId} />
+                {/* Collapse / expand toggle */}
+                <div className="flex items-start pt-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    icon={listCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+                    onClick={() => setListCollapsed((c) => !c)}
+                    aria-label={listCollapsed ? "Show workflow list" : "Hide workflow list"}
+                  />
+                </div>
+
+                {/* Detail panel */}
+                <div className="min-h-[500px] min-w-0 flex-1 rounded border border-[var(--color-border-default)]">
+                  {selectedWorkflow ? (
+                    <WorkflowDetailPanel workflow={selectedWorkflow} />
                   ) : (
                     <EmptyState
                       title="Select a Workflow"
-                      description="Choose a workflow from the list to view its canvas."
+                      description="Choose a workflow from the list to view details."
                     />
                   )}
                 </div>
@@ -160,6 +324,25 @@ export function WorkflowsPage() {
           />
         )}
       </Stack>
+
+      {/* Edit modal */}
+      {editingWorkflow && (
+        <EditWorkflowModal
+          workflow={editingWorkflow}
+          onClose={() => setEditingWorkflow(null)}
+        />
+      )}
+
+      {/* Delete confirmation */}
+      <ConfirmDeleteModal
+        open={deletingWorkflow !== null}
+        onClose={() => setDeletingWorkflow(null)}
+        title="Delete Workflow"
+        entityName={deletingWorkflow?.name ?? ""}
+        warningText="All versions and canvas layouts will be permanently removed."
+        onConfirm={handleDeleteConfirm}
+        loading={deleteMutation.isPending}
+      />
     </div>
   );
 }

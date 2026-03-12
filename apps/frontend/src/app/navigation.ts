@@ -53,6 +53,8 @@ export interface NavItemDef {
   requiredRole?: UserRole;
   /** When true, only highlight when the URL matches exactly (no fuzzy child matching). */
   exact?: boolean;
+  /** When true, render with prominent (white) text even when not active. */
+  prominent?: boolean;
 }
 
 export interface NavGroupDef {
@@ -73,18 +75,18 @@ export const NAV_GROUPS: NavGroupDef[] = [
   {
     label: "Projects",
     items: [
-      { label: "All Projects", path: "/projects", icon: FolderKanban, exact: true },
+      { label: "All Projects", path: "/projects", icon: FolderKanban, exact: true, prominent: true },
     ],
   },
   {
     label: "Content",
     items: [
+      { label: "Scene Catalogue", path: "/content/scene-catalogue", icon: List, prominent: true },
+      { label: "Library", path: "/content/library", icon: Folder, prominent: true },
       { label: "Scenes", path: "/content/scenes", icon: Layers },
       { label: "Characters", path: "/content/characters", icon: User },
-      { label: "Library", path: "/content/library", icon: Folder },
       { label: "Storyboard", path: "/content/storyboard", icon: Layout },
       { label: "Images", path: "/content/images", icon: Image },
-      { label: "Scene Catalogue", path: "/content/scene-catalogue", icon: List },
       { label: "Character Dashboard", path: "/content/character-dashboard", icon: Monitor },
       { label: "Contact Sheet", path: "/content/contact-sheet", icon: Image },
       { label: "Duplicates", path: "/content/duplicates", icon: FileSearch },
@@ -106,8 +108,8 @@ export const NAV_GROUPS: NavGroupDef[] = [
   {
     label: "Review",
     items: [
+      { label: "Annotations", path: "/review/annotations", icon: Edit3, prominent: true },
       { label: "My Reviews", path: "/review/my-reviews", icon: Users },
-      { label: "Annotations", path: "/review/annotations", icon: Edit3 },
       { label: "Notes", path: "/review/notes", icon: File },
       { label: "Production Notes", path: "/review/production-notes", icon: File },
       { label: "QA Gates", path: "/review/qa-gates", icon: ShieldCheck },
@@ -118,8 +120,8 @@ export const NAV_GROUPS: NavGroupDef[] = [
   {
     label: "Tools",
     items: [
+      { label: "Workflows", path: "/tools/workflows", icon: RefreshCw, prominent: true },
       { label: "Prompts", path: "/tools/prompts", icon: Edit3 },
-      { label: "Workflows", path: "/tools/workflows", icon: RefreshCw },
       { label: "Config", path: "/tools/config", icon: Settings },
       { label: "Presets", path: "/tools/presets", icon: Palette },
       { label: "Search", path: "/tools/search", icon: Search },
@@ -136,23 +138,25 @@ export const NAV_GROUPS: NavGroupDef[] = [
     label: "Admin",
     requiredRole: "admin",
     items: [
+      { label: "Infrastructure", path: "/admin/infrastructure", icon: Server, prominent: true },
+      { label: "Cloud GPUs", path: "/admin/cloud-gpus", icon: Cloud, prominent: true },
+      { label: "Storage", path: "/admin/storage", icon: HardDrive, prominent: true },
+      { label: "Naming Rules", path: "/admin/naming", icon: FileText, prominent: true },
+      { label: "Queue Manager", path: "/admin/queue", icon: List, prominent: true },
       { label: "Hardware", path: "/admin/hardware", icon: Monitor },
       { label: "Workers", path: "/admin/workers", icon: Server },
       { label: "Integrity", path: "/admin/integrity", icon: Cpu },
       { label: "Audit", path: "/admin/audit", icon: Lock },
       { label: "Reclamation", path: "/admin/reclamation", icon: HardDrive },
-      { label: "Storage", path: "/admin/storage", icon: HardDrive },
       { label: "Downloads", path: "/admin/downloads", icon: Download },
       { label: "API Keys", path: "/admin/api-keys", icon: Lock },
       { label: "Extensions", path: "/admin/extensions", icon: Layers },
       { label: "Maintenance", path: "/admin/maintenance", icon: Settings },
       { label: "Onboarding Wizard", path: "/admin/onboarding-wizard", icon: Upload },
       { label: "Legacy Import", path: "/admin/legacy-import", icon: Upload },
-      { label: "Naming Rules", path: "/admin/naming", icon: FileText },
       { label: "Readiness", path: "/admin/readiness", icon: ShieldCheck },
       { label: "Settings", path: "/admin/settings", icon: Settings },
       { label: "Themes", path: "/admin/themes", icon: Palette },
-      { label: "Cloud GPUs", path: "/admin/cloud-gpus", icon: Cloud },
       { label: "Job Scheduling", path: "/admin/job-scheduling", icon: Calendar },
       { label: "Sessions", path: "/admin/session-management", icon: Users },
       { label: "Webhook Testing", path: "/admin/webhook-testing", icon: Zap },
