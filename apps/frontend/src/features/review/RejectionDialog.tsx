@@ -59,7 +59,7 @@ export function RejectionDialog({
       role="dialog"
       aria-label="Rejection reason"
     >
-      <div className="w-full max-w-md rounded-lg bg-[var(--color-surface-primary)] p-6 shadow-xl">
+      <div className="w-full max-w-md rounded-[var(--radius-lg)] bg-[var(--color-surface-primary)] p-6 shadow-xl">
         <h2 className="mb-4 text-lg font-semibold text-[var(--color-text-primary)]">
           Select Rejection Reason
         </h2>
@@ -75,7 +75,7 @@ export function RejectionDialog({
                 key={cat.id}
                 type="button"
                 onClick={() => setSelectedCategory(cat.id)}
-                className={`rounded-md border px-3 py-2 text-left text-sm transition-colors ${
+                className={`rounded-[var(--radius-md)] border px-3 py-2 text-left text-sm transition-colors ${
                   selectedCategory === cat.id
                     ? "border-red-500 bg-red-500/10 text-red-400"
                     : "border-[var(--color-border)] text-[var(--color-text-primary)] hover:bg-[var(--color-surface-secondary)]"
@@ -109,7 +109,7 @@ export function RejectionDialog({
             onChange={(e) => setComment(e.target.value)}
             placeholder="Additional details..."
             rows={2}
-            className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-surface-secondary)] px-3 py-2 text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)]"
+            className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-secondary)] px-3 py-2 text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)]"
           />
         </div>
 
@@ -118,14 +118,14 @@ export function RejectionDialog({
           <button
             type="button"
             onClick={handleClose}
-            className="rounded-md px-4 py-2 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
+            className="rounded-[var(--radius-md)] px-4 py-2 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
           >
             Cancel
           </button>
           <button
             type="button"
             onClick={handleSubmit}
-            className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
+            className="rounded-[var(--radius-md)] bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
           >
             Reject
           </button>

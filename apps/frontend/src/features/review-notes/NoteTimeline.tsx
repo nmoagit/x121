@@ -87,7 +87,7 @@ export function NoteTimeline({
       {topLevelNotes.map((note) => (
         <div
           key={note.id}
-          className="rounded-lg border border-[var(--color-border-default)] bg-[var(--color-surface-secondary)] p-3"
+          className="rounded-[var(--radius-lg)] border border-[var(--color-border-default)] bg-[var(--color-surface-secondary)] p-3"
           data-testid={`note-item-${note.id}`}
         >
           {/* Header: user, timecode, status */}

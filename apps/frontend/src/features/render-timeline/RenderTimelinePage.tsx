@@ -6,8 +6,9 @@
 
 import { useMemo, useState } from "react";
 
-import { Card, CardBody, CardHeader } from "@/components/composite";
+import { Card, CardBody } from "@/components/composite";
 import { Stack } from "@/components/layout";
+import { useSetPageTitle } from "@/hooks/useSetPageTitle";
 import { Spinner } from "@/components/primitives";
 
 import { JOB_STATUS_LABELS } from "@/lib/job-status";
@@ -23,6 +24,7 @@ import type { TimelineJob, ZoomLevel } from "./types";
    -------------------------------------------------------------------------- */
 
 export function RenderTimelinePage() {
+  useSetPageTitle("Render Timeline");
   const [zoom, setZoom] = useState<ZoomLevel>("6h");
   const [statusFilter, setStatusFilter] = useState<Set<string>>(
     () => new Set(Object.values(JOB_STATUS_LABELS).map((l) => l.toLowerCase())),
@@ -48,11 +50,6 @@ export function RenderTimelinePage() {
   return (
     <Stack direction="vertical" gap={4} className="h-full">
       <Card padding="lg">
-        <CardHeader>
-          <h1 className="text-lg font-semibold text-[var(--color-text-primary)]">
-            Render Queue Timeline
-          </h1>
-        </CardHeader>
         <CardBody>
           <Stack direction="vertical" gap={4}>
             {/* Controls */}

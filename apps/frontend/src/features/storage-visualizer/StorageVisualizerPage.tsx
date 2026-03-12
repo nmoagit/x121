@@ -5,6 +5,7 @@
  */
 
 import { Stack } from "@/components/layout";
+import { useSetPageTitle } from "@/hooks/useSetPageTitle";
 
 import { FileTypeBreakdownChart } from "./FileTypeBreakdownChart";
 import { StorageSummaryCard } from "./StorageSummaryCard";
@@ -15,12 +16,9 @@ import { StorageTreemap } from "./StorageTreemap";
    -------------------------------------------------------------------------- */
 
 export function StorageVisualizerPage() {
+  useSetPageTitle("Storage Visualizer");
   return (
     <Stack direction="vertical" gap={4} className="p-[var(--spacing-4)]">
-      <h1 className="text-lg font-bold text-[var(--color-text-primary)]">
-        Storage Visualizer
-      </h1>
-
       {/* Summary cards */}
       <StorageSummaryCard />
 

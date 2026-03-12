@@ -106,7 +106,7 @@ export function StepUpload({ stepData, onUpdateStepData }: StepUploadProps) {
       {mode === "images" && (
         <div
           data-testid="image-drop-zone"
-          className="flex min-h-[120px] items-center justify-center rounded-lg border-2 border-dashed border-[var(--color-border-subtle)] bg-[var(--color-surface-secondary)] p-6"
+          className="flex min-h-[120px] items-center justify-center rounded-[var(--radius-lg)] border-2 border-dashed border-[var(--color-border-subtle)] bg-[var(--color-surface-secondary)] p-6"
           onDragOver={(e) => e.preventDefault()}
           onDrop={handleFileDrop}
         >

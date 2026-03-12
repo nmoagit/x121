@@ -1,4 +1,5 @@
 import { Stack } from "@/components/layout";
+import { useSetPageTitle } from "@/hooks/useSetPageTitle";
 import { ActiveTasksWidget } from "@/features/dashboard/widgets/ActiveTasksWidget";
 import { ActivityFeedWidget } from "@/features/dashboard/widgets/ActivityFeedWidget";
 import { DiskHealthWidget } from "@/features/dashboard/widgets/DiskHealthWidget";
@@ -25,19 +26,11 @@ import { ProjectProgressWidget } from "@/features/dashboard/widgets/ProjectProgr
    -------------------------------------------------------------------------- */
 
 export function StudioPulse() {
+  useSetPageTitle("Studio Pulse", "Real-time overview of your studio. Widgets refresh automatically.");
+
   return (
     <div className="min-h-full">
       <Stack gap={6}>
-        {/* Page header */}
-        <div>
-          <h1 className="text-xl font-semibold text-[var(--color-text-primary)]">
-            Studio Pulse
-          </h1>
-          <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-            Real-time overview of your studio. Widgets refresh automatically.
-          </p>
-        </div>
-
         {/* Widget grid */}
         <div className="grid grid-cols-1 gap-[var(--spacing-4)] md:grid-cols-2 lg:grid-cols-4">
           {/* Row 1: Active Tasks + Project Progress */}

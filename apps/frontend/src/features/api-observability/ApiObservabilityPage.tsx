@@ -11,7 +11,8 @@ import { useState } from "react";
 import { Card } from "@/components/composite/Card";
 import { Badge, Select, Spinner, Toggle } from "@/components/primitives";
 import { Stack } from "@/components/layout";
-import { Activity, AlertTriangle, RefreshCw } from "@/tokens/icons";
+import { useSetPageTitle } from "@/hooks/useSetPageTitle";
+import { AlertTriangle, RefreshCw } from "@/tokens/icons";
 
 import { AlertConfigPanel } from "./AlertConfigPanel";
 import { EndpointHeatmap } from "./EndpointHeatmap";
@@ -117,6 +118,7 @@ function ActiveAlertBanner() {
    -------------------------------------------------------------------------- */
 
 export function ApiObservabilityPage() {
+  useSetPageTitle("API Observability");
   const [period, setPeriod] = useState<TimePeriod>("24h");
   const [autoRefresh, setAutoRefresh] = useState(false);
 
@@ -133,31 +135,22 @@ export function ApiObservabilityPage() {
 
   return (
     <Stack gap={6}>
-      {/* Page header */}
-      <div className="flex flex-wrap items-center justify-between gap-[var(--spacing-4)]">
-        <div className="flex items-center gap-[var(--spacing-3)]">
-          <Activity size={24} className="text-[var(--color-text-muted)]" aria-hidden />
-          <h1 className="text-xl font-semibold text-[var(--color-text-primary)]">
-            API Usage &amp; Observability
-          </h1>
-        </div>
-
-        <div className="flex items-center gap-[var(--spacing-3)]">
-          <Select
-            options={TIME_PERIOD_OPTIONS}
-            value={period}
-            onChange={(v) => setPeriod(v as TimePeriod)}
-          />
-          <Toggle
-            checked={autoRefresh}
-            onChange={setAutoRefresh}
-            size="sm"
-            label="Auto-refresh"
-          />
-          {autoRefresh && (
-            <RefreshCw size={14} className="animate-spin text-[var(--color-text-muted)]" aria-label="Auto-refreshing" />
-          )}
-        </div>
+      {/* Controls */}
+      <div className="flex flex-wrap items-center justify-end gap-[var(--spacing-3)]">
+        <Select
+          options={TIME_PERIOD_OPTIONS}
+          value={period}
+          onChange={(v) => setPeriod(v as TimePeriod)}
+        />
+        <Toggle
+          checked={autoRefresh}
+          onChange={setAutoRefresh}
+          size="sm"
+          label="Auto-refresh"
+        />
+        {autoRefresh && (
+          <RefreshCw size={14} className="animate-spin text-[var(--color-text-muted)]" aria-label="Auto-refreshing" />
+        )}
       </div>
 
       {/* Active alert banner */}

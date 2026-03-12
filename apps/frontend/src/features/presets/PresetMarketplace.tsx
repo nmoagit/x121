@@ -1,5 +1,5 @@
 /**
- * Marketplace catalog for browsing and applying shared presets (PRD-27).
+ * Marketplace catalogue for browsing and applying shared presets (PRD-27).
  */
 
 import { useState } from "react";

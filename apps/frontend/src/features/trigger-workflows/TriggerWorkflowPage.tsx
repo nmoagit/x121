@@ -10,6 +10,7 @@ import { useCallback, useState } from "react";
 import { Button } from "@/components/primitives";
 import { Modal, Tabs } from "@/components/composite";
 import { Stack } from "@/components/layout";
+import { useSetPageTitle } from "@/hooks/useSetPageTitle";
 import { Pause, Play, Plus } from "@/tokens/icons";
 import { iconSizes } from "@/tokens/icons";
 
@@ -40,6 +41,7 @@ const TABS = [
    -------------------------------------------------------------------------- */
 
 export function TriggerWorkflowPage() {
+  useSetPageTitle("Trigger Workflows");
   const [activeTab, setActiveTab] = useState("triggers");
   const [formOpen, setFormOpen] = useState(false);
   const [editingTrigger, setEditingTrigger] = useState<Trigger | undefined>();
@@ -79,10 +81,7 @@ export function TriggerWorkflowPage() {
     <div className="p-[var(--spacing-6)]" data-testid="trigger-workflow-page">
       <Stack direction="vertical" gap={5}>
         {/* Page header */}
-        <Stack direction="horizontal" gap={3} align="center" justify="between">
-          <h1 className="text-xl font-semibold text-[var(--color-text-primary)]">
-            Trigger Workflows
-          </h1>
+        <Stack direction="horizontal" gap={3} align="center" justify="end">
           <Stack direction="horizontal" gap={2} align="center">
             {activeTab === "triggers" && (
               <>

@@ -10,6 +10,7 @@ import { useCallback, useState } from "react";
 import { Card, Modal } from "@/components/composite";
 import { Stack } from "@/components/layout";
 import { Badge, Button, Input, Spinner, Toggle } from "@/components/primitives";
+import { useSetPageTitle } from "@/hooks/useSetPageTitle";
 import { cn } from "@/lib/cn";
 import { AlertTriangle, Plus, Settings, Trash2 } from "@/tokens/icons";
 
@@ -292,6 +293,8 @@ function ExtensionRow({ extension, onSettings, onUninstall }: ExtensionRowProps)
    -------------------------------------------------------------------------- */
 
 export function ExtensionManager() {
+  useSetPageTitle("Extensions", "Install, configure, and manage UI extensions.");
+
   const { data: extensions, isLoading } = useExtensions();
   const uninstallMutation = useUninstallExtension();
 
@@ -318,16 +321,8 @@ export function ExtensionManager() {
   return (
     <div className="min-h-full">
       <Stack gap={6}>
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-semibold text-[var(--color-text-primary)]">
-              Extension Manager
-            </h1>
-            <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-              Install, configure, and manage UI extensions.
-            </p>
-          </div>
+        {/* Action bar */}
+        <div className="flex items-center justify-end">
           <Button
             variant="primary"
             size="md"

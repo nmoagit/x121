@@ -90,7 +90,7 @@ export function ReviewQueue({
               <button
                 type="button"
                 onClick={() => onSelectSegment(item.segment_id)}
-                className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-sm transition-colors ${
+                className={`flex w-full items-center justify-between rounded-[var(--radius-md)] px-3 py-2 text-sm transition-colors ${
                   isActive
                     ? "bg-[var(--color-action-primary)] text-white"
                     : "text-[var(--color-text-primary)] hover:bg-[var(--color-surface-secondary)]"
@@ -117,7 +117,7 @@ export function ReviewQueue({
 
       {/* End of queue message */}
       {reviewedCount === totalCount && (
-        <div className="rounded-md bg-green-500/10 px-3 py-2 text-center text-sm text-green-400">
+        <div className="rounded-[var(--radius-md)] bg-green-500/10 px-3 py-2 text-center text-sm text-green-400">
           All segments reviewed
         </div>
       )}

@@ -9,6 +9,7 @@ import { useState } from "react";
 
 import { Tabs } from "@/components/composite";
 import { Stack } from "@/components/layout";
+import { useSetPageTitle } from "@/hooks/useSetPageTitle";
 
 import { DeliveryLogViewer } from "./DeliveryLogViewer";
 import { EndpointHealthDashboard } from "./EndpointHealthDashboard";
@@ -44,21 +45,13 @@ const TAB_PANELS: Record<TabId, React.FC> = {
    -------------------------------------------------------------------------- */
 
 export function WebhookTestingPage() {
+  useSetPageTitle("Webhook Testing", "Send test payloads, inspect deliveries, monitor health, and manage mock endpoints.");
   const [activeTab, setActiveTab] = useState<string>("sender");
   const ActivePanel = TAB_PANELS[activeTab as TabId] ?? TestPayloadSender;
 
   return (
     <div data-testid="webhook-testing-page" className="min-h-full">
       <Stack gap={6}>
-        <div>
-          <h1 className="text-xl font-semibold text-[var(--color-text-primary)]">
-            Webhook Testing Console
-          </h1>
-          <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-            Send test payloads, inspect deliveries, monitor health, and manage mock endpoints.
-          </p>
-        </div>
-
         <Tabs
           tabs={[...TABS]}
           activeTab={activeTab}

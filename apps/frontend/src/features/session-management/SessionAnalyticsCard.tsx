@@ -5,7 +5,7 @@
  */
 
 import { Spinner, StatBadge } from "@/components/primitives";
-import { formatDuration } from "@/lib/format";
+import { formatDurationSecs } from "@/lib/format";
 
 import { useSessionAnalytics } from "./hooks/use-session-management";
 
@@ -39,7 +39,7 @@ export function SessionAnalyticsCard() {
       <StatBadge label="Idle" value={data.idle_sessions} />
       <StatBadge
         label="Avg Duration"
-        value={formatDuration(data.avg_duration_seconds * 1000)}
+        value={formatDurationSecs(data.avg_duration_seconds)}
       />
       <StatBadge label="Peak Concurrent" value={data.peak_concurrent} />
     </div>

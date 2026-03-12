@@ -57,7 +57,7 @@ export function InheritanceView({
     return (
       <div
         data-testid="inheritance-empty"
-        className="rounded-lg border border-dashed border-[var(--color-border)] p-8 text-center text-sm text-[var(--color-text-secondary)]"
+        className="rounded-[var(--radius-lg)] border border-dashed border-[var(--color-border)] p-8 text-center text-sm text-[var(--color-text-secondary)]"
       >
         No effective hooks for this scope.
       </div>

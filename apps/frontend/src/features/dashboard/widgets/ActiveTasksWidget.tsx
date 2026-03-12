@@ -3,7 +3,7 @@ import { EmptyState } from "@/components/domain";
 import { useActiveTasks } from "@/features/dashboard/hooks/use-dashboard";
 import type { ActiveTaskItem } from "@/features/dashboard/hooks/use-dashboard";
 import { WidgetBase } from "@/features/dashboard/WidgetBase";
-import { formatDuration } from "@/lib/format";
+import { formatDurationSecs } from "@/lib/format";
 import { Activity, Layers } from "@/tokens/icons";
 
 /* --------------------------------------------------------------------------
@@ -25,10 +25,7 @@ function statusVariant(status: string): BadgeVariant {
   return STATUS_BADGE_MAP[status] ?? "default";
 }
 
-function formatElapsed(seconds: number | null): string {
-  if (seconds === null || seconds === 0) return "--";
-  return formatDuration(seconds * 1000);
-}
+const formatElapsed = formatDurationSecs;
 
 /* --------------------------------------------------------------------------
    Task row

@@ -49,7 +49,7 @@ export function ExecutionLogViewer({ hookId, jobId }: ExecutionLogViewerProps) {
     return (
       <div
         data-testid="logs-empty"
-        className="rounded-lg border border-dashed border-[var(--color-border)] p-8 text-center text-sm text-[var(--color-text-secondary)]"
+        className="rounded-[var(--radius-lg)] border border-dashed border-[var(--color-border)] p-8 text-center text-sm text-[var(--color-text-secondary)]"
       >
         No execution logs yet.
       </div>

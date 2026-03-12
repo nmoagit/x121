@@ -84,7 +84,7 @@ export function WikiVersionHistory({
           return (
             <div
               key={v.id}
-              className={`flex items-center justify-between rounded-lg border p-3 ${
+              className={`flex items-center justify-between rounded-[var(--radius-lg)] border p-3 ${
                 isSelected
                   ? "border-[var(--color-action-primary)] bg-[var(--color-surface-secondary)]"
                   : "border-[var(--color-border-default)]"
@@ -148,7 +148,7 @@ export function WikiVersionHistory({
           <h4 className="text-sm font-medium text-[var(--color-text-primary)]">
             Diff: v{selectedV1} vs v{selectedV2}
           </h4>
-          <div className="overflow-x-auto rounded-md border border-[var(--color-border-default)] bg-[var(--color-surface-secondary)] p-2 font-mono text-xs">
+          <div className="overflow-x-auto rounded-[var(--radius-md)] border border-[var(--color-border-default)] bg-[var(--color-surface-secondary)] p-2 font-mono text-xs">
             {diffLines.map((line, idx) => {
               let bgClass = "";
               let prefix = " ";

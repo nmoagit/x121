@@ -10,6 +10,7 @@ import { useMemo, useState } from "react";
 import { Tabs } from "@/components/composite/Tabs";
 import { Spinner } from "@/components/primitives";
 import { Stack } from "@/components/layout";
+import { useSetPageTitle } from "@/hooks/useSetPageTitle";
 import { AlertCircle, Settings } from "@/tokens/icons";
 
 import { MetadataTemplateEditor } from "./components/MetadataTemplateEditor";
@@ -32,6 +33,8 @@ const CATEGORY_TABS = SETTING_CATEGORIES.map((c) => ({
    -------------------------------------------------------------------------- */
 
 export function SettingsPanel() {
+  useSetPageTitle("Keyboard Shortcuts", "Configure storage, ComfyUI, authentication, and system-level settings.");
+
   const { data, isLoading, error } = useSettings();
   const [activeCategory, setActiveCategory] = useState<string>(SETTING_CATEGORIES[0].id);
 
@@ -52,19 +55,6 @@ export function SettingsPanel() {
 
   return (
     <Stack gap={6}>
-      {/* Page header */}
-      <div>
-        <div className="flex items-center gap-[var(--spacing-2)]">
-          <Settings size={24} className="text-[var(--color-text-muted)]" aria-hidden />
-          <h1 className="text-xl font-semibold text-[var(--color-text-primary)]">
-            Platform Settings
-          </h1>
-        </div>
-        <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-          Configure storage, ComfyUI, authentication, and system-level settings.
-        </p>
-      </div>
-
       {/* Restart warning banner */}
       {data?.pending_restart && (
         <RestartBanner pendingKeys={data.pending_restart_keys} />

@@ -10,6 +10,7 @@ import { useState, useCallback } from "react";
 import { Card } from "@/components/composite/Card";
 import { Button, Input, Select, Spinner } from "@/components/primitives";
 import { Stack } from "@/components/layout";
+import { useSetPageTitle } from "@/hooks/useSetPageTitle";
 import { useAuditLogs, exportAuditLogs } from "./hooks/use-audit";
 import {
   ACTION_TYPES,
@@ -31,6 +32,8 @@ const DEFAULT_PAGE_SIZE = 50;
    -------------------------------------------------------------------------- */
 
 export function AuditLogViewer() {
+  useSetPageTitle("Audit Log", "Review all user and system actions in the platform.");
+
   const [searchText, setSearchText] = useState("");
   const [actionTypeFilter, setActionTypeFilter] = useState("");
   const [entityTypeFilter, setEntityTypeFilter] = useState("");
@@ -68,25 +71,14 @@ export function AuditLogViewer() {
   return (
     <div className="min-h-full">
       <Stack gap={6}>
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-semibold text-[var(--color-text-primary)]">
-              Audit Log
-            </h1>
-            <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-              Review all user and system actions in the platform.
-            </p>
-          </div>
-
-          <div className="flex gap-2">
-            <Button variant="secondary" size="sm" onClick={() => handleExport("csv")}>
-              Export CSV
-            </Button>
-            <Button variant="secondary" size="sm" onClick={() => handleExport("json")}>
-              Export JSON
-            </Button>
-          </div>
+        {/* Export actions */}
+        <div className="flex items-center justify-end gap-2">
+          <Button variant="secondary" size="sm" onClick={() => handleExport("csv")}>
+            Export CSV
+          </Button>
+          <Button variant="secondary" size="sm" onClick={() => handleExport("json")}>
+            Export JSON
+          </Button>
         </div>
 
         {/* Filters */}

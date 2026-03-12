@@ -49,7 +49,7 @@ export function PatternDetail({ pattern }: PatternDetailProps) {
   return (
     <div className="space-y-6" data-testid="pattern-detail">
       {/* Pattern info card */}
-      <div className="rounded-lg border border-[var(--color-border-primary)] bg-[var(--color-surface-secondary)] p-4">
+      <div className="rounded-[var(--radius-lg)] border border-[var(--color-border-primary)] bg-[var(--color-surface-secondary)] p-4">
         <div className="mb-3 flex items-center justify-between">
           <h3 className="text-lg font-medium text-[var(--color-text-primary)]">
             Pattern #{pattern.id}

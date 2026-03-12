@@ -147,7 +147,7 @@ export function DriftTrendChart({
                 key={mode}
                 type="button"
                 onClick={() => setView(mode)}
-                className={`rounded-md px-3 py-1 text-xs font-medium transition-colors ${
+                className={`rounded-[var(--radius-md)] px-3 py-1 text-xs font-medium transition-colors ${
                   view === mode
                     ? "bg-[var(--color-surface-interactive)] text-[var(--color-text-primary)]"
                     : "text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)]"

@@ -27,7 +27,7 @@ export function NonUndoableWarning({
 }: NonUndoableWarningProps) {
   return (
     <div
-      className="flex flex-col gap-3 rounded-lg border border-[var(--color-border-warning)] bg-[var(--color-bg-surface)] p-4"
+      className="flex flex-col gap-3 rounded-[var(--radius-lg)] border border-[var(--color-border-warning)] bg-[var(--color-bg-surface)] p-4"
       role="alertdialog"
       aria-label="Non-undoable action warning"
     >

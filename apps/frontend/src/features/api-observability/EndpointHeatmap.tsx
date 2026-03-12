@@ -133,7 +133,7 @@ export function EndpointHeatmap({ data, isLoading }: EndpointHeatmapProps) {
                   return (
                     <div
                       key={`${endpoint}::${bucket}`}
-                      className="h-8 rounded-sm transition-colors"
+                      className="h-8 rounded-[var(--radius-sm)] transition-colors"
                       style={{ backgroundColor: intensityToColor(intensity) }}
                       title={`${endpoint} @ ${formatChartTime(bucket)}: ${count} requests`}
                       role="gridcell"

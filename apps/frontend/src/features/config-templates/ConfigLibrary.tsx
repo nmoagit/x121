@@ -1,5 +1,5 @@
 /**
- * ConfigLibrary -- displays a catalog of project configuration templates (PRD-74).
+ * ConfigLibrary -- displays a catalogue of project configuration templates (PRD-74).
  *
  * Shows config cards with name, description, version, source project,
  * recommended badge, and CRUD actions.
@@ -90,7 +90,7 @@ export function ConfigLibrary({ projectId }: ConfigLibraryProps) {
       {configs.length === 0 && !showForm && (
         <div
           data-testid="empty-state"
-          className="rounded-lg border border-dashed border-[var(--color-border)] p-8 text-center text-sm text-[var(--color-text-secondary)]"
+          className="rounded-[var(--radius-lg)] border border-dashed border-[var(--color-border)] p-8 text-center text-sm text-[var(--color-text-secondary)]"
         >
           No configuration templates yet. Create one to get started.
         </div>

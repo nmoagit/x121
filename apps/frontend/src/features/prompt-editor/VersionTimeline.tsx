@@ -97,7 +97,7 @@ export function VersionTimeline({
         <div
           key={ver.id}
           data-testid={`version-item-${ver.id}`}
-          className="rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-surface-secondary)] p-3"
+          className="rounded-[var(--radius-lg)] border border-[var(--color-border-subtle)] bg-[var(--color-surface-secondary)] p-3"
         >
           <div className="flex items-center gap-3">
             {/* Checkbox for diff selection */}

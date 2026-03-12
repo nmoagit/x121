@@ -88,7 +88,7 @@ export function ConsistencyHeatmap({ scores, overallScore }: ConsistencyHeatmapP
                       key={`${rowIdx}-${colIdx}`}
                       data-testid={`cell-${rowIdx}-${colIdx}`}
                       className={cn(
-                        "p-1 text-center w-10 h-10 rounded-sm",
+                        "p-1 text-center w-10 h-10 rounded-[var(--radius-sm)]",
                         rowIdx === colIdx
                           ? "bg-[var(--color-surface-tertiary)] text-[var(--color-text-muted)]"
                           : consistencyCellBg(score),

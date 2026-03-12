@@ -173,12 +173,12 @@ export function WikiArticleEditor({
             data-testid="wiki-content-textarea"
             value={contentMd}
             onChange={(e) => setContentMd(e.target.value)}
-            className="min-h-[300px] w-full rounded-md border border-[var(--color-border-default)] bg-[var(--color-surface-secondary)] p-3 font-mono text-sm text-[var(--color-text-primary)] focus:border-[var(--color-action-primary)] focus:outline-none"
+            className="min-h-[300px] w-full rounded-[var(--radius-md)] border border-[var(--color-border-default)] bg-[var(--color-surface-secondary)] p-3 font-mono text-sm text-[var(--color-text-primary)] focus:border-[var(--color-action-primary)] focus:outline-none"
             placeholder="Write your article content here..."
           />
           {/* Preview pane */}
           <div
-            className="min-h-[300px] rounded-md border border-[var(--color-border-default)] bg-[var(--color-surface-primary)] p-3"
+            className="min-h-[300px] rounded-[var(--radius-md)] border border-[var(--color-border-default)] bg-[var(--color-surface-primary)] p-3"
             data-testid="wiki-content-preview"
           >
             <p className="mb-2 text-xs font-medium text-[var(--color-text-muted)]">

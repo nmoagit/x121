@@ -9,6 +9,7 @@ import { useState } from "react";
 
 import { Badge, Spinner } from "@/components/primitives";
 import { Card, CardBody, CardHeader } from "@/components/composite";
+import { useSetPageTitle } from "@/hooks/useSetPageTitle";
 
 import { ContactSheetControls } from "./ContactSheetControls";
 import { FaceCropGrid } from "./FaceCropGrid";
@@ -34,6 +35,7 @@ export function ContactSheetPage({
   characterName,
   sceneLabels = {},
 }: ContactSheetPageProps) {
+  useSetPageTitle("Contact Sheet", characterName);
   const [columns, setColumns] = useState<GridColumns>(DEFAULT_GRID_COLUMNS);
   const [exportFormat, setExportFormat] = useState<ExportFormat>("png");
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
@@ -60,25 +62,16 @@ export function ContactSheetPage({
 
   return (
     <div data-testid="contact-sheet-page" className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <h1 className="text-xl font-semibold text-[var(--color-text-primary)]">
-            Contact Sheet
-          </h1>
-          <p className="text-sm text-[var(--color-text-secondary)] mt-1">
-            {characterName}
-          </p>
-        </div>
-
-        {images.length > 0 && (
+      {/* Image count badge */}
+      {images.length > 0 && (
+        <div className="flex items-center justify-end">
           <span data-testid="image-count-badge">
             <Badge variant="info" size="sm">
               {images.length} {images.length === 1 ? "image" : "images"}
             </Badge>
           </span>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Controls */}
       <ContactSheetControls

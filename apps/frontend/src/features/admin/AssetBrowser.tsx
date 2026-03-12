@@ -5,6 +5,7 @@ import { Stack } from "@/components/layout";
 import { Badge, Input, Select, Spinner } from "@/components/primitives";
 import { useAssets } from "@/features/admin/hooks/use-assets";
 import type { AssetSearchParams, AssetWithStats } from "@/features/admin/hooks/use-assets";
+import { useSetPageTitle } from "@/hooks/useSetPageTitle";
 import { formatBytes } from "@/lib/format";
 import { File } from "@/tokens/icons";
 
@@ -109,6 +110,8 @@ interface AssetBrowserProps {
 }
 
 export function AssetBrowser({ onSelectAsset }: AssetBrowserProps) {
+  useSetPageTitle("Asset Registry", "Browse registered models, LoRAs, and custom nodes.");
+
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
@@ -139,13 +142,6 @@ export function AssetBrowser({ onSelectAsset }: AssetBrowserProps) {
   return (
     <div className="min-h-full">
       <Stack gap={6}>
-        <div>
-          <h1 className="text-xl font-semibold text-[var(--color-text-primary)]">Asset Registry</h1>
-          <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-            Browse registered models, LoRAs, and custom nodes.
-          </p>
-        </div>
-
         {/* Filters */}
         <div className="flex flex-wrap items-end gap-[var(--spacing-4)]">
           <div className="min-w-[200px] flex-1">

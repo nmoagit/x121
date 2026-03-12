@@ -9,6 +9,7 @@ import { useState } from "react";
 import { Card, CardBody, CardHeader } from "@/components/composite/Card";
 import { Tabs } from "@/components/composite/Tabs";
 import { Stack } from "@/components/layout";
+import { useSetPageTitle } from "@/hooks/useSetPageTitle";
 
 import { ActiveSessionsTable } from "./ActiveSessionsTable";
 import { LoginHistoryTable } from "./LoginHistoryTable";
@@ -40,6 +41,7 @@ const TAB_CONTENT: Record<TabId, React.ComponentType> = {
    -------------------------------------------------------------------------- */
 
 export function SessionManagementPage() {
+  useSetPageTitle("Session Management", "Monitor active sessions, review login history, and manage session configuration.");
   const [activeTab, setActiveTab] = useState<string>("active");
 
   const ContentComponent = TAB_CONTENT[activeTab as TabId] ?? ActiveSessionsTable;
@@ -47,16 +49,6 @@ export function SessionManagementPage() {
   return (
     <div className="min-h-full">
       <Stack gap={6}>
-        {/* Header */}
-        <div>
-          <h1 className="text-xl font-semibold text-[var(--color-text-primary)]">
-            Session Management
-          </h1>
-          <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-            Monitor active sessions, review login history, and manage session configuration.
-          </p>
-        </div>
-
         {/* Tabbed content */}
         <Card>
           <CardHeader className="pb-0">

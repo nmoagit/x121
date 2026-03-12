@@ -7,6 +7,7 @@ import { MetricsChart } from "@/features/admin/components/MetricsChart";
 import { WorkerCard } from "@/features/admin/components/WorkerCard";
 import { useCurrentMetrics, useThresholds } from "@/features/admin/hooks/use-hardware";
 import type { WorkerCurrentMetrics } from "@/features/admin/hooks/use-hardware";
+import { useSetPageTitle } from "@/hooks/useSetPageTitle";
 import { Monitor } from "@/tokens/icons";
 
 /* --------------------------------------------------------------------------
@@ -33,6 +34,8 @@ function groupByWorker(metrics: WorkerCurrentMetrics[]): Map<number, WorkerCurre
    -------------------------------------------------------------------------- */
 
 export function HardwareDashboard() {
+  useSetPageTitle("Hardware Dashboard", "Live GPU metrics across all workers. Data refreshes every 5 seconds.");
+
   const { data: allMetrics, isLoading: metricsLoading } = useCurrentMetrics();
   const { data: thresholds } = useThresholds();
   const [selectedWorkerId, setSelectedWorkerId] = useState<number | null>(null);
@@ -58,15 +61,6 @@ export function HardwareDashboard() {
   return (
     <div className="min-h-full">
       <Stack gap={6}>
-        <div>
-          <h1 className="text-xl font-semibold text-[var(--color-text-primary)]">
-            Hardware Monitoring
-          </h1>
-          <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-            Live GPU metrics across all workers. Data refreshes every 5 seconds.
-          </p>
-        </div>
-
         {sortedWorkers.length === 0 ? (
           <EmptyState
             icon={<Monitor size={40} />}

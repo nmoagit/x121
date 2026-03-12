@@ -67,7 +67,7 @@ export function ReviewThread({
 
   return (
     <div
-      className="rounded-lg border border-[var(--color-border-default)] bg-[var(--color-surface-secondary)]"
+      className="rounded-[var(--radius-lg)] border border-[var(--color-border-default)] bg-[var(--color-surface-secondary)]"
       data-testid="review-thread"
     >
       {/* Root note header */}
@@ -167,7 +167,7 @@ export function ReviewThread({
                   }
                 }}
                 placeholder="Write a reply..."
-                className="flex-1 rounded-md border border-[var(--color-border-default)] bg-[var(--color-surface-primary)] px-3 py-1.5 text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--color-border-focus)]"
+                className="flex-1 rounded-[var(--radius-md)] border border-[var(--color-border-default)] bg-[var(--color-surface-primary)] px-3 py-1.5 text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--color-border-focus)]"
                 data-testid="thread-reply-input"
               />
               <Button

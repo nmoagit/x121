@@ -10,6 +10,7 @@ import { useCallback, useState } from "react";
 import { Card, Modal } from "@/components/composite";
 import { useCopyToClipboard } from "@/hooks/useCopyToClipboard";
 import { Stack } from "@/components/layout";
+import { useSetPageTitle } from "@/hooks/useSetPageTitle";
 import { Badge, Button, Input, Spinner } from "@/components/primitives";
 import { formatDateTime } from "@/lib/format";
 import { AlertTriangle, Copy, Plus, RefreshCw } from "@/tokens/icons";
@@ -242,6 +243,7 @@ function KeyRow({ apiKey, onRotate, onRevoke }: KeyRowProps) {
    -------------------------------------------------------------------------- */
 
 export function ApiKeyManager() {
+  useSetPageTitle("API Keys", "Manage API keys for external integrations.");
   const { data: keys, isLoading } = useApiKeys();
   const rotateMutation = useRotateApiKey();
   const revokeMutation = useRevokeApiKey();
@@ -279,16 +281,8 @@ export function ApiKeyManager() {
   return (
     <div className="min-h-full">
       <Stack gap={6}>
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-semibold text-[var(--color-text-primary)]">
-              API Keys
-            </h1>
-            <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-              Manage API keys for external integrations.
-            </p>
-          </div>
+        {/* Header actions */}
+        <div className="flex items-center justify-end">
           <Button
             variant="primary"
             size="md"

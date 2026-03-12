@@ -45,7 +45,15 @@ export function useNamingCategories() {
 export function useCategoryTokens(categoryId: number) {
   return useQuery({
     queryKey: namingKeys.categoryTokens(categoryId),
-    queryFn: () => api.get<TokenInfo[]>(`/admin/naming/categories/${categoryId}/tokens`),
+    queryFn: async () => {
+      const resp = await api.get<{ category_id: number; category_name: string; tokens: string[] }>(
+        `/admin/naming/categories/${categoryId}/tokens`,
+      );
+      return resp.tokens.map((name): TokenInfo => ({
+        name,
+        description: name.replaceAll("_", " "),
+      }));
+    },
     enabled: categoryId > 0,
   });
 }

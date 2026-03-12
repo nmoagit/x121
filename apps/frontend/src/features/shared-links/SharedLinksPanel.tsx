@@ -9,6 +9,7 @@ import { useCallback, useState } from "react";
 
 import { Card, Modal } from "@/components/composite";
 import { Stack } from "@/components/layout";
+import { useSetPageTitle } from "@/hooks/useSetPageTitle";
 import { Badge, Button, Spinner } from "@/components/primitives";
 import { formatDateTime } from "@/lib/format";
 import { Plus, Trash2 } from "@/tokens/icons";
@@ -26,6 +27,7 @@ import type { SharedLink } from "./types";
    -------------------------------------------------------------------------- */
 
 export function SharedLinksPanel() {
+  useSetPageTitle("Shared Links", "Create and manage shareable preview links for external review.");
   const { data: links, isLoading } = useSharedLinks();
   const revokeMutation = useRevokeLink();
 
@@ -53,16 +55,8 @@ export function SharedLinksPanel() {
   return (
     <div className="min-h-full">
       <Stack gap={6}>
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-semibold text-[var(--color-text-primary)]">
-              Shared Links
-            </h1>
-            <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-              Create and manage shareable preview links for external review.
-            </p>
-          </div>
+        {/* Header actions */}
+        <div className="flex items-center justify-end">
           <Button
             variant="primary"
             size="md"

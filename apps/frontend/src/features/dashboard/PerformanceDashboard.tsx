@@ -15,6 +15,7 @@ import {
   type DatePreset,
   type PerformanceOverview,
 } from "@/features/dashboard/hooks/use-performance";
+import { useSetPageTitle } from "@/hooks/useSetPageTitle";
 
 /* --------------------------------------------------------------------------
    Constants
@@ -39,6 +40,8 @@ const TABS = [
    -------------------------------------------------------------------------- */
 
 export function PerformanceDashboard() {
+  useSetPageTitle("Performance", "Monitor generation performance, quality metrics, and resource utilization.");
+
   const [activeTab, setActiveTab] = useState("overview");
   const [datePreset, setDatePreset] = useState<DatePreset>("30d");
   const { from, to } = useMemo(() => presetToRange(datePreset), [datePreset]);
@@ -49,18 +52,8 @@ export function PerformanceDashboard() {
   return (
     <div className="min-h-full">
       <Stack gap={6}>
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-semibold text-[var(--color-text-primary)]">
-              Performance Dashboard
-            </h1>
-            <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-              Monitor generation performance, quality metrics, and resource utilization.
-            </p>
-          </div>
-
-          {/* Date range selector */}
+        {/* Date range selector */}
+        <div className="flex justify-end">
           <div className="flex gap-1">
             {DATE_PRESETS.map((preset) => (
               <button

@@ -9,6 +9,7 @@ import { useCallback, useState } from "react";
 
 import { Card, Modal } from "@/components/composite";
 import { Stack } from "@/components/layout";
+import { useSetPageTitle } from "@/hooks/useSetPageTitle";
 import { Badge, Button, Input, Spinner } from "@/components/primitives";
 import { formatDateTime } from "@/lib/format";
 import { AlertTriangle, Plus, Trash2 } from "@/tokens/icons";
@@ -183,6 +184,7 @@ export interface WebhookManagerProps {
 }
 
 export function WebhookManager({ onViewDeliveries }: WebhookManagerProps) {
+  useSetPageTitle("Webhooks", "Manage outbound webhook subscriptions.");
   const { data: webhooks, isLoading } = useWebhooks();
   const deleteMutation = useDeleteWebhook();
 
@@ -214,16 +216,8 @@ export function WebhookManager({ onViewDeliveries }: WebhookManagerProps) {
   return (
     <div className="min-h-full">
       <Stack gap={6}>
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-semibold text-[var(--color-text-primary)]">
-              Webhooks
-            </h1>
-            <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-              Manage outbound webhook subscriptions.
-            </p>
-          </div>
+        {/* Header actions */}
+        <div className="flex items-center justify-end">
           <Button
             variant="primary"
             size="md"

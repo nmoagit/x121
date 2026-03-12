@@ -65,7 +65,7 @@ export function PromptLibraryBrowser({
         <div
           key={entry.id}
           data-testid={`library-entry-${entry.id}`}
-          className="rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-surface-secondary)] p-3"
+          className="rounded-[var(--radius-lg)] border border-[var(--color-border-subtle)] bg-[var(--color-surface-secondary)] p-3"
         >
           <div className="flex items-start justify-between gap-2">
             {/* Info */}

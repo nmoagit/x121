@@ -12,6 +12,7 @@ import {
   useProtectionRules,
   useReclamationPolicies,
 } from "@/features/admin/hooks/use-reclamation";
+import { useSetPageTitle } from "@/hooks/useSetPageTitle";
 import { formatBytes } from "@/lib/format";
 
 /* --------------------------------------------------------------------------
@@ -33,6 +34,8 @@ const TABS: { id: TabId; label: string }[] = [
    -------------------------------------------------------------------------- */
 
 export function ReclamationDashboard() {
+  useSetPageTitle("Storage Reclamation", "Manage deferred file deletion, protection rules, and reclamation policies.");
+
   const [activeTab, setActiveTab] = useState<TabId>("overview");
   const [showConfirm, setShowConfirm] = useState(false);
 
@@ -57,16 +60,6 @@ export function ReclamationDashboard() {
   return (
     <div className="min-h-full">
       <Stack gap={6}>
-        {/* Header */}
-        <div>
-          <h1 className="text-xl font-semibold text-[var(--color-text-primary)]">
-            Disk Reclamation
-          </h1>
-          <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-            Manage deferred file deletion, protection rules, and reclamation policies.
-          </p>
-        </div>
-
         {/* Tabs */}
         <div className="flex gap-1 border-b border-[var(--color-border-primary)]" role="tablist">
           {TABS.map((tab) => (

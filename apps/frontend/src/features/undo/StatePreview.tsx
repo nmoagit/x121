@@ -30,7 +30,7 @@ export function StatePreview({ node }: StatePreviewProps) {
   const timestampIso = new Date(node.timestamp).toISOString();
 
   return (
-    <div className="flex flex-col gap-2 rounded-lg border border-[var(--color-border-default)] bg-[var(--color-bg-surface)] p-4">
+    <div className="flex flex-col gap-2 rounded-[var(--radius-lg)] border border-[var(--color-border-default)] bg-[var(--color-bg-surface)] p-4">
       <div className="flex items-center gap-2">
         <span className="text-sm font-medium text-[var(--color-text-primary)]">
           {node.action.label}

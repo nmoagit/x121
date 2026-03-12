@@ -69,7 +69,7 @@ export function ContextualHelpButton({
 
       {isOpen && data?.article && (
         <div
-          className="absolute right-0 top-full z-50 mt-1 w-64 rounded-lg border border-[var(--color-border-default)] bg-[var(--color-surface-primary)] p-3 shadow-lg"
+          className="absolute right-0 top-full z-50 mt-1 w-64 rounded-[var(--radius-lg)] border border-[var(--color-border-default)] bg-[var(--color-surface-primary)] p-3 shadow-lg"
           data-testid="contextual-help-popup"
         >
           <h4 className="mb-1 text-sm font-medium text-[var(--color-text-primary)]">

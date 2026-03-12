@@ -93,7 +93,7 @@ export function ReviewPlayer({
 
   return (
     <div
-      className={`flex flex-col gap-4 rounded-lg bg-[var(--color-surface-secondary)] p-4 transition-all ${flashClass(flash)}`}
+      className={`flex flex-col gap-4 rounded-[var(--radius-lg)] bg-[var(--color-surface-secondary)] p-4 transition-all ${flashClass(flash)}`}
       data-testid="review-player"
     >
       {/* Video placeholder area */}
@@ -107,7 +107,7 @@ export function ReviewPlayer({
           type="button"
           onClick={handleApprove}
           disabled={disabled}
-          className="rounded-md bg-green-600 px-6 py-2 text-sm font-medium text-white transition-colors hover:bg-green-700 disabled:opacity-50"
+          className="rounded-[var(--radius-md)] bg-green-600 px-6 py-2 text-sm font-medium text-white transition-colors hover:bg-green-700 disabled:opacity-50"
           aria-label={`Approve segment ${segmentId}`}
         >
           {decisionLabel(DECISION_APPROVED)}
@@ -117,7 +117,7 @@ export function ReviewPlayer({
           type="button"
           onClick={handleReject}
           disabled={disabled}
-          className="rounded-md bg-red-600 px-6 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700 disabled:opacity-50"
+          className="rounded-[var(--radius-md)] bg-red-600 px-6 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700 disabled:opacity-50"
           aria-label={`Reject segment ${segmentId}`}
         >
           {decisionLabel(DECISION_REJECTED)}
@@ -127,7 +127,7 @@ export function ReviewPlayer({
           type="button"
           onClick={handleFlag}
           disabled={disabled}
-          className="rounded-md bg-yellow-600 px-6 py-2 text-sm font-medium text-white transition-colors hover:bg-yellow-700 disabled:opacity-50"
+          className="rounded-[var(--radius-md)] bg-yellow-600 px-6 py-2 text-sm font-medium text-white transition-colors hover:bg-yellow-700 disabled:opacity-50"
           aria-label={`Flag segment ${segmentId}`}
         >
           {decisionLabel(DECISION_FLAGGED)}

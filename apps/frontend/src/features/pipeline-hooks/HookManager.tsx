@@ -140,7 +140,7 @@ export function HookManager({ scopeType, scopeId }: HookManagerProps) {
       {hooks.length === 0 && !showForm && (
         <div
           data-testid="empty-state"
-          className="rounded-lg border border-dashed border-[var(--color-border)] p-8 text-center text-sm text-[var(--color-text-secondary)]"
+          className="rounded-[var(--radius-lg)] border border-dashed border-[var(--color-border)] p-8 text-center text-sm text-[var(--color-text-secondary)]"
         >
           No hooks configured. Add one to get started.
         </div>

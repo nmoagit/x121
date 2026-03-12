@@ -11,6 +11,7 @@ import { useMemo, useState } from "react";
 import { Card } from "@/components/composite";
 import { Spinner } from "@/components/primitives";
 import { Stack } from "@/components/layout";
+import { useSetPageTitle } from "@/hooks/useSetPageTitle";
 import { AlertCircle, FileText } from "@/tokens/icons";
 
 import { CategoryGroup } from "./components/CategoryCard";
@@ -24,6 +25,8 @@ import { CATEGORY_GROUPS } from "./types";
    -------------------------------------------------------------------------- */
 
 export function NamingRulesPage() {
+  useSetPageTitle("Naming Rules", "Configure filename templates for generated assets, exports, and deliveries.");
+
   const { data: categories, isLoading: categoriesLoading, error: categoriesError } =
     useNamingCategories();
   const { data: rules, isLoading: rulesLoading } = useNamingRules();
@@ -52,19 +55,6 @@ export function NamingRulesPage() {
 
   return (
     <Stack gap={6}>
-      {/* Page header */}
-      <div>
-        <div className="flex items-center gap-[var(--spacing-2)]">
-          <FileText size={24} className="text-[var(--color-text-muted)]" aria-hidden />
-          <h1 className="text-xl font-semibold text-[var(--color-text-primary)]">
-            Naming Rules
-          </h1>
-        </div>
-        <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-          Configure filename templates for generated assets, exports, and deliveries.
-        </p>
-      </div>
-
       {/* Content area */}
       {isLoading ? (
         <div className="flex items-center justify-center py-[var(--spacing-8)]">

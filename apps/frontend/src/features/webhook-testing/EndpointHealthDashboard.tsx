@@ -98,7 +98,7 @@ export function EndpointHealthDashboard() {
     return (
       <div
         data-testid="health-empty"
-        className="rounded-lg border border-dashed border-[var(--color-border-default)] p-8 text-center text-sm text-[var(--color-text-secondary)]"
+        className="rounded-[var(--radius-lg)] border border-dashed border-[var(--color-border-default)] p-8 text-center text-sm text-[var(--color-text-secondary)]"
       >
         No endpoint health data available.
       </div>

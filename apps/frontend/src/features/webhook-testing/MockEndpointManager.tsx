@@ -123,7 +123,7 @@ export function MockEndpointManager() {
 
         {/* Mock list */}
         {mocks.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-[var(--color-border-default)] p-8 text-center text-sm text-[var(--color-text-secondary)]">
+          <div className="rounded-[var(--radius-lg)] border border-dashed border-[var(--color-border-default)] p-8 text-center text-sm text-[var(--color-text-secondary)]">
             No mock endpoints yet. Create one to start capturing payloads.
           </div>
         ) : (

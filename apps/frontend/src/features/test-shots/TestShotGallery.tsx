@@ -162,7 +162,7 @@ function TestShotCard({
   return (
     <div
       data-testid={`test-shot-card-${shot.id}`}
-      className="overflow-hidden rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-surface-secondary)]"
+      className="overflow-hidden rounded-[var(--radius-lg)] border border-[var(--color-border-subtle)] bg-[var(--color-surface-secondary)]"
     >
       {/* Thumbnail area */}
       <div className="relative aspect-video bg-[var(--color-surface-tertiary)]">
