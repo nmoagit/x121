@@ -10,7 +10,7 @@ import { useCallback, useState } from "react";
 import { Card, Modal } from "@/components/composite";
 import { Grid, Stack } from "@/components/layout";
 import { Badge, Button, Spinner } from "@/components/primitives";
-import { Check, Download, Eye, Trash2, XCircle } from "@/tokens/icons";
+import { Check, Download, Eye, RotateCcw, Trash2, XCircle } from "@/tokens/icons";
 
 import {
   useApproveVariant,
@@ -18,6 +18,7 @@ import {
   useExportVariant,
   useImageVariants,
   useRejectVariant,
+  useUnapproveVariant,
 } from "./hooks/use-image-variants";
 import {
   IMAGE_VARIANT_STATUS,
@@ -37,6 +38,7 @@ import { variantImageUrl, variantThumbnailUrl } from "./utils";
 interface VariantCardProps {
   variant: ImageVariant;
   onApprove: (id: number) => void;
+  onUnapprove: (id: number) => void;
   onReject: (id: number) => void;
   onExport: (id: number) => void;
   onDelete: (id: number) => void;
@@ -46,6 +48,7 @@ interface VariantCardProps {
 function VariantCard({
   variant,
   onApprove,
+  onUnapprove,
   onReject,
   onExport,
   onDelete,
@@ -56,6 +59,9 @@ function VariantCard({
     variant.status_id === IMAGE_VARIANT_STATUS.GENERATED ||
     variant.status_id === IMAGE_VARIANT_STATUS.EDITING ||
     variant.status_id === IMAGE_VARIANT_STATUS.PENDING;
+  const canUnapprove =
+    variant.status_id === IMAGE_VARIANT_STATUS.APPROVED ||
+    variant.status_id === IMAGE_VARIANT_STATUS.REJECTED;
 
   return (
     <Card elevation="sm" padding="none" className="group/card overflow-hidden">
@@ -147,6 +153,17 @@ function VariantCard({
               Reject
             </Button>
           )}
+          {canUnapprove && (
+            <Button
+              variant="secondary"
+              size="sm"
+              icon={<RotateCcw size={14} />}
+              onClick={() => onUnapprove(variant.id)}
+              aria-label={`Revert ${variant.variant_label} to generated`}
+            >
+              Unapprove
+            </Button>
+          )}
           <Button
             variant="ghost"
             size="sm"
@@ -183,6 +200,7 @@ interface VariantGalleryProps {
 export function VariantGallery({ characterId, sourceImageUrl }: VariantGalleryProps) {
   const { data: variants, isLoading } = useImageVariants(characterId);
   const approveMutation = useApproveVariant(characterId);
+  const unapproveMutation = useUnapproveVariant(characterId);
   const rejectMutation = useRejectVariant(characterId);
   const exportMutation = useExportVariant(characterId);
   const deleteMutation = useDeleteImageVariant(characterId);
@@ -191,6 +209,10 @@ export function VariantGallery({ characterId, sourceImageUrl }: VariantGalleryPr
   const handleApprove = useCallback(
     (id: number) => approveMutation.mutate(id),
     [approveMutation],
+  );
+  const handleUnapprove = useCallback(
+    (id: number) => unapproveMutation.mutate(id),
+    [unapproveMutation],
   );
   const handleReject = useCallback(
     (id: number) => rejectMutation.mutate(id),
@@ -254,6 +276,7 @@ export function VariantGallery({ characterId, sourceImageUrl }: VariantGalleryPr
                     key={variant.id}
                     variant={variant}
                     onApprove={handleApprove}
+                    onUnapprove={handleUnapprove}
                     onReject={handleReject}
                     onExport={handleExport}
                     onDelete={handleDelete}

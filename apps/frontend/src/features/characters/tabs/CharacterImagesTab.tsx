@@ -12,7 +12,7 @@ import { useCallback, useMemo, useState } from "react";
 import { Modal } from "@/components/composite/Modal";
 import { Grid, Stack } from "@/components/layout";
 import { Badge, Button, Spinner } from "@/components/primitives";
-import { Check, ChevronLeft, ChevronRight, Download, Trash2, Upload, Wand2, XCircle } from "@/tokens/icons";
+import { Check, ChevronLeft, ChevronRight, Download, RotateCcw, Trash2, Upload, Wand2, XCircle } from "@/tokens/icons";
 import { Tooltip } from "@/components/primitives/Tooltip";
 
 import {
@@ -21,6 +21,7 @@ import {
   useExportVariant,
   useImageVariants,
   useRejectVariant,
+  useUnapproveVariant,
 } from "@/features/images/hooks/use-image-variants";
 import { ImageVariantAnnotationModal } from "@/features/images/ImageVariantAnnotationModal";
 import {
@@ -44,17 +45,21 @@ import { useTrackImageActions } from "./useTrackImageActions";
 interface ModalVariantCardProps {
   variant: ImageVariant;
   onApprove: (id: number) => void;
+  onUnapprove: (id: number) => void;
   onReject: (id: number) => void;
   onExport: (id: number) => void;
   onDelete: (id: number) => void;
   onAnnotate: (variant: ImageVariant) => void;
 }
 
-function ModalVariantCard({ variant, onApprove, onReject, onExport, onDelete, onAnnotate }: ModalVariantCardProps) {
+function ModalVariantCard({ variant, onApprove, onUnapprove, onReject, onExport, onDelete, onAnnotate }: ModalVariantCardProps) {
   const canApprove =
     variant.status_id === IMAGE_VARIANT_STATUS.GENERATED ||
     variant.status_id === IMAGE_VARIANT_STATUS.EDITING ||
     variant.status_id === IMAGE_VARIANT_STATUS.PENDING;
+  const canUnapprove =
+    variant.status_id === IMAGE_VARIANT_STATUS.APPROVED ||
+    variant.status_id === IMAGE_VARIANT_STATUS.REJECTED;
 
   return (
     <div className="rounded-[var(--radius-md)] border border-[var(--color-border-default)] bg-[var(--color-surface-secondary)] overflow-hidden">
@@ -110,6 +115,11 @@ function ModalVariantCard({ variant, onApprove, onReject, onExport, onDelete, on
               <Button size="sm" variant="secondary" icon={<XCircle size={14} />} onClick={() => onReject(variant.id)} aria-label="Reject" />
             </Tooltip>
           )}
+          {canUnapprove && (
+            <Tooltip content="Revert to generated">
+              <Button size="sm" variant="secondary" icon={<RotateCcw size={14} />} onClick={() => onUnapprove(variant.id)} aria-label="Unapprove" />
+            </Tooltip>
+          )}
           <Tooltip content="Export">
             <Button size="sm" variant="ghost" icon={<Download size={14} />} onClick={() => onExport(variant.id)} aria-label="Export" />
           </Tooltip>
@@ -151,11 +161,13 @@ export function CharacterImagesTab({ characterId }: CharacterImagesTabProps) {
   // All variants for the character (used in detail modal, filtered by track)
   const { data: allVariants, isLoading: variantsLoading } = useImageVariants(characterId);
   const approveMutation = useApproveVariant(characterId);
+  const unapproveMutation = useUnapproveVariant(characterId);
   const rejectMutation = useRejectVariant(characterId);
   const exportMutation = useExportVariant(characterId);
   const deleteMutation = useDeleteImageVariant(characterId);
 
   const handleApprove = useCallback((id: number) => approveMutation.mutate(id), [approveMutation]);
+  const handleUnapprove = useCallback((id: number) => unapproveMutation.mutate(id), [unapproveMutation]);
   const handleReject = useCallback((id: number) => rejectMutation.mutate(id), [rejectMutation]);
   const handleExport = useCallback((id: number) => exportMutation.mutate(id), [exportMutation]);
   const handleDelete = useCallback((id: number) => deleteMutation.mutate(id), [deleteMutation]);
@@ -336,6 +348,7 @@ export function CharacterImagesTab({ characterId }: CharacterImagesTabProps) {
                       key={v.id}
                       variant={v}
                       onApprove={handleApprove}
+                      onUnapprove={handleUnapprove}
                       onReject={handleReject}
                       onExport={handleExport}
                       onDelete={handleDelete}

@@ -90,6 +90,7 @@ pub fn router() -> Router<AppState> {
                 .delete(image_variant::delete),
         )
         .route("/{id}/approve", post(image_variant::approve_as_hero))
+        .route("/{id}/unapprove", post(image_variant::unapprove_variant))
         .route("/{id}/reject", post(image_variant::reject_variant))
         .route("/{id}/export", post(image_variant::export_for_editing))
         .route("/{id}/reimport", post(image_variant::reimport_variant))

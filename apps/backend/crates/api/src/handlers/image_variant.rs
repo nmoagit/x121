@@ -155,6 +155,55 @@ pub async fn approve_as_hero(
     Ok(Json(DataResponse { data: updated }))
 }
 
+/// POST /api/v1/characters/{character_id}/image-variants/{id}/unapprove
+///
+/// Revert an approved or rejected variant back to generated status.
+pub async fn unapprove_variant(
+    State(state): State<AppState>,
+    Path((_character_id, id)): Path<(DbId, DbId)>,
+) -> AppResult<impl IntoResponse> {
+    let variant = ImageVariantRepo::find_by_id(&state.pool, id)
+        .await?
+        .ok_or(AppError::Core(CoreError::NotFound {
+            entity: "ImageVariant",
+            id,
+        }))?;
+
+    let approved = ImageVariantStatus::Approved.id();
+    let rejected = ImageVariantStatus::Rejected.id();
+    if variant.status_id != approved && variant.status_id != rejected {
+        return Err(AppError::Core(CoreError::Validation(format!(
+            "Variant must be approved or rejected to unapprove; current status_id={}",
+            variant.status_id
+        ))));
+    }
+
+    let input = UpdateImageVariant {
+        status_id: Some(ImageVariantStatus::Generated.id()),
+        source_image_id: None,
+        derived_image_id: None,
+        variant_label: None,
+        file_path: None,
+        variant_type: None,
+        provenance: None,
+        is_hero: Some(false),
+        file_size_bytes: None,
+        width: None,
+        height: None,
+        format: None,
+        generation_params: None,
+    };
+
+    let updated = ImageVariantRepo::update(&state.pool, id, &input)
+        .await?
+        .ok_or(AppError::Core(CoreError::NotFound {
+            entity: "ImageVariant",
+            id,
+        }))?;
+
+    Ok(Json(DataResponse { data: updated }))
+}
+
 /// POST /api/v1/characters/{character_id}/image-variants/{id}/reject
 ///
 /// Set variant status to rejected.

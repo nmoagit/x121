@@ -142,6 +142,19 @@ export function useApproveVariant(characterId: number) {
   });
 }
 
+/** Revert an approved or rejected variant back to generated. */
+export function useUnapproveVariant(characterId: number) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: number) =>
+      api.post<ImageVariant>(`${variantBasePath(characterId)}/${id}/unapprove`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: imageVariantKeys.all });
+    },
+  });
+}
+
 /** Reject a variant. */
 export function useRejectVariant(characterId: number) {
   const queryClient = useQueryClient();
