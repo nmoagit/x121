@@ -159,7 +159,7 @@ function VariantCard({
               size="sm"
               icon={<RotateCcw size={14} />}
               onClick={() => onUnapprove(variant.id)}
-              aria-label={`Revert ${variant.variant_label} to generated`}
+              aria-label={`Unapprove ${variant.variant_label}`}
             >
               Unapprove
             </Button>

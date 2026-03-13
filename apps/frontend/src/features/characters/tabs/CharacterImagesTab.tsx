@@ -116,7 +116,7 @@ function ModalVariantCard({ variant, onApprove, onUnapprove, onReject, onExport,
             </Tooltip>
           )}
           {canUnapprove && (
-            <Tooltip content="Revert to generated">
+            <Tooltip content="Unapprove">
               <Button size="sm" variant="secondary" icon={<RotateCcw size={14} />} onClick={() => onUnapprove(variant.id)} aria-label="Unapprove" />
             </Tooltip>
           )}

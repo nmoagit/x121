@@ -157,7 +157,7 @@ pub async fn approve_as_hero(
 
 /// POST /api/v1/characters/{character_id}/image-variants/{id}/unapprove
 ///
-/// Revert an approved or rejected variant back to generated status.
+/// Revert an approved or rejected variant back to pending status.
 pub async fn unapprove_variant(
     State(state): State<AppState>,
     Path((_character_id, id)): Path<(DbId, DbId)>,
@@ -179,7 +179,7 @@ pub async fn unapprove_variant(
     }
 
     let input = UpdateImageVariant {
-        status_id: Some(ImageVariantStatus::Generated.id()),
+        status_id: Some(ImageVariantStatus::Pending.id()),
         source_image_id: None,
         derived_image_id: None,
         variant_label: None,
