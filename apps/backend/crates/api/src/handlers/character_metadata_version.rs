@@ -426,6 +426,41 @@ pub async fn approve_metadata_version(
     Ok(Json(DataResponse { data: version }))
 }
 
+/// POST /api/v1/characters/{character_id}/metadata/versions/{version_id}/unapprove
+///
+/// Revert a metadata version's approval back to pending. Only the assigned reviewer may unapprove.
+pub async fn unapprove_metadata_version(
+    State(state): State<AppState>,
+    auth: AuthUser,
+    Path((character_id, version_id)): Path<(DbId, DbId)>,
+) -> AppResult<impl IntoResponse> {
+    ensure_version_exists(&state.pool, version_id).await?;
+    require_reviewer(&state.pool, character_id, auth.user_id).await?;
+
+    let version = CharacterMetadataVersionRepo::unapprove(&state.pool, version_id)
+        .await?
+        .ok_or_else(|| {
+            AppError::Core(CoreError::NotFound {
+                entity: "CharacterMetadataVersion",
+                id: version_id,
+            })
+        })?;
+
+    let audit_meta = serde_json::json!({ "version_id": version_id });
+    CharacterReviewRepo::log_action(
+        &state.pool,
+        character_id,
+        "metadata_unapproved",
+        auth.user_id,
+        None,
+        None,
+        &audit_meta,
+    )
+    .await?;
+
+    Ok(Json(DataResponse { data: version }))
+}
+
 /// POST /api/v1/characters/{character_id}/metadata/versions/{version_id}/reject-approval
 ///
 /// Reject a metadata version's approval. Only the assigned character reviewer may reject.

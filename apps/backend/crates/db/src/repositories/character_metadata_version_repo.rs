@@ -315,6 +315,24 @@ impl CharacterMetadataVersionRepo {
         Ok(result)
     }
 
+    /// Revert an approved (or rejected) metadata version back to pending.
+    pub async fn unapprove(
+        pool: &PgPool,
+        version_id: DbId,
+    ) -> Result<Option<CharacterMetadataVersion>, sqlx::Error> {
+        let query = format!(
+            "UPDATE character_metadata_versions \
+             SET approval_status = '{METADATA_APPROVAL_PENDING}', approved_by = NULL, \
+                 approved_at = NULL, approval_comment = NULL \
+             WHERE id = $1 AND deleted_at IS NULL \
+             RETURNING {COLUMNS}"
+        );
+        sqlx::query_as::<_, CharacterMetadataVersion>(&query)
+            .bind(version_id)
+            .fetch_optional(pool)
+            .await
+    }
+
     /// Reject a metadata version's approval with an optional comment.
     pub async fn reject_approval(
         pool: &PgPool,

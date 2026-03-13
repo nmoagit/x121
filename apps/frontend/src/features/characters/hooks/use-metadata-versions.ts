@@ -147,6 +147,20 @@ export function useApproveMetadataVersion(characterId: number) {
   });
 }
 
+/** Revert an approved/rejected metadata version back to pending (reviewer action). */
+export function useUnapproveMetadataVersion(characterId: number) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (versionId: number) =>
+      api.post<MetadataVersion>(
+        `/characters/${characterId}/metadata/versions/${versionId}/unapprove`,
+        {},
+      ),
+    onSuccess: () => invalidateVersionsAndMetadata(queryClient, characterId),
+  });
+}
+
 /** Reject a metadata version's approval (reviewer action). */
 export function useRejectMetadataApproval(characterId: number) {
   const queryClient = useQueryClient();

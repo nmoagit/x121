@@ -52,6 +52,10 @@ pub fn router() -> Router<AppState> {
             post(character_metadata_version::approve_metadata_version),
         )
         .route(
+            "/{character_id}/metadata/versions/{version_id}/unapprove",
+            post(character_metadata_version::unapprove_metadata_version),
+        )
+        .route(
             "/{character_id}/metadata/versions/{version_id}/reject-approval",
             post(character_metadata_version::reject_metadata_approval),
         )
