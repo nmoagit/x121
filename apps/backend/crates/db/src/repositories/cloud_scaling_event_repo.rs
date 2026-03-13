@@ -79,11 +79,10 @@ impl CloudScalingEventRepo {
 
     /// Delete all scaling events for a provider. Returns the number of deleted rows.
     pub async fn delete_by_provider(pool: &PgPool, provider_id: DbId) -> Result<u64, sqlx::Error> {
-        let result =
-            sqlx::query("DELETE FROM cloud_scaling_events WHERE provider_id = $1")
-                .bind(provider_id)
-                .execute(pool)
-                .await?;
+        let result = sqlx::query("DELETE FROM cloud_scaling_events WHERE provider_id = $1")
+            .bind(provider_id)
+            .execute(pool)
+            .await?;
         Ok(result.rows_affected())
     }
 

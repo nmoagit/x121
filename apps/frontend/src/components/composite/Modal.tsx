@@ -92,7 +92,7 @@ export function Modal({ open, onClose, title, size = "md", children }: ModalProp
           "relative w-full mx-[var(--spacing-4)] max-h-[calc(100vh-var(--spacing-8))]",
           "flex flex-col",
           "bg-[var(--color-surface-secondary)] text-[var(--color-text-primary)] rounded-[var(--radius-lg)]",
-          "shadow-[var(--shadow-lg)] p-[var(--spacing-6)]",
+          "shadow-[var(--shadow-lg)] p-[var(--spacing-3)]",
           "animate-[scaleIn_var(--duration-fast)_var(--ease-default)]",
           "focus:outline-none",
           SIZE_CLASSES[size],

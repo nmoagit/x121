@@ -22,7 +22,7 @@ export function ResumeFromDialog({
   if (!clip) return null;
 
   return (
-    <Modal open={isOpen} onClose={onClose} title="Resume Generation">
+    <Modal open={isOpen} onClose={onClose} title="Resume Generation" size="lg">
       <div className="flex flex-col gap-4">
         <p className="text-sm text-[var(--color-text-secondary)]">
           This will discard <strong>{clipsToDiscard}</strong> clip(s) after version{" "}

@@ -33,7 +33,7 @@ export function RejectVersionModal({
   };
 
   return (
-    <Modal open={open} onClose={onClose} title={`Reject Version ${versionNumber}`} size="md">
+    <Modal open={open} onClose={onClose} title={`Reject Version ${versionNumber}`} size="lg">
       <Stack gap={3}>
         <p className="text-sm text-[var(--color-text-secondary)]">
           Provide a reason for rejecting this metadata version.

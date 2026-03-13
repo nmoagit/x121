@@ -47,6 +47,7 @@ interface MatrixColumn {
   scene_type_name: string;
   track_id: number | null;
   track_name: string | null;
+  has_clothes_off_transition?: boolean;
 }
 
 interface MatrixGridProps {
@@ -104,6 +105,8 @@ function getCellColorClass(status: CellStatus): string {
     case "no_seed":
     case "blocked":
       return "bg-orange-900/30 border-orange-700/50";
+    case "skipped":
+      return "bg-neutral-800/30 border-neutral-700/50";
     default:
       return "bg-[var(--color-surface-secondary)] border-[var(--color-border-subtle)]";
   }
@@ -160,11 +163,15 @@ export function MatrixGrid({
                     className="p-2 text-center text-xs font-medium text-[var(--color-text-muted)] whitespace-nowrap"
                   >
                     <div>{col.scene_type_name}</div>
-                    {col.track_name && (
+                    {col.has_clothes_off_transition ? (
+                      <div className="text-[10px] font-normal text-[var(--color-text-muted)] opacity-70">
+                        Clothes Off
+                      </div>
+                    ) : col.track_name ? (
                       <div className="text-[10px] font-normal text-[var(--color-text-muted)] opacity-70">
                         {col.track_name}
                       </div>
-                    )}
+                    ) : null}
                   </th>
               ))}
             </tr>
@@ -226,13 +233,30 @@ export function MatrixGrid({
                     const cell = cellMap.get(key);
 
                     if (!cell) {
+                      const hasCellActions = !!(onCancelCell || onDeleteCell);
                       return (
                         <td
                           key={columnKey(col)}
                           style={{ maxWidth: CELL_MAX_WIDTH }}
                           className="p-1"
                         >
-                          <div className="h-10 rounded border border-dashed border-[var(--color-border-subtle)]" />
+                          <div>
+                            {/* Spacer to align with action-button rows on regular cells */}
+                            {hasCellActions && (
+                              <div style={{ padding: "0 0 2px", visibility: "hidden" }}>
+                                <span className="inline-block text-[10px] px-1.5 py-0.5">&nbsp;</span>
+                              </div>
+                            )}
+                            <div
+                              className={`flex h-10 items-center justify-center rounded border ${getCellColorClass("skipped")}`}
+                            >
+                              <span
+                                className={`inline-flex items-center px-1 py-px text-[10px] font-medium leading-tight whitespace-nowrap ${MATRIX_BADGE_CLASSES[CELL_STATUS_VARIANT.skipped]}`}
+                              >
+                                {CELL_STATUS_LABELS.skipped}
+                              </span>
+                            </div>
+                          </div>
                         </td>
                       );
                     }

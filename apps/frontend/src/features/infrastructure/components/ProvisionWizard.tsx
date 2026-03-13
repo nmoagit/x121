@@ -110,7 +110,7 @@ export function ProvisionWizard({ open, onClose }: ProvisionWizardProps) {
     (step === "count" && count >= 1 && count <= 10);
 
   return (
-    <Modal open={open} onClose={handleClose} title="Provision Instance" size="lg">
+    <Modal open={open} onClose={handleClose} title="Provision Instance" size="xl">
       <Stack gap={4}>
         {/* Step indicator */}
         <StepIndicator current={step} />

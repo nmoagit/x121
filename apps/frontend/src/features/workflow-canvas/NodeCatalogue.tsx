@@ -8,6 +8,8 @@
 
 import { useMemo, useState } from "react";
 
+import { SearchInput } from "@/components/primitives";
+
 import type { CanvasNode, NodeCatalogueEntry, NodeType } from "./types";
 
 /* --------------------------------------------------------------------------
@@ -187,12 +189,11 @@ export function NodeCatalogue({ onAddNode }: NodeCatalogueProps) {
 
       {/* Search */}
       <div className="p-2">
-        <input
-          type="text"
+        <SearchInput
           placeholder="Search nodes..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full rounded border border-[var(--color-text-muted)] bg-[var(--color-surface-secondary)] px-2 py-1 text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)]"
+          size="sm"
           data-testid="node-search"
         />
       </div>

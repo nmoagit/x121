@@ -316,7 +316,7 @@ export function QueueOutstandingModal({
     charsLoading || settingsLoading || scenesLoading || readinessLoading || versionsLoading;
 
   return (
-    <Modal open={open} onClose={onClose} title="Queue Outstanding Generations" size="lg">
+    <Modal open={open} onClose={onClose} title="Queue Outstanding Generations" size="xl">
       <Stack gap={4}>
         {/* Controls bar */}
         <div className="flex items-center justify-between gap-[var(--spacing-3)]">

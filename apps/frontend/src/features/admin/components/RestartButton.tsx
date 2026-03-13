@@ -56,7 +56,7 @@ export function RestartButton({ workerId }: RestartButtonProps) {
         Restart
       </Button>
 
-      <Modal open={open} onClose={handleClose} title="Restart Service" size="sm">
+      <Modal open={open} onClose={handleClose} title="Restart Service" size="md">
         <Stack gap={4}>
           <Input
             label="Service name"

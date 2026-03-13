@@ -407,6 +407,7 @@ impl CharacterRepo {
                 COALESCE(sc.with_video, 0) AS scenes_with_video,
                 COALESCE(sc.vid_approved, 0) AS scenes_approved,
                 COALESCE(meta.has_active, false) AS has_active_metadata,
+                meta.approval_status AS metadata_approval_status,
                 COALESCE(
                     c.settings->>'elevenlabs_voice' IS NOT NULL
                     AND LENGTH(c.settings->>'elevenlabs_voice') > 0,
@@ -418,7 +419,8 @@ impl CharacterRepo {
                     CASE WHEN COALESCE(img.total, 0) > 0 AND COALESCE(img.approved, 0) < COALESCE(img.total, 0) THEN 'Images Not Approved' END,
                     CASE WHEN COALESCE(sc.total, 0) = 0 THEN 'No Scenes' END,
                     CASE WHEN COALESCE(sc.with_video, 0) > 0 AND COALESCE(sc.vid_approved, 0) < COALESCE(sc.with_video, 0) THEN 'Videos Not Approved' END,
-                    CASE WHEN NOT COALESCE(meta.has_active, false) THEN 'Missing Metadata' END
+                    CASE WHEN NOT COALESCE(meta.has_active, false) THEN 'Missing Metadata' END,
+                    CASE WHEN COALESCE(meta.has_active, false) AND COALESCE(meta.approval_status, 'pending') != 'approved' THEN 'Metadata Not Approved' END
                 ], NULL) AS blocking_reasons,
                 -- Readiness: average of 3 sections (metadata, images, scenes).
                 -- Speech is tracked but not blocking, so excluded from the percentage.
@@ -458,12 +460,20 @@ impl CharacterRepo {
                  WHERE s.character_id = c.id
              ) sc ON true
              LEFT JOIN LATERAL (
-                 SELECT EXISTS (
-                     SELECT 1 FROM character_metadata_versions cmv
-                     WHERE cmv.character_id = c.id
-                       AND cmv.is_active = true
-                       AND cmv.deleted_at IS NULL
-                 ) AS has_active
+                 SELECT
+                     EXISTS (
+                         SELECT 1 FROM character_metadata_versions cmv
+                         WHERE cmv.character_id = c.id
+                           AND cmv.is_active = true
+                           AND cmv.deleted_at IS NULL
+                     ) AS has_active,
+                     (
+                         SELECT cmv.approval_status FROM character_metadata_versions cmv
+                         WHERE cmv.character_id = c.id
+                           AND cmv.is_active = true
+                           AND cmv.deleted_at IS NULL
+                         LIMIT 1
+                     ) AS approval_status
              ) meta ON true
              WHERE c.project_id = $1 AND c.deleted_at IS NULL AND c.status_id != 3
              ORDER BY c.name ASC",

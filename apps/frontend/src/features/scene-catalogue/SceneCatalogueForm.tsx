@@ -117,7 +117,7 @@ export function SceneCatalogueForm({ entry, open, onClose }: SceneCatalogueFormP
   );
 
   return (
-    <Modal open={open} onClose={onClose} title={isEdit ? "Edit Scene" : "Add Scene"} size="md">
+    <Modal open={open} onClose={onClose} title={isEdit ? "Edit Scene" : "Add Scene"} size="lg">
       <form onSubmit={handleSubmit}>
         <Stack gap={5}>
           <Input

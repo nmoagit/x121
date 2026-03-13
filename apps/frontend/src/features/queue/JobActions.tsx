@@ -140,7 +140,7 @@ function ReassignModal({
   };
 
   return (
-    <Modal open={open} onClose={onClose} title="Reassign Job" size="sm">
+    <Modal open={open} onClose={onClose} title="Reassign Job" size="md">
       <div className="space-y-2">
         <p className="text-sm text-[var(--color-text-muted)]">
           Select a worker instance to reassign job #{jobId}:

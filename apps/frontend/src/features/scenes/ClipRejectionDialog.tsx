@@ -32,7 +32,7 @@ export function ClipRejectionDialog({
   };
 
   return (
-    <Modal open={isOpen} onClose={handleClose} title="Reject Clip">
+    <Modal open={isOpen} onClose={handleClose} title="Reject Clip" size="lg">
       <div className="flex flex-col gap-4">
         <Input
           label="Reason"

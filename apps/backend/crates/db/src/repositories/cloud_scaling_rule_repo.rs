@@ -136,7 +136,10 @@ impl CloudScalingRuleRepo {
     }
 
     /// Reset cooldown for all scaling rules belonging to a provider by clearing `last_scaled_at`.
-    pub async fn reset_cooldown_by_provider(pool: &PgPool, provider_id: DbId) -> Result<u64, sqlx::Error> {
+    pub async fn reset_cooldown_by_provider(
+        pool: &PgPool,
+        provider_id: DbId,
+    ) -> Result<u64, sqlx::Error> {
         let result = sqlx::query(
             "UPDATE cloud_scaling_rules SET last_scaled_at = NULL WHERE provider_id = $1",
         )

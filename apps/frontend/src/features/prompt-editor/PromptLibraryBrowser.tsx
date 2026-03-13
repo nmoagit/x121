@@ -7,7 +7,7 @@
 
 import { useState } from "react";
 
-import { Badge } from "@/components";
+import { Badge, SearchInput } from "@/components";
 
 import type { PromptLibraryEntry } from "./types";
 
@@ -41,12 +41,10 @@ export function PromptLibraryBrowser({
   return (
     <div data-testid="prompt-library-browser" className="space-y-3">
       {/* Search input */}
-      <input
+      <SearchInput
         data-testid="library-search-input"
-        type="text"
         value={search}
         onChange={(e) => onSearchChange?.(e.target.value)}
-        className="w-full rounded border border-[var(--color-border-subtle)] bg-[var(--color-surface-secondary)] px-3 py-2 text-sm"
         placeholder="Search prompt library..."
       />
 

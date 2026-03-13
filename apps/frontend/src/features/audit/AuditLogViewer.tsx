@@ -8,7 +8,7 @@
 import { useState, useCallback } from "react";
 
 import { Card } from "@/components/composite/Card";
-import { Button, Input, Select, Spinner } from "@/components/primitives";
+import { Button, FilterSelect, SearchInput, Select, Spinner } from "@/components/primitives";
 import { Stack } from "@/components/layout";
 import { useSetPageTitle } from "@/hooks/useSetPageTitle";
 import { useAuditLogs, exportAuditLogs } from "./hooks/use-audit";
@@ -84,53 +84,49 @@ export function AuditLogViewer() {
         {/* Filters */}
         <Card padding="md">
           <div className="flex flex-wrap items-end gap-3">
-            <div className="min-w-[200px] flex-1">
-              <Input
-                label="Search"
-                placeholder="Search log details..."
-                value={searchText}
-                onChange={(e) => {
-                  setSearchText(e.target.value);
-                  setPage(0);
-                }}
-              />
-            </div>
+            <SearchInput
+              placeholder="Search log details..."
+              value={searchText}
+              onChange={(e) => {
+                setSearchText(e.target.value);
+                setPage(0);
+              }}
+              className="min-w-[200px] flex-1"
+            />
 
-            <div className="w-[160px]">
-              <Select
-                label="Action Type"
-                value={actionTypeFilter}
-                onChange={(val) => {
-                  setActionTypeFilter(val);
-                  setPage(0);
-                }}
-                options={[
-                  { value: "", label: "All Actions" },
-                  ...ACTION_TYPES.map((a) => ({
-                    value: a,
-                    label: actionTypeLabel(a),
-                  })),
-                ]}
-              />
-            </div>
+            <FilterSelect
+              label="Action Type"
+              value={actionTypeFilter}
+              onChange={(val) => {
+                setActionTypeFilter(val);
+                setPage(0);
+              }}
+              options={[
+                { value: "", label: "All Actions" },
+                ...ACTION_TYPES.map((a) => ({
+                  value: a,
+                  label: actionTypeLabel(a),
+                })),
+              ]}
+              className="w-[160px]"
+            />
 
-            <div className="w-[160px]">
-              <Select
-                label="Entity Type"
-                value={entityTypeFilter}
-                onChange={(val) => {
-                  setEntityTypeFilter(val);
-                  setPage(0);
-                }}
-                options={[
-                  { value: "", label: "All Entities" },
-                  ...ENTITY_TYPES.map((e) => ({
-                    value: e,
-                    label: e,
-                  })),
-                ]}
-              />
-            </div>
+            <FilterSelect
+              label="Entity Type"
+              value={entityTypeFilter}
+              onChange={(val) => {
+                setEntityTypeFilter(val);
+                setPage(0);
+              }}
+              options={[
+                { value: "", label: "All Entities" },
+                ...ENTITY_TYPES.map((e) => ({
+                  value: e,
+                  label: e,
+                })),
+              ]}
+              className="w-[160px]"
+            />
           </div>
         </Card>
 

@@ -9,6 +9,8 @@ interface CheckboxProps {
   label?: string;
   disabled?: boolean;
   indeterminate?: boolean;
+  /** Size variant — "sm" uses smaller text and checkbox. */
+  size?: "default" | "sm";
 }
 
 export function Checkbox({
@@ -17,7 +19,9 @@ export function Checkbox({
   label,
   disabled = false,
   indeterminate = false,
+  size = "default",
 }: CheckboxProps) {
+  const isSmall = size === "sm";
   const inputRef = useRef<HTMLInputElement>(null);
   const id = useId();
 
@@ -50,7 +54,8 @@ export function Checkbox({
         />
         <span
           className={cn(
-            "flex items-center justify-center w-5 h-5",
+            "flex items-center justify-center",
+            isSmall ? "w-4 h-4" : "w-5 h-5",
             "border rounded-[var(--radius-sm)]",
             "transition-colors duration-[var(--duration-fast)] ease-[var(--ease-default)]",
             "peer-focus-visible:ring-2 peer-focus-visible:ring-[var(--color-border-focus)] peer-focus-visible:ring-offset-1",
@@ -68,7 +73,7 @@ export function Checkbox({
         </span>
       </span>
 
-      {label && <span className="text-base text-[var(--color-text-primary)]">{label}</span>}
+      {label && <span className={cn(isSmall ? "text-xs" : "text-base", "text-[var(--color-text-primary)]")}>{label}</span>}
     </label>
   );
 }

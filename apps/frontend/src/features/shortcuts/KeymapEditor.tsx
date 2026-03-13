@@ -79,7 +79,7 @@ function CaptureModal({ open, actionId, actionLabel, onCapture, onCancel }: Capt
   }, [open, actionId]);
 
   return (
-    <Modal open={open} onClose={onCancel} title="Rebind Shortcut" size="sm">
+    <Modal open={open} onClose={onCancel} title="Rebind Shortcut" size="md">
       <div className="space-y-4">
         <p className="text-sm text-[var(--color-text-secondary)]">
           Press a new key combo for <strong>{actionLabel}</strong>

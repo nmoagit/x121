@@ -66,7 +66,7 @@ export function SimilarityAlert({
   }, [onCreateNew, onClose]);
 
   return (
-    <Modal open={open} onClose={onClose} title="Duplicate Detected" size="lg">
+    <Modal open={open} onClose={onClose} title="Duplicate Detected" size="xl">
       <div className="flex flex-col gap-4" data-testid="similarity-alert">
         {/* Similarity score */}
         <div className="flex items-center justify-center gap-2">

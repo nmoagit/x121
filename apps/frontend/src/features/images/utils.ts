@@ -96,3 +96,21 @@ export function findVariantForTrack(
     )
   );
 }
+
+/**
+ * Pick the best non-deleted variant for a track slug.
+ * Prefers approved, then falls back to the most recently created.
+ */
+export function findBestVariantForTrack(
+  variants: ImageVariant[],
+  trackSlug: string,
+): ImageVariant | undefined {
+  const matching = variants.filter(
+    (v) => v.variant_type?.toLowerCase() === trackSlug.toLowerCase() && !v.deleted_at,
+  );
+  if (matching.length === 0) return undefined;
+  return (
+    matching.find((v) => v.status_id === IMAGE_VARIANT_STATUS.APPROVED) ??
+    matching.sort((a, b) => b.id - a.id)[0]
+  );
+}

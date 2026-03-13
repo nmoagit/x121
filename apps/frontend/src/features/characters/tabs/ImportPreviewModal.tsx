@@ -32,7 +32,7 @@ export function ImportPreviewModal({
   const unmatchedCount = result.unmatched.length;
 
   return (
-    <Modal open={open} onClose={onClose} title="Import Videos" size="lg">
+    <Modal open={open} onClose={onClose} title="Import Videos" size="xl">
       <div className="space-y-[var(--spacing-4)]">
         {/* Matched files */}
         {matchedCount > 0 && (

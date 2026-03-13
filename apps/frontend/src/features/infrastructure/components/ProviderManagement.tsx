@@ -54,7 +54,7 @@ export function ProviderManagement({ open, onClose }: ProviderManagementProps) {
 
   return (
     <>
-      <Modal open={open} onClose={onClose} title="Cloud Providers" size="lg">
+      <Modal open={open} onClose={onClose} title="Cloud Providers" size="xl">
         <Stack gap={4}>
           {/* Provider list */}
           {providers?.map((provider) => (

@@ -75,7 +75,7 @@ export function SpeechImportModal({
   }
 
   return (
-    <Modal open={open} onClose={handleClose} title="Import Speeches" size="lg">
+    <Modal open={open} onClose={handleClose} title="Import Speeches" size="xl">
       <Stack gap={4}>
         <div>
           <label

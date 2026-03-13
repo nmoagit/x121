@@ -56,7 +56,7 @@ export function ConfirmDeleteModal({
   children,
 }: ConfirmDeleteModalProps) {
   return (
-    <Modal open={open} onClose={onClose} title={title} size="sm">
+    <Modal open={open} onClose={onClose} title={title} size="md">
       <Stack gap={4}>
         <p className="text-sm text-[var(--color-text-secondary)]">
           Are you sure you want to delete <strong>{entityName}</strong>? {warningText}

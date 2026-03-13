@@ -5,10 +5,10 @@
 //! belong to a specific character.
 
 use axum::extract::DefaultBodyLimit;
-use axum::routing::{get, post};
+use axum::routing::{get, post, put};
 use axum::Router;
 
-use crate::handlers::{derived_image, image_variant, scene, source_image};
+use crate::handlers::{annotation, derived_image, image_variant, scene, source_image};
 use crate::state::AppState;
 
 /// Routes mounted at `/characters`.
@@ -36,6 +36,9 @@ use crate::state::AppState;
 /// POST   /{character_id}/image-variants/{id}/export   -> export_for_editing
 /// POST   /{character_id}/image-variants/{id}/reimport -> reimport_variant
 /// GET    /{character_id}/image-variants/{id}/history  -> variant_history
+/// GET    /{character_id}/image-variants/{id}/annotations        -> list_image_variant_annotations
+/// PUT    /{character_id}/image-variants/{id}/annotations/{frame} -> upsert_image_variant_annotation
+/// DELETE /{character_id}/image-variants/{id}/annotations/{frame} -> delete_image_variant_frame_annotations
 /// POST   /{character_id}/image-variants/upload        -> upload_manual_variant
 /// POST   /{character_id}/image-variants/generate      -> generate_variants
 ///
@@ -92,6 +95,15 @@ pub fn router() -> Router<AppState> {
         .route("/{id}/reimport", post(image_variant::reimport_variant))
         .route("/{id}/history", get(image_variant::variant_history))
         .route("/{id}/thumbnail", get(image_variant::thumbnail))
+        .route(
+            "/{id}/annotations",
+            get(annotation::list_image_variant_annotations),
+        )
+        .route(
+            "/{id}/annotations/{frame}",
+            put(annotation::upsert_image_variant_annotation)
+                .delete(annotation::delete_image_variant_frame_annotations),
+        )
         .layer(DefaultBodyLimit::max(IMAGE_BODY_LIMIT));
 
     let scene_routes = Router::new()

@@ -399,7 +399,7 @@ pub async fn upload_manual_variant(
         source_image_id: None,
         derived_image_id: None,
         variant_label: vlabel,
-        status_id: Some(ImageVariantStatus::Generated.id()),
+        status_id: Some(ImageVariantStatus::Pending.id()),
         file_path: storage_key,
         variant_type: Some(vtype),
         provenance: Some(images::PROVENANCE_MANUAL_UPLOAD.to_string()),

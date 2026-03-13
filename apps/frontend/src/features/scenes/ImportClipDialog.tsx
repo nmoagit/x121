@@ -83,7 +83,7 @@ export function ImportClipDialog({ isOpen, onClose, sceneId, onSuccess }: Import
   };
 
   return (
-    <Modal open={isOpen} onClose={handleClose} title="Import Clip">
+    <Modal open={isOpen} onClose={handleClose} title="Import Clip" size="lg">
       <div className="flex flex-col gap-4">
         {/* Drop zone */}
         <div

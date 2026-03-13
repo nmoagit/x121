@@ -55,6 +55,8 @@ export interface ProductionRunCell {
   track_name?: string | null;
   /** Whether a matching seed image exists for this character + track. */
   has_seed?: boolean;
+  /** Whether this scene type has a clothes-off transition. */
+  has_clothes_off_transition?: boolean;
 }
 
 /* --------------------------------------------------------------------------
@@ -81,6 +83,50 @@ export interface EnabledSceneTypeEntry {
   scene_type_name: string;
   track_id: number | null;
   track_name: string | null;
+  has_clothes_off_transition: boolean;
+}
+
+/** Deduplicated scene slot (union of enabled scene type entries across characters). */
+export interface SceneSlotInfo {
+  key: string;
+  scene_type_id: number;
+  track_id: number | null;
+  label: string;
+  has_clothes_off_transition: boolean;
+}
+
+/** Build a display label for a scene+track combo (shared by matrix views and run creation). */
+export function buildSceneSlotLabel(entry: {
+  scene_type_name: string;
+  track_name: string | null;
+  has_clothes_off_transition: boolean;
+}): string {
+  if (entry.has_clothes_off_transition) return `${entry.scene_type_name} - Clothes Off`;
+  if (entry.track_name) return `${entry.scene_type_name} - ${entry.track_name}`;
+  return entry.scene_type_name;
+}
+
+/** Build a consistent composite key for a scene_type + track pair. */
+export function sceneSlotKey(sceneTypeId: number, trackId: number | null): string {
+  return `${sceneTypeId}-${trackId ?? "null"}`;
+}
+
+/** Deduplicate enabled scene type entries into unique scene+track slots, sorted by label. */
+export function deduplicateSceneSlots(entries: EnabledSceneTypeEntry[]): SceneSlotInfo[] {
+  const seen = new Map<string, SceneSlotInfo>();
+  for (const entry of entries) {
+    const key = sceneSlotKey(entry.scene_type_id, entry.track_id);
+    if (!seen.has(key)) {
+      seen.set(key, {
+        key,
+        scene_type_id: entry.scene_type_id,
+        track_id: entry.track_id,
+        label: buildSceneSlotLabel(entry),
+        has_clothes_off_transition: entry.has_clothes_off_transition,
+      });
+    }
+  }
+  return Array.from(seen.values()).sort((a, b) => a.label.localeCompare(b.label));
 }
 
 /** Request body for submitting cells. */
@@ -114,7 +160,8 @@ export type CellStatus =
   | "approved"
   | "failed"
   | "rejected"
-  | "delivered";
+  | "delivered"
+  | "skipped";
 
 /* --------------------------------------------------------------------------
    Constants
@@ -133,6 +180,7 @@ export const CELL_STATUS_LABELS: Record<CellStatus, string> = {
   failed: "Failed",
   rejected: "Rejected",
   delivered: "Delivered",
+  skipped: "Skipped",
 };
 
 /** Cell status to Badge variant mapping. */
@@ -148,6 +196,7 @@ export const CELL_STATUS_VARIANT: Record<CellStatus, BadgeVariant> = {
   failed: "danger",
   rejected: "danger",
   delivered: "success",
+  skipped: "default",
 };
 
 /** Run status labels keyed by status_id (maps to job_statuses). */

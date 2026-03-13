@@ -28,6 +28,26 @@ export const IMAGE_VARIANT_STATUS_LABEL: Record<ImageVariantStatusId, string> = 
   [IMAGE_VARIANT_STATUS.EDITING]: "Editing",
 };
 
+/** Map a variant status ID to a Badge component variant for visual consistency. */
+export function statusBadgeVariant(
+  statusId: ImageVariantStatusId,
+): "success" | "danger" | "warning" | "info" | "default" {
+  switch (statusId) {
+    case IMAGE_VARIANT_STATUS.APPROVED:
+      return "success";
+    case IMAGE_VARIANT_STATUS.REJECTED:
+      return "danger";
+    case IMAGE_VARIANT_STATUS.GENERATING:
+      return "warning";
+    case IMAGE_VARIANT_STATUS.GENERATED:
+      return "info";
+    case IMAGE_VARIANT_STATUS.EDITING:
+      return "warning";
+    default:
+      return "default";
+  }
+}
+
 /* --------------------------------------------------------------------------
    Provenance
    -------------------------------------------------------------------------- */

@@ -23,36 +23,12 @@ import {
   IMAGE_VARIANT_STATUS,
   IMAGE_VARIANT_STATUS_LABEL,
   PROVENANCE_LABEL,
+  statusBadgeVariant,
   type ImageVariant,
-  type ImageVariantStatusId,
   type Provenance,
 } from "./types";
 import { ProgressiveImage } from "@/components/primitives";
 import { variantImageUrl, variantThumbnailUrl } from "./utils";
-
-/* --------------------------------------------------------------------------
-   Helpers
-   -------------------------------------------------------------------------- */
-
-/** Map status ID to Badge variant for visual consistency. */
-function statusBadgeVariant(
-  statusId: ImageVariantStatusId,
-): "success" | "danger" | "warning" | "info" | "default" {
-  switch (statusId) {
-    case IMAGE_VARIANT_STATUS.APPROVED:
-      return "success";
-    case IMAGE_VARIANT_STATUS.REJECTED:
-      return "danger";
-    case IMAGE_VARIANT_STATUS.GENERATING:
-      return "warning";
-    case IMAGE_VARIANT_STATUS.GENERATED:
-      return "info";
-    case IMAGE_VARIANT_STATUS.EDITING:
-      return "warning";
-    default:
-      return "default";
-  }
-}
 
 /* --------------------------------------------------------------------------
    Sub-components

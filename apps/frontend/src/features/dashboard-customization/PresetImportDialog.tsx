@@ -58,7 +58,7 @@ export function PresetImportDialog({
   };
 
   return (
-    <Modal open={open} onClose={handleClose} title="Import Shared Preset" size="sm">
+    <Modal open={open} onClose={handleClose} title="Import Shared Preset" size="md">
       <div data-testid="preset-import-dialog" className="flex flex-col gap-4">
         <p className="text-sm text-[var(--color-text-secondary)]">
           Paste a share link or token to import a dashboard preset from another user.

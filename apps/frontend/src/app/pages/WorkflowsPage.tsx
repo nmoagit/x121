@@ -143,7 +143,7 @@ function EditWorkflowModal({
   };
 
   return (
-    <Modal open onClose={onClose} title="Edit Workflow" size="md">
+    <Modal open onClose={onClose} title="Edit Workflow" size="lg">
       <Stack gap={4}>
         <Input
           label="Name"

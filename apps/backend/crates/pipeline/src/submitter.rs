@@ -199,7 +199,10 @@ pub async fn submit_segment_with_broadcaster(
                 pool,
                 scene_id,
                 "warn",
-                format!("Job #{} waiting for a ComfyUI instance to come online", job.id),
+                format!(
+                    "Job #{} waiting for a ComfyUI instance to come online",
+                    job.id
+                ),
             )
             .await;
             Err(PipelineError::NoInstances)

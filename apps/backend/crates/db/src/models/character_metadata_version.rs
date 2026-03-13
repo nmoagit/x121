@@ -20,6 +20,10 @@ pub struct CharacterMetadataVersion {
     pub rejection_reason: Option<String>,
     pub outdated_at: Option<Timestamp>,
     pub outdated_reason: Option<String>,
+    pub approval_status: String,
+    pub approved_by: Option<DbId>,
+    pub approved_at: Option<Timestamp>,
+    pub approval_comment: Option<String>,
     pub deleted_at: Option<Timestamp>,
     pub created_at: Timestamp,
     pub updated_at: Timestamp,
@@ -43,4 +47,10 @@ pub struct CreateCharacterMetadataVersion {
 pub struct UpdateCharacterMetadataVersion {
     pub notes: Option<String>,
     pub rejection_reason: Option<String>,
+}
+
+/// Request body for rejecting a metadata version's reviewer approval.
+#[derive(Debug, Clone, Deserialize)]
+pub struct RejectMetadataApprovalRequest {
+    pub comment: Option<String>,
 }

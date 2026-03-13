@@ -10,7 +10,9 @@ use std::sync::Arc;
 use sqlx::PgPool;
 use tracing::{info, warn};
 use x121_core::activity::{ActivityLogEntry, ActivityLogLevel, ActivityLogSource};
-use x121_core::cloud_scaling::{evaluate_scaling_decision_with_reason, ScalingAction, ScalingInput};
+use x121_core::cloud_scaling::{
+    evaluate_scaling_decision_with_reason, ScalingAction, ScalingInput,
+};
 use x121_events::ActivityLogBroadcaster;
 
 use crate::lifecycle::LifecycleBridge;
@@ -314,22 +316,21 @@ async fn evaluate_all_rules(
                                             gpu.name,
                                         ),
                                     ));
-                                    let _ =
-                                        x121_db::repositories::CloudScalingEventRepo::create(
-                                            pool,
-                                            &x121_db::models::cloud_provider::CreateCloudScalingEvent {
-                                                rule_id: rule.id,
-                                                provider_id: rule.provider_id,
-                                                action: "provision_error".to_string(),
-                                                reason: err_msg,
-                                                instances_changed: 0,
-                                                queue_depth: queue_depth as i32,
-                                                current_count: current_count as i16,
-                                                budget_spent_cents: budget_spent,
-                                                cooldown_remaining_secs: 0,
-                                            },
-                                        )
-                                        .await;
+                                    let _ = x121_db::repositories::CloudScalingEventRepo::create(
+                                        pool,
+                                        &x121_db::models::cloud_provider::CreateCloudScalingEvent {
+                                            rule_id: rule.id,
+                                            provider_id: rule.provider_id,
+                                            action: "provision_error".to_string(),
+                                            reason: err_msg,
+                                            instances_changed: 0,
+                                            queue_depth: queue_depth as i32,
+                                            current_count: current_count as i16,
+                                            budget_spent_cents: budget_spent,
+                                            cooldown_remaining_secs: 0,
+                                        },
+                                    )
+                                    .await;
                                 }
                             }
                         }
@@ -423,7 +424,10 @@ async fn teardown_and_terminate(
     for inst in instances {
         // Run lifecycle teardown if we have an orchestrator.
         if let Some(ref orch) = orchestrator {
-            if let Err(e) = bridge.teardown(inst.id, orch, &inst.external_id, true).await {
+            if let Err(e) = bridge
+                .teardown(inst.id, orch, &inst.external_id, true)
+                .await
+            {
                 warn!(
                     cloud_instance_id = inst.id,
                     external_id = %inst.external_id,

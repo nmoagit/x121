@@ -70,7 +70,7 @@ export function AddSpeechModal({
   }));
 
   return (
-    <Modal open={open} onClose={handleClose} title="Add Speech" size="md">
+    <Modal open={open} onClose={handleClose} title="Add Speech" size="lg">
       <Stack gap={4}>
         <Select
           label="Speech Type"

@@ -13,11 +13,13 @@ use x121_core::metadata_transform::{self, MetadataInput, SOURCE_GENERATED, SOURC
 use x121_core::types::DbId;
 use x121_db::models::character::UpdateCharacter;
 use x121_db::models::character_metadata_version::{
-    CharacterMetadataVersion, CreateCharacterMetadataVersion, UpdateCharacterMetadataVersion,
+    CharacterMetadataVersion, CreateCharacterMetadataVersion, RejectMetadataApprovalRequest,
+    UpdateCharacterMetadataVersion,
 };
-use x121_db::repositories::{CharacterMetadataVersionRepo, CharacterRepo};
+use x121_db::repositories::{CharacterMetadataVersionRepo, CharacterRepo, CharacterReviewRepo};
 
 use crate::error::{AppError, AppResult};
+use crate::middleware::auth::AuthUser;
 use crate::response::DataResponse;
 use crate::state::AppState;
 
@@ -121,6 +123,30 @@ async fn create_version_maybe_activate(
     } else {
         Ok(CharacterMetadataVersionRepo::create(pool, input).await?)
     }
+}
+
+/// Verify that `user_id` is the assigned reviewer for this character.
+///
+/// Returns `Ok(())` if they are, or an appropriate error if there is no
+/// reviewer assigned or the user is not the reviewer.
+async fn require_reviewer(
+    pool: &sqlx::PgPool,
+    character_id: DbId,
+    user_id: DbId,
+) -> AppResult<()> {
+    let assignment = CharacterReviewRepo::find_active_by_character(pool, character_id)
+        .await?
+        .ok_or_else(|| {
+            AppError::Core(CoreError::Forbidden(
+                "No reviewer assigned to this character".into(),
+            ))
+        })?;
+    if assignment.reviewer_user_id != user_id {
+        return Err(AppError::Core(CoreError::Forbidden(
+            "Only the assigned reviewer can perform this action".into(),
+        )));
+    }
+    Ok(())
 }
 
 /// Build a `CreateCharacterMetadataVersion` for a manual edit.
@@ -361,4 +387,82 @@ pub async fn mark_metadata_outdated(
     )
     .await?;
     Ok(StatusCode::NO_CONTENT)
+}
+
+/// POST /api/v1/characters/{character_id}/metadata/versions/{version_id}/approve
+///
+/// Approve a metadata version. Only the assigned character reviewer may approve.
+pub async fn approve_metadata_version(
+    State(state): State<AppState>,
+    auth: AuthUser,
+    Path((character_id, version_id)): Path<(DbId, DbId)>,
+) -> AppResult<impl IntoResponse> {
+    ensure_version_exists(&state.pool, version_id).await?;
+    require_reviewer(&state.pool, character_id, auth.user_id).await?;
+
+    let version =
+        CharacterMetadataVersionRepo::approve(&state.pool, character_id, version_id, auth.user_id)
+            .await?
+            .ok_or_else(|| {
+                AppError::Core(CoreError::NotFound {
+                    entity: "CharacterMetadataVersion",
+                    id: version_id,
+                })
+            })?;
+
+    // Log audit action
+    let audit_meta = serde_json::json!({ "version_id": version_id });
+    CharacterReviewRepo::log_action(
+        &state.pool,
+        character_id,
+        "metadata_approved",
+        auth.user_id,
+        None,
+        None,
+        &audit_meta,
+    )
+    .await?;
+
+    Ok(Json(DataResponse { data: version }))
+}
+
+/// POST /api/v1/characters/{character_id}/metadata/versions/{version_id}/reject-approval
+///
+/// Reject a metadata version's approval. Only the assigned character reviewer may reject.
+pub async fn reject_metadata_approval(
+    State(state): State<AppState>,
+    auth: AuthUser,
+    Path((character_id, version_id)): Path<(DbId, DbId)>,
+    Json(body): Json<RejectMetadataApprovalRequest>,
+) -> AppResult<impl IntoResponse> {
+    ensure_version_exists(&state.pool, version_id).await?;
+    require_reviewer(&state.pool, character_id, auth.user_id).await?;
+
+    let version = CharacterMetadataVersionRepo::reject_approval(
+        &state.pool,
+        version_id,
+        body.comment.as_deref(),
+    )
+    .await?
+    .ok_or_else(|| {
+        AppError::Core(CoreError::NotFound {
+            entity: "CharacterMetadataVersion",
+            id: version_id,
+        })
+    })?;
+
+    // Log audit action
+    let audit_meta = serde_json::json!({ "version_id": version_id });
+    CharacterReviewRepo::log_action(
+        &state.pool,
+        character_id,
+        "metadata_rejected",
+        auth.user_id,
+        None,
+        body.comment.as_deref(),
+        &audit_meta,
+    )
+    .await?;
+
+    Ok(Json(DataResponse { data: version }))
 }

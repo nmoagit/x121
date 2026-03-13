@@ -1,6 +1,10 @@
 //! Repository for the `character_metadata_versions` table.
 
 use sqlx::PgPool;
+use x121_core::metadata::{
+    METADATA_APPROVAL_APPROVED, METADATA_APPROVAL_PENDING,
+    METADATA_APPROVAL_REJECTED,
+};
 use x121_core::types::DbId;
 
 use crate::models::character_metadata_version::{
@@ -10,7 +14,9 @@ use crate::models::character_metadata_version::{
 /// Column list shared across queries to avoid repetition.
 const COLUMNS: &str = "id, character_id, version_number, metadata, source, \
     source_bio, source_tov, generation_report, is_active, notes, \
-    rejection_reason, outdated_at, outdated_reason, deleted_at, created_at, updated_at";
+    rejection_reason, outdated_at, outdated_reason, \
+    approval_status, approved_by, approved_at, approval_comment, \
+    deleted_at, created_at, updated_at";
 
 /// Provides CRUD and version-management operations for character metadata versions.
 pub struct CharacterMetadataVersionRepo;
@@ -148,9 +154,11 @@ impl CharacterMetadataVersionRepo {
         .execute(&mut *tx)
         .await?;
 
-        // Mark the specified version as active
+        // Mark the specified version as active, resetting approval to pending
         let query = format!(
-            "UPDATE character_metadata_versions SET is_active = true \
+            "UPDATE character_metadata_versions \
+             SET is_active = true, approval_status = '{METADATA_APPROVAL_PENDING}', \
+                 approved_by = NULL, approved_at = NULL, approval_comment = NULL \
              WHERE id = $1 AND character_id = $2 AND deleted_at IS NULL \
              RETURNING {COLUMNS}"
         );
@@ -246,5 +254,83 @@ impl CharacterMetadataVersionRepo {
 
         tx.commit().await?;
         Ok(version)
+    }
+
+    // ── Approval operations ──────────────────────────────────────────
+
+    /// Find the currently approved version for a character (if any).
+    pub async fn find_approved(
+        pool: &PgPool,
+        character_id: DbId,
+    ) -> Result<Option<CharacterMetadataVersion>, sqlx::Error> {
+        let query = format!(
+            "SELECT {COLUMNS} FROM character_metadata_versions \
+             WHERE character_id = $1 AND approval_status = '{METADATA_APPROVAL_APPROVED}' AND deleted_at IS NULL"
+        );
+        sqlx::query_as::<_, CharacterMetadataVersion>(&query)
+            .bind(character_id)
+            .fetch_optional(pool)
+            .await
+    }
+
+    /// Approve a metadata version. Clears any previously approved version
+    /// for the same character (sets it back to `'pending'`). Uses a transaction.
+    ///
+    /// Returns `None` if `version_id` does not exist for the given `character_id`.
+    pub async fn approve(
+        pool: &PgPool,
+        character_id: DbId,
+        version_id: DbId,
+        user_id: DbId,
+    ) -> Result<Option<CharacterMetadataVersion>, sqlx::Error> {
+        let mut tx = pool.begin().await?;
+
+        // Clear any previously approved version for this character
+        sqlx::query(&format!(
+            "UPDATE character_metadata_versions \
+             SET approval_status = '{METADATA_APPROVAL_PENDING}', approved_by = NULL, \
+                 approved_at = NULL, approval_comment = NULL \
+             WHERE character_id = $1 AND approval_status = '{METADATA_APPROVAL_APPROVED}' AND deleted_at IS NULL"
+        ))
+        .bind(character_id)
+        .execute(&mut *tx)
+        .await?;
+
+        // Approve the target version
+        let query = format!(
+            "UPDATE character_metadata_versions \
+             SET approval_status = '{METADATA_APPROVAL_APPROVED}', approved_by = $2, approved_at = NOW(), \
+                 approval_comment = NULL \
+             WHERE id = $1 AND character_id = $3 AND deleted_at IS NULL \
+             RETURNING {COLUMNS}"
+        );
+        let result = sqlx::query_as::<_, CharacterMetadataVersion>(&query)
+            .bind(version_id)
+            .bind(user_id)
+            .bind(character_id)
+            .fetch_optional(&mut *tx)
+            .await?;
+
+        tx.commit().await?;
+        Ok(result)
+    }
+
+    /// Reject a metadata version's approval with an optional comment.
+    pub async fn reject_approval(
+        pool: &PgPool,
+        version_id: DbId,
+        comment: Option<&str>,
+    ) -> Result<Option<CharacterMetadataVersion>, sqlx::Error> {
+        let query = format!(
+            "UPDATE character_metadata_versions \
+             SET approval_status = '{METADATA_APPROVAL_REJECTED}', approval_comment = $2 \
+             WHERE id = $1 AND deleted_at IS NULL \
+             RETURNING {COLUMNS}"
+        );
+        sqlx::query_as::<_, CharacterMetadataVersion>(&query)
+            .bind(version_id)
+            .bind(comment)
+            .fetch_optional(pool)
+            .await
     }
 }

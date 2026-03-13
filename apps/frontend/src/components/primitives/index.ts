@@ -1,5 +1,6 @@
 export { Avatar } from "./Avatar";
 export { Badge } from "./Badge";
+export { FilterSelect } from "./FilterSelect";
 export type { BadgeVariant } from "./Badge";
 export { Button } from "./Button";
 export { Checkbox } from "./Checkbox";
@@ -7,6 +8,7 @@ export { Input } from "./Input";
 export { LoadingPane } from "./LoadingPane";
 export { ProgressiveImage } from "./ProgressiveImage";
 export { RemovableChip } from "./RemovableChip";
+export { SearchInput } from "./SearchInput";
 export { Select } from "./Select";
 export { SelectableRow } from "./SelectableRow";
 export { Spinner } from "./Spinner";

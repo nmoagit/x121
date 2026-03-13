@@ -16,6 +16,7 @@ interface ProgressiveImageProps {
   alt: string;
   className?: string;
   loading?: "lazy" | "eager";
+  draggable?: boolean;
 }
 
 export function ProgressiveImage({
@@ -24,6 +25,7 @@ export function ProgressiveImage({
   alt,
   className,
   loading = "lazy",
+  draggable,
 }: ProgressiveImageProps) {
   const [src, setSrc] = useState(lowSrc);
 
@@ -52,6 +54,7 @@ export function ProgressiveImage({
       alt={alt}
       className={className}
       loading={loading}
+      draggable={draggable}
     />
   );
 }

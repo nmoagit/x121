@@ -7,13 +7,12 @@
 
 import { useCallback, useMemo, useState } from "react";
 
-import { Badge, Button, Input, Spinner } from "@/components/primitives";
+import { Badge, Button, SearchInput, Spinner } from "@/components/primitives";
 import {
   AlertCircle,
   ChevronLeft,
   ChevronRight,
   Download,
-  Search,
 } from "@/tokens/icons";
 
 import { useActivityLogHistory } from "../hooks/useActivityLogHistory";
@@ -169,17 +168,13 @@ export function HistoryTab() {
         <div className="flex-1" />
 
         {/* Search */}
-        <div className="w-56">
-          <Input
-            placeholder="Search logs..."
-            value={searchText}
-            onChange={(e) => { setSearchText(e.target.value); resetOffset(); }}
-            className="!py-1 !text-sm"
-          />
-        </div>
-
-        {/* Search icon (decorative) */}
-        <Search size={16} className="text-[var(--color-text-muted)]" aria-hidden />
+        <SearchInput
+          placeholder="Search logs..."
+          value={searchText}
+          onChange={(e) => { setSearchText(e.target.value); resetOffset(); }}
+          size="sm"
+          className="w-56"
+        />
       </div>
 
       {/* Status bar — same wrapper div as ActivityConsolePanel */}

@@ -449,7 +449,8 @@ pub async fn terminate_instance(
                 );
                 let provider = get_provider_impl(&state, provider_id).await?;
                 provider.terminate_instance(&inst.external_id).await?;
-                CloudInstanceRepo::mark_terminated(&state.pool, inst_id, inst.total_cost_cents).await?;
+                CloudInstanceRepo::mark_terminated(&state.pool, inst_id, inst.total_cost_cents)
+                    .await?;
             }
         }
         Err(e) => {

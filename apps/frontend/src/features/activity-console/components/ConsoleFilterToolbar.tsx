@@ -5,8 +5,7 @@
  * and a search input field.
  */
 
-import { Badge, Button, Input } from "@/components/primitives";
-import { Search } from "@/tokens/icons";
+import { Badge, Button, SearchInput } from "@/components/primitives";
 
 import { useActivityConsoleStore } from "../stores/useActivityConsoleStore";
 import type { ActivityLogLevel, ActivityLogSource } from "../types";
@@ -106,17 +105,13 @@ export function ConsoleFilterToolbar() {
       <div className="flex-1" />
 
       {/* Search */}
-      <div className="w-56">
-        <Input
-          placeholder="Search logs..."
-          value={searchText}
-          onChange={(e) => setSearchText(e.target.value)}
-          className="!py-1 !text-sm"
-        />
-      </div>
-
-      {/* Search icon (decorative) */}
-      <Search size={16} className="text-[var(--color-text-muted)]" aria-hidden />
+      <SearchInput
+        placeholder="Search logs..."
+        value={searchText}
+        onChange={(e) => setSearchText(e.target.value)}
+        size="sm"
+        className="w-56"
+      />
     </div>
   );
 }

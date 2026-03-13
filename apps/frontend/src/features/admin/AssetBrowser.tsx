@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 
 import { EmptyState } from "@/components/domain";
 import { Stack } from "@/components/layout";
-import { Badge, Input, Select, Spinner } from "@/components/primitives";
+import { Badge, FilterSelect, SearchInput, Spinner } from "@/components/primitives";
 import { useAssets } from "@/features/admin/hooks/use-assets";
 import type { AssetSearchParams, AssetWithStats } from "@/features/admin/hooks/use-assets";
 import { useSetPageTitle } from "@/hooks/useSetPageTitle";
@@ -144,30 +144,26 @@ export function AssetBrowser({ onSelectAsset }: AssetBrowserProps) {
       <Stack gap={6}>
         {/* Filters */}
         <div className="flex flex-wrap items-end gap-[var(--spacing-4)]">
-          <div className="min-w-[200px] flex-1">
-            <Input
-              label="Search"
-              placeholder="Search assets..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </div>
-          <div className="w-[160px]">
-            <Select
-              label="Type"
-              value={typeFilter}
-              onChange={(val) => setTypeFilter(val)}
-              options={ASSET_TYPE_OPTIONS}
-            />
-          </div>
-          <div className="w-[160px]">
-            <Select
-              label="Status"
-              value={statusFilter}
-              onChange={(val) => setStatusFilter(val)}
-              options={STATUS_OPTIONS}
-            />
-          </div>
+          <SearchInput
+            placeholder="Search assets..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="min-w-[200px] flex-1"
+          />
+          <FilterSelect
+            label="Type"
+            value={typeFilter}
+            onChange={(val) => setTypeFilter(val)}
+            options={ASSET_TYPE_OPTIONS}
+            className="w-[160px]"
+          />
+          <FilterSelect
+            label="Status"
+            value={statusFilter}
+            onChange={(val) => setStatusFilter(val)}
+            options={STATUS_OPTIONS}
+            className="w-[160px]"
+          />
         </div>
 
         {/* Asset grid */}

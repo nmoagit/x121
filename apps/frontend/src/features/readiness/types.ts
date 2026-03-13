@@ -32,6 +32,7 @@ export interface CriteriaJson {
     source_image?: boolean;
     approved_variant?: boolean;
     metadata_complete?: boolean;
+    metadata_approved?: boolean;
     settings?: string[];
   };
 }
@@ -75,4 +76,12 @@ export interface UpdateReadinessCriteria {
 /** Request body for batch evaluation. */
 export interface BatchEvaluateRequest {
   character_ids: number[];
+}
+
+/** Map a readiness percentage to a badge variant. */
+export function readinessPctToVariant(pct: number): "success" | "warning" | "danger" | "default" {
+  if (pct >= 100) return "success";
+  if (pct >= 50) return "warning";
+  if (pct > 0) return "danger";
+  return "default";
 }

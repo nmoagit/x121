@@ -80,12 +80,11 @@ impl ProductionRunRepo {
 
     /// Count production runs that are in-progress across all projects.
     pub async fn active_run_count(pool: &PgPool) -> Result<i64, sqlx::Error> {
-        let row: (i64,) = sqlx::query_as(
-            "SELECT COUNT(*) FROM production_runs WHERE status_id = $1",
-        )
-        .bind(x121_core::batch_production::RUN_STATUS_ID_IN_PROGRESS)
-        .fetch_one(pool)
-        .await?;
+        let row: (i64,) =
+            sqlx::query_as("SELECT COUNT(*) FROM production_runs WHERE status_id = $1")
+                .bind(x121_core::batch_production::RUN_STATUS_ID_IN_PROGRESS)
+                .fetch_one(pool)
+                .await?;
         Ok(row.0)
     }
 
@@ -148,11 +147,7 @@ impl ProductionRunRepo {
     }
 
     /// Set the total_cells count to an exact value.
-    pub async fn set_total_cells(
-        pool: &PgPool,
-        id: DbId,
-        count: i32,
-    ) -> Result<(), sqlx::Error> {
+    pub async fn set_total_cells(pool: &PgPool, id: DbId, count: i32) -> Result<(), sqlx::Error> {
         sqlx::query("UPDATE production_runs SET total_cells = $2 WHERE id = $1")
             .bind(id)
             .bind(count)
@@ -320,7 +315,8 @@ impl ProductionRunRepo {
                             WHERE iv.character_id = prc.character_id \
                               AND iv.deleted_at IS NULL \
                         ) \
-                    END AS has_seed \
+                    END AS has_seed, \
+                    st.has_clothes_off_transition \
              FROM production_run_cells prc \
              JOIN scene_types st ON st.id = prc.scene_type_id \
              LEFT JOIN tracks t ON t.id = prc.track_id \
@@ -467,10 +463,14 @@ impl ProductionRunRepo {
         .await
     }
 
-    /// Batch-update cell statuses to in-progress and link scene_id.
-    pub async fn mark_cells_in_progress_with_scene(
+    /// Batch-update cell statuses and link scene_ids.
+    ///
+    /// Sets `status_id` to the given value and links each cell to its scene.
+    /// Used by both retrospective matching (completed) and in-progress promotion.
+    async fn mark_cells_with_scene(
         pool: &PgPool,
         updates: &[(DbId, DbId)], // (cell_id, scene_id)
+        status_id: DbId,
     ) -> Result<u64, sqlx::Error> {
         if updates.is_empty() {
             return Ok(0);
@@ -487,37 +487,36 @@ impl ProductionRunRepo {
         )
         .bind(&cell_ids)
         .bind(&scene_ids)
-        .bind(x121_core::batch_production::RUN_STATUS_ID_IN_PROGRESS)
+        .bind(status_id)
         .execute(pool)
         .await?;
         Ok(result.rows_affected())
     }
 
-    /// Batch-update cell statuses and scene_ids for retrospective matching.
-    /// Sets status_id to completed and links the scene_id.
+    /// Batch-update cell statuses to in-progress and link scene_id.
+    pub async fn mark_cells_in_progress_with_scene(
+        pool: &PgPool,
+        updates: &[(DbId, DbId)],
+    ) -> Result<u64, sqlx::Error> {
+        Self::mark_cells_with_scene(
+            pool,
+            updates,
+            x121_core::batch_production::RUN_STATUS_ID_IN_PROGRESS,
+        )
+        .await
+    }
+
+    /// Batch-update cell statuses to completed and link scene_id.
     pub async fn mark_cells_completed_with_scene(
         pool: &PgPool,
-        updates: &[(DbId, DbId)], // (cell_id, scene_id)
+        updates: &[(DbId, DbId)],
     ) -> Result<u64, sqlx::Error> {
-        if updates.is_empty() {
-            return Ok(0);
-        }
-        let cell_ids: Vec<DbId> = updates.iter().map(|(cid, _)| *cid).collect();
-        let scene_ids: Vec<DbId> = updates.iter().map(|(_, sid)| *sid).collect();
-
-        let result = sqlx::query(
-            "UPDATE production_run_cells AS prc SET \
-                status_id = $3, \
-                scene_id = v.scene_id \
-             FROM UNNEST($1::bigint[], $2::bigint[]) AS v(cell_id, scene_id) \
-             WHERE prc.id = v.cell_id",
+        Self::mark_cells_with_scene(
+            pool,
+            updates,
+            x121_core::batch_production::RUN_STATUS_ID_COMPLETED,
         )
-        .bind(&cell_ids)
-        .bind(&scene_ids)
-        .bind(x121_core::batch_production::RUN_STATUS_ID_COMPLETED)
-        .execute(pool)
-        .await?;
-        Ok(result.rows_affected())
+        .await
     }
 
     /// Live-refresh stale not_started cells by checking current scene state.
@@ -599,13 +598,12 @@ impl ProductionRunRepo {
         run_id: DbId,
         cell_ids: &[DbId],
     ) -> Result<u64, sqlx::Error> {
-        let result = sqlx::query(
-            "DELETE FROM production_run_cells WHERE run_id = $1 AND id = ANY($2)",
-        )
-        .bind(run_id)
-        .bind(cell_ids)
-        .execute(pool)
-        .await?;
+        let result =
+            sqlx::query("DELETE FROM production_run_cells WHERE run_id = $1 AND id = ANY($2)")
+                .bind(run_id)
+                .bind(cell_ids)
+                .execute(pool)
+                .await?;
         Ok(result.rows_affected())
     }
 
@@ -633,13 +631,12 @@ impl ProductionRunRepo {
         run_id: DbId,
         character_id: DbId,
     ) -> Result<u64, sqlx::Error> {
-        let result = sqlx::query(
-            "DELETE FROM production_run_cells WHERE run_id = $1 AND character_id = $2",
-        )
-        .bind(run_id)
-        .bind(character_id)
-        .execute(pool)
-        .await?;
+        let result =
+            sqlx::query("DELETE FROM production_run_cells WHERE run_id = $1 AND character_id = $2")
+                .bind(run_id)
+                .bind(character_id)
+                .execute(pool)
+                .await?;
         Ok(result.rows_affected())
     }
 

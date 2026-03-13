@@ -10,6 +10,7 @@ pub struct FrameAnnotation {
     pub id: DbId,
     pub segment_id: Option<DbId>,
     pub version_id: Option<DbId>,
+    pub image_variant_id: Option<DbId>,
     pub user_id: DbId,
     pub frame_number: i32,
     pub annotations_json: serde_json::Value,
@@ -29,6 +30,13 @@ pub struct CreateFrameAnnotation {
 /// DTO for creating a new frame annotation on a version (clip review).
 #[derive(Debug, Deserialize)]
 pub struct CreateVersionAnnotation {
+    pub frame_number: i32,
+    pub annotations_json: serde_json::Value,
+}
+
+/// DTO for creating a new frame annotation on an image variant.
+#[derive(Debug, Deserialize)]
+pub struct CreateImageVariantAnnotation {
     pub frame_number: i32,
     pub annotations_json: serde_json::Value,
 }

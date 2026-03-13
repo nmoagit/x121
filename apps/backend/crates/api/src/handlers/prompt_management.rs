@@ -430,24 +430,29 @@ pub async fn resolve_prompt_preview(
                 body.scene_type_id,
             )
             .await?;
-            extract_override_maps(rows.iter().map(|o| (o.prompt_slot_id, &o.fragments, &o.override_text)))
+            extract_override_maps(
+                rows.iter()
+                    .map(|o| (o.prompt_slot_id, &o.fragments, &o.override_text)),
+            )
         } else {
             (HashMap::new(), HashMap::new())
         };
 
     // 5. Group-level overrides -> fragment map + override_text map.
-    let (group_fragment_overrides, group_override_texts) =
-        if let Some(group_id) = body.group_id {
-            let rows = GroupPromptOverrideRepo::list_by_group_and_scene_type(
-                &state.pool,
-                group_id,
-                body.scene_type_id,
-            )
-            .await?;
-            extract_override_maps(rows.iter().map(|o| (o.prompt_slot_id, &o.fragments, &o.override_text)))
-        } else {
-            (HashMap::new(), HashMap::new())
-        };
+    let (group_fragment_overrides, group_override_texts) = if let Some(group_id) = body.group_id {
+        let rows = GroupPromptOverrideRepo::list_by_group_and_scene_type(
+            &state.pool,
+            group_id,
+            body.scene_type_id,
+        )
+        .await?;
+        extract_override_maps(
+            rows.iter()
+                .map(|o| (o.prompt_slot_id, &o.fragments, &o.override_text)),
+        )
+    } else {
+        (HashMap::new(), HashMap::new())
+    };
 
     // 6. Character+scene overrides -> fragment map + override_text map.
     let char_rows = CharacterScenePromptOverrideRepo::list_by_character_and_scene_type(
@@ -456,8 +461,11 @@ pub async fn resolve_prompt_preview(
         body.scene_type_id,
     )
     .await?;
-    let (character_fragment_overrides, character_override_texts) =
-        extract_override_maps(char_rows.iter().map(|o| (o.prompt_slot_id, &o.fragments, &o.override_text)));
+    let (character_fragment_overrides, character_override_texts) = extract_override_maps(
+        char_rows
+            .iter()
+            .map(|o| (o.prompt_slot_id, &o.fragments, &o.override_text)),
+    );
 
     // 7. Convert slots to PromptSlotInput.
     let prompt_slot_inputs: Vec<PromptSlotInput> = slots

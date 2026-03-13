@@ -133,6 +133,34 @@ export function useMarkOutdated(characterId: number) {
   });
 }
 
+/** Approve a metadata version (reviewer action). */
+export function useApproveMetadataVersion(characterId: number) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (versionId: number) =>
+      api.post<MetadataVersion>(
+        `/characters/${characterId}/metadata/versions/${versionId}/approve`,
+        {},
+      ),
+    onSuccess: () => invalidateVersionsAndMetadata(queryClient, characterId),
+  });
+}
+
+/** Reject a metadata version's approval (reviewer action). */
+export function useRejectMetadataApproval(characterId: number) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: { versionId: number; comment?: string }) =>
+      api.post<MetadataVersion>(
+        `/characters/${characterId}/metadata/versions/${data.versionId}/reject-approval`,
+        { comment: data.comment },
+      ),
+    onSuccess: () => invalidateVersions(queryClient, characterId),
+  });
+}
+
 /** Soft-delete a metadata version. */
 export function useDeleteVersion(characterId: number) {
   const queryClient = useQueryClient();

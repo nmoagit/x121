@@ -72,7 +72,7 @@ export function BulkEditDialog({
   }, [selectedField, value, currentFieldDef, onApply, onClose]);
 
   return (
-    <Modal open onClose={onClose} title="Bulk Edit" size="md">
+    <Modal open onClose={onClose} title="Bulk Edit" size="lg">
       <Stack gap={4}>
         <p className="text-sm text-[var(--color-text-secondary)]">
           Update a single field across{" "}

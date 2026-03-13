@@ -37,6 +37,8 @@ interface TrackImageCardProps {
   onGenerate: () => void;
   generating: boolean;
   onUpload: (file: File, trackSlug: string) => void;
+  /** Called when the card image area is clicked (opens detail modal). */
+  onClick?: () => void;
 }
 
 /* --------------------------------------------------------------------------
@@ -52,6 +54,7 @@ export function TrackImageCard({
   onGenerate,
   generating,
   onUpload,
+  onClick,
 }: TrackImageCardProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState(false);
@@ -124,11 +127,19 @@ export function TrackImageCard({
             <span className="text-xs text-[var(--color-action-primary)] mt-1">Drop image here</span>
           </div>
         ) : heroVariant?.file_path ? (
-          <img
-            src={variantImageUrl(heroVariant.file_path)}
-            alt={`${track.name} seed image`}
-            className="w-full aspect-video object-cover bg-black"
-          />
+          <div
+            role="button"
+            tabIndex={0}
+            onClick={onClick}
+            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") onClick?.(); }}
+            className="cursor-pointer"
+          >
+            <img
+              src={variantImageUrl(heroVariant.file_path)}
+              alt={`${track.name} seed image`}
+              className="w-full aspect-video object-cover bg-black"
+            />
+          </div>
         ) : (
           <MediaPlaceholder
             icon={<ImageIcon size={24} className="text-[var(--color-text-muted)]" />}

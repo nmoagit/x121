@@ -23,8 +23,8 @@ use x121_db::models::watermark_setting::{
     CreateWatermarkSetting, UpdateWatermarkSetting, WatermarkSetting,
 };
 use x121_db::repositories::{
-    CharacterRepo, DeliveryExportRepo, OutputFormatProfileRepo, ProjectDeliveryLogRepo,
-    SceneVideoVersionRepo, WatermarkSettingRepo,
+    CharacterMetadataVersionRepo, CharacterRepo, DeliveryExportRepo, OutputFormatProfileRepo,
+    ProjectDeliveryLogRepo, SceneVideoVersionRepo, WatermarkSettingRepo,
 };
 
 use serde::Deserialize;
@@ -305,7 +305,8 @@ pub async fn validate_delivery(
         });
     }
 
-    // Check for characters with no scenes (warning, not blocking).
+    // Check for characters with no scenes (warning, not blocking)
+    // and characters without approved metadata (error, blocking).
     for character in &characters {
         let scenes =
             x121_db::repositories::SceneRepo::list_by_character(&state.pool, character.id).await?;
@@ -314,6 +315,21 @@ pub async fn validate_delivery(
                 severity: assembly::IssueSeverity::Warning,
                 category: "no_scenes".to_string(),
                 message: format!("Character '{}' has no scenes", character.name),
+                entity_id: Some(character.id),
+            });
+        }
+
+        // Check that the character has an approved metadata version.
+        let approved =
+            CharacterMetadataVersionRepo::find_approved(&state.pool, character.id).await?;
+        if approved.is_none() {
+            issues.push(assembly::ValidationIssue {
+                severity: assembly::IssueSeverity::Error,
+                category: "metadata_not_approved".to_string(),
+                message: format!(
+                    "Character '{}' has no approved metadata version",
+                    character.name
+                ),
                 entity_id: Some(character.id),
             });
         }

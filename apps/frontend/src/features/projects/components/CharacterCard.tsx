@@ -76,6 +76,7 @@ export function CharacterCard({ character, group, avatarUrl, heroVariantId, sele
                 alt={character.name}
                 className="absolute inset-0 w-full h-full object-cover"
                 loading="lazy"
+                draggable={false}
               />
             ) : (
               <img
@@ -83,6 +84,7 @@ export function CharacterCard({ character, group, avatarUrl, heroVariantId, sele
                 alt={character.name}
                 className="absolute inset-0 w-full h-full object-cover"
                 loading="lazy"
+                draggable={false}
               />
             )
           ) : (

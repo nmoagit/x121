@@ -190,7 +190,13 @@ async fn handle_execution_start(
         tracing::error!(error = %e, "Failed to mark execution started");
     }
     if let Some(scene_id) = resolve_scene_id(pool, &data.prompt_id).await {
-        write_gen_log(pool, scene_id, "info", "ComfyUI execution started".to_string()).await;
+        write_gen_log(
+            pool,
+            scene_id,
+            "info",
+            "ComfyUI execution started".to_string(),
+        )
+        .await;
     }
 }
 
@@ -240,7 +246,13 @@ async fn handle_executing(
             tracing::error!(error = %e, "Failed to mark execution completed");
         }
         if let Some(scene_id) = resolve_scene_id(pool, &data.prompt_id).await {
-            write_gen_log(pool, scene_id, "success", "ComfyUI execution completed — all nodes done".to_string()).await;
+            write_gen_log(
+                pool,
+                scene_id,
+                "success",
+                "ComfyUI execution completed — all nodes done".to_string(),
+            )
+            .await;
         }
         // Emit a platform event with the mapped platform_job_id.
         if let Ok(Some(exec)) = ComfyUIExecutionRepo::find_by_prompt_id(pool, &data.prompt_id).await
@@ -277,7 +289,11 @@ async fn handle_progress_state(
     data: &crate::messages::ProgressStateData,
 ) {
     let total = data.nodes.len();
-    let finished = data.nodes.values().filter(|n| n.state == "finished").count();
+    let finished = data
+        .nodes
+        .values()
+        .filter(|n| n.state == "finished")
+        .count();
     let running_node = data
         .nodes
         .values()

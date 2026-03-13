@@ -32,6 +32,26 @@ pub const ENTITY_TYPE_CHARACTER: &str = "character";
 pub const ENTITY_TYPE_SCENE: &str = "scene";
 
 // ---------------------------------------------------------------------------
+// Metadata version approval statuses (PRD-133)
+// ---------------------------------------------------------------------------
+
+/// Version approval is pending reviewer action.
+pub const METADATA_APPROVAL_PENDING: &str = "pending";
+
+/// Version has been approved by the assigned reviewer.
+pub const METADATA_APPROVAL_APPROVED: &str = "approved";
+
+/// Version has been rejected by the assigned reviewer.
+pub const METADATA_APPROVAL_REJECTED: &str = "rejected";
+
+/// All valid metadata approval status strings.
+pub const VALID_METADATA_APPROVAL_STATUSES: &[&str] = &[
+    METADATA_APPROVAL_PENDING,
+    METADATA_APPROVAL_APPROVED,
+    METADATA_APPROVAL_REJECTED,
+];
+
+// ---------------------------------------------------------------------------
 // Character metadata schema
 // ---------------------------------------------------------------------------
 

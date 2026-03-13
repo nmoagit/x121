@@ -67,7 +67,7 @@ export function GenerateConfirmModal({
   }
 
   return (
-    <Modal open={open} onClose={onClose} title="Confirm Generation" size="md">
+    <Modal open={open} onClose={onClose} title="Confirm Generation" size="lg">
       <Stack gap={4}>
         {/* Summary */}
         <p className="text-sm text-[var(--color-text-secondary)]">

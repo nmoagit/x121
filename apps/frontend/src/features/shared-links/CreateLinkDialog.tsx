@@ -50,7 +50,7 @@ export function CreateLinkDialog({
   defaultScopeId,
 }: CreateLinkDialogProps) {
   return (
-    <Modal open={open} onClose={onClose} title="Create Shareable Link" size="md">
+    <Modal open={open} onClose={onClose} title="Create Shareable Link" size="lg">
       <CreateLinkForm
         onClose={onClose}
         defaultScopeType={defaultScopeType}

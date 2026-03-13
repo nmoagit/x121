@@ -68,6 +68,7 @@ export interface CharacterDeliverableRow {
   scenes_with_video: number;
   scenes_approved: number;
   has_active_metadata: boolean;
+  metadata_approval_status: "pending" | "approved" | "rejected" | null;
   has_voice_id: boolean;
   blocking_reasons: string[];
   readiness_pct: number;

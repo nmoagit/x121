@@ -59,7 +59,7 @@ export function Select({
           className={cn(
             "w-full appearance-none px-3 py-2 pr-10 text-base",
             "bg-[var(--color-surface-secondary)] text-[var(--color-text-primary)]",
-            "border rounded-[var(--radius-md)]",
+            "border rounded-[var(--color-border-default)] rounded-[var(--radius-md)]",
             "transition-colors duration-[var(--duration-fast)] ease-[var(--ease-default)]",
             "focus:outline-none focus:ring-2 focus:ring-offset-0",
             error

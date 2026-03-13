@@ -635,7 +635,11 @@ async fn recover_missed_completions(
                                     arr.iter().find_map(|msg| {
                                         let msg_type = msg.as_array()?.first()?.as_str()?;
                                         if msg_type == "execution_error" {
-                                            msg.as_array()?.get(1)?.get("exception_message")?.as_str().map(|s| s.to_string())
+                                            msg.as_array()?
+                                                .get(1)?
+                                                .get("exception_message")?
+                                                .as_str()
+                                                .map(|s| s.to_string())
                                         } else {
                                             None
                                         }
@@ -650,11 +654,15 @@ async fn recover_missed_completions(
                                 "Recovered missed execution error: {error_msg}",
                             );
 
-                            if let Err(e) = ComfyUIExecutionRepo::mark_failed(pool, prompt_id, &error_msg).await {
+                            if let Err(e) =
+                                ComfyUIExecutionRepo::mark_failed(pool, prompt_id, &error_msg).await
+                            {
                                 tracing::error!(error = %e, "Failed to mark recovered execution as failed");
                             }
 
-                            if let Ok(Some(exec)) = ComfyUIExecutionRepo::find_by_prompt_id(pool, prompt_id).await {
+                            if let Ok(Some(exec)) =
+                                ComfyUIExecutionRepo::find_by_prompt_id(pool, prompt_id).await
+                            {
                                 let _ = event_tx.send(ComfyUIEvent::GenerationError {
                                     instance_id,
                                     platform_job_id: exec.platform_job_id,
@@ -670,11 +678,15 @@ async fn recover_missed_completions(
                                 "Recovered missed completion from history",
                             );
 
-                            if let Err(e) = ComfyUIExecutionRepo::mark_completed(pool, prompt_id).await {
+                            if let Err(e) =
+                                ComfyUIExecutionRepo::mark_completed(pool, prompt_id).await
+                            {
                                 tracing::error!(error = %e, "Failed to mark recovered execution as completed");
                             }
 
-                            if let Ok(Some(exec)) = ComfyUIExecutionRepo::find_by_prompt_id(pool, prompt_id).await {
+                            if let Ok(Some(exec)) =
+                                ComfyUIExecutionRepo::find_by_prompt_id(pool, prompt_id).await
+                            {
                                 let _ = event_tx.send(ComfyUIEvent::GenerationCompleted {
                                     instance_id,
                                     platform_job_id: exec.platform_job_id,

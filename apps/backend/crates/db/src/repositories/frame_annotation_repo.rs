@@ -9,8 +9,8 @@ use crate::models::frame_annotation::{
 };
 
 /// Column list for frame_annotations queries.
-const COLUMNS: &str = "id, segment_id, version_id, user_id, frame_number, annotations_json, \
-    review_note_id, created_at, updated_at";
+const COLUMNS: &str = "id, segment_id, version_id, image_variant_id, user_id, frame_number, \
+    annotations_json, review_note_id, created_at, updated_at";
 
 /// Provides CRUD operations for frame annotations.
 pub struct FrameAnnotationRepo;
@@ -348,5 +348,86 @@ impl FrameAnnotationRepo {
             .bind(offset)
             .fetch_all(pool)
             .await
+    }
+
+    // -----------------------------------------------------------------------
+    // Image-variant-scoped operations
+    // -----------------------------------------------------------------------
+
+    /// List all annotations for an image variant, ordered by frame number ascending.
+    pub async fn list_by_image_variant(
+        pool: &PgPool,
+        image_variant_id: DbId,
+    ) -> Result<Vec<FrameAnnotation>, sqlx::Error> {
+        let query = format!(
+            "SELECT {COLUMNS} FROM frame_annotations
+             WHERE image_variant_id = $1
+             ORDER BY frame_number ASC, created_at ASC"
+        );
+        sqlx::query_as::<_, FrameAnnotation>(&query)
+            .bind(image_variant_id)
+            .fetch_all(pool)
+            .await
+    }
+
+    /// Replace all annotations for an image_variant+frame in a single transaction.
+    ///
+    /// Deletes existing rows for the (image_variant_id, frame_number) pair, then
+    /// inserts a new row if annotations_json is non-empty.
+    pub async fn upsert_image_variant_frame(
+        pool: &PgPool,
+        image_variant_id: DbId,
+        user_id: DbId,
+        frame_number: i32,
+        annotations_json: &serde_json::Value,
+    ) -> Result<Option<FrameAnnotation>, sqlx::Error> {
+        // Delete existing for this variant+frame
+        sqlx::query(
+            "DELETE FROM frame_annotations
+             WHERE image_variant_id = $1 AND frame_number = $2",
+        )
+        .bind(image_variant_id)
+        .bind(frame_number)
+        .execute(pool)
+        .await?;
+
+        // Only insert if there are actual annotations
+        let arr = annotations_json.as_array();
+        if arr.is_some_and(|a| !a.is_empty()) {
+            let query = format!(
+                "INSERT INTO frame_annotations
+                    (image_variant_id, user_id, frame_number, annotations_json)
+                 VALUES ($1, $2, $3, $4)
+                 RETURNING {COLUMNS}"
+            );
+            let row = sqlx::query_as::<_, FrameAnnotation>(&query)
+                .bind(image_variant_id)
+                .bind(user_id)
+                .bind(frame_number)
+                .bind(annotations_json)
+                .fetch_one(pool)
+                .await?;
+            Ok(Some(row))
+        } else {
+            Ok(None)
+        }
+    }
+
+    /// Delete all annotations for an image variant and a specific frame.
+    /// Returns the number of rows deleted.
+    pub async fn delete_by_image_variant_and_frame(
+        pool: &PgPool,
+        image_variant_id: DbId,
+        frame_number: i32,
+    ) -> Result<u64, sqlx::Error> {
+        let result = sqlx::query(
+            "DELETE FROM frame_annotations
+             WHERE image_variant_id = $1 AND frame_number = $2",
+        )
+        .bind(image_variant_id)
+        .bind(frame_number)
+        .execute(pool)
+        .await?;
+        Ok(result.rows_affected())
     }
 }

@@ -8,7 +8,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { Modal } from "@/components/composite";
 import { EmptyState } from "@/components/domain";
 import { Grid } from "@/components/layout";
-import { Button, Input, LoadingPane, Select, Toggle } from "@/components/primitives";
+import { Button, FilterSelect, Input, LoadingPane, SearchInput, Toggle } from "@/components/primitives";
 import { Stack } from "@/components/layout";
 import { useSetPageTitle } from "@/hooks/useSetPageTitle";
 import { FolderKanban, Plus } from "@/tokens/icons";
@@ -134,28 +134,25 @@ export function ProjectListPage() {
       </div>
 
       {/* Filter bar */}
-      <div className="flex flex-wrap items-end gap-[var(--spacing-3)]">
-        <div className="flex-1 min-w-[200px] max-w-[320px]">
-          <Input
-            placeholder="Search projects..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
-        <div className="w-[160px]">
-          <Select
-            options={STATUS_FILTER_OPTIONS}
-            value={statusFilter}
-            onChange={setStatusFilter}
-          />
-        </div>
-        <div className="w-[160px]">
-          <Select
-            options={SORT_OPTIONS}
-            value={sortBy}
-            onChange={setSortBy}
-          />
-        </div>
+      <div className="flex flex-wrap items-center gap-[var(--spacing-3)]">
+        <SearchInput
+          placeholder="Search projects..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="flex-1 min-w-[200px] max-w-[320px]"
+        />
+        <FilterSelect
+          options={STATUS_FILTER_OPTIONS}
+          value={statusFilter}
+          onChange={setStatusFilter}
+          className="w-[160px]"
+        />
+        <FilterSelect
+          options={SORT_OPTIONS}
+          value={sortBy}
+          onChange={setSortBy}
+          className="w-[160px]"
+        />
         <Toggle
           checked={hideArchived}
           onChange={setHideArchived}

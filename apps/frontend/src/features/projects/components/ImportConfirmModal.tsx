@@ -15,12 +15,16 @@ import { useSetToggle } from "@/hooks/useSetToggle";
 
 import { Modal } from "@/components/composite";
 import { Stack } from "@/components/layout";
-import { Badge, Button, Checkbox, Select, Toggle } from "@/components/primitives";
+import { Badge, Button, Checkbox, Input, Select, Toggle } from "@/components/primitives";
 import { cn } from "@/lib/cn";
+import { INLINE_LINK_BTN } from "@/lib/ui-classes";
 
 import { SOURCE_KEY_BIO, SOURCE_KEY_TOV } from "@/features/characters/types";
 
+import type { ImportProgress } from "../hooks/use-character-import";
 import type { Character, CharacterDropPayload } from "../types";
+import { ImportProgressBar } from "./ImportProgressBar";
+import { useCreateGroup } from "../hooks/use-character-groups";
 import { useDuplicateAssetInfo } from "../hooks/use-duplicate-asset-info";
 import { useGroupSelectOptions } from "../hooks/use-group-select-options";
 
@@ -51,6 +55,10 @@ interface ImportConfirmModalProps {
     skipExisting?: boolean,
   ) => void;
   loading?: boolean;
+  /** Import progress state (shown as a progress bar while importing). */
+  importProgress?: ImportProgress | null;
+  /** Called to abort an in-progress import. */
+  onAbort?: () => void;
   /** Detected project name from folder structure (for grouped imports). */
   detectedProjectName?: string;
   /** Current project name for matching against detectedProjectName. */
@@ -241,6 +249,8 @@ export function ImportConfirmModal({
   onConfirm,
   onConfirmWithAssets,
   loading,
+  importProgress,
+  onAbort,
   detectedProjectName,
   projectName,
   existingGroupNames = [],
@@ -285,6 +295,9 @@ export function ImportConfirmModal({
   );
   const [normalize, setNormalize] = useState(true);
   const [groupId, setGroupId] = useState("");
+  const [showNewGroup, setShowNewGroup] = useState(false);
+  const [newGroupName, setNewGroupName] = useState("");
+  const createGroup = useCreateGroup(projectId);
   const [overwrite, setOverwrite] = useState(false);
   /** Existing characters whose assets should be uploaded. */
   const [checkedExistingAssets, toggleExistingAssets, setCheckedExistingAssets] = useSetToggle<number>();
@@ -484,6 +497,7 @@ export function ImportConfirmModal({
 
   const importableCount = effectiveNames.length - duplicateCount;
   const totalActionCount = selectedCount + existingAssetsCount;
+  const isImporting = importProgress != null && importProgress.phase !== "done";
 
   /** Render a single character row (shared by flat and grouped views). */
   const renderCharacterRow = (idx: number) => {
@@ -502,20 +516,12 @@ export function ImportConfirmModal({
             : "hover:bg-[var(--color-surface-secondary)]"
         }`}
       >
-        {isDuplicate && hasAssets && bulkMode ? (
-          <Checkbox
-            checked={checkedExistingAssets.has(idx)}
-            onChange={() => toggleExistingAssets(idx)}
-            label={name}
-          />
-        ) : (
-          <Checkbox
-            checked={isDuplicate ? false : checked.has(idx)}
-            onChange={() => toggleItem(idx)}
-            disabled={isDuplicate}
-            label={name}
-          />
-        )}
+        <Checkbox
+          checked={isDuplicate ? (bulkMode && hasAssets ? checkedExistingAssets.has(idx) : false) : checked.has(idx)}
+          onChange={() => isDuplicate && bulkMode && hasAssets ? toggleExistingAssets(idx) : toggleItem(idx)}
+          disabled={isDuplicate && !(bulkMode && hasAssets)}
+          label={name}
+        />
 
         {counts && counts.images > 0 && (
           <DiffBadges
@@ -543,28 +549,11 @@ export function ImportConfirmModal({
           />
         )}
 
-        {isDuplicate && !hasAssets && (
-          <span className="text-xs text-[var(--color-text-warning)] ml-auto shrink-0">
-            already exists
-          </span>
-        )}
-
-        {isDuplicate && hasAssets && !bulkMode && (
-          <div className="ml-auto shrink-0 flex items-center gap-[var(--spacing-2)]">
-            <span className="text-xs text-[var(--color-text-warning)]">
-              exists
-            </span>
-            <Toggle
-              checked={checkedExistingAssets.has(idx)}
-              onChange={() => toggleExistingAssets(idx)}
-              label="Upload assets"
-              size="sm"
-            />
-          </div>
-        )}
-        {isDuplicate && hasAssets && bulkMode && (
-          <span className="ml-auto shrink-0 text-xs text-[var(--color-text-success)]">
-            {importMissing ? "import missing" : "overwrite"}
+        {isDuplicate && (
+          <span className={cn("text-xs ml-auto shrink-0", bulkMode && hasAssets ? "text-[var(--color-text-success)]" : "text-[var(--color-text-warning)]")}>
+            {bulkMode && hasAssets
+              ? (importMissing ? "import missing" : "overwrite")
+              : "already exists"}
           </span>
         )}
       </div>
@@ -572,7 +561,7 @@ export function ImportConfirmModal({
   };
 
   return (
-    <Modal open={open} onClose={onClose} title="Import Characters" size="lg">
+    <Modal open={open} onClose={isImporting ? () => {} : onClose} title="Import Characters" size="xl">
       <Stack gap={4}>
         {/* Project detection banner (grouped imports only) */}
         {isGroupedImport && detectedProjectName && (
@@ -605,9 +594,8 @@ export function ImportConfirmModal({
           </div>
         )}
 
-        {/* Options bar */}
+        {/* Group selector row */}
         <div className="flex flex-wrap items-end gap-[var(--spacing-3)]">
-          {/* Group selector — hidden for grouped imports (groups from folder structure) */}
           {isGroupedImport ? (
             <div className="w-[200px]">
               <label className="block text-xs font-medium text-[var(--color-text-muted)] mb-[var(--spacing-1)]">
@@ -627,7 +615,7 @@ export function ImportConfirmModal({
               </span>
             </div>
           ) : (
-            <div className="w-[200px]">
+            <div>
               <Select
                 label="Assign to group"
                 options={groupOptions}
@@ -635,8 +623,64 @@ export function ImportConfirmModal({
                 onChange={setGroupId}
                 disabled={existingGroups.length === 1 && !hasNewCharacters}
               />
+              {hasNewCharacters && (
+                !showNewGroup ? (
+                  <button
+                    type="button"
+                    className={cn("mt-[var(--spacing-1)]", INLINE_LINK_BTN)}
+                    onClick={() => setShowNewGroup(true)}
+                  >
+                    + Create new group
+                  </button>
+                ) : (
+                  <div className="mt-[var(--spacing-2)] flex items-end gap-[var(--spacing-2)]">
+                    <div className="flex-1">
+                      <Input
+                        placeholder="New group name"
+                        value={newGroupName}
+                        onChange={(e) => setNewGroupName(e.target.value)}
+                      />
+                    </div>
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        const name = newGroupName.trim();
+                        if (!name) return;
+                        createGroup.mutate(
+                          { name },
+                          {
+                            onSuccess: (created) => {
+                              setGroupId(String(created.id));
+                              setNewGroupName("");
+                              setShowNewGroup(false);
+                            },
+                          },
+                        );
+                      }}
+                      loading={createGroup.isPending}
+                      disabled={!newGroupName.trim()}
+                    >
+                      Add
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => {
+                        setShowNewGroup(false);
+                        setNewGroupName("");
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                )
+              )}
             </div>
           )}
+        </div>
+
+        {/* Toggles row */}
+        <div className="flex flex-wrap items-center gap-[var(--spacing-4)]">
           <Toggle
             checked={normalize}
             onChange={setNormalize}
@@ -672,7 +716,7 @@ export function ImportConfirmModal({
                   ? " Missing assets will be imported to existing characters."
                   : overwrite
                     ? " Existing assets will be overwritten."
-                    : " Toggle 'Upload assets' to add files to existing characters."
+                    : " Enable 'Import missing' or 'Overwrite existing' to update these characters."
                 : " Duplicates will be skipped."}
             </p>
           </div>
@@ -720,6 +764,11 @@ export function ImportConfirmModal({
           )}
         </div>
 
+        {/* Import progress */}
+        {importProgress && importProgress.phase !== "done" && (
+          <ImportProgressBar progress={importProgress} />
+        )}
+
         {/* Footer */}
         <div className="flex items-center justify-between">
           <span className="text-sm text-[var(--color-text-muted)]">
@@ -728,23 +777,31 @@ export function ImportConfirmModal({
             {existingAssetsCount > 0 && ` + ${existingAssetsCount} asset uploads`}
           </span>
           <div className="flex gap-[var(--spacing-2)]">
-            <Button variant="secondary" onClick={onClose}>
-              Cancel
-            </Button>
-            <Button
-              onClick={handleConfirm}
-              disabled={totalActionCount === 0}
-              loading={loading}
-            >
-              {selectedCount > 0 && (
-                <>Import {selectedCount} {selectedCount === 1 ? "Character" : "Characters"}</>
-              )}
-              {selectedCount > 0 && existingAssetsCount > 0 && " + "}
-              {existingAssetsCount > 0 && (
-                <>Upload to {existingAssetsCount}</>
-              )}
-              {totalActionCount === 0 && "Import"}
-            </Button>
+            {isImporting ? (
+              <Button variant="danger" onClick={onAbort}>
+                Stop Import
+              </Button>
+            ) : (
+              <>
+                <Button variant="secondary" onClick={onClose}>
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleConfirm}
+                  disabled={totalActionCount === 0}
+                  loading={loading}
+                >
+                  {selectedCount > 0 && (
+                    <>Import {selectedCount} {selectedCount === 1 ? "Character" : "Characters"}</>
+                  )}
+                  {selectedCount > 0 && existingAssetsCount > 0 && " + "}
+                  {existingAssetsCount > 0 && (
+                    <>Upload to {existingAssetsCount}</>
+                  )}
+                  {totalActionCount === 0 && "Import"}
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </Stack>

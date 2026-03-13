@@ -124,7 +124,13 @@ async fn handle_event(
             )
             .await;
             // Mark the job as completed in the jobs table so the queue reflects the outcome.
-            if let Err(e) = JobRepo::complete(pool, platform_job_id, &serde_json::json!({ "prompt_id": prompt_id })).await {
+            if let Err(e) = JobRepo::complete(
+                pool,
+                platform_job_id,
+                &serde_json::json!({ "prompt_id": prompt_id }),
+            )
+            .await
+            {
                 tracing::error!(job_id = platform_job_id, error = %e, "Failed to mark job as completed");
             }
             check_drain_completion(pool, instance_id, broadcaster).await;
@@ -186,10 +192,13 @@ async fn handle_event(
                     } else {
                         match lookup_segment_from_job(pool, platform_job_id).await {
                             Ok((_seg_id, sid)) => {
-                                progress_tracker.insert(platform_job_id, ProgressState {
-                                    scene_id: sid,
-                                    last_node: None,
-                                });
+                                progress_tracker.insert(
+                                    platform_job_id,
+                                    ProgressState {
+                                        scene_id: sid,
+                                        last_node: None,
+                                    },
+                                );
                                 Some(sid)
                             }
                             Err(_) => None,
@@ -202,7 +211,8 @@ async fn handle_event(
                             sid,
                             "info",
                             format!("[Job {platform_job_id}] Executing node: {node} ({percent}%)"),
-                        ).await;
+                        )
+                        .await;
 
                         if let Some(s) = progress_tracker.get_mut(&platform_job_id) {
                             s.last_node = Some(node.clone());
@@ -233,7 +243,13 @@ async fn handle_event(
                 let storage_clone = Arc::clone(storage);
                 let broadcaster_clone = broadcaster.clone();
                 tokio::spawn(async move {
-                    dispatch_pending(&pool_clone, &comfyui_clone, &storage_clone, &broadcaster_clone).await;
+                    dispatch_pending(
+                        &pool_clone,
+                        &comfyui_clone,
+                        &storage_clone,
+                        &broadcaster_clone,
+                    )
+                    .await;
                 });
             }
             let pool_clone = pool.clone();
@@ -735,7 +751,7 @@ async fn reconcile_stuck_scenes(
            AND s.deleted_at IS NULL
            AND ce.status = 'completed'
            AND seg.generation_completed_at IS NULL  -- segment not finalized
-         ORDER BY s.id"
+         ORDER BY s.id",
     )
     .fetch_all(pool)
     .await
@@ -781,8 +797,7 @@ async fn reconcile_stuck_scenes(
         }
 
         // Process through the normal completion handler.
-        handle_generation_completed(pool, comfyui, storage, *instance_id, *job_id, prompt_id)
-            .await;
+        handle_generation_completed(pool, comfyui, storage, *instance_id, *job_id, prompt_id).await;
     }
 }
 
@@ -986,13 +1001,11 @@ async fn dispatch_pending(
         Ok(count) => {
             tracing::info!(count, "Dispatched {count} deferred job(s) to ComfyUI");
             if let Some(b) = broadcaster {
-                b.publish(
-                    ActivityLogEntry::curated(
-                        ActivityLogLevel::Info,
-                        ActivityLogSource::Worker,
-                        format!("Dispatched {count} deferred job(s) — instance now available"),
-                    ),
-                );
+                b.publish(ActivityLogEntry::curated(
+                    ActivityLogLevel::Info,
+                    ActivityLogSource::Worker,
+                    format!("Dispatched {count} deferred job(s) — instance now available"),
+                ));
             }
         }
         Err(e) => {

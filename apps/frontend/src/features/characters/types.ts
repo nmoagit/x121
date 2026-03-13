@@ -144,6 +144,10 @@ export interface MetadataVersion {
   source_tov: Record<string, unknown> | null;
   generation_report: GenerationReport | null;
   is_active: boolean;
+  approval_status: "pending" | "approved" | "rejected";
+  approved_by: number | null;
+  approved_at: string | null;
+  approval_comment: string | null;
   notes: string | null;
   rejection_reason: string | null;
   outdated_at: string | null;
@@ -152,6 +156,31 @@ export interface MetadataVersion {
   created_at: string;
   updated_at: string;
 }
+
+/** Map metadata approval_status to Badge variant. */
+export function metadataApprovalBadgeVariant(
+  status: MetadataVersion["approval_status"],
+): BadgeVariant {
+  switch (status) {
+    case "approved":
+      return "success";
+    case "rejected":
+      return "danger";
+    case "pending":
+    default:
+      return "warning";
+  }
+}
+
+/** Human-readable labels for metadata approval statuses. */
+export const METADATA_APPROVAL_LABEL: Record<
+  MetadataVersion["approval_status"],
+  string
+> = {
+  pending: "Pending Approval",
+  approved: "Approved",
+  rejected: "Rejected",
+};
 
 /** Report from the metadata generation engine. */
 export interface GenerationReport {

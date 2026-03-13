@@ -140,7 +140,9 @@ impl LifecycleBridge {
         }
 
         // Mark the cloud instance as running, using actual pod uptime for accurate started_at.
-        if let Err(e) = CloudInstanceRepo::mark_running(&self.pool, cloud_instance_id, ready.uptime_secs).await {
+        if let Err(e) =
+            CloudInstanceRepo::mark_running(&self.pool, cloud_instance_id, ready.uptime_secs).await
+        {
             tracing::warn!(error = %e, "Failed to mark cloud instance as running");
         }
 
@@ -237,7 +239,8 @@ impl LifecycleBridge {
         // Query RunPod for actual uptime and cost before we stop/terminate.
         let session_cost_cents = match orchestrator.get_pod_status(external_id).await {
             Ok(pod) => {
-                let uptime_secs = pod.runtime
+                let uptime_secs = pod
+                    .runtime
                     .as_ref()
                     .and_then(|r| r.uptime_in_seconds)
                     .unwrap_or(0.0);
@@ -245,7 +248,8 @@ impl LifecycleBridge {
                 let uptime_hours = uptime_secs / 3600.0;
                 // costPerHr from RunPod is compute-only; add container storage surcharge.
                 // RunPod storage rate: ~$0.00014/GB/hr ($0.1/GB/month).
-                let container_disk_gb = inst.as_ref()
+                let container_disk_gb = inst
+                    .as_ref()
                     .and_then(|i| i.metadata.get("container_disk_gb"))
                     .and_then(|v| v.as_f64())
                     .unwrap_or(20.0);
@@ -271,7 +275,8 @@ impl LifecycleBridge {
                 );
                 // Fall back to DB cost × uptime estimate.
                 if let Some(ref i) = inst {
-                    let hours = i.started_at
+                    let hours = i
+                        .started_at
                         .map(|s| (chrono::Utc::now() - s).num_seconds() as f64 / 3600.0)
                         .unwrap_or(0.0);
                     (i.cost_per_hour_cents as f64 * hours).round() as i64
@@ -319,9 +324,12 @@ impl LifecycleBridge {
 
         if terminate {
             orchestrator.terminate_pod(external_id).await?;
-            if let Err(e) =
-                CloudInstanceRepo::mark_terminated(&self.pool, cloud_instance_id, session_cost_cents)
-                    .await
+            if let Err(e) = CloudInstanceRepo::mark_terminated(
+                &self.pool,
+                cloud_instance_id,
+                session_cost_cents,
+            )
+            .await
             {
                 tracing::warn!(error = %e, "Failed to mark cloud instance as terminated");
             }

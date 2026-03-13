@@ -114,8 +114,11 @@ pub fn evaluate_scaling_decision_with_reason(input: &ScalingInput) -> ScalingDec
                 action: ScalingAction::ScaleUp(needed),
                 reason: format!(
                     "Queue depth ({}) >= threshold ({}) with {}/{} instances — scaling up {}",
-                    input.queue_depth, input.queue_threshold,
-                    input.current_count, input.max_instances, needed,
+                    input.queue_depth,
+                    input.queue_threshold,
+                    input.current_count,
+                    input.max_instances,
+                    needed,
                 ),
                 cooldown_remaining_secs: cooldown_remaining,
             };

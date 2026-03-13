@@ -129,6 +129,9 @@ export {
   ScanSearch,
   Shield,
   CircleDot,
+  // Collapse / Expand
+  ChevronsDownUp,
+  ChevronsUpDown,
 } from "lucide-react";
 
 /** Standard icon size tokens (px values matching design grid) */

@@ -14,7 +14,7 @@ import { useSetToggle } from "@/hooks/useSetToggle";
 import { CollapsibleSection, ConfirmDeleteModal, ConfigToolbar, Modal } from "@/components/composite";
 import { EmptyState, FileDropZone } from "@/components/domain";
 import { Grid, Stack } from "@/components/layout";
-import { Button, Input, LoadingPane, Select } from "@/components/primitives";
+import { Button, FilterSelect, Input, LoadingPane, SearchInput, Select } from "@/components/primitives";
 import { useExportGroupSettings, useConfigImport } from "@/features/config-io";
 import { GroupPromptOverrides } from "@/features/prompt-management";
 import { GroupSceneOverrides, GroupWorkflowOverrides } from "@/features/scene-catalogue";
@@ -24,6 +24,8 @@ import { ICON_ACTION_BTN, ICON_ACTION_BTN_DANGER, INLINE_LINK_BTN } from "@/lib/
 import {
   ChevronDown,
   ChevronRight,
+  ChevronsDownUp,
+  ChevronsUpDown,
   Edit3,
   Eye,
   EyeOff,
@@ -38,6 +40,7 @@ import { variantThumbnailUrl } from "@/features/images/utils";
 import { AlertTriangle } from "@/tokens/icons";
 
 import { CharacterCard } from "../components/CharacterCard";
+import { ImportProgressBar } from "../components/ImportProgressBar";
 import { useCharacterDeliverables } from "../hooks/use-character-deliverables";
 import { CharacterEditModal } from "../components/CharacterEditModal";
 import { ImportConfirmModal } from "../components/ImportConfirmModal";
@@ -240,6 +243,18 @@ export function ProjectCharactersTab({ projectId, projectName, scrollToGroupId, 
     });
   }
 
+  const allGroupKeys = useMemo(() => {
+    const keys: (number | "ungrouped")[] = (groups ?? []).map((g) => g.id);
+    keys.push("ungrouped");
+    return keys;
+  }, [groups]);
+
+  const allCollapsed = allGroupKeys.length > 0 && allGroupKeys.every((k) => collapsedIds.has(k));
+
+  const toggleCollapseAll = useCallback(() => {
+    setCollapsedIds(allCollapsed ? new Set() : new Set(allGroupKeys));
+  }, [allCollapsed, allGroupKeys]);
+
   /* --- drag state --- */
   const [dragOverGroupId, setDragOverGroupId] = useState<number | "ungrouped" | null>(null);
   const dragCounterRef = useRef<Map<number | "ungrouped", number>>(new Map());
@@ -337,6 +352,8 @@ export function ProjectCharactersTab({ projectId, projectName, scrollToGroupId, 
         ? [...selectedCharIds]
         : [characterId];
       e.dataTransfer.setData("text/plain", ids.join(","));
+      // Sentinel so FileDropZone can distinguish internal drags from external file drops
+      e.dataTransfer.setData("application/x-character-drag", "1");
       e.dataTransfer.effectAllowed = "move";
     },
     [selectedCharIds],
@@ -487,17 +504,23 @@ export function ProjectCharactersTab({ projectId, projectName, scrollToGroupId, 
     >
       <Stack gap={4}>
         {/* Top bar */}
-        <div className="flex flex-wrap items-end gap-[var(--spacing-3)]">
-          <div className="flex-1 min-w-[200px] max-w-[280px]">
-            <Input
-              placeholder="Search characters..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-          <div className="w-[160px]">
-            <Select options={groupOptions} value={groupFilter} onChange={setGroupFilter} />
-          </div>
+        <div className="flex flex-wrap items-center gap-[var(--spacing-3)]">
+          <SearchInput
+            placeholder="Search characters..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            size="sm"
+            className="flex-1 min-w-[200px] max-w-[280px]"
+          />
+          <FilterSelect options={groupOptions} value={groupFilter} onChange={setGroupFilter} size="sm" className="w-[160px]" />
+          <Button
+            size="sm"
+            variant="secondary"
+            icon={allCollapsed ? <ChevronsUpDown size={14} /> : <ChevronsDownUp size={14} />}
+            onClick={toggleCollapseAll}
+          >
+            {allCollapsed ? "Expand All" : "Collapse All"}
+          </Button>
           <Button
             size="sm"
             variant="secondary"
@@ -541,6 +564,11 @@ export function ProjectCharactersTab({ projectId, projectName, scrollToGroupId, 
             </span>
           )}
         </div>
+
+        {/* Import progress */}
+        {charImport.importProgress && charImport.importProgress.phase !== "done" && (
+          <ImportProgressBar progress={charImport.importProgress} />
+        )}
 
         {/* Group quick-nav */}
         {quickNavEntries.length >= 2 && (
@@ -653,7 +681,7 @@ export function ProjectCharactersTab({ projectId, projectName, scrollToGroupId, 
         )}
 
         {/* Add character modal */}
-        <Modal open={charModalOpen} onClose={() => setCharModalOpen(false)} title="Add Character" size="sm">
+        <Modal open={charModalOpen} onClose={() => setCharModalOpen(false)} title="Add Character" size="md">
           <Stack gap={4}>
             <Input
               label="Character Name"
@@ -811,6 +839,8 @@ export function ProjectCharactersTab({ projectId, projectName, scrollToGroupId, 
           onConfirm={charImport.handleImportConfirm}
           onConfirmWithAssets={charImport.handleImportConfirmWithAssets}
           loading={charImport.bulkCreatePending}
+          importProgress={charImport.importProgress}
+          onAbort={charImport.abortImport}
           detectedProjectName={charImport.importResult?.detectedProjectName}
           projectName={projectName}
           existingGroupNames={groups?.map((g) => g.name) ?? []}

@@ -65,6 +65,8 @@ pub struct ProductionRunMatrixCell {
     pub track_name: Option<String>,
     /// Whether a matching seed image (image_variant) exists for this character + track.
     pub has_seed: bool,
+    /// Whether this scene type has a clothes-off transition.
+    pub has_clothes_off_transition: bool,
 }
 
 /// DTO for creating a new production run.
@@ -132,6 +134,35 @@ pub struct ResubmitResponse {
 pub struct DeliverResponse {
     pub run_id: DbId,
     pub status: String,
+}
+
+/// Response for cancelling a run.
+#[derive(Debug, Clone, Serialize)]
+pub struct CancelRunResponse {
+    pub run_id: DbId,
+    pub status: String,
+}
+
+/// Response for cancelling cells.
+#[derive(Debug, Clone, Serialize)]
+pub struct CancelCellsResponse {
+    pub run_id: DbId,
+    pub cancelled: usize,
+}
+
+/// Response for deleting cells.
+#[derive(Debug, Clone, Serialize)]
+pub struct DeleteCellsResponse {
+    pub run_id: DbId,
+    pub deleted: u64,
+}
+
+/// Response for cancelling cells for a character.
+#[derive(Debug, Clone, Serialize)]
+pub struct CharacterCellsResponse {
+    pub run_id: DbId,
+    pub character_id: DbId,
+    pub affected: u64,
 }
 
 /// Aggregate progress statistics for a production run.

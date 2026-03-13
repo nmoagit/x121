@@ -313,9 +313,7 @@ async fn probe_workflows(pool: &PgPool) -> WorkflowStatus {
     let current_stage = match x121_db::repositories::JobRepo::queue_counts(pool).await {
         Ok((pending, running, _scheduled)) => {
             if running > 0 {
-                Some(format!(
-                    "Generating ({running} running, {pending} queued)"
-                ))
+                Some(format!("Generating ({running} running, {pending} queued)"))
             } else if pending > 0 {
                 Some(format!("Queued ({pending} pending)"))
             } else {

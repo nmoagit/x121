@@ -18,7 +18,7 @@ import { cn } from "@/lib/cn";
 import { readFileAsJson } from "@/lib/file-types";
 import { formatDate } from "@/lib/format";
 import { isValidJson } from "@/lib/validation";
-import { ArrowLeft, ArrowRight, Check, Eye, Info, Plus, Sparkles, Trash2, X } from "@/tokens/icons";
+import { ArrowLeft, ArrowRight, Check, Eye, Info, Plus, ShieldCheck, Sparkles, Trash2, X } from "@/tokens/icons";
 
 import {
   useCharacterMetadata,
@@ -29,11 +29,13 @@ import {
 } from "../hooks/use-character-detail";
 import {
   useActivateVersion,
+  useApproveMetadataVersion,
   useCreateManualVersion,
   useDeleteVersion,
   useGenerateMetadata,
   useMarkOutdated,
   useMetadataVersions,
+  useRejectMetadataApproval,
   useRejectVersion,
 } from "../hooks/use-metadata-versions";
 import {
@@ -45,12 +47,14 @@ import {
 } from "../hooks/use-refinement";
 import { flattenMetadata, unflattenMetadata } from "../lib/metadata-flatten";
 import {
+  METADATA_APPROVAL_LABEL,
   SETTING_KEY_VOICE,
   SOURCE_KEYS,
   SOURCE_KEY_BIO,
   SOURCE_KEY_TOV,
   completenessVariant,
   groupFieldsIntoSections,
+  metadataApprovalBadgeVariant,
 } from "../types";
 import type { MetadataSection, MetadataTemplateField, MetadataVersion } from "../types";
 import { GenerationReportCard } from "./GenerationReportCard";
@@ -82,6 +86,8 @@ export function CharacterMetadataTab({ characterId, projectId }: CharacterMetada
   const activateVersion = useActivateVersion(characterId);
   const rejectVersion = useRejectVersion(characterId);
   const deleteVersion = useDeleteVersion(characterId);
+  const approveMetadata = useApproveMetadataVersion(characterId);
+  const rejectMetadataApproval = useRejectMetadataApproval(characterId);
 
   // Refinement hooks (PRD-125)
   const { data: refinementJobs } = useRefinementJobs(characterId);
@@ -93,6 +99,7 @@ export function CharacterMetadataTab({ characterId, projectId }: CharacterMetada
 
   // Version UI state
   const [rejectTarget, setRejectTarget] = useState<MetadataVersion | null>(null);
+  const [rejectApprovalTarget, setRejectApprovalTarget] = useState<MetadataVersion | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<MetadataVersion | null>(null);
   const [lastGeneratedReport, setLastGeneratedReport] = useState<MetadataVersion | null>(null);
   const [previewVersion, setPreviewVersion] = useState<MetadataVersion | null>(null);
@@ -879,7 +886,7 @@ export function CharacterMetadataTab({ characterId, projectId }: CharacterMetada
 
       {/* Import metadata confirmation modal */}
       {pendingImport && (
-        <Modal open onClose={() => setPendingImport(null)} title="Import Metadata" size="sm">
+        <Modal open onClose={() => setPendingImport(null)} title="Import Metadata" size="md">
           <Stack gap={4}>
             <p className="text-sm text-[var(--color-text-secondary)]">
               Import <strong>{Object.keys(pendingImport).filter((k) => !SOURCE_KEYS.has(k)).length} fields</strong> as a new metadata
@@ -958,11 +965,49 @@ export function CharacterMetadataTab({ characterId, projectId }: CharacterMetada
                       </Badge>
                     </span>
                   )}
+                  {v.is_active && (
+                    <span title={v.approval_comment ?? undefined}>
+                      <Badge variant={metadataApprovalBadgeVariant(v.approval_status)} size="sm">
+                        {METADATA_APPROVAL_LABEL[v.approval_status]}
+                      </Badge>
+                    </span>
+                  )}
                   <span className="text-[10px] text-[var(--color-text-muted)]">
                     {formatDate(v.created_at)}
                   </span>
                 </div>
                 <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                  {/* Approval actions — only on active versions with pending approval */}
+                  {v.is_active && v.approval_status === "pending" && (
+                    <>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        icon={<ShieldCheck size={12} />}
+                        onClick={() => approveMetadata.mutate(v.id)}
+                        disabled={approveMetadata.isPending}
+                        title="Approve metadata"
+                      />
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        icon={<X size={12} />}
+                        onClick={() => setRejectApprovalTarget(v)}
+                        title="Reject metadata approval"
+                      />
+                    </>
+                  )}
+                  {/* Re-approve after rejection */}
+                  {v.is_active && v.approval_status === "rejected" && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      icon={<ShieldCheck size={12} />}
+                      onClick={() => approveMetadata.mutate(v.id)}
+                      disabled={approveMetadata.isPending}
+                      title="Approve metadata"
+                    />
+                  )}
                   {!v.is_active && !v.rejection_reason && (
                     <Button
                       variant="ghost"
@@ -1009,6 +1054,22 @@ export function CharacterMetadataTab({ characterId, projectId }: CharacterMetada
             rejectVersion.mutate(
               { versionId: rejectTarget.id, reason },
               { onSuccess: () => setRejectTarget(null) },
+            );
+          }}
+        />
+      )}
+
+      {/* Reject metadata approval modal */}
+      {rejectApprovalTarget && (
+        <RejectVersionModal
+          open
+          onClose={() => setRejectApprovalTarget(null)}
+          versionNumber={rejectApprovalTarget.version_number}
+          isPending={rejectMetadataApproval.isPending}
+          onConfirm={(comment) => {
+            rejectMetadataApproval.mutate(
+              { versionId: rejectApprovalTarget.id, comment },
+              { onSuccess: () => setRejectApprovalTarget(null) },
             );
           }}
         />

@@ -121,7 +121,7 @@ export function CharacterEditModal({
   }
 
   return (
-    <Modal open={character !== null} onClose={onClose} title="Edit Character" size="sm">
+    <Modal open={character !== null} onClose={onClose} title="Edit Character" size="md">
       <Stack gap={4}>
         <Input
           label="Character Name"

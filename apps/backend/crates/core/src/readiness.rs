@@ -82,6 +82,8 @@ pub enum MissingItemType {
     ApprovedVariant,
     /// Character metadata is incomplete.
     MetadataComplete,
+    /// Character metadata version is not approved by reviewer.
+    MetadataApproved,
     /// A specific pipeline settings key is missing.
     SettingKey { key: String },
 }
@@ -93,6 +95,7 @@ impl MissingItemType {
             Self::SourceImage => "source_image".to_string(),
             Self::ApprovedVariant => "approved_variant".to_string(),
             Self::MetadataComplete => "metadata_complete".to_string(),
+            Self::MetadataApproved => "metadata_approved".to_string(),
             Self::SettingKey { key } => key.clone(),
         }
     }
@@ -111,6 +114,8 @@ pub struct ReadinessCriteria {
     pub approved_variant: bool,
     /// Whether metadata must be complete.
     pub metadata_complete: bool,
+    /// Whether metadata must be approved by a reviewer.
+    pub metadata_approved: bool,
     /// List of required pipeline settings keys.
     pub settings: Vec<String>,
 }
@@ -121,6 +126,7 @@ impl Default for ReadinessCriteria {
             source_image: true,
             approved_variant: true,
             metadata_complete: true,
+            metadata_approved: true,
             settings: vec![
                 "a2c4_model".to_string(),
                 "elevenlabs_voice".to_string(),
@@ -173,6 +179,7 @@ pub fn evaluate_readiness(
     has_source_image: bool,
     has_approved_variant: bool,
     metadata_complete: bool,
+    has_metadata_approved: bool,
     present_settings: &[String],
 ) -> ReadinessResult {
     let mut missing: Vec<String> = Vec::new();
@@ -206,6 +213,16 @@ pub fn evaluate_readiness(
             met += 1;
         } else {
             missing.push(MissingItemType::MetadataComplete.label());
+        }
+    }
+
+    // Check metadata approval.
+    if criteria.metadata_approved {
+        total += 1;
+        if has_metadata_approved {
+            met += 1;
+        } else {
+            missing.push(MissingItemType::MetadataApproved.label());
         }
     }
 
@@ -281,7 +298,7 @@ pub fn validate_criteria_json(json: &serde_json::Value) -> Result<(), String> {
         .ok_or_else(|| "'required_fields' must be a JSON object".to_string())?;
 
     // Validate boolean fields.
-    for field in &["source_image", "approved_variant", "metadata_complete"] {
+    for field in &["source_image", "approved_variant", "metadata_complete", "metadata_approved"] {
         if let Some(val) = required_fields.get(*field) {
             if !val.is_boolean() {
                 return Err(format!("'{field}' must be a boolean"));
@@ -343,6 +360,10 @@ pub fn parse_criteria_json(json: &serde_json::Value) -> Result<ReadinessCriteria
                 .get("metadata_complete")
                 .and_then(|v| v.as_bool())
                 .unwrap_or(false);
+            let metadata_approved = rf
+                .get("metadata_approved")
+                .and_then(|v| v.as_bool())
+                .unwrap_or(false);
             let settings = rf
                 .get("settings")
                 .and_then(|v| v.as_array())
@@ -357,6 +378,7 @@ pub fn parse_criteria_json(json: &serde_json::Value) -> Result<ReadinessCriteria
                 source_image,
                 approved_variant,
                 metadata_complete,
+                metadata_approved,
                 settings,
             })
         }
@@ -491,7 +513,7 @@ mod tests {
             "avatar_json".to_string(),
         ];
 
-        let result = evaluate_readiness(1, &criteria, true, true, true, &settings);
+        let result = evaluate_readiness(1, &criteria, true, true, true, true, &settings);
         assert_eq!(result.state, ReadinessState::Ready);
         assert!(result.missing_items.is_empty());
         assert_eq!(result.readiness_pct, 100);
@@ -500,10 +522,10 @@ mod tests {
     #[test]
     fn no_criteria_met_is_not_started() {
         let criteria = ReadinessCriteria::default();
-        let result = evaluate_readiness(1, &criteria, false, false, false, &[]);
+        let result = evaluate_readiness(1, &criteria, false, false, false, false, &[]);
         assert_eq!(result.state, ReadinessState::NotStarted);
         assert_eq!(result.readiness_pct, 0);
-        assert_eq!(result.missing_items.len(), 6); // 3 bools + 3 settings
+        assert_eq!(result.missing_items.len(), 7); // 4 bools + 3 settings
     }
 
     #[test]
@@ -511,7 +533,7 @@ mod tests {
         let criteria = ReadinessCriteria::default();
         let settings = vec!["a2c4_model".to_string()];
 
-        let result = evaluate_readiness(1, &criteria, true, false, false, &settings);
+        let result = evaluate_readiness(1, &criteria, true, false, false, false, &settings);
         assert_eq!(result.state, ReadinessState::PartiallyReady);
         assert!(result.readiness_pct > 0);
         assert!(result.readiness_pct < 100);
@@ -523,6 +545,7 @@ mod tests {
         let result = evaluate_readiness(
             42,
             &criteria,
+            true,
             true,
             true,
             true,
@@ -541,10 +564,11 @@ mod tests {
             source_image: true,
             approved_variant: false,
             metadata_complete: false,
+            metadata_approved: false,
             settings: vec![],
         };
 
-        let result = evaluate_readiness(1, &criteria, false, false, false, &[]);
+        let result = evaluate_readiness(1, &criteria, false, false, false, false, &[]);
         assert_eq!(result.state, ReadinessState::NotStarted);
         assert_eq!(result.missing_items, vec!["source_image"]);
         assert_eq!(result.readiness_pct, 0);
@@ -556,12 +580,14 @@ mod tests {
             source_image: false,
             approved_variant: false,
             metadata_complete: false,
+            metadata_approved: false,
             settings: vec!["a2c4_model".to_string(), "elevenlabs_voice".to_string()],
         };
 
         let result = evaluate_readiness(
             1,
             &criteria,
+            false,
             false,
             false,
             false,
@@ -578,10 +604,11 @@ mod tests {
             source_image: false,
             approved_variant: false,
             metadata_complete: false,
+            metadata_approved: false,
             settings: vec![],
         };
 
-        let result = evaluate_readiness(1, &criteria, false, false, false, &[]);
+        let result = evaluate_readiness(1, &criteria, false, false, false, false, &[]);
         // No criteria to check, so readiness_pct is 0 from compute (total=0).
         // But no missing items means state is Ready.
         assert_eq!(result.state, ReadinessState::Ready);

@@ -76,6 +76,7 @@ pub struct CharacterDeliverableRow {
     pub scenes_with_video: i64,
     pub scenes_approved: i64,
     pub has_active_metadata: bool,
+    pub metadata_approval_status: Option<String>,
     pub has_voice_id: bool,
     pub blocking_reasons: Vec<String>,
     pub readiness_pct: f64,

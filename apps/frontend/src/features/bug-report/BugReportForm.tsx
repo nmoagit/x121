@@ -101,7 +101,7 @@ export function BugReportForm({ onClose }: BugReportFormProps) {
   }, [submitted, onClose]);
 
   return (
-    <Modal open onClose={onClose} title="Report a Bug" size="lg">
+    <Modal open onClose={onClose} title="Report a Bug" size="xl">
       {submitted ? (
         <div className="py-6 text-center">
           <p className="text-base font-medium text-[var(--color-text-primary)]">

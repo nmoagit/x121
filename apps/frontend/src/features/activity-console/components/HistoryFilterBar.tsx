@@ -5,8 +5,7 @@
  * controls with level/source badge toggles, search, and date inputs.
  */
 
-import { Badge, Input } from "@/components/primitives";
-import { Search } from "@/tokens/icons";
+import { Badge, SearchInput } from "@/components/primitives";
 
 import type { ActivityLogLevel, ActivityLogSource } from "../types";
 import {
@@ -120,17 +119,13 @@ export function HistoryFilterBar({
       <div className="flex-1" />
 
       {/* Search */}
-      <div className="w-56">
-        <Input
-          placeholder="Search logs..."
-          value={searchText}
-          onChange={(e) => onSearchChange(e.target.value)}
-          className="!py-1 !text-sm"
-        />
-      </div>
-
-      {/* Search icon (decorative) */}
-      <Search size={16} className="text-[var(--color-text-muted)]" aria-hidden />
+      <SearchInput
+        placeholder="Search logs..."
+        value={searchText}
+        onChange={(e) => onSearchChange(e.target.value)}
+        size="sm"
+        className="w-56"
+      />
     </div>
   );
 }

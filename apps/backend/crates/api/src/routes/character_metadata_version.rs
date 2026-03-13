@@ -10,6 +10,8 @@
 //! DELETE /{character_id}/metadata/versions/{version_id}     -> delete_version
 //! PUT    /{character_id}/metadata/versions/{version_id}/activate -> activate_version
 //! PUT    /{character_id}/metadata/versions/{version_id}/reject   -> reject_version
+//! POST   /{character_id}/metadata/versions/{version_id}/approve -> approve_metadata_version
+//! POST   /{character_id}/metadata/versions/{version_id}/reject-approval -> reject_metadata_approval
 //! POST   /{character_id}/metadata/mark-outdated                -> mark_metadata_outdated
 //! ```
 
@@ -44,6 +46,14 @@ pub fn router() -> Router<AppState> {
         .route(
             "/{character_id}/metadata/versions/{version_id}/reject",
             put(character_metadata_version::reject_version),
+        )
+        .route(
+            "/{character_id}/metadata/versions/{version_id}/approve",
+            post(character_metadata_version::approve_metadata_version),
+        )
+        .route(
+            "/{character_id}/metadata/versions/{version_id}/reject-approval",
+            post(character_metadata_version::reject_metadata_approval),
         )
         .route(
             "/{character_id}/metadata/mark-outdated",

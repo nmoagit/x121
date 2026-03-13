@@ -74,7 +74,8 @@ pub async fn restart_comfyui(
     let ready = orch.restart_comfyui(&inst.external_id).await?;
 
     // Upsert the ComfyUI instance row (creates it if missing, updates URLs if changed).
-    let instance_name = x121_cloud::runpod::orchestrator::PodOrchestrator::instance_name(&ready.pod_id);
+    let instance_name =
+        x121_cloud::runpod::orchestrator::PodOrchestrator::instance_name(&ready.pod_id);
     if let Err(e) = ComfyUIInstanceRepo::upsert_by_name_with_cloud(
         &state.pool,
         &instance_name,
@@ -89,7 +90,9 @@ pub async fn restart_comfyui(
 
     // Update network info from SSH.
     if let Some((ref host, port)) = ready.ssh_info {
-        if let Err(e) = CloudInstanceRepo::update_network(&state.pool, id, host, Some(port as i32)).await {
+        if let Err(e) =
+            CloudInstanceRepo::update_network(&state.pool, id, host, Some(port as i32)).await
+        {
             tracing::warn!(error = %e, "Failed to update network info after restart");
         }
     }
@@ -100,7 +103,8 @@ pub async fn restart_comfyui(
 
     // Also trigger a force-reconnect for the linked ComfyUI instance so the
     // reconnect loop restarts with a fresh backoff.
-    if let Ok(Some(comfyui)) = ComfyUIInstanceRepo::find_by_cloud_instance_id(&state.pool, id).await {
+    if let Ok(Some(comfyui)) = ComfyUIInstanceRepo::find_by_cloud_instance_id(&state.pool, id).await
+    {
         if let Err(e) = state.comfyui_manager.force_reconnect(comfyui.id).await {
             tracing::warn!(error = %e, "Failed to trigger force reconnect after restart");
         }

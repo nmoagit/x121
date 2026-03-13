@@ -33,13 +33,15 @@ import {
   useProductionProgress,
   useResubmitFailed,
 } from "@/features/production/hooks/use-production";
-import { RUN_STATUS_LABELS, RUN_STATUS_VARIANT } from "@/features/production/types";
+import { RUN_STATUS_LABELS, RUN_STATUS_VARIANT, deduplicateSceneSlots, sceneSlotKey } from "@/features/production/types";
 import type { ProductionRun } from "@/features/production/types";
 import { useQueueStatus } from "@/features/queue/hooks/use-queue";
 
 import { useProjectCharacters } from "../hooks/use-project-characters";
+import { useCharacterGroups } from "../hooks/use-character-groups";
 import { QueueOutstandingModal } from "../components/QueueOutstandingModal";
 import { CHARACTER_STATUS_ID_ARCHIVED } from "../types";
+import type { Character, CharacterGroup } from "../types";
 
 /* --------------------------------------------------------------------------
    Props
@@ -249,10 +251,11 @@ function CreateRunModal({
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [selectedCharacterIds, setSelectedCharacterIds] = useState<Set<number>>(new Set());
-  const [selectedSceneTypeIds, setSelectedSceneTypeIds] = useState<Set<number>>(new Set());
+  const [selectedSlotKeys, setSelectedSlotKeys] = useState<Set<string>>(new Set());
   const [retrospective, setRetrospective] = useState(true);
 
   const { data: allCharacters } = useProjectCharacters(projectId);
+  const { data: groups } = useCharacterGroups(projectId);
   const createRun = useCreateProductionRun();
   const toast = useToast();
 
@@ -261,6 +264,21 @@ function CreateRunModal({
     () => (allCharacters ?? []).filter((c) => c.status_id !== CHARACTER_STATUS_ID_ARCHIVED),
     [allCharacters],
   );
+
+  // Group characters by group_id (null → "Ungrouped")
+  const charactersByGroup = useMemo(() => {
+    const sortedGroups = (groups ?? []).slice().sort((a, b) => a.sort_order - b.sort_order);
+    const groupMap = new Map<number | null, { group: CharacterGroup | null; chars: Character[] }>();
+    for (const g of sortedGroups) {
+      groupMap.set(g.id, { group: g, chars: [] });
+    }
+    groupMap.set(null, { group: null, chars: [] });
+    for (const c of characters) {
+      const entry = groupMap.get(c.group_id) ?? groupMap.get(null)!;
+      entry.chars.push(c);
+    }
+    return Array.from(groupMap.values()).filter((e) => e.chars.length > 0);
+  }, [characters, groups]);
 
   // Determine which character IDs to query enabled scene types for
   const activeCharacterIds = useMemo(() => {
@@ -271,30 +289,10 @@ function CreateRunModal({
   // Fetch enabled scene types for selected characters
   const { data: enabledEntries } = useEnabledSceneTypes(projectId, activeCharacterIds);
 
-  // Build the list of scene types enabled for ALL selected characters (intersection)
-  const sceneTypes = useMemo(() => {
+  // Build the list of scene slots (scene_type+track+clothes_off) from enabled entries (union).
+  const sceneSlots = useMemo(() => {
     if (!enabledEntries || activeCharacterIds.length === 0) return [];
-
-    // Count how many characters have each scene type enabled
-    const countBySceneType = new Map<number, { name: string; count: number }>();
-    for (const entry of enabledEntries) {
-      const existing = countBySceneType.get(entry.scene_type_id);
-      if (existing) {
-        existing.count += 1;
-      } else {
-        countBySceneType.set(entry.scene_type_id, {
-          name: entry.scene_type_name,
-          count: 1,
-        });
-      }
-    }
-
-    // Only include scene types enabled for every selected character
-    const charCount = activeCharacterIds.length;
-    return Array.from(countBySceneType.entries())
-      .filter(([, v]) => v.count >= charCount)
-      .map(([id, v]) => ({ id, name: v.name }))
-      .sort((a, b) => a.name.localeCompare(b.name));
+    return deduplicateSceneSlots(enabledEntries);
   }, [enabledEntries, activeCharacterIds]);
 
   // Reset form when modal closes
@@ -302,7 +300,7 @@ function CreateRunModal({
     setName("");
     setDescription("");
     setSelectedCharacterIds(new Set());
-    setSelectedSceneTypeIds(new Set());
+    setSelectedSlotKeys(new Set());
     setRetrospective(true);
     onClose();
   }, [onClose]);
@@ -314,48 +312,51 @@ function CreateRunModal({
       else next.delete(id);
       return next;
     });
-    // Clear scene type selection when characters change (enabled list may differ)
-    setSelectedSceneTypeIds(new Set());
+    // Clear slot selection when characters change (enabled list may differ)
+    setSelectedSlotKeys(new Set());
   }, []);
 
-  const toggleSceneType = useCallback((id: number, checked: boolean) => {
-    setSelectedSceneTypeIds((prev) => {
+  const toggleSlot = useCallback((key: string, checked: boolean) => {
+    setSelectedSlotKeys((prev) => {
       const next = new Set(prev);
-      if (checked) next.add(id);
-      else next.delete(id);
+      if (checked) next.add(key);
+      else next.delete(key);
       return next;
     });
   }, []);
 
   // Select all / none helpers
   const allCharsSelected = characters.length > 0 && selectedCharacterIds.size === characters.length;
-  const allScenesSelected = sceneTypes.length > 0 && selectedSceneTypeIds.size === sceneTypes.length;
+  const allSlotsSelected = sceneSlots.length > 0 && selectedSlotKeys.size === sceneSlots.length;
 
   const toggleAllCharacters = useCallback(
     (checked: boolean) => {
       setSelectedCharacterIds(checked ? new Set(characters.map((c) => c.id)) : new Set());
-      setSelectedSceneTypeIds(new Set());
+      setSelectedSlotKeys(new Set());
     },
     [characters],
   );
 
-  const toggleAllSceneTypes = useCallback(
+  const toggleAllSlots = useCallback(
     (checked: boolean) => {
-      setSelectedSceneTypeIds(checked ? new Set(sceneTypes.map((st) => st.id)) : new Set());
+      setSelectedSlotKeys(checked ? new Set(sceneSlots.map((s) => s.key)) : new Set());
     },
-    [sceneTypes],
+    [sceneSlots],
   );
 
   const handleCreate = useCallback(() => {
     const charIds = selectedCharacterIds.size > 0
       ? Array.from(selectedCharacterIds)
       : characters.map((c) => c.id);
-    const stIds = selectedSceneTypeIds.size > 0
-      ? Array.from(selectedSceneTypeIds)
-      : sceneTypes.map((st) => st.id);
+
+    // Derive unique scene_type_ids from selected slots (or all slots if none selected)
+    const activeSlots = selectedSlotKeys.size > 0
+      ? sceneSlots.filter((s) => selectedSlotKeys.has(s.key))
+      : sceneSlots;
+    const stIds = [...new Set(activeSlots.map((s) => s.scene_type_id))];
 
     if (charIds.length === 0 || stIds.length === 0) {
-      toast.addToast({ message: "Select at least one character and one scene type.", variant: "warning" });
+      toast.addToast({ message: "Select at least one character and one scene.", variant: "warning" });
       return;
     }
 
@@ -385,12 +386,13 @@ function CreateRunModal({
         },
       },
     );
-  }, [name, description, selectedCharacterIds, selectedSceneTypeIds, characters, sceneTypes, projectId, retrospective, createRun, toast, onCreated, handleClose]);
+  }, [name, description, selectedCharacterIds, selectedSlotKeys, characters, sceneSlots, projectId, retrospective, createRun, toast, onCreated, handleClose]);
 
-  const cellCount = (selectedCharacterIds.size || characters.length) * (selectedSceneTypeIds.size || sceneTypes.length);
+  const slotCount = selectedSlotKeys.size || sceneSlots.length;
+  const cellCount = (selectedCharacterIds.size || characters.length) * slotCount;
 
   return (
-    <Modal open={open} onClose={handleClose} title="Create Production Run" size="lg">
+    <Modal open={open} onClose={handleClose} title="Create Production Run" size="xl">
       <Stack gap={4}>
         {/* Run name */}
         <Input
@@ -408,7 +410,7 @@ function CreateRunModal({
           placeholder="Notes about this production run"
         />
 
-        {/* Character selection */}
+        {/* Character selection — grouped */}
         <div>
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-medium text-[var(--color-text-primary)]">
@@ -421,61 +423,94 @@ function CreateRunModal({
               onChange={toggleAllCharacters}
             />
           </div>
-          <div className="max-h-48 overflow-y-auto rounded-[var(--radius-md)] border border-[var(--color-border-default)] bg-[var(--color-surface-secondary)] p-3">
-            <div className="grid grid-cols-2 gap-x-4 gap-y-1 sm:grid-cols-3">
-              {characters.map((c) => (
-                <Checkbox
-                  key={c.id}
-                  label={c.name}
-                  checked={selectedCharacterIds.has(c.id)}
-                  onChange={(checked) => toggleCharacter(c.id, checked)}
-                />
-              ))}
-            </div>
+          <div className="max-h-64 overflow-y-auto rounded-[var(--radius-md)] border border-[var(--color-border-default)] bg-[var(--color-surface-secondary)] p-1.5 space-y-2">
+            {charactersByGroup.map(({ group, chars }) => {
+              const groupCharIds = chars.map((c) => c.id);
+              const allInGroupSelected = groupCharIds.every((id) => selectedCharacterIds.has(id));
+              const someInGroupSelected = groupCharIds.some((id) => selectedCharacterIds.has(id));
+              return (
+                <div key={group?.id ?? "ungrouped"}>
+                  <div className="flex items-center justify-between mb-0.5">
+                    <span className="text-xs font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide">
+                      {group?.name ?? "Ungrouped"}
+                    </span>
+                    <Checkbox
+                      label="All"
+                      checked={allInGroupSelected}
+                      indeterminate={someInGroupSelected && !allInGroupSelected}
+                      onChange={(checked) => {
+                        setSelectedCharacterIds((prev) => {
+                          const next = new Set(prev);
+                          for (const id of groupCharIds) {
+                            if (checked) next.add(id);
+                            else next.delete(id);
+                          }
+                          return next;
+                        });
+                        setSelectedSlotKeys(new Set());
+                      }}
+                      size="sm"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-1 sm:grid-cols-3">
+                    {chars.map((c) => (
+                      <Checkbox
+                        key={c.id}
+                        label={c.name}
+                        checked={selectedCharacterIds.has(c.id)}
+                        onChange={(checked) => toggleCharacter(c.id, checked)}
+                        size="sm"
+                      />
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
             {characters.length === 0 && (
               <p className="text-xs text-[var(--color-text-muted)] py-2 text-center">No characters in this project.</p>
             )}
           </div>
         </div>
 
-        {/* Scene type selection — filtered to enabled for selected characters */}
+        {/* Scene slot selection — scene_type+track+clothes_off combos */}
         <div>
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-medium text-[var(--color-text-primary)]">
-              Scene Types ({selectedSceneTypeIds.size || sceneTypes.length} enabled)
+              Scenes ({selectedSlotKeys.size || sceneSlots.length} selected)
             </span>
-            {sceneTypes.length > 0 && (
+            {sceneSlots.length > 0 && (
               <Checkbox
                 label="Select all"
-                checked={allScenesSelected}
-                indeterminate={selectedSceneTypeIds.size > 0 && !allScenesSelected}
-                onChange={toggleAllSceneTypes}
+                checked={allSlotsSelected}
+                indeterminate={selectedSlotKeys.size > 0 && !allSlotsSelected}
+                onChange={toggleAllSlots}
               />
             )}
           </div>
-          <div className="max-h-48 overflow-y-auto rounded-[var(--radius-md)] border border-[var(--color-border-default)] bg-[var(--color-surface-secondary)] p-3">
+          <div className="max-h-48 overflow-y-auto rounded-[var(--radius-md)] border border-[var(--color-border-default)] bg-[var(--color-surface-secondary)] p-1.5">
             <div className="grid grid-cols-2 gap-x-4 gap-y-1 sm:grid-cols-3">
-              {sceneTypes.map((st) => (
+              {sceneSlots.map((slot) => (
                 <Checkbox
-                  key={st.id}
-                  label={st.name}
-                  checked={selectedSceneTypeIds.has(st.id)}
-                  onChange={(checked) => toggleSceneType(st.id, checked)}
+                  key={slot.key}
+                  label={slot.label}
+                  checked={selectedSlotKeys.has(slot.key)}
+                  onChange={(checked) => toggleSlot(slot.key, checked)}
+                  size="sm"
                 />
               ))}
             </div>
-            {sceneTypes.length === 0 && (
+            {sceneSlots.length === 0 && (
               <p className="text-xs text-[var(--color-text-muted)] py-2 text-center">
                 {activeCharacterIds.length === 0
-                  ? "Select characters first to see available scene types."
-                  : "No scene types enabled for the selected characters."}
+                  ? "Select characters first to see available scenes."
+                  : "No scenes enabled for the selected characters."}
               </p>
             )}
           </div>
         </div>
 
         {/* Retrospective matching */}
-        <div className="rounded-[var(--radius-md)] border border-[var(--color-border-default)] bg-[var(--color-surface-secondary)] p-3">
+        <div className="rounded-[var(--radius-md)] border border-[var(--color-border-default)] bg-[var(--color-surface-secondary)] p-1.5">
           <Checkbox
             label="Include existing approved scenes (retrospective)"
             checked={retrospective}
@@ -498,7 +533,7 @@ function CreateRunModal({
             <Button
               onClick={handleCreate}
               loading={createRun.isPending}
-              disabled={sceneTypes.length === 0 || characters.length === 0}
+              disabled={sceneSlots.length === 0 || characters.length === 0}
             >
               Create Run
             </Button>
@@ -549,15 +584,16 @@ function RunDetail({
   // Build columns from cells — each unique (scene_type_id, track_id) pair
   const columns = useMemo(() => {
     if (!cells) return [];
-    const seen = new Map<string, { scene_type_id: number; scene_type_name: string; track_id: number | null; track_name: string | null }>();
+    const seen = new Map<string, { scene_type_id: number; scene_type_name: string; track_id: number | null; track_name: string | null; has_clothes_off_transition: boolean }>();
     for (const cell of cells) {
-      const key = `${cell.scene_type_id}-${cell.track_id ?? "null"}`;
+      const key = sceneSlotKey(cell.scene_type_id, cell.track_id);
       if (!seen.has(key)) {
         seen.set(key, {
           scene_type_id: cell.scene_type_id,
           scene_type_name: cell.scene_type_name ?? `Type ${cell.scene_type_id}`,
           track_id: cell.track_id,
           track_name: cell.track_name ?? null,
+          has_clothes_off_transition: cell.has_clothes_off_transition ?? false,
         });
       }
     }

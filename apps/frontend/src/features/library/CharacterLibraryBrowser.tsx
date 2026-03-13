@@ -8,9 +8,9 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { Input, Spinner } from "@/components";
+import { SearchInput, Spinner } from "@/components";
 import { cn } from "@/lib/cn";
-import { LayoutGrid, List, Search } from "@/tokens/icons";
+import { LayoutGrid, List } from "@/tokens/icons";
 
 import { LibraryCharacterCard, LibraryCharacterRow } from "./LibraryCharacterCard";
 import { LibraryCharacterModal } from "./LibraryCharacterModal";
@@ -53,22 +53,13 @@ export function CharacterLibraryBrowser() {
   return (
     <div data-testid="library-browser">
       {/* Search bar — always rendered to preserve focus */}
-      <div className="mb-4">
-        <div className="relative">
-          <Search
-            size={16}
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]"
-            aria-hidden="true"
-          />
-          <Input
-            placeholder="Search by name, project, or group..."
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            className="pl-9"
-            data-testid="library-search"
-          />
-        </div>
-      </div>
+      <SearchInput
+        placeholder="Search by name, project, or group..."
+        value={searchInput}
+        onChange={(e) => setSearchInput(e.target.value)}
+        data-testid="library-search"
+        className="mb-4"
+      />
 
       {/* Results count + view toggle */}
       {!isLoading && !error && (

@@ -42,14 +42,8 @@ pub fn router() -> Router<AppState> {
         )
         .route("/{id}/deliver", post(production_run::deliver_run))
         .route("/{id}/cancel", post(production_run::cancel_run))
-        .route(
-            "/{id}/cells/cancel",
-            post(production_run::cancel_cells),
-        )
-        .route(
-            "/{id}/cells/delete",
-            post(production_run::delete_cells),
-        )
+        .route("/{id}/cells/cancel", post(production_run::cancel_cells))
+        .route("/{id}/cells/delete", post(production_run::delete_cells))
         .route("/{id}/progress", get(production_run::get_progress))
         .route(
             "/{id}/characters/{character_id}/cancel",

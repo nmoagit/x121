@@ -206,12 +206,10 @@ pub async fn handle_completion(
             if let Some(target) = scene.total_segments_estimated {
                 let completed_count = scene.total_segments_completed.max(1) as f64;
                 let avg_duration = cumulative / completed_count;
-                let scene_type = x121_db::repositories::SceneTypeRepo::find_by_id(
-                    pool,
-                    scene.scene_type_id,
-                )
-                .await
-                .map_err(PipelineError::Database)?;
+                let scene_type =
+                    x121_db::repositories::SceneTypeRepo::find_by_id(pool, scene.scene_type_id)
+                        .await
+                        .map_err(PipelineError::Database)?;
                 if let Some(st) = scene_type {
                     let target_dur = st.target_duration_secs.map(|d| d as f64).unwrap_or(16.0);
                     let remaining = (target_dur - cumulative).max(0.0);

@@ -19,7 +19,8 @@ use x121_core::error::CoreError;
 use x121_core::search::{clamp_limit, clamp_offset};
 use x121_core::types::DbId;
 use x121_db::models::production_run::{
-    CreateProductionRun, CreateProductionRunCell, CreateProductionRunRequest, DeliverResponse,
+    CancelCellsResponse, CancelRunResponse, CharacterCellsResponse, CreateProductionRun,
+    CreateProductionRunCell, CreateProductionRunRequest, DeleteCellsResponse, DeliverResponse,
     ProductionRun, ProductionRunProgress, ResubmitResponse, SubmitCellsRequest,
     SubmitCellsResponse,
 };
@@ -166,8 +167,7 @@ pub async fn create_run(
             ProductionRunRepo::find_cells_with_in_progress_scenes(&state.pool, run.id).await?;
         in_progress_count = in_progress.len() as i32;
         if !in_progress.is_empty() {
-            ProductionRunRepo::mark_cells_in_progress_with_scene(&state.pool, &in_progress)
-                .await?;
+            ProductionRunRepo::mark_cells_in_progress_with_scene(&state.pool, &in_progress).await?;
         }
     }
 
@@ -240,8 +240,7 @@ pub async fn get_matrix(
     ensure_run_exists(&state.pool, id).await?;
 
     // Live-refresh stale not_started cells before returning the matrix.
-    let (completed, in_progress) =
-        ProductionRunRepo::refresh_stale_cells(&state.pool, id).await?;
+    let (completed, in_progress) = ProductionRunRepo::refresh_stale_cells(&state.pool, id).await?;
     if completed > 0 || in_progress > 0 {
         tracing::debug!(
             run_id = id,
@@ -279,6 +278,7 @@ struct EnabledSceneTypeEntry {
     scene_type_name: String,
     track_id: Option<DbId>,
     track_name: Option<String>,
+    has_clothes_off_transition: bool,
 }
 
 /// Get the enabled scene types for each character in the request.
@@ -305,13 +305,9 @@ pub async fn enabled_scene_types(
     // group_id is not known here — pass None to skip the group tier.
     let mut entries = Vec::new();
     for &cid in &char_ids {
-        let settings = CharacterSceneOverrideRepo::list_effective(
-            &state.pool,
-            cid,
-            params.project_id,
-            None,
-        )
-        .await?;
+        let settings =
+            CharacterSceneOverrideRepo::list_effective(&state.pool, cid, params.project_id, None)
+                .await?;
 
         for s in settings {
             if s.is_enabled {
@@ -321,6 +317,7 @@ pub async fn enabled_scene_types(
                     scene_type_name: s.name.clone(),
                     track_id: s.track_id,
                     track_name: s.track_name.clone(),
+                    has_clothes_off_transition: s.has_clothes_off_transition,
                 });
             }
         }
@@ -555,17 +552,20 @@ pub async fn cancel_run(
         )));
     }
 
-    ProductionRunRepo::update_status(
-        &state.pool,
-        id,
-        batch_production::RUN_STATUS_ID_CANCELLED,
-    )
-    .await?;
+    ProductionRunRepo::update_status(&state.pool, id, batch_production::RUN_STATUS_ID_CANCELLED)
+        .await?;
 
-    tracing::info!(run_id = id, user_id = auth.user_id, "Production run cancelled");
+    tracing::info!(
+        run_id = id,
+        user_id = auth.user_id,
+        "Production run cancelled"
+    );
 
     Ok(Json(DataResponse {
-        data: serde_json::json!({ "run_id": id, "status": "cancelled" }),
+        data: CancelRunResponse {
+            run_id: id,
+            status: "cancelled".to_string(),
+        },
     }))
 }
 
@@ -604,7 +604,10 @@ pub async fn cancel_cells(
 
     tracing::info!(run_id = id, cancelled, "Cells cancelled");
     Ok(Json(DataResponse {
-        data: serde_json::json!({ "run_id": id, "cancelled": cancelled }),
+        data: CancelCellsResponse {
+            run_id: id,
+            cancelled,
+        },
     }))
 }
 
@@ -628,7 +631,10 @@ pub async fn delete_cells(
 
     tracing::info!(run_id = id, deleted, "Cells deleted");
     Ok(Json(DataResponse {
-        data: serde_json::json!({ "run_id": id, "deleted": deleted }),
+        data: DeleteCellsResponse {
+            run_id: id,
+            deleted,
+        },
     }))
 }
 
@@ -646,9 +652,18 @@ pub async fn cancel_character_cells(
     let cancelled =
         ProductionRunRepo::cancel_character_cells(&state.pool, id, character_id).await?;
 
-    tracing::info!(run_id = id, character_id, cancelled, "Character cells cancelled");
+    tracing::info!(
+        run_id = id,
+        character_id,
+        cancelled,
+        "Character cells cancelled"
+    );
     Ok(Json(DataResponse {
-        data: serde_json::json!({ "run_id": id, "character_id": character_id, "cancelled": cancelled }),
+        data: CharacterCellsResponse {
+            run_id: id,
+            character_id,
+            affected: cancelled,
+        },
     }))
 }
 
@@ -659,8 +674,7 @@ pub async fn delete_character_cells(
 ) -> AppResult<impl IntoResponse> {
     let run = ensure_run_exists(&state.pool, id).await?;
 
-    let deleted =
-        ProductionRunRepo::delete_character_cells(&state.pool, id, character_id).await?;
+    let deleted = ProductionRunRepo::delete_character_cells(&state.pool, id, character_id).await?;
 
     // Update total_cells on the run.
     let new_total = run.total_cells - deleted as i32;
@@ -677,9 +691,18 @@ pub async fn delete_character_cells(
         .await;
     }
 
-    tracing::info!(run_id = id, character_id, deleted, "Character cells deleted");
+    tracing::info!(
+        run_id = id,
+        character_id,
+        deleted,
+        "Character cells deleted"
+    );
     Ok(Json(DataResponse {
-        data: serde_json::json!({ "run_id": id, "character_id": character_id, "deleted": deleted }),
+        data: CharacterCellsResponse {
+            run_id: id,
+            character_id,
+            affected: deleted,
+        },
     }))
 }
 

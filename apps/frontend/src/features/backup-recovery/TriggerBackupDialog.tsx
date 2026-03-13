@@ -52,7 +52,7 @@ export function TriggerBackupDialog({ open, onClose }: TriggerBackupDialogProps)
   };
 
   return (
-    <Modal open={open} onClose={onClose} title="Trigger Backup" size="sm">
+    <Modal open={open} onClose={onClose} title="Trigger Backup" size="md">
       <form onSubmit={handleSubmit} className="flex flex-col gap-4" data-testid="trigger-backup-form">
         <Select
           label="Backup Type"

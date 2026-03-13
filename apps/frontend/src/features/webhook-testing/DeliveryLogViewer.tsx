@@ -9,7 +9,7 @@ import { useCallback, useState } from "react";
 
 import { Card } from "@/components/composite";
 import { Stack } from "@/components/layout";
-import { Button, Select, Spinner } from "@/components/primitives";
+import { Button, FilterSelect, Spinner } from "@/components/primitives";
 
 import { DeliveryRow } from "./DeliveryRow";
 import { useDeliveryLogs } from "./hooks/use-webhook-testing";
@@ -100,14 +100,13 @@ export function DeliveryLogViewer() {
     <Stack gap={4}>
       {/* Filter bar */}
       <div data-testid="delivery-filter-bar" className="flex items-center gap-4">
-        <div className="w-48">
-          <Select
-            options={[...DELIVERY_FILTER_OPTIONS]}
-            value={filterValue}
-            onChange={handleFilterChange}
-            placeholder="Filter deliveries"
-          />
-        </div>
+        <FilterSelect
+          options={[...DELIVERY_FILTER_OPTIONS]}
+          value={filterValue}
+          onChange={handleFilterChange}
+          placeholder="Filter deliveries"
+          className="w-48"
+        />
         <span className="text-xs text-[var(--color-text-muted)]">
           {total} {total === 1 ? "delivery" : "deliveries"}
         </span>

@@ -1,19 +1,128 @@
 /**
- * Character images tab — track seed image cards + variant gallery (PRD-112).
+ * Character images tab — track seed image cards with detail modal (PRD-112).
  *
- * Shows a card per active track with hero image preview, upload button, and
- * clothed-from-topless generation. Below the cards, the full variant gallery
- * is shown for detailed variant management.
+ * Shows a card per active track with hero image preview. Clicking a card opens
+ * a detail modal with the seed image, all variants for that track, and actions
+ * to approve/reject/delete variants and delete the seed image.
+ * Navigation arrows allow cycling through tracks.
  */
+
+import { useCallback, useMemo, useState } from "react";
 
 import { Modal } from "@/components/composite/Modal";
 import { Grid, Stack } from "@/components/layout";
-import { Button } from "@/components/primitives";
+import { Badge, Button, Spinner } from "@/components/primitives";
+import { Check, ChevronLeft, ChevronRight, Download, Trash2, Upload, Wand2, XCircle } from "@/tokens/icons";
+import { Tooltip } from "@/components/primitives/Tooltip";
 
-import { VariantGallery } from "@/features/images/VariantGallery";
+import {
+  useApproveVariant,
+  useDeleteImageVariant,
+  useExportVariant,
+  useImageVariants,
+  useRejectVariant,
+} from "@/features/images/hooks/use-image-variants";
+import { ImageVariantAnnotationModal } from "@/features/images/ImageVariantAnnotationModal";
+import {
+  IMAGE_VARIANT_STATUS,
+  IMAGE_VARIANT_STATUS_LABEL,
+  PROVENANCE_LABEL,
+  statusBadgeVariant,
+} from "@/features/images/types";
+import type { ImageVariant, Provenance } from "@/features/images/types";
+import { variantImageUrl, variantThumbnailUrl } from "@/features/images/utils";
+import { ProgressiveImage } from "@/components/primitives";
+import { TrackBadge } from "@/features/scene-catalogue/TrackBadge";
 
 import { TrackImageCard } from "./TrackImageCard";
 import { useTrackImageActions } from "./useTrackImageActions";
+
+/* --------------------------------------------------------------------------
+   Detail modal variant card (inline — only used inside the modal)
+   -------------------------------------------------------------------------- */
+
+interface ModalVariantCardProps {
+  variant: ImageVariant;
+  onApprove: (id: number) => void;
+  onReject: (id: number) => void;
+  onExport: (id: number) => void;
+  onDelete: (id: number) => void;
+  onAnnotate: (variant: ImageVariant) => void;
+}
+
+function ModalVariantCard({ variant, onApprove, onReject, onExport, onDelete, onAnnotate }: ModalVariantCardProps) {
+  const canApprove =
+    variant.status_id === IMAGE_VARIANT_STATUS.GENERATED ||
+    variant.status_id === IMAGE_VARIANT_STATUS.EDITING ||
+    variant.status_id === IMAGE_VARIANT_STATUS.PENDING;
+
+  return (
+    <div className="rounded-[var(--radius-md)] border border-[var(--color-border-default)] bg-[var(--color-surface-secondary)] overflow-hidden">
+      {/* Thumbnail — click to annotate */}
+      {variant.file_path ? (
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={() => onAnnotate(variant)}
+          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") onAnnotate(variant); }}
+          className="cursor-pointer"
+          title="Click to annotate"
+        >
+          <ProgressiveImage
+            lowSrc={variantThumbnailUrl(variant.id, 128)}
+            highSrc={variantThumbnailUrl(variant.id, 512)}
+            alt={variant.variant_label}
+            className="w-full aspect-video object-cover"
+            loading="lazy"
+          />
+        </div>
+      ) : (
+        <div className="flex aspect-video items-center justify-center text-xs text-[var(--color-text-muted)]">
+          No image
+        </div>
+      )}
+
+      {/* Info + actions */}
+      <div className="px-2 py-1.5 space-y-1.5">
+        <div className="flex items-center justify-between gap-1">
+          <p className="truncate text-xs font-medium text-[var(--color-text-primary)]">
+            {variant.variant_label}
+          </p>
+          {variant.is_hero && <Badge variant="success" size="sm">Hero</Badge>}
+        </div>
+        <div className="flex flex-wrap gap-1">
+          <Badge variant={statusBadgeVariant(variant.status_id)} size="sm">
+            {IMAGE_VARIANT_STATUS_LABEL[variant.status_id] ?? "Unknown"}
+          </Badge>
+          <Badge variant="default" size="sm">
+            {PROVENANCE_LABEL[variant.provenance as Provenance] ?? variant.provenance}
+          </Badge>
+          <Badge variant="default" size="sm">v{variant.version}</Badge>
+        </div>
+        <div className="flex items-center gap-1">
+          {canApprove && (
+            <Tooltip content="Approve">
+              <Button size="sm" variant="primary" icon={<Check size={14} />} onClick={() => onApprove(variant.id)} aria-label="Approve" />
+            </Tooltip>
+          )}
+          {canApprove && (
+            <Tooltip content="Reject">
+              <Button size="sm" variant="secondary" icon={<XCircle size={14} />} onClick={() => onReject(variant.id)} aria-label="Reject" />
+            </Tooltip>
+          )}
+          <Tooltip content="Export">
+            <Button size="sm" variant="ghost" icon={<Download size={14} />} onClick={() => onExport(variant.id)} aria-label="Export" />
+          </Tooltip>
+          <span className="ml-auto">
+            <Tooltip content="Delete">
+              <Button size="sm" variant="danger" icon={<Trash2 size={14} />} onClick={() => onDelete(variant.id)} aria-label="Delete" />
+            </Tooltip>
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 /* --------------------------------------------------------------------------
    Component
@@ -36,6 +145,33 @@ export function CharacterImagesTab({ characterId }: CharacterImagesTabProps) {
     generating,
   } = useTrackImageActions(characterId);
 
+  const [detailTrackIndex, setDetailTrackIndex] = useState<number | null>(null);
+  const [annotatingVariant, setAnnotatingVariant] = useState<ImageVariant | null>(null);
+
+  // All variants for the character (used in detail modal, filtered by track)
+  const { data: allVariants, isLoading: variantsLoading } = useImageVariants(characterId);
+  const approveMutation = useApproveVariant(characterId);
+  const rejectMutation = useRejectVariant(characterId);
+  const exportMutation = useExportVariant(characterId);
+  const deleteMutation = useDeleteImageVariant(characterId);
+
+  const handleApprove = useCallback((id: number) => approveMutation.mutate(id), [approveMutation]);
+  const handleReject = useCallback((id: number) => rejectMutation.mutate(id), [rejectMutation]);
+  const handleExport = useCallback((id: number) => exportMutation.mutate(id), [exportMutation]);
+  const handleDelete = useCallback((id: number) => deleteMutation.mutate(id), [deleteMutation]);
+
+  // Current detail track data
+  const detailTrack = detailTrackIndex !== null ? trackImageData[detailTrackIndex] : null;
+
+  // Variants for the currently open track
+  const trackVariants = useMemo(() => {
+    if (!detailTrack || !allVariants) return [];
+    const slug = detailTrack.track.slug.toLowerCase();
+    return allVariants.filter(
+      (v) => v.variant_type?.toLowerCase() === slug && !v.deleted_at,
+    );
+  }, [detailTrack, allVariants]);
+
   return (
     <Stack gap={6}>
       {/* Track seed image cards */}
@@ -43,7 +179,7 @@ export function CharacterImagesTab({ characterId }: CharacterImagesTabProps) {
         <div className="space-y-[var(--spacing-2)]">
           <h3 className="text-sm font-medium text-[var(--color-text-muted)]">Seed Images</h3>
           <Grid cols={4} gap={4}>
-            {trackImageData.map(({ track, hero }) => (
+            {trackImageData.map(({ track, hero }, index) => (
               <TrackImageCard
                 key={track.id}
                 track={track}
@@ -56,14 +192,162 @@ export function CharacterImagesTab({ characterId }: CharacterImagesTabProps) {
                 onGenerate={() => handleGenerateTrackImage(track.slug)}
                 generating={generating}
                 onUpload={handleUploadTrackImage}
+                onClick={() => setDetailTrackIndex(index)}
               />
             ))}
           </Grid>
         </div>
       )}
 
-      {/* Full variant gallery */}
-      <VariantGallery characterId={characterId} />
+      {/* Track detail modal */}
+      <Modal
+        open={detailTrackIndex !== null}
+        onClose={() => setDetailTrackIndex(null)}
+        size="3xl"
+      >
+        {detailTrack && (
+          <div className="flex flex-col gap-[var(--spacing-4)]">
+            {/* Header with navigation */}
+            <div className="flex items-center gap-[var(--spacing-2)]">
+              <Button
+                size="sm"
+                variant="ghost"
+                disabled={detailTrackIndex === 0}
+                onClick={() => setDetailTrackIndex((i) => (i !== null && i > 0 ? i - 1 : i))}
+                icon={<ChevronLeft size={16} />}
+                aria-label="Previous track"
+              />
+              <h2 className="text-lg font-semibold text-[var(--color-text-primary)]">
+                {detailTrack.track.name}
+              </h2>
+              <TrackBadge name={detailTrack.track.name} slug={detailTrack.track.slug} />
+              <span className="text-sm text-[var(--color-text-muted)]">
+                {(detailTrackIndex ?? 0) + 1} / {trackImageData.length}
+              </span>
+              <Button
+                size="sm"
+                variant="ghost"
+                disabled={detailTrackIndex === trackImageData.length - 1}
+                onClick={() => setDetailTrackIndex((i) => (i !== null && i < trackImageData.length - 1 ? i + 1 : i))}
+                icon={<ChevronRight size={16} />}
+                aria-label="Next track"
+              />
+            </div>
+
+            {/* Seed image large preview */}
+            <div className="flex justify-center bg-[var(--color-surface-secondary)] rounded-[var(--radius-md)]">
+              {detailTrack.hero?.file_path ? (
+                <img
+                  src={variantImageUrl(detailTrack.hero.file_path)}
+                  alt={`${detailTrack.track.name} seed image`}
+                  className="max-h-[40vh] rounded-[var(--radius-md)] object-contain"
+                />
+              ) : (
+                <div className="flex h-48 w-full items-center justify-center text-[var(--color-text-muted)]">
+                  No seed image
+                </div>
+              )}
+            </div>
+
+            {/* Seed image info + actions */}
+            <div className="flex items-center justify-between">
+              <div className="flex flex-wrap gap-2">
+                {detailTrack.hero && (
+                  <>
+                    <Badge variant={statusBadgeVariant(detailTrack.hero.status_id)} size="sm">
+                      {IMAGE_VARIANT_STATUS_LABEL[detailTrack.hero.status_id]}
+                    </Badge>
+                    <Badge variant="default" size="sm">
+                      {PROVENANCE_LABEL[detailTrack.hero.provenance as Provenance] ?? detailTrack.hero.provenance}
+                    </Badge>
+                    {detailTrack.hero.width && detailTrack.hero.height && (
+                      <Badge variant="info" size="sm">
+                        {detailTrack.hero.width} x {detailTrack.hero.height}
+                      </Badge>
+                    )}
+                    {detailTrack.hero.format && (
+                      <Badge variant="default" size="sm">
+                        {detailTrack.hero.format.toUpperCase()}
+                      </Badge>
+                    )}
+                  </>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  icon={<Upload size={14} />}
+                  onClick={() => {
+                    // Trigger file picker
+                    const input = document.createElement("input");
+                    input.type = "file";
+                    input.accept = "image/*";
+                    input.onchange = (e) => {
+                      const file = (e.target as HTMLInputElement).files?.[0];
+                      if (file) handleUploadTrackImage(file, detailTrack.track.slug);
+                    };
+                    input.click();
+                  }}
+                >
+                  Upload
+                </Button>
+                {detailTrack.track.slug.toLowerCase() === "clothed" && (
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    icon={<Wand2 size={14} />}
+                    disabled={!toplessHeroExists || generating}
+                    onClick={() => handleGenerateTrackImage(detailTrack.track.slug)}
+                  >
+                    {generating ? "Generating…" : "Generate"}
+                  </Button>
+                )}
+                {detailTrack.hero && (
+                  <Button
+                    size="sm"
+                    variant="danger"
+                    icon={<Trash2 size={14} />}
+                    onClick={() => handleDelete(detailTrack.hero!.id)}
+                  >
+                    Delete
+                  </Button>
+                )}
+              </div>
+            </div>
+
+            {/* Variants for this track */}
+            <div className="space-y-2">
+              <h3 className="text-sm font-medium text-[var(--color-text-primary)]">
+                Variants ({trackVariants.length})
+              </h3>
+              {variantsLoading ? (
+                <div className="flex items-center justify-center py-4">
+                  <Spinner size="md" />
+                </div>
+              ) : trackVariants.length === 0 ? (
+                <p className="text-sm text-[var(--color-text-muted)] py-4 text-center">
+                  No variants for this track yet.
+                </p>
+              ) : (
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                  {trackVariants.map((v) => (
+                    <ModalVariantCard
+                      key={v.id}
+                      variant={v}
+                      onApprove={handleApprove}
+                      onReject={handleReject}
+                      onExport={handleExport}
+                      onDelete={handleDelete}
+                      onAnnotate={setAnnotatingVariant}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </Modal>
 
       {/* Overwrite confirmation modal */}
       <Modal
@@ -89,6 +373,13 @@ export function CharacterImagesTab({ characterId }: CharacterImagesTabProps) {
           </Button>
         </div>
       </Modal>
+
+      {/* Image variant annotation modal */}
+      <ImageVariantAnnotationModal
+        characterId={characterId}
+        variant={annotatingVariant}
+        onClose={() => setAnnotatingVariant(null)}
+      />
     </Stack>
   );
 }
