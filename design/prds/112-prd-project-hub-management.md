@@ -624,6 +624,7 @@ This check is **blocking** — no PR should be merged without a DRY-GUY audit of
 - **v1.5** (2026-02-24): Complete character workstation. Added: Assets tab for external tool clips — txrs_refined, mesh_refined, mouth_refined, smiles_refined (Req 1.17). Dedicated Metadata tab with JSON + pretty-printed dual view (Req 1.18). Settings tab expanded with named character attributes — x121 status, a2c4 model, ElevenLabs voice — extensible via JSONB (Req 1.19). Delivery tab gains external handoff to final processing tool (Req 1.7). Total: 20 MVP requirements + 2 post-MVP.
 - **v1.6** (2026-02-24): Character groups. Characters organized into collapsible groups within a project (replacing ad-hoc batch numbering). New `character_groups` table. Expanded character creation actions: manual, CSV/text, library import, folder import (PRD-113). New group API endpoints and hooks. Folder import and metadata generation pipeline split to PRD-113.
 - **v1.7** (2026-03-06): Amendment — Requirements gap fill (Reqs A.1-A.5).
+- **v1.8** (2026-03-14): Amendment — Character thumbnail tooltip on deliverables grid (Req A.6).
 
 ---
 
@@ -711,3 +712,15 @@ The following requirements were identified during a stakeholder requirements rev
 **Technical Notes:**
 - Each group section element should have an `id` attribute matching the group ID for scroll targeting
 - Use `useEffect` or `useLayoutEffect` to trigger scroll after the characters tab renders
+
+### Requirement A.6: Character Thumbnail Tooltip on Deliverables Grid
+
+**Description:** Character names in the deliverables grid (both Readiness table and Matrix tab) show a thumbnail preview of the character's hero image on hover. This gives users visual context without navigating to the character detail page.
+
+**Acceptance Criteria:**
+- [ ] Backend `list_deliverable_status` query includes `hero_variant_id` via LATERAL join selecting the best hero/clothed variant
+- [ ] `CharacterDeliverableRow` type includes `hero_variant_id: number | null`
+- [ ] `CharacterNameWithThumb` component wraps character name with a `Tooltip` showing a 256px thumbnail image
+- [ ] Tooltip uses `side="bottom"` with 150ms delay
+- [ ] Tooltip auto-flips to top when near the bottom of the viewport (per PRD-029 Amendment A.1)
+- [ ] Characters without a hero variant show the name without a tooltip

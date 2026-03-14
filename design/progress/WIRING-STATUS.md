@@ -3,20 +3,20 @@
 Tracks which completed PRDs have frontend features accessible via routes/navigation
 versus those that are implemented but need integration into host pages.
 
-**Last updated:** 2026-03-10
+**Last updated:** 2026-03-14
 
-**132 of 132 PRDs are complete.** All PRDs implemented.
-**All 132 PRDs have frontend navigation or are correctly unrouted.**
+**133 of 133 PRDs are complete.** All PRDs implemented.
+**All 133 PRDs have frontend navigation or are correctly unrouted.**
 
 ## Summary
 
 | Category | Count |
 |----------|-------|
 | Routed (accessible via sidebar/nav) | 73 |
-| Correctly unrouted (overlays/framework/embedded) | 15 |
+| Correctly unrouted (overlays/framework/embedded) | 16 |
 | Missing routes (need host-page integration) | 29 |
 | No frontend (backend/script only) | 15 |
-| **Total** | **132** |
+| **Total** | **133** |
 
 ---
 
@@ -125,6 +125,7 @@ They do NOT need their own routes.
 | — | PRD-126 | Bug fixes & UX polish (cross-cutting, no standalone UI) |
 | `scenes` | PRD-127 | ArtifactTimeline embedded in ClipCard (scene detail page) |
 | `projects` | PRD-128 | ReadinessIndicators embedded in CharacterCard (project character grid) |
+| `characters` | PRD-133 | Metadata approval controls embedded in CharacterMetadataTab |
 | `character-review` | PRD-129 | `/review/my-reviews` (MyReviewsPage), `/projects/$projectId/review-assignments` (AssignmentDashboard), Review tab + controls in CharacterDetailPage |
 
 ---

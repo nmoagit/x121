@@ -440,3 +440,42 @@ apps/frontend/src/features/scenes/
 ## 14. Version History
 
 - **v1.0** (2026-02-28): Initial PRD creation
+- **v1.1** (2026-03-14): Amendment — Newer-than-final indicator, generation snapshot display, clickable workflow link (Reqs A.1-A.3).
+
+---
+
+## Amendment (2026-03-14): Newer-than-Final Indicator, Generation Snapshot Display & Clickable Workflow Link
+
+### Requirement A.1: Newer-than-Final Blue Dot Indicator
+
+**Description:** Scene cards in the character scenes tab display a visual indicator when clips exist that were generated after the one marked as final. This helps users identify scenes where the final selection may be outdated and newer options are available.
+
+**Acceptance Criteria:**
+- [ ] A 12px blue dot with a 2px white ring appears at the bottom-right of the scene card's video thumbnail
+- [ ] Indicator only shows when `has_newer_than_final` is true (see PRD-109 Amendment A.4)
+- [ ] Includes a title attribute: "Newer clips exist after the final version"
+- [ ] Does not interfere with existing scene card interactions (click to open, status badges)
+
+### Requirement A.2: Generation Snapshot Panel on Clips
+
+**Description:** A shared `GenerationSnapshotPanel` component displays the workflow, prompts, and generation parameters used to create a clip. Shown in both `ClipCard` (toggleable) and `ClipPlaybackModal` (always visible when data exists).
+
+**Acceptance Criteria:**
+- [ ] `GenerationSnapshotPanel` is a shared component at `features/scenes/GenerationSnapshotPanel.tsx`
+- [ ] Displays prompts section prominently (each prompt slot with its text)
+- [ ] Shows workflow name as a clickable link (see Req A.3)
+- [ ] Shows metadata inline: scene type, clip position, seed image, segment index
+- [ ] Generation parameters and LoRA config are shown in a collapsible section
+- [ ] Renders for any clip with a non-null, non-empty `generation_snapshot` (not limited to `source === "generated"`)
+- [ ] Backfilled snapshots (with `backfilled: true`) display identically to real-time snapshots
+
+### Requirement A.3: Clickable Workflow Name with Auto-Select
+
+**Description:** The workflow name displayed in the generation snapshot panel is a clickable link that navigates to the Workflows page and automatically selects the matching workflow.
+
+**Acceptance Criteria:**
+- [ ] Workflow name renders as a link styled with `text-[var(--color-action-primary)]`
+- [ ] Clicking navigates to `/tools/workflows?name={workflowName}`
+- [ ] Workflows page reads the `name` search parameter via TanStack Router's `validateSearch`
+- [ ] On load, the page auto-selects the workflow whose name matches the URL parameter (case-insensitive)
+- [ ] If no match is found, the page loads normally without error

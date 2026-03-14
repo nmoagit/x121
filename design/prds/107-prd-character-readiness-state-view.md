@@ -121,3 +121,19 @@ This check is **blocking** — no PR should be merged without a DRY-GUY audit of
 
 ## 12. Version History
 - **v1.0** (2026-02-19): Initial PRD creation — character library readiness and state view
+- **v1.1** (2026-03-14): Amendment — Metadata approval as readiness criterion (Req A.1).
+
+---
+
+## Amendment (2026-03-14): Metadata Approval as Readiness Criterion
+
+### Requirement A.1: Readiness Percentage Requires Metadata Approval
+
+**Description:** The readiness percentage computation now requires metadata to be approved (via PRD-133 approval workflow), not merely present. A character with active but unapproved metadata is treated as partially ready rather than fully ready for the metadata criterion.
+
+**Acceptance Criteria:**
+- [ ] Backend `readiness_pct` CASE expression checks `approval_status = 'approved'` for active metadata versions
+- [ ] Characters with active metadata that is `pending` or `rejected` show reduced readiness percentage
+- [ ] Frontend `computeSectionReadiness()` returns `"partial"` (yellow indicator) for metadata that is present but unapproved
+- [ ] Tooltip text distinguishes between "Metadata: Approved" (green) and "Metadata: Pending Approval" (yellow)
+- [ ] `CharacterDeliverableRow` includes `metadata_approval_status` for rendering in the deliverables grid

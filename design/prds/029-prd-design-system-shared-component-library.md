@@ -123,3 +123,20 @@ This check is **blocking** — no PR should be merged without a DRY-GUY audit of
 
 ## 12. Version History
 - **v1.0** (2026-02-18): Initial PRD generation from master specification
+- **v1.1** (2026-03-14): Amendment — Tooltip viewport-aware auto-flip (Req A.1).
+
+---
+
+## Amendment (2026-03-14): Tooltip Viewport-Aware Auto-Flip
+
+### Requirement A.1: Tooltip Auto-Flip on Viewport Overflow
+
+**Description:** The `Tooltip` component automatically flips to the opposite side when the requested placement would cause the tooltip to overflow the viewport. This prevents tooltips from being clipped or appearing offscreen when the trigger element is near the edge of the page.
+
+**Acceptance Criteria:**
+- [ ] When `side="bottom"` and the trigger is near the bottom of the viewport, the tooltip flips to `"top"`
+- [ ] When `side="top"` and the trigger is near the top of the viewport, the tooltip flips to `"bottom"`
+- [ ] When `side="left"` and the trigger is near the left edge, the tooltip flips to `"right"`
+- [ ] When `side="right"` and the trigger is near the right edge, the tooltip flips to `"left"`
+- [ ] The flip is transparent to consumers — no API changes required; the `side` prop still specifies the preferred placement
+- [ ] The correct `transform` is applied based on the resolved (potentially flipped) side

@@ -24,12 +24,12 @@ Source of truth: [`design/design.md`](../design.md)
 | planning | 0 |
 | in-progress | 0 |
 | review | 0 |
-| done | 128 |
-| planning | 3 |
+| done | 129 |
+| planning | 2 |
 | blocked | 0 |
 | deferred | 0 |
 | maybe | 15 |
-| **Total** | **145** |
+| **Total** | **146** |
 
 ---
 
@@ -73,7 +73,7 @@ Source of truth: [`design/design.md`](../design.md)
 |-----|-------|----------|--------|-------|-------|
 | PRD-13 | Dual-Metadata System (JSON) | — | `done` | 2026-02-21 | Phase 3 Group 4. Amendments A.1–A.4 (2026-03-06): outdated dependency chain (auto-flag on Bio/ToV change), import safeguard (source key protection), age field as text, VoiceID approval gate. |
 | PRD-14 | Data Validation & Import Integrity | — | `done` | 2026-02-20 | Validation engine (8 rule types), import preview/commit, report export (JSON/CSV), 12 integration tests, 33 unit tests. |
-| PRD-15 | Intelligent & Deferred Disk Reclamation | — | `done` | 2026-02-21 | Protection rules, policies, trash queue, reclamation engine, admin dashboard, 6 tests. |
+| PRD-15 | Intelligent & Deferred Disk Reclamation | — | `done` | 2026-02-21 | Protection rules, policies, trash queue, reclamation engine, admin dashboard, 6 tests. Amendment A.1 (2026-03-14): video file purge with DB record preservation, file_purged columns, purge-clips endpoint, 410 Gone guard. |
 | PRD-16 | Folder-to-Entity Bulk Importer | — | `done` | 2026-02-21 | Phase 3 Group 4 |
 | PRD-17 | Asset Registry & Dependency Mapping | — | `done` | 2026-02-21 | Asset registry, dependencies, notes, ratings, impact analysis, browser UI, 8 tests. |
 | PRD-18 | Bulk Data Maintenance (Search/Replace/Re-path) | — | `done` | 2026-02-23 | Migration 000033, core maintenance module (field registry, validators), 7 API endpoints, frontend feature (FindReplacePanel, RePathPanel, OperationsHistory), 36 tests. |
@@ -87,18 +87,19 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-86 | Legacy Data Import & Migration Toolkit | — | `done` | 2026-02-23 | Migrations 000028-000029, core legacy_import module (scanner, mapper, gap analysis), API handlers, frontend feature (legacy-import wizard). |
 | PRD-88 | Batch Metadata Operations | — | `done` | 2026-02-23 | Migration 000032, core batch_metadata module (validators, undo logic), status enum, API handlers, frontend feature (batch-metadata panel), 19 tests. |
 | PRD-104 | Model & LoRA Download Manager | — | `done` | 2026-02-23 | 3 migrations (model_downloads, api_tokens, placement_rules), core module (16 tests), 3 repos, 13 API endpoints, frontend feature (9 tests). |
-| PRD-109 | Scene Video Versioning, External Import & Soft Delete | — | `done` | — | Implemented (2026-02-20). All 7 phases complete: migrations, models, soft delete infra (9 repos), version repo, version API, trash API, delivery integration, integration tests (30 tests). Amendments A.1–A.3 (2026-03-06): generation_snapshot JSONB column, SequencePlayer for clip playback, empty file validation + warning badges. |
-| PRD-113 | Character Ingest Pipeline | 1 | `done` | 2026-02-27 | 3 migrations (5 tables), 4 core modules (name parser, folder scanner, metadata validator, video spec validator), 3 model modules, 3 repo modules, 4 handler modules, 4 route modules, frontend wizard + validation dashboard. 38 core tests. |
+| PRD-109 | Scene Video Versioning, External Import & Soft Delete | — | `done` | — | Implemented (2026-02-20). All 7 phases complete: migrations, models, soft delete infra (9 repos), version repo, version API, trash API, delivery integration, integration tests (30 tests). Amendments A.1–A.3 (2026-03-06): generation_snapshot JSONB column, SequencePlayer for clip playback, empty file validation + warning badges. Amendments A.4–A.6 (2026-03-14): newer-than-final indicator, file_purged tracking, snapshot backfill. |
+| PRD-113 | Character Ingest Pipeline | 1 | `done` | 2026-02-27 | 3 migrations (5 tables), 4 core modules (name parser, folder scanner, metadata validator, video spec validator), 3 model modules, 3 repo modules, 4 handler modules, 4 route modules, frontend wizard + validation dashboard. 38 core tests. Amendment A.1 (2026-03-14): SHA-256 import hash deduplication. |
 | PRD-122 | Storage Configuration (Local & Cloud S3) | 1 | `done` | 2026-03-01 | StorageProvider trait + LocalStorageProvider (core), S3StorageProvider (cloud crate, aws-sdk-s3), runtime hot-swap via RwLock, 5 CoreError variants, 7 settings, seed migration, set_default/test_s3_connection handlers, frontend S3 field toggle. DRY-627 to DRY-634 audited. |
 | PRD-124 | Speech & TTS Repository | 1 | `done` | 2026-03-06 | Normalized speech text storage per character (speech_types lookup + character_speeches), CRUD API, Speech tab in Character Detail page, bulk CSV/JSON import/export, read-only VoiceID display. Deps: PRD-00, PRD-01, PRD-29, PRD-112. |
 | PRD-125 | LLM-Driven Metadata Refinement Pipeline | 1 | `done` | 2026-03-06 | LLM formatting/enrichment of Bio+ToV, iterative fix_metadata.py execution loop, diff-based approval, outdated dependency chain, source file protection. Deps: PRD-009, PRD-013, PRD-014, PRD-066, PRD-113. |
+| PRD-133 | Metadata Version Approval | 1 | `done` | 2026-03-13 | Migration (4 columns), approve/reject/unapprove handlers, reviewer authorization, readiness criterion, delivery gate, frontend approval badges. Amendment A.1 (2026-03-14): unapprove action. |
 
 ## Part 3: Generation & Pipeline Core
 
 | PRD | Title | Priority | Status | Owner | Notes |
 |-----|-------|----------|--------|-------|-------|
 | PRD-76 | Character Identity Embedding | — | `done` | 2026-02-22 | 4 migrations (embedding_statuses, character columns, detected_faces, history), core module (12 tests), 9 repo methods, 5 API endpoints, frontend components (11 tests). |
-| PRD-21 | Source Image Management & Variant Generation | — | `done` | 2026-02-21 | Variant lifecycle, hero selection, external edit loop, provenance tracking, variant gallery UI. |
+| PRD-21 | Source Image Management & Variant Generation | — | `done` | 2026-02-21 | Variant lifecycle, hero selection, external edit loop, provenance tracking, variant gallery UI. Amendment A.1 (2026-03-13): unapprove action for image variants. |
 | PRD-22 | Source Image Quality Assurance | — | `done` | 2026-02-20 | 3 DB tables (qa_check_types, image_quality_scores, image_qa_thresholds), 3 repos, 6 API handlers (/qa/*), 3 Python QA scripts (resolution/format, face detection, image quality), QA runner via subprocess. Post-MVP: likeness comparison (PRD-76), batch validation, frontend components. |
 | PRD-23 | Scene Type Configuration | — | `done` | 2026-02-22 | Migration (11 new columns), core module (prompt resolver, validation, 21 tests), 3 API endpoints (preview_prompt, generate_matrix, validate), frontend feature (SceneTypeEditor, PromptTemplateEditor, SceneMatrixView, 11 tests), DRY fixes (4 resolved, 4 watch). |
 | PRD-24 | Recursive Video Generation Loop | — | `done` | 2026-02-22 | 2 migrations (segment+scene generation state), core module (21 tests), generation DTOs, extended segment/scene repos, 4 API endpoints, frontend progress bar + boundary scrubber (9 tests). DRY-237 to DRY-245 audited. |
@@ -127,12 +128,12 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-103 | Character Face Contact Sheet | — | `done` | 2026-02-28 | Migration, core (15 tests), models, repo, handlers, routes, frontend (grid, controls, page), 10 tests |
 | PRD-111 | Scene Catalog & Track Management | 1 | `done` | 2026-02-26 | 6 migrations, 4 models, 4 repos (three-level inheritance), 4 handlers, 12 frontend components, 13 tests. Replaces variant_applicability with normalized tracks. |
 | PRD-115 | Generation Strategy & Workflow Prompt Management | 1 | `done` | 2026-02-28 | Migration (6 table changes), 5 models, 5 repos, core prompt resolution engine (13 unit tests), 13 API handlers, 5 routers, 7 frontend components, 13 hooks, 22 frontend tests. |
-| PRD-107 | Character Readiness & State View | — | `done` | 2026-02-23 | Migrations 000030-000031, core readiness module (criteria evaluation, cache), API handlers (CRUD + batch evaluate), frontend feature (ReadinessStateBadge, CriteriaEditor, SummaryBar), 18+ tests. |
+| PRD-107 | Character Readiness & State View | — | `done` | 2026-02-23 | Migrations 000030-000031, core readiness module (criteria evaluation, cache), API handlers (CRUD + batch evaluate), frontend feature (ReadinessStateBadge, CriteriaEditor, SummaryBar), 18+ tests. Amendment A.1 (2026-03-14): readiness % requires metadata approval. |
 | PRD-108 | Character Settings Dashboard | — | `done` | 2026-02-23 | Core character_dashboard module (settings merge, label builders), API handlers (get_dashboard, patch_settings), frontend feature (CharacterDashboard, MetadataSummarySection, PipelineSettingsEditor), 27 tests. |
 | PRD-120 | Scene & Workflow Naming Hierarchy (Generation Script) | — | `done` | 2026-03-01 | Python generation script only. Three-level hierarchy (WORKFLOWS, SCENE_TYPES, derived SCENES), display names in all output, dual-level filtering (type + scene), --list-scenes flag, 26 unit tests. Independent of web app. |
 | PRD-123 | Scene Catalog & Scene Types Unification | 1 | `done` | — | Absorbs scene_catalog into scene_types. Adds slug + has_clothes_off_transition to scene_types, creates scene_type_tracks junction, migrates project_scene_settings and character_scene_overrides FKs, drops scene_catalog tables, unifies frontend to single "Scene Catalog" page. |
 | PRD-127 | ComfyUI Output Handling & Artifact Storage | 1 | `done` | 2026-03-06 | Migration (scene_video_version_artifacts), artifact model/repo, output_classifier module (node title convention `[final]`/`[intermediate]`, positional fallback, 7 tests), snapshot builder (2 tests), version_creator, extended completion_handler for multi-output download, generation_snapshot on CreateSceneVideoVersion, artifacts API endpoint, frontend ArtifactTimeline component in ClipCard. Supports all 3 workflow patterns (multi-segment, single-output, single+intermediates). Deps: PRD-005, PRD-024, PRD-001. |
-| PRD-128 | Character Readiness Indicators | 1 | `done` | 2026-03-06 | 4 color-coded circle icons (metadata, images, scenes, speech) on project character cards. Added `has_voice_id` to deliverable SQL, frontend `computeSectionReadiness()` pure function, `ReadinessIndicators` component with tooltips and click-to-navigate. No new endpoint — extends existing character-deliverables data. Deps: PRD-112, PRD-108. |
+| PRD-128 | Character Readiness Indicators | 1 | `done` | 2026-03-06 | 4 color-coded circle icons (metadata, images, scenes, speech) on project character cards. Added `has_voice_id` to deliverable SQL, frontend `computeSectionReadiness()` pure function, `ReadinessIndicators` component with tooltips and click-to-navigate. No new endpoint — extends existing character-deliverables data. Deps: PRD-112, PRD-108. Amendment A.1 (2026-03-14): character thumbnail tooltip on character name hover. |
 | PRD-129 | Character Review Allocation | 1 | `done` | 2026-03-08 | Enterprise character-level review gate with manual assignment and round-robin allocation with load balancing. 4 new DB tables (statuses, assignments, decisions, audit_log) + 2 column additions. Round-robin engine in core crate (pure logic, unit tested). 12 API handlers covering full lifecycle: assign, auto-allocate (preview/execute), start review, approve/reject, rework, re-queue. Frontend: ReviewStatusBadge, MyReviewsPage (reviewer queue), CharacterReviewControls (sticky footer), CharacterReviewAuditLog (timeline), AssignmentDashboard (admin workload), ProjectAuditLogPanel with CSV export. Integrated into CharacterDetailPage with Review tab. Deps: PRD-112, PRD-092. |
 | PRD-130 | Unified Cloud & ComfyUI Orchestration | 1 | `done` | 2026-03-10 | Unifies PodOrchestrator (env-based, single pod, SSH startup) with cloud provider DB infrastructure (multi-provider, multi-pod). Moves all RunPod config from .env to cloud_providers.settings JSONB, auto-seeds from env on first boot, automates full lifecycle (provision → SSH startup → ComfyUI verify → WebSocket connect → queue distribution → teardown), multi-instance support, auto-scaling with full lifecycle hooks, admin CRUD API for providers, FK linking comfyui_instances to cloud_instances. Deps: PRD-02, PRD-05, PRD-114. |
 | PRD-131 | Infrastructure Control Panel | 1 | `done` | 2026-03-10 | Unified operational dashboard for all cloud instances and ComfyUI connections. Replaces split Infrastructure Panel + Cloud GPU Dashboard. Bulk operations (start/stop/terminate multiple), orphan detection & cleanup (cloud orphans, DB orphans, ComfyUI orphans), failed connection recovery (restart ComfyUI, force reconnect, reset state), inline provider management, instance provisioning wizard, curated activity logging, embedded activity console. Deps: PRD-02, PRD-05, PRD-114, PRD-130. |
@@ -142,7 +143,7 @@ Source of truth: [`design/design.md`](../design.md)
 
 | PRD | Title | Priority | Status | Owner | Notes |
 |-----|-------|----------|--------|-------|-------|
-| PRD-29 | Design System & Shared Component Library | — | `done` | 2026-02-20 | Token system (4 themes + high-contrast, Primer palette), 25 components, ThemeProvider, 25 Storybook stories, 76 tests. All deferred phases complete: Phase 1 (theme DB+API), Phase 7 (admin token editor at /admin/themes), Phase 8.1 (API persistence via useThemePersistence), Primer reskin applied. |
+| PRD-29 | Design System & Shared Component Library | — | `done` | 2026-02-20 | Token system (4 themes + high-contrast, Primer palette), 25 components, ThemeProvider, 25 Storybook stories, 76 tests. All deferred phases complete: Phase 1 (theme DB+API), Phase 7 (admin token editor at /admin/themes), Phase 8.1 (API persistence via useThemePersistence), Primer reskin applied. Amendment A.1 (2026-03-14): Tooltip viewport-aware auto-flip. |
 | PRD-30 | Modular Layout & Panel Management | — | `done` | 2026-02-21 | Panel system, snap grid, resize, view module registry, presets, role defaults, 22 tests. |
 | PRD-31 | Command Palette & Navigation (Cmd+K) | — | `done` | 2026-02-22 | 1 migration (user_recent_items), core module (12 tests), repo, 4 API endpoints, CommandRegistry class, frecency scorer, frontend palette (11 tests). DRY-227 to DRY-236 audited. |
 | PRD-32 | Progressive Disclosure & UX Intelligence | — | `done` | 2026-02-21 | AdvancedDrawer, focus mode, parameter visibility, proficiency tracking, 13 tests. |
@@ -151,7 +152,7 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-53 | First-Run Experience & Onboarding | — | `done` | 2026-02-21 | User onboarding state, guided tours, contextual hints, checklist, onboarding gate, 10 core tests. DRY-191 to DRY-200 audited. |
 | PRD-54 | Background Job Tray | — | `done` | — | |
 | PRD-82 | Content Sensitivity Controls | — | `done` | 2026-02-28 | Migration (2 tables), core module (blur level enforcement, 7 tests), model/repo (upsert pattern), 4 API endpoints (user+admin), frontend provider (context+localStorage+API sync), BlurredMedia component, WatermarkOverlay, ScreenShareMode (Ctrl+Shift+S shortcut), admin defaults UI, 18 frontend tests. DRY-453 to DRY-459 watch. |
-| PRD-112 | Project Hub & Management | 1 | `done` | 2026-02-27 | 2 migrations (character_groups, group_id FK), character group model/repo/handlers, project stats endpoint, 25 frontend files (project list, detail with 6 tabs, character workstation with 6 tabs, 3 TanStack Query hook files). Amendments A.1–A.5 (2026-03-06): Queue Outstanding modal with blocking reasons, Force Override toggle, archived exclusion from pipeline, show/hide disabled toggle, breadcrumb auto-scroll to group. |
+| PRD-112 | Project Hub & Management | 1 | `done` | 2026-02-27 | 2 migrations (character_groups, group_id FK), character group model/repo/handlers, project stats endpoint, 25 frontend files (project list, detail with 6 tabs, character workstation with 6 tabs, 3 TanStack Query hook files). Amendments A.1–A.5 (2026-03-06): Queue Outstanding modal with blocking reasons, Force Override toggle, archived exclusion from pipeline, show/hide disabled toggle, breadcrumb auto-scroll to group. Amendment A.6 (2026-03-14): character thumbnail tooltip on deliverables grid. |
 | PRD-117 | System Status Footer Bar | 1 | `done` | 2026-02-27 | HealthAggregator background service, status handler, 7 frontend components (StatusFooter, FooterSegment, ServiceHealth, CloudGpu, Job, Workflow, Collapsed). |
 | PRD-118 | Live Activity Console & Logging System | — | `done` | 2026-02-27 | 1 migration (4 tables), core types, ActivityLogBroadcaster, custom tracing::Layer, batch persistence/retention services, WebSocket handler, REST endpoints, Zustand store, dual-mode UI (panel + page). |
 | PRD-126 | Critical Bug Fixes & UX Polish | 1 | `done` | — | 5 bug fixes (import timeout, Select All, empty versions, UTF-8 metadata, DnD groups), 5 UX polish (ignore toggle, show disabled, breadcrumb scroll, header consolidation, wider inputs), 3 import validation fixes (filename mismatch, skip guard, race condition). |
@@ -175,7 +176,7 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-95 | Production Notes & Internal Comments | — | `done` | 2026-02-23 | Phase 7 |
 | PRD-96 | Poster Frame & Thumbnail Selection | — | `done` | 2026-02-28 | Migration, core module (6 tests), model/repo/handler/routes, 6 frontend components (EntityPoster shared), 16 frontend tests. DRY-442 to DRY-450 audited. |
 | PRD-101 | Segment Regeneration Comparison | — | `done` | 2026-02-28 | Migration (segment_versions table), core module (score diff logic, 12 tests), model/repo extension (6 new methods), 4 API endpoints, 9 frontend components (dual sync, QA comparison, batch workflow), 18 frontend tests. DRY-451 fixed, DRY-446 to DRY-450 watch. |
-| PRD-121 | SVI Clip Management | 1 | `done` | 2026-03-01 | Migration (QA columns), model/DTO updates, soft-delete repo methods, 3 handlers (approve/reject/resume-from), clip_qa constants module, frontend ClipGallery + ClipCard + QA actions + 3 dialogs + useClipManagement hook. DRY-627 to DRY-634 audited. |
+| PRD-121 | SVI Clip Management | 1 | `done` | 2026-03-01 | Migration (QA columns), model/DTO updates, soft-delete repo methods, 3 handlers (approve/reject/resume-from), clip_qa constants module, frontend ClipGallery + ClipCard + QA actions + 3 dialogs + useClipManagement hook. DRY-627 to DRY-634 audited. Amendments A.1–A.3 (2026-03-14): newer-than-final blue dot indicator, GenerationSnapshotPanel shared component, clickable workflow link with auto-select. |
 
 ## Part 6: Production & Hand-off
 
@@ -232,9 +233,9 @@ Source of truth: [`design/design.md`](../design.md)
 
 | File | Purpose |
 |------|---------|
-| [`design/tasks/`](../tasks/) | Task list files for each PRD (119 files) |
+| [`design/tasks/`](../tasks/) | Task list files for each PRD |
 | [`DRY-TRACKER.md`](./DRY-TRACKER.md) | Components and patterns under DRY watch — check before implementing |
-| [`design/prds/`](../prds/) | Individual PRD specification files (119 files) |
+| [`design/prds/`](../prds/) | Individual PRD specification files (134 files) |
 | [`design/design.md`](../design.md) | Master specification document |
 
 ---
@@ -270,3 +271,5 @@ Source of truth: [`design/design.md`](../design.md)
 | 2026-03-10 | Added PRD-130 (Unified Cloud & ComfyUI Orchestration). Unifies PodOrchestrator with cloud provider DB infrastructure. Moves config from .env to DB, full pod lifecycle automation (provision → SSH → ComfyUI → WebSocket → queue), multi-instance, auto-scaling with lifecycle hooks, admin provider CRUD. Deps: PRD-02, PRD-05, PRD-114. Total PRDs: 130 + 15 MAYBEs = 145. |
 | 2026-03-10 | Added PRD-131 (Infrastructure Control Panel). Unified operational dashboard replacing split Infrastructure Panel + Cloud GPU Dashboard. Bulk ops, orphan detection & cleanup, failed connection recovery, inline provider management, provisioning wizard. Deps: PRD-02, PRD-05, PRD-114, PRD-130. Total PRDs: 131 + 15 MAYBEs = 146. |
 | 2026-03-10 | Added PRD-132 (Queue Manager & Intelligent Job Allocation). Full queue visibility, ComfyUI-integrated cancellation, job reassignment, worker drain mode, load-aware allocation, admin queue manipulation (hold, move-to-front, bulk cancel), queue stats dashboard. Deps: PRD-07, PRD-08, PRD-05, PRD-46. Total PRDs: 132 + 15 MAYBEs = 147. |
+| 2026-03-13 | Added + implemented PRD-133 (Metadata Version Approval). Formal approval workflow for character metadata versions with reviewer authorization, readiness criterion, delivery gate, unapprove action. Total PRDs: 133 + 15 MAYBEs = 148. |
+| 2026-03-14 | Amended 10 PRDs to document post-implementation changes: PRD-015 (video file purge), PRD-021 (unapprove image variants), PRD-029 (tooltip auto-flip), PRD-107 (readiness requires metadata approval), PRD-109 (newer-than-final, file_purged, snapshot backfill), PRD-112 (character thumbnail tooltip), PRD-113 (import hash dedup), PRD-121 (blue dot indicator, snapshot panel, workflow link), PRD-128 (thumbnail on name hover), PRD-133 (unapprove action). |

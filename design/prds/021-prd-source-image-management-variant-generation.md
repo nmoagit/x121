@@ -120,3 +120,21 @@ This check is **blocking** — no PR should be merged without a DRY-GUY audit of
 
 ## 12. Version History
 - **v1.0** (2026-02-18): Initial PRD generation from master specification
+- **v1.1** (2026-03-13): Amendment — Unapprove action for image variants (Req A.1).
+
+---
+
+## Amendment (2026-03-13): Unapprove Action for Image Variants
+
+### Requirement A.1: Unapprove Image Variant
+
+**Description:** Allow reverting an approved or rejected image variant back to pending status. This supports workflows where a previously approved variant needs to be reconsidered (e.g., after discovering an issue, or when a better variant is available).
+
+**Acceptance Criteria:**
+- [ ] `PUT /api/v1/characters/{character_id}/variants/{variant_id}/unapprove` endpoint
+- [ ] Validates current status is `approved` or `rejected` before allowing unapproval
+- [ ] Sets variant status to `pending` (for variants that were never generated, like imported ones) or `generated` (for variants that went through the generation pipeline)
+- [ ] Clears hero flag on unapproved variant if it was the hero
+- [ ] Returns the updated variant record
+- [ ] Frontend provides an "Unapprove" button (RotateCcw icon) on approved/rejected variants
+- [ ] Status correctly reverts to `pending` for imported variants (not `generated`)

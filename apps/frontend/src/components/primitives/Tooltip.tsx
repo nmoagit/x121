@@ -28,7 +28,10 @@ export const PLACEMENT_CLASSES: Record<Placement, string> = {
 
 const TOOLTIP_GAP = 8;
 
-function computePosition(rect: DOMRect, side: Placement): { top: number; left: number } {
+/** Estimated tooltip height for overflow detection (px). */
+const ESTIMATED_TOOLTIP_HEIGHT = 160;
+
+function rawPosition(rect: DOMRect, side: Placement): { top: number; left: number } {
   switch (side) {
     case "top":
       return { top: rect.top - TOOLTIP_GAP, left: rect.left + rect.width / 2 };
@@ -41,6 +44,36 @@ function computePosition(rect: DOMRect, side: Placement): { top: number; left: n
   }
 }
 
+/** Compute position with automatic flip when the tooltip would overflow the viewport. */
+function computePosition(
+  rect: DOMRect,
+  side: Placement,
+): { top: number; left: number; resolvedSide: Placement } {
+  const pos = rawPosition(rect, side);
+  const vh = window.innerHeight;
+  const vw = window.innerWidth;
+
+  let resolvedSide = side;
+
+  // Check if the tooltip overflows and flip if needed
+  if (side === "bottom" && pos.top + ESTIMATED_TOOLTIP_HEIGHT > vh) {
+    resolvedSide = "top";
+  } else if (side === "top" && pos.top - ESTIMATED_TOOLTIP_HEIGHT < 0) {
+    resolvedSide = "bottom";
+  } else if (side === "right" && pos.left + ESTIMATED_TOOLTIP_HEIGHT > vw) {
+    resolvedSide = "left";
+  } else if (side === "left" && pos.left - ESTIMATED_TOOLTIP_HEIGHT < 0) {
+    resolvedSide = "right";
+  }
+
+  if (resolvedSide !== side) {
+    const flipped = rawPosition(rect, resolvedSide);
+    return { ...flipped, resolvedSide };
+  }
+
+  return { ...pos, resolvedSide };
+}
+
 const TRANSFORM: Record<Placement, string> = {
   top: "translate(-50%, -100%)",
   bottom: "translate(-50%, 0)",
@@ -50,7 +83,7 @@ const TRANSFORM: Record<Placement, string> = {
 
 export function Tooltip({ content, children, side = "top", delay = DEFAULT_DELAY }: TooltipProps) {
   const [visible, setVisible] = useState(false);
-  const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
+  const [pos, setPos] = useState<{ top: number; left: number; resolvedSide: Placement } | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const triggerRef = useRef<HTMLSpanElement>(null);
 
@@ -97,7 +130,7 @@ export function Tooltip({ content, children, side = "top", delay = DEFAULT_DELAY
             position: "fixed",
             top: pos.top,
             left: pos.left,
-            transform: TRANSFORM[side],
+            transform: TRANSFORM[pos.resolvedSide],
             zIndex: 9999,
           }}
           className={cn(

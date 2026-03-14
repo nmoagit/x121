@@ -224,3 +224,21 @@ Both endpoints require the authenticated user to be the assigned reviewer for th
 ## 11. Version History
 
 - **v1.0** (2026-03-13): Initial PRD creation
+- **v1.1** (2026-03-14): Amendment — Unapprove action for metadata versions (Req A.1).
+
+---
+
+## Amendment (2026-03-14): Unapprove Action for Metadata Versions
+
+### Requirement A.1: Unapprove Metadata Version
+
+**Description:** Allow reverting an approved or rejected metadata version back to pending status. This supports workflows where a previously approved version needs reconsideration — for example, when the underlying data changes or an error is discovered after approval.
+
+**Acceptance Criteria:**
+- [ ] `POST /characters/{character_id}/metadata-versions/{version_id}/unapprove` endpoint
+- [ ] Resets `approval_status` to `pending`, clears `approved_by` and `approved_at`
+- [ ] Returns the updated `CharacterMetadataVersion` record
+- [ ] Frontend provides an "Unapprove" button (RotateCcw icon) on approved and rejected versions
+- [ ] Button is only visible to the assigned reviewer
+- [ ] Unapproving triggers re-evaluation of character readiness (metadata section reverts to partial/pending)
+- [ ] Action is logged to `character_review_audit_log` with action `metadata_unapproved`

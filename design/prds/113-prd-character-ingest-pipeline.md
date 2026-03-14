@@ -335,3 +335,21 @@ This check is **blocking** — no PR should be merged without a DRY-GUY audit of
 
 ## 12. Version History
 - **v1.0** (2026-02-24): Initial PRD creation
+- **v1.1** (2026-03-14): Amendment — Import hash deduplication (Req A.1).
+
+---
+
+## Amendment (2026-03-14): Import Hash Deduplication
+
+### Requirement A.1: SHA-256 File Hash Deduplication on Import
+
+**Description:** During character import (folder or file upload), compute SHA-256 hashes of incoming files and compare against hashes of existing files in the project to detect duplicates. This prevents re-importing the same assets and gives users the option to import only new files.
+
+**Acceptance Criteria:**
+- [ ] SHA-256 hash is computed for each imported file during the scan/preview phase
+- [ ] Hashes are compared against existing files in the target project/character
+- [ ] Import preview shows duplicate detection results: `{ totalFiles, newFiles, duplicateFiles, isHashing }`
+- [ ] `ImportConfirmModal` displays an "Import New Only ({count})" button when duplicates are detected
+- [ ] "Import New Only" button is disabled when `newFiles === 0`
+- [ ] Hash computation runs client-side for fast preview without server round-trips
+- [ ] Duplicate files are visually distinguished in the import preview (e.g., strikethrough or muted)

@@ -105,3 +105,27 @@ This check is **blocking** — no PR should be merged without a DRY-GUY audit of
 
 ## 12. Version History
 - **v1.0** (2026-02-18): Initial PRD generation from master specification
+- **v1.1** (2026-03-14): Amendment — Video file purge with DB record preservation (Req A.1).
+
+---
+
+## Amendment (2026-03-14): Video File Purge with DB Record Preservation
+
+### Requirement A.1: Selective File Purge for Video Clips
+
+**Description:** Add the ability to purge video files from disk for specific scene video versions while preserving all DB records (metadata, generation snapshots, QA history, annotations). This extends the existing trash/reclamation system with a targeted purge capability that does not require soft-deleting the entity.
+
+**Acceptance Criteria:**
+- [ ] New `file_purged BOOLEAN NOT NULL DEFAULT false` column on `scene_video_versions` table
+- [ ] New `file_purged BOOLEAN NOT NULL DEFAULT false` column on `scene_video_version_artifacts` table
+- [ ] `POST /api/v1/admin/reclamation/purge-clips` endpoint accepts `{ version_ids: DbId[] }`
+- [ ] For each version: deletes main video file, preview file, and artifact files from disk via `StorageProvider::delete()`
+- [ ] Sets `file_purged = true` on version and its artifacts after successful file deletion
+- [ ] Already-missing files are treated as non-errors (idempotent purge)
+- [ ] Returns `{ purged_count, bytes_reclaimed, errors }` summary
+- [ ] Admin-only endpoint (RequireAdmin guard)
+- [ ] Video streaming handler returns `410 Gone` for purged clips instead of attempting to read a missing file
+- [ ] Frontend `ClipCard` shows "Purged" badge and disables playback overlay when `file_purged` is true
+- [ ] Frontend `ClipPlaybackModal` shows informational message instead of `VideoPlayer` for purged clips
+- [ ] Generation snapshot panel remains functional for purged clips (metadata is preserved in DB)
+- [ ] Browse clips handler (`/scene-video-versions/browse`) includes `file_purged` field in response

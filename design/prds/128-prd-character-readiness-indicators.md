@@ -190,3 +190,20 @@ None — all design decisions resolved during pre-PRD discussion.
 ## 11. Version History
 
 - **v1.0** (2026-03-06): Initial PRD creation
+- **v1.1** (2026-03-14): Amendment — Character thumbnail tooltip on character name hover (Req A.1).
+
+---
+
+## Amendment (2026-03-14): Character Thumbnail Tooltip on Character Name Hover
+
+### Requirement A.1: Hero Image Thumbnail on Character Name Hover
+
+**Description:** In the deliverables grid (readiness table and matrix), hovering over a character name shows a thumbnail preview of their hero variant image. This complements the readiness indicators with visual character identification.
+
+**Acceptance Criteria:**
+- [ ] Character names in the deliverables grid are wrapped in a `CharacterNameWithThumb` component
+- [ ] On hover, a `Tooltip` shows a 128px × 128px rounded thumbnail of the character's hero variant
+- [ ] Uses `variantThumbnailUrl(heroVariantId, 256)` for the image source
+- [ ] Characters without a `hero_variant_id` show the name without a tooltip
+- [ ] Tooltip delay is 150ms with `side="bottom"` (auto-flips per PRD-029 Amendment A.1)
+- [ ] `hero_variant_id` is provided by the backend `list_deliverable_status` LATERAL join (see PRD-112 Amendment A.6)

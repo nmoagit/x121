@@ -304,6 +304,7 @@ CREATE INDEX idx_scene_video_versions_scene_id
 
 - **v1.0** (2026-02-20): Initial PRD creation
 - **v1.1** (2026-03-06): Amendment — Requirements gap fill (Reqs A.1-A.3).
+- **v1.2** (2026-03-14): Amendment — Newer-than-final indicator, file purge tracking, snapshot backfill (Reqs A.4-A.6).
 
 ---
 
@@ -369,3 +370,40 @@ The following requirements were identified during a stakeholder requirements rev
 - Add file existence and size validation in `SceneVideoVersionRepo::create_as_final` and the `import_video` handler
 - Extend `DeliveryValidator` (PRD-039) to include file size checks on final versions
 - Consider a background job for periodic integrity checks (post-MVP)
+
+---
+
+## Amendment (2026-03-14): Newer-than-Final Indicator, File Purge Tracking & Snapshot Backfill
+
+### Requirement A.4: Newer-than-Final Indicator
+
+**Description:** Add a computed `has_newer_than_final` boolean to scene list responses. This indicates when a scene has video versions generated after the one currently marked as final, helping users identify scenes where the final selection may be outdated.
+
+**Acceptance Criteria:**
+- [ ] `has_newer_than_final` is computed via LATERAL subquery in the scene list query
+- [ ] Returns `true` only when: (a) at least one version is marked final, AND (b) there exists a non-deleted version with a higher `version_number` than the highest final version
+- [ ] Included in the `SceneWithVersion` response struct
+- [ ] Frontend `Scene` type includes `has_newer_than_final: boolean`
+- [ ] UI renders a blue dot indicator at bottom-right of the scene card's video thumbnail when true
+- [ ] Indicator includes a tooltip: "Newer clips exist after the final version"
+
+### Requirement A.5: File Purge Tracking
+
+**Description:** Add a `file_purged` boolean to `scene_video_versions` and `scene_video_version_artifacts` to track when video files have been deleted from disk while preserving the DB record. See also PRD-015 Amendment A.1.
+
+**Acceptance Criteria:**
+- [ ] `file_purged BOOLEAN NOT NULL DEFAULT false` column on `scene_video_versions`
+- [ ] `file_purged BOOLEAN NOT NULL DEFAULT false` column on `scene_video_version_artifacts`
+- [ ] Backend model structs include `pub file_purged: bool`
+- [ ] Frontend type interfaces include `file_purged: boolean`
+- [ ] Helper function `isPurgedClip(clip)` returns `clip.file_purged`
+
+### Requirement A.6: Generation Snapshot Backfill
+
+**Description:** Backfill `generation_snapshot` for existing generated clips that were created before Requirement A.1 (workflow snapshot preservation) was implemented. The backfill reconstructs snapshot data from existing workflow, prompt slot, and scene type relationships.
+
+**Acceptance Criteria:**
+- [ ] Migration reconstructs snapshots for all `source = 'generated'` versions where `generation_snapshot IS NULL` or contains `backfilled: true`
+- [ ] Snapshot includes: `scene_type`, `workflow` (name), `clip_position`, `seed_image`, `segment_index`, `prompts` (with unique keys using `slot_label [node_id]`), `generation_params`, `lora_config`, `comfyui_instance_id`, `generated_at`, `backfilled: true`
+- [ ] Backfilled snapshots are marked with `"backfilled": true` to distinguish from real-time snapshots
+- [ ] Prompt aggregation uses `slot_label || ' [' || node_id || ']'` as key to prevent duplicate key collision in `jsonb_object_agg`
