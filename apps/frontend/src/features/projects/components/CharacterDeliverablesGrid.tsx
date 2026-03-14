@@ -35,17 +35,17 @@ function CharacterNameWithThumb({ name, heroVariantId }: { name: string; heroVar
   if (!heroVariantId) return <>{name}</>;
   return (
     <Tooltip
-      side="right"
-      delay={200}
+      side="bottom"
+      delay={150}
       content={
         <img
           src={variantThumbnailUrl(heroVariantId, 256)}
           alt={name}
-          className="h-32 w-32 rounded-[var(--radius-md)] object-cover"
+          className="block h-32 w-32 rounded-[var(--radius-md)] object-cover"
         />
       }
     >
-      <span>{name}</span>
+      <span className="cursor-default">{name}</span>
     </Tooltip>
   );
 }
