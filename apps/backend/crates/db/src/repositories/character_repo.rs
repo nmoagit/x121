@@ -446,7 +446,9 @@ impl CharacterRepo {
                 -- Metadata/images: 0 or 1 (binary).
                 -- Scenes: ratio of approved to total (proportional progress).
                 ROUND(
-                    ((CASE WHEN COALESCE(meta.has_active, false) THEN 1.0 ELSE 0.0 END
+                    ((CASE WHEN COALESCE(meta.has_active, false)
+                               AND COALESCE(meta.approval_status, 'pending') = 'approved'
+                          THEN 1.0 ELSE 0.0 END
                     + CASE WHEN COALESCE(img.total, 0) > 0
                            THEN COALESCE(img.approved, 0)::numeric / img.total
                            ELSE 0.0 END

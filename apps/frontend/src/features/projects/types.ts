@@ -310,7 +310,9 @@ export function computeSectionReadiness(
   row: CharacterDeliverableRow,
 ): Record<SectionKey, SectionReadiness> {
   const metadata: SectionReadiness = row.has_active_metadata
-    ? { state: "complete", label: "Metadata", tooltip: "Metadata: Complete" }
+    ? row.metadata_approval_status === "approved"
+      ? { state: "complete", label: "Metadata", tooltip: "Metadata: Approved" }
+      : { state: "partial", label: "Metadata", tooltip: `Metadata: ${row.metadata_approval_status === "rejected" ? "Rejected" : "Pending approval"}` }
     : { state: "not_started", label: "Metadata", tooltip: "Metadata: Not started" };
 
   const images: SectionReadiness =
