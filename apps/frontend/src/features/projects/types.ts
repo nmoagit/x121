@@ -72,6 +72,7 @@ export interface CharacterDeliverableRow {
   has_voice_id: boolean;
   blocking_reasons: string[];
   readiness_pct: number;
+  hero_variant_id: number | null;
 }
 
 /* --------------------------------------------------------------------------

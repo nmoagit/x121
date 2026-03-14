@@ -10,6 +10,8 @@
 
 import { useState, useMemo } from "react";
 import { Badge, Spinner, TabBar, Toggle } from "@/components/primitives";
+import { Tooltip } from "@/components/primitives/Tooltip";
+import { variantThumbnailUrl } from "@/features/images/utils";
 import { useNavigate } from "@tanstack/react-router";
 import { useCharacterDeliverables, useBatchSceneAssignments, useBatchVariantStatuses } from "../hooks/use-character-deliverables";
 import type { BatchSceneAssignment, BatchVariantStatus } from "../hooks/use-character-deliverables";
@@ -24,6 +26,29 @@ import type { EnabledSceneTypeEntry } from "@/features/production/types";
 import { readinessPctToVariant } from "@/features/readiness/types";
 import { metadataApprovalBadgeVariant, METADATA_APPROVAL_LABEL } from "@/features/characters/types";
 import { cn } from "@/lib/cn";
+
+/* --------------------------------------------------------------------------
+   Character name with thumbnail tooltip
+   -------------------------------------------------------------------------- */
+
+function CharacterNameWithThumb({ name, heroVariantId }: { name: string; heroVariantId: number | null }) {
+  if (!heroVariantId) return <>{name}</>;
+  return (
+    <Tooltip
+      side="right"
+      delay={200}
+      content={
+        <img
+          src={variantThumbnailUrl(heroVariantId, 256)}
+          alt={name}
+          className="h-32 w-32 rounded-[var(--radius-md)] object-cover"
+        />
+      }
+    >
+      <span>{name}</span>
+    </Tooltip>
+  );
+}
 
 /* --------------------------------------------------------------------------
    Readiness tab (existing table)
@@ -42,7 +67,7 @@ function DeliverableRow({ row, onClick }: RowProps) {
       onClick={onClick}
     >
       <td className="px-3 py-2 text-sm font-medium text-[var(--color-text-primary)]">
-        {row.name}
+        <CharacterNameWithThumb name={row.name} heroVariantId={row.hero_variant_id} />
       </td>
       <td className="px-3 py-2 text-sm text-[var(--color-text-secondary)]">
         {row.images_approved}/{row.images_count}
@@ -451,7 +476,7 @@ function MatrixTab({ rows, projectId }: MatrixTabProps) {
                     search: { tab: undefined, scene: undefined },
                   })}
                 >
-                  {row.name}
+                  <CharacterNameWithThumb name={row.name} heroVariantId={row.hero_variant_id} />
                 </button>
               </td>
               {columns.map((col) => {

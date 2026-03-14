@@ -84,6 +84,7 @@ pub struct CharacterDeliverableRow {
     pub has_voice_id: bool,
     pub blocking_reasons: Vec<String>,
     pub readiness_pct: f64,
+    pub hero_variant_id: Option<DbId>,
 }
 
 /// A character row enriched with project context for the library browser.

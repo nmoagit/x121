@@ -456,7 +456,8 @@ impl CharacterRepo {
                            THEN COALESCE(sc.vid_approved, 0)::numeric / sc.total
                            ELSE 0.0 END
                     ) / 3.0 * 100)::numeric
-                , 1)::float8 AS readiness_pct
+                , 1)::float8 AS readiness_pct,
+                av.id AS hero_variant_id
              FROM characters c
              LEFT JOIN LATERAL (
                  SELECT
@@ -496,6 +497,20 @@ impl CharacterRepo {
                          LIMIT 1
                      ) AS approval_status
              ) meta ON true
+             LEFT JOIN LATERAL (
+                 SELECT iv.id
+                 FROM image_variants iv
+                 WHERE iv.character_id = c.id
+                   AND iv.deleted_at IS NULL
+                   AND iv.file_path IS NOT NULL
+                   AND (iv.is_hero = true OR iv.status_id = 2)
+                 ORDER BY
+                     iv.is_hero DESC,
+                     CASE WHEN lower(iv.variant_type) = 'clothed' THEN 0 ELSE 1 END,
+                     iv.status_id = 2 DESC,
+                     iv.id DESC
+                 LIMIT 1
+             ) av ON true
              WHERE c.project_id = $1 AND c.deleted_at IS NULL AND c.is_enabled = true
              ORDER BY c.name ASC",
         )
