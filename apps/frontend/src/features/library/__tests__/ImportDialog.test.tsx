@@ -18,6 +18,7 @@ const MOCK_CHARACTER: LibraryCharacter = {
   clip_count: 2,
   has_metadata: true,
   status_id: 1,
+  is_enabled: true,
   created_at: "2026-02-22T10:00:00Z",
 };
 

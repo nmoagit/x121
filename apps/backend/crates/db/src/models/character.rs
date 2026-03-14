@@ -30,6 +30,9 @@ pub struct Character {
     pub embedding_extracted_at: Option<Timestamp>,
     /// Review workflow status (PRD-129). References `character_review_statuses`.
     pub review_status_id: StatusId,
+    /// Whether this character is enabled for production workflows.
+    /// Disabled characters are hidden from deliverables, readiness, and browse pages.
+    pub is_enabled: bool,
 }
 
 /// A character row enriched with the best avatar variant ID.
@@ -54,6 +57,7 @@ pub struct CharacterWithAvatar {
     pub embedding_extracted_at: Option<Timestamp>,
     /// Review workflow status (PRD-129). References `character_review_statuses`.
     pub review_status_id: StatusId,
+    pub is_enabled: bool,
     /// The ID of the best avatar variant (hero clothed > hero any > approved clothed > approved any).
     /// `None` when the character has no suitable image variants.
     pub hero_variant_id: Option<DbId>,
@@ -99,6 +103,7 @@ pub struct LibraryCharacterRow {
     pub clip_count: i64,
     pub has_metadata: bool,
     pub status_id: StatusId,
+    pub is_enabled: bool,
     pub created_at: Timestamp,
 }
 

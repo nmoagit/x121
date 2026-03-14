@@ -905,6 +905,14 @@ function SceneCard({ slot, isSelected, onToggleSelect, onGenerate, onClickScene,
             </div>
           )}
 
+          {/* Newer-than-final indicator — bottom-right blue dot */}
+          {scene?.has_newer_than_final && (
+            <div
+              className="absolute bottom-[var(--spacing-2)] right-[var(--spacing-2)] h-3 w-3 rounded-full bg-[var(--color-action-primary)] ring-2 ring-[var(--color-surface-primary)]"
+              title="Newer clips exist after the final version"
+            />
+          )}
+
           {/* Segment progress overlay — bottom of video thumbnail */}
           {isGenerating && estimated > 0 && (
             <div className="absolute bottom-0 inset-x-0 bg-black/60 px-[var(--spacing-2)] py-[var(--spacing-1)]">

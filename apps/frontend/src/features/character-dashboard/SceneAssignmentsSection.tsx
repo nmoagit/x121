@@ -27,10 +27,13 @@ interface SceneAssignmentsSectionProps {
    Helpers
    -------------------------------------------------------------------------- */
 
-const STATUS_VARIANTS: Record<string, "success" | "warning" | "danger" | "default"> = {
+const STATUS_VARIANTS: Record<string, "success" | "warning" | "danger" | "default" | "info"> = {
   completed: "success",
   approved: "success",
   in_progress: "warning",
+  generating: "warning",
+  generated: "warning",
+  imported: "info",
   pending: "default",
   not_started: "default",
   failed: "danger",

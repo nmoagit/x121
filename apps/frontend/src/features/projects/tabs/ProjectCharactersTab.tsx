@@ -58,6 +58,7 @@ import {
   useCreateCharacter,
   useDeleteCharacter,
   useProjectCharacters,
+  useToggleCharacterEnabled,
   useUpdateCharacter,
 } from "../hooks/use-project-characters";
 import type { Character, CharacterGroup, SectionKey, SectionReadiness, UpdateCharacter } from "../types";
@@ -95,6 +96,7 @@ export function ProjectCharactersTab({ projectId, projectName, scrollToGroupId, 
   const deleteGroup = useDeleteGroup(projectId);
   const moveCharacter = useMoveCharacterToGroup(projectId);
   const charImport = useCharacterImport(projectId);
+  const toggleEnabled = useToggleCharacterEnabled(projectId);
   const groupExport = useExportGroupSettings();
   const groupImport = useConfigImport();
 
@@ -279,7 +281,7 @@ export function ProjectCharactersTab({ projectId, projectName, scrollToGroupId, 
 
     let filtered = [...characters];
     if (!showDisabled) {
-      filtered = filtered.filter((c) => c.status_id !== null);
+      filtered = filtered.filter((c) => c.is_enabled);
     }
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
@@ -327,6 +329,13 @@ export function ProjectCharactersTab({ projectId, projectName, scrollToGroupId, 
     }
     return entries;
   }, [filteredGroups, showUngrouped]);
+
+  const handleToggleEnabled = useCallback(
+    (charId: number, enabled: boolean) => {
+      toggleEnabled.mutate({ characterId: charId, isEnabled: enabled });
+    },
+    [toggleEnabled],
+  );
 
   /* --- group select all --- */
   const handleSelectAll = useCallback(
@@ -524,10 +533,10 @@ export function ProjectCharactersTab({ projectId, projectName, scrollToGroupId, 
           <Button
             size="sm"
             variant="secondary"
-            icon={showDisabled ? <Eye size={14} /> : <EyeOff size={14} />}
+            icon={showDisabled ? <EyeOff size={14} /> : <Eye size={14} />}
             onClick={toggleShowDisabled}
           >
-            {showDisabled ? "Show Disabled" : "Hide Disabled"}
+            {showDisabled ? "Hide Disabled" : "Show Disabled"}
           </Button>
           <Button
             size="sm"
@@ -639,6 +648,7 @@ export function ProjectCharactersTab({ projectId, projectName, scrollToGroupId, 
                     navigate({ to: `/projects/${projectId}/characters/${char.id}` })
                   }
                   onCharEdit={setEditingChar}
+                  onCharToggleEnabled={handleToggleEnabled}
                   onCharDragStart={handleCharDragStart}
                   onDragEnter={(e) => handleGroupDragEnter(e, group.id)}
                   onDragOver={handleGroupDragOver}
@@ -670,6 +680,7 @@ export function ProjectCharactersTab({ projectId, projectName, scrollToGroupId, 
                   navigate({ to: `/projects/${projectId}/characters/${char.id}` })
                 }
                 onCharEdit={setEditingChar}
+                onCharToggleEnabled={handleToggleEnabled}
                 onCharDragStart={handleCharDragStart}
                 onDragEnter={(e) => handleGroupDragEnter(e, "ungrouped")}
                 onDragOver={handleGroupDragOver}
@@ -844,6 +855,7 @@ export function ProjectCharactersTab({ projectId, projectName, scrollToGroupId, 
           detectedProjectName={charImport.importResult?.detectedProjectName}
           projectName={projectName}
           existingGroupNames={groups?.map((g) => g.name) ?? []}
+          hashSummary={charImport.hashSummary}
         />
       </Stack>
     </FileDropZone>
@@ -876,6 +888,7 @@ interface GroupSectionProps {
   onDelete?: () => void;
   onCharClick: (char: Character) => void;
   onCharEdit: (char: Character) => void;
+  onCharToggleEnabled: (charId: number, enabled: boolean) => void;
   onCharDragStart: (e: React.DragEvent, characterId: number) => void;
   onDragEnter: (e: React.DragEvent) => void;
   onDragOver: (e: React.DragEvent) => void;
@@ -904,6 +917,7 @@ function GroupSection({
   onDelete,
   onCharClick,
   onCharEdit,
+  onCharToggleEnabled,
   onCharDragStart,
   onDragEnter,
   onDragOver,
@@ -1017,6 +1031,7 @@ function GroupSection({
                     onSelect={onCharSelect}
                     onClick={() => onCharClick(c)}
                     onEdit={() => onCharEdit(c)}
+                    onToggleEnabled={onCharToggleEnabled}
                   />
                 </div>
               ))}

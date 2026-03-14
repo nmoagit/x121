@@ -7,7 +7,7 @@ use axum::extract::{Multipart, Path, State};
 use axum::http::StatusCode;
 use axum::Json;
 use x121_core::clip_qa::{
-    CLIP_QA_APPROVED, CLIP_QA_REJECTED, CLIP_SOURCE_IMPORTED, RESUME_STATUS_READY,
+    CLIP_QA_APPROVED, CLIP_QA_PENDING, CLIP_QA_REJECTED, CLIP_SOURCE_IMPORTED, RESUME_STATUS_READY,
 };
 use x121_core::error::CoreError;
 use x121_core::ffmpeg;
@@ -454,6 +454,59 @@ pub async fn reject_clip(
     Ok(Json(DataResponse { data: updated }))
 }
 
+/// PUT /api/v1/scenes/{scene_id}/versions/{id}/unapprove
+///
+/// Reverts an approved or rejected clip back to pending status.
+/// Updates the parent scene status accordingly.
+pub async fn unapprove_clip(
+    auth: AuthUser,
+    State(state): State<AppState>,
+    Path((scene_id, id)): Path<(DbId, DbId)>,
+) -> AppResult<Json<DataResponse<SceneVideoVersion>>> {
+    let version = ensure_version_exists(&state.pool, id).await?;
+
+    if version.qa_status != CLIP_QA_APPROVED && version.qa_status != CLIP_QA_REJECTED {
+        return Err(AppError::BadRequest(
+            "Clip must be approved or rejected to unapprove".to_string(),
+        ));
+    }
+
+    let update = UpdateSceneVideoVersion {
+        is_final: None,
+        notes: None,
+        qa_status: Some(CLIP_QA_PENDING.to_string()),
+        qa_reviewed_by: None,
+        qa_reviewed_at: None,
+        qa_rejection_reason: None,
+        qa_notes: None,
+    };
+
+    let updated = SceneVideoVersionRepo::update(&state.pool, id, &update)
+        .await?
+        .ok_or_else(|| {
+            AppError::Core(CoreError::NotFound {
+                entity: "SceneVideoVersion",
+                id,
+            })
+        })?;
+
+    // Re-evaluate parent scene status
+    let remaining = SceneVideoVersionRepo::list_by_scene(&state.pool, scene_id).await?;
+    let has_approved = remaining.iter().any(|v| v.qa_status == CLIP_QA_APPROVED);
+    let all_rejected = remaining.iter().all(|v| v.qa_status == CLIP_QA_REJECTED);
+
+    if has_approved {
+        SceneRepo::set_status(&state.pool, scene_id, SceneStatus::Approved.id()).await?;
+    } else if all_rejected {
+        SceneRepo::set_status(&state.pool, scene_id, SceneStatus::Rejected.id()).await?;
+    } else {
+        SceneRepo::set_status(&state.pool, scene_id, SceneStatus::Generated.id()).await?;
+    }
+
+    tracing::info!(user_id = auth.user_id, version_id = id, "Clip unapproved");
+    Ok(Json(DataResponse { data: updated }))
+}
+
 /// GET /api/v1/scenes/{scene_id}/versions/{id}/artifacts
 ///
 /// List all pipeline artifacts for a specific scene video version.
@@ -515,4 +568,107 @@ pub async fn resume_from_clip(
             status: RESUME_STATUS_READY.to_string(),
         },
     }))
+}
+
+// ---------------------------------------------------------------------------
+// Browse all clips across all characters/scenes
+// ---------------------------------------------------------------------------
+
+/// A clip row enriched with character/scene/project context for browsing.
+#[derive(Debug, serde::Serialize, sqlx::FromRow)]
+pub struct ClipBrowseItem {
+    // Video version fields
+    pub id: DbId,
+    pub scene_id: DbId,
+    pub version_number: i32,
+    pub source: String,
+    pub file_path: String,
+    pub file_size_bytes: Option<i64>,
+    pub duration_secs: Option<f64>,
+    pub width: Option<i32>,
+    pub height: Option<i32>,
+    pub frame_rate: Option<f64>,
+    pub preview_path: Option<String>,
+    pub is_final: bool,
+    pub qa_status: String,
+    pub qa_rejection_reason: Option<String>,
+    pub qa_notes: Option<String>,
+    pub generation_snapshot: Option<serde_json::Value>,
+    pub file_purged: bool,
+    pub created_at: chrono::DateTime<chrono::Utc>,
+    pub annotation_count: i64,
+    // Context fields
+    pub character_id: DbId,
+    pub character_name: String,
+    pub scene_type_name: String,
+    pub track_name: String,
+    pub character_is_enabled: bool,
+    pub project_id: DbId,
+    pub project_name: String,
+}
+
+/// GET /api/v1/scene-video-versions/browse
+///
+/// Returns all scene video versions with character/scene/project context,
+/// ordered by most recent first. Supports optional project_id filter.
+pub async fn browse_clips(
+    State(state): State<AppState>,
+    axum::extract::Query(params): axum::extract::Query<BrowseClipsParams>,
+) -> AppResult<Json<DataResponse<Vec<ClipBrowseItem>>>> {
+    let limit = params.limit.unwrap_or(200).min(500);
+    let offset = params.offset.unwrap_or(0);
+
+    let rows = sqlx::query_as::<_, ClipBrowseItem>(
+        "SELECT
+            svv.id,
+            svv.scene_id,
+            svv.version_number,
+            svv.source,
+            svv.file_path,
+            svv.file_size_bytes,
+            svv.duration_secs,
+            svv.width,
+            svv.height,
+            svv.frame_rate,
+            svv.preview_path,
+            svv.is_final,
+            svv.qa_status,
+            svv.qa_rejection_reason,
+            svv.qa_notes,
+            svv.generation_snapshot,
+            svv.file_purged,
+            svv.created_at,
+            COALESCE((SELECT COUNT(*) FROM frame_annotations fa WHERE fa.version_id = svv.id), 0) AS annotation_count,
+            c.id AS character_id,
+            c.name AS character_name,
+            COALESCE(st.name, '') AS scene_type_name,
+            COALESCE(t.name, '') AS track_name,
+            c.is_enabled AS character_is_enabled,
+            p.id AS project_id,
+            p.name AS project_name
+        FROM scene_video_versions svv
+        JOIN scenes sc ON sc.id = svv.scene_id AND sc.deleted_at IS NULL
+        JOIN characters c ON c.id = sc.character_id AND c.deleted_at IS NULL
+        JOIN projects p ON p.id = c.project_id AND p.deleted_at IS NULL
+        LEFT JOIN scene_types st ON st.id = sc.scene_type_id
+        LEFT JOIN tracks t ON t.id = sc.track_id
+        WHERE svv.deleted_at IS NULL
+          AND ($1::bigint IS NULL OR p.id = $1)
+        ORDER BY svv.created_at DESC
+        LIMIT $2 OFFSET $3",
+    )
+    .bind(params.project_id)
+    .bind(limit as i64)
+    .bind(offset as i64)
+    .fetch_all(&state.pool)
+    .await?;
+
+    Ok(Json(DataResponse { data: rows }))
+}
+
+#[derive(Debug, serde::Deserialize)]
+pub struct BrowseClipsParams {
+    pub project_id: Option<DbId>,
+    pub limit: Option<i32>,
+    pub offset: Option<i32>,
 }

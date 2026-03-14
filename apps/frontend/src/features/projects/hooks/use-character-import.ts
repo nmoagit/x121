@@ -40,8 +40,9 @@ import {
   importVideoClip,
   uploadImageVariant,
 } from "../lib/bulk-asset-upload";
-import type { Character, CharacterDropPayload, CharacterGroup, FolderDropResult } from "../types";
+import type { Character, CharacterDropPayload, CharacterGroup, DroppedAsset, FolderDropResult, ImportHashSummary } from "../types";
 import { useBulkCreateCharacters, useProjectCharacters } from "./use-project-characters";
+import { sha256File } from "@/lib/hash";
 
 /* --------------------------------------------------------------------------
    Progress types
@@ -92,6 +93,7 @@ export function useCharacterImport(projectId: number) {
   const [importResult, setImportResult] = useState<FolderDropResult | null>(null);
   const [importOpen, setImportOpen] = useState(false);
   const [importProgress, setImportProgress] = useState<ImportProgress | null>(null);
+  const [hashSummary, setHashSummary] = useState<ImportHashSummary | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const browseFolderRef = useRef<(() => void) | null>(null);
 
@@ -131,6 +133,75 @@ export function useCharacterImport(projectId: number) {
     setImportPayloads(allPayloads);
     setImportNames(allPayloads.map((p) => p.rawName));
     setImportOpen(true);
+
+    // Compute hashes in background and check against backend
+    const imageAssets = allPayloads.flatMap((p) => p.assets.filter((a) => a.kind === "image"));
+    if (imageAssets.length > 0) {
+      setHashSummary({ totalFiles: imageAssets.length, duplicateFiles: 0, newFiles: 0, isHashing: true });
+      computeAndCheckHashes(allPayloads).catch(() => {
+        // On error, clear hashing state — import still works without dedup
+        setHashSummary(null);
+      });
+    } else {
+      setHashSummary(null);
+    }
+  }
+
+  /** Compute SHA-256 hashes for all image assets and check against backend. */
+  async function computeAndCheckHashes(payloads: CharacterDropPayload[]) {
+    // Collect all image assets and compute their hashes
+    const imageAssets: { asset: DroppedAsset; payloadIdx: number; assetIdx: number }[] = [];
+    for (let pi = 0; pi < payloads.length; pi++) {
+      for (let ai = 0; ai < payloads[pi]!.assets.length; ai++) {
+        const asset = payloads[pi]!.assets[ai]!;
+        if (asset.kind === "image") {
+          imageAssets.push({ asset, payloadIdx: pi, assetIdx: ai });
+        }
+      }
+    }
+
+    // Hash all files
+    const hashes = await Promise.all(
+      imageAssets.map(async ({ asset }) => sha256File(asset.file)),
+    );
+
+    // Store hashes on assets
+    for (let i = 0; i < imageAssets.length; i++) {
+      imageAssets[i]!.asset.contentHash = hashes[i];
+    }
+
+    // Check which hashes exist in the backend
+    const uniqueHashes = [...new Set(hashes.filter(Boolean) as string[])];
+    let existingSet = new Set<string>();
+    if (uniqueHashes.length > 0) {
+      try {
+        const result = await api.post<{ existing: string[] }>(
+          "/image-variants/check-hashes",
+          { hashes: uniqueHashes },
+        );
+        existingSet = new Set(result.existing);
+      } catch {
+        // Backend may not have the endpoint yet — silently ignore
+      }
+    }
+
+    // Mark assets as duplicate/new
+    let duplicateCount = 0;
+    for (let i = 0; i < imageAssets.length; i++) {
+      const hash = hashes[i]!;
+      const isDup = existingSet.has(hash);
+      imageAssets[i]!.asset.isDuplicate = isDup;
+      if (isDup) duplicateCount++;
+    }
+
+    // Update payloads (trigger re-render)
+    setImportPayloads([...payloads]);
+    setHashSummary({
+      totalFiles: imageAssets.length,
+      duplicateFiles: duplicateCount,
+      newFiles: imageAssets.length - duplicateCount,
+      isHashing: false,
+    });
   }
 
   const handleImportConfirmWithAssets = useCallback(
@@ -696,6 +767,7 @@ export function useCharacterImport(projectId: number) {
 
   function closeImport() {
     setImportOpen(false);
+    setHashSummary(null);
   }
 
   function abortImport() {
@@ -714,6 +786,7 @@ export function useCharacterImport(projectId: number) {
     importResult,
     importOpen,
     importProgress,
+    hashSummary,
     handleImportDrop,
     handleImportConfirm,
     handleFolderDrop,

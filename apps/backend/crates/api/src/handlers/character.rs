@@ -188,3 +188,25 @@ pub async fn patch_settings(
         }))?;
     Ok(Json(DataResponse { data: character }))
 }
+
+/// PUT /api/v1/projects/{project_id}/characters/{id}/toggle-enabled
+///
+/// Toggle the `is_enabled` flag for a character.
+pub async fn toggle_enabled(
+    State(state): State<AppState>,
+    Path((_project_id, id)): Path<(DbId, DbId)>,
+    Json(body): Json<ToggleEnabledRequest>,
+) -> AppResult<Json<DataResponse<Character>>> {
+    let character = CharacterRepo::toggle_enabled(&state.pool, id, body.is_enabled)
+        .await?
+        .ok_or(AppError::Core(CoreError::NotFound {
+            entity: "Character",
+            id,
+        }))?;
+    Ok(Json(DataResponse { data: character }))
+}
+
+#[derive(Debug, serde::Deserialize)]
+pub struct ToggleEnabledRequest {
+    pub is_enabled: bool,
+}

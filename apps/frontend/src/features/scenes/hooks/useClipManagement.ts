@@ -8,7 +8,50 @@ export const clipKeys = {
   list: (sceneId: number) => [...clipKeys.all, "list", sceneId] as const,
   detail: (sceneId: number, versionId: number) =>
     [...clipKeys.all, "detail", sceneId, versionId] as const,
+  browse: (projectId?: number) => [...clipKeys.all, "browse", projectId] as const,
 };
+
+/** A clip enriched with character/scene/project context for browsing. */
+export interface ClipBrowseItem {
+  id: number;
+  scene_id: number;
+  version_number: number;
+  source: "generated" | "imported";
+  file_path: string;
+  file_size_bytes: number | null;
+  duration_secs: number | null;
+  width: number | null;
+  height: number | null;
+  frame_rate: number | null;
+  preview_path: string | null;
+  is_final: boolean;
+  qa_status: "pending" | "approved" | "rejected";
+  qa_rejection_reason: string | null;
+  qa_notes: string | null;
+  generation_snapshot: Record<string, unknown> | null;
+  file_purged: boolean;
+  created_at: string;
+  annotation_count: number;
+  character_id: number;
+  character_name: string;
+  scene_type_name: string;
+  track_name: string;
+  character_is_enabled: boolean;
+  project_id: number;
+  project_name: string;
+}
+
+/** Fetch all clips across all characters/scenes, most recent first. */
+export function useClipsBrowse(projectId?: number) {
+  const params = new URLSearchParams();
+  if (projectId != null) params.set("project_id", String(projectId));
+  params.set("limit", "500");
+  const qs = params.toString();
+  return useQuery({
+    queryKey: clipKeys.browse(projectId),
+    queryFn: () => api.get<ClipBrowseItem[]>(`/scene-video-versions/browse?${qs}`),
+  });
+}
 
 export function useSceneVersions(sceneId: number) {
   return useQuery({
@@ -31,6 +74,18 @@ export function useApproveClip(sceneId: number) {
   return useMutation({
     mutationFn: (versionId: number) =>
       api.put<SceneVideoVersion>(`/scenes/${sceneId}/versions/${versionId}/approve`, {}),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: clipKeys.list(sceneId) });
+      queryClient.invalidateQueries({ queryKey: sceneKeys.all });
+    },
+  });
+}
+
+export function useUnapproveClip(sceneId: number) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (versionId: number) =>
+      api.put<SceneVideoVersion>(`/scenes/${sceneId}/versions/${versionId}/unapprove`, {}),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: clipKeys.list(sceneId) });
       queryClient.invalidateQueries({ queryKey: sceneKeys.all });

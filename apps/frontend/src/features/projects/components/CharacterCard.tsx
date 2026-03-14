@@ -6,7 +6,7 @@ import { Card } from "@/components/composite";
 import { Badge, ProgressiveImage } from "@/components/primitives";
 import { variantThumbnailUrl } from "@/features/images/utils";
 import { cn } from "@/lib/cn";
-import { Check, Edit3, User } from "@/tokens/icons";
+import { Check, Edit3, Power, User } from "@/tokens/icons";
 
 import type { CharacterDeliveryStatus } from "@/features/delivery";
 import {
@@ -37,11 +37,13 @@ interface CharacterCardProps {
   onSelect?: (charId: number) => void;
   onClick: () => void;
   onEdit?: () => void;
+  onToggleEnabled?: (charId: number, enabled: boolean) => void;
 }
 
-export function CharacterCard({ character, group, avatarUrl, heroVariantId, selected, deliveryStatus, blockingReasons, sectionReadiness, blockingDeliverables, projectId, onSelect, onClick, onEdit }: CharacterCardProps) {
+export function CharacterCard({ character, group, avatarUrl, heroVariantId, selected, deliveryStatus, blockingReasons, sectionReadiness, blockingDeliverables, projectId, onSelect, onClick, onEdit, onToggleEnabled }: CharacterCardProps) {
   const statusLabel = characterStatusLabel(character.status_id);
   const badgeVariant = characterStatusBadgeVariant(character.status_id);
+  const isDisabled = !character.is_enabled;
 
   const allComplete = sectionReadiness != null &&
     (Object.entries(sectionReadiness) as [string, { state: string }][])
@@ -57,7 +59,8 @@ export function CharacterCard({ character, group, avatarUrl, heroVariantId, sele
         "transition-shadow duration-[var(--duration-fast)] ease-[var(--ease-default)]",
         "hover:shadow-[var(--shadow-md)]",
         selected && "ring-2 ring-[var(--color-border-accent)]",
-        allComplete && "!border-2 !border-green-500",
+        allComplete && !isDisabled && "!border-2 !border-green-500",
+        isDisabled && "opacity-70 grayscale",
       )}
     >
       <button
@@ -145,6 +148,34 @@ export function CharacterCard({ character, group, avatarUrl, heroVariantId, sele
               aria-label={`Edit ${character.name}`}
             >
               <Edit3 size={14} aria-hidden />
+            </span>
+          )}
+
+          {/* Enable/disable toggle overlay */}
+          {onToggleEnabled && (
+            <span
+              role="button"
+              tabIndex={0}
+              className={cn(
+                "absolute bottom-2 left-2 p-1 rounded-[var(--radius-sm)] cursor-pointer transition-opacity",
+                isDisabled
+                  ? "bg-[var(--color-action-danger)]/80 text-white opacity-100"
+                  : "bg-[var(--color-surface-primary)]/80 text-[var(--color-text-muted)] opacity-0 group-hover/card:opacity-100 hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-primary)]",
+              )}
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleEnabled(character.id, !character.is_enabled);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onToggleEnabled(character.id, !character.is_enabled);
+                }
+              }}
+              aria-label={isDisabled ? `Enable ${character.name}` : `Disable ${character.name}`}
+            >
+              <Power size={14} aria-hidden />
             </span>
           )}
         </div>

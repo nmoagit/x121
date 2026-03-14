@@ -29,6 +29,7 @@ pub fn router() -> Router<AppState> {
     Router::new()
         .route("/preview", get(reclamation::preview))
         .route("/run", post(reclamation::run_cleanup))
+        .route("/purge-clips", post(reclamation::purge_clips))
         .route("/trash", get(reclamation::list_trash))
         .route("/trash/{id}/restore", post(reclamation::restore_trash))
         .route("/history", get(reclamation::list_runs))

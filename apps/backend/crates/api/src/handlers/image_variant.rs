@@ -9,6 +9,7 @@ use axum::response::IntoResponse;
 use axum::Json;
 use serde::{Deserialize, Serialize};
 use x121_core::error::CoreError;
+use x121_core::hashing::sha256_hex;
 use x121_core::images;
 use x121_core::types::DbId;
 use x121_db::models::image::{CreateImageVariant, UpdateImageVariant};
@@ -353,6 +354,7 @@ pub async fn reimport_variant(
         version: Some(original.version + 1),
         parent_variant_id: Some(id),
         generation_params: None,
+        content_hash: Some(sha256_hex(&data)),
     };
 
     let variant = ImageVariantRepo::create(&state.pool, &input).await?;
@@ -443,6 +445,8 @@ pub async fn upload_manual_variant(
         .map(|(w, h)| (Some(w as i32), Some(h as i32)))
         .unwrap_or((None, None));
 
+    let content_hash = sha256_hex(&data);
+
     let input = CreateImageVariant {
         character_id,
         source_image_id: None,
@@ -460,6 +464,7 @@ pub async fn upload_manual_variant(
         version: Some(1),
         parent_variant_id: None,
         generation_params: None,
+        content_hash: Some(content_hash),
     };
 
     let variant = ImageVariantRepo::create(&state.pool, &input).await?;
@@ -601,6 +606,7 @@ pub async fn generate_variants(
             version: Some(1),
             parent_variant_id: None,
             generation_params: body.generation_params.clone(),
+            content_hash: None,
         };
         let variant = ImageVariantRepo::create(&state.pool, &input).await?;
         variants.push(variant);
@@ -721,6 +727,116 @@ pub struct BackfillThumbnailResponse {
     pub generated: usize,
     pub skipped: usize,
     pub failed: usize,
+}
+
+// ---------------------------------------------------------------------------
+// Browse (cross-character)
+// ---------------------------------------------------------------------------
+
+/// An image variant enriched with character/project context for browsing.
+#[derive(Debug, Serialize, sqlx::FromRow)]
+pub struct ImageVariantBrowseItem {
+    // Variant fields
+    pub id: DbId,
+    pub character_id: DbId,
+    pub variant_label: String,
+    pub status_id: i16,
+    pub file_path: String,
+    pub variant_type: Option<String>,
+    pub provenance: String,
+    pub is_hero: bool,
+    pub file_size_bytes: Option<i64>,
+    pub width: Option<i32>,
+    pub height: Option<i32>,
+    pub format: Option<String>,
+    pub version: i32,
+    pub created_at: chrono::DateTime<chrono::Utc>,
+    // Context fields
+    pub character_name: String,
+    pub character_is_enabled: bool,
+    pub project_id: DbId,
+    pub project_name: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct BrowseVariantsParams {
+    pub project_id: Option<DbId>,
+    pub limit: Option<i32>,
+    pub offset: Option<i32>,
+}
+
+// ---------------------------------------------------------------------------
+// Check hashes (import deduplication)
+// ---------------------------------------------------------------------------
+
+#[derive(Debug, Deserialize)]
+pub struct CheckHashesRequest {
+    pub hashes: Vec<String>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct CheckHashesResponse {
+    pub existing: Vec<String>,
+}
+
+/// POST /api/v1/image-variants/check-hashes
+///
+/// Given a list of SHA-256 content hashes, return those that already exist
+/// in the database. Used by the frontend import flow to detect duplicates
+/// before uploading.
+pub async fn check_hashes(
+    State(state): State<AppState>,
+    Json(body): Json<CheckHashesRequest>,
+) -> AppResult<Json<CheckHashesResponse>> {
+    let existing = ImageVariantRepo::find_existing_hashes(&state.pool, &body.hashes).await?;
+    Ok(Json(CheckHashesResponse { existing }))
+}
+
+/// GET /api/v1/image-variants/browse
+///
+/// List all image variants across characters/projects, most recent first.
+pub async fn browse_variants(
+    State(state): State<AppState>,
+    Query(params): Query<BrowseVariantsParams>,
+) -> AppResult<Json<DataResponse<Vec<ImageVariantBrowseItem>>>> {
+    let limit = params.limit.unwrap_or(200).min(500);
+    let offset = params.offset.unwrap_or(0);
+
+    let rows = sqlx::query_as::<_, ImageVariantBrowseItem>(
+        "SELECT
+            iv.id,
+            iv.character_id,
+            iv.variant_label,
+            iv.status_id,
+            iv.file_path,
+            iv.variant_type,
+            iv.provenance,
+            iv.is_hero,
+            iv.file_size_bytes,
+            iv.width,
+            iv.height,
+            iv.format,
+            iv.version,
+            iv.created_at,
+            c.name AS character_name,
+            c.is_enabled AS character_is_enabled,
+            p.id AS project_id,
+            p.name AS project_name
+        FROM image_variants iv
+        JOIN characters c ON c.id = iv.character_id AND c.deleted_at IS NULL
+        JOIN projects p ON p.id = c.project_id AND p.deleted_at IS NULL
+        WHERE iv.deleted_at IS NULL
+          AND ($1::bigint IS NULL OR p.id = $1)
+        ORDER BY iv.created_at DESC
+        LIMIT $2 OFFSET $3",
+    )
+    .bind(params.project_id)
+    .bind(limit as i64)
+    .bind(offset as i64)
+    .fetch_all(&state.pool)
+    .await?;
+
+    Ok(Json(DataResponse { data: rows }))
 }
 
 /// POST /api/v1/image-variants/backfill-metadata

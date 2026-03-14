@@ -1,4 +1,8 @@
+export { ApprovalActions } from "./ApprovalActions";
 export { EmptyState } from "./EmptyState";
+export { LogLine } from "./LogLine";
+export type { LogLevel } from "./LogLine";
+export { LOG_LEVEL_BADGE_VARIANT, LOG_LEVEL_LABELS } from "./LogLine";
 export { FileDropZone } from "./FileDropZone";
 export { MetadataField } from "./MetadataField";
 export { ProjectCharacterPicker } from "./ProjectCharacterPicker";

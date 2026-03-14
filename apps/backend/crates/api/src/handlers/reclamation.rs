@@ -16,7 +16,7 @@ use x121_db::models::reclamation::{
     CreateProtectionRule, CreateReclamationPolicy, CreateReclamationRun, UpdateProtectionRule,
     UpdateReclamationPolicy,
 };
-use x121_db::repositories::ReclamationRepo;
+use x121_db::repositories::{ReclamationRepo, SceneVideoVersionArtifactRepo, SceneVideoVersionRepo};
 
 use crate::error::{AppError, AppResult};
 use crate::middleware::rbac::RequireAdmin;
@@ -159,6 +159,143 @@ pub async fn run_cleanup(
             files_scanned: expired.len() as i32,
             files_marked: 0,
             files_deleted,
+            bytes_reclaimed,
+            errors,
+        },
+    }))
+}
+
+// ── Purge Clips ─────────────────────────────────────────────────────
+
+/// Returns `true` if the storage deletion error indicates the file was
+/// already missing (not-found). These are safe to ignore during purge.
+fn is_storage_not_found(err: &dyn std::fmt::Display) -> bool {
+    let msg = err.to_string();
+    msg.contains("not found") || msg.contains("NotFound")
+}
+
+/// Request body for the purge-clips endpoint.
+#[derive(Debug, Deserialize)]
+pub struct PurgeClipsRequest {
+    pub version_ids: Vec<DbId>,
+}
+
+/// Response for the purge-clips endpoint.
+#[derive(Debug, serde::Serialize)]
+pub struct PurgeClipsResponse {
+    pub purged_count: i32,
+    pub bytes_reclaimed: i64,
+    pub errors: Vec<String>,
+}
+
+/// POST /api/v1/admin/reclamation/purge-clips
+///
+/// Deletes video files from disk for the given version IDs while preserving
+/// all DB records (metadata, generation snapshots, QA history). Sets
+/// `file_purged = true` on the versions and their artifacts.
+pub async fn purge_clips(
+    State(state): State<AppState>,
+    RequireAdmin(_admin): RequireAdmin,
+    Json(body): Json<PurgeClipsRequest>,
+) -> AppResult<Json<DataResponse<PurgeClipsResponse>>> {
+    let provider = state.storage_provider().await;
+    let mut purged_count: i32 = 0;
+    let mut bytes_reclaimed: i64 = 0;
+    let mut errors: Vec<String> = Vec::new();
+
+    for &version_id in &body.version_ids {
+        let version = match SceneVideoVersionRepo::find_by_id(&state.pool, version_id).await {
+            Ok(Some(v)) => v,
+            Ok(None) => {
+                errors.push(format!("Version {version_id} not found"));
+                continue;
+            }
+            Err(e) => {
+                errors.push(format!("DB error looking up version {version_id}: {e}"));
+                continue;
+            }
+        };
+
+        if version.file_purged {
+            continue; // already purged
+        }
+
+        let mut version_bytes: i64 = 0;
+
+        // Delete the main video file.
+        match provider.delete(&version.file_path).await {
+            Ok(()) => {
+                version_bytes += version.file_size_bytes.unwrap_or(0);
+            }
+            Err(e) if is_storage_not_found(&e) => {
+                // File already missing — safe to continue.
+            }
+            Err(e) => {
+                errors.push(format!("Failed to delete file for version {version_id}: {e}"));
+                continue;
+            }
+        }
+
+        // Delete preview file if present.
+        if let Some(ref preview) = version.preview_path {
+            if let Err(e) = provider.delete(preview).await {
+                if !is_storage_not_found(&e) {
+                    errors.push(format!("Failed to delete preview for version {version_id}: {e}"));
+                }
+            }
+        }
+
+        // Delete artifact files.
+        let artifacts = SceneVideoVersionArtifactRepo::list_by_version(&state.pool, version_id)
+            .await
+            .unwrap_or_default();
+        for artifact in &artifacts {
+            if artifact.file_purged {
+                continue;
+            }
+            match provider.delete(&artifact.file_path).await {
+                Ok(()) => {
+                    version_bytes += artifact.file_size_bytes.unwrap_or(0);
+                }
+                Err(e) if is_storage_not_found(&e) => {
+                    // File already missing — safe to continue.
+                }
+                Err(e) => {
+                    errors.push(format!(
+                        "Failed to delete artifact {} for version {version_id}: {e}",
+                        artifact.id
+                    ));
+                }
+            }
+        }
+
+        // Mark version + artifacts as purged in DB.
+        if let Err(e) =
+            SceneVideoVersionRepo::mark_files_purged(&state.pool, &[version_id]).await
+        {
+            errors.push(format!("DB error marking version {version_id} purged: {e}"));
+            continue;
+        }
+        if let Err(e) =
+            SceneVideoVersionRepo::mark_artifact_files_purged(&state.pool, version_id).await
+        {
+            errors.push(format!("DB error marking artifacts purged for version {version_id}: {e}"));
+        }
+
+        purged_count += 1;
+        bytes_reclaimed += version_bytes;
+    }
+
+    tracing::info!(
+        purged_count,
+        bytes_reclaimed,
+        error_count = errors.len(),
+        "Purge clips completed"
+    );
+
+    Ok(Json(DataResponse {
+        data: PurgeClipsResponse {
+            purged_count,
             bytes_reclaimed,
             errors,
         },

@@ -14,7 +14,7 @@ import { Stack } from "@/components/layout";
 import { Badge, Button, LoadingPane } from "@/components/primitives";
 import { useSetPageTitle } from "@/hooks/useSetPageTitle";
 import { ICON_ACTION_BTN } from "@/lib/ui-classes";
-import { AlertCircle, ChevronLeft, ChevronRight, Edit3, User } from "@/tokens/icons";
+import { AlertCircle, ChevronLeft, ChevronRight, Edit3, Power, User } from "@/tokens/icons";
 
 import { useCharacterDashboard } from "@/features/character-dashboard";
 import { useImageVariants } from "@/features/images/hooks/use-image-variants";
@@ -25,6 +25,7 @@ import {
   useCharacter,
   useDeleteCharacter,
   useProjectCharacters,
+  useToggleCharacterEnabled,
   useUpdateCharacter,
 } from "@/features/projects/hooks/use-project-characters";
 import { useProject } from "@/features/projects/hooks/use-projects";
@@ -69,6 +70,7 @@ export function CharacterDetailPage() {
   const { data: dashboard } = useCharacterDashboard(characterId);
   const updateCharacter = useUpdateCharacter(projectId);
   const deleteCharacter = useDeleteCharacter(projectId);
+  const toggleEnabled = useToggleCharacterEnabled(projectId);
 
   useSetPageTitle(character?.name ?? "Character");
 
@@ -241,6 +243,15 @@ export function CharacterDetailPage() {
         >
           <Edit3 size={16} aria-hidden />
         </button>
+        <Button
+          size="sm"
+          variant={character.is_enabled ? "secondary" : "primary"}
+          icon={<Power size={14} />}
+          onClick={() => toggleEnabled.mutate({ characterId, isEnabled: !character.is_enabled })}
+          loading={toggleEnabled.isPending}
+        >
+          {character.is_enabled ? "Disable" : "Enable"}
+        </Button>
 
         {/* Prev / Next character navigation */}
         {totalCount > 1 && (
@@ -285,8 +296,16 @@ export function CharacterDetailPage() {
           onSceneClick={(sceneId) => { setFocusSceneId(sceneId); setActiveTab("scenes"); }}
         />
       )}
-      {activeTab === "images" && <CharacterImagesTab key={characterId} characterId={characterId} />}
-      {activeTab === "scenes" && <CharacterScenesTab key={characterId} characterId={characterId} projectId={projectId} focusSceneId={focusSceneId} focusSceneTypeId={focusSceneTypeId} focusTrackId={focusTrackId} />}
+      {activeTab === "images" && (
+        <div className={!character.is_enabled ? "opacity-70 grayscale" : ""}>
+          <CharacterImagesTab key={characterId} characterId={characterId} />
+        </div>
+      )}
+      {activeTab === "scenes" && (
+        <div className={!character.is_enabled ? "opacity-70 grayscale" : ""}>
+          <CharacterScenesTab key={characterId} characterId={characterId} projectId={projectId} focusSceneId={focusSceneId} focusSceneTypeId={focusSceneTypeId} focusTrackId={focusTrackId} />
+        </div>
+      )}
       {activeTab === "deliverables" && (
         <CharacterDeliverablesTab
           key={characterId}

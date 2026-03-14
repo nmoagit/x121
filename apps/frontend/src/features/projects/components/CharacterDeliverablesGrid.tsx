@@ -9,18 +9,12 @@
  */
 
 import { useState, useMemo } from "react";
-import { useQueries } from "@tanstack/react-query";
 import { Badge, Spinner, TabBar, Toggle } from "@/components/primitives";
 import { useNavigate } from "@tanstack/react-router";
-import { useCharacterDeliverables } from "../hooks/use-character-deliverables";
+import { useCharacterDeliverables, useBatchSceneAssignments, useBatchVariantStatuses } from "../hooks/use-character-deliverables";
+import type { BatchSceneAssignment, BatchVariantStatus } from "../hooks/use-character-deliverables";
 import { useEnabledSceneTypes } from "@/features/production/hooks/use-production";
-import { imageVariantKeys } from "@/features/images/hooks/use-image-variants";
 import { IMAGE_VARIANT_STATUS } from "@/features/images/types";
-import type { ImageVariant } from "@/features/images/types";
-import { findBestVariantForTrack } from "@/features/images/utils";
-import { characterDashboardKeys } from "@/features/character-dashboard/hooks/use-character-dashboard";
-import { fetchCharacterDashboard } from "@/features/character-dashboard/api";
-import type { CharacterDashboardData, SceneAssignment } from "@/features/character-dashboard/types";
 import { useTracks } from "@/features/scene-catalogue/hooks/use-tracks";
 import type { Track } from "@/features/scene-catalogue/types";
 import type { CharacterDeliverableRow } from "../types";
@@ -29,7 +23,6 @@ import { deduplicateSceneSlots, sceneSlotKey } from "@/features/production/types
 import type { EnabledSceneTypeEntry } from "@/features/production/types";
 import { readinessPctToVariant } from "@/features/readiness/types";
 import { metadataApprovalBadgeVariant, METADATA_APPROVAL_LABEL } from "@/features/characters/types";
-import { api } from "@/lib/api";
 import { cn } from "@/lib/cn";
 
 /* --------------------------------------------------------------------------
@@ -162,8 +155,8 @@ type MatrixColumnDef =
   | { kind: "metadata"; label: string };
 
 /** Map image variant status_id to dot status. */
-function imageStatusToDot(variant: ImageVariant): DotStatus {
-  switch (variant.status_id) {
+function imageStatusToDot(statusId: number): DotStatus {
+  switch (statusId) {
     case IMAGE_VARIANT_STATUS.APPROVED:
       return "approved";
     case IMAGE_VARIANT_STATUS.GENERATING:
@@ -179,15 +172,33 @@ function imageStatusToDot(variant: ImageVariant): DotStatus {
   }
 }
 
+/**
+ * Pick the best variant for a track from a flat list of batch variant statuses.
+ * Prefers approved, then falls back to the most recently created (highest id).
+ */
+function findBestBatchVariant(
+  variants: BatchVariantStatus[],
+  trackSlug: string,
+): BatchVariantStatus | undefined {
+  const matching = variants.filter(
+    (v) => v.variant_type?.toLowerCase() === trackSlug.toLowerCase(),
+  );
+  if (matching.length === 0) return undefined;
+  return (
+    matching.find((v) => v.status_id === IMAGE_VARIANT_STATUS.APPROVED) ??
+    matching.sort((a, b) => b.id - a.id)[0]
+  );
+}
+
 /** Map scene assignment status string to dot status. */
-function sceneStatusToDot(assignment: SceneAssignment): DotStatus {
+function sceneStatusToDot(assignment: BatchSceneAssignment): DotStatus {
   // If no scene record exists yet, it's not started
   if (!assignment.scene_id) return "not_started";
   const s = assignment.status.toLowerCase();
   if (s === "approved" || s === "delivered") return "approved";
   if (s === "generating") return "generating";
   if (s === "rejected") return "rejected";
-  if (s === "review" || s === "generated" || s === "pending") return "pending";
+  if (s === "review" || s === "generated" || s === "imported" || s === "pending") return "pending";
   return "not_started";
 }
 
@@ -231,54 +242,56 @@ function MatrixTab({ rows, projectId }: MatrixTabProps) {
   // Fetch enabled scene types (for scene columns)
   const { data: enabledEntries, isLoading: scenesLoading } = useEnabledSceneTypes(projectId, characterIds);
 
-  // Batch-fetch image variants per character
-  const variantResults = useQueries({
-    queries: characterIds.map((id) => ({
-      queryKey: imageVariantKeys.list(id),
-      queryFn: () => api.get<ImageVariant[]>(`/characters/${id}/image-variants`),
-      enabled: id > 0,
-      staleTime: 5 * 60 * 1000,
-    })),
-  });
+  // Batch-fetch variant statuses for all characters in one request
+  const { data: batchVariants, isLoading: variantsLoading } = useBatchVariantStatuses(projectId);
 
-  // Batch-fetch character dashboards (for scene assignment statuses)
-  const dashboardResults = useQueries({
-    queries: characterIds.map((id) => ({
-      queryKey: characterDashboardKeys.dashboard(id),
-      queryFn: () => fetchCharacterDashboard(id),
-      enabled: id > 0,
-      staleTime: 5 * 60 * 1000,
-    })),
-  });
+  // Batch-fetch scene assignments for all characters in one request
+  const { data: batchAssignments, isLoading: assignmentsLoading } = useBatchSceneAssignments(projectId);
 
   // Build character → variants map
   const variantsByCharacter = useMemo(() => {
-    const map = new Map<number, ImageVariant[]>();
-    for (let i = 0; i < characterIds.length; i++) {
-      const data = variantResults[i]?.data;
-      if (data) map.set(characterIds[i]!, data);
+    const map = new Map<number, BatchVariantStatus[]>();
+    if (!batchVariants) return map;
+    for (const v of batchVariants) {
+      let list = map.get(v.character_id);
+      if (!list) {
+        list = [];
+        map.set(v.character_id, list);
+      }
+      list.push(v);
     }
     return map;
-  }, [characterIds, variantResults]);
+  }, [batchVariants]);
 
   // Build character → scene assignments map (keyed by scene_type_id-track_id)
   const sceneStatusMap = useMemo(() => {
-    const map = new Map<number, Map<string, SceneAssignment>>();
-    for (let i = 0; i < characterIds.length; i++) {
-      const dashboard = dashboardResults[i]?.data as CharacterDashboardData | undefined;
-      if (dashboard?.scene_assignments) {
-        const inner = new Map<string, SceneAssignment>();
-        for (const sa of dashboard.scene_assignments) {
-          inner.set(sceneSlotKey(sa.scene_type_id, sa.track_id), sa);
-        }
-        map.set(characterIds[i]!, inner);
+    const map = new Map<number, Map<string, BatchSceneAssignment>>();
+    if (!batchAssignments) return map;
+    for (const sa of batchAssignments) {
+      let inner = map.get(sa.character_id);
+      if (!inner) {
+        inner = new Map();
+        map.set(sa.character_id, inner);
       }
+      inner.set(sceneSlotKey(sa.scene_type_id, sa.track_id), sa);
     }
     return map;
-  }, [characterIds, dashboardResults]);
+  }, [batchAssignments]);
 
-  const variantsLoading = variantResults.some((r) => r.isLoading);
-  const dashboardsLoading = dashboardResults.some((r) => r.isLoading);
+  // Build character → enabled scene slot keys set (from enabledEntries)
+  const enabledByCharacter = useMemo(() => {
+    const map = new Map<number, Set<string>>();
+    if (!enabledEntries) return map;
+    for (const entry of enabledEntries) {
+      let set = map.get(entry.character_id);
+      if (!set) {
+        set = new Set();
+        map.set(entry.character_id, set);
+      }
+      set.add(sceneSlotKey(entry.scene_type_id, entry.track_id));
+    }
+    return map;
+  }, [enabledEntries]);
 
   // Image columns — one per active track
   const imageColumns: MatrixColumnDef[] = useMemo(() => {
@@ -353,7 +366,12 @@ function MatrixTab({ rows, projectId }: MatrixTabProps) {
     }
   };
 
-  if (tracksLoading || scenesLoading || variantsLoading || dashboardsLoading) {
+  // Show spinner only while columns are loading (tracks + scene types)
+  // Once columns are ready, show skeleton grid while cell data loads
+  const columnsLoading = tracksLoading || scenesLoading;
+  const cellsLoading = variantsLoading || assignmentsLoading;
+
+  if (columnsLoading) {
     return (
       <div className="flex items-center justify-center py-8">
         <Spinner size="md" />
@@ -437,17 +455,35 @@ function MatrixTab({ rows, projectId }: MatrixTabProps) {
                 </button>
               </td>
               {columns.map((col) => {
+                const cellKey =
+                  col.kind === "scene"
+                    ? `scene-${col.scene_type_id}-${col.track_id}`
+                    : col.kind === "image"
+                      ? `img-${col.trackSlug}`
+                      : "metadata";
+
+                // Show skeleton dot while cell data is loading
+                if (cellsLoading) {
+                  return (
+                    <td key={cellKey} className="px-0.5 py-1.5 text-center">
+                      <div className="flex justify-center">
+                        <span className="w-3 h-3 rounded-full bg-neutral-700/20 animate-pulse" />
+                      </div>
+                    </td>
+                  );
+                }
+
                 let status: DotStatus;
                 let tooltip: string;
 
                 if (col.kind === "image") {
                   const variants = variantsByCharacter.get(row.id) ?? [];
-                  const best = findBestVariantForTrack(variants, col.trackSlug);
+                  const best = findBestBatchVariant(variants, col.trackSlug);
                   if (!best) {
                     status = "not_started";
                     tooltip = `${col.label}: No image`;
                   } else {
-                    status = imageStatusToDot(best);
+                    status = imageStatusToDot(best.status_id);
                     tooltip = `${col.label}: ${DOT_LABELS[status]}`;
                   }
                 } else if (col.kind === "metadata") {
@@ -465,29 +501,25 @@ function MatrixTab({ rows, projectId }: MatrixTabProps) {
                     tooltip = "Metadata: Pending Approval";
                   }
                 } else {
-                  // Scene — look up real status from dashboard scene_assignments
+                  // Scene — look up real status from batch scene assignments
                   const charScenes = sceneStatusMap.get(row.id);
                   const saKey = sceneSlotKey(col.scene_type_id, col.track_id);
                   const assignment = charScenes?.get(saKey);
-                  if (!assignment) {
-                    // Not in dashboard assignments = scene disabled for this character
-                    status = "skipped";
-                    tooltip = `${col.label}: Disabled`;
-                  } else {
+                  const isEnabled = enabledByCharacter.get(row.id)?.has(saKey) ?? false;
+                  if (assignment) {
                     status = sceneStatusToDot(assignment);
                     tooltip = `${col.label}: ${DOT_LABELS[status]}`;
                     if (assignment.final_video_count > 0 && status !== "approved") {
                       tooltip += ` (${assignment.final_video_count} final)`;
                     }
+                  } else if (isEnabled) {
+                    status = "not_started";
+                    tooltip = `${col.label}: Not Started`;
+                  } else {
+                    status = "skipped";
+                    tooltip = `${col.label}: Disabled`;
                   }
                 }
-
-                const cellKey =
-                  col.kind === "scene"
-                    ? `scene-${col.scene_type_id}-${col.track_id}`
-                    : col.kind === "image"
-                      ? `img-${col.trackSlug}`
-                      : "metadata";
 
                 return (
                   <td key={cellKey} className="px-0.5 py-1.5 text-center">

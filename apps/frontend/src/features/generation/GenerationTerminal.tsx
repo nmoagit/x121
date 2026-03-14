@@ -5,34 +5,14 @@
  * Polls for new entries every 2 seconds while generation is active.
  */
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
-import { cn } from "@/lib/cn";
 import { Button } from "@/components/primitives";
-import { Terminal, Trash2, XCircle } from "@/tokens/icons";
+import { LogLine } from "@/components/domain";
+import { ChevronDown, ChevronRight, Terminal, Trash2, XCircle } from "@/tokens/icons";
 import { iconSizes } from "@/tokens/icons";
-import { formatLogTime } from "@/features/activity-console";
 
 import { useGenerationLog, useCancelGeneration, useClearGenerationLog } from "./hooks/use-generation";
-import type { GenerationLogEntry } from "./types";
-
-/* --------------------------------------------------------------------------
-   Constants
-   -------------------------------------------------------------------------- */
-
-const LEVEL_CLASSES: Record<GenerationLogEntry["level"], string> = {
-  info: "text-[var(--color-text-muted)]",
-  warn: "text-[var(--color-action-warning)]",
-  error: "text-[var(--color-action-danger)]",
-  success: "text-[var(--color-action-success)]",
-};
-
-const LEVEL_LABELS: Record<GenerationLogEntry["level"], string> = {
-  info: "INFO",
-  warn: "WARN",
-  error: "ERR ",
-  success: " OK ",
-};
 
 /* --------------------------------------------------------------------------
    Component
@@ -52,6 +32,7 @@ export function GenerationTerminal({
   const clearLog = useClearGenerationLog(sceneId);
   const scrollRef = useRef<HTMLDivElement>(null);
   const wasAtBottomRef = useRef(true);
+  const [collapsed, setCollapsed] = useState(!isGenerating);
 
   // Track whether the user is scrolled to the bottom so we can auto-scroll
   // only when they haven't scrolled up to read older entries.
@@ -78,6 +59,11 @@ export function GenerationTerminal({
     }
   }, [entries]);
 
+  // Auto-expand when generation starts.
+  useEffect(() => {
+    if (isGenerating) setCollapsed(false);
+  }, [isGenerating]);
+
   const hasEntries = entries && entries.length > 0;
 
   if (!hasEntries && !isGenerating) {
@@ -87,12 +73,24 @@ export function GenerationTerminal({
   return (
     <div className="rounded-[var(--radius-lg)] border border-[var(--color-border-default)] overflow-hidden">
       {/* Terminal header */}
-      <div className="flex items-center gap-[var(--spacing-2)] px-[var(--spacing-3)] py-[var(--spacing-2)] bg-[var(--color-surface-tertiary)] border-b border-[var(--color-border-default)]">
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={() => setCollapsed((v) => !v)}
+        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") setCollapsed((v) => !v); }}
+        className="flex w-full items-center gap-[var(--spacing-2)] px-[var(--spacing-3)] py-[var(--spacing-2)] bg-[var(--color-surface-tertiary)] border-b border-[var(--color-border-default)] cursor-pointer hover:bg-[var(--color-surface-secondary)] transition-colors"
+      >
+        {collapsed ? (
+          <ChevronRight size={14} className="text-[var(--color-text-muted)]" />
+        ) : (
+          <ChevronDown size={14} className="text-[var(--color-text-muted)]" />
+        )}
         <Terminal size={14} className="text-[var(--color-text-muted)]" />
         <span className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide">
           Generation Log
         </span>
-        <span className="ml-auto flex items-center gap-[var(--spacing-2)]">
+        {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
+        <span className="ml-auto flex items-center gap-[var(--spacing-2)]" onClick={(e) => e.stopPropagation()}>
           {isGenerating ? (
             <>
               <span className="flex items-center gap-[var(--spacing-1)]">
@@ -124,6 +122,7 @@ export function GenerationTerminal({
       </div>
 
       {/* Log output area */}
+      {!collapsed && (
       <div
         ref={scrollRef}
         className="max-h-64 overflow-y-auto bg-[#0d1117] p-[var(--spacing-3)]"
@@ -131,7 +130,12 @@ export function GenerationTerminal({
         {hasEntries ? (
           <div className="flex flex-col gap-px">
             {entries.map((entry) => (
-              <LogLine key={entry.id} entry={entry} />
+              <LogLine
+                key={entry.id}
+                timestamp={entry.created_at}
+                level={entry.level}
+                message={entry.message}
+              />
             ))}
           </div>
         ) : (
@@ -145,46 +149,18 @@ export function GenerationTerminal({
           <span className="inline-block mt-1 h-3.5 w-1.5 bg-[var(--color-text-muted)] animate-[blink_1s_steps(1)_infinite]" />
         )}
       </div>
+      )}
 
       {/* Inline keyframes for the blinking cursor */}
-      <style>{`
-        @keyframes blink {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0; }
-        }
-      `}</style>
+      {isGenerating && (
+        <style>{`
+          @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+          }
+        `}</style>
+      )}
     </div>
   );
 }
 
-/* --------------------------------------------------------------------------
-   LogLine — a single log entry
-   -------------------------------------------------------------------------- */
-
-function LogLine({ entry }: { entry: GenerationLogEntry }) {
-  return (
-    <div className="flex gap-[var(--spacing-2)] font-mono text-xs leading-5">
-      <span className="shrink-0 text-[var(--color-text-muted)] opacity-60">
-        {formatLogTime(entry.created_at)}
-      </span>
-      <span
-        className={cn(
-          "shrink-0 font-semibold",
-          LEVEL_CLASSES[entry.level],
-        )}
-      >
-        [{LEVEL_LABELS[entry.level]}]
-      </span>
-      <span
-        className={cn(
-          "break-words min-w-0",
-          entry.level === "error"
-            ? "text-[var(--color-action-danger)]"
-            : "text-[var(--color-text-secondary)]",
-        )}
-      >
-        {entry.message}
-      </span>
-    </div>
-  );
-}

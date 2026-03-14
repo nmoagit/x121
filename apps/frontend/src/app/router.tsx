@@ -369,6 +369,9 @@ const promptsRoute = createRoute({
 const workflowsRoute = createRoute({
   getParentRoute: () => toolsLayoutRoute,
   path: "/tools/workflows",
+  validateSearch: (search: Record<string, unknown>) => ({
+    name: (search.name as string) ?? undefined,
+  }),
   component: lazyRouteComponent(() =>
     import("@/app/pages/WorkflowsPage").then((m) => ({ default: m.WorkflowsPage })),
   ),

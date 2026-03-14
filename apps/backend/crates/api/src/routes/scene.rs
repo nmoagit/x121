@@ -29,7 +29,8 @@ const IMPORT_BODY_LIMIT: usize = 500 * 1024 * 1024;
 /// GET    /{scene_id}/versions/{id}           get_by_id
 /// DELETE /{scene_id}/versions/{id}           delete
 /// PUT    /{scene_id}/versions/{id}/set-final set_final
-/// PUT    /{scene_id}/versions/{id}/approve   approve_clip
+/// PUT    /{scene_id}/versions/{id}/approve    approve_clip
+/// PUT    /{scene_id}/versions/{id}/unapprove unapprove_clip
 /// PUT    /{scene_id}/versions/{id}/reject    reject_clip
 /// GET    /{scene_id}/versions/{id}/artifacts list_artifacts
 /// POST   /{scene_id}/versions/{id}/resume-from resume_from_clip
@@ -53,6 +54,7 @@ pub fn router() -> Router<AppState> {
         .route("/{id}", get(version::get_by_id).delete(version::delete))
         .route("/{id}/set-final", put(version::set_final))
         .route("/{id}/approve", put(version::approve_clip))
+        .route("/{id}/unapprove", put(version::unapprove_clip))
         .route("/{id}/reject", put(version::reject_clip))
         .route("/{id}/artifacts", get(version::list_artifacts))
         .route("/{id}/resume-from", post(version::resume_from_clip))

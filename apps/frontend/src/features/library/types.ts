@@ -15,6 +15,7 @@ export interface LibraryCharacter {
   clip_count: number;
   has_metadata: boolean;
   status_id: number;
+  is_enabled: boolean;
   created_at: string;
 }
 

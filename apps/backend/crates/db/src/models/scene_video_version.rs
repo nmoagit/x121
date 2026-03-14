@@ -26,6 +26,7 @@ pub struct SceneVideoVersion {
     pub qa_rejection_reason: Option<String>,
     pub qa_notes: Option<String>,
     pub generation_snapshot: Option<serde_json::Value>,
+    pub file_purged: bool,
     pub deleted_at: Option<Timestamp>,
     pub created_at: Timestamp,
     pub updated_at: Timestamp,

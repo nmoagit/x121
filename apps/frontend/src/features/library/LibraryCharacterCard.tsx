@@ -31,6 +31,7 @@ export function LibraryCharacterCard({
         "group/card cursor-pointer overflow-hidden",
         "transition-shadow duration-[var(--duration-fast)] ease-[var(--ease-default)]",
         "hover:shadow-[var(--shadow-md)]",
+        !character.is_enabled && "opacity-70 grayscale",
       )}
       data-testid={`library-card-${character.id}`}
     >
@@ -110,6 +111,7 @@ export function LibraryCharacterRow({
         "bg-[var(--color-surface-primary)] border border-[var(--color-border-default)]",
         "hover:border-[var(--color-border-hover)] hover:shadow-sm",
         "transition-colors cursor-pointer",
+        !character.is_enabled && "opacity-70 grayscale",
       )}
       data-testid={`library-row-${character.id}`}
     >

@@ -84,6 +84,11 @@ async fn resolve_video_path(
                     entity: "SceneVideoVersion",
                     id: source_id,
                 }))?;
+            if version.file_purged {
+                return Err(AppError::Gone(
+                    "Video file has been purged from disk".to_string(),
+                ));
+            }
             Ok(version.file_path)
         }
         _ => Err(AppError::BadRequest(format!(
@@ -169,6 +174,11 @@ pub async fn stream_video(
                 entity: "SceneVideoVersion",
                 id: source_id,
             }))?;
+        if version.file_purged {
+            return Err(AppError::Gone(
+                "Video file has been purged from disk".to_string(),
+            ));
+        }
         version.preview_path.unwrap_or(version.file_path)
     } else {
         resolve_video_path(&state.pool, &source_type, source_id).await?

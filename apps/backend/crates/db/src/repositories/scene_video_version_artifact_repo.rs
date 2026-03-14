@@ -8,7 +8,7 @@ use crate::models::scene_video_version_artifact::{CreateArtifact, SceneVideoVers
 /// Column list shared across queries to avoid repetition.
 const COLUMNS: &str = "id, version_id, role, label, node_id, file_path, \
     file_size_bytes, duration_secs, width, height, sort_order, \
-    deleted_at, created_at, updated_at";
+    file_purged, deleted_at, created_at, updated_at";
 
 /// Provides CRUD operations for scene video version artifacts.
 pub struct SceneVideoVersionArtifactRepo;

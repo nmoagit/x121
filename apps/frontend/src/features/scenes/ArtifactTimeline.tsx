@@ -45,14 +45,18 @@ export function ArtifactTimeline({ sceneId, versionId }: ArtifactTimelineProps) 
                   >
                     {ARTIFACT_ROLE_LABEL[artifact.role]}
                   </Badge>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    icon={<Play size={14} />}
-                    onClick={() => setPlayingArtifact(artifact)}
-                    title="Play artifact"
-                    className="!p-1"
-                  />
+                  {artifact.file_purged ? (
+                    <Badge variant="warning" size="sm">Purged</Badge>
+                  ) : (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      icon={<Play size={14} />}
+                      onClick={() => setPlayingArtifact(artifact)}
+                      title="Play artifact"
+                      className="!p-1"
+                    />
+                  )}
                 </div>
                 <span className="truncate text-xs font-medium text-[var(--color-text-primary)]">
                   {artifact.label}

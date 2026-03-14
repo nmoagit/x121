@@ -8,13 +8,19 @@ use axum::Router;
 use crate::handlers::annotation;
 use crate::state::AppState;
 
-/// Top-level annotation routes (browse).
+/// Top-level annotation routes (browse + direct delete).
 ///
 /// ```text
-/// GET /browse    browse_annotations (?project_id, ?character_id, ?sort, ?sort_dir, ?limit, ?offset)
+/// GET    /browse    browse_annotations (?project_id, ?character_id, ?sort, ?sort_dir, ?limit, ?offset)
+/// DELETE /{id}      delete_annotation_by_id
 /// ```
 pub fn annotation_browse_router() -> Router<AppState> {
-    Router::new().route("/browse", get(annotation::browse_annotations))
+    Router::new()
+        .route("/browse", get(annotation::browse_annotations))
+        .route(
+            "/{id}",
+            axum::routing::delete(annotation::delete_annotation_by_id),
+        )
 }
 
 /// Segment-scoped annotation routes, merged into `/segments`.

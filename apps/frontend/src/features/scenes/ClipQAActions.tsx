@@ -1,67 +1,55 @@
-import { Button } from "@/components/primitives/Button";
-import { Check, X } from "@/tokens/icons";
+/**
+ * QA action buttons for scene clips — thin wrapper around shared ApprovalActions.
+ */
+
+import { ApprovalActions } from "@/components/domain/ApprovalActions";
 import type { SceneVideoVersion } from "./types";
 
 interface ClipQAActionsProps {
   clip: SceneVideoVersion;
   onApprove: (clipId: number) => void;
+  onUnapprove: (clipId: number) => void;
   onReject: (clipId: number) => void;
+  onExport?: (clipId: number) => void;
+  onDelete?: (clipId: number) => void;
   isApproving?: boolean;
+  isUnapproving?: boolean;
   isRejecting?: boolean;
+  isDeleting?: boolean;
+  isDeleteDisabled?: boolean;
 }
 
 export function ClipQAActions({
   clip,
   onApprove,
+  onUnapprove,
   onReject,
+  onExport,
+  onDelete,
   isApproving,
+  isUnapproving,
   isRejecting,
+  isDeleting,
+  isDeleteDisabled,
 }: ClipQAActionsProps) {
-  if (clip.qa_status === "approved") {
-    return (
-      <span
-        className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium
-          bg-[var(--color-action-primary)] text-[var(--color-text-inverse)]"
-      >
-        <Check size={12} /> Approved
-      </span>
-    );
-  }
-
-  if (clip.qa_status === "rejected") {
-    return (
-      <span
-        className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium
-          bg-[var(--color-action-danger)] text-[var(--color-text-inverse)]"
-        title={clip.qa_rejection_reason ?? undefined}
-      >
-        <X size={12} /> Rejected
-      </span>
-    );
-  }
+  const canApprove = clip.qa_status === "pending";
+  const canUnapprove = clip.qa_status === "approved" || clip.qa_status === "rejected";
 
   return (
-    <div className="flex items-center gap-2">
-      <Button
-        variant="primary"
-        size="sm"
-        onClick={() => onApprove(clip.id)}
-        loading={isApproving}
-        disabled={isApproving || isRejecting}
-        icon={<Check size={14} />}
-      >
-        Approve
-      </Button>
-      <Button
-        variant="danger"
-        size="sm"
-        onClick={() => onReject(clip.id)}
-        loading={isRejecting}
-        disabled={isApproving || isRejecting}
-        icon={<X size={14} />}
-      >
-        Reject
-      </Button>
-    </div>
+    <ApprovalActions
+      status={(clip.qa_status ?? "pending") as "pending" | "approved" | "rejected"}
+      canApprove={canApprove}
+      canUnapprove={canUnapprove}
+      onApprove={() => onApprove(clip.id)}
+      onUnapprove={() => onUnapprove(clip.id)}
+      onReject={() => onReject(clip.id)}
+      onExport={onExport ? () => onExport(clip.id) : undefined}
+      onDelete={onDelete ? () => onDelete(clip.id) : undefined}
+      isDeleteDisabled={isDeleteDisabled}
+      isApproving={isApproving}
+      isUnapproving={isUnapproving}
+      isRejecting={isRejecting}
+      isDeleting={isDeleting}
+    />
   );
 }

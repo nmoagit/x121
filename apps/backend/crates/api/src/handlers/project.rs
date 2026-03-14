@@ -189,3 +189,135 @@ pub async fn get_character_deliverables(
     let rows = CharacterRepo::list_deliverable_status(&state.pool, project_id).await?;
     Ok(Json(DataResponse { data: rows }))
 }
+
+// ---------------------------------------------------------------------------
+// Batch scene assignments for the deliverables matrix
+// ---------------------------------------------------------------------------
+
+/// A scene assignment row for batch responses — mirrors the per-character
+/// dashboard `SceneAssignment` but includes `character_id` and fields needed
+/// for building matrix columns (scene_name, track_name, etc.).
+#[derive(Debug, Serialize, sqlx::FromRow)]
+pub struct BatchSceneAssignment {
+    pub character_id: DbId,
+    pub scene_type_id: DbId,
+    pub scene_name: String,
+    pub track_id: DbId,
+    pub track_name: String,
+    pub track_slug: String,
+    pub has_clothes_off_transition: bool,
+    pub scene_id: Option<DbId>,
+    pub status: String,
+    pub segment_count: i64,
+    pub final_video_count: i64,
+}
+
+// ---------------------------------------------------------------------------
+// Batch image variant statuses for the deliverables matrix
+// ---------------------------------------------------------------------------
+
+/// Lightweight image variant projection for the deliverables matrix.
+#[derive(Debug, Serialize, sqlx::FromRow)]
+pub struct BatchVariantStatus {
+    pub character_id: DbId,
+    pub id: DbId,
+    pub variant_type: Option<String>,
+    pub status_id: i16,
+    pub is_hero: bool,
+}
+
+/// GET /api/v1/projects/{id}/variant-statuses
+///
+/// Returns a lightweight projection of all image variants for characters in a project.
+/// Used by the deliverables matrix to avoid N individual image-variant calls.
+pub async fn get_batch_variant_statuses(
+    State(state): State<AppState>,
+    Path(project_id): Path<DbId>,
+) -> AppResult<Json<DataResponse<Vec<BatchVariantStatus>>>> {
+    let _project = ensure_project_exists(&state.pool, project_id).await?;
+
+    let rows = sqlx::query_as::<_, BatchVariantStatus>(
+        "SELECT iv.character_id, iv.id, iv.variant_type, iv.status_id, iv.is_hero
+         FROM image_variants iv
+         JOIN characters c ON c.id = iv.character_id
+         WHERE c.project_id = $1 AND c.deleted_at IS NULL AND iv.deleted_at IS NULL
+         ORDER BY iv.character_id, iv.id",
+    )
+    .bind(project_id)
+    .fetch_all(&state.pool)
+    .await?;
+
+    Ok(Json(DataResponse { data: rows }))
+}
+
+// ---------------------------------------------------------------------------
+// Batch scene assignments for the deliverables matrix
+// ---------------------------------------------------------------------------
+
+/// GET /api/v1/projects/{id}/scene-assignments
+///
+/// Returns scene assignments for ALL characters in a project in one query,
+/// using the same 4-level inheritance (scene_type defaults → project settings
+/// → group settings → character overrides) as the per-character dashboard.
+/// Includes enabled combos without scene records (status = 'not_started').
+pub async fn get_batch_scene_assignments(
+    State(state): State<AppState>,
+    Path(project_id): Path<DbId>,
+) -> AppResult<Json<DataResponse<Vec<BatchSceneAssignment>>>> {
+    let _project = ensure_project_exists(&state.pool, project_id).await?;
+
+    let rows = sqlx::query_as::<_, BatchSceneAssignment>(
+        "SELECT
+            c.id AS character_id,
+            st.id AS scene_type_id,
+            st.name AS scene_name,
+            t.id AS track_id,
+            t.name AS track_name,
+            t.slug AS track_slug,
+            st.has_clothes_off_transition,
+            sc.id AS scene_id,
+            CASE
+                WHEN sc.id IS NULL THEN 'not_started'
+                WHEN fc.qa_status = 'approved' THEN 'approved'
+                WHEN fc.qa_status = 'rejected' THEN 'rejected'
+                WHEN fc.source IS NOT NULL THEN fc.source
+                WHEN ss.name = 'generating' THEN 'generating'
+                ELSE COALESCE(ss.name, 'not_started')
+            END AS status,
+            COALESCE((SELECT COUNT(*) FROM scene_video_versions svv
+             WHERE svv.scene_id = sc.id AND svv.deleted_at IS NULL AND svv.is_final = false), 0) AS segment_count,
+            COALESCE((SELECT COUNT(*) FROM scene_video_versions svv
+             WHERE svv.scene_id = sc.id AND svv.deleted_at IS NULL AND svv.is_final = true), 0) AS final_video_count
+        FROM characters c
+        CROSS JOIN scene_types st
+        CROSS JOIN tracks t
+        LEFT JOIN project_scene_settings pss
+            ON pss.scene_type_id = st.id AND (pss.track_id = t.id OR pss.track_id IS NULL)
+        LEFT JOIN group_scene_settings gss
+            ON gss.scene_type_id = st.id AND (gss.track_id = t.id OR gss.track_id IS NULL)
+               AND gss.group_id = c.group_id
+        LEFT JOIN character_scene_overrides cso
+            ON cso.scene_type_id = st.id AND (cso.track_id = t.id OR cso.track_id IS NULL)
+               AND cso.character_id = c.id
+        LEFT JOIN scenes sc
+            ON sc.scene_type_id = st.id AND sc.track_id = t.id
+               AND sc.character_id = c.id AND sc.deleted_at IS NULL
+        LEFT JOIN scene_statuses ss ON ss.id = sc.status_id
+        LEFT JOIN LATERAL (
+            SELECT svv.qa_status, svv.source
+            FROM scene_video_versions svv
+            WHERE svv.scene_id = sc.id AND svv.is_final = true AND svv.deleted_at IS NULL
+            ORDER BY svv.id DESC
+            LIMIT 1
+        ) fc ON true
+        WHERE c.project_id = $1 AND c.deleted_at IS NULL
+          AND st.is_active = true AND st.deleted_at IS NULL
+          AND COALESCE(cso.is_enabled, gss.is_enabled, pss.is_enabled, st.is_active)
+        ORDER BY c.id, st.name, t.name",
+    )
+    .bind(project_id)
+    .fetch_all(&state.pool)
+    .await?;
+
+    Ok(Json(DataResponse { data: rows }))
+}

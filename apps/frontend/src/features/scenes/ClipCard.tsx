@@ -3,22 +3,26 @@ import { Button } from "@/components/primitives/Button";
 import { getStreamUrl } from "@/features/video-player";
 import { formatDuration } from "@/features/video-player/frame-utils";
 import { formatBytes, formatDate } from "@/lib/format";
-import { ChevronDown, ChevronRight, Clapperboard, Edit3, Layers, Play, RotateCcw, Star, Trash2, Upload } from "@/tokens/icons";
+import { Ban, ChevronDown, ChevronRight, Clapperboard, Edit3, Layers, Play, RotateCcw, Star, Upload } from "@/tokens/icons";
 import { useState } from "react";
 import { ArtifactTimeline } from "./ArtifactTimeline";
 import { ClipQAActions } from "./ClipQAActions";
-import { type SceneVideoVersion, isEmptyClip } from "./types";
+import { GenerationSnapshotPanel } from "./GenerationSnapshotPanel";
+import { type SceneVideoVersion, isEmptyClip, isPurgedClip } from "./types";
 
 interface ClipCardProps {
   clip: SceneVideoVersion;
   onPlay: (clip: SceneVideoVersion) => void;
   onApprove: (clipId: number) => void;
+  onUnapprove: (clipId: number) => void;
   onReject: (clipId: number) => void;
+  onExport?: (clipId: number) => void;
   onSetFinal: (clipId: number) => void;
   onDelete?: (clipId: number) => void;
   onResumeFrom?: (clipId: number) => void;
   showResumeButton: boolean;
   isApproving?: boolean;
+  isUnapproving?: boolean;
   isRejecting?: boolean;
   isDeleting?: boolean;
   /** Number of annotated frames on this clip (0 = no annotations). */
@@ -29,12 +33,15 @@ export function ClipCard({
   clip,
   onPlay,
   onApprove,
+  onUnapprove,
   onReject,
+  onExport,
   onSetFinal,
   onDelete,
   onResumeFrom,
   showResumeButton,
   isApproving,
+  isUnapproving,
   isRejecting,
   isDeleting,
   annotationCount = 0,
@@ -42,6 +49,7 @@ export function ClipCard({
   const [showSnapshot, setShowSnapshot] = useState(false);
   const [showArtifacts, setShowArtifacts] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const purged = isPurgedClip(clip);
   const sourceIcon = clip.source === "imported" ? <Upload size={14} /> : <Clapperboard size={14} />;
   const sourceLabel = clip.source === "imported" ? "Imported" : "Generated";
   const hasSnapshot = clip.generation_snapshot != null && Object.keys(clip.generation_snapshot).length > 0;
@@ -58,22 +66,28 @@ export function ClipCard({
     >
     <div className="flex items-center gap-4 p-4">
       {/* Clickable play area with video thumbnail */}
-      <button
-        type="button"
-        onClick={() => onPlay(clip)}
-        className="group/play relative h-16 w-24 shrink-0 rounded overflow-hidden
-          bg-[var(--color-surface-tertiary)]"
-      >
-        <video
-          src={getStreamUrl("version", clip.id, "proxy")}
-          className="absolute inset-0 w-full h-full object-cover"
-          preload="metadata"
-          muted
-        />
-        <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover/play:opacity-100 transition-opacity">
-          <Play size={20} className="text-white" />
+      {purged ? (
+        <div className="relative flex h-16 w-24 shrink-0 items-center justify-center rounded bg-[var(--color-surface-tertiary)]">
+          <Ban size={20} className="text-[var(--color-text-muted)]" />
         </div>
-      </button>
+      ) : (
+        <button
+          type="button"
+          onClick={() => onPlay(clip)}
+          className="group/play relative h-16 w-24 shrink-0 rounded overflow-hidden
+            bg-[var(--color-surface-tertiary)]"
+        >
+          <video
+            src={getStreamUrl("version", clip.id, "proxy")}
+            className="absolute inset-0 w-full h-full object-cover"
+            preload="metadata"
+            muted
+          />
+          <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover/play:opacity-100 transition-opacity">
+            <Play size={20} className="text-white" />
+          </div>
+        </button>
+      )}
 
       {/* Metadata */}
       <div className="flex min-w-0 flex-1 flex-col gap-1">
@@ -95,7 +109,10 @@ export function ClipCard({
               <Star size={12} /> Final
             </span>
           )}
-          {isEmptyClip(clip) && (
+          {purged && (
+            <Badge variant="warning" size="sm">Purged</Badge>
+          )}
+          {!purged && isEmptyClip(clip) && (
             <Badge variant="warning" size="sm">Empty file</Badge>
           )}
           {annotationCount > 0 && (
@@ -121,10 +138,34 @@ export function ClipCard({
         <ClipQAActions
           clip={clip}
           onApprove={onApprove}
+          onUnapprove={onUnapprove}
           onReject={onReject}
+          onExport={onExport}
+          onDelete={onDelete ? () => setConfirmDelete(true) : undefined}
+          isDeleteDisabled={clip.is_final}
           isApproving={isApproving}
+          isUnapproving={isUnapproving}
           isRejecting={isRejecting}
         />
+        {confirmDelete && onDelete && (
+          <span className="flex items-center gap-1">
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={() => { onDelete(clip.id); setConfirmDelete(false); }}
+              disabled={isDeleting}
+            >
+              {isDeleting ? "Deleting..." : "Confirm"}
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setConfirmDelete(false)}
+            >
+              Cancel
+            </Button>
+          </span>
+        )}
         {showResumeButton && onResumeFrom && (
           <Button
             variant="secondary"
@@ -134,43 +175,6 @@ export function ClipCard({
           >
             Resume
           </Button>
-        )}
-        {onDelete && (
-          clip.is_final ? (
-            <Button
-              variant="ghost"
-              size="sm"
-              disabled
-              icon={<Trash2 size={14} />}
-              title="Cannot delete final clip"
-            />
-          ) : confirmDelete ? (
-            <span className="flex items-center gap-1">
-              <Button
-                variant="danger"
-                size="sm"
-                onClick={() => { onDelete(clip.id); setConfirmDelete(false); }}
-                disabled={isDeleting}
-              >
-                {isDeleting ? "Deleting..." : "Confirm"}
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setConfirmDelete(false)}
-              >
-                Cancel
-              </Button>
-            </span>
-          ) : (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setConfirmDelete(true)}
-              icon={<Trash2 size={14} />}
-              title="Delete clip"
-            />
-          )
         )}
       </div>
     </div>
@@ -189,16 +193,7 @@ export function ClipCard({
           </button>
           {showSnapshot && (
             <div className="border-t border-[var(--color-border-default)] px-4 py-3">
-              <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-xs">
-                {Object.entries(clip.generation_snapshot!).map(([key, value]) => (
-                  <div key={key} className="contents">
-                    <dt className="font-medium text-[var(--color-text-secondary)]">{key}</dt>
-                    <dd className="text-[var(--color-text-primary)] break-all">
-                      {typeof value === "object" ? JSON.stringify(value) : String(value)}
-                    </dd>
-                  </div>
-                ))}
-              </dl>
+              <GenerationSnapshotPanel snapshot={clip.generation_snapshot!} />
             </div>
           )}
         </>

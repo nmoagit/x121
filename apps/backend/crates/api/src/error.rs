@@ -24,6 +24,10 @@ pub enum AppError {
     /// An internal error with a human-readable message.
     #[error("Internal error: {0}")]
     InternalError(String),
+
+    /// The resource existed but has been permanently removed (HTTP 410).
+    #[error("Gone: {0}")]
+    Gone(String),
 }
 
 /// Cloud provider error from `x121_core::cloud`.
@@ -131,6 +135,7 @@ impl IntoResponse for AppError {
                     "An internal error occurred".to_string(),
                 )
             }
+            AppError::Gone(msg) => (StatusCode::GONE, "GONE", msg.clone()),
         };
 
         let body = json!({

@@ -11,9 +11,9 @@ import { useCallback, useMemo, useState } from "react";
 
 import { Modal } from "@/components/composite/Modal";
 import { Grid, Stack } from "@/components/layout";
+import { ApprovalActions } from "@/components/domain/ApprovalActions";
 import { Badge, Button, Spinner } from "@/components/primitives";
-import { Check, ChevronLeft, ChevronRight, Download, RotateCcw, Trash2, Upload, Wand2, XCircle } from "@/tokens/icons";
-import { Tooltip } from "@/components/primitives/Tooltip";
+import { ChevronLeft, ChevronRight, Trash2, Upload, Wand2 } from "@/tokens/icons";
 
 import {
   useApproveVariant,
@@ -25,9 +25,10 @@ import {
 } from "@/features/images/hooks/use-image-variants";
 import { ImageVariantAnnotationModal } from "@/features/images/ImageVariantAnnotationModal";
 import {
-  IMAGE_VARIANT_STATUS,
   IMAGE_VARIANT_STATUS_LABEL,
   PROVENANCE_LABEL,
+  canApproveVariant,
+  canUnapproveVariant,
   statusBadgeVariant,
 } from "@/features/images/types";
 import type { ImageVariant, Provenance } from "@/features/images/types";
@@ -53,13 +54,8 @@ interface ModalVariantCardProps {
 }
 
 function ModalVariantCard({ variant, onApprove, onUnapprove, onReject, onExport, onDelete, onAnnotate }: ModalVariantCardProps) {
-  const canApprove =
-    variant.status_id === IMAGE_VARIANT_STATUS.GENERATED ||
-    variant.status_id === IMAGE_VARIANT_STATUS.EDITING ||
-    variant.status_id === IMAGE_VARIANT_STATUS.PENDING;
-  const canUnapprove =
-    variant.status_id === IMAGE_VARIANT_STATUS.APPROVED ||
-    variant.status_id === IMAGE_VARIANT_STATUS.REJECTED;
+  const canApprove = canApproveVariant(variant.status_id);
+  const canUnapprove = canUnapproveVariant(variant.status_id);
 
   return (
     <div className="rounded-[var(--radius-md)] border border-[var(--color-border-default)] bg-[var(--color-surface-secondary)] overflow-hidden">
@@ -105,29 +101,15 @@ function ModalVariantCard({ variant, onApprove, onUnapprove, onReject, onExport,
           <Badge variant="default" size="sm">v{variant.version}</Badge>
         </div>
         <div className="flex items-center gap-1">
-          {canApprove && (
-            <Tooltip content="Approve">
-              <Button size="sm" variant="primary" icon={<Check size={14} />} onClick={() => onApprove(variant.id)} aria-label="Approve" />
-            </Tooltip>
-          )}
-          {canApprove && (
-            <Tooltip content="Reject">
-              <Button size="sm" variant="secondary" icon={<XCircle size={14} />} onClick={() => onReject(variant.id)} aria-label="Reject" />
-            </Tooltip>
-          )}
-          {canUnapprove && (
-            <Tooltip content="Unapprove">
-              <Button size="sm" variant="secondary" icon={<RotateCcw size={14} />} onClick={() => onUnapprove(variant.id)} aria-label="Unapprove" />
-            </Tooltip>
-          )}
-          <Tooltip content="Export">
-            <Button size="sm" variant="ghost" icon={<Download size={14} />} onClick={() => onExport(variant.id)} aria-label="Export" />
-          </Tooltip>
-          <span className="ml-auto">
-            <Tooltip content="Delete">
-              <Button size="sm" variant="danger" icon={<Trash2 size={14} />} onClick={() => onDelete(variant.id)} aria-label="Delete" />
-            </Tooltip>
-          </span>
+          <ApprovalActions
+            canApprove={canApprove}
+            canUnapprove={canUnapprove}
+            onApprove={() => onApprove(variant.id)}
+            onUnapprove={() => onUnapprove(variant.id)}
+            onReject={() => onReject(variant.id)}
+            onExport={() => onExport(variant.id)}
+            onDelete={() => onDelete(variant.id)}
+          />
         </div>
       </div>
     </div>

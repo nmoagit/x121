@@ -208,7 +208,14 @@ pub async fn get_dashboard(
             ec.track_slug,
             ec.has_clothes_off_transition,
             sc.id AS scene_id,
-            COALESCE(ss.name, 'not_started') AS status,
+            CASE
+                WHEN sc.id IS NULL THEN 'not_started'
+                WHEN fc.qa_status = 'approved' THEN 'approved'
+                WHEN fc.qa_status = 'rejected' THEN 'rejected'
+                WHEN fc.source IS NOT NULL THEN fc.source
+                WHEN ss.name = 'generating' THEN 'generating'
+                ELSE COALESCE(ss.name, 'not_started')
+            END AS status,
             (SELECT COUNT(*) FROM scene_video_versions svv
              WHERE svv.scene_id = sc.id AND svv.deleted_at IS NULL AND svv.is_final = false) AS segment_count,
             (SELECT COUNT(*) FROM scene_video_versions svv
@@ -218,6 +225,13 @@ pub async fn get_dashboard(
             ON sc.scene_type_id = ec.scene_type_id AND sc.track_id = ec.track_id
                AND sc.character_id = $1 AND sc.deleted_at IS NULL
         LEFT JOIN scene_statuses ss ON ss.id = sc.status_id
+        LEFT JOIN LATERAL (
+            SELECT svv.qa_status, svv.source
+            FROM scene_video_versions svv
+            WHERE svv.scene_id = sc.id AND svv.is_final = true AND svv.deleted_at IS NULL
+            ORDER BY svv.id DESC
+            LIMIT 1
+        ) fc ON true
         ORDER BY ec.scene_name, ec.track_name",
     )
     .bind(character_id)

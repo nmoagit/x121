@@ -8,9 +8,10 @@ import type { DrawingObject } from "@/features/annotations/types";
 import { VideoPlayer } from "@/features/video-player/VideoPlayer";
 import { Edit3, Trash2, X } from "@/tokens/icons";
 
+import { GenerationSnapshotPanel } from "./GenerationSnapshotPanel";
 import { useDeleteVersionFrameAnnotation, useUpsertVersionAnnotation, useVersionAnnotations } from "./hooks/useVersionAnnotations";
 import { useClipAnnotationsStore, type FrameAnnotationEntry } from "./stores/useClipAnnotationsStore";
-import type { SceneVideoVersion } from "./types";
+import { type SceneVideoVersion, isPurgedClip } from "./types";
 
 /* --------------------------------------------------------------------------
    Types
@@ -235,31 +236,43 @@ export function ClipPlaybackModal({ clip, onClose }: ClipPlaybackModalProps) {
         <div className="flex flex-col gap-[var(--spacing-3)]">
           {/* Video + annotation overlay */}
           <div ref={wrapperRef} className="relative">
-            <div ref={videoContainerRef}>
-              <VideoPlayer
-                sourceType="version"
-                sourceId={clip.id}
-                autoPlay
-                showControls
-                onFrameChange={setCurrentFrame}
-              />
-            </div>
-
-            {annotating && containerWidth > 0 && videoHeight > 0 && (
-              <div
-                className="absolute top-0 left-0 z-10"
-                style={{ width: containerWidth, height: videoHeight }}
-              >
-                <DrawingCanvas
-                  key={canvasKey}
-                  width={containerWidth}
-                  height={videoHeight}
-                  existingAnnotations={existingForFrame}
-                  onAnnotationsChange={handleAnnotationsChange}
-                  editable
-                  overlay
-                />
+            {isPurgedClip(clip) ? (
+              <div className="flex h-48 items-center justify-center rounded-[var(--radius-md)] border border-dashed border-[var(--color-border-default)] bg-[var(--color-surface-secondary)]">
+                <div className="flex flex-col items-center gap-2 text-[var(--color-text-muted)]">
+                  <X size={32} />
+                  <span className="text-sm">Video file has been purged from disk</span>
+                  <span className="text-xs">Metadata and generation parameters are still available below.</span>
+                </div>
               </div>
+            ) : (
+              <>
+                <div ref={videoContainerRef}>
+                  <VideoPlayer
+                    sourceType="version"
+                    sourceId={clip.id}
+                    autoPlay
+                    showControls
+                    onFrameChange={setCurrentFrame}
+                  />
+                </div>
+
+                {annotating && containerWidth > 0 && videoHeight > 0 && (
+                  <div
+                    className="absolute top-0 left-0 z-10"
+                    style={{ width: containerWidth, height: videoHeight }}
+                  >
+                    <DrawingCanvas
+                      key={canvasKey}
+                      width={containerWidth}
+                      height={videoHeight}
+                      existingAnnotations={existingForFrame}
+                      onAnnotationsChange={handleAnnotationsChange}
+                      editable
+                      overlay
+                    />
+                  </div>
+                )}
+              </>
             )}
           </div>
 
@@ -290,6 +303,7 @@ export function ClipPlaybackModal({ clip, onClose }: ClipPlaybackModalProps) {
           )}
 
           {/* Annotation controls */}
+          {!isPurgedClip(clip) && (
           <div className="flex items-center gap-[var(--spacing-2)]">
             <Button
               size="sm"
@@ -310,6 +324,15 @@ export function ClipPlaybackModal({ clip, onClose }: ClipPlaybackModalProps) {
               <span className="text-xs text-[var(--color-text-muted)]">Saving…</span>
             )}
           </div>
+          )}
+
+          {/* Generation snapshot */}
+          {clip.generation_snapshot != null &&
+            Object.keys(clip.generation_snapshot).length > 0 && (
+              <div className="rounded-[var(--radius-md)] border border-[var(--color-border-default)] bg-[var(--color-surface-secondary)] p-[var(--spacing-3)]">
+                <GenerationSnapshotPanel snapshot={clip.generation_snapshot} />
+              </div>
+            )}
 
           {/* Annotation summary list */}
           {sortedAnnotations.length > 0 && (

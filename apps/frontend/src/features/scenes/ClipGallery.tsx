@@ -1,8 +1,9 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 import { EmptyState } from "@/components/domain/EmptyState";
 import { Button } from "@/components/primitives/Button";
 import { Spinner } from "@/components/primitives/Spinner";
+import { getStreamUrl } from "@/features/video-player";
 import { Play, Upload } from "@/tokens/icons";
 
 import { GenerationTerminal } from "@/features/generation/GenerationTerminal";
@@ -20,6 +21,7 @@ import {
   useResumeFromClip,
   useSceneVersions,
   useSetFinalClip,
+  useUnapproveClip,
 } from "./hooks/useClipManagement";
 import type { SceneVideoVersion } from "./types";
 
@@ -39,10 +41,19 @@ interface ClipGalleryProps {
 export function ClipGallery({ sceneId, onGenerate, generateLoading, generateDisabled, generateDisabledReason, isGenerating, leftActions }: ClipGalleryProps) {
   const { data: clips, isLoading, isError, refetch } = useSceneVersions(sceneId);
   const approveMutation = useApproveClip(sceneId);
+  const unapproveMutation = useUnapproveClip(sceneId);
   const rejectMutation = useRejectClip(sceneId);
   const setFinalMutation = useSetFinalClip(sceneId);
   const resumeFromMutation = useResumeFromClip(sceneId);
   const deleteMutation = useDeleteClip(sceneId);
+
+  const handleExportClip = useCallback((clipId: number) => {
+    const url = getStreamUrl("version", clipId, "full");
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `clip-${clipId}.mp4`;
+    a.click();
+  }, []);
 
   const [playingClip, setPlayingClip] = useState<SceneVideoVersion | null>(null);
   const [rejectingClipId, setRejectingClipId] = useState<number | null>(null);
@@ -146,7 +157,9 @@ export function ClipGallery({ sceneId, onGenerate, generateLoading, generateDisa
               clip={clip}
               onPlay={(c) => setPlayingClip(c)}
               onApprove={(id) => approveMutation.mutate(id)}
+              onUnapprove={(id) => unapproveMutation.mutate(id)}
               onReject={(id) => setRejectingClipId(id)}
+              onExport={handleExportClip}
               onSetFinal={(id) => setFinalMutation.mutate(id)}
               onDelete={(id) => deleteMutation.mutate(id)}
               isDeleting={deleteMutation.isPending && deleteMutation.variables === clip.id}
@@ -156,6 +169,7 @@ export function ClipGallery({ sceneId, onGenerate, generateLoading, generateDisa
               }}
               showResumeButton={resumeEligibleIds.has(clip.id)}
               isApproving={approveMutation.isPending && approveMutation.variables === clip.id}
+              isUnapproving={unapproveMutation.isPending && unapproveMutation.variables === clip.id}
               isRejecting={
                 rejectMutation.isPending && rejectMutation.variables?.versionId === clip.id
               }

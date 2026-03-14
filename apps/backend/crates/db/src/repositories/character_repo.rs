@@ -15,7 +15,7 @@ use crate::models::character::{
 /// existing INSERT queries remain valid.
 const COLUMNS: &str =
     "id, project_id, name, status_id, metadata, settings, group_id, deleted_at, created_at, updated_at, \
-     face_detection_confidence, face_bounding_box, embedding_status_id, embedding_extracted_at, review_status_id";
+     face_detection_confidence, face_bounding_box, embedding_status_id, embedding_extracted_at, review_status_id, is_enabled";
 
 /// Provides CRUD operations for characters plus settings helpers.
 pub struct CharacterRepo;
@@ -332,6 +332,7 @@ impl CharacterRepo {
                 COALESCE(cc.cnt, 0) AS clip_count,
                 (c.metadata IS NOT NULL AND c.metadata != '{{}}'::jsonb) AS has_metadata,
                 c.status_id,
+                c.is_enabled,
                 c.created_at
              FROM characters c
              JOIN projects p ON p.id = c.project_id
@@ -384,6 +385,24 @@ impl CharacterRepo {
         }
 
         q.fetch_all(pool).await
+    }
+
+    /// Toggle `is_enabled` for a character. Returns the updated row.
+    pub async fn toggle_enabled(
+        pool: &PgPool,
+        id: DbId,
+        enabled: bool,
+    ) -> Result<Option<Character>, sqlx::Error> {
+        let query = format!(
+            "UPDATE characters SET is_enabled = $2
+             WHERE id = $1 AND deleted_at IS NULL
+             RETURNING {COLUMNS}"
+        );
+        sqlx::query_as::<_, Character>(&query)
+            .bind(id)
+            .bind(enabled)
+            .fetch_optional(pool)
+            .await
     }
 
     /// Per-character deliverable status for a project.
@@ -475,7 +494,7 @@ impl CharacterRepo {
                          LIMIT 1
                      ) AS approval_status
              ) meta ON true
-             WHERE c.project_id = $1 AND c.deleted_at IS NULL AND c.status_id != 3
+             WHERE c.project_id = $1 AND c.deleted_at IS NULL AND c.is_enabled = true
              ORDER BY c.name ASC",
         )
         .bind(project_id)

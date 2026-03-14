@@ -6,7 +6,8 @@
  * - "Import" tab: renders the ImportWizard for adding new workflows
  */
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useSearch } from "@tanstack/react-router";
 
 import { ConfirmDeleteModal, ConfigToolbar, Modal } from "@/components/composite";
 import { EmptyState } from "@/components/domain";
@@ -191,6 +192,17 @@ export function WorkflowsPage() {
   const [deletingWorkflow, setDeletingWorkflow] = useState<Workflow | null>(null);
 
   const { data: workflows, isLoading } = useWorkflows();
+  const { name: searchName } = useSearch({ strict: false }) as { name?: string };
+
+  // Auto-select workflow from URL search param (e.g., ?name=boobs-fondle)
+  useEffect(() => {
+    if (!searchName || !workflows?.length) return;
+    const match = workflows.find((w) => w.name.toLowerCase() === searchName.toLowerCase());
+    if (match && selectedWorkflowId !== match.id) {
+      setSelectedWorkflowId(match.id);
+    }
+  }, [searchName, workflows]);
+
   const selectedWorkflow = workflows?.find((w) => w.id === selectedWorkflowId) ?? null;
   const importMutation = useImportWorkflow();
   const validateMutation = useValidateWorkflow();

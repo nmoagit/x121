@@ -108,6 +108,30 @@ export function useUpdateCharacter(projectId: number) {
   });
 }
 
+/** Toggle a character's is_enabled flag. */
+export function useToggleCharacterEnabled(projectId: number) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      characterId,
+      isEnabled,
+    }: {
+      characterId: number;
+      isEnabled: boolean;
+    }) =>
+      api.put<Character>(
+        `/projects/${projectId}/characters/${characterId}/toggle-enabled`,
+        { is_enabled: isEnabled },
+      ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: projectCharacterKeys.all(projectId),
+      });
+    },
+  });
+}
+
 /** Delete a character. */
 export function useDeleteCharacter(projectId: number) {
   const queryClient = useQueryClient();

@@ -22,7 +22,7 @@ import { INLINE_LINK_BTN } from "@/lib/ui-classes";
 import { SOURCE_KEY_BIO, SOURCE_KEY_TOV } from "@/features/characters/types";
 
 import type { ImportProgress } from "../hooks/use-character-import";
-import type { Character, CharacterDropPayload } from "../types";
+import type { Character, CharacterDropPayload, ImportHashSummary } from "../types";
 import { ImportProgressBar } from "./ImportProgressBar";
 import { useCreateGroup } from "../hooks/use-character-groups";
 import { useDuplicateAssetInfo } from "../hooks/use-duplicate-asset-info";
@@ -65,6 +65,8 @@ interface ImportConfirmModalProps {
   projectName?: string;
   /** Names of existing groups for "exists" / "will be created" badges. */
   existingGroupNames?: string[];
+  /** Hash-based deduplication summary (computed asynchronously after drop). */
+  hashSummary?: ImportHashSummary | null;
 }
 
 /* --------------------------------------------------------------------------
@@ -254,6 +256,7 @@ export function ImportConfirmModal({
   detectedProjectName,
   projectName,
   existingGroupNames = [],
+  hashSummary,
 }: ImportConfirmModalProps) {
   const { options: groupOptions } = useGroupSelectOptions(projectId);
 
@@ -495,6 +498,47 @@ export function ImportConfirmModal({
     }
   }
 
+  /** Import only assets with new content hashes (filter out duplicates by content). */
+  function handleImportNewOnly() {
+    if (!payloads || !onConfirmWithAssets) return;
+
+    // Clone payloads and filter out duplicate assets
+    const newPayloads: CharacterDropPayload[] = [];
+    const existingPayloads: CharacterDropPayload[] = [];
+
+    for (let i = 0; i < payloads.length; i++) {
+      const payload = payloads[i]!;
+      const display = displayNames[i]!;
+      const isDuplicate = duplicateIndices.has(i);
+
+      // Filter out assets that are content-duplicates
+      const filteredAssets = payload.assets.filter((a) => !a.isDuplicate);
+      if (filteredAssets.length === 0 && !payload.bioJson && !payload.tovJson && !payload.metadataJson) {
+        continue; // Skip entirely if no new assets
+      }
+
+      const filteredPayload: CharacterDropPayload = {
+        ...payload,
+        rawName: display,
+        assets: filteredAssets,
+      };
+
+      if (isDuplicate) {
+        existingPayloads.push(filteredPayload);
+      } else if (checked.has(i)) {
+        newPayloads.push(filteredPayload);
+      }
+    }
+
+    onConfirmWithAssets(
+      newPayloads,
+      existingPayloads,
+      groupId ? Number(groupId) : undefined,
+      false,
+      true,
+    );
+  }
+
   const importableCount = effectiveNames.length - duplicateCount;
   const totalActionCount = selectedCount + existingAssetsCount;
   const isImporting = importProgress != null && importProgress.phase !== "done";
@@ -590,6 +634,37 @@ export function ImportConfirmModal({
                 : projectNameMatch === false
                   ? `Folder "${detectedProjectName}" does not match current project "${projectName}"`
                   : `Importing from "${detectedProjectName}"`}
+            </p>
+          </div>
+        )}
+
+        {/* Hash deduplication summary */}
+        {hashSummary && (
+          <div
+            className={cn(
+              "rounded-[var(--radius-md)] border px-[var(--spacing-3)] py-[var(--spacing-2)]",
+              hashSummary.isHashing
+                ? "border-[var(--color-border-default)] bg-[var(--color-surface-secondary)]"
+                : hashSummary.duplicateFiles > 0
+                  ? "border-[var(--color-border-warning)] bg-[var(--color-surface-warning)]"
+                  : "border-[var(--color-border-success)] bg-[var(--color-surface-success)]",
+            )}
+          >
+            <p
+              className={cn(
+                "text-sm",
+                hashSummary.isHashing
+                  ? "text-[var(--color-text-secondary)]"
+                  : hashSummary.duplicateFiles > 0
+                    ? "text-[var(--color-text-warning)]"
+                    : "text-[var(--color-text-success)]",
+              )}
+            >
+              {hashSummary.isHashing
+                ? `Checking ${hashSummary.totalFiles} file${hashSummary.totalFiles !== 1 ? "s" : ""} for duplicates...`
+                : hashSummary.duplicateFiles > 0
+                  ? `${hashSummary.newFiles} new file${hashSummary.newFiles !== 1 ? "s" : ""}, ${hashSummary.duplicateFiles} already imported (same content)`
+                  : `All ${hashSummary.totalFiles} file${hashSummary.totalFiles !== 1 ? "s" : ""} are new`}
             </p>
           </div>
         )}
@@ -786,6 +861,16 @@ export function ImportConfirmModal({
                 <Button variant="secondary" onClick={onClose}>
                   Cancel
                 </Button>
+                {hashSummary && !hashSummary.isHashing && hashSummary.duplicateFiles > 0 && (
+                  <Button
+                    variant="secondary"
+                    onClick={handleImportNewOnly}
+                    disabled={hashSummary.newFiles === 0}
+                    loading={loading}
+                  >
+                    Import New Only ({hashSummary.newFiles})
+                  </Button>
+                )}
                 <Button
                   onClick={handleConfirm}
                   disabled={totalActionCount === 0}

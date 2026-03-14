@@ -28,6 +28,23 @@ export const IMAGE_VARIANT_STATUS_LABEL: Record<ImageVariantStatusId, string> = 
   [IMAGE_VARIANT_STATUS.EDITING]: "Editing",
 };
 
+/** Whether a variant's status allows approval (pending, generated, or editing). */
+export function canApproveVariant(statusId: ImageVariantStatusId): boolean {
+  return (
+    statusId === IMAGE_VARIANT_STATUS.GENERATED ||
+    statusId === IMAGE_VARIANT_STATUS.EDITING ||
+    statusId === IMAGE_VARIANT_STATUS.PENDING
+  );
+}
+
+/** Whether a variant's status allows unapproval (approved or rejected). */
+export function canUnapproveVariant(statusId: ImageVariantStatusId): boolean {
+  return (
+    statusId === IMAGE_VARIANT_STATUS.APPROVED ||
+    statusId === IMAGE_VARIANT_STATUS.REJECTED
+  );
+}
+
 /** Map a variant status ID to a Badge component variant for visual consistency. */
 export function statusBadgeVariant(
   statusId: ImageVariantStatusId,

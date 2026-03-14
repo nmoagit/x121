@@ -247,6 +247,32 @@ pub async fn browse_annotations(
     Ok(Json(DataResponse { data: items }))
 }
 
+/// DELETE /annotations/{id}
+///
+/// Delete a frame annotation by its primary key (not segment-scoped).
+pub async fn delete_annotation_by_id(
+    auth: AuthUser,
+    State(state): State<AppState>,
+    Path(annotation_id): Path<DbId>,
+) -> AppResult<impl IntoResponse> {
+    let deleted = FrameAnnotationRepo::delete(&state.pool, annotation_id).await?;
+
+    if !deleted {
+        return Err(AppError::Core(CoreError::NotFound {
+            entity: "FrameAnnotation",
+            id: annotation_id,
+        }));
+    }
+
+    tracing::info!(
+        user_id = auth.user_id,
+        annotation_id = annotation_id,
+        "Frame annotation deleted (browse)"
+    );
+
+    Ok(StatusCode::NO_CONTENT)
+}
+
 /* --------------------------------------------------------------------------
 Version-scoped annotation handlers (clip review)
 -------------------------------------------------------------------------- */

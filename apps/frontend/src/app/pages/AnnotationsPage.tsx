@@ -15,7 +15,7 @@ import { PageHeader, Stack } from "@/components/layout";
 import { Badge, Button, Input, Select, Spinner } from "@/components/primitives";
 import { DrawingCanvas } from "@/features/annotations/DrawingCanvas";
 import type { DrawingObject } from "@/features/annotations/types";
-import { useAnnotationsBrowse } from "@/features/annotations";
+import { useAnnotationsBrowse, useDeleteBrowseAnnotation } from "@/features/annotations";
 import type { AnnotatedItem } from "@/features/annotations";
 import { useVersionAnnotations } from "@/features/scenes/hooks/useVersionAnnotations";
 import { VideoPlayer } from "@/features/video-player/VideoPlayer";
@@ -23,7 +23,7 @@ import { getStreamUrl } from "@/features/video-player/hooks/use-video-metadata";
 import { useProjects } from "@/features/projects/hooks/use-projects";
 import { formatRelative } from "@/lib/format";
 import { toSelectOptions } from "@/lib/select-utils";
-import { ArrowDown, ArrowRight, Edit3 } from "@/tokens/icons";
+import { ArrowDown, ArrowRight, Edit3, Trash2 } from "@/tokens/icons";
 
 /* --------------------------------------------------------------------------
    Annotation Detail Modal
@@ -241,61 +241,79 @@ function AnnotationDetailModal({
 function AnnotationCard({
   item,
   onClick,
+  onDelete,
 }: {
   item: AnnotatedItem;
   onClick: () => void;
+  onDelete: () => void;
 }) {
   const streamUrl = item.version_id
     ? getStreamUrl("version", item.version_id, "proxy")
     : null;
 
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="group flex flex-col rounded-lg border border-[var(--color-border-default)] bg-[var(--color-surface-primary)] overflow-hidden text-left transition-colors hover:border-[var(--color-action-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-action-primary)]"
-    >
-      {/* Thumbnail */}
-      <div className="relative aspect-video w-full bg-[var(--color-surface-secondary)] flex items-center justify-center overflow-hidden">
-        {streamUrl ? (
-          <video
-            src={streamUrl}
-            className="h-full w-full object-cover"
-            preload="metadata"
-            muted
-          />
-        ) : (
-          <Edit3 size={32} className="text-[var(--color-text-muted)]" />
-        )}
-        {/* Badges */}
-        <div className="absolute top-2 right-2 flex gap-1">
-          <span className="rounded bg-[var(--color-surface-primary)]/80 px-1.5 py-0.5 text-xs font-medium text-[var(--color-text-primary)] backdrop-blur-sm">
-            F{item.frame_number}
-          </span>
-          <span className="rounded bg-[var(--color-action-primary)]/80 px-1.5 py-0.5 text-xs font-medium text-white backdrop-blur-sm">
-            {item.annotation_count}
-          </span>
-        </div>
-      </div>
+    <div className="group relative flex flex-col rounded-lg border border-[var(--color-border-default)] bg-[var(--color-surface-primary)] overflow-hidden transition-colors hover:border-[var(--color-action-primary)]">
+      {/* Delete button */}
+      <button
+        type="button"
+        title="Delete annotation"
+        onClick={(e) => {
+          e.stopPropagation();
+          onDelete();
+        }}
+        className="absolute top-2 left-2 z-10 rounded bg-red-600/80 p-1 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 cursor-pointer backdrop-blur-sm"
+      >
+        <Trash2 size={12} />
+      </button>
 
-      {/* Info */}
-      <div className="flex flex-col gap-1 p-3">
-        <span className="text-sm font-medium text-[var(--color-text-primary)] truncate">
-          {item.character_name}
-        </span>
-        <span className="text-xs text-[var(--color-text-secondary)] truncate">
-          {item.scene_type_name}
-        </span>
-        <div className="flex items-center justify-between mt-1">
-          <span className="text-xs text-[var(--color-text-muted)] truncate">
-            {item.project_name}
-          </span>
-          <span className="text-xs text-[var(--color-text-muted)] shrink-0">
-            {formatRelative(item.created_at)}
-          </span>
+      {/* Clickable card body */}
+      <button
+        type="button"
+        onClick={onClick}
+        className="flex flex-col text-left w-full focus:outline-none focus:ring-2 focus:ring-[var(--color-action-primary)]"
+      >
+        {/* Thumbnail */}
+        <div className="relative aspect-video w-full bg-[var(--color-surface-secondary)] flex items-center justify-center overflow-hidden">
+          {streamUrl ? (
+            <video
+              src={streamUrl}
+              className="h-full w-full object-cover"
+              preload="metadata"
+              muted
+            />
+          ) : (
+            <Edit3 size={32} className="text-[var(--color-text-muted)]" />
+          )}
+          {/* Badges */}
+          <div className="absolute top-2 right-2 flex gap-1">
+            <span className="rounded bg-[var(--color-surface-primary)]/80 px-1.5 py-0.5 text-xs font-medium text-[var(--color-text-primary)] backdrop-blur-sm">
+              F{item.frame_number}
+            </span>
+            <span className="rounded bg-[var(--color-action-primary)]/80 px-1.5 py-0.5 text-xs font-medium text-white backdrop-blur-sm">
+              {item.annotation_count}
+            </span>
+          </div>
         </div>
-      </div>
-    </button>
+
+        {/* Info */}
+        <div className="flex flex-col gap-1 p-3">
+          <span className="text-sm font-medium text-[var(--color-text-primary)] truncate">
+            {item.character_name}
+          </span>
+          <span className="text-xs text-[var(--color-text-secondary)] truncate">
+            {item.scene_type_name}
+          </span>
+          <div className="flex items-center justify-between mt-1">
+            <span className="text-xs text-[var(--color-text-muted)] truncate">
+              {item.project_name}
+            </span>
+            <span className="text-xs text-[var(--color-text-muted)] shrink-0">
+              {formatRelative(item.created_at)}
+            </span>
+          </div>
+        </div>
+      </button>
+    </div>
   );
 }
 
@@ -324,6 +342,7 @@ export function AnnotationsPage() {
   const [showCompleted, setShowCompleted] = useState(false);
 
   const { data: projects } = useProjects();
+  const deleteMutation = useDeleteBrowseAnnotation();
 
   const projectId = projectFilter ? Number(projectFilter) : undefined;
   const { data: items, isLoading } = useAnnotationsBrowse({
@@ -423,6 +442,11 @@ export function AnnotationsPage() {
               key={item.annotation_id}
               item={item}
               onClick={() => setSelectedItem(item)}
+              onDelete={() => {
+                if (window.confirm(`Delete annotation on ${item.character_name} — ${item.scene_type_name}, frame ${item.frame_number}?`)) {
+                  deleteMutation.mutate(item.annotation_id);
+                }
+              }}
             />
           ))}
         </div>

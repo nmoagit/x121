@@ -67,6 +67,10 @@ pub fn router() -> Router<AppState> {
         .route(
             "/{id}/group",
             axum::routing::put(character_group::assign_character_to_group),
+        )
+        .route(
+            "/{id}/toggle-enabled",
+            axum::routing::put(character::toggle_enabled),
         );
 
     let group_routes = Router::new()
@@ -109,6 +113,14 @@ pub fn router() -> Router<AppState> {
         .route(
             "/{id}/character-deliverables",
             get(project::get_character_deliverables),
+        )
+        .route(
+            "/{id}/scene-assignments",
+            get(project::get_batch_scene_assignments),
+        )
+        .route(
+            "/{id}/variant-statuses",
+            get(project::get_batch_variant_statuses),
         )
         .nest("/{project_id}/characters", character_routes)
         .nest("/{project_id}/groups", group_routes)

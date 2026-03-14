@@ -18,7 +18,8 @@ import { cn } from "@/lib/cn";
 import { readFileAsJson } from "@/lib/file-types";
 import { formatDate } from "@/lib/format";
 import { isValidJson } from "@/lib/validation";
-import { ArrowLeft, ArrowRight, Check, Eye, Info, Plus, RotateCcw, ShieldCheck, Sparkles, Trash2, X } from "@/tokens/icons";
+import { ArrowLeft, ArrowRight, Check, Eye, Info, Plus, Sparkles, Trash2, X } from "@/tokens/icons";
+import { ApprovalActions } from "@/components/domain/ApprovalActions";
 
 import {
   useCharacterMetadata,
@@ -979,57 +980,17 @@ export function CharacterMetadataTab({ characterId, projectId }: CharacterMetada
                   </span>
                 </div>
                 <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-                  {/* Approval actions — only on active versions with pending approval */}
-                  {v.is_active && v.approval_status === "pending" && (
-                    <>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        icon={<ShieldCheck size={12} />}
-                        onClick={() => approveMetadata.mutate(v.id)}
-                        disabled={approveMetadata.isPending}
-                        title="Approve metadata"
-                      />
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        icon={<X size={12} />}
-                        onClick={() => setRejectApprovalTarget(v)}
-                        title="Reject metadata approval"
-                      />
-                    </>
-                  )}
-                  {/* Unapprove — revert approved back to pending */}
-                  {v.is_active && v.approval_status === "approved" && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      icon={<RotateCcw size={12} />}
-                      onClick={() => unapproveMetadata.mutate(v.id)}
-                      disabled={unapproveMetadata.isPending}
-                      title="Revert to pending"
+                  {/* Approval actions — only on active versions */}
+                  {v.is_active && (v.approval_status === "pending" || v.approval_status === "approved" || v.approval_status === "rejected") && (
+                    <ApprovalActions
+                      canApprove={v.approval_status === "pending" || v.approval_status === "rejected"}
+                      canUnapprove={v.approval_status === "approved" || v.approval_status === "rejected"}
+                      onApprove={() => approveMetadata.mutate(v.id)}
+                      onUnapprove={() => unapproveMetadata.mutate(v.id)}
+                      onReject={() => setRejectApprovalTarget(v)}
+                      isApproving={approveMetadata.isPending}
+                      isUnapproving={unapproveMetadata.isPending}
                     />
-                  )}
-                  {/* Re-approve or unapprove after rejection */}
-                  {v.is_active && v.approval_status === "rejected" && (
-                    <>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        icon={<ShieldCheck size={12} />}
-                        onClick={() => approveMetadata.mutate(v.id)}
-                        disabled={approveMetadata.isPending}
-                        title="Approve metadata"
-                      />
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        icon={<RotateCcw size={12} />}
-                        onClick={() => unapproveMetadata.mutate(v.id)}
-                        disabled={unapproveMetadata.isPending}
-                        title="Revert to pending"
-                      />
-                    </>
                   )}
                   {!v.is_active && !v.rejection_reason && (
                     <Button

@@ -8,9 +8,10 @@
 import { useCallback, useState } from "react";
 
 import { Card, Modal } from "@/components/composite";
+import { ApprovalActions } from "@/components/domain/ApprovalActions";
 import { Grid, Stack } from "@/components/layout";
 import { Badge, Button, Spinner } from "@/components/primitives";
-import { Check, Download, Eye, RotateCcw, Trash2, XCircle } from "@/tokens/icons";
+import { Check, Eye } from "@/tokens/icons";
 
 import {
   useApproveVariant,
@@ -24,6 +25,8 @@ import {
   IMAGE_VARIANT_STATUS,
   IMAGE_VARIANT_STATUS_LABEL,
   PROVENANCE_LABEL,
+  canApproveVariant,
+  canUnapproveVariant,
   statusBadgeVariant,
   type ImageVariant,
   type Provenance,
@@ -55,13 +58,8 @@ function VariantCard({
   onPreview,
 }: VariantCardProps) {
   const isGenerating = variant.status_id === IMAGE_VARIANT_STATUS.GENERATING;
-  const canApprove =
-    variant.status_id === IMAGE_VARIANT_STATUS.GENERATED ||
-    variant.status_id === IMAGE_VARIANT_STATUS.EDITING ||
-    variant.status_id === IMAGE_VARIANT_STATUS.PENDING;
-  const canUnapprove =
-    variant.status_id === IMAGE_VARIANT_STATUS.APPROVED ||
-    variant.status_id === IMAGE_VARIANT_STATUS.REJECTED;
+  const canApprove = canApproveVariant(variant.status_id);
+  const canUnapprove = canUnapproveVariant(variant.status_id);
 
   return (
     <Card elevation="sm" padding="none" className="group/card overflow-hidden">
@@ -130,58 +128,16 @@ function VariantCard({
         </div>
 
         {/* Actions */}
-        <div className="flex flex-wrap gap-1">
-          {canApprove && (
-            <Button
-              variant="primary"
-              size="sm"
-              icon={<Check size={14} />}
-              onClick={() => onApprove(variant.id)}
-              aria-label={`Approve ${variant.variant_label}`}
-            >
-              Approve
-            </Button>
-          )}
-          {canApprove && (
-            <Button
-              variant="secondary"
-              size="sm"
-              icon={<XCircle size={14} />}
-              onClick={() => onReject(variant.id)}
-              aria-label={`Reject ${variant.variant_label}`}
-            >
-              Reject
-            </Button>
-          )}
-          {canUnapprove && (
-            <Button
-              variant="secondary"
-              size="sm"
-              icon={<RotateCcw size={14} />}
-              onClick={() => onUnapprove(variant.id)}
-              aria-label={`Unapprove ${variant.variant_label}`}
-            >
-              Unapprove
-            </Button>
-          )}
-          <Button
-            variant="ghost"
-            size="sm"
-            icon={<Download size={14} />}
-            onClick={() => onExport(variant.id)}
-            aria-label={`Export ${variant.variant_label}`}
-          >
-            Export
-          </Button>
-          <Button
-            variant="danger"
-            size="sm"
-            icon={<Trash2 size={14} />}
-            onClick={() => onDelete(variant.id)}
-            aria-label={`Delete ${variant.variant_label}`}
-          >
-            Delete
-          </Button>
+        <div className="flex flex-wrap items-center gap-1">
+          <ApprovalActions
+            canApprove={canApprove}
+            canUnapprove={canUnapprove}
+            onApprove={() => onApprove(variant.id)}
+            onUnapprove={() => onUnapprove(variant.id)}
+            onReject={() => onReject(variant.id)}
+            onExport={() => onExport(variant.id)}
+            onDelete={() => onDelete(variant.id)}
+          />
         </div>
       </div>
     </Card>

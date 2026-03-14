@@ -95,7 +95,8 @@ impl SceneRepo {
         sqlx::query_as::<_, SceneWithVersion>(&format!(
             "SELECT {cols},
                         lv.id AS latest_version_id,
-                        COALESCE(vc.cnt, 0) AS version_count
+                        COALESCE(vc.cnt, 0) AS version_count,
+                        COALESCE(ntf.has_newer, false) AS has_newer_than_final
                  FROM scenes s
                  LEFT JOIN LATERAL (
                      SELECT v.id
@@ -109,6 +110,26 @@ impl SceneRepo {
                      FROM scene_video_versions v
                      WHERE v.scene_id = s.id AND v.deleted_at IS NULL
                  ) vc ON true
+                 LEFT JOIN LATERAL (
+                     SELECT EXISTS(
+                         SELECT 1 FROM scene_video_versions v2
+                         WHERE v2.scene_id = s.id
+                           AND v2.deleted_at IS NULL
+                           AND v2.version_number > (
+                               SELECT COALESCE(MAX(vf.version_number), 0)
+                               FROM scene_video_versions vf
+                               WHERE vf.scene_id = s.id
+                                 AND vf.deleted_at IS NULL
+                                 AND vf.is_final = true
+                           )
+                           AND EXISTS(
+                               SELECT 1 FROM scene_video_versions vf2
+                               WHERE vf2.scene_id = s.id
+                                 AND vf2.deleted_at IS NULL
+                                 AND vf2.is_final = true
+                           )
+                     ) AS has_newer
+                 ) ntf ON true
                  WHERE s.character_id = $1 AND s.deleted_at IS NULL
                  ORDER BY s.created_at ASC"
         ))

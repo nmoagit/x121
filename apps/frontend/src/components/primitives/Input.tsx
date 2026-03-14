@@ -2,14 +2,23 @@ import { cn } from "@/lib/cn";
 import { forwardRef, useId } from "react";
 import type { InputHTMLAttributes } from "react";
 
-interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
+type InputSize = "sm" | "md";
+
+const SIZE_CLASSES: Record<InputSize, string> = {
+  sm: "px-3 py-1.5 text-sm",
+  md: "px-3 py-2 text-base",
+};
+
+interface InputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, "size"> {
   label?: string;
   error?: string;
   helperText?: string;
+  /** Visual size. Default "md". */
+  size?: InputSize;
 }
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
-  { label, error, helperText, className, id, ...rest },
+  { label, error, helperText, size = "md", className, id, ...rest },
   ref,
 ) {
   const generatedId = useId();
@@ -33,7 +42,8 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
         aria-invalid={error ? true : undefined}
         aria-describedby={describedBy}
         className={cn(
-          "w-full px-3 py-2 text-base",
+          "w-full",
+          SIZE_CLASSES[size],
           "bg-[var(--color-surface-secondary)] text-[var(--color-text-primary)]",
           "border rounded-[var(--radius-md)]",
           "placeholder:text-[var(--color-text-muted)]",

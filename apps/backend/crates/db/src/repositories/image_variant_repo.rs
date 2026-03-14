@@ -9,7 +9,7 @@ use crate::models::status::StatusId;
 /// Column list shared across queries to avoid repetition.
 const COLUMNS: &str = "id, character_id, source_image_id, derived_image_id, variant_label, \
     status_id, file_path, variant_type, provenance, is_hero, file_size_bytes, width, height, \
-    format, version, parent_variant_id, generation_params, deleted_at, created_at, updated_at";
+    format, version, parent_variant_id, generation_params, content_hash, deleted_at, created_at, updated_at";
 
 /// Provides CRUD operations for image variants.
 pub struct ImageVariantRepo;
@@ -27,10 +27,10 @@ impl ImageVariantRepo {
                 (character_id, source_image_id, derived_image_id, variant_label,
                  status_id, file_path, variant_type, provenance, is_hero,
                  file_size_bytes, width, height, format, version,
-                 parent_variant_id, generation_params)
+                 parent_variant_id, generation_params, content_hash)
              VALUES ($1, $2, $3, $4, COALESCE($5, 1), $6, $7,
                      COALESCE($8, 'generated'), COALESCE($9, false),
-                     $10, $11, $12, $13, COALESCE($14, 1), $15, $16)
+                     $10, $11, $12, $13, COALESCE($14, 1), $15, $16, $17)
              RETURNING {COLUMNS}"
         );
         sqlx::query_as::<_, ImageVariant>(&query)
@@ -50,8 +50,27 @@ impl ImageVariantRepo {
             .bind(input.version)
             .bind(input.parent_variant_id)
             .bind(&input.generation_params)
+            .bind(&input.content_hash)
             .fetch_one(pool)
             .await
+    }
+
+    /// Given a list of SHA-256 hashes, return those that already exist in the database.
+    pub async fn find_existing_hashes(
+        pool: &PgPool,
+        hashes: &[String],
+    ) -> Result<Vec<String>, sqlx::Error> {
+        if hashes.is_empty() {
+            return Ok(vec![]);
+        }
+        let rows: Vec<(String,)> = sqlx::query_as(
+            "SELECT DISTINCT content_hash FROM image_variants \
+             WHERE content_hash = ANY($1) AND deleted_at IS NULL",
+        )
+        .bind(hashes)
+        .fetch_all(pool)
+        .await?;
+        Ok(rows.into_iter().map(|(h,)| h).collect())
     }
 
     /// Find an image variant by its internal ID. Excludes soft-deleted rows.

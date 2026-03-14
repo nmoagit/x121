@@ -11,7 +11,7 @@ use crate::models::scene_video_version::{
 const COLUMNS: &str = "id, scene_id, version_number, source, file_path, \
     file_size_bytes, duration_secs, width, height, frame_rate, preview_path, is_final, notes, \
     qa_status, qa_reviewed_by, qa_reviewed_at, qa_rejection_reason, qa_notes, \
-    generation_snapshot, deleted_at, created_at, updated_at";
+    generation_snapshot, file_purged, deleted_at, created_at, updated_at";
 
 /// Provides CRUD and version-management operations for scene video versions.
 pub struct SceneVideoVersionRepo;
@@ -386,6 +386,37 @@ impl SceneVideoVersionRepo {
         .fetch_all(pool)
         .await?;
         Ok(rows.into_iter().map(|r| r.0).collect())
+    }
+
+    /// Mark video files as purged for the given version IDs.
+    /// Sets `file_purged = true` without soft-deleting the DB rows.
+    pub async fn mark_files_purged(
+        pool: &PgPool,
+        version_ids: &[DbId],
+    ) -> Result<u64, sqlx::Error> {
+        let result = sqlx::query(
+            "UPDATE scene_video_versions SET file_purged = true \
+             WHERE id = ANY($1) AND deleted_at IS NULL",
+        )
+        .bind(version_ids)
+        .execute(pool)
+        .await?;
+        Ok(result.rows_affected())
+    }
+
+    /// Mark all artifact files as purged for a given version ID.
+    pub async fn mark_artifact_files_purged(
+        pool: &PgPool,
+        version_id: DbId,
+    ) -> Result<u64, sqlx::Error> {
+        let result = sqlx::query(
+            "UPDATE scene_video_version_artifacts SET file_purged = true \
+             WHERE version_id = $1 AND deleted_at IS NULL",
+        )
+        .bind(version_id)
+        .execute(pool)
+        .await?;
+        Ok(result.rows_affected())
     }
 
     /// Count non-empty video versions for a scene (versions with actual file content).

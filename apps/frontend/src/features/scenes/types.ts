@@ -19,6 +19,8 @@ export interface Scene {
   latest_version_id: number | null;
   /** Total number of non-deleted video versions. */
   version_count: number;
+  /** True when a final version exists but newer versions follow it. */
+  has_newer_than_final: boolean;
 }
 
 export interface SceneVideoVersion {
@@ -41,6 +43,7 @@ export interface SceneVideoVersion {
   qa_rejection_reason: string | null;
   qa_notes: string | null;
   generation_snapshot: Record<string, unknown> | null;
+  file_purged: boolean;
   deleted_at: string | null;
   created_at: string;
   updated_at: string;
@@ -60,6 +63,7 @@ export interface SceneVideoVersionArtifact {
   width: number | null;
   height: number | null;
   sort_order: number;
+  file_purged: boolean;
   created_at: string;
 }
 
@@ -186,9 +190,17 @@ export function pickFinalClip(clips: SceneVideoVersion[]): SceneVideoVersion | n
 /**
  * Returns true if a clip has no actual file content (empty or missing file_size_bytes).
  * Used to render the "Empty file" warning badge.
+ * Accepts any object with a `file_size_bytes` field (SceneVideoVersion or ClipBrowseItem).
  */
-export function isEmptyClip(clip: SceneVideoVersion): boolean {
+export function isEmptyClip(clip: { file_size_bytes: number | null }): boolean {
   return clip.file_size_bytes === 0 || clip.file_size_bytes == null;
+}
+
+/** Returns true if the clip's video file has been purged from disk.
+ * Accepts any object with a `file_purged` field (SceneVideoVersion or ClipBrowseItem).
+ */
+export function isPurgedClip(clip: { file_purged: boolean }): boolean {
+  return clip.file_purged;
 }
 
 // IMPORTANT: Use `formatBytes` from `@/lib/format` for file sizes.

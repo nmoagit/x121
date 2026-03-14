@@ -8,36 +8,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 
-import { Badge } from "@/components/primitives";
 import { api } from "@/lib/api";
-import { cn } from "@/lib/cn";
-import { formatLogTime } from "@/features/activity-console";
+import { LogLine } from "@/components/domain";
 import type { GenerationLogEntry } from "@/features/generation/types";
-
-/* --------------------------------------------------------------------------
-   Constants
-   -------------------------------------------------------------------------- */
-
-const LEVEL_CLASSES: Record<GenerationLogEntry["level"], string> = {
-  info: "text-[var(--color-text-muted)]",
-  warn: "text-[var(--color-action-warning)]",
-  error: "text-[var(--color-action-danger)]",
-  success: "text-[var(--color-action-success)]",
-};
-
-const LEVEL_LABELS: Record<GenerationLogEntry["level"], string> = {
-  info: "INFO",
-  warn: "WARN",
-  error: "ERR",
-  success: "OK",
-};
-
-const LEVEL_BADGE: Record<GenerationLogEntry["level"], "default" | "warning" | "danger" | "success"> = {
-  info: "default",
-  warn: "warning",
-  error: "danger",
-  success: "success",
-};
 
 /* --------------------------------------------------------------------------
    Hook
@@ -104,7 +77,17 @@ export function GenerationLogTab() {
         ) : (
           <div className="p-[var(--spacing-3)] space-y-px">
             {chronological.map((entry) => (
-              <GenerationLogRow key={entry.id} entry={entry} />
+              <LogLine
+                key={entry.id}
+                timestamp={entry.created_at}
+                level={entry.level}
+                message={entry.message}
+                prefix={
+                  <span className="shrink-0 text-[var(--color-action-primary)] opacity-70">
+                    S{entry.scene_id}
+                  </span>
+                }
+              />
             ))}
           </div>
         )}
@@ -113,30 +96,3 @@ export function GenerationLogTab() {
   );
 }
 
-/* --------------------------------------------------------------------------
-   Row
-   -------------------------------------------------------------------------- */
-
-function GenerationLogRow({ entry }: { entry: GenerationLogEntry }) {
-  return (
-    <div className="flex items-center gap-[var(--spacing-2)] font-mono text-xs leading-5">
-      <span className="shrink-0 text-[var(--color-text-muted)] opacity-60">
-        {formatLogTime(entry.created_at)}
-      </span>
-      <Badge size="sm" variant={LEVEL_BADGE[entry.level]} className="min-w-[3.25rem] justify-center">
-        {LEVEL_LABELS[entry.level]}
-      </Badge>
-      <span className="shrink-0 text-[var(--color-action-primary)] opacity-70">
-        S{entry.scene_id}
-      </span>
-      <span
-        className={cn(
-          "break-words min-w-0",
-          LEVEL_CLASSES[entry.level],
-        )}
-      >
-        {entry.message}
-      </span>
-    </div>
-  );
-}

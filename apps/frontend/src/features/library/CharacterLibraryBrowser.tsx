@@ -8,9 +8,9 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { SearchInput, Spinner } from "@/components";
+import { Button, SearchInput, Spinner } from "@/components";
 import { cn } from "@/lib/cn";
-import { LayoutGrid, List } from "@/tokens/icons";
+import { Eye, EyeOff, LayoutGrid, List } from "@/tokens/icons";
 
 import { LibraryCharacterCard, LibraryCharacterRow } from "./LibraryCharacterCard";
 import { LibraryCharacterModal } from "./LibraryCharacterModal";
@@ -25,6 +25,7 @@ export function CharacterLibraryBrowser() {
   const [searchInput, setSearchInput] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
+  const [showDisabled, setShowDisabled] = useState(false);
   const [selectedCharacter, setSelectedCharacter] = useState<LibraryCharacter | null>(null);
 
   // Debounce the search input
@@ -48,7 +49,13 @@ export function CharacterLibraryBrowser() {
     setSelectedCharacter(character);
   }, []);
 
-  const resultCount = characters?.length ?? 0;
+  const filteredCharacters = useMemo(() => {
+    if (!characters) return [];
+    if (showDisabled) return characters;
+    return characters.filter((c) => c.is_enabled);
+  }, [characters, showDisabled]);
+
+  const resultCount = filteredCharacters.length;
 
   return (
     <div data-testid="library-browser">
@@ -68,7 +75,15 @@ export function CharacterLibraryBrowser() {
             {resultCount} character{resultCount !== 1 ? "s" : ""}
             {debouncedSearch && " matching"}
           </p>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="secondary"
+              icon={showDisabled ? <EyeOff size={14} /> : <Eye size={14} />}
+              onClick={() => setShowDisabled((p) => !p)}
+            >
+              {showDisabled ? "Hide Disabled" : "Show Disabled"}
+            </Button>
             <button
               type="button"
               onClick={() => setViewMode("grid")}
@@ -137,7 +152,7 @@ export function CharacterLibraryBrowser() {
           className="grid grid-cols-2 sm:grid-cols-5 lg:grid-cols-5 xl:grid-cols-6 gap-4"
           data-testid="library-grid"
         >
-          {characters?.map((character) => (
+          {filteredCharacters.map((character) => (
             <LibraryCharacterCard
               key={character.id}
               character={character}
@@ -149,7 +164,7 @@ export function CharacterLibraryBrowser() {
 
       {!isLoading && !error && resultCount > 0 && viewMode === "list" && (
         <div className="flex flex-col gap-1" data-testid="library-list">
-          {characters?.map((character) => (
+          {filteredCharacters.map((character) => (
             <LibraryCharacterRow
               key={character.id}
               character={character}

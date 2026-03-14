@@ -105,6 +105,7 @@ pub struct ImageVariant {
     pub version: i32,
     pub parent_variant_id: Option<DbId>,
     pub generation_params: Option<serde_json::Value>,
+    pub content_hash: Option<String>,
     pub deleted_at: Option<Timestamp>,
     pub created_at: Timestamp,
     pub updated_at: Timestamp,
@@ -130,6 +131,7 @@ pub struct CreateImageVariant {
     pub version: Option<i32>,
     pub parent_variant_id: Option<DbId>,
     pub generation_params: Option<serde_json::Value>,
+    pub content_hash: Option<String>,
 }
 
 /// DTO for updating an existing image variant.

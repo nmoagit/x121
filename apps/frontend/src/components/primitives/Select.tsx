@@ -1,8 +1,19 @@
 import { cn } from "@/lib/cn";
 import { ChevronDown } from "@/tokens/icons";
-import { iconSizes } from "@/tokens/icons";
 import { useId } from "react";
 import type { ChangeEvent } from "react";
+
+type SelectSize = "sm" | "md";
+
+const SIZE_CLASSES: Record<SelectSize, string> = {
+  sm: "px-3 py-1.5 pr-8 text-sm",
+  md: "px-3 py-2 pr-10 text-base",
+};
+
+const ICON_SIZES: Record<SelectSize, number> = {
+  sm: 14,
+  md: 16,
+};
 
 interface SelectOption {
   value: string;
@@ -18,6 +29,8 @@ interface SelectProps {
   label?: string;
   error?: string;
   disabled?: boolean;
+  /** Visual size. Default "md". */
+  size?: SelectSize;
 }
 
 export function Select({
@@ -28,10 +41,12 @@ export function Select({
   label,
   error,
   disabled,
+  size = "md",
 }: SelectProps) {
   const generatedId = useId();
   const selectId = generatedId;
   const errorId = error ? `${selectId}-error` : undefined;
+  const iconSize = ICON_SIZES[size];
 
   function handleChange(e: ChangeEvent<HTMLSelectElement>) {
     onChange?.(e.target.value);
@@ -57,7 +72,8 @@ export function Select({
           aria-invalid={error ? true : undefined}
           aria-describedby={errorId}
           className={cn(
-            "w-full appearance-none px-3 py-2 pr-10 text-base",
+            "w-full appearance-none",
+            SIZE_CLASSES[size],
             "bg-[var(--color-surface-secondary)] text-[var(--color-text-primary)]",
             "border rounded-[var(--color-border-default)] rounded-[var(--radius-md)]",
             "transition-colors duration-[var(--duration-fast)] ease-[var(--ease-default)]",
@@ -81,8 +97,11 @@ export function Select({
         </select>
 
         <ChevronDown
-          size={iconSizes.md}
-          className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] pointer-events-none"
+          size={iconSize}
+          className={cn(
+            "absolute top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] pointer-events-none",
+            size === "sm" ? "right-2" : "right-3",
+          )}
           aria-hidden="true"
         />
       </div>

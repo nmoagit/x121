@@ -61,6 +61,8 @@ pub struct SceneWithVersion {
     pub latest_version_id: Option<DbId>,
     /// Total number of non-deleted video versions for this scene.
     pub version_count: i64,
+    /// True when a final version exists but newer (higher version_number) versions follow it.
+    pub has_newer_than_final: bool,
 }
 
 /// DTO for creating a new scene.

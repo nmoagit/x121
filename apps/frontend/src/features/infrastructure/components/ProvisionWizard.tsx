@@ -13,12 +13,13 @@ import { useState, useMemo } from "react";
 import { Button, Input, Select, Badge, Spinner } from "@/components/primitives";
 import { Modal } from "@/components/composite";
 import { Stack } from "@/components/layout";
-import { Cpu, DollarSign, HardDrive } from "@/tokens/icons";
+import { Cpu, DollarSign, HardDrive, RefreshCw } from "@/tokens/icons";
 import { formatCents, formatBytes } from "@/lib/format";
 
 import {
   useCloudProviders,
   useGpuTypes,
+  useSyncGpuTypes,
   useProvisionInstance,
   type CloudGpuType,
 } from "@/features/admin/cloud-gpus/hooks/use-cloud-providers";
@@ -129,8 +130,9 @@ export function ProvisionWizard({ open, onClose }: ProvisionWizardProps) {
           />
         )}
 
-        {step === "gpu" && (
+        {step === "gpu" && providerId != null && (
           <GpuSelector
+            providerId={providerId}
             gpuTypes={gpuTypes ?? []}
             loading={gpuLoading}
             selected={selectedGpu}
@@ -235,16 +237,20 @@ function StepIndicator({ current }: { current: WizardStep }) {
    -------------------------------------------------------------------------- */
 
 function GpuSelector({
+  providerId,
   gpuTypes,
   loading,
   selected,
   onSelect,
 }: {
+  providerId: number;
   gpuTypes: CloudGpuType[];
   loading: boolean;
   selected: CloudGpuType | null;
   onSelect: (gpu: CloudGpuType) => void;
 }) {
+  const syncGpuTypes = useSyncGpuTypes(providerId);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-8">
@@ -255,17 +261,39 @@ function GpuSelector({
 
   if (gpuTypes.length === 0) {
     return (
-      <p className="text-sm text-[var(--color-text-muted)] text-center py-4">
-        No GPU types available for this provider. Try syncing GPU types first.
-      </p>
+      <Stack gap={3} align="center" className="py-4">
+        <p className="text-sm text-[var(--color-text-muted)] text-center">
+          No GPU types available for this provider.
+        </p>
+        <Button
+          variant="secondary"
+          size="sm"
+          icon={<RefreshCw size={14} />}
+          onClick={() => syncGpuTypes.mutate()}
+          loading={syncGpuTypes.isPending}
+        >
+          Sync from Provider
+        </Button>
+      </Stack>
     );
   }
 
   return (
     <Stack gap={2}>
-      <p className="text-sm text-[var(--color-text-secondary)]">
-        Select a GPU type:
-      </p>
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-[var(--color-text-secondary)]">
+          Select a GPU type:
+        </p>
+        <Button
+          variant="ghost"
+          size="sm"
+          icon={<RefreshCw size={14} />}
+          onClick={() => syncGpuTypes.mutate()}
+          loading={syncGpuTypes.isPending}
+        >
+          Resync
+        </Button>
+      </div>
       {gpuTypes.map((gpu) => (
         <button
           key={gpu.id}

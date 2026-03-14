@@ -172,3 +172,15 @@ export function useDeleteAnnotation(segmentId: number) {
     onSuccess: useAnnotationInvalidation(segmentId),
   });
 }
+
+/** Delete an annotation by ID from the browse view (not segment-scoped). */
+export function useDeleteBrowseAnnotation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (annotationId: number) =>
+      api.delete(`/annotations/${annotationId}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: annotationKeys.all });
+    },
+  });
+}

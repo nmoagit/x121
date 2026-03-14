@@ -116,6 +116,8 @@ export interface Character {
   review_status_id: number;
   /** Best avatar variant ID (hero clothed > hero > approved clothed > approved). */
   hero_variant_id: number | null;
+  /** Whether this character is enabled for production workflows. */
+  is_enabled: boolean;
 }
 
 export interface CreateCharacter {
@@ -140,6 +142,22 @@ export interface DroppedAsset {
   /** For images: variant_type (e.g. "topless"). For videos: raw filename stem. */
   category: string;
   kind: "image" | "video";
+  /** SHA-256 hex digest of the file content (computed during import). */
+  contentHash?: string;
+  /** Whether this file already exists in the database (by content hash). */
+  isDuplicate?: boolean;
+}
+
+/** Summary of hash-based deduplication for an import batch. */
+export interface ImportHashSummary {
+  /** Total files that were hashed. */
+  totalFiles: number;
+  /** Files whose content hash matches an existing record. */
+  duplicateFiles: number;
+  /** Files with new (unseen) content. */
+  newFiles: number;
+  /** Whether hash computation is still in progress. */
+  isHashing: boolean;
 }
 
 /** All files for one character, parsed from a folder drop. */

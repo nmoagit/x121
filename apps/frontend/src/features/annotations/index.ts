@@ -34,6 +34,7 @@ export {
   useAnnotationSummary,
   useCreateAnnotation,
   useDeleteAnnotation,
+  useDeleteBrowseAnnotation,
   useExportFrame,
   useUpdateAnnotation,
 } from "./hooks/use-annotations";

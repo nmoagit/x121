@@ -912,6 +912,8 @@ pub fn api_routes() -> Router<AppState> {
         .nest("/speech-types", speech_type::router())
         // Trash / bin management.
         .nest("/trash", trash::router())
+        // Clip browsing (cross-project scene video version overview).
+        .route("/scene-video-versions/browse", axum::routing::get(crate::handlers::scene_video_version::browse_clips))
         // Annotation browsing (cross-project annotation overview).
         .nest("/annotations", annotation::annotation_browse_router())
         // Notifications, preferences, and settings.
@@ -931,6 +933,8 @@ pub fn api_routes() -> Router<AppState> {
         // Video streaming, metadata, and thumbnails.
         .nest("/videos", video::router())
         // Image variant utilities.
+        .route("/image-variants/browse", axum::routing::get(crate::handlers::image_variant::browse_variants))
+        .route("/image-variants/check-hashes", axum::routing::post(crate::handlers::image_variant::check_hashes))
         .route("/image-variants/backfill-metadata", axum::routing::post(crate::handlers::image_variant::backfill_image_metadata))
         .route("/image-variants/backfill-thumbnails", axum::routing::post(crate::handlers::image_variant::backfill_thumbnails))
         .route("/image-variants/{id}/thumbnail", axum::routing::get(crate::handlers::image_variant::thumbnail))
