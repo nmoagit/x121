@@ -89,7 +89,7 @@ export function LogEntryRow({ entry }: LogEntryRowProps) {
         </Badge>
 
         {/* Source badge */}
-        <Badge size="sm" variant="default">
+        <Badge size="sm" variant="default" className="min-w-[4.5rem] justify-center">
           {SOURCE_LABELS[entry.source]}
         </Badge>
 
