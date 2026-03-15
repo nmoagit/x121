@@ -898,3 +898,67 @@ pub async fn backfill_image_metadata(
         failed,
     }))
 }
+
+/// POST /api/v1/image-variants/backfill-hashes
+///
+/// Backfill SHA-256 content hashes for existing image variants that don't have
+/// one yet. Reads each file from storage, computes the hash, and updates the DB.
+/// Processes up to `limit` rows (default 200) per call.
+pub async fn backfill_hashes(
+    State(state): State<AppState>,
+    Query(params): Query<BackfillParams>,
+) -> AppResult<Json<BackfillMetadataResponse>> {
+    let limit = params.limit.unwrap_or(200).min(500) as i64;
+
+    // Find variants with no content_hash
+    let variants: Vec<(DbId, String)> = sqlx::query_as(
+        "SELECT id, file_path FROM image_variants \
+         WHERE content_hash IS NULL AND deleted_at IS NULL \
+         ORDER BY id LIMIT $1",
+    )
+    .bind(limit)
+    .fetch_all(&state.pool)
+    .await?;
+
+    let total = variants.len();
+    let mut succeeded = 0usize;
+    let mut failed = 0usize;
+
+    for (id, file_path) in &variants {
+        let abs_path = match state.resolve_to_path(file_path).await {
+            Ok(p) => p,
+            Err(_) => {
+                failed += 1;
+                continue;
+            }
+        };
+
+        let data = match tokio::fs::read(&abs_path).await {
+            Ok(d) => d,
+            Err(_) => {
+                failed += 1;
+                continue;
+            }
+        };
+
+        let hash = sha256_hex(&data);
+
+        match sqlx::query("UPDATE image_variants SET content_hash = $1 WHERE id = $2")
+            .bind(&hash)
+            .bind(id)
+            .execute(&state.pool)
+            .await
+        {
+            Ok(_) => succeeded += 1,
+            Err(_) => failed += 1,
+        }
+    }
+
+    tracing::info!(total, succeeded, failed, "Backfill content hashes complete");
+
+    Ok(Json(BackfillMetadataResponse {
+        processed: total,
+        succeeded,
+        failed,
+    }))
+}
