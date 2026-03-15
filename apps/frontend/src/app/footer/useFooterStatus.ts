@@ -1,18 +1,14 @@
 /**
- * Combines API-fetched footer status with the existing job status store.
- *
- * - Polls `/status/footer` every 30 s for service health, cloud GPU, and workflow data.
- * - Reads job counts from the shared Zustand store via `useJobStatusAggregator`.
- * - Exposes `isAdmin` so consumers can conditionally render admin-only segments.
+ * Polls `/status/footer` every 30s for all footer data:
+ * service health, cloud GPU, and job counts.
  */
 
 import { useQuery } from "@tanstack/react-query";
 
-import { useJobStatusAggregator } from "@/features/job-tray";
 import { api } from "@/lib/api";
 import { useAuthStore } from "@/stores/auth-store";
 
-import type { CloudGpuInfo, FooterServices, FooterStatusData, WorkflowInfo } from "./types";
+import type { CloudGpuInfo, FooterServices, FooterStatusData } from "./types";
 
 /* --------------------------------------------------------------------------
    Constants
@@ -28,7 +24,6 @@ export interface FooterStatus {
   services: FooterServices | null;
   cloudGpu: CloudGpuInfo | null;
   jobs: { running: number; queued: number; overallProgress: number };
-  workflows: WorkflowInfo;
   isAdmin: boolean;
 }
 
@@ -39,7 +34,6 @@ export interface FooterStatus {
 export function useFooterStatus(): FooterStatus {
   const user = useAuthStore((s) => s.user);
   const isAdmin = user?.role === "admin";
-  const jobSummary = useJobStatusAggregator();
 
   const { data: footerData } = useQuery({
     queryKey: ["status", "footer"],
@@ -52,11 +46,10 @@ export function useFooterStatus(): FooterStatus {
     services: footerData?.services ?? null,
     cloudGpu: footerData?.cloud_gpu ?? null,
     jobs: {
-      running: jobSummary.runningCount,
-      queued: jobSummary.queuedCount,
-      overallProgress: jobSummary.overallProgress,
+      running: footerData?.jobs?.running ?? 0,
+      queued: footerData?.jobs?.queued ?? 0,
+      overallProgress: footerData?.jobs?.overall_progress ?? 0,
     },
-    workflows: footerData?.workflows ?? { active: 0, current_stage: null },
     isAdmin,
   };
 }

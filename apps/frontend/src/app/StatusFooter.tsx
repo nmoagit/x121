@@ -18,7 +18,6 @@ import { JobSegment } from "./footer/JobSegment";
 import { ServiceHealthSegment } from "./footer/ServiceHealthSegment";
 import { useFooterCollapse } from "./footer/useFooterCollapse";
 import { useFooterStatus } from "./footer/useFooterStatus";
-import { WorkflowSegment } from "./footer/WorkflowSegment";
 
 export function StatusFooter() {
   const status = useFooterStatus();
@@ -52,7 +51,6 @@ export function StatusFooter() {
         </button>
         {status.isAdmin && <ServiceHealthSegment services={status.services} />}
         {status.isAdmin && <CloudGpuSegment cloudGpu={status.cloudGpu} />}
-        <WorkflowSegment workflows={status.workflows} />
       </div>
 
       {/* Right: jobs + collapse toggle */}
