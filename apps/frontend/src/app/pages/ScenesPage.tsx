@@ -9,7 +9,7 @@ import { useNavigate } from "@tanstack/react-router";
 
 import { EmptyState } from "@/components/domain";
 import { PageHeader, Stack } from "@/components/layout";
-import { Badge, Button, Select, Spinner } from "@/components/primitives";
+import { Badge, Select, Spinner, Toggle } from "@/components/primitives";
 import { useClipsBrowse } from "@/features/scenes/hooks/useClipManagement";
 import type { ClipBrowseItem } from "@/features/scenes/hooks/useClipManagement";
 import { ClipPlaybackModal } from "@/features/scenes/ClipPlaybackModal";
@@ -19,7 +19,7 @@ import { formatDuration } from "@/features/video-player/frame-utils";
 import { formatBytes, formatDateTime } from "@/lib/format";
 import { toSelectOptions } from "@/lib/select-utils";
 import { useProjects } from "@/features/projects/hooks/use-projects";
-import { Ban, Clapperboard, Edit3, Eye, EyeOff, Layers, Play, Star, Upload } from "@/tokens/icons";
+import { Ban, Clapperboard, Edit3, Layers, Play, Star, Upload } from "@/tokens/icons";
 
 /* --------------------------------------------------------------------------
    Read-only clip list item
@@ -310,14 +310,12 @@ export function ScenesPage() {
             onChange={setTrackFilter}
           />
         </div>
-        <Button
+        <Toggle
+          checked={showDisabled}
+          onChange={setShowDisabled}
+          label="Show disabled"
           size="sm"
-          variant="secondary"
-          icon={showDisabled ? <EyeOff size={14} /> : <Eye size={14} />}
-          onClick={() => setShowDisabled((p) => !p)}
-        >
-          {showDisabled ? "Hide Disabled" : "Show Disabled"}
-        </Button>
+        />
         <span className="text-xs text-[var(--color-text-muted)] pb-2">
           {filteredClips.length}{clips && filteredClips.length !== clips.length ? ` of ${clips.length}` : ""} clip{filteredClips.length !== 1 ? "s" : ""}
         </span>

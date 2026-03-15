@@ -10,7 +10,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { EmptyState } from "@/components/domain";
 import { Modal } from "@/components/composite";
 import { PageHeader, Stack } from "@/components/layout";
-import { Badge, Button, Select, Spinner } from "@/components/primitives";
+import { Badge, Select, Spinner, Toggle } from "@/components/primitives";
 import { ProgressiveImage } from "@/components/primitives";
 import {
   useImageVariantsBrowse,
@@ -27,7 +27,7 @@ import { variantImageUrl, variantThumbnailUrl } from "@/features/images/utils";
 import { formatBytes, formatDateTime } from "@/lib/format";
 import { toSelectOptions } from "@/lib/select-utils";
 import { useProjects } from "@/features/projects/hooks/use-projects";
-import { Check, Eye, EyeOff, Image as ImageIcon, Star } from "@/tokens/icons";
+import { Check, Image as ImageIcon, Star } from "@/tokens/icons";
 
 /* --------------------------------------------------------------------------
    Read-only browse item
@@ -233,14 +233,12 @@ export function ImagesPage() {
             onChange={setVariantTypeFilter}
           />
         </div>
-        <Button
+        <Toggle
+          checked={showDisabled}
+          onChange={setShowDisabled}
+          label="Show disabled"
           size="sm"
-          variant="secondary"
-          icon={showDisabled ? <EyeOff size={14} /> : <Eye size={14} />}
-          onClick={() => setShowDisabled((p) => !p)}
-        >
-          {showDisabled ? "Hide Disabled" : "Show Disabled"}
-        </Button>
+        />
         <span className="text-xs text-[var(--color-text-muted)] pb-2">
           {filteredVariants.length}{variants && filteredVariants.length !== variants.length ? ` of ${variants.length}` : ""} variant{filteredVariants.length !== 1 ? "s" : ""}
         </span>
