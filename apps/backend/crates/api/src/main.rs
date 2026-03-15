@@ -227,6 +227,11 @@ async fn main() {
     );
     tracing::info!("Cloud GPU services started (scaling, monitoring, reconciliation)");
 
+    // Reconnect to any ComfyUI instances that were connected before a crash.
+    // refresh_instances checks the DB for enabled instances and spawns WS
+    // connections for any that aren't currently connected.
+    comfyui_manager.refresh_instances().await;
+
     // --- Storage provider (PRD-122) ---
     let default_backend = x121_db::repositories::StorageBackendRepo::find_default(&pool).await;
     let storage_provider: std::sync::Arc<dyn x121_core::storage::StorageProvider> =
