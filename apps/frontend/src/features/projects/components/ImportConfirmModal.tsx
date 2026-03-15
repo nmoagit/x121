@@ -307,14 +307,21 @@ export function ImportConfirmModal({
     }
   }, [existingGroups]);
 
-  // When "Import missing" or "Overwrite" is toggled, auto-select all duplicates with assets
+  // When "Import missing", "Overwrite", or "New content only" is toggled, auto-select all duplicates with assets
   useEffect(() => {
-    if (importMissing || overwrite) {
+    if (importMissing || overwrite || newContentOnly) {
       setCheckedExistingAssets(new Set(duplicatesWithAssets));
     } else {
       setCheckedExistingAssets(new Set());
     }
-  }, [importMissing, overwrite, duplicatesWithAssets]);
+  }, [importMissing, overwrite, newContentOnly, duplicatesWithAssets]);
+
+  // "New content only" implies importing to existing characters
+  useEffect(() => {
+    if (newContentOnly && !importMissing) {
+      setImportMissing(true);
+    }
+  }, [newContentOnly]);
 
   // Count only non-duplicate selected items
   const selectedCount = [...checked].filter(
