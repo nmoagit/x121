@@ -72,7 +72,7 @@ const COLUMNS: &str = "\
     scheduled_start_at, is_off_peak_only, is_paused, paused_at, resumed_at, queue_position, \
     failure_stage_index, failure_stage_name, failure_diagnostics, \
     last_checkpoint_id, resumed_from_checkpoint_id, original_job_id, \
-    comfyui_instance_id, \
+    comfyui_instance_id, orphan_retry_count, \
     created_at, updated_at";
 
 /// Columns for the lightweight queue view.

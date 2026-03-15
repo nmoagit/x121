@@ -1000,7 +1000,10 @@ async fn dispatch_pending(
     broadcaster: &Option<Arc<ActivityLogBroadcaster>>,
 ) {
     match x121_pipeline::dispatch_pending_jobs(pool, comfyui, storage).await {
-        Ok(0) => {} // nothing to dispatch or no instances — silent
+        Ok(0) => {
+            // Log periodically so we know the dispatcher is alive
+            tracing::debug!("Dispatch tick: 0 jobs dispatched");
+        }
         Ok(count) => {
             tracing::info!(count, "Dispatched {count} deferred job(s) to ComfyUI");
             if let Some(b) = broadcaster {

@@ -399,9 +399,9 @@ pub async fn dispatch_pending_jobs(
     // Check if any instances are available before iterating.
     let connected = comfyui.connected_instance_ids().await;
     if connected.is_empty() {
-        tracing::debug!(
+        tracing::warn!(
             pending_count = jobs.len(),
-            "Dispatch: {} pending job(s) waiting but no instances connected",
+            "Dispatch: {} pending job(s) waiting but no ComfyUI instances connected in-memory",
             jobs.len(),
         );
         return Ok(0);
@@ -409,8 +409,10 @@ pub async fn dispatch_pending_jobs(
 
     tracing::info!(
         pending_count = jobs.len(),
-        "Dispatching {} pending unassigned job(s)",
+        connected_count = connected.len(),
+        "Dispatching {} pending unassigned job(s) to {} connected instance(s)",
         jobs.len(),
+        connected.len(),
     );
 
     let mut dispatched = 0u32;
