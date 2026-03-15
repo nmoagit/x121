@@ -37,11 +37,15 @@ export function GenerationLogTab() {
   // Entries come newest-first from API — reverse for chronological display.
   const chronological = entries ? [...entries].reverse() : [];
 
+  // Use the latest entry's ID as the trigger — more reliable than length
+  // (length stays the same when old entries drop off and new ones arrive).
+  const latestId = chronological.length > 0 ? chronological[chronological.length - 1]!.id : null;
+
   useEffect(() => {
     if (autoScroll && scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [chronological.length, autoScroll]);
+  }, [latestId, autoScroll]);
 
   const handleScroll = useCallback(() => {
     if (!scrollRef.current) return;
