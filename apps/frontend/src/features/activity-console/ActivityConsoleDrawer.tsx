@@ -31,7 +31,7 @@ const CONSOLE_TABS = [
 ];
 
 const MIN_HEIGHT = 120;
-const DEFAULT_HEIGHT = 320;
+const DEFAULT_HEIGHT_RATIO = 0.5; // 50vh — opens to half the viewport
 const MAX_HEIGHT_RATIO = 0.8; // 80vh
 
 /* --------------------------------------------------------------------------
@@ -42,7 +42,7 @@ export function ActivityConsoleDrawer() {
   const isOpen = useActivityConsoleStore((s) => s.isOpen);
   const togglePanel = useActivityConsoleStore((s) => s.togglePanel);
   const [activeTab, setActiveTab] = useState("generation");
-  const [height, setHeight] = useState(DEFAULT_HEIGHT);
+  const [height, setHeight] = useState(() => Math.round(window.innerHeight * DEFAULT_HEIGHT_RATIO));
   const dragging = useRef(false);
   const startY = useRef(0);
   const startHeight = useRef(0);
