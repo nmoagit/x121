@@ -404,9 +404,11 @@ export function useCharacterImport(projectId: number) {
         for (const asset of payload.assets) {
           const hint = extractCharacterHint(asset.file.name);
           if (hint && !matchesCharacterName(hint, payload.rawName)) {
-            errors.push(
-              `Warning: "${asset.file.name}" may belong to "${hint}", not "${payload.rawName}"`,
-            );
+            const msg = `"${asset.file.name}" may belong to "${hint}", not "${payload.rawName}"`;
+            errors.push(`Warning: ${msg}`);
+            addLogEntry(importLogEntry("warn", msg, projectId, {
+              file: asset.file.name, expected: hint, assigned: payload.rawName,
+            }));
           }
         }
       }
@@ -482,9 +484,11 @@ export function useCharacterImport(projectId: number) {
         for (let i = 0; i < imageResults.length; i++) {
           const r = imageResults[i]!;
           if (r.status === "rejected") {
-            errors.push(
-              `Image upload failed for "${imageAssets[i]!.asset.file.name}": ${String(r.reason)}`,
-            );
+            const msg = `Image upload failed for "${imageAssets[i]!.asset.file.name}" (${imageAssets[i]!.charName}): ${String(r.reason)}`;
+            errors.push(msg);
+            addLogEntry(importLogEntry("error", msg, projectId, {
+              file: imageAssets[i]!.asset.file.name, character: imageAssets[i]!.charName,
+            }));
           }
         }
 
@@ -603,9 +607,11 @@ export function useCharacterImport(projectId: number) {
         for (let i = 0; i < metadataResults.length; i++) {
           const r = metadataResults[i]!;
           if (r.status === "rejected") {
-            errors.push(
-              `Metadata upload failed for "${metadataPayloads[i]!.rawName}": ${String(r.reason)}`,
-            );
+            const msg = `Metadata upload failed for "${metadataPayloads[i]!.rawName}": ${String(r.reason)}`;
+            errors.push(msg);
+            addLogEntry(importLogEntry("error", msg, projectId, {
+              character: metadataPayloads[i]!.rawName,
+            }));
           }
         }
 
@@ -645,9 +651,11 @@ export function useCharacterImport(projectId: number) {
           // Look up scene_type_id from catalogue by slug
           const sceneType = sceneCatalogue?.find((st) => st.slug === parsed.sceneSlug);
           if (!sceneType) {
-            errors.push(
-              `No scene type "${parsed.sceneSlug}" for video "${asset.file.name}" (${charName})`,
-            );
+            const msg = `No scene type "${parsed.sceneSlug}" for video "${asset.file.name}" (${charName})`;
+            errors.push(msg);
+            addLogEntry(importLogEntry("error", msg, projectId, {
+              file: asset.file.name, character: charName, sceneSlug: parsed.sceneSlug,
+            }));
             return "skipped" as const;
           }
 
@@ -684,9 +692,11 @@ export function useCharacterImport(projectId: number) {
         for (let i = 0; i < videoResults.length; i++) {
           const r = videoResults[i]!;
           if (r.status === "rejected") {
-            errors.push(
-              `Video import failed for "${videoAssets[i]!.asset.file.name}" (${videoAssets[i]!.charName}): ${String(r.reason)}`,
-            );
+            const msg = `Video import failed for "${videoAssets[i]!.asset.file.name}" (${videoAssets[i]!.charName}): ${String(r.reason)}`;
+            errors.push(msg);
+            addLogEntry(importLogEntry("error", msg, projectId, {
+              file: videoAssets[i]!.asset.file.name, character: videoAssets[i]!.charName,
+            }));
           }
         }
 
