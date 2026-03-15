@@ -399,8 +399,8 @@ export function ImportConfirmModal({
         newPayloads,
         existingPayloads,
         groupId ? Number(groupId) : undefined,
-        importMissing ? false : overwrite,
-        importMissing,
+        importMissing && !newContentOnly ? false : overwrite,
+        importMissing && !newContentOnly,
       );
     } else {
       // Legacy name-only path
