@@ -65,9 +65,9 @@ export function FooterSegment({ href, onClick, children, className, label }: Foo
    -------------------------------------------------------------------------- */
 
 const DOT_COLORS: Record<ServiceHealth, string> = {
-  healthy: "bg-[var(--color-status-success)]",
-  degraded: "bg-[var(--color-status-warning)]",
-  down: "bg-[var(--color-status-danger)]",
+  healthy: "bg-green-500",
+  degraded: "bg-yellow-500",
+  down: "bg-red-500",
 };
 
 interface StatusDotProps {
@@ -75,7 +75,7 @@ interface StatusDotProps {
 }
 
 export function StatusDot({ health }: StatusDotProps) {
-  return <span className={cn("inline-block h-2 w-2 shrink-0 rounded-full", DOT_COLORS[health])} />;
+  return <span className={cn("inline-block h-2.5 w-2.5 shrink-0 rounded-full", DOT_COLORS[health])} />;
 }
 
 /* --------------------------------------------------------------------------
