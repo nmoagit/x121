@@ -455,18 +455,18 @@ export function ImportConfirmModal({
             } else if (identicalImages.length > 0 && !newContentOnly) {
               parts.push(<Badge key="img" variant="warning" size="sm">{images.length} img ({identicalImages.length} identical)</Badge>);
             } else {
-              parts.push(<Badge key="img" variant="info" size="sm">{images.length} img</Badge>);
+              parts.push(<Badge key="img" variant="success" size="sm">{images.length} img — new</Badge>);
             }
           }
 
-          // Videos
+          // Videos (never hash-checked, always treated as new)
           if (videos.length > 0) {
-            parts.push(<Badge key="vid" variant="info" size="sm">{videos.length} vid</Badge>);
+            parts.push(<Badge key="vid" variant="success" size="sm">{videos.length} vid — new</Badge>);
           }
 
           // Metadata
           if (metaCount > 0) {
-            parts.push(<Badge key="meta" variant="success" size="sm">{metaCount} json</Badge>);
+            parts.push(<Badge key="meta" variant="info" size="sm">{metaCount} json</Badge>);
           }
 
           return <>{parts}</>;
