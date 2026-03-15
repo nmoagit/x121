@@ -414,14 +414,61 @@ export function ImportConfirmModal({
     const hasAssets = counts && (counts.images > 0 || counts.videos > 0 || counts.metadata > 0);
     const bulkMode = importMissing || overwrite;
 
+    // Compute badge content for this row
+    const p = payloads?.[idx];
+    const isChecking = hashSummary?.isHashing;
+    let imgBadge: React.ReactNode = null;
+    let vidBadge: React.ReactNode = null;
+    let metaBadge: React.ReactNode = null;
+
+    if (p) {
+      const images = p.assets.filter((a) => a.kind === "image");
+      const videos = p.assets.filter((a) => a.kind === "video");
+      const metaCount = [p.bioJson, p.tovJson, p.metadataJson].filter(Boolean).length;
+
+      if (isChecking) {
+        if (images.length > 0) imgBadge = <Badge variant="default" size="sm">{images.length} img…</Badge>;
+        if (videos.length > 0) vidBadge = <Badge variant="default" size="sm">{videos.length} vid…</Badge>;
+        if (metaCount > 0) metaBadge = <Badge variant="info" size="sm">{metaCount} json</Badge>;
+      } else {
+        const identicalImages = images.filter((a) => a.isDuplicate);
+        const newImgs = images.filter((a) => !a.isDuplicate);
+        const imgUp = newContentOnly ? newImgs.length : images.length;
+        const imgSk = newContentOnly ? identicalImages.length : 0;
+
+        if (images.length > 0) {
+          if (imgSk > 0 && imgUp > 0) imgBadge = <><Badge variant="success" size="sm">{imgUp}↑</Badge> <Badge variant="default" size="sm">{imgSk}✕</Badge></>;
+          else if (imgSk > 0) imgBadge = <Badge variant="default" size="sm">{imgSk} identical</Badge>;
+          else if (identicalImages.length > 0 && !newContentOnly) imgBadge = <Badge variant="warning" size="sm">{images.length} ({identicalImages.length}=)</Badge>;
+          else imgBadge = <Badge variant="success" size="sm">{images.length} img</Badge>;
+        }
+
+        if (videos.length > 0) {
+          const identicalVids = videos.filter((a) => a.isDuplicate);
+          const newVids = videos.filter((a) => !a.isDuplicate);
+          const vidUp = newContentOnly ? newVids.length : videos.length;
+          const vidSk = newContentOnly ? identicalVids.length : 0;
+
+          if (vidSk > 0 && vidUp > 0) vidBadge = <><Badge variant="success" size="sm">{vidUp}↑</Badge> <Badge variant="default" size="sm">{vidSk}✕</Badge></>;
+          else if (vidSk > 0) vidBadge = <Badge variant="default" size="sm">{vidSk} identical</Badge>;
+          else if (identicalVids.length > 0 && !newContentOnly) vidBadge = <Badge variant="warning" size="sm">{videos.length} ({identicalVids.length}=)</Badge>;
+          else vidBadge = <Badge variant="success" size="sm">{videos.length} vid</Badge>;
+        }
+
+        if (metaCount > 0) metaBadge = <Badge variant="info" size="sm">{metaCount} json</Badge>;
+      }
+    }
+
     return (
       <div
         key={idx}
-        className={`flex items-center gap-[var(--spacing-2)] px-[var(--spacing-3)] py-[var(--spacing-1)] ${
+        className={cn(
+          "grid items-center gap-x-[var(--spacing-2)] px-[var(--spacing-3)] py-[var(--spacing-1)]",
+          payloads ? "grid-cols-[1fr_auto_auto_auto_auto]" : "grid-cols-[1fr_auto]",
           isDuplicate && !checkedExistingAssets.has(idx) && !(bulkMode && hasAssets)
             ? "opacity-50"
-            : "hover:bg-[var(--color-surface-secondary)]"
-        }`}
+            : "hover:bg-[var(--color-surface-secondary)]",
+        )}
       >
         <Checkbox
           checked={isDuplicate ? (bulkMode && hasAssets ? checkedExistingAssets.has(idx) : false) : checked.has(idx)}
@@ -430,79 +477,11 @@ export function ImportConfirmModal({
           label={name}
         />
 
-        {/* What will happen — single coherent summary */}
-        {payloads?.[idx] && (() => {
-          const p = payloads[idx]!;
-          const images = p.assets.filter((a) => a.kind === "image");
-          const videos = p.assets.filter((a) => a.kind === "video");
-          const metaCount = [p.bioJson, p.tovJson, p.metadataJson].filter(Boolean).length;
-          const isChecking = hashSummary?.isHashing;
+        {payloads && <span className="text-center min-w-[4.5rem]">{imgBadge}</span>}
+        {payloads && <span className="text-center min-w-[4.5rem]">{vidBadge}</span>}
+        {payloads && <span className="text-center min-w-[3.5rem]">{metaBadge}</span>}
 
-          const parts: React.ReactNode[] = [];
-
-          // While hashing, show simple counts with "checking" state
-          if (isChecking) {
-            if (images.length > 0) {
-              parts.push(<Badge key="img" variant="default" size="sm">{images.length} img — checking…</Badge>);
-            }
-            if (videos.length > 0) {
-              parts.push(<Badge key="vid" variant="default" size="sm">{videos.length} vid — checking…</Badge>);
-            }
-            if (metaCount > 0) {
-              parts.push(<Badge key="meta" variant="info" size="sm">{metaCount} json</Badge>);
-            }
-            return <>{parts}</>;
-          }
-
-          // Hash check complete — show accurate results
-          const identicalImages = images.filter((a) => a.isDuplicate);
-          const newImages = images.filter((a) => !a.isDuplicate);
-          const imgUpload = newContentOnly ? newImages.length : images.length;
-          const imgSkip = newContentOnly ? identicalImages.length : 0;
-
-          // Images
-          if (images.length > 0) {
-            if (imgSkip > 0 && imgUpload > 0) {
-              parts.push(<Badge key="img-up" variant="success" size="sm">{imgUpload} img upload</Badge>);
-              parts.push(<Badge key="img-skip" variant="default" size="sm">{imgSkip} img skip</Badge>);
-            } else if (imgSkip > 0 && imgUpload === 0) {
-              parts.push(<Badge key="img-skip" variant="default" size="sm">{imgSkip} img — all identical</Badge>);
-            } else if (identicalImages.length > 0 && !newContentOnly) {
-              parts.push(<Badge key="img" variant="warning" size="sm">{images.length} img ({identicalImages.length} identical)</Badge>);
-            } else {
-              parts.push(<Badge key="img" variant="success" size="sm">{images.length} img — new</Badge>);
-            }
-          }
-
-          // Videos
-          if (videos.length > 0) {
-            const identicalVids = videos.filter((a) => a.isDuplicate);
-            const newVids = videos.filter((a) => !a.isDuplicate);
-            const vidUpload = newContentOnly ? newVids.length : videos.length;
-            const vidSkip = newContentOnly ? identicalVids.length : 0;
-
-            if (vidSkip > 0 && vidUpload > 0) {
-              parts.push(<Badge key="vid-up" variant="success" size="sm">{vidUpload} vid upload</Badge>);
-              parts.push(<Badge key="vid-skip" variant="default" size="sm">{vidSkip} vid skip</Badge>);
-            } else if (vidSkip > 0 && vidUpload === 0) {
-              parts.push(<Badge key="vid-skip" variant="default" size="sm">{vidSkip} vid — all exist</Badge>);
-            } else if (identicalVids.length > 0 && !newContentOnly) {
-              parts.push(<Badge key="vid" variant="warning" size="sm">{videos.length} vid ({identicalVids.length} exist)</Badge>);
-            } else {
-              parts.push(<Badge key="vid" variant="success" size="sm">{videos.length} vid — new</Badge>);
-            }
-          }
-
-          // Metadata
-          if (metaCount > 0) {
-            parts.push(<Badge key="meta" variant="info" size="sm">{metaCount} json</Badge>);
-          }
-
-          return <>{parts}</>;
-        })()}
-
-        {/* Action label */}
-        <span className={cn("text-xs ml-auto shrink-0",
+        <span className={cn("text-xs text-right shrink-0",
           hashSummary?.isHashing
             ? "text-[var(--color-text-muted)]"
             : isDuplicate
