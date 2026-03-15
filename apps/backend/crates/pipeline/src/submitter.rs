@@ -359,12 +359,21 @@ async fn pick_instance(
         .await
         .map_err(PipelineError::Database)?;
 
-    // Select instance with fewest active jobs. On tie, first (lowest ID) wins.
-    loads
-        .into_iter()
-        .min_by_key(|&(id, count)| (count, id))
-        .map(|(id, _)| id)
-        .ok_or_else(|| PipelineError::ComfyUI("No eligible ComfyUI instances found".to_string()))
+    // Only pick instances with ZERO active jobs (one job per instance at a time).
+    // This ensures jobs are distributed evenly across instances, prevents
+    // cascading failures when a pod dies, and avoids paying for idle pods.
+    let idle: Vec<DbId> = loads
+        .iter()
+        .filter(|&&(_, count)| count == 0)
+        .map(|&(id, _)| id)
+        .collect();
+
+    if idle.is_empty() {
+        return Err(PipelineError::NoInstances);
+    }
+
+    // Pick the first idle instance (lowest ID for deterministic ordering).
+    Ok(idle[0])
 }
 
 /// Dispatch pending jobs that have no ComfyUI instance assigned.
