@@ -22,7 +22,8 @@ import { useSetToggle } from "@/hooks/useSetToggle";
 import { getStreamUrl } from "@/features/video-player";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/cn";
-import { AlertCircle, ChevronLeft, ChevronRight, EyeOff, MessageSquare, Pause, Play, Upload, Video } from "@/tokens/icons";
+import { AlertCircle, AlertTriangle, ChevronLeft, ChevronRight, EyeOff, MessageSquare, Pause, Play, Upload, Video } from "@/tokens/icons";
+import { useGpuAvailability } from "@/app/footer";
 
 import { Modal } from "@/components/composite/Modal";
 import { useBatchGenerate } from "@/features/generation/hooks/use-generation";
@@ -93,6 +94,7 @@ export function CharacterScenesTab({ characterId, focusSceneId, focusSceneTypeId
     error: settingsError,
   } = useCharacterSceneSettings(characterId);
   const allExpandedRows = useExpandedSettings(settings);
+  const { hasActiveGpu } = useGpuAvailability();
 
   // Track which scenes are generating so we can poll and detect transitions.
   const [anyGenerating, setAnyGenerating] = useState(false);
@@ -662,6 +664,7 @@ export function CharacterScenesTab({ characterId, focusSceneId, focusSceneTypeId
             generating={isDisabled}
             playback={playback}
             hasWorkflow={workflowMap.get(`${slot.row.scene_type_id}::${slot.row.track_id}`) ?? false}
+            hasActiveGpu={hasActiveGpu}
           />
         ))}
       </Grid>
@@ -800,9 +803,10 @@ interface SceneCardProps {
   generating: boolean;
   playback: boolean;
   hasWorkflow: boolean;
+  hasActiveGpu: boolean;
 }
 
-function SceneCard({ slot, isSelected, onToggleSelect, onGenerate, onClickScene, onVideoDrop, onDisable, generating, playback, hasWorkflow }: SceneCardProps) {
+function SceneCard({ slot, isSelected, onToggleSelect, onGenerate, onClickScene, onVideoDrop, onDisable, generating, playback, hasWorkflow, hasActiveGpu }: SceneCardProps) {
   const { row, scene } = slot;
   const isPlaceholder = scene === null;
   const hasSeedImage = slot.missingVariant === null;
@@ -950,11 +954,16 @@ function SceneCard({ slot, isSelected, onToggleSelect, onGenerate, onClickScene,
           {/* Status row */}
           <div className="flex items-center gap-[var(--spacing-2)]">
             <Badge
-              variant={isPlaceholder ? "default" : sceneStatusBadgeVariant(scene.status_id)}
+              variant={isPlaceholder ? "default" : (isGenerating && !hasActiveGpu) ? "warning" : sceneStatusBadgeVariant(scene.status_id)}
               size="sm"
             >
-              {isPlaceholder ? "Not Started" : sceneStatusLabel(scene.status_id)}
+              {isPlaceholder ? "Not Started" : (isGenerating && !hasActiveGpu) ? "Queued" : sceneStatusLabel(scene.status_id)}
             </Badge>
+            {isGenerating && !hasActiveGpu && (
+              <span className="flex items-center gap-0.5 text-[10px] text-[var(--color-text-warning)]" title="No GPU instances are active — job is queued">
+                <AlertTriangle size={12} /> No GPU
+              </span>
+            )}
             <span className="text-xs text-[var(--color-text-muted)]">
               Source: {sourceLabel(row.source)}
             </span>
@@ -976,7 +985,9 @@ function SceneCard({ slot, isSelected, onToggleSelect, onGenerate, onClickScene,
               icon={<Play size={14} />}
               className="w-full"
             >
-              {isGenerating ? "Generating\u2026" : "Generate"}
+              {isGenerating
+                ? (hasActiveGpu ? "Generating\u2026" : "Queued — no GPU")
+                : "Generate"}
             </Button>
           </span>
         </div>

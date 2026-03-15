@@ -12,6 +12,7 @@ export type {
 // Hooks
 export { useFooterCollapse } from "./useFooterCollapse";
 export { useFooterStatus } from "./useFooterStatus";
+export { useGpuAvailability } from "./useGpuAvailability";
 export type { FooterStatus } from "./useFooterStatus";
 
 // Primitives
