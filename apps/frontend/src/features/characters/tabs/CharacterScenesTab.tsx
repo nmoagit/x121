@@ -45,6 +45,7 @@ import { useCharacterScenes, useCreateScene } from "@/features/scenes/hooks/useC
 import { clipKeys, useBulkImportClip } from "@/features/scenes/hooks/useClipManagement";
 import {
   SCENE_STATUS_APPROVED,
+  SCENE_STATUS_FAILED,
   SCENE_STATUS_GENERATING,
   SCENE_STATUS_REJECTED,
   sceneHasVideo,
@@ -818,6 +819,7 @@ function SceneCard({ slot, isSelected, onToggleSelect, onGenerate, onClickScene,
   const isGenerating = scene?.status_id === SCENE_STATUS_GENERATING;
   const isApproved = scene?.status_id === SCENE_STATUS_APPROVED;
   const isRejected = scene?.status_id === SCENE_STATUS_REJECTED;
+  const isFailed = scene?.status_id === SCENE_STATUS_FAILED;
 
   const handleDrop = useCallback(
     (e: React.DragEvent) => {
@@ -854,6 +856,7 @@ function SceneCard({ slot, isSelected, onToggleSelect, onGenerate, onClickScene,
         dragOver && "ring-2 ring-[var(--color-action-primary)] bg-[var(--color-surface-secondary)]",
         isApproved && "!border-2 !border-green-500",
         isRejected && "!border-2 !border-red-500",
+        isFailed && "!border-2 !border-red-500",
       )}
     >
       <div
@@ -979,7 +982,7 @@ function SceneCard({ slot, isSelected, onToggleSelect, onGenerate, onClickScene,
           >
             <Button
               size="sm"
-              variant="secondary"
+              variant={isFailed ? "danger" : "secondary"}
               disabled={isPlaceholder || isGenerating || generating || !hasSeedImage || !hasWorkflow}
               onClick={(e) => { e.stopPropagation(); scene && onGenerate(scene.id); }}
               icon={<Play size={14} />}
@@ -987,7 +990,7 @@ function SceneCard({ slot, isSelected, onToggleSelect, onGenerate, onClickScene,
             >
               {isGenerating
                 ? (hasActiveGpu ? "Generating\u2026" : "Queued — no GPU")
-                : "Generate"}
+                : isFailed ? "Retry" : "Generate"}
             </Button>
           </span>
         </div>

@@ -45,6 +45,8 @@ pub struct Job {
     pub original_job_id: Option<DbId>,
     /// ComfyUI instance assigned to this job (PRD-132).
     pub comfyui_instance_id: Option<DbId>,
+    /// How many times this job was reset to pending due to instance death.
+    pub orphan_retry_count: i16,
     pub created_at: Timestamp,
     pub updated_at: Timestamp,
 }

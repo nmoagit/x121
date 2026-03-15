@@ -85,6 +85,7 @@ define_status_enum! {
         Approved = 4,
         Rejected = 5,
         Delivered = 6,
+        Failed = 7,
     }
 }
 

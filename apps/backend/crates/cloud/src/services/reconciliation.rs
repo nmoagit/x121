@@ -134,9 +134,12 @@ async fn reconcile_all(
     }
 
     // Detect orphaned jobs: running/dispatched jobs assigned to instances that
-    // no longer exist or are terminated. Reset them to failed.
-    let orphaned = sqlx::query_as::<_, (x121_core::types::DbId,)>(
-        "SELECT j.id FROM jobs j \
+    // no longer exist or are terminated. Retry up to MAX_ORPHAN_RETRIES times
+    // before marking as permanently failed (scene status → Failed).
+    const MAX_ORPHAN_RETRIES: i16 = 3;
+
+    let orphaned = sqlx::query_as::<_, (x121_core::types::DbId, i16)>(
+        "SELECT j.id, j.orphan_retry_count FROM jobs j \
          WHERE j.status_id IN (2, 9) \
            AND j.comfyui_instance_id IS NOT NULL \
            AND NOT EXISTS ( \
@@ -149,36 +152,74 @@ async fn reconcile_all(
     .unwrap_or_default();
 
     if !orphaned.is_empty() {
-        let orphan_ids: Vec<i64> = orphaned.iter().map(|r| r.0).collect();
-        let count = orphan_ids.len();
+        let mut retried_ids: Vec<i64> = Vec::new();
+        let mut failed_ids: Vec<i64> = Vec::new();
 
-        let _ = sqlx::query(
-            "UPDATE jobs SET status_id = 4, comfyui_instance_id = NULL, \
-             error_message = 'Instance terminated while job was in progress (auto-detected)' \
-             WHERE id = ANY($1)"
-        )
-        .bind(&orphan_ids)
-        .execute(pool)
-        .await;
+        for (job_id, retry_count) in &orphaned {
+            if *retry_count < MAX_ORPHAN_RETRIES {
+                // Retry: reset to pending with incremented retry count
+                let _ = sqlx::query(
+                    "UPDATE jobs SET status_id = 1, comfyui_instance_id = NULL, \
+                     orphan_retry_count = orphan_retry_count + 1, \
+                     error_message = NULL \
+                     WHERE id = $1"
+                )
+                .bind(job_id)
+                .execute(pool)
+                .await;
+                retried_ids.push(*job_id);
+            } else {
+                // Max retries exceeded: mark as permanently failed
+                let _ = sqlx::query(
+                    "UPDATE jobs SET status_id = 4, comfyui_instance_id = NULL, \
+                     error_message = 'Generation failed: instance lost 3 times' \
+                     WHERE id = $1"
+                )
+                .bind(job_id)
+                .execute(pool)
+                .await;
+                failed_ids.push(*job_id);
+            }
+        }
 
-        // Also reset their scenes from Generating to Pending
-        let _ = sqlx::query(
-            "UPDATE scenes SET status_id = 1 \
-             WHERE status_id = 2 AND id IN ( \
-                 SELECT (j.parameters->>'scene_id')::bigint FROM jobs j WHERE j.id = ANY($1) \
-             )"
-        )
-        .bind(&orphan_ids)
-        .execute(pool)
-        .await;
+        if !retried_ids.is_empty() {
+            info!(
+                count = retried_ids.len(),
+                job_ids = ?retried_ids,
+                "Orphaned jobs reset to pending for retry"
+            );
+            emit_reconcile(
+                activity,
+                ActivityLogLevel::Warn,
+                format!("{} orphaned job(s) will be retried", retried_ids.len()),
+                serde_json::json!({ "job_ids": retried_ids }),
+            );
+        }
 
-        warn!(count, job_ids = ?orphan_ids, "Reconciled orphaned jobs — marked as failed");
-        emit_reconcile(
-            activity,
-            ActivityLogLevel::Warn,
-            format!("{count} orphaned job(s) detected and marked as failed"),
-            serde_json::json!({ "job_ids": orphan_ids }),
-        );
+        // Set scenes for permanently failed jobs to Failed status (7)
+        if !failed_ids.is_empty() {
+            let _ = sqlx::query(
+                "UPDATE scenes SET status_id = 7 \
+                 WHERE status_id = 2 AND id IN ( \
+                     SELECT (j.parameters->>'scene_id')::bigint FROM jobs j WHERE j.id = ANY($1) \
+                 )"
+            )
+            .bind(&failed_ids)
+            .execute(pool)
+            .await;
+
+            warn!(
+                count = failed_ids.len(),
+                job_ids = ?failed_ids,
+                "Orphaned jobs permanently failed after {MAX_ORPHAN_RETRIES} retries"
+            );
+            emit_reconcile(
+                activity,
+                ActivityLogLevel::Error,
+                format!("{} job(s) failed after {} retries — instance lost repeatedly", failed_ids.len(), MAX_ORPHAN_RETRIES),
+                serde_json::json!({ "job_ids": failed_ids }),
+            );
+        }
     }
 
     Ok(())
