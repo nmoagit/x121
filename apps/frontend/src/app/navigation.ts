@@ -95,7 +95,7 @@ export const NAV_GROUPS: NavGroupDef[] = [
   {
     label: "Production",
     items: [
-      { label: "Queue", path: "/production/queue", icon: Zap },
+      { label: "Queue", path: "/production/queue", icon: Zap, prominent: true },
       { label: "Generation", path: "/production/generation", icon: Play },
       { label: "Test Shots", path: "/production/test-shots", icon: Eye },
       { label: "Batch", path: "/production/batch", icon: Columns },
