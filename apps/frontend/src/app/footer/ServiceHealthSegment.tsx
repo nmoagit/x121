@@ -45,15 +45,17 @@ export function ServiceHealthSegment({ services }: ServiceHealthSegmentProps) {
 
   const overall = worstHealth(services);
 
+  const detailText = SERVICE_LABELS.map(({ key, label }) =>
+    `${label}: ${services[key].status}`
+  ).join(" · ");
+
   return (
     <>
-      <Tooltip content={healthLabel(overall)} side="top">
+      <Tooltip content={`${healthLabel(overall)} — ${detailText}`} side="top">
         <FooterSegment href="/admin/infrastructure" label="Service health">
           <Activity size={14} aria-hidden="true" />
-          {SERVICE_LABELS.map(({ key, label }) => (
-            <Tooltip key={key} content={`${label}: ${services[key].status}`} side="top">
-              <StatusDot health={services[key].status} />
-            </Tooltip>
+          {SERVICE_LABELS.map(({ key }) => (
+            <StatusDot key={key} health={services[key].status} />
           ))}
           <span className="hidden md:inline">Services</span>
         </FooterSegment>
