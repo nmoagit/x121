@@ -58,6 +58,9 @@ async fn evaluate_all_rules(
         CloudCostEventRepo, CloudInstanceRepo, CloudProviderRepo, CloudScalingRuleRepo, JobRepo,
     };
 
+    // Always check for orphaned jobs (runs every 30s regardless of scaling rules).
+    detect_orphaned_jobs(pool, broadcaster).await;
+
     let rules = CloudScalingRuleRepo::list_enabled(pool).await?;
 
     if rules.is_empty() {
@@ -479,4 +482,103 @@ async fn teardown_and_terminate(
     }
 
     (terminated, failed)
+}
+
+/// Detect jobs stuck as running/dispatched but assigned to disconnected instances.
+/// Retries up to 3 times before permanently failing (scene → Failed).
+async fn detect_orphaned_jobs(pool: &PgPool, broadcaster: &Arc<ActivityLogBroadcaster>) {
+    const MAX_ORPHAN_RETRIES: i16 = 3;
+
+    let orphaned = match sqlx::query_as::<_, (x121_core::types::DbId, i16)>(
+        "SELECT j.id, j.orphan_retry_count FROM jobs j \
+         WHERE j.status_id IN (2, 9) \
+           AND j.comfyui_instance_id IS NOT NULL \
+           AND NOT EXISTS ( \
+               SELECT 1 FROM comfyui_instances ci \
+               WHERE ci.id = j.comfyui_instance_id AND ci.status = 'connected' \
+           )"
+    )
+    .fetch_all(pool)
+    .await
+    {
+        Ok(rows) => rows,
+        Err(e) => {
+            warn!("Failed to query orphaned jobs: {e}");
+            return;
+        }
+    };
+
+    if orphaned.is_empty() {
+        return;
+    }
+
+    let mut retried_ids: Vec<i64> = Vec::new();
+    let mut failed_ids: Vec<i64> = Vec::new();
+
+    for (job_id, retry_count) in &orphaned {
+        if *retry_count < MAX_ORPHAN_RETRIES {
+            let _ = sqlx::query(
+                "UPDATE jobs SET status_id = 1, comfyui_instance_id = NULL, \
+                 orphan_retry_count = orphan_retry_count + 1, \
+                 error_message = NULL \
+                 WHERE id = $1"
+            )
+            .bind(job_id)
+            .execute(pool)
+            .await;
+            retried_ids.push(*job_id);
+        } else {
+            let _ = sqlx::query(
+                "UPDATE jobs SET status_id = 4, comfyui_instance_id = NULL, \
+                 error_message = 'Generation failed: instance lost 3 times' \
+                 WHERE id = $1"
+            )
+            .bind(job_id)
+            .execute(pool)
+            .await;
+            failed_ids.push(*job_id);
+        }
+    }
+
+    if !retried_ids.is_empty() {
+        info!(
+            count = retried_ids.len(),
+            job_ids = ?retried_ids,
+            "Orphaned jobs reset to pending for retry"
+        );
+        broadcaster.publish(
+            ActivityLogEntry::curated(
+                ActivityLogLevel::Warn,
+                ActivityLogSource::Infrastructure,
+                format!("{} orphaned job(s) will be retried", retried_ids.len()),
+            )
+            .with_fields(serde_json::json!({ "job_ids": retried_ids })),
+        );
+    }
+
+    if !failed_ids.is_empty() {
+        let _ = sqlx::query(
+            "UPDATE scenes SET status_id = 7 \
+             WHERE status_id = 2 AND id IN ( \
+                 SELECT (j.parameters->>'scene_id')::bigint FROM jobs j WHERE j.id = ANY($1) \
+             )"
+        )
+        .bind(&failed_ids)
+        .execute(pool)
+        .await;
+
+        warn!(
+            count = failed_ids.len(),
+            job_ids = ?failed_ids,
+            "Orphaned jobs permanently failed after {MAX_ORPHAN_RETRIES} retries"
+        );
+        broadcaster.publish(
+            ActivityLogEntry::curated(
+                ActivityLogLevel::Error,
+                ActivityLogSource::Infrastructure,
+                format!("{} job(s) failed after {} retries", failed_ids.len(), MAX_ORPHAN_RETRIES),
+            )
+            .with_fields(serde_json::json!({ "job_ids": failed_ids })),
+        );
+    }
 }
