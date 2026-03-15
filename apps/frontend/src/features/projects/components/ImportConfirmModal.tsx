@@ -510,47 +510,6 @@ export function ImportConfirmModal({
     }
   }
 
-  /** Import only assets with new content hashes (filter out duplicates by content). */
-  function handleImportNewOnly() {
-    if (!payloads || !onConfirmWithAssets) return;
-
-    // Clone payloads and filter out duplicate assets
-    const newPayloads: CharacterDropPayload[] = [];
-    const existingPayloads: CharacterDropPayload[] = [];
-
-    for (let i = 0; i < payloads.length; i++) {
-      const payload = payloads[i]!;
-      const display = displayNames[i]!;
-      const isDuplicate = duplicateIndices.has(i);
-
-      // Filter out assets that are content-duplicates
-      const filteredAssets = payload.assets.filter((a) => !a.isDuplicate);
-      if (filteredAssets.length === 0 && !payload.bioJson && !payload.tovJson && !payload.metadataJson) {
-        continue; // Skip entirely if no new assets
-      }
-
-      const filteredPayload: CharacterDropPayload = {
-        ...payload,
-        rawName: display,
-        assets: filteredAssets,
-      };
-
-      if (isDuplicate) {
-        existingPayloads.push(filteredPayload);
-      } else if (checked.has(i)) {
-        newPayloads.push(filteredPayload);
-      }
-    }
-
-    onConfirmWithAssets(
-      newPayloads,
-      existingPayloads,
-      groupId ? Number(groupId) : undefined,
-      false,
-      true,
-    );
-  }
-
   const importableCount = effectiveNames.length - duplicateCount;
   const totalActionCount = selectedCount + existingAssetsCount;
   const isImporting = importProgress != null && importProgress.phase !== "done";
@@ -606,17 +565,29 @@ export function ImportConfirmModal({
           />
         )}
 
-        {/* Per-asset duplicate indicators (from content hash) */}
-        {payloads?.[idx]?.assets.some((a) => a.isDuplicate) && (() => {
-          const dupCount = payloads[idx]!.assets.filter((a) => a.isDuplicate).length;
-          const totalAssets = payloads[idx]!.assets.length;
-          const newCount = totalAssets - dupCount;
+        {/* Per-file action breakdown */}
+        {payloads?.[idx] && (() => {
+          const p = payloads[idx]!;
+          const assets = p.assets;
+          const dupAssets = assets.filter((a) => a.isDuplicate);
+          const newAssets = assets.filter((a) => !a.isDuplicate);
+          const willUploadCount = newContentOnly ? newAssets.length : assets.length;
+          const willSkipCount = newContentOnly ? dupAssets.length : 0;
+
+          if (dupAssets.length === 0) return null;
+
           return (
-            <Badge variant={newContentOnly ? "info" : "warning"} size="sm">
-              {newContentOnly
-                ? (newCount > 0 ? `${newCount} new` : "all identical")
-                : `${dupCount} identical`}
-            </Badge>
+            <>
+              {willUploadCount > 0 && (
+                <Badge variant="success" size="sm">{willUploadCount} to upload</Badge>
+              )}
+              {willSkipCount > 0 && (
+                <Badge variant="default" size="sm">{willSkipCount} identical — skip</Badge>
+              )}
+              {!newContentOnly && dupAssets.length > 0 && (
+                <Badge variant="warning" size="sm">{dupAssets.length} identical</Badge>
+              )}
+            </>
           );
         })()}
 
@@ -810,7 +781,7 @@ export function ImportConfirmModal({
               size="sm"
             />
           )}
-          {hashSummary && !hashSummary.isHashing && hashSummary.duplicateFiles > 0 && (importMissing || overwrite) && (
+          {hashSummary && !hashSummary.isHashing && hashSummary.duplicateFiles > 0 && (
             <Toggle
               checked={newContentOnly}
               onChange={setNewContentOnly}
@@ -927,16 +898,6 @@ export function ImportConfirmModal({
                 <Button variant="secondary" onClick={onClose}>
                   Cancel
                 </Button>
-                {hashSummary && !hashSummary.isHashing && hashSummary.duplicateFiles > 0 && (
-                  <Button
-                    variant="secondary"
-                    onClick={handleImportNewOnly}
-                    disabled={hashSummary.newFiles === 0}
-                    loading={loading}
-                  >
-                    Import New Only ({hashSummary.newFiles})
-                  </Button>
-                )}
                 <Button
                   onClick={handleConfirm}
                   disabled={totalActionCount === 0}
