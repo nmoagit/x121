@@ -333,6 +333,8 @@ pub async fn import_video(
         .as_ref()
         .is_some_and(|v| v.qa_status == CLIP_QA_APPROVED);
 
+    let content_hash = x121_core::hashing::sha256_hex(&data);
+
     let input = CreateSceneVideoVersion {
         scene_id,
         source: CLIP_SOURCE_IMPORTED.to_string(),
@@ -342,6 +344,7 @@ pub async fn import_video(
         is_final: Some(!has_approved_final),
         notes,
         generation_snapshot: None,
+        content_hash: Some(content_hash),
     };
 
     let version = if has_approved_final {

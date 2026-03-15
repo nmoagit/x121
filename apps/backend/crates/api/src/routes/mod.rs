@@ -937,6 +937,7 @@ pub fn api_routes() -> Router<AppState> {
         .route("/image-variants/check-hashes", axum::routing::post(crate::handlers::image_variant::check_hashes))
         .route("/image-variants/backfill-metadata", axum::routing::post(crate::handlers::image_variant::backfill_image_metadata))
         .route("/image-variants/backfill-hashes", axum::routing::post(crate::handlers::image_variant::backfill_hashes))
+        .route("/image-variants/backfill-video-hashes", axum::routing::post(crate::handlers::image_variant::backfill_video_hashes))
         .route("/image-variants/backfill-thumbnails", axum::routing::post(crate::handlers::image_variant::backfill_thumbnails))
         .route("/image-variants/{id}/thumbnail", axum::routing::get(crate::handlers::image_variant::thumbnail))
         // Background job execution engine (PRD-07, PRD-08, PRD-28, PRD-34, PRD-77).

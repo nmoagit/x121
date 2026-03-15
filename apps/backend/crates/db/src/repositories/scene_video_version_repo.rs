@@ -11,7 +11,7 @@ use crate::models::scene_video_version::{
 const COLUMNS: &str = "id, scene_id, version_number, source, file_path, \
     file_size_bytes, duration_secs, width, height, frame_rate, preview_path, is_final, notes, \
     qa_status, qa_reviewed_by, qa_reviewed_at, qa_rejection_reason, qa_notes, \
-    generation_snapshot, file_purged, deleted_at, created_at, updated_at";
+    generation_snapshot, content_hash, file_purged, deleted_at, created_at, updated_at";
 
 /// Provides CRUD and version-management operations for scene video versions.
 pub struct SceneVideoVersionRepo;
@@ -28,11 +28,11 @@ impl SceneVideoVersionRepo {
     ) -> Result<SceneVideoVersion, sqlx::Error> {
         let query = format!(
             "INSERT INTO scene_video_versions
-                (scene_id, version_number, source, file_path, file_size_bytes, duration_secs, is_final, notes, generation_snapshot)
+                (scene_id, version_number, source, file_path, file_size_bytes, duration_secs, is_final, notes, generation_snapshot, content_hash)
              VALUES (
                 $1,
                 (SELECT COALESCE(MAX(version_number), 0) + 1 FROM scene_video_versions WHERE scene_id = $1),
-                $2, $3, $4, $5, COALESCE($6, false), $7, $8
+                $2, $3, $4, $5, COALESCE($6, false), $7, $8, $9
              )
              RETURNING {COLUMNS}"
         );
@@ -45,6 +45,7 @@ impl SceneVideoVersionRepo {
             .bind(input.is_final)
             .bind(&input.notes)
             .bind(&input.generation_snapshot)
+            .bind(&input.content_hash)
             .fetch_one(pool)
             .await
     }
@@ -319,8 +320,8 @@ impl SceneVideoVersionRepo {
         // Insert new version as final
         let query = format!(
             "INSERT INTO scene_video_versions
-                (scene_id, version_number, source, file_path, file_size_bytes, duration_secs, is_final, notes, generation_snapshot)
-             VALUES ($1, $2, $3, $4, $5, $6, true, $7, $8)
+                (scene_id, version_number, source, file_path, file_size_bytes, duration_secs, is_final, notes, generation_snapshot, content_hash)
+             VALUES ($1, $2, $3, $4, $5, $6, true, $7, $8, $9)
              RETURNING {COLUMNS}"
         );
         let version = sqlx::query_as::<_, SceneVideoVersion>(&query)
@@ -332,6 +333,7 @@ impl SceneVideoVersionRepo {
             .bind(input.duration_secs)
             .bind(&input.notes)
             .bind(&input.generation_snapshot)
+            .bind(&input.content_hash)
             .fetch_one(&mut *tx)
             .await?;
 

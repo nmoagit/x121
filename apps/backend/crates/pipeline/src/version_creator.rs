@@ -45,6 +45,7 @@ pub async fn create_version_from_completion(
         is_final: Some(false),
         notes: None,
         generation_snapshot,
+        content_hash: None, // generated videos are not content-hashed (pipeline output is unique)
     };
 
     let version = SceneVideoVersionRepo::create(pool, &input)

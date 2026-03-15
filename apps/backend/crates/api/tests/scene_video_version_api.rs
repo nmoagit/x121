@@ -124,6 +124,7 @@ fn new_version(scene_id: i64) -> CreateSceneVideoVersion {
         is_final: None,
         notes: None,
         generation_snapshot: None,
+        content_hash: None,
     }
 }
 

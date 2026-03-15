@@ -26,6 +26,7 @@ pub struct SceneVideoVersion {
     pub qa_rejection_reason: Option<String>,
     pub qa_notes: Option<String>,
     pub generation_snapshot: Option<serde_json::Value>,
+    pub content_hash: Option<String>,
     pub file_purged: bool,
     pub deleted_at: Option<Timestamp>,
     pub created_at: Timestamp,
@@ -46,6 +47,7 @@ pub struct CreateSceneVideoVersion {
     pub is_final: Option<bool>,
     pub notes: Option<String>,
     pub generation_snapshot: Option<serde_json::Value>,
+    pub content_hash: Option<String>,
 }
 
 /// DTO for updating a scene video version. All fields optional.

@@ -782,15 +782,33 @@ pub struct CheckHashesResponse {
 /// POST /api/v1/image-variants/check-hashes
 ///
 /// Given a list of SHA-256 content hashes, return those that already exist
-/// in the database. Used by the frontend import flow to detect duplicates
-/// before uploading.
+/// in either `image_variants` or `scene_video_versions`. Used by the frontend
+/// import flow to detect duplicates before uploading.
 pub async fn check_hashes(
     State(state): State<AppState>,
     Json(body): Json<CheckHashesRequest>,
 ) -> AppResult<Json<DataResponse<CheckHashesResponse>>> {
-    let existing = ImageVariantRepo::find_existing_hashes(&state.pool, &body.hashes).await?;
+    // Check image variants
+    let mut existing_set = std::collections::HashSet::<String>::new();
+    let image_existing = ImageVariantRepo::find_existing_hashes(&state.pool, &body.hashes).await?;
+    existing_set.extend(image_existing);
+
+    // Also check scene video versions
+    if !body.hashes.is_empty() {
+        let video_rows: Vec<(String,)> = sqlx::query_as(
+            "SELECT DISTINCT content_hash FROM scene_video_versions \
+             WHERE content_hash = ANY($1) AND deleted_at IS NULL",
+        )
+        .bind(&body.hashes)
+        .fetch_all(&state.pool)
+        .await?;
+        existing_set.extend(video_rows.into_iter().map(|r| r.0));
+    }
+
     Ok(Json(DataResponse {
-        data: CheckHashesResponse { existing },
+        data: CheckHashesResponse {
+            existing: existing_set.into_iter().collect(),
+        },
     }))
 }
 
@@ -955,6 +973,68 @@ pub async fn backfill_hashes(
     }
 
     tracing::info!(total, succeeded, failed, "Backfill content hashes complete");
+
+    Ok(Json(BackfillMetadataResponse {
+        processed: total,
+        succeeded,
+        failed,
+    }))
+}
+
+/// POST /api/v1/image-variants/backfill-video-hashes
+///
+/// Backfill SHA-256 content hashes for existing scene video versions that don't
+/// have one yet. Reads each file from storage, computes the hash, and updates the DB.
+pub async fn backfill_video_hashes(
+    State(state): State<AppState>,
+    Query(params): Query<BackfillParams>,
+) -> AppResult<Json<BackfillMetadataResponse>> {
+    let limit = params.limit.unwrap_or(200).min(500) as i64;
+
+    let versions: Vec<(DbId, String)> = sqlx::query_as(
+        "SELECT id, file_path FROM scene_video_versions \
+         WHERE content_hash IS NULL AND deleted_at IS NULL \
+         ORDER BY id LIMIT $1",
+    )
+    .bind(limit)
+    .fetch_all(&state.pool)
+    .await?;
+
+    let total = versions.len();
+    let mut succeeded = 0usize;
+    let mut failed = 0usize;
+
+    for (id, file_path) in &versions {
+        let abs_path = match state.resolve_to_path(file_path).await {
+            Ok(p) => p,
+            Err(_) => {
+                failed += 1;
+                continue;
+            }
+        };
+
+        let data = match tokio::fs::read(&abs_path).await {
+            Ok(d) => d,
+            Err(_) => {
+                failed += 1;
+                continue;
+            }
+        };
+
+        let hash = sha256_hex(&data);
+
+        match sqlx::query("UPDATE scene_video_versions SET content_hash = $1 WHERE id = $2")
+            .bind(&hash)
+            .bind(id)
+            .execute(&state.pool)
+            .await
+        {
+            Ok(_) => succeeded += 1,
+            Err(_) => failed += 1,
+        }
+    }
+
+    tracing::info!(total, succeeded, failed, "Backfill video content hashes complete");
 
     Ok(Json(BackfillMetadataResponse {
         processed: total,
