@@ -49,7 +49,7 @@ const ICON_SIZE: Record<ButtonSize, number> = {
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
   {
     variant = "primary",
-    size = "md",
+    size = "sm",
     loading = false,
     icon,
     disabled,
