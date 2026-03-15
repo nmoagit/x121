@@ -4,7 +4,7 @@
  * and navigation to character scene detail.
  */
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { useNavigate } from "@tanstack/react-router";
 
 import { EmptyState } from "@/components/domain";
@@ -37,8 +37,23 @@ function BrowseClipItem({
   const sourceIcon = clip.source === "imported" ? <Upload size={14} /> : <Clapperboard size={14} />;
   const sourceLabel = clip.source === "imported" ? "Imported" : "Generated";
 
+  // Lazy-load video: only mount when the card enters the viewport
+  const ref = useRef<HTMLDivElement>(null);
+  const [isVisible, setIsVisible] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => { if (entry?.isIntersecting) { setIsVisible(true); observer.disconnect(); } },
+      { rootMargin: "200px" },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <div
+      ref={ref}
       className={`rounded-[var(--radius-lg)] border transition-colors bg-[var(--color-surface-primary)] hover:bg-[var(--color-surface-secondary)] ${
         clip.qa_status === "approved"
           ? "border-[var(--color-action-success)]"
@@ -60,12 +75,14 @@ function BrowseClipItem({
             className="group/play relative h-16 w-24 shrink-0 rounded overflow-hidden
               bg-[var(--color-surface-tertiary)] cursor-pointer"
           >
-            <video
-              src={getStreamUrl("version", clip.id, "proxy")}
-              className="absolute inset-0 w-full h-full object-cover"
-              preload="none"
-              muted
-            />
+            {isVisible && (
+              <video
+                src={getStreamUrl("version", clip.id, "proxy")}
+                className="absolute inset-0 w-full h-full object-cover"
+                preload="metadata"
+                muted
+              />
+            )}
             <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover/play:opacity-100 transition-opacity">
               <Play size={20} className="text-white" />
             </div>
