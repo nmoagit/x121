@@ -63,7 +63,7 @@ function BrowseClipItem({
             <video
               src={getStreamUrl("version", clip.id, "proxy")}
               className="absolute inset-0 w-full h-full object-cover"
-              preload="metadata"
+              preload="none"
               muted
             />
             <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover/play:opacity-100 transition-opacity">
