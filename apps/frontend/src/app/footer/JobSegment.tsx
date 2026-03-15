@@ -35,7 +35,7 @@ export function JobSegment({ jobs }: JobSegmentProps) {
     <>
       <Separator />
       <Tooltip content={tooltipText} side="top">
-        <FooterSegment href="/jobs" label="Job status">
+        <FooterSegment href="/admin/queue" label="Job status">
           <Zap size={14} aria-hidden="true" />
           <span className="tabular-nums">{total}</span>
           <span className="hidden md:inline">{total === 1 ? "job" : "jobs"}</span>
