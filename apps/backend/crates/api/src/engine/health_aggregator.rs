@@ -116,6 +116,8 @@ impl HealthAggregator {
         comfyui: Arc<x121_comfyui::manager::ComfyUIManager>,
     ) {
         tokio::spawn(async move {
+            // Run first probe immediately, then every POLL_INTERVAL.
+            self.refresh(&pool, &comfyui).await;
             let mut interval = tokio::time::interval(POLL_INTERVAL);
             loop {
                 interval.tick().await;
@@ -349,10 +351,10 @@ async fn probe_workflows(pool: &PgPool) -> WorkflowStatus {
 fn initial_snapshot() -> FooterSnapshot {
     let now = Utc::now();
     let down = || ServiceStatus {
-        status: STATUS_DOWN,
+        status: STATUS_HEALTHY,
         latency_ms: None,
         checked_at: now,
-        detail: None,
+        detail: Some("Starting up…".to_string()),
     };
 
     FooterSnapshot {
