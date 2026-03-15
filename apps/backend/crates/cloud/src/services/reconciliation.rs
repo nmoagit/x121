@@ -133,5 +133,53 @@ async fn reconcile_all(
         }
     }
 
+    // Detect orphaned jobs: running/dispatched jobs assigned to instances that
+    // no longer exist or are terminated. Reset them to failed.
+    let orphaned = sqlx::query_as::<_, (x121_core::types::DbId,)>(
+        "SELECT j.id FROM jobs j \
+         WHERE j.status_id IN (2, 9) \
+           AND j.comfyui_instance_id IS NOT NULL \
+           AND NOT EXISTS ( \
+               SELECT 1 FROM comfyui_instances ci \
+               WHERE ci.id = j.comfyui_instance_id AND ci.status = 'connected' \
+           )"
+    )
+    .fetch_all(pool)
+    .await
+    .unwrap_or_default();
+
+    if !orphaned.is_empty() {
+        let orphan_ids: Vec<i64> = orphaned.iter().map(|r| r.0).collect();
+        let count = orphan_ids.len();
+
+        let _ = sqlx::query(
+            "UPDATE jobs SET status_id = 4, comfyui_instance_id = NULL, \
+             error_message = 'Instance terminated while job was in progress (auto-detected)' \
+             WHERE id = ANY($1)"
+        )
+        .bind(&orphan_ids)
+        .execute(pool)
+        .await;
+
+        // Also reset their scenes from Generating to Pending
+        let _ = sqlx::query(
+            "UPDATE scenes SET status_id = 1 \
+             WHERE status_id = 2 AND id IN ( \
+                 SELECT (j.parameters->>'scene_id')::bigint FROM jobs j WHERE j.id = ANY($1) \
+             )"
+        )
+        .bind(&orphan_ids)
+        .execute(pool)
+        .await;
+
+        warn!(count, job_ids = ?orphan_ids, "Reconciled orphaned jobs — marked as failed");
+        emit_reconcile(
+            activity,
+            ActivityLogLevel::Warn,
+            format!("{count} orphaned job(s) detected and marked as failed"),
+            serde_json::json!({ "job_ids": orphan_ids }),
+        );
+    }
+
     Ok(())
 }
