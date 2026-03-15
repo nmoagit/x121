@@ -168,9 +168,11 @@ async fn main() {
 
     // --- Cloud GPU provider registry (PRD-114) ---
     let cloud_registry = Arc::new(x121_cloud::registry::ProviderRegistry::new());
-    // Load active providers from DB and register runtime instances.
+    // Load ALL providers from DB into the runtime registry (including disabled ones).
+    // Disabled providers won't have active scaling rules, but they must be in the
+    // registry so that resume-processing can re-enable them without a restart.
     {
-        if let Ok(providers) = x121_db::repositories::CloudProviderRepo::list_active(&pool).await {
+        if let Ok(providers) = x121_db::repositories::CloudProviderRepo::list_all(&pool).await {
             if let Ok(master_hex) = std::env::var("CLOUD_ENCRYPTION_KEY") {
                 if let Ok(master_key) = x121_core::crypto::parse_master_key(&master_hex) {
                     for p in &providers {

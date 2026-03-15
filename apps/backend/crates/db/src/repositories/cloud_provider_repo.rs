@@ -88,6 +88,15 @@ impl CloudProviderRepo {
             .await
     }
 
+    /// List all providers regardless of status. Used at startup to register
+    /// all providers in the runtime registry so they're available when re-enabled.
+    pub async fn list_all(pool: &PgPool) -> Result<Vec<CloudProvider>, sqlx::Error> {
+        let query = format!("SELECT {COLUMNS} FROM cloud_providers ORDER BY name ASC");
+        sqlx::query_as::<_, CloudProvider>(&query)
+            .fetch_all(pool)
+            .await
+    }
+
     /// Find providers by type.
     pub async fn find_by_type(
         pool: &PgPool,
