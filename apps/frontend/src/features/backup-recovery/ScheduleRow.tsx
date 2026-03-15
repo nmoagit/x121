@@ -4,8 +4,11 @@
  * Displays a single schedule with toggle, edit, and delete actions.
  */
 
-import { Badge, Button, Toggle } from "@/components/primitives";
+import { useState } from "react";
+
+import { ConfirmModal } from "@/components/composite";
 import { Stack } from "@/components/layout";
+import { Badge, Button, Toggle } from "@/components/primitives";
 import { cn } from "@/lib/cn";
 import { Edit3, Trash2 } from "@/tokens/icons";
 import { iconSizes } from "@/tokens/icons";
@@ -28,6 +31,7 @@ interface ScheduleRowProps {
 }
 
 export function ScheduleRow({ schedule, onEdit }: ScheduleRowProps) {
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const updateMutation = useUpdateSchedule();
   const deleteMutation = useDeleteSchedule();
 
@@ -36,12 +40,11 @@ export function ScheduleRow({ schedule, onEdit }: ScheduleRowProps) {
   };
 
   const handleDelete = () => {
-    if (window.confirm(`Delete schedule #${schedule.id}?`)) {
-      deleteMutation.mutate(schedule.id);
-    }
+    setConfirmDelete(true);
   };
 
   return (
+    <>
     <tr
       className={cn(
         "border-b border-[var(--color-border-default)] last:border-b-0",
@@ -96,5 +99,20 @@ export function ScheduleRow({ schedule, onEdit }: ScheduleRowProps) {
         </Stack>
       </td>
     </tr>
+
+    <ConfirmModal
+      open={confirmDelete}
+      onClose={() => setConfirmDelete(false)}
+      title="Delete Schedule"
+      confirmLabel="Delete"
+      confirmVariant="danger"
+      onConfirm={() => {
+        deleteMutation.mutate(schedule.id);
+        setConfirmDelete(false);
+      }}
+    >
+      <p>Delete schedule #{schedule.id}?</p>
+    </ConfirmModal>
+    </>
   );
 }

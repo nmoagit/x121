@@ -2,6 +2,9 @@
  * Filterable table of cloud instances with action buttons (PRD-114).
  */
 
+import { useState } from "react";
+
+import { ConfirmModal } from "@/components/composite";
 import { formatCents } from "@/lib/format";
 import type { CloudInstance } from "../hooks/use-cloud-providers";
 
@@ -47,7 +50,11 @@ const STATUS_COLORS: Record<number, string> = {
 };
 
 export function CloudInstanceList({ instances, onStart, onStop, onTerminate }: Props) {
+  const [confirmTerminateId, setConfirmTerminateId] = useState<number | null>(null);
+
   return (
+    <>
+
     <table className="w-full text-sm">
       <thead>
         <tr className="border-b border-[var(--color-border-default)] text-left text-xs text-[var(--color-text-muted)]">
@@ -99,11 +106,7 @@ export function CloudInstanceList({ instances, onStart, onStop, onTerminate }: P
                   )}
                   {!isTerminal && (
                     <button
-                      onClick={() => {
-                        if (window.confirm("Terminate this instance? This is irreversible.")) {
-                          onTerminate(inst.id);
-                        }
-                      }}
+                      onClick={() => setConfirmTerminateId(inst.id)}
                       className="rounded border border-red-500 px-2 py-0.5 text-xs text-red-500 hover:bg-red-50"
                     >
                       Terminate
@@ -116,5 +119,22 @@ export function CloudInstanceList({ instances, onStart, onStop, onTerminate }: P
         })}
       </tbody>
     </table>
+
+    <ConfirmModal
+      open={confirmTerminateId !== null}
+      onClose={() => setConfirmTerminateId(null)}
+      title="Terminate Instance"
+      confirmLabel="Terminate"
+      confirmVariant="danger"
+      onConfirm={() => {
+        if (confirmTerminateId !== null) {
+          onTerminate(confirmTerminateId);
+        }
+        setConfirmTerminateId(null);
+      }}
+    >
+      <p>Terminate this instance? This is irreversible.</p>
+    </ConfirmModal>
+    </>
   );
 }

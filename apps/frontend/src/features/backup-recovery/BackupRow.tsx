@@ -8,8 +8,9 @@
 
 import { useState } from "react";
 
-import { Badge, Button } from "@/components/primitives";
+import { ConfirmModal } from "@/components/composite";
 import { Stack } from "@/components/layout";
+import { Badge, Button } from "@/components/primitives";
 import { Check, ShieldCheck, Trash2 } from "@/tokens/icons";
 import { iconSizes } from "@/tokens/icons";
 import { cn } from "@/lib/cn";
@@ -35,6 +36,7 @@ interface BackupRowProps {
 
 export function BackupRow({ backup }: BackupRowProps) {
   const [expanded, setExpanded] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   const verifyMutation = useVerifyBackup();
   const deleteMutation = useDeleteBackup();
@@ -49,9 +51,7 @@ export function BackupRow({ backup }: BackupRowProps) {
 
   const handleDelete = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (window.confirm(`Delete backup #${backup.id}?`)) {
-      deleteMutation.mutate(backup.id);
-    }
+    setConfirmDelete(true);
   };
 
   return (
@@ -140,6 +140,20 @@ export function BackupRow({ backup }: BackupRowProps) {
           </td>
         </tr>
       )}
+
+      <ConfirmModal
+        open={confirmDelete}
+        onClose={() => setConfirmDelete(false)}
+        title="Delete Backup"
+        confirmLabel="Delete"
+        confirmVariant="danger"
+        onConfirm={() => {
+          deleteMutation.mutate(backup.id);
+          setConfirmDelete(false);
+        }}
+      >
+        <p>Delete backup #{backup.id}?</p>
+      </ConfirmModal>
     </>
   );
 }

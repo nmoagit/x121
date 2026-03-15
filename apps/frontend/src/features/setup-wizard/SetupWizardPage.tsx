@@ -7,6 +7,7 @@
 
 import { useCallback, useState } from "react";
 
+import { ConfirmModal } from "@/components/composite";
 import { Badge, Button, Spinner } from "@/components/primitives";
 
 import { AdminAccountStep } from "./AdminAccountStep";
@@ -43,6 +44,7 @@ const STEP_COMPONENTS: Record<SetupStepName, React.FC> = {
 export function SetupWizardPage() {
   const { data: wizardState, isPending } = useWizardStatus();
   const skipWizard = useSkipWizard();
+  const [confirmSkip, setConfirmSkip] = useState(false);
 
   const serverIndex = wizardState?.current_step_index ?? 0;
   const [localIndex, setLocalIndex] = useState<number | null>(null);
@@ -65,12 +67,8 @@ export function SetupWizardPage() {
   }, []);
 
   const handleSkip = useCallback(() => {
-    if (window.confirm("Skip the setup wizard? You can configure services later from Settings.")) {
-      skipWizard.mutate(undefined, {
-        onSuccess: handleGoToDashboard,
-      });
-    }
-  }, [skipWizard, handleGoToDashboard]);
+    setConfirmSkip(true);
+  }, []);
 
   /* -- Loading state -- */
 
@@ -164,6 +162,22 @@ export function SetupWizardPage() {
           Next
         </Button>
       </div>
+
+      <ConfirmModal
+        open={confirmSkip}
+        onClose={() => setConfirmSkip(false)}
+        title="Skip Setup Wizard"
+        confirmLabel="Skip"
+        confirmVariant="primary"
+        onConfirm={() => {
+          skipWizard.mutate(undefined, {
+            onSuccess: handleGoToDashboard,
+          });
+          setConfirmSkip(false);
+        }}
+      >
+        <p>Skip the setup wizard? You can configure services later from Settings.</p>
+      </ConfirmModal>
     </div>
   );
 }

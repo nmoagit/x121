@@ -6,6 +6,7 @@
 
 import { useCallback, useState } from "react";
 
+import { ConfirmModal } from "@/components/composite";
 import { useToast } from "@/components/composite/useToast";
 import { Button, Spinner } from "@/components/primitives";
 import { formatCents, formatDateTime, formatRelative } from "@/lib/format";
@@ -47,6 +48,7 @@ const TABS: { id: Tab; label: string }[] = [
 
 export function CloudProviderDetail({ providerId }: Props) {
   const [tab, setTab] = useState<Tab>("instances");
+  const [confirmEmergencyStop, setConfirmEmergencyStop] = useState(false);
   const { data: provider, isLoading } = useCloudProvider(providerId);
   const { addToast } = useToast();
   const testConnection = useTestConnection(providerId);
@@ -103,11 +105,7 @@ export function CloudProviderDetail({ providerId }: Props) {
             {testConnection.isPending ? "Testing..." : "Test Connection"}
           </button>
           <button
-            onClick={() => {
-              if (window.confirm(`Emergency stop all instances for ${provider.name}?`)) {
-                emergencyStop.mutate();
-              }
-            }}
+            onClick={() => setConfirmEmergencyStop(true)}
             className="rounded-[var(--radius-md)] bg-red-600 px-3 py-1.5 text-xs text-white hover:bg-red-700"
           >
             Emergency Stop
@@ -141,6 +139,20 @@ export function CloudProviderDetail({ providerId }: Props) {
         {tab === "scaling" && <ScalingTab providerId={providerId} />}
         {tab === "cost" && <CostTab providerId={providerId} />}
       </div>
+
+      <ConfirmModal
+        open={confirmEmergencyStop}
+        onClose={() => setConfirmEmergencyStop(false)}
+        title="Emergency Stop"
+        confirmLabel="Stop All"
+        confirmVariant="danger"
+        onConfirm={() => {
+          emergencyStop.mutate();
+          setConfirmEmergencyStop(false);
+        }}
+      >
+        <p>Emergency stop all instances for {provider.name}?</p>
+      </ConfirmModal>
     </div>
   );
 }
@@ -223,6 +235,8 @@ function ScalingTab({ providerId }: { providerId: number }) {
   const { addToast } = useToast();
   const [editingId, setEditingId] = useState<number | null>(null);
   const [showCreate, setShowCreate] = useState(false);
+  const [confirmDeleteRuleId, setConfirmDeleteRuleId] = useState<number | null>(null);
+  const [confirmResetScaling, setConfirmResetScaling] = useState(false);
 
   const gpuName = useCallback(
     (gpuTypeId: number) =>
@@ -282,11 +296,7 @@ function ScalingTab({ providerId }: { providerId: number }) {
                   rule={r}
                   gpuName={gpuName(r.gpu_type_id)}
                   onEdit={() => setEditingId(r.id)}
-                  onDelete={() => {
-                    if (window.confirm("Delete this scaling rule?")) {
-                      deleteRule.mutate(r.id);
-                    }
-                  }}
+                  onDelete={() => setConfirmDeleteRuleId(r.id)}
                   onToggle={() => {
                     updateRule.mutate({
                       ruleId: r.id,
@@ -309,14 +319,7 @@ function ScalingTab({ providerId }: { providerId: number }) {
           <Button
             size="sm"
             variant="secondary"
-            onClick={() => {
-              if (window.confirm("Clear all scaling history and reset cooldowns?")) {
-                resetScaling.mutate(undefined, {
-                  onSuccess: () => addToast({ message: "Scaling history cleared and cooldowns reset", variant: "success" }),
-                  onError: (err) => addToast({ message: `Reset failed: ${err instanceof Error ? err.message : "Unknown error"}`, variant: "error" }),
-                });
-              }
-            }}
+            onClick={() => setConfirmResetScaling(true)}
             loading={resetScaling.isPending}
           >
             Reset History &amp; Cooldown
@@ -368,6 +371,39 @@ function ScalingTab({ providerId }: { providerId: number }) {
           </div>
         )}
       </div>
+
+      <ConfirmModal
+        open={confirmDeleteRuleId !== null}
+        onClose={() => setConfirmDeleteRuleId(null)}
+        title="Delete Scaling Rule"
+        confirmLabel="Delete"
+        confirmVariant="danger"
+        onConfirm={() => {
+          if (confirmDeleteRuleId !== null) {
+            deleteRule.mutate(confirmDeleteRuleId);
+          }
+          setConfirmDeleteRuleId(null);
+        }}
+      >
+        <p>Delete this scaling rule?</p>
+      </ConfirmModal>
+
+      <ConfirmModal
+        open={confirmResetScaling}
+        onClose={() => setConfirmResetScaling(false)}
+        title="Clear Scaling History"
+        confirmLabel="Clear"
+        confirmVariant="danger"
+        onConfirm={() => {
+          resetScaling.mutate(undefined, {
+            onSuccess: () => addToast({ message: "Scaling history cleared and cooldowns reset", variant: "success" }),
+            onError: (err) => addToast({ message: `Reset failed: ${err instanceof Error ? err.message : "Unknown error"}`, variant: "error" }),
+          });
+          setConfirmResetScaling(false);
+        }}
+      >
+        <p>Clear all scaling history and reset cooldowns?</p>
+      </ConfirmModal>
     </div>
   );
 }

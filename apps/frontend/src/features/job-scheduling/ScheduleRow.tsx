@@ -6,8 +6,9 @@
 
 import { useState } from "react";
 
-import { Badge, Button } from "@/components/primitives";
+import { ConfirmModal } from "@/components/composite";
 import { Stack } from "@/components/layout";
+import { Badge, Button } from "@/components/primitives";
 import { cn } from "@/lib/cn";
 import { formatDateTime } from "@/lib/format";
 import { Edit3, Pause, Play, Trash2 } from "@/tokens/icons";
@@ -30,6 +31,7 @@ interface ScheduleRowProps {
 
 export function ScheduleRow({ schedule, onEdit }: ScheduleRowProps) {
   const [expanded, setExpanded] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const pauseMutation = usePauseSchedule();
   const resumeMutation = useResumeSchedule();
   const deleteMutation = useDeleteSchedule();
@@ -43,9 +45,7 @@ export function ScheduleRow({ schedule, onEdit }: ScheduleRowProps) {
   };
 
   const handleDelete = () => {
-    if (window.confirm(`Delete schedule "${schedule.name}"?`)) {
-      deleteMutation.mutate(schedule.id);
-    }
+    setConfirmDelete(true);
   };
 
   return (
@@ -93,6 +93,20 @@ export function ScheduleRow({ schedule, onEdit }: ScheduleRowProps) {
           </td>
         </tr>
       )}
+
+      <ConfirmModal
+        open={confirmDelete}
+        onClose={() => setConfirmDelete(false)}
+        title="Delete Schedule"
+        confirmLabel="Delete"
+        confirmVariant="danger"
+        onConfirm={() => {
+          deleteMutation.mutate(schedule.id);
+          setConfirmDelete(false);
+        }}
+      >
+        <p>Delete schedule "{schedule.name}"?</p>
+      </ConfirmModal>
     </>
   );
 }

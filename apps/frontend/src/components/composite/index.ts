@@ -4,6 +4,7 @@ export { Card, CardHeader, CardBody, CardFooter } from "./Card";
 export { CollapsibleSection } from "./CollapsibleSection";
 export { ConfigToolbar } from "./ConfigToolbar";
 export { ConfirmDeleteModal } from "./ConfirmDeleteModal";
+export { ConfirmModal } from "./ConfirmModal";
 export { Drawer } from "./Drawer";
 export { Dropdown } from "./Dropdown";
 export { Modal } from "./Modal";

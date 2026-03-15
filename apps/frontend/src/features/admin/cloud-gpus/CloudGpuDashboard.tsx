@@ -6,6 +6,7 @@
 
 import { useState } from "react";
 
+import { ConfirmModal } from "@/components/composite";
 import { Stack } from "@/components/layout";
 import { Button } from "@/components/primitives";
 import { Spinner } from "@/components/primitives";
@@ -30,6 +31,7 @@ export function CloudGpuDashboard() {
   const emergencyStopAll = useEmergencyStopAll();
 
   const [selectedProviderId, setSelectedProviderId] = useState<number | null>(null);
+  const [confirmStopAll, setConfirmStopAll] = useState(false);
 
   const isLoading = statsLoading || providersLoading;
 
@@ -60,11 +62,7 @@ export function CloudGpuDashboard() {
       <Stack gap={6}>
         <div className="flex items-center justify-end">
           <Button
-            onClick={() => {
-              if (window.confirm("This will terminate ALL cloud instances across ALL providers. Continue?")) {
-                emergencyStopAll.mutate();
-              }
-            }}
+            onClick={() => setConfirmStopAll(true)}
             className="bg-red-600 text-white hover:bg-red-700"
           >
             Emergency Stop All
@@ -92,6 +90,20 @@ export function CloudGpuDashboard() {
           </div>
         )}
       </Stack>
+
+      <ConfirmModal
+        open={confirmStopAll}
+        onClose={() => setConfirmStopAll(false)}
+        title="Emergency Stop All"
+        confirmLabel="Stop All"
+        confirmVariant="danger"
+        onConfirm={() => {
+          emergencyStopAll.mutate();
+          setConfirmStopAll(false);
+        }}
+      >
+        <p>This will terminate ALL cloud instances across ALL providers. Continue?</p>
+      </ConfirmModal>
     </div>
   );
 }

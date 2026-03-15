@@ -7,7 +7,7 @@
 
 import { useCallback, useState } from "react";
 
-import { Card } from "@/components/composite";
+import { Card, ConfirmModal } from "@/components/composite";
 import { Stack } from "@/components/layout";
 import { Badge, Button, Input, Select, Toggle, Spinner } from "@/components/primitives";
 import { ChevronDown, Plus, Trash2 } from "@/tokens/icons";
@@ -47,6 +47,8 @@ function TemplateRow({ template }: { template: MetadataTemplate }) {
   const deleteTemplate = useDeleteTemplate();
   const createField = useCreateTemplateField(template.id);
   const deleteField = useDeleteTemplateField(template.id);
+
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   // New field form state
   const [newFieldName, setNewFieldName] = useState("");
@@ -245,16 +247,26 @@ function TemplateRow({ template }: { template: MetadataTemplate }) {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => {
-                    if (window.confirm(`Delete template "${template.name}"?`)) {
-                      deleteTemplate.mutate(template.id);
-                    }
-                  }}
+                  onClick={() => setConfirmDelete(true)}
                   disabled={deleteTemplate.isPending}
                 >
                   Delete Template
                 </Button>
               </div>
+
+              <ConfirmModal
+                open={confirmDelete}
+                onClose={() => setConfirmDelete(false)}
+                title="Delete Template"
+                confirmLabel="Delete"
+                confirmVariant="danger"
+                onConfirm={() => {
+                  deleteTemplate.mutate(template.id);
+                  setConfirmDelete(false);
+                }}
+              >
+                <p>Delete template "{template.name}"?</p>
+              </ConfirmModal>
             </Stack>
           )}
         </div>

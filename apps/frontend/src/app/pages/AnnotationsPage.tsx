@@ -10,7 +10,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 
 import { EmptyState } from "@/components/domain";
-import { Modal } from "@/components/composite";
+import { ConfirmModal, Modal } from "@/components/composite";
 import { PageHeader, Stack } from "@/components/layout";
 import { Badge, Button, Input, Select, Spinner } from "@/components/primitives";
 import { DrawingCanvas } from "@/features/annotations/DrawingCanvas";
@@ -340,6 +340,7 @@ export function AnnotationsPage() {
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [selectedItem, setSelectedItem] = useState<AnnotatedItem | null>(null);
   const [showCompleted, setShowCompleted] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<AnnotatedItem | null>(null);
 
   const { data: projects } = useProjects();
   const deleteMutation = useDeleteBrowseAnnotation();
@@ -442,11 +443,7 @@ export function AnnotationsPage() {
               key={item.annotation_id}
               item={item}
               onClick={() => setSelectedItem(item)}
-              onDelete={() => {
-                if (window.confirm(`Delete annotation on ${item.character_name} — ${item.scene_type_name}, frame ${item.frame_number}?`)) {
-                  deleteMutation.mutate(item.annotation_id);
-                }
-              }}
+              onDelete={() => setDeleteTarget(item)}
             />
           ))}
         </div>
@@ -457,6 +454,26 @@ export function AnnotationsPage() {
         item={selectedItem}
         onClose={() => setSelectedItem(null)}
       />
+
+      <ConfirmModal
+        open={deleteTarget !== null}
+        onClose={() => setDeleteTarget(null)}
+        title="Delete Annotation"
+        confirmLabel="Delete"
+        confirmVariant="danger"
+        onConfirm={() => {
+          if (deleteTarget) {
+            deleteMutation.mutate(deleteTarget.annotation_id);
+          }
+          setDeleteTarget(null);
+        }}
+      >
+        {deleteTarget && (
+          <p>
+            Delete annotation on {deleteTarget.character_name} — {deleteTarget.scene_type_name}, frame {deleteTarget.frame_number}?
+          </p>
+        )}
+      </ConfirmModal>
     </Stack>
   );
 }

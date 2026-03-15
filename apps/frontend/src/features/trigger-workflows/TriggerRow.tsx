@@ -7,8 +7,9 @@
 
 import { useState } from "react";
 
-import { Badge, Button, Toggle } from "@/components/primitives";
+import { ConfirmModal } from "@/components/composite";
 import { Stack } from "@/components/layout";
+import { Badge, Button, Toggle } from "@/components/primitives";
 import { cn } from "@/lib/cn";
 import { Edit3, Play, Trash2 } from "@/tokens/icons";
 import { iconSizes } from "@/tokens/icons";
@@ -35,6 +36,7 @@ interface TriggerRowProps {
 export function TriggerRow({ trigger, onEdit }: TriggerRowProps) {
   const [expanded, setExpanded] = useState(false);
   const [dryRunResult, setDryRunResult] = useState<DryRunResult | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   const updateMutation = useUpdateTrigger(trigger.id);
   const deleteMutation = useDeleteTrigger();
@@ -45,9 +47,7 @@ export function TriggerRow({ trigger, onEdit }: TriggerRowProps) {
   };
 
   const handleDelete = () => {
-    if (window.confirm(`Delete trigger "${trigger.name}"?`)) {
-      deleteMutation.mutate(trigger.id);
-    }
+    setConfirmDelete(true);
   };
 
   const handleDryRun = (e: React.MouseEvent) => {
@@ -131,6 +131,20 @@ export function TriggerRow({ trigger, onEdit }: TriggerRowProps) {
           </td>
         </tr>
       )}
+
+      <ConfirmModal
+        open={confirmDelete}
+        onClose={() => setConfirmDelete(false)}
+        title="Delete Trigger"
+        confirmLabel="Delete"
+        confirmVariant="danger"
+        onConfirm={() => {
+          deleteMutation.mutate(trigger.id);
+          setConfirmDelete(false);
+        }}
+      >
+        <p>Delete trigger "{trigger.name}"?</p>
+      </ConfirmModal>
     </>
   );
 }
