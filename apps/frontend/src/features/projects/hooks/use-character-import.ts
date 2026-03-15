@@ -767,6 +767,11 @@ export function useCharacterImport(projectId: number) {
       if (uniqueGroupNames.length > 0) parts.push(`${uniqueGroupNames.length} group${uniqueGroupNames.length > 1 ? "s" : ""} resolved`);
       if (invalidJsonCount > 0) parts.push(`${invalidJsonCount} invalid JSON${invalidJsonCount > 1 ? "s" : ""} skipped`);
 
+      // Dump all errors to browser console for debugging
+      if (errors.length > 0) {
+        console.error(`[Import] ${errors.length} error(s):`, errors);
+      }
+
       addLogEntry(importLogEntry(
         errors.length > 0 ? "warn" : "info",
         `Import complete: ${parts.join(", ")}`,
