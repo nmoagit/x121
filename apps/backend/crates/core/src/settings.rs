@@ -322,6 +322,30 @@ pub static SETTINGS_REGISTRY: &[SettingDefinition] = &[
         sensitive: false,
         validation_regex: None,
     },
+    SettingDefinition {
+        key: "job_timeout_minutes",
+        category: CATEGORY_PIPELINE,
+        label: "Job Timeout (minutes)",
+        description: "Maximum time a generation job can run before being considered timed out and reset for retry.",
+        value_type: SettingValueType::Integer,
+        env_var: Some("JOB_TIMEOUT_MINUTES"),
+        default_value: Some("30"),
+        requires_restart: false,
+        sensitive: false,
+        validation_regex: None,
+    },
+    SettingDefinition {
+        key: "idle_instance_minutes",
+        category: CATEGORY_PIPELINE,
+        label: "Idle Instance Timeout (minutes)",
+        description: "Minutes a GPU instance can run with no jobs before being automatically terminated to save costs.",
+        value_type: SettingValueType::Integer,
+        env_var: Some("IDLE_INSTANCE_MINUTES"),
+        default_value: Some("5"),
+        requires_restart: false,
+        sensitive: false,
+        validation_regex: None,
+    },
 ];
 
 // ---------------------------------------------------------------------------

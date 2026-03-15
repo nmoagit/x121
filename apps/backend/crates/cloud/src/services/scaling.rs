@@ -58,8 +58,21 @@ async fn evaluate_all_rules(
         CloudCostEventRepo, CloudInstanceRepo, CloudProviderRepo, CloudScalingRuleRepo, JobRepo,
     };
 
-    // Always check for orphaned jobs (runs every 30s regardless of scaling rules).
+    // ── Lifecycle health checks (every 30s, regardless of scaling rules) ──
+
+    // 1. Detect orphaned jobs (assigned to disconnected instances)
     detect_orphaned_jobs(pool, broadcaster).await;
+
+    // 2. Detect timed-out jobs (running for too long without completing)
+    detect_timed_out_jobs(pool, broadcaster).await;
+
+    // 3. Detect idle instances (running with no jobs for too long) and shut them down
+    detect_idle_instances(pool, registry, broadcaster).await;
+
+    // 4. Detect disconnected ComfyUI instances on running pods and mark for reconnect
+    detect_disconnected_comfyui(pool, broadcaster).await;
+
+    // ── Scaling rule evaluation ──
 
     let rules = CloudScalingRuleRepo::list_enabled(pool).await?;
 
@@ -590,4 +603,200 @@ async fn detect_orphaned_jobs(pool: &PgPool, broadcaster: &Arc<ActivityLogBroadc
             .with_fields(serde_json::json!({ "job_ids": failed_ids })),
         );
     }
+}
+
+/// Detect jobs that have been "running" for too long without completing.
+/// Default timeout: 30 minutes (configurable via `job_timeout_minutes` platform setting).
+async fn detect_timed_out_jobs(pool: &PgPool, broadcaster: &Arc<ActivityLogBroadcaster>) {
+    let timeout_minutes: i64 = sqlx::query_scalar::<_, String>(
+        "SELECT value FROM platform_settings WHERE key = 'job_timeout_minutes'"
+    )
+    .fetch_optional(pool)
+    .await
+    .ok()
+    .flatten()
+    .and_then(|v| v.parse().ok())
+    .unwrap_or(30);
+
+    let timed_out = match sqlx::query_as::<_, (x121_core::types::DbId, i16)>(
+        "SELECT j.id, j.orphan_retry_count FROM jobs j \
+         WHERE j.status_id = 2 \
+           AND j.started_at IS NOT NULL \
+           AND j.started_at < NOW() - make_interval(mins => $1) "
+    )
+    .bind(timeout_minutes as i32)
+    .fetch_all(pool)
+    .await
+    {
+        Ok(rows) => rows,
+        Err(e) => {
+            warn!("Failed to query timed-out jobs: {e}");
+            return;
+        }
+    };
+
+    if timed_out.is_empty() {
+        return;
+    }
+
+    let job_ids: Vec<i64> = timed_out.iter().map(|r| r.0).collect();
+    let count = job_ids.len();
+
+    // Reset to pending for retry (same mechanism as orphaned jobs)
+    let _ = sqlx::query(
+        "UPDATE jobs SET status_id = 1, comfyui_instance_id = NULL, \
+         orphan_retry_count = orphan_retry_count + 1, \
+         error_message = 'Job timed out — exceeded maximum run time' \
+         WHERE id = ANY($1)"
+    )
+    .bind(&job_ids)
+    .execute(pool)
+    .await;
+
+    warn!(count, job_ids = ?job_ids, timeout_minutes, "Timed-out jobs reset to pending");
+    broadcaster.publish(
+        ActivityLogEntry::curated(
+            ActivityLogLevel::Warn,
+            ActivityLogSource::Infrastructure,
+            format!("{count} job(s) timed out after {timeout_minutes}min — will retry"),
+        )
+        .with_fields(serde_json::json!({ "job_ids": job_ids })),
+    );
+}
+
+/// Detect cloud instances that have been running with no active jobs for too long.
+/// Default idle threshold: 5 minutes (configurable via `idle_instance_minutes` platform setting).
+/// Terminates idle instances to save costs.
+async fn detect_idle_instances(
+    pool: &PgPool,
+    registry: &ProviderRegistry,
+    broadcaster: &Arc<ActivityLogBroadcaster>,
+) {
+    use x121_db::repositories::CloudInstanceRepo;
+
+    let idle_minutes: i64 = sqlx::query_scalar::<_, String>(
+        "SELECT value FROM platform_settings WHERE key = 'idle_instance_minutes'"
+    )
+    .fetch_optional(pool)
+    .await
+    .ok()
+    .flatten()
+    .and_then(|v| v.parse().ok())
+    .unwrap_or(5);
+
+    // Find running cloud instances with no active jobs that have been idle for too long.
+    // An instance is "idle" if it has no jobs with status running/dispatched/pending assigned to it.
+    let idle_instances = match sqlx::query_as::<_, (x121_core::types::DbId, x121_core::types::DbId, String)>(
+        "SELECT ci_cloud.id, ci_cloud.provider_id, ci_cloud.external_id \
+         FROM cloud_instances ci_cloud \
+         WHERE ci_cloud.status_id = 3 \
+           AND ci_cloud.started_at IS NOT NULL \
+           AND ci_cloud.started_at < NOW() - make_interval(mins => $1) \
+           AND NOT EXISTS ( \
+               SELECT 1 FROM jobs j \
+               JOIN comfyui_instances ci ON ci.id = j.comfyui_instance_id \
+               WHERE ci.cloud_instance_id = ci_cloud.id \
+                 AND j.status_id IN (1, 2, 9) \
+           ) \
+           AND NOT EXISTS ( \
+               SELECT 1 FROM jobs j WHERE j.status_id = 1 AND j.comfyui_instance_id IS NULL \
+           )"
+    )
+    .bind(idle_minutes as i32)
+    .fetch_all(pool)
+    .await
+    {
+        Ok(rows) => rows,
+        Err(e) => {
+            warn!("Failed to query idle instances: {e}");
+            return;
+        }
+    };
+
+    if idle_instances.is_empty() {
+        return;
+    }
+
+    for (instance_id, provider_id, external_id) in &idle_instances {
+        let provider = match registry.get(*provider_id).await {
+            Some(p) => p,
+            None => continue,
+        };
+
+        match provider.terminate_instance(external_id).await {
+            Ok(()) => {
+                let _ = CloudInstanceRepo::mark_terminated(pool, *instance_id, 0).await;
+                info!(instance_id, external_id, "Terminated idle instance");
+                broadcaster.publish(
+                    ActivityLogEntry::curated(
+                        ActivityLogLevel::Info,
+                        ActivityLogSource::Infrastructure,
+                        format!("Idle instance {external_id} terminated (no jobs for {idle_minutes}min)"),
+                    )
+                    .with_fields(serde_json::json!({
+                        "instance_id": instance_id,
+                        "external_id": external_id,
+                    })),
+                );
+            }
+            Err(e) => {
+                warn!(instance_id, external_id, error = %e, "Failed to terminate idle instance");
+            }
+        }
+    }
+}
+
+/// Detect ComfyUI instances that are marked disconnected but have a running cloud instance.
+/// Attempts to reconnect by resetting their status so the connection manager picks them up.
+async fn detect_disconnected_comfyui(pool: &PgPool, broadcaster: &Arc<ActivityLogBroadcaster>) {
+    // Find ComfyUI instances that are disconnected but linked to a running cloud instance.
+    let disconnected = match sqlx::query_as::<_, (x121_core::types::DbId, String)>(
+        "SELECT ci.id, ci.name FROM comfyui_instances ci \
+         WHERE ci.status_id = 2 \
+           AND ci.is_enabled = true \
+           AND ci.cloud_instance_id IS NOT NULL \
+           AND EXISTS ( \
+               SELECT 1 FROM cloud_instances cloud \
+               WHERE cloud.id = ci.cloud_instance_id AND cloud.status_id = 3 \
+           ) \
+           AND (ci.last_disconnected_at IS NULL OR ci.last_disconnected_at < NOW() - interval '60 seconds')"
+    )
+    .fetch_all(pool)
+    .await
+    {
+        Ok(rows) => rows,
+        Err(e) => {
+            warn!("Failed to query disconnected ComfyUI instances: {e}");
+            return;
+        }
+    };
+
+    if disconnected.is_empty() {
+        return;
+    }
+
+    // Mark them as reconnecting so the connection manager will pick them up
+    for (id, name) in &disconnected {
+        let _ = sqlx::query(
+            "UPDATE comfyui_instances SET status_id = 3, reconnect_attempts = reconnect_attempts + 1 \
+             WHERE id = $1"
+        )
+        .bind(id)
+        .execute(pool)
+        .await;
+
+        info!(instance_id = id, name = %name, "Marking disconnected ComfyUI instance for reconnect");
+    }
+
+    let count = disconnected.len();
+    broadcaster.publish(
+        ActivityLogEntry::curated(
+            ActivityLogLevel::Warn,
+            ActivityLogSource::Infrastructure,
+            format!("{count} disconnected ComfyUI instance(s) marked for reconnect"),
+        )
+        .with_fields(serde_json::json!({
+            "instance_ids": disconnected.iter().map(|(id, _)| *id).collect::<Vec<_>>(),
+        })),
+    );
 }

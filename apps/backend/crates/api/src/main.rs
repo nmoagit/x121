@@ -232,6 +232,20 @@ async fn main() {
     // connections for any that aren't currently connected.
     comfyui_manager.refresh_instances().await;
 
+    // Periodic ComfyUI instance refresh — picks up instances that were registered
+    // in the DB by the scaling service (provisioned pods) or marked for reconnect.
+    {
+        let mgr = Arc::clone(&comfyui_manager);
+        tokio::spawn(async move {
+            let mut ticker = tokio::time::interval(std::time::Duration::from_secs(30));
+            ticker.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
+            loop {
+                ticker.tick().await;
+                mgr.refresh_instances().await;
+            }
+        });
+    }
+
     // --- Storage provider (PRD-122) ---
     let default_backend = x121_db::repositories::StorageBackendRepo::find_default(&pool).await;
     let storage_provider: std::sync::Arc<dyn x121_core::storage::StorageProvider> =
