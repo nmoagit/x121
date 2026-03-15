@@ -1,5 +1,5 @@
 -- Add "Failed" scene status for generation failures after max retries.
-INSERT INTO scene_statuses (id, slug, label)
+INSERT INTO scene_statuses (id, name, label)
 VALUES (7, 'failed', 'Failed')
 ON CONFLICT (id) DO NOTHING;
 
