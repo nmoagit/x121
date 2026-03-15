@@ -787,9 +787,11 @@ pub struct CheckHashesResponse {
 pub async fn check_hashes(
     State(state): State<AppState>,
     Json(body): Json<CheckHashesRequest>,
-) -> AppResult<Json<CheckHashesResponse>> {
+) -> AppResult<Json<DataResponse<CheckHashesResponse>>> {
     let existing = ImageVariantRepo::find_existing_hashes(&state.pool, &body.hashes).await?;
-    Ok(Json(CheckHashesResponse { existing }))
+    Ok(Json(DataResponse {
+        data: CheckHashesResponse { existing },
+    }))
 }
 
 /// GET /api/v1/image-variants/browse

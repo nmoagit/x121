@@ -179,7 +179,7 @@ export function useCharacterImport(projectId: number) {
           "/image-variants/check-hashes",
           { hashes: uniqueHashes },
         );
-        existingSet = new Set(result.existing);
+        existingSet = new Set(result?.existing ?? []);
       } catch {
         // Backend may not have the endpoint yet — silently ignore
       }

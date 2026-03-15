@@ -567,6 +567,7 @@ export function ImportConfirmModal({
           label={name}
         />
 
+        {/* Asset badges */}
         {counts && counts.images > 0 && (
           <DiffBadges
             isDuplicate={isDuplicate}
@@ -593,13 +594,25 @@ export function ImportConfirmModal({
           />
         )}
 
-        {isDuplicate && (
-          <span className={cn("text-xs ml-auto shrink-0", bulkMode && hasAssets ? "text-[var(--color-text-success)]" : "text-[var(--color-text-warning)]")}>
-            {bulkMode && hasAssets
-              ? (importMissing ? "import missing" : "overwrite")
-              : "already exists"}
-          </span>
+        {/* Per-asset duplicate indicators (from content hash) */}
+        {payloads?.[idx]?.assets.some((a) => a.isDuplicate) && (
+          <Badge variant="warning" size="sm">
+            {payloads[idx]!.assets.filter((a) => a.isDuplicate).length} dup
+          </Badge>
         )}
+
+        {/* Action label */}
+        <span className={cn("text-xs ml-auto shrink-0", isDuplicate
+          ? (bulkMode && hasAssets ? "text-[var(--color-text-success)]" : "text-[var(--color-text-warning)]")
+          : checked.has(idx) ? "text-[var(--color-text-success)]" : "text-[var(--color-text-muted)]"
+        )}>
+          {isDuplicate
+            ? (bulkMode && hasAssets
+              ? (importMissing ? "→ import missing" : "→ overwrite")
+              : "exists — skip")
+            : checked.has(idx) ? "→ create" : "skip"
+          }
+        </span>
       </div>
     );
   };
@@ -794,6 +807,26 @@ export function ImportConfirmModal({
                     : " Enable 'Import missing' or 'Overwrite existing' to update these characters."
                 : " Duplicates will be skipped."}
             </p>
+          </div>
+        )}
+
+        {/* Action summary */}
+        {payloads && (
+          <div className="rounded-[var(--radius-md)] border border-[var(--color-border-default)] bg-[var(--color-surface-secondary)] px-[var(--spacing-3)] py-[var(--spacing-2)]">
+            <div className="flex flex-wrap gap-[var(--spacing-4)] text-sm text-[var(--color-text-secondary)]">
+              {selectedCount > 0 && (
+                <span><strong className="text-[var(--color-text-primary)]">{selectedCount}</strong> new {selectedCount === 1 ? "character" : "characters"} to create</span>
+              )}
+              {existingAssetsCount > 0 && (
+                <span><strong className="text-[var(--color-text-primary)]">{existingAssetsCount}</strong> existing to update</span>
+              )}
+              {duplicateCount > 0 && duplicateCount - existingAssetsCount > 0 && (
+                <span className="text-[var(--color-text-muted)]">{duplicateCount - existingAssetsCount} skipped (exist)</span>
+              )}
+              {hashSummary && !hashSummary.isHashing && hashSummary.duplicateFiles > 0 && (
+                <span className="text-[var(--color-text-warning)]">{hashSummary.duplicateFiles} duplicate {hashSummary.duplicateFiles === 1 ? "file" : "files"} (same content)</span>
+              )}
+            </div>
           </div>
         )}
 
