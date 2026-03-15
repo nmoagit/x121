@@ -514,9 +514,7 @@ export function useCharacterImport(projectId: number) {
         ));
 
         if (skippedImages > 0) {
-          const msg = `${skippedImages} image${skippedImages > 1 ? "s" : ""} skipped (variant type already exists)`;
-          errors.push(msg);
-          addLogEntry(importLogEntry("warn", msg, projectId));
+          addLogEntry(importLogEntry("info", `${skippedImages} image${skippedImages > 1 ? "s" : ""} skipped (variant type already exists)`, projectId));
         }
       }
 
