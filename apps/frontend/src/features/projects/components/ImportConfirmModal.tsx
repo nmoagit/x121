@@ -298,6 +298,8 @@ export function ImportConfirmModal({
     setChecked(initial);
     setCheckedExistingAssets(new Set());
     setImportMissing(false);
+    setOverwrite(false);
+    setNewContentOnly(false);
   }, [effectiveNames, existingSet, normalize]);
 
   // Pre-fill group selector when all duplicates share a single group
