@@ -111,7 +111,7 @@ impl ComfyUIInstanceRepo {
     pub async fn record_connection(pool: &PgPool, id: DbId) -> Result<(), sqlx::Error> {
         sqlx::query(
             "UPDATE comfyui_instances \
-             SET last_connected_at = NOW(), reconnect_attempts = 0 \
+             SET status_id = 1, last_connected_at = NOW(), reconnect_attempts = 0 \
              WHERE id = $1",
         )
         .bind(id)
@@ -120,12 +120,16 @@ impl ComfyUIInstanceRepo {
         Ok(())
     }
 
-    /// Record a disconnection (sets `last_disconnected_at`).
+    /// Record a disconnection (sets status to disconnected and `last_disconnected_at`).
     pub async fn record_disconnection(pool: &PgPool, id: DbId) -> Result<(), sqlx::Error> {
-        sqlx::query("UPDATE comfyui_instances SET last_disconnected_at = NOW() WHERE id = $1")
-            .bind(id)
-            .execute(pool)
-            .await?;
+        sqlx::query(
+            "UPDATE comfyui_instances \
+             SET status_id = 2, last_disconnected_at = NOW() \
+             WHERE id = $1",
+        )
+        .bind(id)
+        .execute(pool)
+        .await?;
         Ok(())
     }
 

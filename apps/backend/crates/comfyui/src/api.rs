@@ -259,6 +259,19 @@ impl ComfyUIApi {
         Self::parse_response(response).await
     }
 
+    /// Get the current queue state from ComfyUI.
+    ///
+    /// Returns `{ "queue_running": [...], "queue_pending": [...] }`.
+    /// Each entry contains `[index, prompt_id, prompt, extra_data, outputs_to_execute]`.
+    pub async fn get_queue(&self) -> Result<serde_json::Value, ComfyUIApiError> {
+        let response = self
+            .client
+            .get(format!("{}/queue", self.api_url))
+            .send()
+            .await?;
+        Self::parse_response(response).await
+    }
+
     /// Clear the entire execution queue via `POST /queue`.
     ///
     /// Sends `{"clear": true}` to remove all pending items from the queue.

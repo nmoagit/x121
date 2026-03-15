@@ -143,16 +143,21 @@ pub fn evaluate_scaling_decision_with_reason(input: &ScalingInput) -> ScalingDec
         }
     }
 
-    // Scale down: queue is empty and we're above minimum
-    if input.queue_depth == 0 && input.current_count > input.min_instances {
-        return ScalingDecision {
-            action: ScalingAction::ScaleDown(1),
-            reason: format!(
-                "Queue empty with {} instances (min {}) — scaling down 1",
-                input.current_count, input.min_instances,
-            ),
-            cooldown_remaining_secs: cooldown_remaining,
-        };
+    // Scale down: more instances than needed and above minimum.
+    // Scale down by 1 at a time to allow graceful drain.
+    if input.current_count > input.min_instances {
+        let needed = (input.queue_depth as u16).max(input.min_instances);
+        if input.current_count > needed {
+            let excess = input.current_count - needed;
+            return ScalingDecision {
+                action: ScalingAction::ScaleDown(excess.min(1)), // 1 at a time for safety
+                reason: format!(
+                    "Excess instances: {} running, {} needed (queue {}, min {}) — scaling down 1",
+                    input.current_count, needed, input.queue_depth, input.min_instances,
+                ),
+                cooldown_remaining_secs: cooldown_remaining,
+            };
+        }
     }
 
     // Enforce minimum
@@ -247,14 +252,14 @@ mod tests {
     }
 
     #[test]
-    fn no_scale_up_when_instances_exceed_queue() {
-        // 2 pending jobs, 3 instances → no scale up
+    fn scale_down_when_instances_exceed_queue() {
+        // 2 pending jobs, 3 instances → scale down 1 (3 > max(2, min_instances=1))
         let input = ScalingInput {
             queue_depth: 2,
             current_count: 3,
             ..base_input()
         };
-        assert_eq!(evaluate_scaling_decision(&input), ScalingAction::NoChange);
+        assert_eq!(evaluate_scaling_decision(&input), ScalingAction::ScaleDown(1));
     }
 
     #[test]
