@@ -726,6 +726,14 @@ async fn detect_idle_instances(
         match provider.terminate_instance(external_id).await {
             Ok(()) => {
                 let _ = CloudInstanceRepo::mark_terminated(pool, *instance_id, 0).await;
+                // Disable linked ComfyUI instances so they don't attempt reconnect
+                let _ = sqlx::query(
+                    "UPDATE comfyui_instances SET is_enabled = false \
+                     WHERE cloud_instance_id = $1"
+                )
+                .bind(instance_id)
+                .execute(pool)
+                .await;
                 info!(instance_id, external_id, "Terminated idle instance");
                 broadcaster.publish(
                     ActivityLogEntry::curated(

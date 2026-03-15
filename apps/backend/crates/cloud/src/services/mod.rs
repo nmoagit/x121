@@ -91,6 +91,14 @@ pub async fn terminate_and_record(
             Ok(()) => {
                 let _ =
                     CloudInstanceRepo::mark_terminated(pool, inst.id, inst.total_cost_cents).await;
+                // Disable linked ComfyUI instances
+                let _ = sqlx::query(
+                    "UPDATE comfyui_instances SET is_enabled = false \
+                     WHERE cloud_instance_id = $1"
+                )
+                .bind(inst.id)
+                .execute(pool)
+                .await;
                 terminated += 1;
             }
             Err(_) => {
