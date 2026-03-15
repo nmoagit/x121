@@ -16,17 +16,31 @@ export function QualitySelector({
     <div className={cn("flex items-center gap-[var(--spacing-1)]", className)}>
       <button
         type="button"
-        onClick={() => onQualityChange(quality === "proxy" ? "full" : "proxy")}
+        onClick={() => onQualityChange("proxy")}
+        className={cn(
+          "px-[var(--spacing-2)] py-0.5 text-xs rounded-[var(--radius-sm)]",
+          "transition-colors duration-[var(--duration-fast)]",
+          quality === "proxy"
+            ? "bg-[var(--color-action-primary)] text-white"
+            : "text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] bg-[var(--color-surface-tertiary)]",
+        )}
+        title="Preview quality (faster loading)"
+      >
+        Preview
+      </button>
+      <button
+        type="button"
+        onClick={() => onQualityChange("full")}
         className={cn(
           "px-[var(--spacing-2)] py-0.5 text-xs rounded-[var(--radius-sm)]",
           "transition-colors duration-[var(--duration-fast)]",
           quality === "full"
-            ? "bg-[var(--color-status-success)] text-[var(--color-text-inverse)]"
+            ? "bg-[var(--color-action-primary)] text-white"
             : "text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] bg-[var(--color-surface-tertiary)]",
         )}
-        title={quality === "full" ? "Switch to proxy quality" : "Switch to full quality"}
+        title="Full quality (original resolution)"
       >
-        {quality === "full" ? "HD" : "SD"}
+        Full
       </button>
     </div>
   );
