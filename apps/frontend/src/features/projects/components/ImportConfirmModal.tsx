@@ -19,7 +19,6 @@ import { Badge, Button, Checkbox, Input, Select, Toggle } from "@/components/pri
 import { cn } from "@/lib/cn";
 import { INLINE_LINK_BTN } from "@/lib/ui-classes";
 
-import { SOURCE_KEY_BIO, SOURCE_KEY_TOV } from "@/features/characters/types";
 
 import type { ImportProgress } from "../hooks/use-character-import";
 import type { Character, CharacterDropPayload, ImportHashSummary } from "../types";
@@ -127,114 +126,6 @@ export function normalizeCharacterName(raw: string): string {
    Diff badge helpers
    -------------------------------------------------------------------------- */
 
-/** Image diff badges: shows new/exists breakdown for duplicate rows. */
-function DiffBadges({
-  isDuplicate,
-  overwrite,
-  payload,
-  displayName,
-  duplicateCharMap,
-  variantMap,
-  variantLoading,
-  totalImages,
-}: {
-  isDuplicate: boolean;
-  overwrite: boolean;
-  payload?: CharacterDropPayload;
-  displayName: string;
-  duplicateCharMap: Map<string, Character>;
-  variantMap: Map<number, Set<string>>;
-  variantLoading: boolean;
-  totalImages: number;
-}) {
-  // Non-duplicate, overwrite on, or still loading: show simple total count
-  if (!isDuplicate || !payload || overwrite || variantLoading) {
-    return (
-      <Badge variant="info" size="sm">
-        {totalImages} {totalImages === 1 ? "image" : "images"}
-      </Badge>
-    );
-  }
-
-  // Compute new vs existing counts
-  const char = duplicateCharMap.get(displayName.toLowerCase());
-  const existingTypes = char ? variantMap.get(char.id) : undefined;
-  if (!existingTypes || existingTypes.size === 0) {
-    return (
-      <Badge variant="info" size="sm">
-        {totalImages} new
-      </Badge>
-    );
-  }
-
-  const imageAssets = payload.assets.filter((a) => a.kind === "image");
-  let newCount = 0;
-  let existCount = 0;
-  for (const a of imageAssets) {
-    if (existingTypes.has(a.category.toLowerCase())) {
-      existCount++;
-    } else {
-      newCount++;
-    }
-  }
-
-  return (
-    <>
-      {newCount > 0 && (
-        <Badge variant="info" size="sm">
-          {newCount} new
-        </Badge>
-      )}
-      {existCount > 0 && (
-        <Badge variant="default" size="sm">
-          {existCount} {existCount === 1 ? "exists" : "exist"}
-        </Badge>
-      )}
-    </>
-  );
-}
-
-/** Metadata diff badges: shows new/exists per json file for duplicate rows. */
-function MetadataDiffBadges({
-  isDuplicate,
-  payload,
-  displayName,
-  duplicateCharMap,
-}: {
-  isDuplicate: boolean;
-  payload?: CharacterDropPayload;
-  displayName: string;
-  duplicateCharMap: Map<string, Character>;
-}) {
-  if (!isDuplicate || !payload) {
-    const count = [payload?.bioJson, payload?.tovJson, payload?.metadataJson].filter(Boolean).length;
-    return (
-      <Badge variant="success" size="sm">
-        {count} json
-      </Badge>
-    );
-  }
-
-  const char = duplicateCharMap.get(displayName.toLowerCase());
-  const meta = char?.metadata;
-  const hasBio = meta && SOURCE_KEY_BIO in meta;
-  const hasTov = meta && SOURCE_KEY_TOV in meta;
-
-  const badges: { label: string; isNew: boolean }[] = [];
-  if (payload.bioJson) badges.push({ label: "bio", isNew: !hasBio });
-  if (payload.tovJson) badges.push({ label: "tov", isNew: !hasTov });
-  if (payload.metadataJson) badges.push({ label: "meta", isNew: true }); // metadata.json always overwrites
-
-  return (
-    <>
-      {badges.map((b) => (
-        <Badge key={b.label} variant={b.isNew ? "success" : "default"} size="sm">
-          {b.label} {b.isNew ? "new" : "exists"}
-        </Badge>
-      ))}
-    </>
-  );
-}
 
 /* --------------------------------------------------------------------------
    Component
@@ -367,7 +258,8 @@ export function ImportConfirmModal({
     return ids;
   }, [duplicateIndices, displayNames, duplicateCharMap]);
 
-  const { variantMap, loading: variantLoading } = useDuplicateAssetInfo(open, duplicateCharIds);
+  // Fetch variant types for duplicate characters (used by asset skip logic in import handler)
+  useDuplicateAssetInfo(open, duplicateCharIds);
 
   // Asset counts per character (only in asset-aware mode)
   const assetCounts = useMemo(() => {
@@ -538,68 +430,58 @@ export function ImportConfirmModal({
           label={name}
         />
 
-        {/* Asset badges */}
-        {counts && counts.images > 0 && (
-          <DiffBadges
-            isDuplicate={isDuplicate}
-            overwrite={overwrite}
-            payload={payloads?.[idx]}
-            displayName={name}
-            duplicateCharMap={duplicateCharMap}
-            variantMap={variantMap}
-            variantLoading={variantLoading}
-            totalImages={counts.images}
-          />
-        )}
-        {counts && counts.videos > 0 && (
-          <Badge variant="default" size="sm">
-            {counts.videos} {counts.videos === 1 ? "video" : "videos"}
-          </Badge>
-        )}
-        {counts && counts.metadata > 0 && (
-          <MetadataDiffBadges
-            isDuplicate={isDuplicate}
-            payload={payloads?.[idx]}
-            displayName={name}
-            duplicateCharMap={duplicateCharMap}
-          />
-        )}
-
-        {/* Per-file action breakdown */}
+        {/* What will happen — single coherent summary */}
         {payloads?.[idx] && (() => {
           const p = payloads[idx]!;
-          const assets = p.assets;
-          const dupAssets = assets.filter((a) => a.isDuplicate);
-          const newAssets = assets.filter((a) => !a.isDuplicate);
-          const willUploadCount = newContentOnly ? newAssets.length : assets.length;
-          const willSkipCount = newContentOnly ? dupAssets.length : 0;
+          const images = p.assets.filter((a) => a.kind === "image");
+          const videos = p.assets.filter((a) => a.kind === "video");
+          const identicalImages = images.filter((a) => a.isDuplicate);
+          const newImages = images.filter((a) => !a.isDuplicate);
+          const metaCount = [p.bioJson, p.tovJson, p.metadataJson].filter(Boolean).length;
 
-          if (dupAssets.length === 0) return null;
+          // Determine what will actually be uploaded
+          const imgUpload = newContentOnly ? newImages.length : images.length;
+          const imgSkip = newContentOnly ? identicalImages.length : 0;
 
-          return (
-            <>
-              {willUploadCount > 0 && (
-                <Badge variant="success" size="sm">{willUploadCount} to upload</Badge>
-              )}
-              {willSkipCount > 0 && (
-                <Badge variant="default" size="sm">{willSkipCount} identical — skip</Badge>
-              )}
-              {!newContentOnly && dupAssets.length > 0 && (
-                <Badge variant="warning" size="sm">{dupAssets.length} identical</Badge>
-              )}
-            </>
-          );
+          const parts: React.ReactNode[] = [];
+
+          // Images
+          if (images.length > 0) {
+            if (imgSkip > 0 && imgUpload > 0) {
+              parts.push(<Badge key="img-up" variant="success" size="sm">{imgUpload} img upload</Badge>);
+              parts.push(<Badge key="img-skip" variant="default" size="sm">{imgSkip} img skip</Badge>);
+            } else if (imgSkip > 0 && imgUpload === 0) {
+              parts.push(<Badge key="img-skip" variant="default" size="sm">{imgSkip} img — all identical</Badge>);
+            } else if (identicalImages.length > 0 && !newContentOnly) {
+              parts.push(<Badge key="img" variant="warning" size="sm">{images.length} img ({identicalImages.length} identical)</Badge>);
+            } else {
+              parts.push(<Badge key="img" variant="info" size="sm">{images.length} img</Badge>);
+            }
+          }
+
+          // Videos
+          if (videos.length > 0) {
+            parts.push(<Badge key="vid" variant="info" size="sm">{videos.length} vid</Badge>);
+          }
+
+          // Metadata
+          if (metaCount > 0) {
+            parts.push(<Badge key="meta" variant="success" size="sm">{metaCount} json</Badge>);
+          }
+
+          return <>{parts}</>;
         })()}
 
         {/* Action label */}
-        <span className={cn("text-xs ml-auto shrink-0", isDuplicate
-          ? (bulkMode && hasAssets ? "text-[var(--color-text-success)]" : "text-[var(--color-text-warning)]")
-          : checked.has(idx) ? "text-[var(--color-text-success)]" : "text-[var(--color-text-muted)]"
+        <span className={cn("text-xs ml-auto shrink-0",
+          isDuplicate
+            ? (bulkMode && hasAssets ? "text-[var(--color-text-success)]" : "text-[var(--color-text-warning)]")
+            : checked.has(idx) ? "text-[var(--color-text-success)]" : "text-[var(--color-text-muted)]"
         )}>
           {isDuplicate
             ? (bulkMode && hasAssets
-              ? (importMissing ? "→ import missing" : "→ overwrite")
-              : "exists — skip")
+              ? (importMissing ? "→ update" : "→ overwrite")
+              : "exists")
             : checked.has(idx) ? "→ create" : "skip"
           }
         </span>
