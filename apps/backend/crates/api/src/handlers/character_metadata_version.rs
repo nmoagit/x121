@@ -125,28 +125,31 @@ async fn create_version_maybe_activate(
     }
 }
 
-/// Verify that `user_id` is the assigned reviewer for this character.
+/// Verify that the user is authorised to approve/reject metadata.
 ///
-/// Returns `Ok(())` if they are, or an appropriate error if there is no
-/// reviewer assigned or the user is not the reviewer.
-async fn require_reviewer(
+/// Allowed when any of:
+/// 1. The user is the assigned reviewer for this character.
+/// 2. The user has the `admin` role (admin bypass).
+/// 3. No reviewer is assigned AND the user is an admin (fallback).
+async fn require_reviewer_or_admin(
     pool: &sqlx::PgPool,
     character_id: DbId,
     user_id: DbId,
+    role: &str,
 ) -> AppResult<()> {
-    let assignment = CharacterReviewRepo::find_active_by_character(pool, character_id)
-        .await?
-        .ok_or_else(|| {
-            AppError::Core(CoreError::Forbidden(
-                "No reviewer assigned to this character".into(),
-            ))
-        })?;
-    if assignment.reviewer_user_id != user_id {
-        return Err(AppError::Core(CoreError::Forbidden(
-            "Only the assigned reviewer can perform this action".into(),
-        )));
+    let is_admin = role == x121_core::roles::ROLE_ADMIN;
+
+    match CharacterReviewRepo::find_active_by_character(pool, character_id).await? {
+        Some(assignment) if assignment.reviewer_user_id == user_id => Ok(()),
+        Some(_) if is_admin => Ok(()), // admin bypass
+        Some(_) => Err(AppError::Core(CoreError::Forbidden(
+            "Only the assigned reviewer or an admin can perform this action".into(),
+        ))),
+        None if is_admin => Ok(()), // no reviewer assigned, admin fallback
+        None => Err(AppError::Core(CoreError::Forbidden(
+            "No reviewer assigned to this character".into(),
+        ))),
     }
-    Ok(())
 }
 
 /// Build a `CreateCharacterMetadataVersion` for a manual edit.
@@ -398,7 +401,7 @@ pub async fn approve_metadata_version(
     Path((character_id, version_id)): Path<(DbId, DbId)>,
 ) -> AppResult<impl IntoResponse> {
     ensure_version_exists(&state.pool, version_id).await?;
-    require_reviewer(&state.pool, character_id, auth.user_id).await?;
+    require_reviewer_or_admin(&state.pool, character_id, auth.user_id, &auth.role).await?;
 
     let version =
         CharacterMetadataVersionRepo::approve(&state.pool, character_id, version_id, auth.user_id)
@@ -435,7 +438,7 @@ pub async fn unapprove_metadata_version(
     Path((character_id, version_id)): Path<(DbId, DbId)>,
 ) -> AppResult<impl IntoResponse> {
     ensure_version_exists(&state.pool, version_id).await?;
-    require_reviewer(&state.pool, character_id, auth.user_id).await?;
+    require_reviewer_or_admin(&state.pool, character_id, auth.user_id, &auth.role).await?;
 
     let version = CharacterMetadataVersionRepo::unapprove(&state.pool, version_id)
         .await?
@@ -471,7 +474,7 @@ pub async fn reject_metadata_approval(
     Json(body): Json<RejectMetadataApprovalRequest>,
 ) -> AppResult<impl IntoResponse> {
     ensure_version_exists(&state.pool, version_id).await?;
-    require_reviewer(&state.pool, character_id, auth.user_id).await?;
+    require_reviewer_or_admin(&state.pool, character_id, auth.user_id, &auth.role).await?;
 
     let version = CharacterMetadataVersionRepo::reject_approval(
         &state.pool,
