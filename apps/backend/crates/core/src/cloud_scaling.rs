@@ -105,10 +105,19 @@ pub fn evaluate_scaling_decision_with_reason(input: &ScalingInput) -> ScalingDec
         }
     }
 
-    // Scale up: queue exceeds threshold and we haven't hit max
+    // Scale up: queue exceeds threshold and we haven't hit max.
+    // Scale by the number of instances needed to handle the queue (1 instance per
+    // queue_threshold pending jobs), capped at max_instances.
     if input.queue_depth >= input.queue_threshold && input.current_count < input.max_instances {
         let can_add = input.max_instances - input.current_count;
-        let needed = 1u16.min(can_add);
+        // How many instances the queue demands (at least 1 when threshold is met)
+        let demand = if input.queue_threshold > 0 {
+            ((input.queue_depth as u16) / (input.queue_threshold as u16)).max(1)
+        } else {
+            1
+        };
+        // Don't exceed available slots or demand
+        let needed = demand.min(can_add);
         if needed > 0 {
             return ScalingDecision {
                 action: ScalingAction::ScaleUp(needed),
@@ -213,6 +222,32 @@ mod tests {
             ..base_input()
         };
         assert_eq!(evaluate_scaling_decision(&input), ScalingAction::ScaleUp(1));
+    }
+
+    #[test]
+    fn scale_up_multiple_when_queue_demands_it() {
+        // 9 pending jobs, threshold 3 → demand = 9/3 = 3, current 0, max 5 → scale up 3
+        let input = ScalingInput {
+            queue_depth: 9,
+            current_count: 0,
+            max_instances: 5,
+            queue_threshold: 3,
+            ..base_input()
+        };
+        assert_eq!(evaluate_scaling_decision(&input), ScalingAction::ScaleUp(3));
+    }
+
+    #[test]
+    fn scale_up_capped_at_max_instances() {
+        // 12 pending, threshold 3 → demand = 4, but max 3 and current 1 → can_add 2
+        let input = ScalingInput {
+            queue_depth: 12,
+            current_count: 1,
+            max_instances: 3,
+            queue_threshold: 3,
+            ..base_input()
+        };
+        assert_eq!(evaluate_scaling_decision(&input), ScalingAction::ScaleUp(2));
     }
 
     #[test]
