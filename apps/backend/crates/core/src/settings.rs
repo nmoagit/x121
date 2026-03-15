@@ -87,6 +87,8 @@ pub const CATEGORY_COMFYUI: &str = "comfyui";
 pub const CATEGORY_AUTH: &str = "auth";
 /// General system/server settings.
 pub const CATEGORY_SYSTEM: &str = "system";
+/// Settings related to the generation pipeline.
+pub const CATEGORY_PIPELINE: &str = "pipeline";
 
 // ---------------------------------------------------------------------------
 // Settings registry
@@ -304,6 +306,19 @@ pub static SETTINGS_REGISTRY: &[SettingDefinition] = &[
         env_var: Some("RUST_LOG"),
         default_value: Some("x121_api=debug,tower_http=debug"),
         requires_restart: true,
+        sensitive: false,
+        validation_regex: None,
+    },
+    // -- Pipeline --
+    SettingDefinition {
+        key: "max_orphan_retries",
+        category: CATEGORY_PIPELINE,
+        label: "Max Orphan Retries",
+        description: "Number of times a job is retried after its GPU instance dies. After this many retries the job and scene are marked as Failed.",
+        value_type: SettingValueType::Integer,
+        env_var: Some("MAX_ORPHAN_RETRIES"),
+        default_value: Some("3"),
+        requires_restart: false,
         sensitive: false,
         validation_regex: None,
     },

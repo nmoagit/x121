@@ -485,9 +485,18 @@ async fn teardown_and_terminate(
 }
 
 /// Detect jobs stuck as running/dispatched but assigned to disconnected instances.
-/// Retries up to 3 times before permanently failing (scene → Failed).
+/// Retries up to `max_orphan_retries` (platform setting, default 3) before permanently failing.
 async fn detect_orphaned_jobs(pool: &PgPool, broadcaster: &Arc<ActivityLogBroadcaster>) {
-    const MAX_ORPHAN_RETRIES: i16 = 3;
+    // Read configurable retry limit from platform_settings (falls back to 3).
+    let max_retries: i16 = sqlx::query_scalar::<_, String>(
+        "SELECT value FROM platform_settings WHERE key = 'max_orphan_retries'"
+    )
+    .fetch_optional(pool)
+    .await
+    .ok()
+    .flatten()
+    .and_then(|v| v.parse().ok())
+    .unwrap_or(3);
 
     let orphaned = match sqlx::query_as::<_, (x121_core::types::DbId, i16)>(
         "SELECT j.id, j.orphan_retry_count FROM jobs j \
@@ -516,7 +525,7 @@ async fn detect_orphaned_jobs(pool: &PgPool, broadcaster: &Arc<ActivityLogBroadc
     let mut failed_ids: Vec<i64> = Vec::new();
 
     for (job_id, retry_count) in &orphaned {
-        if *retry_count < MAX_ORPHAN_RETRIES {
+        if *retry_count < max_retries {
             let _ = sqlx::query(
                 "UPDATE jobs SET status_id = 1, comfyui_instance_id = NULL, \
                  orphan_retry_count = orphan_retry_count + 1, \
@@ -570,13 +579,13 @@ async fn detect_orphaned_jobs(pool: &PgPool, broadcaster: &Arc<ActivityLogBroadc
         warn!(
             count = failed_ids.len(),
             job_ids = ?failed_ids,
-            "Orphaned jobs permanently failed after {MAX_ORPHAN_RETRIES} retries"
+            "Orphaned jobs permanently failed after {max_retries} retries"
         );
         broadcaster.publish(
             ActivityLogEntry::curated(
                 ActivityLogLevel::Error,
                 ActivityLogSource::Infrastructure,
-                format!("{} job(s) failed after {} retries", failed_ids.len(), MAX_ORPHAN_RETRIES),
+                format!("{} job(s) failed after {} retries", failed_ids.len(), max_retries),
             )
             .with_fields(serde_json::json!({ "job_ids": failed_ids })),
         );
