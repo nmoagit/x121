@@ -52,7 +52,7 @@ export function ServiceHealthSegment({ services }: ServiceHealthSegmentProps) {
   return (
     <>
       <Tooltip content={`${healthLabel(overall)} — ${detailText}`} side="top">
-        <FooterSegment href="/admin/infrastructure" label="Service health">
+        <FooterSegment href="/admin/health" label="Service health">
           <Activity size={14} aria-hidden="true" />
           {SERVICE_LABELS.map(({ key }) => (
             <StatusDot key={key} health={services[key].status} />

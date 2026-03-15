@@ -725,6 +725,14 @@ const adminInfrastructureRoute = createRoute({
   ),
 });
 
+const adminHealthRoute = createRoute({
+  getParentRoute: () => adminLayoutRoute,
+  path: "/admin/health",
+  component: lazyRouteComponent(() =>
+    import("@/app/pages/SystemHealthPage"),
+  ),
+});
+
 /* --------------------------------------------------------------------------
    Settings routes
    -------------------------------------------------------------------------- */
@@ -862,6 +870,7 @@ export const routeTree = rootRoute.addChildren([
       adminConfigImportRoute,
       adminQueueRoute,
       adminInfrastructureRoute,
+      adminHealthRoute,
     ]),
 
     settingsLayoutRoute.addChildren([shortcutsRoute, wikiRoute]),
