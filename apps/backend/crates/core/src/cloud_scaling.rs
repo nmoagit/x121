@@ -144,15 +144,16 @@ pub fn evaluate_scaling_decision_with_reason(input: &ScalingInput) -> ScalingDec
     }
 
     // Scale down: more instances than needed and above minimum.
-    // Scale down by 1 at a time to allow graceful drain.
+    // We do NOT terminate immediately here — the idle instance detector
+    // (detect_idle_instances) handles actual termination after the configurable
+    // idle timeout (default 5 min). This just reports the excess for logging.
     if input.current_count > input.min_instances {
         let needed = (input.queue_depth as u16).max(input.min_instances);
         if input.current_count > needed {
-            let excess = input.current_count - needed;
             return ScalingDecision {
-                action: ScalingAction::ScaleDown(excess.min(1)), // 1 at a time for safety
+                action: ScalingAction::NoChange,
                 reason: format!(
-                    "Excess instances: {} running, {} needed (queue {}, min {}) — scaling down 1",
+                    "Excess instances: {} running, {} needed (queue {}, min {}) — idle detector will handle",
                     input.current_count, needed, input.queue_depth, input.min_instances,
                 ),
                 cooldown_remaining_secs: cooldown_remaining,
@@ -252,14 +253,14 @@ mod tests {
     }
 
     #[test]
-    fn scale_down_when_instances_exceed_queue() {
-        // 2 pending jobs, 3 instances → scale down 1 (3 > max(2, min_instances=1))
+    fn no_immediate_scale_down_when_instances_exceed_queue() {
+        // 2 pending jobs, 3 instances → NoChange (idle detector handles actual shutdown)
         let input = ScalingInput {
             queue_depth: 2,
             current_count: 3,
             ..base_input()
         };
-        assert_eq!(evaluate_scaling_decision(&input), ScalingAction::ScaleDown(1));
+        assert_eq!(evaluate_scaling_decision(&input), ScalingAction::NoChange);
     }
 
     #[test]
@@ -289,17 +290,15 @@ mod tests {
     }
 
     #[test]
-    fn scale_down_when_queue_empty_above_min() {
+    fn no_immediate_scale_down_when_queue_empty() {
+        // Queue empty, 3 instances, min 1 → NoChange (idle detector handles after timeout)
         let input = ScalingInput {
             queue_depth: 0,
             current_count: 3,
             min_instances: 1,
             ..base_input()
         };
-        assert_eq!(
-            evaluate_scaling_decision(&input),
-            ScalingAction::ScaleDown(1)
-        );
+        assert_eq!(evaluate_scaling_decision(&input), ScalingAction::NoChange);
     }
 
     #[test]
