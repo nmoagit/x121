@@ -5,7 +5,7 @@
  * and a search input field.
  */
 
-import { Badge, Button, SearchInput } from "@/components/primitives";
+import { Badge, SearchInput } from "@/components/primitives";
 
 import { useActivityConsoleStore } from "../stores/useActivityConsoleStore";
 import type { ActivityLogLevel, ActivityLogSource } from "../types";
@@ -24,11 +24,9 @@ import {
 export function ConsoleFilterToolbar() {
   const levels = useActivityConsoleStore((s) => s.levels);
   const sources = useActivityConsoleStore((s) => s.sources);
-  const mode = useActivityConsoleStore((s) => s.mode);
   const searchText = useActivityConsoleStore((s) => s.searchText);
   const toggleLevel = useActivityConsoleStore((s) => s.toggleLevel);
   const toggleSource = useActivityConsoleStore((s) => s.toggleSource);
-  const setMode = useActivityConsoleStore((s) => s.setMode);
   const setSearchText = useActivityConsoleStore((s) => s.setSearchText);
 
   return (
@@ -78,27 +76,6 @@ export function ConsoleFilterToolbar() {
             </Badge>
           </button>
         ))}
-      </div>
-
-      {/* Separator */}
-      <div className="w-px h-5 bg-[var(--color-border-default)]" />
-
-      {/* Mode toggle */}
-      <div className="flex items-center gap-1">
-        <Button
-          variant={mode === "curated" ? "primary" : "ghost"}
-          size="sm"
-          onClick={() => setMode("curated")}
-        >
-          Activity
-        </Button>
-        <Button
-          variant={mode === "verbose" ? "primary" : "ghost"}
-          size="sm"
-          onClick={() => setMode("verbose")}
-        >
-          Debug
-        </Button>
       </div>
 
       {/* Spacer */}
