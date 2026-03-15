@@ -105,29 +105,38 @@ pub fn evaluate_scaling_decision_with_reason(input: &ScalingInput) -> ScalingDec
         }
     }
 
-    // Scale up: queue exceeds threshold and we haven't hit max.
-    // Scale by the number of instances needed to handle the queue (1 instance per
-    // queue_threshold pending jobs), capped at max_instances.
+    // Scale up: queue exceeds threshold, we haven't hit max, AND there are more
+    // pending jobs than existing instances. The last check prevents spinning up
+    // extra instances when current instances just haven't picked up jobs yet
+    // (e.g. after a restart, reconnecting, or still booting up).
     if input.queue_depth >= input.queue_threshold && input.current_count < input.max_instances {
-        let can_add = input.max_instances - input.current_count;
-        // How many instances the queue demands (at least 1 when threshold is met)
-        let demand = if input.queue_threshold > 0 {
-            ((input.queue_depth as u16) / (input.queue_threshold as u16)).max(1)
+        // Only scale if pending jobs outnumber existing instances
+        if input.queue_depth as u16 > input.current_count {
+            let can_add = input.max_instances - input.current_count;
+            // How many MORE instances are needed beyond what we already have
+            let shortfall = (input.queue_depth as u16) - input.current_count;
+            let needed = shortfall.min(can_add);
+            if needed > 0 {
+                return ScalingDecision {
+                    action: ScalingAction::ScaleUp(needed),
+                    reason: format!(
+                        "Queue depth ({}) > current instances ({}) with max {} — scaling up {}",
+                        input.queue_depth,
+                        input.current_count,
+                        input.max_instances,
+                        needed,
+                    ),
+                    cooldown_remaining_secs: cooldown_remaining,
+                };
+            }
         } else {
-            1
-        };
-        // Don't exceed available slots or demand
-        let needed = demand.min(can_add);
-        if needed > 0 {
             return ScalingDecision {
-                action: ScalingAction::ScaleUp(needed),
+                action: ScalingAction::NoChange,
                 reason: format!(
-                    "Queue depth ({}) >= threshold ({}) with {}/{} instances — scaling up {}",
+                    "Queue has {} pending jobs but already at max instances ({}/{})",
                     input.queue_depth,
-                    input.queue_threshold,
                     input.current_count,
                     input.max_instances,
-                    needed,
                 ),
                 cooldown_remaining_secs: cooldown_remaining,
             };
@@ -215,18 +224,42 @@ mod tests {
     }
 
     #[test]
-    fn scale_up_when_queue_exceeds_threshold() {
+    fn scale_up_when_queue_exceeds_instances() {
+        // 5 pending, 1 instance → shortfall = 4, can_add = 4 → ScaleUp(4)
         let input = ScalingInput {
             queue_depth: 5,
             current_count: 1,
             ..base_input()
         };
-        assert_eq!(evaluate_scaling_decision(&input), ScalingAction::ScaleUp(1));
+        assert_eq!(evaluate_scaling_decision(&input), ScalingAction::ScaleUp(4));
+    }
+
+    #[test]
+    fn no_scale_up_when_instances_cover_queue() {
+        // 1 pending job, 1 instance already exists → no scale up
+        // (instance just hasn't picked up the job yet)
+        let input = ScalingInput {
+            queue_depth: 1,
+            current_count: 1,
+            ..base_input()
+        };
+        assert_eq!(evaluate_scaling_decision(&input), ScalingAction::NoChange);
+    }
+
+    #[test]
+    fn no_scale_up_when_instances_exceed_queue() {
+        // 2 pending jobs, 3 instances → no scale up
+        let input = ScalingInput {
+            queue_depth: 2,
+            current_count: 3,
+            ..base_input()
+        };
+        assert_eq!(evaluate_scaling_decision(&input), ScalingAction::NoChange);
     }
 
     #[test]
     fn scale_up_multiple_when_queue_demands_it() {
-        // 9 pending jobs, threshold 3 → demand = 9/3 = 3, current 0, max 5 → scale up 3
+        // 9 pending, 0 instances, max 5 → shortfall = 9, capped at 5 → ScaleUp(5)
         let input = ScalingInput {
             queue_depth: 9,
             current_count: 0,
@@ -234,12 +267,12 @@ mod tests {
             queue_threshold: 3,
             ..base_input()
         };
-        assert_eq!(evaluate_scaling_decision(&input), ScalingAction::ScaleUp(3));
+        assert_eq!(evaluate_scaling_decision(&input), ScalingAction::ScaleUp(5));
     }
 
     #[test]
     fn scale_up_capped_at_max_instances() {
-        // 12 pending, threshold 3 → demand = 4, but max 3 and current 1 → can_add 2
+        // 12 pending, 1 instance, max 3 → shortfall = 11, can_add = 2 → ScaleUp(2)
         let input = ScalingInput {
             queue_depth: 12,
             current_count: 1,
