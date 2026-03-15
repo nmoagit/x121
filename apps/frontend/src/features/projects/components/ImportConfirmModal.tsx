@@ -459,9 +459,23 @@ export function ImportConfirmModal({
             }
           }
 
-          // Videos (never hash-checked, always treated as new)
+          // Videos
           if (videos.length > 0) {
-            parts.push(<Badge key="vid" variant="success" size="sm">{videos.length} vid — new</Badge>);
+            const identicalVids = videos.filter((a) => a.isDuplicate);
+            const newVids = videos.filter((a) => !a.isDuplicate);
+            const vidUpload = newContentOnly ? newVids.length : videos.length;
+            const vidSkip = newContentOnly ? identicalVids.length : 0;
+
+            if (vidSkip > 0 && vidUpload > 0) {
+              parts.push(<Badge key="vid-up" variant="success" size="sm">{vidUpload} vid upload</Badge>);
+              parts.push(<Badge key="vid-skip" variant="default" size="sm">{vidSkip} vid skip</Badge>);
+            } else if (vidSkip > 0 && vidUpload === 0) {
+              parts.push(<Badge key="vid-skip" variant="default" size="sm">{vidSkip} vid — all exist</Badge>);
+            } else if (identicalVids.length > 0 && !newContentOnly) {
+              parts.push(<Badge key="vid" variant="warning" size="sm">{videos.length} vid ({identicalVids.length} exist)</Badge>);
+            } else {
+              parts.push(<Badge key="vid" variant="success" size="sm">{videos.length} vid — new</Badge>);
+            }
           }
 
           // Metadata

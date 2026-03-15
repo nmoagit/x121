@@ -134,10 +134,10 @@ export function useCharacterImport(projectId: number) {
     setImportNames(allPayloads.map((p) => p.rawName));
     setImportOpen(true);
 
-    // Compute hashes in background and check against backend
-    const imageAssets = allPayloads.flatMap((p) => p.assets.filter((a) => a.kind === "image"));
-    if (imageAssets.length > 0) {
-      setHashSummary({ totalFiles: imageAssets.length, duplicateFiles: 0, newFiles: 0, isHashing: true });
+    // Check all assets for duplicates in background
+    const allAssets = allPayloads.flatMap((p) => p.assets);
+    if (allAssets.length > 0) {
+      setHashSummary({ totalFiles: allAssets.length, duplicateFiles: 0, newFiles: 0, isHashing: true });
       computeAndCheckHashes(allPayloads).catch(() => {
         // On error, clear hashing state — import still works without dedup
         setHashSummary(null);
@@ -147,59 +147,119 @@ export function useCharacterImport(projectId: number) {
     }
   }
 
-  /** Compute SHA-256 hashes for all image assets and check against backend. */
+  /** Check all assets (images + videos) for duplicates against existing data. */
   async function computeAndCheckHashes(payloads: CharacterDropPayload[]) {
-    // Collect all image assets and compute their hashes
-    const imageAssets: { asset: DroppedAsset; payloadIdx: number; assetIdx: number }[] = [];
+    const trackSlugs = tracks?.map((t) => t.slug) ?? [];
+    let totalFiles = 0;
+    let duplicateCount = 0;
+
+    // ── Image dedup: SHA-256 content hash against backend ──
+    const imageAssets: { asset: DroppedAsset; payloadIdx: number }[] = [];
     for (let pi = 0; pi < payloads.length; pi++) {
-      for (let ai = 0; ai < payloads[pi]!.assets.length; ai++) {
-        const asset = payloads[pi]!.assets[ai]!;
+      for (const asset of payloads[pi]!.assets) {
         if (asset.kind === "image") {
-          imageAssets.push({ asset, payloadIdx: pi, assetIdx: ai });
+          imageAssets.push({ asset, payloadIdx: pi });
+        }
+      }
+    }
+    totalFiles += imageAssets.length;
+
+    if (imageAssets.length > 0) {
+      const hashes = await Promise.all(
+        imageAssets.map(({ asset }) => sha256File(asset.file)),
+      );
+      for (let i = 0; i < imageAssets.length; i++) {
+        imageAssets[i]!.asset.contentHash = hashes[i];
+      }
+
+      const uniqueHashes = [...new Set(hashes.filter(Boolean) as string[])];
+      let existingHashSet = new Set<string>();
+      if (uniqueHashes.length > 0) {
+        try {
+          const result = await api.post<{ existing: string[] }>(
+            "/image-variants/check-hashes",
+            { hashes: uniqueHashes },
+          );
+          existingHashSet = new Set(result?.existing ?? []);
+        } catch {
+          // Silently ignore — import still works without dedup
+        }
+      }
+
+      for (let i = 0; i < imageAssets.length; i++) {
+        const isDup = existingHashSet.has(hashes[i]!);
+        imageAssets[i]!.asset.isDuplicate = isDup;
+        if (isDup) duplicateCount++;
+      }
+    }
+
+    // ── Video dedup: check if character already has a video for that scene slot ──
+    // Build a map of existing character scenes that have video
+    const existingSceneSlots = new Map<number, Set<string>>(); // charId → Set<"sceneSlug::trackSlug">
+    const existingCharNames = new Set(
+      (characters ?? []).map((c) => c.name.toLowerCase()),
+    );
+
+    for (const payload of payloads) {
+      const char = characters?.find(
+        (c) => c.name.toLowerCase() === payload.rawName.toLowerCase(),
+      );
+      if (!char || existingSceneSlots.has(char.id)) continue;
+
+      try {
+        const scenes = await api.get<Scene[]>(`/characters/${char.id}/scenes`);
+        const slotSet = new Set<string>();
+        for (const scene of scenes) {
+          if (sceneHasVideo(scene)) {
+            // Build the slot key the same way parseFilename produces it
+            const sceneType = sceneCatalogue?.find((st) => st.id === scene.scene_type_id);
+            if (sceneType) {
+              const trackSlug = tracks?.find((t) => t.id === scene.track_id)?.slug ?? "";
+              slotSet.add(`${sceneType.slug}::${trackSlug}`);
+            }
+          }
+        }
+        existingSceneSlots.set(char.id, slotSet);
+      } catch {
+        // If fetch fails, don't mark any videos as duplicate for this character
+      }
+    }
+
+    // Mark video assets as duplicate if scene slot already has video
+    for (const payload of payloads) {
+      const char = characters?.find(
+        (c) => c.name.toLowerCase() === payload.rawName.toLowerCase(),
+      );
+      if (!char) continue;
+      const slots = existingSceneSlots.get(char.id);
+      if (!slots) continue;
+
+      for (const asset of payload.assets) {
+        if (asset.kind !== "video") continue;
+        totalFiles++;
+        const parsed = parseFilename(asset.file.name, trackSlugs);
+        const key = `${parsed.sceneSlug}::${parsed.trackSlug ?? ""}`;
+        if (slots.has(key)) {
+          asset.isDuplicate = true;
+          duplicateCount++;
+        } else {
+          asset.isDuplicate = false;
         }
       }
     }
 
-    // Hash all files
-    const hashes = await Promise.all(
-      imageAssets.map(async ({ asset }) => sha256File(asset.file)),
-    );
-
-    // Store hashes on assets
-    for (let i = 0; i < imageAssets.length; i++) {
-      imageAssets[i]!.asset.contentHash = hashes[i];
-    }
-
-    // Check which hashes exist in the backend
-    const uniqueHashes = [...new Set(hashes.filter(Boolean) as string[])];
-    let existingSet = new Set<string>();
-    if (uniqueHashes.length > 0) {
-      try {
-        const result = await api.post<{ existing: string[] }>(
-          "/image-variants/check-hashes",
-          { hashes: uniqueHashes },
-        );
-        existingSet = new Set(result?.existing ?? []);
-      } catch {
-        // Backend may not have the endpoint yet — silently ignore
+    // Also count videos for new characters (not duplicates)
+    for (const payload of payloads) {
+      if (!existingCharNames.has(payload.rawName.toLowerCase())) {
+        totalFiles += payload.assets.filter((a) => a.kind === "video").length;
       }
     }
 
-    // Mark assets as duplicate/new
-    let duplicateCount = 0;
-    for (let i = 0; i < imageAssets.length; i++) {
-      const hash = hashes[i]!;
-      const isDup = existingSet.has(hash);
-      imageAssets[i]!.asset.isDuplicate = isDup;
-      if (isDup) duplicateCount++;
-    }
-
-    // Update payloads (trigger re-render)
     setImportPayloads([...payloads]);
     setHashSummary({
-      totalFiles: imageAssets.length,
+      totalFiles,
       duplicateFiles: duplicateCount,
-      newFiles: imageAssets.length - duplicateCount,
+      newFiles: totalFiles - duplicateCount,
       isHashing: false,
     });
   }
