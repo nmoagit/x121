@@ -435,15 +435,30 @@ export function ImportConfirmModal({
           const p = payloads[idx]!;
           const images = p.assets.filter((a) => a.kind === "image");
           const videos = p.assets.filter((a) => a.kind === "video");
-          const identicalImages = images.filter((a) => a.isDuplicate);
-          const newImages = images.filter((a) => !a.isDuplicate);
           const metaCount = [p.bioJson, p.tovJson, p.metadataJson].filter(Boolean).length;
-
-          // Determine what will actually be uploaded
-          const imgUpload = newContentOnly ? newImages.length : images.length;
-          const imgSkip = newContentOnly ? identicalImages.length : 0;
+          const isChecking = hashSummary?.isHashing;
 
           const parts: React.ReactNode[] = [];
+
+          // While hashing, show simple counts with "checking" state
+          if (isChecking) {
+            if (images.length > 0) {
+              parts.push(<Badge key="img" variant="default" size="sm">{images.length} img — checking…</Badge>);
+            }
+            if (videos.length > 0) {
+              parts.push(<Badge key="vid" variant="default" size="sm">{videos.length} vid — checking…</Badge>);
+            }
+            if (metaCount > 0) {
+              parts.push(<Badge key="meta" variant="info" size="sm">{metaCount} json</Badge>);
+            }
+            return <>{parts}</>;
+          }
+
+          // Hash check complete — show accurate results
+          const identicalImages = images.filter((a) => a.isDuplicate);
+          const newImages = images.filter((a) => !a.isDuplicate);
+          const imgUpload = newContentOnly ? newImages.length : images.length;
+          const imgSkip = newContentOnly ? identicalImages.length : 0;
 
           // Images
           if (images.length > 0) {
@@ -488,15 +503,19 @@ export function ImportConfirmModal({
 
         {/* Action label */}
         <span className={cn("text-xs ml-auto shrink-0",
-          isDuplicate
-            ? (bulkMode && hasAssets ? "text-[var(--color-text-success)]" : "text-[var(--color-text-warning)]")
-            : checked.has(idx) ? "text-[var(--color-text-success)]" : "text-[var(--color-text-muted)]"
+          hashSummary?.isHashing
+            ? "text-[var(--color-text-muted)]"
+            : isDuplicate
+              ? (bulkMode && hasAssets ? "text-[var(--color-text-success)]" : "text-[var(--color-text-warning)]")
+              : checked.has(idx) ? "text-[var(--color-text-success)]" : "text-[var(--color-text-muted)]"
         )}>
-          {isDuplicate
-            ? (bulkMode && hasAssets
-              ? (importMissing ? "→ update" : "→ overwrite")
-              : "exists")
-            : checked.has(idx) ? "→ create" : "skip"
+          {hashSummary?.isHashing
+            ? "checking…"
+            : isDuplicate
+              ? (bulkMode && hasAssets
+                ? (importMissing ? "→ update" : "→ overwrite")
+                : "exists")
+              : checked.has(idx) ? "→ create" : "skip"
           }
         </span>
       </div>
@@ -708,23 +727,29 @@ export function ImportConfirmModal({
         {payloads && (
           <div className="rounded-[var(--radius-md)] border border-[var(--color-border-default)] bg-[var(--color-surface-secondary)] px-[var(--spacing-3)] py-[var(--spacing-2)]">
             <div className="flex flex-wrap gap-[var(--spacing-4)] text-sm text-[var(--color-text-secondary)]">
-              {selectedCount > 0 && (
-                <span><strong className="text-[var(--color-text-primary)]">{selectedCount}</strong> new {selectedCount === 1 ? "character" : "characters"} to create</span>
-              )}
-              {existingAssetsCount > 0 && (
-                <span><strong className="text-[var(--color-text-primary)]">{existingAssetsCount}</strong> existing to update</span>
-              )}
-              {duplicateCount > 0 && duplicateCount - existingAssetsCount > 0 && (
-                <span className="text-[var(--color-text-muted)]">{duplicateCount - existingAssetsCount} skipped (exist)</span>
-              )}
-              {hashSummary && !hashSummary.isHashing && hashSummary.duplicateFiles > 0 && (
-                <span className={newContentOnly ? "text-[var(--color-text-muted)]" : "text-[var(--color-text-warning)]"}>
-                  {hashSummary.duplicateFiles} identical {hashSummary.duplicateFiles === 1 ? "file" : "files"}
-                  {newContentOnly ? " (will skip)" : " (same content)"}
-                </span>
-              )}
-              {hashSummary && !hashSummary.isHashing && newContentOnly && hashSummary.newFiles > 0 && (
-                <span className="text-[var(--color-text-success)]">{hashSummary.newFiles} new {hashSummary.newFiles === 1 ? "file" : "files"} to import</span>
+              {hashSummary?.isHashing ? (
+                <span className="text-[var(--color-text-muted)]">Checking {hashSummary.totalFiles} files for duplicates…</span>
+              ) : (
+                <>
+                  {selectedCount > 0 && (
+                    <span><strong className="text-[var(--color-text-primary)]">{selectedCount}</strong> new {selectedCount === 1 ? "character" : "characters"} to create</span>
+                  )}
+                  {existingAssetsCount > 0 && (
+                    <span><strong className="text-[var(--color-text-primary)]">{existingAssetsCount}</strong> existing to update</span>
+                  )}
+                  {duplicateCount > 0 && duplicateCount - existingAssetsCount > 0 && (
+                    <span className="text-[var(--color-text-muted)]">{duplicateCount - existingAssetsCount} skipped (exist)</span>
+                  )}
+                  {hashSummary && hashSummary.duplicateFiles > 0 && (
+                    <span className={newContentOnly ? "text-[var(--color-text-muted)]" : "text-[var(--color-text-warning)]"}>
+                      {hashSummary.duplicateFiles} identical {hashSummary.duplicateFiles === 1 ? "file" : "files"}
+                      {newContentOnly ? " (will skip)" : " (same content)"}
+                    </span>
+                  )}
+                  {hashSummary && newContentOnly && hashSummary.newFiles > 0 && (
+                    <span className="text-[var(--color-text-success)]">{hashSummary.newFiles} new {hashSummary.newFiles === 1 ? "file" : "files"} to import</span>
+                  )}
+                </>
               )}
             </div>
           </div>
