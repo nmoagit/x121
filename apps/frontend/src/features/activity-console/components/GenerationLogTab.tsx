@@ -75,7 +75,7 @@ export function GenerationLogTab() {
       <div
         ref={scrollRef}
         onScroll={handleScroll}
-        className="flex-1 overflow-y-auto min-h-0 bg-[#0d1117] scrollbar-thin"
+        className="flex-1 overflow-y-auto min-h-0 bg-[var(--color-surface-primary)] scrollbar-thin"
       >
         {isLoading ? (
           <div className="flex items-center justify-center h-full">
