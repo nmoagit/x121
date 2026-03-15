@@ -359,8 +359,11 @@ async fn handle_generation_completed(
         }
     };
 
+    // Build a generation snapshot from DB data for this scene.
+    let snapshot = build_snapshot_from_db(pool, scene_id, instance_id).await;
+
     // Create the scene video version + artifact records so the UI can display the output.
-    match create_version_from_completion(pool, scene_id, &completion, None).await {
+    match create_version_from_completion(pool, scene_id, &completion, snapshot).await {
         Ok(version) => {
             tracing::info!(
                 version_id = version.id,
@@ -1012,4 +1015,65 @@ async fn dispatch_pending(
             tracing::error!(error = %e, "Failed to dispatch pending jobs");
         }
     }
+}
+
+/// Build a generation snapshot from DB data for a completed scene.
+///
+/// Looks up the scene type, workflow, and prompt slots to reconstruct
+/// the snapshot that should have been captured at generation time.
+/// Returns `None` if any required data is missing (graceful fallback).
+async fn build_snapshot_from_db(
+    pool: &sqlx::PgPool,
+    scene_id: DbId,
+    instance_id: DbId,
+) -> Option<serde_json::Value> {
+    use x121_db::repositories::{SceneRepo, SceneTypeRepo, WorkflowRepo};
+
+    // Look up scene → scene_type → workflow → prompt slots
+    let scene = SceneRepo::find_by_id(pool, scene_id).await.ok()??;
+    let scene_type = SceneTypeRepo::find_by_id(pool, scene.scene_type_id)
+        .await
+        .ok()??;
+
+    // Get workflow name (prefer scene_type_track_config, fall back to scene_type)
+    let workflow_id = scene_type.workflow_id?;
+    let workflow = WorkflowRepo::find_by_id(pool, workflow_id).await.ok()??;
+
+    // Get prompt slots for this workflow
+    let prompt_slots =
+        x121_db::repositories::WorkflowPromptSlotRepo::list_by_workflow(pool, workflow_id)
+            .await
+            .unwrap_or_default();
+
+    let mut prompts = serde_json::Map::new();
+    for slot in &prompt_slots {
+        let key = format!("{} [{}]", slot.slot_label, slot.node_id);
+        let text = slot.default_text.clone().unwrap_or_default();
+        prompts.insert(key, serde_json::Value::String(text));
+    }
+
+    // Get seed image path
+    let seed_image = if let Some(variant_id) = scene.image_variant_id {
+        x121_db::repositories::ImageVariantRepo::find_by_id(pool, variant_id)
+            .await
+            .ok()
+            .flatten()
+            .map(|v| v.file_path)
+            .unwrap_or_default()
+    } else {
+        String::new()
+    };
+
+    Some(serde_json::json!({
+        "scene_type": scene_type.name,
+        "workflow": workflow.name,
+        "clip_position": "full_clip",
+        "seed_image": seed_image,
+        "segment_index": 0,
+        "prompts": prompts,
+        "generation_params": scene_type.generation_params,
+        "lora_config": scene_type.lora_config,
+        "comfyui_instance_id": instance_id,
+        "generated_at": chrono::Utc::now().to_rfc3339(),
+    }))
 }
