@@ -305,6 +305,7 @@ export function ImportConfirmModal({
   /** Existing characters whose assets should be uploaded. */
   const [checkedExistingAssets, toggleExistingAssets, setCheckedExistingAssets] = useSetToggle<number>();
   const [importMissing, setImportMissing] = useState(false);
+  const [newContentOnly, setNewContentOnly] = useState(false);
 
   const displayNames = useMemo(
     () => (normalize ? effectiveNames.map(normalizeCharacterName) : effectiveNames),
@@ -466,10 +467,21 @@ export function ImportConfirmModal({
         const payload = payloads[i]!;
         const display = displayNames[i]!;
 
+        // Filter out content-duplicate assets when "new content only" is on
+        const assets = newContentOnly
+          ? payload.assets.filter((a) => !a.isDuplicate)
+          : payload.assets;
+
+        // Skip character entirely if no assets remain after filtering
+        if (newContentOnly && assets.length === 0 && !payload.bioJson && !payload.tovJson && !payload.metadataJson) {
+          continue;
+        }
+
         // Apply normalized name
         const normalizedPayload: CharacterDropPayload = {
           ...payload,
           rawName: display,
+          assets,
         };
 
         if (duplicateIndices.has(i)) {
@@ -595,11 +607,18 @@ export function ImportConfirmModal({
         )}
 
         {/* Per-asset duplicate indicators (from content hash) */}
-        {payloads?.[idx]?.assets.some((a) => a.isDuplicate) && (
-          <Badge variant="warning" size="sm">
-            {payloads[idx]!.assets.filter((a) => a.isDuplicate).length} dup
-          </Badge>
-        )}
+        {payloads?.[idx]?.assets.some((a) => a.isDuplicate) && (() => {
+          const dupCount = payloads[idx]!.assets.filter((a) => a.isDuplicate).length;
+          const totalAssets = payloads[idx]!.assets.length;
+          const newCount = totalAssets - dupCount;
+          return (
+            <Badge variant={newContentOnly ? "info" : "warning"} size="sm">
+              {newContentOnly
+                ? (newCount > 0 ? `${newCount} new` : "all identical")
+                : `${dupCount} identical`}
+            </Badge>
+          );
+        })()}
 
         {/* Action label */}
         <span className={cn("text-xs ml-auto shrink-0", isDuplicate
@@ -791,6 +810,14 @@ export function ImportConfirmModal({
               size="sm"
             />
           )}
+          {hashSummary && !hashSummary.isHashing && hashSummary.duplicateFiles > 0 && (importMissing || overwrite) && (
+            <Toggle
+              checked={newContentOnly}
+              onChange={setNewContentOnly}
+              label={`New content only (skip ${hashSummary.duplicateFiles} identical)`}
+              size="sm"
+            />
+          )}
         </div>
 
         {/* Duplicate warning */}
@@ -824,7 +851,13 @@ export function ImportConfirmModal({
                 <span className="text-[var(--color-text-muted)]">{duplicateCount - existingAssetsCount} skipped (exist)</span>
               )}
               {hashSummary && !hashSummary.isHashing && hashSummary.duplicateFiles > 0 && (
-                <span className="text-[var(--color-text-warning)]">{hashSummary.duplicateFiles} duplicate {hashSummary.duplicateFiles === 1 ? "file" : "files"} (same content)</span>
+                <span className={newContentOnly ? "text-[var(--color-text-muted)]" : "text-[var(--color-text-warning)]"}>
+                  {hashSummary.duplicateFiles} identical {hashSummary.duplicateFiles === 1 ? "file" : "files"}
+                  {newContentOnly ? " (will skip)" : " (same content)"}
+                </span>
+              )}
+              {hashSummary && !hashSummary.isHashing && newContentOnly && hashSummary.newFiles > 0 && (
+                <span className="text-[var(--color-text-success)]">{hashSummary.newFiles} new {hashSummary.newFiles === 1 ? "file" : "files"} to import</span>
               )}
             </div>
           </div>
