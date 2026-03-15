@@ -60,10 +60,23 @@ async fn evaluate_all_rules(
 
     let rules = CloudScalingRuleRepo::list_enabled(pool).await?;
 
+    if rules.is_empty() {
+        return Ok(());
+    }
+
+    info!(count = rules.len(), "Evaluating {} scaling rule(s)", rules.len());
+
     for rule in &rules {
         let provider = match registry.get(rule.provider_id).await {
             Some(p) => p,
-            None => continue,
+            None => {
+                warn!(
+                    rule_id = rule.id,
+                    provider_id = rule.provider_id,
+                    "Scaling rule skipped — provider not registered in runtime registry"
+                );
+                continue;
+            }
         };
 
         let current_count =
@@ -102,6 +115,15 @@ async fn evaluate_all_rules(
         };
 
         let decision = evaluate_scaling_decision_with_reason(&input);
+
+        info!(
+            rule_id = rule.id,
+            queue_depth,
+            current_count,
+            action = ?decision.action,
+            reason = %decision.reason,
+            "Scaling decision"
+        );
 
         // Log every decision to the audit table.
         let instances_changed = match &decision.action {
