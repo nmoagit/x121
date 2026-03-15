@@ -39,7 +39,7 @@ export function CloudGpuSegment({ cloudGpu }: CloudGpuSegmentProps) {
   return (
     <>
       <Tooltip content={tooltipText} side="top">
-        <FooterSegment href="/admin/cloud-gpu" label="Cloud GPU status">
+        <FooterSegment href="/admin/infrastructure" label="Cloud GPU status">
           <Cloud size={14} aria-hidden="true" />
           <StatusDot health={budgetToHealth(cloudGpu.budget_status)} />
           <span className="tabular-nums">{cloudGpu.active_pods}</span>
