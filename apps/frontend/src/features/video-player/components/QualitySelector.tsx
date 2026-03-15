@@ -24,9 +24,9 @@ export function QualitySelector({
             ? "bg-[var(--color-action-primary)] text-white"
             : "text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] bg-[var(--color-surface-tertiary)]",
         )}
-        title="Preview quality (faster loading)"
+        title="Standard definition (faster loading)"
       >
-        Preview
+        SD
       </button>
       <button
         type="button"
@@ -38,9 +38,9 @@ export function QualitySelector({
             ? "bg-[var(--color-action-primary)] text-white"
             : "text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] bg-[var(--color-surface-tertiary)]",
         )}
-        title="Full quality (original resolution)"
+        title="High definition (original resolution)"
       >
-        Full
+        HD
       </button>
     </div>
   );
