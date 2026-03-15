@@ -17,7 +17,7 @@ pub fn spawn_monitoring_service(
     pool: PgPool,
     registry: Arc<ProviderRegistry>,
     interval_secs: Option<u64>,
-) -> tokio::task::JoinHandle<()> {
+) -> (tokio::task::JoinHandle<()>, super::ServiceNudge) {
     super::spawn_periodic_service(
         "Monitoring",
         pool,

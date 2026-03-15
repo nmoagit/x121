@@ -32,7 +32,7 @@ pub fn spawn_scaling_service(
     lifecycle_bridge: Arc<LifecycleBridge>,
     broadcaster: Arc<ActivityLogBroadcaster>,
     interval_secs: Option<u64>,
-) -> tokio::task::JoinHandle<()> {
+) -> (tokio::task::JoinHandle<()>, super::ServiceNudge) {
     let bridge = Arc::clone(&lifecycle_bridge);
     super::spawn_periodic_service(
         "Scaling",

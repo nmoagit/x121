@@ -503,6 +503,7 @@ pub async fn create_scaling_rule(
 ) -> AppResult<(StatusCode, Json<DataResponse<CloudScalingRule>>)> {
     let _ = ensure_provider_exists(&state.pool, id).await?;
     let rule = CloudScalingRuleRepo::create(&state.pool, id, &input).await?;
+    state.scaling_nudge.nudge();
     Ok((StatusCode::CREATED, Json(DataResponse { data: rule })))
 }
 
@@ -521,6 +522,7 @@ pub async fn update_scaling_rule(
                 id: rule_id,
             })
         })?;
+    state.scaling_nudge.nudge();
     Ok(Json(DataResponse { data: rule }))
 }
 
@@ -532,6 +534,7 @@ pub async fn delete_scaling_rule(
 ) -> AppResult<StatusCode> {
     let deleted = CloudScalingRuleRepo::delete(&state.pool, rule_id).await?;
     if deleted {
+        state.scaling_nudge.nudge();
         Ok(StatusCode::NO_CONTENT)
     } else {
         Err(AppError::Core(CoreError::NotFound {
@@ -581,6 +584,8 @@ pub async fn reset_scaling(
         admin_id = admin.user_id,
         "Scaling history reset and cooldown cleared",
     );
+
+    state.scaling_nudge.nudge();
 
     Ok(StatusCode::NO_CONTENT)
 }
@@ -775,6 +780,8 @@ pub async fn emergency_stop_provider(
         "Emergency stop: provider disabled, scaling rules disabled, pending jobs held"
     );
 
+    state.scaling_nudge.nudge();
+
     Ok(Json(DataResponse {
         data: EmergencyStopResult {
             terminated,
@@ -834,6 +841,8 @@ pub async fn emergency_stop_all(
         "Emergency stop ALL: providers disabled, scaling rules disabled, pending jobs held"
     );
 
+    state.scaling_nudge.nudge();
+
     Ok(Json(DataResponse {
         data: EmergencyStopResult {
             terminated: total_terminated,
@@ -886,6 +895,9 @@ pub async fn resume_processing(
         jobs_released,
         "Resume processing: providers re-enabled, scaling rules re-enabled, held jobs released"
     );
+
+    // Trigger immediate scaling evaluation
+    state.scaling_nudge.nudge();
 
     Ok(Json(DataResponse {
         data: ResumeProcessingResult {

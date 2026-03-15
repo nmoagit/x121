@@ -207,19 +207,19 @@ async fn main() {
     tracing::info!("Lifecycle bridge initialized");
 
     // Spawn cloud background services (PRD-114, PRD-130 Phase 6).
-    let _scaling_handle = x121_cloud::services::scaling::spawn_scaling_service(
+    let (_scaling_handle, scaling_nudge) = x121_cloud::services::scaling::spawn_scaling_service(
         pool.clone(),
         Arc::clone(&cloud_registry),
         Arc::clone(&lifecycle_bridge),
         Arc::clone(&activity_broadcaster),
         None,
     );
-    let _monitoring_handle = x121_cloud::services::monitoring::spawn_monitoring_service(
+    let (_monitoring_handle, _monitoring_nudge) = x121_cloud::services::monitoring::spawn_monitoring_service(
         pool.clone(),
         Arc::clone(&cloud_registry),
         None,
     );
-    let _reconciliation_handle = x121_cloud::services::reconciliation::spawn_reconciliation_service(
+    let (_reconciliation_handle, _reconciliation_nudge) = x121_cloud::services::reconciliation::spawn_reconciliation_service(
         pool.clone(),
         Arc::clone(&cloud_registry),
         Some(Arc::clone(&activity_broadcaster)),
@@ -297,6 +297,7 @@ async fn main() {
         storage,
         lifecycle_bridge,
         pod_orchestrator,
+        scaling_nudge,
     };
 
     // --- Router ---

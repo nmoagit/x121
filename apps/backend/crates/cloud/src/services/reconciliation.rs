@@ -22,7 +22,7 @@ pub fn spawn_reconciliation_service(
     registry: Arc<ProviderRegistry>,
     activity: Option<Arc<ActivityLogBroadcaster>>,
     interval_secs: Option<u64>,
-) -> tokio::task::JoinHandle<()> {
+) -> (tokio::task::JoinHandle<()>, super::ServiceNudge) {
     super::spawn_periodic_service(
         "Reconciliation",
         pool,

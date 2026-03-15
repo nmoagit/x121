@@ -43,6 +43,8 @@ pub struct AppState {
     pub lifecycle_bridge: Arc<x121_cloud::lifecycle::LifecycleBridge>,
     /// RunPod pod orchestrator (None if RunPod is not configured).
     pub pod_orchestrator: Option<Arc<PodOrchestrator>>,
+    /// Nudge handle to trigger immediate scaling evaluation.
+    pub scaling_nudge: x121_cloud::services::ServiceNudge,
 }
 
 impl AppState {
