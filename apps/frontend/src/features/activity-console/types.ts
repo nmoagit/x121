@@ -157,7 +157,7 @@ export type WsConnectionStatus = "connecting" | "connected" | "disconnected";
    -------------------------------------------------------------------------- */
 
 export const ALL_LEVELS: ActivityLogLevel[] = ["debug", "info", "warn", "error"];
-export const ALL_SOURCES: ActivityLogSource[] = ["api", "comfyui", "worker", "agent", "pipeline"];
+export const ALL_SOURCES: ActivityLogSource[] = ["api", "comfyui", "worker", "agent", "pipeline", "infrastructure"];
 
 export const LEVEL_BADGE_VARIANT: Record<ActivityLogLevel, BadgeVariant> = {
   debug: "default",
