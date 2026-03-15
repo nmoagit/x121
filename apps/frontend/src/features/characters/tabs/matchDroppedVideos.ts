@@ -89,6 +89,13 @@ export function parseFilename(filename: string, trackSlugs: string[]): ParsedFil
  * and returns the remaining prefix as a character name hint.
  * Returns null if no clear character name can be extracted.
  */
+/** Words that are track prefixes or scene slugs, not character names. */
+const NON_CHARACTER_HINTS = new Set([
+  "topless", "clothed", "nude", "naked", "dressed",
+  "bj", "idle", "sex", "feet", "bottom", "boobs",
+  "mesh", "txrs", "mouth", "smiles",
+]);
+
 export function extractCharacterHint(filename: string): string | null {
   const stem = stripExtension(filename).toLowerCase();
   // If the stem contains no underscores, it's likely just a scene name
@@ -97,6 +104,8 @@ export function extractCharacterHint(filename: string): string | null {
   // Common patterns: "anna_bj", "anna_scene_bj", "anna_01"
   const firstPart = stem.split("_")[0];
   if (!firstPart || firstPart.length < 2) return null;
+  // Ignore known track/scene prefixes
+  if (NON_CHARACTER_HINTS.has(firstPart)) return null;
   return firstPart;
 }
 
