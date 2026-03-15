@@ -66,6 +66,10 @@ function importLogEntry(
   projectId: number,
   fields?: Record<string, unknown>,
 ): ActivityLogEntry {
+  // Also log to browser console for debugging
+  const logFn = level === "error" ? console.error : level === "warn" ? console.warn : console.info;
+  logFn(`[Import] ${message}`, fields ?? "");
+
   return {
     type: "entry",
     timestamp: new Date().toISOString(),
@@ -302,7 +306,7 @@ export function useCharacterImport(projectId: number) {
             } catch (err) {
               const msg = `Failed to create group "${name}": ${String(err)}`;
               errors.push(msg);
-              console.warn(`[Import] ${msg}`);
+              addLogEntry(importLogEntry("error", msg, projectId));
               addToast({ message: msg, variant: "error" });
             }
           } else {
@@ -362,7 +366,7 @@ export function useCharacterImport(projectId: number) {
               createdCharacters.push(...created);
             }
           } catch (err) {
-            errors.push(`Failed to create characters: ${String(err)}`);
+            { const msg = `Failed to create characters: ${String(err)}`; errors.push(msg); addLogEntry(importLogEntry("error", msg, projectId)); }
             setImportProgress(null);
             setImportOpen(false);
             addToast({ message: "Character import failed", variant: "error" });
@@ -379,7 +383,7 @@ export function useCharacterImport(projectId: number) {
               nameToIdMap.set(char.name.toLowerCase(), char.id);
             }
           } catch (err) {
-            errors.push(`Failed to create characters: ${String(err)}`);
+            { const msg = `Failed to create characters: ${String(err)}`; errors.push(msg); addLogEntry(importLogEntry("error", msg, projectId)); }
             setImportProgress(null);
             setImportOpen(false);
             addToast({ message: "Character import failed", variant: "error" });
@@ -396,7 +400,7 @@ export function useCharacterImport(projectId: number) {
         if (existing) {
           nameToIdMap.set(payload.rawName.toLowerCase(), existing.id);
         } else {
-          errors.push(`Could not find existing character "${payload.rawName}"`);
+          { const msg = `Could not find existing character "${payload.rawName}"`; errors.push(msg); addLogEntry(importLogEntry("error", msg, projectId)); }
         }
       }
 
@@ -508,9 +512,9 @@ export function useCharacterImport(projectId: number) {
         ));
 
         if (skippedImages > 0) {
-          errors.push(
-            `${skippedImages} image${skippedImages > 1 ? "s" : ""} skipped (variant type already exists)`,
-          );
+          const msg = `${skippedImages} image${skippedImages > 1 ? "s" : ""} skipped (variant type already exists)`;
+          errors.push(msg);
+          addLogEntry(importLogEntry("warn", msg, projectId));
         }
       }
 
@@ -561,19 +565,19 @@ export function useCharacterImport(projectId: number) {
           if (payload.bioJson && bioData === null) {
             const msg = `Invalid JSON: bio.json for "${payload.rawName}" — file skipped`;
             errors.push(msg);
-            console.warn(`[Import] ${msg}`);
+            addLogEntry(importLogEntry("error", msg, projectId));
             invalidJsonCount++;
           }
           if (payload.tovJson && tovData === null) {
             const msg = `Invalid JSON: tov.json for "${payload.rawName}" — file skipped`;
             errors.push(msg);
-            console.warn(`[Import] ${msg}`);
+            addLogEntry(importLogEntry("error", msg, projectId));
             invalidJsonCount++;
           }
           if (payload.metadataJson && metaData === null) {
             const msg = `Invalid JSON: metadata.json for "${payload.rawName}" — file skipped`;
             errors.push(msg);
-            console.warn(`[Import] ${msg}`);
+            addLogEntry(importLogEntry("error", msg, projectId));
             invalidJsonCount++;
           }
 
