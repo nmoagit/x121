@@ -495,7 +495,7 @@ async fn detect_orphaned_jobs(pool: &PgPool, broadcaster: &Arc<ActivityLogBroadc
            AND j.comfyui_instance_id IS NOT NULL \
            AND NOT EXISTS ( \
                SELECT 1 FROM comfyui_instances ci \
-               WHERE ci.id = j.comfyui_instance_id AND ci.status = 'connected' \
+               WHERE ci.id = j.comfyui_instance_id AND ci.status_id = 1 \
            )"
     )
     .fetch_all(pool)
