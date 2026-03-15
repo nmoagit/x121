@@ -5,7 +5,7 @@
  * filter toolbar, pause/resume, clear, and connection status.
  */
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { Badge, Button } from "@/components/primitives";
 import { ArrowDown, Pause, Play, Trash2 } from "@/tokens/icons";
@@ -40,11 +40,22 @@ const CONNECTION_VARIANTS: Record<WsConnectionStatus, "warning" | "success" | "d
 export function ActivityConsolePanel() {
   const connectionStatus = useActivityLogStream();
 
-  const entries = useActivityConsoleStore((s) => s.entries);
+  const allEntries = useActivityConsoleStore((s) => s.entries);
+  const levels = useActivityConsoleStore((s) => s.levels);
+  const sources = useActivityConsoleStore((s) => s.sources);
   const isPaused = useActivityConsoleStore((s) => s.isPaused);
   const skippedCount = useActivityConsoleStore((s) => s.skippedCount);
   const setPaused = useActivityConsoleStore((s) => s.setPaused);
   const clearEntries = useActivityConsoleStore((s) => s.clearEntries);
+
+  // Apply level + source filters
+  const entries = useMemo(() =>
+    allEntries.filter((e) =>
+      (levels.size === 0 || levels.has(e.level)) &&
+      (sources.size === 0 || sources.has(e.source))
+    ),
+    [allEntries, levels, sources],
+  );
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const [isAtBottom, setIsAtBottom] = useState(true);
