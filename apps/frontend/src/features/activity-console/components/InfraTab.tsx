@@ -8,7 +8,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { Badge } from "@/components/primitives";
+import { Badge, Button } from "@/components/primitives";
+import { ArrowDown } from "@/tokens/icons";
 import { cn } from "@/lib/cn";
 
 import { useActivityLogStream } from "../hooks/useActivityLogStream";
@@ -52,8 +53,15 @@ export function InfraTab() {
 
   const isConnected = connectionStatus === "connected";
 
+  const jumpToBottom = useCallback(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+      setAutoScroll(true);
+    }
+  }, []);
+
   return (
-    <div className="flex flex-col h-full bg-[var(--color-surface-primary)] overflow-hidden">
+    <div className="relative flex flex-col h-full bg-[var(--color-surface-primary)] overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between px-[var(--spacing-3)] py-[var(--spacing-2)] border-b border-[var(--color-border-default)] bg-[var(--color-surface-secondary)]">
         <div className="flex items-center gap-[var(--spacing-2)]">
@@ -88,6 +96,15 @@ export function InfraTab() {
           </div>
         )}
       </div>
+
+      {/* Jump to latest */}
+      {!autoScroll && infraEntries.length > 0 && (
+        <div className="absolute bottom-[var(--spacing-4)] right-[var(--spacing-4)]">
+          <Button variant="secondary" size="sm" onClick={jumpToBottom} icon={<ArrowDown size={14} />} className="shadow-md">
+            Jump to latest
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

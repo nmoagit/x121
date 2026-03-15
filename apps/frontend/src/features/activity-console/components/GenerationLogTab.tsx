@@ -8,6 +8,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 
+import { Button } from "@/components/primitives";
+import { ArrowDown } from "@/tokens/icons";
 import { api } from "@/lib/api";
 import { LogLine } from "@/components/domain";
 import type { GenerationLogEntry } from "@/features/generation/types";
@@ -53,8 +55,15 @@ export function GenerationLogTab() {
     setAutoScroll(scrollHeight - scrollTop - clientHeight < 40);
   }, []);
 
+  const jumpToBottom = useCallback(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+      setAutoScroll(true);
+    }
+  }, []);
+
   return (
-    <div className="flex flex-col h-full bg-[var(--color-surface-primary)] overflow-hidden">
+    <div className="relative flex flex-col h-full bg-[var(--color-surface-primary)] overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between px-[var(--spacing-3)] py-[var(--spacing-2)] border-b border-[var(--color-border-default)] bg-[var(--color-surface-secondary)]">
         <span className="text-xs text-[var(--color-text-muted)]">
@@ -96,6 +105,15 @@ export function GenerationLogTab() {
           </div>
         )}
       </div>
+
+      {/* Jump to latest */}
+      {!autoScroll && chronological.length > 0 && (
+        <div className="absolute bottom-[var(--spacing-4)] right-[var(--spacing-4)]">
+          <Button variant="secondary" size="sm" onClick={jumpToBottom} icon={<ArrowDown size={14} />} className="shadow-md">
+            Jump to latest
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
