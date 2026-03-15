@@ -3,10 +3,14 @@
  */
 
 import { Card } from "@/components/composite";
+import { FileDropZone } from "@/components/domain";
 import { Stack } from "@/components/layout";
 import { SECTION_HEADING } from "@/lib/ui-classes";
 
 import { CharacterDeliverablesGrid } from "../components/CharacterDeliverablesGrid";
+import { ImportConfirmModal } from "../components/ImportConfirmModal";
+import { useCharacterImport } from "../hooks/use-character-import";
+import { useProjectCharacters } from "../hooks/use-project-characters";
 import type { ProjectStats } from "../types";
 
 /* --------------------------------------------------------------------------
@@ -41,6 +45,10 @@ interface ProjectOverviewTabProps {
 }
 
 export function ProjectOverviewTab({ projectId, stats }: ProjectOverviewTabProps) {
+  const charImport = useCharacterImport(projectId);
+  const { data: characters } = useProjectCharacters(projectId);
+  const existingNames = characters?.map((c) => c.name) ?? [];
+
   if (!stats) {
     return (
       <p className="text-sm text-[var(--color-text-muted)] py-[var(--spacing-4)]">
@@ -50,6 +58,11 @@ export function ProjectOverviewTab({ projectId, stats }: ProjectOverviewTabProps
   }
 
   return (
+    <FileDropZone
+      onNamesDropped={charImport.handleImportDrop}
+      onFolderDropped={charImport.handleFolderDrop}
+      browseFolderRef={charImport.browseFolderRef}
+    >
     <Stack gap={6}>
       {/* Character stats */}
       <div>
@@ -99,5 +112,24 @@ export function ProjectOverviewTab({ projectId, stats }: ProjectOverviewTabProps
         <CharacterDeliverablesGrid projectId={projectId} />
       </div>
     </Stack>
+
+    <ImportConfirmModal
+      open={charImport.importOpen}
+      onClose={charImport.closeImport}
+      names={charImport.importNames}
+      payloads={charImport.importPayloads}
+      projectId={projectId}
+      existingNames={existingNames}
+      characters={characters}
+      onConfirm={charImport.handleImportConfirm}
+      onConfirmWithAssets={charImport.handleImportConfirmWithAssets}
+      loading={charImport.bulkCreatePending}
+      importProgress={charImport.importProgress}
+      onAbort={charImport.abortImport}
+      detectedProjectName={charImport.importResult?.detectedProjectName}
+      existingGroupNames={charImport.importResult ? [...charImport.importResult.groupedPayloads.keys()].filter(Boolean) : undefined}
+      hashSummary={charImport.hashSummary}
+    />
+    </FileDropZone>
   );
 }
