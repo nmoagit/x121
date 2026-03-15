@@ -86,12 +86,14 @@ function importLogEntry(
 export function useCharacterImport(projectId: number) {
   const queryClient = useQueryClient();
   const { addToast } = useToast();
-  const addLogEntry = useActivityConsoleStore((s) => s.addEntry);
+  /** Add a log entry to the activity console store (always uses latest state). */
+  const addLogEntry = (entry: ActivityLogEntry) => {
+    useActivityConsoleStore.getState().addEntry(entry);
+  };
   const openConsoleOnLive = () => {
-    useActivityConsoleStore.getState().setActiveTab("live");
-    if (!useActivityConsoleStore.getState().isOpen) {
-      useActivityConsoleStore.getState().togglePanel();
-    }
+    const state = useActivityConsoleStore.getState();
+    state.setActiveTab("live");
+    if (!state.isOpen) state.togglePanel();
   };
   const bulkCreate = useBulkCreateCharacters(projectId);
   const { data: characters } = useProjectCharacters(projectId);
