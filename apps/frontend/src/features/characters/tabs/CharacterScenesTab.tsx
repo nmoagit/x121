@@ -85,9 +85,11 @@ interface CharacterScenesTabProps {
   focusSceneTypeId?: number;
   /** Track ID to match when using focusSceneTypeId. */
   focusTrackId?: number;
+  /** Whether the character is enabled. When false, all generation controls are disabled. */
+  characterEnabled?: boolean;
 }
 
-export function CharacterScenesTab({ characterId, focusSceneId, focusSceneTypeId, focusTrackId }: CharacterScenesTabProps) {
+export function CharacterScenesTab({ characterId, focusSceneId, focusSceneTypeId, focusTrackId, characterEnabled = true }: CharacterScenesTabProps) {
   const queryClient = useQueryClient();
   const {
     data: settings,
@@ -553,7 +555,7 @@ export function CharacterScenesTab({ characterId, focusSceneId, focusSceneTypeId
     });
   }
 
-  const isDisabled = importing || batchGenerate.isPending;
+  const isDisabled = !characterEnabled || importing || batchGenerate.isPending;
 
   return (
     <div

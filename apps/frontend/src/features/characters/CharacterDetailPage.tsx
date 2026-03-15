@@ -303,7 +303,7 @@ export function CharacterDetailPage() {
       )}
       {activeTab === "scenes" && (
         <div className={!character.is_enabled ? "opacity-70 grayscale" : ""}>
-          <CharacterScenesTab key={characterId} characterId={characterId} projectId={projectId} focusSceneId={focusSceneId} focusSceneTypeId={focusSceneTypeId} focusTrackId={focusTrackId} />
+          <CharacterScenesTab key={characterId} characterId={characterId} projectId={projectId} focusSceneId={focusSceneId} focusSceneTypeId={focusSceneTypeId} focusTrackId={focusTrackId} characterEnabled={character.is_enabled} />
         </div>
       )}
       {activeTab === "deliverables" && (
