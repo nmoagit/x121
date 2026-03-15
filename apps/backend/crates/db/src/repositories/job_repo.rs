@@ -605,6 +605,34 @@ impl JobRepo {
         Ok(result.rows_affected())
     }
 
+    /// Hold all pending jobs (set status to Held). Used by emergency stop to
+    /// prevent jobs from being dispatched while infrastructure is down.
+    pub async fn hold_all_pending(pool: &PgPool) -> Result<u64, sqlx::Error> {
+        let result = sqlx::query(
+            "UPDATE jobs SET status_id = $1 \
+             WHERE status_id = $2",
+        )
+        .bind(JobStatus::Held.id())
+        .bind(JobStatus::Pending.id())
+        .execute(pool)
+        .await?;
+        Ok(result.rows_affected())
+    }
+
+    /// Release all held jobs back to pending. Used by resume processing to
+    /// re-enable job dispatch after an emergency stop.
+    pub async fn release_all_held(pool: &PgPool) -> Result<u64, sqlx::Error> {
+        let result = sqlx::query(
+            "UPDATE jobs SET status_id = $1 \
+             WHERE status_id = $2",
+        )
+        .bind(JobStatus::Pending.id())
+        .bind(JobStatus::Held.id())
+        .execute(pool)
+        .await?;
+        Ok(result.rows_affected())
+    }
+
     // -----------------------------------------------------------------------
     // Phase 7: Queue statistics (PRD-132)
     // -----------------------------------------------------------------------

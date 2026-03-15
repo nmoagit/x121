@@ -18,6 +18,7 @@ import {
   useCloudDashboard,
   useCloudProviders,
   useEmergencyStopAll,
+  useResumeProcessing,
 } from "./hooks/use-cloud-providers";
 import { CloudProviderList } from "./components/CloudProviderList";
 import { CloudProviderDetail } from "./components/CloudProviderDetail";
@@ -29,9 +30,14 @@ export function CloudGpuDashboard() {
   const { data: stats, isLoading: statsLoading } = useCloudDashboard();
   const { data: providers, isLoading: providersLoading } = useCloudProviders();
   const emergencyStopAll = useEmergencyStopAll();
+  const resumeProcessing = useResumeProcessing();
 
   const [selectedProviderId, setSelectedProviderId] = useState<number | null>(null);
   const [confirmStopAll, setConfirmStopAll] = useState(false);
+  const [confirmResume, setConfirmResume] = useState(false);
+
+  // Show resume button when any provider is disabled
+  const hasDisabledProviders = providers?.some((p) => p.status_id === 2) ?? false;
 
   const isLoading = statsLoading || providersLoading;
 
@@ -60,7 +66,16 @@ export function CloudGpuDashboard() {
   return (
     <div className="min-h-full">
       <Stack gap={6}>
-        <div className="flex items-center justify-end">
+        <div className="flex items-center justify-end gap-[var(--spacing-2)]">
+          {hasDisabledProviders && (
+            <Button
+              onClick={() => setConfirmResume(true)}
+              variant="primary"
+              loading={resumeProcessing.isPending}
+            >
+              Resume Processing
+            </Button>
+          )}
           <Button
             onClick={() => setConfirmStopAll(true)}
             className="bg-red-600 text-white hover:bg-red-700"
@@ -102,7 +117,33 @@ export function CloudGpuDashboard() {
           setConfirmStopAll(false);
         }}
       >
-        <p>This will terminate ALL cloud instances across ALL providers. Continue?</p>
+        <p>This will:</p>
+        <ul className="list-disc pl-5 mt-1 space-y-0.5">
+          <li>Terminate ALL cloud instances</li>
+          <li>Disable all providers and scaling rules</li>
+          <li>Hold all pending jobs (preventing dispatch)</li>
+        </ul>
+        <p className="mt-2">Use "Resume Processing" to restart operations.</p>
+      </ConfirmModal>
+
+      <ConfirmModal
+        open={confirmResume}
+        onClose={() => setConfirmResume(false)}
+        title="Resume Processing"
+        confirmLabel="Resume"
+        confirmVariant="primary"
+        onConfirm={() => {
+          resumeProcessing.mutate();
+          setConfirmResume(false);
+        }}
+      >
+        <p>This will:</p>
+        <ul className="list-disc pl-5 mt-1 space-y-0.5">
+          <li>Re-enable all disabled providers</li>
+          <li>Re-enable all scaling rules</li>
+          <li>Release held jobs back to the pending queue</li>
+        </ul>
+        <p className="mt-2">Auto-scaling will resume and jobs will be dispatched to available instances.</p>
       </ConfirmModal>
     </div>
   );

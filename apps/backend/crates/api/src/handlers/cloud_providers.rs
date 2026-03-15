@@ -15,7 +15,7 @@ use x121_core::types::DbId;
 use x121_db::models::cloud_provider::*;
 use x121_db::repositories::{
     CloudCostEventRepo, CloudGpuTypeRepo, CloudInstanceRepo, CloudProviderRepo,
-    CloudScalingEventRepo, CloudScalingRuleRepo,
+    CloudScalingEventRepo, CloudScalingRuleRepo, JobRepo,
 };
 
 use crate::error::{AppError, AppResult};
@@ -758,11 +758,30 @@ pub async fn emergency_stop_provider(
     )
     .await?;
 
+    // Disable scaling rules so auto-scaler doesn't spin up new instances
+    let rules_disabled = CloudScalingRuleRepo::disable_all_by_provider(&state.pool, id)
+        .await
+        .unwrap_or(0);
+
+    // Hold all pending jobs so they don't get dispatched
+    let jobs_held = JobRepo::hold_all_pending(&state.pool).await.unwrap_or(0);
+
+    tracing::info!(
+        provider_id = id,
+        terminated,
+        failed,
+        rules_disabled,
+        jobs_held,
+        "Emergency stop: provider disabled, scaling rules disabled, pending jobs held"
+    );
+
     Ok(Json(DataResponse {
         data: EmergencyStopResult {
             terminated,
             failed,
             provider_disabled: true,
+            rules_disabled: rules_disabled as u32,
+            jobs_held: jobs_held as u32,
         },
     }))
 }
@@ -775,6 +794,7 @@ pub async fn emergency_stop_all(
     let provider_ids = state.cloud_registry.provider_ids().await;
     let mut total_terminated = 0u32;
     let mut total_failed = 0u32;
+    let mut total_rules_disabled = 0u32;
 
     for pid in provider_ids {
         let provider = match state.cloud_registry.get(pid).await {
@@ -796,13 +816,82 @@ pub async fn emergency_stop_all(
             x121_db::models::status::CloudProviderStatus::Disabled.id(),
         )
         .await;
+
+        // Disable scaling rules
+        total_rules_disabled += CloudScalingRuleRepo::disable_all_by_provider(&state.pool, pid)
+            .await
+            .unwrap_or(0) as u32;
     }
+
+    // Hold all pending jobs
+    let jobs_held = JobRepo::hold_all_pending(&state.pool).await.unwrap_or(0);
+
+    tracing::info!(
+        total_terminated,
+        total_failed,
+        total_rules_disabled,
+        jobs_held,
+        "Emergency stop ALL: providers disabled, scaling rules disabled, pending jobs held"
+    );
 
     Ok(Json(DataResponse {
         data: EmergencyStopResult {
             terminated: total_terminated,
             failed: total_failed,
             provider_disabled: true,
+            rules_disabled: total_rules_disabled,
+            jobs_held: jobs_held as u32,
+        },
+    }))
+}
+
+/// POST /admin/cloud-providers/resume-processing
+///
+/// Reverse an emergency stop: re-enable providers, re-enable scaling rules,
+/// and release held jobs back to pending.
+pub async fn resume_processing(
+    RequireAdmin(_admin): RequireAdmin,
+    State(state): State<AppState>,
+) -> AppResult<Json<DataResponse<ResumeProcessingResult>>> {
+    let provider_ids = state.cloud_registry.provider_ids().await;
+    let mut providers_enabled = 0u32;
+    let mut rules_enabled = 0u32;
+
+    for pid in provider_ids {
+        // Re-enable disabled providers
+        let rows = sqlx::query(
+            "UPDATE cloud_providers SET status_id = $1 WHERE id = $2 AND status_id = $3",
+        )
+        .bind(x121_db::models::status::CloudProviderStatus::Active.id())
+        .bind(pid)
+        .bind(x121_db::models::status::CloudProviderStatus::Disabled.id())
+        .execute(&state.pool)
+        .await?;
+        if rows.rows_affected() > 0 {
+            providers_enabled += 1;
+        }
+
+        // Re-enable scaling rules
+        rules_enabled += CloudScalingRuleRepo::enable_all_by_provider(&state.pool, pid)
+            .await
+            .unwrap_or(0) as u32;
+    }
+
+    // Release held jobs back to pending
+    let jobs_released = JobRepo::release_all_held(&state.pool).await.unwrap_or(0);
+
+    tracing::info!(
+        providers_enabled,
+        rules_enabled,
+        jobs_released,
+        "Resume processing: providers re-enabled, scaling rules re-enabled, held jobs released"
+    );
+
+    Ok(Json(DataResponse {
+        data: ResumeProcessingResult {
+            providers_enabled,
+            rules_enabled,
+            jobs_released: jobs_released as u32,
         },
     }))
 }
@@ -831,6 +920,15 @@ pub struct EmergencyStopResult {
     pub terminated: u32,
     pub failed: u32,
     pub provider_disabled: bool,
+    pub rules_disabled: u32,
+    pub jobs_held: u32,
+}
+
+#[derive(Debug, serde::Serialize)]
+pub struct ResumeProcessingResult {
+    pub providers_enabled: u32,
+    pub rules_enabled: u32,
+    pub jobs_released: u32,
 }
 
 // ---------------------------------------------------------------------------

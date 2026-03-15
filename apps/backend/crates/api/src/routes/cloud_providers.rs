@@ -12,10 +12,14 @@ pub fn router() -> Router<AppState> {
     Router::new()
         // Dashboard (must be before /:id to avoid path conflicts)
         .route("/dashboard", get(cloud_providers::dashboard))
-        // Emergency stop all
+        // Emergency stop all + resume
         .route(
             "/emergency-stop-all",
             post(cloud_providers::emergency_stop_all),
+        )
+        .route(
+            "/resume-processing",
+            post(cloud_providers::resume_processing),
         )
         // Provider CRUD
         .route(

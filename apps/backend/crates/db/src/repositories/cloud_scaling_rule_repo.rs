@@ -149,6 +149,34 @@ impl CloudScalingRuleRepo {
         Ok(result.rows_affected())
     }
 
+    /// Disable all scaling rules for a provider. Used by emergency stop.
+    pub async fn disable_all_by_provider(
+        pool: &PgPool,
+        provider_id: DbId,
+    ) -> Result<u64, sqlx::Error> {
+        let result = sqlx::query(
+            "UPDATE cloud_scaling_rules SET enabled = false WHERE provider_id = $1 AND enabled = true",
+        )
+        .bind(provider_id)
+        .execute(pool)
+        .await?;
+        Ok(result.rows_affected())
+    }
+
+    /// Re-enable all scaling rules for a provider. Used by resume processing.
+    pub async fn enable_all_by_provider(
+        pool: &PgPool,
+        provider_id: DbId,
+    ) -> Result<u64, sqlx::Error> {
+        let result = sqlx::query(
+            "UPDATE cloud_scaling_rules SET enabled = true WHERE provider_id = $1 AND enabled = false",
+        )
+        .bind(provider_id)
+        .execute(pool)
+        .await?;
+        Ok(result.rows_affected())
+    }
+
     /// Delete a scaling rule.
     pub async fn delete(pool: &PgPool, id: DbId) -> Result<bool, sqlx::Error> {
         let result = sqlx::query("DELETE FROM cloud_scaling_rules WHERE id = $1")

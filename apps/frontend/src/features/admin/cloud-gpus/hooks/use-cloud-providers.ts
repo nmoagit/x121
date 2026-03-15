@@ -104,6 +104,14 @@ export interface EmergencyStopResult {
   terminated: number;
   failed: number;
   provider_disabled: boolean;
+  rules_disabled: number;
+  jobs_held: number;
+}
+
+export interface ResumeProcessingResult {
+  providers_enabled: number;
+  rules_enabled: number;
+  jobs_released: number;
 }
 
 export interface CloudScalingEvent {
@@ -430,6 +438,16 @@ export function useEmergencyStopAll() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: () => api.post<EmergencyStopResult>(`${BASE}/emergency-stop-all`, {}),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: cloudKeys.all });
+    },
+  });
+}
+
+export function useResumeProcessing() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.post<ResumeProcessingResult>(`${BASE}/resume-processing`, {}),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: cloudKeys.all });
     },
