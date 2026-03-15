@@ -14,7 +14,7 @@ use tokio::sync::RwLock;
 
 use x121_core::system_health::{STATUS_DEGRADED, STATUS_DOWN, STATUS_HEALTHY};
 use x121_db::repositories::{
-    CloudCostEventRepo, CloudInstanceRepo, CloudScalingRuleRepo, ProductionRunRepo, WorkerRepo,
+    CloudCostEventRepo, CloudInstanceRepo, CloudScalingRuleRepo, JobRepo, ProductionRunRepo, WorkerRepo,
 };
 
 /// How often the background task refreshes the cached snapshot.
@@ -127,7 +127,7 @@ impl HealthAggregator {
     /// Probe all services and update the cached snapshot.
     async fn refresh(&self, pool: &PgPool, comfyui: &x121_comfyui::manager::ComfyUIManager) {
         let db_status = probe_database(pool).await;
-        let comfyui_status = probe_comfyui(comfyui).await;
+        let comfyui_status = probe_comfyui(pool, comfyui).await;
         let workers_status = probe_workers(pool).await;
 
         let cloud_gpu = probe_cloud_gpu(pool).await;
@@ -179,7 +179,7 @@ async fn probe_database(pool: &PgPool) -> ServiceStatus {
 }
 
 /// Probe ComfyUI by checking the number of connected instances.
-async fn probe_comfyui(comfyui: &x121_comfyui::manager::ComfyUIManager) -> ServiceStatus {
+async fn probe_comfyui(pool: &PgPool, comfyui: &x121_comfyui::manager::ComfyUIManager) -> ServiceStatus {
     let now = Utc::now();
     let connected = comfyui.connected_instance_ids().await;
     let count = connected.len();
@@ -192,11 +192,22 @@ async fn probe_comfyui(comfyui: &x121_comfyui::manager::ComfyUIManager) -> Servi
             detail: Some(format!("{count} instance(s) connected")),
         }
     } else {
-        ServiceStatus {
-            status: STATUS_DOWN,
-            latency_ms: None,
-            checked_at: now,
-            detail: Some("No ComfyUI instances connected".to_string()),
+        // No instances — only "down" if there are pending jobs
+        let (pending, _, _) = JobRepo::queue_counts(pool).await.unwrap_or((0, 0, 0));
+        if pending > 0 {
+            ServiceStatus {
+                status: STATUS_DOWN,
+                latency_ms: None,
+                checked_at: now,
+                detail: Some(format!("{pending} pending job(s) but no GPU instances")),
+            }
+        } else {
+            ServiceStatus {
+                status: STATUS_HEALTHY,
+                latency_ms: None,
+                checked_at: now,
+                detail: Some("Idle — instances scale on demand".to_string()),
+            }
         }
     }
 }
@@ -211,8 +222,9 @@ async fn probe_workers(pool: &PgPool) -> ServiceStatus {
             let idle = stats.idle_workers;
             let busy = stats.busy_workers;
 
+            let (pending, _, _) = JobRepo::queue_counts(pool).await.unwrap_or((0, 0, 0));
             let status = if total == 0 {
-                STATUS_DOWN
+                if pending > 0 { STATUS_DOWN } else { STATUS_HEALTHY }
             } else if idle == 0 && busy == 0 {
                 STATUS_DEGRADED
             } else {
