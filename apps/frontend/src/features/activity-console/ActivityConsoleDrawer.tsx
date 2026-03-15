@@ -41,7 +41,8 @@ const MAX_HEIGHT_RATIO = 0.8; // 80vh
 export function ActivityConsoleDrawer() {
   const isOpen = useActivityConsoleStore((s) => s.isOpen);
   const togglePanel = useActivityConsoleStore((s) => s.togglePanel);
-  const [activeTab, setActiveTab] = useState("generation");
+  const activeTab = useActivityConsoleStore((s) => s.activeTab);
+  const setActiveTab = useActivityConsoleStore((s) => s.setActiveTab);
   const [height, setHeight] = useState(() => Math.round(window.innerHeight * DEFAULT_HEIGHT_RATIO));
   const dragging = useRef(false);
   const startY = useRef(0);

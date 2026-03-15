@@ -83,6 +83,12 @@ export function useCharacterImport(projectId: number) {
   const queryClient = useQueryClient();
   const { addToast } = useToast();
   const addLogEntry = useActivityConsoleStore((s) => s.addEntry);
+  const openConsoleOnLive = () => {
+    useActivityConsoleStore.getState().setActiveTab("live");
+    if (!useActivityConsoleStore.getState().isOpen) {
+      useActivityConsoleStore.getState().togglePanel();
+    }
+  };
   const bulkCreate = useBulkCreateCharacters(projectId);
   const { data: characters } = useProjectCharacters(projectId);
   const { data: sceneCatalogue } = useSceneCatalogue();
@@ -765,9 +771,10 @@ export function useCharacterImport(projectId: number) {
 
       if (errors.length > 0) {
         addToast({
-          message: `Import done with ${errors.length} error${errors.length > 1 ? "s" : ""}. ${parts.join(", ")}.`,
+          message: `Import done with ${errors.length} error${errors.length > 1 ? "s" : ""}. ${parts.join(", ")}. See console for details.`,
           variant: "warning",
         });
+        openConsoleOnLive();
       } else {
         addToast({ message: parts.join(", "), variant: "success" });
       }

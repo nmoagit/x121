@@ -41,6 +41,10 @@ interface ActivityConsoleState {
   isPaused: boolean;
   skippedCount: number;
 
+  // Active tab (synced from drawer for programmatic switching)
+  activeTab: string;
+  setActiveTab: (tab: string) => void;
+
   // Actions
   togglePanel: () => void;
   setMode: (mode: ActivityLogCategory) => void;
@@ -60,6 +64,7 @@ interface ActivityConsoleState {
 
 export const useActivityConsoleStore = create<ActivityConsoleState>((set) => ({
   isOpen: false,
+  activeTab: "generation",
   levels: new Set<ActivityLogLevel>(["info", "warn", "error"]),
   sources: new Set<ActivityLogSource>(),
   mode: "verbose",
@@ -70,6 +75,7 @@ export const useActivityConsoleStore = create<ActivityConsoleState>((set) => ({
   isPaused: false,
   skippedCount: 0,
 
+  setActiveTab: (tab) => set({ activeTab: tab }),
   togglePanel: () => set((s) => ({ isOpen: !s.isOpen })),
 
   setMode: (mode) => set({ mode }),
