@@ -14,5 +14,7 @@ export type { CharacterFilterBarProps } from "./CharacterFilterBar";
 
 export { FileAssignmentModal } from "./FileAssignmentModal";
 
+export { CharacterSeedDataModal } from "./CharacterSeedDataModal";
+
 export { ProjectConfirmModal } from "./ProjectConfirmModal";
 export type { DetectedProject } from "./ProjectConfirmModal";

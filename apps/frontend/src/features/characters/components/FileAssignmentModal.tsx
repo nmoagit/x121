@@ -1,22 +1,19 @@
-/**
- * Modal for assigning unmatched files to characters during import.
- *
- * Displays a per-character assignment grid with dropdowns for
- * clothed/topless images and bio/tov JSON files.
- */
+/** Modal for assigning unmatched files to characters during import. */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { Modal } from "@/components/composite";
+import { Card, Modal } from "@/components/composite";
 import { Stack } from "@/components/layout";
 import { Badge, Button } from "@/components/primitives";
 import { cn } from "@/lib/cn";
 
 import type { FileAssignments, UnmatchedCharacterFiles } from "../hooks/useCharacterImportBase";
+import { suggestImageCategory } from "../hooks/useCharacterImportBase";
+import { ImageThumbnail, JsonFileCard } from "./FileAssignmentThumbnails";
 
-/* --------------------------------------------------------------------------
-   Constants
-   -------------------------------------------------------------------------- */
+/* ------------------------------------------------------------------ */
+/*  Constants                                                          */
+/* ------------------------------------------------------------------ */
 
 const SKIP_VALUE = "__skip__";
 const COLUMNS = ["clothed", "topless", "bio", "tov"] as const;
@@ -32,164 +29,135 @@ const COLUMN_LABELS: Record<ColumnKey, string> = {
 const IMAGE_COLUMNS: ColumnKey[] = ["clothed", "topless"];
 const JSON_COLUMNS: ColumnKey[] = ["bio", "tov"];
 
-/* --------------------------------------------------------------------------
-   Helpers
-   -------------------------------------------------------------------------- */
+/* ------------------------------------------------------------------ */
+/*  Helpers                                                            */
+/* ------------------------------------------------------------------ */
 
-/** Build a unique file key for deduplication. */
 function fileKey(file: File): string {
   return `${file.name}::${file.size}::${file.lastModified}`;
 }
 
-/* --------------------------------------------------------------------------
-   Props
-   -------------------------------------------------------------------------- */
+/* ------------------------------------------------------------------ */
+/*  Props                                                              */
+/* ------------------------------------------------------------------ */
 
 interface FileAssignmentModalProps {
   open: boolean;
   onClose: () => void;
-  /** Characters with unmatched files to assign. */
   unmatchedFiles: UnmatchedCharacterFiles[];
-  /** Called with final assignments when user confirms. */
   onConfirm: (assignments: FileAssignments) => void;
 }
 
-/* --------------------------------------------------------------------------
-   Component
-   -------------------------------------------------------------------------- */
+/* ------------------------------------------------------------------ */
+/*  Component                                                          */
+/* ------------------------------------------------------------------ */
 
-export function FileAssignmentModal({
-  open,
-  onClose,
-  unmatchedFiles,
-  onConfirm,
-}: FileAssignmentModalProps) {
-  // State: characterName -> columnKey -> fileKey (or SKIP_VALUE)
+export function FileAssignmentModal({ open, onClose, unmatchedFiles, onConfirm }: FileAssignmentModalProps) {
   const [selections, setSelections] = useState<Map<string, Map<ColumnKey, string>>>(new Map());
 
-  // Build file lookup maps and pre-populate with matched files
   const { fileLookup, preMatched } = useMemo(() => {
     const lookup = new Map<string, File>();
     const matched = new Map<string, Map<ColumnKey, string>>();
-
     for (const entry of unmatchedFiles) {
-      const charSelections = new Map<ColumnKey, string>();
-
-      // Register matched files as locked
+      const charSel = new Map<ColumnKey, string>();
       for (const [key, file] of Object.entries(entry.matched)) {
-        if (file) {
-          const fk = fileKey(file);
-          lookup.set(fk, file);
-          charSelections.set(key as ColumnKey, fk);
-        }
+        if (file) { const fk = fileKey(file); lookup.set(fk, file); charSel.set(key as ColumnKey, fk); }
       }
-
-      // Register unmatched files
-      for (const file of entry.imageFiles) {
-        lookup.set(fileKey(file), file);
-      }
-      for (const file of entry.jsonFiles) {
-        lookup.set(fileKey(file), file);
-      }
-
-      matched.set(entry.characterName, charSelections);
+      for (const file of entry.imageFiles) lookup.set(fileKey(file), file);
+      for (const file of entry.jsonFiles) lookup.set(fileKey(file), file);
+      matched.set(entry.characterName, charSel);
     }
-
     return { fileLookup: lookup, preMatched: matched };
   }, [unmatchedFiles]);
 
-  // Initialize selections from pre-matched data
   useEffect(() => {
     const initial = new Map<string, Map<ColumnKey, string>>();
-    for (const [charName, charMatched] of preMatched) {
-      initial.set(charName, new Map(charMatched));
-    }
-    setSelections(initial);
-  }, [preMatched]);
+    for (const [charName, charMatched] of preMatched) initial.set(charName, new Map(charMatched));
 
-  // Collect all assigned file keys (excluding locked/pre-matched) for duplicate guard
-  const assignedFileKeys = useMemo(() => {
-    const assigned = new Map<string, { charName: string; column: ColumnKey }>();
-    for (const [charName, charSelections] of selections) {
-      for (const [column, fk] of charSelections) {
-        if (fk === SKIP_VALUE) continue;
-        // Only track user selections, not pre-matched (locked) ones
-        const isLocked = preMatched.get(charName)?.get(column as ColumnKey) === fk;
-        if (!isLocked) {
-          assigned.set(fk, { charName, column: column as ColumnKey });
+    // Pre-select suggestions based on filename hints
+    for (const entry of unmatchedFiles) {
+      const charSel = initial.get(entry.characterName) ?? new Map<ColumnKey, string>();
+      const usedFks = new Set<string>([...charSel.values()]);
+
+      for (const file of entry.imageFiles) {
+        const suggestion = suggestImageCategory(file.name);
+        if (suggestion && !charSel.has(suggestion)) {
+          const fk = fileKey(file);
+          if (!usedFks.has(fk)) {
+            charSel.set(suggestion, fk);
+            usedFks.add(fk);
+          }
         }
       }
+      initial.set(entry.characterName, charSel);
     }
-    return assigned;
+
+    setSelections(initial);
+  }, [preMatched, unmatchedFiles]);
+
+  // Track ALL assigned file keys (including within same character) for duplicate guard
+  const assignedFileKeys = useMemo(() => {
+    const assigned = new Map<string, { charName: string; column: ColumnKey }>();
+    for (const [charName, charSel] of selections) {
+      for (const [column, fk] of charSel) {
+        if (fk === SKIP_VALUE) continue;
+        const isLocked = preMatched.get(charName)?.get(column as ColumnKey) === fk;
+        if (!isLocked) assigned.set(`${charName}::${column}::${fk}`, { charName, column: column as ColumnKey });
+      }
+    }
+    // Also build a simple set of all assigned fks for cross-cell duplicate detection
+    const usedFks = new Map<string, { charName: string; column: ColumnKey }>();
+    for (const [charName, charSel] of selections) {
+      for (const [column, fk] of charSel) {
+        if (fk === SKIP_VALUE) continue;
+        usedFks.set(fk, { charName, column: column as ColumnKey });
+      }
+    }
+    return usedFks;
   }, [selections, preMatched]);
 
-  const handleSelect = useCallback(
-    (charName: string, column: ColumnKey, value: string) => {
-      setSelections((prev) => {
-        const next = new Map(prev);
-        const charMap = new Map(next.get(charName) ?? new Map());
-        if (value === SKIP_VALUE || value === "") {
-          charMap.delete(column);
-        } else {
-          charMap.set(column, value);
-        }
-        next.set(charName, charMap);
-        return next;
-      });
-    },
-    [],
-  );
+  const handleToggle = useCallback((charName: string, column: ColumnKey, fk: string) => {
+    setSelections((prev) => {
+      const next = new Map(prev);
+      const charMap = new Map(next.get(charName) ?? new Map());
+      charMap.get(column) === fk ? charMap.delete(column) : charMap.set(column, fk);
+      next.set(charName, charMap);
+      return next;
+    });
+  }, []);
 
   const handleConfirm = useCallback(() => {
     const assignments: FileAssignments = {};
-    for (const [charName, charSelections] of selections) {
+    for (const [charName, charSel] of selections) {
       const entry: FileAssignments[string] = {};
-      for (const [column, fk] of charSelections) {
+      for (const [column, fk] of charSel) {
         if (fk === SKIP_VALUE) continue;
         const file = fileLookup.get(fk);
-        if (file) {
-          entry[column as ColumnKey] = file;
-        }
+        if (file) entry[column as ColumnKey] = file;
       }
-      if (Object.keys(entry).length > 0) {
-        assignments[charName] = entry;
-      }
+      if (Object.keys(entry).length > 0) assignments[charName] = entry;
     }
     onConfirm(assignments);
   }, [selections, fileLookup, onConfirm]);
 
-  // Thumbnail previews (created object URLs, cleaned up on unmount)
   const [previews, setPreviews] = useState<Map<string, string>>(new Map());
   useEffect(() => {
     const urls = new Map<string, string>();
     for (const entry of unmatchedFiles) {
-      for (const file of entry.imageFiles) {
-        const fk = fileKey(file);
-        urls.set(fk, URL.createObjectURL(file));
-      }
-      // Also create previews for matched image files
-      if (entry.matched.clothed) {
-        const fk = fileKey(entry.matched.clothed);
-        urls.set(fk, URL.createObjectURL(entry.matched.clothed));
-      }
-      if (entry.matched.topless) {
-        const fk = fileKey(entry.matched.topless);
-        urls.set(fk, URL.createObjectURL(entry.matched.topless));
-      }
+      for (const file of entry.imageFiles) urls.set(fileKey(file), URL.createObjectURL(file));
+      if (entry.matched.clothed) urls.set(fileKey(entry.matched.clothed), URL.createObjectURL(entry.matched.clothed));
+      if (entry.matched.topless) urls.set(fileKey(entry.matched.topless), URL.createObjectURL(entry.matched.topless));
     }
     setPreviews(urls);
-    return () => {
-      for (const url of urls.values()) URL.revokeObjectURL(url);
-    };
+    return () => { for (const url of urls.values()) URL.revokeObjectURL(url); };
   }, [unmatchedFiles]);
 
-  // Count unassigned bio/tov warnings
   const warningCount = useMemo(() => {
     let count = 0;
     for (const entry of unmatchedFiles) {
-      const charSelections = selections.get(entry.characterName);
-      if (!charSelections?.has("bio") && !entry.matched.bio) count++;
-      if (!charSelections?.has("tov") && !entry.matched.tov) count++;
+      const charSel = selections.get(entry.characterName);
+      if (!charSel?.has("bio") && !entry.matched.bio) count++;
+      if (!charSel?.has("tov") && !entry.matched.tov) count++;
     }
     return count;
   }, [unmatchedFiles, selections]);
@@ -205,94 +173,49 @@ export function FileAssignmentModal({
           </div>
         )}
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-[var(--color-border-default)]">
-                <th className="text-left py-2 px-2 font-medium text-[var(--color-text-secondary)]">Character</th>
-                {COLUMNS.map((col) => (
-                  <th key={col} className="text-left py-2 px-2 font-medium text-[var(--color-text-secondary)]">
-                    {COLUMN_LABELS[col]}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {unmatchedFiles.map((entry) => {
-                const charSelections = selections.get(entry.characterName);
-                return (
-                  <tr key={entry.characterName} className="border-b border-[var(--color-border-default)]">
-                    <td className="py-2 px-2 font-medium text-[var(--color-text-primary)] whitespace-nowrap">
-                      {entry.characterName}
-                    </td>
-                    {COLUMNS.map((col) => {
-                      const isImage = IMAGE_COLUMNS.includes(col);
-                      const isJson = JSON_COLUMNS.includes(col);
-                      const isLocked = preMatched.get(entry.characterName)?.has(col) ?? false;
-                      const currentValue = charSelections?.get(col) ?? "";
-                      const availableFiles = isImage ? entry.imageFiles : entry.jsonFiles;
+        {unmatchedFiles.map((entry) => {
+          const charSel = selections.get(entry.characterName);
+          return (
+            <Card key={entry.characterName} padding="sm" elevation="flat">
+              <h3 className="mb-3 text-sm font-semibold text-[var(--color-text-primary)]">{entry.characterName}</h3>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                {COLUMNS.map((col) => {
+                  const isImage = IMAGE_COLUMNS.includes(col);
+                  const files = isImage ? entry.imageFiles : entry.jsonFiles;
+                  const currentFk = charSel?.get(col);
+                  const hasWarning = JSON_COLUMNS.includes(col) && !currentFk && !preMatched.get(entry.characterName)?.has(col);
+                  const lockedFk = preMatched.get(entry.characterName)?.get(col);
 
-                      return (
-                        <td key={col} className="py-2 px-2">
-                          {isLocked ? (
-                            <div className="flex items-center gap-2">
-                              {isImage && currentValue && previews.get(currentValue) && (
-                                <img
-                                  src={previews.get(currentValue)}
-                                  alt=""
-                                  className="w-8 h-8 object-cover rounded"
-                                />
-                              )}
-                              <Badge variant="default" size="sm">
-                                {fileLookup.get(currentValue)?.name ?? "matched"}
-                              </Badge>
-                            </div>
-                          ) : (
-                            <div className="flex items-center gap-2">
-                              {isImage && currentValue && currentValue !== SKIP_VALUE && previews.get(currentValue) && (
-                                <img
-                                  src={previews.get(currentValue)}
-                                  alt=""
-                                  className="w-8 h-8 object-cover rounded"
-                                />
-                              )}
-                              <select
-                                value={currentValue || SKIP_VALUE}
-                                onChange={(e) => handleSelect(entry.characterName, col, e.target.value)}
-                                className={cn(
-                                  "w-full appearance-none px-2 py-1 text-sm",
-                                  "bg-[var(--color-surface-secondary)] text-[var(--color-text-primary)]",
-                                  "border border-[var(--color-border-default)] rounded-[var(--radius-md)]",
-                                  "focus:outline-none focus:ring-1 focus:ring-[var(--color-border-focus)]",
-                                )}
-                              >
-                                <option value={SKIP_VALUE}>-- Skip --</option>
-                                {availableFiles.map((file) => {
-                                  const fk = fileKey(file);
-                                  const isUsed = assignedFileKeys.has(fk) &&
-                                    !(assignedFileKeys.get(fk)?.charName === entry.characterName &&
-                                      assignedFileKeys.get(fk)?.column === col);
-                                  return (
-                                    <option key={fk} value={fk} disabled={isUsed}>
-                                      {file.name}{isUsed ? " (assigned)" : ""}
-                                    </option>
-                                  );
-                                })}
-                              </select>
-                              {isJson && !currentValue && (
-                                <Badge variant="warning" size="sm" className="shrink-0">!</Badge>
-                              )}
-                            </div>
-                          )}
-                        </td>
-                      );
-                    })}
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+                  return (
+                    <div key={col}>
+                      <div className="mb-1.5 flex items-center gap-1">
+                        <span className="text-xs font-medium text-[var(--color-text-secondary)]">{COLUMN_LABELS[col]}</span>
+                        {hasWarning && <Badge variant="warning" size="sm">!</Badge>}
+                      </div>
+                      <div className={cn("flex flex-col gap-1.5", isImage && "grid grid-cols-3 gap-1.5")}>
+                        {files.map((file) => {
+                          const fk = fileKey(file);
+                          const isLocked = lockedFk === fk;
+                          const isSelected = currentFk === fk;
+                          const assignedTo = assignedFileKeys.get(fk);
+                          const isUsed = !!assignedTo && !(assignedTo.charName === entry.characterName && assignedTo.column === col);
+                          const toggle = (key: string) => handleToggle(entry.characterName, col, key);
+                          const Comp = isImage ? ImageThumbnail : JsonFileCard;
+                          return <Comp key={fk} fk={fk} file={file} previewUrl={previews.get(fk)} isSelected={isSelected} isLocked={isLocked} isAssignedElsewhere={isUsed} onToggle={toggle} />;
+                        })}
+                        {lockedFk && !files.some((f) => fileKey(f) === lockedFk) && fileLookup.get(lockedFk) && (() => {
+                          const file = fileLookup.get(lockedFk)!;
+                          const Comp = isImage ? ImageThumbnail : JsonFileCard;
+                          return <Comp fk={lockedFk} file={file} previewUrl={previews.get(lockedFk)} isSelected isLocked isAssignedElsewhere={false} onToggle={() => {}} />;
+                        })()}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </Card>
+          );
+        })}
 
         <div className="flex justify-end gap-[var(--spacing-2)]">
           <Button variant="secondary" onClick={onClose}>Cancel</Button>

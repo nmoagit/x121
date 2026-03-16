@@ -5,10 +5,12 @@
 import { Card } from "@/components/composite";
 import { FileDropZone } from "@/components/domain";
 import { Stack } from "@/components/layout";
+import { FileAssignmentModal } from "@/features/characters/components";
 import { SECTION_HEADING } from "@/lib/ui-classes";
 
 import { CharacterDeliverablesGrid } from "../components/CharacterDeliverablesGrid";
 import { ImportConfirmModal } from "../components/ImportConfirmModal";
+import { ImportProgressBar } from "../components/ImportProgressBar";
 import { useCharacterImport } from "../hooks/use-character-import";
 import { useProjectCharacters } from "../hooks/use-project-characters";
 import type { ProjectStats } from "../types";
@@ -112,6 +114,17 @@ export function ProjectOverviewTab({ projectId, stats }: ProjectOverviewTabProps
         <CharacterDeliverablesGrid projectId={projectId} />
       </div>
     </Stack>
+
+    {charImport.importProgress && charImport.importProgress.phase !== "done" && (
+      <ImportProgressBar progress={charImport.importProgress} />
+    )}
+
+    <FileAssignmentModal
+      open={charImport.unmatchedFiles.length > 0}
+      onClose={charImport.dismissUnmatchedFiles}
+      unmatchedFiles={charImport.unmatchedFiles}
+      onConfirm={(assignments) => charImport.resolveUnmatchedFiles(assignments)}
+    />
 
     <ImportConfirmModal
       open={charImport.importOpen}

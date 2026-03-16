@@ -155,11 +155,16 @@ export function useCharacterImport(projectId: number) {
       const result = partitionCharacterFiles(payload);
       if (result) unmatched.push(result);
     }
-    setUnmatchedFiles(unmatched);
-
     setImportPayloads(allPayloads);
     setImportNames(allPayloads.map((p) => p.rawName));
-    setImportOpen(true);
+
+    // If there are unmatched files, show the assignment modal FIRST.
+    // The import confirmation modal opens only after unmatched files are resolved.
+    if (unmatched.length > 0) {
+      setUnmatchedFiles(unmatched);
+    } else {
+      setImportOpen(true);
+    }
 
     // Check all assets for duplicates in background
     const allAssets = allPayloads.flatMap((p) => p.assets);
@@ -826,24 +831,17 @@ export function useCharacterImport(projectId: number) {
         const charAssignment = assignments[payload.rawName];
         if (!charAssignment) return payload;
 
-        const newPayload = { ...payload, assets: [...payload.assets] };
+        // Remove all image assets — replace with user's explicit assignments
+        const newAssets = payload.assets.filter((a) => a.kind !== "image");
 
         if (charAssignment.clothed) {
-          const existing = newPayload.assets.findIndex(
-            (a) => a.kind === "image" && a.category === "clothed",
-          );
-          const asset: DroppedAsset = { file: charAssignment.clothed, category: "clothed", kind: "image" };
-          if (existing >= 0) newPayload.assets[existing] = asset;
-          else newPayload.assets.push(asset);
+          newAssets.push({ file: charAssignment.clothed, category: "clothed", kind: "image" });
         }
         if (charAssignment.topless) {
-          const existing = newPayload.assets.findIndex(
-            (a) => a.kind === "image" && a.category === "topless",
-          );
-          const asset: DroppedAsset = { file: charAssignment.topless, category: "topless", kind: "image" };
-          if (existing >= 0) newPayload.assets[existing] = asset;
-          else newPayload.assets.push(asset);
+          newAssets.push({ file: charAssignment.topless, category: "topless", kind: "image" });
         }
+
+        const newPayload = { ...payload, assets: newAssets };
         if (charAssignment.bio) newPayload.bioJson = charAssignment.bio;
         if (charAssignment.tov) newPayload.tovJson = charAssignment.tov;
 
@@ -851,10 +849,12 @@ export function useCharacterImport(projectId: number) {
       });
     });
     setUnmatchedFiles([]);
+    setImportOpen(true);
   }
 
   function dismissUnmatchedFiles() {
     setUnmatchedFiles([]);
+    setImportOpen(true);
   }
 
   const isImporting = importProgress !== null && importProgress.phase !== "done";

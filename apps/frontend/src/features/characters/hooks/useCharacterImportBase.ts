@@ -98,8 +98,21 @@ function importLogEntry(
   };
 }
 
-/** Recognized image filenames (lowercase stems). */
-const RECOGNIZED_IMAGE_NAMES = new Set(["clothed", "topless"]);
+
+/** Suggest a category for a file based on its name (for pre-selecting in the assignment modal). */
+export function suggestImageCategory(filename: string): "clothed" | "topless" | null {
+  const lower = filename.toLowerCase();
+  if (lower.includes("clothed")) return "clothed";
+  if (lower.includes("topless")) return "topless";
+  return null;
+}
+
+/** Normalize a category to a canonical variant_type for upload. */
+function normalizeImageCategory(category: string): string {
+  if (category.toLowerCase() === "clothed") return "clothed";
+  if (category.toLowerCase() === "topless") return "topless";
+  return category;
+}
 
 /**
  * Partition files in a payload into matched (recognized names) and unmatched.
@@ -115,12 +128,10 @@ export function partitionCharacterFiles(
   // Check image assets
   for (const asset of payload.assets) {
     if (asset.kind === "image") {
-      if (RECOGNIZED_IMAGE_NAMES.has(asset.category)) {
-        if (asset.category === "clothed") matched.clothed = asset.file;
-        else if (asset.category === "topless") matched.topless = asset.file;
-      } else {
-        unmatchedImages.push(asset.file);
-      }
+      const cat = asset.category.toLowerCase();
+      if (cat === "clothed") matched.clothed = asset.file;
+      else if (cat === "topless") matched.topless = asset.file;
+      else unmatchedImages.push(asset.file);
     }
   }
 
@@ -225,11 +236,16 @@ export function useCharacterImportBase(projectId: number, _options?: UseCharacte
       const result = partitionCharacterFiles(payload);
       if (result) unmatched.push(result);
     }
-    setUnmatchedFiles(unmatched);
-
     setImportPayloads(allPayloads);
     setImportNames(allPayloads.map((p) => p.rawName));
-    setImportOpen(true);
+
+    // If there are unmatched files, show the assignment modal FIRST.
+    // The import confirmation modal opens only after unmatched files are resolved.
+    if (unmatched.length > 0) {
+      setUnmatchedFiles(unmatched);
+    } else {
+      setImportOpen(true);
+    }
 
     // Check all assets for duplicates in background
     const allAssets = allPayloads.flatMap((p) => p.assets);
@@ -250,26 +266,20 @@ export function useCharacterImportBase(projectId: number, _options?: UseCharacte
         const charAssignment = assignments[payload.rawName];
         if (!charAssignment) return payload;
 
-        const newPayload = { ...payload, assets: [...payload.assets] };
+        // Remove all image assets for this character — they'll be replaced by
+        // the user's explicit assignments from the FileAssignmentModal.
+        // Keep video assets untouched.
+        const newAssets = payload.assets.filter((a) => a.kind !== "image");
 
-        // Merge assigned images into assets
+        // Add assigned images with correct canonical categories
         if (charAssignment.clothed) {
-          // Replace or add clothed image asset
-          const existing = newPayload.assets.findIndex(
-            (a) => a.kind === "image" && a.category === "clothed",
-          );
-          const asset: DroppedAsset = { file: charAssignment.clothed, category: "clothed", kind: "image" };
-          if (existing >= 0) newPayload.assets[existing] = asset;
-          else newPayload.assets.push(asset);
+          newAssets.push({ file: charAssignment.clothed, category: "clothed", kind: "image" });
         }
         if (charAssignment.topless) {
-          const existing = newPayload.assets.findIndex(
-            (a) => a.kind === "image" && a.category === "topless",
-          );
-          const asset: DroppedAsset = { file: charAssignment.topless, category: "topless", kind: "image" };
-          if (existing >= 0) newPayload.assets[existing] = asset;
-          else newPayload.assets.push(asset);
+          newAssets.push({ file: charAssignment.topless, category: "topless", kind: "image" });
         }
+
+        const newPayload = { ...payload, assets: newAssets };
 
         // Merge assigned JSON files
         if (charAssignment.bio) newPayload.bioJson = charAssignment.bio;
@@ -280,10 +290,14 @@ export function useCharacterImportBase(projectId: number, _options?: UseCharacte
       return updated;
     });
     setUnmatchedFiles([]);
+    // Now open the import confirmation modal
+    setImportOpen(true);
   }
 
   function dismissUnmatchedFiles() {
     setUnmatchedFiles([]);
+    // User dismissed without assigning — still open import modal with original payloads
+    setImportOpen(true);
   }
 
   /** Hash all importable assets and check against backend. */
@@ -567,14 +581,16 @@ export function useCharacterImportBase(projectId: number, _options?: UseCharacte
         let skippedImages = 0;
         const imageTasks = imageAssets.map(({ charId, asset, charName }) => () => {
           if (abort.signal.aborted) return Promise.resolve("skipped" as const);
+          // Normalize category to canonical variant_type
+          const variantType = normalizeImageCategory(asset.category);
           const existing = existingVariantTypes.get(charId);
-          if (!overwrite && existing?.has(asset.category.toLowerCase())) {
+          if (!overwrite && existing?.has(variantType.toLowerCase())) {
             skippedImages++;
-            addLogEntry(importLogEntry("debug", `${asset.file.name} skipped for ${charName} (${asset.category} already exists)`, projectId));
+            addLogEntry(importLogEntry("debug", `${asset.file.name} skipped for ${charName} (${variantType} already exists)`, projectId));
             return Promise.resolve("skipped" as const);
           }
-          return uploadImageVariant(charId, asset.file, asset.category).then(() => {
-            existing?.add(asset.category.toLowerCase());
+          return uploadImageVariant(charId, asset.file, variantType).then(() => {
+            existing?.add(variantType.toLowerCase());
             addLogEntry(importLogEntry("info", `${asset.file.name} imported for ${charName}`, projectId));
             return "uploaded" as const;
           });
