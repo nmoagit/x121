@@ -57,6 +57,8 @@ export interface CharacterGroupSectionProps<T extends GroupSectionCharacter> {
   dragHandlers?: GroupSectionDragHandlers;
   /** Render function for each character. Receives the character object. */
   renderCard: (character: T) => ReactNode;
+  /** Optional subtitle shown next to the label (e.g. project name). */
+  subtitle?: string;
   /** Message shown when the group has no characters. */
   emptyMessage?: string;
 }
@@ -79,6 +81,7 @@ export function CharacterGroupSection<T extends GroupSectionCharacter>({
   onDelete,
   dragHandlers,
   renderCard,
+  subtitle,
   emptyMessage = "No characters in this group. Drag characters here to add them.",
 }: CharacterGroupSectionProps<T>) {
   const Chevron = expanded ? ChevronDown : ChevronRight;
@@ -113,7 +116,12 @@ export function CharacterGroupSection<T extends GroupSectionCharacter>({
         }}
       >
         <Chevron size={16} className="text-[var(--color-text-muted)] shrink-0" aria-hidden />
-        <span className="font-medium text-[var(--color-text-primary)] flex-1">{label}</span>
+        <span className="font-medium text-[var(--color-text-primary)] flex-1">
+          {label}
+          {subtitle && (
+            <span className="ml-2 text-xs font-normal text-[var(--color-text-muted)]">{subtitle}</span>
+          )}
+        </span>
         <span className="text-xs text-[var(--color-text-muted)]">
           {characters.length} {characters.length === 1 ? "character" : "characters"}
         </span>

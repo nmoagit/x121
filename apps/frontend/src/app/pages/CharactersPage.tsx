@@ -6,22 +6,28 @@
  * Supports folder import with the base import hook (no videos).
  */
 
-import { useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import { useQueries, useQueryClient } from "@tanstack/react-query";
+import { api } from "@/lib/api";
+
+
+import { useSetPageTitle } from "@/hooks/useSetPageTitle";
 import { useSetToggle } from "@/hooks/useSetToggle";
 
 import { ConfirmDeleteModal, Modal } from "@/components/composite";
 import { EmptyState, FileDropZone } from "@/components/domain";
 import { Stack } from "@/components/layout";
 import { Button, Input, LoadingPane, Select } from "@/components/primitives";
-import { CharacterFilterBar, CharacterGroupSection, FileAssignmentModal } from "@/features/characters/components";
-import { useCharacterImportBase } from "@/features/characters/hooks/useCharacterImportBase";
+import { CharacterFilterBar, CharacterGroupSection, CharacterSeedDataModal, FileAssignmentModal } from "@/features/characters/components";
+import { useCharacterImport } from "@/features/projects/hooks/use-character-import";
 import { CharacterCard } from "@/features/projects/components/CharacterCard";
+import type { SeedDataStatus } from "@/features/projects/components/CharacterCard";
+import { useImageVariantsBrowse } from "@/features/images/hooks/use-image-variants";
+import { SOURCE_KEY_BIO, SOURCE_KEY_TOV } from "@/features/characters/types";
 import { ImportConfirmModal } from "@/features/projects/components/ImportConfirmModal";
 import { ImportProgressBar } from "@/features/projects/components/ImportProgressBar";
 import {
-  useCharacterGroups,
   useCreateGroup,
   useDeleteGroup,
   useUpdateGroup,
@@ -29,14 +35,13 @@ import {
 import { useGroupMap } from "@/features/projects/hooks/use-group-map";
 import { useGroupSelectOptions } from "@/features/projects/hooks/use-group-select-options";
 import {
-  useCreateCharacter,
   useDeleteCharacter,
-  useProjectCharacters,
+
   useToggleCharacterEnabled,
   useUpdateCharacter,
 } from "@/features/projects/hooks/use-project-characters";
-import { useProjects } from "@/features/projects/hooks/use-projects";
-import type { Character, CharacterGroup, UpdateCharacter } from "@/features/projects/types";
+import { useCreateProject, useProjects } from "@/features/projects/hooks/use-projects";
+import type { Character, CharacterGroup, FolderDropResult, UpdateCharacter } from "@/features/projects/types";
 import { CharacterEditModal } from "@/features/projects/components/CharacterEditModal";
 import { variantThumbnailUrl } from "@/features/images/utils";
 import { cn } from "@/lib/cn";
@@ -45,6 +50,7 @@ import { INLINE_LINK_BTN } from "@/lib/ui-classes";
 import { useAuthStore } from "@/stores/auth-store";
 import {
   Folder,
+  FolderKanban,
   Plus,
   Upload,
   User,
@@ -61,7 +67,8 @@ const SHOW_DISABLED_KEY = "x121.characters.showDisabled";
    -------------------------------------------------------------------------- */
 
 export function CharactersPage() {
-  const navigate = useNavigate();
+  useSetPageTitle("Characters");
+  const queryClient = useQueryClient();
   const user = useAuthStore((s) => s.user);
   const isAdmin = user?.role === "admin";
 
@@ -84,37 +91,85 @@ export function CharactersPage() {
     [projects],
   );
 
-  // Determine active project ID for hooks (first selected or first in filter)
-  const activeProjectId = useMemo(() => {
-    if (!isAdmin) return selectedProjectId;
-    if (projectFilter.length === 1) return Number(projectFilter[0]);
-    if (projectFilter.length === 0 && projects?.length) return projects[0]!.id;
-    return projectFilter.length > 0 ? Number(projectFilter[0]) : 0;
+  // Which project IDs to display
+  const displayProjectIds = useMemo(() => {
+    if (!isAdmin) return selectedProjectId > 0 ? [selectedProjectId] : [];
+    if (projectFilter.length > 0) return projectFilter.map(Number);
+    return (projects ?? []).map((p) => p.id);
   }, [isAdmin, selectedProjectId, projectFilter, projects]);
 
-  // Data hooks
-  const { data: characters, isLoading: charsLoading } = useProjectCharacters(activeProjectId);
-  const { data: groups, isLoading: groupsLoading } = useCharacterGroups(activeProjectId);
-  const charImport = useCharacterImportBase(activeProjectId);
+  // Primary project for mutations/import (first in list)
+  const primaryProjectId = displayProjectIds[0] ?? 0;
 
-  // For admin: fetch characters from multiple projects
+  // Fetch characters and groups from all display projects
+  // useQueries supports dynamic arrays — the number of queries can change
+  const characterQueries = useQueries({
+    queries: displayProjectIds.map((pid) => ({
+      queryKey: ["projects", pid, "characters", "list"] as const,
+      queryFn: () => api.get<Character[]>(`/projects/${pid}/characters`),
+      enabled: pid > 0,
+    })),
+  });
+
+  const groupQueries = useQueries({
+    queries: displayProjectIds.map((pid) => ({
+      queryKey: ["projects", pid, "groups"] as const,
+      queryFn: () => api.get<CharacterGroup[]>(`/projects/${pid}/groups`),
+      enabled: pid > 0,
+    })),
+  });
+
+  const charsLoading = characterQueries.some((q) => q.isLoading);
+  const groupsLoading = groupQueries.some((q) => q.isLoading);
+
   const allProjectCharacters = useMemo(() => {
-    if (!isAdmin || projectFilter.length <= 1) return characters ?? [];
-    // When multiple projects are selected, we only show the active project's characters
-    // (the hook only supports one project at a time)
-    return characters ?? [];
-  }, [isAdmin, projectFilter, characters]);
+    const chars: Character[] = [];
+    for (const q of characterQueries) {
+      if (q.data) chars.push(...q.data);
+    }
+    return chars;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [characterQueries.map((q) => q.dataUpdatedAt).join(",")]);
 
-  const createCharacter = useCreateCharacter(activeProjectId);
-  const updateCharacter = useUpdateCharacter(activeProjectId);
-  const deleteCharacter = useDeleteCharacter(activeProjectId);
-  const createGroup = useCreateGroup(activeProjectId);
-  const updateGroup = useUpdateGroup(activeProjectId);
-  const deleteGroup = useDeleteGroup(activeProjectId);
-  const toggleEnabled = useToggleCharacterEnabled(activeProjectId);
+  const groups = useMemo(() => {
+    const allGroups: CharacterGroup[] = [];
+    for (const q of groupQueries) {
+      if (q.data) allGroups.push(...q.data);
+    }
+    return allGroups;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [groupQueries.map((q) => q.dataUpdatedAt).join(",")]);
+
+  const charImport = useCharacterImport(primaryProjectId);
+
+  const updateCharacter = useUpdateCharacter(primaryProjectId);
+  const deleteCharacter = useDeleteCharacter(primaryProjectId);
+  const createGroup = useCreateGroup(primaryProjectId);
+  const updateGroup = useUpdateGroup(primaryProjectId);
+  const deleteGroup = useDeleteGroup(primaryProjectId);
+  const toggleEnabled = useToggleCharacterEnabled(primaryProjectId);
+  const createProject = useCreateProject();
+
+  /* --- create project modal (admin only) --- */
+  const [projectModalOpen, setProjectModalOpen] = useState(false);
+  const [newProjectName, setNewProjectName] = useState("");
+
+  function handleCreateProject() {
+    if (!newProjectName.trim()) return;
+    createProject.mutate(
+      { name: newProjectName.trim() },
+      {
+        onSuccess: (created) => {
+          setProjectModalOpen(false);
+          setNewProjectName("");
+          setProjectFilter([String(created.id)]);
+        },
+      },
+    );
+  }
 
   const groupMap = useGroupMap(groups);
-  const { options: modalGroupOptions } = useGroupSelectOptions(activeProjectId);
+  const { options: modalGroupOptions } = useGroupSelectOptions(primaryProjectId);
 
   const avatarMap = useMemo(() => {
     const map = new Map<number, string>();
@@ -125,6 +180,34 @@ export function CharactersPage() {
     }
     return map;
   }, [allProjectCharacters]);
+
+  // Fetch all image variants for the project to compute seed data status
+  const { data: allVariants } = useImageVariantsBrowse(primaryProjectId || undefined);
+
+  const seedDataStatusMap = useMemo(() => {
+    const map = new Map<number, SeedDataStatus>();
+    // Build a set of variant types per character from browse data
+    const variantTypes = new Map<number, Set<string>>();
+    if (allVariants) {
+      for (const v of allVariants) {
+        if (!v.variant_type) continue;
+        let set = variantTypes.get(v.character_id);
+        if (!set) { set = new Set(); variantTypes.set(v.character_id, set); }
+        set.add(v.variant_type.toLowerCase());
+      }
+    }
+    for (const c of allProjectCharacters) {
+      const types = variantTypes.get(c.id);
+      const meta = c.metadata;
+      map.set(c.id, {
+        hasClothedImage: types?.has("clothed") ?? false,
+        hasToplessImage: types?.has("topless") ?? false,
+        hasBio: meta?.[SOURCE_KEY_BIO] != null,
+        hasTov: meta?.[SOURCE_KEY_TOV] != null,
+      });
+    }
+    return map;
+  }, [allProjectCharacters, allVariants]);
 
   /* --- search & filter --- */
   const [searchQuery, setSearchQuery] = useState("");
@@ -149,6 +232,7 @@ export function CharactersPage() {
   /* --- create character modal --- */
   const [charModalOpen, setCharModalOpen] = useState(false);
   const [newCharName, setNewCharName] = useState("");
+  const [newCharProjectId, setNewCharProjectId] = useState("");
   const [selectedGroupId, setSelectedGroupId] = useState("");
   const [newGroupName, setNewGroupName] = useState("");
   const [showNewGroup, setShowNewGroup] = useState(false);
@@ -158,6 +242,9 @@ export function CharactersPage() {
   const [editingGroup, setEditingGroup] = useState<CharacterGroup | null>(null);
   const [groupNameInput, setGroupNameInput] = useState("");
 
+  /* --- seed data modal --- */
+  const [seedDataTarget, setSeedDataTarget] = useState<Character | null>(null);
+
   /* --- edit/delete character modals --- */
   const [editingChar, setEditingChar] = useState<Character | null>(null);
   const [charDeleteTarget, setCharDeleteTarget] = useState<Character | null>(null);
@@ -166,7 +253,7 @@ export function CharactersPage() {
   const [groupDeleteTarget, setGroupDeleteTarget] = useState<CharacterGroup | null>(null);
 
   /* --- expanded groups --- */
-  const storageKey = `characters-page-group-collapsed-${activeProjectId}`;
+  const storageKey = `characters-page-group-collapsed-${primaryProjectId}`;
   const [collapsedIds, setCollapsedIds] = useState<Set<number | "ungrouped">>(new Set());
   const collapsedRef = useRef(collapsedIds);
   collapsedRef.current = collapsedIds;
@@ -284,21 +371,32 @@ export function CharactersPage() {
   );
 
   /* --- character CRUD --- */
-  function handleCreateCharacter() {
+  async function handleCreateCharacter() {
     if (!newCharName.trim()) return;
+    const targetProjectId = isAdmin && newCharProjectId ? Number(newCharProjectId) : primaryProjectId;
+    if (!targetProjectId) return;
     const gId = selectedGroupId ? Number(selectedGroupId) : undefined;
-    createCharacter.mutate(
-      { name: newCharName.trim(), group_id: gId },
-      {
-        onSuccess: () => {
-          setCharModalOpen(false);
-          setNewCharName("");
-          setSelectedGroupId("");
-          setShowNewGroup(false);
-          setNewGroupName("");
-        },
-      },
-    );
+
+    try {
+      await api.post(`/projects/${targetProjectId}/characters`, {
+        name: newCharName.trim(),
+        group_id: gId,
+      });
+      setCharModalOpen(false);
+      setNewCharName("");
+      setNewCharProjectId("");
+      setSelectedGroupId("");
+      setShowNewGroup(false);
+      setNewGroupName("");
+      // Switch to the target project
+      if (isAdmin) {
+        setProjectFilter([String(targetProjectId)]);
+      }
+      // Invalidate character queries
+      queryClient.invalidateQueries({ queryKey: ["projects", targetProjectId, "characters"] });
+    } catch {
+      // Error handled by API layer
+    }
   }
 
   function handleCreateNewGroupInline() {
@@ -363,14 +461,42 @@ export function CharactersPage() {
     });
   }
 
+  /* --- intercept folder drop for admin project selection --- */
+  const [pendingFolderDrop, setPendingFolderDrop] = useState<FolderDropResult | null>(null);
+  const [pickProjectForImport, setPickProjectForImport] = useState(false);
+  const [importTargetProjectId, setImportTargetProjectId] = useState("");
+
+  const handleFolderDrop = useCallback(
+    (result: FolderDropResult) => {
+      if (isAdmin && primaryProjectId === 0) {
+        setPendingFolderDrop(result);
+        setPickProjectForImport(true);
+      } else {
+        charImport.handleFolderDrop(result);
+      }
+    },
+    [isAdmin, primaryProjectId, charImport],
+  );
+
+  function handlePickProjectConfirm() {
+    if (!importTargetProjectId || !pendingFolderDrop) return;
+    const pid = Number(importTargetProjectId);
+    setProjectFilter([String(pid)]);
+    setPickProjectForImport(false);
+    const result = pendingFolderDrop;
+    setPendingFolderDrop(null);
+    setImportTargetProjectId("");
+    setTimeout(() => charImport.handleFolderDrop(result), 100);
+  }
+
   const isLoading = projectsLoading || charsLoading || groupsLoading;
 
-  if (isLoading && !characters) {
+  if (isLoading && allProjectCharacters.length === 0) {
     return <LoadingPane />;
   }
 
   // Non-admin without a project selected
-  if (!isAdmin && activeProjectId === 0) {
+  if (!isAdmin && primaryProjectId === 0) {
     return (
       <EmptyState
         icon={<User size={32} />}
@@ -380,8 +506,8 @@ export function CharactersPage() {
     );
   }
 
-  // Admin project selector (when no project filter is applied)
-  if (isAdmin && activeProjectId === 0 && (!projects || projects.length === 0)) {
+  // Admin with no projects at all
+  if (isAdmin && (!projects || projects.length === 0) && !projectsLoading) {
     return (
       <EmptyState
         icon={<User size={32} />}
@@ -399,9 +525,10 @@ export function CharactersPage() {
       avatarUrl={avatarMap.get(c.id)}
       heroVariantId={c.hero_variant_id}
       selected={selectedCharIds.has(c.id)}
-      projectId={activeProjectId}
+      projectId={primaryProjectId}
+      seedDataStatus={seedDataStatusMap.get(c.id)}
       onSelect={toggleCharSelection}
-      onClick={() => navigate({ to: `/projects/${activeProjectId}/characters/${c.id}` })}
+      onClick={() => setSeedDataTarget(c)}
       onEdit={() => setEditingChar(c)}
       onToggleEnabled={handleToggleEnabled}
     />
@@ -410,7 +537,7 @@ export function CharactersPage() {
   return (
     <FileDropZone
       onNamesDropped={charImport.handleImportDrop}
-      onFolderDropped={charImport.handleFolderDrop}
+      onFolderDropped={handleFolderDrop}
       browseFolderRef={charImport.browseFolderRef}
     >
       <Stack gap={4}>
@@ -439,16 +566,26 @@ export function CharactersPage() {
             variant="secondary"
             icon={<Upload size={14} />}
             onClick={charImport.browseFolder}
-            disabled={activeProjectId === 0}
+            disabled={primaryProjectId === 0}
           >
             Import Folder
           </Button>
+          {isAdmin && (
+            <Button
+              size="sm"
+              variant="secondary"
+              icon={<FolderKanban size={14} />}
+              onClick={() => setProjectModalOpen(true)}
+            >
+              New Project
+            </Button>
+          )}
           <Button
             size="sm"
             variant="secondary"
             icon={<Folder size={14} />}
             onClick={openCreateGroup}
-            disabled={activeProjectId === 0}
+            disabled={primaryProjectId === 0}
           >
             New Group
           </Button>
@@ -456,7 +593,6 @@ export function CharactersPage() {
             size="sm"
             icon={<Plus size={14} />}
             onClick={() => setCharModalOpen(true)}
-            disabled={activeProjectId === 0}
           >
             Add Character
           </Button>
@@ -475,12 +611,10 @@ export function CharactersPage() {
             description={
               allProjectCharacters.length > 0
                 ? "No characters match your filter."
-                : activeProjectId > 0
-                  ? "Add a character or import a folder."
-                  : "Select a project to view characters."
+                : "Add a character or import a folder."
             }
             action={
-              activeProjectId > 0 && allProjectCharacters.length === 0 ? (
+              allProjectCharacters.length === 0 ? (
                 <Button size="sm" icon={<Plus size={14} />} onClick={() => setCharModalOpen(true)}>
                   Add Character
                 </Button>
@@ -498,6 +632,7 @@ export function CharactersPage() {
                   key={group.id}
                   sectionId={`group-${group.id}`}
                   label={group.name}
+                  subtitle={projects?.find((p) => p.id === group.project_id)?.name}
                   characters={chars}
                   expanded={expanded}
                   onToggle={() => toggleExpanded(group.id)}
@@ -515,6 +650,7 @@ export function CharactersPage() {
               <CharacterGroupSection
                 sectionId="group-ungrouped"
                 label="Ungrouped"
+                subtitle={projects?.find((p) => p.id === primaryProjectId)?.name}
                 characters={ungroupedChars}
                 expanded={!collapsedIds.has("ungrouped")}
                 onToggle={() => toggleExpanded("ungrouped")}
@@ -530,6 +666,23 @@ export function CharactersPage() {
         {/* Add character modal */}
         <Modal open={charModalOpen} onClose={() => setCharModalOpen(false)} title="Add Character" size="md">
           <Stack gap={4}>
+            {isAdmin ? (
+              <Select
+                label="Project"
+                options={[
+                  { value: "", label: "— Select project —" },
+                  ...(projects ?? []).map((p) => ({ value: String(p.id), label: p.name })),
+                ]}
+                value={newCharProjectId || String(primaryProjectId || "")}
+                onChange={setNewCharProjectId}
+              />
+            ) : (
+              primaryProjectId > 0 && projects?.length && (
+                <p className="text-sm text-[var(--color-text-muted)]">
+                  Project: <span className="font-medium text-[var(--color-text-primary)]">{projects.find((p) => p.id === primaryProjectId)?.name}</span>
+                </p>
+              )
+            )}
             <Input
               label="Character Name"
               placeholder="e.g. Aria"
@@ -583,13 +736,62 @@ export function CharactersPage() {
             </div>
             <Button
               onClick={handleCreateCharacter}
-              loading={createCharacter.isPending}
-              disabled={!newCharName.trim()}
+              disabled={!newCharName.trim() || (isAdmin && !newCharProjectId && !primaryProjectId)}
             >
               Create Character
             </Button>
           </Stack>
         </Modal>
+
+        {/* Pick project for import (admin, no project selected) */}
+        <Modal
+          open={pickProjectForImport}
+          onClose={() => { setPickProjectForImport(false); setPendingFolderDrop(null); }}
+          title="Select Project for Import"
+          size="sm"
+        >
+          <Stack gap={4}>
+            <p className="text-sm text-[var(--color-text-muted)]">
+              Choose which project to import the dropped files into.
+            </p>
+            <Select
+              label="Project"
+              options={[
+                { value: "", label: "— Select —" },
+                ...(projects ?? []).map((p) => ({ value: String(p.id), label: p.name })),
+              ]}
+              value={importTargetProjectId}
+              onChange={setImportTargetProjectId}
+            />
+            <Button
+              onClick={handlePickProjectConfirm}
+              disabled={!importTargetProjectId}
+            >
+              Continue Import
+            </Button>
+          </Stack>
+        </Modal>
+
+        {/* Create project modal (admin) */}
+        {isAdmin && (
+          <Modal open={projectModalOpen} onClose={() => setProjectModalOpen(false)} title="New Project" size="sm">
+            <Stack gap={4}>
+              <Input
+                label="Project Name"
+                placeholder="e.g. Season 3"
+                value={newProjectName}
+                onChange={(e) => setNewProjectName(e.target.value)}
+              />
+              <Button
+                onClick={handleCreateProject}
+                loading={createProject.isPending}
+                disabled={!newProjectName.trim()}
+              >
+                Create Project
+              </Button>
+            </Stack>
+          </Modal>
+        )}
 
         {/* Create / Edit group modal */}
         <Modal
@@ -618,7 +820,7 @@ export function CharactersPage() {
         {/* Edit character modal */}
         <CharacterEditModal
           character={editingChar}
-          projectId={activeProjectId}
+          projectId={primaryProjectId}
           onClose={() => setEditingChar(null)}
           onSave={handleSaveCharEdit}
           saving={updateCharacter.isPending}
@@ -654,13 +856,21 @@ export function CharactersPage() {
           onConfirm={(assignments) => charImport.resolveUnmatchedFiles(assignments)}
         />
 
+        {/* Seed data modal */}
+        <CharacterSeedDataModal
+          character={seedDataTarget}
+          projectId={primaryProjectId}
+          onClose={() => setSeedDataTarget(null)}
+        />
+
         {/* Import confirmation modal */}
         <ImportConfirmModal
           open={charImport.importOpen}
           onClose={charImport.closeImport}
           names={charImport.importNames}
           payloads={charImport.importPayloads.length > 0 ? charImport.importPayloads : undefined}
-          projectId={activeProjectId}
+          projectId={primaryProjectId}
+          projectName={projects?.find((p) => p.id === primaryProjectId)?.name}
           existingNames={allProjectCharacters.map((c) => c.name)}
           characters={allProjectCharacters}
           onConfirm={charImport.handleImportConfirm}
