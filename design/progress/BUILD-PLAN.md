@@ -1,10 +1,10 @@
 # X121 Platform — Build Plan
 
-Optimal build order for all 133 PRDs, organized into dependency-ordered phases.
+Optimal build order for all 135 PRDs, organized into dependency-ordered phases.
 Each phase can begin only after all prior phases are complete. PRDs within a phase
 can be built **in parallel** (dependencies are satisfied by earlier phases).
 
-> **All 133 PRDs are complete as of 2026-03-14.** This document is retained as the authoritative record of the build order and dependency structure.
+> **133 PRDs complete as of 2026-03-14.** 2 new PRDs in planning: PRD-134 (Deferred/Scheduled Generation), PRD-135 (Character Creator).
 
 > **Source of truth:** Cross-Reference Map in [`design/design.md`](../design.md) (Appendix)
 > **Status tracking:** [`PRD-STATUS.md`](./PRD-STATUS.md)
