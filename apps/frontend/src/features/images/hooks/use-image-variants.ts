@@ -97,7 +97,7 @@ export function useCreateImageVariant(characterId: number) {
     mutationFn: (data: CreateImageVariantInput) =>
       api.post<ImageVariant>(variantBasePath(characterId), data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: imageVariantKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: imageVariantKeys.all });
     },
   });
 }
@@ -113,7 +113,7 @@ export function useUpdateImageVariant(characterId: number, id: number) {
       queryClient.invalidateQueries({
         queryKey: imageVariantKeys.detail(characterId, id),
       });
-      queryClient.invalidateQueries({ queryKey: imageVariantKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: imageVariantKeys.all });
     },
   });
 }
@@ -125,7 +125,7 @@ export function useDeleteImageVariant(characterId: number) {
   return useMutation({
     mutationFn: (id: number) => api.delete(`${variantBasePath(characterId)}/${id}`),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: imageVariantKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: imageVariantKeys.all });
     },
   });
 }
@@ -215,7 +215,7 @@ export function useUploadImageVariant(characterId: number) {
       variant_label?: string;
     }) => postImageVariantUpload(characterId, file, variant_type, variant_label),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: imageVariantKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: imageVariantKeys.all });
     },
   });
 }
@@ -228,7 +228,7 @@ export function useGenerateVariants(characterId: number) {
     mutationFn: (data: GenerateVariantsInput) =>
       api.post<ImageVariant[]>(`${variantBasePath(characterId)}/generate`, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: imageVariantKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: imageVariantKeys.all });
     },
   });
 }
