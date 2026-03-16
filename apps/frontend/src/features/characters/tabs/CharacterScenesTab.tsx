@@ -16,7 +16,7 @@ import { Card } from "@/components/composite/Card";
 import { useToast } from "@/components/composite/useToast";
 import { EmptyState } from "@/components/domain";
 import { Grid } from "@/components/layout";
-import { Badge, Button, LoadingPane } from "@/components/primitives";
+import { Badge, Button, LoadingPane, Toggle } from "@/components/primitives";
 import { Checkbox } from "@/components/primitives/Checkbox";
 import { useSetToggle } from "@/hooks/useSetToggle";
 import { getStreamUrl } from "@/features/video-player";
@@ -137,6 +137,9 @@ export function CharacterScenesTab({ characterId, focusSceneId, focusSceneTypeId
   const [playback, setPlayback] = useState(true);
   /** Timestamp of last drop — used to ignore residual pointer events that close the modal. */
   const dropTimestampRef = useRef(0);
+
+  /* --- hide scenes without videos --- */
+  const [hideEmpty, setHideEmpty] = useState(false);
 
   /* --- clip gallery (scene detail) modal state --- */
   const [detailSlotIndex, setDetailSlotIndex] = useState<number | null>(null);
@@ -610,6 +613,12 @@ export function CharacterScenesTab({ characterId, focusSceneId, focusSceneTypeId
         )}
 
         <div className="flex items-center gap-[var(--spacing-2)] ml-auto">
+          <Toggle
+            checked={hideEmpty}
+            onChange={setHideEmpty}
+            label="Has video"
+            size="sm"
+          />
           <Button
             size="sm"
             variant={playback ? "primary" : "secondary"}
@@ -651,7 +660,7 @@ export function CharacterScenesTab({ characterId, focusSceneId, focusSceneTypeId
 
       {/* Scene Grid */}
       <Grid cols={4} gap={4}>
-        {slots.map((slot) => (
+        {slots.filter((slot) => !hideEmpty || (slot.scene && slot.scene.version_count > 0)).map((slot) => (
           <SceneCard
             key={`${slot.row.scene_type_id}-${slot.row.track_id ?? "none"}`}
             slot={slot}

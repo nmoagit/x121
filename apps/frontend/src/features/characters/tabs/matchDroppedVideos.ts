@@ -53,6 +53,17 @@ function stripClothesOffSuffix(slug: string): string {
   return match ? match[1]! : slug;
 }
 
+/**
+ * Strip trailing version digits from a scene slug.
+ * `bj1` → `bj`, `dance2` → `dance`, `slow_walk3` → `slow_walk`
+ * Does NOT strip if the entire slug is digits (`123` stays `123`).
+ * Does NOT strip if preceded by underscore + digits (`idle_2` stays — likely intentional).
+ */
+function stripVersionSuffix(slug: string): string {
+  const match = slug.match(/^([a-z_]+?)(\d+)$/);
+  return match ? match[1]! : slug;
+}
+
 export function parseFilename(filename: string, trackSlugs: string[]): ParsedFilename {
   const stem = stripExtension(filename).toLowerCase();
 
@@ -79,6 +90,10 @@ export function parseFilename(filename: string, trackSlugs: string[]): ParsedFil
 
   // Strip _clothes_off suffix (with optional index) from scene slug
   sceneSlug = stripClothesOffSuffix(sceneSlug!);
+
+  // Strip trailing version digits (e.g. "bj1" → "bj", "dance2" → "dance")
+  // but NOT if the entire slug is digits (e.g. "123" stays "123")
+  sceneSlug = stripVersionSuffix(sceneSlug);
 
   return { sceneSlug, trackSlug: trackSlug! };
 }
