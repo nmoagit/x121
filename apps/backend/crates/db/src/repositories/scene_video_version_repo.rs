@@ -9,7 +9,7 @@ use crate::models::scene_video_version::{
 
 /// Column list shared across queries to avoid repetition.
 const COLUMNS: &str = "id, scene_id, version_number, source, file_path, \
-    file_size_bytes, duration_secs, width, height, frame_rate, preview_path, is_final, notes, \
+    file_size_bytes, duration_secs, width, height, frame_rate, preview_path, web_playback_path, video_codec, is_final, notes, \
     qa_status, qa_reviewed_by, qa_reviewed_at, qa_rejection_reason, qa_notes, \
     generation_snapshot, content_hash, file_purged, deleted_at, created_at, updated_at";
 
@@ -175,10 +175,11 @@ impl SceneVideoVersionRepo {
         width: i32,
         height: i32,
         frame_rate: f64,
+        video_codec: &str,
     ) -> Result<bool, sqlx::Error> {
         let result = sqlx::query(
             "UPDATE scene_video_versions \
-             SET duration_secs = $2, width = $3, height = $4, frame_rate = $5 \
+             SET duration_secs = $2, width = $3, height = $4, frame_rate = $5, video_codec = $6 \
              WHERE id = $1 AND deleted_at IS NULL",
         )
         .bind(id)
@@ -186,6 +187,7 @@ impl SceneVideoVersionRepo {
         .bind(width)
         .bind(height)
         .bind(frame_rate)
+        .bind(video_codec)
         .execute(pool)
         .await?;
         Ok(result.rows_affected() > 0)
@@ -199,7 +201,7 @@ impl SceneVideoVersionRepo {
     ) -> Result<Vec<SceneVideoVersion>, sqlx::Error> {
         let query = format!(
             "SELECT {COLUMNS} FROM scene_video_versions \
-             WHERE (duration_secs IS NULL OR width IS NULL OR frame_rate IS NULL) \
+             WHERE (duration_secs IS NULL OR width IS NULL OR frame_rate IS NULL OR video_codec IS NULL) \
              AND deleted_at IS NULL \
              ORDER BY id ASC LIMIT $1"
         );
@@ -207,6 +209,41 @@ impl SceneVideoVersionRepo {
             .bind(limit)
             .fetch_all(pool)
             .await
+    }
+
+    /// List generated versions that have no generation_snapshot.
+    pub async fn list_missing_snapshots(
+        pool: &PgPool,
+        limit: i64,
+    ) -> Result<Vec<SceneVideoVersion>, sqlx::Error> {
+        let query = format!(
+            "SELECT {COLUMNS} FROM scene_video_versions \
+             WHERE source = 'generated' \
+               AND generation_snapshot IS NULL \
+               AND deleted_at IS NULL \
+             ORDER BY id ASC LIMIT $1"
+        );
+        sqlx::query_as::<_, SceneVideoVersion>(&query)
+            .bind(limit)
+            .fetch_all(pool)
+            .await
+    }
+
+    /// Set the generation_snapshot for a scene video version.
+    pub async fn set_generation_snapshot(
+        pool: &PgPool,
+        id: DbId,
+        snapshot: &serde_json::Value,
+    ) -> Result<bool, sqlx::Error> {
+        let result = sqlx::query(
+            "UPDATE scene_video_versions SET generation_snapshot = $2 \
+             WHERE id = $1 AND deleted_at IS NULL",
+        )
+        .bind(id)
+        .bind(snapshot)
+        .execute(pool)
+        .await?;
+        Ok(result.rows_affected() > 0)
     }
 
     /// Set the preview_path for a scene video version. Returns `true` if a row was updated.
@@ -217,6 +254,23 @@ impl SceneVideoVersionRepo {
     ) -> Result<bool, sqlx::Error> {
         let result = sqlx::query(
             "UPDATE scene_video_versions SET preview_path = $2 \
+             WHERE id = $1 AND deleted_at IS NULL",
+        )
+        .bind(id)
+        .bind(path)
+        .execute(pool)
+        .await?;
+        Ok(result.rows_affected() > 0)
+    }
+
+    /// Set the web_playback_path for a scene video version. Returns `true` if a row was updated.
+    pub async fn set_web_playback_path(
+        pool: &PgPool,
+        id: DbId,
+        path: &str,
+    ) -> Result<bool, sqlx::Error> {
+        let result = sqlx::query(
+            "UPDATE scene_video_versions SET web_playback_path = $2 \
              WHERE id = $1 AND deleted_at IS NULL",
         )
         .bind(id)
@@ -354,6 +408,44 @@ impl SceneVideoVersionRepo {
         );
         sqlx::query_as::<_, SceneVideoVersion>(&query)
             .bind(limit)
+            .fetch_all(pool)
+            .await
+    }
+
+    /// List versions that have no web_playback_path yet.
+    pub async fn list_missing_web_playback(
+        pool: &PgPool,
+        limit: i64,
+    ) -> Result<Vec<SceneVideoVersion>, sqlx::Error> {
+        let query = format!(
+            "SELECT {COLUMNS} FROM scene_video_versions \
+             WHERE web_playback_path IS NULL AND deleted_at IS NULL \
+             ORDER BY id ASC LIMIT $1"
+        );
+        sqlx::query_as::<_, SceneVideoVersion>(&query)
+            .bind(limit)
+            .fetch_all(pool)
+            .await
+    }
+
+    /// List final video versions in a project that use a non-H.264 codec.
+    pub async fn list_non_h264_finals(
+        pool: &PgPool,
+        project_id: DbId,
+    ) -> Result<Vec<SceneVideoVersion>, sqlx::Error> {
+        let query = format!(
+            "SELECT {COLUMNS} FROM scene_video_versions svv \
+             JOIN scenes s ON s.id = svv.scene_id AND s.deleted_at IS NULL \
+             JOIN characters c ON c.id = s.character_id AND c.deleted_at IS NULL \
+             WHERE c.project_id = $1 \
+               AND svv.is_final = true \
+               AND svv.deleted_at IS NULL \
+               AND svv.video_codec IS NOT NULL \
+               AND svv.video_codec != 'h264' \
+             ORDER BY svv.id"
+        );
+        sqlx::query_as::<_, SceneVideoVersion>(&query)
+            .bind(project_id)
             .fetch_all(pool)
             .await
     }

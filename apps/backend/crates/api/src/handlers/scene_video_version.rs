@@ -49,6 +49,51 @@ async fn ensure_version_exists(pool: &sqlx::PgPool, id: DbId) -> AppResult<Scene
         })
 }
 
+/// Ensure uploaded video data is H.264 encoded.
+///
+/// If the source codec is already H.264, returns the data unchanged.
+/// Otherwise, writes to a temp file, transcodes via ffmpeg, and returns
+/// the transcoded bytes. The output is always `.mp4` / H.264.
+async fn ensure_h264(data: Vec<u8>, _ext: &str) -> Result<Vec<u8>, String> {
+    // Write to a temp file so ffprobe can inspect the codec.
+    let tmp_dir = std::env::temp_dir().join("x121_import");
+    std::fs::create_dir_all(&tmp_dir).map_err(|e| e.to_string())?;
+    let input_path = tmp_dir.join(format!("import_in_{}.mp4", chrono::Utc::now().timestamp_millis()));
+    tokio::fs::write(&input_path, &data)
+        .await
+        .map_err(|e| format!("Failed to write temp input: {e}"))?;
+
+    let is_compatible = ffmpeg::is_browser_compatible(&input_path)
+        .await
+        .unwrap_or(false);
+
+    if is_compatible {
+        let _ = tokio::fs::remove_file(&input_path).await;
+        return Ok(data);
+    }
+
+    // Transcode to H.264 at original resolution.
+    let output_path = tmp_dir.join(format!("import_out_{}.mp4", chrono::Utc::now().timestamp_millis()));
+    let result = ffmpeg::transcode_web_playback(&input_path, &output_path)
+        .await
+        .map_err(|e| format!("Transcode failed: {e}"))?;
+
+    let transcoded = tokio::fs::read(&output_path)
+        .await
+        .map_err(|e| format!("Failed to read transcoded file: {e}"))?;
+
+    tracing::info!(
+        original_size = data.len(),
+        transcoded_size = result.file_size,
+        "Transcoded imported video to H.264"
+    );
+
+    let _ = tokio::fs::remove_file(&input_path).await;
+    let _ = tokio::fs::remove_file(&output_path).await;
+
+    Ok(transcoded)
+}
+
 /// Generate a low-res preview for a scene video version (best-effort).
 ///
 /// Transcodes to a temp file, then uploads via the storage provider so the
@@ -124,6 +169,99 @@ pub async fn generate_preview_for_version(
     Some(preview_key)
 }
 
+/// Generate a full-resolution browser-compatible (H.264) transcode for a scene
+/// video version (best-effort).
+///
+/// Only transcodes if the original video uses a codec that browsers cannot play
+/// (e.g. H.265/HEVC). If the original is already H.264, this is a no-op.
+///
+/// Returns the storage key of the generated file, or `None` if generation
+/// failed or was unnecessary.
+pub async fn generate_web_playback_for_version(
+    state: &AppState,
+    version: &SceneVideoVersion,
+) -> Option<String> {
+    let abs_source = match state.resolve_to_path(&version.file_path).await {
+        Ok(path) => path,
+        Err(e) => {
+            tracing::warn!(version_id = version.id, error = %e, "Failed to resolve source for web playback transcode");
+            return None;
+        }
+    };
+
+    // Skip transcode if the original is already browser-compatible.
+    match ffmpeg::is_browser_compatible(&abs_source).await {
+        Ok(true) => {
+            tracing::info!(version_id = version.id, "Original video is browser-compatible, skipping web playback transcode");
+            // Point web_playback_path to the original file so the HD toggle works.
+            if let Err(e) = SceneVideoVersionRepo::set_web_playback_path(
+                &state.pool,
+                version.id,
+                &version.file_path,
+            )
+            .await
+            {
+                tracing::warn!(version_id = version.id, error = %e, "Failed to save web_playback_path");
+            }
+            return Some(version.file_path.clone());
+        }
+        Ok(false) => {} // needs transcode
+        Err(e) => {
+            tracing::warn!(version_id = version.id, error = %e, "Failed to probe codec, will attempt transcode anyway");
+        }
+    }
+
+    let web_key = format!(
+        "web_playback/scene_{}_{}.mp4",
+        version.scene_id,
+        chrono::Utc::now().timestamp_millis()
+    );
+
+    let provider = state.storage_provider().await;
+
+    let tmp_dir = std::env::temp_dir().join("x121_web_playback");
+    let tmp_path = tmp_dir.join(format!("web_{}.mp4", version.id));
+
+    let result = match ffmpeg::transcode_web_playback(&abs_source, &tmp_path).await {
+        Ok(r) => r,
+        Err(e) => {
+            tracing::warn!(version_id = version.id, error = %e, "Web playback transcode failed");
+            let _ = tokio::fs::remove_file(&tmp_path).await;
+            return None;
+        }
+    };
+
+    let data = match tokio::fs::read(&tmp_path).await {
+        Ok(d) => d,
+        Err(e) => {
+            tracing::warn!(version_id = version.id, error = %e, "Failed to read temp web playback file");
+            let _ = tokio::fs::remove_file(&tmp_path).await;
+            return None;
+        }
+    };
+
+    let _ = tokio::fs::remove_file(&tmp_path).await;
+
+    if let Err(e) = provider.upload(&web_key, &data).await {
+        tracing::warn!(version_id = version.id, error = %e, "Failed to upload web playback to storage");
+        return None;
+    }
+
+    if let Err(e) =
+        SceneVideoVersionRepo::set_web_playback_path(&state.pool, version.id, &web_key).await
+    {
+        tracing::warn!(version_id = version.id, error = %e, "Failed to save web_playback_path");
+        return None;
+    }
+
+    tracing::info!(
+        version_id = version.id,
+        web_playback_size = result.file_size,
+        "Generated web playback transcode"
+    );
+    Some(web_key)
+}
+
 /// Extract video metadata (duration, resolution, frame rate) via ffprobe
 /// and persist it to the database.
 ///
@@ -153,6 +291,7 @@ pub async fn extract_and_set_video_metadata(state: &AppState, version: &SceneVid
 
     let (width, height) = ffmpeg::parse_resolution(&probe);
     let frame_rate = ffmpeg::parse_framerate(&probe);
+    let video_codec = ffmpeg::parse_video_codec(&probe);
 
     match SceneVideoVersionRepo::set_video_metadata(
         &state.pool,
@@ -161,6 +300,7 @@ pub async fn extract_and_set_video_metadata(state: &AppState, version: &SceneVid
         width,
         height,
         frame_rate,
+        &video_codec,
     )
     .await
     {
@@ -317,10 +457,21 @@ pub async fn import_video(
 
     // Store file via the active storage provider (PRD-122).
     let storage_key = format!(
-        "imports/scene_{scene_id}_{}.{ext}",
+        "imports/scene_{scene_id}_{}.mp4",
         chrono::Utc::now().timestamp()
     );
     let provider = state.storage_provider().await;
+
+    // Hash the original file for duplicate detection BEFORE any transcoding,
+    // so re-importing the same source file is always caught.
+    let content_hash = x121_core::hashing::sha256_hex(&data);
+
+    // Probe codec and transcode to H.264 if needed, so every video in the
+    // system is browser-compatible and delivery-ready from the start.
+    let data = ensure_h264(data, &ext).await.map_err(|e| {
+        AppError::InternalError(format!("Video transcode failed: {e}"))
+    })?;
+
     provider.upload(&storage_key, &data).await?;
 
     let file_size = data.len() as i64;
@@ -332,8 +483,6 @@ pub async fn import_video(
     let has_approved_final = existing_final
         .as_ref()
         .is_some_and(|v| v.qa_status == CLIP_QA_APPROVED);
-
-    let content_hash = x121_core::hashing::sha256_hex(&data);
 
     let input = CreateSceneVideoVersion {
         scene_id,
@@ -358,6 +507,9 @@ pub async fn import_video(
 
     // Best-effort: generate a low-res preview copy for card thumbnails.
     generate_preview_for_version(&state, &version).await;
+
+    // Best-effort: generate a full-res browser-compatible transcode for HD playback.
+    generate_web_playback_for_version(&state, &version).await;
 
     // Best-effort: extract duration via ffprobe and persist it.
     extract_and_set_video_metadata(&state, &version).await;

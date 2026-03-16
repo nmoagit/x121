@@ -305,6 +305,25 @@ pub async fn validate_delivery(
         });
     }
 
+    // Check for non-H.264 source codecs that will need transcoding for delivery.
+    let all_versions =
+        SceneVideoVersionRepo::list_non_h264_finals(&state.pool, project_id).await?;
+    for version in &all_versions {
+        let codec = version
+            .video_codec
+            .as_deref()
+            .unwrap_or("unknown");
+        issues.push(assembly::ValidationIssue {
+            severity: assembly::IssueSeverity::Warning,
+            category: "non_h264_codec".to_string(),
+            message: format!(
+                "Scene {} version v{} uses {} codec — will be transcoded to H.264 for delivery",
+                version.scene_id, version.version_number, codec
+            ),
+            entity_id: Some(version.id),
+        });
+    }
+
     // Check for characters with no scenes (warning, not blocking)
     // and characters without approved metadata (error, blocking).
     for character in &characters {

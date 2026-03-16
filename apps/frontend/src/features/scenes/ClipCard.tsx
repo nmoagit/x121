@@ -122,6 +122,9 @@ export function ClipCard({
           )}
         </div>
         <div className="flex items-center gap-3 text-xs text-[var(--color-text-muted)]">
+          {clip.video_codec && (
+            <span className="uppercase">{clip.video_codec}</span>
+          )}
           <span>{clip.file_size_bytes != null ? formatBytes(clip.file_size_bytes) : "\u2014"}</span>
           <span>{clip.duration_secs != null ? formatDuration(clip.duration_secs) : "\u2014"}</span>
           <span>{formatDate(clip.created_at)}</span>

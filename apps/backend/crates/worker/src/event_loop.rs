@@ -1030,7 +1030,9 @@ async fn build_snapshot_from_db(
     scene_id: DbId,
     instance_id: DbId,
 ) -> Option<serde_json::Value> {
-    use x121_db::repositories::{SceneRepo, SceneTypeRepo, WorkflowRepo};
+    use x121_db::repositories::{
+        SceneRepo, SceneTypeRepo, SceneTypeTrackConfigRepo, WorkflowRepo,
+    };
 
     // Look up scene → scene_type → workflow → prompt slots
     let scene = SceneRepo::find_by_id(pool, scene_id).await.ok()??;
@@ -1038,8 +1040,27 @@ async fn build_snapshot_from_db(
         .await
         .ok()??;
 
-    // Get workflow name (prefer scene_type_track_config, fall back to scene_type)
-    let workflow_id = scene_type.workflow_id?;
+    // Resolve workflow using the same priority as context_loader:
+    // 1. Track config workflow (scene_type_track_configs)
+    // 2. Scene type's linked workflow (scene_types.workflow_id)
+    let resolved_workflow_id = if let Some(track_id) = scene.track_id {
+        let track_config = SceneTypeTrackConfigRepo::find_by_scene_type_and_track(
+            pool,
+            scene.scene_type_id,
+            track_id,
+            false,
+        )
+        .await
+        .ok()
+        .flatten();
+        track_config
+            .and_then(|c| c.workflow_id)
+            .or(scene_type.workflow_id)
+    } else {
+        scene_type.workflow_id
+    };
+
+    let workflow_id = resolved_workflow_id?;
     let workflow = WorkflowRepo::find_by_id(pool, workflow_id).await.ok()??;
 
     // Get prompt slots for this workflow

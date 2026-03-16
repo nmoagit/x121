@@ -305,6 +305,77 @@ pub async fn transcode_preview(
     })
 }
 
+/// Transcode a video to a browser-compatible H.264 file at original resolution.
+///
+/// Produces an H.264 main-profile file with `faststart` for progressive
+/// streaming. Intended for HD in-browser playback when the original codec
+/// (e.g. H.265/HEVC) is not browser-compatible.
+pub async fn transcode_web_playback(
+    video_path: &Path,
+    output_path: &Path,
+) -> Result<TranscodePreviewResult, FfmpegError> {
+    if !video_path.exists() {
+        return Err(FfmpegError::VideoNotFound(
+            video_path.to_string_lossy().to_string(),
+        ));
+    }
+
+    if let Some(parent) = output_path.parent() {
+        tokio::fs::create_dir_all(parent).await?;
+    }
+
+    // Ensure even dimensions for H.264 compatibility.
+    let vf = "pad=ceil(iw/2)*2:ceil(ih/2)*2";
+
+    let output = tokio::process::Command::new("ffmpeg")
+        .args(["-y", "-i"])
+        .arg(video_path)
+        .args(["-vf", vf])
+        .args([
+            "-c:v",
+            "libx264",
+            "-preset",
+            "medium",
+            "-crf",
+            "18",
+            "-profile:v",
+            "main",
+            "-level",
+            "4.1",
+            "-c:a",
+            "aac",
+            "-b:a",
+            "128k",
+            "-movflags",
+            "+faststart",
+        ])
+        .arg(output_path)
+        .output()
+        .await
+        .map_err(FfmpegError::NotFound)?;
+
+    if !output.status.success() {
+        return Err(FfmpegError::ExecutionFailed {
+            exit_code: output.status.code(),
+            stderr: String::from_utf8_lossy(&output.stderr).to_string(),
+        });
+    }
+
+    let metadata = tokio::fs::metadata(output_path).await?;
+
+    Ok(TranscodePreviewResult {
+        output_path: output_path.to_string_lossy().to_string(),
+        file_size: metadata.len(),
+    })
+}
+
+/// Check if a video file uses a browser-compatible codec (H.264/VP9/AV1).
+pub async fn is_browser_compatible(path: &Path) -> Result<bool, FfmpegError> {
+    let probe = probe_video(path).await?;
+    let codec = parse_video_codec(&probe);
+    Ok(matches!(codec.as_str(), "h264" | "vp9" | "av1" | "vp8"))
+}
+
 // ---------------------------------------------------------------------------
 // Parsing helpers
 // ---------------------------------------------------------------------------

@@ -251,6 +251,9 @@ function VideoRow({
         {clip.frame_rate != null && (
           <span className="text-[var(--color-text-muted)]">{clip.frame_rate}fps</span>
         )}
+        {clip.video_codec && (
+          <span className="text-[var(--color-text-muted)] uppercase">{clip.video_codec}</span>
+        )}
         {ext && <span className="text-[var(--color-text-muted)]">{ext}</span>}
         {clip.file_size_bytes != null && (
           <span className="text-[var(--color-text-muted)]">

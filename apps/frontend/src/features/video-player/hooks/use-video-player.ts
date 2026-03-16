@@ -187,7 +187,7 @@ export function useVideoPlayer(options: UseVideoPlayerOptions): VideoPlayerContr
 
   const seekToTime = useCallback((time: number) => {
     const video = videoRef.current;
-    if (!video) return;
+    if (!video || !Number.isFinite(time)) return;
     video.currentTime = time;
   }, []);
 
@@ -201,14 +201,14 @@ export function useVideoPlayer(options: UseVideoPlayerOptions): VideoPlayerContr
 
   const stepForward = useCallback(() => {
     const video = videoRef.current;
-    if (!video || framerate <= 0) return;
+    if (!video || framerate <= 0 || !Number.isFinite(video.duration)) return;
     video.pause();
     video.currentTime = Math.min(video.duration, video.currentTime + 1 / framerate);
   }, [framerate]);
 
   const stepBackward = useCallback(() => {
     const video = videoRef.current;
-    if (!video || framerate <= 0) return;
+    if (!video || framerate <= 0 || !Number.isFinite(video.currentTime)) return;
     video.pause();
     video.currentTime = Math.max(0, video.currentTime - 1 / framerate);
   }, [framerate]);

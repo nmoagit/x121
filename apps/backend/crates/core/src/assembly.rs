@@ -71,7 +71,7 @@ pub const VALID_LOG_LEVELS: &[&str] = &[LOG_LEVEL_INFO, LOG_LEVEL_WARNING, LOG_L
 // Known codecs, containers, pixel formats
 // ---------------------------------------------------------------------------
 
-pub const VALID_CODECS: &[&str] = &["h264", "h265", "hevc", "prores", "vp9", "av1"];
+pub const VALID_CODECS: &[&str] = &["h264", "h265", "hevc", "mpeg4", "prores", "vp9", "av1"];
 pub const VALID_CONTAINERS: &[&str] = &["mp4", "mov", "mkv", "webm"];
 pub const VALID_PIXEL_FORMATS: &[&str] = &["yuv420p", "yuv422p", "yuv444p", "rgb24"];
 

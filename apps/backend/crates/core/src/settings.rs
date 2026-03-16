@@ -87,8 +87,8 @@ pub const CATEGORY_COMFYUI: &str = "comfyui";
 pub const CATEGORY_AUTH: &str = "auth";
 /// General system/server settings.
 pub const CATEGORY_SYSTEM: &str = "system";
-/// Settings related to the generation pipeline.
-pub const CATEGORY_PIPELINE: &str = "pipeline";
+/// Settings related to production and the generation pipeline.
+pub const CATEGORY_PIPELINE: &str = "production";
 
 // ---------------------------------------------------------------------------
 // Settings registry
@@ -283,10 +283,10 @@ pub static SETTINGS_REGISTRY: &[SettingDefinition] = &[
         sensitive: false,
         validation_regex: None,
     },
-    // -- System (deliverables) --
+    // -- Pipeline (deliverables) --
     SettingDefinition {
         key: "blocking_deliverables",
-        category: CATEGORY_SYSTEM,
+        category: CATEGORY_PIPELINE,
         label: "Blocking Deliverables",
         description: "Comma-separated list of deliverable sections that must be complete for a character to be considered done. Valid values: metadata, images, scenes, speech. Projects inherit this default unless overridden.",
         value_type: SettingValueType::CommaSeparatedList,

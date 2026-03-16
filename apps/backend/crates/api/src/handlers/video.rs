@@ -26,6 +26,7 @@ use x121_db::repositories::{SceneVideoVersionRepo, SegmentRepo, VideoThumbnailRe
 use crate::error::{AppError, AppResult};
 use crate::handlers::scene_video_version::{
     extract_and_set_video_metadata, generate_preview_for_version,
+    generate_web_playback_for_version,
 };
 use crate::state::AppState;
 
@@ -156,18 +157,16 @@ fn parse_range_header(range: &str) -> Option<(u64, Option<u64>)> {
 /// GET /api/v1/videos/{source_type}/{source_id}/stream
 ///
 /// Streams a video file with HTTP range request support.
-/// Supports `?quality=proxy|full` (proxy is a no-op for MVP — serves the
-/// full file regardless).
+/// Supports `?quality=proxy|full`:
+/// - `proxy`: serves the low-res preview (640x360 H.264 baseline)
+/// - `full`: serves the full-res browser-compatible transcode (H.264 main)
 pub async fn stream_video(
     State(state): State<AppState>,
     Path((source_type, source_id)): Path<(String, DbId)>,
     Query(params): Query<StreamParams>,
     headers: HeaderMap,
 ) -> AppResult<Response> {
-    // When proxy quality is requested for a version source, try the preview file first.
-    let file_path = if params.quality.as_deref() == Some("proxy")
-        && source_type == video_sources::VIDEO_SOURCE_VERSION
-    {
+    let file_path = if source_type == video_sources::VIDEO_SOURCE_VERSION {
         let version = SceneVideoVersionRepo::find_by_id(&state.pool, source_id)
             .await?
             .ok_or(AppError::Core(CoreError::NotFound {
@@ -179,7 +178,18 @@ pub async fn stream_video(
                 "Video file has been purged from disk".to_string(),
             ));
         }
-        version.preview_path.unwrap_or(version.file_path)
+        if params.quality.as_deref() == Some("proxy") {
+            // SD: serve low-res preview, fall back to web playback, then original.
+            version
+                .preview_path
+                .or(version.web_playback_path)
+                .unwrap_or(version.file_path)
+        } else {
+            // HD: serve full-res browser-compatible transcode, fall back to original.
+            version
+                .web_playback_path
+                .unwrap_or(version.file_path)
+        }
     } else {
         resolve_video_path(&state.pool, &source_type, source_id).await?
     };
@@ -467,6 +477,44 @@ pub struct GeneratePreviewsParams {
     pub limit: Option<u32>,
 }
 
+/// POST /api/v1/videos/generate-web-playback
+///
+/// Backfill full-resolution browser-compatible transcodes for existing scene
+/// video versions that don't have one yet. Processes up to `limit` rows
+/// (default 50) per call.
+pub async fn generate_web_playback(
+    State(state): State<AppState>,
+    Query(params): Query<GeneratePreviewsParams>,
+) -> AppResult<Json<BackfillPreviewsResponse>> {
+    let limit = params.limit.unwrap_or(50).min(200) as i64;
+
+    let versions = SceneVideoVersionRepo::list_missing_web_playback(&state.pool, limit).await?;
+
+    let total = versions.len();
+    let mut succeeded = 0usize;
+    let mut failed = 0usize;
+
+    for version in &versions {
+        match generate_web_playback_for_version(&state, version).await {
+            Some(_) => succeeded += 1,
+            None => failed += 1,
+        }
+    }
+
+    tracing::info!(
+        total,
+        succeeded,
+        failed,
+        "Backfill web playback generation complete"
+    );
+
+    Ok(Json(BackfillPreviewsResponse {
+        processed: total,
+        succeeded,
+        failed,
+    }))
+}
+
 /// Response body for backfill-metadata endpoints.
 #[derive(Debug, Serialize)]
 pub struct BackfillMetadataResponse {
@@ -500,6 +548,136 @@ pub async fn backfill_video_metadata(
     }
 
     tracing::info!(total, succeeded, failed, "Backfill video metadata complete");
+
+    Ok(Json(BackfillMetadataResponse {
+        processed: total,
+        succeeded,
+        failed,
+    }))
+}
+
+/// POST /api/v1/videos/backfill-snapshots
+///
+/// Backfill generation_snapshot for generated scene video versions that are
+/// missing it. Rebuilds the snapshot from the scene's current workflow and
+/// prompt configuration. Processes up to `limit` rows (default 50) per call.
+pub async fn backfill_snapshots(
+    State(state): State<AppState>,
+    Query(params): Query<GeneratePreviewsParams>,
+) -> AppResult<Json<BackfillMetadataResponse>> {
+    use x121_db::repositories::{
+        SceneRepo, SceneTypeRepo, SceneTypeTrackConfigRepo, WorkflowRepo,
+    };
+
+    let limit = params.limit.unwrap_or(50).min(200) as i64;
+
+    let versions = SceneVideoVersionRepo::list_missing_snapshots(&state.pool, limit).await?;
+
+    let total = versions.len();
+    let mut succeeded = 0usize;
+    let mut failed = 0usize;
+
+    for version in &versions {
+        // Rebuild snapshot using same logic as event_loop::build_snapshot_from_db
+        let snapshot = async {
+            let scene = SceneRepo::find_by_id(&state.pool, version.scene_id)
+                .await
+                .ok()??;
+            let scene_type = SceneTypeRepo::find_by_id(&state.pool, scene.scene_type_id)
+                .await
+                .ok()??;
+
+            // Resolve workflow: track config → scene_type.workflow_id
+            let resolved_workflow_id = if let Some(track_id) = scene.track_id {
+                let track_config =
+                    SceneTypeTrackConfigRepo::find_by_scene_type_and_track(
+                        &state.pool,
+                        scene.scene_type_id,
+                        track_id,
+                        false,
+                    )
+                    .await
+                    .ok()
+                    .flatten();
+                track_config
+                    .and_then(|c| c.workflow_id)
+                    .or(scene_type.workflow_id)
+            } else {
+                scene_type.workflow_id
+            };
+
+            let workflow_id = resolved_workflow_id?;
+            let workflow =
+                WorkflowRepo::find_by_id(&state.pool, workflow_id).await.ok()??;
+
+            let prompt_slots =
+                x121_db::repositories::WorkflowPromptSlotRepo::list_by_workflow(
+                    &state.pool,
+                    workflow_id,
+                )
+                .await
+                .unwrap_or_default();
+
+            let mut prompts = serde_json::Map::new();
+            for slot in &prompt_slots {
+                let key = format!("{} [{}]", slot.slot_label, slot.node_id);
+                let text = slot.default_text.clone().unwrap_or_default();
+                prompts.insert(key, serde_json::Value::String(text));
+            }
+
+            let seed_image = if let Some(variant_id) = scene.image_variant_id {
+                x121_db::repositories::ImageVariantRepo::find_by_id(
+                    &state.pool,
+                    variant_id,
+                )
+                .await
+                .ok()
+                .flatten()
+                .map(|v| v.file_path)
+                .unwrap_or_default()
+            } else {
+                String::new()
+            };
+
+            Some(serde_json::json!({
+                "scene_type": scene_type.name,
+                "workflow": workflow.name,
+                "clip_position": "full_clip",
+                "seed_image": seed_image,
+                "segment_index": 0,
+                "prompts": prompts,
+                "generation_params": scene_type.generation_params,
+                "lora_config": scene_type.lora_config,
+                "generated_at": version.created_at.to_rfc3339(),
+            }))
+        }
+        .await;
+
+        match snapshot {
+            Some(snap) => {
+                match SceneVideoVersionRepo::set_generation_snapshot(
+                    &state.pool,
+                    version.id,
+                    &snap,
+                )
+                .await
+                {
+                    Ok(true) => succeeded += 1,
+                    _ => failed += 1,
+                }
+            }
+            None => {
+                tracing::warn!(
+                    version_id = version.id,
+                    scene_id = version.scene_id,
+                    "Could not build snapshot — missing workflow or scene data"
+                );
+                failed += 1;
+            }
+        }
+    }
+
+    tracing::info!(total, succeeded, failed, "Backfill generation snapshots complete");
 
     Ok(Json(BackfillMetadataResponse {
         processed: total,

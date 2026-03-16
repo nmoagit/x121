@@ -18,6 +18,10 @@ pub struct SceneVideoVersion {
     pub height: Option<i32>,
     pub frame_rate: Option<f64>,
     pub preview_path: Option<String>,
+    /// Full-resolution H.264 transcode for browser playback (HD mode).
+    pub web_playback_path: Option<String>,
+    /// Source video codec (e.g. "h264", "mpeg4", "hevc").
+    pub video_codec: Option<String>,
     pub is_final: bool,
     pub notes: Option<String>,
     pub qa_status: String,

@@ -35,6 +35,7 @@ export interface SceneVideoVersion {
   height: number | null;
   frame_rate: number | null;
   preview_path: string | null;
+  video_codec: string | null;
   is_final: boolean;
   notes: string | null;
   qa_status: "pending" | "approved" | "rejected";
