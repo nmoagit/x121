@@ -13,31 +13,24 @@ import { useSetToggle } from "@/hooks/useSetToggle";
 
 import { CollapsibleSection, ConfirmDeleteModal, ConfigToolbar, Modal } from "@/components/composite";
 import { EmptyState, FileDropZone } from "@/components/domain";
-import { Grid, Stack } from "@/components/layout";
-import { Button, FilterSelect, Input, LoadingPane, SearchInput, Select } from "@/components/primitives";
+import { Stack } from "@/components/layout";
+import { Button, Input, LoadingPane, Select } from "@/components/primitives";
+import { CharacterFilterBar, CharacterGroupSection, FileAssignmentModal } from "@/features/characters/components";
+import type { GroupSectionDragHandlers } from "@/features/characters/components";
 import { useExportGroupSettings, useConfigImport } from "@/features/config-io";
 import { GroupPromptOverrides } from "@/features/prompt-management";
 import { GroupSceneOverrides, GroupWorkflowOverrides } from "@/features/scene-catalogue";
 import { cn } from "@/lib/cn";
 import { toSelectOptions } from "@/lib/select-utils";
-import { ICON_ACTION_BTN, ICON_ACTION_BTN_DANGER, INLINE_LINK_BTN } from "@/lib/ui-classes";
+import { INLINE_LINK_BTN } from "@/lib/ui-classes";
 import {
-  ChevronDown,
-  ChevronRight,
-  ChevronsDownUp,
-  ChevronsUpDown,
-  Edit3,
-  Eye,
-  EyeOff,
   Folder,
   Plus,
-  Trash2,
   Upload,
   User,
 } from "@/tokens/icons";
 
 import { variantThumbnailUrl } from "@/features/images/utils";
-import { AlertTriangle } from "@/tokens/icons";
 
 import { CharacterCard } from "../components/CharacterCard";
 import { ImportProgressBar } from "../components/ImportProgressBar";
@@ -116,7 +109,7 @@ export function ProjectCharactersTab({ projectId, projectName, scrollToGroupId, 
 
   /* --- search & filter --- */
   const [searchQuery, setSearchQuery] = useState("");
-  const [groupFilter, setGroupFilter] = useState("");
+  const [groupFilter, setGroupFilter] = useState<string[]>([]);
 
   const [showDisabled, setShowDisabled] = useState<boolean>(() => {
     try {
@@ -267,7 +260,6 @@ export function ProjectCharactersTab({ projectId, projectName, scrollToGroupId, 
   /* --- group filter options --- */
   const groupOptions = useMemo(
     () => [
-      { value: "", label: "All Groups" },
       ...toSelectOptions(groups),
       ...(groups?.length ? [{ value: "ungrouped", label: "Ungrouped" }] : []),
     ],
@@ -304,12 +296,14 @@ export function ProjectCharactersTab({ projectId, projectName, scrollToGroupId, 
   /* --- filtered groups for display --- */
   const filteredGroups = useMemo(() => {
     if (!groups) return [];
-    if (groupFilter === "ungrouped") return [];
-    if (groupFilter) return groups.filter((g) => g.id === Number(groupFilter));
-    return groups;
+    if (groupFilter.length === 0) return groups;
+    // If only "ungrouped" is selected, show no named groups
+    const groupIds = groupFilter.filter((f) => f !== "ungrouped").map(Number);
+    if (groupIds.length === 0) return [];
+    return groups.filter((g) => groupIds.includes(g.id));
   }, [groups, groupFilter]);
 
-  const showUngrouped = !groupFilter || groupFilter === "ungrouped";
+  const showUngrouped = groupFilter.length === 0 || groupFilter.includes("ungrouped");
   const ungroupedChars = charactersByGroup.get("ungrouped") ?? [];
 
   const totalFiltered = useMemo(() => {
@@ -512,40 +506,25 @@ export function ProjectCharactersTab({ projectId, projectName, scrollToGroupId, 
       browseFolderRef={charImport.browseFolderRef}
     >
       <Stack gap={4}>
-        {/* Top bar */}
+        {/* Filter row */}
+        <CharacterFilterBar
+          searchQuery={searchQuery}
+          onSearchChange={(e) => setSearchQuery(e.target.value)}
+          groupOptions={groupOptions}
+          groupFilter={groupFilter}
+          onGroupFilterChange={setGroupFilter}
+          allCollapsed={allCollapsed}
+          onToggleCollapseAll={toggleCollapseAll}
+          showDisabled={showDisabled}
+          onToggleShowDisabled={toggleShowDisabled}
+          auditView={auditView}
+          onAuditViewChange={toggleAuditView}
+          selectedCount={selectedCharIds.size}
+          onClearSelection={() => setSelectedCharIds(new Set())}
+        />
+
+        {/* Action row */}
         <div className="flex flex-wrap items-center gap-[var(--spacing-3)]">
-          <SearchInput
-            placeholder="Search characters..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            size="sm"
-            className="flex-1 min-w-[200px] max-w-[280px]"
-          />
-          <FilterSelect options={groupOptions} value={groupFilter} onChange={setGroupFilter} size="sm" className="w-[160px]" />
-          <Button
-            size="sm"
-            variant="secondary"
-            icon={allCollapsed ? <ChevronsUpDown size={14} /> : <ChevronsDownUp size={14} />}
-            onClick={toggleCollapseAll}
-          >
-            {allCollapsed ? "Expand All" : "Collapse All"}
-          </Button>
-          <Button
-            size="sm"
-            variant="secondary"
-            icon={showDisabled ? <EyeOff size={14} /> : <Eye size={14} />}
-            onClick={toggleShowDisabled}
-          >
-            {showDisabled ? "Hide Disabled" : "Show Disabled"}
-          </Button>
-          <Button
-            size="sm"
-            variant={auditView ? "primary" : "secondary"}
-            icon={<AlertTriangle size={14} />}
-            onClick={toggleAuditView}
-          >
-            {auditView ? "Audit View" : "Gallery View"}
-          </Button>
           <Button
             size="sm"
             variant="secondary"
@@ -560,18 +539,6 @@ export function ProjectCharactersTab({ projectId, projectName, scrollToGroupId, 
           <Button size="sm" icon={<Plus size={14} />} onClick={() => setCharModalOpen(true)}>
             Add Character
           </Button>
-          {selectedCharIds.size > 0 && (
-            <span className="text-sm text-[var(--color-text-muted)] flex items-center gap-[var(--spacing-2)]">
-              {selectedCharIds.size} selected
-              <button
-                type="button"
-                className={INLINE_LINK_BTN}
-                onClick={() => setSelectedCharIds(new Set())}
-              >
-                Clear
-              </button>
-            </span>
-          )}
         </div>
 
         {/* Import progress */}
@@ -623,69 +590,98 @@ export function ProjectCharactersTab({ projectId, projectName, scrollToGroupId, 
             {filteredGroups.map((group) => {
               const chars = charactersByGroup.get(group.id) ?? [];
               const expanded = !collapsedIds.has(group.id);
+              const dragHandlers: GroupSectionDragHandlers = {
+                onDragEnter: (e) => handleGroupDragEnter(e, group.id),
+                onDragOver: handleGroupDragOver,
+                onDragLeave: (e) => handleGroupDragLeave(e, group.id),
+                onDrop: (e) => handleGroupDrop(e, group.id),
+              };
 
               return (
-                <GroupSection
+                <CharacterGroupSection
                   key={group.id}
                   sectionId={`group-${group.id}`}
-                  group={group}
+                  label={group.name}
                   characters={chars}
-                  avatarMap={avatarMap}
-                  groupMap={groupMap}
-                  blockingMap={auditView ? blockingMap : undefined}
-                  sectionReadinessMap={sectionReadinessMap}
-                  blockingDeliverables={blockingDeliverables}
                   expanded={expanded}
                   isDragOver={dragOverGroupId === group.id}
-                  projectId={projectId}
                   onToggle={() => toggleExpanded(group.id)}
                   onEdit={() => openEditGroup(group)}
                   onDelete={() => setGroupDeleteTarget(group)}
                   selectedCharIds={selectedCharIds}
                   onCharSelect={toggleCharSelection}
                   onSelectAll={handleSelectAll}
-                  onCharClick={(char) =>
-                    navigate({ to: `/projects/${projectId}/characters/${char.id}` })
-                  }
-                  onCharEdit={setEditingChar}
-                  onCharToggleEnabled={handleToggleEnabled}
-                  onCharDragStart={handleCharDragStart}
-                  onDragEnter={(e) => handleGroupDragEnter(e, group.id)}
-                  onDragOver={handleGroupDragOver}
-                  onDragLeave={(e) => handleGroupDragLeave(e, group.id)}
-                  onDrop={(e) => handleGroupDrop(e, group.id)}
+                  dragHandlers={dragHandlers}
+                  renderCard={(c) => (
+                    <div
+                      key={c.id}
+                      draggable
+                      onDragStart={(e) => handleCharDragStart(e, c.id)}
+                      className="cursor-grab active:cursor-grabbing"
+                    >
+                      <CharacterCard
+                        character={c}
+                        group={c.group_id ? groupMap.get(c.group_id) : undefined}
+                        avatarUrl={avatarMap.get(c.id)}
+                        heroVariantId={c.hero_variant_id}
+                        selected={selectedCharIds.has(c.id)}
+                        blockingReasons={auditView ? blockingMap.get(c.id) : undefined}
+                        sectionReadiness={sectionReadinessMap.get(c.id)}
+                        blockingDeliverables={blockingDeliverables}
+                        projectId={projectId}
+                        onSelect={toggleCharSelection}
+                        onClick={() => navigate({ to: `/projects/${projectId}/characters/${c.id}` })}
+                        onEdit={() => setEditingChar(c)}
+                        onToggleEnabled={handleToggleEnabled}
+                      />
+                    </div>
+                  )}
                 />
               );
             })}
 
             {/* Ungrouped section — always visible as a drop target */}
             {showUngrouped && (
-              <GroupSection
+              <CharacterGroupSection
                 sectionId="group-ungrouped"
                 label="Ungrouped"
                 characters={ungroupedChars}
-                avatarMap={avatarMap}
-                groupMap={groupMap}
-                blockingMap={auditView ? blockingMap : undefined}
-                sectionReadinessMap={sectionReadinessMap}
-                blockingDeliverables={blockingDeliverables}
                 expanded={!collapsedIds.has("ungrouped")}
                 isDragOver={dragOverGroupId === "ungrouped"}
-                projectId={projectId}
                 onToggle={() => toggleExpanded("ungrouped")}
                 selectedCharIds={selectedCharIds}
                 onCharSelect={toggleCharSelection}
                 onSelectAll={handleSelectAll}
-                onCharClick={(char) =>
-                  navigate({ to: `/projects/${projectId}/characters/${char.id}` })
-                }
-                onCharEdit={setEditingChar}
-                onCharToggleEnabled={handleToggleEnabled}
-                onCharDragStart={handleCharDragStart}
-                onDragEnter={(e) => handleGroupDragEnter(e, "ungrouped")}
-                onDragOver={handleGroupDragOver}
-                onDragLeave={(e) => handleGroupDragLeave(e, "ungrouped")}
-                onDrop={(e) => handleGroupDrop(e, "ungrouped")}
+                dragHandlers={{
+                  onDragEnter: (e) => handleGroupDragEnter(e, "ungrouped"),
+                  onDragOver: handleGroupDragOver,
+                  onDragLeave: (e) => handleGroupDragLeave(e, "ungrouped"),
+                  onDrop: (e) => handleGroupDrop(e, "ungrouped"),
+                }}
+                renderCard={(c) => (
+                  <div
+                    key={c.id}
+                    draggable
+                    onDragStart={(e) => handleCharDragStart(e, c.id)}
+                    className="cursor-grab active:cursor-grabbing"
+                  >
+                    <CharacterCard
+                      character={c}
+                      group={c.group_id ? groupMap.get(c.group_id) : undefined}
+                      avatarUrl={avatarMap.get(c.id)}
+                      heroVariantId={c.hero_variant_id}
+                      selected={selectedCharIds.has(c.id)}
+                      blockingReasons={auditView ? blockingMap.get(c.id) : undefined}
+                      sectionReadiness={sectionReadinessMap.get(c.id)}
+                      blockingDeliverables={blockingDeliverables}
+                      projectId={projectId}
+                      onSelect={toggleCharSelection}
+                      onClick={() => navigate({ to: `/projects/${projectId}/characters/${c.id}` })}
+                      onEdit={() => setEditingChar(c)}
+                      onToggleEnabled={handleToggleEnabled}
+                    />
+                  </div>
+                )}
               />
             )}
           </Stack>
@@ -838,6 +834,14 @@ export function ProjectCharactersTab({ projectId, projectName, scrollToGroupId, 
           loading={deleteGroup.isPending}
         />
 
+        {/* File assignment modal (unmatched files) */}
+        <FileAssignmentModal
+          open={charImport.unmatchedFiles.length > 0}
+          onClose={charImport.dismissUnmatchedFiles}
+          unmatchedFiles={charImport.unmatchedFiles}
+          onConfirm={(assignments) => charImport.resolveUnmatchedFiles(assignments)}
+        />
+
         {/* Import confirmation modal */}
         <ImportConfirmModal
           open={charImport.importOpen}
@@ -862,183 +866,3 @@ export function ProjectCharactersTab({ projectId, projectName, scrollToGroupId, 
   );
 }
 
-/* --------------------------------------------------------------------------
-   GroupSection — expandable group with draggable avatar character cards
-   -------------------------------------------------------------------------- */
-
-interface GroupSectionProps {
-  /** HTML id for scroll-to-group anchoring. */
-  sectionId?: string;
-  group?: CharacterGroup;
-  label?: string;
-  characters: Character[];
-  avatarMap: Map<number, string>;
-  groupMap: Map<number, CharacterGroup>;
-  blockingMap?: Map<number, string[]>;
-  sectionReadinessMap?: Map<number, Record<SectionKey, SectionReadiness>>;
-  blockingDeliverables?: string[];
-  expanded: boolean;
-  isDragOver: boolean;
-  projectId: number;
-  selectedCharIds: Set<number>;
-  onCharSelect: (charId: number) => void;
-  onSelectAll: (charIds: number[]) => void;
-  onToggle: () => void;
-  onEdit?: () => void;
-  onDelete?: () => void;
-  onCharClick: (char: Character) => void;
-  onCharEdit: (char: Character) => void;
-  onCharToggleEnabled: (charId: number, enabled: boolean) => void;
-  onCharDragStart: (e: React.DragEvent, characterId: number) => void;
-  onDragEnter: (e: React.DragEvent) => void;
-  onDragOver: (e: React.DragEvent) => void;
-  onDragLeave: (e: React.DragEvent) => void;
-  onDrop: (e: React.DragEvent) => void;
-}
-
-function GroupSection({
-  sectionId,
-  group,
-  label,
-  characters,
-  avatarMap,
-  groupMap,
-  blockingMap,
-  sectionReadinessMap,
-  blockingDeliverables,
-  expanded,
-  isDragOver,
-  projectId,
-  selectedCharIds,
-  onCharSelect,
-  onSelectAll,
-  onToggle,
-  onEdit,
-  onDelete,
-  onCharClick,
-  onCharEdit,
-  onCharToggleEnabled,
-  onCharDragStart,
-  onDragEnter,
-  onDragOver,
-  onDragLeave,
-  onDrop,
-}: GroupSectionProps) {
-  const displayName = group?.name ?? label ?? "Unknown";
-  const Chevron = expanded ? ChevronDown : ChevronRight;
-  const charIds = characters.map((c) => c.id);
-  const allSelected = characters.length > 0 && charIds.every((id) => selectedCharIds.has(id));
-
-  return (
-    <div
-      id={sectionId}
-      className={cn(
-        "rounded-[var(--radius-md)] border bg-[var(--color-surface-primary)] transition-colors",
-        isDragOver
-          ? "border-[var(--color-border-accent)] ring-2 ring-[var(--color-action-primary)] bg-[var(--color-surface-secondary)]"
-          : "border-[var(--color-border-default)]",
-      )}
-      onDragEnter={onDragEnter}
-      onDragOver={onDragOver}
-      onDragLeave={onDragLeave}
-      onDrop={onDrop}
-    >
-      {/* Header */}
-      <div
-        role="button"
-        tabIndex={0}
-        className="flex w-full items-center gap-[var(--spacing-2)] px-[var(--spacing-3)] py-[var(--spacing-2)] text-left hover:bg-[var(--color-surface-secondary)] transition-colors rounded-t-[var(--radius-md)] cursor-pointer"
-        onClick={onToggle}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            onToggle();
-          }
-        }}
-      >
-        <Chevron size={16} className="text-[var(--color-text-muted)] shrink-0" aria-hidden />
-        <span className="font-medium text-[var(--color-text-primary)] flex-1">{displayName}</span>
-        <span className="text-xs text-[var(--color-text-muted)]">
-          {characters.length} {characters.length === 1 ? "character" : "characters"}
-        </span>
-        {characters.length > 0 && (
-          <button
-            type="button"
-            className={INLINE_LINK_BTN}
-            onClick={(e) => {
-              e.stopPropagation();
-              onSelectAll(allSelected ? [] : charIds);
-            }}
-            aria-label={allSelected ? `Deselect all in ${displayName}` : `Select all in ${displayName}`}
-          >
-            {allSelected ? "Deselect All" : "Select All"}
-          </button>
-        )}
-        {onEdit && (
-          <button
-            type="button"
-            className={ICON_ACTION_BTN}
-            onClick={(e) => {
-              e.stopPropagation();
-              onEdit();
-            }}
-            aria-label={`Edit ${displayName}`}
-          >
-            <Edit3 size={14} aria-hidden />
-          </button>
-        )}
-        {onDelete && (
-          <button
-            type="button"
-            className={ICON_ACTION_BTN_DANGER}
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete();
-            }}
-            aria-label={`Delete ${displayName}`}
-          >
-            <Trash2 size={14} aria-hidden />
-          </button>
-        )}
-      </div>
-
-      {/* Expanded character cards */}
-      {expanded && (
-        <div className="border-t border-[var(--color-border-default)] px-[var(--spacing-3)] py-[var(--spacing-3)]">
-          {characters.length === 0 ? (
-            <p className="text-sm text-[var(--color-text-muted)] py-[var(--spacing-2)]">
-              No characters in this group. Drag characters here to add them.
-            </p>
-          ) : (
-            <Grid cols={2} gap={3} className="sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-              {characters.map((c) => (
-                <div
-                  key={c.id}
-                  draggable
-                  onDragStart={(e) => onCharDragStart(e, c.id)}
-                  className="cursor-grab active:cursor-grabbing"
-                >
-                  <CharacterCard
-                    character={c}
-                    group={c.group_id ? groupMap.get(c.group_id) : undefined}
-                    avatarUrl={avatarMap.get(c.id)}
-                    heroVariantId={c.hero_variant_id}
-                    selected={selectedCharIds.has(c.id)}
-                    blockingReasons={blockingMap?.get(c.id)}
-                    sectionReadiness={sectionReadinessMap?.get(c.id)}
-                    blockingDeliverables={blockingDeliverables}
-                    projectId={projectId}
-                    onSelect={onCharSelect}
-                    onClick={() => onCharClick(c)}
-                    onEdit={() => onCharEdit(c)}
-                    onToggleEnabled={onCharToggleEnabled}
-                  />
-                </div>
-              ))}
-            </Grid>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}

@@ -22,6 +22,14 @@ import { ReadinessIndicators } from "./ReadinessIndicators";
    Component
    -------------------------------------------------------------------------- */
 
+/** Seed data completeness status for the character (PRD-135). */
+export interface SeedDataStatus {
+  hasClothedImage: boolean;
+  hasToplessImage: boolean;
+  hasBio: boolean;
+  hasTov: boolean;
+}
+
 interface CharacterCardProps {
   character: Character;
   group?: CharacterGroup;
@@ -34,13 +42,41 @@ interface CharacterCardProps {
   /** Which sections must be complete for green border. Defaults to all sections. */
   blockingDeliverables?: string[];
   projectId?: number;
+  /** Seed data completeness indicators. Omit to hide dots. */
+  seedDataStatus?: SeedDataStatus;
   onSelect?: (charId: number) => void;
   onClick: () => void;
   onEdit?: () => void;
   onToggleEnabled?: (charId: number, enabled: boolean) => void;
 }
 
-export function CharacterCard({ character, group, avatarUrl, heroVariantId, selected, deliveryStatus, blockingReasons, sectionReadiness, blockingDeliverables, projectId, onSelect, onClick, onEdit, onToggleEnabled }: CharacterCardProps) {
+const SEED_DATA_ITEMS: { key: keyof SeedDataStatus; label: string }[] = [
+  { key: "hasClothedImage", label: "Clothed image" },
+  { key: "hasToplessImage", label: "Topless image" },
+  { key: "hasBio", label: "Bio" },
+  { key: "hasTov", label: "Tone of Voice" },
+];
+
+function SeedDataDots({ status }: { status: SeedDataStatus }) {
+  return (
+    <div className="mt-1 flex items-center gap-1">
+      {SEED_DATA_ITEMS.map(({ key, label }) => (
+        <span
+          key={key}
+          title={`${label}: ${status[key] ? "Present" : "Missing"}`}
+          className={cn(
+            "w-2 h-2 rounded-full",
+            status[key]
+              ? "bg-[var(--color-action-success)]"
+              : "bg-[var(--color-text-muted)] opacity-40",
+          )}
+        />
+      ))}
+    </div>
+  );
+}
+
+export function CharacterCard({ character, group, avatarUrl, heroVariantId, selected, deliveryStatus, blockingReasons, sectionReadiness, blockingDeliverables, projectId, seedDataStatus, onSelect, onClick, onEdit, onToggleEnabled }: CharacterCardProps) {
   const statusLabel = characterStatusLabel(character.status_id);
   const badgeVariant = characterStatusBadgeVariant(character.status_id);
   const isDisabled = !character.is_enabled;
@@ -222,6 +258,9 @@ export function CharacterCard({ character, group, avatarUrl, heroVariantId, sele
                 <Badge key={reason} variant="danger" size="sm">{reason}</Badge>
               ))}
             </div>
+          )}
+          {seedDataStatus && (
+            <SeedDataDots status={seedDataStatus} />
           )}
         </div>
       </button>

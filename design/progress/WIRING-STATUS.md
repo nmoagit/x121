@@ -30,7 +30,7 @@ These features have routes in `router.tsx` and entries in `navigation.ts`.
 | `/performance` | `dashboard` | PRD-41 |
 | `/dashboard/customize` | `dashboard-customization` | PRD-89 |
 | `/content/scenes` | `scenes` | PRD-01 |
-| `/content/characters` | `characters` | PRD-01 |
+| `/content/characters` | `characters` | PRD-01, PRD-135 |
 | `/content/library` | `library` | PRD-60 |
 | `/content/storyboard` | `storyboard` | PRD-62 |
 | `/content/images` | `images` | PRD-21 |

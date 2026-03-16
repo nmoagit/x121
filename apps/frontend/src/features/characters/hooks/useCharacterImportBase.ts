@@ -1,13 +1,12 @@
 /**
- * Shared hook for drag-and-drop character import flow.
+ * Base import hook for character folder imports (phases 0-3.5).
  *
- * Encapsulates the import state, handlers, and bulk-create mutation
- * so that both ProjectCharactersTab and ProjectGroupsTab can share
- * identical import behavior without duplicating code.
+ * Handles: group resolution, character creation, image upload, and
+ * metadata upload. Does NOT handle video import (Phase 4).
  *
- * Supports two modes:
- * - Name-only (legacy): creates characters from name list
- * - Asset-aware: creates characters + uploads images/videos from folders
+ * Used by:
+ * - CharactersPage (no video support)
+ * - useCharacterImport (wraps this and adds Phase 4 on top)
  */
 
 import { useQueryClient } from "@tanstack/react-query";
@@ -22,35 +21,32 @@ import { generateMetadata } from "@/features/characters/lib/metadata-transform";
 import {
   extractCharacterHint,
   matchesCharacterName,
-  parseFilename,
 } from "@/features/characters/tabs/matchDroppedVideos";
 import { SOURCE_KEY_BIO, SOURCE_KEY_TOV } from "@/features/characters/types";
 import { fetchVariantTypeSet, imageVariantKeys } from "@/features/images/hooks/use-image-variants";
-import { useSceneCatalogue } from "@/features/scene-catalogue/hooks/use-scene-catalogue";
-import { useTracks } from "@/features/scene-catalogue/hooks/use-tracks";
-import { sceneKeys } from "@/features/scenes/hooks/useCharacterScenes";
-import type { Scene } from "@/features/scenes/types";
-import { sceneHasVideo } from "@/features/scenes/types";
 import { api } from "@/lib/api";
 import { limitConcurrency } from "@/lib/async-utils";
 import { readFileAsJson } from "@/lib/file-types";
+import { sha256File } from "@/lib/hash";
 
 import {
-  createSceneForCharacter,
-  importVideoClip,
   uploadImageVariant,
-} from "../lib/bulk-asset-upload";
-import type { Character, CharacterDropPayload, CharacterGroup, DroppedAsset, FolderDropResult, ImportHashSummary } from "../types";
-import { useBulkCreateCharacters, useProjectCharacters } from "./use-project-characters";
-import { sha256File } from "@/lib/hash";
+} from "@/features/projects/lib/bulk-asset-upload";
+import type {
+  Character,
+  CharacterDropPayload,
+  CharacterGroup,
+  DroppedAsset,
+  FolderDropResult,
+  ImportHashSummary,
+} from "@/features/projects/types";
 import {
-  partitionCharacterFiles,
-  type FileAssignments,
-  type UnmatchedCharacterFiles,
-} from "@/features/characters/hooks/useCharacterImportBase";
+  useBulkCreateCharacters,
+  useProjectCharacters,
+} from "@/features/projects/hooks/use-project-characters";
 
 /* --------------------------------------------------------------------------
-   Progress types
+   Progress types (shared with useCharacterImport)
    -------------------------------------------------------------------------- */
 
 export interface ImportProgress {
@@ -61,7 +57,22 @@ export interface ImportProgress {
 }
 
 /* --------------------------------------------------------------------------
-   Hook
+   Unmatched file types (for FileAssignmentModal)
+   -------------------------------------------------------------------------- */
+
+export interface UnmatchedCharacterFiles {
+  characterName: string;
+  imageFiles: File[];
+  jsonFiles: File[];
+  matched: { clothed?: File; topless?: File; bio?: File; tov?: File };
+}
+
+export interface FileAssignments {
+  [characterName: string]: { clothed?: File; topless?: File; bio?: File; tov?: File };
+}
+
+/* --------------------------------------------------------------------------
+   Helpers
    -------------------------------------------------------------------------- */
 
 /** Build an ActivityLogEntry for import events. */
@@ -71,7 +82,6 @@ function importLogEntry(
   projectId: number,
   fields?: Record<string, unknown>,
 ): ActivityLogEntry {
-  // Also log to browser console for debugging
   const logFn = level === "error" ? console.error : level === "warn" ? console.warn : console.info;
   logFn(`[Import] ${message}`, fields ?? "");
 
@@ -88,10 +98,73 @@ function importLogEntry(
   };
 }
 
-export function useCharacterImport(projectId: number) {
+/** Recognized image filenames (lowercase stems). */
+const RECOGNIZED_IMAGE_NAMES = new Set(["clothed", "topless"]);
+
+/**
+ * Partition files in a payload into matched (recognized names) and unmatched.
+ * Returns null if there are no unmatched files.
+ */
+export function partitionCharacterFiles(
+  payload: CharacterDropPayload,
+): UnmatchedCharacterFiles | null {
+  const matched: UnmatchedCharacterFiles["matched"] = {};
+  const unmatchedImages: File[] = [];
+  const unmatchedJsons: File[] = [];
+
+  // Check image assets
+  for (const asset of payload.assets) {
+    if (asset.kind === "image") {
+      if (RECOGNIZED_IMAGE_NAMES.has(asset.category)) {
+        if (asset.category === "clothed") matched.clothed = asset.file;
+        else if (asset.category === "topless") matched.topless = asset.file;
+      } else {
+        unmatchedImages.push(asset.file);
+      }
+    }
+  }
+
+  // Check JSON files
+  if (payload.bioJson) matched.bio = payload.bioJson;
+  else {
+    // Check for JSON files that might have non-standard names
+    // (already handled by FileDropZone — bio.json/tov.json are auto-classified)
+  }
+  if (payload.tovJson) matched.tov = payload.tovJson;
+
+  // Any other JSON files that weren't classified as bio/tov/metadata
+  // are already handled by classifyCharacterFiles — only bio.json, tov.json,
+  // and metadata.json are recognized. Other JSON files would not be present
+  // in the payload at all (they are ignored by FileDropZone).
+
+  if (unmatchedImages.length === 0 && unmatchedJsons.length === 0) {
+    return null;
+  }
+
+  return {
+    characterName: payload.rawName,
+    imageFiles: unmatchedImages,
+    jsonFiles: unmatchedJsons,
+    matched,
+  };
+}
+
+/* --------------------------------------------------------------------------
+   Hook options
+   -------------------------------------------------------------------------- */
+
+export interface UseCharacterImportBaseOptions {
+  /** Called when files don't match recognized names. Return assignments to merge. */
+  onUnmatchedFiles?: (files: UnmatchedCharacterFiles[]) => Promise<FileAssignments | null>;
+}
+
+/* --------------------------------------------------------------------------
+   Hook
+   -------------------------------------------------------------------------- */
+
+export function useCharacterImportBase(projectId: number, _options?: UseCharacterImportBaseOptions) {
   const queryClient = useQueryClient();
   const { addToast } = useToast();
-  /** Add a log entry to the activity console store (always uses latest state). */
   const addLogEntry = (entry: ActivityLogEntry) => {
     useActivityConsoleStore.getState().addEntry(entry);
   };
@@ -102,8 +175,6 @@ export function useCharacterImport(projectId: number) {
   };
   const bulkCreate = useBulkCreateCharacters(projectId);
   const { data: characters } = useProjectCharacters(projectId);
-  const { data: sceneCatalogue } = useSceneCatalogue();
-  const { data: tracks } = useTracks();
 
   const [importNames, setImportNames] = useState<string[]>([]);
   const [importPayloads, setImportPayloads] = useState<CharacterDropPayload[]>([]);
@@ -143,13 +214,12 @@ export function useCharacterImport(projectId: number) {
 
   function handleFolderDrop(result: FolderDropResult) {
     setImportResult(result);
-    // Flatten all grouped payloads for the modal's character list
     const allPayloads: CharacterDropPayload[] = [];
     for (const payloads of result.groupedPayloads.values()) {
       allPayloads.push(...payloads);
     }
 
-    // Scan for unmatched files (image/JSON files with non-standard names)
+    // Scan for unmatched files
     const unmatched: UnmatchedCharacterFiles[] = [];
     for (const payload of allPayloads) {
       const result = partitionCharacterFiles(payload);
@@ -166,7 +236,6 @@ export function useCharacterImport(projectId: number) {
     if (allAssets.length > 0) {
       setHashSummary({ totalFiles: allAssets.length, duplicateFiles: 0, newFiles: 0, isHashing: true });
       computeAndCheckHashes(allPayloads).catch(() => {
-        // On error, clear hashing state — import still works without dedup
         setHashSummary(null);
       });
     } else {
@@ -174,9 +243,51 @@ export function useCharacterImport(projectId: number) {
     }
   }
 
-  /** Hash all importable assets (images + videos) and check against backend. */
+  /** Merge file assignments from the FileAssignmentModal into import payloads. */
+  function resolveUnmatchedFiles(assignments: FileAssignments) {
+    setImportPayloads((prev) => {
+      const updated = prev.map((payload) => {
+        const charAssignment = assignments[payload.rawName];
+        if (!charAssignment) return payload;
+
+        const newPayload = { ...payload, assets: [...payload.assets] };
+
+        // Merge assigned images into assets
+        if (charAssignment.clothed) {
+          // Replace or add clothed image asset
+          const existing = newPayload.assets.findIndex(
+            (a) => a.kind === "image" && a.category === "clothed",
+          );
+          const asset: DroppedAsset = { file: charAssignment.clothed, category: "clothed", kind: "image" };
+          if (existing >= 0) newPayload.assets[existing] = asset;
+          else newPayload.assets.push(asset);
+        }
+        if (charAssignment.topless) {
+          const existing = newPayload.assets.findIndex(
+            (a) => a.kind === "image" && a.category === "topless",
+          );
+          const asset: DroppedAsset = { file: charAssignment.topless, category: "topless", kind: "image" };
+          if (existing >= 0) newPayload.assets[existing] = asset;
+          else newPayload.assets.push(asset);
+        }
+
+        // Merge assigned JSON files
+        if (charAssignment.bio) newPayload.bioJson = charAssignment.bio;
+        if (charAssignment.tov) newPayload.tovJson = charAssignment.tov;
+
+        return newPayload;
+      });
+      return updated;
+    });
+    setUnmatchedFiles([]);
+  }
+
+  function dismissUnmatchedFiles() {
+    setUnmatchedFiles([]);
+  }
+
+  /** Hash all importable assets and check against backend. */
   async function computeAndCheckHashes(payloads: CharacterDropPayload[]) {
-    // Collect all assets (images + videos)
     const allAssets: { asset: DroppedAsset }[] = [];
     for (const payload of payloads) {
       for (const asset of payload.assets) {
@@ -189,17 +300,14 @@ export function useCharacterImport(projectId: number) {
       return;
     }
 
-    // Hash all files
     const hashes = await Promise.all(
       allAssets.map(({ asset }) => sha256File(asset.file)),
     );
 
-    // Store hashes on assets
     for (let i = 0; i < allAssets.length; i++) {
       allAssets[i]!.asset.contentHash = hashes[i];
     }
 
-    // Check which hashes already exist in the backend (images + videos)
     const uniqueHashes = [...new Set(hashes.filter(Boolean) as string[])];
     let existingHashSet = new Set<string>();
     if (uniqueHashes.length > 0) {
@@ -210,11 +318,10 @@ export function useCharacterImport(projectId: number) {
         );
         existingHashSet = new Set(result?.existing ?? []);
       } catch {
-        // Silently ignore — import still works without dedup
+        // Silently ignore
       }
     }
 
-    // Mark assets as duplicate/new
     let duplicateCount = 0;
     for (let i = 0; i < allAssets.length; i++) {
       const isDup = existingHashSet.has(hashes[i]!);
@@ -231,6 +338,11 @@ export function useCharacterImport(projectId: number) {
     });
   }
 
+  /**
+   * Core import logic: phases 0-3.5.
+   * Returns { nameToIdMap, errors, createdCharacters, imageAssets, allPayloads }
+   * so callers can add Phase 4 (videos) on top.
+   */
   const handleImportConfirmWithAssets = useCallback(
     async (
       newPayloads: CharacterDropPayload[],
@@ -239,14 +351,12 @@ export function useCharacterImport(projectId: number) {
       overwrite = false,
       skipExisting = false,
     ) => {
-      // Early return if nothing to import
       if (newPayloads.length === 0 && existingPayloads.length === 0) {
         setImportOpen(false);
         addToast({ message: "Nothing to import", variant: "info" });
         return;
       }
 
-      // Set up abort controller for cancellation
       const abort = new AbortController();
       abortRef.current = abort;
 
@@ -255,14 +365,10 @@ export function useCharacterImport(projectId: number) {
         new: newPayloads.length,
         existing: existingPayloads.length,
       }));
-      console.info(
-        `[Import] Starting import of ${totalCount} character(s) for project ${projectId}`,
-      );
 
       const errors: string[] = [];
       const nameToIdMap = new Map<string, number>();
 
-      /** Check if the import was aborted; if so, clean up and return true. */
       const wasAborted = () => {
         if (!abort.signal.aborted) return false;
         addLogEntry(importLogEntry("warn", "Import stopped by user", projectId));
@@ -273,22 +379,19 @@ export function useCharacterImport(projectId: number) {
         setImportPayloads([]);
         setImportResult(null);
         abortRef.current = null;
-        // Still invalidate caches for any work already done
         queryClient.invalidateQueries({ queryKey: ["projects", projectId, "characters"] });
         queryClient.invalidateQueries({ queryKey: ["projects", projectId, "groups"] });
         queryClient.invalidateQueries({ queryKey: imageVariantKeys.all });
-        queryClient.invalidateQueries({ queryKey: sceneKeys.all });
         return true;
       };
 
-      /** Reusable progress updater for limitConcurrency callbacks. */
       const onProgress = (done: number) => {
         setImportProgress((prev) =>
           prev ? { ...prev, current: done, errors: [...errors] } : null,
         );
       };
 
-      // Phase 0: Create missing groups (for grouped/project imports)
+      // Phase 0: Create missing groups
       const groupNameToId = new Map<string, number>();
       const uniqueGroupNames = [
         ...new Set(
@@ -299,9 +402,6 @@ export function useCharacterImport(projectId: number) {
       ];
 
       if (uniqueGroupNames.length > 0) {
-        console.info(
-          `[Import] Phase 0: Resolving ${uniqueGroupNames.length} group(s): ${uniqueGroupNames.join(", ")}`,
-        );
         const existingGroups = await api.get<CharacterGroup[]>(
           `/projects/${projectId}/groups`,
         );
@@ -319,7 +419,6 @@ export function useCharacterImport(projectId: number) {
               );
               groupNameToId.set(name.toLowerCase(), created.id);
               groupsCreated++;
-              console.info(`[Import] Created group "${name}" (id=${created.id})`);
             } catch (err) {
               const msg = `Failed to create group "${name}": ${String(err)}`;
               errors.push(msg);
@@ -331,13 +430,7 @@ export function useCharacterImport(projectId: number) {
           }
         }
         if (groupsCreated > 0 || groupsExisted > 0) {
-          addLogEntry(importLogEntry("info", `Groups resolved: ${groupsCreated} created, ${groupsExisted} existing`, projectId, {
-            created: groupsCreated,
-            existing: groupsExisted,
-          }));
-          console.info(
-            `[Import] Groups: ${groupsCreated} created, ${groupsExisted} already existed`,
-          );
+          addLogEntry(importLogEntry("info", `Groups resolved: ${groupsCreated} created, ${groupsExisted} existing`, projectId));
         }
       }
 
@@ -346,9 +439,6 @@ export function useCharacterImport(projectId: number) {
       let createdCharacters: Character[] = [];
 
       if (newNames.length > 0) {
-        console.info(
-          `[Import] Phase 1: Creating ${newNames.length} character(s)`,
-        );
         setImportProgress({
           phase: "creating",
           current: 0,
@@ -356,11 +446,9 @@ export function useCharacterImport(projectId: number) {
           errors: [],
         });
 
-        // Check if payloads have group assignments from folder structure
         const hasGroupAssignments = newPayloads.some((p) => p.groupName);
 
         if (hasGroupAssignments) {
-          // Per-group bulk creation
           const byGroup = new Map<number | undefined, string[]>();
           for (const p of newPayloads) {
             const gId = p.groupName
@@ -383,14 +471,15 @@ export function useCharacterImport(projectId: number) {
               createdCharacters.push(...created);
             }
           } catch (err) {
-            { const msg = `Failed to create characters: ${String(err)}`; errors.push(msg); addLogEntry(importLogEntry("error", msg, projectId)); }
+            const msg = `Failed to create characters: ${String(err)}`;
+            errors.push(msg);
+            addLogEntry(importLogEntry("error", msg, projectId));
             setImportProgress(null);
             setImportOpen(false);
             addToast({ message: "Character import failed", variant: "error" });
             return;
           }
         } else {
-          // Single bulk creation (existing behavior)
           try {
             createdCharacters = await bulkCreate.mutateAsync({
               names: newNames,
@@ -400,7 +489,9 @@ export function useCharacterImport(projectId: number) {
               nameToIdMap.set(char.name.toLowerCase(), char.id);
             }
           } catch (err) {
-            { const msg = `Failed to create characters: ${String(err)}`; errors.push(msg); addLogEntry(importLogEntry("error", msg, projectId)); }
+            const msg = `Failed to create characters: ${String(err)}`;
+            errors.push(msg);
+            addLogEntry(importLogEntry("error", msg, projectId));
             setImportProgress(null);
             setImportOpen(false);
             addToast({ message: "Character import failed", variant: "error" });
@@ -417,11 +508,12 @@ export function useCharacterImport(projectId: number) {
         if (existing) {
           nameToIdMap.set(payload.rawName.toLowerCase(), existing.id);
         } else {
-          { const msg = `Could not find existing character "${payload.rawName}"`; errors.push(msg); addLogEntry(importLogEntry("error", msg, projectId)); }
+          const msg = `Could not find existing character "${payload.rawName}"`;
+          errors.push(msg);
+          addLogEntry(importLogEntry("error", msg, projectId));
         }
       }
 
-      // Combine all payloads that have a resolved character ID
       const allPayloads = [...newPayloads, ...existingPayloads];
 
       // Check for filename-to-character mismatches
@@ -446,27 +538,15 @@ export function useCharacterImport(projectId: number) {
         return p.assets.filter((a) => a.kind === "image").map((a) => ({ charId, asset: a, charName: p.rawName }));
       });
 
-      const videoAssets = allPayloads.flatMap((p) => {
-        const charId = nameToIdMap.get(p.rawName.toLowerCase());
-        if (!charId) return [];
-        return p.assets
-          .filter((a) => a.kind === "video")
-          .map((a) => ({ charId, asset: a, charName: p.rawName }));
-      });
-
       if (createdCharacters.length > 0) {
         addLogEntry(importLogEntry("info", `Created ${createdCharacters.length} character(s)`, projectId, {
           names: createdCharacters.map((c) => c.name),
         }));
       }
-      console.info(
-        `[Import] Phase 1 complete: ${createdCharacters.length} character(s) created`,
-      );
 
-      // Phase 3: Upload images (skip variant_types that already exist)
+      // Phase 3: Upload images
       if (wasAborted()) return;
       if (imageAssets.length > 0) {
-        console.info(`[Import] Phase 2: Uploading ${imageAssets.length} image(s)`);
         setImportProgress({
           phase: "uploading-images",
           current: 0,
@@ -474,14 +554,12 @@ export function useCharacterImport(projectId: number) {
           errors,
         });
 
-        // Fetch existing variant_types per character to avoid duplicates
         const existingVariantTypes = new Map<number, Set<string>>();
         const uniqueCharIds = [...new Set(imageAssets.map((a) => a.charId))];
         for (const cid of uniqueCharIds) {
           try {
             existingVariantTypes.set(cid, await fetchVariantTypeSet(cid));
           } catch {
-            // If fetch fails, proceed without skip-check for this character
             existingVariantTypes.set(cid, new Set());
           }
         }
@@ -492,16 +570,12 @@ export function useCharacterImport(projectId: number) {
           const existing = existingVariantTypes.get(charId);
           if (!overwrite && existing?.has(asset.category.toLowerCase())) {
             skippedImages++;
-            addLogEntry(importLogEntry("debug", `${asset.file.name} skipped for ${charName} (${asset.category} already exists)`, projectId, {
-              file: asset.file.name, character: charName, variant_type: asset.category,
-            }));
+            addLogEntry(importLogEntry("debug", `${asset.file.name} skipped for ${charName} (${asset.category} already exists)`, projectId));
             return Promise.resolve("skipped" as const);
           }
           return uploadImageVariant(charId, asset.file, asset.category).then(() => {
             existing?.add(asset.category.toLowerCase());
-            addLogEntry(importLogEntry("info", `${asset.file.name} imported for ${charName}`, projectId, {
-              file: asset.file.name, character: charName, variant_type: asset.category,
-            }));
+            addLogEntry(importLogEntry("info", `${asset.file.name} imported for ${charName}`, projectId));
             return "uploaded" as const;
           });
         });
@@ -513,9 +587,7 @@ export function useCharacterImport(projectId: number) {
           if (r.status === "rejected") {
             const msg = `Image upload failed for "${imageAssets[i]!.asset.file.name}" (${imageAssets[i]!.charName}): ${String(r.reason)}`;
             errors.push(msg);
-            addLogEntry(importLogEntry("error", msg, projectId, {
-              file: imageAssets[i]!.asset.file.name, character: imageAssets[i]!.charName,
-            }));
+            addLogEntry(importLogEntry("error", msg, projectId));
           }
         }
 
@@ -525,15 +597,11 @@ export function useCharacterImport(projectId: number) {
           failedImages > 0 ? "warn" : "info",
           `Images: ${uploadedImages} uploaded${skippedImages > 0 ? `, ${skippedImages} skipped` : ""}${failedImages > 0 ? `, ${failedImages} failed` : ""}`,
           projectId,
-          { uploaded: uploadedImages, skipped: skippedImages, failed: failedImages },
         ));
-
-        if (skippedImages > 0) {
-          addLogEntry(importLogEntry("info", `${skippedImages} image${skippedImages > 1 ? "s" : ""} skipped (variant type already exists)`, projectId));
-        }
       }
 
       if (wasAborted()) return;
+
       // Phase 3.5: Upload metadata from JSON files
       const metadataPayloads = allPayloads.filter((p) => {
         const charId = nameToIdMap.get(p.rawName.toLowerCase());
@@ -544,9 +612,6 @@ export function useCharacterImport(projectId: number) {
       let skippedMetadata = 0;
       let invalidJsonCount = 0;
       if (metadataPayloads.length > 0) {
-        console.info(
-          `[Import] Phase 3: Uploading metadata for ${metadataPayloads.length} character(s)`,
-        );
         setImportProgress({
           phase: "uploading-metadata",
           current: 0,
@@ -558,7 +623,6 @@ export function useCharacterImport(projectId: number) {
           if (abort.signal.aborted) return "skipped" as const;
           const charId = nameToIdMap.get(payload.rawName.toLowerCase())!;
 
-          // Skip if character already has metadata and skipExisting is on
           if (skipExisting) {
             const existing = characters?.find((c) => c.id === charId);
             if (existing?.metadata && Object.keys(existing.metadata).length > 0) {
@@ -569,14 +633,12 @@ export function useCharacterImport(projectId: number) {
 
           const draft: Record<string, unknown> = {};
 
-          // Parse all available JSON files with validation
           const [bioData, tovData, metaData] = await Promise.all([
             payload.bioJson ? readFileAsJson(payload.bioJson) : null,
             payload.tovJson ? readFileAsJson(payload.tovJson) : null,
             payload.metadataJson ? readFileAsJson(payload.metadataJson) : null,
           ]);
 
-          // Validate JSON parse results — report invalid files
           if (payload.bioJson && bioData === null) {
             const msg = `Invalid JSON: bio.json for "${payload.rawName}" — file skipped`;
             errors.push(msg);
@@ -596,34 +658,28 @@ export function useCharacterImport(projectId: number) {
             invalidJsonCount++;
           }
 
-          // bio.json + tov.json → generate + flatten (lower priority)
           if (bioData || tovData) {
             const generated = generateMetadata(bioData, tovData, payload.rawName);
             const flat = flattenMetadata(generated);
             Object.assign(draft, flat);
           }
 
-          // metadata.json → flatten and merge (higher priority, overwrites bio/tov keys)
           if (metaData) {
             const flat = flattenMetadata(metaData);
             Object.assign(draft, flat);
           }
 
-          // If no valid JSON data at all, skip the API call
           if (Object.keys(draft).length === 0 && !bioData && !tovData) {
             return "skipped" as const;
           }
 
-          // Store raw sources (matching CharacterMetadataTab pattern)
           if (bioData) draft[SOURCE_KEY_BIO] = bioData;
           if (tovData) draft[SOURCE_KEY_TOV] = tovData;
 
           await api.put(`/characters/${charId}/metadata`, draft);
           metadataUploaded++;
           const sources = [payload.bioJson && "bio.json", payload.tovJson && "tov.json", payload.metadataJson && "metadata.json"].filter(Boolean).join(", ");
-          addLogEntry(importLogEntry("info", `Metadata (${sources}) imported for ${payload.rawName}`, projectId, {
-            character: payload.rawName, sources,
-          }));
+          addLogEntry(importLogEntry("info", `Metadata (${sources}) imported for ${payload.rawName}`, projectId));
           return "uploaded" as const;
         });
 
@@ -634,9 +690,7 @@ export function useCharacterImport(projectId: number) {
           if (r.status === "rejected") {
             const msg = `Metadata upload failed for "${metadataPayloads[i]!.rawName}": ${String(r.reason)}`;
             errors.push(msg);
-            addLogEntry(importLogEntry("error", msg, projectId, {
-              character: metadataPayloads[i]!.rawName,
-            }));
+            addLogEntry(importLogEntry("error", msg, projectId));
           }
         }
 
@@ -644,7 +698,6 @@ export function useCharacterImport(projectId: number) {
           invalidJsonCount > 0 ? "warn" : "info",
           `Metadata: ${metadataUploaded} uploaded${skippedMetadata > 0 ? `, ${skippedMetadata} skipped` : ""}${invalidJsonCount > 0 ? `, ${invalidJsonCount} invalid JSON` : ""}`,
           projectId,
-          { uploaded: metadataUploaded, skipped: skippedMetadata, invalid: invalidJsonCount },
         ));
 
         if (invalidJsonCount > 0) {
@@ -655,87 +708,7 @@ export function useCharacterImport(projectId: number) {
         }
       }
 
-      // Phase 4: Import videos
-      if (wasAborted()) return;
-      let skippedVideos = 0;
-      if (videoAssets.length > 0) {
-        console.info(`[Import] Phase 4: Importing ${videoAssets.length} video(s)`);
-        setImportProgress({
-          phase: "importing-videos",
-          current: 0,
-          total: videoAssets.length,
-          errors,
-        });
-
-        const trackSlugs = tracks?.map((t) => t.slug) ?? [];
-
-        const videoTasks = videoAssets.map(({ charId, asset, charName }) => async () => {
-          if (abort.signal.aborted) return "skipped" as const;
-          const parsed = parseFilename(asset.file.name, trackSlugs);
-
-          // Look up scene_type_id from catalogue by slug
-          const sceneType = sceneCatalogue?.find((st) => st.slug === parsed.sceneSlug);
-          if (!sceneType) {
-            const msg = `No scene type "${parsed.sceneSlug}" for video "${asset.file.name}" (${charName})`;
-            errors.push(msg);
-            addLogEntry(importLogEntry("error", msg, projectId, {
-              file: asset.file.name, character: charName, sceneSlug: parsed.sceneSlug,
-            }));
-            return "skipped" as const;
-          }
-
-          // Look up track_id
-          const track = tracks?.find((t) => t.slug === parsed.trackSlug) ?? null;
-          const trackId = track?.id ?? null;
-
-          // Find existing scene or create one
-          const existingScenes = await api.get<Scene[]>(`/characters/${charId}/scenes`);
-          let scene = existingScenes.find(
-            (s) => s.scene_type_id === sceneType.id && s.track_id === trackId,
-          );
-
-          // Skip if scene already has video and skipExisting is on
-          if (skipExisting && scene && sceneHasVideo(scene)) {
-            skippedVideos++;
-            return "skipped" as const;
-          }
-
-          if (!scene) {
-            const sceneId = await createSceneForCharacter(charId, sceneType.id, trackId, null);
-            scene = { id: sceneId } as Scene;
-          }
-
-          await importVideoClip(scene.id, asset.file);
-          addLogEntry(importLogEntry("info", `${asset.file.name} imported for ${charName}`, projectId, {
-            file: asset.file.name, character: charName, scene_type: parsed.sceneSlug, track: parsed.trackSlug,
-          }));
-          return "uploaded" as const;
-        });
-
-        const videoResults = await limitConcurrency(videoTasks, 2, onProgress);
-
-        for (let i = 0; i < videoResults.length; i++) {
-          const r = videoResults[i]!;
-          if (r.status === "rejected") {
-            const msg = `Video import failed for "${videoAssets[i]!.asset.file.name}" (${videoAssets[i]!.charName}): ${String(r.reason)}`;
-            errors.push(msg);
-            addLogEntry(importLogEntry("error", msg, projectId, {
-              file: videoAssets[i]!.asset.file.name, character: videoAssets[i]!.charName,
-            }));
-          }
-        }
-
-        const uploadedVideos = videoResults.filter((r) => r.status === "fulfilled" && r.value === "uploaded").length;
-        const failedVideos = videoResults.filter((r) => r.status === "rejected").length;
-        addLogEntry(importLogEntry(
-          failedVideos > 0 ? "warn" : "info",
-          `Videos: ${uploadedVideos} imported${skippedVideos > 0 ? `, ${skippedVideos} skipped` : ""}${failedVideos > 0 ? `, ${failedVideos} failed` : ""}`,
-          projectId,
-          { uploaded: uploadedVideos, skipped: skippedVideos, failed: failedVideos },
-        ));
-      }
-
-      // Phase 5: Done — invalidate queries and show summary
+      // Phase done (no videos in base hook)
       if (wasAborted()) return;
       abortRef.current = null;
       setImportProgress({
@@ -745,7 +718,6 @@ export function useCharacterImport(projectId: number) {
         errors,
       });
 
-      // Invalidate all relevant caches
       await Promise.all([
         queryClient.invalidateQueries({
           queryKey: ["projects", projectId, "characters"],
@@ -754,7 +726,6 @@ export function useCharacterImport(projectId: number) {
           queryKey: ["projects", projectId, "groups"],
         }),
         queryClient.invalidateQueries({ queryKey: imageVariantKeys.all }),
-        queryClient.invalidateQueries({ queryKey: sceneKeys.all }),
       ]);
 
       setImportOpen(false);
@@ -766,7 +737,6 @@ export function useCharacterImport(projectId: number) {
       // Summary toast
       const created = createdCharacters.length;
       const imgCount = imageAssets.length;
-      const vidCount = videoAssets.length;
       const existingCount = existingPayloads.length;
 
       const parts: string[] = [];
@@ -774,13 +744,10 @@ export function useCharacterImport(projectId: number) {
       if (existingCount > 0) parts.push(`${existingCount} existing updated`);
       if (imgCount > 0) parts.push(`${imgCount} image${imgCount > 1 ? "s" : ""} uploaded`);
       if (metadataUploaded > 0) parts.push(`${metadataUploaded} metadata uploaded`);
-      if (vidCount > 0) parts.push(`${vidCount} video${vidCount > 1 ? "s" : ""} imported`);
       if (skippedMetadata > 0) parts.push(`${skippedMetadata} metadata skipped`);
-      if (skippedVideos > 0) parts.push(`${skippedVideos} video${skippedVideos > 1 ? "s" : ""} skipped`);
       if (uniqueGroupNames.length > 0) parts.push(`${uniqueGroupNames.length} group${uniqueGroupNames.length > 1 ? "s" : ""} resolved`);
       if (invalidJsonCount > 0) parts.push(`${invalidJsonCount} invalid JSON${invalidJsonCount > 1 ? "s" : ""} skipped`);
 
-      // Dump all errors to browser console for debugging
       if (errors.length > 0) {
         console.error(`[Import] ${errors.length} error(s):`, errors);
       }
@@ -791,7 +758,6 @@ export function useCharacterImport(projectId: number) {
         projectId,
         { errors: errors.length > 0 ? errors : undefined },
       ));
-      console.info(`[Import] Complete: ${parts.join(", ")}${errors.length > 0 ? ` (${errors.length} error${errors.length > 1 ? "s" : ""})` : ""}`);
 
       if (errors.length > 0) {
         addToast({
@@ -803,7 +769,7 @@ export function useCharacterImport(projectId: number) {
         addToast({ message: parts.join(", "), variant: "success" });
       }
     },
-    [bulkCreate, characters, sceneCatalogue, tracks, projectId, queryClient],
+    [bulkCreate, characters, projectId, queryClient],
   );
 
   function closeImport() {
@@ -817,44 +783,6 @@ export function useCharacterImport(projectId: number) {
 
   function browseFolder() {
     browseFolderRef.current?.();
-  }
-
-  /** Merge file assignments from the FileAssignmentModal into import payloads. */
-  function resolveUnmatchedFiles(assignments: FileAssignments) {
-    setImportPayloads((prev) => {
-      return prev.map((payload) => {
-        const charAssignment = assignments[payload.rawName];
-        if (!charAssignment) return payload;
-
-        const newPayload = { ...payload, assets: [...payload.assets] };
-
-        if (charAssignment.clothed) {
-          const existing = newPayload.assets.findIndex(
-            (a) => a.kind === "image" && a.category === "clothed",
-          );
-          const asset: DroppedAsset = { file: charAssignment.clothed, category: "clothed", kind: "image" };
-          if (existing >= 0) newPayload.assets[existing] = asset;
-          else newPayload.assets.push(asset);
-        }
-        if (charAssignment.topless) {
-          const existing = newPayload.assets.findIndex(
-            (a) => a.kind === "image" && a.category === "topless",
-          );
-          const asset: DroppedAsset = { file: charAssignment.topless, category: "topless", kind: "image" };
-          if (existing >= 0) newPayload.assets[existing] = asset;
-          else newPayload.assets.push(asset);
-        }
-        if (charAssignment.bio) newPayload.bioJson = charAssignment.bio;
-        if (charAssignment.tov) newPayload.tovJson = charAssignment.tov;
-
-        return newPayload;
-      });
-    });
-    setUnmatchedFiles([]);
-  }
-
-  function dismissUnmatchedFiles() {
-    setUnmatchedFiles([]);
   }
 
   const isImporting = importProgress !== null && importProgress.phase !== "done";
@@ -878,5 +806,6 @@ export function useCharacterImport(projectId: number) {
     bulkCreatePending: bulkCreate.isPending || isImporting,
     browseFolderRef,
     browseFolder,
+    characters,
   };
 }

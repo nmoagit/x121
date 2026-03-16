@@ -15,9 +15,10 @@ import { useSetToggle } from "@/hooks/useSetToggle";
 
 import { Modal } from "@/components/composite";
 import { Stack } from "@/components/layout";
-import { Badge, Button, Checkbox, Input, Select, Toggle } from "@/components/primitives";
+import { Badge, Button, Checkbox, FilterSelect, Input, Select, Toggle } from "@/components/primitives";
 import { cn } from "@/lib/cn";
 import { INLINE_LINK_BTN } from "@/lib/ui-classes";
+import { useMetadataTemplates } from "@/features/settings/hooks/use-metadata-templates";
 
 
 import type { ImportProgress } from "../hooks/use-character-import";
@@ -66,6 +67,10 @@ interface ImportConfirmModalProps {
   existingGroupNames?: string[];
   /** Hash-based deduplication summary (computed asynchronously after drop). */
   hashSummary?: ImportHashSummary | null;
+  /** Currently selected metadata template ID. */
+  metadataTemplateId?: string;
+  /** Called when metadata template selection changes. */
+  onMetadataTemplateChange?: (templateId: string) => void;
 }
 
 /* --------------------------------------------------------------------------
@@ -148,8 +153,16 @@ export function ImportConfirmModal({
   projectName,
   existingGroupNames = [],
   hashSummary,
+  metadataTemplateId,
+  onMetadataTemplateChange,
 }: ImportConfirmModalProps) {
   const { options: groupOptions } = useGroupSelectOptions(projectId);
+  const { data: metadataTemplates } = useMetadataTemplates();
+
+  const templateOptions = useMemo(() => {
+    if (!metadataTemplates) return [];
+    return metadataTemplates.map((t) => ({ value: String(t.id), label: t.name }));
+  }, [metadataTemplates]);
 
   // Grouped import detection
   const isGroupedImport = payloads?.some((p) => p.groupName) ?? false;
@@ -690,6 +703,16 @@ export function ImportConfirmModal({
               onChange={setNewContentOnly}
               label={`New content only (skip ${hashSummary.duplicateFiles} identical)`}
               size="sm"
+            />
+          )}
+          {onMetadataTemplateChange && templateOptions.length > 0 && (
+            <FilterSelect
+              options={templateOptions}
+              value={metadataTemplateId ?? ""}
+              onChange={onMetadataTemplateChange}
+              placeholder="Metadata template"
+              size="sm"
+              className="w-[180px]"
             />
           )}
         </div>
