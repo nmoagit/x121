@@ -77,7 +77,19 @@ export function CharacterFilterBar({
   selectedCount = 0,
   onClearSelection,
 }: CharacterFilterBarProps) {
+  // Build active filter summary
+  const activeFilters: string[] = [];
+  if (projectOptions && (projectFilter?.length ?? 0) > 0) {
+    const names = projectFilter!.map((v) => projectOptions.find((o) => o.value === v)?.label ?? v);
+    activeFilters.push(names.join(", "));
+  }
+  if (groupFilter.length > 0) {
+    const names = groupFilter.map((v) => groupOptions.find((o) => o.value === v)?.label ?? v);
+    activeFilters.push(names.join(", "));
+  }
+
   return (
+    <div className="space-y-1">
     <div className="flex flex-wrap items-center gap-[var(--spacing-3)]">
       <SearchInput
         placeholder="Search characters..."
@@ -91,6 +103,7 @@ export function CharacterFilterBar({
         selected={groupFilter}
         onChange={onGroupFilterChange}
         placeholder="All Groups"
+        showChips={false}
         className="w-[160px]"
       />
       {projectOptions && onProjectFilterChange && (
@@ -99,6 +112,7 @@ export function CharacterFilterBar({
           selected={projectFilter ?? []}
           onChange={onProjectFilterChange}
           placeholder="All Projects"
+          showChips={false}
           className="w-[160px]"
         />
       )}
@@ -138,6 +152,11 @@ export function CharacterFilterBar({
           </span>
         )}
       </div>
+    </div>
+    {/* Active filter summary — fixed height to prevent shift */}
+    <div className="h-5 text-xs text-[var(--color-text-muted)] truncate">
+      {activeFilters.length > 0 ? activeFilters.join(" · ") : "\u00A0"}
+    </div>
     </div>
   );
 }
