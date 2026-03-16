@@ -33,7 +33,7 @@ const PAGE_GUIDES: Record<string, string> = {
   "/production/debugger": "Debug failed generation jobs. View error logs, workflow state, and retry options.",
   "/production/render-timeline": "Gantt-style timeline showing when each scene was rendered, duration, and GPU utilisation.",
   "/review/annotations": "Browse all annotated frames across projects. Click any card to view the video with annotation overlay, then navigate to the specific scene.",
-  "/review/my-reviews": "Your assigned review queue. Start a review to approve or reject character scenes.",
+  "/reviews": "Your assigned review queue. Start a review to approve or reject character scenes.",
   "/review/notes": "View and manage review notes left on scenes and clips during the review process.",
   "/review/production-notes": "Internal production notes for the team — tracking decisions, blockers, and context.",
   "/review/qa-gates": "Quality gates that scenes must pass before advancing. Configure pass/fail criteria per scene type.",

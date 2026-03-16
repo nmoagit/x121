@@ -283,8 +283,8 @@ const reviewLayoutRoute = createRoute({
 });
 
 const myReviewsRoute = createRoute({
-  getParentRoute: () => reviewLayoutRoute,
-  path: "/review/my-reviews",
+  getParentRoute: () => authenticatedRoute,
+  path: "/reviews",
   component: lazyRouteComponent(() =>
     import("@/app/pages/MyReviewsPage").then((m) => ({ default: m.MyReviewsPage })),
   ),
@@ -813,8 +813,9 @@ export const routeTree = rootRoute.addChildren([
       renderTimelineRoute,
     ]),
 
+    myReviewsRoute,
+
     reviewLayoutRoute.addChildren([
-      myReviewsRoute,
       annotationsRoute,
       reviewNotesRoute,
       productionNotesRoute,

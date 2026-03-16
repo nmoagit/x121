@@ -10,7 +10,8 @@ import { useNavigate } from "@tanstack/react-router";
 import { EmptyState } from "@/components/domain";
 import { Modal } from "@/components/composite";
 import { PageHeader, Stack } from "@/components/layout";
-import { Badge, Select, Spinner, Toggle } from "@/components/primitives";
+import { Badge, MultiFilterBar, Spinner, Toggle } from "@/components/primitives";
+import type { FilterConfig, FilterOption } from "@/components/primitives";
 import { ProgressiveImage } from "@/components/primitives";
 import {
   useImageVariantsBrowse,
@@ -127,11 +128,10 @@ function BrowseVariantItem({
 }
 
 /* --------------------------------------------------------------------------
-   Filter option builders
+   Filter option constants
    -------------------------------------------------------------------------- */
 
-const STATUS_OPTIONS = [
-  { value: "", label: "All Statuses" },
+const STATUS_OPTIONS: FilterOption[] = [
   { value: "1", label: "Pending" },
   { value: "2", label: "Approved" },
   { value: "3", label: "Rejected" },
@@ -140,17 +140,16 @@ const STATUS_OPTIONS = [
   { value: "6", label: "Editing" },
 ];
 
-const PROVENANCE_OPTIONS = [
-  { value: "", label: "All Provenance" },
+const SOURCE_OPTIONS: FilterOption[] = [
   { value: "generated", label: "Generated" },
   { value: "manually_edited", label: "Manually Edited" },
   { value: "manual_upload", label: "Manual Upload" },
 ];
 
-function buildVariantTypeOptions(items: ImageVariantBrowseItem[] | undefined) {
-  if (!items) return [{ value: "", label: "All Types" }];
+function buildVariantTypeOptions(items: ImageVariantBrowseItem[] | undefined): FilterOption[] {
+  if (!items) return [];
   const types = [...new Set(items.map((v) => v.variant_type).filter((t): t is string => t != null))].sort();
-  return [{ value: "", label: "All Types" }, ...types.map((t) => ({ value: t, label: t }))];
+  return types.map((t) => ({ value: t, label: t }));
 }
 
 /* --------------------------------------------------------------------------
@@ -159,34 +158,41 @@ function buildVariantTypeOptions(items: ImageVariantBrowseItem[] | undefined) {
 
 export function ImagesPage() {
   const navigate = useNavigate();
-  const [projectFilter, setProjectFilter] = useState<string>("");
-  const [statusFilter, setStatusFilter] = useState<string>("");
-  const [provenanceFilter, setProvenanceFilter] = useState<string>("");
-  const [variantTypeFilter, setVariantTypeFilter] = useState<string>("");
+  const [projectFilter, setProjectFilter] = useState<string[]>([]);
+  const [statusFilter, setStatusFilter] = useState<string[]>([]);
+  const [sourceFilter, setSourceFilter] = useState<string[]>([]);
+  const [variantTypeFilter, setVariantTypeFilter] = useState<string[]>([]);
   const [previewVariant, setPreviewVariant] = useState<ImageVariantBrowseItem | null>(null);
   const [showDisabled, setShowDisabled] = useState(false);
 
   const { data: projects } = useProjects();
-  const projectId = projectFilter ? Number(projectFilter) : undefined;
+  const projectId = projectFilter.length === 1 ? Number(projectFilter[0]) : undefined;
   const { data: variants, isLoading } = useImageVariantsBrowse(projectId);
 
-  const projectOptions = useMemo(
-    () => [{ value: "", label: "All Projects" }, ...toSelectOptions(projects)],
+  const projectOptions: FilterOption[] = useMemo(
+    () => toSelectOptions(projects).map((o) => ({ value: o.value, label: o.label })),
     [projects],
   );
-
   const variantTypeOptions = useMemo(() => buildVariantTypeOptions(variants), [variants]);
 
   const filteredVariants = useMemo(() => {
     if (!variants) return [];
     return variants.filter((v) => {
       if (!showDisabled && !v.character_is_enabled) return false;
-      if (statusFilter && v.status_id !== Number(statusFilter)) return false;
-      if (provenanceFilter && v.provenance !== provenanceFilter) return false;
-      if (variantTypeFilter && v.variant_type !== variantTypeFilter) return false;
+      if (projectFilter.length > 0 && !projectFilter.includes(String(v.project_id))) return false;
+      if (statusFilter.length > 0 && !statusFilter.includes(String(v.status_id))) return false;
+      if (sourceFilter.length > 0 && !sourceFilter.includes(v.provenance)) return false;
+      if (variantTypeFilter.length > 0 && !variantTypeFilter.includes(v.variant_type ?? "")) return false;
       return true;
     });
-  }, [variants, showDisabled, statusFilter, provenanceFilter, variantTypeFilter]);
+  }, [variants, showDisabled, projectFilter, statusFilter, sourceFilter, variantTypeFilter]);
+
+  const filters: FilterConfig[] = useMemo(() => [
+    { key: "project", label: "Project", options: projectOptions, selected: projectFilter, onChange: setProjectFilter, width: "w-44" },
+    { key: "status", label: "Status", options: STATUS_OPTIONS, selected: statusFilter, onChange: setStatusFilter },
+    { key: "source", label: "Source", options: SOURCE_OPTIONS, selected: sourceFilter, onChange: setSourceFilter },
+    { key: "type", label: "Type", options: variantTypeOptions, selected: variantTypeFilter, onChange: setVariantTypeFilter },
+  ], [projectOptions, projectFilter, statusFilter, sourceFilter, variantTypeOptions, variantTypeFilter]);
 
   return (
     <Stack gap={6}>
@@ -196,53 +202,19 @@ export function ImagesPage() {
       />
 
       {/* Filter bar */}
-      <div className="flex flex-wrap items-end gap-3">
-        <div className="w-44">
-          <Select
-            label="Project"
+      <MultiFilterBar filters={filters}>
+        <div className="flex items-center gap-3 self-end pb-[3px]">
+          <Toggle
+            checked={showDisabled}
+            onChange={setShowDisabled}
+            label="Show disabled"
             size="sm"
-            options={projectOptions}
-            value={projectFilter}
-            onChange={setProjectFilter}
           />
+          <span className="text-xs text-[var(--color-text-muted)]">
+            {filteredVariants.length}{variants && filteredVariants.length !== variants.length ? ` of ${variants.length}` : ""} variant{filteredVariants.length !== 1 ? "s" : ""}
+          </span>
         </div>
-        <div className="w-36">
-          <Select
-            label="Status"
-            size="sm"
-            options={STATUS_OPTIONS}
-            value={statusFilter}
-            onChange={setStatusFilter}
-          />
-        </div>
-        <div className="w-40">
-          <Select
-            label="Provenance"
-            size="sm"
-            options={PROVENANCE_OPTIONS}
-            value={provenanceFilter}
-            onChange={setProvenanceFilter}
-          />
-        </div>
-        <div className="w-36">
-          <Select
-            label="Type"
-            size="sm"
-            options={variantTypeOptions}
-            value={variantTypeFilter}
-            onChange={setVariantTypeFilter}
-          />
-        </div>
-        <Toggle
-          checked={showDisabled}
-          onChange={setShowDisabled}
-          label="Show disabled"
-          size="sm"
-        />
-        <span className="text-xs text-[var(--color-text-muted)] pb-2">
-          {filteredVariants.length}{variants && filteredVariants.length !== variants.length ? ` of ${variants.length}` : ""} variant{filteredVariants.length !== 1 ? "s" : ""}
-        </span>
-      </div>
+      </MultiFilterBar>
 
       {/* Content */}
       {isLoading ? (

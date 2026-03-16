@@ -12,7 +12,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { EmptyState } from "@/components/domain";
 import { ConfirmModal, Modal } from "@/components/composite";
 import { PageHeader, Stack } from "@/components/layout";
-import { Badge, Button, Input, Select, Spinner } from "@/components/primitives";
+import { Badge, Button, FilterSelect, SearchInput, Spinner, Toggle } from "@/components/primitives";
 import { DrawingCanvas } from "@/features/annotations/DrawingCanvas";
 import type { DrawingObject } from "@/features/annotations/types";
 import { useAnnotationsBrowse, useDeleteBrowseAnnotation } from "@/features/annotations";
@@ -379,50 +379,47 @@ export function AnnotationsPage() {
 
       {/* Filter bar */}
       <div className="flex flex-wrap items-end gap-3">
-        <div className="w-48">
-          <Select
-            label="Project"
-            options={projectOptions}
-            value={projectFilter}
-            onChange={setProjectFilter}
-          />
-        </div>
-        <div className="w-56">
-          <Input
-            label="Character"
-            placeholder="Search character name..."
-            value={characterSearch}
-            onChange={(e) => setCharacterSearch(e.target.value)}
-          />
-        </div>
-        <div className="w-44">
-          <Select
-            label="Sort by"
-            options={[...SORT_OPTIONS]}
-            value={sort}
-            onChange={(v) => setSort(v as "created_at" | "character_name")}
-          />
-        </div>
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={() => setSortDir((d) => (d === "asc" ? "desc" : "asc"))}
-        >
-          <ArrowDown
-            size={14}
-            className={`transition-transform ${sortDir === "asc" ? "rotate-180" : ""}`}
-          />
-          {sortDir === "asc" ? "Asc" : "Desc"}
-        </Button>
-        {completedCount > 0 && (
+        <FilterSelect
+          label="Project"
+          options={projectOptions}
+          value={projectFilter}
+          onChange={setProjectFilter}
+          className="w-48"
+        />
+        <SearchInput
+          placeholder="Search character name..."
+          value={characterSearch}
+          onChange={(e) => setCharacterSearch(e.target.value)}
+          className="w-56"
+        />
+        <FilterSelect
+          label="Sort by"
+          options={[...SORT_OPTIONS]}
+          value={sort}
+          onChange={(v) => setSort(v as "created_at" | "character_name")}
+          className="w-44"
+        />
+        <div className="flex items-center gap-3 self-end pb-[3px]">
           <Button
-            variant={showCompleted ? "primary" : "secondary"}
+            variant="ghost"
             size="sm"
-            onClick={() => setShowCompleted((v) => !v)}
+            onClick={() => setSortDir((d) => (d === "asc" ? "desc" : "asc"))}
           >
-            {showCompleted ? "Hide Completed" : `Show Completed (${completedCount})`}
+            <ArrowDown
+              size={14}
+              className={`transition-transform ${sortDir === "asc" ? "rotate-180" : ""}`}
+            />
+            {sortDir === "asc" ? "Asc" : "Desc"}
           </Button>
-        )}
+          {completedCount > 0 && (
+            <Toggle
+              checked={showCompleted}
+              onChange={setShowCompleted}
+              label={`Show completed (${completedCount})`}
+              size="sm"
+            />
+          )}
+        </div>
       </div>
 
       {/* Content */}

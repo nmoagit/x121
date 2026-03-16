@@ -54,6 +54,7 @@ export const SOURCE_VARIANT: Record<SettingSource, BadgeVariant> = {
 export const SETTING_CATEGORIES = [
   { id: "storage", label: "Storage" },
   { id: "comfyui", label: "ComfyUI" },
+  { id: "production", label: "Production" },
   { id: "auth", label: "Authentication" },
   { id: "system", label: "System" },
   { id: "templates", label: "Templates" },

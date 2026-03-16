@@ -85,7 +85,7 @@ export const NAV_GROUPS: NavGroupDef[] = [
       { label: "Library", path: "/content/library", icon: Folder, prominent: true },
       { label: "Images", path: "/content/images", icon: Image, prominent: true },
       { label: "Scenes", path: "/content/scenes", icon: Layers, prominent: true },
-      { label: "Characters", path: "/content/characters", icon: User },
+      { label: "Characters", path: "/content/characters", icon: User, prominent: true },
       { label: "Storyboard", path: "/content/storyboard", icon: Layout },
       { label: "Character Dashboard", path: "/content/character-dashboard", icon: Monitor },
       { label: "Contact Sheet", path: "/content/contact-sheet", icon: Image },
@@ -109,7 +109,7 @@ export const NAV_GROUPS: NavGroupDef[] = [
     label: "Review",
     items: [
       { label: "Annotations", path: "/review/annotations", icon: Edit3, prominent: true },
-      { label: "My Reviews", path: "/review/my-reviews", icon: Users },
+      { label: "Reviews", path: "/reviews", icon: Users, prominent: true },
       { label: "Notes", path: "/review/notes", icon: File },
       { label: "Production Notes", path: "/review/production-notes", icon: File },
       { label: "QA Gates", path: "/review/qa-gates", icon: ShieldCheck },

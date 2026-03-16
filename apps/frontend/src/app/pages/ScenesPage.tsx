@@ -4,12 +4,13 @@
  * and navigation to character scene detail.
  */
 
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import { useNavigate } from "@tanstack/react-router";
 
 import { EmptyState } from "@/components/domain";
 import { PageHeader, Stack } from "@/components/layout";
-import { Badge, Select, Spinner, Toggle } from "@/components/primitives";
+import { Badge, MultiFilterBar, Spinner, Toggle } from "@/components/primitives";
+import type { FilterConfig, FilterOption } from "@/components/primitives";
 import { useClipsBrowse } from "@/features/scenes/hooks/useClipManagement";
 import type { ClipBrowseItem } from "@/features/scenes/hooks/useClipManagement";
 import { ClipPlaybackModal } from "@/features/scenes/ClipPlaybackModal";
@@ -154,40 +155,24 @@ function BrowseClipItem({
 }
 
 /* --------------------------------------------------------------------------
-   Filter options derived from data
+   Filter option constants
    -------------------------------------------------------------------------- */
 
-const SOURCE_OPTIONS = [
-  { value: "", label: "All Sources" },
+const SOURCE_OPTIONS: FilterOption[] = [
   { value: "generated", label: "Generated" },
   { value: "imported", label: "Imported" },
 ];
 
-const QA_STATUS_OPTIONS = [
-  { value: "", label: "All Statuses" },
+const STATUS_OPTIONS: FilterOption[] = [
   { value: "pending", label: "Pending" },
   { value: "approved", label: "Approved" },
   { value: "rejected", label: "Rejected" },
 ];
 
-/** Build unique sorted scene type options from clip data. */
-function buildSceneTypeOptions(clips: ClipBrowseItem[] | undefined) {
-  if (!clips) return [{ value: "", label: "All Scene Types" }];
-  const names = [...new Set(clips.map((c) => c.scene_type_name).filter(Boolean))].sort();
-  return [
-    { value: "", label: "All Scene Types" },
-    ...names.map((n) => ({ value: n, label: n })),
-  ];
-}
-
-/** Build unique sorted track options from clip data. */
-function buildTrackOptions(clips: ClipBrowseItem[] | undefined) {
-  if (!clips) return [{ value: "", label: "All Tracks" }];
-  const names = [...new Set(clips.map((c) => c.track_name).filter(Boolean))].sort();
-  return [
-    { value: "", label: "All Tracks" },
-    ...names.map((n) => ({ value: n, label: n })),
-  ];
+function buildUniqueOptions(items: ClipBrowseItem[] | undefined, key: keyof ClipBrowseItem): FilterOption[] {
+  if (!items) return [];
+  const values = [...new Set(items.map((c) => c[key] as string).filter(Boolean))].sort();
+  return values.map((v) => ({ value: v, label: v }));
 }
 
 /* --------------------------------------------------------------------------
@@ -196,40 +181,48 @@ function buildTrackOptions(clips: ClipBrowseItem[] | undefined) {
 
 export function ScenesPage() {
   const navigate = useNavigate();
-  const [projectFilter, setProjectFilter] = useState<string>("");
-  const [sourceFilter, setSourceFilter] = useState<string>("");
-  const [qaStatusFilter, setQaStatusFilter] = useState<string>("");
-  const [sceneTypeFilter, setSceneTypeFilter] = useState<string>("");
-  const [trackFilter, setTrackFilter] = useState<string>("");
+  const [projectFilter, setProjectFilter] = useState<string[]>([]);
+  const [sourceFilter, setSourceFilter] = useState<string[]>([]);
+  const [statusFilter, setStatusFilter] = useState<string[]>([]);
+  const [sceneTypeFilter, setSceneTypeFilter] = useState<string[]>([]);
+  const [trackFilter, setTrackFilter] = useState<string[]>([]);
   const [playingClip, setPlayingClip] = useState<SceneVideoVersion | null>(null);
   const [showDisabled, setShowDisabled] = useState(false);
 
   const { data: projects } = useProjects();
-  const projectId = projectFilter ? Number(projectFilter) : undefined;
+  // When a single project is selected, pass it to the API for server-side filtering
+  const projectId = projectFilter.length === 1 ? Number(projectFilter[0]) : undefined;
   const { data: clips, isLoading } = useClipsBrowse(projectId);
 
-  const projectOptions = useMemo(
-    () => [{ value: "", label: "All Projects" }, ...toSelectOptions(projects)],
+  const projectOptions: FilterOption[] = useMemo(
+    () => toSelectOptions(projects).map((o) => ({ value: o.value, label: o.label })),
     [projects],
   );
-
-  const sceneTypeOptions = useMemo(() => buildSceneTypeOptions(clips), [clips]);
-  const trackOptions = useMemo(() => buildTrackOptions(clips), [clips]);
+  const sceneTypeOptions = useMemo(() => buildUniqueOptions(clips, "scene_type_name"), [clips]);
+  const trackOptions = useMemo(() => buildUniqueOptions(clips, "track_name"), [clips]);
 
   const filteredClips = useMemo(() => {
     if (!clips) return [];
     return clips.filter((c) => {
       if (!showDisabled && !c.character_is_enabled) return false;
-      if (sourceFilter && c.source !== sourceFilter) return false;
-      if (qaStatusFilter && c.qa_status !== qaStatusFilter) return false;
-      if (sceneTypeFilter && c.scene_type_name !== sceneTypeFilter) return false;
-      if (trackFilter && c.track_name !== trackFilter) return false;
+      if (projectFilter.length > 0 && !projectFilter.includes(String(c.project_id))) return false;
+      if (sourceFilter.length > 0 && !sourceFilter.includes(c.source)) return false;
+      if (statusFilter.length > 0 && !statusFilter.includes(c.qa_status)) return false;
+      if (sceneTypeFilter.length > 0 && !sceneTypeFilter.includes(c.scene_type_name)) return false;
+      if (trackFilter.length > 0 && !trackFilter.includes(c.track_name)) return false;
       return true;
     });
-  }, [clips, showDisabled, sourceFilter, qaStatusFilter, sceneTypeFilter, trackFilter]);
+  }, [clips, showDisabled, projectFilter, sourceFilter, statusFilter, sceneTypeFilter, trackFilter]);
 
-  /** Convert a browse item to SceneVideoVersion for the playback modal. */
-  const toPlayable = (clip: ClipBrowseItem): SceneVideoVersion => ({
+  const filters: FilterConfig[] = useMemo(() => [
+    { key: "project", label: "Project", options: projectOptions, selected: projectFilter, onChange: setProjectFilter, width: "w-44" },
+    { key: "source", label: "Source", options: SOURCE_OPTIONS, selected: sourceFilter, onChange: setSourceFilter },
+    { key: "status", label: "Status", options: STATUS_OPTIONS, selected: statusFilter, onChange: setStatusFilter },
+    { key: "sceneType", label: "Scene Type", options: sceneTypeOptions, selected: sceneTypeFilter, onChange: setSceneTypeFilter, width: "w-44" },
+    { key: "track", label: "Track", options: trackOptions, selected: trackFilter, onChange: setTrackFilter },
+  ], [projectOptions, projectFilter, sourceFilter, statusFilter, sceneTypeOptions, sceneTypeFilter, trackOptions, trackFilter]);
+
+  const toPlayable = useCallback((clip: ClipBrowseItem): SceneVideoVersion => ({
     id: clip.id,
     scene_id: clip.scene_id,
     version_number: clip.version_number,
@@ -241,6 +234,7 @@ export function ScenesPage() {
     height: clip.height,
     frame_rate: clip.frame_rate,
     preview_path: clip.preview_path,
+    video_codec: null,
     is_final: clip.is_final,
     notes: null,
     qa_status: clip.qa_status,
@@ -254,7 +248,7 @@ export function ScenesPage() {
     created_at: clip.created_at,
     updated_at: clip.created_at,
     annotation_count: clip.annotation_count,
-  });
+  }), []);
 
   return (
     <Stack gap={6}>
@@ -264,62 +258,19 @@ export function ScenesPage() {
       />
 
       {/* Filter bar */}
-      <div className="flex flex-wrap items-end gap-3">
-        <div className="w-44">
-          <Select
-            label="Project"
+      <MultiFilterBar filters={filters}>
+        <div className="flex items-center gap-3 self-end pb-[3px]">
+          <Toggle
+            checked={showDisabled}
+            onChange={setShowDisabled}
+            label="Show disabled"
             size="sm"
-            options={projectOptions}
-            value={projectFilter}
-            onChange={setProjectFilter}
           />
+          <span className="text-xs text-[var(--color-text-muted)]">
+            {filteredClips.length}{clips && filteredClips.length !== clips.length ? ` of ${clips.length}` : ""} clip{filteredClips.length !== 1 ? "s" : ""}
+          </span>
         </div>
-        <div className="w-40">
-          <Select
-            label="Source"
-            size="sm"
-            options={SOURCE_OPTIONS}
-            value={sourceFilter}
-            onChange={setSourceFilter}
-          />
-        </div>
-        <div className="w-36">
-          <Select
-            label="QA Status"
-            size="sm"
-            options={QA_STATUS_OPTIONS}
-            value={qaStatusFilter}
-            onChange={setQaStatusFilter}
-          />
-        </div>
-        <div className="w-44">
-          <Select
-            label="Scene Type"
-            size="sm"
-            options={sceneTypeOptions}
-            value={sceneTypeFilter}
-            onChange={setSceneTypeFilter}
-          />
-        </div>
-        <div className="w-36">
-          <Select
-            label="Track"
-            size="sm"
-            options={trackOptions}
-            value={trackFilter}
-            onChange={setTrackFilter}
-          />
-        </div>
-        <Toggle
-          checked={showDisabled}
-          onChange={setShowDisabled}
-          label="Show disabled"
-          size="sm"
-        />
-        <span className="text-xs text-[var(--color-text-muted)] pb-2">
-          {filteredClips.length}{clips && filteredClips.length !== clips.length ? ` of ${clips.length}` : ""} clip{filteredClips.length !== 1 ? "s" : ""}
-        </span>
-      </div>
+      </MultiFilterBar>
 
       {/* Content */}
       {isLoading ? (

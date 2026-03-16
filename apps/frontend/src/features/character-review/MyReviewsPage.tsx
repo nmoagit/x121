@@ -9,7 +9,7 @@ import { useNavigate } from "@tanstack/react-router";
 
 import { EmptyState } from "@/components/domain";
 import { PageHeader, Stack } from "@/components/layout";
-import { Badge, Select, Spinner, Toggle } from "@/components/primitives";
+import { Badge, FilterSelect, Spinner, Toggle } from "@/components/primitives";
 import { useClipsBrowse } from "@/features/scenes/hooks/useClipManagement";
 import type { ClipBrowseItem } from "@/features/scenes/hooks/useClipManagement";
 import { isPurgedClip, isEmptyClip } from "@/features/scenes/types";
@@ -174,7 +174,6 @@ export function MyReviewsPage() {
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [projectFilter, setProjectFilter] = useState<string>("");
   const [showDelivered, setShowDelivered] = useState(false);
-  const [showPending, setShowPending] = useState(false);
 
   const { data: projects } = useProjects();
   const projectId = projectFilter ? Number(projectFilter) : undefined;
@@ -188,8 +187,6 @@ export function MyReviewsPage() {
   const filteredClips = useMemo(() => {
     if (!clips) return [];
     return clips.filter((c) => {
-      // Default: hide pending unless toggle is on or explicitly selected
-      if (!showPending && statusFilter !== "pending" && c.qa_status === "pending") return false;
       // Status filter
       if (statusFilter && c.qa_status !== statusFilter) return false;
       // Reviewer filter (best-effort: filter by qa_notes containing username)
@@ -202,7 +199,7 @@ export function MyReviewsPage() {
       }
       return true;
     });
-  }, [clips, showPending, statusFilter, reviewerFilter, user, showDelivered]);
+  }, [clips, statusFilter, reviewerFilter, user, showDelivered]);
 
   return (
     <Stack gap={6}>
@@ -213,48 +210,38 @@ export function MyReviewsPage() {
 
       {/* Filter bar */}
       <div className="flex flex-wrap items-end gap-3">
-        <div className="w-40">
-          <Select
-            label="Reviewer"
-            size="sm"
-            options={REVIEWER_OPTIONS}
-            value={reviewerFilter}
-            onChange={setReviewerFilter}
-          />
-        </div>
-        <div className="w-36">
-          <Select
-            label="Status"
-            size="sm"
-            options={STATUS_OPTIONS}
-            value={statusFilter}
-            onChange={setStatusFilter}
-          />
-        </div>
-        <div className="w-44">
-          <Select
-            label="Project"
-            size="sm"
-            options={projectOptions}
-            value={projectFilter}
-            onChange={setProjectFilter}
-          />
-        </div>
-        <Toggle
-          checked={showDelivered}
-          onChange={setShowDelivered}
-          label="Show delivered"
-          size="sm"
+        <FilterSelect
+          label="Reviewer"
+          options={REVIEWER_OPTIONS}
+          value={reviewerFilter}
+          onChange={setReviewerFilter}
+          className="w-40"
         />
-        <Toggle
-          checked={showPending}
-          onChange={setShowPending}
-          label="Show pending"
-          size="sm"
+        <FilterSelect
+          label="Status"
+          options={STATUS_OPTIONS}
+          value={statusFilter}
+          onChange={setStatusFilter}
+          className="w-36"
         />
-        <span className="text-xs text-[var(--color-text-muted)] pb-2">
-          {filteredClips.length}{clips && filteredClips.length !== clips.length ? ` of ${clips.length}` : ""} clip{filteredClips.length !== 1 ? "s" : ""}
-        </span>
+        <FilterSelect
+          label="Project"
+          options={projectOptions}
+          value={projectFilter}
+          onChange={setProjectFilter}
+          className="w-44"
+        />
+        <div className="flex items-center gap-3 self-end pb-[3px]">
+          <Toggle
+            checked={showDelivered}
+            onChange={setShowDelivered}
+            label="Show delivered"
+            size="sm"
+          />
+          <span className="text-xs text-[var(--color-text-muted)]">
+            {filteredClips.length}{clips && filteredClips.length !== clips.length ? ` of ${clips.length}` : ""} clip{filteredClips.length !== 1 ? "s" : ""}
+          </span>
+        </div>
       </div>
 
       {/* Content */}
