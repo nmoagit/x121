@@ -67,7 +67,7 @@ const templateKeys = {
 export function useMetadataTemplates() {
   return useQuery({
     queryKey: templateKeys.all,
-    queryFn: () => api.get<MetadataTemplate[]>("/metadata-templates"),
+    queryFn: async () => (await api.get<MetadataTemplate[]>("/metadata-templates")) ?? [],
   });
 }
 

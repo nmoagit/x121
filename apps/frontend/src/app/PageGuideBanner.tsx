@@ -18,7 +18,7 @@ const PAGE_GUIDES: Record<string, string> = {
   "/content/scene-catalogue": "The scene catalogue defines your scene types (e.g. Close-up, Wide Shot), their track configurations, prompt defaults, and workflow assignments. This is the blueprint that drives generation.",
   "/content/library": "Browse all characters across projects in one place. Filter by scene type or track, preview assets, and jump to character details.",
   "/content/scenes": "View and manage individual scene clips. Filter by character, scene type, or status. Import clips or review QA actions.",
-  "/content/characters": "Browse all characters. Click any character to see their images, scenes, deliverables, and settings.",
+  "/content/characters": "Manage characters across projects. Drop folders to bulk-import seed images and metadata. Click any character to view or upload their seed data.",
   "/content/storyboard": "Visual storyboard layout of scenes in sequence. Drag to reorder, preview clips inline.",
   "/content/images": "Browse and manage image variants (seed images, track images). Approve, reject, or regenerate variants.",
   "/content/character-dashboard": "Per-character readiness dashboard showing image counts, scene progress, metadata status, and blocking issues.",
