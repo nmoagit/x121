@@ -3,9 +3,10 @@
  */
 
 import { Card } from "@/components/composite";
-import { Badge } from "@/components/primitives";
+import { Badge, Button } from "@/components/primitives";
 import { cn } from "@/lib/cn";
 import { formatDate } from "@/lib/format";
+import { Archive, ArchiveRestore, Trash2 } from "@/tokens/icons";
 
 import type { Project } from "../types";
 import { PROJECT_STATUS_BADGE_VARIANT, PROJECT_STATUS_LABELS } from "../types";
@@ -17,11 +18,23 @@ import { PROJECT_STATUS_BADGE_VARIANT, PROJECT_STATUS_LABELS } from "../types";
 interface ProjectCardProps {
   project: Project;
   onClick: () => void;
+  onArchive?: (id: number) => void;
+  onUnarchive?: (id: number) => void;
+  onDelete?: (id: number) => void;
+  isUpdating?: boolean;
 }
 
-export function ProjectCard({ project, onClick }: ProjectCardProps) {
+export function ProjectCard({
+  project,
+  onClick,
+  onArchive,
+  onUnarchive,
+  onDelete,
+  isUpdating,
+}: ProjectCardProps) {
   const variant = PROJECT_STATUS_BADGE_VARIANT[project.status] ?? "default";
   const statusLabel = PROJECT_STATUS_LABELS[project.status] ?? project.status;
+  const isArchived = project.status === "archived";
 
   return (
     <Card
@@ -31,10 +44,10 @@ export function ProjectCard({ project, onClick }: ProjectCardProps) {
         "cursor-pointer",
         "transition-shadow duration-[var(--duration-fast)] ease-[var(--ease-default)]",
         "hover:shadow-[var(--shadow-md)]",
+        isArchived && "opacity-60",
       )}
     >
-      <button
-        type="button"
+      <div
         onClick={onClick}
         className="w-full text-left"
         aria-label={`Open project ${project.name}`}
@@ -54,10 +67,59 @@ export function ProjectCard({ project, onClick }: ProjectCardProps) {
           </p>
         )}
 
-        <p className="mt-[var(--spacing-3)] text-xs text-[var(--color-text-muted)]">
-          Created {formatDate(project.created_at)}
-        </p>
-      </button>
+        <div className="mt-[var(--spacing-3)] flex items-center justify-between">
+          <p className="text-xs text-[var(--color-text-muted)]">
+            Created {formatDate(project.created_at)}
+          </p>
+
+          {isArchived && (
+            <div className="flex items-center gap-1">
+              {onUnarchive && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  icon={<ArchiveRestore size={14} />}
+                  loading={isUpdating}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onUnarchive(project.id);
+                  }}
+                >
+                  Unarchive
+                </Button>
+              )}
+              {onDelete && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  icon={<Trash2 size={14} />}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete(project.id);
+                  }}
+                  className="text-[var(--color-action-danger)] hover:text-[var(--color-action-danger)]"
+                >
+                  Delete
+                </Button>
+              )}
+            </div>
+          )}
+          {!isArchived && onArchive && (
+            <Button
+              variant="ghost"
+              size="sm"
+              icon={<Archive size={14} />}
+              loading={isUpdating}
+              onClick={(e) => {
+                e.stopPropagation();
+                onArchive(project.id);
+              }}
+            >
+              Archive
+            </Button>
+          )}
+        </div>
+      </div>
     </Card>
   );
 }

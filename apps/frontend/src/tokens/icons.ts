@@ -18,6 +18,8 @@ export {
   ArrowLeft,
   ArrowRight,
   // Actions
+  Archive,
+  ArchiveRestore,
   RotateCcw,
   Plus,
   Minus,
