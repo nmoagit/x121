@@ -96,7 +96,7 @@ export function CharacterSettingsTab({
       </CollapsibleSection>
 
       <CollapsibleSection card title="Scene Settings" description="Override scene settings for this character." open={openSections.has("scenes")} onToggle={() => toggleSection("scenes")}>
-        <CharacterSceneOverrides characterId={characterId} />
+        <CharacterSceneOverrides projectId={projectId} characterId={characterId} />
       </CollapsibleSection>
 
       <CollapsibleSection card title="Workflow Assignments" description="Assign workflows per scene and track." open={openSections.has("workflows")} onToggle={() => toggleSection("workflows")}>

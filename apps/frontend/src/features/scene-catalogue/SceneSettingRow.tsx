@@ -8,7 +8,8 @@
 
 import type { ReactNode } from "react";
 
-import { Toggle } from "@/components/primitives";
+import { Toggle, Tooltip } from "@/components/primitives";
+import { Film } from "@/tokens/icons";
 
 import { SourceBadge } from "./SourceBadge";
 import { TrackBadge } from "./TrackBadge";
@@ -22,6 +23,8 @@ export interface SceneSettingRowProps {
   row: ExpandedSceneSetting;
   onToggle: (sceneTypeId: number, trackId: number | null, enabled: boolean) => void;
   isPending: boolean;
+  /** Number of existing videos for this scene_type × track combination. */
+  hasVideo?: boolean;
   /** Optional trailing cell content (e.g. a "Reset" button). */
   actions?: ReactNode;
 }
@@ -30,7 +33,7 @@ export interface SceneSettingRowProps {
    Component
    -------------------------------------------------------------------------- */
 
-export function SceneSettingRow({ row, onToggle, isPending, actions }: SceneSettingRowProps) {
+export function SceneSettingRow({ row, onToggle, isPending, hasVideo, actions }: SceneSettingRowProps) {
   return (
     <tr className="border-b border-[var(--color-border-default)]">
       {/* Scene name -- only shown on first row of each scene_type group */}
@@ -70,6 +73,20 @@ export function SceneSettingRow({ row, onToggle, isPending, actions }: SceneSett
       <td className="px-3 py-1.5">
         <SourceBadge source={row.source} />
       </td>
+
+      {/* Video count indicator */}
+      {hasVideo !== undefined && (
+        <td className="px-3 py-1.5">
+          <Tooltip content={hasVideo ? "Has videos" : "No videos"}>
+            <span className="inline-flex items-center gap-1">
+              <Film
+                size={14}
+                className={hasVideo ? "text-[var(--color-status-success)]" : "text-[var(--color-text-muted)]"}
+              />
+            </span>
+          </Tooltip>
+        </td>
+      )}
 
       {/* Optional actions column */}
       {actions !== undefined && <td className="px-3 py-1.5">{actions}</td>}

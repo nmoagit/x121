@@ -6,10 +6,12 @@
  * Each row toggles independently at per-track granularity.
  */
 
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 
 import { Card } from "@/components/composite/Card";
 import { LoadingPane } from "@/components/primitives";
+
+import { useBatchSceneAssignments } from "@/features/projects/hooks/use-character-deliverables";
 
 import { SceneSettingRow } from "./SceneSettingRow";
 import { useExpandedSettings } from "./hooks/use-expanded-settings";
@@ -32,8 +34,19 @@ interface ProjectSceneSettingsProps {
 
 export function ProjectSceneSettings({ projectId }: ProjectSceneSettingsProps) {
   const { data: settings, isLoading: settingsLoading } = useProjectSceneSettings(projectId);
+  const { data: assignments } = useBatchSceneAssignments(projectId);
   const expandedRows = useExpandedSettings(settings);
   const toggleMutation = useToggleProjectSceneSetting(projectId);
+
+  const videoCountMap = useMemo(() => {
+    const map = new Map<string, number>();
+    if (!assignments) return map;
+    for (const a of assignments) {
+      const key = `${a.scene_type_id}::${a.track_id ?? ""}`;
+      map.set(key, (map.get(key) ?? 0) + a.final_video_count);
+    }
+    return map;
+  }, [assignments]);
 
   const handleToggle = useCallback(
     (sceneTypeId: number, trackId: number | null, enabled: boolean) => {
@@ -68,13 +81,16 @@ export function ProjectSceneSettings({ projectId }: ProjectSceneSettingsProps) {
                 <th className="px-3 py-1.5 text-left text-xs font-medium text-[var(--color-text-muted)]">
                   Source
                 </th>
+                <th className="px-3 py-1.5 text-left text-xs font-medium text-[var(--color-text-muted)]">
+                  Videos
+                </th>
               </tr>
             </thead>
             <tbody>
               {expandedRows.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={4}
+                    colSpan={5}
                     className="px-3 py-6 text-center text-xs text-[var(--color-text-muted)]"
                   >
                     No scene settings available. Add scenes to the catalogue first.
@@ -87,6 +103,7 @@ export function ProjectSceneSettings({ projectId }: ProjectSceneSettingsProps) {
                     row={row}
                     onToggle={handleToggle}
                     isPending={toggleMutation.isPending}
+                    hasVideo={(videoCountMap.get(`${row.scene_type_id}::${row.track_id ?? ""}`) ?? 0) > 0}
                   />
                 ))
               )}

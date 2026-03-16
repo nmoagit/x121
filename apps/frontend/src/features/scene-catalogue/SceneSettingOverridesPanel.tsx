@@ -34,6 +34,8 @@ interface SceneSettingOverridesPanelProps {
   toggleMutation: UseMutationResult<unknown, unknown, SceneSettingUpdate>;
   /** Mutation for removing an override. */
   removeMutation: UseMutationResult<unknown, unknown, { sceneTypeId: number; trackId: number | null }>;
+  /** Optional map of "scene_type_id::track_id" → video count. */
+  videoCountMap?: Map<string, number>;
 }
 
 /* --------------------------------------------------------------------------
@@ -47,6 +49,7 @@ export function SceneSettingOverridesPanel({
   entityLabel,
   toggleMutation,
   removeMutation,
+  videoCountMap,
 }: SceneSettingOverridesPanelProps) {
   const expandedRows = useExpandedSettings(settings);
   const [showResetAll, setShowResetAll] = useState(false);
@@ -123,6 +126,11 @@ export function SceneSettingOverridesPanel({
                 <th className="px-4 py-3 text-left font-medium text-[var(--color-text-muted)]">
                   Source
                 </th>
+                {videoCountMap && (
+                  <th className="px-4 py-3 text-left font-medium text-[var(--color-text-muted)]">
+                    Videos
+                  </th>
+                )}
                 <th className="px-4 py-3 text-left font-medium text-[var(--color-text-muted)]">
                   Actions
                 </th>
@@ -132,7 +140,7 @@ export function SceneSettingOverridesPanel({
               {expandedRows.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={5}
+                    colSpan={videoCountMap ? 6 : 5}
                     className="px-4 py-8 text-center text-sm text-[var(--color-text-muted)]"
                   >
                     No scene settings available.
@@ -145,6 +153,7 @@ export function SceneSettingOverridesPanel({
                     row={row}
                     onToggle={handleToggle}
                     isPending={isPending}
+                    hasVideo={videoCountMap ? (videoCountMap.get(`${row.scene_type_id}::${row.track_id ?? ""}`) ?? 0) > 0 : undefined}
                     actions={
                       row.source === sourceName ? (
                         <Button
