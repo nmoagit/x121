@@ -7,7 +7,7 @@
 
 import { useState } from "react";
 
-import { Badge, Button, Checkbox, Input, Select } from "@/components/primitives";
+import { Badge, Button, Input, Select, Toggle } from "@/components/primitives";
 import { Stack } from "@/components/layout";
 import { cn } from "@/lib/cn";
 import { SECTION_HEADING } from "@/lib/ui-classes";
@@ -115,10 +115,11 @@ export function DeliveryDestinationManager({
           "border border-[var(--color-border-default)]",
         )}
       >
-        <Checkbox
+        <Toggle
           checked={autoDeliverOnFinal}
           onChange={onToggleAutoDeliver}
           label="Auto-deliver on final approval"
+          size="sm"
         />
         <p className="mt-1 ml-7 text-xs text-[var(--color-text-muted)]">
           Automatically deliver to all enabled destinations when a scene video receives final approval.
@@ -327,10 +328,11 @@ function DestinationForm({
         </div>
       )}
 
-      <Checkbox
+      <Toggle
         checked={isEnabled}
         onChange={setIsEnabled}
         label="Enabled"
+        size="sm"
       />
 
       <div className="flex justify-end gap-2">

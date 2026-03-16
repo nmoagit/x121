@@ -8,9 +8,9 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { Button, SearchInput, Spinner } from "@/components";
+import { SearchInput, Spinner, Toggle } from "@/components";
 import { cn } from "@/lib/cn";
-import { Eye, EyeOff, LayoutGrid, List } from "@/tokens/icons";
+import { LayoutGrid, List } from "@/tokens/icons";
 
 import { LibraryCharacterCard, LibraryCharacterRow } from "./LibraryCharacterCard";
 import { LibraryCharacterModal } from "./LibraryCharacterModal";
@@ -76,14 +76,12 @@ export function CharacterLibraryBrowser() {
             {debouncedSearch && " matching"}
           </p>
           <div className="flex items-center gap-2">
-            <Button
+            <Toggle
+              checked={showDisabled}
+              onChange={() => setShowDisabled((p) => !p)}
+              label="Show disabled"
               size="sm"
-              variant="secondary"
-              icon={showDisabled ? <EyeOff size={14} /> : <Eye size={14} />}
-              onClick={() => setShowDisabled((p) => !p)}
-            >
-              {showDisabled ? "Hide Disabled" : "Show Disabled"}
-            </Button>
+            />
             <button
               type="button"
               onClick={() => setViewMode("grid")}

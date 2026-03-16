@@ -2,7 +2,7 @@ import { useState } from "react";
 
 import { Modal } from "@/components/composite";
 import { Stack } from "@/components/layout";
-import { Button, Checkbox, Input } from "@/components/primitives";
+import { Button, Input, Toggle } from "@/components/primitives";
 import { useRestartService } from "@/features/admin/hooks/use-hardware";
 
 /* --------------------------------------------------------------------------
@@ -75,11 +75,11 @@ export function RestartButton({ workerId }: RestartButtonProps) {
           />
 
           <div className="flex flex-col gap-2">
-            <Checkbox
+            <Toggle
               checked={force}
               onChange={setForce}
               label="Force restart"
-              disabled={mutation.isPending}
+              size="sm"
             />
             {force && (
               <p className="text-xs text-[var(--color-action-danger)]">

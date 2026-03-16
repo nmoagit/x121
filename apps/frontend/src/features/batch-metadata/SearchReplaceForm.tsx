@@ -7,7 +7,7 @@
 
 import { useState } from "react";
 
-import { Button, Checkbox, Input } from "@/components";
+import { Button, Input, Toggle } from "@/components";
 
 import { useCreatePreview } from "./hooks/use-batch-metadata";
 import type {
@@ -96,17 +96,19 @@ export function SearchReplaceForm({
 
       <div className="flex items-center gap-4">
         <span data-testid="regex-toggle">
-          <Checkbox
+          <Toggle
             checked={useRegex}
             onChange={(v: boolean) => setUseRegex(v)}
             label="Use Regex"
+            size="sm"
           />
         </span>
         <span data-testid="case-sensitive-toggle">
-          <Checkbox
+          <Toggle
             checked={caseSensitive}
             onChange={(v: boolean) => setCaseSensitive(v)}
             label="Case Sensitive"
+            size="sm"
           />
         </span>
       </div>

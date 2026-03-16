@@ -5,7 +5,7 @@
 
 import { useCallback, useMemo, useState } from "react";
 
-import { Button, Checkbox, Input, Select, Spinner } from "@/components/primitives";
+import { Button, Input, Select, Spinner, Toggle } from "@/components/primitives";
 import { CollapsibleSection } from "@/components/composite";
 import { PageHeader, Stack } from "@/components/layout";
 import { EmptyState } from "@/components/domain";
@@ -78,10 +78,11 @@ export function InfrastructureControlPanel() {
         description="Manage cloud GPU instances across all providers"
         actions={
           <Stack direction="horizontal" gap={3} align="center">
-            <Checkbox
+            <Toggle
               checked={showArchived}
               onChange={setShowArchived}
               label="Show archived"
+              size="sm"
             />
             <Button
               variant="secondary"

@@ -39,7 +39,7 @@ export function FilterSelect({
   onChange,
   placeholder,
   label,
-  size = "md",
+  size = "sm",
   disabled,
   className,
 }: FilterSelectProps) {

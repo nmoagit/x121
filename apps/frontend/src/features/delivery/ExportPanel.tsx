@@ -7,7 +7,7 @@
 
 import { useState } from "react";
 
-import { Badge, Button, Checkbox, Select } from "@/components";
+import { Badge, Button, Checkbox, Select, Toggle } from "@/components";
 import { SECTION_HEADING } from "@/lib/ui-classes";
 
 import { useOutputFormatProfiles, useStartAssembly } from "./hooks/use-delivery";
@@ -75,11 +75,11 @@ export function ExportPanel({
 
       {/* Character selection */}
       <div className="space-y-2">
-        <Checkbox
+        <Toggle
           label="All characters"
           checked={allCharacters}
           onChange={setAllCharacters}
-          data-testid="all-characters-checkbox"
+          size="sm"
         />
         {!allCharacters && characters.length > 0 && (
           <div className="ml-6 space-y-1" data-testid="character-checkboxes">
@@ -96,10 +96,11 @@ export function ExportPanel({
       </div>
 
       {/* Watermark */}
-      <Checkbox
+      <Toggle
         label="Include watermark"
         checked={includeWatermark}
         onChange={setIncludeWatermark}
+        size="sm"
         data-testid="watermark-checkbox"
       />
 

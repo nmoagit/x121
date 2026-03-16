@@ -13,7 +13,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { Modal, useToast } from "@/components/composite";
 import { EmptyState } from "@/components/domain";
 import { Stack } from "@/components/layout";
-import { Badge, Button, Checkbox, Input, LoadingPane } from "@/components/primitives";
+import { Badge, Button, Checkbox, Input, LoadingPane, Toggle } from "@/components/primitives";
 import { ChevronDown, Eye, List, Play, Plus, RefreshCw, Trash2, XCircle, Zap } from "@/tokens/icons";
 import { iconSizes } from "@/tokens/icons";
 
@@ -511,10 +511,11 @@ function CreateRunModal({
 
         {/* Retrospective matching */}
         <div className="rounded-[var(--radius-md)] border border-[var(--color-border-default)] bg-[var(--color-surface-secondary)] p-1.5">
-          <Checkbox
+          <Toggle
             label="Include existing approved scenes (retrospective)"
             checked={retrospective}
             onChange={setRetrospective}
+            size="sm"
           />
           <p className="mt-1 ml-7 text-xs text-[var(--color-text-muted)]">
             Pre-marks cells as completed where an approved video already exists for the character + scene type.

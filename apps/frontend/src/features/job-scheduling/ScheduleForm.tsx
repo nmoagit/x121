@@ -8,7 +8,7 @@
 
 import { useCallback, useState } from "react";
 
-import { Button, Checkbox, Input, Select } from "@/components/primitives";
+import { Button, Input, Select, Toggle } from "@/components/primitives";
 import { Stack } from "@/components/layout";
 
 import { CronPreview } from "./CronPreview";
@@ -112,7 +112,7 @@ export function ScheduleForm({
         )}
 
         <Select label="Timezone" options={TIMEZONE_SELECT_OPTIONS} value={timezone} onChange={setTimezone} />
-        <Checkbox checked={isOffPeakOnly} onChange={setIsOffPeakOnly} label="Off-peak hours only" />
+        <Toggle checked={isOffPeakOnly} onChange={setIsOffPeakOnly} label="Off-peak hours only" size="sm" />
         <Select label="Action Type" options={ACTION_TYPE_OPTIONS} value={actionType} onChange={(v) => setActionType(v as ActionType)} />
 
         <JsonTextarea

@@ -23,7 +23,7 @@ interface SearchInputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, "
 }
 
 export const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(function SearchInput(
-  { size = "md", showIcon = true, className, ...rest },
+  { size = "sm", showIcon = true, className, ...rest },
   ref,
 ) {
   const iconSize = ICON_SIZES[size];
