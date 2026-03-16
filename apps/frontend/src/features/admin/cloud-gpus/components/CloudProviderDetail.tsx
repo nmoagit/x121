@@ -6,7 +6,7 @@
 
 import { useCallback, useState } from "react";
 
-import { ConfirmModal } from "@/components/composite";
+import { ConfirmModal, Tabs } from "@/components/composite";
 import { useToast } from "@/components/composite/useToast";
 import { Button, Spinner } from "@/components/primitives";
 import { formatCents, formatDateTime, formatRelative } from "@/lib/format";
@@ -75,7 +75,10 @@ export function CloudProviderDetail({ providerId }: Props) {
           </p>
         </div>
         <div className="flex gap-2">
-          <button
+          <Button
+            variant="secondary"
+            size="sm"
+            loading={testConnection.isPending}
             onClick={() =>
               testConnection.mutate(undefined, {
                 onSuccess: (result) => {
@@ -100,36 +103,22 @@ export function CloudProviderDetail({ providerId }: Props) {
                 },
               })
             }
-            className="rounded-[var(--radius-md)] border border-[var(--color-border-default)] px-3 py-1.5 text-xs text-[var(--color-text-primary)] hover:bg-[var(--color-surface-secondary)]"
           >
-            {testConnection.isPending ? "Testing..." : "Test Connection"}
-          </button>
-          <button
+            Test Connection
+          </Button>
+          <Button
+            variant="danger"
+            size="sm"
             onClick={() => setConfirmEmergencyStop(true)}
-            className="rounded-[var(--radius-md)] bg-red-600 px-3 py-1.5 text-xs text-white hover:bg-red-700"
           >
             Emergency Stop
-          </button>
+          </Button>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-[var(--color-border-default)]" role="tablist">
-        {TABS.map((t) => (
-          <button
-            key={t.id}
-            role="tab"
-            aria-selected={tab === t.id}
-            onClick={() => setTab(t.id)}
-            className={`px-4 py-2 text-sm ${
-              tab === t.id
-                ? "border-b-2 border-[var(--color-action-primary)] font-medium text-[var(--color-text-primary)]"
-                : "text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
-            }`}
-          >
-            {t.label}
-          </button>
-        ))}
+      <div className="px-4 pt-2">
+        <Tabs tabs={TABS} activeTab={tab} onTabChange={(id) => setTab(id as Tab)} variant="pill" />
       </div>
 
       {/* Tab content */}
@@ -187,12 +176,14 @@ function GpuTypesTab({ providerId }: { providerId: number }) {
   return (
     <div>
       <div className="mb-3 flex justify-end">
-        <button
+        <Button
+          variant="secondary"
+          size="sm"
+          loading={syncTypes.isPending}
           onClick={() => syncTypes.mutate()}
-          className="rounded-[var(--radius-md)] border border-[var(--color-border-default)] px-3 py-1.5 text-xs text-[var(--color-text-primary)] hover:bg-[var(--color-surface-secondary)]"
         >
-          {syncTypes.isPending ? "Syncing..." : "Sync from Provider"}
-        </button>
+          Sync from Provider
+        </Button>
       </div>
       {!types || types.length === 0 ? (
         <p className="text-sm text-[var(--color-text-muted)]">No GPU types. Click sync to fetch from provider.</p>

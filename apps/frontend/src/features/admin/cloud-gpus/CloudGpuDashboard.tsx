@@ -71,14 +71,16 @@ export function CloudGpuDashboard() {
             <Button
               onClick={() => setConfirmResume(true)}
               variant="primary"
+              size="sm"
               loading={resumeProcessing.isPending}
             >
               Resume Processing
             </Button>
           )}
           <Button
+            variant="danger"
+            size="sm"
             onClick={() => setConfirmStopAll(true)}
-            className="bg-red-600 text-white hover:bg-red-700"
           >
             Emergency Stop All
           </Button>

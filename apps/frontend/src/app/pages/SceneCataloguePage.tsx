@@ -7,10 +7,10 @@
 
 import { useCallback, useState } from "react";
 
-import { ConfirmDeleteModal, ConfigToolbar } from "@/components/composite";
+import { ConfirmDeleteModal, ConfigToolbar, Tabs } from "@/components/composite";
 import { EmptyState } from "@/components/domain";
 import { PageHeader, Stack } from "@/components/layout";
-import { Badge, Button, LoadingPane, SelectableRow, TabBar } from "@/components/primitives";
+import { Badge, Button, LoadingPane, SelectableRow } from "@/components/primitives";
 import { Edit3, Plus, Trash2 } from "@/tokens/icons";
 
 import { useExportSceneCatalogue, useConfigImport } from "@/features/config-io";
@@ -37,13 +37,13 @@ import type { Workflow } from "@/features/workflow-import";
 
 type TabKey = "scene-types" | "workflows" | "catalogue" | "tracks" | "prompt-defaults" | "video-settings";
 
-const TABS: { key: TabKey; label: string }[] = [
-  { key: "scene-types", label: "Scene Types" },
-  { key: "catalogue", label: "Scene Catalogue" },
-  { key: "tracks", label: "Tracks" },
-  { key: "workflows", label: "Workflows" },
-  { key: "prompt-defaults", label: "Prompt Defaults" },
-  { key: "video-settings", label: "Video Settings" },
+const TABS: { id: TabKey; label: string }[] = [
+  { id: "scene-types", label: "Scene Types" },
+  { id: "catalogue", label: "Scene Catalogue" },
+  { id: "tracks", label: "Tracks" },
+  { id: "workflows", label: "Workflows" },
+  { id: "prompt-defaults", label: "Prompt Defaults" },
+  { id: "video-settings", label: "Video Settings" },
 ];
 
 /* --------------------------------------------------------------------------
@@ -120,7 +120,7 @@ function SceneTypesTab() {
         title="No Scene Types"
         description="Create your first scene type to define workflow configurations for video generation."
         action={
-          <Button variant="primary" onClick={() => setCreating(true)}>
+          <Button variant="primary" size="sm" onClick={() => setCreating(true)}>
             Create Scene Type
           </Button>
         }
@@ -396,7 +396,7 @@ export function SceneCataloguePage() {
           />
         </div>
 
-        <TabBar tabs={TABS} activeTab={activeTab} onChange={(k) => setActiveTab(k as TabKey)} />
+        <Tabs tabs={TABS} activeTab={activeTab} onTabChange={(k) => setActiveTab(k as TabKey)} variant="underline" />
 
         {activeTab === "scene-types" && <SceneTypesTab />}
         {activeTab === "workflows" && <TrackWorkflowManager />}

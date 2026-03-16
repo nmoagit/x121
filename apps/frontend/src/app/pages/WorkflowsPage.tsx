@@ -9,7 +9,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useSearch } from "@tanstack/react-router";
 
-import { ConfirmDeleteModal, ConfigToolbar, Modal } from "@/components/composite";
+import { ConfirmDeleteModal, ConfigToolbar, Modal, Tabs } from "@/components/composite";
 import { EmptyState } from "@/components/domain";
 import { PageHeader, Stack } from "@/components/layout";
 import {
@@ -19,7 +19,6 @@ import {
   LoadingPane,
   Select,
   SelectableRow,
-  TabBar,
 } from "@/components/primitives";
 import { ChevronLeft, ChevronRight, Edit3, Trash2 } from "@/tokens/icons";
 
@@ -44,9 +43,9 @@ import { useExportWorkflow, useConfigImport } from "@/features/config-io";
 
 type TabKey = "list" | "import";
 
-const TABS: { key: TabKey; label: string }[] = [
-  { key: "list", label: "Workflows" },
-  { key: "import", label: "Import New" },
+const TABS: { id: TabKey; label: string }[] = [
+  { id: "list", label: "Workflows" },
+  { id: "import", label: "Import New" },
 ];
 
 /* --------------------------------------------------------------------------
@@ -163,11 +162,12 @@ function EditWorkflowModal({
           options={STATUS_OPTIONS}
         />
         <div className="flex gap-[var(--spacing-2)] justify-end">
-          <Button variant="secondary" onClick={onClose}>
+          <Button variant="secondary" size="sm" onClick={onClose}>
             Cancel
           </Button>
           <Button
             variant="primary"
+            size="sm"
             onClick={handleSave}
             loading={updateMutation.isPending}
             disabled={!name.trim()}
@@ -258,7 +258,7 @@ export function WorkflowsPage() {
           )}
         </div>
 
-        <TabBar tabs={TABS} activeTab={activeTab} onChange={(k) => setActiveTab(k as TabKey)} />
+        <Tabs tabs={TABS} activeTab={activeTab} onTabChange={(k) => setActiveTab(k as TabKey)} variant="underline" />
 
         {/* List tab */}
         {activeTab === "list" && (
@@ -270,7 +270,7 @@ export function WorkflowsPage() {
                 title="No Workflows"
                 description="Import a ComfyUI workflow JSON to get started."
                 action={
-                  <Button variant="primary" onClick={() => setActiveTab("import")}>
+                  <Button variant="primary" size="sm" onClick={() => setActiveTab("import")}>
                     Import Workflow
                   </Button>
                 }

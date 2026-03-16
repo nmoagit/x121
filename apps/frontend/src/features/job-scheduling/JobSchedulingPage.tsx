@@ -80,7 +80,7 @@ export function JobSchedulingPage() {
           {activeTab === "schedules" && (
             <Button
               variant="primary"
-              size="md"
+              size="sm"
               icon={<Plus size={iconSizes.md} />}
               onClick={handleOpenCreate}
               data-testid="create-schedule-btn"
