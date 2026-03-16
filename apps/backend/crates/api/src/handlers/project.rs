@@ -287,12 +287,13 @@ pub async fn get_batch_scene_assignments(
             COALESCE((SELECT COUNT(*) FROM scene_video_versions svv
              WHERE svv.scene_id = sc.id AND svv.deleted_at IS NULL AND svv.is_final = false), 0) AS segment_count,
             COALESCE((SELECT COUNT(*) FROM scene_video_versions svv
-             WHERE svv.scene_id = sc.id AND svv.deleted_at IS NULL AND svv.is_final = true), 0) AS final_video_count
+             WHERE svv.scene_id = sc.id AND svv.deleted_at IS NULL), 0) AS final_video_count
         FROM characters c
         CROSS JOIN scene_types st
         CROSS JOIN tracks t
         LEFT JOIN project_scene_settings pss
             ON pss.scene_type_id = st.id AND (pss.track_id = t.id OR pss.track_id IS NULL)
+               AND pss.project_id = $1
         LEFT JOIN group_scene_settings gss
             ON gss.scene_type_id = st.id AND (gss.track_id = t.id OR gss.track_id IS NULL)
                AND gss.group_id = c.group_id

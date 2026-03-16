@@ -219,7 +219,7 @@ pub async fn get_dashboard(
             (SELECT COUNT(*) FROM scene_video_versions svv
              WHERE svv.scene_id = sc.id AND svv.deleted_at IS NULL AND svv.is_final = false) AS segment_count,
             (SELECT COUNT(*) FROM scene_video_versions svv
-             WHERE svv.scene_id = sc.id AND svv.deleted_at IS NULL AND svv.is_final = true) AS final_video_count
+             WHERE svv.scene_id = sc.id AND svv.deleted_at IS NULL) AS final_video_count
         FROM enabled_combos ec
         LEFT JOIN scenes sc
             ON sc.scene_type_id = ec.scene_type_id AND sc.track_id = ec.track_id

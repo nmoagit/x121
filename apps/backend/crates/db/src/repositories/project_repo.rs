@@ -44,7 +44,7 @@ impl ProjectRepo {
     /// List all projects ordered by most recently created first. Excludes soft-deleted rows.
     pub async fn list(pool: &PgPool) -> Result<Vec<Project>, sqlx::Error> {
         let query = format!(
-            "SELECT {COLUMNS} FROM projects WHERE deleted_at IS NULL ORDER BY created_at DESC"
+            "SELECT {COLUMNS} FROM projects WHERE deleted_at IS NULL ORDER BY LOWER(name) ASC"
         );
         sqlx::query_as::<_, Project>(&query).fetch_all(pool).await
     }
