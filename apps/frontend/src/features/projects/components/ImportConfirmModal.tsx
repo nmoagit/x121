@@ -526,6 +526,14 @@ export function ImportConfirmModal({
   return (
     <Modal open={open} onClose={isImporting ? () => {} : onClose} title="Import Characters" size="xl">
       <Stack gap={4}>
+        {/* Target project indicator */}
+        {projectName && (
+          <div className="flex items-center gap-2 text-sm text-[var(--color-text-muted)]">
+            <span>Importing into:</span>
+            <Badge variant="info" size="sm">{projectName}</Badge>
+          </div>
+        )}
+
         {/* Project detection banner (grouped imports only) */}
         {isGroupedImport && detectedProjectName && (
           <div

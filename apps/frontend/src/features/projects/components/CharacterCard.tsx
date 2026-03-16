@@ -3,10 +3,10 @@
  */
 
 import { Card } from "@/components/composite";
-import { Badge, ProgressiveImage } from "@/components/primitives";
+import { Badge, ProgressiveImage, Tooltip } from "@/components/primitives";
 import { variantThumbnailUrl } from "@/features/images/utils";
 import { cn } from "@/lib/cn";
-import { Check, Edit3, Power, User } from "@/tokens/icons";
+import { Check, Edit3, FileText, Image, Power, User } from "@/tokens/icons";
 
 import type { CharacterDeliveryStatus } from "@/features/delivery";
 import {
@@ -50,28 +50,37 @@ interface CharacterCardProps {
   onToggleEnabled?: (charId: number, enabled: boolean) => void;
 }
 
-const SEED_DATA_ITEMS: { key: keyof SeedDataStatus; label: string }[] = [
-  { key: "hasClothedImage", label: "Clothed image" },
-  { key: "hasToplessImage", label: "Topless image" },
-  { key: "hasBio", label: "Bio" },
-  { key: "hasTov", label: "Tone of Voice" },
+const SEED_SECTIONS: { key: keyof SeedDataStatus; label: string; Icon: typeof Image }[] = [
+  { key: "hasClothedImage", label: "Clothed image", Icon: Image },
+  { key: "hasToplessImage", label: "Topless image", Icon: Image },
+  { key: "hasBio", label: "Bio", Icon: FileText },
+  { key: "hasTov", label: "Tone of Voice", Icon: FileText },
 ];
 
-function SeedDataDots({ status }: { status: SeedDataStatus }) {
+function SeedDataIndicators({ status }: { status: SeedDataStatus }) {
   return (
-    <div className="mt-1 flex items-center gap-1">
-      {SEED_DATA_ITEMS.map(({ key, label }) => (
-        <span
-          key={key}
-          title={`${label}: ${status[key] ? "Present" : "Missing"}`}
-          className={cn(
-            "w-2 h-2 rounded-full",
-            status[key]
-              ? "bg-[var(--color-action-success)]"
-              : "bg-[var(--color-text-muted)] opacity-40",
-          )}
-        />
-      ))}
+    <div className="flex flex-col gap-1 rounded-full bg-black/20 p-0.5 backdrop-blur-sm">
+      {SEED_SECTIONS.map(({ key, label, Icon }) => {
+        const present = status[key];
+        return (
+          <Tooltip key={key} content={`${label}: ${present ? "Present" : "Missing"}`} side="left">
+            <span
+              className="flex items-center justify-center w-6 h-6 rounded-full"
+              style={{
+                backgroundColor: present
+                  ? "var(--color-action-success)"
+                  : "var(--color-text-muted)",
+              }}
+            >
+              <Icon
+                size={12}
+                className={present ? "text-white" : "text-[var(--color-surface-primary)]"}
+                aria-hidden
+              />
+            </span>
+          </Tooltip>
+        );
+      })}
     </div>
   );
 }
@@ -227,21 +236,26 @@ export function CharacterCard({ character, group, avatarUrl, heroVariantId, sele
           </div>
         )}
 
+        {/* Seed data completeness overlay */}
+        {seedDataStatus && !sectionReadiness && (
+          <div className={cn("absolute right-1.5 top-1.5 z-10", seedDataStatus.hasClothedImage && seedDataStatus.hasToplessImage && seedDataStatus.hasBio && seedDataStatus.hasTov && "opacity-30")}>
+            <SeedDataIndicators status={seedDataStatus} />
+          </div>
+        )}
+
         {/* Info area */}
         <div className="px-[var(--spacing-3)] py-[var(--spacing-2)]">
-          <div className="flex items-center justify-between gap-[var(--spacing-2)]">
-            <h3 className="text-sm font-semibold text-[var(--color-text-primary)] truncate">
-              {character.name}
-            </h3>
+          <h3 className="text-sm font-semibold text-[var(--color-text-primary)] truncate">
+            {character.name}
+          </h3>
+          <div className="mt-0.5 flex items-center justify-between gap-1">
+            <span className="text-xs text-[var(--color-text-muted)] truncate">
+              {group?.name ?? "\u00A0"}
+            </span>
             <Badge variant={badgeVariant} size="sm">
               {statusLabel}
             </Badge>
           </div>
-          {group && (
-            <p className="mt-0.5 text-xs text-[var(--color-text-muted)] truncate">
-              {group.name}
-            </p>
-          )}
           {deliveryStatus && deliveryStatus.status !== "not_delivered" && (
             <div className="mt-1">
               <Badge
@@ -258,9 +272,6 @@ export function CharacterCard({ character, group, avatarUrl, heroVariantId, sele
                 <Badge key={reason} variant="danger" size="sm">{reason}</Badge>
               ))}
             </div>
-          )}
-          {seedDataStatus && (
-            <SeedDataDots status={seedDataStatus} />
           )}
         </div>
       </button>
