@@ -29,6 +29,8 @@ interface FileDropZoneProps {
   onFolderDropped?: (result: FolderDropResult) => void;
   /** Optional ref callback to receive the browseFolder function. */
   browseFolderRef?: React.MutableRefObject<(() => void) | null>;
+  /** Additional CSS classes for the wrapper div. */
+  className?: string;
 }
 
 /* --------------------------------------------------------------------------
@@ -194,6 +196,7 @@ async function readDirectoryStructure(
     const payload = classifyCharacterFiles(entry.name, files);
     return {
       structure: "flat",
+      detectedProjectName: entry.name,
       groupedPayloads: new Map([["", [payload]]]),
     };
   }
@@ -219,6 +222,7 @@ async function readDirectoryStructure(
     }
     return {
       structure: "flat",
+      detectedProjectName: entry.name,
       groupedPayloads: new Map([["", payloads]]),
     };
   }
@@ -427,6 +431,7 @@ export function FileDropZone({
   onNamesDropped,
   onFolderDropped,
   browseFolderRef,
+  className,
 }: FileDropZoneProps) {
   const [isDragOver, setIsDragOver] = useState(false);
   const folderInputRef = useRef<HTMLInputElement>(null);
@@ -579,7 +584,7 @@ export function FileDropZone({
 
   return (
     <div
-      className="relative"
+      className={cn("relative", className)}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
