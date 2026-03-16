@@ -55,6 +55,8 @@ export interface NavItemDef {
   exact?: boolean;
   /** When true, render with prominent (white) text even when not active. */
   prominent?: boolean;
+  /** When true, indent the item (used for sub-items like individual projects). */
+  indent?: boolean;
 }
 
 export interface NavGroupDef {

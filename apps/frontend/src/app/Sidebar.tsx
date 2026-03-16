@@ -31,6 +31,7 @@ function SidebarContent({ collapsed }: { collapsed: boolean }) {
             path: `/projects/${p.id}`,
             icon: Folder,
             prominent: true,
+            indent: true,
           })),
         ],
       };

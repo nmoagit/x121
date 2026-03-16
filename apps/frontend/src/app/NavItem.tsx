@@ -25,6 +25,7 @@ export function NavItem({ item, collapsed }: NavItemProps) {
             ? "text-[var(--color-text-primary)] hover:bg-[var(--color-surface-tertiary)]"
             : "text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-tertiary)] hover:text-[var(--color-text-primary)]",
         collapsed && "justify-center px-0 w-8 mx-auto",
+        !collapsed && item.indent && "pl-6",
       )}
       aria-current={isActive ? "page" : undefined}
     >
