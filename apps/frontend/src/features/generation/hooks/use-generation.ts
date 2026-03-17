@@ -150,6 +150,24 @@ export function useCancelGeneration(sceneId: number) {
   });
 }
 
+/** Schedule generation for multiple scenes at a future time (PRD-134). */
+export function useScheduleGeneration() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: { scene_ids: number[]; scheduled_at: string }) =>
+      api.post<{ schedule_id: number; scenes_scheduled: number }>(
+        "/scenes/schedule-generation",
+        input,
+      ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: generationKeys.all });
+      queryClient.invalidateQueries({ queryKey: ["scenes"] });
+      queryClient.invalidateQueries({ queryKey: ["characters"] });
+    },
+  });
+}
+
 /** Manually select a boundary frame for a segment. */
 export function useSelectBoundaryFrame(segmentId: number) {
   const queryClient = useQueryClient();

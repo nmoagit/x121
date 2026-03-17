@@ -133,6 +133,7 @@ export const SCENE_STATUS_APPROVED = 4;
 export const SCENE_STATUS_REJECTED = 5;
 export const SCENE_STATUS_DELIVERED = 6;
 export const SCENE_STATUS_FAILED = 7;
+export const SCENE_STATUS_SCHEDULED = 8;
 
 const SCENE_STATUS_LABELS: Record<number, string> = {
   1: "Pending",
@@ -142,6 +143,7 @@ const SCENE_STATUS_LABELS: Record<number, string> = {
   5: "Rejected",
   6: "Delivered",
   7: "Failed",
+  8: "Scheduled",
 };
 
 const SCENE_STATUS_BADGE: Record<number, BadgeVariant> = {
@@ -152,6 +154,7 @@ const SCENE_STATUS_BADGE: Record<number, BadgeVariant> = {
   5: "danger",
   6: "success",
   7: "danger",
+  8: "info",
 };
 
 export function sceneStatusLabel(statusId: number): string {

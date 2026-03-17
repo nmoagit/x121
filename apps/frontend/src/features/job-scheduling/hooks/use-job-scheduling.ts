@@ -139,6 +139,34 @@ export function useResumeSchedule() {
   });
 }
 
+/** Cancel a pending schedule (PRD-134). */
+export function useCancelSchedule() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: number) => api.post(`/schedules/${id}/cancel`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: scheduleKeys.all });
+      queryClient.invalidateQueries({ queryKey: ["scenes"] });
+      queryClient.invalidateQueries({ queryKey: ["characters"] });
+    },
+  });
+}
+
+/** Trigger a schedule to run immediately (PRD-134). */
+export function useStartScheduleNow() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: number) => api.post(`/schedules/${id}/run-now`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: scheduleKeys.all });
+      queryClient.invalidateQueries({ queryKey: ["scenes"] });
+      queryClient.invalidateQueries({ queryKey: ["characters"] });
+    },
+  });
+}
+
 /* --------------------------------------------------------------------------
    Off-peak config mutations
    -------------------------------------------------------------------------- */

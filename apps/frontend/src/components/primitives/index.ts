@@ -14,6 +14,7 @@ export { ProgressiveImage } from "./ProgressiveImage";
 export { RemovableChip } from "./RemovableChip";
 export { SearchInput } from "./SearchInput";
 export { Select } from "./Select";
+export { SplitButton } from "./SplitButton";
 export { SelectableRow } from "./SelectableRow";
 export { Spinner } from "./Spinner";
 export { StatBadge } from "./StatBadge";

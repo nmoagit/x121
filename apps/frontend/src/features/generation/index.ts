@@ -28,6 +28,7 @@ export {
   useClearGenerationLog,
   useGenerationLog,
   useGenerationProgress,
+  useScheduleGeneration,
   useSelectBoundaryFrame,
   useStartGeneration,
 } from "./hooks/use-generation";
@@ -47,6 +48,7 @@ export {
 } from "./hooks/use-infrastructure";
 
 // Components
+export { ScheduleGenerationModal } from "./ScheduleGenerationModal";
 export { BoundaryFrameScrubber } from "./BoundaryFrameScrubber";
 export { GenerationProgressBar } from "./GenerationProgressBar";
 export { GenerationTerminal } from "./GenerationTerminal";

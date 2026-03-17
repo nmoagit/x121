@@ -16,17 +16,18 @@ import { Card } from "@/components/composite/Card";
 import { useToast } from "@/components/composite/useToast";
 import { EmptyState } from "@/components/domain";
 import { Grid } from "@/components/layout";
-import { Badge, Button, LoadingPane, Toggle } from "@/components/primitives";
+import { Badge, Button, LoadingPane, SplitButton, Toggle } from "@/components/primitives";
 import { Checkbox } from "@/components/primitives/Checkbox";
 import { useSetToggle } from "@/hooks/useSetToggle";
 import { getStreamUrl } from "@/features/video-player";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/cn";
-import { AlertCircle, AlertTriangle, ChevronLeft, ChevronRight, EyeOff, MessageSquare, Pause, Play, Upload, Video } from "@/tokens/icons";
+import { AlertCircle, AlertTriangle, ChevronLeft, ChevronRight, Clock, EyeOff, MessageSquare, Pause, Play, Upload, Video } from "@/tokens/icons";
 import { useGpuAvailability } from "@/app/footer";
 
 import { Modal } from "@/components/composite/Modal";
 import { useBatchGenerate } from "@/features/generation/hooks/use-generation";
+import { ScheduleGenerationModal } from "@/features/generation/ScheduleGenerationModal";
 import { useImageVariants } from "@/features/images/hooks/use-image-variants";
 import { findVariantForTrack } from "@/features/images/utils";
 import { sourceLabel } from "@/features/scene-catalogue/SourceBadge";
@@ -48,6 +49,7 @@ import {
   SCENE_STATUS_FAILED,
   SCENE_STATUS_GENERATING,
   SCENE_STATUS_REJECTED,
+  SCENE_STATUS_SCHEDULED,
   sceneHasVideo,
   sceneStatusBadgeVariant,
   sceneStatusLabel,
@@ -144,6 +146,9 @@ export function CharacterScenesTab({ characterId, focusSceneId, focusSceneTypeId
   /* --- clip gallery (scene detail) modal state --- */
   const [detailSlotIndex, setDetailSlotIndex] = useState<number | null>(null);
   const [promptOverrideOpen, setPromptOverrideOpen] = useState(false);
+
+  /* --- schedule generation modal state (PRD-134) --- */
+  const [scheduleSceneIds, setScheduleSceneIds] = useState<number[]>([]);
 
   /* --- generate confirmation modal state --- */
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -517,6 +522,10 @@ export function CharacterScenesTab({ characterId, focusSceneId, focusSceneTypeId
     batchGenerate.mutate({ scene_ids: [sceneId] });
   }
 
+  function handleScheduleScenes(sceneIds: number[]) {
+    setScheduleSceneIds(sceneIds);
+  }
+
   function handleSelectMissing() {
     setSelected(new Set(missingSceneIds));
   }
@@ -607,6 +616,14 @@ export function CharacterScenesTab({ characterId, focusSceneId, focusSceneTypeId
                 >
                   Generate Selected
                 </Button>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => handleScheduleScenes([...selected])}
+                  icon={<Clock size={14} />}
+                >
+                  Schedule Selected ({selected.size})
+                </Button>
               </>
             )}
           </>
@@ -636,6 +653,15 @@ export function CharacterScenesTab({ characterId, focusSceneId, focusSceneTypeId
             icon={<Play size={14} />}
           >
             Generate All
+          </Button>
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={() => handleScheduleScenes(selectableSceneIds)}
+            disabled={isDisabled || !canGenerateAny || selectableSceneIds.length === 0}
+            icon={<Clock size={14} />}
+          >
+            Schedule All
           </Button>
         </div>
       </div>
@@ -667,6 +693,7 @@ export function CharacterScenesTab({ characterId, focusSceneId, focusSceneTypeId
             isSelected={slot.scene !== null && selected.has(slot.scene.id)}
             onToggleSelect={toggleSelectItem}
             onGenerate={handleSingleGenerate}
+            onSchedule={(sceneId) => handleScheduleScenes([sceneId])}
             onClickScene={(sceneId) => {
               const idx = navigableSlots.findIndex((s) => s.scene?.id === sceneId);
               if (idx >= 0) setDetailSlotIndex(idx);
@@ -737,16 +764,26 @@ export function CharacterScenesTab({ characterId, focusSceneId, focusSceneTypeId
               onGenerate={() => handleSingleGenerate(detailScene.scene!.id)}
               generateLoading={batchGenerate.isPending}
               leftActions={
-                workflowIdMap.get(`${detailScene.row.scene_type_id}::${detailScene.row.track_id}`) != null ? (
+                <div className="flex items-center gap-2">
+                  {workflowIdMap.get(`${detailScene.row.scene_type_id}::${detailScene.row.track_id}`) != null && (
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      icon={<MessageSquare size={14} />}
+                      onClick={() => setPromptOverrideOpen(true)}
+                    >
+                      Prompt Overrides
+                    </Button>
+                  )}
                   <Button
                     size="sm"
                     variant="secondary"
-                    icon={<MessageSquare size={14} />}
-                    onClick={() => setPromptOverrideOpen(true)}
+                    icon={<Clock size={14} />}
+                    onClick={() => handleScheduleScenes([detailScene.scene!.id])}
                   >
-                    Prompt Overrides
+                    Schedule
                   </Button>
-                ) : undefined
+                </div>
               }
               generateDisabled={
                 isDisabled
@@ -796,6 +833,13 @@ export function CharacterScenesTab({ characterId, focusSceneId, focusSceneTypeId
         onConfirm={handleConfirmGenerate}
         loading={batchGenerate.isPending}
       />
+
+      {/* Schedule generation modal (PRD-134) */}
+      <ScheduleGenerationModal
+        sceneIds={scheduleSceneIds}
+        onClose={() => setScheduleSceneIds([])}
+        onScheduled={() => setScheduleSceneIds([])}
+      />
     </div>
   );
 }
@@ -809,6 +853,7 @@ interface SceneCardProps {
   isSelected: boolean;
   onToggleSelect: (sceneId: number) => void;
   onGenerate: (sceneId: number) => void;
+  onSchedule: (sceneId: number) => void;
   onClickScene: (sceneId: number, name: string, trackName: string | null, trackSlug: string | null) => void;
   onVideoDrop: (slot: SceneSlot, file: File) => void;
   onDisable: (slot: SceneSlot) => void;
@@ -818,7 +863,7 @@ interface SceneCardProps {
   hasActiveGpu: boolean;
 }
 
-function SceneCard({ slot, isSelected, onToggleSelect, onGenerate, onClickScene, onVideoDrop, onDisable, generating, playback, hasWorkflow, hasActiveGpu }: SceneCardProps) {
+function SceneCard({ slot, isSelected, onToggleSelect, onGenerate, onSchedule, onClickScene, onVideoDrop, onDisable, generating, playback, hasWorkflow, hasActiveGpu }: SceneCardProps) {
   const { row, scene } = slot;
   const isPlaceholder = scene === null;
   const hasSeedImage = slot.missingVariant === null;
@@ -983,7 +1028,7 @@ function SceneCard({ slot, isSelected, onToggleSelect, onGenerate, onClickScene,
             </span>
           </div>
 
-          {/* Generate button — disabled when no seed image or no workflow */}
+          {/* Generate button with schedule dropdown (PRD-134) */}
           <span
             title={
               !hasWorkflow ? "No workflow assigned to this scene type / track"
@@ -991,18 +1036,31 @@ function SceneCard({ slot, isSelected, onToggleSelect, onGenerate, onClickScene,
               : undefined
             }
           >
-            <Button
+            <SplitButton
               size="sm"
               variant={isFailed ? "danger" : "secondary"}
               disabled={isPlaceholder || isGenerating || generating || !hasSeedImage || !hasWorkflow}
+              disabledReason={
+                !hasWorkflow ? "No workflow assigned"
+                : !hasSeedImage ? "No seed image"
+                : undefined
+              }
               onClick={(e) => { e.stopPropagation(); scene && onGenerate(scene.id); }}
               icon={<Play size={14} />}
+              actions={[
+                {
+                  label: "Schedule\u2026",
+                  icon: <Clock size={14} />,
+                  onClick: () => scene && onSchedule(scene.id),
+                },
+              ]}
               className="w-full"
             >
               {isGenerating
-                ? (hasActiveGpu ? "Generating\u2026" : "Queued — no GPU")
+                ? (hasActiveGpu ? "Generating\u2026" : "Queued \u2014 no GPU")
+                : scene?.status_id === SCENE_STATUS_SCHEDULED ? "Scheduled"
                 : isFailed ? "Retry" : "Generate"}
-            </Button>
+            </SplitButton>
           </span>
         </div>
       </div>
