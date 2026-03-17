@@ -34,7 +34,7 @@ use crate::state::AppState;
 ///
 /// If the scene has existing video versions → Generated (3).
 /// Otherwise → Pending (1).
-async fn resolve_restore_status(pool: &sqlx::PgPool, scene_id: DbId) -> StatusId {
+pub(crate) async fn resolve_restore_status(pool: &sqlx::PgPool, scene_id: DbId) -> StatusId {
     let has_videos = SceneVideoVersionRepo::list_by_scene(pool, scene_id)
         .await
         .map(|v| !v.is_empty())
@@ -101,7 +101,7 @@ pub async fn start_generation(
 ///
 /// Extracted to avoid duplicating this logic between `start_generation` and
 /// `batch_generate`.
-async fn init_scene_generation(
+pub(crate) async fn init_scene_generation(
     state: &AppState,
     scene_id: DbId,
     boundary_mode: Option<String>,
@@ -212,7 +212,7 @@ use x121_core::generation::SYSTEM_USER_ID;
 ///
 /// Fire-and-forget: the API returns immediately while the submission
 /// happens asynchronously. Errors are logged but don't fail the response.
-fn submit_first_segment(state: &AppState, scene_id: DbId) {
+pub(crate) fn submit_first_segment(state: &AppState, scene_id: DbId) {
     let pool = state.pool.clone();
     let comfyui = state.comfyui_manager.clone();
     let storage = state.storage.clone();
@@ -613,4 +613,149 @@ pub async fn clear_generation_log(
 ) -> AppResult<impl IntoResponse> {
     let _ = SceneGenerationLogRepo::delete_for_scene(&state.pool, scene_id).await;
     Ok(axum::http::StatusCode::NO_CONTENT)
+}
+
+// ---------------------------------------------------------------------------
+// Deferred/Scheduled generation (PRD-134)
+// ---------------------------------------------------------------------------
+
+/// Request body for `POST /scenes/schedule-generation`.
+#[derive(Debug, serde::Deserialize)]
+pub struct ScheduleGenerationRequest {
+    pub scene_ids: Vec<DbId>,
+    pub scheduled_at: chrono::DateTime<chrono::Utc>,
+}
+
+/// Response body for a successful schedule-generation request.
+#[derive(Debug, serde::Serialize)]
+pub struct ScheduleGenerationResponse {
+    pub schedule_id: DbId,
+    pub scenes_scheduled: usize,
+}
+
+/// POST /api/v1/scenes/schedule-generation
+///
+/// Create a one-time schedule entry that will trigger batch generation
+/// at the specified time. Sets scene statuses to "Scheduled" (PRD-134).
+pub async fn schedule_generation(
+    auth: crate::middleware::auth::AuthUser,
+    State(state): State<AppState>,
+    Json(input): Json<ScheduleGenerationRequest>,
+) -> AppResult<impl IntoResponse> {
+    use x121_core::job_scheduling::{ACTION_SCHEDULE_GENERATION, SCHEDULE_ONE_TIME};
+    use x121_db::models::job_scheduling::CreateSchedule;
+    use x121_db::repositories::ScheduleRepo;
+
+    if input.scene_ids.is_empty() {
+        return Err(AppError::BadRequest("scene_ids must not be empty".into()));
+    }
+
+    // Validate scheduled_at is in the future.
+    let now = chrono::Utc::now();
+    if input.scheduled_at <= now {
+        return Err(AppError::BadRequest(
+            "scheduled_at must be in the future".into(),
+        ));
+    }
+
+    // Validate all scenes exist and meet generation preconditions.
+    let mut valid_ids = Vec::new();
+    let mut errors = Vec::new();
+    for &scene_id in &input.scene_ids {
+        match validate_scene_for_generation(&state, scene_id).await {
+            Ok(()) => valid_ids.push(scene_id),
+            Err(e) => errors.push(format!("scene {scene_id}: {e}")),
+        }
+    }
+
+    if valid_ids.is_empty() {
+        return Err(AppError::BadRequest(format!(
+            "No scenes are eligible for scheduling: {}",
+            errors.join("; ")
+        )));
+    }
+
+    // Create schedule entry.
+    let action_config = serde_json::json!({ "scene_ids": valid_ids });
+    let create = CreateSchedule {
+        name: format!("Generate {} scene(s)", valid_ids.len()),
+        description: None,
+        schedule_type: SCHEDULE_ONE_TIME.to_string(),
+        cron_expression: None,
+        scheduled_at: Some(input.scheduled_at),
+        timezone: "UTC".to_string(),
+        is_off_peak_only: false,
+        action_type: ACTION_SCHEDULE_GENERATION.to_string(),
+        action_config,
+    };
+
+    let schedule = ScheduleRepo::create(&state.pool, auth.user_id, &create).await?;
+    ScheduleRepo::set_next_run(&state.pool, schedule.id, Some(input.scheduled_at)).await?;
+
+    // Set each valid scene to Scheduled status.
+    for &scene_id in &valid_ids {
+        let update = UpdateSceneGeneration {
+            status_id: Some(SceneStatus::Scheduled.id()),
+            total_segments_estimated: None,
+            total_segments_completed: None,
+            actual_duration_secs: None,
+            transition_segment_index: None,
+            generation_started_at: None,
+            generation_completed_at: None,
+        };
+        let _ = SceneRepo::update_generation_state(&state.pool, scene_id, &update).await;
+    }
+
+    Ok(Json(DataResponse {
+        data: ScheduleGenerationResponse {
+            schedule_id: schedule.id,
+            scenes_scheduled: valid_ids.len(),
+        },
+    }))
+}
+
+/// Check whether a scene meets the preconditions for generation.
+///
+/// Returns `Ok(())` if valid, or an error string describing the issue.
+async fn validate_scene_for_generation(state: &AppState, scene_id: DbId) -> Result<(), String> {
+    let scene = SceneRepo::find_by_id(&state.pool, scene_id)
+        .await
+        .map_err(|e| e.to_string())?
+        .ok_or_else(|| format!("scene {scene_id} not found"))?;
+
+    let scene_type = SceneTypeRepo::find_by_id(&state.pool, scene.scene_type_id)
+        .await
+        .map_err(|e| e.to_string())?
+        .ok_or_else(|| "scene type not found".to_string())?;
+
+    // Check seed image exists or can be auto-resolved.
+    let has_seed = scene.image_variant_id.is_some() || {
+        // Check if a hero variant exists for auto-assignment.
+        if let Some(track_id) = scene.track_id {
+            let track = TrackRepo::find_by_id(&state.pool, track_id)
+                .await
+                .map_err(|e| e.to_string())?;
+            if let Some(track) = track {
+                ImageVariantRepo::find_hero(&state.pool, scene.character_id, &track.slug)
+                    .await
+                    .map_err(|e| e.to_string())?
+                    .is_some()
+            } else {
+                false
+            }
+        } else {
+            false
+        }
+    };
+
+    if !has_seed {
+        return Err("no seed image variant available".into());
+    }
+
+    // Check target duration exists.
+    if scene_type.target_duration_secs.is_none() {
+        return Err("scene type has no target duration".into());
+    }
+
+    Ok(())
 }

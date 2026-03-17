@@ -8,3 +8,4 @@ pub mod activity_persistence;
 pub mod activity_retention;
 pub mod activity_tracing;
 pub mod metrics_retention;
+pub mod schedule_executor;

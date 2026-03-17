@@ -86,6 +86,8 @@ define_status_enum! {
         Rejected = 5,
         Delivered = 6,
         Failed = 7,
+        /// Deferred generation scheduled for a future time (PRD-134).
+        Scheduled = 8,
     }
 }
 
@@ -297,6 +299,8 @@ mod tests {
         assert_eq!(SceneStatus::Approved.id(), 4);
         assert_eq!(SceneStatus::Rejected.id(), 5);
         assert_eq!(SceneStatus::Delivered.id(), 6);
+        assert_eq!(SceneStatus::Failed.id(), 7);
+        assert_eq!(SceneStatus::Scheduled.id(), 8);
     }
 
     #[test]

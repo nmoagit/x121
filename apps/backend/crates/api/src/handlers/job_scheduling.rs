@@ -338,6 +338,103 @@ pub async fn update_off_peak_config(
 }
 
 // ---------------------------------------------------------------------------
+// POST /schedules/:id/cancel  (PRD-134)
+// ---------------------------------------------------------------------------
+
+/// Cancel a scheduled generation. Reverts associated scene statuses
+/// and records the cancellation in history.
+pub async fn cancel_schedule(
+    auth: AuthUser,
+    State(state): State<AppState>,
+    Path(id): Path<DbId>,
+) -> AppResult<impl IntoResponse> {
+    use x121_core::job_scheduling::{ACTION_SCHEDULE_GENERATION, HISTORY_CANCELLED};
+    use x121_db::models::generation::UpdateSceneGeneration;
+    use x121_db::models::status::SceneStatus;
+    use x121_db::repositories::{SceneRepo, SceneVideoVersionRepo};
+
+    let schedule = ensure_schedule_owned(&state.pool, id, auth.user_id).await?;
+
+    // Must be active and not already fired.
+    if !schedule.is_active {
+        return Err(AppError::Core(CoreError::Conflict(
+            "Schedule is already inactive".into(),
+        )));
+    }
+
+    // Deactivate the schedule.
+    ScheduleRepo::set_active(&state.pool, id, false).await?;
+
+    // If this is a generation schedule, revert scene statuses.
+    let mut scenes_reverted = 0usize;
+    if schedule.action_type == ACTION_SCHEDULE_GENERATION {
+        if let Some(scene_ids) = schedule
+            .action_config
+            .get("scene_ids")
+            .and_then(|v| serde_json::from_value::<Vec<DbId>>(v.clone()).ok())
+        {
+            for scene_id in scene_ids {
+                // Only revert scenes that are still in Scheduled status.
+                if let Ok(Some(scene)) = SceneRepo::find_by_id(&state.pool, scene_id).await {
+                    if scene.status_id == SceneStatus::Scheduled.id() {
+                        // Determine restore status: Generated if has videos, else Pending.
+                        let has_videos =
+                            SceneVideoVersionRepo::list_by_scene(&state.pool, scene_id)
+                                .await
+                                .map(|v| !v.is_empty())
+                                .unwrap_or(false);
+                        let restore = if has_videos {
+                            SceneStatus::Generated.id()
+                        } else {
+                            SceneStatus::Pending.id()
+                        };
+
+                        let update = UpdateSceneGeneration {
+                            status_id: Some(restore),
+                            total_segments_estimated: None,
+                            total_segments_completed: None,
+                            actual_duration_secs: None,
+                            transition_segment_index: None,
+                            generation_started_at: None,
+                            generation_completed_at: None,
+                        };
+                        let _ = SceneRepo::update_generation_state(&state.pool, scene_id, &update)
+                            .await;
+                        scenes_reverted += 1;
+                    }
+                }
+            }
+        }
+    }
+
+    // Record cancellation in history.
+    let _ = ScheduleHistoryRepo::record(&state.pool, id, HISTORY_CANCELLED, None, None, None).await;
+
+    tracing::info!(
+        schedule_id = id,
+        user_id = auth.user_id,
+        scenes_reverted,
+        "Schedule cancelled"
+    );
+
+    Ok(Json(DataResponse {
+        data: CancelScheduleResponse {
+            schedule_id: id,
+            cancelled: true,
+            scenes_reverted,
+        },
+    }))
+}
+
+/// Response body for `POST /schedules/{id}/cancel`.
+#[derive(Debug, serde::Serialize)]
+struct CancelScheduleResponse {
+    schedule_id: DbId,
+    cancelled: bool,
+    scenes_reverted: usize,
+}
+
+// ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 

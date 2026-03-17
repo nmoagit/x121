@@ -40,5 +40,6 @@ pub fn router() -> Router<AppState> {
         )
         .route("/{id}/pause", post(job_scheduling::pause_schedule))
         .route("/{id}/resume", post(job_scheduling::resume_schedule))
+        .route("/{id}/cancel", post(job_scheduling::cancel_schedule))
         .route("/{id}/history", get(job_scheduling::list_schedule_history))
 }

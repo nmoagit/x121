@@ -31,8 +31,15 @@ pub const ACTION_SUBMIT_JOB: &str = "submit_job";
 /// Action type: submit a batch of jobs.
 pub const ACTION_SUBMIT_BATCH: &str = "submit_batch";
 
+/// Action type: schedule deferred scene generation (PRD-134).
+pub const ACTION_SCHEDULE_GENERATION: &str = "schedule_generation";
+
 /// All valid action type values.
-pub const VALID_ACTION_TYPES: &[&str] = &[ACTION_SUBMIT_JOB, ACTION_SUBMIT_BATCH];
+pub const VALID_ACTION_TYPES: &[&str] = &[
+    ACTION_SUBMIT_JOB,
+    ACTION_SUBMIT_BATCH,
+    ACTION_SCHEDULE_GENERATION,
+];
 
 // ---------------------------------------------------------------------------
 // History status constants
@@ -46,6 +53,9 @@ pub const HISTORY_FAILED: &str = "failed";
 
 /// History status for skipped execution (e.g. off-peak constraint).
 pub const HISTORY_SKIPPED: &str = "skipped";
+
+/// History status for cancelled schedule (PRD-134).
+pub const HISTORY_CANCELLED: &str = "cancelled";
 
 // ---------------------------------------------------------------------------
 // Validators
@@ -405,6 +415,7 @@ mod tests {
     fn valid_action_types() {
         assert!(validate_action_type("submit_job").is_ok());
         assert!(validate_action_type("submit_batch").is_ok());
+        assert!(validate_action_type("schedule_generation").is_ok());
     }
 
     #[test]

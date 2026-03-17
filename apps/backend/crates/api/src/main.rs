@@ -143,6 +143,10 @@ async fn main() {
         activity_retention_cancel_clone,
     ));
 
+    // Spawn schedule executor (checks for due schedules every 30s, PRD-134).
+    let schedule_executor_cancel = tokio_util::sync::CancellationToken::new();
+    let schedule_executor_cancel_clone = schedule_executor_cancel.clone();
+
     tracing::info!("Event services started (persistence, notification router, digest scheduler, metrics retention, activity log persistence, activity log retention)");
 
     // --- Script orchestrator (PRD-09) ---
@@ -214,17 +218,19 @@ async fn main() {
         Arc::clone(&activity_broadcaster),
         None,
     );
-    let (_monitoring_handle, _monitoring_nudge) = x121_cloud::services::monitoring::spawn_monitoring_service(
-        pool.clone(),
-        Arc::clone(&cloud_registry),
-        None,
-    );
-    let (_reconciliation_handle, _reconciliation_nudge) = x121_cloud::services::reconciliation::spawn_reconciliation_service(
-        pool.clone(),
-        Arc::clone(&cloud_registry),
-        Some(Arc::clone(&activity_broadcaster)),
-        None,
-    );
+    let (_monitoring_handle, _monitoring_nudge) =
+        x121_cloud::services::monitoring::spawn_monitoring_service(
+            pool.clone(),
+            Arc::clone(&cloud_registry),
+            None,
+        );
+    let (_reconciliation_handle, _reconciliation_nudge) =
+        x121_cloud::services::reconciliation::spawn_reconciliation_service(
+            pool.clone(),
+            Arc::clone(&cloud_registry),
+            Some(Arc::clone(&activity_broadcaster)),
+            None,
+        );
     tracing::info!("Cloud GPU services started (scaling, monitoring, reconciliation)");
 
     // Reconnect to any ComfyUI instances that were connected before a crash.
@@ -319,6 +325,12 @@ async fn main() {
         scaling_nudge,
     };
 
+    // Spawn schedule executor (needs AppState, so must be after state construction).
+    let schedule_executor_handle = tokio::spawn(x121_api::background::schedule_executor::run(
+        state.clone(),
+        schedule_executor_cancel_clone,
+    ));
+
     // --- Router ---
     let app = build_app_router(state, &config);
 
@@ -366,6 +378,11 @@ async fn main() {
     activity_retention_cancel.cancel();
     let _ = tokio::time::timeout(Duration::from_secs(5), activity_retention_handle).await;
     tracing::info!("Activity log services stopped");
+
+    // Stop schedule executor (PRD-134).
+    schedule_executor_cancel.cancel();
+    let _ = tokio::time::timeout(Duration::from_secs(5), schedule_executor_handle).await;
+    tracing::info!("Schedule executor stopped");
 
     // Drop the event bus sender to close the broadcast channel.
     // This signals persistence and notification router to shut down.
