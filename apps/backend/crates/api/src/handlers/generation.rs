@@ -280,15 +280,7 @@ pub(crate) fn submit_first_segment(state: &AppState, scene_id: DbId) {
 
                 // Revert scene to its appropriate prior status.
                 let restore_status = resolve_restore_status(&pool, scene_id).await;
-                let update = UpdateSceneGeneration {
-                    status_id: Some(restore_status),
-                    total_segments_estimated: None,
-                    total_segments_completed: None,
-                    actual_duration_secs: None,
-                    transition_segment_index: None,
-                    generation_started_at: None,
-                    generation_completed_at: None,
-                };
+                let update = UpdateSceneGeneration::reset_to(restore_status);
                 let _ = SceneRepo::update_generation_state(&pool, scene_id, &update).await;
 
                 let status_label = if restore_status == SceneStatus::Generated.id() {
@@ -529,15 +521,7 @@ pub async fn cancel_generation(
 
     // Revert scene to its appropriate prior status (Generated if has videos, else Pending).
     let restore_status = resolve_restore_status(&state.pool, scene_id).await;
-    let update = UpdateSceneGeneration {
-        status_id: Some(restore_status),
-        total_segments_estimated: None,
-        total_segments_completed: None,
-        actual_duration_secs: None,
-        transition_segment_index: None,
-        generation_started_at: None,
-        generation_completed_at: None,
-    };
+    let update = UpdateSceneGeneration::reset_to(restore_status);
     SceneRepo::update_generation_state(&state.pool, scene_id, &update).await?;
 
     let restore_label = if restore_status == SceneStatus::Generated.id() {
@@ -694,15 +678,7 @@ pub async fn schedule_generation(
 
     // Set each valid scene to Scheduled status.
     for &scene_id in &valid_ids {
-        let update = UpdateSceneGeneration {
-            status_id: Some(SceneStatus::Scheduled.id()),
-            total_segments_estimated: None,
-            total_segments_completed: None,
-            actual_duration_secs: None,
-            transition_segment_index: None,
-            generation_started_at: None,
-            generation_completed_at: None,
-        };
+        let update = UpdateSceneGeneration::reset_to(SceneStatus::Scheduled.id());
         let _ = SceneRepo::update_generation_state(&state.pool, scene_id, &update).await;
     }
 

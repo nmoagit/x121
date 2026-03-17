@@ -351,7 +351,7 @@ pub async fn cancel_schedule(
     use x121_core::job_scheduling::{ACTION_SCHEDULE_GENERATION, HISTORY_CANCELLED};
     use x121_db::models::generation::UpdateSceneGeneration;
     use x121_db::models::status::SceneStatus;
-    use x121_db::repositories::{SceneRepo, SceneVideoVersionRepo};
+    use x121_db::repositories::SceneRepo;
 
     let schedule = ensure_schedule_owned(&state.pool, id, auth.user_id).await?;
 
@@ -377,27 +377,10 @@ pub async fn cancel_schedule(
                 // Only revert scenes that are still in Scheduled status.
                 if let Ok(Some(scene)) = SceneRepo::find_by_id(&state.pool, scene_id).await {
                     if scene.status_id == SceneStatus::Scheduled.id() {
-                        // Determine restore status: Generated if has videos, else Pending.
-                        let has_videos =
-                            SceneVideoVersionRepo::list_by_scene(&state.pool, scene_id)
-                                .await
-                                .map(|v| !v.is_empty())
-                                .unwrap_or(false);
-                        let restore = if has_videos {
-                            SceneStatus::Generated.id()
-                        } else {
-                            SceneStatus::Pending.id()
-                        };
-
-                        let update = UpdateSceneGeneration {
-                            status_id: Some(restore),
-                            total_segments_estimated: None,
-                            total_segments_completed: None,
-                            actual_duration_secs: None,
-                            transition_segment_index: None,
-                            generation_started_at: None,
-                            generation_completed_at: None,
-                        };
+                        let restore = crate::handlers::generation::resolve_restore_status(
+                            &state.pool, scene_id,
+                        ).await;
+                        let update = UpdateSceneGeneration::reset_to(restore);
                         let _ = SceneRepo::update_generation_state(&state.pool, scene_id, &update)
                             .await;
                         scenes_reverted += 1;

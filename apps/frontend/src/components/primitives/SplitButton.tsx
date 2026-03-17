@@ -4,9 +4,10 @@
  * Follows the same styling patterns as the Button component.
  */
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 
+import { useClickOutside } from "@/hooks/useClickOutside";
 import { cn } from "@/lib/cn";
 import { ChevronDown } from "@/tokens/icons";
 
@@ -91,25 +92,17 @@ export function SplitButton({
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Close dropdown on outside click or Escape
+  const closeMenu = useCallback(() => setOpen(false), []);
+  useClickOutside(containerRef, closeMenu, open);
+
+  // Close on Escape key
   useEffect(() => {
     if (!open) return;
-
-    const handleClick = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
-    };
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") setOpen(false);
     };
-
-    document.addEventListener("mousedown", handleClick);
     document.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.removeEventListener("mousedown", handleClick);
-      document.removeEventListener("keydown", handleKeyDown);
-    };
+    return () => document.removeEventListener("keydown", handleKeyDown);
   }, [open]);
 
   const isDisabled = disabled || loading;

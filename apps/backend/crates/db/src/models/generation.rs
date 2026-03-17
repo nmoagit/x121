@@ -58,6 +58,23 @@ pub struct UpdateSceneGeneration {
     pub generation_completed_at: Option<Timestamp>,
 }
 
+impl UpdateSceneGeneration {
+    /// Build a reset update that only changes `status_id`, clearing all other
+    /// generation fields. Used when reverting a scene from Generating/Scheduled
+    /// back to Pending or Generated.
+    pub fn reset_to(status_id: StatusId) -> Self {
+        Self {
+            status_id: Some(status_id),
+            total_segments_estimated: None,
+            total_segments_completed: None,
+            actual_duration_secs: None,
+            transition_segment_index: None,
+            generation_started_at: None,
+            generation_completed_at: None,
+        }
+    }
+}
+
 // ---------------------------------------------------------------------------
 // Progress reporting
 // ---------------------------------------------------------------------------

@@ -211,15 +211,7 @@ async fn execute_schedule_generation(
                 let restore =
                     crate::handlers::generation::resolve_restore_status(&state.pool, scene_id)
                         .await;
-                let update = UpdateSceneGeneration {
-                    status_id: Some(restore),
-                    total_segments_estimated: None,
-                    total_segments_completed: None,
-                    actual_duration_secs: None,
-                    transition_segment_index: None,
-                    generation_started_at: None,
-                    generation_completed_at: None,
-                };
+                let update = UpdateSceneGeneration::reset_to(restore);
                 let _ = SceneRepo::update_generation_state(&state.pool, scene_id, &update).await;
                 skipped += 1;
             }

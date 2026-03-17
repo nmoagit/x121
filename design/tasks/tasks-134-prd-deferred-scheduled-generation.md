@@ -35,10 +35,10 @@ This feature extends the existing PRD-119 schedule system to support a new `sche
 
 ---
 
-## Phase 1: Database & Backend Foundation
+## Phase 1: Database & Backend Foundation [COMPLETE]
 
-### Task 1.1: Add "Scheduled" Scene Status Migration
-**File:** `apps/db/migrations/20260316000001_add_scheduled_scene_status.sql`
+### Task 1.1:  Add "Scheduled" Scene Status Migration [COMPLETE]
+**File:** `apps/db/migrations/20260317000001_add_scheduled_scene_status.sql`
 
 Add the new "Scheduled" status to the `scene_statuses` lookup table.
 
@@ -47,24 +47,26 @@ INSERT INTO scene_statuses (id, name) VALUES (8, 'Scheduled')
 ON CONFLICT (id) DO NOTHING;
 ```
 
-**Acceptance Criteria:**
-- [ ] Migration inserts status ID 8 with name "Scheduled"
-- [ ] Migration is idempotent (ON CONFLICT)
-- [ ] `sqlx migrate run` succeeds
+**Implementation:** Also widens `schedules.action_type` CHECK to include `schedule_generation` and `schedule_history.status` CHECK to include `cancelled`.
 
-### Task 1.2: Add Scheduled Variant to Rust SceneStatus Enum
+**Acceptance Criteria:**
+- [x] Migration inserts status ID 8 with name "Scheduled"
+- [x] Migration is idempotent (ON CONFLICT)
+- [x] `sqlx migrate run` succeeds
+
+### Task 1.2:  Add Scheduled Variant to Rust SceneStatus Enum [COMPLETE]
 **File:** `apps/backend/crates/db/src/models/status.rs`
 
 Add `Scheduled = 8` to the `SceneStatus` enum and update the `from_id`, `id()`, `name()` methods and tests.
 
 **Acceptance Criteria:**
-- [ ] `SceneStatus::Scheduled` variant exists with value 8
-- [ ] `SceneStatus::from_id(8)` returns `Some(SceneStatus::Scheduled)`
-- [ ] `SceneStatus::Scheduled.name()` returns `"Scheduled"`
-- [ ] Existing tests updated to account for the new variant
-- [ ] `cargo check` passes
+- [x] `SceneStatus::Scheduled` variant exists with value 8
+- [x] `SceneStatus::from_id(8)` returns `Some(SceneStatus::Scheduled)`
+- [x] `SceneStatus::Scheduled.name()` returns `"Scheduled"`
+- [x] Existing tests updated to account for the new variant
+- [x] `cargo check` passes
 
-### Task 1.3: Add `schedule_generation` Action Type
+### Task 1.3:  Add `schedule_generation` Action Type [COMPLETE]
 **File:** `apps/backend/crates/core/src/job_scheduling.rs`
 
 Add the new action type constant and include it in validation.
@@ -79,13 +81,13 @@ pub const VALID_ACTION_TYPES: &[&str] = &[
 ```
 
 **Acceptance Criteria:**
-- [ ] `ACTION_SCHEDULE_GENERATION` constant defined as `"schedule_generation"`
-- [ ] `VALID_ACTION_TYPES` array includes the new constant
-- [ ] `validate_action_type("schedule_generation")` returns `Ok(())`
-- [ ] Existing action types still validate correctly
-- [ ] `cargo check` passes
+- [x] `ACTION_SCHEDULE_GENERATION` constant defined as `"schedule_generation"`
+- [x] `VALID_ACTION_TYPES` array includes the new constant
+- [x] `validate_action_type("schedule_generation")` returns `Ok(())`
+- [x] Existing action types still validate correctly
+- [x] `cargo check` passes
 
-### Task 1.4: Create Schedule Generation Endpoint
+### Task 1.4:  Create Schedule Generation Endpoint [COMPLETE]
 **File:** `apps/backend/crates/api/src/handlers/generation.rs`
 
 Add `POST /api/v1/scenes/schedule-generation` that creates a one-time schedule entry and sets scene statuses to "Scheduled".
@@ -114,15 +116,15 @@ Implementation steps:
 **Also modify:** `apps/backend/crates/api/src/routes/generation.rs` — add the new route.
 
 **Acceptance Criteria:**
-- [ ] Endpoint accepts `{ scene_ids, scheduled_at }` and returns `{ schedule_id, scenes_scheduled }`
-- [ ] Rejects requests where `scheduled_at` is in the past
-- [ ] Rejects scenes that don't meet generation preconditions (returns errors per scene)
-- [ ] Creates a schedule entry in the `schedules` table
-- [ ] Sets all valid scenes to status "Scheduled" (ID 8)
-- [ ] Route is registered and accessible
-- [ ] `cargo check` passes
+- [x] Endpoint accepts `{ scene_ids, scheduled_at }` and returns `{ schedule_id, scenes_scheduled }`
+- [x] Rejects requests where `scheduled_at` is in the past
+- [x] Rejects scenes that don't meet generation preconditions (returns errors per scene)
+- [x] Creates a schedule entry in the `schedules` table
+- [x] Sets all valid scenes to status "Scheduled" (ID 8)
+- [x] Route is registered and accessible
+- [x] `cargo check` passes
 
-### Task 1.5: Extend Schedule Executor for Generation
+### Task 1.5:  Extend Schedule Executor for Generation [COMPLETE]
 **File:** `apps/backend/crates/api/src/background/schedule_executor.rs` (or wherever the executor lives)
 
 When the schedule executor fires a schedule with `action_type == "schedule_generation"`:
@@ -132,15 +134,15 @@ When the schedule executor fires a schedule with `action_type == "schedule_gener
 4. Record results in `schedule_history`
 
 **Acceptance Criteria:**
-- [ ] Executor recognizes `"schedule_generation"` action type
-- [ ] Extracts `scene_ids` from `action_config` JSON
-- [ ] Skips scenes that no longer meet preconditions (logs warning per scene)
-- [ ] Calls batch generation logic for valid scenes
-- [ ] Records success/failure/skip counts in schedule history
-- [ ] Scene statuses transition from "Scheduled" to "Generating" when the schedule fires
-- [ ] `cargo check` passes
+- [x] Executor recognizes `"schedule_generation"` action type
+- [x] Extracts `scene_ids` from `action_config` JSON
+- [x] Skips scenes that no longer meet preconditions (logs warning per scene)
+- [x] Calls batch generation logic for valid scenes
+- [x] Records success/failure/skip counts in schedule history
+- [x] Scene statuses transition from "Scheduled" to "Generating" when the schedule fires
+- [x] `cargo check` passes
 
-### Task 1.6: Add Cancel Schedule Endpoint
+### Task 1.6:  Add Cancel Schedule Endpoint [COMPLETE]
 **File:** `apps/backend/crates/api/src/handlers/job_scheduling.rs`
 
 Add `POST /api/v1/schedules/{id}/cancel` that cancels a schedule and reverts associated scene statuses.
@@ -157,19 +159,19 @@ Implementation:
 **Also modify:** `apps/backend/crates/api/src/routes/job_scheduling.rs` — add `.route("/{id}/cancel", post(job_scheduling::cancel_schedule))`
 
 **Acceptance Criteria:**
-- [ ] Endpoint cancels the schedule (sets `is_active = false`)
-- [ ] Scene statuses revert to appropriate prior state
-- [ ] Schedule history records the cancellation
-- [ ] Returns 404 if schedule not found
-- [ ] Returns 409 if schedule already fired
-- [ ] Route registered at `/{id}/cancel`
-- [ ] `cargo check` passes
+- [x] Endpoint cancels the schedule (sets `is_active = false`)
+- [x] Scene statuses revert to appropriate prior state
+- [x] Schedule history records the cancellation
+- [x] Returns 404 if schedule not found
+- [x] Returns 409 if schedule already fired
+- [x] Route registered at `/{id}/cancel`
+- [x] `cargo check` passes
 
 ---
 
-## Phase 2: Frontend — Design System
+## Phase 2: Frontend — Design System [COMPLETE]
 
-### Task 2.1: Create SplitButton Component
+### Task 2.1:  Create SplitButton Component [COMPLETE]
 **File:** `apps/frontend/src/components/primitives/SplitButton.tsx`
 
 A button with a primary action on the left and a dropdown arrow on the right. Clicking the arrow reveals a menu of secondary actions.
@@ -209,18 +211,18 @@ Design:
 **Also modify:** `apps/frontend/src/components/primitives/index.ts` — export `SplitButton`
 
 **Acceptance Criteria:**
-- [ ] Renders with primary action label and dropdown arrow
-- [ ] Clicking main area fires `onClick`
-- [ ] Clicking dropdown arrow opens/closes menu
-- [ ] Menu items render with label and optional icon
-- [ ] Disabled state greys out entire button + shows tooltip
-- [ ] Individual menu items can be disabled
-- [ ] Menu closes on outside click and Escape key
-- [ ] Supports `variant` and `size` props matching `Button`
-- [ ] Exported from primitives index
-- [ ] `npx tsc --noEmit` passes
+- [x] Renders with primary action label and dropdown arrow
+- [x] Clicking main area fires `onClick`
+- [x] Clicking dropdown arrow opens/closes menu
+- [x] Menu items render with label and optional icon
+- [x] Disabled state greys out entire button + shows tooltip
+- [x] Individual menu items can be disabled
+- [x] Menu closes on outside click and Escape key
+- [x] Supports `variant` and `size` props matching `Button`
+- [x] Exported from primitives index
+- [x] `npx tsc --noEmit` passes
 
-### Task 2.2: Create ScheduleGenerationModal
+### Task 2.2:  Create ScheduleGenerationModal [COMPLETE]
 **File:** `apps/frontend/src/features/generation/ScheduleGenerationModal.tsx`
 
 Modal for picking a date/time to schedule generation. Shows the scenes being scheduled and a datetime picker.
@@ -246,22 +248,22 @@ Implementation:
 - Closes modal and calls `onScheduled` callback
 
 **Acceptance Criteria:**
-- [ ] Opens when `sceneIds` is non-empty
-- [ ] Shows scene count in title/body
-- [ ] Datetime picker defaults to tomorrow at 00:00 local time
-- [ ] Validates time is in the future (disables Schedule button if not)
-- [ ] Calls schedule endpoint on confirm
-- [ ] Shows loading state while request is in flight
-- [ ] Shows toast notification on success
-- [ ] Closes and calls `onScheduled` on success
-- [ ] Shows error toast on failure
-- [ ] `npx tsc --noEmit` passes
+- [x] Opens when `sceneIds` is non-empty
+- [x] Shows scene count in title/body
+- [x] Datetime picker defaults to tomorrow at 00:00 local time
+- [x] Validates time is in the future (disables Schedule button if not)
+- [x] Calls schedule endpoint on confirm
+- [x] Shows loading state while request is in flight
+- [x] Shows toast notification on success
+- [x] Closes and calls `onScheduled` on success
+- [x] Shows error toast on failure
+- [x] `npx tsc --noEmit` passes
 
 ---
 
-## Phase 3: Frontend — Scene Card & Toolbar Integration
+## Phase 3: Frontend — Scene Card & Toolbar Integration [COMPLETE]
 
-### Task 3.1: Add "Scheduled" Scene Status to Frontend
+### Task 3.1:  Add "Scheduled" Scene Status to Frontend [COMPLETE]
 **File:** `apps/frontend/src/features/scenes/types.ts`
 
 Add the new status constant, label, and badge variant.
@@ -277,14 +279,14 @@ export const SCENE_STATUS_SCHEDULED = 8;
 ```
 
 **Acceptance Criteria:**
-- [ ] `SCENE_STATUS_SCHEDULED` constant exported with value 8
-- [ ] Label "Scheduled" mapped in `SCENE_STATUS_LABELS`
-- [ ] Badge variant "info" mapped in `SCENE_STATUS_BADGE`
-- [ ] `sceneStatusLabel(8)` returns "Scheduled"
-- [ ] `sceneStatusBadgeVariant(8)` returns "info"
-- [ ] `npx tsc --noEmit` passes
+- [x] `SCENE_STATUS_SCHEDULED` constant exported with value 8
+- [x] Label "Scheduled" mapped in `SCENE_STATUS_LABELS`
+- [x] Badge variant "info" mapped in `SCENE_STATUS_BADGE`
+- [x] `sceneStatusLabel(8)` returns "Scheduled"
+- [x] `sceneStatusBadgeVariant(8)` returns "info"
+- [x] `npx tsc --noEmit` passes
 
-### Task 3.2: Add Schedule Generation Hook
+### Task 3.2:  Add Schedule Generation Hook [COMPLETE]
 **File:** `apps/frontend/src/features/generation/hooks/use-generation.ts`
 
 Add a mutation hook for scheduling generation.
@@ -306,13 +308,13 @@ export function useScheduleGeneration() {
 ```
 
 **Acceptance Criteria:**
-- [ ] `useScheduleGeneration` hook exported
-- [ ] Calls `POST /api/v1/scenes/schedule-generation`
-- [ ] Invalidates scene queries on success
-- [ ] Returns mutation state (isPending, error, etc.)
-- [ ] `npx tsc --noEmit` passes
+- [x] `useScheduleGeneration` hook exported
+- [x] Calls `POST /api/v1/scenes/schedule-generation`
+- [x] Invalidates scene queries on success
+- [x] Returns mutation state (isPending, error, etc.)
+- [x] `npx tsc --noEmit` passes
 
-### Task 3.3: Replace Generate Button with SplitButton on Scene Cards
+### Task 3.3:  Replace Generate Button with SplitButton on Scene Cards [COMPLETE]
 **File:** `apps/frontend/src/features/characters/tabs/CharacterScenesTab.tsx`
 
 Replace the existing `<Button>` for generation with `<SplitButton>`. Primary action: generate now. Dropdown action: "Schedule...".
@@ -343,14 +345,14 @@ The SceneCard component's Generate button (around line 978) becomes:
 Add `onSchedule` prop to SceneCard and wire it up to open the `ScheduleGenerationModal`.
 
 **Acceptance Criteria:**
-- [ ] Scene cards show SplitButton with "Generate" primary and "Schedule..." dropdown
-- [ ] Clicking main area generates immediately (no behavior change)
-- [ ] Clicking "Schedule..." opens the ScheduleGenerationModal with that scene's ID
-- [ ] Button disabled state and tooltip unchanged
-- [ ] SplitButton matches existing button sizing/layout
-- [ ] `npx tsc --noEmit` passes
+- [x] Scene cards show SplitButton with "Generate" primary and "Schedule..." dropdown
+- [x] Clicking main area generates immediately (no behavior change)
+- [x] Clicking "Schedule..." opens the ScheduleGenerationModal with that scene's ID
+- [x] Button disabled state and tooltip unchanged
+- [x] SplitButton matches existing button sizing/layout
+- [x] `npx tsc --noEmit` passes
 
-### Task 3.4: Add Toolbar Schedule Actions
+### Task 3.4:  Add Toolbar Schedule Actions [COMPLETE]
 **File:** `apps/frontend/src/features/characters/tabs/CharacterScenesTab.tsx`
 
 Add schedule counterparts to existing bulk generation actions in the toolbar:
@@ -361,29 +363,29 @@ Add schedule counterparts to existing bulk generation actions in the toolbar:
 Place these alongside or within the existing generation toolbar actions.
 
 **Acceptance Criteria:**
-- [ ] "Schedule All Outstanding" button visible in toolbar
-- [ ] Opens ScheduleGenerationModal with all ungenerated scene IDs
-- [ ] "Schedule Selected" button visible when scenes are selected
-- [ ] Opens ScheduleGenerationModal with selected scene IDs
-- [ ] Buttons disabled when no applicable scenes exist
-- [ ] `npx tsc --noEmit` passes
+- [x] "Schedule All Outstanding" button visible in toolbar
+- [x] Opens ScheduleGenerationModal with all ungenerated scene IDs
+- [x] "Schedule Selected" button visible when scenes are selected
+- [x] Opens ScheduleGenerationModal with selected scene IDs
+- [x] Buttons disabled when no applicable scenes exist
+- [x] `npx tsc --noEmit` passes
 
-### Task 3.5: Add Schedule Button to Scene Detail Modal
+### Task 3.5:  Add Schedule Button to Scene Detail Modal [COMPLETE]
 **File:** `apps/frontend/src/features/characters/tabs/CharacterScenesTab.tsx` (or the scene detail modal component)
 
 Add a "Schedule" button alongside the existing "Generate" button in the scene detail modal/card expanded view.
 
 **Acceptance Criteria:**
-- [ ] "Schedule" button appears next to "Generate" in the scene detail view
-- [ ] Opens ScheduleGenerationModal with the current scene's ID
-- [ ] Disabled when generation preconditions aren't met
-- [ ] `npx tsc --noEmit` passes
+- [x] "Schedule" button appears next to "Generate" in the scene detail view
+- [x] Opens ScheduleGenerationModal with the current scene's ID
+- [x] Disabled when generation preconditions aren't met
+- [x] `npx tsc --noEmit` passes
 
 ---
 
-## Phase 4: Frontend — Job Scheduling Page
+## Phase 4: Frontend — Job Scheduling Page [COMPLETE]
 
-### Task 4.1: Add Type Filter to Job Scheduling Page
+### Task 4.1:  Add Type Filter to Job Scheduling Page [COMPLETE]
 **File:** `apps/frontend/src/features/job-scheduling/JobSchedulingPage.tsx` (or equivalent)
 
 Add a "Type" filter dropdown to the scheduling page with options: All, Generation, Other.
@@ -396,13 +398,13 @@ Filter the schedule list by `action_type`:
 Also enhance the schedule row display for generation schedules to show scene count from `action_config`.
 
 **Acceptance Criteria:**
-- [ ] Type filter dropdown with All / Generation / Other options
-- [ ] Filtering correctly shows/hides schedule entries
-- [ ] Generation schedule rows display scene count
-- [ ] Generation schedule rows display scheduled time prominently
-- [ ] `npx tsc --noEmit` passes
+- [x] Type filter dropdown with All / Generation / Other options
+- [x] Filtering correctly shows/hides schedule entries
+- [x] Generation schedule rows display scene count
+- [x] Generation schedule rows display scheduled time prominently
+- [x] `npx tsc --noEmit` passes
 
-### Task 4.2: Add Management Actions to Generation Schedule Rows
+### Task 4.2:  Add Management Actions to Generation Schedule Rows [COMPLETE]
 **File:** `apps/frontend/src/features/job-scheduling/JobSchedulingPage.tsx` (or equivalent)
 
 Add action buttons to generation schedule rows:
@@ -412,13 +414,13 @@ Add action buttons to generation schedule rows:
 3. **"Reschedule"** — opens the ScheduleGenerationModal pre-filled with the schedule's scene IDs and current time
 
 **Acceptance Criteria:**
-- [ ] "Start Now" button fires the schedule immediately
-- [ ] "Cancel" button cancels the schedule and reverts scene statuses
-- [ ] "Reschedule" opens ScheduleGenerationModal pre-filled
-- [ ] Actions only visible on active, unfired schedules
-- [ ] Loading states shown during mutations
-- [ ] Schedule list refreshes after actions
-- [ ] `npx tsc --noEmit` passes
+- [x] "Start Now" button fires the schedule immediately
+- [x] "Cancel" button cancels the schedule and reverts scene statuses
+- [x] "Reschedule" opens ScheduleGenerationModal pre-filled
+- [x] Actions only visible on active, unfired schedules
+- [x] Loading states shown during mutations
+- [x] Schedule list refreshes after actions
+- [x] `npx tsc --noEmit` passes
 
 ---
 
