@@ -71,6 +71,10 @@ pub fn router() -> Router<AppState> {
         .route(
             "/{id}/toggle-enabled",
             axum::routing::put(character::toggle_enabled),
+        )
+        .route(
+            "/{id}/bulk-approve",
+            axum::routing::post(character::bulk_approve),
         );
 
     let group_routes = Router::new()

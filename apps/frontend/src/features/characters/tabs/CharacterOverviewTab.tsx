@@ -2,13 +2,15 @@
  * Character overview tab showing identity, stats, and completeness (PRD-112).
  */
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
-import { Card } from "@/components/composite";
+import { Card, ConfirmModal } from "@/components/composite";
 import { Grid, Stack } from "@/components/layout";
-import { Badge, LoadingPane, Tooltip } from "@/components/primitives";
-import { AlertTriangle, Check } from "@/tokens/icons";
+import { Badge, Button, LoadingPane, Tooltip } from "@/components/primitives";
+import { AlertTriangle, Check, CheckCircle } from "@/tokens/icons";
 import { getVoiceId } from "../types";
+import { useBulkApprove } from "../hooks/use-character-detail";
+import type { BulkApproveResult } from "../hooks/use-character-detail";
 
 import {
   deriveMissingItems,
@@ -31,6 +33,7 @@ import type { ReadinessState } from "@/features/readiness/types";
 interface CharacterOverviewTabProps {
   character: Character;
   characterId: number;
+  projectId: number;
   /** Called when a scene assignment row is clicked — navigate to scenes tab. */
   onSceneClick?: (sceneId: number) => void;
 }
@@ -95,6 +98,7 @@ function RatioStatCard({
 export function CharacterOverviewTab({
   character,
   characterId,
+  projectId,
   onSceneClick,
 }: CharacterOverviewTabProps) {
   const { data: dashboard, isLoading: dashboardLoading } =
@@ -102,6 +106,9 @@ export function CharacterOverviewTab({
   const { data: sceneSettings, isLoading: settingsLoading } =
     useCharacterSceneSettings(characterId);
   const expandedSettings = useExpandedSettings(sceneSettings);
+  const bulkApprove = useBulkApprove(projectId, characterId);
+  const [bulkResult, setBulkResult] = useState<BulkApproveResult | null>(null);
+  const [confirmApproveOpen, setConfirmApproveOpen] = useState(false);
 
   /** Set of enabled scene_type+track keys from the effective scene settings. */
   const enabledKeys = useMemo(() => {
@@ -228,6 +235,54 @@ export function CharacterOverviewTab({
           </Stack>
         </Card>
       )}
+
+      {/* Bulk approve — backfill shortcut */}
+      {dashboard && (
+        <Card elevation="flat" padding="md">
+          <div className="flex items-center gap-[var(--spacing-3)]">
+            <Button
+              size="sm"
+              variant="secondary"
+              icon={<CheckCircle size={14} />}
+              onClick={() => setConfirmApproveOpen(true)}
+            >
+              Approve All Deliverables
+            </Button>
+            <span className="text-xs text-[var(--color-text-muted)]">
+              {bulkResult
+                ? `Approved: ${bulkResult.images_approved} images, ${bulkResult.clips_approved} clips, ${bulkResult.metadata_approved} metadata`
+                : "Approve all unapproved images, final clips, and metadata"}
+            </span>
+          </div>
+        </Card>
+      )}
+
+      <ConfirmModal
+        open={confirmApproveOpen}
+        onClose={() => setConfirmApproveOpen(false)}
+        title="Approve All Deliverables"
+        confirmLabel="Approve All"
+        confirmVariant="primary"
+        loading={bulkApprove.isPending}
+        onConfirm={() =>
+          bulkApprove.mutate(undefined, {
+            onSuccess: (result) => {
+              setBulkResult(result);
+              setConfirmApproveOpen(false);
+            },
+          })
+        }
+      >
+        <p>
+          This will approve <strong>all</strong> unapproved image variants,
+          final video clips, and the active metadata version for{" "}
+          <strong>{character.name}</strong>.
+        </p>
+        <p className="mt-2">
+          This bypasses the normal review workflow and should only be used
+          for backfill operations. This action cannot be easily undone.
+        </p>
+      </ConfirmModal>
 
       {/* Metadata Completeness */}
       {dashboard && (

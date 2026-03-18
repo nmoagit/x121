@@ -89,6 +89,38 @@ export function useMetadataTemplate(characterId: number) {
   });
 }
 
+/* --------------------------------------------------------------------------
+   Bulk approve
+   -------------------------------------------------------------------------- */
+
+/** Result from the bulk-approve endpoint. */
+export interface BulkApproveResult {
+  images_approved: number;
+  clips_approved: number;
+  metadata_approved: number;
+}
+
+/** Approve all unapproved deliverables for a character in one call. */
+export function useBulkApprove(projectId: number, characterId: number) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () =>
+      api.post<BulkApproveResult>(
+        `/projects/${projectId}/characters/${characterId}/bulk-approve`,
+        {},
+      ),
+    onSuccess: () => {
+      // Broad invalidation to refresh all dependent views
+      queryClient.invalidateQueries({ queryKey: ["characters", characterId] });
+      queryClient.invalidateQueries({ queryKey: ["character-dashboard", characterId] });
+      queryClient.invalidateQueries({ queryKey: ["projects", projectId] });
+      queryClient.invalidateQueries({ queryKey: ["imageVariants"] });
+      queryClient.invalidateQueries({ queryKey: ["scenes"] });
+    },
+  });
+}
+
 /** Replace character metadata. */
 export function useUpdateCharacterMetadata(characterId: number) {
   const queryClient = useQueryClient();
@@ -106,6 +138,14 @@ export function useUpdateCharacterMetadata(characterId: number) {
       // Also refresh the version list so new/deduped versions appear immediately.
       queryClient.invalidateQueries({
         queryKey: ["characters", characterId, "metadata", "versions"],
+      });
+      // Refresh character lists so components reading character.metadata see
+      // the updated source keys (e.g. _source_bio, _source_tov).
+      queryClient.invalidateQueries({
+        predicate: (query) =>
+          Array.isArray(query.queryKey) &&
+          query.queryKey.includes("characters") &&
+          query.queryKey.includes("list"),
       });
     },
   });
