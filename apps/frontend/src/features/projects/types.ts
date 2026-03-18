@@ -337,6 +337,7 @@ export function filterBlockingReasons(reasons: string[], blockingDeliverables?: 
 export function computeReadinessPct(
   row: CharacterDeliverableRow,
   blockingDeliverables?: string[],
+  speechOverride?: SpeechCompletenessOverride,
 ): number {
   if (!blockingDeliverables || blockingDeliverables.length === 0) return row.readiness_pct;
 
@@ -356,7 +357,11 @@ export function computeReadinessPct(
     count++;
   }
   if (blockingDeliverables.includes("speech")) {
-    sum += row.has_voice_id ? 1 : 0;
+    if (speechOverride) {
+      sum += speechOverride.totalSlots > 0 ? speechOverride.completenessPct / 100 : 0;
+    } else {
+      sum += row.has_voice_id ? 1 : 0;
+    }
     count++;
   }
 
@@ -373,9 +378,17 @@ export const SECTION_STATE_BG: Record<SectionState, string> = {
   error: "var(--color-action-danger)",
 };
 
+/** Optional speech completeness override for enhanced readiness (PRD-136). */
+export interface SpeechCompletenessOverride {
+  totalSlots: number;
+  filledSlots: number;
+  completenessPct: number;
+}
+
 /** Compute per-section readiness from a deliverable row. */
 export function computeSectionReadiness(
   row: CharacterDeliverableRow,
+  speechOverride?: SpeechCompletenessOverride,
 ): Record<SectionKey, SectionReadiness> {
   // Metadata state machine:
   //   Red (error)       — no source files uploaded (bio + tov missing)
@@ -418,9 +431,21 @@ export function computeSectionReadiness(
           ? { state: "partial", label: "Scenes", tooltip: `Scenes: ${row.scenes_approved}/${row.scenes_with_video} approved, ${row.scenes_with_video}/${row.scenes_total} with video` }
           : { state: "not_started", label: "Scenes", tooltip: `Scenes: 0/${row.scenes_total} with video` };
 
-  const speech: SectionReadiness = row.has_voice_id
-    ? { state: "complete", label: "Speech", tooltip: "Speech: Voice configured" }
-    : { state: "not_started", label: "Speech", tooltip: "Speech: Not configured" };
+  let speech: SectionReadiness;
+  if (speechOverride) {
+    const { totalSlots, filledSlots, completenessPct } = speechOverride;
+    if (completenessPct >= 100) {
+      speech = { state: "complete", label: "Speech", tooltip: `Speech: ${filledSlots}/${totalSlots} slots filled (100%)` };
+    } else if (filledSlots > 0) {
+      speech = { state: "partial", label: "Speech", tooltip: `Speech: ${filledSlots}/${totalSlots} slots filled (${completenessPct}%)` };
+    } else {
+      speech = { state: "not_started", label: "Speech", tooltip: `Speech: ${filledSlots}/${totalSlots} slots filled (0%)` };
+    }
+  } else {
+    speech = row.has_voice_id
+      ? { state: "complete", label: "Speech", tooltip: "Speech: Voice configured" }
+      : { state: "not_started", label: "Speech", tooltip: "Speech: Not configured" };
+  }
 
   return { metadata, images, scenes, speech };
 }

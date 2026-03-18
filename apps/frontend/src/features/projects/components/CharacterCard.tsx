@@ -3,7 +3,7 @@
  */
 
 import { Card } from "@/components/composite";
-import { Badge, ProgressiveImage, Tooltip } from "@/components/primitives";
+import { Badge, FlagIcon, ProgressiveImage, Tooltip } from "@/components/primitives";
 import { variantThumbnailUrl } from "@/features/images/utils";
 import { cn } from "@/lib/cn";
 import { Check, Edit3, FileText, Image, Power, User } from "@/tokens/icons";
@@ -30,6 +30,13 @@ export interface SeedDataStatus {
   hasTov: boolean;
 }
 
+/** Language flag summary for displaying on character cards. */
+export interface SpeechLanguageSummary {
+  flagCode: string;
+  languageCode: string;
+  count: number;
+}
+
 interface CharacterCardProps {
   character: Character;
   group?: CharacterGroup;
@@ -44,6 +51,8 @@ interface CharacterCardProps {
   projectId?: number;
   /** Seed data completeness indicators. Omit to hide dots. */
   seedDataStatus?: SeedDataStatus;
+  /** Languages the character has speech entries for. Omit to hide flags. */
+  speechLanguages?: SpeechLanguageSummary[];
   onSelect?: (charId: number) => void;
   onClick: () => void;
   onEdit?: () => void;
@@ -56,6 +65,29 @@ const SEED_SECTIONS: { key: keyof SeedDataStatus; label: string; Icon: typeof Im
   { key: "hasBio", label: "Bio", Icon: FileText },
   { key: "hasTov", label: "Tone of Voice", Icon: FileText },
 ];
+
+const MAX_VISIBLE_FLAGS = 5;
+
+function LanguageFlags({ languages }: { languages: SpeechLanguageSummary[] }) {
+  if (languages.length === 0) return null;
+  const visible = languages.slice(0, MAX_VISIBLE_FLAGS);
+  const overflow = languages.length - MAX_VISIBLE_FLAGS;
+
+  return (
+    <div className="flex items-center gap-1 mt-1">
+      {visible.map((lang) => (
+        <Tooltip key={lang.languageCode} content={`${lang.languageCode.toUpperCase()}: ${lang.count} speech entries`}>
+          <span className="inline-flex"><FlagIcon flagCode={lang.flagCode} size={16} /></span>
+        </Tooltip>
+      ))}
+      {overflow > 0 && (
+        <span className="text-[10px] text-[var(--color-text-muted)] leading-none">
+          +{overflow}
+        </span>
+      )}
+    </div>
+  );
+}
 
 function SeedDataIndicators({ status }: { status: SeedDataStatus }) {
   return (
@@ -85,7 +117,7 @@ function SeedDataIndicators({ status }: { status: SeedDataStatus }) {
   );
 }
 
-export function CharacterCard({ character, group, avatarUrl, heroVariantId, selected, deliveryStatus, blockingReasons, sectionReadiness, blockingDeliverables, projectId, seedDataStatus, onSelect, onClick, onEdit, onToggleEnabled }: CharacterCardProps) {
+export function CharacterCard({ character, group, avatarUrl, heroVariantId, selected, deliveryStatus, blockingReasons, sectionReadiness, blockingDeliverables, projectId, seedDataStatus, speechLanguages, onSelect, onClick, onEdit, onToggleEnabled }: CharacterCardProps) {
   const statusLabel = characterStatusLabel(character.status_id);
   const badgeVariant = characterStatusBadgeVariant(character.status_id);
   const isDisabled = !character.is_enabled;
@@ -273,6 +305,9 @@ export function CharacterCard({ character, group, avatarUrl, heroVariantId, sele
                 <Badge key={reason} variant="danger" size="sm">{reason}</Badge>
               ))}
             </div>
+          )}
+          {speechLanguages && speechLanguages.length > 0 && (
+            <LanguageFlags languages={speechLanguages} />
           )}
         </div>
       </button>

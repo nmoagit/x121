@@ -11,6 +11,8 @@ import { CollapsibleSection, ConfigToolbar } from "@/components/composite";
 import { BlockingDeliverablesEditor } from "@/components/domain";
 import { Stack } from "@/components/layout";
 import { Button } from "@/components/primitives";
+import { useLanguages } from "@/features/characters/hooks/use-languages";
+import { useSpeechTypes } from "@/features/characters/hooks/use-character-speeches";
 import { useExportProjectSettings, useConfigImport } from "@/features/config-io";
 import { ConfigLibrary } from "@/features/config-templates";
 import { ProjectPromptOverrides } from "@/features/prompt-management";
@@ -19,11 +21,14 @@ import { ProjectVideoSettings } from "@/features/video-settings";
 import { useSetting } from "@/features/settings/hooks/use-settings";
 import { ChevronDown, ChevronUp } from "@/tokens/icons";
 
+import { BulkSpeechImportModal } from "../components/BulkSpeechImportModal";
+import { SpeechRequirementsEditor } from "../components/SpeechRequirementsEditor";
+import { useProjectSpeechConfig, useSetProjectSpeechConfig } from "../hooks/use-project-speech-config";
 import { useProject, useUpdateProject } from "../hooks/use-projects";
 
 const DEFAULT_BLOCKING = ["metadata", "images", "scenes"];
 
-const SECTION_IDS = ["blocking", "scenes", "workflows", "video", "prompts", "templates"] as const;
+const SECTION_IDS = ["blocking", "speech", "scenes", "workflows", "video", "prompts", "templates"] as const;
 type SectionId = (typeof SECTION_IDS)[number];
 
 interface ProjectSettingsTabProps {
@@ -37,6 +42,11 @@ export function ProjectSettingsTab({ projectId, projectName = "project" }: Proje
   const { data: project } = useProject(projectId);
   const updateProject = useUpdateProject();
   const { data: studioSetting } = useSetting("blocking_deliverables");
+  const { data: speechTypes } = useSpeechTypes();
+  const { data: languages } = useLanguages();
+  const { data: speechConfig } = useProjectSpeechConfig(projectId);
+  const setSpeechConfig = useSetProjectSpeechConfig(projectId);
+  const [importModalOpen, setImportModalOpen] = useState(false);
 
   const [openSections, setOpenSections] = useState<Set<SectionId>>(new Set(SECTION_IDS));
 
@@ -100,6 +110,26 @@ export function ProjectSettingsTab({ projectId, projectName = "project" }: Proje
       </CollapsibleSection>
 
       <CollapsibleSection card
+        title="Speech Requirements"
+        description="Define the minimum number of speech variants required per type and language. This drives the speech completeness indicator on character cards."
+        open={openSections.has("speech")}
+        onToggle={() => toggleSection("speech")}
+      >
+        {speechTypes && languages ? (
+          <SpeechRequirementsEditor
+            speechTypes={speechTypes}
+            languages={languages}
+            config={speechConfig ?? []}
+            saving={setSpeechConfig.isPending}
+            onSave={(entries) => setSpeechConfig.mutate(entries)}
+            onOpenImport={() => setImportModalOpen(true)}
+          />
+        ) : (
+          <p className="text-sm text-[var(--color-text-muted)]">Loading speech configuration...</p>
+        )}
+      </CollapsibleSection>
+
+      <CollapsibleSection card
         title="Scene Settings"
         description="Enable or disable scenes for this project."
         open={openSections.has("scenes")}
@@ -143,6 +173,13 @@ export function ProjectSettingsTab({ projectId, projectName = "project" }: Proje
       >
         <ConfigLibrary projectId={projectId} />
       </CollapsibleSection>
+
+      <BulkSpeechImportModal
+        open={importModalOpen}
+        onClose={() => setImportModalOpen(false)}
+        projectId={projectId}
+        languages={languages}
+      />
     </Stack>
   );
 }

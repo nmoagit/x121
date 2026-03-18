@@ -11,7 +11,7 @@ import { useMemo, useState } from "react";
 import { ConfirmDeleteModal, Tabs } from "@/components/composite";
 import { EmptyState } from "@/components/domain";
 import { Stack } from "@/components/layout";
-import { Badge, Button, LoadingPane } from "@/components/primitives";
+import { Badge, Button, FlagIcon, LoadingPane, Tooltip } from "@/components/primitives";
 import { useSetPageTitle } from "@/hooks/useSetPageTitle";
 import { ICON_ACTION_BTN } from "@/lib/ui-classes";
 import { AlertCircle, ChevronLeft, ChevronRight, Edit3, Power, User } from "@/tokens/icons";
@@ -39,6 +39,8 @@ import { ReadinessStateBadge } from "@/features/readiness/ReadinessStateBadge";
 import type { ReadinessState } from "@/features/readiness/types";
 import { ReviewStatusBadge, CharacterReviewControls, CharacterReviewAuditLog, REVIEW_STATUS_MAP } from "@/features/character-review";
 
+import { useSpeechCompleteness } from "./hooks/use-character-speeches";
+import { useLanguages } from "./hooks/use-languages";
 import { CharacterDeliverablesTab } from "./tabs/CharacterDeliverablesTab";
 import { CharacterImagesTab } from "./tabs/CharacterImagesTab";
 import { CharacterMetadataTab } from "./tabs/CharacterMetadataTab";
@@ -68,11 +70,29 @@ export function CharacterDetailPage() {
   const { data: groups } = useCharacterGroups(projectId);
   const { data: variants } = useImageVariants(characterId);
   const { data: dashboard } = useCharacterDashboard(characterId);
+  const { data: speechCompleteness } = useSpeechCompleteness(characterId);
+  const { data: allLanguages } = useLanguages();
   const updateCharacter = useUpdateCharacter(projectId);
   const deleteCharacter = useDeleteCharacter(projectId);
   const toggleEnabled = useToggleCharacterEnabled(projectId);
 
   useSetPageTitle(character?.name ?? "Model");
+
+  /* --- speech language summary for header flags --- */
+  const speechLanguageSummary = useMemo(() => {
+    if (!speechCompleteness?.breakdown || !allLanguages) return [];
+    const langCounts = new Map<number, number>();
+    for (const entry of speechCompleteness.breakdown) {
+      langCounts.set(entry.language_id, (langCounts.get(entry.language_id) ?? 0) + entry.approved);
+    }
+    return Array.from(langCounts.entries())
+      .filter(([, count]) => count > 0)
+      .map(([langId, count]) => {
+        const lang = allLanguages.find((l) => l.id === langId);
+        return lang ? { flagCode: lang.flag_code, languageCode: lang.code, count } : null;
+      })
+      .filter(Boolean) as { flagCode: string; languageCode: string; count: number }[];
+  }, [speechCompleteness, allLanguages]);
 
   const validTabIds = CHARACTER_TABS.map((t) => t.id) as readonly string[];
   const activeTab = tabParam && validTabIds.includes(tabParam) ? tabParam : CHARACTER_TABS[0].id;
@@ -234,6 +254,23 @@ export function CharacterDetailPage() {
             state={dashboard.readiness.state as ReadinessState}
             missingItems={dashboard.readiness.missing_items}
           />
+        )}
+        {speechLanguageSummary.length > 0 && (
+          <div className="flex items-center gap-1.5">
+            {speechLanguageSummary.map((lang) => (
+              <Tooltip key={lang.languageCode} content={`${lang.languageCode.toUpperCase()}: ${lang.count} approved`}>
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-0.5 cursor-pointer hover:opacity-80 transition-opacity"
+                  onClick={() => setActiveTab("speech")}
+                  aria-label={`${lang.languageCode.toUpperCase()} speech`}
+                >
+                  <FlagIcon flagCode={lang.flagCode} size={18} />
+                  <span className="text-xs text-[var(--color-text-muted)]">{lang.count}</span>
+                </button>
+              </Tooltip>
+            ))}
+          </div>
         )}
         <button
           type="button"
