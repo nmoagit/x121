@@ -1,4 +1,5 @@
 export { ApprovalActions } from "./ApprovalActions";
+export { BlockingDeliverablesEditor } from "./BlockingDeliverablesEditor";
 export { EmptyState } from "./EmptyState";
 export { LogLine } from "./LogLine";
 export type { LogLevel } from "./LogLine";

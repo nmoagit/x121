@@ -57,14 +57,7 @@ impl ProjectRepo {
         id: DbId,
         input: &UpdateProject,
     ) -> Result<Option<Project>, sqlx::Error> {
-        // blocking_deliverables: None = don't change, Some([]) = reset to NULL (inherit),
-        // Some([...]) = set override.
-        let bd_value: Option<Vec<String>> = match &input.blocking_deliverables {
-            None => None,                    // field absent → keep existing
-            Some(v) if v.is_empty() => None, // empty array → will set NULL
-            Some(v) => Some(v.clone()),      // non-empty → set override
-        };
-        let bd_set_null = matches!(&input.blocking_deliverables, Some(v) if v.is_empty());
+        let (bd_value, bd_set_null) = crate::resolve_nullable_array(&input.blocking_deliverables);
 
         let query = format!(
             "UPDATE projects SET

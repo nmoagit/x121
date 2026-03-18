@@ -8,26 +8,18 @@
 import { useCallback, useState } from "react";
 
 import { CollapsibleSection, ConfigToolbar } from "@/components/composite";
+import { BlockingDeliverablesEditor } from "@/components/domain";
 import { Stack } from "@/components/layout";
-import { Badge, Button } from "@/components/primitives";
-import { Checkbox } from "@/components/primitives/Checkbox";
+import { Button } from "@/components/primitives";
 import { useExportProjectSettings, useConfigImport } from "@/features/config-io";
 import { ConfigLibrary } from "@/features/config-templates";
 import { ProjectPromptOverrides } from "@/features/prompt-management";
 import { ProjectSceneSettings, ProjectWorkflowOverrides } from "@/features/scene-catalogue";
 import { ProjectVideoSettings } from "@/features/video-settings";
 import { useSetting } from "@/features/settings/hooks/use-settings";
-import { ChevronDown, ChevronUp, RotateCcw } from "@/tokens/icons";
+import { ChevronDown, ChevronUp } from "@/tokens/icons";
 
 import { useProject, useUpdateProject } from "../hooks/use-projects";
-
-/** All known deliverable section keys with human labels. */
-const DELIVERABLE_SECTIONS = [
-  { key: "metadata", label: "Metadata" },
-  { key: "images", label: "Images" },
-  { key: "scenes", label: "Scenes" },
-  { key: "speech", label: "Speech" },
-] as const;
 
 const DEFAULT_BLOCKING = ["metadata", "images", "scenes"];
 
@@ -70,18 +62,6 @@ export function ProjectSettingsTab({ projectId, projectName = "project" }: Proje
   const isOverridden = project?.blocking_deliverables != null;
   const blocking = project?.blocking_deliverables ?? studioDefault;
 
-  function toggleBlocking(key: string) {
-    const next = blocking.includes(key)
-      ? blocking.filter((k) => k !== key)
-      : [...blocking, key];
-    updateProject.mutate({ id: projectId, data: { blocking_deliverables: next } });
-  }
-
-  function resetToStudioDefault() {
-    // Empty array signals "reset to NULL" (inherit studio default) on the backend.
-    updateProject.mutate({ id: projectId, data: { blocking_deliverables: [] } });
-  }
-
   return (
     <Stack gap={6}>
       <div className="flex justify-end gap-[var(--spacing-2)]">
@@ -107,33 +87,16 @@ export function ProjectSettingsTab({ projectId, projectName = "project" }: Proje
         open={openSections.has("blocking")}
         onToggle={() => toggleSection("blocking")}
       >
-        <Stack gap={3}>
-          <div className="flex items-center gap-[var(--spacing-2)]">
-            <Badge variant={isOverridden ? "warning" : "default"} size="sm">
-              {isOverridden ? "Project Override" : "Inherited from Studio"}
-            </Badge>
-            {isOverridden && (
-              <Button
-                variant="ghost"
-                size="sm"
-                icon={<RotateCcw size={14} />}
-                onClick={resetToStudioDefault}
-              >
-                Reset to Studio Default
-              </Button>
-            )}
-          </div>
-          <Stack gap={2}>
-            {DELIVERABLE_SECTIONS.map(({ key, label }) => (
-              <Checkbox
-                key={key}
-                checked={blocking.includes(key)}
-                onChange={() => toggleBlocking(key)}
-                label={label}
-              />
-            ))}
-          </Stack>
-        </Stack>
+        <BlockingDeliverablesEditor
+          effective={blocking}
+          isOverridden={isOverridden}
+          inheritLabel="Inherited from Studio"
+          overrideLabel="Project Override"
+          resetLabel="Reset to Studio Default"
+          onUpdate={(next) =>
+            updateProject.mutate({ id: projectId, data: { blocking_deliverables: next } })
+          }
+        />
       </CollapsibleSection>
 
       <CollapsibleSection card
