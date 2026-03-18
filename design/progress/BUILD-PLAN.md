@@ -4,7 +4,7 @@ Optimal build order for all 135 PRDs, organized into dependency-ordered phases.
 Each phase can begin only after all prior phases are complete. PRDs within a phase
 can be built **in parallel** (dependencies are satisfied by earlier phases).
 
-> **133 PRDs complete as of 2026-03-14.** 2 new PRDs in planning: PRD-134 (Deferred/Scheduled Generation), PRD-135 (Character Creator).
+> **135 PRDs complete as of 2026-03-18.** PRD-134 (Deferred/Scheduled Generation) and PRD-135 (Character Creator) completed 2026-03-17. PRD-136 (Multilingual Speech & Deliverable System) in planning.
 
 > **Source of truth:** Cross-Reference Map in [`design/design.md`](../design.md) (Appendix)
 > **Status tracking:** [`PRD-STATUS.md`](./PRD-STATUS.md)
@@ -470,6 +470,10 @@ This phase contains no PRD work — only structural setup.
 | 130 | PRD-130 | Unified Cloud & ComfyUI Orchestration | XL | Backend | PRD-02, PRD-05, PRD-114 (all done) | **DONE** |
 | 131 | PRD-131 | Infrastructure Control Panel | L | Full-Stack | PRD-02, PRD-05, PRD-114, PRD-130 | **DONE** |
 | 132 | PRD-132 | Queue Manager & Intelligent Job Allocation | L | Full-Stack | PRD-07, PRD-08, PRD-05, PRD-46 (all done) | **DONE** |
+| 133 | PRD-133 | Metadata Version Approval | M | Full-Stack | PRD-00, PRD-01, PRD-112 (all done) | **DONE** |
+| 134 | PRD-134 | Deferred / Scheduled Generation | L | Full-Stack | PRD-008, PRD-024, PRD-119, PRD-132 (all done) | **DONE** 2026-03-17 |
+| 135 | PRD-135 | Character Creator | L | Full-Stack | PRD-112, PRD-113, PRD-066 (all done) | **DONE** 2026-03-17 |
+| 136 | PRD-136 | Multilingual Speech & Deliverable System | XL | Full-Stack | PRD-124, PRD-112, PRD-128 (all done) | Planning |
 
 ---
 
@@ -549,9 +553,9 @@ PRD-29 → PRD-83 → PRD-35 → PRD-57
 | 9 | 8 | Advanced Review | Cross-char comparison, QA rulesets, regression testing |
 | 10 | 8 | Reporting & Delivery | Production reports, compliance, lifecycle, sharing |
 | 11 | 10 | Admin Infrastructure | GPU power, budgets, health, webhooks, observability, time scheduling |
-| 12 | 4 | Polish & Hardening | Backup/DR, mobile review, setup wizard, dashboard config |
+| 12 | 8 | Polish & Hardening | Backup/DR, mobile review, setup wizard, dashboard config, readiness, cloud orchestration, queue manager, scheduled generation, character creator, multilingual speech |
 | Standalone | 1 | Python Scripts | Scene naming hierarchy for generation script |
-| **Total** | **127** | | |
+| **Total** | **136** | | |
 
 ---
 
@@ -594,6 +598,7 @@ PRD-29 → PRD-83 → PRD-35 → PRD-57
 | 2026-03-10 | Added PRD-130 (Unified Cloud & ComfyUI Orchestration) to Phase 12. Unifies PodOrchestrator with cloud provider DB infrastructure. Full lifecycle automation, multi-instance, auto-scaling. All deps done (PRD-02, 05, 114). Total: 130 PRDs |
 | 2026-03-10 | Added PRD-131 (Infrastructure Control Panel) to Phase 12. Unified operational dashboard, bulk ops, orphan cleanup, connection recovery. Deps on PRD-130 (planning). Total: 131 PRDs |
 | 2026-03-10 | Added PRD-132 (Queue Manager & Intelligent Job Allocation) to Phase 12. Full queue visibility, job reassignment, drain mode, intelligent allocation. All deps done (PRD-07, 08, 05, 46). Total: 132 PRDs |
+| 2026-03-18 | Marked PRD-134 (Deferred/Scheduled Generation) and PRD-135 (Character Creator) as DONE (completed 2026-03-17). Added PRD-136 (Multilingual Speech & Deliverable System) to Phase 12 as planning. Total: 136 PRDs (135 done, 1 planning) |
 
 ---
 

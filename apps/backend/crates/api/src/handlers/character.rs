@@ -40,7 +40,10 @@ pub async fn create(
             Some(group.id)
         } else {
             let groups = CharacterGroupRepo::list_by_project(&state.pool, project_id).await?;
-            groups.iter().find(|g| g.name == CharacterGroupRepo::DEFAULT_GROUP_NAME).map(|g| g.id)
+            groups
+                .iter()
+                .find(|g| g.name == CharacterGroupRepo::DEFAULT_GROUP_NAME)
+                .map(|g| g.id)
         };
         if let Some(id) = intake_id {
             input.group_id = Some(Some(id));

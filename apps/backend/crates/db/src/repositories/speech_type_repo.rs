@@ -1,27 +1,31 @@
-//! Repository for the `speech_types` lookup table (PRD-124).
+//! Repository for the `speech_types` lookup table (PRD-124, PRD-136).
 
 use sqlx::PgPool;
 
 use crate::models::speech_type::SpeechType;
 
 /// Column list shared across queries to avoid repetition.
-const COLUMNS: &str = "id, name, created_at";
+const COLUMNS: &str = "id, name, sort_order, created_at";
 
 /// Provides CRUD operations for speech types.
 pub struct SpeechTypeRepo;
 
 impl SpeechTypeRepo {
-    /// List all speech types, ordered by name.
+    /// List all speech types, ordered by sort_order then name.
     pub async fn list_all(pool: &PgPool) -> Result<Vec<SpeechType>, sqlx::Error> {
-        let query = format!("SELECT {COLUMNS} FROM speech_types ORDER BY name");
+        let query = format!("SELECT {COLUMNS} FROM speech_types ORDER BY sort_order ASC, name ASC");
         sqlx::query_as::<_, SpeechType>(&query)
             .fetch_all(pool)
             .await
     }
 
-    /// Create a new speech type. Returns the created type.
+    /// Create a new speech type with auto-assigned sort_order (MAX + 1).
     pub async fn create(pool: &PgPool, name: &str) -> Result<SpeechType, sqlx::Error> {
-        let query = format!("INSERT INTO speech_types (name) VALUES ($1) RETURNING {COLUMNS}");
+        let query = format!(
+            "INSERT INTO speech_types (name, sort_order) \
+             VALUES ($1, (SELECT COALESCE(MAX(sort_order), 0) + 1 FROM speech_types)) \
+             RETURNING {COLUMNS}"
+        );
         sqlx::query_as::<_, SpeechType>(&query)
             .bind(name)
             .fetch_one(pool)

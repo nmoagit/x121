@@ -6,7 +6,8 @@ use x121_core::types::DbId;
 use crate::models::character_group::{CharacterGroup, CreateCharacterGroup, UpdateCharacterGroup};
 
 /// Column list shared across queries to avoid repetition.
-const COLUMNS: &str = "id, project_id, name, sort_order, blocking_deliverables, deleted_at, created_at, updated_at";
+const COLUMNS: &str =
+    "id, project_id, name, sort_order, blocking_deliverables, deleted_at, created_at, updated_at";
 
 /// Provides CRUD operations for character groups.
 pub struct CharacterGroupRepo;

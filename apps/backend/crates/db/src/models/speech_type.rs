@@ -1,4 +1,4 @@
-//! Speech type lookup model (PRD-124).
+//! Speech type lookup model (PRD-124, PRD-136).
 //!
 //! A seeded, user-extensible lookup table for categorizing character speech
 //! entries (e.g. Greeting, Farewell, Flirty).
@@ -12,5 +12,6 @@ use x121_core::types::Timestamp;
 pub struct SpeechType {
     pub id: i16,
     pub name: String,
+    pub sort_order: i32,
     pub created_at: Timestamp,
 }

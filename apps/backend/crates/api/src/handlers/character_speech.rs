@@ -1,7 +1,8 @@
-//! Handlers for character speeches (PRD-124).
+//! Handlers for character speeches (PRD-124, PRD-136).
 //!
 //! Manages versioned speech text entries per character, with import/export
-//! support for JSON and CSV formats.
+//! support for JSON and CSV formats. Supports multilingual entries, approval
+//! workflow, and variant reordering.
 
 use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
@@ -10,18 +11,22 @@ use axum::Json;
 use serde::{Deserialize, Serialize};
 use x121_core::error::CoreError;
 use x121_core::types::DbId;
-use x121_db::models::character_speech::{CreateCharacterSpeech, UpdateCharacterSpeech};
-use x121_db::repositories::{CharacterSpeechRepo, SpeechTypeRepo};
+use x121_db::models::character_speech::{
+    CreateCharacterSpeech, UpdateCharacterSpeech, UpdateSpeechStatus,
+};
+use x121_db::models::speech_status::status_name_to_id;
+use x121_db::repositories::{CharacterSpeechRepo, LanguageRepo, SpeechTypeRepo};
 
 use crate::error::{AppError, AppResult};
 use crate::middleware::auth::AuthUser;
 use crate::response::DataResponse;
 use crate::state::AppState;
 
-/// Optional query parameter to filter by speech type.
+/// Optional query parameters to filter the speech list.
 #[derive(Debug, Deserialize)]
 pub struct SpeechListQuery {
     pub type_id: Option<i16>,
+    pub language_id: Option<i16>,
 }
 
 /// Request body for importing speeches.
@@ -51,6 +56,8 @@ struct ImportJsonEntry {
     #[serde(rename = "type")]
     speech_type: String,
     text: String,
+    /// Optional language code; defaults to "en" if absent.
+    language: Option<String>,
 }
 
 /// A single entry in JSON export format.
@@ -60,34 +67,68 @@ struct ExportJsonEntry {
     speech_type: String,
     text: String,
     version: i32,
+    language: String,
+}
+
+/// Query parameters for bulk approve.
+#[derive(Debug, Deserialize)]
+pub struct BulkApproveQuery {
+    pub language_id: Option<i16>,
+    pub type_id: Option<i16>,
+}
+
+/// Request body for reordering speeches.
+#[derive(Debug, Deserialize)]
+pub struct ReorderSpeechesRequest {
+    pub speech_ids: Vec<DbId>,
+}
+
+/// Response for bulk approve.
+#[derive(Debug, Serialize)]
+pub struct BulkApproveResponse {
+    pub approved_count: u64,
 }
 
 // ---------------------------------------------------------------------------
 // CRUD handlers
 // ---------------------------------------------------------------------------
 
-/// GET /characters/{character_id}/speeches?type_id=N
+/// GET /characters/{character_id}/speeches?type_id=N&language_id=N
 ///
-/// List all non-deleted speeches for a character, optionally filtered by type.
+/// List all non-deleted speeches for a character, optionally filtered by type
+/// and/or language.
 pub async fn list_speeches(
     _auth: AuthUser,
     State(state): State<AppState>,
     Path(character_id): Path<DbId>,
     Query(params): Query<SpeechListQuery>,
 ) -> AppResult<impl IntoResponse> {
-    let speeches = match params.type_id {
-        Some(type_id) => {
-            CharacterSpeechRepo::list_for_character_by_type(&state.pool, character_id, type_id)
+    let speeches = match (params.type_id, params.language_id) {
+        (Some(tid), Some(lid)) => {
+            CharacterSpeechRepo::list_for_character_by_type_and_language(
+                &state.pool,
+                character_id,
+                tid,
+                lid,
+            )
+            .await?
+        }
+        (Some(tid), None) => {
+            CharacterSpeechRepo::list_for_character_by_type(&state.pool, character_id, tid).await?
+        }
+        (None, Some(lid)) => {
+            CharacterSpeechRepo::list_for_character_by_language(&state.pool, character_id, lid)
                 .await?
         }
-        None => CharacterSpeechRepo::list_for_character(&state.pool, character_id).await?,
+        (None, None) => CharacterSpeechRepo::list_for_character(&state.pool, character_id).await?,
     };
     Ok(Json(DataResponse { data: speeches }))
 }
 
 /// POST /characters/{character_id}/speeches
 ///
-/// Create a new speech entry with auto-assigned version.
+/// Create a new speech entry with auto-assigned version. Defaults language_id
+/// to 1 (English) if not provided.
 pub async fn create_speech(
     auth: AuthUser,
     State(state): State<AppState>,
@@ -104,6 +145,7 @@ pub async fn create_speech(
         user_id = auth.user_id,
         character_id = character_id,
         speech_id = speech.id,
+        language_id = speech.language_id,
         "Character speech created"
     );
 
@@ -168,13 +210,126 @@ pub async fn delete_speech(
 }
 
 // ---------------------------------------------------------------------------
+// Approval workflow handlers
+// ---------------------------------------------------------------------------
+
+/// PUT /characters/{character_id}/speeches/{speech_id}/status
+///
+/// Update the approval status of a speech entry. Accepts a status name
+/// ("draft", "approved", "rejected") and maps it to the status ID.
+pub async fn update_speech_status(
+    auth: AuthUser,
+    State(state): State<AppState>,
+    Path((character_id, speech_id)): Path<(DbId, DbId)>,
+    Json(body): Json<UpdateSpeechStatus>,
+) -> AppResult<impl IntoResponse> {
+    let status_id = status_name_to_id(&body.status).ok_or_else(|| {
+        AppError::BadRequest(format!(
+            "Invalid status '{}'. Must be one of: draft, approved, rejected",
+            body.status
+        ))
+    })?;
+
+    let speech = CharacterSpeechRepo::update_status(&state.pool, speech_id, status_id)
+        .await?
+        .ok_or(AppError::Core(CoreError::NotFound {
+            entity: "CharacterSpeech",
+            id: speech_id,
+        }))?;
+
+    tracing::info!(
+        user_id = auth.user_id,
+        character_id = character_id,
+        speech_id = speech_id,
+        status = %body.status,
+        "Character speech status updated"
+    );
+
+    Ok(Json(DataResponse { data: speech }))
+}
+
+/// POST /characters/{character_id}/speeches/bulk-approve?language_id=N&type_id=N
+///
+/// Bulk approve all draft/rejected speeches for a character, optionally
+/// filtered by language and/or type.
+pub async fn bulk_approve_speeches(
+    auth: AuthUser,
+    State(state): State<AppState>,
+    Path(character_id): Path<DbId>,
+    Query(params): Query<BulkApproveQuery>,
+) -> AppResult<impl IntoResponse> {
+    let approved_count = CharacterSpeechRepo::bulk_approve(
+        &state.pool,
+        character_id,
+        params.language_id,
+        params.type_id,
+    )
+    .await?;
+
+    tracing::info!(
+        user_id = auth.user_id,
+        character_id = character_id,
+        approved_count = approved_count,
+        "Speeches bulk approved"
+    );
+
+    Ok(Json(DataResponse {
+        data: BulkApproveResponse { approved_count },
+    }))
+}
+
+// ---------------------------------------------------------------------------
+// Reorder handler
+// ---------------------------------------------------------------------------
+
+/// PUT /characters/{character_id}/speeches/reorder
+///
+/// Reorder speech entries. Accepts a list of speech IDs; each gets sort_order
+/// set to its 1-based position in the list.
+pub async fn reorder_speeches(
+    auth: AuthUser,
+    State(state): State<AppState>,
+    Path(character_id): Path<DbId>,
+    Json(body): Json<ReorderSpeechesRequest>,
+) -> AppResult<StatusCode> {
+    if body.speech_ids.is_empty() {
+        return Err(AppError::BadRequest(
+            "speech_ids must not be empty".to_string(),
+        ));
+    }
+
+    // Validate that all speech IDs belong to this character.
+    let existing = CharacterSpeechRepo::list_for_character(&state.pool, character_id).await?;
+    let existing_ids: std::collections::HashSet<DbId> = existing.iter().map(|s| s.id).collect();
+
+    for &sid in &body.speech_ids {
+        if !existing_ids.contains(&sid) {
+            return Err(AppError::BadRequest(format!(
+                "Speech ID {sid} does not belong to character {character_id}"
+            )));
+        }
+    }
+
+    CharacterSpeechRepo::reorder(&state.pool, &body.speech_ids).await?;
+
+    tracing::info!(
+        user_id = auth.user_id,
+        character_id = character_id,
+        count = body.speech_ids.len(),
+        "Speeches reordered"
+    );
+
+    Ok(StatusCode::NO_CONTENT)
+}
+
+// ---------------------------------------------------------------------------
 // Import / Export
 // ---------------------------------------------------------------------------
 
 /// POST /characters/{character_id}/speeches/import
 ///
 /// Import speeches from JSON or CSV data. Unknown type names are auto-created.
-/// Empty text entries produce errors. The operation is all-or-nothing.
+/// Supports optional language field (defaults to English).
 pub async fn import_speeches(
     auth: AuthUser,
     State(state): State<AppState>,
@@ -193,7 +348,7 @@ pub async fn import_speeches(
 
     // Validate all entries before creating anything.
     let mut errors = Vec::new();
-    for (i, (type_name, text)) in parsed.iter().enumerate() {
+    for (i, (type_name, text, _lang)) in parsed.iter().enumerate() {
         if type_name.trim().is_empty() {
             errors.push(format!("row {}: type name is empty", i + 1));
         }
@@ -211,11 +366,11 @@ pub async fn import_speeches(
         }));
     }
 
-    // Resolve type names to IDs, creating new types as needed.
+    // Resolve type names to IDs and language codes to IDs.
     let mut created_types = Vec::new();
-    let mut entries: Vec<(i16, String)> = Vec::with_capacity(parsed.len());
+    let mut entries: Vec<(i16, i16, String)> = Vec::with_capacity(parsed.len());
 
-    for (type_name, text) in &parsed {
+    for (type_name, text, lang_code) in &parsed {
         let trimmed_name = type_name.trim();
         let existed_before = SpeechTypeRepo::find_by_name(&state.pool, trimmed_name)
             .await?
@@ -224,11 +379,23 @@ pub async fn import_speeches(
         if !existed_before {
             created_types.push(trimmed_name.to_string());
         }
-        entries.push((speech_type.id, text.clone()));
+
+        // Resolve language code; default to English (id=1).
+        let language_id = if let Some(code) = lang_code {
+            LanguageRepo::find_by_code(&state.pool, code)
+                .await?
+                .map(|l| l.id)
+                .unwrap_or(1)
+        } else {
+            1
+        };
+
+        entries.push((speech_type.id, language_id, text.clone()));
     }
 
-    // Bulk create in a transaction.
-    let created = CharacterSpeechRepo::bulk_create(&state.pool, character_id, &entries).await?;
+    // Bulk create with language support.
+    let created =
+        CharacterSpeechRepo::bulk_create_with_language(&state.pool, character_id, &entries).await?;
     let imported = created.len();
 
     tracing::info!(
@@ -250,7 +417,7 @@ pub async fn import_speeches(
 
 /// POST /characters/{character_id}/speeches/export
 ///
-/// Export speeches as JSON array or CSV string.
+/// Export speeches as JSON array or CSV string. Includes language code.
 pub async fn export_speeches(
     _auth: AuthUser,
     State(state): State<AppState>,
@@ -259,14 +426,24 @@ pub async fn export_speeches(
 ) -> AppResult<impl IntoResponse> {
     let speeches = CharacterSpeechRepo::list_for_character(&state.pool, character_id).await?;
 
-    // Load speech types for name lookup.
+    // Load speech types and languages for name/code lookup.
     let types = SpeechTypeRepo::list_all(&state.pool).await?;
+    let languages = LanguageRepo::list_all(&state.pool).await?;
+
     let type_name = |id: i16| -> String {
         types
             .iter()
             .find(|t| t.id == id)
             .map(|t| t.name.clone())
             .unwrap_or_else(|| format!("unknown_{id}"))
+    };
+
+    let language_code = |id: i16| -> String {
+        languages
+            .iter()
+            .find(|l| l.id == id)
+            .map(|l| l.code.clone())
+            .unwrap_or_else(|| "en".to_string())
     };
 
     let data: serde_json::Value = match body.format.as_str() {
@@ -277,6 +454,7 @@ pub async fn export_speeches(
                     speech_type: type_name(s.speech_type_id),
                     text: s.text.clone(),
                     version: s.version,
+                    language: language_code(s.language_id),
                 })
                 .collect();
             serde_json::to_value(items).unwrap_or_default()
@@ -286,8 +464,9 @@ pub async fn export_speeches(
             for s in &speeches {
                 let escaped_text = s.text.replace('"', "\"\"");
                 csv.push_str(&format!(
-                    "{},\"{}\"\n",
+                    "{},{},\"{}\"\n",
                     type_name(s.speech_type_id),
+                    language_code(s.language_id),
                     escaped_text
                 ));
             }
@@ -306,22 +485,26 @@ pub async fn export_speeches(
 // Import parsers
 // ---------------------------------------------------------------------------
 
-/// Parse JSON import format: `[{ "type": "Greeting", "text": "Hey..." }, ...]`
-fn parse_json_import(data: &str) -> AppResult<Vec<(String, String)>> {
+/// Parse JSON import format: `[{ "type": "Greeting", "text": "Hey...", "language": "en" }, ...]`
+///
+/// The `language` field is optional; entries without it default to English.
+fn parse_json_import(data: &str) -> AppResult<Vec<(String, String, Option<String>)>> {
     let entries: Vec<ImportJsonEntry> = serde_json::from_str(data)
         .map_err(|e| AppError::BadRequest(format!("Invalid JSON: {e}")))?;
 
     Ok(entries
         .into_iter()
-        .map(|e| (e.speech_type, e.text))
+        .map(|e| (e.speech_type, e.text, e.language))
         .collect())
 }
 
-/// Parse CSV import format: `type,text` per line.
+/// Parse CSV import format: `type,text` or `type,language,text` per line.
 ///
-/// Handles an optional header row (skips if first row is exactly "type,text").
-fn parse_csv_import(data: &str) -> AppResult<Vec<(String, String)>> {
+/// Handles an optional header row (skips if first row starts with "type,").
+/// If only two columns are present, language defaults to None (English).
+fn parse_csv_import(data: &str) -> AppResult<Vec<(String, String, Option<String>)>> {
     let mut results = Vec::new();
+    let mut has_language_col = false;
 
     for (i, line) in data.lines().enumerate() {
         let trimmed = line.trim();
@@ -329,28 +512,52 @@ fn parse_csv_import(data: &str) -> AppResult<Vec<(String, String)>> {
             continue;
         }
 
-        // Skip header row if present.
-        if i == 0 && trimmed.eq_ignore_ascii_case("type,text") {
-            continue;
+        // Detect header row.
+        if i == 0 {
+            let lower = trimmed.to_lowercase();
+            if lower.starts_with("type,") {
+                has_language_col = lower.contains("language");
+                continue;
+            }
         }
 
-        // Split on first comma only.
-        let Some(comma_pos) = trimmed.find(',') else {
+        // Split on first comma.
+        let Some(first_comma) = trimmed.find(',') else {
             return Err(AppError::BadRequest(format!(
-                "row {}: expected 'type,text' format, no comma found",
+                "row {}: expected comma-separated format, no comma found",
                 i + 1
             )));
         };
 
-        let type_name = trimmed[..comma_pos].trim().to_string();
-        let mut text = trimmed[comma_pos + 1..].trim().to_string();
+        let type_name = trimmed[..first_comma].trim().to_string();
+        let rest = trimmed[first_comma + 1..].trim();
+
+        // Check for language column (second field before text).
+        let (language, text) = if has_language_col {
+            if let Some(second_comma) = rest.find(',') {
+                let lang = rest[..second_comma].trim().to_string();
+                let txt = rest[second_comma + 1..].trim().to_string();
+                (Some(lang), txt)
+            } else {
+                (None, rest.to_string())
+            }
+        } else {
+            (None, rest.to_string())
+        };
 
         // Strip surrounding quotes if present.
-        if text.starts_with('"') && text.ends_with('"') && text.len() >= 2 {
-            text = text[1..text.len() - 1].replace("\"\"", "\"");
+        let mut clean_text = text;
+        if clean_text.starts_with('"') && clean_text.ends_with('"') && clean_text.len() >= 2 {
+            clean_text = clean_text[1..clean_text.len() - 1].replace("\"\"", "\"");
         }
 
-        results.push((type_name, text));
+        let lang = if language.as_deref() == Some("") {
+            None
+        } else {
+            language
+        };
+
+        results.push((type_name, clean_text, lang));
     }
 
     Ok(results)

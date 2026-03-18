@@ -64,6 +64,7 @@ pub mod job_scheduling;
 pub mod jobs;
 pub mod jobs_admin;
 pub mod keymaps;
+pub mod language;
 pub mod layouts;
 pub mod legacy_import;
 pub mod library;

@@ -21,14 +21,14 @@ Source of truth: [`design/design.md`](../design.md)
 | Status | Count |
 |--------|-------|
 | backlog | 0 |
-| planning | 2 |
+| planning | 1 |
 | in-progress | 0 |
 | review | 0 |
-| done | 129 |
+| done | 131 |
 | blocked | 0 |
 | deferred | 0 |
 | maybe | 15 |
-| **Total** | **148** |
+| **Total** | **151** |
 
 ---
 
@@ -92,7 +92,8 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-124 | Speech & TTS Repository | 1 | `done` | 2026-03-06 | Normalized speech text storage per character (speech_types lookup + character_speeches), CRUD API, Speech tab in Character Detail page, bulk CSV/JSON import/export, read-only VoiceID display. Deps: PRD-00, PRD-01, PRD-29, PRD-112. |
 | PRD-125 | LLM-Driven Metadata Refinement Pipeline | 1 | `done` | 2026-03-06 | LLM formatting/enrichment of Bio+ToV, iterative fix_metadata.py execution loop, diff-based approval, outdated dependency chain, source file protection. Deps: PRD-009, PRD-013, PRD-014, PRD-066, PRD-113. |
 | PRD-133 | Metadata Version Approval | 1 | `done` | 2026-03-13 | Migration (4 columns), approve/reject/unapprove handlers, reviewer authorization, readiness criterion, delivery gate, frontend approval badges. Amendment A.1 (2026-03-14): unapprove action. |
-| PRD-135 | Character Creator | 1 | `planning` | — | Dedicated seed-data provisioning page at /content/characters. Shared group/card module extraction, FileAssignmentModal for unmatched files, admin project auto-creation, metadata template selection. Deps: PRD-112, PRD-113, PRD-066. |
+| PRD-135 | Character Creator | 1 | `done` | 2026-03-17 | Dedicated seed-data provisioning page at /content/characters. Shared group/card module extraction (CharacterGroupSection, CharacterFilterBar), FileAssignmentModal with thumbnails, admin project auto-creation (ProjectConfirmModal), metadata template selection, useCharacterImportBase hook. Deps: PRD-112, PRD-113, PRD-066. |
+| PRD-136 | Multilingual Speech & Deliverable System | 1 | `planning` | — | Language infrastructure (languages table), language_id on character_speeches, speech approval workflow, deliverable JSON export, speech completeness tracking, project speech config, bulk multi-character import (greetings.json format), language flag indicators on character cards. Post-MVP: LLM translation, TTS preview, speech generation. Deps: PRD-124, PRD-112, PRD-128. |
 
 ## Part 3: Generation & Pipeline Core
 
@@ -138,7 +139,7 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-130 | Unified Cloud & ComfyUI Orchestration | 1 | `done` | 2026-03-10 | Unifies PodOrchestrator (env-based, single pod, SSH startup) with cloud provider DB infrastructure (multi-provider, multi-pod). Moves all RunPod config from .env to cloud_providers.settings JSONB, auto-seeds from env on first boot, automates full lifecycle (provision → SSH startup → ComfyUI verify → WebSocket connect → queue distribution → teardown), multi-instance support, auto-scaling with full lifecycle hooks, admin CRUD API for providers, FK linking comfyui_instances to cloud_instances. Deps: PRD-02, PRD-05, PRD-114. |
 | PRD-131 | Infrastructure Control Panel | 1 | `done` | 2026-03-10 | Unified operational dashboard for all cloud instances and ComfyUI connections. Replaces split Infrastructure Panel + Cloud GPU Dashboard. Bulk operations (start/stop/terminate multiple), orphan detection & cleanup (cloud orphans, DB orphans, ComfyUI orphans), failed connection recovery (restart ComfyUI, force reconnect, reset state), inline provider management, instance provisioning wizard, curated activity logging, embedded activity console. Deps: PRD-02, PRD-05, PRD-114, PRD-130. |
 | PRD-132 | Queue Manager & Intelligent Job Allocation | 1 | `done` | 2026-03-10 | Full queue visibility (all job states, not just pending), ComfyUI-integrated job cancellation (interrupt GPU), job reassignment between workers, worker drain mode (finish current work before stopping), intelligent load-aware allocation (replace naive first-available), admin queue manipulation (move to front, hold, bulk cancel, redistribute), queue statistics dashboard, curated activity logging. New held state, drain mode on instances, job-instance tracking. Deps: PRD-07, PRD-08, PRD-05, PRD-46. |
-| PRD-134 | Deferred / Scheduled Generation | 1 | `planning` | — | Schedule scene generation for future time. Split-button UX (generate now vs schedule), bulk scheduling, "Scheduled" scene status (ID 8), schedule executor integration (PRD-119), management from Job Scheduling page. Deps: PRD-008, PRD-024, PRD-119, PRD-132. |
+| PRD-134 | Deferred / Scheduled Generation | 1 | `done` | 2026-03-17 | Schedule scene generation for future time. Migration (scheduled scene status ID 8), SplitButton component, ScheduleGenerationModal, schedule executor integration, ScheduledGenerationsPanel in queue manager, cancel/remove-scenes endpoints. Deps: PRD-008, PRD-024, PRD-119, PRD-132. |
 
 ## Part 4: Design System & UX Patterns
 
@@ -276,3 +277,6 @@ Source of truth: [`design/design.md`](../design.md)
 | 2026-03-14 | Amended 10 PRDs to document post-implementation changes: PRD-015 (video file purge), PRD-021 (unapprove image variants), PRD-029 (tooltip auto-flip), PRD-107 (readiness requires metadata approval), PRD-109 (newer-than-final, file_purged, snapshot backfill), PRD-112 (character thumbnail tooltip), PRD-113 (import hash dedup), PRD-121 (blue dot indicator, snapshot panel, workflow link), PRD-128 (thumbnail on name hover), PRD-133 (unapprove action). |
 | 2026-03-16 | Added PRD-134 (Deferred / Scheduled Generation). Schedule scene generation for future time via split-button UX, bulk scheduling, new "Scheduled" scene status, schedule executor integration. Deps: PRD-008, PRD-024, PRD-119, PRD-132. Total PRDs: 135 + 15 MAYBEs = 150. |
 | 2026-03-16 | Added PRD-135 (Character Creator). Dedicated seed-data provisioning page at /content/characters with shared group/card module, FileAssignmentModal for unmatched files, admin project auto-creation, metadata template selection. Deps: PRD-112, PRD-113, PRD-066. Total PRDs: 135 + 15 MAYBEs = 150. |
+| 2026-03-18 | Marked PRD-134 (Deferred/Scheduled Generation) as done. Migration, SplitButton, ScheduleGenerationModal, schedule executor, ScheduledGenerationsPanel, cancel/remove-scenes endpoints all implemented. Completion date: 2026-03-17. |
+| 2026-03-18 | Marked PRD-135 (Character Creator) as done. CharactersPage, shared CharacterGroupSection/CharacterFilterBar, FileAssignmentModal with thumbnails, ProjectConfirmModal, useCharacterImportBase, metadata template selection all implemented. Completion date: 2026-03-17. Done count: 131. |
+| 2026-03-18 | Added PRD-136 (Multilingual Speech & Deliverable System). Language infrastructure, speech approval workflow, deliverable JSON export, speech completeness tracking, project speech config, bulk multi-character import, language flags on character cards. Post-MVP: LLM translation, TTS preview, speech generation. Deps: PRD-124, PRD-112, PRD-128. Total PRDs: 136 + 15 MAYBEs = 151. |

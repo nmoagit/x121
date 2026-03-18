@@ -407,11 +407,10 @@ async fn probe_storage(storage: &Arc<RwLock<Arc<dyn StorageProvider>>>) -> Servi
 async fn probe_autoscaler(pool: &PgPool) -> ServiceStatus {
     let now = Utc::now();
 
-    let result: Result<(i64,), _> = sqlx::query_as(
-        "SELECT COUNT(*) FROM cloud_scaling_rules WHERE enabled = true",
-    )
-    .fetch_one(pool)
-    .await;
+    let result: Result<(i64,), _> =
+        sqlx::query_as("SELECT COUNT(*) FROM cloud_scaling_rules WHERE enabled = true")
+            .fetch_one(pool)
+            .await;
 
     match result {
         Ok((enabled_rules,)) => {

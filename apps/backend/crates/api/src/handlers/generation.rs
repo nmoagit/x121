@@ -705,7 +705,7 @@ pub async fn schedule_generation(
         let active_schedules = ScheduleRepo::list_filtered(
             &state.pool,
             Some(auth.user_id),
-            None,   // any schedule_type
+            None,       // any schedule_type
             Some(true), // active only
             200,
             0,

@@ -55,6 +55,7 @@ pub mod job_debug;
 pub mod job_scheduling;
 pub mod jobs;
 pub mod keymaps;
+pub mod language;
 pub mod layouts;
 pub mod legacy_import;
 pub mod library;
@@ -910,6 +911,8 @@ pub fn api_routes() -> Router<AppState> {
         .nest("/tracks", track::router())
         // Speech types (PRD-124).
         .nest("/speech-types", speech_type::router())
+        // Languages (PRD-136).
+        .nest("/languages", language::router())
         // Trash / bin management.
         .nest("/trash", trash::router())
         // Clip browsing (cross-project scene video version overview).
