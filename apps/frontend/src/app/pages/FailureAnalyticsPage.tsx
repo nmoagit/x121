@@ -33,7 +33,7 @@ export function FailureAnalyticsPage() {
       <Stack gap={6}>
         <PageHeader
           title="Failure Analytics"
-          description="Identify failure patterns across workflows, characters, and scene types."
+          description="Identify failure patterns across workflows, models, and scene types."
         />
 
         {/* Heatmap */}

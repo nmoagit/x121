@@ -292,7 +292,7 @@ export function ScenesPage() {
               onPlay={() => setPlayingClip(toPlayable(clip))}
               onNavigate={() =>
                 navigate({
-                  to: "/projects/$projectId/characters/$characterId",
+                  to: "/projects/$projectId/models/$characterId",
                   params: {
                     projectId: String(clip.project_id),
                     characterId: String(clip.character_id),

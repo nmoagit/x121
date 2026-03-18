@@ -36,7 +36,7 @@ export const SOURCE_LABELS: Record<VideoSettingSource, string> = {
   scene_type: "Scene Type",
   project: "Project",
   group: "Group",
-  character: "Character",
+  character: "Model",
 };
 
 /** Empty override — all values inherit from parent level. */

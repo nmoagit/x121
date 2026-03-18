@@ -30,7 +30,7 @@ export const CONFIG_TYPE_LABELS: Record<ConfigType, string> = {
   "scene-catalogue": "Scene Catalogue",
   "project-settings": "Project Settings",
   "group-settings": "Group Settings",
-  "character-settings": "Character Settings",
+  "character-settings": "Model Settings",
 };
 
 /* --------------------------------------------------------------------------

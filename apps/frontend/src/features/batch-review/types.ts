@@ -31,7 +31,7 @@ export const SORT_MODE_LABELS: Record<SortMode, string> = {
   worst_qa_first: "Worst QA First",
   oldest_first: "Oldest First",
   by_scene_type: "By Scene Type",
-  by_character: "By Character",
+  by_character: "By Model",
 };
 
 /* --------------------------------------------------------------------------

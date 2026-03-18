@@ -70,7 +70,7 @@ export function GenerationPage() {
         <ScenePicker
           characterId={characterId}
           emptyIcon={<Zap size={32} />}
-          noScenesDescription="This character has no scenes yet. Create scenes first."
+          noScenesDescription="This model has no scenes yet. Create scenes first."
         >
           {(sceneId) => <SceneGeneration sceneId={sceneId} />}
         </ScenePicker>

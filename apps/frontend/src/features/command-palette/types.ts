@@ -60,7 +60,7 @@ export type PaletteEntityType = (typeof VALID_ENTITY_TYPES)[number];
 /** Human-readable labels for entity types. */
 export const ENTITY_TYPE_LABELS: Record<string, string> = {
   project: "Project",
-  character: "Character",
+  character: "Model",
   scene: "Scene",
   segment: "Segment",
   scene_type: "Scene Type",

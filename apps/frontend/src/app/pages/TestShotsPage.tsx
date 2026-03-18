@@ -76,7 +76,7 @@ export function TestShotsPage() {
   return (
     <ProjectCharacterPicker
       title="Test Shots"
-      description="Generate and review test shots for a character."
+      description="Generate and review test shots for a model."
     >
       {(_projectId, characterId) => (
         <CharacterTestShots characterId={characterId} />

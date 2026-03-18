@@ -63,7 +63,7 @@ export function CinemaPage() {
         <ScenePicker
           characterId={characterId}
           emptyIcon={<Play size={32} />}
-          noScenesDescription="This character has no scenes yet."
+          noScenesDescription="This model has no scenes yet."
         >
           {(_sceneId) => (
             <SegmentIdPicker

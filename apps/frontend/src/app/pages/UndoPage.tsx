@@ -63,7 +63,7 @@ export function UndoPage() {
               value={entityType}
               onChange={setEntityType}
               options={[
-                { value: "character", label: "Character" },
+                { value: "character", label: "Model" },
                 { value: "scene", label: "Scene" },
                 { value: "workflow", label: "Workflow" },
                 { value: "project", label: "Project" },

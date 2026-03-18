@@ -49,7 +49,7 @@ export function ImporterPage() {
       <Stack gap={6}>
         <PageHeader
           title="Folder Importer"
-          description="Import characters and assets from a folder structure into a project."
+          description="Import models and assets from a folder structure into a project."
         />
 
         {/* Project selector */}

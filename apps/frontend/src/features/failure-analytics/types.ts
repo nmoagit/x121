@@ -90,7 +90,7 @@ export type AlertResponse = FailurePattern[];
 /** Available dimension options for heatmap axes. */
 export const HEATMAP_DIMENSIONS = [
   { value: "workflow", label: "Workflow" },
-  { value: "character", label: "Character" },
+  { value: "character", label: "Model" },
   { value: "scene_type", label: "Scene Type" },
   { value: "lora", label: "LoRA" },
   { value: "segment_position", label: "Segment Position" },

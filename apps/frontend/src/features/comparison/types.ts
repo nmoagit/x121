@@ -64,7 +64,7 @@ export const APPROVAL_BADGE_VARIANT: Record<string, BadgeVariant> = {
 
 /** Sort field options for the gallery toolbar. */
 export const SORT_OPTIONS: { value: SortField; label: string }[] = [
-  { value: "character_name", label: "Character Name" },
+  { value: "character_name", label: "Model Name" },
   { value: "qa_score", label: "QA Score" },
   { value: "created_at", label: "Generation Date" },
   { value: "approval_status", label: "Approval Status" },

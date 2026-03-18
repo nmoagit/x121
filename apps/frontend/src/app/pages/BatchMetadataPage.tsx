@@ -32,7 +32,7 @@ export function BatchMetadataPage() {
       <Stack gap={6}>
         <PageHeader
           title="Batch Metadata Operations"
-          description="Perform bulk metadata edits, search-replace, and field operations across multiple characters."
+          description="Perform bulk metadata edits, search-replace, and field operations across multiple models."
         />
 
         {/* Project selector */}
