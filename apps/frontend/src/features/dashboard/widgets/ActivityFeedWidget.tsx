@@ -80,7 +80,7 @@ function FeedRow({ item }: { item: ActivityFeedItem }) {
       </div>
 
       <div className="flex-1 min-w-0">
-        <p className="text-sm text-[var(--color-text-primary)] leading-snug">
+        <p className="text-xs text-[var(--color-text-primary)] leading-snug">
           {eventMessage(item)}
         </p>
         <p className="text-xs text-[var(--color-text-muted)] mt-0.5">

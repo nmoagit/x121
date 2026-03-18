@@ -60,7 +60,7 @@ export function WidgetBase({
               {icon}
             </span>
           )}
-          <h3 className="text-sm font-semibold text-[var(--color-text-primary)]">{title}</h3>
+          <h3 className="text-xs font-semibold text-[var(--color-text-primary)]">{title}</h3>
         </div>
         {headerActions && <div className="flex items-center gap-1">{headerActions}</div>}
       </CardHeader>
@@ -77,7 +77,7 @@ export function WidgetBase({
               className="text-[var(--color-action-danger)]"
               aria-hidden="true"
             />
-            <p className="text-sm text-[var(--color-text-muted)]">{error}</p>
+            <p className="text-xs text-[var(--color-text-muted)]">{error}</p>
             {onRetry && (
               <Button
                 variant="secondary"

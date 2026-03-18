@@ -33,6 +33,15 @@ pub struct ActiveTaskItem {
     pub worker_id: Option<DbId>,
     pub submitted_by: DbId,
     pub submitted_at: Timestamp,
+    /// Resolved model name from scene → character join.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub character_name: Option<String>,
+    /// Resolved scene type name from scene → scene_type join.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub scene_type_name: Option<String>,
+    /// Resolved track name from scene → track join.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub track_name: Option<String>,
 }
 
 /// A single project row for the Project Progress widget.
@@ -110,6 +119,9 @@ struct ActiveTaskRow {
     worker_id: Option<DbId>,
     submitted_by: DbId,
     submitted_at: Timestamp,
+    character_name: Option<String>,
+    scene_type_name: Option<String>,
+    track_name: Option<String>,
 }
 
 /// Map a status_id to a human-readable label.
@@ -140,17 +152,33 @@ pub async fn active_tasks(
     let recent_limit = params.recent_completed.unwrap_or(10).min(50);
 
     // Fetch all running + pending jobs, plus recently completed jobs.
+    // LEFT JOINs resolve scene context (model name, scene type, track) via
+    // the parameters->>'scene_id' JSONB field.
     let rows = sqlx::query_as::<_, ActiveTaskRow>(
-        "SELECT id, job_type, status_id, progress_percent, progress_message, \
-                actual_duration_secs, worker_id, submitted_by, submitted_at \
-         FROM jobs \
-         WHERE status_id IN ($1, $2) \
+        "SELECT j.id, j.job_type, j.status_id, j.progress_percent, j.progress_message, \
+                j.actual_duration_secs, j.worker_id, j.submitted_by, j.submitted_at, \
+                ch.name AS character_name, \
+                st.name AS scene_type_name, \
+                t.name  AS track_name \
+         FROM jobs j \
+         LEFT JOIN scenes s   ON s.id  = (j.parameters->>'scene_id')::BIGINT \
+         LEFT JOIN characters ch ON ch.id = COALESCE(s.character_id, (j.parameters->>'character_id')::BIGINT) \
+         LEFT JOIN scene_types st ON st.id = s.scene_type_id \
+         LEFT JOIN tracks t   ON t.id  = s.track_id \
+         WHERE j.status_id IN ($1, $2) \
          UNION ALL \
-         (SELECT id, job_type, status_id, progress_percent, progress_message, \
-                 actual_duration_secs, worker_id, submitted_by, submitted_at \
-          FROM jobs \
-          WHERE status_id = $3 \
-          ORDER BY completed_at DESC \
+         (SELECT j.id, j.job_type, j.status_id, j.progress_percent, j.progress_message, \
+                 j.actual_duration_secs, j.worker_id, j.submitted_by, j.submitted_at, \
+                 ch.name AS character_name, \
+                 st.name AS scene_type_name, \
+                 t.name  AS track_name \
+          FROM jobs j \
+          LEFT JOIN scenes s   ON s.id  = (j.parameters->>'scene_id')::BIGINT \
+          LEFT JOIN characters ch ON ch.id = COALESCE(s.character_id, (j.parameters->>'character_id')::BIGINT) \
+          LEFT JOIN scene_types st ON st.id = s.scene_type_id \
+          LEFT JOIN tracks t   ON t.id  = s.track_id \
+          WHERE j.status_id = $3 \
+          ORDER BY j.completed_at DESC \
           LIMIT $4) \
          ORDER BY submitted_at DESC",
     )
@@ -173,6 +201,9 @@ pub async fn active_tasks(
             worker_id: r.worker_id,
             submitted_by: r.submitted_by,
             submitted_at: r.submitted_at,
+            character_name: r.character_name,
+            scene_type_name: r.scene_type_name,
+            track_name: r.track_name,
         })
         .collect();
 

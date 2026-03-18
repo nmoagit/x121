@@ -1,6 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { api } from "@/lib/api";
+import { useAuthStore } from "@/stores/auth-store";
+import type { FooterStatusData } from "@/app/footer/types";
+import type { ReadinessSummary } from "@/features/readiness/types";
+import type { Schedule } from "@/features/job-scheduling/types";
 
 /* --------------------------------------------------------------------------
    Types
@@ -16,6 +20,12 @@ export interface ActiveTaskItem {
   worker_id: number | null;
   submitted_by: number;
   submitted_at: string;
+  /** Resolved model name (via scene → character join). */
+  character_name?: string | null;
+  /** Resolved scene type name (via scene → scene_type join). */
+  scene_type_name?: string | null;
+  /** Resolved track name (via scene → track join). */
+  track_name?: string | null;
 }
 
 export interface ProjectProgressItem {
@@ -25,6 +35,15 @@ export interface ProjectProgressItem {
   scenes_total: number;
   progress_pct: number;
   status_color: string;
+  /** Model readiness — counts per state (optional, returned by enhanced endpoint). */
+  model_count?: number;
+  models_ready?: number;
+  /** Seed image coverage (optional). */
+  images_uploaded?: number;
+  images_total?: number;
+  /** Metadata status (optional). */
+  metadata_approved?: number;
+  metadata_total?: number;
 }
 
 export interface DiskHealthData {
@@ -158,4 +177,45 @@ export function useSaveDashboardConfig() {
       queryClient.invalidateQueries({ queryKey: dashboardKeys.config() });
     },
   });
+}
+
+/* --------------------------------------------------------------------------
+   Dashboard-specific widget hooks
+   -------------------------------------------------------------------------- */
+
+/** Fetches readiness summary across all projects for the dashboard widget. */
+export function useReadinessSummaryWidget() {
+  return useQuery({
+    queryKey: [...dashboardKeys.all, "readiness-summary"],
+    queryFn: () => api.get<ReadinessSummary>("/library/characters/readiness-summary"),
+    refetchInterval: WIDGET_POLL_MS,
+  });
+}
+
+/** Fetches active scheduled generations for the dashboard widget. */
+export function useScheduledGenerationsWidget() {
+  return useQuery({
+    queryKey: [...dashboardKeys.all, "scheduled-generations"],
+    queryFn: () => api.get<Schedule[]>("/schedules?is_active=true"),
+    refetchInterval: WIDGET_POLL_MS,
+  });
+}
+
+/** Fetches infrastructure status (footer data) for the admin dashboard widget. */
+export function useInfraStatusWidget() {
+  const user = useAuthStore((s) => s.user);
+  const isAdmin = user?.role === "admin";
+
+  return useQuery({
+    queryKey: ["status", "footer"],
+    queryFn: () => api.get<FooterStatusData>("/status/footer"),
+    refetchInterval: WIDGET_POLL_MS,
+    enabled: isAdmin,
+  });
+}
+
+/** Whether the current user is an admin. */
+export function useIsAdmin() {
+  const user = useAuthStore((s) => s.user);
+  return user?.role === "admin";
 }

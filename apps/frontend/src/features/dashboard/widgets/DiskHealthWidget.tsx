@@ -1,3 +1,5 @@
+import { Link } from "@tanstack/react-router";
+
 import { useDiskHealth } from "@/features/dashboard/hooks/use-dashboard";
 import { WidgetBase } from "@/features/dashboard/WidgetBase";
 import { cn } from "@/lib/cn";
@@ -45,6 +47,11 @@ export function DiskHealthWidget() {
       loading={isLoading}
       error={error?.message}
       onRetry={() => void refetch()}
+      headerActions={
+        <Link to="/admin/storage" className="text-xs text-[var(--color-action-primary)] hover:underline">
+          Storage
+        </Link>
+      }
     >
       {data && (
         <div className="flex flex-col items-center gap-[var(--spacing-4)]">
@@ -79,7 +86,7 @@ export function DiskHealthWidget() {
             <div className="absolute inset-0 flex flex-col items-center justify-center">
               <span
                 className={cn(
-                  "text-lg font-bold tabular-nums",
+                  "text-sm font-bold tabular-nums",
                   gaugeColor(usagePct, warning, critical),
                 )}
               >
