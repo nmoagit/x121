@@ -5,6 +5,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { api } from "@/lib/api";
+import { projectKeys } from "@/features/projects/hooks/use-projects";
 import type { EffectiveSceneSetting, SceneSettingUpdate } from "../types";
 import { useToggleSceneSetting } from "./scene-setting-mutations";
 
@@ -46,6 +47,10 @@ export function useBulkUpdateProjectSceneSettings(projectId: number) {
       queryClient.invalidateQueries({
         queryKey: projectSceneSettingKeys.list(projectId),
       });
+      // Scene settings affect deliverable counts and readiness
+      queryClient.invalidateQueries({
+        queryKey: projectKeys.detail(projectId),
+      });
     },
   });
 }
@@ -56,5 +61,6 @@ export function useToggleProjectSceneSetting(projectId: number) {
     `/projects/${projectId}/scene-settings`,
     projectSceneSettingKeys.list(projectId),
     "project",
+    [projectKeys.detail(projectId)],
   );
 }

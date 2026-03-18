@@ -49,6 +49,9 @@ export function useBulkUpdateCharacterSceneSettings(characterId: number) {
       queryClient.invalidateQueries({
         queryKey: characterSceneSettingKeys.list(characterId),
       });
+      queryClient.invalidateQueries({
+        queryKey: ["character-dashboard", characterId],
+      });
     },
   });
 }
@@ -59,6 +62,7 @@ export function useToggleCharacterSceneSetting(characterId: number) {
     `/characters/${characterId}/scene-settings`,
     characterSceneSettingKeys.list(characterId),
     "character",
+    [["character-dashboard", characterId]],
   );
 }
 
@@ -67,5 +71,6 @@ export function useRemoveCharacterSceneOverride(characterId: number) {
   return useRemoveSceneOverride(
     `/characters/${characterId}/scene-settings`,
     characterSceneSettingKeys.list(characterId),
+    [["character-dashboard", characterId]],
   );
 }

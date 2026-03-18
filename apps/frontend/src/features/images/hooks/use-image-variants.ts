@@ -216,6 +216,14 @@ export function useUploadImageVariant(characterId: number) {
     }) => postImageVariantUpload(characterId, file, variant_type, variant_label),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: imageVariantKeys.all });
+      // Refresh character lists so hero_variant_id (card avatar) and
+      // seed data indicators update immediately after image upload.
+      queryClient.invalidateQueries({
+        predicate: (query) =>
+          Array.isArray(query.queryKey) &&
+          query.queryKey.includes("characters") &&
+          query.queryKey.includes("list"),
+      });
     },
   });
 }

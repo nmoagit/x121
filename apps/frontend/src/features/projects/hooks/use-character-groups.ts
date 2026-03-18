@@ -12,6 +12,7 @@ import type {
   CreateCharacterGroup,
   UpdateCharacterGroup,
 } from "../types";
+import { projectKeys } from "./use-projects";
 
 /* --------------------------------------------------------------------------
    Query key factory
@@ -66,9 +67,18 @@ export function useUpdateGroup(projectId: number) {
         `/projects/${projectId}/groups/${groupId}`,
         data,
       ),
-    onSuccess: () => {
+    onSuccess: (updated) => {
+      // Optimistically patch the group in the cache so dependent UI updates immediately.
+      queryClient.setQueryData<CharacterGroup[]>(
+        characterGroupKeys.lists(projectId),
+        (old) => old?.map((g) => (g.id === updated.id ? updated : g)),
+      );
       queryClient.invalidateQueries({
         queryKey: characterGroupKeys.all(projectId),
+      });
+      // Cascade to deliverables, stats, scene assignments
+      queryClient.invalidateQueries({
+        queryKey: projectKeys.detail(projectId),
       });
     },
   });

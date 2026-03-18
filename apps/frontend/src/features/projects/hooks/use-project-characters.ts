@@ -6,6 +6,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { api } from "@/lib/api";
 import type { Character, CreateCharacter, UpdateCharacter } from "../types";
+import { projectKeys } from "./use-projects";
 
 /* --------------------------------------------------------------------------
    Query key factory
@@ -104,6 +105,13 @@ export function useUpdateCharacter(projectId: number) {
           variables.characterId,
         ),
       });
+      // Cascade to deliverables, stats, scene assignments
+      queryClient.invalidateQueries({
+        queryKey: projectKeys.detail(projectId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["character-dashboard", variables.characterId],
+      });
     },
   });
 }
@@ -127,6 +135,10 @@ export function useToggleCharacterEnabled(projectId: number) {
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: projectCharacterKeys.all(projectId),
+      });
+      // Cascade to deliverables and stats (enabled/disabled affects counts)
+      queryClient.invalidateQueries({
+        queryKey: projectKeys.detail(projectId),
       });
     },
   });

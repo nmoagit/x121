@@ -28,6 +28,8 @@ export function useToggleSceneSetting(
   basePath: string,
   invalidationKey: readonly unknown[],
   sourceName?: EffectiveSceneSetting["source"],
+  /** Additional query keys to invalidate on settle (e.g. project detail for deliverables cascade). */
+  extraInvalidationKeys?: readonly (readonly unknown[])[],
 ) {
   const queryClient = useQueryClient();
 
@@ -67,6 +69,9 @@ export function useToggleSceneSetting(
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: invalidationKey });
+      for (const key of extraInvalidationKeys ?? []) {
+        queryClient.invalidateQueries({ queryKey: key });
+      }
     },
   });
 }
@@ -81,7 +86,11 @@ export function useToggleSceneSetting(
  * @param basePath  API base path, e.g. `/characters/5/scene-settings`
  * @param invalidationKey  Query key to invalidate on success
  */
-export function useRemoveSceneOverride(basePath: string, invalidationKey: readonly unknown[]) {
+export function useRemoveSceneOverride(
+  basePath: string,
+  invalidationKey: readonly unknown[],
+  extraInvalidationKeys?: readonly (readonly unknown[])[],
+) {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -101,6 +110,9 @@ export function useRemoveSceneOverride(basePath: string, invalidationKey: readon
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: invalidationKey });
+      for (const key of extraInvalidationKeys ?? []) {
+        queryClient.invalidateQueries({ queryKey: key });
+      }
     },
   });
 }
