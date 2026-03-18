@@ -19,7 +19,7 @@ import { ConfirmDeleteModal, Modal } from "@/components/composite";
 import { EmptyState, FileDropZone } from "@/components/domain";
 import { Stack } from "@/components/layout";
 import { Button, Input, LoadingPane, Select } from "@/components/primitives";
-import { CharacterFilterBar, CharacterGroupSection, CharacterSeedDataModal, FileAssignmentModal } from "@/features/characters/components";
+import { CharacterFilterBar, CharacterGroupSection, CharacterSeedDataModal, FileAssignmentModal, type GroupSectionDragHandlers } from "@/features/characters/components";
 import { useCharacterImport } from "@/features/projects/hooks/use-character-import";
 import { CharacterCard } from "@/features/projects/components/CharacterCard";
 import type { SeedDataStatus } from "@/features/projects/components/CharacterCard";
@@ -67,7 +67,7 @@ const SHOW_DISABLED_KEY = "x121.characters.showDisabled";
    -------------------------------------------------------------------------- */
 
 export function CharactersPage() {
-  useSetPageTitle("Characters");
+  useSetPageTitle("Models");
   const queryClient = useQueryClient();
   const user = useAuthStore((s) => s.user);
   const isAdmin = user?.role === "admin";
@@ -140,7 +140,7 @@ export function CharactersPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [groupQueries.map((q) => q.dataUpdatedAt).join(",")]);
 
-  const charImport = useCharacterImport(primaryProjectId);
+  const charImport = useCharacterImport(primaryProjectId, allProjectCharacters);
 
   const updateCharacter = useUpdateCharacter(primaryProjectId);
   const deleteCharacter = useDeleteCharacter(primaryProjectId);
@@ -181,8 +181,9 @@ export function CharactersPage() {
     return map;
   }, [allProjectCharacters]);
 
-  // Fetch all image variants for the project to compute seed data status
-  const { data: allVariants } = useImageVariantsBrowse(primaryProjectId || undefined);
+  // Fetch image variants across all displayed projects to compute seed data status.
+  // Pass undefined (no project filter) so variants from every visible project are included.
+  const { data: allVariants } = useImageVariantsBrowse(undefined);
 
   const seedDataStatusMap = useMemo(() => {
     const map = new Map<number, SeedDataStatus>();
@@ -213,6 +214,11 @@ export function CharactersPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [groupFilter, setGroupFilter] = useState<string[]>([]);
 
+  // Reset group filter when project selection changes (groups are project-scoped).
+  useEffect(() => {
+    setGroupFilter([]);
+  }, [projectFilter, selectedProjectId]);
+
   const [showDisabled, setShowDisabled] = useState<boolean>(() => {
     try {
       const stored = localStorage.getItem(SHOW_DISABLED_KEY);
@@ -229,6 +235,9 @@ export function CharactersPage() {
     });
   }, []);
 
+  const [hideComplete, setHideComplete] = useState(false);
+  const toggleHideComplete = useCallback(() => setHideComplete((p) => !p), []);
+
   /* --- create character modal --- */
   const [charModalOpen, setCharModalOpen] = useState(false);
   const [newCharName, setNewCharName] = useState("");
@@ -243,7 +252,11 @@ export function CharactersPage() {
   const [groupNameInput, setGroupNameInput] = useState("");
 
   /* --- seed data modal --- */
-  const [seedDataTarget, setSeedDataTarget] = useState<Character | null>(null);
+  const [seedDataTargetId, setSeedDataTargetId] = useState<number | null>(null);
+  // Always derive from latest query data so metadata updates reflect immediately
+  const seedDataTarget = seedDataTargetId != null
+    ? allProjectCharacters.find((c) => c.id === seedDataTargetId) ?? null
+    : null;
 
   /* --- edit/delete character modals --- */
   const [editingChar, setEditingChar] = useState<Character | null>(null);
@@ -296,6 +309,82 @@ export function CharactersPage() {
   /* --- multi-select --- */
   const [selectedCharIds, toggleCharSelection, setSelectedCharIds] = useSetToggle<number>();
 
+  /* --- drag-and-drop between groups --- */
+  const [dragOverGroupId, setDragOverGroupId] = useState<number | "ungrouped" | null>(null);
+  const dragCounterRef = useRef<Map<number | "ungrouped", number>>(new Map());
+
+  const handleCharDragStart = useCallback(
+    (e: React.DragEvent, characterId: number) => {
+      const ids = selectedCharIds.has(characterId)
+        ? [...selectedCharIds]
+        : [characterId];
+      e.dataTransfer.setData("text/plain", ids.join(","));
+      // Sentinel so FileDropZone can distinguish internal drags from file drops
+      e.dataTransfer.setData("application/x-character-drag", "1");
+      e.dataTransfer.effectAllowed = "move";
+    },
+    [selectedCharIds],
+  );
+
+  const handleGroupDragOver = useCallback((e: React.DragEvent) => {
+    // Let file drops bubble to FileDropZone
+    if (e.dataTransfer.types.includes("Files")) return;
+    e.preventDefault();
+    e.stopPropagation();
+    e.dataTransfer.dropEffect = "move";
+  }, []);
+
+  const handleGroupDragEnter = useCallback((e: React.DragEvent, groupId: number | "ungrouped") => {
+    if (e.dataTransfer.types.includes("Files")) return;
+    e.preventDefault();
+    const counter = (dragCounterRef.current.get(groupId) ?? 0) + 1;
+    dragCounterRef.current.set(groupId, counter);
+    if (counter === 1) setDragOverGroupId(groupId);
+  }, []);
+
+  const handleGroupDragLeave = useCallback((_e: React.DragEvent, groupId: number | "ungrouped") => {
+    const counter = (dragCounterRef.current.get(groupId) ?? 1) - 1;
+    dragCounterRef.current.set(groupId, counter);
+    if (counter <= 0) {
+      dragCounterRef.current.set(groupId, 0);
+      setDragOverGroupId((prev) => (prev === groupId ? null : prev));
+    }
+  }, []);
+
+  const handleGroupDrop = useCallback(
+    (e: React.DragEvent, targetGroupId: number | "ungrouped") => {
+      // Let file drops bubble to FileDropZone
+      if (e.dataTransfer.types.includes("Files")) return;
+      e.preventDefault();
+      e.stopPropagation();
+      dragCounterRef.current.set(targetGroupId, 0);
+      setDragOverGroupId(null);
+
+      const raw = e.dataTransfer.getData("text/plain");
+      if (!raw) return;
+      const charIds = raw.split(",").map(Number).filter(Boolean);
+
+      const newGroupId = targetGroupId === "ungrouped" ? null : targetGroupId;
+      for (const charId of charIds) {
+        const char = allProjectCharacters.find((c) => c.id === charId);
+        if (!char || char.group_id === newGroupId) continue;
+        const pid = char.project_id;
+        api.put(`/projects/${pid}/characters/${charId}/group`, { group_id: newGroupId });
+      }
+      setSelectedCharIds(new Set());
+      // Refresh after a short delay to let the API calls complete
+      setTimeout(() => {
+        queryClient.invalidateQueries({
+          predicate: (query) =>
+            Array.isArray(query.queryKey) &&
+            query.queryKey.includes("characters") &&
+            query.queryKey.includes("list"),
+        });
+      }, 300);
+    },
+    [allProjectCharacters, queryClient, setSelectedCharIds],
+  );
+
   /* --- group filter options --- */
   const groupOptions = useMemo(
     () => [
@@ -318,6 +407,13 @@ export function CharactersPage() {
       const q = searchQuery.toLowerCase();
       filtered = filtered.filter((c) => c.name.toLowerCase().includes(q));
     }
+    if (hideComplete) {
+      filtered = filtered.filter((c) => {
+        const status = seedDataStatusMap.get(c.id);
+        if (!status) return true;
+        return !(status.hasClothedImage && status.hasToplessImage && status.hasBio && status.hasTov);
+      });
+    }
 
     for (const c of filtered) {
       const key = c.group_id ?? "ungrouped";
@@ -329,7 +425,7 @@ export function CharactersPage() {
       chars.sort((a, b) => a.name.localeCompare(b.name));
     }
     return map;
-  }, [allProjectCharacters, searchQuery, showDisabled]);
+  }, [allProjectCharacters, searchQuery, showDisabled, hideComplete, seedDataStatusMap]);
 
   const filteredGroups = useMemo(() => {
     if (!groups) return [];
@@ -340,7 +436,18 @@ export function CharactersPage() {
   }, [groups, groupFilter]);
 
   const showUngrouped = groupFilter.length === 0 || groupFilter.includes("ungrouped");
-  const ungroupedChars = charactersByGroup.get("ungrouped") ?? [];
+  const allUngroupedChars = charactersByGroup.get("ungrouped") ?? [];
+
+  // Split ungrouped characters by project so each project gets its own section
+  const ungroupedByProject = useMemo(() => {
+    const map = new Map<number, Character[]>();
+    for (const c of allUngroupedChars) {
+      const arr = map.get(c.project_id);
+      if (arr) arr.push(c);
+      else map.set(c.project_id, [c]);
+    }
+    return map;
+  }, [allUngroupedChars]);
 
   const totalFiltered = useMemo(() => {
     let count = 0;
@@ -415,7 +522,25 @@ export function CharactersPage() {
   }
 
   function handleSaveCharEdit(characterId: number, data: UpdateCharacter) {
-    updateCharacter.mutate({ characterId, data }, { onSuccess: () => setEditingChar(null) });
+    // Find the character's actual project_id — it may differ from primaryProjectId
+    // in multi-project view. The update hook is bound to primaryProjectId, so if
+    // the character is in a different project we call the API directly.
+    const char = allProjectCharacters.find((c) => c.id === characterId);
+    const charProjectId = char?.project_id ?? primaryProjectId;
+    if (charProjectId !== primaryProjectId) {
+      api.put(`/projects/${charProjectId}/characters/${characterId}`, data).then(() => {
+        setEditingChar(null);
+        // Invalidate character lists so the change appears immediately
+        queryClient.invalidateQueries({
+          predicate: (query) =>
+            Array.isArray(query.queryKey) &&
+            query.queryKey.includes("characters") &&
+            query.queryKey.includes("list"),
+        });
+      });
+    } else {
+      updateCharacter.mutate({ characterId, data }, { onSuccess: () => setEditingChar(null) });
+    }
   }
 
   function handleDeleteCharacter() {
@@ -456,9 +581,33 @@ export function CharactersPage() {
 
   function handleDeleteGroup() {
     if (!groupDeleteTarget) return;
-    deleteGroup.mutate(groupDeleteTarget.id, {
-      onSuccess: () => setGroupDeleteTarget(null),
-    });
+    const pid = groupDeleteTarget.project_id;
+    if (pid !== primaryProjectId) {
+      // Group belongs to a different project — call API directly
+      api.delete(`/projects/${pid}/groups/${groupDeleteTarget.id}`).then(() => {
+        setGroupDeleteTarget(null);
+        queryClient.invalidateQueries({ queryKey: ["projects", pid, "groups"] });
+        queryClient.invalidateQueries({
+          predicate: (query) =>
+            Array.isArray(query.queryKey) &&
+            query.queryKey.includes("characters") &&
+            query.queryKey.includes("list"),
+        });
+      });
+    } else {
+      deleteGroup.mutate(groupDeleteTarget.id, {
+        onSuccess: () => {
+          setGroupDeleteTarget(null);
+          // Also invalidate character lists so ungrouped chars refresh
+          queryClient.invalidateQueries({
+            predicate: (query) =>
+              Array.isArray(query.queryKey) &&
+              query.queryKey.includes("characters") &&
+              query.queryKey.includes("list"),
+          });
+        },
+      });
+    }
   }
 
   /* --- intercept folder drop for admin project selection --- */
@@ -512,26 +661,32 @@ export function CharactersPage() {
       <EmptyState
         icon={<User size={32} />}
         title="No projects"
-        description="Create a project first to manage characters."
+        description="Create a project first to manage models."
       />
     );
   }
 
   const renderCard = (c: Character) => (
-    <CharacterCard
+    <div
       key={c.id}
-      character={c}
-      group={c.group_id ? groupMap.get(c.group_id) : undefined}
-      avatarUrl={avatarMap.get(c.id)}
-      heroVariantId={c.hero_variant_id}
-      selected={selectedCharIds.has(c.id)}
-      projectId={primaryProjectId}
-      seedDataStatus={seedDataStatusMap.get(c.id)}
-      onSelect={toggleCharSelection}
-      onClick={() => setSeedDataTarget(c)}
-      onEdit={() => setEditingChar(c)}
-      onToggleEnabled={handleToggleEnabled}
-    />
+      draggable
+      onDragStart={(e) => handleCharDragStart(e, c.id)}
+      className="cursor-grab active:cursor-grabbing"
+    >
+      <CharacterCard
+        character={c}
+        group={c.group_id ? groupMap.get(c.group_id) : undefined}
+        avatarUrl={avatarMap.get(c.id)}
+        heroVariantId={c.hero_variant_id}
+        selected={selectedCharIds.has(c.id)}
+        projectId={c.project_id}
+        seedDataStatus={seedDataStatusMap.get(c.id)}
+        onSelect={toggleCharSelection}
+        onClick={() => setSeedDataTargetId(c.id)}
+        onEdit={() => setEditingChar(c)}
+        onToggleEnabled={handleToggleEnabled}
+      />
+    </div>
   );
 
   return (
@@ -552,11 +707,18 @@ export function CharactersPage() {
           onToggleCollapseAll={toggleCollapseAll}
           showDisabled={showDisabled}
           onToggleShowDisabled={toggleShowDisabled}
+          hideComplete={hideComplete}
+          onToggleHideComplete={toggleHideComplete}
           projectOptions={isAdmin ? projectOptions : undefined}
           projectFilter={isAdmin ? projectFilter : undefined}
           onProjectFilterChange={isAdmin ? setProjectFilter : undefined}
           selectedCount={selectedCharIds.size}
           onClearSelection={() => setSelectedCharIds(new Set())}
+          onClearFilters={() => {
+            setSearchQuery("");
+            setGroupFilter([]);
+            if (isAdmin) setProjectFilter([]);
+          }}
         />
 
         {/* Action row */}
@@ -594,7 +756,7 @@ export function CharactersPage() {
             icon={<Plus size={14} />}
             onClick={() => setCharModalOpen(true)}
           >
-            Add Character
+            Add Model
           </Button>
         </div>
 
@@ -607,16 +769,16 @@ export function CharactersPage() {
         {totalFiltered === 0 ? (
           <EmptyState
             icon={<User size={32} />}
-            title="No characters"
+            title="No models"
             description={
               allProjectCharacters.length > 0
-                ? "No characters match your filter."
-                : "Add a character or import a folder."
+                ? "No models match your filter."
+                : "Add a model or import a folder."
             }
             action={
               allProjectCharacters.length === 0 ? (
                 <Button size="sm" icon={<Plus size={14} />} onClick={() => setCharModalOpen(true)}>
-                  Add Character
+                  Add Model
                 </Button>
               ) : undefined
             }
@@ -627,6 +789,13 @@ export function CharactersPage() {
               const chars = charactersByGroup.get(group.id) ?? [];
               const expanded = !collapsedIds.has(group.id);
 
+              const dragHandlers: GroupSectionDragHandlers = {
+                onDragEnter: (e) => handleGroupDragEnter(e, group.id),
+                onDragOver: handleGroupDragOver,
+                onDragLeave: (e) => handleGroupDragLeave(e, group.id),
+                onDrop: (e) => handleGroupDrop(e, group.id),
+              };
+
               return (
                 <CharacterGroupSection
                   key={group.id}
@@ -635,36 +804,46 @@ export function CharactersPage() {
                   subtitle={projects?.find((p) => p.id === group.project_id)?.name}
                   characters={chars}
                   expanded={expanded}
+                  isDragOver={dragOverGroupId === group.id}
                   onToggle={() => toggleExpanded(group.id)}
                   onEdit={() => openEditGroup(group)}
                   onDelete={() => setGroupDeleteTarget(group)}
                   selectedCharIds={selectedCharIds}
                   onCharSelect={toggleCharSelection}
                   onSelectAll={handleSelectAll}
+                  dragHandlers={dragHandlers}
                   renderCard={renderCard}
                 />
               );
             })}
 
-            {showUngrouped && (
+            {showUngrouped && [...ungroupedByProject.entries()].map(([pid, chars]) => (
               <CharacterGroupSection
-                sectionId="group-ungrouped"
+                key={`ungrouped-${pid}`}
+                sectionId={`group-ungrouped-${pid}`}
                 label="Ungrouped"
-                subtitle={projects?.find((p) => p.id === primaryProjectId)?.name}
-                characters={ungroupedChars}
+                subtitle={projects?.find((p) => p.id === pid)?.name}
+                characters={chars}
                 expanded={!collapsedIds.has("ungrouped")}
+                isDragOver={dragOverGroupId === "ungrouped"}
                 onToggle={() => toggleExpanded("ungrouped")}
                 selectedCharIds={selectedCharIds}
                 onCharSelect={toggleCharSelection}
                 onSelectAll={handleSelectAll}
+                dragHandlers={{
+                  onDragEnter: (e) => handleGroupDragEnter(e, "ungrouped"),
+                  onDragOver: handleGroupDragOver,
+                  onDragLeave: (e) => handleGroupDragLeave(e, "ungrouped"),
+                  onDrop: (e) => handleGroupDrop(e, "ungrouped"),
+                }}
                 renderCard={renderCard}
               />
-            )}
+            ))}
           </Stack>
         )}
 
         {/* Add character modal */}
-        <Modal open={charModalOpen} onClose={() => setCharModalOpen(false)} title="Add Character" size="md">
+        <Modal open={charModalOpen} onClose={() => setCharModalOpen(false)} title="Add Model" size="md">
           <Stack gap={4}>
             {isAdmin ? (
               <Select
@@ -684,7 +863,7 @@ export function CharactersPage() {
               )
             )}
             <Input
-              label="Character Name"
+              label="Model Name"
               placeholder="e.g. Aria"
               value={newCharName}
               onChange={(e) => setNewCharName(e.target.value)}
@@ -738,7 +917,7 @@ export function CharactersPage() {
               onClick={handleCreateCharacter}
               disabled={!newCharName.trim() || (isAdmin && !newCharProjectId && !primaryProjectId)}
             >
-              Create Character
+              Create Model
             </Button>
           </Stack>
         </Modal>
@@ -820,7 +999,7 @@ export function CharactersPage() {
         {/* Edit character modal */}
         <CharacterEditModal
           character={editingChar}
-          projectId={primaryProjectId}
+          projectId={editingChar?.project_id ?? primaryProjectId}
           onClose={() => setEditingChar(null)}
           onSave={handleSaveCharEdit}
           saving={updateCharacter.isPending}
@@ -831,7 +1010,7 @@ export function CharactersPage() {
         <ConfirmDeleteModal
           open={charDeleteTarget !== null}
           onClose={() => setCharDeleteTarget(null)}
-          title="Delete Character"
+          title="Delete Model"
           entityName={charDeleteTarget?.name ?? ""}
           onConfirm={handleDeleteCharacter}
           loading={deleteCharacter.isPending}
@@ -843,7 +1022,7 @@ export function CharactersPage() {
           onClose={() => setGroupDeleteTarget(null)}
           title="Delete Group"
           entityName={groupDeleteTarget?.name ?? ""}
-          warningText="Characters in this group will become ungrouped."
+          warningText="Models in this group will become ungrouped."
           onConfirm={handleDeleteGroup}
           loading={deleteGroup.isPending}
         />
@@ -859,8 +1038,46 @@ export function CharactersPage() {
         {/* Seed data modal */}
         <CharacterSeedDataModal
           character={seedDataTarget}
-          projectId={primaryProjectId}
-          onClose={() => setSeedDataTarget(null)}
+          projectId={seedDataTarget?.project_id ?? primaryProjectId}
+          onClose={() => setSeedDataTargetId(null)}
+          groupOptions={(() => {
+            const pid = seedDataTarget?.project_id ?? primaryProjectId;
+            const projectGroups = groups.filter((g) => g.project_id === pid);
+            return [
+              { value: "", label: "No group" },
+              ...projectGroups.map((g) => ({ value: String(g.id), label: g.name })),
+            ];
+          })()}
+          onGroupChange={(charId, groupId) => {
+            const char = allProjectCharacters.find((c) => c.id === charId);
+            const pid = char?.project_id ?? primaryProjectId;
+            api.put(`/projects/${pid}/characters/${charId}`, { group_id: groupId }).then(() => {
+              queryClient.invalidateQueries({
+                predicate: (query) =>
+                  Array.isArray(query.queryKey) &&
+                  query.queryKey.includes("characters") &&
+                  query.queryKey.includes("list"),
+              });
+            });
+          }}
+          onCreateGroup={async (name) => {
+            const pid = seedDataTarget?.project_id ?? primaryProjectId;
+            const created = await api.post<CharacterGroup>(`/projects/${pid}/groups`, { name });
+            queryClient.invalidateQueries({ queryKey: ["projects", pid, "groups"] });
+            return created.id;
+          }}
+          onDelete={(charId) => {
+            const char = allProjectCharacters.find((c) => c.id === charId);
+            const pid = char?.project_id ?? primaryProjectId;
+            api.delete(`/projects/${pid}/characters/${charId}`).then(() => {
+              queryClient.invalidateQueries({
+                predicate: (query) =>
+                  Array.isArray(query.queryKey) &&
+                  query.queryKey.includes("characters") &&
+                  query.queryKey.includes("list"),
+              });
+            });
+          }}
         />
 
         {/* Import confirmation modal */}

@@ -2,6 +2,8 @@
  * A drop zone slot for uploading a single file (image or JSON).
  *
  * Used by CharacterSeedDataModal for each seed image / metadata slot.
+ * When multiple files or a directory are dropped, the event is NOT consumed
+ * so it can bubble up to a parent section-level handler.
  */
 
 import { useRef, useState } from "react";
@@ -17,8 +19,20 @@ interface SeedDataDropSlotProps {
   label: string;
   /** Whether an upload is in progress. */
   loading?: boolean;
-  /** Called when a file is selected or dropped. */
+  /** Called when a single file is selected or dropped. */
   onFile: (file: File) => void;
+}
+
+/** Check if a drop event contains multiple files or a directory. */
+function isMultiOrDirectory(e: React.DragEvent): boolean {
+  const items = e.dataTransfer.items;
+  if (items.length > 1) return true;
+  // Single item that is a directory
+  if (items.length === 1) {
+    const entry = items[0]?.webkitGetAsEntry?.();
+    if (entry?.isDirectory) return true;
+  }
+  return false;
 }
 
 export function SeedDataDropSlot({ accept, label, loading, onFile }: SeedDataDropSlotProps) {
@@ -26,7 +40,15 @@ export function SeedDataDropSlot({ accept, label, loading, onFile }: SeedDataDro
   const [dragOver, setDragOver] = useState(false);
 
   function handleDrop(e: React.DragEvent) {
+    // Multiple files or directory → let the event bubble to the parent
+    // section handler which can auto-assign bio/tov.
+    if (isMultiOrDirectory(e)) {
+      setDragOver(false);
+      return; // Don't preventDefault/stopPropagation — let it bubble
+    }
+
     e.preventDefault();
+    e.stopPropagation();
     setDragOver(false);
     const file = e.dataTransfer.files[0];
     if (file) onFile(file);
@@ -40,8 +62,8 @@ export function SeedDataDropSlot({ accept, label, loading, onFile }: SeedDataDro
 
   return (
     <div
-      onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
-      onDragLeave={() => setDragOver(false)}
+      onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); setDragOver(true); }}
+      onDragLeave={(e) => { e.stopPropagation(); setDragOver(false); }}
       onDrop={handleDrop}
       onClick={() => inputRef.current?.click()}
       onKeyDown={(e) => { if (e.key === "Enter") inputRef.current?.click(); }}

@@ -88,7 +88,15 @@ function importLogEntry(
   };
 }
 
-export function useCharacterImport(projectId: number) {
+/**
+ * @param projectId - Primary project for creating new characters.
+ * @param allCharacters - Optional characters from ALL displayed projects.
+ *   When provided, existing-character lookups search this list instead of
+ *   the single-project query. This is needed on multi-project pages
+ *   (e.g. CharactersPage) where the drop target character may belong
+ *   to a different project than `projectId`.
+ */
+export function useCharacterImport(projectId: number, allCharacters?: Character[]) {
   const queryClient = useQueryClient();
   const { addToast } = useToast();
   /** Add a log entry to the activity console store (always uses latest state). */
@@ -101,7 +109,9 @@ export function useCharacterImport(projectId: number) {
     if (!state.isOpen) state.togglePanel();
   };
   const bulkCreate = useBulkCreateCharacters(projectId);
-  const { data: characters } = useProjectCharacters(projectId);
+  const { data: projectCharacters } = useProjectCharacters(projectId);
+  // Use the multi-project character list when available, fall back to single-project query
+  const characters = allCharacters ?? projectCharacters;
   const { data: sceneCatalogue } = useSceneCatalogue();
   const { data: tracks } = useTracks();
 
@@ -391,7 +401,7 @@ export function useCharacterImport(projectId: number) {
             { const msg = `Failed to create characters: ${String(err)}`; errors.push(msg); addLogEntry(importLogEntry("error", msg, projectId)); }
             setImportProgress(null);
             setImportOpen(false);
-            addToast({ message: "Character import failed", variant: "error" });
+            addToast({ message: "Model import failed", variant: "error" });
             return;
           }
         } else {
@@ -408,7 +418,7 @@ export function useCharacterImport(projectId: number) {
             { const msg = `Failed to create characters: ${String(err)}`; errors.push(msg); addLogEntry(importLogEntry("error", msg, projectId)); }
             setImportProgress(null);
             setImportOpen(false);
-            addToast({ message: "Character import failed", variant: "error" });
+            addToast({ message: "Model import failed", variant: "error" });
             return;
           }
         }
@@ -563,12 +573,27 @@ export function useCharacterImport(projectId: number) {
           if (abort.signal.aborted) return "skipped" as const;
           const charId = nameToIdMap.get(payload.rawName.toLowerCase())!;
 
-          // Skip if character already has metadata and skipExisting is on
+          // Skip if character already has the specific source files being uploaded.
+          // Don't skip just because *some* metadata exists — the user may have
+          // metadata fields but be missing the bio/tov source files.
           if (skipExisting) {
             const existing = characters?.find((c) => c.id === charId);
-            if (existing?.metadata && Object.keys(existing.metadata).length > 0) {
-              skippedMetadata++;
-              return "skipped" as const;
+            if (existing?.metadata) {
+              const meta = existing.metadata as Record<string, unknown>;
+              const hasBioAlready = payload.bioJson && meta[SOURCE_KEY_BIO] != null;
+              const hasTovAlready = payload.tovJson && meta[SOURCE_KEY_TOV] != null;
+              const hasMetaAlready = payload.metadataJson && Object.keys(meta).some(
+                (k) => !k.startsWith("_source_"),
+              );
+              // Only skip if ALL files being imported are already present
+              const allPresent =
+                (!payload.bioJson || hasBioAlready) &&
+                (!payload.tovJson || hasTovAlready) &&
+                (!payload.metadataJson || hasMetaAlready);
+              if (allPresent) {
+                skippedMetadata++;
+                return "skipped" as const;
+              }
             }
           }
 
