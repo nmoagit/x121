@@ -41,7 +41,7 @@ const DEBOUNCE_MS = 100;
 export function SearchBar({
   onResultSelect,
   onSearch,
-  placeholder = "Search characters, projects, scenes...",
+  placeholder = "Search models, projects, scenes...",
 }: SearchBarProps) {
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");

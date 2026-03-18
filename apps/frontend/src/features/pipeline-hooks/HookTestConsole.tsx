@@ -30,7 +30,7 @@ const DEFAULT_INPUT = JSON.stringify(
     segment_id: 1,
     job_id: null,
     scene_type: "talking_head",
-    character_name: "Test Character",
+    character_name: "Test Model",
   },
   null,
   2,

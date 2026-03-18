@@ -79,8 +79,8 @@ export function ImportProgress({
         className="grid grid-cols-2 gap-3 sm:grid-cols-4"
       >
         <CountCard label="Total Files" value={run.total_files} testId="total-files" />
-        <CountCard label="Characters Created" value={run.characters_created} testId="chars-created" />
-        <CountCard label="Characters Updated" value={run.characters_updated} testId="chars-updated" />
+        <CountCard label="Models Created" value={run.characters_created} testId="chars-created" />
+        <CountCard label="Models Updated" value={run.characters_updated} testId="chars-updated" />
         <CountCard label="Scenes Registered" value={run.scenes_registered} testId="scenes-registered" />
         <CountCard label="Images Registered" value={run.images_registered} testId="images-registered" />
         <CountCard label="Duplicates" value={run.duplicates_found} testId="duplicates" />

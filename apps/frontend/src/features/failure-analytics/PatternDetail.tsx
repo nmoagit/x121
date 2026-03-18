@@ -92,7 +92,7 @@ export function PatternDetail({ pattern }: PatternDetailProps) {
 
           {pattern.dimension_character_id && (
             <>
-              <div className="text-[var(--color-text-muted)]">Character</div>
+              <div className="text-[var(--color-text-muted)]">Model</div>
               <div className="text-[var(--color-text-primary)]">
                 #{pattern.dimension_character_id}
               </div>

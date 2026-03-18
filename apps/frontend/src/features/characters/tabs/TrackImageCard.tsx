@@ -18,6 +18,7 @@ import { MediaPlaceholder } from "./MediaPlaceholder";
 import type { Track } from "@/features/scene-catalogue/types";
 import {
   IMAGE_ACCEPT_STRING,
+  IMAGE_VARIANT_STATUS,
   IMAGE_VARIANT_STATUS_LABEL,
   PROVENANCE_LABEL,
 } from "@/features/images/types";
@@ -112,6 +113,8 @@ export function TrackImageCard({
       className={cn(
         "group/card transition-colors overflow-hidden",
         dragOver && "ring-2 ring-[var(--color-action-primary)] bg-[var(--color-surface-secondary)]",
+        heroVariant?.status_id === IMAGE_VARIANT_STATUS.APPROVED && "!border-2 !border-green-500",
+        heroVariant?.status_id === IMAGE_VARIANT_STATUS.REJECTED && "!border-2 !border-red-500",
       )}
     >
       <div

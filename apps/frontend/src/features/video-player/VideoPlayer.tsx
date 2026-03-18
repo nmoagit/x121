@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { cn } from "@/lib/cn";
 
@@ -33,6 +33,7 @@ export function VideoPlayer({
   className,
 }: VideoPlayerProps) {
   const [quality, setQuality] = useState<PlaybackQuality>(initialQuality);
+  const restoreTimeRef = useRef<number | null>(null);
 
   const { data: metadata } = useVideoMetadata(sourceType, sourceId);
   const framerate = metadata?.framerate ?? 24;
@@ -48,6 +49,30 @@ export function VideoPlayer({
   const loop = useABLoop(player.videoRef, framerate);
 
   const streamUrl = getStreamUrl(sourceType, sourceId, quality);
+
+  // Save current time before quality switch, restore after new source loads.
+  const handleQualityChange = useCallback(
+    (newQuality: PlaybackQuality) => {
+      restoreTimeRef.current = player.currentTime;
+      setQuality(newQuality);
+    },
+    [player.currentTime],
+  );
+
+  useEffect(() => {
+    if (restoreTimeRef.current === null) return;
+    const video = player.videoRef.current;
+    if (!video) return;
+
+    const savedTime = restoreTimeRef.current;
+    function handleLoaded() {
+      video!.currentTime = savedTime;
+      restoreTimeRef.current = null;
+    }
+
+    video.addEventListener("loadedmetadata", handleLoaded, { once: true });
+    return () => video.removeEventListener("loadedmetadata", handleLoaded);
+  }, [quality, player.videoRef]);
 
   return (
     <div
@@ -94,7 +119,7 @@ export function VideoPlayer({
             player={player}
             loop={loop}
             quality={quality}
-            onQualityChange={setQuality}
+            onQualityChange={handleQualityChange}
           />
         </div>
       )}

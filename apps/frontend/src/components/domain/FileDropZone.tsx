@@ -473,6 +473,8 @@ export function FileDropZone({
     if (!e.dataTransfer.types.includes("Files")) return;
     // Ignore internal character card drags (browsers may add "Files" for img elements)
     if (e.dataTransfer.types.includes("application/x-character-drag")) return;
+    // Don't activate when a modal is open — its own drop zones handle file drops
+    if (document.querySelector("dialog[open]")) return;
     e.preventDefault();
     setIsDragOver(true);
   }, []);
@@ -489,6 +491,8 @@ export function FileDropZone({
       // Ignore internal element drags (e.g. character card reordering)
       if (!e.dataTransfer.types.includes("Files")) return;
       if (e.dataTransfer.types.includes("application/x-character-drag")) return;
+      // Don't handle drops when a modal is open — modal has its own drop zones
+      if (document.querySelector("dialog[open]")) { setIsDragOver(false); return; }
       e.preventDefault();
       setIsDragOver(false);
 
@@ -564,8 +568,11 @@ export function FileDropZone({
       }
 
       for (const file of plainFiles) {
-        const text = await readFileText(file);
         const ext = file.name.split(".").pop()?.toLowerCase();
+        // Only process text and CSV files as name lists — skip images, JSON, etc.
+        if (ext !== "txt" && ext !== "csv") continue;
+
+        const text = await readFileText(file);
 
         if (ext === "csv") {
           allNames.push(...parseCsv(text));
@@ -613,7 +620,7 @@ export function FileDropZone({
           )}
         >
           <p className="text-sm font-medium text-[var(--color-text-primary)]">
-            Drop files or folders to import characters
+            Drop files or folders to import models
           </p>
         </div>
       )}

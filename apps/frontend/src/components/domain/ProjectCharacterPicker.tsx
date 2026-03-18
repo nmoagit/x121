@@ -88,10 +88,10 @@ export function ProjectCharacterPicker({
             <Spinner size="sm" />
           ) : (
             <Select
-              label="Character"
+              label="Model"
               placeholder={
                 projectId > 0
-                  ? "Select a character..."
+                  ? "Select a model..."
                   : "Select a project first"
               }
               options={characterOptions}
@@ -118,12 +118,12 @@ export function ProjectCharacterPicker({
           }
           title={
             projectId > 0
-              ? "Select a character"
+              ? "Select a model"
               : "Select a project"
           }
           description={
             projectId > 0
-              ? "Choose a character from the dropdown above to continue."
+              ? "Choose a model from the dropdown above to continue."
               : "Choose a project from the dropdown above to get started."
           }
         />

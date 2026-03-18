@@ -17,7 +17,7 @@ export function NavItem({ item, collapsed }: NavItemProps) {
     <Link
       to={item.path}
       className={cn(
-        "flex items-center gap-2 rounded-[var(--radius-sm)] px-2 py-[3px] text-[13px] font-normal",
+        "flex items-center gap-2 rounded-[var(--radius-sm)] px-2 py-[3px] text-xs font-normal",
         "transition-colors duration-[var(--duration-fast)]",
         isActive
           ? "bg-[var(--color-action-primary)] text-[var(--color-action-primary-text)]"

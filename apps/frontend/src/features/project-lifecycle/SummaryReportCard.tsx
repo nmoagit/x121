@@ -27,7 +27,7 @@ interface SummaryReportCardProps {
    -------------------------------------------------------------------------- */
 
 const STAT_LABELS = [
-  { key: "total_characters", label: "Characters" },
+  { key: "total_characters", label: "Models" },
   { key: "total_scenes", label: "Total Scenes" },
   { key: "approved_scenes", label: "Approved Scenes" },
   { key: "total_segments", label: "Total Segments" },

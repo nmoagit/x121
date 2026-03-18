@@ -39,7 +39,7 @@ function ReferenceRow({
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2 text-sm">
           <span className="text-[var(--color-text-primary)] font-medium">
-            Character {reference.character_id}
+            Model {reference.character_id}
           </span>
           <span className="text-[var(--color-text-muted)]">/</span>
           <span className="text-[var(--color-text-secondary)]">

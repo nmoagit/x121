@@ -4,10 +4,10 @@
  * Follows the same styling patterns as the Button component.
  */
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
+import { createPortal } from "react-dom";
 
-import { useClickOutside } from "@/hooks/useClickOutside";
 import { cn } from "@/lib/cn";
 import { ChevronDown } from "@/tokens/icons";
 
@@ -91,35 +91,56 @@ export function SplitButton({
 }: SplitButtonProps) {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
 
-  const closeMenu = useCallback(() => setOpen(false), []);
-  useClickOutside(containerRef, closeMenu, open);
-
-  // Close on Escape key
+  // Close on outside click or Escape — must check both the button container
+  // AND the portalled dropdown menu since they are in different DOM trees.
   useEffect(() => {
     if (!open) return;
+    const handleMouseDown = (e: MouseEvent) => {
+      const target = e.target as Node;
+      if (
+        containerRef.current?.contains(target) ||
+        menuRef.current?.contains(target)
+      ) return;
+      setOpen(false);
+    };
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") setOpen(false);
     };
+    document.addEventListener("mousedown", handleMouseDown);
     document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handleMouseDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
   }, [open]);
 
   const isDisabled = disabled || loading;
 
+  // Compute portal position from the arrow button's bounding rect.
+  const arrowRef = useRef<HTMLButtonElement>(null);
+  const [menuPos, setMenuPos] = useState<{ top: number; left: number } | null>(null);
+
+  useEffect(() => {
+    if (!open || !arrowRef.current) return;
+    const rect = arrowRef.current.getBoundingClientRect();
+    setMenuPos({ top: rect.bottom + 4, left: rect.right });
+  }, [open]);
+
   return (
     <div
       ref={containerRef}
-      className={cn("relative inline-flex", className)}
+      className={cn("relative flex", className)}
       title={isDisabled ? disabledReason : undefined}
     >
-      {/* Main button */}
+      {/* Main button — flex-1 so it fills the available width */}
       <button
         type="button"
         disabled={isDisabled}
         onClick={onClick}
         className={cn(
-          "inline-flex items-center justify-center font-medium",
+          "flex-1 inline-flex items-center justify-center font-medium",
           "rounded-l-[var(--radius-md)] rounded-r-none",
           "transition-colors duration-[var(--duration-fast)] ease-[var(--ease-default)]",
           "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-border-focus)]",
@@ -138,8 +159,9 @@ export function SplitButton({
         {children}
       </button>
 
-      {/* Dropdown arrow */}
+      {/* Dropdown arrow — fixed width */}
       <button
+        ref={arrowRef}
         type="button"
         disabled={isDisabled}
         onClick={(e) => {
@@ -147,7 +169,7 @@ export function SplitButton({
           setOpen((prev) => !prev);
         }}
         className={cn(
-          "inline-flex items-center justify-center",
+          "shrink-0 inline-flex items-center justify-center",
           "rounded-r-[var(--radius-md)] rounded-l-none",
           "transition-colors duration-[var(--duration-fast)] ease-[var(--ease-default)]",
           "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-border-focus)]",
@@ -164,12 +186,13 @@ export function SplitButton({
         <ChevronDown size={size === "sm" ? 14 : 16} />
       </button>
 
-      {/* Dropdown menu */}
-      {open && (
+      {/* Dropdown menu — portalled to body to escape overflow-hidden containers */}
+      {open && menuPos && createPortal(
         <div
+          ref={menuRef}
+          style={{ position: "fixed", top: menuPos.top, left: menuPos.left, transform: "translateX(-100%)" }}
           className={cn(
-            "absolute top-full right-0 mt-1 z-50",
-            "min-w-[160px] py-1",
+            "z-50 min-w-[160px] py-1",
             "bg-[var(--color-surface-secondary)] border border-[var(--color-border-default)]",
             "rounded-[var(--radius-md)] shadow-[var(--shadow-lg)]",
             "animate-[fadeIn_var(--duration-fast)_var(--ease-default)]",
@@ -200,7 +223,8 @@ export function SplitButton({
               {action.label}
             </button>
           ))}
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   );

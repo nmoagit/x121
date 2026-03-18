@@ -44,7 +44,7 @@ export function MetadataPreview({
 
   const query = mode === "character" ? characterQuery : videoQuery;
   const title =
-    mode === "character" ? "Character Metadata" : "Video Metadata";
+    mode === "character" ? "Model Metadata" : "Video Metadata";
 
   return (
     <Stack gap={4}>
