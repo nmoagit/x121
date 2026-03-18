@@ -80,6 +80,8 @@ pub mod project;
 pub mod project_config;
 pub mod project_lifecycle;
 pub mod project_scene_settings;
+pub mod project_speech_config;
+pub mod project_speech_import;
 pub mod prompt_editor;
 pub mod prompt_management;
 pub mod provenance;
@@ -845,7 +847,9 @@ pub fn api_routes() -> Router<AppState> {
             .nest("/{project_id}/characters", character_metadata::project_router())
             .nest("/{project_id}/ingest", character_ingest::router())
             .nest("/{project_id}/scene-settings", project_scene_settings::router())
-            .nest("/{project_id}/review", character_review::project_review_router()))
+            .nest("/{project_id}/speech-config", project_speech_config::router())
+            .nest("/{project_id}/review", character_review::project_review_router())
+            .merge(project_speech_import::router()))
         // Character-scoped sub-resources (images, scenes, metadata editor, face embedding, readiness, dashboard PRD-108, prompt overrides PRD-115).
         .nest("/characters", character::router()
             .merge(metadata::character_metadata_router())

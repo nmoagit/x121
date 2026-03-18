@@ -516,16 +516,16 @@ Logic:
 6. Use `IndexMap` (from `indexmap` crate) to preserve insertion order in JSON serialization
 
 **Acceptance Criteria:**
-- [ ] Deliverable JSON matches PRD format exactly
-- [ ] Only approved speeches included
-- [ ] Speech types ordered by `speech_types.sort_order`
-- [ ] Variant texts ordered by `character_speeches.sort_order`
-- [ ] Speech type names converted to lowercase snake_case
-- [ ] Language codes are ISO 639-1
-- [ ] `languages` array contains only languages present in the speech data
-- [ ] `voice_id` extracted from character settings JSONB (`elevenlabs_voice` key)
-- [ ] Returns 422 with message when no approved speeches
-- [ ] `generated_at` is current UTC timestamp
+- [x] Deliverable JSON matches PRD format exactly
+- [x] Only approved speeches included
+- [x] Speech types ordered by `speech_types.sort_order`
+- [x] Variant texts ordered by `character_speeches.sort_order`
+- [x] Speech type names converted to lowercase snake_case
+- [x] Language codes are ISO 639-1
+- [x] `languages` array contains only languages present in the speech data
+- [x] `voice_id` extracted from character settings JSONB (`elevenlabs_voice` key)
+- [x] Returns 422 with message when no approved speeches
+- [x] `generated_at` is current UTC timestamp
 
 ### Task 4.2: Create speech completeness handler
 **File:** `apps/backend/crates/api/src/handlers/character_speech.rs`
@@ -546,10 +546,10 @@ Logic:
 5. `completeness_pct` = (filled_slots / total_slots * 100), where filled_slot = min(approved, required) per entry
 
 **Acceptance Criteria:**
-- [ ] Returns `CompletenessSummary` with total_slots, filled_slots, completeness_pct, breakdown
-- [ ] Uses project config or defaults if none configured
-- [ ] Each breakdown entry has type name, language code, required count, approved count, status string
-- [ ] Percentage correctly calculated (0 when no config, 100 when all slots filled)
+- [x] Returns `CompletenessSummary` with total_slots, filled_slots, completeness_pct, breakdown
+- [x] Uses project config or defaults if none configured
+- [x] Each breakdown entry has type name, language code, required count, approved count, status string
+- [x] Percentage correctly calculated (0 when no config, 100 when all slots filled)
 
 ### Task 4.3: Create project speech config handlers and routes
 **Files:** `apps/backend/crates/api/src/handlers/project_speech_config.rs`, `apps/backend/crates/api/src/routes/project_speech_config.rs`
@@ -579,11 +579,11 @@ Routes mounted at `/api/v1/projects/{project_id}/speech-config`:
 - `PUT /` → `set_speech_config`
 
 **Acceptance Criteria:**
-- [ ] GET returns current config or empty array (frontend computes defaults)
-- [ ] PUT replaces all entries atomically (transaction)
-- [ ] Validates all speech_type_ids and language_ids exist
-- [ ] Returns 400 for invalid references
-- [ ] Routes registered under project routes in `routes/mod.rs`
+- [x] GET returns current config or empty array (frontend computes defaults)
+- [x] PUT replaces all entries atomically (transaction)
+- [x] Validates all speech_type_ids and language_ids exist
+- [x] Returns 400 for invalid references
+- [x] Routes registered under project routes in `routes/mod.rs`
 
 ### Task 4.4: Create bulk multi-character import handler
 **File:** `apps/backend/crates/api/src/handlers/project_speech_import.rs`
@@ -619,15 +619,15 @@ Logic:
 Route: `POST /api/v1/projects/{project_id}/speeches/import`
 
 **Acceptance Criteria:**
-- [ ] Parses greetings.json format correctly (all 66 characters from sample file)
-- [ ] Maps character slugs case-insensitively with underscore/space normalization
-- [ ] Maps language names case-insensitively ("english" → en, "spanish" → es)
-- [ ] Auto-creates missing speech types
-- [ ] All imported entries have `status_id = 1` (draft)
-- [ ] Sort order auto-assigned per (character, type, language) group
-- [ ] Unmatched characters listed in response
-- [ ] CSV format also supported
-- [ ] Route registered under project routes
+- [x] Parses greetings.json format correctly (all 66 characters from sample file)
+- [x] Maps character slugs case-insensitively with underscore/space normalization
+- [x] Maps language names case-insensitively ("english" → en, "spanish" → es)
+- [x] Auto-creates missing speech types
+- [x] All imported entries have `status_id = 1` (draft)
+- [x] Sort order auto-assigned per (character, type, language) group
+- [x] Unmatched characters listed in response
+- [x] CSV format also supported
+- [x] Route registered under project routes
 
 ### Task 4.5: Create bulk project deliverable handler
 **File:** `apps/backend/crates/api/src/handlers/project_speech_import.rs` (same file, deliverable section)
@@ -651,12 +651,12 @@ Logic:
 Route: `POST /api/v1/projects/{project_id}/speech-deliverables`
 
 **Acceptance Criteria:**
-- [ ] Returns a valid zip file containing one JSON per character
-- [ ] Each JSON matches the deliverable format from Task 4.1
-- [ ] Characters without approved speech are excluded
-- [ ] Zip filename: `{project_name}_speech_deliverables.zip`
-- [ ] Returns 422 if no character has approved speech
-- [ ] Route registered under project routes
+- [x] Returns a valid zip file containing one JSON per character
+- [x] Each JSON matches the deliverable format from Task 4.1
+- [x] Characters without approved speech are excluded
+- [x] Zip filename: `speech_deliverables.zip` (Content-Disposition header)
+- [x] Returns 422 if no character has approved speech
+- [x] Route registered under project routes
 
 ---
 

@@ -22,6 +22,12 @@ use crate::middleware::auth::AuthUser;
 use crate::response::DataResponse;
 use crate::state::AppState;
 
+// Re-export deliverable/completeness handlers and helpers from the extracted module.
+pub(crate) use crate::handlers::character_speech_deliverable::{build_deliverable, slugify};
+pub use crate::handlers::character_speech_deliverable::{
+    generate_deliverable, speech_completeness, SpeechDeliverable,
+};
+
 /// Optional query parameters to filter the speech list.
 #[derive(Debug, Deserialize)]
 pub struct SpeechListQuery {

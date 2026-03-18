@@ -14,6 +14,8 @@ use crate::state::AppState;
 /// POST   /import              -> import_speeches
 /// POST   /export              -> export_speeches
 /// POST   /bulk-approve        -> bulk_approve_speeches
+/// POST   /deliverable         -> generate_deliverable
+/// GET    /completeness        -> speech_completeness
 /// PUT    /reorder             -> reorder_speeches
 /// PUT    /{speech_id}         -> update_speech
 /// DELETE /{speech_id}         -> delete_speech
@@ -31,6 +33,8 @@ pub fn router() -> Router<AppState> {
             "/bulk-approve",
             post(character_speech::bulk_approve_speeches),
         )
+        .route("/deliverable", post(character_speech::generate_deliverable))
+        .route("/completeness", get(character_speech::speech_completeness))
         .route("/reorder", put(character_speech::reorder_speeches))
         .route(
             "/{speech_id}",

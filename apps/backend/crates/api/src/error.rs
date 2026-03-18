@@ -25,6 +25,10 @@ pub enum AppError {
     #[error("Internal error: {0}")]
     InternalError(String),
 
+    /// The request cannot be processed due to semantic errors (HTTP 422).
+    #[error("Unprocessable entity: {0}")]
+    Unprocessable(String),
+
     /// The resource existed but has been permanently removed (HTTP 410).
     #[error("Gone: {0}")]
     Gone(String),
@@ -135,6 +139,11 @@ impl IntoResponse for AppError {
                     "An internal error occurred".to_string(),
                 )
             }
+            AppError::Unprocessable(msg) => (
+                StatusCode::UNPROCESSABLE_ENTITY,
+                "UNPROCESSABLE_ENTITY",
+                msg.clone(),
+            ),
             AppError::Gone(msg) => (StatusCode::GONE, "GONE", msg.clone()),
         };
 
