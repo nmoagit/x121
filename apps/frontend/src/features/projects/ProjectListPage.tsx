@@ -405,8 +405,8 @@ export function ProjectListPage() {
 
               <p className="text-xs text-[var(--color-text-muted)]">
                 {pendingDrop.existingProjectId
-                  ? "Characters will be added to the existing project. You'll be taken to the project's characters tab to complete the import."
-                  : "A new project will be created and you'll be taken to the characters tab to complete the import."}
+                  ? "Models will be added to the existing project. You'll be taken to the project's models tab to complete the import."
+                  : "A new project will be created and you'll be taken to the models tab to complete the import."}
               </p>
             </div>
 

@@ -345,7 +345,7 @@ export function AdminConfigImportPage() {
             />
           </label>
           <p className="mt-2 text-xs text-[var(--color-text-muted)]">
-            Supports: workflow, scene-catalogue, project-settings, group-settings, character-settings
+            Supports: workflow, scene-catalogue, project-settings, group-settings, model-settings
           </p>
         </div>
 

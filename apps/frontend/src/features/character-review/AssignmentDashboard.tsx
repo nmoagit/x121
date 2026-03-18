@@ -142,7 +142,7 @@ function AssignmentsTable({ assignments }: { assignments: CharacterReviewAssignm
             <thead>
               <tr className="text-left text-text-muted border-b border-border-primary">
                 <th className="py-2 px-3">ID</th>
-                <th className="py-2 px-3">Character</th>
+                <th className="py-2 px-3">Model</th>
                 <th className="py-2 px-3">Reviewer</th>
                 <th className="py-2 px-3">Round</th>
                 <th className="py-2 px-3">Status</th>

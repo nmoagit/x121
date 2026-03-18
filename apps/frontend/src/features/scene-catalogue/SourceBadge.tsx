@@ -19,7 +19,7 @@ const SOURCE_CONFIG: Record<SettingSource, { label: string; variant: BadgeVarian
   scene_type: { label: "Default", variant: "default" },
   project: { label: "Project", variant: "info" },
   group: { label: "Group", variant: "success" },
-  character: { label: "Character", variant: "warning" },
+  character: { label: "Model", variant: "warning" },
 };
 
 /** Returns the human-readable label for a setting source. */

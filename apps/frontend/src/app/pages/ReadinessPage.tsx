@@ -55,8 +55,8 @@ export function ReadinessPage() {
     <div className="min-h-full">
       <Stack gap={6}>
         <PageHeader
-          title="Character Readiness"
-          description="View character library readiness states and manage readiness criteria."
+          title="Model Readiness"
+          description="View model library readiness states and manage readiness criteria."
         />
 
         <TabBar tabs={TABS} activeTab={activeTab} onChange={(k) => setActiveTab(k as TabKey)} />
@@ -82,7 +82,7 @@ export function ReadinessPage() {
                       : "Re-evaluate All"}
                   </Button>
                   <span className="text-xs text-[var(--color-text-muted)]">
-                    {summary.total} characters total
+                    {summary.total} models total
                   </span>
                 </div>
 
@@ -97,7 +97,7 @@ export function ReadinessPage() {
 
             {!summaryLoading && !summary && (
               <p className="text-sm text-[var(--color-text-muted)]">
-                No readiness data available. Define criteria first, then evaluate characters.
+                No readiness data available. Define criteria first, then evaluate models.
               </p>
             )}
           </Stack>

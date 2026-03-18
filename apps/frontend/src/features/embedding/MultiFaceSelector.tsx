@@ -53,7 +53,7 @@ export function MultiFaceSelector({
         {imageUrl && (
           <img
             src={imageUrl}
-            alt="Character source"
+            alt="Model source"
             className="block w-full h-auto"
           />
         )}

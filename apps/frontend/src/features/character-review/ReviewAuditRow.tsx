@@ -25,7 +25,7 @@ export function ReviewAuditRow({ entry, showCharacterId }: ReviewAuditRowProps) 
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium text-text-primary">{config.label}</span>
           {showCharacterId && (
-            <span className="text-xs text-text-muted">Character #{entry.character_id}</span>
+            <span className="text-xs text-text-muted">Model #{entry.character_id}</span>
           )}
           <span className="text-xs text-text-muted">{formatDateTime(entry.created_at)}</span>
         </div>

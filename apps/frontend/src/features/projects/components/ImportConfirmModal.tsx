@@ -751,7 +751,7 @@ export function ImportConfirmModal({
               ) : (
                 <>
                   {selectedCount > 0 && (
-                    <span><strong className="text-[var(--color-text-primary)]">{selectedCount}</strong> new {selectedCount === 1 ? "character" : "characters"} to create</span>
+                    <span><strong className="text-[var(--color-text-primary)]">{selectedCount}</strong> new {selectedCount === 1 ? "model" : "models"} to create</span>
                   )}
                   {existingAssetsCount > 0 && (
                     <span><strong className="text-[var(--color-text-primary)]">{existingAssetsCount}</strong> existing to update</span>
@@ -844,7 +844,7 @@ export function ImportConfirmModal({
                   loading={loading}
                 >
                   {selectedCount > 0 && (
-                    <>Import {selectedCount} {selectedCount === 1 ? "Character" : "Characters"}</>
+                    <>Import {selectedCount} {selectedCount === 1 ? "Model" : "Models"}</>
                   )}
                   {selectedCount > 0 && existingAssetsCount > 0 && " + "}
                   {existingAssetsCount > 0 && (

@@ -116,8 +116,8 @@ export function OnboardingWizardPage() {
     <div className="min-h-full">
       <Stack gap={6}>
         <PageHeader
-          title="Character Onboarding Wizard"
-          description="Bulk character onboarding with step-by-step guidance for upload, metadata, and variant generation."
+          title="Model Onboarding Wizard"
+          description="Bulk model onboarding with step-by-step guidance for upload, metadata, and variant generation."
         />
 
         {/* Project selector */}

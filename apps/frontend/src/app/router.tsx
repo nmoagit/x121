@@ -104,7 +104,7 @@ const projectDetailRoute = createRoute({
 
 const characterDetailRoute = createRoute({
   getParentRoute: () => projectsLayoutRoute,
-  path: "/projects/$projectId/characters/$characterId",
+  path: "/projects/$projectId/models/$characterId",
   validateSearch: (search: Record<string, unknown>) => ({
     tab: typeof search.tab === "string" ? search.tab : undefined,
     scene: typeof search.scene === "string" ? search.scene : undefined,
@@ -134,7 +134,7 @@ const scenesRoute = createRoute({
 
 const charactersRoute = createRoute({
   getParentRoute: () => contentLayoutRoute,
-  path: "/content/characters",
+  path: "/content/models",
   component: lazyRouteComponent(() =>
     import("@/app/pages/CharactersPage").then((m) => ({ default: m.CharactersPage })),
   ),
@@ -174,7 +174,7 @@ const sceneCatalogueRoute = createRoute({
 
 const characterDashboardRoute = createRoute({
   getParentRoute: () => contentLayoutRoute,
-  path: "/content/character-dashboard",
+  path: "/content/model-dashboard",
   component: lazyRouteComponent(() =>
     import("@/app/pages/CharacterDashboardPage").then((m) => ({
       default: m.CharacterDashboardPage,
@@ -419,7 +419,7 @@ const activityConsoleRoute = createRoute({
 
 const characterIngestRoute = createRoute({
   getParentRoute: () => toolsLayoutRoute,
-  path: "/tools/character-ingest",
+  path: "/tools/model-ingest",
   component: lazyRouteComponent(() =>
     import("@/features/character-ingest").then((m) => ({
       default: m.CharacterIngestPage,

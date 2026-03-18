@@ -229,12 +229,12 @@ export function QueueTable({
     if (job.project_id == null || job.character_id == null) return;
     if (job.job_kind === "image") {
       navigate({
-        to: `/projects/${job.project_id}/characters/${job.character_id}`,
+        to: `/projects/${job.project_id}/models/${job.character_id}`,
         search: { tab: "overview" },
       });
     } else {
       navigate({
-        to: `/projects/${job.project_id}/characters/${job.character_id}`,
+        to: `/projects/${job.project_id}/models/${job.character_id}`,
         search: { tab: "scenes", scene: String(job.scene_id) },
       });
     }
@@ -277,7 +277,7 @@ export function QueueTable({
             </th>
             <SortHeader label="ID" field="id" filter={filter} onChange={onFilterChange} />
             <th className="px-3 py-2 text-left text-xs font-medium text-[var(--color-text-muted)]">
-              Character
+              Model
             </th>
             <th className="px-3 py-2 text-left text-xs font-medium text-[var(--color-text-muted)]">
               Target

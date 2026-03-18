@@ -67,8 +67,8 @@ export function ProjectDeliveryTab({ projectId }: ProjectDeliveryTabProps) {
         {!statusLoading && statuses.length === 0 && (
           <EmptyState
             icon={<Download size={24} />}
-            title="No characters"
-            description="This project has no characters to track delivery status for."
+            title="No models"
+            description="This project has no models to track delivery status for."
           />
         )}
 
@@ -77,7 +77,7 @@ export function ProjectDeliveryTab({ projectId }: ProjectDeliveryTabProps) {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-[var(--color-border-default)] text-left text-xs text-[var(--color-text-muted)]">
-                  <th className="py-2 pr-3">Character</th>
+                  <th className="py-2 pr-3">Model</th>
                   <th className="py-2 pr-3">Status</th>
                   <th className="py-2">Last Delivered</th>
                 </tr>

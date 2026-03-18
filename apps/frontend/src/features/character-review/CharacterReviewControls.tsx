@@ -116,7 +116,7 @@ export function CharacterReviewControls({
 
       <Modal
         open={showDecisionModal}
-        title={decisionType === "approved" ? "Approve Character" : "Reject Character"}
+        title={decisionType === "approved" ? "Approve Model" : "Reject Model"}
         onClose={() => setShowDecisionModal(false)}
       >
         <div className="space-y-4">

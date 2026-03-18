@@ -127,7 +127,7 @@ export function LibraryCharacterModal({
             {character.group_name && ` / ${character.group_name}`}
           </p>
           <Link
-            to="/projects/$projectId/characters/$characterId"
+            to="/projects/$projectId/models/$characterId"
             params={{
               projectId: String(character.project_id),
               characterId: String(character.id),
@@ -135,7 +135,7 @@ export function LibraryCharacterModal({
             search={{ tab: undefined, scene: undefined }}
           >
             <Button variant="secondary" size="sm">
-              Go to Character
+              Go to Model
               <ArrowRight size={14} aria-hidden className="ml-1" />
             </Button>
           </Link>

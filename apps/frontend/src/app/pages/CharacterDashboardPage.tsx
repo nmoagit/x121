@@ -9,8 +9,8 @@ import { CharacterDashboard } from "@/features/character-dashboard/CharacterDash
 export function CharacterDashboardPage() {
   return (
     <ProjectCharacterPicker
-      title="Character Dashboard"
-      description="View settings, generation history, and readiness status for a character."
+      title="Model Dashboard"
+      description="View settings, generation history, and readiness status for a model."
     >
       {(_projectId, characterId) => (
         <CharacterDashboard characterId={characterId} />

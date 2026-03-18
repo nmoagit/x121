@@ -30,7 +30,7 @@ const PAGE_TABS = [
 ];
 
 export function CharacterIngestPage() {
-  useSetPageTitle("Character Ingest");
+  useSetPageTitle("Model Ingest");
 
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<"import" | "validation">("import");

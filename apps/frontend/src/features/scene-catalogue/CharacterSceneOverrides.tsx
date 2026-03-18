@@ -45,7 +45,7 @@ export function CharacterSceneOverrides({ projectId, characterId }: CharacterSce
       settings={settings}
       isLoading={isLoading}
       sourceName="character"
-      entityLabel="character"
+      entityLabel="model"
       toggleMutation={toggleMutation}
       removeMutation={removeMutation}
       videoCountMap={videoCountMap}

@@ -623,7 +623,7 @@ function RunDetail({
 
   const handleCancelCharacter = useCallback(
     (characterId: number) => {
-      const charName = characters.find((c) => c.id === characterId)?.name ?? "Character";
+      const charName = characters.find((c) => c.id === characterId)?.name ?? "Model";
       cancelCharacterCells.mutate(characterId, {
         onSuccess: () => toast.addToast({ message: `${charName} cells cancelled.`, variant: "info" }),
         onError: () => toast.addToast({ message: `Failed to cancel ${charName} cells.`, variant: "error" }),
@@ -634,7 +634,7 @@ function RunDetail({
 
   const handleDeleteCharacter = useCallback(
     (characterId: number) => {
-      const charName = characters.find((c) => c.id === characterId)?.name ?? "Character";
+      const charName = characters.find((c) => c.id === characterId)?.name ?? "Model";
       deleteCharacterCells.mutate(characterId, {
         onSuccess: () => toast.addToast({ message: `${charName} removed from run.`, variant: "info" }),
         onError: () => toast.addToast({ message: `Failed to remove ${charName}.`, variant: "error" }),
@@ -646,7 +646,7 @@ function RunDetail({
   const handleCharacterClick = useCallback(
     (characterId: number) => {
       navigate({
-        to: `/projects/${projectId}/characters/${characterId}`,
+        to: `/projects/${projectId}/models/${characterId}`,
         search: { tab: "scenes" },
       });
     },
@@ -656,7 +656,7 @@ function RunDetail({
   const handleCellClick = useCallback(
     (cell: { character_id: number; scene_type_id: number; track_id: number | null; scene_id: number | null }) => {
       navigate({
-        to: `/projects/${projectId}/characters/${cell.character_id}`,
+        to: `/projects/${projectId}/models/${cell.character_id}`,
         search: {
           tab: "scenes",
           ...(cell.scene_id

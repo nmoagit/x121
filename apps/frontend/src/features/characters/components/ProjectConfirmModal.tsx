@@ -111,7 +111,7 @@ export function ProjectConfirmModal({
                   </Badge>
                   <span className="text-xs text-[var(--color-text-muted)]">
                     {project.groupCount} {project.groupCount === 1 ? "group" : "groups"},{" "}
-                    {project.characterCount} {project.characterCount === 1 ? "character" : "characters"}
+                    {project.characterCount} {project.characterCount === 1 ? "model" : "models"}
                   </span>
                 </div>
               </div>

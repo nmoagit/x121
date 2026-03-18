@@ -47,7 +47,7 @@ export function SceneMatrixView({ cells, characters, sceneTypes, onSelect }: Sce
   if (cells.length === 0) {
     return (
       <p className="text-sm text-[var(--color-text-muted)]">
-        No matrix data. Select characters and scene types to generate.
+        No matrix data. Select models and scene types to generate.
       </p>
     );
   }
@@ -70,7 +70,7 @@ export function SceneMatrixView({ cells, characters, sceneTypes, onSelect }: Sce
               <th className="p-2 text-left text-[var(--color-text-muted)] font-medium border-b border-[var(--color-border-default)]" />
             )}
             <th className="p-2 text-left text-[var(--color-text-muted)] font-medium border-b border-[var(--color-border-default)]">
-              Character
+              Model
             </th>
             {sceneTypes.map((st) => (
               <th

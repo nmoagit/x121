@@ -109,7 +109,7 @@ export function ProjectOverviewTab({ projectId, stats }: ProjectOverviewTabProps
       {/* Per-character deliverables grid */}
       <div>
         <h2 className={`${SECTION_HEADING} mb-[var(--spacing-3)]`}>
-          Character Deliverables
+          Model Deliverables
         </h2>
         <CharacterDeliverablesGrid projectId={projectId} />
       </div>

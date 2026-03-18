@@ -490,7 +490,7 @@ export function useCharacterImportBase(projectId: number, _options?: UseCharacte
             addLogEntry(importLogEntry("error", msg, projectId));
             setImportProgress(null);
             setImportOpen(false);
-            addToast({ message: "Character import failed", variant: "error" });
+            addToast({ message: "Model import failed", variant: "error" });
             return;
           }
         } else {
@@ -508,7 +508,7 @@ export function useCharacterImportBase(projectId: number, _options?: UseCharacte
             addLogEntry(importLogEntry("error", msg, projectId));
             setImportProgress(null);
             setImportOpen(false);
-            addToast({ message: "Character import failed", variant: "error" });
+            addToast({ message: "Model import failed", variant: "error" });
             return;
           }
         }

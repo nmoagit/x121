@@ -82,7 +82,7 @@ export function CharacterGroupSection<T extends GroupSectionCharacter>({
   dragHandlers,
   renderCard,
   subtitle,
-  emptyMessage = "No characters in this group. Drag characters here to add them.",
+  emptyMessage = "No models in this group. Drag models here to add them.",
 }: CharacterGroupSectionProps<T>) {
   const Chevron = expanded ? ChevronDown : ChevronRight;
   const charIds = characters.map((c) => c.id);
@@ -123,7 +123,7 @@ export function CharacterGroupSection<T extends GroupSectionCharacter>({
           )}
         </span>
         <span className="text-xs text-[var(--color-text-muted)]">
-          {characters.length} {characters.length === 1 ? "character" : "characters"}
+          {characters.length} {characters.length === 1 ? "model" : "models"}
         </span>
         {characters.length > 0 && (
           <button

@@ -8,7 +8,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { SearchInput, Spinner, Toggle } from "@/components";
+import { FilterSelect, SearchInput, Spinner, Toggle } from "@/components";
 import { cn } from "@/lib/cn";
 import { LayoutGrid, List } from "@/tokens/icons";
 
@@ -27,6 +27,8 @@ export function CharacterLibraryBrowser() {
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [showDisabled, setShowDisabled] = useState(false);
   const [selectedCharacter, setSelectedCharacter] = useState<LibraryCharacter | null>(null);
+  const [projectFilter, setProjectFilter] = useState("");
+  const [groupFilter, setGroupFilter] = useState("");
 
   // Debounce the search input
   useEffect(() => {
@@ -49,11 +51,47 @@ export function CharacterLibraryBrowser() {
     setSelectedCharacter(character);
   }, []);
 
+  // Derive project options from all loaded characters.
+  const projectOptions = useMemo(() => {
+    if (!characters) return [];
+    const seen = new Map<number, string>();
+    for (const c of characters) {
+      if (!seen.has(c.project_id)) seen.set(c.project_id, c.project_name);
+    }
+    return [...seen.entries()]
+      .sort((a, b) => a[1].localeCompare(b[1]))
+      .map(([id, name]) => ({ value: String(id), label: name }));
+  }, [characters]);
+
+  // Derive group options from characters matching the selected project.
+  const groupOptions = useMemo(() => {
+    if (!characters) return [];
+    const pool = projectFilter
+      ? characters.filter((c) => c.project_id === Number(projectFilter))
+      : characters;
+    const names = new Set<string>();
+    for (const c of pool) {
+      if (c.group_name) names.add(c.group_name);
+    }
+    return [...names]
+      .sort((a, b) => a.localeCompare(b))
+      .map((name) => ({ value: name, label: name }));
+  }, [characters, projectFilter]);
+
+  // Reset group filter when project changes (groups are project-scoped).
+  useEffect(() => {
+    setGroupFilter("");
+  }, [projectFilter]);
+
   const filteredCharacters = useMemo(() => {
     if (!characters) return [];
-    if (showDisabled) return characters;
-    return characters.filter((c) => c.is_enabled);
-  }, [characters, showDisabled]);
+    return characters.filter((c) => {
+      if (!showDisabled && !c.is_enabled) return false;
+      if (projectFilter && c.project_id !== Number(projectFilter)) return false;
+      if (groupFilter && c.group_name !== groupFilter) return false;
+      return true;
+    });
+  }, [characters, showDisabled, projectFilter, groupFilter]);
 
   const resultCount = filteredCharacters.length;
 
@@ -68,11 +106,30 @@ export function CharacterLibraryBrowser() {
         className="mb-4"
       />
 
+      {/* Filters */}
+      <div className="flex items-center gap-2 mb-3">
+        <FilterSelect
+          options={projectOptions}
+          value={projectFilter}
+          onChange={setProjectFilter}
+          placeholder="All Projects"
+          size="sm"
+        />
+        <FilterSelect
+          options={groupOptions}
+          value={groupFilter}
+          onChange={setGroupFilter}
+          placeholder="All Groups"
+          size="sm"
+          disabled={!projectFilter}
+        />
+      </div>
+
       {/* Results count + view toggle */}
       {!isLoading && !error && (
         <div className="flex items-center justify-between mb-3">
           <p className="text-xs text-[var(--color-text-muted)]">
-            {resultCount} character{resultCount !== 1 ? "s" : ""}
+            {resultCount} model{resultCount !== 1 ? "s" : ""}
             {debouncedSearch && " matching"}
           </p>
           <div className="flex items-center gap-2">
@@ -125,7 +182,7 @@ export function CharacterLibraryBrowser() {
           className="text-sm text-[var(--color-status-error)] text-center py-8"
           data-testid="library-error"
         >
-          Failed to load library characters.
+          Failed to load library models.
         </div>
       )}
 
@@ -140,8 +197,8 @@ export function CharacterLibraryBrowser() {
           data-testid="library-empty"
         >
           {debouncedSearch
-            ? "No characters match your search."
-            : "No characters found."}
+            ? "No models match your search."
+            : "No models found."}
         </div>
       )}
 

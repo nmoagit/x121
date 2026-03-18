@@ -75,7 +75,7 @@ export function TestShotGallery({
       <div className="flex flex-wrap items-center gap-3">
         {/* Character filter */}
         <label className="flex items-center gap-1.5 text-sm text-[var(--color-text-secondary)]">
-          Character:
+          Model:
           <select
             data-testid="character-filter"
             value={characterFilter}
@@ -203,7 +203,7 @@ function TestShotCard({
         </div>
 
         <div className="text-xs text-[var(--color-text-muted)]">
-          <p>Character: {shot.character_id}</p>
+          <p>Model: {shot.character_id}</p>
           {shot.duration_secs != null && (
             <p>Duration: {shot.duration_secs.toFixed(1)}s</p>
           )}

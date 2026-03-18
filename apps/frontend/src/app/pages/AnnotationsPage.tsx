@@ -62,11 +62,12 @@ function AnnotationDetailModal({
     return () => ro.disconnect();
   }, [item]);
 
-  // Reset state when item changes
+  // Reset state when item changes — default to showing annotations since
+  // the user opened this from the annotations browser.
   useEffect(() => {
-    setAnnotating(false);
-    setCurrentFrame(0);
-  }, [item?.annotation_id]);
+    setAnnotating(true);
+    setCurrentFrame(item?.frame_number ?? 0);
+  }, [item?.annotation_id, item?.frame_number]);
 
   const videoHeight = Math.round(containerWidth * (9 / 16));
 
@@ -84,7 +85,7 @@ function AnnotationDetailModal({
   const handleGoToScene = useCallback(() => {
     if (!item) return;
     navigate({
-      to: `/projects/${item.project_id}/characters/${item.character_id}`,
+      to: `/projects/${item.project_id}/models/${item.character_id}`,
       search: { tab: "scenes", scene: String(item.scene_id) },
     });
     onClose();
@@ -105,13 +106,35 @@ function AnnotationDetailModal({
     [],
   );
 
-  // On open, seek to the annotated frame
+  // On open, seek to the annotated frame once the video is ready.
+  // Uses loadeddata (not loadedmetadata) to ensure seeking works reliably.
   useEffect(() => {
-    if (item && item.version_id && containerWidth > 0) {
-      // Small delay to let the video element mount
-      const timer = setTimeout(() => seekToFrame(item.frame_number), 300);
-      return () => clearTimeout(timer);
+    if (!item || !item.version_id || containerWidth <= 0) return;
+
+    const container = videoContainerRef.current;
+    if (!container) return;
+
+    function trySeek() {
+      const video = container!.querySelector("video");
+      if (!video) return;
+
+      // If already loaded, seek immediately.
+      if (video.readyState >= 2) {
+        seekToFrame(item!.frame_number);
+        return;
+      }
+
+      // Otherwise wait for the video to be ready.
+      function handleLoaded() {
+        seekToFrame(item!.frame_number);
+      }
+      video.addEventListener("loadeddata", handleLoaded, { once: true });
+      return () => video.removeEventListener("loadeddata", handleLoaded);
     }
+
+    // Small delay to let the video element mount in the DOM.
+    const timer = setTimeout(trySeek, 50);
+    return () => clearTimeout(timer);
   }, [item, containerWidth, seekToFrame]);
 
   // Current frame's annotations (when viewing a different frame)
@@ -323,7 +346,7 @@ function AnnotationCard({
 
 const SORT_OPTIONS = [
   { value: "created_at", label: "Most Recent" },
-  { value: "character_name", label: "Character Name" },
+  { value: "character_name", label: "Model Name" },
 ] as const;
 
 /* --------------------------------------------------------------------------
@@ -374,7 +397,7 @@ export function AnnotationsPage() {
     <Stack gap={6}>
       <PageHeader
         title="Annotations"
-        description="Browse all frame annotations across projects and characters."
+        description="Browse all frame annotations across projects and models."
       />
 
       {/* Filter bar */}
@@ -387,7 +410,7 @@ export function AnnotationsPage() {
           className="w-48"
         />
         <SearchInput
-          placeholder="Search character name..."
+          placeholder="Search model name..."
           value={characterSearch}
           onChange={(e) => setCharacterSearch(e.target.value)}
           className="w-56"

@@ -198,7 +198,7 @@ export function ImagesPage() {
     <Stack gap={6}>
       <PageHeader
         title="Images"
-        description="Browse all image variants across characters, most recent first."
+        description="Browse all image variants across models, most recent first."
       />
 
       {/* Filter bar */}
@@ -236,7 +236,7 @@ export function ImagesPage() {
               onPreview={() => setPreviewVariant(variant)}
               onNavigate={() =>
                 navigate({
-                  to: "/projects/$projectId/characters/$characterId",
+                  to: "/projects/$projectId/models/$characterId",
                   params: {
                     projectId: String(variant.project_id),
                     characterId: String(variant.character_id),

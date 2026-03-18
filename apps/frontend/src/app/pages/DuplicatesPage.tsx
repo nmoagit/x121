@@ -42,8 +42,8 @@ export function DuplicatesPage() {
             .filter((c) => c.matched_character_id !== null)
             .map((c) => ({
               checkId: c.id,
-              characterAName: `Character #${c.source_character_id}`,
-              characterBName: `Character #${c.matched_character_id}`,
+              characterAName: `Model #${c.source_character_id}`,
+              characterBName: `Model #${c.matched_character_id}`,
               similarityScore: (c.similarity_score ?? 0) * 100,
             }));
           setFlaggedPairs(pairs);
@@ -70,7 +70,7 @@ export function DuplicatesPage() {
       <Stack gap={6}>
         <PageHeader
           title="Duplicate Detection"
-          description="Configure similarity thresholds and resolve flagged duplicate characters."
+          description="Configure similarity thresholds and resolve flagged duplicate models."
         />
 
         {/* Settings */}
