@@ -34,11 +34,21 @@ interface CloudGpuSegmentProps {
 export function CloudGpuSegment({ cloudGpu }: CloudGpuSegmentProps) {
   if (!cloudGpu) return null;
 
-  const tooltipText = `${cloudGpu.active_pods} pod${cloudGpu.active_pods !== 1 ? "s" : ""} active — ${formatCost(cloudGpu.cost_per_hour_cents)} — budget ${cloudGpu.budget_status}`;
+  const tooltipContent = (
+    <div className="space-y-0.5 text-xs">
+      <div className="font-medium">Cloud GPU</div>
+      <div>{cloudGpu.active_pods} pod{cloudGpu.active_pods !== 1 ? "s" : ""} active</div>
+      <div>Cost: {formatCost(cloudGpu.cost_per_hour_cents)}</div>
+      <div className="flex items-center gap-1.5">
+        <StatusDot health={budgetToHealth(cloudGpu.budget_status)} />
+        <span>Budget: {cloudGpu.budget_status}</span>
+      </div>
+    </div>
+  );
 
   return (
     <>
-      <Tooltip content={tooltipText} side="top">
+      <Tooltip content={tooltipContent} side="top">
         <FooterSegment href="/admin/infrastructure" label="Cloud GPU status">
           <Cloud size={14} aria-hidden="true" />
           <StatusDot health={budgetToHealth(cloudGpu.budget_status)} />

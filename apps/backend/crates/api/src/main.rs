@@ -158,11 +158,8 @@ async fn main() {
     tracing::info!("Script orchestrator initialized");
 
     // --- Health aggregator (PRD-117) ---
+    // Created here but polling is started later, after storage provider is initialized.
     let health_aggregator = Arc::new(x121_api::engine::health_aggregator::HealthAggregator::new());
-    health_aggregator
-        .clone()
-        .start_polling(pool.clone(), Arc::clone(&comfyui_manager));
-    tracing::info!("Health aggregator started (30s interval)");
 
     // --- Settings service (PRD-110) ---
     let settings_service = Arc::new(x121_core::settings::SettingsService::new(
@@ -306,6 +303,14 @@ async fn main() {
 
     let storage = Arc::new(tokio::sync::RwLock::new(storage_provider));
     tracing::info!("Storage provider initialized");
+
+    // Start health aggregator polling now that all dependencies are ready.
+    health_aggregator.clone().start_polling(
+        pool.clone(),
+        Arc::clone(&comfyui_manager),
+        Arc::clone(&storage),
+    );
+    tracing::info!("Health aggregator started (30s interval)");
 
     // --- App state ---
     let state = AppState {

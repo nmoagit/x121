@@ -17,12 +17,16 @@ interface WorkflowSegmentProps {
 }
 
 export function WorkflowSegment({ workflows }: WorkflowSegmentProps) {
-  const tooltipText = workflows.current_stage
-    ? `${workflows.active} active — ${workflows.current_stage}`
-    : `${workflows.active} active workflow${workflows.active !== 1 ? "s" : ""}`;
+  const tooltipContent = (
+    <div className="space-y-0.5 text-xs">
+      <div className="font-medium">Workflows</div>
+      <div>{workflows.active} active</div>
+      {workflows.current_stage && <div>{workflows.current_stage}</div>}
+    </div>
+  );
 
   return (
-    <Tooltip content={tooltipText} side="top">
+    <Tooltip content={tooltipContent} side="top">
       <FooterSegment href="/" label="Active workflows">
         <Workflow size={14} aria-hidden="true" />
         <span className="tabular-nums">{workflows.active}</span>

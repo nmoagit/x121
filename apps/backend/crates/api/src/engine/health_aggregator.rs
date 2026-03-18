@@ -12,9 +12,11 @@ use serde::Serialize;
 use sqlx::PgPool;
 use tokio::sync::RwLock;
 
+use x121_core::storage::StorageProvider;
 use x121_core::system_health::{STATUS_DEGRADED, STATUS_DOWN, STATUS_HEALTHY};
 use x121_db::repositories::{
-    CloudCostEventRepo, CloudInstanceRepo, CloudScalingRuleRepo, JobRepo, ProductionRunRepo, WorkerRepo,
+    CloudCostEventRepo, CloudInstanceRepo, CloudScalingRuleRepo, JobRepo, ProductionRunRepo,
+    WorkerRepo,
 };
 
 /// How often the background task refreshes the cached snapshot.
@@ -67,6 +69,12 @@ pub struct FooterServices {
     pub database: ServiceStatus,
     /// Worker fleet health.
     pub workers: ServiceStatus,
+    /// Storage backend (local/S3) connectivity.
+    pub storage: ServiceStatus,
+    /// Schedule executor health.
+    pub scheduler: ServiceStatus,
+    /// Auto-scaler service health.
+    pub autoscaler: ServiceStatus,
 }
 
 /// Complete footer data cached in memory.
@@ -114,23 +122,32 @@ impl HealthAggregator {
         self: Arc<Self>,
         pool: PgPool,
         comfyui: Arc<x121_comfyui::manager::ComfyUIManager>,
+        storage: Arc<RwLock<Arc<dyn StorageProvider>>>,
     ) {
         tokio::spawn(async move {
             // Run first probe immediately, then every POLL_INTERVAL.
-            self.refresh(&pool, &comfyui).await;
+            self.refresh(&pool, &comfyui, &storage).await;
             let mut interval = tokio::time::interval(POLL_INTERVAL);
             loop {
                 interval.tick().await;
-                self.refresh(&pool, &comfyui).await;
+                self.refresh(&pool, &comfyui, &storage).await;
             }
         });
     }
 
     /// Probe all services and update the cached snapshot.
-    async fn refresh(&self, pool: &PgPool, comfyui: &x121_comfyui::manager::ComfyUIManager) {
+    async fn refresh(
+        &self,
+        pool: &PgPool,
+        comfyui: &x121_comfyui::manager::ComfyUIManager,
+        storage: &Arc<RwLock<Arc<dyn StorageProvider>>>,
+    ) {
         let db_status = probe_database(pool).await;
         let comfyui_status = probe_comfyui(pool, comfyui).await;
         let workers_status = probe_workers(pool).await;
+        let storage_status = probe_storage(storage).await;
+        let scheduler_status = probe_scheduler(pool).await;
+        let autoscaler_status = probe_autoscaler(pool).await;
 
         let cloud_gpu = probe_cloud_gpu(pool).await;
         let workflows = probe_workflows(pool).await;
@@ -140,6 +157,9 @@ impl HealthAggregator {
                 comfyui: comfyui_status,
                 database: db_status,
                 workers: workers_status,
+                storage: storage_status,
+                scheduler: scheduler_status,
+                autoscaler: autoscaler_status,
             },
             cloud_gpu,
             workflows,
@@ -181,7 +201,10 @@ async fn probe_database(pool: &PgPool) -> ServiceStatus {
 }
 
 /// Probe ComfyUI by checking the number of connected instances.
-async fn probe_comfyui(pool: &PgPool, comfyui: &x121_comfyui::manager::ComfyUIManager) -> ServiceStatus {
+async fn probe_comfyui(
+    pool: &PgPool,
+    comfyui: &x121_comfyui::manager::ComfyUIManager,
+) -> ServiceStatus {
     let now = Utc::now();
     let connected = comfyui.connected_instance_ids().await;
     let count = connected.len();
@@ -194,7 +217,7 @@ async fn probe_comfyui(pool: &PgPool, comfyui: &x121_comfyui::manager::ComfyUIMa
             detail: Some(format!("{count} instance(s) connected")),
         }
     } else {
-        // No instances — only "down" if there are pending jobs
+        // No instances connected — check if any are needed.
         let (pending, _, _) = JobRepo::queue_counts(pool).await.unwrap_or((0, 0, 0));
         if pending > 0 {
             ServiceStatus {
@@ -204,11 +227,12 @@ async fn probe_comfyui(pool: &PgPool, comfyui: &x121_comfyui::manager::ComfyUIMa
                 detail: Some(format!("{pending} pending job(s) but no GPU instances")),
             }
         } else {
+            // No instances and none needed — show as inactive, not healthy.
             ServiceStatus {
-                status: STATUS_HEALTHY,
+                status: STATUS_DEGRADED,
                 latency_ms: None,
                 checked_at: now,
-                detail: Some("Idle — instances scale on demand".to_string()),
+                detail: Some("No active instances".to_string()),
             }
         }
     }
@@ -226,7 +250,11 @@ async fn probe_workers(pool: &PgPool) -> ServiceStatus {
 
             let (pending, _, _) = JobRepo::queue_counts(pool).await.unwrap_or((0, 0, 0));
             let status = if total == 0 {
-                if pending > 0 { STATUS_DOWN } else { STATUS_HEALTHY }
+                if pending > 0 {
+                    STATUS_DOWN
+                } else {
+                    STATUS_HEALTHY
+                }
             } else if idle == 0 && busy == 0 {
                 STATUS_DEGRADED
             } else {
@@ -343,6 +371,132 @@ async fn probe_workflows(pool: &PgPool) -> WorkflowStatus {
     }
 }
 
+/// Probe the storage backend via `test_connection()`.
+async fn probe_storage(storage: &Arc<RwLock<Arc<dyn StorageProvider>>>) -> ServiceStatus {
+    let start = Instant::now();
+    let now = Utc::now();
+    let provider = storage.read().await.clone();
+
+    match provider.test_connection().await {
+        Ok(()) => {
+            let latency_ms = start.elapsed().as_millis() as u32;
+            ServiceStatus {
+                status: STATUS_HEALTHY,
+                latency_ms: Some(latency_ms),
+                checked_at: now,
+                detail: None,
+            }
+        }
+        Err(e) => {
+            tracing::warn!(error = %e, "Storage health probe failed");
+            ServiceStatus {
+                status: STATUS_DOWN,
+                latency_ms: None,
+                checked_at: now,
+                detail: Some(e.to_string()),
+            }
+        }
+    }
+}
+
+/// Probe the auto-scaler by checking whether scaling rules are enabled.
+///
+/// The scaling service runs every 30s when rules exist. Green means the
+/// service is configured and running; no scaling events just means the
+/// cluster is stable.
+async fn probe_autoscaler(pool: &PgPool) -> ServiceStatus {
+    let now = Utc::now();
+
+    let result: Result<(i64,), _> = sqlx::query_as(
+        "SELECT COUNT(*) FROM cloud_scaling_rules WHERE enabled = true",
+    )
+    .fetch_one(pool)
+    .await;
+
+    match result {
+        Ok((enabled_rules,)) => {
+            let detail = if enabled_rules == 0 {
+                "No scaling rules configured".to_string()
+            } else {
+                format!("{enabled_rules} rule(s) active")
+            };
+
+            ServiceStatus {
+                status: STATUS_HEALTHY,
+                latency_ms: None,
+                checked_at: now,
+                detail: Some(detail),
+            }
+        }
+        Err(e) => {
+            tracing::warn!(error = %e, "Auto-scaler health probe failed");
+            ServiceStatus {
+                status: STATUS_DEGRADED,
+                latency_ms: None,
+                checked_at: now,
+                detail: Some(e.to_string()),
+            }
+        }
+    }
+}
+
+/// Probe the schedule executor by checking recent execution history.
+///
+/// Healthy if no recent failures; degraded if any failed in the last hour;
+/// down if > 50% of recent executions failed.
+async fn probe_scheduler(pool: &PgPool) -> ServiceStatus {
+    let now = Utc::now();
+
+    // Check for any failed schedule executions in the last hour.
+    let result = sqlx::query_as::<_, (i64, i64)>(
+        "SELECT \
+             COUNT(*) FILTER (WHERE status = 'failed') AS failed, \
+             COUNT(*) AS total \
+         FROM schedule_history \
+         WHERE executed_at > NOW() - INTERVAL '1 hour'",
+    )
+    .fetch_one(pool)
+    .await;
+
+    match result {
+        Ok((failed, total)) => {
+            let status = if total == 0 {
+                // No recent executions — scheduler is idle, that's fine.
+                STATUS_HEALTHY
+            } else if failed == 0 {
+                STATUS_HEALTHY
+            } else if failed * 2 > total {
+                // More than half failed.
+                STATUS_DOWN
+            } else {
+                STATUS_DEGRADED
+            };
+
+            let detail = if total == 0 {
+                "Idle — no recent executions".to_string()
+            } else {
+                format!("{}/{total} succeeded in last hour", total - failed)
+            };
+
+            ServiceStatus {
+                status,
+                latency_ms: None,
+                checked_at: now,
+                detail: Some(detail),
+            }
+        }
+        Err(e) => {
+            tracing::warn!(error = %e, "Scheduler health probe failed");
+            ServiceStatus {
+                status: STATUS_DEGRADED,
+                latency_ms: None,
+                checked_at: now,
+                detail: Some(e.to_string()),
+            }
+        }
+    }
+}
+
 // ---------------------------------------------------------------------------
 // Initial state
 // ---------------------------------------------------------------------------
@@ -362,6 +516,9 @@ fn initial_snapshot() -> FooterSnapshot {
             comfyui: down(),
             database: down(),
             workers: down(),
+            storage: down(),
+            scheduler: down(),
+            autoscaler: down(),
         },
         cloud_gpu: CloudGpuStatus {
             active_pods: 0,

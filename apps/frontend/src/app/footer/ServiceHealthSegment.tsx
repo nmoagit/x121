@@ -17,10 +17,13 @@ const SERVICE_LABELS: { key: keyof FooterServices; label: string }[] = [
   { key: "comfyui", label: "ComfyUI" },
   { key: "database", label: "Database" },
   { key: "workers", label: "Workers" },
+  { key: "storage", label: "Storage" },
+  { key: "scheduler", label: "Scheduler" },
+  { key: "autoscaler", label: "Auto-scaler" },
 ];
 
 function worstHealth(services: FooterServices): ServiceHealth {
-  const statuses = [services.comfyui.status, services.database.status, services.workers.status];
+  const statuses = SERVICE_LABELS.map(({ key }) => services[key].status);
   if (statuses.includes("down")) return "down";
   if (statuses.includes("degraded")) return "degraded";
   return "healthy";
@@ -45,13 +48,21 @@ export function ServiceHealthSegment({ services }: ServiceHealthSegmentProps) {
 
   const overall = worstHealth(services);
 
-  const detailText = SERVICE_LABELS.map(({ key, label }) =>
-    `${label}: ${services[key].status}`
-  ).join(" · ");
+  const tooltipContent = (
+    <div className="space-y-0.5 text-xs">
+      <div className="font-medium">{healthLabel(overall)}</div>
+      {SERVICE_LABELS.map(({ key, label }) => (
+        <div key={key} className="flex items-center gap-1.5">
+          <StatusDot health={services[key].status} />
+          <span>{label}</span>
+        </div>
+      ))}
+    </div>
+  );
 
   return (
     <>
-      <Tooltip content={`${healthLabel(overall)} — ${detailText}`} side="top">
+      <Tooltip content={tooltipContent} side="top">
         <FooterSegment href="/admin/health" label="Service health">
           <Activity size={14} aria-hidden="true" />
           {SERVICE_LABELS.map(({ key }) => (

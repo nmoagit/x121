@@ -17,6 +17,9 @@ export interface FooterServices {
   comfyui: ServiceStatusInfo;
   database: ServiceStatusInfo;
   workers: ServiceStatusInfo;
+  storage: ServiceStatusInfo;
+  scheduler: ServiceStatusInfo;
+  autoscaler: ServiceStatusInfo;
 }
 
 export interface CloudGpuInfo {

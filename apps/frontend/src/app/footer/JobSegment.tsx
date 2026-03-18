@@ -26,15 +26,21 @@ interface JobSegmentProps {
 
 export function JobSegment({ jobs }: JobSegmentProps) {
   const total = jobs.running + jobs.queued;
-  const tooltipText =
-    total > 0
-      ? `${jobs.running} running, ${jobs.queued} queued — ${jobs.overallProgress}% overall`
-      : "No active jobs";
+  const tooltipContent = total > 0 ? (
+    <div className="space-y-0.5 text-xs">
+      <div className="font-medium">Jobs</div>
+      <div>{jobs.running} running</div>
+      <div>{jobs.queued} queued</div>
+      <div>{jobs.overallProgress}% overall progress</div>
+    </div>
+  ) : (
+    <div className="text-xs">No active jobs</div>
+  );
 
   return (
     <>
       <Separator />
-      <Tooltip content={tooltipText} side="top">
+      <Tooltip content={tooltipContent} side="top">
         <FooterSegment href="/admin/queue" label="Job status">
           <Zap size={14} aria-hidden="true" />
           <span className="tabular-nums">{total}</span>
