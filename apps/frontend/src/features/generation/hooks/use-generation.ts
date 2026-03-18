@@ -168,6 +168,49 @@ export function useScheduleGeneration() {
   });
 }
 
+/* --------------------------------------------------------------------------
+   Batch scene details (PRD-134)
+   -------------------------------------------------------------------------- */
+
+export interface SceneDetail {
+  id: number;
+  character_id: number;
+  character_name: string;
+  project_id: number | null;
+  scene_type_name: string;
+  track_name: string | null;
+  status_id: number;
+}
+
+/** Fetch enriched details for a batch of scene IDs. */
+export function useBatchSceneDetails(sceneIds: number[]) {
+  return useQuery({
+    queryKey: [...generationKeys.all, "batch-details", sceneIds],
+    queryFn: () =>
+      api.post<SceneDetail[]>("/scenes/batch-details", { scene_ids: sceneIds }),
+    enabled: sceneIds.length > 0,
+  });
+}
+
+/** Remove specific scenes from a scheduled generation (PRD-134). */
+export function useRemoveScenesFromSchedule() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: { scheduleId: number; sceneIds: number[] }) =>
+      api.post<{ removed: number; remaining: number }>(
+        `/schedules/${input.scheduleId}/remove-scenes`,
+        { scene_ids: input.sceneIds },
+      ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: generationKeys.all });
+      queryClient.invalidateQueries({ queryKey: ["schedules"] });
+      queryClient.invalidateQueries({ queryKey: ["scenes"] });
+      queryClient.invalidateQueries({ queryKey: ["characters"] });
+    },
+  });
+}
+
 /** Manually select a boundary frame for a segment. */
 export function useSelectBoundaryFrame(segmentId: number) {
   const queryClient = useQueryClient();

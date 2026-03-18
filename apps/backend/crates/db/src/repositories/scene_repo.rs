@@ -4,7 +4,7 @@ use sqlx::PgPool;
 use x121_core::types::DbId;
 
 use crate::models::generation::UpdateSceneGeneration;
-use crate::models::scene::{CreateScene, Scene, SceneWithVersion, UpdateScene};
+use crate::models::scene::{CreateScene, Scene, SceneDetail, SceneWithVersion, UpdateScene};
 
 /// Column list shared across queries to avoid repetition.
 const COLUMNS: &str = "id, character_id, scene_type_id, image_variant_id, track_id, \
@@ -241,6 +241,29 @@ impl SceneRepo {
              ORDER BY generation_started_at ASC"
         );
         sqlx::query_as::<_, Scene>(&query).fetch_all(pool).await
+    }
+
+    /// Fetch enriched scene details for a batch of IDs (PRD-134).
+    ///
+    /// Returns character name, scene type name, and track name via JOINs.
+    /// Only returns non-deleted scenes.
+    pub async fn batch_details(
+        pool: &PgPool,
+        scene_ids: &[DbId],
+    ) -> Result<Vec<SceneDetail>, sqlx::Error> {
+        sqlx::query_as::<_, SceneDetail>(
+            "SELECT s.id, s.character_id, c.name AS character_name, c.project_id, \
+                    st.name AS scene_type_name, t.name AS track_name, s.status_id \
+             FROM scenes s \
+             JOIN characters c ON c.id = s.character_id \
+             JOIN scene_types st ON st.id = s.scene_type_id \
+             LEFT JOIN tracks t ON t.id = s.track_id \
+             WHERE s.id = ANY($1) AND s.deleted_at IS NULL \
+             ORDER BY s.id",
+        )
+        .bind(scene_ids)
+        .fetch_all(pool)
+        .await
     }
 
     // -- Generation-specific methods (PRD-24) ---------------------------------

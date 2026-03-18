@@ -23,6 +23,7 @@ import { QueueTable } from "./QueueTable";
 import { BulkActionToolbar } from "./JobActions";
 import { WorkerDrainPanel } from "./WorkerDrainPanel";
 import { QueueActivityLog } from "./QueueActivityLog";
+import { ScheduledGenerationsPanel } from "./ScheduledGenerationsPanel";
 import type { QueueJobFilter } from "./types";
 
 /* --------------------------------------------------------------------------
@@ -66,6 +67,9 @@ export function QueueManagerPage() {
         selectedJobIds={Array.from(selectedIds)}
         onClearSelection={handleClearSelection}
       />
+
+      {/* Scheduled generations (PRD-134) — shown above the jobs table */}
+      <ScheduledGenerationsPanel />
 
       {/* Jobs table */}
       <div className="border border-[var(--color-border-default)] rounded-[var(--radius-lg)] overflow-hidden bg-[var(--color-surface-secondary)]">

@@ -16,7 +16,7 @@ import { Card } from "@/components/composite/Card";
 import { useToast } from "@/components/composite/useToast";
 import { EmptyState } from "@/components/domain";
 import { Grid } from "@/components/layout";
-import { Badge, Button, LoadingPane, SplitButton, Toggle } from "@/components/primitives";
+import { Badge, Button, LoadingPane, Toggle } from "@/components/primitives";
 import { Checkbox } from "@/components/primitives/Checkbox";
 import { useSetToggle } from "@/hooks/useSetToggle";
 import { getStreamUrl } from "@/features/video-player";
@@ -26,8 +26,9 @@ import { AlertCircle, AlertTriangle, ChevronLeft, ChevronRight, Clock, EyeOff, M
 import { useGpuAvailability } from "@/app/footer";
 
 import { Modal } from "@/components/composite/Modal";
-import { useBatchGenerate } from "@/features/generation/hooks/use-generation";
+import { useBatchGenerate, useRemoveScenesFromSchedule } from "@/features/generation/hooks/use-generation";
 import { ScheduleGenerationModal } from "@/features/generation/ScheduleGenerationModal";
+import { useSchedules } from "@/features/job-scheduling/hooks/use-job-scheduling";
 import { useImageVariants } from "@/features/images/hooks/use-image-variants";
 import { findVariantForTrack } from "@/features/images/utils";
 import { sourceLabel } from "@/features/scene-catalogue/SourceBadge";
@@ -147,8 +148,24 @@ export function CharacterScenesTab({ characterId, focusSceneId, focusSceneTypeId
   const [detailSlotIndex, setDetailSlotIndex] = useState<number | null>(null);
   const [promptOverrideOpen, setPromptOverrideOpen] = useState(false);
 
-  /* --- schedule generation modal state (PRD-134) --- */
+  /* --- schedule generation state (PRD-134) --- */
   const [scheduleSceneIds, setScheduleSceneIds] = useState<number[]>([]);
+  const [cancelScheduleSceneId, setCancelScheduleSceneId] = useState<number | null>(null);
+  const { data: activeSchedules } = useSchedules({ is_active: "true" });
+  const removeFromSchedule = useRemoveScenesFromSchedule();
+
+  // Build a lookup: sceneId → scheduleId for scheduled scenes.
+  const sceneScheduleMap = useMemo(() => {
+    const map = new Map<number, number>();
+    for (const s of activeSchedules ?? []) {
+      if (s.action_type !== "schedule_generation" || !s.is_active) continue;
+      const ids = s.action_config?.scene_ids;
+      if (Array.isArray(ids)) {
+        for (const id of ids) map.set(id as number, s.id);
+      }
+    }
+    return map;
+  }, [activeSchedules]);
 
   /* --- generate confirmation modal state --- */
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -607,23 +624,26 @@ export function CharacterScenesTab({ characterId, focusSceneId, focusSceneTypeId
                 <span className="text-sm text-[var(--color-text-muted)]">
                   {selected.size} selected
                 </span>
-                <Button
-                  size="sm"
-                  onClick={handleBatchGenerate}
-                  loading={batchGenerate.isPending}
-                  disabled={isDisabled}
-                  icon={<Play size={14} />}
-                >
-                  Generate Selected
-                </Button>
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  onClick={() => handleScheduleScenes([...selected])}
-                  icon={<Clock size={14} />}
-                >
-                  Schedule Selected ({selected.size})
-                </Button>
+                <div className="flex">
+                  <Button
+                    size="sm"
+                    onClick={handleBatchGenerate}
+                    loading={batchGenerate.isPending}
+                    disabled={isDisabled}
+                    icon={<Play size={14} />}
+                    className="!rounded-r-none"
+                  >
+                    Generate Selected
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => handleScheduleScenes([...selected])}
+                    icon={<Clock size={14} />}
+                    className="shrink-0 !rounded-l-none !border-l-0"
+                    aria-label="Schedule selected"
+                  />
+                </div>
               </>
             )}
           </>
@@ -644,25 +664,28 @@ export function CharacterScenesTab({ characterId, focusSceneId, focusSceneTypeId
           >
             {playback ? "Stop Playback" : "Play Videos"}
           </Button>
-          <Button
-            size="sm"
-            variant="secondary"
-            onClick={handleGenerateAll}
-            loading={batchGenerate.isPending || importing}
-            disabled={isDisabled || !canGenerateAny}
-            icon={<Play size={14} />}
-          >
-            Generate All
-          </Button>
-          <Button
-            size="sm"
-            variant="secondary"
-            onClick={() => handleScheduleScenes(selectableSceneIds)}
-            disabled={isDisabled || !canGenerateAny || selectableSceneIds.length === 0}
-            icon={<Clock size={14} />}
-          >
-            Schedule All
-          </Button>
+          <div className="flex">
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={handleGenerateAll}
+              loading={batchGenerate.isPending || importing}
+              disabled={isDisabled || !canGenerateAny}
+              icon={<Play size={14} />}
+              className="!rounded-r-none"
+            >
+              Generate All
+            </Button>
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => handleScheduleScenes(selectableSceneIds)}
+              disabled={isDisabled || !canGenerateAny || selectableSceneIds.length === 0}
+              icon={<Clock size={14} />}
+              className="shrink-0 !rounded-l-none !border-l-0"
+              aria-label="Schedule all"
+            />
+          </div>
         </div>
       </div>
 
@@ -694,6 +717,8 @@ export function CharacterScenesTab({ characterId, focusSceneId, focusSceneTypeId
             onToggleSelect={toggleSelectItem}
             onGenerate={handleSingleGenerate}
             onSchedule={(sceneId) => handleScheduleScenes([sceneId])}
+            onCancelSchedule={(sceneId) => setCancelScheduleSceneId(sceneId)}
+            isScheduled={slot.scene !== null && sceneScheduleMap.has(slot.scene.id)}
             onClickScene={(sceneId) => {
               const idx = navigableSlots.findIndex((s) => s.scene?.id === sceneId);
               if (idx >= 0) setDetailSlotIndex(idx);
@@ -840,6 +865,83 @@ export function CharacterScenesTab({ characterId, focusSceneId, focusSceneTypeId
         onClose={() => setScheduleSceneIds([])}
         onScheduled={() => setScheduleSceneIds([])}
       />
+
+      {/* Manage scheduled generation modal (PRD-134) */}
+      {(() => {
+        if (cancelScheduleSceneId === null) return null;
+        const scheduleId = sceneScheduleMap.get(cancelScheduleSceneId);
+        const schedule = (activeSchedules ?? []).find((s) => s.id === scheduleId);
+        const firesAt = schedule?.next_run_at ?? schedule?.scheduled_at;
+        const groupSize = Array.isArray(schedule?.action_config?.scene_ids)
+          ? (schedule.action_config.scene_ids as number[]).length
+          : 0;
+
+        return (
+          <Modal
+            open
+            onClose={() => setCancelScheduleSceneId(null)}
+            title="Scheduled Generation"
+            size="sm"
+          >
+            <div className="flex flex-col gap-[var(--spacing-4)]">
+              <div className="text-sm text-[var(--color-text-secondary)] space-y-1">
+                <p>
+                  Scheduled for{" "}
+                  <span className="font-medium text-[var(--color-text-primary)]">
+                    {firesAt
+                      ? new Date(firesAt).toLocaleString(undefined, {
+                          weekday: "short", month: "short", day: "numeric",
+                          hour: "2-digit", minute: "2-digit",
+                        })
+                      : "unknown time"}
+                  </span>
+                </p>
+                {groupSize > 1 && (
+                  <p className="text-xs text-[var(--color-text-muted)]">
+                    Part of a group of {groupSize} scenes. Rescheduling will move only this scene to a new time.
+                  </p>
+                )}
+              </div>
+
+              <div className="flex justify-end gap-2">
+                <Button variant="secondary" size="sm" onClick={() => setCancelScheduleSceneId(null)}>
+                  Close
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  icon={<Clock size={14} />}
+                  onClick={() => {
+                    setCancelScheduleSceneId(null);
+                    setScheduleSceneIds([cancelScheduleSceneId]);
+                  }}
+                >
+                  Reschedule
+                </Button>
+                <Button
+                  variant="danger"
+                  size="sm"
+                  loading={removeFromSchedule.isPending}
+                  onClick={() => {
+                    if (!scheduleId) return;
+                    removeFromSchedule.mutate(
+                      { scheduleId, sceneIds: [cancelScheduleSceneId] },
+                      {
+                        onSuccess: () => {
+                          addToast({ message: "Scene removed from schedule", variant: "info" });
+                          setCancelScheduleSceneId(null);
+                        },
+                      },
+                    );
+                  }}
+                >
+                  Cancel Schedule
+                </Button>
+              </div>
+            </div>
+          </Modal>
+        );
+      })()}
     </div>
   );
 }
@@ -854,6 +956,8 @@ interface SceneCardProps {
   onToggleSelect: (sceneId: number) => void;
   onGenerate: (sceneId: number) => void;
   onSchedule: (sceneId: number) => void;
+  onCancelSchedule: (sceneId: number) => void;
+  isScheduled: boolean;
   onClickScene: (sceneId: number, name: string, trackName: string | null, trackSlug: string | null) => void;
   onVideoDrop: (slot: SceneSlot, file: File) => void;
   onDisable: (slot: SceneSlot) => void;
@@ -863,7 +967,7 @@ interface SceneCardProps {
   hasActiveGpu: boolean;
 }
 
-function SceneCard({ slot, isSelected, onToggleSelect, onGenerate, onSchedule, onClickScene, onVideoDrop, onDisable, generating, playback, hasWorkflow, hasActiveGpu }: SceneCardProps) {
+function SceneCard({ slot, isSelected, onToggleSelect, onGenerate, onSchedule, onCancelSchedule, isScheduled, onClickScene, onVideoDrop, onDisable, generating, playback, hasWorkflow, hasActiveGpu }: SceneCardProps) {
   const { row, scene } = slot;
   const isPlaceholder = scene === null;
   const hasSeedImage = slot.missingVariant === null;
@@ -1028,40 +1132,43 @@ function SceneCard({ slot, isSelected, onToggleSelect, onGenerate, onSchedule, o
             </span>
           </div>
 
-          {/* Generate button with schedule dropdown (PRD-134) */}
-          <span
+          {/* Generate + Schedule button group (PRD-134) */}
+          <div
+            className="flex w-full"
             title={
               !hasWorkflow ? "No workflow assigned to this scene type / track"
               : !hasSeedImage ? "No seed image set"
               : undefined
             }
           >
-            <SplitButton
+            <Button
               size="sm"
               variant={isFailed ? "danger" : "secondary"}
               disabled={isPlaceholder || isGenerating || generating || !hasSeedImage || !hasWorkflow}
-              disabledReason={
-                !hasWorkflow ? "No workflow assigned"
-                : !hasSeedImage ? "No seed image"
-                : undefined
-              }
               onClick={(e) => { e.stopPropagation(); scene && onGenerate(scene.id); }}
               icon={<Play size={14} />}
-              actions={[
-                {
-                  label: "Schedule\u2026",
-                  icon: <Clock size={14} />,
-                  onClick: () => scene && onSchedule(scene.id),
-                },
-              ]}
-              className="w-full"
+              className="flex-1 !rounded-r-none"
             >
               {isGenerating
                 ? (hasActiveGpu ? "Generating\u2026" : "Queued \u2014 no GPU")
                 : scene?.status_id === SCENE_STATUS_SCHEDULED ? "Scheduled"
                 : isFailed ? "Retry" : "Generate"}
-            </SplitButton>
-          </span>
+            </Button>
+            <Button
+              size="sm"
+              variant={isScheduled ? "danger" : "secondary"}
+              disabled={isPlaceholder || isGenerating || generating || (!isScheduled && (!hasSeedImage || !hasWorkflow))}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (!scene) return;
+                if (isScheduled) onCancelSchedule(scene.id);
+                else onSchedule(scene.id);
+              }}
+              icon={<Clock size={14} />}
+              className="shrink-0 !rounded-l-none !border-l-0"
+              aria-label={isScheduled ? "Cancel scheduled generation" : "Schedule generation"}
+            />
+          </div>
         </div>
       </div>
     </Card>

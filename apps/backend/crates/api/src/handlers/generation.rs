@@ -600,6 +600,44 @@ pub async fn clear_generation_log(
 }
 
 // ---------------------------------------------------------------------------
+// Batch scene details (PRD-134)
+// ---------------------------------------------------------------------------
+
+/// Maximum number of scene IDs allowed in a single batch-details request.
+const MAX_BATCH_SCENE_IDS: usize = 200;
+
+/// Request body for `POST /scenes/batch-details`.
+#[derive(Debug, serde::Deserialize)]
+pub struct BatchSceneDetailsRequest {
+    pub scene_ids: Vec<DbId>,
+}
+
+/// POST /api/v1/scenes/batch-details
+///
+/// Returns enriched scene details for a list of scene IDs.
+/// Used by the queue manager to display scheduled generation targets.
+pub async fn batch_scene_details(
+    State(state): State<AppState>,
+    Json(input): Json<BatchSceneDetailsRequest>,
+) -> AppResult<impl IntoResponse> {
+    if input.scene_ids.is_empty() {
+        return Err(AppError::BadRequest(
+            "scene_ids must not be empty".to_string(),
+        ));
+    }
+    if input.scene_ids.len() > MAX_BATCH_SCENE_IDS {
+        return Err(AppError::BadRequest(format!(
+            "scene_ids must contain at most {MAX_BATCH_SCENE_IDS} entries, got {}",
+            input.scene_ids.len()
+        )));
+    }
+
+    let details = SceneRepo::batch_details(&state.pool, &input.scene_ids).await?;
+
+    Ok(Json(DataResponse { data: details }))
+}
+
+// ---------------------------------------------------------------------------
 // Deferred/Scheduled generation (PRD-134)
 // ---------------------------------------------------------------------------
 
@@ -657,6 +695,68 @@ pub async fn schedule_generation(
             "No scenes are eligible for scheduling: {}",
             errors.join("; ")
         )));
+    }
+
+    // Remove already-scheduled scenes from their existing schedules so they
+    // can be moved to the new time slot without duplication.
+    {
+        use x121_db::models::job_scheduling::UpdateSchedule;
+
+        let active_schedules = ScheduleRepo::list_filtered(
+            &state.pool,
+            Some(auth.user_id),
+            None,   // any schedule_type
+            Some(true), // active only
+            200,
+            0,
+        )
+        .await?;
+
+        for schedule in active_schedules {
+            if schedule.action_type != ACTION_SCHEDULE_GENERATION {
+                continue;
+            }
+            let current_ids: Vec<DbId> = schedule
+                .action_config
+                .get("scene_ids")
+                .and_then(|v| serde_json::from_value(v.clone()).ok())
+                .unwrap_or_default();
+
+            let overlap: Vec<DbId> = current_ids
+                .iter()
+                .copied()
+                .filter(|id| valid_ids.contains(id))
+                .collect();
+
+            if overlap.is_empty() {
+                continue;
+            }
+
+            let remaining: Vec<DbId> = current_ids
+                .into_iter()
+                .filter(|id| !overlap.contains(id))
+                .collect();
+
+            if remaining.is_empty() {
+                // All scenes moved away — deactivate the old schedule.
+                let _ = ScheduleRepo::set_active(&state.pool, schedule.id, false).await;
+            } else {
+                // Update with trimmed list.
+                let new_config = serde_json::json!({ "scene_ids": remaining });
+                let update = UpdateSchedule {
+                    name: Some(format!("Generate {} scene(s)", remaining.len())),
+                    description: None,
+                    schedule_type: None,
+                    cron_expression: None,
+                    scheduled_at: None,
+                    timezone: None,
+                    is_off_peak_only: None,
+                    action_type: None,
+                    action_config: Some(new_config),
+                };
+                let _ = ScheduleRepo::update(&state.pool, schedule.id, &update).await;
+            }
+        }
     }
 
     // Create schedule entry.

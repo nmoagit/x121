@@ -378,8 +378,10 @@ pub async fn cancel_schedule(
                 if let Ok(Some(scene)) = SceneRepo::find_by_id(&state.pool, scene_id).await {
                     if scene.status_id == SceneStatus::Scheduled.id() {
                         let restore = crate::handlers::generation::resolve_restore_status(
-                            &state.pool, scene_id,
-                        ).await;
+                            &state.pool,
+                            scene_id,
+                        )
+                        .await;
                         let update = UpdateSceneGeneration::reset_to(restore);
                         let _ = SceneRepo::update_generation_state(&state.pool, scene_id, &update)
                             .await;
@@ -415,6 +417,141 @@ struct CancelScheduleResponse {
     schedule_id: DbId,
     cancelled: bool,
     scenes_reverted: usize,
+}
+
+// ---------------------------------------------------------------------------
+// POST /schedules/:id/remove-scenes  (PRD-134)
+// ---------------------------------------------------------------------------
+
+/// Request body for `POST /schedules/{id}/remove-scenes`.
+#[derive(Debug, serde::Deserialize)]
+pub struct RemoveScenesRequest {
+    pub scene_ids: Vec<DbId>,
+}
+
+/// Response body for `POST /schedules/{id}/remove-scenes`.
+#[derive(Debug, serde::Serialize)]
+struct RemoveScenesResponse {
+    removed: usize,
+    remaining: usize,
+}
+
+/// Remove specific scenes from a scheduled generation.
+///
+/// Reverts their status and updates the schedule's `action_config`.
+/// If all scenes are removed, cancels the entire schedule.
+pub async fn remove_scenes_from_schedule(
+    auth: AuthUser,
+    State(state): State<AppState>,
+    Path(id): Path<DbId>,
+    Json(input): Json<RemoveScenesRequest>,
+) -> AppResult<impl IntoResponse> {
+    use x121_core::job_scheduling::ACTION_SCHEDULE_GENERATION;
+    use x121_db::models::generation::UpdateSceneGeneration;
+    use x121_db::models::job_scheduling::UpdateSchedule;
+    use x121_db::models::status::SceneStatus;
+    use x121_db::repositories::SceneRepo;
+
+    if input.scene_ids.is_empty() {
+        return Err(AppError::BadRequest(
+            "scene_ids must not be empty".to_string(),
+        ));
+    }
+
+    let schedule = ensure_schedule_owned(&state.pool, id, auth.user_id).await?;
+
+    // Must be active.
+    if !schedule.is_active {
+        return Err(AppError::Core(CoreError::Conflict(
+            "Schedule is already inactive".into(),
+        )));
+    }
+
+    // Must be a generation schedule.
+    if schedule.action_type != ACTION_SCHEDULE_GENERATION {
+        return Err(AppError::BadRequest(
+            "This endpoint only applies to schedule_generation schedules".into(),
+        ));
+    }
+
+    // Extract current scene_ids from action_config.
+    let current_scene_ids: Vec<DbId> = schedule
+        .action_config
+        .get("scene_ids")
+        .and_then(|v| serde_json::from_value(v.clone()).ok())
+        .unwrap_or_default();
+
+    // Determine which IDs to remove (intersection of request and current).
+    let to_remove: Vec<DbId> = input
+        .scene_ids
+        .iter()
+        .copied()
+        .filter(|id| current_scene_ids.contains(id))
+        .collect();
+
+    // Revert each removed scene to its appropriate prior status.
+    for &scene_id in &to_remove {
+        if let Ok(Some(scene)) = SceneRepo::find_by_id(&state.pool, scene_id).await {
+            if scene.status_id == SceneStatus::Scheduled.id() {
+                let restore =
+                    crate::handlers::generation::resolve_restore_status(&state.pool, scene_id)
+                        .await;
+                let update = UpdateSceneGeneration::reset_to(restore);
+                let _ = SceneRepo::update_generation_state(&state.pool, scene_id, &update).await;
+            }
+        }
+    }
+
+    // Compute remaining scene list.
+    let remaining: Vec<DbId> = current_scene_ids
+        .into_iter()
+        .filter(|id| !to_remove.contains(id))
+        .collect();
+
+    let removed_count = to_remove.len();
+    let remaining_count = remaining.len();
+
+    if remaining.is_empty() {
+        // No scenes left — cancel the entire schedule.
+        ScheduleRepo::set_active(&state.pool, id, false).await?;
+
+        tracing::info!(
+            schedule_id = id,
+            user_id = auth.user_id,
+            removed = removed_count,
+            "All scenes removed from schedule — schedule cancelled",
+        );
+    } else {
+        // Update action_config with the trimmed list and adjust name.
+        let new_config = serde_json::json!({ "scene_ids": remaining });
+        let update = UpdateSchedule {
+            name: Some(format!("Generate {} scene(s)", remaining.len())),
+            description: None,
+            schedule_type: None,
+            cron_expression: None,
+            scheduled_at: None,
+            timezone: None,
+            is_off_peak_only: None,
+            action_type: None,
+            action_config: Some(new_config),
+        };
+        ScheduleRepo::update(&state.pool, id, &update).await?;
+
+        tracing::info!(
+            schedule_id = id,
+            user_id = auth.user_id,
+            removed = removed_count,
+            remaining = remaining_count,
+            "Scenes removed from schedule",
+        );
+    }
+
+    Ok(Json(DataResponse {
+        data: RemoveScenesResponse {
+            removed: removed_count,
+            remaining: remaining_count,
+        },
+    }))
 }
 
 // ---------------------------------------------------------------------------

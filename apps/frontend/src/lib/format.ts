@@ -101,9 +101,9 @@ export function formatValue(value: unknown): string {
  *
  * Returns strings like "3d 4h", "2h 15m", "expired".
  */
-export function formatCountdown(targetIso: string): string {
+export function formatCountdown(targetIso: string, expiredLabel = "expired"): string {
   const diff = new Date(targetIso).getTime() - Date.now();
-  if (diff <= 0) return "expired";
+  if (diff <= 0) return expiredLabel;
 
   const days = Math.floor(diff / (1000 * 60 * 60 * 24));
   const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));

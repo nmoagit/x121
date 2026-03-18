@@ -65,6 +65,21 @@ pub struct SceneWithVersion {
     pub has_newer_than_final: bool,
 }
 
+/// Enriched scene info returned by `batch_details`.
+///
+/// Joins scenes with characters, scene types, and tracks to provide
+/// display-friendly names for queue management UIs (PRD-134).
+#[derive(Debug, Clone, FromRow, Serialize)]
+pub struct SceneDetail {
+    pub id: DbId,
+    pub character_id: DbId,
+    pub character_name: String,
+    pub project_id: Option<DbId>,
+    pub scene_type_name: String,
+    pub track_name: Option<String>,
+    pub status_id: StatusId,
+}
+
 /// DTO for creating a new scene.
 #[derive(Debug, Clone, Deserialize)]
 pub struct CreateScene {

@@ -31,6 +31,7 @@ pub fn generation_scene_router() -> Router<AppState> {
             get(generation::get_generation_log).delete(generation::clear_generation_log),
         )
         .route("/batch-generate", post(generation::batch_generate))
+        .route("/batch-details", post(generation::batch_scene_details))
         .route(
             "/schedule-generation",
             post(generation::schedule_generation),

@@ -12,8 +12,8 @@ import type { BadgeVariant } from "@/components/primitives";
    -------------------------------------------------------------------------- */
 
 export type ScheduleType = "one_time" | "recurring";
-export type ActionType = "submit_job" | "submit_batch";
-export type HistoryStatus = "success" | "failed" | "skipped";
+export type ActionType = "submit_job" | "submit_batch" | "schedule_generation";
+export type HistoryStatus = "success" | "failed" | "skipped" | "cancelled";
 
 export interface Schedule {
   id: number;
@@ -104,12 +104,14 @@ export const SCHEDULE_TYPE_LABEL: Record<ScheduleType, string> = {
 export const ACTION_TYPE_LABEL: Record<ActionType, string> = {
   submit_job: "Submit Job",
   submit_batch: "Submit Batch",
+  schedule_generation: "Schedule Generation",
 };
 
 export const HISTORY_STATUS_BADGE: Record<HistoryStatus, BadgeVariant> = {
   success: "success",
   failed: "danger",
   skipped: "warning",
+  cancelled: "default",
 };
 
 export const DAY_NAMES = [
@@ -144,3 +146,20 @@ export const TIMEZONE_SELECT_OPTIONS = TIMEZONE_OPTIONS.map((tz) => ({
   value: tz.value,
   label: tz.label,
 }));
+
+/* --------------------------------------------------------------------------
+   Schedule helpers (shared across dashboard widgets and queue panel)
+   -------------------------------------------------------------------------- */
+
+/** Extract scene IDs from a schedule's action config. */
+export function getScheduleSceneIds(schedule: Schedule): number[] {
+  const ids = schedule.action_config?.scene_ids;
+  return Array.isArray(ids) ? ids : [];
+}
+
+/** Filter schedules to only active generation schedules. */
+export function filterActiveGenerationSchedules(schedules: Schedule[]): Schedule[] {
+  return schedules.filter(
+    (s) => s.action_type === "schedule_generation" && s.is_active,
+  );
+}
