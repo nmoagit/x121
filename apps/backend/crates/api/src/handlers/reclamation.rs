@@ -16,7 +16,9 @@ use x121_db::models::reclamation::{
     CreateProtectionRule, CreateReclamationPolicy, CreateReclamationRun, UpdateProtectionRule,
     UpdateReclamationPolicy,
 };
-use x121_db::repositories::{ReclamationRepo, SceneVideoVersionArtifactRepo, SceneVideoVersionRepo};
+use x121_db::repositories::{
+    ReclamationRepo, SceneVideoVersionArtifactRepo, SceneVideoVersionRepo,
+};
 
 use crate::error::{AppError, AppResult};
 use crate::middleware::rbac::RequireAdmin;
@@ -231,7 +233,9 @@ pub async fn purge_clips(
                 // File already missing — safe to continue.
             }
             Err(e) => {
-                errors.push(format!("Failed to delete file for version {version_id}: {e}"));
+                errors.push(format!(
+                    "Failed to delete file for version {version_id}: {e}"
+                ));
                 continue;
             }
         }
@@ -240,7 +244,9 @@ pub async fn purge_clips(
         if let Some(ref preview) = version.preview_path {
             if let Err(e) = provider.delete(preview).await {
                 if !is_storage_not_found(&e) {
-                    errors.push(format!("Failed to delete preview for version {version_id}: {e}"));
+                    errors.push(format!(
+                        "Failed to delete preview for version {version_id}: {e}"
+                    ));
                 }
             }
         }
@@ -270,16 +276,16 @@ pub async fn purge_clips(
         }
 
         // Mark version + artifacts as purged in DB.
-        if let Err(e) =
-            SceneVideoVersionRepo::mark_files_purged(&state.pool, &[version_id]).await
-        {
+        if let Err(e) = SceneVideoVersionRepo::mark_files_purged(&state.pool, &[version_id]).await {
             errors.push(format!("DB error marking version {version_id} purged: {e}"));
             continue;
         }
         if let Err(e) =
             SceneVideoVersionRepo::mark_artifact_files_purged(&state.pool, version_id).await
         {
-            errors.push(format!("DB error marking artifacts purged for version {version_id}: {e}"));
+            errors.push(format!(
+                "DB error marking artifacts purged for version {version_id}: {e}"
+            ));
         }
 
         purged_count += 1;

@@ -1034,7 +1034,12 @@ pub async fn backfill_video_hashes(
         }
     }
 
-    tracing::info!(total, succeeded, failed, "Backfill video content hashes complete");
+    tracing::info!(
+        total,
+        succeeded,
+        failed,
+        "Backfill video content hashes complete"
+    );
 
     Ok(Json(BackfillMetadataResponse {
         processed: total,

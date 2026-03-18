@@ -23,10 +23,7 @@ use crate::state::AppState;
 pub fn router() -> Router<AppState> {
     Router::new()
         .route("/generate-previews", post(video::generate_previews))
-        .route(
-            "/generate-web-playback",
-            post(video::generate_web_playback),
-        )
+        .route("/generate-web-playback", post(video::generate_web_playback))
         .route("/backfill-metadata", post(video::backfill_video_metadata))
         .route("/backfill-snapshots", post(video::backfill_snapshots))
         .route(

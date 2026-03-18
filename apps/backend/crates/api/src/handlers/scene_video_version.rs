@@ -58,7 +58,10 @@ async fn ensure_h264(data: Vec<u8>, _ext: &str) -> Result<Vec<u8>, String> {
     // Write to a temp file so ffprobe can inspect the codec.
     let tmp_dir = std::env::temp_dir().join("x121_import");
     std::fs::create_dir_all(&tmp_dir).map_err(|e| e.to_string())?;
-    let input_path = tmp_dir.join(format!("import_in_{}.mp4", chrono::Utc::now().timestamp_millis()));
+    let input_path = tmp_dir.join(format!(
+        "import_in_{}.mp4",
+        chrono::Utc::now().timestamp_millis()
+    ));
     tokio::fs::write(&input_path, &data)
         .await
         .map_err(|e| format!("Failed to write temp input: {e}"))?;
@@ -73,7 +76,10 @@ async fn ensure_h264(data: Vec<u8>, _ext: &str) -> Result<Vec<u8>, String> {
     }
 
     // Transcode to H.264 at original resolution.
-    let output_path = tmp_dir.join(format!("import_out_{}.mp4", chrono::Utc::now().timestamp_millis()));
+    let output_path = tmp_dir.join(format!(
+        "import_out_{}.mp4",
+        chrono::Utc::now().timestamp_millis()
+    ));
     let result = ffmpeg::transcode_web_playback(&input_path, &output_path)
         .await
         .map_err(|e| format!("Transcode failed: {e}"))?;
@@ -192,7 +198,10 @@ pub async fn generate_web_playback_for_version(
     // Skip transcode if the original is already browser-compatible.
     match ffmpeg::is_browser_compatible(&abs_source).await {
         Ok(true) => {
-            tracing::info!(version_id = version.id, "Original video is browser-compatible, skipping web playback transcode");
+            tracing::info!(
+                version_id = version.id,
+                "Original video is browser-compatible, skipping web playback transcode"
+            );
             // Point web_playback_path to the original file so the HD toggle works.
             if let Err(e) = SceneVideoVersionRepo::set_web_playback_path(
                 &state.pool,
@@ -468,9 +477,9 @@ pub async fn import_video(
 
     // Probe codec and transcode to H.264 if needed, so every video in the
     // system is browser-compatible and delivery-ready from the start.
-    let data = ensure_h264(data, &ext).await.map_err(|e| {
-        AppError::InternalError(format!("Video transcode failed: {e}"))
-    })?;
+    let data = ensure_h264(data, &ext)
+        .await
+        .map_err(|e| AppError::InternalError(format!("Video transcode failed: {e}")))?;
 
     provider.upload(&storage_key, &data).await?;
 

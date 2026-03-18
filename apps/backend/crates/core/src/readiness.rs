@@ -298,7 +298,12 @@ pub fn validate_criteria_json(json: &serde_json::Value) -> Result<(), String> {
         .ok_or_else(|| "'required_fields' must be a JSON object".to_string())?;
 
     // Validate boolean fields.
-    for field in &["source_image", "approved_variant", "metadata_complete", "metadata_approved"] {
+    for field in &[
+        "source_image",
+        "approved_variant",
+        "metadata_complete",
+        "metadata_approved",
+    ] {
         if let Some(val) = required_fields.get(*field) {
             if !val.is_boolean() {
                 return Err(format!("'{field}' must be a boolean"));

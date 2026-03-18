@@ -25,8 +25,7 @@ use x121_db::repositories::{SceneVideoVersionRepo, SegmentRepo, VideoThumbnailRe
 
 use crate::error::{AppError, AppResult};
 use crate::handlers::scene_video_version::{
-    extract_and_set_video_metadata, generate_preview_for_version,
-    generate_web_playback_for_version,
+    extract_and_set_video_metadata, generate_preview_for_version, generate_web_playback_for_version,
 };
 use crate::state::AppState;
 
@@ -186,9 +185,7 @@ pub async fn stream_video(
                 .unwrap_or(version.file_path)
         } else {
             // HD: serve full-res browser-compatible transcode, fall back to original.
-            version
-                .web_playback_path
-                .unwrap_or(version.file_path)
+            version.web_playback_path.unwrap_or(version.file_path)
         }
     } else {
         resolve_video_path(&state.pool, &source_type, source_id).await?
@@ -565,9 +562,7 @@ pub async fn backfill_snapshots(
     State(state): State<AppState>,
     Query(params): Query<GeneratePreviewsParams>,
 ) -> AppResult<Json<BackfillMetadataResponse>> {
-    use x121_db::repositories::{
-        SceneRepo, SceneTypeRepo, SceneTypeTrackConfigRepo, WorkflowRepo,
-    };
+    use x121_db::repositories::{SceneRepo, SceneTypeRepo, SceneTypeTrackConfigRepo, WorkflowRepo};
 
     let limit = params.limit.unwrap_or(50).min(200) as i64;
 
@@ -589,16 +584,15 @@ pub async fn backfill_snapshots(
 
             // Resolve workflow: track config → scene_type.workflow_id
             let resolved_workflow_id = if let Some(track_id) = scene.track_id {
-                let track_config =
-                    SceneTypeTrackConfigRepo::find_by_scene_type_and_track(
-                        &state.pool,
-                        scene.scene_type_id,
-                        track_id,
-                        false,
-                    )
-                    .await
-                    .ok()
-                    .flatten();
+                let track_config = SceneTypeTrackConfigRepo::find_by_scene_type_and_track(
+                    &state.pool,
+                    scene.scene_type_id,
+                    track_id,
+                    false,
+                )
+                .await
+                .ok()
+                .flatten();
                 track_config
                     .and_then(|c| c.workflow_id)
                     .or(scene_type.workflow_id)
@@ -607,16 +601,16 @@ pub async fn backfill_snapshots(
             };
 
             let workflow_id = resolved_workflow_id?;
-            let workflow =
-                WorkflowRepo::find_by_id(&state.pool, workflow_id).await.ok()??;
-
-            let prompt_slots =
-                x121_db::repositories::WorkflowPromptSlotRepo::list_by_workflow(
-                    &state.pool,
-                    workflow_id,
-                )
+            let workflow = WorkflowRepo::find_by_id(&state.pool, workflow_id)
                 .await
-                .unwrap_or_default();
+                .ok()??;
+
+            let prompt_slots = x121_db::repositories::WorkflowPromptSlotRepo::list_by_workflow(
+                &state.pool,
+                workflow_id,
+            )
+            .await
+            .unwrap_or_default();
 
             let mut prompts = serde_json::Map::new();
             for slot in &prompt_slots {
@@ -626,15 +620,12 @@ pub async fn backfill_snapshots(
             }
 
             let seed_image = if let Some(variant_id) = scene.image_variant_id {
-                x121_db::repositories::ImageVariantRepo::find_by_id(
-                    &state.pool,
-                    variant_id,
-                )
-                .await
-                .ok()
-                .flatten()
-                .map(|v| v.file_path)
-                .unwrap_or_default()
+                x121_db::repositories::ImageVariantRepo::find_by_id(&state.pool, variant_id)
+                    .await
+                    .ok()
+                    .flatten()
+                    .map(|v| v.file_path)
+                    .unwrap_or_default()
             } else {
                 String::new()
             };
@@ -655,12 +646,8 @@ pub async fn backfill_snapshots(
 
         match snapshot {
             Some(snap) => {
-                match SceneVideoVersionRepo::set_generation_snapshot(
-                    &state.pool,
-                    version.id,
-                    &snap,
-                )
-                .await
+                match SceneVideoVersionRepo::set_generation_snapshot(&state.pool, version.id, &snap)
+                    .await
                 {
                     Ok(true) => succeeded += 1,
                     _ => failed += 1,
@@ -677,7 +664,12 @@ pub async fn backfill_snapshots(
         }
     }
 
-    tracing::info!(total, succeeded, failed, "Backfill generation snapshots complete");
+    tracing::info!(
+        total,
+        succeeded,
+        failed,
+        "Backfill generation snapshots complete"
+    );
 
     Ok(Json(BackfillMetadataResponse {
         processed: total,

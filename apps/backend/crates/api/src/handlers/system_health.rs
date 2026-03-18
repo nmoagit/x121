@@ -299,7 +299,9 @@ async fn probe_service(
                     (
                         system_health::STATUS_DOWN,
                         None,
-                        Some(format!("{pending} pending job(s) but no GPU instances connected")),
+                        Some(format!(
+                            "{pending} pending job(s) but no GPU instances connected"
+                        )),
                         None,
                     )
                 } else {
@@ -318,10 +320,15 @@ async fn probe_service(
                     let total = stats.total_workers;
                     let status = if total == 0 {
                         // No workers — only report down if there are pending jobs
-                        let (pending, _, _) = x121_db::repositories::JobRepo::queue_counts(&state.pool)
-                            .await
-                            .unwrap_or((0, 0, 0));
-                        if pending > 0 { system_health::STATUS_DOWN } else { system_health::STATUS_HEALTHY }
+                        let (pending, _, _) =
+                            x121_db::repositories::JobRepo::queue_counts(&state.pool)
+                                .await
+                                .unwrap_or((0, 0, 0));
+                        if pending > 0 {
+                            system_health::STATUS_DOWN
+                        } else {
+                            system_health::STATUS_HEALTHY
+                        }
                     } else if stats.idle_workers == 0 && stats.busy_workers == 0 {
                         system_health::STATUS_DEGRADED
                     } else {

@@ -80,7 +80,11 @@ async fn evaluate_all_rules(
         return Ok(());
     }
 
-    info!(count = rules.len(), "Evaluating {} scaling rule(s)", rules.len());
+    info!(
+        count = rules.len(),
+        "Evaluating {} scaling rule(s)",
+        rules.len()
+    );
 
     for rule in &rules {
         let provider = match registry.get(rule.provider_id).await {
@@ -502,7 +506,7 @@ async fn teardown_and_terminate(
 async fn detect_orphaned_jobs(pool: &PgPool, broadcaster: &Arc<ActivityLogBroadcaster>) {
     // Read configurable retry limit from platform_settings (falls back to 3).
     let max_retries: i16 = sqlx::query_scalar::<_, String>(
-        "SELECT value FROM platform_settings WHERE key = 'max_orphan_retries'"
+        "SELECT value FROM platform_settings WHERE key = 'max_orphan_retries'",
     )
     .fetch_optional(pool)
     .await
@@ -518,7 +522,7 @@ async fn detect_orphaned_jobs(pool: &PgPool, broadcaster: &Arc<ActivityLogBroadc
            AND NOT EXISTS ( \
                SELECT 1 FROM comfyui_instances ci \
                WHERE ci.id = j.comfyui_instance_id AND ci.status_id = 1 \
-           )"
+           )",
     )
     .fetch_all(pool)
     .await
@@ -543,7 +547,7 @@ async fn detect_orphaned_jobs(pool: &PgPool, broadcaster: &Arc<ActivityLogBroadc
                 "UPDATE jobs SET status_id = 1, comfyui_instance_id = NULL, \
                  orphan_retry_count = orphan_retry_count + 1, \
                  error_message = NULL \
-                 WHERE id = $1"
+                 WHERE id = $1",
             )
             .bind(job_id)
             .execute(pool)
@@ -553,7 +557,7 @@ async fn detect_orphaned_jobs(pool: &PgPool, broadcaster: &Arc<ActivityLogBroadc
             let _ = sqlx::query(
                 "UPDATE jobs SET status_id = 4, comfyui_instance_id = NULL, \
                  error_message = 'Generation failed: instance lost 3 times' \
-                 WHERE id = $1"
+                 WHERE id = $1",
             )
             .bind(job_id)
             .execute(pool)
@@ -583,7 +587,7 @@ async fn detect_orphaned_jobs(pool: &PgPool, broadcaster: &Arc<ActivityLogBroadc
             "UPDATE scenes SET status_id = 7 \
              WHERE status_id = 2 AND id IN ( \
                  SELECT (j.parameters->>'scene_id')::bigint FROM jobs j WHERE j.id = ANY($1) \
-             )"
+             )",
         )
         .bind(&failed_ids)
         .execute(pool)
@@ -598,7 +602,11 @@ async fn detect_orphaned_jobs(pool: &PgPool, broadcaster: &Arc<ActivityLogBroadc
             ActivityLogEntry::curated(
                 ActivityLogLevel::Error,
                 ActivityLogSource::Infrastructure,
-                format!("{} job(s) failed after {} retries", failed_ids.len(), max_retries),
+                format!(
+                    "{} job(s) failed after {} retries",
+                    failed_ids.len(),
+                    max_retries
+                ),
             )
             .with_fields(serde_json::json!({ "job_ids": failed_ids })),
         );
@@ -609,7 +617,7 @@ async fn detect_orphaned_jobs(pool: &PgPool, broadcaster: &Arc<ActivityLogBroadc
 /// Default timeout: 30 minutes (configurable via `job_timeout_minutes` platform setting).
 async fn detect_timed_out_jobs(pool: &PgPool, broadcaster: &Arc<ActivityLogBroadcaster>) {
     let timeout_minutes: i64 = sqlx::query_scalar::<_, String>(
-        "SELECT value FROM platform_settings WHERE key = 'job_timeout_minutes'"
+        "SELECT value FROM platform_settings WHERE key = 'job_timeout_minutes'",
     )
     .fetch_optional(pool)
     .await
@@ -622,7 +630,7 @@ async fn detect_timed_out_jobs(pool: &PgPool, broadcaster: &Arc<ActivityLogBroad
         "SELECT j.id, j.orphan_retry_count FROM jobs j \
          WHERE j.status_id = 2 \
            AND j.started_at IS NOT NULL \
-           AND j.started_at < NOW() - make_interval(mins => $1) "
+           AND j.started_at < NOW() - make_interval(mins => $1) ",
     )
     .bind(timeout_minutes as i32)
     .fetch_all(pool)
@@ -647,7 +655,7 @@ async fn detect_timed_out_jobs(pool: &PgPool, broadcaster: &Arc<ActivityLogBroad
         "UPDATE jobs SET status_id = 1, comfyui_instance_id = NULL, \
          orphan_retry_count = orphan_retry_count + 1, \
          error_message = 'Job timed out — exceeded maximum run time' \
-         WHERE id = ANY($1)"
+         WHERE id = ANY($1)",
     )
     .bind(&job_ids)
     .execute(pool)
@@ -675,7 +683,7 @@ async fn detect_idle_instances(
     use x121_db::repositories::CloudInstanceRepo;
 
     let idle_minutes: i64 = sqlx::query_scalar::<_, String>(
-        "SELECT value FROM platform_settings WHERE key = 'idle_instance_minutes'"
+        "SELECT value FROM platform_settings WHERE key = 'idle_instance_minutes'",
     )
     .fetch_optional(pool)
     .await
@@ -686,8 +694,9 @@ async fn detect_idle_instances(
 
     // Find running cloud instances with no active jobs that have been idle for too long.
     // An instance is "idle" if it has no jobs with status running/dispatched/pending assigned to it.
-    let idle_instances = match sqlx::query_as::<_, (x121_core::types::DbId, x121_core::types::DbId, String)>(
-        "SELECT ci_cloud.id, ci_cloud.provider_id, ci_cloud.external_id \
+    let idle_instances =
+        match sqlx::query_as::<_, (x121_core::types::DbId, x121_core::types::DbId, String)>(
+            "SELECT ci_cloud.id, ci_cloud.provider_id, ci_cloud.external_id \
          FROM cloud_instances ci_cloud \
          WHERE ci_cloud.status_id = 3 \
            AND ci_cloud.started_at IS NOT NULL \
@@ -700,18 +709,18 @@ async fn detect_idle_instances(
            ) \
            AND NOT EXISTS ( \
                SELECT 1 FROM jobs j WHERE j.status_id = 1 AND j.comfyui_instance_id IS NULL \
-           )"
-    )
-    .bind(idle_minutes as i32)
-    .fetch_all(pool)
-    .await
-    {
-        Ok(rows) => rows,
-        Err(e) => {
-            warn!("Failed to query idle instances: {e}");
-            return;
-        }
-    };
+           )",
+        )
+        .bind(idle_minutes as i32)
+        .fetch_all(pool)
+        .await
+        {
+            Ok(rows) => rows,
+            Err(e) => {
+                warn!("Failed to query idle instances: {e}");
+                return;
+            }
+        };
 
     if idle_instances.is_empty() {
         return;
@@ -729,7 +738,7 @@ async fn detect_idle_instances(
                 // Disable linked ComfyUI instances so they don't attempt reconnect
                 let _ = sqlx::query(
                     "UPDATE comfyui_instances SET is_enabled = false \
-                     WHERE cloud_instance_id = $1"
+                     WHERE cloud_instance_id = $1",
                 )
                 .bind(instance_id)
                 .execute(pool)

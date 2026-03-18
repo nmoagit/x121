@@ -94,7 +94,7 @@ pub async fn terminate_and_record(
                 // Disable linked ComfyUI instances
                 let _ = sqlx::query(
                     "UPDATE comfyui_instances SET is_enabled = false \
-                     WHERE cloud_instance_id = $1"
+                     WHERE cloud_instance_id = $1",
                 )
                 .bind(inst.id)
                 .execute(pool)

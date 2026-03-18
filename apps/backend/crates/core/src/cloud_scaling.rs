@@ -121,10 +121,7 @@ pub fn evaluate_scaling_decision_with_reason(input: &ScalingInput) -> ScalingDec
                     action: ScalingAction::ScaleUp(needed),
                     reason: format!(
                         "Queue depth ({}) > current instances ({}) with max {} — scaling up {}",
-                        input.queue_depth,
-                        input.current_count,
-                        input.max_instances,
-                        needed,
+                        input.queue_depth, input.current_count, input.max_instances, needed,
                     ),
                     cooldown_remaining_secs: cooldown_remaining,
                 };
@@ -134,9 +131,7 @@ pub fn evaluate_scaling_decision_with_reason(input: &ScalingInput) -> ScalingDec
                 action: ScalingAction::NoChange,
                 reason: format!(
                     "Queue has {} pending jobs but already at max instances ({}/{})",
-                    input.queue_depth,
-                    input.current_count,
-                    input.max_instances,
+                    input.queue_depth, input.current_count, input.max_instances,
                 ),
                 cooldown_remaining_secs: cooldown_remaining,
             };

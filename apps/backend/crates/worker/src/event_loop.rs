@@ -1030,9 +1030,7 @@ async fn build_snapshot_from_db(
     scene_id: DbId,
     instance_id: DbId,
 ) -> Option<serde_json::Value> {
-    use x121_db::repositories::{
-        SceneRepo, SceneTypeRepo, SceneTypeTrackConfigRepo, WorkflowRepo,
-    };
+    use x121_db::repositories::{SceneRepo, SceneTypeRepo, SceneTypeTrackConfigRepo, WorkflowRepo};
 
     // Look up scene → scene_type → workflow → prompt slots
     let scene = SceneRepo::find_by_id(pool, scene_id).await.ok()??;

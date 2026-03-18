@@ -306,13 +306,9 @@ pub async fn validate_delivery(
     }
 
     // Check for non-H.264 source codecs that will need transcoding for delivery.
-    let all_versions =
-        SceneVideoVersionRepo::list_non_h264_finals(&state.pool, project_id).await?;
+    let all_versions = SceneVideoVersionRepo::list_non_h264_finals(&state.pool, project_id).await?;
     for version in &all_versions {
-        let codec = version
-            .video_codec
-            .as_deref()
-            .unwrap_or("unknown");
+        let codec = version.video_codec.as_deref().unwrap_or("unknown");
         issues.push(assembly::ValidationIssue {
             severity: assembly::IssueSeverity::Warning,
             category: "non_h264_codec".to_string(),
