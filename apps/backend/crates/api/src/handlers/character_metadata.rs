@@ -342,6 +342,7 @@ pub async fn update_character_metadata(
             metadata: Some(new_metadata.clone()),
             settings: None,
             group_id: None,
+            blocking_deliverables: None,
         },
     )
     .await?

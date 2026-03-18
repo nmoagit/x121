@@ -33,6 +33,9 @@ pub struct Character {
     /// Whether this character is enabled for production workflows.
     /// Disabled characters are hidden from deliverables, readiness, and browse pages.
     pub is_enabled: bool,
+    /// Which deliverable sections must be complete for this character.
+    /// NULL = inherit from group (or project). When set, overrides the group/project default.
+    pub blocking_deliverables: Option<Vec<String>>,
 }
 
 /// A character row enriched with the best avatar variant ID.
@@ -58,6 +61,9 @@ pub struct CharacterWithAvatar {
     /// Review workflow status (PRD-129). References `character_review_statuses`.
     pub review_status_id: StatusId,
     pub is_enabled: bool,
+    /// Which deliverable sections must be complete for this character.
+    /// NULL = inherit from group (or project). When set, overrides the group/project default.
+    pub blocking_deliverables: Option<Vec<String>>,
     /// The ID of the best avatar variant (hero clothed > hero any > approved clothed > approved any).
     /// `None` when the character has no suitable image variants.
     pub hero_variant_id: Option<DbId>,
@@ -76,11 +82,17 @@ pub struct CharacterDeliverableRow {
     pub status_id: StatusId,
     pub images_count: i64,
     pub images_approved: i64,
+    /// Number of active tracks — each character needs one seed image per track.
+    pub required_images_count: i64,
     pub scenes_total: i64,
     pub scenes_with_video: i64,
     pub scenes_approved: i64,
     pub has_active_metadata: bool,
     pub metadata_approval_status: Option<String>,
+    /// The `source` column of the active metadata version (e.g. "generated", "json_import", "manual").
+    pub metadata_source: Option<String>,
+    /// True when the active metadata version has both `source_bio` and `source_tov` populated.
+    pub has_source_files: bool,
     pub has_voice_id: bool,
     pub blocking_reasons: Vec<String>,
     pub readiness_pct: f64,
@@ -132,4 +144,6 @@ pub struct UpdateCharacter {
     pub metadata: Option<serde_json::Value>,
     pub settings: Option<serde_json::Value>,
     pub group_id: Option<Option<DbId>>,
+    /// NULL = don't change, Some([]) = reset to inherit from group/project, Some([...]) = override.
+    pub blocking_deliverables: Option<Vec<String>>,
 }

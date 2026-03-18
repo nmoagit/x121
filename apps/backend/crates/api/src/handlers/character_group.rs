@@ -30,10 +30,14 @@ pub async fn create(
 }
 
 /// GET /api/v1/projects/{project_id}/groups
+///
+/// Auto-creates a default "Intake" group if the project has none.
 pub async fn list_by_project(
     State(state): State<AppState>,
     Path(project_id): Path<DbId>,
 ) -> AppResult<Json<DataResponse<Vec<CharacterGroup>>>> {
+    // Ensure at least one group exists (auto-create "Intake" if empty)
+    CharacterGroupRepo::ensure_default(&state.pool, project_id).await?;
     let groups = CharacterGroupRepo::list_by_project(&state.pool, project_id).await?;
     Ok(Json(DataResponse { data: groups }))
 }
@@ -93,6 +97,7 @@ pub async fn assign_character_to_group(
         metadata: None,
         settings: None,
         group_id: Some(body.group_id),
+        blocking_deliverables: None,
     };
     let character = CharacterRepo::update(&state.pool, character_id, &input)
         .await?

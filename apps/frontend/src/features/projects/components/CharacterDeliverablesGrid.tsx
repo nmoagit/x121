@@ -20,7 +20,11 @@ import { IMAGE_VARIANT_STATUS } from "@/features/images/types";
 import { useTracks } from "@/features/scene-catalogue/hooks/use-tracks";
 import type { Track } from "@/features/scene-catalogue/types";
 import type { CharacterDeliverableRow } from "../types";
+import { computeReadinessPct, filterBlockingReasons } from "../types";
 import { useGroupSelectOptions } from "../hooks/use-group-select-options";
+import { useCharacterGroups } from "../hooks/use-character-groups";
+import { useProject } from "../hooks/use-projects";
+import { useSetting } from "@/features/settings/hooks/use-settings";
 import { deduplicateSceneSlots, sceneSlotKey } from "@/features/production/types";
 import type { EnabledSceneTypeEntry } from "@/features/production/types";
 import { readinessPctToVariant } from "@/features/readiness/types";
@@ -56,10 +60,14 @@ function CharacterNameWithThumb({ name, heroVariantId }: { name: string; heroVar
 
 interface RowProps {
   row: CharacterDeliverableRow;
+  /** Blocking reasons filtered by the character's resolved blocking deliverables. */
+  filteredBlockingReasons: string[];
+  /** Readiness percentage computed from blocking deliverables. */
+  readinessPct: number;
   onClick: () => void;
 }
 
-function DeliverableRow({ row, onClick }: RowProps) {
+function DeliverableRow({ row, filteredBlockingReasons, readinessPct, onClick }: RowProps) {
   return (
     <tr
       className="cursor-pointer border-b border-[var(--color-border-default)]
@@ -69,10 +77,10 @@ function DeliverableRow({ row, onClick }: RowProps) {
       <td className="px-3 py-2 text-sm font-medium text-[var(--color-text-primary)]">
         <CharacterNameWithThumb name={row.name} heroVariantId={row.hero_variant_id} />
       </td>
-      <td className="px-3 py-2 text-sm text-[var(--color-text-secondary)]">
+      <td className={`px-3 py-2 text-sm ${row.images_count > 0 && row.images_approved >= row.images_count ? "text-[var(--color-action-success)] font-medium" : "text-[var(--color-text-secondary)]"}`}>
         {row.images_approved}/{row.images_count}
       </td>
-      <td className="px-3 py-2 text-sm text-[var(--color-text-secondary)]">
+      <td className={`px-3 py-2 text-sm ${row.scenes_total > 0 && row.scenes_approved >= row.scenes_total ? "text-[var(--color-action-success)] font-medium" : "text-[var(--color-text-secondary)]"}`}>
         {row.scenes_approved}/{row.scenes_with_video}/{row.scenes_total}
       </td>
       <td className="px-3 py-2 text-sm">
@@ -88,9 +96,9 @@ function DeliverableRow({ row, onClick }: RowProps) {
         )}
       </td>
       <td className="px-3 py-2">
-        {row.blocking_reasons.length > 0 ? (
+        {filteredBlockingReasons.length > 0 ? (
           <div className="flex flex-wrap gap-1">
-            {row.blocking_reasons.map((reason) => (
+            {filteredBlockingReasons.map((reason) => (
               <Badge key={reason} variant="warning" size="sm">{reason}</Badge>
             ))}
           </div>
@@ -99,8 +107,8 @@ function DeliverableRow({ row, onClick }: RowProps) {
         )}
       </td>
       <td className="px-3 py-2 text-right">
-        <Badge variant={readinessPctToVariant(row.readiness_pct)} size="sm">
-          {row.readiness_pct.toFixed(1)}%
+        <Badge variant={readinessPctToVariant(readinessPct)} size="sm">
+          {readinessPct.toFixed(1)}%
         </Badge>
       </td>
     </tr>
@@ -110,9 +118,11 @@ function DeliverableRow({ row, onClick }: RowProps) {
 interface ReadinessTabProps {
   rows: CharacterDeliverableRow[];
   projectId: number;
+  /** Resolve blocking deliverables for a given row (character). */
+  resolveBlockingDeliverables: (row: CharacterDeliverableRow) => string[] | undefined;
 }
 
-function ReadinessTab({ rows, projectId }: ReadinessTabProps) {
+function ReadinessTab({ rows, projectId, resolveBlockingDeliverables }: ReadinessTabProps) {
   const navigate = useNavigate();
 
   return (
@@ -120,7 +130,7 @@ function ReadinessTab({ rows, projectId }: ReadinessTabProps) {
       <table className="w-full text-left">
         <thead>
           <tr className="border-b border-[var(--color-border-default)] text-xs font-medium uppercase tracking-wide text-[var(--color-text-muted)]">
-            <th className="px-3 py-2">Character</th>
+            <th className="px-3 py-2">Model</th>
             <th className="px-3 py-2">Images</th>
             <th className="px-3 py-2" title="Approved / With Video / Total">Scenes</th>
             <th className="px-3 py-2">Metadata</th>
@@ -129,19 +139,24 @@ function ReadinessTab({ rows, projectId }: ReadinessTabProps) {
           </tr>
         </thead>
         <tbody>
-          {rows.map((row) => (
-            <DeliverableRow
-              key={row.id}
-              row={row}
-              onClick={() =>
-                navigate({
-                  to: "/projects/$projectId/characters/$characterId",
-                  params: { projectId: String(projectId), characterId: String(row.id) },
-                  search: { tab: undefined, scene: undefined },
-                })
-              }
-            />
-          ))}
+          {rows.map((row) => {
+            const bd = resolveBlockingDeliverables(row);
+            return (
+              <DeliverableRow
+                key={row.id}
+                row={row}
+                filteredBlockingReasons={filterBlockingReasons(row.blocking_reasons, bd)}
+                readinessPct={computeReadinessPct(row, bd)}
+                onClick={() =>
+                  navigate({
+                    to: "/projects/$projectId/models/$characterId",
+                    params: { projectId: String(projectId), characterId: String(row.id) },
+                    search: { tab: undefined, scene: undefined },
+                  })
+                }
+              />
+            );
+          })}
         </tbody>
       </table>
     </div>
@@ -374,17 +389,17 @@ function MatrixTab({ rows, projectId }: MatrixTabProps) {
 
     if (col.kind === "image") {
       navigate({
-        to: "/projects/$projectId/characters/$characterId",
+        to: "/projects/$projectId/models/$characterId",
         params,
         search: { tab: "images", scene: undefined },
       });
     } else if (col.kind === "scene") {
       // scene_type and track are picked up by useSearch({ strict: false }) in CharacterDetailPage
-      const url = `/projects/${projectId}/characters/${characterId}?tab=scenes&scene_type=${col.scene_type_id}${col.track_id != null ? `&track=${col.track_id}` : ""}`;
+      const url = `/projects/${projectId}/models/${characterId}?tab=scenes&scene_type=${col.scene_type_id}${col.track_id != null ? `&track=${col.track_id}` : ""}`;
       navigate({ to: url });
     } else {
       navigate({
-        to: "/projects/$projectId/characters/$characterId",
+        to: "/projects/$projectId/models/$characterId",
         params,
         search: { tab: "metadata", scene: undefined },
       });
@@ -426,7 +441,7 @@ function MatrixTab({ rows, projectId }: MatrixTabProps) {
         <thead>
           <tr className="border-b border-[var(--color-border-default)]">
             <th className="px-2 py-1.5 text-left text-xs font-medium text-[var(--color-text-muted)] whitespace-nowrap sticky left-0 bg-[var(--color-surface-primary)] z-10">
-              Character
+              Model
             </th>
             {columns.map((col) => {
               const key =
@@ -471,7 +486,7 @@ function MatrixTab({ rows, projectId }: MatrixTabProps) {
                   type="button"
                   className="hover:underline cursor-pointer text-left"
                   onClick={() => navigate({
-                    to: "/projects/$projectId/characters/$characterId",
+                    to: "/projects/$projectId/models/$characterId",
                     params: { projectId: String(projectId), characterId: String(row.id) },
                     search: { tab: undefined, scene: undefined },
                   })}
@@ -584,9 +599,36 @@ interface CharacterDeliverablesGridProps {
 export function CharacterDeliverablesGrid({ projectId }: CharacterDeliverablesGridProps) {
   const { data: rows, isLoading } = useCharacterDeliverables(projectId);
   const { groups } = useGroupSelectOptions(projectId);
+  const { data: charGroups } = useCharacterGroups(projectId);
+  const { data: project } = useProject(projectId);
+  const { data: studioSetting } = useSetting("blocking_deliverables");
   const [activeTab, setActiveTab] = useState<DeliverableTabKey>("readiness");
   const [hideComplete, setHideComplete] = useState(true);
   const [selectedGroups, setSelectedGroups] = useState<Set<number>>(new Set());
+
+  /** Resolve blocking deliverables per character: character → group → project → studio. */
+  const resolveBlockingDeliverables = useMemo(() => {
+    const studioDefault = studioSetting?.value
+      ? studioSetting.value.split(",").map((s: string) => s.trim()).filter(Boolean)
+      : ["metadata", "images", "scenes"];
+    const projectBd = project?.blocking_deliverables ?? studioDefault;
+
+    const groupBdMap = new Map<number, string[]>();
+    if (charGroups) {
+      for (const g of charGroups) {
+        if (g.blocking_deliverables) {
+          groupBdMap.set(g.id, g.blocking_deliverables);
+        }
+      }
+    }
+
+    return (row: CharacterDeliverableRow): string[] | undefined => {
+      // Note: CharacterDeliverableRow doesn't have blocking_deliverables from the character
+      // itself (it's not in the SQL query), so we only resolve group → project → studio.
+      if (row.group_id && groupBdMap.has(row.group_id)) return groupBdMap.get(row.group_id);
+      return projectBd;
+    };
+  }, [charGroups, project?.blocking_deliverables, studioSetting?.value]);
 
   const toggleGroup = (gid: number) => {
     setSelectedGroups((prev) => {
@@ -602,14 +644,16 @@ export function CharacterDeliverablesGrid({ projectId }: CharacterDeliverablesGr
     const base = selectedGroups.size > 0
       ? rows.filter((r) => r.group_id != null && selectedGroups.has(r.group_id))
       : rows;
-    const complete = base.filter((r) => r.readiness_pct >= 100 && r.blocking_reasons.length === 0);
+    const isComplete = (r: CharacterDeliverableRow) => {
+      const bd = resolveBlockingDeliverables(r);
+      return computeReadinessPct(r, bd) >= 100 && filterBlockingReasons(r.blocking_reasons, bd).length === 0;
+    };
+    const complete = base.filter(isComplete);
     return {
-      filtered: hideComplete
-        ? base.filter((r) => r.readiness_pct < 100 || r.blocking_reasons.length > 0)
-        : base,
+      filtered: hideComplete ? base.filter((r) => !isComplete(r)) : base,
       completeCount: complete.length,
     };
-  }, [rows, hideComplete, selectedGroups]);
+  }, [rows, hideComplete, selectedGroups, resolveBlockingDeliverables]);
 
   if (isLoading) {
     return (
@@ -672,7 +716,7 @@ export function CharacterDeliverablesGrid({ projectId }: CharacterDeliverablesGr
       </div>
 
       {activeTab === "readiness" && (
-        <ReadinessTab rows={filtered} projectId={projectId} />
+        <ReadinessTab rows={filtered} projectId={projectId} resolveBlockingDeliverables={resolveBlockingDeliverables} />
       )}
 
       {activeTab === "matrix" && (

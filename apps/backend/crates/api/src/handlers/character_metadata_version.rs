@@ -102,6 +102,7 @@ pub(crate) async fn sync_to_character(
             metadata: Some(metadata.clone()),
             settings: None,
             group_id: None,
+            blocking_deliverables: None,
         },
     )
     .await?;

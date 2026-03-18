@@ -15,7 +15,8 @@ use crate::models::character::{
 /// existing INSERT queries remain valid.
 const COLUMNS: &str =
     "id, project_id, name, status_id, metadata, settings, group_id, deleted_at, created_at, updated_at, \
-     face_detection_confidence, face_bounding_box, embedding_status_id, embedding_extracted_at, review_status_id, is_enabled";
+     face_detection_confidence, face_bounding_box, embedding_status_id, embedding_extracted_at, review_status_id, is_enabled, \
+     blocking_deliverables";
 
 /// Provides CRUD operations for characters plus settings helpers.
 pub struct CharacterRepo;
@@ -163,13 +164,19 @@ impl CharacterRepo {
             None => (false, None),
         };
 
+        let (bd_value, bd_set_null) = crate::resolve_nullable_array(&input.blocking_deliverables);
+
         let query = format!(
             "UPDATE characters SET
                 name = COALESCE($2, name),
                 status_id = COALESCE($3, status_id),
                 metadata = COALESCE($4, metadata),
                 settings = COALESCE($5, settings),
-                group_id = CASE WHEN $6 THEN $7 ELSE group_id END
+                group_id = CASE WHEN $6 THEN $7 ELSE group_id END,
+                blocking_deliverables = CASE
+                    WHEN $9 THEN NULL
+                    ELSE COALESCE($8, blocking_deliverables)
+                END
              WHERE id = $1 AND deleted_at IS NULL
              RETURNING {COLUMNS}"
         );
@@ -181,6 +188,8 @@ impl CharacterRepo {
             .bind(&input.settings)
             .bind(group_id_provided)
             .bind(group_id_value)
+            .bind(&bd_value)
+            .bind(bd_set_null)
             .fetch_optional(pool)
             .await
     }
@@ -422,11 +431,14 @@ impl CharacterRepo {
                 c.status_id,
                 COALESCE(img.total, 0) AS images_count,
                 COALESCE(img.approved, 0) AS images_approved,
+                (SELECT COUNT(*) FROM tracks t WHERE t.is_active = true) AS required_images_count,
                 COALESCE(sc.total, 0) AS scenes_total,
                 COALESCE(sc.with_video, 0) AS scenes_with_video,
                 COALESCE(sc.vid_approved, 0) AS scenes_approved,
                 COALESCE(meta.has_active, false) AS has_active_metadata,
                 meta.approval_status AS metadata_approval_status,
+                meta.source AS metadata_source,
+                COALESCE(meta.has_source_files, false) AS has_source_files,
                 COALESCE(
                     c.settings->>'elevenlabs_voice' IS NOT NULL
                     AND LENGTH(c.settings->>'elevenlabs_voice') > 0,
@@ -467,19 +479,37 @@ impl CharacterRepo {
                  WHERE iv.character_id = c.id AND iv.deleted_at IS NULL
              ) img ON true
              LEFT JOIN LATERAL (
+                 -- Count enabled scene slots from the settings hierarchy,
+                 -- then check which have actual scenes with videos/approvals.
+                 -- Mirrors the dashboard query's enabled_combos CTE logic.
                  SELECT
                      COUNT(*) AS total,
-                     COUNT(*) FILTER (WHERE EXISTS (
+                     COUNT(*) FILTER (WHERE sc.id IS NOT NULL AND EXISTS (
                          SELECT 1 FROM scene_video_versions svv
-                         WHERE svv.scene_id = s.id AND svv.deleted_at IS NULL
+                         WHERE svv.scene_id = sc.id AND svv.deleted_at IS NULL
                      )) AS with_video,
-                     COUNT(*) FILTER (WHERE EXISTS (
+                     COUNT(*) FILTER (WHERE sc.id IS NOT NULL AND EXISTS (
                          SELECT 1 FROM scene_video_versions svv
-                         WHERE svv.scene_id = s.id AND svv.deleted_at IS NULL
-                           AND svv.qa_status = 'approved'
+                         WHERE svv.scene_id = sc.id AND svv.deleted_at IS NULL
+                           AND svv.is_final = true AND svv.qa_status = 'approved'
                      )) AS vid_approved
-                 FROM scenes s
-                 WHERE s.character_id = c.id
+                 FROM scene_types st
+                 JOIN scene_type_tracks stt ON stt.scene_type_id = st.id
+                 JOIN tracks t ON t.id = stt.track_id AND t.is_active = true
+                 LEFT JOIN project_scene_settings pss
+                     ON pss.scene_type_id = st.id AND pss.track_id = t.id
+                        AND pss.project_id = c.project_id
+                 LEFT JOIN group_scene_settings gss
+                     ON gss.scene_type_id = st.id AND gss.track_id = t.id
+                        AND gss.group_id = c.group_id
+                 LEFT JOIN character_scene_overrides cso
+                     ON cso.scene_type_id = st.id AND cso.track_id = t.id
+                        AND cso.character_id = c.id
+                 LEFT JOIN scenes sc
+                     ON sc.scene_type_id = st.id AND sc.track_id = t.id
+                        AND sc.character_id = c.id AND sc.deleted_at IS NULL
+                 WHERE st.is_active = true AND st.deleted_at IS NULL
+                   AND COALESCE(cso.is_enabled, gss.is_enabled, pss.is_enabled, st.is_active) = true
              ) sc ON true
              LEFT JOIN LATERAL (
                  SELECT
@@ -495,7 +525,22 @@ impl CharacterRepo {
                            AND cmv.is_active = true
                            AND cmv.deleted_at IS NULL
                          LIMIT 1
-                     ) AS approval_status
+                     ) AS approval_status,
+                     (
+                         SELECT cmv.source FROM character_metadata_versions cmv
+                         WHERE cmv.character_id = c.id
+                           AND cmv.is_active = true
+                           AND cmv.deleted_at IS NULL
+                         LIMIT 1
+                     ) AS source,
+                     (
+                         SELECT cmv.source_bio IS NOT NULL AND cmv.source_tov IS NOT NULL
+                         FROM character_metadata_versions cmv
+                         WHERE cmv.character_id = c.id
+                           AND cmv.is_active = true
+                           AND cmv.deleted_at IS NULL
+                         LIMIT 1
+                     ) AS has_source_files
              ) meta ON true
              LEFT JOIN LATERAL (
                  SELECT iv.id

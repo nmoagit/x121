@@ -6,7 +6,7 @@ use x121_core::types::DbId;
 use crate::models::character_group::{CharacterGroup, CreateCharacterGroup, UpdateCharacterGroup};
 
 /// Column list shared across queries to avoid repetition.
-const COLUMNS: &str = "id, project_id, name, sort_order, deleted_at, created_at, updated_at";
+const COLUMNS: &str = "id, project_id, name, sort_order, blocking_deliverables, deleted_at, created_at, updated_at";
 
 /// Provides CRUD operations for character groups.
 pub struct CharacterGroupRepo;
@@ -28,6 +28,50 @@ impl CharacterGroupRepo {
             .bind(input.sort_order)
             .fetch_one(pool)
             .await
+    }
+
+    /// Default group name created automatically for projects with no groups.
+    pub const DEFAULT_GROUP_NAME: &'static str = "Intake";
+
+    /// Ensure the project has at least one group. If none exist, create
+    /// a default "Intake" group and return it. Otherwise return `None`.
+    pub async fn ensure_default(
+        pool: &PgPool,
+        project_id: DbId,
+    ) -> Result<Option<CharacterGroup>, sqlx::Error> {
+        // Check if any non-deleted groups exist
+        let count: (i64,) = sqlx::query_as(
+            "SELECT COUNT(*) FROM character_groups WHERE project_id = $1 AND deleted_at IS NULL",
+        )
+        .bind(project_id)
+        .fetch_one(pool)
+        .await?;
+
+        if count.0 > 0 {
+            return Ok(None);
+        }
+
+        // No groups — create the default
+        let group = Self::create(
+            pool,
+            &CreateCharacterGroup {
+                project_id,
+                name: Self::DEFAULT_GROUP_NAME.to_string(),
+                sort_order: Some(0),
+            },
+        )
+        .await?;
+
+        // Assign any existing ungrouped characters in this project to the new group
+        sqlx::query(
+            "UPDATE characters SET group_id = $1 WHERE project_id = $2 AND group_id IS NULL AND deleted_at IS NULL",
+        )
+        .bind(group.id)
+        .bind(project_id)
+        .execute(pool)
+        .await?;
+
+        Ok(Some(group))
     }
 
     /// Find a character group by ID. Excludes soft-deleted rows.
@@ -65,10 +109,16 @@ impl CharacterGroupRepo {
         id: DbId,
         input: &UpdateCharacterGroup,
     ) -> Result<Option<CharacterGroup>, sqlx::Error> {
+        let (bd_value, bd_set_null) = crate::resolve_nullable_array(&input.blocking_deliverables);
+
         let query = format!(
             "UPDATE character_groups SET
                 name = COALESCE($2, name),
-                sort_order = COALESCE($3, sort_order)
+                sort_order = COALESCE($3, sort_order),
+                blocking_deliverables = CASE
+                    WHEN $5 THEN NULL
+                    ELSE COALESCE($4, blocking_deliverables)
+                END
              WHERE id = $1 AND deleted_at IS NULL
              RETURNING {COLUMNS}"
         );
@@ -76,6 +126,8 @@ impl CharacterGroupRepo {
             .bind(id)
             .bind(&input.name)
             .bind(input.sort_order)
+            .bind(&bd_value)
+            .bind(bd_set_null)
             .fetch_optional(pool)
             .await
     }

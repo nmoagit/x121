@@ -232,6 +232,7 @@ export function CharacterCard({ character, group, avatarUrl, heroVariantId, sele
               readiness={sectionReadiness}
               projectId={projectId}
               characterId={character.id}
+              blockingDeliverables={blockingDeliverables}
             />
           </div>
         )}

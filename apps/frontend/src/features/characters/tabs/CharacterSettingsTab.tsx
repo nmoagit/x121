@@ -6,6 +6,7 @@
 import { useCallback, useState } from "react";
 
 import { CollapsibleSection, ConfigToolbar } from "@/components/composite";
+import { BlockingDeliverablesEditor } from "@/components/domain";
 import { Stack } from "@/components/layout";
 import { Button, LoadingPane } from "@/components/primitives";
 import { ChevronDown, ChevronUp } from "@/tokens/icons";
@@ -25,19 +26,28 @@ import {
    Component
    -------------------------------------------------------------------------- */
 
-const CHAR_SECTION_IDS = ["pipeline", "scenes", "workflows", "video", "prompts"] as const;
+const CHAR_SECTION_IDS = ["blocking", "pipeline", "scenes", "workflows", "video", "prompts"] as const;
 type CharSectionId = (typeof CHAR_SECTION_IDS)[number];
 
 interface CharacterSettingsTabProps {
   projectId: number;
   characterId: number;
   characterName?: string;
+  /** Character's own blocking_deliverables (null = inherited). */
+  blockingDeliverables?: string[] | null;
+  /** Effective blocking deliverables from parent (group or project). */
+  parentBlockingDeliverables?: string[];
+  /** Called with the new array when user changes blocking deliverables. Empty = reset to inherit. */
+  onUpdateBlockingDeliverables?: (next: string[]) => void;
 }
 
 export function CharacterSettingsTab({
   projectId,
   characterId,
-  characterName = "character",
+  characterName = "model",
+  blockingDeliverables,
+  parentBlockingDeliverables = [],
+  onUpdateBlockingDeliverables,
 }: CharacterSettingsTabProps) {
   const { data: settings, isLoading } = useCharacterSettings(
     projectId,
@@ -86,6 +96,19 @@ export function CharacterSettingsTab({
           importing={importing}
         />
       </div>
+
+      {onUpdateBlockingDeliverables && (
+        <CollapsibleSection card title="Blocking Deliverables" description="Override which deliverable sections must be complete for this character." open={openSections.has("blocking")} onToggle={() => toggleSection("blocking")}>
+          <BlockingDeliverablesEditor
+            effective={blockingDeliverables ?? parentBlockingDeliverables}
+            isOverridden={blockingDeliverables != null}
+            inheritLabel="Inherited from Group/Project"
+            overrideLabel="Model Override"
+            resetLabel="Reset to Group/Project Default"
+            onUpdate={onUpdateBlockingDeliverables}
+          />
+        </CollapsibleSection>
+      )}
 
       <CollapsibleSection card title="Pipeline Settings" description="Configure generation pipeline for this character." open={openSections.has("pipeline")} onToggle={() => toggleSection("pipeline")}>
         <PipelineSettingsEditor

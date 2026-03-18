@@ -72,14 +72,14 @@ export function CharacterDetailPage() {
   const deleteCharacter = useDeleteCharacter(projectId);
   const toggleEnabled = useToggleCharacterEnabled(projectId);
 
-  useSetPageTitle(character?.name ?? "Character");
+  useSetPageTitle(character?.name ?? "Model");
 
   const validTabIds = CHARACTER_TABS.map((t) => t.id) as readonly string[];
   const activeTab = tabParam && validTabIds.includes(tabParam) ? tabParam : CHARACTER_TABS[0].id;
 
   function setActiveTab(tab: string) {
     navigate({
-      to: `/projects/${projectId}/characters/${characterId}`,
+      to: `/projects/${projectId}/models/${characterId}`,
       search: { tab },
     });
   }
@@ -111,7 +111,7 @@ export function CharacterDetailPage() {
   }, [characters, characterId, groups]);
 
   function navigateToCharacter(targetId: number) {
-    navigate({ to: `/projects/${projectId}/characters/${targetId}`, search: { tab: activeTab } });
+    navigate({ to: `/projects/${projectId}/models/${targetId}`, search: { tab: activeTab } });
   }
 
   /* --- scene focus state (auto-open scene detail modal) --- */
@@ -148,8 +148,8 @@ export function CharacterDetailPage() {
     return (
       <EmptyState
         icon={<AlertCircle size={32} />}
-        title="Character not found"
-        description="The requested character could not be loaded."
+        title="Model not found"
+        description="The requested model could not be loaded."
       />
     );
   }
@@ -293,6 +293,7 @@ export function CharacterDetailPage() {
           key={characterId}
           character={character}
           characterId={characterId}
+          projectId={projectId}
           onSceneClick={(sceneId) => { setFocusSceneId(sceneId); setActiveTab("scenes"); }}
         />
       )}
@@ -319,7 +320,23 @@ export function CharacterDetailPage() {
       {activeTab === "speech" && <CharacterSpeechTab key={characterId} characterId={characterId} projectId={projectId} />}
       {activeTab === "review" && <CharacterReviewAuditLog key={characterId} characterId={characterId} />}
       {activeTab === "settings" && (
-        <CharacterSettingsTab key={characterId} projectId={projectId} characterId={characterId} characterName={character.name} />
+        <CharacterSettingsTab
+          key={characterId}
+          projectId={projectId}
+          characterId={characterId}
+          characterName={character.name}
+          blockingDeliverables={character.blocking_deliverables}
+          parentBlockingDeliverables={
+            (character.group_id
+              ? groups?.find((g) => g.id === character.group_id)?.blocking_deliverables
+              : null)
+            ?? project?.blocking_deliverables
+            ?? ["metadata", "images", "scenes"]
+          }
+          onUpdateBlockingDeliverables={(next) =>
+            updateCharacter.mutate({ characterId, data: { blocking_deliverables: next } })
+          }
+        />
       )}
 
       {/* Edit character modal */}
@@ -336,7 +353,7 @@ export function CharacterDetailPage() {
       <ConfirmDeleteModal
         open={deleteOpen}
         onClose={() => setDeleteOpen(false)}
-        title="Delete Character"
+        title="Delete Model"
         entityName={character.name}
         onConfirm={handleDelete}
         loading={deleteCharacter.isPending}

@@ -12,7 +12,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSetToggle } from "@/hooks/useSetToggle";
 
 import { CollapsibleSection, ConfirmDeleteModal, ConfigToolbar, Modal } from "@/components/composite";
-import { EmptyState, FileDropZone } from "@/components/domain";
+import { BlockingDeliverablesEditor, EmptyState, FileDropZone } from "@/components/domain";
 import { Stack } from "@/components/layout";
 import { Button, Input, LoadingPane, Select } from "@/components/primitives";
 import { CharacterFilterBar, CharacterGroupSection, FileAssignmentModal } from "@/features/characters/components";
@@ -55,7 +55,7 @@ import {
   useUpdateCharacter,
 } from "../hooks/use-project-characters";
 import type { Character, CharacterGroup, SectionKey, SectionReadiness, UpdateCharacter } from "../types";
-import { computeSectionReadiness } from "../types";
+import { computeSectionReadiness, filterBlockingReasons } from "../types";
 
 /** localStorage key for the show/hide disabled characters toggle. */
 const SHOW_DISABLED_KEY = "x121.project.showDisabled";
@@ -127,6 +127,9 @@ export function ProjectCharactersTab({ projectId, projectName, scrollToGroupId, 
     });
   }, []);
 
+  const [hideComplete, setHideComplete] = useState(false);
+  const toggleHideComplete = useCallback(() => setHideComplete((p) => !p), []);
+
   /* --- audit view (shows blocking reasons on character cards) --- */
   const [auditView, setAuditView] = useState<boolean>(() => {
     try {
@@ -163,6 +166,28 @@ export function ProjectCharactersTab({ projectId, projectName, scrollToGroupId, 
     }
     return map;
   }, [deliverables]);
+
+  /** Resolve per-character blocking deliverables: character → group → project prop. */
+  const resolveCharBlockingDeliverables = useMemo(() => {
+    // Build group blocking deliverables map
+    const groupBdMap = new Map<number, string[]>();
+    if (groups) {
+      for (const g of groups) {
+        if (g.blocking_deliverables) {
+          groupBdMap.set(g.id, g.blocking_deliverables);
+        }
+      }
+    }
+
+    return (c: Character): string[] | undefined => {
+      // Character override
+      if (c.blocking_deliverables) return c.blocking_deliverables;
+      // Group override
+      if (c.group_id && groupBdMap.has(c.group_id)) return groupBdMap.get(c.group_id);
+      // Project-level (passed as prop)
+      return blockingDeliverables;
+    };
+  }, [groups, blockingDeliverables]);
 
   /* --- create character modal --- */
   const [charModalOpen, setCharModalOpen] = useState(false);
@@ -279,6 +304,20 @@ export function ProjectCharactersTab({ projectId, projectName, scrollToGroupId, 
       const q = searchQuery.toLowerCase();
       filtered = filtered.filter((c) => c.name.toLowerCase().includes(q));
     }
+    if (hideComplete) {
+      filtered = filtered.filter((c) => {
+        const readiness = sectionReadinessMap.get(c.id);
+        if (!readiness) return true; // No readiness data → keep visible
+        // Only check sections that are blocking deliverables — non-blocking
+        // sections (e.g. speech when not selected) are treated as complete.
+        const charBd = resolveCharBlockingDeliverables(c);
+        const entries = Object.entries(readiness) as [string, { state: string }][];
+        const relevant = charBd
+          ? entries.filter(([key]) => charBd.includes(key))
+          : entries;
+        return !relevant.every(([, s]) => s.state === "complete");
+      });
+    }
 
     for (const c of filtered) {
       const key = c.group_id ?? "ungrouped";
@@ -291,7 +330,7 @@ export function ProjectCharactersTab({ projectId, projectName, scrollToGroupId, 
       chars.sort((a, b) => a.name.localeCompare(b.name));
     }
     return map;
-  }, [characters, searchQuery, showDisabled]);
+  }, [characters, searchQuery, showDisabled, hideComplete, sectionReadinessMap, resolveCharBlockingDeliverables]);
 
   /* --- filtered groups for display --- */
   const filteredGroups = useMemo(() => {
@@ -517,6 +556,8 @@ export function ProjectCharactersTab({ projectId, projectName, scrollToGroupId, 
           onToggleCollapseAll={toggleCollapseAll}
           showDisabled={showDisabled}
           onToggleShowDisabled={toggleShowDisabled}
+          hideComplete={hideComplete}
+          onToggleHideComplete={toggleHideComplete}
           auditView={auditView}
           onAuditViewChange={toggleAuditView}
           selectedCount={selectedCharIds.size}
@@ -537,7 +578,7 @@ export function ProjectCharactersTab({ projectId, projectName, scrollToGroupId, 
             New Group
           </Button>
           <Button size="sm" icon={<Plus size={14} />} onClick={() => setCharModalOpen(true)}>
-            Add Character
+            Add Model
           </Button>
         </div>
 
@@ -571,16 +612,16 @@ export function ProjectCharactersTab({ projectId, projectName, scrollToGroupId, 
         {totalFiltered === 0 ? (
           <EmptyState
             icon={<User size={32} />}
-            title="No characters"
+            title="No models"
             description={
               characters && characters.length > 0
-                ? "No characters match your filter."
-                : "Add a character to this project."
+                ? "No models match your filter."
+                : "Add a model to this project."
             }
             action={
               !characters?.length ? (
                 <Button size="sm" icon={<Plus size={14} />} onClick={() => setCharModalOpen(true)}>
-                  Add Character
+                  Add Model
                 </Button>
               ) : undefined
             }
@@ -625,12 +666,12 @@ export function ProjectCharactersTab({ projectId, projectName, scrollToGroupId, 
                         avatarUrl={avatarMap.get(c.id)}
                         heroVariantId={c.hero_variant_id}
                         selected={selectedCharIds.has(c.id)}
-                        blockingReasons={auditView ? blockingMap.get(c.id) : undefined}
+                        blockingReasons={auditView ? filterBlockingReasons(blockingMap.get(c.id) ?? [], resolveCharBlockingDeliverables(c)) : undefined}
                         sectionReadiness={sectionReadinessMap.get(c.id)}
-                        blockingDeliverables={blockingDeliverables}
+                        blockingDeliverables={resolveCharBlockingDeliverables(c)}
                         projectId={projectId}
                         onSelect={toggleCharSelection}
-                        onClick={() => navigate({ to: `/projects/${projectId}/characters/${c.id}` })}
+                        onClick={() => navigate({ to: `/projects/${projectId}/models/${c.id}` })}
                         onEdit={() => setEditingChar(c)}
                         onToggleEnabled={handleToggleEnabled}
                       />
@@ -671,12 +712,12 @@ export function ProjectCharactersTab({ projectId, projectName, scrollToGroupId, 
                       avatarUrl={avatarMap.get(c.id)}
                       heroVariantId={c.hero_variant_id}
                       selected={selectedCharIds.has(c.id)}
-                      blockingReasons={auditView ? blockingMap.get(c.id) : undefined}
+                      blockingReasons={auditView ? filterBlockingReasons(blockingMap.get(c.id) ?? [], resolveCharBlockingDeliverables(c)) : undefined}
                       sectionReadiness={sectionReadinessMap.get(c.id)}
                       blockingDeliverables={blockingDeliverables}
                       projectId={projectId}
                       onSelect={toggleCharSelection}
-                      onClick={() => navigate({ to: `/projects/${projectId}/characters/${c.id}` })}
+                      onClick={() => navigate({ to: `/projects/${projectId}/models/${c.id}` })}
                       onEdit={() => setEditingChar(c)}
                       onToggleEnabled={handleToggleEnabled}
                     />
@@ -688,10 +729,10 @@ export function ProjectCharactersTab({ projectId, projectName, scrollToGroupId, 
         )}
 
         {/* Add character modal */}
-        <Modal open={charModalOpen} onClose={() => setCharModalOpen(false)} title="Add Character" size="md">
+        <Modal open={charModalOpen} onClose={() => setCharModalOpen(false)} title="Add Model" size="md">
           <Stack gap={4}>
             <Input
-              label="Character Name"
+              label="Model Name"
               placeholder="e.g. Aria"
               value={newCharName}
               onChange={(e) => setNewCharName(e.target.value)}
@@ -746,7 +787,7 @@ export function ProjectCharactersTab({ projectId, projectName, scrollToGroupId, 
               loading={createCharacter.isPending}
               disabled={!newCharName.trim()}
             >
-              Create Character
+              Create Model
             </Button>
           </Stack>
         </Modal>
@@ -788,6 +829,21 @@ export function ProjectCharactersTab({ projectId, projectName, scrollToGroupId, 
                   />
                 </div>
                 <Stack gap={4}>
+                  <CollapsibleSection card title="Blocking Deliverables" description="Override which deliverable sections must be complete for characters in this group.">
+                    <BlockingDeliverablesEditor
+                      effective={editingGroup.blocking_deliverables ?? blockingDeliverables ?? []}
+                      isOverridden={editingGroup.blocking_deliverables != null}
+                      inheritLabel="Inherited from Project"
+                      overrideLabel="Group Override"
+                      resetLabel="Reset to Project Default"
+                      onUpdate={(next) =>
+                        updateGroup.mutate(
+                          { groupId: editingGroup.id, data: { blocking_deliverables: next } },
+                          { onSuccess: (updated) => setEditingGroup(updated) },
+                        )
+                      }
+                    />
+                  </CollapsibleSection>
                   <CollapsibleSection card title="Scene Settings" description="Override scene settings for this group.">
                     <GroupSceneOverrides projectId={projectId} groupId={editingGroup.id} />
                   </CollapsibleSection>
@@ -817,7 +873,7 @@ export function ProjectCharactersTab({ projectId, projectName, scrollToGroupId, 
         <ConfirmDeleteModal
           open={charDeleteTarget !== null}
           onClose={() => setCharDeleteTarget(null)}
-          title="Delete Character"
+          title="Delete Model"
           entityName={charDeleteTarget?.name ?? ""}
           onConfirm={handleDeleteCharacter}
           loading={deleteCharacter.isPending}
@@ -829,7 +885,7 @@ export function ProjectCharactersTab({ projectId, projectName, scrollToGroupId, 
           onClose={() => setGroupDeleteTarget(null)}
           title="Delete Group"
           entityName={groupDeleteTarget?.name ?? ""}
-          warningText="Characters in this group will become ungrouped."
+          warningText="Models in this group will become ungrouped."
           onConfirm={handleDeleteGroup}
           loading={deleteGroup.isPending}
         />

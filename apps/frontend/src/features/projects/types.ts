@@ -64,11 +64,17 @@ export interface CharacterDeliverableRow {
   status_id: number;
   images_count: number;
   images_approved: number;
+  /** Number of active tracks — each character needs one seed image per track. */
+  required_images_count: number;
   scenes_total: number;
   scenes_with_video: number;
   scenes_approved: number;
   has_active_metadata: boolean;
   metadata_approval_status: "pending" | "approved" | "rejected" | null;
+  /** The `source` column of the active metadata version (e.g. "generated", "json_import"). */
+  metadata_source: string | null;
+  /** True when the active metadata version has both source_bio and source_tov populated. */
+  has_source_files: boolean;
   has_voice_id: boolean;
   blocking_reasons: string[];
   readiness_pct: number;
@@ -84,6 +90,8 @@ export interface CharacterGroup {
   project_id: number;
   name: string;
   sort_order: number;
+  /** Which deliverable sections must be complete. NULL = inherit from project. */
+  blocking_deliverables: string[] | null;
   deleted_at: string | null;
   created_at: string;
   updated_at: string;
@@ -97,6 +105,7 @@ export interface CreateCharacterGroup {
 export interface UpdateCharacterGroup {
   name?: string;
   sort_order?: number;
+  blocking_deliverables?: string[];
 }
 
 /* --------------------------------------------------------------------------
@@ -119,6 +128,8 @@ export interface Character {
   hero_variant_id: number | null;
   /** Whether this character is enabled for production workflows. */
   is_enabled: boolean;
+  /** Which deliverable sections must be complete. NULL = inherit from group/project. */
+  blocking_deliverables: string[] | null;
 }
 
 export interface CreateCharacter {
@@ -131,6 +142,7 @@ export interface UpdateCharacter {
   name?: string;
   status_id?: number;
   group_id?: number | null;
+  blocking_deliverables?: string[];
 }
 
 /* --------------------------------------------------------------------------
@@ -229,7 +241,7 @@ export const PROJECT_STATUS_LABELS: Record<string, string> = {
 /** Tab definitions for project detail page. */
 export const PROJECT_TABS = [
   { id: "overview", label: "Overview" },
-  { id: "characters", label: "Characters" },
+  { id: "characters", label: "Models" },
   { id: "production", label: "Production" },
   { id: "delivery", label: "Delivery" },
   { id: "settings", label: "Settings" },
@@ -286,7 +298,7 @@ export function characterStatusBadgeVariant(statusId: number | null): BadgeVaria
    -------------------------------------------------------------------------- */
 
 /** Per-section readiness state. */
-export type SectionState = "not_started" | "partial" | "complete" | "error";
+export type SectionState = "not_started" | "partial" | "info" | "complete" | "error";
 
 /** Readiness data for a single section. */
 export interface SectionReadiness {
@@ -298,10 +310,65 @@ export interface SectionReadiness {
 /** The four tracked sections in workflow order. */
 export type SectionKey = "metadata" | "images" | "scenes" | "speech";
 
+/** Map blocking reason strings to the section they belong to. */
+const BLOCKING_REASON_SECTION: Record<string, SectionKey> = {
+  "Missing Seed Image": "images",
+  "Images Not Approved": "images",
+  "No Scenes": "scenes",
+  "Videos Not Approved": "scenes",
+  "Missing Metadata": "metadata",
+  "Metadata Not Approved": "metadata",
+};
+
+/** Filter blocking reasons to only include those for configured blocking sections. */
+export function filterBlockingReasons(reasons: string[], blockingDeliverables?: string[]): string[] {
+  if (!blockingDeliverables) return reasons;
+  return reasons.filter((r) => {
+    const section = BLOCKING_REASON_SECTION[r];
+    return !section || blockingDeliverables.includes(section);
+  });
+}
+
+/**
+ * Compute readiness percentage from a deliverable row, considering only
+ * the sections listed in `blockingDeliverables`. Falls back to the
+ * backend-computed value when no deliverables filter is provided.
+ */
+export function computeReadinessPct(
+  row: CharacterDeliverableRow,
+  blockingDeliverables?: string[],
+): number {
+  if (!blockingDeliverables || blockingDeliverables.length === 0) return row.readiness_pct;
+
+  let sum = 0;
+  let count = 0;
+
+  if (blockingDeliverables.includes("metadata")) {
+    sum += row.has_active_metadata && (row.metadata_approval_status ?? "pending") === "approved" ? 1 : 0;
+    count++;
+  }
+  if (blockingDeliverables.includes("images")) {
+    sum += row.images_count > 0 ? row.images_approved / row.images_count : 0;
+    count++;
+  }
+  if (blockingDeliverables.includes("scenes")) {
+    sum += row.scenes_total > 0 ? row.scenes_approved / row.scenes_total : 0;
+    count++;
+  }
+  if (blockingDeliverables.includes("speech")) {
+    sum += row.has_voice_id ? 1 : 0;
+    count++;
+  }
+
+  if (count === 0) return 100;
+  return Math.round((sum / count) * 1000) / 10;
+}
+
 /** CSS color variable for each section state. */
 export const SECTION_STATE_BG: Record<SectionState, string> = {
   not_started: "var(--color-text-muted)",
   partial: "var(--color-action-warning)",
+  info: "var(--color-action-primary)",
   complete: "var(--color-action-success)",
   error: "var(--color-action-danger)",
 };
@@ -310,15 +377,34 @@ export const SECTION_STATE_BG: Record<SectionState, string> = {
 export function computeSectionReadiness(
   row: CharacterDeliverableRow,
 ): Record<SectionKey, SectionReadiness> {
-  const metadata: SectionReadiness = row.has_active_metadata
-    ? row.metadata_approval_status === "approved"
-      ? { state: "complete", label: "Metadata", tooltip: "Metadata: Approved" }
-      : { state: "partial", label: "Metadata", tooltip: `Metadata: ${row.metadata_approval_status === "rejected" ? "Rejected" : "Pending approval"}` }
-    : { state: "not_started", label: "Metadata", tooltip: "Metadata: Not started" };
+  // Metadata state machine:
+  //   Red (error)       — no source files uploaded (bio + tov missing)
+  //   Yellow (partial)  — source files imported, pending generation; OR metadata imported externally, pending approval
+  //   Blue (info)       — metadata generated (via LLM/script), pending approval
+  //   Green (complete)  — approved
+  const isGenerated = row.metadata_source === "generated" || row.metadata_source === "llm_refined";
+  let metadata: SectionReadiness;
+  if (row.has_active_metadata && row.metadata_approval_status === "approved") {
+    metadata = { state: "complete", label: "Metadata", tooltip: "Metadata: Approved" };
+  } else if (row.has_active_metadata && isGenerated) {
+    metadata = { state: "info", label: "Metadata", tooltip: "Metadata: Generated — pending approval" };
+  } else if (row.has_active_metadata) {
+    // Imported or manual metadata, pending approval
+    metadata = { state: "partial", label: "Metadata", tooltip: `Metadata: ${row.metadata_approval_status === "rejected" ? "Rejected" : "Imported — pending approval"}` };
+  } else if (row.has_source_files) {
+    // Source files uploaded but metadata not yet generated
+    metadata = { state: "partial", label: "Metadata", tooltip: "Metadata: Source files uploaded — pending generation" };
+  } else {
+    // No source files, no metadata
+    metadata = { state: "error", label: "Metadata", tooltip: "Metadata: Missing bio/tov source files" };
+  }
 
+  // Images: red = missing track seed images, yellow = all tracks covered but not all approved, green = all approved
+  const requiredImages = row.required_images_count ?? row.images_count;
+  const allTracksCovered = requiredImages > 0 && row.images_count >= requiredImages;
   const images: SectionReadiness =
-    row.images_count === 0
-      ? { state: "not_started", label: "Images", tooltip: "Images: No seed images" }
+    !allTracksCovered
+      ? { state: "error", label: "Images", tooltip: `Images: ${row.images_count}/${requiredImages} track seed images — missing` }
       : row.images_approved >= row.images_count
         ? { state: "complete", label: "Images", tooltip: `Images: ${row.images_approved}/${row.images_count} approved` }
         : { state: "partial", label: "Images", tooltip: `Images: ${row.images_approved}/${row.images_count} approved` };

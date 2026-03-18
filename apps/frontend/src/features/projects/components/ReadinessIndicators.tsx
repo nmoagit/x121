@@ -32,17 +32,20 @@ interface ReadinessIndicatorsProps {
   readiness: Record<SectionKey, SectionReadiness>;
   projectId: number;
   characterId: number;
+  /** Which sections are blocking. Non-blocking sections render as muted. */
+  blockingDeliverables?: string[];
 }
 
-export function ReadinessIndicators({ readiness, projectId, characterId }: ReadinessIndicatorsProps) {
+export function ReadinessIndicators({ readiness, projectId, characterId, blockingDeliverables }: ReadinessIndicatorsProps) {
   const navigate = useNavigate();
 
   return (
     <div className="flex flex-col gap-1 rounded-full bg-black/20 p-0.5 backdrop-blur-sm">
       {SECTIONS.map(({ key, Icon, tab }) => {
         const section = readiness[key];
-        const bg = SECTION_STATE_BG[section.state];
-        const isGrey = section.state === "not_started";
+        const isNonBlocking = blockingDeliverables != null && !blockingDeliverables.includes(key);
+        const bg = isNonBlocking ? SECTION_STATE_BG.not_started : SECTION_STATE_BG[section.state];
+        const isGrey = section.state === "not_started" || isNonBlocking;
 
         return (
           <Tooltip key={key} content={section.tooltip} side="left">
@@ -56,7 +59,7 @@ export function ReadinessIndicators({ readiness, projectId, characterId }: Readi
                 e.stopPropagation();
                 e.preventDefault();
                 navigate({
-                  to: `/projects/${projectId}/characters/${characterId}`,
+                  to: `/projects/${projectId}/models/${characterId}`,
                   search: { tab },
                 });
               }}
@@ -65,7 +68,7 @@ export function ReadinessIndicators({ readiness, projectId, characterId }: Readi
                   e.stopPropagation();
                   e.preventDefault();
                   navigate({
-                    to: `/projects/${projectId}/characters/${characterId}`,
+                    to: `/projects/${projectId}/models/${characterId}`,
                     search: { tab },
                   });
                 }

@@ -11,6 +11,9 @@ pub struct CharacterGroup {
     pub project_id: DbId,
     pub name: String,
     pub sort_order: i32,
+    /// Which deliverable sections must be complete for characters in this group.
+    /// NULL = inherit from project. When set, overrides the project default.
+    pub blocking_deliverables: Option<Vec<String>>,
     pub deleted_at: Option<Timestamp>,
     pub created_at: Timestamp,
     pub updated_at: Timestamp,
@@ -33,4 +36,6 @@ pub struct CreateCharacterGroup {
 pub struct UpdateCharacterGroup {
     pub name: Option<String>,
     pub sort_order: Option<i32>,
+    /// NULL = don't change, Some([]) = reset to inherit from project, Some([...]) = override.
+    pub blocking_deliverables: Option<Vec<String>>,
 }
