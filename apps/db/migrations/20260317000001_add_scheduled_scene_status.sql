@@ -2,7 +2,7 @@
 -- Also extends the schedules.action_type CHECK to allow 'schedule_generation'
 -- and schedule_history.status CHECK to allow 'cancelled'.
 
-INSERT INTO scene_statuses (id, name) VALUES (8, 'Scheduled')
+INSERT INTO scene_statuses (id, name, label) VALUES (8, 'scheduled', 'Scheduled')
 ON CONFLICT (id) DO NOTHING;
 
 -- Widen the action_type CHECK on schedules to include schedule_generation.

@@ -192,8 +192,9 @@ PLURAL_TO_SINGULAR = {
 # Standard field names that should NOT be treated as category_value patterns
 # (e.g., "hair_color" is a real field name, not "hair" category with "color" value)
 STANDARD_FIELD_NAMES = {
-    "hair_color", "hair_length", "hair_style", "eye_color", "eyes_color",
-    "body_type", "age", "ethnicity",
+    "hair_color", "hair_length", "hair_style", "hair_texture", "hair_description",
+    "eye_color", "eyes_color", "eye_description",
+    "body_type", "age", "ethnicity", "personality_traits",
     "height", "personality", "education", "occupation", "residence",
     "birthplace", "siblings", "kids", "pets", "backstory",
     "relationship_status", "current_job", "cup_size", "dress_size",
@@ -814,6 +815,7 @@ def extract_fields_from_array(key: str, values: list) -> dict:
     """
     result = defaultdict(list)
     base_key = normalize_key(key)
+    last_category = None
 
     # For favorite_sex arrays, orphan items should become kinks
     is_sex_array = base_key.lower() == "favorite_sex"
@@ -875,8 +877,16 @@ def extract_fields_from_array(key: str, values: list) -> dict:
         if category:
             norm_category = category.replace(" ", "_")
             result[norm_category].append(value)
+            last_category = norm_category
         else:
             # This is an orphan value (no category prefix)
+            # Check if this is a location continuation (e.g., "CA", "TX")
+            is_state = isinstance(item, str) and len(item) == 2 and item.isupper()
+            if is_state and last_category in ("favorite_travel_destination", "birthplace", "residence"):
+                if result[last_category]:
+                    result[last_category][-1] = f"{result[last_category][-1]}, {item}"
+                    continue
+
             if is_sex_array:
                 # Known position names route to sex_position, not kink
                 known_positions = {
@@ -934,6 +944,7 @@ RENAME_TO_FAVORITE = {
     "holiday": "favorite_holiday",
     "pornstar": "favorite_pornstar",
     "animal": "favorite_animal",
+    "clothing_brand": "favorite_brand",
 }
 
 # Other key renames
@@ -941,6 +952,8 @@ KEY_RENAMES = {
     "eyes_color": "eye_color",
     "lives": "residence",
     "hometown": "birthplace",
+    "sexual_position": "sex_position",
+    "personality_traits": "personality",
 }
 
 # Keys where the value contains part of the key name that got split off
@@ -948,14 +961,16 @@ KEY_RENAMES = {
 # Note: These are sexual preference fields, not favorites, so don't use favorite_ prefix
 SPLIT_KEY_VALUE_FIXES = [
     ("favorite_place", "to have sex", "favorite_place_to_have_sex"),
-    ("wildest_or", "most surprising place", "wildest_or_most_surprising_place"),
+    ("favorite_place", "", "favorite_place_to_have_sex"),
+    ("most_surprising_place", "", "wildest_place"),
+    ("wildest_or", "most surprising place", "wildest_place"),
     ("one_favorite", "sexual fantasy", "one_favorite_sexual_fantasy"),
 ]
 
 # Sexual preference fields that should NOT be nested under favorites
 SEXUAL_PREFERENCE_KEYS = {
     "favorite_place_to_have_sex",
-    "wildest_or_most_surprising_place",
+    "wildest_place",
     "one_favorite_sexual_fantasy",
 }
 
@@ -992,13 +1007,7 @@ def process_embedded_key(key: str, value) -> tuple[str, any] | None:
     norm_key = normalize_key(key)
 
     # Skip keys that are standard field names (not embedded values)
-    standard_keys = {
-        "hair_color", "hair_length", "hair_style",
-        "eye_color", "eyes_color", "body_type", "age", "ethnicity",
-        "height", "personality", "education", "occupation", "residence",
-        "birthplace", "siblings", "kids", "pets", "backstory"
-    }
-    if norm_key.lower() in standard_keys:
+    if norm_key.lower() in STANDARD_FIELD_NAMES:
         return None
 
     # Skip keys that look like sentence fragments (xena-style schema)
@@ -1219,9 +1228,9 @@ def fix_json(data: dict) -> dict:
             result["sex_fantasy"] = value
             continue
 
-        # "wildest_place" -> wildest_or_most_surprising_place
+        # "wildest_place" -> wildest_place
         if norm_key.lower() == "wildest_place":
-            result["wildest_or_most_surprising_place"] = value
+            result["wildest_place"] = value
             continue
 
         # "sex_toys" (plural) -> normalize to sex_toy
@@ -1297,7 +1306,7 @@ def fix_json(data: dict) -> dict:
 
         # "wildest_or_most_surprising_place_to_have_sex" -> already handled field name
         if norm_key.lower() == "wildest_or_most_surprising_place_to_have_sex":
-            result["wildest_or_most_surprising_place"] = value
+            result["wildest_place"] = value
             continue
 
         # Stray ")" key (June Berri malformed bio) -> skip
@@ -1436,7 +1445,7 @@ def fix_json(data: dict) -> dict:
             age_val = int(key)
             if age_val in (18, 21):
                 result["over_" + key] = result.pop(key)
-            elif 25 <= age_val <= 70:
+            elif 18 <= age_val <= 70:
                 # This is likely the actual age
                 result["age"] = age_val
                 del result[key]
@@ -1500,7 +1509,7 @@ def fix_json(data: dict) -> dict:
                 "always", "staying", "practicing", "watching", "maintaining", "i'm", "i",
                 "early", "type", "saving", "daily", "giggles", "sleeping",
                 "not", "jokes", "oversleeping", "partying",
-                "working", "biting", "weaving", "cleaning",
+                "working", "biting", "weaving", "cleaning", "reading",
             )
 
             # Label words that are section headers, not actual habit prefixes
@@ -1581,7 +1590,7 @@ def fix_json(data: dict) -> dict:
         "exploring", "paddleboarding", "eating", "building",
         "caring", "skiing", "going", "skating", "traveling",
         "being", "relaxing", "walking", "watching",
-        "water", "shopping", "spending",
+        "water", "shopping", "spending", "fashion",
     )
     # Transitive verbs that always need an object — bypass gerund check
     always_join_hobbies = ("watching", "doing", "going", "trying", "building", "caring", "exploring", "walking", "spending")
@@ -1639,7 +1648,7 @@ def fix_json(data: dict) -> dict:
                 "bad", "waiting", "half-assed", "rainy", "washing", "math",
                 "loud", "slow", "cold", "unsolicited", "when", "men", "repeating",
                 "folding", "people", "ungenerous", "being", "cleaning",
-                "waking", "getting",
+                "waking", "getting", "early",
             )
 
             # Handle string value (gerund check for safety)
@@ -2120,7 +2129,7 @@ MASTER_SCHEMA = {
         "porn_genres": [],
         "fantasy": "",
         "favorite_place_to_have_sex": "",
-        "wildest_or_most_surprising_place": "",
+        "wildest_place": "",
         "one_favorite_sexual_fantasy": "",
     },
     "hobbies": [],
@@ -2149,9 +2158,9 @@ def transform_to_new_schema(data: dict) -> dict:
 
     # Transform female/male booleans to gender string
     # Also handle edge cases like "female_elf" -> female (ignore "elf")
-    if data.get("female") or data.get("female_elf"):
+    if data.get("female") or data.get("female_elf") or data.get("woman"):
         result["gender"] = "female"
-    elif data.get("male"):
+    elif data.get("male") or data.get("man"):
         result["gender"] = "male"
     else:
         result["gender"] = ""
@@ -2176,10 +2185,11 @@ def transform_to_new_schema(data: dict) -> dict:
         result["age"] = age
     result["relationship_status"] = data.get("relationship_status", "")
     # Map "single: true" or "married: true" to relationship_status if not already set
-    if not result["relationship_status"] and data.get("single") is True:
-        result["relationship_status"] = "single"
-    if not result["relationship_status"] and data.get("married") is True:
-        result["relationship_status"] = "married"
+    if not result["relationship_status"]:
+        if data.get("single") is True or data.get("marital_status_single") is True:
+            result["relationship_status"] = "single"
+        elif data.get("married") is True or data.get("marital_status_married") is True:
+            result["relationship_status"] = "married"
     bp = data.get("birthplace", "")
     result["birthplace"] = normalize_location(smart_title_case(bp)) if bp else ""
 
@@ -2191,9 +2201,9 @@ def transform_to_new_schema(data: dict) -> dict:
     # Personality type from boolean flags (ambivert/extrovert/introvert)
     if data.get("ambivert"):
         result["personality"] = "ambivert"
-    elif data.get("extrovert"):
+    elif data.get("extrovert") or data.get("extroverted"):
         result["personality"] = "extrovert"
-    elif data.get("introvert"):
+    elif data.get("introvert") or data.get("introverted"):
         result["personality"] = "introvert"
     else:
         result["personality"] = data.get("personality", "")
@@ -2407,11 +2417,16 @@ def transform_to_new_schema(data: dict) -> dict:
         result["appearance"] = appearance
 
     # Build favorites object (from favorite nested object)
-    favorites = data.get("favorite", {})
+    favorites = data.get("favorite", data.get("favorites", {}))
     if isinstance(favorites, dict) and favorites:
         # Normalize favorite key names and apply title case to values
         # (ensures consistency between compound-key and mega-array extraction paths)
-        fav_key_renames = {"tvshow": "tv_show", "sport": "sports", "band": "singer", "music": "singer", "travel_destinations": "travel_destination"}
+        fav_key_renames = {
+            "tvshow": "tv_show", "sport": "sports", "band": "singer",
+            "music": "singer", "travel_destinations": "travel_destination",
+            "drink": "beverage", "series": "tv_show", "singer_or_band": "singer", "clothing_brand": "brand",
+            "games": "game", "video_game": "game"
+        }
         # Keys where lowercase is the convention (genre names, colors)
         skip_title_case = {"movie_genre", "music_genre", "book_genre"}
         normalized_favs = {}
@@ -2427,97 +2442,106 @@ def transform_to_new_schema(data: dict) -> dict:
             else:
                 normalized_favs[norm_k] = v
         result["favorites"] = normalized_favs
+
+        # Check for top-level favorites that should be in the nested object
+        for k in ["game", "games", "video_game", "sports", "sport", "favorite_game"]:
+            if data.get(k) and "game" not in normalized_favs:
+                val = data.get(k)
+                normalized_favs["game"] = smart_title_case(val) if isinstance(val, str) else val
     else:
-        result["favorites"] = {}
+        # Check for top-level favorite fields
+        favs = {}
+        target_map = {
+            "favorite_food": "food", "favorite_beverage": "beverage",
+            "favorite_game": "game", "favorite_movie": "movie",
+            "favorite_color": "color", "favorite_book": "book",
+            "favorite_cartoon": "cartoon", "favorite_tv_show": "tv_show",
+            "favorite_singer": "singer", "favorite_celebrity": "celebrity",
+            "favorite_flowers": "flowers", "favorite_sports": "sports",
+            "favorite_brand": "brand", "favorite_holiday": "holiday",
+            "favorite_travel_destination": "travel_destination"
+        }
+        for k, target in target_map.items():
+            if data.get(k):
+                val = data[k]
+                favs[target] = smart_title_case(val) if isinstance(val, str) else val
+        result["favorites"] = favs
 
     # Build sexual_preferences object
     sexual_preferences = {}
 
-    # Positions from sex.position or top-level position
+    # Positions from sex.position or top-level position or favorites.sex_positions
     sex = data.get("sex", {})
-    if isinstance(sex, dict):
-        positions = sex.get("position", [])
-        if positions:
-            if isinstance(positions, list):
-                sexual_preferences["positions"] = positions
-            else:
-                sexual_preferences["positions"] = [positions]
+    fav_obj = data.get("favorite", data.get("favorites", {}))
 
-    # Also check for top-level position field (from favorite_sex extraction)
-    top_positions = data.get("position", "")
-    if top_positions:
-        if "positions" not in sexual_preferences:
-            sexual_preferences["positions"] = []
-        if isinstance(top_positions, list):
-            sexual_preferences["positions"].extend(top_positions)
-        else:
-            # Split "cowgirl and missionary" into separate positions
-            # But don't split inside parentheses: "missionary (with both women and men)"
-            if " and " in top_positions:
-                parts = []
-                depth = 0
-                current = []
-                for char in top_positions:
-                    if char == '(':
-                        depth += 1
-                    elif char == ')':
-                        depth -= 1
-                    current.append(char)
-                    # Check for " and " at top level
-                    segment = "".join(current)
-                    if depth == 0 and segment.endswith(" and "):
-                        parts.append(segment[:-5].strip())
-                        current = []
-                if current:
-                    parts.append("".join(current).strip())
-                sexual_preferences["positions"].extend(p for p in parts if p)
-            else:
-                sexual_preferences["positions"].append(top_positions)
+    positions = []
+    if isinstance(sex, dict) and sex.get("position"):
+        p = sex["position"]
+        positions.extend(p if isinstance(p, list) else [p])
 
-    # Toys from sex.toy (independent of top-level position)
-    if isinstance(sex, dict):
-        toys = sex.get("toy", [])
-        if toys:
-            if isinstance(toys, list):
-                sexual_preferences["toys"] = toys
-            else:
-                sexual_preferences["toys"] = [toys]
+    # Check top-level and favorite-nested variants
+    for k in ["position", "sex_position", "sex_positions", "favorite_sex_positions"]:
+        val = data.get(k) or fav_obj.get(k)
+        if val:
+            positions.extend(val if isinstance(val, list) else [val])
 
-        # Fantasy from sex.fantasy
-        fantasy = sex.get("fantasy", "")
-        if fantasy:
-            sexual_preferences["fantasy"] = fantasy
+    if positions:
+        sexual_preferences["positions"] = positions
+
+    # Toys
+    toys = []
+    if isinstance(sex, dict) and sex.get("toy"):
+        t = sex["toy"]
+        toys.extend(t if isinstance(t, list) else [t])
+
+    for k in ["toy", "sex_toy", "sex_toys", "favorite_sex_toys"]:
+        val = data.get(k) or fav_obj.get(k)
+        if val:
+            toys.extend(val if isinstance(val, list) else [val])
+
+    if toys:
+        sexual_preferences["toys"] = toys
 
     # Kinks
-    kinks = data.get("kink", [])
-    if kinks:
-        if isinstance(kinks, list):
-            sexual_preferences["kinks"] = kinks
-        else:
-            sexual_preferences["kinks"] = [kinks]
+    kinks = []
+    if data.get("kink"):
+        k = data["kink"]
+        kinks.extend(k if isinstance(k, list) else [k])
+    if fav_obj.get("kink") or fav_obj.get("kinks"):
+        k = fav_obj.get("kink") or fav_obj.get("kinks")
+        kinks.extend(k if isinstance(k, list) else [k])
 
-    # Porn preferences from porn nested object
+    if kinks:
+        sexual_preferences["kinks"] = kinks
+
+    # Porn genres
+    porn_genres = []
     porn = data.get("porn", {})
-    if isinstance(porn, dict) and porn:
-        if porn.get("genre"):
-            genre = porn["genre"]
-            if isinstance(genre, list):
-                sexual_preferences["porn_genres"] = genre
-            else:
-                sexual_preferences["porn_genres"] = [genre]
+    if isinstance(porn, dict) and porn.get("genre"):
+        g = porn["genre"]
+        porn_genres.extend(g if isinstance(g, list) else [g])
+
+    for k in ["porn_genre", "porn_genres", "favorite_porn_genres"]:
+        val = data.get(k) or fav_obj.get(k)
+        if val:
+            porn_genres.extend(val if isinstance(val, list) else [val])
+
+    if porn_genres:
+        sexual_preferences["porn_genres"] = porn_genres
+
+    # Fantasy
+    if isinstance(sex, dict) and sex.get("fantasy"):
+        sexual_preferences["fantasy"] = sex["fantasy"]
+    elif data.get("sex_fantasy"):
+        sexual_preferences["fantasy"] = data["sex_fantasy"]
 
     # Additional sexual preference fields
     if data.get("favorite_place_to_have_sex"):
         sexual_preferences["favorite_place_to_have_sex"] = data["favorite_place_to_have_sex"]
-    if data.get("wildest_or_most_surprising_place"):
-        sexual_preferences["wildest_or_most_surprising_place"] = data["wildest_or_most_surprising_place"]
+    if data.get("wildest_place") or data.get("most_surprising_place"):
+        sexual_preferences["wildest_place"] = data.get("wildest_place") or data.get("most_surprising_place")
     if data.get("one_favorite_sexual_fantasy"):
         sexual_preferences["one_favorite_sexual_fantasy"] = data["one_favorite_sexual_fantasy"]
-    # sex_fantasy from mega-array extraction
-    if data.get("sex_fantasy"):
-        sexual_preferences["fantasy"] = data["sex_fantasy"]
-
-    # Masturbation frequency — dropped (no standard field)
 
     # Clean category prefixes from positions, toys, and porn_genres values
     if "positions" in sexual_preferences:
@@ -2576,6 +2600,10 @@ def transform_to_new_schema(data: dict) -> dict:
         kids = False
     if not kids and "children" in data:
         kids = bool(data["children"])
+    if not kids and "no_children" in data:
+        kids = not bool(data["no_children"])
+    if not kids and data.get("no_kids") is True:
+        kids = False
     result["kids"] = bool(kids)
 
     # Merge career_experience into backstory
@@ -2595,6 +2623,21 @@ def transform_to_new_schema(data: dict) -> dict:
     habits = data.get("habits", [])
     result["habits"] = [habits] if isinstance(habits, str) and habits else habits
     result["phobia"] = data.get("phobia", [])
+    if not result["phobia"] and data.get("phobias"):
+        phobias_val = data.get("phobias")
+        result["phobia"] = phobias_val if isinstance(phobias_val, list) else [phobias_val]
+
+    # Residence (handle place_of_living)
+    if not result.get("residence"):
+        res = data.get("place_of_living", data.get("lives", ""))
+        if res:
+            result["residence"] = normalize_location(smart_title_case(res))
+
+    # Handle hair_texture field if it was nested into hair.texture
+    if "appearance" in result and "hair" in result["appearance"]:
+        hair = result["appearance"]["hair"]
+        if not hair.get("style") and hair.get("texture"):
+            hair["style"] = hair.pop("texture")
 
     # Add extra fields not in the main structure (alphabetically)
     extra_fields = {}
@@ -2602,20 +2645,21 @@ def transform_to_new_schema(data: dict) -> dict:
     # Fields to skip (already processed or transformed)
     skip_fields = {
         "VoiceProvider", "VoiceID", "bio", "description", "female", "male", "pansexual", "bisexual",
-        "straight", "heterosexual", "female_elf",
+        "straight", "heterosexual", "female_elf", "woman", "man",
         "age", "relationship_status", "birthplace", "occupation",
         "current_job", "ethnicity", "hair", "hair_color", "hair_length", "hair_style",
         "eye", "eye_color", "eye_description", "physical_features", "body_type",
-        "cup_size", "dress_size", "height", "shoe_size", "favorite", "sex", "kink",
+        "cup_size", "dress_size", "height", "shoe_size", "favorite", "favorites", "sex", "kink",
         "porn", "hobbies", "dislikes", "biggest_dream",
-        "favorite_place_to_have_sex", "wildest_or_most_surprising_place",
-        "one_favorite_sexual_fantasy", "sex_fantasy", "position", "tattoos",
-        "masturbation",
+        "favorite_place_to_have_sex", "wildest_place",
+        "one_favorite_sexual_fantasy", "sex_fantasy", "position", "sex_position", "tattoos",
+        "masturbation", "most_surprising_place", "sex_positions", "sex_toy", "sex_toys",
+        "favorite_sex_positions", "favorite_sex_toys", "favorite_porn_genres",
         "filmed_my", "walked_the", "first_started",  # biographical milestones → interesting_facts
-        "single", "married",  # consumed into relationship_status
-        "ambivert", "extrovert", "introvert",  # consumed into personality
-        "residence",  # handled explicitly with smart_title_case
-        "children",  # normalized to kids
+        "single", "married", "marital_status_single", "marital_status_married", # consumed into relationship_status
+        "ambivert", "extrovert", "introvert", "extroverted", "introverted", # consumed into personality
+        "residence", "place_of_living", "lives", # handled explicitly
+        "children", "no_children", "no_kids", # normalized to kids
         "kids",  # handled explicitly
         "personality",  # handled explicitly
         "pubic_hair",  # too specific, not standardized
@@ -2628,7 +2672,8 @@ def transform_to_new_schema(data: dict) -> dict:
         "guilty_pleasure",  # handled explicitly
         "love_language",  # handled explicitly
         "habits",  # handled explicitly
-        "phobia",  # handled explicitly
+        "phobia", "phobias", # handled explicitly
+        "game", "games", "video_game", "favorite_game", # handled in favorites
     }
 
     for key, value in data.items():
@@ -2638,6 +2683,26 @@ def transform_to_new_schema(data: dict) -> dict:
     # Add extra fields
     for key in sorted(extra_fields.keys()):
         result[key] = extra_fields[key]
+
+    # DEDUPLICATE all list fields
+    def deduplicate_lists(obj):
+        if isinstance(obj, dict):
+            for k, v in obj.items():
+                if isinstance(v, list):
+                    # deduplicate list of strings/ints while preserving order
+                    seen = set()
+                    new_list = []
+                    for item in v:
+                        # Convert item to a hashable form for comparison
+                        item_key = str(item).lower().strip() if isinstance(item, str) else str(item)
+                        if item_key not in seen:
+                            seen.add(item_key)
+                            new_list.append(item)
+                    obj[k] = new_list
+                elif isinstance(v, dict):
+                    deduplicate_lists(v)
+
+    deduplicate_lists(result)
 
     return result
 
