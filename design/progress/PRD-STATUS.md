@@ -21,10 +21,10 @@ Source of truth: [`design/design.md`](../design.md)
 | Status | Count |
 |--------|-------|
 | backlog | 0 |
-| planning | 1 |
+| planning | 0 |
 | in-progress | 0 |
 | review | 0 |
-| done | 131 |
+| done | 132 |
 | blocked | 0 |
 | deferred | 0 |
 | maybe | 15 |
@@ -93,7 +93,7 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-125 | LLM-Driven Metadata Refinement Pipeline | 1 | `done` | 2026-03-06 | LLM formatting/enrichment of Bio+ToV, iterative fix_metadata.py execution loop, diff-based approval, outdated dependency chain, source file protection. Deps: PRD-009, PRD-013, PRD-014, PRD-066, PRD-113. |
 | PRD-133 | Metadata Version Approval | 1 | `done` | 2026-03-13 | Migration (4 columns), approve/reject/unapprove handlers, reviewer authorization, readiness criterion, delivery gate, frontend approval badges. Amendment A.1 (2026-03-14): unapprove action. |
 | PRD-135 | Character Creator | 1 | `done` | 2026-03-17 | Dedicated seed-data provisioning page at /content/characters. Shared group/card module extraction (CharacterGroupSection, CharacterFilterBar), FileAssignmentModal with thumbnails, admin project auto-creation (ProjectConfirmModal), metadata template selection, useCharacterImportBase hook. Deps: PRD-112, PRD-113, PRD-066. |
-| PRD-136 | Multilingual Speech & Deliverable System | 1 | `planning` | — | Language infrastructure (languages table), language_id on character_speeches, speech approval workflow, deliverable JSON export, speech completeness tracking, project speech config, bulk multi-character import (greetings.json format), language flag indicators on character cards. Post-MVP: LLM translation, TTS preview, speech generation. Deps: PRD-124, PRD-112, PRD-128. |
+| PRD-136 | Multilingual Speech & Deliverable System | 1 | `done` | 2026-03-18 | Language infrastructure (languages table), language_id on character_speeches, speech approval workflow, deliverable JSON export, speech completeness tracking, project speech config, bulk multi-character import (greetings.json format), language flag indicators on character cards. Post-MVP: LLM translation, TTS preview, speech generation. Deps: PRD-124, PRD-112, PRD-128. |
 
 ## Part 3: Generation & Pipeline Core
 
@@ -280,3 +280,4 @@ Source of truth: [`design/design.md`](../design.md)
 | 2026-03-18 | Marked PRD-134 (Deferred/Scheduled Generation) as done. Migration, SplitButton, ScheduleGenerationModal, schedule executor, ScheduledGenerationsPanel, cancel/remove-scenes endpoints all implemented. Completion date: 2026-03-17. |
 | 2026-03-18 | Marked PRD-135 (Character Creator) as done. CharactersPage, shared CharacterGroupSection/CharacterFilterBar, FileAssignmentModal with thumbnails, ProjectConfirmModal, useCharacterImportBase, metadata template selection all implemented. Completion date: 2026-03-17. Done count: 131. |
 | 2026-03-18 | Added PRD-136 (Multilingual Speech & Deliverable System). Language infrastructure, speech approval workflow, deliverable JSON export, speech completeness tracking, project speech config, bulk multi-character import, language flags on character cards. Post-MVP: LLM translation, TTS preview, speech generation. Deps: PRD-124, PRD-112, PRD-128. Total PRDs: 136 + 15 MAYBEs = 151. |
+| 2026-03-18 | Implemented PRD-136. Migration (languages, speech_statuses, project_speech_config, character_speeches + speech_types alterations), backend models/repos/handlers for language CRUD, speech approval, reorder, deliverable JSON, completeness, project config, bulk import. Frontend: circle-flags, FlagIcon, SpeechStatusBadge, enhanced speech tab with language filter/approval/reorder/deliverable, language flags on cards/detail, SpeechRequirementsEditor, BulkSpeechImportModal. Done count: 136. |

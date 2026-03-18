@@ -5,14 +5,14 @@ versus those that are implemented but need integration into host pages.
 
 **Last updated:** 2026-03-18
 
-**135 of 136 PRDs are complete.** PRD-136 (Multilingual Speech & Deliverable System) in planning.
+**136 of 136 PRDs are complete.** All committed PRDs implemented.
 
 ## Summary
 
 | Category | Count |
 |----------|-------|
 | Routed (accessible via sidebar/nav) | 73 |
-| Correctly unrouted (overlays/framework/embedded) | 18 |
+| Correctly unrouted (overlays/framework/embedded) | 19 |
 | Missing routes (need host-page integration) | 29 |
 | No frontend (backend/script only) | 15 |
 | **Total** | **135** |
@@ -127,6 +127,7 @@ They do NOT need their own routes.
 | `characters` | PRD-133 | Metadata approval controls embedded in CharacterMetadataTab |
 | `queue` | PRD-134 | ScheduledGenerationsPanel embedded in QueueManagerPage; ScheduleGenerationModal in CharacterScenesTab |
 | `characters` | PRD-135 | Shared CharacterGroupSection/CharacterFilterBar used by CharactersPage (routed at /content/characters via PRD-01/PRD-135) and ProjectCharactersTab |
+| `characters` | PRD-136 | Multilingual speech tab (language filter, approval, reorder, deliverable) embedded in CharacterDetailPage; SpeechRequirementsEditor + BulkSpeechImportModal embedded in ProjectConfigTab; language flags on CharacterCard |
 | `character-review` | PRD-129 | `/review/my-reviews` (MyReviewsPage), `/projects/$projectId/review-assignments` (AssignmentDashboard), Review tab + controls in CharacterDetailPage |
 
 ---

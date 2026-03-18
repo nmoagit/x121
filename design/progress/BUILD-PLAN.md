@@ -4,7 +4,7 @@ Optimal build order for all 135 PRDs, organized into dependency-ordered phases.
 Each phase can begin only after all prior phases are complete. PRDs within a phase
 can be built **in parallel** (dependencies are satisfied by earlier phases).
 
-> **135 PRDs complete as of 2026-03-18.** PRD-134 (Deferred/Scheduled Generation) and PRD-135 (Character Creator) completed 2026-03-17. PRD-136 (Multilingual Speech & Deliverable System) in planning.
+> **136 PRDs complete as of 2026-03-18.** All committed PRDs implemented. 15 MAYBEs remain on the evaluation list.
 
 > **Source of truth:** Cross-Reference Map in [`design/design.md`](../design.md) (Appendix)
 > **Status tracking:** [`PRD-STATUS.md`](./PRD-STATUS.md)
@@ -473,7 +473,7 @@ This phase contains no PRD work — only structural setup.
 | 133 | PRD-133 | Metadata Version Approval | M | Full-Stack | PRD-00, PRD-01, PRD-112 (all done) | **DONE** |
 | 134 | PRD-134 | Deferred / Scheduled Generation | L | Full-Stack | PRD-008, PRD-024, PRD-119, PRD-132 (all done) | **DONE** 2026-03-17 |
 | 135 | PRD-135 | Character Creator | L | Full-Stack | PRD-112, PRD-113, PRD-066 (all done) | **DONE** 2026-03-17 |
-| 136 | PRD-136 | Multilingual Speech & Deliverable System | XL | Full-Stack | PRD-124, PRD-112, PRD-128 (all done) | Planning |
+| 136 | PRD-136 | Multilingual Speech & Deliverable System | XL | Full-Stack | PRD-124, PRD-112, PRD-128 (all done) | **DONE** 2026-03-18 |
 
 ---
 
