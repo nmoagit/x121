@@ -672,9 +672,9 @@ cd apps/frontend && npm install circle-flags
 If `circle-flags` isn't an npm package, use `@nicedoc/circle-flags` or download SVGs to `public/flags/`. Evaluate which approach works best.
 
 **Acceptance Criteria:**
-- [ ] Flag SVG assets accessible in the frontend build
-- [ ] Can render a flag given a `flag_code` like `us`, `es`, `jp`
-- [ ] Works with Vite asset pipeline
+- [x] Flag SVG assets accessible in the frontend build
+- [x] Can render a flag given a `flag_code` like `us`, `es`, `jp`
+- [x] Works with Vite asset pipeline
 
 ### Task 5.2: Update TypeScript types for speech system
 **File:** `apps/frontend/src/features/characters/types.ts`
@@ -767,10 +767,10 @@ export interface CharacterSpeech {
 ```
 
 **Acceptance Criteria:**
-- [ ] All new types and interfaces exported
-- [ ] Existing `SpeechType` and `CharacterSpeech` updated with new fields
-- [ ] Status constants exported
-- [ ] No TypeScript errors (`npx tsc --noEmit`)
+- [x] All new types and interfaces exported
+- [x] Existing `SpeechType` and `CharacterSpeech` updated with new fields
+- [x] Status constants exported
+- [x] No TypeScript errors (`npx tsc --noEmit`)
 
 ### Task 5.3: Create language hooks
 **File:** `apps/frontend/src/features/characters/hooks/use-languages.ts`
@@ -785,9 +785,9 @@ export function useCreateLanguage(): UseMutationResult<Language, Error, { code: 
 ```
 
 **Acceptance Criteria:**
-- [ ] `useLanguages` fetches `GET /api/v1/languages`
-- [ ] `useCreateLanguage` posts to `POST /api/v1/languages` with invalidation
-- [ ] Query key factory pattern followed
+- [x] `useLanguages` fetches `GET /api/v1/languages`
+- [x] `useCreateLanguage` posts to `POST /api/v1/languages` with invalidation
+- [x] Query key factory pattern followed
 
 ### Task 5.4: Update speech hooks with language, approval, reorder, deliverable, completeness
 **File:** `apps/frontend/src/features/characters/hooks/use-character-speeches.ts`
@@ -827,11 +827,11 @@ export function useSpeechCompleteness(characterId: number): UseQueryResult<
 ```
 
 **Acceptance Criteria:**
-- [ ] `useCreateSpeech` passes `language_id` in body
-- [ ] All 5 new hooks implemented with correct API paths
-- [ ] Query invalidation: approval/reorder/bulk-approve invalidate `speechKeys.list(characterId)`
-- [ ] Completeness query key: `["characters", characterId, "speech-completeness"]`
-- [ ] Deliverable hook returns parsed JSON (for preview) or triggers download
+- [x] `useCreateSpeech` passes `language_id` in body
+- [x] All 5 new hooks implemented with correct API paths
+- [x] Query invalidation: approval/reorder/bulk-approve invalidate `speechKeys.list(characterId)`
+- [x] Completeness query key: `["characters", characterId, "speech-completeness"]`
+- [x] Deliverable hook returns parsed JSON (for preview) or triggers download
 
 ### Task 5.5: Create project speech config hooks
 **File:** `apps/frontend/src/features/projects/hooks/use-project-speech-config.ts`
@@ -849,9 +849,9 @@ export function useSetProjectSpeechConfig(projectId: number): UseMutationResult<
 ```
 
 **Acceptance Criteria:**
-- [ ] GET/PUT hooks for project speech config
-- [ ] Mutation invalidates config query key
-- [ ] Follows existing project hook patterns
+- [x] GET/PUT hooks for project speech config
+- [x] Mutation invalidates config query key
+- [x] Follows existing project hook patterns
 
 ### Task 5.6: Create bulk import hook
 **File:** `apps/frontend/src/features/projects/hooks/use-project-speech-import.ts`
@@ -868,9 +868,9 @@ export function useBulkGenerateDeliverables(projectId: number): UseMutationResul
 ```
 
 **Acceptance Criteria:**
-- [ ] Import hook posts to `POST /api/v1/projects/{id}/speeches/import`
-- [ ] Deliverables hook posts to `POST /api/v1/projects/{id}/speech-deliverables` and returns blob
-- [ ] Import invalidates all speech query keys for the project
+- [x] Import hook posts to `POST /api/v1/projects/{id}/speeches/import`
+- [x] Deliverables hook posts to `POST /api/v1/projects/{id}/speech-deliverables` and returns blob
+- [x] Import invalidates all speech query keys for the project
 
 ---
 
@@ -892,10 +892,10 @@ export function FlagIcon({ flagCode, size = 16, className }: FlagIconProps): Rea
 ```
 
 **Acceptance Criteria:**
-- [ ] Renders SVG flag image from circle-flags assets
-- [ ] Accepts size prop for width/height
-- [ ] Falls back gracefully if flag_code not found (show language code text)
-- [ ] Circular shape (border-radius: 50% or SVG already circular)
+- [x] Renders SVG flag image from circle-flags assets
+- [x] Accepts size prop for width/height
+- [x] Falls back gracefully if flag_code not found (show language code text)
+- [x] Circular shape (border-radius: 50% or SVG already circular)
 
 ### Task 6.2: Create SpeechStatusBadge component
 **File:** `apps/frontend/src/features/characters/components/SpeechStatusBadge.tsx`
@@ -914,9 +914,9 @@ Renders a `Badge` component with appropriate color:
 - Rejected (3) → red/danger
 
 **Acceptance Criteria:**
-- [ ] Uses design system `Badge` component
-- [ ] Correct color mapping for all 3 statuses
-- [ ] Accessible text label
+- [x] Uses design system `Badge` component
+- [x] Correct color mapping for all 3 statuses
+- [x] Accessible text label
 
 ### Task 6.3: Update AddSpeechModal with language selector
 **File:** `apps/frontend/src/features/characters/tabs/AddSpeechModal.tsx`
@@ -924,11 +924,11 @@ Renders a `Badge` component with appropriate color:
 Add a language dropdown that defaults to English. Use `useLanguages()` to populate options.
 
 **Acceptance Criteria:**
-- [ ] Language `Select` dropdown added between type selector and text area
-- [ ] Defaults to English (id=1)
-- [ ] `onSave` callback passes `language_id` along with `speech_type_id` and `text`
-- [ ] Props interface updated: `onSave: (input: { speech_type_id: number; text: string; language_id: number }) => void`
-- [ ] Flag icon shown next to each language option
+- [x] Language `Select` dropdown added between type selector and text area
+- [x] Defaults to English (id=1)
+- [x] `onSave` callback passes `language_id` along with `speech_type_id` and `text`
+- [x] Props interface updated: `onSave: (input: { speech_type_id: number; text: string; language_id?: number }) => void`
+- [ ] Flag icon shown next to each language option (deferred: Select component uses native `<select>` which doesn't support custom option rendering)
 
 ### Task 6.4: Update SpeechImportModal with language support
 **File:** `apps/frontend/src/features/characters/tabs/SpeechImportModal.tsx`
@@ -936,10 +936,10 @@ Add a language dropdown that defaults to English. Use `useLanguages()` to popula
 Add a "Default language" selector for imports that don't specify per-entry language. Update preview to show language column.
 
 **Acceptance Criteria:**
-- [ ] Default language selector added (for files without language field)
-- [ ] Preview table shows language column when per-entry language detected
-- [ ] Backward-compatible: files without language column use the selected default
-- [ ] JSON import recognizes optional `language` field per entry
+- [x] Default language selector added (for files without language field)
+- [ ] Preview table shows language column when per-entry language detected (deferred: no preview table exists yet)
+- [x] Backward-compatible: files without language column use the selected default
+- [x] JSON import recognizes optional `language` field per entry
 
 ### Task 6.5: Rewrite CharacterSpeechTab with language filter, approval, reorder, deliverable
 **File:** `apps/frontend/src/features/characters/tabs/CharacterSpeechTab.tsx`
@@ -956,16 +956,16 @@ Major enhancement of the existing tab. Keep the existing structure but add:
 8. **Generate deliverable**: calls API, triggers JSON file download
 
 **Acceptance Criteria:**
-- [ ] Language filter tabs rendered from character's actual speech languages
-- [ ] "All" tab shows all languages with flag icons next to each group
-- [ ] Entries grouped by Type (collapsible) → Language (sub-header with flag) → Variants (list)
-- [ ] Each entry shows: text, status badge, sort order, approve/reject/draft buttons
-- [ ] Approve button on draft → approved; reject button on draft → rejected; reset button on approved/rejected → draft
-- [ ] Up/down arrow reorder within type/language group, calls reorder API on change
-- [ ] Bulk Approve button in toolbar, applies to current filter (all or specific language)
-- [ ] Generate Deliverable button triggers download of `{slug}_speech.json`
-- [ ] Existing edit/delete functionality preserved
-- [ ] VoiceID badge still shown
+- [x] Language filter tabs rendered from character's actual speech languages
+- [x] "All" tab shows all languages with flag icons next to each group
+- [x] Entries grouped by Type (collapsible) → Language (sub-header with flag) → Variants (list)
+- [x] Each entry shows: text, status badge, sort order, approve/reject/draft buttons
+- [x] Approve button on draft → approved; reject button on draft → rejected; reset button on approved/rejected → draft
+- [x] Up/down arrow reorder within type/language group, calls reorder API on change
+- [x] Bulk Approve button in toolbar, applies to current filter (all or specific language)
+- [x] Generate Deliverable button triggers download of `{slug}_speech.json`
+- [x] Existing edit/delete functionality preserved
+- [x] VoiceID badge still shown
 
 ---
 

@@ -1,6 +1,7 @@
 export { Avatar } from "./Avatar";
 export { Badge } from "./Badge";
 export { FilterSelect } from "./FilterSelect";
+export { FlagIcon } from "./FlagIcon";
 export type { BadgeVariant } from "./Badge";
 export { Button } from "./Button";
 export { Checkbox } from "./Checkbox";

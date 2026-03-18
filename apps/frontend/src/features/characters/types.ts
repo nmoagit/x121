@@ -203,6 +203,7 @@ export interface MissingField {
 export interface SpeechType {
   id: number;
   name: string;
+  sort_order: number;
   created_at: string;
 }
 
@@ -210,6 +211,9 @@ export interface CharacterSpeech {
   id: number;
   character_id: number;
   speech_type_id: number;
+  language_id: number;
+  status_id: number;
+  sort_order: number;
   version: number;
   text: string;
   created_at: string;
@@ -266,4 +270,63 @@ export function completenessVariant(pct: number): BadgeVariant {
   if (pct === 100) return "success";
   if (pct >= 50) return "warning";
   return "danger";
+}
+
+/* --------------------------------------------------------------------------
+   Language & multilingual speech types (PRD-136)
+   -------------------------------------------------------------------------- */
+
+export interface Language {
+  id: number;
+  code: string;
+  name: string;
+  flag_code: string;
+  created_at: string;
+}
+
+export const SPEECH_STATUS_DRAFT = 1;
+export const SPEECH_STATUS_APPROVED = 2;
+export const SPEECH_STATUS_REJECTED = 3;
+
+export interface ProjectSpeechConfigEntry {
+  id?: number;
+  project_id?: number;
+  speech_type_id: number;
+  language_id: number;
+  min_variants: number;
+}
+
+export interface CompletenessSummary {
+  total_slots: number;
+  filled_slots: number;
+  completeness_pct: number;
+  breakdown: CompletenessEntry[];
+}
+
+export interface CompletenessEntry {
+  speech_type_id: number;
+  speech_type_name: string;
+  language_id: number;
+  language_code: string;
+  required: number;
+  approved: number;
+  status: "complete" | "partial" | "not_started";
+}
+
+export interface SpeechDeliverable {
+  character_id: number;
+  character_slug: string;
+  character_name: string;
+  voice_id: string | null;
+  generated_at: string;
+  languages: string[];
+  speech: Record<string, Record<string, string[]>>;
+}
+
+export interface BulkImportReport {
+  imported: number;
+  skipped: number;
+  errors: string[];
+  characters_matched: string[];
+  characters_unmatched: string[];
 }

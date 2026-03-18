@@ -23,8 +23,10 @@ interface AddSpeechModalProps {
   speechTypes: { id: number; name: string }[];
   onCreateType: (name: string) => Promise<unknown>;
   creatingType: boolean;
-  onSave: (input: { speech_type_id: number; text: string }) => void;
+  onSave: (input: { speech_type_id: number; text: string; language_id?: number }) => void;
   saving: boolean;
+  /** Available languages for the language selector. */
+  languages?: { id: number; code: string; name: string }[];
 }
 
 /* --------------------------------------------------------------------------
@@ -39,13 +41,16 @@ export function AddSpeechModal({
   creatingType,
   onSave,
   saving,
+  languages,
 }: AddSpeechModalProps) {
   const [selectedTypeId, setSelectedTypeId] = useState("");
+  const [selectedLanguageId, setSelectedLanguageId] = useState("1");
   const [newTypeName, setNewTypeName] = useState("");
   const [text, setText] = useState("");
 
   function handleClose() {
     setSelectedTypeId("");
+    setSelectedLanguageId("1");
     setNewTypeName("");
     setText("");
     onClose();
@@ -60,9 +65,19 @@ export function AddSpeechModal({
   function handleSave() {
     const typeId = Number(selectedTypeId);
     if (!typeId || !text.trim()) return;
-    onSave({ speech_type_id: typeId, text: text.trim() });
+    const langId = Number(selectedLanguageId);
+    onSave({
+      speech_type_id: typeId,
+      text: text.trim(),
+      language_id: langId > 0 ? langId : undefined,
+    });
     handleClose();
   }
+
+  const languageOptions = (languages ?? []).map((l) => ({
+    value: String(l.id),
+    label: `${l.name} (${l.code})`,
+  }));
 
   const typeOptions = speechTypes.map((t) => ({
     value: String(t.id),
@@ -79,6 +94,15 @@ export function AddSpeechModal({
           onChange={setSelectedTypeId}
           placeholder="Select a speech type"
         />
+
+        {languageOptions.length > 0 && (
+          <Select
+            label="Language"
+            options={languageOptions}
+            value={selectedLanguageId}
+            onChange={setSelectedLanguageId}
+          />
+        )}
 
         <div className="flex items-end gap-[var(--spacing-2)]">
           <div className="flex-1">

@@ -101,6 +101,10 @@ export {
   // Console
   Terminal,
   ArrowDown,
+  ArrowUp,
+  // Language / Multilingual
+  Globe,
+  FileJson,
   // Projects
   FolderKanban,
   Film,

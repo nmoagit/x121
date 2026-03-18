@@ -23,6 +23,9 @@ importers:
       '@xyflow/react':
         specifier: ^12.10.1
         version: 12.10.1(@types/react@19.2.14)(immer@11.1.4)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      circle-flags:
+        specifier: ^2.8.2
+        version: 2.8.2
       lucide-react:
         specifier: ^0.474.0
         version: 0.474.0(react@19.2.4)
@@ -1232,6 +1235,9 @@ packages:
   check-error@2.1.3:
     resolution: {integrity: sha512-PAJdDJusoxnwm1VwW07VWwUN1sl7smmC3OKggvndJFadxxDRyFJBX/ggnu/KE4kQAB7a3Dp8f/YXC1FlUprWmA==}
     engines: {node: '>= 16'}
+
+  circle-flags@2.8.2:
+    resolution: {integrity: sha512-FWWHTnTOjX0Ncf9ZcUIuhKb/LsnuSyxu9O4uUTE6WKauT2ewCdoaE+qLYDK/aHMY2NkDHn3bO9zvmMlMWJuJlA==}
 
   classcat@5.0.5:
     resolution: {integrity: sha512-JhZUT7JFcQy/EzW605k/ktHtncoo9vnyW/2GspNYwFlN1C/WmjuV/xtS04e9SOkL2sTdw0VAZ2UGCcQ9lR6p6w==}
@@ -3347,6 +3353,8 @@ snapshots:
       pathval: 2.0.1
 
   check-error@2.1.3: {}
+
+  circle-flags@2.8.2: {}
 
   classcat@5.0.5: {}
 

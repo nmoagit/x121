@@ -8,7 +8,7 @@ import { useCallback, useState } from "react";
 
 import { Modal } from "@/components/composite";
 import { Stack } from "@/components/layout";
-import { Badge, Button } from "@/components/primitives";
+import { Badge, Button, Select } from "@/components/primitives";
 import { cn } from "@/lib/cn";
 import { readFileText } from "@/lib/file-types";
 import { TEXTAREA_BASE } from "@/lib/ui-classes";
@@ -23,9 +23,11 @@ import type { ImportSpeechesResponse } from "../types";
 interface SpeechImportModalProps {
   open: boolean;
   onClose: () => void;
-  onImport: (input: { format: string; data: string }) => void;
+  onImport: (input: { format: string; data: string; language_id?: number }) => void;
   importing: boolean;
   result: ImportSpeechesResponse | null;
+  /** Available languages for the default language selector. */
+  languages?: { id: number; code: string; name: string }[];
 }
 
 /* --------------------------------------------------------------------------
@@ -50,9 +52,11 @@ export function SpeechImportModal({
   onImport,
   importing,
   result,
+  languages,
 }: SpeechImportModalProps) {
   const [text, setText] = useState("");
   const [filename, setFilename] = useState<string | undefined>();
+  const [defaultLanguageId, setDefaultLanguageId] = useState("1");
 
   const handleFileChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -65,18 +69,34 @@ export function SpeechImportModal({
   function handleImport() {
     if (!text.trim()) return;
     const format = detectFormat(text, filename);
-    onImport({ format, data: text });
+    const langId = Number(defaultLanguageId);
+    onImport({ format, data: text, language_id: langId > 0 ? langId : undefined });
   }
+
+  const languageOptions = (languages ?? []).map((l) => ({
+    value: String(l.id),
+    label: `${l.name} (${l.code})`,
+  }));
 
   function handleClose() {
     setText("");
     setFilename(undefined);
+    setDefaultLanguageId("1");
     onClose();
   }
 
   return (
     <Modal open={open} onClose={handleClose} title="Import Speeches" size="xl">
       <Stack gap={4}>
+        {languageOptions.length > 0 && (
+          <Select
+            label="Default language for imported entries"
+            options={languageOptions}
+            value={defaultLanguageId}
+            onChange={setDefaultLanguageId}
+          />
+        )}
+
         <div>
           <label
             htmlFor="speech-import-file"
