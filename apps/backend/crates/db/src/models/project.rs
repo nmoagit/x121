@@ -23,6 +23,8 @@ pub struct Project {
     /// Which deliverable sections must be complete for a character to be "done".
     /// NULL = inherit from platform_settings default. When set, overrides studio default.
     pub blocking_deliverables: Option<Vec<String>>,
+    /// Default output format profile for this project's deliveries.
+    pub default_format_profile_id: Option<DbId>,
 }
 
 /// DTO for creating a new project.
@@ -44,4 +46,6 @@ pub struct UpdateProject {
     pub retention_days: Option<i32>,
     pub auto_deliver_on_final: Option<bool>,
     pub blocking_deliverables: Option<Vec<String>>,
+    /// Double-option: outer `None` = not provided, inner `None` = set to NULL.
+    pub default_format_profile_id: Option<Option<DbId>>,
 }

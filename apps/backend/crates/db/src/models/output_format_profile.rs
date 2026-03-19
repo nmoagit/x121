@@ -17,6 +17,7 @@ pub struct OutputFormatProfile {
     pub framerate: Option<f32>,
     pub pixel_format: Option<String>,
     pub extra_ffmpeg_args: Option<String>,
+    pub is_default: bool,
     pub created_at: Timestamp,
     pub updated_at: Timestamp,
 }

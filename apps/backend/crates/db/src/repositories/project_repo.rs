@@ -8,7 +8,7 @@ use crate::models::project::{CreateProject, Project, UpdateProject};
 /// Column list shared across queries to avoid repetition.
 const COLUMNS: &str =
     "id, name, description, status_id, retention_days, auto_deliver_on_final, deleted_at, created_at, updated_at, \
-     review_trigger_threshold, blocking_deliverables";
+     review_trigger_threshold, blocking_deliverables, default_format_profile_id";
 
 /// Provides CRUD operations for projects.
 pub struct ProjectRepo;
@@ -59,6 +59,12 @@ impl ProjectRepo {
     ) -> Result<Option<Project>, sqlx::Error> {
         let (bd_value, bd_set_null) = crate::resolve_nullable_array(&input.blocking_deliverables);
 
+        // default_format_profile_id: outer Option = provided?, inner Option = nullable value.
+        let (dfp_provided, dfp_value) = match &input.default_format_profile_id {
+            Some(inner) => (true, *inner),
+            None => (false, None),
+        };
+
         let query = format!(
             "UPDATE projects SET
                 name = COALESCE($2, name),
@@ -69,7 +75,8 @@ impl ProjectRepo {
                 blocking_deliverables = CASE
                     WHEN $8 THEN NULL
                     ELSE COALESCE($7, blocking_deliverables)
-                END
+                END,
+                default_format_profile_id = CASE WHEN $9 THEN $10 ELSE default_format_profile_id END
              WHERE id = $1 AND deleted_at IS NULL
              RETURNING {COLUMNS}"
         );
@@ -82,6 +89,8 @@ impl ProjectRepo {
             .bind(input.auto_deliver_on_final)
             .bind(&bd_value)
             .bind(bd_set_null)
+            .bind(dfp_provided)
+            .bind(dfp_value)
             .fetch_optional(pool)
             .await
     }

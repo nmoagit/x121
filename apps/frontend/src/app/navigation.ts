@@ -14,6 +14,7 @@ import {
   File,
   FileSearch,
   FileText,
+  Film,
   Folder,
   FolderKanban,
   HardDrive,
@@ -171,6 +172,7 @@ export const NAV_GROUPS: NavGroupDef[] = [
       { label: "Failure Analytics", path: "/admin/failure-analytics", icon: TrendingUp },
       { label: "Importer", path: "/admin/importer", icon: Upload },
       { label: "Config Import", path: "/admin/config-import", icon: Upload },
+      { label: "Output Profiles", path: "/admin/output-profiles", icon: Film },
     ],
   },
   {

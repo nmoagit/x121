@@ -92,6 +92,22 @@ export function useUpdateProfile(id: number) {
   });
 }
 
+/** Set a profile as the platform default. */
+export function useSetProfileDefault() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (profileId: number) =>
+      api.put<OutputFormatProfile>(
+        `/output-format-profiles/${profileId}/set-default`,
+        {},
+      ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: deliveryKeys.profiles });
+    },
+  });
+}
+
 /** Delete an output format profile. */
 export function useDeleteProfile() {
   const queryClient = useQueryClient();

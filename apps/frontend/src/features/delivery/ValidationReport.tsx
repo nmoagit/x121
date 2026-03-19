@@ -23,12 +23,16 @@ interface ValidationReportProps {
 
 export function ValidationReport({ projectId, initialData }: ValidationReportProps) {
   const [enabled, setEnabled] = useState(false);
-  const { data, isLoading } = useDeliveryValidation(projectId, enabled);
+  const { data, isLoading, isError, error, refetch } = useDeliveryValidation(projectId, enabled);
 
   const result = data ?? initialData;
 
   function handleRunValidation() {
-    setEnabled(true);
+    if (enabled) {
+      refetch();
+    } else {
+      setEnabled(true);
+    }
   }
 
   return (
@@ -47,6 +51,12 @@ export function ValidationReport({ projectId, initialData }: ValidationReportPro
           {isLoading ? "Validating..." : "Run Validation"}
         </Button>
       </div>
+
+      {isError && (
+        <p className="text-sm text-[var(--color-action-danger)]">
+          Validation failed: {error instanceof Error ? error.message : "Unknown error"}
+        </p>
+      )}
 
       {result && (
         <div className="space-y-3">
@@ -75,28 +85,40 @@ export function ValidationReport({ projectId, initialData }: ValidationReportPro
   );
 }
 
+/** Human-readable labels for validation categories. */
+const CATEGORY_LABELS: Record<string, string> = {
+  missing_characters: "No Models",
+  missing_final_video: "Missing Video",
+  non_h264_codec: "Codec Warning",
+  no_scenes: "No Scenes",
+  metadata_not_approved: "Metadata",
+};
+
+function formatCategory(category: string): string {
+  return CATEGORY_LABELS[category] ?? category.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 function IssueItem({ issue }: { issue: ValidationIssue }) {
   return (
     <li
       className={cn(
-        "flex items-start gap-2 text-sm",
+        "flex items-center gap-2 text-sm",
         "rounded-[var(--radius-md)] p-2",
         "bg-[var(--color-surface-secondary)]",
       )}
       data-testid="validation-issue"
     >
-      <Badge variant={SEVERITY_COLORS[issue.severity]} size="sm">
-        {issue.severity}
-      </Badge>
-      <div className="flex-1">
-        <span className="text-[var(--color-text-secondary)]">[{issue.category}]</span>{" "}
-        <span className="text-[var(--color-text-primary)]">{issue.message}</span>
-        {issue.entity_id != null && (
-          <span className="ml-1 text-xs text-[var(--color-text-muted)]">
-            (ID: {issue.entity_id})
-          </span>
-        )}
-      </div>
+      <span className="inline-block w-16 shrink-0">
+        <Badge variant={SEVERITY_COLORS[issue.severity]} size="sm">
+          {issue.severity}
+        </Badge>
+      </span>
+      <span className="inline-block w-28 shrink-0">
+        <Badge variant="default" size="sm">
+          {formatCategory(issue.category)}
+        </Badge>
+      </span>
+      <span className="text-[var(--color-text-primary)] flex-1">{issue.message}</span>
     </li>
   );
 }

@@ -20,6 +20,7 @@ export interface OutputFormatProfile {
   framerate: number | null;
   pixel_format: string | null;
   extra_ffmpeg_args: string | null;
+  is_default: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -48,6 +49,11 @@ export interface UpdateOutputFormatProfile {
   framerate?: number | null;
   pixel_format?: string | null;
   extra_ffmpeg_args?: string | null;
+}
+
+/** Format a profile as a select option label: "Name (resolution, codec)". */
+export function formatProfileOption(p: OutputFormatProfile): { value: string; label: string } {
+  return { value: String(p.id), label: `${p.name} (${p.resolution}, ${p.codec})` };
 }
 
 /* --------------------------------------------------------------------------

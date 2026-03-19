@@ -474,6 +474,7 @@ This phase contains no PRD work — only structural setup.
 | 134 | PRD-134 | Deferred / Scheduled Generation | L | Full-Stack | PRD-008, PRD-024, PRD-119, PRD-132 (all done) | **DONE** 2026-03-17 |
 | 135 | PRD-135 | Character Creator | L | Full-Stack | PRD-112, PRD-113, PRD-066 (all done) | **DONE** 2026-03-17 |
 | 136 | PRD-136 | Multilingual Speech & Deliverable System | XL | Full-Stack | PRD-124, PRD-112, PRD-128 (all done) | **DONE** 2026-03-18 |
+| 137 | PRD-137 | Output Format Profile Management | M | Full-Stack | PRD-039, PRD-110, PRD-112 (all done) | **DONE** 2026-03-19 |
 
 ---
 
@@ -599,6 +600,7 @@ PRD-29 → PRD-83 → PRD-35 → PRD-57
 | 2026-03-10 | Added PRD-131 (Infrastructure Control Panel) to Phase 12. Unified operational dashboard, bulk ops, orphan cleanup, connection recovery. Deps on PRD-130 (planning). Total: 131 PRDs |
 | 2026-03-10 | Added PRD-132 (Queue Manager & Intelligent Job Allocation) to Phase 12. Full queue visibility, job reassignment, drain mode, intelligent allocation. All deps done (PRD-07, 08, 05, 46). Total: 132 PRDs |
 | 2026-03-18 | Marked PRD-134 (Deferred/Scheduled Generation) and PRD-135 (Character Creator) as DONE (completed 2026-03-17). Added PRD-136 (Multilingual Speech & Deliverable System) to Phase 12 as planning. Total: 136 PRDs (135 done, 1 planning) |
+| 2026-03-19 | Added PRD-137 (Output Format Profile Management) to Phase 12. Admin page for profile CRUD, is_default flag, project-level override, ExportPanel auto-selection, seed profiles. All deps done (PRD-039, 110, 112). Total: 137 PRDs (136 done, 1 planning) |
 
 ---
 

@@ -149,17 +149,17 @@ export function FormatProfileManager() {
 }
 
 /* --------------------------------------------------------------------------
-   Profile Form (internal)
+   Profile Form (shared — also used by OutputProfilesPage)
    -------------------------------------------------------------------------- */
 
-interface ProfileFormProps {
+export interface ProfileFormProps {
   profile?: OutputFormatProfile | null;
   onSave: (data: CreateOutputFormatProfile) => void;
   onCancel: () => void;
   isSubmitting: boolean;
 }
 
-function ProfileForm({ profile, onSave, onCancel, isSubmitting }: ProfileFormProps) {
+export function ProfileForm({ profile, onSave, onCancel, isSubmitting }: ProfileFormProps) {
   const [name, setName] = useState(profile?.name ?? "");
   const [resolution, setResolution] = useState(profile?.resolution ?? "1920x1080");
   const [codec, setCodec] = useState(profile?.codec ?? "h264");

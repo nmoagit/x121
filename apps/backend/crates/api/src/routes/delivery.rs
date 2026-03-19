@@ -12,6 +12,7 @@
 //! GET    /{id}                          get_profile
 //! PUT    /{id}                          update_profile
 //! DELETE /{id}                          delete_profile
+//! PUT    /{id}/set-default              set_profile_default
 //!
 //! PROJECT DELIVERY:
 //! POST   /{project_id}/assemble                start_assembly
@@ -29,7 +30,7 @@
 //! DELETE /{id}                          delete_watermark
 //! ```
 
-use axum::routing::{get, post};
+use axum::routing::{get, post, put};
 use axum::Router;
 
 use crate::handlers::delivery;
@@ -48,6 +49,7 @@ pub fn profile_router() -> Router<AppState> {
                 .put(delivery::update_profile)
                 .delete(delivery::delete_profile),
         )
+        .route("/{id}/set-default", put(delivery::set_profile_default))
 }
 
 /// Delivery export routes — merged into `/projects`.

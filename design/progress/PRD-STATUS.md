@@ -24,7 +24,7 @@ Source of truth: [`design/design.md`](../design.md)
 | planning | 0 |
 | in-progress | 0 |
 | review | 0 |
-| done | 132 |
+| done | 137 |
 | blocked | 0 |
 | deferred | 0 |
 | maybe | 15 |
@@ -94,6 +94,7 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-133 | Metadata Version Approval | 1 | `done` | 2026-03-13 | Migration (4 columns), approve/reject/unapprove handlers, reviewer authorization, readiness criterion, delivery gate, frontend approval badges. Amendment A.1 (2026-03-14): unapprove action. |
 | PRD-135 | Character Creator | 1 | `done` | 2026-03-17 | Dedicated seed-data provisioning page at /content/characters. Shared group/card module extraction (CharacterGroupSection, CharacterFilterBar), FileAssignmentModal with thumbnails, admin project auto-creation (ProjectConfirmModal), metadata template selection, useCharacterImportBase hook. Deps: PRD-112, PRD-113, PRD-066. |
 | PRD-136 | Multilingual Speech & Deliverable System | 1 | `done` | 2026-03-18 | Language infrastructure (languages table), language_id on character_speeches, speech approval workflow, deliverable JSON export, speech completeness tracking, project speech config, bulk multi-character import (greetings.json format), language flag indicators on character cards. Post-MVP: LLM translation, TTS preview, speech generation. Deps: PRD-124, PRD-112, PRD-128. |
+| PRD-137 | Output Format Profile Management | 1 | `done` | 2026-03-19 | Admin page at /admin/output-profiles for profile CRUD, is_default flag with unique partial index, project-level default override via default_format_profile_id FK, ExportPanel auto-selection cascade (project → platform → first alphabetical), seed profiles (720p/1080p/4K with 1080p as default). ProfileForm shared between admin page and FormatProfileManager. Deps: PRD-039, PRD-110, PRD-112. |
 
 ## Part 3: Generation & Pipeline Core
 
@@ -281,3 +282,4 @@ Source of truth: [`design/design.md`](../design.md)
 | 2026-03-18 | Marked PRD-135 (Character Creator) as done. CharactersPage, shared CharacterGroupSection/CharacterFilterBar, FileAssignmentModal with thumbnails, ProjectConfirmModal, useCharacterImportBase, metadata template selection all implemented. Completion date: 2026-03-17. Done count: 131. |
 | 2026-03-18 | Added PRD-136 (Multilingual Speech & Deliverable System). Language infrastructure, speech approval workflow, deliverable JSON export, speech completeness tracking, project speech config, bulk multi-character import, language flags on character cards. Post-MVP: LLM translation, TTS preview, speech generation. Deps: PRD-124, PRD-112, PRD-128. Total PRDs: 136 + 15 MAYBEs = 151. |
 | 2026-03-18 | Implemented PRD-136. Migration (languages, speech_statuses, project_speech_config, character_speeches + speech_types alterations), backend models/repos/handlers for language CRUD, speech approval, reorder, deliverable JSON, completeness, project config, bulk import. Frontend: circle-flags, FlagIcon, SpeechStatusBadge, enhanced speech tab with language filter/approval/reorder/deliverable, language flags on cards/detail, SpeechRequirementsEditor, BulkSpeechImportModal. Done count: 136. |
+| 2026-03-19 | Added PRD-137 (Output Format Profile Management). Admin page for centralized profile CRUD, is_default flag, project-level default override, ExportPanel auto-selection, seed profiles (720p/1080p/4K). Deps: PRD-039, PRD-110, PRD-112. Total PRDs: 137 + 15 MAYBEs = 152. |

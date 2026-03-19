@@ -3,6 +3,8 @@
  * (PRD-39 Amendments A.3 & A.4).
  */
 
+import { useMemo } from "react";
+
 import { Badge } from "@/components/primitives";
 import { Stack } from "@/components/layout";
 import { EmptyState } from "@/components/domain";
@@ -13,12 +15,16 @@ import {
   DeliveryDestinationManager,
   DeliveryLogViewer,
   ExportHistory,
+  ExportPanel,
+  ValidationReport,
   useDeliveryStatus,
+  useDeliveryValidation,
   DELIVERY_STATUS_LABELS,
   DELIVERY_STATUS_VARIANT,
 } from "@/features/delivery";
 
 import { useProject, useUpdateProject } from "../hooks/use-projects";
+import { useProjectCharacters } from "../hooks/use-project-characters";
 
 /* --------------------------------------------------------------------------
    Component
@@ -31,8 +37,10 @@ interface ProjectDeliveryTabProps {
 export function ProjectDeliveryTab({ projectId }: ProjectDeliveryTabProps) {
   const { data: project } = useProject(projectId);
   const updateProject = useUpdateProject();
+  const { data: characters = [] } = useProjectCharacters(projectId);
   const { data: statuses = [], isLoading: statusLoading } =
     useDeliveryStatus(projectId);
+  const { data: validationResult } = useDeliveryValidation(projectId, true);
 
   function handleToggleAutoDeliver(enabled: boolean) {
     updateProject.mutate({
@@ -41,8 +49,42 @@ export function ProjectDeliveryTab({ projectId }: ProjectDeliveryTabProps) {
     });
   }
 
+  const characterOptions = characters.map((c) => ({ id: c.id, name: c.name }));
+
+  // Collect model IDs that have validation errors (entity_id on error-severity issues
+  // where category targets a specific model: metadata_not_approved, no_scenes)
+  const invalidModelIds = useMemo(() => {
+    const ids = new Set<number>();
+    if (!validationResult) return ids;
+    for (const issue of validationResult.issues) {
+      if (issue.severity === "error" && issue.entity_id != null) {
+        // metadata_not_approved and no_scenes use character ID as entity_id
+        if (issue.category === "metadata_not_approved" || issue.category === "no_scenes") {
+          ids.add(issue.entity_id);
+        }
+      }
+    }
+    return ids;
+  }, [validationResult]);
+
   return (
     <Stack gap={6}>
+      {/* Pre-export validation */}
+      <section>
+        <ValidationReport projectId={projectId} initialData={validationResult} />
+      </section>
+
+      {/* Export delivery */}
+      <section>
+        <ExportPanel
+          projectId={projectId}
+          characters={characterOptions}
+          validationPassed={validationResult?.passed}
+          invalidModelIds={invalidModelIds}
+          projectDefaultProfileId={project?.default_format_profile_id}
+        />
+      </section>
+
       {/* Delivery Destinations (PRD-039 A.1 & A.2) */}
       <section>
         <DeliveryDestinationManager
@@ -55,7 +97,7 @@ export function ProjectDeliveryTab({ projectId }: ProjectDeliveryTabProps) {
       {/* Delivery Status Summary */}
       <section>
         <h2 className="text-lg font-semibold text-[var(--color-text-primary)] mb-3">
-          Character Delivery Status
+          Model Delivery Status
         </h2>
 
         {statusLoading && (

@@ -733,6 +733,16 @@ const adminHealthRoute = createRoute({
   ),
 });
 
+const adminOutputProfilesRoute = createRoute({
+  getParentRoute: () => adminLayoutRoute,
+  path: "/admin/output-profiles",
+  component: lazyRouteComponent(() =>
+    import("@/app/pages/OutputProfilesPage").then((m) => ({
+      default: m.OutputProfilesPage,
+    })),
+  ),
+});
+
 /* --------------------------------------------------------------------------
    Settings routes
    -------------------------------------------------------------------------- */
@@ -872,6 +882,7 @@ export const routeTree = rootRoute.addChildren([
       adminQueueRoute,
       adminInfrastructureRoute,
       adminHealthRoute,
+      adminOutputProfilesRoute,
     ]),
 
     settingsLayoutRoute.addChildren([shortcutsRoute, wikiRoute]),

@@ -7,7 +7,8 @@ export { DeliveryDestinationManager } from "./DeliveryDestinationManager";
 export { DeliveryLogViewer } from "./DeliveryLogViewer";
 export { ExportHistory } from "./ExportHistory";
 export { ExportPanel } from "./ExportPanel";
-export { FormatProfileManager } from "./FormatProfileManager";
+export { FormatProfileManager, ProfileForm } from "./FormatProfileManager";
+export type { ProfileFormProps } from "./FormatProfileManager";
 export { ValidationReport } from "./ValidationReport";
 
 // Hooks
@@ -22,6 +23,7 @@ export {
   useDeliveryValidation,
   useOutputFormatProfile,
   useOutputFormatProfiles,
+  useSetProfileDefault,
   useStartAssembly,
   useUpdateProfile,
   useUpdateWatermark,
@@ -71,4 +73,5 @@ export {
   EXPORT_STATUS_VARIANT,
   LOG_LEVEL_BADGE_VARIANT,
   SEVERITY_COLORS,
+  formatProfileOption,
 } from "./types";

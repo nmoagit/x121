@@ -8,7 +8,7 @@ use crate::models::output_format_profile::{
 };
 
 const COLUMNS: &str = "id, name, description, resolution, codec, container, \
-     bitrate_kbps, framerate, pixel_format, extra_ffmpeg_args, created_at, updated_at";
+     bitrate_kbps, framerate, pixel_format, extra_ffmpeg_args, is_default, created_at, updated_at";
 
 /// Provides CRUD operations for output format profiles.
 pub struct OutputFormatProfileRepo;
@@ -103,6 +103,43 @@ impl OutputFormatProfileRepo {
             .bind(input.framerate)
             .bind(&input.pixel_format)
             .bind(&input.extra_ffmpeg_args)
+            .fetch_optional(pool)
+            .await
+    }
+
+    /// Set a profile as the default, clearing `is_default` on all other profiles.
+    ///
+    /// Returns the updated profile row.
+    pub async fn set_default(
+        pool: &PgPool,
+        id: DbId,
+    ) -> Result<Option<OutputFormatProfile>, sqlx::Error> {
+        let mut tx = pool.begin().await?;
+
+        sqlx::query("UPDATE output_format_profiles SET is_default = false WHERE is_default = true")
+            .execute(&mut *tx)
+            .await?;
+
+        let query = format!(
+            "UPDATE output_format_profiles SET is_default = true \
+             WHERE id = $1 \
+             RETURNING {COLUMNS}"
+        );
+        let profile = sqlx::query_as::<_, OutputFormatProfile>(&query)
+            .bind(id)
+            .fetch_optional(&mut *tx)
+            .await?;
+
+        tx.commit().await?;
+        Ok(profile)
+    }
+
+    /// Find the profile marked as default, if any.
+    pub async fn find_default(pool: &PgPool) -> Result<Option<OutputFormatProfile>, sqlx::Error> {
+        let query = format!(
+            "SELECT {COLUMNS} FROM output_format_profiles WHERE is_default = true LIMIT 1"
+        );
+        sqlx::query_as::<_, OutputFormatProfile>(&query)
             .fetch_optional(pool)
             .await
     }

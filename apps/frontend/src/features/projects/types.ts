@@ -18,6 +18,8 @@ export interface Project {
   auto_deliver_on_final: boolean;
   /** Which deliverable sections must be complete. NULL = inherit studio default. */
   blocking_deliverables: string[] | null;
+  /** Platform-level default output format profile override. NULL = use platform default. */
+  default_format_profile_id: number | null;
   deleted_at: string | null;
   created_at: string;
   updated_at: string;
@@ -34,6 +36,7 @@ export interface UpdateProject {
   status?: string;
   auto_deliver_on_final?: boolean;
   blocking_deliverables?: string[];
+  default_format_profile_id?: number | null;
 }
 
 /* --------------------------------------------------------------------------
@@ -42,9 +45,8 @@ export interface UpdateProject {
 
 export interface ProjectStats {
   character_count: number;
-  characters_ready: number;
-  characters_generating: number;
-  characters_complete: number;
+  characters_draft: number;
+  characters_active: number;
   scenes_enabled: number;
   scenes_generated: number;
   scenes_approved: number;

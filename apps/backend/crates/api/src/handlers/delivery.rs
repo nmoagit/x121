@@ -172,6 +172,22 @@ pub async fn update_profile(
 // DELETE /output-format-profiles/{id}
 // ---------------------------------------------------------------------------
 
+/// Set a profile as the system default.
+pub async fn set_profile_default(
+    State(state): State<AppState>,
+    _auth: AuthUser,
+    Path(id): Path<DbId>,
+) -> AppResult<impl IntoResponse> {
+    let profile = OutputFormatProfileRepo::set_default(&state.pool, id)
+        .await?
+        .ok_or(AppError::Core(CoreError::NotFound {
+            entity: "OutputFormatProfile",
+            id,
+        }))?;
+    tracing::info!(id = profile.id, "Output format profile set as default");
+    Ok(Json(DataResponse { data: profile }))
+}
+
 /// Delete an output format profile by ID.
 pub async fn delete_profile(
     State(state): State<AppState>,
@@ -283,39 +299,64 @@ pub async fn validate_delivery(
     let mut issues: Vec<assembly::ValidationIssue> = Vec::new();
 
     // Check that the project has characters.
-    let characters = CharacterRepo::list_by_project(&state.pool, project_id).await?;
+    let characters = CharacterRepo::list_by_project(&state.pool, project_id).await
+        .map_err(|e| { tracing::error!(%e, "validate_delivery: list_by_project failed"); e })?;
     if characters.is_empty() {
         issues.push(assembly::ValidationIssue {
             severity: assembly::IssueSeverity::Error,
             category: "missing_characters".to_string(),
-            message: "Project has no characters".to_string(),
+            message: "Project has no models".to_string(),
             entity_id: Some(project_id),
         });
     }
 
     // Check for scenes missing a finalized video version.
+    // Build a scene_id → character_name map so error messages are meaningful.
+    let all_scenes: Vec<(DbId, DbId)> = sqlx::query_as(
+        "SELECT s.id, s.character_id FROM scenes s \
+         JOIN characters c ON s.character_id = c.id \
+         WHERE c.project_id = $1 AND s.deleted_at IS NULL AND c.deleted_at IS NULL",
+    )
+    .bind(project_id)
+    .fetch_all(&state.pool)
+    .await?;
+    let char_name_map: std::collections::HashMap<DbId, &str> = characters
+        .iter()
+        .map(|c| (c.id, c.name.as_str()))
+        .collect();
+    let scene_to_char: std::collections::HashMap<DbId, &str> = all_scenes
+        .iter()
+        .filter_map(|(sid, cid)| char_name_map.get(cid).map(|name| (*sid, *name)))
+        .collect();
+
     let missing_final =
-        SceneVideoVersionRepo::find_scenes_missing_final(&state.pool, project_id).await?;
+        SceneVideoVersionRepo::find_scenes_missing_final(&state.pool, project_id).await
+        .map_err(|e| { tracing::error!(%e, "validate_delivery: find_scenes_missing_final failed"); e })?;
     for scene_id in &missing_final {
+        let model_name = scene_to_char.get(scene_id).unwrap_or(&"Unknown");
         issues.push(assembly::ValidationIssue {
             severity: assembly::IssueSeverity::Error,
             category: "missing_final_video".to_string(),
-            message: format!("Scene {scene_id} has no finalized video version"),
+            message: format!("Model '{}' — scene {scene_id} has no finalized video version", model_name),
             entity_id: Some(*scene_id),
         });
     }
 
     // Check for non-H.264 source codecs that will need transcoding for delivery.
-    let all_versions = SceneVideoVersionRepo::list_non_h264_finals(&state.pool, project_id).await?;
+    let all_versions = SceneVideoVersionRepo::list_non_h264_finals(&state.pool, project_id).await
+        .map_err(|e| { tracing::error!(%e, "validate_delivery: list_non_h264_finals failed"); e })?;
     for version in &all_versions {
         let codec = version.video_codec.as_deref().unwrap_or("unknown");
         issues.push(assembly::ValidationIssue {
             severity: assembly::IssueSeverity::Warning,
             category: "non_h264_codec".to_string(),
-            message: format!(
-                "Scene {} version v{} uses {} codec — will be transcoded to H.264 for delivery",
-                version.scene_id, version.version_number, codec
-            ),
+            message: {
+                let model_name = scene_to_char.get(&version.scene_id).unwrap_or(&"Unknown");
+                format!(
+                    "Model '{}' — scene {} v{} uses {} codec, will be transcoded to H.264",
+                    model_name, version.scene_id, version.version_number, codec
+                )
+            },
             entity_id: Some(version.id),
         });
     }
@@ -324,25 +365,27 @@ pub async fn validate_delivery(
     // and characters without approved metadata (error, blocking).
     for character in &characters {
         let scenes =
-            x121_db::repositories::SceneRepo::list_by_character(&state.pool, character.id).await?;
+            x121_db::repositories::SceneRepo::list_by_character(&state.pool, character.id).await
+            .map_err(|e| { tracing::error!(%e, character_id = character.id, "validate_delivery: list_by_character failed"); e })?;
         if scenes.is_empty() {
             issues.push(assembly::ValidationIssue {
                 severity: assembly::IssueSeverity::Warning,
                 category: "no_scenes".to_string(),
-                message: format!("Character '{}' has no scenes", character.name),
+                message: format!("Model '{}' has no scenes", character.name),
                 entity_id: Some(character.id),
             });
         }
 
         // Check that the character has an approved metadata version.
         let approved =
-            CharacterMetadataVersionRepo::find_approved(&state.pool, character.id).await?;
+            CharacterMetadataVersionRepo::find_approved(&state.pool, character.id).await
+            .map_err(|e| { tracing::error!(%e, character_id = character.id, "validate_delivery: find_approved failed"); e })?;
         if approved.is_none() {
             issues.push(assembly::ValidationIssue {
                 severity: assembly::IssueSeverity::Error,
                 category: "metadata_not_approved".to_string(),
                 message: format!(
-                    "Character '{}' has no approved metadata version",
+                    "Model '{}' has no approved metadata version",
                     character.name
                 ),
                 entity_id: Some(character.id),

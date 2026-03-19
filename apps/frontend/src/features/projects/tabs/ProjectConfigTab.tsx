@@ -10,9 +10,10 @@ import { useCallback, useState } from "react";
 import { CollapsibleSection, ConfigToolbar } from "@/components/composite";
 import { BlockingDeliverablesEditor } from "@/components/domain";
 import { Stack } from "@/components/layout";
-import { Button } from "@/components/primitives";
+import { Button, Select } from "@/components/primitives";
 import { useLanguages } from "@/features/characters/hooks/use-languages";
 import { useSpeechTypes } from "@/features/characters/hooks/use-character-speeches";
+import { useOutputFormatProfiles, formatProfileOption } from "@/features/delivery";
 import { useExportProjectSettings, useConfigImport } from "@/features/config-io";
 import { ConfigLibrary } from "@/features/config-templates";
 import { ProjectPromptOverrides } from "@/features/prompt-management";
@@ -28,7 +29,7 @@ import { useProject, useUpdateProject } from "../hooks/use-projects";
 
 const DEFAULT_BLOCKING = ["metadata", "images", "scenes"];
 
-const SECTION_IDS = ["blocking", "speech", "scenes", "workflows", "video", "prompts", "templates"] as const;
+const SECTION_IDS = ["blocking", "delivery", "speech", "scenes", "workflows", "video", "prompts", "templates"] as const;
 type SectionId = (typeof SECTION_IDS)[number];
 
 interface ProjectSettingsTabProps {
@@ -46,6 +47,7 @@ export function ProjectSettingsTab({ projectId, projectName = "project" }: Proje
   const { data: languages } = useLanguages();
   const { data: speechConfig } = useProjectSpeechConfig(projectId);
   const setSpeechConfig = useSetProjectSpeechConfig(projectId);
+  const { data: formatProfiles = [] } = useOutputFormatProfiles();
   const [importModalOpen, setImportModalOpen] = useState(false);
 
   const [openSections, setOpenSections] = useState<Set<SectionId>>(new Set(SECTION_IDS));
@@ -105,6 +107,27 @@ export function ProjectSettingsTab({ projectId, projectName = "project" }: Proje
           resetLabel="Reset to Studio Default"
           onUpdate={(next) =>
             updateProject.mutate({ id: projectId, data: { blocking_deliverables: next } })
+          }
+        />
+      </CollapsibleSection>
+
+      <CollapsibleSection card
+        title="Default Output Profile"
+        description="Choose a default output format profile for delivery exports in this project. When not set, the platform-wide default is used."
+        open={openSections.has("delivery")}
+        onToggle={() => toggleSection("delivery")}
+      >
+        <Select
+          label="Default Output Profile"
+          size="sm"
+          placeholder="Use platform default"
+          options={formatProfiles.map(formatProfileOption)}
+          value={project?.default_format_profile_id ? String(project.default_format_profile_id) : ""}
+          onChange={(value) =>
+            updateProject.mutate({
+              id: projectId,
+              data: { default_format_profile_id: value ? Number(value) : null },
+            })
           }
         />
       </CollapsibleSection>
