@@ -53,8 +53,8 @@ export function Tabs({ tabs, activeTab, onTabChange, variant = "underline", size
         "flex",
         isPill
           ? cn(
-              "rounded-[var(--radius-lg)] bg-[var(--color-surface-secondary)]",
-              isSmall ? "gap-0.5 p-0.5 rounded-[var(--radius-md)]" : "gap-[var(--spacing-1)] p-[var(--spacing-1)]",
+              "rounded-[3px] bg-[var(--color-surface-tertiary)]",
+              isSmall ? "gap-0.5 p-0.5" : "gap-[var(--spacing-1)] p-[var(--spacing-1)]",
             )
           : "border-b border-[var(--color-border-default)]",
       )}
@@ -77,18 +77,18 @@ export function Tabs({ tabs, activeTab, onTabChange, variant = "underline", size
               "inline-flex items-center cursor-pointer",
               "transition-colors duration-[var(--duration-fast)] ease-[var(--ease-default)]",
               "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-border-focus)]",
-              isSmall ? "gap-1 text-xs font-medium" : "gap-2 text-sm font-medium",
+              isSmall ? "gap-1 text-[11px] font-medium uppercase tracking-wide" : "gap-1.5 text-[11px] font-medium uppercase tracking-wide",
               isPill
                 ? cn(
                     isSmall
-                      ? "px-2 py-0.5 rounded-[var(--radius-sm)]"
-                      : "px-[var(--spacing-3)] py-[var(--spacing-2)] rounded-[var(--radius-md)]",
+                      ? "px-2 py-0.5 rounded-[2px]"
+                      : "px-3 py-1 rounded-[2px]",
                     isActive
                       ? "bg-[var(--color-surface-primary)] text-[var(--color-text-primary)] shadow-[var(--shadow-sm)]"
                       : "text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]",
                   )
                 : cn(
-                    isSmall ? "px-2.5 py-1 border-b-2 -mb-px" : "px-4 py-2.5 border-b-2 -mb-px",
+                    isSmall ? "px-2.5 py-1 border-b-2 -mb-px" : "px-3 py-2 border-b-2 -mb-px",
                     isActive
                       ? "border-[var(--color-action-primary)] text-[var(--color-action-primary)]"
                       : "border-transparent text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:border-[var(--color-border-default)]",

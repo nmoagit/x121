@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { ReactNode } from "react";
 
 import { cn } from "@/lib/cn";
+import { TERMINAL_PANEL } from "@/lib/ui-classes";
 import { ChevronDown } from "@/tokens/icons";
 
 interface CollapsibleSectionProps {
@@ -33,26 +34,71 @@ export function CollapsibleSection({
   const open = controlledOpen ?? internalOpen;
   const toggle = onToggle ?? (() => setInternalOpen((prev) => !prev));
 
+  if (!card) {
+    // Non-card mode — simple section with no wrapper styling
+    return (
+      <div>
+        <div className="flex w-full items-center justify-between gap-2">
+          <button
+            type="button"
+            onClick={toggle}
+            className="flex flex-1 items-center justify-between text-left group min-w-0"
+          >
+            <div className="min-w-0">
+              <h3 className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide font-mono">{title}</h3>
+              {description && (
+                <p className="mt-0.5 text-[10px] text-[var(--color-text-muted)] font-mono">{description}</p>
+              )}
+            </div>
+            <ChevronDown
+              size={14}
+              aria-hidden="true"
+              className={cn(
+                "shrink-0 text-[var(--color-text-muted)] transition-transform duration-150",
+                open && "rotate-180",
+              )}
+            />
+          </button>
+          {actions && (
+            // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
+            <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
+              {actions}
+            </div>
+          )}
+        </div>
+
+        <div
+          className={cn(
+            "grid transition-[grid-template-rows] duration-200 ease-[var(--ease-default)]",
+            open ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
+          )}
+        >
+          <div className="overflow-hidden">
+            <div className="pt-3">{children}</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Card mode — terminal-style dark panel
   return (
-    <div
-      className={cn(
-        card && "rounded-[var(--radius-lg)] border border-[var(--color-border-default)] bg-[var(--color-bg-subtle)] p-4",
-      )}
-    >
+    <div className={TERMINAL_PANEL}>
+      {/* Header */}
       <div className="flex w-full items-center justify-between gap-2">
         <button
           type="button"
           onClick={toggle}
-          className="flex flex-1 items-center justify-between text-left group min-w-0"
+          className="flex flex-1 items-center justify-between text-left px-[var(--spacing-3)] py-[var(--spacing-2)] bg-[#161b22] hover:bg-[#1c2333] transition-colors min-w-0"
         >
           <div className="min-w-0">
-            <h3 className="text-base font-semibold text-[var(--color-text-primary)]">{title}</h3>
+            <h3 className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide font-mono">{title}</h3>
             {description && (
-              <p className="mt-0.5 text-sm text-[var(--color-text-muted)]">{description}</p>
+              <p className="mt-0.5 text-[10px] text-[var(--color-text-muted)] font-mono opacity-60">{description}</p>
             )}
           </div>
           <ChevronDown
-            size={16}
+            size={14}
             aria-hidden="true"
             className={cn(
               "shrink-0 text-[var(--color-text-muted)] transition-transform duration-150",
@@ -62,12 +108,13 @@ export function CollapsibleSection({
         </button>
         {actions && (
           // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
-          <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
+          <div className="shrink-0 pr-[var(--spacing-3)]" onClick={(e) => e.stopPropagation()}>
             {actions}
           </div>
         )}
       </div>
 
+      {/* Content */}
       <div
         className={cn(
           "grid transition-[grid-template-rows] duration-200 ease-[var(--ease-default)]",
@@ -75,7 +122,7 @@ export function CollapsibleSection({
         )}
       >
         <div className="overflow-hidden">
-          <div className="pt-3">{children}</div>
+          <div className="p-[var(--spacing-3)]">{children}</div>
         </div>
       </div>
     </div>

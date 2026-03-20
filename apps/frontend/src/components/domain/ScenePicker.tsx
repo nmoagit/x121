@@ -8,7 +8,7 @@
 import { useState } from "react";
 
 import { Stack } from "@/components/layout";
-import { Select, Spinner } from "@/components/primitives";
+import { Select ,  WireframeLoader } from "@/components/primitives";
 import { EmptyState } from "@/components/domain/EmptyState";
 import { useCharacterScenes } from "@/features/scenes/hooks/useCharacterScenes";
 import { toSelectOptionsBy } from "@/lib/select-utils";
@@ -46,7 +46,7 @@ export function ScenePicker({
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-[var(--spacing-8)]">
-        <Spinner size="lg" />
+        <WireframeLoader size={64} />
       </div>
     );
   }

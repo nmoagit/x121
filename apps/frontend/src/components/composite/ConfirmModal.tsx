@@ -46,15 +46,15 @@ export function ConfirmModal({
 }: ConfirmModalProps) {
   return (
     <Modal open={open} onClose={onClose} title={title} size="md">
-      <Stack gap={4}>
-        <div className="text-sm text-[var(--color-text-secondary)]">
+      <Stack gap={3}>
+        <div className="text-xs font-mono text-[var(--color-text-secondary)]">
           {children}
         </div>
-        <div className="flex gap-[var(--spacing-2)] justify-end">
-          <Button variant="secondary" onClick={onClose}>
+        <div className="flex gap-2 justify-end pt-1 border-t border-[var(--color-border-default)]">
+          <Button variant="secondary" size="sm" onClick={onClose}>
             {cancelLabel}
           </Button>
-          <Button variant={confirmVariant} onClick={onConfirm} loading={loading}>
+          <Button variant={confirmVariant} size="sm" onClick={onConfirm} loading={loading}>
             {confirmLabel}
           </Button>
         </div>

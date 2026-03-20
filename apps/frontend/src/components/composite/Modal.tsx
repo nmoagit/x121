@@ -76,7 +76,7 @@ export function Modal({ open, onClose, title, size = "md", children }: ModalProp
     <div
       className={cn(
         "fixed inset-0 z-50 flex items-center justify-center",
-        "bg-[var(--color-surface-overlay)] backdrop-blur-sm",
+        "bg-black/60 backdrop-blur-sm",
         "animate-[fadeIn_var(--duration-fast)_var(--ease-default)]",
       )}
       role="presentation"
@@ -91,35 +91,50 @@ export function Modal({ open, onClose, title, size = "md", children }: ModalProp
         className={cn(
           "relative w-full mx-[var(--spacing-4)] max-h-[calc(100vh-var(--spacing-8))]",
           "flex flex-col",
-          "bg-[var(--color-surface-secondary)] text-[var(--color-text-primary)] rounded-[var(--radius-lg)]",
-          "shadow-[var(--shadow-lg)] p-[var(--spacing-3)]",
+          "bg-[#0d1117] text-[var(--color-text-primary)]",
+          "border border-[var(--color-border-default)] rounded-[var(--radius-lg)]",
+          "shadow-[0_8px_32px_rgba(0,0,0,0.6)]",
           "animate-[scaleIn_var(--duration-fast)_var(--ease-default)]",
           "focus:outline-none",
           SIZE_CLASSES[size],
         )}
       >
+        {/* Header */}
         {title && (
-          <h2 className="text-lg font-semibold text-[var(--color-text-primary)] pr-8 mb-[var(--spacing-4)] shrink-0">
-            {title}
-          </h2>
+          <div className="flex items-center justify-between px-3 py-2 border-b border-[var(--color-border-default)] bg-[#161b22] rounded-t-[var(--radius-lg)] shrink-0">
+            <h2 className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide font-mono">
+              {title}
+            </h2>
+            <button
+              type="button"
+              onClick={onClose}
+              className="p-0.5 rounded-[var(--radius-sm)] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
+              aria-label="Close"
+            >
+              <X size={14} aria-hidden="true" />
+            </button>
+          </div>
         )}
 
-        <button
-          type="button"
-          onClick={onClose}
-          className={cn(
-            "absolute top-[var(--spacing-4)] right-[var(--spacing-4)] z-10",
-            "p-1 rounded-[var(--radius-sm)]",
-            "text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]",
-            "hover:bg-[var(--color-surface-tertiary)]",
-            "transition-colors duration-[var(--duration-fast)]",
-          )}
-          aria-label="Close"
-        >
-          <X size={20} aria-hidden="true" />
-        </button>
+        {/* Close button when no title */}
+        {!title && (
+          <button
+            type="button"
+            onClick={onClose}
+            className={cn(
+              "absolute top-2 right-2 z-10",
+              "p-0.5 rounded-[var(--radius-sm)]",
+              "text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]",
+              "transition-colors",
+            )}
+            aria-label="Close"
+          >
+            <X size={14} aria-hidden="true" />
+          </button>
+        )}
 
-        <div className="overflow-y-auto min-h-0 pl-2 pr-1 scrollbar-thin">
+        {/* Body */}
+        <div className="overflow-y-auto min-h-0 px-3 py-2 scrollbar-thin">
           {children}
         </div>
       </dialog>

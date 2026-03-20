@@ -27,14 +27,14 @@ interface TabBarProps {
 export function TabBar({ tabs, activeTab, onChange, variant = "underline" }: TabBarProps) {
   if (variant === "pills") {
     return (
-      <div className="inline-flex rounded-[var(--radius-full)] bg-[var(--color-surface-tertiary)] p-0.5">
+      <div className="inline-flex rounded-[3px] bg-[var(--color-surface-tertiary)] p-0.5">
         {tabs.map((tab) => (
           <button
             key={tab.key}
             type="button"
             onClick={() => onChange(tab.key)}
             className={cn(
-              "px-3 py-1 text-xs font-medium rounded-[var(--radius-full)] transition-colors cursor-pointer",
+              "px-3 py-1 text-[11px] font-medium uppercase tracking-wide rounded-[2px] transition-colors cursor-pointer",
               activeTab === tab.key
                 ? "bg-[var(--color-surface-primary)] text-[var(--color-text-primary)] shadow-sm"
                 : "text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)]",

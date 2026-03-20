@@ -1,7 +1,7 @@
 import { cn } from "@/lib/cn";
 import { useId } from "react";
 
-type ToggleSize = "sm" | "md";
+type ToggleSize = "xs" | "sm" | "md";
 
 interface ToggleProps {
   checked?: boolean;
@@ -9,21 +9,32 @@ interface ToggleProps {
   label?: string;
   disabled?: boolean;
   size?: ToggleSize;
+  /** Use pill shape instead of the default rectangular track. */
+  pill?: boolean;
 }
 
 const TRACK_SIZE: Record<ToggleSize, string> = {
-  sm: "w-8 h-[18px]",
+  xs: "w-6 h-3.5",
+  sm: "w-7 h-4",
   md: "w-11 h-6",
 };
 
 const THUMB_SIZE: Record<ToggleSize, string> = {
-  sm: "w-3.5 h-3.5",
+  xs: "w-2.5 h-2.5",
+  sm: "w-3 h-3",
   md: "w-5 h-5",
 };
 
 const THUMB_TRANSLATE: Record<ToggleSize, string> = {
-  sm: "translate-x-[16px]",
+  xs: "translate-x-[10px]",
+  sm: "translate-x-[12px]",
   md: "translate-x-[22px]",
+};
+
+const LABEL_SIZE: Record<ToggleSize, string> = {
+  xs: "text-xs",
+  sm: "text-sm",
+  md: "text-base",
 };
 
 export function Toggle({
@@ -32,6 +43,7 @@ export function Toggle({
   label,
   disabled = false,
   size = "md",
+  pill = false,
 }: ToggleProps) {
   const id = useId();
 
@@ -39,7 +51,7 @@ export function Toggle({
     <label
       htmlFor={id}
       className={cn(
-        "inline-flex items-center gap-2 select-none",
+        "inline-flex items-center gap-1.5 select-none",
         disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer",
       )}
     >
@@ -51,7 +63,8 @@ export function Toggle({
         disabled={disabled}
         onClick={() => onChange?.(!checked)}
         className={cn(
-          "relative inline-flex shrink-0 items-center rounded-[var(--radius-full)]",
+          "relative inline-flex shrink-0 items-center",
+          pill ? "rounded-[var(--radius-full)]" : "rounded-[3px]",
           "transition-colors duration-[var(--duration-fast)] ease-[var(--ease-default)]",
           "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-border-focus)]",
           TRACK_SIZE[size],
@@ -61,7 +74,8 @@ export function Toggle({
         <span
           aria-hidden="true"
           className={cn(
-            "inline-block rounded-[var(--radius-full)] bg-white shadow-sm",
+            "inline-block bg-white shadow-sm",
+            pill ? "rounded-[var(--radius-full)]" : "rounded-[2px]",
             "transition-transform duration-[var(--duration-fast)] ease-[var(--ease-spring)]",
             "translate-x-0.5",
             THUMB_SIZE[size],
@@ -70,7 +84,7 @@ export function Toggle({
         />
       </button>
 
-      {label && <span className="text-base text-[var(--color-text-primary)]">{label}</span>}
+      {label && <span className={cn(LABEL_SIZE[size], "text-[var(--color-text-primary)]")}>{label}</span>}
     </label>
   );
 }

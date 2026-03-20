@@ -1,6 +1,6 @@
 import { Navigate } from "@tanstack/react-router";
 
-import { Spinner } from "@/components/primitives";
+import { WireframeLoader } from "@/components/primitives";
 import { useAuthStore } from "@/stores/auth-store";
 import type { UserRole } from "@/stores/auth-store";
 import type { ReactNode } from "react";
@@ -35,7 +35,7 @@ export function ProtectedRoute({ requiredRole, children }: ProtectedRouteProps) 
   if (isLoading) {
     return (
       <div className="flex h-screen items-center justify-center">
-        <Spinner size="lg" />
+        <WireframeLoader size={64} />
       </div>
     );
   }

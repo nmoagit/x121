@@ -7,8 +7,7 @@
  */
 
 import { Stack } from "@/components/layout";
-import { Badge, Button } from "@/components/primitives";
-import { Checkbox } from "@/components/primitives/Checkbox";
+import { Button, Toggle } from "@/components/primitives";
 import { RotateCcw } from "@/tokens/icons";
 
 /** All known deliverable section keys with human labels. */
@@ -55,31 +54,33 @@ export function BlockingDeliverablesEditor({
 
   return (
     <Stack gap={3}>
-      <div className="flex items-center gap-[var(--spacing-2)]">
-        <Badge variant={isOverridden ? "warning" : "default"} size="sm">
-          {isOverridden ? overrideLabel : inheritLabel}
-        </Badge>
+      <div className="flex items-center gap-2 font-mono text-xs">
+        <span className={isOverridden ? "text-orange-400" : "text-[var(--color-text-muted)]"}>
+          {isOverridden ? overrideLabel.toLowerCase() : inheritLabel.toLowerCase()}
+        </span>
         {isOverridden && (
           <Button
             variant="ghost"
-            size="sm"
-            icon={<RotateCcw size={14} />}
+            size="xs"
+            icon={<RotateCcw size={12} />}
             onClick={reset}
+            className="!text-red-400 hover:!text-red-300"
           >
             {resetLabel}
           </Button>
         )}
       </div>
-      <Stack gap={2}>
+      <div className="flex items-center gap-4">
         {DELIVERABLE_SECTIONS.map(({ key, label }) => (
-          <Checkbox
+          <Toggle
             key={key}
             checked={effective.includes(key)}
             onChange={() => toggleSection(key)}
             label={label}
+            size="sm"
           />
         ))}
-      </Stack>
+      </div>
     </Stack>
   );
 }

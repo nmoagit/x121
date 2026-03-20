@@ -8,7 +8,7 @@
 import { useState } from "react";
 
 import { Stack } from "@/components/layout";
-import { Select, Spinner } from "@/components/primitives";
+import { Select ,  WireframeLoader } from "@/components/primitives";
 import { EmptyState } from "@/components/domain/EmptyState";
 import { useProjects } from "@/features/projects/hooks/use-projects";
 import { useProjectCharacters } from "@/features/projects/hooks/use-project-characters";
@@ -68,7 +68,7 @@ export function ProjectCharacterPicker({
       <div className="flex flex-wrap items-end gap-[var(--spacing-3)]">
         <div className="w-[240px]">
           {projectsLoading ? (
-            <Spinner size="sm" />
+            <WireframeLoader size={32} />
           ) : (
             <Select
               label="Project"
@@ -85,7 +85,7 @@ export function ProjectCharacterPicker({
 
         <div className="w-[240px]">
           {projectId > 0 && charsLoading ? (
-            <Spinner size="sm" />
+            <WireframeLoader size={32} />
           ) : (
             <Select
               label="Model"

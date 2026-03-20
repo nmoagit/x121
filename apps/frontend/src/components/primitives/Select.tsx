@@ -6,7 +6,7 @@ import type { ChangeEvent } from "react";
 type SelectSize = "sm" | "md";
 
 const SIZE_CLASSES: Record<SelectSize, string> = {
-  sm: "px-3 py-1.5 pr-8 text-sm",
+  sm: "px-2 py-1 pr-8 text-xs",
   md: "px-3 py-2 pr-10 text-base",
 };
 
@@ -31,6 +31,7 @@ interface SelectProps {
   disabled?: boolean;
   /** Visual size. Default "md". */
   size?: SelectSize;
+  className?: string;
 }
 
 export function Select({
@@ -42,6 +43,7 @@ export function Select({
   error,
   disabled,
   size = "md",
+  className,
 }: SelectProps) {
   const generatedId = useId();
   const selectId = generatedId;
@@ -57,7 +59,7 @@ export function Select({
       {label && (
         <label
           htmlFor={selectId}
-          className="text-sm font-medium text-[var(--color-text-secondary)]"
+          className="text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-wide font-mono"
         >
           {label}
         </label>
@@ -74,7 +76,7 @@ export function Select({
           className={cn(
             "w-full appearance-none",
             SIZE_CLASSES[size],
-            "bg-[var(--color-surface-secondary)] text-[var(--color-text-primary)]",
+            "bg-transparent text-[var(--color-text-primary)] font-mono",
             "border rounded-[var(--color-border-default)] rounded-[var(--radius-md)]",
             "transition-colors duration-[var(--duration-fast)] ease-[var(--ease-default)]",
             "focus:outline-none focus:ring-2 focus:ring-offset-0",
@@ -82,6 +84,8 @@ export function Select({
               ? "border-[var(--color-border-error)] focus:ring-[var(--color-border-error)]"
               : "border-[var(--color-border-default)] focus:ring-[var(--color-border-focus)]",
             "disabled:opacity-50 disabled:cursor-not-allowed",
+            "[&>option]:bg-[#161b22] [&>option]:text-[var(--color-text-primary)]",
+            className,
           )}
         >
           {placeholder && (

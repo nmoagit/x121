@@ -9,7 +9,7 @@
 import { useState, type ReactNode } from "react";
 
 import { Stack } from "@/components/layout";
-import { Select, Spinner } from "@/components/primitives";
+import { Select ,  WireframeLoader } from "@/components/primitives";
 import { EmptyState } from "@/components/domain/EmptyState";
 import { useProjects } from "@/features/projects/hooks/use-projects";
 import { toSelectOptions } from "@/lib/select-utils";
@@ -47,7 +47,7 @@ export function ProjectPicker({
 
       <div className="w-[240px]">
         {isLoading ? (
-          <Spinner size="sm" />
+          <WireframeLoader size={32} />
         ) : (
           <Select
             label="Project"

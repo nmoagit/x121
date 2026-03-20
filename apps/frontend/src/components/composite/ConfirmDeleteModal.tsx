@@ -57,16 +57,16 @@ export function ConfirmDeleteModal({
 }: ConfirmDeleteModalProps) {
   return (
     <Modal open={open} onClose={onClose} title={title} size="md">
-      <Stack gap={4}>
-        <p className="text-sm text-[var(--color-text-secondary)]">
-          Are you sure you want to delete <strong>{entityName}</strong>? {warningText}
+      <Stack gap={3}>
+        <p className="text-xs font-mono text-[var(--color-text-secondary)]">
+          Are you sure you want to delete <strong className="text-red-400">{entityName}</strong>? {warningText}
         </p>
         {children}
-        <div className="flex gap-[var(--spacing-2)] justify-end">
-          <Button variant="secondary" onClick={onClose}>
+        <div className="flex gap-2 justify-end pt-1 border-t border-[var(--color-border-default)]">
+          <Button variant="secondary" size="sm" onClick={onClose}>
             Cancel
           </Button>
-          <Button variant="danger" onClick={onConfirm} loading={loading}>
+          <Button variant="danger" size="sm" onClick={onConfirm} loading={loading}>
             Delete
           </Button>
         </div>

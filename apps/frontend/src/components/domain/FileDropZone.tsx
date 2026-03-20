@@ -22,11 +22,21 @@ import { isImageFile, isVideoFile, readFileText, stripExtension } from "@/lib/fi
    Props
    -------------------------------------------------------------------------- */
 
+/** A single character→voiceId mapping parsed from a voice CSV. */
+export interface VoiceIdEntry {
+  slug: string;
+  voice_id: string;
+}
+
 interface FileDropZoneProps {
   children: ReactNode;
   onNamesDropped: (names: string[]) => void;
   /** When provided and directories are dropped, called instead of onNamesDropped. */
   onFolderDropped?: (result: FolderDropResult) => void;
+  /** When provided and a speech file (JSON or CSV) is dropped, called with format and data. */
+  onSpeechFileDropped?: (format: "json" | "csv", data: string) => void;
+  /** When provided and a voice ID CSV is dropped, called with parsed entries. */
+  onVoiceFileDropped?: (entries: VoiceIdEntry[]) => void;
   /** Optional ref callback to receive the browseFolder function. */
   browseFolderRef?: React.MutableRefObject<(() => void) | null>;
   /** Additional CSS classes for the wrapper div. */
@@ -423,6 +433,121 @@ function flatPayloadsFromFiles(files: FileList): CharacterDropPayload[] {
 }
 
 /* --------------------------------------------------------------------------
+   Helpers — speech JSON detection
+   -------------------------------------------------------------------------- */
+
+/**
+ * Detect if a parsed JSON object matches the speech import format:
+ * `{ character_slug: { speech_type: { language: string[] } } }`
+ */
+function isSpeechJson(obj: unknown): boolean {
+  if (typeof obj !== "object" || obj === null || Array.isArray(obj)) return false;
+  const entries = Object.entries(obj as Record<string, unknown>);
+  if (entries.length === 0) return false;
+  // Check at least the first entry matches the nested structure
+  for (const [, charVal] of entries.slice(0, 3)) {
+    if (typeof charVal !== "object" || charVal === null || Array.isArray(charVal)) return false;
+    for (const [, typeVal] of Object.entries(charVal as Record<string, unknown>)) {
+      if (typeof typeVal !== "object" || typeVal === null || Array.isArray(typeVal)) return false;
+      for (const [, langVal] of Object.entries(typeVal as Record<string, unknown>)) {
+        if (!Array.isArray(langVal)) return false;
+        if (langVal.length > 0 && typeof langVal[0] !== "string") return false;
+        return true; // First valid path is enough
+      }
+    }
+  }
+  return false;
+}
+
+/**
+ * Detect if CSV text is a speech import file.
+ *
+ * Supports two header formats:
+ * - 4-col: `character,speech_type,language,text` (backend native)
+ * - 3-col: `character,language,text` (speech type inferred from header/filename)
+ *
+ * Returns the normalised 4-column CSV string if detected, or null.
+ */
+function normaliseSpeechCsv(text: string, filename: string): string | null {
+  const lines = text.split(/\r?\n/).filter((l) => l.trim());
+  if (lines.length < 2) return null;
+
+  const header = lines[0]!.toLowerCase();
+  const cols = header.split(",").map((c) => c.trim());
+
+  // 4-column format: already correct
+  if (
+    cols.length >= 4 &&
+    (cols[0] === "character" || cols[0] === "slug" || cols[0] === "character_slug") &&
+    (cols[2] === "language" || cols[2] === "lang") &&
+    (cols[1] === "speech_type" || cols[1] === "type")
+  ) {
+    return text;
+  }
+
+  // 3-column format: character, language, text — need to inject speech type
+  if (
+    cols.length >= 3 &&
+    (cols[0] === "character" || cols[0] === "slug" || cols[0] === "character_slug") &&
+    (cols[1] === "language" || cols[1] === "lang")
+  ) {
+    // Infer speech type from filename: "greetings_entries.csv" → "greeting"
+    const stem = stripExtension(filename).toLowerCase()
+      .replace(/_entries$/, "")
+      .replace(/_summary$/, "")
+      .replace(/s$/, ""); // plural → singular
+    const speechType = stem || "greeting";
+
+    // Rebuild as 4-column CSV
+    const out = ["character_slug,speech_type,language,text"];
+    for (const line of lines.slice(1)) {
+      if (!line.trim()) continue;
+      // Split on first two commas only — text may contain commas
+      const parts = line.match(/^([^,]*),([^,]*),(.*)$/);
+      if (parts) {
+        out.push(`${parts[1]},${speechType},${parts[2]},${parts[3]}`);
+      }
+    }
+    return out.join("\n");
+  }
+
+  return null;
+}
+
+/* --------------------------------------------------------------------------
+   Helpers — voice ID CSV detection
+   -------------------------------------------------------------------------- */
+
+/**
+ * Detect if CSV text is a voice ID mapping file.
+ *
+ * Expects columns: character/name/slug + voice_id/voiceid/voice/elevenlabs_voice.
+ * Returns parsed entries or null if not a voice CSV.
+ */
+function parseVoiceCsv(text: string): VoiceIdEntry[] | null {
+  const lines = text.split(/\r?\n/).filter((l) => l.trim());
+  if (lines.length < 2) return null;
+
+  const cols = lines[0]!.toLowerCase().split(",").map((c) => c.trim());
+  const nameCol = cols.findIndex((h) => ["character", "character_slug", "slug", "name", "model", "avatar"].includes(h));
+  const voiceCol = cols.findIndex((h) => ["voice_id", "voiceid", "elevenlabs_voice", "voice"].includes(h));
+  if (nameCol < 0 || voiceCol < 0) return null;
+
+  const entries: VoiceIdEntry[] = [];
+  for (const line of lines.slice(1)) {
+    if (!line.trim()) continue;
+    const parts = line.split(",").map((c) => c.trim());
+    const slug = parts[nameCol]?.replace(/^"|"$/g, "").trim();
+    const vid = parts[voiceCol]?.replace(/^"|"$/g, "").trim();
+    if (slug && vid) {
+      entries.push({ slug, voice_id: vid });
+    }
+  }
+
+  return entries.length > 0 ? entries : null;
+}
+
+/* --------------------------------------------------------------------------
    Component
    -------------------------------------------------------------------------- */
 
@@ -430,6 +555,8 @@ export function FileDropZone({
   children,
   onNamesDropped,
   onFolderDropped,
+  onSpeechFileDropped,
+  onVoiceFileDropped,
   browseFolderRef,
   className,
 }: FileDropZoneProps) {
@@ -559,6 +686,49 @@ export function FileDropZone({
         return;
       }
 
+      // Speech file detection — check JSON and CSV before legacy path
+      if (onSpeechFileDropped) {
+        for (const file of plainFiles) {
+          const lower = file.name.toLowerCase();
+          try {
+            const text = await readFileText(file);
+
+            if (lower.endsWith(".json")) {
+              const parsed = JSON.parse(text);
+              if (isSpeechJson(parsed)) {
+                onSpeechFileDropped("json", text);
+                return;
+              }
+            } else if (lower.endsWith(".csv")) {
+              const normalised = normaliseSpeechCsv(text, file.name);
+              if (normalised) {
+                onSpeechFileDropped("csv", normalised);
+                return;
+              }
+            }
+          } catch {
+            // Not valid — fall through to legacy path
+          }
+        }
+      }
+
+      // Voice ID CSV detection — check before legacy path
+      if (onVoiceFileDropped) {
+        for (const file of plainFiles) {
+          if (!file.name.toLowerCase().endsWith(".csv")) continue;
+          try {
+            const text = await readFileText(file);
+            const entries = parseVoiceCsv(text);
+            if (entries) {
+              onVoiceFileDropped(entries);
+              return;
+            }
+          } catch {
+            // Not valid — fall through
+          }
+        }
+      }
+
       // Legacy name-only path (directories without onFolderDropped, or text/csv files)
       const allNames: string[] = [];
 
@@ -586,7 +756,7 @@ export function FileDropZone({
         onNamesDropped(unique);
       }
     },
-    [onNamesDropped, onFolderDropped],
+    [onNamesDropped, onFolderDropped, onSpeechFileDropped, onVoiceFileDropped],
   );
 
   return (
@@ -620,7 +790,7 @@ export function FileDropZone({
           )}
         >
           <p className="text-sm font-medium text-[var(--color-text-primary)]">
-            Drop files or folders to import models
+            Drop files, folders, speech, or voice CSV to import
           </p>
         </div>
       )}

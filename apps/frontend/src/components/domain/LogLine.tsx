@@ -1,13 +1,11 @@
 /**
  * Shared log line component for terminal-style log viewers.
  *
- * Renders a single log entry with timestamp, level badge, and message
- * in a monospace terminal style. Used by GenerationTerminal (per-scene)
- * and GenerationLogTab (global activity console).
+ * Renders a single log entry with timestamp, colored level label, and message
+ * in a monospace terminal style. Used by GenerationTerminal (per-scene),
+ * GenerationLogTab (global activity console), and delivery logs.
  */
 
-import { Badge } from "@/components/primitives";
-import type { BadgeVariant } from "@/components/primitives";
 import { cn } from "@/lib/cn";
 import { formatLogTime } from "@/features/activity-console";
 
@@ -18,28 +16,28 @@ import { formatLogTime } from "@/features/activity-console";
 /** Log levels used by generation logs (superset includes "success"). */
 export type LogLevel = "debug" | "info" | "warn" | "error" | "success";
 
-export const LOG_LEVEL_BADGE_VARIANT: Record<LogLevel, BadgeVariant> = {
-  debug: "default",
-  info: "default",
-  warn: "warning",
-  error: "danger",
-  success: "success",
-};
-
 export const LOG_LEVEL_LABELS: Record<LogLevel, string> = {
-  debug: "DEBUG",
-  info: "INFO",
-  warn: "WARN",
+  debug: "DBG",
+  info: "INF",
+  warn: "WRN",
   error: "ERR",
   success: "OK",
 };
 
-const LEVEL_MESSAGE_CLASSES: Record<LogLevel, string> = {
+const LEVEL_LABEL_COLORS: Record<LogLevel, string> = {
+  debug: "text-[var(--color-text-muted)]",
+  info: "text-cyan-400",
+  warn: "text-orange-400",
+  error: "text-red-400",
+  success: "text-green-400",
+};
+
+const LEVEL_MESSAGE_COLORS: Record<LogLevel, string> = {
   debug: "text-[var(--color-text-muted)]",
   info: "text-[var(--color-text-muted)]",
-  warn: "text-[var(--color-action-warning)]",
-  error: "text-[var(--color-action-danger)]",
-  success: "text-[var(--color-action-success)]",
+  warn: "text-orange-400",
+  error: "text-red-400",
+  success: "text-green-400",
 };
 
 /* --------------------------------------------------------------------------
@@ -49,29 +47,25 @@ const LEVEL_MESSAGE_CLASSES: Record<LogLevel, string> = {
 interface LogLineProps {
   /** ISO timestamp for the entry. */
   timestamp: string;
-  /** Log level — determines badge variant and message color. */
+  /** Log level — determines label color and message color. */
   level: LogLevel;
   /** The log message text. */
   message: string;
-  /** Optional prefix shown between badge and message (e.g. scene ID). */
+  /** Optional prefix shown between level and message (e.g. scene ID). */
   prefix?: React.ReactNode;
 }
 
 export function LogLine({ timestamp, level, message, prefix }: LogLineProps) {
   return (
-    <div className="flex items-center gap-[var(--spacing-2)] font-mono text-xs leading-5">
-      <span className="shrink-0 text-[var(--color-text-muted)] opacity-60">
+    <div className="flex items-center gap-2 font-mono text-[11px] leading-5">
+      <span className="shrink-0 text-[var(--color-text-muted)] opacity-40 text-[10px]">
         {formatLogTime(timestamp)}
       </span>
-      <Badge
-        size="sm"
-        variant={LOG_LEVEL_BADGE_VARIANT[level]}
-        className="min-w-[3.25rem] justify-center"
-      >
+      <span className={cn("shrink-0 w-7 text-[10px] font-semibold uppercase", LEVEL_LABEL_COLORS[level])}>
         {LOG_LEVEL_LABELS[level]}
-      </Badge>
+      </span>
       {prefix}
-      <span className={cn("break-words min-w-0", LEVEL_MESSAGE_CLASSES[level])}>
+      <span className={cn("break-words min-w-0", LEVEL_MESSAGE_COLORS[level])}>
         {message}
       </span>
     </div>
