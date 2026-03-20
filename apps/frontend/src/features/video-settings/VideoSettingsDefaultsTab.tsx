@@ -10,11 +10,18 @@ import { useCallback, useEffect, useState } from "react";
 
 import { EmptyState } from "@/components/domain";
 import { Stack } from "@/components/layout";
-import { Badge, Button, LoadingPane } from "@/components/primitives";
+import { Button, LoadingPane } from "@/components/primitives";
 import { useSceneTypes, useUpdateSceneType } from "@/features/scene-types";
 import type { SceneType } from "@/features/scene-types";
 import { Check, RotateCcw } from "@/tokens/icons";
 
+import {
+  TERMINAL_PANEL,
+  TERMINAL_TH,
+  TERMINAL_DIVIDER,
+  TERMINAL_ROW_HOVER,
+  TERMINAL_SELECT,
+} from "@/lib/ui-classes";
 import { FPS_OPTIONS, RESOLUTION_OPTIONS } from "./types";
 
 /* --------------------------------------------------------------------------
@@ -22,10 +29,7 @@ import { FPS_OPTIONS, RESOLUTION_OPTIONS } from "./types";
    -------------------------------------------------------------------------- */
 
 const INPUT_CLS =
-  "w-full px-2 py-1 text-sm bg-[var(--color-surface-secondary)] text-[var(--color-text-primary)] border border-[var(--color-border-default)] rounded-[var(--radius-md)] focus:outline-none focus:ring-1 focus:ring-[var(--color-border-focus)]";
-
-const SELECT_CLS =
-  "w-full appearance-none px-2 py-1 pr-6 text-sm bg-[var(--color-surface-secondary)] text-[var(--color-text-primary)] border border-[var(--color-border-default)] rounded-[var(--radius-md)] focus:outline-none focus:ring-1 focus:ring-[var(--color-border-focus)]";
+  "w-full px-2 py-1 text-xs font-mono bg-transparent text-[var(--color-text-primary)] border border-[var(--color-border-default)] rounded-[var(--radius-md)] placeholder:text-[var(--color-text-muted)] placeholder:opacity-40 focus:outline-none focus:ring-1 focus:ring-[var(--color-border-focus)]";
 
 /* --------------------------------------------------------------------------
    Per-row editor
@@ -68,14 +72,14 @@ function SceneTypeRow({ sceneType }: { sceneType: SceneType }) {
   }, [updateMutation, draft]);
 
   return (
-    <tr className="border-b border-[var(--color-border-default)] last:border-b-0">
-      <td className="py-1 pr-3">
-        <div className="flex items-center gap-1.5">
-          <span className="text-sm text-[var(--color-text-primary)]">{sceneType.name}</span>
-          {!sceneType.is_active && <Badge variant="default" size="sm">Inactive</Badge>}
+    <tr className={`${TERMINAL_DIVIDER} last:border-b-0 ${TERMINAL_ROW_HOVER}`}>
+      <td className="py-2 px-3">
+        <div className="flex items-center gap-1.5 font-mono text-xs">
+          <span className="text-[var(--color-text-primary)] uppercase tracking-wide">{sceneType.name}</span>
+          {!sceneType.is_active && <span className="text-[var(--color-text-muted)]">inactive</span>}
         </div>
       </td>
-      <td className="py-1 px-1">
+      <td className="py-2 px-2">
         <input
           type="number"
           min={1}
@@ -85,11 +89,11 @@ function SceneTypeRow({ sceneType }: { sceneType: SceneType }) {
           className={`${INPUT_CLS} w-20`}
         />
       </td>
-      <td className="py-1 px-1">
+      <td className="py-2 px-2">
         <select
           value={draft.target_fps}
           onChange={(e) => setDraft((d) => ({ ...d, target_fps: e.target.value }))}
-          className={`${SELECT_CLS} w-24`}
+          className={`${TERMINAL_SELECT} w-24`}
         >
           <option value="">Not set</option>
           {FPS_OPTIONS.map((fps) => (
@@ -97,11 +101,11 @@ function SceneTypeRow({ sceneType }: { sceneType: SceneType }) {
           ))}
         </select>
       </td>
-      <td className="py-1 px-1">
+      <td className="py-2 px-2">
         <select
           value={draft.target_resolution}
           onChange={(e) => setDraft((d) => ({ ...d, target_resolution: e.target.value }))}
-          className={`${SELECT_CLS} w-36`}
+          className={`${TERMINAL_SELECT} w-36`}
         >
           <option value="">Not set</option>
           {RESOLUTION_OPTIONS.map((r) => (
@@ -109,17 +113,17 @@ function SceneTypeRow({ sceneType }: { sceneType: SceneType }) {
           ))}
         </select>
       </td>
-      <td className="py-1 pl-1">
+      <td className="py-2 px-3">
         <div className="flex items-center gap-1">
           {isDirty && (
             <>
-              <Button variant="primary" size="sm" icon={<Check size={14} />} onClick={handleSave} loading={updateMutation.isPending} aria-label="Save">
+              <Button variant="primary" size="xs" icon={<Check size={12} />} onClick={handleSave} loading={updateMutation.isPending} aria-label="Save">
                 Save
               </Button>
-              <Button variant="ghost" size="sm" icon={<RotateCcw size={14} />} onClick={() => setDraft(toRowDraft(sceneType))} aria-label="Reset" />
+              <Button variant="ghost" size="xs" icon={<RotateCcw size={12} />} onClick={() => setDraft(toRowDraft(sceneType))} aria-label="Reset" />
             </>
           )}
-          {!isDirty && updateMutation.isSuccess && <Badge variant="success" size="sm">Saved</Badge>}
+          {!isDirty && updateMutation.isSuccess && <span className="font-mono text-[10px] text-green-400">saved</span>}
         </div>
       </td>
     </tr>
@@ -150,27 +154,29 @@ export function VideoSettingsDefaultsTab() {
 
   return (
     <Stack gap={3}>
-      <p className="text-sm text-[var(--color-text-secondary)]">
+      <p className="font-mono text-xs text-[var(--color-text-muted)]">
         Set the default video duration, frame rate, and resolution for each scene type.
         These defaults are inherited by all projects, groups, and characters unless overridden.
       </p>
 
-      <table className="w-full">
-        <thead>
-          <tr className="border-b-2 border-[var(--color-border-default)]">
-            <th className="text-left text-xs font-semibold text-[var(--color-text-tertiary)] uppercase tracking-wide py-1 pr-3">Scene Type</th>
-            <th className="text-left text-xs font-semibold text-[var(--color-text-tertiary)] uppercase tracking-wide py-1 px-1">Duration (s)</th>
-            <th className="text-left text-xs font-semibold text-[var(--color-text-tertiary)] uppercase tracking-wide py-1 px-1">FPS</th>
-            <th className="text-left text-xs font-semibold text-[var(--color-text-tertiary)] uppercase tracking-wide py-1 px-1">Resolution</th>
-            <th className="py-1 pl-1 w-24" />
-          </tr>
-        </thead>
-        <tbody>
-          {sorted.map((st) => (
-            <SceneTypeRow key={st.id} sceneType={st} />
-          ))}
-        </tbody>
-      </table>
+      <div className={TERMINAL_PANEL}>
+        <table className="w-full">
+          <thead>
+            <tr className={TERMINAL_DIVIDER}>
+              <th className={`${TERMINAL_TH} py-2 px-3`}>Scene Type</th>
+              <th className={`${TERMINAL_TH} py-2 px-2`}>Duration (s)</th>
+              <th className={`${TERMINAL_TH} py-2 px-2`}>FPS</th>
+              <th className={`${TERMINAL_TH} py-2 px-2`}>Resolution</th>
+              <th className="py-2 px-3 w-24" />
+            </tr>
+          </thead>
+          <tbody>
+            {sorted.map((st) => (
+              <SceneTypeRow key={st.id} sceneType={st} />
+            ))}
+          </tbody>
+        </table>
+      </div>
     </Stack>
   );
 }

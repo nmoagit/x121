@@ -11,9 +11,14 @@ import { Clock, Pause, Square, X } from "@/tokens/icons";
 import { iconSizes } from "@/tokens/icons";
 import type { RefObject } from "react";
 import { useCallback } from "react";
-import { Badge, Button } from "@/components/primitives";
+import { Button } from "@/components/primitives";
 import { Stack } from "@/components/layout";
 import { useClickOutside } from "@/hooks/useClickOutside";
+import {
+  TERMINAL_DIVIDER,
+  TERMINAL_ROW_HOVER,
+  TERMINAL_HEADER_TITLE,
+} from "@/lib/ui-classes";
 import type { JobDetail, JobSummary } from "./useJobStatusAggregator";
 
 /* --------------------------------------------------------------------------
@@ -43,7 +48,7 @@ function ProgressBar({ value }: { value: number }) {
       <div
         className={cn(
           "h-full rounded-[var(--radius-full)]",
-          "bg-[var(--color-action-primary)]",
+          "bg-cyan-400",
           "transition-[width] duration-[var(--duration-normal)] ease-[var(--ease-default)]",
         )}
         style={{ width: `${clamped}%` }}
@@ -62,23 +67,21 @@ function JobRow({ job }: { job: JobDetail }) {
     <div
       className={cn(
         "px-3 py-2.5",
-        "border-b border-[var(--color-border-default)] last:border-b-0",
-        "hover:bg-[var(--color-surface-tertiary)]/50",
-        "transition-colors duration-[var(--duration-instant)]",
+        TERMINAL_DIVIDER,
+        "last:border-b-0",
+        TERMINAL_ROW_HOVER,
+        "transition-colors",
       )}
     >
       <Stack direction="vertical" gap={2}>
-        {/* Header row: name + status badge */}
+        {/* Header row: name + status */}
         <Stack direction="horizontal" gap={2} align="center" justify="between">
-          <span className="text-sm font-medium text-[var(--color-text-primary)] truncate max-w-[200px]">
+          <span className="font-mono text-xs text-[var(--color-text-primary)] truncate max-w-[200px]">
             {job.name}
           </span>
-          <Badge
-            variant={isRunning ? "info" : "default"}
-            size="sm"
-          >
+          <span className={`font-mono text-[10px] uppercase ${isRunning ? "text-cyan-400" : "text-[var(--color-text-muted)]"}`}>
             {job.status}
-          </Badge>
+          </span>
         </Stack>
 
         {/* Progress bar (running jobs only) */}
@@ -86,12 +89,12 @@ function JobRow({ job }: { job: JobDetail }) {
           <Stack direction="vertical" gap={1}>
             <ProgressBar value={job.progress} />
             <Stack direction="horizontal" gap={2} align="center" justify="between">
-              <span className="text-xs text-[var(--color-text-muted)]">
+              <span className="font-mono text-[10px] text-cyan-400">
                 {job.progress}%
               </span>
               <Stack direction="horizontal" gap={1} align="center">
                 <Clock size={iconSizes.sm} className="text-[var(--color-text-muted)]" />
-                <span className="text-xs text-[var(--color-text-muted)]">
+                <span className="font-mono text-[10px] text-[var(--color-text-muted)]">
                   {formatDuration(job.elapsedMs)}
                   {remaining && ` — ~${remaining} left`}
                 </span>
@@ -102,7 +105,7 @@ function JobRow({ job }: { job: JobDetail }) {
 
         {/* Queued jobs show position only */}
         {job.status === "queued" && (
-          <span className="text-xs text-[var(--color-text-muted)]">
+          <span className="font-mono text-[10px] text-[var(--color-text-muted)]">
             Waiting in queue...
           </span>
         )}
@@ -112,7 +115,7 @@ function JobRow({ job }: { job: JobDetail }) {
           {isRunning && (
             <Button
               variant="ghost"
-              size="sm"
+              size="xs"
               icon={<Pause size={iconSizes.sm} />}
               aria-label={`Pause ${job.name}`}
             >
@@ -121,7 +124,7 @@ function JobRow({ job }: { job: JobDetail }) {
           )}
           <Button
             variant="ghost"
-            size="sm"
+            size="xs"
             icon={<Square size={iconSizes.sm} />}
             aria-label={`Cancel ${job.name}`}
           >
@@ -163,7 +166,7 @@ export function JobTrayPanel({ summary, onClose, containerRef }: JobTrayPanelPro
       className={cn(
         "absolute right-0 top-full mt-2 z-50",
         "w-80 max-h-96 overflow-auto",
-        "bg-[var(--color-surface-secondary)]",
+        "bg-[#0d1117]",
         "border border-[var(--color-border-default)]",
         "rounded-[var(--radius-lg)] shadow-[var(--shadow-lg)]",
         "animate-[fadeIn_var(--duration-fast)_var(--ease-default)]",
@@ -175,16 +178,17 @@ export function JobTrayPanel({ summary, onClose, containerRef }: JobTrayPanelPro
           "flex items-center justify-between",
           "px-3 py-2.5",
           "border-b border-[var(--color-border-default)]",
+          "bg-[#161b22]",
         )}
       >
         <Stack direction="horizontal" gap={2} align="center">
-          <span className="text-sm font-semibold text-[var(--color-text-primary)]">
+          <span className={TERMINAL_HEADER_TITLE}>
             Active Jobs
           </span>
           {hasJobs && (
-            <Badge variant="info" size="sm">
+            <span className="font-mono text-xs text-cyan-400">
               {summary.runningCount + summary.queuedCount}
-            </Badge>
+            </span>
           )}
         </Stack>
 
@@ -224,14 +228,14 @@ export function JobTrayPanel({ summary, onClose, containerRef }: JobTrayPanelPro
           className={cn(
             "px-3 py-2",
             "border-t border-[var(--color-border-default)]",
-            "bg-[var(--color-surface-primary)]/50",
+            "bg-[#161b22]",
           )}
         >
           <Stack direction="horizontal" gap={2} align="center" justify="between">
-            <span className="text-xs text-[var(--color-text-muted)]">
-              Overall progress
+            <span className="font-mono text-[10px] uppercase tracking-wide text-[var(--color-text-muted)]">
+              Overall
             </span>
-            <span className="text-xs font-medium text-[var(--color-text-secondary)]">
+            <span className="font-mono text-xs text-cyan-400">
               {summary.overallProgress}%
             </span>
           </Stack>

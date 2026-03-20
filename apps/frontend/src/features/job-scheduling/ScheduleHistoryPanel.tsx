@@ -5,13 +5,20 @@
  * with status badges, job links, durations, and error messages.
  */
 
-import { Badge, Spinner } from "@/components/primitives";
-import { Stack } from "@/components/layout";
+import { WireframeLoader } from "@/components/primitives";
 import { cn } from "@/lib/cn";
 import { formatDateTime, formatDuration } from "@/lib/format";
+import {
+  TERMINAL_PANEL,
+  TERMINAL_HEADER,
+  TERMINAL_HEADER_TITLE,
+  TERMINAL_TH,
+  TERMINAL_DIVIDER,
+  TERMINAL_ROW_HOVER,
+  TERMINAL_STATUS_COLORS,
+} from "@/lib/ui-classes";
 
 import { useScheduleHistory } from "./hooks/use-job-scheduling";
-import { HISTORY_STATUS_BADGE } from "./types";
 import type { ScheduleHistory } from "./types";
 
 /* --------------------------------------------------------------------------
@@ -19,34 +26,33 @@ import type { ScheduleHistory } from "./types";
    -------------------------------------------------------------------------- */
 
 function HistoryRow({ entry }: { entry: ScheduleHistory }) {
+  const statusColor = TERMINAL_STATUS_COLORS[entry.status] ?? "text-[var(--color-text-muted)]";
   return (
     <tr
       className={cn(
-        "border-b border-[var(--color-border-default)] last:border-b-0",
-        "hover:bg-[var(--color-surface-tertiary)]/50",
-        "transition-colors duration-[var(--duration-instant)]",
+        TERMINAL_DIVIDER,
+        "last:border-b-0",
+        TERMINAL_ROW_HOVER,
+        "transition-colors",
       )}
     >
-      <td className="px-3 py-2 text-sm text-[var(--color-text-primary)]">
+      <td className="px-3 py-2 font-mono text-xs text-[var(--color-text-muted)]">
         {formatDateTime(entry.executed_at)}
       </td>
       <td className="px-3 py-2">
-        <Badge
-          variant={HISTORY_STATUS_BADGE[entry.status]}
-          size="sm"
-        >
+        <span className={`font-mono text-xs uppercase tracking-wide ${statusColor}`}>
           {entry.status}
-        </Badge>
+        </span>
       </td>
-      <td className="px-3 py-2 text-sm text-[var(--color-text-secondary)]">
+      <td className="px-3 py-2 font-mono text-xs text-cyan-400">
         {entry.result_job_id ? `#${entry.result_job_id}` : "\u2014"}
       </td>
-      <td className="px-3 py-2 text-sm text-[var(--color-text-secondary)]">
+      <td className="px-3 py-2 font-mono text-xs text-[var(--color-text-muted)]">
         {entry.execution_duration_ms != null
           ? formatDuration(entry.execution_duration_ms)
           : "\u2014"}
       </td>
-      <td className="px-3 py-2 text-sm text-[var(--color-action-danger)] max-w-[200px] truncate">
+      <td className="px-3 py-2 font-mono text-xs text-red-400 max-w-[200px] truncate">
         {entry.error_message ?? ""}
       </td>
     </tr>
@@ -67,7 +73,7 @@ export function ScheduleHistoryPanel({ scheduleId }: ScheduleHistoryPanelProps) 
   if (isPending) {
     return (
       <div className="flex items-center justify-center py-8" data-testid="history-loading">
-        <Spinner size="md" />
+        <WireframeLoader size={48} />
       </div>
     );
   }
@@ -89,40 +95,28 @@ export function ScheduleHistoryPanel({ scheduleId }: ScheduleHistoryPanelProps) 
   }
 
   return (
-    <div data-testid="schedule-history-panel">
-      <Stack direction="vertical" gap={2}>
-        <h3 className="text-sm font-semibold text-[var(--color-text-primary)]">
-          Execution History
-        </h3>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead>
-              <tr className="border-b border-[var(--color-border-default)]">
-                <th className="px-3 py-2 text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide">
-                  Executed At
-                </th>
-                <th className="px-3 py-2 text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide">
-                  Status
-                </th>
-                <th className="px-3 py-2 text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide">
-                  Job
-                </th>
-                <th className="px-3 py-2 text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide">
-                  Duration
-                </th>
-                <th className="px-3 py-2 text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide">
-                  Error
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.map((entry) => (
-                <HistoryRow key={entry.id} entry={entry} />
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Stack>
+    <div data-testid="schedule-history-panel" className={TERMINAL_PANEL}>
+      <div className={TERMINAL_HEADER}>
+        <span className={TERMINAL_HEADER_TITLE}>Execution History</span>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full text-left">
+          <thead>
+            <tr className={TERMINAL_DIVIDER}>
+              <th className={`${TERMINAL_TH} px-3 py-2`}>Executed At</th>
+              <th className={`${TERMINAL_TH} px-3 py-2`}>Status</th>
+              <th className={`${TERMINAL_TH} px-3 py-2`}>Job</th>
+              <th className={`${TERMINAL_TH} px-3 py-2`}>Duration</th>
+              <th className={`${TERMINAL_TH} px-3 py-2`}>Error</th>
+            </tr>
+          </thead>
+          <tbody>
+            {data.map((entry) => (
+              <HistoryRow key={entry.id} entry={entry} />
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

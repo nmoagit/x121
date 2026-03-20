@@ -4,7 +4,7 @@
 
 import { useState } from "react";
 
-import { Badge, Spinner } from "@/components/primitives";
+import { Badge ,  WireframeLoader } from "@/components/primitives";
 import { formatDateTime } from "@/lib/format";
 
 import { useMockCaptures } from "./hooks/use-webhook-testing";
@@ -26,7 +26,7 @@ export function MockCapturesList({ mockId }: MockCapturesListProps) {
   if (isLoading) {
     return (
       <div className="flex justify-center py-4">
-        <Spinner size="sm" />
+        <WireframeLoader size={32} />
       </div>
     );
   }

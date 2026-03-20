@@ -21,6 +21,7 @@ export interface OutputFormatProfile {
   pixel_format: string | null;
   extra_ffmpeg_args: string | null;
   is_default: boolean;
+  is_passthrough: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -106,7 +107,7 @@ export interface DeliveryValidationResponse {
 
 /** A single validation issue. */
 export interface ValidationIssue {
-  severity: "error" | "warning";
+  severity: "error" | "warning" | "info";
   category: string;
   message: string;
   entity_id: number | null;
@@ -174,6 +175,8 @@ export interface CharacterDeliveryStatus {
   character_name: string;
   status: "delivered" | "needs_redelivery" | "not_delivered";
   last_delivered_at: string | null;
+  /** ID of the latest completed export containing this character. */
+  export_id: number | null;
 }
 
 /** Map delivery status to Badge variant. */

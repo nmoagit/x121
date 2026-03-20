@@ -83,8 +83,8 @@ export function CharacterSettingsTab({
       <div className="flex justify-end gap-[var(--spacing-2)]">
         <Button
           variant="ghost"
-          size="sm"
-          icon={allExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+          size="xs"
+          icon={allExpanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
           onClick={toggleAll}
         >
           {allExpanded ? "Collapse All" : "Expand All"}

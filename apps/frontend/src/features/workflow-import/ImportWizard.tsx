@@ -12,7 +12,9 @@ import { useCallback, useState } from "react";
 
 import { useQueryClient } from "@tanstack/react-query";
 
-import { Badge, Toggle } from "@/components/primitives";
+import { Button, Toggle } from "@/components/primitives";
+import { TERMINAL_INPUT, TERMINAL_TEXTAREA, TERMINAL_DIVIDER, TERMINAL_ROW_HOVER } from "@/lib/ui-classes";
+import { cn } from "@/lib/cn";
 
 import { api } from "@/lib/api";
 import { useSceneCatalogue } from "@/features/scene-catalogue/hooks/use-scene-catalogue";
@@ -25,7 +27,7 @@ import type {
   ValidationResult,
   Workflow,
 } from "./types";
-import { workflowStatusLabel, workflowStatusVariant } from "./types";
+import { workflowStatusLabel } from "./types";
 
 /* --------------------------------------------------------------------------
    Types
@@ -45,10 +47,10 @@ interface ImportWizardProps {
 type WizardStep = "upload" | "validation" | "parameters" | "assign" | "done";
 
 const STEP_LABELS: Record<WizardStep, string> = {
-  upload: "Upload JSON",
-  validation: "Review Validation",
-  parameters: "Review Parameters",
-  assign: "Assign to Scenes",
+  upload: "Upload",
+  validation: "Validation",
+  parameters: "Parameters",
+  assign: "Assign",
   done: "Complete",
 };
 
@@ -82,7 +84,6 @@ export function ImportWizard({
 
   const readFile = useCallback((file: File) => {
     setSourceFilename(file.name);
-    // Default workflow name to filename (without extension) if not already filled
     setName((prev) => {
       if (prev.trim()) return prev;
       return file.name.replace(/\.json$/i, "");
@@ -141,7 +142,6 @@ export function ImportWizard({
       });
       setWorkflow(result);
 
-      // Try to validate.
       if (onValidate) {
         try {
           const validation = await onValidate(result.id);
@@ -157,24 +157,23 @@ export function ImportWizard({
         err instanceof Error ? err.message : "Import failed.";
       setError(message);
     }
-  }, [name, description, jsonText, onImport, onValidate]);
+  }, [name, description, jsonText, onImport, onValidate, sourceFilename]);
 
   const discoveredParams: DiscoveredParameter[] =
     (workflow?.discovered_params_json as DiscoveredParameter[] | null) ?? [];
 
   return (
-    <div data-testid="import-wizard" className="space-y-6">
+    <div data-testid="import-wizard" className="space-y-4">
       {/* Step indicator */}
-      <nav data-testid="step-indicator" className="flex gap-2">
+      <nav data-testid="step-indicator" className="flex items-center gap-1 font-mono text-xs">
         {STEPS.map((s, i) => {
-          // Can navigate to visited steps (except can't go back to upload after import)
           const isVisited = i <= currentStepIndex;
           const canClick = isVisited && s !== step && s !== "done" && (s !== "upload" || !workflow);
 
           return (
             <span key={s} className="inline-flex items-center">
               {i > 0 && (
-                <span className="mr-2 text-sm text-[var(--color-text-tertiary)]">/</span>
+                <span className="mx-1 text-white/20">/</span>
               )}
               <span
                 data-testid={`indicator-${s}`}
@@ -182,13 +181,14 @@ export function ImportWizard({
                 tabIndex={canClick ? 0 : undefined}
                 onClick={canClick ? () => setStep(s) : undefined}
                 onKeyDown={canClick ? (e) => { if (e.key === "Enter") setStep(s); } : undefined}
-                className={`text-sm font-medium ${
+                className={cn(
+                  "uppercase tracking-wide",
                   s === step
-                    ? "text-[var(--color-action-primary)] underline underline-offset-4"
+                    ? "text-cyan-400"
                     : isVisited
-                      ? "text-[var(--color-action-primary)] cursor-pointer hover:underline"
-                      : "text-[var(--color-text-tertiary)]"
-                }`}
+                      ? "text-cyan-400/60 cursor-pointer hover:text-cyan-400"
+                      : "text-[var(--color-text-muted)]",
+                )}
               >
                 {STEP_LABELS[s]}
               </span>
@@ -199,9 +199,9 @@ export function ImportWizard({
 
       {/* Step 1: Upload */}
       {step === "upload" && (
-        <div data-testid="step-upload" className="space-y-4">
-          <label className="block space-y-1 text-sm">
-            <span className="text-[var(--color-text-secondary)]">
+        <div data-testid="step-upload" className="space-y-3">
+          <div className="space-y-1">
+            <span className="font-mono text-[10px] uppercase tracking-wide text-[var(--color-text-muted)]">
               Workflow Name
             </span>
             <input
@@ -209,42 +209,43 @@ export function ImportWizard({
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full rounded border border-[var(--color-border-subtle)] bg-[var(--color-surface-secondary)] px-2 py-1.5 text-sm"
+              className={cn(TERMINAL_INPUT, "w-full")}
               placeholder="My Workflow"
             />
-          </label>
+          </div>
 
-          <label className="block space-y-1 text-sm">
-            <span className="text-[var(--color-text-secondary)]">
-              Description (optional)
+          <div className="space-y-1">
+            <span className="font-mono text-[10px] uppercase tracking-wide text-[var(--color-text-muted)]">
+              Description
             </span>
             <input
               data-testid="workflow-description-input"
               type="text"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="w-full rounded border border-[var(--color-border-subtle)] bg-[var(--color-surface-secondary)] px-2 py-1.5 text-sm"
+              className={cn(TERMINAL_INPUT, "w-full")}
               placeholder="Optional description"
             />
-          </label>
+          </div>
 
           <div
             onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
             onDragLeave={() => setIsDragging(false)}
             onDrop={handleDrop}
-            className={`rounded-[var(--radius-lg)] border-2 border-dashed p-6 text-center transition-colors ${
+            className={cn(
+              "rounded-[var(--radius-sm)] border-2 border-dashed p-4 text-center transition-colors",
               isDragging
-                ? "border-[var(--color-action-primary)] bg-[var(--color-action-primary)]/5"
-                : "border-[var(--color-border-subtle)]"
-            }`}
+                ? "border-cyan-400 bg-cyan-400/5"
+                : "border-[var(--color-border-default)]",
+            )}
           >
-            <p className="text-sm text-[var(--color-text-secondary)]">
+            <p className="font-mono text-xs text-[var(--color-text-muted)]">
               {sourceFilename
-                ? `Loaded: ${sourceFilename}`
-                : "Drag & drop a ComfyUI workflow JSON file here, or"}
+                ? <>loaded: <span className="text-cyan-400">{sourceFilename}</span></>
+                : "drop comfyui workflow .json here"}
             </p>
-            <label className="mt-2 inline-block cursor-pointer rounded bg-[var(--color-surface-secondary)] px-3 py-1.5 text-sm font-medium text-[var(--color-text-primary)] hover:bg-[var(--color-surface-tertiary)]">
-              Browse file
+            <label className="mt-2 inline-block cursor-pointer rounded bg-[#161b22] px-2 py-1 font-mono text-[11px] uppercase tracking-wide text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors">
+              Browse
               <input
                 data-testid="file-upload"
                 type="file"
@@ -255,219 +256,157 @@ export function ImportWizard({
             </label>
           </div>
 
-          <label className="block space-y-1 text-sm">
-            <span className="text-[var(--color-text-secondary)]">
-              Or paste JSON:
+          <div className="space-y-1">
+            <span className="font-mono text-[10px] uppercase tracking-wide text-[var(--color-text-muted)]">
+              Or paste JSON
             </span>
             <textarea
               data-testid="json-textarea"
               value={jsonText}
               onChange={(e) => setJsonText(e.target.value)}
-              rows={10}
-              className="w-full rounded border border-[var(--color-border-subtle)] bg-[var(--color-surface-secondary)] px-2 py-1.5 font-mono text-xs"
+              rows={8}
+              className={cn(TERMINAL_TEXTAREA, "w-full")}
               placeholder='{"3": {"class_type": "KSampler", ...}}'
             />
-          </label>
+          </div>
 
           {error && (
-            <p data-testid="error-message" className="text-sm text-[var(--color-action-danger)]">
+            <p data-testid="error-message" className="font-mono text-xs text-red-400">
               {error}
             </p>
           )}
 
-          <div className="flex justify-end">
-            <button
+          <div className="flex justify-end pt-1 border-t border-[var(--color-border-default)]">
+            <Button
               data-testid="import-btn"
-              type="button"
+              size="sm"
               disabled={!jsonText.trim() || !name.trim() || isImporting}
               onClick={handleImport}
-              className="rounded bg-[var(--color-action-primary)] px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
             >
               {isImporting ? "Importing..." : "Import & Validate"}
-            </button>
+            </Button>
           </div>
         </div>
       )}
 
       {/* Step 2: Validation Results */}
       {step === "validation" && (
-        <div data-testid="step-validation" className="space-y-4">
+        <div data-testid="step-validation" className="space-y-3">
           {validationResult ? (
             <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium">Overall:</span>
+              <div className="flex items-center gap-2 font-mono text-xs">
+                <span className="text-[var(--color-text-muted)]">overall:</span>
                 {validationResult.validation_source === "live" ? (
-                  <Badge
-                    variant={validationResult.overall_valid ? "success" : "danger"}
-                  >
-                    {validationResult.overall_valid ? "Valid" : "Invalid"}
-                  </Badge>
+                  <span className={validationResult.overall_valid ? "text-green-400" : "text-red-400"}>
+                    {validationResult.overall_valid ? "valid" : "invalid"}
+                  </span>
                 ) : (
-                  <Badge variant="warning">Unverified</Badge>
+                  <span className="text-orange-400">unverified</span>
                 )}
-                <Badge
-                  variant={validationResult.validation_source === "live" ? "info" : "warning"}
-                >
-                  {validationResult.validation_source === "live"
-                    ? "Live (ComfyUI)"
-                    : "Connect ComfyUI to verify"}
-                </Badge>
+                <span className="text-white/20">|</span>
+                <span className={validationResult.validation_source === "live" ? "text-cyan-400" : "text-orange-400"}>
+                  {validationResult.validation_source === "live" ? "live (ComfyUI)" : "static — connect ComfyUI to verify"}
+                </span>
               </div>
-
-              {validationResult.validation_source === "static" && (
-                <p className="text-sm text-[var(--color-action-warning)]">
-                  No ComfyUI instance is connected. Connect to ComfyUI and
-                  re-validate to check node availability.
-                </p>
-              )}
 
               {validationResult.node_results.length > 0 && (
                 <div>
-                  <h4 className="mb-1 text-sm font-medium">
-                    Node Validation
-                  </h4>
-                  <ul className="space-y-1">
+                  <p className="font-mono text-[10px] uppercase tracking-wide text-[var(--color-text-muted)] mb-1">
+                    nodes ({validationResult.node_results.length})
+                  </p>
+                  <div className="border border-[var(--color-border-default)] rounded-[var(--radius-sm)] max-h-40 overflow-y-auto">
                     {validationResult.node_results.map((nr) => {
                       const isLive = validationResult.validation_source === "live";
-                      let icon: string;
-                      let colorClass: string;
-
-                      if (isLive) {
-                        icon = nr.present ? "\u2713" : "\u2717";
-                        colorClass = nr.present
-                          ? "text-[var(--color-action-success)]"
-                          : "text-[var(--color-action-danger)]";
-                      } else {
-                        icon = "\u2014";
-                        colorClass = "text-[var(--color-text-muted)]";
-                      }
-
                       return (
-                        <li
+                        <div
                           key={nr.node_type}
                           data-testid={`node-result-${nr.node_type}`}
-                          className="flex items-center gap-2 text-sm"
+                          className={`px-2 py-0.5 font-mono text-xs flex items-center gap-2 ${TERMINAL_DIVIDER} last:border-b-0 ${TERMINAL_ROW_HOVER}`}
                         >
-                          <span className={colorClass}>{icon}</span>
-                          {nr.node_type}
-                        </li>
+                          <span className={isLive ? (nr.present ? "text-green-400" : "text-red-400") : "text-[var(--color-text-muted)]"}>
+                            {isLive ? (nr.present ? "✓" : "✗") : "—"}
+                          </span>
+                          <span className="text-[var(--color-text-primary)]">{nr.node_type}</span>
+                        </div>
                       );
                     })}
-                  </ul>
+                  </div>
                 </div>
               )}
 
               {validationResult.model_results.length > 0 && (
                 <div>
-                  <h4 className="mb-1 text-sm font-medium">
-                    Model Validation
-                  </h4>
-                  <ul className="space-y-1">
+                  <p className="font-mono text-[10px] uppercase tracking-wide text-[var(--color-text-muted)] mb-1">
+                    models ({validationResult.model_results.length})
+                  </p>
+                  <div className="border border-[var(--color-border-default)] rounded-[var(--radius-sm)] max-h-40 overflow-y-auto">
                     {validationResult.model_results.map((mr) => (
-                      <li
+                      <div
                         key={mr.model_name}
                         data-testid={`model-result-${mr.model_name}`}
-                        className="flex items-center gap-2 text-sm"
+                        className={`px-2 py-0.5 font-mono text-xs flex items-center gap-2 ${TERMINAL_DIVIDER} last:border-b-0 ${TERMINAL_ROW_HOVER}`}
                       >
-                        <span
-                          className={
-                            mr.found_in_registry
-                              ? "text-[var(--color-action-success)]"
-                              : "text-[var(--color-action-warning)]"
-                          }
-                        >
-                          {mr.found_in_registry ? "\u2713" : "?"}
+                        <span className={mr.found_in_registry ? "text-green-400" : "text-orange-400"}>
+                          {mr.found_in_registry ? "✓" : "?"}
                         </span>
-                        {mr.model_name}
-                      </li>
+                        <span className="text-[var(--color-text-primary)]">{mr.model_name}</span>
+                      </div>
                     ))}
-                  </ul>
+                  </div>
                 </div>
               )}
             </div>
           ) : (
-            <p
-              data-testid="no-validation"
-              className="text-sm text-[var(--color-text-tertiary)]"
-            >
-              No validation results available. Validation can be run after
-              import.
+            <p data-testid="no-validation" className="font-mono text-xs text-[var(--color-text-muted)]">
+              No validation results available. Validation can be run after import.
             </p>
           )}
 
-          <div className="flex justify-between">
-            <button
-              type="button"
-              onClick={() => setStep("upload")}
-              className="rounded border border-[var(--color-border-default)] px-4 py-2 text-sm font-medium text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-secondary)]"
-            >
+          <div className="flex justify-between pt-1 border-t border-[var(--color-border-default)]">
+            <Button size="sm" variant="secondary" onClick={() => setStep("upload")}>
               Back
-            </button>
-            <button
-              data-testid="next-to-parameters"
-              type="button"
-              onClick={() => setStep("parameters")}
-              className="rounded bg-[var(--color-action-primary)] px-4 py-2 text-sm font-medium text-white hover:opacity-90"
-            >
-              Next: Review Parameters
-            </button>
+            </Button>
+            <Button size="sm" data-testid="next-to-parameters" onClick={() => setStep("parameters")}>
+              Parameters
+            </Button>
           </div>
         </div>
       )}
 
       {/* Step 3: Discovered Parameters */}
       {step === "parameters" && (
-        <div data-testid="step-parameters" className="space-y-4">
+        <div data-testid="step-parameters" className="space-y-3">
           {discoveredParams.length > 0 ? (
-            <ul className="space-y-2">
-              {discoveredParams.map((param) => (
-                <li
+            <div className="border border-[var(--color-border-default)] rounded-[var(--radius-sm)]">
+              {discoveredParams.map((param, i) => (
+                <div
                   key={`${param.node_id}-${param.input_name}`}
                   data-testid={`param-${param.node_id}-${param.input_name}`}
-                  className="rounded border border-[var(--color-border-subtle)] p-3"
+                  className={`px-2 py-1.5 font-mono text-xs ${i > 0 ? TERMINAL_DIVIDER : ""} ${TERMINAL_ROW_HOVER}`}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">
-                      {param.suggested_name}
-                    </span>
-                    <Badge variant="default" size="sm">
-                      {param.category}
-                    </Badge>
+                    <span className="text-[var(--color-text-primary)]">{param.suggested_name}</span>
+                    <span className="text-[var(--color-text-muted)]">{param.category}</span>
                   </div>
-                  <p className="mt-1 text-xs text-[var(--color-text-tertiary)]">
-                    Node {param.node_id} / {param.input_name}
-                  </p>
-                  <p className="mt-0.5 text-xs text-[var(--color-text-secondary)]">
-                    Current: {JSON.stringify(param.current_value)}
-                  </p>
-                </li>
+                  <div className="text-[10px] text-[var(--color-text-muted)] mt-0.5">
+                    node {param.node_id} / {param.input_name} = <span className="text-cyan-400">{JSON.stringify(param.current_value)}</span>
+                  </div>
+                </div>
               ))}
-            </ul>
+            </div>
           ) : (
-            <p
-              data-testid="no-parameters"
-              className="text-sm text-[var(--color-text-tertiary)]"
-            >
-              No configurable parameters were detected in this workflow.
+            <p data-testid="no-parameters" className="font-mono text-xs text-[var(--color-text-muted)]">
+              No configurable parameters detected in this workflow.
             </p>
           )}
 
-          <div className="flex justify-between">
-            <button
-              type="button"
-              onClick={() => setStep("validation")}
-              className="rounded border border-[var(--color-border-default)] px-4 py-2 text-sm font-medium text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-secondary)]"
-            >
+          <div className="flex justify-between pt-1 border-t border-[var(--color-border-default)]">
+            <Button size="sm" variant="secondary" onClick={() => setStep("validation")}>
               Back
-            </button>
-            <button
-              data-testid="next-to-assign"
-              type="button"
-              onClick={() => setStep("assign")}
-              className="rounded bg-[var(--color-action-primary)] px-4 py-2 text-sm font-medium text-white hover:opacity-90"
-            >
-              Next: Assign to Scenes
-            </button>
+            </Button>
+            <Button size="sm" data-testid="next-to-assign" onClick={() => setStep("assign")}>
+              Assign to Scenes
+            </Button>
           </div>
         </div>
       )}
@@ -503,12 +442,10 @@ export function ImportWizard({
             );
             const failures = results.filter((r) => r.status === "rejected");
             if (failures.length > 0) {
-              console.error("Failed to assign workflows:", failures);
               setError(
-                `${failures.length} of ${results.length} assignment(s) failed. Check console for details.`,
+                `${failures.length} of ${results.length} assignment(s) failed.`,
               );
             }
-            // Invalidate all track config caches so other views pick up changes
             queryClient.invalidateQueries({ queryKey: trackConfigKeys.all });
             setIsAssigning(false);
             setStep("done");
@@ -520,36 +457,26 @@ export function ImportWizard({
 
       {/* Step 5: Done */}
       {step === "done" && workflow && (
-        <div data-testid="step-done" className="space-y-4">
-          <div className="rounded border border-[var(--color-action-success)] bg-[var(--color-action-success)]/10 p-4">
-            <h3 className="text-sm font-medium text-[var(--color-action-success)]">
-              Workflow imported successfully
-            </h3>
-            <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
-              <strong>{workflow.name}</strong> (ID: {workflow.id}) has been
-              imported as version {workflow.current_version}.
+        <div data-testid="step-done" className="space-y-3">
+          <div className="border-l-2 border-green-400 pl-2 py-1 font-mono text-xs">
+            <p className="text-green-400">workflow imported successfully</p>
+            <p className="text-[var(--color-text-primary)] mt-0.5">
+              <span className="text-cyan-400">{workflow.name}</span> (id: {workflow.id}) v{workflow.current_version}
             </p>
-            <div className="mt-2">
-              <Badge variant={workflowStatusVariant(workflow.status_id)}>
-                {workflowStatusLabel(workflow.status_id)}
-              </Badge>
-            </div>
+            <p className="text-[var(--color-text-muted)] mt-0.5">
+              status: <span className="text-cyan-400">{workflowStatusLabel(workflow.status_id).toLowerCase()}</span>
+            </p>
           </div>
 
           {error && (
-            <p className="text-sm text-[var(--color-action-danger)]">{error}</p>
+            <p className="font-mono text-xs text-red-400">{error}</p>
           )}
 
           {onComplete && (
-            <div className="flex justify-end">
-              <button
-                data-testid="done-btn"
-                type="button"
-                onClick={() => onComplete(workflow)}
-                className="rounded bg-[var(--color-action-primary)] px-4 py-2 text-sm font-medium text-white hover:opacity-90"
-              >
+            <div className="flex justify-end pt-1 border-t border-[var(--color-border-default)]">
+              <Button data-testid="done-btn" size="sm" onClick={() => onComplete(workflow)}>
                 Done
-              </button>
+              </Button>
             </div>
           )}
         </div>
@@ -587,39 +514,31 @@ function AssignToScenesStep({
   );
 
   if (isLoading) {
-    return <p className="text-sm text-[var(--color-text-muted)]">Loading scenes...</p>;
+    return <p className="font-mono text-xs text-[var(--color-text-muted)]">loading scenes...</p>;
   }
 
   return (
-    <div data-testid="step-assign" className="space-y-4">
-      <p className="text-sm text-[var(--color-text-secondary)]">
-        Toggle the scene + track combinations that should use this workflow.
-        You can skip this step and assign later from the Scene Catalogue.
+    <div data-testid="step-assign" className="space-y-3">
+      <p className="font-mono text-xs text-[var(--color-text-muted)]">
+        Toggle scene + track combinations for this workflow. You can skip and assign later.
       </p>
 
       {entriesWithTracks.length === 0 ? (
-        <p className="text-sm text-[var(--color-text-muted)]">
-          No scene types with tracks found. You can assign workflows later.
+        <p className="font-mono text-xs text-[var(--color-text-muted)]">
+          No scene types with tracks found.
         </p>
       ) : (
-        <div className="overflow-y-auto rounded border border-[var(--color-border-subtle)]">
-          <table className="w-full text-sm">
-            <thead className="sticky top-0 bg-[var(--color-surface-primary)]">
-              <tr className="border-b border-[var(--color-border-default)]">
-                <th className="px-3 py-1.5 text-left text-xs font-medium text-[var(--color-text-muted)]">
-                  Scene Type
-                </th>
-                <th className="px-3 py-1.5 text-left text-xs font-medium text-[var(--color-text-muted)]">
-                  Track
-                </th>
-                <th className="px-3 py-1.5 text-center text-xs font-medium text-[var(--color-text-muted)]">
-                  Assign
-                </th>
+        <div className="overflow-y-auto max-h-64 border border-[var(--color-border-default)] rounded-[var(--radius-sm)]">
+          <table className="w-full font-mono text-xs">
+            <thead className="sticky top-0 bg-[#161b22]">
+              <tr className={TERMINAL_DIVIDER}>
+                <th className="px-2 py-1 text-left text-[10px] uppercase tracking-wide text-[var(--color-text-muted)]">Scene</th>
+                <th className="px-2 py-1 text-left text-[10px] uppercase tracking-wide text-[var(--color-text-muted)]">Track</th>
+                <th className="px-2 py-1 text-center text-[10px] uppercase tracking-wide text-[var(--color-text-muted)]">Assign</th>
               </tr>
             </thead>
             <tbody>
               {entriesWithTracks.map((entry: SceneCatalogueEntry) => {
-                // Build rows: normal + clothes-off per track
                 const rows: { trackId: number; trackName: string; isClothesOff: boolean }[] = [];
                 for (const track of entry.tracks) {
                   rows.push({ trackId: track.id, trackName: track.name, isClothesOff: false });
@@ -633,32 +552,25 @@ function AssignToScenesStep({
                   return (
                     <tr
                       key={key}
-                      className="border-b border-[var(--color-border-subtle)] hover:bg-[var(--color-surface-secondary)] transition-colors cursor-pointer"
+                      className={`${TERMINAL_DIVIDER} last:border-b-0 ${TERMINAL_ROW_HOVER} cursor-pointer`}
                       onClick={() => onToggle(key)}
                     >
-                      <td className="px-3 py-1">
+                      <td className="px-2 py-0.5">
                         {idx === 0 ? (
-                          <span className="text-xs font-medium text-[var(--color-text-primary)]">
-                            {entry.name}
-                          </span>
+                          <span className="text-[var(--color-text-primary)]">{entry.name}</span>
                         ) : null}
                       </td>
-                      <td className="px-3 py-1 text-xs text-[var(--color-text-secondary)]">
-                        <span>{row.trackName}</span>
+                      <td className="px-2 py-0.5 text-[var(--color-text-muted)]">
+                        {row.trackName}
                         {row.isClothesOff && (
-                          <span className="ml-1.5 text-[var(--color-action-warning)] font-medium">
-                            (Clothes Off)
-                          </span>
+                          <span className="ml-1 text-orange-400">(off)</span>
                         )}
                       </td>
-                      <td
-                        className="px-3 py-1 text-center"
-                        onClick={(e) => e.stopPropagation()}
-                      >
+                      <td className="px-2 py-0.5 text-center" onClick={(e) => e.stopPropagation()}>
                         <Toggle
                           checked={assignedPairs.has(key)}
                           onChange={() => onToggle(key)}
-                          size="sm"
+                          size="xs"
                         />
                       </td>
                     </tr>
@@ -670,36 +582,26 @@ function AssignToScenesStep({
         </div>
       )}
 
-      <div className="flex justify-between">
-        <button
-          type="button"
-          onClick={onBack}
-          className="rounded border border-[var(--color-border-default)] px-4 py-2 text-sm font-medium text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-secondary)]"
-        >
+      <div className="flex justify-between pt-1 border-t border-[var(--color-border-default)]">
+        <Button size="sm" variant="secondary" onClick={onBack}>
           Back
-        </button>
+        </Button>
         <div className="flex gap-2">
-          <button
-            data-testid="skip-assign"
-            type="button"
-            onClick={onSkip}
-            className="rounded border border-[var(--color-border-default)] px-4 py-2 text-sm font-medium text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-secondary)]"
-          >
+          <Button data-testid="skip-assign" size="sm" variant="secondary" onClick={onSkip}>
             Skip
-          </button>
-          <button
+          </Button>
+          <Button
             data-testid="finish-assign"
-          type="button"
-          disabled={isAssigning}
-          onClick={onFinish}
-          className="rounded bg-[var(--color-action-primary)] px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
-        >
-          {isAssigning
-            ? "Assigning..."
-            : assignedPairs.size > 0
-              ? `Assign & Finish (${assignedPairs.size})`
-              : "Finish"}
-          </button>
+            size="sm"
+            disabled={isAssigning}
+            onClick={onFinish}
+          >
+            {isAssigning
+              ? "Assigning..."
+              : assignedPairs.size > 0
+                ? `Assign (${assignedPairs.size})`
+                : "Finish"}
+          </Button>
         </div>
       </div>
     </div>

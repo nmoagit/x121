@@ -8,7 +8,7 @@
 
 import { Card, CardBody, CardHeader } from "@/components/composite";
 import { Stack } from "@/components/layout";
-import { Spinner } from "@/components/primitives";
+import { WireframeLoader } from "@/components/primitives";
 import { cn } from "@/lib/cn";
 import { formatBytes } from "@/lib/format";
 import { useCallback, useMemo, useRef, useState } from "react";
@@ -91,7 +91,7 @@ export function StorageTreemap() {
       <CardBody>
         {isLoading ? (
           <div className="flex h-[480px] items-center justify-center">
-            <Spinner size="md" />
+            <WireframeLoader size={48} />
           </div>
         ) : rects.length === 0 ? (
           <div className="flex h-[480px] items-center justify-center">

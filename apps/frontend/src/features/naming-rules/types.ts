@@ -82,5 +82,5 @@ export const CATEGORY_GROUPS: CategoryGroupDef[] = [
   { label: "Generation", categories: ["scene_video", "thumbnail", "test_shot", "chunk_artifact"] },
   { label: "Storage", categories: ["image_variant", "scene_video_import"] },
   { label: "Export", categories: ["metadata_export"] },
-  { label: "Delivery", categories: ["delivery_zip", "delivery_folder", "delivery_video", "delivery_image", "delivery_metadata"] },
+  { label: "Delivery", categories: ["delivery_archive", "delivery_folder", "delivery_video", "delivery_image", "delivery_metadata", "delivery_speech"] },
 ];

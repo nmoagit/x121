@@ -13,6 +13,9 @@ import { Trash2 } from "@/tokens/icons";
 import type { MetadataTemplateField } from "../types";
 import { ChipInput } from "./ChipInput";
 
+/** Shared className override for metadata inputs — transparent bg, smaller text. */
+const FIELD_INPUT_CLASS = "!bg-transparent !text-xs !py-1";
+
 interface MetadataFieldInputProps {
   field: MetadataTemplateField;
   value: unknown;
@@ -61,9 +64,9 @@ export function MetadataFieldInput({ field, value, onChange, onDelete }: Metadat
     const obj = value as Record<string, unknown>;
     const subKeys = Object.keys(obj);
     return (
-      <div className="col-span-full flex flex-col gap-2 rounded-[var(--radius-md)] border border-[var(--color-border-default)] p-3">
+      <div className="col-span-full flex flex-col gap-2 rounded-[var(--radius-md)] border border-[var(--color-border-default)]/30 p-3">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold text-[var(--color-text-secondary)]">
+          <span className="text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-wide font-mono">
             {displayLabel}
           </span>
           {onDelete && !field.is_required && (
@@ -110,6 +113,8 @@ export function MetadataFieldInput({ field, value, onChange, onDelete }: Metadat
                   key={subKey}
                   label={subLabel}
                   type="number"
+                  size="sm"
+                  className={FIELD_INPUT_CLASS}
                   value={String(subValue)}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                     onChange(field.field_name, {
@@ -126,6 +131,8 @@ export function MetadataFieldInput({ field, value, onChange, onDelete }: Metadat
               <Input
                 key={subKey}
                 label={subLabel}
+                size="sm"
+                className={FIELD_INPUT_CLASS}
                 value={subValue != null ? String(subValue) : ""}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                   onChange(field.field_name, { ...obj, [subKey]: e.target.value })
@@ -183,6 +190,8 @@ export function MetadataFieldInput({ field, value, onChange, onDelete }: Metadat
             <Input
               label={displayLabel}
               type="number"
+              size="sm"
+              className={FIELD_INPUT_CLASS}
               value={strValue}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                 onChange(field.field_name, e.target.value ? Number(e.target.value) : null)
@@ -201,6 +210,8 @@ export function MetadataFieldInput({ field, value, onChange, onDelete }: Metadat
           <div className="flex-1">
             <Input
               label={displayLabel}
+              size="sm"
+              className={FIELD_INPUT_CLASS}
               value={strValue}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                 onChange(field.field_name, e.target.value)

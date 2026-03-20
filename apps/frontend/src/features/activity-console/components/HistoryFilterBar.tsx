@@ -5,15 +5,22 @@
  * controls with level/source badge toggles, search, and date inputs.
  */
 
-import { Badge, SearchInput } from "@/components/primitives";
+import { SearchInput } from "@/components/primitives";
+import { cn } from "@/lib/cn";
+import {
+  TERMINAL_HEADER,
+  TERMINAL_LABEL,
+  TERMINAL_SELECT,
+} from "@/lib/ui-classes";
 
 import type { ActivityLogLevel, ActivityLogSource } from "../types";
 import {
   ALL_LEVELS,
   ALL_SOURCES,
-  LEVEL_BADGE_VARIANT,
   LEVEL_LABELS,
+  LEVEL_TERMINAL_COLORS,
   SOURCE_LABELS,
+  SOURCE_TERMINAL_COLORS,
 } from "../types";
 
 /* --------------------------------------------------------------------------
@@ -50,68 +57,66 @@ export function HistoryFilterBar({
   onSourceChange,
 }: HistoryFilterBarProps) {
   return (
-    <div className="flex flex-wrap items-center gap-[var(--spacing-3)] px-[var(--spacing-3)] py-[var(--spacing-2)] border-b border-[var(--color-border-default)] bg-[var(--color-surface-secondary)]">
+    <div className={cn(TERMINAL_HEADER, "flex flex-wrap items-center gap-[var(--spacing-3)]")}>
       {/* Level toggles */}
-      <div className="flex items-center gap-1">
-        <span className="text-xs font-medium text-[var(--color-text-muted)] mr-1">Level</span>
-        <button type="button" onClick={() => onLevelChange("")} className="transition-opacity duration-[var(--duration-fast)]">
-          <Badge size="sm" variant={selectedLevel === "" ? "info" : "default"}>
-            All
-          </Badge>
+      <div className="flex items-center gap-1.5">
+        <span className={cn(TERMINAL_LABEL, "mr-1")}>Level</span>
+        <button type="button" onClick={() => onLevelChange("")} className={cn(
+          "font-mono text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded transition-opacity",
+          selectedLevel === "" ? "text-cyan-400" : "text-[var(--color-text-muted)] opacity-40",
+        )}>
+          All
         </button>
         {ALL_LEVELS.map((level) => (
-          <button key={level} type="button" onClick={() => onLevelChange(level)} className="transition-opacity duration-[var(--duration-fast)]">
-            <Badge
-              size="sm"
-              variant={selectedLevel === level ? LEVEL_BADGE_VARIANT[level] : "default"}
-            >
-              {LEVEL_LABELS[level]}
-            </Badge>
+          <button key={level} type="button" onClick={() => onLevelChange(level)} className={cn(
+            "font-mono text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded transition-opacity",
+            selectedLevel === level ? LEVEL_TERMINAL_COLORS[level] : "text-[var(--color-text-muted)] opacity-40",
+          )}>
+            {LEVEL_LABELS[level]}
           </button>
         ))}
       </div>
 
       {/* Separator */}
-      <div className="w-px h-5 bg-[var(--color-border-default)]" />
+      <span className="opacity-30">|</span>
 
       {/* Source toggles */}
-      <div className="flex items-center gap-1">
-        <span className="text-xs font-medium text-[var(--color-text-muted)] mr-1">Source</span>
-        <button type="button" onClick={() => onSourceChange("")} className="transition-opacity duration-[var(--duration-fast)]">
-          <Badge size="sm" variant={selectedSource === "" ? "info" : "default"}>
-            All
-          </Badge>
+      <div className="flex items-center gap-1.5">
+        <span className={cn(TERMINAL_LABEL, "mr-1")}>Source</span>
+        <button type="button" onClick={() => onSourceChange("")} className={cn(
+          "font-mono text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded transition-opacity",
+          selectedSource === "" ? "text-cyan-400" : "text-[var(--color-text-muted)] opacity-40",
+        )}>
+          All
         </button>
         {ALL_SOURCES.map((source) => (
-          <button key={source} type="button" onClick={() => onSourceChange(source)} className="transition-opacity duration-[var(--duration-fast)]">
-            <Badge
-              size="sm"
-              variant={selectedSource === source ? "info" : "default"}
-            >
-              {SOURCE_LABELS[source]}
-            </Badge>
+          <button key={source} type="button" onClick={() => onSourceChange(source)} className={cn(
+            "font-mono text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded transition-opacity",
+            selectedSource === source ? SOURCE_TERMINAL_COLORS[source] : "text-[var(--color-text-muted)] opacity-40",
+          )}>
+            {SOURCE_LABELS[source]}
           </button>
         ))}
       </div>
 
       {/* Separator */}
-      <div className="w-px h-5 bg-[var(--color-border-default)]" />
+      <span className="opacity-30">|</span>
 
-      {/* Date range — compact inline inputs without labels */}
+      {/* Date range */}
       <div className="flex items-center gap-1">
-        <span className="text-xs font-medium text-[var(--color-text-muted)] mr-1">From</span>
+        <span className={cn(TERMINAL_LABEL, "mr-1")}>From</span>
         <input
           type="datetime-local"
           value={fromDate}
           onChange={(e) => onFromChange(e.target.value)}
-          className="h-7 px-1.5 text-xs rounded-[var(--radius-sm)] border border-[var(--color-border-default)] bg-[var(--color-surface-primary)] text-[var(--color-text-primary)] outline-none focus:border-[var(--color-action-primary)]"
+          className={cn(TERMINAL_SELECT, "h-6")}
         />
-        <span className="text-xs font-medium text-[var(--color-text-muted)] mx-1">To</span>
+        <span className={cn(TERMINAL_LABEL, "mx-1")}>To</span>
         <input
           type="datetime-local"
           value={toDate}
           onChange={(e) => onToChange(e.target.value)}
-          className="h-7 px-1.5 text-xs rounded-[var(--radius-sm)] border border-[var(--color-border-default)] bg-[var(--color-surface-primary)] text-[var(--color-text-primary)] outline-none focus:border-[var(--color-action-primary)]"
+          className={cn(TERMINAL_SELECT, "h-6")}
         />
       </div>
 

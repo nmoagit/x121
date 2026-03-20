@@ -7,7 +7,7 @@
 import { useState } from "react";
 
 import { Card, CardBody, CardHeader } from "@/components/composite/Card";
-import { Spinner } from "@/components/primitives";
+import { WireframeLoader } from "@/components/primitives";
 import { formatBytes } from "@/lib/format";
 import { BarChart3 } from "@/tokens/icons";
 
@@ -91,7 +91,7 @@ export function TopConsumersTable({ period = "24h" }: TopConsumersTableProps) {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-[var(--spacing-6)]">
-        <Spinner size="md" />
+        <WireframeLoader size={48} />
       </div>
     );
   }

@@ -82,19 +82,19 @@ export function RestartButton({ workerId }: RestartButtonProps) {
               size="sm"
             />
             {force && (
-              <p className="text-xs text-[var(--color-action-danger)]">
+              <p className="font-mono text-xs text-red-400">
                 Force restart will terminate the service immediately. In-progress tasks may be lost.
               </p>
             )}
           </div>
 
           {mutation.isError && (
-            <p role="alert" className="text-sm text-[var(--color-action-danger)]">
+            <p role="alert" className="font-mono text-xs text-red-400">
               {mutation.error instanceof Error ? mutation.error.message : "Restart failed"}
             </p>
           )}
 
-          <Stack direction="horizontal" gap={3} justify="end">
+          <Stack direction="horizontal" gap={2} justify="end" className="pt-1 border-t border-[var(--color-border-default)]">
             <Button
               variant="secondary"
               size="sm"

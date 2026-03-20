@@ -7,9 +7,15 @@
 
 import { useCallback, useMemo, useState } from "react";
 
-import { Card } from "@/components/composite/Card";
-import { Spinner } from "@/components/primitives";
+import { WireframeLoader } from "@/components/primitives";
 import { Stack } from "@/components/layout";
+import {
+  TERMINAL_PANEL,
+  TERMINAL_HEADER,
+  TERMINAL_TH,
+  TERMINAL_DIVIDER,
+  TERMINAL_ROW_HOVER,
+} from "@/lib/ui-classes";
 
 import { CompletenessBar } from "./CompletenessBar";
 import {
@@ -115,7 +121,7 @@ export function MetadataSpreadsheet({
   if (isLoading) {
     return (
       <div className="flex h-64 items-center justify-center">
-        <Spinner size="lg" />
+        <WireframeLoader size={64} />
       </div>
     );
   }
@@ -137,19 +143,19 @@ export function MetadataSpreadsheet({
           placeholder="Filter characters..."
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
-          className="rounded-[var(--radius-md)] border border-[var(--color-border-default)] bg-[var(--color-surface-primary)] px-3 py-1.5 text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:border-[var(--color-border-active)] focus:outline-none"
+          className="rounded-[var(--radius-md)] border border-[var(--color-border-default)] bg-[#0d1117] px-3 py-1.5 font-mono text-xs text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:ring-1 focus:ring-[var(--color-border-focus)]"
         />
-        <span className="text-xs text-[var(--color-text-muted)]">
+        <span className="font-mono text-xs text-[var(--color-text-muted)]">
           {sortedData.length} character{sortedData.length !== 1 ? "s" : ""}
         </span>
       </div>
 
       {/* Table */}
-      <Card padding="none">
+      <div className={TERMINAL_PANEL}>
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full font-mono text-xs">
             <thead>
-              <tr className="border-b border-[var(--color-border-default)] bg-[var(--color-surface-secondary)]">
+              <tr className={`${TERMINAL_DIVIDER} ${TERMINAL_HEADER}`}>
                 {onSelectionChange && (
                   <th className="w-8 px-2 py-2.5">
                     <input
@@ -169,7 +175,7 @@ export function MetadataSpreadsheet({
                   </th>
                 )}
                 <th
-                  className="cursor-pointer px-4 py-2.5 text-left font-medium text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
+                  className={`${TERMINAL_TH} cursor-pointer px-4 py-2.5 hover:text-[var(--color-text-primary)]`}
                   onClick={() => handleSort("name")}
                 >
                   Name {sortIndicator(sort, "name")}
@@ -177,13 +183,13 @@ export function MetadataSpreadsheet({
                 {columns.map((col) => (
                   <th
                     key={col.name}
-                    className="cursor-pointer px-4 py-2.5 text-left font-medium text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
+                    className={`${TERMINAL_TH} cursor-pointer px-4 py-2.5 hover:text-[var(--color-text-primary)]`}
                     onClick={() => handleSort(col.name)}
                   >
                     {col.label} {sortIndicator(sort, col.name)}
                   </th>
                 ))}
-                <th className="px-4 py-2.5 text-left font-medium text-[var(--color-text-muted)]">
+                <th className={`${TERMINAL_TH} px-4 py-2.5`}>
                   Completeness
                 </th>
               </tr>
@@ -202,7 +208,7 @@ export function MetadataSpreadsheet({
             </tbody>
           </table>
         </div>
-      </Card>
+      </div>
     </Stack>
   );
 }
@@ -235,7 +241,7 @@ function SpreadsheetRow({
   );
 
   return (
-    <tr className="border-b border-[var(--color-border-default)] hover:bg-[var(--color-surface-secondary)]">
+    <tr className={`${TERMINAL_DIVIDER} ${TERMINAL_ROW_HOVER}`}>
       {onToggleSelect && (
         <td className="w-8 px-2 py-2">
           <input
@@ -271,7 +277,7 @@ function SpreadsheetRow({
               type="text"
               defaultValue={displayValue}
               onBlur={(e) => handleCellBlur(col.name, e.target.value, displayValue)}
-              className="w-full border-0 bg-transparent px-0 text-sm text-[var(--color-text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--color-border-active)] focus:rounded-[var(--radius-sm)] focus:px-1"
+              className="w-full border-0 bg-transparent px-0 font-mono text-xs text-cyan-400 focus:outline-none focus:ring-1 focus:ring-[var(--color-border-focus)] focus:rounded-[var(--radius-sm)] focus:px-1"
             />
           </td>
         );

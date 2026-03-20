@@ -3,7 +3,7 @@
  * budget remaining, estimated cost vs remaining, and warning/blocked states (PRD-93).
  */
 
-import { Badge, Spinner } from "@/components/primitives";
+import { Badge ,  WireframeLoader } from "@/components/primitives";
 import { cn } from "@/lib/cn";
 
 import { useBudgetCheck } from "./hooks/use-budget-quota";
@@ -96,7 +96,7 @@ export function SubmissionBudgetCheck({
   if (isLoading && !externalCheck) {
     return (
       <div data-testid="submission-budget-check-loading" className="flex items-center gap-2 py-2">
-        <Spinner size="sm" />
+        <WireframeLoader size={32} />
         <span className="text-xs text-[var(--color-text-muted)]">Checking budget...</span>
       </div>
     );

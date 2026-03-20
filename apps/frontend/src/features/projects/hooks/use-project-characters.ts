@@ -32,6 +32,7 @@ export function useProjectCharacters(projectId: number) {
     queryFn: () =>
       api.get<Character[]>(`/projects/${projectId}/characters`),
     enabled: projectId > 0,
+    refetchInterval: 15_000,
   });
 }
 
@@ -106,12 +107,9 @@ export function useUpdateCharacter(projectId: number) {
         ),
       });
       // Cascade to deliverables, stats, scene assignments
-      queryClient.invalidateQueries({
-        queryKey: projectKeys.detail(projectId),
-      });
-      queryClient.invalidateQueries({
-        queryKey: ["character-dashboard", variables.characterId],
-      });
+      queryClient.invalidateQueries({ queryKey: projectKeys.detail(projectId) });
+      queryClient.invalidateQueries({ queryKey: projectKeys.stats(projectId) });
+      queryClient.invalidateQueries({ queryKey: ["character-dashboard"] });
     },
   });
 }

@@ -8,7 +8,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { ConfirmDeleteModal, Modal } from "@/components/composite";
 import { EmptyState, FileDropZone } from "@/components/domain";
 import { Grid } from "@/components/layout";
-import { Badge, Button, FilterSelect, Input, LoadingPane, SearchInput, Toggle } from "@/components/primitives";
+import { Button, FilterSelect, Input, LoadingPane, SearchInput, Toggle } from "@/components/primitives";
 import { Stack } from "@/components/layout";
 import { useCharacterImport } from "./hooks/use-character-import";
 import { FileAssignmentModal } from "@/features/characters/components";
@@ -21,7 +21,7 @@ import { ProjectCard } from "./components/ProjectCard";
 import { useCreateProject, useDeleteProject, useProjects, useUpdateProject } from "./hooks/use-projects";
 import { useProjectCharacters } from "./hooks/use-project-characters";
 import { useCharacterGroups } from "./hooks/use-character-groups";
-import { PROJECT_STATUSES, PROJECT_STATUS_LABELS } from "./types";
+import { PROJECT_STATUSES, PROJECT_STATUS_LABELS, projectStatusSlug } from "./types";
 import type { FolderDropResult } from "./types";
 
 /* --------------------------------------------------------------------------
@@ -58,11 +58,11 @@ export function ProjectListPage() {
 
   /* --- archive/unarchive/delete handlers --- */
   function handleArchive(id: number) {
-    updateProject.mutate({ id, data: { status: "archived" } });
+    updateProject.mutate({ id, data: { status_id: 5 } });
   }
 
   function handleUnarchive(id: number) {
-    updateProject.mutate({ id, data: { status: "active" } });
+    updateProject.mutate({ id, data: { status_id: 2 } });
   }
 
   const [deleteTarget, setDeleteTarget] = useState<{ id: number; name: string } | null>(null);
@@ -103,12 +103,12 @@ export function ProjectListPage() {
 
     // Status filter
     if (statusFilter) {
-      result = result.filter((p) => p.status === statusFilter);
+      result = result.filter((p) => projectStatusSlug(p.status_id) === statusFilter);
     }
 
     // Hide archived toggle
     if (hideArchived) {
-      result = result.filter((p) => p.status !== "archived");
+      result = result.filter((p) => projectStatusSlug(p.status_id) !== "archived");
     }
 
     // Sort
@@ -352,6 +352,7 @@ export function ProjectListPage() {
             onChange={(e) => setNewDescription(e.target.value)}
           />
           <Button
+            size="sm"
             onClick={handleCreate}
             loading={createProject.isPending}
             disabled={!newName.trim()}
@@ -371,46 +372,46 @@ export function ProjectListPage() {
         {pendingDrop && (
           <Stack gap={4}>
             <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium text-[var(--color-text-primary)]">
+              <div className="flex items-center gap-2 font-mono text-xs">
+                <span className="text-[var(--color-text-muted)]">
                   Project:
                 </span>
-                <span className="text-sm text-[var(--color-text-primary)] font-semibold">
+                <span className="text-[var(--color-text-primary)]">
                   {pendingDrop.projectName}
                 </span>
-                <Badge variant={pendingDrop.existingProjectId ? "info" : "success"} size="sm">
+                <span className={pendingDrop.existingProjectId ? "text-cyan-400" : "text-green-400"}>
                   {pendingDrop.existingProjectId ? "Existing" : "New"}
-                </Badge>
+                </span>
               </div>
 
-              <div className="rounded-[var(--radius-md)] border border-[var(--color-border-default)] bg-[var(--color-surface-secondary)] p-3">
-                <div className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide mb-2">
+              <div className="rounded-[var(--radius-md)] border border-[var(--color-border-default)] p-3">
+                <div className="text-xs font-mono uppercase tracking-wide text-[var(--color-text-muted)] mb-2">
                   Contents
                 </div>
                 {pendingDrop.groups.map((g) => (
-                  <div key={g.name} className="flex items-center justify-between py-1">
-                    <span className="text-sm text-[var(--color-text-primary)]">{g.name}</span>
-                    <span className="text-xs text-[var(--color-text-muted)]">
+                  <div key={g.name} className="flex items-center justify-between py-1 border-b border-white/5 font-mono text-xs">
+                    <span className="text-[var(--color-text-primary)]">{g.name}</span>
+                    <span className="text-[var(--color-text-muted)]">
                       {g.characterCount} character{g.characterCount !== 1 ? "s" : ""}
                     </span>
                   </div>
                 ))}
-                <div className="flex items-center justify-between pt-2 mt-2 border-t border-[var(--color-border-default)]">
-                  <span className="text-sm font-medium text-[var(--color-text-primary)]">Total</span>
-                  <span className="text-sm font-medium text-[var(--color-text-primary)]">
+                <div className="flex items-center justify-between pt-2 mt-1 border-t border-[var(--color-border-default)] font-mono text-xs">
+                  <span className="text-[var(--color-text-primary)]">Total</span>
+                  <span className="text-[var(--color-text-primary)]">
                     {pendingDrop.totalCharacters} character{pendingDrop.totalCharacters !== 1 ? "s" : ""}
                   </span>
                 </div>
               </div>
 
-              <p className="text-xs text-[var(--color-text-muted)]">
+              <p className="text-xs font-mono text-[var(--color-text-muted)]">
                 {pendingDrop.existingProjectId
                   ? "Models will be added to the existing project. You'll be taken to the project's models tab to complete the import."
                   : "A new project will be created and you'll be taken to the models tab to complete the import."}
               </p>
             </div>
 
-            <div className="flex justify-end gap-2">
+            <div className="flex justify-end gap-2 pt-1 border-t border-[var(--color-border-default)]">
               <Button size="sm" variant="secondary" onClick={() => setPendingDrop(null)}>
                 Cancel
               </Button>

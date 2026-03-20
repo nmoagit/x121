@@ -1,3 +1,4 @@
+import { WireframeLoader } from "@/components/primitives";
 /**
  * Tree visualization component for undo/redo history (PRD-51).
  *
@@ -7,7 +8,6 @@
 
 import { Badge } from "@/components/primitives/Badge";
 import { Button } from "@/components/primitives/Button";
-import { Spinner } from "@/components/primitives/Spinner";
 
 import { UndoTree } from "./UndoTree";
 import type { UndoNode } from "./types";
@@ -44,7 +44,7 @@ export function HistoryBrowser({
         <span className="text-sm font-medium text-[var(--color-text-primary)]">
           History
         </span>
-        {isSaving && <Spinner size="sm" />}
+        {isSaving && <WireframeLoader size={32} />}
       </div>
       <HistoryNodeItem
         node={rootNode}

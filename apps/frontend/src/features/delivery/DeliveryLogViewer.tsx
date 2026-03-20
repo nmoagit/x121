@@ -1,20 +1,18 @@
 /**
  * Delivery log viewer component (PRD-39 Amendment A.3).
  *
- * Displays delivery log entries with level filtering and expandable details.
+ * Displays delivery log entries in a terminal-style viewer matching
+ * the generation log style (dark background, monospace LogLine entries).
  */
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
-import { Badge, Button } from "@/components/primitives";
-import { cn } from "@/lib/cn";
-import { formatDateTime } from "@/lib/format";
-import { SECTION_HEADING } from "@/lib/ui-classes";
-import { ChevronDown, ChevronRight } from "@/tokens/icons";
+import { Button } from "@/components/primitives";
+import { LogLine } from "@/components/domain";
+import type { LogLevel } from "@/components/domain";
+import { ChevronDown, ChevronRight, Terminal } from "@/tokens/icons";
 
 import { useDeliveryLogs } from "./hooks/use-delivery-logs";
-import { LOG_LEVEL_BADGE_VARIANT } from "./types";
-import type { DeliveryLog } from "./types";
 
 /* --------------------------------------------------------------------------
    Constants
@@ -34,26 +32,87 @@ const FILTER_OPTIONS: { value: LogFilter; label: string }[] = [
 
 interface DeliveryLogViewerProps {
   projectId: number;
+  /** Poll for new logs (e.g. while an export is in progress). */
+  poll?: boolean;
 }
 
-export function DeliveryLogViewer({ projectId }: DeliveryLogViewerProps) {
+export function DeliveryLogViewer({ projectId, poll }: DeliveryLogViewerProps) {
   const [filter, setFilter] = useState<LogFilter>("all");
+  const [collapsed, setCollapsed] = useState(true);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const wasAtBottomRef = useRef(true);
 
   const levelParam = filter === "all" ? undefined : filter;
-  const { data: logs = [], isLoading } = useDeliveryLogs(
-    projectId,
-    levelParam,
-    200,
-  );
+  const { data: logs = [] } = useDeliveryLogs(projectId, levelParam, 200, poll);
+
+  const hasLogs = logs.length > 0;
+
+  // Auto-expand when polling starts (export in progress).
+  useEffect(() => {
+    if (poll) setCollapsed(false);
+  }, [poll]);
+
+  // Track scroll position for auto-scroll.
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    function handleScroll() {
+      if (!el) return;
+      wasAtBottomRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 24;
+    }
+    el.addEventListener("scroll", handleScroll, { passive: true });
+    return () => el.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  // Auto-scroll when new entries arrive.
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (el && wasAtBottomRef.current) {
+      el.scrollTop = el.scrollHeight;
+    }
+  }, [logs]);
+
+  /** Map delivery log level to LogLine level. */
+  function toLogLevel(level: string): LogLevel {
+    if (level === "error") return "error";
+    if (level === "warning") return "warn";
+    return "info";
+  }
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <h3 className={SECTION_HEADING}>
+    <div className="rounded-[var(--radius-lg)] border border-[var(--color-border-default)] overflow-hidden">
+      {/* Terminal header */}
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={() => setCollapsed((v) => !v)}
+        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") setCollapsed((v) => !v); }}
+        className="flex w-full items-center gap-[var(--spacing-2)] px-[var(--spacing-3)] py-[var(--spacing-2)] bg-[var(--color-surface-tertiary)] border-b border-[var(--color-border-default)] cursor-pointer hover:bg-[var(--color-surface-secondary)] transition-colors"
+      >
+        {collapsed ? (
+          <ChevronRight size={14} className="text-[var(--color-text-muted)]" />
+        ) : (
+          <ChevronDown size={14} className="text-[var(--color-text-muted)]" />
+        )}
+        <Terminal size={14} className="text-[var(--color-text-muted)]" />
+        <span className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide">
           Delivery Logs
-        </h3>
+        </span>
+        {hasLogs && (
+          <span className="text-xs text-[var(--color-text-muted)]">
+            ({logs.length})
+          </span>
+        )}
 
-        <div className="flex items-center gap-1">
+        {/* Live indicator + filter buttons */}
+        {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
+        <span className="ml-auto flex items-center gap-[var(--spacing-2)]" onClick={(e) => e.stopPropagation()}>
+          {poll && (
+            <span className="flex items-center gap-[var(--spacing-1)]">
+              <span className="inline-block h-2 w-2 rounded-full bg-[var(--color-action-success)] animate-pulse" />
+              <span className="text-xs text-[var(--color-text-muted)]">Live</span>
+            </span>
+          )}
           {FILTER_OPTIONS.map((opt) => (
             <Button
               key={opt.value}
@@ -64,96 +123,46 @@ export function DeliveryLogViewer({ projectId }: DeliveryLogViewerProps) {
               {opt.label}
             </Button>
           ))}
-        </div>
+        </span>
       </div>
 
-      {isLoading && (
-        <p className="text-sm text-[var(--color-text-muted)]">
-          Loading logs...
-        </p>
-      )}
-
-      {!isLoading && logs.length === 0 && (
-        <p className="text-sm text-[var(--color-text-muted)]">
-          No delivery logs found.
-        </p>
-      )}
-
-      {logs.length > 0 && (
-        <div className="space-y-1">
-          {logs.map((log) => (
-            <LogEntry key={log.id} log={log} />
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-/* --------------------------------------------------------------------------
-   Log Entry Row
-   -------------------------------------------------------------------------- */
-
-function LogEntry({ log }: { log: DeliveryLog }) {
-  const [expanded, setExpanded] = useState(false);
-  const hasDetails = log.details != null && Object.keys(log.details).length > 0;
-
-  const variant = LOG_LEVEL_BADGE_VARIANT[log.log_level] ?? "info";
-
-  return (
-    <div
-      className={cn(
-        "rounded-[var(--radius-sm)] border px-3 py-2",
-        log.log_level === "error"
-          ? "border-[var(--color-action-danger)]/30 bg-[var(--color-action-danger)]/5"
-          : log.log_level === "warning"
-            ? "border-[var(--color-action-warning)]/30 bg-[var(--color-action-warning)]/5"
-            : "border-[var(--color-border-default)] bg-[var(--color-surface-secondary)]",
-      )}
-    >
-      <div className="flex items-start gap-2">
-        {/* Expand toggle */}
-        {hasDetails ? (
-          <button
-            type="button"
-            onClick={() => setExpanded(!expanded)}
-            className="mt-0.5 shrink-0 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
-            aria-label={expanded ? "Collapse details" : "Expand details"}
-          >
-            {expanded ? (
-              <ChevronDown size={14} />
-            ) : (
-              <ChevronRight size={14} />
-            )}
-          </button>
-        ) : (
-          <span className="mt-0.5 w-[14px] shrink-0" />
-        )}
-
-        {/* Level badge */}
-        <Badge
-          variant={variant}
-          size="sm"
+      {/* Log output area */}
+      {!collapsed && (
+        <div
+          ref={scrollRef}
+          className="max-h-64 overflow-y-auto bg-[#0d1117] p-[var(--spacing-3)]"
         >
-          {log.log_level}
-        </Badge>
+          {hasLogs ? (
+            <div className="flex flex-col gap-px">
+              {logs.map((log) => (
+                <LogLine
+                  key={log.id}
+                  timestamp={log.created_at}
+                  level={toLogLevel(log.log_level)}
+                  message={log.message}
+                />
+              ))}
+            </div>
+          ) : (
+            <p className="text-xs text-[var(--color-text-muted)] font-mono">
+              No delivery logs yet.
+            </p>
+          )}
 
-        {/* Message */}
-        <span className="flex-1 text-sm text-[var(--color-text-primary)]">
-          {log.message}
-        </span>
+          {/* Blinking cursor when live */}
+          {poll && (
+            <span className="inline-block mt-1 h-3.5 w-1.5 bg-[var(--color-text-muted)] animate-[blink_1s_steps(1)_infinite]" />
+          )}
+        </div>
+      )}
 
-        {/* Timestamp */}
-        <span className="shrink-0 text-xs text-[var(--color-text-muted)]">
-          {formatDateTime(log.created_at)}
-        </span>
-      </div>
-
-      {/* Expanded details */}
-      {expanded && hasDetails && (
-        <pre className="mt-2 ml-[22px] rounded-[var(--radius-sm)] bg-[var(--color-surface-tertiary)] p-2 text-xs text-[var(--color-text-secondary)] overflow-x-auto">
-          {JSON.stringify(log.details, null, 2)}
-        </pre>
+      {poll && (
+        <style>{`
+          @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+          }
+        `}</style>
       )}
     </div>
   );

@@ -7,9 +7,10 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { Badge, Button } from "@/components/primitives";
+import { Button } from "@/components/primitives";
 import { ArrowDown, Pause, Play, Trash2 } from "@/tokens/icons";
 import { cn } from "@/lib/cn";
+import { TERMINAL_HEADER } from "@/lib/ui-classes";
 
 import { ConsoleFilterToolbar } from "./components/ConsoleFilterToolbar";
 import { LogEntryRow } from "./components/LogEntryRow";
@@ -27,10 +28,10 @@ const CONNECTION_LABELS: Record<WsConnectionStatus, string> = {
   disconnected: "Disconnected",
 };
 
-const CONNECTION_VARIANTS: Record<WsConnectionStatus, "warning" | "success" | "danger"> = {
-  connecting: "warning",
-  connected: "success",
-  disconnected: "danger",
+const CONNECTION_COLORS: Record<WsConnectionStatus, string> = {
+  connecting: "text-orange-400",
+  connected: "text-green-400",
+  disconnected: "text-red-400",
 };
 
 /* --------------------------------------------------------------------------
@@ -84,40 +85,44 @@ export function ActivityConsolePanel() {
   }, []);
 
   return (
-    <div className="flex flex-col h-full bg-[var(--color-surface-primary)] overflow-hidden">
+    <div className="flex flex-col h-full bg-[#0d1117] overflow-hidden">
       {/* Filter toolbar */}
       <ConsoleFilterToolbar />
 
       {/* Status bar */}
-      <div className="flex items-center justify-between px-[var(--spacing-3)] py-[var(--spacing-1)] border-b border-[var(--color-border-default)] bg-[var(--color-surface-secondary)]">
+      <div className={cn(TERMINAL_HEADER, "flex items-center justify-between")}>
         <div className="flex items-center gap-[var(--spacing-2)]">
-          <Badge size="sm" variant={CONNECTION_VARIANTS[connectionStatus]}>
+          <span className={cn("font-mono text-[10px] uppercase tracking-wide", CONNECTION_COLORS[connectionStatus])}>
             {CONNECTION_LABELS[connectionStatus]}
-          </Badge>
-          <span className="text-xs text-[var(--color-text-muted)]">
+          </span>
+          <span className="opacity-30">|</span>
+          <span className="font-mono text-xs text-[var(--color-text-muted)]">
             {entries.length.toLocaleString()} entries
           </span>
           {skippedCount > 0 && (
-            <span className="text-xs text-[var(--color-action-warning)]">
-              ({skippedCount.toLocaleString()} skipped)
-            </span>
+            <>
+              <span className="opacity-30">|</span>
+              <span className="font-mono text-xs text-orange-400">
+                {skippedCount.toLocaleString()} skipped
+              </span>
+            </>
           )}
         </div>
 
         <div className="flex items-center gap-1">
           <Button
             variant="ghost"
-            size="sm"
+            size="xs"
             onClick={() => setPaused(!isPaused)}
-            icon={isPaused ? <Play size={14} /> : <Pause size={14} />}
+            icon={isPaused ? <Play size={12} /> : <Pause size={12} />}
           >
             {isPaused ? "Resume" : "Pause"}
           </Button>
           <Button
             variant="ghost"
-            size="sm"
+            size="xs"
             onClick={clearEntries}
-            icon={<Trash2 size={14} />}
+            icon={<Trash2 size={12} />}
           >
             Clear
           </Button>
@@ -128,11 +133,11 @@ export function ActivityConsolePanel() {
       <div
         ref={scrollRef}
         onScroll={handleScroll}
-        className="flex-1 overflow-y-auto min-h-0 scrollbar-thin"
+        className="flex-1 overflow-y-auto min-h-0 bg-[#0d1117] scrollbar-thin"
       >
         {entries.length === 0 ? (
           <div className="flex items-center justify-center h-full">
-            <p className="text-sm text-[var(--color-text-muted)]">
+            <p className="font-mono text-xs text-[var(--color-text-muted)]">
               {connectionStatus === "connected"
                 ? "Waiting for log entries..."
                 : "Not connected to log stream"}
@@ -152,12 +157,10 @@ export function ActivityConsolePanel() {
         <div className="absolute bottom-[var(--spacing-4)] right-[var(--spacing-4)]">
           <Button
             variant="secondary"
-            size="sm"
+            size="xs"
             onClick={jumpToBottom}
-            icon={<ArrowDown size={14} />}
-            className={cn(
-              "shadow-md",
-            )}
+            icon={<ArrowDown size={12} />}
+            className="shadow-md"
           >
             Jump to latest
           </Button>

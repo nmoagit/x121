@@ -2,8 +2,6 @@
  * External & tiered storage types (PRD-48).
  */
 
-import type { BadgeVariant } from "@/components/primitives";
-
 // ---------------------------------------------------------------------------
 // Storage backend types
 // ---------------------------------------------------------------------------
@@ -48,14 +46,6 @@ export const BACKEND_STATUS_LABELS: Record<StorageBackendStatusId, string> = {
   [BACKEND_STATUS.DECOMMISSIONED]: "Decommissioned",
 };
 
-/** Badge variant for each backend status. */
-export const BACKEND_STATUS_VARIANT: Record<StorageBackendStatusId, BadgeVariant> = {
-  [BACKEND_STATUS.ACTIVE]: "success",
-  [BACKEND_STATUS.READ_ONLY]: "warning",
-  [BACKEND_STATUS.OFFLINE]: "danger",
-  [BACKEND_STATUS.DECOMMISSIONED]: "default",
-};
-
 // ---------------------------------------------------------------------------
 // Storage migration statuses
 // ---------------------------------------------------------------------------
@@ -81,16 +71,6 @@ export const MIGRATION_STATUS_LABELS: Record<StorageMigrationStatusId, string> =
   [MIGRATION_STATUS.COMPLETED]: "Completed",
   [MIGRATION_STATUS.FAILED]: "Failed",
   [MIGRATION_STATUS.ROLLED_BACK]: "Rolled Back",
-};
-
-/** Badge variant for each migration status. */
-export const MIGRATION_STATUS_VARIANT: Record<StorageMigrationStatusId, BadgeVariant> = {
-  [MIGRATION_STATUS.PENDING]: "default",
-  [MIGRATION_STATUS.IN_PROGRESS]: "info",
-  [MIGRATION_STATUS.VERIFYING]: "warning",
-  [MIGRATION_STATUS.COMPLETED]: "success",
-  [MIGRATION_STATUS.FAILED]: "danger",
-  [MIGRATION_STATUS.ROLLED_BACK]: "default",
 };
 
 // ---------------------------------------------------------------------------

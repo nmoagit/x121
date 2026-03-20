@@ -1,3 +1,4 @@
+import { WireframeLoader } from "@/components/primitives";
 /**
  * Retry history panel (PRD-71).
  *
@@ -7,7 +8,6 @@
 
 import { useCallback, useState } from "react";
 
-import { Spinner } from "@/components/primitives/Spinner";
 
 import { AttemptRow } from "./AttemptRow";
 import { useRetryAttempts, useSelectRetryAttempt } from "./hooks/use-auto-retry";
@@ -45,7 +45,7 @@ export function RetryHistoryPanel({ segmentId }: RetryHistoryPanelProps) {
   if (isPending) {
     return (
       <div className="flex items-center justify-center py-8" data-testid="retry-history-loading">
-        <Spinner size="md" />
+        <WireframeLoader size={48} />
       </div>
     );
   }

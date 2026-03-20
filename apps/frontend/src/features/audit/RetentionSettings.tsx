@@ -6,9 +6,10 @@
 
 import { useState, useCallback } from "react";
 
-import { Card } from "@/components/composite/Card";
-import { Button, Input, Spinner, Toggle } from "@/components/primitives";
+import { Button, Input, Toggle ,  WireframeLoader } from "@/components/primitives";
 import { Stack } from "@/components/layout";
+import { TERMINAL_PANEL, TERMINAL_HEADER, TERMINAL_HEADER_TITLE, TERMINAL_BODY, TERMINAL_DIVIDER, TERMINAL_INPUT } from "@/lib/ui-classes";
+import { cn } from "@/lib/cn";
 import {
   useRetentionPolicies,
   useUpdateRetentionPolicy,
@@ -26,50 +27,50 @@ export function RetentionSettings() {
   if (isLoading) {
     return (
       <div className="flex h-64 items-center justify-center">
-        <Spinner size="lg" />
+        <WireframeLoader size={64} />
       </div>
     );
   }
 
   return (
-    <Card padding="lg">
-      <Stack gap={4}>
-        <div>
-          <h3 className="text-base font-semibold text-[var(--color-text-primary)]">
-            Retention Policies
-          </h3>
-          <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-            Configure how long audit logs are retained per category.
-          </p>
-        </div>
+    <div className={TERMINAL_PANEL}>
+      <div className={TERMINAL_HEADER}>
+        <span className={TERMINAL_HEADER_TITLE}>Retention Policies</span>
+        <p className="mt-1 text-xs text-[var(--color-text-muted)] font-mono">
+          Configure how long audit logs are retained per category.
+        </p>
+      </div>
 
-        {policies?.length === 0 && (
-          <p className="text-sm text-[var(--color-text-muted)]">
-            No retention policies found.
-          </p>
-        )}
+      <div className={TERMINAL_BODY}>
+        <Stack gap={4}>
+          {policies?.length === 0 && (
+            <p className="text-xs text-[var(--color-text-muted)] font-mono">
+              No retention policies found.
+            </p>
+          )}
 
-        <div className="space-y-3">
-          {policies?.map((policy) => (
-            <RetentionPolicyRow
-              key={policy.id}
-              policy={policy}
-              onSave={(active, archive, enabled) => {
-                updateMutation.mutate({
-                  category: policy.log_category,
-                  data: {
-                    active_retention_days: active,
-                    archive_retention_days: archive,
-                    enabled,
-                  },
-                });
-              }}
-              isSaving={updateMutation.isPending}
-            />
-          ))}
-        </div>
-      </Stack>
-    </Card>
+          <div className="space-y-3">
+            {policies?.map((policy) => (
+              <RetentionPolicyRow
+                key={policy.id}
+                policy={policy}
+                onSave={(active, archive, enabled) => {
+                  updateMutation.mutate({
+                    category: policy.log_category,
+                    data: {
+                      active_retention_days: active,
+                      archive_retention_days: archive,
+                      enabled,
+                    },
+                  });
+                }}
+                isSaving={updateMutation.isPending}
+              />
+            ))}
+          </div>
+        </Stack>
+      </div>
+    </div>
   );
 }
 
@@ -116,22 +117,23 @@ function RetentionPolicyRow({
   }, [activeDays, archiveDays, enabled, onSave]);
 
   return (
-    <div className="rounded-[var(--radius-md)] border border-[var(--color-border-default)] p-4">
+    <div className={cn(TERMINAL_DIVIDER, "pb-3")}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <span className="text-sm font-medium capitalize text-[var(--color-text-primary)]">
+          <span className="text-xs font-medium capitalize text-cyan-400 font-mono">
             {policy.log_category}
           </span>
           <Toggle
             checked={enabled}
             onChange={setEnabled}
             label={enabled ? "Enabled" : "Disabled"}
+            size="sm"
           />
         </div>
         {hasChanges && (
           <Button
             variant="primary"
-            size="sm"
+            size="xs"
             onClick={handleSave}
             disabled={isSaving}
           >
@@ -142,10 +144,9 @@ function RetentionPolicyRow({
 
       <div className="mt-3 flex gap-4">
         <div className="w-[160px]">
-          <label className="mb-1 block text-xs font-medium text-[var(--color-text-muted)]">
-            Active Retention (days)
-          </label>
           <Input
+            label="Active Retention (days)"
+            className={TERMINAL_INPUT}
             type="number"
             min={1}
             value={String(activeDays)}
@@ -153,10 +154,9 @@ function RetentionPolicyRow({
           />
         </div>
         <div className="w-[160px]">
-          <label className="mb-1 block text-xs font-medium text-[var(--color-text-muted)]">
-            Archive Retention (days)
-          </label>
           <Input
+            label="Archive Retention (days)"
+            className={TERMINAL_INPUT}
             type="number"
             min={1}
             value={String(archiveDays)}
@@ -166,18 +166,18 @@ function RetentionPolicyRow({
       </div>
 
       {showWarning && (
-        <div className="mt-3 rounded-[var(--radius-md)] border border-[var(--color-status-warning)] bg-yellow-50 p-3">
-          <p className="text-sm text-[var(--color-text-secondary)]">
+        <div className="mt-3 rounded-[var(--radius-md)] border border-orange-400/30 bg-orange-400/5 p-3">
+          <p className="text-xs text-orange-400 font-mono">
             Reducing retention may cause existing logs to be purged earlier than
             originally configured. Are you sure?
           </p>
           <div className="mt-2 flex gap-2">
-            <Button variant="primary" size="sm" onClick={confirmSave}>
+            <Button variant="primary" size="xs" onClick={confirmSave}>
               Confirm
             </Button>
             <Button
               variant="secondary"
-              size="sm"
+              size="xs"
               onClick={() => setShowWarning(false)}
             >
               Cancel

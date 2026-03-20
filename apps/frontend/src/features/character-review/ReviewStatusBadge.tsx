@@ -1,17 +1,14 @@
-import { Badge } from "@/components/primitives";
+import { TERMINAL_STATUS_COLORS } from "@/lib/ui-classes";
 import type { CharacterReviewStatus } from "./types";
 
-const STATUS_CONFIG: Record<
-  CharacterReviewStatus,
-  { variant: "default" | "info" | "warning" | "success" | "danger"; label: string }
-> = {
-  unassigned: { variant: "default", label: "Unassigned" },
-  assigned: { variant: "info", label: "Assigned" },
-  in_review: { variant: "warning", label: "In Review" },
-  approved: { variant: "success", label: "Approved" },
-  rejected: { variant: "danger", label: "Rejected" },
-  rework: { variant: "warning", label: "Rework" },
-  re_queued: { variant: "info", label: "Re-queued" },
+const STATUS_LABELS: Record<CharacterReviewStatus, string> = {
+  unassigned: "Unassigned",
+  assigned: "Assigned",
+  in_review: "In Review",
+  approved: "Approved",
+  rejected: "Rejected",
+  rework: "Rework",
+  re_queued: "Re-queued",
 };
 
 interface ReviewStatusBadgeProps {
@@ -19,11 +16,12 @@ interface ReviewStatusBadgeProps {
   size?: "sm" | "md";
 }
 
-export function ReviewStatusBadge({ status, size = "md" }: ReviewStatusBadgeProps) {
-  const config = STATUS_CONFIG[status] ?? STATUS_CONFIG.unassigned;
+export function ReviewStatusBadge({ status }: ReviewStatusBadgeProps) {
+  const label = STATUS_LABELS[status] ?? STATUS_LABELS.unassigned;
+  const colorClass = TERMINAL_STATUS_COLORS[status] ?? "text-[var(--color-text-muted)]";
   return (
-    <Badge variant={config.variant} size={size}>
-      {config.label}
-    </Badge>
+    <span className={`font-mono text-xs uppercase tracking-wide ${colorClass}`}>
+      {label}
+    </span>
   );
 }

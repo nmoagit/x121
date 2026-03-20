@@ -2,7 +2,7 @@
  * Energy consumption summary panel showing kWh stats and time breakdown (PRD-87).
  */
 
-import { Spinner, StatBadge } from "@/components/primitives";
+import { StatBadge ,  WireframeLoader } from "@/components/primitives";
 import { Stack } from "@/components/layout";
 import { formatPercent } from "@/lib/format";
 import { BarChart3, Zap } from "@/tokens/icons";
@@ -68,7 +68,7 @@ export function ConsumptionSummary({ params }: ConsumptionSummaryProps) {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-[var(--spacing-8)]">
-        <Spinner size="lg" />
+        <WireframeLoader size={64} />
       </div>
     );
   }

@@ -6,8 +6,8 @@
  * Generation Parameters, and Timing.
  */
 
-import { Accordion } from "@/components";
-import { Badge, Spinner } from "@/components";
+import { Accordion ,  WireframeLoader } from "@/components";
+import { Badge  } from "@/components";
 import { useCopyToClipboard } from "@/hooks/useCopyToClipboard";
 
 import { useSegmentProvenance } from "./hooks/use-provenance";
@@ -186,7 +186,7 @@ export function ReceiptPanel({ segmentId }: ReceiptPanelProps) {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center p-6" data-testid="receipt-loading">
-        <Spinner />
+        <WireframeLoader size={48} />
       </div>
     );
   }

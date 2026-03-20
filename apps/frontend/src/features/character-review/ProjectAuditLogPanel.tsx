@@ -1,5 +1,12 @@
 import { useState } from "react";
-import { Button, Spinner } from "@/components/primitives";
+import { Button ,  WireframeLoader } from "@/components/primitives";
+import {
+  TERMINAL_PANEL,
+  TERMINAL_HEADER,
+  TERMINAL_HEADER_TITLE,
+  TERMINAL_BODY,
+  TERMINAL_SELECT,
+} from "@/lib/ui-classes";
 import { useProjectAuditLog, useExportAuditLog } from "./hooks/use-character-review";
 import { ReviewAuditRow } from "./ReviewAuditRow";
 import type { AuditLogFilters, ReviewAuditEntry } from "./types";
@@ -17,13 +24,11 @@ export function ProjectAuditLogPanel({ projectId }: ProjectAuditLogPanelProps) {
   const entries: ReviewAuditEntry[] = data ?? [];
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-sm font-medium text-text-muted uppercase tracking-wider">
-          Audit Log
-        </h2>
+    <div className={TERMINAL_PANEL}>
+      <div className={`${TERMINAL_HEADER} flex items-center justify-between`}>
+        <span className={TERMINAL_HEADER_TITLE}>Audit Log</span>
         <Button
-          size="sm"
+          size="xs"
           variant="ghost"
           icon={<Download size={14} />}
           onClick={() => exportAuditLog(filters)}
@@ -32,37 +37,39 @@ export function ProjectAuditLogPanel({ projectId }: ProjectAuditLogPanelProps) {
         </Button>
       </div>
 
-      {/* Filters */}
-      <div className="flex gap-2">
-        <select
-          className="bg-surface-secondary text-text-primary text-sm rounded px-2 py-1 border border-border-primary"
-          value={filters.action ?? ""}
-          onChange={(e) =>
-            setFilters((f) => ({ ...f, action: e.target.value || undefined }))
-          }
-        >
-          <option value="">All Actions</option>
-          <option value="assigned">Assigned</option>
-          <option value="reassigned">Reassigned</option>
-          <option value="review_started">Review Started</option>
-          <option value="approved">Approved</option>
-          <option value="rejected">Rejected</option>
-          <option value="rework_submitted">Rework Submitted</option>
-          <option value="re_queued">Re-queued</option>
-        </select>
-      </div>
-
-      {isPending ? (
-        <Spinner />
-      ) : entries.length === 0 ? (
-        <div className="text-text-muted text-sm">No audit entries found.</div>
-      ) : (
-        <div className="space-y-0">
-          {entries.map((entry) => (
-            <ReviewAuditRow key={entry.id} entry={entry} showCharacterId />
-          ))}
+      <div className={TERMINAL_BODY}>
+        {/* Filters */}
+        <div className="flex gap-2 mb-4">
+          <select
+            className={TERMINAL_SELECT}
+            value={filters.action ?? ""}
+            onChange={(e) =>
+              setFilters((f) => ({ ...f, action: e.target.value || undefined }))
+            }
+          >
+            <option value="">All Actions</option>
+            <option value="assigned">Assigned</option>
+            <option value="reassigned">Reassigned</option>
+            <option value="review_started">Review Started</option>
+            <option value="approved">Approved</option>
+            <option value="rejected">Rejected</option>
+            <option value="rework_submitted">Rework Submitted</option>
+            <option value="re_queued">Re-queued</option>
+          </select>
         </div>
-      )}
+
+        {isPending ? (
+          <WireframeLoader size={48} />
+        ) : entries.length === 0 ? (
+          <div className="font-mono text-xs text-[var(--color-text-muted)]">No audit entries found.</div>
+        ) : (
+          <div className="space-y-0">
+            {entries.map((entry) => (
+              <ReviewAuditRow key={entry.id} entry={entry} showCharacterId />
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

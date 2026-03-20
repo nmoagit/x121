@@ -6,14 +6,20 @@
  */
 
 import { Link, useNavigate, useParams, useSearch } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
-import { ConfirmDeleteModal, Tabs } from "@/components/composite";
-import { EmptyState } from "@/components/domain";
+import { ConfirmDeleteModal, Modal, Tabs } from "@/components/composite";
+import { EmptyState, FileDropZone } from "@/components/domain";
 import { Stack } from "@/components/layout";
-import { Badge, Button, FlagIcon, LoadingPane, Tooltip } from "@/components/primitives";
+import { useCharacterImport } from "@/features/projects/hooks/use-character-import";
+import { ImportConfirmModal } from "@/features/projects/components/ImportConfirmModal";
+import { useBulkImportSpeeches } from "@/features/projects/hooks/use-project-speech-import";
+import { SpeechImportResultModal } from "@/features/projects/components/SpeechImportResultModal";
+import { FileAssignmentModal } from "./components";
+import type { BulkImportReport } from "./types";
+import { Button, FlagIcon, LoadingPane, Tooltip } from "@/components/primitives";
 import { useSetPageTitle } from "@/hooks/useSetPageTitle";
-import { ICON_ACTION_BTN } from "@/lib/ui-classes";
+
 import { AlertCircle, ChevronLeft, ChevronRight, Edit3, Power, User } from "@/tokens/icons";
 
 import { useCharacterDashboard } from "@/features/character-dashboard";
@@ -35,8 +41,6 @@ import {
   characterStatusBadgeVariant,
   characterStatusLabel,
 } from "@/features/projects/types";
-import { ReadinessStateBadge } from "@/features/readiness/ReadinessStateBadge";
-import type { ReadinessState } from "@/features/readiness/types";
 import { ReviewStatusBadge, CharacterReviewControls, CharacterReviewAuditLog, REVIEW_STATUS_MAP } from "@/features/character-review";
 
 import { useSpeechCompleteness } from "./hooks/use-character-speeches";
@@ -141,6 +145,44 @@ export function CharacterDetailPage() {
   const focusSceneTypeId = sceneTypeParam ? Number(sceneTypeParam) : undefined;
   const focusTrackId = trackParam ? Number(trackParam) : undefined;
 
+  /* --- resolved blocking deliverables (character → group → project → default) --- */
+  const resolvedBlockingDeliverables = useMemo(() => {
+    if (character?.blocking_deliverables) return character.blocking_deliverables;
+    if (character?.group_id) {
+      const group = groups?.find((g) => g.id === character.group_id);
+      if (group?.blocking_deliverables) return group.blocking_deliverables;
+    }
+    if (project?.blocking_deliverables) return project.blocking_deliverables;
+    return ["metadata", "images", "scenes"];
+  }, [character?.blocking_deliverables, character?.group_id, groups, project?.blocking_deliverables]);
+
+  /* --- folder drop (character import) --- */
+  const { data: projectCharacters } = useProjectCharacters(projectId);
+  const charImport = useCharacterImport(projectId, projectCharacters);
+
+  /* --- speech file drop --- */
+  const bulkSpeechImport = useBulkImportSpeeches(projectId);
+  const [speechImport, setSpeechImport] = useState<{ format: "json" | "csv"; data: string } | null>(null);
+  const [speechImportResult, setSpeechImportResult] = useState<BulkImportReport | null>(null);
+
+  const handleSpeechFileDrop = useCallback((format: "json" | "csv", data: string) => {
+    setSpeechImport({ format, data });
+    setSpeechImportResult(null);
+  }, []);
+
+  function handleSpeechImportConfirm() {
+    if (!speechImport) return;
+    bulkSpeechImport.mutate(
+      { format: speechImport.format, data: speechImport.data, skip_existing: true },
+      {
+        onSuccess: (result) => {
+          setSpeechImportResult(result);
+          setSpeechImport(null);
+        },
+      },
+    );
+  }
+
   /* --- edit/delete modal state --- */
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -182,108 +224,129 @@ export function CharacterDetailPage() {
     : undefined;
 
   return (
+    <FileDropZone
+      onNamesDropped={() => {}}
+      onFolderDropped={charImport.handleFolderDrop}
+      onSpeechFileDropped={handleSpeechFileDrop}
+    >
     <Stack gap={6}>
       {/* Breadcrumb */}
-      <nav className="flex items-center gap-[var(--spacing-1)] text-sm text-[var(--color-text-muted)]">
-        <Link to="/projects" className="hover:text-[var(--color-text-primary)] transition-colors">
-          Projects
+      <nav className="flex items-center gap-[var(--spacing-1)] text-xs font-mono text-[var(--color-text-muted)]">
+        <Link to="/projects" className="hover:text-cyan-400 transition-colors">
+          projects
         </Link>
-        <ChevronRight size={14} aria-hidden />
+        <ChevronRight size={12} aria-hidden className="opacity-40" />
         <Link
           to="/projects/$projectId"
           params={{ projectId: String(projectId) }}
           search={{ tab: undefined, group: undefined }}
-          className="hover:text-[var(--color-text-primary)] transition-colors"
+          className="hover:text-cyan-400 transition-colors"
         >
-          {project?.name ?? `Project ${projectId}`}
+          {project?.name?.toLowerCase() ?? `project ${projectId}`}
         </Link>
         {groupName && character.group_id != null && (
           <>
-            <ChevronRight size={14} aria-hidden />
+            <ChevronRight size={12} aria-hidden className="opacity-40" />
             <Link
               to="/projects/$projectId"
               params={{ projectId: String(projectId) }}
               search={{ tab: "characters", group: String(character.group_id) }}
-              className="hover:text-[var(--color-text-primary)] transition-colors"
+              className="hover:text-cyan-400 transition-colors"
             >
-              {groupName}
+              {groupName.toLowerCase()}
             </Link>
           </>
         )}
-        <ChevronRight size={14} aria-hidden />
-        <span className="text-[var(--color-text-primary)] font-medium">{character.name}</span>
+        <ChevronRight size={12} aria-hidden className="opacity-40" />
+        <span className="text-[var(--color-text-primary)]">{character.name.toLowerCase()}</span>
       </nav>
 
       {/* Header */}
-      <div className="flex items-center gap-[var(--spacing-2)]">
+      <div className="flex items-center gap-[var(--spacing-2)] rounded-[var(--radius-lg)] border border-[var(--color-border-default)] bg-[#0d1117] px-[var(--spacing-3)] py-[var(--spacing-2)]">
         {avatarUrl ? (
           <button
             type="button"
-            className="h-8 w-8 rounded-full overflow-hidden cursor-pointer"
+            className="h-7 w-7 rounded-full overflow-hidden cursor-pointer shrink-0"
             onClick={() => setActiveTab("images")}
             aria-label="View images"
           >
             <img
               src={avatarUrl}
               alt={character.name}
-              className="h-8 w-8 rounded-full object-cover"
+              className="h-7 w-7 rounded-full object-cover"
             />
           </button>
         ) : (
-          <User size={24} className="text-[var(--color-text-muted)]" aria-hidden />
+          <User size={20} className="text-[var(--color-text-muted)]" aria-hidden />
         )}
-        <Badge variant={badgeVariant} size="sm">
-          {statusLabel}
-        </Badge>
+        <span className={`text-xs font-mono font-semibold ${
+          badgeVariant === "success" ? "text-green-400"
+          : badgeVariant === "danger" ? "text-red-400"
+          : badgeVariant === "warning" ? "text-orange-400"
+          : "text-cyan-400"
+        }`}>
+          {statusLabel.toLowerCase()}
+        </span>
+        <span className="text-[var(--color-text-muted)] opacity-30 font-mono">|</span>
         <Link
           to="/projects/$projectId"
           params={{ projectId: String(projectId) }}
           search={{ tab: "characters", group: character.group_id != null ? String(character.group_id) : undefined }}
-          className="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
+          className="text-xs font-mono text-[var(--color-text-muted)] hover:text-cyan-400 transition-colors"
         >
-          {groupName ?? "Ungrouped"}
+          {groupName?.toLowerCase() ?? "ungrouped"}
         </Link>
         {character.review_status_id > 1 && (
-          <ReviewStatusBadge
-            status={REVIEW_STATUS_MAP[character.review_status_id] ?? "unassigned"}
-            size="sm"
-          />
+          <>
+            <span className="text-[var(--color-text-muted)] opacity-30 font-mono">|</span>
+            <ReviewStatusBadge
+              status={REVIEW_STATUS_MAP[character.review_status_id] ?? "unassigned"}
+              size="sm"
+            />
+          </>
         )}
         {dashboard?.readiness && (
-          <ReadinessStateBadge
-            state={dashboard.readiness.state as ReadinessState}
-            missingItems={dashboard.readiness.missing_items}
-          />
+          <>
+            <span className="text-[var(--color-text-muted)] opacity-30 font-mono">|</span>
+            <span className={`text-xs font-mono ${
+              dashboard.readiness.readiness_pct >= 100 ? "text-green-400" : "text-cyan-400"
+            }`}>
+              {dashboard.readiness.readiness_pct}%
+            </span>
+          </>
         )}
         {speechLanguageSummary.length > 0 && (
-          <div className="flex items-center gap-1.5">
-            {speechLanguageSummary.map((lang) => (
-              <Tooltip key={lang.languageCode} content={`${lang.languageCode.toUpperCase()}: ${lang.count} approved`}>
-                <button
-                  type="button"
-                  className="inline-flex items-center gap-0.5 cursor-pointer hover:opacity-80 transition-opacity"
-                  onClick={() => setActiveTab("speech")}
-                  aria-label={`${lang.languageCode.toUpperCase()} speech`}
-                >
-                  <FlagIcon flagCode={lang.flagCode} size={18} />
-                  <span className="text-xs text-[var(--color-text-muted)]">{lang.count}</span>
-                </button>
-              </Tooltip>
-            ))}
-          </div>
+          <>
+            <span className="text-[var(--color-text-muted)] opacity-30 font-mono">|</span>
+            <div className="flex items-center gap-1">
+              {speechLanguageSummary.map((lang) => (
+                <Tooltip key={lang.languageCode} content={`${lang.languageCode.toUpperCase()}: ${lang.count} approved`}>
+                  <button
+                    type="button"
+                    className="inline-flex items-center gap-0.5 cursor-pointer hover:opacity-80 transition-opacity"
+                    onClick={() => setActiveTab("speech")}
+                    aria-label={`${lang.languageCode.toUpperCase()} speech`}
+                  >
+                    <FlagIcon flagCode={lang.flagCode} size={10} />
+                    <span className="text-[10px] font-mono text-[var(--color-text-muted)]">{lang.count}</span>
+                  </button>
+                </Tooltip>
+              ))}
+            </div>
+          </>
         )}
         <button
           type="button"
-          className={ICON_ACTION_BTN}
+          className="text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors p-0.5"
           onClick={() => setEditOpen(true)}
           aria-label="Edit character"
         >
-          <Edit3 size={16} aria-hidden />
+          <Edit3 size={14} aria-hidden />
         </button>
         <Button
-          size="sm"
+          size="xs"
           variant={character.is_enabled ? "secondary" : "primary"}
-          icon={<Power size={14} />}
+          icon={<Power size={12} />}
           onClick={() => toggleEnabled.mutate({ characterId, isEnabled: !character.is_enabled })}
           loading={toggleEnabled.isPending}
         >
@@ -293,21 +356,21 @@ export function CharacterDetailPage() {
         {/* Prev / Next character navigation */}
         {totalCount > 1 && (
           <div className="flex items-center gap-[var(--spacing-1)] ml-auto">
-            <span className="text-xs text-[var(--color-text-muted)]">
-              {currentIndex + 1} / {totalCount}
+            <span className="text-[10px] font-mono text-[var(--color-text-muted)]">
+              {currentIndex + 1}/{totalCount}
             </span>
             <Button
               variant="secondary"
-              size="sm"
-              icon={<ChevronLeft size={14} />}
+              size="xs"
+              icon={<ChevronLeft size={12} />}
               disabled={prevId === null}
               onClick={() => prevId !== null && navigateToCharacter(prevId)}
               aria-label="Previous character"
             />
             <Button
               variant="secondary"
-              size="sm"
-              icon={<ChevronRight size={14} />}
+              size="xs"
+              icon={<ChevronRight size={12} />}
               disabled={nextId === null}
               onClick={() => nextId !== null && navigateToCharacter(nextId)}
               aria-label="Next character"
@@ -331,6 +394,7 @@ export function CharacterDetailPage() {
           character={character}
           characterId={characterId}
           projectId={projectId}
+          blockingDeliverables={resolvedBlockingDeliverables}
           onSceneClick={(sceneId) => { setFocusSceneId(sceneId); setActiveTab("scenes"); }}
         />
       )}
@@ -363,13 +427,7 @@ export function CharacterDetailPage() {
           characterId={characterId}
           characterName={character.name}
           blockingDeliverables={character.blocking_deliverables}
-          parentBlockingDeliverables={
-            (character.group_id
-              ? groups?.find((g) => g.id === character.group_id)?.blocking_deliverables
-              : null)
-            ?? project?.blocking_deliverables
-            ?? ["metadata", "images", "scenes"]
-          }
+          parentBlockingDeliverables={resolvedBlockingDeliverables}
           onUpdateBlockingDeliverables={(next) =>
             updateCharacter.mutate({ characterId, data: { blocking_deliverables: next } })
           }
@@ -401,6 +459,62 @@ export function CharacterDetailPage() {
         characterId={characterId}
         reviewStatusId={character.review_status_id}
       />
+
+      {/* Speech import confirmation */}
+      {speechImport && (
+        <Modal open onClose={() => setSpeechImport(null)} title="Import Speeches" size="md">
+          <Stack gap={3}>
+            <p className="font-mono text-xs text-[var(--color-text-muted)]">
+              Detected <span className="text-cyan-400">{speechImport.format.toUpperCase()}</span> speech file.
+              Existing duplicates will be skipped automatically.
+            </p>
+            <div className="flex gap-2 justify-end pt-1 border-t border-[var(--color-border-default)]">
+              <Button variant="secondary" size="sm" onClick={() => setSpeechImport(null)}>Cancel</Button>
+              <Button size="sm" onClick={handleSpeechImportConfirm} loading={bulkSpeechImport.isPending}>
+                Import
+              </Button>
+            </div>
+          </Stack>
+        </Modal>
+      )}
+
+      {/* Speech import result */}
+      {speechImportResult && (
+        <SpeechImportResultModal
+          open
+          onClose={() => setSpeechImportResult(null)}
+          result={speechImportResult}
+        />
+      )}
+
+      {/* Character import from folder drop */}
+      <ImportConfirmModal
+        open={charImport.importOpen}
+        onClose={charImport.closeImport}
+        names={charImport.importNames}
+        payloads={charImport.importPayloads.length > 0 ? charImport.importPayloads : undefined}
+        projectId={projectId}
+        projectName={project?.name}
+        existingNames={projectCharacters?.map((c) => c.name) ?? []}
+        characters={projectCharacters ?? []}
+        onConfirm={charImport.handleImportConfirm}
+        onConfirmWithAssets={charImport.handleImportConfirmWithAssets}
+        loading={charImport.bulkCreatePending}
+        importProgress={charImport.importProgress}
+        onAbort={charImport.abortImport}
+        detectedProjectName={charImport.importResult?.detectedProjectName}
+        existingGroupNames={groups?.map((g) => g.name) ?? []}
+        hashSummary={charImport.hashSummary}
+      />
+
+      {/* File assignment modal (unmatched files) */}
+      <FileAssignmentModal
+        open={charImport.unmatchedFiles.length > 0}
+        onClose={charImport.dismissUnmatchedFiles}
+        unmatchedFiles={charImport.unmatchedFiles}
+        onConfirm={(assignments) => charImport.resolveUnmatchedFiles(assignments)}
+      />
     </Stack>
+    </FileDropZone>
   );
 }

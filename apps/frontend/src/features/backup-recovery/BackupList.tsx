@@ -5,7 +5,7 @@
  * date, verified indicator, and action buttons.
  */
 
-import { Spinner } from "@/components/primitives";
+import { WireframeLoader } from "@/components/primitives";
 import { Card } from "@/components/composite";
 import { cn } from "@/lib/cn";
 
@@ -49,7 +49,7 @@ export function BackupList({ params }: BackupListProps) {
   if (isPending) {
     return (
       <div className="flex items-center justify-center py-8" data-testid="backup-list-loading">
-        <Spinner size="md" />
+        <WireframeLoader size={48} />
       </div>
     );
   }

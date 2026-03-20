@@ -8,7 +8,7 @@
 
 import { useRef, useState } from "react";
 
-import { Spinner } from "@/components/primitives";
+import { WireframeLoader } from "@/components/primitives";
 import { cn } from "@/lib/cn";
 import { Upload } from "@/tokens/icons";
 
@@ -21,6 +21,8 @@ interface SeedDataDropSlotProps {
   loading?: boolean;
   /** Called when a single file is selected or dropped. */
   onFile: (file: File) => void;
+  /** Compact inline variant (smaller padding, single line). */
+  compact?: boolean;
 }
 
 /** Check if a drop event contains multiple files or a directory. */
@@ -35,7 +37,7 @@ function isMultiOrDirectory(e: React.DragEvent): boolean {
   return false;
 }
 
-export function SeedDataDropSlot({ accept, label, loading, onFile }: SeedDataDropSlotProps) {
+export function SeedDataDropSlot({ accept, label, loading, onFile, compact }: SeedDataDropSlotProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState(false);
 
@@ -70,12 +72,14 @@ export function SeedDataDropSlot({ accept, label, loading, onFile }: SeedDataDro
       role="button"
       tabIndex={0}
       className={cn(
-        "flex flex-col items-center justify-center gap-[var(--spacing-2)]",
-        "cursor-pointer rounded-[var(--radius-md)] border-2 border-dashed p-[var(--spacing-4)]",
+        "cursor-pointer rounded-[var(--radius-md)] border-2 border-dashed",
         "text-[var(--color-text-muted)] text-sm transition-colors",
         dragOver
           ? "border-[var(--color-action-primary)] bg-[var(--color-action-primary-hover)]"
           : "border-[var(--color-border-secondary)] hover:border-[var(--color-border-primary)]",
+        compact
+          ? "inline-flex items-center gap-[var(--spacing-1)] px-[var(--spacing-2)] py-[var(--spacing-1)] text-xs"
+          : "flex flex-col items-center justify-center gap-[var(--spacing-1)] px-[var(--spacing-4)] py-[var(--spacing-2)]",
       )}
     >
       <input
@@ -86,12 +90,16 @@ export function SeedDataDropSlot({ accept, label, loading, onFile }: SeedDataDro
         onChange={handleFileChange}
       />
       {loading ? (
-        <Spinner size="sm" />
+        <WireframeLoader size={32} />
+      ) : compact ? (
+        <>
+          <Upload size={12} />
+          <span>{label}</span>
+        </>
       ) : (
         <>
-          <Upload size={20} />
+          <Upload size={16} />
           <span>{label}</span>
-          <span className="text-xs">Drop file or click to upload</span>
         </>
       )}
     </div>

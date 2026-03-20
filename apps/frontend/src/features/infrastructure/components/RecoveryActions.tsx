@@ -5,7 +5,7 @@
  * and ComfyUI connection state.
  */
 
-import { Button, Badge } from "@/components/primitives";
+import { Button } from "@/components/primitives";
 import { Stack } from "@/components/layout";
 import {
   AlertTriangle,
@@ -55,7 +55,7 @@ export function RecoveryActions({ instance }: RecoveryActionsProps) {
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               <AlertTriangle size={14} className="text-[var(--color-action-danger)]" />
-              <Badge variant="danger" size="sm">Error</Badge>
+              <span className="text-red-400 font-mono text-[10px] uppercase">Error</span>
               <span className="text-xs text-[var(--color-text-muted)]">
                 Instance encountered an error
               </span>
@@ -78,7 +78,7 @@ export function RecoveryActions({ instance }: RecoveryActionsProps) {
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               <AlertTriangle size={14} className="text-[var(--color-action-warning)]" />
-              <Badge variant="warning" size="sm">Disconnected</Badge>
+              <span className="text-orange-400 font-mono text-[10px] uppercase">Disconnected</span>
               <span className="text-xs text-[var(--color-text-muted)]">
                 ComfyUI connection lost
               </span>
@@ -113,7 +113,7 @@ export function RecoveryActions({ instance }: RecoveryActionsProps) {
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               <AlertTriangle size={14} className="text-[var(--color-action-warning)]" />
-              <Badge variant="warning" size="sm">Stuck</Badge>
+              <span className="text-orange-400 font-mono text-[10px] uppercase">Stuck</span>
               <span className="text-xs text-[var(--color-text-muted)]">
                 Provisioning for over 10 minutes
               </span>

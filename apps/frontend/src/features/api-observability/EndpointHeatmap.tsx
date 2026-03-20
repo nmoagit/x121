@@ -8,7 +8,7 @@
 import { Fragment, useMemo } from "react";
 
 import { Card, CardBody, CardHeader } from "@/components/composite/Card";
-import { Spinner } from "@/components/primitives";
+import { WireframeLoader } from "@/components/primitives";
 import { Layers } from "@/tokens/icons";
 
 import type { Granularity, HeatmapCell, TimePeriod } from "./types";
@@ -71,7 +71,7 @@ export function EndpointHeatmap({ data, isLoading }: EndpointHeatmapProps) {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-[var(--spacing-6)]">
-        <Spinner size="md" />
+        <WireframeLoader size={48} />
       </div>
     );
   }

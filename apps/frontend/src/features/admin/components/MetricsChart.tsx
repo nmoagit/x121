@@ -1,6 +1,6 @@
-import { Card, CardBody, CardHeader } from "@/components/composite";
 import { Stack } from "@/components/layout";
-import { Button, Spinner } from "@/components/primitives";
+import { Button ,  WireframeLoader } from "@/components/primitives";
+import { TERMINAL_PANEL, TERMINAL_HEADER, TERMINAL_BODY, TERMINAL_HEADER_TITLE } from "@/lib/ui-classes";
 import { useThresholds, useWorkerMetrics } from "@/features/admin/hooks/use-hardware";
 import type { GpuMetricRow } from "@/features/admin/hooks/use-hardware";
 import { useMemo, useState } from "react";
@@ -101,10 +101,10 @@ export function MetricsChart({ workerId }: MetricsChartProps) {
   );
 
   return (
-    <Card elevation="sm">
-      <CardHeader>
+    <div className={TERMINAL_PANEL}>
+      <div className={TERMINAL_HEADER}>
         <Stack direction="horizontal" gap={3} align="center" justify="between">
-          <span className="text-sm font-semibold text-[var(--color-text-primary)]">
+          <span className={TERMINAL_HEADER_TITLE}>
             Worker {workerId} -- Historical Metrics
           </span>
           <Stack direction="horizontal" gap={1}>
@@ -120,12 +120,12 @@ export function MetricsChart({ workerId }: MetricsChartProps) {
             ))}
           </Stack>
         </Stack>
-      </CardHeader>
+      </div>
 
-      <CardBody>
+      <div className={TERMINAL_BODY}>
         {isLoading ? (
           <div className="flex h-64 items-center justify-center">
-            <Spinner size="md" />
+            <WireframeLoader size={48} />
           </div>
         ) : chartData.length === 0 ? (
           <div className="flex h-64 items-center justify-center">
@@ -199,7 +199,7 @@ export function MetricsChart({ workerId }: MetricsChartProps) {
             </LineChart>
           </ResponsiveContainer>
         )}
-      </CardBody>
-    </Card>
+      </div>
+    </div>
   );
 }

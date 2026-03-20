@@ -1,4 +1,3 @@
-import { Badge } from "@/components/primitives";
 import type { AssetNote } from "@/features/admin/hooks/use-assets";
 import { AlertTriangle } from "@/tokens/icons";
 
@@ -69,9 +68,9 @@ export function CompatibilityWarning({ notes }: CompatibilityWarningProps) {
           const noteConfig = (SEVERITY_CONFIG[note.severity] ?? DEFAULT_CONFIG);
           return (
             <li key={note.id} className="flex items-start gap-[var(--spacing-2)]">
-              <Badge variant={noteConfig.variant} size="sm">
+              <span className={`font-mono text-[10px] uppercase shrink-0 ${noteConfig.variant === "danger" ? "text-red-400" : "text-orange-400"}`}>
                 {note.severity}
-              </Badge>
+              </span>
               <span className="text-sm text-[var(--color-text-primary)]">
                 {note.note_text}
                 {note.related_asset_id != null && (

@@ -7,7 +7,7 @@
 
 import { useCallback, useRef, useState } from "react";
 
-import { Button, Spinner } from "@/components/primitives";
+import { Button ,  WireframeLoader } from "@/components/primitives";
 import { Stack } from "@/components/layout";
 import { useUploadFolder } from "./hooks/use-importer";
 
@@ -106,7 +106,7 @@ export function FolderDropZone({
     >
       {isUploading ? (
         <Stack align="center" gap={3}>
-          <Spinner size="lg" />
+          <WireframeLoader size={64} />
           <p className="text-sm text-[var(--color-text-secondary)]">
             Uploading files...
           </p>

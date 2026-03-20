@@ -7,9 +7,14 @@
 
 import { useCallback, useMemo, useState } from "react";
 
-import { Card } from "@/components/composite/Card";
-import { Button, Input, Select, Spinner } from "@/components/primitives";
+import { Button, Input, Select ,  WireframeLoader } from "@/components/primitives";
 import { Stack } from "@/components/layout";
+import {
+  TERMINAL_PANEL,
+  TERMINAL_HEADER,
+  TERMINAL_HEADER_TITLE,
+  TERMINAL_BODY,
+} from "@/lib/ui-classes";
 
 import { CompletenessBar } from "./CompletenessBar";
 import { useCharacterMetadata, useUpdateCharacterMetadata } from "./hooks/use-metadata-editor";
@@ -99,7 +104,7 @@ export function MetadataForm({ characterId }: MetadataFormProps) {
   if (isLoading) {
     return (
       <div className="flex h-64 items-center justify-center">
-        <Spinner size="lg" />
+        <WireframeLoader size={64} />
       </div>
     );
   }
@@ -117,8 +122,8 @@ export function MetadataForm({ characterId }: MetadataFormProps) {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-[var(--color-text-primary)]">
-            {data.character_name} - Metadata
+          <h2 className="font-mono text-xs font-medium text-[var(--color-text-primary)] uppercase tracking-wide">
+            {data.character_name} — Metadata
           </h2>
           <div className="mt-2 max-w-md">
             <CompletenessBar completeness={data.completeness} />
@@ -140,22 +145,26 @@ export function MetadataForm({ characterId }: MetadataFormProps) {
         if (!fields || fields.length === 0) return null;
 
         return (
-          <Card key={category} padding="md">
-            <h3 className="mb-4 text-sm font-semibold text-[var(--color-text-secondary)]">
-              {CATEGORY_LABELS[category]}
-            </h3>
-            <div className="grid gap-4 sm:grid-cols-2">
-              {fields.map((field) => (
-                <MetadataField
-                  key={field.name}
-                  field={field}
-                  value={fieldValues[field.name]}
-                  error={getFieldError(field.name)}
-                  onChange={handleFieldChange}
-                />
-              ))}
+          <div key={category} className={TERMINAL_PANEL}>
+            <div className={TERMINAL_HEADER}>
+              <span className={TERMINAL_HEADER_TITLE}>
+                {CATEGORY_LABELS[category]}
+              </span>
             </div>
-          </Card>
+            <div className={TERMINAL_BODY}>
+              <div className="grid gap-4 sm:grid-cols-2">
+                {fields.map((field) => (
+                  <MetadataField
+                    key={field.name}
+                    field={field}
+                    value={fieldValues[field.name]}
+                    error={getFieldError(field.name)}
+                    onChange={handleFieldChange}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
         );
       })}
     </Stack>

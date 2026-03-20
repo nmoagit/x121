@@ -98,25 +98,30 @@ export interface BulkApproveResult {
   images_approved: number;
   clips_approved: number;
   metadata_approved: number;
+  skipped_sections: string[];
 }
 
-/** Approve all unapproved deliverables for a character in one call. */
+/** Approve deliverables for a character, scoped to the given sections. */
 export function useBulkApprove(projectId: number, characterId: number) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: () =>
+    mutationFn: (sections?: string[]) =>
       api.post<BulkApproveResult>(
         `/projects/${projectId}/characters/${characterId}/bulk-approve`,
-        {},
+        { sections: sections ?? null },
       ),
     onSuccess: () => {
       // Broad invalidation to refresh all dependent views
       queryClient.invalidateQueries({ queryKey: ["characters", characterId] });
-      queryClient.invalidateQueries({ queryKey: ["character-dashboard", characterId] });
+      queryClient.invalidateQueries({ queryKey: ["character-dashboard"] });
       queryClient.invalidateQueries({ queryKey: ["projects", projectId] });
       queryClient.invalidateQueries({ queryKey: ["imageVariants"] });
       queryClient.invalidateQueries({ queryKey: ["scenes"] });
+      queryClient.invalidateQueries({
+        predicate: (q) => Array.isArray(q.queryKey) && q.queryKey.includes("characters") && q.queryKey.includes("list"),
+      });
+      queryClient.invalidateQueries({ queryKey: characterDetailKeys.metadata(characterId) });
     },
   });
 }

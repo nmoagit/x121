@@ -4,10 +4,11 @@
 
 import { useMemo, useState } from "react";
 
-import { Card, ConfirmModal } from "@/components/composite";
-import { Grid, Stack } from "@/components/layout";
-import { Badge, Button, LoadingPane, Tooltip } from "@/components/primitives";
-import { AlertTriangle, Check, CheckCircle } from "@/tokens/icons";
+import { ConfirmModal } from "@/components/composite";
+import { StatTicker, TerminalSection } from "@/components/domain";
+import { Stack } from "@/components/layout";
+import { Button, FlagIcon, LoadingPane, Tooltip } from "@/components/primitives";
+import { CheckCircle } from "@/tokens/icons";
 import { getVoiceId } from "../types";
 import { useBulkApprove } from "../hooks/use-character-detail";
 import type { BulkApproveResult } from "../hooks/use-character-detail";
@@ -25,6 +26,7 @@ import { useCharacterSceneSettings } from "@/features/scene-catalogue/hooks/use-
 import { useExpandedSettings } from "@/features/scene-catalogue/hooks/use-expanded-settings";
 import { ReadinessStateBadge } from "@/features/readiness/ReadinessStateBadge";
 import type { ReadinessState } from "@/features/readiness/types";
+import { useSpeechLanguageCounts } from "@/features/projects/hooks/use-character-deliverables";
 
 /* --------------------------------------------------------------------------
    Types
@@ -34,6 +36,8 @@ interface CharacterOverviewTabProps {
   character: Character;
   characterId: number;
   projectId: number;
+  /** Resolved blocking deliverables for this character. */
+  blockingDeliverables?: string[];
   /** Called when a scene assignment row is clicked — navigate to scenes tab. */
   onSceneClick?: (sceneId: number) => void;
 }
@@ -45,52 +49,6 @@ interface CharacterOverviewTabProps {
 /** Total source images needed (clothed + topless tracks). */
 const TOTAL_SOURCE_IMAGES_NEEDED = 2;
 
-function StatCard({ label, value }: { label: string; value: string | number }) {
-  return (
-    <Card elevation="flat" padding="md">
-      <dt className="text-xs text-[var(--color-text-muted)] mb-[var(--spacing-1)]">
-        {label}
-      </dt>
-      <dd className="text-lg font-semibold text-[var(--color-text-primary)]">
-        {value}
-      </dd>
-    </Card>
-  );
-}
-
-/** Stat card showing N/M ratio, green when complete. */
-function RatioStatCard({
-  label,
-  current,
-  total,
-  tooltip,
-}: {
-  label: string;
-  current: number;
-  total: number;
-  tooltip: string;
-}) {
-  const isComplete = current >= total && total > 0;
-  return (
-    <Card elevation="flat" padding="md">
-      <dt className="text-xs text-[var(--color-text-muted)] mb-[var(--spacing-1)]">
-        {label}
-      </dt>
-      <Tooltip content={tooltip} side="bottom">
-        <dd
-          className={`text-lg font-semibold cursor-help ${
-            isComplete
-              ? "text-[var(--color-status-success)]"
-              : "text-[var(--color-text-primary)]"
-          }`}
-        >
-          {current}/{total}
-        </dd>
-      </Tooltip>
-    </Card>
-  );
-}
-
 /* --------------------------------------------------------------------------
    Component
    -------------------------------------------------------------------------- */
@@ -99,16 +57,24 @@ export function CharacterOverviewTab({
   character,
   characterId,
   projectId,
+  blockingDeliverables,
   onSceneClick,
 }: CharacterOverviewTabProps) {
   const { data: dashboard, isLoading: dashboardLoading } =
     useCharacterDashboard(characterId);
   const { data: sceneSettings, isLoading: settingsLoading } =
     useCharacterSceneSettings(characterId);
+  const { data: speechLangCounts } = useSpeechLanguageCounts(projectId);
   const expandedSettings = useExpandedSettings(sceneSettings);
   const bulkApprove = useBulkApprove(projectId, characterId);
   const [bulkResult, setBulkResult] = useState<BulkApproveResult | null>(null);
   const [confirmApproveOpen, setConfirmApproveOpen] = useState(false);
+
+  /** Per-language speech counts for this character. */
+  const languageSpeechStats = useMemo(() => {
+    if (!speechLangCounts) return [];
+    return speechLangCounts.filter((r) => r.character_id === characterId);
+  }, [speechLangCounts, characterId]);
 
   /** Set of enabled scene_type+track keys from the effective scene settings. */
   const enabledKeys = useMemo(() => {
@@ -140,31 +106,38 @@ export function CharacterOverviewTab({
 
   return (
     <Stack gap={4}>
-      {/* Stats grid */}
+      {/* Stats ticker */}
       {dashboard && (() => {
         const scenesAssigned = activeAssignments.length;
-        const scenesWithFinalVideo = activeAssignments.filter((a) => a.final_video_count > 0).length;
+        const scenesApproved = activeAssignments.filter((a) => a.status === "approved").length;
+        const imagesApproved = dashboard.variant_counts.approved;
+        const imagesComplete = imagesApproved >= TOTAL_SOURCE_IMAGES_NEEDED;
+        const scenesComplete = scenesApproved >= scenesAssigned && scenesAssigned > 0;
 
         return (
-          <Grid cols={2} gap={3}>
-            <RatioStatCard
-              label="Source Images"
-              current={dashboard.source_image_count}
-              total={TOTAL_SOURCE_IMAGES_NEEDED}
-              tooltip={`${dashboard.source_image_count} provided / ${TOTAL_SOURCE_IMAGES_NEEDED} needed (clothed + topless)`}
-            />
-            <StatCard
-              label="Variants"
-              value={`${dashboard.variant_counts.approved} / ${dashboard.variant_counts.total}`}
-            />
-            <RatioStatCard
-              label="Scenes"
-              current={scenesWithFinalVideo}
-              total={scenesAssigned}
-              tooltip={`${scenesWithFinalVideo} with final video / ${scenesAssigned} assigned`}
-            />
-            <StatCard label="Metadata Fields" value={metadataFieldCount} />
-          </Grid>
+          <StatTicker stats={[
+            {
+              label: "Images",
+              value: `${imagesApproved}/${TOTAL_SOURCE_IMAGES_NEEDED}`,
+              tooltip: `${imagesApproved} approved / ${TOTAL_SOURCE_IMAGES_NEEDED} needed (clothed + topless)`,
+              complete: imagesComplete,
+            },
+            {
+              label: "Variants",
+              value: `${dashboard.variant_counts.approved}/${dashboard.variant_counts.total}`,
+              complete: dashboard.variant_counts.approved >= dashboard.variant_counts.total && dashboard.variant_counts.total > 0,
+            },
+            {
+              label: "Scenes",
+              value: `${scenesApproved}/${scenesAssigned}`,
+              tooltip: `${scenesApproved} approved / ${scenesAssigned} assigned`,
+              complete: scenesComplete,
+            },
+            {
+              label: "Metadata",
+              value: metadataFieldCount,
+            },
+          ]} />
         );
       })()}
 
@@ -173,72 +146,84 @@ export function CharacterOverviewTab({
         const voiceId = getVoiceId(character.settings as Record<string, unknown> | null);
 
         return (
-          <Card elevation="flat" padding="md">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-[var(--color-text-primary)]">
-                VoiceID
-              </h3>
+          <TerminalSection title="VoiceID">
+            <div className="flex items-center justify-between font-mono text-xs">
               {voiceId ? (
                 <div className="flex items-center gap-[var(--spacing-2)]">
-                  <Badge variant="success">
-                    <Check size={12} className="mr-1 inline" />
-                    Configured
-                  </Badge>
-                  <span className="text-xs text-[var(--color-text-muted)] font-mono">
-                    {voiceId}
-                  </span>
+                  <span className="text-green-400">configured</span>
+                  <span className="text-cyan-400 truncate">{voiceId}</span>
                 </div>
               ) : (
                 <div className="flex items-center gap-[var(--spacing-2)]">
-                  <Badge variant="warning">
-                    <AlertTriangle size={12} className="mr-1 inline" />
-                    Missing
-                  </Badge>
-                  <span className="text-xs text-[var(--color-text-muted)]">
-                    Configure in Settings tab to activate character
-                  </span>
+                  <span className="text-orange-400">missing</span>
+                  <span className="text-[var(--color-text-muted)]">configure in Settings tab</span>
                 </div>
               )}
             </div>
-          </Card>
+          </TerminalSection>
         );
       })()}
 
+      {/* Speech Languages */}
+      {languageSpeechStats.length > 0 && (
+        <TerminalSection title="Speech Languages">
+          <div className="flex flex-wrap gap-4 font-mono text-xs">
+            {languageSpeechStats.map((lang) => (
+              <Tooltip
+                key={lang.language_id}
+                content={`${lang.code.toUpperCase()}: ${lang.count} speech entries`}
+              >
+                <div className="flex items-center gap-1.5 cursor-help">
+                  <FlagIcon flagCode={lang.flag_code} size={10} />
+                  <span className="uppercase text-[var(--color-text-muted)]">
+                    {lang.code}:
+                  </span>
+                  <span className="font-semibold text-cyan-400">
+                    {lang.count}
+                  </span>
+                </div>
+              </Tooltip>
+            ))}
+          </div>
+        </TerminalSection>
+      )}
+
       {/* Completeness */}
       {dashboard?.readiness && (
-        <Card elevation="flat" padding="md">
+        <TerminalSection title="Readiness">
           <Stack gap={2}>
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-[var(--color-text-primary)]">
-                Readiness
-              </h3>
+            <div className="flex items-center justify-between font-mono text-xs">
               <div className="flex items-center gap-[var(--spacing-2)]">
                 <ReadinessStateBadge
                   state={dashboard.readiness.state as ReadinessState}
                   missingItems={dashboard.readiness.missing_items}
                 />
-                <span className="text-sm font-medium text-[var(--color-text-primary)]">
-                  {dashboard.readiness.readiness_pct}%
-                </span>
               </div>
+              <span className={`font-semibold text-sm ${
+                dashboard.readiness.readiness_pct >= 100 ? "text-green-400" : "text-cyan-400"
+              }`}>
+                {dashboard.readiness.readiness_pct}%
+              </span>
             </div>
 
             {/* Progress bar */}
-            <div className="h-2 w-full overflow-hidden rounded-full bg-[var(--color-surface-secondary)]">
+            <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/10">
               <div
-                className="h-full rounded-full bg-[var(--color-action-primary)] transition-all"
+                className={`h-full rounded-full transition-all ${
+                  dashboard.readiness.readiness_pct >= 100 ? "bg-green-400" : "bg-cyan-400"
+                }`}
                 style={{ width: `${dashboard.readiness.readiness_pct}%` }}
               />
             </div>
 
             <MissingItemsBanner items={missingItems} />
           </Stack>
-        </Card>
+        </TerminalSection>
       )}
 
       {/* Bulk approve — backfill shortcut */}
       {dashboard && (
-        <Card elevation="flat" padding="md">
+        <TerminalSection title="Actions">
           <div className="flex items-center gap-[var(--spacing-3)]">
             <Button
               size="sm"
@@ -248,13 +233,13 @@ export function CharacterOverviewTab({
             >
               Approve All Deliverables
             </Button>
-            <span className="text-xs text-[var(--color-text-muted)]">
+            <span className="text-xs text-[var(--color-text-muted)] font-mono">
               {bulkResult
-                ? `Approved: ${bulkResult.images_approved} images, ${bulkResult.clips_approved} clips, ${bulkResult.metadata_approved} metadata`
-                : "Approve all unapproved images, final clips, and metadata"}
+                ? `approved: ${bulkResult.images_approved} images, ${bulkResult.clips_approved} clips, ${bulkResult.metadata_approved} metadata${bulkResult.skipped_sections.length > 0 ? ` (skipped: ${bulkResult.skipped_sections.join(", ")})` : ""}`
+                : `approve blocking deliverables: ${(blockingDeliverables ?? ["metadata", "images", "scenes"]).join(", ")}`}
             </span>
           </div>
-        </Card>
+        </TerminalSection>
       )}
 
       <ConfirmModal
@@ -265,7 +250,7 @@ export function CharacterOverviewTab({
         confirmVariant="primary"
         loading={bulkApprove.isPending}
         onConfirm={() =>
-          bulkApprove.mutate(undefined, {
+          bulkApprove.mutate(blockingDeliverables, {
             onSuccess: (result) => {
               setBulkResult(result);
               setConfirmApproveOpen(false);
@@ -274,10 +259,15 @@ export function CharacterOverviewTab({
         }
       >
         <p>
-          This will approve <strong>all</strong> unapproved image variants,
-          final video clips, and the active metadata version for{" "}
-          <strong>{character.name}</strong>.
+          This will approve unapproved deliverables for{" "}
+          <strong>{character.name}</strong> in the following sections:{" "}
+          <strong>{(blockingDeliverables ?? ["metadata", "images", "scenes"]).join(", ")}</strong>.
         </p>
+        {blockingDeliverables && (
+          <p className="mt-1 text-xs text-[var(--color-text-muted)]">
+            Only sections enabled in blocking deliverables are approved.
+          </p>
+        )}
         <p className="mt-2">
           This bypasses the normal review workflow and should only be used
           for backfill operations. This action cannot be easily undone.
@@ -286,30 +276,30 @@ export function CharacterOverviewTab({
 
       {/* Metadata Completeness */}
       {dashboard && (
-        <Card elevation="flat" padding="md">
+        <TerminalSection title="Metadata">
           <MetadataSummarySection
             characterId={characterId}
             sourceImageCount={dashboard.source_image_count}
           />
-        </Card>
+        </TerminalSection>
       )}
 
       {/* Scene Assignments */}
       {dashboard && (
-        <Card elevation="flat" padding="md">
+        <TerminalSection title="Scene Assignments">
           <SceneAssignmentsSection
             assignments={activeAssignments}
             sceneCount={activeAssignments.length}
             onSceneClick={onSceneClick}
           />
-        </Card>
+        </TerminalSection>
       )}
 
       {/* Generation History */}
       {dashboard && (
-        <Card elevation="flat" padding="md">
+        <TerminalSection title="Generation History">
           <GenerationHistorySection summary={dashboard.generation_summary} />
-        </Card>
+        </TerminalSection>
       )}
     </Stack>
   );

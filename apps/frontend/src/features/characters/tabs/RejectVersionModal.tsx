@@ -35,7 +35,7 @@ export function RejectVersionModal({
   return (
     <Modal open={open} onClose={onClose} title={`Reject Version ${versionNumber}`} size="lg">
       <Stack gap={3}>
-        <p className="text-sm text-[var(--color-text-secondary)]">
+        <p className="text-xs font-mono text-[var(--color-text-secondary)]">
           Provide a reason for rejecting this metadata version.
         </p>
         <textarea
@@ -43,9 +43,9 @@ export function RejectVersionModal({
           onChange={(e) => setReason(e.target.value)}
           placeholder="Rejection reason..."
           rows={3}
-          className="w-full rounded-[var(--radius-md)] border border-[var(--color-border-default)] bg-[var(--color-surface-secondary)] p-2 text-sm text-[var(--color-text-primary)] focus:outline-2 focus:outline-[var(--color-border-focus)]"
+          className="w-full rounded-[var(--radius-md)] border border-[var(--color-border-default)] bg-[var(--color-surface-secondary)] p-2 text-xs font-mono text-[var(--color-text-primary)] focus:outline-2 focus:outline-[var(--color-border-focus)]"
         />
-        <div className="flex justify-end gap-[var(--spacing-2)]">
+        <div className="flex justify-end gap-2 pt-1 border-t border-[var(--color-border-default)]">
           <Button variant="ghost" size="sm" onClick={onClose}>
             Cancel
           </Button>

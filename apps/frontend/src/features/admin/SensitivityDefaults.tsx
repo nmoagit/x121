@@ -8,8 +8,8 @@
 import { useState } from "react";
 
 import { Button } from "@/components/primitives/Button";
-import { Card, CardBody, CardHeader } from "@/components/composite/Card";
 import { cn } from "@/lib/cn";
+import { TERMINAL_PANEL, TERMINAL_HEADER, TERMINAL_HEADER_TITLE, TERMINAL_BODY } from "@/lib/ui-classes";
 import { User } from "@/tokens/icons";
 import { iconSizes } from "@/tokens/icons";
 
@@ -46,18 +46,18 @@ export function SensitivityDefaults() {
   const isDirty = selectedLevel !== null && selectedLevel !== config?.min_level;
 
   return (
-    <Card>
-      <CardHeader>
-        <h3 className="text-lg font-semibold text-[var(--color-text-primary)]">
+    <div className={TERMINAL_PANEL}>
+      <div className={TERMINAL_HEADER}>
+        <span className={TERMINAL_HEADER_TITLE}>
           Studio Sensitivity Defaults
-        </h3>
-        <p className="text-sm text-[var(--color-text-muted)] mt-1">
+        </span>
+        <p className="text-xs text-[var(--color-text-muted)] font-mono mt-1">
           Set the minimum blur level enforced across the studio. Users cannot
           select a less restrictive level than this.
         </p>
-      </CardHeader>
+      </div>
 
-      <CardBody>
+      <div className={TERMINAL_BODY}>
         {isLoading ? (
           <p className="text-sm text-[var(--color-text-muted)]">Loading...</p>
         ) : (
@@ -115,8 +115,8 @@ export function SensitivityDefaults() {
             </Button>
           </>
         )}
-      </CardBody>
-    </Card>
+      </div>
+    </div>
   );
 }
 

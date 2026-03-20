@@ -8,6 +8,7 @@
 import { EmptyState } from "@/components/domain";
 import { Stack } from "@/components/layout";
 import { LoadingPane } from "@/components/primitives";
+import { TERMINAL_HEADER_TITLE } from "@/lib/ui-classes";
 import { Workflow } from "@/tokens/icons";
 
 import { useWorkflows } from "@/features/workflow-import";
@@ -45,10 +46,8 @@ export function TrackWorkflowManager() {
   return (
     <Stack gap={6}>
       <div>
-        <h2 className="text-base font-semibold text-[var(--color-text-primary)]">
-          Workflow Assignments
-        </h2>
-        <p className="mt-1 text-sm text-[var(--color-text-muted)]">
+        <h2 className={TERMINAL_HEADER_TITLE}>Workflow Assignments</h2>
+        <p className="mt-1 font-mono text-xs text-[var(--color-text-muted)]">
           Assign workflows per scene type and track combination.
         </p>
       </div>

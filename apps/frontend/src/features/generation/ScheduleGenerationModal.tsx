@@ -73,8 +73,8 @@ export function ScheduleGenerationModal({ sceneIds, onClose, onScheduled }: Sche
   return (
     <Modal open={isOpen} onClose={onClose} title="Schedule Generation" size="sm">
       <div className="flex flex-col gap-[var(--spacing-4)]">
-        <p className="text-sm text-[var(--color-text-secondary)]">
-          Schedule {sceneIds.length} scene{sceneIds.length === 1 ? "" : "s"} for generation at a future time.
+        <p className="font-mono text-xs text-[var(--color-text-secondary)]">
+          Schedule <span className="text-cyan-400">{sceneIds.length}</span> scene{sceneIds.length === 1 ? "" : "s"} for generation at a future time.
         </p>
 
         <Input
@@ -85,16 +85,16 @@ export function ScheduleGenerationModal({ sceneIds, onClose, onScheduled }: Sche
         />
 
         {!isInFuture && scheduledTime && (
-          <p className="text-xs text-[var(--color-action-danger)]">
+          <p className="font-mono text-xs text-red-400">
             Scheduled time must be in the future.
           </p>
         )}
 
-        <p className="text-xs text-[var(--color-text-muted)]">
+        <p className="font-mono text-xs text-[var(--color-text-muted)]">
           Times are in your local timezone ({Intl.DateTimeFormat().resolvedOptions().timeZone}).
         </p>
 
-        <div className="flex justify-end gap-2 pt-2">
+        <div className="flex justify-end gap-2 pt-1 border-t border-[var(--color-border-default)]">
           <Button variant="secondary" size="sm" onClick={onClose}>
             Cancel
           </Button>

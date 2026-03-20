@@ -5,7 +5,7 @@
  * re-validate capability.
  */
 
-import { Badge, Button, Spinner } from "@/components/primitives";
+import { Badge, Button ,  WireframeLoader } from "@/components/primitives";
 import { Card } from "@/components/composite";
 import { Stack } from "@/components/layout";
 import { formatDate } from "@/lib/format";
@@ -36,7 +36,7 @@ export function ValidationDashboard({ projectId }: ValidationDashboardProps) {
   if (isLoading) {
     return (
       <div className="flex justify-center p-8">
-        <Spinner />
+        <WireframeLoader size={48} />
       </div>
     );
   }
@@ -75,7 +75,7 @@ export function ValidationDashboard({ projectId }: ValidationDashboardProps) {
           onClick={() => revalidate.mutate()}
           disabled={revalidate.isPending}
         >
-          {revalidate.isPending ? <Spinner size="sm" /> : "Re-validate All"}
+          {revalidate.isPending ? <WireframeLoader size={32} /> : "Re-validate All"}
         </Button>
       </div>
 

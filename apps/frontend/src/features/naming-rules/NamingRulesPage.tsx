@@ -8,10 +8,10 @@
 
 import { useMemo, useState } from "react";
 
-import { Card } from "@/components/composite";
-import { Spinner } from "@/components/primitives";
+import { WireframeLoader } from "@/components/primitives";
 import { Stack } from "@/components/layout";
 import { useSetPageTitle } from "@/hooks/useSetPageTitle";
+import { TERMINAL_PANEL, TERMINAL_BODY } from "@/lib/ui-classes";
 import { AlertCircle, FileText } from "@/tokens/icons";
 
 import { CategoryGroup } from "./components/CategoryCard";
@@ -58,21 +58,21 @@ export function NamingRulesPage() {
       {/* Content area */}
       {isLoading ? (
         <div className="flex items-center justify-center py-[var(--spacing-8)]">
-          <Spinner size="lg" />
+          <WireframeLoader size={64} />
         </div>
       ) : categoriesError ? (
-        <Card elevation="sm" padding="md">
-          <div className="flex flex-col items-center justify-center gap-[var(--spacing-3)] py-[var(--spacing-8)]">
+        <div className={TERMINAL_PANEL}>
+          <div className={`${TERMINAL_BODY} flex flex-col items-center justify-center gap-[var(--spacing-3)] py-[var(--spacing-8)]`}>
             <AlertCircle
               size={24}
-              className="text-[var(--color-action-danger)]"
+              className="text-red-400"
               aria-hidden
             />
-            <p className="text-sm text-[var(--color-text-muted)]">
+            <p className="text-xs text-[var(--color-text-muted)] font-mono">
               Failed to load naming categories.
             </p>
           </div>
-        </Card>
+        </div>
       ) : categories && categories.length > 0 ? (
         <Stack gap={6}>
           {/* Category groups */}
@@ -99,14 +99,14 @@ export function NamingRulesPage() {
           )}
         </Stack>
       ) : (
-        <Card elevation="sm" padding="md">
-          <div className="flex flex-col items-center justify-center gap-[var(--spacing-3)] py-[var(--spacing-8)]">
+        <div className={TERMINAL_PANEL}>
+          <div className={`${TERMINAL_BODY} flex flex-col items-center justify-center gap-[var(--spacing-3)] py-[var(--spacing-8)]`}>
             <FileText size={32} className="text-[var(--color-text-muted)]" aria-hidden />
-            <p className="text-sm text-[var(--color-text-muted)]">
+            <p className="text-xs text-[var(--color-text-muted)] font-mono">
               No naming categories configured.
             </p>
           </div>
-        </Card>
+        </div>
       )}
     </Stack>
   );

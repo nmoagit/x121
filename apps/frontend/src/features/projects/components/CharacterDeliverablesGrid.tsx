@@ -9,8 +9,9 @@
  */
 
 import { useState, useMemo } from "react";
-import { Badge, Spinner, TabBar, Toggle } from "@/components/primitives";
+import { TabBar, Toggle ,  WireframeLoader } from "@/components/primitives";
 import { Tooltip } from "@/components/primitives/Tooltip";
+import { AlertTriangle, FileText, Film, Image, Mic } from "@/tokens/icons";
 import { variantThumbnailUrl } from "@/features/images/utils";
 import { useNavigate } from "@tanstack/react-router";
 import { useCharacterDeliverables, useBatchSceneAssignments, useBatchVariantStatuses } from "../hooks/use-character-deliverables";
@@ -27,9 +28,9 @@ import { useProject } from "../hooks/use-projects";
 import { useSetting } from "@/features/settings/hooks/use-settings";
 import { deduplicateSceneSlots, sceneSlotKey } from "@/features/production/types";
 import type { EnabledSceneTypeEntry } from "@/features/production/types";
-import { readinessPctToVariant } from "@/features/readiness/types";
-import { metadataApprovalBadgeVariant, METADATA_APPROVAL_LABEL } from "@/features/characters/types";
+import { METADATA_APPROVAL_LABEL } from "@/features/characters/types";
 import { cn } from "@/lib/cn";
+import { TERMINAL_TH, TERMINAL_DIVIDER, TERMINAL_ROW_HOVER } from "@/lib/ui-classes";
 
 /* --------------------------------------------------------------------------
    Character name with thumbnail tooltip
@@ -58,8 +59,31 @@ function CharacterNameWithThumb({ name, heroVariantId }: { name: string; heroVar
    Readiness tab (existing table)
    -------------------------------------------------------------------------- */
 
+const BLOCKING_ICON_MAP: Record<string, typeof FileText> = {
+  "Missing Seed Image": Image,
+  "Images Not Approved": Image,
+  "No Scenes": Film,
+  "Videos Not Approved": Film,
+  "Missing Metadata": FileText,
+  "Metadata Not Approved": FileText,
+  "Missing Speech": Mic,
+  "Speech Not Approved": Mic,
+};
+
+const BLOCKING_REASON_TAB: Record<string, string> = {
+  "Missing Seed Image": "images",
+  "Images Not Approved": "images",
+  "No Scenes": "scenes",
+  "Videos Not Approved": "scenes",
+  "Missing Metadata": "metadata",
+  "Metadata Not Approved": "metadata",
+  "Missing Speech": "speech",
+  "Speech Not Approved": "speech",
+};
+
 interface RowProps {
   row: CharacterDeliverableRow;
+  projectId: number;
   /** Blocking reasons filtered by the character's resolved blocking deliverables. */
   filteredBlockingReasons: string[];
   /** Readiness percentage computed from blocking deliverables. */
@@ -67,49 +91,80 @@ interface RowProps {
   onClick: () => void;
 }
 
-function DeliverableRow({ row, filteredBlockingReasons, readinessPct, onClick }: RowProps) {
+function DeliverableRow({ row, projectId, filteredBlockingReasons, readinessPct, onClick }: RowProps) {
+  const navigate = useNavigate();
   return (
     <tr
-      className="cursor-pointer border-b border-[var(--color-border-default)]
-        hover:bg-[var(--color-surface-secondary)] transition-colors"
+      className={`cursor-pointer ${TERMINAL_DIVIDER} ${TERMINAL_ROW_HOVER}`}
       onClick={onClick}
     >
-      <td className="px-3 py-2 text-sm font-medium text-[var(--color-text-primary)]">
+      <td className="px-3 py-2 font-mono text-xs font-medium text-[var(--color-text-primary)]">
         <CharacterNameWithThumb name={row.name} heroVariantId={row.hero_variant_id} />
       </td>
-      <td className={`px-3 py-2 text-sm ${row.images_count > 0 && row.images_approved >= row.images_count ? "text-[var(--color-action-success)] font-medium" : "text-[var(--color-text-secondary)]"}`}>
-        {row.images_approved}/{row.images_count}
+      <td className={`px-3 py-2 font-mono text-xs ${row.images_approved >= row.required_images_count && row.required_images_count > 0 ? "text-green-400 font-medium" : "text-cyan-400"}`}>
+        {row.images_approved}/{row.required_images_count}
       </td>
-      <td className={`px-3 py-2 text-sm ${row.scenes_total > 0 && row.scenes_approved >= row.scenes_total ? "text-[var(--color-action-success)] font-medium" : "text-[var(--color-text-secondary)]"}`}>
+      <td className={`px-3 py-2 font-mono text-xs ${row.scenes_total > 0 && row.scenes_approved >= row.scenes_total ? "text-green-400 font-medium" : "text-cyan-400"}`}>
         {row.scenes_approved}/{row.scenes_with_video}/{row.scenes_total}
       </td>
-      <td className="px-3 py-2 text-sm">
+      <td className="px-3 py-2 font-mono text-xs">
         {row.has_active_metadata ? (
-          <Badge
-            variant={metadataApprovalBadgeVariant(row.metadata_approval_status ?? "pending")}
-            size="sm"
-          >
+          <span className={
+            row.metadata_approval_status === "approved" ? "text-green-400"
+              : row.metadata_approval_status === "rejected" ? "text-red-400"
+              : "text-orange-400"
+          }>
             {METADATA_APPROVAL_LABEL[row.metadata_approval_status ?? "pending"]}
-          </Badge>
+          </span>
         ) : (
-          <Badge variant="default" size="sm">No</Badge>
+          <span className="text-[var(--color-text-muted)]">No</span>
         )}
       </td>
       <td className="px-3 py-2">
         {filteredBlockingReasons.length > 0 ? (
-          <div className="flex flex-wrap gap-1">
-            {filteredBlockingReasons.map((reason) => (
-              <Badge key={reason} variant="warning" size="sm">{reason}</Badge>
-            ))}
+          <div className="flex items-center gap-1">
+            {filteredBlockingReasons.map((reason) => {
+              const Icon = BLOCKING_ICON_MAP[reason] ?? AlertTriangle;
+              const tab = BLOCKING_REASON_TAB[reason];
+              return (
+                <Tooltip key={reason} content={reason} side="top">
+                  <span
+                    role="button"
+                    tabIndex={0}
+                    className="flex items-center justify-center size-[18px] rounded-full bg-orange-500/20 ring-1 ring-orange-500 cursor-pointer hover:scale-110 transition-transform"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (tab) {
+                        navigate({
+                          to: `/projects/${projectId}/models/${row.id}`,
+                          search: { tab },
+                        });
+                      }
+                    }}
+                    onKeyDown={(e) => {
+                      if ((e.key === "Enter" || e.key === " ") && tab) {
+                        e.stopPropagation();
+                        navigate({
+                          to: `/projects/${projectId}/models/${row.id}`,
+                          search: { tab },
+                        });
+                      }
+                    }}
+                  >
+                    <Icon size={10} className="text-orange-500" aria-hidden />
+                  </span>
+                </Tooltip>
+              );
+            })}
           </div>
         ) : (
           <span className="text-xs text-[var(--color-text-muted)]">&mdash;</span>
         )}
       </td>
-      <td className="px-3 py-2 text-right">
-        <Badge variant={readinessPctToVariant(readinessPct)} size="sm">
+      <td className="px-3 py-2 text-right font-mono text-xs">
+        <span className={readinessPct >= 100 ? "text-green-400" : readinessPct >= 50 ? "text-cyan-400" : "text-orange-400"}>
           {readinessPct.toFixed(1)}%
-        </Badge>
+        </span>
       </td>
     </tr>
   );
@@ -129,13 +184,13 @@ function ReadinessTab({ rows, projectId, resolveBlockingDeliverables }: Readines
     <div className="overflow-x-auto">
       <table className="w-full text-left">
         <thead>
-          <tr className="border-b border-[var(--color-border-default)] text-xs font-medium uppercase tracking-wide text-[var(--color-text-muted)]">
-            <th className="px-3 py-2">Model</th>
-            <th className="px-3 py-2">Images</th>
-            <th className="px-3 py-2" title="Approved / With Video / Total">Scenes</th>
-            <th className="px-3 py-2">Metadata</th>
-            <th className="px-3 py-2">Blocking</th>
-            <th className="px-3 py-2 text-right">Readiness</th>
+          <tr className={TERMINAL_DIVIDER}>
+            <th className={`${TERMINAL_TH} px-3 py-2`}>Model</th>
+            <th className={`${TERMINAL_TH} px-3 py-2`}>Images</th>
+            <th className={`${TERMINAL_TH} px-3 py-2`} title="Approved / With Video / Total">Scenes</th>
+            <th className={`${TERMINAL_TH} px-3 py-2`}>Metadata</th>
+            <th className={`${TERMINAL_TH} px-3 py-2`}>Blocking</th>
+            <th className={`${TERMINAL_TH} px-3 py-2 text-right`}>Readiness</th>
           </tr>
         </thead>
         <tbody>
@@ -145,6 +200,7 @@ function ReadinessTab({ rows, projectId, resolveBlockingDeliverables }: Readines
               <DeliverableRow
                 key={row.id}
                 row={row}
+                projectId={projectId}
                 filteredBlockingReasons={filterBlockingReasons(row.blocking_reasons, bd)}
                 readinessPct={computeReadinessPct(row, bd)}
                 onClick={() =>
@@ -414,7 +470,7 @@ function MatrixTab({ rows, projectId }: MatrixTabProps) {
   if (columnsLoading) {
     return (
       <div className="flex items-center justify-center py-8">
-        <Spinner size="md" />
+        <WireframeLoader size={48} />
       </div>
     );
   }
@@ -439,8 +495,8 @@ function MatrixTab({ rows, projectId }: MatrixTabProps) {
           ))}
         </colgroup>
         <thead>
-          <tr className="border-b border-[var(--color-border-default)]">
-            <th className="px-2 py-1.5 text-left text-xs font-medium text-[var(--color-text-muted)] whitespace-nowrap sticky left-0 bg-[var(--color-surface-primary)] z-10">
+          <tr className={TERMINAL_DIVIDER}>
+            <th className={`${TERMINAL_TH} px-2 py-1.5 whitespace-nowrap sticky left-0 bg-[#0d1117] z-10`}>
               Model
             </th>
             {columns.map((col) => {
@@ -453,7 +509,7 @@ function MatrixTab({ rows, projectId }: MatrixTabProps) {
               return (
                 <th
                   key={key}
-                  className="px-0.5 py-1.5 text-center text-[10px] font-medium text-[var(--color-text-muted)]"
+                  className={`${TERMINAL_TH} px-0.5 py-1.5 text-center`}
                 >
                   {col.kind === "image" ? (
                     <div title={`Image: ${col.label}`}>
@@ -479,9 +535,9 @@ function MatrixTab({ rows, projectId }: MatrixTabProps) {
           {rows.map((row) => (
             <tr
               key={row.id}
-              className="border-b border-[var(--color-border-default)] hover:bg-[var(--color-surface-secondary)] transition-colors"
+              className={`${TERMINAL_DIVIDER} ${TERMINAL_ROW_HOVER}`}
             >
-              <td className="px-2 py-1.5 text-xs font-medium text-[var(--color-text-primary)] whitespace-nowrap sticky left-0 bg-[var(--color-surface-primary)] z-10">
+              <td className="px-2 py-1.5 font-mono text-xs font-medium text-[var(--color-text-primary)] whitespace-nowrap sticky left-0 bg-[#0d1117] z-10">
                 <button
                   type="button"
                   className="hover:underline cursor-pointer text-left"
@@ -658,7 +714,7 @@ export function CharacterDeliverablesGrid({ projectId }: CharacterDeliverablesGr
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-8">
-        <Spinner size="md" />
+        <WireframeLoader size={48} />
       </div>
     );
   }
@@ -689,7 +745,7 @@ export function CharacterDeliverablesGrid({ projectId }: CharacterDeliverablesGr
                   type="button"
                   onClick={() => toggleGroup(g.id)}
                   className={cn(
-                    "px-2 py-0.5 text-[11px] font-medium rounded-[var(--radius-full)] transition-colors cursor-pointer border",
+                    "px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide rounded-[3px] transition-colors cursor-pointer border",
                     selectedGroups.has(g.id)
                       ? "bg-[var(--color-action-primary)] text-white border-[var(--color-action-primary)]"
                       : "bg-transparent text-[var(--color-text-muted)] border-[var(--color-border-default)] hover:text-[var(--color-text-secondary)] hover:border-[var(--color-border-hover)]",

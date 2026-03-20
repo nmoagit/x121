@@ -1,23 +1,14 @@
-import { Badge } from "@/components/primitives";
-
 interface ProtectedBadgeProps {
   isActive: boolean;
 }
 
 /**
- * Small badge showing whether a protection rule is active or inactive.
+ * Small terminal-style status indicator for protection rules.
  */
 export function ProtectedBadge({ isActive }: ProtectedBadgeProps) {
-  if (isActive) {
-    return (
-      <Badge variant="success" size="sm">
-        Active
-      </Badge>
-    );
-  }
   return (
-    <Badge variant="default" size="sm">
-      Inactive
-    </Badge>
+    <span className={`font-mono text-[10px] uppercase ${isActive ? "text-green-400" : "text-[var(--color-text-muted)]"}`}>
+      {isActive ? "Active" : "Inactive"}
+    </span>
   );
 }

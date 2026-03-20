@@ -7,6 +7,7 @@
 import { useState } from "react";
 
 import { Button, Input, Select } from "@/components/primitives";
+import { TERMINAL_LABEL, TERMINAL_TEXTAREA } from "@/lib/ui-classes";
 import { isValidJson } from "@/lib/validation";
 
 import { useCreateTemplate } from "./hooks/use-sidecar";
@@ -97,12 +98,12 @@ export function CreateTemplateForm({ onCancel }: CreateTemplateFormProps) {
         />
       </div>
       <div>
-        <label className="block text-xs font-medium text-[var(--color-text-muted)] mb-1">
+        <span className={`block mb-1 ${TERMINAL_LABEL}`}>
           Template JSON
-        </label>
+        </span>
         <textarea
           data-testid="template-json-editor"
-          className="w-full rounded border border-[var(--color-border-default)] bg-[var(--color-bg-secondary)] px-3 py-2 text-sm text-[var(--color-text-primary)] font-mono focus:outline-none focus:ring-1 focus:ring-[var(--color-action-primary)]"
+          className={`${TERMINAL_TEXTAREA} resize-y`}
           rows={4}
           value={templateJson}
           onChange={(e) => setTemplateJson(e.target.value)}

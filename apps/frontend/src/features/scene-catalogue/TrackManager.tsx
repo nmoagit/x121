@@ -7,10 +7,20 @@
 
 import { useCallback, useState } from "react";
 
-import { Card } from "@/components/composite/Card";
 import { Stack } from "@/components/layout";
-import { Badge, Button, Input, Spinner, Toggle } from "@/components/primitives";
+import { Button, Input, Toggle ,  WireframeLoader } from "@/components/primitives";
+import { cn } from "@/lib/cn";
 import { generateSnakeSlug } from "@/lib/format";
+import {
+  TERMINAL_BODY,
+  TERMINAL_DIVIDER,
+  TERMINAL_HEADER,
+  TERMINAL_HEADER_TITLE,
+  TERMINAL_PANEL,
+  TERMINAL_ROW_HOVER,
+  TERMINAL_STATUS_COLORS,
+  TERMINAL_TH,
+} from "@/lib/ui-classes";
 import { Plus } from "@/tokens/icons";
 
 import { useCreateTrack, useTracks, useUpdateTrack } from "./hooks/use-tracks";
@@ -108,11 +118,11 @@ function TrackRow({ track }: TrackRowProps) {
 
   if (editing) {
     return (
-      <tr className="border-b border-[var(--color-border-default)]">
+      <tr className={cn(TERMINAL_DIVIDER, TERMINAL_ROW_HOVER)}>
         <td className="px-3 py-1.5">
           <Input value={name} onChange={(e) => setName(e.target.value)} className="text-sm" />
         </td>
-        <td className="px-3 py-1.5 text-xs text-[var(--color-text-muted)]">{track.slug}</td>
+        <td className="px-3 py-1.5 font-mono text-xs text-[var(--color-text-muted)]">{track.slug}</td>
         <td className="px-3 py-1.5">
           <Input
             type="number"
@@ -123,22 +133,22 @@ function TrackRow({ track }: TrackRowProps) {
           />
         </td>
         <td className="px-3 py-1.5">
-          <Badge variant={track.is_active ? "success" : "default"} size="sm">
+          <span className={cn("font-mono text-xs", TERMINAL_STATUS_COLORS[track.is_active ? "active" : "pending"])}>
             {track.is_active ? "Active" : "Inactive"}
-          </Badge>
+          </span>
         </td>
         <td className="px-3 py-1.5">
           <div className="flex gap-2">
             <Button
               variant="primary"
-              size="sm"
+              size="xs"
               onClick={handleSave}
               loading={updateMutation.isPending}
               disabled={!name.trim()}
             >
               Save
             </Button>
-            <Button variant="secondary" size="sm" onClick={() => setEditing(false)}>
+            <Button variant="secondary" size="xs" onClick={() => setEditing(false)}>
               Cancel
             </Button>
           </div>
@@ -148,17 +158,17 @@ function TrackRow({ track }: TrackRowProps) {
   }
 
   return (
-    <tr className="border-b border-[var(--color-border-default)]">
-      <td className="px-3 py-1.5 text-xs font-medium text-[var(--color-text-primary)]">
+    <tr className={cn(TERMINAL_DIVIDER, TERMINAL_ROW_HOVER)}>
+      <td className="px-3 py-1.5 font-mono text-xs text-cyan-400">
         {track.name}
       </td>
-      <td className="px-3 py-1.5 text-xs text-[var(--color-text-muted)]">{track.slug}</td>
-      <td className="px-3 py-1.5 text-xs text-[var(--color-text-secondary)]">{track.sort_order}</td>
+      <td className="px-3 py-1.5 font-mono text-xs text-[var(--color-text-muted)]">{track.slug}</td>
+      <td className="px-3 py-1.5 font-mono text-xs text-[var(--color-text-muted)]">{track.sort_order}</td>
       <td className="px-3 py-1.5">
         <Toggle checked={track.is_active} onChange={handleToggleActive} size="sm" />
       </td>
       <td className="px-3 py-1.5">
-        <Button variant="ghost" size="sm" onClick={() => setEditing(true)}>
+        <Button variant="ghost" size="xs" onClick={() => setEditing(true)}>
           Edit
         </Button>
       </td>
@@ -177,68 +187,59 @@ export function TrackManager() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Spinner size="lg" />
+        <WireframeLoader size={64} />
       </div>
     );
   }
 
   return (
     <Stack gap={4}>
-      <div className="flex items-center justify-between">
-        <h2 className="text-base font-semibold text-[var(--color-text-primary)]">Tracks</h2>
-        {!showAdd && (
-          <Button
-            variant="secondary"
-            size="sm"
-            icon={<Plus size={16} />}
-            onClick={() => setShowAdd(true)}
-          >
-            Add Track
-          </Button>
-        )}
-      </div>
-
       {showAdd && <AddTrackForm onClose={() => setShowAdd(false)} />}
 
-      <Card elevation="sm" padding="none">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-[var(--color-border-default)]">
-                <th className="px-3 py-1.5 text-left text-xs font-medium text-[var(--color-text-muted)]">
-                  Name
-                </th>
-                <th className="px-3 py-1.5 text-left text-xs font-medium text-[var(--color-text-muted)]">
-                  Slug
-                </th>
-                <th className="px-3 py-1.5 text-left text-xs font-medium text-[var(--color-text-muted)]">
-                  Order
-                </th>
-                <th className="px-3 py-1.5 text-left text-xs font-medium text-[var(--color-text-muted)]">
-                  Active
-                </th>
-                <th className="px-3 py-1.5 text-left text-xs font-medium text-[var(--color-text-muted)]">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {!tracks || tracks.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={5}
-                    className="px-4 py-8 text-center text-xs text-[var(--color-text-muted)]"
-                  >
-                    No tracks defined. Click "Add Track" to create one.
-                  </td>
-                </tr>
-              ) : (
-                tracks.map((track) => <TrackRow key={track.id} track={track} />)
-              )}
-            </tbody>
-          </table>
+      <div className={TERMINAL_PANEL}>
+        <div className={cn(TERMINAL_HEADER, "flex items-center justify-between")}>
+          <span className={TERMINAL_HEADER_TITLE}>Tracks</span>
+          {!showAdd && (
+            <Button
+              variant="secondary"
+              size="sm"
+              icon={<Plus size={14} />}
+              onClick={() => setShowAdd(true)}
+            >
+              Add Track
+            </Button>
+          )}
         </div>
-      </Card>
+        <div className={TERMINAL_BODY}>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className={TERMINAL_DIVIDER}>
+                  <th className={cn(TERMINAL_TH, "px-3 py-1.5")}>Name</th>
+                  <th className={cn(TERMINAL_TH, "px-3 py-1.5")}>Slug</th>
+                  <th className={cn(TERMINAL_TH, "px-3 py-1.5")}>Order</th>
+                  <th className={cn(TERMINAL_TH, "px-3 py-1.5")}>Active</th>
+                  <th className={cn(TERMINAL_TH, "px-3 py-1.5")}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {!tracks || tracks.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={5}
+                      className="px-4 py-8 text-center font-mono text-xs text-[var(--color-text-muted)]"
+                    >
+                      No tracks defined. Click "Add Track" to create one.
+                    </td>
+                  </tr>
+                ) : (
+                  tracks.map((track) => <TrackRow key={track.id} track={track} />)
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
     </Stack>
   );
 }

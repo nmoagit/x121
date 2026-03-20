@@ -9,7 +9,7 @@
 import { useState } from "react";
 
 import { Stack } from "@/components/layout";
-import { Badge, Spinner } from "@/components/primitives";
+import { Badge ,  WireframeLoader } from "@/components/primitives";
 import { formatCountdown } from "@/lib/format";
 
 import { FeedbackForm } from "./FeedbackForm";
@@ -31,7 +31,7 @@ export function ExternalReviewPage({ token }: ExternalReviewPageProps) {
   if (isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <Spinner size="lg" />
+        <WireframeLoader size={64} />
       </div>
     );
   }

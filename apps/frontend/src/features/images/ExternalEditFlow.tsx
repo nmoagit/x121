@@ -7,9 +7,9 @@
 
 import { useCallback, useRef, useState } from "react";
 
-import { Card } from "@/components/composite";
 import { Stack } from "@/components/layout";
-import { Badge, Button, Spinner } from "@/components/primitives";
+import { Button ,  WireframeLoader } from "@/components/primitives";
+import { TERMINAL_BODY, TERMINAL_HEADER, TERMINAL_HEADER_TITLE, TERMINAL_PANEL } from "@/lib/ui-classes";
 import { Download, Upload } from "@/tokens/icons";
 
 import {
@@ -102,11 +102,14 @@ export function ExternalEditFlow({
   return (
     <div className="flex gap-6">
       {/* Actions panel */}
-      <Card elevation="sm" padding="md">
+      <div className={TERMINAL_PANEL}>
+        <div className={TERMINAL_HEADER}>
+          <span className={TERMINAL_HEADER_TITLE}>External Edit</span>
+        </div>
+        <div className={TERMINAL_BODY}>
         <Stack gap={4}>
-          <h4 className="text-sm font-medium text-[var(--color-text-primary)]">External Edit</h4>
 
-          <p className="text-xs text-[var(--color-text-muted)]">
+          <p className="font-mono text-xs text-[var(--color-text-muted)]">
             Export the variant at full resolution, edit it in an external tool (e.g., Photoshop),
             then re-import the edited version.
           </p>
@@ -147,16 +150,20 @@ export function ExternalEditFlow({
             </p>
           )}
         </Stack>
-      </Card>
+        </div>
+      </div>
 
       {/* Version history sidebar */}
-      <Card elevation="sm" padding="md">
+      <div className={TERMINAL_PANEL}>
+        <div className={TERMINAL_HEADER}>
+          <span className={TERMINAL_HEADER_TITLE}>Version History</span>
+        </div>
+        <div className={TERMINAL_BODY}>
         <Stack gap={3}>
-          <h4 className="text-sm font-medium text-[var(--color-text-primary)]">Version History</h4>
 
           {historyLoading ? (
             <div className="flex h-24 items-center justify-center">
-              <Spinner size="sm" />
+              <WireframeLoader size={32} />
             </div>
           ) : !history || history.length === 0 ? (
             <p className="text-xs text-[var(--color-text-muted)]">No version history.</p>
@@ -178,19 +185,17 @@ export function ExternalEditFlow({
                   )}
 
                   <div className="flex flex-col">
-                    <span className="text-xs font-medium text-[var(--color-text-primary)]">
+                    <span className="font-mono text-xs text-cyan-400">
                       v{entry.version}
                     </span>
-                    <div className="flex gap-1">
-                      <Badge
-                        variant="default"
-                        size="sm"
-                      >
+                    <div className="flex items-center gap-1 font-mono text-[10px]">
+                      <span className="text-[var(--color-text-muted)]">
                         {IMAGE_VARIANT_STATUS_LABEL[entry.status_id as ImageVariantStatusId] ?? "Unknown"}
-                      </Badge>
-                      <Badge variant="default" size="sm">
+                      </span>
+                      <span className="opacity-30">|</span>
+                      <span className="text-[var(--color-text-muted)]">
                         {PROVENANCE_LABEL[entry.provenance as Provenance] ?? entry.provenance}
-                      </Badge>
+                      </span>
                     </div>
                   </div>
                 </li>
@@ -198,7 +203,8 @@ export function ExternalEditFlow({
             </ul>
           )}
         </Stack>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }

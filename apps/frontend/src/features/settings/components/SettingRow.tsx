@@ -4,9 +4,10 @@
 
 import { useState } from "react";
 
-import { Badge, Button } from "@/components/primitives";
+import { Button } from "@/components/primitives";
 import { useToast } from "@/components/composite/useToast";
 import { cn } from "@/lib/cn";
+import { TERMINAL_PANEL, TERMINAL_HEADER, TERMINAL_HEADER_TITLE, TERMINAL_BODY } from "@/lib/ui-classes";
 import { AlertTriangle, RefreshCw } from "@/tokens/icons";
 
 import {
@@ -17,9 +18,9 @@ import {
 import type { PlatformSetting } from "../types";
 import {
   SOURCE_LABELS,
-  SOURCE_VARIANT,
   TESTABLE_VALUE_TYPES,
 } from "../types";
+import type { SettingSource } from "../types";
 import { EditForm, ValueDisplay } from "./SettingValueEditor";
 
 /* --------------------------------------------------------------------------
@@ -27,6 +28,13 @@ import { EditForm, ValueDisplay } from "./SettingValueEditor";
    -------------------------------------------------------------------------- */
 
 const SENSITIVE_MASK = "********";
+
+/** Terminal-style source colors. */
+const SOURCE_TERMINAL_COLOR: Record<SettingSource, string> = {
+  database: "text-green-400",
+  env: "text-orange-400",
+  default: "text-[var(--color-text-muted)]",
+};
 
 /* --------------------------------------------------------------------------
    Component
@@ -116,38 +124,33 @@ export function SettingRow({ setting }: SettingRowProps) {
     setting.sensitive && !revealed ? SENSITIVE_MASK : setting.value;
 
   return (
-    <div
-      className={cn(
-        "rounded-[var(--radius-md)] border border-[var(--color-border-default)]",
-        "bg-[var(--color-surface-secondary)] p-[var(--spacing-4)]",
-      )}
-    >
-      {/* Header row: label + badges */}
-      <div className="flex items-start justify-between gap-[var(--spacing-3)]">
+    <div className={TERMINAL_PANEL}>
+      {/* Header row: label + source */}
+      <div className={cn(TERMINAL_HEADER, "flex items-start justify-between gap-[var(--spacing-3)]")}>
         <div className="flex-1">
           <div className="flex items-center gap-[var(--spacing-2)]">
-            <span className="text-sm font-semibold text-[var(--color-text-primary)]">
+            <span className={TERMINAL_HEADER_TITLE}>
               {setting.label}
             </span>
             {setting.requires_restart && (
               <AlertTriangle
                 size={14}
-                className="text-[var(--color-action-warning)]"
+                className="text-orange-400"
                 aria-label="Requires restart"
               />
             )}
           </div>
-          <p className="mt-0.5 text-xs text-[var(--color-text-muted)]">
+          <p className="mt-0.5 text-xs text-[var(--color-text-muted)] font-mono">
             {setting.description}
           </p>
         </div>
-        <Badge variant={SOURCE_VARIANT[setting.source]} size="sm">
+        <span className={cn("font-mono text-[10px] uppercase tracking-wide", SOURCE_TERMINAL_COLOR[setting.source])}>
           {SOURCE_LABELS[setting.source]}
-        </Badge>
+        </span>
       </div>
 
       {/* Value / edit area */}
-      <div className="mt-[var(--spacing-3)]">
+      <div className={cn(TERMINAL_BODY)}>
         {editing ? (
           <EditForm
             draft={draft}
@@ -169,11 +172,11 @@ export function SettingRow({ setting }: SettingRowProps) {
       </div>
 
       {/* Action buttons */}
-      <div className="mt-[var(--spacing-3)] flex items-center gap-[var(--spacing-2)]">
+      <div className="px-[var(--spacing-3)] pb-[var(--spacing-3)] flex items-center gap-[var(--spacing-2)]">
         {setting.source === "database" && (
           <Button
             variant="ghost"
-            size="sm"
+            size="xs"
             onClick={reset}
             loading={isResetting}
           >
@@ -183,7 +186,7 @@ export function SettingRow({ setting }: SettingRowProps) {
         {isTestable && (
           <Button
             variant="ghost"
-            size="sm"
+            size="xs"
             onClick={testConnection}
             loading={testMutation.isPending}
             icon={<RefreshCw size={14} />}

@@ -5,8 +5,6 @@
  * rejected, and pending counts with visual indicators.
  */
 
-import { Badge } from "@/components";
-
 import type { GenerationSummary } from "./types";
 
 /* --------------------------------------------------------------------------
@@ -14,7 +12,6 @@ import type { GenerationSummary } from "./types";
    -------------------------------------------------------------------------- */
 
 interface GenerationHistorySectionProps {
-  /** Generation summary statistics. */
   summary: GenerationSummary;
 }
 
@@ -26,90 +23,35 @@ export function GenerationHistorySection({
   summary,
 }: GenerationHistorySectionProps) {
   const stats = [
-    {
-      label: "Total",
-      value: summary.total_segments,
-      variant: "default" as const,
-      testId: "gen-total",
-    },
-    {
-      label: "Approved",
-      value: summary.approved,
-      variant: "success" as const,
-      testId: "gen-approved",
-    },
-    {
-      label: "Rejected",
-      value: summary.rejected,
-      variant: "danger" as const,
-      testId: "gen-rejected",
-    },
-    {
-      label: "Pending",
-      value: summary.pending,
-      variant: "warning" as const,
-      testId: "gen-pending",
-    },
+    { label: "total", value: summary.total_segments, color: "text-[var(--color-text-muted)]", testId: "gen-total" },
+    { label: "approved", value: summary.approved, color: "text-green-400", testId: "gen-approved" },
+    { label: "rejected", value: summary.rejected, color: "text-red-400", testId: "gen-rejected" },
+    { label: "pending", value: summary.pending, color: "text-orange-400", testId: "gen-pending" },
   ];
 
   return (
-    <div
-      data-testid="generation-history-section"
-      className="flex flex-col gap-2"
-    >
-      <h3 className="text-sm font-semibold text-[var(--color-text-primary)]">
-        Generation History
-      </h3>
-
-      <div className="flex flex-wrap gap-3">
-        {stats.map((stat) => (
-          <div
-            key={stat.testId}
-            data-testid={stat.testId}
-            className="flex items-center gap-1"
-          >
-            <Badge variant={stat.variant} size="sm">
-              {stat.value}
-            </Badge>
-            <span className="text-xs text-[var(--color-text-secondary)]">
-              {stat.label}
-            </span>
-          </div>
+    <div data-testid="generation-history-section" className="flex flex-col gap-2">
+      <div className="flex items-center gap-0 font-mono text-xs">
+        {stats.map((stat, idx) => (
+          <span key={stat.testId} data-testid={stat.testId} className="flex items-center">
+            {idx > 0 && <span className="mx-2 text-[var(--color-text-muted)] opacity-30">|</span>}
+            <span className="uppercase tracking-wide text-[var(--color-text-muted)]">{stat.label}:</span>
+            <span className={`ml-1 font-semibold ${stat.color}`}>{stat.value}</span>
+          </span>
         ))}
       </div>
 
       {summary.total_segments > 0 && (
-        <div
-          data-testid="gen-progress-bar"
-          className="h-2 w-full overflow-hidden rounded-full bg-[var(--color-bg-tertiary)]"
-        >
+        <div data-testid="gen-progress-bar" className="h-1.5 w-full overflow-hidden rounded-full bg-white/10">
           <div className="flex h-full">
             {summary.approved > 0 && (
-              <div
-                data-testid="gen-bar-approved"
-                className="bg-[var(--color-success)]"
-                style={{
-                  width: `${(summary.approved / summary.total_segments) * 100}%`,
-                }}
-              />
+              <div data-testid="gen-bar-approved" className="bg-green-400" style={{ width: `${(summary.approved / summary.total_segments) * 100}%` }} />
             )}
             {summary.pending > 0 && (
-              <div
-                data-testid="gen-bar-pending"
-                className="bg-[var(--color-warning)]"
-                style={{
-                  width: `${(summary.pending / summary.total_segments) * 100}%`,
-                }}
-              />
+              <div data-testid="gen-bar-pending" className="bg-orange-400" style={{ width: `${(summary.pending / summary.total_segments) * 100}%` }} />
             )}
             {summary.rejected > 0 && (
-              <div
-                data-testid="gen-bar-rejected"
-                className="bg-[var(--color-danger)]"
-                style={{
-                  width: `${(summary.rejected / summary.total_segments) * 100}%`,
-                }}
-              />
+              <div data-testid="gen-bar-rejected" className="bg-red-400" style={{ width: `${(summary.rejected / summary.total_segments) * 100}%` }} />
             )}
           </div>
         </div>

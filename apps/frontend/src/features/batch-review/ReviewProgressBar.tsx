@@ -5,7 +5,7 @@
  * counts, plus average review pace and estimated remaining time.
  */
 
-import { Spinner } from "@/components/primitives";
+import { WireframeLoader } from "@/components/primitives";
 import { cn } from "@/lib/cn";
 import { formatPercent } from "@/lib/format";
 
@@ -30,7 +30,7 @@ export function ReviewProgressBar({ projectId }: ReviewProgressBarProps) {
   if (isPending) {
     return (
       <div data-testid="review-progress-loading" className="flex items-center gap-2 py-2">
-        <Spinner size="sm" />
+        <WireframeLoader size={32} />
         <span className="text-sm text-[var(--color-text-muted)]">Loading progress...</span>
       </div>
     );

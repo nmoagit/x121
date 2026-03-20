@@ -1,5 +1,5 @@
 /**
- * Cloud GPU dashboard summary stat cards (PRD-114).
+ * Cloud GPU dashboard summary stats — terminal ticker strip (PRD-114).
  */
 
 import { formatCents } from "@/lib/format";
@@ -10,25 +10,25 @@ interface Props {
 }
 
 export function DashboardStats({ stats }: Props) {
-  const cards = [
-    { label: "Providers", value: `${stats.active_providers} / ${stats.total_providers}`, sub: "active" },
-    { label: "Instances", value: String(stats.total_instances), sub: `${stats.running_instances} running` },
-    { label: "Monthly Cost", value: formatCents(stats.total_cost_cents), sub: "last 30 days" },
+  const items = [
+    { label: "Providers", value: `${stats.active_providers}/${stats.total_providers}`, complete: stats.active_providers > 0 },
+    { label: "Instances", value: String(stats.total_instances) },
+    { label: "Running", value: String(stats.running_instances), complete: stats.running_instances > 0 },
+    { label: "Cost (30d)", value: formatCents(stats.total_cost_cents) },
   ];
 
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-      {cards.map((c) => (
-        <div
-          key={c.label}
-          className="rounded-[var(--radius-lg)] border border-[var(--color-border-default)] bg-[var(--color-surface-primary)] p-4"
-        >
-          <p className="text-xs font-medium uppercase tracking-wider text-[var(--color-text-muted)]">
-            {c.label}
-          </p>
-          <p className="mt-1 text-2xl font-bold text-[var(--color-text-primary)]">{c.value}</p>
-          <p className="text-xs text-[var(--color-text-muted)]">{c.sub}</p>
-        </div>
+    <div className="flex items-center gap-0 rounded-[var(--radius-lg)] border border-[var(--color-border-default)] bg-[#0d1117] px-[var(--spacing-3)] py-[var(--spacing-2)] font-mono text-xs overflow-x-auto">
+      {items.map((item, idx) => (
+        <span key={item.label} className="flex items-center whitespace-nowrap">
+          {idx > 0 && (
+            <span className="mx-3 text-[var(--color-text-muted)] opacity-30 select-none">|</span>
+          )}
+          <span className="uppercase tracking-wide text-[var(--color-text-muted)]">{item.label}:</span>
+          <span className={`ml-1.5 font-semibold text-sm ${item.complete ? "text-green-400" : "text-cyan-400"}`}>
+            {item.value}
+          </span>
+        </span>
       ))}
     </div>
   );

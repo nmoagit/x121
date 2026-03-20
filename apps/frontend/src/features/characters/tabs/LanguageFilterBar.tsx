@@ -55,7 +55,7 @@ export function LanguageFilterBar({
             onClick={() => onSelect(langId)}
             className={`flex items-center gap-1 ${activeId === langId ? PILL_ACTIVE : PILL_INACTIVE}`}
           >
-            {lang && <FlagIcon flagCode={lang.flag_code} size={14} />}
+            {lang && <FlagIcon flagCode={lang.flag_code} size={10} />}
             {lang?.name ?? `Lang ${langId}`}
           </button>
         );

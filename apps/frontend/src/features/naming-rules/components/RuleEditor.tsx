@@ -4,10 +4,11 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { Card } from "@/components/composite";
 import { useToast } from "@/components/composite/useToast";
 import { Button } from "@/components/primitives";
 import { Stack } from "@/components/layout";
+import { TERMINAL_PANEL, TERMINAL_HEADER, TERMINAL_HEADER_TITLE, TERMINAL_BODY, TERMINAL_TEXTAREA, TERMINAL_LABEL } from "@/lib/ui-classes";
+import { cn } from "@/lib/cn";
 import { Check, Save, X } from "@/tokens/icons";
 
 import {
@@ -109,37 +110,32 @@ export function RuleEditor({ category, rule, onClose }: RuleEditorProps) {
   }, [rule?.template]);
 
   return (
-    <Card elevation="sm" padding="md" className="mt-[var(--spacing-2)]">
-      <Stack gap={4}>
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-[var(--color-text-primary)]">
-            Edit Template: {category.name}
-          </h3>
-          <Button variant="ghost" size="sm" onClick={onClose} aria-label="Close editor">
-            <X size={16} />
-          </Button>
-        </div>
+    <div className={cn(TERMINAL_PANEL, "mt-[var(--spacing-2)]")}>
+      <div className={cn(TERMINAL_HEADER, "flex items-center justify-between")}>
+        <span className={TERMINAL_HEADER_TITLE}>
+          Edit Template: {category.name}
+        </span>
+        <Button variant="ghost" size="xs" onClick={onClose} aria-label="Close editor">
+          <X size={16} />
+        </Button>
+      </div>
 
+      <div className={TERMINAL_BODY}>
+      <Stack gap={4}>
         {/* Template textarea */}
         <div className="flex flex-col gap-1.5">
-          <label
-            htmlFor={`template-${category.id}`}
-            className="text-xs font-medium text-[var(--color-text-muted)]"
+          <span
+            className={TERMINAL_LABEL}
           >
             Template pattern
-          </label>
+          </span>
           <textarea
             ref={textareaRef}
             id={`template-${category.id}`}
             value={template}
             onChange={(e) => setTemplate(e.target.value)}
             rows={2}
-            className="w-full px-3 py-2 text-sm font-mono
-              bg-[var(--color-surface-primary)] text-[var(--color-text-primary)]
-              border border-[var(--color-border-default)] rounded-[var(--radius-md)]
-              focus:outline-none focus:ring-2 focus:ring-[var(--color-action-primary)]
-              resize-none"
+            className={cn(TERMINAL_TEXTAREA, "resize-none")}
             placeholder="e.g. {project}_{scene}_{version}.mp4"
           />
         </div>
@@ -174,12 +170,13 @@ export function RuleEditor({ category, rule, onClose }: RuleEditorProps) {
 
         {/* Save confirmation indicator */}
         {(updateMutation.isSuccess || createMutation.isSuccess) && (
-          <div className="flex items-center gap-1.5 text-xs text-[var(--color-action-success)]">
+          <div className="flex items-center gap-1.5 text-xs text-green-400 font-mono">
             <Check size={14} aria-hidden />
             Saved
           </div>
         )}
       </Stack>
-    </Card>
+      </div>
+    </div>
   );
 }

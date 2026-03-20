@@ -1,20 +1,85 @@
 /**
- * TanStack Query hooks for bulk speech import and deliverable generation (PRD-136).
+ * TanStack Query hooks for bulk speech import, voice import, and deliverable generation (PRD-136).
  */
 
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { api } from "@/lib/api";
+import { generateSnakeSlug } from "@/lib/format";
+import type { VoiceIdEntry } from "@/components/domain/FileDropZone";
+import { SETTING_KEY_VOICE } from "@/features/characters/types";
 import type { BulkImportReport } from "@/features/characters/types";
+import type { Character } from "../types";
+import { deliverableKeys } from "./use-character-deliverables";
 
 /* --------------------------------------------------------------------------
    Bulk import
    -------------------------------------------------------------------------- */
 
 export function useBulkImportSpeeches(projectId: number) {
+  const qc = useQueryClient();
   return useMutation({
-    mutationFn: (input: { format: string; data: string; default_language_id?: number }) =>
+    mutationFn: (input: { format: string; data: string; default_language_id?: number; skip_existing?: boolean }) =>
       api.post<BulkImportReport>(`/projects/${projectId}/speeches/import`, input),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: deliverableKeys.speechLanguageCounts(projectId) });
+      // Also invalidate per-character speech queries
+      qc.invalidateQueries({ predicate: (q) => Array.isArray(q.queryKey) && q.queryKey.includes("speeches") });
+    },
+  });
+}
+
+/* --------------------------------------------------------------------------
+   Bulk voice ID import
+   -------------------------------------------------------------------------- */
+
+export type VoiceImportMode = "new_only" | "overwrite";
+
+export interface BulkVoiceImportResult {
+  updated: string[];
+  skipped: string[];
+  unmatched: string[];
+  errors: string[];
+}
+
+export function useBulkVoiceImport(projectId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { entries: VoiceIdEntry[]; characters: Character[]; mode: VoiceImportMode }): Promise<BulkVoiceImportResult> => {
+      const result: BulkVoiceImportResult = { updated: [], skipped: [], unmatched: [], errors: [] };
+      const charMap = new Map(input.characters.map((c) => [generateSnakeSlug(c.name), c]));
+
+      for (const entry of input.entries) {
+        const char = charMap.get(generateSnakeSlug(entry.slug));
+        if (!char) {
+          result.unmatched.push(entry.slug);
+          continue;
+        }
+        // In new_only mode, skip characters that already have a voice ID
+        if (input.mode === "new_only") {
+          const existing = char.settings?.[SETTING_KEY_VOICE];
+          if (typeof existing === "string" && existing.length > 0) {
+            result.skipped.push(char.name);
+            continue;
+          }
+        }
+        try {
+          await api.patch(`/projects/${projectId}/characters/${char.id}/settings`, {
+            [SETTING_KEY_VOICE]: entry.voice_id,
+          });
+          result.updated.push(char.name);
+        } catch (e) {
+          result.errors.push(`${char.name}: ${e instanceof Error ? e.message : "unknown error"}`);
+        }
+      }
+
+      return result;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({
+        predicate: (q) => Array.isArray(q.queryKey) && q.queryKey.includes("characters"),
+      });
+    },
   });
 }
 

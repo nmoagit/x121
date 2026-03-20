@@ -12,11 +12,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQueries, useQueryClient } from "@tanstack/react-query";
 
-import { Card } from "@/components/composite/Card";
 import { useToast } from "@/components/composite/useToast";
 import { EmptyState } from "@/components/domain";
 import { Grid } from "@/components/layout";
-import { Badge, Button, LoadingPane, Toggle } from "@/components/primitives";
+import { Button, LoadingPane, Toggle } from "@/components/primitives";
 import { Checkbox } from "@/components/primitives/Checkbox";
 import { useSetToggle } from "@/hooks/useSetToggle";
 import { getStreamUrl } from "@/features/video-player";
@@ -32,7 +31,7 @@ import { useSchedules } from "@/features/job-scheduling/hooks/use-job-scheduling
 import { useImageVariants } from "@/features/images/hooks/use-image-variants";
 import { findVariantForTrack } from "@/features/images/utils";
 import { sourceLabel } from "@/features/scene-catalogue/SourceBadge";
-import { TrackBadge } from "@/features/scene-catalogue/TrackBadge";
+import { TRACK_TEXT_COLORS } from "@/lib/ui-classes";
 import {
   useCharacterSceneSettings,
   useToggleCharacterSceneSetting,
@@ -52,7 +51,6 @@ import {
   SCENE_STATUS_REJECTED,
   SCENE_STATUS_SCHEDULED,
   sceneHasVideo,
-  sceneStatusBadgeVariant,
   sceneStatusLabel,
 } from "@/features/scenes/types";
 import type { Scene } from "@/features/scenes/types";
@@ -691,24 +689,24 @@ export function CharacterScenesTab({ characterId, focusSceneId, focusSceneTypeId
 
       {/* Drop zone overlay */}
       {dragOver && (
-        <div className="flex items-center justify-center rounded-[var(--radius-lg)] border-2 border-dashed border-[var(--color-action-primary)] bg-[var(--color-surface-secondary)] p-8">
-          <div className="flex items-center gap-[var(--spacing-2)] text-[var(--color-action-primary)]">
+        <div className="flex items-center justify-center rounded-[var(--radius-lg)] border-2 border-dashed border-[var(--color-action-primary)] bg-[#0d1117] p-8">
+          <div className="flex items-center gap-[var(--spacing-2)] text-[var(--color-action-primary)] font-mono text-sm">
             <Upload size={24} />
-            <span className="text-sm font-medium">Drop videos to import</span>
+            <span>Drop videos to import</span>
           </div>
         </div>
       )}
 
       {/* Importing indicator */}
       {importing && (
-        <div className="flex items-center gap-[var(--spacing-2)] text-sm text-[var(--color-text-muted)]">
+        <div className="flex items-center gap-[var(--spacing-2)] text-xs font-mono text-[var(--color-text-muted)]">
           <LoadingPane />
           <span>Importing videos...</span>
         </div>
       )}
 
       {/* Scene Grid */}
-      <Grid cols={4} gap={4}>
+      <Grid cols={2} gap={4} className="sm:grid-cols-3 lg:grid-cols-4 min-[1500px]:grid-cols-5 min-[1700px]:grid-cols-6">
         {slots.filter((slot) => !hideEmpty || (slot.scene && slot.scene.version_count > 0)).map((slot) => (
           <SceneCard
             key={`${slot.row.scene_type_id}-${slot.row.track_id ?? "none"}`}
@@ -766,14 +764,16 @@ export function CharacterScenesTab({ characterId, focusSceneId, focusSceneTypeId
                 icon={<ChevronLeft size={16} />}
                 aria-label="Previous scene"
               />
-              <h2 className="text-lg font-semibold text-[var(--color-text-primary)]">
+              <h2 className="text-sm font-semibold font-mono uppercase tracking-wide text-[var(--color-text-primary)]">
                 {detailScene.row.name}
               </h2>
               {detailScene.row.track_slug && (
-                <TrackBadge name={detailScene.row.track_name ?? ""} slug={detailScene.row.track_slug} />
+                <span className={`text-xs font-mono font-medium ${TRACK_TEXT_COLORS[detailScene.row.track_slug] ?? "text-[var(--color-text-primary)]"}`}>
+                  {detailScene.row.track_name}
+                </span>
               )}
-              <span className="text-sm text-[var(--color-text-muted)]">
-                {(detailSlotIndex ?? 0) + 1} / {navigableSlots.length}
+              <span className="text-[10px] font-mono text-[var(--color-text-muted)]">
+                {(detailSlotIndex ?? 0) + 1}/{navigableSlots.length}
               </span>
               <Button
                 size="sm"
@@ -884,7 +884,7 @@ export function CharacterScenesTab({ characterId, focusSceneId, focusSceneTypeId
             size="sm"
           >
             <div className="flex flex-col gap-[var(--spacing-4)]">
-              <div className="text-sm text-[var(--color-text-secondary)] space-y-1">
+              <div className="text-xs font-mono text-[var(--color-text-secondary)] space-y-1">
                 <p>
                   Scheduled for{" "}
                   <span className="font-medium text-[var(--color-text-primary)]">
@@ -897,13 +897,13 @@ export function CharacterScenesTab({ characterId, focusSceneId, focusSceneTypeId
                   </span>
                 </p>
                 {groupSize > 1 && (
-                  <p className="text-xs text-[var(--color-text-muted)]">
+                  <p className="text-xs font-mono text-[var(--color-text-muted)]">
                     Part of a group of {groupSize} scenes. Rescheduling will move only this scene to a new time.
                   </p>
                 )}
               </div>
 
-              <div className="flex justify-end gap-2">
+              <div className="flex justify-end gap-2 pt-1 border-t border-[var(--color-border-default)]">
                 <Button variant="secondary" size="sm" onClick={() => setCancelScheduleSceneId(null)}>
                   Close
                 </Button>
@@ -1007,13 +1007,12 @@ function SceneCard({ slot, isSelected, onToggleSelect, onGenerate, onSchedule, o
   }, []);
 
   return (
-    <Card
-      padding="none"
+    <div
       className={cn(
-        "group/card transition-colors overflow-hidden",
+        "group/card rounded-[var(--radius-lg)] border border-[var(--color-border-default)] bg-[#0d1117] overflow-hidden transition-colors",
         !isPlaceholder && "cursor-pointer",
         isPlaceholder && !dragOver && "opacity-60 border-dashed",
-        dragOver && "ring-2 ring-[var(--color-action-primary)] bg-[var(--color-surface-secondary)]",
+        dragOver && "ring-2 ring-[var(--color-action-primary)]",
         isApproved && "!border-2 !border-green-500",
         isRejected && "!border-2 !border-red-500",
         isFailed && "!border-2 !border-red-500",
@@ -1098,41 +1097,43 @@ function SceneCard({ slot, isSelected, onToggleSelect, onGenerate, onSchedule, o
         </div>
 
         {/* Content below video */}
-        <div className="flex flex-col gap-[var(--spacing-2)] px-[var(--spacing-3)] py-[var(--spacing-2)]">
+        <div className="flex flex-col gap-1.5 px-[var(--spacing-2)] py-[var(--spacing-2)]">
           {/* Header: title + track badge */}
           <div className="flex items-center gap-[var(--spacing-2)] min-w-0">
-            <span className="text-sm font-medium text-[var(--color-text-primary)] truncate">
+            <span className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide font-mono truncate">
               {row.name}
             </span>
-            <span className="shrink-0 ml-auto inline-flex items-center gap-[var(--spacing-1)]">
+            <span className="shrink-0 ml-auto inline-flex items-center gap-1 font-mono text-[10px]">
               {row.track_slug && (
-                <TrackBadge name={row.track_name ?? ""} slug={row.track_slug} />
+                <span className={TRACK_TEXT_COLORS[row.track_slug] ?? "text-[var(--color-text-primary)]"}>{row.track_name}</span>
               )}
               {row.has_clothes_off_transition && (
-                <TrackBadge name="Clothes Off" slug="clothes_off" />
+                <span className="text-orange-400">clothes off</span>
               )}
             </span>
           </div>
 
-          {/* Status row */}
-          <div className="flex items-center gap-[var(--spacing-2)]">
-            <Badge
-              variant={isPlaceholder ? "default" : (isGenerating && !hasActiveGpu) ? "warning" : sceneStatusBadgeVariant(scene.status_id)}
-              size="sm"
-            >
-              {isPlaceholder ? "Not Started" : (isGenerating && !hasActiveGpu) ? "Queued" : sceneStatusLabel(scene.status_id)}
-            </Badge>
+          {/* Status row — terminal style */}
+          <div className="flex items-center gap-2 font-mono text-[10px] text-[var(--color-text-muted)]">
+            <span className={
+              isPlaceholder ? "text-[var(--color-text-muted)]"
+              : isApproved ? "text-green-400"
+              : isGenerating ? "text-cyan-400"
+              : isFailed || isRejected ? "text-red-400"
+              : "text-cyan-400"
+            }>
+              {isPlaceholder ? "not started" : (isGenerating && !hasActiveGpu) ? "queued" : sceneStatusLabel(scene.status_id).toLowerCase()}
+            </span>
             {isGenerating && !hasActiveGpu && (
-              <span className="flex items-center gap-0.5 text-[10px] text-[var(--color-text-warning)]" title="No GPU instances are active — job is queued">
-                <AlertTriangle size={12} /> No GPU
+              <span className="flex items-center gap-0.5 text-orange-400" title="No GPU instances are active — job is queued">
+                <AlertTriangle size={10} /> no gpu
               </span>
             )}
-            <span className="text-xs text-[var(--color-text-muted)]">
-              Source: {sourceLabel(row.source)}
-            </span>
+            <span className="opacity-30">|</span>
+            <span>{sourceLabel(row.source).toLowerCase()}</span>
           </div>
 
-          {/* Generate + Schedule button group (PRD-134) */}
+          {/* Generate + Schedule button group — xs size */}
           <div
             className="flex w-full"
             title={
@@ -1142,20 +1143,20 @@ function SceneCard({ slot, isSelected, onToggleSelect, onGenerate, onSchedule, o
             }
           >
             <Button
-              size="sm"
+              size="xs"
               variant={isFailed ? "danger" : "secondary"}
               disabled={isPlaceholder || isGenerating || generating || !hasSeedImage || !hasWorkflow}
               onClick={(e) => { e.stopPropagation(); scene && onGenerate(scene.id); }}
-              icon={<Play size={14} />}
+              icon={<Play size={12} />}
               className="flex-1 !rounded-r-none"
             >
               {isGenerating
-                ? (hasActiveGpu ? "Generating\u2026" : "Queued \u2014 no GPU")
+                ? (hasActiveGpu ? "Generating\u2026" : "Queued")
                 : scene?.status_id === SCENE_STATUS_SCHEDULED ? "Scheduled"
                 : isFailed ? "Retry" : "Generate"}
             </Button>
             <Button
-              size="sm"
+              size="xs"
               variant={isScheduled ? "danger" : "secondary"}
               disabled={isPlaceholder || isGenerating || generating || (!isScheduled && (!hasSeedImage || !hasWorkflow))}
               onClick={(e) => {
@@ -1164,14 +1165,14 @@ function SceneCard({ slot, isSelected, onToggleSelect, onGenerate, onSchedule, o
                 if (isScheduled) onCancelSchedule(scene.id);
                 else onSchedule(scene.id);
               }}
-              icon={<Clock size={14} />}
+              icon={<Clock size={12} />}
               className="shrink-0 !rounded-l-none !border-l-0"
               aria-label={isScheduled ? "Cancel scheduled generation" : "Schedule generation"}
             />
           </div>
         </div>
       </div>
-    </Card>
+    </div>
   );
 }
 

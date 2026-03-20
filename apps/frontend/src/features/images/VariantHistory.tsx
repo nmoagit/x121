@@ -4,11 +4,11 @@
  * Shows the full edit history: original generated variant -> edited v2 -> edited v3.
  */
 
-import { Card } from "@/components/composite";
 import { Stack } from "@/components/layout";
-import { Badge, Spinner } from "@/components/primitives";
-import { Clock } from "@/tokens/icons";
+import { WireframeLoader } from "@/components/primitives";
 import { formatDateTime } from "@/lib/format";
+import { TERMINAL_BODY, TERMINAL_HEADER, TERMINAL_HEADER_TITLE, TERMINAL_PANEL } from "@/lib/ui-classes";
+import { Clock } from "@/tokens/icons";
 
 import { useVariantHistory } from "./hooks/use-image-variants";
 import {
@@ -38,7 +38,7 @@ export function VariantHistory({ characterId, variantId }: VariantHistoryProps) 
   if (isLoading) {
     return (
       <div className="flex h-24 items-center justify-center">
-        <Spinner size="md" />
+        <WireframeLoader size={48} />
       </div>
     );
   }
@@ -50,9 +50,12 @@ export function VariantHistory({ characterId, variantId }: VariantHistoryProps) 
   }
 
   return (
-    <Card elevation="sm" padding="md">
+    <div className={TERMINAL_PANEL}>
+      <div className={TERMINAL_HEADER}>
+        <span className={TERMINAL_HEADER_TITLE}>Version History</span>
+      </div>
+      <div className={TERMINAL_BODY}>
       <Stack gap={4}>
-        <h4 className="text-sm font-medium text-[var(--color-text-primary)]">Version History</h4>
 
         <div className="relative">
           {/* Vertical timeline line */}
@@ -85,31 +88,26 @@ export function VariantHistory({ characterId, variantId }: VariantHistoryProps) 
 
                   {/* Info */}
                   <Stack gap={1}>
-                    <span className="text-sm font-medium text-[var(--color-text-primary)]">
+                    <span className="font-mono text-xs text-cyan-400">
                       Version {entry.version}
                       {entry.is_hero && (
-                        <span className="ml-2 inline-block">
-                          <Badge variant="success" size="sm">
-                            Hero
-                          </Badge>
-                        </span>
+                        <span className="ml-2 text-green-400">[Hero]</span>
                       )}
                     </span>
 
-                    <div className="flex flex-wrap gap-1">
-                      <Badge
-                        variant="default"
-                        size="sm"
-                      >
+                    <div className="flex flex-wrap items-center gap-1 font-mono text-[10px]">
+                      <span className="text-[var(--color-text-muted)]">
                         {IMAGE_VARIANT_STATUS_LABEL[entry.status_id as ImageVariantStatusId] ?? "Unknown"}
-                      </Badge>
-                      <Badge variant="default" size="sm">
+                      </span>
+                      <span className="opacity-30">|</span>
+                      <span className="text-[var(--color-text-muted)]">
                         {PROVENANCE_LABEL[entry.provenance as Provenance] ?? entry.provenance}
-                      </Badge>
+                      </span>
                       {entry.width && entry.height && (
-                        <Badge variant="info" size="sm">
-                          {entry.width} x {entry.height}
-                        </Badge>
+                        <>
+                          <span className="opacity-30">|</span>
+                          <span className="text-cyan-400">{entry.width} x {entry.height}</span>
+                        </>
                       )}
                     </div>
 
@@ -124,6 +122,7 @@ export function VariantHistory({ characterId, variantId }: VariantHistoryProps) 
           </ul>
         </div>
       </Stack>
-    </Card>
+      </div>
+    </div>
   );
 }

@@ -84,16 +84,18 @@ export function GenerationProgressBar({
       </div>
 
       {/* Stats row */}
-      <div className="flex items-center justify-between text-xs text-[var(--color-text-secondary)]">
+      <div className="flex items-center justify-between font-mono text-xs text-[var(--color-text-muted)]">
         {/* Duration counter */}
-        <span data-testid="duration-counter">
+        <span data-testid="duration-counter" className="text-cyan-400">
           {formatDurationSecs(cumulative_duration)}
-          {target_duration != null && ` / ${formatDurationSecs(target_duration)} target`}
+          {target_duration != null && (
+            <span className="text-[var(--color-text-muted)]"> / {formatDurationSecs(target_duration)} target</span>
+          )}
         </span>
 
         {/* Percentage */}
-        <span data-testid="percent-indicator">
-          {isComplete ? "Complete" : `${percent}%`}
+        <span data-testid="percent-indicator" className={isComplete ? "text-green-400" : "text-cyan-400"}>
+          {isComplete ? "COMPLETE" : `${percent}%`}
         </span>
 
         {/* ETA */}

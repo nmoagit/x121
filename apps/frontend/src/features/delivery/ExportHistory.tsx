@@ -6,9 +6,11 @@
  */
 
 import { Badge, Button } from "@/components";
+import { API_BASE_URL } from "@/lib/api";
 import { cn } from "@/lib/cn";
 import { formatBytes, formatDateTime } from "@/lib/format";
 import { SECTION_HEADING } from "@/lib/ui-classes";
+import { useAuthStore } from "@/stores/auth-store";
 
 import { useDeliveryExports } from "./hooks/use-delivery";
 import { EXPORT_STATUS_LABELS, EXPORT_STATUS_VARIANT } from "./types";
@@ -31,7 +33,9 @@ export function ExportHistory({ projectId, onReExport }: ExportHistoryProps) {
     );
   }
 
-  if (exports.length === 0) {
+  const visible = exports.filter((e) => e.status_id !== 7);
+
+  if (visible.length === 0) {
     return (
       <div data-testid="export-history" className="text-sm text-[var(--color-text-muted)]">
         No exports yet.
@@ -60,9 +64,11 @@ export function ExportHistory({ projectId, onReExport }: ExportHistoryProps) {
           </tr>
         </thead>
         <tbody>
-          {exports.map((exp) => (
-            <ExportRow key={exp.id} exportItem={exp} onReExport={onReExport} />
-          ))}
+          {exports
+            .filter((exp) => exp.status_id !== 7)
+            .map((exp) => (
+              <ExportRow key={exp.id} exportItem={exp} onReExport={onReExport} />
+            ))}
         </tbody>
       </table>
     </div>
@@ -76,6 +82,7 @@ function ExportRow({
   exportItem: DeliveryExport;
   onReExport?: (item: DeliveryExport) => void;
 }) {
+  const token = useAuthStore((s) => s.accessToken);
   const isCompleted = exportItem.status_id === 6;
 
   return (
@@ -101,11 +108,11 @@ function ExportRow({
         <div className="flex items-center gap-2">
           {isCompleted && exportItem.file_path && (
             <a
-              href={exportItem.file_path}
+              href={`${API_BASE_URL}/projects/${exportItem.project_id}/exports/${exportItem.id}/download?token=${token}`}
               className="text-sm text-[var(--color-action-primary)] hover:underline"
               data-testid="download-link"
             >
-              Download
+              Download .rar
             </a>
           )}
           {onReExport && (

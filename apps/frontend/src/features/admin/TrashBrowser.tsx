@@ -1,9 +1,11 @@
-import { Badge } from "@/components/primitives";
+import { Button } from "@/components/primitives";
 import {
   useTrashQueue,
   useRestoreTrashEntry,
 } from "@/features/admin/hooks/use-reclamation";
 import { formatBytes, formatCountdown } from "@/lib/format";
+import { TERMINAL_TH, TERMINAL_DIVIDER, TERMINAL_ROW_HOVER } from "@/lib/ui-classes";
+import { cn } from "@/lib/cn";
 
 /**
  * Table of pending trash queue items with restore functionality.
@@ -22,24 +24,14 @@ export function TrashBrowser() {
 
   return (
     <div className="overflow-x-auto">
-      <table className="w-full text-sm">
+      <table className="w-full font-mono text-xs">
         <thead>
-          <tr className="border-b border-[var(--color-border-primary)]">
-            <th className="px-4 py-2 text-left font-medium text-[var(--color-text-muted)]">
-              File Path
-            </th>
-            <th className="px-4 py-2 text-left font-medium text-[var(--color-text-muted)]">
-              Entity Type
-            </th>
-            <th className="px-4 py-2 text-right font-medium text-[var(--color-text-muted)]">
-              Size
-            </th>
-            <th className="px-4 py-2 text-right font-medium text-[var(--color-text-muted)]">
-              Deletes In
-            </th>
-            <th className="px-4 py-2 text-right font-medium text-[var(--color-text-muted)]">
-              Actions
-            </th>
+          <tr className={TERMINAL_DIVIDER}>
+            <th className={cn(TERMINAL_TH, "px-4 py-2")}>File Path</th>
+            <th className={cn(TERMINAL_TH, "px-4 py-2")}>Entity Type</th>
+            <th className={cn(TERMINAL_TH, "px-4 py-2 text-right")}>Size</th>
+            <th className={cn(TERMINAL_TH, "px-4 py-2 text-right")}>Deletes In</th>
+            <th className={cn(TERMINAL_TH, "px-4 py-2 text-right")}>Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -49,10 +41,10 @@ export function TrashBrowser() {
             return (
               <tr
                 key={entry.id}
-                className="border-b border-[var(--color-border-primary)]"
+                className={cn(TERMINAL_DIVIDER, TERMINAL_ROW_HOVER)}
               >
                 <td
-                  className="max-w-xs truncate px-4 py-2 text-[var(--color-text-primary)]"
+                  className="max-w-xs truncate px-4 py-2 text-cyan-400"
                   title={entry.file_path}
                 >
                   {entry.file_path}
@@ -64,18 +56,19 @@ export function TrashBrowser() {
                   {formatBytes(entry.file_size_bytes)}
                 </td>
                 <td className="px-4 py-2 text-right">
-                  <Badge variant={isExpired ? "danger" : "warning"} size="sm">
+                  <span className={isExpired ? "text-red-400" : "text-orange-400"}>
                     {countdown}
-                  </Badge>
+                  </span>
                 </td>
                 <td className="px-4 py-2 text-right">
-                  <button
+                  <Button
+                    variant="ghost"
+                    size="xs"
                     onClick={() => restoreMutation.mutate(entry.id)}
                     disabled={restoreMutation.isPending}
-                    className="rounded-[var(--radius-md)] border border-[var(--color-border-primary)] px-3 py-1 text-xs font-medium text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-tertiary)] disabled:opacity-50"
                   >
                     Restore
-                  </button>
+                  </Button>
                 </td>
               </tr>
             );

@@ -4,7 +4,7 @@
 
 import { useState } from "react";
 
-import { Badge, Button, Select, Spinner } from "@/components";
+import { Badge, Button, Select ,  WireframeLoader } from "@/components";
 import { cn } from "@/lib/cn";
 
 import {
@@ -67,7 +67,7 @@ export function BugReportList() {
       {/* Loading / error states */}
       {isLoading && (
         <div className="flex items-center justify-center py-12">
-          <Spinner />
+          <WireframeLoader size={48} />
         </div>
       )}
 

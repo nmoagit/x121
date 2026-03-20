@@ -42,28 +42,29 @@ export function ClipRejectionDialog({
           required
         />
         <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-[var(--color-text-secondary)]">
+          <span className="font-mono text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide">
             Notes (optional)
-          </label>
+          </span>
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             placeholder="Additional notes..."
             rows={3}
-            className="w-full rounded-[var(--radius-md)] border p-2 text-sm
+            className="w-full rounded-[var(--radius-md)] border p-2 font-mono text-xs
               border-[var(--color-border-default)]
-              bg-[var(--color-surface-secondary)]
+              bg-[#0d1117]
               text-[var(--color-text-primary)]
               placeholder:text-[var(--color-text-muted)]
               focus:outline-none focus:ring-2 focus:ring-offset-0 focus:ring-[var(--color-border-focus)]"
           />
         </div>
-        <div className="flex justify-end gap-2">
-          <Button variant="ghost" onClick={handleClose}>
+        <div className="flex justify-end gap-2 pt-1 border-t border-[var(--color-border-default)]">
+          <Button variant="ghost" size="sm" onClick={handleClose}>
             Cancel
           </Button>
           <Button
             variant="danger"
+            size="sm"
             onClick={handleSubmit}
             disabled={!reason.trim() || isSubmitting}
             loading={isSubmitting}

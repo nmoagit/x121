@@ -1,10 +1,8 @@
 /**
- * Schedule active/paused status badge (PRD-119).
+ * Schedule active/paused status indicator (PRD-119).
  *
- * Displays a colored badge indicating whether a schedule is active or paused.
+ * Displays a monospace colored text indicating whether a schedule is active or paused.
  */
-
-import { Badge } from "@/components/primitives";
 
 interface ScheduleStatusBadgeProps {
   isActive: boolean;
@@ -12,8 +10,8 @@ interface ScheduleStatusBadgeProps {
 
 export function ScheduleStatusBadge({ isActive }: ScheduleStatusBadgeProps) {
   return (
-    <Badge variant={isActive ? "success" : "default"} size="sm">
+    <span className={`font-mono text-xs uppercase tracking-wide ${isActive ? "text-green-400" : "text-[var(--color-text-muted)]"}`}>
       {isActive ? "Active" : "Paused"}
-    </Badge>
+    </span>
   );
 }

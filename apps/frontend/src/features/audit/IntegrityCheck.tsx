@@ -7,9 +7,9 @@
 
 import { useState, useCallback } from "react";
 
-import { Card } from "@/components/composite/Card";
-import { Button, Spinner } from "@/components/primitives";
+import { Button ,  WireframeLoader } from "@/components/primitives";
 import { Stack } from "@/components/layout";
+import { TERMINAL_PANEL, TERMINAL_HEADER, TERMINAL_HEADER_TITLE, TERMINAL_BODY } from "@/lib/ui-classes";
 import type { IntegrityCheckResult } from "./types";
 import { api } from "@/lib/api";
 
@@ -42,71 +42,71 @@ export function IntegrityCheck() {
   }, []);
 
   return (
-    <Card padding="lg">
-      <Stack gap={4}>
-        <div>
-          <h3 className="text-base font-semibold text-[var(--color-text-primary)]">
-            Integrity Verification
-          </h3>
-          <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-            Verify the audit log hash chain has not been tampered with.
-          </p>
-        </div>
+    <div className={TERMINAL_PANEL}>
+      <div className={TERMINAL_HEADER}>
+        <span className={TERMINAL_HEADER_TITLE}>Integrity Verification</span>
+        <p className="mt-1 text-xs text-[var(--color-text-muted)] font-mono">
+          Verify the audit log hash chain has not been tampered with.
+        </p>
+      </div>
 
-        <Button
-          variant="primary"
-          size="md"
-          onClick={runCheck}
-          disabled={isRunning}
-        >
-          {isRunning ? "Running..." : "Run Integrity Check"}
-        </Button>
-
-        {isRunning && (
-          <div className="flex items-center gap-2">
-            <Spinner size="sm" />
-            <span className="text-sm text-[var(--color-text-muted)]">
-              Verifying audit log chain...
-            </span>
-          </div>
-        )}
-
-        {error && (
-          <div className="rounded-[var(--radius-md)] border border-[var(--color-status-error)] bg-red-50 p-3 text-sm text-[var(--color-status-error)]">
-            {error}
-          </div>
-        )}
-
-        {result && (
-          <div
-            className={`rounded-[var(--radius-md)] border p-4 ${
-              result.chain_valid
-                ? "border-[var(--color-status-success)] bg-green-50"
-                : "border-[var(--color-status-error)] bg-red-50"
-            }`}
+      <div className={TERMINAL_BODY}>
+        <Stack gap={4}>
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={runCheck}
+            disabled={isRunning}
           >
+            {isRunning ? "Running..." : "Run Integrity Check"}
+          </Button>
+
+          {isRunning && (
             <div className="flex items-center gap-2">
-              <span
-                className={`text-lg font-bold ${
-                  result.chain_valid
-                    ? "text-[var(--color-status-success)]"
-                    : "text-[var(--color-status-error)]"
-                }`}
-              >
-                {result.chain_valid ? "PASS" : "FAIL"}
-              </span>
-              <span className="text-sm text-[var(--color-text-secondary)]">
-                {result.verified_entries} entries verified
+              <WireframeLoader size={32} />
+              <span className="text-xs text-[var(--color-text-muted)] font-mono">
+                Verifying audit log chain...
               </span>
             </div>
-            {result.first_break !== null && (
-              <p className="mt-2 text-sm text-[var(--color-status-error)]">
-                Chain break detected at entry #{result.first_break}
-              </p>
-            )}
-          </div>
-        )}
-      </Stack>
-    </Card>
+          )}
+
+          {error && (
+            <div className="rounded-[var(--radius-md)] border border-red-400/30 bg-red-400/5 p-3 text-xs text-red-400 font-mono">
+              {error}
+            </div>
+          )}
+
+          {result && (
+            <div
+              className={`rounded-[var(--radius-md)] border p-4 ${
+                result.chain_valid
+                  ? "border-green-400/30 bg-green-400/5"
+                  : "border-red-400/30 bg-red-400/5"
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <span
+                  className={`text-lg font-bold font-mono ${
+                    result.chain_valid
+                      ? "text-green-400"
+                      : "text-red-400"
+                  }`}
+                >
+                  {result.chain_valid ? "PASS" : "FAIL"}
+                </span>
+                <span className="text-xs text-[var(--color-text-muted)] font-mono">
+                  {result.verified_entries} entries verified
+                </span>
+              </div>
+              {result.first_break !== null && (
+                <p className="mt-2 text-xs text-red-400 font-mono">
+                  Chain break detected at entry #{result.first_break}
+                </p>
+              )}
+            </div>
+          )}
+        </Stack>
+      </div>
+    </div>
   );
 }

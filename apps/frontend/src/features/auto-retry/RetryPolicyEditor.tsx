@@ -1,3 +1,4 @@
+import { WireframeLoader } from "@/components/primitives";
 /**
  * Retry policy editor (PRD-71).
  *
@@ -11,7 +12,6 @@ import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/primitives/Button";
 import { Checkbox } from "@/components/primitives/Checkbox";
 import { Input } from "@/components/primitives/Input";
-import { Spinner } from "@/components/primitives/Spinner";
 import { Toggle } from "@/components/primitives/Toggle";
 import { cn } from "@/lib/cn";
 
@@ -89,7 +89,7 @@ export function RetryPolicyEditor({ sceneTypeId }: RetryPolicyEditorProps) {
   if (isPending) {
     return (
       <div className="flex items-center justify-center py-8" data-testid="retry-policy-loading">
-        <Spinner size="md" />
+        <WireframeLoader size={48} />
       </div>
     );
   }

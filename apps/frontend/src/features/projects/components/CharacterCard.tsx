@@ -2,20 +2,20 @@
  * Character summary card for the project characters grid (PRD-112).
  */
 
-import { Card } from "@/components/composite";
-import { Badge, FlagIcon, ProgressiveImage, Tooltip } from "@/components/primitives";
+import { useNavigate } from "@tanstack/react-router";
+import { FlagIcon, ProgressiveImage, Tooltip } from "@/components/primitives";
 import { variantThumbnailUrl } from "@/features/images/utils";
 import { cn } from "@/lib/cn";
-import { Check, Edit3, FileText, Image, Power, User } from "@/tokens/icons";
+import { TERMINAL_STATUS_COLORS } from "@/lib/ui-classes";
+import { AlertTriangle, Check, Edit3, FileText, Film, Image, Mic, Power, User } from "@/tokens/icons";
 
 import type { CharacterDeliveryStatus } from "@/features/delivery";
 import {
   DELIVERY_STATUS_LABELS,
-  DELIVERY_STATUS_VARIANT,
 } from "@/features/delivery";
 
 import type { Character, CharacterGroup, SectionKey, SectionReadiness } from "../types";
-import { characterStatusBadgeVariant, characterStatusLabel } from "../types";
+import { characterStatusLabel } from "../types";
 import { ReadinessIndicators } from "./ReadinessIndicators";
 
 /* --------------------------------------------------------------------------
@@ -74,10 +74,10 @@ function LanguageFlags({ languages }: { languages: SpeechLanguageSummary[] }) {
   const overflow = languages.length - MAX_VISIBLE_FLAGS;
 
   return (
-    <div className="flex items-center gap-1 mt-1">
+    <div className="flex items-center gap-1 shrink-0 mr-[2px]">
       {visible.map((lang) => (
         <Tooltip key={lang.languageCode} content={`${lang.languageCode.toUpperCase()}: ${lang.count} speech entries`}>
-          <span className="inline-flex"><FlagIcon flagCode={lang.flagCode} size={16} /></span>
+          <span className="inline-flex"><FlagIcon flagCode={lang.flagCode} size={10} /></span>
         </Tooltip>
       ))}
       {overflow > 0 && (
@@ -97,7 +97,7 @@ function SeedDataIndicators({ status }: { status: SeedDataStatus }) {
         return (
           <Tooltip key={key} content={`${label}: ${present ? "Present" : "Missing"}`} side="left">
             <span
-              className="flex items-center justify-center w-6 h-6 rounded-full"
+              className="flex items-center justify-center size-[18px] rounded-full"
               style={{
                 backgroundColor: present
                   ? "var(--color-action-success)"
@@ -105,7 +105,7 @@ function SeedDataIndicators({ status }: { status: SeedDataStatus }) {
               }}
             >
               <Icon
-                size={12}
+                size={10}
                 className={present ? "text-white" : "text-[var(--color-surface-primary)]"}
                 aria-hidden
               />
@@ -117,9 +117,66 @@ function SeedDataIndicators({ status }: { status: SeedDataStatus }) {
   );
 }
 
+const REASON_ICON_MAP: Record<string, typeof FileText> = {
+  "Missing Seed Image": Image,
+  "Images Not Approved": Image,
+  "No Scenes": Film,
+  "Videos Not Approved": Film,
+  "Missing Metadata": FileText,
+  "Metadata Not Approved": FileText,
+  "Missing Speech": Mic,
+  "Speech Not Approved": Mic,
+};
+
+const REASON_TAB_MAP: Record<string, string> = {
+  "Missing Seed Image": "images",
+  "Images Not Approved": "images",
+  "No Scenes": "scenes",
+  "Videos Not Approved": "scenes",
+  "Missing Metadata": "metadata",
+  "Metadata Not Approved": "metadata",
+  "Missing Speech": "speech",
+  "Speech Not Approved": "speech",
+};
+
+function BlockingReasonIcon({ reason, projectId, characterId }: { reason: string; projectId?: number; characterId: number }) {
+  const navigate = useNavigate();
+  const Icon = REASON_ICON_MAP[reason] ?? AlertTriangle;
+  const tab = REASON_TAB_MAP[reason];
+
+  return (
+    <Tooltip content={reason} side="top">
+      <span
+        role="button"
+        tabIndex={0}
+        className="flex items-center justify-center size-[18px] rounded-full bg-orange-500/20 ring-1 ring-orange-500 cursor-pointer hover:scale-110 transition-transform"
+        onClick={(e) => {
+          e.stopPropagation();
+          if (tab && projectId) {
+            navigate({
+              to: `/projects/${projectId}/models/${characterId}`,
+              search: { tab },
+            });
+          }
+        }}
+        onKeyDown={(e) => {
+          if ((e.key === "Enter" || e.key === " ") && tab && projectId) {
+            e.stopPropagation();
+            navigate({
+              to: `/projects/${projectId}/models/${characterId}`,
+              search: { tab },
+            });
+          }
+        }}
+      >
+        <Icon size={10} className="text-orange-500" aria-hidden />
+      </span>
+    </Tooltip>
+  );
+}
+
 export function CharacterCard({ character, group, avatarUrl, heroVariantId, selected, deliveryStatus, blockingReasons, sectionReadiness, blockingDeliverables, projectId, seedDataStatus, speechLanguages, onSelect, onClick, onEdit, onToggleEnabled }: CharacterCardProps) {
   const statusLabel = characterStatusLabel(character.status_id);
-  const badgeVariant = characterStatusBadgeVariant(character.status_id);
   const isDisabled = !character.is_enabled;
 
   const allComplete = sectionReadiness != null &&
@@ -128,11 +185,9 @@ export function CharacterCard({ character, group, avatarUrl, heroVariantId, sele
       .every(([, s]) => s.state === "complete");
 
   return (
-    <Card
-      elevation="sm"
-      padding="none"
+    <div
       className={cn(
-        "group/card cursor-pointer",
+        "group/card cursor-pointer rounded-[var(--radius-lg)] border border-[var(--color-border-default)] bg-[#0d1117] overflow-hidden",
         "transition-shadow duration-[var(--duration-fast)] ease-[var(--ease-default)]",
         "hover:shadow-[var(--shadow-md)]",
         selected && "ring-2 ring-[var(--color-border-accent)]",
@@ -147,7 +202,7 @@ export function CharacterCard({ character, group, avatarUrl, heroVariantId, sele
         aria-label={`Open character ${character.name}`}
       >
         {/* Avatar area */}
-        <div className="relative aspect-[4/3] bg-[var(--color-surface-tertiary)] overflow-hidden rounded-t-[inherit]">
+        <div className="relative aspect-[4/3] bg-[#161b22] overflow-hidden rounded-t-[inherit]">
           {avatarUrl ? (
             heroVariantId ? (
               <ProgressiveImage
@@ -277,40 +332,39 @@ export function CharacterCard({ character, group, avatarUrl, heroVariantId, sele
         )}
 
         {/* Info area */}
-        <div className="px-[var(--spacing-3)] py-[var(--spacing-2)]">
-          <h3 className="text-sm font-semibold text-[var(--color-text-primary)] truncate">
-            {character.name}
-          </h3>
-          <div className="mt-0.5 flex items-center justify-between gap-1">
-            <span className="text-xs text-[var(--color-text-muted)] truncate">
+        <div className="px-[var(--spacing-2)] py-[var(--spacing-2)]">
+          <div className="flex items-center justify-between gap-1">
+            <h3 className="text-xs font-medium text-[var(--color-text-primary)] font-mono truncate">
+              {character.name}
+            </h3>
+            {speechLanguages && speechLanguages.length > 0 && (
+              <LanguageFlags languages={speechLanguages} />
+            )}
+          </div>
+          <div className="mt-0.5 flex items-center justify-between gap-1 font-mono text-[10px]">
+            <span className="text-[var(--color-text-muted)] truncate">
               {group?.name ?? "\u00A0"}
             </span>
-            <Badge variant={badgeVariant} size="sm">
-              {statusLabel}
-            </Badge>
+            <span className={TERMINAL_STATUS_COLORS[statusLabel.toLowerCase()] ?? "text-[var(--color-text-muted)]"}>
+              {statusLabel.toLowerCase()}
+            </span>
           </div>
           {deliveryStatus && deliveryStatus.status !== "not_delivered" && (
-            <div className="mt-1">
-              <Badge
-                variant={DELIVERY_STATUS_VARIANT[deliveryStatus.status]}
-                size="sm"
-              >
-                {DELIVERY_STATUS_LABELS[deliveryStatus.status]}
-              </Badge>
+            <div className="mt-0.5 font-mono text-[10px]">
+              <span className={TERMINAL_STATUS_COLORS[deliveryStatus.status] ?? "text-[var(--color-text-muted)]"}>
+                {DELIVERY_STATUS_LABELS[deliveryStatus.status].toLowerCase()}
+              </span>
             </div>
           )}
           {blockingReasons && blockingReasons.length > 0 && (
-            <div className="mt-1 flex flex-wrap gap-1">
+            <div className="mt-1 flex items-center gap-1">
               {blockingReasons.map((reason) => (
-                <Badge key={reason} variant="danger" size="sm">{reason}</Badge>
+                <BlockingReasonIcon key={reason} reason={reason} projectId={projectId} characterId={character.id} />
               ))}
             </div>
           )}
-          {speechLanguages && speechLanguages.length > 0 && (
-            <LanguageFlags languages={speechLanguages} />
-          )}
         </div>
       </button>
-    </Card>
+    </div>
   );
 }

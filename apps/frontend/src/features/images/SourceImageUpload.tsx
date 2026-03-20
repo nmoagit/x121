@@ -7,11 +7,11 @@
 
 import { useCallback, useRef, useState } from "react";
 
-import { Card } from "@/components/composite";
 import { Stack } from "@/components/layout";
-import { Badge, Button, Spinner } from "@/components/primitives";
-import { Image as ImageIcon, Upload } from "@/tokens/icons";
+import { Button ,  WireframeLoader } from "@/components/primitives";
 import { formatBytes } from "@/lib/format";
+import { TERMINAL_BODY, TERMINAL_HEADER, TERMINAL_HEADER_TITLE, TERMINAL_PANEL } from "@/lib/ui-classes";
+import { Image as ImageIcon, Upload } from "@/tokens/icons";
 
 import { VALID_IMAGE_FORMATS } from "./types";
 
@@ -127,9 +127,12 @@ export function SourceImageUpload({ characterId: _characterId, onUploaded }: Sou
   );
 
   return (
-    <Card elevation="sm" padding="md">
+    <div className={TERMINAL_PANEL}>
+      <div className={TERMINAL_HEADER}>
+        <span className={TERMINAL_HEADER_TITLE}>Source Image</span>
+      </div>
+      <div className={TERMINAL_BODY}>
       <Stack gap={4}>
-        <h3 className="text-sm font-medium text-[var(--color-text-primary)]">Source Image</h3>
 
         {/* Drop zone */}
         <div
@@ -150,7 +153,7 @@ export function SourceImageUpload({ characterId: _characterId, onUploaded }: Sou
           ].join(" ")}
         >
           {isProcessing ? (
-            <Spinner size="md" />
+            <WireframeLoader size={48} />
           ) : preview ? (
             <img
               src={preview.previewUrl}
@@ -188,20 +191,18 @@ export function SourceImageUpload({ characterId: _characterId, onUploaded }: Sou
 
         {/* Metadata display */}
         {preview && (
-          <div className="flex flex-wrap items-center gap-2">
-            <Badge variant="info" size="sm">
-              <ImageIcon size={12} className="mr-1 inline-block" />
+          <div className="flex flex-wrap items-center gap-2 font-mono text-xs">
+            <span className="flex items-center gap-1 text-cyan-400">
+              <ImageIcon size={12} />
               {preview.width} x {preview.height}
-            </Badge>
-            <Badge variant="default" size="sm">
-              {preview.format.toUpperCase()}
-            </Badge>
-            <Badge variant="default" size="sm">
-              {formatBytes(preview.fileSizeBytes)}
-            </Badge>
+            </span>
+            <span className="opacity-30">|</span>
+            <span className="text-[var(--color-text-muted)]">{preview.format.toUpperCase()}</span>
+            <span className="opacity-30">|</span>
+            <span className="text-[var(--color-text-muted)]">{formatBytes(preview.fileSizeBytes)}</span>
             <Button
               variant="secondary"
-              size="sm"
+              size="xs"
               onClick={(e: React.MouseEvent) => {
                 e.stopPropagation();
                 setPreview(null);
@@ -213,6 +214,7 @@ export function SourceImageUpload({ characterId: _characterId, onUploaded }: Sou
           </div>
         )}
       </Stack>
-    </Card>
+      </div>
+    </div>
   );
 }

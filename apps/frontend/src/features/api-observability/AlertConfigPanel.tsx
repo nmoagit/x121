@@ -8,7 +8,7 @@
 import { useState } from "react";
 
 import { Card, CardBody, CardHeader } from "@/components/composite/Card";
-import { Badge, Button, Spinner, Toggle } from "@/components/primitives";
+import { Badge, Button, Toggle ,  WireframeLoader } from "@/components/primitives";
 import { formatDateTime } from "@/lib/format";
 import { Bell, Plus, Trash2 } from "@/tokens/icons";
 
@@ -95,7 +95,7 @@ export function AlertConfigPanel() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-[var(--spacing-6)]">
-        <Spinner size="md" />
+        <WireframeLoader size={48} />
       </div>
     );
   }

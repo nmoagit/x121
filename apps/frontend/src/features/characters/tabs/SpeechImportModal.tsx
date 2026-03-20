@@ -8,7 +8,7 @@ import { useCallback, useState } from "react";
 
 import { Modal } from "@/components/composite";
 import { Stack } from "@/components/layout";
-import { Badge, Button, Select } from "@/components/primitives";
+import { Button, Select } from "@/components/primitives";
 import { cn } from "@/lib/cn";
 import { readFileText } from "@/lib/file-types";
 import { TEXTAREA_BASE } from "@/lib/ui-classes";
@@ -100,7 +100,7 @@ export function SpeechImportModal({
         <div>
           <label
             htmlFor="speech-import-file"
-            className="flex items-center gap-[var(--spacing-2)] cursor-pointer text-sm font-medium text-[var(--color-text-secondary)] mb-[var(--spacing-2)]"
+            className="flex items-center gap-[var(--spacing-2)] cursor-pointer text-xs font-mono text-[var(--color-text-secondary)] mb-[var(--spacing-2)]"
           >
             <Upload size={16} />
             Upload file (.csv or .json)
@@ -110,12 +110,12 @@ export function SpeechImportModal({
             type="file"
             accept=".csv,.json"
             onChange={handleFileChange}
-            className="text-sm text-[var(--color-text-primary)]"
+            className="text-xs font-mono text-[var(--color-text-primary)]"
           />
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <span className="text-sm font-medium text-[var(--color-text-secondary)]">
+          <span className="text-xs font-mono text-[var(--color-text-secondary)]">
             Or paste content directly
           </span>
           <textarea
@@ -136,18 +136,16 @@ export function SpeechImportModal({
         {/* Import result */}
         {result && (
           <Stack gap={2}>
-            <div className="flex items-center gap-[var(--spacing-2)]">
-              <Badge variant="success" size="sm">
-                {result.imported} imported
-              </Badge>
+            <div className="flex items-center gap-[var(--spacing-2)] font-mono text-xs">
+              <span className="text-green-400">{result.imported} imported</span>
               {result.created_types.length > 0 && (
-                <Badge variant="info" size="sm">
+                <span className="text-cyan-400">
                   {result.created_types.length} new type{result.created_types.length !== 1 ? "s" : ""}
-                </Badge>
+                </span>
               )}
             </div>
             {result.errors.length > 0 && (
-              <div className="text-sm text-[var(--color-action-danger)]">
+              <div className="text-xs font-mono text-red-400">
                 {result.errors.map((err) => (
                   <p key={err}>{err}</p>
                 ))}
@@ -156,12 +154,13 @@ export function SpeechImportModal({
           </Stack>
         )}
 
-        <div className="flex gap-[var(--spacing-2)] justify-end">
-          <Button variant="secondary" onClick={handleClose}>
+        <div className="flex gap-2 justify-end pt-1 border-t border-[var(--color-border-default)]">
+          <Button variant="secondary" size="sm" onClick={handleClose}>
             {result ? "Close" : "Cancel"}
           </Button>
           {!result && (
             <Button
+              size="sm"
               onClick={handleImport}
               loading={importing}
               disabled={!text.trim()}

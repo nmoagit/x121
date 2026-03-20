@@ -480,6 +480,10 @@ export function useCharacterImport(projectId: number, allCharacters?: Character[
 
       // Phase 3: Upload images (skip variant_types that already exist)
       if (wasAborted()) return;
+      let totalImagesUploaded = 0;
+      let totalImagesSkipped = 0;
+      let totalVideosUploaded = 0;
+
       if (imageAssets.length > 0) {
         console.info(`[Import] Phase 2: Uploading ${imageAssets.length} image(s)`);
         setImportProgress({
@@ -535,6 +539,8 @@ export function useCharacterImport(projectId: number, allCharacters?: Character[
         }
 
         const uploadedImages = imageResults.filter((r) => r.status === "fulfilled" && r.value === "uploaded").length;
+        totalImagesUploaded = uploadedImages;
+        totalImagesSkipped = skippedImages;
         const failedImages = imageResults.filter((r) => r.status === "rejected").length;
         addLogEntry(importLogEntry(
           failedImages > 0 ? "warn" : "info",
@@ -724,8 +730,10 @@ export function useCharacterImport(projectId: number, allCharacters?: Character[
             (s) => s.scene_type_id === sceneType.id && s.track_id === trackId,
           );
 
-          // Skip if scene already has video and skipExisting is on
-          if (skipExisting && scene && sceneHasVideo(scene)) {
+          // Skip if scene already has video and skipExisting is on —
+          // BUT always import when a version suffix is present (bj_2, dance_3)
+          // as the user explicitly intends to add another version.
+          if (skipExisting && scene && sceneHasVideo(scene) && !parsed.isAdditionalVersion) {
             skippedVideos++;
             return "skipped" as const;
           }
@@ -736,7 +744,8 @@ export function useCharacterImport(projectId: number, allCharacters?: Character[
           }
 
           await importVideoClip(scene.id, asset.file);
-          addLogEntry(importLogEntry("info", `${asset.file.name} imported for ${charName}`, projectId, {
+          const versionHint = parsed.isAdditionalVersion ? " (next version)" : "";
+          addLogEntry(importLogEntry("info", `${asset.file.name} imported for ${charName}${versionHint}`, projectId, {
             file: asset.file.name, character: charName, scene_type: parsed.sceneSlug, track: parsed.trackSlug,
           }));
           return "uploaded" as const;
@@ -756,6 +765,7 @@ export function useCharacterImport(projectId: number, allCharacters?: Character[
         }
 
         const uploadedVideos = videoResults.filter((r) => r.status === "fulfilled" && r.value === "uploaded").length;
+        totalVideosUploaded = uploadedVideos;
         const failedVideos = videoResults.filter((r) => r.status === "rejected").length;
         addLogEntry(importLogEntry(
           failedVideos > 0 ? "warn" : "info",
@@ -793,19 +803,18 @@ export function useCharacterImport(projectId: number, allCharacters?: Character[
       setImportResult(null);
       setImportProgress(null);
 
-      // Summary toast
+      // Summary toast — use actual uploaded counts, not total asset counts
       const created = createdCharacters.length;
-      const imgCount = imageAssets.length;
-      const vidCount = videoAssets.length;
       const existingCount = existingPayloads.length;
 
       const parts: string[] = [];
-      if (created > 0) parts.push(`${created} character${created > 1 ? "s" : ""} created`);
+      if (created > 0) parts.push(`${created} model${created > 1 ? "s" : ""} created`);
       if (existingCount > 0) parts.push(`${existingCount} existing updated`);
-      if (imgCount > 0) parts.push(`${imgCount} image${imgCount > 1 ? "s" : ""} uploaded`);
+      if (totalImagesUploaded > 0) parts.push(`${totalImagesUploaded} image${totalImagesUploaded > 1 ? "s" : ""} uploaded`);
+      if (totalImagesSkipped > 0) parts.push(`${totalImagesSkipped} image${totalImagesSkipped > 1 ? "s" : ""} skipped`);
       if (metadataUploaded > 0) parts.push(`${metadataUploaded} metadata uploaded`);
-      if (vidCount > 0) parts.push(`${vidCount} video${vidCount > 1 ? "s" : ""} imported`);
       if (skippedMetadata > 0) parts.push(`${skippedMetadata} metadata skipped`);
+      if (totalVideosUploaded > 0) parts.push(`${totalVideosUploaded} video${totalVideosUploaded > 1 ? "s" : ""} imported`);
       if (skippedVideos > 0) parts.push(`${skippedVideos} video${skippedVideos > 1 ? "s" : ""} skipped`);
       if (uniqueGroupNames.length > 0) parts.push(`${uniqueGroupNames.length} group${uniqueGroupNames.length > 1 ? "s" : ""} resolved`);
       if (invalidJsonCount > 0) parts.push(`${invalidJsonCount} invalid JSON${invalidJsonCount > 1 ? "s" : ""} skipped`);

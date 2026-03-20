@@ -10,7 +10,7 @@ import { useCallback, useState } from "react";
 import { Card, Modal } from "@/components/composite";
 import { Stack } from "@/components/layout";
 import { useSetPageTitle } from "@/hooks/useSetPageTitle";
-import { Badge, Button, Spinner } from "@/components/primitives";
+import { Badge, Button ,  WireframeLoader } from "@/components/primitives";
 import { formatDateTime } from "@/lib/format";
 import { Plus, Trash2 } from "@/tokens/icons";
 import { iconSizes } from "@/tokens/icons";
@@ -47,7 +47,7 @@ export function SharedLinksPanel() {
   if (isLoading) {
     return (
       <div className="flex h-[calc(100vh-4rem)] items-center justify-center">
-        <Spinner size="lg" />
+        <WireframeLoader size={64} />
       </div>
     );
   }

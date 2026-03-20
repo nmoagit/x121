@@ -5,7 +5,6 @@
  * Shows a warning color at 80% usage, error color when exceeded.
  */
 
-import { Badge } from "@/components/primitives";
 import { useQuotaStatus } from "./hooks/use-queue";
 
 /* --------------------------------------------------------------------------
@@ -42,17 +41,17 @@ export function QuotaStatusBadge() {
 
   if (data.status === "no_quota") {
     return (
-      <Badge variant="default" size="sm">
-        Unlimited GPU
-      </Badge>
+      <span className="font-mono text-[10px] text-[var(--color-text-muted)]">
+        GPU: unlimited
+      </span>
     );
   }
 
   if (data.status === "exceeded") {
     return (
-      <Badge variant="danger" size="sm">
-        Quota exceeded ({data.exceeded_type})
-      </Badge>
+      <span className="font-mono text-[10px] text-red-400">
+        QUOTA EXCEEDED ({data.exceeded_type})
+      </span>
     );
   }
 
@@ -63,9 +62,9 @@ export function QuotaStatusBadge() {
     data.weekly_limit_secs,
   );
 
-  // Use the highest ratio for badge variant
+  // Use the highest ratio for color
   const maxRatio = Math.max(dailyRatio ?? 0, weeklyRatio ?? 0);
-  const variant = maxRatio >= WARNING_THRESHOLD ? "warning" : "default";
+  const colorCls = maxRatio >= WARNING_THRESHOLD ? "text-orange-400" : "text-cyan-400";
 
   // Show the most relevant limit
   const label = data.daily_limit_secs != null
@@ -75,8 +74,8 @@ export function QuotaStatusBadge() {
       : `${formatSeconds(data.used_today_secs)} used today`;
 
   return (
-    <Badge variant={variant} size="sm">
-      {label}
-    </Badge>
+    <span className={`font-mono text-[10px] ${colorCls}`}>
+      GPU: {label}
+    </span>
   );
 }

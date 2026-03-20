@@ -37,11 +37,11 @@ interface FooterSegmentButtonProps {
 type FooterSegmentProps = FooterSegmentLinkProps | FooterSegmentButtonProps;
 
 const SEGMENT_CLASSES = cn(
-  "flex items-center gap-1.5 px-2 py-0.5 text-xs",
+  "flex items-center gap-1.5 px-2 py-0.5 text-[10px] font-mono",
   "text-[var(--color-text-muted)]",
   "transition-colors duration-150",
-  "hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-tertiary)]",
-  "rounded-[var(--radius-sm)]",
+  "hover:text-[var(--color-text-primary)] hover:bg-[#161b22]",
+  "rounded-[2px]",
 );
 
 export function FooterSegment({ href, onClick, children, className, label }: FooterSegmentProps) {
@@ -75,7 +75,7 @@ interface StatusDotProps {
 }
 
 export function StatusDot({ health }: StatusDotProps) {
-  return <span className={cn("inline-block h-2.5 w-2.5 shrink-0 rounded-full", DOT_COLORS[health])} />;
+  return <span className={cn("inline-block h-2 w-2 shrink-0 rounded-full", DOT_COLORS[health])} />;
 }
 
 /* --------------------------------------------------------------------------
@@ -83,7 +83,7 @@ export function StatusDot({ health }: StatusDotProps) {
    -------------------------------------------------------------------------- */
 
 export function Separator() {
-  return <span className="mx-1 h-3.5 w-px shrink-0 bg-[var(--color-border-subtle)]" aria-hidden="true" />;
+  return <span className="mx-1 h-3.5 w-px shrink-0 bg-white/10" aria-hidden="true" />;
 }
 
 /* --------------------------------------------------------------------------
@@ -99,14 +99,14 @@ export function MiniProgressBar({ progress }: MiniProgressBarProps) {
 
   return (
     <span
-      className="relative inline-block h-1.5 w-[60px] overflow-hidden rounded-full bg-[var(--color-border-subtle)]"
+      className="relative inline-block h-1.5 w-[60px] overflow-hidden rounded-full bg-white/10"
       role="progressbar"
       aria-valuenow={clamped}
       aria-valuemin={0}
       aria-valuemax={100}
     >
       <span
-        className="absolute inset-y-0 left-0 rounded-full bg-[var(--color-action-primary)] transition-[width] duration-300"
+        className="absolute inset-y-0 left-0 rounded-full bg-cyan-400 transition-[width] duration-300"
         style={{ width: `${clamped}%` }}
       />
     </span>

@@ -102,7 +102,7 @@ export function JobActionMenu({ job }: JobActionMenuProps) {
     <>
       <Dropdown
         trigger={
-          <Button variant="ghost" size="sm">
+          <Button variant="ghost" size="xs">
             Actions
           </Button>
         }
@@ -142,8 +142,8 @@ function ReassignModal({
   return (
     <Modal open={open} onClose={onClose} title="Reassign Job" size="md">
       <div className="space-y-2">
-        <p className="text-sm text-[var(--color-text-muted)]">
-          Select a worker instance to reassign job #{jobId}:
+        <p className="font-mono text-xs text-[var(--color-text-muted)]">
+          Select a worker instance to reassign job <span className="text-cyan-400">#{jobId}</span>:
         </p>
         {instances?.map((inst) => (
           <Button
@@ -154,16 +154,16 @@ function ReassignModal({
             onClick={() => handleReassign(inst.id)}
             disabled={reassignJob.isPending || !inst.is_enabled}
           >
-            <span className="flex items-center gap-2">
+            <span className="flex items-center gap-2 font-mono text-xs">
               <span>{inst.name}</span>
               {!inst.is_enabled && (
-                <span className="text-xs text-[var(--color-text-muted)]">(disabled)</span>
+                <span className="text-[var(--color-text-muted)]">(disabled)</span>
               )}
             </span>
           </Button>
         ))}
         {(!instances || instances.length === 0) && (
-          <p className="text-sm text-[var(--color-text-muted)] py-4 text-center">
+          <p className="font-mono text-xs text-[var(--color-text-muted)] py-4 text-center">
             No worker instances available
           </p>
         )}
@@ -198,21 +198,21 @@ export function BulkActionToolbar({ selectedJobIds, onClearSelection }: BulkActi
       direction="horizontal"
       gap={3}
       align="center"
-      className="px-4 py-2 bg-[var(--color-surface-tertiary)] rounded-[var(--radius-md)]"
+      className="px-4 py-2 bg-[#161b22] border border-[var(--color-border-default)] rounded-[var(--radius-md)]"
     >
-      <span className="text-sm text-[var(--color-text-primary)]">
+      <span className="font-mono text-xs text-cyan-400">
         {selectedJobIds.length} selected
       </span>
       <Button
         variant="danger"
-        size="sm"
+        size="xs"
         icon={<Ban size={iconSizes.sm} />}
         onClick={handleBulkCancel}
         disabled={bulkCancel.isPending}
       >
         Bulk Cancel
       </Button>
-      <Button variant="ghost" size="sm" onClick={onClearSelection}>
+      <Button variant="ghost" size="xs" onClick={onClearSelection}>
         Clear Selection
       </Button>
     </Stack>

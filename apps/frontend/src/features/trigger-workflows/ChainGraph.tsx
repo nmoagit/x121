@@ -8,7 +8,7 @@
 
 import { useMemo } from "react";
 
-import { Badge, Spinner } from "@/components/primitives";
+import { Badge ,  WireframeLoader } from "@/components/primitives";
 import { Card } from "@/components/composite";
 import { cn } from "@/lib/cn";
 
@@ -127,7 +127,7 @@ export function ChainGraph({ projectId }: ChainGraphProps) {
   if (isPending) {
     return (
       <div className="flex items-center justify-center py-8" data-testid="chain-graph-loading">
-        <Spinner size="md" />
+        <WireframeLoader size={48} />
       </div>
     );
   }

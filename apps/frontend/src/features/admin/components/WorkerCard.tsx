@@ -1,10 +1,9 @@
-import { Card, CardBody, CardFooter, CardHeader } from "@/components/composite";
 import { Stack } from "@/components/layout";
-import { Badge } from "@/components/primitives";
 import { GpuGauge } from "@/features/admin/components/GpuGauge";
 import { RestartButton } from "@/features/admin/components/RestartButton";
 import type { MetricThreshold, WorkerCurrentMetrics } from "@/features/admin/hooks/use-hardware";
 import { cn } from "@/lib/cn";
+import { TERMINAL_PANEL, TERMINAL_HEADER, TERMINAL_BODY } from "@/lib/ui-classes";
 
 /* --------------------------------------------------------------------------
    Types
@@ -64,13 +63,11 @@ export function WorkerCard({ metrics, thresholds, isSelected, onSelect }: Worker
   const utilThresholds = findThreshold(thresholds, metrics.worker_id, "utilization_percent");
 
   return (
-    <Card
-      elevation="md"
-      padding="none"
+    <div
       className={cn(
-        "cursor-pointer transition-all duration-[var(--duration-fast)] ease-[var(--ease-default)]",
-        "hover:shadow-[var(--shadow-lg)]",
-        isSelected && "ring-2 ring-[var(--color-border-focus)]",
+        TERMINAL_PANEL,
+        "cursor-pointer transition-all duration-[var(--duration-fast)]",
+        isSelected && "ring-2 ring-cyan-400/50",
       )}
     >
       <button
@@ -79,18 +76,18 @@ export function WorkerCard({ metrics, thresholds, isSelected, onSelect }: Worker
         onClick={() => onSelect(metrics.worker_id)}
         aria-pressed={isSelected}
       >
-        <CardHeader className="px-[var(--spacing-4)] pt-[var(--spacing-4)]">
+        <div className={cn(TERMINAL_HEADER, "px-[var(--spacing-4)]")}>
           <Stack direction="horizontal" gap={3} align="center" justify="between">
-            <span className="text-sm font-semibold text-[var(--color-text-primary)]">
+            <span className="text-xs font-semibold text-cyan-400 font-mono">
               Worker {metrics.worker_id} / GPU {metrics.gpu_index}
             </span>
-            <Badge variant={online ? "success" : "danger"} size="sm">
+            <span className={cn("font-mono text-[10px] uppercase", online ? "text-green-400" : "text-red-400")}>
               {online ? "Online" : "Offline"}
-            </Badge>
+            </span>
           </Stack>
-        </CardHeader>
+        </div>
 
-        <CardBody className="px-[var(--spacing-4)]">
+        <div className={cn(TERMINAL_BODY, "px-[var(--spacing-4)]")}>
           <Stack gap={3}>
             <GpuGauge
               label="Temperature"
@@ -133,14 +130,14 @@ export function WorkerCard({ metrics, thresholds, isSelected, onSelect }: Worker
               </div>
             )}
           </Stack>
-        </CardBody>
+        </div>
       </button>
 
-      <CardFooter className="px-[var(--spacing-4)] pb-[var(--spacing-3)]">
+      <div className="px-[var(--spacing-4)] pb-[var(--spacing-3)]">
         <Stack direction="horizontal" gap={3} justify="end">
           <RestartButton workerId={metrics.worker_id} />
         </Stack>
-      </CardFooter>
-    </Card>
+      </div>
+    </div>
   );
 }

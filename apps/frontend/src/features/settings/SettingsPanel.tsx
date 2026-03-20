@@ -8,7 +8,7 @@
 import { useMemo, useState } from "react";
 
 import { Tabs } from "@/components/composite/Tabs";
-import { Spinner } from "@/components/primitives";
+import { WireframeLoader } from "@/components/primitives";
 import { Stack } from "@/components/layout";
 import { useSetPageTitle } from "@/hooks/useSetPageTitle";
 import { AlertCircle, Settings } from "@/tokens/icons";
@@ -72,7 +72,7 @@ export function SettingsPanel() {
         <MetadataTemplateEditor />
       ) : isLoading ? (
         <div className="flex items-center justify-center py-[var(--spacing-8)]">
-          <Spinner size="lg" />
+          <WireframeLoader size={64} />
         </div>
       ) : error ? (
         <div className="flex flex-col items-center justify-center gap-[var(--spacing-3)] py-[var(--spacing-8)]">

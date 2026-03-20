@@ -125,7 +125,7 @@ export function AddSpeechModal({
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <span className="text-sm font-medium text-[var(--color-text-secondary)]">
+          <span className="text-xs font-mono text-[var(--color-text-secondary)]">
             Speech Text
           </span>
           <textarea
@@ -137,11 +137,12 @@ export function AddSpeechModal({
           />
         </div>
 
-        <div className="flex gap-[var(--spacing-2)] justify-end">
-          <Button variant="secondary" onClick={handleClose}>
+        <div className="flex gap-2 justify-end pt-1 border-t border-[var(--color-border-default)]">
+          <Button variant="secondary" size="sm" onClick={handleClose}>
             Cancel
           </Button>
           <Button
+            size="sm"
             onClick={handleSave}
             loading={saving}
             disabled={!selectedTypeId || !text.trim()}

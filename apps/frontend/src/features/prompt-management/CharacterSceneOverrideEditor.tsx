@@ -1,3 +1,4 @@
+import { WireframeLoader } from "@/components/primitives";
 /**
  * Character + scene prompt override editor (PRD-115).
  *
@@ -8,7 +9,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { Button } from "@/components/primitives/Button";
-import { Spinner } from "@/components/primitives/Spinner";
 
 import { buildDraftMap, getDefaultText } from "./draft-utils";
 import {
@@ -131,7 +131,7 @@ export function CharacterSceneOverrideEditor({
   if (slotsLoading || overridesLoading) {
     return (
       <div className="flex items-center justify-center py-8" data-testid="override-editor-loading">
-        <Spinner />
+        <WireframeLoader size={48} />
       </div>
     );
   }

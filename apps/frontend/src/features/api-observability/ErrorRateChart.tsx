@@ -13,7 +13,7 @@ import {
 } from "recharts";
 
 import { Card } from "@/components/composite/Card";
-import { Spinner } from "@/components/primitives";
+import { WireframeLoader } from "@/components/primitives";
 import {
   AXIS_TICK_STYLE,
   GRID_STROKE,
@@ -49,7 +49,7 @@ export function ErrorRateChart({ data, isLoading }: ErrorRateChartProps) {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Spinner size="lg" />
+        <WireframeLoader size={64} />
       </div>
     );
   }

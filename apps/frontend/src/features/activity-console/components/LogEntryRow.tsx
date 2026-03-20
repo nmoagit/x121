@@ -7,12 +7,18 @@
 
 import { useState } from "react";
 
-import { Badge } from "@/components/primitives";
 import { ChevronRight } from "@/tokens/icons";
 import { cn } from "@/lib/cn";
+import { TERMINAL_ROW_HOVER } from "@/lib/ui-classes";
 
 import type { ActivityLogEntry } from "../types";
-import { formatLogTime, LEVEL_BADGE_VARIANT, LEVEL_LABELS, SOURCE_LABELS } from "../types";
+import {
+  formatLogTime,
+  LEVEL_LABELS,
+  LEVEL_TERMINAL_COLORS,
+  SOURCE_LABELS,
+  SOURCE_TERMINAL_COLORS,
+} from "../types";
 
 /* --------------------------------------------------------------------------
    Helpers
@@ -39,10 +45,10 @@ export function LogEntryRow({ entry }: LogEntryRowProps) {
     <div
       className={cn(
         "border-l-2 px-[var(--spacing-2)] py-0.5 font-mono text-xs",
-        "hover:bg-[var(--color-surface-tertiary)] transition-colors duration-[var(--duration-fast)]",
-        entry.level === "error" && "border-l-[var(--color-action-danger)]",
-        entry.level === "warn" && "border-l-[var(--color-action-warning)]",
-        entry.level === "info" && "border-l-[var(--color-action-primary)]",
+        TERMINAL_ROW_HOVER,
+        entry.level === "error" && "border-l-red-400",
+        entry.level === "warn" && "border-l-orange-400",
+        entry.level === "info" && "border-l-cyan-400",
         entry.level === "debug" && "border-l-[var(--color-border-default)]",
       )}
     >
@@ -79,19 +85,19 @@ export function LogEntryRow({ entry }: LogEntryRowProps) {
         {!expandable && <span className="w-3 shrink-0" />}
 
         {/* Timestamp */}
-        <span className="shrink-0 text-[var(--color-text-muted)]">
+        <span className="shrink-0 text-[var(--color-text-muted)] opacity-60">
           {formatLogTime(entry.timestamp, true)}
         </span>
 
-        {/* Level badge */}
-        <Badge size="sm" variant={LEVEL_BADGE_VARIANT[entry.level]} className="min-w-[3.25rem] justify-center">
+        {/* Level — monospace colored text */}
+        <span className={cn("font-mono text-[10px] uppercase tracking-wide min-w-[3.25rem] text-center", LEVEL_TERMINAL_COLORS[entry.level])}>
           {LEVEL_LABELS[entry.level]}
-        </Badge>
+        </span>
 
-        {/* Source badge */}
-        <Badge size="sm" variant="default" className="min-w-[4.5rem] justify-center">
+        {/* Source — monospace colored text */}
+        <span className={cn("font-mono text-[10px] uppercase tracking-wide min-w-[4.5rem] text-center", SOURCE_TERMINAL_COLORS[entry.source])}>
           {SOURCE_LABELS[entry.source]}
-        </Badge>
+        </span>
 
         {/* Message */}
         <span className="text-[var(--color-text-primary)] truncate">
@@ -100,7 +106,7 @@ export function LogEntryRow({ entry }: LogEntryRowProps) {
 
         {/* Trace ID (if present) */}
         {entry.trace_id && (
-          <span className="ml-auto shrink-0 text-[var(--color-text-muted)]">
+          <span className="ml-auto shrink-0 text-[var(--color-text-muted)] opacity-60">
             {entry.trace_id.slice(0, 8)}
           </span>
         )}
@@ -108,7 +114,7 @@ export function LogEntryRow({ entry }: LogEntryRowProps) {
 
       {/* Expanded fields */}
       {expanded && (
-        <pre className="mt-1 ml-7 p-[var(--spacing-2)] text-[10px] leading-relaxed bg-[var(--color-surface-primary)] rounded-[var(--radius-sm)] text-[var(--color-text-secondary)] overflow-x-auto">
+        <pre className="mt-1 ml-7 p-[var(--spacing-2)] text-[10px] leading-relaxed bg-[#0d1117] rounded-[var(--radius-sm)] text-cyan-400 overflow-x-auto">
           {JSON.stringify(entry.fields, null, 2)}
         </pre>
       )}

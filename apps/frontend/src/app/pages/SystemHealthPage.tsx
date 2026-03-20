@@ -1,17 +1,14 @@
 import { useSetPageTitle } from "@/hooks/useSetPageTitle";
 import { useFooterStatus } from "@/app/footer";
-import { Card } from "@/components/composite/Card";
 import { Stack } from "@/components/layout";
-import { Badge } from "@/components/primitives";
-import type { BadgeVariant } from "@/components/primitives/Badge";
+import {
+  TERMINAL_PANEL,
+  TERMINAL_HEADER,
+  TERMINAL_HEADER_TITLE,
+  TERMINAL_BODY,
+} from "@/lib/ui-classes";
 import { Activity, HardDrive, Cpu, Users } from "@/tokens/icons";
 import type { ReactNode } from "react";
-
-const HEALTH_BADGE: Record<string, BadgeVariant> = {
-  healthy: "success",
-  degraded: "warning",
-  down: "danger",
-};
 
 interface ServiceCardProps {
   name: string;
@@ -22,30 +19,36 @@ interface ServiceCardProps {
 }
 
 function ServiceCard({ name, icon, status, detail, latency }: ServiceCardProps) {
+  const statusColor = status === "healthy"
+    ? "text-green-400"
+    : status === "degraded"
+      ? "text-orange-400"
+      : status === "down"
+        ? "text-red-400"
+        : "text-[var(--color-text-muted)]";
+
   return (
-    <Card padding="md">
-      <div className="flex items-start justify-between">
-        <div className="flex items-center gap-[var(--spacing-3)]">
-          <div className="flex h-10 w-10 items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-surface-secondary)] text-[var(--color-text-muted)]">
-            {icon}
-          </div>
-          <div>
-            <h3 className="text-sm font-medium text-[var(--color-text-primary)]">{name}</h3>
-            {detail && (
-              <p className="text-xs text-[var(--color-text-muted)] mt-0.5">{detail}</p>
-            )}
-          </div>
+    <div className={TERMINAL_PANEL}>
+      <div className={`${TERMINAL_HEADER} flex items-center justify-between`}>
+        <div className="flex items-center gap-[var(--spacing-2)]">
+          <span className="text-[var(--color-text-muted)]">{icon}</span>
+          <span className={TERMINAL_HEADER_TITLE}>{name}</span>
         </div>
         <div className="flex items-center gap-[var(--spacing-2)]">
           {latency != null && (
-            <span className="text-xs text-[var(--color-text-muted)] tabular-nums">{latency}ms</span>
+            <span className="font-mono text-[10px] text-cyan-400 tabular-nums">{latency}ms</span>
           )}
-          <Badge variant={HEALTH_BADGE[status] ?? "default"} size="sm">
+          <span className={`font-mono text-xs uppercase tracking-wide ${statusColor}`}>
             {status}
-          </Badge>
+          </span>
         </div>
       </div>
-    </Card>
+      {detail && (
+        <div className={TERMINAL_BODY}>
+          <p className="font-mono text-[10px] text-[var(--color-text-muted)]">{detail}</p>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -57,21 +60,21 @@ export default function SystemHealthPage() {
     ? [
         {
           name: "Database",
-          icon: <HardDrive size={20} />,
+          icon: <HardDrive size={16} />,
           status: services.database.status,
           detail: services.database.detail,
           latency: services.database.latency_ms,
         },
         {
           name: "ComfyUI",
-          icon: <Cpu size={20} />,
+          icon: <Cpu size={16} />,
           status: services.comfyui.status,
           detail: services.comfyui.detail,
           latency: services.comfyui.latency_ms,
         },
         {
           name: "Workers",
-          icon: <Users size={20} />,
+          icon: <Users size={16} />,
           status: services.workers.status,
           detail: services.workers.detail,
           latency: services.workers.latency_ms,
@@ -86,40 +89,50 @@ export default function SystemHealthPage() {
   return (
     <div className="min-h-full">
       <Stack gap={6}>
-        {/* Summary cards */}
+        {/* Summary row */}
         <div className="grid grid-cols-2 gap-[var(--spacing-3)] sm:grid-cols-5">
-          <Card elevation="flat" padding="sm">
-            <p className="text-xs text-[var(--color-text-muted)]">Services</p>
-            <p className="text-lg font-semibold text-[var(--color-text-primary)]">{serviceList.length}</p>
-          </Card>
-          <Card elevation="flat" padding="sm">
-            <p className="text-xs text-[var(--color-text-muted)]">Healthy</p>
-            <p className="text-lg font-semibold text-green-500">{healthyCt}</p>
-          </Card>
-          <Card elevation="flat" padding="sm">
-            <p className="text-xs text-[var(--color-text-muted)]">Degraded</p>
-            <p className="text-lg font-semibold text-yellow-500">{degradedCt}</p>
-          </Card>
-          <Card elevation="flat" padding="sm">
-            <p className="text-xs text-[var(--color-text-muted)]">Down</p>
-            <p className="text-lg font-semibold text-red-500">{downCt}</p>
-          </Card>
-          <Card elevation="flat" padding="sm">
-            <p className="text-xs text-[var(--color-text-muted)]">GPU Pods</p>
-            <p className="text-lg font-semibold text-[var(--color-text-primary)]">{cloudGpu?.active_pods ?? 0}</p>
-          </Card>
+          <div className={TERMINAL_PANEL}>
+            <div className={TERMINAL_BODY}>
+              <p className="font-mono text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Services</p>
+              <p className="font-mono text-lg font-semibold text-cyan-400">{serviceList.length}</p>
+            </div>
+          </div>
+          <div className={TERMINAL_PANEL}>
+            <div className={TERMINAL_BODY}>
+              <p className="font-mono text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Healthy</p>
+              <p className="font-mono text-lg font-semibold text-green-400">{healthyCt}</p>
+            </div>
+          </div>
+          <div className={TERMINAL_PANEL}>
+            <div className={TERMINAL_BODY}>
+              <p className="font-mono text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Degraded</p>
+              <p className="font-mono text-lg font-semibold text-orange-400">{degradedCt}</p>
+            </div>
+          </div>
+          <div className={TERMINAL_PANEL}>
+            <div className={TERMINAL_BODY}>
+              <p className="font-mono text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Down</p>
+              <p className="font-mono text-lg font-semibold text-red-400">{downCt}</p>
+            </div>
+          </div>
+          <div className={TERMINAL_PANEL}>
+            <div className={TERMINAL_BODY}>
+              <p className="font-mono text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">GPU Pods</p>
+              <p className="font-mono text-lg font-semibold text-cyan-400">{cloudGpu?.active_pods ?? 0}</p>
+            </div>
+          </div>
         </div>
 
         {/* Job summary */}
-        <Card padding="md">
-          <div className="flex items-center gap-[var(--spacing-3)]">
-            <Activity size={16} className="text-[var(--color-text-muted)]" />
-            <span className="text-sm text-[var(--color-text-secondary)]">
-              {jobs.running} running, {jobs.queued} queued
-              {jobs.overallProgress > 0 && ` — ${jobs.overallProgress}% overall`}
+        <div className={TERMINAL_PANEL}>
+          <div className={`${TERMINAL_BODY} flex items-center gap-[var(--spacing-3)]`}>
+            <Activity size={14} className="text-[var(--color-text-muted)]" />
+            <span className="font-mono text-xs text-[var(--color-text-muted)]">
+              <span className="text-cyan-400">{jobs.running}</span> running, <span className="text-orange-400">{jobs.queued}</span> queued
+              {jobs.overallProgress > 0 && <> — <span className="text-green-400">{jobs.overallProgress}%</span> overall</>}
             </span>
           </div>
-        </Card>
+        </div>
 
         {/* Service cards */}
         <div className="grid grid-cols-1 gap-[var(--spacing-4)] sm:grid-cols-2 lg:grid-cols-3">

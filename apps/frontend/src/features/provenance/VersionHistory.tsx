@@ -5,8 +5,8 @@
  * This is the "reverse provenance" view.
  */
 
-import { Spinner } from "@/components";
-import { Card, CardBody, CardHeader } from "@/components";
+import { WireframeLoader } from "@/components";
+import { Card, CardBody, CardHeader  } from "@/components";
 import { formatDate } from "@/lib/format";
 
 import { useAssetUsage } from "./hooks/use-provenance";
@@ -75,7 +75,7 @@ export function VersionHistory({ assetId, version }: VersionHistoryProps) {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center p-6" data-testid="usage-loading">
-        <Spinner />
+        <WireframeLoader size={48} />
       </div>
     );
   }

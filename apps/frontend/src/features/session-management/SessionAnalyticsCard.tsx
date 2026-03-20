@@ -4,7 +4,7 @@
  * Displays key session metrics using the shared StatBadge component.
  */
 
-import { Spinner, StatBadge } from "@/components/primitives";
+import { StatBadge ,  WireframeLoader } from "@/components/primitives";
 import { formatDurationSecs } from "@/lib/format";
 
 import { useSessionAnalytics } from "./hooks/use-session-management";
@@ -19,7 +19,7 @@ export function SessionAnalyticsCard() {
   if (isLoading) {
     return (
       <div className="flex h-32 items-center justify-center">
-        <Spinner size="lg" />
+        <WireframeLoader size={64} />
       </div>
     );
   }

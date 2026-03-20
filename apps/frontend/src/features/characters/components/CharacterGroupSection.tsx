@@ -174,7 +174,7 @@ export function CharacterGroupSection<T extends GroupSectionCharacter>({
               {emptyMessage}
             </p>
           ) : (
-            <Grid cols={2} gap={3} className="sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+            <Grid cols={2} gap={3} className="sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 min-[1500px]:grid-cols-7 min-[1700px]:grid-cols-8">
               {characters.map((c) => renderCard(c))}
             </Grid>
           )}

@@ -9,21 +9,29 @@
  * - Supports dropping all 4 files (2 images + 2 JSONs) at once
  */
 
-import { useCallback, useState } from "react";
+import { Fragment, useCallback, useState } from "react";
 
-import { Modal } from "@/components/composite";
-import { Badge, Button, Spinner } from "@/components/primitives";
+import { ConfirmDeleteModal, ConfirmModal, Modal } from "@/components/composite";
+import { Button, Input ,  WireframeLoader } from "@/components/primitives";
 import { Stack } from "@/components/layout";
-import { useImageVariants, useUploadImageVariant } from "@/features/images/hooks/use-image-variants";
-import { IMAGE_ACCEPT_STRING, IMAGE_VARIANT_STATUS_LABEL, statusBadgeVariant, type ImageVariant, type ImageVariantStatusId } from "@/features/images/types";
+import { useDeleteImageVariant, useImageVariants, useUploadImageVariant } from "@/features/images/hooks/use-image-variants";
+import { IMAGE_ACCEPT_STRING, IMAGE_VARIANT_STATUS_LABEL, type ImageVariant, type ImageVariantStatusId } from "@/features/images/types";
 import { variantImageUrl, variantThumbnailUrl } from "@/features/images/utils";
-import { useUpdateCharacterMetadata } from "@/features/characters/hooks/use-character-detail";
-import { SOURCE_KEY_BIO, SOURCE_KEY_TOV } from "@/features/characters/types";
-import { isImageFile, readFileAsJson } from "@/lib/file-types";
+import { useUpdateCharacterMetadata, useUpdateCharacterSettings } from "@/features/characters/hooks/use-character-detail";
+import { useCharacterSpeeches, useImportSpeeches, useSpeechTypes } from "@/features/characters/hooks/use-character-speeches";
+import { useLanguages } from "@/features/characters/hooks/use-languages";
+import { useSpeechActions } from "@/features/characters/hooks/use-speech-actions";
+import { getVoiceId, SETTING_KEY_VOICE, SOURCE_KEY_BIO, SOURCE_KEY_TOV } from "@/features/characters/types";
+import type { CharacterSpeech } from "@/features/characters/types";
+import { FlagIcon  } from "@/components/primitives";
+import { isImageFile, readFileAsJson, readFileText } from "@/lib/file-types";
 import { cn } from "@/lib/cn";
-import { Select } from "@/components/primitives";
-import { AlertTriangle, Eye, Plus, Trash2 } from "@/tokens/icons";
-import type { Character } from "@/features/projects/types";
+import { ICON_ACTION_BTN, ICON_ACTION_BTN_DANGER, TERMINAL_BODY, TERMINAL_DIVIDER, TERMINAL_HEADER, TERMINAL_HEADER_TITLE, TERMINAL_INPUT, TERMINAL_LABEL, TERMINAL_PANEL, TERMINAL_ROW_HOVER, TERMINAL_STATUS_COLORS, TERMINAL_TEXTAREA, TERMINAL_TH } from "@/lib/ui-classes";
+import { Select  } from "@/components/primitives";
+import { AlertTriangle, Edit3, Eye, FileText, Image, MessageSquare, Mic, Plus, Settings, Trash2, Upload } from "@/tokens/icons";
+import { hasVoiceId } from "@/features/characters/types";
+import type { Character, UpdateCharacter } from "@/features/projects/types";
+import { CHARACTER_STATUS_ID_ACTIVE, STATUS_LABELS } from "@/features/projects/types";
 
 import { SeedDataDropSlot } from "./SeedDataDropSlot";
 
@@ -48,12 +56,39 @@ interface CharacterSeedDataModalProps {
   onCreateGroup?: (name: string) => Promise<number>;
   /** Called when the user requests to delete the character. */
   onDelete?: (characterId: number) => void;
+  /** Called when the user updates name, status, or group via the management section. */
+  onUpdate?: (characterId: number, data: UpdateCharacter) => void;
+  /** Whether an update mutation is in-flight. */
+  updating?: boolean;
 }
 
 const VARIANT_SLOTS = [
   { type: "clothed", label: "Clothed" },
   { type: "topless", label: "Topless" },
 ] as const;
+
+/** Image with loading spinner placeholder. */
+function SeedImage({ src, alt }: { src: string; alt: string }) {
+  const [loaded, setLoaded] = useState(false);
+  return (
+    <div className="relative h-48">
+      {!loaded && (
+        <div className="absolute inset-0 rounded-[var(--radius-md)] bg-[#161b22] flex items-center justify-center">
+          <WireframeLoader size={32} />
+        </div>
+      )}
+      <img
+        src={src}
+        alt={alt}
+        className={cn(
+          "max-h-48 rounded-[var(--radius-md)] object-contain transition-opacity",
+          loaded ? "opacity-100" : "opacity-0",
+        )}
+        onLoad={() => setLoaded(true)}
+      />
+    </div>
+  );
+}
 
 type JsonSlot = "bio" | "tov";
 type ImageSlot = "clothed" | "topless";
@@ -231,19 +266,120 @@ async function collectDroppedFiles(e: React.DragEvent): Promise<File[]> {
 }
 
 /* --------------------------------------------------------------------------
+   Speech file helpers
+   -------------------------------------------------------------------------- */
+
+/** Slugify for matching character names to JSON keys. */
+function slugify(n: string): string {
+  return n.toLowerCase().replace(/[^a-z0-9]/g, "_").replace(/_+/g, "_").replace(/^_|_$/g, "");
+}
+
+/**
+ * Extract speech entries for a specific character from a multi-character speech file.
+ * Returns entries in the per-character import format: `[{ speech_type, text, language }]`.
+ */
+function extractSpeechEntries(
+  text: string,
+  filename: string,
+  characterName: string,
+): { format: "json"; data: string } | null {
+  const charSlug = slugify(characterName);
+
+  // Try JSON (nested object format)
+  try {
+    const parsed = JSON.parse(text);
+    if (typeof parsed === "object" && parsed !== null && !Array.isArray(parsed)) {
+      // Find the matching character key
+      const matchKey = Object.keys(parsed).find((k) => slugify(k) === charSlug);
+      if (!matchKey) return null;
+
+      const charData = parsed[matchKey];
+      if (typeof charData !== "object" || !charData) return null;
+
+      const entries: { speech_type: string; text: string; language: string }[] = [];
+      for (const [typeName, langsVal] of Object.entries(charData as Record<string, unknown>)) {
+        if (typeof langsVal !== "object" || !langsVal || Array.isArray(langsVal)) continue;
+        for (const [langName, textsVal] of Object.entries(langsVal as Record<string, unknown>)) {
+          if (!Array.isArray(textsVal)) continue;
+          for (const t of textsVal) {
+            if (typeof t === "string" && t.trim()) {
+              entries.push({ speech_type: typeName, text: t, language: langName });
+            }
+          }
+        }
+      }
+
+      if (entries.length > 0) {
+        return { format: "json", data: JSON.stringify(entries) };
+      }
+    }
+  } catch {
+    // Not JSON
+  }
+
+  // Try CSV (3-col or 4-col)
+  const lines = text.split(/\r?\n/).filter((l) => l.trim());
+  if (lines.length < 2) return null;
+
+  const header = lines[0]!.toLowerCase();
+  const cols = header.split(",").map((c) => c.trim());
+  const is4col = cols.length >= 4 && (cols[1] === "speech_type" || cols[1] === "type");
+  const is3col = !is4col && cols.length >= 3 && (cols[0] === "character" || cols[0] === "slug" || cols[0] === "character_slug");
+  if (!is4col && !is3col) return null;
+
+  // Infer speech type from filename for 3-col
+  const stem = filename.replace(/\.[^.]+$/, "").toLowerCase()
+    .replace(/_entries$/, "").replace(/_summary$/, "").replace(/s$/, "");
+  const defaultType = stem || "greeting";
+
+  const entries: { speech_type: string; text: string; language: string }[] = [];
+  for (const line of lines.slice(1)) {
+    if (!line.trim()) continue;
+    if (is4col) {
+      const parts = line.match(/^([^,]*),([^,]*),([^,]*),(.*)$/);
+      if (!parts) continue;
+      if (slugify(parts[1]!) !== charSlug) continue;
+      let txt = parts[4]!.trim();
+      if (txt.startsWith('"') && txt.endsWith('"')) txt = txt.slice(1, -1).replace(/""/g, '"');
+      if (txt) entries.push({ speech_type: parts[2]!, text: txt, language: parts[3]! });
+    } else {
+      const parts = line.match(/^([^,]*),([^,]*),(.*)$/);
+      if (!parts) continue;
+      if (slugify(parts[1]!) !== charSlug) continue;
+      let txt = parts[3]!.trim();
+      if (txt.startsWith('"') && txt.endsWith('"')) txt = txt.slice(1, -1).replace(/""/g, '"');
+      if (txt) entries.push({ speech_type: defaultType, text: txt, language: parts[2]! });
+    }
+  }
+
+  if (entries.length > 0) {
+    return { format: "json", data: JSON.stringify(entries) };
+  }
+
+  return null;
+}
+
+/* --------------------------------------------------------------------------
    Component
    -------------------------------------------------------------------------- */
 
-export function CharacterSeedDataModal({ character, projectId: _projectId, onClose, groupOptions, onGroupChange, onCreateGroup, onDelete }: CharacterSeedDataModalProps) {
+export function CharacterSeedDataModal({ character, projectId, onClose, groupOptions, onGroupChange, onCreateGroup, onDelete, onUpdate, updating }: CharacterSeedDataModalProps) {
   const characterId = character?.id ?? 0;
   const open = character !== null;
+  const charName = character?.name ?? "";
 
   const { data: variants, isLoading: variantsLoading } = useImageVariants(characterId);
   const uploadVariant = useUploadImageVariant(characterId);
   const updateMetadata = useUpdateCharacterMetadata(characterId);
 
+  const importSpeeches = useImportSpeeches(characterId);
+  const { data: speeches } = useCharacterSpeeches(characterId);
+  const { data: speechTypes } = useSpeechTypes();
+  const { data: languages } = useLanguages();
+
   const metadata = character?.metadata ?? null;
 
+  const [speechImportCount, setSpeechImportCount] = useState<number | null>(null);
   const [viewingJson, setViewingJson] = useState<{ label: string; data: unknown } | null>(null);
   const [jsonUploading, setJsonUploading] = useState<JsonSlot | "both" | null>(null);
   const [imageUploading, setImageUploading] = useState<ImageSlot | null>(null);
@@ -252,6 +388,57 @@ export function CharacterSeedDataModal({ character, projectId: _projectId, onClo
   const [creatingGroup, setCreatingGroup] = useState(false);
   const [newGroupName, setNewGroupName] = useState("");
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [pendingVoiceId, setPendingVoiceId] = useState<{ voiceId: string; source: string } | null>(null);
+  const [voiceCsvError, setVoiceCsvError] = useState<string | null>(null);
+  const [editingVoiceId, setEditingVoiceId] = useState(false);
+
+  // Name / status editing
+  const [editName, setEditName] = useState<string | null>(null);
+  const [editStatusId, setEditStatusId] = useState<string | null>(null);
+  const nameValue = editName ?? charName;
+  const statusValue = editStatusId ?? String(character?.status_id ?? 1);
+  const nameDirty = editName !== null && editName.trim() !== charName;
+  const statusDirty = editStatusId !== null && editStatusId !== String(character?.status_id ?? 1);
+  const editDirty = nameDirty || statusDirty;
+
+  const voiceConfigured = hasVoiceId(character?.settings as Record<string, unknown> | null);
+  const statusOptions = Object.entries(STATUS_LABELS).map(([id, label]) => ({
+    value: id,
+    label,
+    disabled: id === String(CHARACTER_STATUS_ID_ACTIVE) && !voiceConfigured,
+  }));
+
+  function handleSaveEdits() {
+    if (!onUpdate || !character || !editDirty) return;
+    const data: UpdateCharacter = {};
+    if (nameDirty) data.name = editName!.trim();
+    if (statusDirty) data.status_id = Number(editStatusId);
+    onUpdate(character.id, data);
+    setEditName(null);
+    setEditStatusId(null);
+  }
+
+  // CRUD state
+  const deleteVariant = useDeleteImageVariant(characterId);
+  const speechActions = useSpeechActions(characterId);
+
+  type DeleteTarget =
+    | { kind: "variant"; id: number; label: string }
+    | { kind: "meta"; slot: JsonSlot }
+    | { kind: "speech"; speech: CharacterSpeech }
+    | null;
+  const [deleteTarget, setDeleteTarget] = useState<DeleteTarget>(null);
+  const [replacingSlot, setReplacingSlot] = useState<ImageSlot | null>(null);
+  const [expandedSpeechGroup, setExpandedSpeechGroup] = useState<string | null>(null);
+
+  // Voice ID — localVoiceId tracks saves so UI updates immediately
+  const updateSettings = useUpdateCharacterSettings(projectId, characterId);
+  const propVoiceId = getVoiceId(character?.settings as Record<string, unknown> | null) ?? "";
+  const [localVoiceId, setLocalVoiceId] = useState<string | null>(null);
+  const currentVoiceId = localVoiceId ?? propVoiceId;
+  const [voiceIdDraft, setVoiceIdDraft] = useState<string | null>(null);
+  const voiceIdValue = voiceIdDraft ?? currentVoiceId;
+  const voiceIdDirty = voiceIdDraft !== null && voiceIdDraft !== currentVoiceId;
 
   function findVariant(variantType: string): ImageVariant | undefined {
     if (!variants) return undefined;
@@ -273,7 +460,6 @@ export function CharacterSeedDataModal({ character, projectId: _projectId, onClo
   const tovData = metadata?.[SOURCE_KEY_TOV] ?? null;
   const hasBio = bioData != null;
   const hasTov = tovData != null;
-  const charName = character?.name ?? "";
 
   const slotLabel = (slot: string) => {
     const labels: Record<string, string> = { bio: "Bio", tov: "ToV", clothed: "Clothed", topless: "Topless" };
@@ -310,6 +496,19 @@ export function CharacterSeedDataModal({ character, projectId: _projectId, onClo
       }
     }
   }, [uploadVariant, updateMetadata]);
+
+  /* --- Speech file drop handler --- */
+
+  async function handleSpeechFileDrop(file: File) {
+    const text = await readFileText(file);
+    const result = extractSpeechEntries(text, file.name, charName);
+    if (!result) return;
+
+    importSpeeches.mutate(
+      { format: result.format, data: result.data },
+      { onSuccess: (res) => setSpeechImportCount(res.imported) },
+    );
+  }
 
   /* --- Single-file handlers for targeted slot drops --- */
 
@@ -353,6 +552,86 @@ export function CharacterSeedDataModal({ character, projectId: _projectId, onClo
     }
 
     uploadVariant.mutate({ file, variant_type: slot, variant_label: label });
+  }
+
+  /* --- Replace image handler --- */
+
+  async function handleReplaceImage(slot: ImageSlot, oldVariantId: number, file: File) {
+    setReplacingSlot(slot);
+    try {
+      await deleteVariant.mutateAsync(oldVariantId);
+      await uploadVariant.mutateAsync({ file, variant_type: slot, variant_label: slotLabel(slot) });
+    } finally {
+      setReplacingSlot(null);
+    }
+  }
+
+  /* --- Confirm delete handler --- */
+
+  function handleConfirmDelete() {
+    if (!deleteTarget) return;
+    switch (deleteTarget.kind) {
+      case "variant":
+        deleteVariant.mutate(deleteTarget.id, { onSuccess: () => setDeleteTarget(null) });
+        break;
+      case "meta": {
+        const key = deleteTarget.slot === "bio" ? SOURCE_KEY_BIO : SOURCE_KEY_TOV;
+        updateMetadata.mutate({ [key]: null }, { onSuccess: () => setDeleteTarget(null) });
+        break;
+      }
+      case "speech":
+        speechActions.deleteSpeech.mutate(deleteTarget.speech.id, { onSuccess: () => setDeleteTarget(null) });
+        break;
+    }
+  }
+
+  /* --- Voice ID handlers --- */
+
+  function saveVoiceId() {
+    if (!voiceIdDirty) return;
+    const value = voiceIdDraft!.trim() || null;
+    updateSettings.mutate(
+      { [SETTING_KEY_VOICE]: value },
+      {
+        onSuccess: () => {
+          setLocalVoiceId(value ?? "");
+          setVoiceIdDraft(null);
+        },
+      },
+    );
+  }
+
+  async function handleVoiceCsvDrop(file: File) {
+    setVoiceCsvError(null);
+    const text = await readFileText(file);
+    const lines = text.split(/\r?\n/).filter((l) => l.trim());
+    if (lines.length < 2) {
+      setVoiceCsvError("CSV file is empty or has no data rows");
+      return;
+    }
+
+    const header = lines[0]!.toLowerCase().split(",").map((c) => c.trim());
+    const nameCol = header.findIndex((h) => ["character", "character_slug", "slug", "name", "model", "avatar"].includes(h));
+    const voiceCol = header.findIndex((h) => ["voice_id", "voiceid", "elevenlabs_voice", "voice"].includes(h));
+    if (nameCol < 0 || voiceCol < 0) {
+      setVoiceCsvError(`Missing required columns. Expected: character/name + voice_id. Found: ${header.join(", ")}`);
+      return;
+    }
+
+    const charSlug = slugify(charName);
+    for (const line of lines.slice(1)) {
+      if (!line.trim()) continue;
+      const cols = line.split(",").map((c) => c.trim());
+      if (slugify(cols[nameCol] ?? "") === charSlug) {
+        const vid = cols[voiceCol]?.replace(/^"|"$/g, "").trim();
+        if (vid) {
+          setPendingVoiceId({ voiceId: vid, source: file.name });
+          return;
+        }
+      }
+    }
+
+    setVoiceCsvError(`No matching entry for "${charName}" found in ${file.name}`);
   }
 
   /* --- Unified multi-file / directory handler (modal-level) --- */
@@ -474,93 +753,171 @@ export function CharacterSeedDataModal({ character, projectId: _projectId, onClo
   const totalAssignments = (pendingUpload?.jsonAssignments.length ?? 0) + (pendingUpload?.imageAssignments.length ?? 0);
 
   return (
-    <Modal open={open} onClose={onClose} title={character?.name ?? ""} size="2xl">
-      {isLoading ? (
-        <div className="flex items-center justify-center py-[var(--spacing-8)]">
-          <Spinner size="md" />
-        </div>
-      ) : (
-        /* Modal-level drop zone catches multi-file / directory / mixed drops */
-        <div
-          onDragOver={(e) => { e.preventDefault(); }}
-          onDrop={handleUnifiedDrop}
-        >
-          <div className="grid grid-cols-1 gap-[var(--spacing-6)] sm:grid-cols-2">
-            {/* Left column: Seed Images */}
-            <Stack gap={4}>
-              <h3 className="text-sm font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide">
-                Seed Images
-              </h3>
-              {VARIANT_SLOTS.map(({ type, label }) => {
-                const variant = findVariant(type);
-                const isUploading = (uploadVariant.isPending && uploadVariant.variables?.variant_type === type)
-                  || imageUploading === type;
+    <Modal open={open} onClose={onClose} size="2xl">
+      {/* Title row — name + delete aligned with modal close X */}
+      <div className="flex items-center gap-2 pr-8 mb-[var(--spacing-3)]">
+        <h2 className="text-xs font-medium text-[var(--color-text-primary)] font-mono uppercase tracking-wide truncate">
+          {character?.name ?? ""}
+        </h2>
+        {onDelete && (
+          <button
+            type="button"
+            className="shrink-0 p-0.5 text-[var(--color-text-muted)] hover:text-red-400 transition-colors"
+            onClick={() => setConfirmDelete(true)}
+            aria-label={`Delete ${charName}`}
+          >
+            <Trash2 size={12} />
+          </button>
+        )}
+      </div>
+      {/* Modal-level drop zone catches multi-file / directory / mixed drops */}
+      <div
+        className="min-h-[420px]"
+        onDragOver={(e) => { e.preventDefault(); }}
+        onDrop={handleUnifiedDrop}
+      >
+        <Stack gap={4}>
+          {/* Seed Images — side by side */}
+          <div>
+            <h3 className={cn("flex items-center gap-2 mb-2", TERMINAL_HEADER_TITLE)}>
+              <Image size={14} aria-hidden />
+              Seed Images
+              <span className="font-normal text-[10px] opacity-50">— PNG, JPG, or WebP — name files with "clothed" or "topless" to auto-classify</span>
+            </h3>
+            <div className="grid grid-cols-2 gap-[var(--spacing-4)]">
+            {VARIANT_SLOTS.map(({ type, label }) => {
+              const variant = isLoading ? undefined : findVariant(type);
+              const isUploading = (uploadVariant.isPending && uploadVariant.variables?.variant_type === type)
+                || imageUploading === type;
 
-                if (variant) {
-                  return (
-                    <div key={type} className="space-y-[var(--spacing-1)]">
-                      <span className="text-xs font-medium text-[var(--color-text-muted)]">{label}</span>
+              if (isLoading) {
+                return (
+                  <div key={type} className="space-y-[var(--spacing-1)]">
+                    <span className={TERMINAL_LABEL}>{label}</span>
+                    <div className="h-48 rounded-[var(--radius-md)] bg-[#161b22] flex items-center justify-center">
+                      <WireframeLoader size={32} />
+                    </div>
+                  </div>
+                );
+              }
+
+              if (variant) {
+                const isReplacing = replacingSlot === type;
+                return (
+                  <div key={type} className="space-y-[var(--spacing-1)]">
+                    <span className={TERMINAL_LABEL}>{label}</span>
+                    {isReplacing ? (
+                      <div className="h-48 rounded-[var(--radius-md)] bg-[#161b22] flex items-center justify-center">
+                        <WireframeLoader size={32} />
+                      </div>
+                    ) : (
                       <button
                         type="button"
                         onClick={() => setLightboxUrl(variantImageUrl(variant.file_path))}
                         className="cursor-pointer hover:opacity-80 transition-opacity"
                       >
-                        <img
+                        <SeedImage
                           src={variantThumbnailUrl(variant.id, 512)}
                           alt={`${label} seed image`}
-                          className="max-h-48 rounded-[var(--radius-md)] object-contain"
                         />
                       </button>
+                    )}
+                    <div className="flex items-center justify-between">
                       <div className="flex items-center gap-[var(--spacing-2)]">
-                        <Badge variant={statusBadgeVariant(variant.status_id as ImageVariantStatusId)}>
+                        <span className={cn("font-mono text-[10px] uppercase", TERMINAL_STATUS_COLORS[IMAGE_VARIANT_STATUS_LABEL[variant.status_id as ImageVariantStatusId]?.toLowerCase() ?? ""] ?? "text-[var(--color-text-muted)]")}>
                           {IMAGE_VARIANT_STATUS_LABEL[variant.status_id as ImageVariantStatusId] ?? "Unknown"}
-                        </Badge>
-                        {variant.is_hero && <Badge variant="info">Hero</Badge>}
+                        </span>
+                        {variant.is_hero && <span className="font-mono text-[10px] uppercase text-cyan-400">Hero</span>}
+                      </div>
+                      <div className="flex items-center gap-[var(--spacing-1)]">
+                        <label className={cn(ICON_ACTION_BTN, "cursor-pointer")}>
+                          <Upload size={14} />
+                          <input
+                            type="file"
+                            accept={IMAGE_ACCEPT_STRING}
+                            className="hidden"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) handleReplaceImage(type, variant.id, file);
+                              e.target.value = "";
+                            }}
+                          />
+                        </label>
+                        <button
+                          type="button"
+                          className={ICON_ACTION_BTN_DANGER}
+                          onClick={() => setDeleteTarget({ kind: "variant", id: variant.id, label: `${label} image` })}
+                        >
+                          <Trash2 size={14} />
+                        </button>
                       </div>
                     </div>
-                  );
-                }
-
-                return (
-                  <div key={type} className="space-y-[var(--spacing-1)]">
-                    <span className="text-xs font-medium text-[var(--color-text-muted)]">{label}</span>
-                    <SeedDataDropSlot
-                      accept={IMAGE_ACCEPT_STRING}
-                      label={`${label} image`}
-                      loading={isUploading}
-                      onFile={(file) => handleSingleImageDrop(type, label, file)}
-                    />
                   </div>
                 );
-              })}
-            </Stack>
+              }
 
-            {/* Right column: Metadata Files */}
-            <Stack gap={4}>
-              <h3 className="text-sm font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide">
-                Metadata Files
-              </h3>
+              return (
+                <div key={type} className="space-y-[var(--spacing-1)]">
+                  <span className={TERMINAL_LABEL}>{label}</span>
+                  <SeedDataDropSlot
+                    accept={IMAGE_ACCEPT_STRING}
+                    label={`${label} image`}
+                    loading={isUploading}
+                    onFile={(file) => handleSingleImageDrop(type, label, file)}
+                  />
+                </div>
+              );
+            })}
+            </div>
+          </div>
+
+          {/* Metadata Files — side by side */}
+          <div>
+            <h3 className={cn("flex items-center gap-2 mb-2", TERMINAL_HEADER_TITLE)}>
+              <FileText size={14} aria-hidden />
+              Metadata
+              <span className="font-normal text-[10px] opacity-50">— JSON files — name with "bio" or "tov" to auto-classify</span>
+            </h3>
+            <div className="grid grid-cols-2 gap-[var(--spacing-4)]">
               {([
                 { slot: "bio" as const, label: "Bio", data: bioData, has: hasBio },
                 { slot: "tov" as const, label: "ToV (Tone of Voice)", data: tovData, has: hasTov },
               ]).map(({ slot, label, data, has }) => (
                 <div key={slot} className="space-y-[var(--spacing-1)]">
-                  <span className="text-xs font-medium text-[var(--color-text-muted)]">{label}</span>
+                  <span className={TERMINAL_LABEL}>{label}</span>
                   {has && data ? (
-                    <button
-                      type="button"
-                      onClick={() => setViewingJson({ label: `${label} — ${slot}.json`, data })}
-                      className={cn(
-                        "w-full text-left rounded-[var(--radius-md)] border border-[var(--color-border-secondary)]",
-                        "bg-[var(--color-surface-tertiary)] p-[var(--spacing-3)]",
-                        "cursor-pointer hover:border-[var(--color-text-muted)] transition-colors",
-                      )}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-[var(--color-text-primary)]">{slot}.json</span>
-                        <Eye size={14} className="text-[var(--color-text-muted)]" />
+                    <div className="space-y-[var(--spacing-1)]">
+                      <button
+                        type="button"
+                        onClick={() => setViewingJson({ label: `${label} — ${slot}.json`, data })}
+                        className={cn(
+                          "w-full text-left rounded-[var(--radius-md)] border border-[var(--color-border-default)]/30",
+                          "bg-[#161b22] px-[var(--spacing-2)] py-[var(--spacing-1)]",
+                          "cursor-pointer hover:border-[var(--color-border-default)] transition-colors",
+                        )}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="font-mono text-xs text-cyan-400">{slot}.json</span>
+                          <Eye size={12} className="text-[var(--color-text-muted)]" />
+                        </div>
+                      </button>
+                      <div className="flex items-center justify-end gap-[var(--spacing-1)]">
+                        <SeedDataDropSlot
+                          accept=".json,application/json"
+                          label="Replace"
+                          loading={jsonUploading === slot || jsonUploading === "both"}
+                          onFile={(file) => handleSingleJsonDrop(slot, file)}
+                          compact
+                        />
+                        <button
+                          type="button"
+                          className={ICON_ACTION_BTN_DANGER}
+                          onClick={() => setDeleteTarget({ kind: "meta", slot })}
+                        >
+                          <Trash2 size={14} />
+                        </button>
                       </div>
-                    </button>
+                    </div>
                   ) : (
                     <SeedDataDropSlot
                       accept=".json,application/json"
@@ -571,49 +928,282 @@ export function CharacterSeedDataModal({ character, projectId: _projectId, onClo
                   )}
                 </div>
               ))}
-            </Stack>
+            </div>
           </div>
 
-          {/* Hint */}
-          <p className="mt-[var(--spacing-4)] text-xs text-[var(--color-text-muted)] text-center">
-            Tip: drop a folder or multiple files anywhere to auto-assign images &amp; metadata
-          </p>
+          {/* Speech */}
+          <div>
+            <h3 className={cn("flex items-center gap-2 mb-2", TERMINAL_HEADER_TITLE)}>
+              <MessageSquare size={14} aria-hidden />
+              Speech
+              {speeches && speeches.length > 0 && <span className="font-mono text-[10px] text-cyan-400">[{speeches.length}]</span>}
+              <span className="font-normal text-[8px] opacity-40 hidden sm:inline">{"— JSON ({ character: { type: { lang: [texts] } } }) or CSV (character, speech_type, language, text)"}</span>
+            </h3>
+            {speeches && speeches.length > 0 ? (() => {
+              // Group by type+language, storing full speech objects
+              const typeMap = new Map(speechTypes?.map((t) => [t.id, t.name]) ?? []);
+              const langMap = new Map(languages?.map((l) => [l.id, { name: l.name, code: l.code, flag_code: l.flag_code }]) ?? []);
 
-          {/* Character management: group assignment + delete */}
-          {(groupOptions || onDelete) && (
-            <div className="mt-[var(--spacing-4)] pt-[var(--spacing-4)] border-t border-[var(--color-border-secondary)]">
-              <div className="flex items-end gap-[var(--spacing-3)]">
-                {/* Group selector */}
-                {groupOptions && onGroupChange && (
-                  <div className="flex-1">
+              const groups = new Map<string, { typeName: string; langCode: string; flagCode: string; entries: CharacterSpeech[] }>();
+              for (const s of speeches) {
+                const key = `${s.speech_type_id}-${s.language_id}`;
+                const existing = groups.get(key);
+                if (existing) {
+                  existing.entries.push(s);
+                } else {
+                  const lang = langMap.get(s.language_id);
+                  groups.set(key, {
+                    typeName: typeMap.get(s.speech_type_id) ?? `type_${s.speech_type_id}`,
+                    langCode: lang?.code ?? "en",
+                    flagCode: lang?.flag_code ?? "gb",
+                    entries: [s],
+                  });
+                }
+              }
+
+              return (
+                <Stack gap={2}>
+                  <div className={cn(TERMINAL_PANEL, "max-h-72 overflow-y-auto")}>
+                    <table className="w-full text-xs font-mono">
+                      <thead className="sticky top-0 bg-[#161b22]">
+                        <tr>
+                          <th className={cn(TERMINAL_TH, "px-2 py-1.5")}>Type</th>
+                          <th className={cn(TERMINAL_TH, "px-2 py-1.5")}>Lang</th>
+                          <th className={cn(TERMINAL_TH, "px-2 py-1.5 text-right")}>Count</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {[...groups.entries()].map(([groupKey, g]) => {
+                          const isExpanded = expandedSpeechGroup === groupKey;
+                          return (
+                            <Fragment key={groupKey}>
+                              <tr
+                                className={cn(
+                                  TERMINAL_DIVIDER,
+                                  TERMINAL_ROW_HOVER,
+                                  "cursor-pointer",
+                                )}
+                                onClick={() => setExpandedSpeechGroup(isExpanded ? null : groupKey)}
+                              >
+                                <td className="px-2 py-1 text-cyan-400">
+                                  <span className="inline-flex items-center gap-1">
+                                    <span className={cn("transition-transform text-[10px]", isExpanded && "rotate-90")}>▶</span>
+                                    {g.typeName}
+                                  </span>
+                                </td>
+                                <td className="px-2 py-1">
+                                  <span className="inline-flex items-center gap-1">
+                                    <FlagIcon flagCode={g.flagCode} size={10} />
+                                    <span className="text-[var(--color-text-muted)] uppercase text-[10px]">{g.langCode}</span>
+                                  </span>
+                                </td>
+                                <td className="px-2 py-1 text-right text-[var(--color-text-primary)]">{g.entries.length}</td>
+                              </tr>
+                              {isExpanded && g.entries.map((speech) => (
+                                <tr key={speech.id} className="bg-[#161b22]/50">
+                                  <td colSpan={3} className="px-3 py-1.5">
+                                    {speechActions.editingId === speech.id ? (
+                                      <div className="space-y-[var(--spacing-1)]">
+                                        <textarea
+                                          className={cn(TERMINAL_TEXTAREA, "min-h-[60px]")}
+                                          value={speechActions.editText}
+                                          onChange={(e) => speechActions.setEditText(e.target.value)}
+                                          autoFocus
+                                        />
+                                        <div className="flex gap-[var(--spacing-1)] justify-end">
+                                          <Button size="xs" variant="primary" onClick={speechActions.saveEdit} loading={speechActions.updateSpeech.isPending}>
+                                            Save
+                                          </Button>
+                                          <Button size="xs" variant="secondary" onClick={speechActions.cancelEdit}>
+                                            Cancel
+                                          </Button>
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      <div className="flex items-start justify-between gap-[var(--spacing-2)]">
+                                        <span className="font-mono text-xs text-[var(--color-text-secondary)] break-words flex-1">{speech.text}</span>
+                                        <div className="flex items-center gap-[var(--spacing-1)] shrink-0">
+                                          <button type="button" className={ICON_ACTION_BTN} onClick={() => speechActions.startEdit(speech)}>
+                                            <Edit3 size={12} />
+                                          </button>
+                                          <button type="button" className={ICON_ACTION_BTN_DANGER} onClick={() => setDeleteTarget({ kind: "speech", speech })}>
+                                            <Trash2 size={12} />
+                                          </button>
+                                        </div>
+                                      </div>
+                                    )}
+                                  </td>
+                                </tr>
+                              ))}
+                            </Fragment>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                  <SeedDataDropSlot
+                    accept=".json,.csv"
+                    label="Drop speech file to import more"
+                    loading={importSpeeches.isPending}
+                    onFile={handleSpeechFileDrop}
+                  />
+                  {speechImportCount !== null && (
+                    <span className="font-mono text-[10px] text-green-400">{speechImportCount} imported</span>
+                  )}
+                </Stack>
+              );
+            })() : (
+              <div>
+                <SeedDataDropSlot
+                  accept=".json,.csv"
+                  label="Speech file (JSON or CSV)"
+                  loading={importSpeeches.isPending}
+                  onFile={handleSpeechFileDrop}
+                />
+                {speechImportCount !== null && (
+                  <div className="mt-[var(--spacing-1)]">
+                    <span className="font-mono text-[10px] text-green-400">{speechImportCount} imported</span>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Voice ID */}
+          <div>
+            <h3 className={cn("flex items-center gap-2 mb-2", TERMINAL_HEADER_TITLE)}>
+              <Mic size={14} aria-hidden />
+              Voice ID
+              <span className="font-normal text-[10px] opacity-50">— CSV with character + voice_id columns, or paste directly</span>
+            </h3>
+            <div className="space-y-[var(--spacing-2)]">
+              {currentVoiceId && !editingVoiceId ? (
+                /* Configured — show value with edit action */
+                <div className="flex items-center gap-[var(--spacing-2)]">
+                  <span className="font-mono text-[10px] uppercase text-green-400">Configured</span>
+                  <span className="font-mono text-xs text-[var(--color-text-muted)] truncate flex-1">{currentVoiceId}</span>
+                  <Button size="xs" variant="ghost" onClick={() => { setVoiceIdDraft(currentVoiceId); setEditingVoiceId(true); }}>
+                    Edit
+                  </Button>
+                </div>
+              ) : (
+                /* Empty or editing — show input + drop slot */
+                <>
+                  <div className="flex items-end gap-[var(--spacing-2)]">
+                    <div className="flex-1">
+                      <Input
+                        placeholder="Paste voice ID here"
+                        size="sm"
+                        className={TERMINAL_INPUT}
+                        value={voiceIdValue}
+                        onChange={(e) => setVoiceIdDraft(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === "Enter") { saveVoiceId(); setEditingVoiceId(false); } }}
+                      />
+                    </div>
+                    <div className="flex gap-[var(--spacing-1)] pb-[1px]">
+                      <Button size="xs" variant="primary" onClick={() => { saveVoiceId(); setEditingVoiceId(false); }} loading={updateSettings.isPending} disabled={!voiceIdDirty}>
+                        Save
+                      </Button>
+                      {(currentVoiceId || voiceIdDraft) && (
+                        <Button size="xs" variant="secondary" onClick={() => { setVoiceIdDraft(null); setEditingVoiceId(false); }}>
+                          Cancel
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                  <SeedDataDropSlot
+                    accept=".csv,text/csv"
+                    label="Voice ID CSV"
+                    loading={false}
+                    onFile={(file) => { setVoiceCsvError(null); if (file.name.toLowerCase().endsWith(".csv")) handleVoiceCsvDrop(file); }}
+                    compact
+                  />
+                </>
+              )}
+              {voiceCsvError && (
+                <div className="flex items-start gap-[var(--spacing-2)] text-xs text-[var(--color-action-danger)]">
+                  <AlertTriangle size={14} className="shrink-0 mt-0.5" />
+                  <span>{voiceCsvError}</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Character management */}
+          {(groupOptions || onUpdate) && (
+            <div className="space-y-2">
+              <h3 className={cn("flex items-center gap-2", TERMINAL_HEADER_TITLE)}>
+                <Settings size={14} aria-hidden />
+                Management
+              </h3>
+
+              {/* Name + Status + Group row — grid so Name and Group share the same column width */}
+              {onUpdate && (
+                <div className="grid grid-cols-[1fr_8rem] items-end gap-[var(--spacing-3)]">
+                  <Input
+                    label="Name"
+                    size="sm"
+                    className={TERMINAL_INPUT}
+                    value={nameValue}
+                    onChange={(e) => setEditName(e.target.value)}
+                  />
+                  <Select
+                    label="Status"
+                    size="sm"
+                    options={statusOptions}
+                    value={statusValue}
+                    onChange={(val) => setEditStatusId(val)}
+                  />
+                  {editDirty && (
+                    <div className="col-span-2 flex gap-[var(--spacing-1)] justify-end">
+                      <Button size="xs" variant="primary" onClick={handleSaveEdits} loading={updating}>
+                        Save
+                      </Button>
+                      <Button size="xs" variant="secondary" onClick={() => { setEditName(null); setEditStatusId(null); }}>
+                        Cancel
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              )}
+              {onUpdate && !voiceConfigured && statusValue === String(CHARACTER_STATUS_ID_ACTIVE) && (
+                <div className="flex items-center gap-1.5">
+                  <AlertTriangle size={14} className="text-[var(--color-status-warning)] shrink-0" />
+                  <span className="text-xs text-[var(--color-text-muted)]">
+                    VoiceID must be configured before activating
+                  </span>
+                </div>
+              )}
+
+              {/* Group selector */}
+              {groupOptions && onGroupChange && (
+                <div className="grid grid-cols-[1fr_8rem] items-end gap-[var(--spacing-3)]">
+                  <div>
                     {creatingGroup ? (
                       <div className="space-y-[var(--spacing-2)]">
-                        <label className="text-xs font-medium text-[var(--color-text-muted)]">New Group</label>
-                        <div className="flex gap-[var(--spacing-2)]">
-                          <input
-                            type="text"
-                            value={newGroupName}
-                            onChange={(e) => setNewGroupName(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter" && newGroupName.trim() && onCreateGroup) {
-                                onCreateGroup(newGroupName.trim()).then((id) => {
-                                  onGroupChange(characterId, id);
-                                  setCreatingGroup(false);
-                                  setNewGroupName("");
-                                });
-                              }
-                            }}
-                            placeholder="Group name"
-                            autoFocus
-                            className={cn(
-                              "flex-1 rounded-[var(--radius-sm)] border border-[var(--color-border-default)]",
-                              "bg-[var(--color-surface-primary)] px-[var(--spacing-2)] py-[var(--spacing-1)]",
-                              "text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)]",
-                              "focus:outline-none focus:border-[var(--color-border-accent)]",
-                            )}
-                          />
+                        <div className="flex gap-[var(--spacing-2)] items-end">
+                          <div className="flex-1">
+                            <Input
+                              label="New Group"
+                              size="sm"
+                              className={TERMINAL_INPUT}
+                              value={newGroupName}
+                              onChange={(e) => setNewGroupName(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter" && newGroupName.trim() && onCreateGroup) {
+                                  onCreateGroup(newGroupName.trim()).then((id) => {
+                                    onGroupChange(characterId, id);
+                                    setCreatingGroup(false);
+                                    setNewGroupName("");
+                                  });
+                                }
+                              }}
+                              placeholder="Group name"
+                              autoFocus
+                            />
+                          </div>
                           <Button
-                            size="sm"
+                            size="xs"
                             variant="primary"
                             icon={<Plus size={14} />}
                             disabled={!newGroupName.trim() || !onCreateGroup}
@@ -629,7 +1219,7 @@ export function CharacterSeedDataModal({ character, projectId: _projectId, onClo
                             Create
                           </Button>
                           <Button
-                            size="sm"
+                            size="xs"
                             variant="secondary"
                             onClick={() => { setCreatingGroup(false); setNewGroupName(""); }}
                           >
@@ -640,6 +1230,7 @@ export function CharacterSeedDataModal({ character, projectId: _projectId, onClo
                     ) : (
                       <Select
                         label="Group"
+                        size="sm"
                         options={[
                           ...groupOptions,
                           ...(onCreateGroup ? [{ value: "__new__", label: "+ New group" }] : []),
@@ -656,44 +1247,12 @@ export function CharacterSeedDataModal({ character, projectId: _projectId, onClo
                       />
                     )}
                   </div>
-                )}
-
-                {/* Delete button */}
-                {onDelete && !confirmDelete && (
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="text-[var(--color-action-danger)] hover:text-[var(--color-action-danger-hover)] shrink-0"
-                    icon={<Trash2 size={14} />}
-                    onClick={() => setConfirmDelete(true)}
-                  >
-                    Delete
-                  </Button>
-                )}
-                {onDelete && confirmDelete && (
-                  <div className="flex items-center gap-[var(--spacing-2)] shrink-0">
-                    <span className="text-xs text-[var(--color-action-danger)]">Delete this character?</span>
-                    <Button
-                      size="sm"
-                      variant="danger"
-                      onClick={() => { onDelete(characterId); onClose(); }}
-                    >
-                      Confirm
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      onClick={() => setConfirmDelete(false)}
-                    >
-                      Cancel
-                    </Button>
-                  </div>
-                )}
-              </div>
+                </div>
+              )}
             </div>
           )}
-        </div>
-      )}
+        </Stack>
+      </div>
 
       {/* Confirmation modal */}
       <Modal
@@ -705,40 +1264,42 @@ export function CharacterSeedDataModal({ character, projectId: _projectId, onClo
         {pendingUpload && (
           <Stack gap={4}>
             {pendingUpload.warnings.map((w, i) => (
-              <div key={i} className="flex items-start gap-[var(--spacing-2)] text-sm text-[var(--color-text-warning)]">
+              <div key={i} className="flex items-start gap-[var(--spacing-2)] text-xs font-mono text-orange-400">
                 <AlertTriangle size={16} className="shrink-0 mt-0.5" />
                 <span>{w}</span>
               </div>
             ))}
 
             {totalAssignments > 0 && (
-              <div className="rounded-[var(--radius-md)] bg-[var(--color-surface-secondary)] p-[var(--spacing-3)] space-y-[var(--spacing-1)]">
-                <p className="text-xs font-medium text-[var(--color-text-muted)] mb-[var(--spacing-2)]">
-                  Files to upload:
-                </p>
-                {pendingUpload.imageAssignments.map(({ slot, file }) => (
-                  <div key={`img-${slot}`} className="flex items-center justify-between text-sm">
-                    <span className="text-[var(--color-text-primary)] truncate">{file.name}</span>
-                    <Badge variant="info" size="sm">{slotLabel(slot)} image</Badge>
-                  </div>
-                ))}
-                {pendingUpload.jsonAssignments.map(({ slot, file }) => (
-                  <div key={`json-${slot}`} className="flex items-center justify-between text-sm">
-                    <span className="text-[var(--color-text-primary)] truncate">{file.name}</span>
-                    <Badge variant="default" size="sm">{slotLabel(slot)}</Badge>
-                  </div>
-                ))}
+              <div className={cn(TERMINAL_PANEL)}>
+                <div className={TERMINAL_HEADER}>
+                  <span className={TERMINAL_HEADER_TITLE}>Files to upload</span>
+                </div>
+                <div className={cn(TERMINAL_BODY, "space-y-[var(--spacing-1)]")}>
+                  {pendingUpload.imageAssignments.map(({ slot, file }) => (
+                    <div key={`img-${slot}`} className={cn("flex items-center justify-between font-mono text-xs", TERMINAL_DIVIDER, "pb-1")}>
+                      <span className="text-[var(--color-text-primary)] truncate">{file.name}</span>
+                      <span className="text-cyan-400 text-[10px] uppercase">{slotLabel(slot)} image</span>
+                    </div>
+                  ))}
+                  {pendingUpload.jsonAssignments.map(({ slot, file }) => (
+                    <div key={`json-${slot}`} className={cn("flex items-center justify-between font-mono text-xs", TERMINAL_DIVIDER, "pb-1")}>
+                      <span className="text-[var(--color-text-primary)] truncate">{file.name}</span>
+                      <span className="text-[var(--color-text-muted)] text-[10px] uppercase">{slotLabel(slot)}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
 
             <div className="flex justify-end gap-[var(--spacing-2)]">
-              <Button variant="secondary" size="sm" onClick={() => setPendingUpload(null)}>
+              <Button variant="secondary" size="xs" onClick={() => setPendingUpload(null)}>
                 Cancel
               </Button>
               {totalAssignments > 0 && (
                 <Button
                   variant="primary"
-                  size="sm"
+                  size="xs"
                   onClick={() => executePendingUpload(pendingUpload)}
                 >
                   Upload{pendingUpload.warnings.length > 0 ? " Anyway" : ""}
@@ -757,11 +1318,79 @@ export function CharacterSeedDataModal({ character, projectId: _projectId, onClo
         size="lg"
       >
         {viewingJson && (
-          <pre className="max-h-[70vh] overflow-auto rounded-[var(--radius-md)] bg-[var(--color-surface-secondary)] p-[var(--spacing-4)] text-xs text-[var(--color-text-secondary)] font-mono">
+          <pre className="max-h-[70vh] overflow-auto rounded-[var(--radius-md)] bg-[#0d1117] p-[var(--spacing-4)] text-xs text-cyan-400 font-mono">
             {JSON.stringify(viewingJson.data, null, 2)}
           </pre>
         )}
       </Modal>
+
+      {/* Confirm delete modal (shared for variants, metadata, speech) */}
+      <ConfirmDeleteModal
+        open={deleteTarget !== null}
+        onClose={() => setDeleteTarget(null)}
+        title={
+          deleteTarget?.kind === "variant" ? "Delete Image"
+            : deleteTarget?.kind === "meta" ? "Clear Metadata"
+            : "Delete Speech Entry"
+        }
+        entityName={
+          deleteTarget?.kind === "variant" ? deleteTarget.label
+            : deleteTarget?.kind === "meta" ? `${slotLabel(deleteTarget.slot)} metadata`
+            : deleteTarget?.kind === "speech" ? (deleteTarget.speech.text.length > 60 ? deleteTarget.speech.text.slice(0, 60) + "…" : deleteTarget.speech.text)
+            : ""
+        }
+        warningText={deleteTarget?.kind === "meta" ? "The slot will become empty." : undefined}
+        onConfirm={handleConfirmDelete}
+        loading={deleteVariant.isPending || updateMetadata.isPending || speechActions.deleteSpeech.isPending}
+      />
+
+      {/* Confirm character delete */}
+      <ConfirmDeleteModal
+        open={confirmDelete}
+        onClose={() => setConfirmDelete(false)}
+        title="Delete Model"
+        entityName={charName}
+        onConfirm={() => { if (onDelete) { onDelete(characterId); onClose(); } }}
+      />
+
+      {/* Voice ID confirmation modal */}
+      <ConfirmModal
+        open={pendingVoiceId !== null}
+        onClose={() => setPendingVoiceId(null)}
+        title="Set Voice ID"
+        confirmLabel="Apply"
+        confirmVariant="primary"
+        loading={updateSettings.isPending}
+        onConfirm={() => {
+          if (!pendingVoiceId) return;
+          updateSettings.mutate(
+            { [SETTING_KEY_VOICE]: pendingVoiceId.voiceId },
+            {
+              onSuccess: () => {
+                setLocalVoiceId(pendingVoiceId.voiceId);
+                setVoiceIdDraft(null);
+                setPendingVoiceId(null);
+              },
+            },
+          );
+        }}
+      >
+        {pendingVoiceId && (
+          <Stack gap={2}>
+            <p className="text-sm text-[var(--color-text-secondary)]">
+              Found voice ID for <strong>{charName}</strong> in <span className="font-mono text-xs">{pendingVoiceId.source}</span>:
+            </p>
+            <div className="rounded-[var(--radius-md)] bg-[#0d1117] border border-[var(--color-border-default)]/30 p-[var(--spacing-3)]">
+              <span className="font-mono text-xs text-cyan-400 break-all">{pendingVoiceId.voiceId}</span>
+            </div>
+            {currentVoiceId && currentVoiceId !== pendingVoiceId.voiceId && (
+              <p className="text-xs text-[var(--color-text-muted)]">
+                Current: <span className="font-mono">{currentVoiceId}</span> (will be replaced)
+              </p>
+            )}
+          </Stack>
+        )}
+      </ConfirmModal>
 
       {/* Full-size image lightbox */}
       {lightboxUrl && (

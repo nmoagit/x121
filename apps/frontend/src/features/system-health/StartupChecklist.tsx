@@ -6,7 +6,7 @@
  * from optional ones.
  */
 
-import { Badge, Spinner } from "@/components/primitives";
+import { Badge ,  WireframeLoader } from "@/components/primitives";
 import { Check, XCircle } from "@/tokens/icons";
 
 import { useStartupChecklist } from "./hooks/use-system-health";
@@ -21,7 +21,7 @@ export function StartupChecklist() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-[var(--spacing-6)]">
-        <Spinner size="md" />
+        <WireframeLoader size={48} />
       </div>
     );
   }

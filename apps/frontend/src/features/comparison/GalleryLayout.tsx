@@ -7,7 +7,7 @@
 
 import { createRef, useMemo, type ReactNode } from "react";
 
-import { Spinner } from "@/components/primitives";
+import { WireframeLoader } from "@/components/primitives";
 import { cn } from "@/lib/cn";
 import { GridControls, useSyncPlay } from "@/features/cinema";
 
@@ -74,7 +74,7 @@ export function GalleryLayout({
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-[var(--spacing-8)]">
-        <Spinner size="lg" />
+        <WireframeLoader size={64} />
       </div>
     );
   }

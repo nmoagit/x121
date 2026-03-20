@@ -1,3 +1,4 @@
+import { WireframeLoader } from "@/components/primitives";
 /**
  * Workflow prompt slots panel (PRD-115).
  *
@@ -7,7 +8,6 @@
 
 import { useCallback, useMemo, useState } from "react";
 
-import { Spinner } from "@/components/primitives/Spinner";
 
 import {
   useSceneTypePromptDefaults,
@@ -87,7 +87,7 @@ export function PromptSlotsPanel({ workflowId, sceneTypeId }: PromptSlotsPanelPr
   if (slotsLoading || defaultsLoading) {
     return (
       <div className="flex items-center justify-center py-8" data-testid="prompt-slots-loading">
-        <Spinner />
+        <WireframeLoader size={48} />
       </div>
     );
   }

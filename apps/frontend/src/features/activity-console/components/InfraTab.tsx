@@ -8,14 +8,18 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { Badge, Button } from "@/components/primitives";
+import { Button } from "@/components/primitives";
 import { ArrowDown } from "@/tokens/icons";
 import { cn } from "@/lib/cn";
+import {
+  TERMINAL_HEADER,
+  TERMINAL_ROW_HOVER,
+} from "@/lib/ui-classes";
 
 import { useActivityLogStream } from "../hooks/useActivityLogStream";
 import { useActivityConsoleStore } from "../stores/useActivityConsoleStore";
 import type { ActivityLogEntry } from "../types";
-import { formatLogTime, LEVEL_BADGE_VARIANT, LEVEL_LABELS } from "../types";
+import { formatLogTime, LEVEL_LABELS, LEVEL_TERMINAL_COLORS } from "../types";
 
 /* --------------------------------------------------------------------------
    Constants
@@ -61,14 +65,15 @@ export function InfraTab() {
   }, []);
 
   return (
-    <div className="relative flex flex-col h-full bg-[var(--color-surface-primary)] overflow-hidden">
+    <div className="relative flex flex-col h-full bg-[#0d1117] overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between px-[var(--spacing-3)] py-[var(--spacing-2)] border-b border-[var(--color-border-default)] bg-[var(--color-surface-secondary)]">
+      <div className={cn(TERMINAL_HEADER, "flex items-center justify-between")}>
         <div className="flex items-center gap-[var(--spacing-2)]">
-          <Badge size="sm" variant={isConnected ? "success" : "danger"}>
+          <span className={cn("font-mono text-[10px] uppercase tracking-wide", isConnected ? "text-green-400" : "text-red-400")}>
             {isConnected ? "Connected" : "Disconnected"}
-          </Badge>
-          <span className="text-xs text-[var(--color-text-muted)]">
+          </span>
+          <span className="opacity-30">|</span>
+          <span className="font-mono text-xs text-[var(--color-text-muted)]">
             {infraEntries.length} infra events
           </span>
         </div>
@@ -78,13 +83,13 @@ export function InfraTab() {
       <div
         ref={scrollRef}
         onScroll={handleScroll}
-        className="flex-1 overflow-y-auto min-h-0 scrollbar-thin"
+        className="flex-1 overflow-y-auto min-h-0 bg-[#0d1117] scrollbar-thin"
       >
         {infraEntries.length === 0 ? (
           <div className="flex items-center justify-center h-full">
-            <p className="text-sm text-[var(--color-text-muted)]">
+            <p className="font-mono text-xs text-[var(--color-text-muted)]">
               {isConnected
-                ? "No infrastructure events yet — waiting for autoscaling, provisioning activity..."
+                ? "No infrastructure events yet \u2014 waiting for autoscaling, provisioning activity..."
                 : "Not connected to activity stream"}
             </p>
           </div>
@@ -100,7 +105,7 @@ export function InfraTab() {
       {/* Jump to latest */}
       {!autoScroll && infraEntries.length > 0 && (
         <div className="absolute bottom-[var(--spacing-4)] right-[var(--spacing-4)]">
-          <Button variant="secondary" size="sm" onClick={jumpToBottom} icon={<ArrowDown size={14} />} className="shadow-md">
+          <Button variant="secondary" size="xs" onClick={jumpToBottom} icon={<ArrowDown size={12} />} className="shadow-md">
             Jump to latest
           </Button>
         </div>
@@ -118,19 +123,20 @@ function InfraLogRow({ entry }: { entry: ActivityLogEntry }) {
     <div
       className={cn(
         "flex items-center gap-[var(--spacing-2)] px-[var(--spacing-2)] py-0.5 font-mono text-xs leading-5",
+        TERMINAL_ROW_HOVER,
         "border-l-2",
-        entry.level === "error" && "border-l-[var(--color-action-danger)]",
-        entry.level === "warn" && "border-l-[var(--color-action-warning)]",
-        entry.level === "info" && "border-l-[var(--color-action-primary)]",
+        entry.level === "error" && "border-l-red-400",
+        entry.level === "warn" && "border-l-orange-400",
+        entry.level === "info" && "border-l-cyan-400",
         entry.level === "debug" && "border-l-[var(--color-border-default)]",
       )}
     >
       <span className="shrink-0 text-[var(--color-text-muted)] opacity-60">
         {formatLogTime(entry.timestamp)}
       </span>
-      <Badge size="sm" variant={LEVEL_BADGE_VARIANT[entry.level]} className="min-w-[3.25rem] justify-center">
+      <span className={cn("font-mono text-[10px] uppercase tracking-wide min-w-[3.25rem] text-center", LEVEL_TERMINAL_COLORS[entry.level])}>
         {LEVEL_LABELS[entry.level]}
-      </Badge>
+      </span>
       <span className="text-[var(--color-text-primary)] break-words min-w-0">
         {entry.message}
       </span>

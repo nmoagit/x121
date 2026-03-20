@@ -5,7 +5,7 @@
 
 import { ProjectCharacterPicker, ScenePicker, EmptyState } from "@/components/domain";
 import { Stack } from "@/components/layout";
-import { Spinner } from "@/components/primitives";
+import { WireframeLoader } from "@/components/primitives";
 import { Layout } from "@/tokens/icons";
 
 import { ThumbnailStrip } from "@/features/storyboard/ThumbnailStrip";
@@ -17,7 +17,7 @@ function StoryboardViewer({ sceneId }: { sceneId: number }) {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-[var(--spacing-8)]">
-        <Spinner size="lg" />
+        <WireframeLoader size={64} />
       </div>
     );
   }

@@ -21,8 +21,9 @@ export const deliveryStatusKeys = {
    Hooks
    -------------------------------------------------------------------------- */
 
-/** Fetch per-character delivery status for a project. */
-export function useDeliveryStatus(projectId: number) {
+/** Fetch per-character delivery status for a project.
+ *  Polls every 10s when `poll` is true (e.g. while an export is in progress). */
+export function useDeliveryStatus(projectId: number, poll?: boolean) {
   return useQuery({
     queryKey: deliveryStatusKeys.status(projectId),
     queryFn: () =>
@@ -30,5 +31,6 @@ export function useDeliveryStatus(projectId: number) {
         `/projects/${projectId}/delivery-status`,
       ),
     enabled: projectId > 0,
+    refetchInterval: poll ? 10_000 : false,
   });
 }

@@ -4,10 +4,10 @@
  * Both variants are clickable and trigger onSelect to open the preview modal.
  */
 
-import { Badge, ProgressiveImage } from "@/components/primitives";
-import { Card } from "@/components/composite";
+import { ProgressiveImage } from "@/components/primitives";
 import { variantThumbnailUrl } from "@/features/images/utils";
 import { cn } from "@/lib/cn";
+import { TERMINAL_PANEL, TERMINAL_ROW_HOVER } from "@/lib/ui-classes";
 import { Check, Film, Image, Minus, User, Video } from "@/tokens/icons";
 
 import type { LibraryCharacter } from "./types";
@@ -24,10 +24,9 @@ export function LibraryCharacterCard({
   const hasAvatar = character.hero_variant_id != null;
 
   return (
-    <Card
-      elevation="sm"
-      padding="none"
+    <div
       className={cn(
+        TERMINAL_PANEL,
         "group/card cursor-pointer overflow-hidden",
         "transition-shadow duration-[var(--duration-fast)] ease-[var(--ease-default)]",
         "hover:shadow-[var(--shadow-md)]",
@@ -67,21 +66,21 @@ export function LibraryCharacterCard({
         {/* Info area */}
         <div className="px-[var(--spacing-3)] py-[var(--spacing-2)]">
           <div className="flex items-center justify-between gap-1">
-            <h4 className="text-sm font-semibold text-[var(--color-text-primary)] truncate">
+            <h4 className="font-mono text-xs text-cyan-400 truncate">
               {character.name}
             </h4>
-            <Badge variant="default" size="sm">
-              <Film size={12} aria-hidden className="mr-1" />
+            <span className="flex items-center gap-0.5 font-mono text-[10px] text-[var(--color-text-muted)]">
+              <Film size={10} aria-hidden />
               {character.scene_count}
-            </Badge>
+            </span>
           </div>
-          <p className="mt-0.5 text-xs text-[var(--color-text-muted)] truncate">
+          <p className="mt-0.5 font-mono text-[10px] text-[var(--color-text-muted)] truncate">
             {character.project_name}
             {character.group_name && ` / ${character.group_name}`}
           </p>
         </div>
       </div>
-    </Card>
+    </div>
   );
 }
 
@@ -107,10 +106,10 @@ export function LibraryCharacterRow({
         }
       }}
       className={cn(
-        "flex items-center gap-4 px-3 py-2 rounded-[var(--radius-md)]",
-        "bg-[var(--color-surface-primary)] border border-[var(--color-border-default)]",
-        "hover:border-[var(--color-border-hover)] hover:shadow-sm",
-        "transition-colors cursor-pointer",
+        "flex items-center gap-4 px-3 py-2",
+        TERMINAL_PANEL,
+        TERMINAL_ROW_HOVER,
+        "cursor-pointer",
         !character.is_enabled && "opacity-70 grayscale",
       )}
       data-testid={`library-row-${character.id}`}
@@ -134,45 +133,42 @@ export function LibraryCharacterRow({
 
       {/* Name + project */}
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-[var(--color-text-primary)] truncate">
+        <p className="font-mono text-xs text-cyan-400 truncate">
           {character.name}
         </p>
-        <p className="text-xs text-[var(--color-text-muted)] truncate">
+        <p className="font-mono text-[10px] text-[var(--color-text-muted)] truncate">
           {character.project_name}
           {character.group_name && ` / ${character.group_name}`}
         </p>
       </div>
 
       {/* Stats */}
-      <div className="flex items-center gap-3 shrink-0">
-        <span title="Images">
-          <Badge variant="default" size="sm">
-            <Image size={12} aria-hidden className="mr-1" />
-            {character.image_count}
-          </Badge>
+      <div className="flex items-center gap-3 shrink-0 font-mono text-[10px]">
+        <span title="Images" className="flex items-center gap-0.5 text-[var(--color-text-muted)]">
+          <Image size={10} aria-hidden />
+          {character.image_count}
         </span>
-        <span title="Scenes">
-          <Badge variant="default" size="sm">
-            <Film size={12} aria-hidden className="mr-1" />
-            {character.scene_count}
-          </Badge>
+        <span className="opacity-30">|</span>
+        <span title="Scenes" className="flex items-center gap-0.5 text-[var(--color-text-muted)]">
+          <Film size={10} aria-hidden />
+          {character.scene_count}
         </span>
-        <span title="Clips">
-          <Badge variant="default" size="sm">
-            <Video size={12} aria-hidden className="mr-1" />
-            {character.clip_count}
-          </Badge>
+        <span className="opacity-30">|</span>
+        <span title="Clips" className="flex items-center gap-0.5 text-[var(--color-text-muted)]">
+          <Video size={10} aria-hidden />
+          {character.clip_count}
         </span>
+        <span className="opacity-30">|</span>
         <span
           title={character.has_metadata ? "Metadata present" : "No metadata"}
           className={cn(
-            "flex items-center gap-0.5 text-[10px] font-medium",
+            "flex items-center gap-0.5",
             character.has_metadata
-              ? "text-[var(--color-status-success)]"
+              ? "text-green-400"
               : "text-[var(--color-text-muted)]",
           )}
         >
-          {character.has_metadata ? <Check size={12} /> : <Minus size={12} />}
+          {character.has_metadata ? <Check size={10} /> : <Minus size={10} />}
           Meta
         </span>
       </div>

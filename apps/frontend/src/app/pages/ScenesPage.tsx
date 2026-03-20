@@ -9,8 +9,8 @@ import { useNavigate } from "@tanstack/react-router";
 
 import { EmptyState } from "@/components/domain";
 import { PageHeader, Stack } from "@/components/layout";
-import { Badge, MultiFilterBar, Spinner, Toggle } from "@/components/primitives";
-import type { FilterConfig, FilterOption } from "@/components/primitives";
+import { MultiFilterBar, Toggle ,  WireframeLoader } from "@/components/primitives";
+import type { FilterConfig, FilterOption  } from "@/components/primitives";
 import { useClipsBrowse } from "@/features/scenes/hooks/useClipManagement";
 import type { ClipBrowseItem } from "@/features/scenes/hooks/useClipManagement";
 import { ClipPlaybackModal } from "@/features/scenes/ClipPlaybackModal";
@@ -18,9 +18,10 @@ import { isEmptyClip, isPurgedClip, type SceneVideoVersion } from "@/features/sc
 import { getStreamUrl } from "@/features/video-player";
 import { formatDuration } from "@/features/video-player/frame-utils";
 import { formatBytes, formatDateTime } from "@/lib/format";
+import { TERMINAL_STATUS_COLORS, TRACK_TEXT_COLORS } from "@/lib/ui-classes";
 import { toSelectOptions } from "@/lib/select-utils";
 import { useProjects } from "@/features/projects/hooks/use-projects";
-import { Ban, Clapperboard, Edit3, Layers, Play, Star, Upload } from "@/tokens/icons";
+import { Ban, Layers, Play } from "@/tokens/icons";
 
 /* --------------------------------------------------------------------------
    Read-only clip list item
@@ -35,8 +36,7 @@ function BrowseClipItem({
   onPlay: () => void;
   onNavigate: () => void;
 }) {
-  const sourceIcon = clip.source === "imported" ? <Upload size={14} /> : <Clapperboard size={14} />;
-  const sourceLabel = clip.source === "imported" ? "Imported" : "Generated";
+  const sourceLabel = clip.source === "imported" ? "imported" : "generated";
 
   // Lazy-load video: only mount when the card enters the viewport
   const ref = useRef<HTMLDivElement>(null);
@@ -55,26 +55,25 @@ function BrowseClipItem({
   return (
     <div
       ref={ref}
-      className={`rounded-[var(--radius-lg)] border transition-colors bg-[var(--color-surface-primary)] hover:bg-[var(--color-surface-secondary)] ${
+      className={`rounded-[var(--radius-lg)] border transition-colors bg-[#0d1117] hover:bg-[#161b22] ${
         clip.qa_status === "approved"
-          ? "border-[var(--color-action-success)]"
+          ? "border-green-500"
           : clip.qa_status === "rejected"
-            ? "border-[var(--color-action-danger)]"
+            ? "border-red-500"
             : "border-[var(--color-border-default)]"
       } ${!clip.character_is_enabled ? "opacity-70 grayscale" : ""}`}
     >
-      <div className="flex items-center gap-4 p-4">
+      <div className="flex items-center gap-3 p-3">
         {/* Clickable video thumbnail */}
         {isPurgedClip(clip) ? (
-          <div className="relative flex h-16 w-24 shrink-0 items-center justify-center rounded bg-[var(--color-surface-tertiary)]">
-            <Ban size={20} className="text-[var(--color-text-muted)]" />
+          <div className="relative flex h-14 w-20 shrink-0 items-center justify-center rounded bg-[#161b22]">
+            <Ban size={18} className="text-[var(--color-text-muted)]" />
           </div>
         ) : (
           <button
             type="button"
             onClick={onPlay}
-            className="group/play relative h-16 w-24 shrink-0 rounded overflow-hidden
-              bg-[var(--color-surface-tertiary)] cursor-pointer"
+            className="group/play relative h-14 w-20 shrink-0 rounded overflow-hidden bg-[#161b22] cursor-pointer"
           >
             {isVisible && (
               <video
@@ -85,67 +84,42 @@ function BrowseClipItem({
               />
             )}
             <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover/play:opacity-100 transition-opacity">
-              <Play size={20} className="text-white" />
+              <Play size={18} className="text-white" />
             </div>
           </button>
         )}
 
-        {/* Clickable metadata area — navigates to character scene detail */}
+        {/* Clickable metadata area */}
         <button
           type="button"
           onClick={onNavigate}
-          className="flex min-w-0 flex-1 flex-col gap-1 text-left cursor-pointer"
+          className="flex min-w-0 flex-1 flex-col gap-0.5 text-left cursor-pointer font-mono text-xs"
         >
           <div className="flex items-center gap-2">
-            <span className="text-sm font-semibold text-[var(--color-text-primary)]">
+            <span className="font-medium text-[var(--color-text-primary)]">
               {clip.character_name}
             </span>
-            <span className="text-xs text-[var(--color-text-muted)]">
-              {clip.scene_type_name} &middot; {clip.track_name}
-            </span>
+            <span className="text-[var(--color-text-muted)] uppercase">{clip.scene_type_name}</span>
+            <span className={TRACK_TEXT_COLORS[clip.track_name.toLowerCase()] ?? "text-[var(--color-text-muted)]"}>{clip.track_name}</span>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-medium text-[var(--color-text-secondary)]">
-              v{clip.version_number}
-            </span>
-            <span
-              className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs
-                bg-[var(--color-surface-tertiary)] text-[var(--color-text-secondary)]"
-            >
-              {sourceIcon} {sourceLabel}
-            </span>
-            {clip.is_final && (
-              <span
-                className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs font-medium
-                  bg-[var(--color-action-primary)] text-[var(--color-text-inverse)]"
-              >
-                <Star size={12} /> Final
-              </span>
-            )}
+          <div className="flex items-center gap-2 text-[10px] text-[var(--color-text-muted)]">
+            <span className="text-cyan-400 font-semibold">v{clip.version_number}</span>
+            <span className="opacity-30">|</span>
+            <span>{sourceLabel}</span>
+            {clip.is_final && <><span className="opacity-30">|</span><span className="text-green-400">final</span></>}
             {clip.qa_status !== "pending" && (
-              <Badge
-                variant={clip.qa_status === "approved" ? "success" : "danger"}
-                size="sm"
-              >
-                {clip.qa_status === "approved" ? "Approved" : "Rejected"}
-              </Badge>
+              <><span className="opacity-30">|</span><span className={TERMINAL_STATUS_COLORS[clip.qa_status] ?? "text-[var(--color-text-muted)]"}>{clip.qa_status}</span></>
             )}
-            {isPurgedClip(clip) && (
-              <Badge variant="warning" size="sm">Purged</Badge>
-            )}
-            {!isPurgedClip(clip) && isEmptyClip(clip) && (
-              <Badge variant="warning" size="sm">Empty file</Badge>
-            )}
-            {clip.annotation_count > 0 && (
-              <span className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs bg-[var(--color-action-warning)] text-[var(--color-text-inverse)]">
-                <Edit3 size={10} /> {clip.annotation_count}
-              </span>
-            )}
-          </div>
-          <div className="flex items-center gap-3 text-xs text-[var(--color-text-muted)]">
-            <span>{clip.project_name}</span>
+            {isPurgedClip(clip) && <><span className="opacity-30">|</span><span className="text-orange-400">purged</span></>}
+            {!isPurgedClip(clip) && isEmptyClip(clip) && <><span className="opacity-30">|</span><span className="text-orange-400">empty</span></>}
+            {clip.annotation_count > 0 && <><span className="opacity-30">|</span><span className="text-orange-400">{clip.annotation_count} annotated</span></>}
+            <span className="opacity-30">|</span>
             <span>{clip.file_size_bytes != null ? formatBytes(clip.file_size_bytes) : "\u2014"}</span>
+            <span className="opacity-30">|</span>
             <span>{clip.duration_secs != null ? formatDuration(clip.duration_secs) : "\u2014"}</span>
+            <span className="opacity-30">|</span>
+            <span>{clip.project_name}</span>
+            <span className="opacity-30">|</span>
             <span>{formatDateTime(clip.created_at)}</span>
           </div>
         </button>
@@ -259,7 +233,7 @@ export function ScenesPage() {
 
       {/* Filter bar */}
       <MultiFilterBar filters={filters}>
-        <div className="flex items-center gap-3 self-end pb-[3px]">
+        <div className="flex items-center gap-3">
           <Toggle
             checked={showDisabled}
             onChange={setShowDisabled}
@@ -275,7 +249,7 @@ export function ScenesPage() {
       {/* Content */}
       {isLoading ? (
         <div className="flex justify-center py-12">
-          <Spinner />
+          <WireframeLoader size={48} />
         </div>
       ) : !filteredClips.length ? (
         <EmptyState

@@ -1,10 +1,10 @@
 import { useState } from "react";
 
 import { Stack } from "@/components/layout";
-import { Badge } from "@/components/primitives";
-import { Spinner } from "@/components/primitives";
+import { Button ,  WireframeLoader } from "@/components/primitives";
+import { TERMINAL_PANEL, TERMINAL_HEADER, TERMINAL_HEADER_TITLE, TERMINAL_BODY, TERMINAL_TH, TERMINAL_DIVIDER, TERMINAL_ROW_HOVER } from "@/lib/ui-classes";
+import { cn } from "@/lib/cn";
 import { CleanupHistory } from "@/features/admin/CleanupHistory";
-import { ProtectedBadge } from "@/features/admin/ProtectedBadge";
 import { TrashBrowser } from "@/features/admin/TrashBrowser";
 import {
   useReclamationPreview,
@@ -52,7 +52,7 @@ export function ReclamationDashboard() {
   if (previewLoading) {
     return (
       <div className="flex h-[calc(100vh-4rem)] items-center justify-center">
-        <Spinner size="lg" />
+        <WireframeLoader size={64} />
       </div>
     );
   }
@@ -83,54 +83,60 @@ export function ReclamationDashboard() {
         {activeTab === "overview" && (
           <Stack gap={4}>
             {/* Summary card */}
-            <div className="rounded-[var(--radius-lg)] border border-[var(--color-border-primary)] bg-[var(--color-surface-secondary)] p-[var(--spacing-6)]">
-              <div className="flex items-center justify-between">
+            <div className={TERMINAL_PANEL}>
+              <div className={TERMINAL_HEADER}>
+                <span className={TERMINAL_HEADER_TITLE}>Storage Overview</span>
+              </div>
+              <div className={cn(TERMINAL_BODY, "flex items-center justify-between")}>
                 <div>
-                  <p className="text-sm text-[var(--color-text-muted)]">Total Reclaimable Space</p>
-                  <p className="mt-1 text-3xl font-bold text-[var(--color-text-primary)]">
+                  <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide font-mono">Total Reclaimable Space</p>
+                  <p className="mt-1 text-2xl font-bold text-cyan-400 font-mono">
                     {formatBytes(preview?.total_bytes ?? 0)}
                   </p>
-                  <p className="mt-1 text-sm text-[var(--color-text-muted)]">
+                  <p className="mt-1 text-xs text-[var(--color-text-muted)] font-mono">
                     {preview?.total_files ?? 0} files pending deletion
                   </p>
                 </div>
                 <div>
                   {showConfirm ? (
                     <div className="flex items-center gap-2">
-                      <span className="text-sm text-[var(--color-text-muted)]">Are you sure?</span>
-                      <button
+                      <span className="text-xs text-[var(--color-text-muted)] font-mono">Are you sure?</span>
+                      <Button
+                        variant="danger"
+                        size="xs"
                         onClick={handleRunCleanup}
                         disabled={cleanupMutation.isPending}
-                        className="rounded-[var(--radius-md)] bg-[var(--color-action-danger)] px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
                       >
                         {cleanupMutation.isPending ? "Running..." : "Confirm"}
-                      </button>
-                      <button
+                      </Button>
+                      <Button
+                        variant="secondary"
+                        size="xs"
                         onClick={() => setShowConfirm(false)}
-                        className="rounded-[var(--radius-md)] border border-[var(--color-border-primary)] px-4 py-2 text-sm font-medium text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-tertiary)]"
                       >
                         Cancel
-                      </button>
+                      </Button>
                     </div>
                   ) : (
-                    <button
+                    <Button
+                      variant="primary"
+                      size="sm"
                       onClick={() => setShowConfirm(true)}
                       disabled={(preview?.total_files ?? 0) === 0}
-                      className="rounded-[var(--radius-md)] bg-[var(--color-action-primary)] px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
                     >
                       Run Cleanup
-                    </button>
+                    </Button>
                   )}
                 </div>
               </div>
 
               {/* Cleanup result */}
               {cleanupMutation.data && (
-                <div className="mt-4 rounded-[var(--radius-md)] bg-[var(--color-action-success)]/10 p-3 text-sm text-[var(--color-action-success)]">
+                <div className="mx-[var(--spacing-3)] mb-[var(--spacing-3)] rounded-[var(--radius-md)] bg-green-400/5 border border-green-400/30 p-3 text-xs text-green-400 font-mono">
                   Cleanup complete: {cleanupMutation.data.files_deleted} files deleted,{" "}
                   {formatBytes(cleanupMutation.data.bytes_reclaimed)} reclaimed.
                   {cleanupMutation.data.errors.length > 0 && (
-                    <span className="text-[var(--color-action-warning)]">
+                    <span className="text-orange-400">
                       {" "}
                       ({cleanupMutation.data.errors.length} errors)
                     </span>
@@ -141,21 +147,21 @@ export function ReclamationDashboard() {
 
             {/* Per-project breakdown */}
             {preview && preview.per_project.length > 0 && (
-              <div>
-                <h2 className="mb-3 text-base font-semibold text-[var(--color-text-primary)]">
-                  Per-Project Breakdown
-                </h2>
+              <div className={TERMINAL_PANEL}>
+                <div className={TERMINAL_HEADER}>
+                  <span className={TERMINAL_HEADER_TITLE}>Per-Project Breakdown</span>
+                </div>
                 <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
+                  <table className="w-full font-mono text-xs">
                     <thead>
-                      <tr className="border-b border-[var(--color-border-primary)]">
-                        <th className="px-4 py-2 text-left font-medium text-[var(--color-text-muted)]">
+                      <tr className={TERMINAL_DIVIDER}>
+                        <th className={cn(TERMINAL_TH, "px-4 py-2")}>
                           Project
                         </th>
-                        <th className="px-4 py-2 text-right font-medium text-[var(--color-text-muted)]">
+                        <th className={cn(TERMINAL_TH, "px-4 py-2 text-right")}>
                           Files
                         </th>
-                        <th className="px-4 py-2 text-right font-medium text-[var(--color-text-muted)]">
+                        <th className={cn(TERMINAL_TH, "px-4 py-2 text-right")}>
                           Size
                         </th>
                       </tr>
@@ -164,9 +170,9 @@ export function ReclamationDashboard() {
                       {preview.per_project.map((p, i) => (
                         <tr
                           key={p.project_id ?? `unscoped-${i}`}
-                          className="border-b border-[var(--color-border-primary)]"
+                          className={cn(TERMINAL_DIVIDER, TERMINAL_ROW_HOVER)}
                         >
-                          <td className="px-4 py-2 text-[var(--color-text-primary)]">
+                          <td className="px-4 py-2 text-cyan-400">
                             {p.project_name ?? (p.project_id ? `Project #${p.project_id}` : "Unscoped")}
                           </td>
                           <td className="px-4 py-2 text-right text-[var(--color-text-secondary)]">
@@ -190,41 +196,35 @@ export function ReclamationDashboard() {
         {activeTab === "history" && <CleanupHistory />}
 
         {activeTab === "rules" && (
-          <div>
-            <h2 className="mb-3 text-base font-semibold text-[var(--color-text-primary)]">
-              Asset Protection Rules
-            </h2>
+          <div className={TERMINAL_PANEL}>
+            <div className={TERMINAL_HEADER}>
+              <span className={TERMINAL_HEADER_TITLE}>Asset Protection Rules</span>
+            </div>
             {!rules || rules.length === 0 ? (
-              <p className="text-sm text-[var(--color-text-muted)]">No protection rules defined.</p>
+              <div className={TERMINAL_BODY}>
+                <p className="text-xs text-[var(--color-text-muted)] font-mono">No protection rules defined.</p>
+              </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+                <table className="w-full font-mono text-xs">
                   <thead>
-                    <tr className="border-b border-[var(--color-border-primary)]">
-                      <th className="px-4 py-2 text-left font-medium text-[var(--color-text-muted)]">
-                        Name
-                      </th>
-                      <th className="px-4 py-2 text-left font-medium text-[var(--color-text-muted)]">
-                        Entity Type
-                      </th>
-                      <th className="px-4 py-2 text-left font-medium text-[var(--color-text-muted)]">
-                        Condition
-                      </th>
-                      <th className="px-4 py-2 text-left font-medium text-[var(--color-text-muted)]">
-                        Status
-                      </th>
+                    <tr className={TERMINAL_DIVIDER}>
+                      <th className={cn(TERMINAL_TH, "px-4 py-2")}>Name</th>
+                      <th className={cn(TERMINAL_TH, "px-4 py-2")}>Entity Type</th>
+                      <th className={cn(TERMINAL_TH, "px-4 py-2")}>Condition</th>
+                      <th className={cn(TERMINAL_TH, "px-4 py-2")}>Status</th>
                     </tr>
                   </thead>
                   <tbody>
                     {rules.map((rule) => (
                       <tr
                         key={rule.id}
-                        className="border-b border-[var(--color-border-primary)]"
+                        className={cn(TERMINAL_DIVIDER, TERMINAL_ROW_HOVER)}
                       >
-                        <td className="px-4 py-2 text-[var(--color-text-primary)]">
+                        <td className="px-4 py-2 text-cyan-400">
                           {rule.name}
                           {rule.description && (
-                            <p className="text-xs text-[var(--color-text-muted)]">
+                            <p className="text-[var(--color-text-muted)]">
                               {rule.description}
                             </p>
                           )}
@@ -236,7 +236,9 @@ export function ReclamationDashboard() {
                           {rule.condition_field} {rule.condition_operator} {rule.condition_value}
                         </td>
                         <td className="px-4 py-2">
-                          <ProtectedBadge isActive={rule.is_active} />
+                          <span className={rule.is_active ? "text-green-400" : "text-[var(--color-text-muted)]"}>
+                            {rule.is_active ? "Active" : "Inactive"}
+                          </span>
                         </td>
                       </tr>
                     ))}
@@ -248,47 +250,37 @@ export function ReclamationDashboard() {
         )}
 
         {activeTab === "policies" && (
-          <div>
-            <h2 className="mb-3 text-base font-semibold text-[var(--color-text-primary)]">
-              Reclamation Policies
-            </h2>
+          <div className={TERMINAL_PANEL}>
+            <div className={TERMINAL_HEADER}>
+              <span className={TERMINAL_HEADER_TITLE}>Reclamation Policies</span>
+            </div>
             {!policies || policies.length === 0 ? (
-              <p className="text-sm text-[var(--color-text-muted)]">No policies defined.</p>
+              <div className={TERMINAL_BODY}>
+                <p className="text-xs text-[var(--color-text-muted)] font-mono">No policies defined.</p>
+              </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+                <table className="w-full font-mono text-xs">
                   <thead>
-                    <tr className="border-b border-[var(--color-border-primary)]">
-                      <th className="px-4 py-2 text-left font-medium text-[var(--color-text-muted)]">
-                        Name
-                      </th>
-                      <th className="px-4 py-2 text-left font-medium text-[var(--color-text-muted)]">
-                        Entity Type
-                      </th>
-                      <th className="px-4 py-2 text-left font-medium text-[var(--color-text-muted)]">
-                        Condition
-                      </th>
-                      <th className="px-4 py-2 text-right font-medium text-[var(--color-text-muted)]">
-                        Age Threshold
-                      </th>
-                      <th className="px-4 py-2 text-right font-medium text-[var(--color-text-muted)]">
-                        Grace Period
-                      </th>
-                      <th className="px-4 py-2 text-left font-medium text-[var(--color-text-muted)]">
-                        Status
-                      </th>
+                    <tr className={TERMINAL_DIVIDER}>
+                      <th className={cn(TERMINAL_TH, "px-4 py-2")}>Name</th>
+                      <th className={cn(TERMINAL_TH, "px-4 py-2")}>Entity Type</th>
+                      <th className={cn(TERMINAL_TH, "px-4 py-2")}>Condition</th>
+                      <th className={cn(TERMINAL_TH, "px-4 py-2 text-right")}>Age Threshold</th>
+                      <th className={cn(TERMINAL_TH, "px-4 py-2 text-right")}>Grace Period</th>
+                      <th className={cn(TERMINAL_TH, "px-4 py-2")}>Status</th>
                     </tr>
                   </thead>
                   <tbody>
                     {policies.map((policy) => (
                       <tr
                         key={policy.id}
-                        className="border-b border-[var(--color-border-primary)]"
+                        className={cn(TERMINAL_DIVIDER, TERMINAL_ROW_HOVER)}
                       >
-                        <td className="px-4 py-2 text-[var(--color-text-primary)]">
+                        <td className="px-4 py-2 text-cyan-400">
                           {policy.name}
                           {policy.description && (
-                            <p className="text-xs text-[var(--color-text-muted)]">
+                            <p className="text-[var(--color-text-muted)]">
                               {policy.description}
                             </p>
                           )}
@@ -307,9 +299,9 @@ export function ReclamationDashboard() {
                           {policy.grace_period_days}d
                         </td>
                         <td className="px-4 py-2">
-                          <Badge variant={policy.is_active ? "success" : "default"} size="sm">
+                          <span className={policy.is_active ? "text-green-400" : "text-[var(--color-text-muted)]"}>
                             {policy.is_active ? "Active" : "Inactive"}
-                          </Badge>
+                          </span>
                         </td>
                       </tr>
                     ))}

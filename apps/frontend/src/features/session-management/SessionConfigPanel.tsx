@@ -7,7 +7,7 @@
 import { useCallback, useState } from "react";
 
 import { Card, CardBody, CardHeader } from "@/components/composite/Card";
-import { Button, Input, Spinner, Tooltip } from "@/components/primitives";
+import { Button, Input, Tooltip ,  WireframeLoader } from "@/components/primitives";
 import { Info } from "@/tokens/icons";
 
 import { useSessionConfigs, useUpdateConfig } from "./hooks/use-session-management";
@@ -50,7 +50,7 @@ export function SessionConfigPanel() {
   if (isLoading) {
     return (
       <div className="flex h-64 items-center justify-center">
-        <Spinner size="lg" />
+        <WireframeLoader size={64} />
       </div>
     );
   }

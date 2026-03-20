@@ -139,7 +139,7 @@ export function CharacterFilterBar({
       >
         {allCollapsed ? "Expand All" : "Collapse All"}
       </Button>
-      <div className="flex items-center gap-[var(--spacing-3)] self-end pb-[3px]">
+      <div className="flex items-center gap-[var(--spacing-3)]">
         <Toggle
           checked={showDisabled}
           onChange={onToggleShowDisabled}

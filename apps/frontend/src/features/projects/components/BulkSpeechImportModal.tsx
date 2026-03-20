@@ -9,7 +9,7 @@ import { useCallback, useState } from "react";
 
 import { Modal } from "@/components/composite";
 import { Stack } from "@/components/layout";
-import { Badge, Button, Select } from "@/components/primitives";
+import { Button, Select } from "@/components/primitives";
 import type { BulkImportReport, Language } from "@/features/characters/types";
 import { cn } from "@/lib/cn";
 import { readFileText } from "@/lib/file-types";
@@ -92,7 +92,7 @@ export function BulkSpeechImportModal({
   return (
     <Modal open={open} onClose={handleClose} title="Bulk Import Speeches" size="xl">
       <Stack gap={4}>
-        <p className="text-sm text-[var(--color-text-muted)]">
+        <p className="text-xs font-mono text-[var(--color-text-muted)]">
           Import speech entries for multiple characters at once. The file should contain
           character names/slugs with their speech data. Characters are matched by name.
         </p>
@@ -109,7 +109,7 @@ export function BulkSpeechImportModal({
         <div>
           <label
             htmlFor="bulk-speech-import-file"
-            className="flex items-center gap-[var(--spacing-2)] cursor-pointer text-sm font-medium text-[var(--color-text-secondary)] mb-[var(--spacing-2)]"
+            className="flex items-center gap-[var(--spacing-2)] cursor-pointer text-xs font-mono font-medium text-[var(--color-text-secondary)] mb-[var(--spacing-2)]"
           >
             <Upload size={16} />
             Upload file (.csv or .json)
@@ -119,12 +119,12 @@ export function BulkSpeechImportModal({
             type="file"
             accept=".csv,.json"
             onChange={handleFileChange}
-            className="text-sm text-[var(--color-text-primary)]"
+            className="text-xs font-mono text-[var(--color-text-primary)]"
           />
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <span className="text-sm font-medium text-[var(--color-text-secondary)]">
+          <span className="text-xs font-mono font-medium text-[var(--color-text-secondary)]">
             Or paste content directly
           </span>
           <textarea
@@ -145,25 +145,27 @@ export function BulkSpeechImportModal({
         {/* Import result */}
         {result && (
           <Stack gap={3}>
-            <div className="flex items-center gap-[var(--spacing-2)] flex-wrap">
-              <Badge variant="success" size="sm">
-                {result.imported} imported
-              </Badge>
+            <div className="flex items-center gap-3 font-mono text-xs">
+              <span className="text-green-400">{result.imported} imported</span>
               {result.skipped > 0 && (
-                <Badge variant="warning" size="sm">
-                  {result.skipped} skipped
-                </Badge>
+                <>
+                  <span className="text-[var(--color-text-muted)] opacity-30 select-none">|</span>
+                  <span className="text-orange-400">{result.skipped} skipped</span>
+                </>
               )}
             </div>
 
             {result.characters_matched.length > 0 && (
               <div>
-                <p className="text-xs font-medium text-[var(--color-text-secondary)] mb-1">
+                <p className="text-xs font-mono uppercase tracking-wide text-[var(--color-text-muted)] mb-1">
                   Matched characters ({result.characters_matched.length})
                 </p>
-                <div className="flex flex-wrap gap-1">
-                  {result.characters_matched.map((name) => (
-                    <Badge key={name} variant="success" size="sm">{name}</Badge>
+                <div className="flex flex-wrap gap-1.5 font-mono text-xs">
+                  {result.characters_matched.map((name, i) => (
+                    <span key={name} className="flex items-center gap-1.5">
+                      {i > 0 && <span className="text-[var(--color-text-muted)] opacity-30 select-none">|</span>}
+                      <span className="text-green-400">{name}</span>
+                    </span>
                   ))}
                 </div>
               </div>
@@ -171,19 +173,22 @@ export function BulkSpeechImportModal({
 
             {result.characters_unmatched.length > 0 && (
               <div>
-                <p className="text-xs font-medium text-[var(--color-text-secondary)] mb-1">
+                <p className="text-xs font-mono uppercase tracking-wide text-[var(--color-text-muted)] mb-1">
                   Unmatched characters ({result.characters_unmatched.length})
                 </p>
-                <div className="flex flex-wrap gap-1">
-                  {result.characters_unmatched.map((name) => (
-                    <Badge key={name} variant="warning" size="sm">{name}</Badge>
+                <div className="flex flex-wrap gap-1.5 font-mono text-xs">
+                  {result.characters_unmatched.map((name, i) => (
+                    <span key={name} className="flex items-center gap-1.5">
+                      {i > 0 && <span className="text-[var(--color-text-muted)] opacity-30 select-none">|</span>}
+                      <span className="text-orange-400">{name}</span>
+                    </span>
                   ))}
                 </div>
               </div>
             )}
 
             {result.errors.length > 0 && (
-              <div className="text-sm text-[var(--color-action-danger)]">
+              <div className="text-xs font-mono text-red-400">
                 {result.errors.map((err) => (
                   <p key={err}>{err}</p>
                 ))}
@@ -192,12 +197,13 @@ export function BulkSpeechImportModal({
           </Stack>
         )}
 
-        <div className="flex gap-[var(--spacing-2)] justify-end">
-          <Button variant="secondary" onClick={handleClose}>
+        <div className="flex gap-2 justify-end pt-1 border-t border-[var(--color-border-default)]">
+          <Button size="sm" variant="secondary" onClick={handleClose}>
             {result ? "Close" : "Cancel"}
           </Button>
           {!result && (
             <Button
+              size="sm"
               onClick={handleImport}
               loading={importMutation.isPending}
               disabled={!text.trim()}

@@ -1,3 +1,4 @@
+import { WireframeLoader } from "@/components/primitives";
 /**
  * Searchable prompt fragment dropdown (PRD-115).
  *
@@ -9,7 +10,6 @@ import { useCallback, useMemo, useState } from "react";
 
 import { Badge } from "@/components/primitives/Badge";
 import { Input } from "@/components/primitives/Input";
-import { Spinner } from "@/components/primitives/Spinner";
 import { cn } from "@/lib/cn";
 
 import { usePromptFragments } from "./hooks/use-prompt-management";
@@ -69,7 +69,7 @@ export function FragmentDropdown({ sceneTypeId, onSelect }: FragmentDropdownProp
 
       {isPending && (
         <div className="flex items-center justify-center py-4">
-          <Spinner size="sm" />
+          <WireframeLoader size={32} />
         </div>
       )}
 

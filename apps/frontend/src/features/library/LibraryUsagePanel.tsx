@@ -5,9 +5,18 @@
  * for cross-project visibility.
  */
 
-import { Spinner } from "@/components";
+import { WireframeLoader } from "@/components";
 import { cn } from "@/lib/cn";
 import { formatDate } from "@/lib/format";
+import {
+  TERMINAL_BODY,
+  TERMINAL_DIVIDER,
+  TERMINAL_HEADER,
+  TERMINAL_HEADER_TITLE,
+  TERMINAL_PANEL,
+  TERMINAL_ROW_HOVER,
+  TERMINAL_TH,
+} from "@/lib/ui-classes";
 import { Layers } from "@/tokens/icons";
 
 import { useLibraryUsage } from "./hooks/use-library";
@@ -26,7 +35,7 @@ export function LibraryUsagePanel({
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-8">
-        <Spinner size="sm" />
+        <WireframeLoader size={32} />
       </div>
     );
   }
@@ -40,76 +49,64 @@ export function LibraryUsagePanel({
   }
 
   return (
-    <div data-testid="usage-panel">
-      {/* Header */}
-      <div className="flex items-center gap-2 mb-3">
+    <div className={TERMINAL_PANEL} data-testid="usage-panel">
+      <div className={cn(TERMINAL_HEADER, "flex items-center gap-2")}>
         <Layers
-          size={16}
+          size={14}
           className="text-[var(--color-text-muted)]"
           aria-hidden="true"
         />
-        <h4 className="text-sm font-medium text-[var(--color-text-primary)]">
+        <span className={TERMINAL_HEADER_TITLE}>
           Cross-Project Usage
           {libraryCharacterName && (
-            <span className="text-[var(--color-text-muted)] font-normal">
-              {" "}
-              &mdash; {libraryCharacterName}
+            <span className="font-normal text-[var(--color-text-muted)]">
+              {" "}&mdash; {libraryCharacterName}
             </span>
           )}
-        </h4>
+        </span>
       </div>
 
-      {/* Usage list */}
-      {!usage || usage.length === 0 ? (
-        <p
-          className="text-sm text-[var(--color-text-muted)] text-center py-6"
-          data-testid="usage-empty"
-        >
-          Not imported into any projects yet.
-        </p>
-      ) : (
-        <div
-          className={cn(
-            "border border-[var(--color-border-default)]",
-            "rounded-[var(--radius-md)] overflow-hidden",
-          )}
-        >
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="bg-[var(--color-surface-tertiary)]">
-                <th className="text-left px-3 py-2 font-medium text-[var(--color-text-secondary)]">
-                  Project
-                </th>
-                <th className="text-left px-3 py-2 font-medium text-[var(--color-text-secondary)]">
-                  Character Name
-                </th>
-                <th className="text-left px-3 py-2 font-medium text-[var(--color-text-secondary)]">
-                  Imported
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {usage.map((entry) => (
-                <tr
-                  key={entry.link_id}
-                  className="border-t border-[var(--color-border-default)] hover:bg-[var(--color-surface-secondary)]"
-                  data-testid={`usage-row-${entry.link_id}`}
-                >
-                  <td className="px-3 py-2 text-[var(--color-text-primary)]">
-                    {entry.project_name}
-                  </td>
-                  <td className="px-3 py-2 text-[var(--color-text-primary)]">
-                    {entry.character_name}
-                  </td>
-                  <td className="px-3 py-2 text-[var(--color-text-muted)]">
-                    {formatDate(entry.imported_at)}
-                  </td>
+      <div className={TERMINAL_BODY}>
+        {!usage || usage.length === 0 ? (
+          <p
+            className="font-mono text-xs text-[var(--color-text-muted)] text-center py-6"
+            data-testid="usage-empty"
+          >
+            Not imported into any projects yet.
+          </p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className={TERMINAL_DIVIDER}>
+                  <th className={cn(TERMINAL_TH, "px-3 py-1.5")}>Project</th>
+                  <th className={cn(TERMINAL_TH, "px-3 py-1.5")}>Character Name</th>
+                  <th className={cn(TERMINAL_TH, "px-3 py-1.5")}>Imported</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+              </thead>
+              <tbody>
+                {usage.map((entry) => (
+                  <tr
+                    key={entry.link_id}
+                    className={cn(TERMINAL_DIVIDER, TERMINAL_ROW_HOVER)}
+                    data-testid={`usage-row-${entry.link_id}`}
+                  >
+                    <td className="px-3 py-1.5 font-mono text-xs text-cyan-400">
+                      {entry.project_name}
+                    </td>
+                    <td className="px-3 py-1.5 font-mono text-xs text-[var(--color-text-primary)]">
+                      {entry.character_name}
+                    </td>
+                    <td className="px-3 py-1.5 font-mono text-xs text-[var(--color-text-muted)]">
+                      {formatDate(entry.imported_at)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

@@ -8,12 +8,14 @@ export const deliverableKeys = {
   byProject: (projectId: number) => [...projectKeys.detail(projectId), "deliverables"] as const,
   sceneAssignments: (projectId: number) => [...projectKeys.detail(projectId), "scene-assignments"] as const,
   variantStatuses: (projectId: number) => [...projectKeys.detail(projectId), "variant-statuses"] as const,
+  speechLanguageCounts: (projectId: number) => [...projectKeys.detail(projectId), "speech-language-counts"] as const,
 };
 
 export function useCharacterDeliverables(projectId: number) {
   return useQuery({
     queryKey: deliverableKeys.byProject(projectId),
     queryFn: () => api.get<CharacterDeliverableRow[]>(`/projects/${projectId}/character-deliverables`),
+    refetchInterval: 15_000,
   });
 }
 
@@ -40,7 +42,7 @@ export function useBatchSceneAssignments(projectId: number) {
   return useQuery({
     queryKey: deliverableKeys.sceneAssignments(projectId),
     queryFn: () => api.get<BatchSceneAssignment[]>(`/projects/${projectId}/scene-assignments`),
-    staleTime: 5 * 60 * 1000,
+    refetchInterval: 30_000,
   });
 }
 
@@ -61,6 +63,27 @@ export function useBatchVariantStatuses(projectId: number) {
   return useQuery({
     queryKey: deliverableKeys.variantStatuses(projectId),
     queryFn: () => api.get<BatchVariantStatus[]>(`/projects/${projectId}/variant-statuses`),
+    refetchInterval: 30_000,
+  });
+}
+
+/** Speech count per language per character (project-level batch). */
+export interface ProjectLanguageCount {
+  character_id: number;
+  language_id: number;
+  code: string;
+  flag_code: string;
+  count: number;
+}
+
+/**
+ * Fetch speech language counts for ALL characters in a project in one request.
+ * Used to render language flags on character cards.
+ */
+export function useSpeechLanguageCounts(projectId: number) {
+  return useQuery({
+    queryKey: deliverableKeys.speechLanguageCounts(projectId),
+    queryFn: () => api.get<ProjectLanguageCount[]>(`/projects/${projectId}/speech-language-counts`),
     staleTime: 5 * 60 * 1000,
   });
 }

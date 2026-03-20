@@ -3,17 +3,16 @@
  * cost data, and action buttons.
  */
 
-import { Badge, Checkbox } from "@/components/primitives";
-import { Card } from "@/components/composite";
+import { Checkbox } from "@/components/primitives";
 import { Stack } from "@/components/layout";
 import { Server, Wifi, WifiOff, Clock, DollarSign } from "@/tokens/icons";
 import { iconSizes } from "@/tokens/icons";
 import { formatCents, formatDuration } from "@/lib/format";
+import { TERMINAL_PANEL, TERMINAL_HEADER, TERMINAL_BODY, TERMINAL_STATUS_COLORS } from "@/lib/ui-classes";
+import { cn } from "@/lib/cn";
 
 import type { EnrichedInstance } from "../types";
 import {
-  statusVariant,
-  comfyuiVariant,
   comfyuiLabel,
   calculateUptimeMs,
 } from "./status-helpers";
@@ -36,27 +35,28 @@ export function InstanceCard({
     : 0;
 
   return (
-    <Card padding="sm" className={selected ? "ring-2 ring-[var(--color-border-focus)]" : ""}>
-      <Stack gap={3}>
-        {/* Header row: checkbox, name, status */}
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2 min-w-0">
-            <Checkbox
-              checked={selected}
-              onChange={() => onToggleSelect(instance.id)}
-            />
-            <Server size={iconSizes.sm} className="shrink-0 text-[var(--color-text-muted)]" />
-            <span className="text-sm font-medium text-[var(--color-text-primary)] truncate">
-              {instance.name ?? instance.external_id}
-            </span>
-          </div>
-          <Badge variant={statusVariant(instance.status_name)} size="sm">
-            {instance.status_name}
-          </Badge>
+    <div className={cn(TERMINAL_PANEL, selected && "ring-2 ring-cyan-400/50")}>
+      <div className={cn(TERMINAL_HEADER, "flex items-center justify-between gap-2")}>
+        <div className="flex items-center gap-2 min-w-0">
+          <Checkbox
+            checked={selected}
+            onChange={() => onToggleSelect(instance.id)}
+          />
+          <Server size={iconSizes.sm} className="shrink-0 text-[var(--color-text-muted)]" />
+          <span className="text-xs font-medium text-cyan-400 font-mono truncate">
+            {instance.name ?? instance.external_id}
+          </span>
         </div>
+        <span className={cn("font-mono text-[10px] uppercase", TERMINAL_STATUS_COLORS[instance.status_name] ?? "text-[var(--color-text-muted)]")}>
+          {instance.status_name}
+        </span>
+      </div>
+
+      <div className={TERMINAL_BODY}>
+      <Stack gap={3}>
 
         {/* Info grid */}
-        <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+        <div className="grid grid-cols-2 gap-x-4 gap-y-1 font-mono text-xs">
           <InfoRow label="Provider" value={instance.provider_name} />
           <InfoRow
             label="GPU"
@@ -86,9 +86,9 @@ export function InstanceCard({
             ) : (
               <WifiOff size={12} className="text-[var(--color-text-muted)]" />
             )}
-            <Badge variant={comfyuiVariant(instance.comfyui_status)} size="sm">
+            <span className={cn("font-mono text-[10px]", instance.comfyui_status === "connected" ? "text-green-400" : "text-[var(--color-text-muted)]")}>
               {comfyuiLabel(instance.comfyui_status)}
-            </Badge>
+            </span>
           </div>
 
           {uptimeMs > 0 && (
@@ -115,7 +115,8 @@ export function InstanceCard({
         {/* Actions */}
         <InstanceActions instance={instance} />
       </Stack>
-    </Card>
+      </div>
+    </div>
   );
 }
 

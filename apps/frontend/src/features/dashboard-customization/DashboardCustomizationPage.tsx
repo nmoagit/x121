@@ -6,7 +6,7 @@
  * WidgetSettingsPanel, PresetManager, EditModeControls).
  */
 
-import { Spinner } from "@/components/primitives";
+import { WireframeLoader } from "@/components/primitives";
 import { useSetPageTitle } from "@/hooks/useSetPageTitle";
 
 import { useDashboardEditor } from "./hooks/use-dashboard-editor";
@@ -31,7 +31,7 @@ export function DashboardCustomizationPage() {
         data-testid="dashboard-loading"
         className="flex items-center justify-center p-12"
       >
-        <Spinner />
+        <WireframeLoader size={48} />
       </div>
     );
   }

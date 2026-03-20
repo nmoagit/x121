@@ -20,7 +20,7 @@ const characters = [
 describe("ExportPanel", () => {
   it("renders profile selection and character checkboxes", () => {
     renderWithProviders(
-      <ExportPanel projectId={1} characters={characters} />,
+      <ExportPanel projectId={1} characters={characters} allCharacters={true} onAllCharactersChange={() => {}} selectedCharacterIds={[]} onSelectedCharacterIdsChange={() => {}} />,
     );
 
     expect(screen.getByTestId("export-panel")).toBeInTheDocument();
@@ -28,19 +28,9 @@ describe("ExportPanel", () => {
     expect(screen.getByTestId("start-export-button")).toBeInTheDocument();
   });
 
-  it("shows progress when export is in progress", () => {
-    renderWithProviders(
-      <ExportPanel projectId={1} characters={characters} activeExportStatus={2} />,
-    );
-
-    expect(screen.getByTestId("export-progress")).toBeInTheDocument();
-    expect(screen.getByText("Assembling")).toBeInTheDocument();
-    expect(screen.getByText("Export in progress...")).toBeInTheDocument();
-  });
-
   it("disables start button when no profile is selected", () => {
     renderWithProviders(
-      <ExportPanel projectId={1} characters={characters} />,
+      <ExportPanel projectId={1} characters={characters} allCharacters={true} onAllCharactersChange={() => {}} selectedCharacterIds={[]} onSelectedCharacterIdsChange={() => {}} />,
     );
 
     const button = screen.getByTestId("start-export-button");

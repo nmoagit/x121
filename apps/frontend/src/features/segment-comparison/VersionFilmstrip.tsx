@@ -8,7 +8,7 @@
 
 import { useState } from "react";
 
-import { Badge, Spinner } from "@/components/primitives";
+import { Badge ,  WireframeLoader } from "@/components/primitives";
 import { cn } from "@/lib/cn";
 import { formatDate } from "@/lib/format";
 
@@ -57,7 +57,7 @@ export function VersionFilmstrip({
         data-testid="version-filmstrip-loading"
         className="flex items-center justify-center py-4"
       >
-        <Spinner size="sm" />
+        <WireframeLoader size={32} />
       </div>
     );
   }

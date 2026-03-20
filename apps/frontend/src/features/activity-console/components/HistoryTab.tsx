@@ -7,13 +7,19 @@
 
 import { useCallback, useMemo, useState } from "react";
 
-import { Badge, Button, SearchInput, Spinner } from "@/components/primitives";
+import { Button, SearchInput ,  WireframeLoader } from "@/components/primitives";
 import {
   AlertCircle,
   ChevronLeft,
   ChevronRight,
   Download,
 } from "@/tokens/icons";
+import { cn } from "@/lib/cn";
+import {
+  TERMINAL_HEADER,
+  TERMINAL_LABEL,
+  TERMINAL_SELECT,
+} from "@/lib/ui-classes";
 
 import { useActivityLogHistory } from "../hooks/useActivityLogHistory";
 import type {
@@ -26,11 +32,12 @@ import type {
 import {
   ALL_LEVELS,
   ALL_SOURCES,
-  LEVEL_BADGE_VARIANT,
   LEVEL_ID_MAP,
   LEVEL_LABELS,
+  LEVEL_TERMINAL_COLORS,
   SOURCE_ID_MAP,
   SOURCE_LABELS,
+  SOURCE_TERMINAL_COLORS,
 } from "../types";
 import { LogEntryRow } from "./LogEntryRow";
 
@@ -105,62 +112,69 @@ export function HistoryTab() {
 
   const resetOffset = () => setOffset(0);
 
-  /* ---- JSX mirrors ActivityConsolePanel exactly ---- */
   return (
-    <div className="flex flex-col h-full bg-[var(--color-surface-primary)] overflow-hidden">
-      {/* Filter toolbar — same wrapper div as ConsoleFilterToolbar */}
-      <div className="flex flex-wrap items-center gap-[var(--spacing-3)] px-[var(--spacing-3)] py-[var(--spacing-2)] border-b border-[var(--color-border-default)] bg-[var(--color-surface-secondary)]">
+    <div className="flex flex-col h-full bg-[#0d1117] overflow-hidden">
+      {/* Filter toolbar */}
+      <div className={cn(TERMINAL_HEADER, "flex flex-wrap items-center gap-[var(--spacing-3)]")}>
         {/* Level toggles */}
-        <div className="flex items-center gap-1">
-          <span className="text-xs font-medium text-[var(--color-text-muted)] mr-1">Level</span>
-          <button type="button" onClick={() => { setSelectedLevel(""); resetOffset(); }} className="transition-opacity duration-[var(--duration-fast)]">
-            <Badge size="sm" variant={selectedLevel === "" ? "info" : "default"}>All</Badge>
+        <div className="flex items-center gap-1.5">
+          <span className={cn(TERMINAL_LABEL, "mr-1")}>Level</span>
+          <button type="button" onClick={() => { setSelectedLevel(""); resetOffset(); }} className={cn(
+            "font-mono text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded transition-opacity",
+            selectedLevel === "" ? "text-cyan-400" : "text-[var(--color-text-muted)] opacity-40",
+          )}>
+            All
           </button>
           {ALL_LEVELS.map((level) => (
-            <button key={level} type="button" onClick={() => { setSelectedLevel(level); resetOffset(); }} className="transition-opacity duration-[var(--duration-fast)]">
-              <Badge size="sm" variant={selectedLevel === level ? LEVEL_BADGE_VARIANT[level] : "default"}>
-                {LEVEL_LABELS[level]}
-              </Badge>
+            <button key={level} type="button" onClick={() => { setSelectedLevel(level); resetOffset(); }} className={cn(
+              "font-mono text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded transition-opacity",
+              selectedLevel === level ? LEVEL_TERMINAL_COLORS[level] : "text-[var(--color-text-muted)] opacity-40",
+            )}>
+              {LEVEL_LABELS[level]}
             </button>
           ))}
         </div>
 
         {/* Separator */}
-        <div className="w-px h-5 bg-[var(--color-border-default)]" />
+        <span className="opacity-30">|</span>
 
         {/* Source toggles */}
-        <div className="flex items-center gap-1">
-          <span className="text-xs font-medium text-[var(--color-text-muted)] mr-1">Source</span>
-          <button type="button" onClick={() => { setSelectedSource(""); resetOffset(); }} className="transition-opacity duration-[var(--duration-fast)]">
-            <Badge size="sm" variant={selectedSource === "" ? "info" : "default"}>All</Badge>
+        <div className="flex items-center gap-1.5">
+          <span className={cn(TERMINAL_LABEL, "mr-1")}>Source</span>
+          <button type="button" onClick={() => { setSelectedSource(""); resetOffset(); }} className={cn(
+            "font-mono text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded transition-opacity",
+            selectedSource === "" ? "text-cyan-400" : "text-[var(--color-text-muted)] opacity-40",
+          )}>
+            All
           </button>
           {ALL_SOURCES.map((source) => (
-            <button key={source} type="button" onClick={() => { setSelectedSource(source); resetOffset(); }} className="transition-opacity duration-[var(--duration-fast)]">
-              <Badge size="sm" variant={selectedSource === source ? "info" : "default"}>
-                {SOURCE_LABELS[source]}
-              </Badge>
+            <button key={source} type="button" onClick={() => { setSelectedSource(source); resetOffset(); }} className={cn(
+              "font-mono text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded transition-opacity",
+              selectedSource === source ? SOURCE_TERMINAL_COLORS[source] : "text-[var(--color-text-muted)] opacity-40",
+            )}>
+              {SOURCE_LABELS[source]}
             </button>
           ))}
         </div>
 
         {/* Separator */}
-        <div className="w-px h-5 bg-[var(--color-border-default)]" />
+        <span className="opacity-30">|</span>
 
         {/* Date range */}
         <div className="flex items-center gap-1">
-          <span className="text-xs font-medium text-[var(--color-text-muted)] mr-1">From</span>
+          <span className={cn(TERMINAL_LABEL, "mr-1")}>From</span>
           <input
             type="datetime-local"
             value={fromDate}
             onChange={(e) => { setFromDate(e.target.value); resetOffset(); }}
-            className="h-7 px-1.5 text-xs rounded-[var(--radius-sm)] border border-[var(--color-border-default)] bg-[var(--color-surface-primary)] text-[var(--color-text-primary)] outline-none focus:border-[var(--color-action-primary)]"
+            className={cn(TERMINAL_SELECT, "h-6")}
           />
-          <span className="text-xs font-medium text-[var(--color-text-muted)] mx-1">To</span>
+          <span className={cn(TERMINAL_LABEL, "mx-1")}>To</span>
           <input
             type="datetime-local"
             value={toDate}
             onChange={(e) => { setToDate(e.target.value); resetOffset(); }}
-            className="h-7 px-1.5 text-xs rounded-[var(--radius-sm)] border border-[var(--color-border-default)] bg-[var(--color-surface-primary)] text-[var(--color-text-primary)] outline-none focus:border-[var(--color-action-primary)]"
+            className={cn(TERMINAL_SELECT, "h-6")}
           />
         </div>
 
@@ -177,12 +191,13 @@ export function HistoryTab() {
         />
       </div>
 
-      {/* Status bar — same wrapper div as ActivityConsolePanel */}
-      <div className="flex items-center justify-between px-[var(--spacing-3)] py-[var(--spacing-1)] border-b border-[var(--color-border-default)] bg-[var(--color-surface-secondary)]">
+      {/* Status bar */}
+      <div className={cn(TERMINAL_HEADER, "flex items-center justify-between")}>
         <div className="flex items-center gap-[var(--spacing-2)]">
-          <Badge size="sm" variant="info">History</Badge>
-          <span className="text-xs text-[var(--color-text-muted)]">
-            {data ? data.total.toLocaleString() : "—"} entries
+          <span className="font-mono text-[10px] uppercase tracking-wide text-cyan-400">History</span>
+          <span className="opacity-30">|</span>
+          <span className="font-mono text-xs text-[var(--color-text-muted)]">
+            {data ? data.total.toLocaleString() : "\u2014"} entries
           </span>
         </div>
 
@@ -191,47 +206,47 @@ export function HistoryTab() {
             <>
               <Button
                 variant="ghost"
-                size="sm"
+                size="xs"
                 disabled={offset === 0}
                 onClick={() => setOffset(Math.max(0, offset - PAGE_SIZE))}
-                icon={<ChevronLeft size={14} />}
+                icon={<ChevronLeft size={12} />}
                 aria-label="Previous page"
               />
-              <span className="text-xs text-[var(--color-text-muted)]">
+              <span className="font-mono text-xs text-[var(--color-text-muted)]">
                 {currentPage} / {totalPages}
               </span>
               <Button
                 variant="ghost"
-                size="sm"
+                size="xs"
                 disabled={offset + PAGE_SIZE >= data.total}
                 onClick={() => setOffset(offset + PAGE_SIZE)}
-                icon={<ChevronRight size={14} />}
+                icon={<ChevronRight size={12} />}
                 aria-label="Next page"
               />
             </>
           )}
           <Button
             variant="ghost"
-            size="sm"
+            size="xs"
             onClick={handleExport}
             disabled={!data?.items?.length}
-            icon={<Download size={14} />}
+            icon={<Download size={12} />}
           >
             Export
           </Button>
         </div>
       </div>
 
-      {/* Log entries — same wrapper div as ActivityConsolePanel */}
-      <div className="flex-1 overflow-y-auto min-h-0 scrollbar-thin">
+      {/* Log entries */}
+      <div className="flex-1 overflow-y-auto min-h-0 bg-[#0d1117] scrollbar-thin">
         {isLoading ? (
           <div className="flex items-center justify-center h-full">
-            <Spinner size="lg" />
+            <WireframeLoader size={64} />
           </div>
         ) : error ? (
           <div className="flex items-center justify-center h-full">
-            <AlertCircle size={24} className="text-[var(--color-action-danger)]" aria-hidden />
-            <p className="text-sm text-[var(--color-text-muted)] ml-2">
+            <AlertCircle size={24} className="text-red-400" aria-hidden />
+            <p className="font-mono text-xs text-[var(--color-text-muted)] ml-2">
               Failed to load activity logs.
             </p>
           </div>
@@ -243,7 +258,7 @@ export function HistoryTab() {
           </div>
         ) : (
           <div className="flex items-center justify-center h-full">
-            <p className="text-sm text-[var(--color-text-muted)]">
+            <p className="font-mono text-xs text-[var(--color-text-muted)]">
               No log entries match the current filters.
             </p>
           </div>

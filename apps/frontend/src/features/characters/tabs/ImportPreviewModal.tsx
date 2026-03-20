@@ -6,7 +6,7 @@
  */
 
 import { Modal } from "@/components/composite/Modal";
-import { Badge, Button } from "@/components/primitives";
+import { Button } from "@/components/primitives";
 import { AlertCircle, Upload } from "@/tokens/icons";
 
 import type { MatchResult } from "./matchDroppedVideos";
@@ -37,13 +37,13 @@ export function ImportPreviewModal({
         {/* Matched files */}
         {matchedCount > 0 && (
           <div className="space-y-[var(--spacing-2)]">
-            <h3 className="text-sm font-medium text-[var(--color-text-primary)]">
+            <h3 className="text-xs font-mono font-medium text-[var(--color-text-primary)]">
               Matched ({matchedCount})
             </h3>
             <div className="rounded-[var(--radius-md)] border border-[var(--color-border-default)] overflow-hidden">
-              <table className="w-full text-sm">
+              <table className="w-full text-xs font-mono">
                 <thead>
-                  <tr className="bg-[var(--color-surface-tertiary)] text-[var(--color-text-muted)]">
+                  <tr className="border-b border-[var(--color-border-default)] text-[var(--color-text-muted)]">
                     <th className="text-left px-[var(--spacing-3)] py-[var(--spacing-2)] font-medium">
                       File
                     </th>
@@ -59,7 +59,7 @@ export function ImportPreviewModal({
                   {result.matched.map(({ file, row }) => (
                     <tr
                       key={file.name}
-                      className="border-t border-[var(--color-border-default)]"
+                      className="border-b border-white/5 hover:bg-[#161b22]"
                     >
                       <td className="px-[var(--spacing-3)] py-[var(--spacing-2)] text-[var(--color-text-primary)] truncate max-w-[200px]">
                         {file.name}
@@ -69,9 +69,7 @@ export function ImportPreviewModal({
                       </td>
                       <td className="px-[var(--spacing-3)] py-[var(--spacing-2)]">
                         {row.track_slug ? (
-                          <Badge variant="default" size="sm">
-                            {row.track_slug}
-                          </Badge>
+                          <span className="text-cyan-400">{row.track_slug}</span>
                         ) : (
                           <span className="text-[var(--color-text-muted)]">—</span>
                         )}
@@ -87,15 +85,15 @@ export function ImportPreviewModal({
         {/* Unmatched files */}
         {unmatchedCount > 0 && (
           <div className="space-y-[var(--spacing-2)]">
-            <h3 className="text-sm font-medium text-[var(--color-text-primary)] flex items-center gap-[var(--spacing-1)]">
-              <AlertCircle size={14} className="text-[var(--color-action-warning)]" />
+            <h3 className="text-xs font-mono font-medium text-[var(--color-text-primary)] flex items-center gap-[var(--spacing-1)]">
+              <AlertCircle size={14} className="text-orange-400" />
               Unmatched ({unmatchedCount}) — will be skipped
             </h3>
-            <ul className="rounded-[var(--radius-md)] border border-[var(--color-border-default)] bg-[var(--color-surface-tertiary)] px-[var(--spacing-3)] py-[var(--spacing-2)] space-y-1">
+            <ul className="rounded-[var(--radius-md)] border border-[var(--color-border-default)] px-[var(--spacing-3)] py-[var(--spacing-2)] space-y-1">
               {result.unmatched.map((file) => (
                 <li
                   key={file.name}
-                  className="text-sm text-[var(--color-text-muted)] truncate"
+                  className="text-xs font-mono text-[var(--color-text-muted)] truncate"
                 >
                   {file.name}
                 </li>
@@ -105,11 +103,12 @@ export function ImportPreviewModal({
         )}
 
         {/* Footer */}
-        <div className="flex justify-end gap-[var(--spacing-3)] pt-[var(--spacing-2)]">
-          <Button variant="secondary" onClick={onClose} disabled={importing}>
+        <div className="flex justify-end gap-2 pt-1 border-t border-[var(--color-border-default)]">
+          <Button variant="secondary" size="sm" onClick={onClose} disabled={importing}>
             Cancel
           </Button>
           <Button
+            size="sm"
             onClick={onConfirm}
             loading={importing}
             disabled={importing}

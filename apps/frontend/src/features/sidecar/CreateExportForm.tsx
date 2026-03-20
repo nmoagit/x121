@@ -7,6 +7,7 @@
 import { useState } from "react";
 
 import { Button, Input } from "@/components/primitives";
+import { TERMINAL_LABEL } from "@/lib/ui-classes";
 
 import { SplitConfigurator } from "./SplitConfigurator";
 import { useCreateDatasetExport } from "./hooks/use-sidecar";
@@ -71,9 +72,9 @@ export function CreateExportForm({ projectId, onCancel }: CreateExportFormProps)
         placeholder="Dataset export name"
       />
       <div>
-        <label className="block text-xs font-medium text-[var(--color-text-muted)] mb-1">
+        <span className={`block mb-1 ${TERMINAL_LABEL}`}>
           Quality Threshold: {qualityThreshold}%
-        </label>
+        </span>
         <input
           type="range"
           min={0}

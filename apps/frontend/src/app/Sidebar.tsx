@@ -10,17 +10,50 @@ import { Tooltip } from "@/components/primitives";
 import { useProjects } from "@/features/projects/hooks/use-projects";
 import { cn } from "@/lib/cn";
 import { useAuthStore } from "@/stores/auth-store";
-import { Folder, PanelLeftClose, PanelLeftOpen } from "@/tokens/icons";
+import { Eye, EyeOff, Folder, PanelLeftClose, PanelLeftOpen } from "@/tokens/icons";
 
 const EXPANDED_WIDTH = "w-52";
 const COLLAPSED_WIDTH = "w-12";
 
+function CompactNavToggle() {
+  const { compactNav, toggleCompactNav } = useSidebar();
+  return (
+    <button
+      type="button"
+      onClick={toggleCompactNav}
+      className={cn(
+        "flex w-full items-center gap-2 px-2 py-1 text-[10px] font-mono uppercase tracking-wider",
+        "text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors",
+      )}
+    >
+      {compactNav ? <Eye size={12} /> : <EyeOff size={12} />}
+      <span>{compactNav ? "Show all" : "Compact"}</span>
+    </button>
+  );
+}
+
+function CompactNavToggleCollapsed() {
+  const { compactNav, toggleCompactNav } = useSidebar();
+  return (
+    <Tooltip content={compactNav ? "Show all nav items" : "Hide non-essential nav"} side="right">
+      <button
+        type="button"
+        onClick={toggleCompactNav}
+        className="flex w-full items-center justify-center py-1.5 text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors"
+      >
+        {compactNav ? <Eye size={14} /> : <EyeOff size={14} />}
+      </button>
+    </Tooltip>
+  );
+}
+
 function SidebarContent({ collapsed }: { collapsed: boolean }) {
   const user = useAuthStore((s) => s.user);
+  const { compactNav } = useSidebar();
   const { data: projects } = useProjects();
 
   const navGroups = useMemo<NavGroupDef[]>(() => {
-    return NAV_GROUPS.map((group) => {
+    let groups = NAV_GROUPS.map((group) => {
       if (group.label !== "Projects" || !projects || projects.length === 0) return group;
       return {
         ...group,
@@ -36,7 +69,19 @@ function SidebarContent({ collapsed }: { collapsed: boolean }) {
         ],
       };
     });
-  }, [projects]);
+
+    // In compact mode, filter to only prominent items per group.
+    if (compactNav) {
+      groups = groups
+        .map((group) => ({
+          ...group,
+          items: group.items.filter((item) => item.prominent),
+        }))
+        .filter((group) => group.items.length > 0);
+    }
+
+    return groups;
+  }, [projects, compactNav]);
 
   const visibleGroups = navGroups.filter((group) => {
     if (!user) return !group.requiredRole;
@@ -59,12 +104,18 @@ function SidebarContent({ collapsed }: { collapsed: boolean }) {
         ))}
       </div>
 
-      {/* Pinned bottom: Settings group */}
-      {bottomGroup && (
-        <div className={cn("shrink-0 pt-1 mt-1", !collapsed && "border-t border-[var(--color-border-default)]")}>
+      {/* Pinned bottom: compact toggle + Settings group */}
+      <div className={cn("shrink-0 pt-1 mt-1", !collapsed && "border-t border-[var(--color-border-default)]")}>
+        {!collapsed && (
+          <CompactNavToggle />
+        )}
+        {collapsed && (
+          <CompactNavToggleCollapsed />
+        )}
+        {bottomGroup && (
           <NavGroup group={bottomGroup} collapsed={collapsed} first={collapsed} />
-        </div>
-      )}
+        )}
+      </div>
     </nav>
   );
 }

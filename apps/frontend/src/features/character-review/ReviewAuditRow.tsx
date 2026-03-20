@@ -12,25 +12,28 @@ export function ReviewAuditRow({ entry, showCharacterId }: ReviewAuditRowProps) 
   const config = REVIEW_ACTION_CONFIG[entry.action] ?? {
     icon: UserPlus,
     label: entry.action,
-    color: "text-blue-400",
+    color: "text-cyan-400",
   };
   const Icon = config.icon;
 
   return (
-    <div className="flex gap-3 py-3 border-b border-border-primary last:border-b-0">
-      <div className={`mt-0.5 ${config.color}`}>
-        <Icon size={16} />
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-text-primary">{config.label}</span>
-          {showCharacterId && (
-            <span className="text-xs text-text-muted">Model #{entry.character_id}</span>
-          )}
-          <span className="text-xs text-text-muted">{formatDateTime(entry.created_at)}</span>
-        </div>
-        {entry.comment && <p className="text-sm text-text-muted mt-1">{entry.comment}</p>}
-      </div>
+    <div className="flex items-center gap-3 px-[var(--spacing-2)] py-1.5 font-mono text-xs rounded-[var(--radius-sm)] hover:bg-[#161b22] transition-colors">
+      <Icon size={14} className={config.color} />
+      <span className={config.color}>{config.label.toLowerCase()}</span>
+      {showCharacterId && (
+        <>
+          <span className="text-[var(--color-text-muted)] opacity-30">|</span>
+          <span className="text-[var(--color-text-muted)]">model #{entry.character_id}</span>
+        </>
+      )}
+      <span className="text-[var(--color-text-muted)] opacity-30">|</span>
+      <span className="text-[var(--color-text-muted)] opacity-60">{formatDateTime(entry.created_at)}</span>
+      {entry.comment && (
+        <>
+          <span className="text-[var(--color-text-muted)] opacity-30">|</span>
+          <span className="text-[var(--color-text-muted)] truncate">{entry.comment}</span>
+        </>
+      )}
     </div>
   );
 }

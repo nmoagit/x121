@@ -11,7 +11,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { useSetToggle } from "@/hooks/useSetToggle";
 
-import { CollapsibleSection, ConfirmDeleteModal, ConfigToolbar, Modal } from "@/components/composite";
+import { CollapsibleSection, ConfirmDeleteModal, ConfirmModal, ConfigToolbar, Modal } from "@/components/composite";
 import { BlockingDeliverablesEditor, EmptyState, FileDropZone } from "@/components/domain";
 import { Stack } from "@/components/layout";
 import { Button, Input, LoadingPane, Select } from "@/components/primitives";
@@ -34,7 +34,13 @@ import { variantThumbnailUrl } from "@/features/images/utils";
 
 import { CharacterCard } from "../components/CharacterCard";
 import { ImportProgressBar } from "../components/ImportProgressBar";
-import { useCharacterDeliverables } from "../hooks/use-character-deliverables";
+import { useCharacterDeliverables, useSpeechLanguageCounts } from "../hooks/use-character-deliverables";
+import { SpeechImportResultModal } from "../components/SpeechImportResultModal";
+import { VoiceImportConfirmModal, VoiceImportResultModal } from "../components/VoiceImportModals";
+import { useBulkImportSpeeches } from "../hooks/use-project-speech-import";
+import { useVoiceImportFlow } from "../hooks/use-voice-import-flow";
+import type { SpeechLanguageSummary } from "../components/CharacterCard";
+import type { BulkImportReport } from "@/features/characters/types";
 import { CharacterEditModal } from "../components/CharacterEditModal";
 import { ImportConfirmModal } from "../components/ImportConfirmModal";
 import {
@@ -92,6 +98,7 @@ export function ProjectCharactersTab({ projectId, projectName, scrollToGroupId, 
   const toggleEnabled = useToggleCharacterEnabled(projectId);
   const groupExport = useExportGroupSettings();
   const groupImport = useConfigImport();
+  const bulkSpeechImport = useBulkImportSpeeches(projectId);
 
   const groupMap = useGroupMap(groups);
   const { options: modalGroupOptions } = useGroupSelectOptions(projectId);
@@ -147,6 +154,20 @@ export function ProjectCharactersTab({ projectId, projectName, scrollToGroupId, 
   }, []);
 
   const { data: deliverables } = useCharacterDeliverables(projectId);
+  const { data: speechLangCounts } = useSpeechLanguageCounts(projectId);
+
+  /** Per-character language summary for character card flags. */
+  const speechLanguageMap = useMemo(() => {
+    const map = new Map<number, SpeechLanguageSummary[]>();
+    if (!speechLangCounts) return map;
+    for (const row of speechLangCounts) {
+      const arr = map.get(row.character_id) ?? [];
+      arr.push({ flagCode: row.flag_code, languageCode: row.code, count: row.count });
+      map.set(row.character_id, arr);
+    }
+    return map;
+  }, [speechLangCounts]);
+
   const blockingMap = useMemo(() => {
     const map = new Map<number, string[]>();
     if (!deliverables) return map;
@@ -188,6 +209,31 @@ export function ProjectCharactersTab({ projectId, projectName, scrollToGroupId, 
       return blockingDeliverables;
     };
   }, [groups, blockingDeliverables]);
+
+  /* --- speech import from dropped file --- */
+  const [speechImport, setSpeechImport] = useState<{ format: "json" | "csv"; data: string } | null>(null);
+  const [speechImportResult, setSpeechImportResult] = useState<BulkImportReport | null>(null);
+
+  const handleSpeechFileDrop = useCallback((format: "json" | "csv", data: string) => {
+    setSpeechImport({ format, data });
+    setSpeechImportResult(null);
+  }, []);
+
+  function handleSpeechImportConfirm() {
+    if (!speechImport) return;
+    bulkSpeechImport.mutate(
+      { format: speechImport.format, data: speechImport.data, skip_existing: true },
+      {
+        onSuccess: (result) => {
+          setSpeechImportResult(result);
+          setSpeechImport(null);
+        },
+      },
+    );
+  }
+
+  /* --- voice ID import from dropped CSV --- */
+  const voiceFlow = useVoiceImportFlow(projectId, characters ?? []);
 
   /* --- create character modal --- */
   const [charModalOpen, setCharModalOpen] = useState(false);
@@ -542,6 +588,8 @@ export function ProjectCharactersTab({ projectId, projectName, scrollToGroupId, 
     <FileDropZone
       onNamesDropped={charImport.handleImportDrop}
       onFolderDropped={charImport.handleFolderDrop}
+      onSpeechFileDropped={handleSpeechFileDrop}
+      onVoiceFileDropped={voiceFlow.handleVoiceFileDrop}
       browseFolderRef={charImport.browseFolderRef}
     >
       <Stack gap={4}>
@@ -670,6 +718,7 @@ export function ProjectCharactersTab({ projectId, projectName, scrollToGroupId, 
                         sectionReadiness={sectionReadinessMap.get(c.id)}
                         blockingDeliverables={resolveCharBlockingDeliverables(c)}
                         projectId={projectId}
+                        speechLanguages={speechLanguageMap.get(c.id)}
                         onSelect={toggleCharSelection}
                         onClick={() => navigate({ to: `/projects/${projectId}/models/${c.id}` })}
                         onEdit={() => setEditingChar(c)}
@@ -716,6 +765,7 @@ export function ProjectCharactersTab({ projectId, projectName, scrollToGroupId, 
                       sectionReadiness={sectionReadinessMap.get(c.id)}
                       blockingDeliverables={blockingDeliverables}
                       projectId={projectId}
+                      speechLanguages={speechLanguageMap.get(c.id)}
                       onSelect={toggleCharSelection}
                       onClick={() => navigate({ to: `/projects/${projectId}/models/${c.id}` })}
                       onEdit={() => setEditingChar(c)}
@@ -782,13 +832,16 @@ export function ProjectCharactersTab({ projectId, projectName, scrollToGroupId, 
                 </div>
               )}
             </div>
-            <Button
-              onClick={handleCreateCharacter}
-              loading={createCharacter.isPending}
-              disabled={!newCharName.trim()}
-            >
-              Create Model
-            </Button>
+            <div className="pt-1 border-t border-[var(--color-border-default)]">
+              <Button
+                size="sm"
+                onClick={handleCreateCharacter}
+                loading={createCharacter.isPending}
+                disabled={!newCharName.trim()}
+              >
+                Create Model
+              </Button>
+            </div>
           </Stack>
         </Modal>
 
@@ -810,6 +863,7 @@ export function ProjectCharactersTab({ projectId, projectName, scrollToGroupId, 
             </div>
             <Button
               className="w-fit"
+              size="sm"
               onClick={handleSaveGroup}
               loading={createGroup.isPending || updateGroup.isPending}
               disabled={!groupNameInput.trim()}
@@ -898,6 +952,113 @@ export function ProjectCharactersTab({ projectId, projectName, scrollToGroupId, 
           onConfirm={(assignments) => charImport.resolveUnmatchedFiles(assignments)}
         />
 
+        {/* Speech file import confirmation */}
+        <ConfirmModal
+          open={speechImport !== null}
+          onClose={() => setSpeechImport(null)}
+          title="Import Speech File"
+          confirmLabel="Import"
+          confirmVariant="primary"
+          loading={bulkSpeechImport.isPending}
+          onConfirm={handleSpeechImportConfirm}
+        >
+          {(() => {
+            if (!speechImport) return null;
+            try {
+              const slugify = (n: string) => n.toLowerCase().replace(/[^a-z0-9]/g, "_").replace(/_+/g, "_").replace(/^_|_$/g, "");
+              type Row = { charSlug: string; type: string; lang: string; count: number; matched: boolean };
+              const rows: Row[] = [];
+
+              if (speechImport.format === "json") {
+                const parsed = JSON.parse(speechImport.data) as Record<string, unknown>;
+                for (const [charSlug, typesVal] of Object.entries(parsed)) {
+                  const matched = characters?.some((c) => slugify(c.name) === slugify(charSlug)) ?? false;
+                  for (const [typeName, langsVal] of Object.entries(typesVal as Record<string, unknown>)) {
+                    for (const [langName, textsVal] of Object.entries(langsVal as Record<string, unknown>)) {
+                      const count = Array.isArray(textsVal) ? textsVal.length : 0;
+                      if (count > 0) rows.push({ charSlug, type: typeName, lang: langName, count, matched });
+                    }
+                  }
+                }
+              } else {
+                const lines = speechImport.data.split(/\r?\n/).filter((l) => l.trim());
+                const counts = new Map<string, Row>();
+                for (const line of lines.slice(1)) {
+                  const parts = line.match(/^([^,]*),([^,]*),([^,]*),(.*)$/);
+                  if (!parts) continue;
+                  const key = `${parts[1]}|${parts[2]}|${parts[3]}`;
+                  const existing = counts.get(key);
+                  if (existing) {
+                    existing.count += 1;
+                  } else {
+                    const charSlug = parts[1]!;
+                    counts.set(key, {
+                      charSlug,
+                      type: parts[2]!,
+                      lang: parts[3]!,
+                      count: 1,
+                      matched: characters?.some((c) => slugify(c.name) === slugify(charSlug)) ?? false,
+                    });
+                  }
+                }
+                rows.push(...counts.values());
+              }
+
+              const matchedCount = new Set(rows.filter((r) => r.matched).map((r) => r.charSlug)).size;
+              const totalChars = new Set(rows.map((r) => r.charSlug)).size;
+              const totalEntries = rows.reduce((sum, r) => sum + r.count, 0);
+
+              return (
+                <Stack gap={2}>
+                  <p className="text-xs font-mono">
+                    <span className="text-[var(--color-text-primary)]">{totalChars}</span> characters, <span className="text-[var(--color-text-primary)]">{rows.length}</span> combinations, <span className="text-[var(--color-text-primary)]">{totalEntries}</span> entries total.
+                    {" "}<span className="text-[var(--color-text-muted)]">(<span className="text-green-400">{matchedCount} matched</span>, <span className="text-orange-400">{totalChars - matchedCount} unmatched</span>)</span>
+                  </p>
+                  <div className="max-h-80 overflow-y-auto rounded border border-[var(--color-border-default)]">
+                    <table className="w-full text-xs font-mono">
+                      <thead className="sticky top-0 bg-[#161b22]">
+                        <tr>
+                          <th className="text-left px-2 py-1.5 font-medium text-[var(--color-text-muted)]">Character</th>
+                          <th className="text-left px-2 py-1.5 font-medium text-[var(--color-text-muted)]">Speech Type</th>
+                          <th className="text-left px-2 py-1.5 font-medium text-[var(--color-text-muted)]">Language</th>
+                          <th className="text-right px-2 py-1.5 font-medium text-[var(--color-text-muted)]">Entries</th>
+                          <th className="text-center px-2 py-1.5 font-medium text-[var(--color-text-muted)]">Match</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {rows.map((row, i) => (
+                          <tr key={i} className="border-b border-white/5 hover:bg-[#161b22]">
+                            <td className="px-2 py-1 text-[var(--color-text-primary)]">{row.charSlug}</td>
+                            <td className="px-2 py-1 text-[var(--color-text-primary)]">{row.type}</td>
+                            <td className="px-2 py-1 text-[var(--color-text-primary)]">{row.lang}</td>
+                            <td className="px-2 py-1 text-right text-[var(--color-text-primary)]">{row.count}</td>
+                            <td className="px-2 py-1 text-center">
+                              <span className={row.matched ? "text-green-400" : "text-orange-400"}>
+                                {row.matched ? "Yes" : "No"}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </Stack>
+              );
+            } catch {
+              return <p>Invalid file data.</p>;
+            }
+          })()}
+        </ConfirmModal>
+
+        {/* Speech import result */}
+        {speechImportResult && (
+          <SpeechImportResultModal
+            open
+            onClose={() => setSpeechImportResult(null)}
+            result={speechImportResult}
+          />
+        )}
+
         {/* Import confirmation modal */}
         <ImportConfirmModal
           open={charImport.importOpen}
@@ -916,6 +1077,24 @@ export function ProjectCharactersTab({ projectId, projectName, scrollToGroupId, 
           projectName={projectName}
           existingGroupNames={groups?.map((g) => g.name) ?? []}
           hashSummary={charImport.hashSummary}
+        />
+
+        {/* Voice ID import */}
+        {voiceFlow.voiceImport && (
+          <VoiceImportConfirmModal
+            open
+            onClose={() => voiceFlow.setVoiceImport(null)}
+            entries={voiceFlow.voiceImport}
+            characters={characters ?? []}
+            mode={voiceFlow.voiceImportMode}
+            onModeChange={voiceFlow.setVoiceImportMode}
+            loading={voiceFlow.bulkVoiceImport.isPending}
+            onConfirm={voiceFlow.handleVoiceImportConfirm}
+          />
+        )}
+        <VoiceImportResultModal
+          result={voiceFlow.voiceImportResult}
+          onClose={() => voiceFlow.setVoiceImportResult(null)}
         />
       </Stack>
     </FileDropZone>

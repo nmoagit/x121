@@ -7,7 +7,7 @@
 
 import { Download } from "@/tokens/icons";
 import { iconSizes } from "@/tokens/icons";
-import { Button, Spinner } from "@/components/primitives";
+import { Button ,  WireframeLoader } from "@/components/primitives";
 import { Card, CardHeader, CardBody, CardFooter } from "@/components/composite";
 import { API_BASE_URL } from "@/lib/api";
 import { formatPercent, formatDateTime } from "@/lib/format";
@@ -46,7 +46,7 @@ export function SummaryReportCard({ projectId }: SummaryReportCardProps) {
     return (
       <Card>
         <div className="flex justify-center py-[var(--spacing-6)]">
-          <Spinner />
+          <WireframeLoader size={48} />
         </div>
       </Card>
     );

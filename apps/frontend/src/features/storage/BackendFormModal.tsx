@@ -12,6 +12,14 @@ import { useEffect, useState } from "react";
 import { Modal } from "@/components/composite";
 import { Stack } from "@/components/layout";
 import { Button, Checkbox, Input, Select } from "@/components/primitives";
+import {
+  TERMINAL_BODY,
+  TERMINAL_HEADER,
+  TERMINAL_HEADER_TITLE,
+  TERMINAL_INPUT,
+  TERMINAL_PANEL,
+  TERMINAL_SELECT,
+} from "@/lib/ui-classes";
 
 import { useCreateBackend, useTestS3Connection, useUpdateBackend } from "./hooks/use-storage";
 import type {
@@ -183,121 +191,163 @@ export function BackendFormModal({ open, onClose, backend }: BackendFormModalPro
       size="md"
     >
       <Stack gap={4}>
-        {/* Common fields */}
-        <Input
-          label="Name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="e.g. Primary Local Storage"
-        />
+        {/* General section */}
+        <div className={TERMINAL_PANEL}>
+          <div className={TERMINAL_HEADER}>
+            <span className={TERMINAL_HEADER_TITLE}>General</span>
+          </div>
+          <div className={`${TERMINAL_BODY} space-y-3`}>
+            <Input
+              label="Name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="e.g. Primary Local Storage"
+              className={TERMINAL_INPUT}
+            />
 
-        <Select
-          label="Type"
-          options={TYPE_OPTIONS}
-          value={typeId}
-          onChange={setTypeId}
-          disabled={isEditing}
-        />
+            <Select
+              label="Type"
+              options={TYPE_OPTIONS}
+              value={typeId}
+              onChange={setTypeId}
+              disabled={isEditing}
+              className={TERMINAL_SELECT}
+            />
 
-        <Select label="Tier" options={TIER_OPTIONS} value={tier} onChange={(v) => setTier(v as StorageTier)} />
+            <Select
+              label="Tier"
+              options={TIER_OPTIONS}
+              value={tier}
+              onChange={(v) => setTier(v as StorageTier)}
+              className={TERMINAL_SELECT}
+            />
 
-        <Checkbox label="Set as default backend" checked={isDefault} onChange={setIsDefault} />
+            <Checkbox label="Set as default backend" checked={isDefault} onChange={setIsDefault} />
+          </div>
+        </div>
 
         {/* Local config */}
         {selectedType === BACKEND_TYPE.LOCAL && (
-          <Input
-            label="Base Path"
-            value={basePath}
-            onChange={(e) => setBasePath(e.target.value)}
-            placeholder="/mnt/storage"
-          />
+          <div className={TERMINAL_PANEL}>
+            <div className={TERMINAL_HEADER}>
+              <span className={TERMINAL_HEADER_TITLE}>Local Configuration</span>
+            </div>
+            <div className={`${TERMINAL_BODY} space-y-3`}>
+              <Input
+                label="Base Path"
+                value={basePath}
+                onChange={(e) => setBasePath(e.target.value)}
+                placeholder="/mnt/storage"
+                className={TERMINAL_INPUT}
+              />
+            </div>
+          </div>
         )}
 
         {/* S3 config */}
         {selectedType === BACKEND_TYPE.S3 && (
-          <Stack gap={3}>
-            <Input
-              label="Bucket"
-              value={bucket}
-              onChange={(e) => setBucket(e.target.value)}
-              placeholder="my-bucket"
-            />
-            <Input
-              label="Region"
-              value={region}
-              onChange={(e) => setRegion(e.target.value)}
-              placeholder="us-east-1"
-            />
-            <Input
-              label="Access Key ID"
-              value={accessKeyId}
-              onChange={(e) => setAccessKeyId(e.target.value)}
-            />
-            <Input
-              label="Secret Access Key"
-              type="password"
-              value={secretAccessKey}
-              onChange={(e) => setSecretAccessKey(e.target.value)}
-            />
-            <Input
-              label="Endpoint (optional)"
-              value={endpoint}
-              onChange={(e) => setEndpoint(e.target.value)}
-              placeholder="https://s3.custom-endpoint.com"
-            />
-            <Input
-              label="Path Prefix (optional)"
-              value={pathPrefix}
-              onChange={(e) => setPathPrefix(e.target.value)}
-              placeholder="uploads/"
-            />
+          <div className={TERMINAL_PANEL}>
+            <div className={TERMINAL_HEADER}>
+              <span className={TERMINAL_HEADER_TITLE}>S3 Configuration</span>
+            </div>
+            <div className={`${TERMINAL_BODY} space-y-3`}>
+              <Input
+                label="Bucket"
+                value={bucket}
+                onChange={(e) => setBucket(e.target.value)}
+                placeholder="my-bucket"
+                className={TERMINAL_INPUT}
+              />
+              <Input
+                label="Region"
+                value={region}
+                onChange={(e) => setRegion(e.target.value)}
+                placeholder="us-east-1"
+                className={TERMINAL_INPUT}
+              />
+              <Input
+                label="Access Key ID"
+                value={accessKeyId}
+                onChange={(e) => setAccessKeyId(e.target.value)}
+                className={TERMINAL_INPUT}
+              />
+              <Input
+                label="Secret Access Key"
+                type="password"
+                value={secretAccessKey}
+                onChange={(e) => setSecretAccessKey(e.target.value)}
+                className={TERMINAL_INPUT}
+              />
+              <Input
+                label="Endpoint (optional)"
+                value={endpoint}
+                onChange={(e) => setEndpoint(e.target.value)}
+                placeholder="https://s3.custom-endpoint.com"
+                className={TERMINAL_INPUT}
+              />
+              <Input
+                label="Path Prefix (optional)"
+                value={pathPrefix}
+                onChange={(e) => setPathPrefix(e.target.value)}
+                placeholder="uploads/"
+                className={TERMINAL_INPUT}
+              />
 
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={handleTestConnection}
-              loading={testConnection.isPending}
-              disabled={!bucket || !region || !accessKeyId || !secretAccessKey}
-            >
-              Test Connection
-            </Button>
-
-            {testConnection.isSuccess && (
-              <p
-                className={`text-sm ${
-                  testConnection.data.success
-                    ? "text-[var(--color-success)]"
-                    : "text-[var(--color-danger)]"
-                }`}
+              <Button
+                variant="secondary"
+                size="xs"
+                onClick={handleTestConnection}
+                loading={testConnection.isPending}
+                disabled={!bucket || !region || !accessKeyId || !secretAccessKey}
               >
-                {testConnection.data.message}
-                {testConnection.data.latency_ms != null &&
-                  ` (${testConnection.data.latency_ms}ms)`}
-              </p>
-            )}
+                Test Connection
+              </Button>
 
-            {testConnection.isError && (
-              <p className="text-sm text-[var(--color-danger)]">Connection test failed.</p>
-            )}
-          </Stack>
+              {testConnection.isSuccess && (
+                <p
+                  className={`font-mono text-xs ${
+                    testConnection.data.success
+                      ? "text-green-400"
+                      : "text-red-400"
+                  }`}
+                >
+                  {testConnection.data.message}
+                  {testConnection.data.latency_ms != null &&
+                    ` (${testConnection.data.latency_ms}ms)`}
+                </p>
+              )}
+
+              {testConnection.isError && (
+                <p className="font-mono text-xs text-red-400">Connection test failed.</p>
+              )}
+            </div>
+          </div>
         )}
 
         {/* NFS config */}
         {selectedType === BACKEND_TYPE.NFS && (
-          <Input
-            label="Mount Path"
-            value={mountPath}
-            onChange={(e) => setMountPath(e.target.value)}
-            placeholder="/mnt/nfs-share"
-          />
+          <div className={TERMINAL_PANEL}>
+            <div className={TERMINAL_HEADER}>
+              <span className={TERMINAL_HEADER_TITLE}>NFS Configuration</span>
+            </div>
+            <div className={`${TERMINAL_BODY} space-y-3`}>
+              <Input
+                label="Mount Path"
+                value={mountPath}
+                onChange={(e) => setMountPath(e.target.value)}
+                placeholder="/mnt/nfs-share"
+                className={TERMINAL_INPUT}
+              />
+            </div>
+          </div>
         )}
 
         {/* Actions */}
         <div className="flex justify-end gap-[var(--spacing-2)]">
-          <Button variant="secondary" onClick={onClose}>
+          <Button variant="secondary" size="xs" onClick={onClose}>
             Cancel
           </Button>
-          <Button onClick={handleSave} loading={saving} disabled={!name.trim()}>
+          <Button size="xs" onClick={handleSave} loading={saving} disabled={!name.trim()}>
             {isEditing ? "Save Changes" : "Create Backend"}
           </Button>
         </div>

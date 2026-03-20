@@ -11,6 +11,7 @@ import { Button, Checkbox, RemovableChip, Select } from "@/components/primitives
 import { Stack } from "@/components/layout";
 import { ListFilter, X } from "@/tokens/icons";
 import { iconSizes } from "@/tokens/icons";
+import { TERMINAL_PANEL, TERMINAL_BODY, TERMINAL_LABEL } from "@/lib/ui-classes";
 
 import { useWorkerInstances } from "./hooks/use-queue";
 import type { QueueJobFilter } from "./types";
@@ -106,11 +107,12 @@ export function QueueFilterBar({ filter, onChange }: QueueFilterBarProps) {
   ];
 
   return (
-    <div className="space-y-3">
+    <div className={`${TERMINAL_PANEL}`}>
+      <div className={`${TERMINAL_BODY} space-y-3`}>
       <Stack direction="horizontal" gap={4} align="center" className="flex-wrap">
         <Stack direction="horizontal" gap={1} align="center">
           <ListFilter size={iconSizes.sm} className="text-[var(--color-text-muted)]" />
-          <span className="text-sm font-medium text-[var(--color-text-primary)]">
+          <span className={TERMINAL_LABEL}>
             Filters
           </span>
         </Stack>
@@ -146,7 +148,7 @@ export function QueueFilterBar({ filter, onChange }: QueueFilterBarProps) {
         {hasActiveFilters && (
           <Button
             variant="ghost"
-            size="sm"
+            size="xs"
             icon={<X size={iconSizes.sm} />}
             onClick={clearAll}
           >
@@ -179,6 +181,7 @@ export function QueueFilterBar({ filter, onChange }: QueueFilterBarProps) {
           )}
         </Stack>
       )}
+      </div>
     </div>
   );
 }

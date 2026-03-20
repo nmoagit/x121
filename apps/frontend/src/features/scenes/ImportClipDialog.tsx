@@ -104,20 +104,20 @@ export function ImportClipDialog({ isOpen, onClose, sceneId, onSuccess }: Import
           {file ? (
             <>
               <FileVideo size={32} className="text-[var(--color-action-primary)]" />
-              <span className="text-sm font-medium text-[var(--color-text-primary)]">
+              <span className="font-mono text-xs font-medium text-[var(--color-text-primary)]">
                 {file.name}
               </span>
-              <span className="text-xs text-[var(--color-text-muted)]">
+              <span className="font-mono text-xs text-[var(--color-text-muted)]">
                 {formatBytes(file.size)}
               </span>
             </>
           ) : (
             <>
               <Upload size={32} className="text-[var(--color-text-muted)]" />
-              <span className="text-sm text-[var(--color-text-secondary)]">
+              <span className="font-mono text-xs text-[var(--color-text-secondary)]">
                 Drag & drop a video file here
               </span>
-              <span className="text-xs text-[var(--color-text-muted)]">
+              <span className="font-mono text-xs text-[var(--color-text-muted)]">
                 Accepted: .mp4, .webm, .mov (max 500 MB)
               </span>
             </>
@@ -141,33 +141,34 @@ export function ImportClipDialog({ isOpen, onClose, sceneId, onSuccess }: Import
           </Button>
         </div>
 
-        {error && <p className="text-sm text-[var(--color-action-danger)]">{error}</p>}
+        {error && <p className="font-mono text-xs text-red-400">{error}</p>}
 
         {/* Notes */}
         <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-[var(--color-text-secondary)]">
+          <span className="font-mono text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide">
             Notes (optional)
-          </label>
+          </span>
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             placeholder="Describe this clip..."
             rows={2}
-            className="w-full rounded-[var(--radius-md)] border p-2 text-sm
+            className="w-full rounded-[var(--radius-md)] border p-2 font-mono text-xs
               border-[var(--color-border-default)]
-              bg-[var(--color-surface-secondary)]
+              bg-[#0d1117]
               text-[var(--color-text-primary)]
               placeholder:text-[var(--color-text-muted)]
               focus:outline-none focus:ring-2 focus:ring-offset-0 focus:ring-[var(--color-border-focus)]"
           />
         </div>
 
-        <div className="flex justify-end gap-2">
-          <Button variant="ghost" onClick={handleClose} disabled={importMutation.isPending}>
+        <div className="flex justify-end gap-2 pt-1 border-t border-[var(--color-border-default)]">
+          <Button variant="ghost" size="sm" onClick={handleClose} disabled={importMutation.isPending}>
             Cancel
           </Button>
           <Button
             variant="primary"
+            size="sm"
             onClick={handleSubmit}
             disabled={!file || importMutation.isPending}
             loading={importMutation.isPending}

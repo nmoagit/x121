@@ -10,9 +10,9 @@ import { useNavigate } from "@tanstack/react-router";
 import { EmptyState } from "@/components/domain";
 import { Modal } from "@/components/composite";
 import { PageHeader, Stack } from "@/components/layout";
-import { Badge, MultiFilterBar, Spinner, Toggle } from "@/components/primitives";
-import type { FilterConfig, FilterOption } from "@/components/primitives";
-import { ProgressiveImage } from "@/components/primitives";
+import { MultiFilterBar, Toggle ,  WireframeLoader } from "@/components/primitives";
+import type { FilterConfig, FilterOption  } from "@/components/primitives";
+import { ProgressiveImage  } from "@/components/primitives";
 import {
   useImageVariantsBrowse,
   type ImageVariantBrowseItem,
@@ -20,15 +20,15 @@ import {
 import {
   IMAGE_VARIANT_STATUS_LABEL,
   PROVENANCE_LABEL,
-  statusBadgeVariant,
   type ImageVariantStatusId,
   type Provenance,
 } from "@/features/images/types";
 import { variantImageUrl, variantThumbnailUrl } from "@/features/images/utils";
 import { formatBytes, formatDateTime } from "@/lib/format";
+import { TERMINAL_STATUS_COLORS, TRACK_TEXT_COLORS } from "@/lib/ui-classes";
 import { toSelectOptions } from "@/lib/select-utils";
 import { useProjects } from "@/features/projects/hooks/use-projects";
-import { Check, Image as ImageIcon, Star } from "@/tokens/icons";
+import { Check, Image as ImageIcon } from "@/tokens/icons";
 
 /* --------------------------------------------------------------------------
    Read-only browse item
@@ -46,14 +46,13 @@ function BrowseVariantItem({
   const statusId = variant.status_id as ImageVariantStatusId;
 
   return (
-    <div className={`rounded-[var(--radius-lg)] border border-[var(--color-border-default)] transition-colors bg-[var(--color-surface-primary)] hover:bg-[var(--color-surface-secondary)] ${!variant.character_is_enabled ? "opacity-70 grayscale" : ""}`}>
-      <div className="flex items-center gap-4 p-4">
+    <div className={`rounded-[var(--radius-lg)] border border-[var(--color-border-default)] transition-colors bg-[#0d1117] hover:bg-[#161b22] ${!variant.character_is_enabled ? "opacity-70 grayscale" : ""}`}>
+      <div className="flex items-center gap-3 p-3">
         {/* Clickable image thumbnail */}
         <button
           type="button"
           onClick={onPreview}
-          className="group/preview relative h-16 w-16 shrink-0 rounded overflow-hidden
-            bg-[var(--color-surface-tertiary)] cursor-pointer"
+          className="group/preview relative h-14 w-14 shrink-0 rounded overflow-hidden bg-[#161b22] cursor-pointer"
         >
           {variant.file_path ? (
             <ProgressiveImage
@@ -65,60 +64,50 @@ function BrowseVariantItem({
             />
           ) : (
             <div className="absolute inset-0 flex items-center justify-center text-[var(--color-text-muted)]">
-              <ImageIcon size={20} />
+              <ImageIcon size={18} />
             </div>
           )}
           {variant.is_hero && (
-            <div className="absolute top-0.5 right-0.5 rounded-full bg-[var(--color-action-success)] p-0.5">
-              <Check size={10} className="text-white" />
+            <div className="absolute top-0.5 right-0.5 rounded-full bg-green-500 p-0.5">
+              <Check size={8} className="text-white" />
             </div>
           )}
         </button>
 
-        {/* Clickable metadata area — navigates to character images tab */}
+        {/* Clickable metadata area */}
         <button
           type="button"
           onClick={onNavigate}
-          className="flex min-w-0 flex-1 flex-col gap-1 text-left cursor-pointer"
+          className="flex min-w-0 flex-1 flex-col gap-0.5 text-left cursor-pointer font-mono text-xs"
         >
           <div className="flex items-center gap-2">
-            <span className="text-sm font-semibold text-[var(--color-text-primary)]">
+            <span className="font-medium text-[var(--color-text-primary)]">
               {variant.character_name}
             </span>
-            <span className="text-xs text-[var(--color-text-muted)]">
-              {variant.variant_label}
-            </span>
-          </div>
-          <div className="flex items-center gap-2 flex-wrap">
-            <Badge variant={statusBadgeVariant(statusId)} size="sm">
-              {IMAGE_VARIANT_STATUS_LABEL[statusId] ?? "Unknown"}
-            </Badge>
-            <Badge variant="default" size="sm">
-              {PROVENANCE_LABEL[variant.provenance as Provenance] ?? variant.provenance}
-            </Badge>
             {variant.variant_type && (
-              <Badge variant="info" size="sm">
+              <span className={TRACK_TEXT_COLORS[variant.variant_type] ?? "text-[var(--color-text-muted)]"}>
                 {variant.variant_type}
-              </Badge>
-            )}
-            <Badge variant="default" size="sm">
-              v{variant.version}
-            </Badge>
-            {variant.is_hero && (
-              <span
-                className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs font-medium
-                  bg-[var(--color-action-primary)] text-[var(--color-text-inverse)]"
-              >
-                <Star size={12} /> Hero
               </span>
             )}
+            {variant.is_hero && <span className="text-green-400">hero</span>}
           </div>
-          <div className="flex items-center gap-3 text-xs text-[var(--color-text-muted)]">
-            <span>{variant.project_name}</span>
+          <div className="flex items-center gap-2 text-[10px] text-[var(--color-text-muted)]">
+            <span className={TERMINAL_STATUS_COLORS[(IMAGE_VARIANT_STATUS_LABEL[statusId] ?? "unknown").toLowerCase()] ?? "text-cyan-400"}>
+              {(IMAGE_VARIANT_STATUS_LABEL[statusId] ?? "unknown").toLowerCase()}
+            </span>
+            <span className="opacity-30">|</span>
+            <span>{(PROVENANCE_LABEL[variant.provenance as Provenance] ?? variant.provenance).toLowerCase()}</span>
+            <span className="opacity-30">|</span>
+            <span>v{variant.version}</span>
             {variant.width && variant.height && (
-              <span>{variant.width}&times;{variant.height}</span>
+              <><span className="opacity-30">|</span><span>{variant.width}x{variant.height}</span></>
             )}
-            <span>{variant.file_size_bytes != null ? formatBytes(variant.file_size_bytes) : "\u2014"}</span>
+            {variant.file_size_bytes != null && (
+              <><span className="opacity-30">|</span><span>{formatBytes(variant.file_size_bytes)}</span></>
+            )}
+            <span className="opacity-30">|</span>
+            <span>{variant.project_name}</span>
+            <span className="opacity-30">|</span>
             <span>{formatDateTime(variant.created_at)}</span>
           </div>
         </button>
@@ -203,7 +192,7 @@ export function ImagesPage() {
 
       {/* Filter bar */}
       <MultiFilterBar filters={filters}>
-        <div className="flex items-center gap-3 self-end pb-[3px]">
+        <div className="flex items-center gap-3">
           <Toggle
             checked={showDisabled}
             onChange={setShowDisabled}
@@ -219,7 +208,7 @@ export function ImagesPage() {
       {/* Content */}
       {isLoading ? (
         <div className="flex justify-center py-12">
-          <Spinner />
+          <WireframeLoader size={48} />
         </div>
       ) : !filteredVariants.length ? (
         <EmptyState
@@ -271,32 +260,26 @@ export function ImagesPage() {
                 </div>
               )}
             </div>
-            <div className="flex flex-wrap gap-2">
-              <Badge variant={statusBadgeVariant(previewVariant.status_id as ImageVariantStatusId)} size="sm">
-                {IMAGE_VARIANT_STATUS_LABEL[previewVariant.status_id as ImageVariantStatusId]}
-              </Badge>
-              <Badge variant="default" size="sm">
-                {PROVENANCE_LABEL[previewVariant.provenance as Provenance] ?? previewVariant.provenance}
-              </Badge>
+            <div className="flex items-center gap-2 font-mono text-[10px] text-[var(--color-text-muted)]">
+              <span className={TERMINAL_STATUS_COLORS[(IMAGE_VARIANT_STATUS_LABEL[previewVariant.status_id as ImageVariantStatusId] ?? "unknown").toLowerCase()] ?? "text-cyan-400"}>
+                {(IMAGE_VARIANT_STATUS_LABEL[previewVariant.status_id as ImageVariantStatusId] ?? "unknown").toLowerCase()}
+              </span>
+              <span className="opacity-30">|</span>
+              <span>{(PROVENANCE_LABEL[previewVariant.provenance as Provenance] ?? previewVariant.provenance).toLowerCase()}</span>
               {previewVariant.width && previewVariant.height && (
-                <Badge variant="info" size="sm">
-                  {previewVariant.width} &times; {previewVariant.height}
-                </Badge>
+                <><span className="opacity-30">|</span><span>{previewVariant.width}x{previewVariant.height}</span></>
               )}
               {previewVariant.format && (
-                <Badge variant="default" size="sm">
-                  {previewVariant.format.toUpperCase()}
-                </Badge>
+                <><span className="opacity-30">|</span><span>{previewVariant.format.toUpperCase()}</span></>
               )}
-              <Badge variant="default" size="sm">
-                v{previewVariant.version}
-              </Badge>
+              <span className="opacity-30">|</span>
+              <span>v{previewVariant.version}</span>
               {previewVariant.is_hero && (
-                <Badge variant="success" size="sm">Hero</Badge>
+                <><span className="opacity-30">|</span><span className="text-green-400">hero</span></>
               )}
             </div>
-            <div className="text-xs text-[var(--color-text-muted)]">
-              {previewVariant.character_name} &middot; {previewVariant.project_name}
+            <div className="font-mono text-[10px] text-[var(--color-text-muted)]">
+              {previewVariant.character_name} · {previewVariant.project_name}
             </div>
           </Stack>
         )}

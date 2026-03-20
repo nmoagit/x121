@@ -1,8 +1,8 @@
+import { WireframeLoader } from "@/components/primitives";
 import { useCallback, useMemo, useState } from "react";
 
 import { EmptyState } from "@/components/domain/EmptyState";
 import { Button } from "@/components/primitives/Button";
-import { Spinner } from "@/components/primitives/Spinner";
 import { getStreamUrl } from "@/features/video-player";
 import { Play, Upload } from "@/tokens/icons";
 
@@ -84,7 +84,7 @@ export function ClipGallery({ sceneId, onGenerate, generateLoading, generateDisa
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Spinner size="lg" />
+        <WireframeLoader size={64} />
       </div>
     );
   }
@@ -104,25 +104,23 @@ export function ClipGallery({ sceneId, onGenerate, generateLoading, generateDisa
     <div className="flex flex-col gap-4">
       {/* Header */}
       <div className="flex items-center gap-[var(--spacing-2)]">
-        <h3 className="text-lg font-semibold text-[var(--color-text-primary)]">
-          Clips{" "}
-          {clips && clips.length > 0 && (
-            <span className="text-sm font-normal text-[var(--color-text-muted)]">
-              ({clips.length})
-            </span>
-          )}
-        </h3>
+        <span className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide font-mono">
+          Clips
+        </span>
+        {clips && clips.length > 0 && (
+          <span className="text-[10px] font-mono text-cyan-400">{clips.length}</span>
+        )}
         {leftActions}
         <div className="flex-1" />
         <div className="flex items-center gap-[var(--spacing-2)]">
           {onGenerate && (
             <span title={generateDisabled && generateDisabledReason ? generateDisabledReason : undefined}>
               <Button
-                size="sm"
+                size="xs"
                 onClick={onGenerate}
                 loading={generateLoading}
                 disabled={generateDisabled}
-                icon={<Play size={14} />}
+                icon={<Play size={12} />}
               >
                 Generate New
               </Button>
@@ -130,9 +128,9 @@ export function ClipGallery({ sceneId, onGenerate, generateLoading, generateDisa
           )}
           <Button
             variant="secondary"
-            size="sm"
+            size="xs"
             onClick={() => setShowImport(true)}
-            icon={<Upload size={14} />}
+            icon={<Upload size={12} />}
           >
             Import Clip
           </Button>

@@ -6,7 +6,7 @@
  */
 
 import { Card } from "@/components/composite/Card";
-import { Spinner } from "@/components/primitives";
+import { WireframeLoader } from "@/components/primitives";
 import { Stack } from "@/components/layout";
 import {
   useCharacterMetadataPreview,
@@ -54,7 +54,7 @@ export function MetadataPreview({
 
       {query.isLoading ? (
         <div className="flex h-32 items-center justify-center">
-          <Spinner size="md" />
+          <WireframeLoader size={48} />
         </div>
       ) : query.error ? (
         <Card padding="md">

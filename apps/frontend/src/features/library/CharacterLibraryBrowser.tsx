@@ -8,8 +8,10 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { FilterSelect, SearchInput, Spinner, Toggle } from "@/components";
+import { FilterSelect, SearchInput, Toggle ,  WireframeLoader } from "@/components";
+import { Button  } from "@/components/primitives";
 import { cn } from "@/lib/cn";
+import { TERMINAL_PANEL } from "@/lib/ui-classes";
 import { LayoutGrid, List } from "@/tokens/icons";
 
 import { LibraryCharacterCard, LibraryCharacterRow } from "./LibraryCharacterCard";
@@ -128,7 +130,7 @@ export function CharacterLibraryBrowser() {
       {/* Results count + view toggle */}
       {!isLoading && !error && (
         <div className="flex items-center justify-between mb-3">
-          <p className="text-xs text-[var(--color-text-muted)]">
+          <p className="font-mono text-[10px] text-[var(--color-text-muted)]">
             {resultCount} model{resultCount !== 1 ? "s" : ""}
             {debouncedSearch && " matching"}
           </p>
@@ -139,32 +141,20 @@ export function CharacterLibraryBrowser() {
               label="Show disabled"
               size="sm"
             />
-            <button
-              type="button"
+            <Button
+              variant={viewMode === "grid" ? "secondary" : "ghost"}
+              size="xs"
+              icon={<LayoutGrid size={14} />}
               onClick={() => setViewMode("grid")}
-              className={cn(
-                "p-1.5 rounded-[var(--radius-sm)] transition-colors",
-                viewMode === "grid"
-                  ? "bg-[var(--color-surface-tertiary)] text-[var(--color-text-primary)]"
-                  : "text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]",
-              )}
               aria-label="Grid view"
-            >
-              <LayoutGrid size={16} />
-            </button>
-            <button
-              type="button"
+            />
+            <Button
+              variant={viewMode === "list" ? "secondary" : "ghost"}
+              size="xs"
+              icon={<List size={14} />}
               onClick={() => setViewMode("list")}
-              className={cn(
-                "p-1.5 rounded-[var(--radius-sm)] transition-colors",
-                viewMode === "list"
-                  ? "bg-[var(--color-surface-tertiary)] text-[var(--color-text-primary)]"
-                  : "text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]",
-              )}
               aria-label="List view"
-            >
-              <List size={16} />
-            </button>
+            />
           </div>
         </div>
       )}
@@ -172,7 +162,7 @@ export function CharacterLibraryBrowser() {
       {/* Loading */}
       {isLoading && (
         <div className="flex items-center justify-center py-12" data-testid="library-loading">
-          <Spinner size="md" />
+          <WireframeLoader size={48} />
         </div>
       )}
 
@@ -190,9 +180,8 @@ export function CharacterLibraryBrowser() {
       {!isLoading && !error && resultCount === 0 && (
         <div
           className={cn(
-            "text-sm text-[var(--color-text-muted)] text-center py-12",
-            "border border-dashed border-[var(--color-border-default)]",
-            "rounded-[var(--radius-lg)]",
+            TERMINAL_PANEL,
+            "font-mono text-xs text-[var(--color-text-muted)] text-center py-12",
           )}
           data-testid="library-empty"
         >
@@ -204,7 +193,7 @@ export function CharacterLibraryBrowser() {
 
       {!isLoading && !error && resultCount > 0 && viewMode === "grid" && (
         <div
-          className="grid grid-cols-2 sm:grid-cols-5 lg:grid-cols-5 xl:grid-cols-6 gap-4"
+          className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 min-[1500px]:grid-cols-7 min-[1700px]:grid-cols-8 gap-4"
           data-testid="library-grid"
         >
           {filteredCharacters.map((character) => (
@@ -230,13 +219,20 @@ export function CharacterLibraryBrowser() {
       )}
 
       {/* Character preview modal */}
-      {selectedCharacter && (
-        <LibraryCharacterModal
-          character={selectedCharacter}
-          open
-          onClose={() => setSelectedCharacter(null)}
-        />
-      )}
+      {selectedCharacter && (() => {
+        const idx = filteredCharacters.findIndex((c) => c.id === selectedCharacter.id);
+        const prev = idx > 0 ? filteredCharacters[idx - 1] : undefined;
+        const next = idx >= 0 && idx < filteredCharacters.length - 1 ? filteredCharacters[idx + 1] : undefined;
+        return (
+          <LibraryCharacterModal
+            character={selectedCharacter}
+            open
+            onClose={() => setSelectedCharacter(null)}
+            onPrev={prev ? () => setSelectedCharacter(prev) : undefined}
+            onNext={next ? () => setSelectedCharacter(next) : undefined}
+          />
+        );
+      })()}
     </div>
   );
 }

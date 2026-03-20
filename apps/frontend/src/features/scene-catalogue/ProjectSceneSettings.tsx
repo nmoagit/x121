@@ -8,8 +8,14 @@
 
 import { useCallback, useMemo } from "react";
 
-import { Card } from "@/components/composite/Card";
 import { LoadingPane } from "@/components/primitives";
+import { cn } from "@/lib/cn";
+import {
+  TERMINAL_BODY,
+  TERMINAL_DIVIDER,
+  TERMINAL_PANEL,
+  TERMINAL_TH,
+} from "@/lib/ui-classes";
 
 import { useBatchSceneAssignments } from "@/features/projects/hooks/use-character-deliverables";
 
@@ -64,52 +70,44 @@ export function ProjectSceneSettings({ projectId }: ProjectSceneSettingsProps) {
   }
 
   return (
-    <Card elevation="sm" padding="none">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-[var(--color-border-default)]">
-                <th className="px-3 py-1.5 text-left text-xs font-medium text-[var(--color-text-muted)]">
-                  Scene
-                </th>
-                <th className="px-3 py-1.5 text-left text-xs font-medium text-[var(--color-text-muted)]">
-                  Track
-                </th>
-                <th className="px-3 py-1.5 text-left text-xs font-medium text-[var(--color-text-muted)]">
-                  Enabled
-                </th>
-                <th className="px-3 py-1.5 text-left text-xs font-medium text-[var(--color-text-muted)]">
-                  Source
-                </th>
-                <th className="px-3 py-1.5 text-left text-xs font-medium text-[var(--color-text-muted)]">
-                  Videos
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {expandedRows.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={5}
-                    className="px-3 py-6 text-center text-xs text-[var(--color-text-muted)]"
-                  >
-                    No scene settings available. Add scenes to the catalogue first.
-                  </td>
+    <div className={TERMINAL_PANEL}>
+        <div className={TERMINAL_BODY}>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className={TERMINAL_DIVIDER}>
+                  <th className={cn(TERMINAL_TH, "px-3 py-1.5")}>Scene</th>
+                  <th className={cn(TERMINAL_TH, "px-3 py-1.5")}>Track</th>
+                  <th className={cn(TERMINAL_TH, "px-3 py-1.5")}>Enabled</th>
+                  <th className={cn(TERMINAL_TH, "px-3 py-1.5")}>Source</th>
+                  <th className={cn(TERMINAL_TH, "px-3 py-1.5")}>Videos</th>
                 </tr>
-              ) : (
-                expandedRows.map((row) => (
-                  <SceneSettingRow
-                    key={`${row.scene_type_id}-${row.track_id ?? "none"}`}
-                    row={row}
-                    onToggle={handleToggle}
-                    isPending={toggleMutation.isPending}
-                    hasVideo={(videoCountMap.get(`${row.scene_type_id}::${row.track_id ?? ""}`) ?? 0) > 0}
-                  />
-                ))
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {expandedRows.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={5}
+                      className="px-3 py-6 text-center font-mono text-xs text-[var(--color-text-muted)]"
+                    >
+                      No scene settings available. Add scenes to the catalogue first.
+                    </td>
+                  </tr>
+                ) : (
+                  expandedRows.map((row) => (
+                    <SceneSettingRow
+                      key={`${row.scene_type_id}-${row.track_id ?? "none"}`}
+                      row={row}
+                      onToggle={handleToggle}
+                      isPending={toggleMutation.isPending}
+                      hasVideo={(videoCountMap.get(`${row.scene_type_id}::${row.track_id ?? ""}`) ?? 0) > 0}
+                    />
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </Card>
+      </div>
   );
 }

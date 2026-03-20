@@ -8,7 +8,7 @@ import { useCallback, useState } from "react";
 
 import { Card } from "@/components/composite/Card";
 import { Modal } from "@/components/composite/Modal";
-import { Button, Spinner } from "@/components/primitives";
+import { Button ,  WireframeLoader } from "@/components/primitives";
 import { formatDateTime, formatDuration } from "@/lib/format";
 
 import { useActiveSessions, useForceTerminate } from "./hooks/use-session-management";
@@ -45,7 +45,7 @@ export function ActiveSessionsTable() {
   if (isLoading) {
     return (
       <div className="flex h-64 items-center justify-center">
-        <Spinner size="lg" />
+        <WireframeLoader size={64} />
       </div>
     );
   }

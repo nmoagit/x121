@@ -1,16 +1,22 @@
 /**
- * Tier indicator badge for storage items (PRD-48).
+ * Tier indicator for storage items (PRD-48).
  *
- * Displays a small badge showing "Hot" or "Cold" storage tier,
- * with an optional "Retrieving..." state for cold-tier assets
+ * Displays a monospace colored label showing "HOT" or "COLD" storage tier,
+ * with an optional "RETRIEVING..." state for cold-tier assets
  * being fetched on demand.
  */
 
-import { Badge } from "@/components/primitives";
-
-import type { BadgeVariant } from "@/components/primitives";
 import type { StorageTier } from "./types";
 import { TIER_LABELS } from "./types";
+
+/* --------------------------------------------------------------------------
+   Constants
+   -------------------------------------------------------------------------- */
+
+const TIER_COLOR: Record<StorageTier, string> = {
+  hot: "text-green-400",
+  cold: "text-cyan-400",
+};
 
 /* --------------------------------------------------------------------------
    Props
@@ -24,30 +30,21 @@ interface TierIndicatorProps {
 }
 
 /* --------------------------------------------------------------------------
-   Constants
-   -------------------------------------------------------------------------- */
-
-const TIER_VARIANT: Record<StorageTier, BadgeVariant> = {
-  hot: "success",
-  cold: "info",
-};
-
-/* --------------------------------------------------------------------------
    Component
    -------------------------------------------------------------------------- */
 
 export function TierIndicator({ tier, isRetrieving = false }: TierIndicatorProps) {
   if (isRetrieving) {
     return (
-      <Badge variant="warning" size="sm">
+      <span className="font-mono text-[10px] uppercase tracking-wide text-orange-400">
         Retrieving...
-      </Badge>
+      </span>
     );
   }
 
   return (
-    <Badge variant={TIER_VARIANT[tier]} size="sm">
+    <span className={`font-mono text-[10px] uppercase tracking-wide ${TIER_COLOR[tier]}`}>
       {TIER_LABELS[tier]}
-    </Badge>
+    </span>
   );
 }

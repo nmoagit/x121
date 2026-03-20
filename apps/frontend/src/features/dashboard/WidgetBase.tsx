@@ -1,9 +1,13 @@
 import type { ReactNode } from "react";
 
-import { Card, CardBody, CardHeader } from "@/components/composite/Card";
-import { Button } from "@/components/primitives";
-import { Spinner } from "@/components/primitives";
+import { Button ,  WireframeLoader } from "@/components/primitives";
 import { cn } from "@/lib/cn";
+import {
+  TERMINAL_PANEL,
+  TERMINAL_HEADER,
+  TERMINAL_HEADER_TITLE,
+  TERMINAL_BODY,
+} from "@/lib/ui-classes";
 import { AlertCircle, RefreshCw } from "@/tokens/icons";
 
 /* --------------------------------------------------------------------------
@@ -23,7 +27,7 @@ interface WidgetBaseProps {
   headerActions?: ReactNode;
   /** Called when the user clicks the retry button in the error state. */
   onRetry?: () => void;
-  /** Additional CSS class for the outer card. */
+  /** Additional CSS class for the outer panel. */
   className?: string;
   /** Widget content. */
   children: ReactNode;
@@ -36,8 +40,9 @@ interface WidgetBaseProps {
 /**
  * Shared container for all dashboard widgets (PRD-42).
  *
+ * Uses the terminal panel aesthetic: dark bg, monospace header, compact body.
  * Provides consistent header styling, loading skeleton, and error state
- * with retry. All four core widgets extend this base component.
+ * with retry. All core widgets extend this base component.
  *
  * Designed for extensibility: PRD-89 will add widget customization hooks.
  */
@@ -52,36 +57,36 @@ export function WidgetBase({
   children,
 }: WidgetBaseProps) {
   return (
-    <Card className={cn("flex flex-col h-full", className)} elevation="sm" padding="none">
-      <CardHeader className="flex items-center justify-between px-[var(--spacing-4)] py-[var(--spacing-3)]">
+    <div className={cn(TERMINAL_PANEL, "flex flex-col h-full", className)}>
+      <div className={cn(TERMINAL_HEADER, "flex items-center justify-between")}>
         <div className="flex items-center gap-[var(--spacing-2)]">
           {icon && (
             <span className="text-[var(--color-text-muted)]" aria-hidden="true">
               {icon}
             </span>
           )}
-          <h3 className="text-xs font-semibold text-[var(--color-text-primary)]">{title}</h3>
+          <h3 className={TERMINAL_HEADER_TITLE}>{title}</h3>
         </div>
         {headerActions && <div className="flex items-center gap-1">{headerActions}</div>}
-      </CardHeader>
+      </div>
 
-      <CardBody className="flex-1 overflow-auto px-[var(--spacing-4)] py-[var(--spacing-3)]">
+      <div className={cn(TERMINAL_BODY, "flex-1 overflow-auto")}>
         {loading ? (
           <div className="flex items-center justify-center py-[var(--spacing-8)]">
-            <Spinner size="md" />
+            <WireframeLoader size={48} />
           </div>
         ) : error ? (
           <div className="flex flex-col items-center justify-center gap-[var(--spacing-3)] py-[var(--spacing-8)] text-center">
             <AlertCircle
               size={24}
-              className="text-[var(--color-action-danger)]"
+              className="text-red-400"
               aria-hidden="true"
             />
-            <p className="text-xs text-[var(--color-text-muted)]">{error}</p>
+            <p className="text-xs font-mono text-[var(--color-text-muted)]">{error}</p>
             {onRetry && (
               <Button
                 variant="secondary"
-                size="sm"
+                size="xs"
                 icon={<RefreshCw size={14} />}
                 onClick={onRetry}
               >
@@ -92,7 +97,7 @@ export function WidgetBase({
         ) : (
           children
         )}
-      </CardBody>
-    </Card>
+      </div>
+    </div>
   );
 }

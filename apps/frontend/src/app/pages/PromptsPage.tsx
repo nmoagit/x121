@@ -8,7 +8,7 @@
 import { useState } from "react";
 
 import { PageHeader, Stack } from "@/components/layout";
-import { LoadingPane, Select, Spinner } from "@/components/primitives";
+import { LoadingPane, Select ,  WireframeLoader } from "@/components/primitives";
 import { EmptyState } from "@/components/domain";
 import { toSelectOptionsBy } from "@/lib/select-utils";
 import { FileText } from "@/tokens/icons";
@@ -77,7 +77,7 @@ export function PromptsPage() {
 
       <div className="w-[300px]">
         {isLoading ? (
-          <Spinner size="sm" />
+          <WireframeLoader size={32} />
         ) : (
           <Select
             label="Scene Type"

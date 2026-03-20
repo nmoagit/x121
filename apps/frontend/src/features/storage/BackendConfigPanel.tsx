@@ -7,14 +7,23 @@
 
 import { useState } from "react";
 
-import { Card } from "@/components/composite/Card";
-import { Badge, Button } from "@/components/primitives";
+import { Button } from "@/components/primitives";
 import { formatBytes } from "@/lib/format";
+import {
+  TERMINAL_BODY,
+  TERMINAL_DIVIDER,
+  TERMINAL_HEADER,
+  TERMINAL_HEADER_TITLE,
+  TERMINAL_LABEL,
+  TERMINAL_PANEL,
+  TERMINAL_ROW_HOVER,
+  TERMINAL_STATUS_COLORS,
+} from "@/lib/ui-classes";
 import { HardDrive, Plus } from "@/tokens/icons";
 
 import { TierIndicator } from "./TierIndicator";
 import type { StorageBackend, StorageBackendStatusId, StorageBackendTypeId } from "./types";
-import { BACKEND_STATUS_LABELS, BACKEND_STATUS_VARIANT, BACKEND_TYPE_LABELS } from "./types";
+import { BACKEND_STATUS_LABELS, BACKEND_TYPE_LABELS } from "./types";
 
 /* --------------------------------------------------------------------------
    Helpers
@@ -24,6 +33,17 @@ import { BACKEND_STATUS_LABELS, BACKEND_STATUS_VARIANT, BACKEND_TYPE_LABELS } fr
 function usagePercent(used: number, total: number | null): number | null {
   if (!total || total <= 0) return null;
   return Math.min(Math.round((used / total) * 100), 100);
+}
+
+/** Map backend status to a terminal color key. */
+function statusColorKey(statusId: StorageBackendStatusId): string {
+  const map: Record<StorageBackendStatusId, string> = {
+    1: "active",
+    2: "queued",     // read_only -> warning color
+    3: "failed",     // offline -> danger color
+    4: "pending",    // decommissioned -> muted
+  };
+  return map[statusId] ?? "pending";
 }
 
 /* --------------------------------------------------------------------------
@@ -55,42 +75,42 @@ export function BackendConfigPanel({
   }
 
   return (
-    <div className="space-y-[var(--spacing-4)]">
+    <div className={TERMINAL_PANEL}>
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-[var(--color-text-primary)]">Storage Backends</h2>
+      <div className={`${TERMINAL_HEADER} flex items-center justify-between`}>
+        <span className={TERMINAL_HEADER_TITLE}>Storage Backends</span>
         {onAdd && (
-          <Button variant="primary" size="sm" onClick={onAdd} icon={<Plus size={14} />}>
+          <Button variant="primary" size="xs" onClick={onAdd} icon={<Plus size={14} />}>
             Add Backend
           </Button>
         )}
       </div>
 
-      {/* Backend cards */}
-      {backends.length === 0 ? (
-        <p className="text-sm text-[var(--color-text-muted)]">No storage backends configured.</p>
-      ) : (
-        <div className="grid gap-[var(--spacing-3)] sm:grid-cols-2 lg:grid-cols-3">
-          {backends.map((backend) => {
-            const statusVariant =
-              BACKEND_STATUS_VARIANT[backend.status_id as StorageBackendStatusId] ?? "default";
-            const statusLabel =
-              BACKEND_STATUS_LABELS[backend.status_id as StorageBackendStatusId] ?? "Unknown";
-            const typeLabel =
-              BACKEND_TYPE_LABELS[backend.backend_type_id as StorageBackendTypeId] ?? "Unknown";
-            const pct = usagePercent(backend.used_bytes, backend.total_capacity_bytes);
+      {/* Body */}
+      <div className={TERMINAL_BODY}>
+        {backends.length === 0 ? (
+          <p className="font-mono text-xs text-[var(--color-text-muted)]">
+            No storage backends configured.
+          </p>
+        ) : (
+          <div className="space-y-0">
+            {backends.map((backend, idx) => {
+              const statusLabel =
+                BACKEND_STATUS_LABELS[backend.status_id as StorageBackendStatusId] ?? "Unknown";
+              const statusColor =
+                TERMINAL_STATUS_COLORS[statusColorKey(backend.status_id as StorageBackendStatusId)] ??
+                "text-[var(--color-text-muted)]";
+              const typeLabel =
+                BACKEND_TYPE_LABELS[backend.backend_type_id as StorageBackendTypeId] ?? "Unknown";
+              const pct = usagePercent(backend.used_bytes, backend.total_capacity_bytes);
+              const isSelected = selectedId === backend.id;
 
-            return (
-              <Card
-                key={backend.id}
-                elevation="sm"
-                padding="none"
-                className={`cursor-pointer transition-shadow hover:shadow-[var(--shadow-md)]${
-                  selectedId === backend.id ? " ring-2 ring-[var(--color-primary)]" : ""
-                }`}
-              >
+              return (
                 <div
-                  className="px-[var(--spacing-4)] py-[var(--spacing-3)]"
+                  key={backend.id}
+                  className={`${TERMINAL_ROW_HOVER} ${idx > 0 ? TERMINAL_DIVIDER : ""} cursor-pointer px-2 py-2.5 ${
+                    isSelected ? "bg-[#161b22] ring-1 ring-cyan-400/40" : ""
+                  }`}
                   onClick={() => handleSelect(backend)}
                   role="button"
                   tabIndex={0}
@@ -98,66 +118,76 @@ export function BackendConfigPanel({
                     if (e.key === "Enter" || e.key === " ") handleSelect(backend);
                   }}
                 >
-                  {/* Name + Status */}
-                  <div className="flex items-center justify-between gap-[var(--spacing-2)]">
-                    <div className="flex items-center gap-[var(--spacing-2)] min-w-0">
+                  {/* Row 1: Name + Status */}
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
                       <HardDrive
-                        size={16}
+                        size={14}
                         className="shrink-0 text-[var(--color-text-muted)]"
                         aria-hidden
                       />
-                      <span className="truncate text-sm font-semibold text-[var(--color-text-primary)]">
+                      <span className="truncate font-mono text-xs font-medium text-[var(--color-text-primary)]">
                         {backend.name}
                       </span>
+                      {backend.is_default && (
+                        <span className="font-mono text-[10px] text-cyan-400 uppercase tracking-wide">
+                          default
+                        </span>
+                      )}
                     </div>
-                    <Badge variant={statusVariant} size="sm">
+                    <span className={`font-mono text-xs uppercase ${statusColor}`}>
                       {statusLabel}
-                    </Badge>
+                    </span>
                   </div>
 
-                  {/* Type + Tier */}
-                  <div className="mt-[var(--spacing-2)] flex items-center gap-[var(--spacing-2)] text-xs text-[var(--color-text-muted)]">
-                    <span>{typeLabel}</span>
+                  {/* Row 2: Type + Tier + Capacity */}
+                  <div className="mt-1.5 flex items-center gap-3">
+                    <span className={TERMINAL_LABEL}>{typeLabel}</span>
+                    <span className="opacity-30">|</span>
                     <TierIndicator tier={backend.tier} />
+                    {pct !== null && (
+                      <>
+                        <span className="opacity-30">|</span>
+                        <span className="font-mono text-xs text-[var(--color-text-muted)]">
+                          {formatBytes(backend.used_bytes)} / {formatBytes(backend.total_capacity_bytes!)}
+                        </span>
+                        <span
+                          className={`font-mono text-xs ${
+                            pct > 90
+                              ? "text-red-400"
+                              : pct > 70
+                                ? "text-orange-400"
+                                : "text-green-400"
+                          }`}
+                        >
+                          {pct}%
+                        </span>
+                      </>
+                    )}
                   </div>
 
                   {/* Capacity bar */}
                   {pct !== null && (
-                    <div className="mt-[var(--spacing-2)]">
-                      <div className="flex items-center justify-between text-xs text-[var(--color-text-muted)]">
-                        <span>
-                          {formatBytes(backend.used_bytes)} /{" "}
-                          {formatBytes(backend.total_capacity_bytes!)}
-                        </span>
-                        <span>{pct}%</span>
-                      </div>
-                      <div className="mt-1 h-1.5 w-full rounded-full bg-[var(--color-surface-tertiary)]">
-                        <div
-                          className={`h-full rounded-full transition-all ${
-                            pct > 90
-                              ? "bg-[var(--color-danger)]"
-                              : pct > 70
-                                ? "bg-[var(--color-warning)]"
-                                : "bg-[var(--color-success)]"
-                          }`}
-                          style={{ width: `${pct}%` }}
-                        />
-                      </div>
+                    <div className="mt-1.5 h-1 w-full rounded-full bg-white/10">
+                      <div
+                        className={`h-full rounded-full transition-all ${
+                          pct > 90
+                            ? "bg-red-400"
+                            : pct > 70
+                              ? "bg-orange-400"
+                              : "bg-cyan-400"
+                        }`}
+                        style={{ width: `${pct}%` }}
+                      />
                     </div>
                   )}
 
-                  {/* Default badge / Set as default */}
-                  {backend.is_default ? (
-                    <div className="mt-[var(--spacing-2)]">
-                      <Badge variant="info" size="sm">
-                        Default
-                      </Badge>
-                    </div>
-                  ) : onSetDefault ? (
-                    <div className="mt-[var(--spacing-2)]">
+                  {/* Set as default button */}
+                  {!backend.is_default && onSetDefault && (
+                    <div className="mt-1.5">
                       <Button
                         variant="ghost"
-                        size="sm"
+                        size="xs"
                         onClick={(e) => {
                           e.stopPropagation();
                           onSetDefault(backend);
@@ -166,13 +196,13 @@ export function BackendConfigPanel({
                         Set as Default
                       </Button>
                     </div>
-                  ) : null}
+                  )}
                 </div>
-              </Card>
-            );
-          })}
-        </div>
-      )}
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

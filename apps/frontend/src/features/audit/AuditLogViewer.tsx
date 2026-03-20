@@ -7,10 +7,11 @@
 
 import { useState, useCallback } from "react";
 
-import { Card } from "@/components/composite/Card";
-import { Button, FilterSelect, SearchInput, Select, Spinner } from "@/components/primitives";
+import { Button, FilterSelect, SearchInput, Select ,  WireframeLoader } from "@/components/primitives";
 import { Stack } from "@/components/layout";
 import { useSetPageTitle } from "@/hooks/useSetPageTitle";
+import { TERMINAL_PANEL, TERMINAL_HEADER, TERMINAL_BODY, TERMINAL_TH, TERMINAL_DIVIDER, TERMINAL_ROW_HOVER, TERMINAL_LABEL } from "@/lib/ui-classes";
+import { cn } from "@/lib/cn";
 import { useAuditLogs, exportAuditLogs } from "./hooks/use-audit";
 import {
   ACTION_TYPES,
@@ -82,8 +83,8 @@ export function AuditLogViewer() {
         </div>
 
         {/* Filters */}
-        <Card padding="md">
-          <div className="flex flex-wrap items-end gap-3">
+        <div className={TERMINAL_PANEL}>
+          <div className={cn(TERMINAL_BODY, "flex flex-wrap items-end gap-3")}>
             <SearchInput
               placeholder="Search log details..."
               value={searchText}
@@ -128,32 +129,35 @@ export function AuditLogViewer() {
               className="w-[160px]"
             />
           </div>
-        </Card>
+        </div>
 
         {/* Table */}
         {isLoading ? (
           <div className="flex h-64 items-center justify-center">
-            <Spinner size="lg" />
+            <WireframeLoader size={64} />
           </div>
         ) : (
-          <Card padding="none">
+          <div className={TERMINAL_PANEL}>
+            <div className={TERMINAL_HEADER}>
+              <span className={TERMINAL_LABEL}>Audit Entries</span>
+            </div>
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="w-full font-mono text-xs">
                 <thead>
-                  <tr className="border-b border-[var(--color-border-default)] bg-[var(--color-surface-secondary)]">
-                    <th className="px-4 py-2.5 text-left font-medium text-[var(--color-text-muted)]">
+                  <tr className={TERMINAL_DIVIDER}>
+                    <th className={cn(TERMINAL_TH, "px-4 py-2.5")}>
                       Timestamp
                     </th>
-                    <th className="px-4 py-2.5 text-left font-medium text-[var(--color-text-muted)]">
+                    <th className={cn(TERMINAL_TH, "px-4 py-2.5")}>
                       User
                     </th>
-                    <th className="px-4 py-2.5 text-left font-medium text-[var(--color-text-muted)]">
+                    <th className={cn(TERMINAL_TH, "px-4 py-2.5")}>
                       Action
                     </th>
-                    <th className="px-4 py-2.5 text-left font-medium text-[var(--color-text-muted)]">
+                    <th className={cn(TERMINAL_TH, "px-4 py-2.5")}>
                       Entity
                     </th>
-                    <th className="px-4 py-2.5 text-left font-medium text-[var(--color-text-muted)]">
+                    <th className={cn(TERMINAL_TH, "px-4 py-2.5")}>
                       IP Address
                     </th>
                   </tr>
@@ -163,7 +167,7 @@ export function AuditLogViewer() {
                     <tr>
                       <td
                         colSpan={5}
-                        className="px-4 py-8 text-center text-sm text-[var(--color-text-muted)]"
+                        className="px-4 py-8 text-center font-mono text-xs text-[var(--color-text-muted)]"
                       >
                         No audit log entries found.
                       </td>
@@ -183,8 +187,8 @@ export function AuditLogViewer() {
 
             {/* Pagination */}
             {data && data.total > 0 && (
-              <div className="flex items-center justify-between border-t border-[var(--color-border-default)] px-4 py-3">
-                <div className="flex items-center gap-2 text-sm text-[var(--color-text-muted)]">
+              <div className="flex items-center justify-between border-t border-[var(--color-border-default)]/30 px-4 py-3">
+                <div className="flex items-center gap-2 font-mono text-xs text-[var(--color-text-muted)]">
                   <span>
                     Showing {page * pageSize + 1}
                     {" - "}
@@ -207,7 +211,7 @@ export function AuditLogViewer() {
                 <div className="flex gap-1">
                   <Button
                     variant="secondary"
-                    size="sm"
+                    size="xs"
                     disabled={page === 0}
                     onClick={() => setPage((p) => p - 1)}
                   >
@@ -215,7 +219,7 @@ export function AuditLogViewer() {
                   </Button>
                   <Button
                     variant="secondary"
-                    size="sm"
+                    size="xs"
                     disabled={page >= totalPages - 1}
                     onClick={() => setPage((p) => p + 1)}
                   >
@@ -224,7 +228,7 @@ export function AuditLogViewer() {
                 </div>
               </div>
             )}
-          </Card>
+          </div>
         )}
       </Stack>
     </div>
@@ -249,12 +253,12 @@ function AuditLogRow({
   return (
     <>
       <tr
-        className="cursor-pointer border-b border-[var(--color-border-default)] transition-colors hover:bg-[var(--color-surface-secondary)]"
+        className={cn("cursor-pointer", TERMINAL_DIVIDER, TERMINAL_ROW_HOVER)}
         onClick={onToggle}
         role="button"
         aria-expanded={expanded}
       >
-        <td className="px-4 py-2.5 text-[var(--color-text-primary)]">
+        <td className="px-4 py-2.5 text-cyan-400">
           {ts.toLocaleDateString()}{" "}
           <span className="text-[var(--color-text-muted)]">
             {ts.toLocaleTimeString()}
@@ -264,7 +268,7 @@ function AuditLogRow({
           {log.user_id ? `User #${log.user_id}` : "System"}
         </td>
         <td className="px-4 py-2.5">
-          <span className="inline-block rounded-[var(--radius-sm)] bg-[var(--color-surface-secondary)] px-2 py-0.5 text-xs font-medium text-[var(--color-text-secondary)]">
+          <span className="text-cyan-400">
             {actionTypeLabel(log.action_type)}
           </span>
         </td>
@@ -282,9 +286,9 @@ function AuditLogRow({
         <tr>
           <td
             colSpan={5}
-            className="bg-[var(--color-surface-secondary)] px-4 py-3"
+            className="bg-[#161b22] px-4 py-3"
           >
-            <div className="space-y-2 text-sm">
+            <div className="space-y-2 font-mono text-xs">
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
                 <DetailItem label="Session ID" value={log.session_id} />
                 <DetailItem label="User Agent" value={log.user_agent} />
@@ -296,10 +300,10 @@ function AuditLogRow({
               </div>
               {log.details_json && (
                 <div>
-                  <p className="mb-1 text-xs font-medium text-[var(--color-text-muted)]">
+                  <p className={cn(TERMINAL_LABEL, "mb-1")}>
                     Details
                   </p>
-                  <pre className="max-h-48 overflow-auto rounded-[var(--radius-md)] bg-[var(--color-surface-primary)] p-3 text-xs text-[var(--color-text-secondary)]">
+                  <pre className="max-h-48 overflow-auto rounded-[var(--radius-md)] bg-[#0d1117] p-3 text-xs text-cyan-400 font-mono">
                     {JSON.stringify(log.details_json, null, 2)}
                   </pre>
                 </div>
@@ -325,10 +329,10 @@ function DetailItem({
 }) {
   return (
     <div>
-      <p className="text-xs font-medium text-[var(--color-text-muted)]">
+      <p className={TERMINAL_LABEL}>
         {label}
       </p>
-      <p className="truncate text-xs text-[var(--color-text-secondary)]">
+      <p className="truncate text-xs text-cyan-400 font-mono">
         {value ?? "-"}
       </p>
     </div>

@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Modal } from "@/components/composite";
-import { Badge } from "@/components/primitives/Badge";
 import { Button } from "@/components/primitives/Button";
 import { DrawingCanvas } from "@/features/annotations/DrawingCanvas";
 import type { DrawingObject } from "@/features/annotations/types";
@@ -240,8 +239,8 @@ export function ClipPlaybackModal({ clip, onClose }: ClipPlaybackModalProps) {
               <div className="flex h-48 items-center justify-center rounded-[var(--radius-md)] border border-dashed border-[var(--color-border-default)] bg-[var(--color-surface-secondary)]">
                 <div className="flex flex-col items-center gap-2 text-[var(--color-text-muted)]">
                   <X size={32} />
-                  <span className="text-sm">Video file has been purged from disk</span>
-                  <span className="text-xs">Metadata and generation parameters are still available below.</span>
+                  <span className="font-mono text-xs">Video file has been purged from disk</span>
+                  <span className="font-mono text-xs text-[var(--color-text-muted)]">Metadata and generation parameters are still available below.</span>
                 </div>
               </div>
             ) : (
@@ -315,9 +314,9 @@ export function ClipPlaybackModal({ clip, onClose }: ClipPlaybackModalProps) {
             </Button>
 
             {annotating && (
-              <Badge variant="info" size="sm">
+              <span className="font-mono text-xs text-cyan-400">
                 Frame {annotatingFrameRef.current}
-              </Badge>
+              </span>
             )}
 
             {upsertMutation.isPending && (
@@ -329,7 +328,7 @@ export function ClipPlaybackModal({ clip, onClose }: ClipPlaybackModalProps) {
           {/* Generation snapshot */}
           {clip.generation_snapshot != null &&
             Object.keys(clip.generation_snapshot).length > 0 && (
-              <div className="rounded-[var(--radius-md)] border border-[var(--color-border-default)] bg-[var(--color-surface-secondary)] p-[var(--spacing-3)]">
+              <div className="rounded-[var(--radius-md)] border border-[var(--color-border-default)] p-[var(--spacing-3)]">
                 <GenerationSnapshotPanel snapshot={clip.generation_snapshot} />
               </div>
             )}
@@ -337,7 +336,7 @@ export function ClipPlaybackModal({ clip, onClose }: ClipPlaybackModalProps) {
           {/* Annotation summary list */}
           {sortedAnnotations.length > 0 && (
             <div className="flex flex-col gap-[var(--spacing-2)]">
-              <h4 className="text-sm font-medium text-[var(--color-text-primary)]">
+              <h4 className="font-mono text-xs font-medium text-[var(--color-text-primary)]">
                 Annotations
               </h4>
               <div className="flex flex-col gap-1 max-h-40 overflow-y-auto">
@@ -348,7 +347,7 @@ export function ClipPlaybackModal({ clip, onClose }: ClipPlaybackModalProps) {
                   >
                     <button
                       type="button"
-                      className="flex flex-1 items-center justify-between rounded border border-[var(--color-border-default)] bg-[var(--color-surface-secondary)] px-3 py-1.5 text-left text-sm hover:bg-[var(--color-surface-tertiary)] transition-colors"
+                      className="flex flex-1 items-center justify-between rounded border border-[var(--color-border-default)] px-3 py-1.5 text-left font-mono text-xs hover:bg-[#161b22] transition-colors"
                       onClick={() => handleFrameSelect(entry.frameNumber)}
                     >
                       <span className="font-mono text-xs text-[var(--color-text-primary)]">
@@ -360,7 +359,7 @@ export function ClipPlaybackModal({ clip, onClose }: ClipPlaybackModalProps) {
                     </button>
                     <button
                       type="button"
-                      className="rounded p-1 text-[var(--color-text-muted)] hover:text-[var(--color-action-danger)] hover:bg-[var(--color-surface-tertiary)] transition-colors"
+                      className="rounded p-1 text-[var(--color-text-muted)] hover:text-[var(--color-action-danger)] hover:bg-[#161b22] transition-colors"
                       onClick={() => handleDeleteFrameAnnotation(entry.frameNumber)}
                       title={`Delete all annotations on frame ${entry.frameNumber}`}
                       aria-label={`Delete frame ${entry.frameNumber} annotations`}

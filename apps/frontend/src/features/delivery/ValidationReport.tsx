@@ -1,89 +1,21 @@
 /**
  * Pre-export validation report component (PRD-39).
  *
- * Runs delivery validation on demand and displays pass/fail summary
- * with a list of errors and warnings.
+ * Displays validation results in a terminal-style log viewer matching
+ * the generation log style (dark background, monospace LogLine entries).
  */
 
 import { useState } from "react";
 
+import { useQueryClient } from "@tanstack/react-query";
+
 import { Badge, Button } from "@/components";
-import { cn } from "@/lib/cn";
-import { SECTION_HEADING } from "@/lib/ui-classes";
+import { LogLine } from "@/components/domain";
+import { ChevronDown, ChevronRight, ShieldCheck, Trash2 } from "@/tokens/icons";
+import { iconSizes } from "@/tokens/icons";
 
-import { useDeliveryValidation } from "./hooks/use-delivery";
-import { SEVERITY_COLORS } from "./types";
-import type { DeliveryValidationResponse, ValidationIssue } from "./types";
-
-interface ValidationReportProps {
-  projectId: number;
-  /** Pre-loaded validation data (for testing or SSR). */
-  initialData?: DeliveryValidationResponse;
-}
-
-export function ValidationReport({ projectId, initialData }: ValidationReportProps) {
-  const [enabled, setEnabled] = useState(false);
-  const { data, isLoading, isError, error, refetch } = useDeliveryValidation(projectId, enabled);
-
-  const result = data ?? initialData;
-
-  function handleRunValidation() {
-    if (enabled) {
-      refetch();
-    } else {
-      setEnabled(true);
-    }
-  }
-
-  return (
-    <div data-testid="validation-report" className="space-y-4">
-      <div className="flex items-center gap-3">
-        <h3 className={SECTION_HEADING}>
-          Delivery Validation
-        </h3>
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={handleRunValidation}
-          disabled={isLoading}
-          data-testid="run-validation-button"
-        >
-          {isLoading ? "Validating..." : "Run Validation"}
-        </Button>
-      </div>
-
-      {isError && (
-        <p className="text-sm text-[var(--color-action-danger)]">
-          Validation failed: {error instanceof Error ? error.message : "Unknown error"}
-        </p>
-      )}
-
-      {result && (
-        <div className="space-y-3">
-          {/* Summary */}
-          <div data-testid="validation-summary" className="flex items-center gap-3">
-            <Badge variant={result.passed ? "success" : "danger"} size="md">
-              {result.passed ? "PASS" : "FAIL"}
-            </Badge>
-            <span className="text-sm text-[var(--color-text-secondary)]">
-              {result.error_count} error{result.error_count !== 1 ? "s" : ""},
-              {" "}{result.warning_count} warning{result.warning_count !== 1 ? "s" : ""}
-            </span>
-          </div>
-
-          {/* Issue list */}
-          {result.issues.length > 0 && (
-            <ul data-testid="validation-issues" className="space-y-2">
-              {result.issues.map((issue, idx) => (
-                <IssueItem key={idx} issue={issue} />
-              ))}
-            </ul>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
+import { deliveryKeys, useDeliveryValidation } from "./hooks/use-delivery";
+import type { DeliveryValidationResponse } from "./types";
 
 /** Human-readable labels for validation categories. */
 const CATEGORY_LABELS: Record<string, string> = {
@@ -92,33 +24,137 @@ const CATEGORY_LABELS: Record<string, string> = {
   non_h264_codec: "Codec Warning",
   no_scenes: "No Scenes",
   metadata_not_approved: "Metadata",
+  skipped_metadata: "Skipped",
+  skipped_images: "Skipped",
+  skipped_scenes: "Skipped",
+  skipped_speech: "Skipped",
 };
 
 function formatCategory(category: string): string {
   return CATEGORY_LABELS[category] ?? category.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
-function IssueItem({ issue }: { issue: ValidationIssue }) {
+interface ValidationReportProps {
+  projectId: number;
+  /** Pre-loaded validation data (for testing or SSR). */
+  initialData?: DeliveryValidationResponse;
+  /** When provided, only these models are validated. Null/undefined = all. */
+  characterIds?: number[] | null;
+}
+
+export function ValidationReport({ projectId, initialData, characterIds }: ValidationReportProps) {
+  const queryClient = useQueryClient();
+  const [enabled, setEnabled] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
+  const [cleared, setCleared] = useState(false);
+  const { data, isLoading, isError, error, refetch } = useDeliveryValidation(projectId, enabled, characterIds);
+
+  const result = cleared ? undefined : (data ?? initialData);
+  const hasResult = result != null;
+
+  function handleRunValidation() {
+    setCleared(false);
+    setCollapsed(false);
+    if (enabled) {
+      refetch();
+    } else {
+      setEnabled(true);
+    }
+  }
+
+  function handleClear() {
+    setCleared(true);
+    setCollapsed(true);
+    setEnabled(false);
+    queryClient.removeQueries({ queryKey: deliveryKeys.validation(projectId) });
+  }
+
   return (
-    <li
-      className={cn(
-        "flex items-center gap-2 text-sm",
-        "rounded-[var(--radius-md)] p-2",
-        "bg-[var(--color-surface-secondary)]",
+    <div data-testid="validation-report" className="rounded-[var(--radius-lg)] border border-[var(--color-border-default)] overflow-hidden">
+      {/* Terminal header */}
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={() => hasResult && setCollapsed((v) => !v)}
+        onKeyDown={(e) => { if ((e.key === "Enter" || e.key === " ") && hasResult) setCollapsed((v) => !v); }}
+        className="flex w-full items-center gap-[var(--spacing-2)] px-[var(--spacing-3)] py-[var(--spacing-2)] bg-[var(--color-surface-tertiary)] border-b border-[var(--color-border-default)] cursor-pointer hover:bg-[var(--color-surface-secondary)] transition-colors"
+      >
+        {hasResult ? (
+          collapsed ? (
+            <ChevronRight size={14} className="text-[var(--color-text-muted)]" />
+          ) : (
+            <ChevronDown size={14} className="text-[var(--color-text-muted)]" />
+          )
+        ) : (
+          <ShieldCheck size={14} className="text-[var(--color-text-muted)]" />
+        )}
+        <span className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide">
+          Delivery Validation
+        </span>
+
+        {/* Summary badge inline in header */}
+        {result && (
+          <Badge variant={result.passed ? "success" : "danger"} size="sm">
+            {result.passed ? "PASS" : "FAIL"}
+          </Badge>
+        )}
+        {result && (
+          <span className="text-xs text-[var(--color-text-muted)]">
+            {result.error_count} error{result.error_count !== 1 ? "s" : ""},
+            {" "}{result.warning_count} warning{result.warning_count !== 1 ? "s" : ""}
+          </span>
+        )}
+
+        {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
+        <span className="ml-auto flex items-center gap-[var(--spacing-2)]" onClick={(e) => e.stopPropagation()}>
+          <Button
+            variant={hasResult ? "ghost" : "secondary"}
+            size="sm"
+            onClick={handleRunValidation}
+            disabled={isLoading}
+          >
+            {isLoading ? "Validating..." : "Run Validation"}
+          </Button>
+          {hasResult && (
+            <Button
+              variant="ghost"
+              size="sm"
+              icon={<Trash2 size={iconSizes.sm} />}
+              onClick={handleClear}
+            >
+              Clear
+            </Button>
+          )}
+        </span>
+      </div>
+
+      {/* Log output area */}
+      {!collapsed && hasResult && (
+        <div className="max-h-64 overflow-y-auto bg-[#0d1117] p-[var(--spacing-3)]">
+          {isError && (
+            <p className="text-xs font-mono text-[var(--color-action-danger)]">
+              Validation query failed: {error instanceof Error ? error.message : "Unknown error"}
+            </p>
+          )}
+
+          {result.issues.length > 0 ? (
+            <div className="flex flex-col gap-px">
+              {result.issues.map((issue, idx) => (
+                <LogLine
+                  key={idx}
+                  timestamp={new Date().toISOString()}
+                  level={issue.severity === "error" ? "error" : issue.severity === "info" ? "info" : "warn"}
+                  message={`[${formatCategory(issue.category)}] ${issue.message}`}
+                />
+              ))}
+            </div>
+          ) : (
+            <p className="text-xs text-[var(--color-action-success)] font-mono">
+              All checks passed — ready to export.
+            </p>
+          )}
+        </div>
       )}
-      data-testid="validation-issue"
-    >
-      <span className="inline-block w-16 shrink-0">
-        <Badge variant={SEVERITY_COLORS[issue.severity]} size="sm">
-          {issue.severity}
-        </Badge>
-      </span>
-      <span className="inline-block w-28 shrink-0">
-        <Badge variant="default" size="sm">
-          {formatCategory(issue.category)}
-        </Badge>
-      </span>
-      <span className="text-[var(--color-text-primary)] flex-1">{issue.message}</span>
-    </li>
+    </div>
   );
 }

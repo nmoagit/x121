@@ -1,3 +1,4 @@
+import { WireframeLoader } from "@/components/primitives";
 /**
  * Displays lock status and provides lock/unlock actions for an entity (PRD-11).
  *
@@ -7,7 +8,6 @@
 
 import { Button } from "@/components/primitives/Button";
 import { Badge } from "@/components/primitives/Badge";
-import { Spinner } from "@/components/primitives/Spinner";
 import { Lock, Unlock } from "@/tokens/icons";
 import { iconSizes } from "@/tokens/icons";
 import { formatDateTime, formatCountdown } from "@/lib/format";
@@ -37,7 +37,7 @@ export function LockStatus({
   } = useLock(entityType, entityId);
 
   if (isLoading) {
-    return <Spinner size="sm" />;
+    return <WireframeLoader size={32} />;
   }
 
   const isLockedByMe = lock !== null && lock.user_id === currentUserId;

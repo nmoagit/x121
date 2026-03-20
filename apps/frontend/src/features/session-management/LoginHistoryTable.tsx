@@ -7,7 +7,7 @@
 import { useState, useMemo } from "react";
 
 import { Card } from "@/components/composite/Card";
-import { Badge, Button, Spinner } from "@/components/primitives";
+import { Badge, Button ,  WireframeLoader } from "@/components/primitives";
 import { formatDateTime } from "@/lib/format";
 
 import { useLoginHistory } from "./hooks/use-session-management";
@@ -40,7 +40,7 @@ export function LoginHistoryTable() {
   if (isLoading) {
     return (
       <div className="flex h-64 items-center justify-center">
-        <Spinner size="lg" />
+        <WireframeLoader size={64} />
       </div>
     );
   }

@@ -7,7 +7,7 @@
 
 import { Check, XCircle, AlertTriangle } from "@/tokens/icons";
 import { iconSizes } from "@/tokens/icons";
-import { Button, Spinner } from "@/components/primitives";
+import { Button ,  WireframeLoader } from "@/components/primitives";
 import { formatPercent } from "@/lib/format";
 
 import { useCompletionChecklist, useTransitionProject } from "./hooks/use-project-lifecycle";
@@ -82,7 +82,7 @@ export function CompletionChecklist({ projectId }: CompletionChecklistProps) {
   if (isLoading) {
     return (
       <div className="flex justify-center py-[var(--spacing-6)]" data-testid="checklist-loading">
-        <Spinner />
+        <WireframeLoader size={48} />
       </div>
     );
   }

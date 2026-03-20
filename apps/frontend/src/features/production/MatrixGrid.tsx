@@ -11,6 +11,7 @@
 
 import { useMemo, useState } from "react";
 
+import { TERMINAL_TH, TERMINAL_DIVIDER, TERMINAL_ROW_HOVER } from "@/lib/ui-classes";
 
 import {
   CELL_STATUS_BY_ID,
@@ -149,18 +150,18 @@ export function MatrixGrid({
   const hasCharActions = !!(onCancelCharacter || onDeleteCharacter);
 
   return (
-    <div data-testid="matrix-grid" className="overflow-auto">
+    <div data-testid="matrix-grid" className="overflow-auto rounded-[var(--radius-lg)] border border-[var(--color-border-default)] bg-[#0d1117]">
       <table className="border-collapse text-sm">
         <thead>
-          <tr>
-            <th className="sticky left-0 z-10 bg-[var(--color-surface-primary)] p-2 text-left text-xs font-medium text-[var(--color-text-muted)] whitespace-nowrap">
+          <tr className="bg-[#161b22]">
+            <th className={`sticky left-0 z-10 bg-[#161b22] p-2 whitespace-nowrap ${TERMINAL_TH}`}>
               Character
             </th>
             {columns.map((col) => (
                   <th
                     key={columnKey(col)}
                     style={{ maxWidth: CELL_MAX_WIDTH }}
-                    className="p-2 text-center text-xs font-medium text-[var(--color-text-muted)] whitespace-nowrap"
+                    className={`p-2 text-center whitespace-nowrap ${TERMINAL_TH}`}
                   >
                     <div>{col.scene_type_name}</div>
                     {col.has_clothes_off_transition ? (
@@ -178,8 +179,8 @@ export function MatrixGrid({
           </thead>
           <tbody>
             {characters.map((char) => (
-              <tr key={char.id}>
-                <td className="sticky left-0 z-10 bg-[var(--color-surface-primary)] p-0 font-medium text-[var(--color-text-primary)] whitespace-nowrap">
+              <tr key={char.id} className={`${TERMINAL_DIVIDER} ${TERMINAL_ROW_HOVER}`}>
+                <td className="sticky left-0 z-10 bg-[#0d1117] p-0 font-mono text-xs text-[var(--color-text-primary)] whitespace-nowrap">
                   <div
                     onMouseEnter={() => setHoveredCharId(char.id)}
                     onMouseLeave={() => setHoveredCharId(null)}

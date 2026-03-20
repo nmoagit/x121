@@ -1,11 +1,10 @@
 import { useState } from "react";
 
-import { Badge } from "@/components/primitives";
+import { Badge ,  WireframeLoader } from "@/components/primitives";
 import { Card } from "@/components/composite/Card";
-import { Input } from "@/components/primitives";
-import { Select } from "@/components/primitives";
-import { Spinner } from "@/components/primitives";
-import { Toggle } from "@/components/primitives";
+import { Input  } from "@/components/primitives";
+import { Select  } from "@/components/primitives";
+import { Toggle  } from "@/components/primitives";
 import { Stack } from "@/components/layout";
 import {
   useAlertThresholds,
@@ -48,7 +47,7 @@ export function AlertConfig() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Spinner size="lg" />
+        <WireframeLoader size={64} />
       </div>
     );
   }

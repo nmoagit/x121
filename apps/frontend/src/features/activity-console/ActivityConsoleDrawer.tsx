@@ -12,6 +12,7 @@ import { Button } from "@/components/primitives";
 import { Tabs } from "@/components/composite";
 import { ChevronDown, Terminal } from "@/tokens/icons";
 import { cn } from "@/lib/cn";
+import { TERMINAL_HEADER_TITLE } from "@/lib/ui-classes";
 
 import { ActivityConsolePanel } from "./ActivityConsolePanel";
 import { GenerationLogTab } from "./components/GenerationLogTab";
@@ -88,7 +89,7 @@ export function ActivityConsoleDrawer() {
   return (
     <div
       className={cn(
-        "shrink-0 border-t border-[var(--color-border-default)] bg-[var(--color-surface-primary)]",
+        "shrink-0 border-t border-[var(--color-border-default)] bg-[#0d1117]",
         "transition-[height] duration-300 ease-in-out overflow-hidden",
         !isOpen && "!h-0 !border-t-0",
       )}
@@ -97,7 +98,7 @@ export function ActivityConsoleDrawer() {
       <div className="flex h-full flex-col">
         {/* Drag handle */}
         <div
-          className="flex h-1.5 shrink-0 cursor-row-resize items-center justify-center hover:bg-[var(--color-surface-tertiary)] active:bg-[var(--color-action-primary-hover)]"
+          className="flex h-1.5 shrink-0 cursor-row-resize items-center justify-center hover:bg-[#161b22] active:bg-[var(--color-action-primary-hover)]"
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
@@ -106,14 +107,19 @@ export function ActivityConsoleDrawer() {
           <div className="h-0.5 w-8 rounded-full bg-[var(--color-border-default)]" />
         </div>
 
-        {/* Drawer header — matches footer height (h-7 / 28px) */}
-        <div className="flex h-7 items-center justify-between px-2 border-b border-[var(--color-border-default)] bg-[var(--color-surface-secondary)] shrink-0">
-          <div className="flex items-center gap-1">
-            <Terminal size={12} className="text-[var(--color-text-muted)]" />
-            <span className="text-xs font-medium text-[var(--color-text-primary)]">
+        {/* Drawer header */}
+        <div className="flex h-7 items-center justify-between px-2 border-b border-[var(--color-border-default)] bg-[#161b22] shrink-0">
+          <button
+            type="button"
+            onClick={togglePanel}
+            className="flex items-center gap-1 cursor-pointer hover:opacity-80 transition-opacity"
+            aria-label="Close console"
+          >
+            <Terminal size={12} className="text-green-400" />
+            <span className={TERMINAL_HEADER_TITLE}>
               Console
             </span>
-          </div>
+          </button>
           <div className="flex items-center gap-1">
             <Tabs
               tabs={CONSOLE_TABS}
@@ -124,7 +130,7 @@ export function ActivityConsoleDrawer() {
             />
             <Button
               variant="ghost"
-              size="sm"
+              size="xs"
               icon={<ChevronDown size={12} />}
               onClick={togglePanel}
               title="Close console"

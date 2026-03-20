@@ -15,6 +15,7 @@ import { useCallback, useState } from "react";
 import { CollapsibleSection } from "@/components/composite/CollapsibleSection";
 import { useSetPageTitle } from "@/hooks/useSetPageTitle";
 import { useSetToggle } from "@/hooks/useSetToggle";
+import { TERMINAL_PANEL } from "@/lib/ui-classes";
 
 import { useQueueStats } from "./hooks/use-queue";
 import { QueueStatsPanel } from "./QueueStatsPanel";
@@ -72,7 +73,7 @@ export function QueueManagerPage() {
       <ScheduledGenerationsPanel />
 
       {/* Jobs table */}
-      <div className="border border-[var(--color-border-default)] rounded-[var(--radius-lg)] overflow-hidden bg-[var(--color-surface-secondary)]">
+      <div className={TERMINAL_PANEL}>
         <QueueTable
           filter={filter}
           onFilterChange={setFilter}

@@ -11,39 +11,50 @@
 import { useEffect, useState } from "react";
 
 import { Badge, Button, Checkbox, Select, Toggle } from "@/components";
+import { useToast } from "@/components/composite/useToast";
 import { SECTION_HEADING } from "@/lib/ui-classes";
 
-import { useOutputFormatProfiles, useStartAssembly } from "./hooks/use-delivery";
+import { useCancelExport, useDeliveryExports, useOutputFormatProfiles, useStartAssembly } from "./hooks/use-delivery";
 import { EXPORT_STATUS_LABELS, EXPORT_STATUS_VARIANT, formatProfileOption } from "./types";
 
 interface ExportPanelProps {
   projectId: number;
   /** Available model options for multi-select. */
   characters?: Array<{ id: number; name: string }>;
-  /** Currently running export status (if any). */
-  activeExportStatus?: number | null;
   /** Whether pre-export validation passed. When false, export is blocked. */
   validationPassed?: boolean;
   /** IDs of models that have validation errors (not deliverable). */
   invalidModelIds?: Set<number>;
   /** Project-level default output format profile ID override. */
   projectDefaultProfileId?: number | null;
+  /** Controlled: whether "All models" is toggled on. */
+  allCharacters: boolean;
+  /** Controlled: setter for allCharacters. */
+  onAllCharactersChange: (value: boolean) => void;
+  /** Controlled: currently selected character IDs (when not all). */
+  selectedCharacterIds: number[];
+  /** Controlled: setter for selectedCharacterIds. */
+  onSelectedCharacterIdsChange: (ids: number[]) => void;
 }
 
 export function ExportPanel({
   projectId,
   characters = [],
-  activeExportStatus,
   validationPassed,
   invalidModelIds,
   projectDefaultProfileId,
+  allCharacters,
+  onAllCharactersChange,
+  selectedCharacterIds,
+  onSelectedCharacterIdsChange,
 }: ExportPanelProps) {
   const { data: profiles = [] } = useOutputFormatProfiles();
+  const { data: exports = [] } = useDeliveryExports(projectId);
+  const { addToast } = useToast();
   const startAssembly = useStartAssembly(projectId);
+  const cancelExport = useCancelExport(projectId);
 
   const [selectedProfileId, setSelectedProfileId] = useState("");
-  const [selectedCharacterIds, setSelectedCharacterIds] = useState<number[]>([]);
-  const [allCharacters, setAllCharacters] = useState(true);
   const [includeWatermark, setIncludeWatermark] = useState(false);
 
   // Auto-select a profile on initial load (only when user hasn't chosen one yet)
@@ -71,38 +82,77 @@ export function ExportPanel({
     }
   }, [profiles, projectDefaultProfileId, selectedProfileId]);
 
-  const isExporting = activeExportStatus != null && activeExportStatus >= 1 && activeExportStatus <= 5;
+  // Derive active export status from the most recent export record
+  const activeExport = exports.find((e) => e.status_id >= 1 && e.status_id <= 5);
+  const activeExportStatus = activeExport?.status_id ?? null;
+  const isExporting = activeExportStatus != null;
 
   // When toggling off "All models", auto-select only deliverable models
   function handleAllToggle(checked: boolean) {
-    setAllCharacters(checked);
+    onAllCharactersChange(checked);
     if (!checked) {
       const deliverable = characters
         .filter((c) => !invalidModelIds?.has(c.id))
         .map((c) => c.id);
-      setSelectedCharacterIds(deliverable);
+      onSelectedCharacterIdsChange(deliverable);
     }
   }
 
   function handleCharacterToggle(id: number, checked: boolean) {
-    setSelectedCharacterIds((prev) =>
-      checked ? [...prev, id] : prev.filter((cid) => cid !== id),
-    );
+    const next = checked
+      ? [...selectedCharacterIds, id]
+      : selectedCharacterIds.filter((cid) => cid !== id);
+    onSelectedCharacterIdsChange(next);
+  }
+
+  function handleCancel() {
+    if (!activeExport) return;
+    cancelExport.mutate(activeExport.id, {
+      onSuccess: () => addToast({ message: "Export cancelled", variant: "info" }),
+      onError: (err) =>
+        addToast({
+          message: `Cancel failed: ${err instanceof Error ? err.message : "Unknown error"}`,
+          variant: "error",
+        }),
+    });
   }
 
   function handleSubmit() {
     if (!selectedProfileId) return;
 
-    startAssembly.mutate({
-      format_profile_id: Number(selectedProfileId),
-      character_ids: allCharacters ? null : selectedCharacterIds,
-      include_watermark: includeWatermark,
-    });
+    startAssembly.mutate(
+      {
+        format_profile_id: Number(selectedProfileId),
+        character_ids: allCharacters ? null : selectedCharacterIds,
+        include_watermark: includeWatermark,
+      },
+      {
+        onSuccess: () => addToast({ message: "Export started", variant: "success" }),
+        onError: (err) =>
+          addToast({
+            message: `Export failed: ${err instanceof Error ? err.message : "Unknown error"}`,
+            variant: "error",
+          }),
+      },
+    );
   }
 
   const profileOptions = profiles.map(formatProfileOption);
 
   const deliverableCount = characters.filter((c) => !invalidModelIds?.has(c.id)).length;
+  const invalidCount = characters.length - deliverableCount;
+  const hasDeliverableModels = deliverableCount > 0;
+
+  // Determine why export might be blocked (first matching reason wins)
+  const disabledReason = !selectedProfileId
+    ? "Select an output format profile"
+    : isExporting
+      ? "An export is already in progress"
+      : validationPassed === false && !hasDeliverableModels
+        ? "No deliverable models — fix all validation errors"
+        : null;
+
+  const canExport = !disabledReason && !startAssembly.isPending;
 
   return (
     <div data-testid="export-panel" className="space-y-4">
@@ -161,28 +211,43 @@ export function ExportPanel({
       />
 
       {/* Submit + progress */}
-      <div className="flex items-center gap-[var(--spacing-3)]">
-        <Button
-          variant="primary"
-          size="sm"
-          onClick={handleSubmit}
-          disabled={!selectedProfileId || isExporting || startAssembly.isPending || validationPassed === false}
-          data-testid="start-export-button"
-        >
-          {startAssembly.isPending ? "Starting..." : "Start Export"}
-        </Button>
-        {validationPassed === false && (
-          <span className="text-xs text-[var(--color-action-danger)]">
-            Run validation and fix errors before exporting
-          </span>
-        )}
-        {isExporting && activeExportStatus != null && (
-          <div data-testid="export-progress" className="flex items-center gap-2">
-            <Badge variant={EXPORT_STATUS_VARIANT[activeExportStatus] ?? "default"} size="sm">
-              {EXPORT_STATUS_LABELS[activeExportStatus] ?? "Unknown"}
-            </Badge>
-            <span className="text-sm text-[var(--color-text-muted)]">Export in progress...</span>
-          </div>
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center gap-[var(--spacing-3)]">
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={handleSubmit}
+            disabled={!canExport}
+            data-testid="start-export-button"
+          >
+            {startAssembly.isPending ? "Starting..." : "Start Export"}
+          </Button>
+          {disabledReason && (
+            <span className="text-xs text-[var(--color-text-muted)]">
+              {disabledReason}
+            </span>
+          )}
+          {isExporting && activeExportStatus != null && (
+            <div data-testid="export-progress" className="flex items-center gap-2">
+              <Badge variant={EXPORT_STATUS_VARIANT[activeExportStatus] ?? "default"} size="sm">
+                {EXPORT_STATUS_LABELS[activeExportStatus] ?? "Unknown"}
+              </Badge>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleCancel}
+                disabled={cancelExport.isPending}
+              >
+                {cancelExport.isPending ? "Cancelling..." : "Cancel"}
+              </Button>
+            </div>
+          )}
+        </div>
+        {validationPassed === false && hasDeliverableModels && invalidCount > 0 && (
+          <p className="text-xs text-[var(--color-action-warning)]">
+            {invalidCount} model{invalidCount !== 1 ? "s" : ""} ha{invalidCount !== 1 ? "ve" : "s"} validation errors and will be skipped.
+            Toggle off "All models" to choose which to include.
+          </p>
         )}
       </div>
     </div>

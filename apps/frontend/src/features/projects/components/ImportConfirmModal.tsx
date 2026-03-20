@@ -9,13 +9,13 @@
  * existing (duplicate) characters.
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { useSetToggle } from "@/hooks/useSetToggle";
 
 import { Modal } from "@/components/composite";
 import { Stack } from "@/components/layout";
-import { Badge, Button, Checkbox, FilterSelect, Input, Select, Toggle } from "@/components/primitives";
+import { Button, Checkbox, FilterSelect, Input, Select, Toggle } from "@/components/primitives";
 import { cn } from "@/lib/cn";
 import { INLINE_LINK_BTN } from "@/lib/ui-classes";
 import { useMetadataTemplates } from "@/features/settings/hooks/use-metadata-templates";
@@ -297,8 +297,17 @@ export function ImportConfirmModal({
     return result;
   }, [duplicateIndices, assetCounts]);
 
-  // Reset checked set when names change — auto-uncheck duplicates
+  // Reset checked set when the NAME LIST changes (modal opens with new data).
+  // Do NOT reset when existingSet changes during import — that causes the
+  // "deselects everything" bug when newly created characters update the list.
+  const prevNamesRef = useRef<string[]>([]);
   useEffect(() => {
+    // Only reset if the actual names being imported changed
+    const key = effectiveNames.join("\0");
+    const prevKey = prevNamesRef.current.join("\0");
+    if (key === prevKey) return;
+    prevNamesRef.current = effectiveNames;
+
     const initial = new Set<number>();
     for (let i = 0; i < effectiveNames.length; i++) {
       const display = normalize
@@ -309,10 +318,14 @@ export function ImportConfirmModal({
       }
     }
     setChecked(initial);
-    setCheckedExistingAssets(new Set());
-    setImportMissing(false);
     setOverwrite(false);
     setNewContentOnly(false);
+
+    // Auto-enable "Import missing" when ALL entries are duplicates (existing characters).
+    // This is the common case when dropping onto a character detail page or re-importing.
+    const allAreDuplicates = initial.size === 0 && effectiveNames.length > 0;
+    setImportMissing(allAreDuplicates);
+    setCheckedExistingAssets(allAreDuplicates ? new Set(duplicatesWithAssets) : new Set());
   }, [effectiveNames, existingSet, normalize]);
 
   // Pre-fill group selector when all duplicates share a single group
@@ -436,12 +449,12 @@ export function ImportConfirmModal({
     const hasAssets = counts && (counts.images > 0 || counts.videos > 0 || counts.metadata > 0);
     const bulkMode = importMissing || overwrite;
 
-    // Compute badge content for this row
+    // Compute monospace asset indicators for this row
     const p = payloads?.[idx];
     const isChecking = hashSummary?.isHashing;
-    let imgBadge: React.ReactNode = null;
-    let vidBadge: React.ReactNode = null;
-    let metaBadge: React.ReactNode = null;
+    let imgLabel: React.ReactNode = null;
+    let vidLabel: React.ReactNode = null;
+    let metaLabel: React.ReactNode = null;
 
     if (p) {
       const images = p.assets.filter((a) => a.kind === "image");
@@ -449,9 +462,9 @@ export function ImportConfirmModal({
       const metaCount = [p.bioJson, p.tovJson, p.metadataJson].filter(Boolean).length;
 
       if (isChecking) {
-        if (images.length > 0) imgBadge = <Badge variant="default" size="sm">{images.length} img…</Badge>;
-        if (videos.length > 0) vidBadge = <Badge variant="default" size="sm">{videos.length} vid…</Badge>;
-        if (metaCount > 0) metaBadge = <Badge variant="info" size="sm">{metaCount} json</Badge>;
+        if (images.length > 0) imgLabel = <span className="text-[var(--color-text-muted)]">{images.length} img…</span>;
+        if (videos.length > 0) vidLabel = <span className="text-[var(--color-text-muted)]">{videos.length} vid…</span>;
+        if (metaCount > 0) metaLabel = <span className="text-cyan-400">{metaCount} json</span>;
       } else {
         const identicalImages = images.filter((a) => a.isDuplicate);
         const newImgs = images.filter((a) => !a.isDuplicate);
@@ -459,10 +472,10 @@ export function ImportConfirmModal({
         const imgSk = newContentOnly ? identicalImages.length : 0;
 
         if (images.length > 0) {
-          if (imgSk > 0 && imgUp > 0) imgBadge = <><Badge variant="success" size="sm">{imgUp}↑</Badge> <Badge variant="default" size="sm">{imgSk}✕</Badge></>;
-          else if (imgSk > 0) imgBadge = <Badge variant="default" size="sm">{imgSk} identical</Badge>;
-          else if (identicalImages.length > 0 && !newContentOnly) imgBadge = <Badge variant="warning" size="sm">{images.length} ({identicalImages.length}=)</Badge>;
-          else imgBadge = <Badge variant="success" size="sm">{images.length} img</Badge>;
+          if (imgSk > 0 && imgUp > 0) imgLabel = <><span className="text-green-400">{imgUp}↑</span> <span className="text-[var(--color-text-muted)]">{imgSk}✕</span></>;
+          else if (imgSk > 0) imgLabel = <span className="text-[var(--color-text-muted)]">{imgSk} =</span>;
+          else if (identicalImages.length > 0 && !newContentOnly) imgLabel = <span className="text-orange-400">{images.length} ({identicalImages.length}=)</span>;
+          else imgLabel = <span className="text-green-400">{images.length} img</span>;
         }
 
         if (videos.length > 0) {
@@ -471,13 +484,13 @@ export function ImportConfirmModal({
           const vidUp = newContentOnly ? newVids.length : videos.length;
           const vidSk = newContentOnly ? identicalVids.length : 0;
 
-          if (vidSk > 0 && vidUp > 0) vidBadge = <><Badge variant="success" size="sm">{vidUp}↑</Badge> <Badge variant="default" size="sm">{vidSk}✕</Badge></>;
-          else if (vidSk > 0) vidBadge = <Badge variant="default" size="sm">{vidSk} identical</Badge>;
-          else if (identicalVids.length > 0 && !newContentOnly) vidBadge = <Badge variant="warning" size="sm">{videos.length} ({identicalVids.length}=)</Badge>;
-          else vidBadge = <Badge variant="success" size="sm">{videos.length} vid</Badge>;
+          if (vidSk > 0 && vidUp > 0) vidLabel = <><span className="text-green-400">{vidUp}↑</span> <span className="text-[var(--color-text-muted)]">{vidSk}✕</span></>;
+          else if (vidSk > 0) vidLabel = <span className="text-[var(--color-text-muted)]">{vidSk} =</span>;
+          else if (identicalVids.length > 0 && !newContentOnly) vidLabel = <span className="text-orange-400">{videos.length} ({identicalVids.length}=)</span>;
+          else vidLabel = <span className="text-green-400">{videos.length} vid</span>;
         }
 
-        if (metaCount > 0) metaBadge = <Badge variant="info" size="sm">{metaCount} json</Badge>;
+        if (metaCount > 0) metaLabel = <span className="text-cyan-400">{metaCount} json</span>;
       }
     }
 
@@ -485,11 +498,12 @@ export function ImportConfirmModal({
       <div
         key={idx}
         className={cn(
-          "grid items-center gap-x-[var(--spacing-2)] px-[var(--spacing-3)] py-[var(--spacing-1)]",
+          "grid items-center gap-x-2 px-2 py-0.5 font-mono text-xs",
           payloads ? "grid-cols-[1fr_auto_auto_auto_auto]" : "grid-cols-[1fr_auto]",
           isDuplicate && !checkedExistingAssets.has(idx) && !(bulkMode && hasAssets)
-            ? "opacity-50"
-            : "hover:bg-[var(--color-surface-secondary)]",
+            ? "opacity-40"
+            : "hover:bg-[#161b22]",
+          "border-b border-white/5 last:border-b-0",
         )}
       >
         <Checkbox
@@ -499,24 +513,24 @@ export function ImportConfirmModal({
           label={name}
         />
 
-        {payloads && <span className="text-center min-w-[4.5rem]">{imgBadge}</span>}
-        {payloads && <span className="text-center min-w-[4.5rem]">{vidBadge}</span>}
-        {payloads && <span className="text-center min-w-[3.5rem]">{metaBadge}</span>}
+        {payloads && <span className="text-center min-w-[3.5rem]">{imgLabel}</span>}
+        {payloads && <span className="text-center min-w-[3.5rem]">{vidLabel}</span>}
+        {payloads && <span className="text-center min-w-[3rem]">{metaLabel}</span>}
 
-        <span className={cn("text-xs text-right shrink-0",
+        <span className={cn("text-right shrink-0",
           hashSummary?.isHashing
             ? "text-[var(--color-text-muted)]"
             : isDuplicate
-              ? (bulkMode && hasAssets ? "text-[var(--color-text-success)]" : "text-[var(--color-text-warning)]")
-              : checked.has(idx) ? "text-[var(--color-text-success)]" : "text-[var(--color-text-muted)]"
+              ? (bulkMode && hasAssets ? "text-green-400" : "text-orange-400")
+              : checked.has(idx) ? "text-green-400" : "text-[var(--color-text-muted)]"
         )}>
           {hashSummary?.isHashing
-            ? "checking…"
+            ? "…"
             : isDuplicate
               ? (bulkMode && hasAssets
-                ? (importMissing ? "→ update" : "→ overwrite")
+                ? (importMissing ? "update" : "overwrite")
                 : "exists")
-              : checked.has(idx) ? "→ create" : "skip"
+              : checked.has(idx) ? "create" : "skip"
           }
         </span>
       </div>
@@ -524,76 +538,50 @@ export function ImportConfirmModal({
   };
 
   return (
-    <Modal open={open} onClose={isImporting ? () => {} : onClose} title="Import Characters" size="xl">
-      <Stack gap={4}>
+    <Modal open={open} onClose={isImporting ? () => {} : onClose} title="Import Models" size="xl">
+      <Stack gap={3}>
         {/* Target project indicator */}
         {projectName && (
-          <div className="flex items-center gap-2 text-sm text-[var(--color-text-muted)]">
-            <span>Importing into:</span>
-            <Badge variant="info" size="sm">{projectName}</Badge>
+          <div className="flex items-center gap-2 font-mono text-xs text-[var(--color-text-muted)]">
+            <span>target</span>
+            <span className="text-cyan-400">{projectName}</span>
           </div>
         )}
 
         {/* Project detection banner (grouped imports only) */}
         {isGroupedImport && detectedProjectName && (
-          <div
-            className={cn(
-              "rounded-[var(--radius-md)] border px-[var(--spacing-3)] py-[var(--spacing-2)]",
-              projectNameMatch
-                ? "border-[var(--color-border-success)] bg-[var(--color-surface-success)]"
-                : projectNameMatch === false
-                  ? "border-[var(--color-border-warning)] bg-[var(--color-surface-warning)]"
-                  : "border-[var(--color-border-default)] bg-[var(--color-surface-secondary)]",
-            )}
-          >
-            <p
-              className={cn(
-                "text-sm",
-                projectNameMatch
-                  ? "text-[var(--color-text-success)]"
-                  : projectNameMatch === false
-                    ? "text-[var(--color-text-warning)]"
-                    : "text-[var(--color-text-secondary)]",
-              )}
-            >
-              {projectNameMatch
-                ? `Folder matches project "${detectedProjectName}"`
-                : projectNameMatch === false
-                  ? `Folder "${detectedProjectName}" does not match current project "${projectName}"`
-                  : `Importing from "${detectedProjectName}"`}
-            </p>
-          </div>
+          <p className={cn(
+            "font-mono text-xs border-l-2 pl-2 py-0.5",
+            projectNameMatch
+              ? "border-green-400 text-green-400"
+              : projectNameMatch === false
+                ? "border-orange-400 text-orange-400"
+                : "border-[var(--color-border-default)] text-[var(--color-text-muted)]",
+          )}>
+            {projectNameMatch
+              ? `folder matches "${detectedProjectName}"`
+              : projectNameMatch === false
+                ? `folder "${detectedProjectName}" ≠ project "${projectName}"`
+                : `importing from "${detectedProjectName}"`}
+          </p>
         )}
 
         {/* Hash deduplication summary */}
         {hashSummary && (
-          <div
-            className={cn(
-              "rounded-[var(--radius-md)] border px-[var(--spacing-3)] py-[var(--spacing-2)]",
-              hashSummary.isHashing
-                ? "border-[var(--color-border-default)] bg-[var(--color-surface-secondary)]"
-                : hashSummary.duplicateFiles > 0
-                  ? "border-[var(--color-border-warning)] bg-[var(--color-surface-warning)]"
-                  : "border-[var(--color-border-success)] bg-[var(--color-surface-success)]",
-            )}
-          >
-            <p
-              className={cn(
-                "text-sm",
-                hashSummary.isHashing
-                  ? "text-[var(--color-text-secondary)]"
-                  : hashSummary.duplicateFiles > 0
-                    ? "text-[var(--color-text-warning)]"
-                    : "text-[var(--color-text-success)]",
-              )}
-            >
-              {hashSummary.isHashing
-                ? `Checking ${hashSummary.totalFiles} file${hashSummary.totalFiles !== 1 ? "s" : ""} for duplicates...`
-                : hashSummary.duplicateFiles > 0
-                  ? `${hashSummary.newFiles} new file${hashSummary.newFiles !== 1 ? "s" : ""}, ${hashSummary.duplicateFiles} already imported (same content)`
-                  : `All ${hashSummary.totalFiles} file${hashSummary.totalFiles !== 1 ? "s" : ""} are new`}
-            </p>
-          </div>
+          <p className={cn(
+            "font-mono text-xs border-l-2 pl-2 py-0.5",
+            hashSummary.isHashing
+              ? "border-[var(--color-border-default)] text-[var(--color-text-muted)]"
+              : hashSummary.duplicateFiles > 0
+                ? "border-orange-400 text-orange-400"
+                : "border-green-400 text-green-400",
+          )}>
+            {hashSummary.isHashing
+              ? `checking ${hashSummary.totalFiles} file${hashSummary.totalFiles !== 1 ? "s" : ""} for duplicates...`
+              : hashSummary.duplicateFiles > 0
+                ? `${hashSummary.newFiles} new, ${hashSummary.duplicateFiles} already imported (same content)`
+                : `all ${hashSummary.totalFiles} file${hashSummary.totalFiles !== 1 ? "s" : ""} are new`}
+          </p>
         )}
 
         {/* Group selector row */}
@@ -727,63 +715,71 @@ export function ImportConfirmModal({
 
         {/* Duplicate warning */}
         {duplicateCount > 0 && (
-          <div className="rounded-[var(--radius-md)] border border-[var(--color-border-warning)] bg-[var(--color-surface-warning)] px-[var(--spacing-3)] py-[var(--spacing-2)]">
-            <p className="text-sm text-[var(--color-text-warning)]">
-              {duplicateCount} {duplicateCount === 1 ? "name" : "names"} already{" "}
-              {duplicateCount === 1 ? "exists" : "exist"}.
-              {payloads
-                ? importMissing
-                  ? " Missing assets will be imported to existing characters."
-                  : overwrite
-                    ? " Existing assets will be overwritten."
-                    : " Enable 'Import missing' or 'Overwrite existing' to update these characters."
-                : " Duplicates will be skipped."}
-            </p>
-          </div>
+          <p className="font-mono text-xs border-l-2 border-orange-400 pl-2 py-0.5 text-orange-400">
+            {duplicateCount} {duplicateCount === 1 ? "name" : "names"} already{" "}
+            {duplicateCount === 1 ? "exists" : "exist"}.
+            {payloads
+              ? importMissing
+                ? " missing assets will be imported."
+                : overwrite
+                  ? " existing assets will be overwritten."
+                  : " enable 'Import missing' or 'Overwrite existing' to update."
+              : " duplicates will be skipped."}
+          </p>
         )}
 
         {/* Action summary */}
         {payloads && (
-          <div className="rounded-[var(--radius-md)] border border-[var(--color-border-default)] bg-[var(--color-surface-secondary)] px-[var(--spacing-3)] py-[var(--spacing-2)]">
-            <div className="flex flex-wrap gap-[var(--spacing-4)] text-sm text-[var(--color-text-secondary)]">
-              {hashSummary?.isHashing ? (
-                <span className="text-[var(--color-text-muted)]">Checking {hashSummary.totalFiles} files for duplicates…</span>
-              ) : (
-                <>
-                  {selectedCount > 0 && (
-                    <span><strong className="text-[var(--color-text-primary)]">{selectedCount}</strong> new {selectedCount === 1 ? "model" : "models"} to create</span>
-                  )}
-                  {existingAssetsCount > 0 && (
-                    <span><strong className="text-[var(--color-text-primary)]">{existingAssetsCount}</strong> existing to update</span>
-                  )}
-                  {duplicateCount > 0 && duplicateCount - existingAssetsCount > 0 && (
-                    <span className="text-[var(--color-text-muted)]">{duplicateCount - existingAssetsCount} skipped (exist)</span>
-                  )}
-                  {hashSummary && hashSummary.duplicateFiles > 0 && (
-                    <span className={newContentOnly ? "text-[var(--color-text-muted)]" : "text-[var(--color-text-warning)]"}>
-                      {hashSummary.duplicateFiles} identical {hashSummary.duplicateFiles === 1 ? "file" : "files"}
-                      {newContentOnly ? " (will skip)" : " (same content)"}
-                    </span>
-                  )}
-                  {hashSummary && newContentOnly && hashSummary.newFiles > 0 && (
-                    <span className="text-[var(--color-text-success)]">{hashSummary.newFiles} new {hashSummary.newFiles === 1 ? "file" : "files"} to import</span>
-                  )}
-                </>
-              )}
-            </div>
+          <div className="flex flex-wrap gap-3 font-mono text-xs text-[var(--color-text-muted)] border-t border-[var(--color-border-default)] pt-2">
+            {hashSummary?.isHashing ? (
+              <span>checking {hashSummary.totalFiles} files…</span>
+            ) : (
+              <>
+                {selectedCount > 0 && (
+                  <span><span className="text-green-400">{selectedCount}</span> new</span>
+                )}
+                {existingAssetsCount > 0 && (
+                  <span><span className="text-cyan-400">{existingAssetsCount}</span> update</span>
+                )}
+                {duplicateCount > 0 && duplicateCount - existingAssetsCount > 0 && (
+                  <span>{duplicateCount - existingAssetsCount} skip</span>
+                )}
+                {hashSummary && hashSummary.duplicateFiles > 0 && (
+                  <span className={newContentOnly ? "" : "text-orange-400"}>
+                    {hashSummary.duplicateFiles} identical
+                    {newContentOnly ? " (skip)" : ""}
+                  </span>
+                )}
+                {hashSummary && newContentOnly && hashSummary.newFiles > 0 && (
+                  <span className="text-green-400">{hashSummary.newFiles} new</span>
+                )}
+              </>
+            )}
           </div>
         )}
 
         {/* Name list */}
-        <div className="max-h-[320px] overflow-y-auto rounded-[var(--radius-md)] border border-[var(--color-border-default)] bg-[var(--color-surface-primary)]">
+        <div className="max-h-[320px] overflow-y-auto border border-[var(--color-border-default)] rounded-[var(--radius-sm)]">
           {/* Select all header */}
-          <div className="px-[var(--spacing-3)] py-[var(--spacing-2)] border-b border-[var(--color-border-default)] hover:bg-[var(--color-surface-secondary)]">
+          <div className="px-2 py-1.5 border-b border-[var(--color-border-default)] bg-[#161b22]">
             <Checkbox
-              checked={importableCount > 0 && selectedCount === importableCount}
-              indeterminate={selectedCount > 0 && selectedCount < importableCount}
-              onChange={toggleAll}
-              disabled={importableCount === 0}
-              label={importableCount === 0 ? "All characters already exist" : `Select all (${importableCount})`}
+              checked={totalActionCount > 0 && selectedCount === importableCount && (duplicatesWithAssets.size === 0 || existingAssetsCount === duplicatesWithAssets.size)}
+              indeterminate={totalActionCount > 0 && (selectedCount < importableCount || (duplicatesWithAssets.size > 0 && existingAssetsCount < duplicatesWithAssets.size))}
+              onChange={() => {
+                toggleAll();
+                // Also toggle all existing asset checkboxes when in bulk mode
+                if (importMissing || overwrite) {
+                  const allNewChecked = importableCount > 0 && selectedCount === importableCount;
+                  const allExistChecked = duplicatesWithAssets.size > 0 && existingAssetsCount === duplicatesWithAssets.size;
+                  if (allNewChecked && allExistChecked) {
+                    setCheckedExistingAssets(new Set());
+                  } else {
+                    setCheckedExistingAssets(new Set(duplicatesWithAssets));
+                  }
+                }
+              }}
+              disabled={importableCount === 0 && duplicatesWithAssets.size === 0}
+              label={importableCount === 0 && duplicatesWithAssets.size === 0 ? "All models already exist" : `Select all (${importableCount + ((importMissing || overwrite) ? duplicatesWithAssets.size : 0)})`}
             />
           </div>
 
@@ -791,20 +787,15 @@ export function ImportConfirmModal({
             /* Grouped view — characters organized under group headers */
             [...groupedIndices.entries()].map(([groupName, indices]) => (
               <div key={groupName}>
-                <div className="px-[var(--spacing-3)] py-[var(--spacing-2)] bg-[var(--color-surface-secondary)] border-b border-[var(--color-border-default)] flex items-center gap-[var(--spacing-2)]">
-                  <span className="font-medium text-sm text-[var(--color-text-primary)]">
+                <div className="px-2 py-1.5 bg-[#161b22] border-b border-[var(--color-border-default)] flex items-center gap-2">
+                  <span className="font-mono text-xs font-medium text-[var(--color-text-primary)]">
                     {groupName || "Ungrouped"}
                   </span>
-                  <Badge variant="default" size="sm">
-                    {indices.length}
-                  </Badge>
+                  <span className="font-mono text-[10px] text-[var(--color-text-muted)]">{indices.length}</span>
                   {groupName && (
-                    <Badge
-                      variant={existingGroupNameSet.has(groupName.toLowerCase()) ? "success" : "info"}
-                      size="sm"
-                    >
-                      {existingGroupNameSet.has(groupName.toLowerCase()) ? "Exists" : "New group"}
-                    </Badge>
+                    <span className={cn("font-mono text-[10px]", existingGroupNameSet.has(groupName.toLowerCase()) ? "text-green-400" : "text-cyan-400")}>
+                      {existingGroupNameSet.has(groupName.toLowerCase()) ? "exists" : "new"}
+                    </span>
                   )}
                 </div>
                 {indices.map((idx) => renderCharacterRow(idx))}
@@ -822,35 +813,37 @@ export function ImportConfirmModal({
         )}
 
         {/* Footer */}
-        <div className="flex items-center justify-between">
-          <span className="text-sm text-[var(--color-text-muted)]">
-            {selectedCount} of {importableCount} selected
-            {duplicateCount > 0 && ` (${duplicateCount} duplicates)`}
-            {existingAssetsCount > 0 && ` + ${existingAssetsCount} asset uploads`}
+        <div className="flex items-center justify-between pt-2 border-t border-[var(--color-border-default)]">
+          <span className="font-mono text-xs text-[var(--color-text-muted)]">
+            {selectedCount > 0 && <><span className="text-green-400">{selectedCount}</span> new</>}
+            {selectedCount > 0 && existingAssetsCount > 0 && " · "}
+            {existingAssetsCount > 0 && <><span className="text-cyan-400">{existingAssetsCount}</span> update</>}
+            {totalActionCount === 0 && "0 selected"}
+            {duplicateCount > 0 && totalActionCount === 0 && ` · ${duplicateCount} already exist`}
           </span>
-          <div className="flex gap-[var(--spacing-2)]">
+          <div className="flex gap-2">
             {isImporting ? (
-              <Button variant="danger" onClick={onAbort}>
-                Stop Import
+              <Button variant="danger" size="sm" onClick={onAbort}>
+                Stop
               </Button>
             ) : (
               <>
-                <Button variant="secondary" onClick={onClose}>
+                <Button variant="secondary" size="sm" onClick={onClose}>
                   Cancel
                 </Button>
                 <Button
+                  size="sm"
                   onClick={handleConfirm}
                   disabled={totalActionCount === 0}
                   loading={loading}
                 >
-                  {selectedCount > 0 && (
-                    <>Import {selectedCount} {selectedCount === 1 ? "Model" : "Models"}</>
-                  )}
-                  {selectedCount > 0 && existingAssetsCount > 0 && " + "}
-                  {existingAssetsCount > 0 && (
-                    <>Upload to {existingAssetsCount}</>
-                  )}
-                  {totalActionCount === 0 && "Import"}
+                  {selectedCount > 0 && existingAssetsCount > 0
+                    ? `Import ${selectedCount} + Update ${existingAssetsCount}`
+                    : selectedCount > 0
+                      ? `Import ${selectedCount} Model${selectedCount !== 1 ? "s" : ""}`
+                      : existingAssetsCount > 0
+                        ? `Update ${existingAssetsCount} Model${existingAssetsCount !== 1 ? "s" : ""}`
+                        : "Import"}
                 </Button>
               </>
             )}

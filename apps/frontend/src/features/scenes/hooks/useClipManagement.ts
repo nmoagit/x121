@@ -185,6 +185,9 @@ export function useBulkImportClip() {
     }) => postClipImport(sceneId, file, notes),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: clipKeys.all });
+      // Refresh scene list (video counts, thumbnails) and character dashboard
+      queryClient.invalidateQueries({ queryKey: sceneKeys.all });
+      queryClient.invalidateQueries({ queryKey: ["character-dashboard"] });
     },
   });
 }

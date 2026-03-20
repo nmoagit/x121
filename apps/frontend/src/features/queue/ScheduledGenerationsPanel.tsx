@@ -7,7 +7,7 @@
 
 import { useState } from "react";
 
-import { Badge, Button } from "@/components/primitives";
+import { Button } from "@/components/primitives";
 import { toastStore } from "@/components/composite/useToast";
 import {
   useBatchSceneDetails,
@@ -22,9 +22,18 @@ import {
 } from "@/features/job-scheduling/hooks/use-job-scheduling";
 import type { Schedule } from "@/features/job-scheduling/types";
 import { getScheduleSceneIds, filterActiveGenerationSchedules } from "@/features/job-scheduling/types";
-import { sceneStatusLabel, sceneStatusBadgeVariant } from "@/features/scenes/types";
+import { sceneStatusLabel } from "@/features/scenes/types";
 import { formatCountdown } from "@/lib/format";
 import { Ban, ChevronDown, ChevronRight, Clock, Edit3, X, Zap } from "@/tokens/icons";
+import {
+  TERMINAL_PANEL,
+  TERMINAL_HEADER,
+  TERMINAL_HEADER_TITLE,
+  TERMINAL_DIVIDER,
+  TERMINAL_ROW_HOVER,
+  TERMINAL_TH,
+  TERMINAL_STATUS_COLORS,
+} from "@/lib/ui-classes";
 
 /* --------------------------------------------------------------------------
    Helpers
@@ -61,9 +70,12 @@ function SceneRow({
   onRemove: (scheduleId: number, sceneId: number) => void;
   removePending: boolean;
 }) {
+  const statusLbl = sceneStatusLabel(scene.status_id).toLowerCase().replace(/\s+/g, "_");
+  const statusColor = TERMINAL_STATUS_COLORS[statusLbl] ?? "text-[var(--color-text-muted)]";
+
   return (
-    <div className="flex items-center gap-3 px-4 py-2 text-sm hover:bg-[var(--color-surface-tertiary)]/50 transition-colors">
-      <span className="w-16 shrink-0 font-mono text-xs text-[var(--color-text-muted)]">
+    <div className={`flex items-center gap-3 px-4 py-2 font-mono text-xs ${TERMINAL_DIVIDER} ${TERMINAL_ROW_HOVER} transition-colors`}>
+      <span className="w-16 shrink-0 text-[var(--color-text-muted)]">
         #{scene.id}
       </span>
       <span className="flex-1 min-w-0 truncate text-[var(--color-text-primary)]">
@@ -75,11 +87,11 @@ function SceneRow({
           <span className="text-[var(--color-text-muted)]"> / {scene.track_name}</span>
         )}
       </span>
-      <Badge variant={sceneStatusBadgeVariant(scene.status_id)} size="sm">
+      <span className={statusColor}>
         {sceneStatusLabel(scene.status_id)}
-      </Badge>
+      </span>
       <Button
-        size="sm"
+        size="xs"
         variant="ghost"
         icon={<X size={14} />}
         onClick={() => onRemove(scheduleId, scene.id)}
@@ -124,7 +136,7 @@ function ScheduleDetailRow({
     <div>
       {/* Summary row */}
       <div
-        className="px-4 py-3 flex items-center gap-3 text-sm cursor-pointer hover:bg-[var(--color-surface-tertiary)] transition-colors"
+        className={`px-4 py-3 flex items-center gap-3 font-mono text-xs cursor-pointer ${TERMINAL_ROW_HOVER} transition-colors`}
         onClick={() => setExpanded((prev) => !prev)}
       >
         <span className="shrink-0 text-[var(--color-text-muted)]">
@@ -135,16 +147,16 @@ function ScheduleDetailRow({
           <span className="font-medium text-[var(--color-text-primary)] truncate">
             {schedule.name}
           </span>
-          <Badge variant="info" size="sm">
+          <span className="text-cyan-400">
             {sceneIds.length} scene{sceneIds.length === 1 ? "" : "s"}
-          </Badge>
+          </span>
         </div>
 
-        <span className="shrink-0 text-xs text-[var(--color-text-muted)]">
+        <span className="shrink-0 text-[var(--color-text-muted)]">
           {timeUntil(firesAt)}
         </span>
 
-        <span className="shrink-0 text-[var(--color-text-secondary)] text-xs">
+        <span className="shrink-0 text-[var(--color-text-secondary)]">
           {formatDateTime(firesAt)}
         </span>
 
@@ -153,7 +165,7 @@ function ScheduleDetailRow({
           onClick={(e) => e.stopPropagation()}
         >
           <Button
-            size="sm"
+            size="xs"
             variant="primary"
             icon={<Zap size={14} />}
             onClick={() => onStartNow(schedule.id)}
@@ -162,7 +174,7 @@ function ScheduleDetailRow({
             Start Now
           </Button>
           <Button
-            size="sm"
+            size="xs"
             variant="secondary"
             icon={<Edit3 size={14} />}
             onClick={() => onReschedule(sceneIds)}
@@ -170,7 +182,7 @@ function ScheduleDetailRow({
             Reschedule
           </Button>
           <Button
-            size="sm"
+            size="xs"
             variant="danger"
             icon={<Ban size={14} />}
             onClick={() => onCancel(schedule.id)}
@@ -183,13 +195,13 @@ function ScheduleDetailRow({
 
       {/* Expanded: scene table */}
       {expanded && (
-        <div className="border-t border-[var(--color-border-default)] bg-[var(--color-surface-primary)]">
+        <div className="border-t border-[var(--color-border-default)] bg-[#0d1117]">
           {/* Column headers */}
-          <div className="flex items-center gap-3 px-4 py-1.5 text-xs font-medium text-[var(--color-text-muted)] border-b border-[var(--color-border-default)]">
-            <span className="w-16 shrink-0">ID</span>
-            <span className="flex-1">Model</span>
-            <span className="shrink-0">Target</span>
-            <span className="shrink-0 w-20">Status</span>
+          <div className={`flex items-center gap-3 px-4 py-1.5 ${TERMINAL_DIVIDER}`}>
+            <span className={`w-16 shrink-0 ${TERMINAL_TH}`}>ID</span>
+            <span className={`flex-1 ${TERMINAL_TH}`}>Model</span>
+            <span className={`shrink-0 ${TERMINAL_TH}`}>Target</span>
+            <span className={`shrink-0 w-20 ${TERMINAL_TH}`}>Status</span>
             <span className="shrink-0 w-8" />
           </div>
 
@@ -262,15 +274,15 @@ export function ScheduledGenerationsPanel() {
   }
 
   return (
-    <div className="border border-[var(--color-border-default)] rounded-[var(--radius-lg)] overflow-hidden bg-[var(--color-surface-secondary)]">
-      <div className="px-4 py-3 border-b border-[var(--color-border-default)] flex items-center gap-2">
-        <Clock size={16} className="text-[var(--color-status-info)]" />
-        <span className="text-sm font-medium text-[var(--color-text-primary)]">
+    <div className={TERMINAL_PANEL}>
+      <div className={`${TERMINAL_HEADER} flex items-center gap-2`}>
+        <Clock size={14} className="text-cyan-400" />
+        <span className={TERMINAL_HEADER_TITLE}>
           Scheduled Generations
         </span>
-        <Badge variant="info" size="sm">
+        <span className="font-mono text-xs text-cyan-400">
           {generationSchedules.length}
-        </Badge>
+        </span>
       </div>
 
       <div className="divide-y divide-[var(--color-border-default)]">

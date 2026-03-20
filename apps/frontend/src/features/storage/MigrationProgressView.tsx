@@ -6,13 +6,21 @@
  * migrations.
  */
 
-import { Card, CardBody, CardHeader } from "@/components/composite/Card";
-import { Badge } from "@/components/primitives";
+import { Button } from "@/components/primitives";
 import { formatBytes, formatDateTime } from "@/lib/format";
+import {
+  GHOST_DANGER_BTN,
+  TERMINAL_BODY,
+  TERMINAL_HEADER,
+  TERMINAL_HEADER_TITLE,
+  TERMINAL_LABEL,
+  TERMINAL_PANEL,
+  TERMINAL_STATUS_COLORS,
+} from "@/lib/ui-classes";
 import { AlertCircle } from "@/tokens/icons";
 
 import type { StorageMigration, StorageMigrationStatusId } from "./types";
-import { MIGRATION_STATUS, MIGRATION_STATUS_LABELS, MIGRATION_STATUS_VARIANT } from "./types";
+import { MIGRATION_STATUS, MIGRATION_STATUS_LABELS } from "./types";
 
 /* --------------------------------------------------------------------------
    Helpers
@@ -31,6 +39,19 @@ function canRollback(statusId: StorageMigrationStatusId): boolean {
   );
 }
 
+/** Map migration status to a terminal color key. */
+function migrationStatusColorKey(statusId: StorageMigrationStatusId): string {
+  const map: Record<StorageMigrationStatusId, string> = {
+    1: "pending",       // Pending
+    2: "in_progress",   // In Progress
+    3: "queued",        // Verifying -> warning
+    4: "completed",     // Completed
+    5: "failed",        // Failed
+    6: "pending",       // Rolled Back -> muted
+  };
+  return map[statusId] ?? "pending";
+}
+
 /* --------------------------------------------------------------------------
    Props
    -------------------------------------------------------------------------- */
@@ -45,38 +66,37 @@ interface MigrationProgressViewProps {
    -------------------------------------------------------------------------- */
 
 export function MigrationProgressView({ migration, onRollback }: MigrationProgressViewProps) {
-  const statusVariant =
-    MIGRATION_STATUS_VARIANT[migration.status_id as StorageMigrationStatusId] ?? "default";
   const statusLabel =
     MIGRATION_STATUS_LABELS[migration.status_id as StorageMigrationStatusId] ?? "Unknown";
+  const statusColor =
+    TERMINAL_STATUS_COLORS[migrationStatusColorKey(migration.status_id as StorageMigrationStatusId)] ??
+    "text-[var(--color-text-muted)]";
   const pct = fileProgress(migration);
   const errors = Array.isArray(migration.error_log) ? migration.error_log : [];
 
   return (
-    <Card elevation="sm" padding="none">
-      <CardHeader className="px-[var(--spacing-4)] py-[var(--spacing-3)]">
-        <div className="flex items-center justify-between">
-          <span className="text-sm font-semibold text-[var(--color-text-primary)]">
-            Migration #{migration.id}
-          </span>
-          <Badge variant={statusVariant} size="sm">
-            {statusLabel}
-          </Badge>
-        </div>
-      </CardHeader>
+    <div className={TERMINAL_PANEL}>
+      {/* Header */}
+      <div className={`${TERMINAL_HEADER} flex items-center justify-between`}>
+        <span className={TERMINAL_HEADER_TITLE}>Migration #{migration.id}</span>
+        <span className={`font-mono text-xs uppercase ${statusColor}`}>
+          {statusLabel}
+        </span>
+      </div>
 
-      <CardBody className="px-[var(--spacing-4)] py-[var(--spacing-3)] space-y-[var(--spacing-3)]">
+      {/* Body */}
+      <div className={`${TERMINAL_BODY} space-y-3`}>
         {/* Progress bar */}
         <div>
-          <div className="flex items-center justify-between text-xs text-[var(--color-text-muted)]">
+          <div className="flex items-center justify-between font-mono text-xs text-[var(--color-text-muted)]">
             <span>
               {migration.transferred_files} / {migration.total_files} files
             </span>
-            <span>{pct}%</span>
+            <span className="text-cyan-400">{pct}%</span>
           </div>
-          <div className="mt-1 h-2 w-full rounded-full bg-[var(--color-surface-tertiary)]">
+          <div className="mt-1 h-1.5 w-full rounded-full bg-white/10">
             <div
-              className="h-full rounded-full bg-[var(--color-primary)] transition-all"
+              className="h-full rounded-full bg-cyan-400 transition-all"
               style={{ width: `${pct}%` }}
               role="progressbar"
               aria-valuenow={pct}
@@ -86,36 +106,44 @@ export function MigrationProgressView({ migration, onRollback }: MigrationProgre
           </div>
         </div>
 
-        {/* Stats row */}
-        <div className="grid grid-cols-2 gap-[var(--spacing-2)] text-xs text-[var(--color-text-muted)]">
+        {/* Stats grid */}
+        <div className="grid grid-cols-2 gap-2">
           <div>
-            <span className="font-medium text-[var(--color-text-secondary)]">Transferred:</span>{" "}
-            {formatBytes(migration.transferred_bytes)} / {formatBytes(migration.total_bytes)}
+            <span className={TERMINAL_LABEL}>Transferred</span>
+            <p className="font-mono text-xs text-cyan-400">
+              {formatBytes(migration.transferred_bytes)} / {formatBytes(migration.total_bytes)}
+            </p>
           </div>
           <div>
-            <span className="font-medium text-[var(--color-text-secondary)]">Verified:</span>{" "}
-            {migration.verified_files} files
+            <span className={TERMINAL_LABEL}>Verified</span>
+            <p className="font-mono text-xs text-green-400">
+              {migration.verified_files} files
+            </p>
           </div>
           <div>
-            <span className="font-medium text-[var(--color-text-secondary)]">Failed:</span>{" "}
-            {migration.failed_files} files
+            <span className={TERMINAL_LABEL}>Failed</span>
+            <p className={`font-mono text-xs ${migration.failed_files > 0 ? "text-red-400" : "text-[var(--color-text-muted)]"}`}>
+              {migration.failed_files} files
+            </p>
           </div>
           {migration.started_at && (
             <div>
-              <span className="font-medium text-[var(--color-text-secondary)]">Started:</span>{" "}
-              {formatDateTime(migration.started_at)}
+              <span className={TERMINAL_LABEL}>Started</span>
+              <p className="font-mono text-xs text-[var(--color-text-muted)]">
+                {formatDateTime(migration.started_at)}
+              </p>
             </div>
           )}
         </div>
 
         {/* Error log */}
         {errors.length > 0 && (
-          <div className="rounded-[var(--radius-md)] border border-[var(--color-danger)] bg-[var(--color-surface-tertiary)] p-[var(--spacing-2)]">
-            <div className="flex items-center gap-[var(--spacing-1)] text-xs font-medium text-[var(--color-danger)]">
+          <div className="rounded-[var(--radius-md)] border border-red-400/30 bg-[#0d1117] p-2">
+            <div className="flex items-center gap-1 font-mono text-xs font-medium text-red-400">
               <AlertCircle size={14} aria-hidden />
-              Errors ({errors.length})
+              ERRORS ({errors.length})
             </div>
-            <ul className="mt-1 max-h-32 overflow-auto text-xs text-[var(--color-text-muted)]">
+            <ul className="mt-1 max-h-32 overflow-auto font-mono text-xs text-[var(--color-text-muted)]">
               {errors.map((err, i) => (
                 <li key={i} className="truncate">
                   {String(err)}
@@ -127,15 +155,16 @@ export function MigrationProgressView({ migration, onRollback }: MigrationProgre
 
         {/* Rollback button */}
         {canRollback(migration.status_id as StorageMigrationStatusId) && onRollback && (
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            size="sm"
+            className={GHOST_DANGER_BTN}
             onClick={() => onRollback(migration.id)}
-            className="rounded-[var(--radius-md)] border border-[var(--color-danger)] px-[var(--spacing-3)] py-[var(--spacing-1)] text-xs font-medium text-[var(--color-danger)] hover:bg-[var(--color-danger)] hover:text-white transition-colors"
           >
             Rollback Migration
-          </button>
+          </Button>
         )}
-      </CardBody>
-    </Card>
+      </div>
+    </div>
   );
 }

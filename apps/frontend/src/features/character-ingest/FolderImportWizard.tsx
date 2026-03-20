@@ -9,7 +9,7 @@
 import type { ReactNode } from "react";
 import { useState } from "react";
 
-import { Badge, Button, Spinner } from "@/components/primitives";
+import { Badge, Button ,  WireframeLoader } from "@/components/primitives";
 import { Card } from "@/components/composite";
 import { Stack } from "@/components/layout";
 import {
@@ -187,7 +187,7 @@ export function FolderImportWizard({
                   }
                 >
                   {ingestFromText.isPending ? (
-                    <Spinner size="sm" />
+                    <WireframeLoader size={32} />
                   ) : (
                     "Parse Names"
                   )}
@@ -211,7 +211,7 @@ export function FolderImportWizard({
               />
               <WizardNavFooter onBack={goBack} onCancel={handleCancel}>
                 <Button onClick={handleValidate} disabled={validateSession.isPending}>
-                  {validateSession.isPending ? <Spinner size="sm" /> : "Validate"}
+                  {validateSession.isPending ? <WireframeLoader size={32} /> : "Validate"}
                 </Button>
               </WizardNavFooter>
             </Stack>
@@ -251,7 +251,7 @@ export function FolderImportWizard({
                       onClick={handleConfirm}
                       disabled={confirmImport.isPending}
                     >
-                      {confirmImport.isPending ? <Spinner size="sm" /> : "Confirm Import"}
+                      {confirmImport.isPending ? <WireframeLoader size={32} /> : "Confirm Import"}
                     </Button>
                   </WizardNavFooter>
                 </>

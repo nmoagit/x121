@@ -6,7 +6,7 @@
  * completeness, scene assignments, and generation history.
  */
 
-import { Spinner } from "@/components";
+import { WireframeLoader } from "@/components";
 
 import { GenerationHistorySection } from "./GenerationHistorySection";
 import { deriveMissingItems } from "./helpers";
@@ -48,7 +48,7 @@ export function CharacterDashboard({
   if (isLoading) {
     return (
       <div data-testid="dashboard-loading" className="flex items-center justify-center p-8">
-        <Spinner />
+        <WireframeLoader size={48} />
       </div>
     );
   }

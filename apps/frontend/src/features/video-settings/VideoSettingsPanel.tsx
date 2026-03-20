@@ -6,7 +6,7 @@
  * and optionally the inherited/resolved values for placeholder display.
  */
 
-import { Badge, Button, Input, Select } from "@/components/primitives";
+import { Button, Input, Select } from "@/components/primitives";
 import { RotateCcw, Save } from "@/tokens/icons";
 
 import {
@@ -107,9 +107,9 @@ export function VideoSettingsPanel({
             }
           />
           {!isBaseLevel && inherited?.duration_source && values.target_duration_secs === null && (
-            <Badge variant="default" size="sm">
+            <span className="font-mono text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">
               {SOURCE_LABELS[inherited.duration_source]}
-            </Badge>
+            </span>
           )}
         </div>
 
@@ -134,9 +134,9 @@ export function VideoSettingsPanel({
             }
           />
           {!isBaseLevel && inherited?.fps_source && values.target_fps === null && (
-            <Badge variant="default" size="sm">
+            <span className="font-mono text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">
               {SOURCE_LABELS[inherited.fps_source]}
-            </Badge>
+            </span>
           )}
         </div>
 
@@ -161,9 +161,9 @@ export function VideoSettingsPanel({
             }
           />
           {!isBaseLevel && inherited?.resolution_source && values.target_resolution === null && (
-            <Badge variant="default" size="sm">
+            <span className="font-mono text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">
               {SOURCE_LABELS[inherited.resolution_source]}
-            </Badge>
+            </span>
           )}
         </div>
       </div>

@@ -7,11 +7,12 @@
 
 import { useCallback, useState } from "react";
 
-import { Card, ConfirmModal } from "@/components/composite";
+import { ConfirmModal } from "@/components/composite";
 import { Stack } from "@/components/layout";
-import { Badge, Button, Input, Select, Toggle, Spinner } from "@/components/primitives";
+import { Button, Input, Select, Toggle ,  WireframeLoader } from "@/components/primitives";
 import { ChevronDown, Plus, Trash2 } from "@/tokens/icons";
 import { cn } from "@/lib/cn";
+import { TERMINAL_PANEL, TERMINAL_HEADER, TERMINAL_BODY, TERMINAL_TH, TERMINAL_DIVIDER, TERMINAL_ROW_HOVER, GHOST_DANGER_BTN } from "@/lib/ui-classes";
 
 import {
   useMetadataTemplates,
@@ -82,26 +83,22 @@ function TemplateRow({ template }: { template: MetadataTemplate }) {
   }, [newFieldName, newFieldType, newFieldRequired, newFieldDesc, detail?.fields, createField]);
 
   return (
-    <Card elevation="flat" padding="none">
+    <div className={TERMINAL_PANEL}>
       {/* Header row */}
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="flex w-full items-center justify-between px-4 py-3 hover:bg-[var(--color-surface-tertiary)] transition-colors"
+        className={cn(TERMINAL_HEADER, "flex w-full items-center justify-between", TERMINAL_ROW_HOVER)}
       >
         <div className="flex items-center gap-[var(--spacing-2)]">
-          <span className="text-sm font-medium text-[var(--color-text-primary)]">
+          <span className="text-xs font-medium text-cyan-400 font-mono">
             {template.name}
           </span>
           {template.is_default && (
-            <Badge variant="info" size="sm">
-              Default
-            </Badge>
+            <span className="text-[10px] text-green-400 font-mono uppercase">Default</span>
           )}
           {template.project_id && (
-            <Badge variant="default" size="sm">
-              Project
-            </Badge>
+            <span className="text-[10px] text-[var(--color-text-muted)] font-mono uppercase">Project</span>
           )}
         </div>
         <ChevronDown
@@ -115,46 +112,34 @@ function TemplateRow({ template }: { template: MetadataTemplate }) {
 
       {/* Expanded content */}
       {isOpen && (
-        <div className="border-t border-[var(--color-border-default)] px-4 py-3">
+        <div className={TERMINAL_BODY}>
           {isLoading ? (
             <div className="flex justify-center py-4">
-              <Spinner size="sm" />
+              <WireframeLoader size={32} />
             </div>
           ) : (
             <Stack gap={3}>
               {/* Fields table */}
               {detail?.fields && detail.fields.length > 0 && (
                 <div className="overflow-x-auto">
-                  <table className="w-full text-xs">
+                  <table className="w-full font-mono text-xs">
                     <thead>
-                      <tr className="border-b border-[var(--color-border-default)]">
-                        <th className="py-1.5 pr-3 text-left font-medium text-[var(--color-text-muted)]">
-                          Field Name
-                        </th>
-                        <th className="py-1.5 pr-3 text-left font-medium text-[var(--color-text-muted)]">
-                          Type
-                        </th>
-                        <th className="py-1.5 pr-3 text-left font-medium text-[var(--color-text-muted)]">
-                          Required
-                        </th>
-                        <th className="py-1.5 pr-3 text-left font-medium text-[var(--color-text-muted)]">
-                          Description
-                        </th>
-                        <th className="py-1.5 pr-3 text-left font-medium text-[var(--color-text-muted)]">
-                          Order
-                        </th>
-                        <th className="py-1.5 text-right font-medium text-[var(--color-text-muted)]">
-                          Actions
-                        </th>
+                      <tr className={TERMINAL_DIVIDER}>
+                        <th className={cn(TERMINAL_TH, "py-1.5 pr-3")}>Field Name</th>
+                        <th className={cn(TERMINAL_TH, "py-1.5 pr-3")}>Type</th>
+                        <th className={cn(TERMINAL_TH, "py-1.5 pr-3")}>Required</th>
+                        <th className={cn(TERMINAL_TH, "py-1.5 pr-3")}>Description</th>
+                        <th className={cn(TERMINAL_TH, "py-1.5 pr-3")}>Order</th>
+                        <th className={cn(TERMINAL_TH, "py-1.5 text-right")}>Actions</th>
                       </tr>
                     </thead>
                     <tbody>
                       {detail.fields.map((field) => (
                         <tr
                           key={field.id}
-                          className="border-b border-[var(--color-border-default)] last:border-0"
+                          className={cn(TERMINAL_DIVIDER, "last:border-0", TERMINAL_ROW_HOVER)}
                         >
-                          <td className="py-1.5 pr-3 text-[var(--color-text-primary)]">
+                          <td className="py-1.5 pr-3 text-cyan-400">
                             {field.field_name}
                           </td>
                           <td className="py-1.5 pr-3 text-[var(--color-text-secondary)]">
@@ -162,7 +147,7 @@ function TemplateRow({ template }: { template: MetadataTemplate }) {
                           </td>
                           <td className="py-1.5 pr-3">
                             {field.is_required ? (
-                              <Badge variant="warning" size="sm">Yes</Badge>
+                              <span className="text-orange-400">Yes</span>
                             ) : (
                               <span className="text-[var(--color-text-muted)]">No</span>
                             )}
@@ -176,7 +161,8 @@ function TemplateRow({ template }: { template: MetadataTemplate }) {
                           <td className="py-1.5 text-right">
                             <Button
                               variant="ghost"
-                              size="sm"
+                              size="xs"
+                              className={GHOST_DANGER_BTN}
                               icon={<Trash2 size={12} />}
                               onClick={() => deleteField.mutate(field.id)}
                               aria-label={`Delete ${field.field_name}`}
@@ -246,7 +232,8 @@ function TemplateRow({ template }: { template: MetadataTemplate }) {
               <div className="flex justify-end pt-2">
                 <Button
                   variant="ghost"
-                  size="sm"
+                  size="xs"
+                  className={GHOST_DANGER_BTN}
                   onClick={() => setConfirmDelete(true)}
                   disabled={deleteTemplate.isPending}
                 >
@@ -271,7 +258,7 @@ function TemplateRow({ template }: { template: MetadataTemplate }) {
           )}
         </div>
       )}
-    </Card>
+    </div>
   );
 }
 
@@ -295,7 +282,7 @@ export function MetadataTemplateEditor() {
   if (isLoading) {
     return (
       <div className="flex justify-center py-8">
-        <Spinner size="lg" />
+        <WireframeLoader size={64} />
       </div>
     );
   }

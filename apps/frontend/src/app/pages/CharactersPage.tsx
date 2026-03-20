@@ -15,14 +15,20 @@ import { api } from "@/lib/api";
 import { useSetPageTitle } from "@/hooks/useSetPageTitle";
 import { useSetToggle } from "@/hooks/useSetToggle";
 
-import { ConfirmDeleteModal, Modal } from "@/components/composite";
+import { ConfirmDeleteModal, ConfirmModal, Modal } from "@/components/composite";
 import { EmptyState, FileDropZone } from "@/components/domain";
 import { Stack } from "@/components/layout";
 import { Button, Input, LoadingPane, Select } from "@/components/primitives";
+import type { BulkImportReport } from "@/features/characters/types";
 import { CharacterFilterBar, CharacterGroupSection, CharacterSeedDataModal, FileAssignmentModal, type GroupSectionDragHandlers } from "@/features/characters/components";
 import { useCharacterImport } from "@/features/projects/hooks/use-character-import";
+import { useBulkImportSpeeches } from "@/features/projects/hooks/use-project-speech-import";
+import { useVoiceImportFlow } from "@/features/projects/hooks/use-voice-import-flow";
+import { SpeechImportResultModal } from "@/features/projects/components/SpeechImportResultModal";
+import { VoiceImportConfirmModal, VoiceImportResultModal } from "@/features/projects/components/VoiceImportModals";
 import { CharacterCard } from "@/features/projects/components/CharacterCard";
-import type { SeedDataStatus } from "@/features/projects/components/CharacterCard";
+import type { SeedDataStatus, SpeechLanguageSummary } from "@/features/projects/components/CharacterCard";
+import type { ProjectLanguageCount } from "@/features/projects/hooks/use-character-deliverables";
 import { useImageVariantsBrowse } from "@/features/images/hooks/use-image-variants";
 import { SOURCE_KEY_BIO, SOURCE_KEY_TOV } from "@/features/characters/types";
 import { ImportConfirmModal } from "@/features/projects/components/ImportConfirmModal";
@@ -41,12 +47,17 @@ import {
   useUpdateCharacter,
 } from "@/features/projects/hooks/use-project-characters";
 import { useCreateProject, useProjects } from "@/features/projects/hooks/use-projects";
-import type { Character, CharacterGroup, FolderDropResult, UpdateCharacter } from "@/features/projects/types";
-import { CharacterEditModal } from "@/features/projects/components/CharacterEditModal";
+import type { Character, CharacterDropPayload, CharacterGroup, FolderDropResult } from "@/features/projects/types";
+
 import { variantThumbnailUrl } from "@/features/images/utils";
 import { cn } from "@/lib/cn";
 import { toSelectOptions } from "@/lib/select-utils";
-import { INLINE_LINK_BTN } from "@/lib/ui-classes";
+import {
+  INLINE_LINK_BTN,
+  TERMINAL_DIVIDER,
+  TERMINAL_ROW_HOVER,
+  TERMINAL_TH,
+} from "@/lib/ui-classes";
 import { useAuthStore } from "@/stores/auth-store";
 import {
   Folder,
@@ -119,6 +130,29 @@ export function CharactersPage() {
     })),
   });
 
+  const speechLangQueries = useQueries({
+    queries: displayProjectIds.map((pid) => ({
+      queryKey: ["deliverables", "speechLanguageCounts", pid] as const,
+      queryFn: () => api.get<ProjectLanguageCount[]>(`/projects/${pid}/speech-language-counts`),
+      enabled: pid > 0,
+      staleTime: 5 * 60 * 1000,
+    })),
+  });
+
+  const speechLanguageMap = useMemo(() => {
+    const map = new Map<number, SpeechLanguageSummary[]>();
+    for (const q of speechLangQueries) {
+      if (!q.data) continue;
+      for (const row of q.data) {
+        const arr = map.get(row.character_id) ?? [];
+        arr.push({ flagCode: row.flag_code, languageCode: row.code, count: row.count });
+        map.set(row.character_id, arr);
+      }
+    }
+    return map;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [speechLangQueries.map((q) => q.dataUpdatedAt).join(",")]);
+
   const charsLoading = characterQueries.some((q) => q.isLoading);
   const groupsLoading = groupQueries.some((q) => q.isLoading);
 
@@ -149,6 +183,32 @@ export function CharactersPage() {
   const deleteGroup = useDeleteGroup(primaryProjectId);
   const toggleEnabled = useToggleCharacterEnabled(primaryProjectId);
   const createProject = useCreateProject();
+  const bulkSpeechImport = useBulkImportSpeeches(primaryProjectId);
+
+  /* --- speech import from dropped file --- */
+  const [speechImport, setSpeechImport] = useState<{ format: "json" | "csv"; data: string } | null>(null);
+  const [speechImportResult, setSpeechImportResult] = useState<BulkImportReport | null>(null);
+
+  const handleSpeechFileDrop = useCallback((format: "json" | "csv", data: string) => {
+    setSpeechImport({ format, data });
+    setSpeechImportResult(null);
+  }, []);
+
+  function handleSpeechImportConfirm() {
+    if (!speechImport) return;
+    bulkSpeechImport.mutate(
+      { format: speechImport.format, data: speechImport.data, skip_existing: true },
+      {
+        onSuccess: (result) => {
+          setSpeechImportResult(result);
+          setSpeechImport(null);
+        },
+      },
+    );
+  }
+
+  /* --- voice ID import from dropped CSV --- */
+  const voiceFlow = useVoiceImportFlow(primaryProjectId, allProjectCharacters);
 
   /* --- create project modal (admin only) --- */
   const [projectModalOpen, setProjectModalOpen] = useState(false);
@@ -258,8 +318,7 @@ export function CharactersPage() {
     ? allProjectCharacters.find((c) => c.id === seedDataTargetId) ?? null
     : null;
 
-  /* --- edit/delete character modals --- */
-  const [editingChar, setEditingChar] = useState<Character | null>(null);
+  /* --- delete character modal --- */
   const [charDeleteTarget, setCharDeleteTarget] = useState<Character | null>(null);
 
   /* --- delete group confirmation --- */
@@ -521,34 +580,13 @@ export function CharactersPage() {
     );
   }
 
-  function handleSaveCharEdit(characterId: number, data: UpdateCharacter) {
-    // Find the character's actual project_id — it may differ from primaryProjectId
-    // in multi-project view. The update hook is bound to primaryProjectId, so if
-    // the character is in a different project we call the API directly.
-    const char = allProjectCharacters.find((c) => c.id === characterId);
-    const charProjectId = char?.project_id ?? primaryProjectId;
-    if (charProjectId !== primaryProjectId) {
-      api.put(`/projects/${charProjectId}/characters/${characterId}`, data).then(() => {
-        setEditingChar(null);
-        // Invalidate character lists so the change appears immediately
-        queryClient.invalidateQueries({
-          predicate: (query) =>
-            Array.isArray(query.queryKey) &&
-            query.queryKey.includes("characters") &&
-            query.queryKey.includes("list"),
-        });
-      });
-    } else {
-      updateCharacter.mutate({ characterId, data }, { onSuccess: () => setEditingChar(null) });
-    }
-  }
+
 
   function handleDeleteCharacter() {
     if (!charDeleteTarget) return;
     deleteCharacter.mutate(charDeleteTarget.id, {
       onSuccess: () => {
         setCharDeleteTarget(null);
-        setEditingChar(null);
       },
     });
   }
@@ -615,28 +653,70 @@ export function CharactersPage() {
   const [pickProjectForImport, setPickProjectForImport] = useState(false);
   const [importTargetProjectId, setImportTargetProjectId] = useState("");
 
+  /** Strip video assets — this page is for seed images, metadata, and speech only. */
+  const stripVideos = useCallback((result: FolderDropResult): FolderDropResult => {
+    const filtered = new Map<string, CharacterDropPayload[]>();
+    for (const [group, payloads] of result.groupedPayloads) {
+      filtered.set(group, payloads.map((p) => ({
+        ...p,
+        assets: p.assets.filter((a) => a.kind !== "video"),
+      })));
+    }
+    return { ...result, groupedPayloads: filtered };
+  }, []);
+
   const handleFolderDrop = useCallback(
     (result: FolderDropResult) => {
-      if (isAdmin && primaryProjectId === 0) {
-        setPendingFolderDrop(result);
+      const cleaned = stripVideos(result);
+      // Admin without an explicit project filter — need to pick/match a project first
+      if (isAdmin && projectFilter.length === 0) {
+        const folderName = cleaned.detectedProjectName;
+        if (folderName && projects) {
+          const match = projects.find(
+            (p) => p.name.toLowerCase() === folderName.toLowerCase(),
+          );
+          if (match) {
+            setProjectFilter([String(match.id)]);
+            setImportTargetProjectId(String(match.id));
+          }
+        }
+        setPendingFolderDrop(cleaned);
         setPickProjectForImport(true);
       } else {
-        charImport.handleFolderDrop(result);
+        charImport.handleFolderDrop(cleaned);
       }
     },
-    [isAdmin, primaryProjectId, charImport],
+    [isAdmin, projectFilter.length, charImport, projects, stripVideos],
   );
+
+  // When a project is picked for import, set the filter and defer the import
+  // until charImport rebinds to the new project on the next render cycle.
+  const pendingImportRef = useRef<FolderDropResult | null>(null);
+  const [importTrigger, setImportTrigger] = useState(0);
 
   function handlePickProjectConfirm() {
     if (!importTargetProjectId || !pendingFolderDrop) return;
-    const pid = Number(importTargetProjectId);
-    setProjectFilter([String(pid)]);
+    setProjectFilter([String(Number(importTargetProjectId))]);
     setPickProjectForImport(false);
-    const result = pendingFolderDrop;
+    pendingImportRef.current = pendingFolderDrop;
     setPendingFolderDrop(null);
     setImportTargetProjectId("");
-    setTimeout(() => charImport.handleFolderDrop(result), 100);
+    // Bump trigger to fire the effect after the filter state propagates
+    setImportTrigger((n) => n + 1);
   }
+
+  useEffect(() => {
+    if (!pendingImportRef.current) return;
+    // Wait two frames for projectFilter → displayProjectIds → primaryProjectId → charImport to rebind
+    const timer = setTimeout(() => {
+      const result = pendingImportRef.current;
+      if (result) {
+        pendingImportRef.current = null;
+        charImport.handleFolderDrop(result);
+      }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [importTrigger]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const isLoading = projectsLoading || charsLoading || groupsLoading;
 
@@ -681,9 +761,9 @@ export function CharactersPage() {
         selected={selectedCharIds.has(c.id)}
         projectId={c.project_id}
         seedDataStatus={seedDataStatusMap.get(c.id)}
+        speechLanguages={speechLanguageMap.get(c.id)}
         onSelect={toggleCharSelection}
         onClick={() => setSeedDataTargetId(c.id)}
-        onEdit={() => setEditingChar(c)}
         onToggleEnabled={handleToggleEnabled}
       />
     </div>
@@ -693,6 +773,8 @@ export function CharactersPage() {
     <FileDropZone
       onNamesDropped={charImport.handleImportDrop}
       onFolderDropped={handleFolderDrop}
+      onSpeechFileDropped={handleSpeechFileDrop}
+      onVoiceFileDropped={voiceFlow.handleVoiceFileDrop}
       browseFolderRef={charImport.browseFolderRef}
     >
       <Stack gap={4}>
@@ -925,14 +1007,23 @@ export function CharactersPage() {
         {/* Pick project for import (admin, no project selected) */}
         <Modal
           open={pickProjectForImport}
-          onClose={() => { setPickProjectForImport(false); setPendingFolderDrop(null); }}
-          title="Select Project for Import"
+          onClose={() => { setPickProjectForImport(false); setPendingFolderDrop(null); setImportTargetProjectId(""); }}
+          title="Import to Project"
           size="sm"
         >
-          <Stack gap={4}>
-            <p className="text-sm text-[var(--color-text-muted)]">
-              Choose which project to import the dropped files into.
-            </p>
+          <Stack gap={3}>
+            {/* Folder name match indicator */}
+            {pendingFolderDrop?.detectedProjectName && (() => {
+              const folderName = pendingFolderDrop.detectedProjectName!;
+              const match = projects?.find((p) => p.name.toLowerCase() === folderName.toLowerCase());
+              return (
+                <p className={`font-mono text-xs border-l-2 pl-2 py-0.5 ${match ? "border-green-400 text-green-400" : "border-orange-400 text-orange-400"}`}>
+                  {match
+                    ? `folder "${folderName}" matches project "${match.name}"`
+                    : `folder "${folderName}" — no matching project`}
+                </p>
+              );
+            })()}
             <Select
               label="Project"
               options={[
@@ -942,12 +1033,15 @@ export function CharactersPage() {
               value={importTargetProjectId}
               onChange={setImportTargetProjectId}
             />
-            <Button
-              onClick={handlePickProjectConfirm}
-              disabled={!importTargetProjectId}
-            >
-              Continue Import
-            </Button>
+            <div className="flex justify-end pt-1 border-t border-[var(--color-border-default)]">
+              <Button
+                size="sm"
+                onClick={handlePickProjectConfirm}
+                disabled={!importTargetProjectId}
+              >
+                Continue Import
+              </Button>
+            </div>
           </Stack>
         </Modal>
 
@@ -995,16 +1089,6 @@ export function CharactersPage() {
             </Button>
           </Stack>
         </Modal>
-
-        {/* Edit character modal */}
-        <CharacterEditModal
-          character={editingChar}
-          projectId={editingChar?.project_id ?? primaryProjectId}
-          onClose={() => setEditingChar(null)}
-          onSave={handleSaveCharEdit}
-          saving={updateCharacter.isPending}
-          onDeleteRequest={(char) => setCharDeleteTarget(char)}
-        />
 
         {/* Delete character confirmation */}
         <ConfirmDeleteModal
@@ -1078,6 +1162,19 @@ export function CharactersPage() {
               });
             });
           }}
+          onUpdate={(charId, data) => {
+            const char = allProjectCharacters.find((c) => c.id === charId);
+            const pid = char?.project_id ?? primaryProjectId;
+            api.put(`/projects/${pid}/characters/${charId}`, data).then(() => {
+              queryClient.invalidateQueries({
+                predicate: (query) =>
+                  Array.isArray(query.queryKey) &&
+                  query.queryKey.includes("characters") &&
+                  query.queryKey.includes("list"),
+              });
+            });
+          }}
+          updating={updateCharacter.isPending}
         />
 
         {/* Import confirmation modal */}
@@ -1098,6 +1195,130 @@ export function CharactersPage() {
           detectedProjectName={charImport.importResult?.detectedProjectName}
           existingGroupNames={groups?.map((g) => g.name) ?? []}
           hashSummary={charImport.hashSummary}
+        />
+        {/* Speech file import confirmation */}
+        <ConfirmModal
+          open={speechImport !== null}
+          onClose={() => setSpeechImport(null)}
+          title="Import Speech File"
+          confirmLabel="Import"
+          confirmVariant="primary"
+          loading={bulkSpeechImport.isPending}
+          onConfirm={handleSpeechImportConfirm}
+        >
+          {(() => {
+            if (!speechImport) return null;
+            try {
+              const slugify = (n: string) => n.toLowerCase().replace(/[^a-z0-9]/g, "_").replace(/_+/g, "_").replace(/^_|_$/g, "");
+              type Row = { charSlug: string; type: string; lang: string; count: number; matched: boolean };
+              const rows: Row[] = [];
+
+              if (speechImport.format === "json") {
+                const parsed = JSON.parse(speechImport.data) as Record<string, unknown>;
+                for (const [charSlug, typesVal] of Object.entries(parsed)) {
+                  const matched = allProjectCharacters.some((c) => slugify(c.name) === slugify(charSlug));
+                  for (const [typeName, langsVal] of Object.entries(typesVal as Record<string, unknown>)) {
+                    for (const [langName, textsVal] of Object.entries(langsVal as Record<string, unknown>)) {
+                      const count = Array.isArray(textsVal) ? textsVal.length : 0;
+                      if (count > 0) rows.push({ charSlug, type: typeName, lang: langName, count, matched });
+                    }
+                  }
+                }
+              } else {
+                const lines = speechImport.data.split(/\r?\n/).filter((l) => l.trim());
+                const counts = new Map<string, Row>();
+                for (const line of lines.slice(1)) {
+                  const parts = line.match(/^([^,]*),([^,]*),([^,]*),(.*)$/);
+                  if (!parts) continue;
+                  const key = `${parts[1]}|${parts[2]}|${parts[3]}`;
+                  const existing = counts.get(key);
+                  if (existing) {
+                    existing.count += 1;
+                  } else {
+                    const charSlug = parts[1]!;
+                    counts.set(key, {
+                      charSlug,
+                      type: parts[2]!,
+                      lang: parts[3]!,
+                      count: 1,
+                      matched: allProjectCharacters.some((c) => slugify(c.name) === slugify(charSlug)),
+                    });
+                  }
+                }
+                rows.push(...counts.values());
+              }
+
+              const matchedCount = new Set(rows.filter((r) => r.matched).map((r) => r.charSlug)).size;
+              const totalChars = new Set(rows.map((r) => r.charSlug)).size;
+              const totalEntries = rows.reduce((sum, r) => sum + r.count, 0);
+
+              return (
+                <Stack gap={2}>
+                  <p className="text-sm">
+                    <strong>{totalChars}</strong> characters, <strong>{rows.length}</strong> combinations, <strong>{totalEntries}</strong> entries total.
+                    {" "}<span className="text-[var(--color-text-muted)]">({matchedCount} matched, {totalChars - matchedCount} unmatched)</span>
+                  </p>
+                  <div className="max-h-80 overflow-y-auto rounded border border-[var(--color-border-default)]">
+                    <table className="w-full text-xs">
+                      <thead className="sticky top-0 bg-[#161b22]">
+                        <tr>
+                          <th className={cn(TERMINAL_TH, "px-2 py-1.5")}>Character</th>
+                          <th className={cn(TERMINAL_TH, "px-2 py-1.5")}>Speech Type</th>
+                          <th className={cn(TERMINAL_TH, "px-2 py-1.5")}>Language</th>
+                          <th className={cn(TERMINAL_TH, "px-2 py-1.5 text-right")}>Entries</th>
+                          <th className={cn(TERMINAL_TH, "px-2 py-1.5 text-center")}>Match</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {rows.map((row, i) => (
+                          <tr key={i} className={cn(TERMINAL_DIVIDER, TERMINAL_ROW_HOVER)}>
+                            <td className="px-2 py-1 font-mono text-xs text-cyan-400">{row.charSlug}</td>
+                            <td className="px-2 py-1 font-mono text-xs text-[var(--color-text-muted)]">{row.type}</td>
+                            <td className="px-2 py-1 font-mono text-xs text-[var(--color-text-muted)]">{row.lang}</td>
+                            <td className="px-2 py-1 text-right font-mono text-xs text-[var(--color-text-muted)]">{row.count}</td>
+                            <td className="px-2 py-1 text-center">
+                              <span className={cn("font-mono text-xs", row.matched ? "text-green-400" : "text-orange-400")}>
+                                {row.matched ? "Yes" : "No"}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </Stack>
+              );
+            } catch {
+              return <p>Invalid file data.</p>;
+            }
+          })()}
+        </ConfirmModal>
+
+        {/* Speech import result */}
+        {speechImportResult && (
+          <SpeechImportResultModal
+            open
+            onClose={() => setSpeechImportResult(null)}
+            result={speechImportResult}
+          />
+        )}
+
+        {/* Voice ID import */}
+        {voiceFlow.voiceImport && (
+          <VoiceImportConfirmModal
+            open
+            onClose={() => voiceFlow.setVoiceImport(null)}
+            entries={voiceFlow.voiceImport}
+            characters={allProjectCharacters}
+            mode={voiceFlow.voiceImportMode}
+            onModeChange={voiceFlow.setVoiceImportMode}
+            loading={voiceFlow.bulkVoiceImport.isPending}
+            onConfirm={voiceFlow.handleVoiceImportConfirm}
+          />
+        )}
+        <VoiceImportResultModal
+          result={voiceFlow.voiceImportResult}
+          onClose={() => voiceFlow.setVoiceImportResult(null)}
         />
       </Stack>
     </FileDropZone>

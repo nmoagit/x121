@@ -13,7 +13,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { Modal, useToast } from "@/components/composite";
 import { EmptyState } from "@/components/domain";
 import { Stack } from "@/components/layout";
-import { Badge, Button, Checkbox, Input, LoadingPane, Toggle } from "@/components/primitives";
+import { Button, Checkbox, Input, LoadingPane, Toggle } from "@/components/primitives";
 import { ChevronDown, Eye, List, Play, Plus, RefreshCw, Trash2, XCircle, Zap } from "@/tokens/icons";
 import { iconSizes } from "@/tokens/icons";
 
@@ -33,7 +33,8 @@ import {
   useProductionProgress,
   useResubmitFailed,
 } from "@/features/production/hooks/use-production";
-import { RUN_STATUS_LABELS, RUN_STATUS_VARIANT, deduplicateSceneSlots, sceneSlotKey } from "@/features/production/types";
+import { RUN_STATUS_LABELS, deduplicateSceneSlots, sceneSlotKey } from "@/features/production/types";
+import { TERMINAL_PANEL, TERMINAL_HEADER, TERMINAL_HEADER_TITLE, TERMINAL_BODY, TERMINAL_ROW_HOVER, TERMINAL_DIVIDER, TERMINAL_STATUS_COLORS } from "@/lib/ui-classes";
 import type { ProductionRun } from "@/features/production/types";
 import { useQueueStatus } from "@/features/queue/hooks/use-queue";
 
@@ -83,13 +84,10 @@ export function ProjectProductionTab({ projectId }: ProjectProductionTabProps) {
           </Button>
 
           {queueStatus && (
-            <div className="flex items-center gap-2">
-              <Badge variant="info" size="sm">
-                {queueStatus.total_queued} queued
-              </Badge>
-              <Badge variant="default" size="sm">
-                {queueStatus.total_running} running
-              </Badge>
+            <div className="flex items-center gap-2 font-mono text-xs">
+              <span className="text-orange-400">{queueStatus.total_queued} queued</span>
+              <span className="text-[var(--color-text-muted)] opacity-30 select-none">|</span>
+              <span className="text-cyan-400">{queueStatus.total_running} running</span>
             </div>
           )}
         </div>
@@ -177,10 +175,10 @@ function RunSelector({
       </button>
 
       {expanded && (
-        <div className="rounded-[var(--radius-md)] border border-[var(--color-border-default)] bg-[var(--color-surface-primary)] divide-y divide-[var(--color-border-default)]">
-          {runs.map((run) => {
+        <div className={TERMINAL_PANEL}>
+          {runs.map((run, idx) => {
             const statusLabel = RUN_STATUS_LABELS[run.status_id] ?? "Unknown";
-            const statusVariant = RUN_STATUS_VARIANT[run.status_id] ?? "default";
+            const statusColor = TERMINAL_STATUS_COLORS[statusLabel.toLowerCase()] ?? "text-[var(--color-text-muted)]";
             const pct =
               run.total_cells > 0 ? Math.round((run.completed_cells / run.total_cells) * 100) : 0;
             const isSelected = run.id === selectedRunId;
@@ -193,35 +191,35 @@ function RunSelector({
                   onSelect(run.id);
                   setExpanded(false);
                 }}
-                className={`flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition-colors hover:bg-[var(--color-surface-secondary)] ${
-                  isSelected ? "bg-[var(--color-surface-secondary)]" : ""
-                }`}
+                className={`flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition-colors ${TERMINAL_ROW_HOVER} ${
+                  isSelected ? "bg-[#161b22]" : ""
+                } ${idx > 0 ? TERMINAL_DIVIDER : ""}`}
               >
                 <div className="flex items-center gap-3 min-w-0">
                   {isSelected && <Eye size={14} className="text-[var(--color-action-primary)] shrink-0" />}
                   <div className="min-w-0">
-                    <span className="text-sm font-medium text-[var(--color-text-primary)] truncate block">
+                    <span className="text-xs font-medium font-mono text-[var(--color-text-primary)] truncate block">
                       {run.name}
                     </span>
                     {run.description && (
-                      <span className="text-xs text-[var(--color-text-muted)] truncate block">
+                      <span className="text-[10px] font-mono text-[var(--color-text-muted)] truncate block">
                         {run.description}
                       </span>
                     )}
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 shrink-0">
-                  <Badge variant={statusVariant} size="sm">
-                    {statusLabel}
-                  </Badge>
-                  <span className="text-xs text-[var(--color-text-muted)] tabular-nums">
+                <div className="flex items-center gap-2 shrink-0 font-mono text-xs">
+                  <span className={statusColor}>{statusLabel}</span>
+                  <span className="text-[var(--color-text-muted)] opacity-30 select-none">|</span>
+                  <span className="text-cyan-400 tabular-nums">
                     {run.completed_cells}/{run.total_cells} ({pct}%)
                   </span>
                   {run.failed_cells > 0 && (
-                    <Badge variant="danger" size="sm">
-                      {run.failed_cells} failed
-                    </Badge>
+                    <>
+                      <span className="text-[var(--color-text-muted)] opacity-30 select-none">|</span>
+                      <span className="text-red-400">{run.failed_cells} failed</span>
+                    </>
                   )}
                 </div>
               </button>
@@ -413,8 +411,8 @@ function CreateRunModal({
         {/* Character selection — grouped */}
         <div>
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-[var(--color-text-primary)]">
-              Characters ({selectedCharacterIds.size || characters.length} selected)
+            <span className="text-xs font-mono uppercase tracking-wide text-[var(--color-text-muted)]">
+              Characters (<span className="text-cyan-400">{selectedCharacterIds.size || characters.length}</span> selected)
             </span>
             <Checkbox
               label="Select all"
@@ -423,7 +421,7 @@ function CreateRunModal({
               onChange={toggleAllCharacters}
             />
           </div>
-          <div className="max-h-64 overflow-y-auto rounded-[var(--radius-md)] border border-[var(--color-border-default)] bg-[var(--color-surface-secondary)] p-1.5 space-y-2">
+          <div className="max-h-64 overflow-y-auto rounded-[var(--radius-md)] border border-[var(--color-border-default)] p-1.5 space-y-2">
             {charactersByGroup.map(({ group, chars }) => {
               const groupCharIds = chars.map((c) => c.id);
               const allInGroupSelected = groupCharIds.every((id) => selectedCharacterIds.has(id));
@@ -475,8 +473,8 @@ function CreateRunModal({
         {/* Scene slot selection — scene_type+track+clothes_off combos */}
         <div>
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-[var(--color-text-primary)]">
-              Scenes ({selectedSlotKeys.size || sceneSlots.length} selected)
+            <span className="text-xs font-mono uppercase tracking-wide text-[var(--color-text-muted)]">
+              Scenes (<span className="text-cyan-400">{selectedSlotKeys.size || sceneSlots.length}</span> selected)
             </span>
             {sceneSlots.length > 0 && (
               <Checkbox
@@ -487,7 +485,7 @@ function CreateRunModal({
               />
             )}
           </div>
-          <div className="max-h-48 overflow-y-auto rounded-[var(--radius-md)] border border-[var(--color-border-default)] bg-[var(--color-surface-secondary)] p-1.5">
+          <div className="max-h-48 overflow-y-auto rounded-[var(--radius-md)] border border-[var(--color-border-default)] p-1.5">
             <div className="grid grid-cols-2 gap-x-4 gap-y-1 sm:grid-cols-3">
               {sceneSlots.map((slot) => (
                 <Checkbox
@@ -510,28 +508,29 @@ function CreateRunModal({
         </div>
 
         {/* Retrospective matching */}
-        <div className="rounded-[var(--radius-md)] border border-[var(--color-border-default)] bg-[var(--color-surface-secondary)] p-1.5">
+        <div className="rounded-[var(--radius-md)] border border-[var(--color-border-default)] p-1.5">
           <Toggle
             label="Include existing approved scenes (retrospective)"
             checked={retrospective}
             onChange={setRetrospective}
             size="sm"
           />
-          <p className="mt-1 ml-7 text-xs text-[var(--color-text-muted)]">
+          <p className="mt-1 ml-7 text-xs font-mono text-[var(--color-text-muted)]">
             Pre-marks cells as completed where an approved video already exists for the character + scene type.
           </p>
         </div>
 
         {/* Summary and actions */}
-        <div className="flex items-center justify-between pt-2 border-t border-[var(--color-border-default)]">
-          <span className="text-sm text-[var(--color-text-muted)]">
-            {cellCount} cell{cellCount !== 1 ? "s" : ""} will be created
+        <div className="flex items-center justify-between pt-1 border-t border-[var(--color-border-default)]">
+          <span className="text-xs font-mono text-[var(--color-text-muted)]">
+            <span className="text-cyan-400">{cellCount}</span> cell{cellCount !== 1 ? "s" : ""} will be created
           </span>
           <div className="flex items-center gap-2">
-            <Button variant="secondary" onClick={handleClose}>
+            <Button size="sm" variant="secondary" onClick={handleClose}>
               Cancel
             </Button>
             <Button
+              size="sm"
               onClick={handleCreate}
               loading={createRun.isPending}
               disabled={sceneSlots.length === 0 || characters.length === 0}
@@ -669,19 +668,22 @@ function RunDetail({
   );
 
   const statusLabel = RUN_STATUS_LABELS[run.status_id] ?? "Unknown";
-  const statusVariant = RUN_STATUS_VARIANT[run.status_id] ?? "default";
+  const statusColor = TERMINAL_STATUS_COLORS[statusLabel.toLowerCase()] ?? "text-[var(--color-text-muted)]";
 
   return (
     <Stack gap={5}>
       {/* Run header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 font-mono text-xs">
           <h3 className="text-base font-semibold text-[var(--color-text-primary)]">
             {run.name}
           </h3>
-          <Badge variant={statusVariant} size="sm">{statusLabel}</Badge>
+          <span className={statusColor}>{statusLabel}</span>
           {run.failed_cells > 0 && (
-            <Badge variant="danger" size="sm">{run.failed_cells} failed</Badge>
+            <>
+              <span className="text-[var(--color-text-muted)] opacity-30 select-none">|</span>
+              <span className="text-red-400">{run.failed_cells} failed</span>
+            </>
           )}
         </div>
         <div className="flex items-center gap-2">
@@ -756,10 +758,11 @@ function RunDetail({
       {cellsLoading && <LoadingPane />}
 
       {!cellsLoading && cells && characters.length > 0 && columns.length > 0 && (
-        <div className="rounded-[var(--radius-lg)] border border-[var(--color-border-default)] bg-[var(--color-surface-primary)] p-4">
-          <h4 className="mb-3 text-sm font-semibold text-[var(--color-text-primary)]">
-            Character × Scene Matrix
-          </h4>
+        <div className={TERMINAL_PANEL}>
+          <div className={TERMINAL_HEADER}>
+            <span className={TERMINAL_HEADER_TITLE}>Character x Scene Matrix</span>
+          </div>
+          <div className={TERMINAL_BODY}>
           <MatrixGrid
             cells={cells}
             characters={characters}
@@ -771,6 +774,7 @@ function RunDetail({
             onCancelCharacter={handleCancelCharacter}
             onDeleteCharacter={handleDeleteCharacter}
           />
+          </div>
         </div>
       )}
 

@@ -9,7 +9,8 @@ import { useNavigate } from "@tanstack/react-router";
 
 import { EmptyState } from "@/components/domain";
 import { PageHeader, Stack } from "@/components/layout";
-import { Badge, FilterSelect, Spinner, Toggle } from "@/components/primitives";
+import { FilterSelect, Toggle ,  WireframeLoader } from "@/components/primitives";
+import { TERMINAL_PANEL, TERMINAL_ROW_HOVER, TERMINAL_STATUS_COLORS } from "@/lib/ui-classes";
 import { useClipsBrowse } from "@/features/scenes/hooks/useClipManagement";
 import type { ClipBrowseItem } from "@/features/scenes/hooks/useClipManagement";
 import { isPurgedClip, isEmptyClip } from "@/features/scenes/types";
@@ -73,15 +74,9 @@ function ReviewClipRow({
   return (
     <div
       ref={ref}
-      className={`rounded-[var(--radius-lg)] border transition-colors bg-[var(--color-surface-primary)] hover:bg-[var(--color-surface-secondary)] ${
-        isApproved
-          ? "border-[var(--color-action-success)]"
-          : isRejected
-            ? "border-[var(--color-action-danger)]"
-            : "border-[var(--color-border-default)]"
-      }`}
+      className={`${TERMINAL_PANEL} ${TERMINAL_ROW_HOVER}`}
     >
-      <div className="flex items-center gap-4 p-4">
+      <div className="flex items-center gap-4 p-[var(--spacing-3)]">
         {/* Video thumbnail */}
         {isPurgedClip(clip) ? (
           <div className="relative flex h-16 w-24 shrink-0 items-center justify-center rounded bg-[var(--color-surface-tertiary)]">
@@ -114,32 +109,35 @@ function ReviewClipRow({
           className="flex min-w-0 flex-1 flex-col gap-1 text-left cursor-pointer"
         >
           <div className="flex items-center gap-2">
-            <span className="text-sm font-semibold text-[var(--color-text-primary)]">
+            <span className="font-mono text-xs font-medium text-[var(--color-text-primary)]">
               {clip.character_name}
             </span>
-            <span className="text-xs text-[var(--color-text-muted)]">
-              {clip.scene_type_name} &middot; {clip.track_name}
+            <span className="font-mono text-xs text-[var(--color-text-muted)]">
+              {clip.scene_type_name}
             </span>
-            <span className="text-xs font-medium text-[var(--color-text-secondary)]">
+            <span className="opacity-30">|</span>
+            <span className="font-mono text-xs text-[var(--color-text-muted)]">
+              {clip.track_name}
+            </span>
+            <span className="opacity-30">|</span>
+            <span className="font-mono text-xs text-cyan-400">
               v{clip.version_number}
             </span>
           </div>
           <div className="flex items-center gap-2">
-            <Badge
-              variant={isApproved ? "success" : isRejected ? "danger" : "default"}
-              size="sm"
-            >
+            <span className={`font-mono text-xs uppercase tracking-wide ${TERMINAL_STATUS_COLORS[clip.qa_status ?? "pending"] ?? "text-[var(--color-text-muted)]"}`}>
               {isApproved ? "Approved" : isRejected ? "Rejected" : "Pending"}
-            </Badge>
+            </span>
             {isPurgedClip(clip) && (
-              <Badge variant="warning" size="sm">Purged</Badge>
+              <span className="font-mono text-xs uppercase tracking-wide text-orange-400">Purged</span>
             )}
             {!isPurgedClip(clip) && isEmptyClip(clip) && (
-              <Badge variant="warning" size="sm">Empty file</Badge>
+              <span className="font-mono text-xs uppercase tracking-wide text-orange-400">Empty file</span>
             )}
           </div>
-          <div className="flex items-center gap-3 text-xs text-[var(--color-text-muted)]">
+          <div className="flex items-center gap-2 font-mono text-xs text-[var(--color-text-muted)]">
             <span>{clip.project_name}</span>
+            <span className="opacity-30">|</span>
             <span>{formatDateTime(clip.created_at)}</span>
           </div>
         </button>
@@ -247,7 +245,7 @@ export function MyReviewsPage() {
       {/* Content */}
       {isLoading ? (
         <div className="flex justify-center py-12">
-          <Spinner />
+          <WireframeLoader size={48} />
         </div>
       ) : !filteredClips.length ? (
         <EmptyState

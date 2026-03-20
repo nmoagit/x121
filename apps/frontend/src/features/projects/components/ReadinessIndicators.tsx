@@ -53,7 +53,7 @@ export function ReadinessIndicators({ readiness, projectId, characterId, blockin
               role="button"
               tabIndex={0}
               aria-label={section.tooltip}
-              className="flex items-center justify-center w-6 h-6 rounded-full cursor-pointer transition-transform hover:scale-110"
+              className="flex items-center justify-center size-[18px] rounded-full cursor-pointer transition-transform hover:scale-110"
               style={{ backgroundColor: bg }}
               onClick={(e) => {
                 e.stopPropagation();
@@ -75,7 +75,7 @@ export function ReadinessIndicators({ readiness, projectId, characterId, blockin
               }}
             >
               <Icon
-                size={12}
+                size={10}
                 className={isGrey ? "text-[var(--color-surface-primary)]" : "text-white"}
                 aria-hidden
               />

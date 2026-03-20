@@ -12,7 +12,7 @@ import { useCallback, useMemo, useState } from "react";
 import { Modal } from "@/components/composite/Modal";
 import { Grid, Stack } from "@/components/layout";
 import { ApprovalActions } from "@/components/domain/ApprovalActions";
-import { Badge, Button, Spinner } from "@/components/primitives";
+import { Button ,  WireframeLoader } from "@/components/primitives";
 import { ChevronLeft, ChevronRight, Trash2, Upload, Wand2 } from "@/tokens/icons";
 
 import {
@@ -33,10 +33,9 @@ import {
 } from "@/features/images/types";
 import type { ImageVariant, Provenance } from "@/features/images/types";
 import { variantImageUrl, variantThumbnailUrl } from "@/features/images/utils";
-import { ProgressiveImage } from "@/components/primitives";
-import { TrackBadge } from "@/features/scene-catalogue/TrackBadge";
-
+import { ProgressiveImage  } from "@/components/primitives";
 import { TrackImageCard } from "./TrackImageCard";
+import { TRACK_TEXT_COLORS } from "@/lib/ui-classes";
 import { useTrackImageActions } from "./useTrackImageActions";
 
 /* --------------------------------------------------------------------------
@@ -58,7 +57,7 @@ function ModalVariantCard({ variant, onApprove, onUnapprove, onReject, onExport,
   const canUnapprove = canUnapproveVariant(variant.status_id);
 
   return (
-    <div className="rounded-[var(--radius-md)] border border-[var(--color-border-default)] bg-[var(--color-surface-secondary)] overflow-hidden">
+    <div className="rounded-[var(--radius-lg)] border border-[var(--color-border-default)] bg-[#0d1117] overflow-hidden">
       {/* Thumbnail — click to annotate */}
       {variant.file_path ? (
         <div
@@ -78,7 +77,7 @@ function ModalVariantCard({ variant, onApprove, onUnapprove, onReject, onExport,
           />
         </div>
       ) : (
-        <div className="flex aspect-video items-center justify-center text-xs text-[var(--color-text-muted)]">
+        <div className="flex aspect-video items-center justify-center text-xs text-[var(--color-text-muted)] font-mono bg-[#161b22]">
           No image
         </div>
       )}
@@ -86,19 +85,19 @@ function ModalVariantCard({ variant, onApprove, onUnapprove, onReject, onExport,
       {/* Info + actions */}
       <div className="px-2 py-1.5 space-y-1.5">
         <div className="flex items-center justify-between gap-1">
-          <p className="truncate text-xs font-medium text-[var(--color-text-primary)]">
+          <p className="truncate text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide font-mono">
             {variant.variant_label}
           </p>
-          {variant.is_hero && <Badge variant="success" size="sm">Hero</Badge>}
+          {variant.is_hero && <span className="text-[10px] font-mono text-green-400">hero</span>}
         </div>
-        <div className="flex flex-wrap gap-1">
-          <Badge variant={statusBadgeVariant(variant.status_id)} size="sm">
-            {IMAGE_VARIANT_STATUS_LABEL[variant.status_id] ?? "Unknown"}
-          </Badge>
-          <Badge variant="default" size="sm">
-            {PROVENANCE_LABEL[variant.provenance as Provenance] ?? variant.provenance}
-          </Badge>
-          <Badge variant="default" size="sm">v{variant.version}</Badge>
+        <div className="flex items-center gap-2 font-mono text-[10px] text-[var(--color-text-muted)]">
+          <span className={statusBadgeVariant(variant.status_id) === "success" ? "text-green-400" : "text-cyan-400"}>
+            {(IMAGE_VARIANT_STATUS_LABEL[variant.status_id] ?? "unknown").toLowerCase()}
+          </span>
+          <span className="opacity-30">|</span>
+          <span>{(PROVENANCE_LABEL[variant.provenance as Provenance] ?? variant.provenance).toLowerCase()}</span>
+          <span className="opacity-30">|</span>
+          <span>v{variant.version}</span>
         </div>
         <div className="flex items-center gap-1">
           <ApprovalActions
@@ -171,7 +170,7 @@ export function CharacterImagesTab({ characterId }: CharacterImagesTabProps) {
       {/* Track seed image cards */}
       {activeTracks.length > 0 && (
         <div className="space-y-[var(--spacing-2)]">
-          <h3 className="text-sm font-medium text-[var(--color-text-muted)]">Seed Images</h3>
+          <h3 className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide font-mono">Seed Images</h3>
           <Grid cols={4} gap={4}>
             {trackImageData.map(({ track, hero }, index) => (
               <TrackImageCard
@@ -211,12 +210,11 @@ export function CharacterImagesTab({ characterId }: CharacterImagesTabProps) {
                 icon={<ChevronLeft size={16} />}
                 aria-label="Previous track"
               />
-              <h2 className="text-lg font-semibold text-[var(--color-text-primary)]">
+              <h2 className={`text-sm font-semibold font-mono uppercase tracking-wide ${TRACK_TEXT_COLORS[detailTrack.track.slug] ?? "text-[var(--color-text-primary)]"}`}>
                 {detailTrack.track.name}
               </h2>
-              <TrackBadge name={detailTrack.track.name} slug={detailTrack.track.slug} />
-              <span className="text-sm text-[var(--color-text-muted)]">
-                {(detailTrackIndex ?? 0) + 1} / {trackImageData.length}
+              <span className="text-[10px] font-mono text-[var(--color-text-muted)]">
+                {(detailTrackIndex ?? 0) + 1}/{trackImageData.length}
               </span>
               <Button
                 size="sm"
@@ -245,35 +243,29 @@ export function CharacterImagesTab({ characterId }: CharacterImagesTabProps) {
 
             {/* Seed image info + actions */}
             <div className="flex items-center justify-between">
-              <div className="flex flex-wrap gap-2">
+              <div className="flex items-center gap-2 font-mono text-[10px] text-[var(--color-text-muted)]">
                 {detailTrack.hero && (
                   <>
-                    <Badge variant={statusBadgeVariant(detailTrack.hero.status_id)} size="sm">
-                      {IMAGE_VARIANT_STATUS_LABEL[detailTrack.hero.status_id]}
-                    </Badge>
-                    <Badge variant="default" size="sm">
-                      {PROVENANCE_LABEL[detailTrack.hero.provenance as Provenance] ?? detailTrack.hero.provenance}
-                    </Badge>
+                    <span className={statusBadgeVariant(detailTrack.hero.status_id) === "success" ? "text-green-400" : "text-cyan-400"}>
+                      {IMAGE_VARIANT_STATUS_LABEL[detailTrack.hero.status_id]?.toLowerCase()}
+                    </span>
+                    <span className="opacity-30">|</span>
+                    <span>{(PROVENANCE_LABEL[detailTrack.hero.provenance as Provenance] ?? detailTrack.hero.provenance).toLowerCase()}</span>
                     {detailTrack.hero.width && detailTrack.hero.height && (
-                      <Badge variant="info" size="sm">
-                        {detailTrack.hero.width} x {detailTrack.hero.height}
-                      </Badge>
+                      <><span className="opacity-30">|</span><span>{detailTrack.hero.width}x{detailTrack.hero.height}</span></>
                     )}
                     {detailTrack.hero.format && (
-                      <Badge variant="default" size="sm">
-                        {detailTrack.hero.format.toUpperCase()}
-                      </Badge>
+                      <><span className="opacity-30">|</span><span>{detailTrack.hero.format.toUpperCase()}</span></>
                     )}
                   </>
                 )}
               </div>
               <div className="flex items-center gap-2">
                 <Button
-                  size="sm"
+                  size="xs"
                   variant="secondary"
-                  icon={<Upload size={14} />}
+                  icon={<Upload size={12} />}
                   onClick={() => {
-                    // Trigger file picker
                     const input = document.createElement("input");
                     input.type = "file";
                     input.accept = "image/*";
@@ -288,9 +280,9 @@ export function CharacterImagesTab({ characterId }: CharacterImagesTabProps) {
                 </Button>
                 {detailTrack.track.slug.toLowerCase() === "clothed" && (
                   <Button
-                    size="sm"
+                    size="xs"
                     variant="secondary"
-                    icon={<Wand2 size={14} />}
+                    icon={<Wand2 size={12} />}
                     disabled={!toplessHeroExists || generating}
                     onClick={() => handleGenerateTrackImage(detailTrack.track.slug)}
                   >
@@ -299,9 +291,9 @@ export function CharacterImagesTab({ characterId }: CharacterImagesTabProps) {
                 )}
                 {detailTrack.hero && (
                   <Button
-                    size="sm"
+                    size="xs"
                     variant="danger"
-                    icon={<Trash2 size={14} />}
+                    icon={<Trash2 size={12} />}
                     onClick={() => handleDelete(detailTrack.hero!.id)}
                   >
                     Delete
@@ -312,15 +304,15 @@ export function CharacterImagesTab({ characterId }: CharacterImagesTabProps) {
 
             {/* Variants for this track */}
             <div className="space-y-2">
-              <h3 className="text-sm font-medium text-[var(--color-text-primary)]">
+              <h3 className="text-xs font-mono font-medium text-[var(--color-text-primary)]">
                 Variants ({trackVariants.length})
               </h3>
               {variantsLoading ? (
                 <div className="flex items-center justify-center py-4">
-                  <Spinner size="md" />
+                  <WireframeLoader size={48} />
                 </div>
               ) : trackVariants.length === 0 ? (
-                <p className="text-sm text-[var(--color-text-muted)] py-4 text-center">
+                <p className="text-xs font-mono text-[var(--color-text-muted)] py-4 text-center">
                   No variants for this track yet.
                 </p>
               ) : (
@@ -351,11 +343,11 @@ export function CharacterImagesTab({ characterId }: CharacterImagesTabProps) {
         title="Replace manually managed image?"
         size="sm"
       >
-        <p className="text-sm text-[var(--color-text-secondary)] mb-[var(--spacing-4)]">
+        <p className="text-xs font-mono text-[var(--color-text-secondary)] mb-[var(--spacing-4)]">
           The existing image was manually uploaded. Generating will create a new
           variant (the existing image will not be deleted).
         </p>
-        <div className="flex justify-end gap-[var(--spacing-2)]">
+        <div className="flex justify-end gap-2 pt-1 border-t border-[var(--color-border-default)]">
           <Button
             size="sm"
             variant="secondary"

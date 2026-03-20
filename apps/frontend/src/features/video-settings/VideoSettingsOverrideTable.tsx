@@ -8,22 +8,23 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { EmptyState } from "@/components/domain";
-import { Badge, Button, LoadingPane } from "@/components/primitives";
+import { Button, LoadingPane } from "@/components/primitives";
 import { useSceneTypes } from "@/features/scene-types/hooks/use-scene-types";
 import type { SceneType } from "@/features/scene-types";
 import { Check, RotateCcw, Trash2 } from "@/tokens/icons";
 
 import { FPS_OPTIONS, RESOLUTION_OPTIONS, EMPTY_OVERRIDE, type VideoSettingsOverride } from "./types";
+import { cn } from "@/lib/cn";
+import { TERMINAL_SELECT } from "@/lib/ui-classes";
 
 /* --------------------------------------------------------------------------
    Compact form element classes (bypass design system wrappers for density)
    -------------------------------------------------------------------------- */
 
 const INPUT_CLS =
-  "w-full px-2 py-1 text-sm bg-[var(--color-surface-secondary)] text-[var(--color-text-primary)] border border-[var(--color-border-default)] rounded-[var(--radius-md)] focus:outline-none focus:ring-1 focus:ring-[var(--color-border-focus)]";
+  "w-full px-2 py-1 text-xs font-mono bg-transparent text-[var(--color-text-primary)] border border-[var(--color-border-default)] rounded-[var(--radius-md)] placeholder:text-[var(--color-text-muted)] placeholder:opacity-40 focus:outline-none focus:ring-1 focus:ring-[var(--color-border-focus)]";
 
-const SELECT_CLS =
-  "w-full appearance-none px-2 py-1 pr-6 text-sm bg-[var(--color-surface-secondary)] text-[var(--color-text-primary)] border border-[var(--color-border-default)] rounded-[var(--radius-md)] focus:outline-none focus:ring-1 focus:ring-[var(--color-border-focus)]";
+const SELECT_CLS = cn(TERMINAL_SELECT, "w-full");
 
 /* --------------------------------------------------------------------------
    Helpers
@@ -91,11 +92,11 @@ function OverrideRow({ sceneType, existing, onSave, onDelete, isSaving }: Overri
     : "Not set (inherited)";
 
   return (
-    <tr className="border-b border-[var(--color-border-default)] last:border-b-0">
+    <tr className="border-b border-[var(--color-border-default)]/30 last:border-b-0">
       <td className="py-1 pr-3">
-        <div className="flex items-center gap-1.5">
-          <span className="text-sm text-[var(--color-text-primary)]">{sceneType.name}</span>
-          {hasOverride && <Badge variant="warning" size="sm">Override</Badge>}
+        <div className="flex items-center gap-1.5 font-mono text-xs">
+          <span className="text-[var(--color-text-primary)] uppercase tracking-wide">{sceneType.name}</span>
+          {hasOverride && <span className="text-orange-400">override</span>}
         </div>
       </td>
       <td className="py-1 px-1">
@@ -144,17 +145,17 @@ function OverrideRow({ sceneType, existing, onSave, onDelete, isSaving }: Overri
       <td className="py-1 pl-1">
         <div className="flex items-center gap-1">
           {isDirty && draftHasValues && (
-            <Button variant="primary" size="sm" icon={<Check size={14} />} onClick={handleSave} loading={isSaving} aria-label="Save">
+            <Button variant="primary" size="xs" icon={<Check size={12} />} onClick={handleSave} loading={isSaving} aria-label="Save">
               Save
             </Button>
           )}
           {isDirty && !draftHasValues && (
-            <Button variant="ghost" size="sm" icon={<RotateCcw size={14} />} onClick={() => setDraft(existing ?? EMPTY_OVERRIDE)} aria-label="Reset" />
+            <Button variant="ghost" size="xs" icon={<RotateCcw size={12} />} onClick={() => setDraft(existing ?? EMPTY_OVERRIDE)} aria-label="Reset" />
           )}
           {!isDirty && hasOverride && (
-            <Button variant="ghost" size="sm" icon={<Trash2 size={14} />} onClick={() => onDelete(sceneType.id)} aria-label="Clear override" />
+            <Button variant="ghost" size="xs" icon={<Trash2 size={12} />} onClick={() => onDelete(sceneType.id)} aria-label="Clear override" className="!text-red-400 hover:!text-red-300" />
           )}
-          {!isDirty && saved && <Badge variant="success" size="sm">Saved</Badge>}
+          {!isDirty && saved && <span className="text-[10px] font-mono text-green-400">saved</span>}
         </div>
       </td>
     </tr>
@@ -211,11 +212,11 @@ export function VideoSettingsOverrideTable({
   return (
     <table className="w-full">
       <thead>
-        <tr className="border-b-2 border-[var(--color-border-default)]">
-          <th className="text-left text-xs font-semibold text-[var(--color-text-tertiary)] uppercase tracking-wide py-1 pr-3">Scene Type</th>
-          <th className="text-left text-xs font-semibold text-[var(--color-text-tertiary)] uppercase tracking-wide py-1 px-1">Duration (s)</th>
-          <th className="text-left text-xs font-semibold text-[var(--color-text-tertiary)] uppercase tracking-wide py-1 px-1">FPS</th>
-          <th className="text-left text-xs font-semibold text-[var(--color-text-tertiary)] uppercase tracking-wide py-1 px-1">Resolution</th>
+        <tr className="border-b border-[var(--color-border-default)]/30">
+          <th className="text-left text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-wide font-mono py-1 pr-3">Scene Type</th>
+          <th className="text-left text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-wide font-mono py-1 px-1">Duration (s)</th>
+          <th className="text-left text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-wide font-mono py-1 px-1">FPS</th>
+          <th className="text-left text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-wide font-mono py-1 px-1">Resolution</th>
           <th className="py-1 pl-1 w-24" />
         </tr>
       </thead>

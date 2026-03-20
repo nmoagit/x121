@@ -1,3 +1,4 @@
+import { WireframeLoader } from "@/components/primitives";
 /**
  * Workspace state provider component (PRD-04).
  *
@@ -8,7 +9,6 @@
 
 import { useEffect } from "react";
 
-import { Spinner } from "@/components/primitives/Spinner";
 import { useAuthStore } from "@/stores/auth-store";
 
 import { detectDeviceType } from "./deviceDetection";
@@ -19,7 +19,7 @@ function WorkspaceLoadingSkeleton() {
   return (
     <div className="flex h-screen w-screen items-center justify-center bg-[var(--color-surface-primary)]">
       <div className="flex flex-col items-center gap-3">
-        <Spinner size="lg" />
+        <WireframeLoader size={64} />
         <span className="text-sm text-[var(--color-text-muted)]">
           Restoring workspace...
         </span>

@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 
 import { Card, CardBody, CardFooter, CardHeader, Tabs } from "@/components/composite";
 import { Stack } from "@/components/layout";
-import { Button, Input, Select, Spinner } from "@/components/primitives";
+import { Button, Input, Select ,  WireframeLoader } from "@/components/primitives";
 import { api } from "@/lib/api";
 
 import {
@@ -161,7 +161,7 @@ export function TokenEditor() {
   if (loading) {
     return (
       <div className="flex items-center justify-center p-8">
-        <Spinner size="lg" />
+        <WireframeLoader size={64} />
       </div>
     );
   }

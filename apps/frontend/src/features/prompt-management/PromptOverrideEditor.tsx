@@ -1,3 +1,4 @@
+import { WireframeLoader } from "@/components/primitives";
 /**
  * Generic prompt override editor for project, group, and character levels.
  *
@@ -10,9 +11,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { Button } from "@/components/primitives/Button";
 import { Select } from "@/components/primitives/Select";
-import { Spinner } from "@/components/primitives/Spinner";
 import { useSceneTypes } from "@/features/scene-types/hooks/use-scene-types";
-import { SECTION_HEADING } from "@/lib/ui-classes";
+import { TERMINAL_HEADER_TITLE } from "@/lib/ui-classes";
 
 import { buildDraftMap, getDefaultText, type OverrideRowLike } from "./draft-utils";
 import {
@@ -162,7 +162,7 @@ export function PromptOverrideEditor({
   if (sceneTypesLoading) {
     return (
       <div className="flex items-center justify-center py-8">
-        <Spinner />
+        <WireframeLoader size={48} />
       </div>
     );
   }
@@ -170,10 +170,10 @@ export function PromptOverrideEditor({
   return (
     <div className="flex flex-col gap-4">
       <div>
-        <h3 className={SECTION_HEADING}>
+        <h3 className={TERMINAL_HEADER_TITLE}>
           {levelLabel} Prompt Overrides
         </h3>
-        <p className="mt-1 text-sm text-[var(--color-text-muted)]">
+        <p className="mt-1 font-mono text-xs text-[var(--color-text-muted)]">
           Add prompt fragments per scene type at the {levelLabel.toLowerCase()} level.
         </p>
       </div>
@@ -202,7 +202,7 @@ export function PromptOverrideEditor({
 
       {sceneTypeId && workflowId && (isLoading || slotsLoading) && (
         <div className="flex items-center justify-center py-8">
-          <Spinner />
+          <WireframeLoader size={48} />
         </div>
       )}
 

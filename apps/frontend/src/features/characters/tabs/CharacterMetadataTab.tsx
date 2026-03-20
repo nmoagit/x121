@@ -11,9 +11,10 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { Accordion, ConfirmDeleteModal, Modal } from "@/components/composite";
+import { ConfirmDeleteModal, Modal } from "@/components/composite";
+import { TerminalSection } from "@/components/domain";
 import { Stack } from "@/components/layout";
-import { Badge, Button, Input, LoadingPane, Toggle, Tooltip } from "@/components/primitives";
+import { Button, Input, LoadingPane, Toggle, Tooltip } from "@/components/primitives";
 import { cn } from "@/lib/cn";
 import { readFileAsJson } from "@/lib/file-types";
 import { formatDate } from "@/lib/format";
@@ -54,9 +55,7 @@ import {
   SOURCE_KEYS,
   SOURCE_KEY_BIO,
   SOURCE_KEY_TOV,
-  completenessVariant,
   groupFieldsIntoSections,
-  metadataApprovalBadgeVariant,
 } from "../types";
 import type { MetadataSection, MetadataTemplateField, MetadataVersion } from "../types";
 import { GenerationReportCard } from "./GenerationReportCard";
@@ -539,19 +538,22 @@ export function CharacterMetadataTab({ characterId, projectId }: CharacterMetada
     return null;
   };
 
-  // Build accordion items from sections
-  const accordionItems = sections.map((section) => ({
-    id: section.key,
-    title: `${section.label} (${section.fields.length} fields)`,
-    content: (
+  // Custom fields for display (preview or draft)
+  const displayCustomKeys = Object.keys(displayData).filter(
+    (k) => !templateFieldNames.has(k) && !SOURCE_KEYS.has(k),
+  );
+
+  /** Render a grid of fields inside a terminal section. */
+  function renderFieldGrid(fields: { field_name: string; field: MetadataTemplateField }[]) {
+    return (
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {section.fields.map((field) => {
-          const subtitle = diffSubtitle(field.field_name);
+        {fields.map(({ field_name, field }) => {
+          const subtitle = diffSubtitle(field_name);
           return (
-            <div key={field.field_name} className={cn("relative", diffClass(field.field_name))}>
+            <div key={field_name} className={cn("relative", diffClass(field_name))}>
               <MetadataFieldInput
                 field={field}
-                value={displayData[field.field_name] ?? null}
+                value={displayData[field_name] ?? null}
                 onChange={isPreview ? noopChange : handleFieldChange}
                 onDelete={!isPreview && !field.is_required ? handleFieldDelete : undefined}
               />
@@ -564,87 +566,39 @@ export function CharacterMetadataTab({ characterId, projectId }: CharacterMetada
           );
         })}
       </div>
-    ),
-  }));
-
-  // Custom fields for display (preview or draft)
-  const displayCustomKeys = Object.keys(displayData).filter(
-    (k) => !templateFieldNames.has(k) && !SOURCE_KEYS.has(k),
-  );
-
-  // Add custom fields section if there are any
-  if (displayCustomKeys.length > 0 || !sections.some((s) => s.key === "optional")) {
-    if (displayCustomKeys.length > 0) {
-      accordionItems.push({
-        id: "custom",
-        title: `Custom Fields (${displayCustomKeys.length})`,
-        content: (
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {displayCustomKeys.map((key) => {
-              const pseudoField: MetadataTemplateField = {
-                id: 0,
-                template_id: 0,
-                field_name: key,
-                field_type: "string",
-                is_required: false,
-                constraints: {},
-                description: null,
-                sort_order: 999,
-                created_at: "",
-                updated_at: "",
-              };
-              const subtitle = diffSubtitle(key);
-              return (
-                <div key={key} className={cn("relative", diffClass(key))}>
-                  <MetadataFieldInput
-                    field={pseudoField}
-                    value={displayData[key] ?? null}
-                    onChange={isPreview ? noopChange : handleFieldChange}
-                    onDelete={isPreview ? undefined : handleFieldDelete}
-                  />
-                  {subtitle && (
-                    <span className="block mt-0.5 px-1 text-[10px] text-[var(--color-text-muted)] italic">
-                      {subtitle}
-                    </span>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        ),
-      });
-    }
+    );
   }
-
-  const sectionIds = accordionItems.map((i) => i.id);
 
   return (
     <Stack gap={4}>
-      {/* Completeness + Advanced toggle */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-[var(--spacing-2)]">
-          <Badge variant={completenessVariant(completePct)} size="sm">
-            {completePct}% complete
-          </Badge>
-          <span className="text-xs text-[var(--color-text-muted)]">
-            {filledRequired} / {totalRequired} required fields filled
+      {/* Completeness ticker + Advanced toggle */}
+      <div className="flex items-center justify-between rounded-[var(--radius-lg)] border border-[var(--color-border-default)] bg-[#0d1117] px-[var(--spacing-3)] py-[var(--spacing-2)] font-mono text-xs">
+        <div className="flex items-center gap-3">
+          <span className="uppercase tracking-wide text-[var(--color-text-muted)]">completeness:</span>
+          <span className={`font-semibold text-sm ${completePct >= 100 ? "text-green-400" : "text-cyan-400"}`}>
+            {completePct}%
+          </span>
+          <span className="text-[var(--color-text-muted)] opacity-30">|</span>
+          <span className="text-[var(--color-text-muted)]">
+            {filledRequired}/{totalRequired} required
           </span>
           {activeVersion?.outdated_at && (
-            <Tooltip content="Source bio or tov files changed since this version was created. Consider re-generating or refining.">
-              <span className="inline-flex items-center gap-1">
-                <Badge variant="warning" size="sm">Outdated</Badge>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    if (activeVersion) clearOutdated.mutate(activeVersion.id);
-                  }}
-                  disabled={clearOutdated.isPending}
-                >
-                  Mark as Current
-                </Button>
-              </span>
-            </Tooltip>
+            <>
+              <span className="text-[var(--color-text-muted)] opacity-30">|</span>
+              <Tooltip content="Source bio or tov files changed since this version was created. Consider re-generating or refining.">
+                <span className="text-orange-400 cursor-help">outdated</span>
+              </Tooltip>
+              <Button
+                variant="ghost"
+                size="xs"
+                onClick={() => {
+                  if (activeVersion) clearOutdated.mutate(activeVersion.id);
+                }}
+                disabled={clearOutdated.isPending}
+              >
+                Mark Current
+              </Button>
+            </>
           )}
         </div>
         <Toggle
@@ -705,9 +659,10 @@ export function CharacterMetadataTab({ characterId, projectId }: CharacterMetada
           {bioJson && (
             <Button
               variant="ghost"
-              size="sm"
-              icon={<Trash2 size={14} />}
+              size="xs"
+              icon={<Trash2 size={12} />}
               onClick={() => setConfirmTarget("bio")}
+              className="!text-red-400 hover:!text-red-300"
             >
               bio.json
             </Button>
@@ -715,9 +670,10 @@ export function CharacterMetadataTab({ characterId, projectId }: CharacterMetada
           {tovJson && (
             <Button
               variant="ghost"
-              size="sm"
-              icon={<Trash2 size={14} />}
+              size="xs"
+              icon={<Trash2 size={12} />}
               onClick={() => setConfirmTarget("tov")}
+              className="!text-red-400 hover:!text-red-300"
             >
               tov.json
             </Button>
@@ -725,9 +681,10 @@ export function CharacterMetadataTab({ characterId, projectId }: CharacterMetada
           {Object.entries(draft).some(([k, v]) => !SOURCE_KEYS.has(k) && v != null && v !== "") && (
             <Button
               variant="ghost"
-              size="sm"
-              icon={<Trash2 size={14} />}
+              size="xs"
+              icon={<Trash2 size={12} />}
               onClick={() => setConfirmTarget("metadata")}
+              className="!text-red-400 hover:!text-red-300"
             >
               Metadata
             </Button>
@@ -735,9 +692,10 @@ export function CharacterMetadataTab({ characterId, projectId }: CharacterMetada
           {settings?.avatar_json != null && (
             <Button
               variant="ghost"
-              size="sm"
-              icon={<Trash2 size={14} />}
+              size="xs"
+              icon={<Trash2 size={12} />}
               onClick={() => setConfirmTarget("avatar")}
+              className="!text-red-400 hover:!text-red-300"
             >
               AvatarJSON
             </Button>
@@ -753,10 +711,10 @@ export function CharacterMetadataTab({ characterId, projectId }: CharacterMetada
             <span className="text-xs font-medium text-[var(--color-text-primary)]">
               Viewing v{previewVersion.version_number}
             </span>
-            <Badge variant="default" size="sm">{previewVersion.source}</Badge>
-            {previewVersion.is_active && <Badge variant="success" size="sm">Active</Badge>}
+            <span className="text-xs font-mono text-[var(--color-text-muted)]">{previewVersion.source}</span>
+            {previewVersion.is_active && <span className="text-xs font-mono text-green-400">active</span>}
             {previewVersion.rejection_reason && (
-              <Badge variant="danger" size="sm">Rejected</Badge>
+              <span className="text-xs font-mono text-red-400">rejected</span>
             )}
             {diffMap.size > 0 && (
               <span className="text-[10px] text-[var(--color-text-muted)]">
@@ -809,7 +767,7 @@ export function CharacterMetadataTab({ characterId, projectId }: CharacterMetada
               ref={advancedRef}
               value={advancedJson}
               onChange={handleAdvancedJsonChange}
-              className="w-full overflow-hidden rounded-[var(--radius-md)] border border-[var(--color-border-default)] bg-[var(--color-surface-secondary)] p-3 font-mono text-xs text-[var(--color-text-primary)] focus:outline-2 focus:outline-[var(--color-border-focus)]"
+              className="w-full overflow-hidden rounded-[var(--radius-lg)] border border-[var(--color-border-default)] bg-[#0d1117] p-3 font-mono text-xs text-cyan-400 focus:outline-2 focus:outline-[var(--color-border-focus)]"
               spellCheck={false}
             />
             {jsonError && (
@@ -817,11 +775,29 @@ export function CharacterMetadataTab({ characterId, projectId }: CharacterMetada
             )}
           </div>
         ) : (
-          <div className="flex flex-col gap-[var(--spacing-4)]">
-            <Accordion items={accordionItems} allowMultiple defaultOpenIds={sectionIds} />
+          <div className="flex flex-col gap-[var(--spacing-3)]">
+            {sections.map((section) => (
+              <TerminalSection key={section.key} title={`${section.label} (${section.fields.length})`}>
+                {renderFieldGrid(section.fields.map((f) => ({ field_name: f.field_name, field: f })))}
+              </TerminalSection>
+            ))}
+
+            {/* Custom fields */}
+            {displayCustomKeys.length > 0 && (
+              <TerminalSection title={`Custom Fields (${displayCustomKeys.length})`}>
+                {renderFieldGrid(displayCustomKeys.map((key) => ({
+                  field_name: key,
+                  field: {
+                    id: 0, template_id: 0, field_name: key, field_type: "string",
+                    is_required: false, constraints: {}, description: null,
+                    sort_order: 999, created_at: "", updated_at: "",
+                  } satisfies MetadataTemplateField,
+                })))}
+              </TerminalSection>
+            )}
 
             {/* Add custom field */}
-            <div className="flex items-center gap-[var(--spacing-2)] pt-[var(--spacing-2)] border-t border-[var(--color-border-default)]">
+            <div className="flex items-center gap-[var(--spacing-2)]">
               <Input
                 value={newKey}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewKey(e.target.value)}
@@ -833,8 +809,8 @@ export function CharacterMetadataTab({ characterId, projectId }: CharacterMetada
               />
               <Button
                 variant="secondary"
-                size="sm"
-                icon={<Plus size={14} />}
+                size="xs"
+                icon={<Plus size={12} />}
                 onClick={handleAddField}
                 disabled={!newKey.trim() || newKey.trim() in draft}
               >
@@ -891,19 +867,20 @@ export function CharacterMetadataTab({ characterId, projectId }: CharacterMetada
       {pendingImport && (
         <Modal open onClose={() => setPendingImport(null)} title="Import Metadata" size="md">
           <Stack gap={4}>
-            <p className="text-sm text-[var(--color-text-secondary)]">
+            <p className="text-xs font-mono text-[var(--color-text-secondary)]">
               Import <strong>{Object.keys(pendingImport).filter((k) => !SOURCE_KEYS.has(k)).length} fields</strong> as a new metadata
               version? This will activate it and replace the current metadata.
             </p>
-            <p className="text-xs text-[var(--color-text-muted)]">
+            <p className="text-xs font-mono text-[var(--color-text-muted)]">
               Your Bio and ToV source files will not be affected.
             </p>
-            <div className="flex gap-[var(--spacing-2)] justify-end">
-              <Button variant="secondary" onClick={() => setPendingImport(null)}>
+            <div className="flex gap-2 justify-end pt-1 border-t border-[var(--color-border-default)]">
+              <Button variant="secondary" size="sm" onClick={() => setPendingImport(null)}>
                 Cancel
               </Button>
               <Button
                 variant="primary"
+                size="sm"
                 onClick={handleConfirmImport}
                 loading={createVersion.isPending}
               >
@@ -925,62 +902,36 @@ export function CharacterMetadataTab({ characterId, projectId }: CharacterMetada
 
       {/* Version history */}
       {versions && versions.length > 0 && (
-        <div className="border-t border-[var(--color-border-default)] pt-[var(--spacing-3)]">
-          <div className="flex items-center gap-[var(--spacing-2)] pb-[var(--spacing-2)]">
-            <span className="text-xs font-medium text-[var(--color-text-muted)]">
-              Version History
-            </span>
-            <Badge variant="default" size="sm">
-              {versions.length}
-            </Badge>
-          </div>
-          <div className="flex flex-col gap-1">
+        <TerminalSection title={`Version History (${versions.length})`}>
+          <div className="flex flex-col gap-px">
             {versions.map((v) => (
               <div
                 key={v.id}
                 className={cn(
-                  "flex items-center justify-between rounded-[var(--radius-md)] px-3 py-2 cursor-pointer transition-colors",
-                  "border border-[var(--color-border-default)]",
-                  v.is_active && "border-[var(--color-border-accent)] bg-[var(--color-surface-accent-subtle)]",
-                  previewVersion?.id === v.id && !v.is_active && "border-[var(--color-border-focus)] bg-[var(--color-surface-secondary)]",
+                  "flex items-center justify-between rounded-[var(--radius-md)] px-3 py-1.5 cursor-pointer transition-colors font-mono text-xs",
+                  v.is_active && "bg-green-400/10",
+                  previewVersion?.id === v.id && !v.is_active && "bg-cyan-400/10",
                 )}
                 onClick={() => setPreviewVersion(previewVersion?.id === v.id ? null : v)}
               >
-                <div className="flex items-center gap-[var(--spacing-2)]">
+                <div className="flex items-center gap-2">
                   {previewVersion?.id === v.id && (
-                    <Eye size={12} className="text-[var(--color-text-accent)]" />
+                    <Eye size={12} className="text-cyan-400" />
                   )}
-                  <span className="text-xs font-medium text-[var(--color-text-primary)]">
-                    v{v.version_number}
-                  </span>
-                  <Badge variant="default" size="sm">
-                    {v.source}
-                  </Badge>
-                  {v.is_active && (
-                    <Badge variant="success" size="sm">
-                      Active
-                    </Badge>
-                  )}
+                  <span className="font-semibold text-cyan-400">v{v.version_number}</span>
+                  <span className="text-[var(--color-text-muted)]">{v.source}</span>
+                  {v.is_active && <span className="text-green-400">active</span>}
                   {v.rejection_reason && (
-                    <span title={v.rejection_reason}>
-                      <Badge variant="danger" size="sm">
-                        Rejected
-                      </Badge>
-                    </span>
+                    <span className="text-red-400" title={v.rejection_reason}>rejected</span>
                   )}
                   {v.is_active && (
-                    <span title={v.approval_comment ?? undefined}>
-                      <Badge variant={metadataApprovalBadgeVariant(v.approval_status)} size="sm">
-                        {METADATA_APPROVAL_LABEL[v.approval_status]}
-                      </Badge>
+                    <span className={v.approval_status === "approved" ? "text-green-400" : v.approval_status === "rejected" ? "text-red-400" : "text-[var(--color-text-muted)]"} title={v.approval_comment ?? undefined}>
+                      {METADATA_APPROVAL_LABEL[v.approval_status].toLowerCase()}
                     </span>
                   )}
-                  <span className="text-[10px] text-[var(--color-text-muted)]">
-                    {formatDate(v.created_at)}
-                  </span>
+                  <span className="text-[var(--color-text-muted)] opacity-60">{formatDate(v.created_at)}</span>
                 </div>
                 <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-                  {/* Approval actions — only on active versions */}
                   {v.is_active && (v.approval_status === "pending" || v.approval_status === "approved" || v.approval_status === "rejected") && (
                     <ApprovalActions
                       canApprove={v.approval_status === "pending" || v.approval_status === "rejected"}
@@ -993,38 +944,19 @@ export function CharacterMetadataTab({ characterId, projectId }: CharacterMetada
                     />
                   )}
                   {!v.is_active && !v.rejection_reason && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      icon={<Check size={12} />}
-                      onClick={() => activateVersion.mutate(v.id)}
-                      disabled={activateVersion.isPending}
-                      title="Activate this version"
-                    />
+                    <Button variant="ghost" size="xs" icon={<Check size={12} />} onClick={() => activateVersion.mutate(v.id)} disabled={activateVersion.isPending} title="Activate" />
                   )}
                   {!v.rejection_reason && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      icon={<X size={12} />}
-                      onClick={() => setRejectTarget(v)}
-                      title="Reject this version"
-                    />
+                    <Button variant="ghost" size="xs" icon={<X size={12} />} onClick={() => setRejectTarget(v)} title="Reject" />
                   )}
                   {!v.is_active && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      icon={<Trash2 size={12} />}
-                      onClick={() => setDeleteTarget(v)}
-                      title="Delete this version"
-                    />
+                    <Button variant="danger" size="xs" icon={<Trash2 size={12} />} onClick={() => setDeleteTarget(v)} title="Delete" />
                   )}
                 </div>
               </div>
             ))}
           </div>
-        </div>
+        </TerminalSection>
       )}
 
       {/* Reject version modal */}
@@ -1076,11 +1008,9 @@ export function CharacterMetadataTab({ characterId, projectId }: CharacterMetada
       )}
 
       {/* LLM Refinement section (PRD-125) */}
-      <div className="border-t border-[var(--color-border-default)] pt-[var(--spacing-3)]">
-        <div className="flex items-center justify-between pb-[var(--spacing-2)]">
-          <span className="text-xs font-medium text-[var(--color-text-muted)]">
-            AI Refinement
-          </span>
+      <TerminalSection
+        title="AI Refinement"
+        actions={
           <Button
             variant="secondary"
             size="sm"
@@ -1090,7 +1020,8 @@ export function CharacterMetadataTab({ characterId, projectId }: CharacterMetada
           >
             {triggerRefinement.isPending ? "Queuing..." : "Refine with AI"}
           </Button>
-        </div>
+        }
+      >
         {refinementJobs && refinementJobs.length > 0 && (
           <div className="flex flex-col gap-[var(--spacing-2)]">
             {refinementJobs.map((job) => (
@@ -1113,30 +1044,24 @@ export function CharacterMetadataTab({ characterId, projectId }: CharacterMetada
             ))}
           </div>
         )}
-      </div>
+      </TerminalSection>
 
       {/* Raw JSON source viewers */}
       {(bioJson || tovJson) && (
-        <div className="grid grid-cols-1 gap-[var(--spacing-4)] border-t border-[var(--color-border-default)] pt-[var(--spacing-4)] lg:grid-cols-2">
+        <div className="grid grid-cols-1 gap-[var(--spacing-4)] lg:grid-cols-2">
           {bioJson && (
-            <div className="flex flex-col gap-[var(--spacing-1)]">
-              <span className="text-xs font-medium text-[var(--color-text-muted)]">
-                bio.json (raw)
-              </span>
-              <pre className="max-h-[400px] overflow-auto rounded-[var(--radius-md)] border border-[var(--color-border-default)] bg-[var(--color-surface-secondary)] px-3 py-2 font-mono text-[10px] leading-relaxed text-[var(--color-text-secondary)]">
+            <TerminalSection title="bio.json">
+              <pre className="max-h-[400px] overflow-auto font-mono text-[10px] leading-relaxed text-cyan-400">
                 {JSON.stringify(bioJson, null, 2)}
               </pre>
-            </div>
+            </TerminalSection>
           )}
           {tovJson && (
-            <div className="flex flex-col gap-[var(--spacing-1)]">
-              <span className="text-xs font-medium text-[var(--color-text-muted)]">
-                tov.json (raw)
-              </span>
-              <pre className="max-h-[400px] overflow-auto rounded-[var(--radius-md)] border border-[var(--color-border-default)] bg-[var(--color-surface-secondary)] px-3 py-2 font-mono text-[10px] leading-relaxed text-[var(--color-text-secondary)]">
+            <TerminalSection title="tov.json">
+              <pre className="max-h-[400px] overflow-auto font-mono text-[10px] leading-relaxed text-cyan-400">
                 {JSON.stringify(tovJson, null, 2)}
               </pre>
-            </div>
+            </TerminalSection>
           )}
         </div>
       )}

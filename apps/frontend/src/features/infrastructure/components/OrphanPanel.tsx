@@ -4,7 +4,7 @@
 
 import { useState } from "react";
 
-import { Button, Badge } from "@/components/primitives";
+import { Button } from "@/components/primitives";
 import { CollapsibleSection } from "@/components/composite";
 import { Stack } from "@/components/layout";
 import { EmptyState } from "@/components/domain";
@@ -276,12 +276,12 @@ function OrphanSection({
   return (
     <div>
       <div className="flex items-center gap-2 mb-2">
-        <span className="text-sm font-medium text-[var(--color-text-primary)]">
+        <span className="text-xs font-medium text-cyan-400 font-mono">
           {title}
         </span>
-        <Badge variant="warning" size="sm">
-          {count}
-        </Badge>
+        <span className="text-[10px] text-orange-400 font-mono">
+          ({count})
+        </span>
       </div>
       <Stack gap={2}>{children}</Stack>
     </div>

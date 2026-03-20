@@ -7,9 +7,13 @@
 
 import { useMemo, useState } from "react";
 
-import { Card } from "@/components/composite";
-import { Select, Spinner } from "@/components/primitives";
+import { Select ,  WireframeLoader } from "@/components/primitives";
 import { cn } from "@/lib/cn";
+import {
+  TERMINAL_PANEL,
+  TERMINAL_TH,
+  TERMINAL_DIVIDER,
+} from "@/lib/ui-classes";
 
 import { useSchedules } from "./hooks/use-job-scheduling";
 import { ScheduleRow } from "./ScheduleRow";
@@ -36,12 +40,12 @@ const COLUMNS = ["Name", "Type", "Schedule", "Next Run", "Last Run", "Runs", "St
 function TableHead() {
   return (
     <thead>
-      <tr className="border-b border-[var(--color-border-default)] bg-[var(--color-surface-primary)]/50">
+      <tr className={`${TERMINAL_DIVIDER} bg-[#161b22]`}>
         {COLUMNS.map((col) => (
           <th
             key={col}
             className={cn(
-              "px-3 py-2 text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide",
+              `${TERMINAL_TH} px-3 py-2`,
               col === "Runs" && "text-center",
             )}
           >
@@ -85,7 +89,7 @@ export function ScheduleList({ onEdit }: ScheduleListProps) {
   if (isPending) {
     return (
       <div className="flex items-center justify-center py-8" data-testid="schedule-list-loading">
-        <Spinner size="md" />
+        <WireframeLoader size={48} />
       </div>
     );
   }
@@ -100,11 +104,11 @@ export function ScheduleList({ onEdit }: ScheduleListProps) {
 
   if (!schedules || schedules.length === 0) {
     return (
-      <Card elevation="flat" padding="lg">
-        <div className="text-center text-sm text-[var(--color-text-muted)]" data-testid="schedule-list-empty">
+      <div className={TERMINAL_PANEL}>
+        <div className="p-[var(--spacing-6)] text-center font-mono text-xs text-[var(--color-text-muted)]" data-testid="schedule-list-empty">
           No schedules configured yet. Create one to get started.
         </div>
-      </Card>
+      </div>
     );
   }
 
@@ -127,12 +131,7 @@ export function ScheduleList({ onEdit }: ScheduleListProps) {
 
       {/* Table */}
       <div
-        className={cn(
-          "overflow-x-auto",
-          "border border-[var(--color-border-default)]",
-          "rounded-[var(--radius-lg)]",
-          "bg-[var(--color-surface-secondary)]",
-        )}
+        className={cn(TERMINAL_PANEL, "overflow-x-auto")}
         data-testid="schedule-list"
       >
         <table className="w-full text-left">

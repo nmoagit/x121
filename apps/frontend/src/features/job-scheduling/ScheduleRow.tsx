@@ -9,9 +9,10 @@ import { useState } from "react";
 
 import { ConfirmModal } from "@/components/composite";
 import { Stack } from "@/components/layout";
-import { Badge, Button } from "@/components/primitives";
+import { Button } from "@/components/primitives";
 import { cn } from "@/lib/cn";
 import { formatDateTime } from "@/lib/format";
+import { TERMINAL_DIVIDER, TERMINAL_ROW_HOVER } from "@/lib/ui-classes";
 import { Ban, Edit3, Pause, Play, Trash2, Zap } from "@/tokens/icons";
 import { iconSizes } from "@/tokens/icons";
 
@@ -71,36 +72,37 @@ export function ScheduleRow({ schedule, onEdit }: ScheduleRowProps) {
     <>
       <tr
         className={cn(
-          "border-b border-[var(--color-border-default)] last:border-b-0",
-          "hover:bg-[var(--color-surface-tertiary)]/50",
-          "transition-colors duration-[var(--duration-instant)] cursor-pointer",
+          TERMINAL_DIVIDER,
+          "last:border-b-0",
+          TERMINAL_ROW_HOVER,
+          "transition-colors cursor-pointer",
         )}
         onClick={() => setExpanded((prev) => !prev)}
         data-testid={`schedule-row-${schedule.id}`}
       >
-        <td className="px-3 py-2.5 text-sm font-medium text-[var(--color-text-primary)]">
+        <td className="px-3 py-2.5 font-mono text-xs font-medium text-[var(--color-text-primary)]">
           <div className="flex flex-col gap-0.5">
             {schedule.name}
             {sceneCount !== null && (
-              <span className="text-xs text-[var(--color-text-muted)]">
+              <span className="text-[10px] text-[var(--color-text-muted)]">
                 {sceneCount} scene{sceneCount === 1 ? "" : "s"}
               </span>
             )}
           </div>
         </td>
         <td className="px-3 py-2.5">
-          <Badge variant="info" size="sm">{SCHEDULE_TYPE_LABEL[schedule.schedule_type]}</Badge>
+          <span className="font-mono text-xs text-cyan-400 uppercase tracking-wide">{SCHEDULE_TYPE_LABEL[schedule.schedule_type]}</span>
         </td>
-        <td className="px-3 py-2.5 text-sm text-[var(--color-text-secondary)] font-mono">
+        <td className="px-3 py-2.5 font-mono text-xs text-[var(--color-text-muted)]">
           {schedule.cron_expression ?? (schedule.scheduled_at ? formatDateTime(schedule.scheduled_at) : "\u2014")}
         </td>
-        <td className="px-3 py-2.5 text-sm text-[var(--color-text-secondary)]">
+        <td className="px-3 py-2.5 font-mono text-xs text-[var(--color-text-muted)]">
           {schedule.next_run_at ? formatDateTime(schedule.next_run_at) : "\u2014"}
         </td>
-        <td className="px-3 py-2.5 text-sm text-[var(--color-text-secondary)]">
+        <td className="px-3 py-2.5 font-mono text-xs text-[var(--color-text-muted)]">
           {schedule.last_run_at ? formatDateTime(schedule.last_run_at) : "\u2014"}
         </td>
-        <td className="px-3 py-2.5 text-sm text-[var(--color-text-secondary)] text-center">
+        <td className="px-3 py-2.5 font-mono text-xs text-cyan-400 text-center">
           {schedule.run_count}
         </td>
         <td className="px-3 py-2.5"><ScheduleStatusBadge isActive={schedule.is_active} /></td>

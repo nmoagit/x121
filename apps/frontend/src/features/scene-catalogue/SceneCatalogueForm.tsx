@@ -139,14 +139,14 @@ export function SceneCatalogueForm({ entry, open, onClose }: SceneCatalogueFormP
           <div className="flex flex-col gap-1.5">
             <label
               htmlFor="catalogue-description"
-              className="text-sm font-medium text-[var(--color-text-secondary)]"
+              className="font-mono text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide"
             >
               Description
             </label>
             <textarea
               id="catalogue-description"
               rows={3}
-              className="w-full px-3 py-2 text-sm bg-[var(--color-surface-secondary)] text-[var(--color-text-primary)] border border-[var(--color-border-default)] rounded-[var(--radius-md)] resize-y focus:outline-none focus:ring-2 focus:ring-[var(--color-border-focus)]"
+              className="w-full px-3 py-2 font-mono text-xs bg-[#0d1117] text-[var(--color-text-primary)] border border-[var(--color-border-default)] rounded-[var(--radius-md)] resize-y focus:outline-none focus:ring-2 focus:ring-[var(--color-border-focus)]"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Optional description"
@@ -169,9 +169,9 @@ export function SceneCatalogueForm({ entry, open, onClose }: SceneCatalogueFormP
 
           {/* Track assignment */}
           <div className="flex flex-col gap-2">
-            <span className="text-sm font-medium text-[var(--color-text-secondary)]">Tracks</span>
+            <span className="font-mono text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide">Tracks</span>
             {!tracks || tracks.length === 0 ? (
-              <p className="text-sm text-[var(--color-text-muted)]">
+              <p className="font-mono text-xs text-[var(--color-text-muted)]">
                 No tracks available. Create tracks first.
               </p>
             ) : (
@@ -189,11 +189,11 @@ export function SceneCatalogueForm({ entry, open, onClose }: SceneCatalogueFormP
           </div>
 
           {/* Actions */}
-          <div className="flex justify-end gap-3 pt-2">
-            <Button type="button" variant="secondary" onClick={onClose}>
+          <div className="flex justify-end gap-2 pt-1 border-t border-[var(--color-border-default)]">
+            <Button type="button" variant="secondary" size="sm" onClick={onClose}>
               Cancel
             </Button>
-            <Button type="submit" variant="primary" disabled={isNameEmpty} loading={isPending}>
+            <Button type="submit" variant="primary" size="sm" disabled={isNameEmpty} loading={isPending}>
               {isEdit ? "Save Changes" : "Create Scene"}
             </Button>
           </div>

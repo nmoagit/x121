@@ -70,7 +70,7 @@ export const NAV_GROUPS: NavGroupDef[] = [
   {
     label: "Dashboard",
     items: [
-      { label: "Home", path: "/", icon: BarChart3 },
+      { label: "Home", path: "/", icon: BarChart3, prominent: true },
       { label: "Performance", path: "/performance", icon: Activity },
       { label: "Customize", path: "/dashboard/customize", icon: Settings },
     ],
@@ -146,6 +146,7 @@ export const NAV_GROUPS: NavGroupDef[] = [
       { label: "Storage", path: "/admin/storage", icon: HardDrive, prominent: true },
       { label: "Naming Rules", path: "/admin/naming", icon: FileText, prominent: true },
       { label: "Queue Manager", path: "/admin/queue", icon: List, prominent: true },
+      { label: "Output Profiles", path: "/admin/output-profiles", icon: Film, prominent: true },
       { label: "Hardware", path: "/admin/hardware", icon: Monitor },
       { label: "Workers", path: "/admin/workers", icon: Server },
       { label: "Integrity", path: "/admin/integrity", icon: Cpu },
@@ -172,7 +173,6 @@ export const NAV_GROUPS: NavGroupDef[] = [
       { label: "Failure Analytics", path: "/admin/failure-analytics", icon: TrendingUp },
       { label: "Importer", path: "/admin/importer", icon: Upload },
       { label: "Config Import", path: "/admin/config-import", icon: Upload },
-      { label: "Output Profiles", path: "/admin/output-profiles", icon: Film },
     ],
   },
   {

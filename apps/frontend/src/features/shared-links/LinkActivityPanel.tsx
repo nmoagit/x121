@@ -6,7 +6,7 @@
 
 import { Card } from "@/components/composite";
 import { Stack } from "@/components/layout";
-import { Badge, Spinner } from "@/components/primitives";
+import { Badge ,  WireframeLoader } from "@/components/primitives";
 import { formatDateTime } from "@/lib/format";
 
 import { useLinkActivity } from "./hooks/use-shared-links";
@@ -22,7 +22,7 @@ export function LinkActivityPanel({ linkId }: LinkActivityPanelProps) {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-8">
-        <Spinner size="md" />
+        <WireframeLoader size={48} />
       </div>
     );
   }

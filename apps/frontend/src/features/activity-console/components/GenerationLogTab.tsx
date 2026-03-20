@@ -12,6 +12,8 @@ import { Button } from "@/components/primitives";
 import { ArrowDown } from "@/tokens/icons";
 import { api } from "@/lib/api";
 import { LogLine } from "@/components/domain";
+import { TERMINAL_HEADER } from "@/lib/ui-classes";
+import { cn } from "@/lib/cn";
 import type { GenerationLogEntry } from "@/features/generation/types";
 
 /* --------------------------------------------------------------------------
@@ -63,10 +65,10 @@ export function GenerationLogTab() {
   }, []);
 
   return (
-    <div className="relative flex flex-col h-full bg-[var(--color-surface-primary)] overflow-hidden">
+    <div className="relative flex flex-col h-full bg-[#0d1117] overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between px-[var(--spacing-3)] py-[var(--spacing-2)] border-b border-[var(--color-border-default)] bg-[var(--color-surface-secondary)]">
-        <span className="text-xs text-[var(--color-text-muted)]">
+      <div className={cn(TERMINAL_HEADER, "flex items-center justify-between")}>
+        <span className="font-mono text-xs text-[var(--color-text-muted)]">
           {chronological.length} entries (polling every 2s)
         </span>
       </div>
@@ -75,15 +77,15 @@ export function GenerationLogTab() {
       <div
         ref={scrollRef}
         onScroll={handleScroll}
-        className="flex-1 overflow-y-auto min-h-0 bg-[var(--color-surface-primary)] scrollbar-thin"
+        className="flex-1 overflow-y-auto min-h-0 bg-[#0d1117] scrollbar-thin"
       >
         {isLoading ? (
           <div className="flex items-center justify-center h-full">
-            <p className="text-sm text-[var(--color-text-muted)]">Loading...</p>
+            <p className="font-mono text-xs text-[var(--color-text-muted)]">Loading...</p>
           </div>
         ) : chronological.length === 0 ? (
           <div className="flex items-center justify-center h-full">
-            <p className="text-sm text-[var(--color-text-muted)]">
+            <p className="font-mono text-xs text-[var(--color-text-muted)]">
               No generation log entries yet
             </p>
           </div>
@@ -96,7 +98,7 @@ export function GenerationLogTab() {
                 level={entry.level}
                 message={entry.message}
                 prefix={
-                  <span className="shrink-0 text-[var(--color-action-primary)] opacity-70">
+                  <span className="shrink-0 text-cyan-400 opacity-70 font-mono text-[10px]">
                     S{entry.scene_id}
                   </span>
                 }
@@ -109,7 +111,7 @@ export function GenerationLogTab() {
       {/* Jump to latest */}
       {!autoScroll && chronological.length > 0 && (
         <div className="absolute bottom-[var(--spacing-4)] right-[var(--spacing-4)]">
-          <Button variant="secondary" size="sm" onClick={jumpToBottom} icon={<ArrowDown size={14} />} className="shadow-md">
+          <Button variant="secondary" size="xs" onClick={jumpToBottom} icon={<ArrowDown size={12} />} className="shadow-md">
             Jump to latest
           </Button>
         </div>
@@ -117,4 +119,3 @@ export function GenerationLogTab() {
     </div>
   );
 }
-

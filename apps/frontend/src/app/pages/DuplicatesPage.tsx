@@ -8,7 +8,7 @@
 import { useState } from "react";
 
 import { PageHeader, Stack } from "@/components/layout";
-import { Button, LoadingPane, Spinner } from "@/components/primitives";
+import { Button, LoadingPane ,  WireframeLoader } from "@/components/primitives";
 
 import {
   BatchDuplicateGrid,
@@ -92,7 +92,7 @@ export function DuplicatesPage() {
           >
             {batchCheck.isPending ? "Checking..." : "Run Batch Check"}
           </Button>
-          {batchCheck.isPending && <Spinner size="sm" />}
+          {batchCheck.isPending && <WireframeLoader size={32} />}
         </div>
 
         {/* Flagged pairs grid */}

@@ -1,4 +1,4 @@
-import { Badge, Button } from "@/components/primitives";
+import { Button } from "@/components/primitives";
 import { Card, Modal } from "@/components/composite";
 import { formatDuration } from "@/features/video-player/frame-utils";
 import { formatBytes } from "@/lib/format";
@@ -8,7 +8,6 @@ import { VideoPlayer } from "@/features/video-player/VideoPlayer";
 import { useVersionArtifacts } from "./hooks/useArtifacts";
 import {
   ARTIFACT_ROLE_LABEL,
-  ARTIFACT_ROLE_VARIANT,
 } from "./types";
 import type { SceneVideoVersionArtifact } from "./types";
 
@@ -39,14 +38,11 @@ export function ArtifactTimeline({ sceneId, versionId }: ArtifactTimelineProps) 
             <Card elevation="flat" padding="sm" className="w-48">
               <div className="flex flex-col gap-1.5">
                 <div className="flex items-center justify-between">
-                  <Badge
-                    variant={ARTIFACT_ROLE_VARIANT[artifact.role]}
-                    size="sm"
-                  >
+                  <span className="font-mono text-xs text-cyan-400">
                     {ARTIFACT_ROLE_LABEL[artifact.role]}
-                  </Badge>
+                  </span>
                   {artifact.file_purged ? (
-                    <Badge variant="warning" size="sm">Purged</Badge>
+                    <span className="font-mono text-xs text-orange-400">Purged</span>
                   ) : (
                     <Button
                       variant="ghost"
@@ -95,13 +91,10 @@ export function ArtifactTimeline({ sceneId, versionId }: ArtifactTimelineProps) 
               autoPlay
               showControls
             />
-            <div className="flex items-center gap-3 text-xs text-[var(--color-text-muted)]">
-              <Badge
-                variant={ARTIFACT_ROLE_VARIANT[playingArtifact.role]}
-                size="sm"
-              >
+            <div className="flex items-center gap-3 font-mono text-xs text-[var(--color-text-muted)]">
+              <span className="text-cyan-400">
                 {ARTIFACT_ROLE_LABEL[playingArtifact.role]}
-              </Badge>
+              </span>
               {playingArtifact.node_id && (
                 <span>Node: {playingArtifact.node_id}</span>
               )}

@@ -9,7 +9,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Modal } from "@/components/composite";
-import { Badge } from "@/components/primitives/Badge";
 import { Button } from "@/components/primitives/Button";
 import { DrawingCanvas } from "@/features/annotations/DrawingCanvas";
 import type { DrawingObject } from "@/features/annotations/types";
@@ -210,9 +209,9 @@ export function ImageVariantAnnotationModal({
             </Button>
 
             {annotationCount > 0 && (
-              <Badge variant="info" size="sm">
+              <span className="font-mono text-xs text-cyan-400">
                 {annotationCount} mark{annotationCount !== 1 ? "s" : ""}
-              </Badge>
+              </span>
             )}
 
             {annotationCount > 0 && !annotating && (
@@ -227,11 +226,11 @@ export function ImageVariantAnnotationModal({
             )}
 
             {upsertMutation.isPending && (
-              <span className="text-xs text-[var(--color-text-muted)]">Saving…</span>
+              <span className="font-mono text-xs text-[var(--color-text-muted)]">Saving…</span>
             )}
 
             {dirty && !upsertMutation.isPending && (
-              <span className="text-xs text-[var(--color-text-muted)]">Unsaved changes</span>
+              <span className="font-mono text-xs text-orange-400">Unsaved changes</span>
             )}
           </div>
         </div>

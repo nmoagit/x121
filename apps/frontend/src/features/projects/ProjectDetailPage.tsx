@@ -11,7 +11,7 @@ import { useMemo } from "react";
 import { Tabs } from "@/components/composite";
 import { EmptyState } from "@/components/domain";
 import { Stack } from "@/components/layout";
-import { Badge, LoadingPane } from "@/components/primitives";
+import { LoadingPane } from "@/components/primitives";
 import { useSetting } from "@/features/settings/hooks/use-settings";
 import { formatDate } from "@/lib/format";
 import { useSetPageTitle } from "@/hooks/useSetPageTitle";
@@ -23,7 +23,8 @@ import { ProjectSettingsTab } from "./tabs/ProjectConfigTab";
 import { ProjectDeliveryTab } from "./tabs/ProjectDeliveryTab";
 import { ProjectOverviewTab } from "./tabs/ProjectOverviewTab";
 import { ProjectProductionTab } from "./tabs/ProjectProductionTab";
-import { PROJECT_STATUS_BADGE_VARIANT, PROJECT_STATUS_LABELS, PROJECT_TABS } from "./types";
+import { PROJECT_STATUS_LABELS, PROJECT_TABS, projectStatusSlug } from "./types";
+import { TERMINAL_STATUS_COLORS } from "@/lib/ui-classes";
 
 /* --------------------------------------------------------------------------
    Component
@@ -78,13 +79,14 @@ export function ProjectDetailPage() {
     );
   }
 
-  const variant = PROJECT_STATUS_BADGE_VARIANT[project.status] ?? "default";
-  const statusLabel = PROJECT_STATUS_LABELS[project.status] ?? project.status;
+  const status = projectStatusSlug(project.status_id);
+  const statusLabel = PROJECT_STATUS_LABELS[status] ?? status;
+  const statusColor = TERMINAL_STATUS_COLORS[status] ?? "text-[var(--color-text-muted)]";
 
   return (
     <Stack gap={6}>
       {/* Breadcrumb */}
-      <nav className="flex items-center gap-[var(--spacing-1)] text-sm text-[var(--color-text-muted)]">
+      <nav className="flex items-center gap-[var(--spacing-1)] text-sm font-mono text-[var(--color-text-muted)]">
         <Link to="/projects" className="hover:text-[var(--color-text-primary)] transition-colors">
           Projects
         </Link>
@@ -96,9 +98,9 @@ export function ProjectDetailPage() {
       <div className="flex items-start justify-between gap-[var(--spacing-4)]">
         <div>
           <div className="flex items-center gap-[var(--spacing-2)]">
-            <Badge variant={variant} size="sm">
+            <span className={`font-mono text-xs ${statusColor}`}>
               {statusLabel}
-            </Badge>
+            </span>
           </div>
           {project.description && (
             <p className="mt-1 text-sm text-[var(--color-text-muted)]">{project.description}</p>

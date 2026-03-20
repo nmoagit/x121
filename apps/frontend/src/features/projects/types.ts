@@ -14,7 +14,8 @@ export interface Project {
   id: number;
   name: string;
   description: string | null;
-  status: string;
+  /** Backend sends `status_id` (number); `status` is mapped on the frontend. */
+  status_id: number;
   auto_deliver_on_final: boolean;
   /** Which deliverable sections must be complete. NULL = inherit studio default. */
   blocking_deliverables: string[] | null;
@@ -23,6 +24,27 @@ export interface Project {
   deleted_at: string | null;
   created_at: string;
   updated_at: string;
+  /** Total non-archived characters in the project (from enriched list endpoint). */
+  character_count?: number;
+  /** Characters with readiness state 'ready' (from enriched list endpoint). */
+  characters_ready?: number;
+}
+
+/** Map project status_id to a slug string. */
+const PROJECT_STATUS_ID_MAP: Record<number, string> = {
+  1: "draft",
+  2: "active",
+  3: "paused",
+  4: "completed",
+  5: "archived",
+  6: "setup",
+  7: "delivered",
+  8: "closed",
+};
+
+/** Resolve project status slug from status_id. */
+export function projectStatusSlug(statusId: number): string {
+  return PROJECT_STATUS_ID_MAP[statusId] ?? "unknown";
 }
 
 export interface CreateProject {
@@ -33,7 +55,7 @@ export interface CreateProject {
 export interface UpdateProject {
   name?: string;
   description?: string;
-  status?: string;
+  status_id?: number;
   auto_deliver_on_final?: boolean;
   blocking_deliverables?: string[];
   default_format_profile_id?: number | null;
@@ -47,6 +69,7 @@ export interface ProjectStats {
   character_count: number;
   characters_draft: number;
   characters_active: number;
+  characters_ready: number;
   scenes_enabled: number;
   scenes_generated: number;
   scenes_approved: number;

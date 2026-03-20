@@ -6,7 +6,7 @@
  * when all checks pass, or specific fix suggestions otherwise.
  */
 
-import { Button, Spinner } from "@/components/primitives";
+import { Button ,  WireframeLoader } from "@/components/primitives";
 import { Check } from "@/tokens/icons";
 import { iconSizes } from "@/tokens/icons";
 
@@ -47,7 +47,7 @@ export function HealthCheckStep() {
       {/* Loading state */}
       {executeStep.isPending && (
         <div className="flex items-center justify-center py-6">
-          <Spinner size="sm" />
+          <WireframeLoader size={32} />
         </div>
       )}
 

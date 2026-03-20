@@ -25,7 +25,7 @@ export function CollapsedFooter({ onExpand, hasAlert }: CollapsedFooterProps) {
       className={cn(
         "group flex h-1.5 w-full shrink-0 items-center justify-center",
         "border-t border-[var(--color-border-subtle)]",
-        "bg-[var(--color-surface-secondary)]",
+        "bg-[#0d1117]",
         "transition-all duration-200",
         "hover:h-5 hover:bg-[var(--color-surface-tertiary)]",
         hasAlert && "animate-pulse",

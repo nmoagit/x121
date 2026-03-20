@@ -8,7 +8,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { Stack } from "@/components/layout";
-import { Badge, Button, FlagIcon, Input, Select, Tooltip } from "@/components/primitives";
+import { Button, FlagIcon, Tooltip } from "@/components/primitives";
+import { TERMINAL_TH, TERMINAL_DIVIDER, TERMINAL_SELECT } from "@/lib/ui-classes";
 import type { Language, ProjectSpeechConfigEntry, SpeechType } from "@/features/characters/types";
 import { Plus, Save, Wand2 } from "@/tokens/icons";
 
@@ -143,39 +144,22 @@ export function SpeechRequirementsEditor({
   }
 
   return (
-    <Stack gap={4}>
+    <Stack gap={3}>
       {/* Toolbar */}
       <div className="flex items-center gap-[var(--spacing-2)] flex-wrap">
-        <Button
-          size="sm"
-          variant="secondary"
-          icon={<Wand2 size={14} />}
-          onClick={applyDefaults}
-        >
+        <Button size="xs" variant="secondary" icon={<Wand2 size={12} />} onClick={applyDefaults}>
           Apply Defaults
         </Button>
         {onOpenImport && (
-          <Button
-            size="sm"
-            variant="secondary"
-            onClick={onOpenImport}
-          >
+          <Button size="xs" variant="secondary" onClick={onOpenImport}>
             Import Speech
           </Button>
         )}
         <div className="ml-auto flex items-center gap-[var(--spacing-2)]">
           {dirty && (
-            <Badge variant="warning" size="sm">
-              Unsaved changes
-            </Badge>
+            <span className="text-[10px] font-mono text-orange-400">unsaved</span>
           )}
-          <Button
-            size="sm"
-            icon={<Save size={14} />}
-            onClick={handleSave}
-            loading={saving}
-            disabled={!dirty}
-          >
+          <Button size="xs" icon={<Save size={12} />} onClick={handleSave} loading={saving} disabled={!dirty}>
             Save
           </Button>
         </div>
@@ -183,28 +167,26 @@ export function SpeechRequirementsEditor({
 
       {/* Matrix grid */}
       {configuredLanguages.length === 0 && sortedTypes.length === 0 ? (
-        <p className="text-sm text-[var(--color-text-muted)]">
+        <p className="text-xs font-mono text-[var(--color-text-muted)]">
           No speech types or languages configured. Click "Apply Defaults" to set up English defaults.
         </p>
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full text-sm border-collapse">
+          <table className="w-full border-collapse">
             <thead>
-              <tr>
-                <th className="text-left px-2 py-1.5 text-[var(--color-text-muted)] font-medium">
+              <tr className={TERMINAL_DIVIDER}>
+                <th className={`${TERMINAL_TH} px-2 py-1.5`}>
                   Speech Type
                 </th>
                 {configuredLanguages.map((lang) => (
-                  <th key={lang.id} className="px-2 py-1.5 text-center min-w-[100px]">
+                  <th key={lang.id} className={`${TERMINAL_TH} px-2 py-1.5 text-center`}>
                     <div className="flex items-center justify-center gap-1">
-                      <FlagIcon flagCode={lang.flag_code} size={16} />
-                      <span className="text-xs font-medium text-[var(--color-text-secondary)]">
-                        {lang.name}
-                      </span>
+                      <FlagIcon flagCode={lang.flag_code} size={10} />
+                      <span>{lang.code.toUpperCase()}</span>
                       <Tooltip content={`Remove ${lang.name}`}>
                         <button
                           type="button"
-                          className="text-[var(--color-text-muted)] hover:text-[var(--color-action-danger)] cursor-pointer ml-0.5"
+                          className="text-[var(--color-text-muted)] hover:text-red-400 cursor-pointer ml-0.5"
                           onClick={() => removeLanguage(lang.id)}
                           aria-label={`Remove ${lang.name}`}
                         >
@@ -214,22 +196,20 @@ export function SpeechRequirementsEditor({
                     </div>
                   </th>
                 ))}
-                <th className="px-2 py-1.5 text-center min-w-[100px]">
+                <th className={`${TERMINAL_TH} px-2 py-1.5 text-center`}>
                   {showAddLang ? (
-                    <Select
-                      options={availableLanguages.map((l) => ({ value: String(l.id), label: l.name }))}
+                    <select
+                      className={`${TERMINAL_SELECT} w-24`}
                       value=""
-                      onChange={(val) => { if (val) addLanguage(Number(val)); }}
-                      placeholder="Select..."
-                    />
-                  ) : (
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      icon={<Plus size={14} />}
-                      onClick={() => setShowAddLang(true)}
-                      disabled={availableLanguages.length === 0}
+                      onChange={(e) => { if (e.target.value) addLanguage(Number(e.target.value)); }}
                     >
+                      <option value="">Select...</option>
+                      {availableLanguages.map((l) => (
+                        <option key={l.id} value={String(l.id)}>{l.name}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <Button size="xs" variant="ghost" icon={<Plus size={12} />} onClick={() => setShowAddLang(true)} disabled={availableLanguages.length === 0}>
                       Add
                     </Button>
                   )}
@@ -238,19 +218,20 @@ export function SpeechRequirementsEditor({
             </thead>
             <tbody>
               {sortedTypes.map((type) => (
-                <tr key={type.id} className="border-t border-[var(--color-border-default)]">
-                  <td className="px-2 py-1.5 font-medium text-[var(--color-text-primary)]">
+                <tr key={type.id} className={TERMINAL_DIVIDER}>
+                  <td className="px-2 py-1 font-mono text-xs text-[var(--color-text-primary)] uppercase tracking-wide">
                     {type.name}
                   </td>
                   {configuredLanguages.map((lang) => {
                     const value = matrix.get(cellKey(type.id, lang.id)) ?? 0;
                     return (
-                      <td key={lang.id} className="px-2 py-1">
-                        <Input
+                      <td key={lang.id} className="px-2 py-1 text-center">
+                        <input
                           type="number"
-                          value={String(value)}
-                          onChange={(val) => setCellValue(type.id, lang.id, Number(val))}
-                          className="text-center w-16 mx-auto"
+                          min={0}
+                          value={value}
+                          onChange={(e) => setCellValue(type.id, lang.id, Number(e.target.value))}
+                          className="w-10 text-center bg-transparent border border-[var(--color-border-default)] rounded-[2px] px-1 py-0.5 text-xs font-mono text-cyan-400 focus:outline-none focus:ring-1 focus:ring-[var(--color-border-focus)]"
                         />
                       </td>
                     );

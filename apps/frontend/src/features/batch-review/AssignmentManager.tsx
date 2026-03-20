@@ -7,7 +7,7 @@
 
 import { useCallback, useState } from "react";
 
-import { Badge, Button, Input, Spinner } from "@/components/primitives";
+import { Badge, Button, Input ,  WireframeLoader } from "@/components/primitives";
 import { Card, CardBody, CardHeader } from "@/components/composite";
 import { Plus, Trash2 } from "@/tokens/icons";
 import { iconSizes } from "@/tokens/icons";
@@ -43,7 +43,7 @@ export function AssignmentManager({ projectId }: AssignmentManagerProps) {
   if (isPending) {
     return (
       <div className="flex items-center gap-2 py-4">
-        <Spinner size="sm" />
+        <WireframeLoader size={32} />
         <span className="text-sm text-[var(--color-text-muted)]">Loading assignments...</span>
       </div>
     );

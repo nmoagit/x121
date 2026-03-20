@@ -10,10 +10,9 @@
  *   O = optional fields completed
  */
 
-import { Badge, Button, Tooltip } from "@/components";
+import { Button, Tooltip } from "@/components";
 
 import { useCharacterMetadata } from "../characters/hooks/use-character-detail";
-import { completenessVariant } from "../characters/types";
 
 /* --------------------------------------------------------------------------
    Types
@@ -62,10 +61,8 @@ export function MetadataSummarySection({
     ? fields.filter((f) => !f.is_required && isFilled(f.value)).length
     : 0;
 
-  const variant = completenessVariant(pct);
-
   const tooltipContent = (
-    <span className="flex flex-col gap-0.5 text-left whitespace-normal max-w-[200px]">
+    <span className="flex flex-col gap-0.5 text-left whitespace-normal max-w-[200px] font-mono text-xs">
       <span><strong>{filledRequired}</strong> = mandatory fields completed</span>
       <span><strong>{totalRequired}</strong> = total mandatory fields</span>
       <span><strong>{filledOptional}</strong> = optional fields completed</span>
@@ -73,44 +70,27 @@ export function MetadataSummarySection({
   );
 
   return (
-    <div data-testid="metadata-summary-section" className="flex flex-col gap-2">
-      <h3 className="text-sm font-semibold text-[var(--color-text-primary)]">
-        Metadata Completeness
-      </h3>
-
-      <div className="flex items-center gap-3">
-        <span data-testid="metadata-completeness-badge">
-          <Badge variant={variant} size="sm">
-            {pct}%
-          </Badge>
+    <div data-testid="metadata-summary-section" className="flex flex-col gap-2 font-mono text-xs">
+      <div className="flex items-center gap-2">
+        <span className="text-[var(--color-text-muted)] uppercase tracking-wide">completeness:</span>
+        <span data-testid="metadata-completeness-badge" className={`font-semibold text-sm ${pct >= 100 ? "text-green-400" : "text-cyan-400"}`}>
+          {pct}%
         </span>
+        <span className="text-[var(--color-text-muted)] opacity-30">|</span>
         <Tooltip content={tooltipContent} side="bottom">
-          <span
-            data-testid="metadata-completeness-detail"
-            className="cursor-help text-xs text-[var(--color-text-secondary)] underline decoration-dotted underline-offset-2"
-          >
+          <span data-testid="metadata-completeness-detail" className="cursor-help text-[var(--color-text-muted)]">
             {filledRequired}/{totalRequired}+{filledOptional}
           </span>
         </Tooltip>
-      </div>
-
-      <div className="flex items-center gap-3">
-        <span
-          data-testid="source-image-count"
-          className="text-xs text-[var(--color-text-secondary)]"
-        >
+        <span className="text-[var(--color-text-muted)] opacity-30">|</span>
+        <span data-testid="source-image-count" className="text-[var(--color-text-muted)]">
           {sourceImageCount} source {sourceImageCount === 1 ? "image" : "images"}
         </span>
       </div>
 
       {onEditClick && (
         <div>
-          <Button
-            data-testid="edit-metadata-btn"
-            variant="ghost"
-            size="sm"
-            onClick={() => onEditClick(characterId)}
-          >
+          <Button data-testid="edit-metadata-btn" variant="ghost" size="xs" onClick={() => onEditClick(characterId)}>
             Edit Metadata
           </Button>
         </div>

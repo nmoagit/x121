@@ -7,7 +7,7 @@
 
 import type { ReactNode } from "react";
 
-import { Button, Spinner } from "@/components/primitives";
+import { Button ,  WireframeLoader } from "@/components/primitives";
 import { cn } from "@/lib/cn";
 
 import { useGetPosterFrame } from "./hooks/use-poster-frame";
@@ -57,7 +57,7 @@ export function EntityPoster({
           className,
         )}
       >
-        <Spinner size="sm" />
+        <WireframeLoader size={32} />
       </div>
     );
   }

@@ -9,7 +9,7 @@ import { useCallback, useState } from "react";
 
 import { Card, Modal } from "@/components/composite";
 import { Stack } from "@/components/layout";
-import { Badge, Button, Input, Spinner, Toggle } from "@/components/primitives";
+import { Badge, Button, Input, Toggle ,  WireframeLoader } from "@/components/primitives";
 import { useSetPageTitle } from "@/hooks/useSetPageTitle";
 import { cn } from "@/lib/cn";
 import { AlertTriangle, Plus, Settings, Trash2 } from "@/tokens/icons";
@@ -313,7 +313,7 @@ export function ExtensionManager() {
   if (isLoading) {
     return (
       <div className="flex h-[calc(100vh-4rem)] items-center justify-center">
-        <Spinner size="lg" />
+        <WireframeLoader size={64} />
       </div>
     );
   }

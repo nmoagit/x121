@@ -7,10 +7,12 @@
 
 import { useCallback, useState } from "react";
 
-import { Card, Modal } from "@/components/composite";
+import { Modal } from "@/components/composite";
 import { ApprovalActions } from "@/components/domain/ApprovalActions";
 import { Grid, Stack } from "@/components/layout";
-import { Badge, Button, Spinner } from "@/components/primitives";
+import { Button ,  WireframeLoader } from "@/components/primitives";
+import { cn } from "@/lib/cn";
+import { TERMINAL_PANEL, TERMINAL_STATUS_COLORS } from "@/lib/ui-classes";
 import { Check, Eye } from "@/tokens/icons";
 
 import {
@@ -27,11 +29,10 @@ import {
   PROVENANCE_LABEL,
   canApproveVariant,
   canUnapproveVariant,
-  statusBadgeVariant,
   type ImageVariant,
   type Provenance,
 } from "./types";
-import { ProgressiveImage } from "@/components/primitives";
+import { ProgressiveImage  } from "@/components/primitives";
 import { variantImageUrl, variantThumbnailUrl } from "./utils";
 
 /* --------------------------------------------------------------------------
@@ -62,7 +63,7 @@ function VariantCard({
   const canUnapprove = canUnapproveVariant(variant.status_id);
 
   return (
-    <Card elevation="sm" padding="none" className="group/card overflow-hidden">
+    <div className={cn(TERMINAL_PANEL, "group/card overflow-hidden")}>
       {/* Image preview */}
       <div
         role="button"
@@ -75,7 +76,7 @@ function VariantCard({
       >
         {isGenerating ? (
           <div className="flex aspect-video items-center justify-center">
-            <Spinner size="md" />
+            <WireframeLoader size={48} />
           </div>
         ) : variant.file_path ? (
           <ProgressiveImage
@@ -106,25 +107,23 @@ function VariantCard({
           {variant.variant_label}
         </p>
 
-        {/* Status & provenance badges */}
-        <div className="flex flex-wrap gap-1">
-          <Badge
-            variant={statusBadgeVariant(variant.status_id)}
-            size="sm"
-          >
+        {/* Status & provenance */}
+        <div className="flex flex-wrap items-center gap-1 font-mono text-[10px]">
+          <span className={TERMINAL_STATUS_COLORS[IMAGE_VARIANT_STATUS_LABEL[variant.status_id]?.toLowerCase() ?? ""] ?? "text-[var(--color-text-muted)]"}>
             {IMAGE_VARIANT_STATUS_LABEL[variant.status_id] ?? "Unknown"}
-          </Badge>
-          <Badge variant="default" size="sm">
+          </span>
+          <span className="opacity-30">|</span>
+          <span className="text-[var(--color-text-muted)]">
             {PROVENANCE_LABEL[variant.provenance as Provenance] ?? variant.provenance}
-          </Badge>
+          </span>
           {variant.variant_type && (
-            <Badge variant="info" size="sm">
-              {variant.variant_type}
-            </Badge>
+            <>
+              <span className="opacity-30">|</span>
+              <span className="text-cyan-400">{variant.variant_type}</span>
+            </>
           )}
-          <Badge variant="default" size="sm">
-            v{variant.version}
-          </Badge>
+          <span className="opacity-30">|</span>
+          <span className="text-[var(--color-text-muted)]">v{variant.version}</span>
         </div>
 
         {/* Actions */}
@@ -140,7 +139,7 @@ function VariantCard({
           />
         </div>
       </div>
-    </Card>
+    </div>
   );
 }
 
@@ -186,7 +185,7 @@ export function VariantGallery({ characterId, sourceImageUrl }: VariantGalleryPr
   if (isLoading) {
     return (
       <div className="flex h-48 items-center justify-center">
-        <Spinner size="lg" />
+        <WireframeLoader size={64} />
       </div>
     );
   }
@@ -202,18 +201,20 @@ export function VariantGallery({ characterId, sourceImageUrl }: VariantGalleryPr
           {/* Source image reference */}
           {sourceImageUrl && (
             <div className="shrink-0">
-              <Card elevation="sm" padding="sm">
-                <Stack gap={2}>
-                  <p className="text-xs font-medium text-[var(--color-text-muted)]">
-                    Source Image
-                  </p>
-                  <img
-                    src={sourceImageUrl}
-                    alt="Source image"
-                    className="h-40 w-40 rounded-[var(--radius-sm)] object-cover"
-                  />
-                </Stack>
-              </Card>
+              <div className={TERMINAL_PANEL}>
+                <div className="p-[var(--spacing-2)]">
+                  <Stack gap={2}>
+                    <p className="font-mono text-[10px] uppercase tracking-wide text-[var(--color-text-muted)]">
+                      Source Image
+                    </p>
+                    <img
+                      src={sourceImageUrl}
+                      alt="Source image"
+                      className="h-40 w-40 rounded-[var(--radius-sm)] object-cover"
+                    />
+                  </Stack>
+                </div>
+              </div>
             </div>
           )}
 
@@ -262,44 +263,46 @@ export function VariantGallery({ characterId, sourceImageUrl }: VariantGalleryPr
                   className="max-h-[60vh] rounded-[var(--radius-md)] object-contain"
                 />
               ) : (
-                <div className="flex h-48 w-full items-center justify-center text-[var(--color-text-muted)]">
+                <div className="flex h-48 w-full items-center justify-center font-mono text-xs text-[var(--color-text-muted)]">
                   No image available
                 </div>
               )}
             </div>
 
-            <div className="flex flex-wrap gap-2">
-              <Badge
-                variant={statusBadgeVariant(previewVariant.status_id)}
-                size="sm"
-              >
+            <div className="flex flex-wrap items-center gap-2 font-mono text-xs">
+              <span className={TERMINAL_STATUS_COLORS[IMAGE_VARIANT_STATUS_LABEL[previewVariant.status_id]?.toLowerCase() ?? ""] ?? "text-[var(--color-text-muted)]"}>
                 {IMAGE_VARIANT_STATUS_LABEL[previewVariant.status_id]}
-              </Badge>
-              <Badge variant="default" size="sm">
+              </span>
+              <span className="opacity-30">|</span>
+              <span className="text-[var(--color-text-muted)]">
                 {PROVENANCE_LABEL[previewVariant.provenance as Provenance] ?? previewVariant.provenance}
-              </Badge>
+              </span>
               {previewVariant.width && previewVariant.height && (
-                <Badge variant="info" size="sm">
-                  <Eye size={12} className="mr-1 inline-block" />
-                  {previewVariant.width} x {previewVariant.height}
-                </Badge>
+                <>
+                  <span className="opacity-30">|</span>
+                  <span className="flex items-center gap-1 text-cyan-400">
+                    <Eye size={12} />
+                    {previewVariant.width} x {previewVariant.height}
+                  </span>
+                </>
               )}
               {previewVariant.format && (
-                <Badge variant="default" size="sm">
-                  {previewVariant.format.toUpperCase()}
-                </Badge>
+                <>
+                  <span className="opacity-30">|</span>
+                  <span className="text-[var(--color-text-muted)]">{previewVariant.format.toUpperCase()}</span>
+                </>
               )}
-              <Badge variant="default" size="sm">
-                v{previewVariant.version}
-              </Badge>
+              <span className="opacity-30">|</span>
+              <span className="text-[var(--color-text-muted)]">v{previewVariant.version}</span>
               {previewVariant.is_hero && (
-                <Badge variant="success" size="sm">
-                  Hero
-                </Badge>
+                <>
+                  <span className="opacity-30">|</span>
+                  <span className="text-green-400">Hero</span>
+                </>
               )}
             </div>
 
-            <div className="flex justify-end">
+            <div className="flex justify-end pt-1 border-t border-[var(--color-border-default)]">
               <Button variant="secondary" size="sm" onClick={() => setPreviewVariant(null)}>
                 Close
               </Button>

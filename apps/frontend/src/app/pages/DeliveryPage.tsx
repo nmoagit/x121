@@ -5,6 +5,8 @@
  * Flow: Project -> ExportPanel + ValidationReport + FormatProfileManager + ExportHistory
  */
 
+import { useState } from "react";
+
 import { Stack } from "@/components/layout";
 import { ProjectPicker } from "@/components/domain";
 
@@ -16,10 +18,20 @@ import {
 } from "@/features/delivery";
 
 function ProjectDelivery({ projectId }: { projectId: number }) {
+  const [allCharacters, setAllCharacters] = useState(true);
+  const [selectedCharacterIds, setSelectedCharacterIds] = useState<number[]>([]);
+  const validationCharacterIds = allCharacters ? null : selectedCharacterIds;
+
   return (
     <Stack gap={6}>
-      <ExportPanel projectId={projectId} />
-      <ValidationReport projectId={projectId} />
+      <ExportPanel
+        projectId={projectId}
+        allCharacters={allCharacters}
+        onAllCharactersChange={setAllCharacters}
+        selectedCharacterIds={selectedCharacterIds}
+        onSelectedCharacterIdsChange={setSelectedCharacterIds}
+      />
+      <ValidationReport projectId={projectId} characterIds={validationCharacterIds} />
       <ExportHistory projectId={projectId} />
       <FormatProfileManager />
     </Stack>

@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 
 import { Card } from "@/components/composite/Card";
 import { Tabs } from "@/components/composite/Tabs";
-import { Spinner } from "@/components/primitives";
+import { WireframeLoader } from "@/components/primitives";
 import { Stack } from "@/components/layout";
 import { AlertConfig } from "@/features/dashboard/performance/AlertConfig";
 import { QualityCharts } from "@/features/dashboard/performance/QualityCharts";
@@ -107,7 +107,7 @@ function OverviewTab({
   if (isLoading) {
     return (
       <div className="flex h-64 items-center justify-center">
-        <Spinner size="lg" />
+        <WireframeLoader size={64} />
       </div>
     );
   }

@@ -43,6 +43,7 @@ export function ActivityConsolePage() {
         tabs={CONSOLE_TABS}
         activeTab={activeTab}
         onTabChange={setActiveTab}
+        variant="pill"
       />
 
       {/* Tab content */}

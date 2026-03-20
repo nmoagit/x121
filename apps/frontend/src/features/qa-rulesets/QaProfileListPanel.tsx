@@ -5,7 +5,7 @@
  * for creating new profiles.
  */
 
-import { Button, Spinner } from "@/components/primitives";
+import { Button ,  WireframeLoader } from "@/components/primitives";
 
 import { useQaProfiles } from "./hooks/use-qa-rulesets";
 import { ProfileCard } from "./ProfileCard";
@@ -35,7 +35,7 @@ export function QaProfileListPanel({
   if (isPending) {
     return (
       <div data-testid="profile-list-loading" className="flex justify-center py-8">
-        <Spinner />
+        <WireframeLoader size={48} />
       </div>
     );
   }

@@ -58,12 +58,12 @@ export function CharacterReviewControls({
 
   return (
     <>
-      <div className="sticky bottom-0 border-t border-border-primary bg-surface-primary p-4 flex items-center justify-between">
+      <div className="sticky bottom-0 rounded-[var(--radius-lg)] border border-[var(--color-border-default)] bg-[#0d1117] px-[var(--spacing-3)] py-[var(--spacing-2)] flex items-center justify-between font-mono text-xs">
         <div className="flex items-center gap-3">
           <ReviewStatusBadge status={status} />
           {(status === "rejected" || status === "rework") && latestRejection?.comment && (
-            <span className="text-sm text-action-danger">
-              Rejection: {latestRejection.comment}
+            <span className="text-red-400 truncate max-w-[300px]">
+              {latestRejection.comment}
             </span>
           )}
         </div>
@@ -72,6 +72,7 @@ export function CharacterReviewControls({
           {status === "assigned" && canReview && assignmentId && (
             <Button
               variant="primary"
+              size="xs"
               onClick={() => startReview.mutate(assignmentId)}
               disabled={startReview.isPending}
             >
@@ -83,6 +84,7 @@ export function CharacterReviewControls({
             <>
               <Button
                 variant="primary"
+                size="xs"
                 onClick={() => {
                   setDecisionType("approved");
                   setShowDecisionModal(true);
@@ -92,6 +94,7 @@ export function CharacterReviewControls({
               </Button>
               <Button
                 variant="danger"
+                size="xs"
                 onClick={() => {
                   setDecisionType("rejected");
                   setShowDecisionModal(true);
@@ -105,6 +108,7 @@ export function CharacterReviewControls({
           {status === "rework" && (
             <Button
               variant="primary"
+              size="xs"
               onClick={() => submitRereview.mutate(characterId)}
               disabled={submitRereview.isPending}
             >
@@ -121,14 +125,14 @@ export function CharacterReviewControls({
       >
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-text-primary mb-1">
+            <span className="block font-mono text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide mb-1">
               Comment{" "}
               {decisionType === "rejected" && (
-                <span className="text-action-danger">*</span>
+                <span className="text-red-400">*</span>
               )}
-            </label>
+            </span>
             <textarea
-              className="w-full bg-surface-secondary text-text-primary border border-border-primary rounded-[var(--radius-lg)] p-3 text-sm min-h-[100px]"
+              className="w-full bg-[#0d1117] text-cyan-400 border border-[var(--color-border-default)] rounded-[var(--radius-lg)] p-3 font-mono text-xs min-h-[100px] focus:outline-none focus:ring-2 focus:ring-[var(--color-border-focus)]"
               placeholder={
                 decisionType === "rejected"
                   ? "Explain what needs to be fixed..."
@@ -138,12 +142,13 @@ export function CharacterReviewControls({
               onChange={(e) => setComment(e.target.value)}
             />
           </div>
-          <div className="flex justify-end gap-2">
-            <Button variant="ghost" onClick={() => setShowDecisionModal(false)}>
+          <div className="flex justify-end gap-2 pt-1 border-t border-[var(--color-border-default)]">
+            <Button variant="ghost" size="sm" onClick={() => setShowDecisionModal(false)}>
               Cancel
             </Button>
             <Button
               variant={decisionType === "approved" ? "primary" : "danger"}
+              size="sm"
               onClick={handleDecision}
               disabled={
                 submitDecision.isPending ||

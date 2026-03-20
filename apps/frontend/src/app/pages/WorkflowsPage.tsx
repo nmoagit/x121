@@ -13,13 +13,13 @@ import { ConfirmDeleteModal, ConfigToolbar, Modal, Tabs } from "@/components/com
 import { EmptyState } from "@/components/domain";
 import { PageHeader, Stack } from "@/components/layout";
 import {
-  Badge,
   Button,
   Input,
   LoadingPane,
   Select,
   SelectableRow,
 } from "@/components/primitives";
+import { TERMINAL_STATUS_COLORS } from "@/lib/ui-classes";
 import { ChevronLeft, ChevronRight, Edit3, Trash2 } from "@/tokens/icons";
 
 import {
@@ -31,7 +31,6 @@ import {
   useWorkflows,
   WORKFLOW_STATUS,
   workflowStatusLabel,
-  workflowStatusVariant,
 } from "@/features/workflow-import";
 import type { ImportWorkflowRequest, Workflow } from "@/features/workflow-import";
 import { WorkflowDetailPanel } from "@/features/workflow-import/WorkflowDetailPanel";
@@ -79,36 +78,37 @@ function WorkflowRow({
 }) {
   return (
     <SelectableRow isSelected={isSelected} onSelect={onSelect}>
-      <div className="grid w-full grid-cols-[minmax(0,1fr)_auto_auto_auto_auto] items-center gap-2">
-        <span className="truncate text-sm font-medium text-[var(--color-text-primary)]">
+      <div className="grid w-full grid-cols-[minmax(0,1fr)_auto_auto_auto_auto] items-center gap-2 font-mono text-xs">
+        <span className="truncate font-medium text-[var(--color-text-primary)]">
           {workflow.name}
         </span>
-        <Badge variant={workflowStatusVariant(workflow.status_id)} size="sm">
-          {workflowStatusLabel(workflow.status_id)}
-        </Badge>
-        <span className="text-xs text-[var(--color-text-muted)]">
+        <span className={TERMINAL_STATUS_COLORS[workflowStatusLabel(workflow.status_id).toLowerCase()] ?? "text-[var(--color-text-muted)]"}>
+          {workflowStatusLabel(workflow.status_id).toLowerCase()}
+        </span>
+        <span className="text-cyan-400">
           v{workflow.current_version}
         </span>
         <Button
           variant="ghost"
-          size="sm"
-          icon={<Edit3 size={14} />}
+          size="xs"
+          icon={<Edit3 size={12} />}
           onClick={(e) => {
             e.stopPropagation();
             onEdit();
           }}
           aria-label="Edit workflow"
         />
-        <Button
-          variant="ghost"
-          size="sm"
-          icon={<Trash2 size={14} />}
+        <button
+          type="button"
+          className="p-0.5 text-[var(--color-text-muted)] hover:text-red-400 transition-colors"
           onClick={(e) => {
             e.stopPropagation();
             onDelete();
           }}
           aria-label="Delete workflow"
-        />
+        >
+          <Trash2 size={12} />
+        </button>
       </div>
     </SelectableRow>
   );
@@ -258,7 +258,7 @@ export function WorkflowsPage() {
           )}
         </div>
 
-        <Tabs tabs={TABS} activeTab={activeTab} onTabChange={(k) => setActiveTab(k as TabKey)} variant="underline" />
+        <Tabs tabs={TABS} activeTab={activeTab} onTabChange={(k) => setActiveTab(k as TabKey)} variant="pill" />
 
         {/* List tab */}
         {activeTab === "list" && (
@@ -311,7 +311,7 @@ export function WorkflowsPage() {
                 </div>
 
                 {/* Detail panel */}
-                <div className="min-h-[500px] min-w-0 flex-1 rounded border border-[var(--color-border-default)]">
+                <div className="min-h-[500px] min-w-0 flex-1 rounded-[var(--radius-lg)] border border-[var(--color-border-default)] bg-[#0d1117]">
                   {selectedWorkflow ? (
                     <WorkflowDetailPanel workflow={selectedWorkflow} />
                   ) : (

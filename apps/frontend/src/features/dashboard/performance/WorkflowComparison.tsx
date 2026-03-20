@@ -11,8 +11,8 @@ import {
 } from "recharts";
 
 import { Card } from "@/components/composite/Card";
-import { Spinner } from "@/components/primitives";
-import { Input } from "@/components/primitives";
+import { WireframeLoader } from "@/components/primitives";
+import { Input  } from "@/components/primitives";
 import { Stack } from "@/components/layout";
 import {
   useWorkflowComparison,
@@ -82,7 +82,7 @@ export function WorkflowComparison({ from, to }: WorkflowComparisonProps) {
 
       {isLoading && (
         <div className="flex items-center justify-center py-12">
-          <Spinner size="lg" />
+          <WireframeLoader size={64} />
         </div>
       )}
 

@@ -21,11 +21,13 @@ export const deliveryLogKeys = {
    Hooks
    -------------------------------------------------------------------------- */
 
-/** Fetch delivery logs for a project with optional level filter. */
+/** Fetch delivery logs for a project with optional level filter.
+ *  Polls every 3s when `poll` is true (e.g. while an export is in progress). */
 export function useDeliveryLogs(
   projectId: number,
   level?: string,
   limit?: number,
+  poll?: boolean,
 ) {
   const params = new URLSearchParams();
   if (level) params.set("level", level);
@@ -40,5 +42,6 @@ export function useDeliveryLogs(
         `/projects/${projectId}/delivery-logs${suffix}`,
       ),
     enabled: projectId > 0,
+    refetchInterval: poll ? 3000 : false,
   });
 }

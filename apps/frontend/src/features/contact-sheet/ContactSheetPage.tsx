@@ -7,7 +7,7 @@
 
 import { useState } from "react";
 
-import { Badge, Spinner } from "@/components/primitives";
+import { Badge ,  WireframeLoader } from "@/components/primitives";
 import { Card, CardBody, CardHeader } from "@/components/composite";
 import { useSetPageTitle } from "@/hooks/useSetPageTitle";
 
@@ -97,7 +97,7 @@ export function ContactSheetPage({
         <CardBody>
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
-              <Spinner />
+              <WireframeLoader size={48} />
             </div>
           ) : (
             <FaceCropGrid

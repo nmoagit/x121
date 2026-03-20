@@ -2,9 +2,9 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { Card, Modal } from "@/components/composite";
+import { Modal } from "@/components/composite";
 import { Stack } from "@/components/layout";
-import { Badge, Button } from "@/components/primitives";
+import { Button } from "@/components/primitives";
 import { cn } from "@/lib/cn";
 
 import type { FileAssignments, UnmatchedCharacterFiles } from "../hooks/useCharacterImportBase";
@@ -166,8 +166,8 @@ export function FileAssignmentModal({ open, onClose, unmatchedFiles, onConfirm }
     <Modal open={open} onClose={onClose} title="Assign Unmatched Files" size="3xl">
       <Stack gap={4}>
         {warningCount > 0 && (
-          <div className="rounded-[var(--radius-md)] border border-[var(--color-border-warning)] bg-[var(--color-surface-warning)] px-[var(--spacing-3)] py-[var(--spacing-2)]">
-            <p className="text-sm text-[var(--color-text-warning)]">
+          <div className="rounded-[var(--radius-md)] border border-[var(--color-border-default)] border-l-2 border-l-orange-400 px-[var(--spacing-3)] py-[var(--spacing-2)]">
+            <p className="text-xs font-mono text-orange-400">
               {warningCount} metadata {warningCount === 1 ? "file" : "files"} unassigned (bio.json / tov.json). This is non-blocking.
             </p>
           </div>
@@ -176,8 +176,8 @@ export function FileAssignmentModal({ open, onClose, unmatchedFiles, onConfirm }
         {unmatchedFiles.map((entry) => {
           const charSel = selections.get(entry.characterName);
           return (
-            <Card key={entry.characterName} padding="sm" elevation="flat">
-              <h3 className="mb-3 text-sm font-semibold text-[var(--color-text-primary)]">{entry.characterName}</h3>
+            <div key={entry.characterName} className="rounded-[var(--radius-md)] border border-[var(--color-border-default)] p-3">
+              <h3 className="mb-3 text-xs font-mono font-semibold text-[var(--color-text-primary)]">{entry.characterName}</h3>
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                 {COLUMNS.map((col) => {
                   const isImage = IMAGE_COLUMNS.includes(col);
@@ -189,8 +189,8 @@ export function FileAssignmentModal({ open, onClose, unmatchedFiles, onConfirm }
                   return (
                     <div key={col}>
                       <div className="mb-1.5 flex items-center gap-1">
-                        <span className="text-xs font-medium text-[var(--color-text-secondary)]">{COLUMN_LABELS[col]}</span>
-                        {hasWarning && <Badge variant="warning" size="sm">!</Badge>}
+                        <span className="text-xs font-mono text-[var(--color-text-secondary)]">{COLUMN_LABELS[col]}</span>
+                        {hasWarning && <span className="text-xs font-mono text-orange-400">!</span>}
                       </div>
                       <div className={cn("flex flex-col gap-1.5", isImage && "grid grid-cols-3 gap-1.5")}>
                         {files.map((file) => {
@@ -213,13 +213,13 @@ export function FileAssignmentModal({ open, onClose, unmatchedFiles, onConfirm }
                   );
                 })}
               </div>
-            </Card>
+            </div>
           );
         })}
 
-        <div className="flex justify-end gap-[var(--spacing-2)]">
-          <Button variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button onClick={handleConfirm}>Confirm Assignments</Button>
+        <div className="flex justify-end gap-2 pt-1 border-t border-[var(--color-border-default)]">
+          <Button variant="secondary" size="sm" onClick={onClose}>Cancel</Button>
+          <Button size="sm" onClick={handleConfirm}>Confirm Assignments</Button>
         </div>
       </Stack>
     </Modal>

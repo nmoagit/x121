@@ -7,13 +7,24 @@
 
 import { useCallback, useState } from "react";
 
-import { Card, Modal } from "@/components/composite";
+import { Modal } from "@/components/composite";
 import { Stack } from "@/components/layout";
-import { Badge, Button, Spinner, Toggle } from "@/components/primitives";
+import { Button, Toggle ,  WireframeLoader } from "@/components/primitives";
+import { cn } from "@/lib/cn";
+import {
+  GHOST_DANGER_BTN,
+  TERMINAL_BODY,
+  TERMINAL_DIVIDER,
+  TERMINAL_HEADER,
+  TERMINAL_HEADER_TITLE,
+  TERMINAL_PANEL,
+  TERMINAL_ROW_HOVER,
+  TERMINAL_STATUS_COLORS,
+  TERMINAL_TH,
+} from "@/lib/ui-classes";
 import { Plus } from "@/tokens/icons";
 
 import { SceneCatalogueForm } from "./SceneCatalogueForm";
-import { TrackBadge } from "./TrackBadge";
 import { useDeactivateSceneCatalogueEntry, useSceneCatalogue } from "./hooks/use-scene-catalogue";
 import type { SceneCatalogueEntry } from "./types";
 
@@ -28,59 +39,61 @@ interface EntryRowProps {
 }
 
 function EntryRow({ entry, onEdit, onDeactivate }: EntryRowProps) {
+  const statusColor = TERMINAL_STATUS_COLORS[entry.is_active ? "active" : "pending"] ?? "text-[var(--color-text-muted)]";
+
   return (
-    <tr className="border-b border-[var(--color-border-default)]">
+    <tr className={cn(TERMINAL_DIVIDER, TERMINAL_ROW_HOVER)}>
       <td className="px-3 py-1.5">
         <div className="flex flex-col">
-          <span className="text-xs font-medium text-[var(--color-text-primary)]">{entry.name}</span>
-          <span className="text-xs text-[var(--color-text-muted)] mt-0.5">{entry.slug}</span>
+          <span className="font-mono text-xs text-cyan-400">{entry.name}</span>
+          <span className="font-mono text-[10px] text-[var(--color-text-muted)] mt-0.5">{entry.slug}</span>
         </div>
       </td>
-      <td className="px-3 py-1.5 text-xs text-[var(--color-text-secondary)]">
+      <td className="px-3 py-1.5 font-mono text-xs text-[var(--color-text-muted)]">
         {entry.description ?? "\u2014"}
       </td>
       <td className="px-3 py-1.5">
         <div className="flex flex-wrap gap-1">
           {entry.tracks.length === 0 ? (
-            <span className="text-xs text-[var(--color-text-muted)]">None</span>
+            <span className="font-mono text-xs text-[var(--color-text-muted)]">None</span>
           ) : (
-            entry.tracks.map((track) => (
-              <TrackBadge key={track.id} name={track.name} slug={track.slug} />
+            entry.tracks.map((track, i) => (
+              <span key={track.id} className="font-mono text-xs">
+                {i > 0 && <span className="text-[var(--color-text-muted)] opacity-30 mx-1">|</span>}
+                <span className={track.slug === "clothed" ? "text-sky-400" : track.slug === "topless" ? "text-pink-400" : "text-[var(--color-text-primary)]"}>{track.name}</span>
+              </span>
             ))
           )}
         </div>
       </td>
       <td className="px-3 py-1.5 text-center">
-        {entry.has_clothes_off_transition ? (
-          <Badge variant="warning" size="sm">
-            Yes
-          </Badge>
-        ) : (
-          <span className="text-xs text-[var(--color-text-muted)]">No</span>
-        )}
+        <span className={cn("font-mono text-xs", entry.has_clothes_off_transition ? "text-orange-400" : "text-[var(--color-text-muted)]")}>
+          {entry.has_clothes_off_transition ? "Yes" : "No"}
+        </span>
       </td>
       <td className="px-3 py-1.5">
-        <Badge variant={entry.is_active ? "success" : "default"} size="sm">
+        <span className={cn("font-mono text-xs", statusColor)}>
           {entry.is_active ? "Active" : "Inactive"}
-        </Badge>
+        </span>
       </td>
       <td className="px-3 py-1.5">
         <div className="flex items-center gap-1">
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            size="xs"
             onClick={() => onEdit(entry)}
-            className="rounded px-2 py-0.5 text-xs text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-secondary)]"
           >
             Edit
-          </button>
+          </Button>
           {entry.is_active && (
-            <button
-              type="button"
+            <Button
+              variant="ghost"
+              size="xs"
+              className={GHOST_DANGER_BTN}
               onClick={() => onDeactivate(entry)}
-              className="rounded px-2 py-0.5 text-xs text-[var(--color-action-danger)] hover:bg-[var(--color-action-danger)]/10"
             >
               Deactivate
-            </button>
+            </Button>
           )}
         </div>
       </td>
@@ -126,86 +139,67 @@ export function SceneCatalogueList() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Spinner size="lg" />
+        <WireframeLoader size={64} />
       </div>
     );
   }
 
   return (
     <Stack gap={6}>
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-base font-semibold text-[var(--color-text-primary)]">
-            Scene Catalogue
-          </h2>
-          <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-            Define scene types available across projects.
-          </p>
+      {/* Table panel */}
+      <div className={TERMINAL_PANEL}>
+        <div className={cn(TERMINAL_HEADER, "flex items-center justify-between")}>
+          <span className={TERMINAL_HEADER_TITLE}>Scene Catalogue</span>
+          <div className="flex items-center gap-4">
+            <Toggle
+              checked={showInactive}
+              onChange={setShowInactive}
+              label="Show Inactive"
+              size="sm"
+            />
+            <Button variant="primary" size="sm" icon={<Plus size={14} />} onClick={handleCreate}>
+              Add Scene
+            </Button>
+          </div>
         </div>
-        <div className="flex items-center gap-4">
-          <Toggle
-            checked={showInactive}
-            onChange={setShowInactive}
-            label="Show Inactive"
-            size="sm"
-          />
-          <Button variant="primary" size="md" icon={<Plus size={20} />} onClick={handleCreate}>
-            Add Scene
-          </Button>
+        <div className={TERMINAL_BODY}>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className={TERMINAL_DIVIDER}>
+                  <th className={cn(TERMINAL_TH, "px-3 py-1.5")}>Name</th>
+                  <th className={cn(TERMINAL_TH, "px-3 py-1.5")}>Description</th>
+                  <th className={cn(TERMINAL_TH, "px-3 py-1.5")}>Tracks</th>
+                  <th className={cn(TERMINAL_TH, "px-3 py-1.5 text-center")}>Clothes Off</th>
+                  <th className={cn(TERMINAL_TH, "px-3 py-1.5")}>Status</th>
+                  <th className={cn(TERMINAL_TH, "px-3 py-1.5")}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {!entries || entries.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={6}
+                      className="px-3 py-6 text-center font-mono text-xs text-[var(--color-text-muted)]"
+                    >
+                      No scene catalogue entries. Click "Add Scene" to create one.
+                    </td>
+                  </tr>
+                ) : (
+                  entries.map((entry) => (
+                    <EntryRow
+                      key={entry.id}
+                      entry={entry}
+                      onEdit={handleEdit}
+                      onDeactivate={setDeactivateTarget}
+                    />
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
-
-      {/* Table */}
-      <Card elevation="sm" padding="none">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-[var(--color-border-default)]">
-                <th className="px-3 py-1.5 text-left text-xs font-medium text-[var(--color-text-muted)]">
-                  Name
-                </th>
-                <th className="px-3 py-1.5 text-left text-xs font-medium text-[var(--color-text-muted)]">
-                  Description
-                </th>
-                <th className="px-3 py-1.5 text-left text-xs font-medium text-[var(--color-text-muted)]">
-                  Tracks
-                </th>
-                <th className="px-3 py-1.5 text-center text-xs font-medium text-[var(--color-text-muted)]">
-                  Clothes Off
-                </th>
-                <th className="px-3 py-1.5 text-left text-xs font-medium text-[var(--color-text-muted)]">
-                  Status
-                </th>
-                <th className="px-3 py-1.5 text-left text-xs font-medium text-[var(--color-text-muted)]">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {!entries || entries.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={6}
-                    className="px-3 py-6 text-center text-xs text-[var(--color-text-muted)]"
-                  >
-                    No scene catalogue entries. Click "Add Scene" to create one.
-                  </td>
-                </tr>
-              ) : (
-                entries.map((entry) => (
-                  <EntryRow
-                    key={entry.id}
-                    entry={entry}
-                    onEdit={handleEdit}
-                    onDeactivate={setDeactivateTarget}
-                  />
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </Card>
 
       {/* Create/Edit drawer */}
       <SceneCatalogueForm
@@ -224,12 +218,12 @@ export function SceneCatalogueList() {
       >
         {deactivateTarget && (
           <Stack gap={4}>
-            <p className="text-sm text-[var(--color-text-secondary)]">
+            <p className="font-mono text-xs text-[var(--color-text-secondary)]">
               Are you sure you want to deactivate{" "}
-              <strong className="text-[var(--color-text-primary)]">{deactivateTarget.name}</strong>?
+              <strong className="text-cyan-400">{deactivateTarget.name}</strong>?
               It will no longer appear in scene settings.
             </p>
-            <div className="flex justify-end gap-2">
+            <div className="flex justify-end gap-2 pt-1 border-t border-[var(--color-border-default)]">
               <Button variant="secondary" size="sm" onClick={() => setDeactivateTarget(null)}>
                 Cancel
               </Button>

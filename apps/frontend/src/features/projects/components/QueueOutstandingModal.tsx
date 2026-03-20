@@ -16,7 +16,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import { Modal } from "@/components/composite";
 import { Stack } from "@/components/layout";
-import { Badge, Button, Checkbox, LoadingPane, Toggle } from "@/components/primitives";
+import { Button, Checkbox, LoadingPane, Toggle } from "@/components/primitives";
 
 import { useSetToggle } from "@/hooks/useSetToggle";
 import { api } from "@/lib/api";
@@ -334,9 +334,9 @@ export function QueueOutstandingModal({
               size="sm"
             />
           </div>
-          <span className="text-sm text-[var(--color-text-muted)]">
-            {readyCount} of {visibleItems.length} ready to queue
-            {blockedCount > 0 && ` (${blockedCount} blocked)`}
+          <span className="text-xs font-mono text-[var(--color-text-muted)]">
+            <span className="text-green-400">{readyCount}</span> of {visibleItems.length} ready to queue
+            {blockedCount > 0 && <> (<span className="text-orange-400">{blockedCount} blocked</span>)</>}
           </span>
         </div>
 
@@ -351,7 +351,7 @@ export function QueueOutstandingModal({
 
         {/* Item list */}
         {!isLoading && visibleItems.length === 0 && (
-          <div className="py-8 text-center text-sm text-[var(--color-text-muted)]">
+          <div className="py-8 text-center text-xs font-mono text-[var(--color-text-muted)]">
             {includeGenerated
               ? "No scene-character combinations found."
               : "All scenes have been generated. Enable 'Include Already Generated' to see them."}
@@ -382,8 +382,8 @@ export function QueueOutstandingModal({
               return (
                 <div
                   key={item.key}
-                  className={`flex items-center gap-[var(--spacing-2)] px-[var(--spacing-3)] py-[var(--spacing-1.5)] ${
-                    blocked ? "opacity-50" : "hover:bg-[var(--color-surface-secondary)]"
+                  className={`flex items-center gap-[var(--spacing-2)] px-[var(--spacing-3)] py-[var(--spacing-1.5)] border-b border-white/5 ${
+                    blocked ? "opacity-50" : "hover:bg-[#161b22]"
                   }`}
                 >
                   <Checkbox
@@ -393,32 +393,26 @@ export function QueueOutstandingModal({
                     label={`${item.character.name} - ${item.setting.name}${item.setting.track_name ? ` (${item.setting.track_name})` : ""}`}
                   />
 
-                  <div className="flex items-center gap-[var(--spacing-1)] ml-auto shrink-0">
+                  <div className="flex items-center gap-2 ml-auto shrink-0 font-mono text-xs">
                     {/* Version indicator (A.2) */}
                     {item.latestVersion !== null && (
-                      <Badge variant="default" size="sm">
-                        v{item.latestVersion} exists
-                      </Badge>
+                      <span className="text-[var(--color-text-muted)]">v{item.latestVersion} exists</span>
                     )}
 
                     {item.hasFinalVersion && (
-                      <Badge variant="success" size="sm">
-                        Final
-                      </Badge>
+                      <span className="text-green-400">Final</span>
                     )}
 
                     {/* Blocking reason */}
                     {item.blockingReason !== null && (
-                      <Badge variant={forceOverride ? "info" : "warning"} size="sm">
+                      <span className={forceOverride ? "text-cyan-400" : "text-orange-400"}>
                         {item.blockingReason}
-                      </Badge>
+                      </span>
                     )}
 
                     {/* No scene yet */}
                     {!item.scene && !blocked && (
-                      <Badge variant="info" size="sm">
-                        New
-                      </Badge>
+                      <span className="text-cyan-400">New</span>
                     )}
                   </div>
                 </div>
@@ -428,13 +422,14 @@ export function QueueOutstandingModal({
         )}
 
         {/* Footer */}
-        <div className="flex items-center justify-between">
-          <span className="text-sm text-[var(--color-text-muted)]">{selectedCount} selected</span>
-          <div className="flex gap-[var(--spacing-2)]">
-            <Button variant="secondary" onClick={onClose}>
+        <div className="flex items-center justify-between pt-1 border-t border-[var(--color-border-default)]">
+          <span className="text-xs font-mono text-[var(--color-text-muted)]">{selectedCount} selected</span>
+          <div className="flex gap-2">
+            <Button size="sm" variant="secondary" onClick={onClose}>
               Cancel
             </Button>
             <Button
+              size="sm"
               onClick={handleQueue}
               disabled={selectedCount === 0}
               loading={batchGenerate.isPending}

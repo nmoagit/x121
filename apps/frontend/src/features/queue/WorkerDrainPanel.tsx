@@ -6,10 +6,11 @@
  * badge when an instance is drained with zero active jobs.
  */
 
-import { Badge, Button, Spinner, Toggle } from "@/components/primitives";
+import { Button, Toggle ,  WireframeLoader } from "@/components/primitives";
 import { Stack } from "@/components/layout";
 import { Server, RefreshCw } from "@/tokens/icons";
 import { iconSizes } from "@/tokens/icons";
+import { TERMINAL_PANEL, TERMINAL_BODY, TERMINAL_DIVIDER, TERMINAL_LABEL } from "@/lib/ui-classes";
 
 import {
   useWorkerInstances,
@@ -45,24 +46,22 @@ function WorkerRow({ instance, load }: WorkerRowProps) {
   };
 
   return (
-    <div className="flex items-center justify-between px-4 py-3 border border-[var(--color-border-default)] rounded-[var(--radius-md)] bg-[var(--color-surface-secondary)]">
+    <div className={`flex items-center justify-between px-4 py-3 ${TERMINAL_DIVIDER} last:border-b-0`}>
       <Stack direction="horizontal" gap={3} align="center">
         <Server size={iconSizes.md} className="text-[var(--color-text-muted)] shrink-0" />
         <div>
           <Stack direction="horizontal" gap={2} align="center">
-            <span className="text-sm font-medium text-[var(--color-text-primary)]">
+            <span className="font-mono text-xs text-[var(--color-text-primary)]">
               {instance.name}
             </span>
-            {instance.is_enabled ? (
-              <Badge variant="success" size="sm">Online</Badge>
-            ) : (
-              <Badge variant="default" size="sm">Offline</Badge>
-            )}
+            <span className={`font-mono text-[10px] uppercase ${instance.is_enabled ? "text-green-400" : "text-[var(--color-text-muted)]"}`}>
+              {instance.is_enabled ? "ONLINE" : "OFFLINE"}
+            </span>
             {readyToStop && (
-              <Badge variant="warning" size="sm">Ready to stop</Badge>
+              <span className="font-mono text-[10px] uppercase text-orange-400">READY</span>
             )}
           </Stack>
-          <span className="text-xs text-[var(--color-text-muted)]">
+          <span className="font-mono text-[10px] text-[var(--color-text-muted)]">
             {activeJobs} active job{activeJobs !== 1 ? "s" : ""}
           </span>
         </div>
@@ -97,7 +96,7 @@ export function WorkerDrainPanel({ workerLoad }: WorkerDrainPanelProps) {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center p-6">
-        <Spinner />
+        <WireframeLoader size={48} />
       </div>
     );
   }
@@ -111,23 +110,23 @@ export function WorkerDrainPanel({ workerLoad }: WorkerDrainPanelProps) {
   }
 
   return (
-    <div className="space-y-3">
-      <Stack direction="horizontal" gap={3} align="center" justify="between">
-        <h4 className="text-sm font-medium text-[var(--color-text-primary)]">
+    <div className={TERMINAL_PANEL}>
+      <div className="px-[var(--spacing-3)] py-[var(--spacing-2)] border-b border-[var(--color-border-default)] bg-[#161b22] flex items-center justify-between">
+        <span className={TERMINAL_LABEL}>
           Worker Instances
-        </h4>
+        </span>
         <Button
           variant="secondary"
-          size="sm"
+          size="xs"
           icon={<RefreshCw size={iconSizes.sm} />}
           onClick={() => redistribute.mutate()}
           disabled={redistribute.isPending}
         >
           Redistribute
         </Button>
-      </Stack>
+      </div>
 
-      <div className="space-y-2">
+      <div className={TERMINAL_BODY}>
         {instances.map((inst) => {
           const load = workerLoad?.find((w) => w.instance_id === inst.id);
           return <WorkerRow key={inst.id} instance={inst} load={load} />;

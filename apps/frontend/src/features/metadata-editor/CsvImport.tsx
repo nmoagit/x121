@@ -7,11 +7,19 @@
 
 import { useCallback, useRef, useState } from "react";
 
-import { Card } from "@/components/composite/Card";
 import { Modal } from "@/components/composite/Modal";
 import { Button } from "@/components/primitives";
 import { Stack } from "@/components/layout";
 import { formatValue } from "@/lib/format";
+import {
+  TERMINAL_PANEL,
+  TERMINAL_HEADER,
+  TERMINAL_HEADER_TITLE,
+  TERMINAL_BODY,
+  TERMINAL_TH,
+  TERMINAL_DIVIDER,
+  TERMINAL_ROW_HOVER,
+} from "@/lib/ui-classes";
 
 import { useImportMetadataCsv } from "./hooks/use-metadata-editor";
 import type { CsvImportPreview } from "./types";
@@ -124,61 +132,57 @@ export function CsvImport({ projectId }: CsvImportProps) {
 
             {/* Validation errors */}
             {preview.validation_errors.length > 0 && (
-              <Card padding="sm">
-                <h4 className="mb-2 text-sm font-semibold text-[var(--color-status-error)]">
-                  Validation Errors
-                </h4>
-                <div className="max-h-32 space-y-1 overflow-y-auto text-xs">
-                  {preview.validation_errors.map((err) => (
-                    <div key={err.row_index} className="text-[var(--color-text-secondary)]">
-                      <span className="font-medium">Row {err.row_index + 1}</span>
-                      {err.character_id && (
-                        <span> (Character #{err.character_id})</span>
-                      )}
-                      : {err.errors.map((e) => e.message).join("; ")}
-                    </div>
-                  ))}
+              <div className={TERMINAL_PANEL}>
+                <div className={TERMINAL_HEADER}>
+                  <span className={`${TERMINAL_HEADER_TITLE} !text-red-400`}>
+                    Validation Errors
+                  </span>
                 </div>
-              </Card>
+                <div className={TERMINAL_BODY}>
+                  <div className="max-h-32 space-y-1 overflow-y-auto font-mono text-xs">
+                    {preview.validation_errors.map((err) => (
+                      <div key={err.row_index} className="text-[var(--color-text-muted)]">
+                        <span className="text-red-400">Row {err.row_index + 1}</span>
+                        {err.character_id && (
+                          <span> (Character #{err.character_id})</span>
+                        )}
+                        : {err.errors.map((e) => e.message).join("; ")}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
             )}
 
             {/* Diff table */}
             {preview.diffs.length > 0 ? (
-              <Card padding="none">
+              <div className={TERMINAL_PANEL}>
                 <div className="max-h-64 overflow-auto">
-                  <table className="w-full text-xs">
+                  <table className="w-full font-mono text-xs">
                     <thead>
-                      <tr className="border-b border-[var(--color-border-default)] bg-[var(--color-surface-secondary)]">
-                        <th className="px-3 py-2 text-left font-medium text-[var(--color-text-muted)]">
-                          Character
-                        </th>
-                        <th className="px-3 py-2 text-left font-medium text-[var(--color-text-muted)]">
-                          Field
-                        </th>
-                        <th className="px-3 py-2 text-left font-medium text-[var(--color-text-muted)]">
-                          Current
-                        </th>
-                        <th className="px-3 py-2 text-left font-medium text-[var(--color-text-muted)]">
-                          New
-                        </th>
+                      <tr className={`${TERMINAL_DIVIDER} bg-[#161b22]`}>
+                        <th className={`${TERMINAL_TH} px-3 py-2`}>Character</th>
+                        <th className={`${TERMINAL_TH} px-3 py-2`}>Field</th>
+                        <th className={`${TERMINAL_TH} px-3 py-2`}>Current</th>
+                        <th className={`${TERMINAL_TH} px-3 py-2`}>New</th>
                       </tr>
                     </thead>
                     <tbody>
                       {preview.diffs.map((diff, idx) => (
                         <tr
                           key={`${diff.character_id}-${diff.field_name}-${idx}`}
-                          className="border-b border-[var(--color-border-default)]"
+                          className={`${TERMINAL_DIVIDER} ${TERMINAL_ROW_HOVER}`}
                         >
                           <td className="px-3 py-1.5 text-[var(--color-text-primary)]">
                             {diff.character_name}
                           </td>
-                          <td className="px-3 py-1.5 text-[var(--color-text-secondary)]">
+                          <td className="px-3 py-1.5 text-[var(--color-text-muted)]">
                             {diff.field_name}
                           </td>
-                          <td className="px-3 py-1.5 text-[var(--color-text-muted)]">
+                          <td className="px-3 py-1.5 text-red-400 line-through">
                             {formatValue(diff.old_value)}
                           </td>
-                          <td className="px-3 py-1.5 font-medium text-[var(--color-text-primary)]">
+                          <td className="px-3 py-1.5 text-green-400">
                             {formatValue(diff.new_value)}
                           </td>
                         </tr>
@@ -186,7 +190,7 @@ export function CsvImport({ projectId }: CsvImportProps) {
                     </tbody>
                   </table>
                 </div>
-              </Card>
+              </div>
             ) : (
               <div className="py-4 text-center text-sm text-[var(--color-text-muted)]">
                 No changes detected. The imported data matches current values.

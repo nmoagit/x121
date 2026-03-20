@@ -7,7 +7,7 @@
 
 import { ProjectCharacterPicker } from "@/components/domain";
 import { Stack } from "@/components/layout";
-import { Spinner } from "@/components/primitives";
+import { WireframeLoader } from "@/components/primitives";
 import { EmptyState } from "@/components/domain";
 import { Image } from "@/tokens/icons";
 
@@ -37,7 +37,7 @@ function CharacterTestShots({ characterId }: { characterId: number }) {
   if (stLoading || galleryLoading) {
     return (
       <div className="flex items-center justify-center py-[var(--spacing-8)]">
-        <Spinner size="lg" />
+        <WireframeLoader size={64} />
       </div>
     );
   }

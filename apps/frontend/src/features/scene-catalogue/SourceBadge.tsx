@@ -5,7 +5,7 @@
  * color coding to indicate where the setting value originated.
  */
 
-import { Badge, type BadgeVariant } from "@/components/primitives/Badge";
+import { cn } from "@/lib/cn";
 
 import type { EffectiveSceneSetting } from "./types";
 
@@ -15,11 +15,11 @@ import type { EffectiveSceneSetting } from "./types";
 
 type SettingSource = EffectiveSceneSetting["source"];
 
-const SOURCE_CONFIG: Record<SettingSource, { label: string; variant: BadgeVariant }> = {
-  scene_type: { label: "Default", variant: "default" },
-  project: { label: "Project", variant: "info" },
-  group: { label: "Group", variant: "success" },
-  character: { label: "Model", variant: "warning" },
+const SOURCE_CONFIG: Record<SettingSource, { label: string; color: string }> = {
+  scene_type: { label: "Default", color: "text-[var(--color-text-muted)]" },
+  project: { label: "Project", color: "text-cyan-400" },
+  group: { label: "Group", color: "text-green-400" },
+  character: { label: "Model", color: "text-orange-400" },
 };
 
 /** Returns the human-readable label for a setting source. */
@@ -39,8 +39,8 @@ export function SourceBadge({ source }: SourceBadgeProps) {
   const config = SOURCE_CONFIG[source];
 
   return (
-    <Badge variant={config.variant} size="sm">
+    <span className={cn("font-mono text-xs", config.color)}>
       {config.label}
-    </Badge>
+    </span>
   );
 }

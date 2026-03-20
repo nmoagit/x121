@@ -9,7 +9,7 @@ import { useCallback, useState } from "react";
 
 import { Card } from "@/components/composite";
 import { Stack } from "@/components/layout";
-import { Button, FilterSelect, Spinner } from "@/components/primitives";
+import { Button, FilterSelect ,  WireframeLoader } from "@/components/primitives";
 
 import { DeliveryRow } from "./DeliveryRow";
 import { useDeliveryLogs } from "./hooks/use-webhook-testing";
@@ -91,7 +91,7 @@ export function DeliveryLogViewer() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Spinner size="md" />
+        <WireframeLoader size={48} />
       </div>
     );
   }

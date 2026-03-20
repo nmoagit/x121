@@ -1,9 +1,8 @@
-import { Badge } from "@/components/primitives";
 import { Button } from "@/components/primitives/Button";
 import { getStreamUrl } from "@/features/video-player";
 import { formatDuration } from "@/features/video-player/frame-utils";
 import { formatBytes, formatDate } from "@/lib/format";
-import { Ban, ChevronDown, ChevronRight, Clapperboard, Edit3, Layers, Play, RotateCcw, Star, Upload } from "@/tokens/icons";
+import { Ban, ChevronDown, ChevronRight, Layers, Play, RotateCcw } from "@/tokens/icons";
 import { useState } from "react";
 import { ArtifactTimeline } from "./ArtifactTimeline";
 import { ClipQAActions } from "./ClipQAActions";
@@ -50,21 +49,20 @@ export function ClipCard({
   const [showArtifacts, setShowArtifacts] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const purged = isPurgedClip(clip);
-  const sourceIcon = clip.source === "imported" ? <Upload size={14} /> : <Clapperboard size={14} />;
   const sourceLabel = clip.source === "imported" ? "Imported" : "Generated";
   const hasSnapshot = clip.generation_snapshot != null && Object.keys(clip.generation_snapshot).length > 0;
 
   return (
     <div
-      className={`rounded-[var(--radius-lg)] border transition-colors bg-[var(--color-surface-primary)] hover:bg-[var(--color-surface-secondary)] ${
+      className={`rounded-[var(--radius-lg)] border transition-colors bg-[#0d1117] hover:bg-[#161b22] ${
         clip.qa_status === "approved"
-          ? "border-[var(--color-action-success)]"
+          ? "border-green-500"
           : clip.qa_status === "rejected"
-            ? "border-[var(--color-action-danger)]"
+            ? "border-red-500"
             : "border-[var(--color-border-default)]"
       }`}
     >
-    <div className="flex items-center gap-4 p-4">
+    <div className="flex items-center gap-4 p-3">
       {/* Clickable play area with video thumbnail */}
       {purged ? (
         <div className="relative flex h-16 w-24 shrink-0 items-center justify-center rounded bg-[var(--color-surface-tertiary)]">
@@ -90,51 +88,35 @@ export function ClipCard({
       )}
 
       {/* Metadata */}
-      <div className="flex min-w-0 flex-1 flex-col gap-1">
+      <div className="flex min-w-0 flex-1 flex-col gap-1 font-mono text-xs">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-semibold text-[var(--color-text-primary)]">
-            v{clip.version_number}
-          </span>
-          <span
-            className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs
-              bg-[var(--color-surface-tertiary)] text-[var(--color-text-secondary)]"
-          >
-            {sourceIcon} {sourceLabel}
-          </span>
+          <span className="font-semibold text-cyan-400">v{clip.version_number}</span>
+          <span className="text-[var(--color-text-muted)]">{sourceLabel.toLowerCase()}</span>
           {clip.is_final && (
-            <span
-              className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs font-medium
-                bg-[var(--color-action-primary)] text-[var(--color-text-inverse)]"
-            >
-              <Star size={12} /> Final
-            </span>
+            <span className="text-green-400 font-medium">final</span>
           )}
-          {purged && (
-            <Badge variant="warning" size="sm">Purged</Badge>
-          )}
-          {!purged && isEmptyClip(clip) && (
-            <Badge variant="warning" size="sm">Empty file</Badge>
-          )}
+          {purged && <span className="text-orange-400">purged</span>}
+          {!purged && isEmptyClip(clip) && <span className="text-orange-400">empty</span>}
           {annotationCount > 0 && (
-            <span className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs bg-[var(--color-action-warning)] text-[var(--color-text-inverse)]">
-              <Edit3 size={10} /> {annotationCount} annotated
-            </span>
+            <span className="text-orange-400">{annotationCount} annotated</span>
           )}
         </div>
-        <div className="flex items-center gap-3 text-xs text-[var(--color-text-muted)]">
+        <div className="flex items-center gap-2 text-[10px] text-[var(--color-text-muted)]">
           {clip.video_codec && (
-            <span className="uppercase">{clip.video_codec}</span>
+            <><span className="uppercase">{clip.video_codec}</span><span className="opacity-30">|</span></>
           )}
           <span>{clip.file_size_bytes != null ? formatBytes(clip.file_size_bytes) : "\u2014"}</span>
+          <span className="opacity-30">|</span>
           <span>{clip.duration_secs != null ? formatDuration(clip.duration_secs) : "\u2014"}</span>
+          <span className="opacity-30">|</span>
           <span>{formatDate(clip.created_at)}</span>
         </div>
       </div>
 
       {/* QA Actions */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1">
         {!clip.is_final && clip.qa_status !== "rejected" && (
-          <Button variant="ghost" size="sm" onClick={() => onSetFinal(clip.id)}>
+          <Button variant="ghost" size="xs" onClick={() => onSetFinal(clip.id)}>
             Set Final
           </Button>
         )}
@@ -154,7 +136,7 @@ export function ClipCard({
           <span className="flex items-center gap-1">
             <Button
               variant="danger"
-              size="sm"
+              size="xs"
               onClick={() => { onDelete(clip.id); setConfirmDelete(false); }}
               disabled={isDeleting}
             >
@@ -162,7 +144,7 @@ export function ClipCard({
             </Button>
             <Button
               variant="ghost"
-              size="sm"
+              size="xs"
               onClick={() => setConfirmDelete(false)}
             >
               Cancel
@@ -172,9 +154,9 @@ export function ClipCard({
         {showResumeButton && onResumeFrom && (
           <Button
             variant="secondary"
-            size="sm"
+            size="xs"
             onClick={() => onResumeFrom(clip.id)}
-            icon={<RotateCcw size={14} />}
+            icon={<RotateCcw size={12} />}
           >
             Resume
           </Button>
@@ -188,14 +170,14 @@ export function ClipCard({
           <button
             type="button"
             onClick={() => setShowSnapshot((v) => !v)}
-            className="flex w-full items-center gap-1 border-t border-[var(--color-border-default)] px-4 py-2
-              text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
+            className="flex w-full items-center gap-1 border-t border-[var(--color-border-default)]/30 px-3 py-1.5
+              text-[10px] font-mono uppercase tracking-wide text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
           >
-            {showSnapshot ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+            {showSnapshot ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
             Generation Parameters
           </button>
           {showSnapshot && (
-            <div className="border-t border-[var(--color-border-default)] px-4 py-3">
+            <div className="border-t border-[var(--color-border-default)]/30 px-3 py-3">
               <GenerationSnapshotPanel snapshot={clip.generation_snapshot!} />
             </div>
           )}
@@ -208,15 +190,15 @@ export function ClipCard({
           <button
             type="button"
             onClick={() => setShowArtifacts((v) => !v)}
-            className="flex w-full items-center gap-1 border-t border-[var(--color-border-default)] px-4 py-2
-              text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
+            className="flex w-full items-center gap-1 border-t border-[var(--color-border-default)]/30 px-3 py-1.5
+              text-[10px] font-mono uppercase tracking-wide text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
           >
-            {showArtifacts ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-            <Layers size={14} />
+            {showArtifacts ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+            <Layers size={12} />
             Pipeline Artifacts
           </button>
           {showArtifacts && (
-            <div className="border-t border-[var(--color-border-default)] px-4 py-3">
+            <div className="border-t border-[var(--color-border-default)]/30 px-3 py-3">
               <ArtifactTimeline sceneId={clip.scene_id} versionId={clip.id} />
             </div>
           )}

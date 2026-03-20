@@ -11,10 +11,12 @@
 import { useState } from "react";
 
 import { PageHeader, Stack } from "@/components/layout";
-import { Badge, Button } from "@/components/primitives";
+import { Button } from "@/components/primitives";
 import { EmptyState } from "@/components/domain";
 import { Film } from "@/tokens/icons";
 import { useSetPageTitle } from "@/hooks/useSetPageTitle";
+import { TERMINAL_PANEL, TERMINAL_HEADER, TERMINAL_HEADER_TITLE, TERMINAL_TH, TERMINAL_DIVIDER, TERMINAL_ROW_HOVER, GHOST_DANGER_BTN } from "@/lib/ui-classes";
+import { cn } from "@/lib/cn";
 
 import {
   ProfileForm,
@@ -112,36 +114,41 @@ export function OutputProfilesPage() {
         )}
 
         {sorted.length > 0 && (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-[var(--color-border-default)] text-left text-xs text-[var(--color-text-muted)]">
-                  <th className="py-2 pr-3">Name</th>
-                  <th className="py-2 pr-3">Resolution</th>
-                  <th className="py-2 pr-3">Codec</th>
-                  <th className="py-2 pr-3">Container</th>
-                  <th className="py-2 pr-3">Bitrate</th>
-                  <th className="py-2 pr-3">Framerate</th>
-                  <th className="py-2 pr-3">Default</th>
-                  <th className="py-2 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {sorted.map((profile) => (
-                  <ProfileRow
-                    key={profile.id}
-                    profile={profile}
-                    confirmDeleteId={confirmDeleteId}
-                    onEdit={() => handleEdit(profile)}
-                    onDelete={() => handleDelete(profile.id)}
-                    onConfirmDelete={() => setConfirmDeleteId(profile.id)}
-                    onCancelDelete={() => setConfirmDeleteId(null)}
-                    onSetDefault={() => setDefault.mutate(profile.id)}
-                    isSettingDefault={setDefault.isPending}
-                  />
-                ))}
-              </tbody>
-            </table>
+          <div className={TERMINAL_PANEL}>
+            <div className={TERMINAL_HEADER}>
+              <span className={TERMINAL_HEADER_TITLE}>Profiles</span>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full font-mono text-xs">
+                <thead>
+                  <tr className={TERMINAL_DIVIDER}>
+                    <th className={cn(TERMINAL_TH, "py-2 px-3")}>Name</th>
+                    <th className={cn(TERMINAL_TH, "py-2 px-3")}>Resolution</th>
+                    <th className={cn(TERMINAL_TH, "py-2 px-3")}>Codec</th>
+                    <th className={cn(TERMINAL_TH, "py-2 px-3")}>Container</th>
+                    <th className={cn(TERMINAL_TH, "py-2 px-3")}>Bitrate</th>
+                    <th className={cn(TERMINAL_TH, "py-2 px-3")}>Framerate</th>
+                    <th className={cn(TERMINAL_TH, "py-2 px-3")}>Default</th>
+                    <th className={cn(TERMINAL_TH, "py-2 px-3 text-right")}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sorted.map((profile) => (
+                    <ProfileRow
+                      key={profile.id}
+                      profile={profile}
+                      confirmDeleteId={confirmDeleteId}
+                      onEdit={() => handleEdit(profile)}
+                      onDelete={() => handleDelete(profile.id)}
+                      onConfirmDelete={() => setConfirmDeleteId(profile.id)}
+                      onCancelDelete={() => setConfirmDeleteId(null)}
+                      onSetDefault={() => setDefault.mutate(profile.id)}
+                      isSettingDefault={setDefault.isPending}
+                    />
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </Stack>
@@ -177,26 +184,26 @@ function ProfileRow({
   const isConfirming = confirmDeleteId === profile.id;
 
   return (
-    <tr className="border-b border-[var(--color-border-default)]">
-      <td className="py-2 pr-3 font-medium text-[var(--color-text-primary)]">
+    <tr className={cn(TERMINAL_DIVIDER, TERMINAL_ROW_HOVER)}>
+      <td className="py-2 px-3 text-cyan-400">
         {profile.name}
       </td>
-      <td className="py-2 pr-3 text-[var(--color-text-secondary)]">{profile.resolution}</td>
-      <td className="py-2 pr-3 text-[var(--color-text-secondary)]">{profile.codec}</td>
-      <td className="py-2 pr-3 text-[var(--color-text-secondary)]">{profile.container}</td>
-      <td className="py-2 pr-3 text-[var(--color-text-secondary)]">
+      <td className="py-2 px-3 text-[var(--color-text-secondary)]">{profile.resolution}</td>
+      <td className="py-2 px-3 text-[var(--color-text-secondary)]">{profile.codec}</td>
+      <td className="py-2 px-3 text-[var(--color-text-secondary)]">{profile.container}</td>
+      <td className="py-2 px-3 text-[var(--color-text-secondary)]">
         {profile.bitrate_kbps ? `${profile.bitrate_kbps} kbps` : "--"}
       </td>
-      <td className="py-2 pr-3 text-[var(--color-text-secondary)]">
+      <td className="py-2 px-3 text-[var(--color-text-secondary)]">
         {profile.framerate ? `${profile.framerate} fps` : "--"}
       </td>
-      <td className="py-2 pr-3">
+      <td className="py-2 px-3">
         {profile.is_default ? (
-          <Badge variant="info" size="sm">Default</Badge>
+          <span className="text-green-400">Default</span>
         ) : (
           <Button
             variant="ghost"
-            size="sm"
+            size="xs"
             onClick={onSetDefault}
             disabled={isSettingDefault}
           >
@@ -204,22 +211,22 @@ function ProfileRow({
           </Button>
         )}
       </td>
-      <td className="py-2 text-right">
+      <td className="py-2 px-3 text-right">
         <div className="flex items-center justify-end gap-2">
-          <Button variant="secondary" size="sm" onClick={onEdit}>
+          <Button variant="secondary" size="xs" onClick={onEdit}>
             Edit
           </Button>
           {isConfirming ? (
             <>
-              <Button variant="primary" size="sm" onClick={onDelete}>
+              <Button variant="primary" size="xs" onClick={onDelete}>
                 Confirm
               </Button>
-              <Button variant="ghost" size="sm" onClick={onCancelDelete}>
+              <Button variant="ghost" size="xs" onClick={onCancelDelete}>
                 Cancel
               </Button>
             </>
           ) : (
-            <Button variant="secondary" size="sm" onClick={onConfirmDelete}>
+            <Button variant="ghost" size="xs" className={GHOST_DANGER_BTN} onClick={onConfirmDelete}>
               Delete
             </Button>
           )}

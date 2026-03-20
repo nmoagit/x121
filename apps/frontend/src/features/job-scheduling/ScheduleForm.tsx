@@ -124,11 +124,11 @@ export function ScheduleForm({
           data-testid="schedule-action-config"
         />
 
-        <Stack direction="horizontal" gap={2} justify="end">
-          <Button variant="secondary" size="md" onClick={onCancel} type="button">
+        <Stack direction="horizontal" gap={2} justify="end" className="pt-1 border-t border-[var(--color-border-default)]">
+          <Button variant="secondary" size="sm" onClick={onCancel} type="button">
             Cancel
           </Button>
-          <Button variant="primary" size="md" type="submit" loading={isSubmitting} disabled={!name.trim()} data-testid="schedule-submit-btn">
+          <Button variant="primary" size="sm" type="submit" loading={isSubmitting} disabled={!name.trim()} data-testid="schedule-submit-btn">
             {isEdit ? "Update Schedule" : "Create Schedule"}
           </Button>
         </Stack>

@@ -10,7 +10,16 @@ import { useCallback, useState } from "react";
 import { ConfirmDeleteModal, ConfigToolbar, Tabs } from "@/components/composite";
 import { EmptyState } from "@/components/domain";
 import { PageHeader, Stack } from "@/components/layout";
-import { Badge, Button, LoadingPane, SelectableRow } from "@/components/primitives";
+import { Button, LoadingPane, SelectableRow } from "@/components/primitives";
+import { cn } from "@/lib/cn";
+import {
+  GHOST_DANGER_BTN,
+  TERMINAL_BODY,
+  TERMINAL_HEADER,
+  TERMINAL_LABEL,
+  TERMINAL_PANEL,
+  TERMINAL_STATUS_COLORS,
+} from "@/lib/ui-classes";
 import { Edit3, Plus, Trash2 } from "@/tokens/icons";
 
 import { useExportSceneCatalogue, useConfigImport } from "@/features/config-io";
@@ -149,26 +158,27 @@ function SceneTypesTab() {
               onSelect={() => setSelectedId(st.id)}
             >
               <div className="grid grid-cols-[1fr_auto_auto_auto] items-center gap-2 w-full">
-                <span className="truncate text-sm font-medium text-[var(--color-text-primary)]">
+                <span className="truncate font-mono text-xs text-cyan-400">
                   {st.name}
                 </span>
-                <Badge variant={st.is_active ? "success" : "default"} size="sm">
+                <span className={cn("font-mono text-xs", TERMINAL_STATUS_COLORS[st.is_active ? "active" : "pending"])}>
                   {st.is_active ? "Active" : "Inactive"}
-                </Badge>
-                <span className="truncate text-xs text-[var(--color-text-muted)] max-w-[100px]">
+                </span>
+                <span className="truncate font-mono text-xs text-[var(--color-text-muted)] max-w-[100px]">
                   {st.workflow_id ? workflowName(st.workflow_id) : ""}
                 </span>
                 <div className="flex items-center gap-1">
                   <Button
                     variant="ghost"
-                    size="sm"
+                    size="xs"
                     icon={<Edit3 size={14} />}
                     onClick={(e) => { e.stopPropagation(); setEditing(st); }}
                     aria-label="Edit scene type"
                   />
                   <Button
                     variant="ghost"
-                    size="sm"
+                    size="xs"
+                    className={GHOST_DANGER_BTN}
                     icon={<Trash2 size={14} />}
                     onClick={(e) => { e.stopPropagation(); setDeleting(st); }}
                     aria-label="Delete scene type"
@@ -259,105 +269,107 @@ function SceneTypeDetail({
     }));
 
   return (
-    <div className="rounded border border-[var(--color-border-default)] p-5 space-y-4">
-      <div className="flex items-center gap-3">
-        <h3 className="text-lg font-semibold text-[var(--color-text-primary)]">
-          {sceneType.name}
-        </h3>
-        <Badge variant={sceneType.is_active ? "success" : "default"} size="sm">
+    <div className={TERMINAL_PANEL}>
+      <div className={cn(TERMINAL_HEADER, "flex items-center gap-3")}>
+        <span className="font-mono text-sm text-cyan-400">{sceneType.name}</span>
+        <span className={cn("font-mono text-xs", TERMINAL_STATUS_COLORS[sceneType.is_active ? "active" : "pending"])}>
           {sceneType.is_active ? "Active" : "Inactive"}
-        </Badge>
+        </span>
       </div>
 
-      {sceneType.description && (
-        <p className="text-sm text-[var(--color-text-secondary)]">{sceneType.description}</p>
-      )}
+      <div className={TERMINAL_BODY}>
+        <div className="space-y-4">
+          {sceneType.description && (
+            <p className="font-mono text-xs text-[var(--color-text-muted)]">{sceneType.description}</p>
+          )}
 
-      <dl className="grid grid-cols-2 gap-x-8 gap-y-3 text-sm">
-        <DetailRow label="Slug" value={sceneType.slug} />
-        <DetailRow
-          label="Default Workflow"
-          value={
-            wfName(sceneType.workflow_id)
-              ?? (trackWorkflows.length > 0 ? "Per-track (see below)" : "None assigned")
-          }
-        />
-        <DetailRow
-          label="Target Duration"
-          value={sceneType.target_duration_secs ? `${sceneType.target_duration_secs}s` : "Not set"}
-        />
-        <DetailRow
-          label="Segment Duration"
-          value={sceneType.segment_duration_secs ? `${sceneType.segment_duration_secs}s` : "Not set"}
-        />
-        <DetailRow
-          label="Duration Tolerance"
-          value={`${sceneType.duration_tolerance_secs}s`}
-        />
-        <DetailRow
-          label="Frame Rate"
-          value={sceneType.target_fps ? `${sceneType.target_fps} fps` : "Not set"}
-        />
-        <DetailRow
-          label="Resolution"
-          value={sceneType.target_resolution ?? "Not set"}
-        />
-        <DetailRow label="Sort Order" value={String(sceneType.sort_order)} />
-        <DetailRow
-          label="Generation Strategy"
-          value={sceneType.generation_strategy}
-        />
-        <DetailRow
-          label="Auto-Retry"
-          value={
-            sceneType.auto_retry_enabled
-              ? `Enabled (max ${sceneType.auto_retry_max_attempts})`
-              : "Disabled"
-          }
-        />
-      </dl>
+          <dl className="grid grid-cols-2 gap-x-8 gap-y-3">
+            <DetailRow label="Slug" value={sceneType.slug} />
+            <DetailRow
+              label="Default Workflow"
+              value={
+                wfName(sceneType.workflow_id)
+                  ?? (trackWorkflows.length > 0 ? "Per-track (see below)" : "None assigned")
+              }
+            />
+            <DetailRow
+              label="Target Duration"
+              value={sceneType.target_duration_secs ? `${sceneType.target_duration_secs}s` : "Not set"}
+            />
+            <DetailRow
+              label="Segment Duration"
+              value={sceneType.segment_duration_secs ? `${sceneType.segment_duration_secs}s` : "Not set"}
+            />
+            <DetailRow
+              label="Duration Tolerance"
+              value={`${sceneType.duration_tolerance_secs}s`}
+            />
+            <DetailRow
+              label="Frame Rate"
+              value={sceneType.target_fps ? `${sceneType.target_fps} fps` : "Not set"}
+            />
+            <DetailRow
+              label="Resolution"
+              value={sceneType.target_resolution ?? "Not set"}
+            />
+            <DetailRow label="Sort Order" value={String(sceneType.sort_order)} />
+            <DetailRow
+              label="Generation Strategy"
+              value={sceneType.generation_strategy}
+            />
+            <DetailRow
+              label="Auto-Retry"
+              value={
+                sceneType.auto_retry_enabled
+                  ? `Enabled (max ${sceneType.auto_retry_max_attempts})`
+                  : "Disabled"
+              }
+            />
+          </dl>
 
-      {/* Per-track workflow assignments */}
-      <div className="space-y-2">
-        <h4 className="text-sm font-medium text-[var(--color-text-primary)]">Track Workflows</h4>
-        <div className="rounded bg-[var(--color-surface-secondary)] p-3 space-y-1.5">
-          {trackWorkflows.length > 0 ? (
-            trackWorkflows.map((tw, i) => (
-              <div key={i} className="flex items-center gap-2 text-sm">
-                <span className="font-medium text-[var(--color-text-primary)]">{tw.trackName}</span>
-                {tw.isClothesOff && (
-                  <Badge variant="warning" size="sm">Clothes Off</Badge>
-                )}
-                <span className="text-[var(--color-text-muted)]">&rarr;</span>
-                <span className="text-[var(--color-text-secondary)]">{tw.workflowName}</span>
-              </div>
-            ))
-          ) : (
-            <p className="text-xs text-[var(--color-text-muted)]">
-              No per-track workflows assigned. Use the Workflows tab to assign workflows to tracks.
-            </p>
+          {/* Per-track workflow assignments */}
+          <div className="space-y-2">
+            <span className={TERMINAL_LABEL}>Track Workflows</span>
+            <div className="rounded-[var(--radius-md)] bg-[#0d1117] border border-[var(--color-border-default)]/30 p-3 space-y-1.5">
+              {trackWorkflows.length > 0 ? (
+                trackWorkflows.map((tw, i) => (
+                  <div key={i} className="flex items-center gap-2 font-mono text-xs">
+                    <span className="text-cyan-400">{tw.trackName}</span>
+                    {tw.isClothesOff && (
+                      <span className="text-orange-400">[Clothes Off]</span>
+                    )}
+                    <span className="text-[var(--color-text-muted)] opacity-30">&rarr;</span>
+                    <span className="text-[var(--color-text-muted)]">{tw.workflowName}</span>
+                  </div>
+                ))
+              ) : (
+                <p className="font-mono text-xs text-[var(--color-text-muted)]">
+                  No per-track workflows assigned. Use the Workflows tab to assign workflows to tracks.
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* Prompt templates */}
+          {sceneType.prompt_template && (
+            <div className="space-y-1">
+              <span className={TERMINAL_LABEL}>Prompt Template</span>
+              <pre className="rounded-[var(--radius-md)] bg-[#0d1117] border border-[var(--color-border-default)]/30 p-3 font-mono text-xs text-cyan-400 whitespace-pre-wrap max-h-[200px] overflow-auto">
+                {sceneType.prompt_template}
+              </pre>
+            </div>
+          )}
+
+          {sceneType.negative_prompt_template && (
+            <div className="space-y-1">
+              <span className={TERMINAL_LABEL}>Negative Prompt</span>
+              <pre className="rounded-[var(--radius-md)] bg-[#0d1117] border border-[var(--color-border-default)]/30 p-3 font-mono text-xs text-red-400 whitespace-pre-wrap max-h-[150px] overflow-auto">
+                {sceneType.negative_prompt_template}
+              </pre>
+            </div>
           )}
         </div>
       </div>
-
-      {/* Prompt templates */}
-      {sceneType.prompt_template && (
-        <div className="space-y-1">
-          <h4 className="text-sm font-medium text-[var(--color-text-primary)]">Prompt Template</h4>
-          <pre className="rounded bg-[var(--color-surface-secondary)] p-3 text-xs text-[var(--color-text-secondary)] whitespace-pre-wrap max-h-[200px] overflow-auto">
-            {sceneType.prompt_template}
-          </pre>
-        </div>
-      )}
-
-      {sceneType.negative_prompt_template && (
-        <div className="space-y-1">
-          <h4 className="text-sm font-medium text-[var(--color-text-primary)]">Negative Prompt</h4>
-          <pre className="rounded bg-[var(--color-surface-secondary)] p-3 text-xs text-[var(--color-text-secondary)] whitespace-pre-wrap max-h-[150px] overflow-auto">
-            {sceneType.negative_prompt_template}
-          </pre>
-        </div>
-      )}
     </div>
   );
 }
@@ -365,8 +377,8 @@ function SceneTypeDetail({
 function DetailRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex flex-col">
-      <dt className="text-[var(--color-text-tertiary)]">{label}</dt>
-      <dd className="text-[var(--color-text-primary)] font-medium">{value}</dd>
+      <dt className={TERMINAL_LABEL}>{label}</dt>
+      <dd className="font-mono text-xs text-cyan-400">{value}</dd>
     </div>
   );
 }
@@ -396,7 +408,7 @@ export function SceneCataloguePage() {
           />
         </div>
 
-        <Tabs tabs={TABS} activeTab={activeTab} onTabChange={(k) => setActiveTab(k as TabKey)} variant="underline" />
+        <Tabs tabs={TABS} activeTab={activeTab} onTabChange={(k) => setActiveTab(k as TabKey)} variant="pill" />
 
         {activeTab === "scene-types" && <SceneTypesTab />}
         {activeTab === "workflows" && <TrackWorkflowManager />}

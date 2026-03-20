@@ -12,7 +12,8 @@ import { useNavigate } from "@tanstack/react-router";
 import { EmptyState } from "@/components/domain";
 import { ConfirmModal, Modal } from "@/components/composite";
 import { PageHeader, Stack } from "@/components/layout";
-import { Badge, Button, FilterSelect, SearchInput, Spinner, Toggle } from "@/components/primitives";
+import { Button, FilterSelect, SearchInput, Toggle ,  WireframeLoader } from "@/components/primitives";
+import { cn } from "@/lib/cn";
 import { DrawingCanvas } from "@/features/annotations/DrawingCanvas";
 import type { DrawingObject } from "@/features/annotations/types";
 import { useAnnotationsBrowse, useDeleteBrowseAnnotation } from "@/features/annotations";
@@ -106,36 +107,50 @@ function AnnotationDetailModal({
     [],
   );
 
-  // On open, seek to the annotated frame once the video is ready.
-  // Uses loadeddata (not loadedmetadata) to ensure seeking works reliably.
+  // Once annotations are loaded, wait for video to be ready then pause+seek.
+  // Lock currentFrame so VideoPlayer's onFrameChange doesn't override it.
+  const seekLockRef = useRef(false);
+  const didAutoSeek = useRef(false);
+
   useEffect(() => {
-    if (!item || !item.version_id || containerWidth <= 0) return;
+    didAutoSeek.current = false;
+    seekLockRef.current = false;
+  }, [item?.annotation_id]);
 
-    const container = videoContainerRef.current;
-    if (!container) return;
+  const handleVideoFrameChange = useCallback((frame: number) => {
+    // Ignore frame changes from the video player while we're holding the seek lock
+    if (!seekLockRef.current) {
+      setCurrentFrame(frame);
+    }
+  }, []);
 
-    function trySeek() {
-      const video = container!.querySelector("video");
-      if (!video) return;
+  useEffect(() => {
+    if (didAutoSeek.current) return;
+    if (!item || !dbAnnotations || dbAnnotations.length === 0) return;
 
-      // If already loaded, seek immediately.
-      if (video.readyState >= 2) {
-        seekToFrame(item!.frame_number);
+    let cancelled = false;
+    let pollTimer: ReturnType<typeof setTimeout>;
+
+    function trySeekAndPause() {
+      if (cancelled || didAutoSeek.current) return;
+      const video = videoContainerRef.current?.querySelector("video");
+      if (!video || video.readyState < 2) {
+        pollTimer = setTimeout(trySeekAndPause, 150);
         return;
       }
-
-      // Otherwise wait for the video to be ready.
-      function handleLoaded() {
-        seekToFrame(item!.frame_number);
-      }
-      video.addEventListener("loadeddata", handleLoaded, { once: true });
-      return () => video.removeEventListener("loadeddata", handleLoaded);
+      didAutoSeek.current = true;
+      seekLockRef.current = true;
+      video.pause();
+      video.currentTime = item!.frame_number / 24;
+      setCurrentFrame(item!.frame_number);
+      setAnnotating(true);
+      // Release the lock after the video has settled
+      setTimeout(() => { seekLockRef.current = false; }, 500);
     }
 
-    // Small delay to let the video element mount in the DOM.
-    const timer = setTimeout(trySeek, 50);
-    return () => clearTimeout(timer);
-  }, [item, containerWidth, seekToFrame]);
+    pollTimer = setTimeout(trySeekAndPause, 200);
+    return () => { cancelled = true; clearTimeout(pollTimer); };
+  }, [item, dbAnnotations]);
 
   // Current frame's annotations (when viewing a different frame)
   const currentAnnotations: DrawingObject[] = annotating
@@ -162,16 +177,16 @@ function AnnotationDetailModal({
                     sourceType="version"
                     sourceId={item.version_id}
                     showControls
-                    onFrameChange={setCurrentFrame}
+                    onFrameChange={handleVideoFrameChange}
                   />
                 </div>
-                {annotating && containerWidth > 0 && videoHeight > 0 && (
+                {annotating && containerWidth > 0 && videoHeight > 0 && currentAnnotations.length > 0 && (
                   <div
                     className="absolute top-0 left-0 z-10 pointer-events-none"
                     style={{ width: containerWidth, height: videoHeight }}
                   >
                     <DrawingCanvas
-                      key={`canvas-${currentFrame}`}
+                      key={`canvas-${currentFrame}-${currentAnnotations.length}`}
                       width={containerWidth}
                       height={videoHeight}
                       existingAnnotations={currentAnnotations}
@@ -190,22 +205,23 @@ function AnnotationDetailModal({
           {/* Annotated frames indicator */}
           {annotatedFrames.length > 0 && (
             <div className="flex items-center gap-2">
-              <span className="shrink-0 text-xs text-[var(--color-text-muted)]">
-                Annotated frames:
+              <span className="shrink-0 font-mono text-[10px] uppercase tracking-wide text-[var(--color-text-muted)]">
+                frames
               </span>
               <div className="flex flex-wrap gap-1">
                 {annotatedFrames.map((frame) => (
                   <button
                     key={frame}
                     type="button"
-                    className={`rounded px-1.5 py-0.5 text-xs font-mono transition-colors ${
+                    className={cn(
+                      "rounded-[2px] px-1.5 py-0.5 font-mono text-[11px] transition-colors",
                       currentFrame === frame
-                        ? "bg-[var(--color-action-primary)] text-[var(--color-text-inverse)]"
-                        : "bg-[var(--color-surface-tertiary)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-secondary)]"
-                    }`}
+                        ? "bg-cyan-400/20 text-cyan-400"
+                        : "text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[#161b22]",
+                    )}
                     onClick={() => seekToFrame(frame)}
                   >
-                    F{frame}
+                    {frame}
                   </button>
                 ))}
               </div>
@@ -215,30 +231,30 @@ function AnnotationDetailModal({
           {/* Toggle annotation overlay */}
           <div className="flex items-center gap-2">
             <Button
-              size="sm"
+              size="xs"
               variant={annotating ? "primary" : "secondary"}
               onClick={() => setAnnotating((v) => !v)}
+              icon={<Edit3 size={12} />}
             >
-              <Edit3 size={14} />
-              {annotating ? "Hide Annotations" : "Show Annotations"}
+              {annotating ? "Hide" : "Show"}
             </Button>
             {annotating && (
-              <Badge variant="info" size="sm">
-                Frame {currentFrame} — {currentAnnotations.length} mark{currentAnnotations.length !== 1 ? "s" : ""}
-              </Badge>
+              <span className="font-mono text-xs text-cyan-400">
+                frame {currentFrame} · {currentAnnotations.length} mark{currentAnnotations.length !== 1 ? "s" : ""}
+              </span>
             )}
           </div>
 
           {/* Context info + navigation */}
-          <div className="flex items-center justify-between border-t border-[var(--color-border-default)] pt-3">
-            <div className="flex flex-col gap-0.5">
-              <span className="text-sm font-medium text-[var(--color-text-primary)]">
+          <div className="flex items-center justify-between pt-1 border-t border-[var(--color-border-default)]">
+            <div className="flex flex-col gap-0.5 font-mono text-xs">
+              <span className="text-[var(--color-text-primary)]">
                 {item.character_name}
               </span>
-              <span className="text-xs text-[var(--color-text-muted)]">
-                {item.project_name} — {item.scene_type_name}
+              <span className="text-[var(--color-text-muted)]">
+                {item.project_name} · {item.scene_type_name}
               </span>
-              <span className="text-xs text-[var(--color-text-muted)]">
+              <span className="text-[10px] text-[var(--color-text-muted)]">
                 {formatRelative(item.created_at)}
               </span>
             </div>
@@ -246,9 +262,9 @@ function AnnotationDetailModal({
               size="sm"
               variant="secondary"
               onClick={handleGoToScene}
+              icon={<ArrowRight size={12} />}
             >
-              <ArrowRight size={14} />
-              Go to Scene
+              Scene
             </Button>
           </div>
         </div>
@@ -275,7 +291,7 @@ function AnnotationCard({
     : null;
 
   return (
-    <div className="group relative flex flex-col rounded-lg border border-[var(--color-border-default)] bg-[var(--color-surface-primary)] overflow-hidden transition-colors hover:border-[var(--color-action-primary)]">
+    <div className="group relative flex flex-col rounded-[var(--radius-lg)] border border-[var(--color-border-default)] bg-[#0d1117] overflow-hidden transition-shadow hover:shadow-[var(--shadow-md)]">
       {/* Delete button */}
       <button
         type="button"
@@ -284,19 +300,19 @@ function AnnotationCard({
           e.stopPropagation();
           onDelete();
         }}
-        className="absolute top-2 left-2 z-10 rounded bg-red-600/80 p-1 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 cursor-pointer backdrop-blur-sm"
+        className="absolute top-1.5 left-1.5 z-10 rounded-[2px] bg-red-600/80 p-0.5 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 cursor-pointer"
       >
-        <Trash2 size={12} />
+        <Trash2 size={10} />
       </button>
 
       {/* Clickable card body */}
       <button
         type="button"
         onClick={onClick}
-        className="flex flex-col text-left w-full focus:outline-none focus:ring-2 focus:ring-[var(--color-action-primary)]"
+        className="flex flex-col text-left w-full focus:outline-none"
       >
         {/* Thumbnail */}
-        <div className="relative aspect-video w-full bg-[var(--color-surface-secondary)] flex items-center justify-center overflow-hidden">
+        <div className="relative aspect-video w-full bg-[#161b22] flex items-center justify-center overflow-hidden">
           {streamUrl ? (
             <video
               src={streamUrl}
@@ -305,32 +321,32 @@ function AnnotationCard({
               muted
             />
           ) : (
-            <Edit3 size={32} className="text-[var(--color-text-muted)]" />
+            <Edit3 size={24} className="text-[var(--color-text-muted)] opacity-30" />
           )}
-          {/* Badges */}
-          <div className="absolute top-2 right-2 flex gap-1">
-            <span className="rounded bg-[var(--color-surface-primary)]/80 px-1.5 py-0.5 text-xs font-medium text-[var(--color-text-primary)] backdrop-blur-sm">
-              F{item.frame_number}
+          {/* Overlays */}
+          <div className="absolute top-1.5 right-1.5 flex gap-1">
+            <span className="font-mono text-[10px] text-[var(--color-text-primary)] bg-black/60 px-1 py-px rounded-[2px]">
+              f{item.frame_number}
             </span>
-            <span className="rounded bg-[var(--color-action-primary)]/80 px-1.5 py-0.5 text-xs font-medium text-white backdrop-blur-sm">
+            <span className="font-mono text-[10px] text-cyan-400 bg-black/60 px-1 py-px rounded-[2px]">
               {item.annotation_count}
             </span>
           </div>
         </div>
 
         {/* Info */}
-        <div className="flex flex-col gap-1 p-3">
-          <span className="text-sm font-medium text-[var(--color-text-primary)] truncate">
+        <div className="flex flex-col gap-0.5 px-2 py-1.5 font-mono">
+          <span className="text-xs text-[var(--color-text-primary)] truncate">
             {item.character_name}
           </span>
-          <span className="text-xs text-[var(--color-text-secondary)] truncate">
+          <span className="text-[10px] text-[var(--color-text-muted)] truncate">
             {item.scene_type_name}
           </span>
-          <div className="flex items-center justify-between mt-1">
-            <span className="text-xs text-[var(--color-text-muted)] truncate">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] text-[var(--color-text-muted)] truncate">
               {item.project_name}
             </span>
-            <span className="text-xs text-[var(--color-text-muted)] shrink-0">
+            <span className="text-[10px] text-[var(--color-text-muted)] shrink-0">
               {formatRelative(item.created_at)}
             </span>
           </div>
@@ -401,54 +417,47 @@ export function AnnotationsPage() {
       />
 
       {/* Filter bar */}
-      <div className="flex flex-wrap items-end gap-3">
+      <div className="flex flex-wrap items-center gap-2">
         <FilterSelect
-          label="Project"
           options={projectOptions}
           value={projectFilter}
           onChange={setProjectFilter}
-          className="w-48"
+          className="w-44"
         />
         <SearchInput
-          placeholder="Search model name..."
+          placeholder="Search model..."
           value={characterSearch}
           onChange={(e) => setCharacterSearch(e.target.value)}
-          className="w-56"
+          className="w-48"
         />
         <FilterSelect
-          label="Sort by"
           options={[...SORT_OPTIONS]}
           value={sort}
           onChange={(v) => setSort(v as "created_at" | "character_name")}
-          className="w-44"
+          className="w-40"
         />
-        <div className="flex items-center gap-3 self-end pb-[3px]">
-          <Button
-            variant="ghost"
+        <Button
+          variant="ghost"
+          size="xs"
+          onClick={() => setSortDir((d) => (d === "asc" ? "desc" : "asc"))}
+          icon={<ArrowDown size={12} className={`transition-transform ${sortDir === "asc" ? "rotate-180" : ""}`} />}
+        >
+          {sortDir === "asc" ? "Asc" : "Desc"}
+        </Button>
+        {completedCount > 0 && (
+          <Toggle
+            checked={showCompleted}
+            onChange={setShowCompleted}
+            label={`Completed (${completedCount})`}
             size="sm"
-            onClick={() => setSortDir((d) => (d === "asc" ? "desc" : "asc"))}
-          >
-            <ArrowDown
-              size={14}
-              className={`transition-transform ${sortDir === "asc" ? "rotate-180" : ""}`}
-            />
-            {sortDir === "asc" ? "Asc" : "Desc"}
-          </Button>
-          {completedCount > 0 && (
-            <Toggle
-              checked={showCompleted}
-              onChange={setShowCompleted}
-              label={`Show completed (${completedCount})`}
-              size="sm"
-            />
-          )}
-        </div>
+          />
+        )}
       </div>
 
       {/* Content */}
       {isLoading ? (
         <div className="flex justify-center py-12">
-          <Spinner />
+          <WireframeLoader size={48} />
         </div>
       ) : !filteredItems?.length ? (
         <EmptyState

@@ -1,3 +1,4 @@
+import { WireframeLoader } from "@/components/primitives";
 /**
  * Displays avatar indicators for users currently viewing an entity (PRD-11).
  *
@@ -6,7 +7,6 @@
  */
 
 import { Avatar } from "@/components/primitives/Avatar";
-import { Spinner } from "@/components/primitives/Spinner";
 import { Tooltip } from "@/components/primitives/Tooltip";
 
 import { usePresence } from "./hooks/use-collaboration";
@@ -23,7 +23,7 @@ export function PresenceIndicator({
   const { data: users, isPending } = usePresence(entityType, entityId);
 
   if (isPending) {
-    return <Spinner size="sm" />;
+    return <WireframeLoader size={32} />;
   }
 
   if (!users || users.length === 0) {

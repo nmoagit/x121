@@ -31,8 +31,6 @@ const KNOWN_KEYS = [
   "a2c4_model",
   "elevenlabs_voice",
   "avatar_json",
-  "lora_model",
-  "comfyui_workflow",
 ];
 
 /* --------------------------------------------------------------------------
@@ -81,18 +79,15 @@ export function PipelineSettingsEditor({
 
   return (
     <div data-testid="pipeline-settings-editor" className="flex flex-col gap-3">
-      <h3 className="text-sm font-semibold text-[var(--color-text-primary)]">
-        Pipeline Settings
-      </h3>
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-1.5">
         {allKeys.map((key) => (
           <div
             key={key}
             data-testid={`setting-row-${key}`}
-            className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-2"
+            className="flex items-center gap-2"
           >
             <label
-              className="w-40 shrink-0 text-xs text-[var(--color-text-secondary)]"
+              className="w-36 shrink-0 text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-wide font-mono"
               data-testid={`setting-label-${key}`}
             >
               {snakeCaseToTitle(key)}
@@ -103,7 +98,8 @@ export function PipelineSettingsEditor({
               onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                 handleChange(key, e.target.value)
               }
-              className="min-w-[320px] flex-1 text-sm"
+              size="sm"
+              className="min-w-[320px] flex-1 !bg-transparent !text-xs !py-1 font-mono"
             />
           </div>
         ))}
@@ -112,7 +108,7 @@ export function PipelineSettingsEditor({
         <Button
           data-testid="save-settings-btn"
           variant="primary"
-          size="sm"
+          size="xs"
           onClick={handleSave}
           disabled={!isDirty || isSaving}
         >

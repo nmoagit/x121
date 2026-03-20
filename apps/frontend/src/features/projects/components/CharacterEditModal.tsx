@@ -174,8 +174,8 @@ export function CharacterEditModal({
           />
           {!voiceConfigured && (
             <div className="mt-1.5 flex items-center gap-1.5">
-              <AlertTriangle size={14} className="text-[var(--color-status-warning)] shrink-0" />
-              <span className="text-xs text-[var(--color-text-muted)]">
+              <AlertTriangle size={14} className="text-orange-400 shrink-0" />
+              <span className="text-xs font-mono text-orange-400">
                 VoiceID must be configured in Settings before activating
               </span>
             </div>
@@ -224,20 +224,20 @@ export function CharacterEditModal({
           />
         )}
 
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between pt-1 border-t border-[var(--color-border-default)]">
           <Button
             variant="ghost"
             size="sm"
-            className="text-[var(--color-action-danger)] hover:text-[var(--color-action-danger-hover)]"
+            className="text-red-400 hover:text-red-300"
             onClick={() => character && onDeleteRequest(character)}
           >
             Delete model
           </Button>
-          <div className="flex gap-[var(--spacing-2)]">
-            <Button variant="secondary" onClick={onClose}>
+          <div className="flex gap-2">
+            <Button size="sm" variant="secondary" onClick={onClose}>
               Cancel
             </Button>
-            <Button onClick={handleUpdate} loading={saving} disabled={!editName.trim() || creatingGroup}>
+            <Button size="sm" onClick={handleUpdate} loading={saving} disabled={!editName.trim() || creatingGroup}>
               Save Changes
             </Button>
           </div>

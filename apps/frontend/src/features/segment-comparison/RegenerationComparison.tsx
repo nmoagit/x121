@@ -7,7 +7,7 @@
 
 import { useState } from "react";
 
-import { Button, Spinner } from "@/components/primitives";
+import { Button ,  WireframeLoader } from "@/components/primitives";
 import { ChevronLeft, ChevronRight, Pause, Play } from "@/tokens/icons";
 
 import { ComparisonActions } from "./ComparisonActions";
@@ -51,7 +51,7 @@ export function RegenerationComparison({
         data-testid="regeneration-comparison-loading"
         className="flex items-center justify-center py-12"
       >
-        <Spinner size="md" />
+        <WireframeLoader size={48} />
       </div>
     );
   }

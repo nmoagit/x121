@@ -7,7 +7,7 @@
 
 import { Card } from "@/components/composite";
 import { Grid, Stack } from "@/components/layout";
-import { Badge, Spinner } from "@/components/primitives";
+import { Badge ,  WireframeLoader } from "@/components/primitives";
 import { formatPercent } from "@/lib/format";
 
 import { useHealthSummary } from "./hooks/use-webhook-testing";
@@ -89,7 +89,7 @@ export function EndpointHealthDashboard() {
   if (isLoading) {
     return (
       <div data-testid="health-loading" className="flex items-center justify-center py-12">
-        <Spinner size="md" />
+        <WireframeLoader size={48} />
       </div>
     );
   }

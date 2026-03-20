@@ -10,7 +10,7 @@ import { useEffect } from "react";
 
 import { Modal } from "@/components/composite/Modal";
 import { Stack } from "@/components/layout";
-import { Badge, Button, Toggle } from "@/components/primitives";
+import { Button, Toggle } from "@/components/primitives";
 import { useSetToggle } from "@/hooks/useSetToggle";
 import { AlertCircle, Play } from "@/tokens/icons";
 
@@ -70,12 +70,12 @@ export function GenerateConfirmModal({
     <Modal open={open} onClose={onClose} title="Confirm Generation" size="lg">
       <Stack gap={4}>
         {/* Summary */}
-        <p className="text-sm text-[var(--color-text-secondary)]">
+        <p className="text-xs font-mono text-[var(--color-text-secondary)]">
           {withoutVideo.length} scene{withoutVideo.length !== 1 ? "s" : ""} will be generated.
           {withVideo.length > 0 && (
             <>
               {" "}
-              <span className="text-[var(--color-text-warning)] font-medium">
+              <span className="text-orange-400 font-medium">
                 {withVideo.length} scene{withVideo.length !== 1 ? "s" : ""} already{" "}
                 {withVideo.length === 1 ? "has" : "have"} video.
               </span>
@@ -85,11 +85,11 @@ export function GenerateConfirmModal({
 
         {/* Existing video warnings with toggles */}
         {withVideo.length > 0 && (
-          <div className="rounded-[var(--radius-md)] border border-[var(--color-border-warning)] bg-[var(--color-surface-warning)]">
-            <div className="px-[var(--spacing-3)] py-[var(--spacing-2)] border-b border-[var(--color-border-warning)]">
+          <div className="rounded-[var(--radius-md)] border border-[var(--color-border-default)]">
+            <div className="px-[var(--spacing-3)] py-[var(--spacing-2)] border-b border-[var(--color-border-default)]">
               <div className="flex items-center gap-[var(--spacing-2)]">
-                <AlertCircle size={14} className="text-[var(--color-text-warning)] shrink-0" />
-                <span className="text-xs font-medium text-[var(--color-text-warning)]">
+                <AlertCircle size={14} className="text-orange-400 shrink-0" />
+                <span className="text-xs font-mono text-orange-400">
                   Toggle to regenerate and override existing video
                 </span>
               </div>
@@ -98,16 +98,14 @@ export function GenerateConfirmModal({
               {withVideo.map((c) => (
                 <div
                   key={c.sceneId}
-                  className="flex items-center justify-between px-[var(--spacing-3)] py-[var(--spacing-2)] border-b last:border-b-0 border-[var(--color-border-warning)]"
+                  className="flex items-center justify-between px-[var(--spacing-3)] py-[var(--spacing-2)] border-b last:border-b-0 border-white/5 hover:bg-[#161b22]"
                 >
                   <div className="flex items-center gap-[var(--spacing-2)] min-w-0">
-                    <span className="text-sm text-[var(--color-text-primary)] truncate">
+                    <span className="text-xs font-mono text-[var(--color-text-primary)] truncate">
                       {c.sceneName}
                     </span>
                     {c.trackName && (
-                      <Badge variant="default" size="sm">
-                        {c.trackName}
-                      </Badge>
+                      <span className="text-xs font-mono text-[var(--color-text-muted)]">{c.trackName}</span>
                     )}
                   </div>
                   <Toggle
@@ -123,17 +121,18 @@ export function GenerateConfirmModal({
         )}
 
         {/* Footer */}
-        <div className="flex items-center justify-between">
-          <span className="text-sm text-[var(--color-text-muted)]">
+        <div className="flex items-center justify-between pt-1 border-t border-[var(--color-border-default)]">
+          <span className="text-xs font-mono text-[var(--color-text-muted)]">
             {confirmIds.length} scene{confirmIds.length !== 1 ? "s" : ""} will be generated
             {overrides.size > 0 &&
               ` (${overrides.size} override${overrides.size !== 1 ? "s" : ""})`}
           </span>
-          <div className="flex gap-[var(--spacing-2)]">
-            <Button variant="secondary" onClick={onClose}>
+          <div className="flex gap-2">
+            <Button variant="secondary" size="sm" onClick={onClose}>
               Cancel
             </Button>
             <Button
+              size="sm"
               onClick={handleConfirm}
               disabled={confirmIds.length === 0}
               loading={loading}

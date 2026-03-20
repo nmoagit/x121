@@ -59,4 +59,5 @@ export {
   PROJECT_STATUS_BADGE_VARIANT,
   characterStatusLabel,
   characterStatusBadgeVariant,
+  projectStatusSlug,
 } from "./types";

@@ -142,13 +142,52 @@ export function useStartAssembly(projectId: number) {
   });
 }
 
-/** Fetch delivery exports for a project. */
+/** Cancel a pending or in-progress export. */
+export function useCancelExport(projectId: number) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (exportId: number) =>
+      api.post<DeliveryExport>(
+        `/projects/${projectId}/exports/${exportId}/cancel`,
+        {},
+      ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: deliveryKeys.exports(projectId),
+      });
+    },
+  });
+}
+
+/** Fetch delivery exports for a project. Polls every 5s when an export is active.
+ *  Invalidates delivery status when an export completes so the status table updates. */
 export function useDeliveryExports(projectId: number) {
+  const queryClient = useQueryClient();
+  // Track whether we had an active export on the previous poll.
+  const hadActiveRef = { current: false };
+
   return useQuery({
     queryKey: deliveryKeys.exports(projectId),
-    queryFn: () =>
-      api.get<DeliveryExport[]>(`/projects/${projectId}/exports`),
+    queryFn: async () => {
+      const data = await api.get<DeliveryExport[]>(`/projects/${projectId}/exports`);
+      const hasActive = data.some((e) => e.status_id >= 1 && e.status_id <= 5);
+
+      // Export just finished — invalidate delivery status + logs so UI updates.
+      if (hadActiveRef.current && !hasActive) {
+        queryClient.invalidateQueries({ queryKey: ["delivery", "status"] });
+        queryClient.invalidateQueries({ queryKey: ["delivery", "logs"] });
+      }
+      hadActiveRef.current = hasActive;
+
+      return data;
+    },
     enabled: projectId > 0,
+    refetchInterval: (query) => {
+      const data = query.state.data;
+      const hasActive = data?.some((e) => e.status_id >= 1 && e.status_id <= 5);
+      return hasActive ? 5000 : false;
+    },
   });
 }
 
@@ -168,13 +207,21 @@ export function useDeliveryExport(projectId: number, exportId: number) {
    Validation Query
    -------------------------------------------------------------------------- */
 
-/** Run pre-export validation for a project (on demand). */
-export function useDeliveryValidation(projectId: number, enabled = false) {
+/** Run pre-export validation for a project (on demand).
+ *  When `characterIds` is provided, only those models are validated. */
+export function useDeliveryValidation(
+  projectId: number,
+  enabled = false,
+  characterIds?: number[] | null,
+) {
+  const idsParam = characterIds && characterIds.length > 0
+    ? `?character_ids=${characterIds.join(",")}`
+    : "";
   return useQuery({
-    queryKey: deliveryKeys.validation(projectId),
+    queryKey: [...deliveryKeys.validation(projectId), characterIds ?? "all"],
     queryFn: () =>
       api.get<DeliveryValidationResponse>(
-        `/projects/${projectId}/delivery-validation`,
+        `/projects/${projectId}/delivery-validation${idsParam}`,
       ),
     enabled: enabled && projectId > 0,
   });

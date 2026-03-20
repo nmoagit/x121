@@ -5,7 +5,13 @@
  * and a visual progress bar with completion percentage.
  */
 
-import { Badge } from "@/components";
+import {
+  TERMINAL_PANEL,
+  TERMINAL_HEADER,
+  TERMINAL_HEADER_TITLE,
+  TERMINAL_BODY,
+  TERMINAL_PIPE,
+} from "@/lib/ui-classes";
 
 import type { ProductionRunProgress } from "./types";
 
@@ -32,76 +38,57 @@ export function ProductionProgress({ progress }: ProductionProgressProps) {
     completion_pct,
   } = progress;
 
+  const stats = [
+    { label: "Total", value: total_cells, color: "text-cyan-400" },
+    { label: "Done", value: completed_cells, color: "text-green-400" },
+    { label: "Failed", value: failed_cells, color: failed_cells > 0 ? "text-red-400" : "text-[var(--color-text-muted)]" },
+    { label: "Active", value: in_progress_cells, color: in_progress_cells > 0 ? "text-cyan-400" : "text-[var(--color-text-muted)]" },
+    { label: "Waiting", value: not_started_cells, color: "text-[var(--color-text-muted)]" },
+  ];
+
   return (
-    <div data-testid="production-progress" className="space-y-4">
-      {/* Summary stats */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
-        <StatCard label="Total" value={total_cells} variant="default" />
-        <StatCard
-          label="Completed"
-          value={completed_cells}
-          variant="success"
-        />
-        <StatCard label="Failed" value={failed_cells} variant="danger" />
-        <StatCard
-          label="In Progress"
-          value={in_progress_cells}
-          variant="info"
-        />
-        <StatCard
-          label="Not Started"
-          value={not_started_cells}
-          variant="default"
-        />
+    <div data-testid="production-progress" className="space-y-3">
+      {/* Stats ticker strip */}
+      <div className="flex items-center gap-0 rounded-[var(--radius-lg)] border border-[var(--color-border-default)] bg-[#0d1117] px-[var(--spacing-3)] py-[var(--spacing-2)] font-mono text-xs overflow-x-auto">
+        {stats.map((stat, idx) => (
+          <span key={stat.label} className="flex items-center whitespace-nowrap">
+            {idx > 0 && (
+              <span className={`mx-3 ${TERMINAL_PIPE} select-none`}>|</span>
+            )}
+            <span className="uppercase tracking-wide text-[var(--color-text-muted)]">
+              {stat.label}:
+            </span>
+            <span className={`ml-1 ${stat.color}`}>{stat.value}</span>
+          </span>
+        ))}
       </div>
 
-      {/* Progress bar */}
-      <div className="space-y-1">
-        <div className="flex items-center justify-between text-sm">
-          <span className="text-[var(--color-text-muted)]">
-            Overall Progress
-          </span>
-          <span className="font-medium text-[var(--color-text-primary)]">
-            {completion_pct.toFixed(1)}%
-          </span>
+      {/* Progress bar panel */}
+      <div className={TERMINAL_PANEL}>
+        <div className={TERMINAL_HEADER}>
+          <div className="flex items-center justify-between">
+            <span className={TERMINAL_HEADER_TITLE}>Overall Progress</span>
+            <span className="font-mono text-xs text-green-400">
+              {completion_pct.toFixed(1)}%
+            </span>
+          </div>
         </div>
-        <div className="h-3 w-full overflow-hidden rounded-full bg-[var(--color-surface-secondary)]">
-          <div
-            data-testid="progress-bar-fill"
-            className="h-full rounded-full bg-green-600 transition-all duration-500"
-            style={{ width: `${Math.min(completion_pct, 100)}%` }}
-          />
+        <div className={TERMINAL_BODY}>
+          <div className="h-2 w-full overflow-hidden rounded-full bg-[var(--color-surface-secondary)]">
+            <div
+              data-testid="progress-bar-fill"
+              className="h-full rounded-full bg-green-600 transition-all duration-500"
+              style={{ width: `${Math.min(completion_pct, 100)}%` }}
+            />
+          </div>
+          {/* Estimated time */}
+          {in_progress_cells > 0 && completed_cells > 0 && (
+            <p className="mt-2 text-[10px] font-mono text-[var(--color-text-muted)]">
+              ETA: {estimateRemaining(total_cells, completed_cells, in_progress_cells)}
+            </p>
+          )}
         </div>
       </div>
-
-      {/* Estimated time */}
-      {in_progress_cells > 0 && completed_cells > 0 && (
-        <p className="text-xs text-[var(--color-text-muted)]">
-          Estimated remaining:{" "}
-          {estimateRemaining(total_cells, completed_cells, in_progress_cells)}
-        </p>
-      )}
-    </div>
-  );
-}
-
-/* --------------------------------------------------------------------------
-   Internal components
-   -------------------------------------------------------------------------- */
-
-interface StatCardProps {
-  label: string;
-  value: number;
-  variant: "default" | "success" | "danger" | "info";
-}
-
-function StatCard({ label, value, variant }: StatCardProps) {
-  return (
-    <div className="rounded-[var(--radius-lg)] border border-[var(--color-border-subtle)] bg-[var(--color-surface-secondary)] p-3 text-center">
-      <p className="text-2xl font-semibold text-[var(--color-text-primary)]">
-        {value}
-      </p>
-      <Badge variant={variant}>{label}</Badge>
     </div>
   );
 }

@@ -4,7 +4,7 @@
  * Displays the current phase, progress fraction, and error count.
  */
 
-import { Badge, Spinner } from "@/components/primitives";
+import { Badge ,  WireframeLoader } from "@/components/primitives";
 
 import type { ImportProgress } from "../hooks/use-character-import";
 
@@ -27,7 +27,7 @@ export function ImportProgressBar({ progress }: ImportProgressBarProps) {
 
   return (
     <div className="flex items-center gap-[var(--spacing-3)] rounded-[var(--radius-md)] border border-[var(--color-border-default)] bg-[var(--color-surface-secondary)] px-[var(--spacing-3)] py-[var(--spacing-2)]">
-      {!isDone && <Spinner size="sm" />}
+      {!isDone && <WireframeLoader size={32} />}
       <span className="text-sm font-medium text-[var(--color-text-primary)]">
         {PHASE_LABELS[phase]}
       </span>

@@ -4,29 +4,29 @@ import { useDiskHealth } from "@/features/dashboard/hooks/use-dashboard";
 import { WidgetBase } from "@/features/dashboard/WidgetBase";
 import { cn } from "@/lib/cn";
 import { formatBytes } from "@/lib/format";
+import { TERMINAL_LABEL, TERMINAL_DIVIDER } from "@/lib/ui-classes";
 import { HardDrive } from "@/tokens/icons";
 
 /* --------------------------------------------------------------------------
    Helpers
    -------------------------------------------------------------------------- */
 
-/** Determine gauge color based on usage percentage and thresholds. */
-function gaugeColor(usagePct: number, warning: number, critical: number): string {
-  if (usagePct >= critical) return "text-[var(--color-action-danger)]";
-  if (usagePct >= warning) return "text-[var(--color-action-warning)]";
-  return "text-[var(--color-action-success)]";
+function gaugeTextColor(usagePct: number, warning: number, critical: number): string {
+  if (usagePct >= critical) return "text-red-400";
+  if (usagePct >= warning) return "text-orange-400";
+  return "text-green-400";
 }
 
-function gaugeBg(usagePct: number, warning: number, critical: number): string {
-  if (usagePct >= critical) return "bg-[var(--color-action-danger)]";
-  if (usagePct >= warning) return "bg-[var(--color-action-warning)]";
-  return "bg-[var(--color-action-success)]";
+function gaugeStroke(usagePct: number, warning: number, critical: number): string {
+  if (usagePct >= critical) return "stroke-red-400";
+  if (usagePct >= warning) return "stroke-orange-400";
+  return "stroke-green-400";
 }
 
-function gaugeTrack(usagePct: number, warning: number, critical: number): string {
-  if (usagePct >= critical) return "bg-[var(--color-action-danger)]/20";
-  if (usagePct >= warning) return "bg-[var(--color-action-warning)]/20";
-  return "bg-[var(--color-action-success)]/20";
+function gaugeFill(usagePct: number, warning: number, critical: number): string {
+  if (usagePct >= critical) return "bg-red-400";
+  if (usagePct >= warning) return "bg-orange-400";
+  return "bg-green-400";
 }
 
 /* --------------------------------------------------------------------------
@@ -48,7 +48,7 @@ export function DiskHealthWidget() {
       error={error?.message}
       onRetry={() => void refetch()}
       headerActions={
-        <Link to="/admin/storage" className="text-xs text-[var(--color-action-primary)] hover:underline">
+        <Link to="/admin/storage" className="font-mono text-xs text-cyan-400 hover:underline">
           Storage
         </Link>
       }
@@ -63,7 +63,7 @@ export function DiskHealthWidget() {
                 cy="50"
                 r="42"
                 fill="none"
-                stroke="var(--color-surface-tertiary)"
+                className="stroke-white/10"
                 strokeWidth="10"
               />
               <circle
@@ -71,13 +71,7 @@ export function DiskHealthWidget() {
                 cy="50"
                 r="42"
                 fill="none"
-                className={cn(
-                  usagePct >= critical
-                    ? "stroke-[var(--color-action-danger)]"
-                    : usagePct >= warning
-                      ? "stroke-[var(--color-action-warning)]"
-                      : "stroke-[var(--color-action-success)]",
-                )}
+                className={gaugeStroke(usagePct, warning, critical)}
                 strokeWidth="10"
                 strokeLinecap="round"
                 strokeDasharray={`${(usagePct / 100) * 263.9} 263.9`}
@@ -86,33 +80,33 @@ export function DiskHealthWidget() {
             <div className="absolute inset-0 flex flex-col items-center justify-center">
               <span
                 className={cn(
-                  "text-sm font-bold tabular-nums",
-                  gaugeColor(usagePct, warning, critical),
+                  "font-mono text-sm font-bold tabular-nums",
+                  gaugeTextColor(usagePct, warning, critical),
                 )}
               >
                 {usagePct.toFixed(0)}%
               </span>
-              <span className="text-xs text-[var(--color-text-muted)]">used</span>
+              <span className={TERMINAL_LABEL}>used</span>
             </div>
           </div>
 
           {/* Capacity details */}
-          <div className="w-full space-y-[var(--spacing-2)]">
-            <div className="flex justify-between text-xs">
-              <span className="text-[var(--color-text-muted)]">Used</span>
-              <span className="text-[var(--color-text-primary)] font-medium tabular-nums">
+          <div className="w-full space-y-1">
+            <div className={`flex justify-between font-mono text-xs py-1 ${TERMINAL_DIVIDER} last:border-b-0`}>
+              <span className={TERMINAL_LABEL}>Used</span>
+              <span className="text-cyan-400 tabular-nums">
                 {formatBytes(data.used_bytes)}
               </span>
             </div>
-            <div className="flex justify-between text-xs">
-              <span className="text-[var(--color-text-muted)]">Free</span>
-              <span className="text-[var(--color-text-primary)] font-medium tabular-nums">
+            <div className={`flex justify-between font-mono text-xs py-1 ${TERMINAL_DIVIDER} last:border-b-0`}>
+              <span className={TERMINAL_LABEL}>Free</span>
+              <span className="text-cyan-400 tabular-nums">
                 {formatBytes(data.free_bytes)}
               </span>
             </div>
-            <div className="flex justify-between text-xs">
-              <span className="text-[var(--color-text-muted)]">Total</span>
-              <span className="text-[var(--color-text-primary)] font-medium tabular-nums">
+            <div className="flex justify-between font-mono text-xs py-1">
+              <span className={TERMINAL_LABEL}>Total</span>
+              <span className="text-cyan-400 tabular-nums">
                 {formatBytes(data.total_bytes)}
               </span>
             </div>
@@ -120,16 +114,11 @@ export function DiskHealthWidget() {
 
           {/* Warning bar */}
           <div className="w-full">
-            <div
-              className={cn(
-                "w-full h-1.5 rounded-full overflow-hidden",
-                gaugeTrack(usagePct, warning, critical),
-              )}
-            >
+            <div className="w-full h-1.5 rounded-full bg-white/10 overflow-hidden">
               <div
                 className={cn(
                   "h-full rounded-full transition-all duration-500",
-                  gaugeBg(usagePct, warning, critical),
+                  gaugeFill(usagePct, warning, critical),
                 )}
                 style={{ width: `${Math.min(usagePct, 100)}%` }}
               />

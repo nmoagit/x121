@@ -34,6 +34,8 @@ export interface MatchResult {
 export interface ParsedFilename {
   sceneSlug: string;
   trackSlug: string;
+  /** True when the filename had a version suffix (e.g. bj_2, dance1). Signals "add as next version". */
+  isAdditionalVersion: boolean;
 }
 
 /**
@@ -54,14 +56,23 @@ function stripClothesOffSuffix(slug: string): string {
 }
 
 /**
- * Strip trailing version digits from a scene slug.
- * `bj1` → `bj`, `dance2` → `dance`, `slow_walk3` → `slow_walk`
- * Does NOT strip if the entire slug is digits (`123` stays `123`).
- * Does NOT strip if preceded by underscore + digits (`idle_2` stays — likely intentional).
+ * Strip trailing version digits from a scene slug and return the version number.
+ * `bj1` → (`bj`, 1), `bj_2` → (`bj`, 2), `dance_3` → (`dance`, 3)
+ * `slow_walk3` → (`slow_walk`, 3), `slow_walk_1` → (`slow_walk`, 1)
+ * Does NOT strip if the entire slug is digits (`123` stays).
  */
-function stripVersionSuffix(slug: string): string {
-  const match = slug.match(/^([a-z_]+?)(\d+)$/);
-  return match ? match[1]! : slug;
+function stripVersionSuffix(slug: string): { slug: string; version: number | null } {
+  // Match trailing _N (underscore + digits)
+  const underscoreMatch = slug.match(/^(.+?)_(\d+)$/);
+  if (underscoreMatch) {
+    return { slug: underscoreMatch[1]!, version: Number(underscoreMatch[2]) };
+  }
+  // Match trailing digits directly attached (bj1, dance2)
+  const directMatch = slug.match(/^([a-z_]+?)(\d+)$/);
+  if (directMatch) {
+    return { slug: directMatch[1]!, version: Number(directMatch[2]) };
+  }
+  return { slug, version: null };
 }
 
 export function parseFilename(filename: string, trackSlugs: string[]): ParsedFilename {
@@ -91,11 +102,12 @@ export function parseFilename(filename: string, trackSlugs: string[]): ParsedFil
   // Strip _clothes_off suffix (with optional index) from scene slug
   sceneSlug = stripClothesOffSuffix(sceneSlug!);
 
-  // Strip trailing version digits (e.g. "bj1" → "bj", "dance2" → "dance")
-  // but NOT if the entire slug is digits (e.g. "123" stays "123")
-  sceneSlug = stripVersionSuffix(sceneSlug);
+  // Strip trailing version digits (e.g. "bj1" → "bj", "bj_2" → "bj")
+  // and flag as additional version so the import doesn't skip it
+  const { slug: cleanSlug, version } = stripVersionSuffix(sceneSlug);
+  sceneSlug = cleanSlug;
 
-  return { sceneSlug, trackSlug: trackSlug! };
+  return { sceneSlug, trackSlug: trackSlug!, isAdditionalVersion: version != null };
 }
 
 /**

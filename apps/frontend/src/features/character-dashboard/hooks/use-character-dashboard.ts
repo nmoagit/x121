@@ -32,6 +32,7 @@ export function useCharacterDashboard(characterId: number) {
     queryKey: characterDashboardKeys.dashboard(characterId),
     queryFn: () => fetchCharacterDashboard(characterId),
     enabled: characterId > 0,
+    refetchInterval: 15_000,
   });
 }
 
@@ -52,6 +53,10 @@ export function usePatchSettings(characterId: number) {
       });
       queryClient.invalidateQueries({
         queryKey: characterDashboardKeys.settings(characterId),
+      });
+      // Settings changes affect character list indicators
+      queryClient.invalidateQueries({
+        predicate: (q) => Array.isArray(q.queryKey) && q.queryKey.includes("characters") && q.queryKey.includes("list"),
       });
     },
   });
