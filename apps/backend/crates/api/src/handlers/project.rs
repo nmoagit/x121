@@ -8,7 +8,8 @@ use x121_core::error::CoreError;
 use x121_core::types::DbId;
 use x121_db::models::character::CharacterDeliverableRow;
 use x121_db::models::project::{CreateProject, Project, UpdateProject};
-use x121_db::repositories::{CharacterRepo, ProjectRepo};
+use x121_db::repositories::character_speech_repo::ProjectLanguageCount;
+use x121_db::repositories::{CharacterRepo, CharacterSpeechRepo, ProjectRepo};
 
 use crate::error::{AppError, AppResult};
 use crate::response::DataResponse;
@@ -36,10 +37,56 @@ pub async fn create(
     Ok((StatusCode::CREATED, Json(DataResponse { data: project })))
 }
 
+/// Enriched project for list views — includes inline character counts.
+#[derive(Debug, Clone, Serialize)]
+pub struct ProjectWithCounts {
+    #[serde(flatten)]
+    pub project: Project,
+    pub character_count: i64,
+    pub characters_ready: i64,
+}
+
 /// GET /api/v1/projects
-pub async fn list(State(state): State<AppState>) -> AppResult<Json<DataResponse<Vec<Project>>>> {
+pub async fn list(State(state): State<AppState>) -> AppResult<Json<DataResponse<Vec<ProjectWithCounts>>>> {
     let projects = ProjectRepo::list(&state.pool).await?;
-    Ok(Json(DataResponse { data: projects }))
+
+    // Single query: character counts per project (non-archived, non-deleted).
+    let counts: Vec<(DbId, i64)> = sqlx::query_as(
+        "SELECT project_id, COUNT(*)
+         FROM characters
+         WHERE deleted_at IS NULL AND status_id != 3
+         GROUP BY project_id",
+    )
+    .fetch_all(&state.pool)
+    .await?;
+
+    // Single query: ready character counts from readiness cache per project.
+    let ready_counts: Vec<(DbId, i64)> = sqlx::query_as(
+        "SELECT c.project_id, COUNT(*)
+         FROM character_readiness_cache crc
+         JOIN characters c ON c.id = crc.character_id
+         WHERE crc.state = 'ready' AND c.deleted_at IS NULL AND c.status_id != 3
+         GROUP BY c.project_id",
+    )
+    .fetch_all(&state.pool)
+    .await?;
+
+    let count_map: std::collections::HashMap<DbId, i64> = counts.into_iter().collect();
+    let ready_map: std::collections::HashMap<DbId, i64> = ready_counts.into_iter().collect();
+
+    let enriched: Vec<ProjectWithCounts> = projects
+        .into_iter()
+        .map(|p| {
+            let id = p.id;
+            ProjectWithCounts {
+                project: p,
+                character_count: count_map.get(&id).copied().unwrap_or(0),
+                characters_ready: ready_map.get(&id).copied().unwrap_or(0),
+            }
+        })
+        .collect();
+
+    Ok(Json(DataResponse { data: enriched }))
 }
 
 /// GET /api/v1/projects/{id}
@@ -92,9 +139,10 @@ pub async fn delete(State(state): State<AppState>, Path(id): Path<DbId>) -> AppR
 #[derive(Debug, Clone, Serialize)]
 pub struct ProjectStats {
     pub character_count: i64,
+    pub characters_draft: i64,
+    pub characters_active: i64,
+    /// Characters with readiness state 'ready' in the cache.
     pub characters_ready: i64,
-    pub characters_generating: i64,
-    pub characters_complete: i64,
     pub scenes_enabled: i64,
     pub scenes_generated: i64,
     pub scenes_approved: i64,
@@ -114,15 +162,13 @@ pub async fn get_stats(
     let _project = ensure_project_exists(&state.pool, project_id).await?;
 
     // Character counts by status.
-    // Statuses: 1=draft, 2=active (ready), 3=archived.
-    // Archived characters (status_id = 3) are excluded from all counts
-    // to prevent "ghost" tasks cluttering the PM's view.
-    let char_stats: (i64, i64, i64, i64) = sqlx::query_as(
+    // Statuses: 1=draft, 2=active, 3=archived.
+    // Archived characters (status_id = 3) are excluded from all counts.
+    let char_stats: (i64, i64, i64) = sqlx::query_as(
         "SELECT
             COUNT(*) AS total,
-            COUNT(*) FILTER (WHERE status_id = 2) AS ready,
-            COUNT(*) FILTER (WHERE status_id = 1) AS generating,
-            0::bigint AS complete
+            COUNT(*) FILTER (WHERE status_id = 1) AS draft,
+            COUNT(*) FILTER (WHERE status_id = 2) AS active
          FROM characters
          WHERE project_id = $1 AND deleted_at IS NULL AND status_id != 3",
     )
@@ -130,12 +176,39 @@ pub async fn get_stats(
     .fetch_one(&state.pool)
     .await?;
 
-    // Scene video version counts by QA approval status.
-    // Join through scenes to reach characters for project filtering.
-    // Excludes archived characters (status_id = 3).
-    let scene_stats: (i64, i64, i64, i64, i64) = sqlx::query_as(
+    // Ready characters from the readiness cache.
+    let characters_ready: (i64,) = sqlx::query_as(
+        "SELECT COUNT(*)
+         FROM character_readiness_cache crc
+         JOIN characters c ON c.id = crc.character_id
+         WHERE crc.state = 'ready' AND c.project_id = $1
+           AND c.deleted_at IS NULL AND c.status_id != 3",
+    )
+    .bind(project_id)
+    .fetch_one(&state.pool)
+    .await?;
+
+    // scenes_enabled: count of enabled scene+track combos for this project,
+    // using the same logic as the project scene settings endpoint.
+    let scenes_enabled: (i64,) = sqlx::query_as(
+        "SELECT COUNT(*)
+         FROM scene_types st
+         JOIN scene_type_tracks stt ON stt.scene_type_id = st.id
+         JOIN tracks t ON t.id = stt.track_id AND t.is_active = true
+         LEFT JOIN project_scene_settings pss
+             ON pss.scene_type_id = st.id AND pss.track_id = t.id
+                AND pss.project_id = $1
+         WHERE st.is_active = true AND st.deleted_at IS NULL
+           AND COALESCE(pss.is_enabled, st.is_active)",
+    )
+    .bind(project_id)
+    .fetch_one(&state.pool)
+    .await?;
+
+    // Scene video version counts: how many scenes across all models have
+    // been generated / approved / rejected / are pending.
+    let scene_stats: (i64, i64, i64, i64) = sqlx::query_as(
         "SELECT
-            COUNT(*) AS total,
             COUNT(*) FILTER (WHERE svv.qa_status != 'pending') AS generated,
             COUNT(*) FILTER (WHERE svv.qa_status = 'approved') AS approved,
             COUNT(*) FILTER (WHERE svv.qa_status = 'rejected') AS rejected,
@@ -144,14 +217,15 @@ pub async fn get_stats(
          JOIN scenes s ON s.id = svv.scene_id
          JOIN characters c ON c.id = s.character_id
          WHERE c.project_id = $1 AND c.deleted_at IS NULL AND c.status_id != 3
-           AND svv.deleted_at IS NULL",
+           AND svv.deleted_at IS NULL AND svv.is_final = true",
     )
     .bind(project_id)
     .fetch_one(&state.pool)
     .await?;
 
-    let delivery_readiness_pct = if scene_stats.0 > 0 {
-        (scene_stats.2 as f64 / scene_stats.0 as f64) * 100.0
+    // Delivery readiness = percentage of models that are ready.
+    let delivery_readiness_pct = if char_stats.0 > 0 {
+        (characters_ready.0 as f64 / char_stats.0 as f64) * 100.0
     } else {
         0.0
     };
@@ -159,14 +233,14 @@ pub async fn get_stats(
     Ok(Json(DataResponse {
         data: ProjectStats {
             character_count: char_stats.0,
-            characters_ready: char_stats.1,
-            characters_generating: char_stats.2,
-            characters_complete: char_stats.3,
-            scenes_enabled: scene_stats.0,
-            scenes_generated: scene_stats.1,
-            scenes_approved: scene_stats.2,
-            scenes_rejected: scene_stats.3,
-            scenes_pending: scene_stats.4,
+            characters_draft: char_stats.1,
+            characters_active: char_stats.2,
+            characters_ready: characters_ready.0,
+            scenes_enabled: scenes_enabled.0,
+            scenes_generated: scene_stats.0,
+            scenes_approved: scene_stats.1,
+            scenes_rejected: scene_stats.2,
+            scenes_pending: scene_stats.3,
             delivery_readiness_pct,
         },
     }))
@@ -320,5 +394,22 @@ pub async fn get_batch_scene_assignments(
     .fetch_all(&state.pool)
     .await?;
 
+    Ok(Json(DataResponse { data: rows }))
+}
+
+// ---------------------------------------------------------------------------
+// Batch speech language counts for character cards
+// ---------------------------------------------------------------------------
+
+/// GET /api/v1/projects/{id}/speech-language-counts
+///
+/// Returns speech count per language per character for the project character grid.
+pub async fn get_speech_language_counts(
+    State(state): State<AppState>,
+    Path(project_id): Path<DbId>,
+) -> AppResult<Json<DataResponse<Vec<ProjectLanguageCount>>>> {
+    let _project = ensure_project_exists(&state.pool, project_id).await?;
+
+    let rows = CharacterSpeechRepo::count_by_language_for_project(&state.pool, project_id).await?;
     Ok(Json(DataResponse { data: rows }))
 }

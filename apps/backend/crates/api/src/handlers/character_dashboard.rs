@@ -194,11 +194,13 @@ pub async fn get_dashboard(
             CROSS JOIN tracks t
             LEFT JOIN project_scene_settings pss
                 ON pss.scene_type_id = st.id AND (pss.track_id = t.id OR pss.track_id IS NULL)
+                   AND pss.project_id = $2
             LEFT JOIN group_scene_settings gss
                 ON gss.scene_type_id = st.id AND (gss.track_id = t.id OR gss.track_id IS NULL) AND gss.group_id = $3
             LEFT JOIN character_scene_overrides cso
                 ON cso.scene_type_id = st.id AND (cso.track_id = t.id OR cso.track_id IS NULL) AND cso.character_id = $1
-            WHERE COALESCE(cso.is_enabled, gss.is_enabled, pss.is_enabled, st.is_active)
+            WHERE st.is_active = true AND st.deleted_at IS NULL
+              AND COALESCE(cso.is_enabled, gss.is_enabled, pss.is_enabled, st.is_active)
         )
         SELECT
             ec.scene_type_id,

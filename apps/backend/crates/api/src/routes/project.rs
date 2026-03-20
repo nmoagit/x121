@@ -126,6 +126,10 @@ pub fn router() -> Router<AppState> {
             "/{id}/variant-statuses",
             get(project::get_batch_variant_statuses),
         )
+        .route(
+            "/{id}/speech-language-counts",
+            get(project::get_speech_language_counts),
+        )
         .nest("/{project_id}/characters", character_routes)
         .nest("/{project_id}/groups", group_routes)
         .nest("/{project_id}/scene-types", scene_type_routes)

@@ -208,10 +208,11 @@ pub fn tokens_for_category(category: &str) -> Vec<&'static str> {
         ],
         "delivery_image" => vec!["variant_label", "ext"],
         "delivery_metadata" => vec![],
+        "delivery_speech" => vec![],
         "delivery_folder" => vec!["project_slug", "character_slug"],
         "test_shot" => vec!["character_slug", "scene_type_slug", "sequence"],
         "chunk_artifact" => vec!["sequence", "character_slug", "scene_type_slug"],
-        "delivery_zip" => vec!["project_slug", "date_compact"],
+        "delivery_archive" => vec!["character_slug", "project_slug", "date_compact"],
         "avatar_json" => vec!["project_slug", "character_slug"],
         _ => vec![],
     }
@@ -692,7 +693,7 @@ mod tests {
     #[test]
     fn tokens_for_known_categories() {
         assert!(!tokens_for_category("scene_video").is_empty());
-        assert!(!tokens_for_category("delivery_zip").is_empty());
+        assert!(!tokens_for_category("delivery_archive").is_empty());
         assert!(tokens_for_category("delivery_metadata").is_empty());
     }
 

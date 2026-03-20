@@ -53,6 +53,10 @@ pub struct ProjectProgressItem {
     pub scenes_total: i64,
     pub progress_pct: f64,
     pub status_color: String,
+    /// Total non-archived characters in the project.
+    pub model_count: i64,
+    /// Characters with readiness state 'ready'.
+    pub models_ready: i64,
 }
 
 /// Top-level disk health data.
@@ -253,6 +257,27 @@ pub async fn project_progress(
     .fetch_all(&state.pool)
     .await?;
 
+    // Character counts per project (non-archived, non-deleted).
+    let char_counts: Vec<(DbId, i64)> = sqlx::query_as(
+        "SELECT project_id, COUNT(*) FROM characters \
+         WHERE deleted_at IS NULL AND status_id != 3 \
+         GROUP BY project_id",
+    )
+    .fetch_all(&state.pool)
+    .await?;
+    let count_map: std::collections::HashMap<DbId, i64> = char_counts.into_iter().collect();
+
+    // Ready character counts from readiness cache per project.
+    let ready_counts: Vec<(DbId, i64)> = sqlx::query_as(
+        "SELECT c.project_id, COUNT(*) FROM character_readiness_cache crc \
+         JOIN characters c ON c.id = crc.character_id \
+         WHERE crc.state = 'ready' AND c.deleted_at IS NULL AND c.status_id != 3 \
+         GROUP BY c.project_id",
+    )
+    .fetch_all(&state.pool)
+    .await?;
+    let ready_map: std::collections::HashMap<DbId, i64> = ready_counts.into_iter().collect();
+
     let items: Vec<ProjectProgressItem> = rows
         .into_iter()
         .map(|r| {
@@ -270,6 +295,9 @@ pub async fn project_progress(
                 "red"
             };
 
+            let model_count = count_map.get(&r.project_id).copied().unwrap_or(0);
+            let models_ready = ready_map.get(&r.project_id).copied().unwrap_or(0);
+
             ProjectProgressItem {
                 project_id: r.project_id,
                 project_name: r.project_name,
@@ -277,6 +305,8 @@ pub async fn project_progress(
                 scenes_total: r.scenes_total,
                 progress_pct: pct,
                 status_color: color.to_string(),
+                model_count,
+                models_ready,
             }
         })
         .collect();

@@ -13,6 +13,8 @@ use serde::{Deserialize, Serialize};
 use x121_core::types::DbId;
 use x121_db::repositories::{CharacterRepo, CharacterSpeechRepo, LanguageRepo, SpeechTypeRepo};
 
+use x121_core::activity::{ActivityLogEntry, ActivityLogLevel, ActivityLogSource};
+
 use crate::error::{AppError, AppResult};
 use crate::handlers::character_speech::{build_deliverable, slugify};
 use crate::middleware::auth::AuthUser;
@@ -24,6 +26,9 @@ use crate::state::AppState;
 pub struct ImportProjectSpeechesRequest {
     pub format: String,
     pub data: String,
+    /// When true, skip entries that already exist (same type + language + text).
+    #[serde(default)]
+    pub skip_existing: bool,
 }
 
 /// Report returned after bulk speech import.
@@ -80,6 +85,7 @@ pub async fn bulk_import_speeches(
                 &body.data,
                 &slug_map,
                 &lang_map,
+                body.skip_existing,
             )
             .await
         }
@@ -92,6 +98,7 @@ pub async fn bulk_import_speeches(
                 &slug_map,
                 &lang_map,
                 &lang_code_map,
+                body.skip_existing,
             )
             .await
         }
@@ -118,6 +125,7 @@ async fn import_json(
     data: &str,
     slug_map: &std::collections::HashMap<String, DbId>,
     lang_map: &std::collections::HashMap<String, i16>,
+    skip_existing: bool,
 ) -> AppResult<Json<DataResponse<BulkImportReport>>> {
     let parsed: serde_json::Value = serde_json::from_str(data)
         .map_err(|e| AppError::BadRequest(format!("Invalid JSON: {e}")))?;
@@ -192,12 +200,42 @@ async fn import_json(
         }
 
         if !entries.is_empty() {
-            let created =
-                CharacterSpeechRepo::bulk_create_with_language(&state.pool, character_id, &entries)
-                    .await?;
-            imported += created.len();
+            let to_create = if skip_existing {
+                // Fetch existing speeches and filter out duplicates.
+                let existing = CharacterSpeechRepo::list_for_character(&state.pool, character_id).await?;
+                let existing_keys: std::collections::HashSet<(i16, i16, String)> = existing
+                    .iter()
+                    .map(|s| (s.speech_type_id, s.language_id, s.text.to_lowercase()))
+                    .collect();
+                let (new_entries, dup_count): (Vec<_>, usize) = {
+                    let mut new_e = Vec::new();
+                    let mut dups = 0usize;
+                    for e in &entries {
+                        if existing_keys.contains(&(e.0, e.1, e.2.to_lowercase())) {
+                            dups += 1;
+                        } else {
+                            new_e.push(e.clone());
+                        }
+                    }
+                    (new_e, dups)
+                };
+                skipped += dup_count;
+                new_entries
+            } else {
+                entries
+            };
+
+            if !to_create.is_empty() {
+                let created =
+                    CharacterSpeechRepo::bulk_create_with_language(&state.pool, character_id, &to_create)
+                        .await?;
+                imported += created.len();
+            }
         }
     }
+
+    let matched: Vec<String> = matched_set.into_iter().collect();
+    let unmatched: Vec<String> = unmatched_set.into_iter().collect();
 
     tracing::info!(
         user_id = user_id,
@@ -207,13 +245,32 @@ async fn import_json(
         "Bulk project speeches imported (JSON)"
     );
 
+    state.activity_broadcaster.publish(
+        ActivityLogEntry::curated(
+            ActivityLogLevel::Info,
+            ActivityLogSource::Api,
+            format!(
+                "Bulk speech import (JSON): {imported} imported, {skipped} skipped, {} matched, {} unmatched",
+                matched.len(), unmatched.len(),
+            ),
+        )
+        .with_project(project_id)
+        .with_user(user_id)
+        .with_fields(serde_json::json!({
+            "imported": imported,
+            "skipped": skipped,
+            "characters_matched": matched,
+            "characters_unmatched": unmatched,
+        })),
+    );
+
     Ok(Json(DataResponse {
         data: BulkImportReport {
             imported,
             skipped,
             errors,
-            characters_matched: matched_set.into_iter().collect(),
-            characters_unmatched: unmatched_set.into_iter().collect(),
+            characters_matched: matched,
+            characters_unmatched: unmatched,
         },
     }))
 }
@@ -227,6 +284,7 @@ async fn import_csv(
     slug_map: &std::collections::HashMap<String, DbId>,
     lang_map: &std::collections::HashMap<String, i16>,
     lang_code_map: &std::collections::HashMap<String, i16>,
+    skip_existing: bool,
 ) -> AppResult<Json<DataResponse<BulkImportReport>>> {
     let mut imported = 0usize;
     let mut skipped = 0usize;
@@ -304,13 +362,37 @@ async fn import_csv(
             .push((speech_type.id, language_id, text));
     }
 
-    // Bulk create per character.
+    // Bulk create per character (with optional dedup).
     for (character_id, entries) in &char_entries {
-        let created =
-            CharacterSpeechRepo::bulk_create_with_language(&state.pool, *character_id, entries)
-                .await?;
-        imported += created.len();
+        let to_create = if skip_existing {
+            let existing = CharacterSpeechRepo::list_for_character(&state.pool, *character_id).await?;
+            let existing_keys: std::collections::HashSet<(i16, i16, String)> = existing
+                .iter()
+                .map(|s| (s.speech_type_id, s.language_id, s.text.to_lowercase()))
+                .collect();
+            let mut new_entries = Vec::new();
+            for e in entries {
+                if existing_keys.contains(&(e.0, e.1, e.2.to_lowercase())) {
+                    skipped += 1;
+                } else {
+                    new_entries.push(e.clone());
+                }
+            }
+            new_entries
+        } else {
+            entries.clone()
+        };
+
+        if !to_create.is_empty() {
+            let created =
+                CharacterSpeechRepo::bulk_create_with_language(&state.pool, *character_id, &to_create)
+                    .await?;
+            imported += created.len();
+        }
     }
+
+    let matched: Vec<String> = matched_set.into_iter().collect();
+    let unmatched: Vec<String> = unmatched_set.into_iter().collect();
 
     tracing::info!(
         user_id = user_id,
@@ -320,13 +402,32 @@ async fn import_csv(
         "Bulk project speeches imported (CSV)"
     );
 
+    state.activity_broadcaster.publish(
+        ActivityLogEntry::curated(
+            ActivityLogLevel::Info,
+            ActivityLogSource::Api,
+            format!(
+                "Bulk speech import (CSV): {imported} imported, {skipped} skipped, {} matched, {} unmatched",
+                matched.len(), unmatched.len(),
+            ),
+        )
+        .with_project(project_id)
+        .with_user(user_id)
+        .with_fields(serde_json::json!({
+            "imported": imported,
+            "skipped": skipped,
+            "characters_matched": matched,
+            "characters_unmatched": unmatched,
+        })),
+    );
+
     Ok(Json(DataResponse {
         data: BulkImportReport {
             imported,
             skipped,
             errors,
-            characters_matched: matched_set.into_iter().collect(),
-            characters_unmatched: unmatched_set.into_iter().collect(),
+            characters_matched: matched,
+            characters_unmatched: unmatched,
         },
     }))
 }

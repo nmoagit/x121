@@ -93,13 +93,25 @@ pub(crate) async fn sync_to_character(
     character_id: DbId,
     metadata: &serde_json::Value,
 ) -> AppResult<()> {
+    // Preserve voice_id from settings — never let metadata generation/import clear it.
+    let mut final_metadata = metadata.clone();
+    if let Ok(Some(character)) = CharacterRepo::find_by_id(pool, character_id).await {
+        if let Some(voice_id) = character.settings.get("elevenlabs_voice").and_then(|v| v.as_str()) {
+            if !voice_id.is_empty() {
+                if let Some(obj) = final_metadata.as_object_mut() {
+                    obj.insert("voice_id".to_string(), serde_json::Value::String(voice_id.to_string()));
+                }
+            }
+        }
+    }
+
     CharacterRepo::update(
         pool,
         character_id,
         &UpdateCharacter {
             name: None,
             status_id: None,
-            metadata: Some(metadata.clone()),
+            metadata: Some(final_metadata),
             settings: None,
             group_id: None,
             blocking_deliverables: None,

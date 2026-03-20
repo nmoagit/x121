@@ -433,8 +433,12 @@ impl SceneVideoVersionRepo {
         pool: &PgPool,
         project_id: DbId,
     ) -> Result<Vec<SceneVideoVersion>, sqlx::Error> {
+        let prefixed = COLUMNS.split(", ")
+            .map(|c| format!("svv.{}", c.trim()))
+            .collect::<Vec<_>>()
+            .join(", ");
         let query = format!(
-            "SELECT {COLUMNS} FROM scene_video_versions svv \
+            "SELECT {prefixed} FROM scene_video_versions svv \
              JOIN scenes s ON s.id = svv.scene_id AND s.deleted_at IS NULL \
              JOIN characters c ON c.id = s.character_id AND c.deleted_at IS NULL \
              WHERE c.project_id = $1 \

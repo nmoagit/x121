@@ -511,8 +511,11 @@ pub async fn import_video(
         SceneVideoVersionRepo::create_as_final(&state.pool, &input).await?
     };
 
-    // Update scene status to Generated (has video content).
-    SceneRepo::set_status(&state.pool, scene_id, SceneStatus::Generated.id()).await?;
+    // Update scene status — don't downgrade from Approved/Delivered if there's
+    // already an approved final clip. Only promote from Pending/Generating.
+    if !has_approved_final {
+        SceneRepo::set_status(&state.pool, scene_id, SceneStatus::Generated.id()).await?;
+    }
 
     // Best-effort: generate a low-res preview copy for card thumbnails.
     generate_preview_for_version(&state, &version).await;

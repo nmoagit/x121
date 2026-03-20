@@ -327,6 +327,28 @@ impl CharacterSpeechRepo {
         Ok(results)
     }
 
+    /// Count speeches per language for all characters in a project.
+    ///
+    /// Returns `(character_id, language_id, code, flag_code, count)` tuples.
+    pub async fn count_by_language_for_project(
+        pool: &PgPool,
+        project_id: DbId,
+    ) -> Result<Vec<ProjectLanguageCount>, sqlx::Error> {
+        sqlx::query_as::<_, ProjectLanguageCount>(
+            "SELECT cs.character_id, l.id AS language_id, l.code, l.flag_code, \
+                    COUNT(cs.id)::BIGINT AS count \
+             FROM character_speeches cs \
+             JOIN characters c ON c.id = cs.character_id AND c.project_id = $1 \
+             JOIN languages l ON l.id = cs.language_id \
+             WHERE cs.deleted_at IS NULL \
+             GROUP BY cs.character_id, l.id, l.code, l.flag_code \
+             ORDER BY cs.character_id, l.name",
+        )
+        .bind(project_id)
+        .fetch_all(pool)
+        .await
+    }
+
     /// Count speeches per language for a character.
     ///
     /// Returns `(language_id, code, flag_code, count)` tuples.
@@ -350,6 +372,16 @@ impl CharacterSpeechRepo {
         .fetch_all(pool)
         .await
     }
+}
+
+/// Count of speeches per language per character (project-level).
+#[derive(Debug, Clone, Serialize, sqlx::FromRow)]
+pub struct ProjectLanguageCount {
+    pub character_id: DbId,
+    pub language_id: i16,
+    pub code: String,
+    pub flag_code: String,
+    pub count: i64,
 }
 
 /// Count of speeches per language for a character.

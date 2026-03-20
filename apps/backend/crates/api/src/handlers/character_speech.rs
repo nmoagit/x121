@@ -17,6 +17,8 @@ use x121_db::models::character_speech::{
 use x121_db::models::speech_status::status_name_to_id;
 use x121_db::repositories::{CharacterSpeechRepo, LanguageRepo, SpeechTypeRepo};
 
+use x121_core::activity::{ActivityLogEntry, ActivityLogLevel, ActivityLogSource};
+
 use crate::error::{AppError, AppResult};
 use crate::middleware::auth::AuthUser;
 use crate::response::DataResponse;
@@ -410,6 +412,20 @@ pub async fn import_speeches(
         imported = imported,
         created_types = ?created_types,
         "Speeches imported"
+    );
+
+    state.activity_broadcaster.publish(
+        ActivityLogEntry::curated(
+            ActivityLogLevel::Info,
+            ActivityLogSource::Api,
+            format!("Imported {imported} speech{} for character {character_id}", if imported != 1 { "es" } else { "" }),
+        )
+        .with_user(auth.user_id)
+        .with_fields(serde_json::json!({
+            "character_id": character_id,
+            "imported": imported,
+            "format": body.format,
+        })),
     );
 
     Ok(Json(DataResponse {

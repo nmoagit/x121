@@ -8,7 +8,7 @@ use crate::models::output_format_profile::{
 };
 
 const COLUMNS: &str = "id, name, description, resolution, codec, container, \
-     bitrate_kbps, framerate, pixel_format, extra_ffmpeg_args, is_default, created_at, updated_at";
+     bitrate_kbps, framerate, pixel_format, extra_ffmpeg_args, is_default, is_passthrough, created_at, updated_at";
 
 /// Provides CRUD operations for output format profiles.
 pub struct OutputFormatProfileRepo;

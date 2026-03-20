@@ -114,6 +114,25 @@ impl ReadinessCacheRepo {
             .await
     }
 
+    /// Get a summary of readiness states across ALL characters.
+    ///
+    /// Returns `(ready_count, partially_ready_count, not_started_count)`.
+    pub async fn summary_all(pool: &PgPool) -> Result<(i64, i64, i64), sqlx::Error> {
+        let row: (Option<i64>, Option<i64>, Option<i64>) = sqlx::query_as(
+            "SELECT
+                COUNT(*) FILTER (WHERE crc.state = 'ready'),
+                COUNT(*) FILTER (WHERE crc.state = 'partially_ready'),
+                COUNT(*) FILTER (WHERE crc.state = 'not_started')
+             FROM character_readiness_cache crc
+             JOIN characters c ON c.id = crc.character_id
+             WHERE c.deleted_at IS NULL",
+        )
+        .fetch_one(pool)
+        .await?;
+
+        Ok((row.0.unwrap_or(0), row.1.unwrap_or(0), row.2.unwrap_or(0)))
+    }
+
     /// Get a summary of readiness states for characters in a project.
     ///
     /// Returns `(ready_count, partially_ready_count, not_started_count)`.

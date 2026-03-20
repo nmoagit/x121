@@ -37,6 +37,31 @@ impl DeliveryExportRepo {
             .await
     }
 
+    /// Atomically claim the oldest pending export by setting its status to assembling.
+    ///
+    /// Uses `FOR UPDATE SKIP LOCKED` to prevent double-processing when multiple
+    /// server instances are running.
+    pub async fn claim_next_pending(
+        pool: &PgPool,
+    ) -> Result<Option<DeliveryExport>, sqlx::Error> {
+        let pending = x121_core::assembly::EXPORT_STATUS_ID_PENDING;
+        let assembling = x121_core::assembly::EXPORT_STATUS_ID_ASSEMBLING;
+        let query = format!(
+            "UPDATE delivery_exports SET status_id = {assembling}, started_at = NOW() \
+             WHERE id = ( \
+                SELECT id FROM delivery_exports \
+                WHERE status_id = {pending} \
+                ORDER BY created_at ASC \
+                LIMIT 1 \
+                FOR UPDATE SKIP LOCKED \
+             ) \
+             RETURNING {COLUMNS}"
+        );
+        sqlx::query_as::<_, DeliveryExport>(&query)
+            .fetch_optional(pool)
+            .await
+    }
+
     /// Find a delivery export by ID.
     pub async fn find_by_id(
         pool: &PgPool,
@@ -145,6 +170,9 @@ impl DeliveryExportRepo {
     /// Joins characters with completed delivery exports to determine
     /// which characters have been delivered, which need re-delivery
     /// (updated_at > last export), and which have never been delivered.
+    ///
+    /// Only considers exports where the character was actually included
+    /// (`characters_json IS NULL` means all, otherwise checks the JSON array).
     pub async fn delivery_status_by_project(
         pool: &PgPool,
         project_id: DbId,
@@ -159,12 +187,15 @@ impl DeliveryExportRepo {
                         WHEN c.updated_at > de.completed_at THEN 'needs_redelivery' \
                         ELSE 'delivered' \
                     END AS status, \
-                    de.completed_at AS last_delivered_at \
+                    de.completed_at AS last_delivered_at, \
+                    de.id AS export_id \
                  FROM characters c \
                  LEFT JOIN LATERAL ( \
-                    SELECT completed_at \
+                    SELECT id, completed_at \
                     FROM delivery_exports \
-                    WHERE project_id = $1 AND status_id = {completed} \
+                    WHERE project_id = $1 \
+                      AND status_id = {completed} \
+                      AND (characters_json IS NULL OR characters_json @> to_jsonb(c.id)) \
                     ORDER BY completed_at DESC \
                     LIMIT 1 \
                  ) de ON TRUE \

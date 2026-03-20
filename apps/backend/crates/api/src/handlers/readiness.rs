@@ -136,10 +136,12 @@ pub async fn get_readiness_summary(
     State(state): State<AppState>,
     Query(params): Query<ReadinessSummaryParams>,
 ) -> AppResult<impl IntoResponse> {
-    let project_id = params.project_id.unwrap_or(0);
-
-    let (ready, partially_ready, not_started) =
-        ReadinessCacheRepo::summary_by_project(&state.pool, project_id).await?;
+    let (ready, partially_ready, not_started) = if let Some(pid) = params.project_id {
+        ReadinessCacheRepo::summary_by_project(&state.pool, pid).await?
+    } else {
+        // No project filter — aggregate across all projects.
+        ReadinessCacheRepo::summary_all(&state.pool).await?
+    };
 
     let total = ready + partially_ready + not_started;
 

@@ -30,6 +30,12 @@ const ALL_EXPORT_STATUSES: &[&str] = &[
     EXPORT_STATUS_FAILED,
 ];
 
+/// Get a human-readable label for an export status ID (1-indexed).
+pub fn export_status_label(status_id: i16) -> Option<&'static str> {
+    let idx = (status_id - 1) as usize;
+    ALL_EXPORT_STATUSES.get(idx).copied()
+}
+
 // ---------------------------------------------------------------------------
 // Export status IDs (match seed data in migration 000078)
 // ---------------------------------------------------------------------------
@@ -100,6 +106,7 @@ pub const VALID_WATERMARK_POSITIONS: &[&str] = &[
 pub enum IssueSeverity {
     Error,
     Warning,
+    Info,
 }
 
 /// A single validation issue found during pre-export checks.
@@ -117,6 +124,7 @@ pub struct ValidationResult {
     pub passed: bool,
     pub errors: Vec<ValidationIssue>,
     pub warnings: Vec<ValidationIssue>,
+    pub infos: Vec<ValidationIssue>,
 }
 
 impl ValidationResult {
@@ -132,11 +140,17 @@ impl ValidationResult {
             .filter(|i| i.severity == IssueSeverity::Warning)
             .cloned()
             .collect();
+        let infos: Vec<_> = issues
+            .iter()
+            .filter(|i| i.severity == IssueSeverity::Info)
+            .cloned()
+            .collect();
         let passed = errors.is_empty();
         Self {
             passed,
             errors,
             warnings,
+            infos,
         }
     }
 }

@@ -20,24 +20,26 @@ impl SpeechTypeRepo {
     }
 
     /// Create a new speech type with auto-assigned sort_order (MAX + 1).
+    /// Name is normalised to lowercase.
     pub async fn create(pool: &PgPool, name: &str) -> Result<SpeechType, sqlx::Error> {
+        let normalised = name.to_lowercase();
         let query = format!(
             "INSERT INTO speech_types (name, sort_order) \
              VALUES ($1, (SELECT COALESCE(MAX(sort_order), 0) + 1 FROM speech_types)) \
              RETURNING {COLUMNS}"
         );
         sqlx::query_as::<_, SpeechType>(&query)
-            .bind(name)
+            .bind(&normalised)
             .fetch_one(pool)
             .await
     }
 
-    /// Find a speech type by exact name.
+    /// Find a speech type by name (case-insensitive).
     pub async fn find_by_name(
         pool: &PgPool,
         name: &str,
     ) -> Result<Option<SpeechType>, sqlx::Error> {
-        let query = format!("SELECT {COLUMNS} FROM speech_types WHERE name = $1");
+        let query = format!("SELECT {COLUMNS} FROM speech_types WHERE LOWER(name) = LOWER($1)");
         sqlx::query_as::<_, SpeechType>(&query)
             .bind(name)
             .fetch_optional(pool)

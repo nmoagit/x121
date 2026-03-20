@@ -76,4 +76,6 @@ pub struct CharacterDeliveryStatus {
     pub character_name: String,
     pub status: String,
     pub last_delivered_at: Option<Timestamp>,
+    /// ID of the most recent completed export containing this character.
+    pub export_id: Option<DbId>,
 }

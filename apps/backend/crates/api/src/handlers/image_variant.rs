@@ -16,6 +16,8 @@ use x121_db::models::image::{CreateImageVariant, UpdateImageVariant};
 use x121_db::models::status::ImageVariantStatus;
 use x121_db::repositories::ImageVariantRepo;
 
+use x121_core::activity::{ActivityLogEntry, ActivityLogLevel, ActivityLogSource};
+
 use crate::error::{AppError, AppResult};
 use crate::response::DataResponse;
 use crate::state::AppState;
@@ -468,6 +470,21 @@ pub async fn upload_manual_variant(
     };
 
     let variant = ImageVariantRepo::create(&state.pool, &input).await?;
+
+    state.activity_broadcaster.publish(
+        ActivityLogEntry::curated(
+            ActivityLogLevel::Info,
+            ActivityLogSource::Api,
+            format!("Image uploaded for character {character_id}: {filename}"),
+        )
+        .with_fields(serde_json::json!({
+            "character_id": character_id,
+            "variant_id": variant.id,
+            "variant_type": &input.variant_type,
+            "filename": filename,
+        })),
+    );
+
     Ok((StatusCode::CREATED, Json(DataResponse { data: variant })))
 }
 

@@ -19,6 +19,8 @@
 //! GET    /{project_id}/delivery-validation      validate_delivery
 //! GET    /{project_id}/exports                  list_exports
 //! GET    /{project_id}/exports/{export_id}      get_export
+//! POST   /{project_id}/exports/{export_id}/cancel     cancel_export
+//! GET    /{project_id}/exports/{export_id}/download   download_export
 //! GET    /{project_id}/delivery-logs            list_delivery_logs
 //! GET    /{project_id}/delivery-status          get_delivery_status
 //!
@@ -64,6 +66,18 @@ pub fn export_router() -> Router<AppState> {
         .route(
             "/{project_id}/exports/{export_id}",
             get(delivery::get_export),
+        )
+        .route(
+            "/{project_id}/exports/{export_id}/cancel",
+            post(delivery::cancel_export),
+        )
+        .route(
+            "/{project_id}/exports/{export_id}/download",
+            get(delivery::download_export),
+        )
+        .route(
+            "/{project_id}/exports/{export_id}/download/{character_slug}",
+            get(delivery::download_model_archive),
         )
         // Delivery logs (PRD-39 Amendment A.3).
         .route(

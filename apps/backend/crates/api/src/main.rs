@@ -336,6 +336,14 @@ async fn main() {
         schedule_executor_cancel_clone,
     ));
 
+    // Spawn delivery assembly pipeline (PRD-39).
+    let delivery_assembly_cancel = tokio_util::sync::CancellationToken::new();
+    let delivery_assembly_cancel_clone = delivery_assembly_cancel.clone();
+    let delivery_assembly_handle = tokio::spawn(x121_api::background::delivery_assembly::run(
+        state.clone(),
+        delivery_assembly_cancel_clone,
+    ));
+
     // --- Router ---
     let app = build_app_router(state, &config);
 
@@ -388,6 +396,11 @@ async fn main() {
     schedule_executor_cancel.cancel();
     let _ = tokio::time::timeout(Duration::from_secs(5), schedule_executor_handle).await;
     tracing::info!("Schedule executor stopped");
+
+    // Stop delivery assembly pipeline (PRD-39). 30s timeout for FFmpeg transcodes.
+    delivery_assembly_cancel.cancel();
+    let _ = tokio::time::timeout(Duration::from_secs(30), delivery_assembly_handle).await;
+    tracing::info!("Delivery assembly pipeline stopped");
 
     // Drop the event bus sender to close the broadcast channel.
     // This signals persistence and notification router to shut down.

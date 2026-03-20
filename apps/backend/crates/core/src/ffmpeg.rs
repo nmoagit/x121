@@ -494,6 +494,165 @@ pub struct AudioTrackInfo {
     pub language: Option<String>,
 }
 
+// ---------------------------------------------------------------------------
+// Delivery transcode (format profile)
+// ---------------------------------------------------------------------------
+
+/// Parameters for transcoding to an output format profile.
+#[derive(Debug, Clone)]
+pub struct TranscodeProfileParams {
+    pub resolution: String,
+    pub codec: String,
+    pub container: String,
+    pub bitrate_kbps: Option<i32>,
+    pub framerate: Option<f32>,
+    pub pixel_format: Option<String>,
+    pub extra_ffmpeg_args: Option<String>,
+}
+
+/// Map a codec name (as stored in the DB) to the FFmpeg encoder name.
+fn codec_to_encoder(codec: &str) -> &str {
+    match codec {
+        "h264" => "libx264",
+        "h265" | "hevc" => "libx265",
+        "prores" => "prores_ks",
+        "vp9" => "libvpx-vp9",
+        "av1" => "libaom-av1",
+        other => other,
+    }
+}
+
+/// Check whether a video needs transcoding to match the given profile.
+///
+/// Returns `false` if the source already matches the target codec and resolution,
+/// allowing a stream copy instead of a full re-encode.
+pub fn needs_transcode(probe: &FfprobeOutput, params: &TranscodeProfileParams) -> bool {
+    let source_codec = parse_video_codec(probe);
+    let (sw, sh) = parse_resolution(probe);
+
+    // Normalize codec names for comparison.
+    let target_codec = match params.codec.as_str() {
+        "h265" => "hevc",
+        other => other,
+    };
+    let source_normalized = match source_codec.as_str() {
+        "h265" => "hevc",
+        other => other,
+    };
+
+    if source_normalized != target_codec {
+        return true;
+    }
+
+    // Check resolution (format: "WIDTHxHEIGHT").
+    if let Some((tw, th)) = params.resolution.split_once('x') {
+        let tw: i32 = tw.parse().unwrap_or(0);
+        let th: i32 = th.parse().unwrap_or(0);
+        if tw > 0 && th > 0 && (sw != tw || sh != th) {
+            return true;
+        }
+    }
+
+    // Check framerate if specified.
+    if let Some(target_fps) = params.framerate {
+        let source_fps = parse_framerate(probe) as f32;
+        if (source_fps - target_fps).abs() > 0.5 {
+            return true;
+        }
+    }
+
+    false
+}
+
+/// Transcode a video file to match an output format profile.
+pub async fn transcode_to_profile(
+    input_path: &Path,
+    output_path: &Path,
+    params: &TranscodeProfileParams,
+) -> Result<TranscodePreviewResult, FfmpegError> {
+    if !input_path.exists() {
+        return Err(FfmpegError::VideoNotFound(
+            input_path.to_string_lossy().to_string(),
+        ));
+    }
+
+    if let Some(parent) = output_path.parent() {
+        tokio::fs::create_dir_all(parent).await?;
+    }
+
+    let encoder = codec_to_encoder(&params.codec);
+
+    let mut args: Vec<String> = vec![
+        "-y".into(),
+        "-i".into(),
+        input_path.to_string_lossy().to_string(),
+        "-c:v".into(),
+        encoder.into(),
+        "-s".into(),
+        params.resolution.clone(),
+    ];
+
+    if let Some(kbps) = params.bitrate_kbps {
+        args.push("-b:v".into());
+        args.push(format!("{kbps}k"));
+    } else if encoder == "libx264" || encoder == "libx265" {
+        // Sensible default CRF when no bitrate specified.
+        args.push("-crf".into());
+        args.push("18".into());
+    }
+
+    if let Some(fps) = params.framerate {
+        args.push("-r".into());
+        args.push(format!("{fps}"));
+    }
+
+    if let Some(ref pf) = params.pixel_format {
+        args.push("-pix_fmt".into());
+        args.push(pf.clone());
+    }
+
+    // Audio: copy if possible, re-encode to AAC as fallback.
+    args.push("-c:a".into());
+    args.push("aac".into());
+    args.push("-b:a".into());
+    args.push("128k".into());
+
+    // Container-specific flags.
+    if matches!(params.container.as_str(), "mp4" | "mov") {
+        args.push("-movflags".into());
+        args.push("+faststart".into());
+    }
+
+    // Extra user-provided FFmpeg args.
+    if let Some(ref extra) = params.extra_ffmpeg_args {
+        for arg in extra.split_whitespace() {
+            args.push(arg.to_string());
+        }
+    }
+
+    args.push(output_path.to_string_lossy().to_string());
+
+    let output = tokio::process::Command::new("ffmpeg")
+        .args(&args)
+        .output()
+        .await
+        .map_err(FfmpegError::NotFound)?;
+
+    if !output.status.success() {
+        return Err(FfmpegError::ExecutionFailed {
+            exit_code: output.status.code(),
+            stderr: String::from_utf8_lossy(&output.stderr).to_string(),
+        });
+    }
+
+    let metadata = tokio::fs::metadata(output_path).await?;
+
+    Ok(TranscodePreviewResult {
+        output_path: output_path.to_string_lossy().to_string(),
+        file_size: metadata.len(),
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
