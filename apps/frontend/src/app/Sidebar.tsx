@@ -196,7 +196,7 @@ function GlobalSidebarContent({ collapsed }: { collapsed: boolean }) {
 
   return (
     <nav
-      className={cn("flex flex-col gap-1 py-2 h-full", collapsed ? "px-0.5" : "px-1.5")}
+      className={cn("flex flex-col gap-1 pt-2 h-full", collapsed ? "px-0.5" : "px-1.5")}
       aria-label="Main navigation"
     >
       {/* Scrollable nav groups */}
@@ -221,8 +221,8 @@ function GlobalSidebarContent({ collapsed }: { collapsed: boolean }) {
         </div>
       )}
 
-      {/* Compact nav toggle — h-7 to match footer bar */}
-      <div className="shrink-0 border-t border-[var(--color-border-default)] h-7 flex items-center">
+      {/* Compact nav toggle — h-7 to match footer bar exactly */}
+      <div className="shrink-0 border-t border-[var(--color-border-default)] h-7 flex items-center -mx-px">
         {!collapsed && <CompactNavToggle />}
         {collapsed && <CompactNavToggleCollapsed />}
       </div>
