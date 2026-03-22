@@ -11,7 +11,7 @@ import { Info, X } from "@/tokens/icons";
 
 /** Descriptions keyed by route path. Only pages listed here show the banner. */
 const PAGE_GUIDES: Record<string, string> = {
-  "/": "Welcome to X121. This is your Studio Pulse dashboard — a real-time overview of active tasks, generation progress, and system health across all projects.",
+  "/": "Welcome to αN2N. This is your Studio Pulse dashboard — a real-time overview of active tasks, generation progress, and system health across all projects.",
   "/performance": "Track generation performance metrics, quality scores, and resource utilization over time. Use date range filters to compare periods.",
   "/dashboard/customize": "Rearrange, add, or remove dashboard widgets to create your ideal studio overview. Changes are saved per-user.",
   "/projects": "Your projects hub. Each project groups models, scenes, and deliverables together. Create a new project to get started.",
