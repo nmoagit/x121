@@ -124,7 +124,8 @@ function GlobalSidebarContent({ collapsed }: { collapsed: boolean }) {
   const { data: pipelines, isLoading: pipelinesLoading } = usePipelines();
 
   const navGroups = useMemo<NavGroupDef[]>(() => {
-    let groups = [...NAV_GROUPS];
+    // Deep-copy groups so we never mutate the module-level NAV_GROUPS constant.
+    let groups = NAV_GROUPS.map((g) => ({ ...g, items: [...g.items] }));
 
     // Inject active pipelines into the "Pipelines" group as indented sub-items.
     const pipelinesGroup = groups.find((g) => g.label === "Pipelines");
