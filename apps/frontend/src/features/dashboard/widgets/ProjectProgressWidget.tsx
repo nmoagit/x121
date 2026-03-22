@@ -42,7 +42,7 @@ function MiniIndicator({
    Project row — primary metric: model completeness
    -------------------------------------------------------------------------- */
 
-function ProjectRow({ item }: { item: ProjectProgressItem }) {
+function ProjectRow({ item, showPipeline = true }: { item: ProjectProgressItem; showPipeline?: boolean }) {
   const scenePct = item.scenes_total > 0 ? Math.round((item.scenes_approved / item.scenes_total) * 100) : 0;
   const allApproved = item.scenes_total > 0 && item.scenes_approved >= item.scenes_total;
   const fillColor = allApproved ? "bg-green-400" : "bg-cyan-400";
@@ -51,7 +51,7 @@ function ProjectRow({ item }: { item: ProjectProgressItem }) {
     <div className={`py-2 ${TERMINAL_DIVIDER} last:border-b-0 ${TERMINAL_ROW_HOVER}`}>
       <div className="flex items-center justify-between mb-1">
         <p className="font-mono text-xs text-[var(--color-text-primary)] truncate">
-          {item.pipeline_code && (
+          {showPipeline && item.pipeline_code && (
             <span className="text-[var(--color-text-muted)]">{item.pipeline_code} / </span>
           )}
           {item.project_name}
@@ -94,7 +94,7 @@ function ProjectRow({ item }: { item: ProjectProgressItem }) {
    Widget
    -------------------------------------------------------------------------- */
 
-export function ProjectProgressWidget({ pipelineId }: { pipelineId?: number } = {}) {
+export function ProjectProgressWidget({ pipelineId, showPipeline = true }: { pipelineId?: number; showPipeline?: boolean } = {}) {
   const { data: projects, isLoading, error, refetch } = useProjectProgress(pipelineId);
 
   return (
@@ -119,7 +119,7 @@ export function ProjectProgressWidget({ pipelineId }: { pipelineId?: number } = 
       ) : (
         <div className="flex flex-col">
           {projects.map((p) => (
-            <ProjectRow key={p.project_id} item={p} />
+            <ProjectRow key={p.project_id} item={p} showPipeline={showPipeline} />
           ))}
         </div>
       )}

@@ -31,11 +31,11 @@ function statusColor(status: string): string {
    -------------------------------------------------------------------------- */
 
 /** Build a human-readable task label: pipeline / avatar — scene — track */
-function TaskLabel({ task }: { task: ActiveTaskItem }) {
+function TaskLabel({ task, showPipeline = true }: { task: ActiveTaskItem; showPipeline?: boolean }) {
   if (task.avatar_name) {
     return (
       <>
-        {task.pipeline_code && (
+        {showPipeline && task.pipeline_code && (
           <span className="text-[var(--color-text-muted)]">{task.pipeline_code} / </span>
         )}
         {task.avatar_name}
@@ -52,7 +52,7 @@ function TaskLabel({ task }: { task: ActiveTaskItem }) {
   }
   return (
     <>
-      {task.pipeline_code && (
+      {showPipeline && task.pipeline_code && (
         <span className="text-[var(--color-text-muted)]">{task.pipeline_code} / </span>
       )}
       {task.job_type
@@ -62,12 +62,12 @@ function TaskLabel({ task }: { task: ActiveTaskItem }) {
   );
 }
 
-function TaskRow({ task }: { task: ActiveTaskItem }) {
+function TaskRow({ task, showPipeline = true }: { task: ActiveTaskItem; showPipeline?: boolean }) {
   return (
     <div className={`flex items-center justify-between gap-2 py-2 ${TERMINAL_DIVIDER} last:border-b-0 ${TERMINAL_ROW_HOVER}`}>
       <div className="flex-1 min-w-0">
         <p className="font-mono text-xs text-[var(--color-text-primary)] truncate">
-          <TaskLabel task={task} />
+          <TaskLabel task={task} showPipeline={showPipeline} />
         </p>
         {task.progress_message && (
           <p className="font-mono text-xs text-[var(--color-text-muted)] truncate">{task.progress_message}</p>
@@ -129,7 +129,7 @@ function SummaryBar({ tasks, scheduledCount }: { tasks: ActiveTaskItem[]; schedu
    Widget
    -------------------------------------------------------------------------- */
 
-export function ActiveTasksWidget({ pipelineId }: { pipelineId?: number } = {}) {
+export function ActiveTasksWidget({ pipelineId, showPipeline = true }: { pipelineId?: number; showPipeline?: boolean } = {}) {
   const { data: tasks, isLoading, error, refetch } = useActiveTasks(pipelineId);
   const { data: schedules } = useScheduledGenerationsWidget();
 
@@ -158,7 +158,7 @@ export function ActiveTasksWidget({ pipelineId }: { pipelineId?: number } = {}) 
         <div className="flex flex-col">
           <SummaryBar tasks={tasks} scheduledCount={scheduledCount} />
           {tasks.map((task) => (
-            <TaskRow key={task.job_id} task={task} />
+            <TaskRow key={task.job_id} task={task} showPipeline={showPipeline} />
           ))}
         </div>
       )}

@@ -52,8 +52,8 @@ export function PipelineDashboardPage() {
 
       {/* Pipeline-scoped dashboard widgets */}
       <div className="grid grid-cols-1 gap-[var(--spacing-4)] lg:grid-cols-2">
-        <ActiveTasksWidget pipelineId={pipelineId} />
-        <ProjectProgressWidget pipelineId={pipelineId} />
+        <ActiveTasksWidget pipelineId={pipelineId} showPipeline={false} />
+        <ProjectProgressWidget pipelineId={pipelineId} showPipeline={false} />
       </div>
 
       {/* Seed slots summary */}
