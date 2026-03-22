@@ -215,7 +215,7 @@ function GlobalSidebarContent({ collapsed }: { collapsed: boolean }) {
       </div>
 
       {/* Pinned bottom: compact toggle + Settings group */}
-      <div className={cn("shrink-0 pt-1 mt-1", !collapsed && "border-t border-[var(--color-border-default)]")}>
+      <div className={cn("shrink-0", !collapsed && "border-t border-[var(--color-border-default)]")}>
         {!collapsed && <CompactNavToggle />}
         {collapsed && <CompactNavToggleCollapsed />}
         {bottomGroup && (
