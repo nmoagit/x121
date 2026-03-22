@@ -90,6 +90,8 @@ export {
   // Collaboration
   Lock,
   Unlock,
+  // Pipeline
+  GitBranch,
   // Workers
   Server,
   Cpu,
