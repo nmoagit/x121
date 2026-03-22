@@ -12,15 +12,15 @@ import { Badge, Button } from "@/components";
    -------------------------------------------------------------------------- */
 
 interface VariantReviewEntry {
-  character_id: number;
+  avatar_id: number;
   approved: boolean;
 }
 
 interface StepVariantReviewProps {
   /** Current step data from the session. */
   stepData: Record<string, unknown>;
-  /** Character IDs from the session. */
-  characterIds: number[];
+  /** Avatar IDs from the session. */
+  avatarIds: number[];
   /** Callback to update step data. */
   onUpdateStepData: (data: Record<string, unknown>) => void;
 }
@@ -31,7 +31,7 @@ interface StepVariantReviewProps {
 
 export function StepVariantReview({
   stepData,
-  characterIds,
+  avatarIds,
   onUpdateStepData,
 }: StepVariantReviewProps) {
   const reviewedVariants = (
@@ -39,11 +39,11 @@ export function StepVariantReview({
   ) ?? [];
 
   const approvedCount = reviewedVariants.filter((v) => v.approved).length;
-  const allReviewed = reviewedVariants.length === characterIds.length;
+  const allReviewed = reviewedVariants.length === avatarIds.length;
 
   function handleApproveAll() {
-    const entries: VariantReviewEntry[] = characterIds.map((id) => ({
-      character_id: id,
+    const entries: VariantReviewEntry[] = avatarIds.map((id) => ({
+      avatar_id: id,
       approved: true,
     }));
     onUpdateStepData({
@@ -52,21 +52,21 @@ export function StepVariantReview({
     });
   }
 
-  function handleToggleApproval(characterId: number) {
+  function handleToggleApproval(avatarId: number) {
     const existing = reviewedVariants.find(
-      (v) => v.character_id === characterId,
+      (v) => v.avatar_id === avatarId,
     );
     let updated: VariantReviewEntry[];
     if (existing) {
       updated = reviewedVariants.map((v) =>
-        v.character_id === characterId
+        v.avatar_id === avatarId
           ? { ...v, approved: !v.approved }
           : v,
       );
     } else {
       updated = [
         ...reviewedVariants,
-        { character_id: characterId, approved: true },
+        { avatar_id: avatarId, approved: true },
       ];
     }
     onUpdateStepData({
@@ -76,10 +76,10 @@ export function StepVariantReview({
   }
 
   function getApprovalStatus(
-    characterId: number,
+    avatarId: number,
   ): "approved" | "rejected" | "unreviewed" {
     const entry = reviewedVariants.find(
-      (v) => v.character_id === characterId,
+      (v) => v.avatar_id === avatarId,
     );
     if (!entry) return "unreviewed";
     return entry.approved ? "approved" : "rejected";
@@ -106,7 +106,7 @@ export function StepVariantReview({
           Approve All
         </Button>
         <span className="text-sm text-[var(--color-text-muted)]">
-          {approvedCount} / {characterIds.length} approved
+          {approvedCount} / {avatarIds.length} approved
         </span>
       </div>
 
@@ -115,7 +115,7 @@ export function StepVariantReview({
         data-testid="variant-grid"
         className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4"
       >
-        {characterIds.map((charId) => {
+        {avatarIds.map((charId) => {
           const status = getApprovalStatus(charId);
           return (
             <div
@@ -139,7 +139,7 @@ export function StepVariantReview({
             >
               <div className="mb-2 h-16 w-full rounded bg-[var(--color-surface-tertiary)]" />
               <p className="text-xs text-[var(--color-text-primary)]">
-                Character {charId}
+                Avatar {charId}
               </p>
               <Badge
                 variant={

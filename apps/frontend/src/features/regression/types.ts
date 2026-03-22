@@ -49,7 +49,7 @@ export type RunStatus = "pending" | "running" | "completed" | "failed" | "cancel
 
 export interface RegressionReference {
   id: number;
-  character_id: number;
+  avatar_id: number;
   scene_type_id: number;
   reference_scene_id: number;
   baseline_scores: Record<string, number>;
@@ -109,7 +109,7 @@ export interface RunReport {
    -------------------------------------------------------------------------- */
 
 export interface CreateRegressionReference {
-  character_id: number;
+  avatar_id: number;
   scene_type_id: number;
   reference_scene_id: number;
   baseline_scores: Record<string, number>;

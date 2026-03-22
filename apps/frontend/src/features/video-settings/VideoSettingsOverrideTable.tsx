@@ -1,5 +1,5 @@
 /**
- * Compact table for video settings overrides at project/group/character level.
+ * Compact table for video settings overrides at project/group/avatar level.
  *
  * Only shows active scene types. Shows inherited values (from scene type
  * defaults) in placeholders so users can see what they'd get without an override.
@@ -173,7 +173,7 @@ interface VideoSettingsOverrideTableProps {
   onDelete: (sceneTypeId: number) => void;
   savingIds?: Set<number>;
   projectId?: number;
-  /** When provided, only scene types in this set are shown (project/character enabled scenes). */
+  /** When provided, only scene types in this set are shown (project/avatar enabled scenes). */
   enabledSceneTypeIds?: Set<number>;
 }
 
@@ -191,7 +191,7 @@ export function VideoSettingsOverrideTable({
   if (sceneTypesLoading || isLoading) return <LoadingPane />;
 
   // Filter to enabled scene types only. If enabledSceneTypeIds is provided, use
-  // that (project/character scope). Otherwise fall back to is_active on the type.
+  // that (project/avatar scope). Otherwise fall back to is_active on the type.
   const visible = (sceneTypes ?? []).filter((st) =>
     enabledSceneTypeIds ? enabledSceneTypeIds.has(st.id) : st.is_active,
   );

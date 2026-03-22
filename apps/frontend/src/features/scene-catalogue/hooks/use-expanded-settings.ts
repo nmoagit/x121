@@ -5,7 +5,7 @@
  * cross-join with the catalogue is needed. This hook just adds `isFirstInGroup`
  * and `groupSize` annotations for table rendering.
  *
- * Used by ProjectSceneSettings, CharacterSceneOverrides, and CharacterScenesTab.
+ * Used by ProjectSceneSettings, AvatarSceneOverrides, and AvatarScenesTab.
  */
 
 import { useMemo } from "react";
@@ -19,7 +19,7 @@ import {
 /**
  * Annotate effective scene settings with group metadata for table display.
  *
- * @param settings - The effective scene settings from any level (project, character, etc.)
+ * @param settings - The effective scene settings from any level (project, avatar, etc.)
  * @returns expandedRows (one per scene_type x track) with group annotations
  */
 export function useExpandedSettings(

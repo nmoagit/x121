@@ -1,11 +1,11 @@
 /**
- * Review Notes page — project/character/scene picker wrapping
+ * Review Notes page — project/avatar/scene picker wrapping
  * note timeline for a specific segment.
  *
- * Flow: Project -> Character -> Scene -> Segment ID (typed) -> NoteTimeline
+ * Flow: Project -> Avatar -> Scene -> Segment ID (typed) -> NoteTimeline
  */
 
-import { ProjectCharacterPicker, ScenePicker, SegmentIdPicker } from "@/components/domain";
+import { ProjectAvatarPicker, ScenePicker, SegmentIdPicker } from "@/components/domain";
 import { LoadingPane } from "@/components/primitives";
 import { FileText } from "@/tokens/icons";
 
@@ -28,13 +28,13 @@ function SegmentReviewNotes({ segmentId }: { segmentId: number }) {
 
 export function ReviewNotesPage() {
   return (
-    <ProjectCharacterPicker
+    <ProjectAvatarPicker
       title="Review Notes"
       description="Collaborative review notes for segment-level feedback."
     >
-      {(_projectId, characterId) => (
+      {(_projectId, avatarId) => (
         <ScenePicker
-          characterId={characterId}
+          avatarId={avatarId}
           emptyIcon={<FileText size={32} />}
           noScenesDescription="This model has no scenes yet."
         >
@@ -48,6 +48,6 @@ export function ReviewNotesPage() {
           )}
         </ScenePicker>
       )}
-    </ProjectCharacterPicker>
+    </ProjectAvatarPicker>
   );
 }

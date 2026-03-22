@@ -14,7 +14,7 @@ const projectDetailSearch = (search: Record<string, unknown>) => ({
   group: typeof search.group === "string" ? search.group : undefined,
 });
 
-const characterDetailSearch = (search: Record<string, unknown>) => ({
+const avatarDetailSearch = (search: Record<string, unknown>) => ({
   tab: typeof search.tab === "string" ? search.tab : undefined,
   scene: typeof search.scene === "string" ? search.scene : undefined,
 });
@@ -106,20 +106,20 @@ const pipelineProjectDetailRoute = createRoute({
   ),
 });
 
-const pipelineCharacterDetailRoute = createRoute({
+const pipelineAvatarDetailRoute = createRoute({
   getParentRoute: () => pipelineLayoutRoute,
-  path: "/projects/$projectId/models/$characterId",
-  validateSearch: characterDetailSearch,
+  path: "/projects/$projectId/avatars/$avatarId",
+  validateSearch: avatarDetailSearch,
   component: lazyRouteComponent(() =>
-    import("@/features/characters").then((m) => ({ default: m.CharacterDetailPage })),
+    import("@/features/avatars").then((m) => ({ default: m.AvatarDetailPage })),
   ),
 });
 
-const pipelineCharactersRoute = createRoute({
+const pipelineAvatarsRoute = createRoute({
   getParentRoute: () => pipelineLayoutRoute,
-  path: "/characters",
+  path: "/avatars",
   component: lazyRouteComponent(() =>
-    import("@/app/pages/CharactersPage").then((m) => ({ default: m.CharactersPage })),
+    import("@/app/pages/AvatarsPage").then((m) => ({ default: m.AvatarsPage })),
   ),
 });
 
@@ -172,7 +172,7 @@ const pipelineLibraryRoute = createRoute({
   getParentRoute: () => pipelineLayoutRoute,
   path: "/library",
   component: lazyRouteComponent(() =>
-    import("@/features/library").then((m) => ({ default: m.CharacterLibraryBrowser })),
+    import("@/features/library").then((m) => ({ default: m.AvatarLibraryBrowser })),
   ),
 });
 
@@ -192,14 +192,6 @@ const pipelineScenesRoute = createRoute({
   ),
 });
 
-const pipelineModelsRoute = createRoute({
-  getParentRoute: () => pipelineLayoutRoute,
-  path: "/models",
-  component: lazyRouteComponent(() =>
-    import("@/app/pages/CharactersPage").then((m) => ({ default: m.CharactersPage })),
-  ),
-});
-
 const pipelineStoryboardRoute = createRoute({
   getParentRoute: () => pipelineLayoutRoute,
   path: "/storyboard",
@@ -208,12 +200,12 @@ const pipelineStoryboardRoute = createRoute({
   ),
 });
 
-const pipelineModelDashboardRoute = createRoute({
+const pipelineAvatarDashboardRoute = createRoute({
   getParentRoute: () => pipelineLayoutRoute,
-  path: "/model-dashboard",
+  path: "/avatar-dashboard",
   component: lazyRouteComponent(() =>
-    import("@/app/pages/CharacterDashboardPage").then((m) => ({
-      default: m.CharacterDashboardPage,
+    import("@/app/pages/AvatarDashboardPage").then((m) => ({
+      default: m.AvatarDashboardPage,
     })),
   ),
 });
@@ -400,12 +392,12 @@ const pipelineActivityConsoleRoute = createRoute({
   ),
 });
 
-const pipelineModelIngestRoute = createRoute({
+const pipelineAvatarIngestRoute = createRoute({
   getParentRoute: () => pipelineLayoutRoute,
-  path: "/model-ingest",
+  path: "/avatar-ingest",
   component: lazyRouteComponent(() =>
-    import("@/features/character-ingest").then((m) => ({
-      default: m.CharacterIngestPage,
+    import("@/features/avatar-ingest").then((m) => ({
+      default: m.AvatarIngestPage,
     })),
   ),
 });
@@ -521,12 +513,12 @@ const projectDetailRoute = createRoute({
   ),
 });
 
-const characterDetailRoute = createRoute({
+const avatarDetailRoute = createRoute({
   getParentRoute: () => projectsLayoutRoute,
-  path: "/projects/$projectId/models/$characterId",
-  validateSearch: characterDetailSearch,
+  path: "/projects/$projectId/avatars/$avatarId",
+  validateSearch: avatarDetailSearch,
   component: lazyRouteComponent(() =>
-    import("@/features/characters").then((m) => ({ default: m.CharacterDetailPage })),
+    import("@/features/avatars").then((m) => ({ default: m.AvatarDetailPage })),
   ),
 });
 
@@ -548,11 +540,11 @@ const scenesRoute = createRoute({
   ),
 });
 
-const charactersRoute = createRoute({
+const avatarsRoute = createRoute({
   getParentRoute: () => contentLayoutRoute,
-  path: "/content/models",
+  path: "/content/avatars",
   component: lazyRouteComponent(() =>
-    import("@/app/pages/CharactersPage").then((m) => ({ default: m.CharactersPage })),
+    import("@/app/pages/AvatarsPage").then((m) => ({ default: m.AvatarsPage })),
   ),
 });
 
@@ -560,7 +552,7 @@ const libraryRoute = createRoute({
   getParentRoute: () => contentLayoutRoute,
   path: "/content/library",
   component: lazyRouteComponent(() =>
-    import("@/features/library").then((m) => ({ default: m.CharacterLibraryBrowser })),
+    import("@/features/library").then((m) => ({ default: m.AvatarLibraryBrowser })),
   ),
 });
 
@@ -588,12 +580,12 @@ const sceneCatalogueRoute = createRoute({
   ),
 });
 
-const characterDashboardRoute = createRoute({
+const avatarDashboardRoute = createRoute({
   getParentRoute: () => contentLayoutRoute,
-  path: "/content/model-dashboard",
+  path: "/content/avatar-dashboard",
   component: lazyRouteComponent(() =>
-    import("@/app/pages/CharacterDashboardPage").then((m) => ({
-      default: m.CharacterDashboardPage,
+    import("@/app/pages/AvatarDashboardPage").then((m) => ({
+      default: m.AvatarDashboardPage,
     })),
   ),
 });
@@ -831,12 +823,12 @@ const activityConsoleRoute = createRoute({
   ),
 });
 
-const characterIngestRoute = createRoute({
+const avatarIngestRoute = createRoute({
   getParentRoute: () => toolsLayoutRoute,
-  path: "/tools/model-ingest",
+  path: "/tools/avatar-ingest",
   component: lazyRouteComponent(() =>
-    import("@/features/character-ingest").then((m) => ({
-      default: m.CharacterIngestPage,
+    import("@/features/avatar-ingest").then((m) => ({
+      default: m.AvatarIngestPage,
     })),
   ),
 });
@@ -1234,16 +1226,15 @@ export const routeTree = rootRoute.addChildren([
       /* Content */
       pipelineProjectsRoute,
       pipelineProjectDetailRoute,
-      pipelineCharacterDetailRoute,
-      pipelineCharactersRoute,
+      pipelineAvatarDetailRoute,
+      pipelineAvatarsRoute,
       pipelineSceneTypesRoute,
       pipelineSceneCatalogueRoute,
       pipelineLibraryRoute,
       pipelineImagesRoute,
       pipelineScenesRoute,
-      pipelineModelsRoute,
       pipelineStoryboardRoute,
-      pipelineModelDashboardRoute,
+      pipelineAvatarDashboardRoute,
       pipelineContactSheetRoute,
       pipelineDuplicatesRoute,
       /* Production */
@@ -1271,7 +1262,7 @@ export const routeTree = rootRoute.addChildren([
       pipelineSearchRoute,
       pipelineBranchingRoute,
       pipelineActivityConsoleRoute,
-      pipelineModelIngestRoute,
+      pipelineAvatarIngestRoute,
       pipelineBatchMetadataRoute,
       pipelinePipelineHooksRoute,
       pipelineWorkflowImportRoute,
@@ -1286,18 +1277,18 @@ export const routeTree = rootRoute.addChildren([
     projectsLayoutRoute.addChildren([
       projectListRoute,
       projectDetailRoute,
-      characterDetailRoute,
+      avatarDetailRoute,
       assignmentDashboardRoute,
     ]),
 
     contentLayoutRoute.addChildren([
       scenesRoute,
-      charactersRoute,
+      avatarsRoute,
       libraryRoute,
       storyboardRoute,
       imagesRoute,
       sceneCatalogueRoute,
-      characterDashboardRoute,
+      avatarDashboardRoute,
       contactSheetRoute,
       duplicatesRoute,
     ]),
@@ -1332,7 +1323,7 @@ export const routeTree = rootRoute.addChildren([
       searchRoute,
       branchingRoute,
       activityConsoleRoute,
-      characterIngestRoute,
+      avatarIngestRoute,
       batchMetadataRoute,
       pipelineHooksRoute,
       workflowImportRoute,

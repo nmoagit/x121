@@ -1,7 +1,7 @@
 /**
  * Badge showing the source level of a scene setting (PRD-111).
  *
- * Displays "Default", "Project", or "Character" with appropriate
+ * Displays "Default", "Project", or "Avatar" with appropriate
  * color coding to indicate where the setting value originated.
  */
 
@@ -19,7 +19,7 @@ const SOURCE_CONFIG: Record<SettingSource, { label: string; color: string }> = {
   scene_type: { label: "Default", color: "text-[var(--color-text-muted)]" },
   project: { label: "Project", color: "text-cyan-400" },
   group: { label: "Group", color: "text-green-400" },
-  character: { label: "Model", color: "text-orange-400" },
+  avatar: { label: "Model", color: "text-orange-400" },
 };
 
 /** Returns the human-readable label for a setting source. */

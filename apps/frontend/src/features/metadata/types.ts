@@ -6,7 +6,7 @@
  */
 
 /* --------------------------------------------------------------------------
-   Character metadata
+   Avatar metadata
    -------------------------------------------------------------------------- */
 
 export interface BiographicalData {
@@ -28,9 +28,9 @@ export interface ImageReference {
   image_type: string;
 }
 
-export interface CharacterMetadata {
+export interface AvatarMetadata {
   schema_version: string;
-  character_id: number;
+  avatar_id: number;
   name: string;
   project_id: number;
   project_name: string;
@@ -79,8 +79,8 @@ export interface QualityScores {
 export interface VideoMetadata {
   schema_version: string;
   scene_id: number;
-  character_id: number;
-  character_name: string;
+  avatar_id: number;
+  avatar_name: string;
   scene_type: string;
   technical: VideoTechnicalInfo;
   segments: SegmentInfo[];
@@ -104,7 +104,7 @@ export interface StaleMetadataEntry {
 }
 
 export interface StaleMetadataReport {
-  stale_character_metadata: StaleMetadataEntry[];
+  stale_avatar_metadata: StaleMetadataEntry[];
   stale_video_metadata: StaleMetadataEntry[];
 }
 

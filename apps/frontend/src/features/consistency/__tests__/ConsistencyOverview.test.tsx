@@ -16,7 +16,7 @@ import type { ConsistencyReport } from "../types";
 
 const makeReport = (overrides: Partial<ConsistencyReport> = {}): ConsistencyReport => ({
   id: 1,
-  character_id: 1,
+  avatar_id: 1,
   project_id: 1,
   scores_json: { matrix: [], scene_ids: [], scene_labels: [] },
   overall_consistency_score: 0.9,
@@ -27,10 +27,10 @@ const makeReport = (overrides: Partial<ConsistencyReport> = {}): ConsistencyRepo
   ...overrides,
 });
 
-const characters = [
-  { characterId: 1, characterName: "Alice", report: makeReport({ overall_consistency_score: 0.92 }) },
-  { characterId: 2, characterName: "Bob", report: makeReport({ id: 2, character_id: 2, overall_consistency_score: 0.6 }) },
-  { characterId: 3, characterName: "Charlie", report: null },
+const avatars = [
+  { avatarId: 1, avatarName: "Alice", report: makeReport({ overall_consistency_score: 0.92 }) },
+  { avatarId: 2, avatarName: "Bob", report: makeReport({ id: 2, avatar_id: 2, overall_consistency_score: 0.6 }) },
+  { avatarId: 3, avatarName: "Charlie", report: null },
 ];
 
 /* --------------------------------------------------------------------------
@@ -40,7 +40,7 @@ const characters = [
 describe("ConsistencyOverview", () => {
   test("shows project summary with consistent count", () => {
     renderWithProviders(
-      <ConsistencyOverview characters={characters} />,
+      <ConsistencyOverview avatars={avatars} />,
     );
 
     const overview = screen.getByTestId("consistency-overview");
@@ -48,9 +48,9 @@ describe("ConsistencyOverview", () => {
     expect(overview).toHaveTextContent("1 of 3 consistent");
   });
 
-  test("lists character rows with names", () => {
+  test("lists avatar rows with names", () => {
     renderWithProviders(
-      <ConsistencyOverview characters={characters} />,
+      <ConsistencyOverview avatars={avatars} />,
     );
 
     expect(screen.getByText("Alice")).toBeInTheDocument();
@@ -58,12 +58,12 @@ describe("ConsistencyOverview", () => {
     expect(screen.getByText("Charlie")).toBeInTheDocument();
   });
 
-  test("shows generate button for characters without report", () => {
+  test("shows generate button for avatars without report", () => {
     const handleGenerate = vi.fn();
 
     renderWithProviders(
       <ConsistencyOverview
-        characters={characters}
+        avatars={avatars}
         onGenerate={handleGenerate}
       />,
     );

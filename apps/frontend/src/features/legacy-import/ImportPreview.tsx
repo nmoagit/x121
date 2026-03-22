@@ -9,7 +9,7 @@ import type { InferredEntity } from "./types";
    -------------------------------------------------------------------------- */
 
 const ACTION_LABELS: Record<string, string> = {
-  character: "Model",
+  avatar: "Model",
   scene: "Scene",
   image: "Image",
   metadata: "Metadata",

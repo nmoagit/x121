@@ -2,14 +2,14 @@
  * Set Poster Frame button (PRD-96).
  *
  * Captures the current video frame and sets it as the poster frame
- * for a character or scene entity.
+ * for a avatar or scene entity.
  */
 
 import { useCallback } from "react";
 
 import { Button } from "@/components/primitives";
 
-import { useSetCharacterPoster, useSetScenePoster } from "./hooks/use-poster-frame";
+import { useSetAvatarPoster, useSetScenePoster } from "./hooks/use-poster-frame";
 import type { UpsertPosterFrame } from "./types";
 import { ENTITY_TYPE_CHARACTER } from "./types";
 
@@ -18,7 +18,7 @@ import { ENTITY_TYPE_CHARACTER } from "./types";
    -------------------------------------------------------------------------- */
 
 interface SetPosterButtonProps {
-  entityType: "character" | "scene";
+  entityType: "avatar" | "scene";
   entityId: number;
   segmentId: number;
   /** Current frame number from the video player. */
@@ -37,11 +37,11 @@ export function SetPosterButton({
   currentFrame,
   onSuccess,
 }: SetPosterButtonProps) {
-  const setCharacterPoster = useSetCharacterPoster();
+  const setAvatarPoster = useSetAvatarPoster();
   const setScenePoster = useSetScenePoster();
 
   const isLoading =
-    setCharacterPoster.isPending || setScenePoster.isPending;
+    setAvatarPoster.isPending || setScenePoster.isPending;
 
   const handleClick = useCallback(() => {
     const imagePath = `/storage/posters/${entityType}/${entityId}.jpg`;
@@ -53,8 +53,8 @@ export function SetPosterButton({
     };
 
     if (entityType === ENTITY_TYPE_CHARACTER) {
-      setCharacterPoster.mutate(
-        { characterId: entityId, body },
+      setAvatarPoster.mutate(
+        { avatarId: entityId, body },
         { onSuccess },
       );
     } else {
@@ -69,7 +69,7 @@ export function SetPosterButton({
     segmentId,
     currentFrame,
     onSuccess,
-    setCharacterPoster,
+    setAvatarPoster,
     setScenePoster,
   ]);
 

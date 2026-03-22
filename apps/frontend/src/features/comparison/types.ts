@@ -1,5 +1,5 @@
 /**
- * TypeScript types for cross-character scene comparison (PRD-68).
+ * TypeScript types for cross-avatar scene comparison (PRD-68).
  *
  * Defines the data shape returned by the comparison API endpoints,
  * plus sort/filter options for the gallery view.
@@ -12,8 +12,8 @@ import type { BadgeVariant } from "@/components/primitives";
    -------------------------------------------------------------------------- */
 
 export interface ComparisonCell {
-  character_id: number;
-  character_name: string;
+  avatar_id: number;
+  avatar_name: string;
   scene_id: number;
   segment_id: number | null;
   scene_type_id: number;
@@ -38,7 +38,7 @@ export interface ComparisonResponse {
    Sort / filter
    -------------------------------------------------------------------------- */
 
-export type SortField = "character_name" | "qa_score" | "created_at" | "approval_status";
+export type SortField = "avatar_name" | "qa_score" | "created_at" | "approval_status";
 export type SortDirection = "asc" | "desc";
 
 export interface GallerySort {
@@ -64,7 +64,7 @@ export const APPROVAL_BADGE_VARIANT: Record<string, BadgeVariant> = {
 
 /** Sort field options for the gallery toolbar. */
 export const SORT_OPTIONS: { value: SortField; label: string }[] = [
-  { value: "character_name", label: "Model Name" },
+  { value: "avatar_name", label: "Avatar Name" },
   { value: "qa_score", label: "QA Score" },
   { value: "created_at", label: "Generation Date" },
   { value: "approval_status", label: "Approval Status" },

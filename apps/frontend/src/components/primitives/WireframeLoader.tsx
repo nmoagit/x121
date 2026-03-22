@@ -1,7 +1,7 @@
 /**
  * Animated wireframe logo loader.
  *
- * Draws the provided text character-by-character with stroke-dashoffset
+ * Draws the provided text avatar-by-avatar with stroke-dashoffset
  * animation in cyan, holds briefly, then fades out and redraws — matching
  * the terminal hacker aesthetic.
  *
@@ -24,8 +24,8 @@ interface WireframeLoaderProps {
 }
 
 /*
- * Glyph library — each character has an SVG path for a 20-unit wide cell
- * in a 0–40 height space. Characters are positioned dynamically.
+ * Glyph library — each avatar has an SVG path for a 20-unit wide cell
+ * in a 0–40 height space. Avatars are positioned dynamically.
  */
 interface Glyph {
   d: string;

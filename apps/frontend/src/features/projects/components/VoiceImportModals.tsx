@@ -1,7 +1,7 @@
 /**
  * Shared voice ID import confirmation and result modals.
  *
- * Used by ProjectOverviewTab, ProjectCharactersTab, and CharactersPage
+ * Used by ProjectOverviewTab, ProjectAvatarsTab, and AvatarsPage
  * to show a preview of voice ID CSV imports and their results.
  */
 
@@ -9,11 +9,11 @@ import { Modal } from "@/components/composite";
 import type { VoiceIdEntry } from "@/components/domain/FileDropZone";
 import { Stack } from "@/components/layout";
 import { Button } from "@/components/primitives";
-import { getVoiceId } from "@/features/characters/types";
+import { getVoiceId } from "@/features/avatars/types";
 import { generateSnakeSlug } from "@/lib/format";
 
 import type { BulkVoiceImportResult, VoiceImportMode } from "../hooks/use-project-speech-import";
-import type { Character } from "../types";
+import type { Avatar } from "../types";
 
 /* --------------------------------------------------------------------------
    Confirmation modal
@@ -23,7 +23,7 @@ interface VoiceImportConfirmModalProps {
   open: boolean;
   onClose: () => void;
   entries: VoiceIdEntry[];
-  characters: Character[];
+  avatars: Avatar[];
   mode: VoiceImportMode;
   onModeChange: (mode: VoiceImportMode) => void;
   loading: boolean;
@@ -34,13 +34,13 @@ export function VoiceImportConfirmModal({
   open,
   onClose,
   entries,
-  characters,
+  avatars,
   mode,
   onModeChange,
   loading,
   onConfirm,
 }: VoiceImportConfirmModalProps) {
-  const charMap = new Map(characters.map((c) => [generateSnakeSlug(c.name), c]));
+  const charMap = new Map(avatars.map((c) => [generateSnakeSlug(c.name), c]));
 
   const rows = entries.map((e) => {
     const char = charMap.get(generateSnakeSlug(e.slug));
@@ -105,7 +105,7 @@ export function VoiceImportConfirmModal({
           <table className="w-full text-xs font-mono">
             <thead className="sticky top-0 bg-[#161b22]">
               <tr>
-                <th className="text-left px-2 py-1.5 font-medium text-[var(--color-text-muted)]">Character</th>
+                <th className="text-left px-2 py-1.5 font-medium text-[var(--color-text-muted)]">Avatar</th>
                 <th className="text-left px-2 py-1.5 font-medium text-[var(--color-text-muted)]">New Voice ID</th>
                 <th className="text-left px-2 py-1.5 font-medium text-[var(--color-text-muted)]">Current</th>
                 <th className="text-center px-2 py-1.5 font-medium text-[var(--color-text-muted)]">Action</th>

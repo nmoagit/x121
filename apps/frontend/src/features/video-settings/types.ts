@@ -1,7 +1,7 @@
 /**
  * Video settings override types for hierarchical duration/fps/resolution.
  *
- * Settings cascade: Scene Type -> Project -> Group -> Character.
+ * Settings cascade: Scene Type -> Project -> Group -> Avatar.
  * Each level can override individual fields; null means "inherit from parent".
  */
 
@@ -20,7 +20,7 @@ export interface ResolvedVideoSettings {
   resolution_source: VideoSettingSource;
 }
 
-export type VideoSettingSource = "system_default" | "scene_type" | "project" | "group" | "character";
+export type VideoSettingSource = "system_default" | "scene_type" | "project" | "group" | "avatar";
 
 export const RESOLUTION_OPTIONS = [
   { value: "480p", label: "480p (854x480)" },
@@ -36,7 +36,7 @@ export const SOURCE_LABELS: Record<VideoSettingSource, string> = {
   scene_type: "Scene Type",
   project: "Project",
   group: "Group",
-  character: "Model",
+  avatar: "Model",
 };
 
 /** Empty override — all values inherit from parent level. */

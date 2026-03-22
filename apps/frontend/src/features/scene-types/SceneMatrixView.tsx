@@ -1,7 +1,7 @@
 /**
  * Scene matrix view (PRD-23).
  *
- * Displays a grid of characters x scene types showing generation status,
+ * Displays a grid of avatars x scene types showing generation status,
  * with color-coded badges and optional checkbox selection.
  */
 
@@ -13,14 +13,14 @@ import type { MatrixCell, SceneType } from "./types";
    Types
    -------------------------------------------------------------------------- */
 
-interface CharacterInfo {
+interface AvatarInfo {
   id: number;
   name: string;
 }
 
 interface SceneMatrixViewProps {
   cells: MatrixCell[];
-  characters: CharacterInfo[];
+  avatars: AvatarInfo[];
   sceneTypes: SceneType[];
   onSelect?: (cells: MatrixCell[]) => void;
 }
@@ -43,7 +43,7 @@ const STATUS_BADGE: Record<string, { label: string; variant: BadgeVariant }> = {
    Component
    -------------------------------------------------------------------------- */
 
-export function SceneMatrixView({ cells, characters, sceneTypes, onSelect }: SceneMatrixViewProps) {
+export function SceneMatrixView({ cells, avatars, sceneTypes, onSelect }: SceneMatrixViewProps) {
   if (cells.length === 0) {
     return (
       <p className="text-sm text-[var(--color-text-muted)]">
@@ -83,7 +83,7 @@ export function SceneMatrixView({ cells, characters, sceneTypes, onSelect }: Sce
           </tr>
         </thead>
         <tbody>
-          {characters.map((char) => (
+          {avatars.map((char) => (
             <tr key={char.id}>
               {onSelect && (
                 <td className="p-2 border-b border-[var(--color-border-default)]">
@@ -91,7 +91,7 @@ export function SceneMatrixView({ cells, characters, sceneTypes, onSelect }: Sce
                     type="checkbox"
                     aria-label={`Select ${char.name}`}
                     onChange={(e) => {
-                      const charCells = cells.filter((c) => c.character_id === char.id);
+                      const charCells = cells.filter((c) => c.avatar_id === char.id);
                       handleCheckboxChange(charCells[0]!, e.target.checked);
                     }}
                   />
@@ -102,7 +102,7 @@ export function SceneMatrixView({ cells, characters, sceneTypes, onSelect }: Sce
               </td>
               {sceneTypes.map((st) => {
                 const cell = cells.find(
-                  (c) => c.character_id === char.id && c.scene_type_id === st.id,
+                  (c) => c.avatar_id === char.id && c.scene_type_id === st.id,
                 );
                 const badge = cell
                   ? (STATUS_BADGE[cell.status] ?? STATUS_BADGE.unknown)

@@ -1,10 +1,10 @@
 /**
  * Project production tab (PRD-112, PRD-57).
  *
- * Shows production runs with a character × scene-type matrix grid,
+ * Shows production runs with a avatar × scene-type matrix grid,
  * progress dashboard, and queue outstanding action.
  *
- * Archived characters (status_id === 3) are excluded from the production view.
+ * Archived avatars (status_id === 3) are excluded from the production view.
  */
 
 import { useCallback, useMemo, useState } from "react";
@@ -23,9 +23,9 @@ import {
   useProductionRuns,
   useCreateProductionRun,
   useCancelCells,
-  useCancelCharacterCells,
+  useCancelAvatarCells,
   useCancelProductionRun,
-  useDeleteCharacterCells,
+  useDeleteAvatarCells,
   useDeleteCells,
   useDeleteProductionRun,
   useEnabledSceneTypes,
@@ -38,11 +38,11 @@ import { TERMINAL_PANEL, TERMINAL_HEADER, TERMINAL_HEADER_TITLE, TERMINAL_BODY, 
 import type { ProductionRun } from "@/features/production/types";
 import { useQueueStatus } from "@/features/queue/hooks/use-queue";
 
-import { useProjectCharacters } from "../hooks/use-project-characters";
-import { useCharacterGroups } from "../hooks/use-character-groups";
+import { useProjectAvatars } from "../hooks/use-project-avatars";
+import { useAvatarGroups } from "../hooks/use-avatar-groups";
 import { QueueOutstandingModal } from "../components/QueueOutstandingModal";
 import { CHARACTER_STATUS_ID_ARCHIVED } from "../types";
-import type { Character, CharacterGroup } from "../types";
+import type { Avatar, AvatarGroup } from "../types";
 
 /* --------------------------------------------------------------------------
    Props
@@ -100,7 +100,7 @@ export function ProjectProductionTab({ projectId }: ProjectProductionTabProps) {
         <EmptyState
           icon={<Zap size={32} />}
           title="No production runs yet"
-          description="Create a production run to generate scenes for your characters."
+          description="Create a production run to generate scenes for your avatars."
         />
       )}
 
@@ -248,69 +248,69 @@ function CreateRunModal({
 }) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [selectedCharacterIds, setSelectedCharacterIds] = useState<Set<number>>(new Set());
+  const [selectedAvatarIds, setSelectedAvatarIds] = useState<Set<number>>(new Set());
   const [selectedSlotKeys, setSelectedSlotKeys] = useState<Set<string>>(new Set());
   const [retrospective, setRetrospective] = useState(true);
 
-  const { data: allCharacters } = useProjectCharacters(projectId);
-  const { data: groups } = useCharacterGroups(projectId);
+  const { data: allAvatars } = useProjectAvatars(projectId);
+  const { data: groups } = useAvatarGroups(projectId);
   const createRun = useCreateProductionRun();
   const toast = useToast();
 
-  // Non-archived characters
-  const characters = useMemo(
-    () => (allCharacters ?? []).filter((c) => c.status_id !== CHARACTER_STATUS_ID_ARCHIVED),
-    [allCharacters],
+  // Non-archived avatars
+  const avatars = useMemo(
+    () => (allAvatars ?? []).filter((c) => c.status_id !== CHARACTER_STATUS_ID_ARCHIVED),
+    [allAvatars],
   );
 
-  // Group characters by group_id (null → "Ungrouped")
-  const charactersByGroup = useMemo(() => {
+  // Group avatars by group_id (null → "Ungrouped")
+  const avatarsByGroup = useMemo(() => {
     const sortedGroups = (groups ?? []).slice().sort((a, b) => a.sort_order - b.sort_order);
-    const groupMap = new Map<number | null, { group: CharacterGroup | null; chars: Character[] }>();
+    const groupMap = new Map<number | null, { group: AvatarGroup | null; chars: Avatar[] }>();
     for (const g of sortedGroups) {
       groupMap.set(g.id, { group: g, chars: [] });
     }
     groupMap.set(null, { group: null, chars: [] });
-    for (const c of characters) {
+    for (const c of avatars) {
       const entry = groupMap.get(c.group_id) ?? groupMap.get(null)!;
       entry.chars.push(c);
     }
     return Array.from(groupMap.values()).filter((e) => e.chars.length > 0);
-  }, [characters, groups]);
+  }, [avatars, groups]);
 
-  // Determine which character IDs to query enabled scene types for
-  const activeCharacterIds = useMemo(() => {
-    if (selectedCharacterIds.size > 0) return Array.from(selectedCharacterIds);
-    return characters.map((c) => c.id);
-  }, [selectedCharacterIds, characters]);
+  // Determine which avatar IDs to query enabled scene types for
+  const activeAvatarIds = useMemo(() => {
+    if (selectedAvatarIds.size > 0) return Array.from(selectedAvatarIds);
+    return avatars.map((c) => c.id);
+  }, [selectedAvatarIds, avatars]);
 
-  // Fetch enabled scene types for selected characters
-  const { data: enabledEntries } = useEnabledSceneTypes(projectId, activeCharacterIds);
+  // Fetch enabled scene types for selected avatars
+  const { data: enabledEntries } = useEnabledSceneTypes(projectId, activeAvatarIds);
 
   // Build the list of scene slots (scene_type+track+clothes_off) from enabled entries (union).
   const sceneSlots = useMemo(() => {
-    if (!enabledEntries || activeCharacterIds.length === 0) return [];
+    if (!enabledEntries || activeAvatarIds.length === 0) return [];
     return deduplicateSceneSlots(enabledEntries);
-  }, [enabledEntries, activeCharacterIds]);
+  }, [enabledEntries, activeAvatarIds]);
 
   // Reset form when modal closes
   const handleClose = useCallback(() => {
     setName("");
     setDescription("");
-    setSelectedCharacterIds(new Set());
+    setSelectedAvatarIds(new Set());
     setSelectedSlotKeys(new Set());
     setRetrospective(true);
     onClose();
   }, [onClose]);
 
-  const toggleCharacter = useCallback((id: number, checked: boolean) => {
-    setSelectedCharacterIds((prev) => {
+  const toggleAvatar = useCallback((id: number, checked: boolean) => {
+    setSelectedAvatarIds((prev) => {
       const next = new Set(prev);
       if (checked) next.add(id);
       else next.delete(id);
       return next;
     });
-    // Clear slot selection when characters change (enabled list may differ)
+    // Clear slot selection when avatars change (enabled list may differ)
     setSelectedSlotKeys(new Set());
   }, []);
 
@@ -324,15 +324,15 @@ function CreateRunModal({
   }, []);
 
   // Select all / none helpers
-  const allCharsSelected = characters.length > 0 && selectedCharacterIds.size === characters.length;
+  const allCharsSelected = avatars.length > 0 && selectedAvatarIds.size === avatars.length;
   const allSlotsSelected = sceneSlots.length > 0 && selectedSlotKeys.size === sceneSlots.length;
 
-  const toggleAllCharacters = useCallback(
+  const toggleAllAvatars = useCallback(
     (checked: boolean) => {
-      setSelectedCharacterIds(checked ? new Set(characters.map((c) => c.id)) : new Set());
+      setSelectedAvatarIds(checked ? new Set(avatars.map((c) => c.id)) : new Set());
       setSelectedSlotKeys(new Set());
     },
-    [characters],
+    [avatars],
   );
 
   const toggleAllSlots = useCallback(
@@ -343,9 +343,9 @@ function CreateRunModal({
   );
 
   const handleCreate = useCallback(() => {
-    const charIds = selectedCharacterIds.size > 0
-      ? Array.from(selectedCharacterIds)
-      : characters.map((c) => c.id);
+    const charIds = selectedAvatarIds.size > 0
+      ? Array.from(selectedAvatarIds)
+      : avatars.map((c) => c.id);
 
     // Derive unique scene_type_ids from selected slots (or all slots if none selected)
     const activeSlots = selectedSlotKeys.size > 0
@@ -354,7 +354,7 @@ function CreateRunModal({
     const stIds = [...new Set(activeSlots.map((s) => s.scene_type_id))];
 
     if (charIds.length === 0 || stIds.length === 0) {
-      toast.addToast({ message: "Select at least one character and one scene.", variant: "warning" });
+      toast.addToast({ message: "Select at least one avatar and one scene.", variant: "warning" });
       return;
     }
 
@@ -363,7 +363,7 @@ function CreateRunModal({
         project_id: projectId,
         name: name.trim() || `Run ${new Date().toLocaleDateString()}`,
         description: description.trim() || undefined,
-        character_ids: charIds,
+        avatar_ids: charIds,
         scene_type_ids: stIds,
         retrospective,
       },
@@ -384,10 +384,10 @@ function CreateRunModal({
         },
       },
     );
-  }, [name, description, selectedCharacterIds, selectedSlotKeys, characters, sceneSlots, projectId, retrospective, createRun, toast, onCreated, handleClose]);
+  }, [name, description, selectedAvatarIds, selectedSlotKeys, avatars, sceneSlots, projectId, retrospective, createRun, toast, onCreated, handleClose]);
 
   const slotCount = selectedSlotKeys.size || sceneSlots.length;
-  const cellCount = (selectedCharacterIds.size || characters.length) * slotCount;
+  const cellCount = (selectedAvatarIds.size || avatars.length) * slotCount;
 
   return (
     <Modal open={open} onClose={handleClose} title="Create Production Run" size="xl">
@@ -408,24 +408,24 @@ function CreateRunModal({
           placeholder="Notes about this production run"
         />
 
-        {/* Character selection — grouped */}
+        {/* Avatar selection — grouped */}
         <div>
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-mono uppercase tracking-wide text-[var(--color-text-muted)]">
-              Characters (<span className="text-cyan-400">{selectedCharacterIds.size || characters.length}</span> selected)
+              Avatars (<span className="text-cyan-400">{selectedAvatarIds.size || avatars.length}</span> selected)
             </span>
             <Checkbox
               label="Select all"
               checked={allCharsSelected}
-              indeterminate={selectedCharacterIds.size > 0 && !allCharsSelected}
-              onChange={toggleAllCharacters}
+              indeterminate={selectedAvatarIds.size > 0 && !allCharsSelected}
+              onChange={toggleAllAvatars}
             />
           </div>
           <div className="max-h-64 overflow-y-auto rounded-[var(--radius-md)] border border-[var(--color-border-default)] p-1.5 space-y-2">
-            {charactersByGroup.map(({ group, chars }) => {
+            {avatarsByGroup.map(({ group, chars }) => {
               const groupCharIds = chars.map((c) => c.id);
-              const allInGroupSelected = groupCharIds.every((id) => selectedCharacterIds.has(id));
-              const someInGroupSelected = groupCharIds.some((id) => selectedCharacterIds.has(id));
+              const allInGroupSelected = groupCharIds.every((id) => selectedAvatarIds.has(id));
+              const someInGroupSelected = groupCharIds.some((id) => selectedAvatarIds.has(id));
               return (
                 <div key={group?.id ?? "ungrouped"}>
                   <div className="flex items-center justify-between mb-0.5">
@@ -437,7 +437,7 @@ function CreateRunModal({
                       checked={allInGroupSelected}
                       indeterminate={someInGroupSelected && !allInGroupSelected}
                       onChange={(checked) => {
-                        setSelectedCharacterIds((prev) => {
+                        setSelectedAvatarIds((prev) => {
                           const next = new Set(prev);
                           for (const id of groupCharIds) {
                             if (checked) next.add(id);
@@ -455,8 +455,8 @@ function CreateRunModal({
                       <Checkbox
                         key={c.id}
                         label={c.name}
-                        checked={selectedCharacterIds.has(c.id)}
-                        onChange={(checked) => toggleCharacter(c.id, checked)}
+                        checked={selectedAvatarIds.has(c.id)}
+                        onChange={(checked) => toggleAvatar(c.id, checked)}
                         size="sm"
                       />
                     ))}
@@ -464,8 +464,8 @@ function CreateRunModal({
                 </div>
               );
             })}
-            {characters.length === 0 && (
-              <p className="text-xs text-[var(--color-text-muted)] py-2 text-center">No characters in this project.</p>
+            {avatars.length === 0 && (
+              <p className="text-xs text-[var(--color-text-muted)] py-2 text-center">No avatars in this project.</p>
             )}
           </div>
         </div>
@@ -499,9 +499,9 @@ function CreateRunModal({
             </div>
             {sceneSlots.length === 0 && (
               <p className="text-xs text-[var(--color-text-muted)] py-2 text-center">
-                {activeCharacterIds.length === 0
-                  ? "Select characters first to see available scenes."
-                  : "No scenes enabled for the selected characters."}
+                {activeAvatarIds.length === 0
+                  ? "Select avatars first to see available scenes."
+                  : "No scenes enabled for the selected avatars."}
               </p>
             )}
           </div>
@@ -516,7 +516,7 @@ function CreateRunModal({
             size="sm"
           />
           <p className="mt-1 ml-7 text-xs font-mono text-[var(--color-text-muted)]">
-            Pre-marks cells as completed where an approved video already exists for the character + scene type.
+            Pre-marks cells as completed where an approved video already exists for the avatar + scene type.
           </p>
         </div>
 
@@ -533,7 +533,7 @@ function CreateRunModal({
               size="sm"
               onClick={handleCreate}
               loading={createRun.isPending}
-              disabled={sceneSlots.length === 0 || characters.length === 0}
+              disabled={sceneSlots.length === 0 || avatars.length === 0}
             >
               Create Run
             </Button>
@@ -560,26 +560,26 @@ function RunDetail({
   const [confirmDelete, setConfirmDelete] = useState(false);
   const { data: cells, isLoading: cellsLoading } = useProductionMatrix(run.id);
   const { data: progress } = useProductionProgress(run.id);
-  const { data: allCharacters } = useProjectCharacters(projectId);
+  const { data: allAvatars } = useProjectAvatars(projectId);
   const resubmitFailed = useResubmitFailed(run.id);
   const cancelRun = useCancelProductionRun(projectId);
   const deleteRun = useDeleteProductionRun(projectId);
   const cancelCells = useCancelCells(run.id);
   const deleteCells = useDeleteCells(run.id, projectId);
-  const cancelCharacterCells = useCancelCharacterCells(run.id);
-  const deleteCharacterCells = useDeleteCharacterCells(run.id, projectId);
+  const cancelAvatarCells = useCancelAvatarCells(run.id);
+  const deleteAvatarCells = useDeleteAvatarCells(run.id, projectId);
   const navigate = useNavigate();
   const toast = useToast();
 
-  // Filter to characters in this run's matrix config
-  const characters = useMemo(() => {
-    if (!allCharacters) return [];
-    const configIds = new Set(run.matrix_config?.character_ids ?? []);
-    return allCharacters
+  // Filter to avatars in this run's matrix config
+  const avatars = useMemo(() => {
+    if (!allAvatars) return [];
+    const configIds = new Set(run.matrix_config?.avatar_ids ?? []);
+    return allAvatars
       .filter((c) => c.status_id !== CHARACTER_STATUS_ID_ARCHIVED)
       .filter((c) => configIds.size === 0 || configIds.has(c.id))
       .map((c) => ({ id: c.id, name: c.name }));
-  }, [allCharacters, run.matrix_config]);
+  }, [allAvatars, run.matrix_config]);
 
   // Build columns from cells — each unique (scene_type_id, track_id) pair
   const columns = useMemo(() => {
@@ -620,32 +620,32 @@ function RunDetail({
     [deleteCells, toast],
   );
 
-  const handleCancelCharacter = useCallback(
-    (characterId: number) => {
-      const charName = characters.find((c) => c.id === characterId)?.name ?? "Model";
-      cancelCharacterCells.mutate(characterId, {
+  const handleCancelAvatar = useCallback(
+    (avatarId: number) => {
+      const charName = avatars.find((c) => c.id === avatarId)?.name ?? "Model";
+      cancelAvatarCells.mutate(avatarId, {
         onSuccess: () => toast.addToast({ message: `${charName} cells cancelled.`, variant: "info" }),
         onError: () => toast.addToast({ message: `Failed to cancel ${charName} cells.`, variant: "error" }),
       });
     },
-    [cancelCharacterCells, characters, toast],
+    [cancelAvatarCells, avatars, toast],
   );
 
-  const handleDeleteCharacter = useCallback(
-    (characterId: number) => {
-      const charName = characters.find((c) => c.id === characterId)?.name ?? "Model";
-      deleteCharacterCells.mutate(characterId, {
+  const handleDeleteAvatar = useCallback(
+    (avatarId: number) => {
+      const charName = avatars.find((c) => c.id === avatarId)?.name ?? "Model";
+      deleteAvatarCells.mutate(avatarId, {
         onSuccess: () => toast.addToast({ message: `${charName} removed from run.`, variant: "info" }),
         onError: () => toast.addToast({ message: `Failed to remove ${charName}.`, variant: "error" }),
       });
     },
-    [deleteCharacterCells, characters, toast],
+    [deleteAvatarCells, avatars, toast],
   );
 
-  const handleCharacterClick = useCallback(
-    (characterId: number) => {
+  const handleAvatarClick = useCallback(
+    (avatarId: number) => {
       navigate({
-        to: `/projects/${projectId}/models/${characterId}`,
+        to: `/projects/${projectId}/avatars/${avatarId}`,
         search: { tab: "scenes" },
       });
     },
@@ -653,9 +653,9 @@ function RunDetail({
   );
 
   const handleCellClick = useCallback(
-    (cell: { character_id: number; scene_type_id: number; track_id: number | null; scene_id: number | null }) => {
+    (cell: { avatar_id: number; scene_type_id: number; track_id: number | null; scene_id: number | null }) => {
       navigate({
-        to: `/projects/${projectId}/models/${cell.character_id}`,
+        to: `/projects/${projectId}/models/${cell.avatar_id}`,
         search: {
           tab: "scenes",
           ...(cell.scene_id
@@ -757,22 +757,22 @@ function RunDetail({
       {/* Matrix grid */}
       {cellsLoading && <LoadingPane />}
 
-      {!cellsLoading && cells && characters.length > 0 && columns.length > 0 && (
+      {!cellsLoading && cells && avatars.length > 0 && columns.length > 0 && (
         <div className={TERMINAL_PANEL}>
           <div className={TERMINAL_HEADER}>
-            <span className={TERMINAL_HEADER_TITLE}>Character x Scene Matrix</span>
+            <span className={TERMINAL_HEADER_TITLE}>Avatar x Scene Matrix</span>
           </div>
           <div className={TERMINAL_BODY}>
           <MatrixGrid
             cells={cells}
-            characters={characters}
+            avatars={avatars}
             columns={columns}
-            onCharacterClick={handleCharacterClick}
+            onAvatarClick={handleAvatarClick}
             onCellClick={handleCellClick}
             onCancelCell={handleCancelCell}
             onDeleteCell={handleDeleteCell}
-            onCancelCharacter={handleCancelCharacter}
-            onDeleteCharacter={handleDeleteCharacter}
+            onCancelAvatar={handleCancelAvatar}
+            onDeleteAvatar={handleDeleteAvatar}
           />
           </div>
         </div>
@@ -781,7 +781,7 @@ function RunDetail({
       {!cellsLoading && cells && cells.length === 0 && (
         <EmptyState
           title="No cells in this run"
-          description="This production run has no character/scene combinations."
+          description="This production run has no avatar/scene combinations."
         />
       )}
     </Stack>

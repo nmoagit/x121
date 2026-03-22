@@ -1,5 +1,5 @@
 /**
- * Per-section readiness indicator circles for character cards (PRD-128).
+ * Per-section readiness indicator circles for avatar cards (PRD-128).
  *
  * Renders 4 vertically-stacked colored circles (metadata, images, scenes,
  * speech) with tooltips and click-to-navigate to the corresponding tab.
@@ -31,12 +31,12 @@ const SECTIONS: { key: SectionKey; Icon: typeof FileText; tab: string }[] = [
 interface ReadinessIndicatorsProps {
   readiness: Record<SectionKey, SectionReadiness>;
   projectId: number;
-  characterId: number;
+  avatarId: number;
   /** Which sections are blocking. Non-blocking sections render as muted. */
   blockingDeliverables?: string[];
 }
 
-export function ReadinessIndicators({ readiness, projectId, characterId, blockingDeliverables }: ReadinessIndicatorsProps) {
+export function ReadinessIndicators({ readiness, projectId, avatarId, blockingDeliverables }: ReadinessIndicatorsProps) {
   const navigate = useNavigate();
 
   return (
@@ -59,7 +59,7 @@ export function ReadinessIndicators({ readiness, projectId, characterId, blockin
                 e.stopPropagation();
                 e.preventDefault();
                 navigate({
-                  to: `/projects/${projectId}/models/${characterId}`,
+                  to: `/projects/${projectId}/avatars/${avatarId}`,
                   search: { tab },
                 });
               }}
@@ -68,7 +68,7 @@ export function ReadinessIndicators({ readiness, projectId, characterId, blockin
                   e.stopPropagation();
                   e.preventDefault();
                   navigate({
-                    to: `/projects/${projectId}/models/${characterId}`,
+                    to: `/projects/${projectId}/avatars/${avatarId}`,
                     search: { tab },
                   });
                 }

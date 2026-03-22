@@ -84,7 +84,7 @@ export interface ChecklistResult {
    -------------------------------------------------------------------------- */
 
 export interface ProjectSummaryData {
-  total_characters: number;
+  total_avatars: number;
   total_scenes: number;
   total_segments: number;
   approved_scenes: number;

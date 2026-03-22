@@ -3,7 +3,7 @@ import type { ExpandedSceneSetting } from "@/features/scene-catalogue/types";
 
 export interface Scene {
   id: number;
-  character_id: number;
+  avatar_id: number;
   scene_type_id: number;
   image_variant_id: number | null;
   track_id: number | null;
@@ -171,7 +171,7 @@ export function sceneHasVideo(scene: Scene): boolean {
 }
 
 /* --------------------------------------------------------------------------
-   Clip helpers (shared by CharacterDeliverablesTab, SequencePlayer, ClipCard)
+   Clip helpers (shared by AvatarDeliverablesTab, SequencePlayer, ClipCard)
    -------------------------------------------------------------------------- */
 
 /**

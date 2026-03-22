@@ -100,7 +100,7 @@ export function OperationHistory({
             <div className="flex flex-col gap-0.5">
               <span data-testid={`history-summary-${op.id}`}>{op.summary}</span>
               <span className="text-xs text-[var(--color-text-secondary)]">
-                {op.character_count} characters &middot;{" "}
+                {op.avatar_count} avatars &middot;{" "}
                 {new Date(op.created_at).toLocaleString()}
               </span>
             </div>

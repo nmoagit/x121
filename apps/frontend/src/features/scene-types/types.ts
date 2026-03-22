@@ -143,7 +143,7 @@ export interface PromptPreviewResponse {
 }
 
 export interface MatrixCell {
-  character_id: number;
+  avatar_id: number;
   scene_type_id: number;
   variant_type: string;
   existing_scene_id: number | null;

@@ -35,7 +35,7 @@ import {
 } from "@/features/delivery";
 
 import { useProject, useUpdateProject } from "../hooks/use-projects";
-import { useProjectCharacters } from "../hooks/use-project-characters";
+import { useProjectAvatars } from "../hooks/use-project-avatars";
 
 /* --------------------------------------------------------------------------
    Component
@@ -53,19 +53,19 @@ export function ProjectDeliveryTab({ projectId }: ProjectDeliveryTabProps) {
   const token = useAuthStore((s) => s.accessToken);
   const { data: project } = useProject(projectId);
   const updateProject = useUpdateProject();
-  const { data: characters = [] } = useProjectCharacters(projectId);
+  const { data: avatars = [] } = useProjectAvatars(projectId);
   const { data: exports = [] } = useDeliveryExports(projectId);
   const hasActiveExport = exports.some((e) => e.status_id >= 1 && e.status_id <= 5);
   const { data: statuses = [], isLoading: statusLoading } =
     useDeliveryStatus(projectId, hasActiveExport);
   // Lifted model selection state shared between ExportPanel and ValidationReport.
-  const [allCharacters, setAllCharacters] = useState(true);
-  const [selectedCharacterIds, setSelectedCharacterIds] = useState<number[]>([]);
+  const [allAvatars, setAllAvatars] = useState(true);
+  const [selectedAvatarIds, setSelectedAvatarIds] = useState<number[]>([]);
 
-  // Derive character IDs for scoped validation (null = all).
-  const validationCharacterIds = allCharacters ? null : selectedCharacterIds;
+  // Derive avatar IDs for scoped validation (null = all).
+  const validationAvatarIds = allAvatars ? null : selectedAvatarIds;
 
-  const { data: validationResult } = useDeliveryValidation(projectId, true, validationCharacterIds);
+  const { data: validationResult } = useDeliveryValidation(projectId, true, validationAvatarIds);
 
   function handleToggleAutoDeliver(enabled: boolean) {
     updateProject.mutate({
@@ -74,7 +74,7 @@ export function ProjectDeliveryTab({ projectId }: ProjectDeliveryTabProps) {
     });
   }
 
-  const characterOptions = characters.map((c) => ({ id: c.id, name: c.name }));
+  const avatarOptions = avatars.map((c) => ({ id: c.id, name: c.name }));
 
   // Collect model IDs that have validation errors (entity_id on error-severity issues
   // where category targets a specific model: metadata_not_approved, no_scenes)
@@ -83,7 +83,7 @@ export function ProjectDeliveryTab({ projectId }: ProjectDeliveryTabProps) {
     if (!validationResult) return ids;
     for (const issue of validationResult.issues) {
       if (issue.severity === "error" && issue.entity_id != null) {
-        // metadata_not_approved and no_scenes use character ID as entity_id
+        // metadata_not_approved and no_scenes use avatar ID as entity_id
         if (issue.category === "metadata_not_approved" || issue.category === "no_scenes") {
           ids.add(issue.entity_id);
         }
@@ -96,21 +96,21 @@ export function ProjectDeliveryTab({ projectId }: ProjectDeliveryTabProps) {
     <Stack gap={6}>
       {/* Pre-export validation */}
       <section>
-        <ValidationReport projectId={projectId} initialData={validationResult} characterIds={validationCharacterIds} />
+        <ValidationReport projectId={projectId} initialData={validationResult} avatarIds={validationAvatarIds} />
       </section>
 
       {/* Export delivery */}
       <section>
         <ExportPanel
           projectId={projectId}
-          characters={characterOptions}
+          avatars={avatarOptions}
           validationPassed={validationResult?.passed}
           invalidModelIds={invalidModelIds}
           projectDefaultProfileId={project?.default_format_profile_id}
-          allCharacters={allCharacters}
-          onAllCharactersChange={setAllCharacters}
-          selectedCharacterIds={selectedCharacterIds}
-          onSelectedCharacterIdsChange={setSelectedCharacterIds}
+          allAvatars={allAvatars}
+          onAllAvatarsChange={setAllAvatars}
+          selectedAvatarIds={selectedAvatarIds}
+          onSelectedAvatarIdsChange={setSelectedAvatarIds}
         />
       </section>
 
@@ -158,15 +158,15 @@ export function ProjectDeliveryTab({ projectId }: ProjectDeliveryTabProps) {
                   <tbody>
                     {statuses.map((s) => {
                       const canDownload = s.status !== "not_delivered" && s.export_id != null;
-                      const slug = slugify(s.character_name);
+                      const slug = slugify(s.avatar_name);
                       const statusColor = TERMINAL_STATUS_COLORS[s.status] ?? "text-[var(--color-text-muted)]";
                       return (
                         <tr
-                          key={s.character_id}
+                          key={s.avatar_id}
                           className={`${TERMINAL_DIVIDER} ${TERMINAL_ROW_HOVER}`}
                         >
                           <td className="py-2 pr-3 font-mono text-xs text-[var(--color-text-primary)] font-medium">
-                            {s.character_name}
+                            {s.avatar_name}
                           </td>
                           <td className="py-2 pr-3 font-mono text-xs">
                             <span className={statusColor}>

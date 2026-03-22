@@ -1,5 +1,5 @@
 /**
- * Types for Character Identity Embedding (PRD-76).
+ * Types for Avatar Identity Embedding (PRD-76).
  */
 
 /* --------------------------------------------------------------------------
@@ -43,7 +43,7 @@ export interface BoundingBox {
 /** A detected face from the multi-face detection results. */
 export interface DetectedFace {
   id: number;
-  character_id: number;
+  avatar_id: number;
   bounding_box: BoundingBox;
   confidence: number;
   is_primary: boolean;
@@ -51,9 +51,9 @@ export interface DetectedFace {
   updated_at: string;
 }
 
-/** Current embedding status for a character. */
+/** Current embedding status for a avatar. */
 export interface EmbeddingStatusResponse {
-  character_id: number;
+  avatar_id: number;
   embedding_status_id: EmbeddingStatusId;
   embedding_status_label: string;
   face_detection_confidence: number | null;
@@ -65,7 +65,7 @@ export interface EmbeddingStatusResponse {
 /** A historical embedding record (audit trail). */
 export interface EmbeddingHistory {
   id: number;
-  character_id: number;
+  avatar_id: number;
   face_detection_confidence: number;
   face_bounding_box: BoundingBox | null;
   replaced_at: string;

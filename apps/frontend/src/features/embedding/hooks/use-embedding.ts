@@ -1,5 +1,5 @@
 /**
- * TanStack Query hooks for character face embedding management (PRD-76).
+ * TanStack Query hooks for avatar face embedding management (PRD-76).
  */
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -20,61 +20,61 @@ import type {
 export const embeddingKeys = {
   all: ["embedding"] as const,
   statuses: () => [...embeddingKeys.all, "status"] as const,
-  status: (characterId: number) =>
-    [...embeddingKeys.statuses(), characterId] as const,
+  status: (avatarId: number) =>
+    [...embeddingKeys.statuses(), avatarId] as const,
   faces: () => [...embeddingKeys.all, "faces"] as const,
-  faceList: (characterId: number) =>
-    [...embeddingKeys.faces(), characterId] as const,
+  faceList: (avatarId: number) =>
+    [...embeddingKeys.faces(), avatarId] as const,
   histories: () => [...embeddingKeys.all, "history"] as const,
-  history: (characterId: number) =>
-    [...embeddingKeys.histories(), characterId] as const,
+  history: (avatarId: number) =>
+    [...embeddingKeys.histories(), avatarId] as const,
 };
 
 /* --------------------------------------------------------------------------
    Helpers
    -------------------------------------------------------------------------- */
 
-function embeddingBasePath(characterId: number): string {
-  return `/characters/${characterId}`;
+function embeddingBasePath(avatarId: number): string {
+  return `/avatars/${avatarId}`;
 }
 
 /* --------------------------------------------------------------------------
    Query hooks
    -------------------------------------------------------------------------- */
 
-/** Fetch the current embedding status for a character. */
-export function useEmbeddingStatus(characterId: number) {
+/** Fetch the current embedding status for a avatar. */
+export function useEmbeddingStatus(avatarId: number) {
   return useQuery({
-    queryKey: embeddingKeys.status(characterId),
+    queryKey: embeddingKeys.status(avatarId),
     queryFn: () =>
       api.get<EmbeddingStatusResponse>(
-        `${embeddingBasePath(characterId)}/embedding-status`,
+        `${embeddingBasePath(avatarId)}/embedding-status`,
       ),
-    enabled: characterId > 0,
+    enabled: avatarId > 0,
   });
 }
 
-/** Fetch detected faces for a character (multi-face scenario). */
-export function useDetectedFaces(characterId: number) {
+/** Fetch detected faces for a avatar (multi-face scenario). */
+export function useDetectedFaces(avatarId: number) {
   return useQuery({
-    queryKey: embeddingKeys.faceList(characterId),
+    queryKey: embeddingKeys.faceList(avatarId),
     queryFn: () =>
       api.get<DetectedFace[]>(
-        `${embeddingBasePath(characterId)}/detected-faces`,
+        `${embeddingBasePath(avatarId)}/detected-faces`,
       ),
-    enabled: characterId > 0,
+    enabled: avatarId > 0,
   });
 }
 
-/** Fetch the embedding replacement history for a character. */
-export function useEmbeddingHistory(characterId: number) {
+/** Fetch the embedding replacement history for a avatar. */
+export function useEmbeddingHistory(avatarId: number) {
   return useQuery({
-    queryKey: embeddingKeys.history(characterId),
+    queryKey: embeddingKeys.history(avatarId),
     queryFn: () =>
       api.get<EmbeddingHistory[]>(
-        `${embeddingBasePath(characterId)}/embedding-history`,
+        `${embeddingBasePath(avatarId)}/embedding-history`,
       ),
-    enabled: characterId > 0,
+    enabled: avatarId > 0,
   });
 }
 
@@ -82,46 +82,46 @@ export function useEmbeddingHistory(characterId: number) {
    Mutation hooks
    -------------------------------------------------------------------------- */
 
-/** Trigger face embedding extraction for a character. */
-export function useExtractEmbedding(characterId: number) {
+/** Trigger face embedding extraction for a avatar. */
+export function useExtractEmbedding(avatarId: number) {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (data?: ExtractEmbeddingRequest) =>
       api.post<EmbeddingStatusResponse>(
-        `${embeddingBasePath(characterId)}/extract-embedding`,
+        `${embeddingBasePath(avatarId)}/extract-embedding`,
         data,
       ),
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: embeddingKeys.status(characterId),
+        queryKey: embeddingKeys.status(avatarId),
       });
       queryClient.invalidateQueries({
-        queryKey: embeddingKeys.faceList(characterId),
+        queryKey: embeddingKeys.faceList(avatarId),
       });
     },
   });
 }
 
-/** Select a detected face as the primary face for a character. */
-export function useSelectFace(characterId: number) {
+/** Select a detected face as the primary face for a avatar. */
+export function useSelectFace(avatarId: number) {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (data: SelectFaceRequest) =>
       api.post<EmbeddingStatusResponse>(
-        `${embeddingBasePath(characterId)}/select-face`,
+        `${embeddingBasePath(avatarId)}/select-face`,
         data,
       ),
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: embeddingKeys.status(characterId),
+        queryKey: embeddingKeys.status(avatarId),
       });
       queryClient.invalidateQueries({
-        queryKey: embeddingKeys.faceList(characterId),
+        queryKey: embeddingKeys.faceList(avatarId),
       });
       queryClient.invalidateQueries({
-        queryKey: embeddingKeys.history(characterId),
+        queryKey: embeddingKeys.history(avatarId),
       });
     },
   });

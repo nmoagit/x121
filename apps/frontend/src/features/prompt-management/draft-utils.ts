@@ -1,7 +1,7 @@
 /**
  * Shared draft-map helpers for prompt override editors (PRD-115).
  *
- * Both PromptOverrideEditor and CharacterSceneOverrideEditor convert
+ * Both PromptOverrideEditor and AvatarSceneOverrideEditor convert
  * override rows into a Map<slotId, SlotDraft>.  This module provides a
  * single implementation for that conversion plus the default-text lookup.
  */
@@ -12,7 +12,7 @@ import type { SceneTypePromptDefault, SlotDraft, WorkflowPromptSlot } from "./ty
    Types
    -------------------------------------------------------------------------- */
 
-/** Minimal shape that any override row must satisfy (project, group, or character). */
+/** Minimal shape that any override row must satisfy (project, group, or avatar). */
 export interface OverrideRowLike {
   prompt_slot_id: number;
   fragments: { type: "fragment_ref" | "inline"; fragment_id?: number; text: string }[];
@@ -26,7 +26,7 @@ export interface OverrideRowLike {
 
 /**
  * Convert an array of override rows into a Map keyed by prompt_slot_id.
- * Works for project, group, and character override shapes alike.
+ * Works for project, group, and avatar override shapes alike.
  */
 export function buildDraftMap(overrides: OverrideRowLike[] | undefined): Map<number, SlotDraft> {
   const map = new Map<number, SlotDraft>();

@@ -1,7 +1,7 @@
 /**
  * Factory functions for scene-setting toggle and remove mutations.
  *
- * Shared by project, group, and character scene setting hooks to avoid
+ * Shared by project, group, and avatar scene setting hooks to avoid
  * duplicating the same mutation pattern across all three levels.
  *
  * Both mutations use optimistic updates — the UI flips immediately and
@@ -20,9 +20,9 @@ import { sceneSettingUrl } from "../types";
  * Optimistically updates the cached settings list by flipping `is_enabled`
  * and updating `source` on the matched row. Reverts on error.
  *
- * @param basePath  API base path, e.g. `/characters/5/scene-settings`
+ * @param basePath  API base path, e.g. `/avatars/5/scene-settings`
  * @param invalidationKey  Query key to invalidate on success
- * @param sourceName  Source label applied to toggled rows (e.g. "project", "group", "character")
+ * @param sourceName  Source label applied to toggled rows (e.g. "project", "group", "avatar")
  */
 export function useToggleSceneSetting(
   basePath: string,
@@ -83,7 +83,7 @@ export function useToggleSceneSetting(
  * and keeping `is_enabled` unchanged (actual fallback value comes from the
  * server refetch). Reverts on error.
  *
- * @param basePath  API base path, e.g. `/characters/5/scene-settings`
+ * @param basePath  API base path, e.g. `/avatars/5/scene-settings`
  * @param invalidationKey  Query key to invalidate on success
  */
 export function useRemoveSceneOverride(

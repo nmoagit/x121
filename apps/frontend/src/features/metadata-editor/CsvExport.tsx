@@ -1,5 +1,5 @@
 /**
- * CSV export button for character metadata (PRD-66).
+ * CSV export button for avatar metadata (PRD-66).
  *
  * Triggers a browser file download of the project's metadata CSV.
  */

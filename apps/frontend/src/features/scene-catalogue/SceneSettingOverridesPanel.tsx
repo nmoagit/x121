@@ -1,5 +1,5 @@
 /**
- * Shared overrides panel for scene settings at group and character level.
+ * Shared overrides panel for scene settings at group and avatar level.
  *
  * Terminal-style dark table with toggle, source label, reset actions,
  * and a "Reset All" modal.

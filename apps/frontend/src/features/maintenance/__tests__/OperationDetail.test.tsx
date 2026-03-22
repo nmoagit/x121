@@ -18,7 +18,7 @@ const makeOperation = (
   status_id: 3,
   parameters: { search_term: "foo", replace_with: "bar" },
   scope_project_id: null,
-  affected_entity_type: "character",
+  affected_entity_type: "avatar",
   affected_field: "name",
   preview_count: 5,
   affected_count: 3,

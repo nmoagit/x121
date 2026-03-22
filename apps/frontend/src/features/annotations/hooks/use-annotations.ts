@@ -95,8 +95,8 @@ export function useExportFrame(segmentId: number, frame: number) {
 /** Browse params for the annotations browse endpoint. */
 export interface AnnotationBrowseParams {
   projectId?: number;
-  characterId?: number;
-  sort?: "character_name" | "created_at";
+  avatarId?: number;
+  sort?: "avatar_name" | "created_at";
   sortDir?: "asc" | "desc";
   limit?: number;
   offset?: number;
@@ -106,7 +106,7 @@ export interface AnnotationBrowseParams {
 export function useAnnotationsBrowse(params: AnnotationBrowseParams = {}) {
   const searchParams = new URLSearchParams();
   if (params.projectId != null) searchParams.set("project_id", String(params.projectId));
-  if (params.characterId != null) searchParams.set("character_id", String(params.characterId));
+  if (params.avatarId != null) searchParams.set("avatar_id", String(params.avatarId));
   if (params.sort) searchParams.set("sort", params.sort);
   if (params.sortDir) searchParams.set("sort_dir", params.sortDir);
   if (params.limit != null) searchParams.set("limit", String(params.limit));
@@ -116,7 +116,7 @@ export function useAnnotationsBrowse(params: AnnotationBrowseParams = {}) {
   return useQuery({
     queryKey: annotationKeys.browse({
       projectId: params.projectId,
-      characterId: params.characterId,
+      avatarId: params.avatarId,
       sort: params.sort,
       sortDir: params.sortDir,
     }),

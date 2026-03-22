@@ -94,7 +94,7 @@ describe("useTreemapData", () => {
 
   it("passes entity_type and entity_id as query params", async () => {
     const fakeNodes: TreemapNode[] = [
-      { name: "Char 1", entity_type: "character", entity_id: 10, size: 100, file_count: 2, reclaimable_bytes: 0, children: [] },
+      { name: "Char 1", entity_type: "avatar", entity_id: 10, size: 100, file_count: 2, reclaimable_bytes: 0, children: [] },
     ];
     mockGet.mockResolvedValueOnce(fakeNodes);
 

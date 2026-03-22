@@ -44,12 +44,12 @@ export interface SceneTypePromptDefault {
 }
 
 /* --------------------------------------------------------------------------
-   Character scene prompt overrides
+   Avatar scene prompt overrides
    -------------------------------------------------------------------------- */
 
-export interface CharacterScenePromptOverride {
+export interface AvatarScenePromptOverride {
   id: number;
-  character_id: number;
+  avatar_id: number;
   scene_type_id: number;
   prompt_slot_id: number;
   fragments: FragmentEntry[];
@@ -142,7 +142,7 @@ export interface SlotOverride {
 export interface ResolvePromptRequest {
   workflow_id: number;
   scene_type_id: number;
-  character_id: number;
+  avatar_id: number;
   slot_id?: number;
 }
 

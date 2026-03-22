@@ -2,7 +2,7 @@
  * Gallery sort, filter, and mute state management (PRD-68).
  *
  * Encapsulates all UI state for the comparison gallery so that
- * SceneGallery and CharacterAllScenes stay lean.
+ * SceneGallery and AvatarAllScenes stay lean.
  */
 
 import { useMemo, useState } from "react";
@@ -20,7 +20,7 @@ import type {
    -------------------------------------------------------------------------- */
 
 const SORT_FNS: Record<SortField, (a: ComparisonCell, b: ComparisonCell) => number> = {
-  character_name: (a, b) => a.character_name.localeCompare(b.character_name),
+  avatar_name: (a, b) => a.avatar_name.localeCompare(b.avatar_name),
   qa_score: (a, b) => (a.qa_score ?? -1) - (b.qa_score ?? -1),
   created_at: (a, b) => a.created_at.localeCompare(b.created_at),
   approval_status: (a, b) =>
@@ -58,7 +58,7 @@ export interface GalleryStateResult {
 
 export function useGalleryState(cells: ComparisonCell[]): GalleryStateResult {
   const [sort, setSort] = useState<GallerySort>({
-    field: "character_name",
+    field: "avatar_name",
     direction: "asc",
   });
 

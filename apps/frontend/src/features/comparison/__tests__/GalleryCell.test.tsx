@@ -10,8 +10,8 @@ import type { ComparisonCell } from "../types";
 
 function makeCell(overrides: Partial<ComparisonCell> = {}): ComparisonCell {
   return {
-    character_id: 1,
-    character_name: "Alice",
+    avatar_id: 1,
+    avatar_name: "Alice",
     scene_id: 10,
     segment_id: 100,
     scene_type_id: 5,
@@ -33,7 +33,7 @@ function makeCell(overrides: Partial<ComparisonCell> = {}): ComparisonCell {
    -------------------------------------------------------------------------- */
 
 describe("GalleryCell", () => {
-  it("renders character name and QA score", () => {
+  it("renders avatar name and QA score", () => {
     render(<GalleryCell cell={makeCell()} />);
 
     expect(screen.getByText("Alice")).toBeInTheDocument();

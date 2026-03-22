@@ -1,8 +1,8 @@
 /**
  * Poster frame gallery grid (PRD-96).
  *
- * Displays all character poster frames for a project in a grid layout,
- * with an option to auto-select the best frame for each character.
+ * Displays all avatar poster frames for a project in a grid layout,
+ * with an option to auto-select the best frame for each avatar.
  */
 
 import { Badge, Button ,  WireframeLoader } from "@/components/primitives";

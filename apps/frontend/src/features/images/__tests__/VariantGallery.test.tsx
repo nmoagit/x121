@@ -11,7 +11,7 @@ import { IMAGE_VARIANT_STATUS, PROVENANCE, type ImageVariant } from "../types";
 
 const MOCK_VARIANT_GENERATED: ImageVariant = {
   id: 1,
-  character_id: 10,
+  avatar_id: 10,
   source_image_id: null,
   derived_image_id: null,
   variant_label: "Clothed variant",
@@ -88,7 +88,7 @@ describe("VariantGallery", () => {
 
   it("renders loading state initially", () => {
     mockGet.mockReturnValue(new Promise(() => {}));
-    renderWithProviders(<VariantGallery characterId={10} />);
+    renderWithProviders(<VariantGallery avatarId={10} />);
 
     const spinner = document.querySelector('[aria-label="Loading"]');
     expect(spinner).toBeTruthy();
@@ -97,7 +97,7 @@ describe("VariantGallery", () => {
   it("renders the list of variants", async () => {
     mockGet.mockResolvedValue([MOCK_VARIANT_GENERATED, MOCK_VARIANT_HERO]);
 
-    renderWithProviders(<VariantGallery characterId={10} />);
+    renderWithProviders(<VariantGallery avatarId={10} />);
 
     await waitFor(() => {
       expect(screen.getByText("Clothed variant")).toBeInTheDocument();
@@ -108,7 +108,7 @@ describe("VariantGallery", () => {
   it("shows empty state when no variants exist", async () => {
     mockGet.mockResolvedValue([]);
 
-    renderWithProviders(<VariantGallery characterId={10} />);
+    renderWithProviders(<VariantGallery avatarId={10} />);
 
     await waitFor(() => {
       expect(
@@ -124,7 +124,7 @@ describe("VariantGallery", () => {
       MOCK_VARIANT_GENERATING,
     ]);
 
-    renderWithProviders(<VariantGallery characterId={10} />);
+    renderWithProviders(<VariantGallery avatarId={10} />);
 
     await waitFor(() => {
       // "Generated" appears as both a status badge and a provenance badge
@@ -137,7 +137,7 @@ describe("VariantGallery", () => {
   it("shows approve and reject buttons for generated variants", async () => {
     mockGet.mockResolvedValue([MOCK_VARIANT_GENERATED]);
 
-    renderWithProviders(<VariantGallery characterId={10} />);
+    renderWithProviders(<VariantGallery avatarId={10} />);
 
     await waitFor(() => {
       expect(
@@ -153,7 +153,7 @@ describe("VariantGallery", () => {
     mockGet.mockResolvedValue([MOCK_VARIANT_GENERATED]);
     mockPost.mockResolvedValue({ ...MOCK_VARIANT_GENERATED, is_hero: true });
 
-    renderWithProviders(<VariantGallery characterId={10} />);
+    renderWithProviders(<VariantGallery avatarId={10} />);
 
     await waitFor(() => {
       expect(screen.getByText("Clothed variant")).toBeInTheDocument();
@@ -166,7 +166,7 @@ describe("VariantGallery", () => {
 
     await waitFor(() => {
       expect(mockPost).toHaveBeenCalledWith(
-        "/characters/10/image-variants/1/approve",
+        "/avatars/10/image-variants/1/approve",
       );
     });
   });
@@ -175,7 +175,7 @@ describe("VariantGallery", () => {
     mockGet.mockResolvedValue([MOCK_VARIANT_GENERATED]);
     mockPost.mockResolvedValue({ ...MOCK_VARIANT_GENERATED, status_id: 3 });
 
-    renderWithProviders(<VariantGallery characterId={10} />);
+    renderWithProviders(<VariantGallery avatarId={10} />);
 
     await waitFor(() => {
       expect(screen.getByText("Clothed variant")).toBeInTheDocument();
@@ -188,7 +188,7 @@ describe("VariantGallery", () => {
 
     await waitFor(() => {
       expect(mockPost).toHaveBeenCalledWith(
-        "/characters/10/image-variants/1/reject",
+        "/avatars/10/image-variants/1/reject",
       );
     });
   });
@@ -197,7 +197,7 @@ describe("VariantGallery", () => {
     mockGet.mockResolvedValue([MOCK_VARIANT_GENERATED]);
     mockDelete.mockResolvedValue(undefined);
 
-    renderWithProviders(<VariantGallery characterId={10} />);
+    renderWithProviders(<VariantGallery avatarId={10} />);
 
     await waitFor(() => {
       expect(screen.getByText("Clothed variant")).toBeInTheDocument();
@@ -210,7 +210,7 @@ describe("VariantGallery", () => {
 
     await waitFor(() => {
       expect(mockDelete).toHaveBeenCalledWith(
-        "/characters/10/image-variants/1",
+        "/avatars/10/image-variants/1",
       );
     });
   });
@@ -220,7 +220,7 @@ describe("VariantGallery", () => {
 
     renderWithProviders(
       <VariantGallery
-        characterId={10}
+        avatarId={10}
         sourceImageUrl="/storage/source.png"
       />,
     );
@@ -233,7 +233,7 @@ describe("VariantGallery", () => {
   it("opens preview modal when variant image is clicked", async () => {
     mockGet.mockResolvedValue([MOCK_VARIANT_GENERATED]);
 
-    renderWithProviders(<VariantGallery characterId={10} />);
+    renderWithProviders(<VariantGallery avatarId={10} />);
 
     await waitFor(() => {
       expect(screen.getByText("Clothed variant")).toBeInTheDocument();

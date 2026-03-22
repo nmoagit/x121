@@ -116,8 +116,8 @@ export interface AnnotatedItem {
   segment_id: number | null;
   frame_number: number;
   annotation_count: number;
-  character_id: number;
-  character_name: string;
+  avatar_id: number;
+  avatar_name: string;
   scene_id: number;
   scene_type_name: string;
   scene_status_id: number;

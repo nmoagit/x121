@@ -1,7 +1,7 @@
 /**
- * Scenes content page — browse all generated clips across characters,
+ * Scenes content page — browse all generated clips across avatars,
  * most recent first. Read-only clip list items with video playback
- * and navigation to character scene detail.
+ * and navigation to avatar scene detail.
  */
 
 import { useState, useMemo, useRef, useEffect, useCallback } from "react";
@@ -61,7 +61,7 @@ function BrowseClipItem({
           : clip.qa_status === "rejected"
             ? "border-red-500"
             : "border-[var(--color-border-default)]"
-      } ${!clip.character_is_enabled ? "opacity-70 grayscale" : ""}`}
+      } ${!clip.avatar_is_enabled ? "opacity-70 grayscale" : ""}`}
     >
       <div className="flex items-center gap-3 p-3">
         {/* Clickable video thumbnail */}
@@ -97,7 +97,7 @@ function BrowseClipItem({
         >
           <div className="flex items-center gap-2">
             <span className="font-medium text-[var(--color-text-primary)]">
-              {clip.character_name}
+              {clip.avatar_name}
             </span>
             <span className="text-[var(--color-text-muted)] uppercase">{clip.scene_type_name}</span>
             <span className={TRACK_TEXT_COLORS[clip.track_name.toLowerCase()] ?? "text-[var(--color-text-muted)]"}>{clip.track_name}</span>
@@ -178,7 +178,7 @@ export function ScenesPage() {
   const filteredClips = useMemo(() => {
     if (!clips) return [];
     return clips.filter((c) => {
-      if (!showDisabled && !c.character_is_enabled) return false;
+      if (!showDisabled && !c.avatar_is_enabled) return false;
       if (projectFilter.length > 0 && !projectFilter.includes(String(c.project_id))) return false;
       if (sourceFilter.length > 0 && !sourceFilter.includes(c.source)) return false;
       if (statusFilter.length > 0 && !statusFilter.includes(c.qa_status)) return false;
@@ -266,10 +266,10 @@ export function ScenesPage() {
               onPlay={() => setPlayingClip(toPlayable(clip))}
               onNavigate={() =>
                 navigate({
-                  to: "/projects/$projectId/models/$characterId",
+                  to: "/projects/$projectId/avatars/$avatarId",
                   params: {
                     projectId: String(clip.project_id),
-                    characterId: String(clip.character_id),
+                    avatarId: String(clip.avatar_id),
                   },
                   search: { tab: "scenes", scene: String(clip.scene_id) },
                 })

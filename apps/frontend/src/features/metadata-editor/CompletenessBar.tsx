@@ -1,5 +1,5 @@
 /**
- * Completeness progress bar for character metadata (PRD-66).
+ * Completeness progress bar for avatar metadata (PRD-66).
  *
  * Shows a visual bar with percentage, count text, and expandable
  * list of missing required fields.

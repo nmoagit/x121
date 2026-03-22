@@ -37,7 +37,7 @@ export const SWIPE_ACTION_BADGE_VARIANT: Record<SwipeAction, BadgeVariant> = {
 
 export interface ReviewQueueItem {
   segment_id: number;
-  character_name: string;
+  avatar_name: string;
   scene_type: string;
   status: string;
   thumbnail_url: string | null;

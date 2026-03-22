@@ -1,7 +1,7 @@
 /**
  * Multi-face selector overlay for choosing the primary face (PRD-76).
  *
- * Renders detected faces with bounding box overlays on a character's image.
+ * Renders detected faces with bounding box overlays on a avatar's image.
  * Users click a face to select it as the primary identity.
  */
 
@@ -53,7 +53,7 @@ export function MultiFaceSelector({
         {imageUrl && (
           <img
             src={imageUrl}
-            alt="Model source"
+            alt="Avatar source"
             className="block w-full h-auto"
           />
         )}

@@ -1,8 +1,8 @@
 /**
- * SimilarityAlert -- modal dialog for duplicate character detection (PRD-79).
+ * SimilarityAlert -- modal dialog for duplicate avatar detection (PRD-79).
  *
- * Shows a side-by-side comparison of the uploaded character versus the
- * matched character, displays the similarity percentage, and provides
+ * Shows a side-by-side comparison of the uploaded avatar versus the
+ * matched avatar, displays the similarity percentage, and provides
  * resolution actions: Link to Existing, Create as New, Cancel.
  */
 
@@ -18,9 +18,9 @@ import { Modal } from "@/components/composite";
 interface SimilarityAlertProps {
   open: boolean;
   onClose: () => void;
-  /** Name of the character being uploaded. */
+  /** Name of the avatar being uploaded. */
   sourceName: string;
-  /** Name of the matched existing character. */
+  /** Name of the matched existing avatar. */
   matchedName: string;
   /** Similarity percentage (0-100). */
   similarityScore: number;
@@ -82,7 +82,7 @@ export function SimilarityAlert({
         <div className="grid grid-cols-2 gap-4">
           <div
             className="rounded-[var(--radius-md)] border border-[var(--color-border-default)] p-4"
-            data-testid="source-character"
+            data-testid="source-avatar"
           >
             <p className="text-xs font-medium uppercase tracking-wide text-[var(--color-text-muted)] mb-1">
               Uploaded
@@ -94,7 +94,7 @@ export function SimilarityAlert({
 
           <div
             className="rounded-[var(--radius-md)] border border-[var(--color-border-default)] p-4"
-            data-testid="matched-character"
+            data-testid="matched-avatar"
           >
             <p className="text-xs font-medium uppercase tracking-wide text-[var(--color-text-muted)] mb-1">
               Existing Match

@@ -1,9 +1,9 @@
 /**
  * Shared editor for blocking deliverables overrides.
  *
- * Used at project, group, and character level. Each level can override
+ * Used at project, group, and avatar level. Each level can override
  * or inherit from its parent in the hierarchy:
- * Studio → Project → Group → Character.
+ * Studio → Project → Group → Avatar.
  */
 
 import { Stack } from "@/components/layout";

@@ -12,7 +12,7 @@ import type { BadgeVariant } from "@/components";
 export interface TestShot {
   id: number;
   scene_type_id: number;
-  character_id: number;
+  avatar_id: number;
   workflow_id: number | null;
   parameters: Record<string, unknown>;
   seed_image_path: string;
@@ -34,7 +34,7 @@ export interface TestShot {
 /** Request body for generating a single test shot. */
 export interface GenerateTestShotRequest {
   scene_type_id: number;
-  character_id: number;
+  avatar_id: number;
   workflow_id?: number | null;
   parameters?: Record<string, unknown> | null;
   seed_image_path: string;
@@ -44,7 +44,7 @@ export interface GenerateTestShotRequest {
 /** Request body for generating a batch of test shots. */
 export interface BatchTestShotRequest {
   scene_type_id: number;
-  character_ids: number[];
+  avatar_ids: number[];
   workflow_id?: number | null;
   parameters?: Record<string, unknown> | null;
   seed_image_path: string;

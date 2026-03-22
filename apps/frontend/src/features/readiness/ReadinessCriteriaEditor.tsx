@@ -1,7 +1,7 @@
 /**
  * Readiness criteria editor component (PRD-107).
  *
- * Allows admins to configure which fields are required for a character
+ * Allows admins to configure which fields are required for a avatar
  * to be considered "ready". Supports studio-level and project-level scopes.
  */
 
@@ -24,7 +24,7 @@ interface ReadinessCriteriaEditorProps {
   onSave: (criteria: CriteriaJson) => void;
   /** Callback when cancel is clicked. */
   onCancel?: () => void;
-  /** Number of characters that will be affected by the change. */
+  /** Number of avatars that will be affected by the change. */
   affectedCount?: number;
 }
 
@@ -174,7 +174,7 @@ export function ReadinessCriteriaEditor({
           data-testid="affected-count"
           className="text-sm text-[var(--color-action-warning)]"
         >
-          This will recalculate readiness for {affectedCount} characters.
+          This will recalculate readiness for {affectedCount} avatars.
         </p>
       )}
 

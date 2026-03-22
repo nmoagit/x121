@@ -9,7 +9,7 @@
 /** A poster frame record from the server. */
 export interface PosterFrame {
   id: number;
-  entity_type: "character" | "scene";
+  entity_type: "avatar" | "scene";
   entity_id: number;
   segment_id: number;
   frame_number: number;
@@ -52,9 +52,9 @@ export interface UpdatePosterFrameAdjustments {
   contrast?: number;
 }
 
-/** Result from the auto-select endpoint for a single character. */
+/** Result from the auto-select endpoint for a single avatar. */
 export interface AutoSelectResult {
-  character_id: number;
+  avatar_id: number;
   segment_id: number | null;
   selected: boolean;
 }
@@ -63,7 +63,7 @@ export interface AutoSelectResult {
    Constants
    -------------------------------------------------------------------------- */
 
-export const ENTITY_TYPE_CHARACTER = "character" as const;
+export const ENTITY_TYPE_CHARACTER = "avatar" as const;
 export const ENTITY_TYPE_SCENE = "scene" as const;
 
 export const ASPECT_RATIO_OPTIONS = [

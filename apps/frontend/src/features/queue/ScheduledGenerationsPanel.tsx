@@ -1,7 +1,7 @@
 /**
  * Displays active scheduled generation entries in the Queue Manager (PRD-134).
  *
- * Shows generation schedules with enriched scene details (character name,
+ * Shows generation schedules with enriched scene details (avatar name,
  * scene type, track) and per-scene cancel capability.
  */
 
@@ -79,7 +79,7 @@ function SceneRow({
         #{scene.id}
       </span>
       <span className="flex-1 min-w-0 truncate text-[var(--color-text-primary)]">
-        {scene.character_name}
+        {scene.avatar_name}
       </span>
       <span className="shrink-0 text-[var(--color-text-secondary)]">
         {scene.scene_type_name}

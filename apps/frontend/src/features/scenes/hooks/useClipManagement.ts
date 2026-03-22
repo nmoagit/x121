@@ -1,7 +1,7 @@
 import { api } from "@/lib/api";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { RejectClipInput, ResumeFromResponse, SceneVideoVersion } from "../types";
-import { sceneKeys } from "./useCharacterScenes";
+import { sceneKeys } from "./useAvatarScenes";
 
 export const clipKeys = {
   all: ["scene-versions"] as const,
@@ -11,7 +11,7 @@ export const clipKeys = {
   browse: (projectId?: number) => [...clipKeys.all, "browse", projectId] as const,
 };
 
-/** A clip enriched with character/scene/project context for browsing. */
+/** A clip enriched with avatar/scene/project context for browsing. */
 export interface ClipBrowseItem {
   id: number;
   scene_id: number;
@@ -32,16 +32,16 @@ export interface ClipBrowseItem {
   file_purged: boolean;
   created_at: string;
   annotation_count: number;
-  character_id: number;
-  character_name: string;
+  avatar_id: number;
+  avatar_name: string;
   scene_type_name: string;
   track_name: string;
-  character_is_enabled: boolean;
+  avatar_is_enabled: boolean;
   project_id: number;
   project_name: string;
 }
 
-/** Fetch all clips across all characters/scenes, most recent first. */
+/** Fetch all clips across all avatars/scenes, most recent first. */
 export function useClipsBrowse(projectId?: number) {
   const params = new URLSearchParams();
   if (projectId != null) params.set("project_id", String(projectId));
@@ -185,9 +185,9 @@ export function useBulkImportClip() {
     }) => postClipImport(sceneId, file, notes),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: clipKeys.all });
-      // Refresh scene list (video counts, thumbnails) and character dashboard
+      // Refresh scene list (video counts, thumbnails) and avatar dashboard
       queryClient.invalidateQueries({ queryKey: sceneKeys.all });
-      queryClient.invalidateQueries({ queryKey: ["character-dashboard"] });
+      queryClient.invalidateQueries({ queryKey: ["avatar-dashboard"] });
     },
   });
 }

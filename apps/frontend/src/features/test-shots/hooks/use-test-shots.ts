@@ -23,8 +23,8 @@ import type {
 
 export const testShotKeys = {
   all: ["test-shots"] as const,
-  gallery: (sceneTypeId: number, characterId?: number) =>
-    ["test-shots", "gallery", { sceneTypeId, characterId }] as const,
+  gallery: (sceneTypeId: number, avatarId?: number) =>
+    ["test-shots", "gallery", { sceneTypeId, avatarId }] as const,
   detail: (id: number) => ["test-shots", "detail", id] as const,
 };
 
@@ -35,17 +35,17 @@ export const testShotKeys = {
 /** List test shots as a filterable gallery for a scene type. */
 export function useTestShotGallery(
   sceneTypeId: number,
-  characterId?: number,
+  avatarId?: number,
 ) {
   const params = new URLSearchParams({
     scene_type_id: String(sceneTypeId),
   });
-  if (characterId != null) {
-    params.set("character_id", String(characterId));
+  if (avatarId != null) {
+    params.set("avatar_id", String(avatarId));
   }
 
   return useQuery({
-    queryKey: testShotKeys.gallery(sceneTypeId, characterId),
+    queryKey: testShotKeys.gallery(sceneTypeId, avatarId),
     queryFn: () =>
       api.get<TestShot[]>(`/test-shots?${params.toString()}`),
     enabled: sceneTypeId > 0,
@@ -80,7 +80,7 @@ export function useGenerateTestShot() {
   });
 }
 
-/** Generate a batch of test shots for multiple characters. */
+/** Generate a batch of test shots for multiple avatars. */
 export function useBatchTestShots() {
   const queryClient = useQueryClient();
 

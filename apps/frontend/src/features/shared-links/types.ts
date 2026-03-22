@@ -6,13 +6,13 @@
    Scope & Decision types
    -------------------------------------------------------------------------- */
 
-export type LinkScopeType = "segment" | "scene" | "character" | "project";
+export type LinkScopeType = "segment" | "scene" | "avatar" | "project";
 export type ReviewDecision = "approved" | "rejected";
 
 export const SCOPE_TYPE_LABELS: Record<LinkScopeType, string> = {
   segment: "Segment",
   scene: "Scene",
-  character: "Model",
+  avatar: "Model",
   project: "Project",
 };
 

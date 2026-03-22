@@ -1,7 +1,7 @@
 /**
- * Panel showing all projects using a library character (PRD-60).
+ * Panel showing all projects using a library avatar (PRD-60).
  *
- * Displays a table of project names, character names, and import dates
+ * Displays a table of project names, avatar names, and import dates
  * for cross-project visibility.
  */
 
@@ -22,15 +22,15 @@ import { Layers } from "@/tokens/icons";
 import { useLibraryUsage } from "./hooks/use-library";
 
 interface LibraryUsagePanelProps {
-  libraryCharacterId: number;
-  libraryCharacterName?: string;
+  libraryAvatarId: number;
+  libraryAvatarName?: string;
 }
 
 export function LibraryUsagePanel({
-  libraryCharacterId,
-  libraryCharacterName,
+  libraryAvatarId,
+  libraryAvatarName,
 }: LibraryUsagePanelProps) {
-  const { data: usage, isLoading, error } = useLibraryUsage(libraryCharacterId);
+  const { data: usage, isLoading, error } = useLibraryUsage(libraryAvatarId);
 
   if (isLoading) {
     return (
@@ -58,9 +58,9 @@ export function LibraryUsagePanel({
         />
         <span className={TERMINAL_HEADER_TITLE}>
           Cross-Project Usage
-          {libraryCharacterName && (
+          {libraryAvatarName && (
             <span className="font-normal text-[var(--color-text-muted)]">
-              {" "}&mdash; {libraryCharacterName}
+              {" "}&mdash; {libraryAvatarName}
             </span>
           )}
         </span>
@@ -80,7 +80,7 @@ export function LibraryUsagePanel({
               <thead>
                 <tr className={TERMINAL_DIVIDER}>
                   <th className={cn(TERMINAL_TH, "px-3 py-1.5")}>Project</th>
-                  <th className={cn(TERMINAL_TH, "px-3 py-1.5")}>Character Name</th>
+                  <th className={cn(TERMINAL_TH, "px-3 py-1.5")}>Avatar Name</th>
                   <th className={cn(TERMINAL_TH, "px-3 py-1.5")}>Imported</th>
                 </tr>
               </thead>
@@ -95,7 +95,7 @@ export function LibraryUsagePanel({
                       {entry.project_name}
                     </td>
                     <td className="px-3 py-1.5 font-mono text-xs text-[var(--color-text-primary)]">
-                      {entry.character_name}
+                      {entry.avatar_name}
                     </td>
                     <td className="px-3 py-1.5 font-mono text-xs text-[var(--color-text-muted)]">
                       {formatDate(entry.imported_at)}

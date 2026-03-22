@@ -290,7 +290,7 @@ export function MetadataTemplateEditor() {
   return (
     <Stack gap={4}>
       <p className="text-sm text-[var(--color-text-muted)]">
-        Manage metadata templates that define which fields characters should have.
+        Manage metadata templates that define which fields avatars should have.
       </p>
 
       {/* Template list */}
@@ -315,7 +315,7 @@ export function MetadataTemplateEditor() {
             onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
               setNewName(e.target.value)
             }
-            placeholder="e.g. Custom Character Template"
+            placeholder="e.g. Custom Avatar Template"
             onKeyDown={(e: React.KeyboardEvent) => {
               if (e.key === "Enter") handleCreate();
             }}

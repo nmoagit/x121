@@ -39,7 +39,7 @@ function ReferenceRow({
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2 text-sm">
           <span className="text-[var(--color-text-primary)] font-medium">
-            Model {reference.character_id}
+            Model {reference.avatar_id}
           </span>
           <span className="text-[var(--color-text-muted)]">/</span>
           <span className="text-[var(--color-text-secondary)]">
@@ -91,7 +91,7 @@ export function ReferenceManager() {
   function handleAdd() {
     // Placeholder: in production this would open a form dialog
     const placeholder: CreateRegressionReference = {
-      character_id: 1,
+      avatar_id: 1,
       scene_type_id: 1,
       reference_scene_id: 1,
       baseline_scores: {},

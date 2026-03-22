@@ -28,7 +28,7 @@ interface PipelineNamingRules {
 }
 
 const DEFAULT_RULES: PipelineNamingRules = {
-  video_template: "{character}_{scene}_{track}",
+  video_template: "{avatar}_{scene}_{track}",
   prefix_rules: {},
   transition_suffix: "_transition",
 };
@@ -122,10 +122,10 @@ export function PipelineNamingRulesEditor({ pipeline }: PipelineNamingRulesEdito
               label="Video Filename Template"
               value={rules.video_template}
               onChange={(e) => setRules((prev) => ({ ...prev, video_template: e.target.value }))}
-              placeholder="{character}_{scene}_{track}"
+              placeholder="{avatar}_{scene}_{track}"
             />
             <p className="text-xs text-[var(--color-text-muted)] font-mono">
-              Available tokens: {"{character}"}, {"{scene}"}, {"{track}"}, {"{project}"}, {"{scene_type}"}
+              Available tokens: {"{avatar}"}, {"{scene}"}, {"{track}"}, {"{project}"}, {"{scene_type}"}
             </p>
           </Stack>
         </div>

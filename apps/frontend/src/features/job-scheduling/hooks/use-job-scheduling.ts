@@ -148,7 +148,7 @@ export function useCancelSchedule() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: scheduleKeys.all });
       queryClient.invalidateQueries({ queryKey: ["scenes"] });
-      queryClient.invalidateQueries({ queryKey: ["characters"] });
+      queryClient.invalidateQueries({ queryKey: ["avatars"] });
     },
   });
 }
@@ -162,7 +162,7 @@ export function useStartScheduleNow() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: scheduleKeys.all });
       queryClient.invalidateQueries({ queryKey: ["scenes"] });
-      queryClient.invalidateQueries({ queryKey: ["characters"] });
+      queryClient.invalidateQueries({ queryKey: ["avatars"] });
     },
   });
 }

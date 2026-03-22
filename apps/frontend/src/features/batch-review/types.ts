@@ -12,7 +12,7 @@ import type { BadgeVariant } from "@/components/primitives/Badge";
    -------------------------------------------------------------------------- */
 
 export type AssignmentStatus = "active" | "completed" | "overdue";
-export type SortMode = "worst_qa_first" | "oldest_first" | "by_scene_type" | "by_character";
+export type SortMode = "worst_qa_first" | "oldest_first" | "by_scene_type" | "by_avatar";
 
 export const ASSIGNMENT_STATUS_LABELS: Record<AssignmentStatus, string> = {
   active: "Active",
@@ -31,7 +31,7 @@ export const SORT_MODE_LABELS: Record<SortMode, string> = {
   worst_qa_first: "Worst QA First",
   oldest_first: "Oldest First",
   by_scene_type: "By Scene Type",
-  by_character: "By Model",
+  by_avatar: "By Model",
 };
 
 /* --------------------------------------------------------------------------

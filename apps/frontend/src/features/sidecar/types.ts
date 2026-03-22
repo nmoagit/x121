@@ -53,7 +53,7 @@ export interface DatasetExport {
 export interface DatasetConfig {
   quality_threshold?: number;
   scene_types?: string[];
-  character_ids?: number[];
+  avatar_ids?: number[];
   train_split: number;
   validation_split: number;
   test_split: number;

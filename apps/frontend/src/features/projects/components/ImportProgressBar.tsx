@@ -1,15 +1,15 @@
 /**
- * Compact progress bar shown during character import operations.
+ * Compact progress bar shown during avatar import operations.
  *
  * Displays the current phase, progress fraction, and error count.
  */
 
 import { Badge ,  WireframeLoader } from "@/components/primitives";
 
-import type { ImportProgress } from "../hooks/use-character-import";
+import type { ImportProgress } from "../hooks/use-avatar-import";
 
 const PHASE_LABELS: Record<ImportProgress["phase"], string> = {
-  creating: "Creating characters",
+  creating: "Creating avatars",
   "uploading-images": "Uploading images",
   "uploading-metadata": "Uploading metadata",
   "importing-videos": "Importing videos",

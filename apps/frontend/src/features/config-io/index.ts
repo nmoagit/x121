@@ -3,6 +3,6 @@ export {
   useExportWorkflow,
   useExportProjectSettings,
   useExportGroupSettings,
-  useExportCharacterSettings,
+  useExportAvatarSettings,
   useConfigImport,
 } from "./use-config-export";

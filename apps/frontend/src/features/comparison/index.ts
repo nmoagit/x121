@@ -1,6 +1,6 @@
 /* Components */
 export { SceneGallery } from "./SceneGallery";
-export { CharacterAllScenes } from "./CharacterAllScenes";
+export { AvatarAllScenes } from "./AvatarAllScenes";
 export { GalleryLayout } from "./GalleryLayout";
 export { GalleryCell } from "./GalleryCell";
 export { GalleryControls } from "./GalleryControls";
@@ -9,7 +9,7 @@ export { GalleryControls } from "./GalleryControls";
 export {
   comparisonKeys,
   useSceneComparison,
-  useCharacterAllScenes,
+  useAvatarAllScenes,
 } from "./hooks/use-comparison";
 export { useGalleryState } from "./hooks/useGalleryState";
 export type { GalleryStateResult } from "./hooks/useGalleryState";

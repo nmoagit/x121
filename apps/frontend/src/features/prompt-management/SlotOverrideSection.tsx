@@ -1,5 +1,5 @@
 /**
- * Individual slot override section for the character scene override editor (PRD-115).
+ * Individual slot override section for the avatar scene override editor (PRD-115).
  *
  * Shows base prompt text, fragment list with remove buttons,
  * fragment dropdown for adding, and notes input.

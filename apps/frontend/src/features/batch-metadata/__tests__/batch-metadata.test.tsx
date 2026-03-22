@@ -21,12 +21,12 @@ const makeOperation = (
   status_id: 1,
   operation_type: "search_replace",
   project_id: 10,
-  character_ids: [1, 2, 3],
-  character_count: 3,
+  avatar_ids: [1, 2, 3],
+  avatar_count: 3,
   parameters: { search_pattern: "blonde", replace_with: "brown" },
   before_snapshot: {},
   after_snapshot: {},
-  summary: "Search & replace in all fields across 3 characters",
+  summary: "Search & replace in all fields across 3 avatars",
   initiated_by: 1,
   applied_at: null,
   undone_at: null,
@@ -38,7 +38,7 @@ const makeOperation = (
 const defaultBuildRequest = vi.fn((params, fieldName) => ({
   operation_type: "search_replace" as const,
   project_id: 10,
-  character_ids: [1, 2, 3],
+  avatar_ids: [1, 2, 3],
   parameters: params,
   field_name: fieldName,
 }));
@@ -52,7 +52,7 @@ describe("BatchMetadataPanel", () => {
     renderWithProviders(
       <BatchMetadataPanel
         projectId={10}
-        characterIds={[1, 2, 3]}
+        avatarIds={[1, 2, 3]}
       />,
     );
 
@@ -60,29 +60,29 @@ describe("BatchMetadataPanel", () => {
     expect(screen.getByTestId("operation-type-selector")).toBeInTheDocument();
   });
 
-  it("shows character count", () => {
+  it("shows avatar count", () => {
     renderWithProviders(
       <BatchMetadataPanel
         projectId={10}
-        characterIds={[1, 2, 3]}
+        avatarIds={[1, 2, 3]}
       />,
     );
 
-    expect(screen.getByTestId("character-count")).toHaveTextContent(
-      "3 characters selected",
+    expect(screen.getByTestId("avatar-count")).toHaveTextContent(
+      "3 avatars selected",
     );
   });
 
-  it("shows singular character count for one character", () => {
+  it("shows singular avatar count for one avatar", () => {
     renderWithProviders(
       <BatchMetadataPanel
         projectId={10}
-        characterIds={[1]}
+        avatarIds={[1]}
       />,
     );
 
-    expect(screen.getByTestId("character-count")).toHaveTextContent(
-      "1 character selected",
+    expect(screen.getByTestId("avatar-count")).toHaveTextContent(
+      "1 avatar selected",
     );
   });
 
@@ -90,7 +90,7 @@ describe("BatchMetadataPanel", () => {
     renderWithProviders(
       <BatchMetadataPanel
         projectId={10}
-        characterIds={[1, 2]}
+        avatarIds={[1, 2]}
       />,
     );
 
@@ -215,7 +215,7 @@ describe("OperationPreview", () => {
     expect(screen.getByTestId("preview-type")).toHaveTextContent(
       "search replace",
     );
-    expect(screen.getByTestId("preview-character-count")).toHaveTextContent(
+    expect(screen.getByTestId("preview-avatar-count")).toHaveTextContent(
       "3",
     );
   });

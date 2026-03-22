@@ -2,11 +2,11 @@
 
 export { PromptSlotsPanel } from "./PromptSlotsPanel";
 export { FragmentDropdown } from "./FragmentDropdown";
-export { CharacterSceneOverrideEditor } from "./CharacterSceneOverrideEditor";
+export { AvatarSceneOverrideEditor } from "./AvatarSceneOverrideEditor";
 export { PromptOverrideEditor } from "./PromptOverrideEditor";
 export { ProjectPromptOverrides } from "./ProjectPromptOverrides";
 export { GroupPromptOverrides } from "./GroupPromptOverrides";
-export { CharacterPromptOverrides } from "./CharacterPromptOverrides";
+export { AvatarPromptOverrides } from "./AvatarPromptOverrides";
 export { GenerationStrategySelector } from "./GenerationStrategySelector";
 export { WorkflowPromptOverridePanel } from "./WorkflowPromptOverridePanel";
 export { SceneTypePromptDefaultsPanel } from "./SceneTypePromptDefaultsPanel";
@@ -22,7 +22,7 @@ export {
   promptPreviewKeys,
   useWorkflowPromptSlots,
   useSceneTypePromptDefaults,
-  useCharacterSceneOverrides,
+  useAvatarSceneOverrides,
   useProjectPromptOverrides,
   useUpsertProjectPromptOverrides,
   useGroupPromptOverrides,
@@ -31,7 +31,7 @@ export {
   usePromptPreview,
   useUpdatePromptSlot,
   useUpsertPromptDefault,
-  useUpsertCharacterSceneOverrides,
+  useUpsertAvatarSceneOverrides,
   useCreateFragment,
   useUpdateFragment,
   useDeleteFragment,
@@ -42,7 +42,7 @@ export type {
   WorkflowPromptSlot,
   UpdateWorkflowPromptSlot,
   SceneTypePromptDefault,
-  CharacterScenePromptOverride,
+  AvatarScenePromptOverride,
   ProjectPromptOverride,
   GroupPromptOverride,
   FragmentEntry,

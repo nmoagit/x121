@@ -25,7 +25,7 @@ import { useReviewQueue } from "../hooks/use-directors-view";
 const mockItems: ReviewQueueItem[] = [
   {
     segment_id: 1,
-    character_name: "Neo",
+    avatar_name: "Neo",
     scene_type: "action",
     status: "pending",
     thumbnail_url: null,
@@ -35,7 +35,7 @@ const mockItems: ReviewQueueItem[] = [
   },
   {
     segment_id: 2,
-    character_name: "Trinity",
+    avatar_name: "Trinity",
     scene_type: "dialogue",
     status: "approved",
     thumbnail_url: null,

@@ -41,8 +41,8 @@ export interface LegacyImportRun {
   mapping_config: Record<string, unknown>;
   match_key: MatchKey;
   total_files: number;
-  characters_created: number;
-  characters_updated: number;
+  avatars_created: number;
+  avatars_updated: number;
   scenes_registered: number;
   images_registered: number;
   duplicates_found: number;

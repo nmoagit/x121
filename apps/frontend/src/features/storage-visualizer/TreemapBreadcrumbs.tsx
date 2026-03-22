@@ -1,7 +1,7 @@
 /**
  * Breadcrumb navigation for treemap drill-down (PRD-19).
  *
- * Shows the current hierarchy path (e.g. Root > Project > Character)
+ * Shows the current hierarchy path (e.g. Root > Project > Avatar)
  * and allows clicking any ancestor to navigate up.
  */
 

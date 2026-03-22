@@ -223,7 +223,7 @@ function TreemapTooltip({ rect }: { rect: TreemapRect }) {
    Helpers
    -------------------------------------------------------------------------- */
 
-/** Rough character truncation based on available pixel width. */
+/** Rough avatar truncation based on available pixel width. */
 function truncateLabel(label: string, maxPx: number): string {
   const approxCharWidth = 7;
   const maxChars = Math.floor(maxPx / approxCharWidth);

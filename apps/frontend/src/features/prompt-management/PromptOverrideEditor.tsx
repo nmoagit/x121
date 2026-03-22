@@ -1,6 +1,6 @@
 import { WireframeLoader } from "@/components/primitives";
 /**
- * Generic prompt override editor for project, group, and character levels.
+ * Generic prompt override editor for project, group, and avatar levels.
  *
  * Renders slot-level fragment overrides for a specific scene type. The parent
  * component provides the override data and save handler — this component is
@@ -34,7 +34,7 @@ import type {
 export type { OverrideRowLike as OverrideRow } from "./draft-utils";
 
 interface PromptOverrideEditorProps {
-  /** Label for the hierarchy level, e.g. "Project", "Group", "Character". */
+  /** Label for the hierarchy level, e.g. "Project", "Group", "Avatar". */
   levelLabel: string;
   /** Project ID — used to list available scene types. */
   projectId: number;

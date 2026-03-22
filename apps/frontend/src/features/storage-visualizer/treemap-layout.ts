@@ -30,7 +30,7 @@ export interface TreemapRect {
 /** Hue values assigned by entity type. */
 const ENTITY_HUES: Record<string, number> = {
   project: 220,
-  character: 150,
+  avatar: 150,
   scene: 35,
   segment: 280,
 };

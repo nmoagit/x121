@@ -12,7 +12,7 @@ import { SetPosterButton } from "../SetPosterButton";
 const mockMutate = vi.fn();
 
 vi.mock("../hooks/use-poster-frame", () => ({
-  useSetCharacterPoster: () => ({
+  useSetAvatarPoster: () => ({
     mutate: mockMutate,
     isPending: false,
   }),
@@ -34,7 +34,7 @@ describe("SetPosterButton", () => {
   it("renders with correct text", () => {
     renderWithProviders(
       <SetPosterButton
-        entityType="character"
+        entityType="avatar"
         entityId={1}
         segmentId={10}
         currentFrame={42}
@@ -46,12 +46,12 @@ describe("SetPosterButton", () => {
     );
   });
 
-  it("calls character mutation with correct payload on click", () => {
+  it("calls avatar mutation with correct payload on click", () => {
     const onSuccess = vi.fn();
 
     renderWithProviders(
       <SetPosterButton
-        entityType="character"
+        entityType="avatar"
         entityId={5}
         segmentId={10}
         currentFrame={42}
@@ -63,11 +63,11 @@ describe("SetPosterButton", () => {
 
     expect(mockMutate).toHaveBeenCalledWith(
       {
-        characterId: 5,
+        avatarId: 5,
         body: {
           segment_id: 10,
           frame_number: 42,
-          image_path: "/storage/posters/character/5.jpg",
+          image_path: "/storage/posters/avatar/5.jpg",
         },
       },
       { onSuccess },

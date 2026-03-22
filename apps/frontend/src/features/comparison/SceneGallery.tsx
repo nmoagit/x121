@@ -1,7 +1,7 @@
 /**
  * Scene-type comparison gallery (PRD-68).
  *
- * Shows one cell per character for a given scene type, with
+ * Shows one cell per avatar for a given scene type, with
  * synchronized playback, sorting, filtering, and quick actions.
  */
 
@@ -37,10 +37,10 @@ export function SceneGallery({ projectId, sceneTypeId, className }: SceneGallery
           </h2>
         ) : undefined
       }
-      cellLabelField="character_name"
-      cellKeyField="character_id"
+      cellLabelField="avatar_name"
+      cellKeyField="avatar_id"
       emptyTitle="No scenes to compare"
-      emptyDescription="Generate scenes for more characters to see them side-by-side."
+      emptyDescription="Generate scenes for more avatars to see them side-by-side."
       className={className}
     />
   );

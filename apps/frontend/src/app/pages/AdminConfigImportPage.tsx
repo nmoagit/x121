@@ -151,15 +151,15 @@ async function applyConfig(envelope: ConfigEnvelope): Promise<void> {
       break;
     }
 
-    case "character-settings": {
+    case "avatar-settings": {
       const projectId = d.project_id as number;
-      const characterId = d.character_id as number;
+      const avatarId = d.avatar_id as number;
 
       // Pipeline settings
       const pipelineSettings = d.pipeline_settings as Record<string, unknown> | undefined;
       if (pipelineSettings && Object.keys(pipelineSettings).length > 0) {
         await api.put(
-          `/projects/${projectId}/characters/${characterId}/settings`,
+          `/projects/${projectId}/avatars/${avatarId}/settings`,
           pipelineSettings,
         ).catch(() => {});
       }
@@ -168,7 +168,7 @@ async function applyConfig(envelope: ConfigEnvelope): Promise<void> {
       const sceneSettings = (d.scene_settings ?? []) as Record<string, unknown>[];
       if (sceneSettings.length > 0) {
         await api.put(
-          `/characters/${characterId}/scene-settings`,
+          `/avatars/${avatarId}/scene-settings`,
           sceneSettings,
         ).catch(() => {});
       }
@@ -181,7 +181,7 @@ async function applyConfig(envelope: ConfigEnvelope): Promise<void> {
       for (const group of promptOverrides) {
         if ((group.overrides ?? []).length > 0) {
           await api.put(
-            `/characters/${characterId}/scenes/${group.scene_type_id}/prompt-overrides`,
+            `/avatars/${avatarId}/scenes/${group.scene_type_id}/prompt-overrides`,
             { overrides: group.overrides },
           ).catch(() => {});
         }
@@ -200,7 +200,7 @@ const TYPE_ORDER: ConfigType[] = [
   "workflow",
   "project-settings",
   "group-settings",
-  "character-settings",
+  "avatar-settings",
 ];
 
 function sortByTypeOrder(configs: LoadedConfig[]): LoadedConfig[] {

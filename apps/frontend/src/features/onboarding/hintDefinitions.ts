@@ -26,7 +26,7 @@ export const hintDefinitions: Record<string, HintDefinition> = {
     placement: "bottom",
   },
   generation: {
-    message: "Select a character and scene type, then click Generate to start a job.",
+    message: "Select a avatar and scene type, then click Generate to start a job.",
     placement: "left",
   },
   settings: {

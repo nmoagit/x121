@@ -26,12 +26,12 @@ export const videoSettingsKeys = {
     [...videoSettingsKeys.all, "group", groupId, sceneTypeId] as const,
   groupList: (groupId: number) =>
     [...videoSettingsKeys.all, "group-list", groupId] as const,
-  character: (characterId: number, sceneTypeId: number) =>
-    [...videoSettingsKeys.all, "character", characterId, sceneTypeId] as const,
-  characterList: (characterId: number) =>
-    [...videoSettingsKeys.all, "character-list", characterId] as const,
-  resolved: (characterId: number, sceneTypeId: number) =>
-    [...videoSettingsKeys.all, "resolved", characterId, sceneTypeId] as const,
+  avatar: (avatarId: number, sceneTypeId: number) =>
+    [...videoSettingsKeys.all, "avatar", avatarId, sceneTypeId] as const,
+  avatarList: (avatarId: number) =>
+    [...videoSettingsKeys.all, "avatar-list", avatarId] as const,
+  resolved: (avatarId: number, sceneTypeId: number) =>
+    [...videoSettingsKeys.all, "resolved", avatarId, sceneTypeId] as const,
 };
 
 /* --------------------------------------------------------------------------
@@ -78,39 +78,39 @@ export function useGroupVideoSettings(
   });
 }
 
-/** Fetch all video settings overrides for a character (across scene types). */
-export function useCharacterVideoSettingsList(characterId: number) {
+/** Fetch all video settings overrides for a avatar (across scene types). */
+export function useAvatarVideoSettingsList(avatarId: number) {
   return useQuery({
-    queryKey: videoSettingsKeys.characterList(characterId),
+    queryKey: videoSettingsKeys.avatarList(avatarId),
     queryFn: () =>
       api.get<Array<VideoSettingsOverride & { scene_type_id: number }>>(
-        `/characters/${characterId}/video-settings`,
+        `/avatars/${avatarId}/video-settings`,
       ),
-    enabled: characterId > 0,
+    enabled: avatarId > 0,
   });
 }
 
-/** Fetch video settings overrides for a character + scene type. */
-export function useCharacterVideoSettings(characterId: number, sceneTypeId: number) {
+/** Fetch video settings overrides for a avatar + scene type. */
+export function useAvatarVideoSettings(avatarId: number, sceneTypeId: number) {
   return useQuery({
-    queryKey: videoSettingsKeys.character(characterId, sceneTypeId),
+    queryKey: videoSettingsKeys.avatar(avatarId, sceneTypeId),
     queryFn: () =>
       api.get<VideoSettingsOverride>(
-        `/characters/${characterId}/video-settings/${sceneTypeId}`,
+        `/avatars/${avatarId}/video-settings/${sceneTypeId}`,
       ),
-    enabled: characterId > 0 && sceneTypeId > 0,
+    enabled: avatarId > 0 && sceneTypeId > 0,
   });
 }
 
-/** Fetch fully resolved video settings for a character + scene type. */
-export function useResolvedVideoSettings(characterId: number, sceneTypeId: number) {
+/** Fetch fully resolved video settings for a avatar + scene type. */
+export function useResolvedVideoSettings(avatarId: number, sceneTypeId: number) {
   return useQuery({
-    queryKey: videoSettingsKeys.resolved(characterId, sceneTypeId),
+    queryKey: videoSettingsKeys.resolved(avatarId, sceneTypeId),
     queryFn: () =>
       api.get<ResolvedVideoSettings>(
-        `/characters/${characterId}/video-settings/${sceneTypeId}/resolved`,
+        `/avatars/${avatarId}/video-settings/${sceneTypeId}/resolved`,
       ),
-    enabled: characterId > 0 && sceneTypeId > 0,
+    enabled: avatarId > 0 && sceneTypeId > 0,
   });
 }
 
@@ -195,35 +195,35 @@ export function useDeleteGroupVideoSettings(
 }
 
 /* --------------------------------------------------------------------------
-   Mutation hooks — Character level
+   Mutation hooks — Avatar level
    -------------------------------------------------------------------------- */
 
-export function useUpsertCharacterVideoSettings(characterId: number, sceneTypeId: number) {
+export function useUpsertAvatarVideoSettings(avatarId: number, sceneTypeId: number) {
   const qc = useQueryClient();
 
   return useMutation({
     mutationFn: (data: VideoSettingsOverride) =>
       api.put<VideoSettingsOverride>(
-        `/characters/${characterId}/video-settings/${sceneTypeId}`,
+        `/avatars/${avatarId}/video-settings/${sceneTypeId}`,
         data,
       ),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: videoSettingsKeys.character(characterId, sceneTypeId) });
-      qc.invalidateQueries({ queryKey: videoSettingsKeys.characterList(characterId) });
+      qc.invalidateQueries({ queryKey: videoSettingsKeys.avatar(avatarId, sceneTypeId) });
+      qc.invalidateQueries({ queryKey: videoSettingsKeys.avatarList(avatarId) });
       qc.invalidateQueries({ queryKey: videoSettingsKeys.all });
     },
   });
 }
 
-export function useDeleteCharacterVideoSettings(characterId: number, sceneTypeId: number) {
+export function useDeleteAvatarVideoSettings(avatarId: number, sceneTypeId: number) {
   const qc = useQueryClient();
 
   return useMutation({
     mutationFn: () =>
-      api.delete(`/characters/${characterId}/video-settings/${sceneTypeId}`),
+      api.delete(`/avatars/${avatarId}/video-settings/${sceneTypeId}`),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: videoSettingsKeys.character(characterId, sceneTypeId) });
-      qc.invalidateQueries({ queryKey: videoSettingsKeys.characterList(characterId) });
+      qc.invalidateQueries({ queryKey: videoSettingsKeys.avatar(avatarId, sceneTypeId) });
+      qc.invalidateQueries({ queryKey: videoSettingsKeys.avatarList(avatarId) });
       qc.invalidateQueries({ queryKey: videoSettingsKeys.all });
     },
   });

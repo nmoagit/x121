@@ -37,7 +37,7 @@ describe("OnboardingChecklist", () => {
     });
 
     expect(screen.getByText("Getting Started")).toBeInTheDocument();
-    expect(screen.getByText("Upload a character portrait")).toBeInTheDocument();
+    expect(screen.getByText("Upload a avatar portrait")).toBeInTheDocument();
     expect(screen.getByText("Run your first generation")).toBeInTheDocument();
     expect(screen.getByText("Approve a segment")).toBeInTheDocument();
   });

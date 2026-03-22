@@ -1,7 +1,7 @@
 /**
  * TanStack Query hooks for image-variant-scoped frame annotations.
  *
- * Uses the `/characters/{characterId}/image-variants/{variantId}/annotations` endpoints.
+ * Uses the `/avatars/{avatarId}/image-variants/{variantId}/annotations` endpoints.
  * Image variants are static images so annotations always target frame 0.
  */
 
@@ -16,8 +16,8 @@ import type { DrawingObject, FrameAnnotation } from "@/features/annotations/type
 
 export const imageVariantAnnotationKeys = {
   all: ["image-variant-annotations"] as const,
-  byVariant: (characterId: number, variantId: number) =>
-    [...imageVariantAnnotationKeys.all, characterId, variantId] as const,
+  byVariant: (avatarId: number, variantId: number) =>
+    [...imageVariantAnnotationKeys.all, avatarId, variantId] as const,
 };
 
 /* --------------------------------------------------------------------------
@@ -25,14 +25,14 @@ export const imageVariantAnnotationKeys = {
    -------------------------------------------------------------------------- */
 
 /** Fetch all annotations for an image variant. */
-export function useImageVariantAnnotations(characterId: number, variantId: number) {
+export function useImageVariantAnnotations(avatarId: number, variantId: number) {
   return useQuery({
-    queryKey: imageVariantAnnotationKeys.byVariant(characterId, variantId),
+    queryKey: imageVariantAnnotationKeys.byVariant(avatarId, variantId),
     queryFn: () =>
       api.get<FrameAnnotation[]>(
-        `/characters/${characterId}/image-variants/${variantId}/annotations`,
+        `/avatars/${avatarId}/image-variants/${variantId}/annotations`,
       ),
-    enabled: characterId > 0 && variantId > 0,
+    enabled: avatarId > 0 && variantId > 0,
   });
 }
 
@@ -41,7 +41,7 @@ export function useImageVariantAnnotations(characterId: number, variantId: numbe
    -------------------------------------------------------------------------- */
 
 /** Upsert annotations for a specific frame on an image variant. */
-export function useUpsertImageVariantAnnotation(characterId: number, variantId: number) {
+export function useUpsertImageVariantAnnotation(avatarId: number, variantId: number) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({
@@ -52,7 +52,7 @@ export function useUpsertImageVariantAnnotation(characterId: number, variantId: 
       annotations: DrawingObject[];
     }) =>
       api.put<FrameAnnotation | null>(
-        `/characters/${characterId}/image-variants/${variantId}/annotations/${frameNumber}`,
+        `/avatars/${avatarId}/image-variants/${variantId}/annotations/${frameNumber}`,
         {
           frame_number: frameNumber,
           annotations_json: annotations,
@@ -60,23 +60,23 @@ export function useUpsertImageVariantAnnotation(characterId: number, variantId: 
       ),
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: imageVariantAnnotationKeys.byVariant(characterId, variantId),
+        queryKey: imageVariantAnnotationKeys.byVariant(avatarId, variantId),
       });
     },
   });
 }
 
 /** Delete all annotations for a specific frame on an image variant. */
-export function useDeleteImageVariantFrameAnnotation(characterId: number, variantId: number) {
+export function useDeleteImageVariantFrameAnnotation(avatarId: number, variantId: number) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (frameNumber: number) =>
       api.delete(
-        `/characters/${characterId}/image-variants/${variantId}/annotations/${frameNumber}`,
+        `/avatars/${avatarId}/image-variants/${variantId}/annotations/${frameNumber}`,
       ),
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: imageVariantAnnotationKeys.byVariant(characterId, variantId),
+        queryKey: imageVariantAnnotationKeys.byVariant(avatarId, variantId),
       });
     },
   });

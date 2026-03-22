@@ -34,7 +34,7 @@ const FRAME_NUMBER = 0;
    -------------------------------------------------------------------------- */
 
 interface ImageVariantAnnotationModalProps {
-  characterId: number;
+  avatarId: number;
   variant: ImageVariant | null;
   onClose: () => void;
 }
@@ -44,7 +44,7 @@ interface ImageVariantAnnotationModalProps {
    -------------------------------------------------------------------------- */
 
 export function ImageVariantAnnotationModal({
-  characterId,
+  avatarId,
   variant,
   onClose,
 }: ImageVariantAnnotationModalProps) {
@@ -61,9 +61,9 @@ export function ImageVariantAnnotationModal({
   const variantId = variant?.id ?? 0;
 
   // ---- DB persistence via TanStack Query ----
-  const { data: dbAnnotations } = useImageVariantAnnotations(characterId, variantId);
-  const upsertMutation = useUpsertImageVariantAnnotation(characterId, variantId);
-  const deleteMutation = useDeleteImageVariantFrameAnnotation(characterId, variantId);
+  const { data: dbAnnotations } = useImageVariantAnnotations(avatarId, variantId);
+  const upsertMutation = useUpsertImageVariantAnnotation(avatarId, variantId);
+  const deleteMutation = useDeleteImageVariantFrameAnnotation(avatarId, variantId);
 
   // Seed local state from DB when data arrives
   useEffect(() => {

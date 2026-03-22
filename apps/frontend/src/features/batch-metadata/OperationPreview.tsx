@@ -82,8 +82,8 @@ export function OperationPreview({
         <div data-testid="preview-type">
           Type: {operation.operation_type.replace(/_/g, " ")}
         </div>
-        <div data-testid="preview-character-count">
-          Characters affected: {operation.character_count}
+        <div data-testid="preview-avatar-count">
+          Avatars affected: {operation.avatar_count}
         </div>
       </div>
 

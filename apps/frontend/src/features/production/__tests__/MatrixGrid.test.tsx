@@ -6,7 +6,7 @@ import { renderWithProviders } from "@/lib/test-utils";
 import { MatrixGrid } from "../MatrixGrid";
 import type { ProductionRunCell } from "../types";
 
-const characters = [
+const avatars = [
   { id: 1, name: "Luna" },
   { id: 2, name: "Kai" },
 ];
@@ -18,7 +18,7 @@ const columns = [
 
 function makeCell(
   id: number,
-  characterId: number,
+  avatarId: number,
   sceneTypeId: number,
   statusId: number,
   blockingReason?: string,
@@ -26,7 +26,7 @@ function makeCell(
   return {
     id,
     run_id: 1,
-    character_id: characterId,
+    avatar_id: avatarId,
     scene_type_id: sceneTypeId,
     track_id: null,
     variant_label: "default",
@@ -48,11 +48,11 @@ const cells: ProductionRunCell[] = [
 ];
 
 describe("MatrixGrid", () => {
-  it("renders character names as row headers", () => {
+  it("renders avatar names as row headers", () => {
     renderWithProviders(
       <MatrixGrid
         cells={cells}
-        characters={characters}
+        avatars={avatars}
         columns={columns}
       />,
     );
@@ -65,7 +65,7 @@ describe("MatrixGrid", () => {
     renderWithProviders(
       <MatrixGrid
         cells={cells}
-        characters={characters}
+        avatars={avatars}
         columns={columns}
       />,
     );
@@ -78,7 +78,7 @@ describe("MatrixGrid", () => {
     renderWithProviders(
       <MatrixGrid
         cells={cells}
-        characters={characters}
+        avatars={avatars}
         columns={columns}
       />,
     );
@@ -93,7 +93,7 @@ describe("MatrixGrid", () => {
     renderWithProviders(
       <MatrixGrid
         cells={cells}
-        characters={characters}
+        avatars={avatars}
         columns={columns}
       />,
     );
@@ -109,7 +109,7 @@ describe("MatrixGrid", () => {
     renderWithProviders(
       <MatrixGrid
         cells={cells}
-        characters={characters}
+        avatars={avatars}
         columns={columns}
         onToggleCell={onToggle}
       />,
@@ -123,7 +123,7 @@ describe("MatrixGrid", () => {
     renderWithProviders(
       <MatrixGrid
         cells={cells}
-        characters={characters}
+        avatars={avatars}
         columns={columns}
       />,
     );

@@ -1,7 +1,7 @@
 /**
  * Single-step project selector with render-prop pattern.
  *
- * Used by pages that need only a project context (no character).
+ * Used by pages that need only a project context (no avatar).
  * Once a project is selected, renders the children render-prop
  * with the selected project ID.
  */

@@ -29,8 +29,8 @@ export const productionKeys = {
   detail: (id: number) => ["production-runs", "detail", id] as const,
   matrix: (id: number) => ["production-runs", "matrix", id] as const,
   progress: (id: number) => ["production-runs", "progress", id] as const,
-  enabledSceneTypes: (projectId: number, characterIds: number[]) =>
-    ["production-runs", "enabled-scene-types", { projectId, characterIds }] as const,
+  enabledSceneTypes: (projectId: number, avatarIds: number[]) =>
+    ["production-runs", "enabled-scene-types", { projectId, avatarIds }] as const,
 };
 
 /* --------------------------------------------------------------------------
@@ -79,15 +79,15 @@ export function useProductionProgress(runId: number) {
   });
 }
 
-/** Fetch enabled scene types for a set of characters in a project. */
-export function useEnabledSceneTypes(projectId: number, characterIds: number[]) {
+/** Fetch enabled scene types for a set of avatars in a project. */
+export function useEnabledSceneTypes(projectId: number, avatarIds: number[]) {
   return useQuery({
-    queryKey: productionKeys.enabledSceneTypes(projectId, characterIds),
+    queryKey: productionKeys.enabledSceneTypes(projectId, avatarIds),
     queryFn: () =>
       api.get<EnabledSceneTypeEntry[]>(
-        `/production-runs/enabled-scene-types?project_id=${projectId}&character_ids=${characterIds.join(",")}`,
+        `/production-runs/enabled-scene-types?project_id=${projectId}&avatar_ids=${avatarIds.join(",")}`,
       ),
-    enabled: projectId > 0 && characterIds.length > 0,
+    enabled: projectId > 0 && avatarIds.length > 0,
   });
 }
 
@@ -196,13 +196,13 @@ export function useDeleteCells(runId: number, projectId: number) {
   });
 }
 
-/** Cancel all cells for a character in a production run. */
-export function useCancelCharacterCells(runId: number) {
+/** Cancel all cells for a avatar in a production run. */
+export function useCancelAvatarCells(runId: number) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (characterId: number) =>
-      api.post(`/production-runs/${runId}/characters/${characterId}/cancel`, {}),
+    mutationFn: (avatarId: number) =>
+      api.post(`/production-runs/${runId}/avatars/${avatarId}/cancel`, {}),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: productionKeys.matrix(runId) });
       queryClient.invalidateQueries({ queryKey: productionKeys.progress(runId) });
@@ -210,13 +210,13 @@ export function useCancelCharacterCells(runId: number) {
   });
 }
 
-/** Delete all cells for a character in a production run. */
-export function useDeleteCharacterCells(runId: number, projectId: number) {
+/** Delete all cells for a avatar in a production run. */
+export function useDeleteAvatarCells(runId: number, projectId: number) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (characterId: number) =>
-      api.post(`/production-runs/${runId}/characters/${characterId}/delete`, {}),
+    mutationFn: (avatarId: number) =>
+      api.post(`/production-runs/${runId}/avatars/${avatarId}/delete`, {}),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: productionKeys.matrix(runId) });
       queryClient.invalidateQueries({ queryKey: productionKeys.progress(runId) });

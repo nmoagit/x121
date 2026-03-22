@@ -17,7 +17,7 @@ import { HistoryBrowser, StatePreview, useEntityUndo } from "@/features/undo";
    -------------------------------------------------------------------------- */
 
 export function UndoPage() {
-  const [entityType, setEntityType] = useState("character");
+  const [entityType, setEntityType] = useState("avatar");
   const [entityId, setEntityId] = useState<number | null>(null);
   const [inputValue, setInputValue] = useState("");
   const [previewNodeId, setPreviewNodeId] = useState<string | null>(null);
@@ -63,7 +63,7 @@ export function UndoPage() {
               value={entityType}
               onChange={setEntityType}
               options={[
-                { value: "character", label: "Model" },
+                { value: "avatar", label: "Model" },
                 { value: "scene", label: "Scene" },
                 { value: "workflow", label: "Workflow" },
                 { value: "project", label: "Project" },

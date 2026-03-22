@@ -50,7 +50,7 @@ export function useBulkUpdateProjectSceneSettings(projectId: number) {
       // Scene settings affect deliverable counts, stats, and readiness
       queryClient.invalidateQueries({ queryKey: projectKeys.detail(projectId) });
       queryClient.invalidateQueries({ queryKey: projectKeys.stats(projectId) });
-      queryClient.invalidateQueries({ queryKey: ["character-dashboard"] });
+      queryClient.invalidateQueries({ queryKey: ["avatar-dashboard"] });
     },
   });
 }
@@ -64,7 +64,7 @@ export function useToggleProjectSceneSetting(projectId: number) {
     [
       projectKeys.detail(projectId),
       projectKeys.stats(projectId),
-      ["character-dashboard"] as const,
+      ["avatar-dashboard"] as const,
     ],
   );
 }

@@ -17,20 +17,20 @@ describe("SimilarityAlert", () => {
   const defaultProps = {
     open: true,
     onClose: vi.fn(),
-    sourceName: "Character A",
-    matchedName: "Character B",
+    sourceName: "Avatar A",
+    matchedName: "Avatar B",
     similarityScore: 92.5,
     onLinkExisting: vi.fn(),
     onCreateNew: vi.fn(),
   };
 
-  test("renders side-by-side comparison of source and matched characters", () => {
+  test("renders side-by-side comparison of source and matched avatars", () => {
     renderWithProviders(<SimilarityAlert {...defaultProps} />);
 
-    expect(screen.getByTestId("source-character")).toBeInTheDocument();
-    expect(screen.getByText("Character A")).toBeInTheDocument();
-    expect(screen.getByTestId("matched-character")).toBeInTheDocument();
-    expect(screen.getByText("Character B")).toBeInTheDocument();
+    expect(screen.getByTestId("source-avatar")).toBeInTheDocument();
+    expect(screen.getByText("Avatar A")).toBeInTheDocument();
+    expect(screen.getByTestId("matched-avatar")).toBeInTheDocument();
+    expect(screen.getByText("Avatar B")).toBeInTheDocument();
   });
 
   test("shows similarity score as percentage", () => {

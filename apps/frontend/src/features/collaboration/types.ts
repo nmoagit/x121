@@ -59,6 +59,6 @@ export const DEFAULT_LOCK_DURATION_MINS = 30;
 export const LOCK_EXTEND_INTERVAL_MS = (DEFAULT_LOCK_DURATION_MINS / 2) * 60 * 1000;
 
 /** Valid entity types for collaboration. */
-export const VALID_ENTITY_TYPES = ["scene", "segment", "character", "project"] as const;
+export const VALID_ENTITY_TYPES = ["scene", "segment", "avatar", "project"] as const;
 
 export type CollaborationEntityType = (typeof VALID_ENTITY_TYPES)[number];

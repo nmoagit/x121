@@ -69,7 +69,7 @@ export function SourceSelection({
             type="text"
             value={sourcePath}
             onChange={(e) => setSourcePath(e.target.value)}
-            placeholder="/data/legacy/characters"
+            placeholder="/data/legacy/avatars"
             disabled={disabled}
             className="w-full rounded border px-3 py-2 text-sm"
           />

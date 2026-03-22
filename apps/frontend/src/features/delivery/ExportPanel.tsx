@@ -20,7 +20,7 @@ import { EXPORT_STATUS_LABELS, EXPORT_STATUS_VARIANT, formatProfileOption } from
 interface ExportPanelProps {
   projectId: number;
   /** Available model options for multi-select. */
-  characters?: Array<{ id: number; name: string }>;
+  avatars?: Array<{ id: number; name: string }>;
   /** Whether pre-export validation passed. When false, export is blocked. */
   validationPassed?: boolean;
   /** IDs of models that have validation errors (not deliverable). */
@@ -28,25 +28,25 @@ interface ExportPanelProps {
   /** Project-level default output format profile ID override. */
   projectDefaultProfileId?: number | null;
   /** Controlled: whether "All models" is toggled on. */
-  allCharacters: boolean;
-  /** Controlled: setter for allCharacters. */
-  onAllCharactersChange: (value: boolean) => void;
-  /** Controlled: currently selected character IDs (when not all). */
-  selectedCharacterIds: number[];
-  /** Controlled: setter for selectedCharacterIds. */
-  onSelectedCharacterIdsChange: (ids: number[]) => void;
+  allAvatars: boolean;
+  /** Controlled: setter for allAvatars. */
+  onAllAvatarsChange: (value: boolean) => void;
+  /** Controlled: currently selected avatar IDs (when not all). */
+  selectedAvatarIds: number[];
+  /** Controlled: setter for selectedAvatarIds. */
+  onSelectedAvatarIdsChange: (ids: number[]) => void;
 }
 
 export function ExportPanel({
   projectId,
-  characters = [],
+  avatars = [],
   validationPassed,
   invalidModelIds,
   projectDefaultProfileId,
-  allCharacters,
-  onAllCharactersChange,
-  selectedCharacterIds,
-  onSelectedCharacterIdsChange,
+  allAvatars,
+  onAllAvatarsChange,
+  selectedAvatarIds,
+  onSelectedAvatarIdsChange,
 }: ExportPanelProps) {
   const { data: profiles = [] } = useOutputFormatProfiles();
   const { data: exports = [] } = useDeliveryExports(projectId);
@@ -89,20 +89,20 @@ export function ExportPanel({
 
   // When toggling off "All models", auto-select only deliverable models
   function handleAllToggle(checked: boolean) {
-    onAllCharactersChange(checked);
+    onAllAvatarsChange(checked);
     if (!checked) {
-      const deliverable = characters
+      const deliverable = avatars
         .filter((c) => !invalidModelIds?.has(c.id))
         .map((c) => c.id);
-      onSelectedCharacterIdsChange(deliverable);
+      onSelectedAvatarIdsChange(deliverable);
     }
   }
 
-  function handleCharacterToggle(id: number, checked: boolean) {
+  function handleAvatarToggle(id: number, checked: boolean) {
     const next = checked
-      ? [...selectedCharacterIds, id]
-      : selectedCharacterIds.filter((cid) => cid !== id);
-    onSelectedCharacterIdsChange(next);
+      ? [...selectedAvatarIds, id]
+      : selectedAvatarIds.filter((cid) => cid !== id);
+    onSelectedAvatarIdsChange(next);
   }
 
   function handleCancel() {
@@ -123,7 +123,7 @@ export function ExportPanel({
     startAssembly.mutate(
       {
         format_profile_id: Number(selectedProfileId),
-        character_ids: allCharacters ? null : selectedCharacterIds,
+        avatar_ids: allAvatars ? null : selectedAvatarIds,
         include_watermark: includeWatermark,
       },
       {
@@ -139,8 +139,8 @@ export function ExportPanel({
 
   const profileOptions = profiles.map(formatProfileOption);
 
-  const deliverableCount = characters.filter((c) => !invalidModelIds?.has(c.id)).length;
-  const invalidCount = characters.length - deliverableCount;
+  const deliverableCount = avatars.filter((c) => !invalidModelIds?.has(c.id)).length;
+  const invalidCount = avatars.length - deliverableCount;
   const hasDeliverableModels = deliverableCount > 0;
 
   // Determine why export might be blocked (first matching reason wins)
@@ -174,24 +174,24 @@ export function ExportPanel({
       <div className="space-y-2">
         <Toggle
           label="All models"
-          checked={allCharacters}
+          checked={allAvatars}
           onChange={handleAllToggle}
           size="sm"
         />
-        {!allCharacters && characters.length > 0 && (
+        {!allAvatars && avatars.length > 0 && (
           <>
             <p className="ml-6 text-xs text-[var(--color-text-muted)]">
-              {deliverableCount} of {characters.length} models deliverable — {selectedCharacterIds.length} selected
+              {deliverableCount} of {avatars.length} models deliverable — {selectedAvatarIds.length} selected
             </p>
-            <div className="ml-6 grid grid-cols-3 gap-x-4 gap-y-1 sm:grid-cols-4 lg:grid-cols-6" data-testid="character-checkboxes">
-              {characters.map((c) => {
+            <div className="ml-6 grid grid-cols-3 gap-x-4 gap-y-1 sm:grid-cols-4 lg:grid-cols-6" data-testid="avatar-checkboxes">
+              {avatars.map((c) => {
                 const isInvalid = invalidModelIds?.has(c.id);
                 return (
                   <div key={c.id} className={isInvalid ? "opacity-50" : ""}>
                     <Checkbox
                       label={c.name}
-                      checked={selectedCharacterIds.includes(c.id)}
-                      onChange={(checked) => handleCharacterToggle(c.id, checked)}
+                      checked={selectedAvatarIds.includes(c.id)}
+                      onChange={(checked) => handleAvatarToggle(c.id, checked)}
                     />
                   </div>
                 );

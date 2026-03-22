@@ -60,7 +60,7 @@ const DEFAULT_1: SceneTypePromptDefault = {
   id: 100,
   scene_type_id: 5,
   prompt_slot_id: 1,
-  prompt_text: "A stunning {character} portrait",
+  prompt_text: "A stunning {avatar} portrait",
   created_at: "2026-01-01T00:00:00Z",
   updated_at: "2026-01-01T00:00:00Z",
 };
@@ -136,7 +136,7 @@ describe("PromptSlotsPanel", () => {
 
     const textarea1 = screen.getByTestId("slot-textarea-1");
     expect(textarea1).toBeInTheDocument();
-    expect(textarea1).toHaveValue("A stunning {character} portrait");
+    expect(textarea1).toHaveValue("A stunning {avatar} portrait");
 
     const textarea2 = screen.getByTestId("slot-textarea-2");
     expect(textarea2).toBeInTheDocument();

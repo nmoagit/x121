@@ -1,8 +1,8 @@
 /**
- * Contact sheet page for a character (PRD-103).
+ * Contact sheet page for a avatar (PRD-103).
  *
  * Combines FaceCropGrid + ContactSheetControls into a full page view
- * with character header, image count summary, and empty state.
+ * with avatar header, image count summary, and empty state.
  */
 
 import { useState } from "react";
@@ -25,24 +25,24 @@ import {
    -------------------------------------------------------------------------- */
 
 interface ContactSheetPageProps {
-  characterId: number;
-  characterName: string;
+  avatarId: number;
+  avatarName: string;
   sceneLabels?: Record<number, string>;
 }
 
 export function ContactSheetPage({
-  characterId,
-  characterName,
+  avatarId,
+  avatarName,
   sceneLabels = {},
 }: ContactSheetPageProps) {
-  useSetPageTitle("Contact Sheet", characterName);
+  useSetPageTitle("Contact Sheet", avatarName);
   const [columns, setColumns] = useState<GridColumns>(DEFAULT_GRID_COLUMNS);
   const [exportFormat, setExportFormat] = useState<ExportFormat>("png");
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [exportTriggered, setExportTriggered] = useState(false);
 
-  const { data: images = [], isLoading } = useContactSheetImages(characterId);
-  const generateMutation = useGenerateContactSheet(characterId);
+  const { data: images = [], isLoading } = useContactSheetImages(avatarId);
+  const generateMutation = useGenerateContactSheet(avatarId);
 
   function handleGenerate() {
     generateMutation.mutate();

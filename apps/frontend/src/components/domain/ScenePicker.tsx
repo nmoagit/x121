@@ -1,7 +1,7 @@
 /**
- * Scene selection widget for a given character.
+ * Scene selection widget for a given avatar.
  *
- * Loads scenes via `useCharacterScenes`, shows a Select dropdown,
+ * Loads scenes via `useAvatarScenes`, shows a Select dropdown,
  * and delegates rendering of the selected scene to a render-prop.
  */
 
@@ -10,12 +10,12 @@ import { useState } from "react";
 import { Stack } from "@/components/layout";
 import { Select ,  WireframeLoader } from "@/components/primitives";
 import { EmptyState } from "@/components/domain/EmptyState";
-import { useCharacterScenes } from "@/features/scenes/hooks/useCharacterScenes";
+import { useAvatarScenes } from "@/features/scenes/hooks/useAvatarScenes";
 import { toSelectOptionsBy } from "@/lib/select-utils";
 import { Layers } from "@/tokens/icons";
 
 interface ScenePickerProps {
-  characterId: number;
+  avatarId: number;
   /** Render-prop called with the selected scene id. */
   children: (sceneId: number) => React.ReactNode;
   /** Icon shown in the empty state. Defaults to Layers. */
@@ -27,14 +27,14 @@ interface ScenePickerProps {
 }
 
 export function ScenePicker({
-  characterId,
+  avatarId,
   children,
   emptyIcon = <Layers size={32} />,
   noScenesTitle = "No scenes",
   noScenesDescription = "This model has no scenes yet.",
 }: ScenePickerProps) {
   const [selectedSceneId, setSelectedSceneId] = useState<string>("");
-  const { data: scenes, isLoading } = useCharacterScenes(characterId);
+  const { data: scenes, isLoading } = useAvatarScenes(avatarId);
 
   const sceneId = Number(selectedSceneId);
 

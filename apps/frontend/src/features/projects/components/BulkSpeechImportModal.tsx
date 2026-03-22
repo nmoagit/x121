@@ -1,8 +1,8 @@
 /**
- * Bulk speech import modal for project-level multi-character import (PRD-136 Task 7.5).
+ * Bulk speech import modal for project-level multi-avatar import (PRD-136 Task 7.5).
  *
  * Supports file upload (.json, .csv) or direct paste with format auto-detection.
- * Shows a preview of matched vs unmatched characters before importing.
+ * Shows a preview of matched vs unmatched avatars before importing.
  */
 
 import { useCallback, useState } from "react";
@@ -10,7 +10,7 @@ import { useCallback, useState } from "react";
 import { Modal } from "@/components/composite";
 import { Stack } from "@/components/layout";
 import { Button, Select } from "@/components/primitives";
-import type { BulkImportReport, Language } from "@/features/characters/types";
+import type { BulkImportReport, Language } from "@/features/avatars/types";
 import { cn } from "@/lib/cn";
 import { readFileText } from "@/lib/file-types";
 import { TEXTAREA_BASE } from "@/lib/ui-classes";
@@ -93,8 +93,8 @@ export function BulkSpeechImportModal({
     <Modal open={open} onClose={handleClose} title="Bulk Import Speeches" size="xl">
       <Stack gap={4}>
         <p className="text-xs font-mono text-[var(--color-text-muted)]">
-          Import speech entries for multiple characters at once. The file should contain
-          character names/slugs with their speech data. Characters are matched by name.
+          Import speech entries for multiple avatars at once. The file should contain
+          avatar names/slugs with their speech data. Avatars are matched by name.
         </p>
 
         {languageOptions.length > 0 && (
@@ -155,13 +155,13 @@ export function BulkSpeechImportModal({
               )}
             </div>
 
-            {result.characters_matched.length > 0 && (
+            {result.avatars_matched.length > 0 && (
               <div>
                 <p className="text-xs font-mono uppercase tracking-wide text-[var(--color-text-muted)] mb-1">
-                  Matched characters ({result.characters_matched.length})
+                  Matched avatars ({result.avatars_matched.length})
                 </p>
                 <div className="flex flex-wrap gap-1.5 font-mono text-xs">
-                  {result.characters_matched.map((name, i) => (
+                  {result.avatars_matched.map((name, i) => (
                     <span key={name} className="flex items-center gap-1.5">
                       {i > 0 && <span className="text-[var(--color-text-muted)] opacity-30 select-none">|</span>}
                       <span className="text-green-400">{name}</span>
@@ -171,13 +171,13 @@ export function BulkSpeechImportModal({
               </div>
             )}
 
-            {result.characters_unmatched.length > 0 && (
+            {result.avatars_unmatched.length > 0 && (
               <div>
                 <p className="text-xs font-mono uppercase tracking-wide text-[var(--color-text-muted)] mb-1">
-                  Unmatched characters ({result.characters_unmatched.length})
+                  Unmatched avatars ({result.avatars_unmatched.length})
                 </p>
                 <div className="flex flex-wrap gap-1.5 font-mono text-xs">
-                  {result.characters_unmatched.map((name, i) => (
+                  {result.avatars_unmatched.map((name, i) => (
                     <span key={name} className="flex items-center gap-1.5">
                       {i > 0 && <span className="text-[var(--color-text-muted)] opacity-30 select-none">|</span>}
                       <span className="text-orange-400">{name}</span>

@@ -32,7 +32,7 @@ export const WithHelperText: Story = {
     label: "Password",
     type: "password",
     placeholder: "Enter password",
-    helperText: "Must be at least 8 characters",
+    helperText: "Must be at least 8 avatars",
   },
 };
 

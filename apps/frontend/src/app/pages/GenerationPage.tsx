@@ -1,11 +1,11 @@
 /**
- * Generation page — project/character/scene picker wrapping the
+ * Generation page — project/avatar/scene picker wrapping the
  * generation progress bar, boundary frame scrubber, and start controls.
  *
- * Flow: Project -> Character -> Scene -> GenerationProgressBar + start control
+ * Flow: Project -> Avatar -> Scene -> GenerationProgressBar + start control
  */
 
-import { ProjectCharacterPicker, ScenePicker, EmptyState } from "@/components/domain";
+import { ProjectAvatarPicker, ScenePicker, EmptyState } from "@/components/domain";
 import { Stack } from "@/components/layout";
 import { WireframeLoader } from "@/components/primitives";
 import { Button  } from "@/components/primitives";
@@ -62,19 +62,19 @@ function SceneGeneration({ sceneId }: { sceneId: number }) {
 
 export function GenerationPage() {
   return (
-    <ProjectCharacterPicker
+    <ProjectAvatarPicker
       title="Generation"
       description="Start and monitor video generation jobs for scenes."
     >
-      {(_projectId, characterId) => (
+      {(_projectId, avatarId) => (
         <ScenePicker
-          characterId={characterId}
+          avatarId={avatarId}
           emptyIcon={<Zap size={32} />}
           noScenesDescription="This model has no scenes yet. Create scenes first."
         >
           {(sceneId) => <SceneGeneration sceneId={sceneId} />}
         </ScenePicker>
       )}
-    </ProjectCharacterPicker>
+    </ProjectAvatarPicker>
   );
 }

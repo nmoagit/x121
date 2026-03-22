@@ -1,7 +1,7 @@
 /**
- * Character library TanStack Query hooks (PRD-60).
+ * Avatar library TanStack Query hooks (PRD-60).
  *
- * Provides a single hook for fetching all characters across all projects
+ * Provides a single hook for fetching all avatars across all projects
  * with optional search / scene-type / track filtering.
  */
 
@@ -10,17 +10,17 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 
 import type {
-  ImportCharacterRequest,
-  LibraryCharacter,
+  ImportAvatarRequest,
+  LibraryAvatar,
   LibraryUsageEntry,
-  ProjectCharacterLink,
+  ProjectAvatarLink,
 } from "../types";
 
 /* --------------------------------------------------------------------------
    Query Keys
    -------------------------------------------------------------------------- */
 
-/** Optional filters for the library character list. */
+/** Optional filters for the library avatar list. */
 export interface LibraryFilters {
   search?: string;
   sceneTypeId?: number;
@@ -28,7 +28,7 @@ export interface LibraryFilters {
 }
 
 export const libraryKeys = {
-  all: ["library-characters"] as const,
+  all: ["library-avatars"] as const,
   lists: () => [...libraryKeys.all, "list"] as const,
   list: (filters?: LibraryFilters) => [...libraryKeys.lists(), filters ?? {}] as const,
 };
@@ -54,36 +54,36 @@ function buildLibraryQueryString(filters?: LibraryFilters): string {
   return qs ? `?${qs}` : "";
 }
 
-/** Fetch all characters across all projects, with optional filters. */
-export function useLibraryCharacters(filters?: LibraryFilters) {
+/** Fetch all avatars across all projects, with optional filters. */
+export function useLibraryAvatars(filters?: LibraryFilters) {
   return useQuery({
     queryKey: libraryKeys.list(filters),
     queryFn: () =>
-      api.get<LibraryCharacter[]>(`/library/characters${buildLibraryQueryString(filters)}`),
+      api.get<LibraryAvatar[]>(`/library/avatars${buildLibraryQueryString(filters)}`),
   });
 }
 
 /* --------------------------------------------------------------------------
    Legacy hooks — used by ImportDialog and LibraryUsagePanel
-   which still reference the library_characters backend endpoints.
+   which still reference the library_avatars backend endpoints.
    -------------------------------------------------------------------------- */
 
-/** Fetch cross-project usage for a library character. */
+/** Fetch cross-project usage for a library avatar. */
 export function useLibraryUsage(id: number) {
   return useQuery({
     queryKey: [...libraryKeys.all, "usage", id] as const,
-    queryFn: () => api.get<LibraryUsageEntry[]>(`/library/characters/${id}/usage`),
+    queryFn: () => api.get<LibraryUsageEntry[]>(`/library/avatars/${id}/usage`),
     enabled: id > 0,
   });
 }
 
-/** Import a library character into a project. */
+/** Import a library avatar into a project. */
 export function useImportToProject() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ libraryId, ...input }: ImportCharacterRequest & { libraryId: number }) =>
-      api.post<ProjectCharacterLink>(`/library/characters/${libraryId}/import`, input),
+    mutationFn: ({ libraryId, ...input }: ImportAvatarRequest & { libraryId: number }) =>
+      api.post<ProjectAvatarLink>(`/library/avatars/${libraryId}/import`, input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: libraryKeys.all });
     },

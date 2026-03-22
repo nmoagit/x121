@@ -1,7 +1,7 @@
 /**
- * Character face contact sheet page (PRD-103).
+ * Avatar face contact sheet page (PRD-103).
  *
- * Provides a character selector, then renders the contact sheet grid.
+ * Provides a avatar selector, then renders the contact sheet grid.
  */
 
 import { useState } from "react";
@@ -12,13 +12,13 @@ import { Button, Input } from "@/components/primitives";
 import { ContactSheetPage as ContactSheet } from "@/features/contact-sheet";
 
 export function ContactSheetPage() {
-  const [characterId, setCharacterId] = useState<number | null>(null);
+  const [avatarId, setAvatarId] = useState<number | null>(null);
   const [inputValue, setInputValue] = useState("");
 
   const handleLoad = () => {
     const parsed = Number.parseInt(inputValue, 10);
     if (!Number.isNaN(parsed) && parsed > 0) {
-      setCharacterId(parsed);
+      setAvatarId(parsed);
     }
   };
 
@@ -33,7 +33,7 @@ export function ContactSheetPage() {
         <Stack direction="horizontal" gap={3} align="end">
           <div className="w-48">
             <Input
-              label="Model ID"
+              label="Avatar ID"
               type="number"
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
@@ -46,8 +46,8 @@ export function ContactSheetPage() {
           </Button>
         </Stack>
 
-        {characterId !== null ? (
-          <ContactSheet characterId={characterId} characterName={`Model #${characterId}`} />
+        {avatarId !== null ? (
+          <ContactSheet avatarId={avatarId} avatarName={`Model #${avatarId}`} />
         ) : (
           <p className="text-sm text-[var(--color-text-muted)]">
             Enter a model ID above to generate a contact sheet.

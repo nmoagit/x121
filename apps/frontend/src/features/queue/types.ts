@@ -137,9 +137,9 @@ export interface FullQueueJob {
   parameters: Record<string, unknown>;
   // Enriched context from backend JOINs.
   scene_id: number | null;
-  character_id: number | null;
+  avatar_id: number | null;
   project_id: number | null;
-  character_name: string | null;
+  avatar_name: string | null;
   scene_type_name: string | null;
   track_name: string | null;
   // Job kind discriminator + image-generation context.
@@ -176,7 +176,7 @@ export interface QueueStats {
 
 export interface BulkCancelFilter {
   scene_id?: number;
-  character_id?: number;
+  avatar_id?: number;
   project_id?: number;
   submitted_by?: number;
   status_ids?: number[];

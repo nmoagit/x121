@@ -1,9 +1,9 @@
 /**
- * Storyboard content page — project/character/scene picker wrapping
+ * Storyboard content page — project/avatar/scene picker wrapping
  * the storyboard timeline and keyframe components.
  */
 
-import { ProjectCharacterPicker, ScenePicker, EmptyState } from "@/components/domain";
+import { ProjectAvatarPicker, ScenePicker, EmptyState } from "@/components/domain";
 import { Stack } from "@/components/layout";
 import { WireframeLoader } from "@/components/primitives";
 import { Layout } from "@/tokens/icons";
@@ -47,19 +47,19 @@ function StoryboardViewer({ sceneId }: { sceneId: number }) {
 
 export function StoryboardPage() {
   return (
-    <ProjectCharacterPicker
+    <ProjectAvatarPicker
       title="Storyboard"
       description="View storyboard timeline and keyframes for a scene."
     >
-      {(_projectId, characterId) => (
+      {(_projectId, avatarId) => (
         <ScenePicker
-          characterId={characterId}
+          avatarId={avatarId}
           emptyIcon={<Layout size={32} />}
           noScenesDescription="This model has no scenes yet."
         >
           {(sceneId) => <StoryboardViewer sceneId={sceneId} />}
         </ScenePicker>
       )}
-    </ProjectCharacterPicker>
+    </ProjectAvatarPicker>
   );
 }

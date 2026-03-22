@@ -120,7 +120,7 @@ export function PromptTemplateEditor({ prompts, onChange }: PromptTemplateEditor
             placeholder={
               isOverride
                 ? "Leave empty to use Full Clip prompt as fallback"
-                : "Enter positive prompt template. Use {character_name}, {hair_color}, etc."
+                : "Enter positive prompt template. Use {avatar_name}, {hair_color}, etc."
             }
           />
         </div>

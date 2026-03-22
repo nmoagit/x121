@@ -4,8 +4,8 @@
  * Provides a standard "Are you sure?" dialog with entity name,
  * customizable warning text, and Cancel / Delete buttons.
  *
- * Extracted from ProjectGroupsTab, ProjectCharactersTab, and
- * CharacterDetailPage which all had near-identical delete modals.
+ * Extracted from ProjectGroupsTab, ProjectAvatarsTab, and
+ * AvatarDetailPage which all had near-identical delete modals.
  */
 
 import type { ReactNode } from "react";
@@ -24,7 +24,7 @@ interface ConfirmDeleteModalProps {
   open: boolean;
   /** Close handler. */
   onClose: () => void;
-  /** Title shown in the modal header (e.g. "Delete Character"). */
+  /** Title shown in the modal header (e.g. "Delete Avatar"). */
   title: string;
   /** The name of the entity being deleted (rendered in bold). */
   entityName: string;

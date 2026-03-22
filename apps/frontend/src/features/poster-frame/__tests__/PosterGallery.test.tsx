@@ -12,7 +12,7 @@ import type { PosterFrame } from "../types";
 
 const makePoster = (overrides: Partial<PosterFrame> = {}): PosterFrame => ({
   id: 1,
-  entity_type: "character",
+  entity_type: "avatar",
   entity_id: 1,
   segment_id: 10,
   frame_number: 42,

@@ -17,18 +17,18 @@ import type { RegressionReference } from "../types";
 const mockReferences: RegressionReference[] = [
   {
     id: 1,
-    character_id: 10,
+    avatar_id: 10,
     scene_type_id: 5,
     reference_scene_id: 100,
     baseline_scores: { face_confidence: 0.92, boundary_ssim: 0.85 },
-    notes: "Baseline for hero character",
+    notes: "Baseline for hero avatar",
     created_by: 1,
     created_at: "2026-02-28T10:00:00Z",
     updated_at: "2026-02-28T10:00:00Z",
   },
   {
     id: 2,
-    character_id: 11,
+    avatar_id: 11,
     scene_type_id: 3,
     reference_scene_id: 101,
     baseline_scores: { motion: 0.75 },

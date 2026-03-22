@@ -26,10 +26,10 @@ export interface Project {
   deleted_at: string | null;
   created_at: string;
   updated_at: string;
-  /** Total non-archived characters in the project (from enriched list endpoint). */
-  character_count?: number;
-  /** Characters with readiness state 'ready' (from enriched list endpoint). */
-  characters_ready?: number;
+  /** Total non-archived avatars in the project (from enriched list endpoint). */
+  avatar_count?: number;
+  /** Avatars with readiness state 'ready' (from enriched list endpoint). */
+  avatars_ready?: number;
 }
 
 /** Map project status_id to a slug string. */
@@ -69,10 +69,10 @@ export interface UpdateProject {
    -------------------------------------------------------------------------- */
 
 export interface ProjectStats {
-  character_count: number;
-  characters_draft: number;
-  characters_active: number;
-  characters_ready: number;
+  avatar_count: number;
+  avatars_draft: number;
+  avatars_active: number;
+  avatars_ready: number;
   scenes_enabled: number;
   scenes_generated: number;
   scenes_approved: number;
@@ -82,17 +82,17 @@ export interface ProjectStats {
 }
 
 /* --------------------------------------------------------------------------
-   Character deliverable status (per-character readiness grid)
+   Avatar deliverable status (per-avatar readiness grid)
    -------------------------------------------------------------------------- */
 
-export interface CharacterDeliverableRow {
+export interface AvatarDeliverableRow {
   id: number;
   name: string;
   group_id: number | null;
   status_id: number;
   images_count: number;
   images_approved: number;
-  /** Number of active tracks — each character needs one seed image per track. */
+  /** Number of active tracks — each avatar needs one seed image per track. */
   required_images_count: number;
   scenes_total: number;
   scenes_with_video: number;
@@ -110,10 +110,10 @@ export interface CharacterDeliverableRow {
 }
 
 /* --------------------------------------------------------------------------
-   Character groups
+   Avatar groups
    -------------------------------------------------------------------------- */
 
-export interface CharacterGroup {
+export interface AvatarGroup {
   id: number;
   project_id: number;
   name: string;
@@ -125,22 +125,22 @@ export interface CharacterGroup {
   updated_at: string;
 }
 
-export interface CreateCharacterGroup {
+export interface CreateAvatarGroup {
   name: string;
   sort_order?: number;
 }
 
-export interface UpdateCharacterGroup {
+export interface UpdateAvatarGroup {
   name?: string;
   sort_order?: number;
   blocking_deliverables?: string[];
 }
 
 /* --------------------------------------------------------------------------
-   Characters (project-scoped)
+   Avatars (project-scoped)
    -------------------------------------------------------------------------- */
 
-export interface Character {
+export interface Avatar {
   id: number;
   project_id: number;
   name: string;
@@ -154,19 +154,19 @@ export interface Character {
   review_status_id: number;
   /** Best avatar variant ID (hero clothed > hero > approved clothed > approved). */
   hero_variant_id: number | null;
-  /** Whether this character is enabled for production workflows. */
+  /** Whether this avatar is enabled for production workflows. */
   is_enabled: boolean;
   /** Which deliverable sections must be complete. NULL = inherit from group/project. */
   blocking_deliverables: string[] | null;
 }
 
-export interface CreateCharacter {
+export interface CreateAvatar {
   name: string;
   status_id?: number;
   group_id?: number;
 }
 
-export interface UpdateCharacter {
+export interface UpdateAvatar {
   name?: string;
   status_id?: number;
   group_id?: number | null;
@@ -177,7 +177,7 @@ export interface UpdateCharacter {
    Folder-drop import payloads
    -------------------------------------------------------------------------- */
 
-/** A file classified from a dropped character folder. */
+/** A file classified from a dropped avatar folder. */
 export interface DroppedAsset {
   file: File;
   /** For images: variant_type (e.g. "topless"). For videos: raw filename stem. */
@@ -201,8 +201,8 @@ export interface ImportHashSummary {
   isHashing: boolean;
 }
 
-/** All files for one character, parsed from a folder drop. */
-export interface CharacterDropPayload {
+/** All files for one avatar, parsed from a folder drop. */
+export interface AvatarDropPayload {
   rawName: string;
   /** Group name derived from folder structure (grouped/project imports). */
   groupName?: string;
@@ -221,21 +221,21 @@ export interface FolderDropResult {
   structure: "flat" | "grouped" | "project";
   /** Top-level folder name (potential project name for grouped/project imports). */
   detectedProjectName?: string;
-  /** Characters grouped by group name. Empty string key = ungrouped (flat). */
-  groupedPayloads: Map<string, CharacterDropPayload[]>;
+  /** Avatars grouped by group name. Empty string key = ungrouped (flat). */
+  groupedPayloads: Map<string, AvatarDropPayload[]>;
 }
 
 /* --------------------------------------------------------------------------
    Constants
    -------------------------------------------------------------------------- */
 
-/** Character status_id for Draft. */
+/** Avatar status_id for Draft. */
 export const CHARACTER_STATUS_ID_DRAFT = 1;
 
-/** Character status_id for Active (VoiceID gate, PRD-013 A.4). */
+/** Avatar status_id for Active (VoiceID gate, PRD-013 A.4). */
 export const CHARACTER_STATUS_ID_ACTIVE = 2;
 
-/** Character status_id for Archived (used to exclude from production queues, A.3). */
+/** Avatar status_id for Archived (used to exclude from production queues, A.3). */
 export const CHARACTER_STATUS_ID_ARCHIVED = 3;
 
 /** Status ID to human-readable label mapping. */
@@ -269,13 +269,13 @@ export const PROJECT_STATUS_LABELS: Record<string, string> = {
 /** Tab definitions for project detail page. */
 export const PROJECT_TABS = [
   { id: "overview", label: "Overview" },
-  { id: "characters", label: "Models" },
+  { id: "avatars", label: "Avatars" },
   { id: "production", label: "Production" },
   { id: "delivery", label: "Delivery" },
   { id: "settings", label: "Settings" },
 ] as const;
 
-/** Tab definitions for character detail page. */
+/** Tab definitions for avatar detail page. */
 export const CHARACTER_TABS = [
   { id: "overview", label: "Overview" },
   { id: "images", label: "Images" },
@@ -289,7 +289,7 @@ export const CHARACTER_TABS = [
 
 /* --------------------------------------------------------------------------
    Badge variant helpers (shared by ProjectCard, ProjectDetailPage,
-   CharacterCard, CharacterDetailPage, CharacterOverviewTab)
+   AvatarCard, AvatarDetailPage, AvatarOverviewTab)
    -------------------------------------------------------------------------- */
 
 /** Project status string -> Badge variant. */
@@ -299,7 +299,7 @@ export const PROJECT_STATUS_BADGE_VARIANT: Record<string, BadgeVariant> = {
   draft: "warning",
 };
 
-/** Intermediate color string -> Badge variant (for character status_id). */
+/** Intermediate color string -> Badge variant (for avatar status_id). */
 const COLOR_TO_VARIANT: Record<string, BadgeVariant> = {
   gray: "default",
   yellow: "warning",
@@ -308,14 +308,14 @@ const COLOR_TO_VARIANT: Record<string, BadgeVariant> = {
   green: "success",
 };
 
-/** Derive a human-readable label from a character status_id. */
-export function characterStatusLabel(statusId: number | null): string {
+/** Derive a human-readable label from a avatar status_id. */
+export function avatarStatusLabel(statusId: number | null): string {
   if (statusId === null) return "No Status";
   return STATUS_LABELS[statusId] ?? "Unknown";
 }
 
-/** Derive a BadgeVariant from a character status_id. */
-export function characterStatusBadgeVariant(statusId: number | null): BadgeVariant {
+/** Derive a BadgeVariant from a avatar status_id. */
+export function avatarStatusBadgeVariant(statusId: number | null): BadgeVariant {
   if (statusId === null) return "default";
   const color = STATUS_COLORS[statusId] ?? "gray";
   return COLOR_TO_VARIANT[color] ?? "default";
@@ -363,7 +363,7 @@ export function filterBlockingReasons(reasons: string[], blockingDeliverables?: 
  * backend-computed value when no deliverables filter is provided.
  */
 export function computeReadinessPct(
-  row: CharacterDeliverableRow,
+  row: AvatarDeliverableRow,
   blockingDeliverables?: string[],
   speechOverride?: SpeechCompletenessOverride,
 ): number {
@@ -415,7 +415,7 @@ export interface SpeechCompletenessOverride {
 
 /** Compute per-section readiness from a deliverable row. */
 export function computeSectionReadiness(
-  row: CharacterDeliverableRow,
+  row: AvatarDeliverableRow,
   speechOverride?: SpeechCompletenessOverride,
 ): Record<SectionKey, SectionReadiness> {
   // Metadata state machine:

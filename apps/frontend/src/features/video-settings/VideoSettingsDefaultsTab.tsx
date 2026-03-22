@@ -3,7 +3,7 @@
  *
  * Shows all scene types in a compact table with inline-editable
  * duration, fps, and resolution. These are the base-level defaults
- * that all projects, groups, and characters inherit from.
+ * that all projects, groups, and avatars inherit from.
  */
 
 import { useCallback, useEffect, useState } from "react";
@@ -156,7 +156,7 @@ export function VideoSettingsDefaultsTab() {
     <Stack gap={3}>
       <p className="font-mono text-xs text-[var(--color-text-muted)]">
         Set the default video duration, frame rate, and resolution for each scene type.
-        These defaults are inherited by all projects, groups, and characters unless overridden.
+        These defaults are inherited by all projects, groups, and avatars unless overridden.
       </p>
 
       <div className={TERMINAL_PANEL}>

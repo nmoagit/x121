@@ -1,5 +1,5 @@
 /**
- * TypeScript types for Character Duplicate Detection (PRD-79).
+ * TypeScript types for Avatar Duplicate Detection (PRD-79).
  *
  * These types mirror the backend API response shapes for duplicate checks,
  * match responses, detection settings, and request DTOs.
@@ -12,8 +12,8 @@
 export interface DuplicateCheck {
   id: number;
   status_id: number;
-  source_character_id: number;
-  matched_character_id: number | null;
+  source_avatar_id: number;
+  matched_avatar_id: number | null;
   similarity_score: number | null;
   threshold_used: number;
   check_type: string;
@@ -26,8 +26,8 @@ export interface DuplicateCheck {
 
 export interface DuplicateMatchResponse {
   check_id: number;
-  matched_character_id: number;
-  matched_character_name: string;
+  matched_avatar_id: number;
+  matched_avatar_name: string;
   similarity_score: number;
 }
 
@@ -56,18 +56,18 @@ export interface UpdateDuplicateSetting {
    -------------------------------------------------------------------------- */
 
 export interface CheckDuplicateRequest {
-  character_id: number;
+  avatar_id: number;
   project_id?: number;
 }
 
 export interface BatchCheckRequest {
-  character_ids: number[];
+  avatar_ids: number[];
   project_id?: number;
 }
 
 export interface ResolveCheckRequest {
   resolution: string;
-  target_character_id?: number;
+  target_avatar_id?: number;
 }
 
 /* --------------------------------------------------------------------------

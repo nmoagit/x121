@@ -99,7 +99,7 @@ export const ACTION_TYPES = [
 /** Known entity types for display/filtering. */
 export const ENTITY_TYPES = [
   "project",
-  "character",
+  "avatar",
   "scene",
   "segment",
   "workflow",

@@ -4,9 +4,9 @@ import { describe, expect, it, vi } from "vitest";
 import { renderWithProviders } from "@/lib/test-utils";
 
 import { ImportDialog } from "../ImportDialog";
-import type { LibraryCharacter } from "../types";
+import type { LibraryAvatar } from "../types";
 
-const MOCK_CHARACTER: LibraryCharacter = {
+const MOCK_CHARACTER: LibraryAvatar = {
   id: 1,
   name: "Alice",
   project_id: 10,
@@ -28,8 +28,8 @@ vi.mock("@/lib/api", () => ({
     post: vi.fn().mockResolvedValue({
       id: 10,
       project_id: 5,
-      library_character_id: 1,
-      project_character_id: 42,
+      library_avatar_id: 1,
+      project_avatar_id: 42,
       linked_fields: [],
       imported_at: "2026-02-22T12:00:00Z",
       created_at: "2026-02-22T12:00:00Z",
@@ -43,12 +43,12 @@ vi.mock("@/lib/api", () => ({
 describe("ImportDialog", () => {
   const onClose = vi.fn();
 
-  it("renders the import dialog with character name", () => {
+  it("renders the import dialog with avatar name", () => {
     renderWithProviders(
       <ImportDialog
         open={true}
         onClose={onClose}
-        character={MOCK_CHARACTER}
+        avatar={MOCK_CHARACTER}
         projectId={5}
         projectName="My Project"
       />,
@@ -59,12 +59,12 @@ describe("ImportDialog", () => {
     expect(screen.getByText("My Project")).toBeInTheDocument();
   });
 
-  it("shows no linkable fields message for cross-project characters", () => {
+  it("shows no linkable fields message for cross-project avatars", () => {
     renderWithProviders(
       <ImportDialog
         open={true}
         onClose={onClose}
-        character={MOCK_CHARACTER}
+        avatar={MOCK_CHARACTER}
         projectId={5}
       />,
     );
@@ -78,7 +78,7 @@ describe("ImportDialog", () => {
       <ImportDialog
         open={true}
         onClose={onClose}
-        character={MOCK_CHARACTER}
+        avatar={MOCK_CHARACTER}
         projectId={5}
       />,
     );

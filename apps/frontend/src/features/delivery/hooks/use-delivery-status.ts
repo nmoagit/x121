@@ -6,7 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import { api } from "@/lib/api";
 
-import type { CharacterDeliveryStatus } from "../types";
+import type { AvatarDeliveryStatus } from "../types";
 
 /* --------------------------------------------------------------------------
    Query Keys
@@ -21,13 +21,13 @@ export const deliveryStatusKeys = {
    Hooks
    -------------------------------------------------------------------------- */
 
-/** Fetch per-character delivery status for a project.
+/** Fetch per-avatar delivery status for a project.
  *  Polls every 10s when `poll` is true (e.g. while an export is in progress). */
 export function useDeliveryStatus(projectId: number, poll?: boolean) {
   return useQuery({
     queryKey: deliveryStatusKeys.status(projectId),
     queryFn: () =>
-      api.get<CharacterDeliveryStatus[]>(
+      api.get<AvatarDeliveryStatus[]>(
         `/projects/${projectId}/delivery-status`,
       ),
     enabled: projectId > 0,

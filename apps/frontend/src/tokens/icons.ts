@@ -124,7 +124,7 @@ export {
   Sparkles,
   Wand2,
   Wrench,
-  // Character Review
+  // Avatar Review
   CheckCircle,
   UserPlus,
   ArrowRightLeft,

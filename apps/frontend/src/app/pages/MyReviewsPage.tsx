@@ -1,4 +1,4 @@
-import { MyReviewsPage as MyReviewsFeature } from "@/features/character-review/MyReviewsPage";
+import { MyReviewsPage as MyReviewsFeature } from "@/features/avatar-review/MyReviewsPage";
 
 export function MyReviewsPage() {
   return <MyReviewsFeature />;

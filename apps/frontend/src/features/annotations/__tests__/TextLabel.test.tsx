@@ -27,7 +27,7 @@ describe("TextLabel", () => {
     expect(screen.getByTestId("text-color-picker")).toBeInTheDocument();
   });
 
-  test("shows character count", () => {
+  test("shows avatar count", () => {
     renderWithProviders(<TextLabel x={100} y={100} initialText="Hello" />);
     expect(screen.getByText("5/500")).toBeInTheDocument();
   });

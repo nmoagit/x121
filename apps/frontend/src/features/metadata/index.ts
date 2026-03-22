@@ -7,14 +7,14 @@ export { StalenessIndicator } from "./StalenessIndicator";
 export { RegenerationControls } from "./RegenerationControls";
 export {
   metadataKeys,
-  useCharacterMetadataPreview,
+  useAvatarMetadataPreview,
   useVideoMetadataPreview,
   useStaleMetadata,
-  useRegenerateCharacterMetadata,
+  useRegenerateAvatarMetadata,
   useRegenerateProjectMetadata,
 } from "./hooks/use-metadata";
 export type {
-  CharacterMetadata,
+  AvatarMetadata,
   VideoMetadata,
   StaleMetadataEntry,
   StaleMetadataReport,

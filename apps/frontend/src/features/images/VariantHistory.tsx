@@ -24,7 +24,7 @@ import { variantImageUrl } from "./utils";
    -------------------------------------------------------------------------- */
 
 interface VariantHistoryProps {
-  characterId: number;
+  avatarId: number;
   variantId: number;
 }
 
@@ -32,8 +32,8 @@ interface VariantHistoryProps {
    Component
    -------------------------------------------------------------------------- */
 
-export function VariantHistory({ characterId, variantId }: VariantHistoryProps) {
-  const { data: history, isLoading } = useVariantHistory(characterId, variantId);
+export function VariantHistory({ avatarId, variantId }: VariantHistoryProps) {
+  const { data: history, isLoading } = useVariantHistory(avatarId, variantId);
 
   if (isLoading) {
     return (

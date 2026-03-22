@@ -1,5 +1,5 @@
 /**
- * TypeScript types for Character Face Contact Sheet (PRD-103).
+ * TypeScript types for Avatar Face Contact Sheet (PRD-103).
  *
  * These types mirror the backend API response shapes for contact sheet
  * images, face crop metadata, and export formats.
@@ -13,7 +13,7 @@ import type { BadgeVariant } from "@/components/primitives";
 
 export interface ContactSheetImage {
   id: number;
-  character_id: number;
+  avatar_id: number;
   scene_id: number;
   face_crop_path: string;
   confidence_score: number | null;

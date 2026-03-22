@@ -2,7 +2,7 @@
  * Prompt editor component (PRD-63).
  *
  * Provides twin textareas for positive/negative prompts with placeholder
- * highlighting, character count, estimated CLIP token count, change notes,
+ * highlighting, avatar count, estimated CLIP token count, change notes,
  * and a save button that triggers prompt version creation.
  */
 

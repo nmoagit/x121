@@ -1,5 +1,5 @@
 /**
- * Color-coded badge displaying a character's face embedding status (PRD-76).
+ * Color-coded badge displaying a avatar's face embedding status (PRD-76).
  *
  * Uses the shared Badge primitive from the design system.
  */

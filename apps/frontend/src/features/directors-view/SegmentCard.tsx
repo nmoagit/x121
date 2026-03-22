@@ -1,7 +1,7 @@
 /**
  * Touch-optimized segment review card (PRD-55).
  *
- * Displays a segment thumbnail, character name, scene type, and status
+ * Displays a segment thumbnail, avatar name, scene type, and status
  * badge. Swipe-enabled with visual feedback (tilt + color tint overlay).
  * All tap targets meet the 44px minimum WCAG touch target guideline.
  */
@@ -96,7 +96,7 @@ export function SegmentCard({ item, onAction, onTap }: SegmentCardProps) {
           {item.thumbnail_url ? (
             <img
               src={item.thumbnail_url}
-              alt={`${item.character_name} thumbnail`}
+              alt={`${item.avatar_name} thumbnail`}
               className="h-full w-full object-cover"
             />
           ) : (
@@ -111,7 +111,7 @@ export function SegmentCard({ item, onAction, onTap }: SegmentCardProps) {
         {/* Details */}
         <div className="flex min-w-0 flex-1 flex-col gap-1">
           <span className="truncate text-sm font-medium text-[var(--color-text-primary)]">
-            {item.character_name}
+            {item.avatar_name}
           </span>
           <span className="truncate text-xs text-[var(--color-text-muted)]">
             {item.scene_type}

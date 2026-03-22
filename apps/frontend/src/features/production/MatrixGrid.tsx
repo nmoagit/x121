@@ -1,7 +1,7 @@
 /**
  * Matrix grid component for visualizing production run cells (PRD-57).
  *
- * Displays characters as rows and scene_type+track pairs as columns.
+ * Displays avatars as rows and scene_type+track pairs as columns.
  * Each cell is color-coded by status, supports checkbox selection for
  * partial submission, and shows blocking reasons on hover.
  *
@@ -37,7 +37,7 @@ const CELL_MAX_WIDTH = 80;
    Types
    -------------------------------------------------------------------------- */
 
-interface Character {
+interface Avatar {
   id: number;
   name: string;
 }
@@ -54,26 +54,26 @@ interface MatrixColumn {
 interface MatrixGridProps {
   /** All cells in the production run. */
   cells: ProductionRunCell[];
-  /** Characters (rows). */
-  characters: Character[];
+  /** Avatars (rows). */
+  avatars: Avatar[];
   /** Scene type + track columns. */
   columns: MatrixColumn[];
   /** Currently selected cell IDs for submission. */
   selectedCellIds?: Set<number>;
   /** Toggle a cell's selection state. */
   onToggleCell?: (cellId: number) => void;
-  /** Navigate to a character's detail page. */
-  onCharacterClick?: (characterId: number) => void;
+  /** Navigate to a avatar's detail page. */
+  onAvatarClick?: (avatarId: number) => void;
   /** Navigate to a cell's scene detail. */
   onCellClick?: (cell: ProductionRunCell) => void;
   /** Cancel a cell. */
   onCancelCell?: (cellId: number) => void;
   /** Delete a cell. */
   onDeleteCell?: (cellId: number) => void;
-  /** Cancel all cells for a character. */
-  onCancelCharacter?: (characterId: number) => void;
-  /** Delete all cells for a character (remove character from run). */
-  onDeleteCharacter?: (characterId: number) => void;
+  /** Cancel all cells for a avatar. */
+  onCancelAvatar?: (avatarId: number) => void;
+  /** Delete all cells for a avatar (remove avatar from run). */
+  onDeleteAvatar?: (avatarId: number) => void;
 }
 
 /* --------------------------------------------------------------------------
@@ -123,31 +123,31 @@ function columnKey(col: MatrixColumn): string {
 
 export function MatrixGrid({
   cells,
-  characters,
+  avatars,
   columns,
   selectedCellIds,
   onToggleCell,
-  onCharacterClick,
+  onAvatarClick,
   onCellClick,
   onCancelCell,
   onDeleteCell,
-  onCancelCharacter,
-  onDeleteCharacter,
+  onCancelAvatar,
+  onDeleteAvatar,
 }: MatrixGridProps) {
   const [hoveredCellId, setHoveredCellId] = useState<number | null>(null);
   const [hoveredCharId, setHoveredCharId] = useState<number | null>(null);
 
-  // Build a lookup map: (character_id, scene_type_id, track_id) -> cell
+  // Build a lookup map: (avatar_id, scene_type_id, track_id) -> cell
   const cellMap = useMemo(() => {
     const map = new Map<string, ProductionRunCell>();
     for (const cell of cells) {
-      const key = `${cell.character_id}-${cell.scene_type_id}-${cell.track_id ?? "null"}`;
+      const key = `${cell.avatar_id}-${cell.scene_type_id}-${cell.track_id ?? "null"}`;
       map.set(key, cell);
     }
     return map;
   }, [cells]);
 
-  const hasCharActions = !!(onCancelCharacter || onDeleteCharacter);
+  const hasCharActions = !!(onCancelAvatar || onDeleteAvatar);
 
   return (
     <div data-testid="matrix-grid" className="overflow-auto rounded-[var(--radius-lg)] border border-[var(--color-border-default)] bg-[#0d1117]">
@@ -155,7 +155,7 @@ export function MatrixGrid({
         <thead>
           <tr className="bg-[#161b22]">
             <th className={`sticky left-0 z-10 bg-[#161b22] p-2 whitespace-nowrap ${TERMINAL_TH}`}>
-              Character
+              Avatar
             </th>
             {columns.map((col) => (
                   <th
@@ -178,7 +178,7 @@ export function MatrixGrid({
             </tr>
           </thead>
           <tbody>
-            {characters.map((char) => (
+            {avatars.map((char) => (
               <tr key={char.id} className={`${TERMINAL_DIVIDER} ${TERMINAL_ROW_HOVER}`}>
                 <td className="sticky left-0 z-10 bg-[#0d1117] p-0 font-mono text-xs text-[var(--color-text-primary)] whitespace-nowrap">
                   <div
@@ -194,24 +194,24 @@ export function MatrixGrid({
                           padding: "2px 8px 0",
                         }}
                       >
-                        {onCancelCharacter && (
+                        {onCancelAvatar && (
                           <button
                             type="button"
                             style={{ paddingRight: 2 }}
                             className="text-[10px] font-medium text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
-                            onClick={() => onCancelCharacter(char.id)}
+                            onClick={() => onCancelAvatar(char.id)}
                           >
                             <span className="inline-block rounded bg-[var(--color-surface-primary)] px-1.5 py-0.5 shadow border border-[var(--color-border-default)]">
                               Cancel
                             </span>
                           </button>
                         )}
-                        {onDeleteCharacter && (
+                        {onDeleteAvatar && (
                           <button
                             type="button"
                             style={{ paddingLeft: 2 }}
                             className="text-[10px] font-medium text-red-400 hover:text-red-300"
-                            onClick={() => onDeleteCharacter(char.id)}
+                            onClick={() => onDeleteAvatar(char.id)}
                           >
                             <span className="inline-block rounded bg-[var(--color-surface-primary)] px-1.5 py-0.5 shadow border border-[var(--color-border-default)]">
                               Remove
@@ -221,9 +221,9 @@ export function MatrixGrid({
                       </div>
                     )}
                     <div
-                      style={{ padding: "4px 8px 8px", cursor: onCharacterClick ? "pointer" : undefined }}
-                      className={onCharacterClick ? "hover:text-[var(--color-action-primary)] hover:underline" : ""}
-                      onClick={onCharacterClick ? () => onCharacterClick(char.id) : undefined}
+                      style={{ padding: "4px 8px 8px", cursor: onAvatarClick ? "pointer" : undefined }}
+                      className={onAvatarClick ? "hover:text-[var(--color-action-primary)] hover:underline" : ""}
+                      onClick={onAvatarClick ? () => onAvatarClick(char.id) : undefined}
                     >
                       {char.name}
                     </div>

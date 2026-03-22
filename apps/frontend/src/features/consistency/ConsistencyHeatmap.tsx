@@ -1,5 +1,5 @@
 /**
- * Pairwise similarity heatmap for character consistency (PRD-94).
+ * Pairwise similarity heatmap for avatar consistency (PRD-94).
  *
  * Renders a color-coded matrix of pairwise similarity scores with
  * scene labels on rows and columns.

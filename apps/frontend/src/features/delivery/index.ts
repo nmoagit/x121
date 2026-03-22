@@ -49,7 +49,7 @@ export {
 // Types
 export type {
   AssemblyStartedResponse,
-  CharacterDeliveryStatus,
+  AvatarDeliveryStatus,
   CreateDeliveryDestination,
   CreateOutputFormatProfile,
   CreateWatermarkSetting,

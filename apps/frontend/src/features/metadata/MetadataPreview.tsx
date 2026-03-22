@@ -1,7 +1,7 @@
 /**
  * Metadata Preview Panel (PRD-13).
  *
- * Displays character or video metadata JSON in a formatted, read-only view.
+ * Displays avatar or video metadata JSON in a formatted, read-only view.
  * Supports both entity types via a `mode` prop.
  */
 
@@ -9,7 +9,7 @@ import { Card } from "@/components/composite/Card";
 import { WireframeLoader } from "@/components/primitives";
 import { Stack } from "@/components/layout";
 import {
-  useCharacterMetadataPreview,
+  useAvatarMetadataPreview,
   useVideoMetadataPreview,
 } from "./hooks/use-metadata";
 
@@ -19,9 +19,9 @@ import {
 
 interface MetadataPreviewProps {
   /** Determines which metadata type to fetch and display. */
-  mode: "character" | "video";
-  /** Character ID when `mode === "character"`. */
-  characterId?: number;
+  mode: "avatar" | "video";
+  /** Avatar ID when `mode === "avatar"`. */
+  avatarId?: number;
   /** Scene ID when `mode === "video"`. */
   sceneId?: number;
 }
@@ -32,19 +32,19 @@ interface MetadataPreviewProps {
 
 export function MetadataPreview({
   mode,
-  characterId,
+  avatarId,
   sceneId,
 }: MetadataPreviewProps) {
-  const characterQuery = useCharacterMetadataPreview(
-    mode === "character" ? (characterId ?? 0) : 0,
+  const avatarQuery = useAvatarMetadataPreview(
+    mode === "avatar" ? (avatarId ?? 0) : 0,
   );
   const videoQuery = useVideoMetadataPreview(
     mode === "video" ? (sceneId ?? 0) : 0,
   );
 
-  const query = mode === "character" ? characterQuery : videoQuery;
+  const query = mode === "avatar" ? avatarQuery : videoQuery;
   const title =
-    mode === "character" ? "Model Metadata" : "Video Metadata";
+    mode === "avatar" ? "Avatar Metadata" : "Video Metadata";
 
   return (
     <Stack gap={4}>

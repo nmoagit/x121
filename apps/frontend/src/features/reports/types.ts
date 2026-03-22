@@ -109,7 +109,7 @@ export const REPORT_TYPE_LABELS: Record<string, string> = {
   throughput_metrics: "Throughput Metrics",
   gpu_utilization: "GPU Utilization",
   quality_metrics: "Quality Metrics",
-  cost_per_character: "Cost Per Model",
+  cost_per_avatar: "Cost Per Model",
   reviewer_productivity: "Reviewer Productivity",
   video_technical: "Video Technical",
 };

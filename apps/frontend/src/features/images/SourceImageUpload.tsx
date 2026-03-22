@@ -29,7 +29,7 @@ interface UploadResult {
 }
 
 interface SourceImageUploadProps {
-  characterId: number;
+  avatarId: number;
   onUploaded: (result: UploadResult) => void;
 }
 
@@ -51,7 +51,7 @@ function getFileExtension(name: string): string {
    Component
    -------------------------------------------------------------------------- */
 
-export function SourceImageUpload({ characterId: _characterId, onUploaded }: SourceImageUploadProps) {
+export function SourceImageUpload({ avatarId: _avatarId, onUploaded }: SourceImageUploadProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [preview, setPreview] = useState<UploadResult | null>(null);

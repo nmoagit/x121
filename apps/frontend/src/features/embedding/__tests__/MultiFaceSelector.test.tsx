@@ -11,7 +11,7 @@ import type { DetectedFace } from "../types";
 
 const MOCK_FACE_1: DetectedFace = {
   id: 1,
-  character_id: 10,
+  avatar_id: 10,
   bounding_box: { x: 50, y: 50, width: 100, height: 120 },
   confidence: 0.95,
   is_primary: true,
@@ -21,7 +21,7 @@ const MOCK_FACE_1: DetectedFace = {
 
 const MOCK_FACE_2: DetectedFace = {
   id: 2,
-  character_id: 10,
+  avatar_id: 10,
   bounding_box: { x: 200, y: 60, width: 90, height: 110 },
   confidence: 0.72,
   is_primary: false,

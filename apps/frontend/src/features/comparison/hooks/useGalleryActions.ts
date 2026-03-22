@@ -2,7 +2,7 @@
  * Shared gallery mutation actions (PRD-68).
  *
  * Encapsulates approve/reject/flag mutation boilerplate used by
- * both SceneGallery and CharacterAllScenes.
+ * both SceneGallery and AvatarAllScenes.
  */
 
 import { useApproveSegment, useRejectSegment, useFlagSegment } from "@/features/review/hooks/use-review";

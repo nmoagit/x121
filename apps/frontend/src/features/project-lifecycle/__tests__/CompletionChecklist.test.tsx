@@ -36,7 +36,7 @@ const MOCK_CHECKLIST: ChecklistResult = {
       description: "All metadata fields populated",
       passed: false,
       blocking: false,
-      details: "3 characters missing metadata",
+      details: "3 avatars missing metadata",
     },
   ],
 };
@@ -120,7 +120,7 @@ describe("CompletionChecklist", () => {
 
     renderWithProviders(<CompletionChecklist projectId={1} />);
     expect(screen.getByText("Current QA pass rate is 87%")).toBeInTheDocument();
-    expect(screen.getByText("3 characters missing metadata")).toBeInTheDocument();
+    expect(screen.getByText("3 avatars missing metadata")).toBeInTheDocument();
   });
 
   test("shows admin override button when checklist fails", () => {

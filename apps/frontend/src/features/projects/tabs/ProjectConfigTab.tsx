@@ -11,8 +11,8 @@ import { CollapsibleSection, ConfigToolbar } from "@/components/composite";
 import { BlockingDeliverablesEditor } from "@/components/domain";
 import { Stack } from "@/components/layout";
 import { Button, Select } from "@/components/primitives";
-import { useLanguages } from "@/features/characters/hooks/use-languages";
-import { useSpeechTypes } from "@/features/characters/hooks/use-character-speeches";
+import { useLanguages } from "@/features/avatars/hooks/use-languages";
+import { useSpeechTypes } from "@/features/avatars/hooks/use-avatar-speeches";
 import { useOutputFormatProfiles, formatProfileOption } from "@/features/delivery";
 import { useExportProjectSettings, useConfigImport } from "@/features/config-io";
 import { ConfigLibrary } from "@/features/config-templates";
@@ -95,7 +95,7 @@ export function ProjectSettingsTab({ projectId, projectName = "project" }: Proje
 
       <CollapsibleSection card
         title="Blocking Deliverables"
-        description="Choose which deliverable sections must be complete for a character to be considered done. Inherited from studio defaults unless overridden."
+        description="Choose which deliverable sections must be complete for a avatar to be considered done. Inherited from studio defaults unless overridden."
         open={openSections.has("blocking")}
         onToggle={() => toggleSection("blocking")}
       >
@@ -134,7 +134,7 @@ export function ProjectSettingsTab({ projectId, projectName = "project" }: Proje
 
       <CollapsibleSection card
         title="Speech Requirements"
-        description="Define the minimum number of speech variants required per type and language. This drives the speech completeness indicator on character cards."
+        description="Define the minimum number of speech variants required per type and language. This drives the speech completeness indicator on avatar cards."
         open={openSections.has("speech")}
         onToggle={() => toggleSection("speech")}
       >

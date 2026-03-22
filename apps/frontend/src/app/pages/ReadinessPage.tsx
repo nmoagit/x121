@@ -1,13 +1,13 @@
 /**
- * Character readiness & state view page (PRD-107).
+ * Avatar readiness & state view page (PRD-107).
  *
  * Provides two tabs:
- * - "Library View" renders the CharacterLibraryStateView with readiness data
+ * - "Library View" renders the AvatarLibraryStateView with readiness data
  * - "Criteria" renders the ReadinessCriteriaEditor for managing readiness rules
  *
- * Since CharacterLibraryStateView expects character rows with readiness data,
- * this page fetches the readiness summary and displays it. For now, character
- * data comes from the readiness hooks (no project/character context needed
+ * Since AvatarLibraryStateView expects avatar rows with readiness data,
+ * this page fetches the readiness summary and displays it. For now, avatar
+ * data comes from the readiness hooks (no project/avatar context needed
  * since this is an admin-level view).
  */
 
@@ -55,7 +55,7 @@ export function ReadinessPage() {
     <div className="min-h-full">
       <Stack gap={6}>
         <PageHeader
-          title="Model Readiness"
+          title="Avatar Readiness"
           description="View model library readiness states and manage readiness criteria."
         />
 
@@ -74,7 +74,7 @@ export function ReadinessPage() {
                   <Button
                     variant="secondary"
                     size="sm"
-                    onClick={() => batchEvaluate.mutate({ character_ids: [] })}
+                    onClick={() => batchEvaluate.mutate({ avatar_ids: [] })}
                     disabled={batchEvaluate.isPending}
                   >
                     {batchEvaluate.isPending

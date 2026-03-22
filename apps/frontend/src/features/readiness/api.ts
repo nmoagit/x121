@@ -1,37 +1,37 @@
 /**
- * Character Readiness API functions (PRD-107).
+ * Avatar Readiness API functions (PRD-107).
  */
 
 import { api } from "@/lib/api";
 
 import type {
   BatchEvaluateRequest,
-  CharacterReadinessCache,
+  AvatarReadinessCache,
   CreateReadinessCriteria,
   ReadinessCriteria,
   ReadinessSummary,
   UpdateReadinessCriteria,
 } from "./types";
 
-/** Fetch readiness for a single character. */
-export function fetchCharacterReadiness(
-  characterId: number,
-): Promise<CharacterReadinessCache> {
-  return api.get(`/characters/${characterId}/readiness`);
+/** Fetch readiness for a single avatar. */
+export function fetchAvatarReadiness(
+  avatarId: number,
+): Promise<AvatarReadinessCache> {
+  return api.get(`/avatars/${avatarId}/readiness`);
 }
 
-/** Invalidate the readiness cache for a character. */
-export function invalidateCharacterReadiness(
-  characterId: number,
+/** Invalidate the readiness cache for a avatar. */
+export function invalidateAvatarReadiness(
+  avatarId: number,
 ): Promise<void> {
-  return api.post(`/characters/${characterId}/readiness/invalidate`);
+  return api.post(`/avatars/${avatarId}/readiness/invalidate`);
 }
 
-/** Batch evaluate readiness for multiple characters. */
+/** Batch evaluate readiness for multiple avatars. */
 export function batchEvaluateReadiness(
   body: BatchEvaluateRequest,
-): Promise<CharacterReadinessCache[]> {
-  return api.post("/characters/readiness/batch-evaluate", body);
+): Promise<AvatarReadinessCache[]> {
+  return api.post("/avatars/readiness/batch-evaluate", body);
 }
 
 /** Fetch readiness summary for a project or the whole library. */
@@ -39,7 +39,7 @@ export function fetchReadinessSummary(
   projectId?: number,
 ): Promise<ReadinessSummary> {
   const qs = projectId != null ? `?project_id=${projectId}` : "";
-  return api.get(`/library/characters/readiness-summary${qs}`);
+  return api.get(`/library/avatars/readiness-summary${qs}`);
 }
 
 /** List all readiness criteria. */

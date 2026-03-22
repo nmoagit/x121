@@ -15,7 +15,7 @@ export interface FailurePattern {
   description: string | null;
   dimension_workflow_id: number | null;
   dimension_lora_id: number | null;
-  dimension_character_id: number | null;
+  dimension_avatar_id: number | null;
   dimension_scene_type_id: number | null;
   dimension_segment_position: string | null;
   failure_count: number;
@@ -90,7 +90,7 @@ export type AlertResponse = FailurePattern[];
 /** Available dimension options for heatmap axes. */
 export const HEATMAP_DIMENSIONS = [
   { value: "workflow", label: "Workflow" },
-  { value: "character", label: "Model" },
+  { value: "avatar", label: "Model" },
   { value: "scene_type", label: "Scene Type" },
   { value: "lora", label: "LoRA" },
   { value: "segment_position", label: "Segment Position" },

@@ -6,12 +6,12 @@ import { CompletenessBar } from "../CompletenessBar";
 import { BulkEditDialog } from "../BulkEditDialog";
 import { CsvExport } from "../CsvExport";
 import { CsvImport } from "../CsvImport";
-import type { CharacterMetadataResponse, CompletenessResult, MetadataFieldDef } from "../types";
+import type { AvatarMetadataResponse, CompletenessResult, MetadataFieldDef } from "../types";
 
 // Mock the api module to prevent real HTTP requests.
-const mockCharacterMetadata: CharacterMetadataResponse = {
-  character_id: 1,
-  character_name: "Alice",
+const mockAvatarMetadata: AvatarMetadataResponse = {
+  avatar_id: 1,
+  avatar_name: "Alice",
   fields: [
     {
       name: "full_name",
@@ -60,7 +60,7 @@ const mockCharacterMetadata: CharacterMetadataResponse = {
     },
   ],
   completeness: {
-    character_id: 1,
+    avatar_id: 1,
     total_required: 2,
     filled: 1,
     missing_fields: ["description"],
@@ -72,16 +72,16 @@ vi.mock("@/lib/api", () => ({
   api: {
     get: vi.fn().mockImplementation((path: string) => {
       if (path.includes("/metadata/completeness")) {
-        return Promise.resolve(mockCharacterMetadata.completeness);
+        return Promise.resolve(mockAvatarMetadata.completeness);
       }
       if (path.includes("/metadata")) {
-        return Promise.resolve(mockCharacterMetadata);
+        return Promise.resolve(mockAvatarMetadata);
       }
       return Promise.resolve([]);
     }),
     put: vi.fn().mockResolvedValue({
       status: "updated",
-      character_id: 1,
+      avatar_id: 1,
       metadata: {},
     }),
     post: vi.fn().mockResolvedValue({}),
@@ -90,8 +90,8 @@ vi.mock("@/lib/api", () => ({
 }));
 
 describe("MetadataForm", () => {
-  it("renders the character name", async () => {
-    renderWithProviders(<MetadataForm characterId={1} />);
+  it("renders the avatar name", async () => {
+    renderWithProviders(<MetadataForm avatarId={1} />);
 
     await waitFor(() => {
       expect(screen.getByText("Alice - Metadata")).toBeInTheDocument();
@@ -99,7 +99,7 @@ describe("MetadataForm", () => {
   });
 
   it("renders field category headings", async () => {
-    renderWithProviders(<MetadataForm characterId={1} />);
+    renderWithProviders(<MetadataForm avatarId={1} />);
 
     await waitFor(() => {
       expect(screen.getByText("Biographical")).toBeInTheDocument();
@@ -109,7 +109,7 @@ describe("MetadataForm", () => {
   });
 
   it("marks required fields with asterisk", async () => {
-    renderWithProviders(<MetadataForm characterId={1} />);
+    renderWithProviders(<MetadataForm avatarId={1} />);
 
     await waitFor(() => {
       expect(screen.getByText("Full Name *")).toBeInTheDocument();
@@ -118,7 +118,7 @@ describe("MetadataForm", () => {
   });
 
   it("renders a save button", async () => {
-    renderWithProviders(<MetadataForm characterId={1} />);
+    renderWithProviders(<MetadataForm avatarId={1} />);
 
     await waitFor(() => {
       expect(screen.getByText("Save")).toBeInTheDocument();
@@ -126,7 +126,7 @@ describe("MetadataForm", () => {
   });
 
   it("shows completeness bar", async () => {
-    renderWithProviders(<MetadataForm characterId={1} />);
+    renderWithProviders(<MetadataForm avatarId={1} />);
 
     await waitFor(() => {
       expect(screen.getByText("1 / 2 required")).toBeInTheDocument();
@@ -134,7 +134,7 @@ describe("MetadataForm", () => {
   });
 
   it("renders loading state initially", () => {
-    renderWithProviders(<MetadataForm characterId={1} />);
+    renderWithProviders(<MetadataForm avatarId={1} />);
     const spinner = document.querySelector('[class*="animate-spin"]');
     expect(spinner).toBeTruthy();
   });
@@ -142,7 +142,7 @@ describe("MetadataForm", () => {
 
 describe("CompletenessBar", () => {
   const fullCompleteness: CompletenessResult = {
-    character_id: 1,
+    avatar_id: 1,
     total_required: 3,
     filled: 3,
     missing_fields: [],
@@ -150,7 +150,7 @@ describe("CompletenessBar", () => {
   };
 
   const partialCompleteness: CompletenessResult = {
-    character_id: 1,
+    avatar_id: 1,
     total_required: 4,
     filled: 2,
     missing_fields: ["field_a", "field_b"],
@@ -199,23 +199,23 @@ describe("BulkEditDialog", () => {
     },
   ];
 
-  it("shows selected character count", () => {
+  it("shows selected avatar count", () => {
     renderWithProviders(
       <BulkEditDialog
-        selectedCharacterIds={[1, 2, 3]}
+        selectedAvatarIds={[1, 2, 3]}
         fieldDefs={fieldDefs}
         onApply={vi.fn()}
         onClose={vi.fn()}
       />,
     );
     expect(screen.getByText(/3/)).toBeInTheDocument();
-    expect(screen.getByText(/selected character/)).toBeInTheDocument();
+    expect(screen.getByText(/selected avatar/)).toBeInTheDocument();
   });
 
   it("renders field selector and action buttons", () => {
     renderWithProviders(
       <BulkEditDialog
-        selectedCharacterIds={[1]}
+        selectedAvatarIds={[1]}
         fieldDefs={fieldDefs}
         onApply={vi.fn()}
         onClose={vi.fn()}

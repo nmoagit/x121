@@ -31,7 +31,7 @@ import { variantImageUrl } from "./utils";
    -------------------------------------------------------------------------- */
 
 interface ExternalEditFlowProps {
-  characterId: number;
+  avatarId: number;
   variantId: number;
   /** Called after successful reimport with the new variant ID. */
   onReimported?: (newVariantId: number) => void;
@@ -42,12 +42,12 @@ interface ExternalEditFlowProps {
    -------------------------------------------------------------------------- */
 
 export function ExternalEditFlow({
-  characterId,
+  avatarId,
   variantId,
   onReimported,
 }: ExternalEditFlowProps) {
-  const exportMutation = useExportVariant(characterId);
-  const { data: history, isLoading: historyLoading } = useVariantHistory(characterId, variantId);
+  const exportMutation = useExportVariant(avatarId);
+  const { data: history, isLoading: historyLoading } = useVariantHistory(avatarId, variantId);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -75,7 +75,7 @@ export function ExternalEditFlow({
         formData.append("file", file);
 
         const response = await fetch(
-          `/api/v1/characters/${characterId}/image-variants/${variantId}/reimport`,
+          `/api/v1/avatars/${avatarId}/image-variants/${variantId}/reimport`,
           {
             method: "POST",
             body: formData,
@@ -96,7 +96,7 @@ export function ExternalEditFlow({
         setIsUploading(false);
       }
     },
-    [characterId, variantId, onReimported],
+    [avatarId, variantId, onReimported],
   );
 
   return (

@@ -17,7 +17,7 @@ export type NoteVisibility =
 /** Entity types that notes can be attached to. */
 export type NoteEntityType =
   | "project"
-  | "character"
+  | "avatar"
   | "scene"
   | "segment"
   | "scene_type"

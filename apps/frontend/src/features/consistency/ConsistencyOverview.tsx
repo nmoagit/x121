@@ -1,8 +1,8 @@
 /**
  * Project-wide consistency overview (PRD-94).
  *
- * Shows a summary of how many characters are fully consistent and
- * lists per-character rows with overall score and click-through.
+ * Shows a summary of how many avatars are fully consistent and
+ * lists per-avatar rows with overall score and click-through.
  */
 
 import { Badge } from "@/components/primitives";
@@ -15,13 +15,13 @@ import { CONSISTENCY_THRESHOLDS, type ConsistencyReport, type ConsistencyReportT
    Helpers
    -------------------------------------------------------------------------- */
 
-interface CharacterEntry {
-  characterId: number;
-  characterName: string;
+interface AvatarEntry {
+  avatarId: number;
+  avatarName: string;
   report: ConsistencyReport | null;
 }
 
-function countConsistent(entries: CharacterEntry[]): number {
+function countConsistent(entries: AvatarEntry[]): number {
   return entries.filter(
     (e) =>
       e.report !== null &&
@@ -35,20 +35,20 @@ function countConsistent(entries: CharacterEntry[]): number {
    -------------------------------------------------------------------------- */
 
 interface ConsistencyOverviewProps {
-  characters: CharacterEntry[];
+  avatars: AvatarEntry[];
   isGenerating?: boolean;
-  onGenerate?: (characterId: number, reportType: ConsistencyReportType) => void;
-  onCharacterClick?: (characterId: number) => void;
+  onGenerate?: (avatarId: number, reportType: ConsistencyReportType) => void;
+  onAvatarClick?: (avatarId: number) => void;
 }
 
 export function ConsistencyOverview({
-  characters,
+  avatars,
   isGenerating = false,
   onGenerate,
-  onCharacterClick,
+  onAvatarClick,
 }: ConsistencyOverviewProps) {
-  const consistentCount = countConsistent(characters);
-  const totalCount = characters.length;
+  const consistentCount = countConsistent(avatars);
+  const totalCount = avatars.length;
 
   return (
     <div data-testid="consistency-overview">
@@ -56,7 +56,7 @@ export function ConsistencyOverview({
         <CardHeader>
           <div className="flex items-center justify-between gap-3">
             <h2 className="text-base font-medium text-[var(--color-text-primary)]">
-              Character Consistency
+              Avatar Consistency
             </h2>
             <Badge
               variant={consistentCount === totalCount ? "success" : "warning"}
@@ -67,24 +67,24 @@ export function ConsistencyOverview({
           </div>
         </CardHeader>
         <CardBody className="p-0">
-          {characters.length === 0 && (
+          {avatars.length === 0 && (
             <p className="px-4 py-6 text-sm text-[var(--color-text-muted)] text-center">
-              No characters in this project.
+              No avatars in this project.
             </p>
           )}
           <div className="space-y-2 py-2">
-            {characters.map((entry) => (
+            {avatars.map((entry) => (
               <ConsistencyReportCard
-                key={entry.characterId}
-                characterName={entry.characterName}
+                key={entry.avatarId}
+                avatarName={entry.avatarName}
                 report={entry.report}
                 isGenerating={isGenerating}
                 onGenerate={(reportType) =>
-                  onGenerate?.(entry.characterId, reportType)
+                  onGenerate?.(entry.avatarId, reportType)
                 }
                 onClick={
                   entry.report
-                    ? () => onCharacterClick?.(entry.characterId)
+                    ? () => onAvatarClick?.(entry.avatarId)
                     : undefined
                 }
               />

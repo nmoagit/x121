@@ -7,14 +7,14 @@ import { MetadataPreview } from "../MetadataPreview";
 vi.mock("@/lib/api", () => ({
   api: {
     get: vi.fn().mockImplementation((path: string) => {
-      if (path.includes("/characters/") && path.includes("/metadata/preview")) {
+      if (path.includes("/avatars/") && path.includes("/metadata/preview")) {
         return Promise.resolve({
           schema_version: "1.0",
-          character_id: 42,
+          avatar_id: 42,
           name: "Alice",
           project_id: 1,
           project_name: "Test Project",
-          biographical: { description: "A test character", tags: ["hero"] },
+          biographical: { description: "A test avatar", tags: ["hero"] },
           physical_attributes: {
             height: "170cm",
             build: "Athletic",
@@ -32,8 +32,8 @@ vi.mock("@/lib/api", () => ({
         return Promise.resolve({
           schema_version: "1.0",
           scene_id: 10,
-          character_id: 42,
-          character_name: "Alice",
+          avatar_id: 42,
+          avatar_name: "Alice",
           scene_type: "full_body",
           technical: {
             duration_seconds: 12.5,
@@ -62,16 +62,16 @@ vi.mock("@/lib/api", () => ({
 }));
 
 describe("MetadataPreview", () => {
-  it("renders character metadata title", async () => {
-    renderWithProviders(<MetadataPreview mode="character" characterId={42} />);
+  it("renders avatar metadata title", async () => {
+    renderWithProviders(<MetadataPreview mode="avatar" avatarId={42} />);
 
     await waitFor(() => {
-      expect(screen.getByText("Character Metadata")).toBeInTheDocument();
+      expect(screen.getByText("Avatar Metadata")).toBeInTheDocument();
     });
   });
 
-  it("displays character metadata JSON after loading", async () => {
-    renderWithProviders(<MetadataPreview mode="character" characterId={42} />);
+  it("displays avatar metadata JSON after loading", async () => {
+    renderWithProviders(<MetadataPreview mode="avatar" avatarId={42} />);
 
     await waitFor(() => {
       expect(screen.getByText(/Alice/)).toBeInTheDocument();
@@ -96,8 +96,8 @@ describe("MetadataPreview", () => {
     });
   });
 
-  it("shows schema version in character metadata output", async () => {
-    renderWithProviders(<MetadataPreview mode="character" characterId={42} />);
+  it("shows schema version in avatar metadata output", async () => {
+    renderWithProviders(<MetadataPreview mode="avatar" avatarId={42} />);
 
     await waitFor(() => {
       expect(screen.getByText(/schema_version/)).toBeInTheDocument();
@@ -105,7 +105,7 @@ describe("MetadataPreview", () => {
   });
 
   it("shows loading state initially", () => {
-    renderWithProviders(<MetadataPreview mode="character" characterId={42} />);
+    renderWithProviders(<MetadataPreview mode="avatar" avatarId={42} />);
 
     const spinner = document.querySelector('[class*="animate-spin"]');
     expect(spinner).toBeTruthy();

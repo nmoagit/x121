@@ -1,5 +1,5 @@
 /**
- * TanStack Query hooks for Character Duplicate Detection (PRD-79).
+ * TanStack Query hooks for Avatar Duplicate Detection (PRD-79).
  *
  * Follows the key factory pattern used throughout the codebase.
  */
@@ -32,26 +32,26 @@ export const duplicateKeys = {
    Checking mutations
    -------------------------------------------------------------------------- */
 
-/** Check a single character for duplicates. */
+/** Check a single avatar for duplicates. */
 export function useCheckDuplicate() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (input: CheckDuplicateRequest) =>
-      api.post<DuplicateCheck>("/characters/duplicates/check", input),
+      api.post<DuplicateCheck>("/avatars/duplicates/check", input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: duplicateKeys.all });
     },
   });
 }
 
-/** Batch-check multiple characters for cross-duplicates. */
+/** Batch-check multiple avatars for cross-duplicates. */
 export function useBatchCheck() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (input: BatchCheckRequest) =>
-      api.post<DuplicateCheck[]>("/characters/duplicates/batch", input),
+      api.post<DuplicateCheck[]>("/avatars/duplicates/batch", input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: duplicateKeys.all });
     },
@@ -68,7 +68,7 @@ export function useDuplicateHistory(limit = 50, offset = 0) {
     queryKey: duplicateKeys.history(limit, offset),
     queryFn: () =>
       api.get<DuplicateCheck[]>(
-        `/characters/duplicates/history?limit=${limit}&offset=${offset}`,
+        `/avatars/duplicates/history?limit=${limit}&offset=${offset}`,
       ),
   });
 }
@@ -87,7 +87,7 @@ export function useResolveCheck() {
       ...body
     }: ResolveCheckRequest & { id: number }) =>
       api.post<DuplicateCheck>(
-        `/characters/duplicates/${id}/resolve`,
+        `/avatars/duplicates/${id}/resolve`,
         body,
       ),
     onSuccess: () => {
@@ -102,7 +102,7 @@ export function useDismissCheck() {
 
   return useMutation({
     mutationFn: (id: number) =>
-      api.post<DuplicateCheck>(`/characters/duplicates/${id}/dismiss`),
+      api.post<DuplicateCheck>(`/avatars/duplicates/${id}/dismiss`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: duplicateKeys.all });
     },

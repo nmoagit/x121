@@ -1,12 +1,12 @@
 /**
- * Confirmation modal shown after dropping a file to import characters.
+ * Confirmation modal shown after dropping a file to import avatars.
  *
  * Displays a scrollable, checkable list of parsed names with options
  * to assign a group and apply title-case formatting.
  *
  * When `payloads` is provided (asset-aware mode), each row additionally
  * shows image/video asset counts and allows uploading assets to
- * existing (duplicate) characters.
+ * existing (duplicate) avatars.
  */
 
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -21,10 +21,10 @@ import { INLINE_LINK_BTN } from "@/lib/ui-classes";
 import { useMetadataTemplates } from "@/features/settings/hooks/use-metadata-templates";
 
 
-import type { ImportProgress } from "../hooks/use-character-import";
-import type { Character, CharacterDropPayload, ImportHashSummary } from "../types";
+import type { ImportProgress } from "../hooks/use-avatar-import";
+import type { Avatar, AvatarDropPayload, ImportHashSummary } from "../types";
 import { ImportProgressBar } from "./ImportProgressBar";
-import { useCreateGroup } from "../hooks/use-character-groups";
+import { useCreateGroup } from "../hooks/use-avatar-groups";
 import { useDuplicateAssetInfo } from "../hooks/use-duplicate-asset-info";
 import { useGroupSelectOptions } from "../hooks/use-group-select-options";
 
@@ -38,18 +38,18 @@ interface ImportConfirmModalProps {
   /** Raw names (legacy name-only mode). */
   names: string[];
   /** Asset-aware payloads. When provided, takes precedence over `names`. */
-  payloads?: CharacterDropPayload[];
+  payloads?: AvatarDropPayload[];
   projectId: number;
-  /** Names of characters that already exist (case-insensitive match). */
+  /** Names of avatars that already exist (case-insensitive match). */
   existingNames?: string[];
-  /** Full character objects for metadata presence checks + ID lookup. */
-  characters?: Character[];
+  /** Full avatar objects for metadata presence checks + ID lookup. */
+  avatars?: Avatar[];
   /** Legacy callback — names only. */
   onConfirm: (names: string[], groupId?: number) => void;
   /** Asset-aware callback. When provided, used instead of onConfirm. */
   onConfirmWithAssets?: (
-    newPayloads: CharacterDropPayload[],
-    existingPayloads: CharacterDropPayload[],
+    newPayloads: AvatarDropPayload[],
+    existingPayloads: AvatarDropPayload[],
     groupId?: number,
     overwrite?: boolean,
     skipExisting?: boolean,
@@ -90,7 +90,7 @@ const NOT_INITIALS = new Set(["la", "le", "el", "de", "mr", "ms", "dr"]);
  * - `miss_molly`   -> `Miss Molly`    (title preserved)
  * - `la_sirena_69` -> `La Sirena 69`  (article + number)
  */
-export function normalizeCharacterName(raw: string): string {
+export function normalizeAvatarName(raw: string): string {
   const rawParts = raw.replace(/[_-]/g, " ").split(/\s+/);
 
   // Title-case each part; uppercase 2-char alpha parts that aren't articles
@@ -143,7 +143,7 @@ export function ImportConfirmModal({
   payloads,
   projectId,
   existingNames = [],
-  characters = [],
+  avatars = [],
   onConfirm,
   onConfirmWithAssets,
   loading,
@@ -206,13 +206,13 @@ export function ImportConfirmModal({
   const [newGroupName, setNewGroupName] = useState("");
   const createGroup = useCreateGroup(projectId);
   const [overwrite, setOverwrite] = useState(false);
-  /** Existing characters whose assets should be uploaded. */
+  /** Existing avatars whose assets should be uploaded. */
   const [checkedExistingAssets, toggleExistingAssets, setCheckedExistingAssets] = useSetToggle<number>();
   const [importMissing, setImportMissing] = useState(false);
   const [newContentOnly, setNewContentOnly] = useState(false);
 
   const displayNames = useMemo(
-    () => (normalize ? effectiveNames.map(normalizeCharacterName) : effectiveNames),
+    () => (normalize ? effectiveNames.map(normalizeAvatarName) : effectiveNames),
     [effectiveNames, normalize],
   );
 
@@ -225,14 +225,14 @@ export function ImportConfirmModal({
     return set;
   }, [existingNames]);
 
-  // Map lowercase display name → Character for duplicate rows
+  // Map lowercase display name → Avatar for duplicate rows
   const duplicateCharMap = useMemo(() => {
-    const map = new Map<string, Character>();
-    for (const c of characters) {
+    const map = new Map<string, Avatar>();
+    for (const c of avatars) {
       map.set(c.name.toLowerCase(), c);
     }
     return map;
-  }, [characters]);
+  }, [avatars]);
 
   // Compute which indices are duplicates (against existing + title-case)
   const duplicateIndices = useMemo(() => {
@@ -247,7 +247,7 @@ export function ImportConfirmModal({
 
   const duplicateCount = duplicateIndices.size;
 
-  // Unique non-null group IDs from characters that match duplicate names
+  // Unique non-null group IDs from avatars that match duplicate names
   const existingGroups = useMemo(() => {
     const groupIds = new Set<number>();
     for (const idx of duplicateIndices) {
@@ -258,9 +258,9 @@ export function ImportConfirmModal({
     return [...groupIds];
   }, [duplicateIndices, displayNames, duplicateCharMap]);
 
-  const hasNewCharacters = effectiveNames.length - duplicateCount > 0;
+  const hasNewAvatars = effectiveNames.length - duplicateCount > 0;
 
-  // IDs of duplicate characters for fetching existing variant data
+  // IDs of duplicate avatars for fetching existing variant data
   const duplicateCharIds = useMemo(() => {
     const ids: number[] = [];
     for (const idx of duplicateIndices) {
@@ -271,10 +271,10 @@ export function ImportConfirmModal({
     return ids;
   }, [duplicateIndices, displayNames, duplicateCharMap]);
 
-  // Fetch variant types for duplicate characters (used by asset skip logic in import handler)
+  // Fetch variant types for duplicate avatars (used by asset skip logic in import handler)
   useDuplicateAssetInfo(open, duplicateCharIds);
 
-  // Asset counts per character (only in asset-aware mode)
+  // Asset counts per avatar (only in asset-aware mode)
   const assetCounts = useMemo(() => {
     if (!payloads) return null;
     return payloads.map((p) => ({
@@ -299,7 +299,7 @@ export function ImportConfirmModal({
 
   // Reset checked set when the NAME LIST changes (modal opens with new data).
   // Do NOT reset when existingSet changes during import — that causes the
-  // "deselects everything" bug when newly created characters update the list.
+  // "deselects everything" bug when newly created avatars update the list.
   const prevNamesRef = useRef<string[]>([]);
   useEffect(() => {
     // Only reset if the actual names being imported changed
@@ -311,7 +311,7 @@ export function ImportConfirmModal({
     const initial = new Set<number>();
     for (let i = 0; i < effectiveNames.length; i++) {
       const display = normalize
-        ? normalizeCharacterName(effectiveNames[i]!)
+        ? normalizeAvatarName(effectiveNames[i]!)
         : effectiveNames[i]!;
       if (!existingSet.has(display.toLowerCase())) {
         initial.add(i);
@@ -321,8 +321,8 @@ export function ImportConfirmModal({
     setOverwrite(false);
     setNewContentOnly(false);
 
-    // Auto-enable "Import missing" when ALL entries are duplicates (existing characters).
-    // This is the common case when dropping onto a character detail page or re-importing.
+    // Auto-enable "Import missing" when ALL entries are duplicates (existing avatars).
+    // This is the common case when dropping onto a avatar detail page or re-importing.
     const allAreDuplicates = initial.size === 0 && effectiveNames.length > 0;
     setImportMissing(allAreDuplicates);
     setCheckedExistingAssets(allAreDuplicates ? new Set(duplicatesWithAssets) : new Set());
@@ -344,7 +344,7 @@ export function ImportConfirmModal({
     }
   }, [importMissing, overwrite, newContentOnly, duplicatesWithAssets]);
 
-  // "New content only" implies importing to existing characters
+  // "New content only" implies importing to existing avatars
   useEffect(() => {
     if (newContentOnly && !importMissing) {
       setImportMissing(true);
@@ -387,8 +387,8 @@ export function ImportConfirmModal({
   function handleConfirm() {
     if (payloads && onConfirmWithAssets) {
       // Asset-aware path
-      const newPayloads: CharacterDropPayload[] = [];
-      const existingPayloads: CharacterDropPayload[] = [];
+      const newPayloads: AvatarDropPayload[] = [];
+      const existingPayloads: AvatarDropPayload[] = [];
 
       for (let i = 0; i < payloads.length; i++) {
         const payload = payloads[i]!;
@@ -399,20 +399,20 @@ export function ImportConfirmModal({
           ? payload.assets.filter((a) => !a.isDuplicate)
           : payload.assets;
 
-        // Skip character entirely if no assets remain after filtering
+        // Skip avatar entirely if no assets remain after filtering
         if (newContentOnly && assets.length === 0 && !payload.bioJson && !payload.tovJson && !payload.metadataJson) {
           continue;
         }
 
         // Apply normalized name
-        const normalizedPayload: CharacterDropPayload = {
+        const normalizedPayload: AvatarDropPayload = {
           ...payload,
           rawName: display,
           assets,
         };
 
         if (duplicateIndices.has(i)) {
-          // Existing character — include only if asset upload is checked
+          // Existing avatar — include only if asset upload is checked
           if (checkedExistingAssets.has(i)) {
             existingPayloads.push(normalizedPayload);
           }
@@ -441,8 +441,8 @@ export function ImportConfirmModal({
   const totalActionCount = selectedCount + existingAssetsCount;
   const isImporting = importProgress != null && importProgress.phase !== "done";
 
-  /** Render a single character row (shared by flat and grouped views). */
-  const renderCharacterRow = (idx: number) => {
+  /** Render a single avatar row (shared by flat and grouped views). */
+  const renderAvatarRow = (idx: number) => {
     const name = displayNames[idx]!;
     const isDuplicate = duplicateIndices.has(idx);
     const counts = assetCounts?.[idx];
@@ -611,9 +611,9 @@ export function ImportConfirmModal({
                 options={groupOptions}
                 value={groupId}
                 onChange={setGroupId}
-                disabled={existingGroups.length === 1 && !hasNewCharacters}
+                disabled={existingGroups.length === 1 && !hasNewAvatars}
               />
-              {hasNewCharacters && (
+              {hasNewAvatars && (
                 !showNewGroup ? (
                   <button
                     type="button"
@@ -784,7 +784,7 @@ export function ImportConfirmModal({
           </div>
 
           {isGroupedImport && groupedIndices ? (
-            /* Grouped view — characters organized under group headers */
+            /* Grouped view — avatars organized under group headers */
             [...groupedIndices.entries()].map(([groupName, indices]) => (
               <div key={groupName}>
                 <div className="px-2 py-1.5 bg-[#161b22] border-b border-[var(--color-border-default)] flex items-center gap-2">
@@ -798,12 +798,12 @@ export function ImportConfirmModal({
                     </span>
                   )}
                 </div>
-                {indices.map((idx) => renderCharacterRow(idx))}
+                {indices.map((idx) => renderAvatarRow(idx))}
               </div>
             ))
           ) : (
-            /* Flat view — simple character list */
-            displayNames.map((_, idx) => renderCharacterRow(idx))
+            /* Flat view — simple avatar list */
+            displayNames.map((_, idx) => renderAvatarRow(idx))
           )}
         </div>
 

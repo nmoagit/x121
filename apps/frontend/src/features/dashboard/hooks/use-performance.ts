@@ -88,7 +88,7 @@ export interface PerformanceMetric {
   workflow_id: number | null;
   worker_id: number | null;
   project_id: number | null;
-  character_id: number | null;
+  avatar_id: number | null;
   scene_id: number | null;
   time_per_frame_ms: number | null;
   total_gpu_time_ms: number | null;

@@ -24,7 +24,7 @@ import type { NoteEntityType } from "@/features/production-notes";
 
 const ENTITY_TYPE_OPTIONS: { value: string; label: string }[] = [
   { value: "project", label: "Project" },
-  { value: "character", label: "Model" },
+  { value: "avatar", label: "Model" },
   { value: "scene", label: "Scene" },
   { value: "segment", label: "Segment" },
   { value: "scene_type", label: "Scene Type" },

@@ -19,7 +19,7 @@ import type { ReviewQueueItem } from "../types";
 
 const mockItem: ReviewQueueItem = {
   segment_id: 42,
-  character_name: "Agent Smith",
+  avatar_name: "Agent Smith",
   scene_type: "dialogue",
   status: "pending",
   thumbnail_url: null,
@@ -39,7 +39,7 @@ describe("SegmentCard", () => {
     onTap: vi.fn(),
   };
 
-  it("renders character name and scene type", () => {
+  it("renders avatar name and scene type", () => {
     renderWithProviders(<SegmentCard {...defaultProps} />);
 
     expect(screen.getByText("Agent Smith")).toBeInTheDocument();

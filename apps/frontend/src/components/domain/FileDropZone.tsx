@@ -1,5 +1,5 @@
 /**
- * Generic drag-and-drop zone for importing character names from files.
+ * Generic drag-and-drop zone for importing avatar names from files.
  *
  * Supports:
  * - `.txt` files: split by newlines
@@ -14,7 +14,7 @@
 import { useCallback, useRef, useState } from "react";
 import type { ReactNode } from "react";
 
-import type { CharacterDropPayload, DroppedAsset, FolderDropResult } from "@/features/projects/types";
+import type { AvatarDropPayload, DroppedAsset, FolderDropResult } from "@/features/projects/types";
 import { cn } from "@/lib/cn";
 import { isImageFile, isVideoFile, readFileText, stripExtension } from "@/lib/file-types";
 
@@ -22,7 +22,7 @@ import { isImageFile, isVideoFile, readFileText, stripExtension } from "@/lib/fi
    Props
    -------------------------------------------------------------------------- */
 
-/** A single character→voiceId mapping parsed from a voice CSV. */
+/** A single avatar→voiceId mapping parsed from a voice CSV. */
 export interface VoiceIdEntry {
   slug: string;
   voice_id: string;
@@ -66,7 +66,7 @@ function parseCsv(text: string): string[] {
 
   // Heuristic: skip header if first cell matches common label patterns
   const firstCell = lines[0]!.split(",")[0]!.trim().toLowerCase();
-  const headerPatterns = ["name", "character", "label", "title", "id", "#"];
+  const headerPatterns = ["name", "avatar", "label", "title", "id", "#"];
   const hasHeader = headerPatterns.some(
     (p) => firstCell === p || firstCell.startsWith(p),
   );
@@ -132,7 +132,7 @@ async function collectFilesFromDirectory(
     if (entry.isFile) {
       files.push(await entryToFile(entry as FileSystemFileEntry));
     }
-    // Ignore nested subdirectories within a character folder
+    // Ignore nested subdirectories within a avatar folder
   }
 
   return files;
@@ -148,11 +148,11 @@ function filenameStem(filename: string): string {
   return stripExtension(filename).toLowerCase();
 }
 
-/** Classify a list of files from a character folder into a CharacterDropPayload. */
-function classifyCharacterFiles(
-  characterName: string,
+/** Classify a list of files from a avatar folder into a AvatarDropPayload. */
+function classifyAvatarFiles(
+  avatarName: string,
   files: File[],
-): CharacterDropPayload {
+): AvatarDropPayload {
   const assets: DroppedAsset[] = [];
   let bioJson: File | undefined;
   let tovJson: File | undefined;
@@ -183,15 +183,15 @@ function classifyCharacterFiles(
     }
   }
 
-  return { rawName: characterName, assets, bioJson, tovJson, metadataJson };
+  return { rawName: avatarName, assets, bioJson, tovJson, metadataJson };
 }
 
 /**
  * Read a dropped directory and detect its structure.
  *
  * Detects three structures:
- * - Flat: single character folder or batch (subdirs with only files)
- * - Grouped: subdirs contain sub-subdirs ({group}/{character}/*.*)
+ * - Flat: single avatar folder or batch (subdirs with only files)
+ * - Grouped: subdirs contain sub-subdirs ({group}/{avatar}/*.*)
  * - Project: same as grouped but top-level dir name is a potential project name
  */
 async function readDirectoryStructure(
@@ -200,10 +200,10 @@ async function readDirectoryStructure(
   const entries = await readAllEntries(entry.createReader());
   const subdirs = entries.filter((e) => e.isDirectory) as FileSystemDirectoryEntry[];
 
-  // No subdirs → flat single character folder
+  // No subdirs → flat single avatar folder
   if (subdirs.length === 0) {
     const files = await collectFilesFromDirectory(entry);
-    const payload = classifyCharacterFiles(entry.name, files);
+    const payload = classifyAvatarFiles(entry.name, files);
     return {
       structure: "flat",
       detectedProjectName: entry.name,
@@ -225,10 +225,10 @@ async function readDirectoryStructure(
 
   // No subdirs have sub-subdirs → flat batch (backward compatible)
   if (subdirsWithChildren === 0) {
-    const payloads: CharacterDropPayload[] = [];
+    const payloads: AvatarDropPayload[] = [];
     for (const sub of subdirs) {
       const files = await collectFilesFromDirectory(sub);
-      payloads.push(classifyCharacterFiles(sub.name, files));
+      payloads.push(classifyAvatarFiles(sub.name, files));
     }
     return {
       structure: "flat",
@@ -238,25 +238,25 @@ async function readDirectoryStructure(
   }
 
   // Majority have sub-subdirs → grouped structure
-  // Each top-level subdir = group, each sub-subdir = character
-  const groupedPayloads = new Map<string, CharacterDropPayload[]>();
+  // Each top-level subdir = group, each sub-subdir = avatar
+  const groupedPayloads = new Map<string, AvatarDropPayload[]>();
 
   for (const sub of subdirs) {
     const subEntries = subdirEntryMap.get(sub.name) ?? [];
     const charDirs = subEntries.filter((e) => e.isDirectory) as FileSystemDirectoryEntry[];
 
     if (charDirs.length === 0) {
-      // Subdir has only files → treat as ungrouped character
+      // Subdir has only files → treat as ungrouped avatar
       const files = await collectFilesFromDirectory(sub);
-      const payload = classifyCharacterFiles(sub.name, files);
+      const payload = classifyAvatarFiles(sub.name, files);
       const ungrouped = groupedPayloads.get("") ?? [];
       ungrouped.push(payload);
       groupedPayloads.set("", ungrouped);
     } else {
-      const payloads: CharacterDropPayload[] = [];
+      const payloads: AvatarDropPayload[] = [];
       for (const charDir of charDirs) {
         const files = await collectFilesFromDirectory(charDir);
-        const payload = classifyCharacterFiles(charDir.name, files);
+        const payload = classifyAvatarFiles(charDir.name, files);
         payload.groupName = sub.name;
         payloads.push(payload);
       }
@@ -272,7 +272,7 @@ async function readDirectoryStructure(
 }
 
 /**
- * Read a dropped directory and extract character names (legacy path).
+ * Read a dropped directory and extract avatar names (legacy path).
  */
 async function readDirectoryNames(
   entry: FileSystemDirectoryEntry,
@@ -326,8 +326,8 @@ function getRootFolderName(files: FileList): string {
  * Build a FolderDropResult from browse-folder file picker results.
  *
  * Detects structure depth from webkitRelativePath segment count:
- * - depth ≤ 3: flat (Root/[Character/]file.ext)
- * - depth ≥ 4: grouped (Root/Group/Character/file.ext)
+ * - depth ≤ 3: flat (Root/[Avatar/]file.ext)
+ * - depth ≥ 4: grouped (Root/Group/Avatar/file.ext)
  */
 function folderResultFromFiles(files: FileList): FolderDropResult {
   // Determine max depth from webkitRelativePath segments
@@ -349,7 +349,7 @@ function folderResultFromFiles(files: FileList): FolderDropResult {
     };
   }
 
-  // depth ≥ 4: grouped mode (Root/Group/Character/file.ext)
+  // depth ≥ 4: grouped mode (Root/Group/Avatar/file.ext)
   const rootName = getRootFolderName(files);
   const groupCharFiles = new Map<string, Map<string, File[]>>();
 
@@ -360,7 +360,7 @@ function folderResultFromFiles(files: FileList): FolderDropResult {
     const parts = rel.split("/");
 
     if (parts.length >= 4) {
-      // parts[0] = root, parts[1] = group, parts[2] = character, parts[3+] = file path
+      // parts[0] = root, parts[1] = group, parts[2] = avatar, parts[3+] = file path
       const groupName = parts[1]!;
       const charName = parts[2]!;
       if (!groupCharFiles.has(groupName)) groupCharFiles.set(groupName, new Map());
@@ -370,11 +370,11 @@ function folderResultFromFiles(files: FileList): FolderDropResult {
     }
   }
 
-  const groupedPayloads = new Map<string, CharacterDropPayload[]>();
+  const groupedPayloads = new Map<string, AvatarDropPayload[]>();
   for (const [groupName, charMap] of groupCharFiles) {
-    const payloads: CharacterDropPayload[] = [];
+    const payloads: AvatarDropPayload[] = [];
     for (const [charName, charFiles] of charMap) {
-      const payload = classifyCharacterFiles(charName, charFiles);
+      const payload = classifyAvatarFiles(charName, charFiles);
       payload.groupName = groupName;
       payloads.push(payload);
     }
@@ -388,8 +388,8 @@ function folderResultFromFiles(files: FileList): FolderDropResult {
   };
 }
 
-/** Build flat CharacterDropPayloads from browse-folder results (depth ≤ 3). */
-function flatPayloadsFromFiles(files: FileList): CharacterDropPayload[] {
+/** Build flat AvatarDropPayloads from browse-folder results (depth ≤ 3). */
+function flatPayloadsFromFiles(files: FileList): AvatarDropPayload[] {
   const charFilesMap = new Map<string, File[]>();
   let hasSubdirs = false;
 
@@ -421,13 +421,13 @@ function flatPayloadsFromFiles(files: FileList): CharacterDropPayload[] {
       for (let i = 0; i < files.length; i++) {
         if (files[i]) allFiles.push(files[i]!);
       }
-      return [classifyCharacterFiles(rootName, allFiles)];
+      return [classifyAvatarFiles(rootName, allFiles)];
     }
   }
 
-  const payloads: CharacterDropPayload[] = [];
+  const payloads: AvatarDropPayload[] = [];
   for (const [name, charFiles] of charFilesMap) {
-    payloads.push(classifyCharacterFiles(name, charFiles));
+    payloads.push(classifyAvatarFiles(name, charFiles));
   }
   return payloads;
 }
@@ -438,7 +438,7 @@ function flatPayloadsFromFiles(files: FileList): CharacterDropPayload[] {
 
 /**
  * Detect if a parsed JSON object matches the speech import format:
- * `{ character_slug: { speech_type: { language: string[] } } }`
+ * `{ avatar_slug: { speech_type: { language: string[] } } }`
  */
 function isSpeechJson(obj: unknown): boolean {
   if (typeof obj !== "object" || obj === null || Array.isArray(obj)) return false;
@@ -463,8 +463,8 @@ function isSpeechJson(obj: unknown): boolean {
  * Detect if CSV text is a speech import file.
  *
  * Supports two header formats:
- * - 4-col: `character,speech_type,language,text` (backend native)
- * - 3-col: `character,language,text` (speech type inferred from header/filename)
+ * - 4-col: `avatar,speech_type,language,text` (backend native)
+ * - 3-col: `avatar,language,text` (speech type inferred from header/filename)
  *
  * Returns the normalised 4-column CSV string if detected, or null.
  */
@@ -478,17 +478,17 @@ function normaliseSpeechCsv(text: string, filename: string): string | null {
   // 4-column format: already correct
   if (
     cols.length >= 4 &&
-    (cols[0] === "character" || cols[0] === "slug" || cols[0] === "character_slug") &&
+    (cols[0] === "avatar" || cols[0] === "slug" || cols[0] === "avatar_slug") &&
     (cols[2] === "language" || cols[2] === "lang") &&
     (cols[1] === "speech_type" || cols[1] === "type")
   ) {
     return text;
   }
 
-  // 3-column format: character, language, text — need to inject speech type
+  // 3-column format: avatar, language, text — need to inject speech type
   if (
     cols.length >= 3 &&
-    (cols[0] === "character" || cols[0] === "slug" || cols[0] === "character_slug") &&
+    (cols[0] === "avatar" || cols[0] === "slug" || cols[0] === "avatar_slug") &&
     (cols[1] === "language" || cols[1] === "lang")
   ) {
     // Infer speech type from filename: "greetings_entries.csv" → "greeting"
@@ -499,7 +499,7 @@ function normaliseSpeechCsv(text: string, filename: string): string | null {
     const speechType = stem || "greeting";
 
     // Rebuild as 4-column CSV
-    const out = ["character_slug,speech_type,language,text"];
+    const out = ["avatar_slug,speech_type,language,text"];
     for (const line of lines.slice(1)) {
       if (!line.trim()) continue;
       // Split on first two commas only — text may contain commas
@@ -521,7 +521,7 @@ function normaliseSpeechCsv(text: string, filename: string): string | null {
 /**
  * Detect if CSV text is a voice ID mapping file.
  *
- * Expects columns: character/name/slug + voice_id/voiceid/voice/elevenlabs_voice.
+ * Expects columns: avatar/name/slug + voice_id/voiceid/voice/elevenlabs_voice.
  * Returns parsed entries or null if not a voice CSV.
  */
 function parseVoiceCsv(text: string): VoiceIdEntry[] | null {
@@ -529,7 +529,7 @@ function parseVoiceCsv(text: string): VoiceIdEntry[] | null {
   if (lines.length < 2) return null;
 
   const cols = lines[0]!.toLowerCase().split(",").map((c) => c.trim());
-  const nameCol = cols.findIndex((h) => ["character", "character_slug", "slug", "name", "model", "avatar"].includes(h));
+  const nameCol = cols.findIndex((h) => ["avatar", "avatar_slug", "slug", "name", "model", "avatar"].includes(h));
   const voiceCol = cols.findIndex((h) => ["voice_id", "voiceid", "elevenlabs_voice", "voice"].includes(h));
   if (nameCol < 0 || voiceCol < 0) return null;
 
@@ -598,8 +598,8 @@ export function FileDropZone({
   const handleDragOver = useCallback((e: React.DragEvent) => {
     // Only activate for external file drops, not internal element drags
     if (!e.dataTransfer.types.includes("Files")) return;
-    // Ignore internal character card drags (browsers may add "Files" for img elements)
-    if (e.dataTransfer.types.includes("application/x-character-drag")) return;
+    // Ignore internal avatar card drags (browsers may add "Files" for img elements)
+    if (e.dataTransfer.types.includes("application/x-avatar-drag")) return;
     // Don't activate when a modal is open — its own drop zones handle file drops
     if (document.querySelector("dialog[open]")) return;
     e.preventDefault();
@@ -608,16 +608,16 @@ export function FileDropZone({
 
   const handleDragLeave = useCallback((e: React.DragEvent) => {
     if (!e.dataTransfer.types.includes("Files")) return;
-    if (e.dataTransfer.types.includes("application/x-character-drag")) return;
+    if (e.dataTransfer.types.includes("application/x-avatar-drag")) return;
     e.preventDefault();
     setIsDragOver(false);
   }, []);
 
   const handleDrop = useCallback(
     async (e: React.DragEvent) => {
-      // Ignore internal element drags (e.g. character card reordering)
+      // Ignore internal element drags (e.g. avatar card reordering)
       if (!e.dataTransfer.types.includes("Files")) return;
-      if (e.dataTransfer.types.includes("application/x-character-drag")) return;
+      if (e.dataTransfer.types.includes("application/x-avatar-drag")) return;
       // Don't handle drops when a modal is open — modal has its own drop zones
       if (document.querySelector("dialog[open]")) { setIsDragOver(false); return; }
       e.preventDefault();
@@ -663,7 +663,7 @@ export function FileDropZone({
           onFolderDropped(result);
         } else {
           // Multiple directories dropped — merge all as flat
-          const allPayloads: CharacterDropPayload[] = [];
+          const allPayloads: AvatarDropPayload[] = [];
           for (const dirEntry of dirEntries) {
             const result = await readDirectoryStructure(dirEntry);
             for (const payloads of result.groupedPayloads.values()) {

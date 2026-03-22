@@ -2,7 +2,7 @@
  * Step 5: Scene Type Selection — choose scene types for the batch (PRD-67).
  *
  * Allows users to select which scene types to apply to the batch of
- * characters. Each selected scene type will be generated for each character.
+ * avatars. Each selected scene type will be generated for each avatar.
  */
 
 import { Badge } from "@/components";
@@ -63,7 +63,7 @@ export function StepSceneTypes({
         Scene Type Selection
       </h3>
       <p className="text-sm text-[var(--color-text-secondary)]">
-        Select which scene types to generate for all characters in this batch.
+        Select which scene types to generate for all avatars in this batch.
       </p>
 
       {/* Bulk actions */}

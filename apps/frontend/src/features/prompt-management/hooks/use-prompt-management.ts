@@ -7,7 +7,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { toastStore } from "@/components/composite/useToast";
 import type {
-  CharacterScenePromptOverride,
+  AvatarScenePromptOverride,
   CreatePromptFragment,
   FragmentListParams,
   GroupPromptOverride,
@@ -37,9 +37,9 @@ export const promptDefaultKeys = {
 };
 
 export const promptOverrideKeys = {
-  all: ["character-scene-overrides"] as const,
-  byCharacterScene: (characterId: number, sceneTypeId: number) =>
-    [...promptOverrideKeys.all, characterId, sceneTypeId] as const,
+  all: ["avatar-scene-overrides"] as const,
+  byAvatarScene: (avatarId: number, sceneTypeId: number) =>
+    [...promptOverrideKeys.all, avatarId, sceneTypeId] as const,
 };
 
 export const projectPromptOverrideKeys = {
@@ -86,15 +86,15 @@ export function useSceneTypePromptDefaults(sceneTypeId: number) {
   });
 }
 
-/** Fetch character+scene prompt overrides. */
-export function useCharacterSceneOverrides(characterId: number, sceneTypeId: number) {
+/** Fetch avatar+scene prompt overrides. */
+export function useAvatarSceneOverrides(avatarId: number, sceneTypeId: number) {
   return useQuery({
-    queryKey: promptOverrideKeys.byCharacterScene(characterId, sceneTypeId),
+    queryKey: promptOverrideKeys.byAvatarScene(avatarId, sceneTypeId),
     queryFn: () =>
-      api.get<CharacterScenePromptOverride[]>(
-        `/characters/${characterId}/scenes/${sceneTypeId}/prompt-overrides`,
+      api.get<AvatarScenePromptOverride[]>(
+        `/avatars/${avatarId}/scenes/${sceneTypeId}/prompt-overrides`,
       ),
-    enabled: characterId > 0 && sceneTypeId > 0,
+    enabled: avatarId > 0 && sceneTypeId > 0,
   });
 }
 
@@ -117,12 +117,12 @@ export function usePromptFragments(params: FragmentListParams) {
   });
 }
 
-/** Resolve prompts for a character+scene+workflow combination. */
+/** Resolve prompts for a avatar+scene+workflow combination. */
 export function usePromptPreview(request: ResolvePromptRequest) {
   return useQuery({
     queryKey: promptPreviewKeys.resolve(request),
     queryFn: () => api.post<ResolvedPromptSlot[]>("/prompts/resolve", request),
-    enabled: request.workflow_id > 0 && request.scene_type_id > 0 && request.character_id > 0,
+    enabled: request.workflow_id > 0 && request.scene_type_id > 0 && request.avatar_id > 0,
   });
 }
 
@@ -178,27 +178,27 @@ export function useUpsertPromptDefault() {
   });
 }
 
-/** Upsert all character+scene prompt overrides. */
-export function useUpsertCharacterSceneOverrides() {
+/** Upsert all avatar+scene prompt overrides. */
+export function useUpsertAvatarSceneOverrides() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: ({
-      characterId,
+      avatarId,
       sceneTypeId,
       overrides,
     }: {
-      characterId: number;
+      avatarId: number;
       sceneTypeId: number;
       overrides: SlotOverride[];
     }) =>
-      api.put<CharacterScenePromptOverride[]>(
-        `/characters/${characterId}/scenes/${sceneTypeId}/prompt-overrides`,
+      api.put<AvatarScenePromptOverride[]>(
+        `/avatars/${avatarId}/scenes/${sceneTypeId}/prompt-overrides`,
         { overrides },
       ),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({
-        queryKey: promptOverrideKeys.byCharacterScene(variables.characterId, variables.sceneTypeId),
+        queryKey: promptOverrideKeys.byAvatarScene(variables.avatarId, variables.sceneTypeId),
       });
       queryClient.invalidateQueries({ queryKey: promptPreviewKeys.all });
       toastStore.addToast({ message: "Prompt overrides saved", variant: "success" });

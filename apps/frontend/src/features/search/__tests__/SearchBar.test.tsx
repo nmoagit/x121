@@ -10,7 +10,7 @@ vi.mock("@/lib/api", () => ({
       if (path.includes("/search/typeahead")) {
         return Promise.resolve([
           {
-            entity_type: "character",
+            entity_type: "avatar",
             entity_id: 1,
             name: "Alice Wonderland",
             rank: 0.9,
@@ -41,7 +41,7 @@ describe("SearchBar", () => {
   it("renders the search input", () => {
     renderWithProviders(<SearchBar />);
     expect(
-      screen.getByPlaceholderText("Search characters, projects, scenes..."),
+      screen.getByPlaceholderText("Search avatars, projects, scenes..."),
     ).toBeInTheDocument();
   });
 
@@ -56,7 +56,7 @@ describe("SearchBar", () => {
     renderWithProviders(<SearchBar />);
 
     const input = screen.getByPlaceholderText(
-      "Search characters, projects, scenes...",
+      "Search avatars, projects, scenes...",
     );
     fireEvent.change(input, { target: { value: "ali" } });
 
@@ -74,13 +74,13 @@ describe("SearchBar", () => {
     renderWithProviders(<SearchBar />);
 
     const input = screen.getByPlaceholderText(
-      "Search characters, projects, scenes...",
+      "Search avatars, projects, scenes...",
     );
     fireEvent.change(input, { target: { value: "ali" } });
 
     await waitFor(
       () => {
-        expect(screen.getByText("Character")).toBeInTheDocument();
+        expect(screen.getByText("Avatar")).toBeInTheDocument();
         expect(screen.getByText("Project")).toBeInTheDocument();
         expect(screen.getByText("Scene Type")).toBeInTheDocument();
       },
@@ -93,7 +93,7 @@ describe("SearchBar", () => {
     renderWithProviders(<SearchBar onResultSelect={onSelect} />);
 
     const input = screen.getByPlaceholderText(
-      "Search characters, projects, scenes...",
+      "Search avatars, projects, scenes...",
     );
     fireEvent.change(input, { target: { value: "ali" } });
 
@@ -108,7 +108,7 @@ describe("SearchBar", () => {
 
     expect(onSelect).toHaveBeenCalledWith(
       expect.objectContaining({
-        entity_type: "character",
+        entity_type: "avatar",
         entity_id: 1,
         name: "Alice Wonderland",
       }),
@@ -128,7 +128,7 @@ describe("SearchBar", () => {
     renderWithProviders(<SearchBar />);
 
     const input = screen.getByPlaceholderText(
-      "Search characters, projects, scenes...",
+      "Search avatars, projects, scenes...",
     );
     fireEvent.change(input, { target: { value: "ali" } });
 
@@ -146,11 +146,11 @@ describe("SearchBar", () => {
     });
   });
 
-  it("does not show results when query is less than 2 characters", () => {
+  it("does not show results when query is less than 2 avatars", () => {
     renderWithProviders(<SearchBar />);
 
     const input = screen.getByPlaceholderText(
-      "Search characters, projects, scenes...",
+      "Search avatars, projects, scenes...",
     );
     fireEvent.change(input, { target: { value: "a" } });
 

@@ -18,7 +18,7 @@ import { useSetPageTitle } from "@/hooks/useSetPageTitle";
 import { AlertCircle, ChevronRight, Users } from "@/tokens/icons";
 
 import { useProject, useProjectStats } from "./hooks/use-projects";
-import { ProjectCharactersTab } from "./tabs/ProjectCharactersTab";
+import { ProjectAvatarsTab } from "./tabs/ProjectAvatarsTab";
 import { ProjectSettingsTab } from "./tabs/ProjectConfigTab";
 import { ProjectDeliveryTab } from "./tabs/ProjectDeliveryTab";
 import { ProjectOverviewTab } from "./tabs/ProjectOverviewTab";
@@ -56,7 +56,7 @@ export function ProjectDetailPage() {
     });
   }
 
-  const scrollToGroupId = activeTab === "characters" && groupParam ? groupParam : undefined;
+  const scrollToGroupId = activeTab === "avatars" && groupParam ? groupParam : undefined;
 
   /** Resolved blocking deliverables: project override > studio setting > hardcoded default. */
   const resolvedBlockingDeliverables = useMemo(() => {
@@ -131,8 +131,8 @@ export function ProjectDetailPage() {
 
       {/* Tab content */}
       {activeTab === "overview" && <ProjectOverviewTab projectId={id} stats={stats} />}
-      {activeTab === "characters" && (
-        <ProjectCharactersTab projectId={id} projectName={project.name} scrollToGroupId={scrollToGroupId} blockingDeliverables={resolvedBlockingDeliverables} />
+      {activeTab === "avatars" && (
+        <ProjectAvatarsTab projectId={id} projectName={project.name} scrollToGroupId={scrollToGroupId} blockingDeliverables={resolvedBlockingDeliverables} />
       )}
       {activeTab === "production" && <ProjectProductionTab projectId={id} />}
       {activeTab === "delivery" && <ProjectDeliveryTab projectId={id} />}

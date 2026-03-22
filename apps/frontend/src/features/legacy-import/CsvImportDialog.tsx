@@ -72,7 +72,7 @@ export function CsvImportDialog({
             data-testid="csv-data-input"
             value={csvData}
             onChange={(e) => setCsvData(e.target.value)}
-            placeholder="name,type,description&#10;Alice,character,Main protagonist"
+            placeholder="name,type,description&#10;Alice,avatar,Main protagonist"
             rows={6}
             className="w-full rounded border px-3 py-2 font-mono text-sm"
           />

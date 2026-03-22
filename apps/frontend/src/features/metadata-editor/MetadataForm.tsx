@@ -1,5 +1,5 @@
 /**
- * Per-character metadata editing form (PRD-66).
+ * Per-avatar metadata editing form (PRD-66).
  *
  * Groups fields by category (biographical, physical, preferences, production)
  * with inline validation and a completeness bar.
@@ -17,7 +17,7 @@ import {
 } from "@/lib/ui-classes";
 
 import { CompletenessBar } from "./CompletenessBar";
-import { useCharacterMetadata, useUpdateCharacterMetadata } from "./hooks/use-metadata-editor";
+import { useAvatarMetadata, useUpdateAvatarMetadata } from "./hooks/use-metadata-editor";
 import type {
   FieldCategory,
   MetadataFieldError,
@@ -35,12 +35,12 @@ import { CATEGORY_LABELS, FIELD_CATEGORIES } from "./types";
    -------------------------------------------------------------------------- */
 
 interface MetadataFormProps {
-  characterId: number;
+  avatarId: number;
 }
 
-export function MetadataForm({ characterId }: MetadataFormProps) {
-  const { data, isLoading } = useCharacterMetadata(characterId);
-  const updateMutation = useUpdateCharacterMetadata(characterId);
+export function MetadataForm({ avatarId }: MetadataFormProps) {
+  const { data, isLoading } = useAvatarMetadata(avatarId);
+  const updateMutation = useUpdateAvatarMetadata(avatarId);
 
   const [localValues, setLocalValues] = useState<Record<string, unknown>>({});
   const [errors, setErrors] = useState<MetadataFieldError[]>([]);
@@ -112,7 +112,7 @@ export function MetadataForm({ characterId }: MetadataFormProps) {
   if (!data) {
     return (
       <div className="p-6 text-sm text-[var(--color-text-muted)]">
-        Character not found.
+        Avatar not found.
       </div>
     );
   }
@@ -123,7 +123,7 @@ export function MetadataForm({ characterId }: MetadataFormProps) {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="font-mono text-xs font-medium text-[var(--color-text-primary)] uppercase tracking-wide">
-            {data.character_name} — Metadata
+            {data.avatar_name} — Metadata
           </h2>
           <div className="mt-2 max-w-md">
             <CompletenessBar completeness={data.completeness} />

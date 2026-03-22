@@ -12,15 +12,15 @@ vi.mock("@/lib/api", () => ({
   },
 }));
 
-const characters = [
+const avatars = [
   { id: 1, name: "Luna" },
   { id: 2, name: "Kai" },
 ];
 
 describe("ExportPanel", () => {
-  it("renders profile selection and character checkboxes", () => {
+  it("renders profile selection and avatar checkboxes", () => {
     renderWithProviders(
-      <ExportPanel projectId={1} characters={characters} allCharacters={true} onAllCharactersChange={() => {}} selectedCharacterIds={[]} onSelectedCharacterIdsChange={() => {}} />,
+      <ExportPanel projectId={1} avatars={avatars} allAvatars={true} onAllAvatarsChange={() => {}} selectedAvatarIds={[]} onSelectedAvatarIdsChange={() => {}} />,
     );
 
     expect(screen.getByTestId("export-panel")).toBeInTheDocument();
@@ -30,7 +30,7 @@ describe("ExportPanel", () => {
 
   it("disables start button when no profile is selected", () => {
     renderWithProviders(
-      <ExportPanel projectId={1} characters={characters} allCharacters={true} onAllCharactersChange={() => {}} selectedCharacterIds={[]} onSelectedCharacterIdsChange={() => {}} />,
+      <ExportPanel projectId={1} avatars={avatars} allAvatars={true} onAllAvatarsChange={() => {}} selectedAvatarIds={[]} onSelectedAvatarIdsChange={() => {}} />,
     );
 
     const button = screen.getByTestId("start-export-button");

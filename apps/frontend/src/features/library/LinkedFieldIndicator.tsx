@@ -2,7 +2,7 @@
  * Visual indicator showing whether a metadata field is linked or copied (PRD-60).
  *
  * Displays a small badge/icon next to a field name to communicate
- * its synchronisation status with the library character.
+ * its synchronisation status with the library avatar.
  */
 
 import { cn } from "@/lib/cn";

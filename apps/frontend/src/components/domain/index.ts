@@ -7,7 +7,7 @@ export { LOG_LEVEL_LABELS } from "./LogLine";
 export { FileDropZone } from "./FileDropZone";
 export type { VoiceIdEntry } from "./FileDropZone";
 export { MetadataField } from "./MetadataField";
-export { ProjectCharacterPicker } from "./ProjectCharacterPicker";
+export { ProjectAvatarPicker } from "./ProjectAvatarPicker";
 export { ProjectPicker } from "./ProjectPicker";
 export { ScenePicker } from "./ScenePicker";
 export { SegmentIdPicker } from "./SegmentIdPicker";

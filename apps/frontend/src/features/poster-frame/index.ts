@@ -3,7 +3,7 @@
  */
 
 // Components
-export { CharacterPoster } from "./CharacterPoster";
+export { AvatarPoster } from "./AvatarPoster";
 export { CropAdjust } from "./CropAdjust";
 export { EntityPoster } from "./EntityPoster";
 export { PosterGallery } from "./PosterGallery";
@@ -16,7 +16,7 @@ export {
   useAutoSelectPosters,
   useGetPosterFrame,
   usePosterGallery,
-  useSetCharacterPoster,
+  useSetAvatarPoster,
   useSetScenePoster,
   useUpdateAdjustments,
 } from "./hooks/use-poster-frame";

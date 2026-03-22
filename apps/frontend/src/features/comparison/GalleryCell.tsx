@@ -1,7 +1,7 @@
 /**
  * Single cell in the comparison gallery (PRD-68).
  *
- * Shows video/thumbnail, character name, QA score badge, approval
+ * Shows video/thumbnail, avatar name, QA score badge, approval
  * status badge, and hover-reveal quick-action buttons.
  */
 
@@ -37,7 +37,7 @@ function qaVariant(score: number | null): "success" | "warning" | "danger" | "de
 
 interface GalleryCellProps {
   cell: ComparisonCell;
-  /** Label to show at top - defaults to character_name. */
+  /** Label to show at top - defaults to avatar_name. */
   primaryLabel?: string;
   videoRef?: React.RefObject<HTMLVideoElement | null>;
   isMuted?: boolean;
@@ -61,7 +61,7 @@ export function GalleryCell({
   onFlag,
 }: GalleryCellProps) {
   const [isHovered, setIsHovered] = useState(false);
-  const label = primaryLabel ?? cell.character_name;
+  const label = primaryLabel ?? cell.avatar_name;
   const borderClass = cell.approval_status
     ? BORDER_BY_STATUS[cell.approval_status]
     : "border-[var(--color-border-default)]";

@@ -2,7 +2,7 @@
  * Abort confirmation dialog for job debugger (PRD-34).
  *
  * Shows a confirmation dialog before aborting a job, with an
- * optional reason textarea (max 2000 characters).
+ * optional reason textarea (max 2000 avatars).
  */
 
 import { useState } from "react";

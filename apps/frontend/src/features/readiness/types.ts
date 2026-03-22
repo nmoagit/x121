@@ -1,12 +1,12 @@
 /**
- * Character Readiness & State View types (PRD-107).
+ * Avatar Readiness & State View types (PRD-107).
  */
 
 /* --------------------------------------------------------------------------
    Readiness state union
    -------------------------------------------------------------------------- */
 
-/** Possible readiness states for a character. */
+/** Possible readiness states for a avatar. */
 export type ReadinessState = "ready" | "partially_ready" | "not_started";
 
 /** Scope type for readiness criteria. */
@@ -37,9 +37,9 @@ export interface CriteriaJson {
   };
 }
 
-/** A cached readiness result for a character. */
-export interface CharacterReadinessCache {
-  character_id: number;
+/** A cached readiness result for a avatar. */
+export interface AvatarReadinessCache {
+  avatar_id: number;
   state: ReadinessState;
   missing_items: string[];
   readiness_pct: number;
@@ -75,7 +75,7 @@ export interface UpdateReadinessCriteria {
 
 /** Request body for batch evaluation. */
 export interface BatchEvaluateRequest {
-  character_ids: number[];
+  avatar_ids: number[];
 }
 
 /** Map a readiness percentage to a badge variant. */

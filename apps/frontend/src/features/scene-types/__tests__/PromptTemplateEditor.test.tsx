@@ -68,13 +68,13 @@ describe("PromptTemplateEditor", () => {
 
     const positiveTextarea = screen.getByLabelText("Positive Prompt");
     fireEvent.change(positiveTextarea, {
-      target: { value: "Photo of {character_name}" },
+      target: { value: "Photo of {avatar_name}" },
     });
 
     expect(onChange).toHaveBeenCalledTimes(1);
     const firstCall = onChange.mock.calls[0] as [PromptTemplateValues];
     expect(firstCall[0].prompt_template).toBe(
-      "Photo of {character_name}",
+      "Photo of {avatar_name}",
     );
   });
 

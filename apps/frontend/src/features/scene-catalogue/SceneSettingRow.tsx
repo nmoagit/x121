@@ -20,14 +20,14 @@ const SOURCE_COLORS: Record<string, string> = {
   scene_type: "text-[var(--color-text-muted)]",
   project: "text-cyan-400",
   group: "text-green-400",
-  character: "text-orange-400",
+  avatar: "text-orange-400",
 };
 
 const SOURCE_LABELS: Record<string, string> = {
   scene_type: "default",
   project: "project",
   group: "group",
-  character: "model",
+  avatar: "model",
 };
 
 /* --------------------------------------------------------------------------

@@ -114,7 +114,7 @@ export function FolderDropZone({
       ) : (
         <>
           <p className="text-base text-[var(--color-text-primary)]">
-            Drag a folder here to import characters
+            Drag a folder here to import avatars
           </p>
           <p className="text-sm text-[var(--color-text-secondary)]">
             or

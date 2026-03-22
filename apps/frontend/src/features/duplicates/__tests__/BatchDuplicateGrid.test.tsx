@@ -17,14 +17,14 @@ import type { FlaggedPair } from "../BatchDuplicateGrid";
 const pairs: FlaggedPair[] = [
   {
     checkId: 1,
-    characterAName: "Alice",
-    characterBName: "Alice Clone",
+    avatarAName: "Alice",
+    avatarBName: "Alice Clone",
     similarityScore: 96.3,
   },
   {
     checkId: 2,
-    characterAName: "Bob",
-    characterBName: "Robert",
+    avatarAName: "Bob",
+    avatarBName: "Robert",
     similarityScore: 88.1,
   },
 ];
@@ -45,7 +45,7 @@ describe("BatchDuplicateGrid", () => {
     expect(screen.getByText("Flagged Duplicates (2)")).toBeInTheDocument();
   });
 
-  test("shows per-pair resolution controls with character names", () => {
+  test("shows per-pair resolution controls with avatar names", () => {
     const onResolve = vi.fn();
     renderWithProviders(
       <BatchDuplicateGrid pairs={pairs} onResolve={onResolve} />,

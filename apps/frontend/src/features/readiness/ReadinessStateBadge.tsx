@@ -1,7 +1,7 @@
 /**
  * Readiness state badge component (PRD-107).
  *
- * Displays a color-coded badge for a character's readiness state,
+ * Displays a color-coded badge for a avatar's readiness state,
  * with a tooltip showing missing items when hovered.
  */
 

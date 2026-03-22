@@ -9,7 +9,7 @@ import { ActiveTasksWidget } from "@/features/dashboard/widgets/ActiveTasksWidge
 import { ActivityFeedWidget } from "@/features/dashboard/widgets/ActivityFeedWidget";
 import { DiskHealthWidget } from "@/features/dashboard/widgets/DiskHealthWidget";
 import { InfraStatusWidget } from "@/features/dashboard/widgets/InfraStatusWidget";
-import { ModelReadinessWidget } from "@/features/dashboard/widgets/ModelReadinessWidget";
+import { AvatarReadinessWidget } from "@/features/dashboard/widgets/AvatarReadinessWidget";
 import { ProjectProgressWidget } from "@/features/dashboard/widgets/ProjectProgressWidget";
 import { ScheduledGenerationsWidget } from "@/features/dashboard/widgets/ScheduledGenerationsWidget";
 
@@ -76,7 +76,7 @@ export function StudioPulse() {
 
           {/* Row 2: Model Readiness + Scheduled Generations + Disk Health + Infra (admin) */}
           <div className="md:col-span-1 lg:col-span-1">
-            <ModelReadinessWidget />
+            <AvatarReadinessWidget />
           </div>
           <div className="md:col-span-1 lg:col-span-1">
             <ScheduledGenerationsWidget />

@@ -112,11 +112,11 @@ export interface SearchParams {
    -------------------------------------------------------------------------- */
 
 /** Searchable entity types. */
-export const ENTITY_TYPES = ["character", "project", "scene_type"] as const;
+export const ENTITY_TYPES = ["avatar", "project", "scene_type"] as const;
 
 /** Human-readable labels for entity types. */
 export const ENTITY_TYPE_LABELS: Record<string, string> = {
-  character: "Model",
+  avatar: "Model",
   project: "Project",
   scene_type: "Scene Type",
 };

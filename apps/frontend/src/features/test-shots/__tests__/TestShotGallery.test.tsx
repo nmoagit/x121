@@ -13,7 +13,7 @@ import type { TestShot } from "../types";
 const makeShot = (overrides: Partial<TestShot> = {}): TestShot => ({
   id: 1,
   scene_type_id: 10,
-  character_id: 100,
+  avatar_id: 100,
   workflow_id: null,
   parameters: { strength: 0.8 },
   seed_image_path: "/images/seed.png",
@@ -30,11 +30,11 @@ const makeShot = (overrides: Partial<TestShot> = {}): TestShot => ({
 });
 
 const testShots: TestShot[] = [
-  makeShot({ id: 1, character_id: 100, quality_score: 0.85 }),
-  makeShot({ id: 2, character_id: 200, quality_score: 0.92 }),
+  makeShot({ id: 1, avatar_id: 100, quality_score: 0.85 }),
+  makeShot({ id: 2, avatar_id: 200, quality_score: 0.92 }),
   makeShot({
     id: 3,
-    character_id: 100,
+    avatar_id: 100,
     is_promoted: true,
     promoted_to_scene_id: 50,
     quality_score: 0.78,
@@ -66,15 +66,15 @@ describe("TestShotGallery", () => {
     ).toBeInTheDocument();
   });
 
-  it("filters by character when character filter is changed", () => {
+  it("filters by avatar when avatar filter is changed", () => {
     renderWithProviders(
       <TestShotGallery testShots={testShots} />,
     );
 
-    const filter = screen.getByTestId("character-filter");
+    const filter = screen.getByTestId("avatar-filter");
     fireEvent.change(filter, { target: { value: "200" } });
 
-    // Only character 200 shots should be visible.
+    // Only avatar 200 shots should be visible.
     expect(screen.queryByTestId("test-shot-card-1")).not.toBeInTheDocument();
     expect(screen.getByTestId("test-shot-card-2")).toBeInTheDocument();
     expect(screen.queryByTestId("test-shot-card-3")).not.toBeInTheDocument();

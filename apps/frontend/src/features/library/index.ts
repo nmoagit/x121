@@ -1,21 +1,21 @@
 /**
- * Character library feature public API (PRD-60).
+ * Avatar library feature public API (PRD-60).
  */
 
 // Components
-export { CharacterLibraryBrowser } from "./CharacterLibraryBrowser";
+export { AvatarLibraryBrowser } from "./AvatarLibraryBrowser";
 export { ImportDialog } from "./ImportDialog";
-export { LibraryCharacterCard } from "./LibraryCharacterCard";
+export { LibraryAvatarCard } from "./LibraryAvatarCard";
 export { LibraryUsagePanel } from "./LibraryUsagePanel";
 export { LinkedFieldIndicator } from "./LinkedFieldIndicator";
 
 // Hooks
 export {
   libraryKeys,
-  useLibraryCharacters,
+  useLibraryAvatars,
 } from "./hooks/use-library";
 
 // Types
 export type {
-  LibraryCharacter,
+  LibraryAvatar,
 } from "./types";

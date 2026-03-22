@@ -7,7 +7,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { api } from "@/lib/api";
-import type { ProjectSpeechConfigEntry } from "@/features/characters/types";
+import type { ProjectSpeechConfigEntry } from "@/features/avatars/types";
 
 /* --------------------------------------------------------------------------
    Query key factory

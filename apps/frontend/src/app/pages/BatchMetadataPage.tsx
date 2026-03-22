@@ -54,7 +54,7 @@ export function BatchMetadataPage() {
 
         {/* Panel */}
         {projectId !== null ? (
-          <BatchMetadataPanel projectId={projectId} characterIds={[]} />
+          <BatchMetadataPanel projectId={projectId} avatarIds={[]} />
         ) : (
           <p className="text-sm text-[var(--color-text-muted)]">
             Enter a project ID above to start a batch metadata operation.

@@ -42,8 +42,8 @@ export function ProjectCard({
   const status = projectStatusSlug(project.status_id);
   const statusLabel = PROJECT_STATUS_LABELS[status] ?? status;
   const isArchived = status === "archived";
-  const total = project.character_count ?? 0;
-  const ready = project.characters_ready ?? 0;
+  const total = project.avatar_count ?? 0;
+  const ready = project.avatars_ready ?? 0;
   const allReady = total > 0 && ready === total;
 
   return (

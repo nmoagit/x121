@@ -11,7 +11,7 @@ vi.mock("@/lib/api", () => ({
       if (path.includes("/metadata/regenerate")) {
         return Promise.resolve({
           status: "regenerated",
-          character_id: 42,
+          avatar_id: 42,
         });
       }
       return Promise.resolve({ regenerated: 2, skipped: 0, failed: 0 });
@@ -22,11 +22,11 @@ vi.mock("@/lib/api", () => ({
 }));
 
 describe("RegenerationControls", () => {
-  it("renders character regeneration button", () => {
-    renderWithProviders(<RegenerationControls characterId={42} />);
+  it("renders avatar regeneration button", () => {
+    renderWithProviders(<RegenerationControls avatarId={42} />);
 
     expect(
-      screen.getByText("Regenerate Character Metadata"),
+      screen.getByText("Regenerate Avatar Metadata"),
     ).toBeInTheDocument();
   });
 
@@ -44,8 +44,8 @@ describe("RegenerationControls", () => {
     expect(screen.getByText("Stale only")).toBeInTheDocument();
   });
 
-  it("does not show stale-only checkbox for character-level regeneration", () => {
-    renderWithProviders(<RegenerationControls characterId={42} />);
+  it("does not show stale-only checkbox for avatar-level regeneration", () => {
+    renderWithProviders(<RegenerationControls avatarId={42} />);
 
     expect(screen.queryByText("Stale only")).not.toBeInTheDocument();
   });
@@ -53,10 +53,10 @@ describe("RegenerationControls", () => {
   it("calls onRegenerated callback after regeneration", async () => {
     const onRegenerated = vi.fn();
     renderWithProviders(
-      <RegenerationControls characterId={42} onRegenerated={onRegenerated} />,
+      <RegenerationControls avatarId={42} onRegenerated={onRegenerated} />,
     );
 
-    fireEvent.click(screen.getByText("Regenerate Character Metadata"));
+    fireEvent.click(screen.getByText("Regenerate Avatar Metadata"));
 
     await waitFor(() => {
       expect(onRegenerated).toHaveBeenCalledTimes(1);

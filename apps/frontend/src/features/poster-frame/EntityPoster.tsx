@@ -2,7 +2,7 @@
  * Shared entity poster frame display (PRD-96).
  *
  * Renders loading, empty, and poster states for any entity type.
- * Used by CharacterPoster and ScenePoster to eliminate duplication (DRY-444).
+ * Used by AvatarPoster and ScenePoster to eliminate duplication (DRY-444).
  */
 
 import type { ReactNode } from "react";
@@ -17,7 +17,7 @@ import { useGetPosterFrame } from "./hooks/use-poster-frame";
    -------------------------------------------------------------------------- */
 
 interface EntityPosterProps {
-  entityType: "character" | "scene";
+  entityType: "avatar" | "scene";
   entityId: number;
   /** data-testid for testing. */
   testId: string;

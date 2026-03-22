@@ -1,5 +1,5 @@
 /**
- * Character Readiness TanStack Query hooks (PRD-107).
+ * Avatar Readiness TanStack Query hooks (PRD-107).
  *
  * Provides hooks for reading readiness state, managing criteria,
  * and batch evaluation.
@@ -11,10 +11,10 @@ import {
   batchEvaluateReadiness,
   createCriteria,
   deleteCriteria,
-  fetchCharacterReadiness,
+  fetchAvatarReadiness,
   fetchCriteria,
   fetchReadinessSummary,
-  invalidateCharacterReadiness,
+  invalidateAvatarReadiness,
   updateCriteria,
 } from "../api";
 import type {
@@ -29,8 +29,8 @@ import type {
 
 export const readinessKeys = {
   all: ["readiness"] as const,
-  character: (characterId: number) =>
-    ["readiness", "character", characterId] as const,
+  avatar: (avatarId: number) =>
+    ["readiness", "avatar", avatarId] as const,
   summary: (projectId?: number) =>
     ["readiness", "summary", projectId] as const,
   criteria: ["readiness", "criteria"] as const,
@@ -41,12 +41,12 @@ export const readinessKeys = {
    Queries
    -------------------------------------------------------------------------- */
 
-/** Fetch readiness for a single character. */
-export function useCharacterReadiness(characterId: number) {
+/** Fetch readiness for a single avatar. */
+export function useAvatarReadiness(avatarId: number) {
   return useQuery({
-    queryKey: readinessKeys.character(characterId),
-    queryFn: () => fetchCharacterReadiness(characterId),
-    enabled: characterId > 0,
+    queryKey: readinessKeys.avatar(avatarId),
+    queryFn: () => fetchAvatarReadiness(avatarId),
+    enabled: avatarId > 0,
   });
 }
 
@@ -70,16 +70,16 @@ export function useCriteria() {
    Mutations
    -------------------------------------------------------------------------- */
 
-/** Invalidate readiness cache for a character. */
+/** Invalidate readiness cache for a avatar. */
 export function useInvalidateReadiness() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (characterId: number) =>
-      invalidateCharacterReadiness(characterId),
-    onSuccess: (_data, characterId) => {
+    mutationFn: (avatarId: number) =>
+      invalidateAvatarReadiness(avatarId),
+    onSuccess: (_data, avatarId) => {
       queryClient.invalidateQueries({
-        queryKey: readinessKeys.character(characterId),
+        queryKey: readinessKeys.avatar(avatarId),
       });
       queryClient.invalidateQueries({
         queryKey: readinessKeys.all,
@@ -88,7 +88,7 @@ export function useInvalidateReadiness() {
   });
 }
 
-/** Batch evaluate readiness for multiple characters. */
+/** Batch evaluate readiness for multiple avatars. */
 export function useBatchEvaluate() {
   const queryClient = useQueryClient();
 

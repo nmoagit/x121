@@ -20,7 +20,7 @@ vi.mock("@/lib/api", () => ({
         return Promise.resolve([
           {
             id: 1,
-            character_id: 10,
+            avatar_id: 10,
             scene_id: 100,
             face_crop_path: "/crops/face_001.png",
             confidence_score: 0.95,
@@ -30,7 +30,7 @@ vi.mock("@/lib/api", () => ({
           },
           {
             id: 2,
-            character_id: 10,
+            avatar_id: 10,
             scene_id: 101,
             face_crop_path: "/crops/face_002.png",
             confidence_score: 0.82,
@@ -54,7 +54,7 @@ vi.mock("@/lib/api", () => ({
 describe("ContactSheetPage", () => {
   test("renders grid and controls", async () => {
     renderWithProviders(
-      <ContactSheetPage characterId={10} characterName="Alice" />,
+      <ContactSheetPage avatarId={10} avatarName="Alice" />,
     );
 
     await waitFor(() => {
@@ -66,7 +66,7 @@ describe("ContactSheetPage", () => {
 
   test("shows image count when images are loaded", async () => {
     renderWithProviders(
-      <ContactSheetPage characterId={10} characterName="Alice" />,
+      <ContactSheetPage avatarId={10} avatarName="Alice" />,
     );
 
     await waitFor(() => {
@@ -78,7 +78,7 @@ describe("ContactSheetPage", () => {
     vi.mocked((await import("@/lib/api")).api.get).mockResolvedValueOnce([]);
 
     renderWithProviders(
-      <ContactSheetPage characterId={99} characterName="Nobody" />,
+      <ContactSheetPage avatarId={99} avatarName="Nobody" />,
     );
 
     await waitFor(() => {

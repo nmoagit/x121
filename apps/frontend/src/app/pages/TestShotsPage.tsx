@@ -1,11 +1,11 @@
 /**
- * Test Shots page — project/character picker wrapping the test shot
+ * Test Shots page — project/avatar picker wrapping the test shot
  * gallery with generate and promote actions.
  *
- * Flow: Project -> Character -> TestShotGallery + TestShotButton
+ * Flow: Project -> Avatar -> TestShotGallery + TestShotButton
  */
 
-import { ProjectCharacterPicker } from "@/components/domain";
+import { ProjectAvatarPicker } from "@/components/domain";
 import { Stack } from "@/components/layout";
 import { WireframeLoader } from "@/components/primitives";
 import { EmptyState } from "@/components/domain";
@@ -21,7 +21,7 @@ import {
 } from "@/features/test-shots";
 import { useSceneTypes } from "@/features/scene-types/hooks/use-scene-types";
 
-function CharacterTestShots({ characterId }: { characterId: number }) {
+function AvatarTestShots({ avatarId }: { avatarId: number }) {
   const { data: sceneTypes, isLoading: stLoading } = useSceneTypes();
   const generateTestShot = useGenerateTestShot();
   const promoteTestShot = usePromoteTestShot();
@@ -31,7 +31,7 @@ function CharacterTestShots({ characterId }: { characterId: number }) {
   const {
     data: testShots,
     isLoading: galleryLoading,
-  } = useTestShotGallery(defaultSceneTypeId, characterId);
+  } = useTestShotGallery(defaultSceneTypeId, avatarId);
   const deleteTestShot = useDeleteTestShot(defaultSceneTypeId);
 
   if (stLoading || galleryLoading) {
@@ -57,7 +57,7 @@ function CharacterTestShots({ characterId }: { characterId: number }) {
       <div className="flex items-center gap-3">
         <TestShotButton
           sceneTypeId={defaultSceneTypeId}
-          characterId={characterId}
+          avatarId={avatarId}
           isLoading={generateTestShot.isPending}
           onGenerate={(req) => generateTestShot.mutate(req)}
         />
@@ -74,13 +74,13 @@ function CharacterTestShots({ characterId }: { characterId: number }) {
 
 export function TestShotsPage() {
   return (
-    <ProjectCharacterPicker
+    <ProjectAvatarPicker
       title="Test Shots"
       description="Generate and review test shots for a model."
     >
-      {(_projectId, characterId) => (
-        <CharacterTestShots characterId={characterId} />
+      {(_projectId, avatarId) => (
+        <AvatarTestShots avatarId={avatarId} />
       )}
-    </ProjectCharacterPicker>
+    </ProjectAvatarPicker>
   );
 }

@@ -12,17 +12,17 @@ import type { InferredEntity } from "../types";
 
 const makeEntity = (overrides: Partial<InferredEntity> = {}): InferredEntity => ({
   source_path: "Alice/portrait.png",
-  entity_type: "character",
+  entity_type: "avatar",
   captured_values: { name: "Alice" },
   inferred_name: "Alice",
   ...overrides,
 });
 
 const entities: InferredEntity[] = [
-  makeEntity({ inferred_name: "Alice", entity_type: "character" }),
+  makeEntity({ inferred_name: "Alice", entity_type: "avatar" }),
   makeEntity({
     inferred_name: "Bob",
-    entity_type: "character",
+    entity_type: "avatar",
     source_path: "Bob/portrait.png",
     captured_values: { name: "Bob" },
   }),

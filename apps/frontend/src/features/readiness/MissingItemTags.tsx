@@ -1,7 +1,7 @@
 /**
  * Missing item tags component (PRD-107).
  *
- * Displays a compact list of missing item tags for a character.
+ * Displays a compact list of missing item tags for a avatar.
  */
 
 import { Badge } from "@/components";

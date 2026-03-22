@@ -93,7 +93,7 @@ export const PREFERRED_VARIANT_TYPE = "clothed";
 
 export interface ImageVariant {
   id: number;
-  character_id: number;
+  avatar_id: number;
   source_image_id: number | null;
   derived_image_id: number | null;
   variant_label: string;

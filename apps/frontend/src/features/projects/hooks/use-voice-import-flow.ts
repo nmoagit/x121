@@ -2,7 +2,7 @@
  * Shared voice import flow hook for bulk voice ID CSV imports.
  *
  * Manages voice import state, preview, and confirmation across
- * ProjectOverviewTab, ProjectCharactersTab, and CharactersPage.
+ * ProjectOverviewTab, ProjectAvatarsTab, and AvatarsPage.
  */
 
 import { useCallback, useState } from "react";
@@ -11,9 +11,9 @@ import type { VoiceIdEntry } from "@/components/domain/FileDropZone";
 
 import { useBulkVoiceImport } from "./use-project-speech-import";
 import type { BulkVoiceImportResult, VoiceImportMode } from "./use-project-speech-import";
-import type { Character } from "../types";
+import type { Avatar } from "../types";
 
-export function useVoiceImportFlow(projectId: number, characters: Character[]) {
+export function useVoiceImportFlow(projectId: number, avatars: Avatar[]) {
   const bulkVoiceImport = useBulkVoiceImport(projectId);
   const [voiceImport, setVoiceImport] = useState<VoiceIdEntry[] | null>(null);
   const [voiceImportResult, setVoiceImportResult] = useState<BulkVoiceImportResult | null>(null);
@@ -27,7 +27,7 @@ export function useVoiceImportFlow(projectId: number, characters: Character[]) {
   function handleVoiceImportConfirm() {
     if (!voiceImport) return;
     bulkVoiceImport.mutate(
-      { entries: voiceImport, characters, mode: voiceImportMode },
+      { entries: voiceImport, avatars, mode: voiceImportMode },
       {
         onSuccess: (result) => {
           setVoiceImportResult(result);

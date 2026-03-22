@@ -17,22 +17,22 @@ export {
   useDeleteProject,
 } from "./hooks/use-projects";
 export {
-  characterGroupKeys,
-  useCharacterGroups,
+  avatarGroupKeys,
+  useAvatarGroups,
   useCreateGroup,
   useUpdateGroup,
   useDeleteGroup,
-  useMoveCharacterToGroup,
-} from "./hooks/use-character-groups";
+  useMoveAvatarToGroup,
+} from "./hooks/use-avatar-groups";
 export {
-  projectCharacterKeys,
-  useProjectCharacters,
-  useCharacter,
-  useCreateCharacter,
-  useBulkCreateCharacters,
-  useUpdateCharacter,
-  useDeleteCharacter,
-} from "./hooks/use-project-characters";
+  projectAvatarKeys,
+  useProjectAvatars,
+  useAvatar,
+  useCreateAvatar,
+  useBulkCreateAvatars,
+  useUpdateAvatar,
+  useDeleteAvatar,
+} from "./hooks/use-project-avatars";
 export { useGroupSelectOptions } from "./hooks/use-group-select-options";
 export { useGroupMap } from "./hooks/use-group-map";
 
@@ -42,12 +42,12 @@ export type {
   CreateProject,
   UpdateProject,
   ProjectStats,
-  CharacterGroup,
-  CreateCharacterGroup,
-  UpdateCharacterGroup,
-  Character,
-  CreateCharacter,
-  UpdateCharacter,
+  AvatarGroup,
+  CreateAvatarGroup,
+  UpdateAvatarGroup,
+  Avatar,
+  CreateAvatar,
+  UpdateAvatar,
 } from "./types";
 export {
   STATUS_LABELS,
@@ -57,7 +57,7 @@ export {
   PROJECT_TABS,
   CHARACTER_TABS,
   PROJECT_STATUS_BADGE_VARIANT,
-  characterStatusLabel,
-  characterStatusBadgeVariant,
+  avatarStatusLabel,
+  avatarStatusBadgeVariant,
   projectStatusSlug,
 } from "./types";

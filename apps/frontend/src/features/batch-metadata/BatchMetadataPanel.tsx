@@ -1,7 +1,7 @@
 /**
  * Main panel for batch metadata operations (PRD-88).
  *
- * Provides operation type selector, character selector, and delegates
+ * Provides operation type selector, avatar selector, and delegates
  * to the appropriate form component based on the chosen operation type.
  */
 
@@ -37,8 +37,8 @@ const OPERATION_TYPE_OPTIONS: { value: BatchOperationType; label: string }[] = [
 interface BatchMetadataPanelProps {
   /** Current project ID. */
   projectId: number;
-  /** Selected character IDs for the batch operation. */
-  characterIds: number[];
+  /** Selected avatar IDs for the batch operation. */
+  avatarIds: number[];
   /** Callback when a preview is created. */
   onPreviewCreated?: (op: BatchMetadataOperation) => void;
   /** Callback when an operation is executed. */
@@ -53,7 +53,7 @@ interface BatchMetadataPanelProps {
 
 export function BatchMetadataPanel({
   projectId,
-  characterIds,
+  avatarIds,
   onPreviewCreated,
   onExecuted,
   onUndone,
@@ -75,7 +75,7 @@ export function BatchMetadataPanel({
   ): CreateBatchMetadataRequest => ({
     operation_type: operationType,
     project_id: projectId,
-    character_ids: characterIds,
+    avatar_ids: avatarIds,
     parameters: params,
     field_name: fieldName,
   });
@@ -94,9 +94,9 @@ export function BatchMetadataPanel({
         />
       </div>
 
-      {/* Character count indicator */}
-      <div data-testid="character-count" className="text-sm text-[var(--color-text-secondary)]">
-        {characterIds.length} character{characterIds.length !== 1 ? "s" : ""} selected
+      {/* Avatar count indicator */}
+      <div data-testid="avatar-count" className="text-sm text-[var(--color-text-secondary)]">
+        {avatarIds.length} avatar{avatarIds.length !== 1 ? "s" : ""} selected
       </div>
 
       {/* Operation-specific form */}
@@ -119,12 +119,12 @@ export function BatchMetadataPanel({
             data-testid="placeholder-form"
             className="rounded border border-[var(--color-border)] p-4 text-sm text-[var(--color-text-secondary)]"
           >
-            Select characters and configure the {operationType.replace(/_/g, " ")} operation.
+            Select avatars and configure the {operationType.replace(/_/g, " ")} operation.
           </div>
         )}
       </div>
 
-      {/* Preview of affected characters */}
+      {/* Preview of affected avatars */}
       {previewOp && (
         <OperationPreview
           operation={previewOp}

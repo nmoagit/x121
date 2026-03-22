@@ -1,5 +1,5 @@
 /**
- * TypeScript types for Character Consistency Report (PRD-94).
+ * TypeScript types for Avatar Consistency Report (PRD-94).
  *
  * These types mirror the backend API response shapes for consistency
  * reports, pairwise similarity scores, and outlier detection.
@@ -25,7 +25,7 @@ export interface PairwiseScores {
 
 export interface ConsistencyReport {
   id: number;
-  character_id: number;
+  avatar_id: number;
   project_id: number;
   scores_json: PairwiseScores;
   overall_consistency_score: number | null;
@@ -44,7 +44,7 @@ export interface GenerateConsistencyInput {
 }
 
 export interface BatchConsistencyInput {
-  character_ids: number[];
+  avatar_ids: number[];
   report_type: ConsistencyReportType;
 }
 

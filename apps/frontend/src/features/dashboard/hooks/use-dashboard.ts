@@ -20,8 +20,8 @@ export interface ActiveTaskItem {
   worker_id: number | null;
   submitted_by: number;
   submitted_at: string;
-  /** Resolved model name (via scene → character join). */
-  character_name?: string | null;
+  /** Resolved model name (via scene → avatar join). */
+  avatar_name?: string | null;
   /** Resolved scene type name (via scene → scene_type join). */
   scene_type_name?: string | null;
   /** Resolved track name (via scene → track join). */
@@ -197,7 +197,7 @@ export function useSaveDashboardConfig() {
 export function useReadinessSummaryWidget() {
   return useQuery({
     queryKey: [...dashboardKeys.all, "readiness-summary"],
-    queryFn: () => api.get<ReadinessSummary>("/library/characters/readiness-summary"),
+    queryFn: () => api.get<ReadinessSummary>("/library/avatars/readiness-summary"),
     refetchInterval: WIDGET_POLL_MS,
   });
 }

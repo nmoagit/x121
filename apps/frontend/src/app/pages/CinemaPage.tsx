@@ -1,13 +1,13 @@
 /**
- * Cinema Mode page — project/character/scene picker wrapping
+ * Cinema Mode page — project/avatar/scene picker wrapping
  * the cinema mode full-screen player.
  *
- * Flow: Project -> Character -> Scene -> Segment ID (typed) -> CinemaMode
+ * Flow: Project -> Avatar -> Scene -> Segment ID (typed) -> CinemaMode
  */
 
 import { useState } from "react";
 
-import { ProjectCharacterPicker, ScenePicker, SegmentIdPicker } from "@/components/domain";
+import { ProjectAvatarPicker, ScenePicker, SegmentIdPicker } from "@/components/domain";
 import { Stack } from "@/components/layout";
 import { Play } from "@/tokens/icons";
 
@@ -55,13 +55,13 @@ function SegmentCinema({ segmentId }: { segmentId: number }) {
 
 export function CinemaPage() {
   return (
-    <ProjectCharacterPicker
+    <ProjectAvatarPicker
       title="Cinema Mode"
       description="Full-screen cinema review with ambilight and keyboard controls."
     >
-      {(_projectId, characterId) => (
+      {(_projectId, avatarId) => (
         <ScenePicker
-          characterId={characterId}
+          avatarId={avatarId}
           emptyIcon={<Play size={32} />}
           noScenesDescription="This model has no scenes yet."
         >
@@ -75,6 +75,6 @@ export function CinemaPage() {
           )}
         </ScenePicker>
       )}
-    </ProjectCharacterPicker>
+    </ProjectAvatarPicker>
   );
 }

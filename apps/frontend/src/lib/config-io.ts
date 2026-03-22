@@ -3,7 +3,7 @@
  *
  * Provides a standard envelope format for exporting and importing
  * settings across workflows, scene catalogue, project, group, and
- * character configuration pages.
+ * avatar configuration pages.
  */
 
 /* --------------------------------------------------------------------------
@@ -15,7 +15,7 @@ export type ConfigType =
   | "scene-catalogue"
   | "project-settings"
   | "group-settings"
-  | "character-settings";
+  | "avatar-settings";
 
 export interface ConfigEnvelope<T = unknown> {
   config_type: ConfigType;
@@ -30,7 +30,7 @@ export const CONFIG_TYPE_LABELS: Record<ConfigType, string> = {
   "scene-catalogue": "Scene Catalogue",
   "project-settings": "Project Settings",
   "group-settings": "Group Settings",
-  "character-settings": "Model Settings",
+  "avatar-settings": "Avatar Settings",
 };
 
 /* --------------------------------------------------------------------------

@@ -152,7 +152,7 @@ export function PipelineSettingsPage({ pipelineId }: PipelineSettingsPageProps) 
         title="Naming Rules"
         value={namingRules}
         onChange={setNamingRules}
-        placeholder='{ "pattern": "{character}_{scene}_{variant}" }'
+        placeholder='{ "pattern": "{avatar}_{scene}_{variant}" }'
       />
 
       {/* Delivery config */}

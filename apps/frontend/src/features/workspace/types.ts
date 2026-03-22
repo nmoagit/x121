@@ -29,7 +29,7 @@ export interface LayoutState {
 
 export interface NavigationState {
   activeProjectId: number | null;
-  activeCharacterId: number | null;
+  activeAvatarId: number | null;
   activeSceneId: number | null;
   activeSegmentId: number | null;
   scrollPositions: Record<string, number>;
@@ -99,7 +99,7 @@ export const DEFAULT_LAYOUT_STATE: LayoutState = {
 
 export const DEFAULT_NAVIGATION_STATE: NavigationState = {
   activeProjectId: null,
-  activeCharacterId: null,
+  activeAvatarId: null,
   activeSceneId: null,
   activeSegmentId: null,
   scrollPositions: {},

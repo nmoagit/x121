@@ -62,12 +62,12 @@ export function CsvImport({ projectId }: CsvImportProps) {
 
   const handleCommit = useCallback(async () => {
     // In the current MVP, committing means the frontend iterates over
-    // the diffs and applies them per-character. A future enhancement could
+    // the diffs and applies them per-avatar. A future enhancement could
     // add a batch commit endpoint.
     if (!preview) return;
     setCommitting(true);
     // For now, close the preview. The parent component is responsible
-    // for applying updates per character via the diff data.
+    // for applying updates per avatar via the diff data.
     setShowPreview(false);
     setCommitting(false);
     setPreview(null);
@@ -143,8 +143,8 @@ export function CsvImport({ projectId }: CsvImportProps) {
                     {preview.validation_errors.map((err) => (
                       <div key={err.row_index} className="text-[var(--color-text-muted)]">
                         <span className="text-red-400">Row {err.row_index + 1}</span>
-                        {err.character_id && (
-                          <span> (Character #{err.character_id})</span>
+                        {err.avatar_id && (
+                          <span> (Avatar #{err.avatar_id})</span>
                         )}
                         : {err.errors.map((e) => e.message).join("; ")}
                       </div>
@@ -161,7 +161,7 @@ export function CsvImport({ projectId }: CsvImportProps) {
                   <table className="w-full font-mono text-xs">
                     <thead>
                       <tr className={`${TERMINAL_DIVIDER} bg-[#161b22]`}>
-                        <th className={`${TERMINAL_TH} px-3 py-2`}>Character</th>
+                        <th className={`${TERMINAL_TH} px-3 py-2`}>Avatar</th>
                         <th className={`${TERMINAL_TH} px-3 py-2`}>Field</th>
                         <th className={`${TERMINAL_TH} px-3 py-2`}>Current</th>
                         <th className={`${TERMINAL_TH} px-3 py-2`}>New</th>
@@ -170,11 +170,11 @@ export function CsvImport({ projectId }: CsvImportProps) {
                     <tbody>
                       {preview.diffs.map((diff, idx) => (
                         <tr
-                          key={`${diff.character_id}-${diff.field_name}-${idx}`}
+                          key={`${diff.avatar_id}-${diff.field_name}-${idx}`}
                           className={`${TERMINAL_DIVIDER} ${TERMINAL_ROW_HOVER}`}
                         >
                           <td className="px-3 py-1.5 text-[var(--color-text-primary)]">
-                            {diff.character_name}
+                            {diff.avatar_name}
                           </td>
                           <td className="px-3 py-1.5 text-[var(--color-text-muted)]">
                             {diff.field_name}

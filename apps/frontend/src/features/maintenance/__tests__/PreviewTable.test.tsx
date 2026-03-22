@@ -11,7 +11,7 @@ import type { FieldInfo } from "../types";
    -------------------------------------------------------------------------- */
 
 const sampleFields: FieldInfo[] = [
-  { entity_type: "character", table_name: "characters", column_name: "name" },
+  { entity_type: "avatar", table_name: "avatars", column_name: "name" },
   { entity_type: "scene", table_name: "scenes", column_name: "title" },
 ];
 
@@ -64,8 +64,8 @@ describe("PreviewTable", () => {
     );
 
     const row = screen.getByTestId("preview-row-0");
-    expect(row).toHaveTextContent("character");
-    expect(row).toHaveTextContent("characters");
+    expect(row).toHaveTextContent("avatar");
+    expect(row).toHaveTextContent("avatars");
     expect(row).toHaveTextContent("name");
   });
 });

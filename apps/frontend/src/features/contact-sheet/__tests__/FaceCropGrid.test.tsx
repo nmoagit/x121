@@ -16,7 +16,7 @@ import type { ContactSheetImage } from "../types";
 
 const makeImage = (overrides: Partial<ContactSheetImage> = {}): ContactSheetImage => ({
   id: 1,
-  character_id: 10,
+  avatar_id: 10,
   scene_id: 100,
   face_crop_path: "/crops/face_001.png",
   confidence_score: 0.95,

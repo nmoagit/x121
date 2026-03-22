@@ -6,7 +6,7 @@ import { Modal } from "@/components/composite";
 import { Stack } from "@/components/layout";
 import { Button } from "@/components/primitives";
 
-import type { BulkImportReport } from "@/features/characters/types";
+import type { BulkImportReport } from "@/features/avatars/types";
 
 interface SpeechImportResultModalProps {
   open: boolean;
@@ -30,13 +30,13 @@ export function SpeechImportResultModal({ open, onClose, result }: SpeechImportR
         </div>
 
         {/* Matched models */}
-        {result.characters_matched.length > 0 && (
+        {result.avatars_matched.length > 0 && (
           <div>
             <p className="font-mono text-[10px] uppercase tracking-wide text-[var(--color-text-muted)] mb-1">
-              matched ({result.characters_matched.length})
+              matched ({result.avatars_matched.length})
             </p>
             <div className="max-h-32 overflow-y-auto border border-[var(--color-border-default)] rounded-[var(--radius-sm)]">
-              {result.characters_matched.map((name) => (
+              {result.avatars_matched.map((name) => (
                 <div key={name} className="px-2 py-0.5 font-mono text-xs text-cyan-400 border-b border-white/5 last:border-b-0">
                   {name}
                 </div>
@@ -46,13 +46,13 @@ export function SpeechImportResultModal({ open, onClose, result }: SpeechImportR
         )}
 
         {/* Unmatched models */}
-        {result.characters_unmatched.length > 0 && (
+        {result.avatars_unmatched.length > 0 && (
           <div>
             <p className="font-mono text-[10px] uppercase tracking-wide text-orange-400 mb-1">
-              unmatched ({result.characters_unmatched.length})
+              unmatched ({result.avatars_unmatched.length})
             </p>
             <div className="max-h-24 overflow-y-auto border border-[var(--color-border-default)] rounded-[var(--radius-sm)]">
-              {result.characters_unmatched.map((name) => (
+              {result.avatars_unmatched.map((name) => (
                 <div key={name} className="px-2 py-0.5 font-mono text-xs text-orange-400 border-b border-white/5 last:border-b-0">
                   {name}
                 </div>

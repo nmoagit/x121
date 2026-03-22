@@ -1,5 +1,5 @@
 /**
- * TanStack Query hooks for Character Face Contact Sheet (PRD-103).
+ * TanStack Query hooks for Avatar Face Contact Sheet (PRD-103).
  *
  * Follows the key factory pattern used throughout the codebase.
  */
@@ -15,37 +15,37 @@ import type { ContactSheetImage, CreateContactSheetImageInput, ExportFormat } fr
 
 export const contactSheetKeys = {
   all: ["contact-sheet"] as const,
-  character: (characterId: number) =>
-    [...contactSheetKeys.all, "character", characterId] as const,
-  export: (characterId: number, format: ExportFormat) =>
-    [...contactSheetKeys.all, "export", characterId, format] as const,
+  avatar: (avatarId: number) =>
+    [...contactSheetKeys.all, "avatar", avatarId] as const,
+  export: (avatarId: number, format: ExportFormat) =>
+    [...contactSheetKeys.all, "export", avatarId, format] as const,
 };
 
 /* --------------------------------------------------------------------------
    Queries
    -------------------------------------------------------------------------- */
 
-/** Fetches all contact sheet face-crop images for a character. */
-export function useContactSheetImages(characterId: number) {
+/** Fetches all contact sheet face-crop images for a avatar. */
+export function useContactSheetImages(avatarId: number) {
   return useQuery({
-    queryKey: contactSheetKeys.character(characterId),
+    queryKey: contactSheetKeys.avatar(avatarId),
     queryFn: () =>
-      api.get<ContactSheetImage[]>(`/characters/${characterId}/contact-sheet/images`),
-    enabled: characterId > 0,
+      api.get<ContactSheetImage[]>(`/avatars/${avatarId}/contact-sheet/images`),
+    enabled: avatarId > 0,
   });
 }
 
 /** Exports the contact sheet in the specified format. Enabled only when explicitly triggered. */
 export function useExportContactSheet(
-  characterId: number,
+  avatarId: number,
   format: ExportFormat,
   enabled: boolean,
 ) {
   return useQuery({
-    queryKey: contactSheetKeys.export(characterId, format),
+    queryKey: contactSheetKeys.export(avatarId, format),
     queryFn: () =>
-      api.get<{ url: string }>(`/characters/${characterId}/contact-sheet/export?format=${format}`),
-    enabled: enabled && characterId > 0,
+      api.get<{ url: string }>(`/avatars/${avatarId}/contact-sheet/export?format=${format}`),
+    enabled: enabled && avatarId > 0,
   });
 }
 
@@ -53,19 +53,19 @@ export function useExportContactSheet(
    Mutations
    -------------------------------------------------------------------------- */
 
-/** Creates a new face-crop image entry for a character's contact sheet. */
-export function useCreateContactSheetImage(characterId: number) {
+/** Creates a new face-crop image entry for a avatar's contact sheet. */
+export function useCreateContactSheetImage(avatarId: number) {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (input: CreateContactSheetImageInput) =>
       api.post<ContactSheetImage>(
-        `/characters/${characterId}/contact-sheet/images`,
+        `/avatars/${avatarId}/contact-sheet/images`,
         input,
       ),
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: contactSheetKeys.character(characterId),
+        queryKey: contactSheetKeys.avatar(avatarId),
       });
     },
   });
@@ -86,18 +86,18 @@ export function useDeleteContactSheetImage() {
   });
 }
 
-/** Generates face-crop extractions for all scenes of a character. */
-export function useGenerateContactSheet(characterId: number) {
+/** Generates face-crop extractions for all scenes of a avatar. */
+export function useGenerateContactSheet(avatarId: number) {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: () =>
       api.post<ContactSheetImage[]>(
-        `/characters/${characterId}/contact-sheet/generate`,
+        `/avatars/${avatarId}/contact-sheet/generate`,
       ),
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: contactSheetKeys.character(characterId),
+        queryKey: contactSheetKeys.avatar(avatarId),
       });
     },
   });

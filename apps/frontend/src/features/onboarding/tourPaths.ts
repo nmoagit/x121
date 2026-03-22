@@ -62,8 +62,8 @@ export const tourPaths: Record<string, TourStep[]> = {
       placement: "bottom",
     },
     {
-      target: "[data-tour='character-panel']",
-      title: "Models",
+      target: "[data-tour='avatar-panel']",
+      title: "Avatars",
       description: "Upload model portraits and manage source images here.",
       placement: "right",
     },

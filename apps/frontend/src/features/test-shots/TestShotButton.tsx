@@ -20,8 +20,8 @@ import type { GenerateTestShotRequest } from "./types";
 interface TestShotButtonProps {
   /** Pre-filled scene type ID for the test shot. */
   sceneTypeId: number;
-  /** Pre-filled character ID for the test shot. */
-  characterId: number;
+  /** Pre-filled avatar ID for the test shot. */
+  avatarId: number;
   /** Default seed image path. */
   defaultSeedImagePath?: string;
   /** Whether the generate mutation is pending. */
@@ -36,7 +36,7 @@ interface TestShotButtonProps {
 
 export function TestShotButton({
   sceneTypeId,
-  characterId,
+  avatarId,
   defaultSeedImagePath = "",
   isLoading = false,
   onGenerate,
@@ -48,7 +48,7 @@ export function TestShotButton({
   const handleSubmit = () => {
     onGenerate({
       scene_type_id: sceneTypeId,
-      character_id: characterId,
+      avatar_id: avatarId,
       seed_image_path: seedImagePath,
       duration_secs: parseFloat(durationSecs) || 3.0,
     });

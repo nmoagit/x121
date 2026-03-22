@@ -92,6 +92,6 @@ export interface ExtensionApiResponse {
 
 export interface PlatformContext {
   projectId?: number;
-  characterId?: number;
+  avatarId?: number;
   sceneId?: number;
 }

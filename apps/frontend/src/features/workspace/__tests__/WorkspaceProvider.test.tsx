@@ -24,7 +24,7 @@ vi.mock("@/lib/api", () => ({
       layout_state: { panels: {}, sidebarWidth: 300, sidebarCollapsed: false },
       navigation_state: {
         activeProjectId: 5,
-        activeCharacterId: null,
+        activeAvatarId: null,
         activeSceneId: null,
         activeSegmentId: null,
         scrollPositions: {},
@@ -74,7 +74,7 @@ describe("WorkspaceProvider", () => {
       layout: { panels: {}, sidebarWidth: 280, sidebarCollapsed: false },
       navigation: {
         activeProjectId: null,
-        activeCharacterId: null,
+        activeAvatarId: null,
         activeSceneId: null,
         activeSegmentId: null,
         scrollPositions: {},

@@ -87,12 +87,12 @@ export function useUpdateProject() {
         queryKey: projectKeys.detail(variables.id),
       });
       // Settings changes (blocking_deliverables, format profile, etc.) affect
-      // stats, deliverables, and character readiness indicators.
+      // stats, deliverables, and avatar readiness indicators.
       queryClient.invalidateQueries({ queryKey: projectKeys.stats(variables.id) });
       queryClient.invalidateQueries({
         queryKey: ["projects", "detail", variables.id, "deliverables"],
       });
-      queryClient.invalidateQueries({ queryKey: ["character-dashboard"] });
+      queryClient.invalidateQueries({ queryKey: ["avatar-dashboard"] });
     },
   });
 }

@@ -3,22 +3,22 @@ import { describe, expect, it, vi } from "vitest";
 
 import { renderWithProviders } from "@/lib/test-utils";
 
-import { CharacterLibraryStateView } from "../CharacterLibraryStateView";
+import { AvatarLibraryStateView } from "../AvatarLibraryStateView";
 import { MissingItemTags } from "../MissingItemTags";
 import { ReadinessCriteriaEditor } from "../ReadinessCriteriaEditor";
 import { ReadinessStateBadge } from "../ReadinessStateBadge";
 import { ReadinessSummaryBar } from "../ReadinessSummaryBar";
 import { readinessKeys } from "../hooks/use-readiness";
-import type { CharacterReadinessCache, ReadinessSummary } from "../types";
+import type { AvatarReadinessCache, ReadinessSummary } from "../types";
 
 /* --------------------------------------------------------------------------
    Fixtures
    -------------------------------------------------------------------------- */
 
 const makeCache = (
-  overrides: Partial<CharacterReadinessCache> = {},
-): CharacterReadinessCache => ({
-  character_id: 1,
+  overrides: Partial<AvatarReadinessCache> = {},
+): AvatarReadinessCache => ({
+  avatar_id: 1,
   state: "ready",
   missing_items: [],
   readiness_pct: 100,
@@ -185,16 +185,16 @@ describe("ReadinessSummaryBar", () => {
 });
 
 /* --------------------------------------------------------------------------
-   CharacterLibraryStateView tests
+   AvatarLibraryStateView tests
    -------------------------------------------------------------------------- */
 
-describe("CharacterLibraryStateView", () => {
-  const characters = [
+describe("AvatarLibraryStateView", () => {
+  const avatars = [
     {
       id: 1,
       name: "Alice",
       readiness: makeCache({
-        character_id: 1,
+        avatar_id: 1,
         state: "ready",
         missing_items: [],
         readiness_pct: 100,
@@ -204,7 +204,7 @@ describe("CharacterLibraryStateView", () => {
       id: 2,
       name: "Bob",
       readiness: makeCache({
-        character_id: 2,
+        avatar_id: 2,
         state: "partially_ready",
         missing_items: ["source_image"],
         readiness_pct: 67,
@@ -214,7 +214,7 @@ describe("CharacterLibraryStateView", () => {
       id: 3,
       name: "Charlie",
       readiness: makeCache({
-        character_id: 3,
+        avatar_id: 3,
         state: "not_started",
         missing_items: ["source_image", "a2c4_model", "metadata_complete"],
         readiness_pct: 0,
@@ -222,19 +222,19 @@ describe("CharacterLibraryStateView", () => {
     },
   ];
 
-  it("renders character rows", () => {
+  it("renders avatar rows", () => {
     renderWithProviders(
-      <CharacterLibraryStateView characters={characters} />,
+      <AvatarLibraryStateView avatars={avatars} />,
     );
 
-    expect(screen.getByTestId("character-row-1")).toBeInTheDocument();
-    expect(screen.getByTestId("character-row-2")).toBeInTheDocument();
-    expect(screen.getByTestId("character-row-3")).toBeInTheDocument();
+    expect(screen.getByTestId("avatar-row-1")).toBeInTheDocument();
+    expect(screen.getByTestId("avatar-row-2")).toBeInTheDocument();
+    expect(screen.getByTestId("avatar-row-3")).toBeInTheDocument();
   });
 
-  it("shows empty state when no characters match", () => {
+  it("shows empty state when no avatars match", () => {
     renderWithProviders(
-      <CharacterLibraryStateView characters={[]} />,
+      <AvatarLibraryStateView avatars={[]} />,
     );
 
     expect(screen.getByTestId("empty-state")).toBeInTheDocument();
@@ -242,7 +242,7 @@ describe("CharacterLibraryStateView", () => {
 
   it("displays readiness percentage", () => {
     renderWithProviders(
-      <CharacterLibraryStateView characters={characters} />,
+      <AvatarLibraryStateView avatars={avatars} />,
     );
 
     expect(screen.getByTestId("readiness-pct-1")).toHaveTextContent("100%");
@@ -250,16 +250,16 @@ describe("CharacterLibraryStateView", () => {
     expect(screen.getByTestId("readiness-pct-3")).toHaveTextContent("0%");
   });
 
-  it("calls onCharacterClick when name is clicked", () => {
+  it("calls onAvatarClick when name is clicked", () => {
     const onClick = vi.fn();
     renderWithProviders(
-      <CharacterLibraryStateView
-        characters={characters}
-        onCharacterClick={onClick}
+      <AvatarLibraryStateView
+        avatars={avatars}
+        onAvatarClick={onClick}
       />,
     );
 
-    fireEvent.click(screen.getByTestId("character-name-1"));
+    fireEvent.click(screen.getByTestId("avatar-name-1"));
     expect(onClick).toHaveBeenCalledWith(1);
   });
 });
@@ -332,7 +332,7 @@ describe("ReadinessCriteriaEditor", () => {
     );
 
     expect(screen.getByTestId("affected-count")).toBeInTheDocument();
-    expect(screen.getByText(/42 characters/)).toBeInTheDocument();
+    expect(screen.getByText(/42 avatars/)).toBeInTheDocument();
   });
 
   it("calls onCancel when cancel is clicked", () => {
@@ -360,10 +360,10 @@ describe("readinessKeys", () => {
     expect(readinessKeys.all).toEqual(["readiness"]);
   });
 
-  it("character key includes id", () => {
-    expect(readinessKeys.character(42)).toEqual([
+  it("avatar key includes id", () => {
+    expect(readinessKeys.avatar(42)).toEqual([
       "readiness",
-      "character",
+      "avatar",
       42,
     ]);
   });

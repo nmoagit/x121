@@ -17,7 +17,7 @@ import {
   TERMINAL_TH,
 } from "@/lib/ui-classes";
 
-import { useBatchSceneAssignments } from "@/features/projects/hooks/use-character-deliverables";
+import { useBatchSceneAssignments } from "@/features/projects/hooks/use-avatar-deliverables";
 
 import { SceneSettingRow } from "./SceneSettingRow";
 import { useExpandedSettings } from "./hooks/use-expanded-settings";

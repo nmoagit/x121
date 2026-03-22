@@ -1,5 +1,5 @@
 /**
- * Character duplicate detection page (PRD-79).
+ * Avatar duplicate detection page (PRD-79).
  *
  * Shows duplicate detection settings, a batch check trigger,
  * and a grid of flagged duplicate pairs with resolution controls.
@@ -35,15 +35,15 @@ export function DuplicatesPage() {
 
   const handleBatchCheck = () => {
     batchCheck.mutate(
-      { character_ids: [] },
+      { avatar_ids: [] },
       {
         onSuccess: (checks) => {
           const pairs: FlaggedPair[] = checks
-            .filter((c) => c.matched_character_id !== null)
+            .filter((c) => c.matched_avatar_id !== null)
             .map((c) => ({
               checkId: c.id,
-              characterAName: `Model #${c.source_character_id}`,
-              characterBName: `Model #${c.matched_character_id}`,
+              avatarAName: `Model #${c.source_avatar_id}`,
+              avatarBName: `Model #${c.matched_avatar_id}`,
               similarityScore: (c.similarity_score ?? 0) * 100,
             }));
           setFlaggedPairs(pairs);

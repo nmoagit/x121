@@ -49,7 +49,7 @@ export interface EffectiveSceneSetting {
   name: string;
   slug: string;
   is_enabled: boolean;
-  source: "scene_type" | "project" | "group" | "character";
+  source: "scene_type" | "project" | "group" | "avatar";
   track_id: number | null;
   track_name: string | null;
   track_slug: string | null;
@@ -125,7 +125,7 @@ export interface UpdateTrack {
 /**
  * Builds the API URL for a single scene setting toggle or delete.
  *
- * @param basePath - e.g. `/projects/5/scene-settings` or `/characters/12/scene-settings`
+ * @param basePath - e.g. `/projects/5/scene-settings` or `/avatars/12/scene-settings`
  * @param sceneTypeId - the scene type to target
  * @param trackId - optional track qualifier (null targets the scene_type level)
  */

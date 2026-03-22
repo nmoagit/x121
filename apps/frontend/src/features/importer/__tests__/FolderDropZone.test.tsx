@@ -32,7 +32,7 @@ describe("FolderDropZone", () => {
   it("renders the drop zone", () => {
     renderWithProviders(<FolderDropZone {...defaultProps} />);
     expect(
-      screen.getByText("Drag a folder here to import characters"),
+      screen.getByText("Drag a folder here to import avatars"),
     ).toBeInTheDocument();
   });
 

@@ -1,5 +1,5 @@
 /**
- * Bulk Character Onboarding Wizard types (PRD-67).
+ * Bulk Avatar Onboarding Wizard types (PRD-67).
  */
 
 /* --------------------------------------------------------------------------
@@ -36,7 +36,7 @@ export interface OnboardingSession {
   created_by_id: number;
   current_step: number;
   step_data: Record<string, unknown>;
-  character_ids: number[];
+  avatar_ids: number[];
   status: OnboardingSessionStatus;
   created_at: string;
   updated_at: string;

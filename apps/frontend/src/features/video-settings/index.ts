@@ -4,21 +4,21 @@ export { VideoSettingsPanel } from "./VideoSettingsPanel";
 export { VideoSettingsDefaultsTab } from "./VideoSettingsDefaultsTab";
 export { VideoSettingsOverrideTable } from "./VideoSettingsOverrideTable";
 export { ProjectVideoSettings } from "./ProjectVideoSettings";
-export { CharacterVideoSettings } from "./CharacterVideoSettings";
+export { AvatarVideoSettings } from "./AvatarVideoSettings";
 export {
   videoSettingsKeys,
   useProjectVideoSettings,
   useProjectVideoSettingsList,
   useGroupVideoSettings,
-  useCharacterVideoSettings,
-  useCharacterVideoSettingsList,
+  useAvatarVideoSettings,
+  useAvatarVideoSettingsList,
   useResolvedVideoSettings,
   useUpsertProjectVideoSettings,
   useDeleteProjectVideoSettings,
   useUpsertGroupVideoSettings,
   useDeleteGroupVideoSettings,
-  useUpsertCharacterVideoSettings,
-  useDeleteCharacterVideoSettings,
+  useUpsertAvatarVideoSettings,
+  useDeleteAvatarVideoSettings,
 } from "./hooks/use-video-settings";
 export type {
   VideoSettingsOverride,

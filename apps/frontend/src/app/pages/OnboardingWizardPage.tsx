@@ -1,5 +1,5 @@
 /**
- * Bulk character onboarding wizard page (PRD-67).
+ * Bulk avatar onboarding wizard page (PRD-67).
  *
  * Lists existing onboarding sessions for a project, allows creating
  * new sessions, and renders the OnboardingWizard for the selected session.
@@ -116,7 +116,7 @@ export function OnboardingWizardPage() {
     <div className="min-h-full">
       <Stack gap={6}>
         <PageHeader
-          title="Model Onboarding Wizard"
+          title="Avatar Onboarding Wizard"
           description="Bulk model onboarding with step-by-step guidance for upload, metadata, and variant generation."
         />
 

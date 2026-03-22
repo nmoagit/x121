@@ -34,7 +34,7 @@ import type { PromptFragment, SlotDraft, SlotOverride, WorkflowPromptSlot } from
    -------------------------------------------------------------------------- */
 
 interface WorkflowPromptOverridePanelProps {
-  /** Effective scene settings for the current level (project/group/character). */
+  /** Effective scene settings for the current level (project/group/avatar). */
   settings: EffectiveSceneSetting[] | undefined;
   settingsLoading: boolean;
   /** Fetch overrides for a scene type at this level. */

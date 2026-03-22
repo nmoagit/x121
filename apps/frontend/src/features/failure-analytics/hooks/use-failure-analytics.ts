@@ -30,8 +30,8 @@ export const failureAnalyticsKeys = {
     [...failureAnalyticsKeys.all, "heatmap", row, col] as const,
   trends: (patternId: number, periodDays: number) =>
     [...failureAnalyticsKeys.all, "trends", patternId, periodDays] as const,
-  alerts: (workflowId?: number, characterId?: number) =>
-    [...failureAnalyticsKeys.all, "alerts", workflowId, characterId] as const,
+  alerts: (workflowId?: number, avatarId?: number) =>
+    [...failureAnalyticsKeys.all, "alerts", workflowId, avatarId] as const,
   fixes: (patternId: number) =>
     [...failureAnalyticsKeys.all, "fixes", patternId] as const,
 };
@@ -112,19 +112,19 @@ export function useFailureTrends(patternId: number, periodDays: number) {
    -------------------------------------------------------------------------- */
 
 /** Fetches high-severity patterns matching the given dimensions for alerts. */
-export function useFailureAlerts(workflowId?: number, characterId?: number) {
+export function useFailureAlerts(workflowId?: number, avatarId?: number) {
   const qs = new URLSearchParams();
   if (workflowId) qs.set("workflow_id", String(workflowId));
-  if (characterId) qs.set("character_id", String(characterId));
+  if (avatarId) qs.set("avatar_id", String(avatarId));
   const qsStr = qs.toString();
 
   return useQuery({
-    queryKey: failureAnalyticsKeys.alerts(workflowId, characterId),
+    queryKey: failureAnalyticsKeys.alerts(workflowId, avatarId),
     queryFn: () =>
       api.get<AlertResponse>(
         `/analytics/failure-alerts${qsStr ? `?${qsStr}` : ""}`,
       ),
-    enabled: !!workflowId || !!characterId,
+    enabled: !!workflowId || !!avatarId,
   });
 }
 

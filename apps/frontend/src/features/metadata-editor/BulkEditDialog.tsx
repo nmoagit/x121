@@ -1,5 +1,5 @@
 /**
- * Bulk edit dialog for updating a field across multiple characters (PRD-66).
+ * Bulk edit dialog for updating a field across multiple avatars (PRD-66).
  *
  * Shows a field selector, value input, confirmation count, and apply/cancel actions.
  */
@@ -17,9 +17,9 @@ import type { MetadataFieldDef } from "./types";
    -------------------------------------------------------------------------- */
 
 interface BulkEditDialogProps {
-  /** IDs of characters to edit. */
-  selectedCharacterIds: number[];
-  /** Available field definitions (from any character's metadata response). */
+  /** IDs of avatars to edit. */
+  selectedAvatarIds: number[];
+  /** Available field definitions (from any avatar's metadata response). */
   fieldDefs: MetadataFieldDef[];
   /** Callback to apply the edit. Returns a promise so we can show loading. */
   onApply: (field: string, value: unknown) => Promise<void>;
@@ -28,7 +28,7 @@ interface BulkEditDialogProps {
 }
 
 export function BulkEditDialog({
-  selectedCharacterIds,
+  selectedAvatarIds,
   fieldDefs,
   onApply,
   onClose,
@@ -76,8 +76,8 @@ export function BulkEditDialog({
       <Stack gap={4}>
         <p className="text-sm text-[var(--color-text-secondary)]">
           Update a single field across{" "}
-          <span className="font-semibold">{selectedCharacterIds.length}</span>{" "}
-          selected character{selectedCharacterIds.length !== 1 ? "s" : ""}.
+          <span className="font-semibold">{selectedAvatarIds.length}</span>{" "}
+          selected avatar{selectedAvatarIds.length !== 1 ? "s" : ""}.
         </p>
 
         <Select
@@ -117,8 +117,8 @@ export function BulkEditDialog({
             This will set <span className="font-medium">{currentFieldDef?.label ?? selectedField}</span>{" "}
             to{" "}
             <span className="font-medium">{value || "(empty)"}</span>{" "}
-            for {selectedCharacterIds.length} character
-            {selectedCharacterIds.length !== 1 ? "s" : ""}.
+            for {selectedAvatarIds.length} avatar
+            {selectedAvatarIds.length !== 1 ? "s" : ""}.
           </p>
         )}
 

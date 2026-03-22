@@ -1,7 +1,7 @@
 /**
  * Step 6: Summary — review and submit (PRD-67).
  *
- * Displays a summary of all wizard choices: character count, scene types,
+ * Displays a summary of all wizard choices: avatar count, scene types,
  * metadata status, and provides a submit button to complete the wizard.
  */
 
@@ -17,8 +17,8 @@ import type { OnboardingStepNumber } from "./types";
 interface StepSummaryProps {
   /** Current step data from the session. */
   stepData: Record<string, unknown>;
-  /** Character IDs from the session. */
-  characterIds: number[];
+  /** Avatar IDs from the session. */
+  avatarIds: number[];
   /** Whether the complete mutation is in progress. */
   isSubmitting?: boolean;
   /** Callback to complete the session. */
@@ -31,19 +31,19 @@ interface StepSummaryProps {
 
 export function StepSummary({
   stepData,
-  characterIds,
+  avatarIds,
   isSubmitting = false,
   onComplete,
 }: StepSummaryProps) {
   const sceneTypes = (stepData.scene_types as number[] | undefined) ?? [];
   const metadata =
-    (stepData.metadata as Array<{ character_id: number }> | undefined) ?? [];
+    (stepData.metadata as Array<{ avatar_id: number }> | undefined) ?? [];
   const reviewedVariants =
     (stepData.reviewed_variants as Array<{ approved: boolean }> | undefined) ??
     [];
 
   const approvedVariants = reviewedVariants.filter((v) => v.approved).length;
-  const totalCells = characterIds.length * sceneTypes.length;
+  const totalCells = avatarIds.length * sceneTypes.length;
 
   return (
     <div data-testid="step-summary" className="space-y-4">
@@ -56,19 +56,19 @@ export function StepSummary({
 
       {/* Summary cards */}
       <div className="grid gap-3 sm:grid-cols-2">
-        {/* Characters */}
+        {/* Avatars */}
         <div
-          data-testid="summary-characters"
+          data-testid="summary-avatars"
           className="rounded border border-[var(--color-border-subtle)] bg-[var(--color-surface-secondary)] p-3"
         >
           <p className="text-xs font-medium text-[var(--color-text-muted)]">
             {STEP_LABELS[1 as OnboardingStepNumber]}
           </p>
           <p className="mt-1 text-lg font-bold text-[var(--color-text-primary)]">
-            {characterIds.length}
+            {avatarIds.length}
           </p>
           <p className="text-xs text-[var(--color-text-secondary)]">
-            characters uploaded
+            avatars uploaded
           </p>
         </div>
 
@@ -127,7 +127,7 @@ export function StepSummary({
         className="rounded border border-[var(--color-action-primary)] bg-[var(--color-surface-secondary)] p-3"
       >
         <p className="text-sm font-medium text-[var(--color-text-primary)]">
-          Total generation cells: {totalCells} ({characterIds.length} characters
+          Total generation cells: {totalCells} ({avatarIds.length} avatars
           x {sceneTypes.length} scene types)
         </p>
       </div>
@@ -137,7 +137,7 @@ export function StepSummary({
         <Button
           data-testid="submit-btn"
           variant="primary"
-          disabled={isSubmitting || characterIds.length === 0}
+          disabled={isSubmitting || avatarIds.length === 0}
           onClick={onComplete}
         >
           {isSubmitting ? "Submitting..." : "Complete Onboarding"}

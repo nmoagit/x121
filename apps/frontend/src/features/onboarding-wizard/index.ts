@@ -1,5 +1,5 @@
 /**
- * Bulk Character Onboarding Wizard feature public API (PRD-67).
+ * Bulk Avatar Onboarding Wizard feature public API (PRD-67).
  */
 
 // Components

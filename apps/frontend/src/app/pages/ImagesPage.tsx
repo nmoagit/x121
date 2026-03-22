@@ -1,7 +1,7 @@
 /**
- * Images content page — browse all image variants across characters,
+ * Images content page — browse all image variants across avatars,
  * most recent first. Read-only list items with image preview
- * and navigation to character images tab.
+ * and navigation to avatar images tab.
  */
 
 import { useState, useMemo } from "react";
@@ -46,7 +46,7 @@ function BrowseVariantItem({
   const statusId = variant.status_id as ImageVariantStatusId;
 
   return (
-    <div className={`rounded-[var(--radius-lg)] border border-[var(--color-border-default)] transition-colors bg-[#0d1117] hover:bg-[#161b22] ${!variant.character_is_enabled ? "opacity-70 grayscale" : ""}`}>
+    <div className={`rounded-[var(--radius-lg)] border border-[var(--color-border-default)] transition-colors bg-[#0d1117] hover:bg-[#161b22] ${!variant.avatar_is_enabled ? "opacity-70 grayscale" : ""}`}>
       <div className="flex items-center gap-3 p-3">
         {/* Clickable image thumbnail */}
         <button
@@ -82,7 +82,7 @@ function BrowseVariantItem({
         >
           <div className="flex items-center gap-2">
             <span className="font-medium text-[var(--color-text-primary)]">
-              {variant.character_name}
+              {variant.avatar_name}
             </span>
             {variant.variant_type && (
               <span className={TRACK_TEXT_COLORS[variant.variant_type] ?? "text-[var(--color-text-muted)]"}>
@@ -167,7 +167,7 @@ export function ImagesPage() {
   const filteredVariants = useMemo(() => {
     if (!variants) return [];
     return variants.filter((v) => {
-      if (!showDisabled && !v.character_is_enabled) return false;
+      if (!showDisabled && !v.avatar_is_enabled) return false;
       if (projectFilter.length > 0 && !projectFilter.includes(String(v.project_id))) return false;
       if (statusFilter.length > 0 && !statusFilter.includes(String(v.status_id))) return false;
       if (sourceFilter.length > 0 && !sourceFilter.includes(v.provenance)) return false;
@@ -225,10 +225,10 @@ export function ImagesPage() {
               onPreview={() => setPreviewVariant(variant)}
               onNavigate={() =>
                 navigate({
-                  to: "/projects/$projectId/models/$characterId",
+                  to: "/projects/$projectId/avatars/$avatarId",
                   params: {
                     projectId: String(variant.project_id),
-                    characterId: String(variant.character_id),
+                    avatarId: String(variant.avatar_id),
                   },
                   search: { tab: "images", scene: undefined },
                 })
@@ -279,7 +279,7 @@ export function ImagesPage() {
               )}
             </div>
             <div className="font-mono text-[10px] text-[var(--color-text-muted)]">
-              {previewVariant.character_name} · {previewVariant.project_name}
+              {previewVariant.avatar_name} · {previewVariant.project_name}
             </div>
           </Stack>
         )}

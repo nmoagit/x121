@@ -14,7 +14,7 @@ import { makeSceneType } from "./fixtures";
 const MOCK_SCENE_TYPE = makeSceneType({
   id: 1,
   name: "Close-up Portrait",
-  prompt_template: "Photo of {character_name}",
+  prompt_template: "Photo of {avatar_name}",
 });
 
 const MOCK_CHARACTERS = [
@@ -24,14 +24,14 @@ const MOCK_CHARACTERS = [
 
 const MOCK_CELLS: MatrixCell[] = [
   {
-    character_id: 1,
+    avatar_id: 1,
     scene_type_id: 1,
     variant_type: "clothed",
     existing_scene_id: 10,
     status: "approved",
   },
   {
-    character_id: 2,
+    avatar_id: 2,
     scene_type_id: 1,
     variant_type: "clothed",
     existing_scene_id: null,
@@ -44,11 +44,11 @@ const MOCK_CELLS: MatrixCell[] = [
    -------------------------------------------------------------------------- */
 
 describe("SceneMatrixView", () => {
-  it("renders character rows and scene type columns", () => {
+  it("renders avatar rows and scene type columns", () => {
     renderWithProviders(
       <SceneMatrixView
         cells={MOCK_CELLS}
-        characters={MOCK_CHARACTERS}
+        avatars={MOCK_CHARACTERS}
         sceneTypes={[MOCK_SCENE_TYPE]}
       />,
     );
@@ -62,7 +62,7 @@ describe("SceneMatrixView", () => {
     renderWithProviders(
       <SceneMatrixView
         cells={MOCK_CELLS}
-        characters={MOCK_CHARACTERS}
+        avatars={MOCK_CHARACTERS}
         sceneTypes={[MOCK_SCENE_TYPE]}
       />,
     );
@@ -75,7 +75,7 @@ describe("SceneMatrixView", () => {
     renderWithProviders(
       <SceneMatrixView
         cells={[]}
-        characters={[]}
+        avatars={[]}
         sceneTypes={[]}
       />,
     );

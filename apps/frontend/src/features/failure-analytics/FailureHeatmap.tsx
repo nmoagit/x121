@@ -28,7 +28,7 @@ interface FailureHeatmapProps {
 
 export function FailureHeatmap({ onCellClick }: FailureHeatmapProps) {
   const [rowDimension, setRowDimension] = useState("workflow");
-  const [colDimension, setColDimension] = useState("character");
+  const [colDimension, setColDimension] = useState("avatar");
 
   const { data, isPending, isError } = useFailureHeatmap(
     rowDimension,

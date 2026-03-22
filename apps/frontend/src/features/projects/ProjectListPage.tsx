@@ -10,8 +10,8 @@ import { EmptyState, FileDropZone } from "@/components/domain";
 import { Grid } from "@/components/layout";
 import { Button, FilterSelect, Input, LoadingPane, SearchInput, Select, Toggle } from "@/components/primitives";
 import { Stack } from "@/components/layout";
-import { useCharacterImport } from "./hooks/use-character-import";
-import { FileAssignmentModal } from "@/features/characters/components";
+import { useAvatarImport } from "./hooks/use-avatar-import";
+import { FileAssignmentModal } from "@/features/avatars/components";
 import { ImportConfirmModal } from "./components/ImportConfirmModal";
 import { ImportProgressBar } from "./components/ImportProgressBar";
 import { useSetPageTitle } from "@/hooks/useSetPageTitle";
@@ -21,8 +21,8 @@ import { usePipelines } from "@/features/pipelines/hooks/use-pipelines";
 import { usePipelineCode } from "@/features/pipelines/hooks/use-pipeline-context";
 import { ProjectCard } from "./components/ProjectCard";
 import { useCreateProject, useDeleteProject, useProjects, useUpdateProject } from "./hooks/use-projects";
-import { useProjectCharacters } from "./hooks/use-project-characters";
-import { useCharacterGroups } from "./hooks/use-character-groups";
+import { useProjectAvatars } from "./hooks/use-project-avatars";
+import { useAvatarGroups } from "./hooks/use-avatar-groups";
 import { PROJECT_STATUSES, PROJECT_STATUS_LABELS, projectStatusSlug } from "./types";
 import type { FolderDropResult } from "./types";
 
@@ -50,7 +50,7 @@ const STATUS_FILTER_OPTIONS = [
    -------------------------------------------------------------------------- */
 
 export function ProjectListPage() {
-  useSetPageTitle("Projects", "Manage characters, scenes, and delivery across projects.");
+  useSetPageTitle("Projects", "Manage avatars, scenes, and delivery across projects.");
 
   const navigate = useNavigate();
   const { data: projects, isLoading, error } = useProjects();
@@ -146,22 +146,22 @@ export function ProjectListPage() {
     return result;
   }, [projects, searchQuery, statusFilter, sortBy, hideArchived]);
 
-  /* --- folder drop → project creation → character import --- */
+  /* --- folder drop → project creation → avatar import --- */
   const browseFolderRef = useRef<(() => void) | null>(null);
   const [pendingDrop, setPendingDrop] = useState<{
     result: FolderDropResult;
     projectName: string;
     existingProjectId: number | null;
-    groups: { name: string; characterCount: number }[];
-    totalCharacters: number;
+    groups: { name: string; avatarCount: number }[];
+    totalAvatars: number;
   } | null>(null);
   const [importProjectId, setImportProjectId] = useState<number>(0);
   const pendingFolderResult = useRef<FolderDropResult | null>(null);
 
-  // Character import hook bound to the target project
-  const charImport = useCharacterImport(importProjectId);
-  const { data: importProjectCharacters } = useProjectCharacters(importProjectId);
-  const { data: importProjectGroups } = useCharacterGroups(importProjectId);
+  // Avatar import hook bound to the target project
+  const charImport = useAvatarImport(importProjectId);
+  const { data: importProjectAvatars } = useProjectAvatars(importProjectId);
+  const { data: importProjectGroups } = useAvatarGroups(importProjectId);
 
   // When importProjectId is set and we have a pending folder result, trigger the import flow
   useEffect(() => {
@@ -176,14 +176,14 @@ export function ProjectListPage() {
       const projectName = result.detectedProjectName;
       if (!projectName) return;
 
-      const groups: { name: string; characterCount: number }[] = [];
-      let totalCharacters = 0;
+      const groups: { name: string; avatarCount: number }[] = [];
+      let totalAvatars = 0;
       for (const [groupName, payloads] of result.groupedPayloads) {
         groups.push({
           name: groupName || "Ungrouped",
-          characterCount: payloads.length,
+          avatarCount: payloads.length,
         });
-        totalCharacters += payloads.length;
+        totalAvatars += payloads.length;
       }
 
       const existing = projects?.find(
@@ -195,7 +195,7 @@ export function ProjectListPage() {
         projectName,
         existingProjectId: existing?.id ?? null,
         groups,
-        totalCharacters,
+        totalAvatars,
       });
     },
     [projects],
@@ -363,7 +363,7 @@ export function ProjectListPage() {
         <Stack gap={4}>
           <Input
             label="Project Name"
-            placeholder="e.g. Season 3 Characters"
+            placeholder="e.g. Season 3 Avatars"
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
           />
@@ -422,14 +422,14 @@ export function ProjectListPage() {
                   <div key={g.name} className="flex items-center justify-between py-1 border-b border-white/5 font-mono text-xs">
                     <span className="text-[var(--color-text-primary)]">{g.name}</span>
                     <span className="text-[var(--color-text-muted)]">
-                      {g.characterCount} character{g.characterCount !== 1 ? "s" : ""}
+                      {g.avatarCount} avatar{g.avatarCount !== 1 ? "s" : ""}
                     </span>
                   </div>
                 ))}
                 <div className="flex items-center justify-between pt-2 mt-1 border-t border-[var(--color-border-default)] font-mono text-xs">
                   <span className="text-[var(--color-text-primary)]">Total</span>
                   <span className="text-[var(--color-text-primary)]">
-                    {pendingDrop.totalCharacters} character{pendingDrop.totalCharacters !== 1 ? "s" : ""}
+                    {pendingDrop.totalAvatars} avatar{pendingDrop.totalAvatars !== 1 ? "s" : ""}
                   </span>
                 </div>
               </div>
@@ -459,12 +459,12 @@ export function ProjectListPage() {
         onClose={() => setDeleteTarget(null)}
         title="Delete Project"
         entityName={deleteTarget?.name ?? ""}
-        warningText="This will permanently delete the project and all its characters, scenes, and deliverables."
+        warningText="This will permanently delete the project and all its avatars, scenes, and deliverables."
         onConfirm={handleDeleteConfirm}
         loading={deleteProject.isPending}
       />
 
-      {/* Character import progress */}
+      {/* Avatar import progress */}
       {charImport.importProgress && charImport.importProgress.phase !== "done" && (
         <ImportProgressBar progress={charImport.importProgress} />
       )}
@@ -477,7 +477,7 @@ export function ProjectListPage() {
         onConfirm={(assignments) => charImport.resolveUnmatchedFiles(assignments)}
       />
 
-      {/* Character import confirmation modal */}
+      {/* Avatar import confirmation modal */}
       {importProjectId > 0 && (
         <ImportConfirmModal
           open={charImport.importOpen}
@@ -486,8 +486,8 @@ export function ProjectListPage() {
           payloads={charImport.importPayloads.length > 0 ? charImport.importPayloads : undefined}
           projectId={importProjectId}
           projectName={projects?.find((p) => p.id === importProjectId)?.name}
-          existingNames={importProjectCharacters?.map((c) => c.name) ?? []}
-          characters={importProjectCharacters ?? []}
+          existingNames={importProjectAvatars?.map((c) => c.name) ?? []}
+          avatars={importProjectAvatars ?? []}
           onConfirm={charImport.handleImportConfirm}
           onConfirmWithAssets={charImport.handleImportConfirmWithAssets}
           loading={charImport.bulkCreatePending}

@@ -1,5 +1,5 @@
 /**
- * TanStack Query hooks for cross-character scene comparison (PRD-68).
+ * TanStack Query hooks for cross-avatar scene comparison (PRD-68).
  *
  * Follows the key factory pattern used throughout the codebase.
  */
@@ -18,16 +18,16 @@ export const comparisonKeys = {
   all: ["comparison"] as const,
   sceneType: (projectId: number, sceneTypeId: number, variantId?: number) =>
     [...comparisonKeys.all, "scene-type", projectId, sceneTypeId, variantId] as const,
-  character: (projectId: number, characterId: number) =>
-    [...comparisonKeys.all, "character", projectId, characterId] as const,
+  avatar: (projectId: number, avatarId: number) =>
+    [...comparisonKeys.all, "avatar", projectId, avatarId] as const,
 };
 
 /* --------------------------------------------------------------------------
-   Scene-type comparison (one cell per character)
+   Scene-type comparison (one cell per avatar)
    -------------------------------------------------------------------------- */
 
 /**
- * Fetches comparison cells for a single scene type across all characters.
+ * Fetches comparison cells for a single scene type across all avatars.
  *
  * GET /api/v1/projects/{projectId}/scene-comparison
  *   ?scene_type_id={sceneTypeId}
@@ -55,24 +55,24 @@ export function useSceneComparison(
 }
 
 /* --------------------------------------------------------------------------
-   Character all-scenes (one cell per scene type)
+   Avatar all-scenes (one cell per scene type)
    -------------------------------------------------------------------------- */
 
 /**
- * Fetches all scene-type cells for a single character.
+ * Fetches all scene-type cells for a single avatar.
  *
- * GET /api/v1/projects/{projectId}/characters/{characterId}/all-scenes
+ * GET /api/v1/projects/{projectId}/avatars/{avatarId}/all-scenes
  */
-export function useCharacterAllScenes(
+export function useAvatarAllScenes(
   projectId: number,
-  characterId: number,
+  avatarId: number,
 ) {
   return useQuery({
-    queryKey: comparisonKeys.character(projectId, characterId),
+    queryKey: comparisonKeys.avatar(projectId, avatarId),
     queryFn: () =>
       api.get<ComparisonCell[]>(
-        `/projects/${projectId}/characters/${characterId}/all-scenes`,
+        `/projects/${projectId}/avatars/${avatarId}/all-scenes`,
       ),
-    enabled: projectId > 0 && characterId > 0,
+    enabled: projectId > 0 && avatarId > 0,
   });
 }

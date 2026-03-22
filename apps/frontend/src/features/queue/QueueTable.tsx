@@ -115,7 +115,7 @@ function terminalStatusColor(statusId: number): string {
 
 function JobRow({ job, selected, onToggle, onNavigate }: JobRowProps) {
   const label = statusLabel(job.status_id);
-  const canNavigate = job.character_id != null && job.project_id != null;
+  const canNavigate = job.avatar_id != null && job.project_id != null;
   const statusColorCls = terminalStatusColor(job.status_id);
 
   const errorContent = job.error_message ? (
@@ -145,7 +145,7 @@ function JobRow({ job, selected, onToggle, onNavigate }: JobRowProps) {
         #{job.id}
       </td>
       <td className="px-3 py-2 font-mono text-xs text-[var(--color-text-primary)]">
-        {job.character_name ?? "--"}
+        {job.avatar_name ?? "--"}
       </td>
       <td className="px-3 py-2">
         {job.pipeline_code ? (
@@ -238,15 +238,15 @@ export function QueueTable({
   const navigate = useNavigate();
 
   function handleNavigateToJob(job: FullQueueJob) {
-    if (job.project_id == null || job.character_id == null) return;
+    if (job.project_id == null || job.avatar_id == null) return;
     if (job.job_kind === "image") {
       navigate({
-        to: `/projects/${job.project_id}/models/${job.character_id}`,
+        to: `/projects/${job.project_id}/avatars/${job.avatar_id}`,
         search: { tab: "overview" },
       });
     } else {
       navigate({
-        to: `/projects/${job.project_id}/models/${job.character_id}`,
+        to: `/projects/${job.project_id}/avatars/${job.avatar_id}`,
         search: { tab: "scenes", scene: String(job.scene_id) },
       });
     }

@@ -23,7 +23,7 @@ const makeSession = (
   created_by_id: 100,
   current_step: 1,
   step_data: {},
-  character_ids: [],
+  avatar_ids: [],
   status: "in_progress",
   created_at: "2026-02-23T10:00:00Z",
   updated_at: "2026-02-23T10:00:00Z",
@@ -96,7 +96,7 @@ describe("OnboardingWizard", () => {
     renderWithProviders(<OnboardingWizard {...defaultProps} />);
 
     expect(screen.getByTestId("onboarding-wizard")).toBeInTheDocument();
-    expect(screen.getByText("Character Onboarding Wizard")).toBeInTheDocument();
+    expect(screen.getByText("Avatar Onboarding Wizard")).toBeInTheDocument();
   });
 
   it("renders step indicator", () => {
@@ -223,7 +223,7 @@ describe("StepUpload", () => {
     );
 
     expect(screen.getByTestId("step-upload")).toBeInTheDocument();
-    expect(screen.getByText("Upload Characters")).toBeInTheDocument();
+    expect(screen.getByText("Upload Avatars")).toBeInTheDocument();
   });
 
   it("shows upload mode toggle", () => {
@@ -307,32 +307,32 @@ describe("StepSummary", () => {
       <StepSummary
         stepData={{
           scene_types: [1, 2],
-          metadata: [{ character_id: 1 }],
+          metadata: [{ avatar_id: 1 }],
           reviewed_variants: [{ approved: true }],
         }}
-        characterIds={[1, 2, 3]}
+        avatarIds={[1, 2, 3]}
         onComplete={onComplete}
       />,
     );
 
     expect(screen.getByTestId("step-summary")).toBeInTheDocument();
-    expect(screen.getByTestId("summary-characters")).toBeInTheDocument();
+    expect(screen.getByTestId("summary-avatars")).toBeInTheDocument();
     expect(screen.getByTestId("summary-variants")).toBeInTheDocument();
     expect(screen.getByTestId("summary-metadata")).toBeInTheDocument();
     expect(screen.getByTestId("summary-scene-types")).toBeInTheDocument();
   });
 
-  it("shows correct character count", () => {
+  it("shows correct avatar count", () => {
     const onComplete = vi.fn();
     renderWithProviders(
       <StepSummary
         stepData={{}}
-        characterIds={[1, 2, 3]}
+        avatarIds={[1, 2, 3]}
         onComplete={onComplete}
       />,
     );
 
-    expect(screen.getByTestId("summary-characters")).toHaveTextContent("3");
+    expect(screen.getByTestId("summary-avatars")).toHaveTextContent("3");
   });
 
   it("shows total generation cells", () => {
@@ -340,7 +340,7 @@ describe("StepSummary", () => {
     renderWithProviders(
       <StepSummary
         stepData={{ scene_types: [1, 2] }}
-        characterIds={[1, 2, 3]}
+        avatarIds={[1, 2, 3]}
         onComplete={onComplete}
       />,
     );
@@ -355,7 +355,7 @@ describe("StepSummary", () => {
     renderWithProviders(
       <StepSummary
         stepData={{}}
-        characterIds={[1]}
+        avatarIds={[1]}
         onComplete={onComplete}
       />,
     );
@@ -364,12 +364,12 @@ describe("StepSummary", () => {
     expect(onComplete).toHaveBeenCalledTimes(1);
   });
 
-  it("disables submit when no characters", () => {
+  it("disables submit when no avatars", () => {
     const onComplete = vi.fn();
     renderWithProviders(
       <StepSummary
         stepData={{}}
-        characterIds={[]}
+        avatarIds={[]}
         onComplete={onComplete}
       />,
     );
@@ -382,7 +382,7 @@ describe("StepSummary", () => {
     renderWithProviders(
       <StepSummary
         stepData={{}}
-        characterIds={[1]}
+        avatarIds={[1]}
         isSubmitting
         onComplete={onComplete}
       />,

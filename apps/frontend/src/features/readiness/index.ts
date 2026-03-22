@@ -1,9 +1,9 @@
 /**
- * Character Readiness & State View feature public API (PRD-107).
+ * Avatar Readiness & State View feature public API (PRD-107).
  */
 
 // Components
-export { CharacterLibraryStateView } from "./CharacterLibraryStateView";
+export { AvatarLibraryStateView } from "./AvatarLibraryStateView";
 export { MissingItemTags } from "./MissingItemTags";
 export { ReadinessCriteriaEditor } from "./ReadinessCriteriaEditor";
 export { ReadinessStateBadge } from "./ReadinessStateBadge";
@@ -13,7 +13,7 @@ export { ReadinessSummaryBar } from "./ReadinessSummaryBar";
 export {
   readinessKeys,
   useBatchEvaluate,
-  useCharacterReadiness,
+  useAvatarReadiness,
   useCreateCriteria,
   useCriteria,
   useDeleteCriteria,
@@ -25,7 +25,7 @@ export {
 // Types
 export type {
   BatchEvaluateRequest,
-  CharacterReadinessCache,
+  AvatarReadinessCache,
   CreateReadinessCriteria,
   CriteriaJson,
   CriteriaScopeType,

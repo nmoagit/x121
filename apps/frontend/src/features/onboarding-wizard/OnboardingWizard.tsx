@@ -1,5 +1,5 @@
 /**
- * Main wizard shell for bulk character onboarding (PRD-67).
+ * Main wizard shell for bulk avatar onboarding (PRD-67).
  *
  * Renders the step indicator, current step content, and navigation
  * buttons. Manages step transitions via the onboarding session API.
@@ -50,7 +50,7 @@ export function OnboardingWizard({
   onComplete,
   isLoading = false,
 }: OnboardingWizardProps) {
-  const { current_step: currentStep, step_data: stepData, character_ids: characterIds, status } = session;
+  const { current_step: currentStep, step_data: stepData, avatar_ids: avatarIds, status } = session;
 
   const isCompleted = status === "completed";
   const isAbandoned = status === "abandoned";
@@ -71,7 +71,7 @@ export function OnboardingWizard({
         return (
           <StepVariantGeneration
             stepData={stepData}
-            characterIds={characterIds}
+            avatarIds={avatarIds}
             onUpdateStepData={onUpdateStepData}
           />
         );
@@ -79,7 +79,7 @@ export function OnboardingWizard({
         return (
           <StepVariantReview
             stepData={stepData}
-            characterIds={characterIds}
+            avatarIds={avatarIds}
             onUpdateStepData={onUpdateStepData}
           />
         );
@@ -87,7 +87,7 @@ export function OnboardingWizard({
         return (
           <StepMetadata
             stepData={stepData}
-            characterIds={characterIds}
+            avatarIds={avatarIds}
             onUpdateStepData={onUpdateStepData}
           />
         );
@@ -102,7 +102,7 @@ export function OnboardingWizard({
         return (
           <StepSummary
             stepData={stepData}
-            characterIds={characterIds}
+            avatarIds={avatarIds}
             isSubmitting={isLoading}
             onComplete={onComplete}
           />
@@ -117,7 +117,7 @@ export function OnboardingWizard({
       {/* Header */}
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-bold text-[var(--color-text-primary)]">
-          Character Onboarding Wizard
+          Avatar Onboarding Wizard
         </h2>
         {isCompleted && (
           <Badge variant="success">Completed</Badge>

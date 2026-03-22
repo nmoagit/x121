@@ -69,7 +69,7 @@ export const CHECKLIST_ITEM_IDS = [
 
 /** Human-readable labels for each checklist item. */
 export const CHECKLIST_LABELS: Record<string, string> = {
-  upload_portrait: "Upload a character portrait",
+  upload_portrait: "Upload a avatar portrait",
   run_generation: "Run your first generation",
   approve_segment: "Approve a segment",
   configure_workflow: "Configure a workflow",

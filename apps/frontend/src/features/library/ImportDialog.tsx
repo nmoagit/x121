@@ -1,8 +1,8 @@
 /**
- * Import dialog for importing a library character into a project (PRD-60).
+ * Import dialog for importing a library avatar into a project (PRD-60).
  *
  * Allows users to select which metadata fields remain linked to the
- * library character vs. being independently editable copies.
+ * library avatar vs. being independently editable copies.
  */
 
 import { useCallback, useMemo, useState } from "react";
@@ -11,12 +11,12 @@ import { Button, Checkbox, Modal } from "@/components";
 import { cn } from "@/lib/cn";
 
 import { useImportToProject } from "./hooks/use-library";
-import type { LibraryCharacter } from "./types";
+import type { LibraryAvatar } from "./types";
 
 interface ImportDialogProps {
   open: boolean;
   onClose: () => void;
-  character: LibraryCharacter;
+  avatar: LibraryAvatar;
   projectId: number;
   projectName?: string;
 }
@@ -24,7 +24,7 @@ interface ImportDialogProps {
 export function ImportDialog({
   open,
   onClose,
-  character,
+  avatar,
   projectId,
   projectName,
 }: ImportDialogProps) {
@@ -61,7 +61,7 @@ export function ImportDialog({
   const handleImport = useCallback(() => {
     importMutation.mutate(
       {
-        libraryId: character.id,
+        libraryId: avatar.id,
         project_id: projectId,
         linked_fields: Array.from(selectedFields),
       },
@@ -71,13 +71,13 @@ export function ImportDialog({
         },
       },
     );
-  }, [importMutation, character.id, projectId, selectedFields, onClose]);
+  }, [importMutation, avatar.id, projectId, selectedFields, onClose]);
 
   return (
     <Modal
       open={open}
       onClose={onClose}
-      title={`Import "${character.name}"`}
+      title={`Import "${avatar.name}"`}
       size="md"
     >
       <div data-testid="import-dialog">
@@ -108,7 +108,7 @@ export function ImportDialog({
               </button>
             </div>
             <p className="text-xs text-[var(--color-text-muted)] mb-3">
-              Linked fields stay in sync with the library character. Unlinked
+              Linked fields stay in sync with the library avatar. Unlinked
               fields become independent copies.
             </p>
             <div
@@ -140,7 +140,7 @@ export function ImportDialog({
           </>
         ) : (
           <p className="text-sm text-[var(--color-text-muted)] mb-4">
-            No linkable metadata fields found. The character will be imported as
+            No linkable metadata fields found. The avatar will be imported as
             a standalone copy.
           </p>
         )}

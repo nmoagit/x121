@@ -2,7 +2,7 @@
  * Poster Frame TanStack Query hooks (PRD-96).
  *
  * Provides hooks for fetching, setting, adjusting, and auto-selecting
- * poster frames for characters and scenes.
+ * poster frames for avatars and scenes.
  */
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -32,7 +32,7 @@ export const posterFrameKeys = {
    Queries
    -------------------------------------------------------------------------- */
 
-/** Fetch the poster frame for a specific entity (character or scene). */
+/** Fetch the poster frame for a specific entity (avatar or scene). */
 export function useGetPosterFrame(entityType: string, entityId: number) {
   return useQuery({
     queryKey: posterFrameKeys.entity(entityType, entityId),
@@ -56,25 +56,25 @@ export function usePosterGallery(projectId: number) {
    Mutations
    -------------------------------------------------------------------------- */
 
-/** Set (upsert) a character's poster frame. */
-export function useSetCharacterPoster() {
+/** Set (upsert) a avatar's poster frame. */
+export function useSetAvatarPoster() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: ({
-      characterId,
+      avatarId,
       body,
     }: {
-      characterId: number;
+      avatarId: number;
       body: UpsertPosterFrame;
     }) =>
       api.post<PosterFrame>(
-        `/poster-frames/character/${characterId}`,
+        `/poster-frames/avatar/${avatarId}`,
         body,
       ),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({
-        queryKey: posterFrameKeys.entity("character", variables.characterId),
+        queryKey: posterFrameKeys.entity("avatar", variables.avatarId),
       });
       queryClient.invalidateQueries({
         queryKey: posterFrameKeys.all,
@@ -107,7 +107,7 @@ export function useSetScenePoster() {
   });
 }
 
-/** Auto-select the best poster frame for all characters in a project. */
+/** Auto-select the best poster frame for all avatars in a project. */
 export function useAutoSelectPosters() {
   const queryClient = useQueryClient();
 

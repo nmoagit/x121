@@ -1,8 +1,8 @@
 /**
  * Step 2: Variant Generation — batch trigger (PRD-67).
  *
- * Displays a list of characters from step 1 and provides a one-click
- * button to trigger variant generation for all characters.
+ * Displays a list of avatars from step 1 and provides a one-click
+ * button to trigger variant generation for all avatars.
  */
 
 import { Badge, Button } from "@/components";
@@ -14,8 +14,8 @@ import { Badge, Button } from "@/components";
 interface StepVariantGenerationProps {
   /** Current step data from the session. */
   stepData: Record<string, unknown>;
-  /** Character IDs from the session. */
-  characterIds: number[];
+  /** Avatar IDs from the session. */
+  avatarIds: number[];
   /** Callback to update step data. */
   onUpdateStepData: (data: Record<string, unknown>) => void;
 }
@@ -26,17 +26,17 @@ interface StepVariantGenerationProps {
 
 export function StepVariantGeneration({
   stepData,
-  characterIds,
+  avatarIds,
   onUpdateStepData,
 }: StepVariantGenerationProps) {
   const variantJobs = (stepData.variant_jobs as number[] | undefined) ?? [];
   const isGenerated = variantJobs.length > 0;
 
   function handleGenerate() {
-    // Simulate triggering variant generation for all characters.
+    // Simulate triggering variant generation for all avatars.
     // In a real implementation, this would call the variant generation API
     // and populate with actual job IDs.
-    const jobIds = characterIds.map((_, i) => i + 1);
+    const jobIds = avatarIds.map((_, i) => i + 1);
     onUpdateStepData({
       ...stepData,
       variant_jobs: jobIds,
@@ -49,17 +49,17 @@ export function StepVariantGeneration({
         Variant Generation
       </h3>
       <p className="text-sm text-[var(--color-text-secondary)]">
-        Generate variants for all {characterIds.length} characters in one click.
+        Generate variants for all {avatarIds.length} avatars in one click.
         Workers will process them in parallel.
       </p>
 
-      {/* Character count */}
+      {/* Avatar count */}
       <div
-        data-testid="character-count"
+        data-testid="avatar-count"
         className="rounded bg-[var(--color-surface-secondary)] p-3"
       >
         <span className="text-sm text-[var(--color-text-primary)]">
-          {characterIds.length} character(s) ready for variant generation
+          {avatarIds.length} avatar(s) ready for variant generation
         </span>
       </div>
 
@@ -69,7 +69,7 @@ export function StepVariantGeneration({
           data-testid="generate-btn"
           variant="primary"
           onClick={handleGenerate}
-          disabled={characterIds.length === 0}
+          disabled={avatarIds.length === 0}
         >
           Generate All Variants
         </Button>

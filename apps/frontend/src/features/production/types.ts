@@ -30,7 +30,7 @@ export interface ProductionRun {
 
 /** Matrix configuration stored in the run. */
 export interface MatrixConfig {
-  character_ids: number[];
+  avatar_ids: number[];
   scene_type_ids: number[];
 }
 
@@ -38,7 +38,7 @@ export interface MatrixConfig {
 export interface ProductionRunCell {
   id: number;
   run_id: number;
-  character_id: number;
+  avatar_id: number;
   scene_type_id: number;
   track_id: number | null;
   variant_label: string;
@@ -53,7 +53,7 @@ export interface ProductionRunCell {
   scene_type_name?: string;
   /** Track name — present in matrix response when track_id is set. */
   track_name?: string | null;
-  /** Whether a matching seed image exists for this character + track. */
+  /** Whether a matching seed image exists for this avatar + track. */
   has_seed?: boolean;
   /** Whether this scene type has a clothes-off transition. */
   has_clothes_off_transition?: boolean;
@@ -68,7 +68,7 @@ export interface CreateProductionRunRequest {
   project_id: number;
   name: string;
   description?: string | null;
-  character_ids: number[];
+  avatar_ids: number[];
   scene_type_ids: number[];
   estimated_gpu_hours?: number | null;
   estimated_disk_gb?: number | null;
@@ -78,7 +78,7 @@ export interface CreateProductionRunRequest {
 
 /** An entry from the enabled-scene-types endpoint. */
 export interface EnabledSceneTypeEntry {
-  character_id: number;
+  avatar_id: number;
   scene_type_id: number;
   scene_type_name: string;
   track_id: number | null;
@@ -86,7 +86,7 @@ export interface EnabledSceneTypeEntry {
   has_clothes_off_transition: boolean;
 }
 
-/** Deduplicated scene slot (union of enabled scene type entries across characters). */
+/** Deduplicated scene slot (union of enabled scene type entries across avatars). */
 export interface SceneSlotInfo {
   key: string;
   scene_type_id: number;

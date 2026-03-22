@@ -1,14 +1,14 @@
 /**
  * Queue Outstanding Modal (PRD-112, Amendments A.1, A.2, A.3).
  *
- * Displays all ungenerated scene-character combinations for a project,
+ * Displays all ungenerated scene-avatar combinations for a project,
  * allowing the user to select items for batch generation. Blocked items
  * (missing readiness requirements) are greyed out with a reason.
  *
  * Amendment A.2: "Include Already Generated" toggle reveals items with
  * existing final versions, showing a "vN exists" indicator.
  *
- * Amendment A.3: Archived characters (status_id === 3) are excluded.
+ * Amendment A.3: Archived avatars (status_id === 3) are excluded.
  */
 
 import { useQueries } from "@tanstack/react-query";
@@ -22,11 +22,11 @@ import { useSetToggle } from "@/hooks/useSetToggle";
 import { api } from "@/lib/api";
 import { Play } from "@/tokens/icons";
 
-import { useProjectCharacters } from "../hooks/use-project-characters";
-import { CHARACTER_STATUS_ID_ARCHIVED, type Character } from "../types";
+import { useProjectAvatars } from "../hooks/use-project-avatars";
+import { CHARACTER_STATUS_ID_ARCHIVED, type Avatar } from "../types";
 
 import { useBatchGenerate } from "@/features/generation/hooks/use-generation";
-import type { CharacterReadinessCache } from "@/features/readiness/types";
+import type { AvatarReadinessCache } from "@/features/readiness/types";
 import { useProjectSceneSettings } from "@/features/scene-catalogue/hooks/use-project-scene-settings";
 import type { EffectiveSceneSetting } from "@/features/scene-catalogue/types";
 import type { Scene, SceneVideoVersion } from "@/features/scenes/types";
@@ -35,11 +35,11 @@ import type { Scene, SceneVideoVersion } from "@/features/scenes/types";
    Types
    -------------------------------------------------------------------------- */
 
-/** A single scene-character combination to display in the modal. */
+/** A single scene-avatar combination to display in the modal. */
 interface QueueItem {
   /** Unique key for the item. */
   key: string;
-  character: Character;
+  avatar: Avatar;
   setting: EffectiveSceneSetting;
   /** The scene record, if it exists. */
   scene: Scene | null;
@@ -59,8 +59,8 @@ interface QueueOutstandingModalProps {
   open: boolean;
   onClose: () => void;
   projectId: number;
-  /** When set, scope to a single character instead of the entire project. */
-  characterId?: number;
+  /** When set, scope to a single avatar instead of the entire project. */
+  avatarId?: number;
 }
 
 /* --------------------------------------------------------------------------
@@ -108,7 +108,7 @@ export function QueueOutstandingModal({
   open,
   onClose,
   projectId,
-  characterId,
+  avatarId,
 }: QueueOutstandingModalProps) {
   /* --- toggle state (A.2) --- */
   const [includeGenerated, setIncludeGenerated] = useState(false);
@@ -122,20 +122,20 @@ export function QueueOutstandingModal({
     }
   }, [open]);
 
-  /* --- fetch project characters --- */
-  const { data: allCharacters, isLoading: charsLoading } = useProjectCharacters(projectId);
+  /* --- fetch project avatars --- */
+  const { data: allAvatars, isLoading: charsLoading } = useProjectAvatars(projectId);
 
-  /* --- filter out archived characters (A.3) and optionally scope to single character --- */
-  const activeCharacters = useMemo(() => {
-    if (!allCharacters) return [];
-    return allCharacters.filter((c) => {
+  /* --- filter out archived avatars (A.3) and optionally scope to single avatar --- */
+  const activeAvatars = useMemo(() => {
+    if (!allAvatars) return [];
+    return allAvatars.filter((c) => {
       if (c.status_id === CHARACTER_STATUS_ID_ARCHIVED) return false;
-      if (characterId != null && c.id !== characterId) return false;
+      if (avatarId != null && c.id !== avatarId) return false;
       return true;
     });
-  }, [allCharacters, characterId]);
+  }, [allAvatars, avatarId]);
 
-  const characterIds = useMemo(() => activeCharacters.map((c) => c.id), [activeCharacters]);
+  const avatarIds = useMemo(() => activeAvatars.map((c) => c.id), [activeAvatars]);
 
   /* --- fetch project scene settings (enabled scenes) --- */
   const { data: sceneSettings, isLoading: settingsLoading } = useProjectSceneSettings(projectId);
@@ -145,20 +145,20 @@ export function QueueOutstandingModal({
     [sceneSettings],
   );
 
-  /* --- batch fetch scenes per character --- */
+  /* --- batch fetch scenes per avatar --- */
   const { map: scenesMap, isLoading: scenesLoading } = useBatchQueryMap<Scene[]>(
-    characterIds,
-    ["scenes", "character"],
-    (cid) => `/characters/${cid}/scenes`,
-    open && characterIds.length > 0,
+    avatarIds,
+    ["scenes", "avatar"],
+    (cid) => `/avatars/${cid}/scenes`,
+    open && avatarIds.length > 0,
   );
 
-  /* --- batch fetch readiness per character --- */
-  const { map: readinessMap, isLoading: readinessLoading } = useBatchQueryMap<CharacterReadinessCache>(
-    characterIds,
-    ["readiness", "character"],
-    (cid) => `/characters/${cid}/readiness`,
-    open && characterIds.length > 0,
+  /* --- batch fetch readiness per avatar --- */
+  const { map: readinessMap, isLoading: readinessLoading } = useBatchQueryMap<AvatarReadinessCache>(
+    avatarIds,
+    ["readiness", "avatar"],
+    (cid) => `/avatars/${cid}/readiness`,
+    open && avatarIds.length > 0,
   );
 
   /* --- collect all existing scene IDs for version fetching --- */
@@ -182,9 +182,9 @@ export function QueueOutstandingModal({
   const allItems = useMemo<QueueItem[]>(() => {
     const items: QueueItem[] = [];
 
-    for (const character of activeCharacters) {
-      const readiness = readinessMap.get(character.id);
-      const scenes = scenesMap.get(character.id) ?? [];
+    for (const avatar of activeAvatars) {
+      const readiness = readinessMap.get(avatar.id);
+      const scenes = scenesMap.get(avatar.id) ?? [];
 
       for (const setting of enabledSettings) {
         // Find matching scene
@@ -213,17 +213,17 @@ export function QueueOutstandingModal({
           blockingReason =
             readiness.missing_items.length > 0 ? readiness.missing_items.join(", ") : "Not ready";
         } else if (readiness && readiness.state === "partially_ready") {
-          // Partially ready characters can still generate, but flag missing items
+          // Partially ready avatars can still generate, but flag missing items
           if (readiness.missing_items.length > 0) {
             blockingReason = readiness.missing_items.join(", ");
           }
         }
 
-        const key = `${character.id}::${setting.scene_type_id}::${setting.track_id ?? "null"}`;
+        const key = `${avatar.id}::${setting.scene_type_id}::${setting.track_id ?? "null"}`;
 
         items.push({
           key,
-          character,
+          avatar,
           setting,
           scene,
           hasFinalVersion,
@@ -234,7 +234,7 @@ export function QueueOutstandingModal({
     }
 
     return items;
-  }, [activeCharacters, enabledSettings, scenesMap, readinessMap, versionsMap]);
+  }, [activeAvatars, enabledSettings, scenesMap, readinessMap, versionsMap]);
 
   /* --- filter items based on "Include Already Generated" toggle --- */
   const visibleItems = useMemo(() => {
@@ -272,7 +272,7 @@ export function QueueOutstandingModal({
 
   function handleQueue() {
     // Collect scene IDs from selected items. For items without a scene,
-    // the scene would need to be auto-created first (similar to CharacterScenesTab).
+    // the scene would need to be auto-created first (similar to AvatarScenesTab).
     const sceneIds: number[] = [];
     for (const item of visibleItems) {
       if (!selected.has(item.key)) continue;
@@ -353,7 +353,7 @@ export function QueueOutstandingModal({
         {!isLoading && visibleItems.length === 0 && (
           <div className="py-8 text-center text-xs font-mono text-[var(--color-text-muted)]">
             {includeGenerated
-              ? "No scene-character combinations found."
+              ? "No scene-avatar combinations found."
               : "All scenes have been generated. Enable 'Include Already Generated' to see them."}
           </div>
         )}
@@ -390,7 +390,7 @@ export function QueueOutstandingModal({
                     checked={isChecked}
                     onChange={() => toggleSelected(item.key)}
                     disabled={blocked}
-                    label={`${item.character.name} - ${item.setting.name}${item.setting.track_name ? ` (${item.setting.track_name})` : ""}`}
+                    label={`${item.avatar.name} - ${item.setting.name}${item.setting.track_name ? ` (${item.setting.track_name})` : ""}`}
                   />
 
                   <div className="flex items-center gap-2 ml-auto shrink-0 font-mono text-xs">

@@ -1,5 +1,5 @@
 /**
- * Single character consistency report card (PRD-94).
+ * Single avatar consistency report card (PRD-94).
  *
  * Displays overall score, outlier count, report type badge, and
  * a generate button when no report exists yet.
@@ -22,7 +22,7 @@ import {
    -------------------------------------------------------------------------- */
 
 interface ConsistencyReportCardProps {
-  characterName: string;
+  avatarName: string;
   report: ConsistencyReport | null;
   isGenerating?: boolean;
   onGenerate?: (reportType: ConsistencyReportType) => void;
@@ -30,7 +30,7 @@ interface ConsistencyReportCardProps {
 }
 
 export function ConsistencyReportCard({
-  characterName,
+  avatarName,
   report,
   isGenerating = false,
   onGenerate,
@@ -59,10 +59,10 @@ export function ConsistencyReportCard({
             }
           }}
         >
-          {/* Left: character name + badges */}
+          {/* Left: avatar name + badges */}
           <div className="flex items-center gap-3 min-w-0">
             <span className="text-sm font-medium text-[var(--color-text-primary)] truncate">
-              {characterName}
+              {avatarName}
             </span>
             {hasReport && (
               <Badge

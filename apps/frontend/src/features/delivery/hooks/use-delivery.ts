@@ -208,17 +208,17 @@ export function useDeliveryExport(projectId: number, exportId: number) {
    -------------------------------------------------------------------------- */
 
 /** Run pre-export validation for a project (on demand).
- *  When `characterIds` is provided, only those models are validated. */
+ *  When `avatarIds` is provided, only those models are validated. */
 export function useDeliveryValidation(
   projectId: number,
   enabled = false,
-  characterIds?: number[] | null,
+  avatarIds?: number[] | null,
 ) {
-  const idsParam = characterIds && characterIds.length > 0
-    ? `?character_ids=${characterIds.join(",")}`
+  const idsParam = avatarIds && avatarIds.length > 0
+    ? `?avatar_ids=${avatarIds.join(",")}`
     : "";
   return useQuery({
-    queryKey: [...deliveryKeys.validation(projectId), characterIds ?? "all"],
+    queryKey: [...deliveryKeys.validation(projectId), avatarIds ?? "all"],
     queryFn: () =>
       api.get<DeliveryValidationResponse>(
         `/projects/${projectId}/delivery-validation${idsParam}`,

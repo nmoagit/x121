@@ -197,34 +197,34 @@ export function useExportGroupSettings() {
 }
 
 /* --------------------------------------------------------------------------
-   Character Settings export
+   Avatar Settings export
    -------------------------------------------------------------------------- */
 
-export function useExportCharacterSettings() {
+export function useExportAvatarSettings() {
   const [state, setState] = useState<ExportState>({ exporting: false, error: null });
 
   const exportConfig = useCallback(
-    async (projectId: number, characterId: number, characterName: string) => {
+    async (projectId: number, avatarId: number, avatarName: string) => {
       setState({ exporting: true, error: null });
       try {
         const [pipelineSettings, sceneSettings, sceneTypes] = await Promise.all([
-          api.get(`/projects/${projectId}/characters/${characterId}/settings`).catch(() => ({})),
-          api.get(`/characters/${characterId}/scene-settings`),
+          api.get(`/projects/${projectId}/avatars/${avatarId}/settings`).catch(() => ({})),
+          api.get(`/avatars/${avatarId}/scene-settings`),
           api.get<{ id: number; name: string }[]>("/scene-types"),
         ]);
 
         const promptOverrides = await Promise.all(
           sceneTypes.map((st) =>
             api
-              .get(`/characters/${characterId}/scenes/${st.id}/prompt-overrides`)
+              .get(`/avatars/${avatarId}/scenes/${st.id}/prompt-overrides`)
               .catch(() => []),
           ),
         );
 
-        const envelope = createEnvelope("character-settings", characterName, {
+        const envelope = createEnvelope("avatar-settings", avatarName, {
           project_id: projectId,
-          character_id: characterId,
-          character_name: characterName,
+          avatar_id: avatarId,
+          avatar_name: avatarName,
           pipeline_settings: pipelineSettings,
           scene_settings: sceneSettings,
           prompt_overrides: sceneTypes.map((st, i) => ({
@@ -236,7 +236,7 @@ export function useExportCharacterSettings() {
 
         downloadConfig(
           envelope,
-          `character-settings-${safeFilename(characterName)}.json`,
+          `avatar-settings-${safeFilename(avatarName)}.json`,
         );
         setState({ exporting: false, error: null });
       } catch (err) {

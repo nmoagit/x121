@@ -17,10 +17,10 @@ import type { FailurePattern, PatternFix } from "../types";
 const mockPattern: FailurePattern = {
   id: 42,
   pattern_key: "w:5:c:12",
-  description: "High failure when using LoRA A with Character B",
+  description: "High failure when using LoRA A with Avatar B",
   dimension_workflow_id: 5,
   dimension_lora_id: 3,
-  dimension_character_id: 12,
+  dimension_avatar_id: 12,
   dimension_scene_type_id: null,
   dimension_segment_position: "6+",
   failure_count: 8,
@@ -94,7 +94,7 @@ describe("PatternDetail", () => {
     renderWithProviders(<PatternDetail pattern={mockPattern} />);
 
     expect(
-      screen.getByText("High failure when using LoRA A with Character B"),
+      screen.getByText("High failure when using LoRA A with Avatar B"),
     ).toBeInTheDocument();
   });
 
@@ -102,7 +102,7 @@ describe("PatternDetail", () => {
     renderWithProviders(<PatternDetail pattern={mockPattern} />);
 
     expect(screen.getByText("#5")).toBeInTheDocument(); // workflow
-    expect(screen.getByText("#12")).toBeInTheDocument(); // character
+    expect(screen.getByText("#12")).toBeInTheDocument(); // avatar
     expect(screen.getByText("#3")).toBeInTheDocument(); // lora
     expect(screen.getByText("6+")).toBeInTheDocument(); // segment position
   });

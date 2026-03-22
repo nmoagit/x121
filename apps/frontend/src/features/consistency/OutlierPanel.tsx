@@ -1,5 +1,5 @@
 /**
- * Outlier scene panel for character consistency (PRD-94).
+ * Outlier scene panel for avatar consistency (PRD-94).
  *
  * Lists scenes identified as outliers with their IDs, and provides
  * a re-queue action per outlier.

@@ -7,17 +7,17 @@ import { useCallback, useState } from "react";
 import { ConfirmModal } from "@/components/composite";
 import { FileDropZone, StatTicker } from "@/components/domain";
 import { Stack } from "@/components/layout";
-import { FileAssignmentModal } from "@/features/characters/components";
-import type { BulkImportReport } from "@/features/characters/types";
+import { FileAssignmentModal } from "@/features/avatars/components";
+import type { BulkImportReport } from "@/features/avatars/types";
 import {
   TERMINAL_HEADER_TITLE,
 } from "@/lib/ui-classes";
 
-import { CharacterDeliverablesGrid } from "../components/CharacterDeliverablesGrid";
+import { AvatarDeliverablesGrid } from "../components/AvatarDeliverablesGrid";
 import { ImportConfirmModal } from "../components/ImportConfirmModal";
 import { ImportProgressBar } from "../components/ImportProgressBar";
-import { useCharacterImport } from "../hooks/use-character-import";
-import { useProjectCharacters } from "../hooks/use-project-characters";
+import { useAvatarImport } from "../hooks/use-avatar-import";
+import { useProjectAvatars } from "../hooks/use-project-avatars";
 import { SpeechImportResultModal } from "../components/SpeechImportResultModal";
 import { VoiceImportConfirmModal, VoiceImportResultModal } from "../components/VoiceImportModals";
 import { useBulkImportSpeeches } from "../hooks/use-project-speech-import";
@@ -34,9 +34,9 @@ interface ProjectOverviewTabProps {
 }
 
 export function ProjectOverviewTab({ projectId, stats }: ProjectOverviewTabProps) {
-  const charImport = useCharacterImport(projectId);
-  const { data: characters } = useProjectCharacters(projectId);
-  const existingNames = characters?.map((c) => c.name) ?? [];
+  const charImport = useAvatarImport(projectId);
+  const { data: avatars } = useProjectAvatars(projectId);
+  const existingNames = avatars?.map((c) => c.name) ?? [];
   const bulkSpeechImport = useBulkImportSpeeches(projectId);
 
   /* --- speech import from dropped file --- */
@@ -62,7 +62,7 @@ export function ProjectOverviewTab({ projectId, stats }: ProjectOverviewTabProps
   }
 
   /* --- voice ID import from dropped CSV --- */
-  const voiceFlow = useVoiceImportFlow(projectId, characters ?? []);
+  const voiceFlow = useVoiceImportFlow(projectId, avatars ?? []);
 
   if (!stats) {
     return (
@@ -81,11 +81,11 @@ export function ProjectOverviewTab({ projectId, stats }: ProjectOverviewTabProps
       browseFolderRef={charImport.browseFolderRef}
     >
     <Stack gap={6}>
-      {/* Character stats ticker */}
+      {/* Avatar stats ticker */}
       <StatTicker stats={[
-        { label: "Models", value: `${stats.characters_ready}/${stats.character_count}`, tooltip: `${stats.characters_ready} ready / ${stats.character_count} total`, complete: stats.character_count > 0 && stats.characters_ready >= stats.character_count },
-        { label: "Draft", value: stats.characters_draft },
-        { label: "Active", value: stats.characters_active, complete: stats.characters_active > 0 },
+        { label: "Avatars", value: `${stats.avatars_ready}/${stats.avatar_count}`, tooltip: `${stats.avatars_ready} ready / ${stats.avatar_count} total`, complete: stats.avatar_count > 0 && stats.avatars_ready >= stats.avatar_count },
+        { label: "Draft", value: stats.avatars_draft },
+        { label: "Active", value: stats.avatars_active, complete: stats.avatars_active > 0 },
       ]} />
 
       {/* Scene stats ticker */}
@@ -106,12 +106,12 @@ export function ProjectOverviewTab({ projectId, stats }: ProjectOverviewTabProps
         },
       ]} />
 
-      {/* Per-character deliverables grid */}
+      {/* Per-avatar deliverables grid */}
       <div>
         <h2 className={`${TERMINAL_HEADER_TITLE} mb-[var(--spacing-3)]`}>
           Model Deliverables
         </h2>
-        <CharacterDeliverablesGrid projectId={projectId} />
+        <AvatarDeliverablesGrid projectId={projectId} />
       </div>
     </Stack>
 
@@ -133,7 +133,7 @@ export function ProjectOverviewTab({ projectId, stats }: ProjectOverviewTabProps
       payloads={charImport.importPayloads}
       projectId={projectId}
       existingNames={existingNames}
-      characters={characters}
+      avatars={avatars}
       onConfirm={charImport.handleImportConfirm}
       onConfirmWithAssets={charImport.handleImportConfirmWithAssets}
       loading={charImport.bulkCreatePending}
@@ -165,7 +165,7 @@ export function ProjectOverviewTab({ projectId, stats }: ProjectOverviewTabProps
           if (speechImport.format === "json") {
             const parsed = JSON.parse(speechImport.data) as Record<string, unknown>;
             for (const [charSlug, typesVal] of Object.entries(parsed)) {
-              const matched = characters?.some((c) => slugify(c.name) === slugify(charSlug)) ?? false;
+              const matched = avatars?.some((c) => slugify(c.name) === slugify(charSlug)) ?? false;
               for (const [typeName, langsVal] of Object.entries(typesVal as Record<string, unknown>)) {
                 for (const [langName, textsVal] of Object.entries(langsVal as Record<string, unknown>)) {
                   const count = Array.isArray(textsVal) ? textsVal.length : 0;
@@ -191,7 +191,7 @@ export function ProjectOverviewTab({ projectId, stats }: ProjectOverviewTabProps
                   type: parts[2]!,
                   lang: parts[3]!,
                   count: 1,
-                  matched: characters?.some((c) => slugify(c.name) === slugify(charSlug)) ?? false,
+                  matched: avatars?.some((c) => slugify(c.name) === slugify(charSlug)) ?? false,
                 });
               }
             }
@@ -205,14 +205,14 @@ export function ProjectOverviewTab({ projectId, stats }: ProjectOverviewTabProps
           return (
             <Stack gap={2}>
               <p className="text-xs font-mono">
-                <span className="text-[var(--color-text-primary)]">{totalChars}</span> characters, <span className="text-[var(--color-text-primary)]">{rows.length}</span> combinations, <span className="text-[var(--color-text-primary)]">{totalEntries}</span> entries total.
+                <span className="text-[var(--color-text-primary)]">{totalChars}</span> avatars, <span className="text-[var(--color-text-primary)]">{rows.length}</span> combinations, <span className="text-[var(--color-text-primary)]">{totalEntries}</span> entries total.
                 {" "}<span className="text-[var(--color-text-muted)]">(<span className="text-green-400">{matchedCount} matched</span>, <span className="text-orange-400">{totalChars - matchedCount} unmatched</span>)</span>
               </p>
               <div className="max-h-80 overflow-y-auto rounded border border-[var(--color-border-default)]">
                 <table className="w-full text-xs font-mono">
                   <thead className="sticky top-0 bg-[#161b22]">
                     <tr>
-                      <th className="text-left px-2 py-1.5 font-medium text-[var(--color-text-muted)]">Character</th>
+                      <th className="text-left px-2 py-1.5 font-medium text-[var(--color-text-muted)]">Avatar</th>
                       <th className="text-left px-2 py-1.5 font-medium text-[var(--color-text-muted)]">Speech Type</th>
                       <th className="text-left px-2 py-1.5 font-medium text-[var(--color-text-muted)]">Language</th>
                       <th className="text-right px-2 py-1.5 font-medium text-[var(--color-text-muted)]">Entries</th>
@@ -259,7 +259,7 @@ export function ProjectOverviewTab({ projectId, stats }: ProjectOverviewTabProps
         open
         onClose={() => voiceFlow.setVoiceImport(null)}
         entries={voiceFlow.voiceImport}
-        characters={characters ?? []}
+        avatars={avatars ?? []}
         mode={voiceFlow.voiceImportMode}
         onModeChange={voiceFlow.setVoiceImportMode}
         loading={voiceFlow.bulkVoiceImport.isPending}

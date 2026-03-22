@@ -1,7 +1,7 @@
 /**
  * Variant gallery with hero selection, approve/reject/delete actions (PRD-21).
  *
- * Displays all image variants for a character in a responsive grid.
+ * Displays all image variants for a avatar in a responsive grid.
  * The source image is shown on the left for side-by-side comparison.
  */
 
@@ -148,17 +148,17 @@ function VariantCard({
    -------------------------------------------------------------------------- */
 
 interface VariantGalleryProps {
-  characterId: number;
+  avatarId: number;
   sourceImageUrl?: string;
 }
 
-export function VariantGallery({ characterId, sourceImageUrl }: VariantGalleryProps) {
-  const { data: variants, isLoading } = useImageVariants(characterId);
-  const approveMutation = useApproveVariant(characterId);
-  const unapproveMutation = useUnapproveVariant(characterId);
-  const rejectMutation = useRejectVariant(characterId);
-  const exportMutation = useExportVariant(characterId);
-  const deleteMutation = useDeleteImageVariant(characterId);
+export function VariantGallery({ avatarId, sourceImageUrl }: VariantGalleryProps) {
+  const { data: variants, isLoading } = useImageVariants(avatarId);
+  const approveMutation = useApproveVariant(avatarId);
+  const unapproveMutation = useUnapproveVariant(avatarId);
+  const rejectMutation = useRejectVariant(avatarId);
+  const exportMutation = useExportVariant(avatarId);
+  const deleteMutation = useDeleteImageVariant(avatarId);
   const [previewVariant, setPreviewVariant] = useState<ImageVariant | null>(null);
 
   const handleApprove = useCallback(

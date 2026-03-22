@@ -69,7 +69,7 @@ export interface DeliveryExport {
   status_id: number;
   exported_by: number;
   include_watermark: boolean;
-  characters_json: unknown | null;
+  avatars_json: unknown | null;
   file_path: string | null;
   file_size_bytes: number | null;
   validation_results_json: unknown | null;
@@ -83,7 +83,7 @@ export interface DeliveryExport {
 /** Request body for starting an assembly job. */
 export interface StartAssemblyRequest {
   format_profile_id: number;
-  character_ids?: number[] | null;
+  avatar_ids?: number[] | null;
   include_watermark: boolean;
 }
 
@@ -169,19 +169,19 @@ export interface DeliveryLog {
    Delivery status types (PRD-39 Amendment A.4)
    -------------------------------------------------------------------------- */
 
-/** Per-character delivery status. */
-export interface CharacterDeliveryStatus {
-  character_id: number;
-  character_name: string;
+/** Per-avatar delivery status. */
+export interface AvatarDeliveryStatus {
+  avatar_id: number;
+  avatar_name: string;
   status: "delivered" | "needs_redelivery" | "not_delivered";
   last_delivered_at: string | null;
-  /** ID of the latest completed export containing this character. */
+  /** ID of the latest completed export containing this avatar. */
   export_id: number | null;
 }
 
 /** Map delivery status to Badge variant. */
 export const DELIVERY_STATUS_VARIANT: Record<
-  CharacterDeliveryStatus["status"],
+  AvatarDeliveryStatus["status"],
   BadgeVariant
 > = {
   delivered: "success",
@@ -191,7 +191,7 @@ export const DELIVERY_STATUS_VARIANT: Record<
 
 /** Map delivery status to display label. */
 export const DELIVERY_STATUS_LABELS: Record<
-  CharacterDeliveryStatus["status"],
+  AvatarDeliveryStatus["status"],
   string
 > = {
   delivered: "Delivered",

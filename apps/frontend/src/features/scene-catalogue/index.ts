@@ -11,10 +11,10 @@ export { SourceBadge, sourceLabel } from "./SourceBadge";
 export { SceneSettingRow } from "./SceneSettingRow";
 export type { SceneSettingRowProps } from "./SceneSettingRow";
 export { ProjectSceneSettings } from "./ProjectSceneSettings";
-export { CharacterSceneOverrides } from "./CharacterSceneOverrides";
+export { AvatarSceneOverrides } from "./AvatarSceneOverrides";
 export { GroupSceneOverrides } from "./GroupSceneOverrides";
 export { SceneSettingOverridesPanel } from "./SceneSettingOverridesPanel";
-export { CharacterWorkflowOverrides } from "./CharacterWorkflowOverrides";
+export { AvatarWorkflowOverrides } from "./AvatarWorkflowOverrides";
 export { GroupWorkflowOverrides } from "./GroupWorkflowOverrides";
 export { ProjectWorkflowOverrides } from "./ProjectWorkflowOverrides";
 export { WorkflowAssignmentTable } from "./WorkflowAssignmentTable";
@@ -55,14 +55,14 @@ export {
   useRemoveGroupSceneOverride,
 } from "./hooks/use-group-scene-settings";
 
-// Hooks — Character scene settings
+// Hooks — Avatar scene settings
 export {
-  characterSceneSettingKeys,
-  useCharacterSceneSettings,
-  useBulkUpdateCharacterSceneSettings,
-  useToggleCharacterSceneSetting,
-  useRemoveCharacterSceneOverride,
-} from "./hooks/use-character-scene-settings";
+  avatarSceneSettingKeys,
+  useAvatarSceneSettings,
+  useBulkUpdateAvatarSceneSettings,
+  useToggleAvatarSceneSetting,
+  useRemoveAvatarSceneOverride,
+} from "./hooks/use-avatar-scene-settings";
 
 // Hooks — Track configs (per-track workflow & prompt overrides)
 export {

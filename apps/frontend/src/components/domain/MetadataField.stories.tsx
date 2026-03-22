@@ -33,7 +33,7 @@ export const Horizontal: Story = {
 export const MultipleFields: Story = {
   render: () => (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-      <MetadataField label="Name" value="AI Character Alpha" />
+      <MetadataField label="Name" value="AI Avatar Alpha" />
       <MetadataField label="Type" value="Conversational Agent" />
       <MetadataField label="Created" value="February 20, 2026" />
       <MetadataField label="Last Modified" value="2 hours ago" />

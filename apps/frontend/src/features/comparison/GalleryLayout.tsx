@@ -1,7 +1,7 @@
 /**
  * Shared gallery layout for comparison views (PRD-68).
  *
- * Extracted from SceneGallery and CharacterAllScenes to eliminate
+ * Extracted from SceneGallery and AvatarAllScenes to eliminate
  * duplicated toolbar, sync-play, grid rendering, and empty/loading states.
  */
 
@@ -27,9 +27,9 @@ interface GalleryLayoutProps {
   /** Header rendered above the toolbar (optional). */
   header?: ReactNode;
   /** Which field from ComparisonCell to use as each cell's primary label. */
-  cellLabelField?: "character_name" | "scene_type_name";
+  cellLabelField?: "avatar_name" | "scene_type_name";
   /** React key field for each cell. */
-  cellKeyField?: "character_id" | "scene_type_id";
+  cellKeyField?: "avatar_id" | "scene_type_id";
   /** Empty state message. */
   emptyTitle?: string;
   emptyDescription?: string;
@@ -44,8 +44,8 @@ export function GalleryLayout({
   cells,
   isLoading,
   header,
-  cellLabelField = "character_name",
-  cellKeyField = "character_id",
+  cellLabelField = "avatar_name",
+  cellKeyField = "avatar_id",
   emptyTitle = "No scenes to compare",
   emptyDescription = "Generate scenes to see them here.",
   className,

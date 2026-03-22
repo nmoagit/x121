@@ -25,12 +25,12 @@ export const sceneTypeKeys = {
     [...sceneTypeKeys.lists(), { projectId }] as const,
   details: () => [...sceneTypeKeys.all, "detail"] as const,
   detail: (id: number) => [...sceneTypeKeys.details(), id] as const,
-  preview: (sceneTypeId: number, characterId: number, clipPosition?: string) =>
+  preview: (sceneTypeId: number, avatarId: number, clipPosition?: string) =>
     [
       ...sceneTypeKeys.all,
       "preview",
       sceneTypeId,
-      characterId,
+      avatarId,
       clipPosition,
     ] as const,
 };
@@ -61,25 +61,25 @@ export function useSceneType(id: number | null) {
   });
 }
 
-/** Preview a resolved prompt for a given scene type and character. */
+/** Preview a resolved prompt for a given scene type and avatar. */
 export function usePreviewPrompt(
   sceneTypeId: number | null,
-  characterId: number | null,
+  avatarId: number | null,
   clipPosition?: string,
 ) {
   return useQuery({
     queryKey: sceneTypeKeys.preview(
       sceneTypeId ?? 0,
-      characterId ?? 0,
+      avatarId ?? 0,
       clipPosition,
     ),
     queryFn: () => {
       const params = clipPosition ? `?clip_position=${clipPosition}` : "";
       return api.get<PromptPreviewResponse>(
-        `/scene-types/${sceneTypeId}/preview-prompt/${characterId}${params}`,
+        `/scene-types/${sceneTypeId}/preview-prompt/${avatarId}${params}`,
       );
     },
-    enabled: sceneTypeId !== null && characterId !== null,
+    enabled: sceneTypeId !== null && avatarId !== null,
   });
 }
 
@@ -126,10 +126,10 @@ export function useDeleteSceneType() {
   });
 }
 
-/** Generate the scene matrix for given characters and scene types. */
+/** Generate the scene matrix for given avatars and scene types. */
 export function useGenerateMatrix() {
   return useMutation({
-    mutationFn: (data: { character_ids: number[]; scene_type_ids: number[] }) =>
+    mutationFn: (data: { avatar_ids: number[]; scene_type_ids: number[] }) =>
       api.post<MatrixCell[]>("/scene-types/matrix", data),
   });
 }

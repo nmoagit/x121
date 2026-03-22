@@ -38,8 +38,8 @@ export interface BatchMetadataOperation {
   status_id: number;
   operation_type: BatchOperationType;
   project_id: number;
-  character_ids: number[];
-  character_count: number;
+  avatar_ids: number[];
+  avatar_count: number;
   parameters: Record<string, unknown>;
   before_snapshot: Record<string, unknown>;
   after_snapshot: Record<string, unknown>;
@@ -59,7 +59,7 @@ export interface BatchMetadataOperation {
 export interface CreateBatchMetadataRequest {
   operation_type: BatchOperationType;
   project_id: number;
-  character_ids: number[];
+  avatar_ids: number[];
   parameters?: Record<string, unknown>;
   field_name?: string;
 }

@@ -28,7 +28,7 @@ interface SearchResultsProps {
    -------------------------------------------------------------------------- */
 
 const BADGE_VARIANT_MAP: Record<string, "info" | "success" | "warning"> = {
-  character: "info",
+  avatar: "info",
   project: "success",
   scene_type: "warning",
 };

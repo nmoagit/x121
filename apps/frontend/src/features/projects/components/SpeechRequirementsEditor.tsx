@@ -10,7 +10,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Stack } from "@/components/layout";
 import { Button, FlagIcon, Tooltip } from "@/components/primitives";
 import { TERMINAL_TH, TERMINAL_DIVIDER, TERMINAL_SELECT } from "@/lib/ui-classes";
-import type { Language, ProjectSpeechConfigEntry, SpeechType } from "@/features/characters/types";
+import type { Language, ProjectSpeechConfigEntry, SpeechType } from "@/features/avatars/types";
 import { Plus, Save, Wand2 } from "@/tokens/icons";
 
 /* --------------------------------------------------------------------------

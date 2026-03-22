@@ -1,5 +1,5 @@
 import { Link, useParams } from "@tanstack/react-router";
-import { AssignmentDashboard } from "@/features/character-review/AssignmentDashboard";
+import { AssignmentDashboard } from "@/features/avatar-review/AssignmentDashboard";
 import { ChevronLeft } from "@/tokens/icons";
 
 export function AssignmentDashboardPage() {

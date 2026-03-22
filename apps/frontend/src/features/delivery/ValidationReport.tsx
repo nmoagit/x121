@@ -19,7 +19,7 @@ import type { DeliveryValidationResponse } from "./types";
 
 /** Human-readable labels for validation categories. */
 const CATEGORY_LABELS: Record<string, string> = {
-  missing_characters: "No Models",
+  missing_avatars: "No Models",
   missing_final_video: "Missing Video",
   non_h264_codec: "Codec Warning",
   no_scenes: "No Scenes",
@@ -39,15 +39,15 @@ interface ValidationReportProps {
   /** Pre-loaded validation data (for testing or SSR). */
   initialData?: DeliveryValidationResponse;
   /** When provided, only these models are validated. Null/undefined = all. */
-  characterIds?: number[] | null;
+  avatarIds?: number[] | null;
 }
 
-export function ValidationReport({ projectId, initialData, characterIds }: ValidationReportProps) {
+export function ValidationReport({ projectId, initialData, avatarIds }: ValidationReportProps) {
   const queryClient = useQueryClient();
   const [enabled, setEnabled] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [cleared, setCleared] = useState(false);
-  const { data, isLoading, isError, error, refetch } = useDeliveryValidation(projectId, enabled, characterIds);
+  const { data, isLoading, isError, error, refetch } = useDeliveryValidation(projectId, enabled, avatarIds);
 
   const result = cleared ? undefined : (data ?? initialData);
   const hasResult = result != null;

@@ -18,7 +18,7 @@ describe("PromptEditor", () => {
     expect(screen.getByTestId("negative-prompt-input")).toBeInTheDocument();
   });
 
-  it("displays character count for positive prompt", () => {
+  it("displays avatar count for positive prompt", () => {
     renderWithProviders(
       <PromptEditor sceneTypeId={1} initialPositive="hello world" />,
     );

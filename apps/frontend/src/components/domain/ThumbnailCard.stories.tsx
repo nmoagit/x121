@@ -13,7 +13,7 @@ type Story = StoryObj<typeof meta>;
 export const WithImage: Story = {
   args: {
     src: "https://picsum.photos/seed/x121/400/225",
-    title: "AI Character Alpha",
+    title: "AI Avatar Alpha",
     subtitle: "Created 2 days ago",
   },
 };

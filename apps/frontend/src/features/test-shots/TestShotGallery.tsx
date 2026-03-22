@@ -3,7 +3,7 @@
  *
  * Displays a grid of test shot cards with video thumbnails, quality badges,
  * parameter tooltips, and promote/delete actions. Supports filtering by
- * character and sorting by date or quality.
+ * avatar and sorting by date or quality.
  */
 
 import { useState } from "react";
@@ -44,21 +44,21 @@ export function TestShotGallery({
   onDelete,
   isPromoting = false,
 }: TestShotGalleryProps) {
-  const [characterFilter, setCharacterFilter] = useState<number | "all">(
+  const [avatarFilter, setAvatarFilter] = useState<number | "all">(
     "all",
   );
   const [sortBy, setSortBy] = useState<SortField>("date");
 
-  // Derive unique character IDs for filter options.
-  const characterIds = [
-    ...new Set(testShots.map((ts) => ts.character_id)),
+  // Derive unique avatar IDs for filter options.
+  const avatarIds = [
+    ...new Set(testShots.map((ts) => ts.avatar_id)),
   ].sort((a, b) => a - b);
 
   // Filter.
   const filtered =
-    characterFilter === "all"
+    avatarFilter === "all"
       ? testShots
-      : testShots.filter((ts) => ts.character_id === characterFilter);
+      : testShots.filter((ts) => ts.avatar_id === avatarFilter);
 
   // Sort.
   const sorted = [...filtered].sort((a, b) => {
@@ -73,23 +73,23 @@ export function TestShotGallery({
     <div data-testid="test-shot-gallery" className="space-y-4">
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-3">
-        {/* Character filter */}
+        {/* Avatar filter */}
         <label className="flex items-center gap-1.5 text-sm text-[var(--color-text-secondary)]">
           Model:
           <select
-            data-testid="character-filter"
-            value={characterFilter}
+            data-testid="avatar-filter"
+            value={avatarFilter}
             onChange={(e) =>
-              setCharacterFilter(
+              setAvatarFilter(
                 e.target.value === "all" ? "all" : Number(e.target.value),
               )
             }
             className="rounded border border-[var(--color-border-subtle)] bg-[var(--color-surface-primary)] px-2 py-1 text-sm"
           >
             <option value="all">All</option>
-            {characterIds.map((cid) => (
+            {avatarIds.map((cid) => (
               <option key={cid} value={cid}>
-                Character {cid}
+                Avatar {cid}
               </option>
             ))}
           </select>
@@ -203,7 +203,7 @@ function TestShotCard({
         </div>
 
         <div className="text-xs text-[var(--color-text-muted)]">
-          <p>Model: {shot.character_id}</p>
+          <p>Model: {shot.avatar_id}</p>
           {shot.duration_secs != null && (
             <p>Duration: {shot.duration_secs.toFixed(1)}s</p>
           )}

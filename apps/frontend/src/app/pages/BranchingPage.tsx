@@ -1,11 +1,11 @@
 /**
- * Branching page — project/character/scene picker wrapping
+ * Branching page — project/avatar/scene picker wrapping
  * branch manager, comparison, and cleanup components.
  *
- * Flow: Project -> Character -> Scene -> BranchManager + BranchCleanup
+ * Flow: Project -> Avatar -> Scene -> BranchManager + BranchCleanup
  */
 
-import { ProjectCharacterPicker, ScenePicker } from "@/components/domain";
+import { ProjectAvatarPicker, ScenePicker } from "@/components/domain";
 import { Stack } from "@/components/layout";
 import { WireframeLoader } from "@/components/primitives";
 import { Layers } from "@/tokens/icons";
@@ -62,19 +62,19 @@ function SceneBranches({ sceneId }: { sceneId: number }) {
 
 export function BranchingPage() {
   return (
-    <ProjectCharacterPicker
+    <ProjectAvatarPicker
       title="Content Branching"
       description="Manage content branches for exploring alternative generation parameters."
     >
-      {(_projectId, characterId) => (
+      {(_projectId, avatarId) => (
         <ScenePicker
-          characterId={characterId}
+          avatarId={avatarId}
           emptyIcon={<Layers size={32} />}
           noScenesDescription="This model has no scenes yet."
         >
           {(sceneId) => <SceneBranches sceneId={sceneId} />}
         </ScenePicker>
       )}
-    </ProjectCharacterPicker>
+    </ProjectAvatarPicker>
   );
 }

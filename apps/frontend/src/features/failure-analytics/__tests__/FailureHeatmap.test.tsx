@@ -18,28 +18,28 @@ const mockHeatmapData: HeatmapData = {
   cells: [
     {
       row: "Workflow 1",
-      col: "Character 1",
+      col: "Avatar 1",
       failure_rate: 0.6,
       sample_count: 20,
       severity: "high",
     },
     {
       row: "Workflow 1",
-      col: "Character 2",
+      col: "Avatar 2",
       failure_rate: 0.15,
       sample_count: 30,
       severity: "low",
     },
     {
       row: "Workflow 2",
-      col: "Character 1",
+      col: "Avatar 1",
       failure_rate: 0.3,
       sample_count: 15,
       severity: "medium",
     },
   ],
   row_labels: ["Workflow 1", "Workflow 2"],
-  col_labels: ["Character 1", "Character 2"],
+  col_labels: ["Avatar 1", "Avatar 2"],
 };
 
 vi.mock("../hooks/use-failure-analytics", () => ({
@@ -70,8 +70,8 @@ describe("FailureHeatmap", () => {
     expect(screen.getByText("Workflow 1")).toBeInTheDocument();
     expect(screen.getByText("Workflow 2")).toBeInTheDocument();
     // Column labels appear in the table header.
-    expect(screen.getByText("Character 1")).toBeInTheDocument();
-    expect(screen.getByText("Character 2")).toBeInTheDocument();
+    expect(screen.getByText("Avatar 1")).toBeInTheDocument();
+    expect(screen.getByText("Avatar 2")).toBeInTheDocument();
   });
 
   test("renders severity badges", () => {

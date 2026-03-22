@@ -2,7 +2,7 @@
  * Step 4: Metadata Entry — bulk metadata editing (PRD-67).
  *
  * Provides a spreadsheet-style view for entering metadata for all
- * characters in the batch. Reuses the pattern from PRD-66.
+ * avatars in the batch. Reuses the pattern from PRD-66.
  */
 
 import { Badge, Button } from "@/components";
@@ -12,7 +12,7 @@ import { Badge, Button } from "@/components";
    -------------------------------------------------------------------------- */
 
 interface MetadataEntry {
-  character_id: number;
+  avatar_id: number;
   name: string;
   description: string;
 }
@@ -20,8 +20,8 @@ interface MetadataEntry {
 interface StepMetadataProps {
   /** Current step data from the session. */
   stepData: Record<string, unknown>;
-  /** Character IDs from the session. */
-  characterIds: number[];
+  /** Avatar IDs from the session. */
+  avatarIds: number[];
   /** Callback to update step data. */
   onUpdateStepData: (data: Record<string, unknown>) => void;
 }
@@ -32,17 +32,17 @@ interface StepMetadataProps {
 
 export function StepMetadata({
   stepData,
-  characterIds,
+  avatarIds,
   onUpdateStepData,
 }: StepMetadataProps) {
   const metadata = (stepData.metadata as MetadataEntry[] | undefined) ?? [];
 
-  const isComplete = metadata.length >= characterIds.length;
+  const isComplete = metadata.length >= avatarIds.length;
 
   function handleInitialize() {
-    const entries: MetadataEntry[] = characterIds.map((id) => ({
-      character_id: id,
-      name: `Character ${id}`,
+    const entries: MetadataEntry[] = avatarIds.map((id) => ({
+      avatar_id: id,
+      name: `Avatar ${id}`,
       description: "",
     }));
     onUpdateStepData({
@@ -64,8 +64,8 @@ export function StepMetadata({
         Metadata Entry
       </h3>
       <p className="text-sm text-[var(--color-text-secondary)]">
-        Enter metadata for each character. Fill common fields first, then
-        customize per character.
+        Enter metadata for each avatar. Fill common fields first, then
+        customize per avatar.
       </p>
 
       {metadata.length === 0 && (
@@ -75,7 +75,7 @@ export function StepMetadata({
           size="sm"
           onClick={handleInitialize}
         >
-          Initialize Metadata for {characterIds.length} Characters
+          Initialize Metadata for {avatarIds.length} Avatars
         </Button>
       )}
 
@@ -89,7 +89,7 @@ export function StepMetadata({
             <thead>
               <tr className="bg-[var(--color-surface-tertiary)]">
                 <th className="px-3 py-2 text-left font-medium text-[var(--color-text-secondary)]">
-                  Character
+                  Avatar
                 </th>
                 <th className="px-3 py-2 text-left font-medium text-[var(--color-text-secondary)]">
                   Name
@@ -102,16 +102,16 @@ export function StepMetadata({
             <tbody>
               {metadata.map((entry, i) => (
                 <tr
-                  key={entry.character_id}
-                  data-testid={`metadata-row-${entry.character_id}`}
+                  key={entry.avatar_id}
+                  data-testid={`metadata-row-${entry.avatar_id}`}
                   className="border-t border-[var(--color-border-subtle)]"
                 >
                   <td className="px-3 py-2 text-[var(--color-text-muted)]">
-                    #{entry.character_id}
+                    #{entry.avatar_id}
                   </td>
                   <td className="px-3 py-2">
                     <input
-                      data-testid={`metadata-name-${entry.character_id}`}
+                      data-testid={`metadata-name-${entry.avatar_id}`}
                       className="w-full rounded border border-[var(--color-border-subtle)] bg-[var(--color-surface-secondary)] px-2 py-1 text-sm text-[var(--color-text-primary)]"
                       value={entry.name}
                       onChange={(e) =>
@@ -121,7 +121,7 @@ export function StepMetadata({
                   </td>
                   <td className="px-3 py-2">
                     <input
-                      data-testid={`metadata-desc-${entry.character_id}`}
+                      data-testid={`metadata-desc-${entry.avatar_id}`}
                       className="w-full rounded border border-[var(--color-border-subtle)] bg-[var(--color-surface-secondary)] px-2 py-1 text-sm text-[var(--color-text-primary)]"
                       value={entry.description}
                       onChange={(e) =>
@@ -140,11 +140,11 @@ export function StepMetadata({
       <div data-testid="metadata-status">
         {isComplete ? (
           <Badge variant="success" size="sm">
-            Metadata entered for all characters
+            Metadata entered for all avatars
           </Badge>
         ) : (
           <Badge variant="default" size="sm">
-            Enter metadata for all characters to continue
+            Enter metadata for all avatars to continue
           </Badge>
         )}
       </div>

@@ -18,7 +18,7 @@ const mockReport: Report = {
   id: 1,
   report_type_id: 1,
   config_json: { date_from: "2026-01-01", date_to: "2026-01-31" },
-  data_json: { deliveries: 42, characters: 10 },
+  data_json: { deliveries: 42, avatars: 10 },
   file_path: "/reports/1.csv",
   format: "csv",
   generated_by: 1,

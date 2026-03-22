@@ -1,8 +1,8 @@
 /**
- * Hook that fetches existing image variant types for duplicate characters.
+ * Hook that fetches existing image variant types for duplicate avatars.
  *
  * Used by ImportConfirmModal to show diff badges (new vs existing) when
- * uploading assets to characters that already exist in the project.
+ * uploading assets to avatars that already exist in the project.
  */
 
 import { useEffect, useState } from "react";
@@ -10,14 +10,14 @@ import { useEffect, useState } from "react";
 import { fetchVariantTypeSet } from "@/features/images/hooks/use-image-variants";
 
 /**
- * Fetches existing variant types for a set of duplicate character IDs.
+ * Fetches existing variant types for a set of duplicate avatar IDs.
  *
- * Only runs when `open` is true and `duplicateCharacterIds` is non-empty.
+ * Only runs when `open` is true and `duplicateAvatarIds` is non-empty.
  * Failed fetches produce empty Sets so everything looks "new" (graceful fallback).
  */
 export function useDuplicateAssetInfo(
   open: boolean,
-  duplicateCharacterIds: number[],
+  duplicateAvatarIds: number[],
 ): {
   variantMap: Map<number, Set<string>>;
   loading: boolean;
@@ -26,7 +26,7 @@ export function useDuplicateAssetInfo(
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!open || duplicateCharacterIds.length === 0) {
+    if (!open || duplicateAvatarIds.length === 0) {
       setVariantMap(new Map());
       return;
     }
@@ -38,7 +38,7 @@ export function useDuplicateAssetInfo(
       const map = new Map<number, Set<string>>();
 
       await Promise.all(
-        duplicateCharacterIds.map(async (charId) => {
+        duplicateAvatarIds.map(async (charId) => {
           try {
             map.set(charId, await fetchVariantTypeSet(charId));
           } catch {
@@ -57,7 +57,7 @@ export function useDuplicateAssetInfo(
     return () => {
       cancelled = true;
     };
-  }, [open, duplicateCharacterIds.join(",")]);
+  }, [open, duplicateAvatarIds.join(",")]);
 
   return { variantMap, loading };
 }

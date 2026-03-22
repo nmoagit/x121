@@ -1,7 +1,7 @@
 /**
  * Regeneration Controls (PRD-13).
  *
- * UI controls for triggering single-character or project-wide metadata
+ * UI controls for triggering single-avatar or project-wide metadata
  * regeneration. Supports a "stale only" option for project-level batches.
  */
 
@@ -10,7 +10,7 @@ import { useState } from "react";
 import { Button } from "@/components/primitives";
 import { Stack } from "@/components/layout";
 import {
-  useRegenerateCharacterMetadata,
+  useRegenerateAvatarMetadata,
   useRegenerateProjectMetadata,
 } from "./hooks/use-metadata";
 
@@ -19,9 +19,9 @@ import {
    -------------------------------------------------------------------------- */
 
 interface RegenerationControlsProps {
-  /** Regenerate for a single character. */
-  characterId?: number;
-  /** Regenerate for all characters in a project. */
+  /** Regenerate for a single avatar. */
+  avatarId?: number;
+  /** Regenerate for all avatars in a project. */
   projectId?: number;
   /** Called after a successful regeneration to allow parent refresh. */
   onRegenerated?: () => void;
@@ -32,20 +32,20 @@ interface RegenerationControlsProps {
    -------------------------------------------------------------------------- */
 
 export function RegenerationControls({
-  characterId,
+  avatarId,
   projectId,
   onRegenerated,
 }: RegenerationControlsProps) {
   const [staleOnly, setStaleOnly] = useState(false);
-  const characterMutation = useRegenerateCharacterMetadata();
+  const avatarMutation = useRegenerateAvatarMetadata();
   const projectMutation = useRegenerateProjectMetadata();
 
   const isRegenerating =
-    characterMutation.isPending || projectMutation.isPending;
+    avatarMutation.isPending || projectMutation.isPending;
 
   const handleRegenerate = async () => {
-    if (characterId) {
-      await characterMutation.mutateAsync(characterId);
+    if (avatarId) {
+      await avatarMutation.mutateAsync(avatarId);
     } else if (projectId) {
       await projectMutation.mutateAsync({
         projectId,
@@ -66,13 +66,13 @@ export function RegenerationControls({
         >
           {isRegenerating
             ? "Regenerating..."
-            : characterId
-              ? "Regenerate Character Metadata"
+            : avatarId
+              ? "Regenerate Avatar Metadata"
               : "Regenerate Project Metadata"}
         </Button>
 
         {/* Stale-only toggle (project-level only) */}
-        {projectId && !characterId && (
+        {projectId && !avatarId && (
           <label className="flex cursor-pointer items-center gap-2 text-sm text-[var(--color-text-secondary)]">
             <input
               type="checkbox"

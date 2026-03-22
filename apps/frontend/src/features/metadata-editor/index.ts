@@ -1,5 +1,5 @@
 /**
- * Barrel export for character metadata editor feature (PRD-66).
+ * Barrel export for avatar metadata editor feature (PRD-66).
  */
 
 export { MetadataForm } from "./MetadataForm";
@@ -10,9 +10,9 @@ export { CsvExport } from "./CsvExport";
 export { CsvImport } from "./CsvImport";
 export {
   metadataEditorKeys,
-  useCharacterMetadata,
-  useCharacterCompleteness,
-  useUpdateCharacterMetadata,
+  useAvatarMetadata,
+  useAvatarCompleteness,
+  useUpdateAvatarMetadata,
   useProjectMetadata,
   useProjectCompleteness,
   exportMetadataCsv,
@@ -25,7 +25,7 @@ export type {
   MetadataFieldWithValue,
   CompletenessResult,
   ProjectCompleteness,
-  CharacterMetadataResponse,
+  AvatarMetadataResponse,
   MetadataUpdateResult,
   MetadataValidationFailure,
   MetadataFieldError,

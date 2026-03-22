@@ -31,8 +31,8 @@ function statusColor(status: string): string {
 
 /** Build a human-readable task label from enriched scene context fields. */
 function taskLabel(task: ActiveTaskItem): string {
-  if (task.character_name) {
-    const parts = [task.character_name];
+  if (task.avatar_name) {
+    const parts = [task.avatar_name];
     if (task.scene_type_name) {
       parts.push(task.scene_type_name);
     }

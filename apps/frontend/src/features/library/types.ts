@@ -1,9 +1,9 @@
 /**
- * Character library feature types (PRD-60).
+ * Avatar library feature types (PRD-60).
  */
 
-/** A library character record from the server (cross-project browser view). */
-export interface LibraryCharacter {
+/** A library avatar record from the server (cross-project browser view). */
+export interface LibraryAvatar {
   id: number;
   name: string;
   project_id: number;
@@ -19,10 +19,10 @@ export interface LibraryCharacter {
   created_at: string;
 }
 
-/** Create payload for a new library character. */
-export interface CreateLibraryCharacter {
+/** Create payload for a new library avatar. */
+export interface CreateLibraryAvatar {
   name: string;
-  source_character_id?: number | null;
+  source_avatar_id?: number | null;
   source_project_id?: number | null;
   master_metadata?: Record<string, unknown>;
   tags?: string[];
@@ -31,8 +31,8 @@ export interface CreateLibraryCharacter {
   is_published?: boolean;
 }
 
-/** Update payload for an existing library character (all fields optional). */
-export interface UpdateLibraryCharacter {
+/** Update payload for an existing library avatar (all fields optional). */
+export interface UpdateLibraryAvatar {
   name?: string;
   master_metadata?: Record<string, unknown>;
   tags?: string[];
@@ -41,35 +41,35 @@ export interface UpdateLibraryCharacter {
   is_published?: boolean;
 }
 
-/** A link between a library character and a project character. */
-export interface ProjectCharacterLink {
+/** A link between a library avatar and a project avatar. */
+export interface ProjectAvatarLink {
   id: number;
   project_id: number;
-  library_character_id: number;
-  project_character_id: number;
+  library_avatar_id: number;
+  project_avatar_id: number;
   linked_fields: string[];
   imported_at: string;
   created_at: string;
   updated_at: string;
 }
 
-/** Request body for importing a library character into a project. */
-export interface ImportCharacterRequest {
+/** Request body for importing a library avatar into a project. */
+export interface ImportAvatarRequest {
   project_id: number;
   linked_fields?: string[];
 }
 
-/** Cross-project usage entry for a library character. */
+/** Cross-project usage entry for a library avatar. */
 export interface LibraryUsageEntry {
   link_id: number;
   project_id: number;
   project_name: string;
-  project_character_id: number;
-  character_name: string;
+  project_avatar_id: number;
+  avatar_name: string;
   imported_at: string;
 }
 
-/** Per-field synchronisation status between library and project character. */
+/** Per-field synchronisation status between library and project avatar. */
 export interface FieldSyncStatus {
   field: string;
   status: "in_sync" | "diverged" | "library_only" | "project_only";

@@ -1,5 +1,5 @@
 /**
- * TanStack Query hooks for character metadata editing (PRD-66).
+ * TanStack Query hooks for avatar metadata editing (PRD-66).
  *
  * Follows the key factory pattern used throughout the codebase.
  */
@@ -8,7 +8,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { api } from "@/lib/api";
 import type {
-  CharacterMetadataResponse,
+  AvatarMetadataResponse,
   CompletenessResult,
   CsvImportPreview,
   MetadataUpdateResult,
@@ -22,10 +22,10 @@ import type {
 
 export const metadataEditorKeys = {
   all: ["metadata-editor"] as const,
-  character: (characterId: number) =>
-    [...metadataEditorKeys.all, "character", characterId] as const,
-  completeness: (characterId: number) =>
-    [...metadataEditorKeys.all, "completeness", characterId] as const,
+  avatar: (avatarId: number) =>
+    [...metadataEditorKeys.all, "avatar", avatarId] as const,
+  completeness: (avatarId: number) =>
+    [...metadataEditorKeys.all, "completeness", avatarId] as const,
   project: (projectId: number) =>
     [...metadataEditorKeys.all, "project", projectId] as const,
   projectCompleteness: (projectId: number) =>
@@ -33,48 +33,48 @@ export const metadataEditorKeys = {
 };
 
 /* --------------------------------------------------------------------------
-   Character metadata hooks
+   Avatar metadata hooks
    -------------------------------------------------------------------------- */
 
-/** Fetch structured metadata for a single character. */
-export function useCharacterMetadata(characterId: number) {
+/** Fetch structured metadata for a single avatar. */
+export function useAvatarMetadata(avatarId: number) {
   return useQuery({
-    queryKey: metadataEditorKeys.character(characterId),
+    queryKey: metadataEditorKeys.avatar(avatarId),
     queryFn: () =>
-      api.get<CharacterMetadataResponse>(
-        `/characters/${characterId}/metadata`,
+      api.get<AvatarMetadataResponse>(
+        `/avatars/${avatarId}/metadata`,
       ),
-    enabled: characterId > 0,
+    enabled: avatarId > 0,
   });
 }
 
-/** Fetch completeness for a single character. */
-export function useCharacterCompleteness(characterId: number) {
+/** Fetch completeness for a single avatar. */
+export function useAvatarCompleteness(avatarId: number) {
   return useQuery({
-    queryKey: metadataEditorKeys.completeness(characterId),
+    queryKey: metadataEditorKeys.completeness(avatarId),
     queryFn: () =>
       api.get<CompletenessResult>(
-        `/characters/${characterId}/metadata/completeness`,
+        `/avatars/${avatarId}/metadata/completeness`,
       ),
-    enabled: characterId > 0,
+    enabled: avatarId > 0,
   });
 }
 
-/** Update character metadata fields. */
-export function useUpdateCharacterMetadata(characterId: number) {
+/** Update avatar metadata fields. */
+export function useUpdateAvatarMetadata(avatarId: number) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (updates: Record<string, unknown>) =>
       api.put<MetadataUpdateResult | MetadataValidationFailure>(
-        `/characters/${characterId}/metadata`,
+        `/avatars/${avatarId}/metadata`,
         updates,
       ),
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: metadataEditorKeys.character(characterId),
+        queryKey: metadataEditorKeys.avatar(avatarId),
       });
       queryClient.invalidateQueries({
-        queryKey: metadataEditorKeys.completeness(characterId),
+        queryKey: metadataEditorKeys.completeness(avatarId),
       });
     },
   });
@@ -84,13 +84,13 @@ export function useUpdateCharacterMetadata(characterId: number) {
    Project metadata hooks
    -------------------------------------------------------------------------- */
 
-/** Fetch metadata for all characters in a project (spreadsheet view). */
+/** Fetch metadata for all avatars in a project (spreadsheet view). */
 export function useProjectMetadata(projectId: number) {
   return useQuery({
     queryKey: metadataEditorKeys.project(projectId),
     queryFn: () =>
-      api.get<CharacterMetadataResponse[]>(
-        `/projects/${projectId}/characters/metadata`,
+      api.get<AvatarMetadataResponse[]>(
+        `/projects/${projectId}/avatars/metadata`,
       ),
     enabled: projectId > 0,
   });
@@ -102,7 +102,7 @@ export function useProjectCompleteness(projectId: number) {
     queryKey: metadataEditorKeys.projectCompleteness(projectId),
     queryFn: () =>
       api.get<ProjectCompleteness>(
-        `/projects/${projectId}/characters/metadata/completeness`,
+        `/projects/${projectId}/avatars/metadata/completeness`,
       ),
     enabled: projectId > 0,
   });
@@ -112,10 +112,10 @@ export function useProjectCompleteness(projectId: number) {
    CSV export helper
    -------------------------------------------------------------------------- */
 
-/** Trigger a CSV download for all character metadata in a project. */
+/** Trigger a CSV download for all avatar metadata in a project. */
 export async function exportMetadataCsv(projectId: number): Promise<void> {
   const response = await api.raw(
-    `/projects/${projectId}/characters/metadata/csv`,
+    `/projects/${projectId}/avatars/metadata/csv`,
   );
 
   const blob = await response.blob();
@@ -139,7 +139,7 @@ export function useImportMetadataCsv(projectId: number) {
   return useMutation({
     mutationFn: async (file: File): Promise<CsvImportPreview> => {
       const response = await api.raw(
-        `/projects/${projectId}/characters/metadata/csv`,
+        `/projects/${projectId}/avatars/metadata/csv`,
         {
           method: "POST",
           headers: { "Content-Type": "text/csv" },

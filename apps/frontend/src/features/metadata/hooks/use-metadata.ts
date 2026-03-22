@@ -8,7 +8,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { api } from "@/lib/api";
 import type {
-  CharacterMetadata,
+  AvatarMetadata,
   RegenerateProjectRequest,
   RegenerationReport,
   StaleMetadataReport,
@@ -21,8 +21,8 @@ import type {
 
 export const metadataKeys = {
   all: ["metadata"] as const,
-  characterPreview: (characterId: number) =>
-    [...metadataKeys.all, "character-preview", characterId] as const,
+  avatarPreview: (avatarId: number) =>
+    [...metadataKeys.all, "avatar-preview", avatarId] as const,
   videoPreview: (sceneId: number) =>
     [...metadataKeys.all, "video-preview", sceneId] as const,
   stale: (projectId: number) =>
@@ -33,15 +33,15 @@ export const metadataKeys = {
    Preview hooks
    -------------------------------------------------------------------------- */
 
-/** Fetch character metadata preview (read-only, no DB write). */
-export function useCharacterMetadataPreview(characterId: number) {
+/** Fetch avatar metadata preview (read-only, no DB write). */
+export function useAvatarMetadataPreview(avatarId: number) {
   return useQuery({
-    queryKey: metadataKeys.characterPreview(characterId),
+    queryKey: metadataKeys.avatarPreview(avatarId),
     queryFn: () =>
-      api.get<CharacterMetadata>(
-        `/characters/${characterId}/metadata/preview`,
+      api.get<AvatarMetadata>(
+        `/avatars/${avatarId}/metadata/preview`,
       ),
-    enabled: characterId > 0,
+    enabled: avatarId > 0,
   });
 }
 
@@ -75,17 +75,17 @@ export function useStaleMetadata(projectId: number) {
    Regeneration mutations
    -------------------------------------------------------------------------- */
 
-/** Regenerate metadata for a single character. */
-export function useRegenerateCharacterMetadata() {
+/** Regenerate metadata for a single avatar. */
+export function useRegenerateAvatarMetadata() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (characterId: number) =>
-      api.post<{ status: string; character_id: number }>(
-        `/characters/${characterId}/metadata/regenerate`,
+    mutationFn: (avatarId: number) =>
+      api.post<{ status: string; avatar_id: number }>(
+        `/avatars/${avatarId}/metadata/regenerate`,
       ),
-    onSuccess: (_data, characterId) => {
+    onSuccess: (_data, avatarId) => {
       queryClient.invalidateQueries({
-        queryKey: metadataKeys.characterPreview(characterId),
+        queryKey: metadataKeys.avatarPreview(avatarId),
       });
       // Also invalidate staleness since it may have changed.
       queryClient.invalidateQueries({
@@ -97,7 +97,7 @@ export function useRegenerateCharacterMetadata() {
   });
 }
 
-/** Regenerate metadata for all characters in a project. */
+/** Regenerate metadata for all avatars in a project. */
 export function useRegenerateProjectMetadata() {
   const queryClient = useQueryClient();
   return useMutation({

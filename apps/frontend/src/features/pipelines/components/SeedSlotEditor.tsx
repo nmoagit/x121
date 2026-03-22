@@ -41,7 +41,7 @@ export function SeedSlotEditor({ slots, onChange }: SeedSlotEditorProps) {
 
       {slots.length === 0 && (
         <p className="font-mono text-xs text-[var(--color-text-muted)]">
-          No seed slots defined. Add slots to define what images are required per character.
+          No seed slots defined. Add slots to define what images are required per avatar.
         </p>
       )}
 

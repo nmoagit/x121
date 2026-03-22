@@ -1,5 +1,5 @@
 /**
- * TypeScript types for character metadata editing (PRD-66).
+ * TypeScript types for avatar metadata editing (PRD-66).
  *
  * These types mirror the backend API response shapes.
  */
@@ -51,9 +51,9 @@ export interface MetadataFieldWithValue extends MetadataFieldDef {
    Completeness
    -------------------------------------------------------------------------- */
 
-/** Completeness result for a single character. */
+/** Completeness result for a single avatar. */
 export interface CompletenessResult {
-  character_id: number;
+  avatar_id: number;
   total_required: number;
   filled: number;
   missing_fields: string[];
@@ -62,19 +62,19 @@ export interface CompletenessResult {
 
 /** Project-level completeness summary. */
 export interface ProjectCompleteness {
-  total_characters: number;
-  complete_characters: number;
-  per_character: CompletenessResult[];
+  total_avatars: number;
+  complete_avatars: number;
+  per_avatar: CompletenessResult[];
 }
 
 /* --------------------------------------------------------------------------
-   Character metadata response
+   Avatar metadata response
    -------------------------------------------------------------------------- */
 
-/** Structured metadata response for a single character. */
-export interface CharacterMetadataResponse {
-  character_id: number;
-  character_name: string;
+/** Structured metadata response for a single avatar. */
+export interface AvatarMetadataResponse {
+  avatar_id: number;
+  avatar_name: string;
   fields: MetadataFieldWithValue[];
   completeness: CompletenessResult;
 }
@@ -86,7 +86,7 @@ export interface CharacterMetadataResponse {
 /** Result of a successful metadata update. */
 export interface MetadataUpdateResult {
   status: string;
-  character_id: number;
+  avatar_id: number;
   metadata: Record<string, unknown>;
 }
 
@@ -108,8 +108,8 @@ export interface MetadataFieldError {
 
 /** Diff entry showing what would change on CSV import. */
 export interface CsvDiffEntry {
-  character_id: number;
-  character_name: string;
+  avatar_id: number;
+  avatar_name: string;
   field_name: string;
   old_value: unknown;
   new_value: unknown;
@@ -118,7 +118,7 @@ export interface CsvDiffEntry {
 /** Per-record validation errors from CSV import. */
 export interface CsvRecordError {
   row_index: number;
-  character_id: number | null;
+  avatar_id: number | null;
   errors: MetadataFieldError[];
 }
 

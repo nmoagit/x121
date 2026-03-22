@@ -16,8 +16,8 @@ import { Card, CardBody, CardHeader } from "@/components/composite";
 
 export interface FlaggedPair {
   checkId: number;
-  characterAName: string;
-  characterBName: string;
+  avatarAName: string;
+  avatarBName: string;
   similarityScore: number;
 }
 
@@ -68,14 +68,14 @@ function PairCard({
               className="font-medium text-[var(--color-text-primary)]"
               data-testid={`pair-a-${pair.checkId}`}
             >
-              {pair.characterAName}
+              {pair.avatarAName}
             </span>
             <span className="text-[var(--color-text-muted)]">vs</span>
             <span
               className="font-medium text-[var(--color-text-primary)]"
               data-testid={`pair-b-${pair.checkId}`}
             >
-              {pair.characterBName}
+              {pair.avatarBName}
             </span>
           </div>
           <Badge variant={pair.similarityScore >= 95 ? "danger" : "warning"}>
@@ -89,7 +89,7 @@ function PairCard({
             onChange={(val) => setResolution(val)}
             options={RESOLUTION_OPTIONS}
             placeholder="Select..."
-            label={`Resolution for ${pair.characterAName} vs ${pair.characterBName}`}
+            label={`Resolution for ${pair.avatarAName} vs ${pair.avatarBName}`}
           />
           <Button
             onClick={handleResolve}

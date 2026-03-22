@@ -1,7 +1,7 @@
 /**
  * Terminal-styled horizontal stat ticker strip with pipe separators.
  *
- * Used across overview tabs (character, project) to display key metrics
+ * Used across overview tabs (avatar, project) to display key metrics
  * in the "hacker terminal" aesthetic.
  */
 

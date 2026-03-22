@@ -21,7 +21,7 @@ const MOCK_EXTENSION: Extension = {
     api_version: "1",
     permissions: [
       { resource: "projects", access: "read" },
-      { resource: "characters", access: "*" },
+      { resource: "avatars", access: "*" },
     ],
     panels: [],
     menu_items: [],

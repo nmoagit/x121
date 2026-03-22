@@ -49,7 +49,7 @@ export type PaletteCategory = "all" | "commands" | "entities";
 /** Valid entity types that can appear in the command palette (mirrors backend). */
 export const VALID_ENTITY_TYPES = [
   "project",
-  "character",
+  "avatar",
   "scene",
   "segment",
   "scene_type",
@@ -60,7 +60,7 @@ export type PaletteEntityType = (typeof VALID_ENTITY_TYPES)[number];
 /** Human-readable labels for entity types. */
 export const ENTITY_TYPE_LABELS: Record<string, string> = {
   project: "Project",
-  character: "Model",
+  avatar: "Model",
   scene: "Scene",
   segment: "Segment",
   scene_type: "Scene Type",

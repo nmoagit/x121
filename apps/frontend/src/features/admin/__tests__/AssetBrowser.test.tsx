@@ -31,14 +31,14 @@ const mockAssets: AssetWithStats[] = [
   },
   {
     id: 2,
-    name: "character-lora-v2",
+    name: "avatar-lora-v2",
     version: "2.0.0",
     asset_type_id: 2,
     status_id: 1,
     file_path: "/loras/char-v2.safetensors",
     file_size_bytes: 134_217_728,
     checksum_sha256: "def456",
-    description: "Character generation LoRA weights",
+    description: "Avatar generation LoRA weights",
     metadata: {},
     registered_by: 1,
     created_at: "2026-01-15T00:00:00Z",
@@ -120,7 +120,7 @@ describe("AssetBrowser", () => {
 
     await waitFor(() => {
       expect(screen.getByText("stable-diffusion-v1.5")).toBeInTheDocument();
-      expect(screen.getByText("character-lora-v2")).toBeInTheDocument();
+      expect(screen.getByText("avatar-lora-v2")).toBeInTheDocument();
       expect(screen.getByText("animatediff-node")).toBeInTheDocument();
     });
 

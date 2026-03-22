@@ -91,7 +91,7 @@ export function useBatchGenerate() {
       });
       // Also refresh scenes so status changes are reflected in the UI.
       queryClient.invalidateQueries({ queryKey: ["scenes"] });
-      queryClient.invalidateQueries({ queryKey: ["characters"] });
+      queryClient.invalidateQueries({ queryKey: ["avatars"] });
 
       const count = result.started.length;
       const errors = result.errors;
@@ -141,7 +141,7 @@ export function useCancelGeneration(sceneId: number) {
         queryKey: generationKeys.all,
       });
       queryClient.invalidateQueries({ queryKey: ["scenes"] });
-      queryClient.invalidateQueries({ queryKey: ["characters"] });
+      queryClient.invalidateQueries({ queryKey: ["avatars"] });
       toastStore.addToast({
         message: "Generation cancelled",
         variant: "info",
@@ -163,7 +163,7 @@ export function useScheduleGeneration() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: generationKeys.all });
       queryClient.invalidateQueries({ queryKey: ["scenes"] });
-      queryClient.invalidateQueries({ queryKey: ["characters"] });
+      queryClient.invalidateQueries({ queryKey: ["avatars"] });
     },
   });
 }
@@ -174,8 +174,8 @@ export function useScheduleGeneration() {
 
 export interface SceneDetail {
   id: number;
-  character_id: number;
-  character_name: string;
+  avatar_id: number;
+  avatar_name: string;
   project_id: number | null;
   scene_type_name: string;
   track_name: string | null;
@@ -206,7 +206,7 @@ export function useRemoveScenesFromSchedule() {
       queryClient.invalidateQueries({ queryKey: generationKeys.all });
       queryClient.invalidateQueries({ queryKey: ["schedules"] });
       queryClient.invalidateQueries({ queryKey: ["scenes"] });
-      queryClient.invalidateQueries({ queryKey: ["characters"] });
+      queryClient.invalidateQueries({ queryKey: ["avatars"] });
     },
   });
 }

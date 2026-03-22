@@ -1,5 +1,5 @@
 /**
- * TanStack Query hooks for Character Consistency Report (PRD-94).
+ * TanStack Query hooks for Avatar Consistency Report (PRD-94).
  *
  * Follows the key factory pattern used throughout the codebase.
  */
@@ -19,23 +19,23 @@ import type {
 
 export const consistencyKeys = {
   all: ["consistency"] as const,
-  character: (characterId: number) =>
-    [...consistencyKeys.all, "character", characterId] as const,
+  avatar: (avatarId: number) =>
+    [...consistencyKeys.all, "avatar", avatarId] as const,
   project: (projectId: number) =>
     [...consistencyKeys.all, "project", projectId] as const,
 };
 
 /* --------------------------------------------------------------------------
-   Character queries
+   Avatar queries
    -------------------------------------------------------------------------- */
 
-/** Fetches the latest consistency report for a character. */
-export function useConsistencyReport(characterId: number) {
+/** Fetches the latest consistency report for a avatar. */
+export function useConsistencyReport(avatarId: number) {
   return useQuery({
-    queryKey: consistencyKeys.character(characterId),
+    queryKey: consistencyKeys.avatar(avatarId),
     queryFn: () =>
-      api.get<ConsistencyReport>(`/characters/${characterId}/consistency`),
-    enabled: characterId > 0,
+      api.get<ConsistencyReport>(`/avatars/${avatarId}/consistency`),
+    enabled: avatarId > 0,
   });
 }
 
@@ -57,19 +57,19 @@ export function useProjectConsistency(projectId: number) {
    Mutations
    -------------------------------------------------------------------------- */
 
-/** Generates a new consistency report for a character. */
-export function useGenerateConsistencyReport(characterId: number) {
+/** Generates a new consistency report for a avatar. */
+export function useGenerateConsistencyReport(avatarId: number) {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (input: GenerateConsistencyInput) =>
       api.post<ConsistencyReport>(
-        `/characters/${characterId}/consistency`,
+        `/avatars/${avatarId}/consistency`,
         input,
       ),
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: consistencyKeys.character(characterId),
+        queryKey: consistencyKeys.avatar(avatarId),
       });
       queryClient.invalidateQueries({
         queryKey: consistencyKeys.all,
@@ -78,7 +78,7 @@ export function useGenerateConsistencyReport(characterId: number) {
   });
 }
 
-/** Generates consistency reports for multiple characters. */
+/** Generates consistency reports for multiple avatars. */
 export function useBatchConsistencyReport() {
   const queryClient = useQueryClient();
 

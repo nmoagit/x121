@@ -3,7 +3,7 @@
  *
  * Grid of annotation cards. Clicking a card opens a detail modal showing
  * the video with annotation overlay. From the modal you can navigate to
- * the character's scene detail page.
+ * the avatar's scene detail page.
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -86,7 +86,7 @@ function AnnotationDetailModal({
   const handleGoToScene = useCallback(() => {
     if (!item) return;
     navigate({
-      to: `/projects/${item.project_id}/models/${item.character_id}`,
+      to: `/projects/${item.project_id}/avatars/${item.avatar_id}`,
       search: { tab: "scenes", scene: String(item.scene_id) },
     });
     onClose();
@@ -163,7 +163,7 @@ function AnnotationDetailModal({
     <Modal
       open={item !== null}
       onClose={onClose}
-      title={item ? `${item.character_name} — ${item.scene_type_name}` : ""}
+      title={item ? `${item.avatar_name} — ${item.scene_type_name}` : ""}
       size="3xl"
     >
       {item && (
@@ -249,7 +249,7 @@ function AnnotationDetailModal({
           <div className="flex items-center justify-between pt-1 border-t border-[var(--color-border-default)]">
             <div className="flex flex-col gap-0.5 font-mono text-xs">
               <span className="text-[var(--color-text-primary)]">
-                {item.character_name}
+                {item.avatar_name}
               </span>
               <span className="text-[var(--color-text-muted)]">
                 {item.project_name} · {item.scene_type_name}
@@ -337,7 +337,7 @@ function AnnotationCard({
         {/* Info */}
         <div className="flex flex-col gap-0.5 px-2 py-1.5 font-mono">
           <span className="text-xs text-[var(--color-text-primary)] truncate">
-            {item.character_name}
+            {item.avatar_name}
           </span>
           <span className="text-[10px] text-[var(--color-text-muted)] truncate">
             {item.scene_type_name}
@@ -362,7 +362,7 @@ function AnnotationCard({
 
 const SORT_OPTIONS = [
   { value: "created_at", label: "Most Recent" },
-  { value: "character_name", label: "Model Name" },
+  { value: "avatar_name", label: "Avatar Name" },
 ] as const;
 
 /* --------------------------------------------------------------------------
@@ -374,8 +374,8 @@ const COMPLETED_SCENE_STATUSES = new Set([4, 6]);
 
 export function AnnotationsPage() {
   const [projectFilter, setProjectFilter] = useState<string>("");
-  const [characterSearch, setCharacterSearch] = useState("");
-  const [sort, setSort] = useState<"created_at" | "character_name">("created_at");
+  const [avatarSearch, setAvatarSearch] = useState("");
+  const [sort, setSort] = useState<"created_at" | "avatar_name">("created_at");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [selectedItem, setSelectedItem] = useState<AnnotatedItem | null>(null);
   const [showCompleted, setShowCompleted] = useState(false);
@@ -391,9 +391,9 @@ export function AnnotationsPage() {
     sortDir,
   });
 
-  // Filter by character name and completed status
+  // Filter by avatar name and completed status
   const filteredItems = items?.filter((item) => {
-    if (characterSearch && !item.character_name.toLowerCase().includes(characterSearch.toLowerCase())) {
+    if (avatarSearch && !item.avatar_name.toLowerCase().includes(avatarSearch.toLowerCase())) {
       return false;
     }
     if (!showCompleted && COMPLETED_SCENE_STATUSES.has(item.scene_status_id)) {
@@ -426,14 +426,14 @@ export function AnnotationsPage() {
         />
         <SearchInput
           placeholder="Search model..."
-          value={characterSearch}
-          onChange={(e) => setCharacterSearch(e.target.value)}
+          value={avatarSearch}
+          onChange={(e) => setAvatarSearch(e.target.value)}
           className="w-48"
         />
         <FilterSelect
           options={[...SORT_OPTIONS]}
           value={sort}
-          onChange={(v) => setSort(v as "created_at" | "character_name")}
+          onChange={(v) => setSort(v as "created_at" | "avatar_name")}
           className="w-40"
         />
         <Button
@@ -499,7 +499,7 @@ export function AnnotationsPage() {
       >
         {deleteTarget && (
           <p>
-            Delete annotation on {deleteTarget.character_name} — {deleteTarget.scene_type_name}, frame {deleteTarget.frame_number}?
+            Delete annotation on {deleteTarget.avatar_name} — {deleteTarget.scene_type_name}, frame {deleteTarget.frame_number}?
           </p>
         )}
       </ConfirmModal>

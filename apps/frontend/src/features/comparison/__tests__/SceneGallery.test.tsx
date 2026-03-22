@@ -11,8 +11,8 @@ import type { ComparisonCell, ComparisonResponse } from "../types";
 
 const mockCells: ComparisonCell[] = [
   {
-    character_id: 1,
-    character_name: "Alice",
+    avatar_id: 1,
+    avatar_name: "Alice",
     scene_id: 10,
     segment_id: 100,
     scene_type_id: 5,
@@ -27,8 +27,8 @@ const mockCells: ComparisonCell[] = [
     created_at: "2026-01-01T00:00:00Z",
   },
   {
-    character_id: 2,
-    character_name: "Bob",
+    avatar_id: 2,
+    avatar_name: "Bob",
     scene_id: 11,
     segment_id: 101,
     scene_type_id: 5,
@@ -43,8 +43,8 @@ const mockCells: ComparisonCell[] = [
     created_at: "2026-01-02T00:00:00Z",
   },
   {
-    character_id: 3,
-    character_name: "Charlie",
+    avatar_id: 3,
+    avatar_name: "Charlie",
     scene_id: 12,
     segment_id: 102,
     scene_type_id: 5,
@@ -139,7 +139,7 @@ describe("SceneGallery", () => {
     expect(screen.getByLabelText("Loading")).toBeInTheDocument();
   });
 
-  it("renders gallery cells for each character", () => {
+  it("renders gallery cells for each avatar", () => {
     render(<SceneGallery projectId={1} sceneTypeId={5} />, { wrapper: createWrapper() });
 
     expect(screen.getByText("Alice")).toBeInTheDocument();

@@ -35,12 +35,12 @@ describe("failureAnalyticsKeys", () => {
   });
 
   test("heatmap includes dimensions", () => {
-    const key = failureAnalyticsKeys.heatmap("workflow", "character");
+    const key = failureAnalyticsKeys.heatmap("workflow", "avatar");
     expect(key).toEqual([
       "failure-analytics",
       "heatmap",
       "workflow",
-      "character",
+      "avatar",
     ]);
   });
 
@@ -49,7 +49,7 @@ describe("failureAnalyticsKeys", () => {
     expect(key).toEqual(["failure-analytics", "trends", 5, 30]);
   });
 
-  test("alerts includes workflow and character ids", () => {
+  test("alerts includes workflow and avatar ids", () => {
     const key = failureAnalyticsKeys.alerts(10, 20);
     expect(key).toEqual(["failure-analytics", "alerts", 10, 20]);
   });

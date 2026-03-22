@@ -10,11 +10,11 @@
  *  Sync: mirrors `PLACEHOLDER_PATTERN` in `core/src/prompt_editor.rs`. */
 export const PLACEHOLDER_REGEX = /\{[a-zA-Z_][a-zA-Z0-9_.]*\}/g;
 
-/** Maximum allowed prompt length in characters.
+/** Maximum allowed prompt length in avatars.
  *  Sync: mirrors `MAX_PROMPT_LENGTH` in `core/src/provenance.rs`. */
 export const MAX_PROMPT_LENGTH = 10_000;
 
-/** Maximum allowed negative prompt length in characters.
+/** Maximum allowed negative prompt length in avatars.
  *  Sync: mirrors `MAX_NEGATIVE_PROMPT_LENGTH` in `core/src/prompt_editor.rs`. */
 export const MAX_NEGATIVE_PROMPT_LENGTH = 5_000;
 

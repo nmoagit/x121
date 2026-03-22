@@ -1,5 +1,5 @@
 /**
- * Character Identity Embedding feature (PRD-76).
+ * Avatar Identity Embedding feature (PRD-76).
  *
  * Barrel export for types, hooks, and components.
  */

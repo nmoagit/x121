@@ -18,20 +18,20 @@ import {
 } from "@/features/delivery";
 
 function ProjectDelivery({ projectId }: { projectId: number }) {
-  const [allCharacters, setAllCharacters] = useState(true);
-  const [selectedCharacterIds, setSelectedCharacterIds] = useState<number[]>([]);
-  const validationCharacterIds = allCharacters ? null : selectedCharacterIds;
+  const [allAvatars, setAllAvatars] = useState(true);
+  const [selectedAvatarIds, setSelectedAvatarIds] = useState<number[]>([]);
+  const validationAvatarIds = allAvatars ? null : selectedAvatarIds;
 
   return (
     <Stack gap={6}>
       <ExportPanel
         projectId={projectId}
-        allCharacters={allCharacters}
-        onAllCharactersChange={setAllCharacters}
-        selectedCharacterIds={selectedCharacterIds}
-        onSelectedCharacterIdsChange={setSelectedCharacterIds}
+        allAvatars={allAvatars}
+        onAllAvatarsChange={setAllAvatars}
+        selectedAvatarIds={selectedAvatarIds}
+        onSelectedAvatarIdsChange={setSelectedAvatarIds}
       />
-      <ValidationReport projectId={projectId} characterIds={validationCharacterIds} />
+      <ValidationReport projectId={projectId} avatarIds={validationAvatarIds} />
       <ExportHistory projectId={projectId} />
       <FormatProfileManager />
     </Stack>
