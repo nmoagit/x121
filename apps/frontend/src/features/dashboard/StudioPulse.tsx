@@ -1,6 +1,10 @@
+import { useState } from "react";
+
 import { Stack } from "@/components/layout";
+import { Select } from "@/components/primitives";
 import { useSetPageTitle } from "@/hooks/useSetPageTitle";
 import { useIsAdmin } from "@/features/dashboard/hooks/use-dashboard";
+import { usePipelines } from "@/features/pipelines/hooks/use-pipelines";
 import { ActiveTasksWidget } from "@/features/dashboard/widgets/ActiveTasksWidget";
 import { ActivityFeedWidget } from "@/features/dashboard/widgets/ActivityFeedWidget";
 import { DiskHealthWidget } from "@/features/dashboard/widgets/DiskHealthWidget";
@@ -36,18 +40,38 @@ import { ScheduledGenerationsWidget } from "@/features/dashboard/widgets/Schedul
 export function StudioPulse() {
   useSetPageTitle("Studio Pulse", "Real-time overview of your studio. Widgets refresh automatically.");
   const isAdmin = useIsAdmin();
+  const { data: pipelines } = usePipelines();
+  const [selectedPipelineId, setSelectedPipelineId] = useState<number | undefined>(undefined);
+
+  const pipelineOptions = [
+    { label: "All Pipelines", value: "" },
+    ...(pipelines?.filter((p) => p.is_active).map((p) => ({
+      label: p.name,
+      value: String(p.id),
+    })) ?? []),
+  ];
 
   return (
     <div className="min-h-full">
       <Stack gap={6}>
+        {/* Pipeline filter */}
+        <div className="flex items-center gap-3">
+          <Select
+            label=""
+            options={pipelineOptions}
+            value={selectedPipelineId ? String(selectedPipelineId) : ""}
+            onChange={(v) => setSelectedPipelineId(v ? Number(v) : undefined)}
+          />
+        </div>
+
         {/* Widget grid */}
         <div className="grid grid-cols-1 gap-[var(--spacing-4)] md:grid-cols-2 lg:grid-cols-4">
           {/* Row 1: Active Tasks + Project Progress */}
           <div className="md:col-span-1 lg:col-span-2">
-            <ActiveTasksWidget />
+            <ActiveTasksWidget pipelineId={selectedPipelineId} />
           </div>
           <div className="md:col-span-1 lg:col-span-2">
-            <ProjectProgressWidget />
+            <ProjectProgressWidget pipelineId={selectedPipelineId} />
           </div>
 
           {/* Row 2: Model Readiness + Scheduled Generations + Disk Health + Infra (admin) */}

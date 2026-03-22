@@ -127,7 +127,8 @@ function GlobalSidebarContent({ collapsed }: { collapsed: boolean }) {
     // Deep-copy groups so we never mutate the module-level NAV_GROUPS constant.
     let groups = NAV_GROUPS.map((g) => ({ ...g, items: [...g.items] }));
 
-    // Inject active pipelines into the "Pipelines" group as indented sub-items.
+    // Inject active pipelines into the "Pipelines" group as indented sub-items,
+    // right after "All Pipelines" but before other links (Overview Dashboard, etc.).
     const pipelinesGroup = groups.find((g) => g.label === "Pipelines");
     if (pipelinesGroup && pipelines) {
       const pipelineItems = pipelines
@@ -138,7 +139,12 @@ function GlobalSidebarContent({ collapsed }: { collapsed: boolean }) {
           icon: Workflow,
           indent: true,
         }));
-      pipelinesGroup.items = [...pipelinesGroup.items, ...pipelineItems];
+      // Insert after the first item ("All Pipelines")
+      pipelinesGroup.items = [
+        pipelinesGroup.items[0]!,
+        ...pipelineItems,
+        ...pipelinesGroup.items.slice(1),
+      ];
     }
 
     // In compact mode, filter to only prominent items per group.

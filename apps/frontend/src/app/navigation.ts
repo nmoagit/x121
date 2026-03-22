@@ -68,11 +68,16 @@ export interface NavGroupDef {
 
 export const NAV_GROUPS: NavGroupDef[] = [
   {
+    label: "Overview",
+    items: [
+      { label: "Dashboard", path: "/dashboard", icon: BarChart3, prominent: true },
+      { label: "Performance", path: "/performance", icon: TrendingUp, prominent: true },
+    ],
+  },
+  {
     label: "Pipelines",
     items: [
       { label: "All Pipelines", path: "/", icon: Workflow, exact: true, prominent: true },
-      { label: "Overview Dashboard", path: "/dashboard", icon: BarChart3, prominent: true },
-      { label: "Performance", path: "/performance", icon: TrendingUp },
     ],
   },
   {
