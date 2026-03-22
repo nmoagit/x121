@@ -160,8 +160,16 @@ const TRACK_TEXT_COLOR_PALETTE = [
   "text-lime-400",
 ] as const;
 
+/** Well-known track slugs with fixed text colors. */
+const FIXED_TEXT_COLORS: Record<string, string> = {
+  clothed: "text-sky-400",
+  topless: "text-pink-400",
+  clothes_off: "text-violet-400",
+};
+
 /** Get a deterministic text color for any track slug. */
 export function trackTextColor(slug: string): string {
+  if (slug in FIXED_TEXT_COLORS) return FIXED_TEXT_COLORS[slug]!;
   let hash = 0;
   for (const ch of slug) hash = (hash * 31 + ch.charCodeAt(0)) | 0;
   return TRACK_TEXT_COLOR_PALETTE[Math.abs(hash) % TRACK_TEXT_COLOR_PALETTE.length]!;

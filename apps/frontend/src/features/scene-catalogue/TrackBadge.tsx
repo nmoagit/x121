@@ -29,8 +29,16 @@ const TRACK_COLORS = [
   "bg-lime-500/15 text-lime-400",
 ] as const;
 
-/** Deterministic hash-based color selection for any track slug. */
+/** Well-known track slugs with fixed colors for visual consistency. */
+const FIXED_COLORS: Record<string, string> = {
+  clothed: "bg-sky-500/15 text-sky-400",
+  topless: "bg-pink-500/15 text-pink-400",
+  clothes_off: "bg-violet-500/15 text-violet-400",
+};
+
+/** Deterministic color selection: fixed overrides for known slugs, hash-based for others. */
 function trackColor(slug: string): string {
+  if (slug in FIXED_COLORS) return FIXED_COLORS[slug]!;
   let hash = 0;
   for (const ch of slug) hash = (hash * 31 + ch.charCodeAt(0)) | 0;
   return TRACK_COLORS[Math.abs(hash) % TRACK_COLORS.length]!;
