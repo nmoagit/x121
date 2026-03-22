@@ -5,7 +5,7 @@
  * Active tab is managed via URL search param `?tab=`.
  */
 
-import { Link, useNavigate, useParams, useSearch } from "@tanstack/react-router";
+import { useLocation, useNavigate, useParams, useSearch } from "@tanstack/react-router";
 import { useMemo } from "react";
 
 import { Tabs } from "@/components/composite";
@@ -35,10 +35,16 @@ export function ProjectDetailPage() {
   const id = Number(projectId);
 
   const navigate = useNavigate();
+  const location = useLocation();
   const { tab: tabParam, group: groupParam } = useSearch({ strict: false }) as {
     tab?: string;
     group?: string;
   };
+
+  // Derive base path from current location so links work under both
+  // root (/projects/8) and pipeline (/pipelines/x121/projects/8) routes.
+  const basePath = location.pathname;
+  const projectsPath = basePath.replace(/\/projects\/\d+.*/, "/projects");
 
   const { data: project, isLoading, error } = useProject(id);
   const { data: stats } = useProjectStats(id);
@@ -51,7 +57,7 @@ export function ProjectDetailPage() {
 
   function setActiveTab(tab: string) {
     navigate({
-      to: `/projects/${projectId}`,
+      to: ".",
       search: { tab },
     });
   }
@@ -87,9 +93,9 @@ export function ProjectDetailPage() {
     <Stack gap={6}>
       {/* Breadcrumb */}
       <nav className="flex items-center gap-[var(--spacing-1)] text-sm font-mono text-[var(--color-text-muted)]">
-        <Link to="/projects" className="hover:text-[var(--color-text-primary)] transition-colors">
+        <a href={projectsPath} className="hover:text-[var(--color-text-primary)] transition-colors">
           Projects
-        </Link>
+        </a>
         <ChevronRight size={14} aria-hidden />
         <span className="text-[var(--color-text-primary)] font-medium">{project.name}</span>
       </nav>
@@ -111,14 +117,13 @@ export function ProjectDetailPage() {
             Updated {formatDate(project.updated_at)}
           </p>
         </div>
-        <Link
-          to="/projects/$projectId/review-assignments"
-          params={{ projectId: String(id) }}
+        <a
+          href={`${basePath}/review-assignments`}
           className="inline-flex items-center gap-[var(--spacing-1)] rounded-[var(--radius-md)] border border-[var(--color-border-default)] bg-[var(--color-surface-primary)] px-3 py-1.5 text-sm text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-secondary)] transition-colors"
         >
           <Users size={14} />
           Review Assignments
-        </Link>
+        </a>
       </div>
 
       {/* Tabs */}
