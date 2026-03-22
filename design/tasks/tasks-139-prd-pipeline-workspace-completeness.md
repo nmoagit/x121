@@ -1,32 +1,33 @@
 # Task List: Pipeline Workspace Completeness
 
 **PRD Reference:** `design/prds/139-prd-pipeline-workspace-completeness.md`
-**Scope:** Complete the pipeline workspace with full navigation, dynamic pipeline list, queue pipeline awareness, and pipeline-scoped naming rules.
+**Scope:** Complete pipeline integration across entire app — full workspace nav, pipeline-filtered listings, hardcoded removal, queue/delivery/naming/dashboard awareness.
 
 ## Overview
 
-PRD-138 established the pipeline architecture but the workspace sidebar was too minimal. This task list completes the workspace by replicating the full navigation structure (Content, Production, Review, Tools, Admin) inside each pipeline, adding a dynamic pipeline list to the global sidebar, making the queue manager pipeline-aware, and scoping naming rules per pipeline.
+PRD-138 added the pipeline entity and basic scoping. This task list completes the integration: every listing, every reference, every feature becomes pipeline-aware. The codebase audit identified 20+ areas needing changes across backend repos, handlers, frontend hooks, and hardcoded string literals.
 
 ### What Already Exists
-- `navigation.ts` — Full nav config with ~60 items across 6 groups
-- `pipeline-navigation.ts` — Minimal 7-item pipeline nav (needs expansion)
-- `PipelineProvider` / `usePipelineContext()` — Pipeline context for workspace
-- `PipelineWorkspaceLayout` — Layout wrapper for pipeline routes
-- All existing page components — Can be reused within pipeline routes
-- Pipeline CRUD API and sidebar with global/pipeline mode switching
+- Pipeline entity, repos, API, PipelineProvider context (PRD-138)
+- `pipeline_id` columns on projects, tracks, workflows, scene_types
+- Pipeline workspace layout and routing shell
+- `buildPipelineNavItems()` (minimal, needs expansion)
 
 ### What We're Building
-1. Expanded pipeline-navigation.ts with ALL nav groups from navigation.ts
+1. Full pipeline workspace navigation (all sections)
 2. Dynamic pipeline list in global sidebar
-3. Full route tree under `/pipelines/:code/` for all sections
-4. Queue manager pipeline badge and filtering
-5. Pipeline-scoped naming rules page
+3. Pipeline-filtered repos and handlers (tracks, scene types, workflows)
+4. Hardcoded "clothed"/"topless" removal (6+ files)
+5. Queue, delivery, naming, dashboard pipeline awareness
+6. Cross-pipeline validation guards
+7. ~40 pipeline-scoped routes
 
 ### Key Design Decisions
-1. Pipeline nav is derived from the global nav — same sections, paths prefixed with `/pipelines/:code/`
-2. Existing page components are reused as-is (they read pipeline context where needed)
-3. Queue shows pipeline via project → pipeline join (no new DB column needed)
-4. Naming rules page has dual mode: pipeline-scoped (in workspace) and cross-pipeline (in admin)
+1. Pipeline nav derived from global nav — same sections, prefixed paths
+2. Repos gain optional pipeline_id filter — backward compatible
+3. Hardcoded slugs replaced with pipeline.seed_slots/naming_rules lookups
+4. Track badge colors use deterministic hash — works for any track slug
+5. Cross-pipeline validation at repo level — DB integrity over UI checks
 
 ---
 
@@ -35,80 +36,41 @@ PRD-138 established the pipeline architecture but the workspace sidebar was too 
 ### Task 1.1: Expand pipeline-navigation.ts with full nav structure
 **File:** `apps/frontend/src/app/pipeline-navigation.ts`
 
-Replace the minimal 7-item pipeline nav with a function that generates ALL nav groups (Content, Production, Review, Tools, Admin subset) with paths prefixed by `/pipelines/:code/`.
-
-```typescript
-export function buildPipelineNavGroups(pipelineCode: string): NavGroupDef[] {
-  const base = `/pipelines/${pipelineCode}`;
-  return [
-    {
-      label: "Overview",
-      items: [
-        { label: "Dashboard", path: `${base}/dashboard`, icon: BarChart3, prominent: true },
-      ],
-    },
-    {
-      label: "Content",
-      items: [
-        { label: "Projects", path: `${base}/projects`, icon: FolderKanban, prominent: true },
-        { label: "Characters", path: `${base}/characters`, icon: User, prominent: true },
-        { label: "Scene Catalogue", path: `${base}/content/scene-catalogue`, icon: List, prominent: true },
-        { label: "Library", path: `${base}/content/library`, icon: Folder, prominent: true },
-        // ... all Content items from navigation.ts
-      ],
-    },
-    {
-      label: "Production",
-      items: [
-        { label: "Queue", path: `${base}/production/queue`, icon: Zap, prominent: true },
-        // ... all Production items
-      ],
-    },
-    // ... Review, Tools sections
-    {
-      label: "Pipeline Admin",
-      items: [
-        { label: "Naming Rules", path: `${base}/admin/naming`, icon: FileText, prominent: true },
-        { label: "Output Profiles", path: `${base}/admin/output-profiles`, icon: Film, prominent: true },
-        { label: "Settings", path: `${base}/settings`, icon: Settings },
-      ],
-    },
-  ];
-}
-```
+Replace minimal nav with `buildPipelineNavGroups(code)` returning ALL sections (Content, Production, Review, Tools, Pipeline Admin) with prefixed paths. Use `navigation.ts` as source of truth.
 
 **Acceptance Criteria:**
-- [ ] `buildPipelineNavGroups(code)` returns NavGroupDef[] with ALL sections
-- [ ] Content section: all 9+ items from global nav, paths prefixed
-- [ ] Production section: all 8 items, paths prefixed
-- [ ] Review section: all 7 items, paths prefixed
-- [ ] Tools section: all 12 items, paths prefixed
-- [ ] Pipeline Admin section: Naming Rules, Output Profiles, Settings
-- [ ] Old `buildPipelineNavItems()` removed or redirects to new function
+- [ ] Returns `NavGroupDef[]` with Overview, Content, Production, Review, Tools, Pipeline Admin groups
+- [ ] Content: all 11 items (Projects, Characters, Scene Catalogue, Library, Images, Scenes, Models, Storyboard, Model Dashboard, Contact Sheet, Duplicates)
+- [ ] Production: all 8 items
+- [ ] Review: all 7 items
+- [ ] Tools: all 12 items
+- [ ] Pipeline Admin: Naming Rules, Output Profiles, Settings
+- [ ] All paths prefixed with `/pipelines/${code}/`
+- [ ] Old `buildPipelineNavItems()` removed
 
 ### Task 1.2: Dynamic pipeline list in global sidebar
 **File:** `apps/frontend/src/app/Sidebar.tsx`
 
-In the global sidebar (outside pipeline workspace), the "Pipelines" group should dynamically fetch and list all active pipelines as indented nav items.
+Add dynamic pipeline entries under the "Pipelines" group in the global sidebar.
 
 **Acceptance Criteria:**
-- [ ] "Pipelines" group fetches active pipelines via `usePipelines()` hook
-- [ ] Each pipeline rendered as an indented item with pipeline name
+- [ ] "Pipelines" group fetches active pipelines via `usePipelines()`
+- [ ] Each pipeline rendered as indented nav item with name
 - [ ] Clicking navigates to `/pipelines/:code/dashboard`
-- [ ] "All Pipelines" link shown as first (non-indented) item
-- [ ] Loading state handled (skeleton or spinner)
+- [ ] "All Pipelines" shown as first non-indented item
+- [ ] Loading state handled
 
-### Task 1.3: Update pipeline workspace sidebar to use full nav groups
+### Task 1.3: Update pipeline workspace sidebar for full nav groups
 **File:** `apps/frontend/src/app/Sidebar.tsx`
 
-The `PipelineSidebarContent` component should render `buildPipelineNavGroups()` instead of the minimal flat list.
+`PipelineSidebarContent` renders `buildPipelineNavGroups()` as collapsible groups instead of flat list.
 
 **Acceptance Criteria:**
-- [ ] Pipeline sidebar renders full nav groups (Content, Production, Review, Tools, Pipeline Admin)
-- [ ] Each group collapsible/expandable (matching global sidebar behavior)
-- [ ] Pipeline name and code shown at top
-- [ ] "Switch Pipeline" or back arrow navigates to pipeline selector
-- [ ] Active item highlighting works with prefixed paths
+- [ ] Renders full nav groups with section headers
+- [ ] Groups collapsible/expandable (matching global sidebar behavior)
+- [ ] Pipeline name and code at top
+- [ ] "Switch Pipeline" link back to `/`
+- [ ] Active item highlighting works
 
 ---
 
@@ -117,117 +79,171 @@ The `PipelineSidebarContent` component should render `buildPipelineNavGroups()` 
 ### Task 2.1: Add all pipeline-scoped routes
 **File:** `apps/frontend/src/app/router.tsx`
 
-Add route definitions under `/pipelines/$pipelineCode/` for ALL sections that currently exist at root level. Reuse existing lazy page imports.
+Add route definitions under `/pipelines/$pipelineCode/` for ALL sections. Reuse existing lazy page imports.
 
 **Acceptance Criteria:**
-- [ ] Content routes: `/pipelines/:code/content/scene-catalogue`, `/pipelines/:code/content/library`, `/pipelines/:code/content/images`, `/pipelines/:code/content/scenes`, `/pipelines/:code/content/models`, `/pipelines/:code/content/storyboard`, `/pipelines/:code/content/model-dashboard`, `/pipelines/:code/content/contact-sheet`, `/pipelines/:code/content/duplicates`
-- [ ] Production routes: `/pipelines/:code/production/queue`, `/pipelines/:code/production/generation`, `/pipelines/:code/production/test-shots`, `/pipelines/:code/production/batch`, `/pipelines/:code/production/delivery`, `/pipelines/:code/production/checkpoints`, `/pipelines/:code/production/debugger`, `/pipelines/:code/production/render-timeline`
-- [ ] Review routes: `/pipelines/:code/review/annotations`, `/pipelines/:code/reviews`, `/pipelines/:code/review/notes`, `/pipelines/:code/review/production-notes`, `/pipelines/:code/review/qa-gates`, `/pipelines/:code/review/cinema`, `/pipelines/:code/review/temporal`
-- [ ] Tools routes: `/pipelines/:code/tools/workflows`, `/pipelines/:code/tools/prompts`, `/pipelines/:code/tools/config`, `/pipelines/:code/tools/presets`, `/pipelines/:code/tools/search`, `/pipelines/:code/tools/branching`, `/pipelines/:code/tools/activity-console`, `/pipelines/:code/tools/model-ingest`, `/pipelines/:code/tools/batch-metadata`, `/pipelines/:code/tools/pipeline-hooks`, `/pipelines/:code/tools/workflow-import`, `/pipelines/:code/tools/undo`
-- [ ] Pipeline admin routes: `/pipelines/:code/admin/naming`, `/pipelines/:code/admin/output-profiles`
-- [ ] All routes use PipelineWorkspaceLayout as parent
-- [ ] Existing root-level routes remain for backward compatibility
+- [ ] Content routes: scene-catalogue, library, images, scenes, models, characters, storyboard, model-dashboard, contact-sheet, duplicates
+- [ ] Production routes: queue, generation, test-shots, batch, delivery, checkpoints, debugger, render-timeline
+- [ ] Review routes: annotations, reviews, notes, production-notes, qa-gates, cinema, temporal
+- [ ] Tools routes: workflows, prompts, config, presets, search, branching, activity-console, model-ingest, batch-metadata, pipeline-hooks, workflow-import, undo
+- [ ] Pipeline admin routes: naming, output-profiles
+- [ ] All wrapped in PipelineWorkspaceLayout
+- [ ] Root-level routes kept for backward compat
 
 ---
 
-## Phase 3: Queue Pipeline Awareness
+## Phase 3: Backend Pipeline Filtering
 
-### Task 3.1: Add pipeline info to job API responses
-**File:** `apps/backend/crates/api/src/handlers/` (job/queue handlers)
-
-Modify job list queries to JOIN through project to get pipeline_id and pipeline_code.
+### Task 3.1: Pipeline-filtered track repo and handler
+**Files:** `apps/backend/crates/db/src/repositories/track_repo.rs`, `apps/backend/crates/api/src/handlers/track.rs`
 
 **Acceptance Criteria:**
-- [ ] Job list API response includes `pipeline_id` and `pipeline_code` fields
-- [ ] Job list supports optional `pipeline_id` query parameter for filtering
-- [ ] When filtered by pipeline_id, only jobs from that pipeline's projects are returned
+- [ ] `TrackRepo::list()` accepts optional `pipeline_id` parameter
+- [ ] When provided, adds `WHERE pipeline_id = $N` clause
+- [ ] Track list handler accepts `pipeline_id` query param
+- [ ] Frontend `useTracks()` passes pipeline_id when in pipeline context
 
-### Task 3.2: Queue manager UI pipeline display
-**Files:** `apps/frontend/src/features/` (queue/job components)
-
-Add pipeline badge/tag to job cards in the queue manager.
+### Task 3.2: Pipeline-filtered scene type repo and handler
+**Files:** `apps/backend/crates/db/src/repositories/scene_type_repo.rs`, `apps/backend/crates/api/src/handlers/scene_type.rs`
 
 **Acceptance Criteria:**
-- [ ] Each job card shows a pipeline code badge (e.g., "x121", "y122")
-- [ ] Pipeline badge uses a distinct color per pipeline
-- [ ] Queue page within pipeline workspace auto-filters to that pipeline
-- [ ] Admin queue page shows all pipelines with filter dropdown
+- [ ] `SceneTypeRepo::list()` accepts optional `pipeline_id` filter
+- [ ] `list_with_tracks()` passes pipeline filter through
+- [ ] `find_by_slug()` accepts optional pipeline_id to disambiguate
+- [ ] Scene type handlers pass pipeline filter from query params
+- [ ] Frontend scene catalogue hooks pass pipeline_id
+
+### Task 3.3: Pipeline-filtered workflow repo and handler
+**Files:** `apps/backend/crates/db/src/repositories/workflow_repo.rs`, `apps/backend/crates/api/src/handlers/workflow_import.rs`
+
+**Acceptance Criteria:**
+- [ ] `WorkflowRepo::list()` accepts optional `pipeline_id` filter
+- [ ] Workflow list handler accepts `pipeline_id` query param
+- [ ] Frontend workflow hooks pass pipeline_id
+
+### Task 3.4: Cross-pipeline validation in scene type track operations
+**File:** `apps/backend/crates/db/src/repositories/scene_type_repo.rs`
+
+**Acceptance Criteria:**
+- [ ] `add_track()` validates track's pipeline_id matches scene type's pipeline_id
+- [ ] `set_tracks()` validates all track_ids belong to same pipeline
+- [ ] Returns error if pipeline mismatch detected
 
 ---
 
-## Phase 4: Pipeline-Scoped Naming Rules
+## Phase 4: Hardcoded Reference Removal
 
-### Task 4.1: Pipeline-aware naming rules page
-**Files:** `apps/frontend/src/features/` (naming/admin components)
-
-When the naming rules page is accessed from within a pipeline workspace, it shows and edits that pipeline's naming templates from `pipeline.naming_rules`.
+### Task 4.1: Backend hardcoded slug removal
+**Files:** Multiple backend files
 
 **Acceptance Criteria:**
-- [ ] Naming rules page detects pipeline context via `usePipelineContextSafe()`
-- [ ] In pipeline context: shows/edits that pipeline's `naming_rules` from the pipeline record
-- [ ] In admin context: shows pipeline selector to choose which pipeline to edit
-- [ ] Save updates the pipeline's `naming_rules` JSONB via pipeline update API
-- [ ] Preview shows example filenames using the pipeline's rules
+- [ ] `naming_engine.rs` — Replace `Some("topless") => "topless_"` with pipeline naming_rules.prefix_rules lookup
+- [ ] `delivery_assembly.rs` — Replace hardcoded track ordering with pipeline seed slot order
+- [ ] `generation.rs` — Seed image auto-resolve uses pipeline's tracks, not hardcoded slugs
+
+### Task 4.2: Frontend hardcoded slug removal
+**Files:** Multiple frontend files
+
+**Acceptance Criteria:**
+- [ ] `matchDroppedVideos.ts` — Replace `DEFAULT_TRACK_SLUG = "clothed"` with pipeline.seed_slots[0].name
+- [ ] `use-character-import.ts` — Replace `.clothed`/`.topless` direct access with dynamic slot names from pipeline
+- [ ] `TrackBadge.tsx` — Replace hardcoded color map with deterministic hash-based color function that works for any track slug
+- [ ] `CharacterSeedDataModal.tsx` — Already accepts dynamic slots (verify it's used correctly)
+
+---
+
+## Phase 5: Queue, Delivery, Dashboard
+
+### Task 5.1: Queue manager pipeline awareness
+**Files:** Backend job/queue handlers, frontend queue components
+
+**Acceptance Criteria:**
+- [ ] Job list query JOINs project → pipeline to return pipeline_code
+- [ ] Job list handler accepts optional pipeline_id filter
+- [ ] Queue UI shows pipeline badge per job
+- [ ] Pipeline workspace queue auto-filters to that pipeline
+- [ ] Admin queue shows all with pipeline filter dropdown
+
+### Task 5.2: Pipeline-scoped naming rules page
+**Files:** Frontend naming rules components
+
+**Acceptance Criteria:**
+- [ ] In pipeline workspace: shows that pipeline's naming_rules
+- [ ] Edits save to pipeline's naming_rules JSONB via update API
+- [ ] In admin: pipeline selector dropdown
+- [ ] Preview uses pipeline's rules for example filenames
+
+### Task 5.3: Dashboard pipeline scoping
+**Files:** Backend dashboard handlers, frontend dashboard
+
+**Acceptance Criteria:**
+- [ ] Dashboard handlers accept optional pipeline_id filter
+- [ ] Pipeline workspace dashboard shows pipeline-specific stats
+- [ ] Active tasks, project progress scoped by pipeline
+- [ ] Queue status shows pipeline-specific counts
+
+### Task 5.4: Character ingest pipeline awareness
+**Files:** Backend ingest handlers, frontend seed data components
+
+**Acceptance Criteria:**
+- [ ] Ingest handler loads project's pipeline for seed slot validation
+- [ ] Image classification uses pipeline seed slot names
+- [ ] Validation rejects when required seed slots missing
+- [ ] Clear error messages naming missing slots
 
 ---
 
 ## Relevant Files
 
-| File | Description |
-|------|-------------|
-| `apps/frontend/src/app/pipeline-navigation.ts` | Pipeline workspace nav groups |
-| `apps/frontend/src/app/Sidebar.tsx` | Sidebar with pipeline/global modes |
-| `apps/frontend/src/app/navigation.ts` | Global nav config (source of truth) |
-| `apps/frontend/src/app/router.tsx` | Route definitions |
-| `apps/frontend/src/features/pipelines/PipelineProvider.tsx` | Pipeline context |
-| Backend job handlers | Pipeline info in job responses |
-| Frontend queue components | Pipeline badge display |
-| Frontend naming components | Pipeline-scoped naming rules |
-
----
-
-## Dependencies
-
-### Existing Components to Reuse
-- `navigation.ts` nav groups — Mirror structure in pipeline-navigation.ts
-- All existing page components — Reuse via lazy imports in pipeline routes
-- `usePipelineContext()` / `usePipelineContextSafe()` — Read pipeline in feature components
-- `PipelineWorkspaceLayout` — Wraps all pipeline routes
-- Design system Badge component — For pipeline badges in queue
-
-### New Infrastructure Needed
-- `buildPipelineNavGroups()` function generating full nav
-- Pipeline-scoped routes for ~40 pages
-- Job API pipeline join
-- Naming rules pipeline-aware mode
+| File | Change |
+|------|--------|
+| `apps/frontend/src/app/pipeline-navigation.ts` | Full nav groups |
+| `apps/frontend/src/app/Sidebar.tsx` | Dynamic pipelines + full workspace nav |
+| `apps/frontend/src/app/router.tsx` | ~40 pipeline-scoped routes |
+| `apps/backend/crates/db/src/repositories/track_repo.rs` | pipeline_id filter |
+| `apps/backend/crates/db/src/repositories/scene_type_repo.rs` | pipeline_id filter + validation |
+| `apps/backend/crates/db/src/repositories/workflow_repo.rs` | pipeline_id filter |
+| `apps/backend/crates/core/src/naming_engine.rs` | Remove hardcoded "topless" |
+| `apps/backend/crates/api/src/background/delivery_assembly.rs` | Dynamic track ordering |
+| `apps/backend/crates/api/src/handlers/generation.rs` | Dynamic seed resolve |
+| `apps/frontend/src/features/characters/tabs/matchDroppedVideos.ts` | Dynamic default track |
+| `apps/frontend/src/features/projects/hooks/use-character-import.ts` | Dynamic slot access |
+| `apps/frontend/src/features/scene-catalogue/TrackBadge.tsx` | Hash-based colors |
+| Backend job/queue handlers | Pipeline join + filter |
+| Frontend queue components | Pipeline badge |
+| Backend dashboard handlers | Pipeline scoping |
+| Backend ingest handlers | Seed slot validation |
 
 ---
 
 ## Implementation Order
 
-### MVP (Minimum for Feature)
-1. Phase 1: Sidebar & Navigation — Tasks 1.1-1.3
-2. Phase 2: Route Expansion — Task 2.1
-3. Phase 3: Queue Pipeline Awareness — Tasks 3.1-3.2
-4. Phase 4: Pipeline-Scoped Naming Rules — Task 4.1
+### MVP
+1. Phase 1: Sidebar & Navigation (Tasks 1.1-1.3)
+2. Phase 2: Route Expansion (Task 2.1)
+3. Phase 3: Backend Pipeline Filtering (Tasks 3.1-3.4)
+4. Phase 4: Hardcoded Reference Removal (Tasks 4.1-4.2)
+5. Phase 5: Queue, Delivery, Dashboard (Tasks 5.1-5.4)
 
 **MVP Success Criteria:**
-- Pipeline workspace has complete nav matching global sidebar
-- Global sidebar shows dynamic pipeline list
-- Queue manager shows pipeline per job
+- Pipeline workspace has 100% feature parity with global nav
+- Zero hardcoded "clothed"/"topless" in codebase
+- All listings filtered by pipeline
+- Queue shows pipeline per job
 - Naming rules configurable per pipeline
 
 ---
 
 ## Notes
 
-1. **Route expansion is mechanical** — Task 2.1 is large but simple: duplicate existing lazy imports under pipeline-prefixed routes. Consider a helper function to reduce repetition.
-2. **Page components mostly don't change** — They just need to read pipeline_id from context for API calls. Most pages that list data already accept query parameters.
-3. **Queue pipeline info** — Jobs are linked to projects which have pipeline_id. The JOIN is straightforward: `jobs → scenes → projects → pipelines`.
-4. **Naming rules dual mode** — Same component, different data source: pipeline's `naming_rules` JSONB vs global naming config.
+1. **Phase 2 is mechanical** — ~40 routes, all using existing lazy imports. Consider a helper to reduce repetition.
+2. **Phase 3 is backward compatible** — pipeline_id filters are optional. Existing global calls still work.
+3. **Phase 4 is the highest-risk** — Changing naming engine and delivery assembly affects output. Test with both x121 and y122 configs.
+4. **Frontend hooks** — Most hooks just need `pipeline_id` added to query params. Use `usePipelineContextSafe()` to get it without requiring pipeline context (for pages accessible both globally and within pipeline).
 
 ---
 
 ## Version History
 
-- **v1.0** (2026-03-22): Initial task list creation from PRD-139
+- **v1.0** (2026-03-22): Initial task list
+- **v1.1** (2026-03-22): Expanded after comprehensive codebase audit — added 20+ areas of pipeline awareness
