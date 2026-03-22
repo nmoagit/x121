@@ -117,7 +117,7 @@ function CompactNavToggle() {
       type="button"
       onClick={toggleCompactNav}
       className={cn(
-        "flex w-full items-center gap-2 px-2 py-1 text-[10px] font-mono uppercase tracking-wider",
+        "flex w-full items-center gap-2 px-2 h-7 text-[10px] font-mono uppercase tracking-wider",
         "text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors",
       )}
     >
