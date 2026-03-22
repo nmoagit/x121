@@ -18,7 +18,6 @@ use std::sync::Arc;
 use axum::extract::State;
 use axum::Json;
 use serde::{Deserialize, Serialize};
-use x121_cloud::runpod::orchestrator::PodOrchestrator;
 use x121_core::cloud::CloudGpuProvider;
 use x121_core::error::CoreError;
 use x121_core::types::DbId;
@@ -224,8 +223,13 @@ pub async fn get_status(
         })
         .collect();
 
+    let runpod_configured = CloudProviderRepo::find_by_type(&state.pool, "runpod")
+        .await
+        .map(|p| !p.is_empty())
+        .unwrap_or(false);
+
     let status = InfrastructureStatus {
-        runpod_configured: state.pod_orchestrator.is_some(),
+        runpod_configured,
         comfyui_instances: instance_infos,
         connected_count: connected_ids.len(),
     };
@@ -235,107 +239,81 @@ pub async fn get_status(
 
 /// POST /admin/infrastructure/pod/start
 ///
-/// Starts a RunPod pod and registers the ComfyUI instance. Prefers the
-/// lifecycle bridge path (DB-based provider) but falls back to the legacy
-/// env-based `PodOrchestrator` when no RunPod provider exists in the DB.
+/// Starts a RunPod pod and registers the ComfyUI instance using the
+/// DB-configured cloud provider (via lifecycle bridge).
 pub async fn start_pod(
     RequireAdmin(_admin): RequireAdmin,
     State(state): State<AppState>,
 ) -> Result<Json<DataResponse<PodStartResult>>, AppError> {
-    // Try the lifecycle bridge path first: look for a RunPod provider in DB.
     let runpod_providers = CloudProviderRepo::find_by_type(&state.pool, "runpod").await?;
+    let provider = runpod_providers
+        .first()
+        .ok_or_else(|| AppError::BadRequest("No RunPod provider configured in database".into()))?;
 
-    if let Some(provider) = runpod_providers.first() {
-        let provider_id = provider.id;
-        let orch = state
-            .lifecycle_bridge
-            .build_orchestrator(provider_id)
-            .await?;
+    let provider_id = provider.id;
+    let orch = state
+        .lifecycle_bridge
+        .build_orchestrator(provider_id)
+        .await?;
 
-        // Find or create a cloud_instance row to track this pod.
-        // Use the first active instance, or create a placeholder if none exist.
-        let cloud_instance_id =
-            match CloudInstanceRepo::list_active_by_provider(&state.pool, provider_id)
-                .await?
-                .first()
-            {
-                Some(inst) => inst.id,
-                None => {
-                    // No tracked instance — fall through to legacy path.
-                    return start_pod_legacy(&state).await;
-                }
-            };
-
-        let external_id = CloudInstanceRepo::find_by_id(&state.pool, cloud_instance_id)
+    // Find the first active cloud instance, or use ensure_ready to provision one.
+    let cloud_instance_id =
+        match CloudInstanceRepo::list_active_by_provider(&state.pool, provider_id)
             .await?
-            .map(|i| i.external_id)
-            .unwrap_or_default();
+            .first()
+        {
+            Some(inst) => inst.id,
+            None => {
+                // No tracked instance — provision a new one via ensure_ready.
+                let ready = orch.ensure_ready(&state.pool).await?;
 
-        let ready = state
-            .lifecycle_bridge
-            .startup(cloud_instance_id, &orch, &external_id)
-            .await?;
+                // Register the ComfyUI instance in the DB.
+                let instance_name =
+                    x121_cloud::runpod::orchestrator::PodOrchestrator::instance_name(
+                        &ready.pod_id,
+                    );
+                let _ = ComfyUIInstanceRepo::upsert_by_name(
+                    &state.pool,
+                    &instance_name,
+                    &ready.comfyui_ws_url,
+                    &ready.comfyui_api_url,
+                )
+                .await;
 
-        tokio::time::sleep(std::time::Duration::from_secs(2)).await;
-        let connected = state.comfyui_manager.connected_instance_ids().await;
+                state.comfyui_manager.refresh_instances().await;
+                tokio::time::sleep(std::time::Duration::from_secs(2)).await;
+                let connected = state.comfyui_manager.connected_instance_ids().await;
 
-        let result = PodStartResult {
-            pod_id: ready.pod_id,
-            comfyui_api_url: ready.comfyui_api_url,
-            comfyui_ws_url: ready.comfyui_ws_url,
-            instance_registered: true,
-            manager_refreshed: !connected.is_empty(),
+                return Ok(Json(DataResponse {
+                    data: PodStartResult {
+                        pod_id: ready.pod_id,
+                        comfyui_api_url: ready.comfyui_api_url,
+                        comfyui_ws_url: ready.comfyui_ws_url,
+                        instance_registered: true,
+                        manager_refreshed: !connected.is_empty(),
+                    },
+                }));
+            }
         };
 
-        return Ok(Json(DataResponse { data: result }));
-    }
+    let external_id = CloudInstanceRepo::find_by_id(&state.pool, cloud_instance_id)
+        .await?
+        .map(|i| i.external_id)
+        .unwrap_or_default();
 
-    // No RunPod provider in DB — fall back to legacy env-based path.
-    start_pod_legacy(&state).await
-}
+    let ready = state
+        .lifecycle_bridge
+        .startup(cloud_instance_id, &orch, &external_id)
+        .await?;
 
-/// Legacy start_pod implementation using the env-based `PodOrchestrator`.
-async fn start_pod_legacy(
-    state: &AppState,
-) -> Result<Json<DataResponse<PodStartResult>>, AppError> {
-    let orchestrator = state
-        .pod_orchestrator
-        .as_ref()
-        .ok_or_else(|| AppError::BadRequest("RunPod is not configured".into()))?;
-
-    let ready = orchestrator.ensure_ready(&state.pool).await?;
-
-    // Disable stale runpod-* instances.
-    let _ = ComfyUIInstanceRepo::disable_by_name_prefix(&state.pool, "runpod-").await;
-
-    // Register the new pod's ComfyUI endpoints.
-    let instance_name = PodOrchestrator::instance_name(&ready.pod_id);
-    let instance_registered = match ComfyUIInstanceRepo::upsert_by_name(
-        &state.pool,
-        &instance_name,
-        &ready.comfyui_ws_url,
-        &ready.comfyui_api_url,
-    )
-    .await
-    {
-        Ok(_) => true,
-        Err(e) => {
-            tracing::error!(error = %e, name = %instance_name, "Failed to register ComfyUI instance");
-            false
-        }
-    };
-
-    // Refresh the manager to pick up the new instance.
-    state.comfyui_manager.refresh_instances().await;
     tokio::time::sleep(std::time::Duration::from_secs(2)).await;
-
     let connected = state.comfyui_manager.connected_instance_ids().await;
 
     let result = PodStartResult {
         pod_id: ready.pod_id,
         comfyui_api_url: ready.comfyui_api_url,
         comfyui_ws_url: ready.comfyui_ws_url,
-        instance_registered,
+        instance_registered: true,
         manager_refreshed: !connected.is_empty(),
     };
 
@@ -344,8 +322,7 @@ async fn start_pod_legacy(
 
 /// POST /admin/infrastructure/pod/stop
 ///
-/// Stops a RunPod pod. Prefers the lifecycle bridge (teardown handles ComfyUI
-/// disconnection) but falls back to the legacy env-based orchestrator.
+/// Stops a RunPod pod via the lifecycle bridge (DB-based provider).
 pub async fn stop_pod(
     RequireAdmin(_admin): RequireAdmin,
     State(state): State<AppState>,
@@ -369,51 +346,42 @@ pub async fn stop_pod(
             .ok_or_else(|| AppError::BadRequest("No RunPod instances found to stop".into()))?
     };
 
-    // Try lifecycle bridge path: find the cloud instance for this pod.
+    // Use lifecycle bridge path: find the cloud instance for this pod.
     let runpod_providers = CloudProviderRepo::find_by_type(&state.pool, "runpod").await?;
     let mut used_bridge = false;
 
     if let Some(provider) = runpod_providers.first() {
         let provider_id = provider.id;
-        // Look for a cloud instance with this external_id.
         if let Ok(Some(cloud_inst)) =
             CloudInstanceRepo::find_by_external_id(&state.pool, provider_id, &pod_id).await
         {
-            match state.lifecycle_bridge.build_orchestrator(provider_id).await {
-                Ok(orch) => {
-                    if let Err(e) = state
-                        .lifecycle_bridge
-                        .teardown(cloud_inst.id, &orch, &pod_id, false)
-                        .await
-                    {
-                        tracing::warn!(
-                            cloud_instance_id = cloud_inst.id,
-                            error = %e,
-                            "Lifecycle teardown failed; falling back to legacy stop"
-                        );
-                    } else {
-                        used_bridge = true;
-                    }
-                }
-                Err(e) => {
-                    tracing::warn!(
-                        provider_id,
-                        error = %e,
-                        "Failed to build orchestrator for stop_pod teardown"
-                    );
-                }
-            }
+            let orch = state
+                .lifecycle_bridge
+                .build_orchestrator(provider_id)
+                .await?;
+
+            state
+                .lifecycle_bridge
+                .teardown(cloud_inst.id, &orch, &pod_id, false)
+                .await?;
+
+            used_bridge = true;
         }
     }
 
-    // Legacy fallback: direct orchestrator stop + manual cleanup.
+    // If no cloud instance was tracked, build an orchestrator and stop directly.
     if !used_bridge {
-        let orchestrator = state
-            .pod_orchestrator
-            .as_ref()
-            .ok_or_else(|| AppError::BadRequest("RunPod is not configured".into()))?;
+        let runpod_providers = CloudProviderRepo::find_by_type(&state.pool, "runpod").await?;
+        let provider = runpod_providers
+            .first()
+            .ok_or_else(|| AppError::BadRequest("No RunPod provider configured".into()))?;
 
-        orchestrator.stop_or_terminate_pod(&pod_id).await?;
+        let orch = state
+            .lifecycle_bridge
+            .build_orchestrator(provider.id)
+            .await?;
+
+        orch.stop_or_terminate_pod(&pod_id).await?;
     }
 
     let disabled = ComfyUIInstanceRepo::disable_by_name_prefix(&state.pool, "runpod-")
@@ -434,12 +402,17 @@ pub async fn list_gpu_types(
     RequireAdmin(_admin): RequireAdmin,
     State(state): State<AppState>,
 ) -> Result<Json<DataResponse<Vec<x121_core::cloud::GpuTypeInfo>>>, AppError> {
-    let orchestrator = state
-        .pod_orchestrator
-        .as_ref()
-        .ok_or_else(|| AppError::BadRequest("RunPod is not configured".into()))?;
+    let runpod_providers = CloudProviderRepo::find_by_type(&state.pool, "runpod").await?;
+    let provider = runpod_providers
+        .first()
+        .ok_or_else(|| AppError::BadRequest("No RunPod provider configured".into()))?;
 
-    let gpu_types = orchestrator.list_gpu_types().await?;
+    let orch = state
+        .lifecycle_bridge
+        .build_orchestrator(provider.id)
+        .await?;
+
+    let gpu_types = orch.list_gpu_types().await?;
 
     Ok(Json(DataResponse { data: gpu_types }))
 }

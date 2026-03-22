@@ -14,7 +14,7 @@ use x121_cloud::runpod::orchestrator::{PodOrchestrator, PodOrchestratorConfig, P
 use x121_comfyui::manager::ComfyUIManager;
 use x121_core::storage::local::LocalStorageProvider;
 use x121_core::storage::StorageProvider;
-use x121_db::repositories::ComfyUIInstanceRepo;
+use x121_db::repositories::{CloudProviderRepo, ComfyUIInstanceRepo};
 
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
@@ -91,10 +91,26 @@ async fn main() {
     tracing::info!("Worker shut down");
 }
 
-/// Set up the RunPod pod if configured. Returns the orchestrator and pod
-/// info so the caller can terminate the pod on shutdown.
+/// Set up the RunPod pod if configured in the database.
+/// Returns the orchestrator and pod info so the caller can terminate on shutdown.
 async fn setup_runpod_pod(pool: &sqlx::PgPool) -> Option<(PodOrchestrator, PodReady)> {
-    let pod_config = PodOrchestratorConfig::from_env()?;
+    // Look for a RunPod provider in the database (need full entity for encrypted key).
+    let all_providers = CloudProviderRepo::list_all(pool).await.ok()?;
+    let provider = all_providers
+        .iter()
+        .find(|p| p.provider_type == "runpod")?;
+
+    // Decrypt API key and build orchestrator from DB settings.
+    let master_hex = std::env::var("CLOUD_ENCRYPTION_KEY").ok()?;
+    let master_key = x121_core::crypto::parse_master_key(&master_hex).ok()?;
+    let api_key = x121_core::crypto::decrypt_api_key(
+        &provider.api_key_encrypted,
+        &provider.api_key_nonce,
+        &master_key,
+    )
+    .ok()?;
+
+    let pod_config = PodOrchestratorConfig::from_provider(api_key, &provider.settings).ok()?;
     let orchestrator = PodOrchestrator::new(pod_config);
 
     match orchestrator.ensure_ready(pool).await {

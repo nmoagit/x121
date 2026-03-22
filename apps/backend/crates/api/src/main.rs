@@ -76,15 +76,6 @@ async fn main() {
     // --- Heartbeat ---
     let heartbeat_handle = ws::start_heartbeat(Arc::clone(&ws_manager));
 
-    // --- RunPod pod orchestrator (if configured) ---
-    let pod_orchestrator =
-        x121_cloud::runpod::orchestrator::PodOrchestratorConfig::from_env().map(|config| {
-            tracing::info!("RunPod configured — pod orchestrator available");
-            Arc::new(x121_cloud::runpod::orchestrator::PodOrchestrator::new(
-                config,
-            ))
-        });
-
     // --- ComfyUI manager ---
     let comfyui_manager = x121_comfyui::manager::ComfyUIManager::start_with_activity(
         pool.clone(),
@@ -326,7 +317,6 @@ async fn main() {
         cloud_registry,
         storage,
         lifecycle_bridge,
-        pod_orchestrator,
         scaling_nudge,
     };
 
