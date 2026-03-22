@@ -57,38 +57,50 @@ impl WorkflowRepo {
             .await
     }
 
-    /// List workflows with optional status filter and pagination, ordered by name.
+    /// List workflows with optional status and pipeline filters, plus pagination.
+    ///
+    /// Ordered by name.
     pub async fn list(
         pool: &PgPool,
         status_id: Option<DbId>,
+        pipeline_id: Option<DbId>,
         limit: i64,
         offset: i64,
     ) -> Result<Vec<Workflow>, sqlx::Error> {
-        if let Some(sid) = status_id {
-            let query = format!(
-                "SELECT {COLUMNS} FROM workflows
-                 WHERE status_id = $1
-                 ORDER BY name
-                 LIMIT $2 OFFSET $3"
-            );
-            sqlx::query_as::<_, Workflow>(&query)
-                .bind(sid)
-                .bind(limit)
-                .bind(offset)
-                .fetch_all(pool)
-                .await
-        } else {
-            let query = format!(
-                "SELECT {COLUMNS} FROM workflows
-                 ORDER BY name
-                 LIMIT $1 OFFSET $2"
-            );
-            sqlx::query_as::<_, Workflow>(&query)
-                .bind(limit)
-                .bind(offset)
-                .fetch_all(pool)
-                .await
+        let mut conditions: Vec<String> = Vec::new();
+        let mut bind_idx: usize = 1;
+
+        if status_id.is_some() {
+            conditions.push(format!("status_id = ${bind_idx}"));
+            bind_idx += 1;
         }
+        if pipeline_id.is_some() {
+            conditions.push(format!("pipeline_id = ${bind_idx}"));
+            bind_idx += 1;
+        }
+
+        let where_clause = if conditions.is_empty() {
+            String::new()
+        } else {
+            format!(" WHERE {}", conditions.join(" AND "))
+        };
+
+        let query = format!(
+            "SELECT {COLUMNS} FROM workflows{where_clause} \
+             ORDER BY name \
+             LIMIT ${bind_idx} OFFSET ${}",
+            bind_idx + 1
+        );
+
+        let mut q = sqlx::query_as::<_, Workflow>(&query);
+        if let Some(sid) = status_id {
+            q = q.bind(sid);
+        }
+        if let Some(pid) = pipeline_id {
+            q = q.bind(pid);
+        }
+        q = q.bind(limit).bind(offset);
+        q.fetch_all(pool).await
     }
 
     /// Update a workflow with the provided fields, returning the updated row.

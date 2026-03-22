@@ -133,10 +133,7 @@ mod tests {
     #[test]
     fn extra_labels_ignored() {
         let slots = vec![slot("front_clothed", true)];
-        let labels = vec![
-            "front_clothed".to_string(),
-            "extra_label".to_string(),
-        ];
+        let labels = vec!["front_clothed".to_string(), "extra_label".to_string()];
         assert!(validate_seed_images(&slots, &labels).is_ok());
     }
 }

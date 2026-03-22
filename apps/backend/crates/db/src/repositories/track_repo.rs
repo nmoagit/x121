@@ -38,16 +38,36 @@ impl TrackRepo {
             .await
     }
 
-    /// List all tracks, optionally including inactive ones.
+    /// List all tracks, optionally including inactive ones and filtering by pipeline.
     ///
     /// Ordered by sort_order, then name.
-    pub async fn list(pool: &PgPool, include_inactive: bool) -> Result<Vec<Track>, sqlx::Error> {
-        let query = if include_inactive {
-            format!("SELECT {COLUMNS} FROM tracks ORDER BY sort_order, name")
+    pub async fn list(
+        pool: &PgPool,
+        include_inactive: bool,
+        pipeline_id: Option<DbId>,
+    ) -> Result<Vec<Track>, sqlx::Error> {
+        let mut conditions: Vec<String> = Vec::new();
+
+        if !include_inactive {
+            conditions.push("is_active = true".to_string());
+        }
+        if pipeline_id.is_some() {
+            conditions.push(format!("pipeline_id = ${}", conditions.len() + 1));
+        }
+
+        let where_clause = if conditions.is_empty() {
+            String::new()
         } else {
-            format!("SELECT {COLUMNS} FROM tracks WHERE is_active = true ORDER BY sort_order, name")
+            format!(" WHERE {}", conditions.join(" AND "))
         };
-        sqlx::query_as::<_, Track>(&query).fetch_all(pool).await
+
+        let query = format!("SELECT {COLUMNS} FROM tracks{where_clause} ORDER BY sort_order, name");
+
+        let mut q = sqlx::query_as::<_, Track>(&query);
+        if let Some(pid) = pipeline_id {
+            q = q.bind(pid);
+        }
+        q.fetch_all(pool).await
     }
 
     /// Update a track. Only non-`None` fields are applied. Slug is immutable.

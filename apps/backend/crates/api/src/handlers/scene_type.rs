@@ -22,7 +22,6 @@ use x121_db::repositories::{CharacterRepo, SceneTypeRepo};
 
 use crate::error::{AppError, AppResult};
 use crate::handlers::scene_type_inheritance::ensure_scene_type_exists;
-use crate::query::IncludeInactiveParams;
 use crate::response::DataResponse;
 use crate::state::AppState;
 
@@ -298,7 +297,7 @@ pub async fn generate_matrix(
     let scene_types = SceneTypeRepo::list_by_ids(&state.pool, &body.scene_type_ids).await?;
 
     // Load active tracks to use as variant types (replaces expand_variants)
-    let tracks = TrackRepo::list(&state.pool, false).await?;
+    let tracks = TrackRepo::list(&state.pool, false, None).await?;
     let track_slugs: Vec<String> = tracks.into_iter().map(|t| t.slug).collect();
 
     // Build matrix cells
@@ -405,14 +404,26 @@ pub async fn validate_scene_type_config(
 // Track management endpoints (PRD-123, ported from scene_catalog)
 // ---------------------------------------------------------------------------
 
-/// GET /api/v1/scene-types/with-tracks?include_inactive=false
+/// Query parameters for scene-type list endpoints that support pipeline filtering.
+#[derive(Debug, Deserialize)]
+pub struct SceneTypeListParams {
+    /// Include deactivated scene types in the results.
+    #[serde(default)]
+    pub include_inactive: bool,
+    /// When provided, only scene types belonging to this pipeline are returned.
+    pub pipeline_id: Option<DbId>,
+}
+
+/// GET /api/v1/scene-types/with-tracks?include_inactive=false&pipeline_id=1
 ///
 /// List all scene types with their associated tracks.
 pub async fn list_with_tracks(
     State(state): State<AppState>,
-    Query(params): Query<IncludeInactiveParams>,
+    Query(params): Query<SceneTypeListParams>,
 ) -> AppResult<impl IntoResponse> {
-    let entries = SceneTypeRepo::list_with_tracks(&state.pool, params.include_inactive).await?;
+    let entries =
+        SceneTypeRepo::list_with_tracks(&state.pool, params.include_inactive, params.pipeline_id)
+            .await?;
     Ok(Json(DataResponse { data: entries }))
 }
 

@@ -124,14 +124,33 @@ impl SceneTypeRepo {
             .await
     }
 
-    /// Find a scene type by slug. Excludes soft-deleted rows.
-    pub async fn find_by_slug(pool: &PgPool, slug: &str) -> Result<Option<SceneType>, sqlx::Error> {
-        let query =
-            format!("SELECT {COLUMNS} FROM scene_types WHERE slug = $1 AND deleted_at IS NULL");
-        sqlx::query_as::<_, SceneType>(&query)
-            .bind(slug)
-            .fetch_optional(pool)
-            .await
+    /// Find a scene type by slug, optionally scoped to a pipeline. Excludes soft-deleted rows.
+    ///
+    /// When `pipeline_id` is provided, the query is narrowed to that pipeline,
+    /// which disambiguates slugs that may exist in multiple pipelines.
+    pub async fn find_by_slug(
+        pool: &PgPool,
+        slug: &str,
+        pipeline_id: Option<DbId>,
+    ) -> Result<Option<SceneType>, sqlx::Error> {
+        if let Some(pid) = pipeline_id {
+            let query = format!(
+                "SELECT {COLUMNS} FROM scene_types \
+                 WHERE slug = $1 AND pipeline_id = $2 AND deleted_at IS NULL"
+            );
+            sqlx::query_as::<_, SceneType>(&query)
+                .bind(slug)
+                .bind(pid)
+                .fetch_optional(pool)
+                .await
+        } else {
+            let query =
+                format!("SELECT {COLUMNS} FROM scene_types WHERE slug = $1 AND deleted_at IS NULL");
+            sqlx::query_as::<_, SceneType>(&query)
+                .bind(slug)
+                .fetch_optional(pool)
+                .await
+        }
     }
 
     /// List scene types scoped to a specific project, ordered by most recently created first.
@@ -162,23 +181,35 @@ impl SceneTypeRepo {
         sqlx::query_as::<_, SceneType>(&query).fetch_all(pool).await
     }
 
-    /// List all active (non-deleted) scene types, optionally including inactive ones.
+    /// List all active (non-deleted) scene types, optionally including inactive
+    /// ones and filtering by pipeline.
     pub async fn list(
         pool: &PgPool,
         include_inactive: bool,
+        pipeline_id: Option<DbId>,
     ) -> Result<Vec<SceneType>, sqlx::Error> {
-        let query = if include_inactive {
-            format!(
-                "SELECT {COLUMNS} FROM scene_types WHERE deleted_at IS NULL ORDER BY sort_order, name"
-            )
-        } else {
-            format!(
-                "SELECT {COLUMNS} FROM scene_types \
-                 WHERE is_active = true AND deleted_at IS NULL \
-                 ORDER BY sort_order, name"
-            )
-        };
-        sqlx::query_as::<_, SceneType>(&query).fetch_all(pool).await
+        let mut conditions = vec!["deleted_at IS NULL".to_string()];
+        let mut bind_idx = 1;
+
+        if !include_inactive {
+            conditions.push("is_active = true".to_string());
+        }
+        if pipeline_id.is_some() {
+            conditions.push(format!("pipeline_id = ${bind_idx}"));
+            bind_idx += 1;
+        }
+        let _ = bind_idx; // suppress unused warning
+
+        let where_clause = conditions.join(" AND ");
+        let query = format!(
+            "SELECT {COLUMNS} FROM scene_types WHERE {where_clause} ORDER BY sort_order, name"
+        );
+
+        let mut q = sqlx::query_as::<_, SceneType>(&query);
+        if let Some(pid) = pipeline_id {
+            q = q.bind(pid);
+        }
+        q.fetch_all(pool).await
     }
 
     /// Update a scene type. Only non-`None` fields in `input` are applied.
@@ -393,11 +424,16 @@ impl SceneTypeRepo {
     /// Replace all track associations for a scene type.
     ///
     /// Deletes existing associations, then inserts the new set.
+    /// Returns an error if any track belongs to a different pipeline than the scene type.
     pub async fn set_tracks(
         pool: &PgPool,
         scene_type_id: DbId,
         track_ids: &[DbId],
     ) -> Result<(), sqlx::Error> {
+        if !track_ids.is_empty() {
+            Self::validate_track_pipelines(pool, scene_type_id, track_ids).await?;
+        }
+
         let mut tx = pool.begin().await?;
         Self::set_tracks_inner(&mut tx, scene_type_id, track_ids).await?;
         tx.commit().await?;
@@ -405,11 +441,15 @@ impl SceneTypeRepo {
     }
 
     /// Add a single track to a scene type (idempotent).
+    ///
+    /// Returns an error if the track belongs to a different pipeline than the scene type.
     pub async fn add_track(
         pool: &PgPool,
         scene_type_id: DbId,
         track_id: DbId,
     ) -> Result<(), sqlx::Error> {
+        Self::validate_track_pipelines(pool, scene_type_id, &[track_id]).await?;
+
         sqlx::query(
             "INSERT INTO scene_type_tracks (scene_type_id, track_id) \
              VALUES ($1, $2) \
@@ -441,12 +481,14 @@ impl SceneTypeRepo {
         Ok(result.rows_affected() > 0)
     }
 
-    /// List all non-deleted scene types with their tracks.
+    /// List all non-deleted scene types with their tracks, optionally filtered
+    /// by pipeline.
     pub async fn list_with_tracks(
         pool: &PgPool,
         include_inactive: bool,
+        pipeline_id: Option<DbId>,
     ) -> Result<Vec<SceneTypeWithTracks>, sqlx::Error> {
-        let entries = Self::list(pool, include_inactive).await?;
+        let entries = Self::list(pool, include_inactive, pipeline_id).await?;
         let mut result = Vec::with_capacity(entries.len());
 
         for scene_type in entries {
@@ -475,6 +517,46 @@ impl SceneTypeRepo {
     // -----------------------------------------------------------------------
     // Internal helpers
     // -----------------------------------------------------------------------
+
+    /// Validate that all given tracks belong to the same pipeline as the scene type.
+    ///
+    /// Returns a database error if any track has a different `pipeline_id`.
+    async fn validate_track_pipelines(
+        pool: &PgPool,
+        scene_type_id: DbId,
+        track_ids: &[DbId],
+    ) -> Result<(), sqlx::Error> {
+        let st_pipeline: Option<(DbId,)> =
+            sqlx::query_as("SELECT pipeline_id FROM scene_types WHERE id = $1")
+                .bind(scene_type_id)
+                .fetch_optional(pool)
+                .await?;
+
+        let Some((scene_type_pipeline_id,)) = st_pipeline else {
+            // Scene type doesn't exist — let the caller handle NotFound.
+            return Ok(());
+        };
+
+        let mismatched: Vec<(DbId, DbId)> = sqlx::query_as(
+            "SELECT id, pipeline_id FROM tracks \
+             WHERE id = ANY($1) AND pipeline_id != $2",
+        )
+        .bind(track_ids)
+        .bind(scene_type_pipeline_id)
+        .fetch_all(pool)
+        .await?;
+
+        if !mismatched.is_empty() {
+            let ids: Vec<String> = mismatched.iter().map(|(id, _)| id.to_string()).collect();
+            return Err(sqlx::Error::Protocol(format!(
+                "Track(s) [{}] belong to a different pipeline than the scene type (pipeline_id={})",
+                ids.join(", "),
+                scene_type_pipeline_id,
+            )));
+        }
+
+        Ok(())
+    }
 
     /// Replace track associations within an existing transaction.
     async fn set_tracks_inner(

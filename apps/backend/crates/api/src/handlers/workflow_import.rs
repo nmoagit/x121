@@ -33,6 +33,8 @@ use crate::state::AppState;
 #[derive(Debug, Deserialize)]
 pub struct ListWorkflowsParams {
     pub status_id: Option<DbId>,
+    /// When provided, only workflows belonging to this pipeline are returned.
+    pub pipeline_id: Option<DbId>,
     pub limit: Option<i64>,
     pub offset: Option<i64>,
 }
@@ -154,7 +156,14 @@ pub async fn list_workflows(
     let limit = clamp_limit(params.limit, DEFAULT_SEARCH_LIMIT, MAX_SEARCH_LIMIT);
     let offset = clamp_offset(params.offset);
 
-    let items = WorkflowRepo::list(&state.pool, params.status_id, limit, offset).await?;
+    let items = WorkflowRepo::list(
+        &state.pool,
+        params.status_id,
+        params.pipeline_id,
+        limit,
+        offset,
+    )
+    .await?;
 
     tracing::debug!(count = items.len(), "Listed workflows");
 
