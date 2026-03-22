@@ -56,7 +56,7 @@ export function buildPipelineNavGroups(pipelineCode: string): NavGroupDef[] {
     {
       label: "Projects",
       items: [
-        { label: "All Projects", path: `${base}/projects`, icon: FolderKanban, prominent: true },
+        { label: "All Projects", path: `${base}/projects`, icon: FolderKanban, prominent: true, exact: true },
       ],
     },
     {
