@@ -12,6 +12,7 @@ import { Stack } from "@/components/layout";
 import { ListFilter, X } from "@/tokens/icons";
 import { iconSizes } from "@/tokens/icons";
 import { TERMINAL_PANEL, TERMINAL_BODY, TERMINAL_LABEL } from "@/lib/ui-classes";
+import { usePipelines } from "@/features/pipelines/hooks/use-pipelines";
 
 import { useWorkerInstances } from "./hooks/use-queue";
 import type { QueueJobFilter } from "./types";
@@ -63,6 +64,7 @@ interface QueueFilterBarProps {
 
 export function QueueFilterBar({ filter, onChange }: QueueFilterBarProps) {
   const { data: instances } = useWorkerInstances();
+  const { data: pipelines } = usePipelines();
 
   const toggleStatus = useCallback(
     (statusId: number) => {
@@ -92,6 +94,13 @@ export function QueueFilterBar({ filter, onChange }: QueueFilterBarProps) {
     [filter, onChange],
   );
 
+  const setPipeline = useCallback(
+    (value: string) => {
+      onChange({ ...filter, pipeline_id: value ? Number(value) : undefined });
+    },
+    [filter, onChange],
+  );
+
   const clearAll = useCallback(() => {
     onChange({ limit: filter.limit, offset: 0 });
   }, [filter.limit, onChange]);
@@ -99,7 +108,8 @@ export function QueueFilterBar({ filter, onChange }: QueueFilterBarProps) {
   const hasActiveFilters =
     (filter.status_ids && filter.status_ids.length > 0) ||
     filter.instance_id != null ||
-    !!filter.job_type;
+    !!filter.job_type ||
+    filter.pipeline_id != null;
 
   const workerOptions = [
     { label: "All Workers", value: "" },
@@ -145,6 +155,17 @@ export function QueueFilterBar({ filter, onChange }: QueueFilterBarProps) {
           options={JOB_TYPES.map((jt) => ({ label: jt.label, value: jt.value }))}
         />
 
+        {/* Pipeline dropdown */}
+        <Select
+          label=""
+          value={filter.pipeline_id != null ? String(filter.pipeline_id) : ""}
+          onChange={setPipeline}
+          options={[
+            { label: "All Pipelines", value: "" },
+            ...(pipelines?.map((p) => ({ label: p.name, value: String(p.id) })) ?? []),
+          ]}
+        />
+
         {hasActiveFilters && (
           <Button
             variant="ghost"
@@ -177,6 +198,12 @@ export function QueueFilterBar({ filter, onChange }: QueueFilterBarProps) {
             <RemovableChip
               label={`Type: ${filter.job_type}`}
               onRemove={() => onChange({ ...filter, job_type: undefined })}
+            />
+          )}
+          {filter.pipeline_id != null && (
+            <RemovableChip
+              label={`Pipeline: ${pipelines?.find((p) => p.id === filter.pipeline_id)?.name ?? filter.pipeline_id}`}
+              onRemove={() => onChange({ ...filter, pipeline_id: undefined })}
             />
           )}
         </Stack>

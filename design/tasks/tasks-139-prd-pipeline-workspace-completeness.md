@@ -154,42 +154,42 @@ Add route definitions under `/pipelines/$pipelineCode/` for ALL sections. Reuse 
 
 ## Phase 5: Queue, Delivery, Dashboard
 
-### Task 5.1: Queue manager pipeline awareness
+### Task 5.1: Queue manager pipeline awareness [COMPLETE]
 **Files:** Backend job/queue handlers, frontend queue components
 
 **Acceptance Criteria:**
-- [ ] Job list query JOINs project → pipeline to return pipeline_code
-- [ ] Job list handler accepts optional pipeline_id filter
-- [ ] Queue UI shows pipeline badge per job
-- [ ] Pipeline workspace queue auto-filters to that pipeline
-- [ ] Admin queue shows all with pipeline filter dropdown
+- [x] Job list query JOINs project → pipeline to return pipeline_code
+- [x] Job list handler accepts optional pipeline_id filter
+- [x] Queue UI shows pipeline badge per job
+- [x] Pipeline workspace queue auto-filters to that pipeline
+- [x] Admin queue shows all with pipeline filter dropdown
 
-### Task 5.2: Pipeline-scoped naming rules page
+### Task 5.2: Pipeline-scoped naming rules page [COMPLETE]
 **Files:** Frontend naming rules components
 
 **Acceptance Criteria:**
-- [ ] In pipeline workspace: shows that pipeline's naming_rules
-- [ ] Edits save to pipeline's naming_rules JSONB via update API
-- [ ] In admin: pipeline selector dropdown
+- [x] In pipeline workspace: shows that pipeline's naming_rules
+- [x] Edits save to pipeline's naming_rules JSONB via update API
+- [x] In admin: pipeline selector dropdown
 - [ ] Preview uses pipeline's rules for example filenames
 
-### Task 5.3: Dashboard pipeline scoping
+### Task 5.3: Dashboard pipeline scoping [COMPLETE]
 **Files:** Backend dashboard handlers, frontend dashboard
 
 **Acceptance Criteria:**
-- [ ] Dashboard handlers accept optional pipeline_id filter
-- [ ] Pipeline workspace dashboard shows pipeline-specific stats
-- [ ] Active tasks, project progress scoped by pipeline
+- [x] Dashboard handlers accept optional pipeline_id filter
+- [x] Pipeline workspace dashboard shows pipeline-specific stats
+- [x] Active tasks, project progress scoped by pipeline
 - [ ] Queue status shows pipeline-specific counts
 
-### Task 5.4: Character ingest pipeline awareness
+### Task 5.4: Character ingest pipeline awareness [COMPLETE]
 **Files:** Backend ingest handlers, frontend seed data components
 
 **Acceptance Criteria:**
-- [ ] Ingest handler loads project's pipeline for seed slot validation
-- [ ] Image classification uses pipeline seed slot names
-- [ ] Validation rejects when required seed slots missing
-- [ ] Clear error messages naming missing slots
+- [x] Ingest handler loads project's pipeline for seed slot validation
+- [x] Image classification uses pipeline seed slot names
+- [x] Validation rejects when required seed slots missing
+- [x] Clear error messages naming missing slots
 
 ---
 

@@ -1,7 +1,8 @@
 /**
- * Dashboard page for a specific pipeline workspace.
+ * Dashboard page for a specific pipeline workspace (PRD-139).
  *
- * Shows pipeline-specific stats and quick actions.
+ * Shows pipeline-specific stats (active tasks, project progress) scoped
+ * to the pipeline's projects, plus pipeline info and quick navigation.
  */
 
 import { useNavigate } from "@tanstack/react-router";
@@ -12,11 +13,13 @@ import { Badge } from "@/components/primitives";
 import { useSetPageTitle } from "@/hooks/useSetPageTitle";
 import { usePipelineContext } from "@/features/pipelines/PipelineProvider";
 import { buildPipelineNavGroups } from "@/app/pipeline-navigation";
+import { ActiveTasksWidget } from "@/features/dashboard/widgets/ActiveTasksWidget";
+import { ProjectProgressWidget } from "@/features/dashboard/widgets/ProjectProgressWidget";
 import type { NavItemDef } from "@/app/navigation";
 import { Workflow } from "@/tokens/icons";
 
 export function PipelineDashboardPage() {
-  const { pipeline, pipelineCode } = usePipelineContext();
+  const { pipeline, pipelineCode, pipelineId } = usePipelineContext();
   const navigate = useNavigate();
 
   useSetPageTitle(pipeline.name, "Pipeline workspace dashboard");
@@ -45,6 +48,12 @@ export function PipelineDashboardPage() {
             </p>
           )}
         </div>
+      </div>
+
+      {/* Pipeline-scoped dashboard widgets */}
+      <div className="grid grid-cols-1 gap-[var(--spacing-4)] lg:grid-cols-2">
+        <ActiveTasksWidget pipelineId={pipelineId} />
+        <ProjectProgressWidget pipelineId={pipelineId} />
       </div>
 
       {/* Seed slots summary */}

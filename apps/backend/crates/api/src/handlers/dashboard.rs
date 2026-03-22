@@ -93,6 +93,15 @@ pub struct ActivityFeedItem {
 pub struct ActiveTasksQuery {
     /// Max number of recently completed jobs to include. Defaults to 10.
     pub recent_completed: Option<i64>,
+    /// Filter to jobs from projects belonging to this pipeline (PRD-139).
+    pub pipeline_id: Option<DbId>,
+}
+
+/// Query params for `GET /dashboard/widgets/project-progress`.
+#[derive(Debug, Deserialize)]
+pub struct ProjectProgressQuery {
+    /// Filter to projects belonging to this pipeline (PRD-139).
+    pub pipeline_id: Option<DbId>,
 }
 
 /// Query params for `GET /dashboard/widgets/activity-feed`.
@@ -148,6 +157,7 @@ fn job_status_label(status_id: i16) -> &'static str {
 /// GET /api/v1/dashboard/widgets/active-tasks
 ///
 /// Returns running, pending/queued, and recently completed jobs.
+/// Optionally filtered by pipeline_id (PRD-139).
 pub async fn active_tasks(
     _auth: AuthUser,
     State(state): State<AppState>,
@@ -155,10 +165,17 @@ pub async fn active_tasks(
 ) -> AppResult<impl IntoResponse> {
     let recent_limit = params.recent_completed.unwrap_or(10).min(50);
 
+    // Build optional pipeline filter clause.
+    let pipeline_filter = if params.pipeline_id.is_some() {
+        "AND p.pipeline_id = $5"
+    } else {
+        ""
+    };
+
     // Fetch all running + pending jobs, plus recently completed jobs.
     // LEFT JOINs resolve scene context (model name, scene type, track) via
-    // the parameters->>'scene_id' JSONB field.
-    let rows = sqlx::query_as::<_, ActiveTaskRow>(
+    // the parameters->>'scene_id' JSONB field. Projects are joined for pipeline filtering.
+    let query = format!(
         "SELECT j.id, j.job_type, j.status_id, j.progress_percent, j.progress_message, \
                 j.actual_duration_secs, j.worker_id, j.submitted_by, j.submitted_at, \
                 ch.name AS character_name, \
@@ -169,7 +186,8 @@ pub async fn active_tasks(
          LEFT JOIN characters ch ON ch.id = COALESCE(s.character_id, (j.parameters->>'character_id')::BIGINT) \
          LEFT JOIN scene_types st ON st.id = s.scene_type_id \
          LEFT JOIN tracks t   ON t.id  = s.track_id \
-         WHERE j.status_id IN ($1, $2) \
+         LEFT JOIN projects p ON p.id = ch.project_id \
+         WHERE j.status_id IN ($1, $2) {pipeline_filter} \
          UNION ALL \
          (SELECT j.id, j.job_type, j.status_id, j.progress_percent, j.progress_message, \
                  j.actual_duration_secs, j.worker_id, j.submitted_by, j.submitted_at, \
@@ -181,17 +199,24 @@ pub async fn active_tasks(
           LEFT JOIN characters ch ON ch.id = COALESCE(s.character_id, (j.parameters->>'character_id')::BIGINT) \
           LEFT JOIN scene_types st ON st.id = s.scene_type_id \
           LEFT JOIN tracks t   ON t.id  = s.track_id \
-          WHERE j.status_id = $3 \
+          LEFT JOIN projects p ON p.id = ch.project_id \
+          WHERE j.status_id = $3 {pipeline_filter} \
           ORDER BY j.completed_at DESC \
           LIMIT $4) \
          ORDER BY submitted_at DESC",
-    )
-    .bind(JobStatus::Running.id())
-    .bind(JobStatus::Pending.id())
-    .bind(JobStatus::Completed.id())
-    .bind(recent_limit)
-    .fetch_all(&state.pool)
-    .await?;
+    );
+
+    let mut q = sqlx::query_as::<_, ActiveTaskRow>(&query)
+        .bind(JobStatus::Running.id())
+        .bind(JobStatus::Pending.id())
+        .bind(JobStatus::Completed.id())
+        .bind(recent_limit);
+
+    if let Some(pid) = params.pipeline_id {
+        q = q.bind(pid);
+    }
+
+    let rows = q.fetch_all(&state.pool).await?;
 
     let items: Vec<ActiveTaskItem> = rows
         .into_iter()
@@ -230,14 +255,23 @@ struct ProjectProgressRow {
 /// GET /api/v1/dashboard/widgets/project-progress
 ///
 /// Returns per-project scene completion tracking.
+/// Optionally filtered by pipeline_id (PRD-139).
 pub async fn project_progress(
     _auth: AuthUser,
     State(state): State<AppState>,
+    Query(params): Query<ProjectProgressQuery>,
 ) -> AppResult<impl IntoResponse> {
+    // Build optional pipeline filter.
+    let pipeline_filter = if params.pipeline_id.is_some() {
+        "AND p.pipeline_id = $4"
+    } else {
+        ""
+    };
+
     // Query active projects with scene counts.
     // A scene is "approved" when its status_id matches SceneStatus::Approved.
     // We join through characters to link scenes -> projects.
-    let rows = sqlx::query_as::<_, ProjectProgressRow>(
+    let query = format!(
         "SELECT \
              p.id AS project_id, \
              p.name AS project_name, \
@@ -248,14 +282,21 @@ pub async fn project_progress(
          LEFT JOIN scenes s ON s.character_id = c.id AND s.deleted_at IS NULL \
          WHERE p.deleted_at IS NULL \
            AND p.status_id NOT IN ($2, $3) \
+           {pipeline_filter} \
          GROUP BY p.id, p.name \
          ORDER BY p.name ASC",
-    )
-    .bind(SceneStatus::Approved.id())
-    .bind(ProjectStatus::Archived.id())
-    .bind(ProjectStatus::Completed.id())
-    .fetch_all(&state.pool)
-    .await?;
+    );
+
+    let mut q = sqlx::query_as::<_, ProjectProgressRow>(&query)
+        .bind(SceneStatus::Approved.id())
+        .bind(ProjectStatus::Archived.id())
+        .bind(ProjectStatus::Completed.id());
+
+    if let Some(pid) = params.pipeline_id {
+        q = q.bind(pid);
+    }
+
+    let rows = q.fetch_all(&state.pool).await?;
 
     // Character counts per project (non-archived, non-deleted).
     let char_counts: Vec<(DbId, i64)> = sqlx::query_as(

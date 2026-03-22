@@ -48,7 +48,7 @@ pub struct BulkCancelFilter {
     pub status_ids: Option<Vec<StatusId>>,
 }
 
-/// Filter criteria for the admin queue list (PRD-132 Phase 7).
+/// Filter criteria for the admin queue list (PRD-132 Phase 7, extended by PRD-139).
 #[derive(Debug, Default, Deserialize)]
 pub struct AdminQueueFilter {
     #[serde(default, deserialize_with = "csv_to_vec")]
@@ -56,6 +56,8 @@ pub struct AdminQueueFilter {
     pub instance_id: Option<DbId>,
     pub job_type: Option<String>,
     pub submitted_by: Option<DbId>,
+    /// Filter by pipeline (PRD-139). JOINs through project to get pipeline_id.
+    pub pipeline_id: Option<DbId>,
     pub sort_by: Option<String>,
     pub sort_dir: Option<String>,
     pub limit: Option<i64>,
@@ -712,8 +714,8 @@ impl JobRepo {
     /// List all jobs with rich filtering for the admin queue view.
     ///
     /// Returns enriched [`AdminQueueJob`] rows that include resolved scene
-    /// context (character name, scene type name, track name) via LEFT JOINs
-    /// on `parameters->>'scene_id'`.
+    /// context (character name, scene type name, track name) and pipeline
+    /// context (pipeline_id, pipeline_code) via LEFT JOINs.
     pub async fn list_admin_queue(
         pool: &PgPool,
         filter: &AdminQueueFilter,
@@ -740,6 +742,10 @@ impl JobRepo {
         }
         if filter.submitted_by.is_some() {
             conditions.push(format!("j.submitted_by = ${bind_idx}"));
+            bind_idx += 1;
+        }
+        if filter.pipeline_id.is_some() {
+            conditions.push(format!("p.pipeline_id = ${bind_idx}"));
             bind_idx += 1;
         }
 
@@ -782,12 +788,16 @@ impl JobRepo {
                       ELSE 'other' \
                     END AS job_kind, \
                     j.parameters->>'source_variant_type' AS source_variant_type, \
-                    j.parameters->>'target_variant_type' AS target_variant_type \
+                    j.parameters->>'target_variant_type' AS target_variant_type, \
+                    p.pipeline_id, \
+                    pl.code AS pipeline_code \
              FROM jobs j \
              LEFT JOIN scenes s ON s.id = (j.parameters->>'scene_id')::BIGINT \
              LEFT JOIN characters ch ON ch.id = COALESCE(s.character_id, (j.parameters->>'character_id')::BIGINT) \
              LEFT JOIN scene_types st ON st.id = s.scene_type_id \
              LEFT JOIN tracks t ON t.id = s.track_id \
+             LEFT JOIN projects p ON p.id = ch.project_id \
+             LEFT JOIN pipelines pl ON pl.id = p.pipeline_id \
              {where_clause} \
              ORDER BY {sort_col} {sort_dir} \
              LIMIT ${bind_idx} OFFSET ${}",
@@ -809,6 +819,9 @@ impl JobRepo {
         }
         if let Some(uid) = filter.submitted_by {
             q = q.bind(uid);
+        }
+        if let Some(pid) = filter.pipeline_id {
+            q = q.bind(pid);
         }
 
         q = q.bind(limit).bind(offset);

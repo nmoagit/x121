@@ -113,8 +113,8 @@ function SummaryBar({ tasks, scheduledCount }: { tasks: ActiveTaskItem[]; schedu
    Widget
    -------------------------------------------------------------------------- */
 
-export function ActiveTasksWidget() {
-  const { data: tasks, isLoading, error, refetch } = useActiveTasks();
+export function ActiveTasksWidget({ pipelineId }: { pipelineId?: number } = {}) {
+  const { data: tasks, isLoading, error, refetch } = useActiveTasks(pipelineId);
   const { data: schedules } = useScheduledGenerationsWidget();
 
   const scheduledCount = filterActiveGenerationSchedules(schedules ?? []).length;

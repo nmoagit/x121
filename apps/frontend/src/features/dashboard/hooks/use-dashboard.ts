@@ -87,8 +87,8 @@ export interface SaveDashboardConfigInput {
 
 const dashboardKeys = {
   all: ["dashboard"] as const,
-  activeTasks: () => [...dashboardKeys.all, "active-tasks"] as const,
-  projectProgress: () => [...dashboardKeys.all, "project-progress"] as const,
+  activeTasks: (pipelineId?: number) => [...dashboardKeys.all, "active-tasks", { pipelineId }] as const,
+  projectProgress: (pipelineId?: number) => [...dashboardKeys.all, "project-progress", { pipelineId }] as const,
   diskHealth: () => [...dashboardKeys.all, "disk-health"] as const,
   activityFeed: (params?: { limit?: number; offset?: number; category?: string }) =>
     [...dashboardKeys.all, "activity-feed", params] as const,
@@ -110,20 +110,30 @@ const WIDGET_POLL_MS = 30_000;
    -------------------------------------------------------------------------- */
 
 /** Fetches active, pending, and recently completed jobs for the widget. */
-export function useActiveTasks() {
+export function useActiveTasks(pipelineId?: number) {
+  const params = new URLSearchParams();
+  params.set("recent_completed", "10");
+  if (pipelineId != null) params.set("pipeline_id", String(pipelineId));
+  const qs = params.toString();
+
   return useQuery({
-    queryKey: dashboardKeys.activeTasks(),
+    queryKey: dashboardKeys.activeTasks(pipelineId),
     queryFn: () =>
-      api.get<ActiveTaskItem[]>("/dashboard/widgets/active-tasks?recent_completed=10"),
+      api.get<ActiveTaskItem[]>(`/dashboard/widgets/active-tasks?${qs}`),
     refetchInterval: WIDGET_POLL_MS,
   });
 }
 
 /** Fetches per-project scene completion progress. */
-export function useProjectProgress() {
+export function useProjectProgress(pipelineId?: number) {
+  const params = new URLSearchParams();
+  if (pipelineId != null) params.set("pipeline_id", String(pipelineId));
+  const qs = params.toString();
+  const path = `/dashboard/widgets/project-progress${qs ? `?${qs}` : ""}`;
+
   return useQuery({
-    queryKey: dashboardKeys.projectProgress(),
-    queryFn: () => api.get<ProjectProgressItem[]>("/dashboard/widgets/project-progress"),
+    queryKey: dashboardKeys.projectProgress(pipelineId),
+    queryFn: () => api.get<ProjectProgressItem[]>(path),
     refetchInterval: WIDGET_POLL_MS,
   });
 }

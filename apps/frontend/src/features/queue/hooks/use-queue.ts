@@ -227,6 +227,8 @@ export function useAdminQueueJobs(filter: QueueJobFilter) {
   if (filter.job_type) params.set("job_type", filter.job_type);
   if (filter.submitted_by != null)
     params.set("submitted_by", String(filter.submitted_by));
+  if (filter.pipeline_id != null)
+    params.set("pipeline_id", String(filter.pipeline_id));
   if (filter.sort_by) params.set("sort_by", filter.sort_by);
   if (filter.sort_dir) params.set("sort_dir", filter.sort_dir);
   if (filter.limit != null) params.set("limit", String(filter.limit));

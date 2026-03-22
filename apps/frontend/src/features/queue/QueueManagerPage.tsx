@@ -10,12 +10,13 @@
  * 6. QueueActivityLog (collapsible)
  */
 
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 import { CollapsibleSection } from "@/components/composite/CollapsibleSection";
 import { useSetPageTitle } from "@/hooks/useSetPageTitle";
 import { useSetToggle } from "@/hooks/useSetToggle";
 import { TERMINAL_PANEL } from "@/lib/ui-classes";
+import { usePipelineContextSafe } from "@/features/pipelines/PipelineProvider";
 
 import { useQueueStats } from "./hooks/use-queue";
 import { QueueStatsPanel } from "./QueueStatsPanel";
@@ -28,22 +29,26 @@ import { ScheduledGenerationsPanel } from "./ScheduledGenerationsPanel";
 import type { QueueJobFilter } from "./types";
 
 /* --------------------------------------------------------------------------
-   Constants
-   -------------------------------------------------------------------------- */
-
-const DEFAULT_FILTER: QueueJobFilter = {
-  limit: 50,
-  offset: 0,
-};
-
-/* --------------------------------------------------------------------------
    Component
    -------------------------------------------------------------------------- */
 
 export function QueueManagerPage() {
-  useSetPageTitle("Queue Manager");
+  const pipelineCtx = usePipelineContextSafe();
 
-  const [filter, setFilter] = useState<QueueJobFilter>(DEFAULT_FILTER);
+  useSetPageTitle(
+    pipelineCtx ? `Queue — ${pipelineCtx.pipeline.name}` : "Queue Manager",
+  );
+
+  const defaultFilter = useMemo<QueueJobFilter>(
+    () => ({
+      limit: 50,
+      offset: 0,
+      pipeline_id: pipelineCtx?.pipelineId,
+    }),
+    [pipelineCtx?.pipelineId],
+  );
+
+  const [filter, setFilter] = useState<QueueJobFilter>(defaultFilter);
   const [selectedIds, handleToggleSelect, setSelectedIds] = useSetToggle<number>();
   const { data: stats } = useQueueStats();
 

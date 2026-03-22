@@ -7,6 +7,7 @@ use axum::http::StatusCode;
 use axum::Json;
 use serde::{Deserialize, Serialize};
 use x121_core::error::CoreError;
+use x121_core::pipeline;
 use x121_core::types::DbId;
 use x121_db::models::character::CreateCharacter;
 use x121_db::models::character_ingest::{
@@ -15,7 +16,7 @@ use x121_db::models::character_ingest::{
 };
 use x121_db::repositories::{
     CharacterIngestEntryRepo, CharacterIngestSessionRepo, CharacterRepo, IngestEntryCounts,
-    MetadataTemplateFieldRepo, MetadataTemplateRepo,
+    MetadataTemplateFieldRepo, MetadataTemplateRepo, PipelineRepo, ProjectRepo,
 };
 
 use crate::error::{AppError, AppResult};
@@ -203,9 +204,11 @@ pub async fn update_entry(
 /// POST /api/v1/projects/{project_id}/ingest/{session_id}/validate
 ///
 /// Run metadata validation on all included entries in a session.
+/// Also validates seed image coverage against the project's pipeline
+/// seed slot requirements (PRD-139).
 pub async fn validate_session(
     State(state): State<AppState>,
-    Path((_project_id, session_id)): Path<(DbId, DbId)>,
+    Path((project_id, session_id)): Path<(DbId, DbId)>,
 ) -> AppResult<Json<IngestValidationSummary>> {
     let session = CharacterIngestSessionRepo::find_by_id(&state.pool, session_id)
         .await?
@@ -233,6 +236,9 @@ pub async fn validate_session(
         Vec::new()
     };
 
+    // Load the project's pipeline seed slots for image validation (PRD-139).
+    let seed_slots = load_pipeline_seed_slots(&state.pool, project_id).await?;
+
     let entries = CharacterIngestEntryRepo::list_by_session(&state.pool, session_id).await?;
 
     let mut pass_count: i64 = 0;
@@ -245,7 +251,7 @@ pub async fn validate_session(
             continue;
         }
 
-        let (status, errors_json, warnings_json) = match &entry.metadata_json {
+        let (mut status, mut errors_json, warnings_json) = match &entry.metadata_json {
             Some(metadata) => {
                 if let Some(map) = metadata.as_object() {
                     let result =
@@ -276,6 +282,30 @@ pub async fn validate_session(
             }
         };
 
+        // Validate seed images against pipeline seed slots (PRD-139).
+        if !seed_slots.is_empty() {
+            let provided_labels = extract_image_labels(&entry.image_classifications);
+            if let Err(missing) = pipeline::validate_seed_images(&seed_slots, &provided_labels) {
+                // Add seed slot errors to the validation errors.
+                let seed_errors: Vec<serde_json::Value> = missing
+                    .iter()
+                    .map(|slot_name| {
+                        serde_json::json!({
+                            "field": "seed_images",
+                            "message": format!("Missing required seed slot: {slot_name}"),
+                            "severity": "error"
+                        })
+                    })
+                    .collect();
+
+                // Merge with existing errors.
+                if let Some(arr) = errors_json.as_array_mut() {
+                    arr.extend(seed_errors);
+                }
+                status = "fail";
+            }
+        }
+
         CharacterIngestEntryRepo::update_validation(
             &state.pool,
             entry.id,
@@ -305,6 +335,42 @@ pub async fn validate_session(
         fail: fail_count,
         pending: pending_count,
     }))
+}
+
+/// Load the seed slots for a project's pipeline. Returns empty vec if no pipeline.
+async fn load_pipeline_seed_slots(
+    pool: &sqlx::PgPool,
+    project_id: DbId,
+) -> AppResult<Vec<pipeline::SeedSlot>> {
+    let project = ProjectRepo::find_by_id(pool, project_id)
+        .await?
+        .ok_or(AppError::Core(CoreError::NotFound {
+            entity: "Project",
+            id: project_id,
+        }))?;
+
+    let pl = PipelineRepo::find_by_id(pool, project.pipeline_id).await?;
+    match pl {
+        Some(p) => pipeline::parse_seed_slots(&p.seed_slots)
+            .map_err(|e| AppError::BadRequest(e.to_string())),
+        None => Ok(Vec::new()),
+    }
+}
+
+/// Extract image labels from the entry's `image_classifications` JSON.
+///
+/// Expected format: either a JSON array of strings (e.g. `["front_clothed", "front_topless"]`)
+/// or a JSON object with label keys (e.g. `{"front_clothed": {...}, "front_topless": {...}}`).
+fn extract_image_labels(classifications: &serde_json::Value) -> Vec<String> {
+    if let Some(arr) = classifications.as_array() {
+        arr.iter()
+            .filter_map(|v| v.as_str().map(String::from))
+            .collect()
+    } else if let Some(obj) = classifications.as_object() {
+        obj.keys().cloned().collect()
+    } else {
+        Vec::new()
+    }
 }
 
 /// POST /api/v1/projects/{project_id}/ingest/{session_id}/generate-metadata

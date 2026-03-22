@@ -127,6 +127,9 @@ pub struct AdminQueueJob {
     pub job_kind: Option<String>,
     pub source_variant_type: Option<String>,
     pub target_variant_type: Option<String>,
+    // Pipeline context (PRD-139).
+    pub pipeline_id: Option<DbId>,
+    pub pipeline_code: Option<String>,
 }
 
 /// Lightweight view for queue display — avoids sending full job payload.

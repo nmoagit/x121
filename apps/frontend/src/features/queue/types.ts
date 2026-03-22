@@ -146,6 +146,9 @@ export interface FullQueueJob {
   job_kind: "scene" | "image" | "other" | null;
   source_variant_type: string | null;
   target_variant_type: string | null;
+  // Pipeline context (PRD-139).
+  pipeline_id: number | null;
+  pipeline_code: string | null;
 }
 
 /* --------------------------------------------------------------------------
@@ -184,6 +187,8 @@ export interface QueueJobFilter {
   instance_id?: number;
   job_type?: string;
   submitted_by?: number;
+  /** Filter by pipeline (PRD-139). */
+  pipeline_id?: number;
   sort_by?: string;
   sort_dir?: "asc" | "desc";
   limit?: number;

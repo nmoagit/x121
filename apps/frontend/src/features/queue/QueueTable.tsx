@@ -8,7 +8,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 
-import { Checkbox, Tooltip ,  WireframeLoader } from "@/components/primitives";
+import { Badge, Checkbox, Tooltip, WireframeLoader } from "@/components/primitives";
 import { Image, Play } from "@/tokens/icons";
 import { cn } from "@/lib/cn";
 import { formatDateTime, formatDuration, formatDurationSecs } from "@/lib/format";
@@ -148,6 +148,13 @@ function JobRow({ job, selected, onToggle, onNavigate }: JobRowProps) {
         {job.character_name ?? "--"}
       </td>
       <td className="px-3 py-2">
+        {job.pipeline_code ? (
+          <Badge variant="default" size="sm">{job.pipeline_code}</Badge>
+        ) : (
+          <span className="text-xs text-[var(--color-text-muted)]">--</span>
+        )}
+      </td>
+      <td className="px-3 py-2">
         <TargetCell job={job} />
       </td>
       <td className="px-3 py-2">{errorContent}</td>
@@ -283,6 +290,9 @@ export function QueueTable({
             <SortHeader label="ID" field="id" filter={filter} onChange={onFilterChange} />
             <th className={`px-3 py-2 ${TERMINAL_TH}`}>
               Model
+            </th>
+            <th className={`px-3 py-2 ${TERMINAL_TH}`}>
+              Pipeline
             </th>
             <th className={`px-3 py-2 ${TERMINAL_TH}`}>
               Target

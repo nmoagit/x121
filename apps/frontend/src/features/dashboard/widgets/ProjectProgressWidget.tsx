@@ -91,8 +91,8 @@ function ProjectRow({ item }: { item: ProjectProgressItem }) {
    Widget
    -------------------------------------------------------------------------- */
 
-export function ProjectProgressWidget() {
-  const { data: projects, isLoading, error, refetch } = useProjectProgress();
+export function ProjectProgressWidget({ pipelineId }: { pipelineId?: number } = {}) {
+  const { data: projects, isLoading, error, refetch } = useProjectProgress(pipelineId);
 
   return (
     <WidgetBase
