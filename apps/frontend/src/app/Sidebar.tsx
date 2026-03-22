@@ -21,8 +21,8 @@ import {
   Eye,
   EyeOff,
   FolderKanban,
+  GitBranch,
   PanelLeftClose,
-  Play,
   PanelLeftOpen,
   Workflow,
 } from "@/tokens/icons";
@@ -160,7 +160,7 @@ function GlobalSidebarContent({ collapsed }: { collapsed: boolean }) {
         .map((p) => ({
           label: p.name,
           path: `/pipelines/${p.code}/dashboard`,
-          icon: Play,
+          icon: GitBranch,
           indent: true,
           prominent: true,
         }));
