@@ -9,7 +9,7 @@ import { useState } from "react";
 
 import { useQueryClient } from "@tanstack/react-query";
 
-import { Badge, Button } from "@/components";
+import { Button } from "@/components";
 import { LogLine } from "@/components/domain";
 import { ChevronDown, ChevronRight, ShieldCheck, Trash2 } from "@/tokens/icons";
 import { iconSizes } from "@/tokens/icons";
@@ -94,9 +94,9 @@ export function ValidationReport({ projectId, initialData, avatarIds }: Validati
 
         {/* Summary badge inline in header */}
         {result && (
-          <Badge variant={result.passed ? "success" : "danger"} size="sm">
-            {result.passed ? "PASS" : "FAIL"}
-          </Badge>
+          <span className={`font-mono text-[10px] font-bold tracking-wider ${result.passed ? "text-emerald-400" : "text-red-400"}`}>
+            [{result.passed ? "PASS" : "FAIL"}]
+          </span>
         )}
         {result && (
           <span className="text-xs text-[var(--color-text-muted)]">
