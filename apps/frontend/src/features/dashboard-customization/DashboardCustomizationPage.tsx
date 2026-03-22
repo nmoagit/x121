@@ -21,7 +21,7 @@ import { WidgetSettingsPanel } from "./WidgetSettingsPanel";
    -------------------------------------------------------------------------- */
 
 export function DashboardCustomizationPage() {
-  useSetPageTitle("Customize Dashboard");
+  useSetPageTitle("Customize Dashboard", "Arrange and configure dashboard widgets.");
 
   const editor = useDashboardEditor();
 

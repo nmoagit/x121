@@ -163,7 +163,7 @@ function ReviewClipRow({
    -------------------------------------------------------------------------- */
 
 export function MyReviewsPage() {
-  useSetPageTitle("Review History");
+  useSetPageTitle("Review History", "Browse completed reviews and approval decisions.");
 
   const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);

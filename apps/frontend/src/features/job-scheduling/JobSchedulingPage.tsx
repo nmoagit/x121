@@ -38,7 +38,7 @@ const TABS = [
    -------------------------------------------------------------------------- */
 
 export function JobSchedulingPage() {
-  useSetPageTitle("Job Scheduling");
+  useSetPageTitle("Job Scheduling", "Schedule and manage recurring generation jobs.");
   const [activeTab, setActiveTab] = useState("schedules");
   const [formOpen, setFormOpen] = useState(false);
   const [editingSchedule, setEditingSchedule] = useState<Schedule | undefined>();

@@ -118,7 +118,7 @@ function ActiveAlertBanner() {
    -------------------------------------------------------------------------- */
 
 export function ApiObservabilityPage() {
-  useSetPageTitle("API Observability");
+  useSetPageTitle("API Observability", "Monitor API request patterns, latency, and error rates.");
   const [period, setPeriod] = useState<TimePeriod>("24h");
   const [autoRefresh, setAutoRefresh] = useState(false);
 

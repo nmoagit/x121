@@ -16,7 +16,7 @@ import { StorageTreemap } from "./StorageTreemap";
    -------------------------------------------------------------------------- */
 
 export function StorageVisualizerPage() {
-  useSetPageTitle("Storage Visualizer");
+  useSetPageTitle("Storage Visualizer", "Browse and manage storage usage across projects.");
   return (
     <Stack direction="vertical" gap={4} className="p-[var(--spacing-4)]">
       {/* Summary cards */}

@@ -44,7 +44,7 @@ export function ProjectDetailPage() {
   const { data: stats } = useProjectStats(id);
   const { data: studioSetting } = useSetting("blocking_deliverables");
 
-  useSetPageTitle(project?.name ?? "Project");
+  useSetPageTitle(project?.name ?? "Project", "Project overview and avatar management.");
 
   const validTabIds = PROJECT_TABS.map((t) => t.id) as readonly string[];
   const activeTab = tabParam && validTabIds.includes(tabParam) ? tabParam : PROJECT_TABS[0].id;

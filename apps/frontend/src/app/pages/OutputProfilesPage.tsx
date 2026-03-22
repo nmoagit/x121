@@ -35,7 +35,7 @@ import type {
    -------------------------------------------------------------------------- */
 
 export function OutputProfilesPage() {
-  useSetPageTitle("Output Profiles");
+  useSetPageTitle("Output Profiles", "Configure video encoding profiles for delivery exports.");
 
   const { data: profiles = [], isLoading } = useOutputFormatProfiles();
   const createProfile = useCreateProfile();

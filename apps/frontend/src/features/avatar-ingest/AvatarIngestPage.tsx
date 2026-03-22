@@ -30,7 +30,7 @@ const PAGE_TABS = [
 ];
 
 export function AvatarIngestPage() {
-  useSetPageTitle("Avatar Ingest");
+  useSetPageTitle("Avatar Ingest", "Import avatars from folders with automated metadata generation.");
 
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<"import" | "validation">("import");

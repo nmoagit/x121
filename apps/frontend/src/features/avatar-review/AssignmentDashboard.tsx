@@ -25,7 +25,7 @@ interface AssignmentDashboardProps {
 }
 
 export function AssignmentDashboard({ projectId }: AssignmentDashboardProps) {
-  useSetPageTitle("Review Assignments");
+  useSetPageTitle("Review Assignments", "Manage reviewer assignments and workload distribution.");
   const { data: workloadData, isPending: workloadPending } = useReviewerWorkload(projectId);
   const { data: assignmentData } = useProjectAssignments(projectId);
   const autoAllocate = useAutoAllocate(projectId);

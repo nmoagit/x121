@@ -24,7 +24,7 @@ import type { TimelineJob, ZoomLevel } from "./types";
    -------------------------------------------------------------------------- */
 
 export function RenderTimelinePage() {
-  useSetPageTitle("Render Timeline");
+  useSetPageTitle("Render Timeline", "Visual timeline of render jobs and GPU utilization.");
   const [zoom, setZoom] = useState<ZoomLevel>("6h");
   const [statusFilter, setStatusFilter] = useState<Set<string>>(
     () => new Set(Object.values(JOB_STATUS_LABELS).map((l) => l.toLowerCase())),

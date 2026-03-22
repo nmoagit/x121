@@ -80,7 +80,7 @@ export function AvatarDetailPage() {
   const deleteAvatar = useDeleteAvatar(projectId);
   const toggleEnabled = useToggleAvatarEnabled(projectId);
 
-  useSetPageTitle(avatar?.name ?? "Model");
+  useSetPageTitle(avatar?.name ?? "Model", "Avatar detail and settings.");
 
   /* --- speech language summary for header flags --- */
   const speechLanguageSummary = useMemo(() => {

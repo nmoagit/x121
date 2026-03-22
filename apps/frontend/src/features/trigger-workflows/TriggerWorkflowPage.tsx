@@ -41,7 +41,7 @@ const TABS = [
    -------------------------------------------------------------------------- */
 
 export function TriggerWorkflowPage() {
-  useSetPageTitle("Trigger Workflows");
+  useSetPageTitle("Trigger Workflows", "Configure and test automated workflow triggers.");
   const [activeTab, setActiveTab] = useState("triggers");
   const [formOpen, setFormOpen] = useState(false);
   const [editingTrigger, setEditingTrigger] = useState<Trigger | undefined>();

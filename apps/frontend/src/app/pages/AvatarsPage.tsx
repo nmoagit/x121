@@ -78,7 +78,7 @@ const SHOW_DISABLED_KEY = "an2n.avatars.showDisabled";
    -------------------------------------------------------------------------- */
 
 export function AvatarsPage() {
-  useSetPageTitle("Avatars");
+  useSetPageTitle("Avatars", "Manage avatar seed images, metadata, and generation settings.");
   const queryClient = useQueryClient();
   const user = useAuthStore((s) => s.user);
   const isAdmin = user?.role === "admin";
