@@ -1,6 +1,7 @@
 import type { UserRole } from "@/stores/auth-store";
 import {
   Activity,
+  BarChart3,
   Bug,
   Calendar,
   Cloud,
@@ -70,6 +71,8 @@ export const NAV_GROUPS: NavGroupDef[] = [
     label: "Pipelines",
     items: [
       { label: "All Pipelines", path: "/", icon: Workflow, exact: true, prominent: true },
+      { label: "Overview Dashboard", path: "/dashboard", icon: BarChart3, prominent: true },
+      { label: "Performance", path: "/performance", icon: TrendingUp },
     ],
   },
   {

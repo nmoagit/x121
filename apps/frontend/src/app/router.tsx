@@ -466,6 +466,14 @@ const pipelineOutputProfilesRoute = createRoute({
    Dashboard routes (global, non-pipeline)
    -------------------------------------------------------------------------- */
 
+const globalDashboardRoute = createRoute({
+  getParentRoute: () => authenticatedRoute,
+  path: "/dashboard",
+  component: lazyRouteComponent(() =>
+    import("@/app/pages/DashboardPage").then((m) => ({ default: m.DashboardPage })),
+  ),
+});
+
 const performanceRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   path: "/performance",
@@ -1216,6 +1224,7 @@ export const routeTree = rootRoute.addChildren([
   externalReviewRoute,
   authenticatedRoute.addChildren([
     indexRoute,
+    globalDashboardRoute,
     performanceRoute,
     dashboardCustomizeRoute,
 
