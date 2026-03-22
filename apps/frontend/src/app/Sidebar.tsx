@@ -168,6 +168,7 @@ function GlobalSidebarContent({ collapsed }: { collapsed: boolean }) {
           path: `/pipelines/${p.code}/dashboard`,
           icon: Workflow,
           indent: true,
+          prominent: true,
         }));
       // Insert after the first item ("All Pipelines")
       pipelinesGroup.items = [
