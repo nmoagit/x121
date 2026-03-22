@@ -22,6 +22,7 @@ import {
   EyeOff,
   FolderKanban,
   PanelLeftClose,
+  Play,
   PanelLeftOpen,
   Workflow,
 } from "@/tokens/icons";
@@ -159,7 +160,7 @@ function GlobalSidebarContent({ collapsed }: { collapsed: boolean }) {
         .map((p) => ({
           label: p.name,
           path: `/pipelines/${p.code}/dashboard`,
-          icon: Workflow,
+          icon: Play,
           indent: true,
           prominent: true,
         }));

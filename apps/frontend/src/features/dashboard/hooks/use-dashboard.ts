@@ -26,6 +26,10 @@ export interface ActiveTaskItem {
   scene_type_name?: string | null;
   /** Resolved track name (via scene → track join). */
   track_name?: string | null;
+  /** Resolved track slug for color assignment. */
+  track_slug?: string | null;
+  /** Pipeline code for cross-pipeline display. */
+  pipeline_code?: string | null;
 }
 
 export interface ProjectProgressItem {
@@ -44,6 +48,8 @@ export interface ProjectProgressItem {
   /** Metadata status (optional). */
   metadata_approved?: number;
   metadata_total?: number;
+  /** Pipeline code for cross-pipeline display. */
+  pipeline_code?: string | null;
 }
 
 export interface DiskHealthData {

@@ -42,6 +42,12 @@ pub struct ActiveTaskItem {
     /// Resolved track name from scene → track join.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub track_name: Option<String>,
+    /// Resolved track slug for color coding.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub track_slug: Option<String>,
+    /// Pipeline code for cross-pipeline display.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub pipeline_code: Option<String>,
 }
 
 /// A single project row for the Project Progress widget.
@@ -57,6 +63,9 @@ pub struct ProjectProgressItem {
     pub model_count: i64,
     /// Avatars with readiness state 'ready'.
     pub models_ready: i64,
+    /// Pipeline code for cross-pipeline display.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub pipeline_code: Option<String>,
 }
 
 /// Top-level disk health data.
@@ -135,6 +144,8 @@ struct ActiveTaskRow {
     avatar_name: Option<String>,
     scene_type_name: Option<String>,
     track_name: Option<String>,
+    track_slug: Option<String>,
+    pipeline_code: Option<String>,
 }
 
 /// Map a status_id to a human-readable label.
@@ -180,26 +191,32 @@ pub async fn active_tasks(
                 j.actual_duration_secs, j.worker_id, j.submitted_by, j.submitted_at, \
                 ch.name AS avatar_name, \
                 st.name AS scene_type_name, \
-                t.name  AS track_name \
+                t.name  AS track_name, \
+                t.slug  AS track_slug, \
+                pip.code AS pipeline_code \
          FROM jobs j \
          LEFT JOIN scenes s   ON s.id  = (j.parameters->>'scene_id')::BIGINT \
          LEFT JOIN avatars ch ON ch.id = COALESCE(s.avatar_id, (j.parameters->>'avatar_id')::BIGINT) \
          LEFT JOIN scene_types st ON st.id = s.scene_type_id \
          LEFT JOIN tracks t   ON t.id  = s.track_id \
          LEFT JOIN projects p ON p.id = ch.project_id \
+         LEFT JOIN pipelines pip ON pip.id = p.pipeline_id \
          WHERE j.status_id IN ($1, $2) {pipeline_filter} \
          UNION ALL \
          (SELECT j.id, j.job_type, j.status_id, j.progress_percent, j.progress_message, \
                  j.actual_duration_secs, j.worker_id, j.submitted_by, j.submitted_at, \
                  ch.name AS avatar_name, \
                  st.name AS scene_type_name, \
-                 t.name  AS track_name \
+                 t.name  AS track_name, \
+                 t.slug  AS track_slug, \
+                 pip.code AS pipeline_code \
           FROM jobs j \
           LEFT JOIN scenes s   ON s.id  = (j.parameters->>'scene_id')::BIGINT \
           LEFT JOIN avatars ch ON ch.id = COALESCE(s.avatar_id, (j.parameters->>'avatar_id')::BIGINT) \
           LEFT JOIN scene_types st ON st.id = s.scene_type_id \
           LEFT JOIN tracks t   ON t.id  = s.track_id \
           LEFT JOIN projects p ON p.id = ch.project_id \
+          LEFT JOIN pipelines pip ON pip.id = p.pipeline_id \
           WHERE j.status_id = $3 {pipeline_filter} \
           ORDER BY j.completed_at DESC \
           LIMIT $4) \
@@ -233,6 +250,8 @@ pub async fn active_tasks(
             avatar_name: r.avatar_name,
             scene_type_name: r.scene_type_name,
             track_name: r.track_name,
+            track_slug: r.track_slug,
+            pipeline_code: r.pipeline_code,
         })
         .collect();
 
@@ -250,6 +269,7 @@ struct ProjectProgressRow {
     project_name: String,
     scenes_approved: i64,
     scenes_total: i64,
+    pipeline_code: Option<String>,
 }
 
 /// GET /api/v1/dashboard/widgets/project-progress
@@ -276,14 +296,16 @@ pub async fn project_progress(
              p.id AS project_id, \
              p.name AS project_name, \
              COUNT(s.id) FILTER (WHERE s.status_id = $1) AS scenes_approved, \
-             COUNT(s.id) AS scenes_total \
+             COUNT(s.id) AS scenes_total, \
+             pip.code AS pipeline_code \
          FROM projects p \
          LEFT JOIN avatars c ON c.project_id = p.id AND c.deleted_at IS NULL \
          LEFT JOIN scenes s ON s.avatar_id = c.id AND s.deleted_at IS NULL \
+         LEFT JOIN pipelines pip ON pip.id = p.pipeline_id \
          WHERE p.deleted_at IS NULL \
            AND p.status_id NOT IN ($2, $3) \
            {pipeline_filter} \
-         GROUP BY p.id, p.name \
+         GROUP BY p.id, p.name, pip.code \
          ORDER BY p.name ASC",
     );
 
@@ -348,6 +370,7 @@ pub async fn project_progress(
                 status_color: color.to_string(),
                 model_count,
                 models_ready,
+                pipeline_code: r.pipeline_code,
             }
         })
         .collect();

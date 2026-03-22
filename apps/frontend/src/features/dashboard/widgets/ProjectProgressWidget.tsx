@@ -51,6 +51,9 @@ function ProjectRow({ item }: { item: ProjectProgressItem }) {
     <div className={`py-2 ${TERMINAL_DIVIDER} last:border-b-0 ${TERMINAL_ROW_HOVER}`}>
       <div className="flex items-center justify-between mb-1">
         <p className="font-mono text-xs text-[var(--color-text-primary)] truncate">
+          {item.pipeline_code && (
+            <span className="text-[var(--color-text-muted)]">{item.pipeline_code} / </span>
+          )}
           {item.project_name}
         </p>
         <span className={`font-mono text-xs tabular-nums shrink-0 ml-2 ${allApproved ? "text-green-400" : "text-cyan-400"}`}>

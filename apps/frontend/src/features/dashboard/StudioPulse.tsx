@@ -58,6 +58,7 @@ export function StudioPulse() {
         <div className="flex items-center gap-3">
           <Select
             label=""
+            size="sm"
             options={pipelineOptions}
             value={selectedPipelineId ? String(selectedPipelineId) : ""}
             onChange={(v) => setSelectedPipelineId(v ? Number(v) : undefined)}

@@ -12,6 +12,7 @@ import {
   TERMINAL_LABEL,
   TERMINAL_PIPE,
   TERMINAL_STATUS_COLORS,
+  trackTextColor,
 } from "@/lib/ui-classes";
 import { Activity, Layers } from "@/tokens/icons";
 
@@ -29,21 +30,36 @@ function statusColor(status: string): string {
    Task row
    -------------------------------------------------------------------------- */
 
-/** Build a human-readable task label from enriched scene context fields. */
-function taskLabel(task: ActiveTaskItem): string {
+/** Build a human-readable task label: pipeline / avatar — scene — track */
+function TaskLabel({ task }: { task: ActiveTaskItem }) {
   if (task.avatar_name) {
-    const parts = [task.avatar_name];
-    if (task.scene_type_name) {
-      parts.push(task.scene_type_name);
-    }
-    if (task.track_name) {
-      parts.push(task.track_name);
-    }
-    return parts.join(" \u2014 ");
+    return (
+      <>
+        {task.pipeline_code && (
+          <span className="text-[var(--color-text-muted)]">{task.pipeline_code} / </span>
+        )}
+        {task.avatar_name}
+        {task.scene_type_name && <> &mdash; {task.scene_type_name}</>}
+        {task.track_name && task.track_slug && (
+          <>
+            {" "}&mdash;{" "}
+            <span className={trackTextColor(task.track_slug)}>{task.track_name}</span>
+          </>
+        )}
+        {task.track_name && !task.track_slug && <> &mdash; {task.track_name}</>}
+      </>
+    );
   }
-  return task.job_type
-    .replace(/_/g, " ")
-    .replace(/\b\w/g, (c) => c.toUpperCase());
+  return (
+    <>
+      {task.pipeline_code && (
+        <span className="text-[var(--color-text-muted)]">{task.pipeline_code} / </span>
+      )}
+      {task.job_type
+        .replace(/_/g, " ")
+        .replace(/\b\w/g, (c) => c.toUpperCase())}
+    </>
+  );
 }
 
 function TaskRow({ task }: { task: ActiveTaskItem }) {
@@ -51,7 +67,7 @@ function TaskRow({ task }: { task: ActiveTaskItem }) {
     <div className={`flex items-center justify-between gap-2 py-2 ${TERMINAL_DIVIDER} last:border-b-0 ${TERMINAL_ROW_HOVER}`}>
       <div className="flex-1 min-w-0">
         <p className="font-mono text-xs text-[var(--color-text-primary)] truncate">
-          {taskLabel(task)}
+          <TaskLabel task={task} />
         </p>
         {task.progress_message && (
           <p className="font-mono text-xs text-[var(--color-text-muted)] truncate">{task.progress_message}</p>
