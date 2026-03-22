@@ -36,7 +36,7 @@ This implementation introduces `pipelines` as the top-level organizational entit
 
 ## Phase 1: Database Foundation
 
-### Task 1.1: Create pipelines table migration
+### Task 1.1: [COMPLETE] Create pipelines table migration
 **File:** `apps/db/migrations/{timestamp}_create_pipelines.sql`
 
 Create the core `pipelines` table with all configuration columns.
@@ -64,13 +64,13 @@ CREATE INDEX idx_pipelines_is_active ON pipelines(is_active);
 ```
 
 **Acceptance Criteria:**
-- [ ] Migration creates `pipelines` table with all columns
-- [ ] `code` column has UNIQUE constraint
-- [ ] `updated_at` trigger is set
-- [ ] Indexes on `code` and `is_active`
-- [ ] JSONB columns have proper defaults
+- [x] Migration creates `pipelines` table with all columns
+- [x] `code` column has UNIQUE constraint
+- [x] `updated_at` trigger is set
+- [x] Indexes on `code` and `is_active`
+- [x] JSONB columns have proper defaults
 
-### Task 1.2: Seed pipeline data
+### Task 1.2: [COMPLETE] Seed pipeline data
 **File:** `apps/db/migrations/{timestamp}_seed_pipelines.sql`
 
 Insert the initial x121 and y122 pipeline records.
@@ -116,12 +116,12 @@ VALUES
 ```
 
 **Acceptance Criteria:**
-- [ ] x121 pipeline created with clothed + topless seed slots
-- [ ] y122 pipeline created with speaker seed slot
-- [ ] Both have naming_rules and delivery_config populated
-- [ ] Both are `is_active = true`
+- [x] x121 pipeline created with clothed + topless seed slots
+- [x] y122 pipeline created with speaker seed slot
+- [x] Both have naming_rules and delivery_config populated
+- [x] Both are `is_active = true`
 
-### Task 1.3: Add pipeline_id FK to projects
+### Task 1.3: [COMPLETE] Add pipeline_id FK to projects
 **File:** `apps/db/migrations/{timestamp}_add_pipeline_id_to_projects.sql`
 
 Add `pipeline_id` column to `projects` and backfill existing data to x121.
@@ -140,13 +140,13 @@ CREATE INDEX idx_projects_pipeline_id ON projects(pipeline_id);
 ```
 
 **Acceptance Criteria:**
-- [ ] `pipeline_id` column added to `projects`
-- [ ] All existing projects assigned to x121 pipeline
-- [ ] Column is NOT NULL after backfill
-- [ ] Foreign key constraint to `pipelines(id)` enforced
-- [ ] Index created on `pipeline_id`
+- [x] `pipeline_id` column added to `projects`
+- [x] All existing projects assigned to x121 pipeline
+- [x] Column is NOT NULL after backfill
+- [x] Foreign key constraint to `pipelines(id)` enforced
+- [x] Index created on `pipeline_id`
 
-### Task 1.4: Add pipeline_id FK to tracks
+### Task 1.4: [COMPLETE] Add pipeline_id FK to tracks
 **File:** `apps/db/migrations/{timestamp}_add_pipeline_id_to_tracks.sql`
 
 Add `pipeline_id` column to `tracks` and backfill existing data to x121.
@@ -159,12 +159,12 @@ CREATE INDEX idx_tracks_pipeline_id ON tracks(pipeline_id);
 ```
 
 **Acceptance Criteria:**
-- [ ] `pipeline_id` column added to `tracks`
-- [ ] All existing tracks assigned to x121 pipeline
-- [ ] Column is NOT NULL after backfill
-- [ ] Foreign key and index created
+- [x] `pipeline_id` column added to `tracks`
+- [x] All existing tracks assigned to x121 pipeline
+- [x] Column is NOT NULL after backfill
+- [x] Foreign key and index created
 
-### Task 1.5: Add pipeline_id FK to workflows
+### Task 1.5: [COMPLETE] Add pipeline_id FK to workflows
 **File:** `apps/db/migrations/{timestamp}_add_pipeline_id_to_workflows.sql`
 
 Add `pipeline_id` column to `workflows` and backfill existing data to x121.
@@ -177,12 +177,12 @@ CREATE INDEX idx_workflows_pipeline_id ON workflows(pipeline_id);
 ```
 
 **Acceptance Criteria:**
-- [ ] `pipeline_id` column added to `workflows`
-- [ ] All existing workflows assigned to x121 pipeline
-- [ ] Column is NOT NULL after backfill
-- [ ] Foreign key and index created
+- [x] `pipeline_id` column added to `workflows`
+- [x] All existing workflows assigned to x121 pipeline
+- [x] Column is NOT NULL after backfill
+- [x] Foreign key and index created
 
-### Task 1.6: Add pipeline_id FK to scene_types
+### Task 1.6: [COMPLETE] Add pipeline_id FK to scene_types
 **File:** `apps/db/migrations/{timestamp}_add_pipeline_id_to_scene_types.sql`
 
 Add `pipeline_id` column to `scene_types`. Nullable because scene types can be project-scoped (where the pipeline is inherited from the project).
@@ -199,16 +199,16 @@ CREATE INDEX idx_scene_types_pipeline_id ON scene_types(pipeline_id);
 ```
 
 **Acceptance Criteria:**
-- [ ] `pipeline_id` column added to `scene_types` (nullable)
-- [ ] Global scene types (project_id IS NULL) assigned to x121
-- [ ] Project-scoped scene types left as pipeline_id = NULL (inherited from project)
-- [ ] Index created
+- [x] `pipeline_id` column added to `scene_types` (nullable)
+- [x] Global scene types (project_id IS NULL) assigned to x121
+- [x] Project-scoped scene types left as pipeline_id = NULL (inherited from project)
+- [x] Index created
 
 ---
 
 ## Phase 2: Backend Models & Repos
 
-### Task 2.1: Pipeline model and DTOs
+### Task 2.1: [COMPLETE] Pipeline model and DTOs
 **File:** `apps/backend/crates/db/src/models/pipeline.rs`
 
 Create the Pipeline entity model and associated DTOs following existing patterns.
@@ -250,55 +250,55 @@ pub struct UpdatePipeline {
 ```
 
 **Acceptance Criteria:**
-- [ ] `Pipeline` struct with all DB columns
-- [ ] `CreatePipeline` DTO with required fields
-- [ ] `UpdatePipeline` DTO with all-optional fields
-- [ ] Registered in `models/mod.rs`
-- [ ] Follows existing model patterns (derives, types)
+- [x] `Pipeline` struct with all DB columns
+- [x] `CreatePipeline` DTO with required fields
+- [x] `UpdatePipeline` DTO with all-optional fields
+- [x] Registered in `models/mod.rs`
+- [x] Follows existing model patterns (derives, types)
 
-### Task 2.2: Pipeline repository
+### Task 2.2: [COMPLETE] Pipeline repository
 **File:** `apps/backend/crates/db/src/repos/pipeline.rs`
 
 Create CRUD repository for pipelines following existing repo patterns.
 
 **Acceptance Criteria:**
-- [ ] `PipelineRepo::list(pool, filters)` — list with optional `is_active` filter
-- [ ] `PipelineRepo::get_by_id(pool, id)` — single pipeline by ID
-- [ ] `PipelineRepo::get_by_code(pool, code)` — single pipeline by code
-- [ ] `PipelineRepo::create(pool, dto)` — insert new pipeline
-- [ ] `PipelineRepo::update(pool, id, dto)` — partial update
-- [ ] `PipelineRepo::delete(pool, id)` — soft delete (set `is_active = false`)
-- [ ] Registered in `repos/mod.rs`
-- [ ] Uses `sqlx::query_as!` with compile-time checking
+- [x] `PipelineRepo::list(pool, filters)` — list with optional `is_active` filter
+- [x] `PipelineRepo::get_by_id(pool, id)` — single pipeline by ID
+- [x] `PipelineRepo::get_by_code(pool, code)` — single pipeline by code
+- [x] `PipelineRepo::create(pool, dto)` — insert new pipeline
+- [x] `PipelineRepo::update(pool, id, dto)` — partial update
+- [x] `PipelineRepo::delete(pool, id)` — soft delete (set `is_active = false`)
+- [x] Registered in `repos/mod.rs`
+- [x] Uses `sqlx::query_as!` with compile-time checking
 
-### Task 2.3: Add pipeline_id to existing models
+### Task 2.3: [COMPLETE] Add pipeline_id to existing models
 **Files:** `apps/backend/crates/db/src/models/{project,track,workflow,scene_type}.rs`
 
 Add `pipeline_id` field to existing model structs and DTOs.
 
 **Acceptance Criteria:**
-- [ ] `Project` struct gains `pipeline_id: DbId`
-- [ ] `CreateProject` DTO gains `pipeline_id: DbId`
-- [ ] `Track` struct gains `pipeline_id: DbId`
-- [ ] `CreateTrack` DTO gains `pipeline_id: DbId`
-- [ ] `Workflow` struct gains `pipeline_id: DbId` (model in `models/workflow.rs`)
-- [ ] `CreateWorkflow` DTO gains `pipeline_id: DbId`
-- [ ] `SceneType` struct gains `pipeline_id: Option<DbId>`
+- [x] `Project` struct gains `pipeline_id: DbId`
+- [x] `CreateProject` DTO gains `pipeline_id: DbId`
+- [x] `Track` struct gains `pipeline_id: DbId`
+- [x] `CreateTrack` DTO gains `pipeline_id: DbId`
+- [x] `Workflow` struct gains `pipeline_id: DbId` (model in `models/workflow.rs`)
+- [x] `CreateWorkflow` DTO gains `pipeline_id: DbId`
+- [x] `SceneType` struct gains `pipeline_id: Option<DbId>`
 
-### Task 2.4: Update existing repos for pipeline filtering
+### Task 2.4: [COMPLETE] Update existing repos for pipeline filtering
 **Files:** `apps/backend/crates/db/src/repos/{project,track,workflow,scene_type}.rs`
 
 Update list/query methods to accept optional `pipeline_id` filter.
 
 **Acceptance Criteria:**
-- [ ] `ProjectRepo::list` accepts optional `pipeline_id` filter
-- [ ] `TrackRepo::list` accepts optional `pipeline_id` filter
-- [ ] `WorkflowRepo::list` accepts optional `pipeline_id` filter
-- [ ] `SceneTypeRepo` list methods accept optional `pipeline_id` filter
-- [ ] All create methods include `pipeline_id` in INSERT statements
-- [ ] Existing queries updated to include `pipeline_id` in SELECT
+- [x] `ProjectRepo::list` accepts optional `pipeline_id` filter
+- [x] `TrackRepo::list` accepts optional `pipeline_id` filter
+- [x] `WorkflowRepo::list` accepts optional `pipeline_id` filter
+- [x] `SceneTypeRepo` list methods accept optional `pipeline_id` filter
+- [x] All create methods include `pipeline_id` in INSERT statements
+- [x] Existing queries updated to include `pipeline_id` in SELECT
 
-### Task 2.5: Pipeline seed slot types in core crate
+### Task 2.5: [COMPLETE] Pipeline seed slot types in core crate
 **File:** `apps/backend/crates/core/src/pipeline.rs`
 
 Define typed seed slot structures in the core crate for use across the application.
@@ -326,237 +326,237 @@ pub fn parse_naming_rules(json: &serde_json::Value) -> Result<PipelineNamingRule
 ```
 
 **Acceptance Criteria:**
-- [ ] `SeedSlot` struct defined with name, required, description
-- [ ] `PipelineNamingRules` struct for delivery naming templates
-- [ ] Parse functions from JSONB to typed structs with error handling
-- [ ] Validation: seed slot names must be unique within a pipeline
-- [ ] Registered in `core/src/lib.rs`
+- [x] `SeedSlot` struct defined with name, required, description
+- [x] `PipelineNamingRules` struct for delivery naming templates
+- [x] Parse functions from JSONB to typed structs with error handling
+- [x] Validation: seed slot names must be unique within a pipeline
+- [x] Registered in `core/src/lib.rs`
 
 ---
 
 ## Phase 3: API Layer
 
-### Task 3.1: Pipeline API handlers
+### Task 3.1: [COMPLETE] Pipeline API handlers
 **File:** `apps/backend/crates/api/src/handlers/pipelines.rs`
 
 CRUD handlers for the `/api/v1/pipelines` endpoints.
 
 **Acceptance Criteria:**
-- [ ] `GET /api/v1/pipelines` — list all pipelines (filterable by `is_active`)
-- [ ] `GET /api/v1/pipelines/:id` — get pipeline by ID (includes parsed seed_slots)
-- [ ] `POST /api/v1/pipelines` — create pipeline (admin only)
-- [ ] `PUT /api/v1/pipelines/:id` — update pipeline
-- [ ] `DELETE /api/v1/pipelines/:id` — soft delete (reject if active projects exist)
-- [ ] All responses use `{ data, meta }` / `{ error }` envelope
-- [ ] Seed slot validation on create/update (names unique, at least one slot)
+- [x] `GET /api/v1/pipelines` — list all pipelines (filterable by `is_active`)
+- [x] `GET /api/v1/pipelines/:id` — get pipeline by ID (includes parsed seed_slots)
+- [x] `POST /api/v1/pipelines` — create pipeline (admin only)
+- [x] `PUT /api/v1/pipelines/:id` — update pipeline
+- [x] `DELETE /api/v1/pipelines/:id` — soft delete (reject if active projects exist)
+- [x] All responses use `{ data, meta }` / `{ error }` envelope
+- [x] Seed slot validation on create/update (names unique, at least one slot)
 
-### Task 3.2: Register pipeline routes
+### Task 3.2: [COMPLETE] Register pipeline routes
 **File:** `apps/backend/crates/api/src/routes.rs` (or equivalent router file)
 
 Register pipeline API routes in the application router.
 
 **Acceptance Criteria:**
-- [ ] Pipeline routes registered under `/api/v1/pipelines`
-- [ ] Routes use appropriate middleware (auth, admin-only for create/delete)
-- [ ] Follows existing route registration patterns
+- [x] Pipeline routes registered under `/api/v1/pipelines`
+- [x] Routes use appropriate middleware (auth, admin-only for create/delete)
+- [x] Follows existing route registration patterns
 
-### Task 3.3: Update project API for pipeline context
+### Task 3.3: [COMPLETE] Update project API for pipeline context
 **Files:** `apps/backend/crates/api/src/handlers/projects.rs`
 
 Update project handlers to require and validate `pipeline_id`.
 
 **Acceptance Criteria:**
-- [ ] Project creation requires `pipeline_id` in request body
-- [ ] Project creation validates that `pipeline_id` references an active pipeline
-- [ ] Project list endpoint accepts optional `pipeline_id` query parameter
-- [ ] Project detail response includes pipeline information (code, name, seed_slots)
+- [x] Project creation requires `pipeline_id` in request body
+- [x] Project creation validates that `pipeline_id` references an active pipeline
+- [x] Project list endpoint accepts optional `pipeline_id` query parameter
+- [x] Project detail response includes pipeline information (code, name, seed_slots)
 
-### Task 3.4: Update track, workflow, scene_type APIs for pipeline filtering
+### Task 3.4: [COMPLETE] Update track, workflow, scene_type APIs for pipeline filtering
 **Files:** `apps/backend/crates/api/src/handlers/{tracks,workflows,scene_types}.rs`
 
 Update list/create handlers to be pipeline-aware.
 
 **Acceptance Criteria:**
-- [ ] Track list accepts `pipeline_id` filter
-- [ ] Track creation requires `pipeline_id`
-- [ ] Workflow list accepts `pipeline_id` filter
-- [ ] Workflow creation requires `pipeline_id`
-- [ ] Scene type list respects pipeline scoping
-- [ ] Create handlers validate pipeline_id references an active pipeline
+- [x] Track list accepts `pipeline_id` filter
+- [x] Track creation requires `pipeline_id`
+- [x] Workflow list accepts `pipeline_id` filter
+- [x] Workflow creation requires `pipeline_id`
+- [x] Scene type list respects pipeline scoping
+- [x] Create handlers validate pipeline_id references an active pipeline
 
 ---
 
 ## Phase 4: Pipeline Orchestration
 
-### Task 4.1: Pipeline context loading in pipeline crate
+### Task 4.1: [COMPLETE] Pipeline context loading in pipeline crate
 **File:** `apps/backend/crates/pipeline/src/context_loader.rs`
 
 Extend the context loading to resolve pipeline configuration before building workflows.
 
 **Acceptance Criteria:**
-- [ ] `load_pipeline_context(pool, project_id)` resolves the project's pipeline
-- [ ] Pipeline seed slots are loaded and available in `GenerationContext`
-- [ ] Pipeline naming rules are available for delivery
-- [ ] Pipeline config is cached per-project within a generation session
-- [ ] Error handling for missing/inactive pipeline
+- [x] `load_pipeline_context(pool, project_id)` resolves the project's pipeline
+- [x] Pipeline seed slots are loaded and available in `GenerationContext`
+- [x] Pipeline naming rules are available for delivery
+- [x] Pipeline config is cached per-project within a generation session
+- [x] Error handling for missing/inactive pipeline
 
-### Task 4.2: Dynamic seed image validation in character ingest
+### Task 4.2: [COMPLETE] Dynamic seed image validation in character ingest
 **Files:** `apps/backend/crates/db/src/models/character_ingest.rs`, relevant handler
 
 Replace hardcoded "clothed"/"topless" validation with pipeline-driven seed slot validation.
 
 **Acceptance Criteria:**
-- [ ] Ingest session resolves pipeline from the target project
-- [ ] Image classification uses pipeline's seed slot names (not hardcoded)
-- [ ] Validation checks all required seed slots have matching images
-- [ ] Validation produces clear errors listing missing seed slots
-- [ ] x121 pipeline validates for clothed + topless (backward compatible)
-- [ ] y122 pipeline validates for speaker only
+- [x] Ingest session resolves pipeline from the target project
+- [x] Image classification uses pipeline's seed slot names (not hardcoded)
+- [x] Validation checks all required seed slots have matching images
+- [x] Validation produces clear errors listing missing seed slots
+- [x] x121 pipeline validates for clothed + topless (backward compatible)
+- [x] y122 pipeline validates for speaker only
 
-### Task 4.3: Pipeline-scoped delivery naming
+### Task 4.3: [COMPLETE] Pipeline-scoped delivery naming
 **Files:** `apps/backend/crates/core/src/naming.rs`, `apps/backend/crates/api/src/background/delivery_assembly.rs`
 
 Replace hardcoded naming logic with pipeline-driven naming templates.
 
 **Acceptance Criteria:**
-- [ ] `resolve_video_filename()` reads naming template from pipeline config
-- [ ] Template variables: `{scene_type}`, `{prefix}`, `{transition}`, `{index}`, `{track}`
-- [ ] Prefix rules resolved from pipeline's `naming_rules.prefix_rules` map
-- [ ] x121 naming produces identical output to current hardcoded logic (backward compatible)
-- [ ] y122 naming produces its own format
-- [ ] Deprecated `scene_video_filename()` removed
+- [x] `resolve_video_filename()` reads naming template from pipeline config
+- [x] Template variables: `{scene_type}`, `{prefix}`, `{transition}`, `{index}`, `{track}`
+- [x] Prefix rules resolved from pipeline's `naming_rules.prefix_rules` map
+- [x] x121 naming produces identical output to current hardcoded logic (backward compatible)
+- [x] y122 naming produces its own format
+- [x] Deprecated `scene_video_filename()` removed
 
 ---
 
 ## Phase 5: Frontend
 
-### Task 5.1: Pipeline data hooks and API client
+### Task 5.1: [COMPLETE] Pipeline data hooks and API client
 **File:** `apps/frontend/src/features/pipelines/hooks/usePipelines.ts`
 
 TanStack Query hooks for pipeline data fetching.
 
 **Acceptance Criteria:**
-- [ ] `usePipelines()` — fetch all pipelines
-- [ ] `usePipeline(id)` — fetch single pipeline with config
-- [ ] `useCreatePipeline()` — mutation for creating pipeline
-- [ ] `useUpdatePipeline()` — mutation for updating pipeline
-- [ ] API client functions in `api/` directory
-- [ ] Proper error handling and loading states
+- [x] `usePipelines()` — fetch all pipelines
+- [x] `usePipeline(id)` — fetch single pipeline with config
+- [x] `useCreatePipeline()` — mutation for creating pipeline
+- [x] `useUpdatePipeline()` — mutation for updating pipeline
+- [x] API client functions in `api/` directory
+- [x] Proper error handling and loading states
 
-### Task 5.2: Pipeline navigation in sidebar
+### Task 5.2: [COMPLETE] Pipeline navigation in sidebar
 **Files:** `apps/frontend/src/app/layout/Sidebar.tsx` (or equivalent)
 
 Add pipeline-level navigation sections to the sidebar.
 
 **Acceptance Criteria:**
-- [ ] Sidebar fetches pipelines on mount
-- [ ] Each active pipeline renders as a top-level nav section
-- [ ] Pipeline sections expand to show: Projects, Characters, Scene Types, Workflows, Settings
-- [ ] Active pipeline is highlighted based on current route
-- [ ] Pipeline icon/badge shows pipeline code (x121, y122)
+- [x] Sidebar fetches pipelines on mount
+- [x] Each active pipeline renders as a top-level nav section
+- [x] Pipeline sections expand to show: Projects, Characters, Scene Types, Workflows, Settings
+- [x] Active pipeline is highlighted based on current route
+- [x] Pipeline icon/badge shows pipeline code (x121, y122)
 
-### Task 5.3: Pipeline-scoped routing
+### Task 5.3: [COMPLETE] Pipeline-scoped routing
 **File:** `apps/frontend/src/app/router.tsx`
 
 Add nested routes under each pipeline.
 
 **Acceptance Criteria:**
-- [ ] Routes: `/pipelines/:pipelineCode/projects`, `/pipelines/:pipelineCode/characters`, etc.
-- [ ] Pipeline code resolved from URL and passed as context to child routes
-- [ ] Existing project/character/workflow pages wrapped with pipeline context
-- [ ] 404 handling for invalid pipeline codes
+- [x] Routes: `/pipelines/:pipelineCode/projects`, `/pipelines/:pipelineCode/characters`, etc.
+- [x] Pipeline code resolved from URL and passed as context to child routes
+- [x] Existing project/character/workflow pages wrapped with pipeline context
+- [x] 404 handling for invalid pipeline codes
 
-### Task 5.4: Pipeline admin page
+### Task 5.4: [COMPLETE] Pipeline admin page
 **Files:** `apps/frontend/src/features/pipelines/pages/PipelineSettingsPage.tsx`
 
 Admin page for viewing and editing pipeline configuration.
 
 **Acceptance Criteria:**
-- [ ] Displays pipeline name, code, description
-- [ ] Editable seed slots (add/remove/reorder)
-- [ ] Editable naming rules (template editor)
-- [ ] Editable delivery config
-- [ ] Save button calls update API
-- [ ] Only accessible to admin users
+- [x] Displays pipeline name, code, description
+- [x] Editable seed slots (add/remove/reorder)
+- [x] Editable naming rules (template editor)
+- [x] Editable delivery config
+- [x] Save button calls update API
+- [x] Only accessible to admin users
 
-### Task 5.5: Pipeline-aware project creation
+### Task 5.5: [COMPLETE] Pipeline-aware project creation
 **Files:** `apps/frontend/src/features/projects/components/CreateProjectForm.tsx` (or equivalent)
 
 Project creation form contextualized to the current pipeline.
 
 **Acceptance Criteria:**
-- [ ] Pipeline is pre-selected from the navigation context (not a dropdown)
-- [ ] Form sends `pipeline_id` in the creation request
-- [ ] Pipeline name shown in the form header for clarity
+- [x] Pipeline is pre-selected from the navigation context (not a dropdown)
+- [x] Form sends `pipeline_id` in the creation request
+- [x] Pipeline name shown in the form header for clarity
 
-### Task 5.6: Dynamic seed image upload slots
+### Task 5.6: [COMPLETE] Dynamic seed image upload slots
 **Files:** `apps/frontend/src/features/characters/components/SeedImageUpload.tsx` (or equivalent)
 
 Character upload form renders seed image slots dynamically based on pipeline config.
 
 **Acceptance Criteria:**
-- [ ] Fetches pipeline's `seed_slots` on mount
-- [ ] Renders one upload area per seed slot
-- [ ] Labels each upload area with the slot's name and description
-- [ ] Validates all required slots have images before submission
-- [ ] x121 shows "Clothed" + "Topless" upload areas
-- [ ] y122 shows single "Speaker" upload area
+- [x] Fetches pipeline's `seed_slots` on mount
+- [x] Renders one upload area per seed slot
+- [x] Labels each upload area with the slot's name and description
+- [x] Validates all required slots have images before submission
+- [x] x121 shows "Clothed" + "Topless" upload areas
+- [x] y122 shows single "Speaker" upload area
 
 ---
 
 ## Phase 6: Testing & Migration Verification
 
-### Task 6.1: Pipeline repo integration tests
+### Task 6.1: [COMPLETE] Pipeline repo integration tests
 **File:** `apps/backend/crates/db/src/repos/pipeline_test.rs` (or test module)
 
 **Acceptance Criteria:**
-- [ ] Test create pipeline with valid data
-- [ ] Test create pipeline with duplicate code (expect error)
-- [ ] Test get by id and get by code
-- [ ] Test update pipeline (partial update)
-- [ ] Test soft delete
-- [ ] Test list with is_active filter
+- [x] Test create pipeline with valid data
+- [x] Test create pipeline with duplicate code (expect error)
+- [x] Test get by id and get by code
+- [x] Test update pipeline (partial update)
+- [x] Test soft delete
+- [x] Test list with is_active filter
 
-### Task 6.2: Pipeline API integration tests
+### Task 6.2: [COMPLETE] Pipeline API integration tests
 **File:** `apps/backend/crates/api/tests/pipelines.rs` (or test module)
 
 **Acceptance Criteria:**
-- [ ] Test CRUD endpoints return correct status codes and response format
-- [ ] Test admin-only access for create/delete
-- [ ] Test delete rejection when active projects exist
-- [ ] Test seed slot validation on create/update
+- [x] Test CRUD endpoints return correct status codes and response format
+- [x] Test admin-only access for create/delete
+- [x] Test delete rejection when active projects exist
+- [x] Test seed slot validation on create/update
 
-### Task 6.3: Pipeline scoping tests
+### Task 6.3: [COMPLETE] Pipeline scoping tests
 **File:** `apps/backend/crates/api/tests/pipeline_scoping.rs`
 
 **Acceptance Criteria:**
-- [ ] Test project list filtered by pipeline_id returns only that pipeline's projects
-- [ ] Test track list filtered by pipeline_id
-- [ ] Test workflow list filtered by pipeline_id
-- [ ] Test scene type list filtered by pipeline_id
-- [ ] Test creating a project with invalid pipeline_id (expect error)
+- [x] Test project list filtered by pipeline_id returns only that pipeline's projects
+- [x] Test track list filtered by pipeline_id
+- [x] Test workflow list filtered by pipeline_id
+- [x] Test scene type list filtered by pipeline_id
+- [x] Test creating a project with invalid pipeline_id (expect error)
 
-### Task 6.4: Seed validation tests
+### Task 6.4: [COMPLETE] Seed validation tests
 **File:** `apps/backend/crates/db/tests/seed_validation.rs` (or test module)
 
 **Acceptance Criteria:**
-- [ ] Test x121 pipeline validates clothed + topless present
-- [ ] Test x121 pipeline rejects when topless missing
-- [ ] Test y122 pipeline validates speaker present
-- [ ] Test y122 pipeline rejects when speaker missing
+- [x] Test x121 pipeline validates clothed + topless present
+- [x] Test x121 pipeline rejects when topless missing
+- [x] Test y122 pipeline validates speaker present
+- [x] Test y122 pipeline rejects when speaker missing
 
-### Task 6.5: Migration verification
+### Task 6.5: [COMPLETE] Migration verification
 **Description:** Manual verification checklist after running migrations.
 
 **Acceptance Criteria:**
-- [ ] All existing projects have `pipeline_id` set to x121
-- [ ] All existing tracks have `pipeline_id` set to x121
-- [ ] All existing workflows have `pipeline_id` set to x121
-- [ ] All global scene types have `pipeline_id` set to x121
-- [ ] No NULL values in NOT NULL `pipeline_id` columns
-- [ ] Application starts without errors
-- [ ] Existing x121 project/character/workflow CRUD works unchanged
-- [ ] Existing delivery export produces identical output
+- [x] All existing projects have `pipeline_id` set to x121
+- [x] All existing tracks have `pipeline_id` set to x121
+- [x] All existing workflows have `pipeline_id` set to x121
+- [x] All global scene types have `pipeline_id` set to x121
+- [x] No NULL values in NOT NULL `pipeline_id` columns
+- [x] Application starts without errors
+- [x] Existing x121 project/character/workflow CRUD works unchanged
+- [x] Existing delivery export produces identical output
 
 ---
 
