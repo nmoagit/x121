@@ -214,13 +214,17 @@ function GlobalSidebarContent({ collapsed }: { collapsed: boolean }) {
         ))}
       </div>
 
-      {/* Pinned bottom: compact toggle + Settings group */}
-      <div className={cn("shrink-0", !collapsed && "border-t border-[var(--color-border-default)]")}>
+      {/* Pinned bottom: Settings group (if any) */}
+      {bottomGroup && (
+        <div className="shrink-0">
+          <NavGroup group={bottomGroup} collapsed={collapsed} first={collapsed} />
+        </div>
+      )}
+
+      {/* Compact nav toggle — h-7 to match footer bar */}
+      <div className="shrink-0 border-t border-[var(--color-border-default)] h-7 flex items-center">
         {!collapsed && <CompactNavToggle />}
         {collapsed && <CompactNavToggleCollapsed />}
-        {bottomGroup && (
-          <NavGroup group={bottomGroup} collapsed={collapsed} first={collapsed} />
-        )}
       </div>
     </nav>
   );
