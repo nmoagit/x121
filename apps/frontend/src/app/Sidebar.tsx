@@ -2,15 +2,17 @@ import { useMemo } from "react";
 import { Link, useParams } from "@tanstack/react-router";
 
 import { NavGroup } from "@/app/NavGroup";
-import { NavItem } from "@/app/NavItem";
 import { NAV_GROUPS } from "@/app/navigation";
 import type { NavGroupDef } from "@/app/navigation";
-import { buildPipelineNavItems } from "@/app/pipeline-navigation";
+import { buildPipelineNavGroups } from "@/app/pipeline-navigation";
 import { useSidebar } from "@/app/useSidebar";
 import { hasAccess } from "@/components/ProtectedRoute";
 import { Drawer } from "@/components/composite";
-import { Tooltip } from "@/components/primitives";
-import { usePipelineByCode } from "@/features/pipelines/hooks/use-pipelines";
+import { Spinner, Tooltip } from "@/components/primitives";
+import {
+  usePipelineByCode,
+  usePipelines,
+} from "@/features/pipelines/hooks/use-pipelines";
 import { cn } from "@/lib/cn";
 import { useAuthStore } from "@/stores/auth-store";
 import {
@@ -31,7 +33,7 @@ const COLLAPSED_WIDTH = "w-12";
 
 function PipelineSidebarContent({ collapsed, pipelineCode }: { collapsed: boolean; pipelineCode: string }) {
   const { data: pipeline } = usePipelineByCode(pipelineCode);
-  const navItems = buildPipelineNavItems(pipelineCode);
+  const navGroups = useMemo(() => buildPipelineNavGroups(pipelineCode), [pipelineCode]);
   const pipelineName = pipeline?.name ?? pipelineCode;
 
   return (
@@ -70,10 +72,10 @@ function PipelineSidebarContent({ collapsed, pipelineCode }: { collapsed: boolea
         </div>
       )}
 
-      {/* Nav items */}
-      <div className={cn("flex-1 overflow-y-auto space-y-px", collapsed ? "scrollbar-ultra-thin" : "scrollbar-thin")}>
-        {navItems.map((item) => (
-          <NavItem key={item.path} item={item} collapsed={collapsed} />
+      {/* Nav groups */}
+      <div className={cn("flex-1 overflow-y-auto space-y-1", collapsed ? "scrollbar-ultra-thin" : "scrollbar-thin")}>
+        {navGroups.map((group, i) => (
+          <NavGroup key={group.label} group={group} collapsed={collapsed} first={i === 0} />
         ))}
       </div>
     </nav>
@@ -119,9 +121,24 @@ function CompactNavToggleCollapsed() {
 function GlobalSidebarContent({ collapsed }: { collapsed: boolean }) {
   const user = useAuthStore((s) => s.user);
   const { compactNav } = useSidebar();
+  const { data: pipelines, isLoading: pipelinesLoading } = usePipelines();
 
   const navGroups = useMemo<NavGroupDef[]>(() => {
     let groups = [...NAV_GROUPS];
+
+    // Inject active pipelines into the "Pipelines" group as indented sub-items.
+    const pipelinesGroup = groups.find((g) => g.label === "Pipelines");
+    if (pipelinesGroup && pipelines) {
+      const pipelineItems = pipelines
+        .filter((p) => p.is_active)
+        .map((p) => ({
+          label: p.name,
+          path: `/pipelines/${p.code}/dashboard`,
+          icon: Workflow,
+          indent: true,
+        }));
+      pipelinesGroup.items = [...pipelinesGroup.items, ...pipelineItems];
+    }
 
     // In compact mode, filter to only prominent items per group.
     if (compactNav) {
@@ -134,7 +151,7 @@ function GlobalSidebarContent({ collapsed }: { collapsed: boolean }) {
     }
 
     return groups;
-  }, [compactNav]);
+  }, [compactNav, pipelines]);
 
   const visibleGroups = navGroups.filter((group) => {
     if (!user) return !group.requiredRole;
@@ -153,7 +170,15 @@ function GlobalSidebarContent({ collapsed }: { collapsed: boolean }) {
       {/* Scrollable nav groups */}
       <div className={cn("flex-1 overflow-y-auto space-y-1", collapsed ? "scrollbar-ultra-thin" : "scrollbar-thin")}>
         {scrollGroups.map((group, i) => (
-          <NavGroup key={group.label} group={group} collapsed={collapsed} first={i === 0} />
+          <div key={group.label}>
+            <NavGroup group={group} collapsed={collapsed} first={i === 0} />
+            {group.label === "Pipelines" && pipelinesLoading && !collapsed && (
+              <div className="flex items-center gap-2 px-4 py-1 text-[10px] text-[var(--color-text-muted)]">
+                <Spinner size="sm" />
+                <span>Loading pipelines...</span>
+              </div>
+            )}
+          </div>
         ))}
       </div>
 

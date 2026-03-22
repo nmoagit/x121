@@ -11,7 +11,8 @@ import { Grid, Stack } from "@/components/layout";
 import { Badge } from "@/components/primitives";
 import { useSetPageTitle } from "@/hooks/useSetPageTitle";
 import { usePipelineContext } from "@/features/pipelines/PipelineProvider";
-import { buildPipelineNavItems } from "@/app/pipeline-navigation";
+import { buildPipelineNavGroups } from "@/app/pipeline-navigation";
+import type { NavItemDef } from "@/app/navigation";
 import { Workflow } from "@/tokens/icons";
 
 export function PipelineDashboardPage() {
@@ -20,10 +21,11 @@ export function PipelineDashboardPage() {
 
   useSetPageTitle(pipeline.name, "Pipeline workspace dashboard");
 
-  // Derive quick links from nav items, excluding the current page (Dashboard)
-  const quickLinks = buildPipelineNavItems(pipelineCode).filter(
-    (item) => !item.path.endsWith("/dashboard"),
-  );
+  // Derive quick links from all nav groups, excluding the current page (Dashboard)
+  const quickLinks: NavItemDef[] = buildPipelineNavGroups(pipelineCode)
+    .flatMap((group) => group.items)
+    .filter((item) => !item.path.endsWith("/dashboard"))
+    .filter((item) => item.prominent);
 
   return (
     <Stack gap={6}>

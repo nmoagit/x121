@@ -158,6 +158,310 @@ const pipelineSettingsRoute = createRoute({
   ),
 });
 
+/* --- Pipeline Content routes --- */
+
+const pipelineSceneCatalogueRoute = createRoute({
+  getParentRoute: () => pipelineLayoutRoute,
+  path: "/scene-catalogue",
+  component: lazyRouteComponent(() =>
+    import("@/app/pages/SceneCataloguePage").then((m) => ({ default: m.SceneCataloguePage })),
+  ),
+});
+
+const pipelineLibraryRoute = createRoute({
+  getParentRoute: () => pipelineLayoutRoute,
+  path: "/library",
+  component: lazyRouteComponent(() =>
+    import("@/features/library").then((m) => ({ default: m.CharacterLibraryBrowser })),
+  ),
+});
+
+const pipelineImagesRoute = createRoute({
+  getParentRoute: () => pipelineLayoutRoute,
+  path: "/images",
+  component: lazyRouteComponent(() =>
+    import("@/app/pages/ImagesPage").then((m) => ({ default: m.ImagesPage })),
+  ),
+});
+
+const pipelineScenesRoute = createRoute({
+  getParentRoute: () => pipelineLayoutRoute,
+  path: "/scenes",
+  component: lazyRouteComponent(() =>
+    import("@/app/pages/ScenesPage").then((m) => ({ default: m.ScenesPage })),
+  ),
+});
+
+const pipelineModelsRoute = createRoute({
+  getParentRoute: () => pipelineLayoutRoute,
+  path: "/models",
+  component: lazyRouteComponent(() =>
+    import("@/app/pages/CharactersPage").then((m) => ({ default: m.CharactersPage })),
+  ),
+});
+
+const pipelineStoryboardRoute = createRoute({
+  getParentRoute: () => pipelineLayoutRoute,
+  path: "/storyboard",
+  component: lazyRouteComponent(() =>
+    import("@/app/pages/StoryboardPage").then((m) => ({ default: m.StoryboardPage })),
+  ),
+});
+
+const pipelineModelDashboardRoute = createRoute({
+  getParentRoute: () => pipelineLayoutRoute,
+  path: "/model-dashboard",
+  component: lazyRouteComponent(() =>
+    import("@/app/pages/CharacterDashboardPage").then((m) => ({
+      default: m.CharacterDashboardPage,
+    })),
+  ),
+});
+
+const pipelineContactSheetRoute = createRoute({
+  getParentRoute: () => pipelineLayoutRoute,
+  path: "/contact-sheet",
+  component: lazyRouteComponent(() =>
+    import("@/app/pages/ContactSheetPage").then((m) => ({ default: m.ContactSheetPage })),
+  ),
+});
+
+const pipelineDuplicatesRoute = createRoute({
+  getParentRoute: () => pipelineLayoutRoute,
+  path: "/duplicates",
+  component: lazyRouteComponent(() =>
+    import("@/app/pages/DuplicatesPage").then((m) => ({ default: m.DuplicatesPage })),
+  ),
+});
+
+/* --- Pipeline Production routes --- */
+
+const pipelineQueueRoute = createRoute({
+  getParentRoute: () => pipelineLayoutRoute,
+  path: "/queue",
+  component: lazyRouteComponent(() =>
+    import("@/features/queue").then((m) => ({ default: m.QueueStatusView })),
+  ),
+});
+
+const pipelineGenerationRoute = createRoute({
+  getParentRoute: () => pipelineLayoutRoute,
+  path: "/generation",
+  component: lazyRouteComponent(() =>
+    import("@/app/pages/GenerationPage").then((m) => ({ default: m.GenerationPage })),
+  ),
+});
+
+const pipelineTestShotsRoute = createRoute({
+  getParentRoute: () => pipelineLayoutRoute,
+  path: "/test-shots",
+  component: lazyRouteComponent(() =>
+    import("@/app/pages/TestShotsPage").then((m) => ({ default: m.TestShotsPage })),
+  ),
+});
+
+const pipelineBatchRoute = createRoute({
+  getParentRoute: () => pipelineLayoutRoute,
+  path: "/batch",
+  component: lazyRouteComponent(() =>
+    import("@/app/pages/BatchProductionPage").then((m) => ({ default: m.BatchProductionPage })),
+  ),
+});
+
+const pipelineCheckpointsRoute = createRoute({
+  getParentRoute: () => pipelineLayoutRoute,
+  path: "/checkpoints",
+  component: lazyRouteComponent(() =>
+    import("@/app/pages/CheckpointsPage").then((m) => ({ default: m.CheckpointsPage })),
+  ),
+});
+
+const pipelineDebuggerRoute = createRoute({
+  getParentRoute: () => pipelineLayoutRoute,
+  path: "/debugger",
+  component: lazyRouteComponent(() =>
+    import("@/app/pages/DebuggerPage").then((m) => ({ default: m.DebuggerPage })),
+  ),
+});
+
+const pipelineRenderTimelineRoute = createRoute({
+  getParentRoute: () => pipelineLayoutRoute,
+  path: "/render-timeline",
+  component: lazyRouteComponent(() =>
+    import("@/features/render-timeline").then((m) => ({ default: m.RenderTimelinePage })),
+  ),
+});
+
+/* --- Pipeline Review routes --- */
+
+const pipelineAnnotationsRoute = createRoute({
+  getParentRoute: () => pipelineLayoutRoute,
+  path: "/annotations",
+  component: lazyRouteComponent(() =>
+    import("@/app/pages/AnnotationsPage").then((m) => ({ default: m.AnnotationsPage })),
+  ),
+});
+
+const pipelineReviewsRoute = createRoute({
+  getParentRoute: () => pipelineLayoutRoute,
+  path: "/reviews",
+  component: lazyRouteComponent(() =>
+    import("@/app/pages/MyReviewsPage").then((m) => ({ default: m.MyReviewsPage })),
+  ),
+});
+
+const pipelineNotesRoute = createRoute({
+  getParentRoute: () => pipelineLayoutRoute,
+  path: "/notes",
+  component: lazyRouteComponent(() =>
+    import("@/app/pages/ReviewNotesPage").then((m) => ({ default: m.ReviewNotesPage })),
+  ),
+});
+
+const pipelineProductionNotesRoute = createRoute({
+  getParentRoute: () => pipelineLayoutRoute,
+  path: "/production-notes",
+  component: lazyRouteComponent(() =>
+    import("@/app/pages/ProductionNotesPage").then((m) => ({ default: m.ProductionNotesPage })),
+  ),
+});
+
+const pipelineQaGatesRoute = createRoute({
+  getParentRoute: () => pipelineLayoutRoute,
+  path: "/qa-gates",
+  component: lazyRouteComponent(() =>
+    import("@/app/pages/QaGatesPage").then((m) => ({ default: m.QaGatesPage })),
+  ),
+});
+
+const pipelineCinemaRoute = createRoute({
+  getParentRoute: () => pipelineLayoutRoute,
+  path: "/cinema",
+  component: lazyRouteComponent(() =>
+    import("@/app/pages/CinemaPage").then((m) => ({ default: m.CinemaPage })),
+  ),
+});
+
+const pipelineTemporalRoute = createRoute({
+  getParentRoute: () => pipelineLayoutRoute,
+  path: "/temporal",
+  component: lazyRouteComponent(() =>
+    import("@/app/pages/TemporalPage").then((m) => ({ default: m.TemporalPage })),
+  ),
+});
+
+/* --- Pipeline Tools routes --- */
+
+const pipelinePromptsRoute = createRoute({
+  getParentRoute: () => pipelineLayoutRoute,
+  path: "/prompts",
+  component: lazyRouteComponent(() =>
+    import("@/app/pages/PromptsPage").then((m) => ({ default: m.PromptsPage })),
+  ),
+});
+
+const pipelineConfigRoute = createRoute({
+  getParentRoute: () => pipelineLayoutRoute,
+  path: "/config",
+  component: lazyRouteComponent(() =>
+    import("@/features/config-templates").then((m) => ({ default: m.ConfigLibrary })),
+  ),
+});
+
+const pipelinePresetsRoute = createRoute({
+  getParentRoute: () => pipelineLayoutRoute,
+  path: "/presets",
+  component: lazyRouteComponent(() =>
+    import("@/features/presets").then((m) => ({ default: m.PresetMarketplace })),
+  ),
+});
+
+const pipelineSearchRoute = createRoute({
+  getParentRoute: () => pipelineLayoutRoute,
+  path: "/search",
+  component: lazyRouteComponent(() =>
+    import("@/app/pages/SearchPage").then((m) => ({ default: m.SearchPage })),
+  ),
+});
+
+const pipelineBranchingRoute = createRoute({
+  getParentRoute: () => pipelineLayoutRoute,
+  path: "/branching",
+  component: lazyRouteComponent(() =>
+    import("@/app/pages/BranchingPage").then((m) => ({ default: m.BranchingPage })),
+  ),
+});
+
+const pipelineActivityConsoleRoute = createRoute({
+  getParentRoute: () => pipelineLayoutRoute,
+  path: "/activity-console",
+  component: lazyRouteComponent(() =>
+    import("@/features/activity-console").then((m) => ({ default: m.ActivityConsolePage })),
+  ),
+});
+
+const pipelineModelIngestRoute = createRoute({
+  getParentRoute: () => pipelineLayoutRoute,
+  path: "/model-ingest",
+  component: lazyRouteComponent(() =>
+    import("@/features/character-ingest").then((m) => ({
+      default: m.CharacterIngestPage,
+    })),
+  ),
+});
+
+const pipelineBatchMetadataRoute = createRoute({
+  getParentRoute: () => pipelineLayoutRoute,
+  path: "/batch-metadata",
+  component: lazyRouteComponent(() =>
+    import("@/app/pages/BatchMetadataPage").then((m) => ({ default: m.BatchMetadataPage })),
+  ),
+});
+
+const pipelinePipelineHooksRoute = createRoute({
+  getParentRoute: () => pipelineLayoutRoute,
+  path: "/pipeline-hooks",
+  component: lazyRouteComponent(() =>
+    import("@/app/pages/PipelineHooksPage").then((m) => ({ default: m.PipelineHooksPage })),
+  ),
+});
+
+const pipelineWorkflowImportRoute = createRoute({
+  getParentRoute: () => pipelineLayoutRoute,
+  path: "/workflow-import",
+  component: lazyRouteComponent(() =>
+    import("@/app/pages/WorkflowImportPage").then((m) => ({ default: m.WorkflowImportPage })),
+  ),
+});
+
+const pipelineUndoRoute = createRoute({
+  getParentRoute: () => pipelineLayoutRoute,
+  path: "/undo",
+  component: lazyRouteComponent(() =>
+    import("@/app/pages/UndoPage").then((m) => ({ default: m.UndoPage })),
+  ),
+});
+
+/* --- Pipeline Admin routes --- */
+
+const pipelineNamingRoute = createRoute({
+  getParentRoute: () => pipelineLayoutRoute,
+  path: "/naming",
+  component: lazyRouteComponent(() =>
+    import("@/features/naming-rules").then((m) => ({ default: m.NamingRulesPage })),
+  ),
+});
+
+const pipelineOutputProfilesRoute = createRoute({
+  getParentRoute: () => pipelineLayoutRoute,
+  path: "/output-profiles",
+  component: lazyRouteComponent(() =>
+    import("@/app/pages/OutputProfilesPage").then((m) => ({
+      default: m.OutputProfilesPage,
+    })),
+  ),
+});
+
 /* --------------------------------------------------------------------------
    Dashboard routes (global, non-pipeline)
    -------------------------------------------------------------------------- */
@@ -918,13 +1222,54 @@ export const routeTree = rootRoute.addChildren([
     /* Pipeline workspace */
     pipelineLayoutRoute.addChildren([
       pipelineDashboardRoute,
+      /* Content */
       pipelineProjectsRoute,
       pipelineProjectDetailRoute,
       pipelineCharacterDetailRoute,
       pipelineCharactersRoute,
       pipelineSceneTypesRoute,
-      pipelineWorkflowsRoute,
+      pipelineSceneCatalogueRoute,
+      pipelineLibraryRoute,
+      pipelineImagesRoute,
+      pipelineScenesRoute,
+      pipelineModelsRoute,
+      pipelineStoryboardRoute,
+      pipelineModelDashboardRoute,
+      pipelineContactSheetRoute,
+      pipelineDuplicatesRoute,
+      /* Production */
+      pipelineQueueRoute,
+      pipelineGenerationRoute,
+      pipelineTestShotsRoute,
+      pipelineBatchRoute,
       pipelineDeliveryRoute,
+      pipelineCheckpointsRoute,
+      pipelineDebuggerRoute,
+      pipelineRenderTimelineRoute,
+      /* Review */
+      pipelineAnnotationsRoute,
+      pipelineReviewsRoute,
+      pipelineNotesRoute,
+      pipelineProductionNotesRoute,
+      pipelineQaGatesRoute,
+      pipelineCinemaRoute,
+      pipelineTemporalRoute,
+      /* Tools */
+      pipelineWorkflowsRoute,
+      pipelinePromptsRoute,
+      pipelineConfigRoute,
+      pipelinePresetsRoute,
+      pipelineSearchRoute,
+      pipelineBranchingRoute,
+      pipelineActivityConsoleRoute,
+      pipelineModelIngestRoute,
+      pipelineBatchMetadataRoute,
+      pipelinePipelineHooksRoute,
+      pipelineWorkflowImportRoute,
+      pipelineUndoRoute,
+      /* Pipeline Admin */
+      pipelineNamingRoute,
+      pipelineOutputProfilesRoute,
       pipelineSettingsRoute,
     ]),
 
