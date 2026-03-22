@@ -6,6 +6,9 @@
 export { PipelineListPage } from "./PipelineListPage";
 export { PipelineSettingsPage } from "./PipelineSettingsPage";
 
+/* Provider */
+export { PipelineProvider, usePipelineContext, usePipelineContextSafe } from "./PipelineProvider";
+
 /* Hooks */
 export {
   pipelineKeys,

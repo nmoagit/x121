@@ -1,20 +1,88 @@
 import { useMemo } from "react";
+import { Link, useParams } from "@tanstack/react-router";
 
 import { NavGroup } from "@/app/NavGroup";
+import { NavItem } from "@/app/NavItem";
 import { NAV_GROUPS } from "@/app/navigation";
 import type { NavGroupDef } from "@/app/navigation";
+import { buildPipelineNavItems } from "@/app/pipeline-navigation";
 import { useSidebar } from "@/app/useSidebar";
 import { hasAccess } from "@/components/ProtectedRoute";
 import { Drawer } from "@/components/composite";
 import { Tooltip } from "@/components/primitives";
-import { usePipelines } from "@/features/pipelines/hooks/use-pipelines";
-import { useProjects } from "@/features/projects/hooks/use-projects";
+import { usePipelineByCode } from "@/features/pipelines/hooks/use-pipelines";
 import { cn } from "@/lib/cn";
 import { useAuthStore } from "@/stores/auth-store";
-import { Eye, EyeOff, Folder, FolderKanban, PanelLeftClose, PanelLeftOpen, Settings } from "@/tokens/icons";
+import {
+  ArrowLeft,
+  Eye,
+  EyeOff,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Workflow,
+} from "@/tokens/icons";
 
 const EXPANDED_WIDTH = "w-52";
 const COLLAPSED_WIDTH = "w-12";
+
+/* --------------------------------------------------------------------------
+   Pipeline workspace sidebar content
+   -------------------------------------------------------------------------- */
+
+function PipelineSidebarContent({ collapsed, pipelineCode }: { collapsed: boolean; pipelineCode: string }) {
+  const { data: pipeline } = usePipelineByCode(pipelineCode);
+  const navItems = buildPipelineNavItems(pipelineCode);
+  const pipelineName = pipeline?.name ?? pipelineCode;
+
+  return (
+    <nav
+      className={cn("flex flex-col gap-1 py-2 h-full", collapsed ? "px-0.5" : "px-1.5")}
+      aria-label="Pipeline navigation"
+    >
+      {/* Pipeline header */}
+      {!collapsed && (
+        <div className="px-2 pb-2 mb-1 border-b border-[var(--color-border-default)]">
+          <div className="flex items-center gap-2">
+            <Workflow size={14} className="text-[var(--color-action-primary)] shrink-0" />
+            <span className="text-[11px] font-semibold text-[var(--color-text-primary)] truncate">
+              {pipelineName}
+            </span>
+          </div>
+          <Link
+            to="/"
+            className="flex items-center gap-1 mt-1.5 text-[10px] text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors"
+          >
+            <ArrowLeft size={10} />
+            <span>Switch pipeline</span>
+          </Link>
+        </div>
+      )}
+      {collapsed && (
+        <div className="flex flex-col items-center gap-1 pb-1 mb-1 border-b border-[var(--color-border-default)]">
+          <Tooltip content={`${pipelineName} — Switch pipeline`} side="right">
+            <Link
+              to="/"
+              className="rounded-[var(--radius-sm)] p-1 text-[var(--color-action-primary)] hover:bg-[var(--color-surface-tertiary)] transition-colors"
+            >
+              <Workflow size={16} />
+            </Link>
+          </Tooltip>
+        </div>
+      )}
+
+      {/* Nav items */}
+      <div className={cn("flex-1 overflow-y-auto space-y-px", collapsed ? "scrollbar-ultra-thin" : "scrollbar-thin")}>
+        {navItems.map((item) => (
+          <NavItem key={item.path} item={item} collapsed={collapsed} />
+        ))}
+      </div>
+    </nav>
+  );
+}
+
+/* --------------------------------------------------------------------------
+   Default (global) sidebar content
+   -------------------------------------------------------------------------- */
 
 function CompactNavToggle() {
   const { compactNav, toggleCompactNav } = useSidebar();
@@ -48,53 +116,12 @@ function CompactNavToggleCollapsed() {
   );
 }
 
-function SidebarContent({ collapsed }: { collapsed: boolean }) {
+function GlobalSidebarContent({ collapsed }: { collapsed: boolean }) {
   const user = useAuthStore((s) => s.user);
   const { compactNav } = useSidebar();
-  const { data: projects } = useProjects();
-  const { data: pipelines } = usePipelines();
 
   const navGroups = useMemo<NavGroupDef[]>(() => {
-    let groups = NAV_GROUPS.map((group) => {
-      if (group.label !== "Projects" || !projects || projects.length === 0) return group;
-      return {
-        ...group,
-        items: [
-          ...group.items,
-          ...projects.map((p) => ({
-            label: p.name,
-            path: `/projects/${p.id}`,
-            icon: Folder,
-            prominent: true,
-            indent: true,
-          })),
-        ],
-      };
-    });
-
-    // Insert dynamic pipeline groups after "Projects" group
-    if (pipelines && pipelines.length > 0) {
-      const projectsIndex = groups.findIndex((g) => g.label === "Projects");
-      const pipelineGroups: NavGroupDef[] = pipelines
-        .filter((p) => p.is_active)
-        .map((pipeline) => ({
-          label: pipeline.name,
-          items: [
-            {
-              label: "Projects",
-              path: `/pipelines/${pipeline.code}/projects`,
-              icon: FolderKanban,
-              prominent: true,
-            },
-            {
-              label: "Settings",
-              path: `/pipelines/${pipeline.code}/settings`,
-              icon: Settings,
-            },
-          ],
-        }));
-      groups.splice(projectsIndex + 1, 0, ...pipelineGroups);
-    }
+    let groups = [...NAV_GROUPS];
 
     // In compact mode, filter to only prominent items per group.
     if (compactNav) {
@@ -107,7 +134,7 @@ function SidebarContent({ collapsed }: { collapsed: boolean }) {
     }
 
     return groups;
-  }, [projects, pipelines, compactNav]);
+  }, [compactNav]);
 
   const visibleGroups = navGroups.filter((group) => {
     if (!user) return !group.requiredRole;
@@ -132,18 +159,29 @@ function SidebarContent({ collapsed }: { collapsed: boolean }) {
 
       {/* Pinned bottom: compact toggle + Settings group */}
       <div className={cn("shrink-0 pt-1 mt-1", !collapsed && "border-t border-[var(--color-border-default)]")}>
-        {!collapsed && (
-          <CompactNavToggle />
-        )}
-        {collapsed && (
-          <CompactNavToggleCollapsed />
-        )}
+        {!collapsed && <CompactNavToggle />}
+        {collapsed && <CompactNavToggleCollapsed />}
         {bottomGroup && (
           <NavGroup group={bottomGroup} collapsed={collapsed} first={collapsed} />
         )}
       </div>
     </nav>
   );
+}
+
+/* --------------------------------------------------------------------------
+   Sidebar shell (shared between pipeline and global modes)
+   -------------------------------------------------------------------------- */
+
+function SidebarContent({ collapsed }: { collapsed: boolean }) {
+  const params = useParams({ strict: false }) as { pipelineCode?: string };
+  const isPipelineRoute = Boolean(params.pipelineCode);
+
+  if (isPipelineRoute && params.pipelineCode) {
+    return <PipelineSidebarContent collapsed={collapsed} pipelineCode={params.pipelineCode} />;
+  }
+
+  return <GlobalSidebarContent collapsed={collapsed} />;
 }
 
 function SidebarBrandBar({ collapsed }: { collapsed: boolean }) {

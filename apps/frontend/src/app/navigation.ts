@@ -1,7 +1,6 @@
 import type { UserRole } from "@/stores/auth-store";
 import {
   Activity,
-  BarChart3,
   Bug,
   Calendar,
   Cloud,
@@ -16,7 +15,6 @@ import {
   FileText,
   Film,
   Folder,
-  FolderKanban,
   HardDrive,
   Image,
   Info,
@@ -69,17 +67,9 @@ export interface NavGroupDef {
 
 export const NAV_GROUPS: NavGroupDef[] = [
   {
-    label: "Dashboard",
+    label: "Pipelines",
     items: [
-      { label: "Home", path: "/", icon: BarChart3, prominent: true },
-      { label: "Performance", path: "/performance", icon: Activity },
-      { label: "Customize", path: "/dashboard/customize", icon: Settings },
-    ],
-  },
-  {
-    label: "Projects",
-    items: [
-      { label: "All Projects", path: "/projects", icon: FolderKanban, exact: true, prominent: true },
+      { label: "All Pipelines", path: "/", icon: Workflow, exact: true, prominent: true },
     ],
   },
   {

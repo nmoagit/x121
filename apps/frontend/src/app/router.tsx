@@ -2,6 +2,7 @@ import { Outlet, createRootRoute, createRoute, lazyRouteComponent } from "@tanst
 
 import { AdminGuard } from "@/app/AdminGuard";
 import { AppShell } from "@/app/AppShell";
+import { PipelineWorkspaceLayout } from "@/app/PipelineWorkspaceLayout";
 import { LoginPage } from "@/features/auth/LoginPage";
 
 /* --------------------------------------------------------------------------
@@ -16,6 +17,10 @@ const projectDetailSearch = (search: Record<string, unknown>) => ({
 const characterDetailSearch = (search: Record<string, unknown>) => ({
   tab: typeof search.tab === "string" ? search.tab : undefined,
   scene: typeof search.scene === "string" ? search.scene : undefined,
+});
+
+const workflowSearch = (search: Record<string, unknown>) => ({
+  name: (search.name as string) ?? undefined,
 });
 
 /* --------------------------------------------------------------------------
@@ -55,16 +60,107 @@ const authenticatedRoute = createRoute({
 });
 
 /* --------------------------------------------------------------------------
-   Dashboard routes
+   Landing page — Pipeline selector
    -------------------------------------------------------------------------- */
 
 const indexRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   path: "/",
   component: lazyRouteComponent(() =>
-    import("@/app/pages/DashboardPage").then((m) => ({ default: m.DashboardPage })),
+    import("@/app/pages/PipelineSelectorPage").then((m) => ({ default: m.PipelineSelectorPage })),
   ),
 });
+
+/* --------------------------------------------------------------------------
+   Pipeline workspace routes (/pipelines/:pipelineCode/...)
+   -------------------------------------------------------------------------- */
+
+const pipelineLayoutRoute = createRoute({
+  getParentRoute: () => authenticatedRoute,
+  path: "/pipelines/$pipelineCode",
+  component: PipelineWorkspaceLayout,
+});
+
+const pipelineDashboardRoute = createRoute({
+  getParentRoute: () => pipelineLayoutRoute,
+  path: "/dashboard",
+  component: lazyRouteComponent(() =>
+    import("@/app/pages/PipelineDashboardPage").then((m) => ({ default: m.PipelineDashboardPage })),
+  ),
+});
+
+const pipelineProjectsRoute = createRoute({
+  getParentRoute: () => pipelineLayoutRoute,
+  path: "/projects",
+  component: lazyRouteComponent(() =>
+    import("@/features/projects").then((m) => ({ default: m.ProjectListPage })),
+  ),
+});
+
+const pipelineProjectDetailRoute = createRoute({
+  getParentRoute: () => pipelineLayoutRoute,
+  path: "/projects/$projectId",
+  validateSearch: projectDetailSearch,
+  component: lazyRouteComponent(() =>
+    import("@/features/projects").then((m) => ({ default: m.ProjectDetailPage })),
+  ),
+});
+
+const pipelineCharacterDetailRoute = createRoute({
+  getParentRoute: () => pipelineLayoutRoute,
+  path: "/projects/$projectId/models/$characterId",
+  validateSearch: characterDetailSearch,
+  component: lazyRouteComponent(() =>
+    import("@/features/characters").then((m) => ({ default: m.CharacterDetailPage })),
+  ),
+});
+
+const pipelineCharactersRoute = createRoute({
+  getParentRoute: () => pipelineLayoutRoute,
+  path: "/characters",
+  component: lazyRouteComponent(() =>
+    import("@/app/pages/CharactersPage").then((m) => ({ default: m.CharactersPage })),
+  ),
+});
+
+const pipelineSceneTypesRoute = createRoute({
+  getParentRoute: () => pipelineLayoutRoute,
+  path: "/scene-types",
+  component: lazyRouteComponent(() =>
+    import("@/app/pages/SceneCataloguePage").then((m) => ({ default: m.SceneCataloguePage })),
+  ),
+});
+
+const pipelineWorkflowsRoute = createRoute({
+  getParentRoute: () => pipelineLayoutRoute,
+  path: "/workflows",
+  validateSearch: workflowSearch,
+  component: lazyRouteComponent(() =>
+    import("@/app/pages/WorkflowsPage").then((m) => ({ default: m.WorkflowsPage })),
+  ),
+});
+
+const pipelineDeliveryRoute = createRoute({
+  getParentRoute: () => pipelineLayoutRoute,
+  path: "/delivery",
+  component: lazyRouteComponent(() =>
+    import("@/app/pages/DeliveryPage").then((m) => ({ default: m.DeliveryPage })),
+  ),
+});
+
+const pipelineSettingsRoute = createRoute({
+  getParentRoute: () => pipelineLayoutRoute,
+  path: "/settings",
+  component: lazyRouteComponent(() =>
+    import("@/app/pages/PipelineSettingsPage").then((m) => ({
+      default: m.PipelineSettingsPage,
+    })),
+  ),
+});
+
+/* --------------------------------------------------------------------------
+   Dashboard routes (global, non-pipeline)
+   -------------------------------------------------------------------------- */
 
 const performanceRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
@@ -87,7 +183,7 @@ const dashboardCustomizeRoute = createRoute({
 });
 
 /* --------------------------------------------------------------------------
-   Project routes (PRD-112)
+   Project routes (global, non-pipeline — kept for backward compatibility)
    -------------------------------------------------------------------------- */
 
 const projectsLayoutRoute = createRoute({
@@ -377,9 +473,7 @@ const promptsRoute = createRoute({
 const workflowsRoute = createRoute({
   getParentRoute: () => toolsLayoutRoute,
   path: "/tools/workflows",
-  validateSearch: (search: Record<string, unknown>) => ({
-    name: (search.name as string) ?? undefined,
-  }),
+  validateSearch: workflowSearch,
   component: lazyRouteComponent(() =>
     import("@/app/pages/WorkflowsPage").then((m) => ({ default: m.WorkflowsPage })),
   ),
@@ -772,52 +866,6 @@ const adminPipelineDetailRoute = createRoute({
 });
 
 /* --------------------------------------------------------------------------
-   Pipeline-scoped routes (PRD-138)
-   -------------------------------------------------------------------------- */
-
-const pipelineLayoutRoute = createRoute({
-  getParentRoute: () => authenticatedRoute,
-  path: "/pipelines/$pipelineCode",
-  component: Outlet,
-});
-
-const pipelineProjectsRoute = createRoute({
-  getParentRoute: () => pipelineLayoutRoute,
-  path: "/projects",
-  component: lazyRouteComponent(() =>
-    import("@/features/projects").then((m) => ({ default: m.ProjectListPage })),
-  ),
-});
-
-const pipelineProjectDetailRoute = createRoute({
-  getParentRoute: () => pipelineLayoutRoute,
-  path: "/projects/$projectId",
-  validateSearch: projectDetailSearch,
-  component: lazyRouteComponent(() =>
-    import("@/features/projects").then((m) => ({ default: m.ProjectDetailPage })),
-  ),
-});
-
-const pipelineCharacterDetailRoute = createRoute({
-  getParentRoute: () => pipelineLayoutRoute,
-  path: "/projects/$projectId/models/$characterId",
-  validateSearch: characterDetailSearch,
-  component: lazyRouteComponent(() =>
-    import("@/features/characters").then((m) => ({ default: m.CharacterDetailPage })),
-  ),
-});
-
-const pipelineSettingsRoute = createRoute({
-  getParentRoute: () => pipelineLayoutRoute,
-  path: "/settings",
-  component: lazyRouteComponent(() =>
-    import("@/app/pages/PipelineSettingsPage").then((m) => ({
-      default: m.PipelineSettingsPage,
-    })),
-  ),
-});
-
-/* --------------------------------------------------------------------------
    Settings routes
    -------------------------------------------------------------------------- */
 
@@ -867,6 +915,20 @@ export const routeTree = rootRoute.addChildren([
     performanceRoute,
     dashboardCustomizeRoute,
 
+    /* Pipeline workspace */
+    pipelineLayoutRoute.addChildren([
+      pipelineDashboardRoute,
+      pipelineProjectsRoute,
+      pipelineProjectDetailRoute,
+      pipelineCharacterDetailRoute,
+      pipelineCharactersRoute,
+      pipelineSceneTypesRoute,
+      pipelineWorkflowsRoute,
+      pipelineDeliveryRoute,
+      pipelineSettingsRoute,
+    ]),
+
+    /* Global project routes (backward compat) */
     projectsLayoutRoute.addChildren([
       projectListRoute,
       projectDetailRoute,
@@ -959,13 +1021,6 @@ export const routeTree = rootRoute.addChildren([
       adminOutputProfilesRoute,
       adminPipelinesRoute,
       adminPipelineDetailRoute,
-    ]),
-
-    pipelineLayoutRoute.addChildren([
-      pipelineProjectsRoute,
-      pipelineProjectDetailRoute,
-      pipelineCharacterDetailRoute,
-      pipelineSettingsRoute,
     ]),
 
     settingsLayoutRoute.addChildren([shortcutsRoute, wikiRoute]),
