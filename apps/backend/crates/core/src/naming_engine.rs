@@ -53,7 +53,7 @@ pub const ALL_TOKENS: &[&str] = &[
 /// The engine resolves missing fields to empty strings.
 #[derive(Debug, Clone, Default)]
 pub struct NamingContext {
-    /// Variant label, e.g. `"clothed"`, `"topless"`.
+    /// Variant / track label, e.g. `"default"`, `"alt"`. Any slug is valid.
     pub variant_label: Option<String>,
     /// Scene type display name, e.g. `"Dance"`, `"Slow Walk"`.
     pub scene_type_name: Option<String>,
@@ -77,6 +77,11 @@ pub struct NamingContext {
     pub metadata_type: Option<String>,
     /// Sequence number for ordered artifacts.
     pub sequence: Option<u32>,
+    /// Pipeline prefix rules: maps track slug to its filename prefix.
+    /// E.g. `{"topless": "topless_"}`. When set, the `variant_prefix` token
+    /// looks up the variant_label in this map instead of using a hardcoded check.
+    #[allow(clippy::type_complexity)]
+    pub prefix_rules: Option<HashMap<String, String>>,
 }
 
 // ---------------------------------------------------------------------------
@@ -284,8 +289,8 @@ pub fn validate_template(template: &str, category: &str) -> ValidationResult {
 /// placeholder. Format specifiers (`:N`) apply zero-padding to numeric values.
 ///
 /// Conditional tokens:
-/// - `variant_prefix`: `"topless_"` when variant is topless, empty otherwise
-/// - `clothes_off_suffix`: `"_clothes_off"` when `is_clothes_off` is true
+/// - `variant_prefix`: looked up from `ctx.prefix_rules` by variant label, empty if not found
+/// - `clothes_off_suffix`: `"_clothes_off"` when `is_clothes_off` is true and variant has no prefix
 /// - `index_suffix`: `"_N"` when index is `Some(N)`, empty otherwise
 ///
 /// After substitution the result is sanitized: unresolved `{token}` placeholders
@@ -326,10 +331,17 @@ pub fn resolve_template(template: &str, ctx: &NamingContext) -> Result<ResolvedN
 fn build_token_map(ctx: &NamingContext) -> HashMap<String, String> {
     let mut map = HashMap::new();
 
-    // variant_prefix: "topless_" for topless, empty for clothed
-    let prefix = match ctx.variant_label.as_deref() {
-        Some("topless") => "topless_".to_string(),
-        _ => String::new(),
+    // variant_prefix: look up the variant label in prefix_rules if available,
+    // otherwise fall back to empty string (no hardcoded slug assumptions).
+    let prefix = if let Some(ref label) = ctx.variant_label {
+        if let Some(ref rules) = ctx.prefix_rules {
+            rules.get(label).cloned().unwrap_or_default()
+        } else {
+            // Legacy fallback: no prefix_rules provided — empty prefix for all tracks.
+            String::new()
+        }
+    } else {
+        String::new()
     };
     map.insert("variant_prefix".to_string(), prefix);
 
@@ -347,11 +359,21 @@ fn build_token_map(ctx: &NamingContext) -> HashMap<String, String> {
     }
 
     // clothes_off_suffix: "_clothes_off" only when is_clothes_off=true AND
-    // variant is clothed (or unset). A topless variant cannot have a clothes_off
-    // transition — the character is already unclothed. The clothes_off suffix
-    // means "started clothed, ended with clothes off".
-    let is_clothed_variant = !matches!(ctx.variant_label.as_deref(), Some("topless"));
-    let suffix = if ctx.is_clothes_off && is_clothed_variant {
+    // the variant has a prefix (indicating it is the "non-default" track that
+    // wouldn't need a transition). If a variant has a prefix defined in
+    // prefix_rules, it is a non-default track and clothes_off is suppressed.
+    // When no prefix_rules are provided, the suffix is always applied if
+    // is_clothes_off is true (the caller controls this flag per-track).
+    let has_prefix = if let Some(ref label) = ctx.variant_label {
+        if let Some(ref rules) = ctx.prefix_rules {
+            rules.get(label).map(|p| !p.is_empty()).unwrap_or(false)
+        } else {
+            false
+        }
+    } else {
+        false
+    };
+    let suffix = if ctx.is_clothes_off && !has_prefix {
         "_clothes_off".to_string()
     } else {
         String::new()
@@ -485,6 +507,13 @@ mod tests {
     const SCENE_VIDEO_TEMPLATE: &str =
         "{variant_prefix}{scene_type_slug}{clothes_off_suffix}{index_suffix}.mp4";
 
+    /// Default prefix rules matching the legacy clothed/topless convention.
+    fn default_prefix_rules() -> HashMap<String, String> {
+        let mut rules = HashMap::new();
+        rules.insert("topless".to_string(), "topless_".to_string());
+        rules
+    }
+
     fn scene_ctx(
         variant: &str,
         scene_type: &str,
@@ -496,6 +525,7 @@ mod tests {
             scene_type_name: Some(scene_type.to_string()),
             is_clothes_off: clothes_off,
             index,
+            prefix_rules: Some(default_prefix_rules()),
             ..Default::default()
         }
     }

@@ -363,6 +363,7 @@ pub async fn preview(
         frame_number: input.frame_number,
         metadata_type: input.metadata_type,
         sequence: input.sequence,
+        prefix_rules: None,
     };
 
     let validation = input

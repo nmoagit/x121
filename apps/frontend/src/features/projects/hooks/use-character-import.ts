@@ -868,11 +868,11 @@ export function useCharacterImport(projectId: number, allCharacters?: Character[
         // Remove all image assets — replace with user's explicit assignments
         const newAssets = payload.assets.filter((a) => a.kind !== "image");
 
-        if (charAssignment.clothed) {
-          newAssets.push({ file: charAssignment.clothed, category: "clothed", kind: "image" });
-        }
-        if (charAssignment.topless) {
-          newAssets.push({ file: charAssignment.topless, category: "topless", kind: "image" });
+        // Add dynamically assigned image slots from the pipeline's seed slots
+        for (const [slotName, file] of Object.entries(charAssignment.images)) {
+          if (file) {
+            newAssets.push({ file, category: slotName, kind: "image" });
+          }
         }
 
         const newPayload = { ...payload, assets: newAssets };

@@ -2,15 +2,15 @@
  * Filename → scene slot matching for drag-and-drop video import.
  *
  * Convention:
- * - `topless_bj.mp4` → scene "bj", track "topless"
- * - `bj.mp4` (no prefix) → scene "bj", track "clothed"
- * - `dance_clothes_off.mp4` → scene "dance", track "clothed" (clothes-off suffix stripped)
- * - `topless_dance_clothes_off_1.mp4` → scene "dance", track "topless" (suffix + index stripped)
+ * - `{track}_bj.mp4` → scene "bj", track "{track}"
+ * - `bj.mp4` (no prefix) → scene "bj", uses pipeline's primary track (first in list)
+ * - `dance_clothes_off.mp4` → scene "dance", primary track (clothes-off suffix stripped)
+ * - `{track}_dance_clothes_off_1.mp4` → scene "dance", track "{track}" (suffix + index stripped)
  *
  * Algorithm:
- * 1. Strip extension, lowercase → e.g. "topless_bj"
+ * 1. Strip extension, lowercase → e.g. "alt_bj"
  * 2. Check if name starts with a known track slug + "_". If yes → track = slug, scene_type = remainder
- * 3. If no track prefix → scene_type = full name, track = "clothed" (default)
+ * 3. If no track prefix → scene_type = full name, track = first from trackSlugs list
  * 4. Strip `_clothes_off` suffix (with optional trailing `_N` index) from scene slug
  * 5. Match against expanded slots by (slug, track_slug)
  */
@@ -18,8 +18,14 @@
 import type { ExpandedSceneSetting } from "@/features/scene-catalogue/types";
 import { CLOTHES_OFF_SUFFIX, isVideoFile, stripExtension } from "@/lib/file-types";
 
-/** Default track for files with no track prefix in the filename. */
-const DEFAULT_TRACK_SLUG = "clothed";
+/**
+ * Determine the default track slug for files with no track prefix in the filename.
+ * Uses the first track slug from the provided list (the pipeline's primary track),
+ * falling back to the first slug or empty string.
+ */
+function defaultTrackSlug(trackSlugs: string[]): string {
+  return trackSlugs[0] ?? "";
+}
 
 export interface MatchedVideo {
   file: File;
@@ -94,9 +100,9 @@ export function parseFilename(filename: string, trackSlugs: string[]): ParsedFil
   }
 
   if (!matched) {
-    // No track prefix — scene_type is the full stem, default to "clothed"
+    // No track prefix — scene_type is the full stem, use the pipeline's primary track
     sceneSlug = stem;
-    trackSlug = DEFAULT_TRACK_SLUG;
+    trackSlug = defaultTrackSlug(trackSlugs);
   }
 
   // Strip _clothes_off suffix (with optional index) from scene slug

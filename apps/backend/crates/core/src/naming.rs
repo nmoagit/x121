@@ -186,7 +186,11 @@ mod tests {
         use crate::pipeline::PipelineNamingRules;
         use std::collections::HashMap;
 
-        fn make_rules(template: &str, prefix_rules: &[(&str, &str)], transition: &str) -> PipelineNamingRules {
+        fn make_rules(
+            template: &str,
+            prefix_rules: &[(&str, &str)],
+            transition: &str,
+        ) -> PipelineNamingRules {
             PipelineNamingRules {
                 video_template: template.to_string(),
                 prefix_rules: prefix_rules
@@ -238,11 +242,7 @@ mod tests {
 
         #[test]
         fn unknown_track_produces_empty_prefix() {
-            let rules = make_rules(
-                "{prefix}{scene_type}.mp4",
-                &[("topless", "topless_")],
-                "",
-            );
+            let rules = make_rules("{prefix}{scene_type}.mp4", &[("topless", "topless_")], "");
             assert_eq!(
                 pipeline_video_filename(&rules, "unknown_track", "Dance", false, None),
                 "dance.mp4"

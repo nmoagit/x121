@@ -143,12 +143,38 @@ export const TERMINAL_STATUS_COLORS: Record<string, string> = {
   missing: "text-red-400",
 };
 
-/** Track slug to text color mapping (consistent with TrackBadge colors). */
-export const TRACK_TEXT_COLORS: Record<string, string> = {
-  clothed: "text-sky-400",
-  topless: "text-pink-400",
-  clothes_off: "text-orange-400",
-};
+/**
+ * Deterministic text color palette for track slugs (consistent with TrackBadge colors).
+ * Any track slug gets a stable color via hash-based selection.
+ */
+const TRACK_TEXT_COLOR_PALETTE = [
+  "text-sky-400",
+  "text-pink-400",
+  "text-emerald-400",
+  "text-amber-400",
+  "text-violet-400",
+  "text-cyan-400",
+  "text-orange-400",
+  "text-teal-400",
+  "text-indigo-400",
+  "text-lime-400",
+] as const;
+
+/** Get a deterministic text color for any track slug. */
+export function trackTextColor(slug: string): string {
+  let hash = 0;
+  for (const ch of slug) hash = (hash * 31 + ch.charCodeAt(0)) | 0;
+  return TRACK_TEXT_COLOR_PALETTE[Math.abs(hash) % TRACK_TEXT_COLOR_PALETTE.length]!;
+}
+
+/**
+ * Track slug to text color — uses deterministic hashing for any slug.
+ * Kept as a Proxy for backward compatibility with existing `TRACK_TEXT_COLORS[slug]` usage.
+ */
+export const TRACK_TEXT_COLORS: Record<string, string> = new Proxy(
+  {} as Record<string, string>,
+  { get: (_target, prop: string) => trackTextColor(prop) },
+);
 
 // ---------------------------------------------------------------------------
 // Legacy patterns (still used in some places)

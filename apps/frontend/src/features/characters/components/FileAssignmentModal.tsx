@@ -16,18 +16,14 @@ import { ImageThumbnail, JsonFileCard } from "./FileAssignmentThumbnails";
 /* ------------------------------------------------------------------ */
 
 const SKIP_VALUE = "__skip__";
-const COLUMNS = ["clothed", "topless", "bio", "tov"] as const;
-type ColumnKey = (typeof COLUMNS)[number];
 
-const COLUMN_LABELS: Record<ColumnKey, string> = {
-  clothed: "Clothed Image",
-  topless: "Topless Image",
+/** Fixed metadata columns that are always present. */
+const JSON_COLUMNS = ["bio", "tov"] as const;
+
+const JSON_COLUMN_LABELS: Record<string, string> = {
   bio: "Bio JSON",
   tov: "ToV JSON",
 };
-
-const IMAGE_COLUMNS: ColumnKey[] = ["clothed", "topless"];
-const JSON_COLUMNS: ColumnKey[] = ["bio", "tov"];
 
 /* ------------------------------------------------------------------ */
 /*  Helpers                                                            */
@@ -46,23 +42,33 @@ interface FileAssignmentModalProps {
   onClose: () => void;
   unmatchedFiles: UnmatchedCharacterFiles[];
   onConfirm: (assignments: FileAssignments) => void;
+  /** Image slot names from the pipeline's seed_slots (e.g. ["clothed", "topless"]). */
+  imageSlotNames?: string[];
 }
 
 /* ------------------------------------------------------------------ */
 /*  Component                                                          */
 /* ------------------------------------------------------------------ */
 
-export function FileAssignmentModal({ open, onClose, unmatchedFiles, onConfirm }: FileAssignmentModalProps) {
-  const [selections, setSelections] = useState<Map<string, Map<ColumnKey, string>>>(new Map());
+export function FileAssignmentModal({ open, onClose, unmatchedFiles, onConfirm, imageSlotNames }: FileAssignmentModalProps) {
+  // Build dynamic columns: image slots + fixed JSON columns
+  const imageColumns = useMemo(() => imageSlotNames ?? [], [imageSlotNames]);
+  const allColumns = useMemo(() => [...imageColumns, ...JSON_COLUMNS], [imageColumns]);
+
+  const [selections, setSelections] = useState<Map<string, Map<string, string>>>(new Map());
 
   const { fileLookup, preMatched } = useMemo(() => {
     const lookup = new Map<string, File>();
-    const matched = new Map<string, Map<ColumnKey, string>>();
+    const matched = new Map<string, Map<string, string>>();
     for (const entry of unmatchedFiles) {
-      const charSel = new Map<ColumnKey, string>();
-      for (const [key, file] of Object.entries(entry.matched)) {
-        if (file) { const fk = fileKey(file); lookup.set(fk, file); charSel.set(key as ColumnKey, fk); }
+      const charSel = new Map<string, string>();
+      // Add pre-matched image slots
+      for (const [key, file] of Object.entries(entry.matched.images)) {
+        if (file) { const fk = fileKey(file); lookup.set(fk, file); charSel.set(key, fk); }
       }
+      // Add pre-matched JSON slots
+      if (entry.matched.bio) { const fk = fileKey(entry.matched.bio); lookup.set(fk, entry.matched.bio); charSel.set("bio", fk); }
+      if (entry.matched.tov) { const fk = fileKey(entry.matched.tov); lookup.set(fk, entry.matched.tov); charSel.set("tov", fk); }
       for (const file of entry.imageFiles) lookup.set(fileKey(file), file);
       for (const file of entry.jsonFiles) lookup.set(fileKey(file), file);
       matched.set(entry.characterName, charSel);
@@ -71,16 +77,16 @@ export function FileAssignmentModal({ open, onClose, unmatchedFiles, onConfirm }
   }, [unmatchedFiles]);
 
   useEffect(() => {
-    const initial = new Map<string, Map<ColumnKey, string>>();
+    const initial = new Map<string, Map<string, string>>();
     for (const [charName, charMatched] of preMatched) initial.set(charName, new Map(charMatched));
 
     // Pre-select suggestions based on filename hints
     for (const entry of unmatchedFiles) {
-      const charSel = initial.get(entry.characterName) ?? new Map<ColumnKey, string>();
+      const charSel = initial.get(entry.characterName) ?? new Map<string, string>();
       const usedFks = new Set<string>([...charSel.values()]);
 
       for (const file of entry.imageFiles) {
-        const suggestion = suggestImageCategory(file.name);
+        const suggestion = suggestImageCategory(file.name, imageColumns);
         if (suggestion && !charSel.has(suggestion)) {
           const fk = fileKey(file);
           if (!usedFks.has(fk)) {
@@ -93,30 +99,21 @@ export function FileAssignmentModal({ open, onClose, unmatchedFiles, onConfirm }
     }
 
     setSelections(initial);
-  }, [preMatched, unmatchedFiles]);
+  }, [preMatched, unmatchedFiles, imageColumns]);
 
   // Track ALL assigned file keys (including within same character) for duplicate guard
   const assignedFileKeys = useMemo(() => {
-    const assigned = new Map<string, { charName: string; column: ColumnKey }>();
+    const usedFks = new Map<string, { charName: string; column: string }>();
     for (const [charName, charSel] of selections) {
       for (const [column, fk] of charSel) {
         if (fk === SKIP_VALUE) continue;
-        const isLocked = preMatched.get(charName)?.get(column as ColumnKey) === fk;
-        if (!isLocked) assigned.set(`${charName}::${column}::${fk}`, { charName, column: column as ColumnKey });
-      }
-    }
-    // Also build a simple set of all assigned fks for cross-cell duplicate detection
-    const usedFks = new Map<string, { charName: string; column: ColumnKey }>();
-    for (const [charName, charSel] of selections) {
-      for (const [column, fk] of charSel) {
-        if (fk === SKIP_VALUE) continue;
-        usedFks.set(fk, { charName, column: column as ColumnKey });
+        usedFks.set(fk, { charName, column });
       }
     }
     return usedFks;
-  }, [selections, preMatched]);
+  }, [selections]);
 
-  const handleToggle = useCallback((charName: string, column: ColumnKey, fk: string) => {
+  const handleToggle = useCallback((charName: string, column: string, fk: string) => {
     setSelections((prev) => {
       const next = new Map(prev);
       const charMap = new Map(next.get(charName) ?? new Map());
@@ -129,13 +126,20 @@ export function FileAssignmentModal({ open, onClose, unmatchedFiles, onConfirm }
   const handleConfirm = useCallback(() => {
     const assignments: FileAssignments = {};
     for (const [charName, charSel] of selections) {
-      const entry: FileAssignments[string] = {};
+      const images: Record<string, File> = {};
+      let bio: File | undefined;
+      let tov: File | undefined;
       for (const [column, fk] of charSel) {
         if (fk === SKIP_VALUE) continue;
         const file = fileLookup.get(fk);
-        if (file) entry[column as ColumnKey] = file;
+        if (!file) continue;
+        if (column === "bio") bio = file;
+        else if (column === "tov") tov = file;
+        else images[column] = file;
       }
-      if (Object.keys(entry).length > 0) assignments[charName] = entry;
+      if (Object.keys(images).length > 0 || bio || tov) {
+        assignments[charName] = { images, bio, tov };
+      }
     }
     onConfirm(assignments);
   }, [selections, fileLookup, onConfirm]);
@@ -145,8 +149,9 @@ export function FileAssignmentModal({ open, onClose, unmatchedFiles, onConfirm }
     const urls = new Map<string, string>();
     for (const entry of unmatchedFiles) {
       for (const file of entry.imageFiles) urls.set(fileKey(file), URL.createObjectURL(file));
-      if (entry.matched.clothed) urls.set(fileKey(entry.matched.clothed), URL.createObjectURL(entry.matched.clothed));
-      if (entry.matched.topless) urls.set(fileKey(entry.matched.topless), URL.createObjectURL(entry.matched.topless));
+      for (const file of Object.values(entry.matched.images)) {
+        if (file) urls.set(fileKey(file), URL.createObjectURL(file));
+      }
     }
     setPreviews(urls);
     return () => { for (const url of urls.values()) URL.revokeObjectURL(url); };
@@ -161,6 +166,12 @@ export function FileAssignmentModal({ open, onClose, unmatchedFiles, onConfirm }
     }
     return count;
   }, [unmatchedFiles, selections]);
+
+  /** Capitalize a slot name for display (e.g. "clothed" → "Clothed Image"). */
+  function columnLabel(col: string): string {
+    if (col in JSON_COLUMN_LABELS) return JSON_COLUMN_LABELS[col]!;
+    return `${col.charAt(0).toUpperCase()}${col.slice(1)} Image`;
+  }
 
   return (
     <Modal open={open} onClose={onClose} title="Assign Unmatched Files" size="3xl">
@@ -179,17 +190,18 @@ export function FileAssignmentModal({ open, onClose, unmatchedFiles, onConfirm }
             <div key={entry.characterName} className="rounded-[var(--radius-md)] border border-[var(--color-border-default)] p-3">
               <h3 className="mb-3 text-xs font-mono font-semibold text-[var(--color-text-primary)]">{entry.characterName}</h3>
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                {COLUMNS.map((col) => {
-                  const isImage = IMAGE_COLUMNS.includes(col);
+                {allColumns.map((col) => {
+                  const isImage = imageColumns.includes(col);
                   const files = isImage ? entry.imageFiles : entry.jsonFiles;
                   const currentFk = charSel?.get(col);
-                  const hasWarning = JSON_COLUMNS.includes(col) && !currentFk && !preMatched.get(entry.characterName)?.has(col);
+                  const isJsonCol = (JSON_COLUMNS as readonly string[]).includes(col);
+                  const hasWarning = isJsonCol && !currentFk && !preMatched.get(entry.characterName)?.has(col);
                   const lockedFk = preMatched.get(entry.characterName)?.get(col);
 
                   return (
                     <div key={col}>
                       <div className="mb-1.5 flex items-center gap-1">
-                        <span className="text-xs font-mono text-[var(--color-text-secondary)]">{COLUMN_LABELS[col]}</span>
+                        <span className="text-xs font-mono text-[var(--color-text-secondary)]">{columnLabel(col)}</span>
                         {hasWarning && <span className="text-xs font-mono text-orange-400">!</span>}
                       </div>
                       <div className={cn("flex flex-col gap-1.5", isImage && "grid grid-cols-3 gap-1.5")}>

@@ -15,14 +15,14 @@ use tokio_util::sync::CancellationToken;
 use x121_core::activity::{ActivityLogEntry, ActivityLogLevel, ActivityLogSource};
 use x121_core::assembly;
 use x121_core::ffmpeg::{self, TranscodeProfileParams};
-use x121_core::naming_engine::{self, NamingContext, ResolvedName};
+use x121_core::naming_engine::{self, NamingContext};
 use x121_core::types::DbId;
 use x121_db::models::delivery_export::DeliveryExport;
 use x121_db::models::delivery_log::CreateDeliveryLog;
 use x121_db::repositories::{
     CharacterMetadataVersionRepo, CharacterRepo, DeliveryExportRepo, ImageVariantRepo,
-    NamingRuleRepo, OutputFormatProfileRepo, ProjectDeliveryLogRepo, ProjectRepo, SceneRepo,
-    SceneTypeRepo, SceneTypeTrackConfigRepo, SceneVideoVersionRepo, TrackRepo,
+    NamingRuleRepo, OutputFormatProfileRepo, PipelineRepo, ProjectDeliveryLogRepo, ProjectRepo,
+    SceneRepo, SceneTypeRepo, SceneTypeTrackConfigRepo, SceneVideoVersionRepo, TrackRepo,
 };
 
 use crate::state::AppState;
@@ -96,7 +96,7 @@ async fn process_next(
 
 /// A collected file asset ready for packaging.
 struct FileAsset {
-    /// Resolved filename from naming rules (e.g. "topless_dance.mp4", "clothed.png").
+    /// Resolved filename from naming rules (e.g. "alt_dance.mp4", "default.png").
     resolved_name: String,
     /// Absolute path to the source (or transcoded) file.
     path: PathBuf,
@@ -127,6 +127,17 @@ async fn run_pipeline(
     let project = ProjectRepo::find_by_id(&state.pool, project_id)
         .await?
         .ok_or(PipelineError::msg("Project not found"))?;
+
+    // Load pipeline naming rules for dynamic prefix resolution.
+    let prefix_rules: Option<std::collections::HashMap<String, String>> =
+        if let Ok(Some(pipeline)) = PipelineRepo::find_by_id(&state.pool, project.pipeline_id).await
+        {
+            x121_core::pipeline::parse_naming_rules(&pipeline.naming_rules)
+                .ok()
+                .map(|rules| rules.prefix_rules)
+        } else {
+            None
+        };
 
     // Load format profile.
     let profile = OutputFormatProfileRepo::find_by_id(&state.pool, export.format_profile_id)
@@ -237,7 +248,7 @@ async fn run_pipeline(
             let scene_type = SceneTypeRepo::find_by_id(&state.pool, scene.scene_type_id).await?;
             let scene_type_name = scene_type.as_ref().map(|st| st.name.clone());
 
-            // Determine variant from the track (track 1 = clothed, track 2 = topless).
+            // Determine variant from the track slug (dynamic — works with any track names).
             let variant_label = if let Some(track_id) = scene.track_id {
                 TrackRepo::find_by_id(&state.pool, track_id)
                     .await?
@@ -284,6 +295,7 @@ async fn run_pipeline(
                 character_name: Some(character.name.clone()),
                 project_name: Some(project.name.clone()),
                 ext: Some(ext.to_string()),
+                prefix_rules: prefix_rules.clone(),
                 ..Default::default()
             };
 
@@ -297,7 +309,7 @@ async fn run_pipeline(
             });
         }
 
-        // Collect image variants (clothed.png, topless.png, etc.).
+        // Collect image variants (one per track/seed slot).
         let image_variants = ImageVariantRepo::list_by_character(&state.pool, character.id).await?;
         let mut images = Vec::new();
         for iv in &image_variants {
@@ -309,7 +321,7 @@ async fn run_pipeline(
                 .extension()
                 .and_then(|e| e.to_str())
                 .unwrap_or("png");
-            // Use variant_type (clothed/topless) for naming, not variant_label (display name).
+            // Use variant_type (track slug) for naming, not variant_label (display name).
             let label = iv.variant_type.as_deref().unwrap_or(&iv.variant_label);
             let ctx = NamingContext {
                 variant_label: Some(label.to_string()),

@@ -60,15 +60,23 @@ export interface ImportProgress {
    Unmatched file types (for FileAssignmentModal)
    -------------------------------------------------------------------------- */
 
+/** Per-character file assignment map: dynamic image slot names + fixed bio/tov slots. */
+export interface CharacterFileSlots {
+  /** Dynamic image slots keyed by seed slot name (e.g. "front_clothed", "alt"). */
+  images: Record<string, File>;
+  bio?: File;
+  tov?: File;
+}
+
 export interface UnmatchedCharacterFiles {
   characterName: string;
   imageFiles: File[];
   jsonFiles: File[];
-  matched: { clothed?: File; topless?: File; bio?: File; tov?: File };
+  matched: CharacterFileSlots;
 }
 
 export interface FileAssignments {
-  [characterName: string]: { clothed?: File; topless?: File; bio?: File; tov?: File };
+  [characterName: string]: CharacterFileSlots;
 }
 
 /* --------------------------------------------------------------------------
@@ -99,18 +107,22 @@ function importLogEntry(
 }
 
 
-/** Suggest a category for a file based on its name (for pre-selecting in the assignment modal). */
-export function suggestImageCategory(filename: string): "clothed" | "topless" | null {
+/**
+ * Suggest a seed slot category for a file based on its name.
+ * Matches against the provided slot names (from the pipeline's seed_slots).
+ * Returns the first matching slot name, or null if no match.
+ */
+export function suggestImageCategory(filename: string, slotNames?: string[]): string | null {
   const lower = filename.toLowerCase();
-  if (lower.includes("clothed")) return "clothed";
-  if (lower.includes("topless")) return "topless";
+  const slots = slotNames ?? [];
+  for (const slot of slots) {
+    if (lower.includes(slot.toLowerCase())) return slot;
+  }
   return null;
 }
 
-/** Normalize a category to a canonical variant_type for upload. */
+/** Normalize a category string (identity — no hardcoded slug mapping). */
 function normalizeImageCategory(category: string): string {
-  if (category.toLowerCase() === "clothed") return "clothed";
-  if (category.toLowerCase() === "topless") return "topless";
   return category;
 }
 
@@ -120,33 +132,30 @@ function normalizeImageCategory(category: string): string {
  */
 export function partitionCharacterFiles(
   payload: CharacterDropPayload,
+  knownSlotNames?: string[],
 ): UnmatchedCharacterFiles | null {
-  const matched: UnmatchedCharacterFiles["matched"] = {};
+  const matchedImages: Record<string, File> = {};
   const unmatchedImages: File[] = [];
   const unmatchedJsons: File[] = [];
+  const knownSlots = new Set(knownSlotNames ?? []);
 
-  // Check image assets
+  // Check image assets — match by category against known seed slot names
   for (const asset of payload.assets) {
     if (asset.kind === "image") {
       const cat = asset.category.toLowerCase();
-      if (cat === "clothed") matched.clothed = asset.file;
-      else if (cat === "topless") matched.topless = asset.file;
-      else unmatchedImages.push(asset.file);
+      if (knownSlots.size === 0 || knownSlots.has(cat)) {
+        matchedImages[cat] = asset.file;
+      } else {
+        unmatchedImages.push(asset.file);
+      }
     }
   }
 
+  const matched: CharacterFileSlots = { images: matchedImages };
+
   // Check JSON files
   if (payload.bioJson) matched.bio = payload.bioJson;
-  else {
-    // Check for JSON files that might have non-standard names
-    // (already handled by FileDropZone — bio.json/tov.json are auto-classified)
-  }
   if (payload.tovJson) matched.tov = payload.tovJson;
-
-  // Any other JSON files that weren't classified as bio/tov/metadata
-  // are already handled by classifyCharacterFiles — only bio.json, tov.json,
-  // and metadata.json are recognized. Other JSON files would not be present
-  // in the payload at all (they are ignored by FileDropZone).
 
   if (unmatchedImages.length === 0 && unmatchedJsons.length === 0) {
     return null;
@@ -271,12 +280,11 @@ export function useCharacterImportBase(projectId: number, _options?: UseCharacte
         // Keep video assets untouched.
         const newAssets = payload.assets.filter((a) => a.kind !== "image");
 
-        // Add assigned images with correct canonical categories
-        if (charAssignment.clothed) {
-          newAssets.push({ file: charAssignment.clothed, category: "clothed", kind: "image" });
-        }
-        if (charAssignment.topless) {
-          newAssets.push({ file: charAssignment.topless, category: "topless", kind: "image" });
+        // Add dynamically assigned image slots from the pipeline's seed slots
+        for (const [slotName, file] of Object.entries(charAssignment.images)) {
+          if (file) {
+            newAssets.push({ file, category: slotName, kind: "image" });
+          }
         }
 
         const newPayload = { ...payload, assets: newAssets };
