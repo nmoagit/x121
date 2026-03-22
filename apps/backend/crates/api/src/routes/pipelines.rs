@@ -18,6 +18,7 @@ use crate::state::AppState;
 pub fn router() -> Router<AppState> {
     Router::new()
         .route("/", get(pipelines::list).post(pipelines::create))
+        .route("/code/{code}", get(pipelines::get_by_code))
         .route(
             "/{id}",
             get(pipelines::get_by_id)

@@ -56,6 +56,22 @@ pub async fn get_by_id(
     Ok(Json(DataResponse { data: pipeline }))
 }
 
+/// GET /api/v1/pipelines/code/{code}
+///
+/// Get a single pipeline by its unique code (e.g., "x121", "y122").
+pub async fn get_by_code(
+    State(state): State<AppState>,
+    Path(code): Path<String>,
+) -> AppResult<Json<DataResponse<Pipeline>>> {
+    let pipeline = PipelineRepo::find_by_code(&state.pool, &code)
+        .await?
+        .ok_or(AppError::Core(CoreError::NotFound {
+            entity: "Pipeline",
+            id: 0,
+        }))?;
+    Ok(Json(DataResponse { data: pipeline }))
+}
+
 /// POST /api/v1/pipelines
 ///
 /// Create a new pipeline.
