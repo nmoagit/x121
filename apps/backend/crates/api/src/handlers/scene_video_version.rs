@@ -778,14 +778,28 @@ pub struct ClipBrowseItem {
 ///
 /// Returns all scene video versions with avatar/scene/project context,
 /// ordered by most recent first. Supports optional project_id filter.
+/// Returns paginated results with a total count.
 pub async fn browse_clips(
     State(state): State<AppState>,
     axum::extract::Query(params): axum::extract::Query<BrowseClipsParams>,
-) -> AppResult<Json<DataResponse<Vec<ClipBrowseItem>>>> {
+) -> AppResult<Json<DataResponse<BrowseClipsPage>>> {
     let limit = params.limit.unwrap_or(200).min(500);
     let offset = params.offset.unwrap_or(0);
 
-    let rows = sqlx::query_as::<_, ClipBrowseItem>(
+    let total: i64 = sqlx::query_scalar(
+        "SELECT COUNT(*)
+        FROM scene_video_versions svv
+        JOIN scenes sc ON sc.id = svv.scene_id AND sc.deleted_at IS NULL
+        JOIN avatars c ON c.id = sc.avatar_id AND c.deleted_at IS NULL
+        JOIN projects p ON p.id = c.project_id AND p.deleted_at IS NULL
+        WHERE svv.deleted_at IS NULL
+          AND ($1::bigint IS NULL OR p.id = $1)",
+    )
+    .bind(params.project_id)
+    .fetch_one(&state.pool)
+    .await?;
+
+    let items = sqlx::query_as::<_, ClipBrowseItem>(
         "SELECT
             svv.id,
             svv.scene_id,
@@ -830,7 +844,9 @@ pub async fn browse_clips(
     .fetch_all(&state.pool)
     .await?;
 
-    Ok(Json(DataResponse { data: rows }))
+    Ok(Json(DataResponse {
+        data: BrowseClipsPage { items, total },
+    }))
 }
 
 #[derive(Debug, serde::Deserialize)]
@@ -838,4 +854,11 @@ pub struct BrowseClipsParams {
     pub project_id: Option<DbId>,
     pub limit: Option<i32>,
     pub offset: Option<i32>,
+}
+
+/// Paginated browse result for scene video clips.
+#[derive(Debug, serde::Serialize)]
+pub struct BrowseClipsPage {
+    pub items: Vec<ClipBrowseItem>,
+    pub total: i64,
 }

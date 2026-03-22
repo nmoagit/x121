@@ -10,7 +10,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { EmptyState } from "@/components/domain";
 import { Modal } from "@/components/composite";
 import { PageHeader, Stack } from "@/components/layout";
-import { MultiFilterBar, Toggle ,  WireframeLoader } from "@/components/primitives";
+import { Button, MultiFilterBar, Select, Toggle ,  WireframeLoader } from "@/components/primitives";
 import type { FilterConfig, FilterOption  } from "@/components/primitives";
 import { ProgressiveImage  } from "@/components/primitives";
 import {
@@ -142,6 +142,13 @@ function buildVariantTypeOptions(items: ImageVariantBrowseItem[] | undefined): F
 }
 
 /* --------------------------------------------------------------------------
+   Pagination constants
+   -------------------------------------------------------------------------- */
+
+const PAGE_SIZES = [25, 50, 100] as const;
+const DEFAULT_PAGE_SIZE = 25;
+
+/* --------------------------------------------------------------------------
    Page
    -------------------------------------------------------------------------- */
 
@@ -153,10 +160,20 @@ export function ImagesPage() {
   const [variantTypeFilter, setVariantTypeFilter] = useState<string[]>([]);
   const [previewVariant, setPreviewVariant] = useState<ImageVariantBrowseItem | null>(null);
   const [showDisabled, setShowDisabled] = useState(false);
+  const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState<number>(DEFAULT_PAGE_SIZE);
 
   const { data: projects } = useProjects();
   const projectId = projectFilter.length === 1 ? Number(projectFilter[0]) : undefined;
-  const { data: variants, isLoading } = useImageVariantsBrowse(projectId);
+  const { data: browseResult, isLoading } = useImageVariantsBrowse({
+    projectId,
+    limit: pageSize,
+    offset: page * pageSize,
+  });
+
+  const variants = browseResult?.items;
+  const total = browseResult?.total ?? 0;
+  const totalPages = total > 0 ? Math.ceil(total / pageSize) : 0;
 
   const projectOptions: FilterOption[] = useMemo(
     () => toSelectOptions(projects).map((o) => ({ value: o.value, label: o.label })),
@@ -177,10 +194,10 @@ export function ImagesPage() {
   }, [variants, showDisabled, projectFilter, statusFilter, sourceFilter, variantTypeFilter]);
 
   const filters: FilterConfig[] = useMemo(() => [
-    { key: "project", label: "Project", options: projectOptions, selected: projectFilter, onChange: setProjectFilter, width: "w-44" },
-    { key: "status", label: "Status", options: STATUS_OPTIONS, selected: statusFilter, onChange: setStatusFilter },
-    { key: "source", label: "Source", options: SOURCE_OPTIONS, selected: sourceFilter, onChange: setSourceFilter },
-    { key: "type", label: "Type", options: variantTypeOptions, selected: variantTypeFilter, onChange: setVariantTypeFilter },
+    { key: "project", label: "Project", options: projectOptions, selected: projectFilter, onChange: (v: string[]) => { setProjectFilter(v); setPage(0); }, width: "w-44" },
+    { key: "status", label: "Status", options: STATUS_OPTIONS, selected: statusFilter, onChange: (v: string[]) => { setStatusFilter(v); setPage(0); } },
+    { key: "source", label: "Source", options: SOURCE_OPTIONS, selected: sourceFilter, onChange: (v: string[]) => { setSourceFilter(v); setPage(0); } },
+    { key: "type", label: "Type", options: variantTypeOptions, selected: variantTypeFilter, onChange: (v: string[]) => { setVariantTypeFilter(v); setPage(0); } },
   ], [projectOptions, projectFilter, statusFilter, sourceFilter, variantTypeOptions, variantTypeFilter]);
 
   return (
@@ -235,6 +252,49 @@ export function ImagesPage() {
               }
             />
           ))}
+        </div>
+      )}
+
+      {/* Pagination */}
+      {total > 0 && (
+        <div className="flex items-center justify-between border-t border-[var(--color-border-default)]/30 px-4 py-3">
+          <div className="flex items-center gap-2 font-mono text-xs text-[var(--color-text-muted)]">
+            <span>
+              Showing {page * pageSize + 1}
+              {" - "}
+              {Math.min((page + 1) * pageSize, total)} of {total}
+            </span>
+            <Select
+              value={String(pageSize)}
+              onChange={(val) => {
+                setPageSize(Number(val));
+                setPage(0);
+              }}
+              options={PAGE_SIZES.map((s) => ({
+                value: String(s),
+                label: `${s} per page`,
+              }))}
+            />
+          </div>
+
+          <div className="flex gap-1">
+            <Button
+              variant="secondary"
+              size="xs"
+              disabled={page === 0}
+              onClick={() => setPage((p) => p - 1)}
+            >
+              Previous
+            </Button>
+            <Button
+              variant="secondary"
+              size="xs"
+              disabled={page >= totalPages - 1}
+              onClick={() => setPage((p) => p + 1)}
+            >
+              Next
+            </Button>
+          </div>
         </div>
       )}
 

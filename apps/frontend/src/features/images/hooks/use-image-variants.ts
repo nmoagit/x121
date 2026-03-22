@@ -27,7 +27,8 @@ export const imageVariantKeys = {
   histories: () => [...imageVariantKeys.all, "history"] as const,
   history: (avatarId: number, id: number) =>
     [...imageVariantKeys.histories(), avatarId, id] as const,
-  browse: (projectId?: number) => [...imageVariantKeys.all, "browse", projectId] as const,
+  browse: (projectId?: number, limit?: number, offset?: number) =>
+    [...imageVariantKeys.all, "browse", projectId, limit, offset] as const,
 };
 
 /* --------------------------------------------------------------------------
@@ -267,14 +268,28 @@ export interface ImageVariantBrowseItem {
   project_name: string;
 }
 
-/** Fetch all image variants across avatars/projects, most recent first. */
-export function useImageVariantsBrowse(projectId?: number) {
-  const params = new URLSearchParams();
-  if (projectId != null) params.set("project_id", String(projectId));
-  params.set("limit", "500");
-  const qs = params.toString();
+/** Paginated browse result for image variants. */
+export interface ImageVariantBrowsePage {
+  items: ImageVariantBrowseItem[];
+  total: number;
+}
+
+/** Params for browsing image variants with pagination. */
+export interface ImageVariantBrowseParams {
+  projectId?: number;
+  limit?: number;
+  offset?: number;
+}
+
+/** Fetch paginated image variants across avatars/projects, most recent first. */
+export function useImageVariantsBrowse(params: ImageVariantBrowseParams = {}) {
+  const searchParams = new URLSearchParams();
+  if (params.projectId != null) searchParams.set("project_id", String(params.projectId));
+  if (params.limit != null) searchParams.set("limit", String(params.limit));
+  if (params.offset != null) searchParams.set("offset", String(params.offset));
+  const qs = searchParams.toString();
   return useQuery({
-    queryKey: imageVariantKeys.browse(projectId),
-    queryFn: () => api.get<ImageVariantBrowseItem[]>(`/image-variants/browse?${qs}`),
+    queryKey: imageVariantKeys.browse(params.projectId, params.limit, params.offset),
+    queryFn: () => api.get<ImageVariantBrowsePage>(`/image-variants/browse?${qs}`),
   });
 }

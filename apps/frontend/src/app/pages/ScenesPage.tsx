@@ -9,7 +9,7 @@ import { useNavigate } from "@tanstack/react-router";
 
 import { EmptyState } from "@/components/domain";
 import { PageHeader, Stack } from "@/components/layout";
-import { MultiFilterBar, Toggle ,  WireframeLoader } from "@/components/primitives";
+import { Button, MultiFilterBar, Select, Toggle ,  WireframeLoader } from "@/components/primitives";
 import type { FilterConfig, FilterOption  } from "@/components/primitives";
 import { useClipsBrowse } from "@/features/scenes/hooks/useClipManagement";
 import type { ClipBrowseItem } from "@/features/scenes/hooks/useClipManagement";
@@ -150,6 +150,13 @@ function buildUniqueOptions(items: ClipBrowseItem[] | undefined, key: keyof Clip
 }
 
 /* --------------------------------------------------------------------------
+   Pagination constants
+   -------------------------------------------------------------------------- */
+
+const PAGE_SIZES = [25, 50, 100] as const;
+const DEFAULT_PAGE_SIZE = 25;
+
+/* --------------------------------------------------------------------------
    Page
    -------------------------------------------------------------------------- */
 
@@ -162,11 +169,21 @@ export function ScenesPage() {
   const [trackFilter, setTrackFilter] = useState<string[]>([]);
   const [playingClip, setPlayingClip] = useState<SceneVideoVersion | null>(null);
   const [showDisabled, setShowDisabled] = useState(false);
+  const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState<number>(DEFAULT_PAGE_SIZE);
 
   const { data: projects } = useProjects();
   // When a single project is selected, pass it to the API for server-side filtering
   const projectId = projectFilter.length === 1 ? Number(projectFilter[0]) : undefined;
-  const { data: clips, isLoading } = useClipsBrowse(projectId);
+  const { data: browseResult, isLoading } = useClipsBrowse({
+    projectId,
+    limit: pageSize,
+    offset: page * pageSize,
+  });
+
+  const clips = browseResult?.items;
+  const total = browseResult?.total ?? 0;
+  const totalPages = total > 0 ? Math.ceil(total / pageSize) : 0;
 
   const projectOptions: FilterOption[] = useMemo(
     () => toSelectOptions(projects).map((o) => ({ value: o.value, label: o.label })),
@@ -189,11 +206,11 @@ export function ScenesPage() {
   }, [clips, showDisabled, projectFilter, sourceFilter, statusFilter, sceneTypeFilter, trackFilter]);
 
   const filters: FilterConfig[] = useMemo(() => [
-    { key: "project", label: "Project", options: projectOptions, selected: projectFilter, onChange: setProjectFilter, width: "w-44" },
-    { key: "source", label: "Source", options: SOURCE_OPTIONS, selected: sourceFilter, onChange: setSourceFilter },
-    { key: "status", label: "Status", options: STATUS_OPTIONS, selected: statusFilter, onChange: setStatusFilter },
-    { key: "sceneType", label: "Scene Type", options: sceneTypeOptions, selected: sceneTypeFilter, onChange: setSceneTypeFilter, width: "w-44" },
-    { key: "track", label: "Track", options: trackOptions, selected: trackFilter, onChange: setTrackFilter },
+    { key: "project", label: "Project", options: projectOptions, selected: projectFilter, onChange: (v: string[]) => { setProjectFilter(v); setPage(0); }, width: "w-44" },
+    { key: "source", label: "Source", options: SOURCE_OPTIONS, selected: sourceFilter, onChange: (v: string[]) => { setSourceFilter(v); setPage(0); } },
+    { key: "status", label: "Status", options: STATUS_OPTIONS, selected: statusFilter, onChange: (v: string[]) => { setStatusFilter(v); setPage(0); } },
+    { key: "sceneType", label: "Scene Type", options: sceneTypeOptions, selected: sceneTypeFilter, onChange: (v: string[]) => { setSceneTypeFilter(v); setPage(0); }, width: "w-44" },
+    { key: "track", label: "Track", options: trackOptions, selected: trackFilter, onChange: (v: string[]) => { setTrackFilter(v); setPage(0); } },
   ], [projectOptions, projectFilter, sourceFilter, statusFilter, sceneTypeOptions, sceneTypeFilter, trackOptions, trackFilter]);
 
   const toPlayable = useCallback((clip: ClipBrowseItem): SceneVideoVersion => ({
@@ -276,6 +293,49 @@ export function ScenesPage() {
               }
             />
           ))}
+        </div>
+      )}
+
+      {/* Pagination */}
+      {total > 0 && (
+        <div className="flex items-center justify-between border-t border-[var(--color-border-default)]/30 px-4 py-3">
+          <div className="flex items-center gap-2 font-mono text-xs text-[var(--color-text-muted)]">
+            <span>
+              Showing {page * pageSize + 1}
+              {" - "}
+              {Math.min((page + 1) * pageSize, total)} of {total}
+            </span>
+            <Select
+              value={String(pageSize)}
+              onChange={(val) => {
+                setPageSize(Number(val));
+                setPage(0);
+              }}
+              options={PAGE_SIZES.map((s) => ({
+                value: String(s),
+                label: `${s} per page`,
+              }))}
+            />
+          </div>
+
+          <div className="flex gap-1">
+            <Button
+              variant="secondary"
+              size="xs"
+              disabled={page === 0}
+              onClick={() => setPage((p) => p - 1)}
+            >
+              Previous
+            </Button>
+            <Button
+              variant="secondary"
+              size="xs"
+              disabled={page >= totalPages - 1}
+              onClick={() => setPage((p) => p + 1)}
+            >
+              Next
+            </Button>
+          </div>
         </div>
       )}
 

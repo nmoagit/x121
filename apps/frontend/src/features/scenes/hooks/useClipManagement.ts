@@ -8,7 +8,8 @@ export const clipKeys = {
   list: (sceneId: number) => [...clipKeys.all, "list", sceneId] as const,
   detail: (sceneId: number, versionId: number) =>
     [...clipKeys.all, "detail", sceneId, versionId] as const,
-  browse: (projectId?: number) => [...clipKeys.all, "browse", projectId] as const,
+  browse: (projectId?: number, limit?: number, offset?: number) =>
+    [...clipKeys.all, "browse", projectId, limit, offset] as const,
 };
 
 /** A clip enriched with avatar/scene/project context for browsing. */
@@ -41,15 +42,29 @@ export interface ClipBrowseItem {
   project_name: string;
 }
 
-/** Fetch all clips across all avatars/scenes, most recent first. */
-export function useClipsBrowse(projectId?: number) {
-  const params = new URLSearchParams();
-  if (projectId != null) params.set("project_id", String(projectId));
-  params.set("limit", "500");
-  const qs = params.toString();
+/** Paginated browse result for scene video clips. */
+export interface ClipBrowsePage {
+  items: ClipBrowseItem[];
+  total: number;
+}
+
+/** Params for browsing clips with pagination. */
+export interface ClipBrowseParams {
+  projectId?: number;
+  limit?: number;
+  offset?: number;
+}
+
+/** Fetch paginated clips across all avatars/scenes, most recent first. */
+export function useClipsBrowse(params: ClipBrowseParams = {}) {
+  const searchParams = new URLSearchParams();
+  if (params.projectId != null) searchParams.set("project_id", String(params.projectId));
+  if (params.limit != null) searchParams.set("limit", String(params.limit));
+  if (params.offset != null) searchParams.set("offset", String(params.offset));
+  const qs = searchParams.toString();
   return useQuery({
-    queryKey: clipKeys.browse(projectId),
-    queryFn: () => api.get<ClipBrowseItem[]>(`/scene-video-versions/browse?${qs}`),
+    queryKey: clipKeys.browse(params.projectId, params.limit, params.offset),
+    queryFn: () => api.get<ClipBrowsePage>(`/scene-video-versions/browse?${qs}`),
   });
 }
 

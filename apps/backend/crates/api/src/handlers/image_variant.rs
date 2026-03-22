@@ -782,6 +782,13 @@ pub struct BrowseVariantsParams {
     pub offset: Option<i32>,
 }
 
+/// Paginated browse result for image variants.
+#[derive(Debug, Serialize)]
+pub struct BrowseVariantsPage {
+    pub items: Vec<ImageVariantBrowseItem>,
+    pub total: i64,
+}
+
 // ---------------------------------------------------------------------------
 // Check hashes (import deduplication)
 // ---------------------------------------------------------------------------
@@ -832,14 +839,27 @@ pub async fn check_hashes(
 /// GET /api/v1/image-variants/browse
 ///
 /// List all image variants across avatars/projects, most recent first.
+/// Returns paginated results with a total count.
 pub async fn browse_variants(
     State(state): State<AppState>,
     Query(params): Query<BrowseVariantsParams>,
-) -> AppResult<Json<DataResponse<Vec<ImageVariantBrowseItem>>>> {
+) -> AppResult<Json<DataResponse<BrowseVariantsPage>>> {
     let limit = params.limit.unwrap_or(200).min(500);
     let offset = params.offset.unwrap_or(0);
 
-    let rows = sqlx::query_as::<_, ImageVariantBrowseItem>(
+    let total: i64 = sqlx::query_scalar(
+        "SELECT COUNT(*)
+        FROM image_variants iv
+        JOIN avatars c ON c.id = iv.avatar_id AND c.deleted_at IS NULL
+        JOIN projects p ON p.id = c.project_id AND p.deleted_at IS NULL
+        WHERE iv.deleted_at IS NULL
+          AND ($1::bigint IS NULL OR p.id = $1)",
+    )
+    .bind(params.project_id)
+    .fetch_one(&state.pool)
+    .await?;
+
+    let items = sqlx::query_as::<_, ImageVariantBrowseItem>(
         "SELECT
             iv.id,
             iv.avatar_id,
@@ -873,7 +893,9 @@ pub async fn browse_variants(
     .fetch_all(&state.pool)
     .await?;
 
-    Ok(Json(DataResponse { data: rows }))
+    Ok(Json(DataResponse {
+        data: BrowseVariantsPage { items, total },
+    }))
 }
 
 /// POST /api/v1/image-variants/backfill-metadata

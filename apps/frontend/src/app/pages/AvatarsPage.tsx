@@ -242,8 +242,9 @@ export function AvatarsPage() {
   }, [allProjectAvatars]);
 
   // Fetch image variants across all displayed projects to compute seed data status.
-  // Pass undefined (no project filter) so variants from every visible project are included.
-  const { data: allVariants } = useImageVariantsBrowse(undefined);
+  // Pass a large limit (no project filter) so variants from every visible project are included.
+  const { data: allVariantsBrowse } = useImageVariantsBrowse({ limit: 500 });
+  const allVariants = allVariantsBrowse?.items;
 
   const seedDataStatusMap = useMemo(() => {
     const map = new Map<number, SeedDataStatus>();
