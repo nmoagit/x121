@@ -96,9 +96,7 @@ async fn main() {
 async fn setup_runpod_pod(pool: &sqlx::PgPool) -> Option<(PodOrchestrator, PodReady)> {
     // Look for a RunPod provider in the database (need full entity for encrypted key).
     let all_providers = CloudProviderRepo::list_all(pool).await.ok()?;
-    let provider = all_providers
-        .iter()
-        .find(|p| p.provider_type == "runpod")?;
+    let provider = all_providers.iter().find(|p| p.provider_type == "runpod")?;
 
     // Decrypt API key and build orchestrator from DB settings.
     let master_hex = std::env::var("CLOUD_ENCRYPTION_KEY").ok()?;

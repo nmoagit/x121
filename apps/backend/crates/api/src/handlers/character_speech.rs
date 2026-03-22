@@ -418,7 +418,10 @@ pub async fn import_speeches(
         ActivityLogEntry::curated(
             ActivityLogLevel::Info,
             ActivityLogSource::Api,
-            format!("Imported {imported} speech{} for character {character_id}", if imported != 1 { "es" } else { "" }),
+            format!(
+                "Imported {imported} speech{} for character {character_id}",
+                if imported != 1 { "es" } else { "" }
+            ),
         )
         .with_user(auth.user_id)
         .with_fields(serde_json::json!({

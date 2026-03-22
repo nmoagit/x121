@@ -15,6 +15,8 @@ pub struct Track {
     pub slug: String,
     pub sort_order: i32,
     pub is_active: bool,
+    /// The pipeline this track belongs to (PRD-138).
+    pub pipeline_id: DbId,
     pub created_at: Timestamp,
     pub updated_at: Timestamp,
 }
@@ -26,6 +28,8 @@ pub struct CreateTrack {
     pub slug: String,
     pub sort_order: Option<i32>,
     pub is_active: Option<bool>,
+    /// The pipeline this track belongs to (PRD-138).
+    pub pipeline_id: DbId,
 }
 
 /// DTO for updating an existing track. All fields optional; slug is immutable.

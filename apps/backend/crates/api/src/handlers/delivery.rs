@@ -347,15 +347,16 @@ pub async fn cancel_export(
         )));
     }
 
-    let status_label = assembly::export_status_label(export.status_id)
-        .unwrap_or("unknown");
+    let status_label = assembly::export_status_label(export.status_id).unwrap_or("unknown");
 
     let updated = DeliveryExportRepo::mark_failed(&state.pool, export_id, "Cancelled by user")
         .await?
-        .ok_or_else(|| AppError::Core(CoreError::NotFound {
-            entity: "DeliveryExport",
-            id: export_id,
-        }))?;
+        .ok_or_else(|| {
+            AppError::Core(CoreError::NotFound {
+                entity: "DeliveryExport",
+                id: export_id,
+            })
+        })?;
 
     tracing::info!(export_id, "Delivery export cancelled by user");
 
@@ -395,9 +396,10 @@ pub async fn download_export(
         ));
     }
 
-    let file_path = export.file_path.as_deref().ok_or_else(|| {
-        AppError::InternalError("Completed export has no file_path".to_string())
-    })?;
+    let file_path = export
+        .file_path
+        .as_deref()
+        .ok_or_else(|| AppError::InternalError("Completed export has no file_path".to_string()))?;
 
     let abs_path = state.resolve_to_path(file_path).await?;
 
@@ -418,11 +420,16 @@ pub async fn download_export(
     let mut entries = tokio::fs::read_dir(&abs_path)
         .await
         .map_err(|e| AppError::InternalError(e.to_string()))?;
-    while let Some(entry) = entries.next_entry().await
-        .map_err(|e| AppError::InternalError(e.to_string()))? {
+    while let Some(entry) = entries
+        .next_entry()
+        .await
+        .map_err(|e| AppError::InternalError(e.to_string()))?
+    {
         let path = entry.path();
         if path.extension().and_then(|e| e.to_str()) == Some("rar")
-            && !path.file_name().and_then(|n| n.to_str())
+            && !path
+                .file_name()
+                .and_then(|n| n.to_str())
                 .is_some_and(|n| n.starts_with("delivery_"))
         {
             rars.push(path);
@@ -512,9 +519,10 @@ pub async fn download_model_archive(
         return Err(AppError::BadRequest("Export is not yet completed".into()));
     }
 
-    let file_path = export.file_path.as_deref().ok_or_else(|| {
-        AppError::InternalError("Completed export has no file_path".into())
-    })?;
+    let file_path = export
+        .file_path
+        .as_deref()
+        .ok_or_else(|| AppError::InternalError("Completed export has no file_path".into()))?;
 
     let abs_dir = state.resolve_to_path(file_path).await?;
     let rar_path = abs_dir.join(format!("{character_slug}.rar"));
@@ -554,25 +562,39 @@ pub async fn validate_delivery(
 
     // Parse optional character_ids filter.
     let filter_ids: Option<Vec<DbId>> = params.character_ids.as_ref().map(|ids_str| {
-        ids_str.split(',')
+        ids_str
+            .split(',')
             .filter_map(|s| s.trim().parse::<DbId>().ok())
             .collect()
     });
 
     // Resolve blocking deliverables: project override → studio setting → hardcoded default.
-    let project = ProjectRepo::find_by_id(&state.pool, project_id).await?
-        .ok_or(AppError::Core(CoreError::NotFound { entity: "Project", id: project_id }))?;
+    let project = ProjectRepo::find_by_id(&state.pool, project_id)
+        .await?
+        .ok_or(AppError::Core(CoreError::NotFound {
+            entity: "Project",
+            id: project_id,
+        }))?;
     let blocking_sections: Vec<String> = if let Some(ref bd) = project.blocking_deliverables {
         bd.clone()
     } else {
         // Fall back to studio-level setting, then hardcoded default.
-        let studio_bd = PlatformSettingRepo::find_by_key(&state.pool, "blocking_deliverables").await?;
+        let studio_bd =
+            PlatformSettingRepo::find_by_key(&state.pool, "blocking_deliverables").await?;
         if let Some(setting) = studio_bd {
             serde_json::from_str::<Vec<String>>(&setting.value).unwrap_or_else(|_| {
-                vec!["metadata".to_string(), "images".to_string(), "scenes".to_string()]
+                vec![
+                    "metadata".to_string(),
+                    "images".to_string(),
+                    "scenes".to_string(),
+                ]
             })
         } else {
-            vec!["metadata".to_string(), "images".to_string(), "scenes".to_string()]
+            vec![
+                "metadata".to_string(),
+                "images".to_string(),
+                "scenes".to_string(),
+            ]
         }
     };
 
@@ -588,8 +610,10 @@ pub async fn validate_delivery(
             issues.push(assembly::ValidationIssue {
                 severity: assembly::IssueSeverity::Info,
                 category: format!("skipped_{section}"),
-                message: format!("{} validation skipped — not in blocking deliverables",
-                    section[..1].to_uppercase() + &section[1..]),
+                message: format!(
+                    "{} validation skipped — not in blocking deliverables",
+                    section[..1].to_uppercase() + &section[1..]
+                ),
                 entity_id: None,
             });
         }
@@ -597,12 +621,19 @@ pub async fn validate_delivery(
     let _ = (check_images, check_speech); // reserved for future validation checks
 
     // Check that the project has characters.
-    let all_characters = CharacterRepo::list_by_project(&state.pool, project_id).await
-        .map_err(|e| { tracing::error!(%e, "validate_delivery: list_by_project failed"); e })?;
+    let all_characters = CharacterRepo::list_by_project(&state.pool, project_id)
+        .await
+        .map_err(|e| {
+            tracing::error!(%e, "validate_delivery: list_by_project failed");
+            e
+        })?;
 
     // If character_ids filter is provided, scope to only those characters.
     let characters: Vec<_> = if let Some(ref ids) = filter_ids {
-        all_characters.into_iter().filter(|c| ids.contains(&c.id)).collect()
+        all_characters
+            .into_iter()
+            .filter(|c| ids.contains(&c.id))
+            .collect()
     } else {
         all_characters
     };
@@ -617,10 +648,8 @@ pub async fn validate_delivery(
     }
 
     // Build character name map (needed for scene-level checks).
-    let char_name_map: std::collections::HashMap<DbId, &str> = characters
-        .iter()
-        .map(|c| (c.id, c.name.as_str()))
-        .collect();
+    let char_name_map: std::collections::HashMap<DbId, &str> =
+        characters.iter().map(|c| (c.id, c.name.as_str())).collect();
 
     // --- Scene-related checks (only when "scenes" is a blocking deliverable) ---
     if check_scenes {
@@ -639,23 +668,38 @@ pub async fn validate_delivery(
 
         // Missing finalized video versions.
         let missing_final =
-            SceneVideoVersionRepo::find_scenes_missing_final(&state.pool, project_id).await
-            .map_err(|e| { tracing::error!(%e, "validate_delivery: find_scenes_missing_final failed"); e })?;
+            SceneVideoVersionRepo::find_scenes_missing_final(&state.pool, project_id)
+                .await
+                .map_err(|e| {
+                    tracing::error!(%e, "validate_delivery: find_scenes_missing_final failed");
+                    e
+                })?;
         for scene_id in &missing_final {
-            let Some(model_name) = scene_to_char.get(scene_id) else { continue };
+            let Some(model_name) = scene_to_char.get(scene_id) else {
+                continue;
+            };
             issues.push(assembly::ValidationIssue {
                 severity: assembly::IssueSeverity::Error,
                 category: "missing_final_video".to_string(),
-                message: format!("Model '{}' — scene {scene_id} has no finalized video version", model_name),
+                message: format!(
+                    "Model '{}' — scene {scene_id} has no finalized video version",
+                    model_name
+                ),
                 entity_id: Some(*scene_id),
             });
         }
 
         // Non-H.264 codec warnings.
-        let all_versions = SceneVideoVersionRepo::list_non_h264_finals(&state.pool, project_id).await
-            .map_err(|e| { tracing::error!(%e, "validate_delivery: list_non_h264_finals failed"); e })?;
+        let all_versions = SceneVideoVersionRepo::list_non_h264_finals(&state.pool, project_id)
+            .await
+            .map_err(|e| {
+                tracing::error!(%e, "validate_delivery: list_non_h264_finals failed");
+                e
+            })?;
         for version in &all_versions {
-            let Some(model_name) = scene_to_char.get(&version.scene_id) else { continue };
+            let Some(model_name) = scene_to_char.get(&version.scene_id) else {
+                continue;
+            };
             let codec = version.video_codec.as_deref().unwrap_or("unknown");
             issues.push(assembly::ValidationIssue {
                 severity: assembly::IssueSeverity::Warning,
@@ -728,7 +772,11 @@ pub async fn validate_delivery(
 
     state.activity_broadcaster.publish(
         ActivityLogEntry::curated(
-            if result.passed { ActivityLogLevel::Info } else { ActivityLogLevel::Warn },
+            if result.passed {
+                ActivityLogLevel::Info
+            } else {
+                ActivityLogLevel::Warn
+            },
             ActivityLogSource::Api,
             format!(
                 "Delivery validation {}: {} error{}, {} warning{}",

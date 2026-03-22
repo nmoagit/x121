@@ -9,7 +9,7 @@ use crate::models::workflow::{CreateWorkflow, UpdateWorkflow, Workflow};
 /// Column list for workflows queries.
 const COLUMNS: &str = "id, name, description, current_version, status_id, \
     json_content, discovered_params_json, validation_results_json, \
-    last_validated_at, imported_from, imported_by, created_at, updated_at";
+    last_validated_at, imported_from, imported_by, pipeline_id, created_at, updated_at";
 
 /// Provides CRUD operations for workflows.
 pub struct WorkflowRepo;
@@ -22,8 +22,8 @@ impl WorkflowRepo {
         let query = format!(
             "INSERT INTO workflows
                 (name, description, json_content, discovered_params_json,
-                 imported_from, imported_by, status_id)
-             VALUES ($1, $2, $3, $4, $5, $6, $7)
+                 imported_from, imported_by, status_id, pipeline_id)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
              RETURNING {COLUMNS}"
         );
         sqlx::query_as::<_, Workflow>(&query)
@@ -34,6 +34,7 @@ impl WorkflowRepo {
             .bind(&input.imported_from)
             .bind(input.imported_by)
             .bind(WORKFLOW_STATUS_ID_DRAFT)
+            .bind(input.pipeline_id)
             .fetch_one(pool)
             .await
     }

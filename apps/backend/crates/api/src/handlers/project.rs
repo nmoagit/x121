@@ -1,9 +1,9 @@
 //! Handlers for the `/projects` resource.
 
-use axum::extract::{Path, State};
+use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
 use axum::Json;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use x121_core::error::CoreError;
 use x121_core::types::DbId;
 use x121_db::models::character::CharacterDeliverableRow;
@@ -37,6 +37,13 @@ pub async fn create(
     Ok((StatusCode::CREATED, Json(DataResponse { data: project })))
 }
 
+/// Optional query parameters for the project list endpoint.
+#[derive(Debug, Deserialize)]
+pub struct ProjectListParams {
+    /// When provided, only projects belonging to this pipeline are returned.
+    pub pipeline_id: Option<DbId>,
+}
+
 /// Enriched project for list views — includes inline character counts.
 #[derive(Debug, Clone, Serialize)]
 pub struct ProjectWithCounts {
@@ -46,9 +53,16 @@ pub struct ProjectWithCounts {
     pub characters_ready: i64,
 }
 
-/// GET /api/v1/projects
-pub async fn list(State(state): State<AppState>) -> AppResult<Json<DataResponse<Vec<ProjectWithCounts>>>> {
-    let projects = ProjectRepo::list(&state.pool).await?;
+/// GET /api/v1/projects?pipeline_id=1
+pub async fn list(
+    State(state): State<AppState>,
+    Query(params): Query<ProjectListParams>,
+) -> AppResult<Json<DataResponse<Vec<ProjectWithCounts>>>> {
+    let projects = if let Some(pipeline_id) = params.pipeline_id {
+        ProjectRepo::list_by_pipeline(&state.pool, pipeline_id).await?
+    } else {
+        ProjectRepo::list(&state.pool).await?
+    };
 
     // Single query: character counts per project (non-archived, non-deleted).
     let counts: Vec<(DbId, i64)> = sqlx::query_as(

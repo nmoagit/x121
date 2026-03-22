@@ -136,9 +136,8 @@ impl OutputFormatProfileRepo {
 
     /// Find the profile marked as default, if any.
     pub async fn find_default(pool: &PgPool) -> Result<Option<OutputFormatProfile>, sqlx::Error> {
-        let query = format!(
-            "SELECT {COLUMNS} FROM output_format_profiles WHERE is_default = true LIMIT 1"
-        );
+        let query =
+            format!("SELECT {COLUMNS} FROM output_format_profiles WHERE is_default = true LIMIT 1");
         sqlx::query_as::<_, OutputFormatProfile>(&query)
             .fetch_optional(pool)
             .await

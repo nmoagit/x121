@@ -23,11 +23,12 @@ const COLUMNS: &str =
     auto_retry_enabled, auto_retry_max_attempts, auto_retry_trigger_checks, \
     auto_retry_seed_variation, auto_retry_cfg_jitter, \
     target_fps, target_resolution, \
+    pipeline_id, \
     deleted_at, created_at, updated_at";
 
 /// Column list for the `tracks` table (used in JOIN queries).
 const TRACK_COLUMNS: &str =
-    "t.id, t.name, t.slug, t.sort_order, t.is_active, t.created_at, t.updated_at";
+    "t.id, t.name, t.slug, t.sort_order, t.is_active, t.pipeline_id, t.created_at, t.updated_at";
 
 /// Provides CRUD operations for scene types and their track associations.
 pub struct SceneTypeRepo;

@@ -25,6 +25,8 @@ pub struct Project {
     pub blocking_deliverables: Option<Vec<String>>,
     /// Default output format profile for this project's deliveries.
     pub default_format_profile_id: Option<DbId>,
+    /// The pipeline this project belongs to (PRD-138).
+    pub pipeline_id: DbId,
 }
 
 /// DTO for creating a new project.
@@ -35,6 +37,8 @@ pub struct CreateProject {
     /// Defaults to 1 (Draft) if omitted.
     pub status_id: Option<StatusId>,
     pub retention_days: Option<i32>,
+    /// The pipeline this project belongs to (PRD-138).
+    pub pipeline_id: DbId,
 }
 
 /// DTO for updating an existing project. All fields are optional.

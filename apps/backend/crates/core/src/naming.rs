@@ -58,6 +58,54 @@ pub fn scene_video_filename(
     name
 }
 
+/// Generate a video filename using pipeline-specific naming rules.
+///
+/// Replaces template placeholders in `rules.video_template`:
+/// - `{prefix}` — track-specific prefix from `rules.prefix_rules`
+/// - `{scene_type}` — lowercase snake_case scene type name
+/// - `{transition}` — `rules.transition_suffix` for transition segments, empty otherwise
+/// - `{index}` — `_N` suffix when an index is provided, empty otherwise
+pub fn pipeline_video_filename(
+    rules: &crate::pipeline::PipelineNamingRules,
+    track_slug: &str,
+    scene_type_name: &str,
+    is_transition: bool,
+    index: Option<u32>,
+) -> String {
+    let mut name = rules.video_template.clone();
+
+    // Replace {prefix} with track-specific prefix from rules.
+    let prefix = rules
+        .prefix_rules
+        .get(track_slug)
+        .cloned()
+        .unwrap_or_default();
+    name = name.replace("{prefix}", &prefix);
+
+    // Replace {scene_type}.
+    name = name.replace(
+        "{scene_type}",
+        &scene_type_name.to_lowercase().replace(' ', "_"),
+    );
+
+    // Replace {transition}.
+    let transition = if is_transition {
+        &rules.transition_suffix
+    } else {
+        ""
+    };
+    name = name.replace("{transition}", transition);
+
+    // Replace {index}.
+    let index_str = match index {
+        Some(i) => format!("_{i}"),
+        None => String::new(),
+    };
+    name = name.replace("{index}", &index_str);
+
+    name
+}
+
 #[cfg(test)]
 #[allow(deprecated)]
 mod tests {
@@ -131,5 +179,83 @@ mod tests {
             scene_video_filename("clothed", "Dance", false, Some(0)),
             "dance_0.mp4"
         );
+    }
+
+    mod pipeline_naming {
+        use super::*;
+        use crate::pipeline::PipelineNamingRules;
+        use std::collections::HashMap;
+
+        fn make_rules(template: &str, prefix_rules: &[(&str, &str)], transition: &str) -> PipelineNamingRules {
+            PipelineNamingRules {
+                video_template: template.to_string(),
+                prefix_rules: prefix_rules
+                    .iter()
+                    .map(|(k, v)| (k.to_string(), v.to_string()))
+                    .collect(),
+                transition_suffix: transition.to_string(),
+            }
+        }
+
+        #[test]
+        fn basic_template_substitution() {
+            let rules = make_rules(
+                "{prefix}{scene_type}{transition}{index}.mp4",
+                &[("topless", "topless_")],
+                "_clothes_off",
+            );
+            assert_eq!(
+                pipeline_video_filename(&rules, "topless", "Dance", false, None),
+                "topless_dance.mp4"
+            );
+        }
+
+        #[test]
+        fn transition_suffix_applied() {
+            let rules = make_rules(
+                "{prefix}{scene_type}{transition}{index}.mp4",
+                &[],
+                "_clothes_off",
+            );
+            assert_eq!(
+                pipeline_video_filename(&rules, "clothed", "Dance", true, None),
+                "dance_clothes_off.mp4"
+            );
+        }
+
+        #[test]
+        fn index_suffix_applied() {
+            let rules = make_rules(
+                "{prefix}{scene_type}{transition}{index}.mp4",
+                &[],
+                "_clothes_off",
+            );
+            assert_eq!(
+                pipeline_video_filename(&rules, "clothed", "Idle", false, Some(2)),
+                "idle_2.mp4"
+            );
+        }
+
+        #[test]
+        fn unknown_track_produces_empty_prefix() {
+            let rules = make_rules(
+                "{prefix}{scene_type}.mp4",
+                &[("topless", "topless_")],
+                "",
+            );
+            assert_eq!(
+                pipeline_video_filename(&rules, "unknown_track", "Dance", false, None),
+                "dance.mp4"
+            );
+        }
+
+        #[test]
+        fn multi_word_scene_type_lowercased() {
+            let rules = make_rules("{scene_type}.mp4", &[], "");
+            assert_eq!(
+                pipeline_video_filename(&rules, "clothed", "Hair Flip Idle", false, None),
+                "hair_flip_idle.mp4"
+            );
+        }
     }
 }

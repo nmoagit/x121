@@ -71,13 +71,24 @@ async fn process_next(
         None => return Ok(()),
     };
 
-    tracing::info!(export_id = export.id, project_id = export.project_id, "Claimed delivery export");
+    tracing::info!(
+        export_id = export.id,
+        project_id = export.project_id,
+        "Claimed delivery export"
+    );
 
     if let Err(e) = run_pipeline(state, &export, cancel).await {
         let msg = format!("{e}");
         tracing::error!(export_id = export.id, error = %msg, "Delivery pipeline failed");
         let _ = DeliveryExportRepo::mark_failed(&state.pool, export.id, &msg).await;
-        log_step(state, export.id, export.project_id, "error", &format!("Export failed: {msg}")).await;
+        log_step(
+            state,
+            export.id,
+            export.project_id,
+            "error",
+            &format!("Export failed: {msg}"),
+        )
+        .await;
     }
 
     Ok(())
@@ -142,7 +153,10 @@ async fn run_pipeline(
 
     let model_names: Vec<&str> = characters.iter().map(|c| c.name.as_str()).collect();
     log_step(
-        state, export_id, project_id, "info",
+        state,
+        export_id,
+        project_id,
+        "info",
         &format!(
             "Assembling {} models: {} (profile: {}{})",
             characters.len(),
@@ -150,7 +164,8 @@ async fn run_pipeline(
             profile.name,
             if is_passthrough { ", passthrough" } else { "" },
         ),
-    ).await;
+    )
+    .await;
 
     // -----------------------------------------------------------------------
     // Phase 1: Assembling — collect all final videos with naming context
@@ -158,12 +173,17 @@ async fn run_pipeline(
     let project_slug = naming_engine::slugify(&project.name);
 
     // Load naming rule templates (fall back to sensible defaults).
-    let video_template = load_rule_template(&state.pool, "delivery_video", project_id).await
-        .unwrap_or_else(|| "{variant_prefix}{scene_type_slug}{clothes_off_suffix}{index_suffix}.mp4".into());
-    let image_template = load_rule_template(&state.pool, "delivery_image", project_id).await
+    let video_template = load_rule_template(&state.pool, "delivery_video", project_id)
+        .await
+        .unwrap_or_else(|| {
+            "{variant_prefix}{scene_type_slug}{clothes_off_suffix}{index_suffix}.mp4".into()
+        });
+    let image_template = load_rule_template(&state.pool, "delivery_image", project_id)
+        .await
         .unwrap_or_else(|| "{variant_label}.{ext}".into());
     let folder_template = load_rule_template(&state.pool, "delivery_folder", project_id).await;
-    let metadata_template = load_rule_template(&state.pool, "delivery_metadata", project_id).await
+    let metadata_template = load_rule_template(&state.pool, "delivery_metadata", project_id)
+        .await
         .unwrap_or_else(|| "metadata.json".into());
 
     let mut bundles: Vec<CharacterBundle> = Vec::new();
@@ -190,20 +210,26 @@ async fn run_pipeline(
 
         let mut videos = Vec::new();
         // Track how many videos share the same content key for index_suffix.
-        let mut content_key_counts: std::collections::HashMap<String, u32> = std::collections::HashMap::new();
+        let mut content_key_counts: std::collections::HashMap<String, u32> =
+            std::collections::HashMap::new();
 
         for scene in &scenes {
-            let version = match SceneVideoVersionRepo::find_final_for_scene(&state.pool, scene.id).await? {
-                Some(v) => v,
-                None => continue,
-            };
+            let version =
+                match SceneVideoVersionRepo::find_final_for_scene(&state.pool, scene.id).await? {
+                    Some(v) => v,
+                    None => continue,
+                };
 
             let abs_path = storage_root.join(&version.file_path);
             if !abs_path.exists() {
                 log_step(
-                    state, export_id, project_id, "warning",
+                    state,
+                    export_id,
+                    project_id,
+                    "warning",
                     &format!("Video not found: {} — skipping", abs_path.display()),
-                ).await;
+                )
+                .await;
                 continue;
             }
 
@@ -222,10 +248,11 @@ async fn run_pipeline(
 
             // Determine is_clothes_off from the scene_type_track_configs table.
             let is_clothes_off = if let Some(track_id) = scene.track_id {
-                let configs = SceneTypeTrackConfigRepo::list_by_scene_type(
-                    &state.pool, scene.scene_type_id,
-                ).await?;
-                configs.iter()
+                let configs =
+                    SceneTypeTrackConfigRepo::list_by_scene_type(&state.pool, scene.scene_type_id)
+                        .await?;
+                configs
+                    .iter()
                     .find(|c| c.track_id == track_id)
                     .map(|c| c.is_clothes_off)
                     .unwrap_or(false)
@@ -233,7 +260,10 @@ async fn run_pipeline(
                 false
             };
 
-            let ext = abs_path.extension().and_then(|e| e.to_str()).unwrap_or("mp4");
+            let ext = abs_path
+                .extension()
+                .and_then(|e| e.to_str())
+                .unwrap_or("mp4");
 
             // Compute index for duplicate content keys.
             let content_key = format!(
@@ -275,7 +305,10 @@ async fn run_pipeline(
             if !abs_path.exists() {
                 continue;
             }
-            let ext = abs_path.extension().and_then(|e| e.to_str()).unwrap_or("png");
+            let ext = abs_path
+                .extension()
+                .and_then(|e| e.to_str())
+                .unwrap_or("png");
             // Use variant_type (clothed/topless) for naming, not variant_label (display name).
             let label = iv.variant_type.as_deref().unwrap_or(&iv.variant_label);
             let ctx = NamingContext {
@@ -311,21 +344,48 @@ async fn run_pipeline(
     let total_videos: usize = bundles.iter().map(|b| b.videos.len()).sum();
     let total_images: usize = bundles.iter().map(|b| b.images.len()).sum();
     log_step(
-        state, export_id, project_id, "info",
-        &format!("Collected {total_videos} videos, {total_images} images across {} models", bundles.len()),
-    ).await;
+        state,
+        export_id,
+        project_id,
+        "info",
+        &format!(
+            "Collected {total_videos} videos, {total_images} images across {} models",
+            bundles.len()
+        ),
+    )
+    .await;
 
     // -----------------------------------------------------------------------
     // Phase 2: Transcoding (skipped for passthrough profiles)
     // -----------------------------------------------------------------------
-    DeliveryExportRepo::update_status(&state.pool, export_id, assembly::EXPORT_STATUS_ID_TRANSCODING, None).await?;
+    DeliveryExportRepo::update_status(
+        &state.pool,
+        export_id,
+        assembly::EXPORT_STATUS_ID_TRANSCODING,
+        None,
+    )
+    .await?;
 
     let temp_dir = storage_root.join(format!("deliveries/temp/{export_id}"));
 
     if is_passthrough {
-        log_step(state, export_id, project_id, "info", "Passthrough profile — skipping transcoding").await;
+        log_step(
+            state,
+            export_id,
+            project_id,
+            "info",
+            "Passthrough profile — skipping transcoding",
+        )
+        .await;
     } else {
-        log_step(state, export_id, project_id, "info", "Transcoding videos to target format").await;
+        log_step(
+            state,
+            export_id,
+            project_id,
+            "info",
+            "Transcoding videos to target format",
+        )
+        .await;
 
         let transcode_params = TranscodeProfileParams {
             resolution: profile.resolution.clone(),
@@ -347,10 +407,18 @@ async fn run_pipeline(
                         .join(&bundle.character_slug)
                         .join(&video.resolved_name);
                     log_step(
-                        state, export_id, project_id, "info",
-                        &format!("Transcoding {}/{}", bundle.character_name, video.resolved_name),
-                    ).await;
-                    ffmpeg::transcode_to_profile(&video.path, &output_path, &transcode_params).await?;
+                        state,
+                        export_id,
+                        project_id,
+                        "info",
+                        &format!(
+                            "Transcoding {}/{}",
+                            bundle.character_name, video.resolved_name
+                        ),
+                    )
+                    .await;
+                    ffmpeg::transcode_to_profile(&video.path, &output_path, &transcode_params)
+                        .await?;
                     video.path = output_path;
                 }
             }
@@ -363,8 +431,21 @@ async fn run_pipeline(
     // Structure inside each RAR is FLAT unless delivery_folder naming rule
     // defines subdirectories (e.g. "videos/"). Files are named per naming rules.
     // -----------------------------------------------------------------------
-    DeliveryExportRepo::update_status(&state.pool, export_id, assembly::EXPORT_STATUS_ID_PACKAGING, None).await?;
-    log_step(state, export_id, project_id, "info", "Packaging delivery archives").await;
+    DeliveryExportRepo::update_status(
+        &state.pool,
+        export_id,
+        assembly::EXPORT_STATUS_ID_PACKAGING,
+        None,
+    )
+    .await?;
+    log_step(
+        state,
+        export_id,
+        project_id,
+        "info",
+        "Packaging delivery archives",
+    )
+    .await;
 
     let delivery_dir = storage_root.join(format!("deliveries/{export_id}"));
     tokio::fs::create_dir_all(&delivery_dir).await?;
@@ -423,9 +504,13 @@ async fn run_pipeline(
         rar_paths.push(rar_path);
 
         log_step(
-            state, export_id, project_id, "info",
+            state,
+            export_id,
+            project_id,
+            "info",
             &format!("Created archive: {archive_name}"),
-        ).await;
+        )
+        .await;
 
         // Clean up staging directory.
         let _ = tokio::fs::remove_dir_all(&staging_dir).await;
@@ -434,14 +519,30 @@ async fn run_pipeline(
     // -----------------------------------------------------------------------
     // Phase 4: Validating
     // -----------------------------------------------------------------------
-    DeliveryExportRepo::update_status(&state.pool, export_id, assembly::EXPORT_STATUS_ID_VALIDATING, None).await?;
-    log_step(state, export_id, project_id, "info", "Validating delivery archives").await;
+    DeliveryExportRepo::update_status(
+        &state.pool,
+        export_id,
+        assembly::EXPORT_STATUS_ID_VALIDATING,
+        None,
+    )
+    .await?;
+    log_step(
+        state,
+        export_id,
+        project_id,
+        "info",
+        "Validating delivery archives",
+    )
+    .await;
 
     let mut total_size: u64 = 0;
     for rar_path in &rar_paths {
         let meta = tokio::fs::metadata(rar_path).await?;
         if meta.len() == 0 {
-            let name = rar_path.file_name().and_then(|n| n.to_str()).unwrap_or("unknown");
+            let name = rar_path
+                .file_name()
+                .and_then(|n| n.to_str())
+                .unwrap_or("unknown");
             return Err(PipelineError::msg(format!("Archive {name} is empty")));
         }
         total_size += meta.len();
@@ -487,9 +588,11 @@ async fn create_rar(source_dir: &Path, rar_path: &Path) -> Result<(), PipelineEr
         .current_dir(source_dir)
         .output()
         .await
-        .map_err(|e| PipelineError::msg(format!(
-            "Failed to run `rar` command (is it installed?): {e}"
-        )))?;
+        .map_err(|e| {
+            PipelineError::msg(format!(
+                "Failed to run `rar` command (is it installed?): {e}"
+            ))
+        })?;
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
@@ -509,7 +612,9 @@ fn storage_root() -> PathBuf {
 
 fn check_cancelled(cancel: &CancellationToken) -> Result<(), PipelineError> {
     if cancel.is_cancelled() {
-        Err(PipelineError::msg("Server shutting down — export cancelled"))
+        Err(PipelineError::msg(
+            "Server shutting down — export cancelled",
+        ))
     } else {
         Ok(())
     }
@@ -522,7 +627,9 @@ async fn load_rule_template(
     project_id: DbId,
 ) -> Option<String> {
     // Try project-specific rule first, then global.
-    if let Ok(Some(rule)) = NamingRuleRepo::find_active_rule(pool, category_name, Some(project_id)).await {
+    if let Ok(Some(rule)) =
+        NamingRuleRepo::find_active_rule(pool, category_name, Some(project_id)).await
+    {
         return Some(rule.template);
     }
     if let Ok(Some(rule)) = NamingRuleRepo::find_active_rule(pool, category_name, None).await {
@@ -591,14 +698,22 @@ impl std::fmt::Display for PipelineError {
 impl std::error::Error for PipelineError {}
 
 impl From<sqlx::Error> for PipelineError {
-    fn from(e: sqlx::Error) -> Self { Self::Db(e) }
+    fn from(e: sqlx::Error) -> Self {
+        Self::Db(e)
+    }
 }
 impl From<ffmpeg::FfmpegError> for PipelineError {
-    fn from(e: ffmpeg::FfmpegError) -> Self { Self::Ffmpeg(e) }
+    fn from(e: ffmpeg::FfmpegError) -> Self {
+        Self::Ffmpeg(e)
+    }
 }
 impl From<std::io::Error> for PipelineError {
-    fn from(e: std::io::Error) -> Self { Self::Io(e) }
+    fn from(e: std::io::Error) -> Self {
+        Self::Io(e)
+    }
 }
 impl From<serde_json::Error> for PipelineError {
-    fn from(e: serde_json::Error) -> Self { Self::Json(e) }
+    fn from(e: serde_json::Error) -> Self {
+        Self::Json(e)
+    }
 }

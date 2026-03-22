@@ -202,7 +202,8 @@ async fn import_json(
         if !entries.is_empty() {
             let to_create = if skip_existing {
                 // Fetch existing speeches and filter out duplicates.
-                let existing = CharacterSpeechRepo::list_for_character(&state.pool, character_id).await?;
+                let existing =
+                    CharacterSpeechRepo::list_for_character(&state.pool, character_id).await?;
                 let existing_keys: std::collections::HashSet<(i16, i16, String)> = existing
                     .iter()
                     .map(|s| (s.speech_type_id, s.language_id, s.text.to_lowercase()))
@@ -226,9 +227,12 @@ async fn import_json(
             };
 
             if !to_create.is_empty() {
-                let created =
-                    CharacterSpeechRepo::bulk_create_with_language(&state.pool, character_id, &to_create)
-                        .await?;
+                let created = CharacterSpeechRepo::bulk_create_with_language(
+                    &state.pool,
+                    character_id,
+                    &to_create,
+                )
+                .await?;
                 imported += created.len();
             }
         }
@@ -365,7 +369,8 @@ async fn import_csv(
     // Bulk create per character (with optional dedup).
     for (character_id, entries) in &char_entries {
         let to_create = if skip_existing {
-            let existing = CharacterSpeechRepo::list_for_character(&state.pool, *character_id).await?;
+            let existing =
+                CharacterSpeechRepo::list_for_character(&state.pool, *character_id).await?;
             let existing_keys: std::collections::HashSet<(i16, i16, String)> = existing
                 .iter()
                 .map(|s| (s.speech_type_id, s.language_id, s.text.to_lowercase()))
@@ -384,9 +389,12 @@ async fn import_csv(
         };
 
         if !to_create.is_empty() {
-            let created =
-                CharacterSpeechRepo::bulk_create_with_language(&state.pool, *character_id, &to_create)
-                    .await?;
+            let created = CharacterSpeechRepo::bulk_create_with_language(
+                &state.pool,
+                *character_id,
+                &to_create,
+            )
+            .await?;
             imported += created.len();
         }
     }

@@ -52,6 +52,8 @@ pub struct SceneType {
     pub auto_retry_cfg_jitter: Option<f64>,
     pub target_fps: Option<i32>,
     pub target_resolution: Option<String>,
+    /// The pipeline this scene type belongs to (PRD-138). NULL for project-scoped types.
+    pub pipeline_id: Option<DbId>,
     pub deleted_at: Option<Timestamp>,
     pub created_at: Timestamp,
     pub updated_at: Timestamp,

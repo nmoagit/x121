@@ -10,13 +10,46 @@ use x121_core::generation;
 use x121_core::prompt_resolution;
 use x121_core::types::DbId;
 use x121_core::video_settings::{self, VideoSettingsLayer};
+use x121_db::models::pipeline::Pipeline;
 use x121_db::repositories::{
-    CharacterRepo, ImageVariantRepo, SceneTypeTrackConfigRepo, SegmentRepo, VideoSettingsRepo,
-    WorkflowRepo,
+    CharacterRepo, ImageVariantRepo, PipelineRepo, ProjectRepo, SceneTypeTrackConfigRepo,
+    SegmentRepo, VideoSettingsRepo, WorkflowRepo,
 };
 
 use crate::error::{load_scene_and_type, PipelineError};
 use crate::workflow_builder::GenerationContext;
+
+/// Load the pipeline configuration for a given project.
+///
+/// Resolves the project's `pipeline_id` and fetches the corresponding
+/// `Pipeline` record. Returns an error if the project is not found, has
+/// no pipeline assigned, or the pipeline itself is missing or inactive.
+pub async fn load_pipeline_for_project(
+    pool: &sqlx::PgPool,
+    project_id: DbId,
+) -> Result<Pipeline, PipelineError> {
+    let project = ProjectRepo::find_by_id(pool, project_id)
+        .await?
+        .ok_or_else(|| PipelineError::MissingConfig(format!("Project {project_id} not found")))?;
+
+    let pipeline = PipelineRepo::find_by_id(pool, project.pipeline_id)
+        .await?
+        .ok_or_else(|| {
+            PipelineError::MissingConfig(format!(
+                "Pipeline {} not found for project {project_id}",
+                project.pipeline_id
+            ))
+        })?;
+
+    if !pipeline.is_active {
+        return Err(PipelineError::MissingConfig(format!(
+            "Pipeline {} ({}) is inactive",
+            pipeline.id, pipeline.code
+        )));
+    }
+
+    Ok(pipeline)
+}
 
 /// Load everything needed to build a ComfyUI workflow for one segment.
 pub async fn load_generation_context(

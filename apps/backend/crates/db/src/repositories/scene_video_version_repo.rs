@@ -433,7 +433,8 @@ impl SceneVideoVersionRepo {
         pool: &PgPool,
         project_id: DbId,
     ) -> Result<Vec<SceneVideoVersion>, sqlx::Error> {
-        let prefixed = COLUMNS.split(", ")
+        let prefixed = COLUMNS
+            .split(", ")
             .map(|c| format!("svv.{}", c.trim()))
             .collect::<Vec<_>>()
             .join(", ");

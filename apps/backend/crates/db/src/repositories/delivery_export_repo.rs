@@ -41,9 +41,7 @@ impl DeliveryExportRepo {
     ///
     /// Uses `FOR UPDATE SKIP LOCKED` to prevent double-processing when multiple
     /// server instances are running.
-    pub async fn claim_next_pending(
-        pool: &PgPool,
-    ) -> Result<Option<DeliveryExport>, sqlx::Error> {
+    pub async fn claim_next_pending(pool: &PgPool) -> Result<Option<DeliveryExport>, sqlx::Error> {
         let pending = x121_core::assembly::EXPORT_STATUS_ID_PENDING;
         let assembling = x121_core::assembly::EXPORT_STATUS_ID_ASSEMBLING;
         let query = format!(

@@ -8,7 +8,7 @@ use crate::models::project::{CreateProject, Project, UpdateProject};
 /// Column list shared across queries to avoid repetition.
 const COLUMNS: &str =
     "id, name, description, status_id, retention_days, auto_deliver_on_final, deleted_at, created_at, updated_at, \
-     review_trigger_threshold, blocking_deliverables, default_format_profile_id";
+     review_trigger_threshold, blocking_deliverables, default_format_profile_id, pipeline_id";
 
 /// Provides CRUD operations for projects.
 pub struct ProjectRepo;
@@ -19,8 +19,8 @@ impl ProjectRepo {
     /// If `status_id` is `None` in the input, defaults to 1 (Draft).
     pub async fn create(pool: &PgPool, input: &CreateProject) -> Result<Project, sqlx::Error> {
         let query = format!(
-            "INSERT INTO projects (name, description, status_id, retention_days)
-             VALUES ($1, $2, COALESCE($3, 1), $4)
+            "INSERT INTO projects (name, description, status_id, retention_days, pipeline_id)
+             VALUES ($1, $2, COALESCE($3, 1), $4, $5)
              RETURNING {COLUMNS}"
         );
         sqlx::query_as::<_, Project>(&query)
@@ -28,6 +28,7 @@ impl ProjectRepo {
             .bind(&input.description)
             .bind(input.status_id)
             .bind(input.retention_days)
+            .bind(input.pipeline_id)
             .fetch_one(pool)
             .await
     }
@@ -41,12 +42,27 @@ impl ProjectRepo {
             .await
     }
 
-    /// List all projects ordered by most recently created first. Excludes soft-deleted rows.
+    /// List all projects ordered by name. Excludes soft-deleted rows.
     pub async fn list(pool: &PgPool) -> Result<Vec<Project>, sqlx::Error> {
         let query = format!(
             "SELECT {COLUMNS} FROM projects WHERE deleted_at IS NULL ORDER BY LOWER(name) ASC"
         );
         sqlx::query_as::<_, Project>(&query).fetch_all(pool).await
+    }
+
+    /// List projects belonging to a specific pipeline, ordered by name.
+    /// Excludes soft-deleted rows.
+    pub async fn list_by_pipeline(
+        pool: &PgPool,
+        pipeline_id: DbId,
+    ) -> Result<Vec<Project>, sqlx::Error> {
+        let query = format!(
+            "SELECT {COLUMNS} FROM projects WHERE pipeline_id = $1 AND deleted_at IS NULL ORDER BY LOWER(name) ASC"
+        );
+        sqlx::query_as::<_, Project>(&query)
+            .bind(pipeline_id)
+            .fetch_all(pool)
+            .await
     }
 
     /// Update a project. Only non-`None` fields in `input` are applied.

@@ -69,6 +69,7 @@ pub mod onboarding_wizard;
 pub mod palette;
 pub mod performance;
 pub mod pipeline_hooks;
+pub mod pipelines;
 pub mod platform_settings;
 pub mod poster_frame;
 pub mod presets;
@@ -913,6 +914,8 @@ pub fn api_routes() -> Router<AppState> {
         .nest("/mixins", scene_type_inheritance::mixin_router())
         // Tracks (PRD-111).
         .nest("/tracks", track::router())
+        // Pipelines (PRD-138).
+        .nest("/pipelines", pipelines::router())
         // Speech types (PRD-124).
         .nest("/speech-types", speech_type::router())
         // Languages (PRD-136).

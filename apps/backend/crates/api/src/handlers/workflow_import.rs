@@ -16,6 +16,7 @@ use x121_core::types::DbId;
 use x121_core::workflow_import::{self, WORKFLOW_STATUS_ID_VALIDATED};
 use x121_db::models::workflow::{CreateWorkflow, ImportWorkflowRequest, UpdateWorkflow, Workflow};
 use x121_db::models::workflow_version::{CreateWorkflowVersion, WorkflowDiffResponse};
+use x121_db::repositories::PipelineRepo;
 use x121_db::repositories::WorkflowRepo;
 use x121_db::repositories::WorkflowVersionRepo;
 
@@ -90,6 +91,18 @@ pub async fn import_workflow(
     let discovered = workflow_import::discover_parameters(&parsed);
     let discovered_json = serde_json::to_value(&discovered).ok();
 
+    // Resolve pipeline_id: use request value or fall back to default pipeline.
+    let pipeline_id = match body.pipeline_id {
+        Some(pid) => pid,
+        None => PipelineRepo::default_id(&state.pool)
+            .await?
+            .ok_or_else(|| {
+                AppError::Core(CoreError::Validation(
+                    "No active pipeline exists; specify pipeline_id".to_string(),
+                ))
+            })?,
+    };
+
     // Create the workflow record.
     let create_input = CreateWorkflow {
         name: body.name.clone(),
@@ -101,6 +114,7 @@ pub async fn import_workflow(
             .clone()
             .or_else(|| Some("comfyui_json".to_string())),
         imported_by: Some(auth.user_id),
+        pipeline_id,
     };
 
     let workflow = WorkflowRepo::create(&state.pool, &create_input).await?;

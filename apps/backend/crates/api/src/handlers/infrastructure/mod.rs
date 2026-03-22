@@ -269,9 +269,7 @@ pub async fn start_pod(
 
                 // Register the ComfyUI instance in the DB.
                 let instance_name =
-                    x121_cloud::runpod::orchestrator::PodOrchestrator::instance_name(
-                        &ready.pod_id,
-                    );
+                    x121_cloud::runpod::orchestrator::PodOrchestrator::instance_name(&ready.pod_id);
                 let _ = ComfyUIInstanceRepo::upsert_by_name(
                     &state.pool,
                     &instance_name,

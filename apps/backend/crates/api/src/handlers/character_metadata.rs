@@ -332,9 +332,16 @@ pub async fn update_character_metadata(
     }
 
     // Preserve voice_id from settings — never let metadata imports/generates clear it.
-    if let Some(voice_id) = character.settings.get("elevenlabs_voice").and_then(|v| v.as_str()) {
+    if let Some(voice_id) = character
+        .settings
+        .get("elevenlabs_voice")
+        .and_then(|v| v.as_str())
+    {
         if !voice_id.is_empty() {
-            existing.insert("voice_id".to_string(), serde_json::Value::String(voice_id.to_string()));
+            existing.insert(
+                "voice_id".to_string(),
+                serde_json::Value::String(voice_id.to_string()),
+            );
         }
     }
 

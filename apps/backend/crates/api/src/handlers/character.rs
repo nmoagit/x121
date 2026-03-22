@@ -99,7 +99,10 @@ pub async fn bulk_create(
         ActivityLogEntry::curated(
             ActivityLogLevel::Info,
             ActivityLogSource::Api,
-            format!("Imported {count} model{} into project {project_id}", if count != 1 { "s" } else { "" }),
+            format!(
+                "Imported {count} model{} into project {project_id}",
+                if count != 1 { "s" } else { "" }
+            ),
         )
         .with_project(project_id)
         .with_fields(serde_json::json!({
@@ -421,8 +424,14 @@ pub async fn bulk_approve(
     // Recompute readiness cache — after approving all blocking sections the
     // character is ready (100%). If only some sections were approved, mark as
     // partially_ready so the count is still visible in the pulse widget.
-    let new_state = if skipped_sections.is_empty() { "ready" } else { "partially_ready" };
-    let new_pct: i32 = if skipped_sections.is_empty() { 100 } else {
+    let new_state = if skipped_sections.is_empty() {
+        "ready"
+    } else {
+        "partially_ready"
+    };
+    let new_pct: i32 = if skipped_sections.is_empty() {
+        100
+    } else {
         let total = 4i32; // images, scenes, metadata, speech
         let approved = total - skipped_sections.len() as i32;
         ((approved as f64 / total as f64) * 100.0).round() as i32
@@ -435,7 +444,8 @@ pub async fn bulk_approve(
             missing_items: serde_json::json!([]),
             readiness_pct: new_pct,
         },
-    ).await;
+    )
+    .await;
 
     state.activity_broadcaster.publish(
         ActivityLogEntry::curated(

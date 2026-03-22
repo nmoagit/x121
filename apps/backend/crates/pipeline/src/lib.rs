@@ -14,6 +14,7 @@ pub mod submitter;
 pub mod version_creator;
 pub mod workflow_builder;
 
+pub use context_loader::load_pipeline_for_project;
 pub use error::{load_scene_and_type, PipelineError};
 pub use output_classifier::{classify_outputs, ClassifiedOutput, OutputRole};
 pub use snapshot::build_generation_snapshot;

@@ -67,6 +67,7 @@ pub mod naming;
 pub mod naming_engine;
 pub mod onboarding;
 pub mod onboarding_wizard;
+pub mod pipeline;
 pub mod pipeline_hooks;
 pub mod poster_frame;
 pub mod preset;

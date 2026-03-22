@@ -6,7 +6,7 @@ use x121_core::types::DbId;
 use crate::models::track::{CreateTrack, Track, UpdateTrack};
 
 /// Column list shared across queries to avoid repetition.
-const COLUMNS: &str = "id, name, slug, sort_order, is_active, created_at, updated_at";
+const COLUMNS: &str = "id, name, slug, sort_order, is_active, pipeline_id, created_at, updated_at";
 
 /// Provides CRUD operations for tracks.
 pub struct TrackRepo;
@@ -15,8 +15,8 @@ impl TrackRepo {
     /// Insert a new track, returning the created row.
     pub async fn create(pool: &PgPool, input: &CreateTrack) -> Result<Track, sqlx::Error> {
         let query = format!(
-            "INSERT INTO tracks (name, slug, sort_order, is_active) \
-             VALUES ($1, $2, COALESCE($3, 0), COALESCE($4, true)) \
+            "INSERT INTO tracks (name, slug, sort_order, is_active, pipeline_id) \
+             VALUES ($1, $2, COALESCE($3, 0), COALESCE($4, true), $5) \
              RETURNING {COLUMNS}"
         );
         sqlx::query_as::<_, Track>(&query)
@@ -24,6 +24,7 @@ impl TrackRepo {
             .bind(&input.slug)
             .bind(input.sort_order)
             .bind(input.is_active)
+            .bind(input.pipeline_id)
             .fetch_one(pool)
             .await
     }
