@@ -296,6 +296,7 @@ impl AvatarRepo {
         search: Option<&str>,
         scene_type_id: Option<DbId>,
         track_id: Option<DbId>,
+        pipeline_id: Option<DbId>,
     ) -> Result<Vec<LibraryAvatarRow>, sqlx::Error> {
         // Build optional WHERE clauses.
         let mut conditions = vec!["c.deleted_at IS NULL".to_string()];
@@ -321,6 +322,11 @@ impl AvatarRepo {
             conditions.push(format!(
                 "EXISTS (SELECT 1 FROM scenes s WHERE s.avatar_id = c.id AND s.track_id = ${bind_idx})"
             ));
+            bind_idx += 1;
+        }
+
+        if pipeline_id.is_some() {
+            conditions.push(format!("p.pipeline_id = ${bind_idx}"));
             bind_idx += 1;
         }
 
@@ -391,6 +397,9 @@ impl AvatarRepo {
         }
         if let Some(t) = track_id {
             q = q.bind(t);
+        }
+        if let Some(pid) = pipeline_id {
+            q = q.bind(pid);
         }
 
         q.fetch_all(pool).await

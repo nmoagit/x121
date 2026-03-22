@@ -793,9 +793,11 @@ pub async fn browse_clips(
         JOIN avatars c ON c.id = sc.avatar_id AND c.deleted_at IS NULL
         JOIN projects p ON p.id = c.project_id AND p.deleted_at IS NULL
         WHERE svv.deleted_at IS NULL
-          AND ($1::bigint IS NULL OR p.id = $1)",
+          AND ($1::bigint IS NULL OR p.id = $1)
+          AND ($2::bigint IS NULL OR p.pipeline_id = $2)",
     )
     .bind(params.project_id)
+    .bind(params.pipeline_id)
     .fetch_one(&state.pool)
     .await?;
 
@@ -835,10 +837,12 @@ pub async fn browse_clips(
         LEFT JOIN tracks t ON t.id = sc.track_id
         WHERE svv.deleted_at IS NULL
           AND ($1::bigint IS NULL OR p.id = $1)
+          AND ($2::bigint IS NULL OR p.pipeline_id = $2)
         ORDER BY svv.created_at DESC
-        LIMIT $2 OFFSET $3",
+        LIMIT $3 OFFSET $4",
     )
     .bind(params.project_id)
+    .bind(params.pipeline_id)
     .bind(limit as i64)
     .bind(offset as i64)
     .fetch_all(&state.pool)
@@ -852,6 +856,7 @@ pub async fn browse_clips(
 #[derive(Debug, serde::Deserialize)]
 pub struct BrowseClipsParams {
     pub project_id: Option<DbId>,
+    pub pipeline_id: Option<DbId>,
     pub limit: Option<i32>,
     pub offset: Option<i32>,
 }

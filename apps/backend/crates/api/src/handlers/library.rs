@@ -56,6 +56,8 @@ pub struct LibraryFilterParams {
     pub scene_type_id: Option<DbId>,
     /// Filter to avatars that have scenes on this track.
     pub track_id: Option<DbId>,
+    /// Filter to avatars belonging to projects in this pipeline.
+    pub pipeline_id: Option<DbId>,
 }
 
 /// List all avatars across all projects for the library browser.
@@ -71,6 +73,7 @@ pub async fn list_library_avatars(
         params.search.as_deref(),
         params.scene_type_id,
         params.track_id,
+        params.pipeline_id,
     )
     .await?;
     tracing::debug!(count = items.len(), "Listed library avatars");

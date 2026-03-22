@@ -42,6 +42,7 @@ pub struct AnnotationListFilters {
 pub struct AnnotationBrowseParams {
     pub project_id: Option<DbId>,
     pub avatar_id: Option<DbId>,
+    pub pipeline_id: Option<DbId>,
     pub sort: Option<String>,
     pub sort_dir: Option<String>,
     #[serde(flatten)]
@@ -237,6 +238,7 @@ pub async fn browse_annotations(
         &state.pool,
         params.project_id,
         params.avatar_id,
+        params.pipeline_id,
         sort,
         sort_dir,
         limit,

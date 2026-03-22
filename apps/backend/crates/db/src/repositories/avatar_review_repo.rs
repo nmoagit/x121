@@ -125,9 +125,13 @@ impl AvatarReviewRepo {
     }
 
     /// List the reviewer's active queue with avatar and project details.
+    ///
+    /// Optionally filtered by `pipeline_id` to scope to a specific pipeline's
+    /// projects.
     pub async fn list_by_reviewer(
         pool: &PgPool,
         reviewer_user_id: DbId,
+        pipeline_id: Option<DbId>,
         limit: i64,
         offset: i64,
     ) -> Result<Vec<ReviewQueueAvatar>, sqlx::Error> {
@@ -149,10 +153,12 @@ impl AvatarReviewRepo {
              JOIN projects p ON p.id = c.project_id
              WHERE cra.reviewer_user_id = $1
                AND cra.status = 'active'
+               AND ($2::bigint IS NULL OR p.pipeline_id = $2)
              ORDER BY cra.created_at DESC
-             LIMIT $2 OFFSET $3",
+             LIMIT $3 OFFSET $4",
         )
         .bind(reviewer_user_id)
+        .bind(pipeline_id)
         .bind(limit)
         .bind(offset)
         .fetch_all(pool)

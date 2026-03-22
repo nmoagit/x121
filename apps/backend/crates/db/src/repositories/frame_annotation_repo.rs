@@ -294,6 +294,7 @@ impl FrameAnnotationRepo {
         pool: &PgPool,
         project_id: Option<DbId>,
         avatar_id: Option<DbId>,
+        pipeline_id: Option<DbId>,
         sort: &str,
         sort_dir: &str,
         limit: i64,
@@ -337,13 +338,15 @@ impl FrameAnnotationRepo {
             WHERE sc.id IS NOT NULL
               AND ($1::bigint IS NULL OR pr.id = $1)
               AND ($2::bigint IS NULL OR ch.id = $2)
+              AND ($3::bigint IS NULL OR pr.pipeline_id = $3)
             ORDER BY {order_clause} {dir}
-            LIMIT $3 OFFSET $4"
+            LIMIT $4 OFFSET $5"
         );
 
         sqlx::query_as::<_, AnnotatedItem>(&query)
             .bind(project_id)
             .bind(avatar_id)
+            .bind(pipeline_id)
             .bind(limit)
             .bind(offset)
             .fetch_all(pool)

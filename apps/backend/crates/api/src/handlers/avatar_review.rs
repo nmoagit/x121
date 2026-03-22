@@ -363,19 +363,35 @@ pub async fn get_workload(
     Ok(Json(DataResponse { data: workload }))
 }
 
+/// Query parameters for the reviewer queue endpoint.
+#[derive(Debug, Deserialize)]
+pub struct MyQueueParams {
+    /// Filter to assignments for avatars in projects belonging to this pipeline.
+    pub pipeline_id: Option<DbId>,
+    #[serde(flatten)]
+    pub pagination: PaginationParams,
+}
+
 /// GET /review/avatar-assignments/my-queue
 ///
 /// Get the authenticated user's review queue. Paginated.
+/// Optionally filtered by pipeline_id.
 pub async fn my_queue(
     auth: AuthUser,
     State(state): State<AppState>,
-    Query(pagination): Query<PaginationParams>,
+    Query(params): Query<MyQueueParams>,
 ) -> AppResult<impl IntoResponse> {
-    let limit = clamp_limit(pagination.limit, DEFAULT_SEARCH_LIMIT, MAX_SEARCH_LIMIT);
-    let offset = clamp_offset(pagination.offset);
+    let limit = clamp_limit(params.pagination.limit, DEFAULT_SEARCH_LIMIT, MAX_SEARCH_LIMIT);
+    let offset = clamp_offset(params.pagination.offset);
 
-    let queue =
-        AvatarReviewRepo::list_by_reviewer(&state.pool, auth.user_id, limit, offset).await?;
+    let queue = AvatarReviewRepo::list_by_reviewer(
+        &state.pool,
+        auth.user_id,
+        params.pipeline_id,
+        limit,
+        offset,
+    )
+    .await?;
 
     Ok(Json(DataResponse { data: queue }))
 }
