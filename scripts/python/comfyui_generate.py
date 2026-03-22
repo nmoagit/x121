@@ -89,15 +89,15 @@ load_env()
 
 RUNPOD_API_KEY = os.environ.get("RUNPOD_API_KEY", "")
 
-# Pod creation defaults (matches x121_pod_001 config)
+# Pod creation defaults — all IDs are read from .env / environment.
 POD_DEFAULTS = {
     "name": "x121-batch-worker",
     "imageName": "runpod/comfyui:latest-5090",
-    "gpuTypeId": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+    "gpuTypeId": os.environ.get("RUNPOD_GPU_TYPE_ID", "NVIDIA RTX PRO 6000 Blackwell Server Edition"),
     "gpuCount": 1,
     "containerDiskInGb": 150,
     "volumeInGb": 0,
-    "networkVolumeId": "glhxpn3tgb",
+    "networkVolumeId": os.environ.get("RUNPOD_NETWORK_VOLUME_ID", ""),
     "ports": "8188/http,22/tcp",
     "dataCenterId": "EU-CZ-1",
 }
