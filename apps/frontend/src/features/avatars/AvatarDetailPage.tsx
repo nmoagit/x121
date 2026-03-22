@@ -400,11 +400,17 @@ export function AvatarDetailPage() {
       )}
       {activeTab === "images" && (
         <div className={!avatar.is_enabled ? "opacity-70 grayscale" : ""}>
+          {!resolvedBlockingDeliverables?.includes("images") && (
+            <div className="font-mono text-[10px] text-amber-400/70 mb-2">⚠ not a blocking deliverable</div>
+          )}
           <AvatarImagesTab key={avatarId} avatarId={avatarId} />
         </div>
       )}
       {activeTab === "scenes" && (
         <div className={!avatar.is_enabled ? "opacity-70 grayscale" : ""}>
+          {!resolvedBlockingDeliverables?.includes("scenes") && (
+            <div className="font-mono text-[10px] text-amber-400/70 mb-2">⚠ not a blocking deliverable</div>
+          )}
           <AvatarScenesTab key={avatarId} avatarId={avatarId} projectId={projectId} focusSceneId={focusSceneId} focusSceneTypeId={focusSceneTypeId} focusTrackId={focusTrackId} avatarEnabled={avatar.is_enabled} />
         </div>
       )}
@@ -417,8 +423,22 @@ export function AvatarDetailPage() {
           projectName={project?.name ?? ""}
         />
       )}
-      {activeTab === "metadata" && <AvatarMetadataTab key={avatarId} avatarId={avatarId} projectId={projectId} />}
-      {activeTab === "speech" && <AvatarSpeechTab key={avatarId} avatarId={avatarId} projectId={projectId} />}
+      {activeTab === "metadata" && (
+        <>
+          {!resolvedBlockingDeliverables?.includes("metadata") && (
+            <div className="font-mono text-[10px] text-amber-400/70 mb-2">⚠ not a blocking deliverable</div>
+          )}
+          <AvatarMetadataTab key={avatarId} avatarId={avatarId} projectId={projectId} />
+        </>
+      )}
+      {activeTab === "speech" && (
+        <>
+          {!resolvedBlockingDeliverables?.includes("speech") && (
+            <div className="font-mono text-[10px] text-amber-400/70 mb-2">⚠ not a blocking deliverable</div>
+          )}
+          <AvatarSpeechTab key={avatarId} avatarId={avatarId} projectId={projectId} />
+        </>
+      )}
       {activeTab === "review" && <AvatarReviewAuditLog key={avatarId} avatarId={avatarId} />}
       {activeTab === "settings" && (
         <AvatarSettingsTab
