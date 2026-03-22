@@ -148,17 +148,13 @@ export function TrackImageCard({
 
         {/* Content below image */}
         <div className="flex flex-col gap-1.5 px-[var(--spacing-2)] py-[var(--spacing-2)]">
-          {/* Header: status left, track label right */}
+          {/* Row 1: status left, track label right */}
           <div className="flex items-center justify-between gap-1 min-w-0 font-mono text-[10px]">
             <div className="flex items-center gap-2 text-[var(--color-text-muted)] truncate">
               {heroVariant ? (
-                <>
-                  <span className={heroVariant.status_id === IMAGE_VARIANT_STATUS.APPROVED ? "text-green-400" : "text-cyan-400"}>
-                    {IMAGE_VARIANT_STATUS_LABEL[heroVariant.status_id]?.toLowerCase()}
-                  </span>
-                  <span className="opacity-30">|</span>
-                  <span>{PROVENANCE_LABEL[heroVariant.provenance]?.toLowerCase()}</span>
-                </>
+                <span className={heroVariant.status_id === IMAGE_VARIANT_STATUS.APPROVED ? "text-green-400" : "text-cyan-400"}>
+                  {IMAGE_VARIANT_STATUS_LABEL[heroVariant.status_id]?.toLowerCase()}
+                </span>
               ) : (
                 <span className="text-[var(--color-text-muted)]">no image</span>
               )}
@@ -167,6 +163,13 @@ export function TrackImageCard({
               {track.name}
             </span>
           </div>
+
+          {/* Row 2: provenance */}
+          {heroVariant && (
+            <div className="font-mono text-[10px] text-[var(--color-text-muted)]">
+              {PROVENANCE_LABEL[heroVariant.provenance]?.toLowerCase()}
+            </div>
+          )}
 
           {/* Action buttons — xs size */}
           <div className="flex items-center gap-1.5">
