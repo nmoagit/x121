@@ -40,7 +40,6 @@ ALTER TABLE image_quality_scores RENAME COLUMN character_id TO avatar_id;
 ALTER TABLE performance_metrics RENAME COLUMN character_id TO avatar_id;
 ALTER TABLE detected_faces RENAME COLUMN character_id TO avatar_id;
 ALTER TABLE embedding_history RENAME COLUMN character_id TO avatar_id;
-ALTER TABLE avatar_groups RENAME COLUMN character_id TO avatar_id;
 ALTER TABLE avatar_readiness_cache RENAME COLUMN character_id TO avatar_id;
 ALTER TABLE avatar_scene_overrides RENAME COLUMN character_id TO avatar_id;
 ALTER TABLE avatar_scene_prompt_overrides RENAME COLUMN character_id TO avatar_id;
