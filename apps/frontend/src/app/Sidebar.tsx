@@ -13,12 +13,14 @@ import {
   usePipelineByCode,
   usePipelines,
 } from "@/features/pipelines/hooks/use-pipelines";
+import { useProjects } from "@/features/projects/hooks/use-projects";
 import { cn } from "@/lib/cn";
 import { useAuthStore } from "@/stores/auth-store";
 import {
   ArrowLeft,
   Eye,
   EyeOff,
+  FolderKanban,
   PanelLeftClose,
   PanelLeftOpen,
   Workflow,
@@ -33,8 +35,36 @@ const COLLAPSED_WIDTH = "w-12";
 
 function PipelineSidebarContent({ collapsed, pipelineCode }: { collapsed: boolean; pipelineCode: string }) {
   const { data: pipeline } = usePipelineByCode(pipelineCode);
-  const navGroups = useMemo(() => buildPipelineNavGroups(pipelineCode), [pipelineCode]);
+  const { data: projects } = useProjects(pipeline?.id);
   const pipelineName = pipeline?.name ?? pipelineCode;
+
+  const navGroups = useMemo(() => {
+    const groups = buildPipelineNavGroups(pipelineCode);
+
+    // Inject dynamic project list under the "Projects" item in the Content group
+    if (projects && projects.length > 0) {
+      const contentGroup = groups.find((g) => g.label === "Content");
+      if (contentGroup) {
+        const projectIdx = contentGroup.items.findIndex((item) => item.label === "Projects");
+        if (projectIdx >= 0) {
+          const projectItems = projects.map((p) => ({
+            label: p.name,
+            path: `/pipelines/${pipelineCode}/projects/${p.id}`,
+            icon: FolderKanban,
+            indent: true,
+            prominent: true,
+          }));
+          contentGroup.items = [
+            ...contentGroup.items.slice(0, projectIdx + 1),
+            ...projectItems,
+            ...contentGroup.items.slice(projectIdx + 1),
+          ];
+        }
+      }
+    }
+
+    return groups;
+  }, [pipelineCode, projects]);
 
   return (
     <nav

@@ -20,7 +20,7 @@ import type {
 
 export const projectKeys = {
   all: ["projects"] as const,
-  lists: () => [...projectKeys.all, "list"] as const,
+  lists: (pipelineId?: number) => [...projectKeys.all, "list", { pipelineId }] as const,
   detail: (id: number) => [...projectKeys.all, "detail", id] as const,
   stats: (id: number) => [...projectKeys.all, "stats", id] as const,
 };
@@ -29,11 +29,12 @@ export const projectKeys = {
    Query hooks
    -------------------------------------------------------------------------- */
 
-/** Fetch all projects. */
-export function useProjects() {
+/** Fetch projects, optionally filtered by pipeline. */
+export function useProjects(pipelineId?: number) {
+  const params = pipelineId ? `?pipeline_id=${pipelineId}` : "";
   return useQuery({
-    queryKey: projectKeys.lists(),
-    queryFn: () => api.get<Project[]>("/projects"),
+    queryKey: projectKeys.lists(pipelineId),
+    queryFn: () => api.get<Project[]>(`/projects${params}`),
   });
 }
 
