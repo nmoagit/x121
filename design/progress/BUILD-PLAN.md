@@ -478,6 +478,17 @@ This phase contains no PRD work — only structural setup.
 
 ---
 
+## Phase 13 — Multi-Pipeline Architecture
+
+**Goal:** Evolve from single x121 pipeline to multi-pipeline platform. Pipeline as top-level entity scoping all projects, tracks, workflows, scene types.
+**Milestone:** y122 (Speaker) pipeline fully operational alongside existing x121 pipeline, dynamic seed validation, pipeline-scoped delivery.
+
+| # | PRD | Title | Effort | Track | Depends On |
+|---|-----|-------|--------|-------|------------|
+| 138 | PRD-138 | Multi-Pipeline Architecture | XL | Full-Stack | PRD-01, PRD-05, PRD-24, PRD-75, PRD-111, PRD-113, PRD-116 (all done) |
+
+---
+
 ## Standalone — Python Generation Scripts ✅
 
 **Goal:** Improvements to the standalone Python generation scripts (`scripts/python/`). These are independent of the web application and have no Rust/React/DB dependencies. Can be done at any time.
@@ -601,6 +612,7 @@ PRD-29 → PRD-83 → PRD-35 → PRD-57
 | 2026-03-10 | Added PRD-132 (Queue Manager & Intelligent Job Allocation) to Phase 12. Full queue visibility, job reassignment, drain mode, intelligent allocation. All deps done (PRD-07, 08, 05, 46). Total: 132 PRDs |
 | 2026-03-18 | Marked PRD-134 (Deferred/Scheduled Generation) and PRD-135 (Character Creator) as DONE (completed 2026-03-17). Added PRD-136 (Multilingual Speech & Deliverable System) to Phase 12 as planning. Total: 136 PRDs (135 done, 1 planning) |
 | 2026-03-19 | Added PRD-137 (Output Format Profile Management) to Phase 12. Admin page for profile CRUD, is_default flag, project-level override, ExportPanel auto-selection, seed profiles. All deps done (PRD-039, 110, 112). Total: 137 PRDs (136 done, 1 planning) |
+| 2026-03-22 | Added Phase 13 (Multi-Pipeline Architecture) with PRD-138. Pipeline as top-level entity, projects/tracks/workflows/scene_types scoped to pipeline, dynamic seed slots, pipeline-scoped delivery. x121 + y122 initial pipelines. All deps done. Total: 138 PRDs (137 done, 1 planning) |
 
 ---
 

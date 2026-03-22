@@ -25,10 +25,11 @@ Source of truth: [`design/design.md`](../design.md)
 | in-progress | 0 |
 | review | 0 |
 | done | 137 |
+| planning | 1 |
 | blocked | 0 |
 | deferred | 0 |
 | maybe | 15 |
-| **Total** | **151** |
+| **Total** | **153** |
 
 ---
 
@@ -38,6 +39,7 @@ Source of truth: [`design/design.md`](../design.md)
 |-----|-------|----------|--------|-------|-------|
 | PRD-00 | Database Normalization & Strict Integrity | — | `done` | 2026-02-20 | Foundation. Status lookup tables, pgvector, conventions, integration tests. |
 | PRD-01 | Project, Character & Scene Data Model | — | `done` | 2026-02-20 | 8 entity tables, models, repositories, API endpoints, naming engine, delivery ZIP, 27 integration tests. |
+| PRD-138 | Multi-Pipeline Architecture | 1 | `planning` | — | Pipeline as top-level entity. Projects, tracks, workflows, scene types scoped to pipeline. Dynamic seed slots, pipeline-scoped naming/delivery. x121 + y122 initial pipelines. Deps: PRD-01, PRD-05, PRD-24, PRD-75, PRD-111, PRD-113, PRD-116. |
 
 ## Part 1: Infrastructure & System Core
 
@@ -283,3 +285,4 @@ Source of truth: [`design/design.md`](../design.md)
 | 2026-03-18 | Added PRD-136 (Multilingual Speech & Deliverable System). Language infrastructure, speech approval workflow, deliverable JSON export, speech completeness tracking, project speech config, bulk multi-character import, language flags on character cards. Post-MVP: LLM translation, TTS preview, speech generation. Deps: PRD-124, PRD-112, PRD-128. Total PRDs: 136 + 15 MAYBEs = 151. |
 | 2026-03-18 | Implemented PRD-136. Migration (languages, speech_statuses, project_speech_config, character_speeches + speech_types alterations), backend models/repos/handlers for language CRUD, speech approval, reorder, deliverable JSON, completeness, project config, bulk import. Frontend: circle-flags, FlagIcon, SpeechStatusBadge, enhanced speech tab with language filter/approval/reorder/deliverable, language flags on cards/detail, SpeechRequirementsEditor, BulkSpeechImportModal. Done count: 136. |
 | 2026-03-19 | Added PRD-137 (Output Format Profile Management). Admin page for centralized profile CRUD, is_default flag, project-level default override, ExportPanel auto-selection, seed profiles (720p/1080p/4K). Deps: PRD-039, PRD-110, PRD-112. Total PRDs: 137 + 15 MAYBEs = 152. |
+| 2026-03-22 | Added PRD-138 (Multi-Pipeline Architecture). Pipeline as top-level entity scoping projects, tracks, workflows, scene types. Dynamic seed slots (x121: clothed+topless, y122: speaker), pipeline-scoped naming/delivery, pipeline navigation in frontend. Characters pipeline-scoped (no cross-pipeline sharing). DB-driven config, code-driven backend. Deps: PRD-01, PRD-05, PRD-24, PRD-75, PRD-111, PRD-113, PRD-116. Total PRDs: 138 + 15 MAYBEs = 153. |
