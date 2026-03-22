@@ -63,10 +63,10 @@ export function PipelineSelectorPage() {
             key={pipeline.id}
             type="button"
             onClick={() => navigate({ to: `/pipelines/${pipeline.code}/dashboard` })}
-            className="text-left"
+            className="text-left h-full"
           >
             <Card
-              className="cursor-pointer transition-colors hover:border-[var(--color-action-primary)] hover:bg-[var(--color-surface-tertiary)]"
+              className="cursor-pointer transition-colors hover:border-[var(--color-action-primary)] hover:bg-[var(--color-surface-tertiary)] h-full"
               padding="md"
             >
               <Stack gap={3}>
