@@ -102,9 +102,15 @@ pub async fn create_studio(
 /// GET /api/v1/scene-types
 pub async fn list_studio_level(
     State(state): State<AppState>,
+    Query(params): Query<SceneTypeListParams>,
 ) -> AppResult<Json<DataResponse<Vec<SceneType>>>> {
-    let scene_types = SceneTypeRepo::list_studio_level(&state.pool).await?;
-    Ok(Json(DataResponse { data: scene_types }))
+    let scene_types = SceneTypeRepo::list(&state.pool, params.include_inactive, params.pipeline_id).await?;
+    // Filter to studio-level (no project_id) only
+    let studio_level: Vec<SceneType> = scene_types
+        .into_iter()
+        .filter(|st| st.project_id.is_none())
+        .collect();
+    Ok(Json(DataResponse { data: studio_level }))
 }
 
 /// GET /api/v1/scene-types/{id}
