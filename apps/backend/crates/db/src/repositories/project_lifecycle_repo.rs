@@ -14,8 +14,8 @@ use crate::models::status::SceneStatus;
 pub struct ProjectAggregates {
     pub total_scenes: i64,
     pub approved_scenes: i64,
-    pub total_characters: i64,
-    pub characters_with_metadata: i64,
+    pub total_avatars: i64,
+    pub avatars_with_metadata: i64,
     pub total_segments: i64,
 }
 
@@ -122,7 +122,7 @@ impl ProjectLifecycleRepo {
         let (count,): (i64,) = sqlx::query_as(
             "SELECT COUNT(*)
              FROM scenes s
-             JOIN characters c ON c.id = s.character_id
+             JOIN avatars c ON c.id = s.avatar_id
              WHERE c.project_id = $1
                AND c.deleted_at IS NULL
                AND s.deleted_at IS NULL",
@@ -142,7 +142,7 @@ impl ProjectLifecycleRepo {
         let (count,): (i64,) = sqlx::query_as(
             "SELECT COUNT(*)
              FROM scenes s
-             JOIN characters c ON c.id = s.character_id
+             JOIN avatars c ON c.id = s.avatar_id
              WHERE c.project_id = $1
                AND c.deleted_at IS NULL
                AND s.deleted_at IS NULL
@@ -156,11 +156,11 @@ impl ProjectLifecycleRepo {
         Ok(count)
     }
 
-    /// Count total characters for a project (non-deleted).
-    pub async fn count_characters(pool: &PgPool, project_id: DbId) -> Result<i64, sqlx::Error> {
+    /// Count total avatars for a project (non-deleted).
+    pub async fn count_avatars(pool: &PgPool, project_id: DbId) -> Result<i64, sqlx::Error> {
         let (count,): (i64,) = sqlx::query_as(
             "SELECT COUNT(*)
-             FROM characters
+             FROM avatars
              WHERE project_id = $1 AND deleted_at IS NULL",
         )
         .bind(project_id)
@@ -170,14 +170,14 @@ impl ProjectLifecycleRepo {
         Ok(count)
     }
 
-    /// Count characters that have non-null, non-empty metadata for a project.
-    pub async fn count_characters_with_metadata(
+    /// Count avatars that have non-null, non-empty metadata for a project.
+    pub async fn count_avatars_with_metadata(
         pool: &PgPool,
         project_id: DbId,
     ) -> Result<i64, sqlx::Error> {
         let (count,): (i64,) = sqlx::query_as(
             "SELECT COUNT(*)
-             FROM characters
+             FROM avatars
              WHERE project_id = $1
                AND deleted_at IS NULL
                AND metadata IS NOT NULL
@@ -191,13 +191,13 @@ impl ProjectLifecycleRepo {
         Ok(count)
     }
 
-    /// Count total segments for a project (non-deleted scenes and characters).
+    /// Count total segments for a project (non-deleted scenes and avatars).
     pub async fn count_segments(pool: &PgPool, project_id: DbId) -> Result<i64, sqlx::Error> {
         let (count,): (i64,) = sqlx::query_as(
             "SELECT COUNT(*)
              FROM segments seg
              JOIN scenes s ON s.id = seg.scene_id
-             JOIN characters c ON c.id = s.character_id
+             JOIN avatars c ON c.id = s.avatar_id
              WHERE c.project_id = $1
                AND c.deleted_at IS NULL
                AND s.deleted_at IS NULL",
@@ -212,7 +212,7 @@ impl ProjectLifecycleRepo {
     /// Fetch all project aggregate counts in a single query.
     ///
     /// Replaces multiple sequential calls to `count_scenes`, `count_approved_scenes`,
-    /// `count_characters`, `count_characters_with_metadata`, and `count_segments`.
+    /// `count_avatars`, `count_avatars_with_metadata`, and `count_segments`.
     pub async fn get_project_aggregates(
         pool: &PgPool,
         project_id: DbId,
@@ -221,30 +221,30 @@ impl ProjectLifecycleRepo {
             "SELECT
                  (SELECT COUNT(*)
                   FROM scenes s
-                  JOIN characters c ON c.id = s.character_id
+                  JOIN avatars c ON c.id = s.avatar_id
                   WHERE c.project_id = $1 AND c.deleted_at IS NULL AND s.deleted_at IS NULL
                  ) AS total_scenes,
                  (SELECT COUNT(*)
                   FROM scenes s
-                  JOIN characters c ON c.id = s.character_id
+                  JOIN avatars c ON c.id = s.avatar_id
                   WHERE c.project_id = $1 AND c.deleted_at IS NULL AND s.deleted_at IS NULL
                     AND s.status_id = $2
                  ) AS approved_scenes,
                  (SELECT COUNT(*)
-                  FROM characters
+                  FROM avatars
                   WHERE project_id = $1 AND deleted_at IS NULL
-                 ) AS total_characters,
+                 ) AS total_avatars,
                  (SELECT COUNT(*)
-                  FROM characters
+                  FROM avatars
                   WHERE project_id = $1 AND deleted_at IS NULL
                     AND metadata IS NOT NULL
                     AND metadata != 'null'::jsonb
                     AND metadata != '{}'::jsonb
-                 ) AS characters_with_metadata,
+                 ) AS avatars_with_metadata,
                  (SELECT COUNT(*)
                   FROM segments seg
                   JOIN scenes s ON s.id = seg.scene_id
-                  JOIN characters c ON c.id = s.character_id
+                  JOIN avatars c ON c.id = s.avatar_id
                   WHERE c.project_id = $1 AND c.deleted_at IS NULL AND s.deleted_at IS NULL
                  ) AS total_segments",
         )

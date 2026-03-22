@@ -153,7 +153,7 @@ impl std::fmt::Display for EntityAction {
 pub struct PathMappingRule {
     /// Glob or regex pattern to match against relative paths.
     pub pattern: String,
-    /// The entity type this pattern maps to (e.g. "character", "scene", "image").
+    /// The entity type this pattern maps to (e.g. "avatar", "scene", "image").
     pub entity_type: String,
     /// Named capture groups extracted from the pattern (e.g. "name", "category").
     pub captures: Vec<String>,
@@ -176,14 +176,14 @@ pub struct InferredEntity {
 /// legacy folder structures.
 ///
 /// Default convention:
-/// - `{name}/**` -> character by folder name
+/// - `{name}/**` -> avatar by folder name
 /// - `{name}/scenes/{scene}/**` -> scene by subfolder
 /// - `{name}/images/**` -> source image files
 pub fn default_mapping_rules() -> Vec<PathMappingRule> {
     vec![
         PathMappingRule {
             pattern: "{name}/**".to_string(),
-            entity_type: "character".to_string(),
+            entity_type: "avatar".to_string(),
             captures: vec!["name".to_string()],
         },
         PathMappingRule {
@@ -268,11 +268,11 @@ pub fn match_path_pattern(path: &str, pattern: &str) -> Option<HashMap<String, S
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum GapType {
-    /// Character folder exists but has no metadata file.
+    /// Avatar folder exists but has no metadata file.
     MissingMetadata,
-    /// Character metadata references an image that was not found.
+    /// Avatar metadata references an image that was not found.
     MissingSourceImage,
-    /// Character folder has no scene subfolders.
+    /// Avatar folder has no scene subfolders.
     MissingScene,
 }
 
@@ -315,7 +315,7 @@ pub fn validate_source_path(path: &str) -> Result<(), String> {
     }
     if path.len() > MAX_SOURCE_PATH_LENGTH {
         return Err(format!(
-            "Source path exceeds maximum length of {MAX_SOURCE_PATH_LENGTH} characters"
+            "Source path exceeds maximum length of {MAX_SOURCE_PATH_LENGTH} avatars"
         ));
     }
     // Reject paths with null bytes.
@@ -384,7 +384,7 @@ pub fn validate_match_key(key: &str) -> Result<(), String> {
     }
     if key.len() > MAX_MATCH_KEY_LENGTH {
         return Err(format!(
-            "Match key exceeds maximum length of {MAX_MATCH_KEY_LENGTH} characters"
+            "Match key exceeds maximum length of {MAX_MATCH_KEY_LENGTH} avatars"
         ));
     }
     if !VALID_MATCH_KEYS.contains(&key) {
@@ -474,12 +474,12 @@ mod tests {
 
     #[test]
     fn valid_absolute_path() {
-        assert!(validate_source_path("/data/legacy/characters").is_ok());
+        assert!(validate_source_path("/data/legacy/avatars").is_ok());
     }
 
     #[test]
     fn valid_relative_path() {
-        assert!(validate_source_path("./data/characters").is_ok());
+        assert!(validate_source_path("./data/avatars").is_ok());
     }
 
     #[test]
@@ -527,7 +527,7 @@ mod tests {
     fn valid_config_with_rules() {
         let config = serde_json::json!({
             "rules": [
-                { "pattern": "{name}/**", "entity_type": "character" },
+                { "pattern": "{name}/**", "entity_type": "avatar" },
                 { "pattern": "{name}/scenes/{scene}/**", "entity_type": "scene" }
             ]
         });
@@ -558,7 +558,7 @@ mod tests {
     #[test]
     fn rule_missing_pattern_rejected() {
         let config = serde_json::json!({
-            "rules": [{ "entity_type": "character" }]
+            "rules": [{ "entity_type": "avatar" }]
         });
         let result = validate_mapping_config(&config);
         assert!(result.is_err());
@@ -663,7 +663,7 @@ mod tests {
     #[test]
     fn default_rules_entity_types() {
         let rules = default_mapping_rules();
-        assert_eq!(rules[0].entity_type, "character");
+        assert_eq!(rules[0].entity_type, "avatar");
         assert_eq!(rules[1].entity_type, "scene");
         assert_eq!(rules[2].entity_type, "image");
     }

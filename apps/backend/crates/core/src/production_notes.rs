@@ -9,7 +9,7 @@ use crate::roles::{ROLE_ADMIN, ROLE_REVIEWER};
 // Constants
 // ---------------------------------------------------------------------------
 
-/// Maximum length of note content in characters.
+/// Maximum length of note content in avatars.
 pub const MAX_NOTE_CONTENT_LENGTH: usize = 10_000;
 
 /// Maximum length of a category name.
@@ -63,7 +63,7 @@ pub const BUILT_IN_CATEGORIES: &[&str] = &[
 /// Entity types that production notes can be attached to.
 pub const VALID_ENTITY_TYPES: &[&str] = &[
     "project",
-    "character",
+    "avatar",
     "scene",
     "segment",
     "scene_type",
@@ -93,7 +93,7 @@ pub fn validate_note_content(content: &str) -> Result<(), String> {
     }
     if content.len() > MAX_NOTE_CONTENT_LENGTH {
         return Err(format!(
-            "Note content exceeds maximum length of {MAX_NOTE_CONTENT_LENGTH} characters"
+            "Note content exceeds maximum length of {MAX_NOTE_CONTENT_LENGTH} avatars"
         ));
     }
     Ok(())
@@ -130,7 +130,7 @@ pub fn can_view_note(note_visibility: &str, user_role: &str) -> bool {
 
 /// Extract `@username` mentions from Markdown content.
 ///
-/// Finds all `@` followed by one or more word characters and returns
+/// Finds all `@` followed by one or more word avatars and returns
 /// the usernames (without the leading `@`).
 pub fn extract_mentions(content: &str) -> Vec<String> {
     let mut mentions = Vec::new();
@@ -178,7 +178,7 @@ mod tests {
     #[test]
     fn valid_entity_types_accepted() {
         assert!(validate_entity_type("project").is_ok());
-        assert!(validate_entity_type("character").is_ok());
+        assert!(validate_entity_type("avatar").is_ok());
         assert!(validate_entity_type("scene").is_ok());
         assert!(validate_entity_type("segment").is_ok());
         assert!(validate_entity_type("scene_type").is_ok());

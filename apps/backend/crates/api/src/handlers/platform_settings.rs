@@ -368,7 +368,7 @@ fn build_setting_response(
     }
 }
 
-/// Mask a sensitive value, showing only the last 4 characters.
+/// Mask a sensitive value, showing only the last 4 avatars.
 fn mask_value(value: &str) -> String {
     if value.len() <= 4 {
         "****".to_string()

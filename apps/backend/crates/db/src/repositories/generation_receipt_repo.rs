@@ -130,7 +130,7 @@ impl GenerationReceiptRepo {
 
     /// Find segments whose model hash no longer matches the current asset version.
     ///
-    /// Optionally scoped to a single project via the segment->scene->character->project chain.
+    /// Optionally scoped to a single project via the segment->scene->avatar->project chain.
     pub async fn find_stale_by_model(
         pool: &PgPool,
         project_id: Option<DbId>,
@@ -143,7 +143,7 @@ impl GenerationReceiptRepo {
                  FROM generation_receipts gr
                  JOIN segments s ON s.id = gr.segment_id
                  JOIN scenes sc ON sc.id = s.scene_id
-                 JOIN characters c ON c.id = sc.character_id
+                 JOIN avatars c ON c.id = sc.avatar_id
                  LEFT JOIN assets a ON a.id = gr.model_asset_id
                  WHERE (a.id IS NOT NULL AND gr.model_hash != COALESCE(a.name, ''))
                     OR (a.is_current_version = false)

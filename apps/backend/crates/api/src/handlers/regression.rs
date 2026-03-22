@@ -63,7 +63,7 @@ pub async fn create_reference(
 
     tracing::info!(
         reference_id = reference.id,
-        character_id = body.character_id,
+        avatar_id = body.avatar_id,
         scene_type_id = body.scene_type_id,
         user_id = auth.user_id,
         "Regression reference created"

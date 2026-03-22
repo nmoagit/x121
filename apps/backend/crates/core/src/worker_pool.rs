@@ -76,8 +76,8 @@ pub fn count_matching_tags(worker_tags: &[String], required: &[String]) -> usize
 ///
 /// Rules:
 /// - Must not be empty.
-/// - Must not exceed `MAX_NAME_LEN` characters.
-/// - Must contain only alphanumeric, hyphen, underscore, or dot characters.
+/// - Must not exceed `MAX_NAME_LEN` avatars.
+/// - Must contain only alphanumeric, hyphen, underscore, or dot avatars.
 pub fn validate_worker_name(name: &str) -> Result<(), CoreError> {
     if name.is_empty() {
         return Err(CoreError::Validation(
@@ -86,7 +86,7 @@ pub fn validate_worker_name(name: &str) -> Result<(), CoreError> {
     }
     if name.len() > MAX_NAME_LEN {
         return Err(CoreError::Validation(format!(
-            "Worker name must not exceed {MAX_NAME_LEN} characters"
+            "Worker name must not exceed {MAX_NAME_LEN} avatars"
         )));
     }
     if !name
@@ -94,7 +94,7 @@ pub fn validate_worker_name(name: &str) -> Result<(), CoreError> {
         .all(|c| c.is_alphanumeric() || c == '-' || c == '_' || c == '.')
     {
         return Err(CoreError::Validation(
-            "Worker name may only contain alphanumeric, hyphen, underscore, or dot characters"
+            "Worker name may only contain alphanumeric, hyphen, underscore, or dot avatars"
                 .to_string(),
         ));
     }
@@ -105,7 +105,7 @@ pub fn validate_worker_name(name: &str) -> Result<(), CoreError> {
 ///
 /// Rules:
 /// - At most `MAX_TAGS` tags.
-/// - Each tag must not be empty and must not exceed `MAX_TAG_LEN` characters.
+/// - Each tag must not be empty and must not exceed `MAX_TAG_LEN` avatars.
 /// - No duplicates.
 pub fn validate_tags(tags: &[String]) -> Result<(), CoreError> {
     if tags.len() > MAX_TAGS {
@@ -121,7 +121,7 @@ pub fn validate_tags(tags: &[String]) -> Result<(), CoreError> {
         }
         if tag.len() > MAX_TAG_LEN {
             return Err(CoreError::Validation(format!(
-                "Tag at index {i} exceeds {MAX_TAG_LEN} characters"
+                "Tag at index {i} exceeds {MAX_TAG_LEN} avatars"
             )));
         }
     }

@@ -45,7 +45,7 @@ pub struct TrendParams {
 #[derive(Debug, Deserialize)]
 pub struct AlertParams {
     pub workflow_id: Option<DbId>,
-    pub character_id: Option<DbId>,
+    pub avatar_id: Option<DbId>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -93,13 +93,13 @@ pub async fn get_pattern(
 /// GET /api/v1/analytics/failure-heatmap
 ///
 /// Returns heatmap matrix data with configurable row/column dimensions.
-/// Defaults to `workflow` (rows) x `character` (columns).
+/// Defaults to `workflow` (rows) x `avatar` (columns).
 pub async fn get_heatmap(
     State(state): State<AppState>,
     Query(params): Query<HeatmapParams>,
 ) -> AppResult<impl IntoResponse> {
     let row_dim = params.row_dimension.as_deref().unwrap_or("workflow");
-    let col_dim = params.col_dimension.as_deref().unwrap_or("character");
+    let col_dim = params.col_dimension.as_deref().unwrap_or("avatar");
 
     let patterns = FailurePatternRepo::get_heatmap_data(&state.pool, row_dim, col_dim).await?;
 
@@ -197,10 +197,10 @@ pub async fn check_alerts(
         let workflow_match = params
             .workflow_id
             .map_or(true, |wid| p.dimension_workflow_id == Some(wid));
-        let character_match = params
-            .character_id
-            .map_or(true, |cid| p.dimension_character_id == Some(cid));
-        workflow_match && character_match
+        let avatar_match = params
+            .avatar_id
+            .map_or(true, |cid| p.dimension_avatar_id == Some(cid));
+        workflow_match && avatar_match
     });
 
     Ok(Json(DataResponse { data: all_patterns }))
@@ -265,9 +265,9 @@ fn dimension_label(
             .dimension_lora_id
             .map(|id| format!("LoRA {id}"))
             .unwrap_or_default(),
-        "character" => pattern
-            .dimension_character_id
-            .map(|id| format!("Character {id}"))
+        "avatar" => pattern
+            .dimension_avatar_id
+            .map(|id| format!("Avatar {id}"))
             .unwrap_or_default(),
         "scene_type" => pattern
             .dimension_scene_type_id

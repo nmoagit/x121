@@ -441,7 +441,7 @@ impl SceneVideoVersionRepo {
         let query = format!(
             "SELECT {prefixed} FROM scene_video_versions svv \
              JOIN scenes s ON s.id = svv.scene_id AND s.deleted_at IS NULL \
-             JOIN characters c ON c.id = s.character_id AND c.deleted_at IS NULL \
+             JOIN avatars c ON c.id = s.avatar_id AND c.deleted_at IS NULL \
              WHERE c.project_id = $1 \
                AND svv.is_final = true \
                AND svv.deleted_at IS NULL \
@@ -468,7 +468,7 @@ impl SceneVideoVersionRepo {
         let rows: Vec<(DbId,)> = sqlx::query_as(
             "SELECT s.id \
              FROM scenes s \
-             JOIN characters c ON s.character_id = c.id \
+             JOIN avatars c ON s.avatar_id = c.id \
              WHERE c.project_id = $1 \
                AND s.deleted_at IS NULL \
                AND c.deleted_at IS NULL \

@@ -84,7 +84,7 @@ pub const RETENTION_1H_DAYS: i64 = 90;
 /// A single raw API request metric, captured by middleware.
 #[derive(Debug, Clone)]
 pub struct RequestMetric {
-    /// The endpoint path (e.g. "/api/v1/characters").
+    /// The endpoint path (e.g. "/api/v1/avatars").
     pub endpoint: String,
     /// HTTP method (GET, POST, etc.).
     pub http_method: String,

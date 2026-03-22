@@ -1,13 +1,13 @@
-//! Character readiness cache model (PRD-107).
+//! Avatar readiness cache model (PRD-107).
 
 use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
 use x121_core::types::{DbId, Timestamp};
 
-/// A row from the `character_readiness_cache` table.
+/// A row from the `avatar_readiness_cache` table.
 #[derive(Debug, Clone, Serialize, FromRow)]
-pub struct CharacterReadinessCache {
-    pub character_id: DbId,
+pub struct AvatarReadinessCache {
+    pub avatar_id: DbId,
     pub state: String,
     pub missing_items: serde_json::Value,
     pub readiness_pct: i32,
@@ -17,7 +17,7 @@ pub struct CharacterReadinessCache {
 /// DTO for upserting a readiness cache entry.
 #[derive(Debug, Deserialize)]
 pub struct UpsertReadinessCache {
-    pub character_id: DbId,
+    pub avatar_id: DbId,
     pub state: String,
     pub missing_items: serde_json::Value,
     pub readiness_pct: i32,

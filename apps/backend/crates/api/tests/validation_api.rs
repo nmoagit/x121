@@ -42,14 +42,14 @@ async fn test_list_rule_types(pool: PgPool) {
 #[sqlx::test(migrations = "../../../db/migrations")]
 async fn test_list_rules_by_entity_type(pool: PgPool) {
     let app = build_test_app(pool).await;
-    let response = get(app, "/api/v1/validation/rules?entity_type=characters").await;
+    let response = get(app, "/api/v1/validation/rules?entity_type=avatars").await;
     assert_eq!(response.status(), StatusCode::OK);
 
     let json = body_json(response).await;
     let data = json["data"].as_array().expect("data should be an array");
     assert!(
         data.len() >= 3,
-        "should have at least 3 seeded character rules, got {}",
+        "should have at least 3 seeded avatar rules, got {}",
         data.len()
     );
 }
@@ -65,7 +65,7 @@ async fn test_validate_valid_records(pool: PgPool) {
         app,
         "/api/v1/validation/validate",
         json!({
-            "entity_type": "characters",
+            "entity_type": "avatars",
             "records": [
                 {"name": "Alice", "project_id": 1}
             ]
@@ -93,7 +93,7 @@ async fn test_validate_invalid_records(pool: PgPool) {
         app,
         "/api/v1/validation/validate",
         json!({
-            "entity_type": "characters",
+            "entity_type": "avatars",
             "records": [
                 {"name": null, "project_id": null}
             ]
@@ -125,7 +125,7 @@ async fn test_validate_empty_records_returns_400(pool: PgPool) {
         app,
         "/api/v1/validation/validate",
         json!({
-            "entity_type": "characters",
+            "entity_type": "avatars",
             "records": []
         }),
     )
@@ -145,7 +145,7 @@ async fn test_get_import_report(pool: PgPool) {
         app,
         "/api/v1/validation/validate",
         json!({
-            "entity_type": "characters",
+            "entity_type": "avatars",
             "records": [{"name": "Bob", "project_id": 1}]
         }),
     )
@@ -175,7 +175,7 @@ async fn test_get_import_report_csv(pool: PgPool) {
         app,
         "/api/v1/validation/validate",
         json!({
-            "entity_type": "characters",
+            "entity_type": "avatars",
             "records": [{"name": "Carol", "project_id": 1}]
         }),
     )
@@ -210,7 +210,7 @@ async fn test_commit_import(pool: PgPool) {
         app,
         "/api/v1/validation/validate",
         json!({
-            "entity_type": "characters",
+            "entity_type": "avatars",
             "records": [{"name": "Dave", "project_id": 1}]
         }),
     )
@@ -241,7 +241,7 @@ async fn test_commit_already_committed_returns_409(pool: PgPool) {
         app,
         "/api/v1/validation/validate",
         json!({
-            "entity_type": "characters",
+            "entity_type": "avatars",
             "records": [{"name": "Eve", "project_id": 1}]
         }),
     )
@@ -306,7 +306,7 @@ async fn test_crud_validation_rule(pool: PgPool) {
         app,
         "/api/v1/validation/rules",
         json!({
-            "entity_type": "characters",
+            "entity_type": "avatars",
             "field_name": "custom_field",
             "rule_type_id": rule_type_id,
             "error_message": "Custom field is required"
@@ -352,7 +352,7 @@ async fn test_list_imports(pool: PgPool) {
         app,
         "/api/v1/validation/validate",
         json!({
-            "entity_type": "characters",
+            "entity_type": "avatars",
             "records": [{"name": "Frank", "project_id": 1}]
         }),
     )

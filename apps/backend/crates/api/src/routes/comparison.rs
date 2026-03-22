@@ -1,4 +1,4 @@
-//! Route definitions for cross-character scene comparison (PRD-68).
+//! Route definitions for cross-avatar scene comparison (PRD-68).
 
 use axum::routing::get;
 use axum::Router;
@@ -10,7 +10,7 @@ use crate::state::AppState;
 ///
 /// ```text
 /// GET /{project_id}/scene-comparison                       -> scene_comparison
-/// GET /{project_id}/characters/{character_id}/all-scenes   -> character_all_scenes
+/// GET /{project_id}/avatars/{avatar_id}/all-scenes   -> avatar_all_scenes
 /// ```
 pub fn router() -> Router<AppState> {
     Router::new()
@@ -19,7 +19,7 @@ pub fn router() -> Router<AppState> {
             get(comparison::scene_comparison),
         )
         .route(
-            "/{project_id}/characters/{character_id}/all-scenes",
-            get(comparison::character_all_scenes),
+            "/{project_id}/avatars/{avatar_id}/all-scenes",
+            get(comparison::avatar_all_scenes),
         )
 }

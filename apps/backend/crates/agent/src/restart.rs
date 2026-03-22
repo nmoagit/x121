@@ -12,7 +12,7 @@ use tokio::process::Command;
 /// Default timeout for a restart operation.
 const DEFAULT_RESTART_TIMEOUT: Duration = Duration::from_secs(60);
 
-/// Allowed service name characters: alphanumeric, hyphen, underscore, dot.
+/// Allowed service name avatars: alphanumeric, hyphen, underscore, dot.
 /// Prevents shell injection via the service name field.
 fn is_safe_service_name(name: &str) -> bool {
     !name.is_empty()

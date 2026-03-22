@@ -8,7 +8,7 @@ use std::collections::HashMap;
 
 use crate::error::CoreError;
 
-/// A single seed-image slot that a pipeline requires per character.
+/// A single seed-image slot that a pipeline requires per avatar.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SeedSlot {
     /// Human-readable slot name (e.g. "front_clothed").
@@ -23,7 +23,7 @@ pub struct SeedSlot {
 /// File-naming rules for a pipeline's generated outputs.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PipelineNamingRules {
-    /// Template string for video filenames (e.g. "{character}_{scene}_{track}").
+    /// Template string for video filenames (e.g. "{avatar}_{scene}_{track}").
     pub video_template: String,
     /// Per-field prefix rules (e.g. "scene" -> "SC").
     #[serde(default)]
@@ -38,7 +38,7 @@ pub struct PipelineNamingRules {
 pub struct PipelineDeliveryConfig {
     /// Template string for delivery archive names.
     pub archive_template: String,
-    /// Folder structure pattern inside archives (e.g. "{character}/{scene}").
+    /// Folder structure pattern inside archives (e.g. "{avatar}/{scene}").
     #[serde(default)]
     pub folder_structure: String,
 }

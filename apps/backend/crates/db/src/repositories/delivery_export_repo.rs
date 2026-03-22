@@ -8,7 +8,7 @@ use crate::models::delivery_export::{CreateDeliveryExport, DeliveryExport};
 use crate::models::status::StatusId;
 
 const COLUMNS: &str = "id, project_id, format_profile_id, status_id, exported_by, \
-     include_watermark, characters_json, file_path, file_size_bytes, \
+     include_watermark, avatars_json, file_path, file_size_bytes, \
      validation_results_json, error_message, started_at, completed_at, \
      created_at, updated_at";
 
@@ -23,7 +23,7 @@ impl DeliveryExportRepo {
     ) -> Result<DeliveryExport, sqlx::Error> {
         let query = format!(
             "INSERT INTO delivery_exports \
-                (project_id, format_profile_id, exported_by, include_watermark, characters_json) \
+                (project_id, format_profile_id, exported_by, include_watermark, avatars_json) \
              VALUES ($1, $2, $3, $4, $5) \
              RETURNING {COLUMNS}"
         );
@@ -32,7 +32,7 @@ impl DeliveryExportRepo {
             .bind(input.format_profile_id)
             .bind(input.exported_by)
             .bind(input.include_watermark)
-            .bind(&input.characters_json)
+            .bind(&input.avatars_json)
             .fetch_one(pool)
             .await
     }
@@ -163,23 +163,23 @@ impl DeliveryExportRepo {
             .await
     }
 
-    /// Compute per-character delivery status for a project.
+    /// Compute per-avatar delivery status for a project.
     ///
-    /// Joins characters with completed delivery exports to determine
-    /// which characters have been delivered, which need re-delivery
+    /// Joins avatars with completed delivery exports to determine
+    /// which avatars have been delivered, which need re-delivery
     /// (updated_at > last export), and which have never been delivered.
     ///
-    /// Only considers exports where the character was actually included
-    /// (`characters_json IS NULL` means all, otherwise checks the JSON array).
+    /// Only considers exports where the avatar was actually included
+    /// (`avatars_json IS NULL` means all, otherwise checks the JSON array).
     pub async fn delivery_status_by_project(
         pool: &PgPool,
         project_id: DbId,
-    ) -> Result<Vec<crate::models::delivery_export::CharacterDeliveryStatus>, sqlx::Error> {
+    ) -> Result<Vec<crate::models::delivery_export::AvatarDeliveryStatus>, sqlx::Error> {
         let completed = EXPORT_STATUS_ID_COMPLETED;
-        sqlx::query_as::<_, crate::models::delivery_export::CharacterDeliveryStatus>(&format!(
+        sqlx::query_as::<_, crate::models::delivery_export::AvatarDeliveryStatus>(&format!(
             "SELECT \
-                    c.id AS character_id, \
-                    c.name AS character_name, \
+                    c.id AS avatar_id, \
+                    c.name AS avatar_name, \
                     CASE \
                         WHEN de.completed_at IS NULL THEN 'not_delivered' \
                         WHEN c.updated_at > de.completed_at THEN 'needs_redelivery' \
@@ -187,13 +187,13 @@ impl DeliveryExportRepo {
                     END AS status, \
                     de.completed_at AS last_delivered_at, \
                     de.id AS export_id \
-                 FROM characters c \
+                 FROM avatars c \
                  LEFT JOIN LATERAL ( \
                     SELECT id, completed_at \
                     FROM delivery_exports \
                     WHERE project_id = $1 \
                       AND status_id = {completed} \
-                      AND (characters_json IS NULL OR characters_json @> to_jsonb(c.id)) \
+                      AND (avatars_json IS NULL OR avatars_json @> to_jsonb(c.id)) \
                     ORDER BY completed_at DESC \
                     LIMIT 1 \
                  ) de ON TRUE \

@@ -60,7 +60,7 @@ pub struct LlmConfig {
 /// Request to the LLM for metadata refinement.
 #[derive(Debug, Serialize)]
 pub struct RefinementRequest {
-    pub character_name: String,
+    pub avatar_name: String,
     pub bio_json: Option<serde_json::Value>,
     pub tov_json: Option<serde_json::Value>,
     pub metadata_template: serde_json::Value,
@@ -90,13 +90,13 @@ pub struct RefinementReport {
 
 /// Build the system prompt for the LLM refinement.
 ///
-/// Instructs the LLM to format, normalize, and structure character metadata
+/// Instructs the LLM to format, normalize, and structure avatar metadata
 /// according to the provided template schema. When `enrich` is true, the LLM
 /// is allowed to fill gaps with plausible values.
 pub fn build_system_prompt(template: &serde_json::Value, enrich: bool) -> String {
     let mut prompt = String::from(
         "You are a metadata refinement assistant. Your task is to format, normalize, and structure \
-         character Bio and ToV (Tone of Voice) data into the canonical metadata schema.\n\n\
+         avatar Bio and ToV (Tone of Voice) data into the canonical metadata schema.\n\n\
          Rules:\n\
          1. Map raw fields to the canonical schema keys provided.\n\
          2. Normalize values: proper capitalization, remove emojis, fix formatting.\n\
@@ -117,7 +117,7 @@ pub fn build_system_prompt(template: &serde_json::Value, enrich: bool) -> String
 
 /// Build the user message for the LLM with bio/tov data.
 pub fn build_user_message(request: &RefinementRequest) -> String {
-    let mut msg = format!("Character: {}\n\n", request.character_name);
+    let mut msg = format!("Avatar: {}\n\n", request.avatar_name);
     if let Some(bio) = &request.bio_json {
         msg.push_str("## Bio Data\n```json\n");
         msg.push_str(&serde_json::to_string_pretty(bio).unwrap_or_default());
@@ -276,7 +276,7 @@ mod tests {
     #[test]
     fn build_user_message_includes_bio_and_tov() {
         let req = RefinementRequest {
-            character_name: "TestChar".into(),
+            avatar_name: "TestChar".into(),
             bio_json: Some(json!({"name": "Test"})),
             tov_json: Some(json!({"tone": "friendly"})),
             metadata_template: json!({}),

@@ -1,6 +1,6 @@
 //! Handlers for generation strategy and workflow prompt management (PRD-115).
 //!
-//! Covers workflow prompt slots, scene-type prompt defaults, character+scene
+//! Covers workflow prompt slots, scene-type prompt defaults, avatar+scene
 //! prompt overrides, prompt resolution preview, and prompt fragment CRUD with
 //! scene-type pinning.
 
@@ -13,7 +13,7 @@ use serde::Deserialize;
 use x121_core::error::CoreError;
 use x121_core::prompt_resolution::{self, FragmentEntry, PromptSlotInput};
 use x121_core::types::DbId;
-use x121_db::models::character_scene_prompt_override::CreateCharacterScenePromptOverride;
+use x121_db::models::avatar_scene_prompt_override::CreateAvatarScenePromptOverride;
 use x121_db::models::group_prompt_override::CreateGroupPromptOverride;
 use x121_db::models::project_prompt_override::CreateProjectPromptOverride;
 use x121_db::models::prompt_fragment::{
@@ -22,7 +22,7 @@ use x121_db::models::prompt_fragment::{
 use x121_db::models::scene_type_prompt_default::CreateSceneTypePromptDefault;
 use x121_db::models::workflow_prompt_slot::UpdateWorkflowPromptSlot;
 use x121_db::repositories::{
-    CharacterScenePromptOverrideRepo, GroupPromptOverrideRepo, ProjectPromptOverrideRepo,
+    AvatarScenePromptOverrideRepo, GroupPromptOverrideRepo, ProjectPromptOverrideRepo,
     PromptFragmentRepo, SceneTypePromptDefaultRepo, WorkflowPromptSlotRepo,
 };
 
@@ -40,7 +40,7 @@ pub struct UpsertPromptDefaultRequest {
     pub prompt_text: String,
 }
 
-/// Body for upserting character+scene prompt overrides (bulk).
+/// Body for upserting avatar+scene prompt overrides (bulk).
 #[derive(Debug, Deserialize)]
 pub struct UpsertOverrideRequest {
     pub overrides: Vec<SlotOverride>,
@@ -60,7 +60,7 @@ pub struct SlotOverride {
 pub struct ResolvePromptRequest {
     pub workflow_id: DbId,
     pub scene_type_id: DbId,
-    pub character_id: DbId,
+    pub avatar_id: DbId,
     pub slot_id: Option<DbId>,
     pub project_id: Option<DbId>,
     pub group_id: Option<DbId>,
@@ -172,49 +172,49 @@ pub async fn upsert_prompt_default(
 }
 
 // ---------------------------------------------------------------------------
-// Character+Scene Prompt Overrides
+// Avatar+Scene Prompt Overrides
 // ---------------------------------------------------------------------------
 
-/// GET /api/v1/characters/{character_id}/scenes/{scene_type_id}/prompt-overrides
+/// GET /api/v1/avatars/{avatar_id}/scenes/{scene_type_id}/prompt-overrides
 ///
-/// List all prompt overrides for a character + scene type combination.
-pub async fn get_character_scene_overrides(
+/// List all prompt overrides for a avatar + scene type combination.
+pub async fn get_avatar_scene_overrides(
     State(state): State<AppState>,
-    Path((character_id, scene_type_id)): Path<(DbId, DbId)>,
+    Path((avatar_id, scene_type_id)): Path<(DbId, DbId)>,
 ) -> AppResult<
     Json<
         DataResponse<
-            Vec<x121_db::models::character_scene_prompt_override::CharacterScenePromptOverride>,
+            Vec<x121_db::models::avatar_scene_prompt_override::AvatarScenePromptOverride>,
         >,
     >,
 > {
-    let overrides = CharacterScenePromptOverrideRepo::list_by_character_and_scene_type(
+    let overrides = AvatarScenePromptOverrideRepo::list_by_avatar_and_scene_type(
         &state.pool,
-        character_id,
+        avatar_id,
         scene_type_id,
     )
     .await?;
     Ok(Json(DataResponse { data: overrides }))
 }
 
-/// PUT /api/v1/characters/{character_id}/scenes/{scene_type_id}/prompt-overrides
+/// PUT /api/v1/avatars/{avatar_id}/scenes/{scene_type_id}/prompt-overrides
 ///
-/// Upsert prompt overrides for a character + scene type. For each override,
+/// Upsert prompt overrides for a avatar + scene type. For each override,
 /// also increments usage counters on referenced fragments.
-pub async fn upsert_character_scene_overrides(
+pub async fn upsert_avatar_scene_overrides(
     State(state): State<AppState>,
-    Path((character_id, scene_type_id)): Path<(DbId, DbId)>,
+    Path((avatar_id, scene_type_id)): Path<(DbId, DbId)>,
     Json(body): Json<UpsertOverrideRequest>,
 ) -> AppResult<
     Json<
         DataResponse<
-            Vec<x121_db::models::character_scene_prompt_override::CharacterScenePromptOverride>,
+            Vec<x121_db::models::avatar_scene_prompt_override::AvatarScenePromptOverride>,
         >,
     >,
 > {
     for slot_override in &body.overrides {
-        let input = CreateCharacterScenePromptOverride {
-            character_id,
+        let input = CreateAvatarScenePromptOverride {
+            avatar_id,
             scene_type_id,
             prompt_slot_id: slot_override.prompt_slot_id,
             fragments: slot_override.fragments.clone(),
@@ -222,16 +222,16 @@ pub async fn upsert_character_scene_overrides(
             notes: slot_override.notes.clone(),
             created_by: None,
         };
-        CharacterScenePromptOverrideRepo::upsert(&state.pool, &input).await?;
+        AvatarScenePromptOverrideRepo::upsert(&state.pool, &input).await?;
 
         // Increment usage for any fragment_ref entries.
         increment_fragment_refs(&state.pool, &slot_override.fragments).await?;
     }
 
-    // Return the full set of overrides for the character+scene_type.
-    let overrides = CharacterScenePromptOverrideRepo::list_by_character_and_scene_type(
+    // Return the full set of overrides for the avatar+scene_type.
+    let overrides = AvatarScenePromptOverrideRepo::list_by_avatar_and_scene_type(
         &state.pool,
-        character_id,
+        avatar_id,
         scene_type_id,
     )
     .await?;
@@ -394,7 +394,7 @@ pub async fn upsert_group_prompt_overrides(
 
 /// POST /api/v1/prompts/resolve
 ///
-/// Preview the resolved prompts for a given workflow + scene type + character.
+/// Preview the resolved prompts for a given workflow + scene type + avatar.
 /// Optionally filter to a single slot via `slot_id`.
 pub async fn resolve_prompt_preview(
     State(state): State<AppState>,
@@ -418,8 +418,8 @@ pub async fn resolve_prompt_preview(
         .map(|d| (d.prompt_slot_id, d.prompt_text))
         .collect();
 
-    // 3. Character metadata (empty for now -- character metadata system from another PRD).
-    let character_metadata: HashMap<String, String> = HashMap::new();
+    // 3. Avatar metadata (empty for now -- avatar metadata system from another PRD).
+    let avatar_metadata: HashMap<String, String> = HashMap::new();
 
     // 4. Project-level overrides -> fragment map + override_text map.
     let (project_fragment_overrides, project_override_texts) =
@@ -454,14 +454,14 @@ pub async fn resolve_prompt_preview(
         (HashMap::new(), HashMap::new())
     };
 
-    // 6. Character+scene overrides -> fragment map + override_text map.
-    let char_rows = CharacterScenePromptOverrideRepo::list_by_character_and_scene_type(
+    // 6. Avatar+scene overrides -> fragment map + override_text map.
+    let char_rows = AvatarScenePromptOverrideRepo::list_by_avatar_and_scene_type(
         &state.pool,
-        body.character_id,
+        body.avatar_id,
         body.scene_type_id,
     )
     .await?;
-    let (character_fragment_overrides, character_override_texts) = extract_override_maps(
+    let (avatar_fragment_overrides, avatar_override_texts) = extract_override_maps(
         char_rows
             .iter()
             .map(|o| (o.prompt_slot_id, &o.fragments, &o.override_text)),
@@ -485,13 +485,13 @@ pub async fn resolve_prompt_preview(
     let mut resolved = prompt_resolution::resolve_prompts_with_overrides(
         &prompt_slot_inputs,
         &scene_type_defaults,
-        &character_metadata,
+        &avatar_metadata,
         &project_fragment_overrides,
         &group_fragment_overrides,
-        &character_fragment_overrides,
+        &avatar_fragment_overrides,
         &project_override_texts,
         &group_override_texts,
-        &character_override_texts,
+        &avatar_override_texts,
         None,
     );
 

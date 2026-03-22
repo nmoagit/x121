@@ -10,7 +10,7 @@ use crate::models::legacy_import_run::{
 
 /// Column list for legacy_import_runs queries.
 const COLUMNS: &str = "id, status_id, source_path, project_id, mapping_config, match_key, \
-    total_files, characters_created, characters_updated, scenes_registered, \
+    total_files, avatars_created, avatars_updated, scenes_registered, \
     images_registered, duplicates_found, errors, gap_report, initiated_by, \
     created_at, updated_at";
 
@@ -87,8 +87,8 @@ impl LegacyImportRunRepo {
         pool: &PgPool,
         id: DbId,
         total_files: i32,
-        characters_created: i32,
-        characters_updated: i32,
+        avatars_created: i32,
+        avatars_updated: i32,
         scenes_registered: i32,
         images_registered: i32,
         duplicates_found: i32,
@@ -97,8 +97,8 @@ impl LegacyImportRunRepo {
         let query = format!(
             "UPDATE legacy_import_runs SET
                 total_files = $2,
-                characters_created = $3,
-                characters_updated = $4,
+                avatars_created = $3,
+                avatars_updated = $4,
                 scenes_registered = $5,
                 images_registered = $6,
                 duplicates_found = $7,
@@ -109,8 +109,8 @@ impl LegacyImportRunRepo {
         sqlx::query_as::<_, LegacyImportRun>(&query)
             .bind(id)
             .bind(total_files)
-            .bind(characters_created)
-            .bind(characters_updated)
+            .bind(avatars_created)
+            .bind(avatars_updated)
             .bind(scenes_registered)
             .bind(images_registered)
             .bind(duplicates_found)

@@ -7,7 +7,7 @@ use crate::models::image::{CreateSourceImage, SourceImage, UpdateSourceImage};
 
 /// Column list shared across queries to avoid repetition.
 const COLUMNS: &str =
-    "id, character_id, file_path, description, is_primary, deleted_at, created_at, updated_at";
+    "id, avatar_id, file_path, description, is_primary, deleted_at, created_at, updated_at";
 
 /// Provides CRUD operations for source images.
 pub struct SourceImageRepo;
@@ -21,12 +21,12 @@ impl SourceImageRepo {
         input: &CreateSourceImage,
     ) -> Result<SourceImage, sqlx::Error> {
         let query = format!(
-            "INSERT INTO source_images (character_id, file_path, description, is_primary)
+            "INSERT INTO source_images (avatar_id, file_path, description, is_primary)
              VALUES ($1, $2, $3, COALESCE($4, false))
              RETURNING {COLUMNS}"
         );
         sqlx::query_as::<_, SourceImage>(&query)
-            .bind(input.character_id)
+            .bind(input.avatar_id)
             .bind(&input.file_path)
             .bind(&input.description)
             .bind(input.is_primary)
@@ -44,19 +44,19 @@ impl SourceImageRepo {
             .await
     }
 
-    /// List all source images for a given character, ordered by most recently created first.
+    /// List all source images for a given avatar, ordered by most recently created first.
     /// Excludes soft-deleted rows.
-    pub async fn list_by_character(
+    pub async fn list_by_avatar(
         pool: &PgPool,
-        character_id: DbId,
+        avatar_id: DbId,
     ) -> Result<Vec<SourceImage>, sqlx::Error> {
         let query = format!(
             "SELECT {COLUMNS} FROM source_images
-             WHERE character_id = $1 AND deleted_at IS NULL
+             WHERE avatar_id = $1 AND deleted_at IS NULL
              ORDER BY created_at DESC"
         );
         sqlx::query_as::<_, SourceImage>(&query)
-            .bind(character_id)
+            .bind(avatar_id)
             .fetch_all(pool)
             .await
     }

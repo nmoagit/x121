@@ -10,7 +10,7 @@ use crate::models::status::StatusId;
 #[derive(Debug, Clone, FromRow, Serialize)]
 pub struct Scene {
     pub id: DbId,
-    pub character_id: DbId,
+    pub avatar_id: DbId,
     pub scene_type_id: DbId,
     pub image_variant_id: Option<DbId>,
     pub track_id: Option<DbId>,
@@ -34,12 +34,12 @@ pub struct Scene {
 
 /// A scene row enriched with the latest video version info.
 ///
-/// Returned by `list_by_character_with_versions` to avoid N+1 queries
+/// Returned by `list_by_avatar_with_versions` to avoid N+1 queries
 /// when the frontend needs to show video thumbnails in the scene grid.
 #[derive(Debug, Clone, FromRow, Serialize)]
 pub struct SceneWithVersion {
     pub id: DbId,
-    pub character_id: DbId,
+    pub avatar_id: DbId,
     pub scene_type_id: DbId,
     pub image_variant_id: Option<DbId>,
     pub track_id: Option<DbId>,
@@ -67,13 +67,13 @@ pub struct SceneWithVersion {
 
 /// Enriched scene info returned by `batch_details`.
 ///
-/// Joins scenes with characters, scene types, and tracks to provide
+/// Joins scenes with avatars, scene types, and tracks to provide
 /// display-friendly names for queue management UIs (PRD-134).
 #[derive(Debug, Clone, FromRow, Serialize)]
 pub struct SceneDetail {
     pub id: DbId,
-    pub character_id: DbId,
-    pub character_name: String,
+    pub avatar_id: DbId,
+    pub avatar_name: String,
     pub project_id: Option<DbId>,
     pub scene_type_name: String,
     pub track_name: Option<String>,
@@ -85,7 +85,7 @@ pub struct SceneDetail {
 pub struct CreateScene {
     /// Set from the URL path by the handler — not required in the request body.
     #[serde(default)]
-    pub character_id: DbId,
+    pub avatar_id: DbId,
     pub scene_type_id: DbId,
     pub image_variant_id: Option<DbId>,
     pub track_id: Option<DbId>,

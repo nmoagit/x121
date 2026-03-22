@@ -149,7 +149,7 @@ pub fn classify_severity(failure_count: i32, total_count: i32) -> PatternSeverit
 pub fn compute_pattern_key(
     workflow_id: Option<DbId>,
     lora_id: Option<DbId>,
-    character_id: Option<DbId>,
+    avatar_id: Option<DbId>,
     scene_type_id: Option<DbId>,
     segment_position: Option<&str>,
 ) -> String {
@@ -160,7 +160,7 @@ pub fn compute_pattern_key(
     if let Some(id) = lora_id {
         parts.push(format!("l:{id}"));
     }
-    if let Some(id) = character_id {
+    if let Some(id) = avatar_id {
         parts.push(format!("c:{id}"));
     }
     if let Some(id) = scene_type_id {
@@ -458,14 +458,14 @@ mod tests {
     #[test]
     fn heatmap_single_cell() {
         let input = vec![PatternInput {
-            row_label: "Character A".to_string(),
+            row_label: "Avatar A".to_string(),
             col_label: "Scene Type X".to_string(),
             failure_count: 3,
             total_count: 10,
         }];
         let cells = build_heatmap_matrix(&input);
         assert_eq!(cells.len(), 1);
-        assert_eq!(cells[0].row_label, "Character A");
+        assert_eq!(cells[0].row_label, "Avatar A");
         assert_eq!(cells[0].col_label, "Scene Type X");
         assert!((cells[0].failure_rate - 0.3).abs() < f64::EPSILON);
         assert_eq!(cells[0].sample_count, 10);

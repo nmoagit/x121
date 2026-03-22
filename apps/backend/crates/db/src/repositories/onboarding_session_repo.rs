@@ -7,7 +7,7 @@ use crate::models::onboarding_session::OnboardingSession;
 
 /// Column list for `onboarding_sessions` queries.
 const COLUMNS: &str = "id, project_id, created_by_id, current_step, step_data, \
-     character_ids, status, created_at, updated_at";
+     avatar_ids, status, created_at, updated_at";
 
 /// Provides CRUD operations for onboarding sessions.
 pub struct OnboardingSessionRepo;
@@ -115,21 +115,21 @@ impl OnboardingSessionRepo {
             .await
     }
 
-    /// Append character IDs to the session's character_ids array.
-    pub async fn add_character_ids(
+    /// Append avatar IDs to the session's avatar_ids array.
+    pub async fn add_avatar_ids(
         pool: &PgPool,
         id: DbId,
-        character_ids: &[DbId],
+        avatar_ids: &[DbId],
     ) -> Result<Option<OnboardingSession>, sqlx::Error> {
         let query = format!(
             "UPDATE onboarding_sessions \
-             SET character_ids = character_ids || $2 \
+             SET avatar_ids = avatar_ids || $2 \
              WHERE id = $1 \
              RETURNING {COLUMNS}"
         );
         sqlx::query_as::<_, OnboardingSession>(&query)
             .bind(id)
-            .bind(character_ids)
+            .bind(avatar_ids)
             .fetch_optional(pool)
             .await
     }

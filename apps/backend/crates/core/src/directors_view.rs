@@ -45,7 +45,7 @@ pub fn parse_swipe_action(s: &str) -> Result<SwipeAction, CoreError> {
 #[derive(Debug, Clone, Serialize)]
 pub struct ReviewQueueItem {
     pub segment_id: i64,
-    pub character_name: String,
+    pub avatar_name: String,
     pub scene_type: String,
     pub status: String,
     pub thumbnail_url: Option<String>,
@@ -55,14 +55,14 @@ pub struct ReviewQueueItem {
 }
 
 /// Valid sort fields for the review queue.
-pub const VALID_SORT_FIELDS: &[&str] = &["submitted_at", "character", "scene_type"];
+pub const VALID_SORT_FIELDS: &[&str] = &["submitted_at", "avatar", "scene_type"];
 
 /// Sort review queue items in-place by the given field.
 ///
 /// Defaults to `submitted_at` (oldest first) if the sort field is unrecognised.
 pub fn sort_review_queue(items: &mut [ReviewQueueItem], sort_by: &str) {
     match sort_by {
-        "character" => items.sort_by(|a, b| a.character_name.cmp(&b.character_name)),
+        "avatar" => items.sort_by(|a, b| a.avatar_name.cmp(&b.avatar_name)),
         "scene_type" => items.sort_by(|a, b| a.scene_type.cmp(&b.scene_type)),
         // "submitted_at" and any unrecognised value fall through to date sort
         _ => items.sort_by(|a, b| a.submitted_at.cmp(&b.submitted_at)),
@@ -253,7 +253,7 @@ mod tests {
         vec![
             ReviewQueueItem {
                 segment_id: 1,
-                character_name: "Charlie".into(),
+                avatar_name: "Charlie".into(),
                 scene_type: "dialogue".into(),
                 status: "pending".into(),
                 thumbnail_url: None,
@@ -263,7 +263,7 @@ mod tests {
             },
             ReviewQueueItem {
                 segment_id: 2,
-                character_name: "Alice".into(),
+                avatar_name: "Alice".into(),
                 scene_type: "action".into(),
                 status: "pending".into(),
                 thumbnail_url: None,
@@ -273,7 +273,7 @@ mod tests {
             },
             ReviewQueueItem {
                 segment_id: 3,
-                character_name: "Bob".into(),
+                avatar_name: "Bob".into(),
                 scene_type: "closeup".into(),
                 status: "approved".into(),
                 thumbnail_url: None,
@@ -294,12 +294,12 @@ mod tests {
     }
 
     #[test]
-    fn test_sort_by_character() {
+    fn test_sort_by_avatar() {
         let mut items = make_items();
-        sort_review_queue(&mut items, "character");
-        assert_eq!(items[0].character_name, "Alice");
-        assert_eq!(items[1].character_name, "Bob");
-        assert_eq!(items[2].character_name, "Charlie");
+        sort_review_queue(&mut items, "avatar");
+        assert_eq!(items[0].avatar_name, "Alice");
+        assert_eq!(items[1].avatar_name, "Bob");
+        assert_eq!(items[2].avatar_name, "Charlie");
     }
 
     #[test]

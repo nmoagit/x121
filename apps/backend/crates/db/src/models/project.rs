@@ -18,9 +18,9 @@ pub struct Project {
     pub deleted_at: Option<Timestamp>,
     pub created_at: Timestamp,
     pub updated_at: Timestamp,
-    /// Optional threshold for auto-triggering character review (PRD-129).
+    /// Optional threshold for auto-triggering avatar review (PRD-129).
     pub review_trigger_threshold: Option<i16>,
-    /// Which deliverable sections must be complete for a character to be "done".
+    /// Which deliverable sections must be complete for a avatar to be "done".
     /// NULL = inherit from platform_settings default. When set, overrides studio default.
     pub blocking_deliverables: Option<Vec<String>>,
     /// Default output format profile for this project's deliveries.

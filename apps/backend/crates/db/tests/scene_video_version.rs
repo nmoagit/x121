@@ -11,14 +11,14 @@
 //! - Soft-delete hides versions from queries
 
 use sqlx::PgPool;
-use x121_db::models::character::CreateCharacter;
+use x121_db::models::avatar::CreateAvatar;
 use x121_db::models::image::CreateImageVariant;
 use x121_db::models::project::CreateProject;
 use x121_db::models::scene::CreateScene;
 use x121_db::models::scene_type::CreateSceneType;
 use x121_db::models::scene_video_version::CreateSceneVideoVersion;
 use x121_db::repositories::{
-    CharacterRepo, ImageVariantRepo, ProjectRepo, SceneRepo, SceneTypeRepo, SceneVideoVersionRepo,
+    AvatarRepo, ImageVariantRepo, ProjectRepo, SceneRepo, SceneTypeRepo, SceneVideoVersionRepo,
 };
 
 // ---------------------------------------------------------------------------
@@ -34,8 +34,8 @@ fn new_project(name: &str) -> CreateProject {
     }
 }
 
-fn new_character(project_id: i64, name: &str) -> CreateCharacter {
-    CreateCharacter {
+fn new_avatar(project_id: i64, name: &str) -> CreateAvatar {
+    CreateAvatar {
         project_id,
         name: name.to_string(),
         status_id: None,
@@ -70,9 +70,9 @@ fn new_scene_type(project_id: Option<i64>, name: &str) -> CreateSceneType {
     }
 }
 
-fn new_image_variant(character_id: i64, label: &str, path: &str) -> CreateImageVariant {
+fn new_image_variant(avatar_id: i64, label: &str, path: &str) -> CreateImageVariant {
     CreateImageVariant {
-        character_id,
+        avatar_id,
         source_image_id: None,
         derived_image_id: None,
         variant_label: label.to_string(),
@@ -91,9 +91,9 @@ fn new_image_variant(character_id: i64, label: &str, path: &str) -> CreateImageV
     }
 }
 
-fn new_scene(character_id: i64, scene_type_id: i64, image_variant_id: i64) -> CreateScene {
+fn new_scene(avatar_id: i64, scene_type_id: i64, image_variant_id: i64) -> CreateScene {
     CreateScene {
-        character_id,
+        avatar_id,
         scene_type_id,
         image_variant_id,
         status_id: None,
@@ -121,8 +121,8 @@ async fn setup_hierarchy(pool: &PgPool, suffix: &str) -> (i64, i64) {
     let project = ProjectRepo::create(pool, &new_project(&format!("VVP_{suffix}")))
         .await
         .unwrap();
-    let character =
-        CharacterRepo::create(pool, &new_character(project.id, &format!("VVC_{suffix}")))
+    let avatar =
+        AvatarRepo::create(pool, &new_avatar(project.id, &format!("VVC_{suffix}")))
             .await
             .unwrap();
     let scene_type = SceneTypeRepo::create(
@@ -133,11 +133,11 @@ async fn setup_hierarchy(pool: &PgPool, suffix: &str) -> (i64, i64) {
     .unwrap();
     let variant = ImageVariantRepo::create(
         pool,
-        &new_image_variant(character.id, "clothed", &format!("/img/vv_{suffix}.png")),
+        &new_image_variant(avatar.id, "clothed", &format!("/img/vv_{suffix}.png")),
     )
     .await
     .unwrap();
-    let scene = SceneRepo::create(pool, &new_scene(character.id, scene_type.id, variant.id))
+    let scene = SceneRepo::create(pool, &new_scene(avatar.id, scene_type.id, variant.id))
         .await
         .unwrap();
     (project.id, scene.id)
@@ -348,7 +348,7 @@ async fn test_find_scenes_missing_final(pool: PgPool) {
     let project = ProjectRepo::create(&pool, &new_project("MissingFinal"))
         .await
         .unwrap();
-    let character = CharacterRepo::create(&pool, &new_character(project.id, "MFChar"))
+    let avatar = AvatarRepo::create(&pool, &new_avatar(project.id, "MFChar"))
         .await
         .unwrap();
     let st1 = SceneTypeRepo::create(&pool, &new_scene_type(Some(project.id), "MF_Dance"))
@@ -359,15 +359,15 @@ async fn test_find_scenes_missing_final(pool: PgPool) {
         .unwrap();
     let variant = ImageVariantRepo::create(
         &pool,
-        &new_image_variant(character.id, "clothed", "/img/mf.png"),
+        &new_image_variant(avatar.id, "clothed", "/img/mf.png"),
     )
     .await
     .unwrap();
 
-    let scene1 = SceneRepo::create(&pool, &new_scene(character.id, st1.id, variant.id))
+    let scene1 = SceneRepo::create(&pool, &new_scene(avatar.id, st1.id, variant.id))
         .await
         .unwrap();
-    let scene2 = SceneRepo::create(&pool, &new_scene(character.id, st2.id, variant.id))
+    let scene2 = SceneRepo::create(&pool, &new_scene(avatar.id, st2.id, variant.id))
         .await
         .unwrap();
 

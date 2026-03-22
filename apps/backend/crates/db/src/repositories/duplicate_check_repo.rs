@@ -9,7 +9,7 @@ use crate::models::status::StatusId;
 
 /// Column list shared across queries to avoid repetition.
 const COLUMNS: &str = "\
-    id, status_id, source_character_id, matched_character_id, \
+    id, status_id, source_avatar_id, matched_avatar_id, \
     similarity_score, threshold_used, check_type, resolution, \
     resolved_by, resolved_at, created_at, updated_at";
 
@@ -25,15 +25,15 @@ impl DuplicateCheckRepo {
         let status_id = body.status_id.unwrap_or(1); // default: no_match
         let query = format!(
             "INSERT INTO duplicate_checks
-                (status_id, source_character_id, matched_character_id,
+                (status_id, source_avatar_id, matched_avatar_id,
                  similarity_score, threshold_used, check_type)
              VALUES ($1, $2, $3, $4, $5, $6)
              RETURNING {COLUMNS}"
         );
         sqlx::query_as::<_, DuplicateCheck>(&query)
             .bind(status_id)
-            .bind(body.source_character_id)
-            .bind(body.matched_character_id)
+            .bind(body.source_avatar_id)
+            .bind(body.matched_avatar_id)
             .bind(body.similarity_score)
             .bind(body.threshold_used)
             .bind(&body.check_type)
@@ -50,20 +50,20 @@ impl DuplicateCheckRepo {
             .await
     }
 
-    /// List duplicate checks for a specific source character.
-    pub async fn list_by_character(
+    /// List duplicate checks for a specific source avatar.
+    pub async fn list_by_avatar(
         pool: &PgPool,
-        character_id: DbId,
+        avatar_id: DbId,
         limit: i64,
     ) -> Result<Vec<DuplicateCheck>, sqlx::Error> {
         let query = format!(
             "SELECT {COLUMNS} FROM duplicate_checks
-             WHERE source_character_id = $1
+             WHERE source_avatar_id = $1
              ORDER BY created_at DESC
              LIMIT $2"
         );
         sqlx::query_as::<_, DuplicateCheck>(&query)
-            .bind(character_id)
+            .bind(avatar_id)
             .bind(limit)
             .fetch_all(pool)
             .await

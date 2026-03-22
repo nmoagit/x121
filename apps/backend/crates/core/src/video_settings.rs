@@ -5,7 +5,7 @@
 //! 2. **Scene type** -- `scene_types.target_duration_secs`, `target_fps`, `target_resolution`
 //! 3. **Project** -- `project_video_settings`
 //! 4. **Group** -- `group_video_settings`
-//! 5. **Character** -- `character_video_settings`
+//! 5. **Avatar** -- `avatar_video_settings`
 //!
 //! The most specific non-None value wins for each individual setting.
 
@@ -53,8 +53,8 @@ pub enum VideoSettingSource {
     Project,
     /// Overridden at the group level.
     Group,
-    /// Overridden at the character level.
-    Character,
+    /// Overridden at the avatar level.
+    Avatar,
 }
 
 /// Fully resolved video settings with provenance tracking for each field.
@@ -96,13 +96,13 @@ pub fn resolution_dimensions(resolution: &str) -> (u32, u32) {
 /// * `scene_type` -- settings from the scene type row (always present).
 /// * `project` -- optional project-level overrides.
 /// * `group` -- optional group-level overrides.
-/// * `character` -- optional character-level overrides.
+/// * `avatar` -- optional avatar-level overrides.
 /// * `is_idle` -- if true, the system default duration is [`IDLE_DURATION_SECS`].
 pub fn resolve_video_settings(
     scene_type: &VideoSettingsLayer,
     project: Option<&VideoSettingsLayer>,
     group: Option<&VideoSettingsLayer>,
-    character: Option<&VideoSettingsLayer>,
+    avatar: Option<&VideoSettingsLayer>,
     is_idle: bool,
 ) -> ResolvedVideoSettings {
     let default_duration = if is_idle {
@@ -123,7 +123,7 @@ pub fn resolve_video_settings(
         (Some(scene_type), VideoSettingSource::SceneType),
         (project, VideoSettingSource::Project),
         (group, VideoSettingSource::Group),
-        (character, VideoSettingSource::Character),
+        (avatar, VideoSettingSource::Avatar),
     ];
 
     for &(layer_opt, source) in layers {
@@ -231,7 +231,7 @@ mod tests {
     }
 
     #[test]
-    fn test_character_overrides_everything() {
+    fn test_avatar_overrides_everything() {
         let scene_type = VideoSettingsLayer {
             target_duration_secs: Some(16),
             target_fps: Some(30),
@@ -247,7 +247,7 @@ mod tests {
             target_fps: None,
             target_resolution: None,
         };
-        let character = VideoSettingsLayer {
+        let avatar = VideoSettingsLayer {
             target_duration_secs: None, // Inherits from group
             target_fps: Some(60),
             target_resolution: Some("4k".to_string()),
@@ -256,16 +256,16 @@ mod tests {
             &scene_type,
             Some(&project),
             Some(&group),
-            Some(&character),
+            Some(&avatar),
             false,
         );
 
         assert_eq!(result.duration_secs, 20);
         assert_eq!(result.duration_source, VideoSettingSource::Group);
         assert_eq!(result.fps, 60);
-        assert_eq!(result.fps_source, VideoSettingSource::Character);
+        assert_eq!(result.fps_source, VideoSettingSource::Avatar);
         assert_eq!(result.resolution, "4k");
-        assert_eq!(result.resolution_source, VideoSettingSource::Character);
+        assert_eq!(result.resolution_source, VideoSettingSource::Avatar);
     }
 
     #[test]
@@ -280,20 +280,20 @@ mod tests {
             target_fps: Some(24),
             target_resolution: None,
         };
-        let character = VideoSettingsLayer {
+        let avatar = VideoSettingsLayer {
             target_duration_secs: None,
             target_fps: None,
             target_resolution: Some("1080p".to_string()),
         };
         let result =
-            resolve_video_settings(&scene_type, None, Some(&group), Some(&character), false);
+            resolve_video_settings(&scene_type, None, Some(&group), Some(&avatar), false);
 
         assert_eq!(result.duration_secs, 16);
         assert_eq!(result.duration_source, VideoSettingSource::SceneType);
         assert_eq!(result.fps, 24);
         assert_eq!(result.fps_source, VideoSettingSource::Group);
         assert_eq!(result.resolution, "1080p");
-        assert_eq!(result.resolution_source, VideoSettingSource::Character);
+        assert_eq!(result.resolution_source, VideoSettingSource::Avatar);
     }
 
     #[test]

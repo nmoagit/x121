@@ -1,7 +1,7 @@
 //! Handlers for Batch Metadata Operations endpoints (PRD-88).
 //!
 //! Provides preview, execute, undo, list, and detail endpoints for batch
-//! metadata operations on characters within a project.
+//! metadata operations on avatars within a project.
 
 use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
@@ -31,7 +31,7 @@ use crate::state::AppState;
 pub struct CreatePreviewRequest {
     pub operation_type: String,
     pub project_id: DbId,
-    pub character_ids: Vec<DbId>,
+    pub avatar_ids: Vec<DbId>,
     #[serde(default)]
     pub parameters: serde_json::Value,
     pub field_name: Option<String>,
@@ -125,20 +125,20 @@ pub async fn create_preview(
     }
 
     // Validate batch size.
-    batch_metadata::validate_batch_size(body.character_ids.len()).map_err(AppError::BadRequest)?;
+    batch_metadata::validate_batch_size(body.avatar_ids.len()).map_err(AppError::BadRequest)?;
 
     let summary = batch_metadata::compute_batch_summary(
         &op_type,
         body.field_name.as_deref(),
-        body.character_ids.len(),
+        body.avatar_ids.len(),
     );
 
     let create = CreateBatchMetadataOperation {
         status_id: BatchMetadataOpStatusId::Preview.id(),
         operation_type: body.operation_type,
         project_id: body.project_id,
-        character_ids: body.character_ids.clone(),
-        character_count: body.character_ids.len() as i32,
+        avatar_ids: body.avatar_ids.clone(),
+        avatar_count: body.avatar_ids.len() as i32,
         parameters: body.parameters,
         before_snapshot: serde_json::json!({}),
         after_snapshot: serde_json::json!({}),
@@ -153,7 +153,7 @@ pub async fn create_preview(
         user_id = auth.user_id,
         operation_id = op.id,
         operation_type = %op.operation_type,
-        character_count = op.character_count,
+        avatar_count = op.avatar_count,
         "Batch metadata preview created"
     );
 
@@ -211,7 +211,7 @@ pub async fn execute_operation(
     tracing::info!(
         user_id = auth.user_id,
         operation_id = id,
-        affected_count = completed.character_count,
+        affected_count = completed.avatar_count,
         "Batch metadata operation executed"
     );
 

@@ -77,17 +77,17 @@ impl PosterFrameRepo {
             .await
     }
 
-    /// List all character poster frames for a given project.
+    /// List all avatar poster frames for a given project.
     ///
-    /// Joins through `characters` to filter by `project_id`.
+    /// Joins through `avatars` to filter by `project_id`.
     pub async fn get_project_gallery(
         pool: &PgPool,
         project_id: DbId,
     ) -> Result<Vec<PosterFrame>, sqlx::Error> {
         let query = format!(
             "SELECT {COLUMNS_PF} FROM poster_frames pf \
-             JOIN characters c ON pf.entity_id = c.id \
-             WHERE pf.entity_type = 'character' \
+             JOIN avatars c ON pf.entity_id = c.id \
+             WHERE pf.entity_type = 'avatar' \
                AND c.project_id = $1 \
                AND c.deleted_at IS NULL \
              ORDER BY c.name ASC"

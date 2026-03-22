@@ -80,8 +80,8 @@ pub async fn transition_project(
             let checklist = evaluate_checklist(
                 agg.total_scenes,
                 agg.approved_scenes,
-                agg.total_characters,
-                agg.characters_with_metadata,
+                agg.total_avatars,
+                agg.avatars_with_metadata,
             );
 
             if !checklist.passed {
@@ -118,7 +118,7 @@ pub async fn transition_project(
 
         // Generate summary report.
         let summary_data = ProjectSummaryData {
-            total_characters: agg.total_characters as i32,
+            total_avatars: agg.total_avatars as i32,
             total_scenes: agg.total_scenes as i32,
             total_segments: agg.total_segments as i32,
             approved_scenes: agg.approved_scenes as i32,
@@ -212,8 +212,8 @@ pub async fn get_checklist(
     let checklist = evaluate_checklist(
         agg.total_scenes,
         agg.approved_scenes,
-        agg.total_characters,
-        agg.characters_with_metadata,
+        agg.total_avatars,
+        agg.avatars_with_metadata,
     );
 
     Ok(Json(DataResponse { data: checklist }))

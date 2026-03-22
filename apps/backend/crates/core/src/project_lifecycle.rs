@@ -10,7 +10,7 @@ use chrono::{DateTime, Utc};
 // Lifecycle state constants
 // ---------------------------------------------------------------------------
 
-/// Project is being configured; characters onboarded, no generation started.
+/// Project is being configured; avatars onboarded, no generation started.
 pub const STATE_SETUP: &str = "setup";
 
 /// Project is actively generating scenes.
@@ -165,18 +165,18 @@ impl ChecklistResult {
 pub fn evaluate_checklist(
     total_scenes: i64,
     approved_scenes: i64,
-    total_characters: i64,
-    characters_with_metadata: i64,
+    total_avatars: i64,
+    avatars_with_metadata: i64,
 ) -> ChecklistResult {
     let mut items = Vec::new();
 
     items.push(ChecklistItem {
-        name: "has_characters".to_string(),
-        description: "Project has at least one character".to_string(),
-        passed: total_characters > 0,
+        name: "has_avatars".to_string(),
+        description: "Project has at least one avatar".to_string(),
+        passed: total_avatars > 0,
         blocking: true,
-        details: if total_characters == 0 {
-            Some("No characters in project".to_string())
+        details: if total_avatars == 0 {
+            Some("No avatars in project".to_string())
         } else {
             None
         },
@@ -212,14 +212,14 @@ pub fn evaluate_checklist(
     items.push(ChecklistItem {
         name: "metadata_complete".to_string(),
         description: format!(
-            "{characters_with_metadata} of {total_characters} characters have complete metadata"
+            "{avatars_with_metadata} of {total_avatars} avatars have complete metadata"
         ),
-        passed: total_characters > 0 && characters_with_metadata == total_characters,
+        passed: total_avatars > 0 && avatars_with_metadata == total_avatars,
         blocking: true,
-        details: if total_characters > 0 && characters_with_metadata < total_characters {
+        details: if total_avatars > 0 && avatars_with_metadata < total_avatars {
             Some(format!(
-                "{} character(s) missing metadata",
-                total_characters - characters_with_metadata
+                "{} avatar(s) missing metadata",
+                total_avatars - avatars_with_metadata
             ))
         } else {
             None
@@ -236,7 +236,7 @@ pub fn evaluate_checklist(
 /// Aggregate data for a project summary report.
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct ProjectSummaryData {
-    pub total_characters: i32,
+    pub total_avatars: i32,
     pub total_scenes: i32,
     pub total_segments: i32,
     pub approved_scenes: i32,
@@ -417,7 +417,7 @@ mod tests {
         let chars_item = result
             .items
             .iter()
-            .find(|i| i.name == "has_characters")
+            .find(|i| i.name == "has_avatars")
             .unwrap();
         assert!(!chars_item.passed);
         let scenes_item = result
@@ -442,7 +442,7 @@ mod tests {
             .details
             .as_ref()
             .unwrap()
-            .contains("2 character(s)"));
+            .contains("2 avatar(s)"));
     }
 
     // -- Summary helpers ------------------------------------------------------

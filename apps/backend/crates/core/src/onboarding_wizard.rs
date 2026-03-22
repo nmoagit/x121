@@ -1,7 +1,7 @@
 //! Onboarding wizard constants and validation (PRD-67).
 //!
 //! Defines the wizard step definitions, status enumeration, and validation
-//! helpers used by the API and repository layers for the bulk character
+//! helpers used by the API and repository layers for the bulk avatar
 //! onboarding wizard.
 
 use serde::{Deserialize, Serialize};
@@ -117,8 +117,8 @@ impl OnboardingStep {
 /// JSON key for uploaded file references in step 1 data.
 pub const STEP_DATA_KEY_FILES: &str = "files";
 
-/// JSON key for CSV parsed characters in step 1 data.
-pub const STEP_DATA_KEY_CSV_CHARACTERS: &str = "csv_characters";
+/// JSON key for CSV parsed avatars in step 1 data.
+pub const STEP_DATA_KEY_CSV_AVATARS: &str = "csv_avatars";
 
 /// JSON key for variant generation job IDs in step 2 data.
 pub const STEP_DATA_KEY_VARIANT_JOBS: &str = "variant_jobs";
@@ -180,18 +180,18 @@ pub fn validate_step_data(step: u8, data: &serde_json::Value) -> Result<(), Core
 
     match step_enum {
         OnboardingStep::Upload => {
-            // Step 1 requires either files or csv_characters (at least one).
+            // Step 1 requires either files or csv_avatars (at least one).
             let has_files = obj
                 .get(STEP_DATA_KEY_FILES)
                 .and_then(|v| v.as_array())
                 .map_or(false, |a| !a.is_empty());
             let has_csv = obj
-                .get(STEP_DATA_KEY_CSV_CHARACTERS)
+                .get(STEP_DATA_KEY_CSV_AVATARS)
                 .and_then(|v| v.as_array())
                 .map_or(false, |a| !a.is_empty());
             if !has_files && !has_csv {
                 return Err(CoreError::Validation(
-                    "Step 1 (Upload) requires either 'files' or 'csv_characters' data".to_string(),
+                    "Step 1 (Upload) requires either 'files' or 'csv_avatars' data".to_string(),
                 ));
             }
         }
@@ -409,7 +409,7 @@ mod tests {
 
     #[test]
     fn step1_valid_with_csv() {
-        let data = json!({ "csv_characters": [{"name": "Character A"}] });
+        let data = json!({ "csv_avatars": [{"name": "Avatar A"}] });
         assert!(validate_step_data(1, &data).is_ok());
     }
 
@@ -451,7 +451,7 @@ mod tests {
 
     #[test]
     fn step4_valid() {
-        let data = json!({ "metadata": [{"character_id": 1, "name": "Test"}] });
+        let data = json!({ "metadata": [{"avatar_id": 1, "name": "Test"}] });
         assert!(validate_step_data(4, &data).is_ok());
     }
 

@@ -1,7 +1,7 @@
 //! Handlers for the `/image-variants` resource.
 //!
-//! Image variants are nested under characters:
-//! `/characters/{character_id}/image-variants[/{id}]`
+//! Image variants are nested under avatars:
+//! `/avatars/{avatar_id}/image-variants[/{id}]`
 
 use axum::extract::{Multipart, Path, Query, State};
 use axum::http::StatusCode;
@@ -39,29 +39,29 @@ async fn ensure_variant_dir(state: &AppState) -> AppResult<std::path::PathBuf> {
 // Existing CRUD handlers
 // ---------------------------------------------------------------------------
 
-/// POST /api/v1/characters/{character_id}/image-variants
+/// POST /api/v1/avatars/{avatar_id}/image-variants
 ///
-/// Overrides `input.character_id` with the value from the URL path.
+/// Overrides `input.avatar_id` with the value from the URL path.
 pub async fn create(
     State(state): State<AppState>,
-    Path(character_id): Path<DbId>,
+    Path(avatar_id): Path<DbId>,
     Json(mut input): Json<CreateImageVariant>,
 ) -> AppResult<impl IntoResponse> {
-    input.character_id = character_id;
+    input.avatar_id = avatar_id;
     let variant = ImageVariantRepo::create(&state.pool, &input).await?;
     Ok((StatusCode::CREATED, Json(DataResponse { data: variant })))
 }
 
-/// GET /api/v1/characters/{character_id}/image-variants
-pub async fn list_by_character(
+/// GET /api/v1/avatars/{avatar_id}/image-variants
+pub async fn list_by_avatar(
     State(state): State<AppState>,
-    Path(character_id): Path<DbId>,
+    Path(avatar_id): Path<DbId>,
     Query(filters): Query<VariantListFilters>,
 ) -> AppResult<impl IntoResponse> {
     let variants = if let Some(ref vt) = filters.variant_type {
-        ImageVariantRepo::list_by_character_and_type(&state.pool, character_id, vt).await?
+        ImageVariantRepo::list_by_avatar_and_type(&state.pool, avatar_id, vt).await?
     } else {
-        ImageVariantRepo::list_by_character(&state.pool, character_id).await?
+        ImageVariantRepo::list_by_avatar(&state.pool, avatar_id).await?
     };
     Ok(Json(DataResponse { data: variants }))
 }
@@ -72,10 +72,10 @@ pub struct VariantListFilters {
     pub variant_type: Option<String>,
 }
 
-/// GET /api/v1/characters/{character_id}/image-variants/{id}
+/// GET /api/v1/avatars/{avatar_id}/image-variants/{id}
 pub async fn get_by_id(
     State(state): State<AppState>,
-    Path((_character_id, id)): Path<(DbId, DbId)>,
+    Path((_avatar_id, id)): Path<(DbId, DbId)>,
 ) -> AppResult<impl IntoResponse> {
     let variant = ImageVariantRepo::find_by_id(&state.pool, id)
         .await?
@@ -86,10 +86,10 @@ pub async fn get_by_id(
     Ok(Json(DataResponse { data: variant }))
 }
 
-/// PUT /api/v1/characters/{character_id}/image-variants/{id}
+/// PUT /api/v1/avatars/{avatar_id}/image-variants/{id}
 pub async fn update(
     State(state): State<AppState>,
-    Path((_character_id, id)): Path<(DbId, DbId)>,
+    Path((_avatar_id, id)): Path<(DbId, DbId)>,
     Json(input): Json<UpdateImageVariant>,
 ) -> AppResult<impl IntoResponse> {
     let variant = ImageVariantRepo::update(&state.pool, id, &input)
@@ -101,10 +101,10 @@ pub async fn update(
     Ok(Json(DataResponse { data: variant }))
 }
 
-/// DELETE /api/v1/characters/{character_id}/image-variants/{id}
+/// DELETE /api/v1/avatars/{avatar_id}/image-variants/{id}
 pub async fn delete(
     State(state): State<AppState>,
-    Path((_character_id, id)): Path<(DbId, DbId)>,
+    Path((_avatar_id, id)): Path<(DbId, DbId)>,
 ) -> AppResult<StatusCode> {
     let deleted = ImageVariantRepo::soft_delete(&state.pool, id).await?;
     if deleted {
@@ -121,13 +121,13 @@ pub async fn delete(
 // PRD-21: Variant lifecycle handlers
 // ---------------------------------------------------------------------------
 
-/// POST /api/v1/characters/{character_id}/image-variants/{id}/approve
+/// POST /api/v1/avatars/{avatar_id}/image-variants/{id}/approve
 ///
-/// Approve a variant and set it as the hero for its character+variant_type.
+/// Approve a variant and set it as the hero for its avatar+variant_type.
 /// Clears the previous hero atomically.
 pub async fn approve_as_hero(
     State(state): State<AppState>,
-    Path((_character_id, id)): Path<(DbId, DbId)>,
+    Path((_avatar_id, id)): Path<(DbId, DbId)>,
 ) -> AppResult<impl IntoResponse> {
     // Validate variant exists and is in an approvable state.
     let variant = ImageVariantRepo::find_by_id(&state.pool, id)
@@ -158,12 +158,12 @@ pub async fn approve_as_hero(
     Ok(Json(DataResponse { data: updated }))
 }
 
-/// POST /api/v1/characters/{character_id}/image-variants/{id}/unapprove
+/// POST /api/v1/avatars/{avatar_id}/image-variants/{id}/unapprove
 ///
 /// Revert an approved or rejected variant back to pending status.
 pub async fn unapprove_variant(
     State(state): State<AppState>,
-    Path((_character_id, id)): Path<(DbId, DbId)>,
+    Path((_avatar_id, id)): Path<(DbId, DbId)>,
 ) -> AppResult<impl IntoResponse> {
     let variant = ImageVariantRepo::find_by_id(&state.pool, id)
         .await?
@@ -207,12 +207,12 @@ pub async fn unapprove_variant(
     Ok(Json(DataResponse { data: updated }))
 }
 
-/// POST /api/v1/characters/{character_id}/image-variants/{id}/reject
+/// POST /api/v1/avatars/{avatar_id}/image-variants/{id}/reject
 ///
 /// Set variant status to rejected.
 pub async fn reject_variant(
     State(state): State<AppState>,
-    Path((_character_id, id)): Path<(DbId, DbId)>,
+    Path((_avatar_id, id)): Path<(DbId, DbId)>,
 ) -> AppResult<impl IntoResponse> {
     let input = UpdateImageVariant {
         status_id: Some(ImageVariantStatus::Rejected.id()),
@@ -240,13 +240,13 @@ pub async fn reject_variant(
     Ok(Json(DataResponse { data: variant }))
 }
 
-/// POST /api/v1/characters/{character_id}/image-variants/{id}/export
+/// POST /api/v1/avatars/{avatar_id}/image-variants/{id}/export
 ///
 /// Mark a variant as being edited externally. Returns the variant with
 /// status set to `editing`. The caller uses `file_path` to download the image.
 pub async fn export_for_editing(
     State(state): State<AppState>,
-    Path((_character_id, id)): Path<(DbId, DbId)>,
+    Path((_avatar_id, id)): Path<(DbId, DbId)>,
 ) -> AppResult<impl IntoResponse> {
     let input = UpdateImageVariant {
         status_id: Some(ImageVariantStatus::Editing.id()),
@@ -274,13 +274,13 @@ pub async fn export_for_editing(
     Ok(Json(DataResponse { data: variant }))
 }
 
-/// POST /api/v1/characters/{character_id}/image-variants/{id}/reimport
+/// POST /api/v1/avatars/{avatar_id}/image-variants/{id}/reimport
 ///
 /// Re-import an edited variant. Creates a new variant record linked to the
 /// original via `parent_variant_id` with provenance `manually_edited`.
 pub async fn reimport_variant(
     State(state): State<AppState>,
-    Path((character_id, id)): Path<(DbId, DbId)>,
+    Path((avatar_id, id)): Path<(DbId, DbId)>,
     mut multipart: Multipart,
 ) -> AppResult<impl IntoResponse> {
     let original = ImageVariantRepo::find_by_id(&state.pool, id)
@@ -323,7 +323,7 @@ pub async fn reimport_variant(
     let storage_dir = ensure_variant_dir(&state).await?;
 
     let stored_filename = format!(
-        "variant_{character_id}_{id}_v{}_{}.{ext}",
+        "variant_{avatar_id}_{id}_v{}_{}.{ext}",
         original.version + 1,
         chrono::Utc::now().timestamp()
     );
@@ -340,7 +340,7 @@ pub async fn reimport_variant(
         .unwrap_or((None, None));
 
     let input = CreateImageVariant {
-        character_id,
+        avatar_id,
         source_image_id: original.source_image_id,
         derived_image_id: original.derived_image_id,
         variant_label: original.variant_label.clone(),
@@ -363,12 +363,12 @@ pub async fn reimport_variant(
     Ok((StatusCode::CREATED, Json(DataResponse { data: variant })))
 }
 
-/// POST /api/v1/characters/{character_id}/image-variants/upload
+/// POST /api/v1/avatars/{avatar_id}/image-variants/upload
 ///
 /// Upload a manually created variant (not generated).
 pub async fn upload_manual_variant(
     State(state): State<AppState>,
-    Path(character_id): Path<DbId>,
+    Path(avatar_id): Path<DbId>,
     mut multipart: Multipart,
 ) -> AppResult<impl IntoResponse> {
     let mut file_data: Option<(String, Vec<u8>)> = None;
@@ -428,7 +428,7 @@ pub async fn upload_manual_variant(
     let storage_dir = ensure_variant_dir(&state).await?;
 
     let stored_filename = format!(
-        "variant_{character_id}_{vtype}_{}.{ext}",
+        "variant_{avatar_id}_{vtype}_{}.{ext}",
         chrono::Utc::now().timestamp_millis()
     );
     let abs_path = storage_dir.join(&stored_filename);
@@ -439,8 +439,8 @@ pub async fn upload_manual_variant(
     // Store the storage key (not absolute path) in the DB.
     let storage_key = format!("{VARIANT_KEY_PREFIX}/{stored_filename}");
 
-    // Auto-promote to hero if no hero exists yet for this character+variant_type.
-    let existing_hero = ImageVariantRepo::find_hero(&state.pool, character_id, &vtype).await?;
+    // Auto-promote to hero if no hero exists yet for this avatar+variant_type.
+    let existing_hero = ImageVariantRepo::find_hero(&state.pool, avatar_id, &vtype).await?;
     let should_be_hero = existing_hero.is_none();
 
     let (width, height) = images::image_dimensions(&data)
@@ -450,7 +450,7 @@ pub async fn upload_manual_variant(
     let content_hash = sha256_hex(&data);
 
     let input = CreateImageVariant {
-        character_id,
+        avatar_id,
         source_image_id: None,
         derived_image_id: None,
         variant_label: vlabel,
@@ -475,10 +475,10 @@ pub async fn upload_manual_variant(
         ActivityLogEntry::curated(
             ActivityLogLevel::Info,
             ActivityLogSource::Api,
-            format!("Image uploaded for character {character_id}: {filename}"),
+            format!("Image uploaded for avatar {avatar_id}: {filename}"),
         )
         .with_fields(serde_json::json!({
-            "character_id": character_id,
+            "avatar_id": avatar_id,
             "variant_id": variant.id,
             "variant_type": &input.variant_type,
             "filename": filename,
@@ -488,12 +488,12 @@ pub async fn upload_manual_variant(
     Ok((StatusCode::CREATED, Json(DataResponse { data: variant })))
 }
 
-/// GET /api/v1/characters/{character_id}/image-variants/{id}/history
+/// GET /api/v1/avatars/{avatar_id}/image-variants/{id}/history
 ///
 /// Return the version chain for a variant.
 pub async fn variant_history(
     State(state): State<AppState>,
-    Path((_character_id, id)): Path<(DbId, DbId)>,
+    Path((_avatar_id, id)): Path<(DbId, DbId)>,
 ) -> AppResult<impl IntoResponse> {
     let chain = ImageVariantRepo::list_version_chain(&state.pool, id).await?;
     if chain.is_empty() {
@@ -582,7 +582,7 @@ pub struct ThumbnailParams {
     pub size: Option<u16>,
 }
 
-/// POST /api/v1/characters/{character_id}/image-variants/generate
+/// POST /api/v1/avatars/{avatar_id}/image-variants/generate
 ///
 /// Request variant generation via ComfyUI. Creates pending variant records
 /// that will be updated by the generation completion callback.
@@ -596,7 +596,7 @@ pub struct GenerateVariantsRequest {
 
 pub async fn generate_variants(
     State(state): State<AppState>,
-    Path(character_id): Path<DbId>,
+    Path(avatar_id): Path<DbId>,
     Json(body): Json<GenerateVariantsRequest>,
 ) -> AppResult<impl IntoResponse> {
     let count = body.count.unwrap_or(1).min(10); // cap at 10
@@ -607,7 +607,7 @@ pub async fn generate_variants(
     let mut variants = Vec::with_capacity(count as usize);
     for _ in 0..count {
         let input = CreateImageVariant {
-            character_id,
+            avatar_id,
             source_image_id: None,
             derived_image_id: None,
             variant_label: label.clone(),
@@ -747,15 +747,15 @@ pub struct BackfillThumbnailResponse {
 }
 
 // ---------------------------------------------------------------------------
-// Browse (cross-character)
+// Browse (cross-avatar)
 // ---------------------------------------------------------------------------
 
-/// An image variant enriched with character/project context for browsing.
+/// An image variant enriched with avatar/project context for browsing.
 #[derive(Debug, Serialize, sqlx::FromRow)]
 pub struct ImageVariantBrowseItem {
     // Variant fields
     pub id: DbId,
-    pub character_id: DbId,
+    pub avatar_id: DbId,
     pub variant_label: String,
     pub status_id: i16,
     pub file_path: String,
@@ -769,8 +769,8 @@ pub struct ImageVariantBrowseItem {
     pub version: i32,
     pub created_at: chrono::DateTime<chrono::Utc>,
     // Context fields
-    pub character_name: String,
-    pub character_is_enabled: bool,
+    pub avatar_name: String,
+    pub avatar_is_enabled: bool,
     pub project_id: DbId,
     pub project_name: String,
 }
@@ -831,7 +831,7 @@ pub async fn check_hashes(
 
 /// GET /api/v1/image-variants/browse
 ///
-/// List all image variants across characters/projects, most recent first.
+/// List all image variants across avatars/projects, most recent first.
 pub async fn browse_variants(
     State(state): State<AppState>,
     Query(params): Query<BrowseVariantsParams>,
@@ -842,7 +842,7 @@ pub async fn browse_variants(
     let rows = sqlx::query_as::<_, ImageVariantBrowseItem>(
         "SELECT
             iv.id,
-            iv.character_id,
+            iv.avatar_id,
             iv.variant_label,
             iv.status_id,
             iv.file_path,
@@ -855,12 +855,12 @@ pub async fn browse_variants(
             iv.format,
             iv.version,
             iv.created_at,
-            c.name AS character_name,
-            c.is_enabled AS character_is_enabled,
+            c.name AS avatar_name,
+            c.is_enabled AS avatar_is_enabled,
             p.id AS project_id,
             p.name AS project_name
         FROM image_variants iv
-        JOIN characters c ON c.id = iv.character_id AND c.deleted_at IS NULL
+        JOIN avatars c ON c.id = iv.avatar_id AND c.deleted_at IS NULL
         JOIN projects p ON p.id = c.project_id AND p.deleted_at IS NULL
         WHERE iv.deleted_at IS NULL
           AND ($1::bigint IS NULL OR p.id = $1)

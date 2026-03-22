@@ -6,7 +6,7 @@ use x121_core::types::{DbId, Timestamp};
 
 /// A row from the `poster_frames` table.
 ///
-/// Stores a selected poster frame for a character or scene entity,
+/// Stores a selected poster frame for a avatar or scene entity,
 /// including crop and adjustment settings.
 #[derive(Debug, Clone, FromRow, Serialize)]
 pub struct PosterFrame {

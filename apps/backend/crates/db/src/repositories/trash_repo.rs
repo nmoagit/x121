@@ -11,7 +11,7 @@ use x121_core::types::{DbId, Timestamp};
 /// Known entity types that support soft-delete.
 const KNOWN_ENTITY_TYPES: &[&str] = &[
     "projects",
-    "characters",
+    "avatars",
     "scenes",
     "segments",
     "source_images",
@@ -161,7 +161,7 @@ impl TrashRepo {
             "derived_images",
             "source_images",
             "scenes",
-            "characters",
+            "avatars",
             "scene_types",
             "projects",
         ];
@@ -223,10 +223,10 @@ impl TrashRepo {
         id: DbId,
     ) -> Result<Option<String>, sqlx::Error> {
         let check = match entity_type {
-            "characters" => Some(("characters", "project_id", "projects", "project")),
-            "scenes" => Some(("scenes", "character_id", "characters", "character")),
+            "avatars" => Some(("avatars", "project_id", "projects", "project")),
+            "scenes" => Some(("scenes", "avatar_id", "avatars", "avatar")),
             "segments" => Some(("segments", "scene_id", "scenes", "scene")),
-            "source_images" => Some(("source_images", "character_id", "characters", "character")),
+            "source_images" => Some(("source_images", "avatar_id", "avatars", "avatar")),
             "derived_images" => Some((
                 "derived_images",
                 "source_image_id",
@@ -281,7 +281,7 @@ impl TrashRepo {
 fn table_and_name_expr(entity_type: &str) -> (&str, &str) {
     match entity_type {
         "projects" => ("projects", "name"),
-        "characters" => ("characters", "name"),
+        "avatars" => ("avatars", "name"),
         "scenes" => ("scenes", "NULL::text"),
         "segments" => ("segments", "NULL::text"),
         "source_images" => ("source_images", "description"),

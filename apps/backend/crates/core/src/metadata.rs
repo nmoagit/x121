@@ -1,7 +1,7 @@
 //! Metadata schema definitions, serialization helpers, and staleness detection
 //! for the dual-metadata system (PRD-13).
 //!
-//! Defines the JSON structure for `character_metadata.json` and
+//! Defines the JSON structure for `avatar_metadata.json` and
 //! `video_metadata.json`, with constants for schema versioning and entity/file
 //! type classification.
 
@@ -13,20 +13,20 @@ use crate::types::DbId;
 // Constants
 // ---------------------------------------------------------------------------
 
-/// Current schema version for character metadata files.
-pub const CHARACTER_SCHEMA_VERSION: &str = "1.0";
+/// Current schema version for avatar metadata files.
+pub const AVATAR_SCHEMA_VERSION: &str = "1.0";
 
 /// Current schema version for video metadata files.
 pub const VIDEO_SCHEMA_VERSION: &str = "1.0";
 
-/// File type identifier for character metadata.
-pub const FILE_TYPE_CHARACTER: &str = "character_metadata";
+/// File type identifier for avatar metadata.
+pub const FILE_TYPE_AVATAR: &str = "avatar_metadata";
 
 /// File type identifier for video metadata.
 pub const FILE_TYPE_VIDEO: &str = "video_metadata";
 
-/// Entity type identifier for characters.
-pub const ENTITY_TYPE_CHARACTER: &str = "character";
+/// Entity type identifier for avatars.
+pub const ENTITY_TYPE_AVATAR: &str = "avatar";
 
 /// Entity type identifier for scenes.
 pub const ENTITY_TYPE_SCENE: &str = "scene";
@@ -52,18 +52,18 @@ pub const VALID_METADATA_APPROVAL_STATUSES: &[&str] = &[
 ];
 
 // ---------------------------------------------------------------------------
-// Character metadata schema
+// Avatar metadata schema
 // ---------------------------------------------------------------------------
 
-/// Top-level structure for `character_metadata.json`.
+/// Top-level structure for `avatar_metadata.json`.
 ///
 /// Serialized via serde to produce a schema-versioned JSON file containing
 /// biographical data, physical attributes, image references, and generation
 /// provenance.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-pub struct CharacterMetadata {
+pub struct AvatarMetadata {
     pub schema_version: String,
-    pub character_id: DbId,
+    pub avatar_id: DbId,
     pub name: String,
     pub project_id: DbId,
     pub project_name: String,
@@ -80,7 +80,7 @@ pub struct CharacterMetadata {
     /// Derived images generated from the source.
     pub derived_images: Vec<ImageReference>,
 
-    /// Custom metadata (extensible key-value pairs from the character's
+    /// Custom metadata (extensible key-value pairs from the avatar's
     /// `metadata` JSONB column).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub custom_fields: Option<serde_json::Value>,
@@ -92,14 +92,14 @@ pub struct CharacterMetadata {
     pub source_updated_at: String,
 }
 
-/// Biographical details for a character.
+/// Biographical details for a avatar.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct BiographicalData {
     pub description: Option<String>,
     pub tags: Vec<String>,
 }
 
-/// Physical attributes of a character.
+/// Physical attributes of a avatar.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct PhysicalAttributes {
     pub height: Option<String>,
@@ -129,8 +129,8 @@ pub struct ImageReference {
 pub struct VideoMetadata {
     pub schema_version: String,
     pub scene_id: DbId,
-    pub character_id: DbId,
-    pub character_name: String,
+    pub avatar_id: DbId,
+    pub avatar_name: String,
     pub scene_type: String,
 
     /// Technical video information (resolution, codec, fps, etc.).
@@ -230,15 +230,15 @@ pub fn is_stale(
 mod tests {
     use super::*;
 
-    fn sample_character_metadata() -> CharacterMetadata {
-        CharacterMetadata {
-            schema_version: CHARACTER_SCHEMA_VERSION.to_string(),
-            character_id: 42,
+    fn sample_avatar_metadata() -> AvatarMetadata {
+        AvatarMetadata {
+            schema_version: AVATAR_SCHEMA_VERSION.to_string(),
+            avatar_id: 42,
             name: "Alice".to_string(),
             project_id: 1,
             project_name: "Test Project".to_string(),
             biographical: BiographicalData {
-                description: Some("A test character".to_string()),
+                description: Some("A test avatar".to_string()),
                 tags: vec!["hero".to_string(), "protagonist".to_string()],
             },
             physical_attributes: PhysicalAttributes {
@@ -269,8 +269,8 @@ mod tests {
         VideoMetadata {
             schema_version: VIDEO_SCHEMA_VERSION.to_string(),
             scene_id: 10,
-            character_id: 42,
-            character_name: "Alice".to_string(),
+            avatar_id: 42,
+            avatar_name: "Alice".to_string(),
             scene_type: "full_body".to_string(),
             technical: VideoTechnicalInfo {
                 duration_seconds: 12.5,
@@ -324,10 +324,10 @@ mod tests {
     }
 
     #[test]
-    fn character_metadata_round_trip() {
-        let meta = sample_character_metadata();
+    fn avatar_metadata_round_trip() {
+        let meta = sample_avatar_metadata();
         let json = serialize_metadata(&meta).expect("serialization should succeed");
-        let deserialized: CharacterMetadata =
+        let deserialized: AvatarMetadata =
             serde_json::from_str(&json).expect("deserialization should succeed");
         assert_eq!(meta, deserialized);
     }
@@ -342,11 +342,11 @@ mod tests {
     }
 
     #[test]
-    fn schema_version_is_present_in_character_json() {
-        let meta = sample_character_metadata();
+    fn schema_version_is_present_in_avatar_json() {
+        let meta = sample_avatar_metadata();
         let json = serialize_metadata(&meta).unwrap();
         let value: serde_json::Value = serde_json::from_str(&json).unwrap();
-        assert_eq!(value["schema_version"], CHARACTER_SCHEMA_VERSION);
+        assert_eq!(value["schema_version"], AVATAR_SCHEMA_VERSION);
     }
 
     #[test]
@@ -368,7 +368,7 @@ mod tests {
 
     #[test]
     fn optional_custom_fields_omitted_when_none() {
-        let mut meta = sample_character_metadata();
+        let mut meta = sample_avatar_metadata();
         meta.custom_fields = None;
         let json = serialize_metadata(&meta).unwrap();
         let value: serde_json::Value = serde_json::from_str(&json).unwrap();

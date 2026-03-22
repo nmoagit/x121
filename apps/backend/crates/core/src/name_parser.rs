@@ -1,16 +1,16 @@
-//! Character name parser for the ingest pipeline (PRD-113).
+//! Avatar name parser for the ingest pipeline (PRD-113).
 //!
 //! Converts folder names (e.g. `aj_riley`, `mr_simons`, `tesa_von_doom`) into
-//! properly formatted character names with a confidence score.
+//! properly formatted avatar names with a confidence score.
 
 use serde::{Deserialize, Serialize};
 
-/// Result of parsing a single character name from a folder or text input.
+/// Result of parsing a single avatar name from a folder or text input.
 #[derive(Debug, Clone, Serialize)]
 pub struct ParsedName {
     /// The original input string.
     pub original: String,
-    /// The formatted character name.
+    /// The formatted avatar name.
     pub parsed: String,
     /// Confidence in the parsed result.
     pub confidence: NameConfidence,
@@ -44,7 +44,7 @@ const NAME_PARTICLES: &[&str] = &[
     "von", "van", "de", "di", "la", "le", "el", "al", "du", "des",
 ];
 
-/// Parse a single character name from a folder name or text input.
+/// Parse a single avatar name from a folder name or text input.
 ///
 /// Applies these rules:
 /// 1. Trim, replace underscores/hyphens with spaces, collapse whitespace
@@ -57,7 +57,7 @@ const NAME_PARTICLES: &[&str] = &[
 ///    - Low: empty, single char, purely numeric
 ///    - Medium: contains digits mixed with letters
 ///    - High: everything else
-pub fn parse_character_name(folder_name: &str) -> ParsedName {
+pub fn parse_avatar_name(folder_name: &str) -> ParsedName {
     let original = folder_name.to_string();
     let cleaned = folder_name.trim().replace('_', " ").replace('-', " ");
 
@@ -89,11 +89,11 @@ pub fn parse_character_name(folder_name: &str) -> ParsedName {
     }
 }
 
-/// Parse multiple character names at once.
-pub fn parse_character_names(folder_names: &[&str]) -> Vec<ParsedName> {
+/// Parse multiple avatar names at once.
+pub fn parse_avatar_names(folder_names: &[&str]) -> Vec<ParsedName> {
     folder_names
         .iter()
-        .map(|n| parse_character_name(n))
+        .map(|n| parse_avatar_name(n))
         .collect()
 }
 
@@ -106,7 +106,7 @@ fn determine_confidence(words: &[&str]) -> NameConfidence {
         return NameConfidence::Low;
     }
 
-    // Single character.
+    // Single avatar.
     if joined.len() == 1 {
         return NameConfidence::Low;
     }
@@ -162,104 +162,104 @@ mod tests {
 
     #[test]
     fn parse_initials_and_name() {
-        let result = parse_character_name("aj_riley");
+        let result = parse_avatar_name("aj_riley");
         assert_eq!(result.parsed, "AJ Riley");
         assert_eq!(result.confidence, NameConfidence::High);
     }
 
     #[test]
     fn parse_particle_at_start() {
-        let result = parse_character_name("la_perla");
+        let result = parse_avatar_name("la_perla");
         assert_eq!(result.parsed, "La Perla");
         assert_eq!(result.confidence, NameConfidence::High);
     }
 
     #[test]
     fn parse_salutation() {
-        let result = parse_character_name("mr_simons");
+        let result = parse_avatar_name("mr_simons");
         assert_eq!(result.parsed, "Mr Simons");
         assert_eq!(result.confidence, NameConfidence::High);
     }
 
     #[test]
     fn parse_particle_in_middle() {
-        let result = parse_character_name("tesa_von_doom");
+        let result = parse_avatar_name("tesa_von_doom");
         assert_eq!(result.parsed, "Tesa von Doom");
         assert_eq!(result.confidence, NameConfidence::High);
     }
 
     #[test]
     fn parse_single_name() {
-        let result = parse_character_name("xena");
+        let result = parse_avatar_name("xena");
         assert_eq!(result.parsed, "Xena");
         assert_eq!(result.confidence, NameConfidence::High);
     }
 
     #[test]
     fn parse_three_part_name() {
-        let result = parse_character_name("mary_jane_watson");
+        let result = parse_avatar_name("mary_jane_watson");
         assert_eq!(result.parsed, "Mary Jane Watson");
         assert_eq!(result.confidence, NameConfidence::High);
     }
 
     #[test]
     fn parse_purely_numeric() {
-        let result = parse_character_name("001");
+        let result = parse_avatar_name("001");
         assert_eq!(result.parsed, "001");
         assert_eq!(result.confidence, NameConfidence::Low);
     }
 
     #[test]
     fn parse_empty_string() {
-        let result = parse_character_name("");
+        let result = parse_avatar_name("");
         assert_eq!(result.parsed, "");
         assert_eq!(result.confidence, NameConfidence::Low);
     }
 
     #[test]
     fn parse_hyphens() {
-        let result = parse_character_name("jean-luc-picard");
+        let result = parse_avatar_name("jean-luc-picard");
         assert_eq!(result.parsed, "Jean Luc Picard");
         assert_eq!(result.confidence, NameConfidence::High);
     }
 
     #[test]
     fn parse_mixed_case() {
-        let result = parse_character_name("JOHN_DOE");
+        let result = parse_avatar_name("JOHN_DOE");
         assert_eq!(result.parsed, "John Doe");
         assert_eq!(result.confidence, NameConfidence::High);
     }
 
     #[test]
     fn parse_all_caps_initials() {
-        let result = parse_character_name("JB_FLETCHER");
+        let result = parse_avatar_name("JB_FLETCHER");
         assert_eq!(result.parsed, "Jb Fletcher");
         assert_eq!(result.confidence, NameConfidence::High);
     }
 
     #[test]
     fn parse_mixed_digits_and_letters() {
-        let result = parse_character_name("char123_test");
+        let result = parse_avatar_name("char123_test");
         assert_eq!(result.confidence, NameConfidence::Medium);
     }
 
     #[test]
     fn parse_single_char() {
-        let result = parse_character_name("x");
+        let result = parse_avatar_name("x");
         assert_eq!(result.parsed, "X");
         assert_eq!(result.confidence, NameConfidence::Low);
     }
 
     #[test]
     fn parse_whitespace_only() {
-        let result = parse_character_name("   ");
+        let result = parse_avatar_name("   ");
         assert_eq!(result.parsed, "");
         assert_eq!(result.confidence, NameConfidence::Low);
     }
 
     #[test]
     fn parse_multiple_particles() {
-        let result = parse_character_name("ludwig_van_de_berg");
+        let result = parse_avatar_name("ludwig_van_de_berg");
         assert_eq!(result.parsed, "Ludwig van de Berg");
         assert_eq!(result.confidence, NameConfidence::High);
     }
@@ -267,7 +267,7 @@ mod tests {
     #[test]
     fn batch_parse() {
         let names = vec!["aj_riley", "mr_simons", "001"];
-        let results = parse_character_names(&names);
+        let results = parse_avatar_names(&names);
         assert_eq!(results.len(), 3);
         assert_eq!(results[0].parsed, "AJ Riley");
         assert_eq!(results[1].parsed, "Mr Simons");

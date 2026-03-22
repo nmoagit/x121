@@ -1,7 +1,7 @@
 //! Group scene settings model and DTOs.
 //!
 //! Intermediate tier of the four-level inheritance chain:
-//! scene_type (default) -> project settings -> group settings -> character overrides.
+//! scene_type (default) -> project settings -> group settings -> avatar overrides.
 
 use serde::{Deserialize, Serialize};
 use sqlx::FromRow;

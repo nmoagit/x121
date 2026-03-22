@@ -1,6 +1,6 @@
 //! Round-robin review allocation engine (PRD-129).
 //!
-//! Pure logic with no database dependencies. Assigns unassigned characters
+//! Pure logic with no database dependencies. Assigns unassigned avatars
 //! to reviewers using load-balanced round-robin allocation.
 
 use crate::types::DbId;
@@ -14,9 +14,9 @@ pub struct ReviewerLoad {
     pub last_assigned_at: Option<chrono::DateTime<chrono::Utc>>,
 }
 
-/// An unassigned character awaiting review allocation.
+/// An unassigned avatar awaiting review allocation.
 #[derive(Debug, Clone)]
-pub struct UnassignedCharacter {
+pub struct UnassignedAvatar {
     pub id: DbId,
     pub name: String,
 }
@@ -24,8 +24,8 @@ pub struct UnassignedCharacter {
 /// A proposed assignment from the auto-allocation engine.
 #[derive(Debug, Clone, serde::Serialize)]
 pub struct ProposedAssignment {
-    pub character_id: DbId,
-    pub character_name: String,
+    pub avatar_id: DbId,
+    pub avatar_name: String,
     pub reviewer_user_id: DbId,
     pub reviewer_username: String,
 }
@@ -33,19 +33,19 @@ pub struct ProposedAssignment {
 /// Round-robin allocation with load balancing.
 ///
 /// Sorts reviewers by `(active_count ASC, last_assigned_at ASC NULLS FIRST)`.
-/// For each character, assigns to the reviewer with the fewest active count,
+/// For each avatar, assigns to the reviewer with the fewest active count,
 /// then increments their count (simulating the load after assignment).
 pub fn allocate_round_robin(
     reviewers: &mut [ReviewerLoad],
-    characters: &[UnassignedCharacter],
+    avatars: &[UnassignedAvatar],
 ) -> Vec<ProposedAssignment> {
-    if reviewers.is_empty() || characters.is_empty() {
+    if reviewers.is_empty() || avatars.is_empty() {
         return vec![];
     }
 
-    let mut assignments = Vec::with_capacity(characters.len());
+    let mut assignments = Vec::with_capacity(avatars.len());
 
-    for character in characters {
+    for avatar in avatars {
         // Sort by (active_count ASC, last_assigned_at ASC with None first)
         reviewers.sort_by(|a, b| {
             a.active_count.cmp(&b.active_count).then_with(|| {
@@ -60,8 +60,8 @@ pub fn allocate_round_robin(
 
         let reviewer = &mut reviewers[0];
         assignments.push(ProposedAssignment {
-            character_id: character.id,
-            character_name: character.name.clone(),
+            avatar_id: avatar.id,
+            avatar_name: avatar.name.clone(),
             reviewer_user_id: reviewer.user_id,
             reviewer_username: reviewer.username.clone(),
         });
@@ -87,8 +87,8 @@ mod tests {
         }
     }
 
-    fn make_character(id: DbId, name: &str) -> UnassignedCharacter {
-        UnassignedCharacter {
+    fn make_avatar(id: DbId, name: &str) -> UnassignedAvatar {
+        UnassignedAvatar {
             id,
             name: name.to_string(),
         }
@@ -97,26 +97,26 @@ mod tests {
     #[test]
     fn empty_reviewers_returns_empty() {
         let mut reviewers = vec![];
-        let characters = vec![make_character(1, "Alice")];
-        assert!(allocate_round_robin(&mut reviewers, &characters).is_empty());
+        let avatars = vec![make_avatar(1, "Alice")];
+        assert!(allocate_round_robin(&mut reviewers, &avatars).is_empty());
     }
 
     #[test]
-    fn empty_characters_returns_empty() {
+    fn empty_avatars_returns_empty() {
         let mut reviewers = vec![make_reviewer(1, "Rev1", 0)];
-        let characters = vec![];
-        assert!(allocate_round_robin(&mut reviewers, &characters).is_empty());
+        let avatars = vec![];
+        assert!(allocate_round_robin(&mut reviewers, &avatars).is_empty());
     }
 
     #[test]
     fn single_reviewer_gets_all() {
         let mut reviewers = vec![make_reviewer(1, "Rev1", 0)];
-        let characters = vec![
-            make_character(1, "A"),
-            make_character(2, "B"),
-            make_character(3, "C"),
+        let avatars = vec![
+            make_avatar(1, "A"),
+            make_avatar(2, "B"),
+            make_avatar(3, "C"),
         ];
-        let result = allocate_round_robin(&mut reviewers, &characters);
+        let result = allocate_round_robin(&mut reviewers, &avatars);
         assert_eq!(result.len(), 3);
         assert!(result.iter().all(|a| a.reviewer_user_id == 1));
     }
@@ -128,10 +128,10 @@ mod tests {
             make_reviewer(2, "Rev2", 0),
             make_reviewer(3, "Rev3", 0),
         ];
-        let characters: Vec<_> = (1..=6)
-            .map(|i| make_character(i, &format!("Char{i}")))
+        let avatars: Vec<_> = (1..=6)
+            .map(|i| make_avatar(i, &format!("Char{i}")))
             .collect();
-        let result = allocate_round_robin(&mut reviewers, &characters);
+        let result = allocate_round_robin(&mut reviewers, &avatars);
         assert_eq!(result.len(), 6);
 
         let count_for = |uid: DbId| result.iter().filter(|a| a.reviewer_user_id == uid).count();
@@ -147,10 +147,10 @@ mod tests {
             make_reviewer(2, "Rev2", 0),
             make_reviewer(3, "Rev3", 2),
         ];
-        let characters: Vec<_> = (1..=3)
-            .map(|i| make_character(i, &format!("Char{i}")))
+        let avatars: Vec<_> = (1..=3)
+            .map(|i| make_avatar(i, &format!("Char{i}")))
             .collect();
-        let result = allocate_round_robin(&mut reviewers, &characters);
+        let result = allocate_round_robin(&mut reviewers, &avatars);
 
         // Rev2 (0) gets first two, Rev3 (2) gets third (tie-broken by last_assigned_at)
         let count_for = |uid: DbId| result.iter().filter(|a| a.reviewer_user_id == uid).count();
@@ -162,10 +162,10 @@ mod tests {
     #[test]
     fn max_difference_is_one_or_less() {
         let mut reviewers = vec![make_reviewer(1, "Rev1", 0), make_reviewer(2, "Rev2", 0)];
-        let characters: Vec<_> = (1..=7)
-            .map(|i| make_character(i, &format!("Char{i}")))
+        let avatars: Vec<_> = (1..=7)
+            .map(|i| make_avatar(i, &format!("Char{i}")))
             .collect();
-        let result = allocate_round_robin(&mut reviewers, &characters);
+        let result = allocate_round_robin(&mut reviewers, &avatars);
 
         let c1 = result.iter().filter(|a| a.reviewer_user_id == 1).count();
         let c2 = result.iter().filter(|a| a.reviewer_user_id == 2).count();

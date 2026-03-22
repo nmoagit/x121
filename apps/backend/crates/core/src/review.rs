@@ -132,7 +132,7 @@ pub fn validate_note_content(
     if let Some(t) = text {
         if t.len() > MAX_NOTE_LENGTH {
             return Err(CoreError::Validation(format!(
-                "Note text exceeds maximum length of {MAX_NOTE_LENGTH} characters"
+                "Note text exceeds maximum length of {MAX_NOTE_LENGTH} avatars"
             )));
         }
     }

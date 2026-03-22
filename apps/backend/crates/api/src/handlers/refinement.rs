@@ -13,13 +13,13 @@ use x121_core::error::CoreError;
 use x121_core::llm_refinement::STATUS_FAILED;
 use x121_core::metadata_transform::SOURCE_LLM_REFINED;
 use x121_core::types::DbId;
-use x121_db::models::character_metadata_version::CreateCharacterMetadataVersion;
+use x121_db::models::avatar_metadata_version::CreateAvatarMetadataVersion;
 use x121_db::models::refinement_job::CreateRefinementJob;
-use x121_db::repositories::{CharacterMetadataVersionRepo, RefinementJobRepo};
+use x121_db::repositories::{AvatarMetadataVersionRepo, RefinementJobRepo};
 
 use crate::error::{AppError, AppResult};
-use crate::handlers::character_metadata_version::sync_to_character;
-use crate::handlers::consistency_report::ensure_character_exists;
+use crate::handlers::avatar_metadata_version::sync_to_avatar;
+use crate::handlers::consistency_report::ensure_avatar_exists;
 use crate::response::DataResponse;
 use crate::state::AppState;
 
@@ -85,27 +85,27 @@ fn cherry_pick_fields(
 // Handlers
 // ---------------------------------------------------------------------------
 
-/// POST /api/v1/characters/{character_id}/refinement
+/// POST /api/v1/avatars/{avatar_id}/refinement
 ///
-/// Trigger a new LLM refinement job for a character. Returns 409 if a
+/// Trigger a new LLM refinement job for a avatar. Returns 409 if a
 /// job is already queued or running.
 pub async fn trigger_refinement(
     State(state): State<AppState>,
-    Path(character_id): Path<DbId>,
+    Path(avatar_id): Path<DbId>,
     Json(body): Json<TriggerRefinementRequest>,
 ) -> AppResult<impl IntoResponse> {
-    ensure_character_exists(&state.pool, character_id).await?;
+    ensure_avatar_exists(&state.pool, avatar_id).await?;
 
     // Prevent duplicate active jobs
-    if RefinementJobRepo::has_active_job(&state.pool, character_id).await? {
+    if RefinementJobRepo::has_active_job(&state.pool, avatar_id).await? {
         return Err(AppError::Core(CoreError::Conflict(
-            "A refinement job is already queued or running for this character.".into(),
+            "A refinement job is already queued or running for this avatar.".into(),
         )));
     }
 
     // Read source bio/tov from the active metadata version (if any)
     let active_version =
-        CharacterMetadataVersionRepo::find_active(&state.pool, character_id).await?;
+        AvatarMetadataVersionRepo::find_active(&state.pool, avatar_id).await?;
     let (source_bio, source_tov) = match &active_version {
         Some(v) => (v.source_bio.clone(), v.source_tov.clone()),
         None => (None, None),
@@ -116,7 +116,7 @@ pub async fn trigger_refinement(
     let llm_model = DEFAULT_LLM_MODEL.to_string();
 
     let input = CreateRefinementJob {
-        character_id,
+        avatar_id,
         source_bio,
         source_tov,
         llm_provider,
@@ -129,14 +129,14 @@ pub async fn trigger_refinement(
     Ok((StatusCode::CREATED, Json(DataResponse { data: job })))
 }
 
-/// GET /api/v1/characters/{character_id}/refinement-jobs
+/// GET /api/v1/avatars/{avatar_id}/refinement-jobs
 ///
-/// List all refinement jobs for a character, newest first.
+/// List all refinement jobs for a avatar, newest first.
 pub async fn list_refinement_jobs(
     State(state): State<AppState>,
-    Path(character_id): Path<DbId>,
+    Path(avatar_id): Path<DbId>,
 ) -> AppResult<impl IntoResponse> {
-    let jobs = RefinementJobRepo::list_for_character(&state.pool, character_id).await?;
+    let jobs = RefinementJobRepo::list_for_avatar(&state.pool, avatar_id).await?;
     Ok(Json(DataResponse { data: jobs }))
 }
 
@@ -159,13 +159,13 @@ pub async fn get_refinement_job(
     Ok(Json(DataResponse { data: job }))
 }
 
-/// POST /api/v1/characters/{character_id}/refinement-jobs/{job_uuid}/approve
+/// POST /api/v1/avatars/{avatar_id}/refinement-jobs/{job_uuid}/approve
 ///
 /// Approve a completed refinement job, creating a new metadata version
 /// from the refined result. Supports cherry-picking individual fields.
 pub async fn approve_refinement(
     State(state): State<AppState>,
-    Path((character_id, job_uuid)): Path<(DbId, sqlx::types::Uuid)>,
+    Path((avatar_id, job_uuid)): Path<(DbId, sqlx::types::Uuid)>,
     Json(body): Json<ApproveRefinementRequest>,
 ) -> AppResult<impl IntoResponse> {
     let job = RefinementJobRepo::find_by_uuid(&state.pool, job_uuid)
@@ -177,8 +177,8 @@ pub async fn approve_refinement(
             })
         })?;
 
-    // Verify the job belongs to this character
-    if job.character_id != character_id {
+    // Verify the job belongs to this avatar
+    if job.avatar_id != avatar_id {
         return Err(AppError::Core(CoreError::NotFound {
             entity: "RefinementJob",
             id: 0,
@@ -191,7 +191,7 @@ pub async fn approve_refinement(
 
     // Determine the metadata to use (full or cherry-picked)
     let metadata = if let Some(ref fields) = body.selected_fields {
-        let existing = CharacterMetadataVersionRepo::find_active(&state.pool, character_id)
+        let existing = AvatarMetadataVersionRepo::find_active(&state.pool, avatar_id)
             .await?
             .map(|v| v.metadata)
             .unwrap_or(serde_json::Value::Object(Default::default()));
@@ -201,8 +201,8 @@ pub async fn approve_refinement(
     };
 
     // Create a new active metadata version from the refined result
-    let create_input = CreateCharacterMetadataVersion {
-        character_id,
+    let create_input = CreateAvatarMetadataVersion {
+        avatar_id,
         metadata: metadata.clone(),
         source: SOURCE_LLM_REFINED.to_string(),
         source_bio: job.source_bio.clone(),
@@ -213,10 +213,10 @@ pub async fn approve_refinement(
     };
 
     let version =
-        CharacterMetadataVersionRepo::create_as_active(&state.pool, &create_input).await?;
+        AvatarMetadataVersionRepo::create_as_active(&state.pool, &create_input).await?;
 
-    // Sync to character.metadata column
-    sync_to_character(&state.pool, character_id, &metadata).await?;
+    // Sync to avatar.metadata column
+    sync_to_avatar(&state.pool, avatar_id, &metadata).await?;
 
     // Update the job with the version link and mark completed
     RefinementJobRepo::set_result(
@@ -243,12 +243,12 @@ pub async fn approve_refinement(
     Ok(Json(DataResponse { data: updated_job }))
 }
 
-/// POST /api/v1/characters/{character_id}/refinement-jobs/{job_uuid}/reject
+/// POST /api/v1/avatars/{avatar_id}/refinement-jobs/{job_uuid}/reject
 ///
 /// Reject a refinement result, marking the job as failed with an optional reason.
 pub async fn reject_refinement(
     State(state): State<AppState>,
-    Path((character_id, job_uuid)): Path<(DbId, sqlx::types::Uuid)>,
+    Path((avatar_id, job_uuid)): Path<(DbId, sqlx::types::Uuid)>,
     Json(body): Json<RejectRefinementRequest>,
 ) -> AppResult<StatusCode> {
     let job = RefinementJobRepo::find_by_uuid(&state.pool, job_uuid)
@@ -260,7 +260,7 @@ pub async fn reject_refinement(
             })
         })?;
 
-    if job.character_id != character_id {
+    if job.avatar_id != avatar_id {
         return Err(AppError::Core(CoreError::NotFound {
             entity: "RefinementJob",
             id: 0,
@@ -274,18 +274,18 @@ pub async fn reject_refinement(
     Ok(StatusCode::NO_CONTENT)
 }
 
-/// POST /api/v1/characters/{character_id}/metadata/versions/{version_id}/clear-outdated
+/// POST /api/v1/avatars/{avatar_id}/metadata/versions/{version_id}/clear-outdated
 ///
 /// Clear the outdated marker on a metadata version.
 pub async fn clear_outdated(
     State(state): State<AppState>,
-    Path((_character_id, version_id)): Path<(DbId, DbId)>,
+    Path((_avatar_id, version_id)): Path<(DbId, DbId)>,
 ) -> AppResult<StatusCode> {
-    let updated = CharacterMetadataVersionRepo::clear_outdated(&state.pool, version_id).await?;
+    let updated = AvatarMetadataVersionRepo::clear_outdated(&state.pool, version_id).await?;
 
     if !updated {
         return Err(AppError::Core(CoreError::NotFound {
-            entity: "CharacterMetadataVersion",
+            entity: "AvatarMetadataVersion",
             id: version_id,
         }));
     }

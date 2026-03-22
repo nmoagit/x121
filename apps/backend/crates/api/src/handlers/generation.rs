@@ -22,7 +22,7 @@ use x121_db::models::generation::{
 use x121_db::models::status::SceneStatus;
 use x121_db::models::status::StatusId;
 use x121_db::repositories::{
-    CharacterRepo, ImageVariantRepo, SceneGenerationLogRepo, SceneRepo, SceneTypeRepo,
+    AvatarRepo, ImageVariantRepo, SceneGenerationLogRepo, SceneRepo, SceneTypeRepo,
     SceneVideoVersionRepo, SegmentRepo, TrackRepo, VideoSettingsRepo,
 };
 
@@ -127,18 +127,18 @@ pub(crate) async fn init_scene_generation(
         target_resolution: scene_type.target_resolution.clone(),
     };
 
-    let character = CharacterRepo::find_by_id(&state.pool, scene.character_id)
+    let avatar = AvatarRepo::find_by_id(&state.pool, scene.avatar_id)
         .await?
         .ok_or(AppError::Core(CoreError::NotFound {
-            entity: "Character",
-            id: scene.character_id,
+            entity: "Avatar",
+            id: scene.avatar_id,
         }))?;
 
     let (project_layer, group_layer, char_layer) = VideoSettingsRepo::load_hierarchy_layers(
         &state.pool,
-        character.project_id,
-        character.group_id,
-        scene.character_id,
+        avatar.project_id,
+        avatar.group_id,
+        scene.avatar_id,
         scene.scene_type_id,
     )
     .await?;
@@ -169,7 +169,7 @@ pub(crate) async fn init_scene_generation(
 
         if let Some(ref vt) = variant_type {
             if let Some(variant) =
-                ImageVariantRepo::find_hero(&state.pool, scene.character_id, vt).await?
+                ImageVariantRepo::find_hero(&state.pool, scene.avatar_id, vt).await?
             {
                 // Assign the resolved variant to the scene.
                 SceneRepo::update_image_variant(&state.pool, scene_id, variant.id).await?;
@@ -812,7 +812,7 @@ async fn validate_scene_for_generation(state: &AppState, scene_id: DbId) -> Resu
                 .await
                 .map_err(|e| e.to_string())?;
             if let Some(track) = track {
-                ImageVariantRepo::find_hero(&state.pool, scene.character_id, &track.slug)
+                ImageVariantRepo::find_hero(&state.pool, scene.avatar_id, &track.slug)
                     .await
                     .map_err(|e| e.to_string())?
                     .is_some()

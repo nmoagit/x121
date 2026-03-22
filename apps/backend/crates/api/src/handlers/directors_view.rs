@@ -137,7 +137,7 @@ async fn fetch_review_queue(
     offset: i64,
 ) -> Result<Vec<ReviewQueueRow>, sqlx::Error> {
     let order_clause = match order_by {
-        "character" => "ch.name ASC",
+        "avatar" => "ch.name ASC",
         "scene_type" => "COALESCE(st.name, 'unknown') ASC",
         _ => "seg.created_at ASC",
     };
@@ -145,7 +145,7 @@ async fn fetch_review_queue(
     let query_str = format!(
         "SELECT
             seg.id AS segment_id,
-            ch.name AS character_name,
+            ch.name AS avatar_name,
             COALESCE(st.name, 'unknown') AS scene_type,
             COALESCE(sa_latest.decision, 'pending') AS status,
             NULL::TEXT AS thumbnail_url,
@@ -154,7 +154,7 @@ async fn fetch_review_queue(
             COALESCE(u.name, 'unknown') AS submitted_by
          FROM segments seg
          JOIN scenes sc ON sc.id = seg.scene_id
-         JOIN characters ch ON ch.id = sc.character_id
+         JOIN avatars ch ON ch.id = sc.avatar_id
          LEFT JOIN scene_types st ON st.id = sc.scene_type_id
          LEFT JOIN users u ON u.id = ch.created_by
          LEFT JOIN LATERAL (
@@ -183,7 +183,7 @@ async fn fetch_review_queue(
 #[derive(Debug, sqlx::FromRow, Serialize)]
 pub struct ReviewQueueRow {
     pub segment_id: DbId,
-    pub character_name: String,
+    pub avatar_name: String,
     pub scene_type: String,
     pub status: String,
     pub thumbnail_url: Option<String>,

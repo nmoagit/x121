@@ -69,13 +69,13 @@ pub struct SceneTypeWithTracks {
 
 /// Computed effective scene setting, shared across all tiers of the
 /// four-level inheritance chain (PRD-123):
-/// scene_type -> project -> group -> character.
+/// scene_type -> project -> group -> avatar.
 ///
 /// The `source` field indicates which tier provided the value:
 /// - `"scene_type"`: default from `scene_types.is_active`
 /// - `"project"`: overridden at the project level
 /// - `"group"`: overridden at the group level
-/// - `"character"`: overridden at the character level
+/// - `"avatar"`: overridden at the avatar level
 #[derive(Debug, Clone, FromRow, Serialize)]
 pub struct EffectiveSceneSetting {
     pub scene_type_id: DbId,
@@ -184,14 +184,14 @@ pub struct PromptPreviewQuery {
 /// Request body for matrix generation.
 #[derive(Debug, Deserialize)]
 pub struct MatrixRequest {
-    pub character_ids: Vec<DbId>,
+    pub avatar_ids: Vec<DbId>,
     pub scene_type_ids: Vec<DbId>,
 }
 
 /// A single cell in the scene matrix.
 #[derive(Debug, Clone, Serialize)]
 pub struct MatrixCellDto {
-    pub character_id: DbId,
+    pub avatar_id: DbId,
     pub scene_type_id: DbId,
     pub variant_type: String,
     pub existing_scene_id: Option<DbId>,

@@ -6,7 +6,7 @@
 //! GET    /check-types                                 -> list_check_types
 //! POST   /run                                         -> run_qa
 //! GET    /image-variants/{id}/results                 -> get_results
-//! GET    /characters/{character_id}/source-qa-results -> get_source_results
+//! GET    /avatars/{avatar_id}/source-qa-results -> get_source_results
 //! GET    /projects/{project_id}/thresholds            -> get_thresholds
 //! PUT    /projects/{project_id}/thresholds            -> update_threshold
 //! ```
@@ -24,7 +24,7 @@ pub fn router() -> Router<AppState> {
         .route("/run", post(image_qa::run_qa))
         .route("/image-variants/{id}/results", get(image_qa::get_results))
         .route(
-            "/characters/{character_id}/source-qa-results",
+            "/avatars/{avatar_id}/source-qa-results",
             get(image_qa::get_source_results),
         )
         .route(

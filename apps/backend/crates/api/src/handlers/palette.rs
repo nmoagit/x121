@@ -24,7 +24,7 @@ use crate::state::AppState;
 /// Search the command palette for matching entities and commands.
 ///
 /// Uses the full-text typeahead search from `SearchRepo` to find matching
-/// characters, projects, and scene types by name prefix.
+/// avatars, projects, and scene types by name prefix.
 pub async fn palette_search(
     _auth: AuthUser,
     State(state): State<AppState>,

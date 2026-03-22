@@ -39,7 +39,7 @@ pub const VALID_PIN_LOCATIONS: &[&str] = &[PIN_DASHBOARD];
 
 /// Generate a URL-safe slug from an article title.
 ///
-/// Converts to lowercase, replaces spaces and special characters with hyphens,
+/// Converts to lowercase, replaces spaces and special avatars with hyphens,
 /// collapses consecutive hyphens, and trims leading/trailing hyphens.
 pub fn generate_slug(title: &str) -> String {
     let slug: String = title
@@ -78,7 +78,7 @@ pub fn validate_title(title: &str) -> Result<(), CoreError> {
     }
     if title.len() > 200 {
         return Err(CoreError::Validation(
-            "Title must be at most 200 characters".into(),
+            "Title must be at most 200 avatars".into(),
         ));
     }
     Ok(())
@@ -94,7 +94,7 @@ pub fn validate_slug(slug: &str) -> Result<(), CoreError> {
         .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-')
     {
         return Err(CoreError::Validation(
-            "Slug must contain only lowercase alphanumeric characters and hyphens".into(),
+            "Slug must contain only lowercase alphanumeric avatars and hyphens".into(),
         ));
     }
     Ok(())
@@ -137,7 +137,7 @@ pub fn validate_tags(tags: &[String]) -> Result<(), CoreError> {
         }
         if tag.len() > 50 {
             return Err(CoreError::Validation(
-                "Each tag must be at most 50 characters".into(),
+                "Each tag must be at most 50 avatars".into(),
             ));
         }
     }
@@ -148,7 +148,7 @@ pub fn validate_tags(tags: &[String]) -> Result<(), CoreError> {
 pub fn validate_content(content: &str) -> Result<(), CoreError> {
     if content.len() > 100_000 {
         return Err(CoreError::Validation(
-            "Content must be at most 100000 characters".into(),
+            "Content must be at most 100000 avatars".into(),
         ));
     }
     Ok(())
@@ -242,7 +242,7 @@ mod tests {
     }
 
     #[test]
-    fn slug_special_characters() {
+    fn slug_special_avatars() {
         assert_eq!(
             generate_slug("How to: Use Workflows (v2)"),
             "how-to-use-workflows-v2"

@@ -7,7 +7,7 @@
 // Report type name constants
 // ---------------------------------------------------------------------------
 
-/// Delivery summary: characters delivered per period, broken down by project.
+/// Delivery summary: avatars delivered per period, broken down by project.
 pub const DELIVERY_SUMMARY: &str = "delivery_summary";
 /// Throughput metrics: average turnaround from onboarding to delivery.
 pub const THROUGHPUT_METRICS: &str = "throughput_metrics";
@@ -15,8 +15,8 @@ pub const THROUGHPUT_METRICS: &str = "throughput_metrics";
 pub const GPU_UTILIZATION: &str = "gpu_utilization";
 /// Quality metrics: auto-QA pass rates, retry counts, and failure trends.
 pub const QUALITY_METRICS: &str = "quality_metrics";
-/// Cost per character: average GPU time and wall-clock time per character.
-pub const COST_PER_CHARACTER: &str = "cost_per_character";
+/// Cost per avatar: average GPU time and wall-clock time per avatar.
+pub const COST_PER_AVATAR: &str = "cost_per_avatar";
 /// Reviewer productivity: review turnaround, approval ratios, annotation density.
 pub const REVIEWER_PRODUCTIVITY: &str = "reviewer_productivity";
 /// Video technical: per-video metadata (dimensions, duration, framerate, codec, size).
@@ -28,7 +28,7 @@ pub const VALID_REPORT_TYPES: &[&str] = &[
     THROUGHPUT_METRICS,
     GPU_UTILIZATION,
     QUALITY_METRICS,
-    COST_PER_CHARACTER,
+    COST_PER_AVATAR,
     REVIEWER_PRODUCTIVITY,
     VIDEO_TECHNICAL,
 ];

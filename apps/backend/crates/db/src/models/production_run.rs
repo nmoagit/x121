@@ -30,7 +30,7 @@ pub struct ProductionRun {
 pub struct ProductionRunCell {
     pub id: DbId,
     pub run_id: DbId,
-    pub character_id: DbId,
+    pub avatar_id: DbId,
     pub scene_type_id: DbId,
     pub track_id: Option<DbId>,
     pub variant_label: String,
@@ -48,7 +48,7 @@ pub struct ProductionRunCell {
 pub struct ProductionRunMatrixCell {
     pub id: DbId,
     pub run_id: DbId,
-    pub character_id: DbId,
+    pub avatar_id: DbId,
     pub scene_type_id: DbId,
     pub track_id: Option<DbId>,
     pub variant_label: String,
@@ -63,7 +63,7 @@ pub struct ProductionRunMatrixCell {
     pub scene_type_name: String,
     /// Joined from tracks.name (NULL when no track)
     pub track_name: Option<String>,
-    /// Whether a matching seed image (image_variant) exists for this character + track.
+    /// Whether a matching seed image (image_variant) exists for this avatar + track.
     pub has_seed: bool,
     /// Whether this scene type has a clothes-off transition.
     pub has_clothes_off_transition: bool,
@@ -86,7 +86,7 @@ pub struct CreateProductionRun {
 #[derive(Debug, Clone, Deserialize)]
 pub struct CreateProductionRunCell {
     pub run_id: DbId,
-    pub character_id: DbId,
+    pub avatar_id: DbId,
     pub scene_type_id: DbId,
     pub track_id: Option<DbId>,
     pub variant_label: String,
@@ -98,7 +98,7 @@ pub struct CreateProductionRunRequest {
     pub project_id: DbId,
     pub name: String,
     pub description: Option<String>,
-    pub character_ids: Vec<DbId>,
+    pub avatar_ids: Vec<DbId>,
     pub scene_type_ids: Vec<DbId>,
     pub estimated_gpu_hours: Option<f64>,
     pub estimated_disk_gb: Option<f64>,
@@ -157,11 +157,11 @@ pub struct DeleteCellsResponse {
     pub deleted: u64,
 }
 
-/// Response for cancelling cells for a character.
+/// Response for cancelling cells for a avatar.
 #[derive(Debug, Clone, Serialize)]
-pub struct CharacterCellsResponse {
+pub struct AvatarCellsResponse {
     pub run_id: DbId,
-    pub character_id: DbId,
+    pub avatar_id: DbId,
     pub affected: u64,
 }
 

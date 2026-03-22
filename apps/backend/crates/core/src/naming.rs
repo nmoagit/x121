@@ -165,7 +165,7 @@ mod tests {
     }
 
     #[test]
-    fn special_characters_double_space() {
+    fn special_avatars_double_space() {
         // Multiple spaces produce multiple underscores (no collapsing)
         assert_eq!(
             scene_video_filename("clothed", "Slow  Walk", false, None),

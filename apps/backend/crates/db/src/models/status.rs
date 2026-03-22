@@ -47,8 +47,8 @@ define_status_enum! {
 }
 
 define_status_enum! {
-    /// Character lifecycle status.
-    CharacterStatus {
+    /// Avatar lifecycle status.
+    AvatarStatus {
         Draft = 1,
         Active = 2,
         Archived = 3,
@@ -255,8 +255,8 @@ define_status_enum! {
 }
 
 define_status_enum! {
-    /// Character review workflow status (PRD-129).
-    CharacterReviewStatusId {
+    /// Avatar review workflow status (PRD-129).
+    AvatarReviewStatusId {
         Unassigned = 1,
         Assigned = 2,
         InReview = 3,

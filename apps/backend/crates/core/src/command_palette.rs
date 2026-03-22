@@ -31,7 +31,7 @@ pub const FRECENCY_OLD_WEIGHT: f64 = 1.0;
 
 /// Valid entity types that can appear in the command palette.
 pub const VALID_PALETTE_ENTITY_TYPES: &[&str] =
-    &["project", "character", "scene", "segment", "scene_type"];
+    &["project", "avatar", "scene", "segment", "scene_type"];
 
 // ---------------------------------------------------------------------------
 // Validation

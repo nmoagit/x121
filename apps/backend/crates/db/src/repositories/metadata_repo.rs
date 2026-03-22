@@ -1,7 +1,7 @@
 //! Repository for the `metadata_generations` table (PRD-13).
 
 use sqlx::PgPool;
-use x121_core::metadata::{ENTITY_TYPE_CHARACTER, ENTITY_TYPE_SCENE};
+use x121_core::metadata::{ENTITY_TYPE_AVATAR, ENTITY_TYPE_SCENE};
 use x121_core::types::DbId;
 
 use crate::models::metadata::{CreateMetadataGeneration, MetadataGeneration, StaleMetadata};
@@ -90,10 +90,10 @@ impl MetadataGenerationRepo {
             .await
     }
 
-    /// Find all character metadata records where the source character has been
+    /// Find all avatar metadata records where the source avatar has been
     /// updated since the metadata was last generated.
-    pub async fn find_stale_characters(pool: &PgPool) -> Result<Vec<StaleMetadata>, sqlx::Error> {
-        Self::find_stale_entities(pool, ENTITY_TYPE_CHARACTER, "characters").await
+    pub async fn find_stale_avatars(pool: &PgPool) -> Result<Vec<StaleMetadata>, sqlx::Error> {
+        Self::find_stale_entities(pool, ENTITY_TYPE_AVATAR, "avatars").await
     }
 
     /// Find all scene/video metadata records where the source scene has been
@@ -104,7 +104,7 @@ impl MetadataGenerationRepo {
 
     /// List all metadata generation records for entities belonging to a project.
     ///
-    /// Joins via characters (for character metadata) and scenes (for video
+    /// Joins via avatars (for avatar metadata) and scenes (for video
     /// metadata) to resolve project ownership.
     pub async fn list_by_project(
         pool: &PgPool,
@@ -118,17 +118,17 @@ impl MetadataGenerationRepo {
 
         let query = format!(
             "SELECT {prefixed} FROM metadata_generations mg \
-             JOIN characters c ON c.id = mg.entity_id AND mg.entity_type = $1 \
+             JOIN avatars c ON c.id = mg.entity_id AND mg.entity_type = $1 \
              WHERE c.project_id = $2 \
              UNION ALL \
              SELECT {prefixed} FROM metadata_generations mg \
              JOIN scenes s ON s.id = mg.entity_id AND mg.entity_type = $3 \
-             JOIN characters c2 ON c2.id = s.character_id \
+             JOIN avatars c2 ON c2.id = s.avatar_id \
              WHERE c2.project_id = $2 \
              ORDER BY entity_type, entity_id"
         );
         sqlx::query_as::<_, MetadataGeneration>(&query)
-            .bind(ENTITY_TYPE_CHARACTER)
+            .bind(ENTITY_TYPE_AVATAR)
             .bind(project_id)
             .bind(ENTITY_TYPE_SCENE)
             .fetch_all(pool)

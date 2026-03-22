@@ -1,6 +1,6 @@
 //! Repository for face-embedding operations (PRD-76).
 //!
-//! Manages character face embeddings, detected faces from multi-face images,
+//! Manages avatar face embeddings, detected faces from multi-face images,
 //! primary face selection, and embedding history (audit trail).
 //!
 //! The `face_embedding` column uses pgvector's `vector(512)` type. Because
@@ -17,11 +17,11 @@ use crate::models::status::StatusId;
 
 /// Column list for `detected_faces` queries (excludes the `embedding` vector).
 const DETECTED_FACE_COLUMNS: &str =
-    "id, character_id, bounding_box, confidence, is_primary, created_at, updated_at";
+    "id, avatar_id, bounding_box, confidence, is_primary, created_at, updated_at";
 
 /// Column list for `embedding_history` queries (excludes the `face_embedding` vector).
 const EMBEDDING_HISTORY_COLUMNS: &str =
-    "id, character_id, face_detection_confidence, face_bounding_box, \
+    "id, avatar_id, face_detection_confidence, face_bounding_box, \
      replaced_at, created_at, updated_at";
 
 /// Provides face-embedding CRUD and management operations.
@@ -32,41 +32,41 @@ impl EmbeddingRepo {
     // Embedding status management
     // -----------------------------------------------------------------------
 
-    /// Update the embedding status of a character without touching the embedding itself.
-    pub async fn update_character_embedding_status(
+    /// Update the embedding status of a avatar without touching the embedding itself.
+    pub async fn update_avatar_embedding_status(
         pool: &PgPool,
-        character_id: DbId,
+        avatar_id: DbId,
         status_id: StatusId,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "UPDATE characters SET embedding_status_id = $2 \
+            "UPDATE avatars SET embedding_status_id = $2 \
              WHERE id = $1 AND deleted_at IS NULL",
         )
-        .bind(character_id)
+        .bind(avatar_id)
         .bind(status_id)
         .execute(pool)
         .await?;
         Ok(())
     }
 
-    /// Update a character's embedding metadata (confidence, bounding box, status)
+    /// Update a avatar's embedding metadata (confidence, bounding box, status)
     /// and set the extraction timestamp to now.
-    pub async fn update_character_embedding(
+    pub async fn update_avatar_embedding(
         pool: &PgPool,
-        character_id: DbId,
+        avatar_id: DbId,
         confidence: f64,
         bounding_box: &serde_json::Value,
         status_id: StatusId,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "UPDATE characters SET \
+            "UPDATE avatars SET \
                 face_detection_confidence = $2, \
                 face_bounding_box = $3, \
                 embedding_status_id = $4, \
                 embedding_extracted_at = NOW() \
              WHERE id = $1 AND deleted_at IS NULL",
         )
-        .bind(character_id)
+        .bind(avatar_id)
         .bind(confidence)
         .bind(bounding_box)
         .bind(status_id)
@@ -79,12 +79,12 @@ impl EmbeddingRepo {
     // Detected faces
     // -----------------------------------------------------------------------
 
-    /// Store detected faces for a character (batch insert).
+    /// Store detected faces for a avatar (batch insert).
     ///
     /// Each face's embedding is converted to a pgvector literal and cast in SQL.
     pub async fn store_detected_faces(
         pool: &PgPool,
-        character_id: DbId,
+        avatar_id: DbId,
         faces: &[CreateDetectedFace],
     ) -> Result<Vec<DetectedFace>, sqlx::Error> {
         let mut results = Vec::with_capacity(faces.len());
@@ -100,12 +100,12 @@ impl EmbeddingRepo {
             );
 
             let query = format!(
-                "INSERT INTO detected_faces (character_id, bounding_box, confidence, embedding, is_primary) \
+                "INSERT INTO detected_faces (avatar_id, bounding_box, confidence, embedding, is_primary) \
                  VALUES ($1, $2, $3, $4::vector, $5) \
                  RETURNING {DETECTED_FACE_COLUMNS}"
             );
             let row = sqlx::query_as::<_, DetectedFace>(&query)
-                .bind(character_id)
+                .bind(avatar_id)
                 .bind(&face.bounding_box)
                 .bind(face.confidence)
                 .bind(&embedding_str)
@@ -118,31 +118,31 @@ impl EmbeddingRepo {
         Ok(results)
     }
 
-    /// List all detected faces for a character, ordered by confidence descending.
+    /// List all detected faces for a avatar, ordered by confidence descending.
     pub async fn list_detected_faces(
         pool: &PgPool,
-        character_id: DbId,
+        avatar_id: DbId,
     ) -> Result<Vec<DetectedFace>, sqlx::Error> {
         let query = format!(
             "SELECT {DETECTED_FACE_COLUMNS} FROM detected_faces \
-             WHERE character_id = $1 \
+             WHERE avatar_id = $1 \
              ORDER BY confidence DESC"
         );
         sqlx::query_as::<_, DetectedFace>(&query)
-            .bind(character_id)
+            .bind(avatar_id)
             .fetch_all(pool)
             .await
     }
 
-    /// Select a face as the primary face for a character.
+    /// Select a face as the primary face for a avatar.
     ///
     /// This runs in a transaction:
-    /// 1. Clear the old primary flag on all faces for this character.
+    /// 1. Clear the old primary flag on all faces for this avatar.
     /// 2. Set the new face as primary.
-    /// 3. Copy the selected face's embedding and metadata to the character row.
+    /// 3. Copy the selected face's embedding and metadata to the avatar row.
     pub async fn select_primary_face(
         pool: &PgPool,
-        character_id: DbId,
+        avatar_id: DbId,
         face_id: DbId,
     ) -> Result<(), sqlx::Error> {
         let mut tx = pool.begin().await?;
@@ -150,34 +150,34 @@ impl EmbeddingRepo {
         // Clear existing primary flag.
         sqlx::query(
             "UPDATE detected_faces SET is_primary = false \
-             WHERE character_id = $1 AND is_primary = true",
+             WHERE avatar_id = $1 AND is_primary = true",
         )
-        .bind(character_id)
+        .bind(avatar_id)
         .execute(&mut *tx)
         .await?;
 
         // Set new primary.
         sqlx::query(
             "UPDATE detected_faces SET is_primary = true \
-             WHERE id = $1 AND character_id = $2",
+             WHERE id = $1 AND avatar_id = $2",
         )
         .bind(face_id)
-        .bind(character_id)
+        .bind(avatar_id)
         .execute(&mut *tx)
         .await?;
 
-        // Copy face embedding data to the character row.
+        // Copy face embedding data to the avatar row.
         sqlx::query(
-            "UPDATE characters SET \
+            "UPDATE avatars SET \
                 face_embedding = df.embedding, \
                 face_detection_confidence = df.confidence, \
                 face_bounding_box = df.bounding_box, \
                 embedding_status_id = $3, \
                 embedding_extracted_at = NOW() \
              FROM detected_faces df \
-             WHERE characters.id = $1 AND df.id = $2 AND df.character_id = $1",
+             WHERE avatars.id = $1 AND df.id = $2 AND df.avatar_id = $1",
         )
-        .bind(character_id)
+        .bind(avatar_id)
         .bind(face_id)
         .bind(x121_core::embedding::EmbeddingStatus::Completed.id())
         .execute(&mut *tx)
@@ -187,13 +187,13 @@ impl EmbeddingRepo {
         Ok(())
     }
 
-    /// Clear all detected faces for a character.
+    /// Clear all detected faces for a avatar.
     pub async fn clear_detected_faces(
         pool: &PgPool,
-        character_id: DbId,
+        avatar_id: DbId,
     ) -> Result<(), sqlx::Error> {
-        sqlx::query("DELETE FROM detected_faces WHERE character_id = $1")
-            .bind(character_id)
+        sqlx::query("DELETE FROM detected_faces WHERE avatar_id = $1")
+            .bind(avatar_id)
             .execute(pool)
             .await?;
         Ok(())
@@ -203,30 +203,30 @@ impl EmbeddingRepo {
     // Embedding status query
     // -----------------------------------------------------------------------
 
-    /// Get the current embedding status for a character.
+    /// Get the current embedding status for a avatar.
     pub async fn get_embedding_status(
         pool: &PgPool,
-        character_id: DbId,
+        avatar_id: DbId,
     ) -> Result<EmbeddingStatusResponse, sqlx::Error> {
         let row = sqlx::query_as::<_, EmbeddingStatusRow>(
             "SELECT \
-                c.id AS character_id, \
+                c.id AS avatar_id, \
                 c.embedding_status_id, \
                 es.label AS embedding_status_label, \
                 c.face_detection_confidence, \
                 c.face_bounding_box, \
                 c.embedding_extracted_at, \
                 (c.face_embedding IS NOT NULL) AS has_embedding \
-             FROM characters c \
+             FROM avatars c \
              JOIN embedding_statuses es ON es.id = c.embedding_status_id \
              WHERE c.id = $1 AND c.deleted_at IS NULL",
         )
-        .bind(character_id)
+        .bind(avatar_id)
         .fetch_one(pool)
         .await?;
 
         Ok(EmbeddingStatusResponse {
-            character_id: row.character_id,
+            avatar_id: row.avatar_id,
             embedding_status_id: row.embedding_status_id,
             embedding_status_label: row.embedding_status_label,
             face_detection_confidence: row.face_detection_confidence,
@@ -240,35 +240,35 @@ impl EmbeddingRepo {
     // Embedding history / archive
     // -----------------------------------------------------------------------
 
-    /// Archive the current character embedding into the history table.
+    /// Archive the current avatar embedding into the history table.
     ///
-    /// Only archives if the character has an existing embedding.
-    pub async fn archive_embedding(pool: &PgPool, character_id: DbId) -> Result<(), sqlx::Error> {
+    /// Only archives if the avatar has an existing embedding.
+    pub async fn archive_embedding(pool: &PgPool, avatar_id: DbId) -> Result<(), sqlx::Error> {
         sqlx::query(
             "INSERT INTO embedding_history \
-                (character_id, face_embedding, face_detection_confidence, face_bounding_box) \
+                (avatar_id, face_embedding, face_detection_confidence, face_bounding_box) \
              SELECT id, face_embedding, face_detection_confidence, face_bounding_box \
-             FROM characters \
+             FROM avatars \
              WHERE id = $1 AND face_embedding IS NOT NULL AND deleted_at IS NULL",
         )
-        .bind(character_id)
+        .bind(avatar_id)
         .execute(pool)
         .await?;
         Ok(())
     }
 
-    /// Get the embedding history for a character, ordered newest first.
+    /// Get the embedding history for a avatar, ordered newest first.
     pub async fn get_embedding_history(
         pool: &PgPool,
-        character_id: DbId,
+        avatar_id: DbId,
     ) -> Result<Vec<EmbeddingHistory>, sqlx::Error> {
         let query = format!(
             "SELECT {EMBEDDING_HISTORY_COLUMNS} FROM embedding_history \
-             WHERE character_id = $1 \
+             WHERE avatar_id = $1 \
              ORDER BY replaced_at DESC"
         );
         sqlx::query_as::<_, EmbeddingHistory>(&query)
-            .bind(character_id)
+            .bind(avatar_id)
             .fetch_all(pool)
             .await
     }
@@ -281,7 +281,7 @@ impl EmbeddingRepo {
 /// Internal query result for `get_embedding_status`.
 #[derive(Debug, sqlx::FromRow)]
 struct EmbeddingStatusRow {
-    character_id: DbId,
+    avatar_id: DbId,
     embedding_status_id: StatusId,
     embedding_status_label: String,
     face_detection_confidence: Option<f64>,

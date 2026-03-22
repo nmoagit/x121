@@ -1,8 +1,8 @@
-//! Handlers for the character consistency report system (PRD-94).
+//! Handlers for the avatar consistency report system (PRD-94).
 //!
-//! Provides endpoints for generating consistency reports per character,
+//! Provides endpoints for generating consistency reports per avatar,
 //! retrieving the latest report, listing project-wide reports, and
-//! batch-generating reports for all characters in a project.
+//! batch-generating reports for all avatars in a project.
 
 use axum::extract::{Path, State};
 use axum::http::StatusCode;
@@ -16,7 +16,7 @@ use x121_core::consistency_report::{
 use x121_core::error::CoreError;
 use x121_core::types::DbId;
 use x121_db::models::consistency_report::CreateConsistencyReport;
-use x121_db::repositories::{CharacterRepo, ConsistencyReportRepo};
+use x121_db::repositories::{AvatarRepo, ConsistencyReportRepo};
 
 use crate::error::{AppError, AppResult};
 use crate::middleware::auth::AuthUser;
@@ -35,7 +35,7 @@ pub struct GenerateReportRequest {
     /// Report type: `"face"`, `"color"`, or `"full"`.
     #[serde(default = "default_report_type")]
     pub report_type: String,
-    /// Project the character belongs to.
+    /// Project the avatar belongs to.
     pub project_id: DbId,
 }
 
@@ -49,14 +49,14 @@ pub struct BatchGenerateRequest {
     /// Report type: `"face"`, `"color"`, or `"full"`.
     #[serde(default = "default_report_type")]
     pub report_type: String,
-    /// Per-character scores: `{ "character_id": [score1, score2, ...] }`.
-    pub character_scores: std::collections::HashMap<DbId, Vec<f64>>,
+    /// Per-avatar scores: `{ "avatar_id": [score1, score2, ...] }`.
+    pub avatar_scores: std::collections::HashMap<DbId, Vec<f64>>,
 }
 
 /// A single entry in the batch generation result.
 #[derive(Debug, serde::Serialize)]
 struct BatchResultEntry {
-    character_id: DbId,
+    avatar_id: DbId,
     report_id: DbId,
     overall_consistency_score: Option<f64>,
 }
@@ -64,7 +64,7 @@ struct BatchResultEntry {
 /// A single entry in the batch generation error list.
 #[derive(Debug, serde::Serialize)]
 struct BatchErrorEntry {
-    character_id: DbId,
+    avatar_id: DbId,
     error: String,
 }
 
@@ -79,17 +79,17 @@ struct BatchGenerateResponse {
 // Helpers
 // ---------------------------------------------------------------------------
 
-/// Verify that a character exists, returning a 404 error if not found.
-pub(crate) async fn ensure_character_exists(
+/// Verify that a avatar exists, returning a 404 error if not found.
+pub(crate) async fn ensure_avatar_exists(
     pool: &sqlx::PgPool,
-    character_id: DbId,
+    avatar_id: DbId,
 ) -> AppResult<()> {
-    CharacterRepo::find_by_id(pool, character_id)
+    AvatarRepo::find_by_id(pool, avatar_id)
         .await?
         .ok_or_else(|| {
             AppError::Core(CoreError::NotFound {
-                entity: "Character",
-                id: character_id,
+                entity: "Avatar",
+                id: avatar_id,
             })
         })?;
     Ok(())
@@ -99,7 +99,7 @@ pub(crate) async fn ensure_character_exists(
 /// consistency and outlier detection.  Shared by `generate_report` and
 /// `batch_generate` to avoid duplicating the computation + DTO assembly.
 fn build_report_input(
-    character_id: DbId,
+    avatar_id: DbId,
     project_id: DbId,
     scores: &[f64],
     report_type: String,
@@ -112,7 +112,7 @@ fn build_report_input(
         serde_json::to_value(scores).map_err(|e| AppError::InternalError(e.to_string()))?;
 
     Ok(CreateConsistencyReport {
-        character_id,
+        avatar_id,
         project_id,
         scores_json,
         overall_consistency_score: Some(overall),
@@ -129,22 +129,22 @@ fn build_report_input(
 // Handlers
 // ---------------------------------------------------------------------------
 
-/// POST /characters/{character_id}/consistency-report
+/// POST /avatars/{avatar_id}/consistency-report
 ///
-/// Generate a new consistency report for a character. Validates the report
+/// Generate a new consistency report for a avatar. Validates the report
 /// type, computes overall consistency and outliers from the provided scores,
 /// then persists the report.
 pub async fn generate_report(
     auth: AuthUser,
     State(state): State<AppState>,
-    Path(character_id): Path<DbId>,
+    Path(avatar_id): Path<DbId>,
     Json(input): Json<GenerateReportRequest>,
 ) -> AppResult<impl IntoResponse> {
     validate_report_type(&input.report_type).map_err(AppError::BadRequest)?;
-    ensure_character_exists(&state.pool, character_id).await?;
+    ensure_avatar_exists(&state.pool, avatar_id).await?;
 
     let create = build_report_input(
-        character_id,
+        avatar_id,
         input.project_id,
         &input.scores,
         input.report_type,
@@ -154,7 +154,7 @@ pub async fn generate_report(
 
     tracing::info!(
         user_id = auth.user_id,
-        character_id = character_id,
+        avatar_id = avatar_id,
         report_id = report.id,
         overall_score = report.overall_consistency_score,
         "Consistency report generated"
@@ -163,20 +163,20 @@ pub async fn generate_report(
     Ok((StatusCode::CREATED, Json(DataResponse { data: report })))
 }
 
-/// GET /characters/{character_id}/consistency-report
+/// GET /avatars/{avatar_id}/consistency-report
 ///
-/// Get the latest consistency report for a character.
+/// Get the latest consistency report for a avatar.
 pub async fn get_latest_report(
     _auth: AuthUser,
     State(state): State<AppState>,
-    Path(character_id): Path<DbId>,
+    Path(avatar_id): Path<DbId>,
 ) -> AppResult<impl IntoResponse> {
-    let report = ConsistencyReportRepo::get_latest_for_character(&state.pool, character_id)
+    let report = ConsistencyReportRepo::get_latest_for_avatar(&state.pool, avatar_id)
         .await?
         .ok_or_else(|| {
             AppError::Core(CoreError::NotFound {
                 entity: "ConsistencyReport",
-                id: character_id,
+                id: avatar_id,
             })
         })?;
 
@@ -217,8 +217,8 @@ pub async fn get_report(
 
 /// POST /projects/{project_id}/batch-consistency
 ///
-/// Batch-generate consistency reports for multiple characters in a project.
-/// Accepts a map of character_id to scores. Creates one report per character.
+/// Batch-generate consistency reports for multiple avatars in a project.
+/// Accepts a map of avatar_id to scores. Creates one report per avatar.
 pub async fn batch_generate(
     auth: AuthUser,
     State(state): State<AppState>,
@@ -227,22 +227,22 @@ pub async fn batch_generate(
 ) -> AppResult<impl IntoResponse> {
     validate_report_type(&input.report_type).map_err(AppError::BadRequest)?;
 
-    if input.character_scores.is_empty() {
+    if input.avatar_scores.is_empty() {
         return Err(AppError::BadRequest(
-            "character_scores must not be empty".to_string(),
+            "avatar_scores must not be empty".to_string(),
         ));
     }
 
     let mut created = Vec::new();
     let mut errors = Vec::new();
 
-    for (&character_id, scores) in &input.character_scores {
+    for (&avatar_id, scores) in &input.avatar_scores {
         let create =
-            match build_report_input(character_id, project_id, scores, input.report_type.clone()) {
+            match build_report_input(avatar_id, project_id, scores, input.report_type.clone()) {
                 Ok(c) => c,
                 Err(e) => {
                     errors.push(BatchErrorEntry {
-                        character_id,
+                        avatar_id,
                         error: e.to_string(),
                     });
                     continue;
@@ -252,14 +252,14 @@ pub async fn batch_generate(
         match ConsistencyReportRepo::create(&state.pool, &create).await {
             Ok(report) => {
                 created.push(BatchResultEntry {
-                    character_id,
+                    avatar_id,
                     report_id: report.id,
                     overall_consistency_score: report.overall_consistency_score,
                 });
             }
             Err(e) => {
                 errors.push(BatchErrorEntry {
-                    character_id,
+                    avatar_id,
                     error: e.to_string(),
                 });
             }

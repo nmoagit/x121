@@ -1,7 +1,7 @@
 //! Group-level prompt override model and DTOs.
 //!
-//! Stores additive prompt fragments at the character-group scope, sitting
-//! between project overrides and character overrides in the resolution
+//! Stores additive prompt fragments at the avatar-group scope, sitting
+//! between project overrides and avatar overrides in the resolution
 //! hierarchy.
 
 use serde::{Deserialize, Serialize};
@@ -10,7 +10,7 @@ use x121_core::types::{DbId, Timestamp};
 
 /// A row from the `group_prompt_overrides` table.
 ///
-/// Stores additive prompt fragments for a specific character group + scene
+/// Stores additive prompt fragments for a specific avatar group + scene
 /// type + prompt slot combination. The `fragments` JSONB array contains
 /// entries of the form `{ "type": "inline"|"fragment_ref", "fragment_id": ..., "text": ... }`.
 #[derive(Debug, Clone, FromRow, Serialize)]

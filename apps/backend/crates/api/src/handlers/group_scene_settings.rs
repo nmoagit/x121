@@ -9,7 +9,7 @@ use axum::Json;
 use x121_core::error::CoreError;
 use x121_core::types::DbId;
 use x121_db::models::group_scene_setting::{BulkGroupSceneSettings, ToggleSettingBody};
-use x121_db::repositories::{CharacterGroupRepo, GroupSceneSettingRepo};
+use x121_db::repositories::{AvatarGroupRepo, GroupSceneSettingRepo};
 
 use crate::error::{AppError, AppResult};
 use crate::response::DataResponse;
@@ -28,16 +28,16 @@ pub async fn list_effective(
     Path((project_id, group_id)): Path<(DbId, DbId)>,
 ) -> AppResult<impl IntoResponse> {
     // Verify the group exists and belongs to this project.
-    let group = CharacterGroupRepo::find_by_id(&state.pool, group_id)
+    let group = AvatarGroupRepo::find_by_id(&state.pool, group_id)
         .await?
         .ok_or(AppError::Core(CoreError::NotFound {
-            entity: "CharacterGroup",
+            entity: "AvatarGroup",
             id: group_id,
         }))?;
 
     if group.project_id != project_id {
         return Err(AppError::Core(CoreError::NotFound {
-            entity: "CharacterGroup",
+            entity: "AvatarGroup",
             id: group_id,
         }));
     }

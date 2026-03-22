@@ -194,7 +194,7 @@ pub fn extract_filename_from_url(url: &str) -> String {
 // Token hint generation
 // ---------------------------------------------------------------------------
 
-/// Generate a token hint showing only the last 4 characters.
+/// Generate a token hint showing only the last 4 avatars.
 ///
 /// Returns `"...XXXX"` if the token is long enough, or `"****"` if too short.
 pub fn generate_token_hint(token: &str) -> String {

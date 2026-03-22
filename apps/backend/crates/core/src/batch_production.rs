@@ -116,7 +116,7 @@ impl CellStatus {
 /// Matrix configuration embedded in the production run's `matrix_config` JSONB.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MatrixConfig {
-    pub character_ids: Vec<i64>,
+    pub avatar_ids: Vec<i64>,
     pub scene_type_ids: Vec<i64>,
 }
 
@@ -124,9 +124,9 @@ pub struct MatrixConfig {
 ///
 /// Returns `Ok(())` if valid, or a `CoreError::Validation` describing the issue.
 pub fn validate_matrix_config(config: &MatrixConfig) -> Result<(), CoreError> {
-    if config.character_ids.is_empty() {
+    if config.avatar_ids.is_empty() {
         return Err(CoreError::Validation(
-            "Matrix config must include at least one character".to_string(),
+            "Matrix config must include at least one avatar".to_string(),
         ));
     }
     if config.scene_type_ids.is_empty() {
@@ -199,7 +199,7 @@ pub fn validate_delivery_readiness(cell_statuses: &[CellStatus]) -> Result<(), C
 /// Determine the cell status based on pipeline state indicators.
 ///
 /// The `has_*` flags represent which pipeline stages have completed for a
-/// particular character x scene-type cell.
+/// particular avatar x scene-type cell.
 pub fn compute_cell_status(
     has_approved_variant: bool,
     has_scene: bool,
@@ -250,26 +250,26 @@ mod tests {
     #[test]
     fn valid_matrix_config_passes() {
         let config = MatrixConfig {
-            character_ids: vec![1, 2],
+            avatar_ids: vec![1, 2],
             scene_type_ids: vec![10, 20],
         };
         assert!(validate_matrix_config(&config).is_ok());
     }
 
     #[test]
-    fn empty_character_ids_rejected() {
+    fn empty_avatar_ids_rejected() {
         let config = MatrixConfig {
-            character_ids: vec![],
+            avatar_ids: vec![],
             scene_type_ids: vec![10],
         };
         let err = validate_matrix_config(&config).unwrap_err();
-        assert!(err.to_string().contains("at least one character"));
+        assert!(err.to_string().contains("at least one avatar"));
     }
 
     #[test]
     fn empty_scene_type_ids_rejected() {
         let config = MatrixConfig {
-            character_ids: vec![1],
+            avatar_ids: vec![1],
             scene_type_ids: vec![],
         };
         let err = validate_matrix_config(&config).unwrap_err();

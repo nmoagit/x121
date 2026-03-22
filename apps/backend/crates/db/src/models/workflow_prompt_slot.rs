@@ -7,7 +7,7 @@ use x121_core::types::{DbId, Timestamp};
 /// A row from the `workflow_prompt_slots` table.
 ///
 /// Maps a ComfyUI workflow node input to a named prompt slot for
-/// scene-type defaults and character-level overrides.
+/// scene-type defaults and avatar-level overrides.
 #[derive(Debug, Clone, FromRow, Serialize)]
 pub struct WorkflowPromptSlot {
     pub id: DbId,

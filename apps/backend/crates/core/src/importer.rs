@@ -103,7 +103,7 @@ pub struct MappedEntity {
     pub file_size_bytes: u64,
     /// Derived entity type from extension.
     pub entity_type: String,
-    /// Entity name derived from folder structure (e.g. character name).
+    /// Entity name derived from folder structure (e.g. avatar name).
     pub entity_name: String,
     /// Optional subcategory from subfolder (e.g. "images", "bio").
     pub category: Option<String>,
@@ -173,13 +173,13 @@ pub fn derive_entity_type(extension: &str) -> DerivedEntityType {
 }
 
 /// Return the default mapping rules:
-/// - depth 0 (top folder) = character name
+/// - depth 0 (top folder) = avatar name
 /// - depth 1 (subfolder)  = category
 pub fn default_mapping_rules() -> Vec<MappingRule> {
     vec![
         MappingRule {
             depth: 0,
-            entity_type: "character".to_string(),
+            entity_type: "avatar".to_string(),
             name_source: NameSource::FolderName,
         },
         MappingRule {
@@ -193,7 +193,7 @@ pub fn default_mapping_rules() -> Vec<MappingRule> {
 /// Map a slice of parsed files to entity records using the given rules.
 ///
 /// The default convention:
-/// - `parent_folders[0]` -> character / entity name
+/// - `parent_folders[0]` -> avatar / entity name
 /// - `parent_folders[1]` -> category (optional)
 /// - file extension       -> entity type (image, metadata, video, unknown)
 pub fn map_files_to_entities(files: &[ParsedFile], _rules: &[MappingRule]) -> Vec<MappedEntity> {
@@ -377,7 +377,7 @@ mod tests {
     }
 
     #[test]
-    fn test_map_top_folder_to_character_name() {
+    fn test_map_top_folder_to_avatar_name() {
         let files = vec![make_parsed_file(
             "Alice/portrait.png",
             "portrait.png",
@@ -561,7 +561,7 @@ mod tests {
         let rules = default_mapping_rules();
         assert_eq!(rules.len(), 2);
         assert_eq!(rules[0].depth, 0);
-        assert_eq!(rules[0].entity_type, "character");
+        assert_eq!(rules[0].entity_type, "avatar");
         assert_eq!(rules[1].depth, 1);
         assert_eq!(rules[1].entity_type, "category");
     }

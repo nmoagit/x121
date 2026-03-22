@@ -1,4 +1,4 @@
-//! Character duplicate detection constants, validation, and similarity logic (PRD-79).
+//! Avatar duplicate detection constants, validation, and similarity logic (PRD-79).
 //!
 //! Provides in-memory cosine similarity, check-type / resolution validation,
 //! and batch cross-match computation. No database access — pure domain logic.
@@ -138,17 +138,17 @@ pub fn validate_threshold(threshold: f64) -> Result<(), CoreError> {
 // Batch cross-match
 // ---------------------------------------------------------------------------
 
-/// A pair of characters that exceeds the similarity threshold.
+/// A pair of avatars that exceeds the similarity threshold.
 #[derive(Debug, Serialize)]
 pub struct CrossMatch {
-    pub character_a_id: i64,
-    pub character_b_id: i64,
+    pub avatar_a_id: i64,
+    pub avatar_b_id: i64,
     pub similarity_score: f64,
 }
 
-/// Find all pairs of characters whose embedding similarity exceeds `threshold`.
+/// Find all pairs of avatars whose embedding similarity exceeds `threshold`.
 ///
-/// Each entry in `embeddings` is `(character_id, embedding_vector)`.
+/// Each entry in `embeddings` is `(avatar_id, embedding_vector)`.
 /// Only unique pairs are returned (no duplicates, no self-matches).
 pub fn find_cross_matches(embeddings: &[(i64, Vec<f32>)], threshold: f64) -> Vec<CrossMatch> {
     let mut matches = Vec::new();
@@ -158,8 +158,8 @@ pub fn find_cross_matches(embeddings: &[(i64, Vec<f32>)], threshold: f64) -> Vec
             let score = cosine_similarity(&embeddings[i].1, &embeddings[j].1);
             if score >= threshold {
                 matches.push(CrossMatch {
-                    character_a_id: embeddings[i].0,
-                    character_b_id: embeddings[j].0,
+                    avatar_a_id: embeddings[i].0,
+                    avatar_b_id: embeddings[j].0,
                     similarity_score: score,
                 });
             }
@@ -275,8 +275,8 @@ mod tests {
         let matches = find_cross_matches(&embeddings, 0.90);
 
         assert_eq!(matches.len(), 1);
-        assert_eq!(matches[0].character_a_id, 1);
-        assert_eq!(matches[0].character_b_id, 2);
+        assert_eq!(matches[0].avatar_a_id, 1);
+        assert_eq!(matches[0].avatar_b_id, 2);
         assert!(matches[0].similarity_score > 0.90);
     }
 

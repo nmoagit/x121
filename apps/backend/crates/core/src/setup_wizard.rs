@@ -170,7 +170,7 @@ pub fn get_required_steps() -> Vec<SetupStepName> {
 pub fn validate_password_strength(password: &str) -> Result<(), CoreError> {
     if password.len() < MIN_PASSWORD_LENGTH {
         return Err(CoreError::Validation(format!(
-            "Password must be at least {MIN_PASSWORD_LENGTH} characters"
+            "Password must be at least {MIN_PASSWORD_LENGTH} avatars"
         )));
     }
     if !password.chars().any(|c| c.is_uppercase()) {

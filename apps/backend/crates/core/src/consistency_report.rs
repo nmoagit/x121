@@ -1,7 +1,7 @@
 //! Consistency report constants, validation, and computation helpers (PRD-94).
 //!
 //! Provides report type validation, outlier detection, pairwise similarity
-//! matrix computation, and overall consistency scoring for character
+//! matrix computation, and overall consistency scoring for avatar
 //! consistency analysis across scenes.
 
 // ---------------------------------------------------------------------------

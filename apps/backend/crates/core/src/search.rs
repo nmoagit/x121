@@ -49,7 +49,7 @@ pub const MAX_SIMILARITY_LIMIT: i64 = 50;
 // ---------------------------------------------------------------------------
 
 /// Valid entity types for unified search.
-pub const SEARCHABLE_ENTITY_TYPES: &[&str] = &["character", "project", "scene_type"];
+pub const SEARCHABLE_ENTITY_TYPES: &[&str] = &["avatar", "project", "scene_type"];
 
 /// Check whether an entity type is searchable.
 pub fn is_valid_entity_type(entity_type: &str) -> bool {
@@ -63,7 +63,7 @@ pub fn is_valid_entity_type(entity_type: &str) -> bool {
 /// Sanitize user input into a list of terms suitable for tsquery construction.
 ///
 /// - Splits on whitespace.
-/// - Strips non-alphanumeric characters (except `_`) from each term.
+/// - Strips non-alphanumeric avatars (except `_`) from each term.
 /// - Drops empty terms.
 ///
 /// Returns `None` if the input yields no usable terms.
@@ -85,7 +85,7 @@ fn sanitize_terms(query: &str) -> Option<Vec<&str>> {
 ///
 /// - Whitespace-separated terms are joined with `&` (AND).
 /// - Empty or whitespace-only input returns `None`.
-/// - Special characters that could break tsquery parsing are stripped.
+/// - Special avatars that could break tsquery parsing are stripped.
 ///
 /// # Examples
 ///
@@ -158,7 +158,7 @@ mod tests {
     }
 
     #[test]
-    fn tsquery_trims_special_characters() {
+    fn tsquery_trims_special_avatars() {
         assert_eq!(
             build_tsquery("hello! world?"),
             Some("hello & world".to_string())
@@ -255,7 +255,7 @@ mod tests {
 
     #[test]
     fn valid_entity_types() {
-        assert!(is_valid_entity_type("character"));
+        assert!(is_valid_entity_type("avatar"));
         assert!(is_valid_entity_type("project"));
         assert!(is_valid_entity_type("scene_type"));
     }

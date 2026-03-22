@@ -738,10 +738,10 @@ pub async fn resume_from_clip(
 }
 
 // ---------------------------------------------------------------------------
-// Browse all clips across all characters/scenes
+// Browse all clips across all avatars/scenes
 // ---------------------------------------------------------------------------
 
-/// A clip row enriched with character/scene/project context for browsing.
+/// A clip row enriched with avatar/scene/project context for browsing.
 #[derive(Debug, serde::Serialize, sqlx::FromRow)]
 pub struct ClipBrowseItem {
     // Video version fields
@@ -765,18 +765,18 @@ pub struct ClipBrowseItem {
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub annotation_count: i64,
     // Context fields
-    pub character_id: DbId,
-    pub character_name: String,
+    pub avatar_id: DbId,
+    pub avatar_name: String,
     pub scene_type_name: String,
     pub track_name: String,
-    pub character_is_enabled: bool,
+    pub avatar_is_enabled: bool,
     pub project_id: DbId,
     pub project_name: String,
 }
 
 /// GET /api/v1/scene-video-versions/browse
 ///
-/// Returns all scene video versions with character/scene/project context,
+/// Returns all scene video versions with avatar/scene/project context,
 /// ordered by most recent first. Supports optional project_id filter.
 pub async fn browse_clips(
     State(state): State<AppState>,
@@ -806,16 +806,16 @@ pub async fn browse_clips(
             svv.file_purged,
             svv.created_at,
             COALESCE((SELECT COUNT(*) FROM frame_annotations fa WHERE fa.version_id = svv.id), 0) AS annotation_count,
-            c.id AS character_id,
-            c.name AS character_name,
+            c.id AS avatar_id,
+            c.name AS avatar_name,
             COALESCE(st.name, '') AS scene_type_name,
             COALESCE(t.name, '') AS track_name,
-            c.is_enabled AS character_is_enabled,
+            c.is_enabled AS avatar_is_enabled,
             p.id AS project_id,
             p.name AS project_name
         FROM scene_video_versions svv
         JOIN scenes sc ON sc.id = svv.scene_id AND sc.deleted_at IS NULL
-        JOIN characters c ON c.id = sc.character_id AND c.deleted_at IS NULL
+        JOIN avatars c ON c.id = sc.avatar_id AND c.deleted_at IS NULL
         JOIN projects p ON p.id = c.project_id AND p.deleted_at IS NULL
         LEFT JOIN scene_types st ON st.id = sc.scene_type_id
         LEFT JOIN tracks t ON t.id = sc.track_id

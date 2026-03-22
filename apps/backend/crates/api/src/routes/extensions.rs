@@ -54,10 +54,10 @@ pub fn registry_router() -> Router<AppState> {
 ///
 /// ```text
 /// GET /projects        -> ext_api_list_projects
-/// GET /characters/{id} -> ext_api_get_character
+/// GET /avatars/{id} -> ext_api_get_avatar
 /// ```
 pub fn ext_api_router() -> Router<AppState> {
     Router::new()
         .route("/projects", get(extensions::ext_api_list_projects))
-        .route("/characters/{id}", get(extensions::ext_api_get_character))
+        .route("/avatars/{id}", get(extensions::ext_api_get_avatar))
 }

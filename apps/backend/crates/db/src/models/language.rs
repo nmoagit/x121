@@ -1,6 +1,6 @@
 //! Language lookup model (PRD-136).
 //!
-//! A seeded lookup table for categorizing character speech entries by language.
+//! A seeded lookup table for categorizing avatar speech entries by language.
 
 use serde::Serialize;
 use sqlx::FromRow;

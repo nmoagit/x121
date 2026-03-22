@@ -1,7 +1,7 @@
 //! Handlers for the `/source-images` resource.
 //!
-//! Source images are nested under characters:
-//! `/characters/{character_id}/source-images[/{id}]`
+//! Source images are nested under avatars:
+//! `/avatars/{avatar_id}/source-images[/{id}]`
 
 use axum::extract::{Path, State};
 use axum::http::StatusCode;
@@ -14,32 +14,32 @@ use x121_db::repositories::SourceImageRepo;
 use crate::error::{AppError, AppResult};
 use crate::state::AppState;
 
-/// POST /api/v1/characters/{character_id}/source-images
+/// POST /api/v1/avatars/{avatar_id}/source-images
 ///
-/// Overrides `input.character_id` with the value from the URL path.
+/// Overrides `input.avatar_id` with the value from the URL path.
 pub async fn create(
     State(state): State<AppState>,
-    Path(character_id): Path<DbId>,
+    Path(avatar_id): Path<DbId>,
     Json(mut input): Json<CreateSourceImage>,
 ) -> AppResult<(StatusCode, Json<SourceImage>)> {
-    input.character_id = character_id;
+    input.avatar_id = avatar_id;
     let image = SourceImageRepo::create(&state.pool, &input).await?;
     Ok((StatusCode::CREATED, Json(image)))
 }
 
-/// GET /api/v1/characters/{character_id}/source-images
-pub async fn list_by_character(
+/// GET /api/v1/avatars/{avatar_id}/source-images
+pub async fn list_by_avatar(
     State(state): State<AppState>,
-    Path(character_id): Path<DbId>,
+    Path(avatar_id): Path<DbId>,
 ) -> AppResult<Json<Vec<SourceImage>>> {
-    let images = SourceImageRepo::list_by_character(&state.pool, character_id).await?;
+    let images = SourceImageRepo::list_by_avatar(&state.pool, avatar_id).await?;
     Ok(Json(images))
 }
 
-/// GET /api/v1/characters/{character_id}/source-images/{id}
+/// GET /api/v1/avatars/{avatar_id}/source-images/{id}
 pub async fn get_by_id(
     State(state): State<AppState>,
-    Path((_character_id, id)): Path<(DbId, DbId)>,
+    Path((_avatar_id, id)): Path<(DbId, DbId)>,
 ) -> AppResult<Json<SourceImage>> {
     let image = SourceImageRepo::find_by_id(&state.pool, id)
         .await?
@@ -50,10 +50,10 @@ pub async fn get_by_id(
     Ok(Json(image))
 }
 
-/// PUT /api/v1/characters/{character_id}/source-images/{id}
+/// PUT /api/v1/avatars/{avatar_id}/source-images/{id}
 pub async fn update(
     State(state): State<AppState>,
-    Path((_character_id, id)): Path<(DbId, DbId)>,
+    Path((_avatar_id, id)): Path<(DbId, DbId)>,
     Json(input): Json<UpdateSourceImage>,
 ) -> AppResult<Json<SourceImage>> {
     let image = SourceImageRepo::update(&state.pool, id, &input)
@@ -65,10 +65,10 @@ pub async fn update(
     Ok(Json(image))
 }
 
-/// DELETE /api/v1/characters/{character_id}/source-images/{id}
+/// DELETE /api/v1/avatars/{avatar_id}/source-images/{id}
 pub async fn delete(
     State(state): State<AppState>,
-    Path((_character_id, id)): Path<(DbId, DbId)>,
+    Path((_avatar_id, id)): Path<(DbId, DbId)>,
 ) -> AppResult<StatusCode> {
     let deleted = SourceImageRepo::soft_delete(&state.pool, id).await?;
     if deleted {

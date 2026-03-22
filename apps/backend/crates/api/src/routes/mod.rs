@@ -13,15 +13,15 @@ pub mod batch_review;
 pub mod branching;
 pub mod budget_quota;
 pub mod bug_reports;
-pub mod character;
-pub mod character_dashboard;
-pub mod character_deliverable_ignore;
-pub mod character_ingest;
-pub mod character_metadata;
-pub mod character_metadata_version;
-pub mod character_review;
-pub mod character_scene_overrides;
-pub mod character_speech;
+pub mod avatar;
+pub mod avatar_dashboard;
+pub mod avatar_deliverable_ignore;
+pub mod avatar_ingest;
+pub mod avatar_metadata;
+pub mod avatar_metadata_version;
+pub mod avatar_review;
+pub mod avatar_scene_overrides;
+pub mod avatar_speech;
 pub mod checkpoints;
 pub mod cloud_providers;
 pub mod collaboration;
@@ -241,17 +241,17 @@ use crate::ws;
 /// /projects                                        list, create
 /// /projects/{id}                                   get, update, delete
 /// /projects/{id}/stats                             project stats (GET, PRD-112)
-/// /projects/{project_id}/characters                list, create
-/// /projects/{project_id}/characters/{id}           get, update, delete
-/// /projects/{project_id}/characters/{id}/settings  get, put, patch
-/// /projects/{project_id}/characters/{id}/group     assign group (PUT, PRD-112)
+/// /projects/{project_id}/avatars                list, create
+/// /projects/{project_id}/avatars/{id}           get, update, delete
+/// /projects/{project_id}/avatars/{id}/settings  get, put, patch
+/// /projects/{project_id}/avatars/{id}/group     assign group (PUT, PRD-112)
 /// /projects/{project_id}/groups                    list, create (PRD-112)
 /// /projects/{project_id}/groups/{id}               update, delete (PRD-112)
-/// /projects/{project_id}/characters/metadata             all metadata (PRD-66)
-/// /projects/{project_id}/characters/metadata/completeness project completeness (PRD-66)
-/// /projects/{project_id}/characters/metadata/csv         export/import CSV (PRD-66)
+/// /projects/{project_id}/avatars/metadata             all metadata (PRD-66)
+/// /projects/{project_id}/avatars/metadata/completeness project completeness (PRD-66)
+/// /projects/{project_id}/avatars/metadata/csv         export/import CSV (PRD-66)
 /// /projects/{project_id}/scene-comparison            scene comparison gallery (GET, PRD-68)
-/// /projects/{project_id}/characters/{id}/all-scenes character all-scenes view (GET, PRD-68)
+/// /projects/{project_id}/avatars/{id}/all-scenes avatar all-scenes view (GET, PRD-68)
 /// /projects/{project_id}/scene-types               list, create
 /// /projects/{project_id}/scene-types/{id}          get, update, delete
 /// /projects/{project_id}/qa-thresholds             list, upsert (GET, POST, PRD-49)
@@ -274,33 +274,33 @@ use crate::ws;
 /// /projects/{project_id}/ingest/{id}/generate-metadata  generate metadata (POST, PRD-113)
 /// /projects/{project_id}/ingest/{id}/confirm       confirm import (POST, PRD-113)
 ///
-/// /characters/{character_id}/source-images         list, create
-/// /characters/{character_id}/source-images/{id}    get, update, delete
-/// /characters/{character_id}/derived-images        list, create
-/// /characters/{character_id}/derived-images/{id}   get, update, delete
-/// /characters/{character_id}/image-variants        list, create
-/// /characters/{character_id}/image-variants/{id}   get, update, delete
-/// /characters/{character_id}/metadata               get, update (PRD-66)
-/// /characters/{character_id}/metadata/completeness  completeness status (PRD-66)
-/// /characters/{character_id}/scenes                list, create
-/// /characters/{character_id}/scenes/{id}           get, update, delete
+/// /avatars/{avatar_id}/source-images         list, create
+/// /avatars/{avatar_id}/source-images/{id}    get, update, delete
+/// /avatars/{avatar_id}/derived-images        list, create
+/// /avatars/{avatar_id}/derived-images/{id}   get, update, delete
+/// /avatars/{avatar_id}/image-variants        list, create
+/// /avatars/{avatar_id}/image-variants/{id}   get, update, delete
+/// /avatars/{avatar_id}/metadata               get, update (PRD-66)
+/// /avatars/{avatar_id}/metadata/completeness  completeness status (PRD-66)
+/// /avatars/{avatar_id}/scenes                list, create
+/// /avatars/{avatar_id}/scenes/{id}           get, update, delete
 ///
-/// /characters/{character_id}/readiness              get readiness (GET, PRD-107)
-/// /characters/{character_id}/readiness/invalidate   invalidate cache (POST, PRD-107)
-/// /characters/readiness/batch-evaluate              batch evaluate (POST, PRD-107)
+/// /avatars/{avatar_id}/readiness              get readiness (GET, PRD-107)
+/// /avatars/{avatar_id}/readiness/invalidate   invalidate cache (POST, PRD-107)
+/// /avatars/readiness/batch-evaluate              batch evaluate (POST, PRD-107)
 ///
-/// /characters/{character_id}/dashboard              character dashboard (GET, PRD-108)
-/// /characters/{character_id}/settings               patch settings (PATCH, PRD-108)
+/// /avatars/{avatar_id}/dashboard              avatar dashboard (GET, PRD-108)
+/// /avatars/{avatar_id}/settings               patch settings (PATCH, PRD-108)
 ///
-/// /characters/{character_id}/consistency-report     generate, get latest (POST, GET, PRD-94)
+/// /avatars/{avatar_id}/consistency-report     generate, get latest (POST, GET, PRD-94)
 ///
-/// /characters/{id}/poster-frame                    get, set poster frame (GET, POST, PRD-96)
+/// /avatars/{id}/poster-frame                    get, set poster frame (GET, POST, PRD-96)
 ///
-/// /characters/{character_id}/extract-embedding     trigger extraction (POST, PRD-76)
-/// /characters/{character_id}/embedding-status      get status (GET, PRD-76)
-/// /characters/{character_id}/detected-faces        list faces (GET, PRD-76)
-/// /characters/{character_id}/select-face           select face (POST, PRD-76)
-/// /characters/{character_id}/embedding-history     history (GET, PRD-76)
+/// /avatars/{avatar_id}/extract-embedding     trigger extraction (POST, PRD-76)
+/// /avatars/{avatar_id}/embedding-status      get status (GET, PRD-76)
+/// /avatars/{avatar_id}/detected-faces        list faces (GET, PRD-76)
+/// /avatars/{avatar_id}/select-face           select face (POST, PRD-76)
+/// /avatars/{avatar_id}/embedding-history     history (GET, PRD-76)
 ///
 /// /scenes/{scene_id}/segments                      list, create
 /// /scenes/{scene_id}/segments/{id}                 get, update, delete
@@ -352,7 +352,7 @@ use crate::ws;
 ///
 /// /scene-types                                     list (studio-level), create
 /// /scene-types/{id}                                get, update, delete
-/// /scene-types/{id}/preview-prompt/{character_id}  preview prompt (GET, PRD-23)
+/// /scene-types/{id}/preview-prompt/{avatar_id}  preview prompt (GET, PRD-23)
 /// /scene-types/matrix                              generate matrix (POST, PRD-23)
 /// /scene-types/validate                            validate config (POST, PRD-23)
 /// /scene-types/{id}/children                       create child (POST), list children (GET, PRD-100)
@@ -384,7 +384,7 @@ use crate::ws;
 /// /qa/check-types                                  list check types
 /// /qa/run                                          run QA checks (POST)
 /// /qa/image-variants/{id}/results                  get QA results
-/// /qa/characters/{character_id}/source-qa-results  get source QA results
+/// /qa/avatars/{avatar_id}/source-qa-results  get source QA results
 /// /qa/projects/{project_id}/thresholds             get, update thresholds
 /// /qa/quality-gates/defaults                       studio QA defaults (GET, PRD-49)
 ///
@@ -478,7 +478,7 @@ use crate::ws;
 /// /admin/audit-logs/retention/{category}                 update policy (PUT, PRD-45)
 ///
 /// /extension-api/projects                               ext proxy: list projects (GET)
-/// /extension-api/characters/{id}                        ext proxy: get character (GET)
+/// /extension-api/avatars/{id}                        ext proxy: get avatar (GET)
 ///
 /// /workspace                                             get, update (GET, PUT, PRD-04)
 /// /workspace/reset                                       reset to defaults (POST, PRD-04)
@@ -527,13 +527,13 @@ use crate::ws;
 ///
 /// /workers/register                                          agent self-register (POST, PRD-46)
 ///
-/// /library/characters                                          list, create (GET, POST, PRD-60)
-/// /library/characters/{id}                                     get, update, delete (PRD-60)
-/// /library/characters/{id}/usage                               cross-project usage (GET, PRD-60)
-/// /library/characters/{id}/import                              import to project (POST, PRD-60)
-/// /library/characters/projects/{project_id}/links              list links (GET, PRD-60)
-/// /library/characters/links/{link_id}                          update, delete link (PUT, DELETE, PRD-60)
-/// /library/characters/readiness-summary                        readiness summary (GET, PRD-107)
+/// /library/avatars                                          list, create (GET, POST, PRD-60)
+/// /library/avatars/{id}                                     get, update, delete (PRD-60)
+/// /library/avatars/{id}/usage                               cross-project usage (GET, PRD-60)
+/// /library/avatars/{id}/import                              import to project (POST, PRD-60)
+/// /library/avatars/projects/{project_id}/links              list links (GET, PRD-60)
+/// /library/avatars/links/{link_id}                          update, delete link (PUT, DELETE, PRD-60)
+/// /library/avatars/readiness-summary                        readiness summary (GET, PRD-107)
 ///
 /// /admin/storage/backends                                      list, create (GET, POST, PRD-48)
 /// /admin/storage/backends/{id}                                 update (PUT, PRD-48)
@@ -583,11 +583,11 @@ use crate::ws;
 /// /wiki/articles/{slug}/revert/{version}                         revert (POST, PRD-56)
 /// /wiki/articles/{slug}/diff                                     diff versions (GET, PRD-56)
 ///
-/// /characters/duplicates/check                                   check single (POST, PRD-79)
-/// /characters/duplicates/batch                                   batch check (POST, PRD-79)
-/// /characters/duplicates/history                                 check history (GET, PRD-79)
-/// /characters/duplicates/{id}/resolve                            resolve match (POST, PRD-79)
-/// /characters/duplicates/{id}/dismiss                            dismiss match (POST, PRD-79)
+/// /avatars/duplicates/check                                   check single (POST, PRD-79)
+/// /avatars/duplicates/batch                                   batch check (POST, PRD-79)
+/// /avatars/duplicates/history                                 check history (GET, PRD-79)
+/// /avatars/duplicates/{id}/resolve                            resolve match (POST, PRD-79)
+/// /avatars/duplicates/{id}/dismiss                            dismiss match (POST, PRD-79)
 /// /admin/duplicate-settings                                      get, update settings (GET, PUT, PRD-79)
 ///
 /// /downloads                                                      list, create (GET, POST, PRD-104)
@@ -743,7 +743,7 @@ use crate::ws;
 /// /workflows/{id}/prompt-slots/{slot_id}                         update prompt slot (PUT, PRD-115)
 /// /scene-types/{id}/prompt-defaults                              list prompt defaults (GET, PRD-115)
 /// /scene-types/{id}/prompt-defaults/{slot_id}                    upsert prompt default (PUT, PRD-115)
-/// /characters/{id}/scenes/{scene_type_id}/prompt-overrides       get, upsert overrides (GET, PUT, PRD-115)
+/// /avatars/{id}/scenes/{scene_type_id}/prompt-overrides       get, upsert overrides (GET, PUT, PRD-115)
 /// /projects/{id}/scenes/{scene_type_id}/prompt-overrides         get, upsert project overrides (GET, PUT, PRD-115)
 /// /projects/{pid}/groups/{gid}/scenes/{stid}/prompt-overrides    get, upsert group overrides (GET, PUT, PRD-115)
 /// /prompts/resolve                                               resolve prompt preview (POST, PRD-115)
@@ -828,7 +828,7 @@ pub fn api_routes() -> Router<AppState> {
         .nest("/collaboration", collaboration::router())
         // Performance & benchmarking dashboard (PRD-41).
         .nest("/performance", performance::router())
-        // Project routes (also nests characters and project-scoped scene types).
+        // Project routes (also nests avatars and project-scoped scene types).
         .nest("/projects", project::router()
             .merge(metadata::project_metadata_router())
             .merge(delivery::export_router())
@@ -845,30 +845,30 @@ pub fn api_routes() -> Router<AppState> {
             .merge(project_lifecycle::bulk_lifecycle_router())
             .merge(prompt_management::project_prompt_override_router())
             .merge(video_settings::project_video_settings_router())
-            .nest("/{project_id}/characters", character_metadata::project_router())
-            .nest("/{project_id}/ingest", character_ingest::router())
+            .nest("/{project_id}/avatars", avatar_metadata::project_router())
+            .nest("/{project_id}/ingest", avatar_ingest::router())
             .nest("/{project_id}/scene-settings", project_scene_settings::router())
             .nest("/{project_id}/speech-config", project_speech_config::router())
-            .nest("/{project_id}/review", character_review::project_review_router())
+            .nest("/{project_id}/review", avatar_review::project_review_router())
             .merge(project_speech_import::router()))
-        // Character-scoped sub-resources (images, scenes, metadata editor, face embedding, readiness, dashboard PRD-108, prompt overrides PRD-115).
-        .nest("/characters", character::router()
-            .merge(metadata::character_metadata_router())
-            .merge(character_metadata::character_router())
-            .merge(character_metadata_version::router())
+        // Avatar-scoped sub-resources (images, scenes, metadata editor, face embedding, readiness, dashboard PRD-108, prompt overrides PRD-115).
+        .nest("/avatars", avatar::router()
+            .merge(metadata::avatar_metadata_router())
+            .merge(avatar_metadata::avatar_router())
+            .merge(avatar_metadata_version::router())
             .merge(embedding::embedding_router())
             .merge(readiness::readiness_router())
-            .merge(character_dashboard::dashboard_router())
-            .merge(prompt_management::character_prompt_override_router())
-            .merge(poster_frame::character_poster_router())
-            .merge(consistency_report::character_consistency_router())
-            .merge(contact_sheet::character_contact_sheet_router())
-            .merge(refinement::character_refinement_router())
-            .merge(character_review::character_review_router())
-            .merge(video_settings::character_video_settings_router())
-            .nest("/{character_id}/scene-settings", character_scene_overrides::router())
-            .nest("/{character_id}/deliverable-ignores", character_deliverable_ignore::router())
-            .nest("/{character_id}/speeches", character_speech::router()))
+            .merge(avatar_dashboard::dashboard_router())
+            .merge(prompt_management::avatar_prompt_override_router())
+            .merge(poster_frame::avatar_poster_router())
+            .merge(consistency_report::avatar_consistency_router())
+            .merge(contact_sheet::avatar_contact_sheet_router())
+            .merge(refinement::avatar_refinement_router())
+            .merge(avatar_review::avatar_review_router())
+            .merge(video_settings::avatar_video_settings_router())
+            .nest("/{avatar_id}/scene-settings", avatar_scene_overrides::router())
+            .nest("/{avatar_id}/deliverable-ignores", avatar_deliverable_ignore::router())
+            .nest("/{avatar_id}/speeches", avatar_speech::router()))
         // Scene-scoped sub-resources (segments, review queue, generation PRD-24, QA PRD-49, resolution PRD-59, storyboard PRD-62, branching PRD-50).
         .nest("/scenes", scene::router()
             .merge(metadata::scene_metadata_router())
@@ -1001,8 +1001,8 @@ pub fn api_routes() -> Router<AppState> {
         .nest("/admin/power", gpu_power::router())
         // External & tiered storage management (PRD-48).
         .nest("/admin/storage", storage::router())
-        // Character library: cross-project character sharing (PRD-60) + readiness summary (PRD-107).
-        .nest("/library/characters", library::router()
+        // Avatar library: cross-project avatar sharing (PRD-60) + readiness summary (PRD-107).
+        .nest("/library/avatars", library::router()
             .merge(readiness::readiness_library_router()))
         // Template & preset system (PRD-27).
         .nest("/templates", presets::template_router())
@@ -1017,8 +1017,8 @@ pub fn api_routes() -> Router<AppState> {
         .nest("/admin/model-checksums", integrity::checksum_router())
         // Studio Wiki & Contextual Help (PRD-56).
         .nest("/wiki/articles", wiki::router())
-        // Character duplicate detection (PRD-79).
-        .nest("/characters/duplicates", duplicates::router())
+        // Avatar duplicate detection (PRD-79).
+        .nest("/avatars/duplicates", duplicates::router())
         .nest("/admin/duplicate-settings", duplicates::settings_router())
         // Model & LoRA download manager (PRD-104).
         .nest("/downloads", downloads::download_router())
@@ -1063,11 +1063,11 @@ pub fn api_routes() -> Router<AppState> {
         // Production Reporting & Data Export (PRD-73).
         .nest("/reports", production_report::report_router())
         .nest("/report-schedules", production_report::report_schedule_router())
-        // Character Consistency Reports (PRD-94).
+        // Avatar Consistency Reports (PRD-94).
         .nest("/consistency-reports", consistency_report::consistency_report_router())
         // Contact Sheet Image delete (PRD-103).
         .nest("/contact-sheet-images", contact_sheet::contact_sheet_image_router())
-        // Bulk Character Onboarding Wizard (PRD-67).
+        // Bulk Avatar Onboarding Wizard (PRD-67).
         .nest("/onboarding-sessions", onboarding_wizard::router())
         // Legacy Data Import & Migration Toolkit (PRD-86).
         .nest("/admin/import/legacy", legacy_import::legacy_import_router())
@@ -1075,7 +1075,7 @@ pub fn api_routes() -> Router<AppState> {
         .nest("/admin/maintenance", maintenance::maintenance_router())
         // Batch Metadata Operations (PRD-88).
         .nest("/admin/batch-metadata", batch_metadata::batch_metadata_router())
-        // Character Readiness & State View: criteria configuration (PRD-107).
+        // Avatar Readiness & State View: criteria configuration (PRD-107).
         .nest("/readiness-criteria", readiness::readiness_criteria_router())
         // System status footer (PRD-117).
         .nest("/status", status::router())
@@ -1111,8 +1111,8 @@ pub fn api_routes() -> Router<AppState> {
         .nest("/shared-links", shared_link::authenticated_router())
         // Batch Review & Approval Workflows (PRD-92).
         .nest("/batch-review", batch_review::batch_review_router())
-        // Character Review Allocation: reviewer queue and decision endpoints (PRD-129).
-        .nest("/review/character-assignments", character_review::reviewer_router())
+        // Avatar Review Allocation: reviewer queue and decision endpoints (PRD-129).
+        .nest("/review/avatar-assignments", avatar_review::reviewer_router())
         // Shareable Preview Links: public external review (PRD-84, no auth).
         .nest("/review", shared_link::public_router())
         // Time-based job scheduling (PRD-119).

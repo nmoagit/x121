@@ -12,7 +12,7 @@ use x121_core::types::DbId;
 use x121_core::video_settings::{self, VideoSettingsLayer};
 use x121_db::models::pipeline::Pipeline;
 use x121_db::repositories::{
-    CharacterRepo, ImageVariantRepo, PipelineRepo, ProjectRepo, SceneTypeTrackConfigRepo,
+    AvatarRepo, ImageVariantRepo, PipelineRepo, ProjectRepo, SceneTypeTrackConfigRepo,
     SegmentRepo, VideoSettingsRepo, WorkflowRepo,
 };
 
@@ -132,21 +132,21 @@ pub async fn load_generation_context(
         target_resolution: scene_type.target_resolution.clone(),
     };
 
-    // Load character for project_id and group_id.
-    let character = CharacterRepo::find_by_id(pool, scene.character_id)
+    // Load avatar for project_id and group_id.
+    let avatar = AvatarRepo::find_by_id(pool, scene.avatar_id)
         .await?
         .ok_or_else(|| {
             PipelineError::MissingConfig(format!(
-                "Character {} not found for scene {scene_id}",
-                scene.character_id
+                "Avatar {} not found for scene {scene_id}",
+                scene.avatar_id
             ))
         })?;
 
     let (project_layer, group_layer, char_layer) = VideoSettingsRepo::load_hierarchy_layers(
         pool,
-        character.project_id,
-        character.group_id,
-        scene.character_id,
+        avatar.project_id,
+        avatar.group_id,
+        scene.avatar_id,
         scene.scene_type_id,
     )
     .await?;
@@ -170,10 +170,10 @@ pub async fn load_generation_context(
     let resolved_prompts = prompt_resolution::resolve_prompts(
         &[],             // prompt_slots — will load from workflow_prompt_slots later
         &HashMap::new(), // scene_type_defaults
-        &HashMap::new(), // character_metadata
+        &HashMap::new(), // avatar_metadata
         &HashMap::new(), // project_fragment_overrides
         &HashMap::new(), // group_fragment_overrides
-        &HashMap::new(), // character_fragment_overrides
+        &HashMap::new(), // avatar_fragment_overrides
         None,            // fragment_separator
     );
 

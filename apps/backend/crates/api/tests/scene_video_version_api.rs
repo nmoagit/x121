@@ -1,7 +1,7 @@
 //! HTTP-level integration tests for scene video version API endpoints.
 //!
 //! Uses Axum's tower::ServiceExt to send requests directly to the router.
-//! Prerequisite entities (project, character, scene_type, image_variant, scene)
+//! Prerequisite entities (project, avatar, scene_type, image_variant, scene)
 //! are created via the repository layer to keep tests focused on HTTP behaviour.
 
 mod common;
@@ -9,14 +9,14 @@ mod common;
 use axum::http::StatusCode;
 use common::{body_json, build_test_app, delete, get, put_json};
 use sqlx::PgPool;
-use x121_db::models::character::CreateCharacter;
+use x121_db::models::avatar::CreateAvatar;
 use x121_db::models::image::CreateImageVariant;
 use x121_db::models::project::CreateProject;
 use x121_db::models::scene::CreateScene;
 use x121_db::models::scene_type::CreateSceneType;
 use x121_db::models::scene_video_version::CreateSceneVideoVersion;
 use x121_db::repositories::{
-    CharacterRepo, ImageVariantRepo, ProjectRepo, SceneRepo, SceneTypeRepo, SceneVideoVersionRepo,
+    AvatarRepo, ImageVariantRepo, ProjectRepo, SceneRepo, SceneTypeRepo, SceneVideoVersionRepo,
 };
 
 // ---------------------------------------------------------------------------
@@ -36,9 +36,9 @@ async fn setup_scene(pool: &PgPool, suffix: &str) -> i64 {
     )
     .await
     .unwrap();
-    let character = CharacterRepo::create(
+    let avatar = AvatarRepo::create(
         pool,
-        &CreateCharacter {
+        &CreateAvatar {
             project_id: project.id,
             name: format!("C_{suffix}"),
             status_id: None,
@@ -79,7 +79,7 @@ async fn setup_scene(pool: &PgPool, suffix: &str) -> i64 {
     let variant = ImageVariantRepo::create(
         pool,
         &CreateImageVariant {
-            character_id: character.id,
+            avatar_id: avatar.id,
             source_image_id: None,
             derived_image_id: None,
             variant_label: "clothed".to_string(),
@@ -102,7 +102,7 @@ async fn setup_scene(pool: &PgPool, suffix: &str) -> i64 {
     let scene = SceneRepo::create(
         pool,
         &CreateScene {
-            character_id: character.id,
+            avatar_id: avatar.id,
             scene_type_id: scene_type.id,
             image_variant_id: variant.id,
             status_id: None,

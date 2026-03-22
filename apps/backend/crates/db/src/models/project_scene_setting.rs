@@ -1,7 +1,7 @@
 //! Project scene settings model and DTOs (PRD-111, PRD-123).
 //!
 //! Second tier of the four-level inheritance chain:
-//! scene_type (default) -> project settings -> group settings -> character overrides.
+//! scene_type (default) -> project settings -> group settings -> avatar overrides.
 
 use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
@@ -22,7 +22,7 @@ pub struct ProjectSceneSetting {
 }
 
 /// Type alias for backward compatibility. The effective setting struct is
-/// shared across the project and character tiers.
+/// shared across the project and avatar tiers.
 pub type EffectiveProjectSceneSetting = EffectiveSceneSetting;
 
 /// Bulk update request for project scene settings.
@@ -33,7 +33,7 @@ pub struct BulkProjectSceneSettings {
 
 /// A single setting update within a bulk request.
 ///
-/// Shared shape used by both project and character scene setting updates.
+/// Shared shape used by both project and avatar scene setting updates.
 #[derive(Debug, Clone, Deserialize)]
 pub struct SceneSettingUpdate {
     pub scene_type_id: DbId,

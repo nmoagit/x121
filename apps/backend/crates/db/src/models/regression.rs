@@ -16,7 +16,7 @@ use x121_core::types::{DbId, Timestamp};
 #[derive(Debug, Clone, FromRow, Serialize)]
 pub struct RegressionReference {
     pub id: DbId,
-    pub character_id: DbId,
+    pub avatar_id: DbId,
     pub scene_type_id: DbId,
     pub reference_scene_id: DbId,
     pub baseline_scores: serde_json::Value,
@@ -67,7 +67,7 @@ pub struct RegressionResult {
 /// Input for creating a new regression reference.
 #[derive(Debug, Clone, Deserialize)]
 pub struct CreateRegressionReference {
-    pub character_id: DbId,
+    pub avatar_id: DbId,
     pub scene_type_id: DbId,
     pub reference_scene_id: DbId,
     pub baseline_scores: serde_json::Value,

@@ -9,7 +9,7 @@ use crate::models::failure_pattern::{FailurePattern, UpsertFailurePattern};
 /// Column list shared across queries to avoid repetition.
 const COLUMNS: &str = "\
     id, pattern_key, description, \
-    dimension_workflow_id, dimension_lora_id, dimension_character_id, \
+    dimension_workflow_id, dimension_lora_id, dimension_avatar_id, \
     dimension_scene_type_id, dimension_segment_position, \
     failure_count, total_count, failure_rate, severity, \
     last_occurrence, created_at, updated_at";
@@ -29,7 +29,7 @@ impl FailurePatternRepo {
         let query = format!(
             "INSERT INTO failure_patterns
                 (pattern_key, description, dimension_workflow_id, dimension_lora_id,
-                 dimension_character_id, dimension_scene_type_id, dimension_segment_position,
+                 dimension_avatar_id, dimension_scene_type_id, dimension_segment_position,
                  failure_count, total_count, failure_rate, severity, last_occurrence)
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW())
              ON CONFLICT (pattern_key) DO UPDATE SET
@@ -46,7 +46,7 @@ impl FailurePatternRepo {
             .bind(&input.description)
             .bind(input.dimension_workflow_id)
             .bind(input.dimension_lora_id)
-            .bind(input.dimension_character_id)
+            .bind(input.dimension_avatar_id)
             .bind(input.dimension_scene_type_id)
             .bind(&input.dimension_segment_position)
             .bind(input.failure_count)
@@ -196,7 +196,7 @@ fn dimension_column(dimension: &str) -> &'static str {
     match dimension {
         "workflow" => "dimension_workflow_id",
         "lora" => "dimension_lora_id",
-        "character" => "dimension_character_id",
+        "avatar" => "dimension_avatar_id",
         "scene_type" => "dimension_scene_type_id",
         "segment_position" => "dimension_segment_position",
         _ => "dimension_workflow_id",

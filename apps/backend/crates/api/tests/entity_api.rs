@@ -121,11 +121,11 @@ async fn test_list_projects(pool: PgPool) {
 }
 
 // ---------------------------------------------------------------------------
-// Character CRUD (nested under projects)
+// Avatar CRUD (nested under projects)
 // ---------------------------------------------------------------------------
 
 #[sqlx::test(migrations = "../../../db/migrations")]
-async fn test_create_character_under_project(pool: PgPool) {
+async fn test_create_avatar_under_project(pool: PgPool) {
     let app = common::build_test_app(pool.clone()).await;
     let project = body_json(
         post_json(
@@ -141,7 +141,7 @@ async fn test_create_character_under_project(pool: PgPool) {
     let app = common::build_test_app(pool).await;
     let response = post_json(
         app,
-        &format!("/api/v1/projects/{project_id}/characters"),
+        &format!("/api/v1/projects/{project_id}/avatars"),
         serde_json::json!({"project_id": 0, "name": "Alice"}),
     )
     .await;
@@ -154,7 +154,7 @@ async fn test_create_character_under_project(pool: PgPool) {
 }
 
 #[sqlx::test(migrations = "../../../db/migrations")]
-async fn test_list_characters_for_project(pool: PgPool) {
+async fn test_list_avatars_for_project(pool: PgPool) {
     let app = common::build_test_app(pool.clone()).await;
     let project = body_json(
         post_json(
@@ -170,7 +170,7 @@ async fn test_list_characters_for_project(pool: PgPool) {
     let app = common::build_test_app(pool.clone()).await;
     post_json(
         app,
-        &format!("/api/v1/projects/{pid}/characters"),
+        &format!("/api/v1/projects/{pid}/avatars"),
         serde_json::json!({"project_id": pid, "name": "B1"}),
     )
     .await;
@@ -178,13 +178,13 @@ async fn test_list_characters_for_project(pool: PgPool) {
     let app = common::build_test_app(pool.clone()).await;
     post_json(
         app,
-        &format!("/api/v1/projects/{pid}/characters"),
+        &format!("/api/v1/projects/{pid}/avatars"),
         serde_json::json!({"project_id": pid, "name": "B2"}),
     )
     .await;
 
     let app = common::build_test_app(pool).await;
-    let response = get(app, &format!("/api/v1/projects/{pid}/characters")).await;
+    let response = get(app, &format!("/api/v1/projects/{pid}/avatars")).await;
     assert_eq!(response.status(), StatusCode::OK);
 
     let json = body_json(response).await;
@@ -197,9 +197,9 @@ async fn test_list_characters_for_project(pool: PgPool) {
 
 #[sqlx::test(migrations = "../../../db/migrations")]
 async fn test_segment_crud_under_scene(pool: PgPool) {
-    // Set up: project -> character, scene_type, image_variant -> scene.
+    // Set up: project -> avatar, scene_type, image_variant -> scene.
     // We use the repository layer directly to avoid many HTTP calls for setup.
-    use x121_db::models::character::CreateCharacter;
+    use x121_db::models::avatar::CreateAvatar;
     use x121_db::models::image::CreateImageVariant;
     use x121_db::models::project::CreateProject;
     use x121_db::models::scene::CreateScene;
@@ -217,9 +217,9 @@ async fn test_segment_crud_under_scene(pool: PgPool) {
     )
     .await
     .unwrap();
-    let character = CharacterRepo::create(
+    let avatar = AvatarRepo::create(
         &pool,
-        &CreateCharacter {
+        &CreateAvatar {
             project_id: project.id,
             name: "F".to_string(),
             status_id: None,
@@ -260,7 +260,7 @@ async fn test_segment_crud_under_scene(pool: PgPool) {
     let variant = ImageVariantRepo::create(
         &pool,
         &CreateImageVariant {
-            character_id: character.id,
+            avatar_id: avatar.id,
             source_image_id: None,
             derived_image_id: None,
             variant_label: "clothed".to_string(),
@@ -283,7 +283,7 @@ async fn test_segment_crud_under_scene(pool: PgPool) {
     let scene = SceneRepo::create(
         &pool,
         &CreateScene {
-            character_id: character.id,
+            avatar_id: avatar.id,
             scene_type_id: scene_type.id,
             image_variant_id: variant.id,
             status_id: None,

@@ -11,13 +11,13 @@ use axum::Json;
 use serde::{Deserialize, Serialize};
 use x121_core::error::CoreError;
 use x121_core::metadata::{
-    self, BiographicalData, CharacterMetadata, PhysicalAttributes, ProvenanceInfo, SegmentInfo,
-    VideoMetadata, VideoTechnicalInfo, CHARACTER_SCHEMA_VERSION, ENTITY_TYPE_CHARACTER,
-    FILE_TYPE_CHARACTER, VIDEO_SCHEMA_VERSION,
+    self, BiographicalData, AvatarMetadata, PhysicalAttributes, ProvenanceInfo, SegmentInfo,
+    VideoMetadata, VideoTechnicalInfo, AVATAR_SCHEMA_VERSION, ENTITY_TYPE_AVATAR,
+    FILE_TYPE_AVATAR, VIDEO_SCHEMA_VERSION,
 };
 use x121_core::types::DbId;
 use x121_db::models::metadata::{CreateMetadataGeneration, RegenerationReport, StaleMetadata};
-use x121_db::repositories::{CharacterRepo, MetadataGenerationRepo, SceneRepo, SegmentRepo};
+use x121_db::repositories::{AvatarRepo, MetadataGenerationRepo, SceneRepo, SegmentRepo};
 
 use crate::error::{AppError, AppResult};
 use crate::response::DataResponse;
@@ -27,17 +27,17 @@ use crate::state::AppState;
 // Typed response structs (DRY-176)
 // ---------------------------------------------------------------------------
 
-/// Response for a single character metadata regeneration.
+/// Response for a single avatar metadata regeneration.
 #[derive(Debug, Serialize)]
 struct RegenerateResponse {
     status: &'static str,
-    character_id: DbId,
+    avatar_id: DbId,
 }
 
 /// Response for the stale metadata endpoint.
 #[derive(Debug, Serialize)]
 struct StaleResponse {
-    stale_character_metadata: Vec<StaleMetadata>,
+    stale_avatar_metadata: Vec<StaleMetadata>,
     stale_video_metadata: Vec<StaleMetadata>,
 }
 
@@ -45,47 +45,47 @@ struct StaleResponse {
 // Internal: build metadata structs from DB
 // ---------------------------------------------------------------------------
 
-/// Build a `CharacterMetadata` struct from database records.
-async fn build_character_metadata(
+/// Build a `AvatarMetadata` struct from database records.
+async fn build_avatar_metadata(
     pool: &sqlx::PgPool,
-    character_id: DbId,
-) -> AppResult<CharacterMetadata> {
-    let character = CharacterRepo::find_by_id(pool, character_id)
+    avatar_id: DbId,
+) -> AppResult<AvatarMetadata> {
+    let avatar = AvatarRepo::find_by_id(pool, avatar_id)
         .await?
         .ok_or(AppError::Core(CoreError::NotFound {
-            entity: "Character",
-            id: character_id,
+            entity: "Avatar",
+            id: avatar_id,
         }))?;
 
     // Fetch the project name.
-    let project = x121_db::repositories::ProjectRepo::find_by_id(pool, character.project_id)
+    let project = x121_db::repositories::ProjectRepo::find_by_id(pool, avatar.project_id)
         .await?
         .ok_or(AppError::Core(CoreError::NotFound {
             entity: "Project",
-            id: character.project_id,
+            id: avatar.project_id,
         }))?;
 
-    // Extract biographical data from the character's metadata JSON.
-    let (bio, physical) = extract_bio_and_physical(&character.metadata);
+    // Extract biographical data from the avatar's metadata JSON.
+    let (bio, physical) = extract_bio_and_physical(&avatar.metadata);
 
     let now = chrono::Utc::now();
-    Ok(CharacterMetadata {
-        schema_version: CHARACTER_SCHEMA_VERSION.to_string(),
-        character_id: character.id,
-        name: character.name,
-        project_id: character.project_id,
+    Ok(AvatarMetadata {
+        schema_version: AVATAR_SCHEMA_VERSION.to_string(),
+        avatar_id: avatar.id,
+        name: avatar.name,
+        project_id: avatar.project_id,
         project_name: project.name,
         biographical: bio,
         physical_attributes: physical,
         source_image: None,
         derived_images: Vec::new(),
-        custom_fields: character.metadata.clone(),
+        custom_fields: avatar.metadata.clone(),
         generated_at: now.to_rfc3339(),
-        source_updated_at: character.updated_at.to_rfc3339(),
+        source_updated_at: avatar.updated_at.to_rfc3339(),
     })
 }
 
-/// Extract biographical and physical attribute data from the character's
+/// Extract biographical and physical attribute data from the avatar's
 /// optional metadata JSONB column.
 fn extract_bio_and_physical(
     meta: &Option<serde_json::Value>,
@@ -122,11 +122,11 @@ async fn build_video_metadata(pool: &sqlx::PgPool, scene_id: DbId) -> AppResult<
             id: scene_id,
         }))?;
 
-    let character = CharacterRepo::find_by_id(pool, scene.character_id)
+    let avatar = AvatarRepo::find_by_id(pool, scene.avatar_id)
         .await?
         .ok_or(AppError::Core(CoreError::NotFound {
-            entity: "Character",
-            id: scene.character_id,
+            entity: "Avatar",
+            id: scene.avatar_id,
         }))?;
 
     let segments = SegmentRepo::list_by_scene(pool, scene_id).await?;
@@ -147,8 +147,8 @@ async fn build_video_metadata(pool: &sqlx::PgPool, scene_id: DbId) -> AppResult<
     Ok(VideoMetadata {
         schema_version: VIDEO_SCHEMA_VERSION.to_string(),
         scene_id: scene.id,
-        character_id: scene.character_id,
-        character_name: character.name,
+        avatar_id: scene.avatar_id,
+        avatar_name: avatar.name,
         scene_type: format!("{}", scene.scene_type_id),
         technical: VideoTechnicalInfo {
             duration_seconds: 0.0,
@@ -206,15 +206,15 @@ async fn upsert_generation(
 // Handlers
 // ---------------------------------------------------------------------------
 
-/// GET /api/v1/characters/{character_id}/metadata/preview
+/// GET /api/v1/avatars/{avatar_id}/metadata/preview
 ///
-/// Returns the current character metadata JSON without persisting a generation
+/// Returns the current avatar metadata JSON without persisting a generation
 /// record.
-pub async fn preview_character_metadata(
+pub async fn preview_avatar_metadata(
     State(state): State<AppState>,
-    Path(character_id): Path<DbId>,
+    Path(avatar_id): Path<DbId>,
 ) -> AppResult<impl IntoResponse> {
-    let meta = build_character_metadata(&state.pool, character_id).await?;
+    let meta = build_avatar_metadata(&state.pool, avatar_id).await?;
     Ok(Json(DataResponse { data: meta }))
 }
 
@@ -230,15 +230,15 @@ pub async fn preview_video_metadata(
     Ok(Json(DataResponse { data: meta }))
 }
 
-/// POST /api/v1/characters/{character_id}/metadata/regenerate
+/// POST /api/v1/avatars/{avatar_id}/metadata/regenerate
 ///
-/// Generates character metadata and records the generation in the
+/// Generates avatar metadata and records the generation in the
 /// `metadata_generations` table.
-pub async fn regenerate_character_metadata(
+pub async fn regenerate_avatar_metadata(
     State(state): State<AppState>,
-    Path(character_id): Path<DbId>,
+    Path(avatar_id): Path<DbId>,
 ) -> AppResult<impl IntoResponse> {
-    let meta = build_character_metadata(&state.pool, character_id).await?;
+    let meta = build_avatar_metadata(&state.pool, avatar_id).await?;
 
     let source_updated_at = chrono::DateTime::parse_from_rfc3339(&meta.source_updated_at)
         .map_err(|e| AppError::InternalError(format!("Timestamp parse failed: {e}")))?
@@ -246,10 +246,10 @@ pub async fn regenerate_character_metadata(
 
     upsert_generation(
         &state.pool,
-        ENTITY_TYPE_CHARACTER,
-        character_id,
-        FILE_TYPE_CHARACTER,
-        CHARACTER_SCHEMA_VERSION,
+        ENTITY_TYPE_AVATAR,
+        avatar_id,
+        FILE_TYPE_AVATAR,
+        AVATAR_SCHEMA_VERSION,
         source_updated_at,
         &meta,
     )
@@ -258,7 +258,7 @@ pub async fn regenerate_character_metadata(
     Ok(Json(DataResponse {
         data: RegenerateResponse {
             status: "regenerated",
-            character_id,
+            avatar_id,
         },
     }))
 }
@@ -271,7 +271,7 @@ pub struct RegenerateProjectRequest {
 
 /// POST /api/v1/projects/{project_id}/metadata/regenerate
 ///
-/// Batch-regenerates metadata for all characters in a project. Accepts a
+/// Batch-regenerates metadata for all avatars in a project. Accepts a
 /// `stale_only` flag to skip up-to-date entries.
 pub async fn regenerate_project_metadata(
     State(state): State<AppState>,
@@ -279,23 +279,23 @@ pub async fn regenerate_project_metadata(
     Json(body): Json<RegenerateProjectRequest>,
 ) -> AppResult<impl IntoResponse> {
     let stale_only = body.stale_only.unwrap_or(false);
-    let characters = CharacterRepo::list_by_project(&state.pool, project_id).await?;
+    let avatars = AvatarRepo::list_by_project(&state.pool, project_id).await?;
 
     let mut report = RegenerationReport::default();
 
-    for character in &characters {
+    for avatar in &avatars {
         // If stale_only, check whether the generation is actually stale.
         if stale_only {
             let existing = MetadataGenerationRepo::find_by_entity(
                 &state.pool,
-                ENTITY_TYPE_CHARACTER,
-                character.id,
-                FILE_TYPE_CHARACTER,
+                ENTITY_TYPE_AVATAR,
+                avatar.id,
+                FILE_TYPE_AVATAR,
             )
             .await?;
 
             if let Some(gen) = existing {
-                if !metadata::is_stale(&gen.source_updated_at, &character.updated_at) {
+                if !metadata::is_stale(&gen.source_updated_at, &avatar.updated_at) {
                     report.skipped += 1;
                     continue;
                 }
@@ -303,15 +303,15 @@ pub async fn regenerate_project_metadata(
         }
 
         // Generate and persist.
-        match build_character_metadata(&state.pool, character.id).await {
+        match build_avatar_metadata(&state.pool, avatar.id).await {
             Ok(meta) => {
                 if upsert_generation(
                     &state.pool,
-                    ENTITY_TYPE_CHARACTER,
-                    character.id,
-                    FILE_TYPE_CHARACTER,
-                    CHARACTER_SCHEMA_VERSION,
-                    character.updated_at,
+                    ENTITY_TYPE_AVATAR,
+                    avatar.id,
+                    FILE_TYPE_AVATAR,
+                    AVATAR_SCHEMA_VERSION,
+                    avatar.updated_at,
                     &meta,
                 )
                 .await
@@ -334,30 +334,30 @@ pub async fn regenerate_project_metadata(
 /// GET /api/v1/projects/{project_id}/metadata/stale
 ///
 /// Returns all stale metadata entries for a given project, grouped by
-/// character metadata and video metadata.
+/// avatar metadata and video metadata.
 pub async fn get_stale_metadata(
     State(state): State<AppState>,
     Path(project_id): Path<DbId>,
 ) -> AppResult<impl IntoResponse> {
-    let stale_characters = MetadataGenerationRepo::find_stale_characters(&state.pool).await?;
+    let stale_avatars = MetadataGenerationRepo::find_stale_avatars(&state.pool).await?;
     let stale_scenes = MetadataGenerationRepo::find_stale_scenes(&state.pool).await?;
 
     // Filter to the requested project's entities.
-    let project_character_ids: Vec<DbId> = CharacterRepo::list_by_project(&state.pool, project_id)
+    let project_avatar_ids: Vec<DbId> = AvatarRepo::list_by_project(&state.pool, project_id)
         .await?
         .iter()
         .map(|c| c.id)
         .collect();
 
-    let filtered_characters: Vec<StaleMetadata> = stale_characters
+    let filtered_avatars: Vec<StaleMetadata> = stale_avatars
         .into_iter()
-        .filter(|s| project_character_ids.contains(&s.entity_id))
+        .filter(|s| project_avatar_ids.contains(&s.entity_id))
         .collect();
 
-    // For scenes, resolve via character_id by collecting scenes per character.
+    // For scenes, resolve via avatar_id by collecting scenes per avatar.
     let mut project_scene_ids: Vec<DbId> = Vec::new();
-    for char_id in &project_character_ids {
-        if let Ok(scenes) = SceneRepo::list_by_character(&state.pool, *char_id).await {
+    for char_id in &project_avatar_ids {
+        if let Ok(scenes) = SceneRepo::list_by_avatar(&state.pool, *char_id).await {
             project_scene_ids.extend(scenes.iter().map(|s| s.id));
         }
     }
@@ -369,7 +369,7 @@ pub async fn get_stale_metadata(
 
     Ok(Json(DataResponse {
         data: StaleResponse {
-            stale_character_metadata: filtered_characters,
+            stale_avatar_metadata: filtered_avatars,
             stale_video_metadata: filtered_scenes,
         },
     }))

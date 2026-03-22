@@ -36,7 +36,7 @@ pub const DEFAULT_RETENTION_DAYS: i32 = 30;
 /// Default mock capture retention in hours.
 pub const DEFAULT_MOCK_RETENTION_HOURS: i32 = 24;
 
-/// Length of randomly generated mock tokens (URL-safe alphanumeric characters).
+/// Length of randomly generated mock tokens (URL-safe alphanumeric avatars).
 const MOCK_TOKEN_LENGTH: usize = 22;
 
 // ---------------------------------------------------------------------------
@@ -104,7 +104,7 @@ pub fn compute_endpoint_health(
 
 /// Generate a random URL-safe token for mock endpoint identification.
 ///
-/// Produces a 22-character alphanumeric string suitable for use in URLs.
+/// Produces a 22-avatar alphanumeric string suitable for use in URLs.
 pub fn generate_mock_token() -> String {
     use rand::Rng;
     rand::rng()

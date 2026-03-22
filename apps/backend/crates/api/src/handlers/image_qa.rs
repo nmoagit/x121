@@ -52,7 +52,7 @@ const SCRIPT_GROUPS: &[(&str, &[&str])] = &[
 /// Request body for the `POST /qa/run` endpoint.
 #[derive(Debug, Deserialize)]
 pub struct RunQaRequest {
-    pub character_id: DbId,
+    pub avatar_id: DbId,
     pub image_variant_id: Option<DbId>,
     pub image_path: String,
     pub is_source_image: bool,
@@ -106,7 +106,7 @@ pub async fn run_qa(
 
     // Build a config JSON to pass to every script.
     let config = serde_json::json!({
-        "character_id": input.character_id,
+        "avatar_id": input.avatar_id,
         "image_variant_id": input.image_variant_id,
         "is_source_image": input.is_source_image,
     });
@@ -150,7 +150,7 @@ pub async fn run_qa(
 
             let create_dto = CreateImageQualityScore {
                 image_variant_id: input.image_variant_id,
-                character_id: input.character_id,
+                avatar_id: input.avatar_id,
                 check_type_id,
                 score: raw_score,
                 status: status.clone(),
@@ -185,14 +185,14 @@ pub async fn get_results(
     Ok(Json(scores))
 }
 
-/// GET /api/v1/qa/characters/{character_id}/source-qa-results
+/// GET /api/v1/qa/avatars/{avatar_id}/source-qa-results
 ///
-/// Returns QA scores for source images of a character.
+/// Returns QA scores for source images of a avatar.
 pub async fn get_source_results(
     State(state): State<AppState>,
-    Path(character_id): Path<DbId>,
+    Path(avatar_id): Path<DbId>,
 ) -> AppResult<Json<Vec<ImageQualityScore>>> {
-    let scores = ImageQualityScoreRepo::list_by_character_source(&state.pool, character_id).await?;
+    let scores = ImageQualityScoreRepo::list_by_avatar_source(&state.pool, avatar_id).await?;
     Ok(Json(scores))
 }
 

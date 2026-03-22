@@ -286,21 +286,21 @@ impl FrameAnnotationRepo {
         Ok(count)
     }
 
-    /// Browse all annotated items with full context (character, scene, project).
+    /// Browse all annotated items with full context (avatar, scene, project).
     ///
-    /// Joins through version->scene->character->project and segment->scene->character->project
+    /// Joins through version->scene->avatar->project and segment->scene->avatar->project
     /// chains to provide a flat browseable list.
     pub async fn browse(
         pool: &PgPool,
         project_id: Option<DbId>,
-        character_id: Option<DbId>,
+        avatar_id: Option<DbId>,
         sort: &str,
         sort_dir: &str,
         limit: i64,
         offset: i64,
     ) -> Result<Vec<AnnotatedItem>, sqlx::Error> {
         let order_clause = match sort {
-            "character_name" => "ch.name",
+            "avatar_name" => "ch.name",
             _ => "fa.created_at",
         };
         let dir = match sort_dir {
@@ -315,8 +315,8 @@ impl FrameAnnotationRepo {
                 fa.segment_id,
                 fa.frame_number,
                 COALESCE(jsonb_array_length(fa.annotations_json), 0)::int4 AS annotation_count,
-                ch.id AS character_id,
-                ch.name AS character_name,
+                ch.id AS avatar_id,
+                ch.name AS avatar_name,
                 sc.id AS scene_id,
                 COALESCE(st.name, '') AS scene_type_name,
                 COALESCE(sc.status_id, 1::smallint) AS scene_status_id,
@@ -331,7 +331,7 @@ impl FrameAnnotationRepo {
             LEFT JOIN scene_video_versions svv ON svv.id = fa.version_id
             LEFT JOIN segments seg ON seg.id = fa.segment_id
             LEFT JOIN scenes sc ON sc.id = COALESCE(svv.scene_id, seg.scene_id)
-            LEFT JOIN characters ch ON ch.id = sc.character_id
+            LEFT JOIN avatars ch ON ch.id = sc.avatar_id
             LEFT JOIN projects pr ON pr.id = ch.project_id
             LEFT JOIN scene_types st ON st.id = sc.scene_type_id
             WHERE sc.id IS NOT NULL
@@ -343,7 +343,7 @@ impl FrameAnnotationRepo {
 
         sqlx::query_as::<_, AnnotatedItem>(&query)
             .bind(project_id)
-            .bind(character_id)
+            .bind(avatar_id)
             .bind(limit)
             .bind(offset)
             .fetch_all(pool)

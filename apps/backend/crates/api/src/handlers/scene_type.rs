@@ -18,7 +18,7 @@ use x121_db::models::scene_type::{
     CreateSceneType, MatrixCellDto, MatrixRequest, PromptPreviewQuery, PromptPreviewResponse,
     SceneType, UpdateSceneType, ValidationResult,
 };
-use x121_db::repositories::{CharacterRepo, SceneTypeRepo};
+use x121_db::repositories::{AvatarRepo, SceneTypeRepo};
 
 use crate::error::{AppError, AppResult};
 use crate::handlers::scene_type_inheritance::ensure_scene_type_exists;
@@ -176,10 +176,10 @@ async fn delete_inner(state: &AppState, id: DbId) -> AppResult<StatusCode> {
 // PRD-23 endpoints
 // ---------------------------------------------------------------------------
 
-/// GET /api/v1/scene-types/{id}/preview-prompt/{character_id}?clip_position=full_clip
+/// GET /api/v1/scene-types/{id}/preview-prompt/{avatar_id}?clip_position=full_clip
 pub async fn preview_prompt(
     State(state): State<AppState>,
-    Path((scene_type_id, character_id)): Path<(DbId, DbId)>,
+    Path((scene_type_id, avatar_id)): Path<(DbId, DbId)>,
     Query(params): Query<PromptPreviewQuery>,
 ) -> AppResult<impl IntoResponse> {
     use x121_core::scene_type_config::{self, ClipPosition, ResolvedPrompt};
@@ -187,12 +187,12 @@ pub async fn preview_prompt(
     // 1. Load scene type
     let scene_type = ensure_scene_type_exists(&state.pool, scene_type_id).await?;
 
-    // 2. Load character
-    let character = CharacterRepo::find_by_id(&state.pool, character_id)
+    // 2. Load avatar
+    let avatar = AvatarRepo::find_by_id(&state.pool, avatar_id)
         .await?
         .ok_or(AppError::Core(CoreError::NotFound {
-            entity: "Character",
-            id: character_id,
+            entity: "Avatar",
+            id: avatar_id,
         }))?;
 
     // 3. Parse clip position (default to full_clip)
@@ -215,10 +215,10 @@ pub async fn preview_prompt(
         position,
     );
 
-    // 5. Build metadata map from character
+    // 5. Build metadata map from avatar
     let mut metadata = std::collections::HashMap::new();
-    metadata.insert("character_name".to_string(), character.name.clone());
-    if let Some(ref meta) = character.metadata {
+    metadata.insert("avatar_name".to_string(), avatar.name.clone());
+    if let Some(ref meta) = avatar.metadata {
         if let Some(phys) = meta.get("physical_attributes") {
             for key in &["hair_color", "eye_color", "build", "height"] {
                 if let Some(val) = phys.get(key).and_then(|v| v.as_str()) {
@@ -303,10 +303,10 @@ pub async fn generate_matrix(
     // Build matrix cells
     let mut cells: Vec<MatrixCellDto> = Vec::new();
     for st in &scene_types {
-        for &character_id in &body.character_ids {
+        for &avatar_id in &body.avatar_ids {
             for slug in &track_slugs {
                 cells.push(MatrixCellDto {
-                    character_id,
+                    avatar_id,
                     scene_type_id: st.id,
                     variant_type: slug.clone(),
                     existing_scene_id: None,
@@ -317,13 +317,13 @@ pub async fn generate_matrix(
     }
 
     // Check existing scenes
-    let char_ids: Vec<DbId> = body.character_ids.clone();
+    let char_ids: Vec<DbId> = body.avatar_ids.clone();
     let st_ids: Vec<DbId> = body.scene_type_ids.clone();
     let existing_scenes: Vec<(DbId, DbId, DbId, i16)> = sqlx::query_as(
-        "SELECT s.id, s.character_id, s.scene_type_id, s.status_id
+        "SELECT s.id, s.avatar_id, s.scene_type_id, s.status_id
          FROM scenes s
          JOIN image_variants iv ON iv.id = s.image_variant_id
-         WHERE s.character_id = ANY($1) AND s.scene_type_id = ANY($2) AND s.deleted_at IS NULL",
+         WHERE s.avatar_id = ANY($1) AND s.scene_type_id = ANY($2) AND s.deleted_at IS NULL",
     )
     .bind(&char_ids)
     .bind(&st_ids)
@@ -334,7 +334,7 @@ pub async fn generate_matrix(
     for (scene_id, char_id, st_id, status_id) in &existing_scenes {
         if let Some(cell) = cells
             .iter_mut()
-            .find(|c| c.character_id == *char_id && c.scene_type_id == *st_id)
+            .find(|c| c.avatar_id == *char_id && c.scene_type_id == *st_id)
         {
             cell.existing_scene_id = Some(*scene_id);
             cell.status = scene_status_label(*status_id).to_string();

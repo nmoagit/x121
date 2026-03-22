@@ -1,7 +1,7 @@
-//! Character readiness computation and validation (PRD-107).
+//! Avatar readiness computation and validation (PRD-107).
 //!
 //! Provides types, validation functions, and pure evaluation logic for
-//! determining whether a character meets configurable readiness criteria.
+//! determining whether a avatar meets configurable readiness criteria.
 //! The `core` crate contains no database dependencies; evaluation is
 //! done against pre-loaded data passed in by the caller.
 
@@ -39,7 +39,7 @@ pub const MAX_SETTINGS_KEY_LENGTH: usize = 100;
 // Enums
 // ---------------------------------------------------------------------------
 
-/// The overall readiness state of a character.
+/// The overall readiness state of a avatar.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum ReadinessState {
@@ -76,13 +76,13 @@ impl ReadinessState {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case", tag = "type")]
 pub enum MissingItemType {
-    /// Character has no source image.
+    /// Avatar has no source image.
     SourceImage,
-    /// Character has no approved image variant.
+    /// Avatar has no approved image variant.
     ApprovedVariant,
-    /// Character metadata is incomplete.
+    /// Avatar metadata is incomplete.
     MetadataComplete,
-    /// Character metadata version is not approved by reviewer.
+    /// Avatar metadata version is not approved by reviewer.
     MetadataApproved,
     /// A specific pipeline settings key is missing.
     SettingKey { key: String },
@@ -136,16 +136,16 @@ impl Default for ReadinessCriteria {
     }
 }
 
-/// Result of evaluating a character against readiness criteria.
+/// Result of evaluating a avatar against readiness criteria.
 #[derive(Debug, Clone, Serialize)]
 pub struct ReadinessResult {
-    pub character_id: DbId,
+    pub avatar_id: DbId,
     pub state: ReadinessState,
     pub missing_items: Vec<String>,
     pub readiness_pct: u8,
 }
 
-/// Summary of readiness across a set of characters.
+/// Summary of readiness across a set of avatars.
 #[derive(Debug, Clone, Serialize)]
 pub struct ReadinessSummary {
     pub total: usize,
@@ -169,12 +169,12 @@ pub fn compute_readiness_pct(total_criteria: usize, met_criteria: usize) -> u8 {
     pct.min(100)
 }
 
-/// Evaluate a character's readiness against the given criteria.
+/// Evaluate a avatar's readiness against the given criteria.
 ///
 /// This is a pure function with no database dependencies. The caller
-/// must pre-load the character's data and pass in booleans/lists.
+/// must pre-load the avatar's data and pass in booleans/lists.
 pub fn evaluate_readiness(
-    character_id: DbId,
+    avatar_id: DbId,
     criteria: &ReadinessCriteria,
     has_source_image: bool,
     has_approved_variant: bool,
@@ -247,7 +247,7 @@ pub fn evaluate_readiness(
     };
 
     ReadinessResult {
-        character_id,
+        avatar_id,
         state,
         missing_items: missing,
         readiness_pct: pct,
@@ -545,7 +545,7 @@ mod tests {
     }
 
     #[test]
-    fn evaluate_returns_correct_character_id() {
+    fn evaluate_returns_correct_avatar_id() {
         let criteria = ReadinessCriteria::default();
         let result = evaluate_readiness(
             42,
@@ -560,7 +560,7 @@ mod tests {
                 "avatar_json".to_string(),
             ],
         );
-        assert_eq!(result.character_id, 42);
+        assert_eq!(result.avatar_id, 42);
     }
 
     #[test]

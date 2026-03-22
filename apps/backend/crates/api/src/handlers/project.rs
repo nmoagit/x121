@@ -6,10 +6,10 @@ use axum::Json;
 use serde::{Deserialize, Serialize};
 use x121_core::error::CoreError;
 use x121_core::types::DbId;
-use x121_db::models::character::CharacterDeliverableRow;
+use x121_db::models::avatar::AvatarDeliverableRow;
 use x121_db::models::project::{CreateProject, Project, UpdateProject};
-use x121_db::repositories::character_speech_repo::ProjectLanguageCount;
-use x121_db::repositories::{CharacterRepo, CharacterSpeechRepo, ProjectRepo};
+use x121_db::repositories::avatar_speech_repo::ProjectLanguageCount;
+use x121_db::repositories::{AvatarRepo, AvatarSpeechRepo, ProjectRepo};
 
 use crate::error::{AppError, AppResult};
 use crate::response::DataResponse;
@@ -17,7 +17,7 @@ use crate::state::AppState;
 
 /// Verify a project exists, returning an `AppError::NotFound` if not.
 ///
-/// Shared by `get_stats`, `get_character_deliverables`, and any future
+/// Shared by `get_stats`, `get_avatar_deliverables`, and any future
 /// project-scoped handlers in this file.
 async fn ensure_project_exists(pool: &sqlx::PgPool, id: DbId) -> AppResult<Project> {
     ProjectRepo::find_by_id(pool, id)
@@ -44,13 +44,13 @@ pub struct ProjectListParams {
     pub pipeline_id: Option<DbId>,
 }
 
-/// Enriched project for list views — includes inline character counts.
+/// Enriched project for list views — includes inline avatar counts.
 #[derive(Debug, Clone, Serialize)]
 pub struct ProjectWithCounts {
     #[serde(flatten)]
     pub project: Project,
-    pub character_count: i64,
-    pub characters_ready: i64,
+    pub avatar_count: i64,
+    pub avatars_ready: i64,
 }
 
 /// GET /api/v1/projects?pipeline_id=1
@@ -64,21 +64,21 @@ pub async fn list(
         ProjectRepo::list(&state.pool).await?
     };
 
-    // Single query: character counts per project (non-archived, non-deleted).
+    // Single query: avatar counts per project (non-archived, non-deleted).
     let counts: Vec<(DbId, i64)> = sqlx::query_as(
         "SELECT project_id, COUNT(*)
-         FROM characters
+         FROM avatars
          WHERE deleted_at IS NULL AND status_id != 3
          GROUP BY project_id",
     )
     .fetch_all(&state.pool)
     .await?;
 
-    // Single query: ready character counts from readiness cache per project.
+    // Single query: ready avatar counts from readiness cache per project.
     let ready_counts: Vec<(DbId, i64)> = sqlx::query_as(
         "SELECT c.project_id, COUNT(*)
-         FROM character_readiness_cache crc
-         JOIN characters c ON c.id = crc.character_id
+         FROM avatar_readiness_cache crc
+         JOIN avatars c ON c.id = crc.avatar_id
          WHERE crc.state = 'ready' AND c.deleted_at IS NULL AND c.status_id != 3
          GROUP BY c.project_id",
     )
@@ -94,8 +94,8 @@ pub async fn list(
             let id = p.id;
             ProjectWithCounts {
                 project: p,
-                character_count: count_map.get(&id).copied().unwrap_or(0),
-                characters_ready: ready_map.get(&id).copied().unwrap_or(0),
+                avatar_count: count_map.get(&id).copied().unwrap_or(0),
+                avatars_ready: ready_map.get(&id).copied().unwrap_or(0),
             }
         })
         .collect();
@@ -152,11 +152,11 @@ pub async fn delete(State(state): State<AppState>, Path(id): Path<DbId>) -> AppR
 /// Aggregated project statistics.
 #[derive(Debug, Clone, Serialize)]
 pub struct ProjectStats {
-    pub character_count: i64,
-    pub characters_draft: i64,
-    pub characters_active: i64,
-    /// Characters with readiness state 'ready' in the cache.
-    pub characters_ready: i64,
+    pub avatar_count: i64,
+    pub avatars_draft: i64,
+    pub avatars_active: i64,
+    /// Avatars with readiness state 'ready' in the cache.
+    pub avatars_ready: i64,
     pub scenes_enabled: i64,
     pub scenes_generated: i64,
     pub scenes_approved: i64,
@@ -175,26 +175,26 @@ pub async fn get_stats(
     // Verify project exists.
     let _project = ensure_project_exists(&state.pool, project_id).await?;
 
-    // Character counts by status.
+    // Avatar counts by status.
     // Statuses: 1=draft, 2=active, 3=archived.
-    // Archived characters (status_id = 3) are excluded from all counts.
+    // Archived avatars (status_id = 3) are excluded from all counts.
     let char_stats: (i64, i64, i64) = sqlx::query_as(
         "SELECT
             COUNT(*) AS total,
             COUNT(*) FILTER (WHERE status_id = 1) AS draft,
             COUNT(*) FILTER (WHERE status_id = 2) AS active
-         FROM characters
+         FROM avatars
          WHERE project_id = $1 AND deleted_at IS NULL AND status_id != 3",
     )
     .bind(project_id)
     .fetch_one(&state.pool)
     .await?;
 
-    // Ready characters from the readiness cache.
-    let characters_ready: (i64,) = sqlx::query_as(
+    // Ready avatars from the readiness cache.
+    let avatars_ready: (i64,) = sqlx::query_as(
         "SELECT COUNT(*)
-         FROM character_readiness_cache crc
-         JOIN characters c ON c.id = crc.character_id
+         FROM avatar_readiness_cache crc
+         JOIN avatars c ON c.id = crc.avatar_id
          WHERE crc.state = 'ready' AND c.project_id = $1
            AND c.deleted_at IS NULL AND c.status_id != 3",
     )
@@ -229,7 +229,7 @@ pub async fn get_stats(
             COUNT(*) FILTER (WHERE svv.qa_status = 'pending') AS pending
          FROM scene_video_versions svv
          JOIN scenes s ON s.id = svv.scene_id
-         JOIN characters c ON c.id = s.character_id
+         JOIN avatars c ON c.id = s.avatar_id
          WHERE c.project_id = $1 AND c.deleted_at IS NULL AND c.status_id != 3
            AND svv.deleted_at IS NULL AND svv.is_final = true",
     )
@@ -239,17 +239,17 @@ pub async fn get_stats(
 
     // Delivery readiness = percentage of models that are ready.
     let delivery_readiness_pct = if char_stats.0 > 0 {
-        (characters_ready.0 as f64 / char_stats.0 as f64) * 100.0
+        (avatars_ready.0 as f64 / char_stats.0 as f64) * 100.0
     } else {
         0.0
     };
 
     Ok(Json(DataResponse {
         data: ProjectStats {
-            character_count: char_stats.0,
-            characters_draft: char_stats.1,
-            characters_active: char_stats.2,
-            characters_ready: characters_ready.0,
+            avatar_count: char_stats.0,
+            avatars_draft: char_stats.1,
+            avatars_active: char_stats.2,
+            avatars_ready: avatars_ready.0,
             scenes_enabled: scenes_enabled.0,
             scenes_generated: scene_stats.0,
             scenes_approved: scene_stats.1,
@@ -261,20 +261,20 @@ pub async fn get_stats(
 }
 
 // ---------------------------------------------------------------------------
-// Per-character deliverable status (Requirements gap: Stage 1.3)
+// Per-avatar deliverable status (Requirements gap: Stage 1.3)
 // ---------------------------------------------------------------------------
 
-/// GET /api/v1/projects/{id}/character-deliverables
+/// GET /api/v1/projects/{id}/avatar-deliverables
 ///
-/// Returns per-character deliverable status for the project overview grid.
-pub async fn get_character_deliverables(
+/// Returns per-avatar deliverable status for the project overview grid.
+pub async fn get_avatar_deliverables(
     State(state): State<AppState>,
     Path(project_id): Path<DbId>,
-) -> AppResult<Json<DataResponse<Vec<CharacterDeliverableRow>>>> {
+) -> AppResult<Json<DataResponse<Vec<AvatarDeliverableRow>>>> {
     // Verify project exists.
     let _project = ensure_project_exists(&state.pool, project_id).await?;
 
-    let rows = CharacterRepo::list_deliverable_status(&state.pool, project_id).await?;
+    let rows = AvatarRepo::list_deliverable_status(&state.pool, project_id).await?;
     Ok(Json(DataResponse { data: rows }))
 }
 
@@ -282,12 +282,12 @@ pub async fn get_character_deliverables(
 // Batch scene assignments for the deliverables matrix
 // ---------------------------------------------------------------------------
 
-/// A scene assignment row for batch responses — mirrors the per-character
-/// dashboard `SceneAssignment` but includes `character_id` and fields needed
+/// A scene assignment row for batch responses — mirrors the per-avatar
+/// dashboard `SceneAssignment` but includes `avatar_id` and fields needed
 /// for building matrix columns (scene_name, track_name, etc.).
 #[derive(Debug, Serialize, sqlx::FromRow)]
 pub struct BatchSceneAssignment {
-    pub character_id: DbId,
+    pub avatar_id: DbId,
     pub scene_type_id: DbId,
     pub scene_name: String,
     pub track_id: DbId,
@@ -307,7 +307,7 @@ pub struct BatchSceneAssignment {
 /// Lightweight image variant projection for the deliverables matrix.
 #[derive(Debug, Serialize, sqlx::FromRow)]
 pub struct BatchVariantStatus {
-    pub character_id: DbId,
+    pub avatar_id: DbId,
     pub id: DbId,
     pub variant_type: Option<String>,
     pub status_id: i16,
@@ -316,7 +316,7 @@ pub struct BatchVariantStatus {
 
 /// GET /api/v1/projects/{id}/variant-statuses
 ///
-/// Returns a lightweight projection of all image variants for characters in a project.
+/// Returns a lightweight projection of all image variants for avatars in a project.
 /// Used by the deliverables matrix to avoid N individual image-variant calls.
 pub async fn get_batch_variant_statuses(
     State(state): State<AppState>,
@@ -325,11 +325,11 @@ pub async fn get_batch_variant_statuses(
     let _project = ensure_project_exists(&state.pool, project_id).await?;
 
     let rows = sqlx::query_as::<_, BatchVariantStatus>(
-        "SELECT iv.character_id, iv.id, iv.variant_type, iv.status_id, iv.is_hero
+        "SELECT iv.avatar_id, iv.id, iv.variant_type, iv.status_id, iv.is_hero
          FROM image_variants iv
-         JOIN characters c ON c.id = iv.character_id
+         JOIN avatars c ON c.id = iv.avatar_id
          WHERE c.project_id = $1 AND c.deleted_at IS NULL AND iv.deleted_at IS NULL
-         ORDER BY iv.character_id, iv.id",
+         ORDER BY iv.avatar_id, iv.id",
     )
     .bind(project_id)
     .fetch_all(&state.pool)
@@ -344,9 +344,9 @@ pub async fn get_batch_variant_statuses(
 
 /// GET /api/v1/projects/{id}/scene-assignments
 ///
-/// Returns scene assignments for ALL characters in a project in one query,
+/// Returns scene assignments for ALL avatars in a project in one query,
 /// using the same 4-level inheritance (scene_type defaults → project settings
-/// → group settings → character overrides) as the per-character dashboard.
+/// → group settings → avatar overrides) as the per-avatar dashboard.
 /// Includes enabled combos without scene records (status = 'not_started').
 pub async fn get_batch_scene_assignments(
     State(state): State<AppState>,
@@ -356,7 +356,7 @@ pub async fn get_batch_scene_assignments(
 
     let rows = sqlx::query_as::<_, BatchSceneAssignment>(
         "SELECT
-            c.id AS character_id,
+            c.id AS avatar_id,
             st.id AS scene_type_id,
             st.name AS scene_name,
             t.id AS track_id,
@@ -376,7 +376,7 @@ pub async fn get_batch_scene_assignments(
              WHERE svv.scene_id = sc.id AND svv.deleted_at IS NULL AND svv.is_final = false), 0) AS segment_count,
             COALESCE((SELECT COUNT(*) FROM scene_video_versions svv
              WHERE svv.scene_id = sc.id AND svv.deleted_at IS NULL), 0) AS final_video_count
-        FROM characters c
+        FROM avatars c
         CROSS JOIN scene_types st
         CROSS JOIN tracks t
         LEFT JOIN project_scene_settings pss
@@ -385,12 +385,12 @@ pub async fn get_batch_scene_assignments(
         LEFT JOIN group_scene_settings gss
             ON gss.scene_type_id = st.id AND (gss.track_id = t.id OR gss.track_id IS NULL)
                AND gss.group_id = c.group_id
-        LEFT JOIN character_scene_overrides cso
+        LEFT JOIN avatar_scene_overrides cso
             ON cso.scene_type_id = st.id AND (cso.track_id = t.id OR cso.track_id IS NULL)
-               AND cso.character_id = c.id
+               AND cso.avatar_id = c.id
         LEFT JOIN scenes sc
             ON sc.scene_type_id = st.id AND sc.track_id = t.id
-               AND sc.character_id = c.id AND sc.deleted_at IS NULL
+               AND sc.avatar_id = c.id AND sc.deleted_at IS NULL
         LEFT JOIN scene_statuses ss ON ss.id = sc.status_id
         LEFT JOIN LATERAL (
             SELECT svv.qa_status, svv.source
@@ -412,18 +412,18 @@ pub async fn get_batch_scene_assignments(
 }
 
 // ---------------------------------------------------------------------------
-// Batch speech language counts for character cards
+// Batch speech language counts for avatar cards
 // ---------------------------------------------------------------------------
 
 /// GET /api/v1/projects/{id}/speech-language-counts
 ///
-/// Returns speech count per language per character for the project character grid.
+/// Returns speech count per language per avatar for the project avatar grid.
 pub async fn get_speech_language_counts(
     State(state): State<AppState>,
     Path(project_id): Path<DbId>,
 ) -> AppResult<Json<DataResponse<Vec<ProjectLanguageCount>>>> {
     let _project = ensure_project_exists(&state.pool, project_id).await?;
 
-    let rows = CharacterSpeechRepo::count_by_language_for_project(&state.pool, project_id).await?;
+    let rows = AvatarSpeechRepo::count_by_language_for_project(&state.pool, project_id).await?;
     Ok(Json(DataResponse { data: rows }))
 }

@@ -8,7 +8,7 @@ use x121_core::types::{DbId, Timestamp};
 #[derive(Debug, Clone, FromRow, Serialize)]
 pub struct ConsistencyReport {
     pub id: DbId,
-    pub character_id: DbId,
+    pub avatar_id: DbId,
     pub project_id: DbId,
     pub scores_json: serde_json::Value,
     pub overall_consistency_score: Option<f64>,
@@ -21,7 +21,7 @@ pub struct ConsistencyReport {
 /// DTO for creating a new consistency report.
 #[derive(Debug, Deserialize)]
 pub struct CreateConsistencyReport {
-    pub character_id: DbId,
+    pub avatar_id: DbId,
     pub project_id: DbId,
     pub scores_json: serde_json::Value,
     pub overall_consistency_score: Option<f64>,

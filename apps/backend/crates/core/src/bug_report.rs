@@ -25,7 +25,7 @@ pub const VALID_STATUSES: &[&str] = &[STATUS_NEW, STATUS_TRIAGED, STATUS_RESOLVE
 // Validation constants
 // ---------------------------------------------------------------------------
 
-/// Maximum length for the user-provided description field (characters).
+/// Maximum length for the user-provided description field (avatars).
 pub const MAX_DESCRIPTION_LENGTH: usize = 10_000;
 
 // ---------------------------------------------------------------------------
@@ -78,7 +78,7 @@ pub fn validate_status(status: &str) -> Result<(), CoreError> {
 pub fn validate_description(description: &str) -> Result<(), CoreError> {
     if description.len() > MAX_DESCRIPTION_LENGTH {
         return Err(CoreError::Validation(format!(
-            "Description exceeds maximum length of {} characters (got {})",
+            "Description exceeds maximum length of {} avatars (got {})",
             MAX_DESCRIPTION_LENGTH,
             description.len()
         )));

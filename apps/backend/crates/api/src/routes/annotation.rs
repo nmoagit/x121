@@ -11,7 +11,7 @@ use crate::state::AppState;
 /// Top-level annotation routes (browse + direct delete).
 ///
 /// ```text
-/// GET    /browse    browse_annotations (?project_id, ?character_id, ?sort, ?sort_dir, ?limit, ?offset)
+/// GET    /browse    browse_annotations (?project_id, ?avatar_id, ?sort, ?sort_dir, ?limit, ?offset)
 /// DELETE /{id}      delete_annotation_by_id
 /// ```
 pub fn annotation_browse_router() -> Router<AppState> {

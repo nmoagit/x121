@@ -37,7 +37,7 @@ pub struct EmbeddingStatusLookup {
 #[derive(Debug, Clone, FromRow, Serialize)]
 pub struct DetectedFace {
     pub id: DbId,
-    pub character_id: DbId,
+    pub avatar_id: DbId,
     pub bounding_box: serde_json::Value,
     pub confidence: f64,
     pub is_primary: bool,
@@ -63,7 +63,7 @@ pub struct CreateDetectedFace {
 #[derive(Debug, Clone, FromRow, Serialize)]
 pub struct EmbeddingHistory {
     pub id: DbId,
-    pub character_id: DbId,
+    pub avatar_id: DbId,
     pub face_detection_confidence: f64,
     pub face_bounding_box: Option<serde_json::Value>,
     pub replaced_at: Timestamp,
@@ -75,10 +75,10 @@ pub struct EmbeddingHistory {
 // API response DTOs
 // ---------------------------------------------------------------------------
 
-/// Summary of a character's current embedding status, returned by the API.
+/// Summary of a avatar's current embedding status, returned by the API.
 #[derive(Debug, Clone, Serialize)]
 pub struct EmbeddingStatusResponse {
-    pub character_id: DbId,
+    pub avatar_id: DbId,
     pub embedding_status_id: StatusId,
     pub embedding_status_label: String,
     pub face_detection_confidence: Option<f64>,

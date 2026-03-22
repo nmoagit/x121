@@ -78,7 +78,7 @@ pub struct JobListQuery {
 
 /// Enriched job view for the admin queue — includes resolved scene context.
 ///
-/// Uses LEFT JOINs via `parameters->>'scene_id'` to pull character name,
+/// Uses LEFT JOINs via `parameters->>'scene_id'` to pull avatar name,
 /// scene type name, and track name without changing the jobs table schema.
 #[derive(Debug, Clone, FromRow, Serialize)]
 pub struct AdminQueueJob {
@@ -118,9 +118,9 @@ pub struct AdminQueueJob {
     pub updated_at: Timestamp,
     // Enriched fields from JOINs.
     pub scene_id: Option<DbId>,
-    pub character_id: Option<DbId>,
+    pub avatar_id: Option<DbId>,
     pub project_id: Option<DbId>,
-    pub character_name: Option<String>,
+    pub avatar_name: Option<String>,
     pub scene_type_name: Option<String>,
     pub track_name: Option<String>,
     // Job kind discriminator + image-generation context.

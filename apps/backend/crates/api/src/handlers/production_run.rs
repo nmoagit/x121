@@ -19,12 +19,12 @@ use x121_core::error::CoreError;
 use x121_core::search::{clamp_limit, clamp_offset};
 use x121_core::types::DbId;
 use x121_db::models::production_run::{
-    CancelCellsResponse, CancelRunResponse, CharacterCellsResponse, CreateProductionRun,
+    CancelCellsResponse, CancelRunResponse, AvatarCellsResponse, CreateProductionRun,
     CreateProductionRunCell, CreateProductionRunRequest, DeleteCellsResponse, DeliverResponse,
     ProductionRun, ProductionRunProgress, ResubmitResponse, SubmitCellsRequest,
     SubmitCellsResponse,
 };
-use x121_db::repositories::{CharacterSceneOverrideRepo, ProductionRunRepo};
+use x121_db::repositories::{AvatarSceneOverrideRepo, ProductionRunRepo};
 
 use crate::error::{AppError, AppResult};
 use crate::middleware::auth::AuthUser;
@@ -65,7 +65,7 @@ async fn ensure_run_exists(pool: &sqlx::PgPool, id: DbId) -> AppResult<Productio
 
 /// Create a new production run with the specified matrix configuration.
 ///
-/// Generates all cells (character x scene_type combinations) and inserts them.
+/// Generates all cells (avatar x scene_type combinations) and inserts them.
 pub async fn create_run(
     State(state): State<AppState>,
     auth: AuthUser,
@@ -73,7 +73,7 @@ pub async fn create_run(
 ) -> AppResult<impl IntoResponse> {
     // Validate matrix configuration.
     let config = MatrixConfig {
-        character_ids: body.character_ids.clone(),
+        avatar_ids: body.avatar_ids.clone(),
         scene_type_ids: body.scene_type_ids.clone(),
     };
     batch_production::validate_matrix_config(&config)?;
@@ -82,11 +82,11 @@ pub async fn create_run(
     let requested_scene_types: std::collections::HashSet<DbId> =
         body.scene_type_ids.iter().copied().collect();
 
-    // For each character, resolve the enabled (scene_type, track) pairs via the
+    // For each avatar, resolve the enabled (scene_type, track) pairs via the
     // four-level inheritance chain, then filter to requested scene_type_ids.
     let mut cells: Vec<CreateProductionRunCell> = Vec::new();
-    for &cid in &body.character_ids {
-        let settings = CharacterSceneOverrideRepo::list_effective(
+    for &cid in &body.avatar_ids {
+        let settings = AvatarSceneOverrideRepo::list_effective(
             &state.pool,
             cid,
             body.project_id,
@@ -103,7 +103,7 @@ pub async fn create_run(
             }
             cells.push(CreateProductionRunCell {
                 run_id: 0, // placeholder — set after run creation
-                character_id: cid,
+                avatar_id: cid,
                 scene_type_id: s.scene_type_id,
                 track_id: s.track_id,
                 variant_label: "default".to_string(),
@@ -111,15 +111,15 @@ pub async fn create_run(
         }
     }
 
-    // Deduplicate: one cell per (character_id, scene_type_id, track_id).
+    // Deduplicate: one cell per (avatar_id, scene_type_id, track_id).
     cells.sort_by(|a, b| {
-        a.character_id
-            .cmp(&b.character_id)
+        a.avatar_id
+            .cmp(&b.avatar_id)
             .then(a.scene_type_id.cmp(&b.scene_type_id))
             .then(a.track_id.cmp(&b.track_id))
     });
     cells.dedup_by(|a, b| {
-        a.character_id == b.character_id
+        a.avatar_id == b.avatar_id
             && a.scene_type_id == b.scene_type_id
             && a.track_id == b.track_id
     });
@@ -267,13 +267,13 @@ pub async fn get_matrix(
 #[derive(Debug, Deserialize)]
 pub struct EnabledSceneTypesParams {
     pub project_id: DbId,
-    pub character_ids: String, // Comma-separated
+    pub avatar_ids: String, // Comma-separated
 }
 
-/// A scene type (+track) that is enabled for a character.
+/// A scene type (+track) that is enabled for a avatar.
 #[derive(Debug, Serialize)]
 struct EnabledSceneTypeEntry {
-    character_id: DbId,
+    avatar_id: DbId,
     scene_type_id: DbId,
     scene_type_name: String,
     track_id: Option<DbId>,
@@ -281,16 +281,16 @@ struct EnabledSceneTypeEntry {
     has_clothes_off_transition: bool,
 }
 
-/// Get the enabled scene types for each character in the request.
+/// Get the enabled scene types for each avatar in the request.
 ///
-/// Returns a flat list of `(character_id, scene_type_id, scene_type_name)`
-/// entries, one per enabled scene type per character.
+/// Returns a flat list of `(avatar_id, scene_type_id, scene_type_name)`
+/// entries, one per enabled scene type per avatar.
 pub async fn enabled_scene_types(
     State(state): State<AppState>,
     Query(params): Query<EnabledSceneTypesParams>,
 ) -> AppResult<impl IntoResponse> {
     let char_ids: Vec<DbId> = params
-        .character_ids
+        .avatar_ids
         .split(',')
         .filter_map(|s| s.trim().parse().ok())
         .collect();
@@ -301,18 +301,18 @@ pub async fn enabled_scene_types(
         }));
     }
 
-    // For each character, get effective scene settings and collect enabled scene types.
+    // For each avatar, get effective scene settings and collect enabled scene types.
     // group_id is not known here — pass None to skip the group tier.
     let mut entries = Vec::new();
     for &cid in &char_ids {
         let settings =
-            CharacterSceneOverrideRepo::list_effective(&state.pool, cid, params.project_id, None)
+            AvatarSceneOverrideRepo::list_effective(&state.pool, cid, params.project_id, None)
                 .await?;
 
         for s in settings {
             if s.is_enabled {
                 entries.push(EnabledSceneTypeEntry {
-                    character_id: cid,
+                    avatar_id: cid,
                     scene_type_id: s.scene_type_id,
                     scene_type_name: s.name.clone(),
                     track_id: s.track_id,
@@ -323,15 +323,15 @@ pub async fn enabled_scene_types(
         }
     }
 
-    // Deduplicate: one entry per (character_id, scene_type_id, track_id)
+    // Deduplicate: one entry per (avatar_id, scene_type_id, track_id)
     entries.sort_by(|a, b| {
-        a.character_id
-            .cmp(&b.character_id)
+        a.avatar_id
+            .cmp(&b.avatar_id)
             .then(a.scene_type_id.cmp(&b.scene_type_id))
             .then(a.track_id.cmp(&b.track_id))
     });
     entries.dedup_by(|a, b| {
-        a.character_id == b.character_id
+        a.avatar_id == b.avatar_id
             && a.scene_type_id == b.scene_type_id
             && a.track_id == b.track_id
     });
@@ -639,50 +639,50 @@ pub async fn delete_cells(
 }
 
 // ---------------------------------------------------------------------------
-// POST /production-runs/{id}/characters/{character_id}/delete
+// POST /production-runs/{id}/avatars/{avatar_id}/delete
 // ---------------------------------------------------------------------------
 
-/// Cancel all cells for a specific character in a production run.
-pub async fn cancel_character_cells(
+/// Cancel all cells for a specific avatar in a production run.
+pub async fn cancel_avatar_cells(
     State(state): State<AppState>,
-    Path((id, character_id)): Path<(DbId, DbId)>,
+    Path((id, avatar_id)): Path<(DbId, DbId)>,
 ) -> AppResult<impl IntoResponse> {
     ensure_run_exists(&state.pool, id).await?;
 
     let cancelled =
-        ProductionRunRepo::cancel_character_cells(&state.pool, id, character_id).await?;
+        ProductionRunRepo::cancel_avatar_cells(&state.pool, id, avatar_id).await?;
 
     tracing::info!(
         run_id = id,
-        character_id,
+        avatar_id,
         cancelled,
-        "Character cells cancelled"
+        "Avatar cells cancelled"
     );
     Ok(Json(DataResponse {
-        data: CharacterCellsResponse {
+        data: AvatarCellsResponse {
             run_id: id,
-            character_id,
+            avatar_id,
             affected: cancelled,
         },
     }))
 }
 
-/// Delete all cells for a specific character in a production run.
-pub async fn delete_character_cells(
+/// Delete all cells for a specific avatar in a production run.
+pub async fn delete_avatar_cells(
     State(state): State<AppState>,
-    Path((id, character_id)): Path<(DbId, DbId)>,
+    Path((id, avatar_id)): Path<(DbId, DbId)>,
 ) -> AppResult<impl IntoResponse> {
     let run = ensure_run_exists(&state.pool, id).await?;
 
-    let deleted = ProductionRunRepo::delete_character_cells(&state.pool, id, character_id).await?;
+    let deleted = ProductionRunRepo::delete_avatar_cells(&state.pool, id, avatar_id).await?;
 
     // Update total_cells on the run.
     let new_total = run.total_cells - deleted as i32;
     ProductionRunRepo::set_total_cells(&state.pool, id, new_total).await?;
 
-    // Also update matrix_config to remove this character_id.
+    // Also update matrix_config to remove this avatar_id.
     if let Ok(mut config) = serde_json::from_value::<MatrixConfig>(run.matrix_config.clone()) {
-        config.character_ids.retain(|&cid| cid != character_id);
+        config.avatar_ids.retain(|&cid| cid != avatar_id);
         let _ = ProductionRunRepo::update_matrix_config(
             &state.pool,
             id,
@@ -693,14 +693,14 @@ pub async fn delete_character_cells(
 
     tracing::info!(
         run_id = id,
-        character_id,
+        avatar_id,
         deleted,
-        "Character cells deleted"
+        "Avatar cells deleted"
     );
     Ok(Json(DataResponse {
-        data: CharacterCellsResponse {
+        data: AvatarCellsResponse {
             run_id: id,
-            character_id,
+            avatar_id,
             affected: deleted,
         },
     }))

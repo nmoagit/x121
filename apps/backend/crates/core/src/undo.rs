@@ -9,7 +9,7 @@ pub const MAX_TREE_DEPTH: usize = 500;
 pub const MAX_BRANCHES_PER_NODE: usize = 50;
 
 /// Entity types that support undo/redo trees.
-pub const VALID_ENTITY_TYPES: &[&str] = &["character", "scene", "segment", "project"];
+pub const VALID_ENTITY_TYPES: &[&str] = &["avatar", "scene", "segment", "project"];
 
 /// Action types that cannot be undone.
 pub const NON_UNDOABLE_ACTIONS: &[&str] = &[
@@ -52,7 +52,7 @@ mod tests {
 
     #[test]
     fn test_valid_entity_types() {
-        assert!(validate_entity_type("character").is_ok());
+        assert!(validate_entity_type("avatar").is_ok());
         assert!(validate_entity_type("scene").is_ok());
         assert!(validate_entity_type("segment").is_ok());
         assert!(validate_entity_type("project").is_ok());

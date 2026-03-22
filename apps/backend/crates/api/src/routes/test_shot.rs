@@ -3,7 +3,7 @@
 //! ```text
 //! TEST SHOTS:
 //! POST   /                              generate_test_shot
-//! GET    /                              list_gallery (?scene_type_id, character_id, limit, offset)
+//! GET    /                              list_gallery (?scene_type_id, avatar_id, limit, offset)
 //! POST   /batch                         batch_test_shots
 //! GET    /{id}                          get_test_shot
 //! DELETE /{id}                          delete_test_shot

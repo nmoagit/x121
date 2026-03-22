@@ -1,12 +1,12 @@
 //! Route definitions for the `/projects` resource.
 //!
-//! Also nests character, character group, and project-scoped scene type routes
+//! Also nests avatar, avatar group, and project-scoped scene type routes
 //! under `/projects/{project_id}/...`.
 
 use axum::routing::get;
 use axum::Router;
 
-use crate::handlers::{character, character_group, project, scene_type};
+use crate::handlers::{avatar, avatar_group, project, scene_type};
 use crate::state::AppState;
 
 /// Routes mounted at `/projects`.
@@ -18,18 +18,18 @@ use crate::state::AppState;
 /// PUT    /{id}                              -> update
 /// DELETE /{id}                              -> delete
 /// GET    /{id}/stats                        -> get_stats (PRD-112)
-/// GET    /{id}/character-deliverables       -> get_character_deliverables
+/// GET    /{id}/avatar-deliverables       -> get_avatar_deliverables
 ///
-/// GET    /{project_id}/characters           -> list_by_project
-/// POST   /{project_id}/characters           -> create
-/// POST   /{project_id}/characters/bulk      -> bulk_create
-/// GET    /{project_id}/characters/{id}      -> get_by_id
-/// PUT    /{project_id}/characters/{id}      -> update
-/// DELETE /{project_id}/characters/{id}      -> delete
-/// GET    /{project_id}/characters/{id}/settings  -> get_settings
-/// PUT    /{project_id}/characters/{id}/settings  -> update_settings
-/// PATCH  /{project_id}/characters/{id}/settings  -> patch_settings
-/// PUT    /{project_id}/characters/{id}/group     -> assign_character_to_group (PRD-112)
+/// GET    /{project_id}/avatars           -> list_by_project
+/// POST   /{project_id}/avatars           -> create
+/// POST   /{project_id}/avatars/bulk      -> bulk_create
+/// GET    /{project_id}/avatars/{id}      -> get_by_id
+/// PUT    /{project_id}/avatars/{id}      -> update
+/// DELETE /{project_id}/avatars/{id}      -> delete
+/// GET    /{project_id}/avatars/{id}/settings  -> get_settings
+/// PUT    /{project_id}/avatars/{id}/settings  -> update_settings
+/// PATCH  /{project_id}/avatars/{id}/settings  -> patch_settings
+/// PUT    /{project_id}/avatars/{id}/group     -> assign_avatar_to_group (PRD-112)
 ///
 /// GET    /{project_id}/groups               -> list_by_project (PRD-112)
 /// POST   /{project_id}/groups               -> create (PRD-112)
@@ -49,42 +49,42 @@ use crate::state::AppState;
 /// DELETE /{project_id}/scene-types/{id}     -> delete
 /// ```
 pub fn router() -> Router<AppState> {
-    let character_routes = Router::new()
-        .route("/", get(character::list_by_project).post(character::create))
-        .route("/bulk", axum::routing::post(character::bulk_create))
+    let avatar_routes = Router::new()
+        .route("/", get(avatar::list_by_project).post(avatar::create))
+        .route("/bulk", axum::routing::post(avatar::bulk_create))
         .route(
             "/{id}",
-            get(character::get_by_id)
-                .put(character::update)
-                .delete(character::delete),
+            get(avatar::get_by_id)
+                .put(avatar::update)
+                .delete(avatar::delete),
         )
         .route(
             "/{id}/settings",
-            get(character::get_settings)
-                .put(character::update_settings)
-                .patch(character::patch_settings),
+            get(avatar::get_settings)
+                .put(avatar::update_settings)
+                .patch(avatar::patch_settings),
         )
         .route(
             "/{id}/group",
-            axum::routing::put(character_group::assign_character_to_group),
+            axum::routing::put(avatar_group::assign_avatar_to_group),
         )
         .route(
             "/{id}/toggle-enabled",
-            axum::routing::put(character::toggle_enabled),
+            axum::routing::put(avatar::toggle_enabled),
         )
         .route(
             "/{id}/bulk-approve",
-            axum::routing::post(character::bulk_approve),
+            axum::routing::post(avatar::bulk_approve),
         );
 
     let group_routes = Router::new()
         .route(
             "/",
-            get(character_group::list_by_project).post(character_group::create),
+            get(avatar_group::list_by_project).post(avatar_group::create),
         )
         .route(
             "/{id}",
-            axum::routing::put(character_group::update).delete(character_group::delete),
+            axum::routing::put(avatar_group::update).delete(avatar_group::delete),
         )
         .merge(super::prompt_management::group_prompt_override_router())
         .merge(super::video_settings::group_video_settings_router())
@@ -115,8 +115,8 @@ pub fn router() -> Router<AppState> {
         )
         .route("/{id}/stats", get(project::get_stats))
         .route(
-            "/{id}/character-deliverables",
-            get(project::get_character_deliverables),
+            "/{id}/avatar-deliverables",
+            get(project::get_avatar_deliverables),
         )
         .route(
             "/{id}/scene-assignments",
@@ -130,7 +130,7 @@ pub fn router() -> Router<AppState> {
             "/{id}/speech-language-counts",
             get(project::get_speech_language_counts),
         )
-        .nest("/{project_id}/characters", character_routes)
+        .nest("/{project_id}/avatars", avatar_routes)
         .nest("/{project_id}/groups", group_routes)
         .nest("/{project_id}/scene-types", scene_type_routes)
 }

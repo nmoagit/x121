@@ -1,7 +1,7 @@
 //! Project-level prompt override model and DTOs.
 //!
 //! Stores additive prompt fragments at the project scope, sitting between
-//! scene-type defaults and group/character overrides in the resolution
+//! scene-type defaults and group/avatar overrides in the resolution
 //! hierarchy.
 
 use serde::{Deserialize, Serialize};

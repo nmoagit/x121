@@ -1,6 +1,6 @@
 //! Repository for the `consistency_reports` table (PRD-94).
 //!
-//! Provides CRUD operations for character consistency reports.
+//! Provides CRUD operations for avatar consistency reports.
 
 use sqlx::PgPool;
 use x121_core::types::DbId;
@@ -8,11 +8,11 @@ use x121_core::types::DbId;
 use crate::models::consistency_report::{ConsistencyReport, CreateConsistencyReport};
 
 /// Column list for `consistency_reports` queries.
-const COLUMNS: &str = "id, character_id, project_id, scores_json, \
+const COLUMNS: &str = "id, avatar_id, project_id, scores_json, \
     overall_consistency_score, outlier_scene_ids, report_type, \
     created_at, updated_at";
 
-/// Provides data access for character consistency reports.
+/// Provides data access for avatar consistency reports.
 pub struct ConsistencyReportRepo;
 
 impl ConsistencyReportRepo {
@@ -23,13 +23,13 @@ impl ConsistencyReportRepo {
     ) -> Result<ConsistencyReport, sqlx::Error> {
         let query = format!(
             "INSERT INTO consistency_reports
-                (character_id, project_id, scores_json, overall_consistency_score,
+                (avatar_id, project_id, scores_json, overall_consistency_score,
                  outlier_scene_ids, report_type)
              VALUES ($1, $2, $3, $4, $5, $6)
              RETURNING {COLUMNS}"
         );
         sqlx::query_as::<_, ConsistencyReport>(&query)
-            .bind(input.character_id)
+            .bind(input.avatar_id)
             .bind(input.project_id)
             .bind(&input.scores_json)
             .bind(input.overall_consistency_score)
@@ -51,19 +51,19 @@ impl ConsistencyReportRepo {
             .await
     }
 
-    /// Get the most recent consistency report for a character.
-    pub async fn get_latest_for_character(
+    /// Get the most recent consistency report for a avatar.
+    pub async fn get_latest_for_avatar(
         pool: &PgPool,
-        character_id: DbId,
+        avatar_id: DbId,
     ) -> Result<Option<ConsistencyReport>, sqlx::Error> {
         let query = format!(
             "SELECT {COLUMNS} FROM consistency_reports
-             WHERE character_id = $1
+             WHERE avatar_id = $1
              ORDER BY created_at DESC
              LIMIT 1"
         );
         sqlx::query_as::<_, ConsistencyReport>(&query)
-            .bind(character_id)
+            .bind(avatar_id)
             .fetch_optional(pool)
             .await
     }
@@ -84,18 +84,18 @@ impl ConsistencyReportRepo {
             .await
     }
 
-    /// List all consistency reports for a character, newest first.
-    pub async fn list_by_character(
+    /// List all consistency reports for a avatar, newest first.
+    pub async fn list_by_avatar(
         pool: &PgPool,
-        character_id: DbId,
+        avatar_id: DbId,
     ) -> Result<Vec<ConsistencyReport>, sqlx::Error> {
         let query = format!(
             "SELECT {COLUMNS} FROM consistency_reports
-             WHERE character_id = $1
+             WHERE avatar_id = $1
              ORDER BY created_at DESC"
         );
         sqlx::query_as::<_, ConsistencyReport>(&query)
-            .bind(character_id)
+            .bind(avatar_id)
             .fetch_all(pool)
             .await
     }

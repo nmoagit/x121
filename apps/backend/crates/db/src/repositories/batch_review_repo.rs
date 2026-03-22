@@ -297,7 +297,7 @@ impl BatchReviewRepo {
     // Progress queries
     // -----------------------------------------------------------------------
 
-    /// Count total segments in a project (via scenes -> characters -> projects).
+    /// Count total segments in a project (via scenes -> avatars -> projects).
     pub async fn count_project_segments(
         pool: &PgPool,
         project_id: DbId,
@@ -306,7 +306,7 @@ impl BatchReviewRepo {
             "SELECT COUNT(*)::BIGINT AS count
              FROM segments seg
              JOIN scenes sc ON sc.id = seg.scene_id
-             JOIN characters ch ON ch.id = sc.character_id
+             JOIN avatars ch ON ch.id = sc.avatar_id
              WHERE ch.project_id = $1
                AND seg.deleted_at IS NULL",
         )
@@ -325,7 +325,7 @@ impl BatchReviewRepo {
             "SELECT COUNT(DISTINCT seg.id)::BIGINT AS count
              FROM segments seg
              JOIN scenes sc ON sc.id = seg.scene_id
-             JOIN characters ch ON ch.id = sc.character_id
+             JOIN avatars ch ON ch.id = sc.avatar_id
              JOIN segment_approvals sa ON sa.segment_id = seg.id
              WHERE ch.project_id = $1
                AND seg.deleted_at IS NULL",
@@ -351,7 +351,7 @@ impl BatchReviewRepo {
                 SELECT DISTINCT ON (seg.id) sa.decision
                 FROM segments seg
                 JOIN scenes sc ON sc.id = seg.scene_id
-                JOIN characters ch ON ch.id = sc.character_id
+                JOIN avatars ch ON ch.id = sc.avatar_id
                 JOIN segment_approvals sa ON sa.segment_id = seg.id
                 WHERE ch.project_id = $1
                   AND seg.deleted_at IS NULL
@@ -394,7 +394,7 @@ impl BatchReviewRepo {
             "SELECT seg.id AS segment_id, AVG(qs.score) AS avg_score
              FROM segments seg
              JOIN scenes sc ON sc.id = seg.scene_id
-             JOIN characters ch ON ch.id = sc.character_id
+             JOIN avatars ch ON ch.id = sc.avatar_id
              JOIN quality_scores qs ON qs.segment_id = seg.id
              WHERE ch.project_id = $1
                AND seg.deleted_at IS NULL

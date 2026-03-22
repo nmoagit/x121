@@ -16,7 +16,7 @@ use crate::types::DbId;
 /// Maximum number of LoRA adapters that can be attached to a single generation.
 pub const MAX_LORA_CONFIGS: usize = 16;
 
-/// Maximum allowed prompt length in characters.
+/// Maximum allowed prompt length in avatars.
 pub const MAX_PROMPT_LENGTH: usize = 10_000;
 
 // ---------------------------------------------------------------------------
@@ -107,7 +107,7 @@ pub fn validate_receipt_inputs(
 ) -> Result<(), CoreError> {
     if prompt_len > MAX_PROMPT_LENGTH {
         return Err(CoreError::Validation(format!(
-            "Prompt exceeds maximum length of {MAX_PROMPT_LENGTH} characters (got {prompt_len})"
+            "Prompt exceeds maximum length of {MAX_PROMPT_LENGTH} avatars (got {prompt_len})"
         )));
     }
 

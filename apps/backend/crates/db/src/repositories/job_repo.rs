@@ -42,7 +42,7 @@ where
 #[derive(Debug, Default, Deserialize)]
 pub struct BulkCancelFilter {
     pub scene_id: Option<DbId>,
-    pub character_id: Option<DbId>,
+    pub avatar_id: Option<DbId>,
     pub project_id: Option<DbId>,
     pub submitted_by: Option<DbId>,
     pub status_ids: Option<Vec<StatusId>>,
@@ -518,9 +518,9 @@ impl JobRepo {
             conditions.push(format!("(parameters->>'scene_id')::BIGINT = ${bind_idx}"));
             bind_idx += 1;
         }
-        if filter.character_id.is_some() {
+        if filter.avatar_id.is_some() {
             conditions.push(format!(
-                "(parameters->>'character_id')::BIGINT = ${bind_idx}"
+                "(parameters->>'avatar_id')::BIGINT = ${bind_idx}"
             ));
             bind_idx += 1;
         }
@@ -549,7 +549,7 @@ impl JobRepo {
         if let Some(sid) = filter.scene_id {
             q = q.bind(sid);
         }
-        if let Some(cid) = filter.character_id {
+        if let Some(cid) = filter.avatar_id {
             q = q.bind(cid);
         }
         if let Some(pid) = filter.project_id {
@@ -714,7 +714,7 @@ impl JobRepo {
     /// List all jobs with rich filtering for the admin queue view.
     ///
     /// Returns enriched [`AdminQueueJob`] rows that include resolved scene
-    /// context (character name, scene type name, track name) and pipeline
+    /// context (avatar name, scene type name, track name) and pipeline
     /// context (pipeline_id, pipeline_code) via LEFT JOINs.
     pub async fn list_admin_queue(
         pool: &PgPool,
@@ -777,9 +777,9 @@ impl JobRepo {
         let query = format!(
             "SELECT {j_columns}, \
                     s.id AS scene_id, \
-                    COALESCE(s.character_id, (j.parameters->>'character_id')::BIGINT) AS character_id, \
+                    COALESCE(s.avatar_id, (j.parameters->>'avatar_id')::BIGINT) AS avatar_id, \
                     ch.project_id, \
-                    ch.name AS character_name, \
+                    ch.name AS avatar_name, \
                     st.name AS scene_type_name, \
                     t.name AS track_name, \
                     CASE \
@@ -793,7 +793,7 @@ impl JobRepo {
                     pl.code AS pipeline_code \
              FROM jobs j \
              LEFT JOIN scenes s ON s.id = (j.parameters->>'scene_id')::BIGINT \
-             LEFT JOIN characters ch ON ch.id = COALESCE(s.character_id, (j.parameters->>'character_id')::BIGINT) \
+             LEFT JOIN avatars ch ON ch.id = COALESCE(s.avatar_id, (j.parameters->>'avatar_id')::BIGINT) \
              LEFT JOIN scene_types st ON st.id = s.scene_type_id \
              LEFT JOIN tracks t ON t.id = s.track_id \
              LEFT JOIN projects p ON p.id = ch.project_id \

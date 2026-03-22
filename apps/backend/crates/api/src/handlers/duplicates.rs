@@ -1,4 +1,4 @@
-//! Handlers for character duplicate detection endpoints (PRD-79).
+//! Handlers for avatar duplicate detection endpoints (PRD-79).
 //!
 //! Provides single and batch duplicate checking, resolution workflows,
 //! and per-project/studio-level threshold settings management.
@@ -40,9 +40,9 @@ pub struct SettingsQuery {
 // Duplicate checking
 // ---------------------------------------------------------------------------
 
-/// POST /api/v1/characters/duplicates/check
+/// POST /api/v1/avatars/duplicates/check
 ///
-/// Check a single character for duplicates against existing characters.
+/// Check a single avatar for duplicates against existing avatars.
 /// Returns the created check record. In a production system this would
 /// query embeddings; here we create the check record for the workflow.
 pub async fn check_duplicate(
@@ -54,8 +54,8 @@ pub async fn check_duplicate(
     let settings = DuplicateSettingRepo::get_for_project(&state.pool, body.project_id).await?;
 
     let create = CreateDuplicateCheck {
-        source_character_id: body.character_id,
-        matched_character_id: None,
+        source_avatar_id: body.avatar_id,
+        matched_avatar_id: None,
         similarity_score: None,
         threshold_used: settings.similarity_threshold,
         check_type: duplicate_detection::CHECK_TYPE_MANUAL.to_string(),
@@ -66,9 +66,9 @@ pub async fn check_duplicate(
     Ok(Json(DataResponse { data: check }))
 }
 
-/// POST /api/v1/characters/duplicates/batch
+/// POST /api/v1/avatars/duplicates/batch
 ///
-/// Batch-check multiple characters for cross-duplicates.
+/// Batch-check multiple avatars for cross-duplicates.
 /// Creates a check record for each pair that exceeds the threshold.
 pub async fn batch_check(
     State(state): State<AppState>,
@@ -80,13 +80,13 @@ pub async fn batch_check(
     let settings = DuplicateSettingRepo::get_for_project(&state.pool, body.project_id).await?;
 
     // In a production system we'd load embeddings from the DB and run
-    // `find_cross_matches`. For the API layer, create a no_match record per character.
+    // `find_cross_matches`. For the API layer, create a no_match record per avatar.
     let mut checks: Vec<DuplicateCheck> = Vec::new();
 
-    for &char_id in &body.character_ids {
+    for &char_id in &body.avatar_ids {
         let create = CreateDuplicateCheck {
-            source_character_id: char_id,
-            matched_character_id: None,
+            source_avatar_id: char_id,
+            matched_avatar_id: None,
             similarity_score: None,
             threshold_used: settings.similarity_threshold,
             check_type: duplicate_detection::CHECK_TYPE_BATCH.to_string(),
@@ -99,7 +99,7 @@ pub async fn batch_check(
     Ok(Json(DataResponse { data: checks }))
 }
 
-/// GET /api/v1/characters/duplicates/history
+/// GET /api/v1/avatars/duplicates/history
 ///
 /// List duplicate check history with pagination.
 pub async fn list_checks(
@@ -116,7 +116,7 @@ pub async fn list_checks(
 // Resolution
 // ---------------------------------------------------------------------------
 
-/// POST /api/v1/characters/duplicates/{id}/resolve
+/// POST /api/v1/avatars/duplicates/{id}/resolve
 ///
 /// Resolve a duplicate check with the chosen resolution.
 pub async fn resolve_check(
@@ -140,7 +140,7 @@ pub async fn resolve_check(
     Ok(Json(DataResponse { data: check }))
 }
 
-/// POST /api/v1/characters/duplicates/{id}/dismiss
+/// POST /api/v1/avatars/duplicates/{id}/dismiss
 ///
 /// Shortcut to dismiss a duplicate check.
 pub async fn dismiss_check(

@@ -12,7 +12,7 @@ pub struct OnboardingSession {
     pub created_by_id: DbId,
     pub current_step: i32,
     pub step_data: serde_json::Value,
-    pub character_ids: Vec<DbId>,
+    pub avatar_ids: Vec<DbId>,
     pub status: String,
     pub created_at: Timestamp,
     pub updated_at: Timestamp,

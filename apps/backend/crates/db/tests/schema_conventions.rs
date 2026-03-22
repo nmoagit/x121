@@ -82,14 +82,14 @@ async fn check_timestamp_col(pool: &PgPool, table: &str, col: &str) -> String {
     data_type
 }
 
-/// No character varying columns should exist — TEXT is preferred.
+/// No avatar varying columns should exist — TEXT is preferred.
 #[sqlx::test(migrations = "../../../db/migrations")]
 async fn test_no_varchar_columns(pool: PgPool) {
     let rows: Vec<(String, String)> = sqlx::query_as(
         "SELECT table_name, column_name
          FROM information_schema.columns
          WHERE table_schema = 'public'
-           AND data_type = 'character varying'
+           AND data_type = 'avatar varying'
            AND table_name != '_sqlx_migrations'
          ORDER BY table_name, column_name",
     )

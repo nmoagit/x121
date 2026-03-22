@@ -5,11 +5,11 @@
 
 use crate::types::DbId;
 
-// Re-export so external users can still do `use x121_core::poster_frame::{ENTITY_TYPE_CHARACTER, ...}`.
-pub use crate::metadata::{ENTITY_TYPE_CHARACTER, ENTITY_TYPE_SCENE};
+// Re-export so external users can still do `use x121_core::poster_frame::{ENTITY_TYPE_AVATAR, ...}`.
+pub use crate::metadata::{ENTITY_TYPE_AVATAR, ENTITY_TYPE_SCENE};
 
 /// Valid entity types for poster frames.
-const VALID_ENTITY_TYPES: [&str; 2] = [ENTITY_TYPE_CHARACTER, ENTITY_TYPE_SCENE];
+const VALID_ENTITY_TYPES: [&str; 2] = [ENTITY_TYPE_AVATAR, ENTITY_TYPE_SCENE];
 
 /// Validate that an entity type string is one of the accepted values.
 ///
@@ -41,8 +41,8 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_validate_entity_type_character() {
-        assert!(validate_entity_type("character").is_ok());
+    fn test_validate_entity_type_avatar() {
+        assert!(validate_entity_type("avatar").is_ok());
     }
 
     #[test]

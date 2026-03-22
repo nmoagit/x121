@@ -6,7 +6,7 @@ use x121_core::types::DbId;
 use crate::models::test_shot::{CreateTestShot, TestShot};
 
 /// Column list for test_shots queries.
-const COLUMNS: &str = "id, scene_type_id, character_id, workflow_id, parameters, \
+const COLUMNS: &str = "id, scene_type_id, avatar_id, workflow_id, parameters, \
     seed_image_path, output_video_path, last_frame_path, duration_secs, \
     quality_score, is_promoted, promoted_to_scene_id, created_by_id, \
     created_at, updated_at";
@@ -19,14 +19,14 @@ impl TestShotRepo {
     pub async fn create(pool: &PgPool, input: &CreateTestShot) -> Result<TestShot, sqlx::Error> {
         let query = format!(
             "INSERT INTO test_shots
-                (scene_type_id, character_id, workflow_id, parameters,
+                (scene_type_id, avatar_id, workflow_id, parameters,
                  seed_image_path, duration_secs, created_by_id)
              VALUES ($1, $2, $3, $4, $5, $6, $7)
              RETURNING {COLUMNS}"
         );
         sqlx::query_as::<_, TestShot>(&query)
             .bind(input.scene_type_id)
-            .bind(input.character_id)
+            .bind(input.avatar_id)
             .bind(input.workflow_id)
             .bind(&input.parameters)
             .bind(&input.seed_image_path)
@@ -66,21 +66,21 @@ impl TestShotRepo {
             .await
     }
 
-    /// List test shots for a given character with pagination.
-    pub async fn list_by_character(
+    /// List test shots for a given avatar with pagination.
+    pub async fn list_by_avatar(
         pool: &PgPool,
-        character_id: DbId,
+        avatar_id: DbId,
         limit: i64,
         offset: i64,
     ) -> Result<Vec<TestShot>, sqlx::Error> {
         let query = format!(
             "SELECT {COLUMNS} FROM test_shots
-             WHERE character_id = $1
+             WHERE avatar_id = $1
              ORDER BY created_at DESC
              LIMIT $2 OFFSET $3"
         );
         sqlx::query_as::<_, TestShot>(&query)
-            .bind(character_id)
+            .bind(avatar_id)
             .bind(limit)
             .bind(offset)
             .fetch_all(pool)
@@ -89,18 +89,18 @@ impl TestShotRepo {
 
     /// List test shots as a filterable gallery.
     ///
-    /// Requires `scene_type_id`; optionally filters by `character_id`.
+    /// Requires `scene_type_id`; optionally filters by `avatar_id`.
     pub async fn list_gallery(
         pool: &PgPool,
         scene_type_id: DbId,
-        character_id: Option<DbId>,
+        avatar_id: Option<DbId>,
         limit: i64,
         offset: i64,
     ) -> Result<Vec<TestShot>, sqlx::Error> {
-        if let Some(cid) = character_id {
+        if let Some(cid) = avatar_id {
             let query = format!(
                 "SELECT {COLUMNS} FROM test_shots
-                 WHERE scene_type_id = $1 AND character_id = $2
+                 WHERE scene_type_id = $1 AND avatar_id = $2
                  ORDER BY created_at DESC
                  LIMIT $3 OFFSET $4"
             );

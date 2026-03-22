@@ -1,7 +1,7 @@
 //! Handlers for poster frame & thumbnail selection (PRD-96).
 //!
 //! Provides endpoints for setting, retrieving, and auto-selecting poster
-//! frames for characters and scenes.
+//! frames for avatars and scenes.
 
 use axum::extract::{Path, State};
 use axum::http::StatusCode;
@@ -11,24 +11,24 @@ use serde::Serialize;
 use sqlx::PgPool;
 
 use x121_core::error::CoreError;
-use x121_core::poster_frame::{select_best_frame, ENTITY_TYPE_CHARACTER, ENTITY_TYPE_SCENE};
+use x121_core::poster_frame::{select_best_frame, ENTITY_TYPE_AVATAR, ENTITY_TYPE_SCENE};
 use x121_core::quality_gate::CHECK_FACE_CONFIDENCE;
 use x121_core::types::DbId;
 use x121_db::models::poster_frame::{PosterFrame, UpsertPosterFrame};
 use x121_db::repositories::{
-    CharacterRepo, PosterFrameRepo, ProjectRepo, QualityScoreRepo, SceneRepo, SegmentRepo,
+    AvatarRepo, PosterFrameRepo, ProjectRepo, QualityScoreRepo, SceneRepo, SegmentRepo,
 };
 
 use crate::error::{AppError, AppResult};
-use crate::handlers::consistency_report::ensure_character_exists;
+use crate::handlers::consistency_report::ensure_avatar_exists;
 use crate::middleware::auth::AuthUser;
 use crate::response::DataResponse;
 use crate::state::AppState;
 
-/// Response for the auto-select endpoint, reporting which characters got posters.
+/// Response for the auto-select endpoint, reporting which avatars got posters.
 #[derive(Debug, Serialize)]
 pub struct AutoSelectResult {
-    pub character_id: DbId,
+    pub avatar_id: DbId,
     pub segment_id: Option<DbId>,
     pub selected: bool,
 }
@@ -113,18 +113,18 @@ pub async fn set_scene_poster(
     Ok((StatusCode::CREATED, Json(DataResponse { data: poster })))
 }
 
-/// POST /api/v1/characters/{id}/poster-frame
+/// POST /api/v1/avatars/{id}/poster-frame
 ///
-/// Set or replace the poster frame for a character.
-pub async fn set_character_poster(
+/// Set or replace the poster frame for a avatar.
+pub async fn set_avatar_poster(
     auth: AuthUser,
     State(state): State<AppState>,
     Path(id): Path<DbId>,
     Json(input): Json<UpsertPosterFrame>,
 ) -> AppResult<impl IntoResponse> {
-    ensure_character_exists(&state.pool, id).await?;
+    ensure_avatar_exists(&state.pool, id).await?;
     let poster =
-        set_entity_poster(&state.pool, ENTITY_TYPE_CHARACTER, id, auth.user_id, &input).await?;
+        set_entity_poster(&state.pool, ENTITY_TYPE_AVATAR, id, auth.user_id, &input).await?;
     Ok((StatusCode::CREATED, Json(DataResponse { data: poster })))
 }
 
@@ -140,21 +140,21 @@ pub async fn get_scene_poster(
     Ok(Json(DataResponse { data: poster }))
 }
 
-/// GET /api/v1/characters/{id}/poster-frame
+/// GET /api/v1/avatars/{id}/poster-frame
 ///
-/// Get the poster frame for a character.
-pub async fn get_character_poster(
+/// Get the poster frame for a avatar.
+pub async fn get_avatar_poster(
     _auth: AuthUser,
     State(state): State<AppState>,
     Path(id): Path<DbId>,
 ) -> AppResult<impl IntoResponse> {
-    let poster = get_entity_poster(&state.pool, ENTITY_TYPE_CHARACTER, id).await?;
+    let poster = get_entity_poster(&state.pool, ENTITY_TYPE_AVATAR, id).await?;
     Ok(Json(DataResponse { data: poster }))
 }
 
 /// GET /api/v1/projects/{id}/poster-gallery
 ///
-/// Returns all character poster frames for a project.
+/// Returns all avatar poster frames for a project.
 pub async fn get_poster_gallery(
     _auth: AuthUser,
     State(state): State<AppState>,
@@ -169,7 +169,7 @@ pub async fn get_poster_gallery(
 
 /// POST /api/v1/projects/{id}/auto-select-posters
 ///
-/// For each character in the project, find the segment with the highest
+/// For each avatar in the project, find the segment with the highest
 /// `face_confidence` quality score and auto-set it as the poster frame.
 pub async fn auto_select_posters(
     auth: AuthUser,
@@ -178,11 +178,11 @@ pub async fn auto_select_posters(
 ) -> AppResult<impl IntoResponse> {
     ensure_project_exists(&state.pool, id).await?;
 
-    let characters = CharacterRepo::list_by_project(&state.pool, id).await?;
-    let mut results = Vec::with_capacity(characters.len());
+    let avatars = AvatarRepo::list_by_project(&state.pool, id).await?;
+    let mut results = Vec::with_capacity(avatars.len());
 
-    for character in &characters {
-        let scenes = SceneRepo::list_by_character(&state.pool, character.id).await?;
+    for avatar in &avatars {
+        let scenes = SceneRepo::list_by_avatar(&state.pool, avatar.id).await?;
 
         let mut scores: Vec<(DbId, f64)> = Vec::new();
         for scene in &scenes {
@@ -205,8 +205,8 @@ pub async fn auto_select_posters(
                 segment_id: best_segment_id,
                 frame_number: 0,
                 image_path: format!(
-                    "auto-selected/character_{}_segment_{}.jpg",
-                    character.id, best_segment_id
+                    "auto-selected/avatar_{}_segment_{}.jpg",
+                    avatar.id, best_segment_id
                 ),
                 crop_settings_json: None,
                 brightness: None,
@@ -215,21 +215,21 @@ pub async fn auto_select_posters(
 
             PosterFrameRepo::upsert(
                 &state.pool,
-                ENTITY_TYPE_CHARACTER,
-                character.id,
+                ENTITY_TYPE_AVATAR,
+                avatar.id,
                 auth.user_id,
                 &input,
             )
             .await?;
 
             results.push(AutoSelectResult {
-                character_id: character.id,
+                avatar_id: avatar.id,
                 segment_id: Some(best_segment_id),
                 selected: true,
             });
         } else {
             results.push(AutoSelectResult {
-                character_id: character.id,
+                avatar_id: avatar.id,
                 segment_id: None,
                 selected: false,
             });
@@ -239,7 +239,7 @@ pub async fn auto_select_posters(
     tracing::info!(
         user_id = auth.user_id,
         project_id = id,
-        total_characters = characters.len(),
+        total_avatars = avatars.len(),
         selected_count = results.iter().filter(|r| r.selected).count(),
         "Auto-selected poster frames"
     );

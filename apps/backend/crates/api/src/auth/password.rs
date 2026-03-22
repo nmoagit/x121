@@ -32,12 +32,12 @@ pub fn verify_password(password: &str, hash: &str) -> Result<bool, argon2::passw
 
 /// Validate that a password meets minimum strength requirements.
 ///
-/// Currently enforces a minimum character length. Returns `Ok(())` when the
+/// Currently enforces a minimum avatar length. Returns `Ok(())` when the
 /// password is acceptable, or `Err` with a human-readable explanation.
 pub fn validate_password_strength(password: &str, min_length: usize) -> Result<(), String> {
     if password.len() < min_length {
         return Err(format!(
-            "Password must be at least {min_length} characters long"
+            "Password must be at least {min_length} avatars long"
         ));
     }
     Ok(())
@@ -75,7 +75,7 @@ mod tests {
         assert!(result.is_err());
         let msg = result.unwrap_err();
         assert!(
-            msg.contains("at least 12 characters"),
+            msg.contains("at least 12 avatars"),
             "error message should state the minimum length"
         );
     }

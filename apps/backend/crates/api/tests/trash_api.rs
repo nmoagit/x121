@@ -9,9 +9,9 @@ mod common;
 use axum::http::StatusCode;
 use common::{body_json, build_test_app, delete, get, post_json};
 use sqlx::PgPool;
-use x121_db::models::character::CreateCharacter;
+use x121_db::models::avatar::CreateAvatar;
 use x121_db::models::project::CreateProject;
-use x121_db::repositories::{CharacterRepo, ProjectRepo};
+use x121_db::repositories::{AvatarRepo, ProjectRepo};
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -26,8 +26,8 @@ fn new_project(name: &str) -> CreateProject {
     }
 }
 
-fn new_character(project_id: i64, name: &str) -> CreateCharacter {
-    CreateCharacter {
+fn new_avatar(project_id: i64, name: &str) -> CreateAvatar {
+    CreateAvatar {
         project_id,
         name: name.to_string(),
         status_id: None,
@@ -92,18 +92,18 @@ async fn test_list_trash_filtered_by_type(pool: PgPool) {
         .unwrap();
     ProjectRepo::soft_delete(&pool, project.id).await.unwrap();
 
-    // Create and soft-delete a character (under a different project that stays alive).
+    // Create and soft-delete a avatar (under a different project that stays alive).
     let project2 = ProjectRepo::create(&pool, &new_project("Filter CharProject"))
         .await
         .unwrap();
-    let character = CharacterRepo::create(&pool, &new_character(project2.id, "Filter Char"))
+    let avatar = AvatarRepo::create(&pool, &new_avatar(project2.id, "Filter Char"))
         .await
         .unwrap();
-    CharacterRepo::soft_delete(&pool, character.id)
+    AvatarRepo::soft_delete(&pool, avatar.id)
         .await
         .unwrap();
 
-    // Filter by projects -- should only see the project, not the character.
+    // Filter by projects -- should only see the project, not the avatar.
     let app = build_test_app(pool).await;
     let response = get(app, "/api/v1/trash?type=projects").await;
     assert_eq!(response.status(), StatusCode::OK);
@@ -120,13 +120,13 @@ async fn test_list_trash_filtered_by_type(pool: PgPool) {
             .any(|item| item["id"].as_i64() == Some(project.id)),
         "the trashed project should be in the filtered list"
     );
-    // Note: we cannot check by character.id alone because each table has its
-    // own BIGSERIAL sequence — character.id may equal a project.id numerically.
-    // The entity_type assertion above already proves no characters are present.
+    // Note: we cannot check by avatar.id alone because each table has its
+    // own BIGSERIAL sequence — avatar.id may equal a project.id numerically.
+    // The entity_type assertion above already proves no avatars are present.
     assert_eq!(
         items.len(),
         1,
-        "should only contain the one trashed project, not the character"
+        "should only contain the one trashed project, not the avatar"
     );
 }
 
@@ -171,21 +171,21 @@ async fn test_restore_child_with_trashed_parent_409(pool: PgPool) {
     let project = ProjectRepo::create(&pool, &new_project("Parent Trashed"))
         .await
         .unwrap();
-    let character = CharacterRepo::create(&pool, &new_character(project.id, "Orphan"))
+    let avatar = AvatarRepo::create(&pool, &new_avatar(project.id, "Orphan"))
         .await
         .unwrap();
 
     // Soft-delete both.
     ProjectRepo::soft_delete(&pool, project.id).await.unwrap();
-    CharacterRepo::soft_delete(&pool, character.id)
+    AvatarRepo::soft_delete(&pool, avatar.id)
         .await
         .unwrap();
 
-    // Try to restore the character -- should fail because parent project is trashed.
+    // Try to restore the avatar -- should fail because parent project is trashed.
     let app = build_test_app(pool).await;
     let response = post_json(
         app,
-        &format!("/api/v1/trash/characters/{}/restore", character.id),
+        &format!("/api/v1/trash/avatars/{}/restore", avatar.id),
         serde_json::json!({}),
     )
     .await;

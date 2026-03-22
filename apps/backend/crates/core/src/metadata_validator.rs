@@ -1,6 +1,6 @@
 //! Metadata validation against template fields (PRD-113).
 //!
-//! Validates a character metadata JSON object against a set of template field
+//! Validates a avatar metadata JSON object against a set of template field
 //! definitions, checking required fields, type constraints, and value constraints.
 
 use serde::Serialize;
@@ -287,7 +287,7 @@ mod tests {
     #[test]
     fn valid_metadata_passes() {
         let metadata: serde_json::Map<String, serde_json::Value> = serde_json::from_value(json!({
-            "name": "Test Character",
+            "name": "Test Avatar",
             "age": "25",
             "gender": "female",
             "score": 50,

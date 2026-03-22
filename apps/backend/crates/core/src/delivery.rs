@@ -3,7 +3,7 @@
 //! Represents the expected file structure in a project delivery ZIP:
 //! ```text
 //! project_name/
-//!   character_name/
+//!   avatar_name/
 //!     metadata.json
 //!     clothed.png
 //!     topless.png
@@ -20,7 +20,7 @@ use crate::types::DbId;
 #[derive(Debug, Clone, Serialize)]
 pub struct DeliveryManifest {
     pub project_name: String,
-    pub characters: Vec<CharacterDelivery>,
+    pub avatars: Vec<AvatarDelivery>,
 }
 
 /// A resolved scene video entry for delivery, referencing the final version.
@@ -32,11 +32,11 @@ pub struct SceneVideoEntry {
     pub source: String,
 }
 
-/// A character's delivery contents within the ZIP.
+/// A avatar's delivery contents within the ZIP.
 #[derive(Debug, Clone, Serialize)]
-pub struct CharacterDelivery {
-    pub character_name: String,
-    /// Path to character metadata JSON file (relative to character dir).
+pub struct AvatarDelivery {
+    pub avatar_name: String,
+    /// Path to avatar metadata JSON file (relative to avatar dir).
     pub metadata_json: String,
     /// Path to clothed reference image.
     pub clothed_image: String,
@@ -57,35 +57,35 @@ impl DeliveryManifest {
             errors.push("Project name must not be empty".to_string());
         }
 
-        if self.characters.is_empty() {
-            errors.push("Manifest must include at least one character".to_string());
+        if self.avatars.is_empty() {
+            errors.push("Manifest must include at least one avatar".to_string());
         }
 
-        for character in &self.characters {
-            let prefix = &character.character_name;
+        for avatar in &self.avatars {
+            let prefix = &avatar.avatar_name;
 
-            if character.character_name.is_empty() {
-                errors.push("Character name must not be empty".to_string());
+            if avatar.avatar_name.is_empty() {
+                errors.push("Avatar name must not be empty".to_string());
                 continue;
             }
 
-            if character.metadata_json.is_empty() {
+            if avatar.metadata_json.is_empty() {
                 errors.push(format!("{prefix}: metadata.json path is missing"));
             }
 
-            if character.clothed_image.is_empty() {
+            if avatar.clothed_image.is_empty() {
                 errors.push(format!("{prefix}: clothed image path is missing"));
             }
 
-            if character.topless_image.is_empty() {
+            if avatar.topless_image.is_empty() {
                 errors.push(format!("{prefix}: topless image path is missing"));
             }
 
-            if character.scene_videos.is_empty() {
+            if avatar.scene_videos.is_empty() {
                 errors.push(format!("{prefix}: no scene videos"));
             }
 
-            for entry in &character.scene_videos {
+            for entry in &avatar.scene_videos {
                 if entry.file_path.is_empty() {
                     errors.push(format!(
                         "{prefix}: scene video (scene_id={}) has an empty file path",
@@ -106,8 +106,8 @@ mod tests {
     fn valid_manifest() -> DeliveryManifest {
         DeliveryManifest {
             project_name: "Project Alpha".to_string(),
-            characters: vec![CharacterDelivery {
-                character_name: "Luna".to_string(),
+            avatars: vec![AvatarDelivery {
+                avatar_name: "Luna".to_string(),
                 metadata_json: "metadata.json".to_string(),
                 clothed_image: "clothed.png".to_string(),
                 topless_image: "topless.png".to_string(),
@@ -145,7 +145,7 @@ mod tests {
     #[test]
     fn missing_metadata_json() {
         let mut m = valid_manifest();
-        m.characters[0].metadata_json = String::new();
+        m.avatars[0].metadata_json = String::new();
         let errors = m.validate();
         assert!(errors.iter().any(|e| e.contains("metadata.json")));
     }
@@ -153,7 +153,7 @@ mod tests {
     #[test]
     fn missing_clothed_image() {
         let mut m = valid_manifest();
-        m.characters[0].clothed_image = String::new();
+        m.avatars[0].clothed_image = String::new();
         let errors = m.validate();
         assert!(errors.iter().any(|e| e.contains("clothed image")));
     }
@@ -161,7 +161,7 @@ mod tests {
     #[test]
     fn missing_topless_image() {
         let mut m = valid_manifest();
-        m.characters[0].topless_image = String::new();
+        m.avatars[0].topless_image = String::new();
         let errors = m.validate();
         assert!(errors.iter().any(|e| e.contains("topless image")));
     }
@@ -169,7 +169,7 @@ mod tests {
     #[test]
     fn no_scene_videos() {
         let mut m = valid_manifest();
-        m.characters[0].scene_videos.clear();
+        m.avatars[0].scene_videos.clear();
         let errors = m.validate();
         assert!(errors.iter().any(|e| e.contains("no scene videos")));
     }
@@ -177,7 +177,7 @@ mod tests {
     #[test]
     fn empty_video_file_path() {
         let mut m = valid_manifest();
-        m.characters[0].scene_videos.push(SceneVideoEntry {
+        m.avatars[0].scene_videos.push(SceneVideoEntry {
             scene_id: 99,
             file_path: String::new(),
             version_number: 1,
@@ -188,12 +188,12 @@ mod tests {
     }
 
     #[test]
-    fn no_characters() {
+    fn no_avatars() {
         let m = DeliveryManifest {
             project_name: "Empty".to_string(),
-            characters: vec![],
+            avatars: vec![],
         };
         let errors = m.validate();
-        assert!(errors.iter().any(|e| e.contains("at least one character")));
+        assert!(errors.iter().any(|e| e.contains("at least one avatar")));
     }
 }

@@ -6,7 +6,7 @@ use x121_core::types::DbId;
 use crate::models::image_qa::{CreateImageQualityScore, ImageQualityScore};
 
 /// Column list shared across queries to avoid repetition.
-const COLUMNS: &str = "id, image_variant_id, character_id, check_type_id, score, status, \
+const COLUMNS: &str = "id, image_variant_id, avatar_id, check_type_id, score, status, \
     details, is_source_image, created_at, updated_at";
 
 /// Provides CRUD operations for image quality scores.
@@ -20,13 +20,13 @@ impl ImageQualityScoreRepo {
     ) -> Result<ImageQualityScore, sqlx::Error> {
         let query = format!(
             "INSERT INTO image_quality_scores
-                (image_variant_id, character_id, check_type_id, score, status, details, is_source_image)
+                (image_variant_id, avatar_id, check_type_id, score, status, details, is_source_image)
              VALUES ($1, $2, $3, $4, $5, $6, $7)
              RETURNING {COLUMNS}"
         );
         sqlx::query_as::<_, ImageQualityScore>(&query)
             .bind(input.image_variant_id)
-            .bind(input.character_id)
+            .bind(input.avatar_id)
             .bind(input.check_type_id)
             .bind(input.score)
             .bind(&input.status)
@@ -36,18 +36,18 @@ impl ImageQualityScoreRepo {
             .await
     }
 
-    /// List all quality scores for a given character, ordered by most recently created first.
-    pub async fn list_by_character(
+    /// List all quality scores for a given avatar, ordered by most recently created first.
+    pub async fn list_by_avatar(
         pool: &PgPool,
-        character_id: DbId,
+        avatar_id: DbId,
     ) -> Result<Vec<ImageQualityScore>, sqlx::Error> {
         let query = format!(
             "SELECT {COLUMNS} FROM image_quality_scores
-             WHERE character_id = $1
+             WHERE avatar_id = $1
              ORDER BY created_at DESC"
         );
         sqlx::query_as::<_, ImageQualityScore>(&query)
-            .bind(character_id)
+            .bind(avatar_id)
             .fetch_all(pool)
             .await
     }
@@ -68,18 +68,18 @@ impl ImageQualityScoreRepo {
             .await
     }
 
-    /// List source-image quality scores for a character (where `is_source_image = true`).
-    pub async fn list_by_character_source(
+    /// List source-image quality scores for a avatar (where `is_source_image = true`).
+    pub async fn list_by_avatar_source(
         pool: &PgPool,
-        character_id: DbId,
+        avatar_id: DbId,
     ) -> Result<Vec<ImageQualityScore>, sqlx::Error> {
         let query = format!(
             "SELECT {COLUMNS} FROM image_quality_scores
-             WHERE character_id = $1 AND is_source_image = true
+             WHERE avatar_id = $1 AND is_source_image = true
              ORDER BY created_at DESC"
         );
         sqlx::query_as::<_, ImageQualityScore>(&query)
-            .bind(character_id)
+            .bind(avatar_id)
             .fetch_all(pool)
             .await
     }

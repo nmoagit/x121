@@ -22,7 +22,7 @@ use crate::state::AppState;
 /// GET    /{id}                                     -> get_by_id
 /// PUT    /{id}                                     -> update
 /// DELETE /{id}                                     -> delete
-/// GET    /{id}/preview-prompt/{character_id}       -> preview_prompt (PRD-23)
+/// GET    /{id}/preview-prompt/{avatar_id}       -> preview_prompt (PRD-23)
 /// POST   /{id}/tracks                              -> add_tracks (PRD-123)
 /// DELETE /{id}/tracks/{track_id}                   -> remove_track (PRD-123)
 /// POST   /matrix                                   -> generate_matrix (PRD-23)
@@ -46,7 +46,7 @@ pub fn studio_router() -> Router<AppState> {
                 .delete(scene_type::delete),
         )
         .route(
-            "/{id}/preview-prompt/{character_id}",
+            "/{id}/preview-prompt/{avatar_id}",
             get(scene_type::preview_prompt),
         )
         .route("/{id}/tracks", post(scene_type::add_tracks))

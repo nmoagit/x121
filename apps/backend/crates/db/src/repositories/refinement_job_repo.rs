@@ -8,7 +8,7 @@ use crate::models::refinement_job::{CreateRefinementJob, RefinementJob};
 
 /// Column list shared across queries to avoid repetition.
 const COLUMNS: &str = "\
-    id, uuid, character_id, status, source_bio, source_tov, \
+    id, uuid, avatar_id, status, source_bio, source_tov, \
     llm_provider, llm_model, enrich, iterations, \
     final_metadata, final_report, error, metadata_version_id, \
     created_at, updated_at, deleted_at";
@@ -24,12 +24,12 @@ impl RefinementJobRepo {
     ) -> Result<RefinementJob, sqlx::Error> {
         let query = format!(
             "INSERT INTO refinement_jobs \
-                (character_id, source_bio, source_tov, llm_provider, llm_model, enrich) \
+                (avatar_id, source_bio, source_tov, llm_provider, llm_model, enrich) \
              VALUES ($1, $2, $3, $4, $5, $6) \
              RETURNING {COLUMNS}"
         );
         sqlx::query_as::<_, RefinementJob>(&query)
-            .bind(input.character_id)
+            .bind(input.avatar_id)
             .bind(&input.source_bio)
             .bind(&input.source_tov)
             .bind(&input.llm_provider)
@@ -62,34 +62,34 @@ impl RefinementJobRepo {
             .await
     }
 
-    /// List all refinement jobs for a character, ordered by created_at DESC.
+    /// List all refinement jobs for a avatar, ordered by created_at DESC.
     /// Excludes soft-deleted rows.
-    pub async fn list_for_character(
+    pub async fn list_for_avatar(
         pool: &PgPool,
-        character_id: DbId,
+        avatar_id: DbId,
     ) -> Result<Vec<RefinementJob>, sqlx::Error> {
         let query = format!(
             "SELECT {COLUMNS} FROM refinement_jobs \
-             WHERE character_id = $1 AND deleted_at IS NULL \
+             WHERE avatar_id = $1 AND deleted_at IS NULL \
              ORDER BY created_at DESC"
         );
         sqlx::query_as::<_, RefinementJob>(&query)
-            .bind(character_id)
+            .bind(avatar_id)
             .fetch_all(pool)
             .await
     }
 
-    /// Check whether a `queued` or `running` job already exists for a character.
-    pub async fn has_active_job(pool: &PgPool, character_id: DbId) -> Result<bool, sqlx::Error> {
+    /// Check whether a `queued` or `running` job already exists for a avatar.
+    pub async fn has_active_job(pool: &PgPool, avatar_id: DbId) -> Result<bool, sqlx::Error> {
         let row: (bool,) = sqlx::query_as(
             "SELECT EXISTS(\
                 SELECT 1 FROM refinement_jobs \
-                WHERE character_id = $1 \
+                WHERE avatar_id = $1 \
                   AND status IN ($2, $3) \
                   AND deleted_at IS NULL\
             )",
         )
-        .bind(character_id)
+        .bind(avatar_id)
         .bind(STATUS_QUEUED)
         .bind(STATUS_RUNNING)
         .fetch_one(pool)

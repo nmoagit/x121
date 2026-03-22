@@ -6,7 +6,7 @@ use x121_core::types::DbId;
 use crate::models::image::{CreateDerivedImage, DerivedImage, UpdateDerivedImage};
 
 /// Column list shared across queries to avoid repetition.
-const COLUMNS: &str = "id, source_image_id, character_id, file_path, variant_type, \
+const COLUMNS: &str = "id, source_image_id, avatar_id, file_path, variant_type, \
     description, deleted_at, created_at, updated_at";
 
 /// Provides CRUD operations for derived images.
@@ -19,13 +19,13 @@ impl DerivedImageRepo {
         input: &CreateDerivedImage,
     ) -> Result<DerivedImage, sqlx::Error> {
         let query = format!(
-            "INSERT INTO derived_images (source_image_id, character_id, file_path, variant_type, description)
+            "INSERT INTO derived_images (source_image_id, avatar_id, file_path, variant_type, description)
              VALUES ($1, $2, $3, $4, $5)
              RETURNING {COLUMNS}"
         );
         sqlx::query_as::<_, DerivedImage>(&query)
             .bind(input.source_image_id)
-            .bind(input.character_id)
+            .bind(input.avatar_id)
             .bind(&input.file_path)
             .bind(&input.variant_type)
             .bind(&input.description)
@@ -60,19 +60,19 @@ impl DerivedImageRepo {
             .await
     }
 
-    /// List all derived images for a given character, ordered by most recently created first.
+    /// List all derived images for a given avatar, ordered by most recently created first.
     /// Excludes soft-deleted rows.
-    pub async fn list_by_character(
+    pub async fn list_by_avatar(
         pool: &PgPool,
-        character_id: DbId,
+        avatar_id: DbId,
     ) -> Result<Vec<DerivedImage>, sqlx::Error> {
         let query = format!(
             "SELECT {COLUMNS} FROM derived_images
-             WHERE character_id = $1 AND deleted_at IS NULL
+             WHERE avatar_id = $1 AND deleted_at IS NULL
              ORDER BY created_at DESC"
         );
         sqlx::query_as::<_, DerivedImage>(&query)
-            .bind(character_id)
+            .bind(avatar_id)
             .fetch_all(pool)
             .await
     }

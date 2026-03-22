@@ -1,7 +1,7 @@
 //! Handlers for the `/speech-types` resource (PRD-124).
 //!
 //! Speech types are a seeded, user-extensible lookup table for categorizing
-//! character speech entries.
+//! avatar speech entries.
 
 use axum::extract::State;
 use axum::http::StatusCode;

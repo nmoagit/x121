@@ -195,7 +195,7 @@ mod tests {
     fn first_entry_uses_seed() {
         let hash = compute_integrity_hash(None, "test_data");
         assert!(!hash.is_empty());
-        // SHA-256 hex digest is always 64 characters.
+        // SHA-256 hex digest is always 64 avatars.
         assert_eq!(hash.len(), 64);
     }
 

@@ -46,11 +46,11 @@ pub fn router() -> Router<AppState> {
         .route("/{id}/cells/delete", post(production_run::delete_cells))
         .route("/{id}/progress", get(production_run::get_progress))
         .route(
-            "/{id}/characters/{character_id}/cancel",
-            post(production_run::cancel_character_cells),
+            "/{id}/avatars/{avatar_id}/cancel",
+            post(production_run::cancel_avatar_cells),
         )
         .route(
-            "/{id}/characters/{character_id}/delete",
-            post(production_run::delete_character_cells),
+            "/{id}/avatars/{avatar_id}/delete",
+            post(production_run::delete_avatar_cells),
         )
 }

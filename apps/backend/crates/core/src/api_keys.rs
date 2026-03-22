@@ -11,10 +11,10 @@ use sha2::Sha256;
 // Constants
 // ---------------------------------------------------------------------------
 
-/// Length of the generated API key string (alphanumeric characters).
+/// Length of the generated API key string (alphanumeric avatars).
 pub const KEY_LENGTH: usize = 48;
 
-/// Number of leading characters stored as a human-visible prefix.
+/// Number of leading avatars stored as a human-visible prefix.
 pub const KEY_PREFIX_LENGTH: usize = 8;
 
 /// Default requests-per-minute limit for read operations.
@@ -49,7 +49,7 @@ pub mod scopes {
 pub struct GeneratedApiKey {
     /// The plaintext key (shown to the user exactly once, never stored).
     pub plaintext: String,
-    /// The first [`KEY_PREFIX_LENGTH`] characters of the key for display.
+    /// The first [`KEY_PREFIX_LENGTH`] avatars of the key for display.
     pub prefix: String,
     /// The SHA-256 hex digest of the plaintext key (stored in the database).
     pub hash: String,
@@ -161,7 +161,7 @@ mod tests {
         assert_eq!(key.hash.len(), 64, "SHA-256 hex digest should be 64 chars");
         assert!(
             key.hash.chars().all(|c| c.is_ascii_hexdigit()),
-            "Hash should be hex characters only"
+            "Hash should be hex avatars only"
         );
     }
 

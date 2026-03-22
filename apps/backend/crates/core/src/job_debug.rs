@@ -65,12 +65,12 @@ pub fn validate_modified_params(params: &serde_json::Value) -> Result<(), CoreEr
     Ok(())
 }
 
-/// Validate an optional abort reason (max 2000 characters).
+/// Validate an optional abort reason (max 2000 avatars).
 pub fn validate_abort_reason(reason: &Option<String>) -> Result<(), CoreError> {
     if let Some(r) = reason {
         if r.len() > MAX_ABORT_REASON_LEN {
             return Err(CoreError::Validation(format!(
-                "Abort reason too long: {} characters (max {MAX_ABORT_REASON_LEN})",
+                "Abort reason too long: {} avatars (max {MAX_ABORT_REASON_LEN})",
                 r.len()
             )));
         }

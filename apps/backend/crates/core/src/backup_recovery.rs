@@ -184,7 +184,7 @@ const CRON_FIELD_COUNT_EXTENDED: usize = 6;
 /// Validate that a cron expression has a valid format.
 ///
 /// Performs lightweight structural validation: checks field count (5 or 6
-/// fields) and that each field contains only valid characters
+/// fields) and that each field contains only valid avatars
 /// (`0-9`, `*`, `/`, `-`, `,`).
 pub fn validate_cron_expression(expr: &str) -> Result<(), CoreError> {
     let trimmed = expr.trim();
@@ -215,7 +215,7 @@ pub fn validate_cron_expression(expr: &str) -> Result<(), CoreError> {
     Ok(())
 }
 
-/// Check that a single cron field contains only valid characters.
+/// Check that a single cron field contains only valid avatars.
 fn is_valid_cron_field(field: &str) -> bool {
     if field.is_empty() {
         return false;
@@ -566,7 +566,7 @@ mod tests {
     }
 
     #[test]
-    fn cron_invalid_characters() {
+    fn cron_invalid_avatars() {
         assert!(validate_cron_expression("0 2 * * MON").is_err());
     }
 

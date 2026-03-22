@@ -3,7 +3,7 @@
 //! Polls for pending delivery exports and processes them through:
 //! assembling → transcoding → packaging → validating → completed/failed.
 //!
-//! Files inside each per-character RAR are named according to the dynamic
+//! Files inside each per-avatar RAR are named according to the dynamic
 //! naming rules (delivery_video, delivery_image, delivery_metadata, delivery_folder).
 //! Structure is flat unless delivery_folder defines subdirectories.
 
@@ -20,7 +20,7 @@ use x121_core::types::DbId;
 use x121_db::models::delivery_export::DeliveryExport;
 use x121_db::models::delivery_log::CreateDeliveryLog;
 use x121_db::repositories::{
-    CharacterMetadataVersionRepo, CharacterRepo, DeliveryExportRepo, ImageVariantRepo,
+    AvatarMetadataVersionRepo, AvatarRepo, DeliveryExportRepo, ImageVariantRepo,
     NamingRuleRepo, OutputFormatProfileRepo, PipelineRepo, ProjectDeliveryLogRepo, ProjectRepo,
     SceneRepo, SceneTypeRepo, SceneTypeTrackConfigRepo, SceneVideoVersionRepo, TrackRepo,
 };
@@ -102,10 +102,10 @@ struct FileAsset {
     path: PathBuf,
 }
 
-/// All collected assets for a single character.
-struct CharacterBundle {
-    character_name: String,
-    character_slug: String,
+/// All collected assets for a single avatar.
+struct AvatarBundle {
+    avatar_name: String,
+    avatar_slug: String,
     videos: Vec<FileAsset>,
     images: Vec<FileAsset>,
     metadata_json: Option<serde_json::Value>,
@@ -146,23 +146,23 @@ async fn run_pipeline(
 
     let is_passthrough = profile.is_passthrough;
 
-    // Determine which characters to include.
-    let all_characters = CharacterRepo::list_by_project(&state.pool, project_id).await?;
-    let character_ids: Vec<DbId> = match &export.characters_json {
+    // Determine which avatars to include.
+    let all_avatars = AvatarRepo::list_by_project(&state.pool, project_id).await?;
+    let avatar_ids: Vec<DbId> = match &export.avatars_json {
         Some(json) => serde_json::from_value::<Vec<DbId>>(json.clone())
-            .unwrap_or_else(|_| all_characters.iter().map(|c| c.id).collect()),
-        None => all_characters.iter().map(|c| c.id).collect(),
+            .unwrap_or_else(|_| all_avatars.iter().map(|c| c.id).collect()),
+        None => all_avatars.iter().map(|c| c.id).collect(),
     };
-    let characters: Vec<_> = all_characters
+    let avatars: Vec<_> = all_avatars
         .into_iter()
-        .filter(|c| character_ids.contains(&c.id))
+        .filter(|c| avatar_ids.contains(&c.id))
         .collect();
 
-    if characters.is_empty() {
-        return Err(PipelineError::msg("No characters to export"));
+    if avatars.is_empty() {
+        return Err(PipelineError::msg("No avatars to export"));
     }
 
-    let model_names: Vec<&str> = characters.iter().map(|c| c.name.as_str()).collect();
+    let model_names: Vec<&str> = avatars.iter().map(|c| c.name.as_str()).collect();
     log_step(
         state,
         export_id,
@@ -170,7 +170,7 @@ async fn run_pipeline(
         "info",
         &format!(
             "Assembling {} models: {} (profile: {}{})",
-            characters.len(),
+            avatars.len(),
             model_names.join(", "),
             profile.name,
             if is_passthrough { ", passthrough" } else { "" },
@@ -197,19 +197,19 @@ async fn run_pipeline(
         .await
         .unwrap_or_else(|| "metadata.json".into());
 
-    let mut bundles: Vec<CharacterBundle> = Vec::new();
+    let mut bundles: Vec<AvatarBundle> = Vec::new();
 
-    for character in &characters {
+    for avatar in &avatars {
         check_cancelled(cancel)?;
 
-        let char_slug = naming_engine::slugify(&character.name);
-        let scenes = SceneRepo::list_by_character(&state.pool, character.id).await?;
+        let char_slug = naming_engine::slugify(&avatar.name);
+        let scenes = SceneRepo::list_by_avatar(&state.pool, avatar.id).await?;
 
         // Resolve folder prefix from naming rules.
         let folder_prefix = if let Some(ref tmpl) = folder_template {
             let ctx = NamingContext {
                 project_name: Some(project.name.clone()),
-                character_name: Some(character.name.clone()),
+                avatar_name: Some(avatar.name.clone()),
                 ..Default::default()
             };
             naming_engine::resolve_template(tmpl, &ctx)
@@ -292,7 +292,7 @@ async fn run_pipeline(
                 scene_type_name,
                 is_clothes_off,
                 index,
-                character_name: Some(character.name.clone()),
+                avatar_name: Some(avatar.name.clone()),
                 project_name: Some(project.name.clone()),
                 ext: Some(ext.to_string()),
                 prefix_rules: prefix_rules.clone(),
@@ -310,7 +310,7 @@ async fn run_pipeline(
         }
 
         // Collect image variants (one per track/seed slot).
-        let image_variants = ImageVariantRepo::list_by_character(&state.pool, character.id).await?;
+        let image_variants = ImageVariantRepo::list_by_avatar(&state.pool, avatar.id).await?;
         let mut images = Vec::new();
         for iv in &image_variants {
             let abs_path = storage_root.join(&iv.file_path);
@@ -326,7 +326,7 @@ async fn run_pipeline(
             let ctx = NamingContext {
                 variant_label: Some(label.to_string()),
                 ext: Some(ext.to_string()),
-                character_name: Some(character.name.clone()),
+                avatar_name: Some(avatar.name.clone()),
                 project_name: Some(project.name.clone()),
                 ..Default::default()
             };
@@ -339,13 +339,13 @@ async fn run_pipeline(
             });
         }
 
-        let metadata = CharacterMetadataVersionRepo::find_approved(&state.pool, character.id)
+        let metadata = AvatarMetadataVersionRepo::find_approved(&state.pool, avatar.id)
             .await?
             .map(|m| m.metadata);
 
-        bundles.push(CharacterBundle {
-            character_name: character.name.clone(),
-            character_slug: char_slug,
+        bundles.push(AvatarBundle {
+            avatar_name: avatar.name.clone(),
+            avatar_slug: char_slug,
             videos,
             images,
             metadata_json: metadata,
@@ -416,7 +416,7 @@ async fn run_pipeline(
                 let probe = ffmpeg::probe_video(&video.path).await?;
                 if ffmpeg::needs_transcode(&probe, &transcode_params) {
                     let output_path = temp_dir
-                        .join(&bundle.character_slug)
+                        .join(&bundle.avatar_slug)
                         .join(&video.resolved_name);
                     log_step(
                         state,
@@ -425,7 +425,7 @@ async fn run_pipeline(
                         "info",
                         &format!(
                             "Transcoding {}/{}",
-                            bundle.character_name, video.resolved_name
+                            bundle.avatar_name, video.resolved_name
                         ),
                     )
                     .await;
@@ -438,7 +438,7 @@ async fn run_pipeline(
     }
 
     // -----------------------------------------------------------------------
-    // Phase 3: Packaging — build per-character RAR archives
+    // Phase 3: Packaging — build per-avatar RAR archives
     //
     // Structure inside each RAR is FLAT unless delivery_folder naming rule
     // defines subdirectories (e.g. "videos/"). Files are named per naming rules.
@@ -476,7 +476,7 @@ async fn run_pipeline(
         check_cancelled(cancel)?;
 
         // Build a staging directory with the content to archive.
-        let staging_dir = delivery_dir.join(format!("{}_staging", &bundle.character_slug));
+        let staging_dir = delivery_dir.join(format!("{}_staging", &bundle.avatar_slug));
         tokio::fs::create_dir_all(&staging_dir).await?;
 
         // Copy videos and images — flat unless folder_prefix adds structure.
@@ -509,7 +509,7 @@ async fn run_pipeline(
         }
 
         // Resolve archive name from naming rules (delivery_archive category).
-        let archive_name = format!("{}.rar", &bundle.character_slug);
+        let archive_name = format!("{}.rar", &bundle.avatar_slug);
         let rar_path = delivery_dir.join(&archive_name);
 
         create_rar(&staging_dir, &rar_path).await?;

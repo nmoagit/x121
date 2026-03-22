@@ -1,7 +1,7 @@
-//! Route definitions for the character readiness system (PRD-107).
+//! Route definitions for the avatar readiness system (PRD-107).
 //!
-//! Character readiness is merged into `/characters`, criteria at `/readiness-criteria`,
-//! and library summary into `/library/characters`.
+//! Avatar readiness is merged into `/avatars`, criteria at `/readiness-criteria`,
+//! and library summary into `/library/avatars`.
 
 use axum::routing::{get, post, put};
 use axum::Router;
@@ -9,22 +9,22 @@ use axum::Router;
 use crate::handlers::readiness;
 use crate::state::AppState;
 
-/// Character-scoped readiness routes.
+/// Avatar-scoped readiness routes.
 ///
-/// Merged into the existing `/characters` router.
+/// Merged into the existing `/avatars` router.
 ///
 /// ```text
-/// GET    /{character_id}/readiness               -> get_character_readiness
-/// POST   /{character_id}/readiness/invalidate     -> invalidate_cache
+/// GET    /{avatar_id}/readiness               -> get_avatar_readiness
+/// POST   /{avatar_id}/readiness/invalidate     -> invalidate_cache
 /// ```
 pub fn readiness_router() -> Router<AppState> {
     Router::new()
         .route(
-            "/{character_id}/readiness",
-            get(readiness::get_character_readiness),
+            "/{avatar_id}/readiness",
+            get(readiness::get_avatar_readiness),
         )
         .route(
-            "/{character_id}/readiness/invalidate",
+            "/{avatar_id}/readiness/invalidate",
             post(readiness::invalidate_cache),
         )
         .route("/readiness/batch-evaluate", post(readiness::batch_evaluate))
@@ -54,7 +54,7 @@ pub fn readiness_criteria_router() -> Router<AppState> {
 
 /// Library readiness summary route.
 ///
-/// Merged into `/library/characters`.
+/// Merged into `/library/avatars`.
 ///
 /// ```text
 /// GET    /readiness-summary   -> get_readiness_summary

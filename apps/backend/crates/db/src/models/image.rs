@@ -19,7 +19,7 @@ use crate::models::status::StatusId;
 #[derive(Debug, Clone, FromRow, Serialize)]
 pub struct SourceImage {
     pub id: DbId,
-    pub character_id: DbId,
+    pub avatar_id: DbId,
     pub file_path: String,
     pub description: Option<String>,
     pub is_primary: bool,
@@ -31,7 +31,7 @@ pub struct SourceImage {
 /// DTO for creating a new source image.
 #[derive(Debug, Clone, Deserialize)]
 pub struct CreateSourceImage {
-    pub character_id: DbId,
+    pub avatar_id: DbId,
     pub file_path: String,
     pub description: Option<String>,
     pub is_primary: Option<bool>,
@@ -54,7 +54,7 @@ pub struct UpdateSourceImage {
 pub struct DerivedImage {
     pub id: DbId,
     pub source_image_id: DbId,
-    pub character_id: DbId,
+    pub avatar_id: DbId,
     pub file_path: String,
     pub variant_type: String,
     pub description: Option<String>,
@@ -67,7 +67,7 @@ pub struct DerivedImage {
 #[derive(Debug, Clone, Deserialize)]
 pub struct CreateDerivedImage {
     pub source_image_id: DbId,
-    pub character_id: DbId,
+    pub avatar_id: DbId,
     pub file_path: String,
     pub variant_type: String,
     pub description: Option<String>,
@@ -89,7 +89,7 @@ pub struct UpdateDerivedImage {
 #[derive(Debug, Clone, FromRow, Serialize)]
 pub struct ImageVariant {
     pub id: DbId,
-    pub character_id: DbId,
+    pub avatar_id: DbId,
     pub source_image_id: Option<DbId>,
     pub derived_image_id: Option<DbId>,
     pub variant_label: String,
@@ -114,7 +114,7 @@ pub struct ImageVariant {
 /// DTO for creating a new image variant.
 #[derive(Debug, Clone, Deserialize)]
 pub struct CreateImageVariant {
-    pub character_id: DbId,
+    pub avatar_id: DbId,
     pub source_image_id: Option<DbId>,
     pub derived_image_id: Option<DbId>,
     pub variant_label: String,

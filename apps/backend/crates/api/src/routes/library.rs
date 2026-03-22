@@ -1,13 +1,13 @@
-//! Route definitions for the character library (PRD-60).
+//! Route definitions for the avatar library (PRD-60).
 //!
-//! Mounted at `/library/characters` in the API route tree.
+//! Mounted at `/library/avatars` in the API route tree.
 //!
 //! ```text
-//! GET    /                              list_library_characters
-//! POST   /                              create_library_character
-//! GET    /{id}                          get_library_character
-//! PUT    /{id}                          update_library_character
-//! DELETE /{id}                          delete_library_character
+//! GET    /                              list_library_avatars
+//! POST   /                              create_library_avatar
+//! GET    /{id}                          get_library_avatar
+//! PUT    /{id}                          update_library_avatar
+//! DELETE /{id}                          delete_library_avatar
 //! GET    /{id}/usage                    get_library_usage
 //! POST   /{id}/import                   import_to_project
 //! GET    /projects/{project_id}/links   list_project_links
@@ -25,13 +25,13 @@ pub fn router() -> Router<AppState> {
     Router::new()
         .route(
             "/",
-            get(library::list_library_characters).post(library::create_library_character),
+            get(library::list_library_avatars).post(library::create_library_avatar),
         )
         .route(
             "/{id}",
-            get(library::get_library_character)
-                .put(library::update_library_character)
-                .delete(library::delete_library_character),
+            get(library::get_library_avatar)
+                .put(library::update_library_avatar)
+                .delete(library::delete_library_avatar),
         )
         .route("/{id}/usage", get(library::get_library_usage))
         .route("/{id}/import", post(library::import_to_project))

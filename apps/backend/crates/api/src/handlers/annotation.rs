@@ -41,7 +41,7 @@ pub struct AnnotationListFilters {
 #[derive(Debug, Deserialize)]
 pub struct AnnotationBrowseParams {
     pub project_id: Option<DbId>,
-    pub character_id: Option<DbId>,
+    pub avatar_id: Option<DbId>,
     pub sort: Option<String>,
     pub sort_dir: Option<String>,
     #[serde(flatten)]
@@ -222,7 +222,7 @@ Browse all annotated items
 
 /// GET /annotations/browse
 ///
-/// Browse all annotated items with full context (character, scene, project).
+/// Browse all annotated items with full context (avatar, scene, project).
 pub async fn browse_annotations(
     _auth: AuthUser,
     State(state): State<AppState>,
@@ -236,7 +236,7 @@ pub async fn browse_annotations(
     let items = FrameAnnotationRepo::browse(
         &state.pool,
         params.project_id,
-        params.character_id,
+        params.avatar_id,
         sort,
         sort_dir,
         limit,
@@ -363,19 +363,19 @@ pub async fn delete_version_frame_annotations(
 Image-variant-scoped annotation handlers
 -------------------------------------------------------------------------- */
 
-/// GET /characters/{character_id}/image-variants/{id}/annotations
+/// GET /avatars/{avatar_id}/image-variants/{id}/annotations
 ///
 /// List all annotations for an image variant, ordered by frame number.
 pub async fn list_image_variant_annotations(
     _auth: AuthUser,
     State(state): State<AppState>,
-    Path((_character_id, variant_id)): Path<(DbId, DbId)>,
+    Path((_avatar_id, variant_id)): Path<(DbId, DbId)>,
 ) -> AppResult<impl IntoResponse> {
     let annotations = FrameAnnotationRepo::list_by_image_variant(&state.pool, variant_id).await?;
     Ok(Json(DataResponse { data: annotations }))
 }
 
-/// PUT /characters/{character_id}/image-variants/{id}/annotations/{frame}
+/// PUT /avatars/{avatar_id}/image-variants/{id}/annotations/{frame}
 ///
 /// Upsert annotations for a specific frame on an image variant.
 /// Replaces all existing annotations for that variant+frame.
@@ -383,7 +383,7 @@ pub async fn list_image_variant_annotations(
 pub async fn upsert_image_variant_annotation(
     auth: AuthUser,
     State(state): State<AppState>,
-    Path((_character_id, variant_id, frame)): Path<(DbId, DbId, i32)>,
+    Path((_avatar_id, variant_id, frame)): Path<(DbId, DbId, i32)>,
     Json(input): Json<CreateImageVariantAnnotation>,
 ) -> AppResult<impl IntoResponse> {
     // Ensure the image variant exists.
@@ -423,13 +423,13 @@ pub async fn upsert_image_variant_annotation(
     }
 }
 
-/// DELETE /characters/{character_id}/image-variants/{id}/annotations/{frame}
+/// DELETE /avatars/{avatar_id}/image-variants/{id}/annotations/{frame}
 ///
 /// Delete all annotations for a specific frame on an image variant.
 pub async fn delete_image_variant_frame_annotations(
     auth: AuthUser,
     State(state): State<AppState>,
-    Path((_character_id, variant_id, frame)): Path<(DbId, DbId, i32)>,
+    Path((_avatar_id, variant_id, frame)): Path<(DbId, DbId, i32)>,
 ) -> AppResult<impl IntoResponse> {
     let deleted =
         FrameAnnotationRepo::delete_by_image_variant_and_frame(&state.pool, variant_id, frame)

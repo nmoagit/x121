@@ -39,7 +39,7 @@ pub const PRESENCE_STALE_TIMEOUT_SECS: i64 = 120;
 pub mod entity_types {
     pub const SCENE: &str = "scene";
     pub const SEGMENT: &str = "segment";
-    pub const CHARACTER: &str = "character";
+    pub const AVATAR: &str = "avatar";
     pub const PROJECT: &str = "project";
 }
 
@@ -47,7 +47,7 @@ pub mod entity_types {
 pub const VALID_ENTITY_TYPES: &[&str] = &[
     entity_types::SCENE,
     entity_types::SEGMENT,
-    entity_types::CHARACTER,
+    entity_types::AVATAR,
     entity_types::PROJECT,
 ];
 
@@ -188,7 +188,7 @@ mod tests {
     fn test_valid_entity_types() {
         assert!(is_valid_entity_type("scene"));
         assert!(is_valid_entity_type("segment"));
-        assert!(is_valid_entity_type("character"));
+        assert!(is_valid_entity_type("avatar"));
         assert!(is_valid_entity_type("project"));
     }
 

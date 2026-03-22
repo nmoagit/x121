@@ -1,12 +1,12 @@
 //! Repository for the hierarchical video settings tables:
-//! `project_video_settings`, `group_video_settings`, `character_video_settings`.
+//! `project_video_settings`, `group_video_settings`, `avatar_video_settings`.
 
 use sqlx::PgPool;
 use x121_core::types::DbId;
 use x121_core::video_settings::VideoSettingsLayer;
 
 use crate::models::video_settings::{
-    CharacterVideoSettings, GroupVideoSettings, ProjectVideoSettings, UpsertVideoSettings,
+    AvatarVideoSettings, GroupVideoSettings, ProjectVideoSettings, UpsertVideoSettings,
 };
 
 // ---------------------------------------------------------------------------
@@ -19,8 +19,8 @@ const PROJECT_COLUMNS: &str = "id, project_id, scene_type_id, target_duration_se
 const GROUP_COLUMNS: &str = "id, group_id, scene_type_id, target_duration_secs, target_fps, \
      target_resolution, created_at, updated_at";
 
-const CHARACTER_COLUMNS: &str =
-    "id, character_id, scene_type_id, target_duration_secs, target_fps, \
+const AVATAR_COLUMNS: &str =
+    "id, avatar_id, scene_type_id, target_duration_secs, target_fps, \
      target_resolution, created_at, updated_at";
 
 /// Provides CRUD operations for video settings at all hierarchy levels.
@@ -206,28 +206,28 @@ impl VideoSettingsRepo {
     }
 
     // -----------------------------------------------------------------------
-    // Character
+    // Avatar
     // -----------------------------------------------------------------------
 
-    /// Upsert video settings for a character + scene type pair.
-    pub async fn upsert_character(
+    /// Upsert video settings for a avatar + scene type pair.
+    pub async fn upsert_avatar(
         pool: &PgPool,
-        character_id: DbId,
+        avatar_id: DbId,
         scene_type_id: DbId,
         input: &UpsertVideoSettings,
-    ) -> Result<CharacterVideoSettings, sqlx::Error> {
+    ) -> Result<AvatarVideoSettings, sqlx::Error> {
         let query = format!(
-            "INSERT INTO character_video_settings
-                (character_id, scene_type_id, target_duration_secs, target_fps, target_resolution)
+            "INSERT INTO avatar_video_settings
+                (avatar_id, scene_type_id, target_duration_secs, target_fps, target_resolution)
              VALUES ($1, $2, $3, $4, $5)
-             ON CONFLICT (character_id, scene_type_id)
+             ON CONFLICT (avatar_id, scene_type_id)
              DO UPDATE SET target_duration_secs = EXCLUDED.target_duration_secs,
                            target_fps = EXCLUDED.target_fps,
                            target_resolution = EXCLUDED.target_resolution
-             RETURNING {CHARACTER_COLUMNS}"
+             RETURNING {AVATAR_COLUMNS}"
         );
-        sqlx::query_as::<_, CharacterVideoSettings>(&query)
-            .bind(character_id)
+        sqlx::query_as::<_, AvatarVideoSettings>(&query)
+            .bind(avatar_id)
             .bind(scene_type_id)
             .bind(input.target_duration_secs)
             .bind(input.target_fps)
@@ -236,58 +236,58 @@ impl VideoSettingsRepo {
             .await
     }
 
-    /// Find video settings for a character + scene type pair.
-    pub async fn find_character(
+    /// Find video settings for a avatar + scene type pair.
+    pub async fn find_avatar(
         pool: &PgPool,
-        character_id: DbId,
+        avatar_id: DbId,
         scene_type_id: DbId,
-    ) -> Result<Option<CharacterVideoSettings>, sqlx::Error> {
+    ) -> Result<Option<AvatarVideoSettings>, sqlx::Error> {
         let query = format!(
-            "SELECT {CHARACTER_COLUMNS} FROM character_video_settings \
-             WHERE character_id = $1 AND scene_type_id = $2"
+            "SELECT {AVATAR_COLUMNS} FROM avatar_video_settings \
+             WHERE avatar_id = $1 AND scene_type_id = $2"
         );
-        sqlx::query_as::<_, CharacterVideoSettings>(&query)
-            .bind(character_id)
+        sqlx::query_as::<_, AvatarVideoSettings>(&query)
+            .bind(avatar_id)
             .bind(scene_type_id)
             .fetch_optional(pool)
             .await
     }
 
-    /// List all video settings for a character, ordered by scene type.
-    pub async fn list_by_character(
+    /// List all video settings for a avatar, ordered by scene type.
+    pub async fn list_by_avatar(
         pool: &PgPool,
-        character_id: DbId,
-    ) -> Result<Vec<CharacterVideoSettings>, sqlx::Error> {
+        avatar_id: DbId,
+    ) -> Result<Vec<AvatarVideoSettings>, sqlx::Error> {
         let query = format!(
-            "SELECT {CHARACTER_COLUMNS} FROM character_video_settings \
-             WHERE character_id = $1 ORDER BY scene_type_id"
+            "SELECT {AVATAR_COLUMNS} FROM avatar_video_settings \
+             WHERE avatar_id = $1 ORDER BY scene_type_id"
         );
-        sqlx::query_as::<_, CharacterVideoSettings>(&query)
-            .bind(character_id)
+        sqlx::query_as::<_, AvatarVideoSettings>(&query)
+            .bind(avatar_id)
             .fetch_all(pool)
             .await
     }
 
-    /// Delete a character video settings row by ID. Returns `true` if removed.
-    pub async fn delete_character(pool: &PgPool, id: DbId) -> Result<bool, sqlx::Error> {
-        let result = sqlx::query("DELETE FROM character_video_settings WHERE id = $1")
+    /// Delete a avatar video settings row by ID. Returns `true` if removed.
+    pub async fn delete_avatar(pool: &PgPool, id: DbId) -> Result<bool, sqlx::Error> {
+        let result = sqlx::query("DELETE FROM avatar_video_settings WHERE id = $1")
             .bind(id)
             .execute(pool)
             .await?;
         Ok(result.rows_affected() > 0)
     }
 
-    /// Delete character video settings by composite key. Returns `true` if removed.
-    pub async fn delete_character_by_key(
+    /// Delete avatar video settings by composite key. Returns `true` if removed.
+    pub async fn delete_avatar_by_key(
         pool: &PgPool,
-        character_id: DbId,
+        avatar_id: DbId,
         scene_type_id: DbId,
     ) -> Result<bool, sqlx::Error> {
         let result = sqlx::query(
-            "DELETE FROM character_video_settings \
-             WHERE character_id = $1 AND scene_type_id = $2",
+            "DELETE FROM avatar_video_settings \
+             WHERE avatar_id = $1 AND scene_type_id = $2",
         )
-        .bind(character_id)
+        .bind(avatar_id)
         .bind(scene_type_id)
         .execute(pool)
         .await?;
@@ -298,7 +298,7 @@ impl VideoSettingsRepo {
     // Hierarchy helpers
     // -----------------------------------------------------------------------
 
-    /// Load override layers for all three levels (project, group, character)
+    /// Load override layers for all three levels (project, group, avatar)
     /// in a single call. Returns `(project_layer, group_layer, char_layer)`.
     ///
     /// This is the CANONICAL way to fetch the hierarchy. Do NOT inline
@@ -307,7 +307,7 @@ impl VideoSettingsRepo {
         pool: &PgPool,
         project_id: DbId,
         group_id: Option<DbId>,
-        character_id: DbId,
+        avatar_id: DbId,
         scene_type_id: DbId,
     ) -> Result<
         (
@@ -329,7 +329,7 @@ impl VideoSettingsRepo {
             None
         };
 
-        let char_layer = Self::find_character(pool, character_id, scene_type_id)
+        let char_layer = Self::find_avatar(pool, avatar_id, scene_type_id)
             .await?
             .map(VideoSettingsLayer::from);
 

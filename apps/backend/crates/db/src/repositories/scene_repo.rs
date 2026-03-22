@@ -7,7 +7,7 @@ use crate::models::generation::UpdateSceneGeneration;
 use crate::models::scene::{CreateScene, Scene, SceneDetail, SceneWithVersion, UpdateScene};
 
 /// Column list shared across queries to avoid repetition.
-const COLUMNS: &str = "id, character_id, scene_type_id, image_variant_id, track_id, \
+const COLUMNS: &str = "id, avatar_id, scene_type_id, image_variant_id, track_id, \
     status_id, transition_mode, \
     total_segments_estimated, total_segments_completed, \
     actual_duration_secs, transition_segment_index, \
@@ -26,7 +26,7 @@ impl SceneRepo {
     pub async fn create(pool: &PgPool, input: &CreateScene) -> Result<Scene, sqlx::Error> {
         let query = format!(
             "INSERT INTO scenes
-                (character_id, scene_type_id, image_variant_id, track_id, status_id, transition_mode,
+                (avatar_id, scene_type_id, image_variant_id, track_id, status_id, transition_mode,
                  total_segments_estimated, total_segments_completed,
                  actual_duration_secs, transition_segment_index,
                  generation_started_at, generation_completed_at)
@@ -35,7 +35,7 @@ impl SceneRepo {
              RETURNING {COLUMNS}"
         );
         sqlx::query_as::<_, Scene>(&query)
-            .bind(input.character_id)
+            .bind(input.avatar_id)
             .bind(input.scene_type_id)
             .bind(input.image_variant_id)
             .bind(input.track_id)
@@ -60,32 +60,32 @@ impl SceneRepo {
             .await
     }
 
-    /// List all scenes for a given character, ordered by creation time ascending.
+    /// List all scenes for a given avatar, ordered by creation time ascending.
     /// Excludes soft-deleted rows.
-    pub async fn list_by_character(
+    pub async fn list_by_avatar(
         pool: &PgPool,
-        character_id: DbId,
+        avatar_id: DbId,
     ) -> Result<Vec<Scene>, sqlx::Error> {
         let query = format!(
             "SELECT {COLUMNS} FROM scenes
-             WHERE character_id = $1 AND deleted_at IS NULL
+             WHERE avatar_id = $1 AND deleted_at IS NULL
              ORDER BY created_at ASC"
         );
         sqlx::query_as::<_, Scene>(&query)
-            .bind(character_id)
+            .bind(avatar_id)
             .fetch_all(pool)
             .await
     }
 
-    /// List scenes for a character with the best video version ID and version count.
+    /// List scenes for a avatar with the best video version ID and version count.
     ///
     /// Uses a LATERAL subquery to pick the best version per scene:
     /// final with highest version_number > highest version_number.
     /// This eliminates the N+1 query pattern where the frontend fetches
     /// video versions for each scene individually.
-    pub async fn list_by_character_with_versions(
+    pub async fn list_by_avatar_with_versions(
         pool: &PgPool,
-        character_id: DbId,
+        avatar_id: DbId,
     ) -> Result<Vec<SceneWithVersion>, sqlx::Error> {
         let cols = COLUMNS
             .split(", ")
@@ -130,10 +130,10 @@ impl SceneRepo {
                            )
                      ) AS has_newer
                  ) ntf ON true
-                 WHERE s.character_id = $1 AND s.deleted_at IS NULL
+                 WHERE s.avatar_id = $1 AND s.deleted_at IS NULL
                  ORDER BY s.created_at ASC"
         ))
-        .bind(character_id)
+        .bind(avatar_id)
         .fetch_all(pool)
         .await
     }
@@ -245,17 +245,17 @@ impl SceneRepo {
 
     /// Fetch enriched scene details for a batch of IDs (PRD-134).
     ///
-    /// Returns character name, scene type name, and track name via JOINs.
+    /// Returns avatar name, scene type name, and track name via JOINs.
     /// Only returns non-deleted scenes.
     pub async fn batch_details(
         pool: &PgPool,
         scene_ids: &[DbId],
     ) -> Result<Vec<SceneDetail>, sqlx::Error> {
         sqlx::query_as::<_, SceneDetail>(
-            "SELECT s.id, s.character_id, c.name AS character_name, c.project_id, \
+            "SELECT s.id, s.avatar_id, c.name AS avatar_name, c.project_id, \
                     st.name AS scene_type_name, t.name AS track_name, s.status_id \
              FROM scenes s \
-             JOIN characters c ON c.id = s.character_id \
+             JOIN avatars c ON c.id = s.avatar_id \
              JOIN scene_types st ON st.id = s.scene_type_id \
              LEFT JOIN tracks t ON t.id = s.track_id \
              WHERE s.id = ANY($1) AND s.deleted_at IS NULL \

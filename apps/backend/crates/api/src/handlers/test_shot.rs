@@ -34,7 +34,7 @@ use crate::state::AppState;
 #[derive(Debug, Deserialize)]
 pub struct GalleryParams {
     pub scene_type_id: DbId,
-    pub character_id: Option<DbId>,
+    pub avatar_id: Option<DbId>,
     pub limit: Option<i64>,
     pub offset: Option<i64>,
 }
@@ -73,7 +73,7 @@ pub async fn generate_test_shot(
 
     let input = CreateTestShot {
         scene_type_id: body.scene_type_id,
-        character_id: body.character_id,
+        avatar_id: body.avatar_id,
         workflow_id: body.workflow_id,
         parameters: body.parameters.unwrap_or_else(|| serde_json::json!({})),
         seed_image_path: body.seed_image_path,
@@ -86,7 +86,7 @@ pub async fn generate_test_shot(
     tracing::info!(
         test_shot_id = shot.id,
         scene_type_id = body.scene_type_id,
-        character_id = body.character_id,
+        avatar_id = body.avatar_id,
         user_id = auth.user_id,
         "Test shot created"
     );
@@ -98,16 +98,16 @@ pub async fn generate_test_shot(
 // POST /test-shots/batch
 // ---------------------------------------------------------------------------
 
-/// Generate a batch of test shots for multiple characters.
+/// Generate a batch of test shots for multiple avatars.
 ///
-/// Creates one test shot per character in the request, sharing the same
+/// Creates one test shot per avatar in the request, sharing the same
 /// scene type, workflow, parameters, and seed image.
 pub async fn batch_test_shots(
     State(state): State<AppState>,
     auth: AuthUser,
     Json(body): Json<BatchTestShotRequest>,
 ) -> AppResult<impl IntoResponse> {
-    test_shot::validate_batch_size(body.character_ids.len())?;
+    test_shot::validate_batch_size(body.avatar_ids.len())?;
 
     let duration = body
         .duration_secs
@@ -115,12 +115,12 @@ pub async fn batch_test_shots(
     test_shot::validate_test_shot_params(duration)?;
 
     let params = body.parameters.unwrap_or_else(|| serde_json::json!({}));
-    let mut ids = Vec::with_capacity(body.character_ids.len());
+    let mut ids = Vec::with_capacity(body.avatar_ids.len());
 
-    for &character_id in &body.character_ids {
+    for &avatar_id in &body.avatar_ids {
         let input = CreateTestShot {
             scene_type_id: body.scene_type_id,
-            character_id,
+            avatar_id,
             workflow_id: body.workflow_id,
             parameters: params.clone(),
             seed_image_path: body.seed_image_path.clone(),
@@ -157,7 +157,7 @@ pub async fn batch_test_shots(
 
 /// List test shots as a filterable gallery.
 ///
-/// Requires `scene_type_id` query param; optionally filters by `character_id`.
+/// Requires `scene_type_id` query param; optionally filters by `avatar_id`.
 pub async fn list_gallery(
     State(state): State<AppState>,
     Query(params): Query<GalleryParams>,
@@ -168,7 +168,7 @@ pub async fn list_gallery(
     let items = TestShotRepo::list_gallery(
         &state.pool,
         params.scene_type_id,
-        params.character_id,
+        params.avatar_id,
         limit,
         offset,
     )
@@ -203,7 +203,7 @@ pub async fn get_test_shot(
 /// Promote a test shot to a full scene.
 ///
 /// Creates a real scene record from the test shot data: uses the shot's
-/// `character_id` and `scene_type_id`, and resolves the character's hero
+/// `avatar_id` and `scene_type_id`, and resolves the avatar's hero
 /// image variant for the `image_variant_id` field. Marks the test shot
 /// as promoted and links it to the newly created scene.
 pub async fn promote_test_shot(
@@ -214,12 +214,12 @@ pub async fn promote_test_shot(
     let shot = ensure_test_shot_exists(&state.pool, id).await?;
     test_shot::can_promote(shot.is_promoted)?;
 
-    // Resolve the image_variant_id: prefer the hero variant for this character,
+    // Resolve the image_variant_id: prefer the hero variant for this avatar,
     // fall back to the most recently created variant.
-    let image_variant_id = resolve_image_variant(&state.pool, shot.character_id).await?;
+    let image_variant_id = resolve_image_variant(&state.pool, shot.avatar_id).await?;
 
     let create_scene = CreateScene {
-        character_id: shot.character_id,
+        avatar_id: shot.avatar_id,
         scene_type_id: shot.scene_type_id,
         image_variant_id: Some(image_variant_id),
         track_id: None,
@@ -259,12 +259,12 @@ pub async fn promote_test_shot(
     }))
 }
 
-/// Resolve the image variant ID for a character to use when creating a scene.
+/// Resolve the image variant ID for a avatar to use when creating a scene.
 ///
 /// Prefers the hero variant (of any type), falling back to the most recently
-/// created variant. Returns an error if the character has no image variants.
-async fn resolve_image_variant(pool: &sqlx::PgPool, character_id: DbId) -> AppResult<DbId> {
-    let variants = ImageVariantRepo::list_by_character(pool, character_id).await?;
+/// created variant. Returns an error if the avatar has no image variants.
+async fn resolve_image_variant(pool: &sqlx::PgPool, avatar_id: DbId) -> AppResult<DbId> {
+    let variants = ImageVariantRepo::list_by_avatar(pool, avatar_id).await?;
 
     // Prefer the hero variant.
     if let Some(hero) = variants.iter().find(|v| v.is_hero) {
@@ -274,7 +274,7 @@ async fn resolve_image_variant(pool: &sqlx::PgPool, character_id: DbId) -> AppRe
     // Fall back to the most recently created variant.
     variants.first().map(|v| v.id).ok_or_else(|| {
         AppError::BadRequest(format!(
-            "Character {character_id} has no image variants; cannot promote test shot"
+            "Avatar {avatar_id} has no image variants; cannot promote test shot"
         ))
     })
 }

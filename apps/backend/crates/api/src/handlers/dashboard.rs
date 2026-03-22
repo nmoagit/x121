@@ -33,9 +33,9 @@ pub struct ActiveTaskItem {
     pub worker_id: Option<DbId>,
     pub submitted_by: DbId,
     pub submitted_at: Timestamp,
-    /// Resolved model name from scene → character join.
+    /// Resolved model name from scene → avatar join.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub character_name: Option<String>,
+    pub avatar_name: Option<String>,
     /// Resolved scene type name from scene → scene_type join.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub scene_type_name: Option<String>,
@@ -53,9 +53,9 @@ pub struct ProjectProgressItem {
     pub scenes_total: i64,
     pub progress_pct: f64,
     pub status_color: String,
-    /// Total non-archived characters in the project.
+    /// Total non-archived avatars in the project.
     pub model_count: i64,
-    /// Characters with readiness state 'ready'.
+    /// Avatars with readiness state 'ready'.
     pub models_ready: i64,
 }
 
@@ -132,7 +132,7 @@ struct ActiveTaskRow {
     worker_id: Option<DbId>,
     submitted_by: DbId,
     submitted_at: Timestamp,
-    character_name: Option<String>,
+    avatar_name: Option<String>,
     scene_type_name: Option<String>,
     track_name: Option<String>,
 }
@@ -178,12 +178,12 @@ pub async fn active_tasks(
     let query = format!(
         "SELECT j.id, j.job_type, j.status_id, j.progress_percent, j.progress_message, \
                 j.actual_duration_secs, j.worker_id, j.submitted_by, j.submitted_at, \
-                ch.name AS character_name, \
+                ch.name AS avatar_name, \
                 st.name AS scene_type_name, \
                 t.name  AS track_name \
          FROM jobs j \
          LEFT JOIN scenes s   ON s.id  = (j.parameters->>'scene_id')::BIGINT \
-         LEFT JOIN characters ch ON ch.id = COALESCE(s.character_id, (j.parameters->>'character_id')::BIGINT) \
+         LEFT JOIN avatars ch ON ch.id = COALESCE(s.avatar_id, (j.parameters->>'avatar_id')::BIGINT) \
          LEFT JOIN scene_types st ON st.id = s.scene_type_id \
          LEFT JOIN tracks t   ON t.id  = s.track_id \
          LEFT JOIN projects p ON p.id = ch.project_id \
@@ -191,12 +191,12 @@ pub async fn active_tasks(
          UNION ALL \
          (SELECT j.id, j.job_type, j.status_id, j.progress_percent, j.progress_message, \
                  j.actual_duration_secs, j.worker_id, j.submitted_by, j.submitted_at, \
-                 ch.name AS character_name, \
+                 ch.name AS avatar_name, \
                  st.name AS scene_type_name, \
                  t.name  AS track_name \
           FROM jobs j \
           LEFT JOIN scenes s   ON s.id  = (j.parameters->>'scene_id')::BIGINT \
-          LEFT JOIN characters ch ON ch.id = COALESCE(s.character_id, (j.parameters->>'character_id')::BIGINT) \
+          LEFT JOIN avatars ch ON ch.id = COALESCE(s.avatar_id, (j.parameters->>'avatar_id')::BIGINT) \
           LEFT JOIN scene_types st ON st.id = s.scene_type_id \
           LEFT JOIN tracks t   ON t.id  = s.track_id \
           LEFT JOIN projects p ON p.id = ch.project_id \
@@ -230,7 +230,7 @@ pub async fn active_tasks(
             worker_id: r.worker_id,
             submitted_by: r.submitted_by,
             submitted_at: r.submitted_at,
-            character_name: r.character_name,
+            avatar_name: r.avatar_name,
             scene_type_name: r.scene_type_name,
             track_name: r.track_name,
         })
@@ -270,7 +270,7 @@ pub async fn project_progress(
 
     // Query active projects with scene counts.
     // A scene is "approved" when its status_id matches SceneStatus::Approved.
-    // We join through characters to link scenes -> projects.
+    // We join through avatars to link scenes -> projects.
     let query = format!(
         "SELECT \
              p.id AS project_id, \
@@ -278,8 +278,8 @@ pub async fn project_progress(
              COUNT(s.id) FILTER (WHERE s.status_id = $1) AS scenes_approved, \
              COUNT(s.id) AS scenes_total \
          FROM projects p \
-         LEFT JOIN characters c ON c.project_id = p.id AND c.deleted_at IS NULL \
-         LEFT JOIN scenes s ON s.character_id = c.id AND s.deleted_at IS NULL \
+         LEFT JOIN avatars c ON c.project_id = p.id AND c.deleted_at IS NULL \
+         LEFT JOIN scenes s ON s.avatar_id = c.id AND s.deleted_at IS NULL \
          WHERE p.deleted_at IS NULL \
            AND p.status_id NOT IN ($2, $3) \
            {pipeline_filter} \
@@ -298,9 +298,9 @@ pub async fn project_progress(
 
     let rows = q.fetch_all(&state.pool).await?;
 
-    // Character counts per project (non-archived, non-deleted).
+    // Avatar counts per project (non-archived, non-deleted).
     let char_counts: Vec<(DbId, i64)> = sqlx::query_as(
-        "SELECT project_id, COUNT(*) FROM characters \
+        "SELECT project_id, COUNT(*) FROM avatars \
          WHERE deleted_at IS NULL AND status_id != 3 \
          GROUP BY project_id",
     )
@@ -308,10 +308,10 @@ pub async fn project_progress(
     .await?;
     let count_map: std::collections::HashMap<DbId, i64> = char_counts.into_iter().collect();
 
-    // Ready character counts from readiness cache per project.
+    // Ready avatar counts from readiness cache per project.
     let ready_counts: Vec<(DbId, i64)> = sqlx::query_as(
-        "SELECT c.project_id, COUNT(*) FROM character_readiness_cache crc \
-         JOIN characters c ON c.id = crc.character_id \
+        "SELECT c.project_id, COUNT(*) FROM avatar_readiness_cache crc \
+         JOIN avatars c ON c.id = crc.avatar_id \
          WHERE crc.state = 'ready' AND c.deleted_at IS NULL AND c.status_id != 3 \
          GROUP BY c.project_id",
     )

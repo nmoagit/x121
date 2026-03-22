@@ -36,7 +36,7 @@ pub fn validate_config_name(name: &str) -> Result<(), CoreError> {
     }
     if trimmed.len() > MAX_CONFIG_NAME_LENGTH {
         return Err(CoreError::Validation(format!(
-            "Config name exceeds maximum length of {MAX_CONFIG_NAME_LENGTH} characters"
+            "Config name exceeds maximum length of {MAX_CONFIG_NAME_LENGTH} avatars"
         )));
     }
     Ok(())

@@ -56,7 +56,7 @@ pub struct AnnotationSummary {
     pub annotators: Vec<DbId>,
 }
 
-/// A browseable annotated item with full context (character, scene, project).
+/// A browseable annotated item with full context (avatar, scene, project).
 #[derive(Debug, Clone, Serialize, FromRow)]
 pub struct AnnotatedItem {
     pub annotation_id: DbId,
@@ -64,8 +64,8 @@ pub struct AnnotatedItem {
     pub segment_id: Option<DbId>,
     pub frame_number: i32,
     pub annotation_count: i32,
-    pub character_id: DbId,
-    pub character_name: String,
+    pub avatar_id: DbId,
+    pub avatar_name: String,
     pub scene_id: DbId,
     pub scene_type_name: String,
     pub scene_status_id: i16,

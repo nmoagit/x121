@@ -1,6 +1,6 @@
-//! Route definitions for the character consistency report system (PRD-94).
+//! Route definitions for the avatar consistency report system (PRD-94).
 //!
-//! Character-scoped routes are merged into `/characters`, project-scoped
+//! Avatar-scoped routes are merged into `/avatars`, project-scoped
 //! routes are merged into `/projects`, and the standalone report lookup
 //! is mounted at `/consistency-reports`.
 
@@ -10,17 +10,17 @@ use axum::Router;
 use crate::handlers::consistency_report;
 use crate::state::AppState;
 
-/// Character-scoped consistency report routes.
+/// Avatar-scoped consistency report routes.
 ///
-/// Merged into the `/characters` router:
+/// Merged into the `/avatars` router:
 ///
 /// ```text
-/// POST /{character_id}/consistency-report   -> generate_report
-/// GET  /{character_id}/consistency-report   -> get_latest_report
+/// POST /{avatar_id}/consistency-report   -> generate_report
+/// GET  /{avatar_id}/consistency-report   -> get_latest_report
 /// ```
-pub fn character_consistency_router() -> Router<AppState> {
+pub fn avatar_consistency_router() -> Router<AppState> {
     Router::new().route(
-        "/{character_id}/consistency-report",
+        "/{avatar_id}/consistency-report",
         post(consistency_report::generate_report).get(consistency_report::get_latest_report),
     )
 }

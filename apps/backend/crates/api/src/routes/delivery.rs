@@ -76,7 +76,7 @@ pub fn export_router() -> Router<AppState> {
             get(delivery::download_export),
         )
         .route(
-            "/{project_id}/exports/{export_id}/download/{character_slug}",
+            "/{project_id}/exports/{export_id}/download/{avatar_slug}",
             get(delivery::download_model_archive),
         )
         // Delivery logs (PRD-39 Amendment A.3).
@@ -84,7 +84,7 @@ pub fn export_router() -> Router<AppState> {
             "/{project_id}/delivery-logs",
             get(delivery::list_delivery_logs),
         )
-        // Per-character delivery status (PRD-39 Amendment A.4).
+        // Per-avatar delivery status (PRD-39 Amendment A.4).
         .route(
             "/{project_id}/delivery-status",
             get(delivery::get_delivery_status),

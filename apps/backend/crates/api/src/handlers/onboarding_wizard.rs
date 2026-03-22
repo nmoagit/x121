@@ -1,8 +1,8 @@
-//! Handlers for the Bulk Character Onboarding Wizard (PRD-67).
+//! Handlers for the Bulk Avatar Onboarding Wizard (PRD-67).
 //!
 //! Provides endpoints for creating, advancing, navigating, and managing
 //! onboarding wizard sessions that guide users through multi-step bulk
-//! character onboarding.
+//! avatar onboarding.
 
 use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
@@ -294,7 +294,7 @@ pub async fn complete_session(
     tracing::info!(
         session_id = id,
         user_id = auth.user_id,
-        character_count = session.character_ids.len(),
+        avatar_count = session.avatar_ids.len(),
         "Onboarding session completed"
     );
 

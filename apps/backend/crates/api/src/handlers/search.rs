@@ -53,7 +53,7 @@ async fn run_search(
 
 /// GET /api/v1/search
 ///
-/// Unified full-text search across characters, projects, and scene types.
+/// Unified full-text search across avatars, projects, and scene types.
 /// Returns ranked results, faceted counts, and query timing.
 pub async fn unified_search(
     auth: AuthUser,

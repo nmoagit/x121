@@ -7,7 +7,7 @@ use crate::models::image::{CreateImageVariant, ImageVariant, UpdateImageVariant}
 use crate::models::status::StatusId;
 
 /// Column list shared across queries to avoid repetition.
-const COLUMNS: &str = "id, character_id, source_image_id, derived_image_id, variant_label, \
+const COLUMNS: &str = "id, avatar_id, source_image_id, derived_image_id, variant_label, \
     status_id, file_path, variant_type, provenance, is_hero, file_size_bytes, width, height, \
     format, version, parent_variant_id, generation_params, content_hash, deleted_at, created_at, updated_at";
 
@@ -24,7 +24,7 @@ impl ImageVariantRepo {
     ) -> Result<ImageVariant, sqlx::Error> {
         let query = format!(
             "INSERT INTO image_variants
-                (character_id, source_image_id, derived_image_id, variant_label,
+                (avatar_id, source_image_id, derived_image_id, variant_label,
                  status_id, file_path, variant_type, provenance, is_hero,
                  file_size_bytes, width, height, format, version,
                  parent_variant_id, generation_params, content_hash)
@@ -34,7 +34,7 @@ impl ImageVariantRepo {
              RETURNING {COLUMNS}"
         );
         sqlx::query_as::<_, ImageVariant>(&query)
-            .bind(input.character_id)
+            .bind(input.avatar_id)
             .bind(input.source_image_id)
             .bind(input.derived_image_id)
             .bind(&input.variant_label)
@@ -83,43 +83,43 @@ impl ImageVariantRepo {
             .await
     }
 
-    /// List all image variants for a given character, ordered by most recently created first.
+    /// List all image variants for a given avatar, ordered by most recently created first.
     /// Excludes soft-deleted rows.
-    pub async fn list_by_character(
+    pub async fn list_by_avatar(
         pool: &PgPool,
-        character_id: DbId,
+        avatar_id: DbId,
     ) -> Result<Vec<ImageVariant>, sqlx::Error> {
         let query = format!(
             "SELECT {COLUMNS} FROM image_variants
-             WHERE character_id = $1 AND deleted_at IS NULL
+             WHERE avatar_id = $1 AND deleted_at IS NULL
              ORDER BY created_at DESC"
         );
         sqlx::query_as::<_, ImageVariant>(&query)
-            .bind(character_id)
+            .bind(avatar_id)
             .fetch_all(pool)
             .await
     }
 
-    /// List image variants for a character filtered by variant type.
+    /// List image variants for a avatar filtered by variant type.
     /// Excludes soft-deleted rows.
-    pub async fn list_by_character_and_type(
+    pub async fn list_by_avatar_and_type(
         pool: &PgPool,
-        character_id: DbId,
+        avatar_id: DbId,
         variant_type: &str,
     ) -> Result<Vec<ImageVariant>, sqlx::Error> {
         let query = format!(
             "SELECT {COLUMNS} FROM image_variants
-             WHERE character_id = $1 AND variant_type = $2 AND deleted_at IS NULL
+             WHERE avatar_id = $1 AND variant_type = $2 AND deleted_at IS NULL
              ORDER BY created_at DESC"
         );
         sqlx::query_as::<_, ImageVariant>(&query)
-            .bind(character_id)
+            .bind(avatar_id)
             .bind(variant_type)
             .fetch_all(pool)
             .await
     }
 
-    /// Atomically clear the previous hero for a character+variant_type and set a new hero.
+    /// Atomically clear the previous hero for a avatar+variant_type and set a new hero.
     ///
     /// Updates the target variant's status to `approved_status_id` and marks it as hero.
     /// Returns the updated variant.
@@ -131,14 +131,14 @@ impl ImageVariantRepo {
         // Use a CTE to atomically clear old hero and set new one.
         let query = format!(
             "WITH target AS (
-                SELECT character_id, variant_type
+                SELECT avatar_id, variant_type
                 FROM image_variants
                 WHERE id = $1 AND deleted_at IS NULL
             ),
             clear_old AS (
                 UPDATE image_variants
                 SET is_hero = false
-                WHERE character_id = (SELECT character_id FROM target)
+                WHERE avatar_id = (SELECT avatar_id FROM target)
                   AND variant_type = (SELECT variant_type FROM target)
                   AND is_hero = true
                   AND id != $1
@@ -155,19 +155,19 @@ impl ImageVariantRepo {
             .await
     }
 
-    /// Find the current hero variant for a character and variant type.
+    /// Find the current hero variant for a avatar and variant type.
     pub async fn find_hero(
         pool: &PgPool,
-        character_id: DbId,
+        avatar_id: DbId,
         variant_type: &str,
     ) -> Result<Option<ImageVariant>, sqlx::Error> {
         let query = format!(
             "SELECT {COLUMNS} FROM image_variants
-             WHERE character_id = $1 AND variant_type = $2
+             WHERE avatar_id = $1 AND variant_type = $2
                AND is_hero = true AND deleted_at IS NULL"
         );
         sqlx::query_as::<_, ImageVariant>(&query)
-            .bind(character_id)
+            .bind(avatar_id)
             .bind(variant_type)
             .fetch_optional(pool)
             .await
@@ -187,7 +187,7 @@ impl ImageVariantRepo {
                 FROM image_variants
                 WHERE id = $1 AND deleted_at IS NULL
                 UNION ALL
-                SELECT iv.id, iv.character_id, iv.source_image_id, iv.derived_image_id,
+                SELECT iv.id, iv.avatar_id, iv.source_image_id, iv.derived_image_id,
                        iv.variant_label, iv.status_id, iv.file_path, iv.variant_type,
                        iv.provenance, iv.is_hero, iv.file_size_bytes, iv.width, iv.height,
                        iv.format, iv.version, iv.parent_variant_id, iv.generation_params,

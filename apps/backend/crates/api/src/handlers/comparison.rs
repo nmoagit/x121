@@ -1,11 +1,11 @@
-//! Handlers for cross-character scene comparison (PRD-68).
+//! Handlers for cross-avatar scene comparison (PRD-68).
 //!
-//! Read-only endpoints for comparing scenes across characters within a project.
+//! Read-only endpoints for comparing scenes across avatars within a project.
 //! No new database tables are required -- all data comes from existing tables.
 //!
 //! Endpoints:
-//! - `GET /projects/{project_id}/scene-comparison` -- compare all characters for a scene type
-//! - `GET /projects/{project_id}/characters/{character_id}/all-scenes` -- all scenes for one character
+//! - `GET /projects/{project_id}/scene-comparison` -- compare all avatars for a scene type
+//! - `GET /projects/{project_id}/avatars/{avatar_id}/all-scenes` -- all scenes for one avatar
 
 use axum::extract::{Path, Query, State};
 use axum::response::IntoResponse;
@@ -14,7 +14,7 @@ use serde::{Deserialize, Serialize};
 
 use x121_core::error::CoreError;
 use x121_core::types::{DbId, Timestamp};
-use x121_db::repositories::{CharacterRepo, ProjectRepo};
+use x121_db::repositories::{AvatarRepo, ProjectRepo};
 
 use crate::error::{AppError, AppResult};
 use crate::handlers::scene_type_inheritance::ensure_scene_type_exists;
@@ -29,8 +29,8 @@ use crate::state::AppState;
 /// A single cell in the comparison gallery.
 #[derive(Debug, Serialize)]
 pub struct ComparisonCell {
-    pub character_id: DbId,
-    pub character_name: String,
+    pub avatar_id: DbId,
+    pub avatar_name: String,
     pub scene_id: DbId,
     pub segment_id: Option<DbId>,
     pub scene_type_id: DbId,
@@ -60,7 +60,7 @@ pub struct ComparisonResponse {
 /// Query parameters for `GET /projects/{project_id}/scene-comparison`.
 #[derive(Debug, Deserialize)]
 pub struct SceneComparisonParams {
-    /// The scene type to compare across characters.
+    /// The scene type to compare across avatars.
     pub scene_type_id: DbId,
     /// Optional image variant filter.
     pub variant_id: Option<DbId>,
@@ -75,8 +75,8 @@ pub struct SceneComparisonParams {
 /// Row returned by the comparison query.
 #[derive(Debug, sqlx::FromRow)]
 struct ComparisonRow {
-    character_id: DbId,
-    character_name: String,
+    avatar_id: DbId,
+    avatar_name: String,
     scene_id: DbId,
     scene_type_id: DbId,
     scene_type_name: String,
@@ -132,8 +132,8 @@ fn row_to_cell(row: ComparisonRow) -> ComparisonCell {
     };
 
     ComparisonCell {
-        character_id: row.character_id,
-        character_name: row.character_name,
+        avatar_id: row.avatar_id,
+        avatar_name: row.avatar_name,
         scene_id: row.scene_id,
         segment_id: row.segment_id,
         scene_type_id: row.scene_type_id,
@@ -160,22 +160,22 @@ async fn ensure_project_exists(pool: &x121_db::DbPool, project_id: DbId) -> AppR
     Ok(())
 }
 
-/// Verify that a character exists, belongs to the given project, and is not deleted.
-async fn ensure_character_in_project(
+/// Verify that a avatar exists, belongs to the given project, and is not deleted.
+async fn ensure_avatar_in_project(
     pool: &x121_db::DbPool,
-    character_id: DbId,
+    avatar_id: DbId,
     project_id: DbId,
 ) -> AppResult<()> {
-    let character = CharacterRepo::find_by_id(pool, character_id)
+    let avatar = AvatarRepo::find_by_id(pool, avatar_id)
         .await?
         .ok_or(AppError::Core(CoreError::NotFound {
-            entity: "Character",
-            id: character_id,
+            entity: "Avatar",
+            id: avatar_id,
         }))?;
-    if character.project_id != project_id {
+    if avatar.project_id != project_id {
         return Err(AppError::Core(CoreError::NotFound {
-            entity: "Character",
-            id: character_id,
+            entity: "Avatar",
+            id: avatar_id,
         }));
     }
     Ok(())
@@ -187,7 +187,7 @@ async fn ensure_character_in_project(
 
 /// GET /projects/{project_id}/scene-comparison?scene_type_id=N&variant_id=N&status=approved
 ///
-/// Returns all characters' latest segments for a given scene type within a
+/// Returns all avatars' latest segments for a given scene type within a
 /// project, enabling side-by-side comparison in the gallery UI.
 pub async fn scene_comparison(
     _auth: AuthUser,
@@ -227,19 +227,19 @@ pub async fn scene_comparison(
     Ok(Json(DataResponse { data: response }))
 }
 
-/// GET /projects/{project_id}/characters/{character_id}/all-scenes
+/// GET /projects/{project_id}/avatars/{avatar_id}/all-scenes
 ///
-/// Returns all scene types for a single character, with their latest segment
+/// Returns all scene types for a single avatar, with their latest segment
 /// data for the inverse comparison view.
-pub async fn character_all_scenes(
+pub async fn avatar_all_scenes(
     _auth: AuthUser,
     State(state): State<AppState>,
-    Path((project_id, character_id)): Path<(DbId, DbId)>,
+    Path((project_id, avatar_id)): Path<(DbId, DbId)>,
 ) -> AppResult<impl IntoResponse> {
     ensure_project_exists(&state.pool, project_id).await?;
-    ensure_character_in_project(&state.pool, character_id, project_id).await?;
+    ensure_avatar_in_project(&state.pool, avatar_id, project_id).await?;
 
-    let rows = fetch_character_scenes(&state.pool, character_id).await?;
+    let rows = fetch_avatar_scenes(&state.pool, avatar_id).await?;
     let cells: Vec<ComparisonCell> = rows.into_iter().map(row_to_cell).collect();
 
     Ok(Json(DataResponse { data: cells }))
@@ -249,7 +249,7 @@ pub async fn character_all_scenes(
 // SQL queries
 // ---------------------------------------------------------------------------
 
-/// Fetch comparison rows for all characters in a project for a given scene type.
+/// Fetch comparison rows for all avatars in a project for a given scene type.
 ///
 /// Uses a `LEFT JOIN LATERAL` to efficiently select only the latest segment
 /// per scene (by highest `sequence_index`).
@@ -266,8 +266,8 @@ async fn fetch_comparison_rows(
 
     let sql = format!(
         "SELECT
-            c.id AS character_id,
-            c.name AS character_name,
+            c.id AS avatar_id,
+            c.name AS avatar_name,
             sc.id AS scene_id,
             sc.scene_type_id,
             st.name AS scene_type_name,
@@ -285,7 +285,7 @@ async fn fetch_comparison_rows(
                 LIMIT 1
             ) AS approval_status
         FROM scenes sc
-        JOIN characters c ON c.id = sc.character_id
+        JOIN avatars c ON c.id = sc.avatar_id
         JOIN scene_types st ON st.id = sc.scene_type_id
         LEFT JOIN LATERAL (
             SELECT s.*
@@ -314,15 +314,15 @@ async fn fetch_comparison_rows(
     Ok(rows)
 }
 
-/// Fetch all scenes for a single character with their latest segment data.
-async fn fetch_character_scenes(
+/// Fetch all scenes for a single avatar with their latest segment data.
+async fn fetch_avatar_scenes(
     pool: &x121_db::DbPool,
-    character_id: DbId,
+    avatar_id: DbId,
 ) -> AppResult<Vec<ComparisonRow>> {
     let rows = sqlx::query_as::<_, ComparisonRow>(
         "SELECT
-            c.id AS character_id,
-            c.name AS character_name,
+            c.id AS avatar_id,
+            c.name AS avatar_name,
             sc.id AS scene_id,
             sc.scene_type_id,
             st.name AS scene_type_name,
@@ -340,7 +340,7 @@ async fn fetch_character_scenes(
                 LIMIT 1
             ) AS approval_status
         FROM scenes sc
-        JOIN characters c ON c.id = sc.character_id
+        JOIN avatars c ON c.id = sc.avatar_id
         JOIN scene_types st ON st.id = sc.scene_type_id
         LEFT JOIN LATERAL (
             SELECT s.*
@@ -349,11 +349,11 @@ async fn fetch_character_scenes(
             ORDER BY s.sequence_index DESC
             LIMIT 1
         ) seg ON true
-        WHERE sc.character_id = $1
+        WHERE sc.avatar_id = $1
           AND sc.deleted_at IS NULL
         ORDER BY st.name ASC",
     )
-    .bind(character_id)
+    .bind(avatar_id)
     .fetch_all(pool)
     .await?;
 

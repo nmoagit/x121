@@ -9,8 +9,8 @@ use crate::models::batch_metadata_operation::{
 
 /// Column list for batch_metadata_operations queries.
 const COLUMNS: &str = "\
-    id, status_id, operation_type, project_id, character_ids, \
-    character_count, parameters, before_snapshot, after_snapshot, \
+    id, status_id, operation_type, project_id, avatar_ids, \
+    avatar_count, parameters, before_snapshot, after_snapshot, \
     summary, initiated_by, applied_at, undone_at, created_at, updated_at";
 
 /// Column list for batch_metadata_op_statuses queries.
@@ -27,8 +27,8 @@ impl BatchMetadataOperationRepo {
     ) -> Result<BatchMetadataOperation, sqlx::Error> {
         let query = format!(
             "INSERT INTO batch_metadata_operations \
-                (status_id, operation_type, project_id, character_ids, \
-                 character_count, parameters, before_snapshot, after_snapshot, \
+                (status_id, operation_type, project_id, avatar_ids, \
+                 avatar_count, parameters, before_snapshot, after_snapshot, \
                  summary, initiated_by, applied_at) \
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) \
              RETURNING {COLUMNS}"
@@ -37,8 +37,8 @@ impl BatchMetadataOperationRepo {
             .bind(input.status_id)
             .bind(&input.operation_type)
             .bind(input.project_id)
-            .bind(&input.character_ids)
-            .bind(input.character_count)
+            .bind(&input.avatar_ids)
+            .bind(input.avatar_count)
             .bind(&input.parameters)
             .bind(&input.before_snapshot)
             .bind(&input.after_snapshot)

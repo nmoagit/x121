@@ -213,7 +213,7 @@ pub fn validate_hook_name(name: &str) -> Result<(), CoreError> {
     }
     if trimmed.len() > MAX_HOOK_NAME_LENGTH {
         return Err(CoreError::Validation(format!(
-            "Hook name exceeds maximum length of {MAX_HOOK_NAME_LENGTH} characters"
+            "Hook name exceeds maximum length of {MAX_HOOK_NAME_LENGTH} avatars"
         )));
     }
     Ok(())

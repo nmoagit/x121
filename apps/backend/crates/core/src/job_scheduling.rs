@@ -122,7 +122,7 @@ pub struct CronFields {
     pub day_of_week: String,
 }
 
-/// Valid characters inside a single cron field.
+/// Valid avatars inside a single cron field.
 fn is_valid_cron_char(c: char) -> bool {
     c.is_ascii_digit() || matches!(c, '*' | '-' | ',' | '/')
 }
@@ -130,7 +130,7 @@ fn is_valid_cron_char(c: char) -> bool {
 /// Parse a cron expression string into its five fields.
 ///
 /// Returns an error if the expression does not contain exactly 5
-/// whitespace-separated fields or if any field contains invalid characters.
+/// whitespace-separated fields or if any field contains invalid avatars.
 pub fn parse_cron_fields(cron: &str) -> Result<CronFields, CoreError> {
     let parts: Vec<&str> = cron.split_whitespace().collect();
     if parts.len() != 5 {
@@ -151,7 +151,7 @@ pub fn parse_cron_fields(cron: &str) -> Result<CronFields, CoreError> {
                 _ => "unknown",
             };
             return Err(CoreError::Validation(format!(
-                "Invalid characters in cron field '{field_name}': '{}'",
+                "Invalid avatars in cron field '{field_name}': '{}'",
                 parts[i]
             )));
         }
@@ -500,9 +500,9 @@ mod tests {
     }
 
     #[test]
-    fn cron_invalid_characters() {
+    fn cron_invalid_avatars() {
         let err = parse_cron_fields("* * * * MON").unwrap_err();
-        assert!(err.to_string().contains("Invalid characters"));
+        assert!(err.to_string().contains("Invalid avatars"));
     }
 
     // -----------------------------------------------------------------------

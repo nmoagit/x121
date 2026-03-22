@@ -112,14 +112,14 @@ impl ClipPosition {
 // Prompt template resolution
 // ---------------------------------------------------------------------------
 
-/// Result of resolving a prompt template against character metadata.
+/// Result of resolving a prompt template against avatar metadata.
 #[derive(Debug, Clone, serde::Serialize)]
 pub struct ResolvedPrompt {
     pub text: String,
     pub unresolved_placeholders: Vec<String>,
 }
 
-/// Resolve `{placeholder}` tokens in a template using character metadata values.
+/// Resolve `{placeholder}` tokens in a template using avatar metadata values.
 ///
 /// Unknown placeholders are left in place and listed in `unresolved_placeholders`.
 /// Empty metadata values resolve to empty string.
@@ -202,9 +202,9 @@ pub fn validate_duration_config(
 // Known placeholder fields (for validation hints)
 // ---------------------------------------------------------------------------
 
-/// Well-known character metadata fields usable as prompt placeholders.
+/// Well-known avatar metadata fields usable as prompt placeholders.
 pub const KNOWN_PLACEHOLDERS: &[&str] = &[
-    "character_name",
+    "avatar_name",
     "hair_color",
     "eye_color",
     "build",
@@ -326,10 +326,10 @@ mod tests {
     #[test]
     fn resolve_all_placeholders() {
         let mut meta = HashMap::new();
-        meta.insert("character_name".to_string(), "Alice".to_string());
+        meta.insert("avatar_name".to_string(), "Alice".to_string());
         meta.insert("hair_color".to_string(), "red".to_string());
         let result =
-            resolve_prompt_template("Photo of {character_name} with {hair_color} hair", &meta);
+            resolve_prompt_template("Photo of {avatar_name} with {hair_color} hair", &meta);
         assert_eq!(result.text, "Photo of Alice with red hair");
         assert!(result.unresolved_placeholders.is_empty());
     }
@@ -337,16 +337,16 @@ mod tests {
     #[test]
     fn resolve_missing_placeholder() {
         let meta = HashMap::new();
-        let result = resolve_prompt_template("Photo of {character_name}", &meta);
-        assert_eq!(result.text, "Photo of {character_name}");
-        assert_eq!(result.unresolved_placeholders, vec!["character_name"]);
+        let result = resolve_prompt_template("Photo of {avatar_name}", &meta);
+        assert_eq!(result.text, "Photo of {avatar_name}");
+        assert_eq!(result.unresolved_placeholders, vec!["avatar_name"]);
     }
 
     #[test]
     fn resolve_empty_value() {
         let mut meta = HashMap::new();
-        meta.insert("character_name".to_string(), String::new());
-        let result = resolve_prompt_template("Photo of {character_name}", &meta);
+        meta.insert("avatar_name".to_string(), String::new());
+        let result = resolve_prompt_template("Photo of {avatar_name}", &meta);
         assert_eq!(result.text, "Photo of ");
         assert!(result.unresolved_placeholders.is_empty());
     }
@@ -413,7 +413,7 @@ mod tests {
 
     #[test]
     fn validate_known_placeholders() {
-        let unknown = validate_placeholders("Photo of {character_name} in {custom_field}");
+        let unknown = validate_placeholders("Photo of {avatar_name} in {custom_field}");
         assert_eq!(unknown, vec!["custom_field"]);
     }
 

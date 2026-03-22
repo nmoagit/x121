@@ -29,7 +29,7 @@ impl SearchRepo {
     // Full-text search
     // -----------------------------------------------------------------------
 
-    /// Execute a full-text search across characters, projects, and scene_types.
+    /// Execute a full-text search across avatars, projects, and scene_types.
     ///
     /// Results are ranked by `ts_rank` and merged from all entity types.
     pub async fn search_fulltext(
@@ -53,16 +53,16 @@ impl SearchRepo {
 
         let mut all_results: Vec<SearchResultRow> = Vec::new();
 
-        // Search characters
-        if should_search(&entity_types, "character") {
+        // Search avatars
+        if should_search(&entity_types, "avatar") {
             let sql = "\
-                SELECT 'character'::text AS entity_type, id AS entity_id, name, \
+                SELECT 'avatar'::text AS entity_type, id AS entity_id, name, \
                        metadata ->> 'description' AS description, \
                        ts_rank(search_vector, to_tsquery('english', $1)) AS rank, \
                        ts_headline('english', \
                            COALESCE(name, '') || ' ' || COALESCE(metadata ->> 'description', ''), \
                            to_tsquery('english', $1), 'MaxWords=50, MinWords=10') AS headline \
-                FROM characters \
+                FROM avatars \
                 WHERE search_vector @@ to_tsquery('english', $1) \
                   AND deleted_at IS NULL \
                   AND ($2::BIGINT IS NULL OR project_id = $2) \
@@ -163,8 +163,8 @@ impl SearchRepo {
         };
 
         // Entity type facets
-        let character_count = sqlx::query_scalar::<_, i64>(
-            "SELECT COUNT(*) FROM characters \
+        let avatar_count = sqlx::query_scalar::<_, i64>(
+            "SELECT COUNT(*) FROM avatars \
              WHERE search_vector @@ to_tsquery('english', $1) AND deleted_at IS NULL",
         )
         .bind(&tsquery)
@@ -189,8 +189,8 @@ impl SearchRepo {
 
         let entity_types = vec![
             FacetValue {
-                value: "character".to_string(),
-                count: character_count,
+                value: "avatar".to_string(),
+                count: avatar_count,
             },
             FacetValue {
                 value: "project".to_string(),
@@ -202,10 +202,10 @@ impl SearchRepo {
             },
         ];
 
-        // Project facets (from matching characters grouped by project)
+        // Project facets (from matching avatars grouped by project)
         let projects = sqlx::query_as::<_, FacetValue>(
             "SELECT p.name AS value, COUNT(*)::BIGINT AS count \
-             FROM characters c \
+             FROM avatars c \
              JOIN projects p ON p.id = c.project_id \
              WHERE c.search_vector @@ to_tsquery('english', $1) AND c.deleted_at IS NULL \
              GROUP BY p.name \
@@ -243,9 +243,9 @@ impl SearchRepo {
 
         let sql = "\
             SELECT entity_type, entity_id, name, rank FROM ( \
-                SELECT 'character'::text AS entity_type, id AS entity_id, name, \
+                SELECT 'avatar'::text AS entity_type, id AS entity_id, name, \
                        ts_rank(search_vector, to_tsquery('english', $1)) AS rank \
-                FROM characters \
+                FROM avatars \
                 WHERE search_vector @@ to_tsquery('english', $1) AND deleted_at IS NULL \
                 UNION ALL \
                 SELECT 'project'::text, id, name, \

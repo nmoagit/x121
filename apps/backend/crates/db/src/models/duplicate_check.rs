@@ -17,8 +17,8 @@ use crate::models::status::StatusId;
 pub struct DuplicateCheck {
     pub id: DbId,
     pub status_id: StatusId,
-    pub source_character_id: DbId,
-    pub matched_character_id: Option<DbId>,
+    pub source_avatar_id: DbId,
+    pub matched_avatar_id: Option<DbId>,
     pub similarity_score: Option<f64>,
     pub threshold_used: f64,
     pub check_type: String,
@@ -36,8 +36,8 @@ pub struct DuplicateCheck {
 /// DTO for creating a new duplicate check record.
 #[derive(Debug, Deserialize)]
 pub struct CreateDuplicateCheck {
-    pub source_character_id: DbId,
-    pub matched_character_id: Option<DbId>,
+    pub source_avatar_id: DbId,
+    pub matched_avatar_id: Option<DbId>,
     pub similarity_score: Option<f64>,
     pub threshold_used: f64,
     pub check_type: String,
@@ -48,12 +48,12 @@ pub struct CreateDuplicateCheck {
 // Response types for API
 // ---------------------------------------------------------------------------
 
-/// Rich response DTO for a duplicate match (includes matched character name).
+/// Rich response DTO for a duplicate match (includes matched avatar name).
 #[derive(Debug, Serialize)]
 pub struct DuplicateMatchResponse {
     pub check_id: DbId,
-    pub matched_character_id: DbId,
-    pub matched_character_name: String,
+    pub matched_avatar_id: DbId,
+    pub matched_avatar_name: String,
     pub similarity_score: f64,
 }
 
@@ -65,20 +65,20 @@ pub struct DuplicateMatchResponse {
 #[derive(Debug, Deserialize)]
 pub struct ResolveCheckRequest {
     pub resolution: String,
-    /// When resolution is "merge", the target character to merge into.
-    pub target_character_id: Option<DbId>,
+    /// When resolution is "merge", the target avatar to merge into.
+    pub target_avatar_id: Option<DbId>,
 }
 
-/// Request body for checking a single character for duplicates.
+/// Request body for checking a single avatar for duplicates.
 #[derive(Debug, Deserialize)]
 pub struct CheckDuplicateRequest {
-    pub character_id: DbId,
+    pub avatar_id: DbId,
     pub project_id: Option<DbId>,
 }
 
-/// Request body for batch-checking multiple characters.
+/// Request body for batch-checking multiple avatars.
 #[derive(Debug, Deserialize)]
 pub struct BatchCheckRequest {
-    pub character_ids: Vec<DbId>,
+    pub avatar_ids: Vec<DbId>,
     pub project_id: Option<DbId>,
 }

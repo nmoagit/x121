@@ -13,14 +13,14 @@ use crate::hashing::sha256_hex;
 pub const SCOPE_SEGMENT: &str = "segment";
 /// Scope type for a full scene.
 pub const SCOPE_SCENE: &str = "scene";
-/// Scope type for a character.
-pub const SCOPE_CHARACTER: &str = "character";
+/// Scope type for a avatar.
+pub const SCOPE_AVATAR: &str = "avatar";
 /// Scope type for an entire project.
 pub const SCOPE_PROJECT: &str = "project";
 
 /// All valid scope types for shared links.
 pub const VALID_SCOPE_TYPES: &[&str] =
-    &[SCOPE_SEGMENT, SCOPE_SCENE, SCOPE_CHARACTER, SCOPE_PROJECT];
+    &[SCOPE_SEGMENT, SCOPE_SCENE, SCOPE_AVATAR, SCOPE_PROJECT];
 
 // ---------------------------------------------------------------------------
 // Decision constants
@@ -49,7 +49,7 @@ pub const EXPIRY_30D: i64 = 720;
 // Token length
 // ---------------------------------------------------------------------------
 
-/// Length of the generated share token (alphanumeric characters).
+/// Length of the generated share token (alphanumeric avatars).
 const TOKEN_LENGTH: usize = 43;
 
 // ---------------------------------------------------------------------------
@@ -58,8 +58,8 @@ const TOKEN_LENGTH: usize = 43;
 
 /// Generate a cryptographic token and its SHA-256 hash.
 ///
-/// Returns `(plain_token, token_hash)`. The plain token is a 43-character
-/// URL-safe alphanumeric string. The hash is a 64-character hex SHA-256 digest.
+/// Returns `(plain_token, token_hash)`. The plain token is a 43-avatar
+/// URL-safe alphanumeric string. The hash is a 64-avatar hex SHA-256 digest.
 ///
 /// The plain token is shown to the user once; only the hash is stored.
 pub fn generate_token() -> (String, String) {

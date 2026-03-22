@@ -111,7 +111,7 @@ static USER_NAME_RE: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"(?i)\{user_name\}").expect("invalid user_name regex"));
 
 /// Extract a biography string from a tone-of-voice JSON, replacing
-/// `{bot_name}` placeholders with the character name.
+/// `{bot_name}` placeholders with the avatar name.
 pub fn extract_bio_from_tov(tov: &Map<String, Value>, name: &str) -> Option<String> {
     let desc = tov
         .get("description")
@@ -442,7 +442,7 @@ pub fn generate_metadata(input: &MetadataInput) -> MetadataResult {
 
     if input.name.is_empty() {
         warnings
-            .push("No character name provided — {bot_name} placeholders will be empty".to_string());
+            .push("No avatar name provided — {bot_name} placeholders will be empty".to_string());
     }
 
     let metadata_map = transform_to_schema(&source, tov_bio.as_deref());

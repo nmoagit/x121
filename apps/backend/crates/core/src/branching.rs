@@ -43,7 +43,7 @@ pub fn validate_branch_name(name: &str) -> Result<(), CoreError> {
     }
     if name.len() > MAX_BRANCH_NAME_LENGTH {
         return Err(CoreError::Validation(format!(
-            "Branch name must not exceed {MAX_BRANCH_NAME_LENGTH} characters, got {}",
+            "Branch name must not exceed {MAX_BRANCH_NAME_LENGTH} avatars, got {}",
             name.len()
         )));
     }

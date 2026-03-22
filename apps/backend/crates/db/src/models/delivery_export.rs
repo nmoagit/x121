@@ -15,7 +15,7 @@ pub struct DeliveryExport {
     pub status_id: StatusId,
     pub exported_by: DbId,
     pub include_watermark: bool,
-    pub characters_json: Option<serde_json::Value>,
+    pub avatars_json: Option<serde_json::Value>,
     pub file_path: Option<String>,
     pub file_size_bytes: Option<i64>,
     pub validation_results_json: Option<serde_json::Value>,
@@ -33,14 +33,14 @@ pub struct CreateDeliveryExport {
     pub format_profile_id: DbId,
     pub exported_by: DbId,
     pub include_watermark: bool,
-    pub characters_json: Option<serde_json::Value>,
+    pub avatars_json: Option<serde_json::Value>,
 }
 
 /// Request body for starting a new assembly/export job.
 #[derive(Debug, Clone, Deserialize)]
 pub struct StartAssemblyRequest {
     pub format_profile_id: DbId,
-    pub character_ids: Option<Vec<DbId>>,
+    pub avatar_ids: Option<Vec<DbId>>,
     pub include_watermark: bool,
 }
 
@@ -69,13 +69,13 @@ pub struct ValidationIssueDto {
     pub entity_id: Option<DbId>,
 }
 
-/// Per-character delivery status computed from export history.
+/// Per-avatar delivery status computed from export history.
 #[derive(Debug, Clone, FromRow, Serialize)]
-pub struct CharacterDeliveryStatus {
-    pub character_id: DbId,
-    pub character_name: String,
+pub struct AvatarDeliveryStatus {
+    pub avatar_id: DbId,
+    pub avatar_name: String,
     pub status: String,
     pub last_delivered_at: Option<Timestamp>,
-    /// ID of the most recent completed export containing this character.
+    /// ID of the most recent completed export containing this avatar.
     pub export_id: Option<DbId>,
 }

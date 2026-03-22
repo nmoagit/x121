@@ -149,7 +149,7 @@ pub fn validate_search_term(term: &str) -> Result<(), CoreError> {
     }
     if term.len() > MAX_SEARCH_TERM_LEN {
         return Err(CoreError::Validation(format!(
-            "Search term exceeds maximum length of {MAX_SEARCH_TERM_LEN} characters"
+            "Search term exceeds maximum length of {MAX_SEARCH_TERM_LEN} avatars"
         )));
     }
     Ok(())
@@ -186,7 +186,7 @@ pub fn validate_path_prefix(prefix: &str) -> Result<(), CoreError> {
 pub fn validate_replacement(replacement: &str) -> Result<(), CoreError> {
     if replacement.len() > MAX_REPLACEMENT_LEN {
         return Err(CoreError::Validation(format!(
-            "Replacement exceeds maximum length of {MAX_REPLACEMENT_LEN} characters"
+            "Replacement exceeds maximum length of {MAX_REPLACEMENT_LEN} avatars"
         )));
     }
     Ok(())
@@ -223,7 +223,7 @@ pub fn validate_operation_type(op_type: &str) -> Result<(), CoreError> {
 /// Describes a text field that can be searched or re-pathed.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SearchableField {
-    /// Logical entity type (e.g. "character", "project").
+    /// Logical entity type (e.g. "avatar", "project").
     pub entity_type: &'static str,
     /// Database table name.
     pub table_name: &'static str,
@@ -247,8 +247,8 @@ pub fn get_searchable_fields(entity_type: Option<&str>) -> Vec<SearchableField> 
             column_name: "description",
         },
         SearchableField {
-            entity_type: "character",
-            table_name: "characters",
+            entity_type: "avatar",
+            table_name: "avatars",
             column_name: "name",
         },
         SearchableField {
@@ -570,10 +570,10 @@ mod tests {
 
     #[test]
     fn searchable_fields_filter_by_entity_type() {
-        let fields = get_searchable_fields(Some("character"));
+        let fields = get_searchable_fields(Some("avatar"));
         assert!(!fields.is_empty());
         for f in &fields {
-            assert_eq!(f.entity_type, "character");
+            assert_eq!(f.entity_type, "avatar");
         }
     }
 
@@ -633,8 +633,8 @@ mod tests {
     #[test]
     fn searchable_field_equality() {
         let a = SearchableField {
-            entity_type: "character",
-            table_name: "characters",
+            entity_type: "avatar",
+            table_name: "avatars",
             column_name: "name",
         };
         let b = a.clone();

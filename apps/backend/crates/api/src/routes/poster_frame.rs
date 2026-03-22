@@ -1,6 +1,6 @@
 //! Route definitions for poster frame & thumbnail selection (PRD-96).
 //!
-//! Scene and character poster-frame routes are merged into their parent
+//! Scene and avatar poster-frame routes are merged into their parent
 //! routers. Project-scoped gallery and auto-select routes are merged into
 //! the projects router.
 
@@ -23,16 +23,16 @@ pub fn scene_poster_router() -> Router<AppState> {
     )
 }
 
-/// Character-scoped poster frame routes, merged into `/characters`.
+/// Avatar-scoped poster frame routes, merged into `/avatars`.
 ///
 /// ```text
-/// GET    /{id}/poster-frame      -> get_character_poster
-/// POST   /{id}/poster-frame      -> set_character_poster
+/// GET    /{id}/poster-frame      -> get_avatar_poster
+/// POST   /{id}/poster-frame      -> set_avatar_poster
 /// ```
-pub fn character_poster_router() -> Router<AppState> {
+pub fn avatar_poster_router() -> Router<AppState> {
     Router::new().route(
         "/{id}/poster-frame",
-        get(poster_frame::get_character_poster).post(poster_frame::set_character_poster),
+        get(poster_frame::get_avatar_poster).post(poster_frame::set_avatar_poster),
     )
 }
 

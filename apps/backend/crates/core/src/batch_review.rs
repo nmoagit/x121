@@ -38,15 +38,15 @@ pub const SORT_OLDEST: &str = "oldest_first";
 /// Group by scene type.
 pub const SORT_BY_SCENE_TYPE: &str = "by_scene_type";
 
-/// Group by character.
-pub const SORT_BY_CHARACTER: &str = "by_character";
+/// Group by avatar.
+pub const SORT_BY_AVATAR: &str = "by_avatar";
 
 /// All valid sort modes for the review queue.
 pub const VALID_SORT_MODES: &[&str] = &[
     SORT_WORST_QA,
     SORT_OLDEST,
     SORT_BY_SCENE_TYPE,
-    SORT_BY_CHARACTER,
+    SORT_BY_AVATAR,
 ];
 
 // ---------------------------------------------------------------------------
@@ -160,7 +160,7 @@ mod tests {
         assert!(validate_sort_mode(SORT_WORST_QA).is_ok());
         assert!(validate_sort_mode(SORT_OLDEST).is_ok());
         assert!(validate_sort_mode(SORT_BY_SCENE_TYPE).is_ok());
-        assert!(validate_sort_mode(SORT_BY_CHARACTER).is_ok());
+        assert!(validate_sort_mode(SORT_BY_AVATAR).is_ok());
     }
 
     #[test]

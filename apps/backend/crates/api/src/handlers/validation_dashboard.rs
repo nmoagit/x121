@@ -6,7 +6,7 @@ use axum::extract::{Path, State};
 use axum::Json;
 use serde::Serialize;
 use x121_core::types::DbId;
-use x121_db::repositories::CharacterIngestSessionRepo;
+use x121_db::repositories::AvatarIngestSessionRepo;
 
 use crate::error::AppResult;
 use crate::state::AppState;
@@ -36,7 +36,7 @@ pub async fn get_validation_summary(
     State(state): State<AppState>,
     Path(project_id): Path<DbId>,
 ) -> AppResult<Json<ProjectValidationSummary>> {
-    let sessions = CharacterIngestSessionRepo::list_by_project(&state.pool, project_id).await?;
+    let sessions = AvatarIngestSessionRepo::list_by_project(&state.pool, project_id).await?;
 
     let total_sessions = sessions.len() as i64;
     let completed_sessions = sessions.iter().filter(|s| s.status_id == 6).count() as i64;

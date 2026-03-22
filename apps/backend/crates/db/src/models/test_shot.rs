@@ -16,7 +16,7 @@ use x121_core::types::{DbId, Timestamp};
 pub struct TestShot {
     pub id: DbId,
     pub scene_type_id: DbId,
-    pub character_id: DbId,
+    pub avatar_id: DbId,
     pub workflow_id: Option<DbId>,
     pub parameters: serde_json::Value,
     pub seed_image_path: String,
@@ -39,7 +39,7 @@ pub struct TestShot {
 #[derive(Debug, Clone, Deserialize)]
 pub struct CreateTestShot {
     pub scene_type_id: DbId,
-    pub character_id: DbId,
+    pub avatar_id: DbId,
     pub workflow_id: Option<DbId>,
     pub parameters: serde_json::Value,
     pub seed_image_path: String,
@@ -55,7 +55,7 @@ pub struct CreateTestShot {
 #[derive(Debug, Clone, Deserialize)]
 pub struct GenerateTestShotRequest {
     pub scene_type_id: DbId,
-    pub character_id: DbId,
+    pub avatar_id: DbId,
     pub workflow_id: Option<DbId>,
     pub parameters: Option<serde_json::Value>,
     pub seed_image_path: String,
@@ -66,7 +66,7 @@ pub struct GenerateTestShotRequest {
 #[derive(Debug, Clone, Deserialize)]
 pub struct BatchTestShotRequest {
     pub scene_type_id: DbId,
-    pub character_ids: Vec<DbId>,
+    pub avatar_ids: Vec<DbId>,
     pub workflow_id: Option<DbId>,
     pub parameters: Option<serde_json::Value>,
     pub seed_image_path: String,

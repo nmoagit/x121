@@ -1,4 +1,4 @@
-//! Handlers for the character readiness system (PRD-107).
+//! Handlers for the avatar readiness system (PRD-107).
 //!
 //! Provides endpoints for computing readiness, managing readiness criteria,
 //! and querying the readiness cache.
@@ -40,47 +40,47 @@ pub struct ReadinessStateFilterParams {
 /// Body for batch-evaluate endpoint.
 #[derive(Debug, serde::Deserialize)]
 pub struct BatchEvaluateBody {
-    pub character_ids: Vec<DbId>,
+    pub avatar_ids: Vec<DbId>,
 }
 
 // ---------------------------------------------------------------------------
-// Character Readiness Handlers
+// Avatar Readiness Handlers
 // ---------------------------------------------------------------------------
 
-/// GET /characters/{character_id}/readiness
+/// GET /avatars/{avatar_id}/readiness
 ///
-/// Get the cached readiness for a single character.
-pub async fn get_character_readiness(
+/// Get the cached readiness for a single avatar.
+pub async fn get_avatar_readiness(
     _auth: AuthUser,
     State(state): State<AppState>,
-    Path(character_id): Path<DbId>,
+    Path(avatar_id): Path<DbId>,
 ) -> AppResult<impl IntoResponse> {
-    let cache = ReadinessCacheRepo::find_by_character_id(&state.pool, character_id)
+    let cache = ReadinessCacheRepo::find_by_avatar_id(&state.pool, avatar_id)
         .await?
         .ok_or_else(|| {
             AppError::Core(CoreError::NotFound {
-                entity: "CharacterReadinessCache",
-                id: character_id,
+                entity: "AvatarReadinessCache",
+                id: avatar_id,
             })
         })?;
 
     Ok(Json(DataResponse { data: cache }))
 }
 
-/// POST /characters/{character_id}/readiness/invalidate
+/// POST /avatars/{avatar_id}/readiness/invalidate
 ///
-/// Invalidate the readiness cache for a character, forcing recomputation
+/// Invalidate the readiness cache for a avatar, forcing recomputation
 /// on the next read.
 pub async fn invalidate_cache(
     auth: AuthUser,
     State(state): State<AppState>,
-    Path(character_id): Path<DbId>,
+    Path(avatar_id): Path<DbId>,
 ) -> AppResult<impl IntoResponse> {
-    let deleted = ReadinessCacheRepo::delete_by_character_id(&state.pool, character_id).await?;
+    let deleted = ReadinessCacheRepo::delete_by_avatar_id(&state.pool, avatar_id).await?;
 
     tracing::info!(
         user_id = auth.user_id,
-        character_id = character_id,
+        avatar_id = avatar_id,
         deleted = deleted,
         "Readiness cache invalidated"
     );
@@ -88,9 +88,9 @@ pub async fn invalidate_cache(
     Ok(StatusCode::NO_CONTENT)
 }
 
-/// POST /characters/readiness/batch-evaluate
+/// POST /avatars/readiness/batch-evaluate
 ///
-/// Evaluate readiness for a batch of characters. This is a placeholder
+/// Evaluate readiness for a batch of avatars. This is a placeholder
 /// that records empty results; the actual computation requires joining
 /// multiple tables and should be done by a background service.
 pub async fn batch_evaluate(
@@ -98,25 +98,25 @@ pub async fn batch_evaluate(
     State(state): State<AppState>,
     Json(body): Json<BatchEvaluateBody>,
 ) -> AppResult<impl IntoResponse> {
-    if body.character_ids.is_empty() {
+    if body.avatar_ids.is_empty() {
         return Err(AppError::BadRequest(
-            "character_ids must not be empty".to_string(),
+            "avatar_ids must not be empty".to_string(),
         ));
     }
 
-    if body.character_ids.len() > 500 {
+    if body.avatar_ids.len() > 500 {
         return Err(AppError::BadRequest(
-            "Cannot batch evaluate more than 500 characters at once".to_string(),
+            "Cannot batch evaluate more than 500 avatars at once".to_string(),
         ));
     }
 
-    // Fetch existing cache entries for these characters.
+    // Fetch existing cache entries for these avatars.
     let existing =
-        ReadinessCacheRepo::find_by_character_ids(&state.pool, &body.character_ids).await?;
+        ReadinessCacheRepo::find_by_avatar_ids(&state.pool, &body.avatar_ids).await?;
 
     tracing::info!(
         user_id = auth.user_id,
-        requested = body.character_ids.len(),
+        requested = body.avatar_ids.len(),
         cached = existing.len(),
         "Batch readiness evaluation requested"
     );
@@ -128,7 +128,7 @@ pub async fn batch_evaluate(
 // Library Readiness Summary
 // ---------------------------------------------------------------------------
 
-/// GET /library/characters/readiness-summary
+/// GET /library/avatars/readiness-summary
 ///
 /// Get aggregate readiness statistics.
 pub async fn get_readiness_summary(

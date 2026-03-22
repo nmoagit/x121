@@ -1,11 +1,11 @@
-//! Route definitions for character duplicate detection endpoints (PRD-79).
+//! Route definitions for avatar duplicate detection endpoints (PRD-79).
 //!
 //! ```text
-//! /characters/duplicates/check              check single character (POST)
-//! /characters/duplicates/batch              batch check (POST)
-//! /characters/duplicates/history            check history (GET)
-//! /characters/duplicates/{id}/resolve       resolve match (POST)
-//! /characters/duplicates/{id}/dismiss       dismiss match (POST)
+//! /avatars/duplicates/check              check single avatar (POST)
+//! /avatars/duplicates/batch              batch check (POST)
+//! /avatars/duplicates/history            check history (GET)
+//! /avatars/duplicates/{id}/resolve       resolve match (POST)
+//! /avatars/duplicates/{id}/dismiss       dismiss match (POST)
 //!
 //! /admin/duplicate-settings                 get, update settings (GET, PUT)
 //! ```
@@ -16,7 +16,7 @@ use axum::Router;
 use crate::handlers::duplicates;
 use crate::state::AppState;
 
-/// Duplicate checking and resolution routes, nested at `/characters/duplicates`.
+/// Duplicate checking and resolution routes, nested at `/avatars/duplicates`.
 pub fn router() -> Router<AppState> {
     Router::new()
         .route("/check", post(duplicates::check_duplicate))

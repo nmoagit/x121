@@ -25,7 +25,7 @@ use x121_db::models::watermark_setting::{
     CreateWatermarkSetting, UpdateWatermarkSetting, WatermarkSetting,
 };
 use x121_db::repositories::{
-    CharacterMetadataVersionRepo, CharacterRepo, DeliveryExportRepo, OutputFormatProfileRepo,
+    AvatarMetadataVersionRepo, AvatarRepo, DeliveryExportRepo, OutputFormatProfileRepo,
     PlatformSettingRepo, ProjectDeliveryLogRepo, ProjectRepo, SceneVideoVersionRepo,
     WatermarkSettingRepo,
 };
@@ -227,11 +227,11 @@ pub async fn start_assembly(
     // Verify the format profile exists.
     let profile = ensure_profile_exists(&state.pool, body.format_profile_id).await?;
 
-    // Resolve character names for the activity log message.
-    let all_characters = CharacterRepo::list_by_project(&state.pool, project_id).await?;
-    let (model_names, model_count) = match &body.character_ids {
+    // Resolve avatar names for the activity log message.
+    let all_avatars = AvatarRepo::list_by_project(&state.pool, project_id).await?;
+    let (model_names, model_count) = match &body.avatar_ids {
         Some(ids) => {
-            let names: Vec<&str> = all_characters
+            let names: Vec<&str> = all_avatars
                 .iter()
                 .filter(|c| ids.contains(&c.id))
                 .map(|c| c.name.as_str())
@@ -240,14 +240,14 @@ pub async fn start_assembly(
             (names.join(", "), count)
         }
         None => {
-            let names: Vec<&str> = all_characters.iter().map(|c| c.name.as_str()).collect();
+            let names: Vec<&str> = all_avatars.iter().map(|c| c.name.as_str()).collect();
             let count = names.len();
             (names.join(", "), count)
         }
     };
 
-    let characters_json = body
-        .character_ids
+    let avatars_json = body
+        .avatar_ids
         .as_ref()
         .map(|ids| serde_json::to_value(ids).unwrap_or(serde_json::Value::Null));
 
@@ -256,7 +256,7 @@ pub async fn start_assembly(
         format_profile_id: body.format_profile_id,
         exported_by: auth.user_id,
         include_watermark: body.include_watermark,
-        characters_json,
+        avatars_json,
     };
 
     let export = DeliveryExportRepo::create(&state.pool, &input).await?;
@@ -504,14 +504,14 @@ async fn serve_file(path: &std::path::Path) -> AppResult<Response> {
 }
 
 // ---------------------------------------------------------------------------
-// GET /projects/{project_id}/exports/{export_id}/download/{character_slug}
+// GET /projects/{project_id}/exports/{export_id}/download/{avatar_slug}
 // ---------------------------------------------------------------------------
 
 /// Download a single model's RAR from a completed delivery export.
 pub async fn download_model_archive(
     State(state): State<AppState>,
     _auth: AuthUser,
-    Path((_project_id, export_id, character_slug)): Path<(DbId, DbId, String)>,
+    Path((_project_id, export_id, avatar_slug)): Path<(DbId, DbId, String)>,
 ) -> AppResult<Response> {
     let export = ensure_export_exists(&state.pool, export_id).await?;
 
@@ -525,7 +525,7 @@ pub async fn download_model_archive(
         .ok_or_else(|| AppError::InternalError("Completed export has no file_path".into()))?;
 
     let abs_dir = state.resolve_to_path(file_path).await?;
-    let rar_path = abs_dir.join(format!("{character_slug}.rar"));
+    let rar_path = abs_dir.join(format!("{avatar_slug}.rar"));
 
     if !rar_path.exists() {
         return Err(AppError::Core(CoreError::NotFound {
@@ -544,15 +544,15 @@ pub async fn download_model_archive(
 /// Optional query parameters for delivery validation.
 #[derive(Debug, Deserialize)]
 pub struct ValidationQueryParams {
-    /// Comma-separated character IDs to validate. When absent, validates all.
-    pub character_ids: Option<String>,
+    /// Comma-separated avatar IDs to validate. When absent, validates all.
+    pub avatar_ids: Option<String>,
 }
 
 /// Run pre-export validation checks for a project.
 ///
 /// Validates that all scenes in the project have finalized video versions
-/// and that each character has at least one scene.
-/// Accepts optional `?character_ids=1,2,3` to scope validation to selected models.
+/// and that each avatar has at least one scene.
+/// Accepts optional `?avatar_ids=1,2,3` to scope validation to selected models.
 pub async fn validate_delivery(
     State(state): State<AppState>,
     Path(project_id): Path<DbId>,
@@ -560,8 +560,8 @@ pub async fn validate_delivery(
 ) -> AppResult<impl IntoResponse> {
     let mut issues: Vec<assembly::ValidationIssue> = Vec::new();
 
-    // Parse optional character_ids filter.
-    let filter_ids: Option<Vec<DbId>> = params.character_ids.as_ref().map(|ids_str| {
+    // Parse optional avatar_ids filter.
+    let filter_ids: Option<Vec<DbId>> = params.avatar_ids.as_ref().map(|ids_str| {
         ids_str
             .split(',')
             .filter_map(|s| s.trim().parse::<DbId>().ok())
@@ -620,42 +620,42 @@ pub async fn validate_delivery(
     }
     let _ = (check_images, check_speech); // reserved for future validation checks
 
-    // Check that the project has characters.
-    let all_characters = CharacterRepo::list_by_project(&state.pool, project_id)
+    // Check that the project has avatars.
+    let all_avatars = AvatarRepo::list_by_project(&state.pool, project_id)
         .await
         .map_err(|e| {
             tracing::error!(%e, "validate_delivery: list_by_project failed");
             e
         })?;
 
-    // If character_ids filter is provided, scope to only those characters.
-    let characters: Vec<_> = if let Some(ref ids) = filter_ids {
-        all_characters
+    // If avatar_ids filter is provided, scope to only those avatars.
+    let avatars: Vec<_> = if let Some(ref ids) = filter_ids {
+        all_avatars
             .into_iter()
             .filter(|c| ids.contains(&c.id))
             .collect()
     } else {
-        all_characters
+        all_avatars
     };
 
-    if characters.is_empty() {
+    if avatars.is_empty() {
         issues.push(assembly::ValidationIssue {
             severity: assembly::IssueSeverity::Error,
-            category: "missing_characters".to_string(),
+            category: "missing_avatars".to_string(),
             message: "Project has no models".to_string(),
             entity_id: Some(project_id),
         });
     }
 
-    // Build character name map (needed for scene-level checks).
+    // Build avatar name map (needed for scene-level checks).
     let char_name_map: std::collections::HashMap<DbId, &str> =
-        characters.iter().map(|c| (c.id, c.name.as_str())).collect();
+        avatars.iter().map(|c| (c.id, c.name.as_str())).collect();
 
     // --- Scene-related checks (only when "scenes" is a blocking deliverable) ---
     if check_scenes {
         let all_scenes: Vec<(DbId, DbId)> = sqlx::query_as(
-            "SELECT s.id, s.character_id FROM scenes s \
-             JOIN characters c ON s.character_id = c.id \
+            "SELECT s.id, s.avatar_id FROM scenes s \
+             JOIN avatars c ON s.avatar_id = c.id \
              WHERE c.project_id = $1 AND s.deleted_at IS NULL AND c.deleted_at IS NULL",
         )
         .bind(project_id)
@@ -712,17 +712,17 @@ pub async fn validate_delivery(
             });
         }
 
-        // Characters with no scenes.
-        for character in &characters {
+        // Avatars with no scenes.
+        for avatar in &avatars {
             let scenes =
-                x121_db::repositories::SceneRepo::list_by_character(&state.pool, character.id).await
-                .map_err(|e| { tracing::error!(%e, character_id = character.id, "validate_delivery: list_by_character failed"); e })?;
+                x121_db::repositories::SceneRepo::list_by_avatar(&state.pool, avatar.id).await
+                .map_err(|e| { tracing::error!(%e, avatar_id = avatar.id, "validate_delivery: list_by_avatar failed"); e })?;
             if scenes.is_empty() {
                 issues.push(assembly::ValidationIssue {
                     severity: assembly::IssueSeverity::Warning,
                     category: "no_scenes".to_string(),
-                    message: format!("Model '{}' has no scenes", character.name),
-                    entity_id: Some(character.id),
+                    message: format!("Model '{}' has no scenes", avatar.name),
+                    entity_id: Some(avatar.id),
                 });
             }
         }
@@ -730,19 +730,19 @@ pub async fn validate_delivery(
 
     // --- Metadata checks (only when "metadata" is a blocking deliverable) ---
     if check_metadata {
-        for character in &characters {
+        for avatar in &avatars {
             let approved =
-                CharacterMetadataVersionRepo::find_approved(&state.pool, character.id).await
-                .map_err(|e| { tracing::error!(%e, character_id = character.id, "validate_delivery: find_approved failed"); e })?;
+                AvatarMetadataVersionRepo::find_approved(&state.pool, avatar.id).await
+                .map_err(|e| { tracing::error!(%e, avatar_id = avatar.id, "validate_delivery: find_approved failed"); e })?;
             if approved.is_none() {
                 issues.push(assembly::ValidationIssue {
                     severity: assembly::IssueSeverity::Error,
                     category: "metadata_not_approved".to_string(),
                     message: format!(
                         "Model '{}' has no approved metadata version",
-                        character.name
+                        avatar.name
                     ),
-                    entity_id: Some(character.id),
+                    entity_id: Some(avatar.id),
                 });
             }
         }
@@ -792,7 +792,7 @@ pub async fn validate_delivery(
             "passed": result.passed,
             "error_count": error_count,
             "warning_count": warning_count,
-            "model_count": characters.len(),
+            "model_count": avatars.len(),
         })),
     );
 
@@ -946,7 +946,7 @@ pub async fn list_delivery_logs(
 // GET /projects/{project_id}/delivery-status
 // ---------------------------------------------------------------------------
 
-/// Get per-character delivery status for a project.
+/// Get per-avatar delivery status for a project.
 pub async fn get_delivery_status(
     State(state): State<AppState>,
     Path(project_id): Path<DbId>,

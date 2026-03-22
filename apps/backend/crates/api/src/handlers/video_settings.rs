@@ -1,6 +1,6 @@
 //! Handlers for hierarchical video settings (duration, fps, resolution).
 //!
-//! Supports 4-level hierarchy: Scene Type -> Project -> Group -> Character.
+//! Supports 4-level hierarchy: Scene Type -> Project -> Group -> Avatar.
 //! Includes a resolution endpoint that walks all levels and returns the
 //! effective settings with provenance tracking.
 
@@ -11,7 +11,7 @@ use x121_core::error::CoreError;
 use x121_core::types::DbId;
 use x121_core::video_settings::{self, VideoSettingsLayer};
 use x121_db::models::video_settings::UpsertVideoSettings;
-use x121_db::repositories::{CharacterRepo, SceneTypeRepo, VideoSettingsRepo};
+use x121_db::repositories::{AvatarRepo, SceneTypeRepo, VideoSettingsRepo};
 
 use crate::error::{AppError, AppResult};
 use crate::response::DataResponse;
@@ -150,62 +150,62 @@ pub async fn delete_group_settings(
 }
 
 // ---------------------------------------------------------------------------
-// Character
+// Avatar
 // ---------------------------------------------------------------------------
 
-/// GET /api/v1/characters/{character_id}/video-settings
+/// GET /api/v1/avatars/{avatar_id}/video-settings
 ///
-/// List all character-level video settings overrides.
-pub async fn list_character_settings(
+/// List all avatar-level video settings overrides.
+pub async fn list_avatar_settings(
     State(state): State<AppState>,
-    Path(character_id): Path<DbId>,
-) -> AppResult<Json<DataResponse<Vec<x121_db::models::video_settings::CharacterVideoSettings>>>> {
-    let settings = VideoSettingsRepo::list_by_character(&state.pool, character_id).await?;
+    Path(avatar_id): Path<DbId>,
+) -> AppResult<Json<DataResponse<Vec<x121_db::models::video_settings::AvatarVideoSettings>>>> {
+    let settings = VideoSettingsRepo::list_by_avatar(&state.pool, avatar_id).await?;
     Ok(Json(DataResponse { data: settings }))
 }
 
-/// GET /api/v1/characters/{character_id}/video-settings/{scene_type_id}
+/// GET /api/v1/avatars/{avatar_id}/video-settings/{scene_type_id}
 ///
-/// Returns the character-level video settings override for a scene type.
-pub async fn get_character_settings(
+/// Returns the avatar-level video settings override for a scene type.
+pub async fn get_avatar_settings(
     State(state): State<AppState>,
-    Path((character_id, scene_type_id)): Path<(DbId, DbId)>,
-) -> AppResult<Json<DataResponse<Option<x121_db::models::video_settings::CharacterVideoSettings>>>>
+    Path((avatar_id, scene_type_id)): Path<(DbId, DbId)>,
+) -> AppResult<Json<DataResponse<Option<x121_db::models::video_settings::AvatarVideoSettings>>>>
 {
     let settings =
-        VideoSettingsRepo::find_character(&state.pool, character_id, scene_type_id).await?;
+        VideoSettingsRepo::find_avatar(&state.pool, avatar_id, scene_type_id).await?;
     Ok(Json(DataResponse { data: settings }))
 }
 
-/// PUT /api/v1/characters/{character_id}/video-settings/{scene_type_id}
+/// PUT /api/v1/avatars/{avatar_id}/video-settings/{scene_type_id}
 ///
-/// Create or update character-level video settings for a scene type.
-pub async fn upsert_character_settings(
+/// Create or update avatar-level video settings for a scene type.
+pub async fn upsert_avatar_settings(
     State(state): State<AppState>,
-    Path((character_id, scene_type_id)): Path<(DbId, DbId)>,
+    Path((avatar_id, scene_type_id)): Path<(DbId, DbId)>,
     Json(body): Json<UpsertVideoSettings>,
-) -> AppResult<Json<DataResponse<x121_db::models::video_settings::CharacterVideoSettings>>> {
+) -> AppResult<Json<DataResponse<x121_db::models::video_settings::AvatarVideoSettings>>> {
     let result =
-        VideoSettingsRepo::upsert_character(&state.pool, character_id, scene_type_id, &body)
+        VideoSettingsRepo::upsert_avatar(&state.pool, avatar_id, scene_type_id, &body)
             .await?;
     Ok(Json(DataResponse { data: result }))
 }
 
-/// DELETE /api/v1/characters/{character_id}/video-settings/{scene_type_id}
+/// DELETE /api/v1/avatars/{avatar_id}/video-settings/{scene_type_id}
 ///
-/// Remove the character-level video settings override for a scene type.
-pub async fn delete_character_settings(
+/// Remove the avatar-level video settings override for a scene type.
+pub async fn delete_avatar_settings(
     State(state): State<AppState>,
-    Path((character_id, scene_type_id)): Path<(DbId, DbId)>,
+    Path((avatar_id, scene_type_id)): Path<(DbId, DbId)>,
 ) -> AppResult<StatusCode> {
     let deleted =
-        VideoSettingsRepo::delete_character_by_key(&state.pool, character_id, scene_type_id)
+        VideoSettingsRepo::delete_avatar_by_key(&state.pool, avatar_id, scene_type_id)
             .await?;
     if deleted {
         Ok(StatusCode::NO_CONTENT)
     } else {
         Err(AppError::Core(CoreError::NotFound {
-            entity: "CharacterVideoSettings",
+            entity: "AvatarVideoSettings",
             id: 0,
         }))
     }
@@ -215,21 +215,21 @@ pub async fn delete_character_settings(
 // Resolved settings (walks all 4 levels)
 // ---------------------------------------------------------------------------
 
-/// GET /api/v1/characters/{character_id}/video-settings/{scene_type_id}/resolved
+/// GET /api/v1/avatars/{avatar_id}/video-settings/{scene_type_id}/resolved
 ///
 /// Resolves video settings through the full hierarchy:
-/// Scene Type -> Project -> Group -> Character.
+/// Scene Type -> Project -> Group -> Avatar.
 /// Returns the effective settings with provenance for each field.
 pub async fn get_resolved_settings(
     State(state): State<AppState>,
-    Path((character_id, scene_type_id)): Path<(DbId, DbId)>,
+    Path((avatar_id, scene_type_id)): Path<(DbId, DbId)>,
 ) -> AppResult<Json<DataResponse<video_settings::ResolvedVideoSettings>>> {
-    // Load the character to find project_id and group_id.
-    let character = CharacterRepo::find_by_id(&state.pool, character_id)
+    // Load the avatar to find project_id and group_id.
+    let avatar = AvatarRepo::find_by_id(&state.pool, avatar_id)
         .await?
         .ok_or(AppError::Core(CoreError::NotFound {
-            entity: "Character",
-            id: character_id,
+            entity: "Avatar",
+            id: avatar_id,
         }))?;
 
     // Load the scene type for base settings.
@@ -249,9 +249,9 @@ pub async fn get_resolved_settings(
     // Load all override layers through the shared hierarchy helper.
     let (project_layer, group_layer, char_layer) = VideoSettingsRepo::load_hierarchy_layers(
         &state.pool,
-        character.project_id,
-        character.group_id,
-        character_id,
+        avatar.project_id,
+        avatar.group_id,
+        avatar_id,
         scene_type_id,
     )
     .await?;

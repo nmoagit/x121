@@ -1,7 +1,7 @@
 //! Handlers for bulk project speech import and deliverable generation (PRD-136).
 //!
 //! Routes nested under `/projects/{project_id}/...`.
-//! Provides multi-character speech import and bulk deliverable zip export.
+//! Provides multi-avatar speech import and bulk deliverable zip export.
 
 use std::io::Write;
 
@@ -11,12 +11,12 @@ use axum::response::IntoResponse;
 use axum::Json;
 use serde::{Deserialize, Serialize};
 use x121_core::types::DbId;
-use x121_db::repositories::{CharacterRepo, CharacterSpeechRepo, LanguageRepo, SpeechTypeRepo};
+use x121_db::repositories::{AvatarRepo, AvatarSpeechRepo, LanguageRepo, SpeechTypeRepo};
 
 use x121_core::activity::{ActivityLogEntry, ActivityLogLevel, ActivityLogSource};
 
 use crate::error::{AppError, AppResult};
-use crate::handlers::character_speech::{build_deliverable, slugify};
+use crate::handlers::avatar_speech::{build_deliverable, slugify};
 use crate::middleware::auth::AuthUser;
 use crate::response::DataResponse;
 use crate::state::AppState;
@@ -37,8 +37,8 @@ pub struct BulkImportReport {
     pub imported: usize,
     pub skipped: usize,
     pub errors: Vec<String>,
-    pub characters_matched: Vec<String>,
-    pub characters_unmatched: Vec<String>,
+    pub avatars_matched: Vec<String>,
+    pub avatars_unmatched: Vec<String>,
 }
 
 // ---------------------------------------------------------------------------
@@ -47,7 +47,7 @@ pub struct BulkImportReport {
 
 /// POST /projects/{project_id}/speeches/import
 ///
-/// Import speeches for multiple characters at once. Supports JSON
+/// Import speeches for multiple avatars at once. Supports JSON
 /// (greetings.json style) and CSV formats.
 pub async fn bulk_import_speeches(
     auth: AuthUser,
@@ -55,11 +55,11 @@ pub async fn bulk_import_speeches(
     Path(project_id): Path<DbId>,
     Json(body): Json<ImportProjectSpeechesRequest>,
 ) -> AppResult<impl IntoResponse> {
-    let characters = CharacterRepo::list_by_project(&state.pool, project_id).await?;
+    let avatars = AvatarRepo::list_by_project(&state.pool, project_id).await?;
     let languages = LanguageRepo::list_all(&state.pool).await?;
 
-    // Build slug -> character_id map.
-    let slug_map: std::collections::HashMap<String, DbId> = characters
+    // Build slug -> avatar_id map.
+    let slug_map: std::collections::HashMap<String, DbId> = avatars
         .iter()
         .map(|c| (slugify(&c.name), c.id))
         .collect();
@@ -111,7 +111,7 @@ pub async fn bulk_import_speeches(
 /// Import from JSON format:
 /// ```json
 /// {
-///   "character_slug": {
+///   "avatar_slug": {
 ///     "speech_type_name": {
 ///       "language_name": ["variant1", "variant2"]
 ///     }
@@ -142,7 +142,7 @@ async fn import_json(
 
     for (char_slug, types_val) in root {
         let normalized_slug = slugify(char_slug);
-        let Some(&character_id) = slug_map.get(&normalized_slug) else {
+        let Some(&avatar_id) = slug_map.get(&normalized_slug) else {
             unmatched_set.insert(char_slug.clone());
             continue;
         };
@@ -153,7 +153,7 @@ async fn import_json(
             continue;
         };
 
-        // Collect entries for this character.
+        // Collect entries for this avatar.
         let mut entries: Vec<(i16, i16, String)> = Vec::new();
 
         for (type_name, langs_val) in types_obj {
@@ -203,7 +203,7 @@ async fn import_json(
             let to_create = if skip_existing {
                 // Fetch existing speeches and filter out duplicates.
                 let existing =
-                    CharacterSpeechRepo::list_for_character(&state.pool, character_id).await?;
+                    AvatarSpeechRepo::list_for_avatar(&state.pool, avatar_id).await?;
                 let existing_keys: std::collections::HashSet<(i16, i16, String)> = existing
                     .iter()
                     .map(|s| (s.speech_type_id, s.language_id, s.text.to_lowercase()))
@@ -227,9 +227,9 @@ async fn import_json(
             };
 
             if !to_create.is_empty() {
-                let created = CharacterSpeechRepo::bulk_create_with_language(
+                let created = AvatarSpeechRepo::bulk_create_with_language(
                     &state.pool,
-                    character_id,
+                    avatar_id,
                     &to_create,
                 )
                 .await?;
@@ -263,8 +263,8 @@ async fn import_json(
         .with_fields(serde_json::json!({
             "imported": imported,
             "skipped": skipped,
-            "characters_matched": matched,
-            "characters_unmatched": unmatched,
+            "avatars_matched": matched,
+            "avatars_unmatched": unmatched,
         })),
     );
 
@@ -273,13 +273,13 @@ async fn import_json(
             imported,
             skipped,
             errors,
-            characters_matched: matched,
-            characters_unmatched: unmatched,
+            avatars_matched: matched,
+            avatars_unmatched: unmatched,
         },
     }))
 }
 
-/// Import from CSV format: `character_slug,speech_type,language,text`
+/// Import from CSV format: `avatar_slug,speech_type,language,text`
 async fn import_csv(
     state: &AppState,
     user_id: DbId,
@@ -296,7 +296,7 @@ async fn import_csv(
     let mut matched_set = std::collections::HashSet::new();
     let mut unmatched_set = std::collections::HashSet::new();
 
-    // Collect entries per character for bulk create.
+    // Collect entries per avatar for bulk create.
     let mut char_entries: std::collections::HashMap<DbId, Vec<(i16, i16, String)>> =
         std::collections::HashMap::new();
 
@@ -309,7 +309,7 @@ async fn import_csv(
         // Skip header row.
         if i == 0 {
             let lower = trimmed.to_lowercase();
-            if lower.starts_with("character") || lower.starts_with("slug") {
+            if lower.starts_with("avatar") || lower.starts_with("slug") {
                 continue;
             }
         }
@@ -317,7 +317,7 @@ async fn import_csv(
         let parts: Vec<&str> = trimmed.splitn(4, ',').collect();
         if parts.len() < 4 {
             errors.push(format!(
-                "row {}: expected 4 columns (character_slug,speech_type,language,text)",
+                "row {}: expected 4 columns (avatar_slug,speech_type,language,text)",
                 i + 1
             ));
             continue;
@@ -339,7 +339,7 @@ async fn import_csv(
         }
 
         let normalized_slug = slugify(char_slug);
-        let Some(&character_id) = slug_map.get(&normalized_slug) else {
+        let Some(&avatar_id) = slug_map.get(&normalized_slug) else {
             unmatched_set.insert(char_slug.to_string());
             skipped += 1;
             continue;
@@ -361,16 +361,16 @@ async fn import_csv(
         let speech_type = SpeechTypeRepo::find_or_create(&state.pool, type_name).await?;
 
         char_entries
-            .entry(character_id)
+            .entry(avatar_id)
             .or_default()
             .push((speech_type.id, language_id, text));
     }
 
-    // Bulk create per character (with optional dedup).
-    for (character_id, entries) in &char_entries {
+    // Bulk create per avatar (with optional dedup).
+    for (avatar_id, entries) in &char_entries {
         let to_create = if skip_existing {
             let existing =
-                CharacterSpeechRepo::list_for_character(&state.pool, *character_id).await?;
+                AvatarSpeechRepo::list_for_avatar(&state.pool, *avatar_id).await?;
             let existing_keys: std::collections::HashSet<(i16, i16, String)> = existing
                 .iter()
                 .map(|s| (s.speech_type_id, s.language_id, s.text.to_lowercase()))
@@ -389,9 +389,9 @@ async fn import_csv(
         };
 
         if !to_create.is_empty() {
-            let created = CharacterSpeechRepo::bulk_create_with_language(
+            let created = AvatarSpeechRepo::bulk_create_with_language(
                 &state.pool,
-                *character_id,
+                *avatar_id,
                 &to_create,
             )
             .await?;
@@ -424,8 +424,8 @@ async fn import_csv(
         .with_fields(serde_json::json!({
             "imported": imported,
             "skipped": skipped,
-            "characters_matched": matched,
-            "characters_unmatched": unmatched,
+            "avatars_matched": matched,
+            "avatars_unmatched": unmatched,
         })),
     );
 
@@ -434,8 +434,8 @@ async fn import_csv(
             imported,
             skipped,
             errors,
-            characters_matched: matched,
-            characters_unmatched: unmatched,
+            avatars_matched: matched,
+            avatars_unmatched: unmatched,
         },
     }))
 }
@@ -446,19 +446,19 @@ async fn import_csv(
 
 /// POST /projects/{project_id}/speech-deliverables
 ///
-/// Generate deliverable JSON for all characters in a project that have
+/// Generate deliverable JSON for all avatars in a project that have
 /// approved speeches, bundled as a zip file.
 pub async fn bulk_generate_deliverables(
     _auth: AuthUser,
     State(state): State<AppState>,
     Path(project_id): Path<DbId>,
 ) -> AppResult<impl IntoResponse> {
-    let characters = CharacterRepo::list_by_project(&state.pool, project_id).await?;
+    let avatars = AvatarRepo::list_by_project(&state.pool, project_id).await?;
 
-    // Build deliverables for each character that has approved speeches.
+    // Build deliverables for each avatar that has approved speeches.
     let mut deliverables = Vec::new();
-    for character in &characters {
-        match build_deliverable(&state, character.id).await {
+    for avatar in &avatars {
+        match build_deliverable(&state, avatar.id).await {
             Ok(d) => deliverables.push(d),
             Err(AppError::Unprocessable(_)) => continue, // No approved speeches, skip.
             Err(e) => return Err(e),
@@ -467,7 +467,7 @@ pub async fn bulk_generate_deliverables(
 
     if deliverables.is_empty() {
         return Err(AppError::Unprocessable(
-            "No characters have approved speeches in this project".to_string(),
+            "No avatars have approved speeches in this project".to_string(),
         ));
     }
 
@@ -479,7 +479,7 @@ pub async fn bulk_generate_deliverables(
             .compression_method(zip::CompressionMethod::Deflated);
 
         for d in &deliverables {
-            let filename = format!("{}_speech.json", d.character_slug);
+            let filename = format!("{}_speech.json", d.avatar_slug);
             zip.start_file(&filename, options)
                 .map_err(|e| AppError::InternalError(format!("Zip error: {e}")))?;
 

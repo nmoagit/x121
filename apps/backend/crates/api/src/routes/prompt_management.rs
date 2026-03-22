@@ -2,7 +2,7 @@
 //!
 //! - Workflow prompt slot routes are merged into the `/workflows` nest.
 //! - Scene-type prompt default routes are merged into the `/scene-types` nest.
-//! - Character prompt override routes are merged into the `/characters` nest.
+//! - Avatar prompt override routes are merged into the `/avatars` nest.
 //! - Prompt resolution is mounted at `/prompts`.
 //! - Prompt fragment CRUD + pinning is mounted at `/prompt-fragments`.
 
@@ -48,17 +48,17 @@ pub fn scene_type_prompt_default_router() -> Router<AppState> {
         )
 }
 
-/// Character+scene prompt override routes (merged into `/characters`).
+/// Avatar+scene prompt override routes (merged into `/avatars`).
 ///
 /// ```text
-/// GET  /{character_id}/scenes/{scene_type_id}/prompt-overrides  -> get_character_scene_overrides
-/// PUT  /{character_id}/scenes/{scene_type_id}/prompt-overrides  -> upsert_character_scene_overrides
+/// GET  /{avatar_id}/scenes/{scene_type_id}/prompt-overrides  -> get_avatar_scene_overrides
+/// PUT  /{avatar_id}/scenes/{scene_type_id}/prompt-overrides  -> upsert_avatar_scene_overrides
 /// ```
-pub fn character_prompt_override_router() -> Router<AppState> {
+pub fn avatar_prompt_override_router() -> Router<AppState> {
     Router::new().route(
-        "/{character_id}/scenes/{scene_type_id}/prompt-overrides",
-        get(prompt_management::get_character_scene_overrides)
-            .put(prompt_management::upsert_character_scene_overrides),
+        "/{avatar_id}/scenes/{scene_type_id}/prompt-overrides",
+        get(prompt_management::get_avatar_scene_overrides)
+            .put(prompt_management::upsert_avatar_scene_overrides),
     )
 }
 

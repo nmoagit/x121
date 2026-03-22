@@ -14,7 +14,7 @@ use x121_db::repositories::trash_repo::{
     is_known_entity_type, PurgePreview, TrashRepo, TrashSummary,
 };
 use x121_db::repositories::{
-    CharacterRepo, DerivedImageRepo, ImageVariantRepo, ProjectRepo, SceneRepo, SceneTypeRepo,
+    AvatarRepo, DerivedImageRepo, ImageVariantRepo, ProjectRepo, SceneRepo, SceneTypeRepo,
     SceneVideoVersionRepo, SegmentRepo, SourceImageRepo,
 };
 
@@ -25,7 +25,7 @@ use crate::state::AppState;
 /// Query parameters for the trash listing endpoint.
 #[derive(Debug, Deserialize)]
 pub struct TrashQuery {
-    /// Optional entity type filter (e.g. "projects", "characters").
+    /// Optional entity type filter (e.g. "projects", "avatars").
     #[serde(rename = "type")]
     pub entity_type: Option<String>,
 }
@@ -141,7 +141,7 @@ async fn dispatch_restore(
 ) -> Result<bool, sqlx::Error> {
     match entity_type {
         "projects" => ProjectRepo::restore(pool, id).await,
-        "characters" => CharacterRepo::restore(pool, id).await,
+        "avatars" => AvatarRepo::restore(pool, id).await,
         "scenes" => SceneRepo::restore(pool, id).await,
         "segments" => SegmentRepo::restore(pool, id).await,
         "source_images" => SourceImageRepo::restore(pool, id).await,

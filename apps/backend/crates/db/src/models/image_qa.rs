@@ -28,7 +28,7 @@ pub struct QaCheckType {
 pub struct ImageQualityScore {
     pub id: DbId,
     pub image_variant_id: Option<DbId>,
-    pub character_id: DbId,
+    pub avatar_id: DbId,
     pub check_type_id: DbId,
     pub score: Option<f64>,
     pub status: String,
@@ -42,7 +42,7 @@ pub struct ImageQualityScore {
 #[derive(Debug, Clone, Deserialize)]
 pub struct CreateImageQualityScore {
     pub image_variant_id: Option<DbId>,
-    pub character_id: DbId,
+    pub avatar_id: DbId,
     pub check_type_id: DbId,
     pub score: Option<f64>,
     pub status: String,

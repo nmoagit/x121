@@ -1,7 +1,7 @@
 //! Route definitions for hierarchical video settings.
 //!
 //! Routes are provided as functions that return routers to be merged into
-//! the appropriate parent nests (scene-types, projects, characters).
+//! the appropriate parent nests (scene-types, projects, avatars).
 
 use axum::routing::get;
 use axum::Router;
@@ -59,29 +59,29 @@ pub fn group_video_settings_router() -> Router<AppState> {
     )
 }
 
-/// Character-level video settings routes (merged into `/characters`).
+/// Avatar-level video settings routes (merged into `/avatars`).
 ///
 /// ```text
-/// GET    /{character_id}/video-settings                           -> list_character_settings
-/// GET    /{character_id}/video-settings/{scene_type_id}           -> get_character_settings
-/// PUT    /{character_id}/video-settings/{scene_type_id}           -> upsert_character_settings
-/// DELETE /{character_id}/video-settings/{scene_type_id}           -> delete_character_settings
-/// GET    /{character_id}/video-settings/{scene_type_id}/resolved  -> get_resolved_settings
+/// GET    /{avatar_id}/video-settings                           -> list_avatar_settings
+/// GET    /{avatar_id}/video-settings/{scene_type_id}           -> get_avatar_settings
+/// PUT    /{avatar_id}/video-settings/{scene_type_id}           -> upsert_avatar_settings
+/// DELETE /{avatar_id}/video-settings/{scene_type_id}           -> delete_avatar_settings
+/// GET    /{avatar_id}/video-settings/{scene_type_id}/resolved  -> get_resolved_settings
 /// ```
-pub fn character_video_settings_router() -> Router<AppState> {
+pub fn avatar_video_settings_router() -> Router<AppState> {
     Router::new()
         .route(
-            "/{character_id}/video-settings",
-            get(video_settings::list_character_settings),
+            "/{avatar_id}/video-settings",
+            get(video_settings::list_avatar_settings),
         )
         .route(
-            "/{character_id}/video-settings/{scene_type_id}",
-            get(video_settings::get_character_settings)
-                .put(video_settings::upsert_character_settings)
-                .delete(video_settings::delete_character_settings),
+            "/{avatar_id}/video-settings/{scene_type_id}",
+            get(video_settings::get_avatar_settings)
+                .put(video_settings::upsert_avatar_settings)
+                .delete(video_settings::delete_avatar_settings),
         )
         .route(
-            "/{character_id}/video-settings/{scene_type_id}/resolved",
+            "/{avatar_id}/video-settings/{scene_type_id}/resolved",
             get(video_settings::get_resolved_settings),
         )
 }

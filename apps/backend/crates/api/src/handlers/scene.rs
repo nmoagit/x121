@@ -1,7 +1,7 @@
 //! Handlers for the `/scenes` resource.
 //!
-//! Scenes are nested under characters:
-//! `/characters/{character_id}/scenes[/{id}]`
+//! Scenes are nested under avatars:
+//! `/avatars/{avatar_id}/scenes[/{id}]`
 
 use axum::extract::{Path, State};
 use axum::http::StatusCode;
@@ -15,35 +15,35 @@ use crate::error::{AppError, AppResult};
 use crate::response::DataResponse;
 use crate::state::AppState;
 
-/// POST /api/v1/characters/{character_id}/scenes
+/// POST /api/v1/avatars/{avatar_id}/scenes
 ///
-/// Overrides `input.character_id` with the value from the URL path.
+/// Overrides `input.avatar_id` with the value from the URL path.
 pub async fn create(
     State(state): State<AppState>,
-    Path(character_id): Path<DbId>,
+    Path(avatar_id): Path<DbId>,
     Json(mut input): Json<CreateScene>,
 ) -> AppResult<(StatusCode, Json<DataResponse<Scene>>)> {
-    input.character_id = character_id;
+    input.avatar_id = avatar_id;
     let scene = SceneRepo::create(&state.pool, &input).await?;
     Ok((StatusCode::CREATED, Json(DataResponse { data: scene })))
 }
 
-/// GET /api/v1/characters/{character_id}/scenes
+/// GET /api/v1/avatars/{avatar_id}/scenes
 ///
 /// Returns scenes with their best video version ID and version count,
 /// eliminating the N+1 query pattern on the frontend.
-pub async fn list_by_character(
+pub async fn list_by_avatar(
     State(state): State<AppState>,
-    Path(character_id): Path<DbId>,
+    Path(avatar_id): Path<DbId>,
 ) -> AppResult<Json<DataResponse<Vec<SceneWithVersion>>>> {
-    let scenes = SceneRepo::list_by_character_with_versions(&state.pool, character_id).await?;
+    let scenes = SceneRepo::list_by_avatar_with_versions(&state.pool, avatar_id).await?;
     Ok(Json(DataResponse { data: scenes }))
 }
 
-/// GET /api/v1/characters/{character_id}/scenes/{id}
+/// GET /api/v1/avatars/{avatar_id}/scenes/{id}
 pub async fn get_by_id(
     State(state): State<AppState>,
-    Path((_character_id, id)): Path<(DbId, DbId)>,
+    Path((_avatar_id, id)): Path<(DbId, DbId)>,
 ) -> AppResult<Json<DataResponse<Scene>>> {
     let scene = SceneRepo::find_by_id(&state.pool, id)
         .await?
@@ -54,10 +54,10 @@ pub async fn get_by_id(
     Ok(Json(DataResponse { data: scene }))
 }
 
-/// PUT /api/v1/characters/{character_id}/scenes/{id}
+/// PUT /api/v1/avatars/{avatar_id}/scenes/{id}
 pub async fn update(
     State(state): State<AppState>,
-    Path((_character_id, id)): Path<(DbId, DbId)>,
+    Path((_avatar_id, id)): Path<(DbId, DbId)>,
     Json(input): Json<UpdateScene>,
 ) -> AppResult<Json<DataResponse<Scene>>> {
     let scene = SceneRepo::update(&state.pool, id, &input)
@@ -69,10 +69,10 @@ pub async fn update(
     Ok(Json(DataResponse { data: scene }))
 }
 
-/// DELETE /api/v1/characters/{character_id}/scenes/{id}
+/// DELETE /api/v1/avatars/{avatar_id}/scenes/{id}
 pub async fn delete(
     State(state): State<AppState>,
-    Path((_character_id, id)): Path<(DbId, DbId)>,
+    Path((_avatar_id, id)): Path<(DbId, DbId)>,
 ) -> AppResult<StatusCode> {
     let deleted = SceneRepo::soft_delete(&state.pool, id).await?;
     if deleted {

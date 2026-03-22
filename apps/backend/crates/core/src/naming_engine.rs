@@ -33,7 +33,7 @@ pub const ALL_TOKENS: &[&str] = &[
     "scene_type_slug",
     "clothes_off_suffix",
     "index_suffix",
-    "character_slug",
+    "avatar_slug",
     "project_slug",
     "date_compact",
     "version",
@@ -61,8 +61,8 @@ pub struct NamingContext {
     pub is_clothes_off: bool,
     /// Index when multiple videos share the same content key.
     pub index: Option<u32>,
-    /// Character display name, e.g. `"Chloe"`.
-    pub character_name: Option<String>,
+    /// Avatar display name, e.g. `"Chloe"`.
+    pub avatar_name: Option<String>,
     /// Project display name, e.g. `"Project Alpha"`.
     pub project_name: Option<String>,
     /// Compact date string, e.g. `"20260224"`.
@@ -73,7 +73,7 @@ pub struct NamingContext {
     pub ext: Option<String>,
     /// Zero-based frame number.
     pub frame_number: Option<u64>,
-    /// Metadata type label, e.g. `"character_metadata"`.
+    /// Metadata type label, e.g. `"avatar_metadata"`.
     pub metadata_type: Option<String>,
     /// Sequence number for ordered artifacts.
     pub sequence: Option<u32>,
@@ -153,7 +153,7 @@ pub struct ResolvedName {
 ///
 /// - Lowercases
 /// - Replaces spaces and hyphens with underscores
-/// - Strips characters that are not alphanumeric or underscore
+/// - Strips avatars that are not alphanumeric or underscore
 /// - Collapses consecutive underscores
 /// - Trims leading/trailing underscores
 pub fn slugify(input: &str) -> String {
@@ -164,7 +164,7 @@ pub fn slugify(input: &str) -> String {
         } else if ch == ' ' || ch == '-' {
             result.push('_');
         }
-        // Other characters are stripped
+        // Other avatars are stripped
     }
     // Collapse consecutive underscores
     collapse_underscores(&result)
@@ -201,10 +201,10 @@ pub fn tokens_for_category(category: &str) -> Vec<&'static str> {
             "clothes_off_suffix",
             "index_suffix",
         ],
-        "image_variant" => vec!["character_slug", "variant_label", "version", "ext"],
-        "scene_video_import" => vec!["character_slug", "scene_type_slug", "date_compact", "ext"],
+        "image_variant" => vec!["avatar_slug", "variant_label", "version", "ext"],
+        "scene_video_import" => vec!["avatar_slug", "scene_type_slug", "date_compact", "ext"],
         "thumbnail" => vec!["frame_number"],
-        "metadata_export" => vec!["character_slug", "metadata_type"],
+        "metadata_export" => vec!["avatar_slug", "metadata_type"],
         "delivery_video" => vec![
             "variant_prefix",
             "scene_type_slug",
@@ -214,11 +214,11 @@ pub fn tokens_for_category(category: &str) -> Vec<&'static str> {
         "delivery_image" => vec!["variant_label", "ext"],
         "delivery_metadata" => vec![],
         "delivery_speech" => vec![],
-        "delivery_folder" => vec!["project_slug", "character_slug"],
-        "test_shot" => vec!["character_slug", "scene_type_slug", "sequence"],
-        "chunk_artifact" => vec!["sequence", "character_slug", "scene_type_slug"],
-        "delivery_archive" => vec!["character_slug", "project_slug", "date_compact"],
-        "avatar_json" => vec!["project_slug", "character_slug"],
+        "delivery_folder" => vec!["project_slug", "avatar_slug"],
+        "test_shot" => vec!["avatar_slug", "scene_type_slug", "sequence"],
+        "chunk_artifact" => vec!["sequence", "avatar_slug", "scene_type_slug"],
+        "delivery_archive" => vec!["avatar_slug", "project_slug", "date_compact"],
+        "avatar_json" => vec!["project_slug", "avatar_slug"],
         _ => vec![],
     }
 }
@@ -387,9 +387,9 @@ fn build_token_map(ctx: &NamingContext) -> HashMap<String, String> {
     };
     map.insert("index_suffix".to_string(), idx_suffix);
 
-    // character_slug
-    if let Some(ref name) = ctx.character_name {
-        map.insert("character_slug".to_string(), slugify(name));
+    // avatar_slug
+    if let Some(ref name) = ctx.avatar_name {
+        map.insert("avatar_slug".to_string(), slugify(name));
     }
 
     // project_slug
@@ -452,9 +452,9 @@ fn apply_format(value: &str, width: Option<usize>) -> String {
 // Filename sanitization
 // ---------------------------------------------------------------------------
 
-/// Sanitize a resolved filename by removing unsafe characters.
+/// Sanitize a resolved filename by removing unsafe avatars.
 ///
-/// - Strips characters not in `[a-zA-Z0-9._\-/]`
+/// - Strips avatars not in `[a-zA-Z0-9._\-/]`
 /// - Collapses consecutive underscores and hyphens
 /// - Preserves path separators (`/`) for folder templates
 /// - Trims leading/trailing underscores and hyphens from each path segment
@@ -479,7 +479,7 @@ pub fn sanitize_filename(input: &str) -> String {
     segments.join("/")
 }
 
-/// Collapse consecutive underscores or hyphens into single characters.
+/// Collapse consecutive underscores or hyphens into single avatars.
 fn collapse_separators(input: &str) -> String {
     let mut result = String::with_capacity(input.len());
     let mut prev = None;
@@ -560,7 +560,7 @@ mod tests {
 
     #[test]
     fn compat_topless_ignores_clothes_off() {
-        // Topless variant cannot have clothes_off — character is already unclothed.
+        // Topless variant cannot have clothes_off — avatar is already unclothed.
         // The clothes_off suffix is silently dropped for non-clothed variants.
         let ctx = scene_ctx("topless", "Slow Walk", true, Some(1));
         let result = resolve_template(SCENE_VIDEO_TEMPLATE, &ctx).unwrap();
@@ -620,12 +620,12 @@ mod tests {
     fn format_specifier_sequence() {
         let ctx = NamingContext {
             sequence: Some(7),
-            character_name: Some("Chloe".to_string()),
+            avatar_name: Some("Chloe".to_string()),
             scene_type_name: Some("Dance".to_string()),
             ..Default::default()
         };
         let result = resolve_template(
-            "chunk_{sequence:03}_{character_slug}_{scene_type_slug}.mp4",
+            "chunk_{sequence:03}_{avatar_slug}_{scene_type_slug}.mp4",
             &ctx,
         )
         .unwrap();
@@ -666,10 +666,10 @@ mod tests {
 
     #[test]
     fn validate_cross_category_warning() {
-        // character_slug is valid but not typical for scene_video
-        let result = validate_template("{character_slug}_{scene_type_slug}.mp4", "scene_video");
+        // avatar_slug is valid but not typical for scene_video
+        let result = validate_template("{avatar_slug}_{scene_type_slug}.mp4", "scene_video");
         assert!(result.valid);
-        assert!(result.warnings.iter().any(|w| w.contains("character_slug")));
+        assert!(result.warnings.iter().any(|w| w.contains("avatar_slug")));
     }
 
     // -- Sanitization --
@@ -695,7 +695,7 @@ mod tests {
 
     #[test]
     fn sanitize_preserves_path_separators() {
-        assert_eq!(sanitize_filename("project/character"), "project/character");
+        assert_eq!(sanitize_filename("project/avatar"), "project/avatar");
     }
 
     // -- Empty context --
@@ -738,10 +738,10 @@ mod tests {
     fn delivery_folder_template() {
         let ctx = NamingContext {
             project_name: Some("Project Alpha".to_string()),
-            character_name: Some("Chloe".to_string()),
+            avatar_name: Some("Chloe".to_string()),
             ..Default::default()
         };
-        let result = resolve_template("{project_slug}/{character_slug}", &ctx).unwrap();
+        let result = resolve_template("{project_slug}/{avatar_slug}", &ctx).unwrap();
         assert_eq!(result.filename, "project_alpha/chloe");
     }
 }

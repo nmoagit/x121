@@ -17,8 +17,8 @@ pub const ENTITY_SEGMENT: &str = "segment";
 /// Scene entity type identifier.
 pub const ENTITY_SCENE: &str = "scene";
 
-/// Character entity type identifier.
-pub const ENTITY_CHARACTER: &str = "character";
+/// Avatar entity type identifier.
+pub const ENTITY_AVATAR: &str = "avatar";
 
 /// Project entity type identifier.
 pub const ENTITY_PROJECT: &str = "project";
@@ -27,7 +27,7 @@ pub const ENTITY_PROJECT: &str = "project";
 pub const VALID_ENTITY_TYPES: &[&str] = &[
     ENTITY_SEGMENT,
     ENTITY_SCENE,
-    ENTITY_CHARACTER,
+    ENTITY_AVATAR,
     ENTITY_PROJECT,
 ];
 
@@ -102,7 +102,7 @@ pub fn classify_extension(ext: &str) -> &'static str {
 /// building and breakdown computation.
 #[derive(Debug, Clone)]
 pub struct StorageSnapshot {
-    /// Entity type (segment, scene, character, project).
+    /// Entity type (segment, scene, avatar, project).
     pub entity_type: String,
     /// Internal database ID of the entity.
     pub entity_id: i64,
@@ -146,12 +146,12 @@ pub struct DetailedSnapshot {
 /// A hierarchical node for the D3 treemap visualization.
 ///
 /// The tree structure mirrors the project hierarchy:
-/// project -> character -> scene -> segment.
+/// project -> avatar -> scene -> segment.
 #[derive(Debug, Clone, Serialize)]
 pub struct TreemapNode {
     /// Display name for this node.
     pub name: String,
-    /// Entity type (project, character, scene, segment).
+    /// Entity type (project, avatar, scene, segment).
     pub entity_type: String,
     /// Internal database ID.
     pub entity_id: i64,
@@ -368,8 +368,8 @@ mod tests {
     }
 
     #[test]
-    fn validate_entity_type_character() {
-        assert!(validate_entity_type("character").is_ok());
+    fn validate_entity_type_avatar() {
+        assert!(validate_entity_type("avatar").is_ok());
     }
 
     #[test]
@@ -484,8 +484,8 @@ mod tests {
     fn build_hierarchy_parent_child() {
         let snapshots = vec![
             make_snapshot("project", 1, "Project A", None, None, 5000),
-            make_snapshot("character", 10, "Char 1", Some("project"), Some(1), 3000),
-            make_snapshot("character", 11, "Char 2", Some("project"), Some(1), 2000),
+            make_snapshot("avatar", 10, "Char 1", Some("project"), Some(1), 3000),
+            make_snapshot("avatar", 11, "Char 2", Some("project"), Some(1), 2000),
         ];
         let tree = build_hierarchy(&snapshots);
         assert_eq!(tree.len(), 1);
@@ -496,8 +496,8 @@ mod tests {
     fn build_hierarchy_three_levels() {
         let snapshots = vec![
             make_snapshot("project", 1, "Project A", None, None, 10000),
-            make_snapshot("character", 10, "Char 1", Some("project"), Some(1), 5000),
-            make_snapshot("scene", 100, "Scene 1", Some("character"), Some(10), 3000),
+            make_snapshot("avatar", 10, "Char 1", Some("project"), Some(1), 5000),
+            make_snapshot("scene", 100, "Scene 1", Some("avatar"), Some(10), 3000),
         ];
         let tree = build_hierarchy(&snapshots);
         assert_eq!(tree.len(), 1);

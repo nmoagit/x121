@@ -15,10 +15,10 @@ use crate::provenance::MAX_PROMPT_LENGTH;
 // Constants
 // ---------------------------------------------------------------------------
 
-/// Maximum length for negative prompts in characters.
+/// Maximum length for negative prompts in avatars.
 pub const MAX_NEGATIVE_PROMPT_LENGTH: usize = 5_000;
 
-/// Maximum length for version change notes in characters.
+/// Maximum length for version change notes in avatars.
 pub const MAX_CHANGE_NOTES_LENGTH: usize = 1_000;
 
 /// Maximum length for a prompt library entry name.
@@ -50,7 +50,7 @@ pub fn validate_prompt(text: &str) -> Result<(), CoreError> {
     }
     if text.len() > MAX_PROMPT_LENGTH {
         return Err(CoreError::Validation(format!(
-            "Positive prompt exceeds maximum length of {MAX_PROMPT_LENGTH} characters (got {})",
+            "Positive prompt exceeds maximum length of {MAX_PROMPT_LENGTH} avatars (got {})",
             text.len()
         )));
     }
@@ -61,7 +61,7 @@ pub fn validate_prompt(text: &str) -> Result<(), CoreError> {
 pub fn validate_negative_prompt(text: &str) -> Result<(), CoreError> {
     if text.len() > MAX_NEGATIVE_PROMPT_LENGTH {
         return Err(CoreError::Validation(format!(
-            "Negative prompt exceeds maximum length of {MAX_NEGATIVE_PROMPT_LENGTH} characters (got {})",
+            "Negative prompt exceeds maximum length of {MAX_NEGATIVE_PROMPT_LENGTH} avatars (got {})",
             text.len()
         )));
     }
@@ -72,7 +72,7 @@ pub fn validate_negative_prompt(text: &str) -> Result<(), CoreError> {
 pub fn validate_change_notes(notes: &str) -> Result<(), CoreError> {
     if notes.len() > MAX_CHANGE_NOTES_LENGTH {
         return Err(CoreError::Validation(format!(
-            "Change notes exceed maximum length of {MAX_CHANGE_NOTES_LENGTH} characters (got {})",
+            "Change notes exceed maximum length of {MAX_CHANGE_NOTES_LENGTH} avatars (got {})",
             notes.len()
         )));
     }
@@ -88,7 +88,7 @@ pub fn validate_library_name(name: &str) -> Result<(), CoreError> {
     }
     if name.len() > MAX_LIBRARY_NAME_LENGTH {
         return Err(CoreError::Validation(format!(
-            "Library entry name exceeds maximum length of {MAX_LIBRARY_NAME_LENGTH} characters (got {})",
+            "Library entry name exceeds maximum length of {MAX_LIBRARY_NAME_LENGTH} avatars (got {})",
             name.len()
         )));
     }

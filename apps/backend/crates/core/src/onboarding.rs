@@ -9,7 +9,7 @@ use crate::error::CoreError;
 // Checklist item IDs
 // ---------------------------------------------------------------------------
 
-/// Upload a character portrait.
+/// Upload a avatar portrait.
 pub const CHECKLIST_UPLOAD_PORTRAIT: &str = "upload_portrait";
 /// Run a generation job.
 pub const CHECKLIST_RUN_GENERATION: &str = "run_generation";

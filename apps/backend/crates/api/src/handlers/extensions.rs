@@ -13,7 +13,7 @@ use x121_core::error::CoreError;
 use x121_core::extensions::{self, ExtensionManifest};
 use x121_core::types::DbId;
 use x121_db::models::extension::{CreateExtension, UpdateExtensionSettings};
-use x121_db::repositories::{CharacterRepo, ExtensionRepo, ProjectRepo};
+use x121_db::repositories::{AvatarRepo, ExtensionRepo, ProjectRepo};
 
 use crate::error::{AppError, AppResult};
 use crate::middleware::auth::AuthUser;
@@ -244,26 +244,26 @@ pub async fn ext_api_list_projects(
     Ok(Json(DataResponse { data: projects }))
 }
 
-/// GET /api/v1/extension-api/characters/{id}
+/// GET /api/v1/extension-api/avatars/{id}
 ///
-/// Sandboxed proxy: get a character on behalf of an extension.
-/// The extension must be enabled and have `characters:read` permission.
-pub async fn ext_api_get_character(
+/// Sandboxed proxy: get a avatar on behalf of an extension.
+/// The extension must be enabled and have `avatars:read` permission.
+pub async fn ext_api_get_avatar(
     _auth: AuthUser,
     State(state): State<AppState>,
     Path(id): Path<DbId>,
     Query(params): Query<ExtApiParams>,
 ) -> AppResult<impl IntoResponse> {
-    ensure_extension_permitted(&state, params.extension_id, "characters", "read").await?;
+    ensure_extension_permitted(&state, params.extension_id, "avatars", "read").await?;
 
-    let character = CharacterRepo::find_by_id(&state.pool, id)
+    let avatar = AvatarRepo::find_by_id(&state.pool, id)
         .await?
         .ok_or(AppError::Core(CoreError::NotFound {
-            entity: "Character",
+            entity: "Avatar",
             id,
         }))?;
 
-    Ok(Json(DataResponse { data: character }))
+    Ok(Json(DataResponse { data: avatar }))
 }
 
 // ---------------------------------------------------------------------------

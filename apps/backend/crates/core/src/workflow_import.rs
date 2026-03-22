@@ -420,7 +420,7 @@ pub fn validate_workflow_name(name: &str) -> Result<(), CoreError> {
     }
     if trimmed.len() > MAX_WORKFLOW_NAME_LENGTH {
         return Err(CoreError::Validation(format!(
-            "Workflow name must be at most {MAX_WORKFLOW_NAME_LENGTH} characters, got {}",
+            "Workflow name must be at most {MAX_WORKFLOW_NAME_LENGTH} avatars, got {}",
             trimmed.len()
         )));
     }

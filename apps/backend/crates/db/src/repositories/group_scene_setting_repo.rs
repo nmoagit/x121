@@ -1,7 +1,7 @@
 //! Repository for the `group_scene_settings` table.
 //!
 //! Intermediate tier of the four-level inheritance chain:
-//! scene_type defaults -> project settings -> group settings -> character overrides.
+//! scene_type defaults -> project settings -> group settings -> avatar overrides.
 //!
 //! Settings are keyed on `(group_id, scene_type_id, track_id)` to allow
 //! per-track granularity. `track_id` is nullable — scene types without tracks

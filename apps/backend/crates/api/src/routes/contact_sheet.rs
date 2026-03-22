@@ -1,6 +1,6 @@
-//! Route definitions for the character face contact sheet (PRD-103).
+//! Route definitions for the avatar face contact sheet (PRD-103).
 //!
-//! Character-scoped routes are merged into `/characters`.
+//! Avatar-scoped routes are merged into `/avatars`.
 //! The standalone delete route is mounted separately.
 
 use axum::routing::{delete, get, post};
@@ -9,19 +9,19 @@ use axum::Router;
 use crate::handlers::contact_sheet;
 use crate::state::AppState;
 
-/// Character-scoped contact sheet routes, merged into `/characters`.
+/// Avatar-scoped contact sheet routes, merged into `/avatars`.
 ///
 /// ```text
-/// GET    /{id}/contact-sheet              -> list_character_images
+/// GET    /{id}/contact-sheet              -> list_avatar_images
 /// POST   /{id}/contact-sheet              -> create_image
 /// POST   /{id}/contact-sheet/generate     -> generate_contact_sheet
 /// GET    /{id}/contact-sheet/export       -> export_contact_sheet
 /// ```
-pub fn character_contact_sheet_router() -> Router<AppState> {
+pub fn avatar_contact_sheet_router() -> Router<AppState> {
     Router::new()
         .route(
             "/{id}/contact-sheet",
-            get(contact_sheet::list_character_images).post(contact_sheet::create_image),
+            get(contact_sheet::list_avatar_images).post(contact_sheet::create_image),
         )
         .route(
             "/{id}/contact-sheet/generate",

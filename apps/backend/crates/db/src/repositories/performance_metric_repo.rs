@@ -10,7 +10,7 @@ use crate::models::performance_metric::{
 
 /// Column list for `performance_metrics` SELECT queries.
 const COLUMNS: &str = "\
-    id, job_id, workflow_id, worker_id, project_id, character_id, scene_id, \
+    id, job_id, workflow_id, worker_id, project_id, avatar_id, scene_id, \
     time_per_frame_ms, total_gpu_time_ms, total_wall_time_ms, \
     vram_peak_mb, frame_count, \
     quality_scores_json, pipeline_stages_json, resolution_tier, \
@@ -18,7 +18,7 @@ const COLUMNS: &str = "\
 
 /// Column list for INSERT (excludes auto-generated `id` and `created_at`).
 const INSERT_COLUMNS: &str = "\
-    job_id, workflow_id, worker_id, project_id, character_id, scene_id, \
+    job_id, workflow_id, worker_id, project_id, avatar_id, scene_id, \
     time_per_frame_ms, total_gpu_time_ms, total_wall_time_ms, \
     vram_peak_mb, frame_count, \
     quality_scores_json, pipeline_stages_json, resolution_tier";
@@ -42,7 +42,7 @@ impl PerformanceMetricRepo {
             .bind(metric.workflow_id)
             .bind(metric.worker_id)
             .bind(metric.project_id)
-            .bind(metric.character_id)
+            .bind(metric.avatar_id)
             .bind(metric.scene_id)
             .bind(metric.time_per_frame_ms)
             .bind(metric.total_gpu_time_ms)

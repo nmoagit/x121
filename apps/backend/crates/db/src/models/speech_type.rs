@@ -1,6 +1,6 @@
 //! Speech type lookup model (PRD-124, PRD-136).
 //!
-//! A seeded, user-extensible lookup table for categorizing character speech
+//! A seeded, user-extensible lookup table for categorizing avatar speech
 //! entries (e.g. Greeting, Farewell, Flirty).
 
 use serde::Serialize;

@@ -278,7 +278,7 @@ pub async fn bulk_remove(
 // ---------------------------------------------------------------------------
 
 /// Allowed entity types for tagging.
-const VALID_ENTITY_TYPES: &[&str] = &["project", "character", "scene", "segment", "workflow"];
+const VALID_ENTITY_TYPES: &[&str] = &["project", "avatar", "scene", "segment", "workflow"];
 
 /// Validate that the entity type is one of the allowed values.
 fn validate_entity_type(entity_type: &str) -> AppResult<()> {

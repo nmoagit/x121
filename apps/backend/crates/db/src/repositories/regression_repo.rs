@@ -9,7 +9,7 @@ use crate::models::regression::{
 };
 
 /// Column list for `regression_references` queries.
-const REF_COLUMNS: &str = "id, character_id, scene_type_id, reference_scene_id, \
+const REF_COLUMNS: &str = "id, avatar_id, scene_type_id, reference_scene_id, \
     baseline_scores, notes, created_by, created_at, updated_at";
 
 /// Column list for `regression_runs` queries.
@@ -38,12 +38,12 @@ impl RegressionRepo {
     ) -> Result<RegressionReference, sqlx::Error> {
         let query = format!(
             "INSERT INTO regression_references
-                (character_id, scene_type_id, reference_scene_id, baseline_scores, notes, created_by)
+                (avatar_id, scene_type_id, reference_scene_id, baseline_scores, notes, created_by)
              VALUES ($1, $2, $3, $4, $5, $6)
              RETURNING {REF_COLUMNS}"
         );
         sqlx::query_as::<_, RegressionReference>(&query)
-            .bind(dto.character_id)
+            .bind(dto.avatar_id)
             .bind(dto.scene_type_id)
             .bind(dto.reference_scene_id)
             .bind(&dto.baseline_scores)

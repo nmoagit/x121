@@ -10,10 +10,10 @@ use serde::{Deserialize, Serialize};
 // Constants
 // ---------------------------------------------------------------------------
 
-/// Maximum number of characters per batch operation.
+/// Maximum number of avatars per batch operation.
 pub const MAX_BATCH_SIZE: usize = 1000;
 
-/// Minimum characters required for a batch operation.
+/// Minimum avatars required for a batch operation.
 pub const MIN_BATCH_SIZE: usize = 1;
 
 /// Maximum search pattern length.
@@ -195,7 +195,7 @@ pub fn validate_field_name(name: &str) -> Result<(), String> {
     // Field names should be alphanumeric with underscores.
     if !name.chars().all(|c| c.is_alphanumeric() || c == '_') {
         return Err(format!(
-            "Field name '{name}' contains invalid characters. Only alphanumeric and underscore allowed."
+            "Field name '{name}' contains invalid avatars. Only alphanumeric and underscore allowed."
         ));
     }
     Ok(())
@@ -243,18 +243,18 @@ pub fn compute_batch_summary(
     match op_type {
         BatchOperationType::MultiSelectEdit => {
             let field = field_name.unwrap_or("unknown");
-            format!("Set '{field}' for {count} characters")
+            format!("Set '{field}' for {count} avatars")
         }
         BatchOperationType::SearchReplace => {
             let field = field_name.unwrap_or("all fields");
-            format!("Search & replace in {field} across {count} characters")
+            format!("Search & replace in {field} across {count} avatars")
         }
         BatchOperationType::CsvImport => {
-            format!("{count} characters updated from CSV import")
+            format!("{count} avatars updated from CSV import")
         }
         BatchOperationType::FieldOperation => {
             let field = field_name.unwrap_or("unknown");
-            format!("Field operation on '{field}' for {count} characters")
+            format!("Field operation on '{field}' for {count} avatars")
         }
     }
 }
@@ -560,7 +560,7 @@ mod tests {
     fn summary_multi_select_edit() {
         let summary =
             compute_batch_summary(&BatchOperationType::MultiSelectEdit, Some("agency"), 42);
-        assert_eq!(summary, "Set 'agency' for 42 characters");
+        assert_eq!(summary, "Set 'agency' for 42 avatars");
     }
 
     #[test]
@@ -569,7 +569,7 @@ mod tests {
             compute_batch_summary(&BatchOperationType::SearchReplace, Some("hair_color"), 10);
         assert_eq!(
             summary,
-            "Search & replace in hair_color across 10 characters"
+            "Search & replace in hair_color across 10 avatars"
         );
     }
 
@@ -578,27 +578,27 @@ mod tests {
         let summary = compute_batch_summary(&BatchOperationType::SearchReplace, None, 10);
         assert_eq!(
             summary,
-            "Search & replace in all fields across 10 characters"
+            "Search & replace in all fields across 10 avatars"
         );
     }
 
     #[test]
     fn summary_csv_import() {
         let summary = compute_batch_summary(&BatchOperationType::CsvImport, None, 25);
-        assert_eq!(summary, "25 characters updated from CSV import");
+        assert_eq!(summary, "25 avatars updated from CSV import");
     }
 
     #[test]
     fn summary_field_operation() {
         let summary =
             compute_batch_summary(&BatchOperationType::FieldOperation, Some("hair_color"), 5);
-        assert_eq!(summary, "Field operation on 'hair_color' for 5 characters");
+        assert_eq!(summary, "Field operation on 'hair_color' for 5 avatars");
     }
 
     #[test]
     fn summary_with_no_field_name() {
         let summary = compute_batch_summary(&BatchOperationType::MultiSelectEdit, None, 3);
-        assert_eq!(summary, "Set 'unknown' for 3 characters");
+        assert_eq!(summary, "Set 'unknown' for 3 avatars");
     }
 
     // -- can_undo_operation ---------------------------------------------------

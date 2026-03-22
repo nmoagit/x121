@@ -9,7 +9,7 @@ use x121_core::types::{DbId, Timestamp};
 pub struct RefinementJob {
     pub id: DbId,
     pub uuid: sqlx::types::Uuid,
-    pub character_id: DbId,
+    pub avatar_id: DbId,
     pub status: String,
     pub source_bio: Option<serde_json::Value>,
     pub source_tov: Option<serde_json::Value>,
@@ -29,7 +29,7 @@ pub struct RefinementJob {
 /// DTO for creating a new refinement job.
 #[derive(Debug, Deserialize)]
 pub struct CreateRefinementJob {
-    pub character_id: DbId,
+    pub avatar_id: DbId,
     pub source_bio: Option<serde_json::Value>,
     pub source_tov: Option<serde_json::Value>,
     pub llm_provider: String,

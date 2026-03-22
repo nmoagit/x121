@@ -217,7 +217,7 @@ pub fn evaluate_conditions(event_data: &serde_json::Value, conditions: &serde_js
 
 /// Evaluate scope filtering against event data.
 ///
-/// Scope fields like `character_id` and `scene_type_id` must match if present.
+/// Scope fields like `avatar_id` and `scene_type_id` must match if present.
 /// Returns `true` if all scope fields match (or if scope is null/empty).
 pub fn evaluate_scope(event_data: &serde_json::Value, scope: &serde_json::Value) -> bool {
     json_kv_match(event_data, scope)
@@ -581,48 +581,48 @@ mod tests {
 
     #[test]
     fn empty_scope_always_matches() {
-        let data = json!({"character_id": 42});
+        let data = json!({"avatar_id": 42});
         assert!(evaluate_scope(&data, &json!({})));
     }
 
     #[test]
     fn null_scope_always_matches() {
-        let data = json!({"character_id": 42});
+        let data = json!({"avatar_id": 42});
         assert!(evaluate_scope(&data, &serde_json::Value::Null));
     }
 
     #[test]
-    fn matching_scope_character_id() {
-        let data = json!({"character_id": 42, "scene_type_id": 7});
-        let scope = json!({"character_id": 42});
+    fn matching_scope_avatar_id() {
+        let data = json!({"avatar_id": 42, "scene_type_id": 7});
+        let scope = json!({"avatar_id": 42});
         assert!(evaluate_scope(&data, &scope));
     }
 
     #[test]
     fn matching_scope_multiple_fields() {
-        let data = json!({"character_id": 42, "scene_type_id": 7});
-        let scope = json!({"character_id": 42, "scene_type_id": 7});
+        let data = json!({"avatar_id": 42, "scene_type_id": 7});
+        let scope = json!({"avatar_id": 42, "scene_type_id": 7});
         assert!(evaluate_scope(&data, &scope));
     }
 
     #[test]
     fn mismatched_scope_returns_false() {
-        let data = json!({"character_id": 42});
-        let scope = json!({"character_id": 99});
+        let data = json!({"avatar_id": 42});
+        let scope = json!({"avatar_id": 99});
         assert!(!evaluate_scope(&data, &scope));
     }
 
     #[test]
     fn missing_scope_key_in_data_returns_false() {
         let data = json!({"other_id": 42});
-        let scope = json!({"character_id": 42});
+        let scope = json!({"avatar_id": 42});
         assert!(!evaluate_scope(&data, &scope));
     }
 
     #[test]
     fn non_object_data_with_scope_returns_false() {
         let data = json!(123);
-        let scope = json!({"character_id": 42});
+        let scope = json!({"avatar_id": 42});
         assert!(!evaluate_scope(&data, &scope));
     }
 }

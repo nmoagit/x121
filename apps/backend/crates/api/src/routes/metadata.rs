@@ -2,7 +2,7 @@
 //! endpoints (PRD-13).
 //!
 //! These routes are mounted at multiple nesting points:
-//! - Character metadata preview & regenerate under `/characters`.
+//! - Avatar metadata preview & regenerate under `/avatars`.
 //! - Scene metadata preview under `/scenes`.
 //! - Project-level regeneration & staleness under `/projects`.
 
@@ -12,21 +12,21 @@ use axum::Router;
 use crate::handlers::metadata;
 use crate::state::AppState;
 
-/// Character-scoped metadata routes mounted under `/characters`.
+/// Avatar-scoped metadata routes mounted under `/avatars`.
 ///
 /// ```text
-/// GET  /{character_id}/metadata/preview      -> preview_character_metadata
-/// POST /{character_id}/metadata/regenerate   -> regenerate_character_metadata
+/// GET  /{avatar_id}/metadata/preview      -> preview_avatar_metadata
+/// POST /{avatar_id}/metadata/regenerate   -> regenerate_avatar_metadata
 /// ```
-pub fn character_metadata_router() -> Router<AppState> {
+pub fn avatar_metadata_router() -> Router<AppState> {
     Router::new()
         .route(
-            "/{character_id}/metadata/preview",
-            get(metadata::preview_character_metadata),
+            "/{avatar_id}/metadata/preview",
+            get(metadata::preview_avatar_metadata),
         )
         .route(
-            "/{character_id}/metadata/regenerate",
-            post(metadata::regenerate_character_metadata),
+            "/{avatar_id}/metadata/regenerate",
+            post(metadata::regenerate_avatar_metadata),
         )
 }
 

@@ -6,7 +6,7 @@ use x121_core::types::DbId;
 use crate::models::contact_sheet::{ContactSheetImage, CreateContactSheetImage};
 
 /// Column list for `contact_sheet_images` queries.
-const COLUMNS: &str = "id, character_id, scene_id, face_crop_path, \
+const COLUMNS: &str = "id, avatar_id, scene_id, face_crop_path, \
     confidence_score, frame_number, created_at, updated_at";
 
 /// Provides CRUD operations for contact sheet face crop images.
@@ -20,12 +20,12 @@ impl ContactSheetRepo {
     ) -> Result<ContactSheetImage, sqlx::Error> {
         let query = format!(
             "INSERT INTO contact_sheet_images
-                (character_id, scene_id, face_crop_path, confidence_score, frame_number)
+                (avatar_id, scene_id, face_crop_path, confidence_score, frame_number)
              VALUES ($1, $2, $3, $4, $5)
              RETURNING {COLUMNS}"
         );
         sqlx::query_as::<_, ContactSheetImage>(&query)
-            .bind(input.character_id)
+            .bind(input.avatar_id)
             .bind(input.scene_id)
             .bind(&input.face_crop_path)
             .bind(input.confidence_score)
@@ -46,18 +46,18 @@ impl ContactSheetRepo {
             .await
     }
 
-    /// List all contact sheet images for a character, ordered by scene then creation time.
-    pub async fn list_by_character(
+    /// List all contact sheet images for a avatar, ordered by scene then creation time.
+    pub async fn list_by_avatar(
         pool: &PgPool,
-        character_id: DbId,
+        avatar_id: DbId,
     ) -> Result<Vec<ContactSheetImage>, sqlx::Error> {
         let query = format!(
             "SELECT {COLUMNS} FROM contact_sheet_images
-             WHERE character_id = $1
+             WHERE avatar_id = $1
              ORDER BY scene_id ASC, created_at ASC"
         );
         sqlx::query_as::<_, ContactSheetImage>(&query)
-            .bind(character_id)
+            .bind(avatar_id)
             .fetch_all(pool)
             .await
     }
@@ -87,13 +87,13 @@ impl ContactSheetRepo {
         Ok(result.rows_affected() > 0)
     }
 
-    /// Delete all contact sheet images for a character. Returns the count of deleted rows.
-    pub async fn delete_by_character(
+    /// Delete all contact sheet images for a avatar. Returns the count of deleted rows.
+    pub async fn delete_by_avatar(
         pool: &PgPool,
-        character_id: DbId,
+        avatar_id: DbId,
     ) -> Result<i64, sqlx::Error> {
-        let result = sqlx::query("DELETE FROM contact_sheet_images WHERE character_id = $1")
-            .bind(character_id)
+        let result = sqlx::query("DELETE FROM contact_sheet_images WHERE avatar_id = $1")
+            .bind(avatar_id)
             .execute(pool)
             .await?;
         Ok(result.rows_affected() as i64)

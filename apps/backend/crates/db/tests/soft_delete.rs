@@ -5,16 +5,16 @@
 //! - Restoring a soft-deleted entity makes it visible again
 //! - Hard-delete permanently removes a record
 //! - Soft-delete is idempotent (second call returns `false`)
-//! - The pattern is consistent across entity types (project, character, scene)
+//! - The pattern is consistent across entity types (project, avatar, scene)
 
 use sqlx::PgPool;
-use x121_db::models::character::CreateCharacter;
+use x121_db::models::avatar::CreateAvatar;
 use x121_db::models::image::CreateImageVariant;
 use x121_db::models::project::CreateProject;
 use x121_db::models::scene::CreateScene;
 use x121_db::models::scene_type::CreateSceneType;
 use x121_db::repositories::{
-    CharacterRepo, ImageVariantRepo, ProjectRepo, SceneRepo, SceneTypeRepo,
+    AvatarRepo, ImageVariantRepo, ProjectRepo, SceneRepo, SceneTypeRepo,
 };
 
 // ---------------------------------------------------------------------------
@@ -30,8 +30,8 @@ fn new_project(name: &str) -> CreateProject {
     }
 }
 
-fn new_character(project_id: i64, name: &str) -> CreateCharacter {
-    CreateCharacter {
+fn new_avatar(project_id: i64, name: &str) -> CreateAvatar {
+    CreateAvatar {
         project_id,
         name: name.to_string(),
         status_id: None,
@@ -66,9 +66,9 @@ fn new_scene_type(project_id: Option<i64>, name: &str) -> CreateSceneType {
     }
 }
 
-fn new_image_variant(character_id: i64, label: &str, path: &str) -> CreateImageVariant {
+fn new_image_variant(avatar_id: i64, label: &str, path: &str) -> CreateImageVariant {
     CreateImageVariant {
-        character_id,
+        avatar_id,
         source_image_id: None,
         derived_image_id: None,
         variant_label: label.to_string(),
@@ -87,9 +87,9 @@ fn new_image_variant(character_id: i64, label: &str, path: &str) -> CreateImageV
     }
 }
 
-fn new_scene(character_id: i64, scene_type_id: i64, image_variant_id: i64) -> CreateScene {
+fn new_scene(avatar_id: i64, scene_type_id: i64, image_variant_id: i64) -> CreateScene {
     CreateScene {
-        character_id,
+        avatar_id,
         scene_type_id,
         image_variant_id,
         status_id: None,
@@ -229,11 +229,11 @@ async fn test_soft_delete_idempotent_on_already_deleted(pool: PgPool) {
 
 #[sqlx::test(migrations = "../../../db/migrations")]
 async fn test_soft_delete_scene_also_works(pool: PgPool) {
-    // Build the prerequisite hierarchy: project -> character -> scene_type -> image_variant -> scene
+    // Build the prerequisite hierarchy: project -> avatar -> scene_type -> image_variant -> scene
     let project = ProjectRepo::create(&pool, &new_project("Scene SD"))
         .await
         .unwrap();
-    let character = CharacterRepo::create(&pool, &new_character(project.id, "SceneChar"))
+    let avatar = AvatarRepo::create(&pool, &new_avatar(project.id, "SceneChar"))
         .await
         .unwrap();
     let scene_type = SceneTypeRepo::create(&pool, &new_scene_type(Some(project.id), "Walk"))
@@ -241,11 +241,11 @@ async fn test_soft_delete_scene_also_works(pool: PgPool) {
         .unwrap();
     let variant = ImageVariantRepo::create(
         &pool,
-        &new_image_variant(character.id, "clothed", "/img/scene_sd.png"),
+        &new_image_variant(avatar.id, "clothed", "/img/scene_sd.png"),
     )
     .await
     .unwrap();
-    let scene = SceneRepo::create(&pool, &new_scene(character.id, scene_type.id, variant.id))
+    let scene = SceneRepo::create(&pool, &new_scene(avatar.id, scene_type.id, variant.id))
         .await
         .unwrap();
 

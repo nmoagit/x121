@@ -1,4 +1,4 @@
-//! Route definitions for the Bulk Character Onboarding Wizard (PRD-67).
+//! Route definitions for the Bulk Avatar Onboarding Wizard (PRD-67).
 //!
 //! Mounted at `/onboarding-sessions` by `api_routes()`.
 //!

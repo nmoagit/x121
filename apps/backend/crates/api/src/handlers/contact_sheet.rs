@@ -1,4 +1,4 @@
-//! Handlers for the character face contact sheet system (PRD-103).
+//! Handlers for the avatar face contact sheet system (PRD-103).
 //!
 //! Provides endpoints for managing face crop images that form a tiled
 //! contact sheet for visual consistency review, plus placeholder endpoints
@@ -20,7 +20,7 @@ use x121_db::models::contact_sheet::CreateContactSheetImage;
 use x121_db::repositories::ContactSheetRepo;
 
 use crate::error::{AppError, AppResult};
-use crate::handlers::consistency_report::ensure_character_exists;
+use crate::handlers::consistency_report::ensure_avatar_exists;
 use crate::middleware::auth::AuthUser;
 use crate::response::DataResponse;
 use crate::state::AppState;
@@ -62,7 +62,7 @@ fn default_export_format() -> String {
 /// Response for the generate endpoint (placeholder).
 #[derive(Debug, Serialize)]
 pub struct GenerateResponse {
-    pub character_id: DbId,
+    pub avatar_id: DbId,
     pub grid_cols: u32,
     pub grid_rows: u32,
     pub image_count: usize,
@@ -72,7 +72,7 @@ pub struct GenerateResponse {
 /// Response for the export endpoint (placeholder).
 #[derive(Debug, Serialize)]
 pub struct ExportResponse {
-    pub character_id: DbId,
+    pub avatar_id: DbId,
     pub format: String,
     pub image_count: usize,
 }
@@ -81,34 +81,34 @@ pub struct ExportResponse {
 // Handlers
 // ---------------------------------------------------------------------------
 
-/// GET /characters/{character_id}/contact-sheet
+/// GET /avatars/{avatar_id}/contact-sheet
 ///
-/// List all face crop images for a character, ordered by scene then creation time.
-pub async fn list_character_images(
+/// List all face crop images for a avatar, ordered by scene then creation time.
+pub async fn list_avatar_images(
     _auth: AuthUser,
     State(state): State<AppState>,
-    Path(character_id): Path<DbId>,
+    Path(avatar_id): Path<DbId>,
 ) -> AppResult<impl IntoResponse> {
-    ensure_character_exists(&state.pool, character_id).await?;
+    ensure_avatar_exists(&state.pool, avatar_id).await?;
 
-    let images = ContactSheetRepo::list_by_character(&state.pool, character_id).await?;
+    let images = ContactSheetRepo::list_by_avatar(&state.pool, avatar_id).await?;
 
     Ok(Json(DataResponse { data: images }))
 }
 
-/// POST /characters/{character_id}/contact-sheet
+/// POST /avatars/{avatar_id}/contact-sheet
 ///
-/// Add a face crop image record for a character's contact sheet.
+/// Add a face crop image record for a avatar's contact sheet.
 pub async fn create_image(
     auth: AuthUser,
     State(state): State<AppState>,
-    Path(character_id): Path<DbId>,
+    Path(avatar_id): Path<DbId>,
     Json(input): Json<CreateImageRequest>,
 ) -> AppResult<impl IntoResponse> {
-    ensure_character_exists(&state.pool, character_id).await?;
+    ensure_avatar_exists(&state.pool, avatar_id).await?;
 
     let create = CreateContactSheetImage {
-        character_id,
+        avatar_id,
         scene_id: input.scene_id,
         face_crop_path: input.face_crop_path,
         confidence_score: input.confidence_score,
@@ -119,7 +119,7 @@ pub async fn create_image(
 
     tracing::info!(
         user_id = auth.user_id,
-        character_id,
+        avatar_id,
         image_id = image.id,
         "Contact sheet image created"
     );
@@ -129,7 +129,7 @@ pub async fn create_image(
 
 /// DELETE /contact-sheet-images/{id}
 ///
-/// Remove a single face crop image from a character's contact sheet.
+/// Remove a single face crop image from a avatar's contact sheet.
 pub async fn delete_image(
     auth: AuthUser,
     State(state): State<AppState>,
@@ -153,24 +153,24 @@ pub async fn delete_image(
     Ok(StatusCode::NO_CONTENT)
 }
 
-/// POST /characters/{character_id}/contact-sheet/generate
+/// POST /avatars/{avatar_id}/contact-sheet/generate
 ///
-/// Trigger contact sheet generation for a character. Currently a placeholder
+/// Trigger contact sheet generation for a avatar. Currently a placeholder
 /// that returns the existing images with best-frame selection metadata.
 /// The actual face crop extraction pipeline will be connected in a later phase.
 pub async fn generate_contact_sheet(
     auth: AuthUser,
     State(state): State<AppState>,
-    Path(character_id): Path<DbId>,
+    Path(avatar_id): Path<DbId>,
     Json(input): Json<GenerateRequest>,
 ) -> AppResult<impl IntoResponse> {
     let cols = input.cols.unwrap_or(DEFAULT_GRID_COLS);
     let rows = input.rows.unwrap_or(DEFAULT_GRID_ROWS);
     validate_grid_size(cols, rows)?;
 
-    ensure_character_exists(&state.pool, character_id).await?;
+    ensure_avatar_exists(&state.pool, avatar_id).await?;
 
-    let images = ContactSheetRepo::list_by_character(&state.pool, character_id).await?;
+    let images = ContactSheetRepo::list_by_avatar(&state.pool, avatar_id).await?;
     let max_cells = (cols * rows) as usize;
     let max_count = max_cells.min(MAX_IMAGES);
 
@@ -183,7 +183,7 @@ pub async fn generate_contact_sheet(
 
     tracing::info!(
         user_id = auth.user_id,
-        character_id,
+        avatar_id,
         grid = format!("{cols}x{rows}"),
         image_count = images.len(),
         selected = best_indices.len(),
@@ -192,7 +192,7 @@ pub async fn generate_contact_sheet(
 
     Ok(Json(DataResponse {
         data: GenerateResponse {
-            character_id,
+            avatar_id,
             grid_cols: cols,
             grid_rows: rows,
             image_count: images.len(),
@@ -201,26 +201,26 @@ pub async fn generate_contact_sheet(
     }))
 }
 
-/// GET /characters/{character_id}/contact-sheet/export
+/// GET /avatars/{avatar_id}/contact-sheet/export
 ///
-/// Export a character's contact sheet as PNG or PDF. Currently a placeholder
+/// Export a avatar's contact sheet as PNG or PDF. Currently a placeholder
 /// that returns metadata about what would be exported. The actual rendering
 /// pipeline will be connected in a later phase.
 pub async fn export_contact_sheet(
     _auth: AuthUser,
     State(state): State<AppState>,
-    Path(character_id): Path<DbId>,
+    Path(avatar_id): Path<DbId>,
     Query(query): Query<ExportQuery>,
 ) -> AppResult<impl IntoResponse> {
     validate_export_format(&query.format)?;
 
-    ensure_character_exists(&state.pool, character_id).await?;
+    ensure_avatar_exists(&state.pool, avatar_id).await?;
 
-    let images = ContactSheetRepo::list_by_character(&state.pool, character_id).await?;
+    let images = ContactSheetRepo::list_by_avatar(&state.pool, avatar_id).await?;
 
     Ok(Json(DataResponse {
         data: ExportResponse {
-            character_id,
+            avatar_id,
             format: query.format,
             image_count: images.len(),
         },

@@ -1,4 +1,4 @@
-//! Character metadata editor: field definitions, completeness calculation,
+//! Avatar metadata editor: field definitions, completeness calculation,
 //! and CSV builder/parser helpers (PRD-66).
 //!
 //! This module has **zero database dependencies**. All types and logic are
@@ -56,7 +56,7 @@ impl FieldCategory {
 /// validation layer can augment these definitions with dynamic rules.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MetadataFieldDef {
-    /// Machine-readable field name (matches the JSON key in `characters.metadata`).
+    /// Machine-readable field name (matches the JSON key in `avatars.metadata`).
     pub name: String,
     /// Human-readable display label.
     pub label: String,
@@ -75,7 +75,7 @@ pub struct MetadataFieldDef {
 // Standard field definitions
 // ---------------------------------------------------------------------------
 
-/// Return the canonical set of character metadata field definitions.
+/// Return the canonical set of avatar metadata field definitions.
 ///
 /// These are the fields that the form view, spreadsheet, completeness
 /// tracker, and CSV import/export all operate on.
@@ -295,10 +295,10 @@ pub fn unflatten_metadata(flat: &serde_json::Map<String, Value>) -> serde_json::
 // Completeness calculation
 // ---------------------------------------------------------------------------
 
-/// Result of computing metadata completeness for a single character.
+/// Result of computing metadata completeness for a single avatar.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CompletenessResult {
-    pub character_id: i64,
+    pub avatar_id: i64,
     pub total_required: usize,
     pub filled: usize,
     pub missing_fields: Vec<String>,
@@ -308,9 +308,9 @@ pub struct CompletenessResult {
 /// Project-level completeness summary.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ProjectCompleteness {
-    pub total_characters: usize,
-    pub complete_characters: usize,
-    pub per_character: Vec<CompletenessResult>,
+    pub total_avatars: usize,
+    pub complete_avatars: usize,
+    pub per_avatar: Vec<CompletenessResult>,
 }
 
 /// Check whether a JSON value counts as "filled" (non-null, non-empty).
@@ -323,13 +323,13 @@ fn is_field_filled(value: &serde_json::Value) -> bool {
     }
 }
 
-/// Calculate completeness for one character given its metadata JSON map.
+/// Calculate completeness for one avatar given its metadata JSON map.
 ///
-/// `character_id` is included in the result for convenient aggregation.
+/// `avatar_id` is included in the result for convenient aggregation.
 /// Metadata is flattened first so dot-notation field names (e.g.
 /// `appearance.hair`) match fields stored in nested JSON.
 pub fn calculate_completeness(
-    character_id: i64,
+    avatar_id: i64,
     metadata: &serde_json::Map<String, serde_json::Value>,
     fields: &[MetadataFieldDef],
 ) -> CompletenessResult {
@@ -356,7 +356,7 @@ pub fn calculate_completeness(
     };
 
     CompletenessResult {
-        character_id,
+        avatar_id,
         total_required,
         filled,
         missing_fields,
@@ -364,26 +364,26 @@ pub fn calculate_completeness(
     }
 }
 
-/// Calculate project-level completeness from a list of (character_id, metadata) pairs.
+/// Calculate project-level completeness from a list of (avatar_id, metadata) pairs.
 pub fn calculate_project_completeness(
-    characters: &[(i64, serde_json::Map<String, serde_json::Value>)],
+    avatars: &[(i64, serde_json::Map<String, serde_json::Value>)],
     fields: &[MetadataFieldDef],
 ) -> ProjectCompleteness {
-    let mut per_character = Vec::with_capacity(characters.len());
-    let mut complete_characters = 0usize;
+    let mut per_avatar = Vec::with_capacity(avatars.len());
+    let mut complete_avatars = 0usize;
 
-    for (id, metadata) in characters {
+    for (id, metadata) in avatars {
         let result = calculate_completeness(*id, metadata, fields);
         if result.percentage >= 100.0 {
-            complete_characters += 1;
+            complete_avatars += 1;
         }
-        per_character.push(result);
+        per_avatar.push(result);
     }
 
     ProjectCompleteness {
-        total_characters: characters.len(),
-        complete_characters,
-        per_character,
+        total_avatars: avatars.len(),
+        complete_avatars,
+        per_avatar,
     }
 }
 
@@ -511,15 +511,15 @@ fn json_value_to_csv(value: &serde_json::Value) -> String {
     }
 }
 
-/// Build a CSV string from a list of characters.
+/// Build a CSV string from a list of avatars.
 ///
-/// Each character is represented as `(id, name, metadata_map)`.
+/// Each avatar is represented as `(id, name, metadata_map)`.
 /// The first row is a header with `id, name, <field_names...>`.
 pub fn build_csv(
-    characters: &[(i64, String, serde_json::Map<String, serde_json::Value>)],
+    avatars: &[(i64, String, serde_json::Map<String, serde_json::Value>)],
     fields: &[MetadataFieldDef],
 ) -> String {
-    let mut lines = Vec::with_capacity(characters.len() + 1);
+    let mut lines = Vec::with_capacity(avatars.len() + 1);
 
     // Header row
     let mut header_parts = vec!["id".to_string(), "name".to_string()];
@@ -529,7 +529,7 @@ pub fn build_csv(
     lines.push(header_parts.join(","));
 
     // Data rows
-    for (id, name, metadata) in characters {
+    for (id, name, metadata) in avatars {
         let mut row_parts = vec![id.to_string(), csv_escape(name)];
         for field in fields {
             let value = metadata
@@ -546,9 +546,9 @@ pub fn build_csv(
 /// A single parsed CSV record, keyed by column header.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CsvRecord {
-    /// Character ID from the `id` column (for matching on re-import).
+    /// Avatar ID from the `id` column (for matching on re-import).
     pub id: Option<i64>,
-    /// Character name from the `name` column.
+    /// Avatar name from the `name` column.
     pub name: Option<String>,
     /// Metadata field values keyed by field name.
     pub fields: serde_json::Map<String, serde_json::Value>,
@@ -557,8 +557,8 @@ pub struct CsvRecord {
 /// A diff entry showing what would change on import.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CsvDiffEntry {
-    pub character_id: i64,
-    pub character_name: String,
+    pub avatar_id: i64,
+    pub avatar_name: String,
     pub field_name: String,
     pub old_value: serde_json::Value,
     pub new_value: serde_json::Value,
@@ -690,7 +690,7 @@ mod tests {
     // --- Completeness tests ---
 
     #[test]
-    fn completeness_empty_character_is_zero() {
+    fn completeness_empty_avatar_is_zero() {
         let fields = sample_fields();
         let metadata = serde_json::Map::new();
         let result = calculate_completeness(1, &metadata, &fields);
@@ -761,7 +761,7 @@ mod tests {
     #[test]
     fn project_completeness_aggregates() {
         let fields = sample_fields();
-        let characters = vec![
+        let avatars = vec![
             (
                 1,
                 make_metadata(&[
@@ -776,14 +776,14 @@ mod tests {
             (3, serde_json::Map::new()),
         ];
 
-        let result = calculate_project_completeness(&characters, &fields);
+        let result = calculate_project_completeness(&avatars, &fields);
 
-        assert_eq!(result.total_characters, 3);
-        assert_eq!(result.complete_characters, 1);
-        assert_eq!(result.per_character.len(), 3);
-        assert!((result.per_character[0].percentage - 100.0).abs() < f64::EPSILON);
-        assert!((result.per_character[1].percentage - 50.0).abs() < f64::EPSILON);
-        assert!(result.per_character[2].percentage < 1.0);
+        assert_eq!(result.total_avatars, 3);
+        assert_eq!(result.complete_avatars, 1);
+        assert_eq!(result.per_avatar.len(), 3);
+        assert!((result.per_avatar[0].percentage - 100.0).abs() < f64::EPSILON);
+        assert!((result.per_avatar[1].percentage - 50.0).abs() < f64::EPSILON);
+        assert!(result.per_avatar[2].percentage < 1.0);
     }
 
     // --- Validation tests ---
@@ -871,7 +871,7 @@ mod tests {
     #[test]
     fn csv_round_trip() {
         let fields = sample_fields();
-        let characters = vec![
+        let avatars = vec![
             (
                 1,
                 "Alice".to_string(),
@@ -898,7 +898,7 @@ mod tests {
             ),
         ];
 
-        let csv = build_csv(&characters, &fields);
+        let csv = build_csv(&avatars, &fields);
 
         // Header should start with id,name
         assert!(csv.starts_with("id,name"));
@@ -932,13 +932,13 @@ mod tests {
             options: vec![],
         }];
 
-        let characters = vec![(
+        let avatars = vec![(
             1,
             "Alice".to_string(),
             make_metadata(&[("notes", serde_json::Value::String("Hello, World".into()))]),
         )];
 
-        let csv = build_csv(&characters, &fields);
+        let csv = build_csv(&avatars, &fields);
         let records = parse_csv(csv.as_bytes()).unwrap();
 
         assert_eq!(records.len(), 1);
@@ -959,7 +959,7 @@ mod tests {
             options: vec![],
         }];
 
-        let characters = vec![(
+        let avatars = vec![(
             1,
             "Alice".to_string(),
             make_metadata(&[(
@@ -968,7 +968,7 @@ mod tests {
             )]),
         )];
 
-        let csv = build_csv(&characters, &fields);
+        let csv = build_csv(&avatars, &fields);
         let records = parse_csv(csv.as_bytes()).unwrap();
 
         assert_eq!(records.len(), 1);
@@ -981,8 +981,8 @@ mod tests {
     #[test]
     fn csv_empty_data() {
         let fields = sample_fields();
-        let characters: Vec<(i64, String, serde_json::Map<String, serde_json::Value>)> = vec![];
-        let csv = build_csv(&characters, &fields);
+        let avatars: Vec<(i64, String, serde_json::Map<String, serde_json::Value>)> = vec![];
+        let csv = build_csv(&avatars, &fields);
 
         // Should have only the header line
         let lines: Vec<&str> = csv.lines().collect();

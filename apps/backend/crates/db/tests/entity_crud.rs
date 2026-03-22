@@ -1,21 +1,21 @@
 //! Integration tests for PRD-01 entity CRUD operations.
 //!
 //! Exercises the full repository layer against a real database:
-//! - Create full hierarchy (project -> character -> scene -> segment)
+//! - Create full hierarchy (project -> avatar -> scene -> segment)
 //! - Cascade delete behaviour
 //! - Unique constraint violations
 //! - Foreign key violations
 //! - Update and list operations
 
 use sqlx::PgPool;
-use x121_db::models::character::CreateCharacter;
+use x121_db::models::avatar::CreateAvatar;
 use x121_db::models::image::{CreateImageVariant, CreateSourceImage};
 use x121_db::models::project::{CreateProject, UpdateProject};
 use x121_db::models::scene::CreateScene;
 use x121_db::models::scene_type::CreateSceneType;
 use x121_db::models::segment::CreateSegment;
 use x121_db::repositories::{
-    CharacterRepo, ImageVariantRepo, ProjectRepo, SceneRepo, SceneTypeRepo, SegmentRepo,
+    AvatarRepo, ImageVariantRepo, ProjectRepo, SceneRepo, SceneTypeRepo, SegmentRepo,
     SourceImageRepo,
 };
 
@@ -32,8 +32,8 @@ fn new_project(name: &str) -> CreateProject {
     }
 }
 
-fn new_character(project_id: i64, name: &str) -> CreateCharacter {
-    CreateCharacter {
+fn new_avatar(project_id: i64, name: &str) -> CreateAvatar {
+    CreateAvatar {
         project_id,
         name: name.to_string(),
         status_id: None,
@@ -68,18 +68,18 @@ fn new_scene_type(project_id: Option<i64>, name: &str) -> CreateSceneType {
     }
 }
 
-fn new_source_image(character_id: i64, path: &str) -> CreateSourceImage {
+fn new_source_image(avatar_id: i64, path: &str) -> CreateSourceImage {
     CreateSourceImage {
-        character_id,
+        avatar_id,
         file_path: path.to_string(),
         description: None,
         is_primary: None,
     }
 }
 
-fn new_image_variant(character_id: i64, label: &str, path: &str) -> CreateImageVariant {
+fn new_image_variant(avatar_id: i64, label: &str, path: &str) -> CreateImageVariant {
     CreateImageVariant {
-        character_id,
+        avatar_id,
         source_image_id: None,
         derived_image_id: None,
         variant_label: label.to_string(),
@@ -98,9 +98,9 @@ fn new_image_variant(character_id: i64, label: &str, path: &str) -> CreateImageV
     }
 }
 
-fn new_scene(character_id: i64, scene_type_id: i64, image_variant_id: i64) -> CreateScene {
+fn new_scene(avatar_id: i64, scene_type_id: i64, image_variant_id: i64) -> CreateScene {
     CreateScene {
-        character_id,
+        avatar_id,
         scene_type_id,
         image_variant_id,
         status_id: None,
@@ -132,11 +132,11 @@ async fn test_create_full_hierarchy(pool: PgPool) {
     assert_eq!(project.name, "Hierarchy Test");
     assert_eq!(project.status_id, 1); // Draft default
 
-    let character = CharacterRepo::create(&pool, &new_character(project.id, "Alice"))
+    let avatar = AvatarRepo::create(&pool, &new_avatar(project.id, "Alice"))
         .await
         .unwrap();
-    assert_eq!(character.project_id, project.id);
-    assert_eq!(character.name, "Alice");
+    assert_eq!(avatar.project_id, project.id);
+    assert_eq!(avatar.name, "Alice");
 
     let scene_type = SceneTypeRepo::create(&pool, &new_scene_type(Some(project.id), "Dance"))
         .await
@@ -144,23 +144,23 @@ async fn test_create_full_hierarchy(pool: PgPool) {
     assert_eq!(scene_type.name, "Dance");
 
     let source_image =
-        SourceImageRepo::create(&pool, &new_source_image(character.id, "/img/alice.png"))
+        SourceImageRepo::create(&pool, &new_source_image(avatar.id, "/img/alice.png"))
             .await
             .unwrap();
-    assert_eq!(source_image.character_id, character.id);
+    assert_eq!(source_image.avatar_id, avatar.id);
 
     let variant = ImageVariantRepo::create(
         &pool,
-        &new_image_variant(character.id, "clothed", "/img/alice_clothed.png"),
+        &new_image_variant(avatar.id, "clothed", "/img/alice_clothed.png"),
     )
     .await
     .unwrap();
     assert_eq!(variant.variant_label, "clothed");
 
-    let scene = SceneRepo::create(&pool, &new_scene(character.id, scene_type.id, variant.id))
+    let scene = SceneRepo::create(&pool, &new_scene(avatar.id, scene_type.id, variant.id))
         .await
         .unwrap();
-    assert_eq!(scene.character_id, character.id);
+    assert_eq!(scene.avatar_id, avatar.id);
     assert_eq!(scene.transition_mode, "cut"); // default
 
     let segment = SegmentRepo::create(&pool, &new_segment(scene.id, 0))
@@ -179,7 +179,7 @@ async fn test_cascade_delete_project(pool: PgPool) {
     let project = ProjectRepo::create(&pool, &new_project("Cascade Test"))
         .await
         .unwrap();
-    let character = CharacterRepo::create(&pool, &new_character(project.id, "Bob"))
+    let avatar = AvatarRepo::create(&pool, &new_avatar(project.id, "Bob"))
         .await
         .unwrap();
     let scene_type = SceneTypeRepo::create(&pool, &new_scene_type(Some(project.id), "Idle"))
@@ -187,11 +187,11 @@ async fn test_cascade_delete_project(pool: PgPool) {
         .unwrap();
     let variant = ImageVariantRepo::create(
         &pool,
-        &new_image_variant(character.id, "clothed", "/img/bob.png"),
+        &new_image_variant(avatar.id, "clothed", "/img/bob.png"),
     )
     .await
     .unwrap();
-    let scene = SceneRepo::create(&pool, &new_scene(character.id, scene_type.id, variant.id))
+    let scene = SceneRepo::create(&pool, &new_scene(avatar.id, scene_type.id, variant.id))
         .await
         .unwrap();
     let segment = SegmentRepo::create(&pool, &new_segment(scene.id, 0))
@@ -203,7 +203,7 @@ async fn test_cascade_delete_project(pool: PgPool) {
     assert!(deleted);
 
     // All children should be gone.
-    assert!(CharacterRepo::find_by_id(&pool, character.id)
+    assert!(AvatarRepo::find_by_id(&pool, avatar.id)
         .await
         .unwrap()
         .is_none());
@@ -235,7 +235,7 @@ async fn test_duplicate_project_name_rejected(pool: PgPool) {
 }
 
 // ---------------------------------------------------------------------------
-// Test: Unique constraint on scene (character_id, scene_type_id, image_variant_id)
+// Test: Unique constraint on scene (avatar_id, scene_type_id, image_variant_id)
 // ---------------------------------------------------------------------------
 
 #[sqlx::test(migrations = "../../../db/migrations")]
@@ -243,7 +243,7 @@ async fn test_duplicate_scene_triple_rejected(pool: PgPool) {
     let project = ProjectRepo::create(&pool, &new_project("Scene UQ"))
         .await
         .unwrap();
-    let character = CharacterRepo::create(&pool, &new_character(project.id, "Charlie"))
+    let avatar = AvatarRepo::create(&pool, &new_avatar(project.id, "Charlie"))
         .await
         .unwrap();
     let scene_type = SceneTypeRepo::create(&pool, &new_scene_type(Some(project.id), "Walk"))
@@ -251,22 +251,22 @@ async fn test_duplicate_scene_triple_rejected(pool: PgPool) {
         .unwrap();
     let variant = ImageVariantRepo::create(
         &pool,
-        &new_image_variant(character.id, "clothed", "/img/charlie.png"),
+        &new_image_variant(avatar.id, "clothed", "/img/charlie.png"),
     )
     .await
     .unwrap();
 
     // First scene: OK.
-    SceneRepo::create(&pool, &new_scene(character.id, scene_type.id, variant.id))
+    SceneRepo::create(&pool, &new_scene(avatar.id, scene_type.id, variant.id))
         .await
         .unwrap();
 
     // Second scene with same triple: should fail.
     let result =
-        SceneRepo::create(&pool, &new_scene(character.id, scene_type.id, variant.id)).await;
+        SceneRepo::create(&pool, &new_scene(avatar.id, scene_type.id, variant.id)).await;
     assert!(
         result.is_err(),
-        "Duplicate (character_id, scene_type_id, image_variant_id) should fail"
+        "Duplicate (avatar_id, scene_type_id, image_variant_id) should fail"
     );
 }
 
@@ -275,8 +275,8 @@ async fn test_duplicate_scene_triple_rejected(pool: PgPool) {
 // ---------------------------------------------------------------------------
 
 #[sqlx::test(migrations = "../../../db/migrations")]
-async fn test_fk_violation_character_bad_project(pool: PgPool) {
-    let result = CharacterRepo::create(&pool, &new_character(999_999, "Ghost")).await;
+async fn test_fk_violation_avatar_bad_project(pool: PgPool) {
+    let result = AvatarRepo::create(&pool, &new_avatar(999_999, "Ghost")).await;
     assert!(
         result.is_err(),
         "FK violation should fail for non-existent project_id"
@@ -284,12 +284,12 @@ async fn test_fk_violation_character_bad_project(pool: PgPool) {
 }
 
 #[sqlx::test(migrations = "../../../db/migrations")]
-async fn test_fk_violation_scene_bad_character(pool: PgPool) {
-    // scene_type_id and image_variant_id are also bad, but character FK will fail first.
+async fn test_fk_violation_scene_bad_avatar(pool: PgPool) {
+    // scene_type_id and image_variant_id are also bad, but avatar FK will fail first.
     let result = SceneRepo::create(&pool, &new_scene(999_999, 1, 1)).await;
     assert!(
         result.is_err(),
-        "FK violation should fail for non-existent character_id"
+        "FK violation should fail for non-existent avatar_id"
     );
 }
 
@@ -362,7 +362,7 @@ async fn test_delete_nonexistent_returns_false(pool: PgPool) {
 // ---------------------------------------------------------------------------
 
 #[sqlx::test(migrations = "../../../db/migrations")]
-async fn test_list_characters_scoped_to_project(pool: PgPool) {
+async fn test_list_avatars_scoped_to_project(pool: PgPool) {
     let p1 = ProjectRepo::create(&pool, &new_project("P1"))
         .await
         .unwrap();
@@ -370,20 +370,20 @@ async fn test_list_characters_scoped_to_project(pool: PgPool) {
         .await
         .unwrap();
 
-    CharacterRepo::create(&pool, &new_character(p1.id, "A"))
+    AvatarRepo::create(&pool, &new_avatar(p1.id, "A"))
         .await
         .unwrap();
-    CharacterRepo::create(&pool, &new_character(p1.id, "B"))
+    AvatarRepo::create(&pool, &new_avatar(p1.id, "B"))
         .await
         .unwrap();
-    CharacterRepo::create(&pool, &new_character(p2.id, "C"))
+    AvatarRepo::create(&pool, &new_avatar(p2.id, "C"))
         .await
         .unwrap();
 
-    let p1_chars = CharacterRepo::list_by_project(&pool, p1.id).await.unwrap();
+    let p1_chars = AvatarRepo::list_by_project(&pool, p1.id).await.unwrap();
     assert_eq!(p1_chars.len(), 2);
 
-    let p2_chars = CharacterRepo::list_by_project(&pool, p2.id).await.unwrap();
+    let p2_chars = AvatarRepo::list_by_project(&pool, p2.id).await.unwrap();
     assert_eq!(p2_chars.len(), 1);
 }
 
@@ -396,7 +396,7 @@ async fn test_segments_ordered_by_sequence_index(pool: PgPool) {
     let project = ProjectRepo::create(&pool, &new_project("Seg Order"))
         .await
         .unwrap();
-    let character = CharacterRepo::create(&pool, &new_character(project.id, "D"))
+    let avatar = AvatarRepo::create(&pool, &new_avatar(project.id, "D"))
         .await
         .unwrap();
     let scene_type = SceneTypeRepo::create(&pool, &new_scene_type(Some(project.id), "Smile"))
@@ -404,11 +404,11 @@ async fn test_segments_ordered_by_sequence_index(pool: PgPool) {
         .unwrap();
     let variant = ImageVariantRepo::create(
         &pool,
-        &new_image_variant(character.id, "clothed", "/img/d.png"),
+        &new_image_variant(avatar.id, "clothed", "/img/d.png"),
     )
     .await
     .unwrap();
-    let scene = SceneRepo::create(&pool, &new_scene(character.id, scene_type.id, variant.id))
+    let scene = SceneRepo::create(&pool, &new_scene(avatar.id, scene_type.id, variant.id))
         .await
         .unwrap();
 
@@ -431,20 +431,20 @@ async fn test_segments_ordered_by_sequence_index(pool: PgPool) {
 }
 
 // ---------------------------------------------------------------------------
-// Test: Character settings CRUD
+// Test: Avatar settings CRUD
 // ---------------------------------------------------------------------------
 
 #[sqlx::test(migrations = "../../../db/migrations")]
-async fn test_character_settings_crud(pool: PgPool) {
+async fn test_avatar_settings_crud(pool: PgPool) {
     let project = ProjectRepo::create(&pool, &new_project("Settings"))
         .await
         .unwrap();
-    let character = CharacterRepo::create(&pool, &new_character(project.id, "E"))
+    let avatar = AvatarRepo::create(&pool, &new_avatar(project.id, "E"))
         .await
         .unwrap();
 
     // Default settings should be `{}`.
-    let settings = CharacterRepo::get_settings(&pool, character.id)
+    let settings = AvatarRepo::get_settings(&pool, avatar.id)
         .await
         .unwrap()
         .unwrap();
@@ -452,11 +452,11 @@ async fn test_character_settings_crud(pool: PgPool) {
 
     // Full replace.
     let new_settings = serde_json::json!({"fps": 30, "resolution": "1080p"});
-    CharacterRepo::update_settings(&pool, character.id, &new_settings)
+    AvatarRepo::update_settings(&pool, avatar.id, &new_settings)
         .await
         .unwrap()
         .unwrap();
-    let settings = CharacterRepo::get_settings(&pool, character.id)
+    let settings = AvatarRepo::get_settings(&pool, avatar.id)
         .await
         .unwrap()
         .unwrap();
@@ -464,11 +464,11 @@ async fn test_character_settings_crud(pool: PgPool) {
 
     // Patch merge.
     let patch = serde_json::json!({"format": "mp4"});
-    CharacterRepo::patch_settings(&pool, character.id, &patch)
+    AvatarRepo::patch_settings(&pool, avatar.id, &patch)
         .await
         .unwrap()
         .unwrap();
-    let settings = CharacterRepo::get_settings(&pool, character.id)
+    let settings = AvatarRepo::get_settings(&pool, avatar.id)
         .await
         .unwrap()
         .unwrap();
