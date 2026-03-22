@@ -96,7 +96,7 @@ function importLogEntry(
  *   (e.g. AvatarsPage) where the drop target avatar may belong
  *   to a different project than `projectId`.
  */
-export function useAvatarImport(projectId: number, allAvatars?: Avatar[]) {
+export function useAvatarImport(projectId: number, allAvatars?: Avatar[], pipelineId?: number) {
   const queryClient = useQueryClient();
   const { addToast } = useToast();
   /** Add a log entry to the activity console store (always uses latest state). */
@@ -112,8 +112,8 @@ export function useAvatarImport(projectId: number, allAvatars?: Avatar[]) {
   const { data: projectAvatars } = useProjectAvatars(projectId);
   // Use the multi-project avatar list when available, fall back to single-project query
   const avatars = allAvatars ?? projectAvatars;
-  const { data: sceneCatalogue } = useSceneCatalogue();
-  const { data: tracks } = useTracks();
+  const { data: sceneCatalogue } = useSceneCatalogue(false, pipelineId);
+  const { data: tracks } = useTracks(false, pipelineId);
 
   const [importNames, setImportNames] = useState<string[]>([]);
   const [importPayloads, setImportPayloads] = useState<AvatarDropPayload[]>([]);

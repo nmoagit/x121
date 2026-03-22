@@ -20,6 +20,7 @@ import {
   useSavePromptVersion,
   useRestoreVersion,
 } from "@/features/prompt-editor";
+import { usePipelineContextSafe } from "@/features/pipelines";
 import { useSceneTypes } from "@/features/scene-types/hooks/use-scene-types";
 
 function SceneTypePromptEditor({ sceneTypeId }: { sceneTypeId: number }) {
@@ -59,7 +60,8 @@ function SceneTypePromptEditor({ sceneTypeId }: { sceneTypeId: number }) {
 
 export function PromptsPage() {
   const [selectedSceneTypeId, setSelectedSceneTypeId] = useState("");
-  const { data: sceneTypes, isLoading } = useSceneTypes();
+  const pipelineCtx = usePipelineContextSafe();
+  const { data: sceneTypes, isLoading } = useSceneTypes(undefined, pipelineCtx?.pipelineId);
 
   const sceneTypeId = Number(selectedSceneTypeId);
 

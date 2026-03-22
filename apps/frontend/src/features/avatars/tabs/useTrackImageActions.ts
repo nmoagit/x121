@@ -17,6 +17,7 @@ import {
 import { PROVENANCE } from "@/features/images/types";
 import type { ImageVariant } from "@/features/images/types";
 import { findVariantForTrack } from "@/features/images/utils";
+import { usePipelineContextSafe } from "@/features/pipelines";
 import { useTracks } from "@/features/scene-catalogue/hooks/use-tracks";
 import type { Track } from "@/features/scene-catalogue/types";
 
@@ -26,7 +27,8 @@ interface TrackImageDatum {
 }
 
 export function useTrackImageActions(avatarId: number) {
-  const { data: tracks } = useTracks();
+  const pipelineCtx = usePipelineContextSafe();
+  const { data: tracks } = useTracks(false, pipelineCtx?.pipelineId);
   const { data: imageVariants } = useImageVariants(avatarId);
   const generateVariants = useGenerateVariants(avatarId);
   const uploadVariant = useUploadImageVariant(avatarId);

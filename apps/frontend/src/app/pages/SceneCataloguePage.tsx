@@ -62,7 +62,7 @@ const TABS: { id: TabKey; label: string }[] = [
 
 function SceneTypesTab() {
   const pipelineCtx = usePipelineContextSafe();
-  const { data: sceneTypes, isLoading } = useSceneTypes();
+  const { data: sceneTypes, isLoading } = useSceneTypes(undefined, pipelineCtx?.pipelineId);
   const { data: workflows } = useWorkflows(undefined, pipelineCtx?.pipelineId);
   const createMutation = useCreateSceneType();
   const deleteMutation = useDeleteSceneType();

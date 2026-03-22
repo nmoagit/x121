@@ -389,6 +389,7 @@ export function AnnotationsPage() {
   const projectId = projectFilter ? Number(projectFilter) : undefined;
   const { data: items, isLoading } = useAnnotationsBrowse({
     projectId,
+    pipelineId: pipelineCtx?.pipelineId,
     sort,
     sortDir,
   });

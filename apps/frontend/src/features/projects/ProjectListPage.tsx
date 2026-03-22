@@ -159,7 +159,7 @@ export function ProjectListPage() {
   const pendingFolderResult = useRef<FolderDropResult | null>(null);
 
   // Avatar import hook bound to the target project
-  const charImport = useAvatarImport(importProjectId);
+  const charImport = useAvatarImport(importProjectId, undefined, activePipeline?.id);
   const { data: importProjectAvatars } = useProjectAvatars(importProjectId);
   const { data: importProjectGroups } = useAvatarGroups(importProjectId);
 

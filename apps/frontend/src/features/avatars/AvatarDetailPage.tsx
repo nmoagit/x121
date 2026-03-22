@@ -11,6 +11,7 @@ import { useCallback, useMemo, useState } from "react";
 import { ConfirmDeleteModal, Modal, Tabs } from "@/components/composite";
 import { EmptyState, FileDropZone } from "@/components/domain";
 import { Stack } from "@/components/layout";
+import { usePipelineContextSafe } from "@/features/pipelines";
 import { useAvatarImport } from "@/features/projects/hooks/use-avatar-import";
 import { ImportConfirmModal } from "@/features/projects/components/ImportConfirmModal";
 import { useBulkImportSpeeches } from "@/features/projects/hooks/use-project-speech-import";
@@ -157,8 +158,9 @@ export function AvatarDetailPage() {
   }, [avatar?.blocking_deliverables, avatar?.group_id, groups, project?.blocking_deliverables]);
 
   /* --- folder drop (avatar import) --- */
+  const pipelineCtx = usePipelineContextSafe();
   const { data: projectAvatars } = useProjectAvatars(projectId);
-  const charImport = useAvatarImport(projectId, projectAvatars);
+  const charImport = useAvatarImport(projectId, projectAvatars, pipelineCtx?.pipelineId);
 
   /* --- speech file drop --- */
   const bulkSpeechImport = useBulkImportSpeeches(projectId);

@@ -34,7 +34,7 @@ import type { WorkflowPromptSlot } from "./types";
 
 export function SceneTypePromptDefaultsPanel() {
   const pipelineCtx = usePipelineContextSafe();
-  const { data: sceneTypes, isLoading: loadingST } = useSceneTypes();
+  const { data: sceneTypes, isLoading: loadingST } = useSceneTypes(undefined, pipelineCtx?.pipelineId);
   const { data: workflows, isLoading: loadingWF } = useWorkflows(undefined, pipelineCtx?.pipelineId);
 
   if (loadingST || loadingWF) return <LoadingPane />;

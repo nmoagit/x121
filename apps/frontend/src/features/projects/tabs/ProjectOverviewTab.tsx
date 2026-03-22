@@ -16,6 +16,7 @@ import {
 import { AvatarDeliverablesGrid } from "../components/AvatarDeliverablesGrid";
 import { ImportConfirmModal } from "../components/ImportConfirmModal";
 import { ImportProgressBar } from "../components/ImportProgressBar";
+import { usePipelineContextSafe } from "@/features/pipelines";
 import { useAvatarImport } from "../hooks/use-avatar-import";
 import { useProjectAvatars } from "../hooks/use-project-avatars";
 import { SpeechImportResultModal } from "../components/SpeechImportResultModal";
@@ -34,7 +35,8 @@ interface ProjectOverviewTabProps {
 }
 
 export function ProjectOverviewTab({ projectId, stats }: ProjectOverviewTabProps) {
-  const charImport = useAvatarImport(projectId);
+  const pipelineCtx = usePipelineContextSafe();
+  const charImport = useAvatarImport(projectId, undefined, pipelineCtx?.pipelineId);
   const { data: avatars } = useProjectAvatars(projectId);
   const existingNames = avatars?.map((c) => c.name) ?? [];
   const bulkSpeechImport = useBulkImportSpeeches(projectId);

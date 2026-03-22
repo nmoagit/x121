@@ -21,8 +21,8 @@ import type {
 export const sceneTypeKeys = {
   all: ["scene-types"] as const,
   lists: () => [...sceneTypeKeys.all, "list"] as const,
-  list: (projectId?: number) =>
-    [...sceneTypeKeys.lists(), { projectId }] as const,
+  list: (projectId?: number, pipelineId?: number) =>
+    [...sceneTypeKeys.lists(), { projectId, pipelineId }] as const,
   details: () => [...sceneTypeKeys.all, "detail"] as const,
   detail: (id: number) => [...sceneTypeKeys.details(), id] as const,
   preview: (sceneTypeId: number, avatarId: number, clipPosition?: string) =>
@@ -40,14 +40,17 @@ export const sceneTypeKeys = {
    -------------------------------------------------------------------------- */
 
 /** Fetch studio-level scene types, or project-scoped if projectId is given. */
-export function useSceneTypes(projectId?: number) {
+export function useSceneTypes(projectId?: number, pipelineId?: number) {
   return useQuery({
-    queryKey: sceneTypeKeys.list(projectId),
+    queryKey: sceneTypeKeys.list(projectId, pipelineId),
     queryFn: () => {
-      const path = projectId
+      const basePath = projectId
         ? `/projects/${projectId}/scene-types`
         : "/scene-types";
-      return api.get<SceneType[]>(path);
+      const params = new URLSearchParams();
+      if (pipelineId) params.set("pipeline_id", String(pipelineId));
+      const qs = params.toString();
+      return api.get<SceneType[]>(`${basePath}${qs ? `?${qs}` : ""}`);
     },
   });
 }

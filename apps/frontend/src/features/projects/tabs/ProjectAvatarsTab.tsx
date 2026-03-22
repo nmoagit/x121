@@ -50,6 +50,7 @@ import {
   useMoveAvatarToGroup,
   useUpdateGroup,
 } from "../hooks/use-avatar-groups";
+import { usePipelineContextSafe } from "@/features/pipelines";
 import { useAvatarImport } from "../hooks/use-avatar-import";
 import { useGroupMap } from "../hooks/use-group-map";
 import { useGroupSelectOptions } from "../hooks/use-group-select-options";
@@ -84,6 +85,7 @@ interface ProjectAvatarsTabProps {
 
 export function ProjectAvatarsTab({ projectId, projectName, scrollToGroupId, blockingDeliverables }: ProjectAvatarsTabProps) {
   const navigate = useNavigate();
+  const pipelineCtx = usePipelineContextSafe();
 
   const { data: avatars, isLoading: charsLoading } = useProjectAvatars(projectId);
   const { data: groups, isLoading: groupsLoading } = useAvatarGroups(projectId);
@@ -94,7 +96,7 @@ export function ProjectAvatarsTab({ projectId, projectName, scrollToGroupId, blo
   const updateGroup = useUpdateGroup(projectId);
   const deleteGroup = useDeleteGroup(projectId);
   const moveAvatar = useMoveAvatarToGroup(projectId);
-  const charImport = useAvatarImport(projectId);
+  const charImport = useAvatarImport(projectId, undefined, pipelineCtx?.pipelineId);
   const toggleEnabled = useToggleAvatarEnabled(projectId);
   const groupExport = useExportGroupSettings();
   const groupImport = useConfigImport();

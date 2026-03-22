@@ -176,7 +176,7 @@ export function AvatarsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [groupQueries.map((q) => q.dataUpdatedAt).join(",")]);
 
-  const charImport = useAvatarImport(primaryProjectId, allProjectAvatars);
+  const charImport = useAvatarImport(primaryProjectId, allProjectAvatars, pipelineCtx?.pipelineId);
 
   const updateAvatar = useUpdateAvatar(primaryProjectId);
   const deleteAvatar = useDeleteAvatar(primaryProjectId);

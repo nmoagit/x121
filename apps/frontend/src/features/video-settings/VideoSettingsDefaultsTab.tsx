@@ -11,6 +11,7 @@ import { useCallback, useEffect, useState } from "react";
 import { EmptyState } from "@/components/domain";
 import { Stack } from "@/components/layout";
 import { Button, LoadingPane } from "@/components/primitives";
+import { usePipelineContextSafe } from "@/features/pipelines";
 import { useSceneTypes, useUpdateSceneType } from "@/features/scene-types";
 import type { SceneType } from "@/features/scene-types";
 import { Check, RotateCcw } from "@/tokens/icons";
@@ -135,7 +136,8 @@ function SceneTypeRow({ sceneType }: { sceneType: SceneType }) {
    -------------------------------------------------------------------------- */
 
 export function VideoSettingsDefaultsTab() {
-  const { data: sceneTypes, isLoading } = useSceneTypes();
+  const pipelineCtx = usePipelineContextSafe();
+  const { data: sceneTypes, isLoading } = useSceneTypes(undefined, pipelineCtx?.pipelineId);
 
   if (isLoading) return <LoadingPane />;
 

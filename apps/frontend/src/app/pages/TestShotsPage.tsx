@@ -19,10 +19,12 @@ import {
   usePromoteTestShot,
   useDeleteTestShot,
 } from "@/features/test-shots";
+import { usePipelineContextSafe } from "@/features/pipelines";
 import { useSceneTypes } from "@/features/scene-types/hooks/use-scene-types";
 
 function AvatarTestShots({ avatarId }: { avatarId: number }) {
-  const { data: sceneTypes, isLoading: stLoading } = useSceneTypes();
+  const pipelineCtx = usePipelineContextSafe();
+  const { data: sceneTypes, isLoading: stLoading } = useSceneTypes(undefined, pipelineCtx?.pipelineId);
   const generateTestShot = useGenerateTestShot();
   const promoteTestShot = usePromoteTestShot();
 
