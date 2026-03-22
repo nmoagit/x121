@@ -265,10 +265,10 @@ function SidebarBrandBar({ collapsed }: { collapsed: boolean }) {
         <>
           <div className="flex items-center gap-2">
             <div className="w-5 h-5 rounded bg-[var(--color-action-primary)] flex items-center justify-center shrink-0">
-              <span className="text-[10px] font-bold text-white leading-none">x</span>
+              <span className="text-[10px] font-bold text-white leading-none">α</span>
             </div>
             <span className="text-[13px] font-semibold text-[var(--color-text-primary)]">
-              x121
+              αN2N
             </span>
           </div>
           <button

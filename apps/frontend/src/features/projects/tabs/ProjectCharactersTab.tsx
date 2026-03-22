@@ -64,9 +64,9 @@ import type { Character, CharacterGroup, SectionKey, SectionReadiness, UpdateCha
 import { computeSectionReadiness, filterBlockingReasons } from "../types";
 
 /** localStorage key for the show/hide disabled characters toggle. */
-const SHOW_DISABLED_KEY = "x121.project.showDisabled";
+const SHOW_DISABLED_KEY = "an2n.project.showDisabled";
 /** localStorage key for audit view toggle. */
-const AUDIT_VIEW_KEY = "x121.project.auditView";
+const AUDIT_VIEW_KEY = "an2n.project.auditView";
 
 /* --------------------------------------------------------------------------
    Component

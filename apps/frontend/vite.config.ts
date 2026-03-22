@@ -4,7 +4,7 @@ import tailwindcss from "@tailwindcss/vite";
 import path from "node:path";
 
 export default defineConfig({
-  base: "/x121/",
+  base: "/an2n/",
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {
@@ -14,21 +14,21 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
-      "/x121/api/v1/ws": {
+      "/an2n/api/v1/ws": {
         target: "http://localhost:3000",
         changeOrigin: true,
-        rewrite: (p) => p.replace(/^\/x121/, ""),
+        rewrite: (p) => p.replace(/^\/an2n/, ""),
         ws: true,
       },
-      "/x121/api": {
+      "/an2n/api": {
         target: "http://localhost:3000",
         changeOrigin: true,
-        rewrite: (p) => p.replace(/^\/x121/, ""),
+        rewrite: (p) => p.replace(/^\/an2n/, ""),
       },
-      "/x121/storage": {
+      "/an2n/storage": {
         target: "http://localhost:3000",
         changeOrigin: true,
-        rewrite: (p) => p.replace(/^\/x121/, ""),
+        rewrite: (p) => p.replace(/^\/an2n/, ""),
       },
     },
   },

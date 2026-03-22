@@ -12,8 +12,8 @@ interface SidebarState {
   closeMobile: () => void;
 }
 
-const STORAGE_KEY = "x121:sidebar-collapsed";
-const COMPACT_NAV_KEY = "x121:compact-nav";
+const STORAGE_KEY = "an2n:sidebar-collapsed";
+const COMPACT_NAV_KEY = "an2n:compact-nav";
 
 function loadCollapsed(): boolean {
   try {

@@ -32,7 +32,7 @@ export function exportKeymap(): void {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = "x121-keymap.json";
+  a.download = "an2n-keymap.json";
   a.click();
   URL.revokeObjectURL(url);
 }

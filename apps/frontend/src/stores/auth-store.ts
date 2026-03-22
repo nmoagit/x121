@@ -151,7 +151,7 @@ export const useAuthStore = create<AuthStore>()(
   clearAuth: () => set({ ...INITIAL_STATE }),
 }),
     {
-      name: "x121-auth",
+      name: "an2n-auth",
       partialize: (state) => ({
         user: state.user,
         accessToken: state.accessToken,

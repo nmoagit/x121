@@ -76,4 +76,4 @@ export interface UpsertStudioConfig {
    localStorage key
    -------------------------------------------------------------------------- */
 
-export const SENSITIVITY_STORAGE_KEY = "x121-sensitivity-settings";
+export const SENSITIVITY_STORAGE_KEY = "an2n-sensitivity-settings";

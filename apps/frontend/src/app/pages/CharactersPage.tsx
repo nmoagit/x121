@@ -71,7 +71,7 @@ import {
    Constants
    -------------------------------------------------------------------------- */
 
-const SHOW_DISABLED_KEY = "x121.characters.showDisabled";
+const SHOW_DISABLED_KEY = "an2n.characters.showDisabled";
 
 /* --------------------------------------------------------------------------
    Component

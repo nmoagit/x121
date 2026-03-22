@@ -6,7 +6,7 @@
 
 import { useCallback, useState } from "react";
 
-const STORAGE_KEY = "x121:footer-collapsed";
+const STORAGE_KEY = "an2n:footer-collapsed";
 
 function readInitial(): boolean {
   try {

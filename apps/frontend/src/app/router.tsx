@@ -1383,4 +1383,4 @@ export const routeTree = rootRoute.addChildren([
   ]),
 ]);
 
-export const basepath = "/x121";
+export const basepath = "/an2n";

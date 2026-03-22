@@ -4,8 +4,8 @@
  * When the user switches to another tab/app, the title shows a progress
  * indicator so they can track generation from the OS taskbar.
  *
- * Format: "[73%] x121 — Generating..."
- * Reverts to "x121" when all jobs finish or tab regains focus.
+ * Format: "[73%] αN2N — Generating..."
+ * Reverts to "αN2N" when all jobs finish or tab regains focus.
  */
 
 import { useEffect, useRef, useState } from "react";
@@ -15,7 +15,7 @@ import { useJobStatusAggregator } from "./useJobStatusAggregator";
    Constants
    -------------------------------------------------------------------------- */
 
-const DEFAULT_TITLE = "x121";
+const DEFAULT_TITLE = "αN2N";
 
 /* --------------------------------------------------------------------------
    Tab focus detection
