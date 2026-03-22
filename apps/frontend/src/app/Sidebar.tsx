@@ -21,7 +21,7 @@ import {
   Eye,
   EyeOff,
   FolderKanban,
-  GitBranch,
+  Layers,
   PanelLeftClose,
   PanelLeftOpen,
   Workflow,
@@ -160,7 +160,7 @@ function GlobalSidebarContent({ collapsed }: { collapsed: boolean }) {
         .map((p) => ({
           label: p.name,
           path: `/pipelines/${p.code}/dashboard`,
-          icon: GitBranch,
+          icon: Layers,
           indent: true,
           prominent: true,
         }));
