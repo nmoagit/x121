@@ -10,6 +10,7 @@ import { useState } from "react";
 import { Stack } from "@/components/layout";
 import { Select ,  WireframeLoader } from "@/components/primitives";
 import { EmptyState } from "@/components/domain/EmptyState";
+import { usePipelineContextSafe } from "@/features/pipelines";
 import { useProjects } from "@/features/projects/hooks/use-projects";
 import { useProjectAvatars } from "@/features/projects/hooks/use-project-avatars";
 import { toSelectOptions } from "@/lib/select-utils";
@@ -41,7 +42,8 @@ export function ProjectAvatarPicker({
   const [selectedProjectId, setSelectedProjectId] = useState<string>("");
   const [selectedAvatarId, setSelectedAvatarId] = useState<string>("");
 
-  const { data: projects, isLoading: projectsLoading } = useProjects();
+  const pipelineCtx = usePipelineContextSafe();
+  const { data: projects, isLoading: projectsLoading } = useProjects(pipelineCtx?.pipelineId);
   const projectId = Number(selectedProjectId);
   const {
     data: avatars,

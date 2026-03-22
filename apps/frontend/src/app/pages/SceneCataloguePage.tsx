@@ -37,6 +37,7 @@ import {
 } from "@/features/scene-types";
 import type { CreateSceneType, SceneType } from "@/features/scene-types";
 import { VideoSettingsDefaultsTab } from "@/features/video-settings/VideoSettingsDefaultsTab";
+import { usePipelineContextSafe } from "@/features/pipelines";
 import { useWorkflows } from "@/features/workflow-import";
 import type { Workflow } from "@/features/workflow-import";
 
@@ -60,8 +61,9 @@ const TABS: { id: TabKey; label: string }[] = [
    -------------------------------------------------------------------------- */
 
 function SceneTypesTab() {
+  const pipelineCtx = usePipelineContextSafe();
   const { data: sceneTypes, isLoading } = useSceneTypes();
-  const { data: workflows } = useWorkflows();
+  const { data: workflows } = useWorkflows(undefined, pipelineCtx?.pipelineId);
   const createMutation = useCreateSceneType();
   const deleteMutation = useDeleteSceneType();
 

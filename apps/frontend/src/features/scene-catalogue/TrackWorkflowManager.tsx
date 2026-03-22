@@ -11,6 +11,7 @@ import { LoadingPane } from "@/components/primitives";
 import { TERMINAL_HEADER_TITLE } from "@/lib/ui-classes";
 import { Workflow } from "@/tokens/icons";
 
+import { usePipelineContextSafe } from "@/features/pipelines";
 import { useWorkflows } from "@/features/workflow-import";
 
 import { WorkflowAssignmentTable } from "./WorkflowAssignmentTable";
@@ -21,8 +22,9 @@ import { useSceneCatalogue } from "./hooks/use-scene-catalogue";
    -------------------------------------------------------------------------- */
 
 export function TrackWorkflowManager() {
-  const { data: entries, isLoading: loadingEntries } = useSceneCatalogue();
-  const { data: workflows, isLoading: loadingWorkflows } = useWorkflows();
+  const pipelineCtx = usePipelineContextSafe();
+  const { data: entries, isLoading: loadingEntries } = useSceneCatalogue(false, pipelineCtx?.pipelineId);
+  const { data: workflows, isLoading: loadingWorkflows } = useWorkflows(undefined, pipelineCtx?.pipelineId);
 
   if (loadingEntries || loadingWorkflows) return <LoadingPane />;
 

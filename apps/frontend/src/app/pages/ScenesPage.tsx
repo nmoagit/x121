@@ -20,6 +20,7 @@ import { formatDuration } from "@/features/video-player/frame-utils";
 import { formatBytes, formatDateTime } from "@/lib/format";
 import { TERMINAL_STATUS_COLORS, TRACK_TEXT_COLORS } from "@/lib/ui-classes";
 import { toSelectOptions } from "@/lib/select-utils";
+import { usePipelineContextSafe } from "@/features/pipelines";
 import { useProjects } from "@/features/projects/hooks/use-projects";
 import { Ban, Layers, Play } from "@/tokens/icons";
 
@@ -172,11 +173,13 @@ export function ScenesPage() {
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState<number>(DEFAULT_PAGE_SIZE);
 
-  const { data: projects } = useProjects();
+  const pipelineCtx = usePipelineContextSafe();
+  const { data: projects } = useProjects(pipelineCtx?.pipelineId);
   // When a single project is selected, pass it to the API for server-side filtering
   const projectId = projectFilter.length === 1 ? Number(projectFilter[0]) : undefined;
   const { data: browseResult, isLoading } = useClipsBrowse({
     projectId,
+    pipelineId: pipelineCtx?.pipelineId,
     limit: pageSize,
     offset: page * pageSize,
   });

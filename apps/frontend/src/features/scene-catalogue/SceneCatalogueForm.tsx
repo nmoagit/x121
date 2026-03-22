@@ -11,6 +11,7 @@ import { useCallback, useState } from "react";
 import { Modal } from "@/components/composite/Modal";
 import { Stack } from "@/components/layout";
 import { Button, Checkbox, Input, Toggle } from "@/components/primitives";
+import { usePipelineContextSafe } from "@/features/pipelines";
 import { generateSnakeSlug } from "@/lib/format";
 
 import { useCreateSceneCatalogueEntry, useUpdateSceneCatalogueEntry } from "./hooks/use-scene-catalogue";
@@ -43,7 +44,8 @@ export function SceneCatalogueForm({ entry, open, onClose }: SceneCatalogueFormP
     new Set(entry?.tracks.map((t) => t.id) ?? []),
   );
 
-  const { data: tracks } = useTracks();
+  const pipelineCtx = usePipelineContextSafe();
+  const { data: tracks } = useTracks(false, pipelineCtx?.pipelineId);
   const createMutation = useCreateSceneCatalogueEntry();
   const updateMutation = useUpdateSceneCatalogueEntry(entry?.id ?? 0);
 

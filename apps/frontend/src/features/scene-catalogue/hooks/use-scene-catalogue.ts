@@ -14,7 +14,8 @@ import type { CreateSceneCatalogueEntry, SceneCatalogueEntry, UpdateSceneCatalog
 export const sceneCatalogueKeys = {
   all: ["scene-catalogue"] as const,
   lists: () => [...sceneCatalogueKeys.all, "list"] as const,
-  list: (includeInactive?: boolean) => [...sceneCatalogueKeys.lists(), { includeInactive }] as const,
+  list: (includeInactive?: boolean, pipelineId?: number) =>
+    [...sceneCatalogueKeys.lists(), { includeInactive, pipelineId }] as const,
   details: () => [...sceneCatalogueKeys.all, "detail"] as const,
   detail: (id: number) => [...sceneCatalogueKeys.details(), id] as const,
 };
@@ -24,12 +25,15 @@ export const sceneCatalogueKeys = {
    -------------------------------------------------------------------------- */
 
 /** Fetch all scene catalogue entries with their tracks. */
-export function useSceneCatalogue(includeInactive = false) {
+export function useSceneCatalogue(includeInactive = false, pipelineId?: number) {
   return useQuery({
-    queryKey: sceneCatalogueKeys.list(includeInactive),
+    queryKey: sceneCatalogueKeys.list(includeInactive, pipelineId),
     queryFn: () => {
-      const params = includeInactive ? "?include_inactive=true" : "";
-      return api.get<SceneCatalogueEntry[]>(`/scene-types/with-tracks${params}`);
+      const params = new URLSearchParams();
+      if (includeInactive) params.set("include_inactive", "true");
+      if (pipelineId != null) params.set("pipeline_id", String(pipelineId));
+      const qs = params.toString();
+      return api.get<SceneCatalogueEntry[]>(`/scene-types/with-tracks${qs ? `?${qs}` : ""}`);
     },
   });
 }

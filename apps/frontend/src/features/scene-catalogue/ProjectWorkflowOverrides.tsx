@@ -9,6 +9,7 @@ import { EmptyState } from "@/components/domain";
 import { LoadingPane } from "@/components/primitives";
 import { Workflow } from "@/tokens/icons";
 
+import { usePipelineContextSafe } from "@/features/pipelines";
 import { useWorkflows } from "@/features/workflow-import";
 
 import { WorkflowAssignmentTable } from "./WorkflowAssignmentTable";
@@ -28,9 +29,10 @@ interface ProjectWorkflowOverridesProps {
    -------------------------------------------------------------------------- */
 
 export function ProjectWorkflowOverrides({ projectId }: ProjectWorkflowOverridesProps) {
-  const { data: allEntries, isLoading: loadingEntries } = useSceneCatalogue();
+  const pipelineCtx = usePipelineContextSafe();
+  const { data: allEntries, isLoading: loadingEntries } = useSceneCatalogue(false, pipelineCtx?.pipelineId);
   const { data: settings, isLoading: loadingSettings } = useProjectSceneSettings(projectId);
-  const { data: workflows, isLoading: loadingWorkflows } = useWorkflows();
+  const { data: workflows, isLoading: loadingWorkflows } = useWorkflows(undefined, pipelineCtx?.pipelineId);
 
   if (loadingEntries || loadingSettings || loadingWorkflows) return <LoadingPane />;
 

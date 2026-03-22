@@ -15,6 +15,7 @@ import { FPS_OPTIONS, RESOLUTION_OPTIONS } from "@/features/video-settings/types
 import { generateSnakeSlug } from "@/lib/format";
 import { SECTION_HEADING } from "@/lib/ui-classes";
 
+import { usePipelineContextSafe } from "@/features/pipelines";
 import { useWorkflows } from "@/features/workflow-import";
 
 import {
@@ -40,7 +41,8 @@ interface SceneTypeEditorProps {
 
 export function SceneTypeEditor({ sceneType, onSave, onCancel }: SceneTypeEditorProps) {
   const isEdit = sceneType !== undefined;
-  const { data: workflows } = useWorkflows();
+  const pipelineCtx = usePipelineContextSafe();
+  const { data: workflows } = useWorkflows(undefined, pipelineCtx?.pipelineId);
   const [name, setName] = useState(sceneType?.name ?? "");
   const [workflowId, setWorkflowId] = useState(
     sceneType?.workflow_id?.toString() ?? "",

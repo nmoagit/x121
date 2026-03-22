@@ -14,6 +14,8 @@ import { cn } from "@/lib/cn";
 import { TERMINAL_PANEL } from "@/lib/ui-classes";
 import { LayoutGrid, List } from "@/tokens/icons";
 
+import { usePipelineContextSafe } from "@/features/pipelines";
+
 import { LibraryAvatarCard, LibraryAvatarRow } from "./LibraryAvatarCard";
 import { LibraryAvatarModal } from "./LibraryAvatarModal";
 import { type LibraryFilters, useLibraryAvatars } from "./hooks/use-library";
@@ -40,12 +42,15 @@ export function AvatarLibraryBrowser() {
     return () => clearTimeout(timer);
   }, [searchInput]);
 
+  const pipelineCtx = usePipelineContextSafe();
+
   // Build API-level filters from debounced search.
   const filters: LibraryFilters | undefined = useMemo(() => {
     const search = debouncedSearch.trim() || undefined;
-    if (!search) return undefined;
-    return { search };
-  }, [debouncedSearch]);
+    const pipelineId = pipelineCtx?.pipelineId;
+    if (!search && pipelineId == null) return undefined;
+    return { search, pipelineId };
+  }, [debouncedSearch, pipelineCtx?.pipelineId]);
 
   const { data: avatars, isLoading, error } = useLibraryAvatars(filters);
 

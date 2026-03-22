@@ -16,6 +16,7 @@ import { Workflow as WorkflowIcon } from "@/tokens/icons";
 
 import { useSceneTypes } from "@/features/scene-types";
 import type { SceneType } from "@/features/scene-types";
+import { usePipelineContextSafe } from "@/features/pipelines";
 import { useWorkflows } from "@/features/workflow-import";
 import type { Workflow } from "@/features/workflow-import";
 import { useTrackConfigs, type SceneTypeTrackConfig } from "@/features/scene-catalogue";
@@ -32,8 +33,9 @@ import type { WorkflowPromptSlot } from "./types";
    -------------------------------------------------------------------------- */
 
 export function SceneTypePromptDefaultsPanel() {
+  const pipelineCtx = usePipelineContextSafe();
   const { data: sceneTypes, isLoading: loadingST } = useSceneTypes();
-  const { data: workflows, isLoading: loadingWF } = useWorkflows();
+  const { data: workflows, isLoading: loadingWF } = useWorkflows(undefined, pipelineCtx?.pipelineId);
 
   if (loadingST || loadingWF) return <LoadingPane />;
 

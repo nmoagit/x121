@@ -14,6 +14,7 @@ import { Stack } from "@/components/layout";
 import { Button, LoadingPane } from "@/components/primitives";
 import { Workflow as WorkflowIcon } from "@/tokens/icons";
 
+import { usePipelineContextSafe } from "@/features/pipelines";
 import { useWorkflows } from "@/features/workflow-import";
 import type { Workflow } from "@/features/workflow-import";
 import {
@@ -55,8 +56,9 @@ export function WorkflowPromptOverridePanel({
   onSave,
   isSaving,
 }: WorkflowPromptOverridePanelProps) {
-  const { data: allEntries, isLoading: loadingEntries } = useSceneCatalogue();
-  const { data: workflows, isLoading: loadingWorkflows } = useWorkflows();
+  const pipelineCtx = usePipelineContextSafe();
+  const { data: allEntries, isLoading: loadingEntries } = useSceneCatalogue(false, pipelineCtx?.pipelineId);
+  const { data: workflows, isLoading: loadingWorkflows } = useWorkflows(undefined, pipelineCtx?.pipelineId);
 
   if (settingsLoading || loadingEntries || loadingWorkflows) return <LoadingPane />;
 

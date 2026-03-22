@@ -17,6 +17,7 @@ import { isPurgedClip, isEmptyClip } from "@/features/scenes/types";
 import { getStreamUrl } from "@/features/video-player";
 import { formatDateTime } from "@/lib/format";
 import { toSelectOptions } from "@/lib/select-utils";
+import { usePipelineContextSafe } from "@/features/pipelines";
 import { useProjects } from "@/features/projects/hooks/use-projects";
 import { useAuthStore } from "@/stores/auth-store";
 import { useSetPageTitle } from "@/hooks/useSetPageTitle";
@@ -178,10 +179,12 @@ export function MyReviewsPage() {
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState<number>(DEFAULT_PAGE_SIZE);
 
-  const { data: projects } = useProjects();
+  const pipelineCtx = usePipelineContextSafe();
+  const { data: projects } = useProjects(pipelineCtx?.pipelineId);
   const projectId = projectFilter ? Number(projectFilter) : undefined;
   const { data: browseResult, isLoading } = useClipsBrowse({
     projectId,
+    pipelineId: pipelineCtx?.pipelineId,
     limit: pageSize,
     offset: page * pageSize,
   });

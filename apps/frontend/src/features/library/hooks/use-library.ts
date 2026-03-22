@@ -25,6 +25,7 @@ export interface LibraryFilters {
   search?: string;
   sceneTypeId?: number;
   trackId?: number;
+  pipelineId?: number;
 }
 
 export const libraryKeys = {
@@ -49,6 +50,9 @@ function buildLibraryQueryString(filters?: LibraryFilters): string {
   }
   if (filters.trackId != null) {
     params.set("track_id", String(filters.trackId));
+  }
+  if (filters.pipelineId != null) {
+    params.set("pipeline_id", String(filters.pipelineId));
   }
   const qs = params.toString();
   return qs ? `?${qs}` : "";

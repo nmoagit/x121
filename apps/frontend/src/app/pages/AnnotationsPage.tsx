@@ -21,6 +21,7 @@ import type { AnnotatedItem } from "@/features/annotations";
 import { useVersionAnnotations } from "@/features/scenes/hooks/useVersionAnnotations";
 import { VideoPlayer } from "@/features/video-player/VideoPlayer";
 import { getStreamUrl } from "@/features/video-player/hooks/use-video-metadata";
+import { usePipelineContextSafe } from "@/features/pipelines";
 import { useProjects } from "@/features/projects/hooks/use-projects";
 import { formatRelative } from "@/lib/format";
 import { toSelectOptions } from "@/lib/select-utils";
@@ -381,7 +382,8 @@ export function AnnotationsPage() {
   const [showCompleted, setShowCompleted] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<AnnotatedItem | null>(null);
 
-  const { data: projects } = useProjects();
+  const pipelineCtx = usePipelineContextSafe();
+  const { data: projects } = useProjects(pipelineCtx?.pipelineId);
   const deleteMutation = useDeleteBrowseAnnotation();
 
   const projectId = projectFilter ? Number(projectFilter) : undefined;

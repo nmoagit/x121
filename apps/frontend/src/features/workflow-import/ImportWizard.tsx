@@ -17,6 +17,7 @@ import { TERMINAL_INPUT, TERMINAL_TEXTAREA, TERMINAL_DIVIDER, TERMINAL_ROW_HOVER
 import { cn } from "@/lib/cn";
 
 import { api } from "@/lib/api";
+import { usePipelineContextSafe } from "@/features/pipelines";
 import { useSceneCatalogue } from "@/features/scene-catalogue/hooks/use-scene-catalogue";
 import { trackConfigKeys } from "@/features/scene-catalogue/hooks/use-track-configs";
 import type { SceneCatalogueEntry } from "@/features/scene-catalogue/types";
@@ -507,7 +508,8 @@ function AssignToScenesStep({
   onSkip,
   isAssigning,
 }: AssignToScenesStepProps) {
-  const { data: entries, isLoading } = useSceneCatalogue(true);
+  const pipelineCtx = usePipelineContextSafe();
+  const { data: entries, isLoading } = useSceneCatalogue(true, pipelineCtx?.pipelineId);
 
   const entriesWithTracks = (entries ?? []).filter(
     (e: SceneCatalogueEntry) => e.tracks.length > 0,

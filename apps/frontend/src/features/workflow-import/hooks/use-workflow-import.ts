@@ -23,8 +23,8 @@ import type {
 
 export const workflowKeys = {
   all: ["workflows"] as const,
-  list: (statusId?: number) =>
-    ["workflows", "list", { statusId }] as const,
+  list: (statusId?: number, pipelineId?: number) =>
+    ["workflows", "list", { statusId, pipelineId }] as const,
   detail: (id: number) => ["workflows", "detail", id] as const,
   validationReport: (id: number) =>
     ["workflows", "validation-report", id] as const,
@@ -40,18 +40,21 @@ export const workflowKeys = {
    Queries
    -------------------------------------------------------------------------- */
 
-/** List workflows with optional status filter. */
-export function useWorkflows(statusId?: number) {
+/** List workflows with optional status and pipeline filters. */
+export function useWorkflows(statusId?: number, pipelineId?: number) {
   const params = new URLSearchParams();
   if (statusId != null) {
     params.set("status_id", String(statusId));
+  }
+  if (pipelineId != null) {
+    params.set("pipeline_id", String(pipelineId));
   }
 
   const qs = params.toString();
   const path = qs ? `/workflows?${qs}` : "/workflows";
 
   return useQuery({
-    queryKey: workflowKeys.list(statusId),
+    queryKey: workflowKeys.list(statusId, pipelineId),
     queryFn: () => api.get<Workflow[]>(path),
   });
 }

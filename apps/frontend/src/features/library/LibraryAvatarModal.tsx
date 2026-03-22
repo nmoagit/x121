@@ -26,6 +26,7 @@ import { getVoiceId } from "@/features/avatars/types";
 import type { AvatarSpeech } from "@/features/avatars/types";
 import { useImageVariants } from "@/features/images/hooks/use-image-variants";
 import { variantThumbnailUrl, variantImageUrl } from "@/features/images/utils";
+import { usePipelineContextSafe } from "@/features/pipelines";
 import { useSceneCatalogue } from "@/features/scene-catalogue/hooks/use-scene-catalogue";
 import { useTracks } from "@/features/scene-catalogue/hooks/use-tracks";
 import { useAvatarScenes } from "@/features/scenes/hooks/useAvatarScenes";
@@ -93,8 +94,9 @@ export function LibraryAvatarModal({
   const { data: settings } = useAvatarSettings(avatar.project_id, avatar.id);
 
   // Fetch scene types and tracks for name resolution
-  const { data: sceneCatalogue } = useSceneCatalogue();
-  const { data: tracks } = useTracks();
+  const pipelineCtx = usePipelineContextSafe();
+  const { data: sceneCatalogue } = useSceneCatalogue(false, pipelineCtx?.pipelineId);
+  const { data: tracks } = useTracks(false, pipelineCtx?.pipelineId);
 
   // Build ID→name lookup maps
   const sceneTypeMap = useMemo(() => {

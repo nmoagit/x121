@@ -11,6 +11,7 @@ import { useState, type ReactNode } from "react";
 import { Stack } from "@/components/layout";
 import { Select ,  WireframeLoader } from "@/components/primitives";
 import { EmptyState } from "@/components/domain/EmptyState";
+import { usePipelineContextSafe } from "@/features/pipelines";
 import { useProjects } from "@/features/projects/hooks/use-projects";
 import { toSelectOptions } from "@/lib/select-utils";
 import { FolderKanban } from "@/tokens/icons";
@@ -30,7 +31,8 @@ export function ProjectPicker({
   children,
 }: ProjectPickerProps) {
   const [selectedProjectId, setSelectedProjectId] = useState("");
-  const { data: projects, isLoading } = useProjects();
+  const pipelineCtx = usePipelineContextSafe();
+  const { data: projects, isLoading } = useProjects(pipelineCtx?.pipelineId);
 
   const projectId = Number(selectedProjectId);
 

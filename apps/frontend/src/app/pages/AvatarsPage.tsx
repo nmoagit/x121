@@ -50,6 +50,7 @@ import { useCreateProject, useProjects } from "@/features/projects/hooks/use-pro
 import type { Avatar, AvatarDropPayload, AvatarGroup, FolderDropResult } from "@/features/projects/types";
 
 import { variantThumbnailUrl } from "@/features/images/utils";
+import { usePipelineContextSafe } from "@/features/pipelines";
 import { cn } from "@/lib/cn";
 import { toSelectOptions } from "@/lib/select-utils";
 import {
@@ -82,9 +83,10 @@ export function AvatarsPage() {
   const queryClient = useQueryClient();
   const user = useAuthStore((s) => s.user);
   const isAdmin = user?.role === "admin";
+  const pipelineCtx = usePipelineContextSafe();
 
   // Project selection (admin: multi-project, non-admin: single project)
-  const { data: projects, isLoading: projectsLoading } = useProjects();
+  const { data: projects, isLoading: projectsLoading } = useProjects(pipelineCtx?.pipelineId);
   const [selectedProjectId, setSelectedProjectId] = useState<number>(0);
 
   // Auto-select first project for non-admin users
@@ -243,7 +245,7 @@ export function AvatarsPage() {
 
   // Fetch image variants across all displayed projects to compute seed data status.
   // Pass a large limit (no project filter) so variants from every visible project are included.
-  const { data: allVariantsBrowse } = useImageVariantsBrowse({ limit: 500 });
+  const { data: allVariantsBrowse } = useImageVariantsBrowse({ pipelineId: pipelineCtx?.pipelineId, limit: 500 });
   const allVariants = allVariantsBrowse?.items;
 
   const seedDataStatusMap = useMemo(() => {

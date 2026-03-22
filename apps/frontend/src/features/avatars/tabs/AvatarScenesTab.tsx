@@ -38,6 +38,7 @@ import {
 } from "@/features/scene-catalogue/hooks/use-avatar-scene-settings";
 import { useExpandedSettings } from "@/features/scene-catalogue/hooks/use-expanded-settings";
 import { trackConfigKeys } from "@/features/scene-catalogue/hooks/use-track-configs";
+import { usePipelineContextSafe } from "@/features/pipelines";
 import { useTracks } from "@/features/scene-catalogue/hooks/use-tracks";
 import type { ExpandedSceneSetting, SceneTypeTrackConfig } from "@/features/scene-catalogue/types";
 import { AvatarSceneOverrideEditor } from "@/features/prompt-management/AvatarSceneOverrideEditor";
@@ -122,7 +123,8 @@ export function AvatarScenesTab({ avatarId, focusSceneId, focusSceneTypeId, focu
     setAnyGenerating(currentGenerating.size > 0);
   }, [scenes, queryClient]);
 
-  const { data: tracks } = useTracks();
+  const pipelineCtx = usePipelineContextSafe();
+  const { data: tracks } = useTracks(false, pipelineCtx?.pipelineId);
   const { data: imageVariants } = useImageVariants(avatarId);
   const batchGenerate = useBatchGenerate();
   const createScene = useCreateScene(avatarId);

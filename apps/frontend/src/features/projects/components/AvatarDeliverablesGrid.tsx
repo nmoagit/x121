@@ -18,6 +18,7 @@ import { useAvatarDeliverables, useBatchSceneAssignments, useBatchVariantStatuse
 import type { BatchSceneAssignment, BatchVariantStatus } from "../hooks/use-avatar-deliverables";
 import { useEnabledSceneTypes } from "@/features/production/hooks/use-production";
 import { IMAGE_VARIANT_STATUS } from "@/features/images/types";
+import { usePipelineContextSafe } from "@/features/pipelines";
 import { useTracks } from "@/features/scene-catalogue/hooks/use-tracks";
 import type { Track } from "@/features/scene-catalogue/types";
 import type { AvatarDeliverableRow } from "../types";
@@ -333,7 +334,8 @@ function MatrixTab({ rows, projectId }: MatrixTabProps) {
   const avatarIds = useMemo(() => rows.map((r) => r.id), [rows]);
 
   // Fetch tracks (for image columns)
-  const { data: tracks, isLoading: tracksLoading } = useTracks();
+  const pipelineCtx = usePipelineContextSafe();
+  const { data: tracks, isLoading: tracksLoading } = useTracks(false, pipelineCtx?.pipelineId);
 
   // Fetch enabled scene types (for scene columns)
   const { data: enabledEntries, isLoading: scenesLoading } = useEnabledSceneTypes(projectId, avatarIds);

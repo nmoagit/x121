@@ -8,8 +8,8 @@ export const clipKeys = {
   list: (sceneId: number) => [...clipKeys.all, "list", sceneId] as const,
   detail: (sceneId: number, versionId: number) =>
     [...clipKeys.all, "detail", sceneId, versionId] as const,
-  browse: (projectId?: number, limit?: number, offset?: number) =>
-    [...clipKeys.all, "browse", projectId, limit, offset] as const,
+  browse: (projectId?: number, pipelineId?: number, limit?: number, offset?: number) =>
+    [...clipKeys.all, "browse", projectId, pipelineId, limit, offset] as const,
 };
 
 /** A clip enriched with avatar/scene/project context for browsing. */
@@ -51,6 +51,7 @@ export interface ClipBrowsePage {
 /** Params for browsing clips with pagination. */
 export interface ClipBrowseParams {
   projectId?: number;
+  pipelineId?: number;
   limit?: number;
   offset?: number;
 }
@@ -59,11 +60,12 @@ export interface ClipBrowseParams {
 export function useClipsBrowse(params: ClipBrowseParams = {}) {
   const searchParams = new URLSearchParams();
   if (params.projectId != null) searchParams.set("project_id", String(params.projectId));
+  if (params.pipelineId != null) searchParams.set("pipeline_id", String(params.pipelineId));
   if (params.limit != null) searchParams.set("limit", String(params.limit));
   if (params.offset != null) searchParams.set("offset", String(params.offset));
   const qs = searchParams.toString();
   return useQuery({
-    queryKey: clipKeys.browse(params.projectId, params.limit, params.offset),
+    queryKey: clipKeys.browse(params.projectId, params.pipelineId, params.limit, params.offset),
     queryFn: () => api.get<ClipBrowsePage>(`/scene-video-versions/browse?${qs}`),
   });
 }

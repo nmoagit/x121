@@ -15,6 +15,7 @@ import { Stack } from "@/components/layout";
 import { TERMINAL_STATUS_COLORS, TERMINAL_TH, TERMINAL_DIVIDER, TERMINAL_ROW_HOVER, TRACK_TEXT_COLORS } from "@/lib/ui-classes";
 
 import { WorkflowCanvas } from "@/features/workflow-canvas/WorkflowCanvas";
+import { usePipelineContextSafe } from "@/features/pipelines";
 import { useSceneCatalogue } from "@/features/scene-catalogue/hooks/use-scene-catalogue";
 import { useTrackConfigs } from "@/features/scene-catalogue/hooks/use-track-configs";
 import type { SceneCatalogueEntry } from "@/features/scene-catalogue/types";
@@ -299,7 +300,8 @@ function InfoTab({ workflow }: { workflow: Workflow }) {
    -------------------------------------------------------------------------- */
 
 function ScenesTab({ workflowId }: { workflowId: number }) {
-  const { data: entries, isLoading } = useSceneCatalogue(true);
+  const pipelineCtx = usePipelineContextSafe();
+  const { data: entries, isLoading } = useSceneCatalogue(true, pipelineCtx?.pipelineId);
 
   const entriesWithTracks = (entries ?? []).filter(
     (e: SceneCatalogueEntry) => e.tracks.length > 0,

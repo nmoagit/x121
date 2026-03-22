@@ -35,6 +35,7 @@ import {
 import type { ImportWorkflowRequest, Workflow } from "@/features/workflow-import";
 import { WorkflowDetailPanel } from "@/features/workflow-import/WorkflowDetailPanel";
 import { useExportWorkflow, useConfigImport } from "@/features/config-io";
+import { usePipelineContextSafe } from "@/features/pipelines";
 
 /* --------------------------------------------------------------------------
    Tab types
@@ -191,7 +192,8 @@ export function WorkflowsPage() {
   const [editingWorkflow, setEditingWorkflow] = useState<Workflow | null>(null);
   const [deletingWorkflow, setDeletingWorkflow] = useState<Workflow | null>(null);
 
-  const { data: workflows, isLoading } = useWorkflows();
+  const pipelineCtx = usePipelineContextSafe();
+  const { data: workflows, isLoading } = useWorkflows(undefined, pipelineCtx?.pipelineId);
   const { name: searchName } = useSearch({ strict: false }) as { name?: string };
 
   // Auto-select workflow from URL search param (e.g., ?name=boobs-fondle)

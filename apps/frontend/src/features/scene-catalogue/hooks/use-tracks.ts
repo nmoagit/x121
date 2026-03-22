@@ -16,7 +16,8 @@ import { sceneCatalogueKeys } from "./use-scene-catalogue";
 export const trackKeys = {
   all: ["tracks"] as const,
   lists: () => [...trackKeys.all, "list"] as const,
-  list: (includeInactive?: boolean) => [...trackKeys.lists(), { includeInactive }] as const,
+  list: (includeInactive?: boolean, pipelineId?: number) =>
+    [...trackKeys.lists(), { includeInactive, pipelineId }] as const,
 };
 
 /* --------------------------------------------------------------------------
@@ -24,12 +25,15 @@ export const trackKeys = {
    -------------------------------------------------------------------------- */
 
 /** Fetch all tracks. */
-export function useTracks(includeInactive = false) {
+export function useTracks(includeInactive = false, pipelineId?: number) {
   return useQuery({
-    queryKey: trackKeys.list(includeInactive),
+    queryKey: trackKeys.list(includeInactive, pipelineId),
     queryFn: () => {
-      const params = includeInactive ? "?include_inactive=true" : "";
-      return api.get<Track[]>(`/tracks${params}`);
+      const params = new URLSearchParams();
+      if (includeInactive) params.set("include_inactive", "true");
+      if (pipelineId != null) params.set("pipeline_id", String(pipelineId));
+      const qs = params.toString();
+      return api.get<Track[]>(`/tracks${qs ? `?${qs}` : ""}`);
     },
   });
 }

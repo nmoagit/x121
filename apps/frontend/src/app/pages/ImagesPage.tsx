@@ -27,6 +27,7 @@ import { variantImageUrl, variantThumbnailUrl } from "@/features/images/utils";
 import { formatBytes, formatDateTime } from "@/lib/format";
 import { TERMINAL_STATUS_COLORS, TRACK_TEXT_COLORS } from "@/lib/ui-classes";
 import { toSelectOptions } from "@/lib/select-utils";
+import { usePipelineContextSafe } from "@/features/pipelines";
 import { useProjects } from "@/features/projects/hooks/use-projects";
 import { Check, Image as ImageIcon } from "@/tokens/icons";
 
@@ -163,10 +164,12 @@ export function ImagesPage() {
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState<number>(DEFAULT_PAGE_SIZE);
 
-  const { data: projects } = useProjects();
+  const pipelineCtx = usePipelineContextSafe();
+  const { data: projects } = useProjects(pipelineCtx?.pipelineId);
   const projectId = projectFilter.length === 1 ? Number(projectFilter[0]) : undefined;
   const { data: browseResult, isLoading } = useImageVariantsBrowse({
     projectId,
+    pipelineId: pipelineCtx?.pipelineId,
     limit: pageSize,
     offset: page * pageSize,
   });

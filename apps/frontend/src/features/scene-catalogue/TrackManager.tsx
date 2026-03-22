@@ -21,6 +21,7 @@ import {
   TERMINAL_STATUS_COLORS,
   TERMINAL_TH,
 } from "@/lib/ui-classes";
+import { usePipelineContextSafe } from "@/features/pipelines";
 import { Plus } from "@/tokens/icons";
 
 import { useCreateTrack, useTracks, useUpdateTrack } from "./hooks/use-tracks";
@@ -181,7 +182,8 @@ function TrackRow({ track }: TrackRowProps) {
    -------------------------------------------------------------------------- */
 
 export function TrackManager() {
-  const { data: tracks, isLoading } = useTracks(true);
+  const pipelineCtx = usePipelineContextSafe();
+  const { data: tracks, isLoading } = useTracks(true, pipelineCtx?.pipelineId);
   const [showAdd, setShowAdd] = useState(false);
 
   if (isLoading) {

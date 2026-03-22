@@ -27,8 +27,8 @@ export const imageVariantKeys = {
   histories: () => [...imageVariantKeys.all, "history"] as const,
   history: (avatarId: number, id: number) =>
     [...imageVariantKeys.histories(), avatarId, id] as const,
-  browse: (projectId?: number, limit?: number, offset?: number) =>
-    [...imageVariantKeys.all, "browse", projectId, limit, offset] as const,
+  browse: (projectId?: number, pipelineId?: number, limit?: number, offset?: number) =>
+    [...imageVariantKeys.all, "browse", projectId, pipelineId, limit, offset] as const,
 };
 
 /* --------------------------------------------------------------------------
@@ -277,6 +277,7 @@ export interface ImageVariantBrowsePage {
 /** Params for browsing image variants with pagination. */
 export interface ImageVariantBrowseParams {
   projectId?: number;
+  pipelineId?: number;
   limit?: number;
   offset?: number;
 }
@@ -285,11 +286,12 @@ export interface ImageVariantBrowseParams {
 export function useImageVariantsBrowse(params: ImageVariantBrowseParams = {}) {
   const searchParams = new URLSearchParams();
   if (params.projectId != null) searchParams.set("project_id", String(params.projectId));
+  if (params.pipelineId != null) searchParams.set("pipeline_id", String(params.pipelineId));
   if (params.limit != null) searchParams.set("limit", String(params.limit));
   if (params.offset != null) searchParams.set("offset", String(params.offset));
   const qs = searchParams.toString();
   return useQuery({
-    queryKey: imageVariantKeys.browse(params.projectId, params.limit, params.offset),
+    queryKey: imageVariantKeys.browse(params.projectId, params.pipelineId, params.limit, params.offset),
     queryFn: () => api.get<ImageVariantBrowsePage>(`/image-variants/browse?${qs}`),
   });
 }

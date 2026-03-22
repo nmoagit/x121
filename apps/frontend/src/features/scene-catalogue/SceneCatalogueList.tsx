@@ -24,6 +24,8 @@ import {
 } from "@/lib/ui-classes";
 import { Plus } from "@/tokens/icons";
 
+import { usePipelineContextSafe } from "@/features/pipelines";
+
 import { SceneCatalogueForm } from "./SceneCatalogueForm";
 import { useDeactivateSceneCatalogueEntry, useSceneCatalogue } from "./hooks/use-scene-catalogue";
 import type { SceneCatalogueEntry } from "./types";
@@ -106,8 +108,9 @@ function EntryRow({ entry, onEdit, onDeactivate }: EntryRowProps) {
    -------------------------------------------------------------------------- */
 
 export function SceneCatalogueList() {
+  const pipelineCtx = usePipelineContextSafe();
   const [showInactive, setShowInactive] = useState(false);
-  const { data: entries, isLoading } = useSceneCatalogue(showInactive);
+  const { data: entries, isLoading } = useSceneCatalogue(showInactive, pipelineCtx?.pipelineId);
   const deactivateMutation = useDeactivateSceneCatalogueEntry();
 
   const [formOpen, setFormOpen] = useState(false);
