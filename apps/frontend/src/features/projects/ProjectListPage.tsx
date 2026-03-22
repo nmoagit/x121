@@ -53,12 +53,13 @@ export function ProjectListPage() {
   useSetPageTitle("Projects", "Manage avatars, scenes, and delivery across projects.");
 
   const navigate = useNavigate();
-  const { data: projects, isLoading, error } = useProjects();
+  const { data: pipelines } = usePipelines();
+  const activePipelineCode = usePipelineCode();
+  const activePipeline = pipelines?.find((p) => p.code === activePipelineCode);
+  const { data: projects, isLoading, error } = useProjects(activePipeline?.id);
   const createProject = useCreateProject();
   const updateProject = useUpdateProject();
   const deleteProject = useDeleteProject();
-  const { data: pipelines } = usePipelines();
-  const activePipelineCode = usePipelineCode();
 
   /* --- archive/unarchive/delete handlers --- */
   function handleArchive(id: number) {
@@ -91,7 +92,6 @@ export function ProjectListPage() {
   const [newPipelineId, setNewPipelineId] = useState("");
 
   /** Pre-fill pipeline_id when in a pipeline-scoped route. */
-  const activePipeline = pipelines?.find((p) => p.code === activePipelineCode);
   const defaultPipelineId = activePipeline ? String(activePipeline.id) : "";
 
   const pipelineOptions = [
