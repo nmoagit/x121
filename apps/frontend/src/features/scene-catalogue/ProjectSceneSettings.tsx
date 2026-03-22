@@ -21,6 +21,7 @@ import { useBatchSceneAssignments } from "@/features/projects/hooks/use-avatar-d
 
 import { SceneSettingRow } from "./SceneSettingRow";
 import { useExpandedSettings } from "./hooks/use-expanded-settings";
+import { useSingleTrack } from "./hooks/use-single-track";
 import {
   useProjectSceneSettings,
   useToggleProjectSceneSetting,
@@ -43,6 +44,7 @@ export function ProjectSceneSettings({ projectId }: ProjectSceneSettingsProps) {
   const { data: assignments } = useBatchSceneAssignments(projectId);
   const expandedRows = useExpandedSettings(settings);
   const toggleMutation = useToggleProjectSceneSetting(projectId);
+  const { isSingleTrack } = useSingleTrack();
 
   const videoCountMap = useMemo(() => {
     const map = new Map<string, number>();
@@ -77,7 +79,7 @@ export function ProjectSceneSettings({ projectId }: ProjectSceneSettingsProps) {
               <thead>
                 <tr className={TERMINAL_DIVIDER}>
                   <th className={cn(TERMINAL_TH, "px-3 py-1.5")}>Scene</th>
-                  <th className={cn(TERMINAL_TH, "px-3 py-1.5")}>Track</th>
+                  {!isSingleTrack && <th className={cn(TERMINAL_TH, "px-3 py-1.5")}>Track</th>}
                   <th className={cn(TERMINAL_TH, "px-3 py-1.5")}>Enabled</th>
                   <th className={cn(TERMINAL_TH, "px-3 py-1.5")}>Source</th>
                   <th className={cn(TERMINAL_TH, "px-3 py-1.5")}>Videos</th>
@@ -87,7 +89,7 @@ export function ProjectSceneSettings({ projectId }: ProjectSceneSettingsProps) {
                 {expandedRows.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={5}
+                      colSpan={isSingleTrack ? 4 : 5}
                       className="px-3 py-6 text-center font-mono text-xs text-[var(--color-text-muted)]"
                     >
                       No scene settings available. Add scenes to the catalogue first.
@@ -101,6 +103,7 @@ export function ProjectSceneSettings({ projectId }: ProjectSceneSettingsProps) {
                       onToggle={handleToggle}
                       isPending={toggleMutation.isPending}
                       hasVideo={(videoCountMap.get(`${row.scene_type_id}::${row.track_id ?? ""}`) ?? 0) > 0}
+                      hideTracks={isSingleTrack}
                     />
                   ))
                 )}

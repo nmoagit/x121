@@ -76,6 +76,9 @@ export {
 // Hooks — Expanded settings (backend returns track-expanded rows; hook adds group annotations)
 export { useExpandedSettings } from "./hooks/use-expanded-settings";
 
+// Hooks — Single-track pipeline detection
+export { useSingleTrack } from "./hooks/use-single-track";
+
 // Types & utilities
 export type {
   Track,

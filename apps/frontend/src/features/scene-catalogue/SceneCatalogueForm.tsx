@@ -15,6 +15,7 @@ import { usePipelineContextSafe } from "@/features/pipelines";
 import { generateSnakeSlug } from "@/lib/format";
 
 import { useCreateSceneCatalogueEntry, useUpdateSceneCatalogueEntry } from "./hooks/use-scene-catalogue";
+import { useSingleTrack } from "./hooks/use-single-track";
 import { useTracks } from "./hooks/use-tracks";
 import type { CreateSceneCatalogueEntry, SceneCatalogueEntry } from "./types";
 
@@ -46,6 +47,7 @@ export function SceneCatalogueForm({ entry, open, onClose }: SceneCatalogueFormP
 
   const pipelineCtx = usePipelineContextSafe();
   const { data: tracks } = useTracks(false, pipelineCtx?.pipelineId);
+  const { isSingleTrack, singleTrack } = useSingleTrack();
   const createMutation = useCreateSceneCatalogueEntry();
   const updateMutation = useUpdateSceneCatalogueEntry(entry?.id ?? 0);
 
@@ -79,6 +81,11 @@ export function SceneCatalogueForm({ entry, open, onClose }: SceneCatalogueFormP
       e.preventDefault();
       if (isNameEmpty) return;
 
+      // For single-track pipelines, always include the single track
+      const effectiveTrackIds = isSingleTrack && singleTrack
+        ? [singleTrack.id]
+        : Array.from(selectedTrackIds);
+
       if (isEdit) {
         updateMutation.mutate(
           {
@@ -86,7 +93,7 @@ export function SceneCatalogueForm({ entry, open, onClose }: SceneCatalogueFormP
             description: description.trim() || null,
             has_clothes_off_transition: hasClothesOff,
             sort_order: Number.parseInt(sortOrder, 10) || 0,
-            track_ids: Array.from(selectedTrackIds),
+            track_ids: effectiveTrackIds,
           },
           { onSuccess: () => onClose() },
         );
@@ -97,7 +104,7 @@ export function SceneCatalogueForm({ entry, open, onClose }: SceneCatalogueFormP
           description: description.trim() || null,
           has_clothes_off_transition: hasClothesOff,
           sort_order: Number.parseInt(sortOrder, 10) || 0,
-          track_ids: Array.from(selectedTrackIds),
+          track_ids: effectiveTrackIds,
         };
 
         createMutation.mutate(data, { onSuccess: () => onClose() });
@@ -112,6 +119,8 @@ export function SceneCatalogueForm({ entry, open, onClose }: SceneCatalogueFormP
       hasClothesOff,
       sortOrder,
       selectedTrackIds,
+      isSingleTrack,
+      singleTrack,
       createMutation,
       updateMutation,
       onClose,
@@ -169,26 +178,28 @@ export function SceneCatalogueForm({ entry, open, onClose }: SceneCatalogueFormP
             onChange={(e) => setSortOrder(e.target.value)}
           />
 
-          {/* Track assignment */}
-          <div className="flex flex-col gap-2">
-            <span className="font-mono text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide">Tracks</span>
-            {!tracks || tracks.length === 0 ? (
-              <p className="font-mono text-xs text-[var(--color-text-muted)]">
-                No tracks available. Create tracks first.
-              </p>
-            ) : (
-              <div className="flex flex-col gap-2">
-                {tracks.map((track) => (
-                  <Checkbox
-                    key={track.id}
-                    checked={selectedTrackIds.has(track.id)}
-                    onChange={(checked) => handleTrackToggle(track.id, checked)}
-                    label={track.name}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
+          {/* Track assignment — hidden for single-track pipelines (auto-selected) */}
+          {!isSingleTrack && (
+            <div className="flex flex-col gap-2">
+              <span className="font-mono text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide">Tracks</span>
+              {!tracks || tracks.length === 0 ? (
+                <p className="font-mono text-xs text-[var(--color-text-muted)]">
+                  No tracks available. Create tracks first.
+                </p>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  {tracks.map((track) => (
+                    <Checkbox
+                      key={track.id}
+                      checked={selectedTrackIds.has(track.id)}
+                      onChange={(checked) => handleTrackToggle(track.id, checked)}
+                      label={track.name}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Actions */}
           <div className="flex justify-end gap-2 pt-1 border-t border-[var(--color-border-default)]">

@@ -16,6 +16,7 @@ import { GHOST_DANGER_BTN, TERMINAL_DIVIDER, TERMINAL_TH } from "@/lib/ui-classe
 
 import { SceneSettingRow } from "./SceneSettingRow";
 import { useExpandedSettings } from "./hooks/use-expanded-settings";
+import { useSingleTrack } from "./hooks/use-single-track";
 import type { EffectiveSceneSetting, SceneSettingUpdate } from "./types";
 
 /* --------------------------------------------------------------------------
@@ -46,6 +47,7 @@ export function SceneSettingOverridesPanel({
   videoCountMap,
 }: SceneSettingOverridesPanelProps) {
   const expandedRows = useExpandedSettings(settings);
+  const { isSingleTrack } = useSingleTrack();
   const [showResetAll, setShowResetAll] = useState(false);
 
   const hasOverrides = settings?.some((s) => s.source === sourceName);
@@ -104,7 +106,7 @@ export function SceneSettingOverridesPanel({
           <thead>
             <tr className={TERMINAL_DIVIDER}>
               <th className={cn(TERMINAL_TH, "px-3 py-1.5")}>Scene</th>
-              <th className={cn(TERMINAL_TH, "px-3 py-1.5")}>Track</th>
+              {!isSingleTrack && <th className={cn(TERMINAL_TH, "px-3 py-1.5")}>Track</th>}
               <th className={cn(TERMINAL_TH, "px-3 py-1.5")}>Enabled</th>
               <th className={cn(TERMINAL_TH, "px-3 py-1.5")}>Source</th>
               {videoCountMap && (
@@ -117,7 +119,7 @@ export function SceneSettingOverridesPanel({
             {expandedRows.length === 0 ? (
               <tr>
                 <td
-                  colSpan={videoCountMap ? 6 : 5}
+                  colSpan={(videoCountMap ? 6 : 5) - (isSingleTrack ? 1 : 0)}
                   className="px-3 py-6 text-center text-xs font-mono text-[var(--color-text-muted)]"
                 >
                   No scene settings available.
@@ -131,6 +133,7 @@ export function SceneSettingOverridesPanel({
                   onToggle={handleToggle}
                   isPending={isPending}
                   hasVideo={videoCountMap ? (videoCountMap.get(`${row.scene_type_id}::${row.track_id ?? ""}`) ?? 0) > 0 : undefined}
+                  hideTracks={isSingleTrack}
                   actions={
                     row.source === sourceName ? (
                       <Button

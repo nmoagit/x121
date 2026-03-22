@@ -11,6 +11,7 @@ import {
   useTrackConfigs,
   useUpsertTrackConfig,
 } from "./hooks/use-track-configs";
+import { useSingleTrack } from "./hooks/use-single-track";
 import type { SceneCatalogueEntry } from "./types";
 import { cn } from "@/lib/cn";
 import { TERMINAL_SELECT, TRACK_TEXT_COLORS } from "@/lib/ui-classes";
@@ -37,6 +38,8 @@ interface WorkflowAssignmentTableProps {
    -------------------------------------------------------------------------- */
 
 export function WorkflowAssignmentTable({ entries, workflowOptions, enabledTrackKeys }: WorkflowAssignmentTableProps) {
+  const { isSingleTrack } = useSingleTrack();
+
   return (
     <div className="overflow-x-auto">
       <table className="w-full">
@@ -45,9 +48,11 @@ export function WorkflowAssignmentTable({ entries, workflowOptions, enabledTrack
             <th className="px-3 py-1.5 text-left text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-wide font-mono">
               Scene Type
             </th>
-            <th className="px-3 py-1.5 text-left text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-wide font-mono">
-              Track
-            </th>
+            {!isSingleTrack && (
+              <th className="px-3 py-1.5 text-left text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-wide font-mono">
+                Track
+              </th>
+            )}
             <th className="px-3 py-1.5 text-left text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-wide font-mono">
               Workflow
             </th>
@@ -63,6 +68,7 @@ export function WorkflowAssignmentTable({ entries, workflowOptions, enabledTrack
               entry={entry}
               workflowOptions={workflowOptions}
               enabledTrackKeys={enabledTrackKeys}
+              hideTracks={isSingleTrack}
             />
           ))}
         </tbody>
@@ -79,9 +85,10 @@ interface SceneTypeRowsProps {
   entry: SceneCatalogueEntry;
   workflowOptions: { value: string; label: string }[];
   enabledTrackKeys?: Set<string>;
+  hideTracks?: boolean;
 }
 
-function SceneTypeRows({ entry, workflowOptions, enabledTrackKeys }: SceneTypeRowsProps) {
+function SceneTypeRows({ entry, workflowOptions, enabledTrackKeys, hideTracks }: SceneTypeRowsProps) {
   const { data: configs } = useTrackConfigs(entry.id);
   const upsertMutation = useUpsertTrackConfig(entry.id);
   const deleteMutation = useDeleteTrackConfig(entry.id);
@@ -124,14 +131,16 @@ function SceneTypeRows({ entry, workflowOptions, enabledTrackKeys }: SceneTypeRo
               ) : null}
             </td>
 
-            <td className="px-3 py-1.5 font-mono text-xs">
-              <div className="flex items-center gap-2">
-                <span className={TRACK_TEXT_COLORS[row.trackSlug] ?? "text-[var(--color-text-primary)]"}>{row.trackName}</span>
-                {row.isClothesOff && (
-                  <span className="text-orange-400">clothes off</span>
-                )}
-              </div>
-            </td>
+            {!hideTracks && (
+              <td className="px-3 py-1.5 font-mono text-xs">
+                <div className="flex items-center gap-2">
+                  <span className={TRACK_TEXT_COLORS[row.trackSlug] ?? "text-[var(--color-text-primary)]"}>{row.trackName}</span>
+                  {row.isClothesOff && (
+                    <span className="text-orange-400">clothes off</span>
+                  )}
+                </div>
+              </td>
+            )}
 
             <td className="px-3 py-1.5">
               <select

@@ -38,6 +38,7 @@ import {
 } from "@/features/scene-catalogue/hooks/use-avatar-scene-settings";
 import { useExpandedSettings } from "@/features/scene-catalogue/hooks/use-expanded-settings";
 import { trackConfigKeys } from "@/features/scene-catalogue/hooks/use-track-configs";
+import { useSingleTrack } from "@/features/scene-catalogue/hooks/use-single-track";
 import { usePipelineContextSafe } from "@/features/pipelines";
 import { useTracks } from "@/features/scene-catalogue/hooks/use-tracks";
 import type { ExpandedSceneSetting, SceneTypeTrackConfig } from "@/features/scene-catalogue/types";
@@ -125,6 +126,7 @@ export function AvatarScenesTab({ avatarId, focusSceneId, focusSceneTypeId, focu
 
   const pipelineCtx = usePipelineContextSafe();
   const { data: tracks } = useTracks(false, pipelineCtx?.pipelineId);
+  const { isSingleTrack } = useSingleTrack();
   const { data: imageVariants } = useImageVariants(avatarId);
   const batchGenerate = useBatchGenerate();
   const createScene = useCreateScene(avatarId);
@@ -462,7 +464,7 @@ export function AvatarScenesTab({ avatarId, focusSceneId, focusSceneTypeId, focu
         return {
           sceneId: id,
           sceneName: slot.row.name,
-          trackName: slot.row.track_name ?? null,
+          trackName: isSingleTrack ? null : (slot.row.track_name ?? null),
           hasVideo: sceneHasVideo(slot.scene),
         } satisfies GenerateCandidate;
       })
@@ -729,6 +731,7 @@ export function AvatarScenesTab({ avatarId, focusSceneId, focusSceneTypeId, focu
             playback={playback}
             hasWorkflow={workflowMap.get(`${slot.row.scene_type_id}::${slot.row.track_id}`) ?? false}
             hasActiveGpu={hasActiveGpu}
+            hideTracks={isSingleTrack}
           />
         ))}
       </Grid>
@@ -769,7 +772,7 @@ export function AvatarScenesTab({ avatarId, focusSceneId, focusSceneTypeId, focu
               <h2 className="text-sm font-semibold font-mono uppercase tracking-wide text-[var(--color-text-primary)]">
                 {detailScene.row.name}
               </h2>
-              {detailScene.row.track_slug && (
+              {!isSingleTrack && detailScene.row.track_slug && (
                 <span className={`text-xs font-mono font-medium ${TRACK_TEXT_COLORS[detailScene.row.track_slug] ?? "text-[var(--color-text-primary)]"}`}>
                   {detailScene.row.track_name}
                 </span>
@@ -967,9 +970,11 @@ interface SceneCardProps {
   playback: boolean;
   hasWorkflow: boolean;
   hasActiveGpu: boolean;
+  /** Hide track badge — true for single-track pipelines. */
+  hideTracks?: boolean;
 }
 
-function SceneCard({ slot, isSelected, onToggleSelect, onGenerate, onSchedule, onCancelSchedule, isScheduled, onClickScene, onVideoDrop, onDisable, generating, playback, hasWorkflow, hasActiveGpu }: SceneCardProps) {
+function SceneCard({ slot, isSelected, onToggleSelect, onGenerate, onSchedule, onCancelSchedule, isScheduled, onClickScene, onVideoDrop, onDisable, generating, playback, hasWorkflow, hasActiveGpu, hideTracks }: SceneCardProps) {
   const { row, scene } = slot;
   const isPlaceholder = scene === null;
   const hasSeedImage = slot.missingVariant === null;
@@ -1106,7 +1111,7 @@ function SceneCard({ slot, isSelected, onToggleSelect, onGenerate, onSchedule, o
               {row.name}
             </span>
             <span className="shrink-0 ml-auto inline-flex items-center gap-1 font-mono text-[10px]">
-              {row.track_slug && (
+              {!hideTracks && row.track_slug && (
                 <span className={TRACK_TEXT_COLORS[row.track_slug] ?? "text-[var(--color-text-primary)]"}>{row.track_name}</span>
               )}
               {row.has_clothes_off_transition && (

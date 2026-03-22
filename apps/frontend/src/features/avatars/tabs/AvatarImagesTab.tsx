@@ -36,6 +36,7 @@ import { variantImageUrl, variantThumbnailUrl } from "@/features/images/utils";
 import { ProgressiveImage  } from "@/components/primitives";
 import { TrackImageCard } from "./TrackImageCard";
 import { TRACK_TEXT_COLORS } from "@/lib/ui-classes";
+import { useSingleTrack } from "@/features/scene-catalogue/hooks/use-single-track";
 import { useTrackImageActions } from "./useTrackImageActions";
 
 /* --------------------------------------------------------------------------
@@ -136,6 +137,7 @@ export function AvatarImagesTab({ avatarId }: AvatarImagesTabProps) {
     generating,
   } = useTrackImageActions(avatarId);
 
+  const { isSingleTrack } = useSingleTrack();
   const [detailTrackIndex, setDetailTrackIndex] = useState<number | null>(null);
   const [annotatingVariant, setAnnotatingVariant] = useState<ImageVariant | null>(null);
 
@@ -200,30 +202,36 @@ export function AvatarImagesTab({ avatarId }: AvatarImagesTabProps) {
       >
         {detailTrack && (
           <div className="flex flex-col gap-[var(--spacing-4)]">
-            {/* Header with navigation */}
+            {/* Header with navigation — simplified for single-track pipelines */}
             <div className="flex items-center gap-[var(--spacing-2)]">
-              <Button
-                size="sm"
-                variant="ghost"
-                disabled={detailTrackIndex === 0}
-                onClick={() => setDetailTrackIndex((i) => (i !== null && i > 0 ? i - 1 : i))}
-                icon={<ChevronLeft size={16} />}
-                aria-label="Previous track"
-              />
-              <h2 className={`text-sm font-semibold font-mono uppercase tracking-wide ${TRACK_TEXT_COLORS[detailTrack.track.slug] ?? "text-[var(--color-text-primary)]"}`}>
-                {detailTrack.track.name}
+              {!isSingleTrack && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  disabled={detailTrackIndex === 0}
+                  onClick={() => setDetailTrackIndex((i) => (i !== null && i > 0 ? i - 1 : i))}
+                  icon={<ChevronLeft size={16} />}
+                  aria-label="Previous track"
+                />
+              )}
+              <h2 className={`text-sm font-semibold font-mono uppercase tracking-wide ${isSingleTrack ? "text-[var(--color-text-primary)]" : (TRACK_TEXT_COLORS[detailTrack.track.slug] ?? "text-[var(--color-text-primary)]")}`}>
+                {isSingleTrack ? "Seed Image" : detailTrack.track.name}
               </h2>
-              <span className="text-[10px] font-mono text-[var(--color-text-muted)]">
-                {(detailTrackIndex ?? 0) + 1}/{trackImageData.length}
-              </span>
-              <Button
-                size="sm"
-                variant="ghost"
-                disabled={detailTrackIndex === trackImageData.length - 1}
-                onClick={() => setDetailTrackIndex((i) => (i !== null && i < trackImageData.length - 1 ? i + 1 : i))}
-                icon={<ChevronRight size={16} />}
-                aria-label="Next track"
-              />
+              {!isSingleTrack && (
+                <>
+                  <span className="text-[10px] font-mono text-[var(--color-text-muted)]">
+                    {(detailTrackIndex ?? 0) + 1}/{trackImageData.length}
+                  </span>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    disabled={detailTrackIndex === trackImageData.length - 1}
+                    onClick={() => setDetailTrackIndex((i) => (i !== null && i < trackImageData.length - 1 ? i + 1 : i))}
+                    icon={<ChevronRight size={16} />}
+                    aria-label="Next track"
+                  />
+                </>
+              )}
             </div>
 
             {/* Seed image large preview */}

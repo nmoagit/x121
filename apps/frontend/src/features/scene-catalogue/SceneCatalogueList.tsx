@@ -28,6 +28,7 @@ import { usePipelineContextSafe } from "@/features/pipelines";
 
 import { SceneCatalogueForm } from "./SceneCatalogueForm";
 import { useDeactivateSceneCatalogueEntry, useSceneCatalogue } from "./hooks/use-scene-catalogue";
+import { useSingleTrack } from "./hooks/use-single-track";
 import type { SceneCatalogueEntry } from "./types";
 
 /* --------------------------------------------------------------------------
@@ -38,9 +39,10 @@ interface EntryRowProps {
   entry: SceneCatalogueEntry;
   onEdit: (entry: SceneCatalogueEntry) => void;
   onDeactivate: (entry: SceneCatalogueEntry) => void;
+  hideTracks?: boolean;
 }
 
-function EntryRow({ entry, onEdit, onDeactivate }: EntryRowProps) {
+function EntryRow({ entry, onEdit, onDeactivate, hideTracks }: EntryRowProps) {
   const statusColor = TERMINAL_STATUS_COLORS[entry.is_active ? "active" : "pending"] ?? "text-[var(--color-text-muted)]";
 
   return (
@@ -54,20 +56,22 @@ function EntryRow({ entry, onEdit, onDeactivate }: EntryRowProps) {
       <td className="px-3 py-1.5 font-mono text-xs text-[var(--color-text-muted)]">
         {entry.description ?? "\u2014"}
       </td>
-      <td className="px-3 py-1.5">
-        <div className="flex flex-wrap gap-1">
-          {entry.tracks.length === 0 ? (
-            <span className="font-mono text-xs text-[var(--color-text-muted)]">None</span>
-          ) : (
-            entry.tracks.map((track, i) => (
-              <span key={track.id} className="font-mono text-xs">
-                {i > 0 && <span className="text-[var(--color-text-muted)] opacity-30 mx-1">|</span>}
-                <span className={track.slug === "clothed" ? "text-sky-400" : track.slug === "topless" ? "text-pink-400" : "text-[var(--color-text-primary)]"}>{track.name}</span>
-              </span>
-            ))
-          )}
-        </div>
-      </td>
+      {!hideTracks && (
+        <td className="px-3 py-1.5">
+          <div className="flex flex-wrap gap-1">
+            {entry.tracks.length === 0 ? (
+              <span className="font-mono text-xs text-[var(--color-text-muted)]">None</span>
+            ) : (
+              entry.tracks.map((track, i) => (
+                <span key={track.id} className="font-mono text-xs">
+                  {i > 0 && <span className="text-[var(--color-text-muted)] opacity-30 mx-1">|</span>}
+                  <span className={track.slug === "clothed" ? "text-sky-400" : track.slug === "topless" ? "text-pink-400" : "text-[var(--color-text-primary)]"}>{track.name}</span>
+                </span>
+              ))
+            )}
+          </div>
+        </td>
+      )}
       <td className="px-3 py-1.5 text-center">
         <span className={cn("font-mono text-xs", entry.has_clothes_off_transition ? "text-orange-400" : "text-[var(--color-text-muted)]")}>
           {entry.has_clothes_off_transition ? "Yes" : "No"}
@@ -109,6 +113,7 @@ function EntryRow({ entry, onEdit, onDeactivate }: EntryRowProps) {
 
 export function SceneCatalogueList() {
   const pipelineCtx = usePipelineContextSafe();
+  const { isSingleTrack } = useSingleTrack();
   const [showInactive, setShowInactive] = useState(false);
   const { data: entries, isLoading } = useSceneCatalogue(showInactive, pipelineCtx?.pipelineId);
   const deactivateMutation = useDeactivateSceneCatalogueEntry();
@@ -172,7 +177,7 @@ export function SceneCatalogueList() {
                 <tr className={TERMINAL_DIVIDER}>
                   <th className={cn(TERMINAL_TH, "px-3 py-1.5")}>Name</th>
                   <th className={cn(TERMINAL_TH, "px-3 py-1.5")}>Description</th>
-                  <th className={cn(TERMINAL_TH, "px-3 py-1.5")}>Tracks</th>
+                  {!isSingleTrack && <th className={cn(TERMINAL_TH, "px-3 py-1.5")}>Tracks</th>}
                   <th className={cn(TERMINAL_TH, "px-3 py-1.5 text-center")}>Clothes Off</th>
                   <th className={cn(TERMINAL_TH, "px-3 py-1.5")}>Status</th>
                   <th className={cn(TERMINAL_TH, "px-3 py-1.5")}>Actions</th>
@@ -182,7 +187,7 @@ export function SceneCatalogueList() {
                 {!entries || entries.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={6}
+                      colSpan={isSingleTrack ? 5 : 6}
                       className="px-3 py-6 text-center font-mono text-xs text-[var(--color-text-muted)]"
                     >
                       No scene catalogue entries. Click "Add Scene" to create one.
@@ -195,6 +200,7 @@ export function SceneCatalogueList() {
                       entry={entry}
                       onEdit={handleEdit}
                       onDeactivate={setDeactivateTarget}
+                      hideTracks={isSingleTrack}
                     />
                   ))
                 )}

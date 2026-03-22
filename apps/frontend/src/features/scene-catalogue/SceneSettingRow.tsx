@@ -40,13 +40,15 @@ export interface SceneSettingRowProps {
   isPending: boolean;
   hasVideo?: boolean;
   actions?: ReactNode;
+  /** Hide track column — true for single-track pipelines. */
+  hideTracks?: boolean;
 }
 
 /* --------------------------------------------------------------------------
    Component
    -------------------------------------------------------------------------- */
 
-export function SceneSettingRow({ row, onToggle, isPending, hasVideo, actions }: SceneSettingRowProps) {
+export function SceneSettingRow({ row, onToggle, isPending, hasVideo, actions, hideTracks }: SceneSettingRowProps) {
   return (
     <tr className="border-b border-[var(--color-border-default)]/30 last:border-b-0">
       {/* Scene name */}
@@ -58,19 +60,21 @@ export function SceneSettingRow({ row, onToggle, isPending, hasVideo, actions }:
         )}
       </td>
 
-      {/* Track */}
-      <td className="px-3 py-1.5 font-mono text-xs">
-        <span className="inline-flex items-center gap-1">
-          {row.track_slug ? (
-            <span className={TRACK_TEXT_COLORS[row.track_slug] ?? "text-[var(--color-text-primary)]"}>{row.track_name}</span>
-          ) : (
-            <span className="text-[var(--color-text-muted)]">-</span>
-          )}
-          {row.has_clothes_off_transition && (
-            <span className="text-orange-400">clothes off</span>
-          )}
-        </span>
-      </td>
+      {/* Track — hidden for single-track pipelines */}
+      {!hideTracks && (
+        <td className="px-3 py-1.5 font-mono text-xs">
+          <span className="inline-flex items-center gap-1">
+            {row.track_slug ? (
+              <span className={TRACK_TEXT_COLORS[row.track_slug] ?? "text-[var(--color-text-primary)]"}>{row.track_name}</span>
+            ) : (
+              <span className="text-[var(--color-text-muted)]">-</span>
+            )}
+            {row.has_clothes_off_transition && (
+              <span className="text-orange-400">clothes off</span>
+            )}
+          </span>
+        </td>
+      )}
 
       {/* Toggle */}
       <td className="px-3 py-1.5">
