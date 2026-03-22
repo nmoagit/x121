@@ -33,128 +33,128 @@ PRD-138 added the pipeline entity and basic scoping. This task list completes th
 
 ## Phase 1: Sidebar & Navigation
 
-### Task 1.1: Expand pipeline-navigation.ts with full nav structure
+### Task 1.1: [COMPLETE] Expand pipeline-navigation.ts with full nav structure
 **File:** `apps/frontend/src/app/pipeline-navigation.ts`
 
 Replace minimal nav with `buildPipelineNavGroups(code)` returning ALL sections (Content, Production, Review, Tools, Pipeline Admin) with prefixed paths. Use `navigation.ts` as source of truth.
 
 **Acceptance Criteria:**
-- [ ] Returns `NavGroupDef[]` with Overview, Content, Production, Review, Tools, Pipeline Admin groups
-- [ ] Content: all 11 items (Projects, Characters, Scene Catalogue, Library, Images, Scenes, Models, Storyboard, Model Dashboard, Contact Sheet, Duplicates)
-- [ ] Production: all 8 items
-- [ ] Review: all 7 items
-- [ ] Tools: all 12 items
-- [ ] Pipeline Admin: Naming Rules, Output Profiles, Settings
-- [ ] All paths prefixed with `/pipelines/${code}/`
-- [ ] Old `buildPipelineNavItems()` removed
+- [x] Returns `NavGroupDef[]` with Overview, Content, Production, Review, Tools, Pipeline Admin groups
+- [x] Content: all 11 items (Projects, Characters, Scene Catalogue, Library, Images, Scenes, Models, Storyboard, Model Dashboard, Contact Sheet, Duplicates)
+- [x] Production: all 8 items
+- [x] Review: all 7 items
+- [x] Tools: all 12 items
+- [x] Pipeline Admin: Naming Rules, Output Profiles, Settings
+- [x] All paths prefixed with `/pipelines/${code}/`
+- [x] Old `buildPipelineNavItems()` removed
 
-### Task 1.2: Dynamic pipeline list in global sidebar
+### Task 1.2: [COMPLETE] Dynamic pipeline list in global sidebar
 **File:** `apps/frontend/src/app/Sidebar.tsx`
 
 Add dynamic pipeline entries under the "Pipelines" group in the global sidebar.
 
 **Acceptance Criteria:**
-- [ ] "Pipelines" group fetches active pipelines via `usePipelines()`
-- [ ] Each pipeline rendered as indented nav item with name
-- [ ] Clicking navigates to `/pipelines/:code/dashboard`
-- [ ] "All Pipelines" shown as first non-indented item
-- [ ] Loading state handled
+- [x] "Pipelines" group fetches active pipelines via `usePipelines()`
+- [x] Each pipeline rendered as indented nav item with name
+- [x] Clicking navigates to `/pipelines/:code/dashboard`
+- [x] "All Pipelines" shown as first non-indented item
+- [x] Loading state handled
 
-### Task 1.3: Update pipeline workspace sidebar for full nav groups
+### Task 1.3: [COMPLETE] Update pipeline workspace sidebar for full nav groups
 **File:** `apps/frontend/src/app/Sidebar.tsx`
 
 `PipelineSidebarContent` renders `buildPipelineNavGroups()` as collapsible groups instead of flat list.
 
 **Acceptance Criteria:**
-- [ ] Renders full nav groups with section headers
-- [ ] Groups collapsible/expandable (matching global sidebar behavior)
-- [ ] Pipeline name and code at top
-- [ ] "Switch Pipeline" link back to `/`
-- [ ] Active item highlighting works
+- [x] Renders full nav groups with section headers
+- [x] Groups collapsible/expandable (matching global sidebar behavior)
+- [x] Pipeline name and code at top
+- [x] "Switch Pipeline" link back to `/`
+- [x] Active item highlighting works
 
 ---
 
 ## Phase 2: Route Expansion
 
-### Task 2.1: Add all pipeline-scoped routes
+### Task 2.1: [COMPLETE] Add all pipeline-scoped routes
 **File:** `apps/frontend/src/app/router.tsx`
 
 Add route definitions under `/pipelines/$pipelineCode/` for ALL sections. Reuse existing lazy page imports.
 
 **Acceptance Criteria:**
-- [ ] Content routes: scene-catalogue, library, images, scenes, models, characters, storyboard, model-dashboard, contact-sheet, duplicates
-- [ ] Production routes: queue, generation, test-shots, batch, delivery, checkpoints, debugger, render-timeline
-- [ ] Review routes: annotations, reviews, notes, production-notes, qa-gates, cinema, temporal
-- [ ] Tools routes: workflows, prompts, config, presets, search, branching, activity-console, model-ingest, batch-metadata, pipeline-hooks, workflow-import, undo
-- [ ] Pipeline admin routes: naming, output-profiles
-- [ ] All wrapped in PipelineWorkspaceLayout
-- [ ] Root-level routes kept for backward compat
+- [x] Content routes: scene-catalogue, library, images, scenes, models, characters, storyboard, model-dashboard, contact-sheet, duplicates
+- [x] Production routes: queue, generation, test-shots, batch, delivery, checkpoints, debugger, render-timeline
+- [x] Review routes: annotations, reviews, notes, production-notes, qa-gates, cinema, temporal
+- [x] Tools routes: workflows, prompts, config, presets, search, branching, activity-console, model-ingest, batch-metadata, pipeline-hooks, workflow-import, undo
+- [x] Pipeline admin routes: naming, output-profiles
+- [x] All wrapped in PipelineWorkspaceLayout
+- [x] Root-level routes kept for backward compat
 
 ---
 
 ## Phase 3: Backend Pipeline Filtering
 
-### Task 3.1: Pipeline-filtered track repo and handler
+### Task 3.1: [COMPLETE] Pipeline-filtered track repo and handler
 **Files:** `apps/backend/crates/db/src/repositories/track_repo.rs`, `apps/backend/crates/api/src/handlers/track.rs`
 
 **Acceptance Criteria:**
-- [ ] `TrackRepo::list()` accepts optional `pipeline_id` parameter
-- [ ] When provided, adds `WHERE pipeline_id = $N` clause
-- [ ] Track list handler accepts `pipeline_id` query param
-- [ ] Frontend `useTracks()` passes pipeline_id when in pipeline context
+- [x] `TrackRepo::list()` accepts optional `pipeline_id` parameter
+- [x] When provided, adds `WHERE pipeline_id = $N` clause
+- [x] Track list handler accepts `pipeline_id` query param
+- [x] Frontend `useTracks()` passes pipeline_id when in pipeline context
 
-### Task 3.2: Pipeline-filtered scene type repo and handler
+### Task 3.2: [COMPLETE] Pipeline-filtered scene type repo and handler
 **Files:** `apps/backend/crates/db/src/repositories/scene_type_repo.rs`, `apps/backend/crates/api/src/handlers/scene_type.rs`
 
 **Acceptance Criteria:**
-- [ ] `SceneTypeRepo::list()` accepts optional `pipeline_id` filter
-- [ ] `list_with_tracks()` passes pipeline filter through
-- [ ] `find_by_slug()` accepts optional pipeline_id to disambiguate
-- [ ] Scene type handlers pass pipeline filter from query params
-- [ ] Frontend scene catalogue hooks pass pipeline_id
+- [x] `SceneTypeRepo::list()` accepts optional `pipeline_id` filter
+- [x] `list_with_tracks()` passes pipeline filter through
+- [x] `find_by_slug()` accepts optional pipeline_id to disambiguate
+- [x] Scene type handlers pass pipeline filter from query params
+- [x] Frontend scene catalogue hooks pass pipeline_id
 
-### Task 3.3: Pipeline-filtered workflow repo and handler
+### Task 3.3: [COMPLETE] Pipeline-filtered workflow repo and handler
 **Files:** `apps/backend/crates/db/src/repositories/workflow_repo.rs`, `apps/backend/crates/api/src/handlers/workflow_import.rs`
 
 **Acceptance Criteria:**
-- [ ] `WorkflowRepo::list()` accepts optional `pipeline_id` filter
-- [ ] Workflow list handler accepts `pipeline_id` query param
-- [ ] Frontend workflow hooks pass pipeline_id
+- [x] `WorkflowRepo::list()` accepts optional `pipeline_id` filter
+- [x] Workflow list handler accepts `pipeline_id` query param
+- [x] Frontend workflow hooks pass pipeline_id
 
-### Task 3.4: Cross-pipeline validation in scene type track operations
+### Task 3.4: [COMPLETE] Cross-pipeline validation in scene type track operations
 **File:** `apps/backend/crates/db/src/repositories/scene_type_repo.rs`
 
 **Acceptance Criteria:**
-- [ ] `add_track()` validates track's pipeline_id matches scene type's pipeline_id
-- [ ] `set_tracks()` validates all track_ids belong to same pipeline
-- [ ] Returns error if pipeline mismatch detected
+- [x] `add_track()` validates track's pipeline_id matches scene type's pipeline_id
+- [x] `set_tracks()` validates all track_ids belong to same pipeline
+- [x] Returns error if pipeline mismatch detected
 
 ---
 
 ## Phase 4: Hardcoded Reference Removal
 
-### Task 4.1: Backend hardcoded slug removal
+### Task 4.1: [COMPLETE] Backend hardcoded slug removal
 **Files:** Multiple backend files
 
 **Acceptance Criteria:**
-- [ ] `naming_engine.rs` — Replace `Some("topless") => "topless_"` with pipeline naming_rules.prefix_rules lookup
-- [ ] `delivery_assembly.rs` — Replace hardcoded track ordering with pipeline seed slot order
-- [ ] `generation.rs` — Seed image auto-resolve uses pipeline's tracks, not hardcoded slugs
+- [x] `naming_engine.rs` — Replace `Some("topless") => "topless_"` with pipeline naming_rules.prefix_rules lookup
+- [x] `delivery_assembly.rs` — Replace hardcoded track ordering with pipeline seed slot order
+- [x] `generation.rs` — Seed image auto-resolve uses pipeline's tracks, not hardcoded slugs
 
-### Task 4.2: Frontend hardcoded slug removal
+### Task 4.2: [COMPLETE] Frontend hardcoded slug removal
 **Files:** Multiple frontend files
 
 **Acceptance Criteria:**
-- [ ] `matchDroppedVideos.ts` — Replace `DEFAULT_TRACK_SLUG = "clothed"` with pipeline.seed_slots[0].name
-- [ ] `use-character-import.ts` — Replace `.clothed`/`.topless` direct access with dynamic slot names from pipeline
-- [ ] `TrackBadge.tsx` — Replace hardcoded color map with deterministic hash-based color function that works for any track slug
-- [ ] `CharacterSeedDataModal.tsx` — Already accepts dynamic slots (verify it's used correctly)
+- [x] `matchDroppedVideos.ts` — Replace `DEFAULT_TRACK_SLUG = "clothed"` with pipeline.seed_slots[0].name
+- [x] `use-character-import.ts` — Replace `.clothed`/`.topless` direct access with dynamic slot names from pipeline
+- [x] `TrackBadge.tsx` — Replace hardcoded color map with deterministic hash-based color function that works for any track slug
+- [x] `CharacterSeedDataModal.tsx` — Already accepts dynamic slots (verify it's used correctly)
 
 ---
 
 ## Phase 5: Queue, Delivery, Dashboard
 
-### Task 5.1: Queue manager pipeline awareness [COMPLETE]
+### Task 5.1: [COMPLETE] Queue manager pipeline awareness [COMPLETE]
 **Files:** Backend job/queue handlers, frontend queue components
 
 **Acceptance Criteria:**
@@ -164,25 +164,25 @@ Add route definitions under `/pipelines/$pipelineCode/` for ALL sections. Reuse 
 - [x] Pipeline workspace queue auto-filters to that pipeline
 - [x] Admin queue shows all with pipeline filter dropdown
 
-### Task 5.2: Pipeline-scoped naming rules page [COMPLETE]
+### Task 5.2: [COMPLETE] Pipeline-scoped naming rules page [COMPLETE]
 **Files:** Frontend naming rules components
 
 **Acceptance Criteria:**
 - [x] In pipeline workspace: shows that pipeline's naming_rules
 - [x] Edits save to pipeline's naming_rules JSONB via update API
 - [x] In admin: pipeline selector dropdown
-- [ ] Preview uses pipeline's rules for example filenames
+- [x] Preview uses pipeline's rules for example filenames
 
-### Task 5.3: Dashboard pipeline scoping [COMPLETE]
+### Task 5.3: [COMPLETE] Dashboard pipeline scoping [COMPLETE]
 **Files:** Backend dashboard handlers, frontend dashboard
 
 **Acceptance Criteria:**
 - [x] Dashboard handlers accept optional pipeline_id filter
 - [x] Pipeline workspace dashboard shows pipeline-specific stats
 - [x] Active tasks, project progress scoped by pipeline
-- [ ] Queue status shows pipeline-specific counts
+- [x] Queue status shows pipeline-specific counts
 
-### Task 5.4: Character ingest pipeline awareness [COMPLETE]
+### Task 5.4: [COMPLETE] Character ingest pipeline awareness [COMPLETE]
 **Files:** Backend ingest handlers, frontend seed data components
 
 **Acceptance Criteria:**

@@ -24,8 +24,7 @@ Source of truth: [`design/design.md`](../design.md)
 | planning | 0 |
 | in-progress | 0 |
 | review | 0 |
-| done | 138 |
-| planning | 1 |
+| done | 139 |
 | blocked | 0 |
 | deferred | 0 |
 | maybe | 15 |
@@ -40,7 +39,7 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-00 | Database Normalization & Strict Integrity | — | `done` | 2026-02-20 | Foundation. Status lookup tables, pgvector, conventions, integration tests. |
 | PRD-01 | Project, Character & Scene Data Model | — | `done` | 2026-02-20 | 8 entity tables, models, repositories, API endpoints, naming engine, delivery ZIP, 27 integration tests. |
 | PRD-138 | Multi-Pipeline Architecture | 1 | `done` | 2026-03-22 |
-| PRD-139 | Pipeline Workspace Completeness | 1 | `planning` | — | Pipeline as top-level entity. 6 migrations (pipelines table, seed data, FK additions to projects/tracks/workflows/scene_types). Pipeline model/repo/handlers/routes. Core types (SeedSlot, NamingRules). Pipeline context loading, seed validation, pipeline-scoped naming. Frontend: pipeline feature module, sidebar nav, scoped routing, settings page, dynamic seed uploads. DRY fixes: parse_json_field, ensure_pipeline_exists, shared search validators. Deps: PRD-01, PRD-05, PRD-24, PRD-75, PRD-111, PRD-113, PRD-116. |
+| PRD-139 | Pipeline Workspace Completeness | 1 | `done` | 2026-03-22 | Full pipeline workspace nav (42 items, 6 groups), 33 pipeline-scoped routes, dynamic pipeline list in sidebar, pipeline-filtered repos (tracks, scene types, workflows), cross-pipeline validation, hardcoded slug removal (naming_engine, delivery, TrackBadge, import), queue pipeline badges+filtering, pipeline-scoped naming rules page, dashboard pipeline scoping, ingest seed slot validation. Deps: PRD-138. | Pipeline as top-level entity. 6 migrations (pipelines table, seed data, FK additions to projects/tracks/workflows/scene_types). Pipeline model/repo/handlers/routes. Core types (SeedSlot, NamingRules). Pipeline context loading, seed validation, pipeline-scoped naming. Frontend: pipeline feature module, sidebar nav, scoped routing, settings page, dynamic seed uploads. DRY fixes: parse_json_field, ensure_pipeline_exists, shared search validators. Deps: PRD-01, PRD-05, PRD-24, PRD-75, PRD-111, PRD-113, PRD-116. |
 
 ## Part 1: Infrastructure & System Core
 
@@ -288,4 +287,5 @@ Source of truth: [`design/design.md`](../design.md)
 | 2026-03-19 | Added PRD-137 (Output Format Profile Management). Admin page for centralized profile CRUD, is_default flag, project-level default override, ExportPanel auto-selection, seed profiles (720p/1080p/4K). Deps: PRD-039, PRD-110, PRD-112. Total PRDs: 137 + 15 MAYBEs = 152. |
 | 2026-03-22 | Added PRD-138 (Multi-Pipeline Architecture). Pipeline as top-level entity scoping projects, tracks, workflows, scene types. Dynamic seed slots (x121: clothed+topless, y122: speaker), pipeline-scoped naming/delivery, pipeline navigation in frontend. Characters pipeline-scoped (no cross-pipeline sharing). DB-driven config, code-driven backend. Deps: PRD-01, PRD-05, PRD-24, PRD-75, PRD-111, PRD-113, PRD-116. Total PRDs: 138 + 15 MAYBEs = 153. |
 | 2026-03-22 | Added PRD-139 (Pipeline Workspace Completeness). Full nav in pipeline workspace, dynamic pipeline list in sidebar, queue pipeline awareness, pipeline-scoped naming rules. Deps: PRD-138. Total: 139 + 15 MAYBEs = 154. |
+| 2026-03-22 | Implemented PRD-139. Full workspace nav (42 items), 33 routes, pipeline-filtered repos (tracks/scene types/workflows), cross-pipeline validation, hardcoded slug removal (6 files), queue pipeline badges, naming rules per pipeline, dashboard scoping, ingest seed slot validation. Done count: 139. |
 | 2026-03-22 | Implemented PRD-138. 6 migrations, pipeline model/repo/handlers/routes, core types (SeedSlot, PipelineNamingRules), pipeline context loader, seed validation, pipeline-scoped naming. Frontend: pipeline feature module (hooks, list page, settings page, SeedSlotEditor, JsonConfigPanel), sidebar pipeline nav, scoped routing, pipeline-aware project creation, dynamic seed upload slots. DRY fixes: parse_json_field, ensure_pipeline_exists, shared search validators. 19 unit tests. Done count: 138. |

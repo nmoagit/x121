@@ -486,7 +486,7 @@ This phase contains no PRD work — only structural setup.
 | # | PRD | Title | Effort | Track | Depends On |
 |---|-----|-------|--------|-------|------------|
 | 138 | PRD-138 | Multi-Pipeline Architecture | XL | Full-Stack | PRD-01, PRD-05, PRD-24, PRD-75, PRD-111, PRD-113, PRD-116 (all done) | **DONE** 2026-03-22 |
-| 139 | PRD-139 | Pipeline Workspace Completeness | L | Full-Stack | PRD-138 (done) |
+| 139 | PRD-139 | Pipeline Workspace Completeness | L | Full-Stack | PRD-138 (done) | **DONE** 2026-03-22 |
 
 ---
 
@@ -615,6 +615,7 @@ PRD-29 → PRD-83 → PRD-35 → PRD-57
 | 2026-03-19 | Added PRD-137 (Output Format Profile Management) to Phase 12. Admin page for profile CRUD, is_default flag, project-level override, ExportPanel auto-selection, seed profiles. All deps done (PRD-039, 110, 112). Total: 137 PRDs (136 done, 1 planning) |
 | 2026-03-22 | Added Phase 13 (Multi-Pipeline Architecture) with PRD-138. Pipeline as top-level entity, projects/tracks/workflows/scene_types scoped to pipeline, dynamic seed slots, pipeline-scoped delivery. x121 + y122 initial pipelines. All deps done. Total: 138 PRDs (137 done, 1 planning) |
 | 2026-03-22 | Added PRD-139 (Pipeline Workspace Completeness). Full nav in pipeline workspace, dynamic pipeline list, queue pipeline awareness, naming rules per pipeline. Deps: PRD-138. Total: 139 PRDs (138 done, 1 planning). |
+| 2026-03-22 | Completed PRD-139. Full workspace nav, 33 routes, pipeline-filtered repos, hardcoded slug removal, queue/dashboard/naming pipeline awareness, ingest validation. Done count: 139 PRDs. |
 | 2026-03-22 | Completed PRD-138. 6 migrations, full backend (model/repo/handlers/routes/core types/pipeline crate), full frontend (feature module, sidebar nav, scoped routing, settings, dynamic seed uploads), 19 tests. Done count: 138 PRDs. |
 
 ---
