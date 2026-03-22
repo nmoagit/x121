@@ -1,11 +1,11 @@
-import { WireframeLoader } from "@/components/primitives";
+import { ContextLoader } from "./ContextLoader";
+
 /**
  * Centered spinner with consistent padding.
  *
- * Replaces inline `<div className="flex items-center justify-center ..."><WireframeLoader size={48} /></div>`
- * and `<Stack align="center"><WireframeLoader size={48} /></Stack>` patterns.
+ * Uses the context-aware loader that shows the pipeline code when inside
+ * a pipeline workspace, or "αN2N" when in the global context.
  */
-
 
 interface LoadingPaneProps {
   /** Spinner size. Defaults to "lg". */
@@ -15,7 +15,7 @@ interface LoadingPaneProps {
 export function LoadingPane({ size = "lg" }: LoadingPaneProps) {
   return (
     <div className="flex items-center justify-center py-[var(--spacing-8)]">
-      <WireframeLoader size={size === "sm" ? 32 : size === "lg" ? 64 : 48} />
+      <ContextLoader size={size === "sm" ? 32 : size === "lg" ? 64 : 48} />
     </div>
   );
 }

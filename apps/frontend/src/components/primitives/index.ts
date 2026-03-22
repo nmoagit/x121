@@ -19,6 +19,7 @@ export { SplitButton } from "./SplitButton";
 export { SelectableRow } from "./SelectableRow";
 export { Spinner } from "./Spinner";
 export { WireframeLoader } from "./WireframeLoader";
+export { ContextLoader } from "./ContextLoader";
 export { StatBadge } from "./StatBadge";
 export type { StatBadgeProps } from "./StatBadge";
 export { TabBar } from "./TabBar";
