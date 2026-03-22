@@ -54,9 +54,14 @@ export function buildPipelineNavGroups(pipelineCode: string): NavGroupDef[] {
       ],
     },
     {
+      label: "Projects",
+      items: [
+        { label: "All Projects", path: `${base}/projects`, icon: FolderKanban, prominent: true },
+      ],
+    },
+    {
       label: "Content",
       items: [
-        { label: "Projects", path: `${base}/projects`, icon: FolderKanban, prominent: true },
         { label: "Characters", path: `${base}/characters`, icon: User, prominent: true },
         { label: "Scene Catalogue", path: `${base}/scene-catalogue`, icon: List, prominent: true },
         { label: "Library", path: `${base}/library`, icon: Folder, prominent: true },
