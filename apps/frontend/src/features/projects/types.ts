@@ -16,6 +16,8 @@ export interface Project {
   description: string | null;
   /** Backend sends `status_id` (number); `status` is mapped on the frontend. */
   status_id: number;
+  /** Pipeline this project belongs to. NULL = default pipeline. */
+  pipeline_id: number | null;
   auto_deliver_on_final: boolean;
   /** Which deliverable sections must be complete. NULL = inherit studio default. */
   blocking_deliverables: string[] | null;
@@ -50,6 +52,7 @@ export function projectStatusSlug(statusId: number): string {
 export interface CreateProject {
   name: string;
   description?: string;
+  pipeline_id?: number;
 }
 
 export interface UpdateProject {

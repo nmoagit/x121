@@ -8,7 +8,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { ConfirmDeleteModal, Modal } from "@/components/composite";
 import { EmptyState, FileDropZone } from "@/components/domain";
 import { Grid } from "@/components/layout";
-import { Button, FilterSelect, Input, LoadingPane, SearchInput, Toggle } from "@/components/primitives";
+import { Button, FilterSelect, Input, LoadingPane, SearchInput, Select, Toggle } from "@/components/primitives";
 import { Stack } from "@/components/layout";
 import { useCharacterImport } from "./hooks/use-character-import";
 import { FileAssignmentModal } from "@/features/characters/components";
@@ -17,6 +17,8 @@ import { ImportProgressBar } from "./components/ImportProgressBar";
 import { useSetPageTitle } from "@/hooks/useSetPageTitle";
 import { FolderKanban, Plus, Upload } from "@/tokens/icons";
 
+import { usePipelines } from "@/features/pipelines/hooks/use-pipelines";
+import { usePipelineCode } from "@/features/pipelines/hooks/use-pipeline-context";
 import { ProjectCard } from "./components/ProjectCard";
 import { useCreateProject, useDeleteProject, useProjects, useUpdateProject } from "./hooks/use-projects";
 import { useProjectCharacters } from "./hooks/use-project-characters";
@@ -55,6 +57,8 @@ export function ProjectListPage() {
   const createProject = useCreateProject();
   const updateProject = useUpdateProject();
   const deleteProject = useDeleteProject();
+  const { data: pipelines } = usePipelines();
+  const activePipelineCode = usePipelineCode();
 
   /* --- archive/unarchive/delete handlers --- */
   function handleArchive(id: number) {
@@ -84,6 +88,19 @@ export function ProjectListPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [newName, setNewName] = useState("");
   const [newDescription, setNewDescription] = useState("");
+  const [newPipelineId, setNewPipelineId] = useState("");
+
+  /** Pre-fill pipeline_id when in a pipeline-scoped route. */
+  const activePipeline = pipelines?.find((p) => p.code === activePipelineCode);
+  const defaultPipelineId = activePipeline ? String(activePipeline.id) : "";
+
+  const pipelineOptions = [
+    { value: "", label: "No Pipeline" },
+    ...(pipelines ?? []).filter((p) => p.is_active).map((p) => ({
+      value: String(p.id),
+      label: p.name,
+    })),
+  ];
 
   /* --- filtered and sorted projects --- */
   const filteredProjects = useMemo(() => {
@@ -208,16 +225,20 @@ export function ProjectListPage() {
   function handleCreate() {
     if (!newName.trim()) return;
 
+    const pipelineIdValue = newPipelineId || defaultPipelineId;
+
     createProject.mutate(
       {
         name: newName.trim(),
         description: newDescription.trim() || undefined,
+        pipeline_id: pipelineIdValue ? Number(pipelineIdValue) : undefined,
       },
       {
         onSuccess: () => {
           setModalOpen(false);
           setNewName("");
           setNewDescription("");
+          setNewPipelineId("");
         },
       },
     );
@@ -334,6 +355,7 @@ export function ProjectListPage() {
           setModalOpen(false);
           setNewName("");
           setNewDescription("");
+          setNewPipelineId("");
         }}
         title="New Project"
         size="sm"
@@ -351,6 +373,14 @@ export function ProjectListPage() {
             value={newDescription}
             onChange={(e) => setNewDescription(e.target.value)}
           />
+          {pipelineOptions.length > 1 && (
+            <Select
+              label="Pipeline"
+              options={pipelineOptions}
+              value={newPipelineId || defaultPipelineId}
+              onChange={setNewPipelineId}
+            />
+          )}
           <Button
             size="sm"
             onClick={handleCreate}

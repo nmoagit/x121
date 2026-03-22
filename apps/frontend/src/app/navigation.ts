@@ -42,6 +42,7 @@ import {
   Upload,
   User,
   Users,
+  Workflow,
   Wrench,
   Zap,
 } from "@/tokens/icons";
@@ -141,6 +142,7 @@ export const NAV_GROUPS: NavGroupDef[] = [
     label: "Admin",
     requiredRole: "admin",
     items: [
+      { label: "Pipelines", path: "/admin/pipelines", icon: Workflow, prominent: true },
       { label: "Infrastructure", path: "/admin/infrastructure", icon: Server, prominent: true },
       { label: "Cloud GPUs", path: "/admin/cloud-gpus", icon: Cloud, prominent: true },
       { label: "Storage", path: "/admin/storage", icon: HardDrive, prominent: true },

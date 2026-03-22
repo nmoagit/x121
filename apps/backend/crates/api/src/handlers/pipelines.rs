@@ -16,6 +16,16 @@ use crate::error::{AppError, AppResult};
 use crate::response::DataResponse;
 use crate::state::AppState;
 
+/// Shared lookup — returns the pipeline or a 404 error.
+async fn ensure_pipeline_exists(pool: &sqlx::PgPool, id: DbId) -> AppResult<Pipeline> {
+    PipelineRepo::find_by_id(pool, id)
+        .await?
+        .ok_or(AppError::Core(CoreError::NotFound {
+            entity: "Pipeline",
+            id,
+        }))
+}
+
 /// Optional query parameter for filtering pipelines by active status.
 #[derive(Debug, Deserialize)]
 pub struct PipelineListParams {
@@ -42,12 +52,7 @@ pub async fn get_by_id(
     State(state): State<AppState>,
     Path(id): Path<DbId>,
 ) -> AppResult<Json<DataResponse<Pipeline>>> {
-    let pipeline = PipelineRepo::find_by_id(&state.pool, id)
-        .await?
-        .ok_or(AppError::Core(CoreError::NotFound {
-            entity: "Pipeline",
-            id,
-        }))?;
+    let pipeline = ensure_pipeline_exists(&state.pool, id).await?;
     Ok(Json(DataResponse { data: pipeline }))
 }
 

@@ -5,6 +5,20 @@ import { AppShell } from "@/app/AppShell";
 import { LoginPage } from "@/features/auth/LoginPage";
 
 /* --------------------------------------------------------------------------
+   Shared search validators (reused across parallel route trees)
+   -------------------------------------------------------------------------- */
+
+const projectDetailSearch = (search: Record<string, unknown>) => ({
+  tab: typeof search.tab === "string" ? search.tab : undefined,
+  group: typeof search.group === "string" ? search.group : undefined,
+});
+
+const characterDetailSearch = (search: Record<string, unknown>) => ({
+  tab: typeof search.tab === "string" ? search.tab : undefined,
+  scene: typeof search.scene === "string" ? search.scene : undefined,
+});
+
+/* --------------------------------------------------------------------------
    Root layout
    -------------------------------------------------------------------------- */
 
@@ -93,10 +107,7 @@ const projectListRoute = createRoute({
 const projectDetailRoute = createRoute({
   getParentRoute: () => projectsLayoutRoute,
   path: "/projects/$projectId",
-  validateSearch: (search: Record<string, unknown>) => ({
-    tab: typeof search.tab === "string" ? search.tab : undefined,
-    group: typeof search.group === "string" ? search.group : undefined,
-  }),
+  validateSearch: projectDetailSearch,
   component: lazyRouteComponent(() =>
     import("@/features/projects").then((m) => ({ default: m.ProjectDetailPage })),
   ),
@@ -105,10 +116,7 @@ const projectDetailRoute = createRoute({
 const characterDetailRoute = createRoute({
   getParentRoute: () => projectsLayoutRoute,
   path: "/projects/$projectId/models/$characterId",
-  validateSearch: (search: Record<string, unknown>) => ({
-    tab: typeof search.tab === "string" ? search.tab : undefined,
-    scene: typeof search.scene === "string" ? search.scene : undefined,
-  }),
+  validateSearch: characterDetailSearch,
   component: lazyRouteComponent(() =>
     import("@/features/characters").then((m) => ({ default: m.CharacterDetailPage })),
   ),
@@ -743,6 +751,72 @@ const adminOutputProfilesRoute = createRoute({
   ),
 });
 
+const adminPipelinesRoute = createRoute({
+  getParentRoute: () => adminLayoutRoute,
+  path: "/admin/pipelines",
+  component: lazyRouteComponent(() =>
+    import("@/features/pipelines").then((m) => ({
+      default: m.PipelineListPage,
+    })),
+  ),
+});
+
+const adminPipelineDetailRoute = createRoute({
+  getParentRoute: () => adminLayoutRoute,
+  path: "/admin/pipelines/$pipelineId",
+  component: lazyRouteComponent(() =>
+    import("@/app/pages/PipelineSettingsPage").then((m) => ({
+      default: m.PipelineSettingsPage,
+    })),
+  ),
+});
+
+/* --------------------------------------------------------------------------
+   Pipeline-scoped routes (PRD-138)
+   -------------------------------------------------------------------------- */
+
+const pipelineLayoutRoute = createRoute({
+  getParentRoute: () => authenticatedRoute,
+  path: "/pipelines/$pipelineCode",
+  component: Outlet,
+});
+
+const pipelineProjectsRoute = createRoute({
+  getParentRoute: () => pipelineLayoutRoute,
+  path: "/projects",
+  component: lazyRouteComponent(() =>
+    import("@/features/projects").then((m) => ({ default: m.ProjectListPage })),
+  ),
+});
+
+const pipelineProjectDetailRoute = createRoute({
+  getParentRoute: () => pipelineLayoutRoute,
+  path: "/projects/$projectId",
+  validateSearch: projectDetailSearch,
+  component: lazyRouteComponent(() =>
+    import("@/features/projects").then((m) => ({ default: m.ProjectDetailPage })),
+  ),
+});
+
+const pipelineCharacterDetailRoute = createRoute({
+  getParentRoute: () => pipelineLayoutRoute,
+  path: "/projects/$projectId/models/$characterId",
+  validateSearch: characterDetailSearch,
+  component: lazyRouteComponent(() =>
+    import("@/features/characters").then((m) => ({ default: m.CharacterDetailPage })),
+  ),
+});
+
+const pipelineSettingsRoute = createRoute({
+  getParentRoute: () => pipelineLayoutRoute,
+  path: "/settings",
+  component: lazyRouteComponent(() =>
+    import("@/app/pages/PipelineSettingsPage").then((m) => ({
+      default: m.PipelineSettingsPage,
+    })),
+  ),
+});
+
 /* --------------------------------------------------------------------------
    Settings routes
    -------------------------------------------------------------------------- */
@@ -883,6 +957,15 @@ export const routeTree = rootRoute.addChildren([
       adminInfrastructureRoute,
       adminHealthRoute,
       adminOutputProfilesRoute,
+      adminPipelinesRoute,
+      adminPipelineDetailRoute,
+    ]),
+
+    pipelineLayoutRoute.addChildren([
+      pipelineProjectsRoute,
+      pipelineProjectDetailRoute,
+      pipelineCharacterDetailRoute,
+      pipelineSettingsRoute,
     ]),
 
     settingsLayoutRoute.addChildren([shortcutsRoute, wikiRoute]),

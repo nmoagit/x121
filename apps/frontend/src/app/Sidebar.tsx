@@ -7,10 +7,11 @@ import { useSidebar } from "@/app/useSidebar";
 import { hasAccess } from "@/components/ProtectedRoute";
 import { Drawer } from "@/components/composite";
 import { Tooltip } from "@/components/primitives";
+import { usePipelines } from "@/features/pipelines/hooks/use-pipelines";
 import { useProjects } from "@/features/projects/hooks/use-projects";
 import { cn } from "@/lib/cn";
 import { useAuthStore } from "@/stores/auth-store";
-import { Eye, EyeOff, Folder, PanelLeftClose, PanelLeftOpen } from "@/tokens/icons";
+import { Eye, EyeOff, Folder, FolderKanban, PanelLeftClose, PanelLeftOpen, Settings } from "@/tokens/icons";
 
 const EXPANDED_WIDTH = "w-52";
 const COLLAPSED_WIDTH = "w-12";
@@ -51,6 +52,7 @@ function SidebarContent({ collapsed }: { collapsed: boolean }) {
   const user = useAuthStore((s) => s.user);
   const { compactNav } = useSidebar();
   const { data: projects } = useProjects();
+  const { data: pipelines } = usePipelines();
 
   const navGroups = useMemo<NavGroupDef[]>(() => {
     let groups = NAV_GROUPS.map((group) => {
@@ -70,6 +72,30 @@ function SidebarContent({ collapsed }: { collapsed: boolean }) {
       };
     });
 
+    // Insert dynamic pipeline groups after "Projects" group
+    if (pipelines && pipelines.length > 0) {
+      const projectsIndex = groups.findIndex((g) => g.label === "Projects");
+      const pipelineGroups: NavGroupDef[] = pipelines
+        .filter((p) => p.is_active)
+        .map((pipeline) => ({
+          label: pipeline.name,
+          items: [
+            {
+              label: "Projects",
+              path: `/pipelines/${pipeline.code}/projects`,
+              icon: FolderKanban,
+              prominent: true,
+            },
+            {
+              label: "Settings",
+              path: `/pipelines/${pipeline.code}/settings`,
+              icon: Settings,
+            },
+          ],
+        }));
+      groups.splice(projectsIndex + 1, 0, ...pipelineGroups);
+    }
+
     // In compact mode, filter to only prominent items per group.
     if (compactNav) {
       groups = groups
@@ -81,7 +107,7 @@ function SidebarContent({ collapsed }: { collapsed: boolean }) {
     }
 
     return groups;
-  }, [projects, compactNav]);
+  }, [projects, pipelines, compactNav]);
 
   const visibleGroups = navGroups.filter((group) => {
     if (!user) return !group.requiredRole;

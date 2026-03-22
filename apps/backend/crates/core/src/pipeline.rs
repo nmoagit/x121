@@ -65,24 +65,30 @@ pub fn validate_seed_images(
     }
 }
 
+/// Generic JSON-to-typed parser with a descriptive validation error.
+fn parse_json_field<T: serde::de::DeserializeOwned>(
+    json: &serde_json::Value,
+    field_name: &str,
+) -> Result<T, CoreError> {
+    serde_json::from_value(json.clone())
+        .map_err(|e| CoreError::Validation(format!("Invalid {field_name} JSON: {e}")))
+}
+
 /// Parse a `serde_json::Value` into a typed `Vec<SeedSlot>`.
 pub fn parse_seed_slots(json: &serde_json::Value) -> Result<Vec<SeedSlot>, CoreError> {
-    serde_json::from_value(json.clone())
-        .map_err(|e| CoreError::Validation(format!("Invalid seed_slots JSON: {e}")))
+    parse_json_field(json, "seed_slots")
 }
 
 /// Parse a `serde_json::Value` into a typed `PipelineNamingRules`.
 pub fn parse_naming_rules(json: &serde_json::Value) -> Result<PipelineNamingRules, CoreError> {
-    serde_json::from_value(json.clone())
-        .map_err(|e| CoreError::Validation(format!("Invalid naming_rules JSON: {e}")))
+    parse_json_field(json, "naming_rules")
 }
 
 /// Parse a `serde_json::Value` into a typed `PipelineDeliveryConfig`.
 pub fn parse_delivery_config(
     json: &serde_json::Value,
 ) -> Result<PipelineDeliveryConfig, CoreError> {
-    serde_json::from_value(json.clone())
-        .map_err(|e| CoreError::Validation(format!("Invalid delivery_config JSON: {e}")))
+    parse_json_field(json, "delivery_config")
 }
 
 #[cfg(test)]

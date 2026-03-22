@@ -44,6 +44,18 @@ interface GroupOption {
   label: string;
 }
 
+/** A seed slot definition — can come from pipeline config or hardcoded defaults. */
+interface VariantSlot {
+  type: string;
+  label: string;
+}
+
+/** Default variant slots when no pipeline seed slots are provided. */
+const DEFAULT_variantSlots: VariantSlot[] = [
+  { type: "clothed", label: "Clothed" },
+  { type: "topless", label: "Topless" },
+];
+
 interface CharacterSeedDataModalProps {
   character: Character | null;
   projectId: number;
@@ -60,12 +72,9 @@ interface CharacterSeedDataModalProps {
   onUpdate?: (characterId: number, data: UpdateCharacter) => void;
   /** Whether an update mutation is in-flight. */
   updating?: boolean;
+  /** Pipeline-defined seed slots. When provided, replaces the default clothed/topless slots. */
+  seedSlots?: VariantSlot[];
 }
-
-const VARIANT_SLOTS = [
-  { type: "clothed", label: "Clothed" },
-  { type: "topless", label: "Topless" },
-] as const;
 
 /** Image with loading spinner placeholder. */
 function SeedImage({ src, alt }: { src: string; alt: string }) {
@@ -91,7 +100,7 @@ function SeedImage({ src, alt }: { src: string; alt: string }) {
 }
 
 type JsonSlot = "bio" | "tov";
-type ImageSlot = "clothed" | "topless";
+type ImageSlot = string;
 
 /** A JSON file assignment pending confirmation. */
 interface JsonAssignment { kind: "json"; slot: JsonSlot; file: File; parsed: Record<string, unknown> }
@@ -363,7 +372,7 @@ function extractSpeechEntries(
    Component
    -------------------------------------------------------------------------- */
 
-export function CharacterSeedDataModal({ character, projectId, onClose, groupOptions, onGroupChange, onCreateGroup, onDelete, onUpdate, updating }: CharacterSeedDataModalProps) {
+export function CharacterSeedDataModal({ character, projectId, onClose, groupOptions, onGroupChange, onCreateGroup, onDelete, onUpdate, updating, seedSlots }: CharacterSeedDataModalProps) {
   const characterId = character?.id ?? 0;
   const open = character !== null;
   const charName = character?.name ?? "";
@@ -376,6 +385,11 @@ export function CharacterSeedDataModal({ character, projectId, onClose, groupOpt
   const { data: speeches } = useCharacterSpeeches(characterId);
   const { data: speechTypes } = useSpeechTypes();
   const { data: languages } = useLanguages();
+
+  /** Resolved variant slots — uses pipeline seed slots if provided, else hardcoded defaults. */
+  const variantSlots: VariantSlot[] = seedSlots && seedSlots.length > 0
+    ? seedSlots
+    : DEFAULT_variantSlots;
 
   const metadata = character?.metadata ?? null;
 
@@ -785,7 +799,7 @@ export function CharacterSeedDataModal({ character, projectId, onClose, groupOpt
               <span className="font-normal text-[10px] opacity-50">— PNG, JPG, or WebP — name files with "clothed" or "topless" to auto-classify</span>
             </h3>
             <div className="grid grid-cols-2 gap-[var(--spacing-4)]">
-            {VARIANT_SLOTS.map(({ type, label }) => {
+            {variantSlots.map(({ type, label }) => {
               const variant = isLoading ? undefined : findVariant(type);
               const isUploading = (uploadVariant.isPending && uploadVariant.variables?.variant_type === type)
                 || imageUploading === type;
