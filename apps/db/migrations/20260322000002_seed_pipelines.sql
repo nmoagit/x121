@@ -4,7 +4,7 @@ INSERT INTO pipelines (code, name, description, seed_slots, naming_rules, delive
 VALUES
 (
     'x121',
-    'X121 Adult Content',
+    'x121 Adult Content',
     'Two-track adult content pipeline with clothed and topless seed images',
     '[
         {"name": "clothed", "required": true, "description": "Clothed reference image"},
@@ -22,7 +22,7 @@ VALUES
 ),
 (
     'y122',
-    'Y122 Speaker',
+    'y122 Speaker',
     'Single-track speaker pipeline with one seed image',
     '[
         {"name": "speaker", "required": true, "description": "Speaker reference image"}
