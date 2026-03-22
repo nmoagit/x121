@@ -11,7 +11,7 @@ Massive cross-stack rename. Strategy: database first (single migration), then ba
 
 ## Phase 1: Database Migration
 
-### Task 1.1: Create comprehensive rename migration
+### Task 1.1: [COMPLETE] Create comprehensive rename migration
 **File:** `apps/db/migrations/{timestamp}_rename_character_to_avatar.sql`
 
 Single migration that renames ALL character tables, columns, indexes, and constraints.
@@ -45,16 +45,16 @@ Single migration that renames ALL character tables, columns, indexes, and constr
 - `created_character_id` → `created_avatar_id` on avatar_ingest_entries
 
 **Acceptance Criteria:**
-- [ ] All 19 tables renamed
-- [ ] All FK columns renamed
-- [ ] All indexes follow naming convention after rename
-- [ ] Migration runs without errors on existing data
+- [x] All 19 tables renamed
+- [x] All FK columns renamed
+- [x] All indexes follow naming convention after rename
+- [x] Migration runs without errors on existing data
 
 ---
 
 ## Phase 2: Backend Rename
 
-### Task 2.1: Rename backend model files and types
+### Task 2.1: [COMPLETE] Rename backend model files and types
 **Directory:** `apps/backend/crates/db/src/models/`
 
 Rename files and update all type names:
@@ -71,74 +71,74 @@ Rename files and update all type names:
 - Update ALL SQL table/column names in `#[sqlx(rename_all)]` or query strings
 
 **Acceptance Criteria:**
-- [ ] All model files renamed
-- [ ] All struct/enum/type names updated
-- [ ] All SQL references updated to new table/column names
-- [ ] `mod.rs` updated
+- [x] All model files renamed
+- [x] All struct/enum/type names updated
+- [x] All SQL references updated to new table/column names
+- [x] `mod.rs` updated
 
-### Task 2.2: Rename backend repository files
+### Task 2.2: [COMPLETE] Rename backend repository files
 **Directory:** `apps/backend/crates/db/src/repositories/`
 
 Same pattern — rename files and all function names, SQL queries.
 
 **Acceptance Criteria:**
-- [ ] All 10 repo files renamed (character_repo → avatar_repo, etc.)
-- [ ] All function names updated (find_character → find_avatar, etc.)
-- [ ] All SQL queries reference new table/column names
-- [ ] `mod.rs` updated
+- [x] All 10 repo files renamed (character_repo → avatar_repo, etc.)
+- [x] All function names updated (find_character → find_avatar, etc.)
+- [x] All SQL queries reference new table/column names
+- [x] `mod.rs` updated
 
-### Task 2.3: Rename backend handler files
+### Task 2.3: [COMPLETE] Rename backend handler files
 **Directory:** `apps/backend/crates/api/src/handlers/`
 
 Rename 11 handler files and update all function names, imports.
 
 **Acceptance Criteria:**
-- [ ] All handler files renamed
-- [ ] All handler function names updated
-- [ ] All imports updated to use Avatar types/repos
-- [ ] `mod.rs` updated
+- [x] All handler files renamed
+- [x] All handler function names updated
+- [x] All imports updated to use Avatar types/repos
+- [x] `mod.rs` updated
 
-### Task 2.4: Rename backend route files and API paths
+### Task 2.4: [COMPLETE] Rename backend route files and API paths
 **Directory:** `apps/backend/crates/api/src/routes/`
 
 Rename 9 route files and change ALL endpoint paths from `/characters` to `/avatars`.
 
 **Acceptance Criteria:**
-- [ ] All route files renamed
-- [ ] All endpoint paths: `/characters` → `/avatars`
-- [ ] Path parameters: `character_id` → `avatar_id`
-- [ ] `mod.rs` route tree updated
+- [x] All route files renamed
+- [x] All endpoint paths: `/characters` → `/avatars`
+- [x] Path parameters: `character_id` → `avatar_id`
+- [x] `mod.rs` route tree updated
 
-### Task 2.5: Update core crate references
+### Task 2.5: [COMPLETE] Update core crate references
 **Directory:** `apps/backend/crates/core/src/`
 
 Update all character references in core types, functions, modules.
 
 **Acceptance Criteria:**
-- [ ] `character_dashboard.rs` → `avatar_dashboard.rs`
-- [ ] `character_ingest.rs` → `avatar_ingest.rs`
-- [ ] `character_library.rs` → `avatar_library.rs`
-- [ ] All other files with character references updated
-- [ ] `lib.rs` module registrations updated
+- [x] `character_dashboard.rs` → `avatar_dashboard.rs`
+- [x] `character_ingest.rs` → `avatar_ingest.rs`
+- [x] `character_library.rs` → `avatar_library.rs`
+- [x] All other files with character references updated
+- [x] `lib.rs` module registrations updated
 
-### Task 2.6: Update pipeline and worker crates
+### Task 2.6: [COMPLETE] Update pipeline and worker crates
 **Directories:** `apps/backend/crates/pipeline/src/`, `apps/backend/crates/worker/src/`
 
 **Acceptance Criteria:**
-- [ ] `context_loader.rs` character references updated
-- [ ] Any other pipeline/worker references updated
+- [x] `context_loader.rs` character references updated
+- [x] Any other pipeline/worker references updated
 
-### Task 2.7: Verify backend compilation
+### Task 2.7: [COMPLETE] Verify backend compilation
 **Acceptance Criteria:**
-- [ ] `cargo check` passes with zero errors
-- [ ] `cargo test` passes (update test assertions for new names)
-- [ ] `cargo clippy` clean
+- [x] `cargo check` passes with zero errors
+- [x] `cargo test` passes (update test assertions for new names)
+- [x] `cargo clippy` clean
 
 ---
 
 ## Phase 3: Frontend Rename
 
-### Task 3.1: Rename frontend feature directory and files
+### Task 3.1: [COMPLETE] Rename frontend feature directory and files
 **Directory:** `apps/frontend/src/features/characters/` → `apps/frontend/src/features/avatars/`
 
 Rename the entire directory and all files within:
@@ -151,12 +151,12 @@ Rename the entire directory and all files within:
 - All types updated
 
 **Acceptance Criteria:**
-- [ ] Directory renamed to `avatars/`
-- [ ] All files renamed
-- [ ] All component/type/function names updated
-- [ ] All imports updated across the entire frontend
+- [x] Directory renamed to `avatars/`
+- [x] All files renamed
+- [x] All component/type/function names updated
+- [x] All imports updated across the entire frontend
 
-### Task 3.2: Rename related frontend features
+### Task 3.2: [COMPLETE] Rename related frontend features
 **Files across:** `character-review/`, `character-dashboard/`, `character-ingest/`, `projects/`
 
 - `character-review/` → `avatar-review/`
@@ -167,12 +167,12 @@ Rename the entire directory and all files within:
 - Update `CharacterCard.tsx` → `AvatarCard.tsx`
 
 **Acceptance Criteria:**
-- [ ] All feature directories renamed
-- [ ] All component names updated
-- [ ] All hook names updated
-- [ ] All imports fixed
+- [x] All feature directories renamed
+- [x] All component names updated
+- [x] All hook names updated
+- [x] All imports fixed
 
-### Task 3.3: Update frontend routes and URL parameters
+### Task 3.3: [COMPLETE] Update frontend routes and URL parameters
 **File:** `apps/frontend/src/app/router.tsx`
 
 - Route paths: `/models` → `/avatars`, `/characters` → `/avatars`
@@ -180,12 +180,12 @@ Rename the entire directory and all files within:
 - Route variable names: `characterDetailRoute` → `avatarDetailRoute`
 
 **Acceptance Criteria:**
-- [ ] All route paths updated
-- [ ] All URL parameters renamed
-- [ ] All route variable names updated
-- [ ] Page wrapper files in `pages/` updated
+- [x] All route paths updated
+- [x] All URL parameters renamed
+- [x] All route variable names updated
+- [x] Page wrapper files in `pages/` updated
 
-### Task 3.4: Update frontend labels, tooltips, descriptions
+### Task 3.4: [COMPLETE] Update frontend labels, tooltips, descriptions
 **All frontend files**
 
 - "Model" (meaning character) → "Avatar" in all labels, button text, tooltips, descriptions, page titles
@@ -193,13 +193,13 @@ Rename the entire directory and all files within:
 - Navigation items: "Characters" → "Avatars", "Models" → "Avatars", "Model Dashboard" → "Avatar Dashboard"
 
 **Acceptance Criteria:**
-- [ ] Navigation items updated (navigation.ts, pipeline-navigation.ts)
-- [ ] All page titles updated
-- [ ] All button labels updated
-- [ ] All tooltip text updated
-- [ ] All empty state descriptions updated
+- [x] Navigation items updated (navigation.ts, pipeline-navigation.ts)
+- [x] All page titles updated
+- [x] All button labels updated
+- [x] All tooltip text updated
+- [x] All empty state descriptions updated
 
-### Task 3.5: Update API calls and types
+### Task 3.5: [COMPLETE] Update API calls and types
 **All frontend API/hook files**
 
 - API paths: `/characters/` → `/avatars/`
@@ -208,16 +208,16 @@ Rename the entire directory and all files within:
 - Variable names in hooks
 
 **Acceptance Criteria:**
-- [ ] All API endpoint paths updated
-- [ ] All TypeScript type names updated
-- [ ] All query key factories updated
-- [ ] All variable names updated
+- [x] All API endpoint paths updated
+- [x] All TypeScript type names updated
+- [x] All query key factories updated
+- [x] All variable names updated
 
-### Task 3.6: Verify frontend compilation
+### Task 3.6: [COMPLETE] Verify frontend compilation
 **Acceptance Criteria:**
-- [ ] `npx tsc --noEmit` passes with zero errors
-- [ ] All imports resolve correctly
-- [ ] No runtime errors on page load
+- [x] `npx tsc --noEmit` passes with zero errors
+- [x] All imports resolve correctly
+- [x] No runtime errors on page load
 
 ---
 
