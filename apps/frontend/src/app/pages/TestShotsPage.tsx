@@ -78,7 +78,7 @@ export function TestShotsPage() {
   return (
     <ProjectAvatarPicker
       title="Test Shots"
-      description="Generate and review test shots for a model."
+      description="Generate and review test shots for an avatar."
     >
       {(_projectId, avatarId) => (
         <AvatarTestShots avatarId={avatarId} />

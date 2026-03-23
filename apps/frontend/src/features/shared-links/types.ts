@@ -12,7 +12,7 @@ export type ReviewDecision = "approved" | "rejected";
 export const SCOPE_TYPE_LABELS: Record<LinkScopeType, string> = {
   segment: "Segment",
   scene: "Scene",
-  avatar: "Model",
+  avatar: "Avatar",
   project: "Project",
 };
 

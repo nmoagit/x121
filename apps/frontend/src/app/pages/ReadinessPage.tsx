@@ -56,7 +56,7 @@ export function ReadinessPage() {
       <Stack gap={6}>
         <PageHeader
           title="Avatar Readiness"
-          description="View model library readiness states and manage readiness criteria."
+          description="View avatar library readiness states and manage readiness criteria."
         />
 
         <TabBar tabs={TABS} activeTab={activeTab} onChange={(k) => setActiveTab(k as TabKey)} />
@@ -82,7 +82,7 @@ export function ReadinessPage() {
                       : "Re-evaluate All"}
                   </Button>
                   <span className="text-xs text-[var(--color-text-muted)]">
-                    {summary.total} models total
+                    {summary.total} avatars total
                   </span>
                 </div>
 
@@ -97,7 +97,7 @@ export function ReadinessPage() {
 
             {!summaryLoading && !summary && (
               <p className="text-sm text-[var(--color-text-muted)]">
-                No readiness data available. Define criteria first, then evaluate models.
+                No readiness data available. Define criteria first, then evaluate avatars.
               </p>
             )}
           </Stack>

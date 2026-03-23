@@ -12,7 +12,7 @@
 
 import { EmptyState, TerminalSection } from "@/components/domain";
 import { Stack } from "@/components/layout";
-import { Button, Checkbox, LoadingPane } from "@/components/primitives";
+import { Badge, Button, Checkbox, LoadingPane } from "@/components/primitives";
 import { useClickOutside } from "@/hooks/useClickOutside";
 import { useSetToggle } from "@/hooks/useSetToggle";
 import { cn } from "@/lib/cn";
@@ -24,6 +24,7 @@ import {
   FileText,
   Image,
   ListFilter,
+  Mic,
   Play,
   Video,
 } from "@/tokens/icons";
@@ -35,6 +36,8 @@ import {
   useAvatarSettings,
   useUpdateAvatarSettings,
 } from "@/features/avatars/hooks/use-avatar-detail";
+import { useSpeechCompleteness } from "@/features/avatars/hooks/use-avatar-speeches";
+import type { CompletenessEntry } from "@/features/avatars/types";
 import {
   isIgnored,
   useAddDeliverableIgnore,
@@ -48,6 +51,7 @@ import { useImageVariants } from "@/features/images/hooks/use-image-variants";
 import { IMAGE_VARIANT_STATUS, PROVENANCE_LABEL } from "@/features/images/types";
 import type { ImageVariant, Provenance } from "@/features/images/types";
 import { variantImageUrl } from "@/features/images/utils";
+import { useProject } from "@/features/projects/hooks/use-projects";
 import { useAvatarSceneSettings } from "@/features/scene-catalogue/hooks/use-avatar-scene-settings";
 import { useExpandedSettings } from "@/features/scene-catalogue/hooks/use-expanded-settings";
 import type { ExpandedSceneSetting } from "@/features/scene-catalogue/types";
@@ -63,13 +67,22 @@ import { formatBytes, generateSnakeSlug } from "@/lib/format";
    Constants
    -------------------------------------------------------------------------- */
 
-const SECTION_KEYS = ["metadata", "images", "scene-videos"] as const;
+const SECTION_KEYS = ["metadata", "images", "scene-videos", "speech"] as const;
 type SectionKey = (typeof SECTION_KEYS)[number];
 
 const SECTION_LABELS: Record<SectionKey, string> = {
   metadata: "Metadata",
   images: "Images",
   "scene-videos": "Scene Videos",
+  speech: "Speech",
+};
+
+/** Maps blocking_deliverables keys from project config to SectionKey values. */
+const BLOCKING_KEY_MAP: Record<string, SectionKey> = {
+  metadata: "metadata",
+  images: "images",
+  scenes: "scene-videos",
+  speech: "speech",
 };
 
 /* --------------------------------------------------------------------------
@@ -111,9 +124,11 @@ function expectedVideoFilename(slot: ExpandedSceneSetting): string {
 function SectionFilter({
   visible,
   onToggle,
+  blockingKeys,
 }: {
   visible: Set<SectionKey>;
   onToggle: (key: SectionKey) => void;
+  blockingKeys: Set<SectionKey>;
 }) {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -138,7 +153,7 @@ function SectionFilter({
                 key={key}
                 checked={visible.has(key)}
                 onChange={() => onToggle(key)}
-                label={SECTION_LABELS[key]}
+                label={`${SECTION_LABELS[key]}${!blockingKeys.has(key) ? " (optional)" : ""}`}
               />
             ))}
           </Stack>
@@ -285,6 +300,31 @@ function PlaceholderRow({
   );
 }
 
+const SPEECH_STATUS_COLOR: Record<string, string> = {
+  complete: "text-green-400",
+  partial: "text-orange-400",
+  not_started: "text-red-400",
+  missing: "text-red-400",
+};
+
+function SpeechRow({ entry }: { entry: CompletenessEntry }) {
+  return (
+    <div className={ROW_CLASS}>
+      <Mic size={14} className={ROW_ICON_CLASS} />
+      <span className={ROW_TITLE_CLASS}>{entry.speech_type_name}</span>
+      <span className={ROW_FILENAME_CLASS}>{entry.language_code}</span>
+      <div className={ROW_META_CLASS}>
+        <span>{entry.approved}/{entry.required}</span>
+        <span className="opacity-30">|</span>
+        <span className={SPEECH_STATUS_COLOR[entry.status] ?? "text-[var(--color-text-muted)]"}>
+          {entry.status.replace("_", " ")}
+        </span>
+      </div>
+      <span />
+    </div>
+  );
+}
+
 /* --------------------------------------------------------------------------
    Scene-slot grouped sections
    -------------------------------------------------------------------------- */
@@ -413,11 +453,13 @@ function MetadataSection({
   projectId,
   avatarName,
   projectName,
+  optional,
 }: {
   avatarId: number;
   projectId: number;
   avatarName: string;
   projectName: string;
+  optional?: boolean;
 }) {
   const { data: metadata, isLoading: metaLoading } = useAvatarMetadata(avatarId);
   const { data: settings, isLoading: settingsLoading } = useAvatarSettings(
@@ -472,7 +514,7 @@ function MetadataSection({
   }
 
   return (
-    <TerminalSection title="Metadata">
+    <TerminalSection title="Metadata" actions={optional ? <Badge size="sm" variant="default">optional</Badge> : undefined}>
       <Stack gap={1}>
         {/* Cleaned Metadata row */}
         {!hasMetadata ? (
@@ -584,6 +626,8 @@ export function AvatarDeliverablesTab({
   const { data: ignores } = useDeliverableIgnores(avatarId);
   const addIgnore = useAddDeliverableIgnore(avatarId);
   const removeIgnore = useRemoveDeliverableIgnore(avatarId);
+  const { data: speechData, isLoading: speechLoading } = useSpeechCompleteness(avatarId);
+  const { data: project } = useProject(projectId);
 
   const [showIgnored, setShowIgnored] = useState(true);
   const [sequenceOpen, setSequenceOpen] = useState(false);
@@ -603,8 +647,23 @@ export function AvatarDeliverablesTab({
     return [...seen.entries()].map(([slug, name]) => ({ slug, name }));
   }, [enabledSlots]);
 
+  // Derive initial visible sections from project blocking_deliverables
+  const { initialSections, blockingKeys } = useMemo(() => {
+    const bd = project?.blocking_deliverables;
+    if (!bd || bd.length === 0) {
+      const allKeys = new Set<SectionKey>(SECTION_KEYS);
+      return { initialSections: SECTION_KEYS as Iterable<SectionKey>, blockingKeys: allKeys };
+    }
+    const mapped = bd
+      .map((k) => BLOCKING_KEY_MAP[k])
+      .filter((k): k is SectionKey => k != null);
+    const bKeys = new Set<SectionKey>(mapped);
+    // Show all sections, but mark non-blocking ones
+    return { initialSections: SECTION_KEYS as Iterable<SectionKey>, blockingKeys: bKeys };
+  }, [project?.blocking_deliverables]);
+
   // Section filter state — all visible by default
-  const [visibleSections, toggleSection] = useSetToggle<SectionKey>(SECTION_KEYS);
+  const [visibleSections, toggleSection] = useSetToggle<SectionKey>(initialSections);
 
   function toggleIgnore(sceneTypeId: number, trackId: number | null) {
     const existing = isIgnored(ignores, sceneTypeId, trackId);
@@ -636,82 +695,124 @@ export function AvatarDeliverablesTab({
         >
           {showIgnored ? "Hide Ignored" : "Show Ignored"}
         </Button>
-        <SectionFilter visible={visibleSections} onToggle={toggleSection} />
+        <SectionFilter visible={visibleSections} onToggle={toggleSection} blockingKeys={blockingKeys} />
       </div>
 
       {/* Section 1: Metadata */}
       {visibleSections.has("metadata") && (
-        <MetadataSection
-          avatarId={avatarId}
-          projectId={projectId}
-          avatarName={avatarName}
-          projectName={projectName}
-        />
+        <div className={cn(!blockingKeys.has("metadata") && "opacity-70")}>
+          <MetadataSection
+            avatarId={avatarId}
+            projectId={projectId}
+            avatarName={avatarName}
+            projectName={projectName}
+            optional={!blockingKeys.has("metadata")}
+          />
+        </div>
       )}
 
       {/* Section 2: Images (seed images only — one per track) */}
       {visibleSections.has("images") && (
-        <TerminalSection title="Images">
-          {seedTracks.length === 0 ? (
-            <EmptyState
-              icon={<Image size={32} />}
-              title="No scene slots"
-              description="Enable scene settings to see expected image deliverables."
-            />
-          ) : (
-            <Stack gap={0}>
-              {seedTracks.map((track) => (
-                <SeedImageSlot
-                  key={track.slug}
-                  label={track.name}
-                  trackSlug={track.slug}
-                  variants={variants ?? []}
-                />
-              ))}
-            </Stack>
-          )}
-        </TerminalSection>
+        <div className={cn(!blockingKeys.has("images") && "opacity-70")}>
+          <TerminalSection
+            title="Images"
+            actions={!blockingKeys.has("images") ? <Badge size="sm" variant="default">optional</Badge> : undefined}
+          >
+            {seedTracks.length === 0 ? (
+              <EmptyState
+                icon={<Image size={32} />}
+                title="No scene slots"
+                description="Enable scene settings to see expected image deliverables."
+              />
+            ) : (
+              <Stack gap={0}>
+                {seedTracks.map((track) => (
+                  <SeedImageSlot
+                    key={track.slug}
+                    label={track.name}
+                    trackSlug={track.slug}
+                    variants={variants ?? []}
+                  />
+                ))}
+              </Stack>
+            )}
+          </TerminalSection>
+        </div>
       )}
 
       {/* Section 3: Scene Videos */}
       {visibleSections.has("scene-videos") && (
-        <TerminalSection
-          title="Scene Videos"
-          actions={
-            enabledSlots.length > 0 ? (
-              <Button variant="secondary" size="xs" icon={<Play size={12} />} onClick={() => setSequenceOpen(true)}>
-                Play Sequence
-              </Button>
-            ) : undefined
-          }
-        >
-          {visibleSlots.length === 0 ? (
-            <EmptyState
-              icon={<Video size={32} />}
-              title="No scene slots"
-              description={
-                enabledSlots.length > 0
-                  ? "All slots are ignored."
-                  : "Enable scene settings to see expected video deliverables."
-              }
-            />
-          ) : (
-            <Stack gap={0}>
-              {visibleSlots.map((slot) => {
-                const ig = isIgnored(ignores, slot.scene_type_id, slot.track_id ?? null);
-                return (
-                  <VideoSlot
-                    key={`${slot.scene_type_id}-${slot.track_id ?? "none"}`}
-                    slot={slot}
-                    scenes={scenes ?? []}
-                    ignored={ig}
-                    onToggleIgnore={() => toggleIgnore(slot.scene_type_id, slot.track_id ?? null)}
+        <div className={cn(!blockingKeys.has("scene-videos") && "opacity-70")}>
+          <TerminalSection
+            title="Scene Videos"
+            actions={
+              <div className="flex items-center gap-2">
+                {!blockingKeys.has("scene-videos") && <Badge size="sm" variant="default">optional</Badge>}
+                {enabledSlots.length > 0 && (
+                  <Button variant="secondary" size="xs" icon={<Play size={12} />} onClick={() => setSequenceOpen(true)}>
+                    Play Sequence
+                  </Button>
+                )}
+              </div>
+            }
+          >
+            {visibleSlots.length === 0 ? (
+              <EmptyState
+                icon={<Video size={32} />}
+                title="No scene slots"
+                description={
+                  enabledSlots.length > 0
+                    ? "All slots are ignored."
+                    : "Enable scene settings to see expected video deliverables."
+                }
+              />
+            ) : (
+              <Stack gap={0}>
+                {visibleSlots.map((slot) => {
+                  const ig = isIgnored(ignores, slot.scene_type_id, slot.track_id ?? null);
+                  return (
+                    <VideoSlot
+                      key={`${slot.scene_type_id}-${slot.track_id ?? "none"}`}
+                      slot={slot}
+                      scenes={scenes ?? []}
+                      ignored={ig}
+                      onToggleIgnore={() => toggleIgnore(slot.scene_type_id, slot.track_id ?? null)}
+                    />
+                  );
+                })}
+              </Stack>
+            )}
+          </TerminalSection>
+        </div>
+      )}
+
+      {/* Section 4: Speech */}
+      {visibleSections.has("speech") && (
+        <div className={cn(!blockingKeys.has("speech") && "opacity-70")}>
+          <TerminalSection
+            title={`Speech (${speechData?.filled_slots ?? 0}/${speechData?.total_slots ?? 0})`}
+            actions={!blockingKeys.has("speech") ? <Badge size="sm" variant="default">optional</Badge> : undefined}
+          >
+            {speechLoading ? (
+              <LoadingPane />
+            ) : !speechData?.breakdown?.length ? (
+              <EmptyState
+                icon={<Mic size={32} />}
+                title="No speech slots"
+                description="Configure speech types and languages in project settings to see expected speech deliverables."
+              />
+            ) : (
+              <Stack gap={0}>
+                {speechData.breakdown.map((entry) => (
+                  <SpeechRow
+                    key={`${entry.speech_type_id}-${entry.language_id}`}
+                    entry={entry}
                   />
-                );
-              })}
-            </Stack>
-          )}
-        </TerminalSection>
+                ))}
+              </Stack>
+            )}
+          </TerminalSection>
+        </div>
       )}
 
       {/* Sequence Player overlay */}

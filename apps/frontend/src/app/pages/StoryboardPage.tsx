@@ -55,7 +55,7 @@ export function StoryboardPage() {
         <ScenePicker
           avatarId={avatarId}
           emptyIcon={<Layout size={32} />}
-          noScenesDescription="This model has no scenes yet."
+          noScenesDescription="This avatar has no scenes yet."
         >
           {(sceneId) => <StoryboardViewer sceneId={sceneId} />}
         </ScenePicker>

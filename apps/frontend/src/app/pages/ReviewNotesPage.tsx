@@ -36,7 +36,7 @@ export function ReviewNotesPage() {
         <ScenePicker
           avatarId={avatarId}
           emptyIcon={<FileText size={32} />}
-          noScenesDescription="This model has no scenes yet."
+          noScenesDescription="This avatar has no scenes yet."
         >
           {(_sceneId) => (
             <SegmentIdPicker

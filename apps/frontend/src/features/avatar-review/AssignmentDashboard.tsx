@@ -159,7 +159,7 @@ function AssignmentsTable({ assignments }: { assignments: AvatarReviewAssignment
             <thead>
               <tr className={TERMINAL_DIVIDER}>
                 <th className={`${TERMINAL_TH} py-2 px-3`}>ID</th>
-                <th className={`${TERMINAL_TH} py-2 px-3`}>Model</th>
+                <th className={`${TERMINAL_TH} py-2 px-3`}>Avatar</th>
                 <th className={`${TERMINAL_TH} py-2 px-3`}>Reviewer</th>
                 <th className={`${TERMINAL_TH} py-2 px-3`}>Round</th>
                 <th className={`${TERMINAL_TH} py-2 px-3`}>Status</th>

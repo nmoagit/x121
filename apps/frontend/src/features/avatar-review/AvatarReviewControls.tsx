@@ -120,7 +120,7 @@ export function AvatarReviewControls({
 
       <Modal
         open={showDecisionModal}
-        title={decisionType === "approved" ? "Approve Model" : "Reject Model"}
+        title={decisionType === "approved" ? "Approve Avatar" : "Reject Avatar"}
         onClose={() => setShowDecisionModal(false)}
       >
         <div className="space-y-4">

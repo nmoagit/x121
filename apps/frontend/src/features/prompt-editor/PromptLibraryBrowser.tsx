@@ -146,7 +146,7 @@ export function PromptLibraryBrowser({
               {entry.model_compatibility && entry.model_compatibility.length > 0 && (
                 <div className="flex flex-wrap gap-1">
                   <span className="text-xs font-medium text-[var(--color-text-secondary)]">
-                    Models:
+                    Avatars:
                   </span>
                   {entry.model_compatibility.map((model) => (
                     <Badge key={model} variant="info">

@@ -418,7 +418,7 @@ export function AnnotationsPage() {
     <Stack gap={6}>
       <PageHeader
         title="Annotations"
-        description="Browse all frame annotations across projects and models."
+        description="Browse all frame annotations across projects and avatars."
       />
 
       {/* Filter bar */}
@@ -430,7 +430,7 @@ export function AnnotationsPage() {
           className="w-44"
         />
         <SearchInput
-          placeholder="Search model..."
+          placeholder="Search avatar..."
           value={avatarSearch}
           onChange={(e) => setAvatarSearch(e.target.value)}
           className="w-48"

@@ -23,7 +23,7 @@ export function ReviewAuditRow({ entry, showAvatarId }: ReviewAuditRowProps) {
       {showAvatarId && (
         <>
           <span className="text-[var(--color-text-muted)] opacity-30">|</span>
-          <span className="text-[var(--color-text-muted)]">model #{entry.avatar_id}</span>
+          <span className="text-[var(--color-text-muted)]">avatar #{entry.avatar_id}</span>
         </>
       )}
       <span className="text-[var(--color-text-muted)] opacity-30">|</span>

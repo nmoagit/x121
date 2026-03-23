@@ -78,10 +78,10 @@ export function ProjectCard({
             </p>
           )}
 
-          {/* Model counter */}
+          {/* Avatar counter */}
           {total > 0 && (
             <div className="flex items-center gap-1.5 font-mono text-[11px]">
-              <span className="text-[var(--color-text-muted)]">models</span>
+              <span className="text-[var(--color-text-muted)]">avatars</span>
               <span className={allReady ? "text-green-400" : "text-cyan-400"}>
                 {ready}/{total}
               </span>

@@ -538,7 +538,7 @@ export function ImportConfirmModal({
   };
 
   return (
-    <Modal open={open} onClose={isImporting ? () => {} : onClose} title="Import Models" size="xl">
+    <Modal open={open} onClose={isImporting ? () => {} : onClose} title="Import Avatars" size="xl">
       <Stack gap={3}>
         {/* Target project indicator */}
         {projectName && (
@@ -779,7 +779,7 @@ export function ImportConfirmModal({
                 }
               }}
               disabled={importableCount === 0 && duplicatesWithAssets.size === 0}
-              label={importableCount === 0 && duplicatesWithAssets.size === 0 ? "All models already exist" : `Select all (${importableCount + ((importMissing || overwrite) ? duplicatesWithAssets.size : 0)})`}
+              label={importableCount === 0 && duplicatesWithAssets.size === 0 ? "All avatars already exist" : `Select all (${importableCount + ((importMissing || overwrite) ? duplicatesWithAssets.size : 0)})`}
             />
           </div>
 
@@ -840,9 +840,9 @@ export function ImportConfirmModal({
                   {selectedCount > 0 && existingAssetsCount > 0
                     ? `Import ${selectedCount} + Update ${existingAssetsCount}`
                     : selectedCount > 0
-                      ? `Import ${selectedCount} Model${selectedCount !== 1 ? "s" : ""}`
+                      ? `Import ${selectedCount} Avatar${selectedCount !== 1 ? "s" : ""}`
                       : existingAssetsCount > 0
-                        ? `Update ${existingAssetsCount} Model${existingAssetsCount !== 1 ? "s" : ""}`
+                        ? `Update ${existingAssetsCount} Avatar${existingAssetsCount !== 1 ? "s" : ""}`
                         : "Import"}
                 </Button>
               </>

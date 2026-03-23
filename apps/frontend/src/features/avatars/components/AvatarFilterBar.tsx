@@ -106,7 +106,7 @@ export function AvatarFilterBar({
     <div className="space-y-1">
     <div className="flex flex-wrap items-center gap-[var(--spacing-3)]">
       <SearchInput
-        placeholder="Search models..."
+        placeholder="Search avatars..."
         value={searchQuery}
         onChange={onSearchChange}
         size="sm"

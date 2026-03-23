@@ -42,8 +42,8 @@ export function DuplicatesPage() {
             .filter((c) => c.matched_avatar_id !== null)
             .map((c) => ({
               checkId: c.id,
-              avatarAName: `Model #${c.source_avatar_id}`,
-              avatarBName: `Model #${c.matched_avatar_id}`,
+              avatarAName: `Avatar #${c.source_avatar_id}`,
+              avatarBName: `Avatar #${c.matched_avatar_id}`,
               similarityScore: (c.similarity_score ?? 0) * 100,
             }));
           setFlaggedPairs(pairs);
@@ -70,7 +70,7 @@ export function DuplicatesPage() {
       <Stack gap={6}>
         <PageHeader
           title="Duplicate Detection"
-          description="Configure similarity thresholds and resolve flagged duplicate models."
+          description="Configure similarity thresholds and resolve flagged duplicate avatars."
         />
 
         {/* Settings */}

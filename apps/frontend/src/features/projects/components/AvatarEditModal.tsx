@@ -158,7 +158,7 @@ export function AvatarEditModal({
   }
 
   return (
-    <Modal open={avatar !== null} onClose={onClose} title="Edit Model" size="md">
+    <Modal open={avatar !== null} onClose={onClose} title="Edit Avatar" size="md">
       <Stack gap={4}>
         <Input
           label="Avatar Name"
@@ -231,7 +231,7 @@ export function AvatarEditModal({
             className="text-red-400 hover:text-red-300"
             onClick={() => avatar && onDeleteRequest(avatar)}
           >
-            Delete model
+            Delete avatar
           </Button>
           <div className="flex gap-2">
             <Button size="sm" variant="secondary" onClick={onClose}>

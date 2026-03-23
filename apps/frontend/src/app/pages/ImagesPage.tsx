@@ -207,7 +207,7 @@ export function ImagesPage() {
     <Stack gap={6}>
       <PageHeader
         title="Images"
-        description="Browse all image variants across models, most recent first."
+        description="Browse all image variants across avatars, most recent first."
       />
 
       {/* Filter bar */}

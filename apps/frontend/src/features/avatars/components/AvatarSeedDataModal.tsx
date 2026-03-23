@@ -1397,7 +1397,7 @@ export function AvatarSeedDataModal({ avatar, projectId, onClose, groupOptions, 
       <ConfirmDeleteModal
         open={confirmDelete}
         onClose={() => setConfirmDelete(false)}
-        title="Delete Model"
+        title="Delete Avatar"
         entityName={charName}
         onConfirm={() => { if (onDelete) { onDelete(avatarId); onClose(); } }}
       />

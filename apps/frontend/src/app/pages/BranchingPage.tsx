@@ -70,7 +70,7 @@ export function BranchingPage() {
         <ScenePicker
           avatarId={avatarId}
           emptyIcon={<Layers size={32} />}
-          noScenesDescription="This model has no scenes yet."
+          noScenesDescription="This avatar has no scenes yet."
         >
           {(sceneId) => <SceneBranches sceneId={sceneId} />}
         </ScenePicker>

@@ -10,7 +10,7 @@ export function AvatarDashboardPage() {
   return (
     <ProjectAvatarPicker
       title="Avatar Dashboard"
-      description="View settings, generation history, and readiness status for a model."
+      description="View settings, generation history, and readiness status for an avatar."
     >
       {(_projectId, avatarId) => (
         <AvatarDashboard avatarId={avatarId} />

@@ -27,7 +27,7 @@ export function ContactSheetPage() {
       <Stack gap={6}>
         <PageHeader
           title="Contact Sheet"
-          description="View model face grids across scenes for consistency review."
+          description="View avatar face grids across scenes for consistency review."
         />
 
         <Stack direction="horizontal" gap={3} align="end">
@@ -37,7 +37,7 @@ export function ContactSheetPage() {
               type="number"
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
-              placeholder="Enter model ID"
+              placeholder="Enter avatar ID"
               min="1"
             />
           </div>
@@ -47,10 +47,10 @@ export function ContactSheetPage() {
         </Stack>
 
         {avatarId !== null ? (
-          <ContactSheet avatarId={avatarId} avatarName={`Model #${avatarId}`} />
+          <ContactSheet avatarId={avatarId} avatarName={`Avatar #${avatarId}`} />
         ) : (
           <p className="text-sm text-[var(--color-text-muted)]">
-            Enter a model ID above to generate a contact sheet.
+            Enter an avatar ID above to generate a contact sheet.
           </p>
         )}
       </Stack>

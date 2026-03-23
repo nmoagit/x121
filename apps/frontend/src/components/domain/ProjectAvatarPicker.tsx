@@ -90,10 +90,10 @@ export function ProjectAvatarPicker({
             <WireframeLoader size={32} />
           ) : (
             <Select
-              label="Model"
+              label="Avatar"
               placeholder={
                 projectId > 0
-                  ? "Select a model..."
+                  ? "Select an avatar..."
                   : "Select a project first"
               }
               options={avatarOptions}
@@ -120,12 +120,12 @@ export function ProjectAvatarPicker({
           }
           title={
             projectId > 0
-              ? "Select a model"
+              ? "Select an avatar"
               : "Select a project"
           }
           description={
             projectId > 0
-              ? "Choose a model from the dropdown above to continue."
+              ? "Choose an avatar from the dropdown above to continue."
               : "Choose a project from the dropdown above to get started."
           }
         />

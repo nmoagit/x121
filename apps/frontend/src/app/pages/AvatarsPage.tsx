@@ -744,7 +744,7 @@ export function AvatarsPage() {
       <EmptyState
         icon={<User size={32} />}
         title="No projects"
-        description="Create a project first to manage models."
+        description="Create a project first to manage avatars."
       />
     );
   }
@@ -841,7 +841,7 @@ export function AvatarsPage() {
             icon={<Plus size={14} />}
             onClick={() => setCharModalOpen(true)}
           >
-            Add Model
+            Add Avatar
           </Button>
         </div>
 
@@ -854,16 +854,16 @@ export function AvatarsPage() {
         {totalFiltered === 0 ? (
           <EmptyState
             icon={<User size={32} />}
-            title="No models"
+            title="No avatars"
             description={
               allProjectAvatars.length > 0
-                ? "No models match your filter."
-                : "Add a model or import a folder."
+                ? "No avatars match your filter."
+                : "Add an avatar or import a folder."
             }
             action={
               allProjectAvatars.length === 0 ? (
                 <Button size="sm" icon={<Plus size={14} />} onClick={() => setCharModalOpen(true)}>
-                  Add Model
+                  Add Avatar
                 </Button>
               ) : undefined
             }
@@ -928,7 +928,7 @@ export function AvatarsPage() {
         )}
 
         {/* Add avatar modal */}
-        <Modal open={charModalOpen} onClose={() => setCharModalOpen(false)} title="Add Model" size="md">
+        <Modal open={charModalOpen} onClose={() => setCharModalOpen(false)} title="Add Avatar" size="md">
           <Stack gap={4}>
             {isAdmin ? (
               <Select
@@ -1002,7 +1002,7 @@ export function AvatarsPage() {
               onClick={handleCreateAvatar}
               disabled={!newCharName.trim() || (isAdmin && !newCharProjectId && !primaryProjectId)}
             >
-              Create Model
+              Create Avatar
             </Button>
           </Stack>
         </Modal>
@@ -1097,7 +1097,7 @@ export function AvatarsPage() {
         <ConfirmDeleteModal
           open={charDeleteTarget !== null}
           onClose={() => setCharDeleteTarget(null)}
-          title="Delete Model"
+          title="Delete Avatar"
           entityName={charDeleteTarget?.name ?? ""}
           onConfirm={handleDeleteAvatar}
           loading={deleteAvatar.isPending}
@@ -1109,7 +1109,7 @@ export function AvatarsPage() {
           onClose={() => setGroupDeleteTarget(null)}
           title="Delete Group"
           entityName={groupDeleteTarget?.name ?? ""}
-          warningText="Models in this group will become ungrouped."
+          warningText="Avatars in this group will become ungrouped."
           onConfirm={handleDeleteGroup}
           loading={deleteGroup.isPending}
         />

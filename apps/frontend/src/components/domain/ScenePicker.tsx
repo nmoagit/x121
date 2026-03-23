@@ -31,7 +31,7 @@ export function ScenePicker({
   children,
   emptyIcon = <Layers size={32} />,
   noScenesTitle = "No scenes",
-  noScenesDescription = "This model has no scenes yet.",
+  noScenesDescription = "This avatar has no scenes yet.",
 }: ScenePickerProps) {
   const [selectedSceneId, setSelectedSceneId] = useState<string>("");
   const { data: scenes, isLoading } = useAvatarScenes(avatarId);

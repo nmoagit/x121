@@ -82,7 +82,7 @@ export function AvatarGroupSection<T extends GroupSectionAvatar>({
   dragHandlers,
   renderCard,
   subtitle,
-  emptyMessage = "No models in this group. Drag models here to add them.",
+  emptyMessage = "No avatars in this group. Drag avatars here to add them.",
 }: AvatarGroupSectionProps<T>) {
   const Chevron = expanded ? ChevronDown : ChevronRight;
   const charIds = avatars.map((c) => c.id);
@@ -123,7 +123,7 @@ export function AvatarGroupSection<T extends GroupSectionAvatar>({
           )}
         </span>
         <span className="text-xs text-[var(--color-text-muted)]">
-          {avatars.length} {avatars.length === 1 ? "model" : "models"}
+          {avatars.length} {avatars.length === 1 ? "avatar" : "avatars"}
         </span>
         {avatars.length > 0 && (
           <button

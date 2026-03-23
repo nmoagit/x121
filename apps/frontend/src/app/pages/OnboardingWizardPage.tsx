@@ -117,7 +117,7 @@ export function OnboardingWizardPage() {
       <Stack gap={6}>
         <PageHeader
           title="Avatar Onboarding Wizard"
-          description="Bulk model onboarding with step-by-step guidance for upload, metadata, and variant generation."
+          description="Bulk avatar onboarding with step-by-step guidance for upload, metadata, and variant generation."
         />
 
         {/* Project selector */}

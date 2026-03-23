@@ -291,7 +291,7 @@ export function QueueTable({
             </th>
             <SortHeader label="ID" field="id" filter={filter} onChange={onFilterChange} />
             <th className={`px-3 py-2 ${TERMINAL_TH}`}>
-              Model
+              Avatar
             </th>
             <th className={`px-3 py-2 ${TERMINAL_TH}`}>
               Pipeline
