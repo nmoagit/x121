@@ -25,10 +25,11 @@ Source of truth: [`design/design.md`](../design.md)
 | in-progress | 0 |
 | review | 0 |
 | done | 140 |
+| planning | 1 |
 | blocked | 0 |
 | deferred | 0 |
 | maybe | 15 |
-| **Total** | **155** |
+| **Total** | **156** |
 
 ---
 
@@ -40,7 +41,8 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-01 | Project, Character & Scene Data Model | — | `done` | 2026-02-20 | 8 entity tables, models, repositories, API endpoints, naming engine, delivery ZIP, 27 integration tests. |
 | PRD-138 | Multi-Pipeline Architecture | 1 | `done` | 2026-03-22 |
 | PRD-139 | Pipeline Workspace Completeness | 1 | `done` | 2026-03-22 |
-| PRD-140 | Character to Avatar Rename | 1 | `done` | 2026-03-22 | Renamed "character"→"avatar" across entire stack. DB: 1 migration renaming 19 tables + FK columns. Backend: 46 files renamed, 258 files updated (all types, repos, handlers, routes, SQL). Frontend: 49 files renamed, 402 files updated (all components, hooks, types, routes, labels). Unified "model"/"character" to "avatar". | Full pipeline workspace nav (42 items, 6 groups), 33 pipeline-scoped routes, dynamic pipeline list in sidebar, pipeline-filtered repos (tracks, scene types, workflows), cross-pipeline validation, hardcoded slug removal (naming_engine, delivery, TrackBadge, import), queue pipeline badges+filtering, pipeline-scoped naming rules page, dashboard pipeline scoping, ingest seed slot validation. Deps: PRD-138. | Pipeline as top-level entity. 6 migrations (pipelines table, seed data, FK additions to projects/tracks/workflows/scene_types). Pipeline model/repo/handlers/routes. Core types (SeedSlot, NamingRules). Pipeline context loading, seed validation, pipeline-scoped naming. Frontend: pipeline feature module, sidebar nav, scoped routing, settings page, dynamic seed uploads. DRY fixes: parse_json_field, ensure_pipeline_exists, shared search validators. Deps: PRD-01, PRD-05, PRD-24, PRD-75, PRD-111, PRD-113, PRD-116. |
+| PRD-140 | Character to Avatar Rename | 1 | `done` | 2026-03-22 | Renamed "character"→"avatar" across entire stack. DB: 1 migration (19 tables + FK columns). Backend: 46 files renamed, 258 files updated. Frontend: 49 files renamed, 402 files updated. Unified "model"/"character" to "avatar". |
+| PRD-141 | Pipeline-Scoped Imports and Storage | 1 | `planning` | — | Pipeline-configurable import rules, pipeline-isolated avatar records, pipeline-scoped storage layout. Naming engine integration (platform → pipeline → project hierarchy). Deps: PRD-138, PRD-113, PRD-116. |
 
 ## Part 1: Infrastructure & System Core
 
@@ -289,6 +291,7 @@ Source of truth: [`design/design.md`](../design.md)
 | 2026-03-22 | Added PRD-138 (Multi-Pipeline Architecture). Pipeline as top-level entity scoping projects, tracks, workflows, scene types. Dynamic seed slots (x121: clothed+topless, y122: speaker), pipeline-scoped naming/delivery, pipeline navigation in frontend. Characters pipeline-scoped (no cross-pipeline sharing). DB-driven config, code-driven backend. Deps: PRD-01, PRD-05, PRD-24, PRD-75, PRD-111, PRD-113, PRD-116. Total PRDs: 138 + 15 MAYBEs = 153. |
 | 2026-03-22 | Added PRD-139 (Pipeline Workspace Completeness). Full nav in pipeline workspace, dynamic pipeline list in sidebar, queue pipeline awareness, pipeline-scoped naming rules. Deps: PRD-138. Total: 139 + 15 MAYBEs = 154. |
 | 2026-03-22 | Implemented PRD-140. DB: 1 migration (19 tables + FK columns renamed). Backend: 46 files renamed, 258 files updated. Frontend: 49 files renamed, 402 files updated. "character"/"model" unified to "avatar" everywhere. Done count: 140. |
+| 2026-03-23 | Added PRD-141 (Pipeline-Scoped Imports and Storage). Pipeline-configurable import rules, pipeline-isolated avatar records, pipeline-scoped storage layout, naming engine pipeline integration. Must mesh with PRD-116 naming engine hierarchy (platform → pipeline → project). Deps: PRD-138, PRD-113, PRD-116. Total: 141 + 15 MAYBEs = 156. |
 | 2026-03-22 | Added PRD-140 (Character to Avatar Rename). Rename character→avatar across DB (19 tables), backend (200+ files), frontend (100+ files). Unify "model"/"character" to "avatar". Total: 140 + 15 MAYBEs = 155. |
 | 2026-03-22 | Implemented PRD-139. Full workspace nav (42 items), 33 routes, pipeline-filtered repos (tracks/scene types/workflows), cross-pipeline validation, hardcoded slug removal (6 files), queue pipeline badges, naming rules per pipeline, dashboard scoping, ingest seed slot validation. Done count: 139. |
 | 2026-03-22 | Implemented PRD-138. 6 migrations, pipeline model/repo/handlers/routes, core types (SeedSlot, PipelineNamingRules), pipeline context loader, seed validation, pipeline-scoped naming. Frontend: pipeline feature module (hooks, list page, settings page, SeedSlotEditor, JsonConfigPanel), sidebar pipeline nav, scoped routing, pipeline-aware project creation, dynamic seed upload slots. DRY fixes: parse_json_field, ensure_pipeline_exists, shared search validators. 19 unit tests. Done count: 138. |
