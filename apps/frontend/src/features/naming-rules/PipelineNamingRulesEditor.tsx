@@ -1,21 +1,25 @@
 /**
- * Pipeline-scoped naming rules editor (PRD-139).
+ * Pipeline-scoped naming rules editor (PRD-139, PRD-141).
  *
- * When viewed within a pipeline workspace, shows that pipeline's naming_rules
- * JSONB config (video_template, prefix_rules, transition_suffix) with inline
- * editing that saves via the pipeline update API.
+ * Shows naming engine categories with hierarchy:
+ * - Platform defaults (read-only reference)
+ * - Pipeline overrides (editable)
+ * - Template mapping section (category -> template string)
  */
 
 import { useCallback, useEffect, useState } from "react";
 
 import { Button, Input } from "@/components/primitives";
 import { Stack } from "@/components/layout";
-import { TERMINAL_PANEL, TERMINAL_BODY, TERMINAL_LABEL } from "@/lib/ui-classes";
+import { TERMINAL_PANEL, TERMINAL_BODY, TERMINAL_HEADER, TERMINAL_HEADER_TITLE } from "@/lib/ui-classes";
 import { Save, Plus, Trash2 } from "@/tokens/icons";
 import { iconSizes } from "@/tokens/icons";
 import { toastStore } from "@/components/composite/useToast";
 import { useUpdatePipeline } from "@/features/pipelines/hooks/use-pipelines";
 import type { Pipeline } from "@/features/pipelines/types";
+
+import { CategoryTemplatesSection } from "./components/CategoryTemplatesSection";
+import { useNamingCategories, useNamingRules } from "./hooks/use-naming-rules";
 
 /* --------------------------------------------------------------------------
    Types
@@ -25,69 +29,54 @@ interface PipelineNamingRules {
   video_template: string;
   prefix_rules: Record<string, string>;
   transition_suffix: string;
+  category_templates: Record<string, string>;
 }
 
 const DEFAULT_RULES: PipelineNamingRules = {
   video_template: "{avatar}_{scene}_{track}",
   prefix_rules: {},
   transition_suffix: "_transition",
+  category_templates: {},
 };
 
-/* --------------------------------------------------------------------------
-   Props
-   -------------------------------------------------------------------------- */
-
-interface PipelineNamingRulesEditorProps {
-  pipeline: Pipeline;
+function parseRules(raw: Record<string, unknown>): PipelineNamingRules {
+  return {
+    video_template: (raw?.video_template as string) ?? DEFAULT_RULES.video_template,
+    prefix_rules: (raw?.prefix_rules as Record<string, string>) ?? DEFAULT_RULES.prefix_rules,
+    transition_suffix: (raw?.transition_suffix as string) ?? DEFAULT_RULES.transition_suffix,
+    category_templates: (raw?.category_templates as Record<string, string>) ?? DEFAULT_RULES.category_templates,
+  };
 }
 
 /* --------------------------------------------------------------------------
    Component
    -------------------------------------------------------------------------- */
 
+interface PipelineNamingRulesEditorProps {
+  pipeline: Pipeline;
+}
+
 export function PipelineNamingRulesEditor({ pipeline }: PipelineNamingRulesEditorProps) {
   const updatePipeline = useUpdatePipeline();
+  const { data: categories } = useNamingCategories();
+  const { data: platformRules } = useNamingRules();
 
-  // Parse naming_rules from pipeline JSONB, falling back to defaults.
-  const [rules, setRules] = useState<PipelineNamingRules>(() => {
-    const raw = pipeline.naming_rules;
-    return {
-      video_template:
-        (raw as Record<string, unknown>)?.video_template as string ?? DEFAULT_RULES.video_template,
-      prefix_rules:
-        (raw as Record<string, unknown>)?.prefix_rules as Record<string, string> ?? DEFAULT_RULES.prefix_rules,
-      transition_suffix:
-        (raw as Record<string, unknown>)?.transition_suffix as string ?? DEFAULT_RULES.transition_suffix,
-    };
-  });
-
-  // Track new prefix rule being added.
+  const [rules, setRules] = useState<PipelineNamingRules>(() =>
+    parseRules(pipeline.naming_rules as Record<string, unknown>),
+  );
   const [newPrefixField, setNewPrefixField] = useState("");
   const [newPrefixValue, setNewPrefixValue] = useState("");
 
-  // Reset when pipeline changes.
   useEffect(() => {
-    const raw = pipeline.naming_rules;
-    setRules({
-      video_template:
-        (raw as Record<string, unknown>)?.video_template as string ?? DEFAULT_RULES.video_template,
-      prefix_rules:
-        (raw as Record<string, unknown>)?.prefix_rules as Record<string, string> ?? DEFAULT_RULES.prefix_rules,
-      transition_suffix:
-        (raw as Record<string, unknown>)?.transition_suffix as string ?? DEFAULT_RULES.transition_suffix,
-    });
+    setRules(parseRules(pipeline.naming_rules as Record<string, unknown>));
   }, [pipeline.id, pipeline.naming_rules]);
 
   const handleSave = useCallback(() => {
     updatePipeline.mutate(
       { id: pipeline.id, data: { naming_rules: rules as unknown as Record<string, unknown> } },
       {
-        onSuccess: () => {
-          toastStore.addToast({ message: "Naming rules saved", variant: "success" });
-        },
-        onError: () => {
-          toastStore.addToast({ message: "Failed to save naming rules", variant: "error" });
-        },
+        onSuccess: () => toastStore.addToast({ message: "Naming rules saved", variant: "success" }),
+        onError: () => toastStore.addToast({ message: "Failed to save naming rules", variant: "error" }),
       },
     );
   }, [pipeline.id, rules, updatePipeline]);
@@ -110,16 +99,43 @@ export function PipelineNamingRulesEditor({ pipeline }: PipelineNamingRulesEdito
     });
   }, []);
 
+  const setCategoryTemplate = useCallback((name: string, template: string) => {
+    setRules((prev) => ({
+      ...prev,
+      category_templates: { ...prev.category_templates, [name]: template },
+    }));
+  }, []);
+
+  const removeCategoryTemplate = useCallback((name: string) => {
+    setRules((prev) => {
+      const next = { ...prev.category_templates };
+      delete next[name];
+      return { ...prev, category_templates: next };
+    });
+  }, []);
+
   const prefixEntries = Object.entries(rules.prefix_rules);
 
   return (
     <Stack gap={6}>
+      {/* Category templates with platform defaults */}
+      <CategoryTemplatesSection
+        categories={categories}
+        platformRules={platformRules}
+        categoryTemplates={rules.category_templates}
+        onSetTemplate={setCategoryTemplate}
+        onRemoveTemplate={removeCategoryTemplate}
+      />
+
       {/* Video template */}
       <div className={TERMINAL_PANEL}>
+        <div className={TERMINAL_HEADER}>
+          <h3 className={TERMINAL_HEADER_TITLE}>Video Filename Template</h3>
+        </div>
         <div className={TERMINAL_BODY}>
           <Stack gap={4}>
             <Input
-              label="Video Filename Template"
+              label="Template"
               value={rules.video_template}
               onChange={(e) => setRules((prev) => ({ ...prev, video_template: e.target.value }))}
               placeholder="{avatar}_{scene}_{track}"
@@ -133,9 +149,11 @@ export function PipelineNamingRulesEditor({ pipeline }: PipelineNamingRulesEdito
 
       {/* Transition suffix */}
       <div className={TERMINAL_PANEL}>
+        <div className={TERMINAL_HEADER}>
+          <h3 className={TERMINAL_HEADER_TITLE}>Transition Suffix</h3>
+        </div>
         <div className={TERMINAL_BODY}>
           <Input
-            label="Transition Suffix"
             value={rules.transition_suffix}
             onChange={(e) => setRules((prev) => ({ ...prev, transition_suffix: e.target.value }))}
             placeholder="_transition"
@@ -145,10 +163,11 @@ export function PipelineNamingRulesEditor({ pipeline }: PipelineNamingRulesEdito
 
       {/* Prefix rules */}
       <div className={TERMINAL_PANEL}>
+        <div className={TERMINAL_HEADER}>
+          <h3 className={TERMINAL_HEADER_TITLE}>Prefix Rules</h3>
+        </div>
         <div className={TERMINAL_BODY}>
           <Stack gap={3}>
-            <span className={TERMINAL_LABEL}>Prefix Rules</span>
-
             {prefixEntries.length > 0 ? (
               <div className="space-y-2">
                 {prefixEntries.map(([field, prefix]) => (
@@ -173,7 +192,6 @@ export function PipelineNamingRulesEditor({ pipeline }: PipelineNamingRulesEdito
               </p>
             )}
 
-            {/* Add new prefix rule */}
             <div className="flex items-end gap-2">
               <Input
                 label="Field"
@@ -201,7 +219,7 @@ export function PipelineNamingRulesEditor({ pipeline }: PipelineNamingRulesEdito
         </div>
       </div>
 
-      {/* Save button */}
+      {/* Save */}
       <div className="flex justify-end">
         <Button
           variant="primary"

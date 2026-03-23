@@ -128,18 +128,46 @@ function hasSegment(text: string, word: string): boolean {
   return new RegExp(`(^|[_\\-.\\s])${word}([_\\-.\\s]|$)`).test(text.toLowerCase());
 }
 
+/** Build a regex that matches generic filenames (slot names + metadata types). */
+function buildGenericFilenamePattern(slotNames: string[]): RegExp {
+  const terms = ["bio", "tov", "metadata", ...slotNames.map((s) => s.toLowerCase())];
+  const unique = [...new Set(terms)].map((t) => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+  const joined = unique.join("|");
+  return new RegExp(`^(${joined})\\.(json|png|jpg|jpeg|webp)$`, "i");
+}
+
+/** Build a regex for stripping known slot/metadata terms from filenames. */
+function buildSlotStripPattern(slotNames: string[]): RegExp {
+  const terms = ["bio", "tov", "metadata", ...slotNames.map((s) => s.toLowerCase())];
+  const unique = [...new Set(terms)].map((t) => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+  const joined = unique.join("|");
+  return new RegExp(`[_-]?(${joined})$`, "i");
+}
+
+function buildSlotPrefixStripPattern(slotNames: string[]): RegExp {
+  const terms = ["bio", "tov", "metadata", ...slotNames.map((s) => s.toLowerCase())];
+  const unique = [...new Set(terms)].map((t) => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+  const joined = unique.join("|");
+  return new RegExp(`^(${joined})[_-]?`, "i");
+}
+
 /** Check if a filename contains a avatar name that does NOT match. */
-function detectNameMismatchInFilename(filename: string, avatarName: string): string | null {
+function detectNameMismatchInFilename(
+  filename: string,
+  avatarName: string,
+  slotNames: string[] = [],
+): string | null {
   const charNorm = normalizeName(avatarName);
 
-  // Generic filenames with no name info
-  if (/^(bio|tov|metadata|clothed|topless)\.(json|png|jpg|jpeg|webp)$/i.test(filename)) return null;
+  // Generic filenames with no name info — dynamic based on slot names
+  const genericPattern = buildGenericFilenamePattern(slotNames);
+  if (genericPattern.test(filename)) return null;
 
   // Strip known suffixes/prefixes to isolate the name portion
   const stem = filename
     .replace(/\.(json|txt|png|jpg|jpeg|webp)$/i, "")
-    .replace(/[_-]?(bio|tov|metadata|clothed|topless)$/i, "")
-    .replace(/^(bio|tov|metadata|clothed|topless)[_-]?/i, "");
+    .replace(buildSlotStripPattern(slotNames), "")
+    .replace(buildSlotPrefixStripPattern(slotNames), "");
 
   if (!stem || stem.length < 3) return null;
 
@@ -169,16 +197,17 @@ function detectJsonSlotMismatch(filename: string, targetSlot: JsonSlot): string 
   return null;
 }
 
-/** Detect if an image dropped on a specific slot is for the other slot. */
-function detectImageSlotMismatch(filename: string, targetSlot: ImageSlot): string | null {
+/** Detect if an image dropped on a specific slot is for a different slot. */
+function detectImageSlotMismatch(filename: string, targetSlot: ImageSlot, slotNames: string[] = []): string | null {
   const lower = filename.toLowerCase();
-  const isClothed = hasSegment(lower, "clothed");
-  const isTopless = hasSegment(lower, "topless");
-  if (targetSlot === "clothed" && isTopless && !isClothed) {
-    return `"${filename}" looks like a topless image but was dropped on the Clothed slot`;
-  }
-  if (targetSlot === "topless" && isClothed && !isTopless) {
-    return `"${filename}" looks like a clothed image but was dropped on the Topless slot`;
+  const allSlots = slotNames.length > 0 ? slotNames : ["clothed", "topless"];
+
+  for (const slot of allSlots) {
+    if (slot === targetSlot) continue;
+    if (hasSegment(lower, slot)) {
+      const targetLabel = targetSlot.charAt(0).toUpperCase() + targetSlot.slice(1);
+      return `"${filename}" looks like a ${slot} image but was dropped on the ${targetLabel} slot`;
+    }
   }
   return null;
 }
@@ -220,11 +249,13 @@ function classifyJson(filename: string): JsonSlot | null {
   return null;
 }
 
-/** Classify a filename as clothed or topless image. */
-function classifyImage(filename: string): ImageSlot | null {
+/** Classify a filename as an image slot based on known slot names. */
+function classifyImage(filename: string, slotNames: string[] = []): ImageSlot | null {
   const lower = filename.toLowerCase();
-  if (hasSegment(lower, "clothed")) return "clothed";
-  if (hasSegment(lower, "topless")) return "topless";
+  const allSlots = slotNames.length > 0 ? slotNames : ["clothed", "topless"];
+  for (const slot of allSlots) {
+    if (hasSegment(lower, slot)) return slot;
+  }
   return null;
 }
 
@@ -391,6 +422,9 @@ export function AvatarSeedDataModal({ avatar, projectId, onClose, groupOptions, 
     ? seedSlots
     : DEFAULT_variantSlots;
 
+  /** Slot names derived from variant slots for dynamic pattern matching. */
+  const slotNames = variantSlots.map((s) => s.type);
+
   const metadata = avatar?.metadata ?? null;
 
   const [speechImportCount, setSpeechImportCount] = useState<number | null>(null);
@@ -533,7 +567,7 @@ export function AvatarSeedDataModal({ avatar, projectId, onClose, groupOptions, 
     const warnings: string[] = [];
     const slotWarn = detectJsonSlotMismatch(file.name, slot);
     if (slotWarn) warnings.push(slotWarn);
-    const nameWarn = detectNameMismatchInFilename(file.name, charName);
+    const nameWarn = detectNameMismatchInFilename(file.name, charName, slotNames);
     if (nameWarn) warnings.push(nameWarn);
     if (!nameWarn) {
       const dataWarn = detectNameMismatchInData(parsed, charName);
@@ -555,9 +589,9 @@ export function AvatarSeedDataModal({ avatar, projectId, onClose, groupOptions, 
 
   function handleSingleImageDrop(slot: ImageSlot, label: string, file: File) {
     const warnings: string[] = [];
-    const slotWarn = detectImageSlotMismatch(file.name, slot);
+    const slotWarn = detectImageSlotMismatch(file.name, slot, slotNames);
     if (slotWarn) warnings.push(slotWarn);
-    const nameWarn = detectNameMismatchInFilename(file.name, charName);
+    const nameWarn = detectNameMismatchInFilename(file.name, charName, slotNames);
     if (nameWarn) warnings.push(nameWarn);
 
     if (warnings.length > 0) {
@@ -679,7 +713,7 @@ export function AvatarSeedDataModal({ avatar, projectId, onClose, groupOptions, 
     // Single image, no JSONs → delegate to slot handler
     if (imgFiles.length === 1 && jsonFiles.length === 0) {
       const file = imgFiles[0]!;
-      const slot = classifyImage(file.name) ?? "clothed";
+      const slot = classifyImage(file.name, slotNames) ?? slotNames[0] ?? "clothed";
       const label = slotLabel(slot);
       handleSingleImageDrop(slot, label, file);
       return;
@@ -697,7 +731,7 @@ export function AvatarSeedDataModal({ avatar, projectId, onClose, groupOptions, 
       if (slot) {
         const parsed = await readFileAsJson(file);
         if (parsed) {
-          const nameWarn = detectNameMismatchInFilename(file.name, charName);
+          const nameWarn = detectNameMismatchInFilename(file.name, charName, slotNames);
           if (nameWarn) warnings.push(nameWarn);
           else {
             const dataWarn = detectNameMismatchInData(parsed, charName);
@@ -712,9 +746,9 @@ export function AvatarSeedDataModal({ avatar, projectId, onClose, groupOptions, 
 
     // Classify images
     for (const file of imgFiles) {
-      const slot = classifyImage(file.name);
+      const slot = classifyImage(file.name, slotNames);
       if (slot) {
-        const nameWarn = detectNameMismatchInFilename(file.name, charName);
+        const nameWarn = detectNameMismatchInFilename(file.name, charName, slotNames);
         if (nameWarn) warnings.push(nameWarn);
         imageAssignments.push({ kind: "image", slot, label: slotLabel(slot), file });
       } else {
@@ -730,7 +764,8 @@ export function AvatarSeedDataModal({ avatar, projectId, onClose, groupOptions, 
     }
 
     if (jsonAssignments.length === 0 && imageAssignments.length === 0) {
-      warnings.push("No files could be classified as bio, tov, clothed, or topless");
+      const slotList = slotNames.join(", ") || "clothed, topless";
+      warnings.push(`No files could be classified as bio, tov, ${slotList}`);
       setPendingUpload({ jsonAssignments: [], imageAssignments: [], warnings });
       return;
     }

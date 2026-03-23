@@ -15,6 +15,37 @@ export interface SeedSlot {
   description: string;
 }
 
+/* --------------------------------------------------------------------------
+   Import Rules
+   -------------------------------------------------------------------------- */
+
+/** Pattern for matching seed image files during import. */
+export interface SeedImportPattern {
+  slot: string;
+  pattern: string;
+  extensions: string[];
+}
+
+/** Pattern for matching video files during import. */
+export interface VideoImportPattern {
+  pattern: string;
+  extensions: string[];
+}
+
+/** Pattern for matching metadata files during import. */
+export interface MetadataImportPattern {
+  type: string;
+  pattern: string;
+}
+
+/** Import rules configuration for file classification during import. */
+export interface ImportRules {
+  seed_patterns: SeedImportPattern[];
+  video_patterns: VideoImportPattern[];
+  metadata_patterns: MetadataImportPattern[];
+  case_sensitive: boolean;
+}
+
 /** Pipeline entity as returned by the API. */
 export interface Pipeline {
   id: number;
@@ -24,6 +55,7 @@ export interface Pipeline {
   seed_slots: SeedSlot[];
   naming_rules: Record<string, unknown>;
   delivery_config: Record<string, unknown>;
+  import_rules: ImportRules | null;
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -37,6 +69,7 @@ export interface CreatePipeline {
   seed_slots?: SeedSlot[];
   naming_rules?: Record<string, unknown>;
   delivery_config?: Record<string, unknown>;
+  import_rules?: ImportRules;
 }
 
 /** Payload for updating an existing pipeline. */
@@ -46,5 +79,6 @@ export interface UpdatePipeline {
   seed_slots?: SeedSlot[];
   naming_rules?: Record<string, unknown>;
   delivery_config?: Record<string, unknown>;
+  import_rules?: ImportRules;
   is_active?: boolean;
 }

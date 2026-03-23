@@ -14,6 +14,7 @@ import { useSetPageTitle } from "@/hooks/useSetPageTitle";
 import { TERMINAL_BODY, TERMINAL_HEADER, TERMINAL_HEADER_TITLE, TERMINAL_PANEL } from "@/lib/ui-classes";
 import { Save, Settings } from "@/tokens/icons";
 
+import { ImportRulesEditor } from "./components/ImportRulesEditor";
 import { JsonConfigPanel } from "./components/JsonConfigPanel";
 import { SeedSlotEditor } from "./components/SeedSlotEditor";
 import { usePipeline, useUpdatePipeline } from "./hooks/use-pipelines";
@@ -154,6 +155,16 @@ export function PipelineSettingsPage({ pipelineId }: PipelineSettingsPageProps) 
         onChange={setNamingRules}
         placeholder='{ "pattern": "{avatar}_{scene}_{variant}" }'
       />
+
+      {/* Import Rules */}
+      <div className={TERMINAL_PANEL}>
+        <div className={TERMINAL_HEADER}>
+          <h2 className={TERMINAL_HEADER_TITLE}>Import Rules</h2>
+        </div>
+        <div className={TERMINAL_BODY}>
+          <ImportRulesEditor pipeline={pipeline} />
+        </div>
+      </div>
 
       {/* Delivery config */}
       <JsonConfigPanel

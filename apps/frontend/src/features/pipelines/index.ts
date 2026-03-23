@@ -23,11 +23,19 @@ export { usePipelineCode } from "./hooks/use-pipeline-context";
 
 /* Components */
 export { SeedSlotEditor } from "./components/SeedSlotEditor";
+export { ImportRulesEditor } from "./components/ImportRulesEditor";
+
+/* Lib */
+export { classifyFileWithRules, type FileClassification } from "./lib/classify-file";
 
 /* Types */
 export type {
   Pipeline,
   SeedSlot,
+  ImportRules,
+  SeedImportPattern,
+  VideoImportPattern,
+  MetadataImportPattern,
   CreatePipeline,
   UpdatePipeline,
 } from "./types";

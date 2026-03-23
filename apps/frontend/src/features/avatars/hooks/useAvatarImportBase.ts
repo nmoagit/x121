@@ -28,6 +28,8 @@ import { api } from "@/lib/api";
 import { limitConcurrency } from "@/lib/async-utils";
 import { readFileAsJson } from "@/lib/file-types";
 import { sha256File } from "@/lib/hash";
+import { classifyFileWithRules } from "@/features/pipelines/lib/classify-file";
+import type { ImportRules } from "@/features/pipelines/types";
 
 import {
   uploadImageVariant,
@@ -109,10 +111,22 @@ function importLogEntry(
 
 /**
  * Suggest a seed slot category for a file based on its name.
- * Matches against the provided slot names (from the pipeline's seed_slots).
+ * When import rules are provided, uses regex patterns for matching.
+ * Otherwise falls back to substring matching against slot names.
  * Returns the first matching slot name, or null if no match.
  */
-export function suggestImageCategory(filename: string, slotNames?: string[]): string | null {
+export function suggestImageCategory(
+  filename: string,
+  slotNames?: string[],
+  importRules?: ImportRules | null,
+): string | null {
+  // Prefer import rules if available
+  if (importRules && importRules.seed_patterns.length > 0) {
+    const result = classifyFileWithRules(filename, importRules);
+    if (result.type === "seed" && result.slot) return result.slot;
+  }
+
+  // Fall back to substring matching
   const lower = filename.toLowerCase();
   const slots = slotNames ?? [];
   for (const slot of slots) {

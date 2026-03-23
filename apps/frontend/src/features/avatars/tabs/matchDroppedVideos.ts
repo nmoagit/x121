@@ -122,14 +122,35 @@ export function parseFilename(filename: string, trackSlugs: string[]): ParsedFil
  * and returns the remaining prefix as a avatar name hint.
  * Returns null if no clear avatar name can be extracted.
  */
-/** Words that are track prefixes or scene slugs, not avatar names. */
-const NON_CHARACTER_HINTS = new Set([
+/** Base set of words that are track prefixes or scene slugs, not avatar names. */
+const BASE_NON_CHARACTER_HINTS = new Set([
   "topless", "clothed", "nude", "naked", "dressed",
   "bj", "idle", "sex", "feet", "bottom", "boobs",
   "mesh", "txrs", "mouth", "smiles",
 ]);
 
-export function extractAvatarHint(filename: string): string | null {
+/**
+ * Build a dynamic set of non-character hint words from track slugs and scene type slugs.
+ * Merges with the base set of known non-character terms.
+ */
+export function buildNonCharacterHints(
+  trackSlugs?: string[],
+  sceneTypeSlugs?: string[],
+): Set<string> {
+  const hints = new Set(BASE_NON_CHARACTER_HINTS);
+  for (const slug of trackSlugs ?? []) {
+    hints.add(slug.toLowerCase());
+  }
+  for (const slug of sceneTypeSlugs ?? []) {
+    hints.add(slug.toLowerCase());
+  }
+  return hints;
+}
+
+export function extractAvatarHint(
+  filename: string,
+  nonCharacterHints?: Set<string>,
+): string | null {
   const stem = stripExtension(filename).toLowerCase();
   // If the stem contains no underscores, it's likely just a scene name
   if (!stem.includes("_")) return null;
@@ -138,7 +159,8 @@ export function extractAvatarHint(filename: string): string | null {
   const firstPart = stem.split("_")[0];
   if (!firstPart || firstPart.length < 2) return null;
   // Ignore known track/scene prefixes
-  if (NON_CHARACTER_HINTS.has(firstPart)) return null;
+  const hints = nonCharacterHints ?? BASE_NON_CHARACTER_HINTS;
+  if (hints.has(firstPart)) return null;
   return firstPart;
 }
 
