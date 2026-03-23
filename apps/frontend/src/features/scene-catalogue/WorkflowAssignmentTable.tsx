@@ -31,13 +31,15 @@ interface WorkflowAssignmentTableProps {
    * (e.g. in the global scene catalogue view).
    */
   enabledTrackKeys?: Set<string>;
+  /** When false, hide rows where no workflow is assigned. Default true. */
+  showNotSet?: boolean;
 }
 
 /* --------------------------------------------------------------------------
    Main component
    -------------------------------------------------------------------------- */
 
-export function WorkflowAssignmentTable({ entries, workflowOptions, enabledTrackKeys }: WorkflowAssignmentTableProps) {
+export function WorkflowAssignmentTable({ entries, workflowOptions, enabledTrackKeys, showNotSet = true }: WorkflowAssignmentTableProps) {
   const { isSingleTrack } = useSingleTrack();
 
   return (
@@ -69,6 +71,7 @@ export function WorkflowAssignmentTable({ entries, workflowOptions, enabledTrack
               workflowOptions={workflowOptions}
               enabledTrackKeys={enabledTrackKeys}
               hideTracks={isSingleTrack}
+              showNotSet={showNotSet}
             />
           ))}
         </tbody>
@@ -86,9 +89,10 @@ interface SceneTypeRowsProps {
   workflowOptions: { value: string; label: string }[];
   enabledTrackKeys?: Set<string>;
   hideTracks?: boolean;
+  showNotSet?: boolean;
 }
 
-function SceneTypeRows({ entry, workflowOptions, enabledTrackKeys, hideTracks }: SceneTypeRowsProps) {
+function SceneTypeRows({ entry, workflowOptions, enabledTrackKeys, hideTracks, showNotSet = true }: SceneTypeRowsProps) {
   const { data: configs } = useTrackConfigs(entry.id);
   const upsertMutation = useUpsertTrackConfig(entry.id);
   const deleteMutation = useDeleteTrackConfig(entry.id);
@@ -107,9 +111,19 @@ function SceneTypeRows({ entry, workflowOptions, enabledTrackKeys, hideTracks }:
   }
 
   // Filter to only enabled tracks when a filter set is provided
-  const rows = enabledTrackKeys
+  let rows = enabledTrackKeys
     ? allRows.filter((r) => enabledTrackKeys.has(`${entry.id}:${r.trackId}`))
     : allRows;
+
+  // Filter out rows with no workflow assigned when showNotSet is false
+  if (!showNotSet) {
+    rows = rows.filter((r) => {
+      const c = configMap.get(`${r.trackId}:${r.isClothesOff}`);
+      return c?.workflow_id != null;
+    });
+  }
+
+  if (rows.length === 0) return null;
 
   return (
     <>

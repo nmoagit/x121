@@ -5,9 +5,11 @@
  * each with an inline workflow dropdown.
  */
 
+import { useState } from "react";
+
 import { EmptyState } from "@/components/domain";
 import { Stack } from "@/components/layout";
-import { LoadingPane } from "@/components/primitives";
+import { LoadingPane, Toggle } from "@/components/primitives";
 import { TERMINAL_HEADER_TITLE } from "@/lib/ui-classes";
 import { Workflow } from "@/tokens/icons";
 
@@ -25,6 +27,7 @@ export function TrackWorkflowManager() {
   const pipelineCtx = usePipelineContextSafe();
   const { data: entries, isLoading: loadingEntries } = useSceneCatalogue(false, pipelineCtx?.pipelineId);
   const { data: workflows, isLoading: loadingWorkflows } = useWorkflows(undefined, pipelineCtx?.pipelineId);
+  const [showNotSet, setShowNotSet] = useState(true);
 
   if (loadingEntries || loadingWorkflows) return <LoadingPane />;
 
@@ -47,14 +50,22 @@ export function TrackWorkflowManager() {
 
   return (
     <Stack gap={6}>
-      <div>
-        <h2 className={TERMINAL_HEADER_TITLE}>Workflow Assignments</h2>
-        <p className="mt-1 font-mono text-xs text-[var(--color-text-muted)]">
-          Assign workflows per scene type and track combination.
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className={TERMINAL_HEADER_TITLE}>Workflow Assignments</h2>
+          <p className="mt-1 font-mono text-xs text-[var(--color-text-muted)]">
+            Assign workflows per scene type and track combination.
+          </p>
+        </div>
+        <Toggle
+          checked={showNotSet}
+          onChange={setShowNotSet}
+          label="Show Not Set"
+          size="sm"
+        />
       </div>
 
-      <WorkflowAssignmentTable entries={entriesWithTracks} workflowOptions={workflowOptions} />
+      <WorkflowAssignmentTable entries={entriesWithTracks} workflowOptions={workflowOptions} showNotSet={showNotSet} />
     </Stack>
   );
 }

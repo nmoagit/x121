@@ -5,7 +5,7 @@
  * active/inactive status, and edit/deactivate actions.
  */
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useState } from "react";
 
 import { Modal } from "@/components/composite";
 import { Stack } from "@/components/layout";
@@ -115,14 +115,7 @@ export function SceneCatalogueList() {
   const pipelineCtx = usePipelineContextSafe();
   const { isSingleTrack } = useSingleTrack();
   const [showInactive, setShowInactive] = useState(false);
-  const [showNotSet, setShowNotSet] = useState(true);
   const { data: entries, isLoading } = useSceneCatalogue(showInactive, pipelineCtx?.pipelineId);
-
-  const filteredEntries = useMemo(() => {
-    if (!entries) return undefined;
-    if (showNotSet) return entries;
-    return entries.filter((e) => e.tracks.length > 0);
-  }, [entries, showNotSet]);
   const deactivateMutation = useDeactivateSceneCatalogueEntry();
 
   const [formOpen, setFormOpen] = useState(false);
@@ -167,12 +160,6 @@ export function SceneCatalogueList() {
           <span className={TERMINAL_HEADER_TITLE}>Scene Catalogue</span>
           <div className="flex items-center gap-4">
             <Toggle
-              checked={showNotSet}
-              onChange={setShowNotSet}
-              label="Show Not Set"
-              size="sm"
-            />
-            <Toggle
               checked={showInactive}
               onChange={setShowInactive}
               label="Show Inactive"
@@ -197,19 +184,17 @@ export function SceneCatalogueList() {
                 </tr>
               </thead>
               <tbody>
-                {!filteredEntries || filteredEntries.length === 0 ? (
+                {!entries || entries.length === 0 ? (
                   <tr>
                     <td
                       colSpan={isSingleTrack ? 5 : 6}
                       className="px-3 py-6 text-center font-mono text-xs text-[var(--color-text-muted)]"
                     >
-                      {!showNotSet && entries && entries.length > 0
-                        ? `${entries.length} entries hidden (no tracks assigned). Toggle "Show Not Set" to view.`
-                        : 'No scene catalogue entries. Click "Add Scene" to create one.'}
+                      No scene catalogue entries. Click "Add Scene" to create one.
                     </td>
                   </tr>
                 ) : (
-                  filteredEntries.map((entry) => (
+                  entries.map((entry) => (
                     <EntryRow
                       key={entry.id}
                       entry={entry}
