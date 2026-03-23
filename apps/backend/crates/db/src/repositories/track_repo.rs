@@ -47,12 +47,14 @@ impl TrackRepo {
         pipeline_id: Option<DbId>,
     ) -> Result<Vec<Track>, sqlx::Error> {
         let mut conditions: Vec<String> = Vec::new();
+        let mut bind_idx = 0;
 
         if !include_inactive {
             conditions.push("is_active = true".to_string());
         }
         if pipeline_id.is_some() {
-            conditions.push(format!("pipeline_id = ${}", conditions.len() + 1));
+            bind_idx += 1;
+            conditions.push(format!("pipeline_id = ${bind_idx}"));
         }
 
         let where_clause = if conditions.is_empty() {
