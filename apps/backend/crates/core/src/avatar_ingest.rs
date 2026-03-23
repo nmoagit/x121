@@ -59,9 +59,7 @@ const IMAGE_EXTENSIONS: &[&str] = &["png", "jpg", "jpeg", "webp", "tiff"];
 ///
 /// Each subdirectory of `root` is treated as a avatar folder. Files within
 /// each folder are classified as images, metadata, or other files.
-pub async fn scan_avatar_folders(
-    root: &Path,
-) -> Result<Vec<ScannedAvatarFolder>, std::io::Error> {
+pub async fn scan_avatar_folders(root: &Path) -> Result<Vec<ScannedAvatarFolder>, std::io::Error> {
     let mut results = Vec::new();
     let mut entries = tokio::fs::read_dir(root).await?;
 

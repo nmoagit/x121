@@ -854,8 +854,7 @@ mod tests {
     fn test_full_override_with_placeholders() {
         let slots = vec![make_slot(1, Some("ignored"))];
         let metadata = HashMap::from([("avatar_name".to_string(), "Alice".to_string())]);
-        let avatar_overrides =
-            HashMap::from([(1_i64, "{avatar_name} wearing jeans".to_string())]);
+        let avatar_overrides = HashMap::from([(1_i64, "{avatar_name} wearing jeans".to_string())]);
 
         let result = resolve_prompts_with_overrides(
             &slots,

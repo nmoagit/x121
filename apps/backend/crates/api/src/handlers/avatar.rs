@@ -12,9 +12,7 @@ use axum::Json;
 use x121_core::avatar_dashboard::SETTING_KEY_VOICE;
 use x121_core::error::CoreError;
 use x121_core::types::DbId;
-use x121_db::models::avatar::{
-    Avatar, AvatarWithAvatar, CreateAvatar, UpdateAvatar,
-};
+use x121_db::models::avatar::{Avatar, AvatarWithAvatar, CreateAvatar, UpdateAvatar};
 use x121_db::repositories::{AvatarGroupRepo, AvatarRepo, ReadinessCacheRepo};
 
 use x121_core::activity::{ActivityLogEntry, ActivityLogLevel, ActivityLogSource};
@@ -91,8 +89,7 @@ pub async fn bulk_create(
             }
         }
     };
-    let avatars =
-        AvatarRepo::create_many(&state.pool, project_id, &input.names, group_id).await?;
+    let avatars = AvatarRepo::create_many(&state.pool, project_id, &input.names, group_id).await?;
 
     let count = avatars.len();
     state.activity_broadcaster.publish(

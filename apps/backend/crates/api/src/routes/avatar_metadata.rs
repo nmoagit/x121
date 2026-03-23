@@ -26,8 +26,7 @@ pub fn avatar_router() -> Router<AppState> {
     Router::new()
         .route(
             "/{avatar_id}/metadata",
-            get(avatar_metadata::get_avatar_metadata)
-                .put(avatar_metadata::update_avatar_metadata),
+            get(avatar_metadata::get_avatar_metadata).put(avatar_metadata::update_avatar_metadata),
         )
         .route(
             "/{avatar_id}/metadata/completeness",

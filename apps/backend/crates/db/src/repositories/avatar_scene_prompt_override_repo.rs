@@ -4,8 +4,7 @@ use sqlx::PgPool;
 use x121_core::types::DbId;
 
 use crate::models::avatar_scene_prompt_override::{
-    AvatarScenePromptOverride, CreateAvatarScenePromptOverride,
-    UpdateAvatarScenePromptOverride,
+    AvatarScenePromptOverride, CreateAvatarScenePromptOverride, UpdateAvatarScenePromptOverride,
 };
 
 /// Column list for the `avatar_scene_prompt_overrides` table.

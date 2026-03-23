@@ -48,10 +48,7 @@ impl LibraryAvatarRepo {
     }
 
     /// Find a library avatar by ID.
-    pub async fn find_by_id(
-        pool: &PgPool,
-        id: DbId,
-    ) -> Result<Option<LibraryAvatar>, sqlx::Error> {
+    pub async fn find_by_id(pool: &PgPool, id: DbId) -> Result<Option<LibraryAvatar>, sqlx::Error> {
         let query = format!("SELECT {LC_COLUMNS} FROM library_avatars WHERE id = $1");
         sqlx::query_as::<_, LibraryAvatar>(&query)
             .bind(id)

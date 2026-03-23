@@ -171,10 +171,7 @@ async fn load_template_fields(
 /// Returns template fields with their current values, plus any extra
 /// metadata keys not covered by the template (custom fields, source
 /// blobs like `_source_bio` / `_source_tov`, etc.).
-fn build_metadata_response(
-    avatar: &Avatar,
-    fields: &[MetadataFieldDef],
-) -> AvatarMetadataResponse {
+fn build_metadata_response(avatar: &Avatar, fields: &[MetadataFieldDef]) -> AvatarMetadataResponse {
     let metadata = avatar_metadata_map(avatar);
     let completeness = calculate_completeness(avatar.id, &metadata, fields);
 
@@ -261,8 +258,7 @@ pub async fn get_metadata_template(
             id: avatar_id,
         }))?;
 
-    let template =
-        MetadataTemplateRepo::find_default(&state.pool, Some(avatar.project_id)).await?;
+    let template = MetadataTemplateRepo::find_default(&state.pool, Some(avatar.project_id)).await?;
 
     let (template_name, fields) = match template {
         Some(t) => {

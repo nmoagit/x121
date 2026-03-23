@@ -68,10 +68,7 @@ impl ReadinessCacheRepo {
     }
 
     /// Delete the cache entry for a avatar. Returns `true` if a row was deleted.
-    pub async fn delete_by_avatar_id(
-        pool: &PgPool,
-        avatar_id: DbId,
-    ) -> Result<bool, sqlx::Error> {
+    pub async fn delete_by_avatar_id(pool: &PgPool, avatar_id: DbId) -> Result<bool, sqlx::Error> {
         let result = sqlx::query("DELETE FROM avatar_readiness_cache WHERE avatar_id = $1")
             .bind(avatar_id)
             .execute(pool)

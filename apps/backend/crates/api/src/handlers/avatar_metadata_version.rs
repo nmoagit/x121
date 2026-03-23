@@ -62,10 +62,7 @@ pub struct MarkOutdatedRequest {
 // ---------------------------------------------------------------------------
 
 /// Verify that a metadata version exists, returning the full row.
-async fn ensure_version_exists(
-    pool: &sqlx::PgPool,
-    id: DbId,
-) -> AppResult<AvatarMetadataVersion> {
+async fn ensure_version_exists(pool: &sqlx::PgPool, id: DbId) -> AppResult<AvatarMetadataVersion> {
     AvatarMetadataVersionRepo::find_by_id(pool, id)
         .await?
         .ok_or_else(|| {
@@ -206,8 +203,7 @@ pub async fn list_versions(
     State(state): State<AppState>,
     Path(avatar_id): Path<DbId>,
 ) -> AppResult<impl IntoResponse> {
-    let versions =
-        AvatarMetadataVersionRepo::list_by_avatar(&state.pool, avatar_id).await?;
+    let versions = AvatarMetadataVersionRepo::list_by_avatar(&state.pool, avatar_id).await?;
     Ok(Json(DataResponse { data: versions }))
 }
 
@@ -403,12 +399,8 @@ pub async fn mark_metadata_outdated(
     Json(body): Json<MarkOutdatedRequest>,
 ) -> AppResult<StatusCode> {
     ensure_avatar_exists(&state.pool, avatar_id).await?;
-    AvatarMetadataVersionRepo::mark_outdated_for_avatar(
-        &state.pool,
-        avatar_id,
-        &body.reason,
-    )
-    .await?;
+    AvatarMetadataVersionRepo::mark_outdated_for_avatar(&state.pool, avatar_id, &body.reason)
+        .await?;
     Ok(StatusCode::NO_CONTENT)
 }
 

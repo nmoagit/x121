@@ -104,7 +104,8 @@ pub async fn list_studio_level(
     State(state): State<AppState>,
     Query(params): Query<SceneTypeListParams>,
 ) -> AppResult<Json<DataResponse<Vec<SceneType>>>> {
-    let scene_types = SceneTypeRepo::list(&state.pool, params.include_inactive, params.pipeline_id).await?;
+    let scene_types =
+        SceneTypeRepo::list(&state.pool, params.include_inactive, params.pipeline_id).await?;
     // Filter to studio-level (no project_id) only
     let studio_level: Vec<SceneType> = scene_types
         .into_iter()

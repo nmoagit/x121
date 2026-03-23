@@ -188,10 +188,7 @@ impl EmbeddingRepo {
     }
 
     /// Clear all detected faces for a avatar.
-    pub async fn clear_detected_faces(
-        pool: &PgPool,
-        avatar_id: DbId,
-    ) -> Result<(), sqlx::Error> {
+    pub async fn clear_detected_faces(pool: &PgPool, avatar_id: DbId) -> Result<(), sqlx::Error> {
         sqlx::query("DELETE FROM detected_faces WHERE avatar_id = $1")
             .bind(avatar_id)
             .execute(pool)

@@ -438,11 +438,7 @@ mod tests {
             .find(|i| i.name == "metadata_complete")
             .unwrap();
         assert!(!meta_item.passed);
-        assert!(meta_item
-            .details
-            .as_ref()
-            .unwrap()
-            .contains("2 avatar(s)"));
+        assert!(meta_item.details.as_ref().unwrap().contains("2 avatar(s)"));
     }
 
     // -- Summary helpers ------------------------------------------------------

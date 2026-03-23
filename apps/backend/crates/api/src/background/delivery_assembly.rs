@@ -20,9 +20,9 @@ use x121_core::types::DbId;
 use x121_db::models::delivery_export::DeliveryExport;
 use x121_db::models::delivery_log::CreateDeliveryLog;
 use x121_db::repositories::{
-    AvatarMetadataVersionRepo, AvatarRepo, DeliveryExportRepo, ImageVariantRepo,
-    NamingRuleRepo, OutputFormatProfileRepo, PipelineRepo, ProjectDeliveryLogRepo, ProjectRepo,
-    SceneRepo, SceneTypeRepo, SceneTypeTrackConfigRepo, SceneVideoVersionRepo, TrackRepo,
+    AvatarMetadataVersionRepo, AvatarRepo, DeliveryExportRepo, ImageVariantRepo, NamingRuleRepo,
+    OutputFormatProfileRepo, PipelineRepo, ProjectDeliveryLogRepo, ProjectRepo, SceneRepo,
+    SceneTypeRepo, SceneTypeTrackConfigRepo, SceneVideoVersionRepo, TrackRepo,
 };
 
 use crate::state::AppState;
@@ -129,15 +129,17 @@ async fn run_pipeline(
         .ok_or(PipelineError::msg("Project not found"))?;
 
     // Load pipeline naming rules for dynamic prefix resolution.
-    let prefix_rules: Option<std::collections::HashMap<String, String>> =
-        if let Ok(Some(pipeline)) = PipelineRepo::find_by_id(&state.pool, project.pipeline_id).await
-        {
-            x121_core::pipeline::parse_naming_rules(&pipeline.naming_rules)
-                .ok()
-                .map(|rules| rules.prefix_rules)
-        } else {
-            None
-        };
+    let prefix_rules: Option<std::collections::HashMap<String, String>> = if let Ok(Some(
+        pipeline,
+    )) =
+        PipelineRepo::find_by_id(&state.pool, project.pipeline_id).await
+    {
+        x121_core::pipeline::parse_naming_rules(&pipeline.naming_rules)
+            .ok()
+            .map(|rules| rules.prefix_rules)
+    } else {
+        None
+    };
 
     // Load format profile.
     let profile = OutputFormatProfileRepo::find_by_id(&state.pool, export.format_profile_id)
@@ -423,10 +425,7 @@ async fn run_pipeline(
                         export_id,
                         project_id,
                         "info",
-                        &format!(
-                            "Transcoding {}/{}",
-                            bundle.avatar_name, video.resolved_name
-                        ),
+                        &format!("Transcoding {}/{}", bundle.avatar_name, video.resolved_name),
                     )
                     .await;
                     ffmpeg::transcode_to_profile(&video.path, &output_path, &transcode_params)

@@ -76,10 +76,7 @@ impl AvatarGroupRepo {
     }
 
     /// Find a avatar group by ID. Excludes soft-deleted rows.
-    pub async fn find_by_id(
-        pool: &PgPool,
-        id: DbId,
-    ) -> Result<Option<AvatarGroup>, sqlx::Error> {
+    pub async fn find_by_id(pool: &PgPool, id: DbId) -> Result<Option<AvatarGroup>, sqlx::Error> {
         let query =
             format!("SELECT {COLUMNS} FROM avatar_groups WHERE id = $1 AND deleted_at IS NULL");
         sqlx::query_as::<_, AvatarGroup>(&query)

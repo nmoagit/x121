@@ -34,8 +34,7 @@ pub async fn list_ignores(
     State(state): State<AppState>,
     Path(avatar_id): Path<DbId>,
 ) -> AppResult<impl IntoResponse> {
-    let ignores =
-        AvatarDeliverableIgnoreRepo::list_for_avatar(&state.pool, avatar_id).await?;
+    let ignores = AvatarDeliverableIgnoreRepo::list_for_avatar(&state.pool, avatar_id).await?;
     Ok(Json(DataResponse { data: ignores }))
 }
 

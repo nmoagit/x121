@@ -519,9 +519,7 @@ impl JobRepo {
             bind_idx += 1;
         }
         if filter.avatar_id.is_some() {
-            conditions.push(format!(
-                "(parameters->>'avatar_id')::BIGINT = ${bind_idx}"
-            ));
+            conditions.push(format!("(parameters->>'avatar_id')::BIGINT = ${bind_idx}"));
             bind_idx += 1;
         }
         if filter.project_id.is_some() {

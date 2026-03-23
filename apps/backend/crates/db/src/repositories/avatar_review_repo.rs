@@ -7,8 +7,8 @@ use sqlx::PgPool;
 use x121_core::types::{DbId, Timestamp};
 
 use crate::models::avatar_review::{
-    AvatarReviewAssignment, AvatarReviewAuditEntry, AvatarReviewDecision,
-    ReviewQueueAvatar, ReviewerWorkload,
+    AvatarReviewAssignment, AvatarReviewAuditEntry, AvatarReviewDecision, ReviewQueueAvatar,
+    ReviewerWorkload,
 };
 
 // ---------------------------------------------------------------------------

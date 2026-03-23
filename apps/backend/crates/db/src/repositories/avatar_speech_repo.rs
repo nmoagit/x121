@@ -4,9 +4,7 @@ use serde::Serialize;
 use sqlx::PgPool;
 use x121_core::types::DbId;
 
-use crate::models::avatar_speech::{
-    AvatarSpeech, CreateAvatarSpeech, UpdateAvatarSpeech,
-};
+use crate::models::avatar_speech::{AvatarSpeech, CreateAvatarSpeech, UpdateAvatarSpeech};
 
 /// Column list shared across queries to avoid repetition.
 const COLUMNS: &str = "id, avatar_id, speech_type_id, version, text, \

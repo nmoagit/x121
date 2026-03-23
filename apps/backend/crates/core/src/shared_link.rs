@@ -19,8 +19,7 @@ pub const SCOPE_AVATAR: &str = "avatar";
 pub const SCOPE_PROJECT: &str = "project";
 
 /// All valid scope types for shared links.
-pub const VALID_SCOPE_TYPES: &[&str] =
-    &[SCOPE_SEGMENT, SCOPE_SCENE, SCOPE_AVATAR, SCOPE_PROJECT];
+pub const VALID_SCOPE_TYPES: &[&str] = &[SCOPE_SEGMENT, SCOPE_SCENE, SCOPE_AVATAR, SCOPE_PROJECT];
 
 // ---------------------------------------------------------------------------
 // Decision constants

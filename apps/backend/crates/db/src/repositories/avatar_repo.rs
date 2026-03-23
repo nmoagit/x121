@@ -4,8 +4,7 @@ use sqlx::PgPool;
 use x121_core::types::DbId;
 
 use crate::models::avatar::{
-    Avatar, AvatarDeliverableRow, AvatarWithAvatar, CreateAvatar, LibraryAvatarRow,
-    UpdateAvatar,
+    Avatar, AvatarDeliverableRow, AvatarWithAvatar, CreateAvatar, LibraryAvatarRow, UpdateAvatar,
 };
 
 /// Column list shared across queries to avoid repetition.
@@ -83,8 +82,7 @@ impl AvatarRepo {
 
     /// Find a avatar by its internal ID. Excludes soft-deleted rows.
     pub async fn find_by_id(pool: &PgPool, id: DbId) -> Result<Option<Avatar>, sqlx::Error> {
-        let query =
-            format!("SELECT {COLUMNS} FROM avatars WHERE id = $1 AND deleted_at IS NULL");
+        let query = format!("SELECT {COLUMNS} FROM avatars WHERE id = $1 AND deleted_at IS NULL");
         sqlx::query_as::<_, Avatar>(&query)
             .bind(id)
             .fetch_optional(pool)
@@ -403,6 +401,61 @@ impl AvatarRepo {
         }
 
         q.fetch_all(pool).await
+    }
+
+    /// Check if an avatar with the given name already exists within the same pipeline.
+    ///
+    /// The pipeline scope is determined by joining through the `projects` table:
+    /// avatars in different pipelines may share names without conflict.
+    /// Excludes soft-deleted avatars.
+    pub async fn name_exists_in_pipeline(
+        pool: &PgPool,
+        name: &str,
+        pipeline_id: DbId,
+    ) -> Result<bool, sqlx::Error> {
+        let exists = sqlx::query_scalar::<_, bool>(
+            "SELECT EXISTS(
+                SELECT 1 FROM avatars a
+                JOIN projects p ON p.id = a.project_id
+                WHERE a.name = $1
+                  AND p.pipeline_id = $2
+                  AND a.deleted_at IS NULL
+            )",
+        )
+        .bind(name)
+        .bind(pipeline_id)
+        .fetch_one(pool)
+        .await?;
+        Ok(exists)
+    }
+
+    /// Find avatars with matching names within a pipeline scope.
+    ///
+    /// Returns avatar IDs for all non-deleted avatars whose name matches any
+    /// of the provided names within projects that belong to the given pipeline.
+    pub async fn find_duplicates_in_pipeline(
+        pool: &PgPool,
+        names: &[String],
+        pipeline_id: DbId,
+    ) -> Result<Vec<Avatar>, sqlx::Error> {
+        if names.is_empty() {
+            return Ok(Vec::new());
+        }
+
+        let query = format!(
+            "SELECT {COLUMNS} FROM avatars a
+             JOIN projects p ON p.id = a.project_id
+             WHERE a.name = ANY($2)
+               AND p.pipeline_id = $1
+               AND a.deleted_at IS NULL
+             ORDER BY a.name ASC"
+        );
+
+        sqlx::query_as::<_, Avatar>(&query)
+            .bind(pipeline_id)
+            .bind(names)
+            .fetch_all(pool)
+            .await
     }
 
     /// Toggle `is_enabled` for a avatar. Returns the updated row.

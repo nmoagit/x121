@@ -91,10 +91,7 @@ pub fn parse_avatar_name(folder_name: &str) -> ParsedName {
 
 /// Parse multiple avatar names at once.
 pub fn parse_avatar_names(folder_names: &[&str]) -> Vec<ParsedName> {
-    folder_names
-        .iter()
-        .map(|n| parse_avatar_name(n))
-        .collect()
+    folder_names.iter().map(|n| parse_avatar_name(n)).collect()
 }
 
 /// Determine the confidence level based on the word list.

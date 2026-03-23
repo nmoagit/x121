@@ -7,12 +7,13 @@ use axum::http::StatusCode;
 use axum::Json;
 use serde::{Deserialize, Serialize};
 use x121_core::error::CoreError;
+use x121_core::import_rules::{self, FileClassification};
 use x121_core::pipeline;
 use x121_core::types::DbId;
 use x121_db::models::avatar::CreateAvatar;
 use x121_db::models::avatar_ingest::{
-    AvatarIngestEntry, AvatarIngestSession, CreateAvatarIngestEntry,
-    CreateAvatarIngestSession, UpdateAvatarIngestEntry,
+    AvatarIngestEntry, AvatarIngestSession, CreateAvatarIngestEntry, CreateAvatarIngestSession,
+    UpdateAvatarIngestEntry,
 };
 use x121_db::repositories::{
     AvatarIngestEntryRepo, AvatarIngestSessionRepo, AvatarRepo, IngestEntryCounts,
@@ -357,6 +358,53 @@ async fn load_pipeline_seed_slots(
     }
 }
 
+/// Load the import rules for a project's pipeline. Returns `None` if no pipeline.
+pub async fn load_pipeline_import_rules(
+    pool: &sqlx::PgPool,
+    project_id: DbId,
+) -> AppResult<Option<pipeline::ImportRules>> {
+    let project = ProjectRepo::find_by_id(pool, project_id)
+        .await?
+        .ok_or(AppError::Core(CoreError::NotFound {
+            entity: "Project",
+            id: project_id,
+        }))?;
+
+    let pl = PipelineRepo::find_by_id(pool, project.pipeline_id).await?;
+    match pl {
+        Some(p) => {
+            let rules = pipeline::parse_import_rules(&p.import_rules)
+                .map_err(|e| AppError::BadRequest(e.to_string()))?;
+            Ok(Some(rules))
+        }
+        None => Ok(None),
+    }
+}
+
+/// Classify a list of filenames using the pipeline's import rules.
+///
+/// Returns a JSON object mapping each filename to its classification label
+/// (the seed slot name for images, or a descriptive string for other types).
+/// Only seed image files are included in the result; videos and metadata are
+/// filtered out since ingest only cares about image classification.
+pub fn classify_ingest_images(
+    filenames: &[String],
+    rules: &pipeline::ImportRules,
+) -> serde_json::Value {
+    let mut classifications = serde_json::Map::new();
+    for fname in filenames {
+        match import_rules::classify_file(fname, rules) {
+            FileClassification::SeedImage { slot } => {
+                classifications.insert(fname.clone(), serde_json::Value::String(slot));
+            }
+            FileClassification::Video { .. }
+            | FileClassification::Metadata { .. }
+            | FileClassification::Unrecognized => {}
+        }
+    }
+    serde_json::Value::Object(classifications)
+}
+
 /// Extract image labels from the entry's `image_classifications` JSON.
 ///
 /// Expected format: either a JSON array of strings (e.g. `["front_clothed", "front_topless"]`)
@@ -461,12 +509,7 @@ pub async fn confirm_import(
 
         match AvatarRepo::create(&state.pool, &create_input).await {
             Ok(avatar) => {
-                AvatarIngestEntryRepo::set_created_avatar(
-                    &state.pool,
-                    entry.id,
-                    avatar.id,
-                )
-                .await?;
+                AvatarIngestEntryRepo::set_created_avatar(&state.pool, entry.id, avatar.id).await?;
                 avatar_ids.push(avatar.id);
                 created += 1;
             }

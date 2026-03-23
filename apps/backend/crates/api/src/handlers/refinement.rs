@@ -104,8 +104,7 @@ pub async fn trigger_refinement(
     }
 
     // Read source bio/tov from the active metadata version (if any)
-    let active_version =
-        AvatarMetadataVersionRepo::find_active(&state.pool, avatar_id).await?;
+    let active_version = AvatarMetadataVersionRepo::find_active(&state.pool, avatar_id).await?;
     let (source_bio, source_tov) = match &active_version {
         Some(v) => (v.source_bio.clone(), v.source_tov.clone()),
         None => (None, None),
@@ -212,8 +211,7 @@ pub async fn approve_refinement(
         notes: Some("Created from LLM refinement pipeline".into()),
     };
 
-    let version =
-        AvatarMetadataVersionRepo::create_as_active(&state.pool, &create_input).await?;
+    let version = AvatarMetadataVersionRepo::create_as_active(&state.pool, &create_input).await?;
 
     // Sync to avatar.metadata column
     sync_to_avatar(&state.pool, avatar_id, &metadata).await?;

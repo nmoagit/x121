@@ -59,10 +59,8 @@ pub async fn bulk_import_speeches(
     let languages = LanguageRepo::list_all(&state.pool).await?;
 
     // Build slug -> avatar_id map.
-    let slug_map: std::collections::HashMap<String, DbId> = avatars
-        .iter()
-        .map(|c| (slugify(&c.name), c.id))
-        .collect();
+    let slug_map: std::collections::HashMap<String, DbId> =
+        avatars.iter().map(|c| (slugify(&c.name), c.id)).collect();
 
     // Build language name -> id map (case-insensitive).
     let lang_map: std::collections::HashMap<String, i16> = languages
@@ -202,8 +200,7 @@ async fn import_json(
         if !entries.is_empty() {
             let to_create = if skip_existing {
                 // Fetch existing speeches and filter out duplicates.
-                let existing =
-                    AvatarSpeechRepo::list_for_avatar(&state.pool, avatar_id).await?;
+                let existing = AvatarSpeechRepo::list_for_avatar(&state.pool, avatar_id).await?;
                 let existing_keys: std::collections::HashSet<(i16, i16, String)> = existing
                     .iter()
                     .map(|s| (s.speech_type_id, s.language_id, s.text.to_lowercase()))
@@ -227,12 +224,9 @@ async fn import_json(
             };
 
             if !to_create.is_empty() {
-                let created = AvatarSpeechRepo::bulk_create_with_language(
-                    &state.pool,
-                    avatar_id,
-                    &to_create,
-                )
-                .await?;
+                let created =
+                    AvatarSpeechRepo::bulk_create_with_language(&state.pool, avatar_id, &to_create)
+                        .await?;
                 imported += created.len();
             }
         }
@@ -369,8 +363,7 @@ async fn import_csv(
     // Bulk create per avatar (with optional dedup).
     for (avatar_id, entries) in &char_entries {
         let to_create = if skip_existing {
-            let existing =
-                AvatarSpeechRepo::list_for_avatar(&state.pool, *avatar_id).await?;
+            let existing = AvatarSpeechRepo::list_for_avatar(&state.pool, *avatar_id).await?;
             let existing_keys: std::collections::HashSet<(i16, i16, String)> = existing
                 .iter()
                 .map(|s| (s.speech_type_id, s.language_id, s.text.to_lowercase()))
@@ -389,12 +382,9 @@ async fn import_csv(
         };
 
         if !to_create.is_empty() {
-            let created = AvatarSpeechRepo::bulk_create_with_language(
-                &state.pool,
-                *avatar_id,
-                &to_create,
-            )
-            .await?;
+            let created =
+                AvatarSpeechRepo::bulk_create_with_language(&state.pool, *avatar_id, &to_create)
+                    .await?;
             imported += created.len();
         }
     }

@@ -170,10 +170,8 @@ pub async fn list_avatar_settings(
 pub async fn get_avatar_settings(
     State(state): State<AppState>,
     Path((avatar_id, scene_type_id)): Path<(DbId, DbId)>,
-) -> AppResult<Json<DataResponse<Option<x121_db::models::video_settings::AvatarVideoSettings>>>>
-{
-    let settings =
-        VideoSettingsRepo::find_avatar(&state.pool, avatar_id, scene_type_id).await?;
+) -> AppResult<Json<DataResponse<Option<x121_db::models::video_settings::AvatarVideoSettings>>>> {
+    let settings = VideoSettingsRepo::find_avatar(&state.pool, avatar_id, scene_type_id).await?;
     Ok(Json(DataResponse { data: settings }))
 }
 
@@ -186,8 +184,7 @@ pub async fn upsert_avatar_settings(
     Json(body): Json<UpsertVideoSettings>,
 ) -> AppResult<Json<DataResponse<x121_db::models::video_settings::AvatarVideoSettings>>> {
     let result =
-        VideoSettingsRepo::upsert_avatar(&state.pool, avatar_id, scene_type_id, &body)
-            .await?;
+        VideoSettingsRepo::upsert_avatar(&state.pool, avatar_id, scene_type_id, &body).await?;
     Ok(Json(DataResponse { data: result }))
 }
 
@@ -199,8 +196,7 @@ pub async fn delete_avatar_settings(
     Path((avatar_id, scene_type_id)): Path<(DbId, DbId)>,
 ) -> AppResult<StatusCode> {
     let deleted =
-        VideoSettingsRepo::delete_avatar_by_key(&state.pool, avatar_id, scene_type_id)
-            .await?;
+        VideoSettingsRepo::delete_avatar_by_key(&state.pool, avatar_id, scene_type_id).await?;
     if deleted {
         Ok(StatusCode::NO_CONTENT)
     } else {

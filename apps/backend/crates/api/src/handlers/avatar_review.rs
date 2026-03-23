@@ -381,7 +381,11 @@ pub async fn my_queue(
     State(state): State<AppState>,
     Query(params): Query<MyQueueParams>,
 ) -> AppResult<impl IntoResponse> {
-    let limit = clamp_limit(params.pagination.limit, DEFAULT_SEARCH_LIMIT, MAX_SEARCH_LIMIT);
+    let limit = clamp_limit(
+        params.pagination.limit,
+        DEFAULT_SEARCH_LIMIT,
+        MAX_SEARCH_LIMIT,
+    );
     let offset = clamp_offset(params.pagination.offset);
 
     let queue = AvatarReviewRepo::list_by_reviewer(
@@ -572,14 +576,13 @@ pub async fn submit_for_rereview(
     }
 
     // Find the last completed assignment to determine the previous reviewer.
-    let last_assignment =
-        AvatarReviewRepo::last_completed_for_avatar(&state.pool, avatar_id)
-            .await?
-            .ok_or_else(|| {
-                AppError::BadRequest(
-                    "No previous completed assignment found for this avatar".to_string(),
-                )
-            })?;
+    let last_assignment = AvatarReviewRepo::last_completed_for_avatar(&state.pool, avatar_id)
+        .await?
+        .ok_or_else(|| {
+            AppError::BadRequest(
+                "No previous completed assignment found for this avatar".to_string(),
+            )
+        })?;
 
     let new_round = last_assignment.review_round + 1;
 
@@ -649,8 +652,7 @@ pub async fn get_review_history(
     let offset = clamp_offset(pagination.offset);
 
     let entries =
-        AvatarReviewRepo::list_audit_by_avatar(&state.pool, avatar_id, limit, offset)
-            .await?;
+        AvatarReviewRepo::list_audit_by_avatar(&state.pool, avatar_id, limit, offset).await?;
 
     Ok(Json(DataResponse { data: entries }))
 }

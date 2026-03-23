@@ -29,10 +29,7 @@ use crate::state::AppState;
 // ---------------------------------------------------------------------------
 
 /// Verify that a library avatar exists, returning the full row.
-async fn ensure_library_avatar_exists(
-    pool: &sqlx::PgPool,
-    id: DbId,
-) -> AppResult<LibraryAvatar> {
+async fn ensure_library_avatar_exists(pool: &sqlx::PgPool, id: DbId) -> AppResult<LibraryAvatar> {
     LibraryAvatarRepo::find_by_id(pool, id)
         .await?
         .ok_or_else(|| {

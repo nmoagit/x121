@@ -11,9 +11,9 @@ use axum::Json;
 use serde::{Deserialize, Serialize};
 use x121_core::error::CoreError;
 use x121_core::metadata::{
-    self, BiographicalData, AvatarMetadata, PhysicalAttributes, ProvenanceInfo, SegmentInfo,
-    VideoMetadata, VideoTechnicalInfo, AVATAR_SCHEMA_VERSION, ENTITY_TYPE_AVATAR,
-    FILE_TYPE_AVATAR, VIDEO_SCHEMA_VERSION,
+    self, AvatarMetadata, BiographicalData, PhysicalAttributes, ProvenanceInfo, SegmentInfo,
+    VideoMetadata, VideoTechnicalInfo, AVATAR_SCHEMA_VERSION, ENTITY_TYPE_AVATAR, FILE_TYPE_AVATAR,
+    VIDEO_SCHEMA_VERSION,
 };
 use x121_core::types::DbId;
 use x121_db::models::metadata::{CreateMetadataGeneration, RegenerationReport, StaleMetadata};
@@ -46,10 +46,7 @@ struct StaleResponse {
 // ---------------------------------------------------------------------------
 
 /// Build a `AvatarMetadata` struct from database records.
-async fn build_avatar_metadata(
-    pool: &sqlx::PgPool,
-    avatar_id: DbId,
-) -> AppResult<AvatarMetadata> {
+async fn build_avatar_metadata(pool: &sqlx::PgPool, avatar_id: DbId) -> AppResult<AvatarMetadata> {
     let avatar = AvatarRepo::find_by_id(pool, avatar_id)
         .await?
         .ok_or(AppError::Core(CoreError::NotFound {

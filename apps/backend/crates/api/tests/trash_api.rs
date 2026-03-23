@@ -99,9 +99,7 @@ async fn test_list_trash_filtered_by_type(pool: PgPool) {
     let avatar = AvatarRepo::create(&pool, &new_avatar(project2.id, "Filter Char"))
         .await
         .unwrap();
-    AvatarRepo::soft_delete(&pool, avatar.id)
-        .await
-        .unwrap();
+    AvatarRepo::soft_delete(&pool, avatar.id).await.unwrap();
 
     // Filter by projects -- should only see the project, not the avatar.
     let app = build_test_app(pool).await;
@@ -177,9 +175,7 @@ async fn test_restore_child_with_trashed_parent_409(pool: PgPool) {
 
     // Soft-delete both.
     ProjectRepo::soft_delete(&pool, project.id).await.unwrap();
-    AvatarRepo::soft_delete(&pool, avatar.id)
-        .await
-        .unwrap();
+    AvatarRepo::soft_delete(&pool, avatar.id).await.unwrap();
 
     // Try to restore the avatar -- should fail because parent project is trashed.
     let app = build_test_app(pool).await;

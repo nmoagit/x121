@@ -20,8 +20,7 @@ pub fn router() -> Router<AppState> {
     Router::new()
         .route(
             "/",
-            get(avatar_scene_overrides::list_effective)
-                .put(avatar_scene_overrides::bulk_update),
+            get(avatar_scene_overrides::list_effective).put(avatar_scene_overrides::bulk_update),
         )
         .route(
             "/{scene_type_id}",

@@ -19,7 +19,7 @@ use x121_core::error::CoreError;
 use x121_core::search::{clamp_limit, clamp_offset};
 use x121_core::types::DbId;
 use x121_db::models::production_run::{
-    CancelCellsResponse, CancelRunResponse, AvatarCellsResponse, CreateProductionRun,
+    AvatarCellsResponse, CancelCellsResponse, CancelRunResponse, CreateProductionRun,
     CreateProductionRunCell, CreateProductionRunRequest, DeleteCellsResponse, DeliverResponse,
     ProductionRun, ProductionRunProgress, ResubmitResponse, SubmitCellsRequest,
     SubmitCellsResponse,
@@ -119,9 +119,7 @@ pub async fn create_run(
             .then(a.track_id.cmp(&b.track_id))
     });
     cells.dedup_by(|a, b| {
-        a.avatar_id == b.avatar_id
-            && a.scene_type_id == b.scene_type_id
-            && a.track_id == b.track_id
+        a.avatar_id == b.avatar_id && a.scene_type_id == b.scene_type_id && a.track_id == b.track_id
     });
 
     let total_cells = cells.len() as i32;
@@ -331,9 +329,7 @@ pub async fn enabled_scene_types(
             .then(a.track_id.cmp(&b.track_id))
     });
     entries.dedup_by(|a, b| {
-        a.avatar_id == b.avatar_id
-            && a.scene_type_id == b.scene_type_id
-            && a.track_id == b.track_id
+        a.avatar_id == b.avatar_id && a.scene_type_id == b.scene_type_id && a.track_id == b.track_id
     });
 
     Ok(Json(DataResponse { data: entries }))
@@ -649,15 +645,9 @@ pub async fn cancel_avatar_cells(
 ) -> AppResult<impl IntoResponse> {
     ensure_run_exists(&state.pool, id).await?;
 
-    let cancelled =
-        ProductionRunRepo::cancel_avatar_cells(&state.pool, id, avatar_id).await?;
+    let cancelled = ProductionRunRepo::cancel_avatar_cells(&state.pool, id, avatar_id).await?;
 
-    tracing::info!(
-        run_id = id,
-        avatar_id,
-        cancelled,
-        "Avatar cells cancelled"
-    );
+    tracing::info!(run_id = id, avatar_id, cancelled, "Avatar cells cancelled");
     Ok(Json(DataResponse {
         data: AvatarCellsResponse {
             run_id: id,
@@ -691,12 +681,7 @@ pub async fn delete_avatar_cells(
         .await;
     }
 
-    tracing::info!(
-        run_id = id,
-        avatar_id,
-        deleted,
-        "Avatar cells deleted"
-    );
+    tracing::info!(run_id = id, avatar_id, deleted, "Avatar cells deleted");
     Ok(Json(DataResponse {
         data: AvatarCellsResponse {
             run_id: id,

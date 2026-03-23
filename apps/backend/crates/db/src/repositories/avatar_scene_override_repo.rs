@@ -15,8 +15,7 @@ use crate::models::avatar_scene_override::{
 };
 
 /// Column list for the `avatar_scene_overrides` table.
-const COLUMNS: &str =
-    "id, avatar_id, scene_type_id, track_id, is_enabled, created_at, updated_at";
+const COLUMNS: &str = "id, avatar_id, scene_type_id, track_id, is_enabled, created_at, updated_at";
 
 /// Provides data access for per-avatar scene overrides.
 pub struct AvatarSceneOverrideRepo;

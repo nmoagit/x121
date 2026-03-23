@@ -12,8 +12,8 @@ use x121_core::types::DbId;
 use x121_core::video_settings::{self, VideoSettingsLayer};
 use x121_db::models::pipeline::Pipeline;
 use x121_db::repositories::{
-    AvatarRepo, ImageVariantRepo, PipelineRepo, ProjectRepo, SceneTypeTrackConfigRepo,
-    SegmentRepo, VideoSettingsRepo, WorkflowRepo,
+    AvatarRepo, ImageVariantRepo, PipelineRepo, ProjectRepo, SceneTypeTrackConfigRepo, SegmentRepo,
+    VideoSettingsRepo, WorkflowRepo,
 };
 
 use crate::error::{load_scene_and_type, PipelineError};

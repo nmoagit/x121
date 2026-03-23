@@ -567,19 +567,13 @@ mod tests {
     fn summary_search_replace_specific_field() {
         let summary =
             compute_batch_summary(&BatchOperationType::SearchReplace, Some("hair_color"), 10);
-        assert_eq!(
-            summary,
-            "Search & replace in hair_color across 10 avatars"
-        );
+        assert_eq!(summary, "Search & replace in hair_color across 10 avatars");
     }
 
     #[test]
     fn summary_search_replace_all_fields() {
         let summary = compute_batch_summary(&BatchOperationType::SearchReplace, None, 10);
-        assert_eq!(
-            summary,
-            "Search & replace in all fields across 10 avatars"
-        );
+        assert_eq!(summary, "Search & replace in all fields across 10 avatars");
     }
 
     #[test]

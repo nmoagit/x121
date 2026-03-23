@@ -29,10 +29,7 @@ pub fn router() -> Router<AppState> {
         )
         .route("/import", post(avatar_speech::import_speeches))
         .route("/export", post(avatar_speech::export_speeches))
-        .route(
-            "/bulk-approve",
-            post(avatar_speech::bulk_approve_speeches),
-        )
+        .route("/bulk-approve", post(avatar_speech::bulk_approve_speeches))
         .route("/deliverable", post(avatar_speech::generate_deliverable))
         .route("/completeness", get(avatar_speech::speech_completeness))
         .route("/reorder", put(avatar_speech::reorder_speeches))

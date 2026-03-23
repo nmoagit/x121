@@ -80,10 +80,7 @@ struct BatchGenerateResponse {
 // ---------------------------------------------------------------------------
 
 /// Verify that a avatar exists, returning a 404 error if not found.
-pub(crate) async fn ensure_avatar_exists(
-    pool: &sqlx::PgPool,
-    avatar_id: DbId,
-) -> AppResult<()> {
+pub(crate) async fn ensure_avatar_exists(pool: &sqlx::PgPool, avatar_id: DbId) -> AppResult<()> {
     AvatarRepo::find_by_id(pool, avatar_id)
         .await?
         .ok_or_else(|| {

@@ -3,9 +3,7 @@
 use sqlx::PgPool;
 use x121_core::types::DbId;
 
-use crate::models::avatar_deliverable_ignore::{
-    AvatarDeliverableIgnore, CreateDeliverableIgnore,
-};
+use crate::models::avatar_deliverable_ignore::{AvatarDeliverableIgnore, CreateDeliverableIgnore};
 
 /// Column list shared across queries to avoid repetition.
 const COLUMNS: &str =

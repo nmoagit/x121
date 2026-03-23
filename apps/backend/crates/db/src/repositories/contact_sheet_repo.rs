@@ -88,10 +88,7 @@ impl ContactSheetRepo {
     }
 
     /// Delete all contact sheet images for a avatar. Returns the count of deleted rows.
-    pub async fn delete_by_avatar(
-        pool: &PgPool,
-        avatar_id: DbId,
-    ) -> Result<i64, sqlx::Error> {
+    pub async fn delete_by_avatar(pool: &PgPool, avatar_id: DbId) -> Result<i64, sqlx::Error> {
         let result = sqlx::query("DELETE FROM contact_sheet_images WHERE avatar_id = $1")
             .bind(avatar_id)
             .execute(pool)

@@ -19,8 +19,7 @@ const PROJECT_COLUMNS: &str = "id, project_id, scene_type_id, target_duration_se
 const GROUP_COLUMNS: &str = "id, group_id, scene_type_id, target_duration_secs, target_fps, \
      target_resolution, created_at, updated_at";
 
-const AVATAR_COLUMNS: &str =
-    "id, avatar_id, scene_type_id, target_duration_secs, target_fps, \
+const AVATAR_COLUMNS: &str = "id, avatar_id, scene_type_id, target_duration_secs, target_fps, \
      target_resolution, created_at, updated_at";
 
 /// Provides CRUD operations for video settings at all hierarchy levels.

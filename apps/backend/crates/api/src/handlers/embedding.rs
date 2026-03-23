@@ -55,10 +55,7 @@ pub async fn extract_embedding(
     )
     .await?;
 
-    tracing::info!(
-        avatar_id = avatar_id,
-        "Face embedding extraction triggered"
-    );
+    tracing::info!(avatar_id = avatar_id, "Face embedding extraction triggered");
 
     let status = EmbeddingRepo::get_embedding_status(&state.pool, avatar_id).await?;
 

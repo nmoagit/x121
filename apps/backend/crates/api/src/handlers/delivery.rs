@@ -738,10 +738,7 @@ pub async fn validate_delivery(
                 issues.push(assembly::ValidationIssue {
                     severity: assembly::IssueSeverity::Error,
                     category: "metadata_not_approved".to_string(),
-                    message: format!(
-                        "Model '{}' has no approved metadata version",
-                        avatar.name
-                    ),
+                    message: format!("Model '{}' has no approved metadata version", avatar.name),
                     entity_id: Some(avatar.id),
                 });
             }

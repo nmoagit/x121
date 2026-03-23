@@ -42,8 +42,5 @@ pub fn router() -> Router<AppState> {
             "/{session_id}/generate-metadata",
             post(avatar_ingest::generate_metadata),
         )
-        .route(
-            "/{session_id}/confirm",
-            post(avatar_ingest::confirm_import),
-        )
+        .route("/{session_id}/confirm", post(avatar_ingest::confirm_import))
 }

@@ -11,9 +11,7 @@ use axum::Json;
 use serde::{Deserialize, Serialize};
 use x121_core::error::CoreError;
 use x121_core::types::DbId;
-use x121_db::models::avatar_speech::{
-    CreateAvatarSpeech, UpdateAvatarSpeech, UpdateSpeechStatus,
-};
+use x121_db::models::avatar_speech::{CreateAvatarSpeech, UpdateAvatarSpeech, UpdateSpeechStatus};
 use x121_db::models::speech_status::status_name_to_id;
 use x121_db::repositories::{AvatarSpeechRepo, LanguageRepo, SpeechTypeRepo};
 
@@ -113,20 +111,14 @@ pub async fn list_speeches(
 ) -> AppResult<impl IntoResponse> {
     let speeches = match (params.type_id, params.language_id) {
         (Some(tid), Some(lid)) => {
-            AvatarSpeechRepo::list_for_avatar_by_type_and_language(
-                &state.pool,
-                avatar_id,
-                tid,
-                lid,
-            )
-            .await?
+            AvatarSpeechRepo::list_for_avatar_by_type_and_language(&state.pool, avatar_id, tid, lid)
+                .await?
         }
         (Some(tid), None) => {
             AvatarSpeechRepo::list_for_avatar_by_type(&state.pool, avatar_id, tid).await?
         }
         (None, Some(lid)) => {
-            AvatarSpeechRepo::list_for_avatar_by_language(&state.pool, avatar_id, lid)
-                .await?
+            AvatarSpeechRepo::list_for_avatar_by_language(&state.pool, avatar_id, lid).await?
         }
         (None, None) => AvatarSpeechRepo::list_for_avatar(&state.pool, avatar_id).await?,
     };
@@ -266,13 +258,9 @@ pub async fn bulk_approve_speeches(
     Path(avatar_id): Path<DbId>,
     Query(params): Query<BulkApproveQuery>,
 ) -> AppResult<impl IntoResponse> {
-    let approved_count = AvatarSpeechRepo::bulk_approve(
-        &state.pool,
-        avatar_id,
-        params.language_id,
-        params.type_id,
-    )
-    .await?;
+    let approved_count =
+        AvatarSpeechRepo::bulk_approve(&state.pool, avatar_id, params.language_id, params.type_id)
+            .await?;
 
     tracing::info!(
         user_id = auth.user_id,

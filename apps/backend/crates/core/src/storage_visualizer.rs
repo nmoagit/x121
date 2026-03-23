@@ -24,12 +24,8 @@ pub const ENTITY_AVATAR: &str = "avatar";
 pub const ENTITY_PROJECT: &str = "project";
 
 /// All valid entity types for storage snapshots.
-pub const VALID_ENTITY_TYPES: &[&str] = &[
-    ENTITY_SEGMENT,
-    ENTITY_SCENE,
-    ENTITY_AVATAR,
-    ENTITY_PROJECT,
-];
+pub const VALID_ENTITY_TYPES: &[&str] =
+    &[ENTITY_SEGMENT, ENTITY_SCENE, ENTITY_AVATAR, ENTITY_PROJECT];
 
 // ---------------------------------------------------------------------------
 // File category constants

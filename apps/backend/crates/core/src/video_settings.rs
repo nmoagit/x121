@@ -285,8 +285,7 @@ mod tests {
             target_fps: None,
             target_resolution: Some("1080p".to_string()),
         };
-        let result =
-            resolve_video_settings(&scene_type, None, Some(&group), Some(&avatar), false);
+        let result = resolve_video_settings(&scene_type, None, Some(&group), Some(&avatar), false);
 
         assert_eq!(result.duration_secs, 16);
         assert_eq!(result.duration_source, VideoSettingSource::SceneType);

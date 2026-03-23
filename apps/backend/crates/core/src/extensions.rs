@@ -19,12 +19,7 @@ pub const SUPPORTED_API_VERSIONS: &[&str] = &["1.0"];
 
 /// Resources that extensions may request access to.
 pub const KNOWN_RESOURCES: &[&str] = &[
-    "projects",
-    "avatars",
-    "scenes",
-    "metadata",
-    "assets",
-    "jobs",
+    "projects", "avatars", "scenes", "metadata", "assets", "jobs",
 ];
 
 /// Access levels an extension can request for a resource.

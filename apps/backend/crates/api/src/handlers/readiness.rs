@@ -111,8 +111,7 @@ pub async fn batch_evaluate(
     }
 
     // Fetch existing cache entries for these avatars.
-    let existing =
-        ReadinessCacheRepo::find_by_avatar_ids(&state.pool, &body.avatar_ids).await?;
+    let existing = ReadinessCacheRepo::find_by_avatar_ids(&state.pool, &body.avatar_ids).await?;
 
     tracing::info!(
         user_id = auth.user_id,

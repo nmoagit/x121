@@ -129,8 +129,7 @@ async fn delete_override(
     track_id: Option<DbId>,
 ) -> AppResult<StatusCode> {
     let removed =
-        AvatarSceneOverrideRepo::delete(&state.pool, avatar_id, scene_type_id, track_id)
-            .await?;
+        AvatarSceneOverrideRepo::delete(&state.pool, avatar_id, scene_type_id, track_id).await?;
     if removed {
         Ok(StatusCode::NO_CONTENT)
     } else {

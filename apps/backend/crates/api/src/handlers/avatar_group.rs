@@ -7,9 +7,7 @@ use serde::Deserialize;
 use x121_core::error::CoreError;
 use x121_core::types::DbId;
 use x121_db::models::avatar::UpdateAvatar;
-use x121_db::models::avatar_group::{
-    AvatarGroup, CreateAvatarGroup, UpdateAvatarGroup,
-};
+use x121_db::models::avatar_group::{AvatarGroup, CreateAvatarGroup, UpdateAvatarGroup};
 use x121_db::repositories::{AvatarGroupRepo, AvatarRepo};
 
 use crate::error::{AppError, AppResult};

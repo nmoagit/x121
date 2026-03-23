@@ -6,8 +6,8 @@ use sqlx::PgPool;
 use x121_core::types::DbId;
 
 use crate::models::avatar_ingest::{
-    AvatarIngestEntry, AvatarIngestSession, CreateAvatarIngestEntry,
-    CreateAvatarIngestSession, UpdateAvatarIngestEntry,
+    AvatarIngestEntry, AvatarIngestSession, CreateAvatarIngestEntry, CreateAvatarIngestSession,
+    UpdateAvatarIngestEntry,
 };
 use crate::models::status::StatusId;
 
@@ -67,8 +67,7 @@ impl AvatarIngestSessionRepo {
         pool: &PgPool,
         id: DbId,
     ) -> Result<Option<AvatarIngestSession>, sqlx::Error> {
-        let query =
-            format!("SELECT {SESSION_COLUMNS} FROM avatar_ingest_sessions WHERE id = $1");
+        let query = format!("SELECT {SESSION_COLUMNS} FROM avatar_ingest_sessions WHERE id = $1");
         sqlx::query_as::<_, AvatarIngestSession>(&query)
             .bind(id)
             .fetch_optional(pool)

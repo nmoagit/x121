@@ -88,8 +88,7 @@ pub(crate) async fn build_deliverable(
             id: avatar_id,
         }))?;
 
-    let approved =
-        AvatarSpeechRepo::list_approved_for_avatar(&state.pool, avatar_id).await?;
+    let approved = AvatarSpeechRepo::list_approved_for_avatar(&state.pool, avatar_id).await?;
 
     if approved.is_empty() {
         return Err(AppError::Unprocessable(
@@ -197,8 +196,7 @@ pub async fn speech_completeness(
     };
 
     // Count approved speeches per (type, language) for this avatar.
-    let approved =
-        AvatarSpeechRepo::list_approved_for_avatar(&state.pool, avatar_id).await?;
+    let approved = AvatarSpeechRepo::list_approved_for_avatar(&state.pool, avatar_id).await?;
     let mut counts: std::collections::HashMap<(i16, i16), i32> = std::collections::HashMap::new();
     for s in &approved {
         *counts.entry((s.speech_type_id, s.language_id)).or_insert(0) += 1;

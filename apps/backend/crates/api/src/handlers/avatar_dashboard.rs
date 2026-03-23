@@ -173,8 +173,7 @@ pub async fn get_dashboard(
     .await?;
 
     // Readiness from cache.
-    let readiness_cache =
-        ReadinessCacheRepo::find_by_avatar_id(&state.pool, avatar_id).await?;
+    let readiness_cache = ReadinessCacheRepo::find_by_avatar_id(&state.pool, avatar_id).await?;
 
     let readiness = readiness_cache.map(|c| ReadinessSnapshot {
         state: c.state,

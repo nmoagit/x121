@@ -62,10 +62,7 @@ impl SceneRepo {
 
     /// List all scenes for a given avatar, ordered by creation time ascending.
     /// Excludes soft-deleted rows.
-    pub async fn list_by_avatar(
-        pool: &PgPool,
-        avatar_id: DbId,
-    ) -> Result<Vec<Scene>, sqlx::Error> {
+    pub async fn list_by_avatar(pool: &PgPool, avatar_id: DbId) -> Result<Vec<Scene>, sqlx::Error> {
         let query = format!(
             "SELECT {COLUMNS} FROM scenes
              WHERE avatar_id = $1 AND deleted_at IS NULL

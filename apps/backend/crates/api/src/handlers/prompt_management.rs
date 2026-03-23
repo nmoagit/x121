@@ -183,9 +183,7 @@ pub async fn get_avatar_scene_overrides(
     Path((avatar_id, scene_type_id)): Path<(DbId, DbId)>,
 ) -> AppResult<
     Json<
-        DataResponse<
-            Vec<x121_db::models::avatar_scene_prompt_override::AvatarScenePromptOverride>,
-        >,
+        DataResponse<Vec<x121_db::models::avatar_scene_prompt_override::AvatarScenePromptOverride>>,
     >,
 > {
     let overrides = AvatarScenePromptOverrideRepo::list_by_avatar_and_scene_type(
@@ -207,9 +205,7 @@ pub async fn upsert_avatar_scene_overrides(
     Json(body): Json<UpsertOverrideRequest>,
 ) -> AppResult<
     Json<
-        DataResponse<
-            Vec<x121_db::models::avatar_scene_prompt_override::AvatarScenePromptOverride>,
-        >,
+        DataResponse<Vec<x121_db::models::avatar_scene_prompt_override::AvatarScenePromptOverride>>,
     >,
 > {
     for slot_override in &body.overrides {
