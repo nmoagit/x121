@@ -56,6 +56,7 @@ impl GroupSceneSettingRepo {
                  FROM scene_types st \
                  JOIN scene_type_tracks stt ON stt.scene_type_id = st.id \
                  JOIN tracks t ON t.id = stt.track_id AND t.is_active = true \
+                 JOIN projects p ON p.id = $2 \
                  LEFT JOIN project_scene_settings pss \
                      ON pss.scene_type_id = st.id \
                     AND pss.project_id = $2 \
@@ -65,6 +66,7 @@ impl GroupSceneSettingRepo {
                     AND gss.group_id = $1 \
                     AND gss.track_id = t.id \
                  WHERE st.is_active = true AND st.deleted_at IS NULL \
+                   AND (st.pipeline_id = p.pipeline_id OR (st.pipeline_id IS NULL AND p.pipeline_id IS NULL)) \
                  UNION ALL \
                  SELECT \
                      st.id AS scene_type_id, \
@@ -83,6 +85,7 @@ impl GroupSceneSettingRepo {
                      st.sort_order AS st_sort, \
                      NULL::INT     AS t_sort \
                  FROM scene_types st \
+                 JOIN projects p ON p.id = $2 \
                  LEFT JOIN project_scene_settings pss \
                      ON pss.scene_type_id = st.id \
                     AND pss.project_id = $2 \
@@ -92,6 +95,7 @@ impl GroupSceneSettingRepo {
                     AND gss.group_id = $1 \
                     AND gss.track_id IS NULL \
                  WHERE st.is_active = true AND st.deleted_at IS NULL \
+                   AND (st.pipeline_id = p.pipeline_id OR (st.pipeline_id IS NULL AND p.pipeline_id IS NULL)) \
                    AND NOT EXISTS ( \
                        SELECT 1 FROM scene_type_tracks stt WHERE stt.scene_type_id = st.id \
                    ) \

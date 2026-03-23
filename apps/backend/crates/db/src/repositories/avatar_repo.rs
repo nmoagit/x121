@@ -493,7 +493,7 @@ impl AvatarRepo {
                 c.status_id,
                 COALESCE(img.total, 0) AS images_count,
                 COALESCE(img.approved, 0) AS images_approved,
-                (SELECT COUNT(*) FROM tracks t WHERE t.is_active = true) AS required_images_count,
+                (SELECT COUNT(*) FROM tracks t WHERE t.is_active = true AND t.pipeline_id = p.pipeline_id) AS required_images_count,
                 COALESCE(sc.total, 0) AS scenes_total,
                 COALESCE(sc.with_video, 0) AS scenes_with_video,
                 COALESCE(sc.vid_approved, 0) AS scenes_approved,
@@ -533,6 +533,7 @@ impl AvatarRepo {
                 , 1)::float8 AS readiness_pct,
                 av.id AS hero_variant_id
              FROM avatars c
+             JOIN projects p ON p.id = c.project_id
              LEFT JOIN LATERAL (
                  SELECT
                      COUNT(*) AS total,
@@ -571,6 +572,7 @@ impl AvatarRepo {
                      ON sc.scene_type_id = st.id AND sc.track_id = t.id
                         AND sc.avatar_id = c.id AND sc.deleted_at IS NULL
                  WHERE st.is_active = true AND st.deleted_at IS NULL
+                   AND (st.pipeline_id = p.pipeline_id OR (st.pipeline_id IS NULL AND p.pipeline_id IS NULL))
                    AND COALESCE(cso.is_enabled, gss.is_enabled, pss.is_enabled, st.is_active) = true
              ) sc ON true
              LEFT JOIN LATERAL (

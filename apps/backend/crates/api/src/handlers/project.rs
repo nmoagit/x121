@@ -209,10 +209,12 @@ pub async fn get_stats(
          FROM scene_types st
          JOIN scene_type_tracks stt ON stt.scene_type_id = st.id
          JOIN tracks t ON t.id = stt.track_id AND t.is_active = true
+         JOIN projects p ON p.id = $1
          LEFT JOIN project_scene_settings pss
              ON pss.scene_type_id = st.id AND pss.track_id = t.id
                 AND pss.project_id = $1
          WHERE st.is_active = true AND st.deleted_at IS NULL
+           AND (st.pipeline_id = p.pipeline_id OR (st.pipeline_id IS NULL AND p.pipeline_id IS NULL))
            AND COALESCE(pss.is_enabled, st.is_active)",
     )
     .bind(project_id)
@@ -377,16 +379,19 @@ pub async fn get_batch_scene_assignments(
             COALESCE((SELECT COUNT(*) FROM scene_video_versions svv
              WHERE svv.scene_id = sc.id AND svv.deleted_at IS NULL), 0) AS final_video_count
         FROM avatars c
-        CROSS JOIN scene_types st
-        CROSS JOIN tracks t
+        JOIN projects p ON p.id = c.project_id
+        JOIN scene_types st ON st.is_active = true AND st.deleted_at IS NULL
+            AND (st.pipeline_id = p.pipeline_id OR (st.pipeline_id IS NULL AND p.pipeline_id IS NULL))
+        JOIN scene_type_tracks stt ON stt.scene_type_id = st.id
+        JOIN tracks t ON t.id = stt.track_id AND t.is_active = true
         LEFT JOIN project_scene_settings pss
-            ON pss.scene_type_id = st.id AND (pss.track_id = t.id OR pss.track_id IS NULL)
+            ON pss.scene_type_id = st.id AND pss.track_id = t.id
                AND pss.project_id = $1
         LEFT JOIN group_scene_settings gss
-            ON gss.scene_type_id = st.id AND (gss.track_id = t.id OR gss.track_id IS NULL)
+            ON gss.scene_type_id = st.id AND gss.track_id = t.id
                AND gss.group_id = c.group_id
         LEFT JOIN avatar_scene_overrides cso
-            ON cso.scene_type_id = st.id AND (cso.track_id = t.id OR cso.track_id IS NULL)
+            ON cso.scene_type_id = st.id AND cso.track_id = t.id
                AND cso.avatar_id = c.id
         LEFT JOIN scenes sc
             ON sc.scene_type_id = st.id AND sc.track_id = t.id
@@ -400,7 +405,6 @@ pub async fn get_batch_scene_assignments(
             LIMIT 1
         ) fc ON true
         WHERE c.project_id = $1 AND c.deleted_at IS NULL
-          AND st.is_active = true AND st.deleted_at IS NULL
           AND COALESCE(cso.is_enabled, gss.is_enabled, pss.is_enabled, st.is_active)
         ORDER BY c.id, st.name, t.name",
     )

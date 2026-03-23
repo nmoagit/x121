@@ -190,15 +190,18 @@ pub async fn get_dashboard(
                    t.id AS track_id, t.name AS track_name, t.slug AS track_slug,
                    st.has_clothes_off_transition
             FROM scene_types st
-            CROSS JOIN tracks t
+            JOIN scene_type_tracks stt ON stt.scene_type_id = st.id
+            JOIN tracks t ON t.id = stt.track_id AND t.is_active = true
+            JOIN projects p ON p.id = $2
             LEFT JOIN project_scene_settings pss
-                ON pss.scene_type_id = st.id AND (pss.track_id = t.id OR pss.track_id IS NULL)
+                ON pss.scene_type_id = st.id AND pss.track_id = t.id
                    AND pss.project_id = $2
             LEFT JOIN group_scene_settings gss
-                ON gss.scene_type_id = st.id AND (gss.track_id = t.id OR gss.track_id IS NULL) AND gss.group_id = $3
+                ON gss.scene_type_id = st.id AND gss.track_id = t.id AND gss.group_id = $3
             LEFT JOIN avatar_scene_overrides cso
-                ON cso.scene_type_id = st.id AND (cso.track_id = t.id OR cso.track_id IS NULL) AND cso.avatar_id = $1
+                ON cso.scene_type_id = st.id AND cso.track_id = t.id AND cso.avatar_id = $1
             WHERE st.is_active = true AND st.deleted_at IS NULL
+              AND (st.pipeline_id = p.pipeline_id OR (st.pipeline_id IS NULL AND p.pipeline_id IS NULL))
               AND COALESCE(cso.is_enabled, gss.is_enabled, pss.is_enabled, st.is_active)
         )
         SELECT
