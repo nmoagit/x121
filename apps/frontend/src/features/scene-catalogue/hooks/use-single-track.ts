@@ -24,9 +24,9 @@ interface SingleTrackResult {
   isLoading: boolean;
 }
 
-export function useSingleTrack(): SingleTrackResult {
+export function useSingleTrack(pipelineIdOverride?: number): SingleTrackResult {
   const pipelineCtx = usePipelineContextSafe();
-  const { data: tracks, isLoading } = useTracks(false, pipelineCtx?.pipelineId);
+  const { data: tracks, isLoading } = useTracks(false, pipelineIdOverride ?? pipelineCtx?.pipelineId);
 
   return useMemo(() => {
     const activeTracks = (tracks ?? []).filter((t) => t.is_active);

@@ -14,6 +14,7 @@ import { Tooltip } from "@/components/primitives/Tooltip";
 import { AlertTriangle, FileText, Film, Image, Mic } from "@/tokens/icons";
 import { variantThumbnailUrl } from "@/features/images/utils";
 import { useNavigate } from "@tanstack/react-router";
+import { useAvatarPath } from "@/hooks/usePipelinePath";
 import { useAvatarDeliverables, useBatchSceneAssignments, useBatchVariantStatuses } from "../hooks/use-avatar-deliverables";
 import type { BatchSceneAssignment, BatchVariantStatus } from "../hooks/use-avatar-deliverables";
 import { useEnabledSceneTypes } from "@/features/production/hooks/use-production";
@@ -94,6 +95,7 @@ interface RowProps {
 
 function DeliverableRow({ row, projectId, filteredBlockingReasons, readinessPct, onClick }: RowProps) {
   const navigate = useNavigate();
+  const avatarPath = useAvatarPath();
   return (
     <tr
       className={`cursor-pointer ${TERMINAL_DIVIDER} ${TERMINAL_ROW_HOVER}`}
@@ -137,7 +139,7 @@ function DeliverableRow({ row, projectId, filteredBlockingReasons, readinessPct,
                       e.stopPropagation();
                       if (tab) {
                         navigate({
-                          to: `/projects/${projectId}/avatars/${row.id}`,
+                          to: avatarPath(projectId, row.id) as string,
                           search: { tab },
                         });
                       }
@@ -146,7 +148,7 @@ function DeliverableRow({ row, projectId, filteredBlockingReasons, readinessPct,
                       if ((e.key === "Enter" || e.key === " ") && tab) {
                         e.stopPropagation();
                         navigate({
-                          to: `/projects/${projectId}/avatars/${row.id}`,
+                          to: avatarPath(projectId, row.id) as string,
                           search: { tab },
                         });
                       }
@@ -180,6 +182,7 @@ interface ReadinessTabProps {
 
 function ReadinessTab({ rows, projectId, resolveBlockingDeliverables }: ReadinessTabProps) {
   const navigate = useNavigate();
+  const avatarPath = useAvatarPath();
 
   return (
     <div className="overflow-x-auto">
@@ -206,8 +209,7 @@ function ReadinessTab({ rows, projectId, resolveBlockingDeliverables }: Readines
                 readinessPct={computeReadinessPct(row, bd)}
                 onClick={() =>
                   navigate({
-                    to: "/projects/$projectId/avatars/$avatarId",
-                    params: { projectId: String(projectId), avatarId: String(row.id) },
+                    to: avatarPath(projectId, row.id) as string,
                     search: { tab: undefined, scene: undefined },
                   })
                 }
@@ -330,6 +332,7 @@ interface MatrixTabProps {
 
 function MatrixTab({ rows, projectId }: MatrixTabProps) {
   const navigate = useNavigate();
+  const avatarPath = useAvatarPath();
 
   const avatarIds = useMemo(() => rows.map((r) => r.id), [rows]);
 
@@ -440,25 +443,21 @@ function MatrixTab({ rows, projectId }: MatrixTabProps) {
   );
 
   const navigateToCell = (
-    avatarId: number,
+    aid: number,
     col: MatrixColumnDef,
   ) => {
-    const params = { projectId: String(projectId), avatarId: String(avatarId) };
-
     if (col.kind === "image") {
       navigate({
-        to: "/projects/$projectId/avatars/$avatarId",
-        params,
+        to: avatarPath(projectId, aid) as string,
         search: { tab: "images", scene: undefined },
       });
     } else if (col.kind === "scene") {
-      // scene_type and track are picked up by useSearch({ strict: false }) in AvatarDetailPage
-      const url = `/projects/${projectId}/avatars/${avatarId}?tab=scenes&scene_type=${col.scene_type_id}${col.track_id != null ? `&track=${col.track_id}` : ""}`;
+      const base = avatarPath(projectId, aid);
+      const url = `${base}?tab=scenes&scene_type=${col.scene_type_id}${col.track_id != null ? `&track=${col.track_id}` : ""}`;
       navigate({ to: url });
     } else {
       navigate({
-        to: "/projects/$projectId/avatars/$avatarId",
-        params,
+        to: avatarPath(projectId, aid) as string,
         search: { tab: "metadata", scene: undefined },
       });
     }
@@ -544,8 +543,7 @@ function MatrixTab({ rows, projectId }: MatrixTabProps) {
                   type="button"
                   className="hover:underline cursor-pointer text-left"
                   onClick={() => navigate({
-                    to: "/projects/$projectId/avatars/$avatarId",
-                    params: { projectId: String(projectId), avatarId: String(row.id) },
+                    to: avatarPath(projectId, row.id) as string,
                     search: { tab: undefined, scene: undefined },
                   })}
                 >

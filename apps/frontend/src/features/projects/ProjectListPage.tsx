@@ -4,6 +4,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
+import { useProjectPath } from "@/hooks/usePipelinePath";
 
 import { ConfirmDeleteModal, Modal } from "@/components/composite";
 import { EmptyState, FileDropZone } from "@/components/domain";
@@ -53,6 +54,7 @@ export function ProjectListPage() {
   useSetPageTitle("Projects", "Manage avatars, scenes, and delivery across projects.");
 
   const navigate = useNavigate();
+  const projectPath = useProjectPath();
   const { data: pipelines } = usePipelines();
   const activePipelineCode = usePipelineCode();
   const activePipeline = pipelines?.find((p) => p.code === activePipelineCode);
@@ -315,7 +317,7 @@ export function ProjectListPage() {
             <ProjectCard
               key={project.id}
               project={project}
-              onClick={() => navigate({ to: `/projects/${project.id}` })}
+              onClick={() => navigate({ to: projectPath(project.id) as string })}
               onArchive={handleArchive}
               onUnarchive={handleUnarchive}
               onDelete={(id) => setDeleteTarget({ id, name: project.name })}

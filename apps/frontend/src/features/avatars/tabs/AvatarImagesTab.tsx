@@ -36,6 +36,8 @@ import { variantImageUrl, variantThumbnailUrl } from "@/features/images/utils";
 import { ProgressiveImage  } from "@/components/primitives";
 import { TrackImageCard } from "./TrackImageCard";
 import { TRACK_TEXT_COLORS } from "@/lib/ui-classes";
+import { usePipelineContextSafe } from "@/features/pipelines";
+import { useProject } from "@/features/projects/hooks/use-projects";
 import { useSingleTrack } from "@/features/scene-catalogue/hooks/use-single-track";
 import { useTrackImageActions } from "./useTrackImageActions";
 
@@ -122,9 +124,10 @@ function ModalVariantCard({ variant, onApprove, onUnapprove, onReject, onExport,
 
 interface AvatarImagesTabProps {
   avatarId: number;
+  projectId?: number;
 }
 
-export function AvatarImagesTab({ avatarId }: AvatarImagesTabProps) {
+export function AvatarImagesTab({ avatarId, projectId }: AvatarImagesTabProps) {
   const {
     activeTracks,
     trackImageData,
@@ -135,9 +138,12 @@ export function AvatarImagesTab({ avatarId }: AvatarImagesTabProps) {
     handleConfirmedGenerate,
     handleUploadTrackImage,
     generating,
-  } = useTrackImageActions(avatarId);
+  } = useTrackImageActions(avatarId, projectId);
 
-  const { isSingleTrack } = useSingleTrack();
+  const pipelineCtx = usePipelineContextSafe();
+  const { data: projectData } = useProject(projectId ?? 0);
+  const resolvedPipelineId = pipelineCtx?.pipelineId ?? projectData?.pipeline_id ?? undefined;
+  const { isSingleTrack } = useSingleTrack(resolvedPipelineId);
   const [detailTrackIndex, setDetailTrackIndex] = useState<number | null>(null);
   const [annotatingVariant, setAnnotatingVariant] = useState<ImageVariant | null>(null);
 
@@ -179,10 +185,12 @@ export function AvatarImagesTab({ avatarId }: AvatarImagesTabProps) {
                 key={track.id}
                 track={track}
                 heroVariant={hero}
-                canGenerate={track.slug.toLowerCase() === "clothed"}
-                generateEnabled={toplessHeroExists}
+                canGenerate={isSingleTrack || track.slug.toLowerCase() === "clothed"}
+                generateEnabled={isSingleTrack ? hero != null : toplessHeroExists}
                 generateDisabledReason={
-                  !toplessHeroExists ? "Upload a topless hero image first" : null
+                  isSingleTrack
+                    ? (!hero ? "Upload a seed image first" : null)
+                    : (!toplessHeroExists ? "Upload a topless hero image first" : null)
                 }
                 onGenerate={() => handleGenerateTrackImage(track.slug)}
                 generating={generating}

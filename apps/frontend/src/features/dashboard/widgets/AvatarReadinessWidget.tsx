@@ -8,6 +8,7 @@
 import { Link } from "@tanstack/react-router";
 
 import { EmptyState } from "@/components/domain";
+import { usePipelinePrefix, useProjectPath } from "@/hooks/usePipelinePath";
 import { useProjectProgress } from "@/features/dashboard/hooks/use-dashboard";
 import { WidgetBase } from "@/features/dashboard/WidgetBase";
 import {
@@ -19,6 +20,8 @@ import { ShieldCheck, Users } from "@/tokens/icons";
 
 export function AvatarReadinessWidget() {
   const { data: projects, isLoading, error, refetch } = useProjectProgress();
+  const withPrefix = usePipelinePrefix();
+  const projectPath = useProjectPath();
 
   const totalModels = projects?.reduce((sum, p) => sum + (p.model_count ?? 0), 0) ?? 0;
   const totalReady = projects?.reduce((sum, p) => sum + (p.models_ready ?? 0), 0) ?? 0;
@@ -32,7 +35,7 @@ export function AvatarReadinessWidget() {
       onRetry={() => void refetch()}
       headerActions={
         <Link
-          to="/projects"
+          to={withPrefix("/projects") as string}
           className="font-mono text-xs text-cyan-400 hover:underline"
         >
           Projects
@@ -67,8 +70,7 @@ export function AvatarReadinessWidget() {
                 <div key={p.project_id} className={`py-1.5 ${TERMINAL_DIVIDER} last:border-b-0 ${TERMINAL_ROW_HOVER}`}>
                   <div className="flex items-center justify-between mb-0.5">
                     <Link
-                      to="/projects/$projectId"
-                      params={{ projectId: String(p.project_id) }}
+                      to={projectPath(p.project_id) as string}
                       search={{ tab: undefined, group: undefined }}
                       className="font-mono text-[11px] text-[var(--color-text-primary)] truncate hover:text-cyan-400 transition-colors"
                     >

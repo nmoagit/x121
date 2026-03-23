@@ -5,6 +5,7 @@
 import { useNavigate } from "@tanstack/react-router";
 import { FlagIcon, ProgressiveImage, Tooltip } from "@/components/primitives";
 import { variantThumbnailUrl } from "@/features/images/utils";
+import { useAvatarPath } from "@/hooks/usePipelinePath";
 import { cn } from "@/lib/cn";
 import { TERMINAL_STATUS_COLORS } from "@/lib/ui-classes";
 import { AlertTriangle, Check, Edit3, FileText, Film, Image, Mic, Power, User } from "@/tokens/icons";
@@ -141,6 +142,7 @@ const REASON_TAB_MAP: Record<string, string> = {
 
 function BlockingReasonIcon({ reason, projectId, avatarId }: { reason: string; projectId?: number; avatarId: number }) {
   const navigate = useNavigate();
+  const avatarPath = useAvatarPath();
   const Icon = REASON_ICON_MAP[reason] ?? AlertTriangle;
   const tab = REASON_TAB_MAP[reason];
 
@@ -154,7 +156,7 @@ function BlockingReasonIcon({ reason, projectId, avatarId }: { reason: string; p
           e.stopPropagation();
           if (tab && projectId) {
             navigate({
-              to: `/projects/${projectId}/avatars/${avatarId}`,
+              to: avatarPath(projectId, avatarId) as string,
               search: { tab },
             });
           }
@@ -163,7 +165,7 @@ function BlockingReasonIcon({ reason, projectId, avatarId }: { reason: string; p
           if ((e.key === "Enter" || e.key === " ") && tab && projectId) {
             e.stopPropagation();
             navigate({
-              to: `/projects/${projectId}/avatars/${avatarId}`,
+              to: avatarPath(projectId, avatarId) as string,
               search: { tab },
             });
           }

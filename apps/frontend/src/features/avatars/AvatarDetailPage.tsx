@@ -11,6 +11,7 @@ import { useCallback, useMemo, useState } from "react";
 import { ConfirmDeleteModal, Modal, Tabs } from "@/components/composite";
 import { EmptyState, FileDropZone } from "@/components/domain";
 import { Stack } from "@/components/layout";
+import { useAvatarPath, usePipelinePrefix, useProjectPath } from "@/hooks/usePipelinePath";
 import { usePipelineContextSafe } from "@/features/pipelines";
 import { useAvatarImport } from "@/features/projects/hooks/use-avatar-import";
 import { ImportConfirmModal } from "@/features/projects/components/ImportConfirmModal";
@@ -67,6 +68,9 @@ export function AvatarDetailPage() {
   const avatarId = Number(params.avatarId);
 
   const navigate = useNavigate();
+  const avatarPathFn = useAvatarPath();
+  const projectPathFn = useProjectPath();
+  const withPrefix = usePipelinePrefix();
   const { tab: tabParam, scene: sceneParam, scene_type: sceneTypeParam, track: trackParam } = useSearch({ strict: false }) as { tab?: string; scene?: string; scene_type?: string; track?: string };
 
   const { data: project } = useProject(projectId);
@@ -104,7 +108,7 @@ export function AvatarDetailPage() {
 
   function setActiveTab(tab: string) {
     navigate({
-      to: `/projects/${projectId}/avatars/${avatarId}`,
+      to: avatarPathFn(projectId, avatarId) as string,
       search: { tab },
     });
   }
@@ -136,7 +140,7 @@ export function AvatarDetailPage() {
   }, [avatars, avatarId, groups]);
 
   function navigateToAvatar(targetId: number) {
-    navigate({ to: `/projects/${projectId}/avatars/${targetId}`, search: { tab: activeTab } });
+    navigate({ to: avatarPathFn(projectId, targetId) as string, search: { tab: activeTab } });
   }
 
   /* --- scene focus state (auto-open scene detail modal) --- */
@@ -199,7 +203,7 @@ export function AvatarDetailPage() {
       onSuccess: () => {
         setDeleteOpen(false);
         setEditOpen(false);
-        navigate({ to: `/projects/${projectId}` });
+        navigate({ to: projectPathFn(projectId) as string });
       },
     });
   }
@@ -234,13 +238,12 @@ export function AvatarDetailPage() {
     <Stack gap={6}>
       {/* Breadcrumb */}
       <nav className="flex items-center gap-[var(--spacing-1)] text-xs font-mono text-[var(--color-text-muted)]">
-        <Link to="/projects" className="hover:text-cyan-400 transition-colors">
+        <Link to={withPrefix("/projects") as string} className="hover:text-cyan-400 transition-colors">
           projects
         </Link>
         <ChevronRight size={12} aria-hidden className="opacity-40" />
         <Link
-          to="/projects/$projectId"
-          params={{ projectId: String(projectId) }}
+          to={projectPathFn(projectId) as string}
           search={{ tab: undefined, group: undefined }}
           className="hover:text-cyan-400 transition-colors"
         >
@@ -250,8 +253,7 @@ export function AvatarDetailPage() {
           <>
             <ChevronRight size={12} aria-hidden className="opacity-40" />
             <Link
-              to="/projects/$projectId"
-              params={{ projectId: String(projectId) }}
+              to={projectPathFn(projectId) as string}
               search={{ tab: "avatars", group: String(avatar.group_id) }}
               className="hover:text-cyan-400 transition-colors"
             >
@@ -291,8 +293,7 @@ export function AvatarDetailPage() {
         </span>
         <span className="text-[var(--color-text-muted)] opacity-30 font-mono">|</span>
         <Link
-          to="/projects/$projectId"
-          params={{ projectId: String(projectId) }}
+          to={projectPathFn(projectId) as string}
           search={{ tab: "avatars", group: avatar.group_id != null ? String(avatar.group_id) : undefined }}
           className="text-xs font-mono text-[var(--color-text-muted)] hover:text-cyan-400 transition-colors"
         >
@@ -405,7 +406,7 @@ export function AvatarDetailPage() {
           {!resolvedBlockingDeliverables?.includes("images") && (
             <div className="font-mono text-[10px] text-amber-400/70 mb-2">⚠ not a blocking deliverable</div>
           )}
-          <AvatarImagesTab key={avatarId} avatarId={avatarId} />
+          <AvatarImagesTab key={avatarId} avatarId={avatarId} projectId={projectId} />
         </div>
       )}
       {activeTab === "scenes" && (

@@ -1,10 +1,12 @@
 import { Link, useParams } from "@tanstack/react-router";
+import { useProjectPath } from "@/hooks/usePipelinePath";
 import { AssignmentDashboard } from "@/features/avatar-review/AssignmentDashboard";
 import { ChevronLeft } from "@/tokens/icons";
 
 export function AssignmentDashboardPage() {
   const { projectId } = useParams({ strict: false });
   const id = Number(projectId);
+  const projectPathFn = useProjectPath();
 
   if (!id || Number.isNaN(id)) {
     return <div className="p-6 text-action-danger">Invalid project ID</div>;
@@ -13,8 +15,7 @@ export function AssignmentDashboardPage() {
   return (
     <div className="flex flex-col gap-4">
       <Link
-        to="/projects/$projectId"
-        params={{ projectId: String(id) }}
+        to={projectPathFn(id) as string}
         search={{ tab: undefined, group: undefined }}
         className="inline-flex items-center gap-1 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors w-fit"
       >

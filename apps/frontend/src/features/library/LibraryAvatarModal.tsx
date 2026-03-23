@@ -9,6 +9,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import { Link } from "@tanstack/react-router";
 
+import { useAvatarPath } from "@/hooks/usePipelinePath";
 import { Modal } from "@/components/composite";
 import { Button, FlagIcon, ProgressiveImage, WireframeLoader } from "@/components/primitives";
 import { cn } from "@/lib/cn";
@@ -68,6 +69,7 @@ export function LibraryAvatarModal({
   onPrev,
   onNext,
 }: LibraryAvatarModalProps) {
+  const avatarPathFn = useAvatarPath();
   const [detail, setDetail] = useState<DetailView | null>(null);
 
   // Clear detail view when avatar changes
@@ -217,11 +219,7 @@ export function LibraryAvatarModal({
             </p>
           </div>
           <Link
-            to="/projects/$projectId/avatars/$avatarId"
-            params={{
-              projectId: String(avatar.project_id),
-              avatarId: String(avatar.id),
-            }}
+            to={avatarPathFn(avatar.project_id, avatar.id) as string}
             search={{ tab: undefined, scene: undefined }}
           >
             <Button variant="secondary" size="sm">

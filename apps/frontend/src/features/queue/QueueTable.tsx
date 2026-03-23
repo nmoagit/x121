@@ -8,6 +8,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 
+import { useAvatarPath } from "@/hooks/usePipelinePath";
 import { Badge, Checkbox, Tooltip, WireframeLoader } from "@/components/primitives";
 import { Image, Play } from "@/tokens/icons";
 import { cn } from "@/lib/cn";
@@ -236,17 +237,18 @@ export function QueueTable({
 }: QueueTableProps) {
   const { data: jobs, isLoading } = useAdminQueueJobs(filter);
   const navigate = useNavigate();
+  const avatarPath = useAvatarPath();
 
   function handleNavigateToJob(job: FullQueueJob) {
     if (job.project_id == null || job.avatar_id == null) return;
     if (job.job_kind === "image") {
       navigate({
-        to: `/projects/${job.project_id}/avatars/${job.avatar_id}`,
+        to: avatarPath(job.project_id, job.avatar_id) as string,
         search: { tab: "overview" },
       });
     } else {
       navigate({
-        to: `/projects/${job.project_id}/avatars/${job.avatar_id}`,
+        to: avatarPath(job.project_id, job.avatar_id) as string,
         search: { tab: "scenes", scene: String(job.scene_id) },
       });
     }

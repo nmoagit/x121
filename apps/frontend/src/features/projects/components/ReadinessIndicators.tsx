@@ -8,6 +8,7 @@
 import { useNavigate } from "@tanstack/react-router";
 
 import { Tooltip } from "@/components/primitives";
+import { useAvatarPath } from "@/hooks/usePipelinePath";
 import { FileText, Film, Image, Mic } from "@/tokens/icons";
 
 import type { SectionKey, SectionReadiness } from "../types";
@@ -38,6 +39,7 @@ interface ReadinessIndicatorsProps {
 
 export function ReadinessIndicators({ readiness, projectId, avatarId, blockingDeliverables }: ReadinessIndicatorsProps) {
   const navigate = useNavigate();
+  const avatarPathFn = useAvatarPath();
 
   return (
     <div className="flex flex-col gap-1 rounded-full bg-black/20 p-0.5 backdrop-blur-sm">
@@ -59,7 +61,7 @@ export function ReadinessIndicators({ readiness, projectId, avatarId, blockingDe
                 e.stopPropagation();
                 e.preventDefault();
                 navigate({
-                  to: `/projects/${projectId}/avatars/${avatarId}`,
+                  to: avatarPathFn(projectId, avatarId) as string,
                   search: { tab },
                 });
               }}
@@ -68,7 +70,7 @@ export function ReadinessIndicators({ readiness, projectId, avatarId, blockingDe
                   e.stopPropagation();
                   e.preventDefault();
                   navigate({
-                    to: `/projects/${projectId}/avatars/${avatarId}`,
+                    to: avatarPathFn(projectId, avatarId) as string,
                     search: { tab },
                   });
                 }

@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 
 import { EmptyState } from "@/components/domain";
+import { usePipelinePrefix } from "@/hooks/usePipelinePath";
 import { useProjectProgress } from "@/features/dashboard/hooks/use-dashboard";
 import type { ProjectProgressItem } from "@/features/dashboard/hooks/use-dashboard";
 import { WidgetBase } from "@/features/dashboard/WidgetBase";
@@ -96,6 +97,7 @@ function ProjectRow({ item, showPipeline = true }: { item: ProjectProgressItem; 
 
 export function ProjectProgressWidget({ pipelineId, showPipeline = true }: { pipelineId?: number; showPipeline?: boolean } = {}) {
   const { data: projects, isLoading, error, refetch } = useProjectProgress(pipelineId);
+  const withPrefix = usePipelinePrefix();
 
   return (
     <WidgetBase
@@ -105,7 +107,7 @@ export function ProjectProgressWidget({ pipelineId, showPipeline = true }: { pip
       error={error?.message}
       onRetry={() => void refetch()}
       headerActions={
-        <Link to="/projects" className="font-mono text-xs text-cyan-400 hover:underline">
+        <Link to={withPrefix("/projects") as string} className="font-mono text-xs text-cyan-400 hover:underline">
           Projects
         </Link>
       }

@@ -98,6 +98,35 @@ export function findVariantForTrack(
 }
 
 /**
+ * Find a variant for a track, with fallback for single-track pipelines.
+ *
+ * For single-track pipelines (e.g. y122), the track slug ("main") doesn't
+ * match the seed slot name ("reference"). This function tries:
+ * 1. Direct track slug match
+ * 2. Seed slot name match (for single-track pipelines)
+ * 3. Any non-deleted variant (last resort for single-track)
+ */
+export function findVariantForTrackWithFallback(
+  variants: ImageVariant[],
+  trackSlug: string,
+  seedSlotNames: string[],
+  isSingleTrack: boolean,
+): ImageVariant | undefined {
+  const direct = findVariantForTrack(variants, trackSlug);
+  if (direct) return direct;
+
+  if (isSingleTrack) {
+    for (const slotName of seedSlotNames) {
+      const match = findVariantForTrack(variants, slotName);
+      if (match) return match;
+    }
+    return variants.find((v) => !v.deleted_at);
+  }
+
+  return undefined;
+}
+
+/**
  * Pick the best non-deleted variant for a track slug.
  * Prefers approved, then falls back to the most recently created.
  */

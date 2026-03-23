@@ -22,11 +22,15 @@ import {
   useAvatarDashboard,
 } from "@/features/avatar-dashboard";
 import type { Avatar } from "@/features/projects/types";
+import { usePipelineContextSafe } from "@/features/pipelines";
+import { useProject } from "@/features/projects/hooks/use-projects";
 import { useAvatarSceneSettings } from "@/features/scene-catalogue/hooks/use-avatar-scene-settings";
 import { useExpandedSettings } from "@/features/scene-catalogue/hooks/use-expanded-settings";
+import { useSingleTrack } from "@/features/scene-catalogue/hooks/use-single-track";
 import { ReadinessStateBadge } from "@/features/readiness/ReadinessStateBadge";
 import type { ReadinessState } from "@/features/readiness/types";
 import { useSpeechLanguageCounts } from "@/features/projects/hooks/use-avatar-deliverables";
+import { useSpeechCompleteness } from "@/features/avatars/hooks/use-avatar-speeches";
 
 /* --------------------------------------------------------------------------
    Types
@@ -46,8 +50,8 @@ interface AvatarOverviewTabProps {
    Sub-components
    -------------------------------------------------------------------------- */
 
-/** Total source images needed (clothed + topless tracks). */
-const TOTAL_SOURCE_IMAGES_NEEDED = 2;
+/** Fallback total source images when track data has not loaded yet. */
+const DEFAULT_SOURCE_IMAGES_NEEDED = 1;
 
 /* --------------------------------------------------------------------------
    Component
@@ -60,6 +64,13 @@ export function AvatarOverviewTab({
   blockingDeliverables,
   onSceneClick,
 }: AvatarOverviewTabProps) {
+  const pipelineCtx = usePipelineContextSafe();
+  const { data: projectData } = useProject(projectId);
+  const resolvedPipelineId = pipelineCtx?.pipelineId ?? projectData?.pipeline_id ?? undefined;
+  const { tracks } = useSingleTrack(resolvedPipelineId);
+  const totalSourceImagesNeeded = tracks.length > 0 ? tracks.length : DEFAULT_SOURCE_IMAGES_NEEDED;
+  const { data: speechCompleteness } = useSpeechCompleteness(avatarId);
+
   const { data: dashboard, isLoading: dashboardLoading } =
     useAvatarDashboard(avatarId);
   const { data: sceneSettings, isLoading: settingsLoading } =
@@ -111,15 +122,15 @@ export function AvatarOverviewTab({
         const scenesAssigned = activeAssignments.length;
         const scenesApproved = activeAssignments.filter((a) => a.status === "approved").length;
         const imagesApproved = dashboard.variant_counts.approved;
-        const imagesComplete = imagesApproved >= TOTAL_SOURCE_IMAGES_NEEDED;
+        const imagesComplete = imagesApproved >= totalSourceImagesNeeded;
         const scenesComplete = scenesApproved >= scenesAssigned && scenesAssigned > 0;
 
         return (
           <StatTicker stats={[
             {
               label: "Images",
-              value: `${imagesApproved}/${TOTAL_SOURCE_IMAGES_NEEDED}`,
-              tooltip: `${imagesApproved} approved / ${TOTAL_SOURCE_IMAGES_NEEDED} needed (clothed + topless)`,
+              value: `${imagesApproved}/${totalSourceImagesNeeded}`,
+              tooltip: `${imagesApproved} approved / ${totalSourceImagesNeeded} needed (seed images per track)`,
               complete: imagesComplete,
             },
             {
@@ -132,6 +143,16 @@ export function AvatarOverviewTab({
               value: `${scenesApproved}/${scenesAssigned}`,
               tooltip: `${scenesApproved} approved / ${scenesAssigned} assigned`,
               complete: scenesComplete,
+            },
+            {
+              label: "Speech",
+              value: speechCompleteness
+                ? `${speechCompleteness.filled_slots}/${speechCompleteness.total_slots}`
+                : "0/0",
+              tooltip: speechCompleteness
+                ? `${speechCompleteness.filled_slots} filled / ${speechCompleteness.total_slots} required (${speechCompleteness.completeness_pct}%)`
+                : "No speech requirements configured",
+              complete: speechCompleteness != null && speechCompleteness.completeness_pct >= 100,
             },
             {
               label: "Metadata",

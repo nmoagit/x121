@@ -10,6 +10,7 @@
 import { useCallback, useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 
+import { useAvatarPath } from "@/hooks/usePipelinePath";
 import { Modal, useToast } from "@/components/composite";
 import { EmptyState } from "@/components/domain";
 import { Stack } from "@/components/layout";
@@ -569,6 +570,7 @@ function RunDetail({
   const cancelAvatarCells = useCancelAvatarCells(run.id);
   const deleteAvatarCells = useDeleteAvatarCells(run.id, projectId);
   const navigate = useNavigate();
+  const avatarPath = useAvatarPath();
   const toast = useToast();
 
   // Filter to avatars in this run's matrix config
@@ -645,7 +647,7 @@ function RunDetail({
   const handleAvatarClick = useCallback(
     (avatarId: number) => {
       navigate({
-        to: `/projects/${projectId}/avatars/${avatarId}`,
+        to: avatarPath(projectId, avatarId) as string,
         search: { tab: "scenes" },
       });
     },
@@ -655,7 +657,7 @@ function RunDetail({
   const handleCellClick = useCallback(
     (cell: { avatar_id: number; scene_type_id: number; track_id: number | null; scene_id: number | null }) => {
       navigate({
-        to: `/projects/${projectId}/models/${cell.avatar_id}`,
+        to: avatarPath(projectId, cell.avatar_id) as string,
         search: {
           tab: "scenes",
           ...(cell.scene_id

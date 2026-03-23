@@ -9,6 +9,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 
+import { useAvatarPath } from "@/hooks/usePipelinePath";
 import { EmptyState } from "@/components/domain";
 import { ConfirmModal, Modal } from "@/components/composite";
 import { PageHeader, Stack } from "@/components/layout";
@@ -39,6 +40,7 @@ function AnnotationDetailModal({
   onClose: () => void;
 }) {
   const navigate = useNavigate();
+  const avatarPath = useAvatarPath();
   const wrapperRef = useRef<HTMLDivElement>(null);
   const videoContainerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(0);
@@ -87,7 +89,7 @@ function AnnotationDetailModal({
   const handleGoToScene = useCallback(() => {
     if (!item) return;
     navigate({
-      to: `/projects/${item.project_id}/avatars/${item.avatar_id}`,
+      to: avatarPath(item.project_id, item.avatar_id) as string,
       search: { tab: "scenes", scene: String(item.scene_id) },
     });
     onClose();

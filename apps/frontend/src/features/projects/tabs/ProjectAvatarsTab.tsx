@@ -9,6 +9,7 @@
 import { useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import { useAvatarPath } from "@/hooks/usePipelinePath";
 import { useSetToggle } from "@/hooks/useSetToggle";
 
 import { CollapsibleSection, ConfirmDeleteModal, ConfirmModal, ConfigToolbar, Modal } from "@/components/composite";
@@ -85,6 +86,7 @@ interface ProjectAvatarsTabProps {
 
 export function ProjectAvatarsTab({ projectId, projectName, scrollToGroupId, blockingDeliverables }: ProjectAvatarsTabProps) {
   const navigate = useNavigate();
+  const avatarPath = useAvatarPath();
   const pipelineCtx = usePipelineContextSafe();
 
   const { data: avatars, isLoading: charsLoading } = useProjectAvatars(projectId);
@@ -722,7 +724,7 @@ export function ProjectAvatarsTab({ projectId, projectName, scrollToGroupId, blo
                         projectId={projectId}
                         speechLanguages={speechLanguageMap.get(c.id)}
                         onSelect={toggleCharSelection}
-                        onClick={() => navigate({ to: `/projects/${projectId}/avatars/${c.id}` })}
+                        onClick={() => navigate({ to: avatarPath(projectId, c.id) as string })}
                         onEdit={() => setEditingChar(c)}
                         onToggleEnabled={handleToggleEnabled}
                       />
@@ -769,7 +771,7 @@ export function ProjectAvatarsTab({ projectId, projectName, scrollToGroupId, blo
                       projectId={projectId}
                       speechLanguages={speechLanguageMap.get(c.id)}
                       onSelect={toggleCharSelection}
-                      onClick={() => navigate({ to: `/projects/${projectId}/avatars/${c.id}` })}
+                      onClick={() => navigate({ to: avatarPath(projectId, c.id) as string })}
                       onEdit={() => setEditingChar(c)}
                       onToggleEnabled={handleToggleEnabled}
                     />

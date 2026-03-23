@@ -29,7 +29,7 @@ import { useBatchGenerate, useRemoveScenesFromSchedule } from "@/features/genera
 import { ScheduleGenerationModal } from "@/features/generation/ScheduleGenerationModal";
 import { useSchedules } from "@/features/job-scheduling/hooks/use-job-scheduling";
 import { useImageVariants } from "@/features/images/hooks/use-image-variants";
-import { findVariantForTrack } from "@/features/images/utils";
+import { findVariantForTrackWithFallback } from "@/features/images/utils";
 import { sourceLabel } from "@/features/scene-catalogue/SourceBadge";
 import { TRACK_TEXT_COLORS } from "@/lib/ui-classes";
 import {
@@ -40,6 +40,9 @@ import { useExpandedSettings } from "@/features/scene-catalogue/hooks/use-expand
 import { trackConfigKeys } from "@/features/scene-catalogue/hooks/use-track-configs";
 import { useSingleTrack } from "@/features/scene-catalogue/hooks/use-single-track";
 import { usePipelineContextSafe } from "@/features/pipelines";
+import { usePipeline } from "@/features/pipelines/hooks/use-pipelines";
+import type { SeedSlot } from "@/features/pipelines/types";
+import { useProject } from "@/features/projects/hooks/use-projects";
 import { useTracks } from "@/features/scene-catalogue/hooks/use-tracks";
 import type { ExpandedSceneSetting, SceneTypeTrackConfig } from "@/features/scene-catalogue/types";
 import { AvatarSceneOverrideEditor } from "@/features/prompt-management/AvatarSceneOverrideEditor";
@@ -92,7 +95,7 @@ interface AvatarScenesTabProps {
   avatarEnabled?: boolean;
 }
 
-export function AvatarScenesTab({ avatarId, focusSceneId, focusSceneTypeId, focusTrackId, avatarEnabled = true }: AvatarScenesTabProps) {
+export function AvatarScenesTab({ avatarId, projectId, focusSceneId, focusSceneTypeId, focusTrackId, avatarEnabled = true }: AvatarScenesTabProps) {
   const queryClient = useQueryClient();
   const {
     data: settings,
@@ -125,9 +128,17 @@ export function AvatarScenesTab({ avatarId, focusSceneId, focusSceneTypeId, focu
   }, [scenes, queryClient]);
 
   const pipelineCtx = usePipelineContextSafe();
-  const { data: tracks } = useTracks(false, pipelineCtx?.pipelineId);
-  const { isSingleTrack } = useSingleTrack();
+  const { data: projectData } = useProject(projectId);
+  const resolvedPipelineId = pipelineCtx?.pipelineId ?? projectData?.pipeline_id ?? undefined;
+  const { data: pipelineData } = usePipeline(resolvedPipelineId ?? 0);
+  const { data: tracks } = useTracks(false, resolvedPipelineId);
+  const { isSingleTrack } = useSingleTrack(resolvedPipelineId);
   const { data: imageVariants } = useImageVariants(avatarId);
+
+  const seedSlotNames = useMemo(() => {
+    const slots = (pipelineData?.seed_slots ?? []) as SeedSlot[];
+    return slots.map((s) => s.name.toLowerCase());
+  }, [pipelineData?.seed_slots]);
   const batchGenerate = useBatchGenerate();
   const createScene = useCreateScene(avatarId);
   const bulkImport = useBulkImportClip();
@@ -197,14 +208,16 @@ export function AvatarScenesTab({ avatarId, focusSceneId, focusSceneTypeId, focu
     (trackSlug: string | null | undefined): number | null => {
       if (!imageVariants || imageVariants.length === 0) return null;
       if (trackSlug) {
-        const match = findVariantForTrack(imageVariants, trackSlug);
+        const match = findVariantForTrackWithFallback(
+          imageVariants, trackSlug, seedSlotNames, isSingleTrack,
+        );
         return match?.id ?? null;
       }
       // No track specified — need a generic seed image
       const hero = imageVariants.find((v) => v.is_hero);
       return hero?.id ?? imageVariants[0]?.id ?? null;
     },
-    [imageVariants],
+    [imageVariants, seedSlotNames, isSingleTrack],
   );
 
   /* --- filter to enabled settings only --- */
