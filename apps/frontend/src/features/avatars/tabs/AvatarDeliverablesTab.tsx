@@ -658,11 +658,11 @@ export function AvatarDeliverablesTab({
       .map((k) => BLOCKING_KEY_MAP[k])
       .filter((k): k is SectionKey => k != null);
     const bKeys = new Set<SectionKey>(mapped);
-    // Show all sections, but mark non-blocking ones
-    return { initialSections: SECTION_KEYS as Iterable<SectionKey>, blockingKeys: bKeys };
+    // Only blocking sections are initially visible; non-blocking start deselected
+    return { initialSections: mapped, blockingKeys: bKeys };
   }, [project?.blocking_deliverables]);
 
-  // Section filter state — all visible by default
+  // Section filter state — only blocking sections visible by default
   const [visibleSections, toggleSection] = useSetToggle<SectionKey>(initialSections);
 
   function toggleIgnore(sceneTypeId: number, trackId: number | null) {
