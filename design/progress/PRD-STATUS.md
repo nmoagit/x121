@@ -24,8 +24,7 @@ Source of truth: [`design/design.md`](../design.md)
 | planning | 0 |
 | in-progress | 0 |
 | review | 0 |
-| done | 140 |
-| planning | 1 |
+| done | 141 |
 | blocked | 0 |
 | deferred | 0 |
 | maybe | 15 |
@@ -42,7 +41,7 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-138 | Multi-Pipeline Architecture | 1 | `done` | 2026-03-22 |
 | PRD-139 | Pipeline Workspace Completeness | 1 | `done` | 2026-03-22 |
 | PRD-140 | Character to Avatar Rename | 1 | `done` | 2026-03-22 | Renamed "character"→"avatar" across entire stack. DB: 1 migration (19 tables + FK columns). Backend: 46 files renamed, 258 files updated. Frontend: 49 files renamed, 402 files updated. Unified "model"/"character" to "avatar". |
-| PRD-141 | Pipeline-Scoped Imports and Storage | 1 | `planning` | — | Pipeline-configurable import rules, pipeline-isolated avatar records, pipeline-scoped storage layout. Naming engine integration (platform → pipeline → project hierarchy). Deps: PRD-138, PRD-113, PRD-116. |
+| PRD-141 | Pipeline-Scoped Imports and Storage | 1 | `done` | 2026-03-23 | Import rules JSONB on pipelines (seed/video/metadata patterns), import rule matching engine (regex-based, 14 unit tests), pipeline-scoped duplicate detection, naming engine 3-tier hierarchy (platform→pipeline→project, 6 unit tests), pipeline_code token, delivery assembly refactored, pipeline-scoped storage paths with legacy fallback, migration script, frontend ImportRulesEditor + classifyFileWithRules + dynamic regex + CategoryTemplatesSection. Deps: PRD-138, PRD-113, PRD-116. |
 
 ## Part 1: Infrastructure & System Core
 
@@ -291,6 +290,7 @@ Source of truth: [`design/design.md`](../design.md)
 | 2026-03-22 | Added PRD-138 (Multi-Pipeline Architecture). Pipeline as top-level entity scoping projects, tracks, workflows, scene types. Dynamic seed slots (x121: clothed+topless, y122: speaker), pipeline-scoped naming/delivery, pipeline navigation in frontend. Characters pipeline-scoped (no cross-pipeline sharing). DB-driven config, code-driven backend. Deps: PRD-01, PRD-05, PRD-24, PRD-75, PRD-111, PRD-113, PRD-116. Total PRDs: 138 + 15 MAYBEs = 153. |
 | 2026-03-22 | Added PRD-139 (Pipeline Workspace Completeness). Full nav in pipeline workspace, dynamic pipeline list in sidebar, queue pipeline awareness, pipeline-scoped naming rules. Deps: PRD-138. Total: 139 + 15 MAYBEs = 154. |
 | 2026-03-22 | Implemented PRD-140. DB: 1 migration (19 tables + FK columns renamed). Backend: 46 files renamed, 258 files updated. Frontend: 49 files renamed, 402 files updated. "character"/"model" unified to "avatar" everywhere. Done count: 140. |
+| 2026-03-23 | Implemented PRD-141. 3 migrations, import rule matching engine (14 tests), naming engine 3-tier hierarchy (6 tests), pipeline-scoped storage with fallback, migration script, frontend ImportRulesEditor + classifyFileWithRules + CategoryTemplatesSection, dynamic regex replacement. Done count: 141. |
 | 2026-03-23 | Added PRD-141 (Pipeline-Scoped Imports and Storage). Pipeline-configurable import rules, pipeline-isolated avatar records, pipeline-scoped storage layout, naming engine pipeline integration. Must mesh with PRD-116 naming engine hierarchy (platform → pipeline → project). Deps: PRD-138, PRD-113, PRD-116. Total: 141 + 15 MAYBEs = 156. |
 | 2026-03-22 | Added PRD-140 (Character to Avatar Rename). Rename character→avatar across DB (19 tables), backend (200+ files), frontend (100+ files). Unify "model"/"character" to "avatar". Total: 140 + 15 MAYBEs = 155. |
 | 2026-03-22 | Implemented PRD-139. Full workspace nav (42 items), 33 routes, pipeline-filtered repos (tracks/scene types/workflows), cross-pipeline validation, hardcoded slug removal (6 files), queue pipeline badges, naming rules per pipeline, dashboard scoping, ingest seed slot validation. Done count: 139. |

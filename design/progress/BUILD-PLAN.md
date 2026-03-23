@@ -488,7 +488,7 @@ This phase contains no PRD work — only structural setup.
 | 138 | PRD-138 | Multi-Pipeline Architecture | XL | Full-Stack | PRD-01, PRD-05, PRD-24, PRD-75, PRD-111, PRD-113, PRD-116 (all done) | **DONE** 2026-03-22 |
 | 139 | PRD-139 | Pipeline Workspace Completeness | L | Full-Stack | PRD-138 (done) | **DONE** 2026-03-22 |
 | 140 | PRD-140 | Character to Avatar Rename | XL | Full-Stack | All character PRDs (done) | **DONE** 2026-03-22 |
-| 141 | PRD-141 | Pipeline-Scoped Imports and Storage | XL | Full-Stack | PRD-138, PRD-113, PRD-116 (all done) |
+| 141 | PRD-141 | Pipeline-Scoped Imports and Storage | XL | Full-Stack | PRD-138, PRD-113, PRD-116 (all done) | **DONE** 2026-03-23 |
 
 ---
 
