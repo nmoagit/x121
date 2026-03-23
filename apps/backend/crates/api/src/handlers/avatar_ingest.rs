@@ -218,9 +218,15 @@ pub async fn validate_session(
             id: session_id,
         }))?;
 
-    // Get default template for the project.
-    let template =
-        MetadataTemplateRepo::find_default(&state.pool, Some(session.project_id)).await?;
+    // Get default template for the project (3-tier: project -> pipeline -> global).
+    let ingest_project = ProjectRepo::find_by_id(&state.pool, session.project_id).await?;
+    let ingest_pipeline_id = ingest_project.as_ref().map(|p| p.pipeline_id);
+    let template = MetadataTemplateRepo::find_default(
+        &state.pool,
+        Some(session.project_id),
+        ingest_pipeline_id,
+    )
+    .await?;
 
     let template_fields = if let Some(ref tmpl) = template {
         let db_fields = MetadataTemplateFieldRepo::list_by_template(&state.pool, tmpl.id).await?;

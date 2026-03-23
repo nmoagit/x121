@@ -13,7 +13,9 @@ use x121_core::error::CoreError;
 use x121_core::types::DbId;
 use x121_db::models::avatar_speech::{CreateAvatarSpeech, UpdateAvatarSpeech, UpdateSpeechStatus};
 use x121_db::models::speech_status::status_name_to_id;
-use x121_db::repositories::{AvatarSpeechRepo, LanguageRepo, SpeechTypeRepo};
+use x121_db::repositories::{
+    AvatarRepo, AvatarSpeechRepo, LanguageRepo, ProjectRepo, SpeechTypeRepo,
+};
 
 use x121_core::activity::{ActivityLogEntry, ActivityLogLevel, ActivityLogSource};
 
@@ -362,16 +364,32 @@ pub async fn import_speeches(
         }));
     }
 
+    // Resolve the avatar's pipeline_id for pipeline-scoped speech types.
+    let avatar = AvatarRepo::find_by_id(&state.pool, avatar_id)
+        .await?
+        .ok_or(AppError::Core(CoreError::NotFound {
+            entity: "Avatar",
+            id: avatar_id,
+        }))?;
+    let project = ProjectRepo::find_by_id(&state.pool, avatar.project_id)
+        .await?
+        .ok_or(AppError::Core(CoreError::NotFound {
+            entity: "Project",
+            id: avatar.project_id,
+        }))?;
+    let pipeline_id = project.pipeline_id;
+
     // Resolve type names to IDs and language codes to IDs.
     let mut created_types = Vec::new();
     let mut entries: Vec<(i16, i16, String)> = Vec::with_capacity(parsed.len());
 
     for (type_name, text, lang_code) in &parsed {
         let trimmed_name = type_name.trim();
-        let existed_before = SpeechTypeRepo::find_by_name(&state.pool, trimmed_name)
+        let existed_before = SpeechTypeRepo::find_by_name(&state.pool, pipeline_id, trimmed_name)
             .await?
             .is_some();
-        let speech_type = SpeechTypeRepo::find_or_create(&state.pool, trimmed_name).await?;
+        let speech_type =
+            SpeechTypeRepo::find_or_create(&state.pool, pipeline_id, trimmed_name).await?;
         if !existed_before {
             created_types.push(trimmed_name.to_string());
         }

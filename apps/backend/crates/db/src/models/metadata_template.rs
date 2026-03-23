@@ -11,6 +11,7 @@ pub struct MetadataTemplate {
     pub name: String,
     pub description: Option<String>,
     pub project_id: Option<DbId>,
+    pub pipeline_id: Option<DbId>,
     pub is_default: bool,
     pub version: i32,
     pub created_at: Timestamp,
@@ -23,6 +24,7 @@ pub struct CreateMetadataTemplate {
     pub name: String,
     pub description: Option<String>,
     pub project_id: Option<DbId>,
+    pub pipeline_id: Option<DbId>,
     pub is_default: Option<bool>,
 }
 

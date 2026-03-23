@@ -5,12 +5,13 @@
 
 use serde::Serialize;
 use sqlx::FromRow;
-use x121_core::types::Timestamp;
+use x121_core::types::{DbId, Timestamp};
 
 /// A row from the `speech_types` table.
 #[derive(Debug, Clone, FromRow, Serialize)]
 pub struct SpeechType {
     pub id: i16,
+    pub pipeline_id: DbId,
     pub name: String,
     pub sort_order: i32,
     pub created_at: Timestamp,

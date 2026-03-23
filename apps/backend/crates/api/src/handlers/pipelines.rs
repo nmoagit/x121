@@ -10,11 +10,13 @@ use serde::Deserialize;
 use x121_core::error::CoreError;
 use x121_core::types::DbId;
 use x121_db::models::pipeline::{CreatePipeline, Pipeline, UpdatePipeline};
-use x121_db::repositories::PipelineRepo;
+use x121_db::repositories::{MetadataTemplateRepo, PipelineRepo};
 
 use crate::error::{AppError, AppResult};
 use crate::response::DataResponse;
 use crate::state::AppState;
+
+use x121_db::models::metadata_template::MetadataTemplate;
 
 /// Shared lookup — returns the pipeline or a 404 error.
 async fn ensure_pipeline_exists(pool: &sqlx::PgPool, id: DbId) -> AppResult<Pipeline> {
@@ -113,4 +115,68 @@ pub async fn delete(State(state): State<AppState>, Path(id): Path<DbId>) -> AppR
             id,
         }))
     }
+}
+
+// ---------------------------------------------------------------------------
+// Metadata template routes
+// ---------------------------------------------------------------------------
+
+/// GET /api/v1/pipelines/{id}/metadata-template
+///
+/// Get the default metadata template for a pipeline.
+pub async fn get_metadata_template(
+    State(state): State<AppState>,
+    Path(id): Path<DbId>,
+) -> AppResult<Json<DataResponse<Option<MetadataTemplate>>>> {
+    ensure_pipeline_exists(&state.pool, id).await?;
+    let template = MetadataTemplateRepo::find_default(&state.pool, None, Some(id)).await?;
+    Ok(Json(DataResponse { data: template }))
+}
+
+/// Request body for setting a pipeline's metadata template.
+#[derive(Debug, Deserialize)]
+pub struct SetMetadataTemplateRequest {
+    pub template_id: DbId,
+}
+
+/// PUT /api/v1/pipelines/{id}/metadata-template
+///
+/// Set the default metadata template for a pipeline by marking the specified
+/// template as the pipeline default.
+pub async fn set_metadata_template(
+    State(state): State<AppState>,
+    Path(id): Path<DbId>,
+    Json(body): Json<SetMetadataTemplateRequest>,
+) -> AppResult<Json<DataResponse<MetadataTemplate>>> {
+    ensure_pipeline_exists(&state.pool, id).await?;
+
+    let template = MetadataTemplateRepo::find_by_id(&state.pool, body.template_id)
+        .await?
+        .ok_or(AppError::Core(CoreError::NotFound {
+            entity: "MetadataTemplate",
+            id: body.template_id,
+        }))?;
+
+    // Clear any existing pipeline default.
+    sqlx::query(
+        "UPDATE metadata_templates SET is_default = false \
+         WHERE pipeline_id = $1 AND project_id IS NULL AND is_default = true",
+    )
+    .bind(id)
+    .execute(&state.pool)
+    .await?;
+
+    // Set the new default. Update pipeline_id and is_default.
+    let query = format!(
+        "UPDATE metadata_templates SET is_default = true, pipeline_id = $2 \
+         WHERE id = $1 \
+         RETURNING {}", "id, name, description, project_id, pipeline_id, is_default, version, created_at, updated_at"
+    );
+    let updated = sqlx::query_as::<_, MetadataTemplate>(&query)
+        .bind(template.id)
+        .bind(id)
+        .fetch_one(&state.pool)
+        .await?;
+
+    Ok(Json(DataResponse { data: updated }))
 }

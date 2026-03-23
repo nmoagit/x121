@@ -10,7 +10,7 @@ use crate::models::metadata_template::{
 
 /// Column list for `metadata_templates`.
 const TEMPLATE_COLUMNS: &str =
-    "id, name, description, project_id, is_default, version, created_at, updated_at";
+    "id, name, description, project_id, pipeline_id, is_default, version, created_at, updated_at";
 
 /// Column list for `metadata_template_fields`.
 const FIELD_COLUMNS: &str =
@@ -27,14 +27,15 @@ impl MetadataTemplateRepo {
         input: &CreateMetadataTemplate,
     ) -> Result<MetadataTemplate, sqlx::Error> {
         let query = format!(
-            "INSERT INTO metadata_templates (name, description, project_id, is_default)
-             VALUES ($1, $2, $3, COALESCE($4, false))
+            "INSERT INTO metadata_templates (name, description, project_id, pipeline_id, is_default)
+             VALUES ($1, $2, $3, $4, COALESCE($5, false))
              RETURNING {TEMPLATE_COLUMNS}"
         );
         sqlx::query_as::<_, MetadataTemplate>(&query)
             .bind(&input.name)
             .bind(&input.description)
             .bind(input.project_id)
+            .bind(input.pipeline_id)
             .bind(input.is_default)
             .fetch_one(pool)
             .await
@@ -52,36 +53,52 @@ impl MetadataTemplateRepo {
             .await
     }
 
-    /// Find the default template. Project-level default overrides global.
+    /// Find the default template using 3-tier resolution: Project -> Pipeline -> Global.
+    ///
+    /// If `project_id` is provided, first checks for a project-level default.
+    /// If none, checks the pipeline-level default (using `pipeline_id`).
+    /// Falls back to the global default (no project_id, no pipeline_id).
     pub async fn find_default(
         pool: &PgPool,
         project_id: Option<DbId>,
+        pipeline_id: Option<DbId>,
     ) -> Result<Option<MetadataTemplate>, sqlx::Error> {
+        // 3-tier priority: project_id match > pipeline_id match > global
         let query = format!(
             "SELECT {TEMPLATE_COLUMNS} FROM metadata_templates
              WHERE is_default = true
-               AND (project_id = $1 OR project_id IS NULL)
-             ORDER BY project_id IS NOT NULL DESC
+               AND (
+                   project_id = $1
+                   OR (project_id IS NULL AND pipeline_id = $2)
+                   OR (project_id IS NULL AND pipeline_id IS NULL)
+               )
+             ORDER BY
+               project_id IS NOT NULL DESC,
+               pipeline_id IS NOT NULL DESC
              LIMIT 1"
         );
         sqlx::query_as::<_, MetadataTemplate>(&query)
             .bind(project_id)
+            .bind(pipeline_id)
             .fetch_optional(pool)
             .await
     }
 
-    /// List templates, optionally filtered by project.
+    /// List templates, optionally filtered by project and/or pipeline.
     pub async fn list(
         pool: &PgPool,
         project_id: Option<DbId>,
+        pipeline_id: Option<DbId>,
     ) -> Result<Vec<MetadataTemplate>, sqlx::Error> {
         let query = format!(
             "SELECT {TEMPLATE_COLUMNS} FROM metadata_templates
              WHERE ($1::BIGINT IS NULL OR project_id = $1 OR project_id IS NULL)
+               AND ($2::BIGINT IS NULL OR pipeline_id = $2 OR pipeline_id IS NULL)
              ORDER BY name ASC"
         );
         sqlx::query_as::<_, MetadataTemplate>(&query)
             .bind(project_id)
+            .bind(pipeline_id)
             .fetch_all(pool)
             .await
     }

@@ -13,7 +13,8 @@ use x121_core::error::CoreError;
 use x121_core::types::DbId;
 use x121_db::repositories::avatar_speech_repo::{CompletenessEntry, CompletenessSummary};
 use x121_db::repositories::{
-    AvatarRepo, AvatarSpeechRepo, LanguageRepo, ProjectSpeechConfigRepo, SpeechTypeRepo,
+    AvatarRepo, AvatarSpeechRepo, LanguageRepo, ProjectRepo, ProjectSpeechConfigRepo,
+    SpeechTypeRepo,
 };
 
 use crate::error::{AppError, AppResult};
@@ -174,7 +175,18 @@ pub async fn speech_completeness(
             id: avatar_id,
         }))?;
 
-    let config = ProjectSpeechConfigRepo::get_or_default(&state.pool, avatar.project_id).await?;
+    let project = ProjectRepo::find_by_id(&state.pool, avatar.project_id)
+        .await?
+        .ok_or(AppError::Core(CoreError::NotFound {
+            entity: "Project",
+            id: avatar.project_id,
+        }))?;
+    let config = ProjectSpeechConfigRepo::get_or_default(
+        &state.pool,
+        avatar.project_id,
+        Some(project.pipeline_id),
+    )
+    .await?;
 
     let types = SpeechTypeRepo::list_all(&state.pool).await?;
     let languages = LanguageRepo::list_all(&state.pool).await?;

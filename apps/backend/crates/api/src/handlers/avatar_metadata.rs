@@ -22,6 +22,7 @@ use x121_db::models::avatar::Avatar;
 use x121_db::models::metadata_template::MetadataTemplateField;
 use x121_db::repositories::{
     AvatarMetadataVersionRepo, AvatarRepo, MetadataTemplateFieldRepo, MetadataTemplateRepo,
+    ProjectRepo,
 };
 
 use crate::error::{AppError, AppResult};
@@ -139,7 +140,15 @@ async fn load_template_fields(
     pool: &sqlx::PgPool,
     project_id: Option<DbId>,
 ) -> Result<Vec<MetadataFieldDef>, sqlx::Error> {
-    let template = MetadataTemplateRepo::find_default(pool, project_id).await?;
+    // Resolve pipeline_id from the project for 3-tier template resolution.
+    let pipeline_id = if let Some(pid) = project_id {
+        ProjectRepo::find_by_id(pool, pid)
+            .await?
+            .map(|p| p.pipeline_id)
+    } else {
+        None
+    };
+    let template = MetadataTemplateRepo::find_default(pool, project_id, pipeline_id).await?;
 
     let Some(template) = template else {
         return Ok(standard_field_defs());
@@ -258,7 +267,11 @@ pub async fn get_metadata_template(
             id: avatar_id,
         }))?;
 
-    let template = MetadataTemplateRepo::find_default(&state.pool, Some(avatar.project_id)).await?;
+    let meta_project = ProjectRepo::find_by_id(&state.pool, avatar.project_id).await?;
+    let meta_pipeline_id = meta_project.as_ref().map(|p| p.pipeline_id);
+    let template =
+        MetadataTemplateRepo::find_default(&state.pool, Some(avatar.project_id), meta_pipeline_id)
+            .await?;
 
     let (template_name, fields) = match template {
         Some(t) => {

@@ -25,6 +25,7 @@ use crate::state::AppState;
 #[derive(Debug, Deserialize)]
 pub struct ListTemplatesQuery {
     pub project_id: Option<DbId>,
+    pub pipeline_id: Option<DbId>,
 }
 
 // ---------------------------------------------------------------------------
@@ -48,7 +49,8 @@ pub async fn list_templates(
     State(state): State<AppState>,
     Query(params): Query<ListTemplatesQuery>,
 ) -> AppResult<Json<Vec<MetadataTemplate>>> {
-    let templates = MetadataTemplateRepo::list(&state.pool, params.project_id).await?;
+    let templates =
+        MetadataTemplateRepo::list(&state.pool, params.project_id, params.pipeline_id).await?;
     Ok(Json(templates))
 }
 

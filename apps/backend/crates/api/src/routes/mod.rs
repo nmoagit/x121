@@ -43,6 +43,7 @@ pub mod extensions;
 pub mod external_api;
 pub mod failure_analytics;
 pub mod generation;
+pub mod generator_scripts;
 pub mod gpu_power;
 pub mod group_scene_settings;
 pub mod hardware;
@@ -781,6 +782,8 @@ pub fn api_routes() -> Router<AppState> {
         .nest("/admin/hardware", hardware::router())
         .nest("/admin/cloud-providers", cloud_providers::router())
         .nest("/admin/scripts", scripts::router())
+        // Generator scripts (PRD-143).
+        .nest("/admin/generator-scripts", generator_scripts::router())
         .nest("/admin/themes", themes::admin_router())
         // Studio-wide sensitivity defaults (PRD-82).
         .nest("/admin/sensitivity-defaults", sensitivity::admin_router())

@@ -11,7 +11,9 @@ use axum::response::IntoResponse;
 use axum::Json;
 use serde::{Deserialize, Serialize};
 use x121_core::types::DbId;
-use x121_db::repositories::{AvatarRepo, AvatarSpeechRepo, LanguageRepo, SpeechTypeRepo};
+use x121_db::repositories::{
+    AvatarRepo, AvatarSpeechRepo, LanguageRepo, ProjectRepo, SpeechTypeRepo,
+};
 
 use x121_core::activity::{ActivityLogEntry, ActivityLogLevel, ActivityLogSource};
 
@@ -58,6 +60,15 @@ pub async fn bulk_import_speeches(
     let avatars = AvatarRepo::list_by_project(&state.pool, project_id).await?;
     let languages = LanguageRepo::list_all(&state.pool).await?;
 
+    // Resolve pipeline_id from the project.
+    let project = ProjectRepo::find_by_id(&state.pool, project_id)
+        .await?
+        .ok_or(AppError::Core(x121_core::error::CoreError::NotFound {
+            entity: "Project",
+            id: project_id,
+        }))?;
+    let pipeline_id = project.pipeline_id;
+
     // Build slug -> avatar_id map.
     let slug_map: std::collections::HashMap<String, DbId> =
         avatars.iter().map(|c| (slugify(&c.name), c.id)).collect();
@@ -80,6 +91,7 @@ pub async fn bulk_import_speeches(
                 &state,
                 auth.user_id,
                 project_id,
+                pipeline_id,
                 &body.data,
                 &slug_map,
                 &lang_map,
@@ -92,6 +104,7 @@ pub async fn bulk_import_speeches(
                 &state,
                 auth.user_id,
                 project_id,
+                pipeline_id,
                 &body.data,
                 &slug_map,
                 &lang_map,
@@ -120,6 +133,7 @@ async fn import_json(
     state: &AppState,
     user_id: DbId,
     project_id: DbId,
+    pipeline_id: DbId,
     data: &str,
     slug_map: &std::collections::HashMap<String, DbId>,
     lang_map: &std::collections::HashMap<String, i16>,
@@ -155,7 +169,8 @@ async fn import_json(
         let mut entries: Vec<(i16, i16, String)> = Vec::new();
 
         for (type_name, langs_val) in types_obj {
-            let speech_type = SpeechTypeRepo::find_or_create(&state.pool, type_name).await?;
+            let speech_type =
+                SpeechTypeRepo::find_or_create(&state.pool, pipeline_id, type_name).await?;
 
             let Some(langs_obj) = langs_val.as_object() else {
                 errors.push(format!(
@@ -278,6 +293,7 @@ async fn import_csv(
     state: &AppState,
     user_id: DbId,
     project_id: DbId,
+    pipeline_id: DbId,
     data: &str,
     slug_map: &std::collections::HashMap<String, DbId>,
     lang_map: &std::collections::HashMap<String, i16>,
@@ -352,7 +368,8 @@ async fn import_csv(
             continue;
         };
 
-        let speech_type = SpeechTypeRepo::find_or_create(&state.pool, type_name).await?;
+        let speech_type =
+            SpeechTypeRepo::find_or_create(&state.pool, pipeline_id, type_name).await?;
 
         char_entries
             .entry(avatar_id)

@@ -84,6 +84,8 @@ pub mod output_format_profile;
 pub mod pattern_fix;
 pub mod performance_metric;
 pub mod pipeline;
+pub mod pipeline_generator_script;
+pub mod pipeline_speech_config;
 pub mod placement_rule;
 pub mod platform_setting;
 pub mod poster_frame;

@@ -95,6 +95,7 @@ pub mod roles;
 pub mod scene_type_config;
 pub mod scene_type_inheritance;
 pub mod scheduling;
+pub mod script_executor;
 pub mod script_types;
 pub mod scripting;
 pub mod search;

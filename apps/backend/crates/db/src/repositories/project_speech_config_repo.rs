@@ -74,21 +74,57 @@ impl ProjectSpeechConfigRepo {
 
     /// Get speech config for a project, or generate defaults if none exist.
     ///
-    /// Defaults: all 8 seeded speech types x English (language_id=1) x 3 min_variants.
+    /// Resolution order:
+    /// 1. Project-level config (if any entries exist, return them).
+    /// 2. Pipeline-level config (copy from `pipeline_speech_config` if present).
+    /// 3. Global fallback: all speech types for the pipeline x English x 3 min_variants.
     pub async fn get_or_default(
         pool: &PgPool,
         project_id: DbId,
+        pipeline_id: Option<DbId>,
     ) -> Result<Vec<ProjectSpeechConfig>, sqlx::Error> {
         let existing = Self::list_for_project(pool, project_id).await?;
         if !existing.is_empty() {
             return Ok(existing);
         }
 
-        // Build defaults from all existing speech types.
-        let type_ids: Vec<i16> =
+        // Try pipeline-level defaults first.
+        if let Some(pid) = pipeline_id {
+            let pipeline_config: Vec<(i16, i16, i32)> = sqlx::query_as(
+                "SELECT speech_type_id, language_id, min_variants \
+                 FROM pipeline_speech_config WHERE pipeline_id = $1 \
+                 ORDER BY speech_type_id, language_id",
+            )
+            .bind(pid)
+            .fetch_all(pool)
+            .await?;
+
+            if !pipeline_config.is_empty() {
+                let entries: Vec<SpeechConfigEntry> = pipeline_config
+                    .into_iter()
+                    .map(|(tid, lid, mv)| SpeechConfigEntry {
+                        speech_type_id: tid,
+                        language_id: lid,
+                        min_variants: mv,
+                    })
+                    .collect();
+                return Self::replace_all(pool, project_id, &entries).await;
+            }
+        }
+
+        // Build defaults from speech types scoped to the pipeline (or all if no pipeline).
+        let type_ids: Vec<i16> = if let Some(pid) = pipeline_id {
+            sqlx::query_scalar(
+                "SELECT id FROM speech_types WHERE pipeline_id = $1 ORDER BY sort_order ASC, name ASC",
+            )
+            .bind(pid)
+            .fetch_all(pool)
+            .await?
+        } else {
             sqlx::query_scalar("SELECT id FROM speech_types ORDER BY sort_order ASC, name ASC")
                 .fetch_all(pool)
-                .await?;
+                .await?
+        };
 
         let entries: Vec<SpeechConfigEntry> = type_ids
             .into_iter()
