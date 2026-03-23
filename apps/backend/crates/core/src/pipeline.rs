@@ -33,6 +33,58 @@ pub struct PipelineNamingRules {
     pub transition_suffix: String,
 }
 
+/// Import rules that define how files are matched during bulk import.
+///
+/// Each pipeline can specify its own patterns for seed images, videos,
+/// and metadata files, replacing the previously hardcoded matching logic.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ImportRules {
+    /// Patterns for matching seed image files to avatar slots.
+    #[serde(default)]
+    pub seed_patterns: Vec<SeedPattern>,
+    /// Patterns for matching video files to scene types/tracks.
+    #[serde(default)]
+    pub video_patterns: Vec<VideoPattern>,
+    /// Patterns for matching metadata/JSON files.
+    #[serde(default)]
+    pub metadata_patterns: Vec<MetadataPattern>,
+    /// Whether pattern matching is case-sensitive (default: false).
+    #[serde(default)]
+    pub case_sensitive: bool,
+}
+
+/// A pattern that matches seed image files to a named slot.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SeedPattern {
+    /// The slot name this pattern maps to (e.g. "clothed", "topless").
+    pub slot: String,
+    /// Filename template with placeholders like `{avatar}`, `{ext}`.
+    pub pattern: String,
+    /// Allowed file extensions for this pattern.
+    #[serde(default)]
+    pub extensions: Vec<String>,
+}
+
+/// A pattern that matches video output files.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct VideoPattern {
+    /// Filename template with placeholders like `{scene_type}`, `{track}`, `{ext}`.
+    pub pattern: String,
+    /// Allowed file extensions for this pattern.
+    #[serde(default)]
+    pub extensions: Vec<String>,
+}
+
+/// A pattern that matches metadata/JSON files.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MetadataPattern {
+    /// The type of metadata (e.g. "bio", "tov", "metadata").
+    #[serde(rename = "type")]
+    pub pattern_type: String,
+    /// Exact filename to match.
+    pub pattern: String,
+}
+
 /// Delivery/export configuration for a pipeline.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PipelineDeliveryConfig {
@@ -89,6 +141,11 @@ pub fn parse_delivery_config(
     json: &serde_json::Value,
 ) -> Result<PipelineDeliveryConfig, CoreError> {
     parse_json_field(json, "delivery_config")
+}
+
+/// Parse a `serde_json::Value` into a typed `ImportRules`.
+pub fn parse_import_rules(json: &serde_json::Value) -> Result<ImportRules, CoreError> {
+    parse_json_field(json, "import_rules")
 }
 
 #[cfg(test)]

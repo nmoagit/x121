@@ -121,10 +121,9 @@ async fn setup_hierarchy(pool: &PgPool, suffix: &str) -> (i64, i64) {
     let project = ProjectRepo::create(pool, &new_project(&format!("VVP_{suffix}")))
         .await
         .unwrap();
-    let avatar =
-        AvatarRepo::create(pool, &new_avatar(project.id, &format!("VVC_{suffix}")))
-            .await
-            .unwrap();
+    let avatar = AvatarRepo::create(pool, &new_avatar(project.id, &format!("VVC_{suffix}")))
+        .await
+        .unwrap();
     let scene_type = SceneTypeRepo::create(
         pool,
         &new_scene_type(Some(project.id), &format!("VVST_{suffix}")),

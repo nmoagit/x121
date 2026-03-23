@@ -13,9 +13,7 @@ use x121_db::models::image::CreateImageVariant;
 use x121_db::models::project::CreateProject;
 use x121_db::models::scene::CreateScene;
 use x121_db::models::scene_type::CreateSceneType;
-use x121_db::repositories::{
-    AvatarRepo, ImageVariantRepo, ProjectRepo, SceneRepo, SceneTypeRepo,
-};
+use x121_db::repositories::{AvatarRepo, ImageVariantRepo, ProjectRepo, SceneRepo, SceneTypeRepo};
 
 // ---------------------------------------------------------------------------
 // Helpers

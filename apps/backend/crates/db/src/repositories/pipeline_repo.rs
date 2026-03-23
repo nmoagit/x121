@@ -7,7 +7,7 @@ use crate::models::pipeline::{CreatePipeline, Pipeline, UpdatePipeline};
 
 /// Column list shared across queries to avoid repetition.
 const COLUMNS: &str = "id, code, name, description, seed_slots, naming_rules, delivery_config, \
-     is_active, created_at, updated_at";
+     import_rules, is_active, created_at, updated_at";
 
 /// Provides CRUD operations for pipelines.
 pub struct PipelineRepo;
@@ -16,8 +16,8 @@ impl PipelineRepo {
     /// Insert a new pipeline, returning the created row.
     pub async fn create(pool: &PgPool, input: &CreatePipeline) -> Result<Pipeline, sqlx::Error> {
         let query = format!(
-            "INSERT INTO pipelines (code, name, description, seed_slots, naming_rules, delivery_config) \
-             VALUES ($1, $2, $3, $4, COALESCE($5, '{{}}'::jsonb), COALESCE($6, '{{}}'::jsonb)) \
+            "INSERT INTO pipelines (code, name, description, seed_slots, naming_rules, delivery_config, import_rules) \
+             VALUES ($1, $2, $3, $4, COALESCE($5, '{{}}'::jsonb), COALESCE($6, '{{}}'::jsonb), COALESCE($7, '{{}}'::jsonb)) \
              RETURNING {COLUMNS}"
         );
         sqlx::query_as::<_, Pipeline>(&query)
@@ -27,6 +27,7 @@ impl PipelineRepo {
             .bind(&input.seed_slots)
             .bind(&input.naming_rules)
             .bind(&input.delivery_config)
+            .bind(&input.import_rules)
             .fetch_one(pool)
             .await
     }
@@ -85,7 +86,8 @@ impl PipelineRepo {
                 seed_slots = COALESCE($4, seed_slots), \
                 naming_rules = COALESCE($5, naming_rules), \
                 delivery_config = COALESCE($6, delivery_config), \
-                is_active = COALESCE($7, is_active) \
+                import_rules = COALESCE($7, import_rules), \
+                is_active = COALESCE($8, is_active) \
              WHERE id = $1 \
              RETURNING {COLUMNS}"
         );
@@ -96,6 +98,7 @@ impl PipelineRepo {
             .bind(&input.seed_slots)
             .bind(&input.naming_rules)
             .bind(&input.delivery_config)
+            .bind(&input.import_rules)
             .bind(input.is_active)
             .fetch_optional(pool)
             .await

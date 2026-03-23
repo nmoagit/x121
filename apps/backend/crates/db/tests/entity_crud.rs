@@ -262,8 +262,7 @@ async fn test_duplicate_scene_triple_rejected(pool: PgPool) {
         .unwrap();
 
     // Second scene with same triple: should fail.
-    let result =
-        SceneRepo::create(&pool, &new_scene(avatar.id, scene_type.id, variant.id)).await;
+    let result = SceneRepo::create(&pool, &new_scene(avatar.id, scene_type.id, variant.id)).await;
     assert!(
         result.is_err(),
         "Duplicate (avatar_id, scene_type_id, image_variant_id) should fail"

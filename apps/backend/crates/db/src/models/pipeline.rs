@@ -17,6 +17,7 @@ pub struct Pipeline {
     pub seed_slots: serde_json::Value,
     pub naming_rules: serde_json::Value,
     pub delivery_config: serde_json::Value,
+    pub import_rules: serde_json::Value,
     pub is_active: bool,
     pub created_at: Timestamp,
     pub updated_at: Timestamp,
@@ -31,6 +32,7 @@ pub struct CreatePipeline {
     pub seed_slots: serde_json::Value,
     pub naming_rules: Option<serde_json::Value>,
     pub delivery_config: Option<serde_json::Value>,
+    pub import_rules: Option<serde_json::Value>,
 }
 
 /// DTO for updating an existing pipeline. All fields are optional.
@@ -41,5 +43,6 @@ pub struct UpdatePipeline {
     pub seed_slots: Option<serde_json::Value>,
     pub naming_rules: Option<serde_json::Value>,
     pub delivery_config: Option<serde_json::Value>,
+    pub import_rules: Option<serde_json::Value>,
     pub is_active: Option<bool>,
 }
