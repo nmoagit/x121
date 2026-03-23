@@ -17,6 +17,8 @@ use x121_db::models::status::ImageVariantStatus;
 use x121_db::repositories::ImageVariantRepo;
 
 use x121_core::activity::{ActivityLogEntry, ActivityLogLevel, ActivityLogSource};
+use x121_core::storage::pipeline_scoped_key;
+use x121_db::repositories::PipelineRepo;
 
 use crate::error::{AppError, AppResult};
 use crate::response::DataResponse;
@@ -25,14 +27,41 @@ use crate::state::AppState;
 /// Storage key prefix for variant image files.
 const VARIANT_KEY_PREFIX: &str = "variants";
 
+/// Build the storage key prefix for variants, optionally scoped to a pipeline.
+///
+/// With pipeline: `{pipeline_code}/variants`
+/// Without:       `variants`
+fn variant_key_prefix(pipeline_code: Option<&str>) -> String {
+    match pipeline_code {
+        Some(code) => pipeline_scoped_key(code, VARIANT_KEY_PREFIX),
+        None => VARIANT_KEY_PREFIX.to_string(),
+    }
+}
+
 /// Return the absolute path to the variant storage directory, creating it lazily.
 /// Uses the storage provider root so files go to the configured STORAGE_ROOT.
-async fn ensure_variant_dir(state: &AppState) -> AppResult<std::path::PathBuf> {
-    let abs = state.resolve_to_path(VARIANT_KEY_PREFIX).await?;
+/// When `pipeline_code` is provided, the directory is scoped under the pipeline.
+async fn ensure_variant_dir(
+    state: &AppState,
+    pipeline_code: Option<&str>,
+) -> AppResult<std::path::PathBuf> {
+    let prefix = variant_key_prefix(pipeline_code);
+    let abs = state.resolve_to_path(&prefix).await?;
     tokio::fs::create_dir_all(&abs)
         .await
         .map_err(|e| AppError::InternalError(e.to_string()))?;
     Ok(abs)
+}
+
+/// Look up the pipeline code for the given avatar. Returns `None` if the
+/// avatar or its pipeline doesn't exist (legacy data).
+async fn pipeline_code_for_avatar(
+    pool: &sqlx::PgPool,
+    avatar_id: DbId,
+) -> AppResult<Option<String>> {
+    PipelineRepo::code_for_avatar(pool, avatar_id)
+        .await
+        .map_err(|e| AppError::InternalError(e.to_string()))
 }
 
 // ---------------------------------------------------------------------------
@@ -319,8 +348,9 @@ pub async fn reimport_variant(
         )));
     }
 
-    // Store file
-    let storage_dir = ensure_variant_dir(&state).await?;
+    // Store file (pipeline-scoped, PRD-141)
+    let pc = pipeline_code_for_avatar(&state.pool, avatar_id).await?;
+    let storage_dir = ensure_variant_dir(&state, pc.as_deref()).await?;
 
     let stored_filename = format!(
         "variant_{avatar_id}_{id}_v{}_{}.{ext}",
@@ -333,7 +363,8 @@ pub async fn reimport_variant(
         .map_err(|e| AppError::InternalError(e.to_string()))?;
 
     // Store the storage key (not absolute path) in the DB.
-    let storage_key = format!("{VARIANT_KEY_PREFIX}/{stored_filename}");
+    let prefix = variant_key_prefix(pc.as_deref());
+    let storage_key = format!("{prefix}/{stored_filename}");
 
     let (width, height) = images::image_dimensions(&data)
         .map(|(w, h)| (Some(w as i32), Some(h as i32)))
@@ -424,8 +455,9 @@ pub async fn upload_manual_variant(
         )));
     }
 
-    // Store file
-    let storage_dir = ensure_variant_dir(&state).await?;
+    // Store file (pipeline-scoped, PRD-141)
+    let pc = pipeline_code_for_avatar(&state.pool, avatar_id).await?;
+    let storage_dir = ensure_variant_dir(&state, pc.as_deref()).await?;
 
     let stored_filename = format!(
         "variant_{avatar_id}_{vtype}_{}.{ext}",
@@ -437,7 +469,8 @@ pub async fn upload_manual_variant(
         .map_err(|e| AppError::InternalError(e.to_string()))?;
 
     // Store the storage key (not absolute path) in the DB.
-    let storage_key = format!("{VARIANT_KEY_PREFIX}/{stored_filename}");
+    let prefix = variant_key_prefix(pc.as_deref());
+    let storage_key = format!("{prefix}/{stored_filename}");
 
     // Auto-promote to hero if no hero exists yet for this avatar+variant_type.
     let existing_hero = ImageVariantRepo::find_hero(&state.pool, avatar_id, &vtype).await?;

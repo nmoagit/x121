@@ -204,6 +204,49 @@ pub fn estimate_retrieval_time_secs(file_size_bytes: u64, tier: &str) -> u64 {
 }
 
 // ---------------------------------------------------------------------------
+// Pipeline-scoped storage paths (PRD-141)
+// ---------------------------------------------------------------------------
+
+/// Build a pipeline-scoped storage key by prepending the pipeline code.
+///
+/// New format: `{pipeline_code}/{rest_of_key}`
+/// Old format: `{rest_of_key}` (no prefix)
+///
+/// # Examples
+///
+/// ```
+/// use x121_core::storage::pipeline_scoped_key;
+/// assert_eq!(pipeline_scoped_key("x121", "variants/file.png"), "x121/variants/file.png");
+/// ```
+pub fn pipeline_scoped_key(pipeline_code: &str, key: &str) -> String {
+    format!("{pipeline_code}/{key}")
+}
+
+/// Resolve a storage key with backward-compatible fallback for pre-migration files.
+///
+/// Tries the key as-is first. If the file does not exist, strips the first path
+/// segment (assumed to be a pipeline code) and tries the remainder. This allows
+/// newly written pipeline-prefixed keys to coexist with legacy un-prefixed keys.
+///
+/// Returns the key that should be used for the lookup (not a full filesystem path).
+pub async fn resolve_storage_key(provider: &dyn StorageProvider, key: &str) -> String {
+    // Try the key verbatim first.
+    if provider.exists(key).await.unwrap_or(false) {
+        return key.to_string();
+    }
+
+    // Fallback: strip the first segment (pipeline code) and try the legacy path.
+    if let Some((_pipeline, rest)) = key.split_once('/') {
+        if provider.exists(rest).await.unwrap_or(false) {
+            return rest.to_string();
+        }
+    }
+
+    // Neither exists — return the original key (will 404 naturally).
+    key.to_string()
+}
+
+// ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
 
@@ -317,6 +360,22 @@ mod tests {
     fn retrieval_time_minimum_is_one() {
         assert_eq!(estimate_retrieval_time_secs(0, "hot"), 1);
         assert_eq!(estimate_retrieval_time_secs(100, "cold"), 1);
+    }
+
+    #[test]
+    fn pipeline_scoped_key_prefixes_code() {
+        assert_eq!(
+            pipeline_scoped_key("x121", "variants/file.png"),
+            "x121/variants/file.png"
+        );
+    }
+
+    #[test]
+    fn pipeline_scoped_key_nested_path() {
+        assert_eq!(
+            pipeline_scoped_key("y122", "thumbnails/scene/1/frame.jpg"),
+            "y122/thumbnails/scene/1/frame.jpg"
+        );
     }
 
     // Status enum ID tests live in x121_db::models::status (DRY-220).

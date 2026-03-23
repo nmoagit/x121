@@ -76,4 +76,27 @@ impl AppState {
         let abs = url.strip_prefix("file://").unwrap_or(&url);
         Ok(std::path::PathBuf::from(abs))
     }
+
+    /// Resolve a storage key with backward-compatible fallback (PRD-141).
+    ///
+    /// Tries the key as-is first. If the file doesn't exist, strips the first
+    /// path segment (assumed to be a pipeline code) and retries. This allows
+    /// pipeline-prefixed keys to coexist with legacy un-prefixed keys during
+    /// the migration period.
+    ///
+    /// Returns the resolved absolute filesystem path.
+    pub async fn resolve_to_path_with_fallback(
+        &self,
+        key: &str,
+    ) -> Result<std::path::PathBuf, crate::error::AppError> {
+        if std::path::Path::new(key).is_absolute() {
+            return Ok(std::path::PathBuf::from(key));
+        }
+
+        let provider = self.storage_provider().await;
+        let resolved = x121_core::storage::resolve_storage_key(provider.as_ref(), key).await;
+        let url = provider.presigned_url(&resolved, 3600).await?;
+        let abs = url.strip_prefix("file://").unwrap_or(&url);
+        Ok(std::path::PathBuf::from(abs))
+    }
 }
