@@ -36,9 +36,6 @@ import { variantImageUrl, variantThumbnailUrl } from "@/features/images/utils";
 import { ProgressiveImage  } from "@/components/primitives";
 import { TrackImageCard } from "./TrackImageCard";
 import { TRACK_TEXT_COLORS } from "@/lib/ui-classes";
-import { usePipelineContextSafe } from "@/features/pipelines";
-import { useProject } from "@/features/projects/hooks/use-projects";
-import { useSingleTrack } from "@/features/scene-catalogue/hooks/use-single-track";
 import { useTrackImageActions } from "./useTrackImageActions";
 
 /* --------------------------------------------------------------------------
@@ -132,6 +129,8 @@ export function AvatarImagesTab({ avatarId, projectId }: AvatarImagesTabProps) {
     activeTracks,
     trackImageData,
     toplessHeroExists,
+    seedSlotNames,
+    isSingleTrack,
     confirmGenerateTrack,
     setConfirmGenerateTrack,
     handleGenerateTrackImage,
@@ -139,11 +138,6 @@ export function AvatarImagesTab({ avatarId, projectId }: AvatarImagesTabProps) {
     handleUploadTrackImage,
     generating,
   } = useTrackImageActions(avatarId, projectId);
-
-  const pipelineCtx = usePipelineContextSafe();
-  const { data: projectData } = useProject(projectId ?? 0);
-  const resolvedPipelineId = pipelineCtx?.pipelineId ?? projectData?.pipeline_id ?? undefined;
-  const { isSingleTrack } = useSingleTrack(resolvedPipelineId);
   const [detailTrackIndex, setDetailTrackIndex] = useState<number | null>(null);
   const [annotatingVariant, setAnnotatingVariant] = useState<ImageVariant | null>(null);
 
@@ -164,14 +158,19 @@ export function AvatarImagesTab({ avatarId, projectId }: AvatarImagesTabProps) {
   // Current detail track data
   const detailTrack = detailTrackIndex !== null ? trackImageData[detailTrackIndex] : null;
 
-  // Variants for the currently open track
+  // Variants for the currently open track.
+  // For single-track pipelines, match seed slot names too (e.g. "reference" for "main" track).
   const trackVariants = useMemo(() => {
     if (!detailTrack || !allVariants) return [];
     const slug = detailTrack.track.slug.toLowerCase();
+    const matchTypes = new Set([slug]);
+    if (isSingleTrack) {
+      for (const name of seedSlotNames) matchTypes.add(name);
+    }
     return allVariants.filter(
-      (v) => v.variant_type?.toLowerCase() === slug && !v.deleted_at,
+      (v) => v.variant_type && matchTypes.has(v.variant_type.toLowerCase()) && !v.deleted_at,
     );
-  }, [detailTrack, allVariants]);
+  }, [detailTrack, allVariants, isSingleTrack, seedSlotNames]);
 
   return (
     <Stack gap={6}>
@@ -185,12 +184,10 @@ export function AvatarImagesTab({ avatarId, projectId }: AvatarImagesTabProps) {
                 key={track.id}
                 track={track}
                 heroVariant={hero}
-                canGenerate={isSingleTrack || track.slug.toLowerCase() === "clothed"}
-                generateEnabled={isSingleTrack ? hero != null : toplessHeroExists}
+                canGenerate={!isSingleTrack && track.slug.toLowerCase() === "clothed"}
+                generateEnabled={toplessHeroExists}
                 generateDisabledReason={
-                  isSingleTrack
-                    ? (!hero ? "Upload a seed image first" : null)
-                    : (!toplessHeroExists ? "Upload a topless hero image first" : null)
+                  !toplessHeroExists ? "Upload a topless hero image first" : null
                 }
                 onGenerate={() => handleGenerateTrackImage(track.slug)}
                 generating={generating}

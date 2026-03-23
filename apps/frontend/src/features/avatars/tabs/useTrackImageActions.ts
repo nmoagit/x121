@@ -121,6 +121,8 @@ export function useTrackImageActions(avatarId: number, projectId?: number) {
     activeTracks,
     trackImageData,
     toplessHeroExists,
+    seedSlotNames,
+    isSingleTrack,
     confirmGenerateTrack,
     setConfirmGenerateTrack,
     handleGenerateTrackImage,
