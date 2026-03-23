@@ -67,17 +67,19 @@ export interface SlotCardProps {
    -------------------------------------------------------------------------- */
 
 export function SlotCard({ slot, text, isDirty, isSaving, onTextChange, onSave }: SlotCardProps) {
-  const typeColor = slot.slot_type === "positive" ? "text-cyan-400" : "text-orange-400";
+  const isPositive = slot.slot_type === "positive";
+  const borderColor = isPositive ? "border-l-green-500" : "border-l-red-500";
+  const typeColor = isPositive ? "text-green-400" : "text-red-400";
 
   return (
     <div
-      className={TERMINAL_PANEL}
+      className={cn(TERMINAL_PANEL, "border-l-2", borderColor)}
       data-testid={`slot-card-${slot.id}`}
     >
       <div className={`${TERMINAL_HEADER} flex items-center gap-2`}>
         <span className={TERMINAL_HEADER_TITLE}>{slot.slot_label}</span>
         <span className={`font-mono text-[10px] uppercase tracking-wide ${typeColor}`}>
-          {slot.slot_type}
+          {isPositive ? "positive" : "negative"}
         </span>
         {!slot.is_user_editable && (
           <span className="font-mono text-[10px] text-[var(--color-text-muted)]" aria-label="Read only">

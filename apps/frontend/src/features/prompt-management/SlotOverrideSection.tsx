@@ -38,18 +38,27 @@ export function SlotOverrideSection({
   onNotesChange,
 }: SlotOverrideSectionProps) {
   const hasOverride = !!draft.override_text;
+  const isPositive = slot.slot_type === "positive";
+  const borderColor = isPositive ? "border-l-green-500" : "border-l-red-500";
+  const typeColor = isPositive ? "text-green-400" : "text-red-400";
 
   return (
     <div
       className={cn(
-        "rounded-[var(--radius-md)] border border-[var(--color-border-default)]",
+        "rounded-[var(--radius-md)] border border-[var(--color-border-default)] border-l-2",
+        borderColor,
         "bg-[var(--color-surface-primary)] p-4",
       )}
       data-testid={`override-section-${slot.id}`}
     >
-      <h4 className="text-sm font-medium text-[var(--color-text-primary)] mb-2">
-        {slot.slot_label}
-      </h4>
+      <div className="flex items-center gap-2 mb-2">
+        <h4 className="text-sm font-medium text-[var(--color-text-primary)]">
+          {slot.slot_label}
+        </h4>
+        <span className={cn("font-mono text-[10px] uppercase tracking-wide", typeColor)}>
+          {isPositive ? "positive" : "negative"}
+        </span>
+      </div>
 
       {/* Base text (read-only) */}
       <div className="mb-3">

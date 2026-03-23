@@ -263,7 +263,7 @@ function WorkflowPromptSection({
   }, [drafts, onSave, sceneTypeId]);
 
   const editableSlots = useMemo(
-    () => slots?.filter((s: WorkflowPromptSlot) => s.is_user_editable) ?? [],
+    () => (slots?.filter((s: WorkflowPromptSlot) => s.is_user_editable) ?? []).sort((a: WorkflowPromptSlot, b: WorkflowPromptSlot) => { const r = (s: WorkflowPromptSlot) => (s.slot_type === "positive" ? 0 : 1); return r(a) - r(b) || a.sort_order - b.sort_order; }),
     [slots],
   );
 
