@@ -35,6 +35,7 @@ pub const ALL_TOKENS: &[&str] = &[
     "index_suffix",
     "avatar_slug",
     "project_slug",
+    "pipeline_code",
     "date_compact",
     "version",
     "ext",
@@ -77,6 +78,8 @@ pub struct NamingContext {
     pub metadata_type: Option<String>,
     /// Sequence number for ordered artifacts.
     pub sequence: Option<u32>,
+    /// Pipeline code slug, e.g. `"x121"`, `"y122"`.
+    pub pipeline_code: Option<String>,
     /// Pipeline prefix rules: maps track slug to its filename prefix.
     /// E.g. `{"topless": "topless_"}`. When set, the `variant_prefix` token
     /// looks up the variant_label in this map instead of using a hardcoded check.
@@ -97,6 +100,8 @@ pub enum NamingError {
     EmptyResult,
     /// No active rule found for the requested category.
     RuleNotFound(String),
+    /// No template found for the requested category in any hierarchy tier.
+    UnknownCategory(String),
 }
 
 impl fmt::Display for NamingError {
@@ -107,6 +112,9 @@ impl fmt::Display for NamingError {
             }
             Self::EmptyResult => write!(f, "Template resolved to an empty filename"),
             Self::RuleNotFound(cat) => write!(f, "No active naming rule for category '{cat}'"),
+            Self::UnknownCategory(cat) => {
+                write!(f, "No template found for category '{cat}' in any tier")
+            }
         }
     }
 }
@@ -327,6 +335,40 @@ pub fn resolve_template(template: &str, ctx: &NamingContext) -> Result<ResolvedN
     })
 }
 
+/// Resolve a naming template through a three-tier hierarchy:
+///
+/// 1. **Project override** — checked first (most specific)
+/// 2. **Pipeline override** — checked second
+/// 3. **Platform default** — checked last (least specific)
+///
+/// Returns the resolved name using the first template found in the hierarchy.
+/// Returns [`NamingError::UnknownCategory`] if no tier contains the category.
+pub fn resolve_template_with_hierarchy(
+    category: &str,
+    platform_defaults: &HashMap<String, String>,
+    pipeline_templates: Option<&HashMap<String, String>>,
+    project_templates: Option<&HashMap<String, String>>,
+    ctx: &NamingContext,
+) -> Result<ResolvedName, NamingError> {
+    // Try project first (most specific).
+    if let Some(templates) = project_templates {
+        if let Some(template) = templates.get(category) {
+            return resolve_template(template, ctx);
+        }
+    }
+    // Try pipeline.
+    if let Some(templates) = pipeline_templates {
+        if let Some(template) = templates.get(category) {
+            return resolve_template(template, ctx);
+        }
+    }
+    // Fall back to platform default.
+    if let Some(template) = platform_defaults.get(category) {
+        return resolve_template(template, ctx);
+    }
+    Err(NamingError::UnknownCategory(category.to_string()))
+}
+
 /// Build a token-name to resolved-value map from the naming context.
 fn build_token_map(ctx: &NamingContext) -> HashMap<String, String> {
     let mut map = HashMap::new();
@@ -395,6 +437,12 @@ fn build_token_map(ctx: &NamingContext) -> HashMap<String, String> {
     // project_slug
     if let Some(ref name) = ctx.project_name {
         map.insert("project_slug".to_string(), slugify(name));
+    }
+
+    // pipeline_code (also aliased as `pipeline` for convenience)
+    if let Some(ref code) = ctx.pipeline_code {
+        map.insert("pipeline_code".to_string(), code.clone());
+        map.insert("pipeline".to_string(), code.clone());
     }
 
     // date_compact
@@ -743,5 +791,130 @@ mod tests {
         };
         let result = resolve_template("{project_slug}/{avatar_slug}", &ctx).unwrap();
         assert_eq!(result.filename, "project_alpha/chloe");
+    }
+
+    // -- Pipeline code token --
+
+    #[test]
+    fn pipeline_code_token_resolves() {
+        let ctx = NamingContext {
+            pipeline_code: Some("x121".to_string()),
+            avatar_name: Some("Chloe".to_string()),
+            ..Default::default()
+        };
+        let result = resolve_template("{pipeline_code}_{avatar_slug}.mp4", &ctx).unwrap();
+        assert_eq!(result.filename, "x121_chloe.mp4");
+    }
+
+    #[test]
+    fn pipeline_alias_token_resolves() {
+        let ctx = NamingContext {
+            pipeline_code: Some("y122".to_string()),
+            ..Default::default()
+        };
+        let result = resolve_template("{pipeline}_output.mp4", &ctx).unwrap();
+        assert_eq!(result.filename, "y122_output.mp4");
+    }
+
+    // -- Template hierarchy resolution --
+
+    fn make_defaults() -> HashMap<String, String> {
+        let mut m = HashMap::new();
+        m.insert(
+            "delivery_video".to_string(),
+            "{scene_type_slug}.mp4".to_string(),
+        );
+        m.insert(
+            "delivery_image".to_string(),
+            "{variant_label}.{ext}".to_string(),
+        );
+        m
+    }
+
+    fn make_pipeline_templates() -> HashMap<String, String> {
+        let mut m = HashMap::new();
+        m.insert(
+            "delivery_video".to_string(),
+            "{pipeline_code}_{scene_type_slug}.mp4".to_string(),
+        );
+        m
+    }
+
+    fn make_project_templates() -> HashMap<String, String> {
+        let mut m = HashMap::new();
+        m.insert(
+            "delivery_video".to_string(),
+            "{project_slug}_{scene_type_slug}.mp4".to_string(),
+        );
+        m
+    }
+
+    #[test]
+    fn hierarchy_project_overrides_pipeline() {
+        let defaults = make_defaults();
+        let pipeline = make_pipeline_templates();
+        let project = make_project_templates();
+        let ctx = NamingContext {
+            scene_type_name: Some("Dance".to_string()),
+            project_name: Some("Alpha".to_string()),
+            pipeline_code: Some("x121".to_string()),
+            ..Default::default()
+        };
+        let result = resolve_template_with_hierarchy(
+            "delivery_video",
+            &defaults,
+            Some(&pipeline),
+            Some(&project),
+            &ctx,
+        )
+        .unwrap();
+        assert_eq!(result.filename, "alpha_dance.mp4");
+    }
+
+    #[test]
+    fn hierarchy_pipeline_overrides_platform() {
+        let defaults = make_defaults();
+        let pipeline = make_pipeline_templates();
+        let ctx = NamingContext {
+            scene_type_name: Some("Idle".to_string()),
+            pipeline_code: Some("x121".to_string()),
+            ..Default::default()
+        };
+        let result = resolve_template_with_hierarchy(
+            "delivery_video",
+            &defaults,
+            Some(&pipeline),
+            None,
+            &ctx,
+        )
+        .unwrap();
+        assert_eq!(result.filename, "x121_idle.mp4");
+    }
+
+    #[test]
+    fn hierarchy_falls_back_to_platform_default() {
+        let defaults = make_defaults();
+        let ctx = NamingContext {
+            variant_label: Some("clothed".to_string()),
+            ext: Some("png".to_string()),
+            ..Default::default()
+        };
+        let result =
+            resolve_template_with_hierarchy("delivery_image", &defaults, None, None, &ctx).unwrap();
+        assert_eq!(result.filename, "clothed.png");
+    }
+
+    #[test]
+    fn hierarchy_unknown_category_errors() {
+        let defaults = make_defaults();
+        let ctx = NamingContext::default();
+        let result =
+            resolve_template_with_hierarchy("nonexistent_category", &defaults, None, None, &ctx);
+        assert_eq!(
+            result,
+            Err(NamingError::UnknownCategory(
+                "nonexistent_category".to_string()
+            ))
+        );
     }
 }

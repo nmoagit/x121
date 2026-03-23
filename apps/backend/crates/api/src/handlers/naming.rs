@@ -363,6 +363,7 @@ pub async fn preview(
         frame_number: input.frame_number,
         metadata_type: input.metadata_type,
         sequence: input.sequence,
+        pipeline_code: None,
         prefix_rules: None,
     };
 
@@ -478,5 +479,10 @@ fn naming_error_to_app_error(e: NamingError) -> AppError {
         NamingError::RuleNotFound(cat) => AppError::Core(x121_core::error::CoreError::Validation(
             format!("No active naming rule for category: {cat}"),
         )),
+        NamingError::UnknownCategory(cat) => {
+            AppError::Core(x121_core::error::CoreError::Validation(format!(
+                "No template found for category '{cat}' in any tier"
+            )))
+        }
     }
 }

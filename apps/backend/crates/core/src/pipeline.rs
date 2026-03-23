@@ -31,6 +31,11 @@ pub struct PipelineNamingRules {
     /// Suffix appended for transition segments.
     #[serde(default)]
     pub transition_suffix: String,
+    /// Per-category naming templates that override platform defaults.
+    /// Keys are naming categories (e.g. `"delivery_video"`, `"delivery_image"`),
+    /// values are template strings.
+    #[serde(default)]
+    pub templates: HashMap<String, String>,
 }
 
 /// Import rules that define how files are matched during bulk import.

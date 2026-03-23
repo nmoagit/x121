@@ -198,6 +198,7 @@ mod tests {
                     .map(|(k, v)| (k.to_string(), v.to_string()))
                     .collect(),
                 transition_suffix: transition.to_string(),
+                templates: std::collections::HashMap::new(),
             }
         }
 

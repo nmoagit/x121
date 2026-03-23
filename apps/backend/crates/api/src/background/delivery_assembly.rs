@@ -128,18 +128,20 @@ async fn run_pipeline(
         .await?
         .ok_or(PipelineError::msg("Project not found"))?;
 
-    // Load pipeline naming rules for dynamic prefix resolution.
-    let prefix_rules: Option<std::collections::HashMap<String, String>> = if let Ok(Some(
-        pipeline,
-    )) =
-        PipelineRepo::find_by_id(&state.pool, project.pipeline_id).await
-    {
-        x121_core::pipeline::parse_naming_rules(&pipeline.naming_rules)
-            .ok()
-            .map(|rules| rules.prefix_rules)
-    } else {
-        None
-    };
+    // Load pipeline for naming rules, prefix resolution, and code.
+    let pipeline_row = PipelineRepo::find_by_id(&state.pool, project.pipeline_id)
+        .await
+        .ok()
+        .flatten();
+    let pipeline_naming_rules = pipeline_row
+        .as_ref()
+        .and_then(|p| x121_core::pipeline::parse_naming_rules(&p.naming_rules).ok());
+    let prefix_rules: Option<std::collections::HashMap<String, String>> = pipeline_naming_rules
+        .as_ref()
+        .map(|r| r.prefix_rules.clone());
+    let pipeline_templates: Option<std::collections::HashMap<String, String>> =
+        pipeline_naming_rules.as_ref().map(|r| r.templates.clone());
+    let pipeline_code: Option<String> = pipeline_row.as_ref().map(|p| p.code.clone());
 
     // Load format profile.
     let profile = OutputFormatProfileRepo::find_by_id(&state.pool, export.format_profile_id)
@@ -183,21 +185,48 @@ async fn run_pipeline(
     // -----------------------------------------------------------------------
     // Phase 1: Assembling — collect all final videos with naming context
     // -----------------------------------------------------------------------
-    let project_slug = naming_engine::slugify(&project.name);
+    // Build platform-default and project-override template maps for the
+    // naming hierarchy (platform → pipeline → project).
+    let delivery_categories = [
+        "delivery_video",
+        "delivery_image",
+        "delivery_folder",
+        "delivery_metadata",
+    ];
 
-    // Load naming rule templates (fall back to sensible defaults).
-    let video_template = load_rule_template(&state.pool, "delivery_video", project_id)
-        .await
-        .unwrap_or_else(|| {
-            "{variant_prefix}{scene_type_slug}{clothes_off_suffix}{index_suffix}.mp4".into()
-        });
-    let image_template = load_rule_template(&state.pool, "delivery_image", project_id)
-        .await
-        .unwrap_or_else(|| "{variant_label}.{ext}".into());
-    let folder_template = load_rule_template(&state.pool, "delivery_folder", project_id).await;
-    let metadata_template = load_rule_template(&state.pool, "delivery_metadata", project_id)
-        .await
-        .unwrap_or_else(|| "metadata.json".into());
+    let mut platform_defaults: std::collections::HashMap<String, String> =
+        std::collections::HashMap::new();
+    let mut project_overrides: std::collections::HashMap<String, String> =
+        std::collections::HashMap::new();
+
+    // Hardcoded fallbacks baked into the platform defaults map.
+    platform_defaults.insert(
+        "delivery_video".to_string(),
+        "{variant_prefix}{scene_type_slug}{clothes_off_suffix}{index_suffix}.mp4".to_string(),
+    );
+    platform_defaults.insert(
+        "delivery_image".to_string(),
+        "{variant_label}.{ext}".to_string(),
+    );
+    platform_defaults.insert("delivery_metadata".to_string(), "metadata.json".to_string());
+
+    for cat in &delivery_categories {
+        // Global (platform) rule from DB overrides the hardcoded fallback.
+        if let Ok(Some(rule)) = NamingRuleRepo::find_active_rule(&state.pool, cat, None).await {
+            platform_defaults.insert(cat.to_string(), rule.template);
+        }
+        // Project-scoped rule (if any).
+        if let Ok(Some(rule)) =
+            NamingRuleRepo::find_active_rule(&state.pool, cat, Some(project_id)).await
+        {
+            // Only add as project override if it's actually project-scoped
+            // (find_active_rule returns project-scoped first, so when project_id
+            // is Some and a project rule exists, it differs from the global one).
+            if rule.project_id.is_some() {
+                project_overrides.insert(cat.to_string(), rule.template);
+            }
+        }
+    }
 
     let mut bundles: Vec<AvatarBundle> = Vec::new();
 
@@ -207,18 +236,23 @@ async fn run_pipeline(
         let char_slug = naming_engine::slugify(&avatar.name);
         let scenes = SceneRepo::list_by_avatar(&state.pool, avatar.id).await?;
 
-        // Resolve folder prefix from naming rules.
-        let folder_prefix = if let Some(ref tmpl) = folder_template {
+        // Resolve folder prefix through the naming hierarchy.
+        let folder_prefix = {
             let ctx = NamingContext {
                 project_name: Some(project.name.clone()),
                 avatar_name: Some(avatar.name.clone()),
+                pipeline_code: pipeline_code.clone(),
                 ..Default::default()
             };
-            naming_engine::resolve_template(tmpl, &ctx)
-                .map(|r| r.filename)
-                .unwrap_or_default()
-        } else {
-            String::new()
+            naming_engine::resolve_template_with_hierarchy(
+                "delivery_folder",
+                &platform_defaults,
+                pipeline_templates.as_ref(),
+                Some(&project_overrides),
+                &ctx,
+            )
+            .map(|r| r.filename)
+            .unwrap_or_default()
         };
 
         let mut videos = Vec::new();
@@ -296,14 +330,21 @@ async fn run_pipeline(
                 index,
                 avatar_name: Some(avatar.name.clone()),
                 project_name: Some(project.name.clone()),
+                pipeline_code: pipeline_code.clone(),
                 ext: Some(ext.to_string()),
                 prefix_rules: prefix_rules.clone(),
                 ..Default::default()
             };
 
-            let resolved_name = naming_engine::resolve_template(&video_template, &ctx)
-                .map(|r| r.filename)
-                .unwrap_or_else(|_| format!("scene_{}.{ext}", scene.id));
+            let resolved_name = naming_engine::resolve_template_with_hierarchy(
+                "delivery_video",
+                &platform_defaults,
+                pipeline_templates.as_ref(),
+                Some(&project_overrides),
+                &ctx,
+            )
+            .map(|r| r.filename)
+            .unwrap_or_else(|_| format!("scene_{}.{ext}", scene.id));
 
             videos.push(FileAsset {
                 resolved_name,
@@ -330,11 +371,18 @@ async fn run_pipeline(
                 ext: Some(ext.to_string()),
                 avatar_name: Some(avatar.name.clone()),
                 project_name: Some(project.name.clone()),
+                pipeline_code: pipeline_code.clone(),
                 ..Default::default()
             };
-            let resolved_name = naming_engine::resolve_template(&image_template, &ctx)
-                .map(|r| r.filename)
-                .unwrap_or_else(|_| format!("{label}.{ext}"));
+            let resolved_name = naming_engine::resolve_template_with_hierarchy(
+                "delivery_image",
+                &platform_defaults,
+                pipeline_templates.as_ref(),
+                Some(&project_overrides),
+                &ctx,
+            )
+            .map(|r| r.filename)
+            .unwrap_or_else(|_| format!("{label}.{ext}"));
             images.push(FileAsset {
                 resolved_name,
                 path: abs_path,
@@ -461,12 +509,21 @@ async fn run_pipeline(
     let delivery_dir = storage_root.join(format!("deliveries/{export_id}"));
     tokio::fs::create_dir_all(&delivery_dir).await?;
 
-    // Resolve metadata filename from naming rules.
+    // Resolve metadata filename through the naming hierarchy.
     let metadata_name = {
-        let ctx = NamingContext::default();
-        naming_engine::resolve_template(&metadata_template, &ctx)
-            .map(|r| r.filename)
-            .unwrap_or_else(|_| "metadata.json".into())
+        let ctx = NamingContext {
+            pipeline_code: pipeline_code.clone(),
+            ..Default::default()
+        };
+        naming_engine::resolve_template_with_hierarchy(
+            "delivery_metadata",
+            &platform_defaults,
+            pipeline_templates.as_ref(),
+            Some(&project_overrides),
+            &ctx,
+        )
+        .map(|r| r.filename)
+        .unwrap_or_else(|_| "metadata.json".into())
     };
 
     let mut rar_paths: Vec<PathBuf> = Vec::new();
@@ -629,24 +686,6 @@ fn check_cancelled(cancel: &CancellationToken) -> Result<(), PipelineError> {
     } else {
         Ok(())
     }
-}
-
-/// Load the active naming rule template for a category, with optional project override.
-async fn load_rule_template(
-    pool: &sqlx::PgPool,
-    category_name: &str,
-    project_id: DbId,
-) -> Option<String> {
-    // Try project-specific rule first, then global.
-    if let Ok(Some(rule)) =
-        NamingRuleRepo::find_active_rule(pool, category_name, Some(project_id)).await
-    {
-        return Some(rule.template);
-    }
-    if let Ok(Some(rule)) = NamingRuleRepo::find_active_rule(pool, category_name, None).await {
-        return Some(rule.template);
-    }
-    None
 }
 
 /// Dual-log: write to delivery_logs table + broadcast to activity console.

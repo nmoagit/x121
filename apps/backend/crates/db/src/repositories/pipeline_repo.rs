@@ -116,6 +116,45 @@ impl PipelineRepo {
         Ok(row.map(|(id,)| id))
     }
 
+    /// Look up the pipeline code for an avatar by joining through `projects`.
+    ///
+    /// Returns `None` if the avatar or its project/pipeline doesn't exist.
+    pub async fn code_for_avatar(
+        pool: &PgPool,
+        avatar_id: DbId,
+    ) -> Result<Option<String>, sqlx::Error> {
+        let row: Option<(String,)> = sqlx::query_as(
+            "SELECT p.code \
+             FROM pipelines p \
+             JOIN projects pr ON pr.pipeline_id = p.id \
+             JOIN avatars a ON a.project_id = pr.id \
+             WHERE a.id = $1",
+        )
+        .bind(avatar_id)
+        .fetch_optional(pool)
+        .await?;
+        Ok(row.map(|(code,)| code))
+    }
+
+    /// Look up the pipeline code for a project by joining through `pipelines`.
+    ///
+    /// Returns `None` if the project or pipeline doesn't exist.
+    pub async fn code_for_project(
+        pool: &PgPool,
+        project_id: DbId,
+    ) -> Result<Option<String>, sqlx::Error> {
+        let row: Option<(String,)> = sqlx::query_as(
+            "SELECT p.code \
+             FROM pipelines p \
+             JOIN projects pr ON pr.pipeline_id = p.id \
+             WHERE pr.id = $1",
+        )
+        .bind(project_id)
+        .fetch_optional(pool)
+        .await?;
+        Ok(row.map(|(code,)| code))
+    }
+
     /// Soft-delete a pipeline by setting `is_active = false`.
     ///
     /// Returns `true` if a row was deactivated.
