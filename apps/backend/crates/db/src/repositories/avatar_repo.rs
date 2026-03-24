@@ -127,7 +127,7 @@ impl AvatarRepo {
                  FROM avatars c
                  LEFT JOIN LATERAL (
                      SELECT iv.id
-                     FROM image_variants iv
+                     FROM media_variants iv
                      WHERE iv.avatar_id = c.id
                        AND iv.deleted_at IS NULL
                        AND iv.file_path IS NOT NULL
@@ -352,7 +352,7 @@ impl AvatarRepo {
              LEFT JOIN avatar_groups g ON g.id = c.group_id
              LEFT JOIN LATERAL (
                  SELECT iv.id
-                 FROM image_variants iv
+                 FROM media_variants iv
                  WHERE iv.avatar_id = c.id
                    AND iv.deleted_at IS NULL
                    AND iv.file_path IS NOT NULL
@@ -371,7 +371,7 @@ impl AvatarRepo {
              ) sc ON true
              LEFT JOIN LATERAL (
                  SELECT COUNT(*) AS cnt
-                 FROM image_variants iv
+                 FROM media_variants iv
                  WHERE iv.avatar_id = c.id
                    AND iv.deleted_at IS NULL
              ) ic ON true
@@ -478,7 +478,7 @@ impl AvatarRepo {
 
     /// Per-avatar deliverable status for a project.
     ///
-    /// Single query with LEFT JOINs + aggregates across image_variants, scenes,
+    /// Single query with LEFT JOINs + aggregates across media_variants, scenes,
     /// scene_video_versions, and avatar_metadata_versions. Excludes archived
     /// avatars (status_id = 3).
     pub async fn list_deliverable_status(
@@ -538,7 +538,7 @@ impl AvatarRepo {
                  SELECT
                      COUNT(*) AS total,
                      COUNT(*) FILTER (WHERE iv.status_id = 2) AS approved
-                 FROM image_variants iv
+                 FROM media_variants iv
                  WHERE iv.avatar_id = c.id AND iv.deleted_at IS NULL
              ) img ON true
              LEFT JOIN LATERAL (
@@ -608,7 +608,7 @@ impl AvatarRepo {
              ) meta ON true
              LEFT JOIN LATERAL (
                  SELECT iv.id
-                 FROM image_variants iv
+                 FROM media_variants iv
                  WHERE iv.avatar_id = c.id
                    AND iv.deleted_at IS NULL
                    AND iv.file_path IS NOT NULL

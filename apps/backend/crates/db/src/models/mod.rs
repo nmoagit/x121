@@ -57,7 +57,7 @@ pub mod group_scene_setting;
 pub mod hardware;
 pub mod hook;
 pub mod hook_execution_log;
-pub mod image;
+pub mod media;
 pub mod image_qa;
 pub mod importer;
 pub mod integrity_scan;

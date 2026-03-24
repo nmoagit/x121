@@ -19,7 +19,7 @@ use x121_db::models::test_shot::{
     BatchTestShotRequest, BatchTestShotResponse, CreateTestShot, GenerateTestShotRequest,
     PromoteResponse, TestShot,
 };
-use x121_db::repositories::{ImageVariantRepo, SceneRepo, TestShotRepo};
+use x121_db::repositories::{MediaVariantRepo, SceneRepo, TestShotRepo};
 
 use crate::error::{AppError, AppResult};
 use crate::middleware::auth::AuthUser;
@@ -204,7 +204,7 @@ pub async fn get_test_shot(
 ///
 /// Creates a real scene record from the test shot data: uses the shot's
 /// `avatar_id` and `scene_type_id`, and resolves the avatar's hero
-/// image variant for the `image_variant_id` field. Marks the test shot
+/// image variant for the `media_variant_id` field. Marks the test shot
 /// as promoted and links it to the newly created scene.
 pub async fn promote_test_shot(
     State(state): State<AppState>,
@@ -214,14 +214,14 @@ pub async fn promote_test_shot(
     let shot = ensure_test_shot_exists(&state.pool, id).await?;
     test_shot::can_promote(shot.is_promoted)?;
 
-    // Resolve the image_variant_id: prefer the hero variant for this avatar,
+    // Resolve the media_variant_id: prefer the hero variant for this avatar,
     // fall back to the most recently created variant.
-    let image_variant_id = resolve_image_variant(&state.pool, shot.avatar_id).await?;
+    let media_variant_id = resolve_image_variant(&state.pool, shot.avatar_id).await?;
 
     let create_scene = CreateScene {
         avatar_id: shot.avatar_id,
         scene_type_id: shot.scene_type_id,
-        image_variant_id: Some(image_variant_id),
+        media_variant_id: Some(media_variant_id),
         track_id: None,
         status_id: None,
         transition_mode: None,
@@ -264,7 +264,7 @@ pub async fn promote_test_shot(
 /// Prefers the hero variant (of any type), falling back to the most recently
 /// created variant. Returns an error if the avatar has no image variants.
 async fn resolve_image_variant(pool: &sqlx::PgPool, avatar_id: DbId) -> AppResult<DbId> {
-    let variants = ImageVariantRepo::list_by_avatar(pool, avatar_id).await?;
+    let variants = MediaVariantRepo::list_by_avatar(pool, avatar_id).await?;
 
     // Prefer the hero variant.
     if let Some(hero) = variants.iter().find(|v| v.is_hero) {

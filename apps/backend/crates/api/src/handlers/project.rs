@@ -328,7 +328,7 @@ pub async fn get_batch_variant_statuses(
 
     let rows = sqlx::query_as::<_, BatchVariantStatus>(
         "SELECT iv.avatar_id, iv.id, iv.variant_type, iv.status_id, iv.is_hero
-         FROM image_variants iv
+         FROM media_variants iv
          JOIN avatars c ON c.id = iv.avatar_id
          WHERE c.project_id = $1 AND c.deleted_at IS NULL AND iv.deleted_at IS NULL
          ORDER BY iv.avatar_id, iv.id",

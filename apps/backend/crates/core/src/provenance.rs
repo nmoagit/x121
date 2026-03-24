@@ -51,8 +51,8 @@ pub struct StalenessReason {
 /// parameters. The concatenation order is fixed and must not be changed
 /// after any receipts have been persisted.
 pub fn compute_inputs_hash(
-    source_image_hash: &str,
-    variant_image_hash: &str,
+    source_media_hash: &str,
+    variant_media_hash: &str,
     workflow_hash: &str,
     model_hash: &str,
     lora_configs: &[LoraConfig],
@@ -61,9 +61,9 @@ pub fn compute_inputs_hash(
     seed: i64,
 ) -> String {
     let mut material = String::new();
-    material.push_str(source_image_hash);
+    material.push_str(source_media_hash);
     material.push('|');
-    material.push_str(variant_image_hash);
+    material.push_str(variant_media_hash);
     material.push('|');
     material.push_str(workflow_hash);
     material.push('|');

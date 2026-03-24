@@ -8,7 +8,7 @@ use crate::models::avatar_media_assignment::{
 };
 
 /// Column list for the `avatar_media_assignments` table.
-const COLUMNS: &str = "id, avatar_id, media_slot_id, scene_type_id, track_id, image_variant_id, \
+const COLUMNS: &str = "id, avatar_id, media_slot_id, scene_type_id, track_id, media_variant_id, \
     file_path, media_type, is_passthrough, passthrough_track_id, notes, created_by, \
     created_at, updated_at";
 
@@ -23,7 +23,7 @@ impl AvatarMediaAssignmentRepo {
     ) -> Result<AvatarMediaAssignment, sqlx::Error> {
         let query = format!(
             "INSERT INTO avatar_media_assignments
-                (avatar_id, media_slot_id, scene_type_id, track_id, image_variant_id, file_path,
+                (avatar_id, media_slot_id, scene_type_id, track_id, media_variant_id, file_path,
                  media_type, is_passthrough, passthrough_track_id, notes, created_by)
              VALUES ($1, $2, $3, $4, $5, $6, COALESCE($7, 'image'),
                      COALESCE($8, false), $9, $10, $11)
@@ -34,7 +34,7 @@ impl AvatarMediaAssignmentRepo {
             .bind(input.media_slot_id)
             .bind(input.scene_type_id)
             .bind(input.track_id)
-            .bind(input.image_variant_id)
+            .bind(input.media_variant_id)
             .bind(&input.file_path)
             .bind(&input.media_type)
             .bind(input.is_passthrough)
@@ -105,7 +105,7 @@ impl AvatarMediaAssignmentRepo {
         let query = format!(
             "UPDATE avatar_media_assignments SET
                 scene_type_id = COALESCE($2, scene_type_id),
-                image_variant_id = COALESCE($3, image_variant_id),
+                media_variant_id = COALESCE($3, media_variant_id),
                 file_path = COALESCE($4, file_path),
                 media_type = COALESCE($5, media_type),
                 is_passthrough = COALESCE($6, is_passthrough),
@@ -117,7 +117,7 @@ impl AvatarMediaAssignmentRepo {
         sqlx::query_as::<_, AvatarMediaAssignment>(&query)
             .bind(id)
             .bind(input.scene_type_id)
-            .bind(input.image_variant_id)
+            .bind(input.media_variant_id)
             .bind(&input.file_path)
             .bind(&input.media_type)
             .bind(input.is_passthrough)

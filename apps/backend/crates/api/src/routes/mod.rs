@@ -281,7 +281,7 @@ use crate::ws;
 /// /avatars/{avatar_id}/derived-images        list, create
 /// /avatars/{avatar_id}/derived-images/{id}   get, update, delete
 /// /avatars/{avatar_id}/image-variants        list, create
-/// /avatars/{avatar_id}/image-variants/{id}   get, update, delete
+/// /avatars/{avatar_id}/media-variants/{id}   get, update, delete
 /// /avatars/{avatar_id}/metadata               get, update (PRD-66)
 /// /avatars/{avatar_id}/metadata/completeness  completeness status (PRD-66)
 /// /avatars/{avatar_id}/scenes                list, create
@@ -385,7 +385,7 @@ use crate::ws;
 ///
 /// /qa/check-types                                  list check types
 /// /qa/run                                          run QA checks (POST)
-/// /qa/image-variants/{id}/results                  get QA results
+/// /qa/media-variants/{id}/results                  get QA results
 /// /qa/avatars/{avatar_id}/source-qa-results  get source QA results
 /// /qa/projects/{project_id}/thresholds             get, update thresholds
 /// /qa/quality-gates/defaults                       studio QA defaults (GET, PRD-49)
@@ -948,13 +948,13 @@ pub fn api_routes() -> Router<AppState> {
         // Video streaming, metadata, and thumbnails.
         .nest("/videos", video::router())
         // Image variant utilities.
-        .route("/image-variants/browse", axum::routing::get(crate::handlers::image_variant::browse_variants))
-        .route("/image-variants/check-hashes", axum::routing::post(crate::handlers::image_variant::check_hashes))
-        .route("/image-variants/backfill-metadata", axum::routing::post(crate::handlers::image_variant::backfill_image_metadata))
-        .route("/image-variants/backfill-hashes", axum::routing::post(crate::handlers::image_variant::backfill_hashes))
-        .route("/image-variants/backfill-video-hashes", axum::routing::post(crate::handlers::image_variant::backfill_video_hashes))
-        .route("/image-variants/backfill-thumbnails", axum::routing::post(crate::handlers::image_variant::backfill_thumbnails))
-        .route("/image-variants/{id}/thumbnail", axum::routing::get(crate::handlers::image_variant::thumbnail))
+        .route("/media-variants/browse", axum::routing::get(crate::handlers::media_variant::browse_variants))
+        .route("/media-variants/check-hashes", axum::routing::post(crate::handlers::media_variant::check_hashes))
+        .route("/media-variants/backfill-metadata", axum::routing::post(crate::handlers::media_variant::backfill_media_metadata))
+        .route("/media-variants/backfill-hashes", axum::routing::post(crate::handlers::media_variant::backfill_hashes))
+        .route("/media-variants/backfill-video-hashes", axum::routing::post(crate::handlers::media_variant::backfill_video_hashes))
+        .route("/media-variants/backfill-thumbnails", axum::routing::post(crate::handlers::media_variant::backfill_thumbnails))
+        .route("/media-variants/{id}/thumbnail", axum::routing::get(crate::handlers::media_variant::thumbnail))
         // Background job execution engine (PRD-07, PRD-08, PRD-28, PRD-34, PRD-77).
         .nest("/jobs", jobs::router()
             .merge(checkpoints::checkpoint_routes())

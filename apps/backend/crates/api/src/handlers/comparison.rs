@@ -35,7 +35,7 @@ pub struct ComparisonCell {
     pub segment_id: Option<DbId>,
     pub scene_type_id: DbId,
     pub scene_type_name: String,
-    pub image_variant_id: DbId,
+    pub media_variant_id: DbId,
     pub status_id: i16,
     pub thumbnail_url: Option<String>,
     pub stream_url: Option<String>,
@@ -80,7 +80,7 @@ struct ComparisonRow {
     scene_id: DbId,
     scene_type_id: DbId,
     scene_type_name: String,
-    image_variant_id: DbId,
+    media_variant_id: DbId,
     status_id: i16,
     segment_id: Option<DbId>,
     quality_scores: Option<serde_json::Value>,
@@ -138,7 +138,7 @@ fn row_to_cell(row: ComparisonRow) -> ComparisonCell {
         segment_id: row.segment_id,
         scene_type_id: row.scene_type_id,
         scene_type_name: row.scene_type_name,
-        image_variant_id: row.image_variant_id,
+        media_variant_id: row.media_variant_id,
         status_id: row.status_id,
         thumbnail_url: thumb,
         stream_url: stream,
@@ -259,7 +259,7 @@ async fn fetch_comparison_rows(
     params: &SceneComparisonParams,
 ) -> AppResult<Vec<ComparisonRow>> {
     let variant_clause = if params.variant_id.is_some() {
-        "AND sc.image_variant_id = $3"
+        "AND sc.media_variant_id = $3"
     } else {
         ""
     };
@@ -271,7 +271,7 @@ async fn fetch_comparison_rows(
             sc.id AS scene_id,
             sc.scene_type_id,
             st.name AS scene_type_name,
-            sc.image_variant_id,
+            sc.media_variant_id,
             sc.status_id,
             seg.id AS segment_id,
             seg.quality_scores,
@@ -326,7 +326,7 @@ async fn fetch_avatar_scenes(
             sc.id AS scene_id,
             sc.scene_type_id,
             st.name AS scene_type_name,
-            sc.image_variant_id,
+            sc.media_variant_id,
             sc.status_id,
             seg.id AS segment_id,
             seg.quality_scores,

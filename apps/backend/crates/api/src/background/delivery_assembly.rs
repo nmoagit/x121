@@ -20,7 +20,7 @@ use x121_core::types::DbId;
 use x121_db::models::delivery_export::DeliveryExport;
 use x121_db::models::delivery_log::CreateDeliveryLog;
 use x121_db::repositories::{
-    AvatarMetadataVersionRepo, AvatarRepo, DeliveryExportRepo, ImageVariantRepo, NamingRuleRepo,
+    AvatarMetadataVersionRepo, AvatarRepo, DeliveryExportRepo, MediaVariantRepo, NamingRuleRepo,
     OutputFormatProfileRepo, PipelineRepo, ProjectDeliveryLogRepo, ProjectRepo, SceneRepo,
     SceneTypeRepo, SceneTypeTrackConfigRepo, SceneVideoVersionRepo, TrackRepo,
 };
@@ -353,9 +353,9 @@ async fn run_pipeline(
         }
 
         // Collect image variants (one per track/seed slot).
-        let image_variants = ImageVariantRepo::list_by_avatar(&state.pool, avatar.id).await?;
+        let media_variants = MediaVariantRepo::list_by_avatar(&state.pool, avatar.id).await?;
         let mut images = Vec::new();
-        for iv in &image_variants {
+        for iv in &media_variants {
             let abs_path = storage_root.join(&iv.file_path);
             if !abs_path.exists() {
                 continue;

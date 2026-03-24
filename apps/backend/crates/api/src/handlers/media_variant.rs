@@ -12,9 +12,9 @@ use x121_core::error::CoreError;
 use x121_core::hashing::sha256_hex;
 use x121_core::images;
 use x121_core::types::DbId;
-use x121_db::models::image::{CreateImageVariant, UpdateImageVariant};
-use x121_db::models::status::ImageVariantStatus;
-use x121_db::repositories::ImageVariantRepo;
+use x121_db::models::media::{CreateMediaVariant, UpdateMediaVariant};
+use x121_db::models::status::MediaVariantStatus;
+use x121_db::repositories::MediaVariantRepo;
 
 use x121_core::activity::{ActivityLogEntry, ActivityLogLevel, ActivityLogSource};
 use x121_core::storage::pipeline_scoped_key;
@@ -74,10 +74,10 @@ async fn pipeline_code_for_avatar(
 pub async fn create(
     State(state): State<AppState>,
     Path(avatar_id): Path<DbId>,
-    Json(mut input): Json<CreateImageVariant>,
+    Json(mut input): Json<CreateMediaVariant>,
 ) -> AppResult<impl IntoResponse> {
     input.avatar_id = avatar_id;
-    let variant = ImageVariantRepo::create(&state.pool, &input).await?;
+    let variant = MediaVariantRepo::create(&state.pool, &input).await?;
     Ok((StatusCode::CREATED, Json(DataResponse { data: variant })))
 }
 
@@ -88,9 +88,9 @@ pub async fn list_by_avatar(
     Query(filters): Query<VariantListFilters>,
 ) -> AppResult<impl IntoResponse> {
     let variants = if let Some(ref vt) = filters.variant_type {
-        ImageVariantRepo::list_by_avatar_and_type(&state.pool, avatar_id, vt).await?
+        MediaVariantRepo::list_by_avatar_and_type(&state.pool, avatar_id, vt).await?
     } else {
-        ImageVariantRepo::list_by_avatar(&state.pool, avatar_id).await?
+        MediaVariantRepo::list_by_avatar(&state.pool, avatar_id).await?
     };
     Ok(Json(DataResponse { data: variants }))
 }
@@ -106,10 +106,10 @@ pub async fn get_by_id(
     State(state): State<AppState>,
     Path((_avatar_id, id)): Path<(DbId, DbId)>,
 ) -> AppResult<impl IntoResponse> {
-    let variant = ImageVariantRepo::find_by_id(&state.pool, id)
+    let variant = MediaVariantRepo::find_by_id(&state.pool, id)
         .await?
         .ok_or(AppError::Core(CoreError::NotFound {
-            entity: "ImageVariant",
+            entity: "MediaVariant",
             id,
         }))?;
     Ok(Json(DataResponse { data: variant }))
@@ -119,12 +119,12 @@ pub async fn get_by_id(
 pub async fn update(
     State(state): State<AppState>,
     Path((_avatar_id, id)): Path<(DbId, DbId)>,
-    Json(input): Json<UpdateImageVariant>,
+    Json(input): Json<UpdateMediaVariant>,
 ) -> AppResult<impl IntoResponse> {
-    let variant = ImageVariantRepo::update(&state.pool, id, &input)
+    let variant = MediaVariantRepo::update(&state.pool, id, &input)
         .await?
         .ok_or(AppError::Core(CoreError::NotFound {
-            entity: "ImageVariant",
+            entity: "MediaVariant",
             id,
         }))?;
     Ok(Json(DataResponse { data: variant }))
@@ -135,12 +135,12 @@ pub async fn delete(
     State(state): State<AppState>,
     Path((_avatar_id, id)): Path<(DbId, DbId)>,
 ) -> AppResult<StatusCode> {
-    let deleted = ImageVariantRepo::soft_delete(&state.pool, id).await?;
+    let deleted = MediaVariantRepo::soft_delete(&state.pool, id).await?;
     if deleted {
         Ok(StatusCode::NO_CONTENT)
     } else {
         Err(AppError::Core(CoreError::NotFound {
-            entity: "ImageVariant",
+            entity: "MediaVariant",
             id,
         }))
     }
@@ -159,17 +159,17 @@ pub async fn approve_as_hero(
     Path((_avatar_id, id)): Path<(DbId, DbId)>,
 ) -> AppResult<impl IntoResponse> {
     // Validate variant exists and is in an approvable state.
-    let variant = ImageVariantRepo::find_by_id(&state.pool, id)
+    let variant = MediaVariantRepo::find_by_id(&state.pool, id)
         .await?
         .ok_or(AppError::Core(CoreError::NotFound {
-            entity: "ImageVariant",
+            entity: "MediaVariant",
             id,
         }))?;
 
     let status = variant.status_id;
-    let generated = ImageVariantStatus::Generated.id();
-    let editing = ImageVariantStatus::Editing.id();
-    let pending = ImageVariantStatus::Pending.id();
+    let generated = MediaVariantStatus::Generated.id();
+    let editing = MediaVariantStatus::Editing.id();
+    let pending = MediaVariantStatus::Pending.id();
 
     if status != generated && status != editing && status != pending {
         return Err(AppError::Core(CoreError::Validation(format!(
@@ -177,10 +177,10 @@ pub async fn approve_as_hero(
         ))));
     }
 
-    let updated = ImageVariantRepo::set_hero(&state.pool, id, ImageVariantStatus::Approved.id())
+    let updated = MediaVariantRepo::set_hero(&state.pool, id, MediaVariantStatus::Approved.id())
         .await?
         .ok_or(AppError::Core(CoreError::NotFound {
-            entity: "ImageVariant",
+            entity: "MediaVariant",
             id,
         }))?;
 
@@ -194,15 +194,15 @@ pub async fn unapprove_variant(
     State(state): State<AppState>,
     Path((_avatar_id, id)): Path<(DbId, DbId)>,
 ) -> AppResult<impl IntoResponse> {
-    let variant = ImageVariantRepo::find_by_id(&state.pool, id)
+    let variant = MediaVariantRepo::find_by_id(&state.pool, id)
         .await?
         .ok_or(AppError::Core(CoreError::NotFound {
-            entity: "ImageVariant",
+            entity: "MediaVariant",
             id,
         }))?;
 
-    let approved = ImageVariantStatus::Approved.id();
-    let rejected = ImageVariantStatus::Rejected.id();
+    let approved = MediaVariantStatus::Approved.id();
+    let rejected = MediaVariantStatus::Rejected.id();
     if variant.status_id != approved && variant.status_id != rejected {
         return Err(AppError::Core(CoreError::Validation(format!(
             "Variant must be approved or rejected to unapprove; current status_id={}",
@@ -210,10 +210,10 @@ pub async fn unapprove_variant(
         ))));
     }
 
-    let input = UpdateImageVariant {
-        status_id: Some(ImageVariantStatus::Pending.id()),
-        source_image_id: None,
-        derived_image_id: None,
+    let input = UpdateMediaVariant {
+        status_id: Some(MediaVariantStatus::Pending.id()),
+        source_media_id: None,
+        derived_media_id: None,
         variant_label: None,
         file_path: None,
         variant_type: None,
@@ -226,10 +226,10 @@ pub async fn unapprove_variant(
         generation_params: None,
     };
 
-    let updated = ImageVariantRepo::update(&state.pool, id, &input)
+    let updated = MediaVariantRepo::update(&state.pool, id, &input)
         .await?
         .ok_or(AppError::Core(CoreError::NotFound {
-            entity: "ImageVariant",
+            entity: "MediaVariant",
             id,
         }))?;
 
@@ -243,10 +243,10 @@ pub async fn reject_variant(
     State(state): State<AppState>,
     Path((_avatar_id, id)): Path<(DbId, DbId)>,
 ) -> AppResult<impl IntoResponse> {
-    let input = UpdateImageVariant {
-        status_id: Some(ImageVariantStatus::Rejected.id()),
-        source_image_id: None,
-        derived_image_id: None,
+    let input = UpdateMediaVariant {
+        status_id: Some(MediaVariantStatus::Rejected.id()),
+        source_media_id: None,
+        derived_media_id: None,
         variant_label: None,
         file_path: None,
         variant_type: None,
@@ -259,10 +259,10 @@ pub async fn reject_variant(
         generation_params: None,
     };
 
-    let variant = ImageVariantRepo::update(&state.pool, id, &input)
+    let variant = MediaVariantRepo::update(&state.pool, id, &input)
         .await?
         .ok_or(AppError::Core(CoreError::NotFound {
-            entity: "ImageVariant",
+            entity: "MediaVariant",
             id,
         }))?;
 
@@ -277,10 +277,10 @@ pub async fn export_for_editing(
     State(state): State<AppState>,
     Path((_avatar_id, id)): Path<(DbId, DbId)>,
 ) -> AppResult<impl IntoResponse> {
-    let input = UpdateImageVariant {
-        status_id: Some(ImageVariantStatus::Editing.id()),
-        source_image_id: None,
-        derived_image_id: None,
+    let input = UpdateMediaVariant {
+        status_id: Some(MediaVariantStatus::Editing.id()),
+        source_media_id: None,
+        derived_media_id: None,
         variant_label: None,
         file_path: None,
         variant_type: None,
@@ -293,10 +293,10 @@ pub async fn export_for_editing(
         generation_params: None,
     };
 
-    let variant = ImageVariantRepo::update(&state.pool, id, &input)
+    let variant = MediaVariantRepo::update(&state.pool, id, &input)
         .await?
         .ok_or(AppError::Core(CoreError::NotFound {
-            entity: "ImageVariant",
+            entity: "MediaVariant",
             id,
         }))?;
 
@@ -312,10 +312,10 @@ pub async fn reimport_variant(
     Path((avatar_id, id)): Path<(DbId, DbId)>,
     mut multipart: Multipart,
 ) -> AppResult<impl IntoResponse> {
-    let original = ImageVariantRepo::find_by_id(&state.pool, id)
+    let original = MediaVariantRepo::find_by_id(&state.pool, id)
         .await?
         .ok_or(AppError::Core(CoreError::NotFound {
-            entity: "ImageVariant",
+            entity: "MediaVariant",
             id,
         }))?;
 
@@ -370,12 +370,12 @@ pub async fn reimport_variant(
         .map(|(w, h)| (Some(w as i32), Some(h as i32)))
         .unwrap_or((None, None));
 
-    let input = CreateImageVariant {
+    let input = CreateMediaVariant {
         avatar_id,
-        source_image_id: original.source_image_id,
-        derived_image_id: original.derived_image_id,
+        source_media_id: original.source_media_id,
+        derived_media_id: original.derived_media_id,
         variant_label: original.variant_label.clone(),
-        status_id: Some(ImageVariantStatus::Generated.id()),
+        status_id: Some(MediaVariantStatus::Generated.id()),
         file_path: storage_key,
         variant_type: original.variant_type.clone(),
         provenance: Some(images::PROVENANCE_MANUALLY_EDITED.to_string()),
@@ -390,7 +390,7 @@ pub async fn reimport_variant(
         content_hash: Some(sha256_hex(&data)),
     };
 
-    let variant = ImageVariantRepo::create(&state.pool, &input).await?;
+    let variant = MediaVariantRepo::create(&state.pool, &input).await?;
     Ok((StatusCode::CREATED, Json(DataResponse { data: variant })))
 }
 
@@ -473,7 +473,7 @@ pub async fn upload_manual_variant(
     let storage_key = format!("{prefix}/{stored_filename}");
 
     // Auto-promote to hero if no hero exists yet for this avatar+variant_type.
-    let existing_hero = ImageVariantRepo::find_hero(&state.pool, avatar_id, &vtype).await?;
+    let existing_hero = MediaVariantRepo::find_hero(&state.pool, avatar_id, &vtype).await?;
     let should_be_hero = existing_hero.is_none();
 
     let (width, height) = images::image_dimensions(&data)
@@ -482,12 +482,12 @@ pub async fn upload_manual_variant(
 
     let content_hash = sha256_hex(&data);
 
-    let input = CreateImageVariant {
+    let input = CreateMediaVariant {
         avatar_id,
-        source_image_id: None,
-        derived_image_id: None,
+        source_media_id: None,
+        derived_media_id: None,
         variant_label: vlabel,
-        status_id: Some(ImageVariantStatus::Pending.id()),
+        status_id: Some(MediaVariantStatus::Pending.id()),
         file_path: storage_key,
         variant_type: Some(vtype),
         provenance: Some(images::PROVENANCE_MANUAL_UPLOAD.to_string()),
@@ -502,7 +502,7 @@ pub async fn upload_manual_variant(
         content_hash: Some(content_hash),
     };
 
-    let variant = ImageVariantRepo::create(&state.pool, &input).await?;
+    let variant = MediaVariantRepo::create(&state.pool, &input).await?;
 
     state.activity_broadcaster.publish(
         ActivityLogEntry::curated(
@@ -528,10 +528,10 @@ pub async fn variant_history(
     State(state): State<AppState>,
     Path((_avatar_id, id)): Path<(DbId, DbId)>,
 ) -> AppResult<impl IntoResponse> {
-    let chain = ImageVariantRepo::list_version_chain(&state.pool, id).await?;
+    let chain = MediaVariantRepo::list_version_chain(&state.pool, id).await?;
     if chain.is_empty() {
         return Err(AppError::Core(CoreError::NotFound {
-            entity: "ImageVariant",
+            entity: "MediaVariant",
             id,
         }));
     }
@@ -550,16 +550,16 @@ pub async fn thumbnail(
 ) -> AppResult<impl IntoResponse> {
     let size = params.size.unwrap_or(256).min(1024).max(32);
 
-    let variant = ImageVariantRepo::find_by_id(&state.pool, id)
+    let variant = MediaVariantRepo::find_by_id(&state.pool, id)
         .await?
         .ok_or(AppError::Core(CoreError::NotFound {
-            entity: "ImageVariant",
+            entity: "MediaVariant",
             id,
         }))?;
 
     if variant.file_path.is_empty() {
         return Err(AppError::Core(CoreError::NotFound {
-            entity: "ImageVariant",
+            entity: "MediaVariant",
             id,
         }));
     }
@@ -639,12 +639,12 @@ pub async fn generate_variants(
 
     let mut variants = Vec::with_capacity(count as usize);
     for _ in 0..count {
-        let input = CreateImageVariant {
+        let input = CreateMediaVariant {
             avatar_id,
-            source_image_id: None,
-            derived_image_id: None,
+            source_media_id: None,
+            derived_media_id: None,
             variant_label: label.clone(),
-            status_id: Some(ImageVariantStatus::Generating.id()),
+            status_id: Some(MediaVariantStatus::Generating.id()),
             file_path: String::new(),
             variant_type: Some(body.variant_type.clone()),
             provenance: Some(images::PROVENANCE_GENERATED.to_string()),
@@ -658,7 +658,7 @@ pub async fn generate_variants(
             generation_params: body.generation_params.clone(),
             content_hash: None,
         };
-        let variant = ImageVariantRepo::create(&state.pool, &input).await?;
+        let variant = MediaVariantRepo::create(&state.pool, &input).await?;
         variants.push(variant);
     }
 
@@ -699,7 +699,7 @@ pub async fn backfill_thumbnails(
     let limit = params.limit.unwrap_or(100).min(500) as i64;
     let offset = params.offset.unwrap_or(0) as i64;
 
-    let variants = ImageVariantRepo::list_with_files(&state.pool, limit, offset).await?;
+    let variants = MediaVariantRepo::list_with_files(&state.pool, limit, offset).await?;
 
     let total = variants.len();
     let mut generated = 0usize;
@@ -785,7 +785,7 @@ pub struct BackfillThumbnailResponse {
 
 /// An image variant enriched with avatar/project context for browsing.
 #[derive(Debug, Serialize, sqlx::FromRow)]
-pub struct ImageVariantBrowseItem {
+pub struct MediaVariantBrowseItem {
     // Variant fields
     pub id: DbId,
     pub avatar_id: DbId,
@@ -824,7 +824,7 @@ pub struct BrowseVariantsParams {
 /// Paginated browse result for image variants.
 #[derive(Debug, Serialize)]
 pub struct BrowseVariantsPage {
-    pub items: Vec<ImageVariantBrowseItem>,
+    pub items: Vec<MediaVariantBrowseItem>,
     pub total: i64,
 }
 
@@ -845,7 +845,7 @@ pub struct CheckHashesResponse {
 /// POST /api/v1/image-variants/check-hashes
 ///
 /// Given a list of SHA-256 content hashes, return those that already exist
-/// in either `image_variants` or `scene_video_versions`. Used by the frontend
+/// in either `media_variants` or `scene_video_versions`. Used by the frontend
 /// import flow to detect duplicates before uploading.
 pub async fn check_hashes(
     State(state): State<AppState>,
@@ -853,7 +853,7 @@ pub async fn check_hashes(
 ) -> AppResult<Json<DataResponse<CheckHashesResponse>>> {
     // Check image variants
     let mut existing_set = std::collections::HashSet::<String>::new();
-    let image_existing = ImageVariantRepo::find_existing_hashes(&state.pool, &body.hashes).await?;
+    let image_existing = MediaVariantRepo::find_existing_hashes(&state.pool, &body.hashes).await?;
     existing_set.extend(image_existing);
 
     // Also check scene video versions
@@ -888,7 +888,7 @@ pub async fn browse_variants(
     let show_disabled = params.show_disabled.unwrap_or(false);
 
     let base_from = "\
-        FROM image_variants iv \
+        FROM media_variants iv \
         JOIN avatars c ON c.id = iv.avatar_id AND c.deleted_at IS NULL \
         JOIN projects p ON p.id = c.project_id AND p.deleted_at IS NULL \
         WHERE iv.deleted_at IS NULL \
@@ -921,7 +921,7 @@ pub async fn browse_variants(
         ORDER BY iv.created_at DESC \
         LIMIT $7 OFFSET $8"
     );
-    let items = sqlx::query_as::<_, ImageVariantBrowseItem>(&items_sql)
+    let items = sqlx::query_as::<_, MediaVariantBrowseItem>(&items_sql)
         .bind(params.project_id)
         .bind(params.pipeline_id)
         .bind(&params.status_id)
@@ -943,13 +943,13 @@ pub async fn browse_variants(
 /// Backfill width/height for existing image variants that don't have dimensions
 /// yet. Reads image file bytes, extracts header dimensions, and updates the DB.
 /// Processes up to `limit` rows (default 50) per call.
-pub async fn backfill_image_metadata(
+pub async fn backfill_media_metadata(
     State(state): State<AppState>,
     Query(params): Query<BackfillParams>,
 ) -> AppResult<Json<BackfillMetadataResponse>> {
     let limit = params.limit.unwrap_or(50).min(200) as i64;
 
-    let variants = ImageVariantRepo::list_missing_dimensions(&state.pool, limit).await?;
+    let variants = MediaVariantRepo::list_missing_dimensions(&state.pool, limit).await?;
 
     let total = variants.len();
     let mut succeeded = 0usize;
@@ -981,7 +981,7 @@ pub async fn backfill_image_metadata(
             }
         };
 
-        match ImageVariantRepo::set_dimensions(&state.pool, variant.id, w as i32, h as i32).await {
+        match MediaVariantRepo::set_dimensions(&state.pool, variant.id, w as i32, h as i32).await {
             Ok(true) => succeeded += 1,
             _ => failed += 1,
         }
@@ -1009,7 +1009,7 @@ pub async fn backfill_hashes(
 
     // Find variants with no content_hash
     let variants: Vec<(DbId, String)> = sqlx::query_as(
-        "SELECT id, file_path FROM image_variants \
+        "SELECT id, file_path FROM media_variants \
          WHERE content_hash IS NULL AND deleted_at IS NULL \
          ORDER BY id LIMIT $1",
     )
@@ -1040,7 +1040,7 @@ pub async fn backfill_hashes(
 
         let hash = sha256_hex(&data);
 
-        match sqlx::query("UPDATE image_variants SET content_hash = $1 WHERE id = $2")
+        match sqlx::query("UPDATE media_variants SET content_hash = $1 WHERE id = $2")
             .bind(&hash)
             .bind(id)
             .execute(&state.pool)

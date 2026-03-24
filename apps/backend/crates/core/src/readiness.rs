@@ -77,7 +77,7 @@ impl ReadinessState {
 #[serde(rename_all = "snake_case", tag = "type")]
 pub enum MissingItemType {
     /// Avatar has no source image.
-    SourceImage,
+    SourceMedia,
     /// Avatar has no approved image variant.
     ApprovedVariant,
     /// Avatar metadata is incomplete.
@@ -92,7 +92,7 @@ impl MissingItemType {
     /// Human-readable label for display.
     pub fn label(&self) -> String {
         match self {
-            Self::SourceImage => "source_image".to_string(),
+            Self::SourceMedia => "source_media".to_string(),
             Self::ApprovedVariant => "approved_variant".to_string(),
             Self::MetadataComplete => "metadata_complete".to_string(),
             Self::MetadataApproved => "metadata_approved".to_string(),
@@ -109,7 +109,7 @@ impl MissingItemType {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ReadinessCriteria {
     /// Whether a source image is required.
-    pub source_image: bool,
+    pub source_media: bool,
     /// Whether at least one approved variant is required.
     pub approved_variant: bool,
     /// Whether metadata must be complete.
@@ -123,7 +123,7 @@ pub struct ReadinessCriteria {
 impl Default for ReadinessCriteria {
     fn default() -> Self {
         Self {
-            source_image: true,
+            source_media: true,
             approved_variant: true,
             metadata_complete: true,
             metadata_approved: true,
@@ -176,7 +176,7 @@ pub fn compute_readiness_pct(total_criteria: usize, met_criteria: usize) -> u8 {
 pub fn evaluate_readiness(
     avatar_id: DbId,
     criteria: &ReadinessCriteria,
-    has_source_image: bool,
+    has_source_media: bool,
     has_approved_variant: bool,
     metadata_complete: bool,
     has_metadata_approved: bool,
@@ -187,12 +187,12 @@ pub fn evaluate_readiness(
     let mut met = 0usize;
 
     // Check source image.
-    if criteria.source_image {
+    if criteria.source_media {
         total += 1;
-        if has_source_image {
+        if has_source_media {
             met += 1;
         } else {
-            missing.push(MissingItemType::SourceImage.label());
+            missing.push(MissingItemType::SourceMedia.label());
         }
     }
 
@@ -284,7 +284,7 @@ pub fn validate_readiness_state(state: &str) -> Result<(), String> {
 
 /// Validate criteria JSON structure.
 ///
-/// Expects `{"required_fields": {"source_image": bool, "approved_variant": bool,
+/// Expects `{"required_fields": {"source_media": bool, "approved_variant": bool,
 /// "metadata_complete": bool, "settings": [string, ...]}}`.
 pub fn validate_criteria_json(json: &serde_json::Value) -> Result<(), String> {
     let obj = json
@@ -299,7 +299,7 @@ pub fn validate_criteria_json(json: &serde_json::Value) -> Result<(), String> {
 
     // Validate boolean fields.
     for field in &[
-        "source_image",
+        "source_media",
         "approved_variant",
         "metadata_complete",
         "metadata_approved",
@@ -353,8 +353,8 @@ pub fn parse_criteria_json(json: &serde_json::Value) -> Result<ReadinessCriteria
 
     match required_fields {
         Some(rf) => {
-            let source_image = rf
-                .get("source_image")
+            let source_media = rf
+                .get("source_media")
                 .and_then(|v| v.as_bool())
                 .unwrap_or(false);
             let approved_variant = rf
@@ -380,7 +380,7 @@ pub fn parse_criteria_json(json: &serde_json::Value) -> Result<ReadinessCriteria
                 .unwrap_or_default();
 
             Ok(ReadinessCriteria {
-                source_image,
+                source_media,
                 approved_variant,
                 metadata_complete,
                 metadata_approved,
@@ -450,7 +450,7 @@ mod tests {
 
     #[test]
     fn missing_item_source_image_label() {
-        assert_eq!(MissingItemType::SourceImage.label(), "source_image");
+        assert_eq!(MissingItemType::SourceMedia.label(), "source_media");
     }
 
     #[test]
@@ -564,9 +564,9 @@ mod tests {
     }
 
     #[test]
-    fn missing_only_source_image() {
+    fn missing_only_source_media() {
         let criteria = ReadinessCriteria {
-            source_image: true,
+            source_media: true,
             approved_variant: false,
             metadata_complete: false,
             metadata_approved: false,
@@ -575,14 +575,14 @@ mod tests {
 
         let result = evaluate_readiness(1, &criteria, false, false, false, false, &[]);
         assert_eq!(result.state, ReadinessState::NotStarted);
-        assert_eq!(result.missing_items, vec!["source_image"]);
+        assert_eq!(result.missing_items, vec!["source_media"]);
         assert_eq!(result.readiness_pct, 0);
     }
 
     #[test]
     fn missing_single_setting_key() {
         let criteria = ReadinessCriteria {
-            source_image: false,
+            source_media: false,
             approved_variant: false,
             metadata_complete: false,
             metadata_approved: false,
@@ -606,7 +606,7 @@ mod tests {
     #[test]
     fn empty_criteria_is_ready() {
         let criteria = ReadinessCriteria {
-            source_image: false,
+            source_media: false,
             approved_variant: false,
             metadata_complete: false,
             metadata_approved: false,
@@ -672,7 +672,7 @@ mod tests {
     fn valid_criteria_json() {
         let json: serde_json::Value = serde_json::json!({
             "required_fields": {
-                "source_image": true,
+                "source_media": true,
                 "approved_variant": true,
                 "metadata_complete": true,
                 "settings": ["a2c4_model", "elevenlabs_voice"]
@@ -701,7 +701,7 @@ mod tests {
     fn criteria_json_boolean_field_not_bool_rejected() {
         let json: serde_json::Value = serde_json::json!({
             "required_fields": {
-                "source_image": "yes"
+                "source_media": "yes"
             }
         });
         let result = validate_criteria_json(&json);
@@ -751,7 +751,7 @@ mod tests {
     fn parse_full_criteria() {
         let json: serde_json::Value = serde_json::json!({
             "required_fields": {
-                "source_image": true,
+                "source_media": true,
                 "approved_variant": false,
                 "metadata_complete": true,
                 "settings": ["a2c4_model"]
@@ -759,7 +759,7 @@ mod tests {
         });
 
         let criteria = parse_criteria_json(&json).unwrap();
-        assert!(criteria.source_image);
+        assert!(criteria.source_media);
         assert!(!criteria.approved_variant);
         assert!(criteria.metadata_complete);
         assert_eq!(criteria.settings, vec!["a2c4_model"]);
@@ -772,7 +772,7 @@ mod tests {
         });
 
         let criteria = parse_criteria_json(&json).unwrap();
-        assert!(!criteria.source_image);
+        assert!(!criteria.source_media);
         assert!(!criteria.approved_variant);
         assert!(!criteria.metadata_complete);
         assert!(criteria.settings.is_empty());
@@ -783,7 +783,7 @@ mod tests {
         let json: serde_json::Value = serde_json::json!({});
         let criteria = parse_criteria_json(&json).unwrap();
         // Default: all true with 3 settings
-        assert!(criteria.source_image);
+        assert!(criteria.source_media);
         assert!(criteria.approved_variant);
         assert!(criteria.metadata_complete);
         assert_eq!(criteria.settings.len(), 3);
@@ -800,7 +800,7 @@ mod tests {
     #[test]
     fn default_criteria_has_all_enabled() {
         let criteria = ReadinessCriteria::default();
-        assert!(criteria.source_image);
+        assert!(criteria.source_media);
         assert!(criteria.approved_variant);
         assert!(criteria.metadata_complete);
         assert_eq!(criteria.settings.len(), 3);

@@ -15,7 +15,7 @@ async fn test_full_bootstrap(pool: PgPool) {
         "scene_statuses",
         "segment_statuses",
         "avatar_statuses",
-        "image_variant_statuses",
+        "media_variant_statuses",
         "scene_type_statuses",
     ];
 

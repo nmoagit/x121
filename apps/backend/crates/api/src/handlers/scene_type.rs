@@ -329,7 +329,7 @@ pub async fn generate_matrix(
     let existing_scenes: Vec<(DbId, DbId, DbId, i16)> = sqlx::query_as(
         "SELECT s.id, s.avatar_id, s.scene_type_id, s.status_id
          FROM scenes s
-         JOIN image_variants iv ON iv.id = s.image_variant_id
+         JOIN media_variants iv ON iv.id = s.media_variant_id
          WHERE s.avatar_id = ANY($1) AND s.scene_type_id = ANY($2) AND s.deleted_at IS NULL",
     )
     .bind(&char_ids)

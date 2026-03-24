@@ -200,7 +200,7 @@ async fn test_segment_crud_under_scene(pool: PgPool) {
     // Set up: project -> avatar, scene_type, image_variant -> scene.
     // We use the repository layer directly to avoid many HTTP calls for setup.
     use x121_db::models::avatar::CreateAvatar;
-    use x121_db::models::image::CreateImageVariant;
+    use x121_db::models::image::CreateMediaVariant;
     use x121_db::models::project::CreateProject;
     use x121_db::models::scene::CreateScene;
     use x121_db::models::scene_type::CreateSceneType;
@@ -257,12 +257,12 @@ async fn test_segment_crud_under_scene(pool: PgPool) {
     )
     .await
     .unwrap();
-    let variant = ImageVariantRepo::create(
+    let variant = MediaVariantRepo::create(
         &pool,
-        &CreateImageVariant {
+        &CreateMediaVariant {
             avatar_id: avatar.id,
-            source_image_id: None,
-            derived_image_id: None,
+            source_media_id: None,
+            derived_media_id: None,
             variant_label: "clothed".to_string(),
             status_id: None,
             file_path: "/img/f.png".to_string(),
@@ -285,7 +285,7 @@ async fn test_segment_crud_under_scene(pool: PgPool) {
         &CreateScene {
             avatar_id: avatar.id,
             scene_type_id: scene_type.id,
-            image_variant_id: variant.id,
+            media_variant_id: variant.id,
             status_id: None,
             transition_mode: None,
         },

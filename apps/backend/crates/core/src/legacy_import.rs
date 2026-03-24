@@ -271,7 +271,7 @@ pub enum GapType {
     /// Avatar folder exists but has no metadata file.
     MissingMetadata,
     /// Avatar metadata references an image that was not found.
-    MissingSourceImage,
+    MissingSourceMedia,
     /// Avatar folder has no scene subfolders.
     MissingScene,
 }
@@ -280,7 +280,7 @@ impl GapType {
     pub fn as_str(&self) -> &'static str {
         match self {
             Self::MissingMetadata => "missing_metadata",
-            Self::MissingSourceImage => "missing_source_image",
+            Self::MissingSourceMedia => "missing_source_media",
             Self::MissingScene => "missing_scene",
         }
     }
@@ -288,7 +288,7 @@ impl GapType {
     pub fn from_str(s: &str) -> Option<Self> {
         match s {
             "missing_metadata" => Some(Self::MissingMetadata),
-            "missing_source_image" => Some(Self::MissingSourceImage),
+            "missing_source_media" => Some(Self::MissingSourceMedia),
             "missing_scene" => Some(Self::MissingScene),
             _ => None,
         }
@@ -681,7 +681,7 @@ mod tests {
     fn gap_type_round_trip() {
         let types = [
             ("missing_metadata", GapType::MissingMetadata),
-            ("missing_source_image", GapType::MissingSourceImage),
+            ("missing_source_media", GapType::MissingSourceMedia),
             ("missing_scene", GapType::MissingScene),
         ];
         for (s, expected) in types {

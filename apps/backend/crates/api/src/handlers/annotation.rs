@@ -14,10 +14,10 @@ use x121_core::error::CoreError;
 use x121_core::search::{clamp_limit, clamp_offset};
 use x121_core::types::DbId;
 use x121_db::models::frame_annotation::{
-    CreateFrameAnnotation, CreateImageVariantAnnotation, CreateVersionAnnotation,
+    CreateFrameAnnotation, CreateMediaVariantAnnotation, CreateVersionAnnotation,
     UpdateFrameAnnotation,
 };
-use x121_db::repositories::{FrameAnnotationRepo, ImageVariantRepo, SceneVideoVersionRepo};
+use x121_db::repositories::{FrameAnnotationRepo, MediaVariantRepo, SceneVideoVersionRepo};
 
 use crate::error::{AppError, AppResult};
 use crate::handlers::segment::ensure_segment_exists;
@@ -368,12 +368,12 @@ Image-variant-scoped annotation handlers
 /// GET /avatars/{avatar_id}/image-variants/{id}/annotations
 ///
 /// List all annotations for an image variant, ordered by frame number.
-pub async fn list_image_variant_annotations(
+pub async fn list_media_variant_annotations(
     _auth: AuthUser,
     State(state): State<AppState>,
     Path((_avatar_id, variant_id)): Path<(DbId, DbId)>,
 ) -> AppResult<impl IntoResponse> {
-    let annotations = FrameAnnotationRepo::list_by_image_variant(&state.pool, variant_id).await?;
+    let annotations = FrameAnnotationRepo::list_by_media_variant(&state.pool, variant_id).await?;
     Ok(Json(DataResponse { data: annotations }))
 }
 
@@ -382,18 +382,18 @@ pub async fn list_image_variant_annotations(
 /// Upsert annotations for a specific frame on an image variant.
 /// Replaces all existing annotations for that variant+frame.
 /// Send an empty `annotations_json` array to clear annotations for the frame.
-pub async fn upsert_image_variant_annotation(
+pub async fn upsert_media_variant_annotation(
     auth: AuthUser,
     State(state): State<AppState>,
     Path((_avatar_id, variant_id, frame)): Path<(DbId, DbId, i32)>,
-    Json(input): Json<CreateImageVariantAnnotation>,
+    Json(input): Json<CreateMediaVariantAnnotation>,
 ) -> AppResult<impl IntoResponse> {
     // Ensure the image variant exists.
-    ImageVariantRepo::find_by_id(&state.pool, variant_id)
+    MediaVariantRepo::find_by_id(&state.pool, variant_id)
         .await?
         .ok_or_else(|| {
             AppError::Core(CoreError::NotFound {
-                entity: "ImageVariant",
+                entity: "MediaVariant",
                 id: variant_id,
             })
         })?;
@@ -401,7 +401,7 @@ pub async fn upsert_image_variant_annotation(
     validate_frame_number(frame).map_err(AppError::Core)?;
     validate_annotations_json(&input.annotations_json).map_err(AppError::Core)?;
 
-    let result = FrameAnnotationRepo::upsert_image_variant_frame(
+    let result = FrameAnnotationRepo::upsert_media_variant_frame(
         &state.pool,
         variant_id,
         auth.user_id,
@@ -412,7 +412,7 @@ pub async fn upsert_image_variant_annotation(
 
     tracing::info!(
         user_id = auth.user_id,
-        image_variant_id = variant_id,
+        media_variant_id = variant_id,
         frame_number = frame,
         "Image variant annotation upserted"
     );
@@ -428,18 +428,18 @@ pub async fn upsert_image_variant_annotation(
 /// DELETE /avatars/{avatar_id}/image-variants/{id}/annotations/{frame}
 ///
 /// Delete all annotations for a specific frame on an image variant.
-pub async fn delete_image_variant_frame_annotations(
+pub async fn delete_media_variant_frame_annotations(
     auth: AuthUser,
     State(state): State<AppState>,
     Path((_avatar_id, variant_id, frame)): Path<(DbId, DbId, i32)>,
 ) -> AppResult<impl IntoResponse> {
     let deleted =
-        FrameAnnotationRepo::delete_by_image_variant_and_frame(&state.pool, variant_id, frame)
+        FrameAnnotationRepo::delete_by_media_variant_and_frame(&state.pool, variant_id, frame)
             .await?;
 
     tracing::info!(
         user_id = auth.user_id,
-        image_variant_id = variant_id,
+        media_variant_id = variant_id,
         frame_number = frame,
         rows_deleted = deleted,
         "Image variant frame annotations deleted"

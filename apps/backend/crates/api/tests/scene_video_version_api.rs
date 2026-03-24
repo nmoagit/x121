@@ -10,13 +10,13 @@ use axum::http::StatusCode;
 use common::{body_json, build_test_app, delete, get, put_json};
 use sqlx::PgPool;
 use x121_db::models::avatar::CreateAvatar;
-use x121_db::models::image::CreateImageVariant;
+use x121_db::models::image::CreateMediaVariant;
 use x121_db::models::project::CreateProject;
 use x121_db::models::scene::CreateScene;
 use x121_db::models::scene_type::CreateSceneType;
 use x121_db::models::scene_video_version::CreateSceneVideoVersion;
 use x121_db::repositories::{
-    AvatarRepo, ImageVariantRepo, ProjectRepo, SceneRepo, SceneTypeRepo, SceneVideoVersionRepo,
+    AvatarRepo, MediaVariantRepo, ProjectRepo, SceneRepo, SceneTypeRepo, SceneVideoVersionRepo,
 };
 
 // ---------------------------------------------------------------------------
@@ -76,12 +76,12 @@ async fn setup_scene(pool: &PgPool, suffix: &str) -> i64 {
     )
     .await
     .unwrap();
-    let variant = ImageVariantRepo::create(
+    let variant = MediaVariantRepo::create(
         pool,
-        &CreateImageVariant {
+        &CreateMediaVariant {
             avatar_id: avatar.id,
-            source_image_id: None,
-            derived_image_id: None,
+            source_media_id: None,
+            derived_media_id: None,
             variant_label: "clothed".to_string(),
             status_id: None,
             file_path: format!("/img/{suffix}.png"),
@@ -104,7 +104,7 @@ async fn setup_scene(pool: &PgPool, suffix: &str) -> i64 {
         &CreateScene {
             avatar_id: avatar.id,
             scene_type_id: scene_type.id,
-            image_variant_id: variant.id,
+            media_variant_id: variant.id,
             status_id: None,
             transition_mode: None,
         },

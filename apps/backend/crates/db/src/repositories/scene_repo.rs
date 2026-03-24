@@ -7,7 +7,7 @@ use crate::models::generation::UpdateSceneGeneration;
 use crate::models::scene::{CreateScene, Scene, SceneDetail, SceneWithVersion, UpdateScene};
 
 /// Column list shared across queries to avoid repetition.
-const COLUMNS: &str = "id, avatar_id, scene_type_id, image_variant_id, track_id, \
+const COLUMNS: &str = "id, avatar_id, scene_type_id, media_variant_id, track_id, \
     status_id, transition_mode, \
     total_segments_estimated, total_segments_completed, \
     actual_duration_secs, transition_segment_index, \
@@ -26,7 +26,7 @@ impl SceneRepo {
     pub async fn create(pool: &PgPool, input: &CreateScene) -> Result<Scene, sqlx::Error> {
         let query = format!(
             "INSERT INTO scenes
-                (avatar_id, scene_type_id, image_variant_id, track_id, status_id, transition_mode,
+                (avatar_id, scene_type_id, media_variant_id, track_id, status_id, transition_mode,
                  total_segments_estimated, total_segments_completed,
                  actual_duration_secs, transition_segment_index,
                  generation_started_at, generation_completed_at)
@@ -37,7 +37,7 @@ impl SceneRepo {
         sqlx::query_as::<_, Scene>(&query)
             .bind(input.avatar_id)
             .bind(input.scene_type_id)
-            .bind(input.image_variant_id)
+            .bind(input.media_variant_id)
             .bind(input.track_id)
             .bind(input.status_id)
             .bind(&input.transition_mode)
@@ -146,7 +146,7 @@ impl SceneRepo {
         let query = format!(
             "UPDATE scenes SET
                 scene_type_id = COALESCE($2, scene_type_id),
-                image_variant_id = COALESCE($3, image_variant_id),
+                media_variant_id = COALESCE($3, media_variant_id),
                 status_id = COALESCE($4, status_id),
                 transition_mode = COALESCE($5, transition_mode),
                 total_segments_estimated = COALESCE($6, total_segments_estimated),
@@ -161,7 +161,7 @@ impl SceneRepo {
         sqlx::query_as::<_, Scene>(&query)
             .bind(id)
             .bind(input.scene_type_id)
-            .bind(input.image_variant_id)
+            .bind(input.media_variant_id)
             .bind(input.status_id)
             .bind(&input.transition_mode)
             .bind(input.total_segments_estimated)
@@ -296,14 +296,14 @@ impl SceneRepo {
             .await
     }
 
-    /// Set the image_variant_id for a scene (auto-resolve seed image).
-    pub async fn update_image_variant(
+    /// Set the media_variant_id for a scene (auto-resolve seed image).
+    pub async fn update_media_variant(
         pool: &PgPool,
         scene_id: DbId,
         variant_id: DbId,
     ) -> Result<bool, sqlx::Error> {
         let result = sqlx::query(
-            "UPDATE scenes SET image_variant_id = $2 WHERE id = $1 AND deleted_at IS NULL",
+            "UPDATE scenes SET media_variant_id = $2 WHERE id = $1 AND deleted_at IS NULL",
         )
         .bind(scene_id)
         .bind(variant_id)

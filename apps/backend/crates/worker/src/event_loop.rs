@@ -1075,8 +1075,8 @@ async fn build_snapshot_from_db(
     }
 
     // Get seed image path
-    let seed_image = if let Some(variant_id) = scene.image_variant_id {
-        x121_db::repositories::ImageVariantRepo::find_by_id(pool, variant_id)
+    let seed_image = if let Some(variant_id) = scene.media_variant_id {
+        x121_db::repositories::MediaVariantRepo::find_by_id(pool, variant_id)
             .await
             .ok()
             .flatten()

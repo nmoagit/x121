@@ -209,7 +209,7 @@ pub fn tokens_for_category(category: &str) -> Vec<&'static str> {
             "clothes_off_suffix",
             "index_suffix",
         ],
-        "image_variant" => vec!["avatar_slug", "variant_label", "version", "ext"],
+        "media_variant" => vec!["avatar_slug", "variant_label", "version", "ext"],
         "scene_video_import" => vec!["avatar_slug", "scene_type_slug", "date_compact", "ext"],
         "thumbnail" => vec!["frame_number"],
         "metadata_export" => vec!["avatar_slug", "metadata_type"],

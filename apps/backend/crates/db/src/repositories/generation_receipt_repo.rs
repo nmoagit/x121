@@ -8,7 +8,7 @@ use crate::models::generation_receipt::{
 };
 
 /// Column list for generation_receipts queries.
-const COLUMNS: &str = "id, segment_id, source_image_hash, variant_image_hash, \
+const COLUMNS: &str = "id, segment_id, source_media_hash, variant_media_hash, \
     workflow_version, workflow_hash, model_asset_id, model_version, model_hash, \
     lora_configs, prompt_text, negative_prompt, cfg_scale, seed, \
     resolution_width, resolution_height, steps, sampler, additional_params, \
@@ -26,7 +26,7 @@ impl GenerationReceiptRepo {
     ) -> Result<GenerationReceipt, sqlx::Error> {
         let query = format!(
             "INSERT INTO generation_receipts
-                (segment_id, source_image_hash, variant_image_hash,
+                (segment_id, source_media_hash, variant_media_hash,
                  workflow_version, workflow_hash, model_asset_id,
                  model_version, model_hash, lora_configs,
                  prompt_text, negative_prompt, cfg_scale, seed,
@@ -38,8 +38,8 @@ impl GenerationReceiptRepo {
         );
         sqlx::query_as::<_, GenerationReceipt>(&query)
             .bind(input.segment_id)
-            .bind(&input.source_image_hash)
-            .bind(&input.variant_image_hash)
+            .bind(&input.source_media_hash)
+            .bind(&input.variant_media_hash)
             .bind(&input.workflow_version)
             .bind(&input.workflow_hash)
             .bind(input.model_asset_id)

@@ -304,14 +304,14 @@ impl ProductionRunRepo {
                     t.name AS track_name, \
                     CASE WHEN prc.track_id IS NOT NULL THEN \
                         EXISTS ( \
-                            SELECT 1 FROM image_variants iv \
+                            SELECT 1 FROM media_variants iv \
                             WHERE iv.avatar_id = prc.avatar_id \
                               AND LOWER(iv.variant_type) = LOWER(t.slug) \
                               AND iv.deleted_at IS NULL \
                         ) \
                     ELSE \
                         EXISTS ( \
-                            SELECT 1 FROM image_variants iv \
+                            SELECT 1 FROM media_variants iv \
                             WHERE iv.avatar_id = prc.avatar_id \
                               AND iv.deleted_at IS NULL \
                         ) \

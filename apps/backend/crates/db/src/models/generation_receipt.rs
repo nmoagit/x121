@@ -16,8 +16,8 @@ use x121_core::types::{DbId, Timestamp};
 pub struct GenerationReceipt {
     pub id: DbId,
     pub segment_id: DbId,
-    pub source_image_hash: String,
-    pub variant_image_hash: String,
+    pub source_media_hash: String,
+    pub variant_media_hash: String,
     pub workflow_version: String,
     pub workflow_hash: String,
     pub model_asset_id: Option<DbId>,
@@ -48,8 +48,8 @@ pub struct GenerationReceipt {
 #[derive(Debug, Clone, Deserialize)]
 pub struct CreateGenerationReceipt {
     pub segment_id: DbId,
-    pub source_image_hash: String,
-    pub variant_image_hash: String,
+    pub source_media_hash: String,
+    pub variant_media_hash: String,
     pub workflow_version: String,
     pub workflow_hash: String,
     pub model_asset_id: Option<DbId>,

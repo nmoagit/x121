@@ -53,9 +53,9 @@ const SCRIPT_GROUPS: &[(&str, &[&str])] = &[
 #[derive(Debug, Deserialize)]
 pub struct RunQaRequest {
     pub avatar_id: DbId,
-    pub image_variant_id: Option<DbId>,
+    pub media_variant_id: Option<DbId>,
     pub image_path: String,
-    pub is_source_image: bool,
+    pub is_source_media: bool,
     /// Optional project ID used to look up project-specific thresholds.
     pub project_id: Option<DbId>,
 }
@@ -107,8 +107,8 @@ pub async fn run_qa(
     // Build a config JSON to pass to every script.
     let config = serde_json::json!({
         "avatar_id": input.avatar_id,
-        "image_variant_id": input.image_variant_id,
-        "is_source_image": input.is_source_image,
+        "media_variant_id": input.media_variant_id,
+        "is_source_media": input.is_source_media,
     });
 
     // Run each script group and collect individual check results.
@@ -149,13 +149,13 @@ pub async fn run_qa(
             let status = determine_status(raw_score, threshold.as_ref());
 
             let create_dto = CreateImageQualityScore {
-                image_variant_id: input.image_variant_id,
+                media_variant_id: input.media_variant_id,
                 avatar_id: input.avatar_id,
                 check_type_id,
                 score: raw_score,
                 status: status.clone(),
                 details,
-                is_source_image: input.is_source_image,
+                is_source_media: input.is_source_media,
             };
 
             let saved = ImageQualityScoreRepo::create(&state.pool, &create_dto).await?;
@@ -181,7 +181,7 @@ pub async fn get_results(
     State(state): State<AppState>,
     Path(id): Path<DbId>,
 ) -> AppResult<Json<Vec<ImageQualityScore>>> {
-    let scores = ImageQualityScoreRepo::list_by_image_variant(&state.pool, id).await?;
+    let scores = ImageQualityScoreRepo::list_by_media_variant(&state.pool, id).await?;
     Ok(Json(scores))
 }
 

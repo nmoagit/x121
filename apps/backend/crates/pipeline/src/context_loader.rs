@@ -13,7 +13,7 @@ use x121_core::types::DbId;
 use x121_core::video_settings::{self, VideoSettingsLayer};
 use x121_db::models::pipeline::Pipeline;
 use x121_db::repositories::{
-    AvatarMediaAssignmentRepo, AvatarRepo, ImageVariantRepo, PipelineRepo, ProjectRepo,
+    AvatarMediaAssignmentRepo, AvatarRepo, MediaVariantRepo, PipelineRepo, ProjectRepo,
     SceneTypeTrackConfigRepo, SegmentRepo, VideoSettingsRepo, WorkflowMediaSlotRepo, WorkflowRepo,
 };
 
@@ -98,15 +98,15 @@ pub async fn load_generation_context(
     // 2. Determine the seed image path (legacy) and resolve media slots (PRD-146).
     let seed_image_path = if segment_index == 0 {
         // First segment: use the image variant assigned to the scene.
-        let variant_id = scene.image_variant_id.ok_or_else(|| {
+        let variant_id = scene.media_variant_id.ok_or_else(|| {
             PipelineError::MissingConfig(format!(
-                "Scene {scene_id} has no image_variant_id assigned"
+                "Scene {scene_id} has no media_variant_id assigned"
             ))
         })?;
-        let variant = ImageVariantRepo::find_by_id(pool, variant_id)
+        let variant = MediaVariantRepo::find_by_id(pool, variant_id)
             .await?
             .ok_or_else(|| {
-                PipelineError::MissingConfig(format!("ImageVariant {variant_id} not found"))
+                PipelineError::MissingConfig(format!("MediaVariant {variant_id} not found"))
             })?;
         variant.file_path
     } else {
@@ -234,15 +234,15 @@ async fn resolve_media_for_scene(
     // 2. Load avatar assignments for media resolution.
     let db_assignments = AvatarMediaAssignmentRepo::list_for_resolution(pool, avatar_id).await?;
 
-    // 3. Collect all referenced image_variant_ids and batch-fetch their file paths.
+    // 3. Collect all referenced media_variant_ids and batch-fetch their file paths.
     let variant_ids: Vec<DbId> = db_assignments
         .iter()
-        .filter_map(|a| a.image_variant_id)
+        .filter_map(|a| a.media_variant_id)
         .collect();
 
     let mut variant_paths: HashMap<DbId, String> = HashMap::new();
     for variant_id in &variant_ids {
-        if let Some(variant) = ImageVariantRepo::find_by_id(pool, *variant_id).await? {
+        if let Some(variant) = MediaVariantRepo::find_by_id(pool, *variant_id).await? {
             variant_paths.insert(variant.id, variant.file_path);
         }
     }
@@ -268,7 +268,7 @@ async fn resolve_media_for_scene(
         .map(|a| MediaAssignmentInput {
             media_slot_id: a.media_slot_id,
             scene_type_id: a.scene_type_id,
-            image_variant_id: a.image_variant_id,
+            media_variant_id: a.media_variant_id,
             file_path: a.file_path.clone(),
             is_passthrough: a.is_passthrough,
             passthrough_track_id: a.passthrough_track_id,

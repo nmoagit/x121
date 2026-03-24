@@ -9,11 +9,11 @@
 
 use sqlx::PgPool;
 use x121_db::models::avatar::CreateAvatar;
-use x121_db::models::image::CreateImageVariant;
+use x121_db::models::image::CreateMediaVariant;
 use x121_db::models::project::CreateProject;
 use x121_db::models::scene::CreateScene;
 use x121_db::models::scene_type::CreateSceneType;
-use x121_db::repositories::{AvatarRepo, ImageVariantRepo, ProjectRepo, SceneRepo, SceneTypeRepo};
+use x121_db::repositories::{AvatarRepo, MediaVariantRepo, ProjectRepo, SceneRepo, SceneTypeRepo};
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -64,11 +64,11 @@ fn new_scene_type(project_id: Option<i64>, name: &str) -> CreateSceneType {
     }
 }
 
-fn new_image_variant(avatar_id: i64, label: &str, path: &str) -> CreateImageVariant {
-    CreateImageVariant {
+fn new_image_variant(avatar_id: i64, label: &str, path: &str) -> CreateMediaVariant {
+    CreateMediaVariant {
         avatar_id,
-        source_image_id: None,
-        derived_image_id: None,
+        source_media_id: None,
+        derived_media_id: None,
         variant_label: label.to_string(),
         status_id: None,
         file_path: path.to_string(),
@@ -85,11 +85,11 @@ fn new_image_variant(avatar_id: i64, label: &str, path: &str) -> CreateImageVari
     }
 }
 
-fn new_scene(avatar_id: i64, scene_type_id: i64, image_variant_id: i64) -> CreateScene {
+fn new_scene(avatar_id: i64, scene_type_id: i64, media_variant_id: i64) -> CreateScene {
     CreateScene {
         avatar_id,
         scene_type_id,
-        image_variant_id,
+        media_variant_id,
         status_id: None,
         transition_mode: None,
     }
@@ -237,7 +237,7 @@ async fn test_soft_delete_scene_also_works(pool: PgPool) {
     let scene_type = SceneTypeRepo::create(&pool, &new_scene_type(Some(project.id), "Walk"))
         .await
         .unwrap();
-    let variant = ImageVariantRepo::create(
+    let variant = MediaVariantRepo::create(
         &pool,
         &new_image_variant(avatar.id, "clothed", "/img/scene_sd.png"),
     )

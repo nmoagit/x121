@@ -22,7 +22,7 @@ use x121_db::models::generation::{
 use x121_db::models::status::SceneStatus;
 use x121_db::models::status::StatusId;
 use x121_db::repositories::{
-    AvatarRepo, ImageVariantRepo, SceneGenerationLogRepo, SceneRepo, SceneTypeRepo,
+    AvatarRepo, MediaVariantRepo, SceneGenerationLogRepo, SceneRepo, SceneTypeRepo,
     SceneVideoVersionRepo, SegmentRepo, TrackRepo, VideoSettingsRepo,
 };
 
@@ -155,7 +155,7 @@ pub(crate) async fn init_scene_generation(
     let target_duration = Some(resolved.duration_secs as f64);
 
     // Auto-resolve seed image variant if not set.
-    let has_seed = if scene.image_variant_id.is_some() {
+    let has_seed = if scene.media_variant_id.is_some() {
         true
     } else {
         // Determine variant type from the scene's track (e.g. "clothed", "topless").
@@ -169,10 +169,10 @@ pub(crate) async fn init_scene_generation(
 
         if let Some(ref vt) = variant_type {
             if let Some(variant) =
-                ImageVariantRepo::find_hero(&state.pool, scene.avatar_id, vt).await?
+                MediaVariantRepo::find_hero(&state.pool, scene.avatar_id, vt).await?
             {
                 // Assign the resolved variant to the scene.
-                SceneRepo::update_image_variant(&state.pool, scene_id, variant.id).await?;
+                SceneRepo::update_media_variant(&state.pool, scene_id, variant.id).await?;
                 tracing::info!(scene_id, variant_id = variant.id, variant_type = %vt, "Auto-assigned seed image variant");
                 true
             } else {
@@ -805,14 +805,14 @@ async fn validate_scene_for_generation(state: &AppState, scene_id: DbId) -> Resu
         .ok_or_else(|| "scene type not found".to_string())?;
 
     // Check seed image exists or can be auto-resolved.
-    let has_seed = scene.image_variant_id.is_some() || {
+    let has_seed = scene.media_variant_id.is_some() || {
         // Check if a hero variant exists for auto-assignment.
         if let Some(track_id) = scene.track_id {
             let track = TrackRepo::find_by_id(&state.pool, track_id)
                 .await
                 .map_err(|e| e.to_string())?;
             if let Some(track) = track {
-                ImageVariantRepo::find_hero(&state.pool, scene.avatar_id, &track.slug)
+                MediaVariantRepo::find_hero(&state.pool, scene.avatar_id, &track.slug)
                     .await
                     .map_err(|e| e.to_string())?
                     .is_some()

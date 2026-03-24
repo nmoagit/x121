@@ -72,7 +72,7 @@ pub struct AvatarWithAvatar {
 /// Per-avatar deliverable status for the project overview grid.
 ///
 /// Returned by `AvatarRepo::list_deliverable_status` — a single query
-/// with LEFT JOINs + aggregates across image_variants, scenes,
+/// with LEFT JOINs + aggregates across media_variants, scenes,
 /// scene_video_versions, and avatar_metadata_versions.
 #[derive(Debug, Clone, FromRow, Serialize)]
 pub struct AvatarDeliverableRow {

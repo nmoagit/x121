@@ -88,7 +88,7 @@ pub struct MediaSlotInput {
 pub struct MediaAssignmentInput {
     pub media_slot_id: DbId,
     pub scene_type_id: Option<DbId>,
-    pub image_variant_id: Option<DbId>,
+    pub media_variant_id: Option<DbId>,
     pub file_path: Option<String>,
     pub is_passthrough: bool,
     pub passthrough_track_id: Option<DbId>,
@@ -118,7 +118,7 @@ const FALLBACK_SKIP_NODE: &str = "skip_node";
 ///
 /// If a required slot cannot be resolved, it is added to the unresolved list.
 ///
-/// `image_variant_paths` maps `image_variant.id` -> `file_path` for resolving
+/// `media_variant_paths` maps `image_variant.id` -> `file_path` for resolving
 /// assignments that reference an image variant rather than a direct file path.
 ///
 /// Returns `Ok(resolved)` when all required slots are satisfied, or
@@ -127,14 +127,14 @@ pub fn resolve_media_slots(
     media_slots: &[MediaSlotInput],
     avatar_assignments: &[MediaAssignmentInput],
     scene_type_id: DbId,
-    image_variant_paths: &HashMap<DbId, String>,
+    media_variant_paths: &HashMap<DbId, String>,
 ) -> Result<Vec<ResolvedMediaSlot>, Vec<UnresolvedSlot>> {
     let mut resolved = Vec::with_capacity(media_slots.len());
     let mut unresolved = Vec::new();
 
     for slot in media_slots {
         if let Some(r) =
-            try_resolve_slot(slot, avatar_assignments, scene_type_id, image_variant_paths)
+            try_resolve_slot(slot, avatar_assignments, scene_type_id, media_variant_paths)
         {
             resolved.push(r);
         } else if slot.is_required {
@@ -219,15 +219,15 @@ fn find_assignment(
         .find(|a| a.media_slot_id == slot_id && a.scene_type_id == scene_type_id)
 }
 
-/// Convert an assignment into a resolved slot, resolving image_variant_id if needed.
+/// Convert an assignment into a resolved slot, resolving media_variant_id if needed.
 fn assignment_to_resolved(
     slot: &MediaSlotInput,
     assignment: &MediaAssignmentInput,
     source: MediaSource,
     variant_paths: &HashMap<DbId, String>,
 ) -> Option<ResolvedMediaSlot> {
-    // Resolve file path: prefer image_variant_id lookup, fall back to direct file_path.
-    let file_path = if let Some(variant_id) = assignment.image_variant_id {
+    // Resolve file path: prefer media_variant_id lookup, fall back to direct file_path.
+    let file_path = if let Some(variant_id) = assignment.media_variant_id {
         variant_paths.get(&variant_id)?.clone()
     } else {
         assignment.file_path.clone()?
@@ -282,7 +282,7 @@ mod tests {
         MediaAssignmentInput {
             media_slot_id: slot_id,
             scene_type_id,
-            image_variant_id: variant_id,
+            media_variant_id: variant_id,
             file_path: file_path.map(|s| s.to_string()),
             is_passthrough: false,
             passthrough_track_id: None,
@@ -317,7 +317,7 @@ mod tests {
     }
 
     #[test]
-    fn resolves_via_image_variant_id() {
+    fn resolves_via_media_variant_id() {
         let slots = vec![make_slot(1, "Front Clothed", true)];
         let assignments = vec![make_assignment(1, None, Some(42), None)];
         let mut paths = HashMap::new();

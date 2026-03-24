@@ -27,13 +27,13 @@ pub struct QaCheckType {
 #[derive(Debug, Clone, FromRow, Serialize)]
 pub struct ImageQualityScore {
     pub id: DbId,
-    pub image_variant_id: Option<DbId>,
+    pub media_variant_id: Option<DbId>,
     pub avatar_id: DbId,
     pub check_type_id: DbId,
     pub score: Option<f64>,
     pub status: String,
     pub details: Option<serde_json::Value>,
-    pub is_source_image: bool,
+    pub is_source_media: bool,
     pub created_at: Timestamp,
     pub updated_at: Timestamp,
 }
@@ -41,13 +41,13 @@ pub struct ImageQualityScore {
 /// DTO for creating a new quality score.
 #[derive(Debug, Clone, Deserialize)]
 pub struct CreateImageQualityScore {
-    pub image_variant_id: Option<DbId>,
+    pub media_variant_id: Option<DbId>,
     pub avatar_id: DbId,
     pub check_type_id: DbId,
     pub score: Option<f64>,
     pub status: String,
     pub details: Option<serde_json::Value>,
-    pub is_source_image: bool,
+    pub is_source_media: bool,
 }
 
 // ---------------------------------------------------------------------------

@@ -1,30 +1,30 @@
-//! Repository for the `image_variants` table.
+//! Repository for the `media_variants` table.
 
 use sqlx::PgPool;
 use x121_core::types::DbId;
 
-use crate::models::image::{CreateImageVariant, ImageVariant, UpdateImageVariant};
+use crate::models::media::{CreateMediaVariant, MediaVariant, UpdateMediaVariant};
 use crate::models::status::StatusId;
 
 /// Column list shared across queries to avoid repetition.
-const COLUMNS: &str = "id, avatar_id, source_image_id, derived_image_id, variant_label, \
+const COLUMNS: &str = "id, avatar_id, source_media_id, derived_media_id, variant_label, \
     status_id, file_path, variant_type, provenance, is_hero, file_size_bytes, width, height, \
     format, version, parent_variant_id, generation_params, content_hash, deleted_at, created_at, updated_at";
 
 /// Provides CRUD operations for image variants.
-pub struct ImageVariantRepo;
+pub struct MediaVariantRepo;
 
-impl ImageVariantRepo {
+impl MediaVariantRepo {
     /// Insert a new image variant, returning the created row.
     ///
     /// If `status_id` is `None`, defaults to 1 (Pending).
     pub async fn create(
         pool: &PgPool,
-        input: &CreateImageVariant,
-    ) -> Result<ImageVariant, sqlx::Error> {
+        input: &CreateMediaVariant,
+    ) -> Result<MediaVariant, sqlx::Error> {
         let query = format!(
-            "INSERT INTO image_variants
-                (avatar_id, source_image_id, derived_image_id, variant_label,
+            "INSERT INTO media_variants
+                (avatar_id, source_media_id, derived_media_id, variant_label,
                  status_id, file_path, variant_type, provenance, is_hero,
                  file_size_bytes, width, height, format, version,
                  parent_variant_id, generation_params, content_hash)
@@ -33,10 +33,10 @@ impl ImageVariantRepo {
                      $10, $11, $12, $13, COALESCE($14, 1), $15, $16, $17)
              RETURNING {COLUMNS}"
         );
-        sqlx::query_as::<_, ImageVariant>(&query)
+        sqlx::query_as::<_, MediaVariant>(&query)
             .bind(input.avatar_id)
-            .bind(input.source_image_id)
-            .bind(input.derived_image_id)
+            .bind(input.source_media_id)
+            .bind(input.derived_media_id)
             .bind(&input.variant_label)
             .bind(input.status_id)
             .bind(&input.file_path)
@@ -64,7 +64,7 @@ impl ImageVariantRepo {
             return Ok(vec![]);
         }
         let rows: Vec<(String,)> = sqlx::query_as(
-            "SELECT DISTINCT content_hash FROM image_variants \
+            "SELECT DISTINCT content_hash FROM media_variants \
              WHERE content_hash = ANY($1) AND deleted_at IS NULL",
         )
         .bind(hashes)
@@ -74,10 +74,10 @@ impl ImageVariantRepo {
     }
 
     /// Find an image variant by its internal ID. Excludes soft-deleted rows.
-    pub async fn find_by_id(pool: &PgPool, id: DbId) -> Result<Option<ImageVariant>, sqlx::Error> {
+    pub async fn find_by_id(pool: &PgPool, id: DbId) -> Result<Option<MediaVariant>, sqlx::Error> {
         let query =
-            format!("SELECT {COLUMNS} FROM image_variants WHERE id = $1 AND deleted_at IS NULL");
-        sqlx::query_as::<_, ImageVariant>(&query)
+            format!("SELECT {COLUMNS} FROM media_variants WHERE id = $1 AND deleted_at IS NULL");
+        sqlx::query_as::<_, MediaVariant>(&query)
             .bind(id)
             .fetch_optional(pool)
             .await
@@ -88,13 +88,13 @@ impl ImageVariantRepo {
     pub async fn list_by_avatar(
         pool: &PgPool,
         avatar_id: DbId,
-    ) -> Result<Vec<ImageVariant>, sqlx::Error> {
+    ) -> Result<Vec<MediaVariant>, sqlx::Error> {
         let query = format!(
-            "SELECT {COLUMNS} FROM image_variants
+            "SELECT {COLUMNS} FROM media_variants
              WHERE avatar_id = $1 AND deleted_at IS NULL
              ORDER BY created_at DESC"
         );
-        sqlx::query_as::<_, ImageVariant>(&query)
+        sqlx::query_as::<_, MediaVariant>(&query)
             .bind(avatar_id)
             .fetch_all(pool)
             .await
@@ -106,13 +106,13 @@ impl ImageVariantRepo {
         pool: &PgPool,
         avatar_id: DbId,
         variant_type: &str,
-    ) -> Result<Vec<ImageVariant>, sqlx::Error> {
+    ) -> Result<Vec<MediaVariant>, sqlx::Error> {
         let query = format!(
-            "SELECT {COLUMNS} FROM image_variants
+            "SELECT {COLUMNS} FROM media_variants
              WHERE avatar_id = $1 AND variant_type = $2 AND deleted_at IS NULL
              ORDER BY created_at DESC"
         );
-        sqlx::query_as::<_, ImageVariant>(&query)
+        sqlx::query_as::<_, MediaVariant>(&query)
             .bind(avatar_id)
             .bind(variant_type)
             .fetch_all(pool)
@@ -127,28 +127,28 @@ impl ImageVariantRepo {
         pool: &PgPool,
         variant_id: DbId,
         approved_status_id: StatusId,
-    ) -> Result<Option<ImageVariant>, sqlx::Error> {
+    ) -> Result<Option<MediaVariant>, sqlx::Error> {
         // Use a CTE to atomically clear old hero and set new one.
         let query = format!(
             "WITH target AS (
                 SELECT avatar_id, variant_type
-                FROM image_variants
+                FROM media_variants
                 WHERE id = $1 AND deleted_at IS NULL
             ),
             clear_old AS (
-                UPDATE image_variants
+                UPDATE media_variants
                 SET is_hero = false
                 WHERE avatar_id = (SELECT avatar_id FROM target)
                   AND variant_type = (SELECT variant_type FROM target)
                   AND is_hero = true
                   AND id != $1
             )
-            UPDATE image_variants
+            UPDATE media_variants
             SET is_hero = true, status_id = $2
             WHERE id = $1 AND deleted_at IS NULL
             RETURNING {COLUMNS}"
         );
-        sqlx::query_as::<_, ImageVariant>(&query)
+        sqlx::query_as::<_, MediaVariant>(&query)
             .bind(variant_id)
             .bind(approved_status_id)
             .fetch_optional(pool)
@@ -160,13 +160,13 @@ impl ImageVariantRepo {
         pool: &PgPool,
         avatar_id: DbId,
         variant_type: &str,
-    ) -> Result<Option<ImageVariant>, sqlx::Error> {
+    ) -> Result<Option<MediaVariant>, sqlx::Error> {
         let query = format!(
-            "SELECT {COLUMNS} FROM image_variants
+            "SELECT {COLUMNS} FROM media_variants
              WHERE avatar_id = $1 AND variant_type = $2
                AND is_hero = true AND deleted_at IS NULL"
         );
-        sqlx::query_as::<_, ImageVariant>(&query)
+        sqlx::query_as::<_, MediaVariant>(&query)
             .bind(avatar_id)
             .bind(variant_type)
             .fetch_optional(pool)
@@ -180,25 +180,25 @@ impl ImageVariantRepo {
     pub async fn list_version_chain(
         pool: &PgPool,
         variant_id: DbId,
-    ) -> Result<Vec<ImageVariant>, sqlx::Error> {
+    ) -> Result<Vec<MediaVariant>, sqlx::Error> {
         let query = format!(
             "WITH RECURSIVE chain AS (
                 SELECT {COLUMNS}
-                FROM image_variants
+                FROM media_variants
                 WHERE id = $1 AND deleted_at IS NULL
                 UNION ALL
-                SELECT iv.id, iv.avatar_id, iv.source_image_id, iv.derived_image_id,
+                SELECT iv.id, iv.avatar_id, iv.source_media_id, iv.derived_media_id,
                        iv.variant_label, iv.status_id, iv.file_path, iv.variant_type,
                        iv.provenance, iv.is_hero, iv.file_size_bytes, iv.width, iv.height,
                        iv.format, iv.version, iv.parent_variant_id, iv.generation_params,
                        iv.deleted_at, iv.created_at, iv.updated_at
-                FROM image_variants iv
+                FROM media_variants iv
                 INNER JOIN chain c ON iv.id = c.parent_variant_id
                 WHERE iv.deleted_at IS NULL
             )
             SELECT * FROM chain ORDER BY version DESC"
         );
-        sqlx::query_as::<_, ImageVariant>(&query)
+        sqlx::query_as::<_, MediaVariant>(&query)
             .bind(variant_id)
             .fetch_all(pool)
             .await
@@ -210,12 +210,12 @@ impl ImageVariantRepo {
     pub async fn update(
         pool: &PgPool,
         id: DbId,
-        input: &UpdateImageVariant,
-    ) -> Result<Option<ImageVariant>, sqlx::Error> {
+        input: &UpdateMediaVariant,
+    ) -> Result<Option<MediaVariant>, sqlx::Error> {
         let query = format!(
-            "UPDATE image_variants SET
-                source_image_id  = COALESCE($2, source_image_id),
-                derived_image_id = COALESCE($3, derived_image_id),
+            "UPDATE media_variants SET
+                source_media_id  = COALESCE($2, source_media_id),
+                derived_media_id = COALESCE($3, derived_media_id),
                 variant_label    = COALESCE($4, variant_label),
                 status_id        = COALESCE($5, status_id),
                 file_path        = COALESCE($6, file_path),
@@ -230,10 +230,10 @@ impl ImageVariantRepo {
              WHERE id = $1 AND deleted_at IS NULL
              RETURNING {COLUMNS}"
         );
-        sqlx::query_as::<_, ImageVariant>(&query)
+        sqlx::query_as::<_, MediaVariant>(&query)
             .bind(id)
-            .bind(input.source_image_id)
-            .bind(input.derived_image_id)
+            .bind(input.source_media_id)
+            .bind(input.derived_media_id)
             .bind(&input.variant_label)
             .bind(input.status_id)
             .bind(&input.file_path)
@@ -257,7 +257,7 @@ impl ImageVariantRepo {
         height: i32,
     ) -> Result<bool, sqlx::Error> {
         let result = sqlx::query(
-            "UPDATE image_variants SET width = $2, height = $3 \
+            "UPDATE media_variants SET width = $2, height = $3 \
              WHERE id = $1 AND deleted_at IS NULL",
         )
         .bind(id)
@@ -273,13 +273,13 @@ impl ImageVariantRepo {
     pub async fn list_missing_dimensions(
         pool: &PgPool,
         limit: i64,
-    ) -> Result<Vec<ImageVariant>, sqlx::Error> {
+    ) -> Result<Vec<MediaVariant>, sqlx::Error> {
         let query = format!(
-            "SELECT {COLUMNS} FROM image_variants \
+            "SELECT {COLUMNS} FROM media_variants \
              WHERE width IS NULL AND deleted_at IS NULL \
              ORDER BY id ASC LIMIT $1"
         );
-        sqlx::query_as::<_, ImageVariant>(&query)
+        sqlx::query_as::<_, MediaVariant>(&query)
             .bind(limit)
             .fetch_all(pool)
             .await
@@ -291,13 +291,13 @@ impl ImageVariantRepo {
         pool: &PgPool,
         limit: i64,
         offset: i64,
-    ) -> Result<Vec<ImageVariant>, sqlx::Error> {
+    ) -> Result<Vec<MediaVariant>, sqlx::Error> {
         let query = format!(
-            "SELECT {COLUMNS} FROM image_variants \
+            "SELECT {COLUMNS} FROM media_variants \
              WHERE file_path != '' AND deleted_at IS NULL \
              ORDER BY id ASC LIMIT $1 OFFSET $2"
         );
-        sqlx::query_as::<_, ImageVariant>(&query)
+        sqlx::query_as::<_, MediaVariant>(&query)
             .bind(limit)
             .bind(offset)
             .fetch_all(pool)
@@ -307,7 +307,7 @@ impl ImageVariantRepo {
     /// Soft-delete an image variant by ID. Returns `true` if a row was marked deleted.
     pub async fn soft_delete(pool: &PgPool, id: DbId) -> Result<bool, sqlx::Error> {
         let result = sqlx::query(
-            "UPDATE image_variants SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
+            "UPDATE media_variants SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
         )
         .bind(id)
         .execute(pool)
@@ -318,7 +318,7 @@ impl ImageVariantRepo {
     /// Restore a soft-deleted image variant. Returns `true` if a row was restored.
     pub async fn restore(pool: &PgPool, id: DbId) -> Result<bool, sqlx::Error> {
         let result = sqlx::query(
-            "UPDATE image_variants SET deleted_at = NULL WHERE id = $1 AND deleted_at IS NOT NULL",
+            "UPDATE media_variants SET deleted_at = NULL WHERE id = $1 AND deleted_at IS NOT NULL",
         )
         .bind(id)
         .execute(pool)
@@ -328,7 +328,7 @@ impl ImageVariantRepo {
 
     /// Permanently delete an image variant by ID. Returns `true` if a row was removed.
     pub async fn hard_delete(pool: &PgPool, id: DbId) -> Result<bool, sqlx::Error> {
-        let result = sqlx::query("DELETE FROM image_variants WHERE id = $1")
+        let result = sqlx::query("DELETE FROM media_variants WHERE id = $1")
             .bind(id)
             .execute(pool)
             .await?;

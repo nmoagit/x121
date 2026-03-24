@@ -57,7 +57,7 @@ define_status_enum! {
 
 define_status_enum! {
     /// Image variant review status.
-    ImageVariantStatus {
+    MediaVariantStatus {
         Pending = 1,
         Approved = 2,
         Rejected = 3,
@@ -305,12 +305,12 @@ mod tests {
 
     #[test]
     fn image_variant_status_ids_match_seed_data() {
-        assert_eq!(ImageVariantStatus::Pending.id(), 1);
-        assert_eq!(ImageVariantStatus::Approved.id(), 2);
-        assert_eq!(ImageVariantStatus::Rejected.id(), 3);
-        assert_eq!(ImageVariantStatus::Generating.id(), 4);
-        assert_eq!(ImageVariantStatus::Generated.id(), 5);
-        assert_eq!(ImageVariantStatus::Editing.id(), 6);
+        assert_eq!(MediaVariantStatus::Pending.id(), 1);
+        assert_eq!(MediaVariantStatus::Approved.id(), 2);
+        assert_eq!(MediaVariantStatus::Rejected.id(), 3);
+        assert_eq!(MediaVariantStatus::Generating.id(), 4);
+        assert_eq!(MediaVariantStatus::Generated.id(), 5);
+        assert_eq!(MediaVariantStatus::Editing.id(), 6);
     }
 
     #[test]

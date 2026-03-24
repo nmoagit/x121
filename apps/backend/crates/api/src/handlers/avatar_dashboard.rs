@@ -27,7 +27,7 @@ pub struct AvatarDashboardData {
     pub avatar_id: DbId,
     pub avatar_name: String,
     pub project_id: DbId,
-    pub source_image_count: i64,
+    pub source_media_count: i64,
     pub variant_counts: VariantCounts,
     pub settings: serde_json::Value,
     pub readiness: Option<ReadinessSnapshot>,
@@ -151,21 +151,21 @@ pub async fn get_dashboard(
 
     // Source image count.
     let source_count_row = sqlx::query_as::<_, CountRow>(
-        "SELECT COUNT(*) AS count FROM image_variants WHERE avatar_id = $1 AND provenance = 'manual_upload' AND deleted_at IS NULL",
+        "SELECT COUNT(*) AS count FROM media_variants WHERE avatar_id = $1 AND provenance = 'manual_upload' AND deleted_at IS NULL",
     )
     .bind(avatar_id)
     .fetch_one(&state.pool)
     .await?;
 
     // Image variant counts by status.
-    // status_id: 1=pending, 2=approved, 3=rejected (from image_variant_statuses).
+    // status_id: 1=pending, 2=approved, 3=rejected (from media_variant_statuses).
     let variant_counts_row = sqlx::query_as::<_, VariantCountsRow>(
         "SELECT
             COUNT(*) AS total,
             COUNT(*) FILTER (WHERE status_id = 2) AS approved,
             COUNT(*) FILTER (WHERE status_id = 3) AS rejected,
             COUNT(*) FILTER (WHERE status_id = 1) AS pending
-         FROM image_variants
+         FROM media_variants
          WHERE avatar_id = $1 AND deleted_at IS NULL",
     )
     .bind(avatar_id)
@@ -264,7 +264,7 @@ pub async fn get_dashboard(
         avatar_id: avatar.id,
         avatar_name: avatar.name,
         project_id: avatar.project_id,
-        source_image_count: source_count_row.count.unwrap_or(0),
+        source_media_count: source_count_row.count.unwrap_or(0),
         variant_counts: VariantCounts {
             total: variant_counts_row.total.unwrap_or(0),
             approved: variant_counts_row.approved.unwrap_or(0),

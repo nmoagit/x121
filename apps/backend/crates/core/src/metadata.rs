@@ -75,10 +75,10 @@ pub struct AvatarMetadata {
     pub physical_attributes: PhysicalAttributes,
 
     /// Primary source image reference.
-    pub source_image: Option<ImageReference>,
+    pub source_media: Option<ImageReference>,
 
     /// Derived images generated from the source.
-    pub derived_images: Vec<ImageReference>,
+    pub derived_media: Vec<ImageReference>,
 
     /// Custom metadata (extensible key-value pairs from the avatar's
     /// `metadata` JSONB column).
@@ -247,13 +247,13 @@ mod tests {
                 hair_color: Some("Brown".to_string()),
                 eye_color: Some("Green".to_string()),
             },
-            source_image: Some(ImageReference {
+            source_media: Some(ImageReference {
                 image_id: 100,
                 filename: "source.png".to_string(),
                 path: "/images/source.png".to_string(),
                 image_type: "source".to_string(),
             }),
-            derived_images: vec![ImageReference {
+            derived_media: vec![ImageReference {
                 image_id: 101,
                 filename: "derived_01.png".to_string(),
                 path: "/images/derived_01.png".to_string(),

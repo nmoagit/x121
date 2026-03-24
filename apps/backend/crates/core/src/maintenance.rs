@@ -262,23 +262,23 @@ pub fn get_searchable_fields(entity_type: Option<&str>) -> Vec<SearchableField> 
             column_name: "prompt_template",
         },
         SearchableField {
-            entity_type: "source_image",
-            table_name: "source_images",
+            entity_type: "source_media",
+            table_name: "source_media",
             column_name: "description",
         },
         SearchableField {
-            entity_type: "derived_image",
-            table_name: "derived_images",
+            entity_type: "derived_media",
+            table_name: "derived_media",
             column_name: "description",
         },
         SearchableField {
-            entity_type: "derived_image",
-            table_name: "derived_images",
+            entity_type: "derived_media",
+            table_name: "derived_media",
             column_name: "variant_type",
         },
         SearchableField {
-            entity_type: "image_variant",
-            table_name: "image_variants",
+            entity_type: "media_variant",
+            table_name: "media_variants",
             column_name: "variant_label",
         },
     ];
@@ -295,18 +295,18 @@ pub fn get_searchable_fields(entity_type: Option<&str>) -> Vec<SearchableField> 
 pub fn get_path_fields(entity_type: Option<&str>) -> Vec<SearchableField> {
     let mut fields = vec![
         SearchableField {
-            entity_type: "source_image",
-            table_name: "source_images",
+            entity_type: "source_media",
+            table_name: "source_media",
             column_name: "file_path",
         },
         SearchableField {
-            entity_type: "derived_image",
-            table_name: "derived_images",
+            entity_type: "derived_media",
+            table_name: "derived_media",
             column_name: "file_path",
         },
         SearchableField {
-            entity_type: "image_variant",
-            table_name: "image_variants",
+            entity_type: "media_variant",
+            table_name: "media_variants",
             column_name: "file_path",
         },
         SearchableField {
@@ -614,7 +614,7 @@ mod tests {
 
     #[test]
     fn path_fields_contain_source_image_file_path() {
-        let fields = get_path_fields(Some("source_image"));
+        let fields = get_path_fields(Some("source_media"));
         assert!(fields.iter().any(|f| f.column_name == "file_path"));
     }
 

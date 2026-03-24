@@ -15,7 +15,7 @@ pub struct AvatarMediaAssignment {
     pub media_slot_id: DbId,
     pub scene_type_id: Option<DbId>,
     pub track_id: Option<DbId>,
-    pub image_variant_id: Option<DbId>,
+    pub media_variant_id: Option<DbId>,
     pub file_path: Option<String>,
     pub media_type: String,
     pub is_passthrough: bool,
@@ -33,7 +33,7 @@ pub struct CreateAvatarMediaAssignment {
     pub media_slot_id: DbId,
     pub scene_type_id: Option<DbId>,
     pub track_id: Option<DbId>,
-    pub image_variant_id: Option<DbId>,
+    pub media_variant_id: Option<DbId>,
     pub file_path: Option<String>,
     pub media_type: Option<String>,
     pub is_passthrough: Option<bool>,
@@ -46,7 +46,7 @@ pub struct CreateAvatarMediaAssignment {
 #[derive(Debug, Clone, Deserialize)]
 pub struct UpdateAvatarMediaAssignment {
     pub scene_type_id: Option<DbId>,
-    pub image_variant_id: Option<DbId>,
+    pub media_variant_id: Option<DbId>,
     pub file_path: Option<String>,
     pub media_type: Option<String>,
     pub is_passthrough: Option<bool>,

@@ -131,7 +131,7 @@ pub async fn upsert_avatar_media_assignment(
         // Update the existing assignment.
         let update = UpdateAvatarMediaAssignment {
             scene_type_id: input.scene_type_id,
-            image_variant_id: input.image_variant_id,
+            media_variant_id: input.media_variant_id,
             file_path: input.file_path,
             media_type: input.media_type,
             is_passthrough: input.is_passthrough,
@@ -545,7 +545,7 @@ pub async fn auto_assign_seeds(
                     media_slot_id,
                     scene_type_id: Some(entry.scene_type_id),
                     track_id: Some(entry.track_id),
-                    image_variant_id: Some(variant.id),
+                    media_variant_id: Some(variant.id),
                     file_path: Some(variant.file_path.clone()),
                     media_type: Some("image".to_string()),
                     is_passthrough: Some(false),
@@ -559,7 +559,7 @@ pub async fn auto_assign_seeds(
                     if let Some(existing) = assignment_map.get(&(Some(media_slot_id), Some(entry.track_id))) {
                         let update = UpdateAvatarMediaAssignment {
                             scene_type_id: Some(entry.scene_type_id),
-                            image_variant_id: Some(variant.id),
+                            media_variant_id: Some(variant.id),
                             file_path: Some(variant.file_path.clone()),
                             media_type: Some("image".to_string()),
                             is_passthrough: Some(false),

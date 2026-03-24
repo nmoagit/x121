@@ -14,8 +14,8 @@ use x121_db::repositories::trash_repo::{
     is_known_entity_type, PurgePreview, TrashRepo, TrashSummary,
 };
 use x121_db::repositories::{
-    AvatarRepo, DerivedImageRepo, ImageVariantRepo, ProjectRepo, SceneRepo, SceneTypeRepo,
-    SceneVideoVersionRepo, SegmentRepo, SourceImageRepo,
+    AvatarRepo, DerivedMediaRepo, MediaVariantRepo, ProjectRepo, SceneRepo, SceneTypeRepo,
+    SceneVideoVersionRepo, SegmentRepo, SourceMediaRepo,
 };
 
 use crate::error::{AppError, AppResult};
@@ -144,9 +144,9 @@ async fn dispatch_restore(
         "avatars" => AvatarRepo::restore(pool, id).await,
         "scenes" => SceneRepo::restore(pool, id).await,
         "segments" => SegmentRepo::restore(pool, id).await,
-        "source_images" => SourceImageRepo::restore(pool, id).await,
-        "derived_images" => DerivedImageRepo::restore(pool, id).await,
-        "image_variants" => ImageVariantRepo::restore(pool, id).await,
+        "source_media" => SourceMediaRepo::restore(pool, id).await,
+        "derived_media" => DerivedMediaRepo::restore(pool, id).await,
+        "media_variants" => MediaVariantRepo::restore(pool, id).await,
         "scene_types" => SceneTypeRepo::restore(pool, id).await,
         "scene_video_versions" => SceneVideoVersionRepo::restore(pool, id).await,
         // validate_entity_type is called before dispatch, so this is unreachable

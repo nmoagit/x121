@@ -44,7 +44,7 @@ pub enum DashboardSection {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum MissingItemCategory {
-    SourceImage,
+    SourceMedia,
     ApprovedVariant,
     MetadataComplete,
     PipelineSetting,
@@ -126,7 +126,7 @@ pub fn build_missing_item_label(key: &str) -> String {
 /// Build an action URL for a missing item.
 pub fn build_action_url(avatar_id: i64, category: &MissingItemCategory) -> String {
     match category {
-        MissingItemCategory::SourceImage => {
+        MissingItemCategory::SourceMedia => {
             format!("/avatars/{avatar_id}/source-images")
         }
         MissingItemCategory::ApprovedVariant => {
@@ -199,8 +199,8 @@ mod tests {
 
     #[test]
     fn missing_item_category_serializes_snake_case() {
-        let json = serde_json::to_string(&MissingItemCategory::SourceImage).unwrap();
-        assert_eq!(json, "\"source_image\"");
+        let json = serde_json::to_string(&MissingItemCategory::SourceMedia).unwrap();
+        assert_eq!(json, "\"source_media\"");
     }
 
     #[test]
@@ -345,8 +345,8 @@ mod tests {
     // -- build_action_url ------------------------------------------------
 
     #[test]
-    fn action_url_source_image() {
-        let url = build_action_url(42, &MissingItemCategory::SourceImage);
+    fn action_url_source_media() {
+        let url = build_action_url(42, &MissingItemCategory::SourceMedia);
         assert_eq!(url, "/avatars/42/source-images");
     }
 

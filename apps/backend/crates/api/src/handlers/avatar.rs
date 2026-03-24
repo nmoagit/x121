@@ -344,7 +344,7 @@ pub async fn bulk_approve(
     let images = if approve_images {
         sqlx::query_scalar::<_, i64>(
             "WITH updated AS (
-                UPDATE image_variants
+                UPDATE media_variants
                 SET status_id = 2, updated_at = NOW()
                 WHERE avatar_id = $1
                   AND deleted_at IS NULL

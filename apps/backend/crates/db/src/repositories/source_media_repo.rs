@@ -1,31 +1,31 @@
-//! Repository for the `source_images` table.
+//! Repository for the `source_media` table.
 
 use sqlx::PgPool;
 use x121_core::types::DbId;
 
-use crate::models::image::{CreateSourceImage, SourceImage, UpdateSourceImage};
+use crate::models::media::{CreateSourceMedia, SourceMedia, UpdateSourceMedia};
 
 /// Column list shared across queries to avoid repetition.
 const COLUMNS: &str =
     "id, avatar_id, file_path, description, is_primary, deleted_at, created_at, updated_at";
 
 /// Provides CRUD operations for source images.
-pub struct SourceImageRepo;
+pub struct SourceMediaRepo;
 
-impl SourceImageRepo {
+impl SourceMediaRepo {
     /// Insert a new source image, returning the created row.
     ///
     /// If `is_primary` is `None`, defaults to `false`.
     pub async fn create(
         pool: &PgPool,
-        input: &CreateSourceImage,
-    ) -> Result<SourceImage, sqlx::Error> {
+        input: &CreateSourceMedia,
+    ) -> Result<SourceMedia, sqlx::Error> {
         let query = format!(
-            "INSERT INTO source_images (avatar_id, file_path, description, is_primary)
+            "INSERT INTO source_media (avatar_id, file_path, description, is_primary)
              VALUES ($1, $2, $3, COALESCE($4, false))
              RETURNING {COLUMNS}"
         );
-        sqlx::query_as::<_, SourceImage>(&query)
+        sqlx::query_as::<_, SourceMedia>(&query)
             .bind(input.avatar_id)
             .bind(&input.file_path)
             .bind(&input.description)
@@ -35,10 +35,10 @@ impl SourceImageRepo {
     }
 
     /// Find a source image by its internal ID. Excludes soft-deleted rows.
-    pub async fn find_by_id(pool: &PgPool, id: DbId) -> Result<Option<SourceImage>, sqlx::Error> {
+    pub async fn find_by_id(pool: &PgPool, id: DbId) -> Result<Option<SourceMedia>, sqlx::Error> {
         let query =
-            format!("SELECT {COLUMNS} FROM source_images WHERE id = $1 AND deleted_at IS NULL");
-        sqlx::query_as::<_, SourceImage>(&query)
+            format!("SELECT {COLUMNS} FROM source_media WHERE id = $1 AND deleted_at IS NULL");
+        sqlx::query_as::<_, SourceMedia>(&query)
             .bind(id)
             .fetch_optional(pool)
             .await
@@ -49,13 +49,13 @@ impl SourceImageRepo {
     pub async fn list_by_avatar(
         pool: &PgPool,
         avatar_id: DbId,
-    ) -> Result<Vec<SourceImage>, sqlx::Error> {
+    ) -> Result<Vec<SourceMedia>, sqlx::Error> {
         let query = format!(
-            "SELECT {COLUMNS} FROM source_images
+            "SELECT {COLUMNS} FROM source_media
              WHERE avatar_id = $1 AND deleted_at IS NULL
              ORDER BY created_at DESC"
         );
-        sqlx::query_as::<_, SourceImage>(&query)
+        sqlx::query_as::<_, SourceMedia>(&query)
             .bind(avatar_id)
             .fetch_all(pool)
             .await
@@ -67,17 +67,17 @@ impl SourceImageRepo {
     pub async fn update(
         pool: &PgPool,
         id: DbId,
-        input: &UpdateSourceImage,
-    ) -> Result<Option<SourceImage>, sqlx::Error> {
+        input: &UpdateSourceMedia,
+    ) -> Result<Option<SourceMedia>, sqlx::Error> {
         let query = format!(
-            "UPDATE source_images SET
+            "UPDATE source_media SET
                 file_path = COALESCE($2, file_path),
                 description = COALESCE($3, description),
                 is_primary = COALESCE($4, is_primary)
              WHERE id = $1 AND deleted_at IS NULL
              RETURNING {COLUMNS}"
         );
-        sqlx::query_as::<_, SourceImage>(&query)
+        sqlx::query_as::<_, SourceMedia>(&query)
             .bind(id)
             .bind(&input.file_path)
             .bind(&input.description)
@@ -90,9 +90,9 @@ impl SourceImageRepo {
     pub async fn find_by_id_include_deleted(
         pool: &PgPool,
         id: DbId,
-    ) -> Result<Option<SourceImage>, sqlx::Error> {
-        let query = format!("SELECT {COLUMNS} FROM source_images WHERE id = $1");
-        sqlx::query_as::<_, SourceImage>(&query)
+    ) -> Result<Option<SourceMedia>, sqlx::Error> {
+        let query = format!("SELECT {COLUMNS} FROM source_media WHERE id = $1");
+        sqlx::query_as::<_, SourceMedia>(&query)
             .bind(id)
             .fetch_optional(pool)
             .await
@@ -101,7 +101,7 @@ impl SourceImageRepo {
     /// Soft-delete a source image by ID. Returns `true` if a row was marked deleted.
     pub async fn soft_delete(pool: &PgPool, id: DbId) -> Result<bool, sqlx::Error> {
         let result = sqlx::query(
-            "UPDATE source_images SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
+            "UPDATE source_media SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
         )
         .bind(id)
         .execute(pool)
@@ -112,7 +112,7 @@ impl SourceImageRepo {
     /// Restore a soft-deleted source image. Returns `true` if a row was restored.
     pub async fn restore(pool: &PgPool, id: DbId) -> Result<bool, sqlx::Error> {
         let result = sqlx::query(
-            "UPDATE source_images SET deleted_at = NULL WHERE id = $1 AND deleted_at IS NOT NULL",
+            "UPDATE source_media SET deleted_at = NULL WHERE id = $1 AND deleted_at IS NOT NULL",
         )
         .bind(id)
         .execute(pool)
@@ -122,7 +122,7 @@ impl SourceImageRepo {
 
     /// Permanently delete a source image by ID. Returns `true` if a row was removed.
     pub async fn hard_delete(pool: &PgPool, id: DbId) -> Result<bool, sqlx::Error> {
-        let result = sqlx::query("DELETE FROM source_images WHERE id = $1")
+        let result = sqlx::query("DELETE FROM source_media WHERE id = $1")
             .bind(id)
             .execute(pool)
             .await?;

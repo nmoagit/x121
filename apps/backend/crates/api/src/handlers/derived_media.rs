@@ -8,8 +8,8 @@ use axum::http::StatusCode;
 use axum::Json;
 use x121_core::error::CoreError;
 use x121_core::types::DbId;
-use x121_db::models::image::{CreateDerivedImage, DerivedImage, UpdateDerivedImage};
-use x121_db::repositories::DerivedImageRepo;
+use x121_db::models::media::{CreateDerivedMedia, DerivedMedia, UpdateDerivedMedia};
+use x121_db::repositories::DerivedMediaRepo;
 
 use crate::error::{AppError, AppResult};
 use crate::state::AppState;
@@ -20,10 +20,10 @@ use crate::state::AppState;
 pub async fn create(
     State(state): State<AppState>,
     Path(avatar_id): Path<DbId>,
-    Json(mut input): Json<CreateDerivedImage>,
-) -> AppResult<(StatusCode, Json<DerivedImage>)> {
+    Json(mut input): Json<CreateDerivedMedia>,
+) -> AppResult<(StatusCode, Json<DerivedMedia>)> {
     input.avatar_id = avatar_id;
-    let image = DerivedImageRepo::create(&state.pool, &input).await?;
+    let image = DerivedMediaRepo::create(&state.pool, &input).await?;
     Ok((StatusCode::CREATED, Json(image)))
 }
 
@@ -31,8 +31,8 @@ pub async fn create(
 pub async fn list_by_avatar(
     State(state): State<AppState>,
     Path(avatar_id): Path<DbId>,
-) -> AppResult<Json<Vec<DerivedImage>>> {
-    let images = DerivedImageRepo::list_by_avatar(&state.pool, avatar_id).await?;
+) -> AppResult<Json<Vec<DerivedMedia>>> {
+    let images = DerivedMediaRepo::list_by_avatar(&state.pool, avatar_id).await?;
     Ok(Json(images))
 }
 
@@ -40,11 +40,11 @@ pub async fn list_by_avatar(
 pub async fn get_by_id(
     State(state): State<AppState>,
     Path((_avatar_id, id)): Path<(DbId, DbId)>,
-) -> AppResult<Json<DerivedImage>> {
-    let image = DerivedImageRepo::find_by_id(&state.pool, id)
+) -> AppResult<Json<DerivedMedia>> {
+    let image = DerivedMediaRepo::find_by_id(&state.pool, id)
         .await?
         .ok_or(AppError::Core(CoreError::NotFound {
-            entity: "DerivedImage",
+            entity: "DerivedMedia",
             id,
         }))?;
     Ok(Json(image))
@@ -54,12 +54,12 @@ pub async fn get_by_id(
 pub async fn update(
     State(state): State<AppState>,
     Path((_avatar_id, id)): Path<(DbId, DbId)>,
-    Json(input): Json<UpdateDerivedImage>,
-) -> AppResult<Json<DerivedImage>> {
-    let image = DerivedImageRepo::update(&state.pool, id, &input)
+    Json(input): Json<UpdateDerivedMedia>,
+) -> AppResult<Json<DerivedMedia>> {
+    let image = DerivedMediaRepo::update(&state.pool, id, &input)
         .await?
         .ok_or(AppError::Core(CoreError::NotFound {
-            entity: "DerivedImage",
+            entity: "DerivedMedia",
             id,
         }))?;
     Ok(Json(image))
@@ -70,12 +70,12 @@ pub async fn delete(
     State(state): State<AppState>,
     Path((_avatar_id, id)): Path<(DbId, DbId)>,
 ) -> AppResult<StatusCode> {
-    let deleted = DerivedImageRepo::soft_delete(&state.pool, id).await?;
+    let deleted = DerivedMediaRepo::soft_delete(&state.pool, id).await?;
     if deleted {
         Ok(StatusCode::NO_CONTENT)
     } else {
         Err(AppError::Core(CoreError::NotFound {
-            entity: "DerivedImage",
+            entity: "DerivedMedia",
             id,
         }))
     }

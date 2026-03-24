@@ -53,7 +53,7 @@ mod tests {
     #[test]
     fn test_eq_operator_matches() {
         let cond = ProtectionCondition {
-            entity_type: "image_variant".into(),
+            entity_type: "media_variant".into(),
             condition_field: "status".into(),
             condition_operator: "eq".into(),
             condition_value: "approved".into(),
@@ -78,7 +78,7 @@ mod tests {
     #[test]
     fn test_is_not_null_operator() {
         let cond = ProtectionCondition {
-            entity_type: "source_image".into(),
+            entity_type: "source_media".into(),
             condition_field: "id".into(),
             condition_operator: "is_not_null".into(),
             condition_value: "true".into(),
@@ -105,13 +105,13 @@ mod tests {
     fn test_is_protected_by_rules() {
         let rules = vec![
             ProtectionCondition {
-                entity_type: "image_variant".into(),
+                entity_type: "media_variant".into(),
                 condition_field: "status".into(),
                 condition_operator: "eq".into(),
                 condition_value: "approved".into(),
             },
             ProtectionCondition {
-                entity_type: "image_variant".into(),
+                entity_type: "media_variant".into(),
                 condition_field: "locked".into(),
                 condition_operator: "eq".into(),
                 condition_value: "true".into(),

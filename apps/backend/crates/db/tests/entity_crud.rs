@@ -9,14 +9,14 @@
 
 use sqlx::PgPool;
 use x121_db::models::avatar::CreateAvatar;
-use x121_db::models::image::{CreateImageVariant, CreateSourceImage};
+use x121_db::models::image::{CreateMediaVariant, CreateSourceMedia};
 use x121_db::models::project::{CreateProject, UpdateProject};
 use x121_db::models::scene::CreateScene;
 use x121_db::models::scene_type::CreateSceneType;
 use x121_db::models::segment::CreateSegment;
 use x121_db::repositories::{
-    AvatarRepo, ImageVariantRepo, ProjectRepo, SceneRepo, SceneTypeRepo, SegmentRepo,
-    SourceImageRepo,
+    AvatarRepo, MediaVariantRepo, ProjectRepo, SceneRepo, SceneTypeRepo, SegmentRepo,
+    SourceMediaRepo,
 };
 
 // ---------------------------------------------------------------------------
@@ -68,8 +68,8 @@ fn new_scene_type(project_id: Option<i64>, name: &str) -> CreateSceneType {
     }
 }
 
-fn new_source_image(avatar_id: i64, path: &str) -> CreateSourceImage {
-    CreateSourceImage {
+fn new_source_media(avatar_id: i64, path: &str) -> CreateSourceMedia {
+    CreateSourceMedia {
         avatar_id,
         file_path: path.to_string(),
         description: None,
@@ -77,11 +77,11 @@ fn new_source_image(avatar_id: i64, path: &str) -> CreateSourceImage {
     }
 }
 
-fn new_image_variant(avatar_id: i64, label: &str, path: &str) -> CreateImageVariant {
-    CreateImageVariant {
+fn new_image_variant(avatar_id: i64, label: &str, path: &str) -> CreateMediaVariant {
+    CreateMediaVariant {
         avatar_id,
-        source_image_id: None,
-        derived_image_id: None,
+        source_media_id: None,
+        derived_media_id: None,
         variant_label: label.to_string(),
         status_id: None,
         file_path: path.to_string(),
@@ -98,11 +98,11 @@ fn new_image_variant(avatar_id: i64, label: &str, path: &str) -> CreateImageVari
     }
 }
 
-fn new_scene(avatar_id: i64, scene_type_id: i64, image_variant_id: i64) -> CreateScene {
+fn new_scene(avatar_id: i64, scene_type_id: i64, media_variant_id: i64) -> CreateScene {
     CreateScene {
         avatar_id,
         scene_type_id,
-        image_variant_id,
+        media_variant_id,
         status_id: None,
         transition_mode: None,
     }
@@ -143,13 +143,13 @@ async fn test_create_full_hierarchy(pool: PgPool) {
         .unwrap();
     assert_eq!(scene_type.name, "Dance");
 
-    let source_image =
-        SourceImageRepo::create(&pool, &new_source_image(avatar.id, "/img/alice.png"))
+    let source_media =
+        SourceMediaRepo::create(&pool, &new_source_media(avatar.id, "/img/alice.png"))
             .await
             .unwrap();
-    assert_eq!(source_image.avatar_id, avatar.id);
+    assert_eq!(source_media.avatar_id, avatar.id);
 
-    let variant = ImageVariantRepo::create(
+    let variant = MediaVariantRepo::create(
         &pool,
         &new_image_variant(avatar.id, "clothed", "/img/alice_clothed.png"),
     )
@@ -185,7 +185,7 @@ async fn test_cascade_delete_project(pool: PgPool) {
     let scene_type = SceneTypeRepo::create(&pool, &new_scene_type(Some(project.id), "Idle"))
         .await
         .unwrap();
-    let variant = ImageVariantRepo::create(
+    let variant = MediaVariantRepo::create(
         &pool,
         &new_image_variant(avatar.id, "clothed", "/img/bob.png"),
     )
@@ -215,7 +215,7 @@ async fn test_cascade_delete_project(pool: PgPool) {
         .await
         .unwrap()
         .is_none());
-    assert!(ImageVariantRepo::find_by_id(&pool, variant.id)
+    assert!(MediaVariantRepo::find_by_id(&pool, variant.id)
         .await
         .unwrap()
         .is_none());
@@ -235,7 +235,7 @@ async fn test_duplicate_project_name_rejected(pool: PgPool) {
 }
 
 // ---------------------------------------------------------------------------
-// Test: Unique constraint on scene (avatar_id, scene_type_id, image_variant_id)
+// Test: Unique constraint on scene (avatar_id, scene_type_id, media_variant_id)
 // ---------------------------------------------------------------------------
 
 #[sqlx::test(migrations = "../../../db/migrations")]
@@ -249,7 +249,7 @@ async fn test_duplicate_scene_triple_rejected(pool: PgPool) {
     let scene_type = SceneTypeRepo::create(&pool, &new_scene_type(Some(project.id), "Walk"))
         .await
         .unwrap();
-    let variant = ImageVariantRepo::create(
+    let variant = MediaVariantRepo::create(
         &pool,
         &new_image_variant(avatar.id, "clothed", "/img/charlie.png"),
     )
@@ -265,7 +265,7 @@ async fn test_duplicate_scene_triple_rejected(pool: PgPool) {
     let result = SceneRepo::create(&pool, &new_scene(avatar.id, scene_type.id, variant.id)).await;
     assert!(
         result.is_err(),
-        "Duplicate (avatar_id, scene_type_id, image_variant_id) should fail"
+        "Duplicate (avatar_id, scene_type_id, media_variant_id) should fail"
     );
 }
 
@@ -284,7 +284,7 @@ async fn test_fk_violation_avatar_bad_project(pool: PgPool) {
 
 #[sqlx::test(migrations = "../../../db/migrations")]
 async fn test_fk_violation_scene_bad_avatar(pool: PgPool) {
-    // scene_type_id and image_variant_id are also bad, but avatar FK will fail first.
+    // scene_type_id and media_variant_id are also bad, but avatar FK will fail first.
     let result = SceneRepo::create(&pool, &new_scene(999_999, 1, 1)).await;
     assert!(
         result.is_err(),
@@ -401,7 +401,7 @@ async fn test_segments_ordered_by_sequence_index(pool: PgPool) {
     let scene_type = SceneTypeRepo::create(&pool, &new_scene_type(Some(project.id), "Smile"))
         .await
         .unwrap();
-    let variant = ImageVariantRepo::create(
+    let variant = MediaVariantRepo::create(
         &pool,
         &new_image_variant(avatar.id, "clothed", "/img/d.png"),
     )
