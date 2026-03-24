@@ -58,4 +58,8 @@ pub fn avatar_media_assignment_router() -> Router<AppState> {
             "/{avatar_id}/seed-summary",
             get(media_management::get_seed_summary),
         )
+        .route(
+            "/{avatar_id}/actions/auto-assign-seeds",
+            post(media_management::auto_assign_seeds),
+        )
 }

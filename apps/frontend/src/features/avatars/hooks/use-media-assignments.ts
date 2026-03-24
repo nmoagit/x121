@@ -79,6 +79,28 @@ interface UpdateAssignmentPayload {
   data: Partial<Omit<AvatarMediaAssignment, "id" | "avatar_id" | "created_at" | "updated_at" | "created_by">>;
 }
 
+export interface AutoAssignEntry {
+  scene_type_id: number;
+  scene_type_name: string;
+  track_id: number;
+  track_name: string;
+  media_variant_id: number;
+  variant_label: string;
+}
+
+export interface AutoAssignResult {
+  assigned: AutoAssignEntry[];
+  skipped: AutoAssignEntry[];
+  total_slots: number;
+  total_assigned: number;
+  total_skipped: number;
+}
+
+interface AutoAssignInput {
+  dry_run?: boolean;
+  overwrite_existing?: boolean;
+}
+
 /* --------------------------------------------------------------------------
    Query key factory
    -------------------------------------------------------------------------- */
@@ -150,6 +172,20 @@ export function useRemoveMediaAssignment(avatarId: number) {
   return useMutation({
     mutationFn: (assignmentId: number) =>
       api.delete(`/avatars/${avatarId}/media-assignments/${assignmentId}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: mediaAssignmentKeys.seedSummary(avatarId) });
+      queryClient.invalidateQueries({ queryKey: mediaAssignmentKeys.list(avatarId) });
+    },
+  });
+}
+
+/** Auto-assign best-match variants to all seed slots (PRD-147). */
+export function useAutoAssignSeeds(avatarId: number) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: AutoAssignInput) =>
+      api.post<AutoAssignResult>(`/avatars/${avatarId}/actions/auto-assign-seeds`, input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: mediaAssignmentKeys.seedSummary(avatarId) });
       queryClient.invalidateQueries({ queryKey: mediaAssignmentKeys.list(avatarId) });
