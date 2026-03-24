@@ -61,6 +61,7 @@ pub mod layouts;
 pub mod legacy_import;
 pub mod library;
 pub mod maintenance;
+pub mod media_management;
 pub mod metadata;
 pub mod metadata_template;
 pub mod naming;
@@ -863,6 +864,7 @@ pub fn api_routes() -> Router<AppState> {
             .merge(readiness::readiness_router())
             .merge(avatar_dashboard::dashboard_router())
             .merge(prompt_management::avatar_prompt_override_router())
+            .merge(media_management::avatar_media_assignment_router())
             .merge(poster_frame::avatar_poster_router())
             .merge(consistency_report::avatar_consistency_router())
             .merge(contact_sheet::avatar_contact_sheet_router())
@@ -991,7 +993,8 @@ pub fn api_routes() -> Router<AppState> {
         // Workflow canvas (PRD-33) + Workflow Import & Validation (PRD-75) + Prompt Slots (PRD-115).
         .nest("/workflows", workflow_canvas::router()
             .merge(workflow_import::workflow_import_router())
-            .merge(prompt_management::workflow_prompt_slot_router()))
+            .merge(prompt_management::workflow_prompt_slot_router())
+            .merge(media_management::workflow_media_slot_router()))
         // Bug reporting (PRD-44).
         .nest("/bug-reports", bug_reports::router())
         // Configuration export/import (PRD-44).

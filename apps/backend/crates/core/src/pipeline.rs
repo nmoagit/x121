@@ -18,6 +18,23 @@ pub struct SeedSlot {
     /// Optional description of what the slot is used for.
     #[serde(default)]
     pub description: String,
+    /// The kind of media this slot accepts (e.g. "image", "video", "lora").
+    /// Defaults to "image" for backward compatibility with existing JSONB data.
+    #[serde(default = "default_media_type")]
+    pub media_type: String,
+    /// File extensions this slot accepts (e.g. ["png", "jpg"]).
+    /// Empty means all extensions are allowed.
+    #[serde(default)]
+    pub allowed_extensions: Vec<String>,
+    /// Optional track affinity — ties this slot to a specific track name.
+    /// When set, the slot's media is only used for scenes on the given track.
+    #[serde(default)]
+    pub track_affinity: Option<String>,
+}
+
+/// Default media type for seed slots ("image").
+fn default_media_type() -> String {
+    "image".to_string()
 }
 
 /// File-naming rules for a pipeline's generated outputs.
@@ -162,6 +179,9 @@ mod tests {
             name: name.to_string(),
             required,
             description: String::new(),
+            media_type: "image".to_string(),
+            allowed_extensions: vec![],
+            track_affinity: None,
         }
     }
 
@@ -197,5 +217,35 @@ mod tests {
         let slots = vec![slot("front_clothed", true)];
         let labels = vec!["front_clothed".to_string(), "extra_label".to_string()];
         assert!(validate_seed_images(&slots, &labels).is_ok());
+    }
+
+    #[test]
+    fn parse_seed_slots_backward_compatible() {
+        // Old JSONB without the new fields should still parse correctly.
+        let json = serde_json::json!([
+            { "name": "front_clothed", "required": true },
+            { "name": "back_view", "required": false, "description": "Rear angle" }
+        ]);
+        let slots = parse_seed_slots(&json).unwrap();
+        assert_eq!(slots.len(), 2);
+        assert_eq!(slots[0].media_type, "image");
+        assert!(slots[0].allowed_extensions.is_empty());
+        assert!(slots[0].track_affinity.is_none());
+        assert_eq!(slots[1].description, "Rear angle");
+    }
+
+    #[test]
+    fn parse_seed_slots_with_new_fields() {
+        let json = serde_json::json!([{
+            "name": "front_clothed",
+            "required": true,
+            "media_type": "video",
+            "allowed_extensions": ["mp4", "mov"],
+            "track_affinity": "track_a"
+        }]);
+        let slots = parse_seed_slots(&json).unwrap();
+        assert_eq!(slots[0].media_type, "video");
+        assert_eq!(slots[0].allowed_extensions, vec!["mp4", "mov"]);
+        assert_eq!(slots[0].track_affinity.as_deref(), Some("track_a"));
     }
 }

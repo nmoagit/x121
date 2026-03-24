@@ -7,13 +7,14 @@
 use std::collections::HashMap;
 
 use x121_core::generation;
+use x121_core::media_resolution::{self, MediaAssignmentInput, MediaSlotInput};
 use x121_core::prompt_resolution;
 use x121_core::types::DbId;
 use x121_core::video_settings::{self, VideoSettingsLayer};
 use x121_db::models::pipeline::Pipeline;
 use x121_db::repositories::{
-    AvatarRepo, ImageVariantRepo, PipelineRepo, ProjectRepo, SceneTypeTrackConfigRepo, SegmentRepo,
-    VideoSettingsRepo, WorkflowRepo,
+    AvatarMediaAssignmentRepo, AvatarRepo, ImageVariantRepo, PipelineRepo, ProjectRepo,
+    SceneTypeTrackConfigRepo, SegmentRepo, VideoSettingsRepo, WorkflowMediaSlotRepo, WorkflowRepo,
 };
 
 use crate::error::{load_scene_and_type, PipelineError};
@@ -94,7 +95,7 @@ pub async fn load_generation_context(
         )));
     };
 
-    // 2. Determine the seed image path.
+    // 2. Determine the seed image path (legacy) and resolve media slots (PRD-146).
     let seed_image_path = if segment_index == 0 {
         // First segment: use the image variant assigned to the scene.
         let variant_id = scene.image_variant_id.ok_or_else(|| {
@@ -123,6 +124,20 @@ pub async fn load_generation_context(
                 "Previous segment (index {prev_index}) has no last_frame_path"
             ))
         })?
+    };
+
+    // 2b. Resolve media slots via PRD-146 engine (only for first segment).
+    let resolved_media = if segment_index == 0 {
+        resolve_media_for_scene(
+            pool,
+            resolved_workflow_id,
+            scene.avatar_id,
+            scene.scene_type_id,
+        )
+        .await?
+    } else {
+        // Continuation segments use boundary frames, not media slots.
+        vec![]
     };
 
     // 3. Resolve video settings through the 4-level hierarchy.
@@ -182,10 +197,99 @@ pub async fn load_generation_context(
         segment_index,
         clip_position,
         seed_image_path,
+        resolved_media,
         workflow_template,
         resolved_prompts,
         generation_params: scene_type.generation_params,
         lora_config: scene_type.lora_config,
         resolved_video_settings,
     })
+}
+
+/// Resolve media slots for a scene's workflow and avatar (PRD-146).
+///
+/// Queries `workflow_media_slots` for the workflow, `avatar_media_assignments`
+/// for the avatar, resolves image variant IDs to file paths, then runs the
+/// pure resolution engine.
+///
+/// Returns an empty vec when no media slots are configured (backward compat),
+/// allowing the caller to fall back to the legacy single-seed-image path.
+async fn resolve_media_for_scene(
+    pool: &sqlx::PgPool,
+    workflow_id: Option<DbId>,
+    avatar_id: DbId,
+    scene_type_id: DbId,
+) -> Result<Vec<media_resolution::ResolvedMediaSlot>, PipelineError> {
+    let Some(wf_id) = workflow_id else {
+        // No linked workflow — no media slots to resolve.
+        return Ok(vec![]);
+    };
+
+    // 1. Load media slots for this workflow.
+    let db_slots = WorkflowMediaSlotRepo::list_by_workflow(pool, wf_id).await?;
+    if db_slots.is_empty() {
+        return Ok(vec![]);
+    }
+
+    // 2. Load avatar assignments for media resolution.
+    let db_assignments = AvatarMediaAssignmentRepo::list_for_resolution(pool, avatar_id).await?;
+
+    // 3. Collect all referenced image_variant_ids and batch-fetch their file paths.
+    let variant_ids: Vec<DbId> = db_assignments
+        .iter()
+        .filter_map(|a| a.image_variant_id)
+        .collect();
+
+    let mut variant_paths: HashMap<DbId, String> = HashMap::new();
+    for variant_id in &variant_ids {
+        if let Some(variant) = ImageVariantRepo::find_by_id(pool, *variant_id).await? {
+            variant_paths.insert(variant.id, variant.file_path);
+        }
+    }
+
+    // 4. Convert DB models to resolution engine input types.
+    let slot_inputs: Vec<MediaSlotInput> = db_slots
+        .iter()
+        .map(|s| MediaSlotInput {
+            id: s.id,
+            node_id: s.node_id.clone(),
+            input_name: s.input_name.clone(),
+            class_type: s.class_type.clone(),
+            slot_label: s.slot_label.clone(),
+            media_type: s.media_type.clone(),
+            is_required: s.is_required,
+            fallback_mode: s.fallback_mode.clone(),
+            fallback_value: s.fallback_value.clone(),
+        })
+        .collect();
+
+    let assignment_inputs: Vec<MediaAssignmentInput> = db_assignments
+        .iter()
+        .map(|a| MediaAssignmentInput {
+            media_slot_id: a.media_slot_id,
+            scene_type_id: a.scene_type_id,
+            image_variant_id: a.image_variant_id,
+            file_path: a.file_path.clone(),
+            is_passthrough: a.is_passthrough,
+            passthrough_track_id: a.passthrough_track_id,
+        })
+        .collect();
+
+    // 5. Run resolution.
+    match media_resolution::resolve_media_slots(
+        &slot_inputs,
+        &assignment_inputs,
+        scene_type_id,
+        &variant_paths,
+    ) {
+        Ok(resolved) => Ok(resolved),
+        Err(unresolved) => {
+            let missing_labels: Vec<String> =
+                unresolved.iter().map(|u| u.slot_label.clone()).collect();
+            Err(PipelineError::MissingConfig(format!(
+                "Unresolved required media slots for avatar {avatar_id}: {}",
+                missing_labels.join(", ")
+            )))
+        }
+    }
 }

@@ -15,8 +15,10 @@ use x121_core::search::{clamp_limit, clamp_offset, DEFAULT_SEARCH_LIMIT, MAX_SEA
 use x121_core::types::DbId;
 use x121_core::workflow_import::{self, WORKFLOW_STATUS_ID_VALIDATED};
 use x121_db::models::workflow::{CreateWorkflow, ImportWorkflowRequest, UpdateWorkflow, Workflow};
+use x121_db::models::workflow_media_slot::CreateWorkflowMediaSlot;
 use x121_db::models::workflow_version::{CreateWorkflowVersion, WorkflowDiffResponse};
 use x121_db::repositories::PipelineRepo;
+use x121_db::repositories::WorkflowMediaSlotRepo;
 use x121_db::repositories::WorkflowRepo;
 use x121_db::repositories::WorkflowVersionRepo;
 
@@ -93,6 +95,9 @@ pub async fn import_workflow(
     let discovered = workflow_import::discover_parameters(&parsed);
     let discovered_json = serde_json::to_value(&discovered).ok();
 
+    // Discover media-loading nodes for auto-creating media slots (PRD-146).
+    let media_nodes = workflow_import::discover_media_nodes(&body.json_content);
+
     // Resolve pipeline_id: use request value or fall back to default pipeline.
     let pipeline_id = match body.pipeline_id {
         Some(pid) => pid,
@@ -131,6 +136,35 @@ pub async fn import_workflow(
     };
 
     WorkflowVersionRepo::create(&state.pool, &version_input).await?;
+
+    // Auto-create media slots from discovered media nodes (PRD-146).
+    if !media_nodes.is_empty() {
+        let slot_inputs: Vec<CreateWorkflowMediaSlot> = media_nodes
+            .iter()
+            .enumerate()
+            .map(|(i, node)| CreateWorkflowMediaSlot {
+                workflow_id: workflow.id,
+                node_id: node.node_id.clone(),
+                input_name: node.input_name.clone(),
+                class_type: Some(node.class_type.clone()),
+                slot_label: node.auto_label.clone(),
+                media_type: Some(node.media_type.clone()),
+                is_required: Some(true),
+                fallback_mode: None,
+                fallback_value: None,
+                sort_order: Some(i as i32),
+                description: None,
+                seed_slot_name: None,
+            })
+            .collect();
+
+        let created_slots = WorkflowMediaSlotRepo::bulk_create(&state.pool, &slot_inputs).await?;
+        tracing::info!(
+            workflow_id = workflow.id,
+            media_slots = created_slots.len(),
+            "Auto-created media slots from workflow nodes"
+        );
+    }
 
     tracing::info!(
         workflow_id = workflow.id,
@@ -224,6 +258,35 @@ pub async fn update_workflow(
             .bind(id)
             .execute(&state.pool)
             .await?;
+
+        // Re-discover media slots for the updated workflow JSON (PRD-146).
+        // Remove existing auto-detected slots and re-create from the new JSON.
+        let existing_slots = WorkflowMediaSlotRepo::list_by_workflow(&state.pool, id).await?;
+        for slot in &existing_slots {
+            WorkflowMediaSlotRepo::delete(&state.pool, slot.id).await?;
+        }
+        let media_nodes = workflow_import::discover_media_nodes(json_content);
+        if !media_nodes.is_empty() {
+            let slot_inputs: Vec<CreateWorkflowMediaSlot> = media_nodes
+                .iter()
+                .enumerate()
+                .map(|(i, node)| CreateWorkflowMediaSlot {
+                    workflow_id: id,
+                    node_id: node.node_id.clone(),
+                    input_name: node.input_name.clone(),
+                    class_type: Some(node.class_type.clone()),
+                    slot_label: node.auto_label.clone(),
+                    media_type: Some(node.media_type.clone()),
+                    is_required: Some(true),
+                    fallback_mode: None,
+                    fallback_value: None,
+                    sort_order: Some(i as i32),
+                    description: None,
+                    seed_slot_name: None,
+                })
+                .collect();
+            WorkflowMediaSlotRepo::bulk_create(&state.pool, &slot_inputs).await?;
+        }
     }
 
     let updated = WorkflowRepo::update(&state.pool, id, &body)

@@ -52,6 +52,7 @@ import { AvatarImagesTab } from "./tabs/AvatarImagesTab";
 import { AvatarMetadataTab } from "./tabs/AvatarMetadataTab";
 import { AvatarOverviewTab } from "./tabs/AvatarOverviewTab";
 import { AvatarScenesTab } from "./tabs/AvatarScenesTab";
+import { AvatarSeedsTab } from "./tabs/AvatarSeedsTab";
 import { AvatarSettingsTab } from "./tabs/AvatarSettingsTab";
 import { AvatarSpeechTab } from "./tabs/AvatarSpeechTab";
 
@@ -408,6 +409,9 @@ export function AvatarDetailPage() {
           )}
           <AvatarImagesTab key={avatarId} avatarId={avatarId} projectId={projectId} />
         </div>
+      )}
+      {activeTab === "seeds" && (
+        <AvatarSeedsTab key={avatarId} avatarId={avatarId} projectId={projectId} />
       )}
       {activeTab === "scenes" && (
         <div className={!avatar.is_enabled ? "opacity-70 grayscale" : ""}>

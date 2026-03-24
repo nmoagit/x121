@@ -67,6 +67,39 @@ pub const LOAD_IMAGE_FROM_PATH_CLASS: &str = "LoadImageFromPath";
 /// All node class types that load a seed image in ComfyUI workflows.
 pub const LOAD_IMAGE_CLASSES: &[&str] = &[LOAD_IMAGE_CLASS, LOAD_IMAGE_FROM_PATH_CLASS];
 
+/// Video loading node class types.
+const LOAD_VIDEO_CLASS: &str = "LoadVideo";
+const LOAD_VIDEO_FROM_PATH_CLASS: &str = "LoadVideoFromPath";
+const VHS_LOAD_VIDEO_CLASS: &str = "VHS_LoadVideo";
+
+/// All node class types that load a video file.
+pub const LOAD_VIDEO_CLASSES: &[&str] = &[
+    LOAD_VIDEO_CLASS,
+    LOAD_VIDEO_FROM_PATH_CLASS,
+    VHS_LOAD_VIDEO_CLASS,
+];
+
+/// Audio loading node class types.
+const LOAD_AUDIO_CLASS: &str = "LoadAudio";
+const LOAD_AUDIO_FROM_PATH_CLASS: &str = "LoadAudioFromPath";
+
+/// All node class types that load an audio file.
+pub const LOAD_AUDIO_CLASSES: &[&str] = &[LOAD_AUDIO_CLASS, LOAD_AUDIO_FROM_PATH_CLASS];
+
+/// All media-loading node class types (images, video, audio).
+pub const ALL_MEDIA_LOAD_CLASSES: &[&str] = &[
+    // images
+    LOAD_IMAGE_CLASS,
+    LOAD_IMAGE_FROM_PATH_CLASS,
+    // video
+    LOAD_VIDEO_CLASS,
+    LOAD_VIDEO_FROM_PATH_CLASS,
+    VHS_LOAD_VIDEO_CLASS,
+    // audio
+    LOAD_AUDIO_CLASS,
+    LOAD_AUDIO_FROM_PATH_CLASS,
+];
+
 /// Load checkpoint node class type.
 const LOAD_CHECKPOINT_CLASS: &str = "CheckpointLoaderSimple";
 
@@ -439,6 +472,89 @@ pub fn validate_workflow_json_size(json: &serde_json::Value) -> Result<(), CoreE
         )));
     }
     Ok(())
+}
+
+/// A media-loading node discovered during workflow import.
+///
+/// Used by PRD-146 to auto-create workflow media slots for image, video,
+/// and audio inputs.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DiscoveredMediaNode {
+    /// ComfyUI node ID (string key from the workflow JSON).
+    pub node_id: String,
+    /// ComfyUI class type (e.g. "LoadImage", "LoadVideo").
+    pub class_type: String,
+    /// Input field name within the node (e.g. "image", "video", "audio").
+    pub input_name: String,
+    /// Media type category: "image", "video", or "audio".
+    pub media_type: String,
+    /// Auto-generated human-readable label (e.g. "Image Input 1").
+    pub auto_label: String,
+}
+
+/// Discover all media-loading nodes in a workflow JSON.
+///
+/// Iterates all nodes and returns a [`DiscoveredMediaNode`] for each whose
+/// `class_type` is in [`ALL_MEDIA_LOAD_CLASSES`]. Labels are numbered
+/// sequentially per media type.
+pub fn discover_media_nodes(workflow: &serde_json::Value) -> Vec<DiscoveredMediaNode> {
+    let obj = match workflow.as_object() {
+        Some(o) => o,
+        None => return Vec::new(),
+    };
+
+    let mut results = Vec::new();
+    let mut image_count: u32 = 0;
+    let mut video_count: u32 = 0;
+    let mut audio_count: u32 = 0;
+
+    // Collect and sort node IDs for deterministic ordering.
+    let mut node_ids: Vec<&String> = obj.keys().collect();
+    node_ids.sort();
+
+    for node_id in node_ids {
+        let node_value = match obj.get(node_id) {
+            Some(v) => v,
+            None => continue,
+        };
+
+        let class_type = match node_value.get("class_type").and_then(|v| v.as_str()) {
+            Some(ct) => ct,
+            None => continue,
+        };
+
+        if !ALL_MEDIA_LOAD_CLASSES.contains(&class_type) {
+            continue;
+        }
+
+        let (media_type, input_name, counter) = if LOAD_IMAGE_CLASSES.contains(&class_type) {
+            image_count += 1;
+            ("image", "image", image_count)
+        } else if LOAD_VIDEO_CLASSES.contains(&class_type) {
+            video_count += 1;
+            ("video", "video", video_count)
+        } else {
+            audio_count += 1;
+            ("audio", "audio", audio_count)
+        };
+
+        let type_label = match media_type {
+            "image" => "Image",
+            "video" => "Video",
+            "audio" => "Audio",
+            _ => "Media",
+        };
+
+        results.push(DiscoveredMediaNode {
+            node_id: node_id.clone(),
+            class_type: class_type.to_string(),
+            input_name: input_name.to_string(),
+            media_type: media_type.to_string(),
+            auto_label: format!("{type_label} Input {counter}"),
+        });
+    }
+
+    results
 }
 
 /// Compute a deterministic SHA-256 hash of the workflow JSON content.
@@ -919,5 +1035,78 @@ mod tests {
         let mut sorted = ids.clone();
         sorted.sort();
         assert_eq!(ids, sorted);
+    }
+
+    // -- discover_media_nodes -------------------------------------------------
+
+    #[test]
+    fn discover_media_nodes_finds_load_image() {
+        let json = workflow_with_load_image();
+        let nodes = discover_media_nodes(&json);
+        assert_eq!(nodes.len(), 1);
+        assert_eq!(nodes[0].class_type, "LoadImage");
+        assert_eq!(nodes[0].media_type, "image");
+        assert_eq!(nodes[0].input_name, "image");
+        assert_eq!(nodes[0].auto_label, "Image Input 1");
+    }
+
+    #[test]
+    fn discover_media_nodes_finds_video_and_audio() {
+        let json = json!({
+            "1": {
+                "class_type": "LoadVideo",
+                "inputs": { "video": "clip.mp4" }
+            },
+            "2": {
+                "class_type": "LoadAudio",
+                "inputs": { "audio": "voice.wav" }
+            },
+            "3": {
+                "class_type": "LoadImage",
+                "inputs": { "image": "photo.png" }
+            }
+        });
+        let nodes = discover_media_nodes(&json);
+        assert_eq!(nodes.len(), 3);
+
+        let video = nodes.iter().find(|n| n.media_type == "video").unwrap();
+        assert_eq!(video.auto_label, "Video Input 1");
+
+        let audio = nodes.iter().find(|n| n.media_type == "audio").unwrap();
+        assert_eq!(audio.auto_label, "Audio Input 1");
+
+        let image = nodes.iter().find(|n| n.media_type == "image").unwrap();
+        assert_eq!(image.auto_label, "Image Input 1");
+    }
+
+    #[test]
+    fn discover_media_nodes_numbers_sequentially() {
+        let json = json!({
+            "1": {
+                "class_type": "LoadImage",
+                "inputs": { "image": "a.png" }
+            },
+            "2": {
+                "class_type": "LoadImage",
+                "inputs": { "image": "b.png" }
+            }
+        });
+        let nodes = discover_media_nodes(&json);
+        assert_eq!(nodes.len(), 2);
+        assert_eq!(nodes[0].auto_label, "Image Input 1");
+        assert_eq!(nodes[1].auto_label, "Image Input 2");
+    }
+
+    #[test]
+    fn discover_media_nodes_empty_for_no_media() {
+        let json = sample_workflow_json();
+        let nodes = discover_media_nodes(&json);
+        assert!(nodes.is_empty());
+    }
+
+    #[test]
+    fn discover_media_nodes_non_object_returns_empty() {
+        let nodes = discover_media_nodes(&json!("not an object"));
+        assert!(nodes.is_empty());
     }
 }

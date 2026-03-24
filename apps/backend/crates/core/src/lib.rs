@@ -58,6 +58,7 @@ pub mod job_status;
 pub mod legacy_import;
 pub mod llm_refinement;
 pub mod maintenance;
+pub mod media_resolution;
 pub mod metadata;
 pub mod metadata_editor;
 pub mod metadata_transform;

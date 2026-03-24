@@ -60,6 +60,7 @@ mod tests {
             segment_index: 0,
             clip_position: ClipPosition::FullClip,
             seed_image_path: "/storage/images/seed_001.png".to_string(),
+            resolved_media: vec![],
             workflow_template: serde_json::json!({}),
             resolved_prompts: vec![
                 ResolvedPromptSlot {

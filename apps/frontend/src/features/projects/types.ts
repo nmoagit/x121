@@ -279,6 +279,7 @@ export const PROJECT_TABS = [
 export const CHARACTER_TABS = [
   { id: "overview", label: "Overview" },
   { id: "images", label: "Images" },
+  { id: "seeds", label: "Seeds" },
   { id: "scenes", label: "Scenes" },
   { id: "metadata", label: "Metadata" },
   { id: "speech", label: "Speech" },

@@ -71,6 +71,7 @@ pub mod layouts;
 pub mod legacy_import;
 pub mod library;
 pub mod maintenance;
+pub mod media_management;
 pub mod metadata;
 pub mod metadata_template;
 pub mod naming;
