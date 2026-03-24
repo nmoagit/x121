@@ -28,8 +28,8 @@ import { Modal } from "@/components/composite/Modal";
 import { useBatchGenerate, useRemoveScenesFromSchedule } from "@/features/generation/hooks/use-generation";
 import { ScheduleGenerationModal } from "@/features/generation/ScheduleGenerationModal";
 import { useSchedules } from "@/features/job-scheduling/hooks/use-job-scheduling";
-import { useImageVariants } from "@/features/images/hooks/use-image-variants";
-import { findVariantForTrackWithFallback } from "@/features/images/utils";
+import { useMediaVariants } from "@/features/media/hooks/use-media-variants";
+import { findVariantForTrackWithFallback } from "@/features/media/utils";
 import { sourceLabel } from "@/features/scene-catalogue/SourceBadge";
 import { TRACK_TEXT_COLORS } from "@/lib/ui-classes";
 import {
@@ -133,7 +133,7 @@ export function AvatarScenesTab({ avatarId, projectId, focusSceneId, focusSceneT
   const { data: pipelineData } = usePipeline(resolvedPipelineId ?? 0);
   const { data: tracks } = useTracks(false, resolvedPipelineId);
   const { isSingleTrack } = useSingleTrack(resolvedPipelineId);
-  const { data: imageVariants } = useImageVariants(avatarId);
+  const { data: imageVariants } = useMediaVariants(avatarId);
 
   const seedSlotNames = useMemo(() => {
     const slots = (pipelineData?.seed_slots ?? []) as SeedSlot[];
@@ -203,7 +203,7 @@ export function AvatarScenesTab({ avatarId, projectId, focusSceneId, focusSceneT
     [tracks],
   );
 
-  /* --- resolve image_variant_id for a track slug --- */
+  /* --- resolve media_variant_id for a track slug --- */
   const resolveVariantId = useCallback(
     (trackSlug: string | null | undefined): number | null => {
       if (!imageVariants || imageVariants.length === 0) return null;
@@ -399,7 +399,7 @@ export function AvatarScenesTab({ avatarId, projectId, focusSceneId, focusSceneT
           const variantId = resolveVariantId(row.track_slug);
           const newScene = await createScene.mutateAsync({
             scene_type_id: row.scene_type_id,
-            image_variant_id: variantId,
+            media_variant_id: variantId,
             track_id: row.track_id ?? null,
           });
           sceneId = newScene.id;
@@ -510,7 +510,7 @@ export function AvatarScenesTab({ avatarId, projectId, focusSceneId, focusSceneT
       try {
         const newScene = await createScene.mutateAsync({
           scene_type_id: slot.row.scene_type_id,
-          image_variant_id: variantId,
+          media_variant_id: variantId,
           track_id: slot.row.track_id ?? null,
         });
         sceneIds.push(newScene.id);
@@ -572,7 +572,7 @@ export function AvatarScenesTab({ avatarId, projectId, focusSceneId, focusSceneT
       try {
         const newScene = await createScene.mutateAsync({
           scene_type_id: slot.row.scene_type_id,
-          image_variant_id: variantId,
+          media_variant_id: variantId,
           track_id: slot.row.track_id ?? null,
         });
         sceneId = newScene.id;

@@ -85,7 +85,7 @@ export const NAV_GROUPS: NavGroupDef[] = [
     items: [
       { label: "Scene Catalogue", path: "/content/scene-catalogue", icon: List, prominent: true },
       { label: "Library", path: "/content/library", icon: Folder, prominent: true },
-      { label: "Images", path: "/content/images", icon: Image, prominent: true },
+      { label: "Media", path: "/content/media", icon: Image, prominent: true },
       { label: "Scenes", path: "/content/scenes", icon: Layers, prominent: true },
       { label: "Avatars", path: "/content/avatars", icon: User, prominent: true },
       { label: "Storyboard", path: "/content/storyboard", icon: Layout },

@@ -15,12 +15,12 @@ import type { DrawingObject } from "@/features/annotations/types";
 import { Edit3, Trash2, X } from "@/tokens/icons";
 
 import {
-  useDeleteImageVariantFrameAnnotation,
-  useImageVariantAnnotations,
-  useUpsertImageVariantAnnotation,
-} from "./hooks/useImageVariantAnnotations";
-import type { ImageVariant } from "./types";
-import { variantImageUrl } from "./utils";
+  useDeleteMediaVariantFrameAnnotation,
+  useMediaVariantAnnotations,
+  useUpsertMediaVariantAnnotation,
+} from "./hooks/useMediaVariantAnnotations";
+import type { MediaVariant } from "./types";
+import { variantMediaUrl } from "./utils";
 
 /* --------------------------------------------------------------------------
    Constants
@@ -33,9 +33,9 @@ const FRAME_NUMBER = 0;
    Types
    -------------------------------------------------------------------------- */
 
-interface ImageVariantAnnotationModalProps {
+interface MediaVariantAnnotationModalProps {
   avatarId: number;
-  variant: ImageVariant | null;
+  variant: MediaVariant | null;
   onClose: () => void;
 }
 
@@ -43,11 +43,11 @@ interface ImageVariantAnnotationModalProps {
    Component
    -------------------------------------------------------------------------- */
 
-export function ImageVariantAnnotationModal({
+export function MediaVariantAnnotationModal({
   avatarId,
   variant,
   onClose,
-}: ImageVariantAnnotationModalProps) {
+}: MediaVariantAnnotationModalProps) {
   const [annotating, setAnnotating] = useState(false);
   const [containerWidth, setContainerWidth] = useState(0);
   const [imageHeight, setImageHeight] = useState(0);
@@ -61,9 +61,9 @@ export function ImageVariantAnnotationModal({
   const variantId = variant?.id ?? 0;
 
   // ---- DB persistence via TanStack Query ----
-  const { data: dbAnnotations } = useImageVariantAnnotations(avatarId, variantId);
-  const upsertMutation = useUpsertImageVariantAnnotation(avatarId, variantId);
-  const deleteMutation = useDeleteImageVariantFrameAnnotation(avatarId, variantId);
+  const { data: dbAnnotations } = useMediaVariantAnnotations(avatarId, variantId);
+  const upsertMutation = useUpsertMediaVariantAnnotation(avatarId, variantId);
+  const deleteMutation = useDeleteMediaVariantFrameAnnotation(avatarId, variantId);
 
   // Seed local state from DB when data arrives
   useEffect(() => {
@@ -173,7 +173,7 @@ export function ImageVariantAnnotationModal({
           {/* Image + annotation overlay */}
           <div ref={wrapperRef} className="relative">
             <img
-              src={variantImageUrl(variant.file_path ?? "")}
+              src={variantMediaUrl(variant.file_path ?? "")}
               alt={variant.variant_label}
               className="w-full rounded-[var(--radius-md)] object-contain"
               onLoad={handleImageLoad}

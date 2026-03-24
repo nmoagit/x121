@@ -25,8 +25,8 @@ import { useSetPageTitle } from "@/hooks/useSetPageTitle";
 import { AlertCircle, ChevronLeft, ChevronRight, Edit3, Power, User } from "@/tokens/icons";
 
 import { useAvatarDashboard } from "@/features/avatar-dashboard";
-import { useImageVariants } from "@/features/images/hooks/use-image-variants";
-import { pickAvatarUrl } from "@/features/images/utils";
+import { useMediaVariants } from "@/features/media/hooks/use-media-variants";
+import { pickAvatarUrl } from "@/features/media/utils";
 import { AvatarEditModal } from "@/features/projects/components/AvatarEditModal";
 import { useAvatarGroups } from "@/features/projects/hooks/use-avatar-groups";
 import {
@@ -78,7 +78,7 @@ export function AvatarDetailPage() {
   const { data: avatar, isLoading, error } = useAvatar(projectId, avatarId);
   const { data: avatars } = useProjectAvatars(projectId);
   const { data: groups } = useAvatarGroups(projectId);
-  const { data: variants } = useImageVariants(avatarId);
+  const { data: variants } = useMediaVariants(avatarId);
   const { data: dashboard } = useAvatarDashboard(avatarId);
   const { data: speechCompleteness } = useSpeechCompleteness(avatarId);
   const { data: allLanguages } = useLanguages();

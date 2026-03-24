@@ -57,7 +57,7 @@ export interface BatchVariantStatus {
 
 /**
  * Fetch variant statuses for ALL avatars in a project in one request.
- * Replaces the N individual image-variant calls in the deliverables matrix.
+ * Replaces the N individual media-variant calls in the deliverables matrix.
  */
 export function useBatchVariantStatuses(projectId: number) {
   return useQuery({

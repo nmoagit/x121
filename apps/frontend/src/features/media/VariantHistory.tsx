@@ -10,14 +10,14 @@ import { formatDateTime } from "@/lib/format";
 import { TERMINAL_BODY, TERMINAL_HEADER, TERMINAL_HEADER_TITLE, TERMINAL_PANEL } from "@/lib/ui-classes";
 import { Clock } from "@/tokens/icons";
 
-import { useVariantHistory } from "./hooks/use-image-variants";
+import { useVariantHistory } from "./hooks/use-media-variants";
 import {
-  IMAGE_VARIANT_STATUS_LABEL,
+  MEDIA_VARIANT_STATUS_LABEL,
   PROVENANCE_LABEL,
-  type ImageVariantStatusId,
+  type MediaVariantStatusId,
   type Provenance,
 } from "./types";
-import { variantImageUrl } from "./utils";
+import { variantMediaUrl } from "./utils";
 
 /* --------------------------------------------------------------------------
    Types
@@ -78,7 +78,7 @@ export function VariantHistory({ avatarId, variantId }: VariantHistoryProps) {
                   {/* Thumbnail */}
                   {entry.file_path ? (
                     <img
-                      src={variantImageUrl(entry.file_path)}
+                      src={variantMediaUrl(entry.file_path)}
                       alt={`Version ${entry.version}`}
                       className="h-16 w-16 shrink-0 rounded-[var(--radius-sm)] object-cover"
                     />
@@ -97,7 +97,7 @@ export function VariantHistory({ avatarId, variantId }: VariantHistoryProps) {
 
                     <div className="flex flex-wrap items-center gap-1 font-mono text-[10px]">
                       <span className="text-[var(--color-text-muted)]">
-                        {IMAGE_VARIANT_STATUS_LABEL[entry.status_id as ImageVariantStatusId] ?? "Unknown"}
+                        {MEDIA_VARIANT_STATUS_LABEL[entry.status_id as MediaVariantStatusId] ?? "Unknown"}
                       </span>
                       <span className="opacity-30">|</span>
                       <span className="text-[var(--color-text-muted)]">

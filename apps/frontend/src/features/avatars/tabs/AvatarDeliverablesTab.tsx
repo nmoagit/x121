@@ -47,10 +47,10 @@ import {
 import type { DeliverableIgnore } from "@/features/avatars/hooks/use-deliverable-ignores";
 import { generateAvatarJson } from "@/features/avatars/lib/avatar-json-transform";
 import { SOURCE_KEYS } from "@/features/avatars/types";
-import { useImageVariants } from "@/features/images/hooks/use-image-variants";
-import { IMAGE_VARIANT_STATUS, PROVENANCE_LABEL } from "@/features/images/types";
-import type { ImageVariant, Provenance } from "@/features/images/types";
-import { variantImageUrl } from "@/features/images/utils";
+import { useMediaVariants } from "@/features/media/hooks/use-media-variants";
+import { MEDIA_VARIANT_STATUS, PROVENANCE_LABEL } from "@/features/media/types";
+import type { MediaVariant, Provenance } from "@/features/media/types";
+import { variantMediaUrl } from "@/features/media/utils";
 import { usePipelineContextSafe } from "@/features/pipelines";
 import { usePipeline } from "@/features/pipelines/hooks/use-pipelines";
 import type { SeedSlot } from "@/features/pipelines/types";
@@ -187,7 +187,7 @@ function ImageRow({
   title,
   expectedFilename,
   variant,
-}: { title: string; expectedFilename: string; variant: ImageVariant }) {
+}: { title: string; expectedFilename: string; variant: MediaVariant }) {
   return (
     <div className={ROW_CLASS}>
       <Image size={14} className={ROW_ICON_CLASS} />
@@ -212,7 +212,7 @@ function ImageRow({
           variant="ghost"
           size="xs"
           icon={<Download size={12} />}
-          onClick={() => window.open(variantImageUrl(variant.file_path), "_blank")}
+          onClick={() => window.open(variantMediaUrl(variant.file_path), "_blank")}
         >
           Download
         </Button>
@@ -342,7 +342,7 @@ function SeedImageSlot({
 }: {
   label: string;
   trackSlug: string;
-  variants: ImageVariant[];
+  variants: MediaVariant[];
   seedSlotNames?: string[];
   isSingleTrack?: boolean;
 }) {
@@ -357,8 +357,8 @@ function SeedImageSlot({
       v.variant_type != null &&
       matchTypes.has(v.variant_type.toLowerCase()) &&
       (v.is_hero ||
-        v.status_id === IMAGE_VARIANT_STATUS.APPROVED ||
-        v.status_id === IMAGE_VARIANT_STATUS.GENERATED),
+        v.status_id === MEDIA_VARIANT_STATUS.APPROVED ||
+        v.status_id === MEDIA_VARIANT_STATUS.GENERATED),
   );
 
   const expectedName = expectedImageFilename(trackSlug);
@@ -643,7 +643,7 @@ export function AvatarDeliverablesTab({
     return slots.map((s) => s.name.toLowerCase());
   }, [pipelineData?.seed_slots]);
 
-  const { data: variants, isLoading: variantsLoading } = useImageVariants(avatarId);
+  const { data: variants, isLoading: variantsLoading } = useMediaVariants(avatarId);
   const { data: scenes, isLoading: scenesLoading } = useAvatarScenes(avatarId);
   const { data: settings, isLoading: settingsLoading } = useAvatarSceneSettings(avatarId);
   const { data: ignores } = useDeliverableIgnores(avatarId);

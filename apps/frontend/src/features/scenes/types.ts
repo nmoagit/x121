@@ -5,7 +5,7 @@ export interface Scene {
   id: number;
   avatar_id: number;
   scene_type_id: number;
-  image_variant_id: number | null;
+  media_variant_id: number | null;
   track_id: number | null;
   status_id: number;
   transition_mode: string;

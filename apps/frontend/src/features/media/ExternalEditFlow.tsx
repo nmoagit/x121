@@ -15,16 +15,16 @@ import { Download, Upload } from "@/tokens/icons";
 import {
   useExportVariant,
   useVariantHistory,
-} from "./hooks/use-image-variants";
+} from "./hooks/use-media-variants";
 import {
-  IMAGE_VARIANT_STATUS_LABEL,
+  MEDIA_VARIANT_STATUS_LABEL,
   PROVENANCE_LABEL,
   VALID_IMAGE_FORMATS,
-  type ImageVariant,
-  type ImageVariantStatusId,
+  type MediaVariant,
+  type MediaVariantStatusId,
   type Provenance,
 } from "./types";
-import { variantImageUrl } from "./utils";
+import { variantMediaUrl } from "./utils";
 
 /* --------------------------------------------------------------------------
    Types
@@ -75,7 +75,7 @@ export function ExternalEditFlow({
         formData.append("file", file);
 
         const response = await fetch(
-          `/api/v1/avatars/${avatarId}/image-variants/${variantId}/reimport`,
+          `/api/v1/avatars/${avatarId}/media-variants/${variantId}/reimport`,
           {
             method: "POST",
             body: formData,
@@ -88,7 +88,7 @@ export function ExternalEditFlow({
         }
 
         const body = await response.json();
-        const newVariant = body.data as ImageVariant;
+        const newVariant = body.data as MediaVariant;
         onReimported?.(newVariant.id);
       } catch (err) {
         setUploadError(err instanceof Error ? err.message : "Upload failed");
@@ -176,7 +176,7 @@ export function ExternalEditFlow({
                 >
                   {entry.file_path ? (
                     <img
-                      src={variantImageUrl(entry.file_path)}
+                      src={variantMediaUrl(entry.file_path)}
                       alt={`Version ${entry.version}`}
                       className="h-10 w-10 shrink-0 rounded-[var(--radius-sm)] object-cover"
                     />
@@ -190,7 +190,7 @@ export function ExternalEditFlow({
                     </span>
                     <div className="flex items-center gap-1 font-mono text-[10px]">
                       <span className="text-[var(--color-text-muted)]">
-                        {IMAGE_VARIANT_STATUS_LABEL[entry.status_id as ImageVariantStatusId] ?? "Unknown"}
+                        {MEDIA_VARIANT_STATUS_LABEL[entry.status_id as MediaVariantStatusId] ?? "Unknown"}
                       </span>
                       <span className="opacity-30">|</span>
                       <span className="text-[var(--color-text-muted)]">

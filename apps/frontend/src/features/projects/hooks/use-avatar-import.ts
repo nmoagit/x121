@@ -25,7 +25,7 @@ import {
   parseFilename,
 } from "@/features/avatars/tabs/matchDroppedVideos";
 import { SOURCE_KEY_BIO, SOURCE_KEY_TOV } from "@/features/avatars/types";
-import { fetchVariantTypeSet, imageVariantKeys } from "@/features/images/hooks/use-image-variants";
+import { fetchVariantTypeSet, mediaVariantKeys } from "@/features/media/hooks/use-media-variants";
 import { useSceneCatalogue } from "@/features/scene-catalogue/hooks/use-scene-catalogue";
 import { useTracks } from "@/features/scene-catalogue/hooks/use-tracks";
 import { sceneKeys } from "@/features/scenes/hooks/useAvatarScenes";
@@ -38,7 +38,7 @@ import { readFileAsJson } from "@/lib/file-types";
 import {
   createSceneForAvatar,
   importVideoClip,
-  uploadImageVariant,
+  uploadMediaVariant,
 } from "../lib/bulk-asset-upload";
 import type { Avatar, AvatarDropPayload, AvatarGroup, DroppedAsset, FolderDropResult, ImportHashSummary } from "../types";
 import { useBulkCreateAvatars, useProjectAvatars } from "./use-project-avatars";
@@ -220,7 +220,7 @@ export function useAvatarImport(projectId: number, allAvatars?: Avatar[], pipeli
     if (uniqueHashes.length > 0) {
       try {
         const result = await api.post<{ existing: string[] }>(
-          "/image-variants/check-hashes",
+          "/media-variants/check-hashes",
           { hashes: uniqueHashes },
         );
         existingHashSet = new Set(result?.existing ?? []);
@@ -291,7 +291,7 @@ export function useAvatarImport(projectId: number, allAvatars?: Avatar[], pipeli
         // Still invalidate caches for any work already done
         queryClient.invalidateQueries({ queryKey: ["projects", projectId, "avatars"] });
         queryClient.invalidateQueries({ queryKey: ["projects", projectId, "groups"] });
-        queryClient.invalidateQueries({ queryKey: imageVariantKeys.all });
+        queryClient.invalidateQueries({ queryKey: mediaVariantKeys.all });
         queryClient.invalidateQueries({ queryKey: sceneKeys.all });
         return true;
       };
@@ -516,7 +516,7 @@ export function useAvatarImport(projectId: number, allAvatars?: Avatar[], pipeli
             }));
             return Promise.resolve("skipped" as const);
           }
-          return uploadImageVariant(charId, asset.file, asset.category).then(() => {
+          return uploadMediaVariant(charId, asset.file, asset.category).then(() => {
             existing?.add(asset.category.toLowerCase());
             addLogEntry(importLogEntry("info", `${asset.file.name} imported for ${charName}`, projectId, {
               file: asset.file.name, avatar: charName, variant_type: asset.category,
@@ -793,7 +793,7 @@ export function useAvatarImport(projectId: number, allAvatars?: Avatar[], pipeli
         queryClient.invalidateQueries({
           queryKey: ["projects", projectId, "groups"],
         }),
-        queryClient.invalidateQueries({ queryKey: imageVariantKeys.all }),
+        queryClient.invalidateQueries({ queryKey: mediaVariantKeys.all }),
         queryClient.invalidateQueries({ queryKey: sceneKeys.all }),
       ]);
 

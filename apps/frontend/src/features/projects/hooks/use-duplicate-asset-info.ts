@@ -7,7 +7,7 @@
 
 import { useEffect, useState } from "react";
 
-import { fetchVariantTypeSet } from "@/features/images/hooks/use-image-variants";
+import { fetchVariantTypeSet } from "@/features/media/hooks/use-media-variants";
 
 /**
  * Fetches existing variant types for a set of duplicate avatar IDs.

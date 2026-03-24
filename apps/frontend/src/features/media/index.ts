@@ -1,5 +1,5 @@
 /**
- * Image management barrel export (PRD-21).
+ * Media variant management barrel export (PRD-21).
  */
 
 // Components
@@ -10,32 +10,32 @@ export { VariantHistory } from "./VariantHistory";
 
 // Hooks
 export {
-  imageVariantKeys,
-  useImageVariants,
-  useImageVariant,
+  mediaVariantKeys,
+  useMediaVariants,
+  useMediaVariant,
   useVariantHistory,
-  useCreateImageVariant,
-  useUpdateImageVariant,
-  useDeleteImageVariant,
+  useCreateMediaVariant,
+  useUpdateMediaVariant,
+  useDeleteMediaVariant,
   useApproveVariant,
   useRejectVariant,
   useExportVariant,
   useGenerateVariants,
-} from "./hooks/use-image-variants";
+} from "./hooks/use-media-variants";
 
 // Types
 export type {
-  ImageVariant,
-  ImageVariantStatusId,
+  MediaVariant,
+  MediaVariantStatusId,
   Provenance,
-  CreateImageVariantInput,
-  UpdateImageVariantInput,
+  CreateMediaVariantInput,
+  UpdateMediaVariantInput,
   GenerateVariantsInput,
 } from "./types";
 
 export {
-  IMAGE_VARIANT_STATUS,
-  IMAGE_VARIANT_STATUS_LABEL,
+  MEDIA_VARIANT_STATUS,
+  MEDIA_VARIANT_STATUS_LABEL,
   PROVENANCE,
   PROVENANCE_LABEL,
   VALID_IMAGE_FORMATS,

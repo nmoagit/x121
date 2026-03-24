@@ -3,10 +3,10 @@
  */
 
 /* --------------------------------------------------------------------------
-   Image variant status IDs (match database seed order)
+   Media variant status IDs (match database seed order)
    -------------------------------------------------------------------------- */
 
-export const IMAGE_VARIANT_STATUS = {
+export const MEDIA_VARIANT_STATUS = {
   PENDING: 1,
   APPROVED: 2,
   REJECTED: 3,
@@ -15,50 +15,50 @@ export const IMAGE_VARIANT_STATUS = {
   EDITING: 6,
 } as const;
 
-export type ImageVariantStatusId =
-  (typeof IMAGE_VARIANT_STATUS)[keyof typeof IMAGE_VARIANT_STATUS];
+export type MediaVariantStatusId =
+  (typeof MEDIA_VARIANT_STATUS)[keyof typeof MEDIA_VARIANT_STATUS];
 
 /** Human-readable labels for variant statuses. */
-export const IMAGE_VARIANT_STATUS_LABEL: Record<ImageVariantStatusId, string> = {
-  [IMAGE_VARIANT_STATUS.PENDING]: "Pending",
-  [IMAGE_VARIANT_STATUS.APPROVED]: "Approved",
-  [IMAGE_VARIANT_STATUS.REJECTED]: "Rejected",
-  [IMAGE_VARIANT_STATUS.GENERATING]: "Generating",
-  [IMAGE_VARIANT_STATUS.GENERATED]: "Generated",
-  [IMAGE_VARIANT_STATUS.EDITING]: "Editing",
+export const MEDIA_VARIANT_STATUS_LABEL: Record<MediaVariantStatusId, string> = {
+  [MEDIA_VARIANT_STATUS.PENDING]: "Pending",
+  [MEDIA_VARIANT_STATUS.APPROVED]: "Approved",
+  [MEDIA_VARIANT_STATUS.REJECTED]: "Rejected",
+  [MEDIA_VARIANT_STATUS.GENERATING]: "Generating",
+  [MEDIA_VARIANT_STATUS.GENERATED]: "Generated",
+  [MEDIA_VARIANT_STATUS.EDITING]: "Editing",
 };
 
 /** Whether a variant's status allows approval (pending, generated, or editing). */
-export function canApproveVariant(statusId: ImageVariantStatusId): boolean {
+export function canApproveVariant(statusId: MediaVariantStatusId): boolean {
   return (
-    statusId === IMAGE_VARIANT_STATUS.GENERATED ||
-    statusId === IMAGE_VARIANT_STATUS.EDITING ||
-    statusId === IMAGE_VARIANT_STATUS.PENDING
+    statusId === MEDIA_VARIANT_STATUS.GENERATED ||
+    statusId === MEDIA_VARIANT_STATUS.EDITING ||
+    statusId === MEDIA_VARIANT_STATUS.PENDING
   );
 }
 
 /** Whether a variant's status allows unapproval (approved or rejected). */
-export function canUnapproveVariant(statusId: ImageVariantStatusId): boolean {
+export function canUnapproveVariant(statusId: MediaVariantStatusId): boolean {
   return (
-    statusId === IMAGE_VARIANT_STATUS.APPROVED ||
-    statusId === IMAGE_VARIANT_STATUS.REJECTED
+    statusId === MEDIA_VARIANT_STATUS.APPROVED ||
+    statusId === MEDIA_VARIANT_STATUS.REJECTED
   );
 }
 
 /** Map a variant status ID to a Badge component variant for visual consistency. */
 export function statusBadgeVariant(
-  statusId: ImageVariantStatusId,
+  statusId: MediaVariantStatusId,
 ): "success" | "danger" | "warning" | "info" | "default" {
   switch (statusId) {
-    case IMAGE_VARIANT_STATUS.APPROVED:
+    case MEDIA_VARIANT_STATUS.APPROVED:
       return "success";
-    case IMAGE_VARIANT_STATUS.REJECTED:
+    case MEDIA_VARIANT_STATUS.REJECTED:
       return "danger";
-    case IMAGE_VARIANT_STATUS.GENERATING:
+    case MEDIA_VARIANT_STATUS.GENERATING:
       return "warning";
-    case IMAGE_VARIANT_STATUS.GENERATED:
+    case MEDIA_VARIANT_STATUS.GENERATED:
       return "info";
-    case IMAGE_VARIANT_STATUS.EDITING:
+    case MEDIA_VARIANT_STATUS.EDITING:
       return "warning";
     default:
       return "default";
@@ -91,13 +91,13 @@ export const PREFERRED_VARIANT_TYPE = "clothed";
    Entities
    -------------------------------------------------------------------------- */
 
-export interface ImageVariant {
+export interface MediaVariant {
   id: number;
   avatar_id: number;
-  source_image_id: number | null;
-  derived_image_id: number | null;
+  source_media_id: number | null;
+  derived_media_id: number | null;
   variant_label: string;
-  status_id: ImageVariantStatusId;
+  status_id: MediaVariantStatusId;
   file_path: string;
   variant_type: string | null;
   provenance: Provenance;
@@ -109,16 +109,18 @@ export interface ImageVariant {
   version: number;
   parent_variant_id: number | null;
   generation_params: Record<string, unknown> | null;
+  media_kind: "image" | "video" | "audio";
+  duration_secs: number | null;
   deleted_at: string | null;
   created_at: string;
   updated_at: string;
 }
 
-export interface CreateImageVariantInput {
+export interface CreateMediaVariantInput {
   variant_label: string;
-  source_image_id?: number;
-  derived_image_id?: number;
-  status_id?: ImageVariantStatusId;
+  source_media_id?: number;
+  derived_media_id?: number;
+  status_id?: MediaVariantStatusId;
   file_path: string;
   variant_type?: string;
   provenance?: string;
@@ -132,11 +134,11 @@ export interface CreateImageVariantInput {
   generation_params?: Record<string, unknown>;
 }
 
-export interface UpdateImageVariantInput {
+export interface UpdateMediaVariantInput {
   variant_label?: string;
-  source_image_id?: number;
-  derived_image_id?: number;
-  status_id?: ImageVariantStatusId;
+  source_media_id?: number;
+  derived_media_id?: number;
+  status_id?: MediaVariantStatusId;
   file_path?: string;
   variant_type?: string;
   provenance?: string;

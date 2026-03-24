@@ -4,7 +4,7 @@
 
 import { useNavigate } from "@tanstack/react-router";
 import { FlagIcon, ProgressiveImage, Tooltip } from "@/components/primitives";
-import { variantThumbnailUrl } from "@/features/images/utils";
+import { variantThumbnailUrl } from "@/features/media/utils";
 import { useAvatarPath } from "@/hooks/usePipelinePath";
 import { cn } from "@/lib/cn";
 import { TERMINAL_STATUS_COLORS } from "@/lib/ui-classes";

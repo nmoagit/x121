@@ -13,8 +13,8 @@ import type { GenerationReceipt } from "../types";
 const makeReceipt = (overrides: Partial<GenerationReceipt> = {}): GenerationReceipt => ({
   id: 1,
   segment_id: 10,
-  source_image_hash: "abc123source",
-  variant_image_hash: "def456variant",
+  source_media_hash: "abc123source",
+  variant_media_hash: "def456variant",
   workflow_version: "2.1.0",
   workflow_hash: "wf_hash_789",
   model_asset_id: 42,

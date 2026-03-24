@@ -16,7 +16,7 @@ function makeCell(overrides: Partial<ComparisonCell> = {}): ComparisonCell {
     segment_id: 100,
     scene_type_id: 5,
     scene_type_name: "Idle",
-    image_variant_id: 1,
+    media_variant_id: 1,
     status_id: 1,
     thumbnail_url: "/thumb.jpg",
     stream_url: "/stream.mp4",

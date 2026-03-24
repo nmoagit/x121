@@ -10,15 +10,15 @@ import { useQueries } from "@tanstack/react-query";
 import { useMemo } from "react";
 
 import { api } from "@/lib/api";
-import { imageVariantKeys } from "@/features/images/hooks/use-image-variants";
-import type { ImageVariant } from "@/features/images/types";
-import { pickAvatarThumbnailUrl } from "@/features/images/utils";
+import { mediaVariantKeys } from "@/features/media/hooks/use-media-variants";
+import type { MediaVariant } from "@/features/media/types";
+import { pickAvatarThumbnailUrl } from "@/features/media/utils";
 
 export function useAvatarThumbnails(avatarIds: number[]): Map<number, string> {
   const results = useQueries({
     queries: avatarIds.map((id) => ({
-      queryKey: imageVariantKeys.list(id),
-      queryFn: () => api.get<ImageVariant[]>(`/avatars/${id}/image-variants`),
+      queryKey: mediaVariantKeys.list(id),
+      queryFn: () => api.get<MediaVariant[]>(`/avatars/${id}/media-variants`),
       enabled: id > 0,
       staleTime: 5 * 60 * 1000, // avatars change rarely — cache 5 min
     })),

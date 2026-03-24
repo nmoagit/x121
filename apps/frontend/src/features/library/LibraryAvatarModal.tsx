@@ -25,8 +25,8 @@ import { useAvatarSpeeches, useSpeechTypes } from "@/features/avatars/hooks/use-
 import { useLanguages } from "@/features/avatars/hooks/use-languages";
 import { getVoiceId } from "@/features/avatars/types";
 import type { AvatarSpeech } from "@/features/avatars/types";
-import { useImageVariants } from "@/features/images/hooks/use-image-variants";
-import { variantThumbnailUrl, variantImageUrl } from "@/features/images/utils";
+import { useMediaVariants } from "@/features/media/hooks/use-media-variants";
+import { variantThumbnailUrl, variantMediaUrl } from "@/features/media/utils";
 import { usePipelineContextSafe } from "@/features/pipelines";
 import { useSceneCatalogue } from "@/features/scene-catalogue/hooks/use-scene-catalogue";
 import { useTracks } from "@/features/scene-catalogue/hooks/use-tracks";
@@ -87,7 +87,7 @@ export function LibraryAvatarModal({
   }, [open, onPrev, onNext]);
 
   // Fetch avatar assets
-  const { data: variants, isLoading: loadingImages } = useImageVariants(avatar.id);
+  const { data: variants, isLoading: loadingImages } = useMediaVariants(avatar.id);
   const { data: scenes, isLoading: loadingScenes } = useAvatarScenes(avatar.id);
   const { data: metadata, isLoading: loadingMeta } = useAvatarMetadata(avatar.id);
   const { data: speeches } = useAvatarSpeeches(avatar.id);
@@ -253,7 +253,7 @@ export function LibraryAvatarModal({
                       onClick={() =>
                         setDetail({
                           kind: "image",
-                          url: variantImageUrl(v.file_path),
+                          url: variantMediaUrl(v.file_path),
                           label: v.variant_label || v.variant_type || "Image",
                           index: i,
                           total: seedImages.length,
@@ -439,14 +439,14 @@ export function LibraryAvatarModal({
           onClose={() => setDetail(null)}
           onPrev={
             (detail.kind === "image" && detail.index > 0)
-              ? () => { const v = seedImages[detail.index - 1]; if (!v) return; setDetail({ kind: "image", url: variantImageUrl(v.file_path), label: v.variant_label || v.variant_type || "Image", index: detail.index - 1, total: seedImages.length }); }
+              ? () => { const v = seedImages[detail.index - 1]; if (!v) return; setDetail({ kind: "image", url: variantMediaUrl(v.file_path), label: v.variant_label || v.variant_type || "Image", index: detail.index - 1, total: seedImages.length }); }
               : (detail.kind === "video" && detail.index > 0)
                 ? () => { const s = scenesWithVideo[detail.index - 1]; if (!s) return; const info = sceneInfo(s); setDetail({ kind: "video", versionId: s.latest_version_id!, label: `${info.sceneName}${info.trackName ? ` — ${info.trackName}` : ""}`, index: detail.index - 1, total: scenesWithVideo.length }); }
                 : undefined
           }
           onNext={
             (detail.kind === "image" && detail.index < detail.total - 1)
-              ? () => { const v = seedImages[detail.index + 1]; if (!v) return; setDetail({ kind: "image", url: variantImageUrl(v.file_path), label: v.variant_label || v.variant_type || "Image", index: detail.index + 1, total: seedImages.length }); }
+              ? () => { const v = seedImages[detail.index + 1]; if (!v) return; setDetail({ kind: "image", url: variantMediaUrl(v.file_path), label: v.variant_label || v.variant_type || "Image", index: detail.index + 1, total: seedImages.length }); }
               : (detail.kind === "video" && detail.index < detail.total - 1)
                 ? () => { const s = scenesWithVideo[detail.index + 1]; if (!s) return; const info = sceneInfo(s); setDetail({ kind: "video", versionId: s.latest_version_id!, label: `${info.sceneName}${info.trackName ? ` — ${info.trackName}` : ""}`, index: detail.index + 1, total: scenesWithVideo.length }); }
                 : undefined

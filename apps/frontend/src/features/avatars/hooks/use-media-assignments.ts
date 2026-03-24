@@ -37,7 +37,7 @@ export interface AvatarMediaAssignment {
   media_slot_id: number;
   scene_type_id: number | null;
   track_id: number | null;
-  image_variant_id: number | null;
+  media_variant_id: number | null;
   file_path: string | null;
   media_type: string;
   is_passthrough: boolean;
@@ -66,7 +66,7 @@ interface AssignMediaPayload {
   media_slot_id: number;
   scene_type_id?: number | null;
   track_id?: number | null;
-  image_variant_id?: number | null;
+  media_variant_id?: number | null;
   file_path?: string | null;
   media_type?: string;
   is_passthrough?: boolean;

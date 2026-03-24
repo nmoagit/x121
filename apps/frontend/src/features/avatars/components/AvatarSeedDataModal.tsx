@@ -14,9 +14,9 @@ import { Fragment, useCallback, useState } from "react";
 import { ConfirmDeleteModal, ConfirmModal, Modal } from "@/components/composite";
 import { Button, Input ,  WireframeLoader } from "@/components/primitives";
 import { Stack } from "@/components/layout";
-import { useDeleteImageVariant, useImageVariants, useUploadImageVariant } from "@/features/images/hooks/use-image-variants";
-import { IMAGE_ACCEPT_STRING, IMAGE_VARIANT_STATUS_LABEL, type ImageVariant, type ImageVariantStatusId } from "@/features/images/types";
-import { variantImageUrl, variantThumbnailUrl } from "@/features/images/utils";
+import { useDeleteMediaVariant, useMediaVariants, useUploadMediaVariant } from "@/features/media/hooks/use-media-variants";
+import { IMAGE_ACCEPT_STRING, MEDIA_VARIANT_STATUS_LABEL, type MediaVariant, type MediaVariantStatusId } from "@/features/media/types";
+import { variantMediaUrl, variantThumbnailUrl } from "@/features/media/utils";
 import { useUpdateAvatarMetadata, useUpdateAvatarSettings } from "@/features/avatars/hooks/use-avatar-detail";
 import { useAvatarSpeeches, useImportSpeeches, useSpeechTypes } from "@/features/avatars/hooks/use-avatar-speeches";
 import { useLanguages } from "@/features/avatars/hooks/use-languages";
@@ -408,8 +408,8 @@ export function AvatarSeedDataModal({ avatar, projectId, onClose, groupOptions, 
   const open = avatar !== null;
   const charName = avatar?.name ?? "";
 
-  const { data: variants, isLoading: variantsLoading } = useImageVariants(avatarId);
-  const uploadVariant = useUploadImageVariant(avatarId);
+  const { data: variants, isLoading: variantsLoading } = useMediaVariants(avatarId);
+  const uploadVariant = useUploadMediaVariant(avatarId);
   const updateMetadata = useUpdateAvatarMetadata(avatarId);
 
   const importSpeeches = useImportSpeeches(avatarId);
@@ -467,7 +467,7 @@ export function AvatarSeedDataModal({ avatar, projectId, onClose, groupOptions, 
   }
 
   // CRUD state
-  const deleteVariant = useDeleteImageVariant(avatarId);
+  const deleteVariant = useDeleteMediaVariant(avatarId);
   const speechActions = useSpeechActions(avatarId);
 
   type DeleteTarget =
@@ -488,7 +488,7 @@ export function AvatarSeedDataModal({ avatar, projectId, onClose, groupOptions, 
   const voiceIdValue = voiceIdDraft ?? currentVoiceId;
   const voiceIdDirty = voiceIdDraft !== null && voiceIdDraft !== currentVoiceId;
 
-  function findVariant(variantType: string): ImageVariant | undefined {
+  function findVariant(variantType: string): MediaVariant | undefined {
     if (!variants) return undefined;
     const matching = variants.filter(
       (v) => v.variant_type?.toLowerCase() === variantType.toLowerCase() && !v.deleted_at,
@@ -862,7 +862,7 @@ export function AvatarSeedDataModal({ avatar, projectId, onClose, groupOptions, 
                     ) : (
                       <button
                         type="button"
-                        onClick={() => setLightboxUrl(variantImageUrl(variant.file_path))}
+                        onClick={() => setLightboxUrl(variantMediaUrl(variant.file_path))}
                         className="cursor-pointer hover:opacity-80 transition-opacity"
                       >
                         <SeedImage
@@ -873,8 +873,8 @@ export function AvatarSeedDataModal({ avatar, projectId, onClose, groupOptions, 
                     )}
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-[var(--spacing-2)]">
-                        <span className={cn("font-mono text-[10px] uppercase", TERMINAL_STATUS_COLORS[IMAGE_VARIANT_STATUS_LABEL[variant.status_id as ImageVariantStatusId]?.toLowerCase() ?? ""] ?? "text-[var(--color-text-muted)]")}>
-                          {IMAGE_VARIANT_STATUS_LABEL[variant.status_id as ImageVariantStatusId] ?? "Unknown"}
+                        <span className={cn("font-mono text-[10px] uppercase", TERMINAL_STATUS_COLORS[MEDIA_VARIANT_STATUS_LABEL[variant.status_id as MediaVariantStatusId]?.toLowerCase() ?? ""] ?? "text-[var(--color-text-muted)]")}>
+                          {MEDIA_VARIANT_STATUS_LABEL[variant.status_id as MediaVariantStatusId] ?? "Unknown"}
                         </span>
                         {variant.is_hero && <span className="font-mono text-[10px] uppercase text-cyan-400">Hero</span>}
                       </div>

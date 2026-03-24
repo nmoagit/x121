@@ -1,15 +1,15 @@
 /**
- * Pure utility functions for working with ImageVariant arrays.
+ * Pure utility functions for working with MediaVariant arrays.
  */
 
-import type { ImageVariant } from "./types";
-import { IMAGE_VARIANT_STATUS, PREFERRED_VARIANT_TYPE } from "./types";
+import type { MediaVariant } from "./types";
+import { MEDIA_VARIANT_STATUS, PREFERRED_VARIANT_TYPE } from "./types";
 
 /**
  * Convert a storage key (e.g. `variants/foo.png`) to a URL the browser
  * can fetch, respecting the app's base path and `/storage` prefix.
  */
-export function variantImageUrl(filePath: string): string {
+export function variantMediaUrl(filePath: string): string {
   if (filePath.startsWith("http://") || filePath.startsWith("https://") || filePath.startsWith("/")) {
     return filePath;
   }
@@ -21,7 +21,7 @@ export function variantImageUrl(filePath: string): string {
  * Uses the backend thumbnail endpoint which returns a resized JPEG.
  */
 export function variantThumbnailUrl(variantId: number, size = 512): string {
-  return `${import.meta.env.BASE_URL}api/v1/image-variants/${variantId}/thumbnail?size=${size}`;
+  return `${import.meta.env.BASE_URL}api/v1/media-variants/${variantId}/thumbnail?size=${size}`;
 }
 
 /**
@@ -31,21 +31,21 @@ export function variantThumbnailUrl(variantId: number, size = 512): string {
  * Returns null when no suitable variant is found.
  */
 export function pickAvatarUrl(
-  variants: Pick<ImageVariant, "is_hero" | "status_id" | "file_path" | "variant_type">[],
+  variants: Pick<MediaVariant, "is_hero" | "status_id" | "file_path" | "variant_type">[],
 ): string | null {
   if (variants.length === 0) return null;
 
   const heroes = variants.filter((v) => v.is_hero && v.file_path);
   const clothedHero = heroes.find((v) => v.variant_type?.toLowerCase() === PREFERRED_VARIANT_TYPE);
-  if (clothedHero) return variantImageUrl(clothedHero.file_path);
-  if (heroes.length > 0) return variantImageUrl(heroes[0]!.file_path);
+  if (clothedHero) return variantMediaUrl(clothedHero.file_path);
+  if (heroes.length > 0) return variantMediaUrl(heroes[0]!.file_path);
 
   const approved = variants.filter(
-    (v) => v.status_id === IMAGE_VARIANT_STATUS.APPROVED && v.file_path,
+    (v) => v.status_id === MEDIA_VARIANT_STATUS.APPROVED && v.file_path,
   );
   const clothedApproved = approved.find((v) => v.variant_type?.toLowerCase() === PREFERRED_VARIANT_TYPE);
-  if (clothedApproved) return variantImageUrl(clothedApproved.file_path);
-  return approved.length > 0 ? variantImageUrl(approved[0]!.file_path) : null;
+  if (clothedApproved) return variantMediaUrl(clothedApproved.file_path);
+  return approved.length > 0 ? variantMediaUrl(approved[0]!.file_path) : null;
 }
 
 /**
@@ -55,7 +55,7 @@ export function pickAvatarUrl(
  * for faster loading on grid/card views.
  */
 export function pickAvatarThumbnailUrl(
-  variants: Pick<ImageVariant, "id" | "is_hero" | "status_id" | "file_path" | "variant_type">[],
+  variants: Pick<MediaVariant, "id" | "is_hero" | "status_id" | "file_path" | "variant_type">[],
   size = 512,
 ): string | null {
   if (variants.length === 0) return null;
@@ -66,7 +66,7 @@ export function pickAvatarThumbnailUrl(
   if (heroes.length > 0) return variantThumbnailUrl(heroes[0]!.id, size);
 
   const approved = variants.filter(
-    (v) => v.status_id === IMAGE_VARIANT_STATUS.APPROVED && v.file_path,
+    (v) => v.status_id === MEDIA_VARIANT_STATUS.APPROVED && v.file_path,
   );
   const clothedApproved = approved.find((v) => v.variant_type?.toLowerCase() === PREFERRED_VARIANT_TYPE);
   if (clothedApproved) return variantThumbnailUrl(clothedApproved.id, size);
@@ -96,26 +96,26 @@ export function buildVariantMatchTypes(
 }
 
 /** Check if a variant's type matches any of the given types. */
-function variantTypeMatches(variant: ImageVariant, matchTypes: Set<string>): boolean {
+function variantTypeMatches(variant: MediaVariant, matchTypes: Set<string>): boolean {
   return variant.variant_type != null && matchTypes.has(variant.variant_type.toLowerCase());
 }
 
 /** Find the hero variant matching a track (case-insensitive). */
 export function findHeroVariant(
-  variants: ImageVariant[],
+  variants: MediaVariant[],
   trackSlug: string,
   matchTypes?: Set<string>,
-): ImageVariant | undefined {
+): MediaVariant | undefined {
   const types = matchTypes ?? new Set([trackSlug.toLowerCase()]);
   return variants.find((v) => variantTypeMatches(v, types) && v.is_hero);
 }
 
 /** Find any variant matching a track, preferring hero. */
 export function findVariantForTrack(
-  variants: ImageVariant[],
+  variants: MediaVariant[],
   trackSlug: string,
   matchTypes?: Set<string>,
-): ImageVariant | undefined {
+): MediaVariant | undefined {
   const types = matchTypes ?? new Set([trackSlug.toLowerCase()]);
   return (
     findHeroVariant(variants, trackSlug, types) ??
@@ -131,11 +131,11 @@ export function findVariantForTrack(
  * to expand the match set, then falls back to any non-deleted variant.
  */
 export function findVariantForTrackWithFallback(
-  variants: ImageVariant[],
+  variants: MediaVariant[],
   trackSlug: string,
   seedSlotNames: string[],
   isSingleTrack: boolean,
-): ImageVariant | undefined {
+): MediaVariant | undefined {
   const types = buildVariantMatchTypes(trackSlug, seedSlotNames, isSingleTrack);
   const match = findVariantForTrack(variants, trackSlug, types);
   if (match) return match;
@@ -152,17 +152,17 @@ export function findVariantForTrackWithFallback(
  * Prefers approved, then falls back to the most recently created.
  */
 export function findBestVariantForTrack(
-  variants: ImageVariant[],
+  variants: MediaVariant[],
   trackSlug: string,
   matchTypes?: Set<string>,
-): ImageVariant | undefined {
+): MediaVariant | undefined {
   const types = matchTypes ?? new Set([trackSlug.toLowerCase()]);
   const matching = variants.filter(
     (v) => variantTypeMatches(v, types) && !v.deleted_at,
   );
   if (matching.length === 0) return undefined;
   return (
-    matching.find((v) => v.status_id === IMAGE_VARIANT_STATUS.APPROVED) ??
+    matching.find((v) => v.status_id === MEDIA_VARIANT_STATUS.APPROVED) ??
     matching.sort((a, b) => b.id - a.id)[0]
   );
 }

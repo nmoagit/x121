@@ -20,7 +20,7 @@ export function deriveMissingItems(
 
     const urlMap: Record<MissingItemCategory, string> = {
       source_image: `/avatars/${avatarId}/source-images`,
-      approved_variant: `/avatars/${avatarId}/image-variants`,
+      approved_variant: `/avatars/${avatarId}/media-variants`,
       metadata_complete: `/avatars/${avatarId}/metadata`,
       pipeline_setting: `/avatars/${avatarId}/settings`,
     };

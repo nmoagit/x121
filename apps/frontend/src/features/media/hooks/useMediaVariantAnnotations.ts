@@ -1,8 +1,8 @@
 /**
- * TanStack Query hooks for image-variant-scoped frame annotations.
+ * TanStack Query hooks for media-variant-scoped frame annotations.
  *
- * Uses the `/avatars/{avatarId}/image-variants/{variantId}/annotations` endpoints.
- * Image variants are static images so annotations always target frame 0.
+ * Uses the `/avatars/{avatarId}/media-variants/{variantId}/annotations` endpoints.
+ * Media variants are static images so annotations always target frame 0.
  */
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -14,23 +14,23 @@ import type { DrawingObject, FrameAnnotation } from "@/features/annotations/type
    Query keys
    -------------------------------------------------------------------------- */
 
-export const imageVariantAnnotationKeys = {
-  all: ["image-variant-annotations"] as const,
+export const mediaVariantAnnotationKeys = {
+  all: ["media-variant-annotations"] as const,
   byVariant: (avatarId: number, variantId: number) =>
-    [...imageVariantAnnotationKeys.all, avatarId, variantId] as const,
+    [...mediaVariantAnnotationKeys.all, avatarId, variantId] as const,
 };
 
 /* --------------------------------------------------------------------------
    Queries
    -------------------------------------------------------------------------- */
 
-/** Fetch all annotations for an image variant. */
-export function useImageVariantAnnotations(avatarId: number, variantId: number) {
+/** Fetch all annotations for an media variant. */
+export function useMediaVariantAnnotations(avatarId: number, variantId: number) {
   return useQuery({
-    queryKey: imageVariantAnnotationKeys.byVariant(avatarId, variantId),
+    queryKey: mediaVariantAnnotationKeys.byVariant(avatarId, variantId),
     queryFn: () =>
       api.get<FrameAnnotation[]>(
-        `/avatars/${avatarId}/image-variants/${variantId}/annotations`,
+        `/avatars/${avatarId}/media-variants/${variantId}/annotations`,
       ),
     enabled: avatarId > 0 && variantId > 0,
   });
@@ -40,8 +40,8 @@ export function useImageVariantAnnotations(avatarId: number, variantId: number) 
    Mutations
    -------------------------------------------------------------------------- */
 
-/** Upsert annotations for a specific frame on an image variant. */
-export function useUpsertImageVariantAnnotation(avatarId: number, variantId: number) {
+/** Upsert annotations for a specific frame on an media variant. */
+export function useUpsertMediaVariantAnnotation(avatarId: number, variantId: number) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({
@@ -52,7 +52,7 @@ export function useUpsertImageVariantAnnotation(avatarId: number, variantId: num
       annotations: DrawingObject[];
     }) =>
       api.put<FrameAnnotation | null>(
-        `/avatars/${avatarId}/image-variants/${variantId}/annotations/${frameNumber}`,
+        `/avatars/${avatarId}/media-variants/${variantId}/annotations/${frameNumber}`,
         {
           frame_number: frameNumber,
           annotations_json: annotations,
@@ -60,23 +60,23 @@ export function useUpsertImageVariantAnnotation(avatarId: number, variantId: num
       ),
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: imageVariantAnnotationKeys.byVariant(avatarId, variantId),
+        queryKey: mediaVariantAnnotationKeys.byVariant(avatarId, variantId),
       });
     },
   });
 }
 
-/** Delete all annotations for a specific frame on an image variant. */
-export function useDeleteImageVariantFrameAnnotation(avatarId: number, variantId: number) {
+/** Delete all annotations for a specific frame on an media variant. */
+export function useDeleteMediaVariantFrameAnnotation(avatarId: number, variantId: number) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (frameNumber: number) =>
       api.delete(
-        `/avatars/${avatarId}/image-variants/${variantId}/annotations/${frameNumber}`,
+        `/avatars/${avatarId}/media-variants/${variantId}/annotations/${frameNumber}`,
       ),
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: imageVariantAnnotationKeys.byVariant(avatarId, variantId),
+        queryKey: mediaVariantAnnotationKeys.byVariant(avatarId, variantId),
       });
     },
   });

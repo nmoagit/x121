@@ -23,7 +23,7 @@ import {
   matchesAvatarName,
 } from "@/features/avatars/tabs/matchDroppedVideos";
 import { SOURCE_KEY_BIO, SOURCE_KEY_TOV } from "@/features/avatars/types";
-import { fetchVariantTypeSet, imageVariantKeys } from "@/features/images/hooks/use-image-variants";
+import { fetchVariantTypeSet, mediaVariantKeys } from "@/features/media/hooks/use-media-variants";
 import { api } from "@/lib/api";
 import { limitConcurrency } from "@/lib/async-utils";
 import { readFileAsJson } from "@/lib/file-types";
@@ -32,7 +32,7 @@ import { classifyFileWithRules } from "@/features/pipelines/lib/classify-file";
 import type { ImportRules } from "@/features/pipelines/types";
 
 import {
-  uploadImageVariant,
+  uploadMediaVariant,
 } from "@/features/projects/lib/bulk-asset-upload";
 import type {
   Avatar,
@@ -349,7 +349,7 @@ export function useAvatarImportBase(projectId: number, _options?: UseAvatarImpor
     if (uniqueHashes.length > 0) {
       try {
         const result = await api.post<{ existing: string[] }>(
-          "/image-variants/check-hashes",
+          "/media-variants/check-hashes",
           { hashes: uniqueHashes },
         );
         existingHashSet = new Set(result?.existing ?? []);
@@ -417,7 +417,7 @@ export function useAvatarImportBase(projectId: number, _options?: UseAvatarImpor
         abortRef.current = null;
         queryClient.invalidateQueries({ queryKey: ["projects", projectId, "avatars"] });
         queryClient.invalidateQueries({ queryKey: ["projects", projectId, "groups"] });
-        queryClient.invalidateQueries({ queryKey: imageVariantKeys.all });
+        queryClient.invalidateQueries({ queryKey: mediaVariantKeys.all });
         return true;
       };
 
@@ -611,7 +611,7 @@ export function useAvatarImportBase(projectId: number, _options?: UseAvatarImpor
             addLogEntry(importLogEntry("debug", `${asset.file.name} skipped for ${charName} (${variantType} already exists)`, projectId));
             return Promise.resolve("skipped" as const);
           }
-          return uploadImageVariant(charId, asset.file, variantType).then(() => {
+          return uploadMediaVariant(charId, asset.file, variantType).then(() => {
             existing?.add(variantType.toLowerCase());
             addLogEntry(importLogEntry("info", `${asset.file.name} imported for ${charName}`, projectId));
             return "uploaded" as const;
@@ -763,7 +763,7 @@ export function useAvatarImportBase(projectId: number, _options?: UseAvatarImpor
         queryClient.invalidateQueries({
           queryKey: ["projects", projectId, "groups"],
         }),
-        queryClient.invalidateQueries({ queryKey: imageVariantKeys.all }),
+        queryClient.invalidateQueries({ queryKey: mediaVariantKeys.all }),
       ]);
 
       setImportOpen(false);

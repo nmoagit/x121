@@ -12,13 +12,13 @@ import { useState, useMemo } from "react";
 import { TabBar, Toggle ,  WireframeLoader } from "@/components/primitives";
 import { Tooltip } from "@/components/primitives/Tooltip";
 import { AlertTriangle, FileText, Film, Image, Mic } from "@/tokens/icons";
-import { variantThumbnailUrl } from "@/features/images/utils";
+import { variantThumbnailUrl } from "@/features/media/utils";
 import { useNavigate } from "@tanstack/react-router";
 import { useAvatarPath } from "@/hooks/usePipelinePath";
 import { useAvatarDeliverables, useBatchSceneAssignments, useBatchVariantStatuses } from "../hooks/use-avatar-deliverables";
 import type { BatchSceneAssignment, BatchVariantStatus } from "../hooks/use-avatar-deliverables";
 import { useEnabledSceneTypes } from "@/features/production/hooks/use-production";
-import { IMAGE_VARIANT_STATUS } from "@/features/images/types";
+import { MEDIA_VARIANT_STATUS } from "@/features/media/types";
 import { usePipelineContextSafe } from "@/features/pipelines";
 import { useTracks } from "@/features/scene-catalogue/hooks/use-tracks";
 import type { Track } from "@/features/scene-catalogue/types";
@@ -256,15 +256,15 @@ type MatrixColumnDef =
 /** Map image variant status_id to dot status. */
 function imageStatusToDot(statusId: number): DotStatus {
   switch (statusId) {
-    case IMAGE_VARIANT_STATUS.APPROVED:
+    case MEDIA_VARIANT_STATUS.APPROVED:
       return "approved";
-    case IMAGE_VARIANT_STATUS.GENERATING:
+    case MEDIA_VARIANT_STATUS.GENERATING:
       return "generating";
-    case IMAGE_VARIANT_STATUS.REJECTED:
+    case MEDIA_VARIANT_STATUS.REJECTED:
       return "rejected";
-    case IMAGE_VARIANT_STATUS.PENDING:
-    case IMAGE_VARIANT_STATUS.GENERATED:
-    case IMAGE_VARIANT_STATUS.EDITING:
+    case MEDIA_VARIANT_STATUS.PENDING:
+    case MEDIA_VARIANT_STATUS.GENERATED:
+    case MEDIA_VARIANT_STATUS.EDITING:
       return "pending";
     default:
       return "not_started";
@@ -286,7 +286,7 @@ function findBestBatchVariant(
   );
   if (matching.length === 0) return undefined;
   return (
-    matching.find((v) => v.status_id === IMAGE_VARIANT_STATUS.APPROVED) ??
+    matching.find((v) => v.status_id === MEDIA_VARIANT_STATUS.APPROVED) ??
     matching.sort((a, b) => b.id - a.id)[0]
   );
 }

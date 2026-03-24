@@ -31,7 +31,7 @@ import {
   User,
 } from "@/tokens/icons";
 
-import { variantThumbnailUrl } from "@/features/images/utils";
+import { variantThumbnailUrl } from "@/features/media/utils";
 
 import { AvatarCard } from "../components/AvatarCard";
 import { ImportProgressBar } from "../components/ImportProgressBar";

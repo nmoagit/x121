@@ -178,9 +178,9 @@ const pipelineLibraryRoute = createRoute({
 
 const pipelineImagesRoute = createRoute({
   getParentRoute: () => pipelineLayoutRoute,
-  path: "/images",
+  path: "/media",
   component: lazyRouteComponent(() =>
-    import("@/app/pages/ImagesPage").then((m) => ({ default: m.ImagesPage })),
+    import("@/app/pages/MediaPage").then((m) => ({ default: m.MediaPage })),
   ),
 });
 
@@ -566,9 +566,9 @@ const storyboardRoute = createRoute({
 
 const imagesRoute = createRoute({
   getParentRoute: () => contentLayoutRoute,
-  path: "/content/images",
+  path: "/content/media",
   component: lazyRouteComponent(() =>
-    import("@/app/pages/ImagesPage").then((m) => ({ default: m.ImagesPage })),
+    import("@/app/pages/MediaPage").then((m) => ({ default: m.MediaPage })),
   ),
 });
 

@@ -10,8 +10,8 @@
 export interface GenerationReceipt {
   id: number;
   segment_id: number;
-  source_image_hash: string;
-  variant_image_hash: string;
+  source_media_hash: string;
+  variant_media_hash: string;
   workflow_version: string;
   workflow_hash: string;
   model_asset_id: number | null;
@@ -70,8 +70,8 @@ export interface AssetUsageEntry {
 /** Request body for creating a generation receipt. */
 export interface CreateReceiptRequest {
   segment_id: number;
-  source_image_hash: string;
-  variant_image_hash: string;
+  source_media_hash: string;
+  variant_media_hash: string;
   workflow_version: string;
   workflow_hash: string;
   model_asset_id?: number | null;

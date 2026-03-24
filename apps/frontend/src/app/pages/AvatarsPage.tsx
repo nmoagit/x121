@@ -29,7 +29,7 @@ import { VoiceImportConfirmModal, VoiceImportResultModal } from "@/features/proj
 import { AvatarCard } from "@/features/projects/components/AvatarCard";
 import type { SeedDataStatus, SpeechLanguageSummary } from "@/features/projects/components/AvatarCard";
 import type { ProjectLanguageCount } from "@/features/projects/hooks/use-avatar-deliverables";
-import { useImageVariantsBrowse } from "@/features/images/hooks/use-image-variants";
+import { useMediaVariantsBrowse } from "@/features/media/hooks/use-media-variants";
 import { SOURCE_KEY_BIO, SOURCE_KEY_TOV } from "@/features/avatars/types";
 import { ImportConfirmModal } from "@/features/projects/components/ImportConfirmModal";
 import { ImportProgressBar } from "@/features/projects/components/ImportProgressBar";
@@ -49,7 +49,7 @@ import {
 import { useCreateProject, useProjects } from "@/features/projects/hooks/use-projects";
 import type { Avatar, AvatarDropPayload, AvatarGroup, FolderDropResult } from "@/features/projects/types";
 
-import { variantThumbnailUrl } from "@/features/images/utils";
+import { variantThumbnailUrl } from "@/features/media/utils";
 import { usePipelineContextSafe } from "@/features/pipelines";
 import { cn } from "@/lib/cn";
 import { toSelectOptions } from "@/lib/select-utils";
@@ -245,7 +245,7 @@ export function AvatarsPage() {
 
   // Fetch image variants across all displayed projects to compute seed data status.
   // Pass a large limit (no project filter) so variants from every visible project are included.
-  const { data: allVariantsBrowse } = useImageVariantsBrowse({ pipelineId: pipelineCtx?.pipelineId, limit: 500 });
+  const { data: allVariantsBrowse } = useMediaVariantsBrowse({ pipelineId: pipelineCtx?.pipelineId, limit: 500 });
   const allVariants = allVariantsBrowse?.items;
 
   const seedDataStatusMap = useMemo(() => {

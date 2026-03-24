@@ -11,12 +11,12 @@ import { useToast } from "@/components/composite/useToast";
 
 import {
   useGenerateVariants,
-  useImageVariants,
-  useUploadImageVariant,
-} from "@/features/images/hooks/use-image-variants";
-import { PROVENANCE } from "@/features/images/types";
-import type { ImageVariant } from "@/features/images/types";
-import { findVariantForTrackWithFallback } from "@/features/images/utils";
+  useMediaVariants,
+  useUploadMediaVariant,
+} from "@/features/media/hooks/use-media-variants";
+import { PROVENANCE } from "@/features/media/types";
+import type { MediaVariant } from "@/features/media/types";
+import { findVariantForTrackWithFallback } from "@/features/media/utils";
 import { usePipelineContextSafe } from "@/features/pipelines";
 import { usePipeline } from "@/features/pipelines/hooks/use-pipelines";
 import type { SeedSlot } from "@/features/pipelines/types";
@@ -26,7 +26,7 @@ import type { Track } from "@/features/scene-catalogue/types";
 
 interface TrackImageDatum {
   track: Track;
-  hero: ImageVariant | null;
+  hero: MediaVariant | null;
 }
 
 export function useTrackImageActions(avatarId: number, projectId?: number) {
@@ -35,9 +35,9 @@ export function useTrackImageActions(avatarId: number, projectId?: number) {
   const resolvedPipelineId = pipelineCtx?.pipelineId ?? projectData?.pipeline_id ?? undefined;
   const { data: pipelineData } = usePipeline(resolvedPipelineId ?? 0);
   const { data: tracks } = useTracks(false, resolvedPipelineId);
-  const { data: imageVariants } = useImageVariants(avatarId);
+  const { data: imageVariants } = useMediaVariants(avatarId);
   const generateVariants = useGenerateVariants(avatarId);
-  const uploadVariant = useUploadImageVariant(avatarId);
+  const uploadVariant = useUploadMediaVariant(avatarId);
   const { addToast } = useToast();
 
   const [confirmGenerateTrack, setConfirmGenerateTrack] = useState<string | null>(null);

@@ -14,7 +14,7 @@ import { Image } from "@/tokens/icons";
 import { TRACK_TEXT_COLORS } from "@/lib/ui-classes";
 import { cn } from "@/lib/cn";
 
-import { variantThumbnailUrl } from "@/features/images/utils";
+import { variantThumbnailUrl } from "@/features/media/utils";
 
 import {
   useAvatarSeedSummary,
@@ -151,9 +151,9 @@ function SeedSlotCard({
       {/* Current assignment preview */}
       {hasAssignment && entry.assignment && (
         <div className="flex items-center gap-2">
-          {entry.assignment.image_variant_id != null ? (
+          {entry.assignment.media_variant_id != null ? (
             <img
-              src={variantThumbnailUrl(entry.assignment.image_variant_id, 128)}
+              src={variantThumbnailUrl(entry.assignment.media_variant_id, 128)}
               alt={`${entry.scene_type_name} ${entry.track_name} seed`}
               className="h-12 w-12 rounded-[var(--radius-md)] object-cover border border-[var(--color-border-default)]"
             />

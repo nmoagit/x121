@@ -17,22 +17,22 @@ import { ChevronLeft, ChevronRight, Trash2, Upload, Wand2 } from "@/tokens/icons
 
 import {
   useApproveVariant,
-  useDeleteImageVariant,
+  useDeleteMediaVariant,
   useExportVariant,
-  useImageVariants,
+  useMediaVariants,
   useRejectVariant,
   useUnapproveVariant,
-} from "@/features/images/hooks/use-image-variants";
-import { ImageVariantAnnotationModal } from "@/features/images/ImageVariantAnnotationModal";
+} from "@/features/media/hooks/use-media-variants";
+import { MediaVariantAnnotationModal } from "@/features/media/MediaVariantAnnotationModal";
 import {
-  IMAGE_VARIANT_STATUS_LABEL,
+  MEDIA_VARIANT_STATUS_LABEL,
   PROVENANCE_LABEL,
   canApproveVariant,
   canUnapproveVariant,
   statusBadgeVariant,
-} from "@/features/images/types";
-import type { ImageVariant, Provenance } from "@/features/images/types";
-import { variantImageUrl, variantThumbnailUrl } from "@/features/images/utils";
+} from "@/features/media/types";
+import type { MediaVariant, Provenance } from "@/features/media/types";
+import { variantMediaUrl, variantThumbnailUrl } from "@/features/media/utils";
 import { ProgressiveImage  } from "@/components/primitives";
 import { TrackImageCard } from "./TrackImageCard";
 import { TRACK_TEXT_COLORS } from "@/lib/ui-classes";
@@ -43,13 +43,13 @@ import { useTrackImageActions } from "./useTrackImageActions";
    -------------------------------------------------------------------------- */
 
 interface ModalVariantCardProps {
-  variant: ImageVariant;
+  variant: MediaVariant;
   onApprove: (id: number) => void;
   onUnapprove: (id: number) => void;
   onReject: (id: number) => void;
   onExport: (id: number) => void;
   onDelete: (id: number) => void;
-  onAnnotate: (variant: ImageVariant) => void;
+  onAnnotate: (variant: MediaVariant) => void;
 }
 
 function ModalVariantCard({ variant, onApprove, onUnapprove, onReject, onExport, onDelete, onAnnotate }: ModalVariantCardProps) {
@@ -92,7 +92,7 @@ function ModalVariantCard({ variant, onApprove, onUnapprove, onReject, onExport,
         </div>
         <div className="flex items-center gap-2 font-mono text-[10px] text-[var(--color-text-muted)]">
           <span className={statusBadgeVariant(variant.status_id) === "success" ? "text-green-400" : "text-cyan-400"}>
-            {(IMAGE_VARIANT_STATUS_LABEL[variant.status_id] ?? "unknown").toLowerCase()}
+            {(MEDIA_VARIANT_STATUS_LABEL[variant.status_id] ?? "unknown").toLowerCase()}
           </span>
           <span className="opacity-30">|</span>
           <span>{(PROVENANCE_LABEL[variant.provenance as Provenance] ?? variant.provenance).toLowerCase()}</span>
@@ -139,15 +139,15 @@ export function AvatarImagesTab({ avatarId, projectId }: AvatarImagesTabProps) {
     generating,
   } = useTrackImageActions(avatarId, projectId);
   const [detailTrackIndex, setDetailTrackIndex] = useState<number | null>(null);
-  const [annotatingVariant, setAnnotatingVariant] = useState<ImageVariant | null>(null);
+  const [annotatingVariant, setAnnotatingVariant] = useState<MediaVariant | null>(null);
 
   // All variants for the avatar (used in detail modal, filtered by track)
-  const { data: allVariants, isLoading: variantsLoading } = useImageVariants(avatarId);
+  const { data: allVariants, isLoading: variantsLoading } = useMediaVariants(avatarId);
   const approveMutation = useApproveVariant(avatarId);
   const unapproveMutation = useUnapproveVariant(avatarId);
   const rejectMutation = useRejectVariant(avatarId);
   const exportMutation = useExportVariant(avatarId);
-  const deleteMutation = useDeleteImageVariant(avatarId);
+  const deleteMutation = useDeleteMediaVariant(avatarId);
 
   const handleApprove = useCallback((id: number) => approveMutation.mutate(id), [approveMutation]);
   const handleUnapprove = useCallback((id: number) => unapproveMutation.mutate(id), [unapproveMutation]);
@@ -243,7 +243,7 @@ export function AvatarImagesTab({ avatarId, projectId }: AvatarImagesTabProps) {
             <div className="flex justify-center bg-[var(--color-surface-secondary)] rounded-[var(--radius-md)]">
               {detailTrack.hero?.file_path ? (
                 <img
-                  src={variantImageUrl(detailTrack.hero.file_path)}
+                  src={variantMediaUrl(detailTrack.hero.file_path)}
                   alt={`${detailTrack.track.name} seed image`}
                   className="max-h-[40vh] rounded-[var(--radius-md)] object-contain"
                 />
@@ -260,7 +260,7 @@ export function AvatarImagesTab({ avatarId, projectId }: AvatarImagesTabProps) {
                 {detailTrack.hero && (
                   <>
                     <span className={statusBadgeVariant(detailTrack.hero.status_id) === "success" ? "text-green-400" : "text-cyan-400"}>
-                      {IMAGE_VARIANT_STATUS_LABEL[detailTrack.hero.status_id]?.toLowerCase()}
+                      {MEDIA_VARIANT_STATUS_LABEL[detailTrack.hero.status_id]?.toLowerCase()}
                     </span>
                     <span className="opacity-30">|</span>
                     <span>{(PROVENANCE_LABEL[detailTrack.hero.provenance as Provenance] ?? detailTrack.hero.provenance).toLowerCase()}</span>
@@ -375,7 +375,7 @@ export function AvatarImagesTab({ avatarId, projectId }: AvatarImagesTabProps) {
       </Modal>
 
       {/* Image variant annotation modal */}
-      <ImageVariantAnnotationModal
+      <MediaVariantAnnotationModal
         avatarId={avatarId}
         variant={annotatingVariant}
         onClose={() => setAnnotatingVariant(null)}

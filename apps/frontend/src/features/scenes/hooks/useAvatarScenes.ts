@@ -35,7 +35,7 @@ export function useAvatarScenes(avatarId: number, hasGenerating = false) {
 
 export interface CreateSceneInput {
   scene_type_id: number;
-  image_variant_id?: number | null;
+  media_variant_id?: number | null;
   track_id?: number | null;
   transition_mode?: string;
 }

@@ -18,7 +18,7 @@ export interface ComparisonCell {
   segment_id: number | null;
   scene_type_id: number;
   scene_type_name: string;
-  image_variant_id: number;
+  media_variant_id: number;
   status_id: number;
   thumbnail_url: string | null;
   stream_url: string | null;

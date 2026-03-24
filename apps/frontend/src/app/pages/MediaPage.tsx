@@ -14,19 +14,19 @@ import { Button, MultiFilterBar, Select, Toggle ,  WireframeLoader } from "@/com
 import type { FilterConfig, FilterOption  } from "@/components/primitives";
 import { ProgressiveImage  } from "@/components/primitives";
 import {
-  useImageVariantsBrowse,
+  useMediaVariantsBrowse,
   useBrowseApproveVariant,
   useBrowseUnapproveVariant,
   useBrowseRejectVariant,
-  type ImageVariantBrowseItem,
-} from "@/features/images/hooks/use-image-variants";
+  type MediaVariantBrowseItem,
+} from "@/features/media/hooks/use-media-variants";
 import {
-  IMAGE_VARIANT_STATUS_LABEL,
+  MEDIA_VARIANT_STATUS_LABEL,
   PROVENANCE_LABEL,
-  type ImageVariantStatusId,
+  type MediaVariantStatusId,
   type Provenance,
-} from "@/features/images/types";
-import { variantImageUrl, variantThumbnailUrl } from "@/features/images/utils";
+} from "@/features/media/types";
+import { variantMediaUrl, variantThumbnailUrl } from "@/features/media/utils";
 import { formatBytes, formatDateTime } from "@/lib/format";
 import { TERMINAL_STATUS_COLORS, TRACK_TEXT_COLORS } from "@/lib/ui-classes";
 import { toSelectOptions } from "@/lib/select-utils";
@@ -45,13 +45,13 @@ function BrowseVariantItem({
   onApprove,
   onReject,
 }: {
-  variant: ImageVariantBrowseItem;
+  variant: MediaVariantBrowseItem;
   onPreview: () => void;
   onNavigate: () => void;
   onApprove: () => void;
   onReject: () => void;
 }) {
-  const statusId = variant.status_id as ImageVariantStatusId;
+  const statusId = variant.status_id as MediaVariantStatusId;
 
   return (
     <div className={`rounded-[var(--radius-lg)] border border-[var(--color-border-default)] transition-colors bg-[#0d1117] hover:bg-[#161b22] ${!variant.avatar_is_enabled ? "opacity-70 grayscale" : ""}`}>
@@ -100,8 +100,8 @@ function BrowseVariantItem({
             {variant.is_hero && <span className="text-green-400">hero</span>}
           </div>
           <div className="flex items-center gap-2 text-[10px] text-[var(--color-text-muted)]">
-            <span className={TERMINAL_STATUS_COLORS[(IMAGE_VARIANT_STATUS_LABEL[statusId] ?? "unknown").toLowerCase()] ?? "text-cyan-400"}>
-              {(IMAGE_VARIANT_STATUS_LABEL[statusId] ?? "unknown").toLowerCase()}
+            <span className={TERMINAL_STATUS_COLORS[(MEDIA_VARIANT_STATUS_LABEL[statusId] ?? "unknown").toLowerCase()] ?? "text-cyan-400"}>
+              {(MEDIA_VARIANT_STATUS_LABEL[statusId] ?? "unknown").toLowerCase()}
             </span>
             <span className="opacity-30">|</span>
             <span>{(PROVENANCE_LABEL[variant.provenance as Provenance] ?? variant.provenance).toLowerCase()}</span>
@@ -155,13 +155,13 @@ function BrowseVariantCard({
   onApprove,
   onReject,
 }: {
-  variant: ImageVariantBrowseItem;
+  variant: MediaVariantBrowseItem;
   onPreview: () => void;
   onNavigate: () => void;
   onApprove: () => void;
   onReject: () => void;
 }) {
-  const statusId = variant.status_id as ImageVariantStatusId;
+  const statusId = variant.status_id as MediaVariantStatusId;
 
   return (
     <div className={`rounded-[var(--radius-lg)] border border-[var(--color-border-default)] overflow-hidden transition-colors bg-[#0d1117] hover:bg-[#161b22] ${!variant.avatar_is_enabled ? "opacity-70 grayscale" : ""}`}>
@@ -207,8 +207,8 @@ function BrowseVariantCard({
             )}
           </div>
           <div className="flex items-center gap-1.5 font-mono text-[10px] text-[var(--color-text-muted)] mt-0.5">
-            <span className={TERMINAL_STATUS_COLORS[(IMAGE_VARIANT_STATUS_LABEL[statusId] ?? "unknown").toLowerCase()] ?? "text-cyan-400"}>
-              {(IMAGE_VARIANT_STATUS_LABEL[statusId] ?? "unknown").toLowerCase()}
+            <span className={TERMINAL_STATUS_COLORS[(MEDIA_VARIANT_STATUS_LABEL[statusId] ?? "unknown").toLowerCase()] ?? "text-cyan-400"}>
+              {(MEDIA_VARIANT_STATUS_LABEL[statusId] ?? "unknown").toLowerCase()}
             </span>
             <span>v{variant.version}</span>
             {variant.is_hero && <span className="text-green-400">hero</span>}
@@ -246,7 +246,13 @@ const SOURCE_OPTIONS: FilterOption[] = [
   { value: "manual_upload", label: "Manual Upload" },
 ];
 
-function buildVariantTypeOptions(items: ImageVariantBrowseItem[] | undefined): FilterOption[] {
+const MEDIA_KIND_OPTIONS: FilterOption[] = [
+  { value: "image", label: "Image" },
+  { value: "video", label: "Video" },
+  { value: "audio", label: "Audio" },
+];
+
+function buildVariantTypeOptions(items: MediaVariantBrowseItem[] | undefined): FilterOption[] {
   if (!items) return [];
   const types = [...new Set(items.map((v) => v.variant_type).filter((t): t is string => t != null))].sort();
   return types.map((t) => ({ value: t, label: t }));
@@ -263,12 +269,13 @@ const DEFAULT_PAGE_SIZE = 25;
    Page
    -------------------------------------------------------------------------- */
 
-export function ImagesPage() {
+export function MediaPage() {
   const navigate = useNavigate();
   const [projectFilter, setProjectFilter] = useState<string[]>([]);
   const [statusFilter, setStatusFilter] = useState<string[]>([]);
   const [sourceFilter, setSourceFilter] = useState<string[]>([]);
   const [variantTypeFilter, setVariantTypeFilter] = useState<string[]>([]);
+  const [mediaKindFilter, setMediaKindFilter] = useState<string[]>([]);
   // Absolute index across all pages (0 to total-1)
   const [previewAbsIndex, setPreviewAbsIndex] = useState<number | null>(null);
   const [showDisabled, setShowDisabled] = useState(false);
@@ -280,12 +287,13 @@ export function ImagesPage() {
   const { data: projects } = useProjects(pipelineCtx?.pipelineId);
   // All filters passed server-side as comma-separated OR values
   const projectId = projectFilter.length === 1 ? Number(projectFilter[0]) : undefined;
-  const { data: browseResult, isLoading } = useImageVariantsBrowse({
+  const { data: browseResult, isLoading } = useMediaVariantsBrowse({
     projectId,
     pipelineId: pipelineCtx?.pipelineId,
     statusId: statusFilter.length > 0 ? statusFilter.join(",") : undefined,
     provenance: sourceFilter.length > 0 ? sourceFilter.join(",") : undefined,
     variantType: variantTypeFilter.length > 0 ? variantTypeFilter.join(",") : undefined,
+    mediaKind: mediaKindFilter.length > 0 ? mediaKindFilter.join(",") : undefined,
     showDisabled,
     limit: pageSize,
     offset: page * pageSize,
@@ -326,13 +334,14 @@ export function ImagesPage() {
     { key: "status", label: "Status", options: STATUS_OPTIONS, selected: statusFilter, onChange: (v: string[]) => { setStatusFilter(v); setPage(0); } },
     { key: "source", label: "Source", options: SOURCE_OPTIONS, selected: sourceFilter, onChange: (v: string[]) => { setSourceFilter(v); setPage(0); } },
     { key: "type", label: "Type", options: variantTypeOptions, selected: variantTypeFilter, onChange: (v: string[]) => { setVariantTypeFilter(v); setPage(0); } },
-  ], [projectOptions, projectFilter, statusFilter, sourceFilter, variantTypeOptions, variantTypeFilter]);
+    { key: "mediaKind", label: "Kind", options: MEDIA_KIND_OPTIONS, selected: mediaKindFilter, onChange: (v: string[]) => { setMediaKindFilter(v); setPage(0); } },
+  ], [projectOptions, projectFilter, statusFilter, sourceFilter, variantTypeOptions, variantTypeFilter, mediaKindFilter]);
 
   return (
     <Stack gap={6}>
       <PageHeader
-        title="Images"
-        description="Browse all image variants across avatars, most recent first."
+        title="Media"
+        description="Browse all media variants across avatars, most recent first."
       />
 
       {/* Filter bar */}
@@ -373,7 +382,7 @@ export function ImagesPage() {
         <EmptyState
           icon={<ImageIcon size={32} />}
           title="No variants found"
-          description="No image variants match the current filters."
+          description="No media variants match the current filters."
         />
       ) : viewMode === "list" ? (
         <div className="flex flex-col gap-2">
@@ -490,7 +499,7 @@ function ImagePreviewModal({
   onApprove,
   onReject,
 }: {
-  variant: ImageVariantBrowseItem | null;
+  variant: MediaVariantBrowseItem | null;
   onClose: () => void;
   onPrev?: () => void;
   onNext?: () => void;
@@ -542,7 +551,7 @@ function ImagePreviewModal({
             <div className="flex min-w-0 flex-1 justify-center">
               {variant.file_path ? (
                 <img
-                  src={variantImageUrl(variant.file_path)}
+                  src={variantMediaUrl(variant.file_path)}
                   alt={variant.variant_label}
                   className="max-h-[60vh] rounded-[var(--radius-md)] object-contain"
                 />
@@ -563,8 +572,8 @@ function ImagePreviewModal({
             </button>
           </div>
           <div className="flex items-center gap-2 font-mono text-[10px] text-[var(--color-text-muted)]">
-            <span className={TERMINAL_STATUS_COLORS[(IMAGE_VARIANT_STATUS_LABEL[variant.status_id as ImageVariantStatusId] ?? "unknown").toLowerCase()] ?? "text-cyan-400"}>
-              {(IMAGE_VARIANT_STATUS_LABEL[variant.status_id as ImageVariantStatusId] ?? "unknown").toLowerCase()}
+            <span className={TERMINAL_STATUS_COLORS[(MEDIA_VARIANT_STATUS_LABEL[variant.status_id as MediaVariantStatusId] ?? "unknown").toLowerCase()] ?? "text-cyan-400"}>
+              {(MEDIA_VARIANT_STATUS_LABEL[variant.status_id as MediaVariantStatusId] ?? "unknown").toLowerCase()}
             </span>
             <span className="opacity-30">|</span>
             <span>{(PROVENANCE_LABEL[variant.provenance as Provenance] ?? variant.provenance).toLowerCase()}</span>

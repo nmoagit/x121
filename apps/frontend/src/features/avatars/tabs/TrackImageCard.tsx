@@ -16,12 +16,12 @@ import { MediaPlaceholder } from "./MediaPlaceholder";
 import type { Track } from "@/features/scene-catalogue/types";
 import {
   IMAGE_ACCEPT_STRING,
-  IMAGE_VARIANT_STATUS,
-  IMAGE_VARIANT_STATUS_LABEL,
+  MEDIA_VARIANT_STATUS,
+  MEDIA_VARIANT_STATUS_LABEL,
   PROVENANCE_LABEL,
-} from "@/features/images/types";
-import type { ImageVariant } from "@/features/images/types";
-import { variantImageUrl } from "@/features/images/utils";
+} from "@/features/media/types";
+import type { MediaVariant } from "@/features/media/types";
+import { variantMediaUrl } from "@/features/media/utils";
 import { TRACK_TEXT_COLORS } from "@/lib/ui-classes";
 
 /* --------------------------------------------------------------------------
@@ -30,7 +30,7 @@ import { TRACK_TEXT_COLORS } from "@/lib/ui-classes";
 
 interface TrackImageCardProps {
   track: Track;
-  heroVariant: ImageVariant | null;
+  heroVariant: MediaVariant | null;
   canGenerate: boolean;
   generateEnabled: boolean;
   generateDisabledReason: string | null;
@@ -109,8 +109,8 @@ export function TrackImageCard({
       className={cn(
         "rounded-[var(--radius-lg)] border border-[var(--color-border-default)] bg-[#0d1117] overflow-hidden",
         dragOver && "ring-2 ring-[var(--color-action-primary)]",
-        heroVariant?.status_id === IMAGE_VARIANT_STATUS.APPROVED && "!border-2 !border-green-500",
-        heroVariant?.status_id === IMAGE_VARIANT_STATUS.REJECTED && "!border-2 !border-red-500",
+        heroVariant?.status_id === MEDIA_VARIANT_STATUS.APPROVED && "!border-2 !border-green-500",
+        heroVariant?.status_id === MEDIA_VARIANT_STATUS.REJECTED && "!border-2 !border-red-500",
       )}
     >
       <div
@@ -134,7 +134,7 @@ export function TrackImageCard({
             className="cursor-pointer"
           >
             <img
-              src={variantImageUrl(heroVariant.file_path)}
+              src={variantMediaUrl(heroVariant.file_path)}
               alt={`${track.name} seed image`}
               className="w-full aspect-video object-cover"
             />
@@ -152,8 +152,8 @@ export function TrackImageCard({
           <div className="flex items-center justify-between gap-1 min-w-0 font-mono text-[10px]">
             <div className="flex items-center gap-2 text-[var(--color-text-muted)] truncate">
               {heroVariant ? (
-                <span className={heroVariant.status_id === IMAGE_VARIANT_STATUS.APPROVED ? "text-green-400" : "text-cyan-400"}>
-                  {IMAGE_VARIANT_STATUS_LABEL[heroVariant.status_id]?.toLowerCase()}
+                <span className={heroVariant.status_id === MEDIA_VARIANT_STATUS.APPROVED ? "text-green-400" : "text-cyan-400"}>
+                  {MEDIA_VARIANT_STATUS_LABEL[heroVariant.status_id]?.toLowerCase()}
                 </span>
               ) : (
                 <span className="text-[var(--color-text-muted)]">no image</span>

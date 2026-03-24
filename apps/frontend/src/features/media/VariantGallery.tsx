@@ -17,36 +17,36 @@ import { Check, Eye } from "@/tokens/icons";
 
 import {
   useApproveVariant,
-  useDeleteImageVariant,
+  useDeleteMediaVariant,
   useExportVariant,
-  useImageVariants,
+  useMediaVariants,
   useRejectVariant,
   useUnapproveVariant,
-} from "./hooks/use-image-variants";
+} from "./hooks/use-media-variants";
 import {
-  IMAGE_VARIANT_STATUS,
-  IMAGE_VARIANT_STATUS_LABEL,
+  MEDIA_VARIANT_STATUS,
+  MEDIA_VARIANT_STATUS_LABEL,
   PROVENANCE_LABEL,
   canApproveVariant,
   canUnapproveVariant,
-  type ImageVariant,
+  type MediaVariant,
   type Provenance,
 } from "./types";
 import { ProgressiveImage  } from "@/components/primitives";
-import { variantImageUrl, variantThumbnailUrl } from "./utils";
+import { variantMediaUrl, variantThumbnailUrl } from "./utils";
 
 /* --------------------------------------------------------------------------
    Sub-components
    -------------------------------------------------------------------------- */
 
 interface VariantCardProps {
-  variant: ImageVariant;
+  variant: MediaVariant;
   onApprove: (id: number) => void;
   onUnapprove: (id: number) => void;
   onReject: (id: number) => void;
   onExport: (id: number) => void;
   onDelete: (id: number) => void;
-  onPreview: (variant: ImageVariant) => void;
+  onPreview: (variant: MediaVariant) => void;
 }
 
 function VariantCard({
@@ -58,7 +58,7 @@ function VariantCard({
   onDelete,
   onPreview,
 }: VariantCardProps) {
-  const isGenerating = variant.status_id === IMAGE_VARIANT_STATUS.GENERATING;
+  const isGenerating = variant.status_id === MEDIA_VARIANT_STATUS.GENERATING;
   const canApprove = canApproveVariant(variant.status_id);
   const canUnapprove = canUnapproveVariant(variant.status_id);
 
@@ -109,8 +109,8 @@ function VariantCard({
 
         {/* Status & provenance */}
         <div className="flex flex-wrap items-center gap-1 font-mono text-[10px]">
-          <span className={TERMINAL_STATUS_COLORS[IMAGE_VARIANT_STATUS_LABEL[variant.status_id]?.toLowerCase() ?? ""] ?? "text-[var(--color-text-muted)]"}>
-            {IMAGE_VARIANT_STATUS_LABEL[variant.status_id] ?? "Unknown"}
+          <span className={TERMINAL_STATUS_COLORS[MEDIA_VARIANT_STATUS_LABEL[variant.status_id]?.toLowerCase() ?? ""] ?? "text-[var(--color-text-muted)]"}>
+            {MEDIA_VARIANT_STATUS_LABEL[variant.status_id] ?? "Unknown"}
           </span>
           <span className="opacity-30">|</span>
           <span className="text-[var(--color-text-muted)]">
@@ -153,13 +153,13 @@ interface VariantGalleryProps {
 }
 
 export function VariantGallery({ avatarId, sourceImageUrl }: VariantGalleryProps) {
-  const { data: variants, isLoading } = useImageVariants(avatarId);
+  const { data: variants, isLoading } = useMediaVariants(avatarId);
   const approveMutation = useApproveVariant(avatarId);
   const unapproveMutation = useUnapproveVariant(avatarId);
   const rejectMutation = useRejectVariant(avatarId);
   const exportMutation = useExportVariant(avatarId);
-  const deleteMutation = useDeleteImageVariant(avatarId);
-  const [previewVariant, setPreviewVariant] = useState<ImageVariant | null>(null);
+  const deleteMutation = useDeleteMediaVariant(avatarId);
+  const [previewVariant, setPreviewVariant] = useState<MediaVariant | null>(null);
 
   const handleApprove = useCallback(
     (id: number) => approveMutation.mutate(id),
@@ -258,7 +258,7 @@ export function VariantGallery({ avatarId, sourceImageUrl }: VariantGalleryProps
             <div className="flex justify-center">
               {previewVariant.file_path ? (
                 <img
-                  src={variantImageUrl(previewVariant.file_path)}
+                  src={variantMediaUrl(previewVariant.file_path)}
                   alt={previewVariant.variant_label}
                   className="max-h-[60vh] rounded-[var(--radius-md)] object-contain"
                 />
@@ -270,8 +270,8 @@ export function VariantGallery({ avatarId, sourceImageUrl }: VariantGalleryProps
             </div>
 
             <div className="flex flex-wrap items-center gap-2 font-mono text-xs">
-              <span className={TERMINAL_STATUS_COLORS[IMAGE_VARIANT_STATUS_LABEL[previewVariant.status_id]?.toLowerCase() ?? ""] ?? "text-[var(--color-text-muted)]"}>
-                {IMAGE_VARIANT_STATUS_LABEL[previewVariant.status_id]}
+              <span className={TERMINAL_STATUS_COLORS[MEDIA_VARIANT_STATUS_LABEL[previewVariant.status_id]?.toLowerCase() ?? ""] ?? "text-[var(--color-text-muted)]"}>
+                {MEDIA_VARIANT_STATUS_LABEL[previewVariant.status_id]}
               </span>
               <span className="opacity-30">|</span>
               <span className="text-[var(--color-text-muted)]">

@@ -5,7 +5,7 @@
  */
 
 import { ProgressiveImage } from "@/components/primitives";
-import { variantThumbnailUrl } from "@/features/images/utils";
+import { variantThumbnailUrl } from "@/features/media/utils";
 import { cn } from "@/lib/cn";
 import { TERMINAL_PANEL, TERMINAL_ROW_HOVER } from "@/lib/ui-classes";
 import { Check, Film, Image, Minus, User, Video } from "@/tokens/icons";

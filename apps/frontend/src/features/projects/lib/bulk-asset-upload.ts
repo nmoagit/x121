@@ -7,18 +7,18 @@
  * iteration, which React hooks (bound to a fixed ID) cannot support.
  */
 
-import { postImageVariantUpload } from "@/features/images/hooks/use-image-variants";
+import { postMediaVariantUpload } from "@/features/media/hooks/use-media-variants";
 import { postClipImport } from "@/features/scenes/hooks/useClipManagement";
 import type { Scene } from "@/features/scenes/types";
 import { api } from "@/lib/api";
 
 /** Upload a single image variant to a avatar. */
-export async function uploadImageVariant(
+export async function uploadMediaVariant(
   avatarId: number,
   file: File,
   variantType: string,
 ): Promise<void> {
-  await postImageVariantUpload(avatarId, file, variantType);
+  await postMediaVariantUpload(avatarId, file, variantType);
 }
 
 /** Create a scene for a avatar with the given scene type and track. */
@@ -31,7 +31,7 @@ export async function createSceneForAvatar(
   const scene = await api.post<Scene>(`/avatars/${avatarId}/scenes`, {
     scene_type_id: sceneTypeId,
     track_id: trackId,
-    image_variant_id: imageVariantId,
+    media_variant_id: imageVariantId,
   });
   return scene.id;
 }

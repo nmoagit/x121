@@ -28,7 +28,8 @@ Source of truth: [`design/design.md`](../design.md)
 | blocked | 0 |
 | deferred | 0 |
 | maybe | 15 |
-| **Total** | **157** |
+| draft | 1 |
+| **Total** | **158** |
 
 ---
 
@@ -43,6 +44,7 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-140 | Character to Avatar Rename | 1 | `done` | 2026-03-22 | Renamed "character"→"avatar" across entire stack. DB: 1 migration (19 tables + FK columns). Backend: 46 files renamed, 258 files updated. Frontend: 49 files renamed, 402 files updated. Unified "model"/"character" to "avatar". |
 | PRD-141 | Pipeline-Scoped Imports and Storage | 1 | `done` | 2026-03-23 |
 | PRD-146 | Dynamic Generation Seeds | 1 | `done` | 2026-03-24 | Workflow media slots (mirroring prompt slots), avatar media assignments, passthrough seeds, multi-seed pipeline injection, media resolution engine, auto-detect media nodes on workflow import, frontend Seeds tab. 3 migrations, 7 new backend files, 3 new frontend components, 10 unit tests. Deps: PRD-75, PRD-115, PRD-138, PRD-141. |
+| PRD-147 | Media Variants & Seed Auto-Detection | 1 | `draft` | 2026-03-24 | Part A: Rename image tables → media tables (source_images→source_media, derived_images→derived_media, image_variants→media_variants, image_variant_statuses→media_variant_statuses) + frontend images/→media/ directory. Part B: Seed auto-detection with media variant picker (thumbnails filtered by track_affinity), auto-assign-all endpoint. New columns: media_kind, duration_secs. Deps: PRD-140, PRD-146, PRD-21, PRD-138. |
 
 ## Part 1: Infrastructure & System Core
 

@@ -83,8 +83,8 @@ function buildSections(receipt: GenerationReceipt) {
       title: "Image Hashes",
       content: (
         <div className="flex flex-col gap-2">
-          <CopyableHash label="Source Image" value={receipt.source_image_hash} />
-          <CopyableHash label="Variant Image" value={receipt.variant_image_hash} />
+          <CopyableHash label="Source Image" value={receipt.source_media_hash} />
+          <CopyableHash label="Variant Image" value={receipt.variant_media_hash} />
           <CopyableHash label="Inputs Hash" value={receipt.inputs_hash} />
         </div>
       ),

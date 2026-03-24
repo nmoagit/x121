@@ -3,19 +3,19 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { renderWithProviders } from "@/lib/test-utils";
 
 import { VariantGallery } from "../VariantGallery";
-import { IMAGE_VARIANT_STATUS, PROVENANCE, type ImageVariant } from "../types";
+import { MEDIA_VARIANT_STATUS, PROVENANCE, type MediaVariant } from "../types";
 
 /* --------------------------------------------------------------------------
    Fixtures
    -------------------------------------------------------------------------- */
 
-const MOCK_VARIANT_GENERATED: ImageVariant = {
+const MOCK_VARIANT_GENERATED: MediaVariant = {
   id: 1,
   avatar_id: 10,
-  source_image_id: null,
-  derived_image_id: null,
+  source_media_id: null,
+  derived_media_id: null,
   variant_label: "Clothed variant",
-  status_id: IMAGE_VARIANT_STATUS.GENERATED,
+  status_id: MEDIA_VARIANT_STATUS.GENERATED,
   file_path: "/storage/variants/test.png",
   variant_type: "clothed",
   provenance: PROVENANCE.GENERATED,
@@ -27,27 +27,29 @@ const MOCK_VARIANT_GENERATED: ImageVariant = {
   version: 1,
   parent_variant_id: null,
   generation_params: null,
+  media_kind: "image",
+  duration_secs: null,
   deleted_at: null,
   created_at: "2026-02-21T00:00:00Z",
   updated_at: "2026-02-21T00:00:00Z",
 };
 
-const MOCK_VARIANT_HERO: ImageVariant = {
+const MOCK_VARIANT_HERO: MediaVariant = {
   ...MOCK_VARIANT_GENERATED,
   id: 2,
   variant_label: "Hero variant",
-  status_id: IMAGE_VARIANT_STATUS.APPROVED,
+  status_id: MEDIA_VARIANT_STATUS.APPROVED,
   is_hero: true,
   version: 2,
   parent_variant_id: 1,
   provenance: PROVENANCE.MANUALLY_EDITED,
 };
 
-const MOCK_VARIANT_GENERATING: ImageVariant = {
+const MOCK_VARIANT_GENERATING: MediaVariant = {
   ...MOCK_VARIANT_GENERATED,
   id: 3,
   variant_label: "Generating variant",
-  status_id: IMAGE_VARIANT_STATUS.GENERATING,
+  status_id: MEDIA_VARIANT_STATUS.GENERATING,
   file_path: "",
 };
 
@@ -166,7 +168,7 @@ describe("VariantGallery", () => {
 
     await waitFor(() => {
       expect(mockPost).toHaveBeenCalledWith(
-        "/avatars/10/image-variants/1/approve",
+        "/avatars/10/media-variants/1/approve",
       );
     });
   });
@@ -188,7 +190,7 @@ describe("VariantGallery", () => {
 
     await waitFor(() => {
       expect(mockPost).toHaveBeenCalledWith(
-        "/avatars/10/image-variants/1/reject",
+        "/avatars/10/media-variants/1/reject",
       );
     });
   });
@@ -210,7 +212,7 @@ describe("VariantGallery", () => {
 
     await waitFor(() => {
       expect(mockDelete).toHaveBeenCalledWith(
-        "/avatars/10/image-variants/1",
+        "/avatars/10/media-variants/1",
       );
     });
   });

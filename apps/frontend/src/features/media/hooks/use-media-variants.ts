@@ -1,34 +1,34 @@
 /**
- * TanStack Query hooks for image variant management (PRD-21).
+ * TanStack Query hooks for media variant management (PRD-21).
  */
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { api } from "@/lib/api";
 import type {
-  CreateImageVariantInput,
+  CreateMediaVariantInput,
   GenerateVariantsInput,
-  ImageVariant,
-  UpdateImageVariantInput,
+  MediaVariant,
+  UpdateMediaVariantInput,
 } from "../types";
 
 /* --------------------------------------------------------------------------
    Query key factory
    -------------------------------------------------------------------------- */
 
-export const imageVariantKeys = {
-  all: ["image-variants"] as const,
-  lists: () => [...imageVariantKeys.all, "list"] as const,
+export const mediaVariantKeys = {
+  all: ["media-variants"] as const,
+  lists: () => [...mediaVariantKeys.all, "list"] as const,
   list: (avatarId: number, variantType?: string) =>
-    [...imageVariantKeys.lists(), avatarId, variantType] as const,
-  details: () => [...imageVariantKeys.all, "detail"] as const,
+    [...mediaVariantKeys.lists(), avatarId, variantType] as const,
+  details: () => [...mediaVariantKeys.all, "detail"] as const,
   detail: (avatarId: number, id: number) =>
-    [...imageVariantKeys.details(), avatarId, id] as const,
-  histories: () => [...imageVariantKeys.all, "history"] as const,
+    [...mediaVariantKeys.details(), avatarId, id] as const,
+  histories: () => [...mediaVariantKeys.all, "history"] as const,
   history: (avatarId: number, id: number) =>
-    [...imageVariantKeys.histories(), avatarId, id] as const,
+    [...mediaVariantKeys.histories(), avatarId, id] as const,
   browse: (projectId?: number, pipelineId?: number, limit?: number, offset?: number) =>
-    [...imageVariantKeys.all, "browse", projectId, pipelineId, limit, offset] as const,
+    [...mediaVariantKeys.all, "browse", projectId, pipelineId, limit, offset] as const,
 };
 
 /* --------------------------------------------------------------------------
@@ -36,7 +36,7 @@ export const imageVariantKeys = {
    -------------------------------------------------------------------------- */
 
 function variantBasePath(avatarId: number): string {
-  return `/avatars/${avatarId}/image-variants`;
+  return `/avatars/${avatarId}/media-variants`;
 }
 
 /**
@@ -46,7 +46,7 @@ function variantBasePath(avatarId: number): string {
  * info hook (diff badge display).
  */
 export async function fetchVariantTypeSet(avatarId: number): Promise<Set<string>> {
-  const variants = await api.get<ImageVariant[]>(variantBasePath(avatarId));
+  const variants = await api.get<MediaVariant[]>(variantBasePath(avatarId));
   return new Set(
     variants
       .map((v) => v.variant_type?.toLowerCase())
@@ -58,21 +58,21 @@ export async function fetchVariantTypeSet(avatarId: number): Promise<Set<string>
    Query hooks
    -------------------------------------------------------------------------- */
 
-/** Fetch all image variants for a avatar, optionally filtered by variant type. */
-export function useImageVariants(avatarId: number, variantType?: string) {
+/** Fetch all media variants for a avatar, optionally filtered by variant type. */
+export function useMediaVariants(avatarId: number, variantType?: string) {
   const params = variantType ? `?variant_type=${encodeURIComponent(variantType)}` : "";
   return useQuery({
-    queryKey: imageVariantKeys.list(avatarId, variantType),
-    queryFn: () => api.get<ImageVariant[]>(`${variantBasePath(avatarId)}${params}`),
+    queryKey: mediaVariantKeys.list(avatarId, variantType),
+    queryFn: () => api.get<MediaVariant[]>(`${variantBasePath(avatarId)}${params}`),
     enabled: avatarId > 0,
   });
 }
 
-/** Fetch a single image variant by id. */
-export function useImageVariant(avatarId: number, id: number | null) {
+/** Fetch a single media variant by id. */
+export function useMediaVariant(avatarId: number, id: number | null) {
   return useQuery({
-    queryKey: imageVariantKeys.detail(avatarId, id ?? 0),
-    queryFn: () => api.get<ImageVariant>(`${variantBasePath(avatarId)}/${id}`),
+    queryKey: mediaVariantKeys.detail(avatarId, id ?? 0),
+    queryFn: () => api.get<MediaVariant>(`${variantBasePath(avatarId)}/${id}`),
     enabled: id !== null && avatarId > 0,
   });
 }
@@ -80,8 +80,8 @@ export function useImageVariant(avatarId: number, id: number | null) {
 /** Fetch the version history chain for a variant. */
 export function useVariantHistory(avatarId: number, id: number | null) {
   return useQuery({
-    queryKey: imageVariantKeys.history(avatarId, id ?? 0),
-    queryFn: () => api.get<ImageVariant[]>(`${variantBasePath(avatarId)}/${id}/history`),
+    queryKey: mediaVariantKeys.history(avatarId, id ?? 0),
+    queryFn: () => api.get<MediaVariant[]>(`${variantBasePath(avatarId)}/${id}/history`),
     enabled: id !== null && avatarId > 0,
   });
 }
@@ -90,43 +90,43 @@ export function useVariantHistory(avatarId: number, id: number | null) {
    Mutation hooks
    -------------------------------------------------------------------------- */
 
-/** Create a new image variant via JSON. */
-export function useCreateImageVariant(avatarId: number) {
+/** Create a new media variant via JSON. */
+export function useCreateMediaVariant(avatarId: number) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: CreateImageVariantInput) =>
-      api.post<ImageVariant>(variantBasePath(avatarId), data),
+    mutationFn: (data: CreateMediaVariantInput) =>
+      api.post<MediaVariant>(variantBasePath(avatarId), data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: imageVariantKeys.all });
+      queryClient.invalidateQueries({ queryKey: mediaVariantKeys.all });
     },
   });
 }
 
-/** Update an existing image variant. */
-export function useUpdateImageVariant(avatarId: number, id: number) {
+/** Update an existing media variant. */
+export function useUpdateMediaVariant(avatarId: number, id: number) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: UpdateImageVariantInput) =>
-      api.put<ImageVariant>(`${variantBasePath(avatarId)}/${id}`, data),
+    mutationFn: (data: UpdateMediaVariantInput) =>
+      api.put<MediaVariant>(`${variantBasePath(avatarId)}/${id}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: imageVariantKeys.detail(avatarId, id),
+        queryKey: mediaVariantKeys.detail(avatarId, id),
       });
-      queryClient.invalidateQueries({ queryKey: imageVariantKeys.all });
+      queryClient.invalidateQueries({ queryKey: mediaVariantKeys.all });
     },
   });
 }
 
-/** Soft-delete an image variant. */
-export function useDeleteImageVariant(avatarId: number) {
+/** Soft-delete an media variant. */
+export function useDeleteMediaVariant(avatarId: number) {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (id: number) => api.delete(`${variantBasePath(avatarId)}/${id}`),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: imageVariantKeys.all });
+      queryClient.invalidateQueries({ queryKey: mediaVariantKeys.all });
     },
   });
 }
@@ -137,9 +137,9 @@ export function useApproveVariant(avatarId: number) {
 
   return useMutation({
     mutationFn: (id: number) =>
-      api.post<ImageVariant>(`${variantBasePath(avatarId)}/${id}/approve`),
+      api.post<MediaVariant>(`${variantBasePath(avatarId)}/${id}/approve`),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: imageVariantKeys.all });
+      queryClient.invalidateQueries({ queryKey: mediaVariantKeys.all });
     },
   });
 }
@@ -150,9 +150,9 @@ export function useUnapproveVariant(avatarId: number) {
 
   return useMutation({
     mutationFn: (id: number) =>
-      api.post<ImageVariant>(`${variantBasePath(avatarId)}/${id}/unapprove`),
+      api.post<MediaVariant>(`${variantBasePath(avatarId)}/${id}/unapprove`),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: imageVariantKeys.all });
+      queryClient.invalidateQueries({ queryKey: mediaVariantKeys.all });
     },
   });
 }
@@ -163,9 +163,9 @@ export function useRejectVariant(avatarId: number) {
 
   return useMutation({
     mutationFn: (id: number) =>
-      api.post<ImageVariant>(`${variantBasePath(avatarId)}/${id}/reject`),
+      api.post<MediaVariant>(`${variantBasePath(avatarId)}/${id}/reject`),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: imageVariantKeys.all });
+      queryClient.invalidateQueries({ queryKey: mediaVariantKeys.all });
     },
   });
 }
@@ -175,9 +175,9 @@ export function useBrowseApproveVariant() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ avatarId, id }: { avatarId: number; id: number }) =>
-      api.post<ImageVariant>(`${variantBasePath(avatarId)}/${id}/approve`),
+      api.post<MediaVariant>(`${variantBasePath(avatarId)}/${id}/approve`),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: imageVariantKeys.all });
+      queryClient.invalidateQueries({ queryKey: mediaVariantKeys.all });
     },
   });
 }
@@ -187,9 +187,9 @@ export function useBrowseUnapproveVariant() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ avatarId, id }: { avatarId: number; id: number }) =>
-      api.post<ImageVariant>(`${variantBasePath(avatarId)}/${id}/unapprove`),
+      api.post<MediaVariant>(`${variantBasePath(avatarId)}/${id}/unapprove`),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: imageVariantKeys.all });
+      queryClient.invalidateQueries({ queryKey: mediaVariantKeys.all });
     },
   });
 }
@@ -199,9 +199,9 @@ export function useBrowseRejectVariant() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ avatarId, id }: { avatarId: number; id: number }) =>
-      api.post<ImageVariant>(`${variantBasePath(avatarId)}/${id}/reject`),
+      api.post<MediaVariant>(`${variantBasePath(avatarId)}/${id}/reject`),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: imageVariantKeys.all });
+      queryClient.invalidateQueries({ queryKey: mediaVariantKeys.all });
     },
   });
 }
@@ -212,15 +212,15 @@ export function useExportVariant(avatarId: number) {
 
   return useMutation({
     mutationFn: (id: number) =>
-      api.post<ImageVariant>(`${variantBasePath(avatarId)}/${id}/export`),
+      api.post<MediaVariant>(`${variantBasePath(avatarId)}/${id}/export`),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: imageVariantKeys.all });
+      queryClient.invalidateQueries({ queryKey: mediaVariantKeys.all });
     },
   });
 }
 
-/** Build FormData and POST an image variant upload. Shared by hook and bulk upload. */
-export function postImageVariantUpload(
+/** Build FormData and POST an media variant upload. Shared by hook and bulk upload. */
+export function postMediaVariantUpload(
   avatarId: number,
   file: File,
   variantType: string,
@@ -237,8 +237,8 @@ export function postImageVariantUpload(
   });
 }
 
-/** Upload an image variant via multipart form. */
-export function useUploadImageVariant(avatarId: number) {
+/** Upload an media variant via multipart form. */
+export function useUploadMediaVariant(avatarId: number) {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -250,9 +250,9 @@ export function useUploadImageVariant(avatarId: number) {
       file: File;
       variant_type: string;
       variant_label?: string;
-    }) => postImageVariantUpload(avatarId, file, variant_type, variant_label),
+    }) => postMediaVariantUpload(avatarId, file, variant_type, variant_label),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: imageVariantKeys.all });
+      queryClient.invalidateQueries({ queryKey: mediaVariantKeys.all });
       // Refresh avatar lists so hero_variant_id (card avatar) and
       // seed data indicators update immediately after image upload.
       queryClient.invalidateQueries({
@@ -271,9 +271,9 @@ export function useGenerateVariants(avatarId: number) {
 
   return useMutation({
     mutationFn: (data: GenerateVariantsInput) =>
-      api.post<ImageVariant[]>(`${variantBasePath(avatarId)}/generate`, data),
+      api.post<MediaVariant[]>(`${variantBasePath(avatarId)}/generate`, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: imageVariantKeys.all });
+      queryClient.invalidateQueries({ queryKey: mediaVariantKeys.all });
     },
   });
 }
@@ -282,8 +282,8 @@ export function useGenerateVariants(avatarId: number) {
    Browse (cross-avatar)
    -------------------------------------------------------------------------- */
 
-/** An image variant enriched with avatar/project context for browsing. */
-export interface ImageVariantBrowseItem {
+/** A media variant enriched with avatar/project context for browsing. */
+export interface MediaVariantBrowseItem {
   id: number;
   avatar_id: number;
   variant_label: string;
@@ -297,6 +297,8 @@ export interface ImageVariantBrowseItem {
   height: number | null;
   format: string | null;
   version: number;
+  media_kind: "image" | "video" | "audio";
+  duration_secs: number | null;
   created_at: string;
   avatar_name: string;
   avatar_is_enabled: boolean;
@@ -304,39 +306,41 @@ export interface ImageVariantBrowseItem {
   project_name: string;
 }
 
-/** Paginated browse result for image variants. */
-export interface ImageVariantBrowsePage {
-  items: ImageVariantBrowseItem[];
+/** Paginated browse result for media variants. */
+export interface MediaVariantBrowsePage {
+  items: MediaVariantBrowseItem[];
   total: number;
 }
 
-/** Params for browsing image variants with pagination and server-side filtering. */
-export interface ImageVariantBrowseParams {
+/** Params for browsing media variants with pagination and server-side filtering. */
+export interface MediaVariantBrowseParams {
   projectId?: number;
   pipelineId?: number;
   /** Comma-separated status IDs for OR filtering (e.g., "1,2"). */
   statusId?: string;
   provenance?: string;
   variantType?: string;
+  mediaKind?: string;
   showDisabled?: boolean;
   limit?: number;
   offset?: number;
 }
 
-/** Fetch paginated image variants across avatars/projects, most recent first. */
-export function useImageVariantsBrowse(params: ImageVariantBrowseParams = {}) {
+/** Fetch paginated media variants across avatars/projects, most recent first. */
+export function useMediaVariantsBrowse(params: MediaVariantBrowseParams = {}) {
   const searchParams = new URLSearchParams();
   if (params.projectId != null) searchParams.set("project_id", String(params.projectId));
   if (params.pipelineId != null) searchParams.set("pipeline_id", String(params.pipelineId));
   if (params.statusId != null) searchParams.set("status_id", String(params.statusId));
   if (params.provenance) searchParams.set("provenance", params.provenance);
   if (params.variantType) searchParams.set("variant_type", params.variantType);
+  if (params.mediaKind) searchParams.set("media_kind", params.mediaKind);
   if (params.showDisabled) searchParams.set("show_disabled", "true");
   if (params.limit != null) searchParams.set("limit", String(params.limit));
   if (params.offset != null) searchParams.set("offset", String(params.offset));
   const qs = searchParams.toString();
   return useQuery({
-    queryKey: ["image-variants", "browse", qs],
-    queryFn: () => api.get<ImageVariantBrowsePage>(`/image-variants/browse?${qs}`),
+    queryKey: ["media-variants", "browse", qs],
+    queryFn: () => api.get<MediaVariantBrowsePage>(`/media-variants/browse?${qs}`),
   });
 }
