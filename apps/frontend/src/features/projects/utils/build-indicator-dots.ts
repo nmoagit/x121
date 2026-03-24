@@ -27,7 +27,8 @@ export interface IndicatorDot {
    Constants
    -------------------------------------------------------------------------- */
 
-const DEFAULT_BLOCKING = ["metadata", "images", "scenes"];
+// Scenes are generated (not user-provided), so excluded from default indicators.
+const DEFAULT_BLOCKING = ["images", "metadata"];
 
 /* --------------------------------------------------------------------------
    Builder
