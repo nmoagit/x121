@@ -51,8 +51,12 @@ import { useImageVariants } from "@/features/images/hooks/use-image-variants";
 import { IMAGE_VARIANT_STATUS, PROVENANCE_LABEL } from "@/features/images/types";
 import type { ImageVariant, Provenance } from "@/features/images/types";
 import { variantImageUrl } from "@/features/images/utils";
+import { usePipelineContextSafe } from "@/features/pipelines";
+import { usePipeline } from "@/features/pipelines/hooks/use-pipelines";
+import type { SeedSlot } from "@/features/pipelines/types";
 import { useProject } from "@/features/projects/hooks/use-projects";
 import { useAvatarSceneSettings } from "@/features/scene-catalogue/hooks/use-avatar-scene-settings";
+import { useSingleTrack } from "@/features/scene-catalogue/hooks/use-single-track";
 import { useExpandedSettings } from "@/features/scene-catalogue/hooks/use-expanded-settings";
 import type { ExpandedSceneSetting } from "@/features/scene-catalogue/types";
 import { useAvatarScenes } from "@/features/scenes/hooks/useAvatarScenes";
@@ -333,16 +337,25 @@ function SeedImageSlot({
   label,
   trackSlug,
   variants,
+  seedSlotNames = [],
+  isSingleTrack = false,
 }: {
   label: string;
   trackSlug: string;
   variants: ImageVariant[];
+  seedSlotNames?: string[];
+  isSingleTrack?: boolean;
 }) {
-  // Match variants by track slug. Include hero, approved, or generated variants
-  // (uploaded images arrive as Generated, not Approved).
+  // Match variants by track slug. For single-track pipelines, also match seed slot names.
+  const matchTypes = new Set([trackSlug.toLowerCase()]);
+  if (isSingleTrack) {
+    for (const name of seedSlotNames) matchTypes.add(name);
+  }
+
   const matched = variants.filter(
     (v) =>
-      v.variant_type?.toLowerCase() === trackSlug.toLowerCase() &&
+      v.variant_type != null &&
+      matchTypes.has(v.variant_type.toLowerCase()) &&
       (v.is_hero ||
         v.status_id === IMAGE_VARIANT_STATUS.APPROVED ||
         v.status_id === IMAGE_VARIANT_STATUS.GENERATED),
@@ -620,6 +633,16 @@ export function AvatarDeliverablesTab({
   avatarName,
   projectName,
 }: AvatarDeliverablesTabProps) {
+  const pipelineCtx = usePipelineContextSafe();
+  const { data: project } = useProject(projectId);
+  const resolvedPipelineId = pipelineCtx?.pipelineId ?? project?.pipeline_id ?? undefined;
+  const { data: pipelineData } = usePipeline(resolvedPipelineId ?? 0);
+  const { isSingleTrack } = useSingleTrack(resolvedPipelineId);
+  const seedSlotNames = useMemo(() => {
+    const slots = (pipelineData?.seed_slots ?? []) as SeedSlot[];
+    return slots.map((s) => s.name.toLowerCase());
+  }, [pipelineData?.seed_slots]);
+
   const { data: variants, isLoading: variantsLoading } = useImageVariants(avatarId);
   const { data: scenes, isLoading: scenesLoading } = useAvatarScenes(avatarId);
   const { data: settings, isLoading: settingsLoading } = useAvatarSceneSettings(avatarId);
@@ -627,8 +650,6 @@ export function AvatarDeliverablesTab({
   const addIgnore = useAddDeliverableIgnore(avatarId);
   const removeIgnore = useRemoveDeliverableIgnore(avatarId);
   const { data: speechData, isLoading: speechLoading } = useSpeechCompleteness(avatarId);
-  const { data: project } = useProject(projectId);
-
   const [showIgnored, setShowIgnored] = useState(true);
   const [sequenceOpen, setSequenceOpen] = useState(false);
 
@@ -732,6 +753,8 @@ export function AvatarDeliverablesTab({
                     label={track.name}
                     trackSlug={track.slug}
                     variants={variants ?? []}
+                    seedSlotNames={seedSlotNames}
+                    isSingleTrack={isSingleTrack}
                   />
                 ))}
               </Stack>
