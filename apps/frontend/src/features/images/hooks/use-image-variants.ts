@@ -274,10 +274,14 @@ export interface ImageVariantBrowsePage {
   total: number;
 }
 
-/** Params for browsing image variants with pagination. */
+/** Params for browsing image variants with pagination and server-side filtering. */
 export interface ImageVariantBrowseParams {
   projectId?: number;
   pipelineId?: number;
+  statusId?: number;
+  provenance?: string;
+  variantType?: string;
+  showDisabled?: boolean;
   limit?: number;
   offset?: number;
 }
@@ -287,11 +291,15 @@ export function useImageVariantsBrowse(params: ImageVariantBrowseParams = {}) {
   const searchParams = new URLSearchParams();
   if (params.projectId != null) searchParams.set("project_id", String(params.projectId));
   if (params.pipelineId != null) searchParams.set("pipeline_id", String(params.pipelineId));
+  if (params.statusId != null) searchParams.set("status_id", String(params.statusId));
+  if (params.provenance) searchParams.set("provenance", params.provenance);
+  if (params.variantType) searchParams.set("variant_type", params.variantType);
+  if (params.showDisabled) searchParams.set("show_disabled", "true");
   if (params.limit != null) searchParams.set("limit", String(params.limit));
   if (params.offset != null) searchParams.set("offset", String(params.offset));
   const qs = searchParams.toString();
   return useQuery({
-    queryKey: imageVariantKeys.browse(params.projectId, params.pipelineId, params.limit, params.offset),
+    queryKey: ["image-variants", "browse", qs],
     queryFn: () => api.get<ImageVariantBrowsePage>(`/image-variants/browse?${qs}`),
   });
 }

@@ -95,7 +95,7 @@ impl AvatarSpeechRepo {
         avatar_id: DbId,
     ) -> Result<Vec<AvatarSpeech>, sqlx::Error> {
         let query = format!(
-            "SELECT cs.{COLUMNS_PREFIXED} \
+            "SELECT {COLUMNS_PREFIXED} \
              FROM avatar_speeches cs \
              JOIN speech_types st ON st.id = cs.speech_type_id \
              WHERE cs.avatar_id = $1 AND cs.deleted_at IS NULL AND cs.status_id = 2 \
@@ -413,6 +413,6 @@ pub struct CompletenessEntry {
 }
 
 /// Prefixed column list for queries that join other tables.
-const COLUMNS_PREFIXED: &str = "id, avatar_id, speech_type_id, version, text, \
-                                 language_id, status_id, sort_order, \
-                                 created_at, updated_at, deleted_at";
+const COLUMNS_PREFIXED: &str = "cs.id, cs.avatar_id, cs.speech_type_id, cs.version, cs.text, \
+                                 cs.language_id, cs.status_id, cs.sort_order, \
+                                 cs.created_at, cs.updated_at, cs.deleted_at";

@@ -37,10 +37,11 @@ const COLLAPSED_WIDTH = "w-12";
 function PipelineSidebarContent({ collapsed, pipelineCode }: { collapsed: boolean; pipelineCode: string }) {
   const { data: pipeline } = usePipelineByCode(pipelineCode);
   const { data: projects } = useProjects(pipeline?.id);
+  const { compactNav } = useSidebar();
   const pipelineName = pipeline?.name ?? pipelineCode;
 
   const navGroups = useMemo(() => {
-    const groups = buildPipelineNavGroups(pipelineCode);
+    let groups = buildPipelineNavGroups(pipelineCode);
 
     // Inject dynamic project list under "All Projects" in the Projects group
     if (projects && projects.length > 0) {
@@ -57,8 +58,18 @@ function PipelineSidebarContent({ collapsed, pipelineCode }: { collapsed: boolea
       }
     }
 
+    // In compact mode, filter to only prominent items per group.
+    if (compactNav) {
+      groups = groups
+        .map((group) => ({
+          ...group,
+          items: group.items.filter((item) => item.prominent),
+        }))
+        .filter((group) => group.items.length > 0);
+    }
+
     return groups;
-  }, [pipelineCode, projects]);
+  }, [pipelineCode, projects, compactNav]);
 
   return (
     <nav
@@ -101,6 +112,12 @@ function PipelineSidebarContent({ collapsed, pipelineCode }: { collapsed: boolea
         {navGroups.map((group, i) => (
           <NavGroup key={group.label} group={group} collapsed={collapsed} first={i === 0} />
         ))}
+      </div>
+
+      {/* Compact nav toggle */}
+      <div className="shrink-0 border-t border-[var(--color-border-default)] h-7 flex items-center -mx-px">
+        {!collapsed && <CompactNavToggle />}
+        {collapsed && <CompactNavToggleCollapsed />}
       </div>
     </nav>
   );

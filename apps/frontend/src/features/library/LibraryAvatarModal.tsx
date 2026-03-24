@@ -34,7 +34,7 @@ import { useAvatarScenes } from "@/features/scenes/hooks/useAvatarScenes";
 import { sceneHasVideo } from "@/features/scenes/types";
 import { VideoPlayer } from "@/features/video-player/VideoPlayer";
 import { getStreamUrl } from "@/features/video-player/hooks/use-video-metadata";
-import { ArrowRight, ChevronLeft, ChevronRight, Film, FileText, Image, MessageSquare, Mic, Play, X } from "@/tokens/icons";
+import { ArrowRight, ChevronLeft, ChevronRight, Film, FileText, Image, Maximize2, MessageSquare, Mic, Minimize2, Play, X } from "@/tokens/icons";
 
 import type { LibraryAvatar } from "./types";
 
@@ -43,8 +43,8 @@ import type { LibraryAvatar } from "./types";
    -------------------------------------------------------------------------- */
 
 type DetailView =
-  | { kind: "image"; url: string; label: string }
-  | { kind: "video"; versionId: number; label: string }
+  | { kind: "image"; url: string; label: string; index: number; total: number }
+  | { kind: "video"; versionId: number; label: string; index: number; total: number }
   | { kind: "json"; data: Record<string, unknown> }
   | { kind: "speech"; label: string; entries: AvatarSpeech[] };
 
@@ -246,7 +246,7 @@ export function LibraryAvatarModal({
                   <span className="text-cyan-400">{seedImages.length}</span>
                 </h3>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                  {seedImages.map((v) => (
+                  {seedImages.map((v, i) => (
                     <button
                       key={v.id}
                       type="button"
@@ -255,6 +255,8 @@ export function LibraryAvatarModal({
                           kind: "image",
                           url: variantImageUrl(v.file_path),
                           label: v.variant_label || v.variant_type || "Image",
+                          index: i,
+                          total: seedImages.length,
                         })
                       }
                       className={cn(
@@ -292,7 +294,7 @@ export function LibraryAvatarModal({
                   <span className="text-cyan-400">{scenesWithVideo.length}</span>
                 </h3>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                  {scenesWithVideo.map((s) => {
+                  {scenesWithVideo.map((s, i) => {
                     const info = sceneInfo(s);
                     const trackColor = info.trackSlug ? (TRACK_TEXT_COLORS[info.trackSlug] ?? "text-[var(--color-text-muted)]") : "";
                     return (
@@ -304,6 +306,8 @@ export function LibraryAvatarModal({
                             kind: "video",
                             versionId: s.latest_version_id!,
                             label: `${info.sceneName}${info.trackName ? ` — ${info.trackName}` : ""}`,
+                            index: i,
+                            total: scenesWithVideo.length,
                           })
                         }
                         className={cn(
@@ -430,7 +434,24 @@ export function LibraryAvatarModal({
 
       {/* Detail overlay */}
       {detail && (
-        <DetailOverlay detail={detail} onClose={() => setDetail(null)} />
+        <DetailOverlay
+          detail={detail}
+          onClose={() => setDetail(null)}
+          onPrev={
+            (detail.kind === "image" && detail.index > 0)
+              ? () => { const v = seedImages[detail.index - 1]; if (!v) return; setDetail({ kind: "image", url: variantImageUrl(v.file_path), label: v.variant_label || v.variant_type || "Image", index: detail.index - 1, total: seedImages.length }); }
+              : (detail.kind === "video" && detail.index > 0)
+                ? () => { const s = scenesWithVideo[detail.index - 1]; if (!s) return; const info = sceneInfo(s); setDetail({ kind: "video", versionId: s.latest_version_id!, label: `${info.sceneName}${info.trackName ? ` — ${info.trackName}` : ""}`, index: detail.index - 1, total: scenesWithVideo.length }); }
+                : undefined
+          }
+          onNext={
+            (detail.kind === "image" && detail.index < detail.total - 1)
+              ? () => { const v = seedImages[detail.index + 1]; if (!v) return; setDetail({ kind: "image", url: variantImageUrl(v.file_path), label: v.variant_label || v.variant_type || "Image", index: detail.index + 1, total: seedImages.length }); }
+              : (detail.kind === "video" && detail.index < detail.total - 1)
+                ? () => { const s = scenesWithVideo[detail.index + 1]; if (!s) return; const info = sceneInfo(s); setDetail({ kind: "video", versionId: s.latest_version_id!, label: `${info.sceneName}${info.trackName ? ` — ${info.trackName}` : ""}`, index: detail.index + 1, total: scenesWithVideo.length }); }
+                : undefined
+          }
+        />
       )}
     </Modal>
   );
@@ -443,46 +464,98 @@ export function LibraryAvatarModal({
 function DetailOverlay({
   detail,
   onClose,
+  onPrev,
+  onNext,
 }: {
   detail: DetailView;
   onClose: () => void;
+  onPrev?: () => void;
+  onNext?: () => void;
 }) {
+  const [expanded, setExpanded] = useState(false);
+
+  // Keyboard navigation
+  useEffect(() => {
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === "Escape") { onClose(); return; }
+      if (e.key === "ArrowLeft" && onPrev) { e.preventDefault(); e.stopPropagation(); onPrev(); }
+      if (e.key === "ArrowRight" && onNext) { e.preventDefault(); e.stopPropagation(); onNext(); }
+    }
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [onClose, onPrev, onNext]);
+
+  const hasNav = detail.kind === "image" || detail.kind === "video";
+
   return (
     <div
       className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70"
       onClick={onClose}
-      onKeyDown={(e) => {
-        if (e.key === "Escape") onClose();
-      }}
     >
       <div
         className={cn(
-          "relative max-w-4xl max-h-[90vh] w-full mx-4",
+          "relative max-h-[90vh] w-full mx-4",
+          expanded ? "max-w-[calc(100vw-2rem)]" : "max-w-4xl",
           "bg-[var(--color-surface-primary)] rounded-[var(--radius-lg)]",
           "shadow-lg overflow-auto",
         )}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Close button */}
-        <button
-          type="button"
-          onClick={onClose}
-          className="absolute top-3 right-3 z-10 p-1 rounded-full bg-[var(--color-surface-tertiary)] hover:bg-[var(--color-surface-hover)] transition-colors"
-          aria-label="Close"
-        >
-          <X size={18} />
-        </button>
+        {/* Top buttons */}
+        <div className="absolute top-3 right-3 z-10 flex items-center gap-1">
+          {hasNav && (
+            <button
+              type="button"
+              onClick={() => setExpanded((v) => !v)}
+              className="p-1 rounded-full bg-[var(--color-surface-tertiary)] hover:bg-[var(--color-surface-hover)] transition-colors text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
+              aria-label={expanded ? "Compact" : "Expand"}
+            >
+              {expanded ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-1 rounded-full bg-[var(--color-surface-tertiary)] hover:bg-[var(--color-surface-hover)] transition-colors"
+            aria-label="Close"
+          >
+            <X size={18} />
+          </button>
+        </div>
 
         {detail.kind === "image" && (
           <div className="p-4">
             <h4 className="font-mono text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide mb-2">
               {detail.label}
+              <span className="ml-2 text-[10px] font-normal opacity-50">{detail.index + 1}/{detail.total}</span>
             </h4>
-            <LoadingImage
-              src={detail.url}
-              alt={detail.label}
-              className="w-full h-auto rounded-[var(--radius-md)]"
-            />
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                disabled={!onPrev}
+                onClick={onPrev}
+                className="shrink-0 rounded p-1 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[#161b22] transition-colors disabled:opacity-20 disabled:pointer-events-none"
+                aria-label="Previous image"
+              >
+                <ChevronLeft size={20} />
+              </button>
+              <div className="min-w-0 flex-1">
+                <LoadingImage
+                  src={detail.url}
+                  alt={detail.label}
+                  className="w-full h-auto rounded-[var(--radius-md)]"
+                />
+              </div>
+              <button
+                type="button"
+                disabled={!onNext}
+                onClick={onNext}
+                className="shrink-0 rounded p-1 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[#161b22] transition-colors disabled:opacity-20 disabled:pointer-events-none"
+                aria-label="Next image"
+              >
+                <ChevronRight size={20} />
+              </button>
+            </div>
           </div>
         )}
 
@@ -490,14 +563,38 @@ function DetailOverlay({
           <div className="p-4">
             <h4 className="font-mono text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide mb-2">
               {detail.label}
+              <span className="ml-2 text-[10px] font-normal opacity-50">{detail.index + 1}/{detail.total}</span>
             </h4>
-            <VideoPlayer
-              sourceType="version"
-              sourceId={detail.versionId}
-              autoPlay
-              showControls
-              className="w-full rounded-[var(--radius-md)] overflow-hidden"
-            />
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                disabled={!onPrev}
+                onClick={onPrev}
+                className="shrink-0 rounded p-1 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[#161b22] transition-colors disabled:opacity-20 disabled:pointer-events-none"
+                aria-label="Previous video"
+              >
+                <ChevronLeft size={20} />
+              </button>
+              <div className="min-w-0 flex-1">
+                <VideoPlayer
+                  sourceType="version"
+                  sourceId={detail.versionId}
+                  quality="full"
+                  autoPlay
+                  showControls
+                  className="w-full rounded-[var(--radius-md)] overflow-hidden"
+                />
+              </div>
+              <button
+                type="button"
+                disabled={!onNext}
+                onClick={onNext}
+                className="shrink-0 rounded p-1 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[#161b22] transition-colors disabled:opacity-20 disabled:pointer-events-none"
+                aria-label="Next video"
+              >
+                <ChevronRight size={20} />
+              </button>
+            </div>
           </div>
         )}
 

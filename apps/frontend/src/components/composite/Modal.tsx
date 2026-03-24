@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 import type { ReactNode } from "react";
 import { createPortal } from "react-dom";
 
-type ModalSize = "sm" | "md" | "lg" | "xl" | "2xl" | "3xl";
+type ModalSize = "sm" | "md" | "lg" | "xl" | "2xl" | "3xl" | "full";
 
 interface ModalProps {
   open: boolean;
@@ -21,6 +21,7 @@ const SIZE_CLASSES: Record<ModalSize, string> = {
   xl: "max-w-xl",
   "2xl": "max-w-2xl",
   "3xl": "max-w-3xl",
+  full: "max-w-[calc(100vw-var(--spacing-8))]",
 };
 
 export function Modal({ open, onClose, title, size = "md", children }: ModalProps) {

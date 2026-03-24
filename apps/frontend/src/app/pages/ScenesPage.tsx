@@ -22,7 +22,9 @@ import { TERMINAL_STATUS_COLORS, TRACK_TEXT_COLORS } from "@/lib/ui-classes";
 import { toSelectOptions } from "@/lib/select-utils";
 import { usePipelineContextSafe } from "@/features/pipelines";
 import { useProjects } from "@/features/projects/hooks/use-projects";
-import { Ban, Layers, Play } from "@/tokens/icons";
+import { useSceneTypes } from "@/features/scene-types/hooks/use-scene-types";
+import { useTracks } from "@/features/scene-catalogue/hooks/use-tracks";
+import { Ban, Layers, LayoutGrid, List, Play } from "@/tokens/icons";
 
 /* --------------------------------------------------------------------------
    Read-only clip list item
@@ -130,6 +132,93 @@ function BrowseClipItem({
 }
 
 /* --------------------------------------------------------------------------
+   Grid clip card
+   -------------------------------------------------------------------------- */
+
+function BrowseClipCard({
+  clip,
+  onPlay,
+  onNavigate,
+}: {
+  clip: ClipBrowseItem;
+  onPlay: () => void;
+  onNavigate: () => void;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [isVisible, setIsVisible] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => { if (entry?.isIntersecting) { setIsVisible(true); observer.disconnect(); } },
+      { rootMargin: "200px" },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <div
+      ref={ref}
+      className={`rounded-[var(--radius-lg)] border overflow-hidden transition-colors bg-[#0d1117] hover:bg-[#161b22] ${
+        clip.qa_status === "approved"
+          ? "border-green-500"
+          : clip.qa_status === "rejected"
+            ? "border-red-500"
+            : "border-[var(--color-border-default)]"
+      } ${!clip.avatar_is_enabled ? "opacity-70 grayscale" : ""}`}
+    >
+      {/* Video preview */}
+      {isPurgedClip(clip) ? (
+        <div className="flex aspect-video items-center justify-center bg-[#161b22]">
+          <Ban size={24} className="text-[var(--color-text-muted)]" />
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={onPlay}
+          className="group/play relative aspect-video w-full cursor-pointer bg-[#161b22]"
+        >
+          {isVisible && (
+            <video
+              src={getStreamUrl("version", clip.id, "proxy")}
+              className="absolute inset-0 w-full h-full object-cover"
+              autoPlay
+              loop
+              muted
+              playsInline
+            />
+          )}
+          <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover/play:opacity-100 transition-opacity">
+            <Play size={24} className="text-white drop-shadow-lg" />
+          </div>
+        </button>
+      )}
+
+      {/* Metadata */}
+      <button
+        type="button"
+        onClick={onNavigate}
+        className="w-full p-2 text-left cursor-pointer"
+      >
+        <div className="flex items-center gap-1.5 font-mono text-xs">
+          <span className="truncate font-medium text-[var(--color-text-primary)]">{clip.avatar_name}</span>
+          <span className="shrink-0 text-[var(--color-text-muted)] uppercase text-[10px]">{clip.scene_type_name}</span>
+        </div>
+        <div className="flex items-center gap-1.5 font-mono text-[10px] text-[var(--color-text-muted)] mt-0.5">
+          <span className="text-cyan-400 font-semibold">v{clip.version_number}</span>
+          <span className={TRACK_TEXT_COLORS[clip.track_name.toLowerCase()] ?? "text-[var(--color-text-muted)]"}>{clip.track_name}</span>
+          {clip.qa_status !== "pending" && (
+            <span className={TERMINAL_STATUS_COLORS[clip.qa_status] ?? "text-[var(--color-text-muted)]"}>{clip.qa_status}</span>
+          )}
+          {clip.duration_secs != null && <span>{formatDuration(clip.duration_secs)}</span>}
+        </div>
+      </button>
+    </div>
+  );
+}
+
+/* --------------------------------------------------------------------------
    Filter option constants
    -------------------------------------------------------------------------- */
 
@@ -144,11 +233,6 @@ const STATUS_OPTIONS: FilterOption[] = [
   { value: "rejected", label: "Rejected" },
 ];
 
-function buildUniqueOptions(items: ClipBrowseItem[] | undefined, key: keyof ClipBrowseItem): FilterOption[] {
-  if (!items) return [];
-  const values = [...new Set(items.map((c) => c[key] as string).filter(Boolean))].sort();
-  return values.map((v) => ({ value: v, label: v }));
-}
 
 /* --------------------------------------------------------------------------
    Pagination constants
@@ -168,18 +252,29 @@ export function ScenesPage() {
   const [statusFilter, setStatusFilter] = useState<string[]>([]);
   const [sceneTypeFilter, setSceneTypeFilter] = useState<string[]>([]);
   const [trackFilter, setTrackFilter] = useState<string[]>([]);
-  const [playingClip, setPlayingClip] = useState<SceneVideoVersion | null>(null);
+  // Absolute index across all pages (0 to total-1), not page-local
+  const [playingAbsIndex, setPlayingAbsIndex] = useState<number | null>(null);
   const [showDisabled, setShowDisabled] = useState(false);
+  const [viewMode, setViewMode] = useState<"list" | "grid">("list");
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState<number>(DEFAULT_PAGE_SIZE);
 
   const pipelineCtx = usePipelineContextSafe();
   const { data: projects } = useProjects(pipelineCtx?.pipelineId);
-  // When a single project is selected, pass it to the API for server-side filtering
+  // Pass single-value filters server-side; multi-value filters are applied client-side
   const projectId = projectFilter.length === 1 ? Number(projectFilter[0]) : undefined;
+  const serverSceneType = sceneTypeFilter.length === 1 ? sceneTypeFilter[0] : undefined;
+  const serverTrack = trackFilter.length === 1 ? trackFilter[0] : undefined;
+  const serverSource = sourceFilter.length === 1 ? sourceFilter[0] : undefined;
+  const serverStatus = statusFilter.length === 1 ? statusFilter[0] : undefined;
   const { data: browseResult, isLoading } = useClipsBrowse({
     projectId,
     pipelineId: pipelineCtx?.pipelineId,
+    sceneType: serverSceneType,
+    track: serverTrack,
+    source: serverSource,
+    qaStatus: serverStatus,
+    showDisabled,
     limit: pageSize,
     offset: page * pageSize,
   });
@@ -192,21 +287,43 @@ export function ScenesPage() {
     () => toSelectOptions(projects).map((o) => ({ value: o.value, label: o.label })),
     [projects],
   );
-  const sceneTypeOptions = useMemo(() => buildUniqueOptions(clips, "scene_type_name"), [clips]);
-  const trackOptions = useMemo(() => buildUniqueOptions(clips, "track_name"), [clips]);
+  const { data: sceneTypes } = useSceneTypes(undefined, pipelineCtx?.pipelineId);
+  const { data: tracks } = useTracks(false, pipelineCtx?.pipelineId);
+  const sceneTypeOptions: FilterOption[] = useMemo(
+    () => (sceneTypes ?? []).map((st) => ({ value: st.name, label: st.name })).sort((a, b) => a.label.localeCompare(b.label)),
+    [sceneTypes],
+  );
+  const trackOptions: FilterOption[] = useMemo(
+    () => (tracks ?? []).map((t) => ({ value: t.name, label: t.name })).sort((a, b) => a.label.localeCompare(b.label)),
+    [tracks],
+  );
 
+  // Client-side filtering only needed for multi-value selections (server handles single values)
   const filteredClips = useMemo(() => {
     if (!clips) return [];
     return clips.filter((c) => {
-      if (!showDisabled && !c.avatar_is_enabled) return false;
-      if (projectFilter.length > 0 && !projectFilter.includes(String(c.project_id))) return false;
-      if (sourceFilter.length > 0 && !sourceFilter.includes(c.source)) return false;
-      if (statusFilter.length > 0 && !statusFilter.includes(c.qa_status)) return false;
-      if (sceneTypeFilter.length > 0 && !sceneTypeFilter.includes(c.scene_type_name)) return false;
-      if (trackFilter.length > 0 && !trackFilter.includes(c.track_name)) return false;
+      if (projectFilter.length > 1 && !projectFilter.includes(String(c.project_id))) return false;
+      if (sourceFilter.length > 1 && !sourceFilter.includes(c.source)) return false;
+      if (statusFilter.length > 1 && !statusFilter.includes(c.qa_status)) return false;
+      if (sceneTypeFilter.length > 1 && !sceneTypeFilter.includes(c.scene_type_name)) return false;
+      if (trackFilter.length > 1 && !trackFilter.includes(c.track_name)) return false;
       return true;
     });
-  }, [clips, showDisabled, projectFilter, sourceFilter, statusFilter, sceneTypeFilter, trackFilter]);
+  }, [clips, projectFilter, sourceFilter, statusFilter, sceneTypeFilter, trackFilter]);
+
+  // When the modal navigates past the current page boundary, switch pages
+  const pageOffset = page * pageSize;
+  useEffect(() => {
+    if (playingAbsIndex === null) return;
+    const targetPage = Math.floor(playingAbsIndex / pageSize);
+    if (targetPage !== page) setPage(targetPage);
+  }, [playingAbsIndex, pageSize, page]);
+
+  // Local index within the current page's items
+  const playingLocalIndex = playingAbsIndex !== null ? playingAbsIndex - pageOffset : null;
+  const playingClipData = playingLocalIndex !== null && filteredClips[playingLocalIndex]
+    ? filteredClips[playingLocalIndex]
+    : null;
 
   const filters: FilterConfig[] = useMemo(() => [
     { key: "project", label: "Project", options: projectOptions, selected: projectFilter, onChange: (v: string[]) => { setProjectFilter(v); setPage(0); }, width: "w-44" },
@@ -260,6 +377,20 @@ export function ScenesPage() {
             label="Show disabled"
             size="sm"
           />
+          <Button
+            variant={viewMode === "grid" ? "secondary" : "ghost"}
+            size="xs"
+            icon={<LayoutGrid size={14} />}
+            onClick={() => setViewMode("grid")}
+            aria-label="Grid view"
+          />
+          <Button
+            variant={viewMode === "list" ? "secondary" : "ghost"}
+            size="xs"
+            icon={<List size={14} />}
+            onClick={() => setViewMode("list")}
+            aria-label="List view"
+          />
           <span className="text-xs text-[var(--color-text-muted)]">
             {filteredClips.length}{clips && filteredClips.length !== clips.length ? ` of ${clips.length}` : ""} clip{filteredClips.length !== 1 ? "s" : ""}
           </span>
@@ -277,13 +408,33 @@ export function ScenesPage() {
           title="No clips found"
           description="No scene video clips match the current filters."
         />
-      ) : (
+      ) : viewMode === "list" ? (
         <div className="flex flex-col gap-2">
-          {filteredClips.map((clip) => (
+          {filteredClips.map((clip, i) => (
             <BrowseClipItem
               key={clip.id}
               clip={clip}
-              onPlay={() => setPlayingClip(toPlayable(clip))}
+              onPlay={() => setPlayingAbsIndex(pageOffset + i)}
+              onNavigate={() =>
+                navigate({
+                  to: "/projects/$projectId/avatars/$avatarId",
+                  params: {
+                    projectId: String(clip.project_id),
+                    avatarId: String(clip.avatar_id),
+                  },
+                  search: { tab: "scenes", scene: String(clip.scene_id) },
+                })
+              }
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 min-[1500px]:grid-cols-6 gap-3">
+          {filteredClips.map((clip, i) => (
+            <BrowseClipCard
+              key={clip.id}
+              clip={clip}
+              onPlay={() => setPlayingAbsIndex(pageOffset + i)}
               onNavigate={() =>
                 navigate({
                   to: "/projects/$projectId/avatars/$avatarId",
@@ -309,6 +460,7 @@ export function ScenesPage() {
               {Math.min((page + 1) * pageSize, total)} of {total}
             </span>
             <Select
+              size="sm"
               value={String(pageSize)}
               onChange={(val) => {
                 setPageSize(Number(val));
@@ -344,8 +496,15 @@ export function ScenesPage() {
 
       {/* Video playback modal */}
       <ClipPlaybackModal
-        clip={playingClip}
-        onClose={() => setPlayingClip(null)}
+        clip={playingClipData ? toPlayable(playingClipData) : null}
+        onClose={() => setPlayingAbsIndex(null)}
+        onPrev={playingAbsIndex !== null && playingAbsIndex > 0 ? () => setPlayingAbsIndex(playingAbsIndex - 1) : undefined}
+        onNext={playingAbsIndex !== null && playingAbsIndex < total - 1 ? () => setPlayingAbsIndex(playingAbsIndex + 1) : undefined}
+        meta={playingClipData ? {
+          avatarName: playingClipData.avatar_name,
+          sceneTypeName: playingClipData.scene_type_name,
+          trackName: playingClipData.track_name,
+        } : undefined}
       />
     </Stack>
   );

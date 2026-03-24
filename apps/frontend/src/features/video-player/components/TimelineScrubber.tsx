@@ -96,7 +96,7 @@ export function TimelineScrubber({
 
         {/* Progress fill */}
         <div
-          className="absolute top-0 bottom-0 left-0 bg-[var(--color-action-primary)] rounded-full transition-[width] duration-75"
+          className="absolute top-0 bottom-0 left-0 bg-[var(--color-action-primary)] rounded-full"
           style={{ width: `${progress}%` }}
         />
       </div>

@@ -5,7 +5,8 @@ import { Button } from "@/components/primitives/Button";
 import { DrawingCanvas } from "@/features/annotations/DrawingCanvas";
 import type { DrawingObject } from "@/features/annotations/types";
 import { VideoPlayer } from "@/features/video-player/VideoPlayer";
-import { Edit3, Trash2, X } from "@/tokens/icons";
+import { getStreamUrl } from "@/features/video-player";
+import { ChevronLeft, ChevronRight, Download, Edit3, Maximize2, Minimize2, Trash2, X } from "@/tokens/icons";
 
 import { GenerationSnapshotPanel } from "./GenerationSnapshotPanel";
 import { useDeleteVersionFrameAnnotation, useUpsertVersionAnnotation, useVersionAnnotations } from "./hooks/useVersionAnnotations";
@@ -19,13 +20,22 @@ import { type SceneVideoVersion, isPurgedClip } from "./types";
 interface ClipPlaybackModalProps {
   clip: SceneVideoVersion | null;
   onClose: () => void;
+  onPrev?: () => void;
+  onNext?: () => void;
+  /** Extra context for the modal header and export filename. */
+  meta?: {
+    avatarName: string;
+    sceneTypeName: string;
+    trackName: string;
+  };
 }
 
 /* --------------------------------------------------------------------------
    Component
    -------------------------------------------------------------------------- */
 
-export function ClipPlaybackModal({ clip, onClose }: ClipPlaybackModalProps) {
+export function ClipPlaybackModal({ clip, onClose, onPrev, onNext, meta }: ClipPlaybackModalProps) {
+  const [expanded, setExpanded] = useState(false);
   const [annotating, setAnnotating] = useState(false);
   const [currentFrame, setCurrentFrame] = useState(0);
   const [containerWidth, setContainerWidth] = useState(0);
@@ -214,6 +224,18 @@ export function ClipPlaybackModal({ clip, onClose }: ClipPlaybackModalProps) {
     onClose();
   }, [saveAllDirty, onClose]);
 
+  // Keyboard navigation: left/right arrows for prev/next
+  useEffect(() => {
+    if (!clip) return;
+    const handler = (e: KeyboardEvent) => {
+      if (annotating) return;
+      if (e.key === "ArrowLeft" && onPrev) { e.preventDefault(); saveAllDirty(); onPrev(); }
+      if (e.key === "ArrowRight" && onNext) { e.preventDefault(); saveAllDirty(); onNext(); }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [clip, annotating, onPrev, onNext, saveAllDirty]);
+
   // Use the snapshot taken when annotation mode started, not the reactive store value,
   // to prevent double-counting annotations that the canvas also has in its undoStack.
   const existingForFrame = existingSnapshotRef.current;
@@ -228,13 +250,23 @@ export function ClipPlaybackModal({ clip, onClose }: ClipPlaybackModalProps) {
     <Modal
       open={clip !== null}
       onClose={handleClose}
-      title={clip ? `Clip v${clip.version_number}` : ""}
-      size="3xl"
+      title={clip ? (meta ? `${meta.avatarName} — ${meta.sceneTypeName} — ${meta.trackName} — v${clip.version_number}` : `Clip v${clip.version_number}`) : ""}
+      size={expanded ? "full" : "3xl"}
     >
       {clip && (
         <div className="flex flex-col gap-[var(--spacing-3)]">
-          {/* Video + annotation overlay */}
-          <div ref={wrapperRef} className="relative">
+          {/* Video + annotation overlay + prev/next */}
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => { saveAllDirty(); onPrev?.(); }}
+              disabled={!onPrev}
+              className="shrink-0 rounded p-1 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[#161b22] transition-colors disabled:opacity-20 disabled:pointer-events-none"
+              aria-label="Previous clip"
+            >
+              <ChevronLeft size={20} />
+            </button>
+            <div ref={wrapperRef} className="relative min-w-0 flex-1">
             {isPurgedClip(clip) ? (
               <div className="flex h-48 items-center justify-center rounded-[var(--radius-md)] border border-dashed border-[var(--color-border-default)] bg-[var(--color-surface-secondary)]">
                 <div className="flex flex-col items-center gap-2 text-[var(--color-text-muted)]">
@@ -249,6 +281,7 @@ export function ClipPlaybackModal({ clip, onClose }: ClipPlaybackModalProps) {
                   <VideoPlayer
                     sourceType="version"
                     sourceId={clip.id}
+                    quality="full"
                     autoPlay
                     showControls
                     onFrameChange={setCurrentFrame}
@@ -273,6 +306,16 @@ export function ClipPlaybackModal({ clip, onClose }: ClipPlaybackModalProps) {
                 )}
               </>
             )}
+            </div>
+            <button
+              type="button"
+              onClick={() => { saveAllDirty(); onNext?.(); }}
+              disabled={!onNext}
+              className="shrink-0 rounded p-1 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[#161b22] transition-colors disabled:opacity-20 disabled:pointer-events-none"
+              aria-label="Next clip"
+            >
+              <ChevronRight size={20} />
+            </button>
           </div>
 
           {/* Annotated frames indicator */}
@@ -301,7 +344,7 @@ export function ClipPlaybackModal({ clip, onClose }: ClipPlaybackModalProps) {
             </div>
           )}
 
-          {/* Annotation controls */}
+          {/* Annotation & export controls */}
           {!isPurgedClip(clip) && (
           <div className="flex items-center gap-[var(--spacing-2)]">
             <Button
@@ -311,6 +354,34 @@ export function ClipPlaybackModal({ clip, onClose }: ClipPlaybackModalProps) {
               onClick={annotating ? exitAnnotation : enterAnnotation}
             >
               {annotating ? "Exit Annotation" : "Annotate Frame"}
+            </Button>
+
+            <Button
+              size="sm"
+              variant="secondary"
+              icon={expanded ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
+              onClick={() => setExpanded((v) => !v)}
+            >
+              {expanded ? "Compact" : "Expand"}
+            </Button>
+
+            <Button
+              size="sm"
+              variant="secondary"
+              icon={<Download size={14} />}
+              onClick={() => {
+                const url = getStreamUrl("version", clip.id, "full");
+                const ext = clip.file_path?.split(".").pop() ?? "mp4";
+                const filename = (meta
+                  ? `${meta.avatarName}_${meta.sceneTypeName}_${meta.trackName}_v${clip.version_number}.${ext}`.replace(/\s+/g, "_")
+                  : `clip_v${clip.version_number}.${ext}`).toLowerCase();
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = filename;
+                a.click();
+              }}
+            >
+              Export
             </Button>
 
             {annotating && (

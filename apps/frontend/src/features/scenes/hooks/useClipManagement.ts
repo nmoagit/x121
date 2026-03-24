@@ -48,10 +48,15 @@ export interface ClipBrowsePage {
   total: number;
 }
 
-/** Params for browsing clips with pagination. */
+/** Params for browsing clips with pagination and server-side filtering. */
 export interface ClipBrowseParams {
   projectId?: number;
   pipelineId?: number;
+  sceneType?: string;
+  track?: string;
+  source?: string;
+  qaStatus?: string;
+  showDisabled?: boolean;
   limit?: number;
   offset?: number;
 }
@@ -61,11 +66,16 @@ export function useClipsBrowse(params: ClipBrowseParams = {}) {
   const searchParams = new URLSearchParams();
   if (params.projectId != null) searchParams.set("project_id", String(params.projectId));
   if (params.pipelineId != null) searchParams.set("pipeline_id", String(params.pipelineId));
+  if (params.sceneType) searchParams.set("scene_type", params.sceneType);
+  if (params.track) searchParams.set("track", params.track);
+  if (params.source) searchParams.set("source", params.source);
+  if (params.qaStatus) searchParams.set("qa_status", params.qaStatus);
+  if (params.showDisabled) searchParams.set("show_disabled", "true");
   if (params.limit != null) searchParams.set("limit", String(params.limit));
   if (params.offset != null) searchParams.set("offset", String(params.offset));
   const qs = searchParams.toString();
   return useQuery({
-    queryKey: clipKeys.browse(params.projectId, params.pipelineId, params.limit, params.offset),
+    queryKey: ["scene-versions", "browse", qs],
     queryFn: () => api.get<ClipBrowsePage>(`/scene-video-versions/browse?${qs}`),
   });
 }

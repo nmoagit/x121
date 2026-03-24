@@ -812,6 +812,10 @@ pub struct ImageVariantBrowseItem {
 pub struct BrowseVariantsParams {
     pub project_id: Option<DbId>,
     pub pipeline_id: Option<DbId>,
+    pub status_id: Option<i16>,
+    pub provenance: Option<String>,
+    pub variant_type: Option<String>,
+    pub show_disabled: Option<bool>,
     pub limit: Option<i32>,
     pub offset: Option<i32>,
 }
@@ -880,56 +884,53 @@ pub async fn browse_variants(
 ) -> AppResult<Json<DataResponse<BrowseVariantsPage>>> {
     let limit = params.limit.unwrap_or(200).min(500);
     let offset = params.offset.unwrap_or(0);
+    let show_disabled = params.show_disabled.unwrap_or(false);
 
-    let total: i64 = sqlx::query_scalar(
-        "SELECT COUNT(*)
-        FROM image_variants iv
-        JOIN avatars c ON c.id = iv.avatar_id AND c.deleted_at IS NULL
-        JOIN projects p ON p.id = c.project_id AND p.deleted_at IS NULL
-        WHERE iv.deleted_at IS NULL
-          AND ($1::bigint IS NULL OR p.id = $1)
-          AND ($2::bigint IS NULL OR p.pipeline_id = $2)",
-    )
-    .bind(params.project_id)
-    .bind(params.pipeline_id)
-    .fetch_one(&state.pool)
-    .await?;
+    let base_from = "\
+        FROM image_variants iv \
+        JOIN avatars c ON c.id = iv.avatar_id AND c.deleted_at IS NULL \
+        JOIN projects p ON p.id = c.project_id AND p.deleted_at IS NULL \
+        WHERE iv.deleted_at IS NULL \
+          AND ($1::bigint IS NULL OR p.id = $1) \
+          AND ($2::bigint IS NULL OR p.pipeline_id = $2) \
+          AND ($3::smallint IS NULL OR iv.status_id = $3) \
+          AND ($4::text IS NULL OR iv.provenance = $4) \
+          AND ($5::text IS NULL OR iv.variant_type = $5) \
+          AND ($6::bool OR c.is_enabled = true)";
 
-    let items = sqlx::query_as::<_, ImageVariantBrowseItem>(
-        "SELECT
-            iv.id,
-            iv.avatar_id,
-            iv.variant_label,
-            iv.status_id,
-            iv.file_path,
-            iv.variant_type,
-            iv.provenance,
-            iv.is_hero,
-            iv.file_size_bytes,
-            iv.width,
-            iv.height,
-            iv.format,
-            iv.version,
-            iv.created_at,
-            c.name AS avatar_name,
-            c.is_enabled AS avatar_is_enabled,
-            p.id AS project_id,
-            p.name AS project_name
-        FROM image_variants iv
-        JOIN avatars c ON c.id = iv.avatar_id AND c.deleted_at IS NULL
-        JOIN projects p ON p.id = c.project_id AND p.deleted_at IS NULL
-        WHERE iv.deleted_at IS NULL
-          AND ($1::bigint IS NULL OR p.id = $1)
-          AND ($2::bigint IS NULL OR p.pipeline_id = $2)
-        ORDER BY iv.created_at DESC
-        LIMIT $3 OFFSET $4",
-    )
-    .bind(params.project_id)
-    .bind(params.pipeline_id)
-    .bind(limit as i64)
-    .bind(offset as i64)
-    .fetch_all(&state.pool)
-    .await?;
+    let count_sql = format!("SELECT COUNT(*) {base_from}");
+    let total: i64 = sqlx::query_scalar(&count_sql)
+        .bind(params.project_id)
+        .bind(params.pipeline_id)
+        .bind(params.status_id)
+        .bind(&params.provenance)
+        .bind(&params.variant_type)
+        .bind(show_disabled)
+        .fetch_one(&state.pool)
+        .await?;
+
+    let items_sql = format!(
+        "SELECT \
+            iv.id, iv.avatar_id, iv.variant_label, iv.status_id, iv.file_path, \
+            iv.variant_type, iv.provenance, iv.is_hero, iv.file_size_bytes, \
+            iv.width, iv.height, iv.format, iv.version, iv.created_at, \
+            c.name AS avatar_name, c.is_enabled AS avatar_is_enabled, \
+            p.id AS project_id, p.name AS project_name \
+        {base_from} \
+        ORDER BY iv.created_at DESC \
+        LIMIT $7 OFFSET $8"
+    );
+    let items = sqlx::query_as::<_, ImageVariantBrowseItem>(&items_sql)
+        .bind(params.project_id)
+        .bind(params.pipeline_id)
+        .bind(params.status_id)
+        .bind(&params.provenance)
+        .bind(&params.variant_type)
+        .bind(show_disabled)
+        .bind(limit as i64)
+        .bind(offset as i64)
+        .fetch_all(&state.pool)
+        .await?;
 
     Ok(Json(DataResponse {
         data: BrowseVariantsPage { items, total },

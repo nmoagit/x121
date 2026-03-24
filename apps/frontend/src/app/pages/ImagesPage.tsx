@@ -4,7 +4,7 @@
  * and navigation to avatar images tab.
  */
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "@tanstack/react-router";
 
 import { EmptyState } from "@/components/domain";
@@ -29,7 +29,7 @@ import { TERMINAL_STATUS_COLORS, TRACK_TEXT_COLORS } from "@/lib/ui-classes";
 import { toSelectOptions } from "@/lib/select-utils";
 import { usePipelineContextSafe } from "@/features/pipelines";
 import { useProjects } from "@/features/projects/hooks/use-projects";
-import { Check, Image as ImageIcon } from "@/tokens/icons";
+import { Check, ChevronLeft, ChevronRight, Image as ImageIcon, LayoutGrid, List, Maximize2, Minimize2 } from "@/tokens/icons";
 
 /* --------------------------------------------------------------------------
    Read-only browse item
@@ -118,6 +118,75 @@ function BrowseVariantItem({
 }
 
 /* --------------------------------------------------------------------------
+   Grid variant card
+   -------------------------------------------------------------------------- */
+
+function BrowseVariantCard({
+  variant,
+  onPreview,
+  onNavigate,
+}: {
+  variant: ImageVariantBrowseItem;
+  onPreview: () => void;
+  onNavigate: () => void;
+}) {
+  const statusId = variant.status_id as ImageVariantStatusId;
+
+  return (
+    <div className={`rounded-[var(--radius-lg)] border border-[var(--color-border-default)] overflow-hidden transition-colors bg-[#0d1117] hover:bg-[#161b22] ${!variant.avatar_is_enabled ? "opacity-70 grayscale" : ""}`}>
+      {/* Image preview */}
+      <button
+        type="button"
+        onClick={onPreview}
+        className="relative aspect-square w-full cursor-pointer bg-[#161b22]"
+      >
+        {variant.file_path ? (
+          <ProgressiveImage
+            lowSrc={variantThumbnailUrl(variant.id, 64)}
+            highSrc={variantThumbnailUrl(variant.id, 256)}
+            alt={variant.variant_label}
+            className="absolute inset-0 w-full h-full object-cover"
+            loading="lazy"
+          />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center text-[var(--color-text-muted)]">
+            <ImageIcon size={24} />
+          </div>
+        )}
+        {variant.is_hero && (
+          <div className="absolute top-1 right-1 rounded-full bg-green-500 p-0.5">
+            <Check size={10} className="text-white" />
+          </div>
+        )}
+      </button>
+
+      {/* Metadata */}
+      <button
+        type="button"
+        onClick={onNavigate}
+        className="w-full p-2 text-left cursor-pointer"
+      >
+        <div className="flex items-center gap-1.5 font-mono text-xs">
+          <span className="truncate font-medium text-[var(--color-text-primary)]">{variant.avatar_name}</span>
+          {variant.variant_type && (
+            <span className={`shrink-0 text-[10px] ${TRACK_TEXT_COLORS[variant.variant_type] ?? "text-[var(--color-text-muted)]"}`}>
+              {variant.variant_type}
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-1.5 font-mono text-[10px] text-[var(--color-text-muted)] mt-0.5">
+          <span className={TERMINAL_STATUS_COLORS[(IMAGE_VARIANT_STATUS_LABEL[statusId] ?? "unknown").toLowerCase()] ?? "text-cyan-400"}>
+            {(IMAGE_VARIANT_STATUS_LABEL[statusId] ?? "unknown").toLowerCase()}
+          </span>
+          <span>v{variant.version}</span>
+          {variant.is_hero && <span className="text-green-400">hero</span>}
+        </div>
+      </button>
+    </div>
+  );
+}
+
+/* --------------------------------------------------------------------------
    Filter option constants
    -------------------------------------------------------------------------- */
 
@@ -159,17 +228,26 @@ export function ImagesPage() {
   const [statusFilter, setStatusFilter] = useState<string[]>([]);
   const [sourceFilter, setSourceFilter] = useState<string[]>([]);
   const [variantTypeFilter, setVariantTypeFilter] = useState<string[]>([]);
-  const [previewVariant, setPreviewVariant] = useState<ImageVariantBrowseItem | null>(null);
+  // Absolute index across all pages (0 to total-1)
+  const [previewAbsIndex, setPreviewAbsIndex] = useState<number | null>(null);
   const [showDisabled, setShowDisabled] = useState(false);
+  const [viewMode, setViewMode] = useState<"list" | "grid">("list");
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState<number>(DEFAULT_PAGE_SIZE);
 
   const pipelineCtx = usePipelineContextSafe();
   const { data: projects } = useProjects(pipelineCtx?.pipelineId);
   const projectId = projectFilter.length === 1 ? Number(projectFilter[0]) : undefined;
+  const serverStatusId = statusFilter.length === 1 ? Number(statusFilter[0]) : undefined;
+  const serverProvenance = sourceFilter.length === 1 ? sourceFilter[0] : undefined;
+  const serverVariantType = variantTypeFilter.length === 1 ? variantTypeFilter[0] : undefined;
   const { data: browseResult, isLoading } = useImageVariantsBrowse({
     projectId,
     pipelineId: pipelineCtx?.pipelineId,
+    statusId: serverStatusId,
+    provenance: serverProvenance,
+    variantType: serverVariantType,
+    showDisabled,
     limit: pageSize,
     offset: page * pageSize,
   });
@@ -184,17 +262,30 @@ export function ImagesPage() {
   );
   const variantTypeOptions = useMemo(() => buildVariantTypeOptions(variants), [variants]);
 
+  // Client-side filtering only needed for multi-value selections (server handles single values)
   const filteredVariants = useMemo(() => {
     if (!variants) return [];
     return variants.filter((v) => {
-      if (!showDisabled && !v.avatar_is_enabled) return false;
-      if (projectFilter.length > 0 && !projectFilter.includes(String(v.project_id))) return false;
-      if (statusFilter.length > 0 && !statusFilter.includes(String(v.status_id))) return false;
-      if (sourceFilter.length > 0 && !sourceFilter.includes(v.provenance)) return false;
-      if (variantTypeFilter.length > 0 && !variantTypeFilter.includes(v.variant_type ?? "")) return false;
+      if (projectFilter.length > 1 && !projectFilter.includes(String(v.project_id))) return false;
+      if (statusFilter.length > 1 && !statusFilter.includes(String(v.status_id))) return false;
+      if (sourceFilter.length > 1 && !sourceFilter.includes(v.provenance)) return false;
+      if (variantTypeFilter.length > 1 && !variantTypeFilter.includes(v.variant_type ?? "")) return false;
       return true;
     });
-  }, [variants, showDisabled, projectFilter, statusFilter, sourceFilter, variantTypeFilter]);
+  }, [variants, projectFilter, statusFilter, sourceFilter, variantTypeFilter]);
+
+  // When the modal navigates past the current page boundary, switch pages
+  const pageOffset = page * pageSize;
+  useEffect(() => {
+    if (previewAbsIndex === null) return;
+    const targetPage = Math.floor(previewAbsIndex / pageSize);
+    if (targetPage !== page) setPage(targetPage);
+  }, [previewAbsIndex, pageSize, page]);
+
+  const previewLocalIndex = previewAbsIndex !== null ? previewAbsIndex - pageOffset : null;
+  const previewVariantData = previewLocalIndex !== null && filteredVariants[previewLocalIndex]
+    ? filteredVariants[previewLocalIndex]
+    : null;
 
   const filters: FilterConfig[] = useMemo(() => [
     { key: "project", label: "Project", options: projectOptions, selected: projectFilter, onChange: (v: string[]) => { setProjectFilter(v); setPage(0); }, width: "w-44" },
@@ -219,6 +310,20 @@ export function ImagesPage() {
             label="Show disabled"
             size="sm"
           />
+          <Button
+            variant={viewMode === "grid" ? "secondary" : "ghost"}
+            size="xs"
+            icon={<LayoutGrid size={14} />}
+            onClick={() => setViewMode("grid")}
+            aria-label="Grid view"
+          />
+          <Button
+            variant={viewMode === "list" ? "secondary" : "ghost"}
+            size="xs"
+            icon={<List size={14} />}
+            onClick={() => setViewMode("list")}
+            aria-label="List view"
+          />
           <span className="text-xs text-[var(--color-text-muted)]">
             {filteredVariants.length}{variants && filteredVariants.length !== variants.length ? ` of ${variants.length}` : ""} variant{filteredVariants.length !== 1 ? "s" : ""}
           </span>
@@ -236,13 +341,33 @@ export function ImagesPage() {
           title="No variants found"
           description="No image variants match the current filters."
         />
-      ) : (
+      ) : viewMode === "list" ? (
         <div className="flex flex-col gap-2">
-          {filteredVariants.map((variant) => (
+          {filteredVariants.map((variant, i) => (
             <BrowseVariantItem
               key={variant.id}
               variant={variant}
-              onPreview={() => setPreviewVariant(variant)}
+              onPreview={() => setPreviewAbsIndex(pageOffset + i)}
+              onNavigate={() =>
+                navigate({
+                  to: "/projects/$projectId/avatars/$avatarId",
+                  params: {
+                    projectId: String(variant.project_id),
+                    avatarId: String(variant.avatar_id),
+                  },
+                  search: { tab: "images", scene: undefined },
+                })
+              }
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 min-[1500px]:grid-cols-10 gap-3">
+          {filteredVariants.map((variant, i) => (
+            <BrowseVariantCard
+              key={variant.id}
+              variant={variant}
+              onPreview={() => setPreviewAbsIndex(pageOffset + i)}
               onNavigate={() =>
                 navigate({
                   to: "/projects/$projectId/avatars/$avatarId",
@@ -268,6 +393,7 @@ export function ImagesPage() {
               {Math.min((page + 1) * pageSize, total)} of {total}
             </span>
             <Select
+              size="sm"
               value={String(pageSize)}
               onChange={(val) => {
                 setPageSize(Number(val));
@@ -302,19 +428,67 @@ export function ImagesPage() {
       )}
 
       {/* Image preview modal */}
-      <Modal
-        open={previewVariant !== null}
-        onClose={() => setPreviewVariant(null)}
-        title={previewVariant?.variant_label ?? ""}
-        size="lg"
-      >
-        {previewVariant && (
-          <Stack gap={4}>
-            <div className="flex justify-center">
-              {previewVariant.file_path ? (
+      <ImagePreviewModal
+        variant={previewVariantData}
+        onClose={() => setPreviewAbsIndex(null)}
+        onPrev={previewAbsIndex !== null && previewAbsIndex > 0 ? () => setPreviewAbsIndex(previewAbsIndex - 1) : undefined}
+        onNext={previewAbsIndex !== null && previewAbsIndex < total - 1 ? () => setPreviewAbsIndex(previewAbsIndex + 1) : undefined}
+      />
+    </Stack>
+  );
+}
+
+/* --------------------------------------------------------------------------
+   Image preview modal with prev/next
+   -------------------------------------------------------------------------- */
+
+function ImagePreviewModal({
+  variant,
+  onClose,
+  onPrev,
+  onNext,
+}: {
+  variant: ImageVariantBrowseItem | null;
+  onClose: () => void;
+  onPrev?: () => void;
+  onNext?: () => void;
+}) {
+  const [expanded, setExpanded] = useState(false);
+
+  useEffect(() => {
+    if (!variant) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "ArrowLeft" && onPrev) { e.preventDefault(); onPrev(); }
+      if (e.key === "ArrowRight" && onNext) { e.preventDefault(); onNext(); }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [variant, onPrev, onNext]);
+
+  return (
+    <Modal
+      open={variant !== null}
+      onClose={onClose}
+      title={variant?.variant_label ?? ""}
+      size={expanded ? "full" : "lg"}
+    >
+      {variant && (
+        <Stack gap={4}>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={onPrev}
+              disabled={!onPrev}
+              className="shrink-0 rounded p-1 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[#161b22] transition-colors disabled:opacity-20 disabled:pointer-events-none"
+              aria-label="Previous image"
+            >
+              <ChevronLeft size={20} />
+            </button>
+            <div className="flex min-w-0 flex-1 justify-center">
+              {variant.file_path ? (
                 <img
-                  src={variantImageUrl(previewVariant.file_path)}
-                  alt={previewVariant.variant_label}
+                  src={variantImageUrl(variant.file_path)}
+                  alt={variant.variant_label}
                   className="max-h-[60vh] rounded-[var(--radius-md)] object-contain"
                 />
               ) : (
@@ -323,30 +497,49 @@ export function ImagesPage() {
                 </div>
               )}
             </div>
-            <div className="flex items-center gap-2 font-mono text-[10px] text-[var(--color-text-muted)]">
-              <span className={TERMINAL_STATUS_COLORS[(IMAGE_VARIANT_STATUS_LABEL[previewVariant.status_id as ImageVariantStatusId] ?? "unknown").toLowerCase()] ?? "text-cyan-400"}>
-                {(IMAGE_VARIANT_STATUS_LABEL[previewVariant.status_id as ImageVariantStatusId] ?? "unknown").toLowerCase()}
-              </span>
-              <span className="opacity-30">|</span>
-              <span>{(PROVENANCE_LABEL[previewVariant.provenance as Provenance] ?? previewVariant.provenance).toLowerCase()}</span>
-              {previewVariant.width && previewVariant.height && (
-                <><span className="opacity-30">|</span><span>{previewVariant.width}x{previewVariant.height}</span></>
-              )}
-              {previewVariant.format && (
-                <><span className="opacity-30">|</span><span>{previewVariant.format.toUpperCase()}</span></>
-              )}
-              <span className="opacity-30">|</span>
-              <span>v{previewVariant.version}</span>
-              {previewVariant.is_hero && (
-                <><span className="opacity-30">|</span><span className="text-green-400">hero</span></>
-              )}
-            </div>
+            <button
+              type="button"
+              onClick={onNext}
+              disabled={!onNext}
+              className="shrink-0 rounded p-1 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[#161b22] transition-colors disabled:opacity-20 disabled:pointer-events-none"
+              aria-label="Next image"
+            >
+              <ChevronRight size={20} />
+            </button>
+          </div>
+          <div className="flex items-center gap-2 font-mono text-[10px] text-[var(--color-text-muted)]">
+            <span className={TERMINAL_STATUS_COLORS[(IMAGE_VARIANT_STATUS_LABEL[variant.status_id as ImageVariantStatusId] ?? "unknown").toLowerCase()] ?? "text-cyan-400"}>
+              {(IMAGE_VARIANT_STATUS_LABEL[variant.status_id as ImageVariantStatusId] ?? "unknown").toLowerCase()}
+            </span>
+            <span className="opacity-30">|</span>
+            <span>{(PROVENANCE_LABEL[variant.provenance as Provenance] ?? variant.provenance).toLowerCase()}</span>
+            {variant.width && variant.height && (
+              <><span className="opacity-30">|</span><span>{variant.width}x{variant.height}</span></>
+            )}
+            {variant.format && (
+              <><span className="opacity-30">|</span><span>{variant.format.toUpperCase()}</span></>
+            )}
+            <span className="opacity-30">|</span>
+            <span>v{variant.version}</span>
+            {variant.is_hero && (
+              <><span className="opacity-30">|</span><span className="text-green-400">hero</span></>
+            )}
+          </div>
+          <div className="flex items-center justify-between">
             <div className="font-mono text-[10px] text-[var(--color-text-muted)]">
-              {previewVariant.avatar_name} · {previewVariant.project_name}
+              {variant.avatar_name} · {variant.project_name}
             </div>
-          </Stack>
-        )}
-      </Modal>
-    </Stack>
+            <Button
+              size="xs"
+              variant="secondary"
+              icon={expanded ? <Minimize2 size={12} /> : <Maximize2 size={12} />}
+              onClick={() => setExpanded((v) => !v)}
+            >
+              {expanded ? "Compact" : "Expand"}
+            </Button>
+          </div>
+        </Stack>
+      )}
+    </Modal>
   );
 }

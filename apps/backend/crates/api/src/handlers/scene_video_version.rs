@@ -785,68 +785,64 @@ pub async fn browse_clips(
 ) -> AppResult<Json<DataResponse<BrowseClipsPage>>> {
     let limit = params.limit.unwrap_or(200).min(500);
     let offset = params.offset.unwrap_or(0);
+    let show_disabled = params.show_disabled.unwrap_or(false);
 
-    let total: i64 = sqlx::query_scalar(
-        "SELECT COUNT(*)
-        FROM scene_video_versions svv
-        JOIN scenes sc ON sc.id = svv.scene_id AND sc.deleted_at IS NULL
-        JOIN avatars c ON c.id = sc.avatar_id AND c.deleted_at IS NULL
-        JOIN projects p ON p.id = c.project_id AND p.deleted_at IS NULL
-        WHERE svv.deleted_at IS NULL
-          AND ($1::bigint IS NULL OR p.id = $1)
-          AND ($2::bigint IS NULL OR p.pipeline_id = $2)",
-    )
-    .bind(params.project_id)
-    .bind(params.pipeline_id)
-    .fetch_one(&state.pool)
-    .await?;
+    let base_from = "\
+        FROM scene_video_versions svv \
+        JOIN scenes sc ON sc.id = svv.scene_id AND sc.deleted_at IS NULL \
+        JOIN avatars c ON c.id = sc.avatar_id AND c.deleted_at IS NULL \
+        JOIN projects p ON p.id = c.project_id AND p.deleted_at IS NULL \
+        LEFT JOIN scene_types st ON st.id = sc.scene_type_id \
+        LEFT JOIN tracks t ON t.id = sc.track_id \
+        WHERE svv.deleted_at IS NULL \
+          AND ($1::bigint IS NULL OR p.id = $1) \
+          AND ($2::bigint IS NULL OR p.pipeline_id = $2) \
+          AND ($3::text IS NULL OR st.name = $3) \
+          AND ($4::text IS NULL OR t.name = $4) \
+          AND ($5::text IS NULL OR svv.source = $5) \
+          AND ($6::text IS NULL OR svv.qa_status = $6) \
+          AND ($7::bool OR c.is_enabled = true)";
 
-    let items = sqlx::query_as::<_, ClipBrowseItem>(
-        "SELECT
-            svv.id,
-            svv.scene_id,
-            svv.version_number,
-            svv.source,
-            svv.file_path,
-            svv.file_size_bytes,
-            svv.duration_secs,
-            svv.width,
-            svv.height,
-            svv.frame_rate,
-            svv.preview_path,
-            svv.is_final,
-            svv.qa_status,
-            svv.qa_rejection_reason,
-            svv.qa_notes,
-            svv.generation_snapshot,
-            svv.file_purged,
-            svv.created_at,
-            COALESCE((SELECT COUNT(*) FROM frame_annotations fa WHERE fa.version_id = svv.id), 0) AS annotation_count,
-            c.id AS avatar_id,
-            c.name AS avatar_name,
-            COALESCE(st.name, '') AS scene_type_name,
-            COALESCE(t.name, '') AS track_name,
-            c.is_enabled AS avatar_is_enabled,
-            p.id AS project_id,
-            p.name AS project_name
-        FROM scene_video_versions svv
-        JOIN scenes sc ON sc.id = svv.scene_id AND sc.deleted_at IS NULL
-        JOIN avatars c ON c.id = sc.avatar_id AND c.deleted_at IS NULL
-        JOIN projects p ON p.id = c.project_id AND p.deleted_at IS NULL
-        LEFT JOIN scene_types st ON st.id = sc.scene_type_id
-        LEFT JOIN tracks t ON t.id = sc.track_id
-        WHERE svv.deleted_at IS NULL
-          AND ($1::bigint IS NULL OR p.id = $1)
-          AND ($2::bigint IS NULL OR p.pipeline_id = $2)
-        ORDER BY svv.created_at DESC
-        LIMIT $3 OFFSET $4",
-    )
-    .bind(params.project_id)
-    .bind(params.pipeline_id)
-    .bind(limit as i64)
-    .bind(offset as i64)
-    .fetch_all(&state.pool)
-    .await?;
+    let count_sql = format!("SELECT COUNT(*) {base_from}");
+    let total: i64 = sqlx::query_scalar(&count_sql)
+        .bind(params.project_id)
+        .bind(params.pipeline_id)
+        .bind(&params.scene_type)
+        .bind(&params.track)
+        .bind(&params.source)
+        .bind(&params.qa_status)
+        .bind(show_disabled)
+        .fetch_one(&state.pool)
+        .await?;
+
+    let items_sql = format!(
+        "SELECT \
+            svv.id, svv.scene_id, svv.version_number, svv.source, svv.file_path, \
+            svv.file_size_bytes, svv.duration_secs, svv.width, svv.height, svv.frame_rate, \
+            svv.preview_path, svv.is_final, svv.qa_status, svv.qa_rejection_reason, svv.qa_notes, \
+            svv.generation_snapshot, svv.file_purged, svv.created_at, \
+            COALESCE((SELECT COUNT(*) FROM frame_annotations fa WHERE fa.version_id = svv.id), 0) AS annotation_count, \
+            c.id AS avatar_id, c.name AS avatar_name, \
+            COALESCE(st.name, '') AS scene_type_name, \
+            COALESCE(t.name, '') AS track_name, \
+            c.is_enabled AS avatar_is_enabled, \
+            p.id AS project_id, p.name AS project_name \
+        {base_from} \
+        ORDER BY svv.created_at DESC \
+        LIMIT $8 OFFSET $9"
+    );
+    let items = sqlx::query_as::<_, ClipBrowseItem>(&items_sql)
+        .bind(params.project_id)
+        .bind(params.pipeline_id)
+        .bind(&params.scene_type)
+        .bind(&params.track)
+        .bind(&params.source)
+        .bind(&params.qa_status)
+        .bind(show_disabled)
+        .bind(limit as i64)
+        .bind(offset as i64)
+        .fetch_all(&state.pool)
+        .await?;
 
     Ok(Json(DataResponse {
         data: BrowseClipsPage { items, total },
@@ -857,6 +853,11 @@ pub async fn browse_clips(
 pub struct BrowseClipsParams {
     pub project_id: Option<DbId>,
     pub pipeline_id: Option<DbId>,
+    pub scene_type: Option<String>,
+    pub track: Option<String>,
+    pub source: Option<String>,
+    pub qa_status: Option<String>,
+    pub show_disabled: Option<bool>,
     pub limit: Option<i32>,
     pub offset: Option<i32>,
 }
