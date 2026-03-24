@@ -21,10 +21,10 @@ Source of truth: [`design/design.md`](../design.md)
 | Status | Count |
 |--------|-------|
 | backlog | 0 |
-| planning | 1 |
+| planning | 0 |
 | in-progress | 0 |
 | review | 0 |
-| done | 141 |
+| done | 142 |
 | blocked | 0 |
 | deferred | 0 |
 | maybe | 15 |
@@ -42,7 +42,7 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-139 | Pipeline Workspace Completeness | 1 | `done` | 2026-03-22 |
 | PRD-140 | Character to Avatar Rename | 1 | `done` | 2026-03-22 | Renamed "character"→"avatar" across entire stack. DB: 1 migration (19 tables + FK columns). Backend: 46 files renamed, 258 files updated. Frontend: 49 files renamed, 402 files updated. Unified "model"/"character" to "avatar". |
 | PRD-141 | Pipeline-Scoped Imports and Storage | 1 | `done` | 2026-03-23 |
-| PRD-142 | Dynamic Generation Seeds | 1 | `planning` | 2026-03-24 | Workflow media slots (mirroring prompt slots), avatar media assignments, passthrough seeds, multi-seed context loader, migration from single-seed. Deps: PRD-75, PRD-115, PRD-138, PRD-141. | Import rules JSONB on pipelines (seed/video/metadata patterns), import rule matching engine (regex-based, 14 unit tests), pipeline-scoped duplicate detection, naming engine 3-tier hierarchy (platform→pipeline→project, 6 unit tests), pipeline_code token, delivery assembly refactored, pipeline-scoped storage paths with legacy fallback, migration script, frontend ImportRulesEditor + classifyFileWithRules + dynamic regex + CategoryTemplatesSection. Deps: PRD-138, PRD-113, PRD-116. |
+| PRD-146 | Dynamic Generation Seeds | 1 | `done` | 2026-03-24 | Workflow media slots (mirroring prompt slots), avatar media assignments, passthrough seeds, multi-seed pipeline injection, media resolution engine, auto-detect media nodes on workflow import, frontend Seeds tab. 3 migrations, 7 new backend files, 3 new frontend components, 10 unit tests. Deps: PRD-75, PRD-115, PRD-138, PRD-141. |
 
 ## Part 1: Infrastructure & System Core
 

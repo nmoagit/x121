@@ -8,7 +8,7 @@ use crate::models::avatar_media_assignment::{
 };
 
 /// Column list for the `avatar_media_assignments` table.
-const COLUMNS: &str = "id, avatar_id, media_slot_id, scene_type_id, image_variant_id, \
+const COLUMNS: &str = "id, avatar_id, media_slot_id, scene_type_id, track_id, image_variant_id, \
     file_path, media_type, is_passthrough, passthrough_track_id, notes, created_by, \
     created_at, updated_at";
 
@@ -23,16 +23,17 @@ impl AvatarMediaAssignmentRepo {
     ) -> Result<AvatarMediaAssignment, sqlx::Error> {
         let query = format!(
             "INSERT INTO avatar_media_assignments
-                (avatar_id, media_slot_id, scene_type_id, image_variant_id, file_path,
+                (avatar_id, media_slot_id, scene_type_id, track_id, image_variant_id, file_path,
                  media_type, is_passthrough, passthrough_track_id, notes, created_by)
-             VALUES ($1, $2, $3, $4, $5, COALESCE($6, 'image'),
-                     COALESCE($7, false), $8, $9, $10)
+             VALUES ($1, $2, $3, $4, $5, $6, COALESCE($7, 'image'),
+                     COALESCE($8, false), $9, $10, $11)
              RETURNING {COLUMNS}"
         );
         sqlx::query_as::<_, AvatarMediaAssignment>(&query)
             .bind(input.avatar_id)
             .bind(input.media_slot_id)
             .bind(input.scene_type_id)
+            .bind(input.track_id)
             .bind(input.image_variant_id)
             .bind(&input.file_path)
             .bind(&input.media_type)

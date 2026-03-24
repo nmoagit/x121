@@ -36,6 +36,7 @@ export interface AvatarMediaAssignment {
   avatar_id: number;
   media_slot_id: number;
   scene_type_id: number | null;
+  track_id: number | null;
   image_variant_id: number | null;
   file_path: string | null;
   media_type: string;
@@ -47,14 +48,24 @@ export interface AvatarMediaAssignment {
   updated_at: string;
 }
 
+export interface SeedSlotWithAssignment {
+  scene_type_id: number;
+  scene_type_name: string;
+  track_id: number;
+  track_name: string;
+  workflow_name: string | null;
+  media_slot_id: number | null;
+  assignment: AvatarMediaAssignment | null;
+}
+
 export interface SeedSummary {
-  slots: WorkflowMediaSlot[];
-  assignments: AvatarMediaAssignment[];
+  slots: SeedSlotWithAssignment[];
 }
 
 interface AssignMediaPayload {
   media_slot_id: number;
   scene_type_id?: number | null;
+  track_id?: number | null;
   image_variant_id?: number | null;
   file_path?: string | null;
   media_type?: string;

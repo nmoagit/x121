@@ -212,55 +212,70 @@ pub async fn delete_avatar_media_assignment(
 // Seed Summary
 // ---------------------------------------------------------------------------
 
-/// A media slot with its current avatar assignment (if any).
+/// One seed slot entry: a scene_type × track combination that needs a seed image.
+#[derive(Debug, Clone, Serialize, sqlx::FromRow)]
+pub struct SeedSlotEntry {
+    pub scene_type_id: DbId,
+    pub scene_type_name: String,
+    pub track_id: DbId,
+    pub track_name: String,
+    pub workflow_id: Option<DbId>,
+    pub workflow_name: Option<String>,
+    /// The first media slot in the workflow (if any) — for node injection.
+    pub media_slot_id: Option<DbId>,
+    pub media_slot_label: Option<String>,
+}
+
+/// A seed slot with its current avatar assignment (if any).
 #[derive(Debug, Serialize)]
-pub struct SlotWithAssignment {
-    pub slot: WorkflowMediaSlot,
+pub struct SeedSlotWithAssignment {
+    pub scene_type_id: DbId,
+    pub scene_type_name: String,
+    pub track_id: DbId,
+    pub track_name: String,
+    pub workflow_name: Option<String>,
+    pub media_slot_id: Option<DbId>,
     pub assignment: Option<AvatarMediaAssignment>,
 }
 
-/// Aggregated seed summary for an avatar across all relevant workflows.
+/// Aggregated seed summary for an avatar — every scene_type × track that needs a seed.
 #[derive(Debug, Serialize)]
 pub struct SeedSummary {
-    /// All media slots from workflows linked to the avatar's scene types,
-    /// paired with the avatar's assignment (if any).
-    pub slots: Vec<SlotWithAssignment>,
+    pub slots: Vec<SeedSlotWithAssignment>,
 }
 
 /// GET /api/v1/avatars/{avatar_id}/seed-summary
 ///
-/// Returns an aggregated view of all media slots from workflows linked
-/// to the avatar's scene types, paired with the avatar's current
-/// media assignments.
+/// Returns every scene_type × track combination for the avatar's pipeline,
+/// paired with the avatar's current media assignment (if any).
 pub async fn get_seed_summary(
     State(state): State<AppState>,
     Path(avatar_id): Path<DbId>,
 ) -> AppResult<Json<DataResponse<SeedSummary>>> {
-    // 1. Get all workflow media slots for workflows linked to the avatar's
-    //    project -> scene types (via scene_types.workflow_id) and track-level
-    //    overrides (via scene_type_track_configs.workflow_id).
-    let slots: Vec<WorkflowMediaSlot> = sqlx::query_as::<_, WorkflowMediaSlot>(
-        "SELECT DISTINCT ON (wms.id)
-            wms.id, wms.workflow_id, wms.node_id, wms.input_name, wms.class_type,
-            wms.slot_label, wms.media_type, wms.is_required, wms.fallback_mode,
-            wms.fallback_value, wms.sort_order, wms.description, wms.seed_slot_name,
-            wms.created_at, wms.updated_at
-         FROM workflow_media_slots wms
-         WHERE wms.workflow_id IN (
-             -- Workflows assigned directly to scene types in the avatar's project
-             SELECT st.workflow_id
-             FROM scene_types st
-             JOIN avatars a ON a.project_id = st.project_id
-             WHERE a.id = $1 AND st.workflow_id IS NOT NULL
-             UNION
-             -- Workflows from per-track overrides
-             SELECT sttc.workflow_id
-             FROM scene_type_track_configs sttc
-             JOIN scene_types st ON st.id = sttc.scene_type_id
-             JOIN avatars a ON a.project_id = st.project_id
-             WHERE a.id = $1 AND sttc.workflow_id IS NOT NULL
-         )
-         ORDER BY wms.id",
+    // 1. Get all scene_type × track combos for the avatar's pipeline,
+    //    with their workflow and first media slot.
+    let entries: Vec<SeedSlotEntry> = sqlx::query_as(
+        "SELECT
+            st.id AS scene_type_id,
+            st.name AS scene_type_name,
+            t.id AS track_id,
+            t.name AS track_name,
+            sttc.workflow_id,
+            w.name AS workflow_name,
+            (SELECT wms.id FROM workflow_media_slots wms
+             WHERE wms.workflow_id = sttc.workflow_id
+             ORDER BY wms.sort_order, wms.id LIMIT 1) AS media_slot_id,
+            (SELECT wms.slot_label FROM workflow_media_slots wms
+             WHERE wms.workflow_id = sttc.workflow_id
+             ORDER BY wms.sort_order, wms.id LIMIT 1) AS media_slot_label
+         FROM scene_type_track_configs sttc
+         JOIN scene_types st ON st.id = sttc.scene_type_id
+         JOIN tracks t ON t.id = sttc.track_id
+         JOIN avatars a ON a.id = $1
+         JOIN projects p ON p.id = a.project_id
+         LEFT JOIN workflows w ON w.id = sttc.workflow_id
+         WHERE (st.project_id = p.id OR (st.project_id IS NULL AND st.pipeline_id = p.pipeline_id))
+         ORDER BY st.sort_order, st.name, t.sort_order, t.name",
     )
     .bind(avatar_id)
     .fetch_all(&state.pool)
@@ -269,22 +284,111 @@ pub async fn get_seed_summary(
     // 2. Get all avatar media assignments for this avatar.
     let assignments = AvatarMediaAssignmentRepo::list_by_avatar(&state.pool, avatar_id).await?;
 
-    // 3. Build a map of media_slot_id -> assignment for quick lookup.
-    let assignment_map: std::collections::HashMap<DbId, AvatarMediaAssignment> = assignments
-        .into_iter()
-        .map(|a| (a.media_slot_id, a))
-        .collect();
+    // 3. Build lookup: (media_slot_id, track_id) -> assignment.
+    //    Also support assignments keyed by (media_slot_id, None) as avatar-level defaults.
+    let mut assignment_map: std::collections::HashMap<(Option<DbId>, Option<DbId>), AvatarMediaAssignment> =
+        std::collections::HashMap::new();
+    for a in assignments {
+        assignment_map.insert((Some(a.media_slot_id), a.track_id), a);
+    }
 
-    // 4. Pair each slot with its assignment.
-    let paired: Vec<SlotWithAssignment> = slots
+    // 4. Build the result: one row per scene_type × track.
+    let slots: Vec<SeedSlotWithAssignment> = entries
         .into_iter()
-        .map(|slot| {
-            let assignment = assignment_map.get(&slot.id).cloned();
-            SlotWithAssignment { slot, assignment }
+        .map(|e| {
+            // Try to find assignment for this slot+track, then fallback to slot-only
+            let assignment = e.media_slot_id.and_then(|slot_id| {
+                assignment_map
+                    .get(&(Some(slot_id), Some(e.track_id)))
+                    .or_else(|| assignment_map.get(&(Some(slot_id), None)))
+                    .cloned()
+            });
+            SeedSlotWithAssignment {
+                scene_type_id: e.scene_type_id,
+                scene_type_name: e.scene_type_name,
+                track_id: e.track_id,
+                track_name: e.track_name,
+                workflow_name: e.workflow_name,
+                media_slot_id: e.media_slot_id,
+                assignment,
+            }
         })
         .collect();
 
     Ok(Json(DataResponse {
-        data: SeedSummary { slots: paired },
+        data: SeedSummary { slots },
     }))
+}
+
+// ---------------------------------------------------------------------------
+// Backfill: discover media slots for existing workflows
+// ---------------------------------------------------------------------------
+
+/// POST /api/v1/workflows/backfill-media-slots
+///
+/// For all workflows that have JSON content but no media slots yet,
+/// discover media-loading nodes and create `workflow_media_slots` rows.
+/// Returns the count of workflows processed and slots created.
+pub async fn backfill_media_slots(
+    _auth: AuthUser,
+    State(state): State<AppState>,
+) -> AppResult<Json<DataResponse<BackfillMediaSlotsResult>>> {
+    use x121_core::workflow_import::discover_media_nodes;
+    use x121_db::models::workflow_media_slot::CreateWorkflowMediaSlot;
+
+    // Find workflows that have JSON content but no media slots.
+    let workflows: Vec<(DbId, serde_json::Value)> = sqlx::query_as(
+        "SELECT w.id, w.json_content \
+         FROM workflows w \
+         WHERE w.json_content IS NOT NULL \
+           AND NOT EXISTS (SELECT 1 FROM workflow_media_slots wms WHERE wms.workflow_id = w.id)",
+    )
+    .fetch_all(&state.pool)
+    .await?;
+
+    let mut workflows_processed = 0i64;
+    let mut slots_created = 0i64;
+
+    for (workflow_id, json_content) in &workflows {
+        let media_nodes = discover_media_nodes(json_content);
+        if media_nodes.is_empty() {
+            continue;
+        }
+
+        let slot_inputs: Vec<CreateWorkflowMediaSlot> = media_nodes
+            .iter()
+            .enumerate()
+            .map(|(i, node)| CreateWorkflowMediaSlot {
+                workflow_id: *workflow_id,
+                node_id: node.node_id.clone(),
+                input_name: node.input_name.clone(),
+                class_type: Some(node.class_type.clone()),
+                slot_label: node.auto_label.clone(),
+                media_type: Some(node.media_type.clone()),
+                is_required: Some(true),
+                fallback_mode: None,
+                fallback_value: None,
+                sort_order: Some(i as i32),
+                description: None,
+                seed_slot_name: None,
+            })
+            .collect();
+
+        let created = WorkflowMediaSlotRepo::bulk_create(&state.pool, &slot_inputs).await?;
+        slots_created += created.len() as i64;
+        workflows_processed += 1;
+    }
+
+    Ok(Json(DataResponse {
+        data: BackfillMediaSlotsResult {
+            workflows_processed,
+            slots_created,
+        },
+    }))
+}
+
+#[derive(Debug, Serialize)]
+pub struct BackfillMediaSlotsResult {
+    pub workflows_processed: i64,
+    pub slots_created: i64,
 }

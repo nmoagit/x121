@@ -3,7 +3,7 @@
 //! - Workflow media slot routes are merged into the `/workflows` nest.
 //! - Avatar media assignment routes are merged into the `/avatars` nest.
 
-use axum::routing::{get, put};
+use axum::routing::{get, post, put};
 use axum::Router;
 
 use crate::handlers::media_management;
@@ -14,6 +14,7 @@ use crate::state::AppState;
 /// ```text
 /// GET  /{workflow_id}/media-slots            -> list_media_slots
 /// PUT  /{workflow_id}/media-slots/{slot_id}  -> update_media_slot
+/// POST /backfill-media-slots                 -> backfill_media_slots
 /// ```
 pub fn workflow_media_slot_router() -> Router<AppState> {
     Router::new()
@@ -24,6 +25,10 @@ pub fn workflow_media_slot_router() -> Router<AppState> {
         .route(
             "/{workflow_id}/media-slots/{slot_id}",
             put(media_management::update_media_slot),
+        )
+        .route(
+            "/backfill-media-slots",
+            post(media_management::backfill_media_slots),
         )
 }
 

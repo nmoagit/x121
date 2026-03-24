@@ -545,12 +545,25 @@ pub fn discover_media_nodes(workflow: &serde_json::Value) -> Vec<DiscoveredMedia
             _ => "Media",
         };
 
+        // Prefer _meta.title from ComfyUI if it's more descriptive than the generic class name.
+        let meta_title = node_value
+            .get("_meta")
+            .and_then(|m| m.get("title"))
+            .and_then(|t| t.as_str())
+            .unwrap_or("");
+        let generic_titles = ["Load Image", "LoadImage", "Load Video", "LoadVideo", "Load Audio", "LoadAudio", ""];
+        let auto_label = if !generic_titles.contains(&meta_title) {
+            meta_title.to_string()
+        } else {
+            format!("{type_label} Input {counter}")
+        };
+
         results.push(DiscoveredMediaNode {
             node_id: node_id.clone(),
             class_type: class_type.to_string(),
             input_name: input_name.to_string(),
             media_type: media_type.to_string(),
-            auto_label: format!("{type_label} Input {counter}"),
+            auto_label,
         });
     }
 
