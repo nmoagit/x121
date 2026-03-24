@@ -797,10 +797,10 @@ pub async fn browse_clips(
         WHERE svv.deleted_at IS NULL \
           AND ($1::bigint IS NULL OR p.id = $1) \
           AND ($2::bigint IS NULL OR p.pipeline_id = $2) \
-          AND ($3::text IS NULL OR st.name = $3) \
-          AND ($4::text IS NULL OR t.name = $4) \
-          AND ($5::text IS NULL OR svv.source = $5) \
-          AND ($6::text IS NULL OR svv.qa_status = $6) \
+          AND ($3::text IS NULL OR st.name = ANY(string_to_array($3, ','))) \
+          AND ($4::text IS NULL OR t.name = ANY(string_to_array($4, ','))) \
+          AND ($5::text IS NULL OR svv.source = ANY(string_to_array($5, ','))) \
+          AND ($6::text IS NULL OR svv.qa_status = ANY(string_to_array($6, ','))) \
           AND ($7::bool OR c.is_enabled = true)";
 
     let count_sql = format!("SELECT COUNT(*) {base_from}");

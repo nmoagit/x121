@@ -6,7 +6,7 @@ import { DrawingCanvas } from "@/features/annotations/DrawingCanvas";
 import type { DrawingObject } from "@/features/annotations/types";
 import { VideoPlayer } from "@/features/video-player/VideoPlayer";
 import { getStreamUrl } from "@/features/video-player";
-import { ChevronLeft, ChevronRight, Download, Edit3, Maximize2, Minimize2, Trash2, X } from "@/tokens/icons";
+import { CheckCircle, ChevronLeft, ChevronRight, Download, Edit3, Maximize2, Minimize2, Trash2, X, XCircle } from "@/tokens/icons";
 
 import { GenerationSnapshotPanel } from "./GenerationSnapshotPanel";
 import { useDeleteVersionFrameAnnotation, useUpsertVersionAnnotation, useVersionAnnotations } from "./hooks/useVersionAnnotations";
@@ -22,6 +22,8 @@ interface ClipPlaybackModalProps {
   onClose: () => void;
   onPrev?: () => void;
   onNext?: () => void;
+  onApprove?: () => void;
+  onReject?: () => void;
   /** Extra context for the modal header and export filename. */
   meta?: {
     avatarName: string;
@@ -34,7 +36,7 @@ interface ClipPlaybackModalProps {
    Component
    -------------------------------------------------------------------------- */
 
-export function ClipPlaybackModal({ clip, onClose, onPrev, onNext, meta }: ClipPlaybackModalProps) {
+export function ClipPlaybackModal({ clip, onClose, onPrev, onNext, onApprove, onReject, meta }: ClipPlaybackModalProps) {
   const [expanded, setExpanded] = useState(false);
   const [annotating, setAnnotating] = useState(false);
   const [currentFrame, setCurrentFrame] = useState(0);
@@ -254,7 +256,17 @@ export function ClipPlaybackModal({ clip, onClose, onPrev, onNext, meta }: ClipP
       size={expanded ? "full" : "3xl"}
     >
       {clip && (
-        <div className="flex flex-col gap-[var(--spacing-3)]">
+        <div className="relative flex flex-col gap-[var(--spacing-3)]">
+          {/* Expand toggle — top right */}
+          <button
+            type="button"
+            onClick={() => setExpanded((v) => !v)}
+            className="absolute -top-1 right-0 z-10 p-1 rounded text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[#161b22] transition-colors"
+            title={expanded ? "Compact" : "Expand"}
+          >
+            {expanded ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
+          </button>
+
           {/* Video + annotation overlay + prev/next */}
           <div className="flex items-center gap-2">
             <button
@@ -356,19 +368,8 @@ export function ClipPlaybackModal({ clip, onClose, onPrev, onNext, meta }: ClipP
               {annotating ? "Exit Annotation" : "Annotate Frame"}
             </Button>
 
-            <Button
-              size="sm"
-              variant="secondary"
-              icon={expanded ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
-              onClick={() => setExpanded((v) => !v)}
-            >
-              {expanded ? "Compact" : "Expand"}
-            </Button>
-
-            <Button
-              size="sm"
-              variant="secondary"
-              icon={<Download size={14} />}
+            <button
+              type="button"
               onClick={() => {
                 const url = getStreamUrl("version", clip.id, "full");
                 const ext = clip.file_path?.split(".").pop() ?? "mp4";
@@ -380,9 +381,32 @@ export function ClipPlaybackModal({ clip, onClose, onPrev, onNext, meta }: ClipP
                 a.download = filename;
                 a.click();
               }}
+              className="p-1 rounded text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[#161b22] transition-colors"
+              title="Export"
             >
-              Export
-            </Button>
+              <Download size={14} />
+            </button>
+
+            <div className="w-px h-4 bg-[var(--color-border-default)]" />
+
+            <button
+              type="button"
+              onClick={onApprove}
+              disabled={!onApprove}
+              className={`p-1 rounded transition-colors disabled:opacity-30 disabled:pointer-events-none ${clip.qa_status === "approved" ? "text-green-400" : "text-[var(--color-text-muted)] hover:text-green-400 hover:bg-[#161b22]"}`}
+              title={clip.qa_status === "approved" ? "Approved" : "Approve"}
+            >
+              <CheckCircle size={14} />
+            </button>
+            <button
+              type="button"
+              onClick={onReject}
+              disabled={!onReject}
+              className={`p-1 rounded transition-colors disabled:opacity-30 disabled:pointer-events-none ${clip.qa_status === "rejected" ? "text-red-400" : "text-[var(--color-text-muted)] hover:text-red-400 hover:bg-[#161b22]"}`}
+              title={clip.qa_status === "rejected" ? "Rejected" : "Reject"}
+            >
+              <XCircle size={14} />
+            </button>
 
             {annotating && (
               <span className="font-mono text-xs text-cyan-400">

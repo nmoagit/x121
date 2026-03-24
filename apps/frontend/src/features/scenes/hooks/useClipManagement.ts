@@ -161,6 +161,45 @@ export function useResumeFromClip(sceneId: number) {
   });
 }
 
+/** Approve a clip from the browse page (sceneId provided at call time). */
+export function useBrowseApproveClip() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ sceneId, versionId }: { sceneId: number; versionId: number }) =>
+      api.put<SceneVideoVersion>(`/scenes/${sceneId}/versions/${versionId}/approve`, {}),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: clipKeys.all });
+      queryClient.invalidateQueries({ queryKey: sceneKeys.all });
+    },
+  });
+}
+
+/** Unapprove/unreject a clip back to pending from the browse page. */
+export function useBrowseUnapproveClip() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ sceneId, versionId }: { sceneId: number; versionId: number }) =>
+      api.put<SceneVideoVersion>(`/scenes/${sceneId}/versions/${versionId}/unapprove`, {}),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: clipKeys.all });
+      queryClient.invalidateQueries({ queryKey: sceneKeys.all });
+    },
+  });
+}
+
+/** Reject a clip from the browse page (sceneId provided at call time). */
+export function useBrowseRejectClip() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ sceneId, versionId, input }: { sceneId: number; versionId: number; input: RejectClipInput }) =>
+      api.put<SceneVideoVersion>(`/scenes/${sceneId}/versions/${versionId}/reject`, input),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: clipKeys.all });
+      queryClient.invalidateQueries({ queryKey: sceneKeys.all });
+    },
+  });
+}
+
 /** Build a FormData for clip import and POST it. Shared by single and bulk hooks,
  *  as well as standalone bulk-asset-upload functions. */
 export function postClipImport(sceneId: number, file: File, notes?: string) {

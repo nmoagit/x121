@@ -11,7 +11,7 @@ import { EmptyState } from "@/components/domain";
 import { PageHeader, Stack } from "@/components/layout";
 import { Button, MultiFilterBar, Select, Toggle ,  WireframeLoader } from "@/components/primitives";
 import type { FilterConfig, FilterOption  } from "@/components/primitives";
-import { useClipsBrowse } from "@/features/scenes/hooks/useClipManagement";
+import { useClipsBrowse, useBrowseApproveClip, useBrowseUnapproveClip, useBrowseRejectClip } from "@/features/scenes/hooks/useClipManagement";
 import type { ClipBrowseItem } from "@/features/scenes/hooks/useClipManagement";
 import { ClipPlaybackModal } from "@/features/scenes/ClipPlaybackModal";
 import { isEmptyClip, isPurgedClip, type SceneVideoVersion } from "@/features/scenes/types";
@@ -24,7 +24,7 @@ import { usePipelineContextSafe } from "@/features/pipelines";
 import { useProjects } from "@/features/projects/hooks/use-projects";
 import { useSceneTypes } from "@/features/scene-types/hooks/use-scene-types";
 import { useTracks } from "@/features/scene-catalogue/hooks/use-tracks";
-import { Ban, Layers, LayoutGrid, List, Play } from "@/tokens/icons";
+import { Ban, CheckCircle, Layers, LayoutGrid, List, Play, XCircle } from "@/tokens/icons";
 
 /* --------------------------------------------------------------------------
    Read-only clip list item
@@ -34,10 +34,14 @@ function BrowseClipItem({
   clip,
   onPlay,
   onNavigate,
+  onApprove,
+  onReject,
 }: {
   clip: ClipBrowseItem;
   onPlay: () => void;
   onNavigate: () => void;
+  onApprove: () => void;
+  onReject: () => void;
 }) {
   const sourceLabel = clip.source === "imported" ? "imported" : "generated";
 
@@ -126,6 +130,26 @@ function BrowseClipItem({
             <span>{formatDateTime(clip.created_at)}</span>
           </div>
         </button>
+
+        {/* Approve / Reject */}
+        <div className="flex items-center gap-1 shrink-0">
+          <button
+            type="button"
+            onClick={onApprove}
+            className={`p-1 rounded transition-colors ${clip.qa_status === "approved" ? "text-green-400" : "text-[var(--color-text-muted)] hover:text-green-400"}`}
+            title={clip.qa_status === "approved" ? "Approved" : "Approve"}
+          >
+            <CheckCircle size={16} />
+          </button>
+          <button
+            type="button"
+            onClick={onReject}
+            className={`p-1 rounded transition-colors ${clip.qa_status === "rejected" ? "text-red-400" : "text-[var(--color-text-muted)] hover:text-red-400"}`}
+            title={clip.qa_status === "rejected" ? "Rejected" : "Reject"}
+          >
+            <XCircle size={16} />
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -139,10 +163,14 @@ function BrowseClipCard({
   clip,
   onPlay,
   onNavigate,
+  onApprove,
+  onReject,
 }: {
   clip: ClipBrowseItem;
   onPlay: () => void;
   onNavigate: () => void;
+  onApprove: () => void;
+  onReject: () => void;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = useState(false);
@@ -195,25 +223,35 @@ function BrowseClipCard({
         </button>
       )}
 
-      {/* Metadata */}
-      <button
-        type="button"
-        onClick={onNavigate}
-        className="w-full p-2 text-left cursor-pointer"
-      >
-        <div className="flex items-center gap-1.5 font-mono text-xs">
-          <span className="truncate font-medium text-[var(--color-text-primary)]">{clip.avatar_name}</span>
-          <span className="shrink-0 text-[var(--color-text-muted)] uppercase text-[10px]">{clip.scene_type_name}</span>
+      {/* Metadata + actions */}
+      <div className="flex items-center gap-1 p-2">
+        <button
+          type="button"
+          onClick={onNavigate}
+          className="min-w-0 flex-1 text-left cursor-pointer"
+        >
+          <div className="flex items-center gap-1.5 font-mono text-xs">
+            <span className="truncate font-medium text-[var(--color-text-primary)]">{clip.avatar_name}</span>
+            <span className="shrink-0 text-[var(--color-text-muted)] uppercase text-[10px]">{clip.scene_type_name}</span>
+          </div>
+          <div className="flex items-center gap-1.5 font-mono text-[10px] text-[var(--color-text-muted)] mt-0.5">
+            <span className="text-cyan-400 font-semibold">v{clip.version_number}</span>
+            <span className={TRACK_TEXT_COLORS[clip.track_name.toLowerCase()] ?? "text-[var(--color-text-muted)]"}>{clip.track_name}</span>
+            {clip.qa_status !== "pending" && (
+              <span className={TERMINAL_STATUS_COLORS[clip.qa_status] ?? "text-[var(--color-text-muted)]"}>{clip.qa_status}</span>
+            )}
+            {clip.duration_secs != null && <span>{formatDuration(clip.duration_secs)}</span>}
+          </div>
+        </button>
+        <div className="flex flex-col gap-0.5 shrink-0">
+          <button type="button" onClick={onApprove} className={`p-0.5 rounded transition-colors ${clip.qa_status === "approved" ? "text-green-400" : "text-[var(--color-text-muted)] hover:text-green-400"}`} title="Approve">
+            <CheckCircle size={14} />
+          </button>
+          <button type="button" onClick={onReject} className={`p-0.5 rounded transition-colors ${clip.qa_status === "rejected" ? "text-red-400" : "text-[var(--color-text-muted)] hover:text-red-400"}`} title="Reject">
+            <XCircle size={14} />
+          </button>
         </div>
-        <div className="flex items-center gap-1.5 font-mono text-[10px] text-[var(--color-text-muted)] mt-0.5">
-          <span className="text-cyan-400 font-semibold">v{clip.version_number}</span>
-          <span className={TRACK_TEXT_COLORS[clip.track_name.toLowerCase()] ?? "text-[var(--color-text-muted)]"}>{clip.track_name}</span>
-          {clip.qa_status !== "pending" && (
-            <span className={TERMINAL_STATUS_COLORS[clip.qa_status] ?? "text-[var(--color-text-muted)]"}>{clip.qa_status}</span>
-          )}
-          {clip.duration_secs != null && <span>{formatDuration(clip.duration_secs)}</span>}
-        </div>
-      </button>
+      </div>
     </div>
   );
 }
@@ -261,19 +299,15 @@ export function ScenesPage() {
 
   const pipelineCtx = usePipelineContextSafe();
   const { data: projects } = useProjects(pipelineCtx?.pipelineId);
-  // Pass single-value filters server-side; multi-value filters are applied client-side
+  // All filters passed server-side as comma-separated OR values
   const projectId = projectFilter.length === 1 ? Number(projectFilter[0]) : undefined;
-  const serverSceneType = sceneTypeFilter.length === 1 ? sceneTypeFilter[0] : undefined;
-  const serverTrack = trackFilter.length === 1 ? trackFilter[0] : undefined;
-  const serverSource = sourceFilter.length === 1 ? sourceFilter[0] : undefined;
-  const serverStatus = statusFilter.length === 1 ? statusFilter[0] : undefined;
   const { data: browseResult, isLoading } = useClipsBrowse({
     projectId,
     pipelineId: pipelineCtx?.pipelineId,
-    sceneType: serverSceneType,
-    track: serverTrack,
-    source: serverSource,
-    qaStatus: serverStatus,
+    sceneType: sceneTypeFilter.length > 0 ? sceneTypeFilter.join(",") : undefined,
+    track: trackFilter.length > 0 ? trackFilter.join(",") : undefined,
+    source: sourceFilter.length > 0 ? sourceFilter.join(",") : undefined,
+    qaStatus: statusFilter.length > 0 ? statusFilter.join(",") : undefined,
     showDisabled,
     limit: pageSize,
     offset: page * pageSize,
@@ -298,18 +332,8 @@ export function ScenesPage() {
     [tracks],
   );
 
-  // Client-side filtering only needed for multi-value selections (server handles single values)
-  const filteredClips = useMemo(() => {
-    if (!clips) return [];
-    return clips.filter((c) => {
-      if (projectFilter.length > 1 && !projectFilter.includes(String(c.project_id))) return false;
-      if (sourceFilter.length > 1 && !sourceFilter.includes(c.source)) return false;
-      if (statusFilter.length > 1 && !statusFilter.includes(c.qa_status)) return false;
-      if (sceneTypeFilter.length > 1 && !sceneTypeFilter.includes(c.scene_type_name)) return false;
-      if (trackFilter.length > 1 && !trackFilter.includes(c.track_name)) return false;
-      return true;
-    });
-  }, [clips, projectFilter, sourceFilter, statusFilter, sceneTypeFilter, trackFilter]);
+  // All filtering is server-side; clips are the final filtered list
+  const filteredClips = clips ?? [];
 
   // When the modal navigates past the current page boundary, switch pages
   const pageOffset = page * pageSize;
@@ -324,6 +348,10 @@ export function ScenesPage() {
   const playingClipData = playingLocalIndex !== null && filteredClips[playingLocalIndex]
     ? filteredClips[playingLocalIndex]
     : null;
+
+  const approveMut = useBrowseApproveClip();
+  const unapproveMut = useBrowseUnapproveClip();
+  const rejectMut = useBrowseRejectClip();
 
   const filters: FilterConfig[] = useMemo(() => [
     { key: "project", label: "Project", options: projectOptions, selected: projectFilter, onChange: (v: string[]) => { setProjectFilter(v); setPage(0); }, width: "w-44" },
@@ -425,6 +453,8 @@ export function ScenesPage() {
                   search: { tab: "scenes", scene: String(clip.scene_id) },
                 })
               }
+              onApprove={() => clip.qa_status === "approved" ? unapproveMut.mutate({ sceneId: clip.scene_id, versionId: clip.id }) : approveMut.mutate({ sceneId: clip.scene_id, versionId: clip.id })}
+              onReject={() => clip.qa_status === "rejected" ? unapproveMut.mutate({ sceneId: clip.scene_id, versionId: clip.id }) : rejectMut.mutate({ sceneId: clip.scene_id, versionId: clip.id, input: { reason: "Rejected from browse" } })}
             />
           ))}
         </div>
@@ -445,6 +475,8 @@ export function ScenesPage() {
                   search: { tab: "scenes", scene: String(clip.scene_id) },
                 })
               }
+              onApprove={() => clip.qa_status === "approved" ? unapproveMut.mutate({ sceneId: clip.scene_id, versionId: clip.id }) : approveMut.mutate({ sceneId: clip.scene_id, versionId: clip.id })}
+              onReject={() => clip.qa_status === "rejected" ? unapproveMut.mutate({ sceneId: clip.scene_id, versionId: clip.id }) : rejectMut.mutate({ sceneId: clip.scene_id, versionId: clip.id, input: { reason: "Rejected from browse" } })}
             />
           ))}
         </div>
@@ -500,6 +532,8 @@ export function ScenesPage() {
         onClose={() => setPlayingAbsIndex(null)}
         onPrev={playingAbsIndex !== null && playingAbsIndex > 0 ? () => setPlayingAbsIndex(playingAbsIndex - 1) : undefined}
         onNext={playingAbsIndex !== null && playingAbsIndex < total - 1 ? () => setPlayingAbsIndex(playingAbsIndex + 1) : undefined}
+        onApprove={playingClipData ? () => playingClipData.qa_status === "approved" ? unapproveMut.mutate({ sceneId: playingClipData.scene_id, versionId: playingClipData.id }) : approveMut.mutate({ sceneId: playingClipData.scene_id, versionId: playingClipData.id }) : undefined}
+        onReject={playingClipData ? () => playingClipData.qa_status === "rejected" ? unapproveMut.mutate({ sceneId: playingClipData.scene_id, versionId: playingClipData.id }) : rejectMut.mutate({ sceneId: playingClipData.scene_id, versionId: playingClipData.id, input: { reason: "Rejected from browse" } }) : undefined}
         meta={playingClipData ? {
           avatarName: playingClipData.avatar_name,
           sceneTypeName: playingClipData.scene_type_name,

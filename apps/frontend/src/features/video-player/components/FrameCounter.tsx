@@ -26,7 +26,7 @@ export function FrameCounter({
     <div
       className={cn(
         "flex items-center gap-[var(--spacing-3)] px-[var(--spacing-2)] py-[var(--spacing-1)]",
-        "text-xs font-mono text-[var(--color-text-inverse)] select-none",
+        "text-xs font-mono text-[var(--color-text-secondary)] select-none",
         className,
       )}
     >

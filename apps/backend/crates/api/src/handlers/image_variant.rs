@@ -812,7 +812,8 @@ pub struct ImageVariantBrowseItem {
 pub struct BrowseVariantsParams {
     pub project_id: Option<DbId>,
     pub pipeline_id: Option<DbId>,
-    pub status_id: Option<i16>,
+    /// Comma-separated status IDs for OR filtering (e.g., "1,2,3").
+    pub status_id: Option<String>,
     pub provenance: Option<String>,
     pub variant_type: Option<String>,
     pub show_disabled: Option<bool>,
@@ -893,16 +894,16 @@ pub async fn browse_variants(
         WHERE iv.deleted_at IS NULL \
           AND ($1::bigint IS NULL OR p.id = $1) \
           AND ($2::bigint IS NULL OR p.pipeline_id = $2) \
-          AND ($3::smallint IS NULL OR iv.status_id = $3) \
-          AND ($4::text IS NULL OR iv.provenance = $4) \
-          AND ($5::text IS NULL OR iv.variant_type = $5) \
+          AND ($3::text IS NULL OR iv.status_id::text = ANY(string_to_array($3, ','))) \
+          AND ($4::text IS NULL OR iv.provenance = ANY(string_to_array($4, ','))) \
+          AND ($5::text IS NULL OR iv.variant_type = ANY(string_to_array($5, ','))) \
           AND ($6::bool OR c.is_enabled = true)";
 
     let count_sql = format!("SELECT COUNT(*) {base_from}");
     let total: i64 = sqlx::query_scalar(&count_sql)
         .bind(params.project_id)
         .bind(params.pipeline_id)
-        .bind(params.status_id)
+        .bind(&params.status_id)
         .bind(&params.provenance)
         .bind(&params.variant_type)
         .bind(show_disabled)
@@ -923,7 +924,7 @@ pub async fn browse_variants(
     let items = sqlx::query_as::<_, ImageVariantBrowseItem>(&items_sql)
         .bind(params.project_id)
         .bind(params.pipeline_id)
-        .bind(params.status_id)
+        .bind(&params.status_id)
         .bind(&params.provenance)
         .bind(&params.variant_type)
         .bind(show_disabled)

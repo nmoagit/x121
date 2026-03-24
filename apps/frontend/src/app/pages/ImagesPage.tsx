@@ -15,6 +15,9 @@ import type { FilterConfig, FilterOption  } from "@/components/primitives";
 import { ProgressiveImage  } from "@/components/primitives";
 import {
   useImageVariantsBrowse,
+  useBrowseApproveVariant,
+  useBrowseUnapproveVariant,
+  useBrowseRejectVariant,
   type ImageVariantBrowseItem,
 } from "@/features/images/hooks/use-image-variants";
 import {
@@ -29,7 +32,7 @@ import { TERMINAL_STATUS_COLORS, TRACK_TEXT_COLORS } from "@/lib/ui-classes";
 import { toSelectOptions } from "@/lib/select-utils";
 import { usePipelineContextSafe } from "@/features/pipelines";
 import { useProjects } from "@/features/projects/hooks/use-projects";
-import { Check, ChevronLeft, ChevronRight, Image as ImageIcon, LayoutGrid, List, Maximize2, Minimize2 } from "@/tokens/icons";
+import { Check, CheckCircle, ChevronLeft, ChevronRight, Image as ImageIcon, LayoutGrid, List, Maximize2, Minimize2, XCircle } from "@/tokens/icons";
 
 /* --------------------------------------------------------------------------
    Read-only browse item
@@ -39,10 +42,14 @@ function BrowseVariantItem({
   variant,
   onPreview,
   onNavigate,
+  onApprove,
+  onReject,
 }: {
   variant: ImageVariantBrowseItem;
   onPreview: () => void;
   onNavigate: () => void;
+  onApprove: () => void;
+  onReject: () => void;
 }) {
   const statusId = variant.status_id as ImageVariantStatusId;
 
@@ -112,6 +119,26 @@ function BrowseVariantItem({
             <span>{formatDateTime(variant.created_at)}</span>
           </div>
         </button>
+
+        {/* Approve / Reject */}
+        <div className="flex items-center gap-1 shrink-0">
+          <button
+            type="button"
+            onClick={onApprove}
+            className={`p-1 rounded transition-colors ${variant.status_id === 2 ? "text-green-400" : "text-[var(--color-text-muted)] hover:text-green-400"}`}
+            title={variant.status_id === 2 ? "Approved" : "Approve"}
+          >
+            <CheckCircle size={16} />
+          </button>
+          <button
+            type="button"
+            onClick={onReject}
+            className={`p-1 rounded transition-colors ${variant.status_id === 3 ? "text-red-400" : "text-[var(--color-text-muted)] hover:text-red-400"}`}
+            title={variant.status_id === 3 ? "Rejected" : "Reject"}
+          >
+            <XCircle size={16} />
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -125,10 +152,14 @@ function BrowseVariantCard({
   variant,
   onPreview,
   onNavigate,
+  onApprove,
+  onReject,
 }: {
   variant: ImageVariantBrowseItem;
   onPreview: () => void;
   onNavigate: () => void;
+  onApprove: () => void;
+  onReject: () => void;
 }) {
   const statusId = variant.status_id as ImageVariantStatusId;
 
@@ -160,28 +191,38 @@ function BrowseVariantCard({
         )}
       </button>
 
-      {/* Metadata */}
-      <button
-        type="button"
-        onClick={onNavigate}
-        className="w-full p-2 text-left cursor-pointer"
-      >
-        <div className="flex items-center gap-1.5 font-mono text-xs">
-          <span className="truncate font-medium text-[var(--color-text-primary)]">{variant.avatar_name}</span>
-          {variant.variant_type && (
-            <span className={`shrink-0 text-[10px] ${TRACK_TEXT_COLORS[variant.variant_type] ?? "text-[var(--color-text-muted)]"}`}>
-              {variant.variant_type}
+      {/* Metadata + actions */}
+      <div className="flex items-center gap-1 p-2">
+        <button
+          type="button"
+          onClick={onNavigate}
+          className="min-w-0 flex-1 text-left cursor-pointer"
+        >
+          <div className="flex items-center gap-1.5 font-mono text-xs">
+            <span className="truncate font-medium text-[var(--color-text-primary)]">{variant.avatar_name}</span>
+            {variant.variant_type && (
+              <span className={`shrink-0 text-[10px] ${TRACK_TEXT_COLORS[variant.variant_type] ?? "text-[var(--color-text-muted)]"}`}>
+                {variant.variant_type}
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-1.5 font-mono text-[10px] text-[var(--color-text-muted)] mt-0.5">
+            <span className={TERMINAL_STATUS_COLORS[(IMAGE_VARIANT_STATUS_LABEL[statusId] ?? "unknown").toLowerCase()] ?? "text-cyan-400"}>
+              {(IMAGE_VARIANT_STATUS_LABEL[statusId] ?? "unknown").toLowerCase()}
             </span>
-          )}
+            <span>v{variant.version}</span>
+            {variant.is_hero && <span className="text-green-400">hero</span>}
+          </div>
+        </button>
+        <div className="flex flex-col gap-0.5 shrink-0">
+          <button type="button" onClick={onApprove} className={`p-0.5 rounded transition-colors ${variant.status_id === 2 ? "text-green-400" : "text-[var(--color-text-muted)] hover:text-green-400"}`} title="Approve">
+            <CheckCircle size={14} />
+          </button>
+          <button type="button" onClick={onReject} className={`p-0.5 rounded transition-colors ${variant.status_id === 3 ? "text-red-400" : "text-[var(--color-text-muted)] hover:text-red-400"}`} title="Reject">
+            <XCircle size={14} />
+          </button>
         </div>
-        <div className="flex items-center gap-1.5 font-mono text-[10px] text-[var(--color-text-muted)] mt-0.5">
-          <span className={TERMINAL_STATUS_COLORS[(IMAGE_VARIANT_STATUS_LABEL[statusId] ?? "unknown").toLowerCase()] ?? "text-cyan-400"}>
-            {(IMAGE_VARIANT_STATUS_LABEL[statusId] ?? "unknown").toLowerCase()}
-          </span>
-          <span>v{variant.version}</span>
-          {variant.is_hero && <span className="text-green-400">hero</span>}
-        </div>
-      </button>
+      </div>
     </div>
   );
 }
@@ -237,16 +278,14 @@ export function ImagesPage() {
 
   const pipelineCtx = usePipelineContextSafe();
   const { data: projects } = useProjects(pipelineCtx?.pipelineId);
+  // All filters passed server-side as comma-separated OR values
   const projectId = projectFilter.length === 1 ? Number(projectFilter[0]) : undefined;
-  const serverStatusId = statusFilter.length === 1 ? Number(statusFilter[0]) : undefined;
-  const serverProvenance = sourceFilter.length === 1 ? sourceFilter[0] : undefined;
-  const serverVariantType = variantTypeFilter.length === 1 ? variantTypeFilter[0] : undefined;
   const { data: browseResult, isLoading } = useImageVariantsBrowse({
     projectId,
     pipelineId: pipelineCtx?.pipelineId,
-    statusId: serverStatusId,
-    provenance: serverProvenance,
-    variantType: serverVariantType,
+    statusId: statusFilter.length > 0 ? statusFilter.join(",") : undefined,
+    provenance: sourceFilter.length > 0 ? sourceFilter.join(",") : undefined,
+    variantType: variantTypeFilter.length > 0 ? variantTypeFilter.join(",") : undefined,
     showDisabled,
     limit: pageSize,
     offset: page * pageSize,
@@ -262,17 +301,8 @@ export function ImagesPage() {
   );
   const variantTypeOptions = useMemo(() => buildVariantTypeOptions(variants), [variants]);
 
-  // Client-side filtering only needed for multi-value selections (server handles single values)
-  const filteredVariants = useMemo(() => {
-    if (!variants) return [];
-    return variants.filter((v) => {
-      if (projectFilter.length > 1 && !projectFilter.includes(String(v.project_id))) return false;
-      if (statusFilter.length > 1 && !statusFilter.includes(String(v.status_id))) return false;
-      if (sourceFilter.length > 1 && !sourceFilter.includes(v.provenance)) return false;
-      if (variantTypeFilter.length > 1 && !variantTypeFilter.includes(v.variant_type ?? "")) return false;
-      return true;
-    });
-  }, [variants, projectFilter, statusFilter, sourceFilter, variantTypeFilter]);
+  // All filtering is server-side; variants are the final filtered list
+  const filteredVariants = variants ?? [];
 
   // When the modal navigates past the current page boundary, switch pages
   const pageOffset = page * pageSize;
@@ -286,6 +316,10 @@ export function ImagesPage() {
   const previewVariantData = previewLocalIndex !== null && filteredVariants[previewLocalIndex]
     ? filteredVariants[previewLocalIndex]
     : null;
+
+  const approveVarMut = useBrowseApproveVariant();
+  const unapproveVarMut = useBrowseUnapproveVariant();
+  const rejectVarMut = useBrowseRejectVariant();
 
   const filters: FilterConfig[] = useMemo(() => [
     { key: "project", label: "Project", options: projectOptions, selected: projectFilter, onChange: (v: string[]) => { setProjectFilter(v); setPage(0); }, width: "w-44" },
@@ -358,6 +392,8 @@ export function ImagesPage() {
                   search: { tab: "images", scene: undefined },
                 })
               }
+              onApprove={() => variant.status_id === 2 ? unapproveVarMut.mutate({ avatarId: variant.avatar_id, id: variant.id }) : approveVarMut.mutate({ avatarId: variant.avatar_id, id: variant.id })}
+              onReject={() => variant.status_id === 3 ? unapproveVarMut.mutate({ avatarId: variant.avatar_id, id: variant.id }) : rejectVarMut.mutate({ avatarId: variant.avatar_id, id: variant.id })}
             />
           ))}
         </div>
@@ -378,6 +414,8 @@ export function ImagesPage() {
                   search: { tab: "images", scene: undefined },
                 })
               }
+              onApprove={() => variant.status_id === 2 ? unapproveVarMut.mutate({ avatarId: variant.avatar_id, id: variant.id }) : approveVarMut.mutate({ avatarId: variant.avatar_id, id: variant.id })}
+              onReject={() => variant.status_id === 3 ? unapproveVarMut.mutate({ avatarId: variant.avatar_id, id: variant.id }) : rejectVarMut.mutate({ avatarId: variant.avatar_id, id: variant.id })}
             />
           ))}
         </div>
@@ -433,6 +471,8 @@ export function ImagesPage() {
         onClose={() => setPreviewAbsIndex(null)}
         onPrev={previewAbsIndex !== null && previewAbsIndex > 0 ? () => setPreviewAbsIndex(previewAbsIndex - 1) : undefined}
         onNext={previewAbsIndex !== null && previewAbsIndex < total - 1 ? () => setPreviewAbsIndex(previewAbsIndex + 1) : undefined}
+        onApprove={previewVariantData ? () => previewVariantData.status_id === 2 ? unapproveVarMut.mutate({ avatarId: previewVariantData.avatar_id, id: previewVariantData.id }) : approveVarMut.mutate({ avatarId: previewVariantData.avatar_id, id: previewVariantData.id }) : undefined}
+        onReject={previewVariantData ? () => previewVariantData.status_id === 3 ? unapproveVarMut.mutate({ avatarId: previewVariantData.avatar_id, id: previewVariantData.id }) : rejectVarMut.mutate({ avatarId: previewVariantData.avatar_id, id: previewVariantData.id }) : undefined}
       />
     </Stack>
   );
@@ -447,11 +487,15 @@ function ImagePreviewModal({
   onClose,
   onPrev,
   onNext,
+  onApprove,
+  onReject,
 }: {
   variant: ImageVariantBrowseItem | null;
   onClose: () => void;
   onPrev?: () => void;
   onNext?: () => void;
+  onApprove?: () => void;
+  onReject?: () => void;
 }) {
   const [expanded, setExpanded] = useState(false);
 
@@ -474,6 +518,17 @@ function ImagePreviewModal({
     >
       {variant && (
         <Stack gap={4}>
+          {/* Expand toggle — top right */}
+          <div className="flex justify-end -mb-2">
+            <button
+              type="button"
+              onClick={() => setExpanded((v) => !v)}
+              className="p-1 rounded text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[#161b22] transition-colors"
+              title={expanded ? "Compact" : "Expand"}
+            >
+              {expanded ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
+            </button>
+          </div>
           <div className="flex items-center gap-2">
             <button
               type="button"
@@ -529,14 +584,26 @@ function ImagePreviewModal({
             <div className="font-mono text-[10px] text-[var(--color-text-muted)]">
               {variant.avatar_name} · {variant.project_name}
             </div>
-            <Button
-              size="xs"
-              variant="secondary"
-              icon={expanded ? <Minimize2 size={12} /> : <Maximize2 size={12} />}
-              onClick={() => setExpanded((v) => !v)}
-            >
-              {expanded ? "Compact" : "Expand"}
-            </Button>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={onApprove}
+                disabled={!onApprove}
+                className={`p-1 rounded transition-colors disabled:opacity-30 disabled:pointer-events-none ${variant.status_id === 2 ? "text-green-400" : "text-[var(--color-text-muted)] hover:text-green-400 hover:bg-[#161b22]"}`}
+                title={variant.status_id === 2 ? "Approved" : "Approve"}
+              >
+                <CheckCircle size={14} />
+              </button>
+              <button
+                type="button"
+                onClick={onReject}
+                disabled={!onReject}
+                className={`p-1 rounded transition-colors disabled:opacity-30 disabled:pointer-events-none ${variant.status_id === 3 ? "text-red-400" : "text-[var(--color-text-muted)] hover:text-red-400 hover:bg-[#161b22]"}`}
+                title={variant.status_id === 3 ? "Rejected" : "Reject"}
+              >
+                <XCircle size={14} />
+              </button>
+            </div>
           </div>
         </Stack>
       )}

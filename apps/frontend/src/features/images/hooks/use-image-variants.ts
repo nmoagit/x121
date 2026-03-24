@@ -170,6 +170,42 @@ export function useRejectVariant(avatarId: number) {
   });
 }
 
+/** Approve a variant from the browse page (avatarId provided at call time). */
+export function useBrowseApproveVariant() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ avatarId, id }: { avatarId: number; id: number }) =>
+      api.post<ImageVariant>(`${variantBasePath(avatarId)}/${id}/approve`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: imageVariantKeys.all });
+    },
+  });
+}
+
+/** Unapprove/unreject a variant back to generated from the browse page. */
+export function useBrowseUnapproveVariant() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ avatarId, id }: { avatarId: number; id: number }) =>
+      api.post<ImageVariant>(`${variantBasePath(avatarId)}/${id}/unapprove`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: imageVariantKeys.all });
+    },
+  });
+}
+
+/** Reject a variant from the browse page (avatarId provided at call time). */
+export function useBrowseRejectVariant() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ avatarId, id }: { avatarId: number; id: number }) =>
+      api.post<ImageVariant>(`${variantBasePath(avatarId)}/${id}/reject`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: imageVariantKeys.all });
+    },
+  });
+}
+
 /** Export a variant for external editing. */
 export function useExportVariant(avatarId: number) {
   const queryClient = useQueryClient();
@@ -278,7 +314,8 @@ export interface ImageVariantBrowsePage {
 export interface ImageVariantBrowseParams {
   projectId?: number;
   pipelineId?: number;
-  statusId?: number;
+  /** Comma-separated status IDs for OR filtering (e.g., "1,2"). */
+  statusId?: string;
   provenance?: string;
   variantType?: string;
   showDisabled?: boolean;
