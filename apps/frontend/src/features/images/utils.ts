@@ -73,38 +73,62 @@ export function pickAvatarThumbnailUrl(
   return approved.length > 0 ? variantThumbnailUrl(approved[0]!.id, size) : null;
 }
 
-/** Find the hero variant matching a track slug (case-insensitive). */
+/**
+ * Build a set of variant_type values that should match a given track.
+ *
+ * For multi-track pipelines, the set contains just the track slug.
+ * For single-track pipelines, it also includes seed slot names (e.g. "reference")
+ * because the variant_type may not match the track slug (e.g. "main").
+ *
+ * This is the single source of truth for variant→track matching.
+ * ALL variant lookup functions should use this to build their match set.
+ */
+export function buildVariantMatchTypes(
+  trackSlug: string,
+  seedSlotNames: string[] = [],
+  isSingleTrack = false,
+): Set<string> {
+  const types = new Set([trackSlug.toLowerCase()]);
+  if (isSingleTrack) {
+    for (const name of seedSlotNames) types.add(name.toLowerCase());
+  }
+  return types;
+}
+
+/** Check if a variant's type matches any of the given types. */
+function variantTypeMatches(variant: ImageVariant, matchTypes: Set<string>): boolean {
+  return variant.variant_type != null && matchTypes.has(variant.variant_type.toLowerCase());
+}
+
+/** Find the hero variant matching a track (case-insensitive). */
 export function findHeroVariant(
   variants: ImageVariant[],
   trackSlug: string,
+  matchTypes?: Set<string>,
 ): ImageVariant | undefined {
-  return variants.find(
-    (v) =>
-      v.variant_type?.toLowerCase() === trackSlug.toLowerCase() && v.is_hero,
-  );
+  const types = matchTypes ?? new Set([trackSlug.toLowerCase()]);
+  return variants.find((v) => variantTypeMatches(v, types) && v.is_hero);
 }
 
-/** Find any variant matching a track slug (case-insensitive), preferring hero. */
+/** Find any variant matching a track, preferring hero. */
 export function findVariantForTrack(
   variants: ImageVariant[],
   trackSlug: string,
+  matchTypes?: Set<string>,
 ): ImageVariant | undefined {
+  const types = matchTypes ?? new Set([trackSlug.toLowerCase()]);
   return (
-    findHeroVariant(variants, trackSlug) ??
-    variants.find(
-      (v) => v.variant_type?.toLowerCase() === trackSlug.toLowerCase(),
-    )
+    findHeroVariant(variants, trackSlug, types) ??
+    variants.find((v) => variantTypeMatches(v, types))
   );
 }
 
 /**
- * Find a variant for a track, with fallback for single-track pipelines.
+ * Find a variant for a track with pipeline-aware fallback.
  *
  * For single-track pipelines (e.g. y122), the track slug ("main") doesn't
- * match the seed slot name ("reference"). This function tries:
- * 1. Direct track slug match
- * 2. Seed slot name match (for single-track pipelines)
- * 3. Any non-deleted variant (last resort for single-track)
+ * match the seed slot name ("reference"). This function uses buildVariantMatchTypes
+ * to expand the match set, then falls back to any non-deleted variant.
  */
 export function findVariantForTrackWithFallback(
   variants: ImageVariant[],
@@ -112,30 +136,29 @@ export function findVariantForTrackWithFallback(
   seedSlotNames: string[],
   isSingleTrack: boolean,
 ): ImageVariant | undefined {
-  const direct = findVariantForTrack(variants, trackSlug);
-  if (direct) return direct;
+  const types = buildVariantMatchTypes(trackSlug, seedSlotNames, isSingleTrack);
+  const match = findVariantForTrack(variants, trackSlug, types);
+  if (match) return match;
 
+  // Last resort for single-track: any non-deleted variant
   if (isSingleTrack) {
-    for (const slotName of seedSlotNames) {
-      const match = findVariantForTrack(variants, slotName);
-      if (match) return match;
-    }
     return variants.find((v) => !v.deleted_at);
   }
-
   return undefined;
 }
 
 /**
- * Pick the best non-deleted variant for a track slug.
+ * Pick the best non-deleted variant for a track.
  * Prefers approved, then falls back to the most recently created.
  */
 export function findBestVariantForTrack(
   variants: ImageVariant[],
   trackSlug: string,
+  matchTypes?: Set<string>,
 ): ImageVariant | undefined {
+  const types = matchTypes ?? new Set([trackSlug.toLowerCase()]);
   const matching = variants.filter(
-    (v) => v.variant_type?.toLowerCase() === trackSlug.toLowerCase() && !v.deleted_at,
+    (v) => variantTypeMatches(v, types) && !v.deleted_at,
   );
   if (matching.length === 0) return undefined;
   return (

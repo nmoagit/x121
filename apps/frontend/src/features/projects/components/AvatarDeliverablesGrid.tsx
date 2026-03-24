@@ -278,9 +278,11 @@ function imageStatusToDot(statusId: number): DotStatus {
 function findBestBatchVariant(
   variants: BatchVariantStatus[],
   trackSlug: string,
+  matchTypes?: Set<string>,
 ): BatchVariantStatus | undefined {
+  const types = matchTypes ?? new Set([trackSlug.toLowerCase()]);
   const matching = variants.filter(
-    (v) => v.variant_type?.toLowerCase() === trackSlug.toLowerCase(),
+    (v) => v.variant_type != null && types.has(v.variant_type.toLowerCase()),
   );
   if (matching.length === 0) return undefined;
   return (
