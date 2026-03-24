@@ -41,8 +41,11 @@ export function buildIndicatorDots(opts: {
   avatarMetadata: Record<string, unknown> | null;
   hasScenes?: boolean;
   hasSpeech?: boolean;
+  /** When true, only show indicators for user-provided inputs (images, metadata, speech) — exclude generated outputs (scenes). */
+  inputsOnly?: boolean;
 }): IndicatorDot[] {
-  const blocking = opts.blockingDeliverables ?? DEFAULT_BLOCKING;
+  const blocking = (opts.blockingDeliverables ?? DEFAULT_BLOCKING)
+    .filter((b) => !opts.inputsOnly || b !== "scenes");
   if (blocking.length === 0) return [];
 
   const dots: IndicatorDot[] = [];

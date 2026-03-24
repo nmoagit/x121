@@ -293,6 +293,7 @@ export function AvatarsPage() {
         blockingDeliverables: blocking,
         avatarVariantTypes: variantTypes.get(c.id) ?? new Set(),
         avatarMetadata: c.metadata ?? null,
+        inputsOnly: true,
       });
       map.set(c.id, dots);
     }
