@@ -29,6 +29,7 @@ pub struct AvatarMediaAssignment {
 /// DTO for creating a new avatar media assignment.
 #[derive(Debug, Clone, Deserialize)]
 pub struct CreateAvatarMediaAssignment {
+    #[serde(default)]
     pub avatar_id: DbId,
     pub media_slot_id: DbId,
     pub scene_type_id: Option<DbId>,

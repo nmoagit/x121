@@ -88,9 +88,15 @@ export interface AutoAssignEntry {
   variant_label: string;
 }
 
+export interface SkippedSlot {
+  scene_type_name: string;
+  track_name: string;
+  reason: string;
+}
+
 export interface AutoAssignResult {
   assigned: AutoAssignEntry[];
-  skipped: AutoAssignEntry[];
+  skipped: SkippedSlot[];
   total_slots: number;
   total_assigned: number;
   total_skipped: number;

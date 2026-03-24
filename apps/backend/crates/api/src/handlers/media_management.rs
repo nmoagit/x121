@@ -512,15 +512,25 @@ pub async fn auto_assign_seeds(
             continue;
         }
 
-        // Find best variant: approved, matching variant_type to track name, hero first.
+        // Find best variant using cascading match strategy:
+        // 1. Exact: variant_type matches track name (case-insensitive)
+        // 2. Label: variant_label contains track name (case-insensitive)
+        // 3. Fallback: if avatar has only one variant, use it for any track
+        // Within each tier: hero first, approved preferred, most recent
         let best: Option<BestVariantMatch> = sqlx::query_as(
             "SELECT id, variant_label, file_path
              FROM media_variants
-             WHERE avatar_id = $1
-               AND LOWER(variant_type) = LOWER($2)
-               AND status_id = 2
-               AND deleted_at IS NULL
-             ORDER BY is_hero DESC, created_at DESC
+             WHERE avatar_id = $1 AND deleted_at IS NULL
+             ORDER BY
+               -- Tier 1: exact variant_type match
+               CASE WHEN LOWER(variant_type) = LOWER($2) THEN 0 ELSE 1 END,
+               -- Tier 2: variant_type or label contains track name
+               CASE WHEN LOWER(variant_type) LIKE '%' || LOWER($2) || '%'
+                      OR LOWER(variant_label) LIKE '%' || LOWER($2) || '%' THEN 0 ELSE 1 END,
+               -- Then: hero first, approved preferred, most recent
+               is_hero DESC,
+               CASE WHEN status_id = 2 THEN 0 ELSE 1 END,
+               created_at DESC
              LIMIT 1",
         )
         .bind(avatar_id)

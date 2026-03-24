@@ -109,7 +109,7 @@ impl MediaVariantRepo {
     ) -> Result<Vec<MediaVariant>, sqlx::Error> {
         let query = format!(
             "SELECT {COLUMNS} FROM media_variants
-             WHERE avatar_id = $1 AND variant_type = $2 AND deleted_at IS NULL
+             WHERE avatar_id = $1 AND LOWER(variant_type) = LOWER($2) AND deleted_at IS NULL
              ORDER BY created_at DESC"
         );
         sqlx::query_as::<_, MediaVariant>(&query)

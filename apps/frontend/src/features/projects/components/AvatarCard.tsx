@@ -17,19 +17,13 @@ import {
 
 import type { Avatar, AvatarGroup, SectionKey, SectionReadiness } from "../types";
 import { avatarStatusLabel } from "../types";
+import type { IndicatorDot } from "../utils/build-indicator-dots";
+import { AvatarIndicators } from "./AvatarIndicators";
 import { ReadinessIndicators } from "./ReadinessIndicators";
 
 /* --------------------------------------------------------------------------
    Component
    -------------------------------------------------------------------------- */
-
-/** Seed data completeness status for the avatar (PRD-135). */
-export interface SeedDataStatus {
-  hasClothedImage: boolean;
-  hasToplessImage: boolean;
-  hasBio: boolean;
-  hasTov: boolean;
-}
 
 /** Language flag summary for displaying on avatar cards. */
 export interface SpeechLanguageSummary {
@@ -50,8 +44,8 @@ interface AvatarCardProps {
   /** Which sections must be complete for green border. Defaults to all sections. */
   blockingDeliverables?: string[];
   projectId?: number;
-  /** Seed data completeness indicators. Omit to hide dots. */
-  seedDataStatus?: SeedDataStatus;
+  /** Dynamic indicator dots for seed data completeness (PRD-148). */
+  indicatorDots?: IndicatorDot[];
   /** Languages the avatar has speech entries for. Omit to hide flags. */
   speechLanguages?: SpeechLanguageSummary[];
   onSelect?: (charId: number) => void;
@@ -59,13 +53,6 @@ interface AvatarCardProps {
   onEdit?: () => void;
   onToggleEnabled?: (charId: number, enabled: boolean) => void;
 }
-
-const SEED_SECTIONS: { key: keyof SeedDataStatus; label: string; Icon: typeof Image }[] = [
-  { key: "hasClothedImage", label: "Clothed image", Icon: Image },
-  { key: "hasToplessImage", label: "Topless image", Icon: Image },
-  { key: "hasBio", label: "Bio", Icon: FileText },
-  { key: "hasTov", label: "Tone of Voice", Icon: FileText },
-];
 
 const MAX_VISIBLE_FLAGS = 5;
 
@@ -86,34 +73,6 @@ function LanguageFlags({ languages }: { languages: SpeechLanguageSummary[] }) {
           +{overflow}
         </span>
       )}
-    </div>
-  );
-}
-
-function SeedDataIndicators({ status }: { status: SeedDataStatus }) {
-  return (
-    <div className="flex flex-col gap-1 rounded-full bg-black/20 p-0.5 backdrop-blur-sm">
-      {SEED_SECTIONS.map(({ key, label, Icon }) => {
-        const present = status[key];
-        return (
-          <Tooltip key={key} content={`${label}: ${present ? "Present" : "Missing"}`} side="left">
-            <span
-              className="flex items-center justify-center size-[18px] rounded-full"
-              style={{
-                backgroundColor: present
-                  ? "var(--color-action-success)"
-                  : "var(--color-text-muted)",
-              }}
-            >
-              <Icon
-                size={10}
-                className={present ? "text-white" : "text-[var(--color-surface-primary)]"}
-                aria-hidden
-              />
-            </span>
-          </Tooltip>
-        );
-      })}
     </div>
   );
 }
@@ -177,7 +136,7 @@ function BlockingReasonIcon({ reason, projectId, avatarId }: { reason: string; p
   );
 }
 
-export function AvatarCard({ avatar, group, avatarUrl, heroVariantId, selected, deliveryStatus, blockingReasons, sectionReadiness, blockingDeliverables, projectId, seedDataStatus, speechLanguages, onSelect, onClick, onEdit, onToggleEnabled }: AvatarCardProps) {
+export function AvatarCard({ avatar, group, avatarUrl, heroVariantId, selected, deliveryStatus, blockingReasons, sectionReadiness, blockingDeliverables, projectId, indicatorDots, speechLanguages, onSelect, onClick, onEdit, onToggleEnabled }: AvatarCardProps) {
   const statusLabel = avatarStatusLabel(avatar.status_id);
   const isDisabled = !avatar.is_enabled;
 
@@ -327,9 +286,9 @@ export function AvatarCard({ avatar, group, avatarUrl, heroVariantId, selected, 
         )}
 
         {/* Seed data completeness overlay */}
-        {seedDataStatus && !sectionReadiness && (
-          <div className={cn("absolute right-1.5 top-1.5 z-10", seedDataStatus.hasClothedImage && seedDataStatus.hasToplessImage && seedDataStatus.hasBio && seedDataStatus.hasTov && "opacity-30")}>
-            <SeedDataIndicators status={seedDataStatus} />
+        {indicatorDots && indicatorDots.length > 0 && !sectionReadiness && (
+          <div className="absolute right-1.5 top-1.5 z-10">
+            <AvatarIndicators dots={indicatorDots} />
           </div>
         )}
 

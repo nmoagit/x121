@@ -9,9 +9,10 @@
 import { useCallback, useState } from "react";
 
 import { Button, WireframeLoader } from "@/components/primitives";
+import { Modal } from "@/components/composite";
 import { EmptyState } from "@/components/domain";
 import { Stack } from "@/components/layout";
-import { Image, Sparkles, X } from "@/tokens/icons";
+import { Image, Sparkles } from "@/tokens/icons";
 import { TRACK_TEXT_COLORS } from "@/lib/ui-classes";
 import { cn } from "@/lib/cn";
 import { variantThumbnailUrl } from "@/features/media/utils";
@@ -67,10 +68,6 @@ export function AvatarSeedsTab({ avatarId, projectId: _projectId }: AvatarSeedsT
   const handleAutoAssign = useCallback(async () => {
     try {
       const preview = await autoAssignMutation.mutateAsync({ dry_run: true });
-      if (preview.total_assigned === 0) {
-        window.alert("No slots can be auto-assigned. Upload variants first.");
-        return;
-      }
       setAutoAssignPreview(preview);
     } catch {
       // mutation error handled by TanStack Query
@@ -128,15 +125,13 @@ export function AvatarSeedsTab({ avatarId, projectId: _projectId }: AvatarSeedsT
         </Button>
       </div>
 
-      {/* Auto-assign preview */}
-      {autoAssignPreview && (
-        <AutoAssignPreview
-          preview={autoAssignPreview}
-          onConfirm={handleConfirmAutoAssign}
-          onCancel={() => setAutoAssignPreview(null)}
-          loading={autoAssignMutation.isPending}
-        />
-      )}
+      {/* Auto-assign preview modal */}
+      <AutoAssignPreviewModal
+        preview={autoAssignPreview}
+        onConfirm={handleConfirmAutoAssign}
+        onCancel={() => setAutoAssignPreview(null)}
+        loading={autoAssignMutation.isPending}
+      />
 
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
         {slots.map((entry) => (
@@ -155,51 +150,92 @@ export function AvatarSeedsTab({ avatarId, projectId: _projectId }: AvatarSeedsT
 }
 
 /* --------------------------------------------------------------------------
-   Auto-assign preview banner
+   Auto-assign preview modal
    -------------------------------------------------------------------------- */
 
-function AutoAssignPreview({
+function AutoAssignPreviewModal({
   preview,
   onConfirm,
   onCancel,
   loading,
 }: {
-  preview: AutoAssignResult;
+  preview: AutoAssignResult | null;
   onConfirm: () => void;
   onCancel: () => void;
   loading: boolean;
 }) {
   return (
-    <div className="rounded-[var(--radius-lg)] border border-blue-500/40 bg-blue-500/5 p-3 space-y-2">
-      <div className="flex items-center justify-between">
-        <p className="text-xs font-mono text-blue-400">
-          Auto-assign {preview.total_assigned} of {preview.total_slots} slots
-          {preview.total_skipped > 0 && ` (${preview.total_skipped} skipped)`}
-        </p>
-        <div className="flex items-center gap-2">
-          <Button size="xs" variant="primary" onClick={onConfirm} loading={loading}>
-            Confirm
-          </Button>
-          <Button size="xs" variant="ghost" onClick={onCancel} icon={<X size={12} />}>
-            Cancel
-          </Button>
-        </div>
-      </div>
+    <Modal
+      open={preview !== null}
+      onClose={onCancel}
+      title="Auto-Assign Seeds"
+      size="lg"
+    >
+      {preview && (
+        <Stack gap={4}>
+          <p className="text-xs font-mono text-[var(--color-text-muted)]">
+            {preview.total_assigned} of {preview.total_slots} slots will be assigned.
+            {preview.total_skipped > 0 && ` ${preview.total_skipped} skipped.`}
+          </p>
 
-      {preview.assigned.length > 0 && (
-        <div className="flex flex-wrap gap-1">
-          {preview.assigned.map((a) => (
-            <span
-              key={`${a.scene_type_id}-${a.track_id}`}
-              className="inline-flex items-center gap-1 rounded bg-blue-500/10 px-1.5 py-0.5 text-[10px] font-mono text-blue-300"
-            >
-              {a.scene_type_name}/{a.track_name}
-              <span className="text-blue-400/60">{a.variant_label}</span>
-            </span>
-          ))}
-        </div>
+          {/* Assignments */}
+          {preview.assigned.length > 0 && (
+            <div className="space-y-1">
+              <h4 className="text-[10px] font-mono text-green-400 uppercase tracking-wide">Will Assign</h4>
+              <div className="space-y-1">
+                {preview.assigned.map((a) => (
+                  <div
+                    key={`${a.scene_type_id}-${a.track_id}`}
+                    className="flex items-center gap-2 rounded bg-green-500/5 border border-green-500/20 px-2 py-1.5 font-mono text-xs"
+                  >
+                    <span className="text-[var(--color-text-primary)]">{a.scene_type_name}</span>
+                    <span className={TRACK_TEXT_COLORS[a.track_name.toLowerCase()] ?? "text-[var(--color-text-muted)]"}>{a.track_name}</span>
+                    <span className="text-[var(--color-text-muted)]">→</span>
+                    {a.media_variant_id && (
+                      <img
+                        src={variantThumbnailUrl(a.media_variant_id, 64)}
+                        alt={a.variant_label}
+                        className="h-6 w-6 rounded object-cover"
+                      />
+                    )}
+                    <span className="text-cyan-400 truncate">{a.variant_label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Skipped */}
+          {preview.skipped.length > 0 && (
+            <div className="space-y-1">
+              <h4 className="text-[10px] font-mono text-orange-400 uppercase tracking-wide">Skipped</h4>
+              <div className="space-y-1">
+                {preview.skipped.map((s) => (
+                  <div
+                    key={`${s.scene_type_name}-${s.track_name}`}
+                    className="flex items-center gap-2 rounded bg-orange-500/5 border border-orange-500/20 px-2 py-1.5 font-mono text-[10px] text-[var(--color-text-muted)]"
+                  >
+                    <span>{s.scene_type_name}</span>
+                    <span>{s.track_name}</span>
+                    <span className="text-orange-400">{s.reason}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Actions */}
+          <div className="flex items-center justify-end gap-2 pt-2 border-t border-[var(--color-border-default)]">
+            <Button size="sm" variant="ghost" onClick={onCancel}>
+              Cancel
+            </Button>
+            <Button size="sm" variant="primary" onClick={onConfirm} loading={loading}>
+              Confirm ({preview.total_assigned})
+            </Button>
+          </div>
+        </Stack>
       )}
-    </div>
+    </Modal>
   );
 }
 
@@ -256,50 +292,8 @@ function SeedSlotCard({
         </p>
       )}
 
-      {/* Current assignment preview with clear button */}
-      {hasAssignment && entry.assignment && (
-        <div className="flex items-center gap-2">
-          {entry.assignment.media_variant_id != null ? (
-            <img
-              src={variantThumbnailUrl(entry.assignment.media_variant_id, 128)}
-              alt={`${entry.scene_type_name} ${entry.track_name} seed`}
-              className="h-10 w-10 rounded-[var(--radius-md)] object-cover border border-green-500/30"
-            />
-          ) : entry.assignment.file_path ? (
-            <span className="text-[10px] font-mono text-[var(--color-text-muted)] bg-[var(--color-surface-secondary)] rounded px-2 py-1 truncate max-w-[180px]">
-              {entry.assignment.file_path.split("/").pop()}
-            </span>
-          ) : null}
-          <Button
-            size="xs"
-            variant="ghost"
-            onClick={() => onClearVariant(entry.assignment!.id)}
-            icon={<X size={12} />}
-          >
-            Remove
-          </Button>
-        </div>
-      )}
-
-      {/* Variant picker when slot has a workflow but no assignment */}
-      {!hasAssignment && entry.media_slot_id && (
-        <MediaVariantPicker
-          avatarId={avatarId}
-          trackName={entry.track_name}
-          selectedVariantId={null}
-          onSelect={(variantId) => onSelectVariant(entry, variantId)}
-        />
-      )}
-
-      {/* No workflow = can't assign */}
-      {!hasAssignment && !entry.media_slot_id && (
-        <p className="text-[10px] font-mono text-orange-400">
-          No workflow assigned — cannot configure seed.
-        </p>
-      )}
-
-      {/* Show picker below assigned variant for re-assignment */}
-      {hasAssignment && entry.media_slot_id && (
+      {/* Variant picker — shows thumbnails to select/change, or drop zone if no variants */}
+      {entry.media_slot_id ? (
         <MediaVariantPicker
           avatarId={avatarId}
           trackName={entry.track_name}
@@ -307,6 +301,10 @@ function SeedSlotCard({
           onSelect={(variantId) => onSelectVariant(entry, variantId)}
           onClear={entry.assignment ? () => onClearVariant(entry.assignment!.id) : undefined}
         />
+      ) : (
+        <p className="text-[10px] font-mono text-orange-400">
+          No workflow assigned — cannot configure seed.
+        </p>
       )}
     </div>
   );

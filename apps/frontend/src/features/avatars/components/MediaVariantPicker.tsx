@@ -56,7 +56,11 @@ export function MediaVariantPicker({
   onSelect,
   onClear,
 }: MediaVariantPickerProps) {
-  const { data: variants, isLoading } = useMediaVariants(avatarId, trackName);
+  // Try track-filtered first, fall back to all variants
+  const { data: trackVariants, isLoading: trackLoading } = useMediaVariants(avatarId, trackName);
+  const { data: allVariants, isLoading: allLoading } = useMediaVariants(avatarId);
+
+  const isLoading = trackLoading || allLoading;
 
   if (isLoading) {
     return (
@@ -66,10 +70,10 @@ export function MediaVariantPicker({
     );
   }
 
-  // Filter to non-deleted variants only
-  const available = sortVariants(
-    (variants ?? []).filter((v) => !v.deleted_at),
-  );
+  // Use track-filtered variants if any match, otherwise fall back to all
+  const trackFiltered = (trackVariants ?? []).filter((v) => !v.deleted_at);
+  const allFiltered = (allVariants ?? []).filter((v) => !v.deleted_at);
+  const available = sortVariants(trackFiltered.length > 0 ? trackFiltered : allFiltered);
 
   if (available.length === 0) {
     return (

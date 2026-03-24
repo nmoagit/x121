@@ -28,8 +28,8 @@ Source of truth: [`design/design.md`](../design.md)
 | blocked | 0 |
 | deferred | 0 |
 | maybe | 15 |
-| draft | 1 |
-| **Total** | **158** |
+| draft | 2 |
+| **Total** | **159** |
 
 ---
 
@@ -45,6 +45,7 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-141 | Pipeline-Scoped Imports and Storage | 1 | `done` | 2026-03-23 |
 | PRD-146 | Dynamic Generation Seeds | 1 | `done` | 2026-03-24 | Workflow media slots (mirroring prompt slots), avatar media assignments, passthrough seeds, multi-seed pipeline injection, media resolution engine, auto-detect media nodes on workflow import, frontend Seeds tab. 3 migrations, 7 new backend files, 3 new frontend components, 10 unit tests. Deps: PRD-75, PRD-115, PRD-138, PRD-141. |
 | PRD-147 | Media Variants & Seed Auto-Detection | 1 | `draft` | 2026-03-24 | Part A: Rename image tables → media tables (source_images→source_media, derived_images→derived_media, image_variants→media_variants, image_variant_statuses→media_variant_statuses) + frontend images/→media/ directory. Part B: Seed auto-detection with media variant picker (thumbnails filtered by track_affinity), auto-assign-all endpoint. New columns: media_kind, duration_secs. Deps: PRD-140, PRD-146, PRD-21, PRD-138. |
+| PRD-148 | Dynamic Avatar Card Indicators | 2 | `draft` | 2026-03-24 | Frontend-only refactor: replace hardcoded SeedDataStatus (clothed/topless) with pipeline-driven indicator dots. Indicators filtered by blocking_deliverables. Seed slots from pipeline config, status from seed summary API. Deps: PRD-128, PRD-138, PRD-146. |
 
 ## Part 1: Infrastructure & System Core
 

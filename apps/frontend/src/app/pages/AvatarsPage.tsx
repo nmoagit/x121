@@ -27,10 +27,11 @@ import { useVoiceImportFlow } from "@/features/projects/hooks/use-voice-import-f
 import { SpeechImportResultModal } from "@/features/projects/components/SpeechImportResultModal";
 import { VoiceImportConfirmModal, VoiceImportResultModal } from "@/features/projects/components/VoiceImportModals";
 import { AvatarCard } from "@/features/projects/components/AvatarCard";
-import type { SeedDataStatus, SpeechLanguageSummary } from "@/features/projects/components/AvatarCard";
+import type { SpeechLanguageSummary } from "@/features/projects/components/AvatarCard";
 import type { ProjectLanguageCount } from "@/features/projects/hooks/use-avatar-deliverables";
 import { useMediaVariantsBrowse } from "@/features/media/hooks/use-media-variants";
-import { SOURCE_KEY_BIO, SOURCE_KEY_TOV } from "@/features/avatars/types";
+import { buildIndicatorDots, type IndicatorDot } from "@/features/projects/utils/build-indicator-dots";
+import { useSetting } from "@/features/settings/hooks/use-settings";
 import { ImportConfirmModal } from "@/features/projects/components/ImportConfirmModal";
 import { ImportProgressBar } from "@/features/projects/components/ImportProgressBar";
 import {
@@ -50,7 +51,7 @@ import { useCreateProject, useProjects } from "@/features/projects/hooks/use-pro
 import type { Avatar, AvatarDropPayload, AvatarGroup, FolderDropResult } from "@/features/projects/types";
 
 import { variantThumbnailUrl } from "@/features/media/utils";
-import { usePipelineContextSafe } from "@/features/pipelines";
+import { usePipelineContextSafe, usePipeline } from "@/features/pipelines";
 import { cn } from "@/lib/cn";
 import { toSelectOptions } from "@/lib/select-utils";
 import {
@@ -84,6 +85,16 @@ export function AvatarsPage() {
   const user = useAuthStore((s) => s.user);
   const isAdmin = user?.role === "admin";
   const pipelineCtx = usePipelineContextSafe();
+  const { data: pipelineData } = usePipeline(pipelineCtx?.pipelineId ?? 0);
+
+  const { data: blockingDeliverablesSetting } = useSetting("blocking_deliverables");
+
+  // Pipeline seed slots for the seed data modal
+  const pipelineSeedSlots = useMemo(() => {
+    const slots = (pipelineData?.seed_slots ?? []) as { name: string; description?: string }[];
+    if (slots.length === 0) return undefined;
+    return slots.map((s) => ({ type: s.name.toLowerCase(), label: s.name }));
+  }, [pipelineData?.seed_slots]);
 
   // Project selection (admin: multi-project, non-admin: single project)
   const { data: projects, isLoading: projectsLoading } = useProjects(pipelineCtx?.pipelineId);
@@ -248,8 +259,22 @@ export function AvatarsPage() {
   const { data: allVariantsBrowse } = useMediaVariantsBrowse({ pipelineId: pipelineCtx?.pipelineId, limit: 500 });
   const allVariants = allVariantsBrowse?.items;
 
-  const seedDataStatusMap = useMemo(() => {
-    const map = new Map<number, SeedDataStatus>();
+  // Resolve blocking deliverables: platform setting > hardcoded default
+  const platformBlocking = useMemo(() => {
+    if (blockingDeliverablesSetting?.value) {
+      return blockingDeliverablesSetting.value.split(",").map((s: string) => s.trim()).filter(Boolean);
+    }
+    return null;
+  }, [blockingDeliverablesSetting?.value]);
+
+  // Raw seed slots from pipeline (for buildIndicatorDots)
+  const rawSeedSlots = useMemo(() => {
+    const slots = pipelineData?.seed_slots ?? [];
+    return slots as { name: string }[];
+  }, [pipelineData?.seed_slots]);
+
+  const indicatorDotsMap = useMemo(() => {
+    const map = new Map<number, IndicatorDot[]>();
     // Build a set of variant types per avatar from browse data
     const variantTypes = new Map<number, Set<string>>();
     if (allVariants) {
@@ -261,17 +286,18 @@ export function AvatarsPage() {
       }
     }
     for (const c of allProjectAvatars) {
-      const types = variantTypes.get(c.id);
-      const meta = c.metadata;
-      map.set(c.id, {
-        hasClothedImage: types?.has("clothed") ?? false,
-        hasToplessImage: types?.has("topless") ?? false,
-        hasBio: meta?.[SOURCE_KEY_BIO] != null,
-        hasTov: meta?.[SOURCE_KEY_TOV] != null,
+      const project = projects?.find((p) => p.id === c.project_id);
+      const blocking = project?.blocking_deliverables ?? platformBlocking;
+      const dots = buildIndicatorDots({
+        pipelineSeedSlots: rawSeedSlots,
+        blockingDeliverables: blocking,
+        avatarVariantTypes: variantTypes.get(c.id) ?? new Set(),
+        avatarMetadata: c.metadata ?? null,
       });
+      map.set(c.id, dots);
     }
     return map;
-  }, [allProjectAvatars, allVariants]);
+  }, [allProjectAvatars, allVariants, rawSeedSlots, projects, platformBlocking]);
 
   /* --- search & filter --- */
   const [searchQuery, setSearchQuery] = useState("");
@@ -471,9 +497,9 @@ export function AvatarsPage() {
     }
     if (hideComplete) {
       filtered = filtered.filter((c) => {
-        const status = seedDataStatusMap.get(c.id);
-        if (!status) return true;
-        return !(status.hasClothedImage && status.hasToplessImage && status.hasBio && status.hasTov);
+        const dots = indicatorDotsMap.get(c.id);
+        if (!dots || dots.length === 0) return true;
+        return !dots.every((d) => d.present);
       });
     }
 
@@ -487,7 +513,7 @@ export function AvatarsPage() {
       chars.sort((a, b) => a.name.localeCompare(b.name));
     }
     return map;
-  }, [allProjectAvatars, searchQuery, showDisabled, hideComplete, seedDataStatusMap]);
+  }, [allProjectAvatars, searchQuery, showDisabled, hideComplete, indicatorDotsMap]);
 
   const filteredGroups = useMemo(() => {
     if (!groups) return [];
@@ -763,7 +789,7 @@ export function AvatarsPage() {
         heroVariantId={c.hero_variant_id}
         selected={selectedCharIds.has(c.id)}
         projectId={c.project_id}
-        seedDataStatus={seedDataStatusMap.get(c.id)}
+        indicatorDots={indicatorDotsMap.get(c.id)}
         speechLanguages={speechLanguageMap.get(c.id)}
         onSelect={toggleCharSelection}
         onClick={() => setSeedDataTargetId(c.id)}
@@ -1126,6 +1152,7 @@ export function AvatarsPage() {
         <AvatarSeedDataModal
           avatar={seedDataTarget}
           projectId={seedDataTarget?.project_id ?? primaryProjectId}
+          seedSlots={pipelineSeedSlots}
           onClose={() => setSeedDataTargetId(null)}
           groupOptions={(() => {
             const pid = seedDataTarget?.project_id ?? primaryProjectId;

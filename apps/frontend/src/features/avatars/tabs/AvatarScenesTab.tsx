@@ -29,6 +29,7 @@ import { useBatchGenerate, useRemoveScenesFromSchedule } from "@/features/genera
 import { ScheduleGenerationModal } from "@/features/generation/ScheduleGenerationModal";
 import { useSchedules } from "@/features/job-scheduling/hooks/use-job-scheduling";
 import { useMediaVariants } from "@/features/media/hooks/use-media-variants";
+import { useAvatarSeedSummary } from "../hooks/use-media-assignments";
 import { findVariantForTrackWithFallback } from "@/features/media/utils";
 import { sourceLabel } from "@/features/scene-catalogue/SourceBadge";
 import { TRACK_TEXT_COLORS } from "@/lib/ui-classes";
@@ -134,6 +135,23 @@ export function AvatarScenesTab({ avatarId, projectId, focusSceneId, focusSceneT
   const { data: tracks } = useTracks(false, resolvedPipelineId);
   const { isSingleTrack } = useSingleTrack(resolvedPipelineId);
   const { data: imageVariants } = useMediaVariants(avatarId);
+  const { data: seedSummary } = useAvatarSeedSummary(avatarId);
+
+  // Build a set of assigned seed keys for quick lookup
+  // Keyed by "scene_type_id::track_id" and also "scene_type_id::*" for any-track match
+  const assignedSeedKeys = useMemo(() => {
+    const keys = new Set<string>();
+    if (seedSummary?.slots) {
+      for (const s of seedSummary.slots) {
+        if (s.assignment != null) {
+          keys.add(`${s.scene_type_id}::${s.track_id}`);
+          // Also add a scene-type-level key so null-track slots can match
+          keys.add(`${s.scene_type_id}::*`);
+        }
+      }
+    }
+    return keys;
+  }, [seedSummary?.slots]);
 
   const seedSlotNames = useMemo(() => {
     const slots = (pipelineData?.seed_slots ?? []) as SeedSlot[];
@@ -241,13 +259,16 @@ export function AvatarScenesTab({ avatarId, projectId, focusSceneId, focusSceneT
     return expandedRows.map((row) => {
       const key = `${row.scene_type_id}::${row.track_id ?? "null"}`;
       const scene = sceneByKey.get(key) ?? null;
-      // Check if the required seed image exists — applies to ALL slots
+      // Check if a seed is assigned (PRD-146 assignment OR legacy variant match)
+      const hasSeedAssignment = row.track_id != null
+        ? assignedSeedKeys.has(`${row.scene_type_id}::${row.track_id}`)
+        : assignedSeedKeys.has(`${row.scene_type_id}::*`);
       const variantId = resolveVariantId(row.track_slug);
       const missingVariant =
-        variantId === null ? `${row.track_slug ?? "seed"}.png` : null;
+        (hasSeedAssignment || variantId !== null) ? null : `${row.track_slug ?? "seed"} seed`;
       return { row, scene, missingVariant };
     });
-  }, [expandedRows, scenes, resolveVariantId]);
+  }, [expandedRows, scenes, resolveVariantId, assignedSeedKeys]);
 
   /** Slots that have an existing scene (navigable in the detail modal). */
   const navigableSlots = useMemo(
