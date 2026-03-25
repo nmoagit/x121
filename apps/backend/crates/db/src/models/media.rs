@@ -106,6 +106,7 @@ pub struct MediaVariant {
     pub parent_variant_id: Option<DbId>,
     pub generation_params: Option<serde_json::Value>,
     pub content_hash: Option<String>,
+    pub notes: Option<String>,
     pub deleted_at: Option<Timestamp>,
     pub created_at: Timestamp,
     pub updated_at: Timestamp,
@@ -150,4 +151,5 @@ pub struct UpdateMediaVariant {
     pub height: Option<i32>,
     pub format: Option<String>,
     pub generation_params: Option<serde_json::Value>,
+    pub notes: Option<String>,
 }

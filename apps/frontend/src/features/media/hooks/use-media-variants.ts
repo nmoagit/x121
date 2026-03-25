@@ -298,6 +298,7 @@ export interface MediaVariantBrowseItem {
   format: string | null;
   version: number;
   media_kind: "image" | "video" | "audio";
+  notes: string | null;
   duration_secs: number | null;
   created_at: string;
   avatar_name: string;

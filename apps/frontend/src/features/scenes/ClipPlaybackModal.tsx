@@ -9,6 +9,7 @@ import type { DrawingObject } from "@/features/annotations/types";
 import { VideoPlayer } from "@/features/video-player/VideoPlayer";
 import { getStreamUrl } from "@/features/video-player";
 import { api } from "@/lib/api";
+import { CollapsibleNotes } from "@/components/domain/CollapsibleNotes";
 import { TagInput } from "@/components/domain/TagInput";
 import type { TagInfo } from "@/components/domain/TagChip";
 import { CheckCircle, ChevronLeft, ChevronRight, Download, Edit3, Maximize2, Minimize2, Settings, Trash2, X, XCircle } from "@/tokens/icons";
@@ -48,13 +49,16 @@ export function ClipPlaybackModal({ clip, onClose, onPrev, onNext, onApprove, on
   const [expanded, setExpanded] = useState(false);
   const [annotating, setAnnotating] = useState(false);
   const [clipTags, setClipTags] = useState<TagInfo[]>([]);
+  const [clipNotes, setClipNotes] = useState("");
+  const [clipNotesSaving, setClipNotesSaving] = useState(false);
   const [rangeEnd, setRangeEnd] = useState<number | null>(null);
   const [annotationNote, setAnnotationNote] = useState("");
   const [presetManagerOpen, setPresetManagerOpen] = useState(false);
 
-  // Load existing tags when clip changes
+  // Load existing tags + notes when clip changes
   useEffect(() => {
-    if (!clip) { setClipTags([]); return; }
+    if (!clip) { setClipTags([]); setClipNotes(""); return; }
+    setClipNotes(clip.notes ?? "");
     api.get<TagInfo[]>(`/entities/scene_video_version/${clip.id}/tags`)
       .then(setClipTags)
       .catch(() => setClipTags([]));
@@ -553,6 +557,18 @@ export function ClipPlaybackModal({ clip, onClose, onPrev, onNext, onApprove, on
             onTagsChange={setClipTags}
             pipelineId={pipelineId}
             placeholder="Add label..."
+          />
+
+          {/* Notes */}
+          <CollapsibleNotes
+            value={clipNotes}
+            onChange={setClipNotes}
+            onSave={(value) => {
+              setClipNotesSaving(true);
+              api.put(`/scenes/${clip.scene_id}/versions/${clip.id}`, { notes: value })
+                .finally(() => setClipNotesSaving(false));
+            }}
+            saving={clipNotesSaving}
           />
 
           {/* Generation snapshot */}

@@ -9,6 +9,7 @@ import { useNavigate } from "@tanstack/react-router";
 
 import { EmptyState } from "@/components/domain";
 import { TagFilter } from "@/components/domain/TagFilter";
+import { CollapsibleNotes } from "@/components/domain/CollapsibleNotes";
 import { TagInput } from "@/components/domain/TagInput";
 import type { TagInfo } from "@/components/domain/TagChip";
 import { Modal } from "@/components/composite";
@@ -524,10 +525,13 @@ function ImagePreviewModal({
 }) {
   const [expanded, setExpanded] = useState(false);
   const [variantTags, setVariantTags] = useState<TagInfo[]>([]);
+  const [variantNotes, setVariantNotes] = useState("");
+  const [variantNotesSaving, setVariantNotesSaving] = useState(false);
 
-  // Load tags when variant changes
+  // Load tags + notes when variant changes
   useEffect(() => {
-    if (!variant) { setVariantTags([]); return; }
+    if (!variant) { setVariantTags([]); setVariantNotes(""); return; }
+    setVariantNotes(variant.notes ?? "");
     api.get<TagInfo[]>(`/entities/media_variant/${variant.id}/tags`)
       .then(setVariantTags)
       .catch(() => setVariantTags([]));
@@ -647,6 +651,18 @@ function ImagePreviewModal({
             existingTags={variantTags}
             onTagsChange={setVariantTags}
             pipelineId={pipelineId}
+          />
+
+          {/* Notes */}
+          <CollapsibleNotes
+            value={variantNotes}
+            onChange={setVariantNotes}
+            onSave={(value) => {
+              setVariantNotesSaving(true);
+              api.put(`/avatars/${variant.avatar_id}/media-variants/${variant.id}`, { notes: value })
+                .finally(() => setVariantNotesSaving(false));
+            }}
+            saving={variantNotesSaving}
           />
         </Stack>
       )}

@@ -224,6 +224,7 @@ pub async fn unapprove_variant(
         height: None,
         format: None,
         generation_params: None,
+        notes: None,
     };
 
     let updated = MediaVariantRepo::update(&state.pool, id, &input)
@@ -257,6 +258,7 @@ pub async fn reject_variant(
         height: None,
         format: None,
         generation_params: None,
+        notes: None,
     };
 
     let variant = MediaVariantRepo::update(&state.pool, id, &input)
@@ -291,6 +293,7 @@ pub async fn export_for_editing(
         height: None,
         format: None,
         generation_params: None,
+        notes: None,
     };
 
     let variant = MediaVariantRepo::update(&state.pool, id, &input)
@@ -800,6 +803,7 @@ pub struct MediaVariantBrowseItem {
     pub height: Option<i32>,
     pub format: Option<String>,
     pub version: i32,
+    pub notes: Option<String>,
     pub created_at: chrono::DateTime<chrono::Utc>,
     // Context fields
     pub avatar_name: String,
@@ -922,7 +926,7 @@ pub async fn browse_variants(
         "SELECT \
             iv.id, iv.avatar_id, iv.variant_label, iv.status_id, iv.file_path, \
             iv.variant_type, iv.provenance, iv.is_hero, iv.file_size_bytes, \
-            iv.width, iv.height, iv.format, iv.version, iv.created_at, \
+            iv.width, iv.height, iv.format, iv.version, iv.notes, iv.created_at, \
             c.name AS avatar_name, c.is_enabled AS avatar_is_enabled, \
             p.id AS project_id, p.name AS project_name \
         {base_from} \

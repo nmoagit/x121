@@ -9,7 +9,7 @@ use crate::models::status::StatusId;
 /// Column list shared across queries to avoid repetition.
 const COLUMNS: &str = "id, avatar_id, source_media_id, derived_media_id, variant_label, \
     status_id, file_path, variant_type, provenance, is_hero, file_size_bytes, width, height, \
-    format, version, parent_variant_id, generation_params, content_hash, deleted_at, created_at, updated_at";
+    format, version, parent_variant_id, generation_params, content_hash, notes, deleted_at, created_at, updated_at";
 
 /// Provides CRUD operations for image variants.
 pub struct MediaVariantRepo;
@@ -191,6 +191,7 @@ impl MediaVariantRepo {
                        iv.variant_label, iv.status_id, iv.file_path, iv.variant_type,
                        iv.provenance, iv.is_hero, iv.file_size_bytes, iv.width, iv.height,
                        iv.format, iv.version, iv.parent_variant_id, iv.generation_params,
+                       iv.content_hash, iv.notes,
                        iv.deleted_at, iv.created_at, iv.updated_at
                 FROM media_variants iv
                 INNER JOIN chain c ON iv.id = c.parent_variant_id
@@ -226,7 +227,8 @@ impl MediaVariantRepo {
                 width            = COALESCE($11, width),
                 height           = COALESCE($12, height),
                 format           = COALESCE($13, format),
-                generation_params = COALESCE($14, generation_params)
+                generation_params = COALESCE($14, generation_params),
+                notes            = COALESCE($15, notes)
              WHERE id = $1 AND deleted_at IS NULL
              RETURNING {COLUMNS}"
         );
@@ -245,6 +247,7 @@ impl MediaVariantRepo {
             .bind(input.height)
             .bind(&input.format)
             .bind(&input.generation_params)
+            .bind(&input.notes)
             .fetch_optional(pool)
             .await
     }
