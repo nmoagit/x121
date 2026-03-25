@@ -1,4 +1,24 @@
 /**
+ * Convert a display name to a filesystem-safe slug using dashes as word separators.
+ *
+ * Matches the backend `naming_engine::slugify` convention:
+ * - Lowercases
+ * - Replaces spaces, hyphens, and underscores with dashes
+ * - Strips non-alphanumeric/non-dash characters
+ * - Collapses consecutive dashes
+ *
+ * Examples: "Danni Banks" → "danni-banks", "Boobs Fondle" → "boobs-fondle"
+ */
+export function slugify(input: string): string {
+  return input
+    .toLowerCase()
+    .replace(/[\s_-]+/g, "-")
+    .replace(/[^a-z0-9-]/g, "")
+    .replace(/-{2,}/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+/**
  * Format a byte count into a human-readable string.
  *
  * Examples:

@@ -159,41 +159,49 @@ pub struct ResolvedName {
 
 /// Convert a display name to a filesystem-safe slug.
 ///
+/// Uses **dashes** as the word separator within a component:
+/// - `"Danni Banks"` → `"danni-banks"`
+/// - `"Boobs Fondle"` → `"boobs-fondle"`
+///
+/// Underscores in the input are also replaced with dashes so that
+/// underscores are reserved as the separator between naming components
+/// (e.g., `{project}_{avatar}_{scene_type}`).
+///
 /// - Lowercases
-/// - Replaces spaces and hyphens with underscores
-/// - Strips avatars that are not alphanumeric or underscore
-/// - Collapses consecutive underscores
-/// - Trims leading/trailing underscores
+/// - Replaces spaces, hyphens, and underscores with dashes
+/// - Strips characters that are not alphanumeric or dash
+/// - Collapses consecutive dashes
+/// - Trims leading/trailing dashes
 pub fn slugify(input: &str) -> String {
     let mut result = String::with_capacity(input.len());
     for ch in input.chars() {
         if ch.is_ascii_alphanumeric() {
             result.push(ch.to_ascii_lowercase());
-        } else if ch == ' ' || ch == '-' {
-            result.push('_');
+        } else if ch == ' ' || ch == '-' || ch == '_' {
+            result.push('-');
         }
-        // Other avatars are stripped
+        // Other characters are stripped
     }
-    // Collapse consecutive underscores
-    collapse_underscores(&result)
+    // Collapse consecutive dashes and trim edges
+    collapse_separator(&result, '-')
 }
 
-/// Collapse consecutive underscores into a single underscore and trim edges.
-fn collapse_underscores(input: &str) -> String {
+/// Collapse consecutive occurrences of `sep` into one and trim edges.
+fn collapse_separator(input: &str, sep: char) -> String {
     let mut result = String::with_capacity(input.len());
-    let mut prev_underscore = false;
+    let mut prev_sep = false;
     for ch in input.chars() {
-        if ch == '_' {
-            if !prev_underscore {
-                result.push('_');
+        if ch == sep {
+            if !prev_sep {
+                result.push(sep);
             }
-            prev_underscore = true;
+            prev_sep = true;
         } else {
             result.push(ch);
-            prev_underscore = false;
+            prev_sep = false;
         }
     }
-    result.trim_matches('_').to_string()
+    result.trim_matches(sep).to_string()
 }
 
 // ---------------------------------------------------------------------------
@@ -392,12 +400,9 @@ fn build_token_map(ctx: &NamingContext) -> HashMap<String, String> {
         map.insert("variant_label".to_string(), label.clone());
     }
 
-    // scene_type_slug: lowercase, spaces → underscores
+    // scene_type_slug: lowercase, spaces → dashes (consistent with slugify)
     if let Some(ref name) = ctx.scene_type_name {
-        map.insert(
-            "scene_type_slug".to_string(),
-            name.to_lowercase().replace(' ', "_"),
-        );
+        map.insert("scene_type_slug".to_string(), slugify(name));
     }
 
     // clothes_off_suffix: "_clothes_off" only when is_clothes_off=true AND
@@ -612,7 +617,7 @@ mod tests {
         // The clothes_off suffix is silently dropped for non-clothed variants.
         let ctx = scene_ctx("topless", "Slow Walk", true, Some(1));
         let result = resolve_template(SCENE_VIDEO_TEMPLATE, &ctx).unwrap();
-        assert_eq!(result.filename, "topless_slow_walk_1.mp4");
+        assert_eq!(result.filename, "topless_slow-walk_1.mp4");
     }
 
     #[test]
@@ -620,36 +625,41 @@ mod tests {
         // Clothed variant CAN have clothes_off — "started clothed, ended clothes off".
         let ctx = scene_ctx("clothed", "Slow Walk", true, Some(1));
         let result = resolve_template(SCENE_VIDEO_TEMPLATE, &ctx).unwrap();
-        assert_eq!(result.filename, "slow_walk_clothes_off_1.mp4");
+        assert_eq!(result.filename, "slow-walk_clothes_off_1.mp4");
     }
 
     #[test]
     fn compat_multi_word_scene_type() {
         let ctx = scene_ctx("clothed", "Hair Flip Idle", false, None);
         let result = resolve_template(SCENE_VIDEO_TEMPLATE, &ctx).unwrap();
-        assert_eq!(result.filename, "hair_flip_idle.mp4");
+        assert_eq!(result.filename, "hair-flip-idle.mp4");
     }
 
     // -- Slugify --
 
     #[test]
     fn slugify_basic() {
-        assert_eq!(slugify("Project Alpha"), "project_alpha");
+        assert_eq!(slugify("Project Alpha"), "project-alpha");
     }
 
     #[test]
     fn slugify_special_chars() {
-        assert_eq!(slugify("Chloe's Project!"), "chloes_project");
+        assert_eq!(slugify("Chloe's Project!"), "chloes-project");
     }
 
     #[test]
     fn slugify_hyphens_and_spaces() {
-        assert_eq!(slugify("slow-walk scene"), "slow_walk_scene");
+        assert_eq!(slugify("slow-walk scene"), "slow-walk-scene");
     }
 
     #[test]
-    fn slugify_collapses_underscores() {
-        assert_eq!(slugify("too   many   spaces"), "too_many_spaces");
+    fn slugify_collapses_dashes() {
+        assert_eq!(slugify("too   many   spaces"), "too-many-spaces");
+    }
+
+    #[test]
+    fn slugify_underscores_become_dashes() {
+        assert_eq!(slugify("danni_banks"), "danni-banks");
     }
 
     // -- Format specifiers --
@@ -790,7 +800,7 @@ mod tests {
             ..Default::default()
         };
         let result = resolve_template("{project_slug}/{avatar_slug}", &ctx).unwrap();
-        assert_eq!(result.filename, "project_alpha/chloe");
+        assert_eq!(result.filename, "project-alpha/chloe");
     }
 
     // -- Pipeline code token --

@@ -40,8 +40,8 @@ pub fn scene_video_filename(
         name.push_str("topless_");
     }
 
-    // Content: lowercase snake_case scene type name
-    name.push_str(&scene_type_name.to_lowercase().replace(' ', "_"));
+    // Content: lowercase with dashes as word separator
+    name.push_str(&scene_type_name.to_lowercase().replace(' ', "-"));
 
     // Transition suffix
     if is_clothes_off {
@@ -85,7 +85,7 @@ pub fn pipeline_video_filename(
     // Replace {scene_type}.
     name = name.replace(
         "{scene_type}",
-        &scene_type_name.to_lowercase().replace(' ', "_"),
+        &scene_type_name.to_lowercase().replace(' ', "-"),
     );
 
     // Replace {transition}.
@@ -147,7 +147,7 @@ mod tests {
     fn topless_clothes_off_indexed() {
         assert_eq!(
             scene_video_filename("topless", "Slow Walk", true, Some(1)),
-            "topless_slow_walk_clothes_off_1.mp4"
+            "topless_slow-walk_clothes_off_1.mp4"
         );
     }
 
@@ -155,7 +155,7 @@ mod tests {
     fn multi_word_scene_type() {
         assert_eq!(
             scene_video_filename("clothed", "Hair Flip Idle", false, None),
-            "hair_flip_idle.mp4"
+            "hair-flip-idle.mp4"
         );
     }
 
@@ -165,11 +165,10 @@ mod tests {
     }
 
     #[test]
-    fn special_avatars_double_space() {
-        // Multiple spaces produce multiple underscores (no collapsing)
+    fn double_space_collapses() {
         assert_eq!(
             scene_video_filename("clothed", "Slow  Walk", false, None),
-            "slow__walk.mp4"
+            "slow--walk.mp4"
         );
     }
 
@@ -255,7 +254,7 @@ mod tests {
             let rules = make_rules("{scene_type}.mp4", &[], "");
             assert_eq!(
                 pipeline_video_filename(&rules, "clothed", "Hair Flip Idle", false, None),
-                "hair_flip_idle.mp4"
+                "hair-flip-idle.mp4"
             );
         }
     }

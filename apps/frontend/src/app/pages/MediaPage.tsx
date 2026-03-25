@@ -36,7 +36,7 @@ import {
   type Provenance,
 } from "@/features/media/types";
 import { variantMediaUrl, variantThumbnailUrl } from "@/features/media/utils";
-import { formatBytes, formatDateTime } from "@/lib/format";
+import { formatBytes, formatDateTime, slugify } from "@/lib/format";
 import { TERMINAL_STATUS_COLORS, TRACK_TEXT_COLORS } from "@/lib/ui-classes";
 import { toSelectOptions } from "@/lib/select-utils";
 import { usePipelineContextSafe } from "@/features/pipelines";
@@ -737,8 +737,8 @@ function ImagePreviewModal({
               onClick={() => {
                 if (!variant.file_path) return;
                 const ext = variant.file_path.split(".").pop() ?? "png";
-                const labelSuffix = variantTags.length > 0 ? `_[${variantTags.map((t) => t.display_name).join(",")}]` : "";
-                const filename = `${variant.project_name}_${variant.avatar_name}_${variant.variant_type ?? "other"}_${variant.variant_label}${labelSuffix}.${ext}`.replace(/\s+/g, "_").toLowerCase();
+                const labelSuffix = variantTags.length > 0 ? `_[${variantTags.map((t) => slugify(t.display_name)).join(",")}]` : "";
+                const filename = `${slugify(variant.project_name)}_${slugify(variant.avatar_name)}_${slugify(variant.variant_type ?? "other")}_${slugify(variant.variant_label)}${labelSuffix}.${ext}`;
                 const a = document.createElement("a");
                 a.href = variantMediaUrl(variant.file_path);
                 a.download = filename;

@@ -9,6 +9,7 @@ import type { DrawingObject } from "@/features/annotations/types";
 import { VideoPlayer } from "@/features/video-player/VideoPlayer";
 import { getStreamUrl } from "@/features/video-player";
 import { api } from "@/lib/api";
+import { slugify } from "@/lib/format";
 import { CollapsibleNotes } from "@/components/domain/CollapsibleNotes";
 import { TagInput } from "@/components/domain/TagInput";
 import type { TagInfo } from "@/components/domain/TagChip";
@@ -550,10 +551,10 @@ export function ClipPlaybackModal({ clip, onClose, onPrev, onNext, onApprove, on
                     onClick={() => {
                       const url = getStreamUrl("version", clip.id, "full");
                       const ext = clip.file_path?.split(".").pop() ?? "mp4";
-                      const labelSuffix = clipTags.length > 0 ? `_[${clipTags.map((t) => t.display_name).join(",")}]` : "";
-                      const filename = (meta
-                        ? `${meta.projectName}_${meta.avatarName}_${meta.sceneTypeName}_${meta.trackName}_v${clip.version_number}${labelSuffix}.${ext}`.replace(/\s+/g, "_")
-                        : `clip_v${clip.version_number}${labelSuffix}.${ext}`).toLowerCase();
+                      const labelSuffix = clipTags.length > 0 ? `_[${clipTags.map((t) => slugify(t.display_name)).join(",")}]` : "";
+                      const filename = meta
+                        ? `${slugify(meta.projectName)}_${slugify(meta.avatarName)}_${slugify(meta.sceneTypeName)}_${slugify(meta.trackName)}_v${clip.version_number}${labelSuffix}.${ext}`
+                        : `clip_v${clip.version_number}${labelSuffix}.${ext}`;
                       const a = document.createElement("a");
                       a.href = url;
                       a.download = filename;
