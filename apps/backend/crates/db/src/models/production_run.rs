@@ -30,6 +30,7 @@ pub struct ProductionRun {
 pub struct ProductionRunCell {
     pub id: DbId,
     pub run_id: DbId,
+    #[sqlx(rename = "character_id")]
     pub avatar_id: DbId,
     pub scene_type_id: DbId,
     pub track_id: Option<DbId>,
@@ -48,6 +49,7 @@ pub struct ProductionRunCell {
 pub struct ProductionRunMatrixCell {
     pub id: DbId,
     pub run_id: DbId,
+    #[sqlx(rename = "character_id")]
     pub avatar_id: DbId,
     pub scene_type_id: DbId,
     pub track_id: Option<DbId>,

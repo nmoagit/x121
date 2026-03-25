@@ -12,7 +12,7 @@ const COLUMNS: &str = "id, project_id, name, description, matrix_config, status_
      total_cells, completed_cells, failed_cells, estimated_gpu_hours, estimated_disk_gb, \
      created_by_id, started_at, completed_at, created_at, updated_at";
 
-const CELL_COLUMNS: &str = "id, run_id, avatar_id, scene_type_id, track_id, variant_label, \
+const CELL_COLUMNS: &str = "id, run_id, character_id, scene_type_id, track_id, variant_label, \
      status_id, scene_id, job_id, blocking_reason, error_message, created_at, updated_at";
 
 /// Provides CRUD operations for production runs and cells.
@@ -229,7 +229,7 @@ impl ProductionRunRepo {
     ) -> Result<ProductionRunCell, sqlx::Error> {
         let query = format!(
             "INSERT INTO production_run_cells \
-                (run_id, avatar_id, scene_type_id, track_id, variant_label) \
+                (run_id, character_id, scene_type_id, track_id, variant_label) \
              VALUES ($1, $2, $3, $4, $5) \
              RETURNING {CELL_COLUMNS}"
         );
@@ -261,7 +261,7 @@ impl ProductionRunRepo {
 
         let query = format!(
             "INSERT INTO production_run_cells \
-                (run_id, avatar_id, scene_type_id, track_id, variant_label) \
+                (run_id, character_id, scene_type_id, track_id, variant_label) \
              SELECT * FROM UNNEST($1::bigint[], $2::bigint[], $3::bigint[], $4::bigint[], $5::text[]) \
              RETURNING {CELL_COLUMNS}"
         );
@@ -283,7 +283,7 @@ impl ProductionRunRepo {
         let query = format!(
             "SELECT {CELL_COLUMNS} FROM production_run_cells \
              WHERE run_id = $1 \
-             ORDER BY avatar_id, scene_type_id, variant_label"
+             ORDER BY character_id, scene_type_id, variant_label"
         );
         sqlx::query_as::<_, ProductionRunCell>(&query)
             .bind(run_id)
@@ -297,7 +297,7 @@ impl ProductionRunRepo {
         run_id: DbId,
     ) -> Result<Vec<ProductionRunMatrixCell>, sqlx::Error> {
         sqlx::query_as::<_, ProductionRunMatrixCell>(
-            "SELECT prc.id, prc.run_id, prc.avatar_id, prc.scene_type_id, prc.track_id, \
+            "SELECT prc.id, prc.run_id, prc.character_id, prc.scene_type_id, prc.track_id, \
                     prc.variant_label, prc.status_id, prc.scene_id, prc.job_id, \
                     prc.blocking_reason, prc.error_message, prc.created_at, prc.updated_at, \
                     st.name AS scene_type_name, \
@@ -305,14 +305,14 @@ impl ProductionRunRepo {
                     CASE WHEN prc.track_id IS NOT NULL THEN \
                         EXISTS ( \
                             SELECT 1 FROM media_variants iv \
-                            WHERE iv.avatar_id = prc.avatar_id \
+                            WHERE iv.avatar_id = prc.character_id \
                               AND LOWER(iv.variant_type) = LOWER(t.slug) \
                               AND iv.deleted_at IS NULL \
                         ) \
                     ELSE \
                         EXISTS ( \
                             SELECT 1 FROM media_variants iv \
-                            WHERE iv.avatar_id = prc.avatar_id \
+                            WHERE iv.avatar_id = prc.character_id \
                               AND iv.deleted_at IS NULL \
                         ) \
                     END AS has_seed, \
@@ -321,7 +321,7 @@ impl ProductionRunRepo {
              JOIN scene_types st ON st.id = prc.scene_type_id \
              LEFT JOIN tracks t ON t.id = prc.track_id \
              WHERE prc.run_id = $1 \
-             ORDER BY prc.avatar_id, st.name, t.name NULLS FIRST",
+             ORDER BY prc.character_id, st.name, t.name NULLS FIRST",
         )
         .bind(run_id)
         .fetch_all(pool)
@@ -374,7 +374,7 @@ impl ProductionRunRepo {
         let query = format!(
             "SELECT {CELL_COLUMNS} FROM production_run_cells \
              WHERE run_id = $1 AND id = ANY($2) \
-             ORDER BY avatar_id, scene_type_id, variant_label"
+             ORDER BY character_id, scene_type_id, variant_label"
         );
         sqlx::query_as::<_, ProductionRunCell>(&query)
             .bind(run_id)
@@ -391,7 +391,7 @@ impl ProductionRunRepo {
         let query = format!(
             "SELECT {CELL_COLUMNS} FROM production_run_cells \
              WHERE run_id = $1 AND status_id = $2 \
-             ORDER BY avatar_id, scene_type_id, variant_label"
+             ORDER BY character_id, scene_type_id, variant_label"
         );
         sqlx::query_as::<_, ProductionRunCell>(&query)
             .bind(run_id)
@@ -413,7 +413,7 @@ impl ProductionRunRepo {
             "SELECT prc.id AS cell_id, s.id AS scene_id \
              FROM production_run_cells prc \
              JOIN scenes s \
-               ON s.avatar_id = prc.avatar_id \
+               ON s.avatar_id = prc.character_id \
               AND s.scene_type_id = prc.scene_type_id \
               AND s.track_id IS NOT DISTINCT FROM prc.track_id \
               AND s.deleted_at IS NULL \
@@ -441,7 +441,7 @@ impl ProductionRunRepo {
             "SELECT prc.id AS cell_id, s.id AS scene_id \
              FROM production_run_cells prc \
              JOIN scenes s \
-               ON s.avatar_id = prc.avatar_id \
+               ON s.avatar_id = prc.character_id \
               AND s.scene_type_id = prc.scene_type_id \
               AND s.track_id IS NOT DISTINCT FROM prc.track_id \
               AND s.deleted_at IS NULL \
@@ -531,7 +531,7 @@ impl ProductionRunRepo {
             "SELECT prc.id AS cell_id, s.id AS scene_id \
              FROM production_run_cells prc \
              JOIN scenes s \
-               ON s.avatar_id = prc.avatar_id \
+               ON s.avatar_id = prc.character_id \
               AND s.scene_type_id = prc.scene_type_id \
               AND s.track_id IS NOT DISTINCT FROM prc.track_id \
               AND s.deleted_at IS NULL \
@@ -560,7 +560,7 @@ impl ProductionRunRepo {
             "SELECT prc.id AS cell_id, s.id AS scene_id \
              FROM production_run_cells prc \
              JOIN scenes s \
-               ON s.avatar_id = prc.avatar_id \
+               ON s.avatar_id = prc.character_id \
               AND s.scene_type_id = prc.scene_type_id \
               AND s.track_id IS NOT DISTINCT FROM prc.track_id \
               AND s.deleted_at IS NULL \
@@ -615,7 +615,7 @@ impl ProductionRunRepo {
     ) -> Result<u64, sqlx::Error> {
         let result = sqlx::query(
             "UPDATE production_run_cells SET status_id = $3 \
-             WHERE run_id = $1 AND avatar_id = $2 AND status_id NOT IN ($3)",
+             WHERE run_id = $1 AND character_id = $2 AND status_id NOT IN ($3)",
         )
         .bind(run_id)
         .bind(avatar_id)
@@ -632,7 +632,7 @@ impl ProductionRunRepo {
         avatar_id: DbId,
     ) -> Result<u64, sqlx::Error> {
         let result =
-            sqlx::query("DELETE FROM production_run_cells WHERE run_id = $1 AND avatar_id = $2")
+            sqlx::query("DELETE FROM production_run_cells WHERE run_id = $1 AND character_id = $2")
                 .bind(run_id)
                 .bind(avatar_id)
                 .execute(pool)
