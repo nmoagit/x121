@@ -175,7 +175,7 @@ async fn fetch_labels_for_entities(
 
     Ok(map
         .into_iter()
-        .map(|(id, names)| (id, names.join("_")))
+        .map(|(id, names)| (id, names.join(",")))
         .collect())
 }
 
@@ -249,7 +249,7 @@ async fn resolve_scene_video_versions(
         // Build filename: {project}_{avatar}_{scene_type}_{track}_v{version}[_{labels}].ext
         let label_suffix = labels
             .get(&row.id)
-            .map(|l| format!("_{}", slugify(l)))
+            .map(|l| format!("_[{}]", l))
             .unwrap_or_default();
         let filename = format!(
             "{}_{}_{}_{}_v{}{}.{ext}",
@@ -348,7 +348,7 @@ async fn resolve_media_variants(
         // Build filename: {project}_{avatar}_{variant_type}_{variant_label}[_{labels}].ext
         let label_suffix = labels
             .get(&row.id)
-            .map(|l| format!("_{}", slugify(l)))
+            .map(|l| format!("_[{}]", l))
             .unwrap_or_default();
         let filename = format!(
             "{}_{}_{}_{}{}.{ext}",
