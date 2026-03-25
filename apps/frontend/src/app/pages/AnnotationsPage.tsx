@@ -471,7 +471,7 @@ export function AnnotationsPage() {
           description="No frame annotations match the current filters. Annotations are created when reviewing clips and scene versions."
         />
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 min-[1500px]:grid-cols-7 min-[1700px]:grid-cols-8 gap-4">
           {filteredItems.map((item) => (
             <AnnotationCard
               key={item.annotation_id}
