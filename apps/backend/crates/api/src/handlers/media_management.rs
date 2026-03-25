@@ -278,11 +278,11 @@ pub async fn get_seed_summary(
            -- Exclude scene types disabled at project level (unless re-enabled at avatar level)
            AND COALESCE(
              (SELECT aso.is_enabled FROM avatar_scene_overrides aso
-              WHERE aso.avatar_id = s.avatar_id AND aso.scene_type_id = st.id),
+              WHERE aso.avatar_id = s.avatar_id AND aso.scene_type_id = st.id LIMIT 1),
              (SELECT gss.is_enabled FROM group_scene_settings gss
-              WHERE gss.group_id = a.group_id AND gss.scene_type_id = st.id),
+              WHERE gss.group_id = a.group_id AND gss.scene_type_id = st.id LIMIT 1),
              (SELECT pss.is_enabled FROM project_scene_settings pss
-              WHERE pss.project_id = a.project_id AND pss.scene_type_id = st.id),
+              WHERE pss.project_id = a.project_id AND pss.scene_type_id = st.id LIMIT 1),
              true
            ) = true
          ORDER BY st.id, COALESCE(t.id, 0), st.sort_order, st.name",
@@ -492,11 +492,11 @@ pub async fn auto_assign_seeds(
          WHERE s.avatar_id = $1 AND s.deleted_at IS NULL
            AND COALESCE(
              (SELECT aso.is_enabled FROM avatar_scene_overrides aso
-              WHERE aso.avatar_id = s.avatar_id AND aso.scene_type_id = st.id),
+              WHERE aso.avatar_id = s.avatar_id AND aso.scene_type_id = st.id LIMIT 1),
              (SELECT gss.is_enabled FROM group_scene_settings gss
-              WHERE gss.group_id = a.group_id AND gss.scene_type_id = st.id),
+              WHERE gss.group_id = a.group_id AND gss.scene_type_id = st.id LIMIT 1),
              (SELECT pss.is_enabled FROM project_scene_settings pss
-              WHERE pss.project_id = a.project_id AND pss.scene_type_id = st.id),
+              WHERE pss.project_id = a.project_id AND pss.scene_type_id = st.id LIMIT 1),
              true
            ) = true
          ORDER BY st.id, COALESCE(t.id, 0), st.sort_order, st.name",
