@@ -598,7 +598,11 @@ export function MediaPage() {
         onSelectAllMatching={() => bulk.selectAll(total)}
         isAllPageSelected={bulk.isAllPageSelected(pageIds)}
         pageItemCount={filteredVariants.length}
-      />
+      >
+        {bulkOps.exportJob && (
+          <ExportStatusPanel job={bulkOps.exportJob} onDismiss={bulkOps.dismissExport} />
+        )}
+      </BulkActionBar>
 
       {/* Bulk reject dialog */}
       <BulkRejectDialog
@@ -620,13 +624,6 @@ export function MediaPage() {
         onCancel={() => bulkOps.setLabelDialogOpen(null)}
       />
 
-      {/* Export status panel */}
-      {bulkOps.exportJob && (
-        <ExportStatusPanel
-          job={bulkOps.exportJob}
-          onDismiss={bulkOps.dismissExport}
-        />
-      )}
     </Stack>
   );
 }

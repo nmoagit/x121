@@ -1,3 +1,5 @@
+import type { ReactNode } from "react";
+
 import { Button } from "@/components/primitives";
 import { CheckCircle, Download, Minus, Tag, X, XCircle } from "@/tokens/icons";
 
@@ -14,6 +16,8 @@ interface BulkActionBarProps {
   onSelectAllMatching: () => void;
   isAllPageSelected: boolean;
   pageItemCount: number;
+  /** Optional content rendered above the action row (e.g. ExportStatusPanel). */
+  children?: ReactNode;
 }
 
 /**
@@ -34,6 +38,7 @@ export function BulkActionBar({
   onSelectAllMatching,
   isAllPageSelected,
   pageItemCount,
+  children,
 }: BulkActionBarProps) {
   if (selectedCount === 0) return null;
 
@@ -54,6 +59,9 @@ export function BulkActionBar({
           </button>
         </div>
       )}
+
+      {/* Optional slot (e.g. export status panel) */}
+      {children}
 
       {/* Action row */}
       <div className="flex items-center justify-between gap-4 px-4 py-2.5">

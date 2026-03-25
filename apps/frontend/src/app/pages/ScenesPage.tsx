@@ -654,7 +654,11 @@ export function ScenesPage() {
         onSelectAllMatching={() => bulk.selectAll(total)}
         isAllPageSelected={bulk.isAllPageSelected(pageIds)}
         pageItemCount={filteredClips.length}
-      />
+      >
+        {bulkOps.exportJob && (
+          <ExportStatusPanel job={bulkOps.exportJob} onDismiss={bulkOps.dismissExport} />
+        )}
+      </BulkActionBar>
 
       {/* Bulk reject dialog */}
       <BulkRejectDialog
@@ -676,13 +680,6 @@ export function ScenesPage() {
         onCancel={() => bulkOps.setLabelDialogOpen(null)}
       />
 
-      {/* Export status panel */}
-      {bulkOps.exportJob && (
-        <ExportStatusPanel
-          job={bulkOps.exportJob}
-          onDismiss={bulkOps.dismissExport}
-        />
-      )}
     </Stack>
   );
 }

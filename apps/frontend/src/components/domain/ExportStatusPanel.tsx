@@ -18,7 +18,7 @@ export function ExportStatusPanel({ job, onDismiss }: ExportStatusPanelProps) {
   const isActive = job.status === "queued" || job.status === "processing";
 
   return (
-    <div className="fixed bottom-14 left-0 right-0 z-40 bg-[#161b22] border-t border-[var(--color-border-default)] px-4 py-2.5">
+    <div className="bg-[#161b22] border-t border-[var(--color-border-default)] px-4 py-2.5">
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-3 font-mono text-xs">
           {/* Status indicator */}
@@ -58,6 +58,8 @@ export function ExportStatusPanel({ job, onDismiss }: ExportStatusPanelProps) {
                 key={part.part}
                 href={`${API_BASE_URL}/exports/${job.id}/download/${part.part}`}
                 download
+                target="_blank"
+                rel="noopener noreferrer"
                 className="inline-flex items-center gap-1 rounded px-2 py-1 font-mono text-[10px] bg-[#0d1117] text-[var(--color-text-primary)] hover:bg-[#1c2128] transition-colors border border-[var(--color-border-default)]"
               >
                 <Download size={10} />
