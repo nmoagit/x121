@@ -6,14 +6,10 @@
 import { useMemo, useState } from "react";
 
 import { Stack } from "@/components/layout";
-import { EmptyState } from "@/components/domain";
+import { EmptyState, TerminalSection } from "@/components/domain";
 import { API_BASE_URL } from "@/lib/api";
 import { formatDateTime } from "@/lib/format";
 import {
-  TERMINAL_PANEL,
-  TERMINAL_HEADER,
-  TERMINAL_HEADER_TITLE,
-  TERMINAL_BODY,
   TERMINAL_TH,
   TERMINAL_DIVIDER,
   TERMINAL_ROW_HOVER,
@@ -140,11 +136,7 @@ export function ProjectDeliveryTab({ projectId }: ProjectDeliveryTabProps) {
         )}
 
         {statuses.length > 0 && (
-          <div className={TERMINAL_PANEL}>
-            <div className={TERMINAL_HEADER}>
-              <span className={TERMINAL_HEADER_TITLE}>Model Delivery Status</span>
-            </div>
-            <div className={TERMINAL_BODY}>
+          <TerminalSection title="Avatar Delivery Status" collapsible>
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
@@ -196,8 +188,7 @@ export function ProjectDeliveryTab({ projectId }: ProjectDeliveryTabProps) {
                   </tbody>
                 </table>
               </div>
-            </div>
-          </div>
+          </TerminalSection>
         )}
       </section>
 
