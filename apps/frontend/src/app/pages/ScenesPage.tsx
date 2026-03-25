@@ -55,7 +55,8 @@ function BrowseClipItem({
   // Lazy-load video: only mount when the card enters the viewport
   const ref = useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = useState(false);
-  const [videoLoaded, setVideoLoaded] = useState(false);
+  const [videoReady, setVideoReady] = useState(false);
+  const videoSrc = getStreamUrl("version", clip.id, "proxy");
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
@@ -66,6 +67,17 @@ function BrowseClipItem({
     observer.observe(el);
     return () => observer.disconnect();
   }, []);
+
+  // Preload video offscreen once visible — only mount <video> when metadata is ready.
+  useEffect(() => {
+    if (!isVisible || isPurgedClip(clip)) return;
+    const v = document.createElement("video");
+    v.preload = "metadata";
+    v.muted = true;
+    v.src = videoSrc;
+    v.onloadeddata = () => setVideoReady(true);
+    return () => { v.src = ""; v.onloadeddata = null; };
+  }, [isVisible, videoSrc, clip]);
 
   return (
     <div
@@ -97,20 +109,18 @@ function BrowseClipItem({
             onClick={onPlay}
             className="group/play relative h-14 w-20 shrink-0 rounded overflow-hidden bg-[#161b22] cursor-pointer"
           >
-            {isVisible && (
+            {videoReady ? (
               <video
-                src={getStreamUrl("version", clip.id, "proxy")}
-                className={`absolute inset-0 w-full h-full object-cover ${videoLoaded ? "opacity-100" : "opacity-0"}`}
+                src={videoSrc}
+                className="absolute inset-0 w-full h-full object-cover"
                 preload="metadata"
                 muted
-                onLoadedData={() => setVideoLoaded(true)}
               />
-            )}
-            {isVisible && !videoLoaded && (
+            ) : isVisible ? (
               <div className="absolute inset-0 flex items-center justify-center">
                 <ContextLoader size={14} />
               </div>
-            )}
+            ) : null}
             <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover/play:opacity-100 transition-opacity">
               <Play size={18} className="text-white" />
             </div>
@@ -199,7 +209,8 @@ function BrowseClipCard({
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = useState(false);
-  const [videoLoaded, setVideoLoaded] = useState(false);
+  const [videoReady, setVideoReady] = useState(false);
+  const videoSrc = getStreamUrl("version", clip.id, "proxy");
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
@@ -210,6 +221,17 @@ function BrowseClipCard({
     observer.observe(el);
     return () => observer.disconnect();
   }, []);
+
+  // Preload video offscreen once visible.
+  useEffect(() => {
+    if (!isVisible || isPurgedClip(clip)) return;
+    const v = document.createElement("video");
+    v.preload = "metadata";
+    v.muted = true;
+    v.src = videoSrc;
+    v.onloadeddata = () => setVideoReady(true);
+    return () => { v.src = ""; v.onloadeddata = null; };
+  }, [isVisible, videoSrc, clip]);
 
   return (
     <div
@@ -243,22 +265,20 @@ function BrowseClipCard({
           onClick={onPlay}
           className="group/play relative aspect-video w-full cursor-pointer bg-[#161b22]"
         >
-          {isVisible && (
+          {videoReady ? (
             <video
-              src={getStreamUrl("version", clip.id, "proxy")}
-              className={`absolute inset-0 w-full h-full object-cover ${videoLoaded ? "opacity-100" : "opacity-0"}`}
+              src={videoSrc}
+              className="absolute inset-0 w-full h-full object-cover"
               autoPlay
               loop
               muted
               playsInline
-              onLoadedData={() => setVideoLoaded(true)}
             />
-          )}
-          {isVisible && !videoLoaded && (
+          ) : isVisible ? (
             <div className="absolute inset-0 flex items-center justify-center">
               <ContextLoader size={20} />
             </div>
-          )}
+          ) : null}
           <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover/play:opacity-100 transition-opacity">
             <Play size={24} className="text-white drop-shadow-lg" />
           </div>

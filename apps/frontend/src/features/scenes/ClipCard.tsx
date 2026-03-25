@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
 import { Button } from "@/components/primitives/Button";
 import { ContextLoader } from "@/components/primitives";
@@ -11,10 +11,20 @@ import { ClipQAActions } from "./ClipQAActions";
 import { GenerationSnapshotPanel } from "./GenerationSnapshotPanel";
 import { type SceneVideoVersion, isEmptyClip, isPurgedClip } from "./types";
 
-/** Video thumbnail with ContextLoader overlay while loading. */
+/** Video thumbnail — preloads offscreen, only mounts <video> once metadata is ready. */
 function VideoThumbnail({ clipId, onPlay }: { clipId: number; onPlay: () => void }) {
-  const [loaded, setLoaded] = useState(false);
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const [ready, setReady] = useState(false);
+  const src = getStreamUrl("version", clipId, "proxy");
+
+  // Preload video metadata offscreen so the browser spinner never appears.
+  useEffect(() => {
+    const v = document.createElement("video");
+    v.preload = "metadata";
+    v.muted = true;
+    v.src = src;
+    v.onloadeddata = () => setReady(true);
+    return () => { v.src = ""; v.onloadeddata = null; };
+  }, [src]);
 
   return (
     <button
@@ -22,15 +32,14 @@ function VideoThumbnail({ clipId, onPlay }: { clipId: number; onPlay: () => void
       onClick={onPlay}
       className="group/play relative h-16 w-24 shrink-0 rounded overflow-hidden bg-[var(--color-surface-tertiary)]"
     >
-      <video
-        ref={videoRef}
-        src={getStreamUrl("version", clipId, "proxy")}
-        className={`absolute inset-0 w-full h-full object-cover ${loaded ? "opacity-100" : "opacity-0"}`}
-        preload="metadata"
-        muted
-        onLoadedData={() => setLoaded(true)}
-      />
-      {!loaded && (
+      {ready ? (
+        <video
+          src={src}
+          className="absolute inset-0 w-full h-full object-cover"
+          preload="metadata"
+          muted
+        />
+      ) : (
         <div className="absolute inset-0 flex items-center justify-center">
           <ContextLoader size={16} />
         </div>
