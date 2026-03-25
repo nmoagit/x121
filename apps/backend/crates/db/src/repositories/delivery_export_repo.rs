@@ -8,7 +8,7 @@ use crate::models::delivery_export::{CreateDeliveryExport, DeliveryExport};
 use crate::models::status::StatusId;
 
 const COLUMNS: &str = "id, project_id, format_profile_id, status_id, exported_by, \
-     include_watermark, avatars_json, file_path, file_size_bytes, \
+     include_watermark, characters_json, file_path, file_size_bytes, \
      validation_results_json, error_message, started_at, completed_at, \
      created_at, updated_at";
 
@@ -23,7 +23,7 @@ impl DeliveryExportRepo {
     ) -> Result<DeliveryExport, sqlx::Error> {
         let query = format!(
             "INSERT INTO delivery_exports \
-                (project_id, format_profile_id, exported_by, include_watermark, avatars_json) \
+                (project_id, format_profile_id, exported_by, include_watermark, characters_json) \
              VALUES ($1, $2, $3, $4, $5) \
              RETURNING {COLUMNS}"
         );
@@ -193,7 +193,7 @@ impl DeliveryExportRepo {
                     FROM delivery_exports \
                     WHERE project_id = $1 \
                       AND status_id = {completed} \
-                      AND (avatars_json IS NULL OR avatars_json @> to_jsonb(c.id)) \
+                      AND (characters_json IS NULL OR characters_json @> to_jsonb(c.id)) \
                     ORDER BY completed_at DESC \
                     LIMIT 1 \
                  ) de ON TRUE \

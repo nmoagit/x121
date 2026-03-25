@@ -15,6 +15,7 @@ pub struct DeliveryExport {
     pub status_id: StatusId,
     pub exported_by: DbId,
     pub include_watermark: bool,
+    #[sqlx(rename = "characters_json")]
     pub avatars_json: Option<serde_json::Value>,
     pub file_path: Option<String>,
     pub file_size_bytes: Option<i64>,
