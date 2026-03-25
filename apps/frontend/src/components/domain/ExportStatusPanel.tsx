@@ -3,7 +3,7 @@
  * Displays progress indicator, error messages, and download links for completed parts.
  */
 
-import { useCallback } from "react";
+import { useCallback, useEffect, useRef } from "react";
 
 import { Button } from "@/components/primitives";
 import { API_BASE_URL } from "@/lib/api";
@@ -20,6 +20,7 @@ interface ExportStatusPanelProps {
 
 export function ExportStatusPanel({ job, onDismiss }: ExportStatusPanelProps) {
   const isActive = job.status === "queued" || job.status === "processing";
+  const autoDownloadedRef = useRef<number | null>(null);
 
   const handleDownloadPart = useCallback(
     async (part: ExportPart) => {
@@ -34,6 +35,18 @@ export function ExportStatusPanel({ job, onDismiss }: ExportStatusPanelProps) {
     },
     [job.id],
   );
+
+  // Auto-download all parts when the job completes.
+  useEffect(() => {
+    if (job.status !== "completed") return;
+    if (autoDownloadedRef.current === job.id) return;
+    autoDownloadedRef.current = job.id;
+
+    // Stagger downloads slightly so the browser doesn't block them.
+    job.parts.forEach((part, i) => {
+      setTimeout(() => handleDownloadPart(part), i * 500);
+    });
+  }, [job.status, job.id, job.parts, handleDownloadPart]);
 
   return (
     <div className="bg-[#161b22] border-t border-[var(--color-border-default)] px-4 py-2.5">
