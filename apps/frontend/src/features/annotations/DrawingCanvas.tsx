@@ -40,6 +40,8 @@ interface DrawingCanvasProps {
   onAnnotationsChange?: (annotations: DrawingObject[]) => void;
   /** Whether the canvas is in edit mode. */
   editable?: boolean;
+  /** Initial tool to select on mount. */
+  initialTool?: DrawingTool;
   /** When true, renders as a transparent overlay (no border, toolbar floats at top). */
   overlay?: boolean;
 }
@@ -263,10 +265,11 @@ export function DrawingCanvas({
   onAnnotationComplete,
   onAnnotationsChange,
   editable = true,
+  initialTool,
   overlay = false,
 }: DrawingCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [activeTool, setActiveTool] = useState<DrawingTool>("pen");
+  const [activeTool, setActiveTool] = useState<DrawingTool>(initialTool ?? "pen");
   const [color, setColor] = useState("#FF0000");
   const [strokeWidth, setStrokeWidth] = useState(2);
   const [isDrawing, setIsDrawing] = useState(false);
@@ -278,6 +281,8 @@ export function DrawingCanvas({
   const [textPlacement, setTextPlacement] = useState<Point | null>(null);
   const [dragging, setDragging] = useState<DragState | null>(null);
   const [dragPos, setDragPos] = useState<Point | null>(null);
+  /** Indices of existing annotations that have been moved (replaced by undoStack entries). */
+  const [movedExistingIndices, setMovedExistingIndices] = useState<Set<number>>(new Set());
 
   const allAnnotations = [...existingAnnotations, ...undoStack];
   const totalCount = allAnnotations.length;
@@ -302,6 +307,8 @@ export function DrawingCanvas({
 
     for (let i = 0; i < allAnnotations.length; i++) {
       const obj = allAnnotations[i]!;
+      // Skip existing annotations that have been moved (their replacement is in undoStack)
+      if (i < existingAnnotations.length && movedExistingIndices.has(i)) continue;
       // If this annotation is being dragged, render at the drag position instead.
       if (dragging && dragPos && i === dragging.annotationIndex && obj.tool === "text") {
         const d = obj.data as Record<string, unknown>;
@@ -400,16 +407,10 @@ export function DrawingCanvas({
       };
 
       if (dragging.isExisting) {
-        // Clone the existing annotation into undoStack with the new position.
-        // The original stays rendered at the old position via existingAnnotations,
-        // but we visually override it by pushing a replacement to the undoStack.
-        // To avoid duplication, we also need to track that the existing one is "moved".
-        // Simplest: push the moved copy to undoStack — the original in existing
-        // will still render, but the new one draws on top.
-        // A cleaner approach: replace in undoStack with a move marker.
-        // For now, just push the moved annotation.
+        // Push moved copy to undoStack and mark original as replaced
         setUndoStack((prev) => [...prev, movedAnnotation]);
         setRedoStack([]);
+        setMovedExistingIndices((prev) => new Set([...prev, dragging.annotationIndex]));
       } else {
         // Update the annotation in-place in the undoStack.
         const undoIdx = dragging.annotationIndex - existingAnnotations.length;
@@ -531,7 +532,7 @@ export function DrawingCanvas({
               <button
                 key={tool}
                 type="button"
-                className={`px-1.5 py-0.5 rounded text-xs font-medium transition-colors ${
+                className={`px-1.5 py-0.5 rounded text-[10px] font-mono transition-colors ${
                   activeTool === tool
                     ? "bg-[var(--color-action-primary)] text-white"
                     : "text-white/70 hover:text-white hover:bg-white/10"
@@ -560,7 +561,7 @@ export function DrawingCanvas({
             {/* Undo / Redo */}
             <button
               type="button"
-              className="px-1 py-0.5 text-xs text-white/70 hover:text-white disabled:text-white/30 transition-colors"
+              className="px-1 py-0.5 text-[10px] font-mono text-white/70 hover:text-white disabled:text-white/30 transition-colors"
               onClick={handleUndo}
               disabled={undoStack.length === 0}
               data-testid="undo-button"
@@ -569,7 +570,7 @@ export function DrawingCanvas({
             </button>
             <button
               type="button"
-              className="px-1 py-0.5 text-xs text-white/70 hover:text-white disabled:text-white/30 transition-colors"
+              className="px-1 py-0.5 text-[10px] font-mono text-white/70 hover:text-white disabled:text-white/30 transition-colors"
               onClick={handleRedo}
               disabled={redoStack.length === 0}
               data-testid="redo-button"
@@ -609,7 +610,7 @@ export function DrawingCanvas({
                 ))}
                 <input
                   type="text"
-                  className="ml-1 w-16 rounded border border-white/20 bg-white/10 px-1 py-0.5 text-xs text-white"
+                  className="ml-1 w-16 rounded border border-white/20 bg-white/10 px-1 py-0.5 text-[10px] font-mono text-white"
                   value={color}
                   onChange={(e) => setColor(e.target.value)}
                   placeholder="#RRGGBB"
@@ -620,7 +621,7 @@ export function DrawingCanvas({
               <div className="mx-0.5 h-4 w-px bg-white/20" />
 
               <div className="flex items-center gap-1" data-testid="stroke-width">
-                <span className="text-xs text-white/60">Width</span>
+                <span className="text-[10px] font-mono text-white/60">Width</span>
                 <input
                   id="stroke-width-slider"
                   type="range"
@@ -632,7 +633,7 @@ export function DrawingCanvas({
                   className="w-16"
                   data-testid="stroke-width-slider"
                 />
-                <span className="w-4 text-center text-xs text-white/60">
+                <span className="w-4 text-center text-[10px] font-mono text-white/60">
                   {strokeWidth}
                 </span>
               </div>
@@ -750,7 +751,7 @@ export function DrawingCanvas({
           data-testid="annotation-canvas"
         />
         {/* Annotation count overlay */}
-        <div className={`absolute ${overlay ? "bottom-2 right-2" : "bottom-1 right-1"} rounded bg-black/50 px-1.5 py-0.5 text-xs text-white`}>
+        <div className={`absolute ${overlay ? "bottom-2 right-2" : "bottom-1 right-1"} rounded bg-black/50 px-1.5 py-0.5 text-[10px] font-mono text-white`}>
           {totalCount} annotation{totalCount !== 1 ? "s" : ""}
         </div>
 
@@ -759,6 +760,8 @@ export function DrawingCanvas({
           <TextLabel
             x={textPlacement.x}
             y={textPlacement.y}
+            canvasWidth={width}
+            canvasHeight={height}
             initialColor={color}
             onConfirm={handleTextConfirm}
             onCancel={handleTextCancel}

@@ -18,7 +18,7 @@ export function QualitySelector({
         type="button"
         onClick={() => onQualityChange("proxy")}
         className={cn(
-          "px-[var(--spacing-2)] py-0.5 text-xs rounded-[var(--radius-sm)]",
+          "px-[var(--spacing-2)] py-0.5 text-[10px] font-mono rounded-[var(--radius-sm)]",
           "transition-colors duration-[var(--duration-fast)]",
           quality === "proxy"
             ? "bg-[var(--color-action-primary)] text-white"
@@ -32,7 +32,7 @@ export function QualitySelector({
         type="button"
         onClick={() => onQualityChange("full")}
         className={cn(
-          "px-[var(--spacing-2)] py-0.5 text-xs rounded-[var(--radius-sm)]",
+          "px-[var(--spacing-2)] py-0.5 text-[10px] font-mono rounded-[var(--radius-sm)]",
           "transition-colors duration-[var(--duration-fast)]",
           quality === "full"
             ? "bg-[var(--color-action-primary)] text-white"

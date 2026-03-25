@@ -95,7 +95,7 @@ export function TransportControls({
           type="button"
           onClick={() => loop.setInPoint(player.currentFrame)}
           className={cn(
-            "px-[var(--spacing-1)] py-0.5 text-xs rounded-[var(--radius-sm)] transition-colors",
+            "px-[var(--spacing-1)] py-0.5 text-[10px] font-mono rounded-[var(--radius-sm)] transition-colors",
             loop.inPoint !== null
               ? "bg-[var(--color-status-warning)] text-[var(--color-text-inverse)]"
               : "text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]",
@@ -108,7 +108,7 @@ export function TransportControls({
           type="button"
           onClick={() => loop.setOutPoint(player.currentFrame)}
           className={cn(
-            "px-[var(--spacing-1)] py-0.5 text-xs rounded-[var(--radius-sm)] transition-colors",
+            "px-[var(--spacing-1)] py-0.5 text-[10px] font-mono rounded-[var(--radius-sm)] transition-colors",
             loop.outPoint !== null
               ? "bg-[var(--color-status-warning)] text-[var(--color-text-inverse)]"
               : "text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]",

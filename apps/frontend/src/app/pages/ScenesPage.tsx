@@ -9,7 +9,7 @@ import { useNavigate } from "@tanstack/react-router";
 
 import { EmptyState } from "@/components/domain";
 import { PageHeader, Stack } from "@/components/layout";
-import { Button, MultiFilterBar, Select, Toggle ,  WireframeLoader } from "@/components/primitives";
+import { Button, MultiFilterBar, SearchInput, Select, Toggle ,  WireframeLoader } from "@/components/primitives";
 import type { FilterConfig, FilterOption  } from "@/components/primitives";
 import { useClipsBrowse, useBrowseApproveClip, useBrowseUnapproveClip, useBrowseRejectClip } from "@/features/scenes/hooks/useClipManagement";
 import type { ClipBrowseItem } from "@/features/scenes/hooks/useClipManagement";
@@ -292,12 +292,20 @@ export function ScenesPage() {
   const [sceneTypeFilter, setSceneTypeFilter] = useState<string[]>([]);
   const [trackFilter, setTrackFilter] = useState<string[]>([]);
   const [labelFilter, setLabelFilter] = useState<number[]>([]);
+  const [searchInput, setSearchInput] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   // Absolute index across all pages (0 to total-1), not page-local
   const [playingAbsIndex, setPlayingAbsIndex] = useState<number | null>(null);
   const [showDisabled, setShowDisabled] = useState(false);
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState<number>(DEFAULT_PAGE_SIZE);
+
+  // Debounce search
+  useEffect(() => {
+    const t = setTimeout(() => { setDebouncedSearch(searchInput); setPage(0); }, 300);
+    return () => clearTimeout(t);
+  }, [searchInput]);
 
   const pipelineCtx = usePipelineContextSafe();
   const { data: projects } = useProjects(pipelineCtx?.pipelineId);
@@ -312,6 +320,7 @@ export function ScenesPage() {
     qaStatus: statusFilter.length > 0 ? statusFilter.join(",") : undefined,
     showDisabled,
     tagIds: labelFilter.length > 0 ? labelFilter.join(",") : undefined,
+    search: debouncedSearch || undefined,
     limit: pageSize,
     offset: page * pageSize,
   });
@@ -397,6 +406,14 @@ export function ScenesPage() {
       <PageHeader
         title="Scenes"
         description="Browse all generated scene clips, most recent first."
+      />
+
+      {/* Search */}
+      <SearchInput
+        value={searchInput}
+        onChange={(e) => setSearchInput(e.target.value)}
+        placeholder="Search by avatar, scene type, track, project..."
+        size="sm"
       />
 
       {/* Filter bar */}

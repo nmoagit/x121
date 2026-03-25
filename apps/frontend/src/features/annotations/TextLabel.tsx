@@ -17,10 +17,14 @@ import { COLOR_PRESETS, MAX_TEXT_LENGTH } from "./types";
    -------------------------------------------------------------------------- */
 
 interface TextLabelProps {
-  /** X position where the text was placed. */
+  /** X position where the text was placed (0-1 normalized). */
   x: number;
-  /** Y position where the text was placed. */
+  /** Y position where the text was placed (0-1 normalized). */
   y: number;
+  /** Canvas width in pixels — used to convert normalized coords to pixel position. */
+  canvasWidth?: number;
+  /** Canvas height in pixels. */
+  canvasHeight?: number;
   /** Initial text content. */
   initialText?: string;
   /** Initial color. */
@@ -42,6 +46,8 @@ const FONT_SIZES = [12, 14, 16, 20, 24, 32] as const;
 export function TextLabel({
   x,
   y,
+  canvasWidth = 1,
+  canvasHeight = 1,
   initialText = "",
   initialColor = "#FF0000",
   initialFontSize = 16,
@@ -72,13 +78,16 @@ export function TextLabel({
 
   return (
     <div
-      className="absolute z-10 flex flex-col gap-1 rounded border border-[var(--color-border-default)] bg-[var(--color-surface-primary)] p-2 shadow-lg"
-      style={{ left: x, top: y }}
+      className="absolute z-30 flex flex-col gap-1 rounded border border-[var(--color-border-default)] bg-[var(--color-surface-primary)] p-2 shadow-lg font-mono"
+      style={{
+        left: Math.min(x <= 1.5 ? x * canvasWidth : x, canvasWidth - 210),
+        top: Math.max(44, y <= 1.5 ? y * canvasHeight : y),
+      }}
       data-testid="text-label"
     >
       {/* Text input */}
       <textarea
-        className="min-h-[60px] w-48 resize-none rounded border border-[var(--color-border-default)] bg-[var(--color-surface-secondary)] px-2 py-1 text-sm"
+        className="min-h-[60px] w-48 resize-none rounded border border-[var(--color-border-default)] bg-[var(--color-surface-secondary)] px-2 py-1 text-xs font-mono"
         value={text}
         onChange={(e) =>
           setText(e.target.value.slice(0, MAX_TEXT_LENGTH))
@@ -89,15 +98,15 @@ export function TextLabel({
         autoFocus
       />
 
-      <div className="text-right text-xs text-[var(--color-text-muted)]">
+      <div className="text-right text-[10px] text-[var(--color-text-muted)]">
         {text.length}/{MAX_TEXT_LENGTH}
       </div>
 
       {/* Font size selector */}
       <div className="flex items-center gap-1" data-testid="font-size-selector">
-        <span className="text-xs text-[var(--color-text-muted)]">Size</span>
+        <span className="text-[10px] text-[var(--color-text-muted)]">Size</span>
         <select
-          className="rounded border border-[var(--color-border-default)] bg-[var(--color-surface-secondary)] px-1 py-0.5 text-xs"
+          className="rounded border border-[var(--color-border-default)] bg-[var(--color-surface-secondary)] px-1 py-0.5 text-[10px]"
           value={fontSize}
           onChange={(e) => setFontSize(Number(e.target.value))}
           data-testid="font-size-select"

@@ -1,5 +1,6 @@
 import { api } from "@/lib/api";
 import { cn } from "@/lib/cn";
+import { Chip } from "@/components/primitives/Chip";
 import { useCallback, useEffect, useState } from "react";
 import { TagChip } from "./TagChip";
 import type { TagWithCount } from "./TagChip";
@@ -163,37 +164,16 @@ export function TagFilter({
           {tags.map((tag) => {
             const isSelected = selectedSet.has(tag.id);
             return (
-              <button
+              <Chip
                 key={tag.id}
-                type="button"
+                size="sm"
+                color={tag.color}
+                active={isSelected}
                 onClick={() => toggleTag(tag.id)}
-                className={cn(
-                  "inline-flex items-center gap-1 rounded-[var(--radius-full)]",
-                  "text-xs px-2 py-0.5",
-                  "border transition-all duration-150",
-                  "focus:outline-none focus:ring-1 focus:ring-[var(--color-border-focus)]",
-                  isSelected
-                    ? "bg-[var(--color-action-primary)]/15 text-[var(--color-action-primary)] border-[var(--color-action-primary)]"
-                    : "bg-[var(--color-surface-tertiary)] text-[var(--color-text-secondary)] border-[var(--color-border-default)] hover:border-[var(--color-text-muted)]",
-                )}
-                style={
-                  tag.color && isSelected
-                    ? { borderColor: tag.color, backgroundColor: `${tag.color}20` }
-                    : undefined
-                }
               >
-                <span>{tag.display_name}</span>
-                <span
-                  className={cn(
-                    "text-[0.65rem] leading-none",
-                    isSelected
-                      ? "text-[var(--color-action-primary)]"
-                      : "text-[var(--color-text-muted)]",
-                  )}
-                >
-                  {tag.usage_count}
-                </span>
-              </button>
+                {tag.display_name}
+                <span className="text-[0.6rem] leading-none opacity-50">{tag.usage_count}</span>
+              </Chip>
             );
           })}
         </div>

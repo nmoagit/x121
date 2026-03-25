@@ -264,9 +264,11 @@ impl FrameAnnotationRepo {
         .execute(pool)
         .await?;
 
-        // Only insert if there are actual annotations
+        // Insert if there are annotations, a note, or a frame range
         let arr = annotations_json.as_array();
-        if arr.is_some_and(|a| !a.is_empty()) {
+        let has_drawings = arr.is_some_and(|a| !a.is_empty());
+        let has_note = note.is_some_and(|n| !n.is_empty());
+        if has_drawings || has_note || frame_end.is_some() {
             let query = format!(
                 "INSERT INTO frame_annotations
                     (version_id, user_id, frame_number, frame_end, annotations_json, note)
@@ -410,9 +412,11 @@ impl FrameAnnotationRepo {
         .execute(pool)
         .await?;
 
-        // Only insert if there are actual annotations
+        // Insert if there are annotations, a note, or a frame range
         let arr = annotations_json.as_array();
-        if arr.is_some_and(|a| !a.is_empty()) {
+        let has_drawings = arr.is_some_and(|a| !a.is_empty());
+        let has_note = note.is_some_and(|n| !n.is_empty());
+        if has_drawings || has_note || frame_end.is_some() {
             let query = format!(
                 "INSERT INTO frame_annotations
                     (media_variant_id, user_id, frame_number, frame_end, annotations_json, note)

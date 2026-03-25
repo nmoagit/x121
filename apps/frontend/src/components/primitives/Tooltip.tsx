@@ -16,7 +16,7 @@ interface TooltipProps {
   delay?: number;
 }
 
-const DEFAULT_DELAY = 300;
+const DEFAULT_DELAY = 100;
 
 /** CSS positioning classes for each placement direction. Shared by Tooltip and ContextualHint. */
 export const PLACEMENT_CLASSES: Record<Placement, string> = {

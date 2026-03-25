@@ -4,6 +4,7 @@ export { FilterSelect } from "./FilterSelect";
 export { FlagIcon } from "./FlagIcon";
 export type { BadgeVariant } from "./Badge";
 export { Button } from "./Button";
+export { Chip } from "./Chip";
 export { Checkbox } from "./Checkbox";
 export { Input } from "./Input";
 export { LoadingPane } from "./LoadingPane";

@@ -15,7 +15,7 @@ import type { TagInfo } from "@/components/domain/TagChip";
 import { Modal } from "@/components/composite";
 import { api } from "@/lib/api";
 import { PageHeader, Stack } from "@/components/layout";
-import { Button, MultiFilterBar, Select, Toggle ,  WireframeLoader } from "@/components/primitives";
+import { Button, MultiFilterBar, SearchInput, Select, Toggle ,  WireframeLoader } from "@/components/primitives";
 import type { FilterConfig, FilterOption  } from "@/components/primitives";
 import { ProgressiveImage  } from "@/components/primitives";
 import {
@@ -282,12 +282,20 @@ export function MediaPage() {
   const [variantTypeFilter, setVariantTypeFilter] = useState<string[]>([]);
   const [mediaKindFilter, setMediaKindFilter] = useState<string[]>([]);
   const [labelFilter, setLabelFilter] = useState<number[]>([]);
+  const [searchInput, setSearchInput] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   // Absolute index across all pages (0 to total-1)
   const [previewAbsIndex, setPreviewAbsIndex] = useState<number | null>(null);
   const [showDisabled, setShowDisabled] = useState(false);
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState<number>(DEFAULT_PAGE_SIZE);
+
+  // Debounce search
+  useEffect(() => {
+    const t = setTimeout(() => { setDebouncedSearch(searchInput); setPage(0); }, 300);
+    return () => clearTimeout(t);
+  }, [searchInput]);
 
   const pipelineCtx = usePipelineContextSafe();
   const { data: projects } = useProjects(pipelineCtx?.pipelineId);
@@ -302,6 +310,7 @@ export function MediaPage() {
     mediaKind: mediaKindFilter.length > 0 ? mediaKindFilter.join(",") : undefined,
     showDisabled,
     tagIds: labelFilter.length > 0 ? labelFilter.join(",") : undefined,
+    search: debouncedSearch || undefined,
     limit: pageSize,
     offset: page * pageSize,
   });
@@ -349,6 +358,14 @@ export function MediaPage() {
       <PageHeader
         title="Media"
         description="Browse all media variants across avatars, most recent first."
+      />
+
+      {/* Search */}
+      <SearchInput
+        value={searchInput}
+        onChange={(e) => setSearchInput(e.target.value)}
+        placeholder="Search by avatar, variant type, project..."
+        size="sm"
       />
 
       {/* Filter bar */}

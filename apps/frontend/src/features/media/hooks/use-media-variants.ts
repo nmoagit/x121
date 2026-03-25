@@ -324,6 +324,7 @@ export interface MediaVariantBrowseParams {
   mediaKind?: string;
   showDisabled?: boolean;
   tagIds?: string;
+  search?: string;
   limit?: number;
   offset?: number;
 }
@@ -339,6 +340,7 @@ export function useMediaVariantsBrowse(params: MediaVariantBrowseParams = {}) {
   if (params.mediaKind) searchParams.set("media_kind", params.mediaKind);
   if (params.showDisabled) searchParams.set("show_disabled", "true");
   if (params.tagIds) searchParams.set("tag_ids", params.tagIds);
+  if (params.search) searchParams.set("search", params.search);
   if (params.limit != null) searchParams.set("limit", String(params.limit));
   if (params.offset != null) searchParams.set("offset", String(params.offset));
   const qs = searchParams.toString();

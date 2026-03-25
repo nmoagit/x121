@@ -17,7 +17,7 @@ export function SpeedControl({ speed, onSpeedChange, className }: SpeedControlPr
           type="button"
           onClick={() => onSpeedChange(preset)}
           className={cn(
-            "px-[var(--spacing-1)] py-0.5 text-xs rounded-[var(--radius-sm)]",
+            "px-[var(--spacing-1)] py-0.5 text-[10px] font-mono rounded-[var(--radius-sm)]",
             "transition-colors duration-[var(--duration-fast)]",
             speed === preset
               ? "bg-[var(--color-action-primary)] text-[var(--color-text-inverse)]"

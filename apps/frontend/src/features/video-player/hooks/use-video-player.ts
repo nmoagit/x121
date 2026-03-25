@@ -141,11 +141,16 @@ export function useVideoPlayer(options: UseVideoPlayerOptions): VideoPlayerContr
       cancelAnimationFrame(animFrameRef.current);
     }
 
+    function handleRateChange() {
+      if (video) setSpeedState(video.playbackRate);
+    }
+
     video.addEventListener("play", handlePlay);
     video.addEventListener("pause", handlePause);
     video.addEventListener("loadedmetadata", handleLoadedMetadata);
     video.addEventListener("seeked", handleSeeked);
     video.addEventListener("ended", handleEnded);
+    video.addEventListener("ratechange", handleRateChange);
 
     return () => {
       video.removeEventListener("play", handlePlay);
@@ -153,6 +158,7 @@ export function useVideoPlayer(options: UseVideoPlayerOptions): VideoPlayerContr
       video.removeEventListener("loadedmetadata", handleLoadedMetadata);
       video.removeEventListener("seeked", handleSeeked);
       video.removeEventListener("ended", handleEnded);
+      video.removeEventListener("ratechange", handleRateChange);
       cancelAnimationFrame(animFrameRef.current);
     };
   }, [autoPlay, onPlayStateChange, updateFrame]);

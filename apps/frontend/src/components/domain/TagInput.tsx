@@ -2,6 +2,7 @@ import { useClickOutside } from "@/hooks/useClickOutside";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/cn";
 import { CHIP_CONTAINER } from "@/lib/ui-classes";
+import { Chip } from "@/components/primitives/Chip";
 import { Settings } from "@/tokens/icons";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { LabelManagerModal } from "./LabelManagerModal";
@@ -195,23 +196,14 @@ export function TagInput({
             .filter((ql) => !existingTags.some((t) => t.id === ql.id))
             .sort((a, b) => a.display_name.localeCompare(b.display_name))
             .map((ql) => (
-              <button
+              <Chip
                 key={ql.id}
-                type="button"
+                size="sm"
+                color={ql.color}
                 onClick={() => applyTag(ql.display_name)}
-                className={cn(
-                  "inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full",
-                  "text-[10px] font-mono",
-                  "bg-[var(--color-surface-tertiary)] text-[var(--color-text-muted)]",
-                  "hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]",
-                  "transition-colors cursor-pointer",
-                )}
               >
-                {ql.color && (
-                  <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: ql.color }} />
-                )}
                 {ql.display_name}
-              </button>
+              </Chip>
             ))}
         </div>
       )}
