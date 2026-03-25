@@ -46,6 +46,17 @@
   background-color: var(--color-text-muted);
 }
 
+/* Hide browser-native video loading spinners — we use ContextLoader instead. */
+video::-webkit-media-controls {
+  display: none !important;
+}
+video::-webkit-media-controls-enclosure {
+  display: none !important;
+}
+video::-webkit-media-controls-overlay-play-button {
+  display: none !important;
+}
+
 body {
   margin: 0;
   font-family: var(--font-sans);
