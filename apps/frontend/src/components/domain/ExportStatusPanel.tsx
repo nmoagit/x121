@@ -37,10 +37,11 @@ export function ExportStatusPanel({ job, onDismiss }: ExportStatusPanelProps) {
   );
 
   // Auto-download parts as they become available (progressive download).
-  // Tracks which parts have already been triggered to avoid duplicates.
+  // Uses parts.length as dependency so the effect only fires when new parts appear.
   const downloadedPartsRef = useRef<Set<number>>(new Set());
+  const partsCount = job.parts?.length ?? 0;
   useEffect(() => {
-    if (!job.parts || job.parts.length === 0) return;
+    if (partsCount === 0) return;
     const newParts = job.parts.filter((p) => !downloadedPartsRef.current.has(p.part));
     if (newParts.length === 0) return;
 
@@ -48,7 +49,7 @@ export function ExportStatusPanel({ job, onDismiss }: ExportStatusPanelProps) {
       downloadedPartsRef.current.add(part.part);
       setTimeout(() => handleDownloadPart(part), i * 500);
     });
-  }, [job.parts, handleDownloadPart]);
+  }, [partsCount]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Reset tracking when job ID changes.
   useEffect(() => {
