@@ -3,10 +3,14 @@
 //! Builds ZIP archives from selected scene video versions or media variants,
 //! splitting into multiple parts when the accumulated size exceeds the
 //! configured threshold. Includes a CSV manifest in the first part.
+//!
+//! Files inside the ZIP are named to match the delivery convention:
+//! `{project}_{avatar}_{scene_type}_{track}_{version}[_{labels}].ext`
 
 use std::io::Write;
 use std::path::PathBuf;
 
+use x121_core::naming_engine::slugify;
 use x121_core::types::DbId;
 use x121_db::repositories::ExportJobRepo;
 
@@ -71,7 +75,7 @@ async fn run_export_job_inner(
     let parts = plan_splits(&entries, split_bytes);
 
     // 5. Build manifest CSV.
-    let manifest_csv = build_manifest_csv(&entries);
+    let manifest_csv = build_manifest_csv(&job.entity_type, &entries);
 
     // 6. Create export directory.
     let export_dir = state.resolve_to_path(&format!("exports/{job_id}")).await?;
@@ -116,6 +120,51 @@ async fn run_export_job_inner(
 }
 
 // ---------------------------------------------------------------------------
+// Label lookup
+// ---------------------------------------------------------------------------
+
+/// Fetch tag names for a list of entity IDs, returned as a map of id -> comma-joined labels.
+async fn fetch_labels_for_entities(
+    pool: &sqlx::PgPool,
+    entity_type: &str,
+    ids: &[DbId],
+) -> Result<std::collections::HashMap<DbId, String>, Box<dyn std::error::Error + Send + Sync>> {
+    if ids.is_empty() {
+        return Ok(std::collections::HashMap::new());
+    }
+
+    #[derive(sqlx::FromRow)]
+    struct TagRow {
+        entity_id: DbId,
+        name: String,
+    }
+
+    let rows = sqlx::query_as::<_, TagRow>(
+        "SELECT et.entity_id, t.name \
+         FROM entity_tags et \
+         JOIN tags t ON t.id = et.tag_id \
+         WHERE et.entity_type = $1 AND et.entity_id = ANY($2) \
+         ORDER BY et.entity_id, t.name",
+    )
+    .bind(entity_type)
+    .bind(ids)
+    .fetch_all(pool)
+    .await?;
+
+    let mut map: std::collections::HashMap<DbId, Vec<String>> = std::collections::HashMap::new();
+    for row in rows {
+        map.entry(row.entity_id)
+            .or_default()
+            .push(row.name);
+    }
+
+    Ok(map
+        .into_iter()
+        .map(|(id, names)| (id, names.join("_")))
+        .collect())
+}
+
+// ---------------------------------------------------------------------------
 // File resolution
 // ---------------------------------------------------------------------------
 
@@ -127,7 +176,10 @@ struct SvvExportRow {
     file_size_bytes: Option<i64>,
     avatar_name: Option<String>,
     scene_type_name: Option<String>,
+    track_name: Option<String>,
+    project_name: Option<String>,
     version_number: i32,
+    qa_status: Option<String>,
 }
 
 async fn resolve_scene_video_versions(
@@ -141,16 +193,22 @@ async fn resolve_scene_video_versions(
     let rows = sqlx::query_as::<_, SvvExportRow>(
         "SELECT svv.id, svv.file_path, svv.file_size_bytes, \
                 a.name AS avatar_name, st.name AS scene_type_name, \
-                svv.version_number \
+                tr.name AS track_name, p.name AS project_name, \
+                svv.version_number, svv.qa_status \
          FROM scene_video_versions svv \
          JOIN scenes s ON s.id = svv.scene_id \
          JOIN avatars a ON a.id = s.avatar_id \
          JOIN scene_types st ON st.id = s.scene_type_id \
+         LEFT JOIN tracks tr ON tr.id = s.track_id \
+         LEFT JOIN projects p ON p.id = a.project_id \
          WHERE svv.id = ANY($1)",
     )
     .bind(ids)
     .fetch_all(&state.pool)
     .await?;
+
+    // Fetch labels for all IDs.
+    let labels = fetch_labels_for_entities(&state.pool, "scene_video_version", ids).await?;
 
     let mut entries = Vec::with_capacity(rows.len());
     for row in &rows {
@@ -166,11 +224,32 @@ async fn resolve_scene_video_versions(
 
         let avatar = row.avatar_name.as_deref().unwrap_or("unknown");
         let scene_type = row.scene_type_name.as_deref().unwrap_or("unknown");
+        let track = row.track_name.as_deref().unwrap_or("default");
+        let project = row.project_name.as_deref().unwrap_or("project");
         let ext = abs_path
             .extension()
             .and_then(|e| e.to_str())
             .unwrap_or("mp4");
-        let archive_path = format!("{avatar}/{scene_type}/v{}.{ext}", row.version_number);
+
+        // Build filename: {project}_{avatar}_{scene_type}_{track}_v{version}[_{labels}].ext
+        let label_suffix = labels
+            .get(&row.id)
+            .map(|l| format!("_{}", slugify(l)))
+            .unwrap_or_default();
+        let filename = format!(
+            "{}_{}_{}_{}_v{}{}.{ext}",
+            slugify(project),
+            slugify(avatar),
+            slugify(scene_type),
+            slugify(track),
+            row.version_number,
+            label_suffix,
+        );
+        let qa = row.qa_status.as_deref().unwrap_or("pending");
+        let label_display = labels.get(&row.id).cloned().unwrap_or_default();
+
+        // Folder: {avatar}/{scene_type}/
+        let archive_path = format!("{avatar}/{scene_type}/{filename}");
         let size_bytes = row.file_size_bytes.unwrap_or(0) as u64;
 
         entries.push(ExportFileEntry {
@@ -179,9 +258,14 @@ async fn resolve_scene_video_versions(
             size_bytes,
             manifest_row: vec![
                 row.id.to_string(),
+                project.to_string(),
                 avatar.to_string(),
                 scene_type.to_string(),
+                track.to_string(),
                 format!("v{}", row.version_number),
+                qa.to_string(),
+                label_display,
+                filename.clone(),
                 row.file_path.clone(),
             ],
         });
@@ -199,6 +283,8 @@ struct MvExportRow {
     avatar_name: Option<String>,
     variant_type: Option<String>,
     variant_label: String,
+    project_name: Option<String>,
+    status_id: i32,
 }
 
 async fn resolve_media_variants(
@@ -211,14 +297,19 @@ async fn resolve_media_variants(
 
     let rows = sqlx::query_as::<_, MvExportRow>(
         "SELECT mv.id, mv.file_path, mv.file_size_bytes, \
-                a.name AS avatar_name, mv.variant_type, mv.variant_label \
+                a.name AS avatar_name, mv.variant_type, mv.variant_label, \
+                p.name AS project_name, mv.status_id \
          FROM media_variants mv \
          JOIN avatars a ON a.id = mv.avatar_id \
+         LEFT JOIN projects p ON p.id = a.project_id \
          WHERE mv.id = ANY($1) AND mv.deleted_at IS NULL",
     )
     .bind(ids)
     .fetch_all(&state.pool)
     .await?;
+
+    // Fetch labels for all IDs.
+    let labels = fetch_labels_for_entities(&state.pool, "media_variant", ids).await?;
 
     let mut entries = Vec::with_capacity(rows.len());
     for row in &rows {
@@ -234,11 +325,34 @@ async fn resolve_media_variants(
 
         let avatar = row.avatar_name.as_deref().unwrap_or("unknown");
         let vtype = row.variant_type.as_deref().unwrap_or("other");
+        let project = row.project_name.as_deref().unwrap_or("project");
         let ext = abs_path
             .extension()
             .and_then(|e| e.to_str())
             .unwrap_or("bin");
-        let archive_path = format!("{avatar}/{vtype}/{}.{ext}", row.variant_label);
+
+        // Build filename: {project}_{avatar}_{variant_type}_{variant_label}[_{labels}].ext
+        let label_suffix = labels
+            .get(&row.id)
+            .map(|l| format!("_{}", slugify(l)))
+            .unwrap_or_default();
+        let filename = format!(
+            "{}_{}_{}_{}{}.{ext}",
+            slugify(project),
+            slugify(avatar),
+            slugify(vtype),
+            slugify(&row.variant_label),
+            label_suffix,
+        );
+        let status = match row.status_id {
+            2 => "approved",
+            3 => "rejected",
+            _ => "pending",
+        };
+        let label_display = labels.get(&row.id).cloned().unwrap_or_default();
+
+        // Folder: {avatar}/{variant_type}/
+        let archive_path = format!("{avatar}/{vtype}/{filename}");
         let size_bytes = row.file_size_bytes.unwrap_or(0) as u64;
 
         entries.push(ExportFileEntry {
@@ -247,9 +361,13 @@ async fn resolve_media_variants(
             size_bytes,
             manifest_row: vec![
                 row.id.to_string(),
+                project.to_string(),
                 avatar.to_string(),
                 vtype.to_string(),
                 row.variant_label.clone(),
+                status.to_string(),
+                label_display,
+                filename.clone(),
                 row.file_path.clone(),
             ],
         });
@@ -289,8 +407,17 @@ fn plan_splits(entries: &[ExportFileEntry], split_bytes: u64) -> Vec<Vec<usize>>
 // ---------------------------------------------------------------------------
 
 /// Build a CSV manifest string from the export entries.
-fn build_manifest_csv(entries: &[ExportFileEntry]) -> String {
-    let mut csv = String::from("id,field1,field2,field3,original_path\n");
+fn build_manifest_csv(entity_type: &str, entries: &[ExportFileEntry]) -> String {
+    let header = match entity_type {
+        "scene_video_version" => {
+            "id,project,avatar,scene_type,track,version,qa_status,labels,filename,original_path\n"
+        }
+        "media_variant" => {
+            "id,project,avatar,variant_type,variant_label,status,labels,filename,original_path\n"
+        }
+        _ => "id,fields...\n",
+    };
+    let mut csv = String::from(header);
     for entry in entries {
         let escaped: Vec<String> = entry
             .manifest_row
