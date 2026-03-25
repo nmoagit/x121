@@ -5,7 +5,7 @@
  * tappable to navigate to the related segment (if any).
  */
 
-import { WireframeLoader } from "@/components/primitives";
+import { ContextLoader } from "@/components/primitives";
 import { cn } from "@/lib/cn";
 import { formatDateTime } from "@/lib/format";
 import { Activity } from "@/tokens/icons";
@@ -33,7 +33,7 @@ export function ActivityFeed({ onSegmentTap }: ActivityFeedProps) {
   if (isPending) {
     return (
       <div data-testid="activity-feed-loading" className="flex items-center justify-center py-8">
-        <WireframeLoader size={48} />
+        <ContextLoader size={48} />
       </div>
     );
   }

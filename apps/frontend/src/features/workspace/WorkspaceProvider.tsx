@@ -1,4 +1,4 @@
-import { WireframeLoader } from "@/components/primitives";
+import { ContextLoader } from "@/components/primitives";
 /**
  * Workspace state provider component (PRD-04).
  *
@@ -19,7 +19,7 @@ function WorkspaceLoadingSkeleton() {
   return (
     <div className="flex h-screen w-screen items-center justify-center bg-[var(--color-surface-primary)]">
       <div className="flex flex-col items-center gap-3">
-        <WireframeLoader size={64} />
+        <ContextLoader size={64} />
         <span className="text-sm text-[var(--color-text-muted)]">
           Restoring workspace...
         </span>

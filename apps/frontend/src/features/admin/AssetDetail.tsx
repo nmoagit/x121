@@ -2,7 +2,7 @@ import { useState } from "react";
 
 import { MetadataField } from "@/components/domain";
 import { Stack } from "@/components/layout";
-import { Badge, Button ,  WireframeLoader } from "@/components/primitives";
+import { Badge, Button ,  ContextLoader } from "@/components/primitives";
 import { CompatibilityWarning } from "@/features/admin/CompatibilityWarning";
 import { useAssetDetail, useRateAsset } from "@/features/admin/hooks/use-assets";
 import type {
@@ -169,7 +169,7 @@ export function AssetDetail({ assetId, onBack }: AssetDetailProps) {
   if (isLoading || !data) {
     return (
       <div className="flex h-[calc(100vh-4rem)] items-center justify-center">
-        <WireframeLoader size={64} />
+        <ContextLoader size={64} />
       </div>
     );
   }

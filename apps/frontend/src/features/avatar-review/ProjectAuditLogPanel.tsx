@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Button ,  WireframeLoader } from "@/components/primitives";
+import { Button ,  ContextLoader } from "@/components/primitives";
 import {
   TERMINAL_PANEL,
   TERMINAL_HEADER,
@@ -59,7 +59,7 @@ export function ProjectAuditLogPanel({ projectId }: ProjectAuditLogPanelProps) {
         </div>
 
         {isPending ? (
-          <WireframeLoader size={48} />
+          <ContextLoader size={48} />
         ) : entries.length === 0 ? (
           <div className="font-mono text-xs text-[var(--color-text-muted)]">No audit entries found.</div>
         ) : (

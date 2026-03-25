@@ -8,7 +8,7 @@
 import { cn } from "@/lib/cn";
 import { Clock, Pause, Play, XCircle } from "@/tokens/icons";
 import { iconSizes } from "@/tokens/icons";
-import { Button ,  WireframeLoader } from "@/components/primitives";
+import { Button ,  ContextLoader } from "@/components/primitives";
 import { Stack } from "@/components/layout";
 import {
   TERMINAL_PANEL,
@@ -132,7 +132,7 @@ export function QueueStatusView() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center p-8">
-        <WireframeLoader size={48} />
+        <ContextLoader size={48} />
       </div>
     );
   }

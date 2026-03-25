@@ -6,7 +6,7 @@
  * an ExtensionSandbox inside it.
  */
 
-import { WireframeLoader } from "@/components/primitives";
+import { ContextLoader } from "@/components/primitives";
 import { cn } from "@/lib/cn";
 import { AlertCircle } from "@/tokens/icons";
 import { useMemo } from "react";
@@ -51,7 +51,7 @@ export function ExtensionPanelIntegration({
   if (isLoading) {
     return (
       <div className="flex items-center justify-center p-4">
-        <WireframeLoader size={48} />
+        <ContextLoader size={48} />
       </div>
     );
   }

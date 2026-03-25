@@ -10,7 +10,7 @@ import { useCallback, useState } from "react";
 import { Modal } from "@/components/composite";
 import { ApprovalActions } from "@/components/domain/ApprovalActions";
 import { Grid, Stack } from "@/components/layout";
-import { Button ,  WireframeLoader } from "@/components/primitives";
+import { Button ,  ContextLoader } from "@/components/primitives";
 import { cn } from "@/lib/cn";
 import { TERMINAL_PANEL, TERMINAL_STATUS_COLORS } from "@/lib/ui-classes";
 import { Check, Eye } from "@/tokens/icons";
@@ -76,7 +76,7 @@ function VariantCard({
       >
         {isGenerating ? (
           <div className="flex aspect-video items-center justify-center">
-            <WireframeLoader size={48} />
+            <ContextLoader size={48} />
           </div>
         ) : variant.file_path ? (
           <ProgressiveImage
@@ -185,7 +185,7 @@ export function VariantGallery({ avatarId, sourceImageUrl }: VariantGalleryProps
   if (isLoading) {
     return (
       <div className="flex h-48 items-center justify-center">
-        <WireframeLoader size={64} />
+        <ContextLoader size={64} />
       </div>
     );
   }

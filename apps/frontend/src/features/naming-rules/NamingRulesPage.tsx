@@ -11,7 +11,7 @@
 
 import { useMemo, useState } from "react";
 
-import { Select, WireframeLoader } from "@/components/primitives";
+import { Select, ContextLoader } from "@/components/primitives";
 import { Stack } from "@/components/layout";
 import { useSetPageTitle } from "@/hooks/useSetPageTitle";
 import { TERMINAL_PANEL, TERMINAL_BODY } from "@/lib/ui-classes";
@@ -110,7 +110,7 @@ function AdminNamingRulesView() {
           {/* Content area */}
           {isLoading ? (
             <div className="flex items-center justify-center py-[var(--spacing-8)]">
-              <WireframeLoader size={64} />
+              <ContextLoader size={64} />
             </div>
           ) : categoriesError ? (
             <div className={TERMINAL_PANEL}>

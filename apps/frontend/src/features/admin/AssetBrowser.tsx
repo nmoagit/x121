@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 
 import { EmptyState } from "@/components/domain";
 import { Stack } from "@/components/layout";
-import { Badge, FilterSelect, SearchInput ,  WireframeLoader } from "@/components/primitives";
+import { Badge, FilterSelect, SearchInput ,  ContextLoader } from "@/components/primitives";
 import { useAssets } from "@/features/admin/hooks/use-assets";
 import type { AssetSearchParams, AssetWithStats } from "@/features/admin/hooks/use-assets";
 import { useSetPageTitle } from "@/hooks/useSetPageTitle";
@@ -134,7 +134,7 @@ export function AssetBrowser({ onSelectAsset }: AssetBrowserProps) {
   if (isLoading) {
     return (
       <div className="flex h-[calc(100vh-4rem)] items-center justify-center">
-        <WireframeLoader size={64} />
+        <ContextLoader size={64} />
       </div>
     );
   }

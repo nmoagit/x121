@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { ContextLoader } from "@/components/primitives";
 import { cn } from "@/lib/cn";
 
 import { FrameCounter } from "./components/FrameCounter";
@@ -86,14 +87,22 @@ export function VideoPlayer({
       )}
     >
       {/* Video element */}
-      <video
-        ref={player.videoRef}
-        src={streamUrl}
-        className="w-full aspect-video bg-black"
-        playsInline
-        preload="metadata"
-        onClick={player.togglePlay}
-      />
+      <div className="relative">
+        <video
+          ref={player.videoRef}
+          src={streamUrl}
+          className="w-full aspect-video bg-black"
+          playsInline
+          preload="metadata"
+          onClick={player.togglePlay}
+        />
+        {/* Loading overlay */}
+        {!player.isReady && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/60">
+            <ContextLoader size={32} />
+          </div>
+        )}
+      </div>
 
       {/* Controls overlay */}
       {showControls && (

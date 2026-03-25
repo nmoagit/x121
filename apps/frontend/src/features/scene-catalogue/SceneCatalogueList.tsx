@@ -9,7 +9,7 @@ import { useCallback, useState } from "react";
 
 import { Modal } from "@/components/composite";
 import { Stack } from "@/components/layout";
-import { Button, Toggle ,  WireframeLoader } from "@/components/primitives";
+import { Button, Toggle ,  ContextLoader } from "@/components/primitives";
 import { cn } from "@/lib/cn";
 import {
   GHOST_DANGER_BTN,
@@ -147,7 +147,7 @@ export function SceneCatalogueList() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <WireframeLoader size={64} />
+        <ContextLoader size={64} />
       </div>
     );
   }

@@ -8,7 +8,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { FilterSelect, SearchInput, Toggle ,  WireframeLoader } from "@/components";
+import { FilterSelect, SearchInput, Toggle ,  ContextLoader } from "@/components";
 import { Button  } from "@/components/primitives";
 import { cn } from "@/lib/cn";
 import { TERMINAL_PANEL } from "@/lib/ui-classes";
@@ -167,7 +167,7 @@ export function AvatarLibraryBrowser() {
       {/* Loading */}
       {isLoading && (
         <div className="flex items-center justify-center py-12" data-testid="library-loading">
-          <WireframeLoader size={48} />
+          <ContextLoader size={48} />
         </div>
       )}
 

@@ -9,7 +9,7 @@
 import { useState, type ReactNode } from "react";
 
 import { Stack } from "@/components/layout";
-import { Select ,  WireframeLoader } from "@/components/primitives";
+import { Select ,  ContextLoader } from "@/components/primitives";
 import { EmptyState } from "@/components/domain/EmptyState";
 import { usePipelineContextSafe } from "@/features/pipelines";
 import { useProjects } from "@/features/projects/hooks/use-projects";
@@ -49,7 +49,7 @@ export function ProjectPicker({
 
       <div className="w-[240px]">
         {isLoading ? (
-          <WireframeLoader size={32} />
+          <ContextLoader size={32} />
         ) : (
           <Select
             label="Project"

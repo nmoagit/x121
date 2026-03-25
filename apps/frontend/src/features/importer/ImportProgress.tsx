@@ -5,7 +5,7 @@
  * counts and an overall summary.
  */
 
-import { Badge ,  WireframeLoader } from "@/components/primitives";
+import { Badge ,  ContextLoader } from "@/components/primitives";
 import { Stack } from "@/components/layout";
 import type { ImportCommitResult } from "./types";
 
@@ -28,7 +28,7 @@ export function ImportProgress({ isCommitting, result }: ImportProgressProps) {
   if (isCommitting) {
     return (
       <Stack align="center" gap={3} className="p-6" data-testid="import-progress">
-        <WireframeLoader size={64} />
+        <ContextLoader size={64} />
         <p className="text-sm text-[var(--color-text-secondary)]">
           Committing import...
         </p>

@@ -8,7 +8,7 @@
 
 import { useRef, useState } from "react";
 
-import { WireframeLoader } from "@/components/primitives";
+import { ContextLoader } from "@/components/primitives";
 import { cn } from "@/lib/cn";
 import { Upload } from "@/tokens/icons";
 
@@ -90,7 +90,7 @@ export function SeedDataDropSlot({ accept, label, loading, onFile, compact }: Se
         onChange={handleFileChange}
       />
       {loading ? (
-        <WireframeLoader size={32} />
+        <ContextLoader size={32} />
       ) : compact ? (
         <>
           <Upload size={12} />

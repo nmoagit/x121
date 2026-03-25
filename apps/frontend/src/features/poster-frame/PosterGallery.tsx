@@ -5,7 +5,7 @@
  * with an option to auto-select the best frame for each avatar.
  */
 
-import { Badge, Button ,  WireframeLoader } from "@/components/primitives";
+import { Badge, Button ,  ContextLoader } from "@/components/primitives";
 import { cn } from "@/lib/cn";
 
 import {
@@ -106,7 +106,7 @@ export function PosterGallery({
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-16">
-        <WireframeLoader size={48} />
+        <ContextLoader size={48} />
       </div>
     );
   }

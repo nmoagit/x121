@@ -7,7 +7,7 @@
 
 import { useCallback, useMemo, useState } from "react";
 
-import { WireframeLoader } from "@/components/primitives";
+import { ContextLoader } from "@/components/primitives";
 import { Stack } from "@/components/layout";
 import {
   TERMINAL_PANEL,
@@ -121,7 +121,7 @@ export function MetadataSpreadsheet({
   if (isLoading) {
     return (
       <div className="flex h-64 items-center justify-center">
-        <WireframeLoader size={64} />
+        <ContextLoader size={64} />
       </div>
     );
   }

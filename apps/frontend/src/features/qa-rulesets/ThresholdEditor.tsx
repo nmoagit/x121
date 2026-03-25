@@ -7,7 +7,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { Button, Select ,  WireframeLoader } from "@/components/primitives";
+import { Button, Select ,  ContextLoader } from "@/components/primitives";
 import { Card, CardBody, CardHeader } from "@/components/composite";
 
 import {
@@ -135,7 +135,7 @@ export function ThresholdEditor({ sceneTypeId }: ThresholdEditorProps) {
   if (isPending) {
     return (
       <div data-testid="threshold-editor-loading" className="flex justify-center py-8">
-        <WireframeLoader size={48} />
+        <ContextLoader size={48} />
       </div>
     );
   }

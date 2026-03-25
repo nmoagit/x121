@@ -7,7 +7,7 @@
 
 import { useState } from "react";
 
-import { Badge, Button ,  WireframeLoader } from "@/components/primitives";
+import { Badge, Button ,  ContextLoader } from "@/components/primitives";
 import { Card, CardBody, CardHeader } from "@/components/composite";
 import { Plus } from "@/tokens/icons";
 import { iconSizes } from "@/tokens/icons";
@@ -29,7 +29,7 @@ function SummaryCards() {
   if (isPending) {
     return (
       <div className="flex items-center justify-center py-6">
-        <WireframeLoader size={32} />
+        <ContextLoader size={32} />
       </div>
     );
   }

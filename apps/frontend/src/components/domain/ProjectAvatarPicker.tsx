@@ -8,7 +8,7 @@
 import { useState } from "react";
 
 import { Stack } from "@/components/layout";
-import { Select ,  WireframeLoader } from "@/components/primitives";
+import { Select ,  ContextLoader } from "@/components/primitives";
 import { EmptyState } from "@/components/domain/EmptyState";
 import { usePipelineContextSafe } from "@/features/pipelines";
 import { useProjects } from "@/features/projects/hooks/use-projects";
@@ -70,7 +70,7 @@ export function ProjectAvatarPicker({
       <div className="flex flex-wrap items-end gap-[var(--spacing-3)]">
         <div className="w-[240px]">
           {projectsLoading ? (
-            <WireframeLoader size={32} />
+            <ContextLoader size={32} />
           ) : (
             <Select
               label="Project"
@@ -87,7 +87,7 @@ export function ProjectAvatarPicker({
 
         <div className="w-[240px]">
           {projectId > 0 && charsLoading ? (
-            <WireframeLoader size={32} />
+            <ContextLoader size={32} />
           ) : (
             <Select
               label="Avatar"

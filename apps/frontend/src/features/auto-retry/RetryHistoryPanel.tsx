@@ -1,4 +1,4 @@
-import { WireframeLoader } from "@/components/primitives";
+import { ContextLoader } from "@/components/primitives";
 /**
  * Retry history panel (PRD-71).
  *
@@ -45,7 +45,7 @@ export function RetryHistoryPanel({ segmentId }: RetryHistoryPanelProps) {
   if (isPending) {
     return (
       <div className="flex items-center justify-center py-8" data-testid="retry-history-loading">
-        <WireframeLoader size={48} />
+        <ContextLoader size={48} />
       </div>
     );
   }

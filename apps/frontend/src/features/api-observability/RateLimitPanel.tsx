@@ -5,7 +5,7 @@
  */
 
 import { Card, CardBody, CardHeader } from "@/components/composite/Card";
-import { WireframeLoader } from "@/components/primitives";
+import { ContextLoader } from "@/components/primitives";
 import { cn } from "@/lib/cn";
 import { Activity } from "@/tokens/icons";
 
@@ -76,7 +76,7 @@ export function RateLimitPanel() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-[var(--spacing-6)]">
-        <WireframeLoader size={48} />
+        <ContextLoader size={48} />
       </div>
     );
   }

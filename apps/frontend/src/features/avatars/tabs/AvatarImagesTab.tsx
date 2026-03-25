@@ -12,7 +12,7 @@ import { useCallback, useMemo, useState } from "react";
 import { Modal } from "@/components/composite/Modal";
 import { Grid, Stack } from "@/components/layout";
 import { ApprovalActions } from "@/components/domain/ApprovalActions";
-import { Button ,  WireframeLoader } from "@/components/primitives";
+import { Button ,  ContextLoader } from "@/components/primitives";
 import { ChevronLeft, ChevronRight, Trash2, Upload, Wand2 } from "@/tokens/icons";
 
 import {
@@ -322,7 +322,7 @@ export function AvatarImagesTab({ avatarId, projectId }: AvatarImagesTabProps) {
               </h3>
               {variantsLoading ? (
                 <div className="flex items-center justify-center py-4">
-                  <WireframeLoader size={48} />
+                  <ContextLoader size={48} />
                 </div>
               ) : trackVariants.length === 0 ? (
                 <p className="text-xs font-mono text-[var(--color-text-muted)] py-4 text-center">

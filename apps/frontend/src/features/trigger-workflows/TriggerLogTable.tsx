@@ -6,7 +6,7 @@
 
 import { useState } from "react";
 
-import { WireframeLoader } from "@/components/primitives";
+import { ContextLoader } from "@/components/primitives";
 import { Card } from "@/components/composite";
 import { cn } from "@/lib/cn";
 
@@ -69,7 +69,7 @@ export function TriggerLogTable({ triggerId }: TriggerLogTableProps) {
   if (isPending) {
     return (
       <div className="flex items-center justify-center py-8" data-testid="log-loading">
-        <WireframeLoader size={48} />
+        <ContextLoader size={48} />
       </div>
     );
   }

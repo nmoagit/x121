@@ -13,7 +13,7 @@ import {
 } from "recharts";
 
 import { Card } from "@/components/composite/Card";
-import { WireframeLoader } from "@/components/primitives";
+import { ContextLoader } from "@/components/primitives";
 import { Stack } from "@/components/layout";
 import {
   useWorkersComparison,
@@ -47,7 +47,7 @@ export function WorkerBenchmark({ from, to }: WorkerBenchmarkProps) {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <WireframeLoader size={64} />
+        <ContextLoader size={64} />
       </div>
     );
   }

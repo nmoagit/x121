@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-import { Badge ,  WireframeLoader } from "@/components/primitives";
+import { Badge ,  ContextLoader } from "@/components/primitives";
 import { Card } from "@/components/composite/Card";
 import { Input  } from "@/components/primitives";
 import { Select  } from "@/components/primitives";
@@ -47,7 +47,7 @@ export function AlertConfig() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <WireframeLoader size={64} />
+        <ContextLoader size={64} />
       </div>
     );
   }

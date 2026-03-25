@@ -6,7 +6,7 @@
  * completeness, scene assignments, and generation history.
  */
 
-import { WireframeLoader } from "@/components";
+import { ContextLoader } from "@/components";
 
 import { GenerationHistorySection } from "./GenerationHistorySection";
 import { deriveMissingItems } from "./helpers";
@@ -48,7 +48,7 @@ export function AvatarDashboard({
   if (isLoading) {
     return (
       <div data-testid="dashboard-loading" className="flex items-center justify-center p-8">
-        <WireframeLoader size={48} />
+        <ContextLoader size={48} />
       </div>
     );
   }

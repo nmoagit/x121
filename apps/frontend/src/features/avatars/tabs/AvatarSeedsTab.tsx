@@ -8,7 +8,7 @@
 
 import { useCallback, useState } from "react";
 
-import { Button, WireframeLoader } from "@/components/primitives";
+import { Button, ContextLoader } from "@/components/primitives";
 import { Modal } from "@/components/composite";
 import { EmptyState } from "@/components/domain";
 import { Stack } from "@/components/layout";
@@ -86,7 +86,7 @@ export function AvatarSeedsTab({ avatarId, projectId: _projectId }: AvatarSeedsT
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <WireframeLoader size={48} />
+        <ContextLoader size={48} />
       </div>
     );
   }

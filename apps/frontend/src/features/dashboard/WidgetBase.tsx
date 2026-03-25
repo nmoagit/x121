@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-import { Button ,  WireframeLoader } from "@/components/primitives";
+import { Button ,  ContextLoader } from "@/components/primitives";
 import { cn } from "@/lib/cn";
 import {
   TERMINAL_PANEL,
@@ -73,7 +73,7 @@ export function WidgetBase({
       <div className={cn(TERMINAL_BODY, "flex-1 overflow-auto")}>
         {loading ? (
           <div className="flex items-center justify-center py-[var(--spacing-8)]">
-            <WireframeLoader size={48} />
+            <ContextLoader size={48} />
           </div>
         ) : error ? (
           <div className="flex flex-col items-center justify-center gap-[var(--spacing-3)] py-[var(--spacing-8)] text-center">

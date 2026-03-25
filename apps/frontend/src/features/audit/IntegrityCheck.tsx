@@ -7,7 +7,7 @@
 
 import { useState, useCallback } from "react";
 
-import { Button ,  WireframeLoader } from "@/components/primitives";
+import { Button ,  ContextLoader } from "@/components/primitives";
 import { Stack } from "@/components/layout";
 import { TERMINAL_PANEL, TERMINAL_HEADER, TERMINAL_HEADER_TITLE, TERMINAL_BODY } from "@/lib/ui-classes";
 import type { IntegrityCheckResult } from "./types";
@@ -63,7 +63,7 @@ export function IntegrityCheck() {
 
           {isRunning && (
             <div className="flex items-center gap-2">
-              <WireframeLoader size={32} />
+              <ContextLoader size={32} />
               <span className="text-xs text-[var(--color-text-muted)] font-mono">
                 Verifying audit log chain...
               </span>

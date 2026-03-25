@@ -7,7 +7,7 @@
 
 import { ProjectAvatarPicker, ScenePicker, EmptyState } from "@/components/domain";
 import { Stack } from "@/components/layout";
-import { WireframeLoader } from "@/components/primitives";
+import { ContextLoader } from "@/components/primitives";
 import { Button  } from "@/components/primitives";
 import { Zap } from "@/tokens/icons";
 
@@ -24,7 +24,7 @@ function SceneGeneration({ sceneId }: { sceneId: number }) {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-[var(--spacing-8)]">
-        <WireframeLoader size={64} />
+        <ContextLoader size={64} />
       </div>
     );
   }

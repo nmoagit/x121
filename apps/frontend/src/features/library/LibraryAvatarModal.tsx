@@ -11,7 +11,7 @@ import { Link } from "@tanstack/react-router";
 
 import { useAvatarPath } from "@/hooks/usePipelinePath";
 import { Modal } from "@/components/composite";
-import { Button, FlagIcon, ProgressiveImage, WireframeLoader } from "@/components/primitives";
+import { Button, FlagIcon, ProgressiveImage, ContextLoader } from "@/components/primitives";
 import { cn } from "@/lib/cn";
 import {
   TERMINAL_DIVIDER,
@@ -231,7 +231,7 @@ export function LibraryAvatarModal({
 
         {isLoading && (
           <div className="flex items-center justify-center py-12">
-            <WireframeLoader size={80} />
+            <ContextLoader size={80} />
           </div>
         )}
 
@@ -644,7 +644,7 @@ function LoadingImage({ src, alt, className }: { src: string; alt: string; class
     <div className="relative">
       {!loaded && (
         <div className="absolute inset-0 flex items-center justify-center">
-          <WireframeLoader size={48} />
+          <ContextLoader size={48} />
         </div>
       )}
       <img
@@ -664,7 +664,7 @@ function VideoThumb({ versionId }: { versionId: number }) {
     <>
       {!loaded && !errored && (
         <div className="absolute inset-0 flex items-center justify-center">
-          <WireframeLoader size={32} />
+          <ContextLoader size={32} />
         </div>
       )}
       {errored && (

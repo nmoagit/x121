@@ -1,4 +1,4 @@
-import { WireframeLoader } from "@/components/primitives";
+import { ContextLoader } from "@/components/primitives";
 /**
  * Displays lock status and provides lock/unlock actions for an entity (PRD-11).
  *
@@ -37,7 +37,7 @@ export function LockStatus({
   } = useLock(entityType, entityId);
 
   if (isLoading) {
-    return <WireframeLoader size={32} />;
+    return <ContextLoader size={32} />;
   }
 
   const isLockedByMe = lock !== null && lock.user_id === currentUserId;

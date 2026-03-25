@@ -12,7 +12,7 @@
 import { Fragment, useCallback, useState } from "react";
 
 import { ConfirmDeleteModal, ConfirmModal, Modal } from "@/components/composite";
-import { Button, Input ,  WireframeLoader } from "@/components/primitives";
+import { Button, Input ,  ContextLoader } from "@/components/primitives";
 import { Stack } from "@/components/layout";
 import { useDeleteMediaVariant, useMediaVariants, useUploadMediaVariant } from "@/features/media/hooks/use-media-variants";
 import { IMAGE_ACCEPT_STRING, MEDIA_VARIANT_STATUS_LABEL, type MediaVariant, type MediaVariantStatusId } from "@/features/media/types";
@@ -83,7 +83,7 @@ function SeedImage({ src, alt }: { src: string; alt: string }) {
     <div className="relative h-48">
       {!loaded && (
         <div className="absolute inset-0 rounded-[var(--radius-md)] bg-[#161b22] flex items-center justify-center">
-          <WireframeLoader size={32} />
+          <ContextLoader size={32} />
         </div>
       )}
       <img
@@ -844,7 +844,7 @@ export function AvatarSeedDataModal({ avatar, projectId, onClose, groupOptions, 
                   <div key={type} className="space-y-[var(--spacing-1)]">
                     <span className={TERMINAL_LABEL}>{label}</span>
                     <div className="h-48 rounded-[var(--radius-md)] bg-[#161b22] flex items-center justify-center">
-                      <WireframeLoader size={32} />
+                      <ContextLoader size={32} />
                     </div>
                   </div>
                 );
@@ -857,7 +857,7 @@ export function AvatarSeedDataModal({ avatar, projectId, onClose, groupOptions, 
                     <span className={TERMINAL_LABEL}>{label}</span>
                     {isReplacing ? (
                       <div className="h-48 rounded-[var(--radius-md)] bg-[#161b22] flex items-center justify-center">
-                        <WireframeLoader size={32} />
+                        <ContextLoader size={32} />
                       </div>
                     ) : (
                       <button

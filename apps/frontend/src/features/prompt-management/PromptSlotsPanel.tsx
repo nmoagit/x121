@@ -1,4 +1,4 @@
-import { WireframeLoader } from "@/components/primitives";
+import { ContextLoader } from "@/components/primitives";
 /**
  * Workflow prompt slots panel (PRD-115).
  *
@@ -87,7 +87,7 @@ export function PromptSlotsPanel({ workflowId, sceneTypeId }: PromptSlotsPanelPr
   if (slotsLoading || defaultsLoading) {
     return (
       <div className="flex items-center justify-center py-8" data-testid="prompt-slots-loading">
-        <WireframeLoader size={48} />
+        <ContextLoader size={48} />
       </div>
     );
   }

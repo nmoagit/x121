@@ -8,7 +8,7 @@ import { useCallback, useState } from "react";
 
 import { ConfirmModal, Tabs } from "@/components/composite";
 import { useToast } from "@/components/composite/useToast";
-import { Button ,  WireframeLoader } from "@/components/primitives";
+import { Button ,  ContextLoader } from "@/components/primitives";
 import { formatCents, formatDateTime, formatRelative } from "@/lib/format";
 import {
   TERMINAL_PANEL,
@@ -70,7 +70,7 @@ export function CloudProviderDetail({ providerId }: Props) {
   if (isLoading || !provider) {
     return (
       <div className="flex h-64 items-center justify-center">
-        <WireframeLoader size={48} />
+        <ContextLoader size={48} />
       </div>
     );
   }
@@ -165,7 +165,7 @@ function InstancesTab({ providerId }: { providerId: number }) {
   const stopInst = useStopInstance(providerId);
   const terminateInst = useTerminateInstance(providerId);
 
-  if (isLoading) return <WireframeLoader size={32} />;
+  if (isLoading) return <ContextLoader size={32} />;
   if (!instances || instances.length === 0) {
     return <p className="text-xs font-mono text-[var(--color-text-muted)]">No instances</p>;
   }
@@ -184,7 +184,7 @@ function GpuTypesTab({ providerId }: { providerId: number }) {
   const { data: types, isLoading } = useGpuTypes(providerId);
   const syncTypes = useSyncGpuTypes(providerId);
 
-  if (isLoading) return <WireframeLoader size={32} />;
+  if (isLoading) return <ContextLoader size={32} />;
 
   return (
     <div>
@@ -250,7 +250,7 @@ function ScalingTab({ providerId }: { providerId: number }) {
     [gpuTypes],
   );
 
-  if (isLoading) return <WireframeLoader size={32} />;
+  if (isLoading) return <ContextLoader size={32} />;
 
   return (
     <div className="flex flex-col gap-6">
@@ -330,7 +330,7 @@ function ScalingTab({ providerId }: { providerId: number }) {
           </Button>
         </div>
         {eventsLoading ? (
-          <WireframeLoader size={32} />
+          <ContextLoader size={32} />
         ) : !events || events.length === 0 ? (
           <p className="text-xs font-mono text-[var(--color-text-muted)]">
             No scaling decisions recorded yet. Decisions are evaluated every 30 seconds.
@@ -636,7 +636,7 @@ function CostTab({ providerId }: { providerId: number }) {
   const { data: summary, isLoading: summaryLoading } = useCostSummary(providerId);
   const { data: events, isLoading: eventsLoading } = useCostEvents(providerId);
 
-  if (summaryLoading || eventsLoading) return <WireframeLoader size={32} />;
+  if (summaryLoading || eventsLoading) return <ContextLoader size={32} />;
 
   return (
     <div>

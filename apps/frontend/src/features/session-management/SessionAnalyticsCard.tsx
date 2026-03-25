@@ -4,7 +4,7 @@
  * Displays key session metrics using the shared StatBadge component.
  */
 
-import { StatBadge ,  WireframeLoader } from "@/components/primitives";
+import { StatBadge ,  ContextLoader } from "@/components/primitives";
 import { formatDurationSecs } from "@/lib/format";
 
 import { useSessionAnalytics } from "./hooks/use-session-management";
@@ -19,7 +19,7 @@ export function SessionAnalyticsCard() {
   if (isLoading) {
     return (
       <div className="flex h-32 items-center justify-center">
-        <WireframeLoader size={64} />
+        <ContextLoader size={64} />
       </div>
     );
   }

@@ -10,7 +10,7 @@ import { useCallback, useState } from "react";
 import { Card, Modal } from "@/components/composite";
 import { Stack } from "@/components/layout";
 import { useSetPageTitle } from "@/hooks/useSetPageTitle";
-import { Badge, Button, Input ,  WireframeLoader } from "@/components/primitives";
+import { Badge, Button, Input ,  ContextLoader } from "@/components/primitives";
 import { formatDateTime } from "@/lib/format";
 import { AlertTriangle, Plus, Trash2 } from "@/tokens/icons";
 
@@ -208,7 +208,7 @@ export function WebhookManager({ onViewDeliveries }: WebhookManagerProps) {
   if (isLoading) {
     return (
       <div className="flex h-[calc(100vh-4rem)] items-center justify-center">
-        <WireframeLoader size={64} />
+        <ContextLoader size={64} />
       </div>
     );
   }

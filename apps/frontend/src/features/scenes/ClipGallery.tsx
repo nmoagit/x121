@@ -1,4 +1,4 @@
-import { WireframeLoader } from "@/components/primitives";
+import { ContextLoader } from "@/components/primitives";
 import { useCallback, useMemo, useState } from "react";
 
 import { EmptyState } from "@/components/domain/EmptyState";
@@ -84,7 +84,7 @@ export function ClipGallery({ sceneId, onGenerate, generateLoading, generateDisa
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <WireframeLoader size={64} />
+        <ContextLoader size={64} />
       </div>
     );
   }

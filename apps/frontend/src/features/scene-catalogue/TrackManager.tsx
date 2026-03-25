@@ -8,7 +8,7 @@
 import { useCallback, useState } from "react";
 
 import { Stack } from "@/components/layout";
-import { Button, Input, Toggle ,  WireframeLoader } from "@/components/primitives";
+import { Button, Input, Toggle ,  ContextLoader } from "@/components/primitives";
 import { cn } from "@/lib/cn";
 import { generateSnakeSlug } from "@/lib/format";
 import {
@@ -189,7 +189,7 @@ export function TrackManager() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <WireframeLoader size={64} />
+        <ContextLoader size={64} />
       </div>
     );
   }

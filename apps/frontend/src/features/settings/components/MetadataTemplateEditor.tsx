@@ -9,7 +9,7 @@ import { useCallback, useState } from "react";
 
 import { ConfirmModal } from "@/components/composite";
 import { Stack } from "@/components/layout";
-import { Button, Input, Select, Toggle ,  WireframeLoader } from "@/components/primitives";
+import { Button, Input, Select, Toggle ,  ContextLoader } from "@/components/primitives";
 import { ChevronDown, Plus, Trash2 } from "@/tokens/icons";
 import { cn } from "@/lib/cn";
 import { TERMINAL_PANEL, TERMINAL_HEADER, TERMINAL_BODY, TERMINAL_TH, TERMINAL_DIVIDER, TERMINAL_ROW_HOVER, GHOST_DANGER_BTN } from "@/lib/ui-classes";
@@ -115,7 +115,7 @@ function TemplateRow({ template }: { template: MetadataTemplate }) {
         <div className={TERMINAL_BODY}>
           {isLoading ? (
             <div className="flex justify-center py-4">
-              <WireframeLoader size={32} />
+              <ContextLoader size={32} />
             </div>
           ) : (
             <Stack gap={3}>
@@ -282,7 +282,7 @@ export function MetadataTemplateEditor() {
   if (isLoading) {
     return (
       <div className="flex justify-center py-8">
-        <WireframeLoader size={64} />
+        <ContextLoader size={64} />
       </div>
     );
   }

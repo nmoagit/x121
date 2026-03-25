@@ -2,7 +2,7 @@
  * Live preview display for a naming template (PRD-116).
  */
 
-import { WireframeLoader } from "@/components/primitives";
+import { ContextLoader } from "@/components/primitives";
 import { AlertTriangle } from "@/tokens/icons";
 import { TERMINAL_LABEL } from "@/lib/ui-classes";
 
@@ -19,7 +19,7 @@ export function TemplatePreview({ preview, isLoading }: TemplatePreviewProps) {
       <span className={TERMINAL_LABEL}>Preview</span>
       <div className="px-3 py-2 text-xs font-mono bg-[#161b22] rounded-[var(--radius-md)] min-h-[2rem] flex items-center">
         {isLoading ? (
-          <WireframeLoader size={32} />
+          <ContextLoader size={32} />
         ) : preview ? (
           <span className="text-cyan-400">{preview.filename}</span>
         ) : (

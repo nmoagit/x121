@@ -7,7 +7,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 
-import { Button ,  WireframeLoader } from "@/components/primitives";
+import { Button ,  ContextLoader } from "@/components/primitives";
 import { Select  } from "@/components/primitives";
 import { Stack } from "@/components/layout";
 
@@ -93,7 +93,7 @@ export function OffPeakConfigEditor() {
   if (isPending) {
     return (
       <div className="flex items-center justify-center py-8" data-testid="offpeak-loading">
-        <WireframeLoader size={48} />
+        <ContextLoader size={48} />
       </div>
     );
   }

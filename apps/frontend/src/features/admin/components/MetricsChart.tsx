@@ -1,5 +1,5 @@
 import { Stack } from "@/components/layout";
-import { Button ,  WireframeLoader } from "@/components/primitives";
+import { Button ,  ContextLoader } from "@/components/primitives";
 import { TERMINAL_PANEL, TERMINAL_HEADER, TERMINAL_BODY, TERMINAL_HEADER_TITLE } from "@/lib/ui-classes";
 import { useThresholds, useWorkerMetrics } from "@/features/admin/hooks/use-hardware";
 import type { GpuMetricRow } from "@/features/admin/hooks/use-hardware";
@@ -125,7 +125,7 @@ export function MetricsChart({ workerId }: MetricsChartProps) {
       <div className={TERMINAL_BODY}>
         {isLoading ? (
           <div className="flex h-64 items-center justify-center">
-            <WireframeLoader size={48} />
+            <ContextLoader size={48} />
           </div>
         ) : chartData.length === 0 ? (
           <div className="flex h-64 items-center justify-center">

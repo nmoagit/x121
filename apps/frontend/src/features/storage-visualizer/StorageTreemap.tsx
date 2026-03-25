@@ -8,7 +8,7 @@
 
 import { Card, CardBody, CardHeader } from "@/components/composite";
 import { Stack } from "@/components/layout";
-import { WireframeLoader } from "@/components/primitives";
+import { ContextLoader } from "@/components/primitives";
 import { cn } from "@/lib/cn";
 import { formatBytes } from "@/lib/format";
 import { useCallback, useMemo, useRef, useState } from "react";
@@ -91,7 +91,7 @@ export function StorageTreemap() {
       <CardBody>
         {isLoading ? (
           <div className="flex h-[480px] items-center justify-center">
-            <WireframeLoader size={48} />
+            <ContextLoader size={48} />
           </div>
         ) : rects.length === 0 ? (
           <div className="flex h-[480px] items-center justify-center">

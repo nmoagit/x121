@@ -6,7 +6,7 @@
  */
 
 import { Card } from "@/components/composite/Card";
-import { WireframeLoader } from "@/components/primitives";
+import { ContextLoader } from "@/components/primitives";
 import { Stack } from "@/components/layout";
 import { Activity, AlertCircle } from "@/tokens/icons";
 
@@ -69,7 +69,7 @@ export function ServiceStatusGrid({ onServiceClick }: ServiceStatusGridProps) {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-[var(--spacing-8)]">
-        <WireframeLoader size={64} />
+        <ContextLoader size={64} />
       </div>
     );
   }

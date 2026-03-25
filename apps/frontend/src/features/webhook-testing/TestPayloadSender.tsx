@@ -9,7 +9,7 @@ import { useCallback, useState } from "react";
 
 import { Card, CardBody, CardHeader } from "@/components/composite";
 import { Stack } from "@/components/layout";
-import { Button, Select ,  WireframeLoader } from "@/components/primitives";
+import { Button, Select ,  ContextLoader } from "@/components/primitives";
 
 import { useSamplePayloads, useTestSend } from "./hooks/use-webhook-testing";
 import { TestResultDisplay } from "./TestResultDisplay";
@@ -100,7 +100,7 @@ export function TestPayloadSender() {
         <Stack gap={4}>
           {samplesLoading ? (
             <div className="flex justify-center py-4">
-              <WireframeLoader size={32} />
+              <ContextLoader size={32} />
             </div>
           ) : (
             <>

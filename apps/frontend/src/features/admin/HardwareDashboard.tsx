@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 
 import { EmptyState } from "@/components/domain";
 import { Stack } from "@/components/layout";
-import { WireframeLoader } from "@/components/primitives";
+import { ContextLoader } from "@/components/primitives";
 import { MetricsChart } from "@/features/admin/components/MetricsChart";
 import { WorkerCard } from "@/features/admin/components/WorkerCard";
 import { useCurrentMetrics, useThresholds } from "@/features/admin/hooks/use-hardware";
@@ -53,7 +53,7 @@ export function HardwareDashboard() {
   if (metricsLoading) {
     return (
       <div className="flex h-[calc(100vh-4rem)] items-center justify-center">
-        <WireframeLoader size={64} />
+        <ContextLoader size={64} />
       </div>
     );
   }

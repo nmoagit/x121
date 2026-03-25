@@ -7,7 +7,7 @@
 
 import { useState, useCallback } from "react";
 
-import { Button, FilterSelect, SearchInput, Select ,  WireframeLoader } from "@/components/primitives";
+import { Button, FilterSelect, SearchInput, Select ,  ContextLoader } from "@/components/primitives";
 import { Stack } from "@/components/layout";
 import { useSetPageTitle } from "@/hooks/useSetPageTitle";
 import { TERMINAL_PANEL, TERMINAL_HEADER, TERMINAL_BODY, TERMINAL_TH, TERMINAL_DIVIDER, TERMINAL_ROW_HOVER, TERMINAL_LABEL } from "@/lib/ui-classes";
@@ -134,7 +134,7 @@ export function AuditLogViewer() {
         {/* Table */}
         {isLoading ? (
           <div className="flex h-64 items-center justify-center">
-            <WireframeLoader size={64} />
+            <ContextLoader size={64} />
           </div>
         ) : (
           <div className={TERMINAL_PANEL}>

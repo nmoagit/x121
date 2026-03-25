@@ -1,4 +1,4 @@
-import { WireframeLoader } from "@/components/primitives";
+import { ContextLoader } from "@/components/primitives";
 /**
  * Avatar + scene prompt override editor (PRD-115).
  *
@@ -131,7 +131,7 @@ export function AvatarSceneOverrideEditor({
   if (slotsLoading || overridesLoading) {
     return (
       <div className="flex items-center justify-center py-8" data-testid="override-editor-loading">
-        <WireframeLoader size={48} />
+        <ContextLoader size={48} />
       </div>
     );
   }

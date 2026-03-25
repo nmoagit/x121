@@ -6,7 +6,7 @@
  * Generation Parameters, and Timing.
  */
 
-import { Accordion ,  WireframeLoader } from "@/components";
+import { Accordion ,  ContextLoader } from "@/components";
 import { Badge  } from "@/components";
 import { useCopyToClipboard } from "@/hooks/useCopyToClipboard";
 
@@ -186,7 +186,7 @@ export function ReceiptPanel({ segmentId }: ReceiptPanelProps) {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center p-6" data-testid="receipt-loading">
-        <WireframeLoader size={48} />
+        <ContextLoader size={48} />
       </div>
     );
   }

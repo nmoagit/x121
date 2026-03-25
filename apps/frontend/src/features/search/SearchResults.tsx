@@ -5,7 +5,7 @@
  * matching text, and pagination controls.
  */
 
-import { Badge, Button ,  WireframeLoader } from "@/components/primitives";
+import { Badge, Button ,  ContextLoader } from "@/components/primitives";
 import { Stack } from "@/components/layout";
 import { Card } from "@/components/composite/Card";
 import { entityTypeLabel, type SearchResponse, type SearchResultRow } from "./types";
@@ -48,7 +48,7 @@ export function SearchResults({
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-16">
-        <WireframeLoader size={64} />
+        <ContextLoader size={64} />
       </div>
     );
   }

@@ -5,7 +5,7 @@
  * model versions compared to the current asset versions.
  */
 
-import { Badge ,  WireframeLoader } from "@/components";
+import { Badge ,  ContextLoader } from "@/components";
 import { Card, CardBody, CardHeader  } from "@/components";
 
 import { useStalenessReport } from "./hooks/use-provenance";
@@ -62,7 +62,7 @@ export function StalenessReport({ projectId }: StalenessReportProps) {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center p-6" data-testid="staleness-loading">
-        <WireframeLoader size={48} />
+        <ContextLoader size={48} />
       </div>
     );
   }

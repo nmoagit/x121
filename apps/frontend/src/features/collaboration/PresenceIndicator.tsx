@@ -1,4 +1,4 @@
-import { WireframeLoader } from "@/components/primitives";
+import { ContextLoader } from "@/components/primitives";
 /**
  * Displays avatar indicators for users currently viewing an entity (PRD-11).
  *
@@ -23,7 +23,7 @@ export function PresenceIndicator({
   const { data: users, isPending } = usePresence(entityType, entityId);
 
   if (isPending) {
-    return <WireframeLoader size={32} />;
+    return <ContextLoader size={32} />;
   }
 
   if (!users || users.length === 0) {

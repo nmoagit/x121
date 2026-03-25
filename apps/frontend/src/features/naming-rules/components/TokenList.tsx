@@ -4,7 +4,7 @@
  * Shows available template tokens as clickable chips that insert into the editor.
  */
 
-import { WireframeLoader } from "@/components/primitives";
+import { ContextLoader } from "@/components/primitives";
 import { TERMINAL_LABEL } from "@/lib/ui-classes";
 
 import { useCategoryTokens } from "../hooks/use-naming-rules";
@@ -24,7 +24,7 @@ export function TokenList({ categoryId, onTokenClick }: TokenListProps) {
         Available tokens
       </span>
       {isLoading ? (
-        <WireframeLoader size={32} />
+        <ContextLoader size={32} />
       ) : (
         <div className="flex flex-wrap gap-1.5">
           {tokens?.map((t) => (

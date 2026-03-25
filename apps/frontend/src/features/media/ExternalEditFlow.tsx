@@ -8,7 +8,7 @@
 import { useCallback, useRef, useState } from "react";
 
 import { Stack } from "@/components/layout";
-import { Button ,  WireframeLoader } from "@/components/primitives";
+import { Button ,  ContextLoader } from "@/components/primitives";
 import { TERMINAL_BODY, TERMINAL_HEADER, TERMINAL_HEADER_TITLE, TERMINAL_PANEL } from "@/lib/ui-classes";
 import { Download, Upload } from "@/tokens/icons";
 
@@ -163,7 +163,7 @@ export function ExternalEditFlow({
 
           {historyLoading ? (
             <div className="flex h-24 items-center justify-center">
-              <WireframeLoader size={32} />
+              <ContextLoader size={32} />
             </div>
           ) : !history || history.length === 0 ? (
             <p className="text-xs text-[var(--color-text-muted)]">No version history.</p>

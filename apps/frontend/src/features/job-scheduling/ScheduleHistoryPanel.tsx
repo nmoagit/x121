@@ -5,7 +5,7 @@
  * with status badges, job links, durations, and error messages.
  */
 
-import { WireframeLoader } from "@/components/primitives";
+import { ContextLoader } from "@/components/primitives";
 import { cn } from "@/lib/cn";
 import { formatDateTime, formatDuration } from "@/lib/format";
 import {
@@ -73,7 +73,7 @@ export function ScheduleHistoryPanel({ scheduleId }: ScheduleHistoryPanelProps) 
   if (isPending) {
     return (
       <div className="flex items-center justify-center py-8" data-testid="history-loading">
-        <WireframeLoader size={48} />
+        <ContextLoader size={48} />
       </div>
     );
   }

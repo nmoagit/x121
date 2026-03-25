@@ -13,7 +13,7 @@ import { useAvatarPath } from "@/hooks/usePipelinePath";
 import { EmptyState } from "@/components/domain";
 import { ConfirmModal, Modal } from "@/components/composite";
 import { PageHeader, Stack } from "@/components/layout";
-import { Button, FilterSelect, SearchInput, Toggle ,  WireframeLoader } from "@/components/primitives";
+import { Button, FilterSelect, SearchInput, Toggle ,  ContextLoader } from "@/components/primitives";
 import { cn } from "@/lib/cn";
 import { DrawingCanvas } from "@/features/annotations/DrawingCanvas";
 import type { DrawingObject } from "@/features/annotations/types";
@@ -462,7 +462,7 @@ export function AnnotationsPage() {
       {/* Content */}
       {isLoading ? (
         <div className="flex justify-center py-12">
-          <WireframeLoader size={48} />
+          <ContextLoader size={48} />
         </div>
       ) : !filteredItems?.length ? (
         <EmptyState

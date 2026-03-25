@@ -5,7 +5,7 @@
  * for cross-project visibility.
  */
 
-import { WireframeLoader } from "@/components";
+import { ContextLoader } from "@/components";
 import { cn } from "@/lib/cn";
 import { formatDate } from "@/lib/format";
 import {
@@ -35,7 +35,7 @@ export function LibraryUsagePanel({
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-8">
-        <WireframeLoader size={32} />
+        <ContextLoader size={32} />
       </div>
     );
   }

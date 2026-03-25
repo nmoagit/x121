@@ -8,7 +8,7 @@
 import { useCallback, useRef, useState } from "react";
 
 import { Stack } from "@/components/layout";
-import { Button ,  WireframeLoader } from "@/components/primitives";
+import { Button ,  ContextLoader } from "@/components/primitives";
 import { formatBytes } from "@/lib/format";
 import { TERMINAL_BODY, TERMINAL_HEADER, TERMINAL_HEADER_TITLE, TERMINAL_PANEL } from "@/lib/ui-classes";
 import { Image as ImageIcon, Upload } from "@/tokens/icons";
@@ -153,7 +153,7 @@ export function SourceImageUpload({ avatarId: _avatarId, onUploaded }: SourceIma
           ].join(" ")}
         >
           {isProcessing ? (
-            <WireframeLoader size={48} />
+            <ContextLoader size={48} />
           ) : preview ? (
             <img
               src={preview.previewUrl}

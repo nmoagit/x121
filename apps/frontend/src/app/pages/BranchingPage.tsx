@@ -7,7 +7,7 @@
 
 import { ProjectAvatarPicker, ScenePicker } from "@/components/domain";
 import { Stack } from "@/components/layout";
-import { WireframeLoader } from "@/components/primitives";
+import { ContextLoader } from "@/components/primitives";
 import { Layers } from "@/tokens/icons";
 
 import {
@@ -29,7 +29,7 @@ function SceneBranches({ sceneId }: { sceneId: number }) {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-[var(--spacing-8)]">
-        <WireframeLoader size={64} />
+        <ContextLoader size={64} />
       </div>
     );
   }

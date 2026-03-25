@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Button ,  WireframeLoader } from "@/components/primitives";
+import { Button ,  ContextLoader } from "@/components/primitives";
 import { Modal } from "@/components/composite";
 import {
   TERMINAL_PANEL,
@@ -52,7 +52,7 @@ export function AssignmentDashboard({ projectId }: AssignmentDashboardProps) {
     );
   };
 
-  if (workloadPending) return <div className="m-6"><WireframeLoader size={48} /></div>;
+  if (workloadPending) return <div className="m-6"><ContextLoader size={48} /></div>;
 
   return (
     <div className="p-6 space-y-6">

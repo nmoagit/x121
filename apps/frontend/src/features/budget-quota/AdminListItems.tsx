@@ -4,7 +4,7 @@
  * Extracted to keep BudgetAdminPanel.tsx under the 200-line limit.
  */
 
-import { Badge, Button ,  WireframeLoader } from "@/components/primitives";
+import { Badge, Button ,  ContextLoader } from "@/components/primitives";
 
 import {
   useBudgets,
@@ -33,7 +33,7 @@ export function BudgetListTab({ onEdit }: { onEdit: (projectId: number) => void 
   const deleteBudget = useDeleteBudget();
 
   if (isLoading) {
-    return <div className="flex justify-center py-6"><WireframeLoader size={48} /></div>;
+    return <div className="flex justify-center py-6"><ContextLoader size={48} /></div>;
   }
 
   if (!budgets?.length) {
@@ -86,7 +86,7 @@ export function QuotaListTab({ onEdit }: { onEdit: (userId: number) => void }) {
   const deleteQuota = useDeleteQuota();
 
   if (isLoading) {
-    return <div className="flex justify-center py-6"><WireframeLoader size={48} /></div>;
+    return <div className="flex justify-center py-6"><ContextLoader size={48} /></div>;
   }
 
   if (!quotas?.length) {
@@ -139,7 +139,7 @@ export function ExemptionListTab() {
   const deleteExemption = useDeleteExemption();
 
   if (isLoading) {
-    return <div className="flex justify-center py-6"><WireframeLoader size={48} /></div>;
+    return <div className="flex justify-center py-6"><ContextLoader size={48} /></div>;
   }
 
   if (!exemptions?.length) {

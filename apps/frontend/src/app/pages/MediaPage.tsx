@@ -15,7 +15,7 @@ import type { TagInfo } from "@/components/domain/TagChip";
 import { Modal } from "@/components/composite";
 import { api } from "@/lib/api";
 import { PageHeader, Stack } from "@/components/layout";
-import { Button, Checkbox, MultiFilterBar, SearchInput, Select, Toggle, WireframeLoader } from "@/components/primitives";
+import { Button, Checkbox, MultiFilterBar, SearchInput, Select, Toggle, ContextLoader } from "@/components/primitives";
 import type { FilterConfig, FilterOption } from "@/components/primitives";
 import { ProgressiveImage } from "@/components/primitives";
 import { useBulkSelection } from "@/hooks/useBulkSelection";
@@ -471,7 +471,7 @@ export function MediaPage() {
       {/* Content */}
       {isLoading ? (
         <div className="flex justify-center py-12">
-          <WireframeLoader size={48} />
+          <ContextLoader size={48} />
         </div>
       ) : !filteredVariants.length ? (
         <EmptyState

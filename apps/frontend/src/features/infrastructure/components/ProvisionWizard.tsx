@@ -10,7 +10,7 @@
 
 import { useState, useMemo } from "react";
 
-import { Button, Input, Select, Badge ,  WireframeLoader } from "@/components/primitives";
+import { Button, Input, Select, Badge ,  ContextLoader } from "@/components/primitives";
 import { Modal } from "@/components/composite";
 import { Stack } from "@/components/layout";
 import { Cpu, DollarSign, HardDrive, RefreshCw } from "@/tokens/icons";
@@ -254,7 +254,7 @@ function GpuSelector({
   if (loading) {
     return (
       <div className="flex items-center justify-center py-8">
-        <WireframeLoader size={48} />
+        <ContextLoader size={48} />
       </div>
     );
   }

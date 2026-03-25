@@ -7,7 +7,7 @@
 
 import { Card, CardBody } from "@/components/composite";
 import { Stack } from "@/components/layout";
-import { Button, StatBadge ,  WireframeLoader } from "@/components/primitives";
+import { Button, StatBadge ,  ContextLoader } from "@/components/primitives";
 import { formatBytes, formatDateTime, formatPercent } from "@/lib/format";
 import { RefreshCw } from "@/tokens/icons";
 
@@ -29,7 +29,7 @@ export function StorageSummaryCard() {
       <Card elevation="sm">
         <CardBody>
           <div className="flex h-24 items-center justify-center">
-            <WireframeLoader size={48} />
+            <ContextLoader size={48} />
           </div>
         </CardBody>
       </Card>

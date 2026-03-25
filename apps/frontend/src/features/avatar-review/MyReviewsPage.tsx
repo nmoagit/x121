@@ -9,7 +9,7 @@ import { useNavigate } from "@tanstack/react-router";
 
 import { EmptyState } from "@/components/domain";
 import { PageHeader, Stack } from "@/components/layout";
-import { Button, FilterSelect, Select, Toggle ,  WireframeLoader } from "@/components/primitives";
+import { Button, FilterSelect, Select, Toggle ,  ContextLoader } from "@/components/primitives";
 import { TERMINAL_PANEL, TERMINAL_ROW_HOVER, TERMINAL_STATUS_COLORS } from "@/lib/ui-classes";
 import { useClipsBrowse } from "@/features/scenes/hooks/useClipManagement";
 import type { ClipBrowseItem } from "@/features/scenes/hooks/useClipManagement";
@@ -261,7 +261,7 @@ export function MyReviewsPage() {
       {/* Content */}
       {isLoading ? (
         <div className="flex justify-center py-12">
-          <WireframeLoader size={48} />
+          <ContextLoader size={48} />
         </div>
       ) : !filteredClips.length ? (
         <EmptyState

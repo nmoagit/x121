@@ -9,7 +9,7 @@ import { useMemo, useState } from "react";
 import { Card, CardBody } from "@/components/composite";
 import { Stack } from "@/components/layout";
 import { useSetPageTitle } from "@/hooks/useSetPageTitle";
-import { WireframeLoader } from "@/components/primitives";
+import { ContextLoader } from "@/components/primitives";
 
 import { JOB_STATUS_LABELS } from "@/lib/job-status";
 
@@ -66,7 +66,7 @@ export function RenderTimelinePage() {
             {/* Timeline chart */}
             {isLoading && (
               <div className="flex items-center justify-center py-16">
-                <WireframeLoader size={48} />
+                <ContextLoader size={48} />
               </div>
             )}
 

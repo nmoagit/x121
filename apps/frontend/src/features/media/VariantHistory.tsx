@@ -5,7 +5,7 @@
  */
 
 import { Stack } from "@/components/layout";
-import { WireframeLoader } from "@/components/primitives";
+import { ContextLoader } from "@/components/primitives";
 import { formatDateTime } from "@/lib/format";
 import { TERMINAL_BODY, TERMINAL_HEADER, TERMINAL_HEADER_TITLE, TERMINAL_PANEL } from "@/lib/ui-classes";
 import { Clock } from "@/tokens/icons";
@@ -38,7 +38,7 @@ export function VariantHistory({ avatarId, variantId }: VariantHistoryProps) {
   if (isLoading) {
     return (
       <div className="flex h-24 items-center justify-center">
-        <WireframeLoader size={48} />
+        <ContextLoader size={48} />
       </div>
     );
   }

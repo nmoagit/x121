@@ -1,5 +1,5 @@
 import { TerminalSection } from "@/components/domain";
-import { WireframeLoader } from "@/components/primitives";
+import { ContextLoader } from "@/components/primitives";
 import { useAvatarReviewHistory } from "./hooks/use-avatar-review";
 import { ReviewAuditRow } from "./ReviewAuditRow";
 import type { ReviewAuditEntry } from "./types";
@@ -11,7 +11,7 @@ interface AvatarReviewAuditLogProps {
 export function AvatarReviewAuditLog({ avatarId }: AvatarReviewAuditLogProps) {
   const { data, isPending, isError } = useAvatarReviewHistory(avatarId);
 
-  if (isPending) return <div className="m-4"><WireframeLoader size={48} /></div>;
+  if (isPending) return <div className="m-4"><ContextLoader size={48} /></div>;
   if (isError) return <div className="p-4 text-xs font-mono text-red-400">Failed to load review history.</div>;
 
   const entries: ReviewAuditEntry[] = data ?? [];

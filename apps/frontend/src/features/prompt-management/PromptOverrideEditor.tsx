@@ -1,4 +1,4 @@
-import { WireframeLoader } from "@/components/primitives";
+import { ContextLoader } from "@/components/primitives";
 /**
  * Generic prompt override editor for project, group, and avatar levels.
  *
@@ -162,7 +162,7 @@ export function PromptOverrideEditor({
   if (sceneTypesLoading) {
     return (
       <div className="flex items-center justify-center py-8">
-        <WireframeLoader size={48} />
+        <ContextLoader size={48} />
       </div>
     );
   }
@@ -202,7 +202,7 @@ export function PromptOverrideEditor({
 
       {sceneTypeId && workflowId && (isLoading || slotsLoading) && (
         <div className="flex items-center justify-center py-8">
-          <WireframeLoader size={48} />
+          <ContextLoader size={48} />
         </div>
       )}
 

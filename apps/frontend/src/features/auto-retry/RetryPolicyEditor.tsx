@@ -1,4 +1,4 @@
-import { WireframeLoader } from "@/components/primitives";
+import { ContextLoader } from "@/components/primitives";
 /**
  * Retry policy editor (PRD-71).
  *
@@ -89,7 +89,7 @@ export function RetryPolicyEditor({ sceneTypeId }: RetryPolicyEditorProps) {
   if (isPending) {
     return (
       <div className="flex items-center justify-center py-8" data-testid="retry-policy-loading">
-        <WireframeLoader size={48} />
+        <ContextLoader size={48} />
       </div>
     );
   }

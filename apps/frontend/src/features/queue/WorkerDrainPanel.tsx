@@ -6,7 +6,7 @@
  * badge when an instance is drained with zero active jobs.
  */
 
-import { Button, Toggle ,  WireframeLoader } from "@/components/primitives";
+import { Button, Toggle ,  ContextLoader } from "@/components/primitives";
 import { Stack } from "@/components/layout";
 import { Server, RefreshCw } from "@/tokens/icons";
 import { iconSizes } from "@/tokens/icons";
@@ -96,7 +96,7 @@ export function WorkerDrainPanel({ workerLoad }: WorkerDrainPanelProps) {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center p-6">
-        <WireframeLoader size={48} />
+        <ContextLoader size={48} />
       </div>
     );
   }

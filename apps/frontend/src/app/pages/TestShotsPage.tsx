@@ -7,7 +7,7 @@
 
 import { ProjectAvatarPicker } from "@/components/domain";
 import { Stack } from "@/components/layout";
-import { WireframeLoader } from "@/components/primitives";
+import { ContextLoader } from "@/components/primitives";
 import { EmptyState } from "@/components/domain";
 import { Image } from "@/tokens/icons";
 
@@ -39,7 +39,7 @@ function AvatarTestShots({ avatarId }: { avatarId: number }) {
   if (stLoading || galleryLoading) {
     return (
       <div className="flex items-center justify-center py-[var(--spacing-8)]">
-        <WireframeLoader size={64} />
+        <ContextLoader size={64} />
       </div>
     );
   }

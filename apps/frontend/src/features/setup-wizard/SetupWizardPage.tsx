@@ -8,7 +8,7 @@
 import { useCallback, useState } from "react";
 
 import { ConfirmModal } from "@/components/composite";
-import { Badge, Button ,  WireframeLoader } from "@/components/primitives";
+import { Badge, Button ,  ContextLoader } from "@/components/primitives";
 
 import { AdminAccountStep } from "./AdminAccountStep";
 import { ComfyUiStep } from "./ComfyUiStep";
@@ -75,7 +75,7 @@ export function SetupWizardPage() {
   if (isPending) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <WireframeLoader size={64} />
+        <ContextLoader size={64} />
       </div>
     );
   }

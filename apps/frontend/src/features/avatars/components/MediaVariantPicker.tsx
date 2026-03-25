@@ -7,7 +7,7 @@
  */
 
 import { cn } from "@/lib/cn";
-import { WireframeLoader } from "@/components/primitives";
+import { ContextLoader } from "@/components/primitives";
 import { X } from "@/tokens/icons";
 import { variantThumbnailUrl } from "@/features/media/utils";
 import { useMediaVariants } from "@/features/media/hooks/use-media-variants";
@@ -65,7 +65,7 @@ export function MediaVariantPicker({
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-2">
-        <WireframeLoader size={20} />
+        <ContextLoader size={20} />
       </div>
     );
   }

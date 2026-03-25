@@ -1,7 +1,7 @@
 import { useState } from "react";
 
 import { Stack } from "@/components/layout";
-import { Button ,  WireframeLoader } from "@/components/primitives";
+import { Button ,  ContextLoader } from "@/components/primitives";
 import { TERMINAL_PANEL, TERMINAL_HEADER, TERMINAL_HEADER_TITLE, TERMINAL_BODY, TERMINAL_TH, TERMINAL_DIVIDER, TERMINAL_ROW_HOVER } from "@/lib/ui-classes";
 import { cn } from "@/lib/cn";
 import { CleanupHistory } from "@/features/admin/CleanupHistory";
@@ -52,7 +52,7 @@ export function ReclamationDashboard() {
   if (previewLoading) {
     return (
       <div className="flex h-[calc(100vh-4rem)] items-center justify-center">
-        <WireframeLoader size={64} />
+        <ContextLoader size={64} />
       </div>
     );
   }

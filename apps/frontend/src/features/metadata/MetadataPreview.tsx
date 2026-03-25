@@ -6,7 +6,7 @@
  */
 
 import { Card } from "@/components/composite/Card";
-import { WireframeLoader } from "@/components/primitives";
+import { ContextLoader } from "@/components/primitives";
 import { Stack } from "@/components/layout";
 import {
   useAvatarMetadataPreview,
@@ -54,7 +54,7 @@ export function MetadataPreview({
 
       {query.isLoading ? (
         <div className="flex h-32 items-center justify-center">
-          <WireframeLoader size={48} />
+          <ContextLoader size={48} />
         </div>
       ) : query.error ? (
         <Card padding="md">

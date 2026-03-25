@@ -7,7 +7,7 @@
 
 import { useState } from "react";
 
-import { Button ,  WireframeLoader } from "@/components/primitives";
+import { Button ,  ContextLoader } from "@/components/primitives";
 import { Card } from "@/components/composite";
 import { cn } from "@/lib/cn";
 import { Plus } from "@/tokens/icons";
@@ -81,7 +81,7 @@ export function ScheduleManager() {
       {/* Content */}
       {isPending && (
         <div className="flex items-center justify-center py-8" data-testid="schedule-list-loading">
-          <WireframeLoader size={48} />
+          <ContextLoader size={48} />
         </div>
       )}
 

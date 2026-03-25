@@ -7,7 +7,7 @@
 
 import { useCallback, useMemo, useState } from "react";
 
-import { Button, SearchInput ,  WireframeLoader } from "@/components/primitives";
+import { Button, SearchInput ,  ContextLoader } from "@/components/primitives";
 import {
   AlertCircle,
   ChevronLeft,
@@ -241,7 +241,7 @@ export function HistoryTab() {
       <div className="flex-1 overflow-y-auto min-h-0 bg-[#0d1117] scrollbar-thin">
         {isLoading ? (
           <div className="flex items-center justify-center h-full">
-            <WireframeLoader size={64} />
+            <ContextLoader size={64} />
           </div>
         ) : error ? (
           <div className="flex items-center justify-center h-full">

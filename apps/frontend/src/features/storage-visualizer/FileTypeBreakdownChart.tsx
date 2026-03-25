@@ -5,7 +5,7 @@
  */
 
 import { Card, CardBody, CardHeader } from "@/components/composite";
-import { WireframeLoader } from "@/components/primitives";
+import { ContextLoader } from "@/components/primitives";
 import { TOOLTIP_CONTENT_STYLE } from "@/features/dashboard/performance/chartStyles";
 import { formatBytes } from "@/lib/format";
 import { useMemo } from "react";
@@ -58,7 +58,7 @@ export function FileTypeBreakdownChart() {
       <CardBody>
         {isLoading ? (
           <div className="flex h-64 items-center justify-center">
-            <WireframeLoader size={48} />
+            <ContextLoader size={48} />
           </div>
         ) : chartData.length === 0 ? (
           <div className="flex h-64 items-center justify-center">

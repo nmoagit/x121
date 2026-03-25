@@ -6,7 +6,7 @@
 
 import { useState, useCallback } from "react";
 
-import { Button, Input, Toggle ,  WireframeLoader } from "@/components/primitives";
+import { Button, Input, Toggle ,  ContextLoader } from "@/components/primitives";
 import { Stack } from "@/components/layout";
 import { TERMINAL_PANEL, TERMINAL_HEADER, TERMINAL_HEADER_TITLE, TERMINAL_BODY, TERMINAL_DIVIDER, TERMINAL_INPUT } from "@/lib/ui-classes";
 import { cn } from "@/lib/cn";
@@ -27,7 +27,7 @@ export function RetentionSettings() {
   if (isLoading) {
     return (
       <div className="flex h-64 items-center justify-center">
-        <WireframeLoader size={64} />
+        <ContextLoader size={64} />
       </div>
     );
   }

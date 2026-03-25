@@ -7,7 +7,7 @@
 
 import { useCallback, useMemo, useState } from "react";
 
-import { Button ,  WireframeLoader } from "@/components/primitives";
+import { Button ,  ContextLoader } from "@/components/primitives";
 import { Card, CardBody, CardHeader } from "@/components/composite";
 
 import {
@@ -175,7 +175,7 @@ export function AbTestPanel({ sceneTypeId }: AbTestPanelProps) {
   if (effectivePending) {
     return (
       <div data-testid="ab-test-loading" className="flex justify-center py-8">
-        <WireframeLoader size={48} />
+        <ContextLoader size={48} />
       </div>
     );
   }

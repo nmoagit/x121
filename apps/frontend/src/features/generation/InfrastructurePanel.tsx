@@ -7,7 +7,7 @@
 
 import { Link } from "@tanstack/react-router";
 
-import { WireframeLoader } from "@/components/primitives";
+import { ContextLoader } from "@/components/primitives";
 import { Server, ArrowRight } from "@/tokens/icons";
 import { cn } from "@/lib/cn";
 import {
@@ -36,7 +36,7 @@ export function InfrastructurePanel() {
         </div>
 
         {isLoading ? (
-          <WireframeLoader size={32} />
+          <ContextLoader size={32} />
         ) : (
           <div className="flex items-center gap-[var(--spacing-2)]">
             <span

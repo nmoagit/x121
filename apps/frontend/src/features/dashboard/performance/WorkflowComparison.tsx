@@ -11,7 +11,7 @@ import {
 } from "recharts";
 
 import { Card } from "@/components/composite/Card";
-import { WireframeLoader } from "@/components/primitives";
+import { ContextLoader } from "@/components/primitives";
 import { Input  } from "@/components/primitives";
 import { Stack } from "@/components/layout";
 import {
@@ -82,7 +82,7 @@ export function WorkflowComparison({ from, to }: WorkflowComparisonProps) {
 
       {isLoading && (
         <div className="flex items-center justify-center py-12">
-          <WireframeLoader size={64} />
+          <ContextLoader size={64} />
         </div>
       )}
 

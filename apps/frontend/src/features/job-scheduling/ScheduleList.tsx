@@ -7,7 +7,7 @@
 
 import { useMemo, useState } from "react";
 
-import { Select ,  WireframeLoader } from "@/components/primitives";
+import { Select ,  ContextLoader } from "@/components/primitives";
 import { cn } from "@/lib/cn";
 import {
   TERMINAL_PANEL,
@@ -89,7 +89,7 @@ export function ScheduleList({ onEdit }: ScheduleListProps) {
   if (isPending) {
     return (
       <div className="flex items-center justify-center py-8" data-testid="schedule-list-loading">
-        <WireframeLoader size={48} />
+        <ContextLoader size={48} />
       </div>
     );
   }

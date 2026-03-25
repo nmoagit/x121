@@ -7,7 +7,7 @@
 import { useState } from "react";
 
 import { Card, CardBody, CardHeader } from "@/components/composite/Card";
-import { WireframeLoader } from "@/components/primitives";
+import { ContextLoader } from "@/components/primitives";
 import { formatBytes } from "@/lib/format";
 import { BarChart3 } from "@/tokens/icons";
 
@@ -91,7 +91,7 @@ export function TopConsumersTable({ period = "24h" }: TopConsumersTableProps) {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-[var(--spacing-6)]">
-        <WireframeLoader size={48} />
+        <ContextLoader size={48} />
       </div>
     );
   }

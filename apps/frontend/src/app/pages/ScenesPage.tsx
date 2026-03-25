@@ -9,7 +9,7 @@ import { useNavigate } from "@tanstack/react-router";
 
 import { EmptyState, BulkActionBar, BulkRejectDialog, BulkLabelDialog, ExportStatusPanel } from "@/components/domain";
 import { PageHeader, Stack } from "@/components/layout";
-import { Button, Checkbox, MultiFilterBar, SearchInput, Select, Toggle, WireframeLoader } from "@/components/primitives";
+import { Button, Checkbox, MultiFilterBar, SearchInput, Select, Toggle, ContextLoader } from "@/components/primitives";
 import type { FilterConfig, FilterOption } from "@/components/primitives";
 import { useClipsBrowse, useBrowseApproveClip, useBrowseUnapproveClip, useBrowseRejectClip, useBulkApproveClips, useBulkRejectClips } from "@/features/scenes/hooks/useClipManagement";
 import type { ClipBrowseItem } from "@/features/scenes/hooks/useClipManagement";
@@ -521,7 +521,7 @@ export function ScenesPage() {
       {/* Content */}
       {isLoading ? (
         <div className="flex justify-center py-12">
-          <WireframeLoader size={48} />
+          <ContextLoader size={48} />
         </div>
       ) : !filteredClips.length ? (
         <EmptyState

@@ -4,7 +4,7 @@
  * Displays all triggers with enable/disable toggle, edit/delete actions.
  */
 
-import { WireframeLoader } from "@/components/primitives";
+import { ContextLoader } from "@/components/primitives";
 import { Card } from "@/components/composite";
 import { cn } from "@/lib/cn";
 
@@ -50,7 +50,7 @@ export function TriggerList({ projectId, onEdit }: TriggerListProps) {
   if (isPending) {
     return (
       <div className="flex items-center justify-center py-8" data-testid="trigger-list-loading">
-        <WireframeLoader size={48} />
+        <ContextLoader size={48} />
       </div>
     );
   }

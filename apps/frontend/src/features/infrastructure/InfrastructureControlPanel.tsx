@@ -5,7 +5,7 @@
 
 import { useCallback, useMemo, useState } from "react";
 
-import { Button, Input, Select, Toggle ,  WireframeLoader } from "@/components/primitives";
+import { Button, Input, Select, Toggle ,  ContextLoader } from "@/components/primitives";
 import { CollapsibleSection } from "@/components/composite";
 import { PageHeader, Stack } from "@/components/layout";
 import { EmptyState } from "@/components/domain";
@@ -52,7 +52,7 @@ export function InfrastructureControlPanel() {
           description="Manage cloud GPU instances across all providers"
         />
         <div className="flex items-center justify-center py-16">
-          <WireframeLoader size={64} />
+          <ContextLoader size={64} />
         </div>
       </Stack>
     );

@@ -9,7 +9,7 @@
  */
 
 import { useState, useMemo } from "react";
-import { TabBar, Toggle ,  WireframeLoader } from "@/components/primitives";
+import { TabBar, Toggle ,  ContextLoader } from "@/components/primitives";
 import { Tooltip } from "@/components/primitives/Tooltip";
 import { AlertTriangle, FileText, Film, Image, Mic } from "@/tokens/icons";
 import { variantThumbnailUrl } from "@/features/media/utils";
@@ -473,7 +473,7 @@ function MatrixTab({ rows, projectId }: MatrixTabProps) {
   if (columnsLoading) {
     return (
       <div className="flex items-center justify-center py-8">
-        <WireframeLoader size={48} />
+        <ContextLoader size={48} />
       </div>
     );
   }
@@ -716,7 +716,7 @@ export function AvatarDeliverablesGrid({ projectId }: AvatarDeliverablesGridProp
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-8">
-        <WireframeLoader size={48} />
+        <ContextLoader size={48} />
       </div>
     );
   }

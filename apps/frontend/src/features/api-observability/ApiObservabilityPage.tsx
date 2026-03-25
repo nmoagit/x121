@@ -9,7 +9,7 @@
 import { useState } from "react";
 
 import { Card } from "@/components/composite/Card";
-import { Badge, Select, Toggle ,  WireframeLoader } from "@/components/primitives";
+import { Badge, Select, Toggle ,  ContextLoader } from "@/components/primitives";
 import { Stack } from "@/components/layout";
 import { useSetPageTitle } from "@/hooks/useSetPageTitle";
 import { AlertTriangle, RefreshCw } from "@/tokens/icons";
@@ -57,7 +57,7 @@ function SummaryBar({ period, autoRefresh }: SummaryBarProps) {
   if (isLoading) {
     return (
       <div className="flex items-center gap-[var(--spacing-2)]">
-        <WireframeLoader size={32} />
+        <ContextLoader size={32} />
         <span className="text-xs text-[var(--color-text-muted)]">Loading summary...</span>
       </div>
     );

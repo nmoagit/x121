@@ -5,7 +5,7 @@
  * This is the "reverse provenance" view.
  */
 
-import { WireframeLoader } from "@/components";
+import { ContextLoader } from "@/components";
 import { Card, CardBody, CardHeader  } from "@/components";
 import { formatDate } from "@/lib/format";
 
@@ -75,7 +75,7 @@ export function VersionHistory({ assetId, version }: VersionHistoryProps) {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center p-6" data-testid="usage-loading">
-        <WireframeLoader size={48} />
+        <ContextLoader size={48} />
       </div>
     );
   }

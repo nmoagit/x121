@@ -1,4 +1,4 @@
-import { WireframeLoader } from "@/components/primitives";
+import { ContextLoader } from "@/components/primitives";
 /**
  * Searchable prompt fragment dropdown (PRD-115).
  *
@@ -69,7 +69,7 @@ export function FragmentDropdown({ sceneTypeId, onSelect }: FragmentDropdownProp
 
       {isPending && (
         <div className="flex items-center justify-center py-4">
-          <WireframeLoader size={32} />
+          <ContextLoader size={32} />
         </div>
       )}
 

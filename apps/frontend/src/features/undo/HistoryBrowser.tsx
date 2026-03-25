@@ -1,4 +1,4 @@
-import { WireframeLoader } from "@/components/primitives";
+import { ContextLoader } from "@/components/primitives";
 /**
  * Tree visualization component for undo/redo history (PRD-51).
  *
@@ -44,7 +44,7 @@ export function HistoryBrowser({
         <span className="text-sm font-medium text-[var(--color-text-primary)]">
           History
         </span>
-        {isSaving && <WireframeLoader size={32} />}
+        {isSaving && <ContextLoader size={32} />}
       </div>
       <HistoryNodeItem
         node={rootNode}

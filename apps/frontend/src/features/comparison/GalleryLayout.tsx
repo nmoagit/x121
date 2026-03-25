@@ -7,7 +7,7 @@
 
 import { createRef, useMemo, type ReactNode } from "react";
 
-import { WireframeLoader } from "@/components/primitives";
+import { ContextLoader } from "@/components/primitives";
 import { cn } from "@/lib/cn";
 import { GridControls, useSyncPlay } from "@/features/cinema";
 
@@ -74,7 +74,7 @@ export function GalleryLayout({
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-[var(--spacing-8)]">
-        <WireframeLoader size={64} />
+        <ContextLoader size={64} />
       </div>
     );
   }

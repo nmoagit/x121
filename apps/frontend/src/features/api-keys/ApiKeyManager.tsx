@@ -11,7 +11,7 @@ import { Card, Modal } from "@/components/composite";
 import { useCopyToClipboard } from "@/hooks/useCopyToClipboard";
 import { Stack } from "@/components/layout";
 import { useSetPageTitle } from "@/hooks/useSetPageTitle";
-import { Badge, Button, Input ,  WireframeLoader } from "@/components/primitives";
+import { Badge, Button, Input ,  ContextLoader } from "@/components/primitives";
 import { formatDateTime } from "@/lib/format";
 import { AlertTriangle, Copy, Plus, RefreshCw } from "@/tokens/icons";
 
@@ -273,7 +273,7 @@ export function ApiKeyManager() {
   if (isLoading) {
     return (
       <div className="flex h-[calc(100vh-4rem)] items-center justify-center">
-        <WireframeLoader size={64} />
+        <ContextLoader size={64} />
       </div>
     );
   }

@@ -8,7 +8,7 @@ import { useState } from "react";
 
 import { ConfirmModal } from "@/components/composite";
 import { Stack } from "@/components/layout";
-import { Button ,  WireframeLoader } from "@/components/primitives";
+import { Button ,  ContextLoader } from "@/components/primitives";
 import { EmptyState } from "@/components/domain";
 import { useSetPageTitle } from "@/hooks/useSetPageTitle";
 import { Server } from "@/tokens/icons";
@@ -43,7 +43,7 @@ export function CloudGpuDashboard() {
   if (isLoading) {
     return (
       <div className="flex h-[calc(100vh-4rem)] items-center justify-center">
-        <WireframeLoader size={64} />
+        <ContextLoader size={64} />
       </div>
     );
   }

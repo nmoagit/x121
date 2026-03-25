@@ -8,7 +8,7 @@
 
 import { useState } from "react";
 
-import { StatBadge ,  WireframeLoader } from "@/components/primitives";
+import { StatBadge ,  ContextLoader } from "@/components/primitives";
 import { Stack } from "@/components/layout";
 import { useSetPageTitle } from "@/hooks/useSetPageTitle";
 import { AlertCircle, Server } from "@/tokens/icons";
@@ -60,7 +60,7 @@ export function WorkerDashboard() {
           {/* Worker grid */}
           {isLoading ? (
             <div className="flex items-center justify-center py-[var(--spacing-8)]">
-              <WireframeLoader size={64} />
+              <ContextLoader size={64} />
             </div>
           ) : error ? (
             <div className="flex flex-col items-center justify-center gap-[var(--spacing-3)] py-[var(--spacing-8)]">

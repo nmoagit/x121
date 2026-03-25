@@ -13,7 +13,7 @@ import {
 } from "recharts";
 
 import { Card } from "@/components/composite/Card";
-import { WireframeLoader } from "@/components/primitives";
+import { ContextLoader } from "@/components/primitives";
 import {
   AXIS_TICK_STYLE,
   GRID_STROKE,
@@ -40,7 +40,7 @@ export function RequestVolumeChart({ data, isLoading }: RequestVolumeChartProps)
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <WireframeLoader size={64} />
+        <ContextLoader size={64} />
       </div>
     );
   }
