@@ -35,6 +35,120 @@ pub struct CreateExportInput {
 // Helpers
 // ---------------------------------------------------------------------------
 
+/// Resolve entity IDs from browse filter parameters.
+///
+/// Runs the same WHERE clause as the browse endpoint but returns only IDs,
+/// with no LIMIT/OFFSET (exports all matching rows).
+async fn resolve_ids_from_filters(
+    pool: &sqlx::PgPool,
+    entity_type: &str,
+    filters: &serde_json::Value,
+) -> AppResult<Vec<DbId>> {
+    match entity_type {
+        "scene_video_version" => {
+            let project_id: Option<DbId> = filters.get("projectId").and_then(|v| v.as_i64());
+            let pipeline_id: Option<DbId> = filters.get("pipelineId").and_then(|v| v.as_i64());
+            let scene_type: Option<String> = filters.get("sceneType").and_then(|v| v.as_str()).map(|s| s.to_string());
+            let track: Option<String> = filters.get("track").and_then(|v| v.as_str()).map(|s| s.to_string());
+            let source: Option<String> = filters.get("source").and_then(|v| v.as_str()).map(|s| s.to_string());
+            let qa_status: Option<String> = filters.get("qaStatus").and_then(|v| v.as_str()).map(|s| s.to_string());
+            let show_disabled = filters.get("showDisabled").and_then(|v| v.as_bool()).unwrap_or(false);
+            let tag_ids: Option<String> = filters.get("tagIds").and_then(|v| v.as_str()).map(|s| s.to_string());
+            let search: Option<String> = filters.get("search").and_then(|v| v.as_str()).map(|s| s.to_string());
+
+            let sql = "SELECT svv.id \
+                FROM scene_video_versions svv \
+                JOIN scenes sc ON sc.id = svv.scene_id AND sc.deleted_at IS NULL \
+                JOIN avatars c ON c.id = sc.avatar_id AND c.deleted_at IS NULL \
+                JOIN projects p ON p.id = c.project_id AND p.deleted_at IS NULL \
+                LEFT JOIN scene_types st ON st.id = sc.scene_type_id \
+                LEFT JOIN tracks t ON t.id = sc.track_id \
+                WHERE svv.deleted_at IS NULL \
+                  AND ($1::bigint IS NULL OR p.id = $1) \
+                  AND ($2::bigint IS NULL OR p.pipeline_id = $2) \
+                  AND ($3::text IS NULL OR st.name = ANY(string_to_array($3, ','))) \
+                  AND ($4::text IS NULL OR t.name = ANY(string_to_array($4, ','))) \
+                  AND ($5::text IS NULL OR svv.source = ANY(string_to_array($5, ','))) \
+                  AND ($6::text IS NULL OR svv.qa_status = ANY(string_to_array($6, ','))) \
+                  AND ($7::bool OR c.is_enabled = true) \
+                  AND ($8::text IS NULL OR svv.id IN ( \
+                    SELECT et.entity_id FROM entity_tags et \
+                    WHERE et.entity_type = 'scene_video_version' \
+                      AND et.tag_id = ANY(string_to_array($8, ',')::bigint[]) \
+                  )) \
+                  AND ($9::text IS NULL OR ( \
+                    c.name ILIKE '%' || $9 || '%' \
+                    OR st.name ILIKE '%' || $9 || '%' \
+                    OR t.name ILIKE '%' || $9 || '%' \
+                    OR p.name ILIKE '%' || $9 || '%' \
+                  ))";
+
+            let ids: Vec<(DbId,)> = sqlx::query_as(sql)
+                .bind(project_id)
+                .bind(pipeline_id)
+                .bind(&scene_type)
+                .bind(&track)
+                .bind(&source)
+                .bind(&qa_status)
+                .bind(show_disabled)
+                .bind(&tag_ids)
+                .bind(&search)
+                .fetch_all(pool)
+                .await?;
+
+            Ok(ids.into_iter().map(|(id,)| id).collect())
+        }
+        "media_variant" => {
+            let project_id: Option<DbId> = filters.get("projectId").and_then(|v| v.as_i64());
+            let pipeline_id: Option<DbId> = filters.get("pipelineId").and_then(|v| v.as_i64());
+            let status_id: Option<String> = filters.get("statusId").and_then(|v| v.as_str()).map(|s| s.to_string());
+            let provenance: Option<String> = filters.get("provenance").and_then(|v| v.as_str()).map(|s| s.to_string());
+            let variant_type: Option<String> = filters.get("variantType").and_then(|v| v.as_str()).map(|s| s.to_string());
+            let show_disabled = filters.get("showDisabled").and_then(|v| v.as_bool()).unwrap_or(false);
+            let tag_ids: Option<String> = filters.get("tagIds").and_then(|v| v.as_str()).map(|s| s.to_string());
+            let search: Option<String> = filters.get("search").and_then(|v| v.as_str()).map(|s| s.to_string());
+
+            let sql = "SELECT iv.id \
+                FROM media_variants iv \
+                JOIN avatars c ON c.id = iv.avatar_id AND c.deleted_at IS NULL \
+                JOIN projects p ON p.id = c.project_id AND p.deleted_at IS NULL \
+                WHERE iv.deleted_at IS NULL \
+                  AND ($1::bigint IS NULL OR p.id = $1) \
+                  AND ($2::bigint IS NULL OR p.pipeline_id = $2) \
+                  AND ($3::text IS NULL OR iv.status_id::text = ANY(string_to_array($3, ','))) \
+                  AND ($4::text IS NULL OR iv.provenance = ANY(string_to_array($4, ','))) \
+                  AND ($5::text IS NULL OR iv.variant_type = ANY(string_to_array($5, ','))) \
+                  AND ($6::bool OR c.is_enabled = true) \
+                  AND ($7::text IS NULL OR iv.id IN ( \
+                    SELECT et.entity_id FROM entity_tags et \
+                    WHERE et.entity_type = 'media_variant' \
+                      AND et.tag_id = ANY(string_to_array($7, ',')::bigint[]) \
+                  )) \
+                  AND ($8::text IS NULL OR ( \
+                    c.name ILIKE '%' || $8 || '%' \
+                    OR iv.variant_type ILIKE '%' || $8 || '%' \
+                    OR iv.variant_label ILIKE '%' || $8 || '%' \
+                    OR p.name ILIKE '%' || $8 || '%' \
+                  ))";
+
+            let ids: Vec<(DbId,)> = sqlx::query_as(sql)
+                .bind(project_id)
+                .bind(pipeline_id)
+                .bind(&status_id)
+                .bind(&provenance)
+                .bind(&variant_type)
+                .bind(show_disabled)
+                .bind(&tag_ids)
+                .bind(&search)
+                .fetch_all(pool)
+                .await?;
+
+            Ok(ids.into_iter().map(|(id,)| id).collect())
+        }
+        _ => Ok(Vec::new()),
+    }
+}
+
 /// Verify that an export job exists, returning the full row.
 async fn ensure_export_exists(pool: &sqlx::PgPool, id: DbId) -> AppResult<ExportJob> {
     ExportJobRepo::find_by_id(pool, id).await?.ok_or_else(|| {
@@ -63,12 +177,24 @@ pub async fn create_export(
         )));
     }
 
-    let item_count = input.ids.as_ref().map_or(0, |ids| ids.len() as i32);
     let split_size_mb = input.split_size_mb.unwrap_or(500);
 
-    // Build filter snapshot from provided IDs and/or filters.
+    // Resolve concrete IDs: either use provided IDs or query from filters.
+    let resolved_ids = if let Some(ref ids) = input.ids {
+        ids.clone()
+    } else if let Some(ref filters) = input.filters {
+        resolve_ids_from_filters(&state.pool, &input.entity_type, filters).await?
+    } else {
+        return Err(AppError::BadRequest(
+            "Either 'ids' or 'filters' must be provided".to_string(),
+        ));
+    };
+
+    let item_count = resolved_ids.len() as i32;
+
+    // Store resolved IDs in the snapshot so the background task always has concrete IDs.
     let filter_snapshot = Some(serde_json::json!({
-        "ids": input.ids,
+        "ids": resolved_ids,
         "filters": input.filters,
     }));
 
