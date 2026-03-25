@@ -41,7 +41,7 @@ import { TERMINAL_STATUS_COLORS, TRACK_TEXT_COLORS } from "@/lib/ui-classes";
 import { toSelectOptions } from "@/lib/select-utils";
 import { usePipelineContextSafe } from "@/features/pipelines";
 import { useProjects } from "@/features/projects/hooks/use-projects";
-import { Check, CheckCircle, ChevronLeft, ChevronRight, Image as ImageIcon, LayoutGrid, List, Maximize2, Minimize2, XCircle } from "@/tokens/icons";
+import { Check, CheckCircle, ChevronLeft, ChevronRight, Download, Image as ImageIcon, LayoutGrid, List, Maximize2, Minimize2, XCircle } from "@/tokens/icons";
 
 /* --------------------------------------------------------------------------
    Read-only browse item
@@ -682,27 +682,8 @@ function ImagePreviewModal({
     >
       {variant && (
         <Stack gap={4}>
-          {/* Expand toggle — top right */}
-          <div className="flex justify-end -mb-2">
-            <button
-              type="button"
-              onClick={() => setExpanded((v) => !v)}
-              className="p-1 rounded text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[#161b22] transition-colors"
-              title={expanded ? "Compact" : "Expand"}
-            >
-              {expanded ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
-            </button>
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={onPrev}
-              disabled={!onPrev}
-              className="shrink-0 rounded p-1 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[#161b22] transition-colors disabled:opacity-20 disabled:pointer-events-none"
-              aria-label="Previous image"
-            >
-              <ChevronLeft size={20} />
-            </button>
+          {/* Image with expand overlay */}
+          <div className="group/img relative" onDoubleClick={() => setExpanded((v) => !v)}>
             <div className="flex min-w-0 flex-1 justify-center">
               {variant.file_path ? (
                 <img
@@ -716,16 +697,18 @@ function ImagePreviewModal({
                 </div>
               )}
             </div>
+            {/* Expand toggle — overlays top-right of image */}
             <button
               type="button"
-              onClick={onNext}
-              disabled={!onNext}
-              className="shrink-0 rounded p-1 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[#161b22] transition-colors disabled:opacity-20 disabled:pointer-events-none"
-              aria-label="Next image"
+              className="absolute top-2 right-2 p-1 rounded bg-black/50 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] opacity-0 group-hover/img:opacity-100 transition-opacity"
+              onClick={() => setExpanded((v) => !v)}
+              title={expanded ? "Compact" : "Expand"}
             >
-              <ChevronRight size={20} />
+              {expanded ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
             </button>
           </div>
+
+          {/* Metadata row */}
           <div className="flex items-center gap-2 font-mono text-[10px] text-[var(--color-text-muted)]">
             <span className={TERMINAL_STATUS_COLORS[(MEDIA_VARIANT_STATUS_LABEL[variant.status_id as MediaVariantStatusId] ?? "unknown").toLowerCase()] ?? "text-cyan-400"}>
               {(MEDIA_VARIANT_STATUS_LABEL[variant.status_id as MediaVariantStatusId] ?? "unknown").toLowerCase()}
@@ -743,29 +726,71 @@ function ImagePreviewModal({
             {variant.is_hero && (
               <><span className="opacity-30">|</span><span className="text-green-400">hero</span></>
             )}
+            <span className="opacity-30">|</span>
+            <span>{variant.avatar_name} · {variant.project_name}</span>
           </div>
-          <div className="flex items-center justify-between">
-            <div className="font-mono text-[10px] text-[var(--color-text-muted)]">
-              {variant.avatar_name} · {variant.project_name}
-            </div>
+
+          {/* Toolbar: download, approve/reject, spacer, prev/next */}
+          <div className="flex items-center gap-[var(--spacing-2)]">
+            <button
+              type="button"
+              onClick={() => {
+                if (!variant.file_path) return;
+                const ext = variant.file_path.split(".").pop() ?? "png";
+                const labelSuffix = variantTags.length > 0 ? `_[${variantTags.map((t) => t.display_name).join(",")}]` : "";
+                const filename = `${variant.project_name}_${variant.avatar_name}_${variant.variant_type ?? "other"}_${variant.variant_label}${labelSuffix}.${ext}`.replace(/\s+/g, "_").toLowerCase();
+                const a = document.createElement("a");
+                a.href = variantMediaUrl(variant.file_path);
+                a.download = filename;
+                a.click();
+              }}
+              className="p-1 rounded text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[#161b22] transition-colors"
+              title="Download"
+            >
+              <Download size={14} />
+            </button>
+
+            <div className="w-px h-4 bg-[var(--color-border-default)]" />
+
+            <button
+              type="button"
+              onClick={onApprove}
+              disabled={!onApprove}
+              className={`p-1 rounded transition-colors disabled:opacity-30 disabled:pointer-events-none ${variant.status_id === 2 ? "text-green-400" : "text-[var(--color-text-muted)] hover:text-green-400 hover:bg-[#161b22]"}`}
+              title={variant.status_id === 2 ? "Approved" : "Approve"}
+            >
+              <CheckCircle size={14} />
+            </button>
+            <button
+              type="button"
+              onClick={onReject}
+              disabled={!onReject}
+              className={`p-1 rounded transition-colors disabled:opacity-30 disabled:pointer-events-none ${variant.status_id === 3 ? "text-red-400" : "text-[var(--color-text-muted)] hover:text-red-400 hover:bg-[#161b22]"}`}
+              title={variant.status_id === 3 ? "Rejected" : "Reject"}
+            >
+              <XCircle size={14} />
+            </button>
+
+            <div className="flex-1" />
+
             <div className="flex items-center gap-1">
               <button
                 type="button"
-                onClick={onApprove}
-                disabled={!onApprove}
-                className={`p-1 rounded transition-colors disabled:opacity-30 disabled:pointer-events-none ${variant.status_id === 2 ? "text-green-400" : "text-[var(--color-text-muted)] hover:text-green-400 hover:bg-[#161b22]"}`}
-                title={variant.status_id === 2 ? "Approved" : "Approve"}
+                onClick={onPrev}
+                disabled={!onPrev}
+                className="p-1 rounded text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[#161b22] transition-colors disabled:opacity-20 disabled:pointer-events-none"
+                title="Previous image"
               >
-                <CheckCircle size={14} />
+                <ChevronLeft size={16} />
               </button>
               <button
                 type="button"
-                onClick={onReject}
-                disabled={!onReject}
-                className={`p-1 rounded transition-colors disabled:opacity-30 disabled:pointer-events-none ${variant.status_id === 3 ? "text-red-400" : "text-[var(--color-text-muted)] hover:text-red-400 hover:bg-[#161b22]"}`}
-                title={variant.status_id === 3 ? "Rejected" : "Reject"}
+                onClick={onNext}
+                disabled={!onNext}
+                className="p-1 rounded text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[#161b22] transition-colors disabled:opacity-20 disabled:pointer-events-none"
+                title="Next image"
               >
-                <XCircle size={14} />
+                <ChevronRight size={16} />
               </button>
             </div>
           </div>
