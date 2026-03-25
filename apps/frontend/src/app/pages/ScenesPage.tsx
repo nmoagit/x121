@@ -100,14 +100,14 @@ function BrowseClipItem({
             {isVisible && (
               <video
                 src={getStreamUrl("version", clip.id, "proxy")}
-                className="absolute inset-0 w-full h-full object-cover"
+                className={`absolute inset-0 w-full h-full object-cover ${videoLoaded ? "opacity-100" : "opacity-0"}`}
                 preload="metadata"
                 muted
                 onLoadedData={() => setVideoLoaded(true)}
               />
             )}
             {isVisible && !videoLoaded && (
-              <div className="absolute inset-0 flex items-center justify-center bg-black/60">
+              <div className="absolute inset-0 flex items-center justify-center">
                 <ContextLoader size={14} />
               </div>
             )}
@@ -246,7 +246,7 @@ function BrowseClipCard({
           {isVisible && (
             <video
               src={getStreamUrl("version", clip.id, "proxy")}
-              className="absolute inset-0 w-full h-full object-cover"
+              className={`absolute inset-0 w-full h-full object-cover ${videoLoaded ? "opacity-100" : "opacity-0"}`}
               autoPlay
               loop
               muted
@@ -255,7 +255,7 @@ function BrowseClipCard({
             />
           )}
           {isVisible && !videoLoaded && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/60">
+            <div className="absolute inset-0 flex items-center justify-center">
               <ContextLoader size={20} />
             </div>
           )}

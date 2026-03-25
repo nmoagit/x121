@@ -25,13 +25,13 @@ function VideoThumbnail({ clipId, onPlay }: { clipId: number; onPlay: () => void
       <video
         ref={videoRef}
         src={getStreamUrl("version", clipId, "proxy")}
-        className="absolute inset-0 w-full h-full object-cover"
+        className={`absolute inset-0 w-full h-full object-cover ${loaded ? "opacity-100" : "opacity-0"}`}
         preload="metadata"
         muted
         onLoadedData={() => setLoaded(true)}
       />
       {!loaded && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/60">
+        <div className="absolute inset-0 flex items-center justify-center">
           <ContextLoader size={16} />
         </div>
       )}

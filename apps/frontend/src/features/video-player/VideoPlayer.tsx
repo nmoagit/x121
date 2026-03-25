@@ -91,14 +91,14 @@ export function VideoPlayer({
         <video
           ref={player.videoRef}
           src={streamUrl}
-          className="w-full aspect-video bg-black"
+          className={`w-full aspect-video bg-black ${player.isReady ? "opacity-100" : "opacity-0"}`}
           playsInline
           preload="metadata"
           onClick={player.togglePlay}
         />
         {/* Loading overlay */}
         {!player.isReady && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/60">
+          <div className="absolute inset-0 flex items-center justify-center bg-black">
             <ContextLoader size={32} />
           </div>
         )}
