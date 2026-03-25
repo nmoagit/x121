@@ -73,7 +73,7 @@ function PipelineSidebarContent({ collapsed, pipelineCode }: { collapsed: boolea
 
   return (
     <nav
-      className={cn("flex flex-col gap-1 py-2 h-full", collapsed ? "px-0.5" : "px-1.5")}
+      className={cn("flex flex-col gap-1 pt-2 h-full", collapsed ? "px-0.5" : "px-1.5")}
       aria-label="Pipeline navigation"
     >
       {/* Pipeline header */}
