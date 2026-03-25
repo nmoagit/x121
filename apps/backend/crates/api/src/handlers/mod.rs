@@ -50,6 +50,7 @@ pub mod downloads;
 pub mod duplicates;
 pub mod embedding;
 pub mod estimation;
+pub mod export;
 pub mod extensions;
 pub mod failure_analytics;
 pub mod generation;

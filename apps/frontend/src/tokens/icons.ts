@@ -140,6 +140,8 @@ export {
   // Collapse / Expand
   ChevronsDownUp,
   ChevronsUpDown,
+  // Bulk actions
+  Tag,
 } from "lucide-react";
 
 /** Standard icon size tokens (px values matching design grid) */

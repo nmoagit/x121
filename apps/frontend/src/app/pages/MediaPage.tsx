@@ -4,10 +4,10 @@
  * and navigation to avatar images tab.
  */
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { useNavigate } from "@tanstack/react-router";
 
-import { EmptyState } from "@/components/domain";
+import { EmptyState, BulkActionBar, BulkRejectDialog, BulkLabelDialog, ExportStatusPanel } from "@/components/domain";
 import { TagFilter } from "@/components/domain/TagFilter";
 import { CollapsibleNotes } from "@/components/domain/CollapsibleNotes";
 import { TagInput } from "@/components/domain/TagInput";
@@ -15,14 +15,18 @@ import type { TagInfo } from "@/components/domain/TagChip";
 import { Modal } from "@/components/composite";
 import { api } from "@/lib/api";
 import { PageHeader, Stack } from "@/components/layout";
-import { Button, MultiFilterBar, SearchInput, Select, Toggle ,  WireframeLoader } from "@/components/primitives";
-import type { FilterConfig, FilterOption  } from "@/components/primitives";
-import { ProgressiveImage  } from "@/components/primitives";
+import { Button, Checkbox, MultiFilterBar, SearchInput, Select, Toggle, WireframeLoader } from "@/components/primitives";
+import type { FilterConfig, FilterOption } from "@/components/primitives";
+import { ProgressiveImage } from "@/components/primitives";
+import { useBulkSelection } from "@/hooks/useBulkSelection";
+import { useBulkOperations } from "@/hooks/useBulkOperations";
 import {
   useMediaVariantsBrowse,
   useBrowseApproveVariant,
   useBrowseUnapproveVariant,
   useBrowseRejectVariant,
+  useBulkApproveVariants,
+  useBulkRejectVariants,
   type MediaVariantBrowseItem,
 } from "@/features/media/hooks/use-media-variants";
 import {
@@ -49,18 +53,27 @@ function BrowseVariantItem({
   onNavigate,
   onApprove,
   onReject,
+  selected,
+  onToggleSelect,
 }: {
   variant: MediaVariantBrowseItem;
   onPreview: () => void;
   onNavigate: () => void;
   onApprove: () => void;
   onReject: () => void;
+  selected: boolean;
+  onToggleSelect: () => void;
 }) {
   const statusId = variant.status_id as MediaVariantStatusId;
 
   return (
-    <div className={`rounded-[var(--radius-lg)] border border-[var(--color-border-default)] transition-colors bg-[#0d1117] hover:bg-[#161b22] ${!variant.avatar_is_enabled ? "opacity-70 grayscale" : ""}`}>
+    <div className={`rounded-[var(--radius-lg)] border border-[var(--color-border-default)] transition-colors bg-[#0d1117] hover:bg-[#161b22] ${selected ? "ring-2 ring-blue-500/50" : ""} ${!variant.avatar_is_enabled ? "opacity-70 grayscale" : ""}`}>
       <div className="flex items-center gap-3 p-3">
+        {/* Selection checkbox */}
+        <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
+          <Checkbox checked={selected} onChange={onToggleSelect} size="sm" />
+        </div>
+
         {/* Clickable image thumbnail */}
         <button
           type="button"
@@ -159,17 +172,29 @@ function BrowseVariantCard({
   onNavigate,
   onApprove,
   onReject,
+  selected,
+  onToggleSelect,
 }: {
   variant: MediaVariantBrowseItem;
   onPreview: () => void;
   onNavigate: () => void;
   onApprove: () => void;
   onReject: () => void;
+  selected: boolean;
+  onToggleSelect: () => void;
 }) {
   const statusId = variant.status_id as MediaVariantStatusId;
 
   return (
-    <div className={`rounded-[var(--radius-lg)] border border-[var(--color-border-default)] overflow-hidden transition-colors bg-[#0d1117] hover:bg-[#161b22] ${!variant.avatar_is_enabled ? "opacity-70 grayscale" : ""}`}>
+    <div className={`relative rounded-[var(--radius-lg)] border border-[var(--color-border-default)] overflow-hidden transition-colors bg-[#0d1117] hover:bg-[#161b22] ${selected ? "ring-2 ring-blue-500/50" : ""} ${!variant.avatar_is_enabled ? "opacity-70 grayscale" : ""}`}>
+      {/* Selection checkbox overlay */}
+      <div
+        className="absolute top-1 left-1 z-10 rounded bg-black/50 p-0.5"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <Checkbox checked={selected} onChange={onToggleSelect} size="sm" />
+      </div>
+
       {/* Image preview */}
       <button
         type="button"
@@ -291,6 +316,13 @@ export function MediaPage() {
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState<number>(DEFAULT_PAGE_SIZE);
 
+  // Bulk selection — reset key serializes all filter state
+  const bulkResetKey = useMemo(
+    () => JSON.stringify({ projectFilter, statusFilter, sourceFilter, variantTypeFilter, mediaKindFilter, labelFilter, debouncedSearch, showDisabled }),
+    [projectFilter, statusFilter, sourceFilter, variantTypeFilter, mediaKindFilter, labelFilter, debouncedSearch, showDisabled],
+  );
+  const bulk = useBulkSelection(bulkResetKey);
+
   // Debounce search
   useEffect(() => {
     const t = setTimeout(() => { setDebouncedSearch(searchInput); setPage(0); }, 300);
@@ -327,6 +359,7 @@ export function MediaPage() {
 
   // All filtering is server-side; variants are the final filtered list
   const filteredVariants = variants ?? [];
+  const pageIds = useMemo(() => filteredVariants.map((v) => v.id), [filteredVariants]);
 
   // When the modal navigates past the current page boundary, switch pages
   const pageOffset = page * pageSize;
@@ -344,6 +377,30 @@ export function MediaPage() {
   const approveVarMut = useBrowseApproveVariant();
   const unapproveVarMut = useBrowseUnapproveVariant();
   const rejectVarMut = useBrowseRejectVariant();
+  const bulkApproveMut = useBulkApproveVariants();
+  const bulkRejectMut = useBulkRejectVariants();
+  // Bulk operations (shared hook eliminates ~130 lines of duplication with ScenesPage)
+  const buildFilters = useCallback(() => ({
+    projectId: projectFilter.length === 1 ? Number(projectFilter[0]) : undefined,
+    pipelineId: pipelineCtx?.pipelineId,
+    statusId: statusFilter.length > 0 ? statusFilter.join(",") : undefined,
+    provenance: sourceFilter.length > 0 ? sourceFilter.join(",") : undefined,
+    variantType: variantTypeFilter.length > 0 ? variantTypeFilter.join(",") : undefined,
+    mediaKind: mediaKindFilter.length > 0 ? mediaKindFilter.join(",") : undefined,
+    showDisabled,
+    tagIds: labelFilter.length > 0 ? labelFilter.join(",") : undefined,
+    search: debouncedSearch || undefined,
+  }), [projectFilter, pipelineCtx?.pipelineId, statusFilter, sourceFilter, variantTypeFilter, mediaKindFilter, showDisabled, labelFilter, debouncedSearch]);
+
+  const bulkOps = useBulkOperations({
+    entityType: "media_variant",
+    entityNoun: "variant",
+    bulk,
+    total,
+    buildFilters,
+    approveMut: bulkApproveMut,
+    rejectMut: bulkRejectMut,
+  });
 
   const filters: FilterConfig[] = useMemo(() => [
     { key: "project", label: "Project", options: projectOptions, selected: projectFilter, onChange: (v: string[]) => { setProjectFilter(v); setPage(0); }, width: "w-44" },
@@ -371,6 +428,13 @@ export function MediaPage() {
       {/* Filter bar */}
       <MultiFilterBar filters={filters}>
         <div className="flex items-center gap-3">
+          <Checkbox
+            checked={bulk.isAllPageSelected(pageIds)}
+            indeterminate={bulk.isIndeterminate(pageIds)}
+            onChange={(checked) => checked ? bulk.selectPage(pageIds) : bulk.deselectPage(pageIds)}
+            label="Select all"
+            size="sm"
+          />
           <Toggle
             checked={showDisabled}
             onChange={setShowDisabled}
@@ -421,6 +485,8 @@ export function MediaPage() {
             <BrowseVariantItem
               key={variant.id}
               variant={variant}
+              selected={bulk.isSelected(variant.id)}
+              onToggleSelect={() => bulk.toggle(variant.id)}
               onPreview={() => setPreviewAbsIndex(pageOffset + i)}
               onNavigate={() =>
                 navigate({
@@ -443,6 +509,8 @@ export function MediaPage() {
             <BrowseVariantCard
               key={variant.id}
               variant={variant}
+              selected={bulk.isSelected(variant.id)}
+              onToggleSelect={() => bulk.toggle(variant.id)}
               onPreview={() => setPreviewAbsIndex(pageOffset + i)}
               onNavigate={() =>
                 navigate({
@@ -515,6 +583,50 @@ export function MediaPage() {
         onReject={previewVariantData ? () => previewVariantData.status_id === 3 ? unapproveVarMut.mutate({ avatarId: previewVariantData.avatar_id, id: previewVariantData.id }) : rejectVarMut.mutate({ avatarId: previewVariantData.avatar_id, id: previewVariantData.id }) : undefined}
         pipelineId={pipelineCtx?.pipelineId}
       />
+
+      {/* Bulk action bar */}
+      <BulkActionBar
+        selectedCount={bulk.selectedCount}
+        totalCount={total}
+        selectAllMatching={bulk.selectAllMatching}
+        onApproveAll={bulkOps.handleBulkApprove}
+        onRejectAll={() => bulkOps.setRejectDialogOpen(true)}
+        onAddLabel={() => bulkOps.setLabelDialogOpen("add")}
+        onRemoveLabel={() => bulkOps.setLabelDialogOpen("remove")}
+        onExport={bulkOps.handleExport}
+        onClearSelection={bulk.clearAll}
+        onSelectAllMatching={() => bulk.selectAll(total)}
+        isAllPageSelected={bulk.isAllPageSelected(pageIds)}
+        pageItemCount={filteredVariants.length}
+      />
+
+      {/* Bulk reject dialog */}
+      <BulkRejectDialog
+        open={bulkOps.rejectDialogOpen}
+        count={bulk.selectedCount}
+        onConfirm={bulkOps.handleBulkRejectConfirm}
+        onCancel={() => bulkOps.setRejectDialogOpen(false)}
+        loading={bulkOps.rejectLoading}
+      />
+
+      {/* Bulk label dialog */}
+      <BulkLabelDialog
+        open={bulkOps.labelDialogOpen !== null}
+        mode={bulkOps.labelDialogOpen ?? "add"}
+        count={bulk.selectedCount}
+        pipelineId={pipelineCtx?.pipelineId}
+        onConfirm={bulkOps.handleBulkAddLabel}
+        onConfirmRemove={bulkOps.handleBulkRemoveLabel}
+        onCancel={() => bulkOps.setLabelDialogOpen(null)}
+      />
+
+      {/* Export status panel */}
+      {bulkOps.exportJob && (
+        <ExportStatusPanel
+          job={bulkOps.exportJob}
+          onDismiss={bulkOps.dismissExport}
+        />
+      )}
     </Stack>
   );
 }

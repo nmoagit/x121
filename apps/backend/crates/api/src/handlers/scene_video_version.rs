@@ -887,3 +887,140 @@ pub struct BrowseClipsPage {
     pub items: Vec<ClipBrowseItem>,
     pub total: i64,
 }
+
+// ---------------------------------------------------------------------------
+// Bulk approve / reject
+// ---------------------------------------------------------------------------
+
+/// Result returned by bulk approve/reject operations.
+#[derive(Debug, serde::Serialize)]
+pub struct BulkActionResult {
+    pub updated: i64,
+}
+
+/// Input for bulk clip approve/reject.
+/// Provide either `ids` (explicit list) or `filters` (same filters as browse).
+#[derive(Debug, serde::Deserialize)]
+pub struct BulkClipAction {
+    pub ids: Option<Vec<DbId>>,
+    pub filters: Option<BrowseClipsParams>,
+    /// Rejection reason (only used by bulk-reject).
+    pub reason: Option<String>,
+}
+
+/// Build the shared WHERE clause used by both browse and bulk operations.
+///
+/// Returns the clause fragment (starting with `FROM ...`) and expects
+/// parameters $1..$9 bound in the same order as `browse_clips`.
+fn clip_browse_where_clause() -> &'static str {
+    "FROM scene_video_versions svv \
+     JOIN scenes sc ON sc.id = svv.scene_id AND sc.deleted_at IS NULL \
+     JOIN avatars c ON c.id = sc.avatar_id AND c.deleted_at IS NULL \
+     JOIN projects p ON p.id = c.project_id AND p.deleted_at IS NULL \
+     LEFT JOIN scene_types st ON st.id = sc.scene_type_id \
+     LEFT JOIN tracks t ON t.id = sc.track_id \
+     WHERE svv.deleted_at IS NULL \
+       AND ($1::bigint IS NULL OR p.id = $1) \
+       AND ($2::bigint IS NULL OR p.pipeline_id = $2) \
+       AND ($3::text IS NULL OR st.name = ANY(string_to_array($3, ','))) \
+       AND ($4::text IS NULL OR t.name = ANY(string_to_array($4, ','))) \
+       AND ($5::text IS NULL OR svv.source = ANY(string_to_array($5, ','))) \
+       AND ($6::text IS NULL OR svv.qa_status = ANY(string_to_array($6, ','))) \
+       AND ($7::bool OR c.is_enabled = true) \
+       AND ($8::text IS NULL OR svv.id IN ( \
+         SELECT et.entity_id FROM entity_tags et \
+         WHERE et.entity_type = 'scene_video_version' \
+           AND et.tag_id = ANY(string_to_array($8, ',')::bigint[]) \
+       )) \
+       AND ($9::text IS NULL OR ( \
+         c.name ILIKE '%' || $9 || '%' \
+         OR st.name ILIKE '%' || $9 || '%' \
+         OR t.name ILIKE '%' || $9 || '%' \
+         OR p.name ILIKE '%' || $9 || '%' \
+       ))"
+}
+
+/// Execute a bulk status update for clips, either by explicit IDs or browse filters.
+async fn bulk_update_clip_status(
+    pool: &sqlx::PgPool,
+    input: &BulkClipAction,
+    new_status: &str,
+    rejection_reason: Option<&str>,
+) -> AppResult<i64> {
+    if let Some(ref ids) = input.ids {
+        if ids.is_empty() {
+            return Ok(0);
+        }
+        let result = sqlx::query(
+            "UPDATE scene_video_versions \
+             SET qa_status = $1, qa_rejection_reason = $2, updated_at = NOW() \
+             WHERE id = ANY($3::bigint[]) AND deleted_at IS NULL",
+        )
+        .bind(new_status)
+        .bind(rejection_reason)
+        .bind(ids)
+        .execute(pool)
+        .await?;
+        return Ok(result.rows_affected() as i64);
+    }
+
+    if let Some(ref filters) = input.filters {
+        let show_disabled = filters.show_disabled.unwrap_or(false);
+        let where_clause = clip_browse_where_clause();
+        let sql = format!(
+            "UPDATE scene_video_versions \
+             SET qa_status = $10, qa_rejection_reason = $11, updated_at = NOW() \
+             WHERE id IN (SELECT svv.id {where_clause})"
+        );
+        let result = sqlx::query(&sql)
+            .bind(filters.project_id)
+            .bind(filters.pipeline_id)
+            .bind(&filters.scene_type)
+            .bind(&filters.track)
+            .bind(&filters.source)
+            .bind(&filters.qa_status)
+            .bind(show_disabled)
+            .bind(&filters.tag_ids)
+            .bind(&filters.search)
+            .bind(new_status)
+            .bind(rejection_reason)
+            .execute(pool)
+            .await?;
+        return Ok(result.rows_affected() as i64);
+    }
+
+    Err(AppError::BadRequest(
+        "Either 'ids' or 'filters' must be provided".to_string(),
+    ))
+}
+
+/// POST /api/v1/scene-video-versions/bulk-approve
+///
+/// Bulk-approve clips by explicit IDs or browse filters.
+pub async fn bulk_approve_clips(
+    _auth: AuthUser,
+    State(state): State<AppState>,
+    Json(input): Json<BulkClipAction>,
+) -> AppResult<Json<DataResponse<BulkActionResult>>> {
+    let updated = bulk_update_clip_status(&state.pool, &input, CLIP_QA_APPROVED, None).await?;
+    tracing::info!(updated, "Bulk approved clips");
+    Ok(Json(DataResponse {
+        data: BulkActionResult { updated },
+    }))
+}
+
+/// POST /api/v1/scene-video-versions/bulk-reject
+///
+/// Bulk-reject clips by explicit IDs or browse filters.
+pub async fn bulk_reject_clips(
+    _auth: AuthUser,
+    State(state): State<AppState>,
+    Json(input): Json<BulkClipAction>,
+) -> AppResult<Json<DataResponse<BulkActionResult>>> {
+    let reason = input.reason.as_deref();
+    let updated = bulk_update_clip_status(&state.pool, &input, CLIP_QA_REJECTED, reason).await?;
+    tracing::info!(updated, "Bulk rejected clips");
+    Ok(Json(DataResponse {
+        data: BulkActionResult { updated },
+    }))
+}

@@ -28,8 +28,8 @@ Source of truth: [`design/design.md`](../design.md)
 | blocked | 0 |
 | deferred | 0 |
 | maybe | 15 |
-| draft | 3 |
-| **Total** | **161** |
+| draft | 4 |
+| **Total** | **162** |
 
 ---
 
@@ -48,6 +48,7 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-148 | Dynamic Avatar Card Indicators | 2 | `draft` | 2026-03-24 | Frontend-only refactor: replace hardcoded SeedDataStatus (clothed/topless) with pipeline-driven indicator dots. Indicators filtered by blocking_deliverables. Seed slots from pipeline config, status from seed summary API. Deps: PRD-128, PRD-138, PRD-146. |
 | PRD-149 | Frame Range Annotations | 2 | `draft` | 2026-03-25 | Extends annotations to support frame ranges (frame_number to frame_end). DB: add frame_end column. UI: Mark Start/End buttons in annotation mode, amber range segments on timeline, range labels in annotation list. Deps: PRD-70, PRD-109. |
 | PRD-150 | Clip & Media Notes | 2 | `draft` | 2026-03-25 | Collapsible auto-saving notes textarea in ClipPlaybackModal and ImagePreviewModal. DB: add notes column to media_variants (scene_video_versions already has it). Shared CollapsibleNotes component. Deps: PRD-01, PRD-21. |
+| PRD-151 | Bulk Operations & Export | 2 | `done` | 2026-03-25 | Bulk selection (checkbox multi-select, select-all-matching), bulk approve/reject, bulk add/remove labels, and bulk export as split ZIP archives with manifest CSV. Applies to both ScenesPage and MediaPage. Reuses existing tag bulk endpoints. New export_jobs table, background ZIP generation with configurable split size. Deps: PRD-01, PRD-21, PRD-47, PRD-07, PRD-121. |
 
 ## Part 1: Infrastructure & System Core
 

@@ -261,3 +261,29 @@ export function useBulkImportClip() {
     },
   });
 }
+
+/** Bulk-approve clips by explicit IDs or server-side filters. */
+export function useBulkApproveClips() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { ids?: number[]; filters?: object }) =>
+      api.post<{ updated: number }>("/scene-video-versions/bulk-approve", input),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: clipKeys.all });
+      qc.invalidateQueries({ queryKey: sceneKeys.all });
+    },
+  });
+}
+
+/** Bulk-reject clips by explicit IDs or server-side filters. */
+export function useBulkRejectClips() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { ids?: number[]; filters?: object; reason?: string }) =>
+      api.post<{ updated: number }>("/scene-video-versions/bulk-reject", input),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: clipKeys.all });
+      qc.invalidateQueries({ queryKey: sceneKeys.all });
+    },
+  });
+}

@@ -40,6 +40,7 @@ pub mod downloads;
 pub mod duplicates;
 pub mod embedding;
 pub mod estimation;
+pub mod export;
 pub mod extensions;
 pub mod external_api;
 pub mod failure_analytics;
@@ -930,6 +931,8 @@ pub fn api_routes() -> Router<AppState> {
         .nest("/trash", trash::router())
         // Clip browsing (cross-project scene video version overview).
         .route("/scene-video-versions/browse", axum::routing::get(crate::handlers::scene_video_version::browse_clips))
+        .route("/scene-video-versions/bulk-approve", axum::routing::post(crate::handlers::scene_video_version::bulk_approve_clips))
+        .route("/scene-video-versions/bulk-reject", axum::routing::post(crate::handlers::scene_video_version::bulk_reject_clips))
         // Annotation browsing (cross-project annotation overview).
         .nest("/annotations", annotation::annotation_browse_router())
         // Annotation presets (PRD-149).
@@ -952,6 +955,8 @@ pub fn api_routes() -> Router<AppState> {
         .nest("/videos", video::router())
         // Image variant utilities.
         .route("/media-variants/browse", axum::routing::get(crate::handlers::media_variant::browse_variants))
+        .route("/media-variants/bulk-approve", axum::routing::post(crate::handlers::media_variant::bulk_approve_variants))
+        .route("/media-variants/bulk-reject", axum::routing::post(crate::handlers::media_variant::bulk_reject_variants))
         .route("/media-variants/check-hashes", axum::routing::post(crate::handlers::media_variant::check_hashes))
         .route("/media-variants/backfill-metadata", axum::routing::post(crate::handlers::media_variant::backfill_media_metadata))
         .route("/media-variants/backfill-hashes", axum::routing::post(crate::handlers::media_variant::backfill_hashes))
@@ -1149,4 +1154,6 @@ pub fn api_routes() -> Router<AppState> {
         .nest("/admin/setup", setup_wizard::setup_wizard_router())
         // LLM Refinement Pipeline: top-level job lookup by UUID (PRD-125).
         .nest("/refinement-jobs", refinement::refinement_job_router())
+        // Bulk export jobs: create, poll, download (PRD-151).
+        .nest("/exports", export::router())
 }

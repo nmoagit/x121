@@ -7,11 +7,11 @@
 import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import { useNavigate } from "@tanstack/react-router";
 
-import { EmptyState } from "@/components/domain";
+import { EmptyState, BulkActionBar, BulkRejectDialog, BulkLabelDialog, ExportStatusPanel } from "@/components/domain";
 import { PageHeader, Stack } from "@/components/layout";
-import { Button, MultiFilterBar, SearchInput, Select, Toggle ,  WireframeLoader } from "@/components/primitives";
-import type { FilterConfig, FilterOption  } from "@/components/primitives";
-import { useClipsBrowse, useBrowseApproveClip, useBrowseUnapproveClip, useBrowseRejectClip } from "@/features/scenes/hooks/useClipManagement";
+import { Button, Checkbox, MultiFilterBar, SearchInput, Select, Toggle, WireframeLoader } from "@/components/primitives";
+import type { FilterConfig, FilterOption } from "@/components/primitives";
+import { useClipsBrowse, useBrowseApproveClip, useBrowseUnapproveClip, useBrowseRejectClip, useBulkApproveClips, useBulkRejectClips } from "@/features/scenes/hooks/useClipManagement";
 import type { ClipBrowseItem } from "@/features/scenes/hooks/useClipManagement";
 import { ClipPlaybackModal } from "@/features/scenes/ClipPlaybackModal";
 import { isEmptyClip, isPurgedClip, type SceneVideoVersion } from "@/features/scenes/types";
@@ -25,6 +25,8 @@ import { useProjects } from "@/features/projects/hooks/use-projects";
 import { useSceneTypes } from "@/features/scene-types/hooks/use-scene-types";
 import { useTracks } from "@/features/scene-catalogue/hooks/use-tracks";
 import { TagFilter } from "@/components/domain/TagFilter";
+import { useBulkSelection } from "@/hooks/useBulkSelection";
+import { useBulkOperations } from "@/hooks/useBulkOperations";
 import { Ban, CheckCircle, Layers, LayoutGrid, List, Play, XCircle } from "@/tokens/icons";
 
 /* --------------------------------------------------------------------------
@@ -37,12 +39,16 @@ function BrowseClipItem({
   onNavigate,
   onApprove,
   onReject,
+  selected,
+  onToggleSelect,
 }: {
   clip: ClipBrowseItem;
   onPlay: () => void;
   onNavigate: () => void;
   onApprove: () => void;
   onReject: () => void;
+  selected: boolean;
+  onToggleSelect: () => void;
 }) {
   const sourceLabel = clip.source === "imported" ? "imported" : "generated";
 
@@ -64,6 +70,8 @@ function BrowseClipItem({
     <div
       ref={ref}
       className={`rounded-[var(--radius-lg)] border transition-colors bg-[#0d1117] hover:bg-[#161b22] ${
+        selected ? "ring-2 ring-blue-500/50" : ""
+      } ${
         clip.qa_status === "approved"
           ? "border-green-500"
           : clip.qa_status === "rejected"
@@ -72,6 +80,11 @@ function BrowseClipItem({
       } ${!clip.avatar_is_enabled ? "opacity-70 grayscale" : ""}`}
     >
       <div className="flex items-center gap-3 p-3">
+        {/* Selection checkbox */}
+        <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
+          <Checkbox checked={selected} onChange={onToggleSelect} size="sm" />
+        </div>
+
         {/* Clickable video thumbnail */}
         {isPurgedClip(clip) ? (
           <div className="relative flex h-14 w-20 shrink-0 items-center justify-center rounded bg-[#161b22]">
@@ -166,12 +179,16 @@ function BrowseClipCard({
   onNavigate,
   onApprove,
   onReject,
+  selected,
+  onToggleSelect,
 }: {
   clip: ClipBrowseItem;
   onPlay: () => void;
   onNavigate: () => void;
   onApprove: () => void;
   onReject: () => void;
+  selected: boolean;
+  onToggleSelect: () => void;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = useState(false);
@@ -189,7 +206,9 @@ function BrowseClipCard({
   return (
     <div
       ref={ref}
-      className={`rounded-[var(--radius-lg)] border overflow-hidden transition-colors bg-[#0d1117] hover:bg-[#161b22] ${
+      className={`relative rounded-[var(--radius-lg)] border overflow-hidden transition-colors bg-[#0d1117] hover:bg-[#161b22] ${
+        selected ? "ring-2 ring-blue-500/50" : ""
+      } ${
         clip.qa_status === "approved"
           ? "border-green-500"
           : clip.qa_status === "rejected"
@@ -197,6 +216,14 @@ function BrowseClipCard({
             : "border-[var(--color-border-default)]"
       } ${!clip.avatar_is_enabled ? "opacity-70 grayscale" : ""}`}
     >
+      {/* Selection checkbox overlay */}
+      <div
+        className="absolute top-1 left-1 z-10 rounded bg-black/50 p-0.5"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <Checkbox checked={selected} onChange={onToggleSelect} size="sm" />
+      </div>
+
       {/* Video preview */}
       {isPurgedClip(clip) ? (
         <div className="flex aspect-video items-center justify-center bg-[#161b22]">
@@ -301,6 +328,13 @@ export function ScenesPage() {
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState<number>(DEFAULT_PAGE_SIZE);
 
+  // Bulk selection — reset key serializes all filter state
+  const bulkResetKey = useMemo(
+    () => JSON.stringify({ projectFilter, sourceFilter, statusFilter, sceneTypeFilter, trackFilter, labelFilter, debouncedSearch, showDisabled }),
+    [projectFilter, sourceFilter, statusFilter, sceneTypeFilter, trackFilter, labelFilter, debouncedSearch, showDisabled],
+  );
+  const bulk = useBulkSelection(bulkResetKey);
+
   // Debounce search
   useEffect(() => {
     const t = setTimeout(() => { setDebouncedSearch(searchInput); setPage(0); }, 300);
@@ -346,6 +380,7 @@ export function ScenesPage() {
 
   // All filtering is server-side; clips are the final filtered list
   const filteredClips = clips ?? [];
+  const pageIds = useMemo(() => filteredClips.map((c) => c.id), [filteredClips]);
 
   // When the modal navigates past the current page boundary, switch pages
   const pageOffset = page * pageSize;
@@ -364,6 +399,30 @@ export function ScenesPage() {
   const approveMut = useBrowseApproveClip();
   const unapproveMut = useBrowseUnapproveClip();
   const rejectMut = useBrowseRejectClip();
+  const bulkApproveMut = useBulkApproveClips();
+  const bulkRejectMut = useBulkRejectClips();
+  // Bulk operations (shared hook eliminates ~130 lines of duplication with MediaPage)
+  const buildFilters = useCallback(() => ({
+    projectId: projectFilter.length === 1 ? Number(projectFilter[0]) : undefined,
+    pipelineId: pipelineCtx?.pipelineId,
+    sceneType: sceneTypeFilter.length > 0 ? sceneTypeFilter.join(",") : undefined,
+    track: trackFilter.length > 0 ? trackFilter.join(",") : undefined,
+    source: sourceFilter.length > 0 ? sourceFilter.join(",") : undefined,
+    qaStatus: statusFilter.length > 0 ? statusFilter.join(",") : undefined,
+    showDisabled,
+    tagIds: labelFilter.length > 0 ? labelFilter.join(",") : undefined,
+    search: debouncedSearch || undefined,
+  }), [projectFilter, pipelineCtx?.pipelineId, sceneTypeFilter, trackFilter, sourceFilter, statusFilter, showDisabled, labelFilter, debouncedSearch]);
+
+  const bulkOps = useBulkOperations({
+    entityType: "scene_video_version",
+    entityNoun: "clip",
+    bulk,
+    total,
+    buildFilters,
+    approveMut: bulkApproveMut,
+    rejectMut: bulkRejectMut,
+  });
 
   const filters: FilterConfig[] = useMemo(() => [
     { key: "project", label: "Project", options: projectOptions, selected: projectFilter, onChange: (v: string[]) => { setProjectFilter(v); setPage(0); }, width: "w-44" },
@@ -419,6 +478,13 @@ export function ScenesPage() {
       {/* Filter bar */}
       <MultiFilterBar filters={filters}>
         <div className="flex items-center gap-3">
+          <Checkbox
+            checked={bulk.isAllPageSelected(pageIds)}
+            indeterminate={bulk.isIndeterminate(pageIds)}
+            onChange={(checked) => checked ? bulk.selectPage(pageIds) : bulk.deselectPage(pageIds)}
+            label="Select all"
+            size="sm"
+          />
           <Toggle
             checked={showDisabled}
             onChange={setShowDisabled}
@@ -469,6 +535,8 @@ export function ScenesPage() {
             <BrowseClipItem
               key={clip.id}
               clip={clip}
+              selected={bulk.isSelected(clip.id)}
+              onToggleSelect={() => bulk.toggle(clip.id)}
               onPlay={() => setPlayingAbsIndex(pageOffset + i)}
               onNavigate={() =>
                 navigate({
@@ -491,6 +559,8 @@ export function ScenesPage() {
             <BrowseClipCard
               key={clip.id}
               clip={clip}
+              selected={bulk.isSelected(clip.id)}
+              onToggleSelect={() => bulk.toggle(clip.id)}
               onPlay={() => setPlayingAbsIndex(pageOffset + i)}
               onNavigate={() =>
                 navigate({
@@ -569,6 +639,50 @@ export function ScenesPage() {
           trackName: playingClipData.track_name,
         } : undefined}
       />
+
+      {/* Bulk action bar */}
+      <BulkActionBar
+        selectedCount={bulk.selectedCount}
+        totalCount={total}
+        selectAllMatching={bulk.selectAllMatching}
+        onApproveAll={bulkOps.handleBulkApprove}
+        onRejectAll={() => bulkOps.setRejectDialogOpen(true)}
+        onAddLabel={() => bulkOps.setLabelDialogOpen("add")}
+        onRemoveLabel={() => bulkOps.setLabelDialogOpen("remove")}
+        onExport={bulkOps.handleExport}
+        onClearSelection={bulk.clearAll}
+        onSelectAllMatching={() => bulk.selectAll(total)}
+        isAllPageSelected={bulk.isAllPageSelected(pageIds)}
+        pageItemCount={filteredClips.length}
+      />
+
+      {/* Bulk reject dialog */}
+      <BulkRejectDialog
+        open={bulkOps.rejectDialogOpen}
+        count={bulk.selectedCount}
+        onConfirm={bulkOps.handleBulkRejectConfirm}
+        onCancel={() => bulkOps.setRejectDialogOpen(false)}
+        loading={bulkOps.rejectLoading}
+      />
+
+      {/* Bulk label dialog */}
+      <BulkLabelDialog
+        open={bulkOps.labelDialogOpen !== null}
+        mode={bulkOps.labelDialogOpen ?? "add"}
+        count={bulk.selectedCount}
+        pipelineId={pipelineCtx?.pipelineId}
+        onConfirm={bulkOps.handleBulkAddLabel}
+        onConfirmRemove={bulkOps.handleBulkRemoveLabel}
+        onCancel={() => bulkOps.setLabelDialogOpen(null)}
+      />
+
+      {/* Export status panel */}
+      {bulkOps.exportJob && (
+        <ExportStatusPanel
+          job={bulkOps.exportJob}
+          onDismiss={bulkOps.dismissExport}
+        />
+      )}
     </Stack>
   );
 }

@@ -349,3 +349,27 @@ export function useMediaVariantsBrowse(params: MediaVariantBrowseParams = {}) {
     queryFn: () => api.get<MediaVariantBrowsePage>(`/media-variants/browse?${qs}`),
   });
 }
+
+/** Bulk-approve media variants by explicit IDs or server-side filters. */
+export function useBulkApproveVariants() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { ids?: number[]; filters?: object }) =>
+      api.post<{ updated: number }>("/media-variants/bulk-approve", input),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: mediaVariantKeys.all });
+    },
+  });
+}
+
+/** Bulk-reject media variants by explicit IDs or server-side filters. */
+export function useBulkRejectVariants() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { ids?: number[]; filters?: object; reason?: string }) =>
+      api.post<{ updated: number }>("/media-variants/bulk-reject", input),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: mediaVariantKeys.all });
+    },
+  });
+}

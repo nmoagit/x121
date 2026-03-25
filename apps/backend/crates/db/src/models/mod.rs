@@ -46,6 +46,7 @@ pub mod duplicate_check;
 pub mod duplicate_setting;
 pub mod embedding;
 pub mod event;
+pub mod export_job;
 pub mod extension;
 pub mod failure_pattern;
 pub mod frame_annotation;

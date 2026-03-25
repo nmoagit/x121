@@ -21,6 +21,7 @@ use x121_core::storage::pipeline_scoped_key;
 use x121_db::repositories::PipelineRepo;
 
 use crate::error::{AppError, AppResult};
+use crate::middleware::auth::AuthUser;
 use crate::response::DataResponse;
 use crate::state::AppState;
 
@@ -1147,5 +1148,135 @@ pub async fn backfill_video_hashes(
         processed: total,
         succeeded,
         failed,
+    }))
+}
+
+// ---------------------------------------------------------------------------
+// Bulk approve / reject
+// ---------------------------------------------------------------------------
+
+/// Result returned by bulk approve/reject operations.
+#[derive(Debug, Serialize)]
+pub struct BulkVariantActionResult {
+    pub updated: i64,
+}
+
+/// Input for bulk media variant approve/reject.
+/// Provide either `ids` (explicit list) or `filters` (same filters as browse).
+#[derive(Debug, Deserialize)]
+pub struct BulkVariantAction {
+    pub ids: Option<Vec<DbId>>,
+    pub filters: Option<BrowseVariantsParams>,
+    /// Optional rejection reason (only used by bulk-reject).
+    pub reason: Option<String>,
+}
+
+/// Build the shared WHERE clause used by both browse and bulk operations.
+///
+/// Returns the clause fragment (starting with `FROM ...`) and expects
+/// parameters $1..$8 bound in the same order as `browse_variants`.
+fn variant_browse_where_clause() -> &'static str {
+    "FROM media_variants iv \
+     JOIN avatars c ON c.id = iv.avatar_id AND c.deleted_at IS NULL \
+     JOIN projects p ON p.id = c.project_id AND p.deleted_at IS NULL \
+     WHERE iv.deleted_at IS NULL \
+       AND ($1::bigint IS NULL OR p.id = $1) \
+       AND ($2::bigint IS NULL OR p.pipeline_id = $2) \
+       AND ($3::text IS NULL OR iv.status_id::text = ANY(string_to_array($3, ','))) \
+       AND ($4::text IS NULL OR iv.provenance = ANY(string_to_array($4, ','))) \
+       AND ($5::text IS NULL OR iv.variant_type = ANY(string_to_array($5, ','))) \
+       AND ($6::bool OR c.is_enabled = true) \
+       AND ($7::text IS NULL OR iv.id IN ( \
+         SELECT et.entity_id FROM entity_tags et \
+         WHERE et.entity_type = 'media_variant' \
+           AND et.tag_id = ANY(string_to_array($7, ',')::bigint[]) \
+       )) \
+       AND ($8::text IS NULL OR ( \
+         c.name ILIKE '%' || $8 || '%' \
+         OR iv.variant_type ILIKE '%' || $8 || '%' \
+         OR iv.variant_label ILIKE '%' || $8 || '%' \
+         OR p.name ILIKE '%' || $8 || '%' \
+       ))"
+}
+
+/// Execute a bulk status update for media variants, either by explicit IDs or browse filters.
+async fn bulk_update_variant_status(
+    pool: &sqlx::PgPool,
+    input: &BulkVariantAction,
+    new_status_id: i16,
+) -> AppResult<i64> {
+    if let Some(ref ids) = input.ids {
+        if ids.is_empty() {
+            return Ok(0);
+        }
+        let result = sqlx::query(
+            "UPDATE media_variants \
+             SET status_id = $1, updated_at = NOW() \
+             WHERE id = ANY($2::bigint[]) AND deleted_at IS NULL",
+        )
+        .bind(new_status_id)
+        .bind(ids)
+        .execute(pool)
+        .await?;
+        return Ok(result.rows_affected() as i64);
+    }
+
+    if let Some(ref filters) = input.filters {
+        let show_disabled = filters.show_disabled.unwrap_or(false);
+        let where_clause = variant_browse_where_clause();
+        let sql = format!(
+            "UPDATE media_variants \
+             SET status_id = $9, updated_at = NOW() \
+             WHERE id IN (SELECT iv.id {where_clause})"
+        );
+        let result = sqlx::query(&sql)
+            .bind(filters.project_id)
+            .bind(filters.pipeline_id)
+            .bind(&filters.status_id)
+            .bind(&filters.provenance)
+            .bind(&filters.variant_type)
+            .bind(show_disabled)
+            .bind(&filters.tag_ids)
+            .bind(&filters.search)
+            .bind(new_status_id)
+            .execute(pool)
+            .await?;
+        return Ok(result.rows_affected() as i64);
+    }
+
+    Err(AppError::BadRequest(
+        "Either 'ids' or 'filters' must be provided".to_string(),
+    ))
+}
+
+/// POST /api/v1/media-variants/bulk-approve
+///
+/// Bulk-approve media variants by explicit IDs or browse filters.
+pub async fn bulk_approve_variants(
+    _auth: AuthUser,
+    State(state): State<AppState>,
+    Json(input): Json<BulkVariantAction>,
+) -> AppResult<Json<DataResponse<BulkVariantActionResult>>> {
+    let updated =
+        bulk_update_variant_status(&state.pool, &input, MediaVariantStatus::Approved.id()).await?;
+    tracing::info!(updated, "Bulk approved media variants");
+    Ok(Json(DataResponse {
+        data: BulkVariantActionResult { updated },
+    }))
+}
+
+/// POST /api/v1/media-variants/bulk-reject
+///
+/// Bulk-reject media variants by explicit IDs or browse filters.
+pub async fn bulk_reject_variants(
+    _auth: AuthUser,
+    State(state): State<AppState>,
+    Json(input): Json<BulkVariantAction>,
+) -> AppResult<Json<DataResponse<BulkVariantActionResult>>> {
+    let updated =
+        bulk_update_variant_status(&state.pool, &input, MediaVariantStatus::Rejected.id()).await?;
+    tracing::info!(updated, "Bulk rejected media variants");
+    Ok(Json(DataResponse {
+        data: BulkVariantActionResult { updated },
     }))
 }
