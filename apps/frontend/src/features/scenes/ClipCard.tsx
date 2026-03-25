@@ -1,13 +1,46 @@
+import { useRef, useState } from "react";
+
 import { Button } from "@/components/primitives/Button";
+import { ContextLoader } from "@/components/primitives";
 import { getStreamUrl } from "@/features/video-player";
 import { formatDuration } from "@/features/video-player/frame-utils";
 import { formatBytes, formatDate } from "@/lib/format";
 import { Ban, ChevronDown, ChevronRight, Layers, Play, RotateCcw } from "@/tokens/icons";
-import { useState } from "react";
 import { ArtifactTimeline } from "./ArtifactTimeline";
 import { ClipQAActions } from "./ClipQAActions";
 import { GenerationSnapshotPanel } from "./GenerationSnapshotPanel";
 import { type SceneVideoVersion, isEmptyClip, isPurgedClip } from "./types";
+
+/** Video thumbnail with ContextLoader overlay while loading. */
+function VideoThumbnail({ clipId, onPlay }: { clipId: number; onPlay: () => void }) {
+  const [loaded, setLoaded] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  return (
+    <button
+      type="button"
+      onClick={onPlay}
+      className="group/play relative h-16 w-24 shrink-0 rounded overflow-hidden bg-[var(--color-surface-tertiary)]"
+    >
+      <video
+        ref={videoRef}
+        src={getStreamUrl("version", clipId, "proxy")}
+        className="absolute inset-0 w-full h-full object-cover"
+        preload="metadata"
+        muted
+        onLoadedData={() => setLoaded(true)}
+      />
+      {!loaded && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/60">
+          <ContextLoader size={16} />
+        </div>
+      )}
+      <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover/play:opacity-100 transition-opacity">
+        <Play size={20} className="text-white" />
+      </div>
+    </button>
+  );
+}
 
 interface ClipCardProps {
   clip: SceneVideoVersion;
@@ -69,22 +102,7 @@ export function ClipCard({
           <Ban size={20} className="text-[var(--color-text-muted)]" />
         </div>
       ) : (
-        <button
-          type="button"
-          onClick={() => onPlay(clip)}
-          className="group/play relative h-16 w-24 shrink-0 rounded overflow-hidden
-            bg-[var(--color-surface-tertiary)]"
-        >
-          <video
-            src={getStreamUrl("version", clip.id, "proxy")}
-            className="absolute inset-0 w-full h-full object-cover"
-            preload="metadata"
-            muted
-          />
-          <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover/play:opacity-100 transition-opacity">
-            <Play size={20} className="text-white" />
-          </div>
-        </button>
+        <VideoThumbnail clipId={clip.id} onPlay={() => onPlay(clip)} />
       )}
 
       {/* Metadata */}

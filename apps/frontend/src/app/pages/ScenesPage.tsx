@@ -55,6 +55,7 @@ function BrowseClipItem({
   // Lazy-load video: only mount when the card enters the viewport
   const ref = useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = useState(false);
+  const [videoLoaded, setVideoLoaded] = useState(false);
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
@@ -102,7 +103,13 @@ function BrowseClipItem({
                 className="absolute inset-0 w-full h-full object-cover"
                 preload="metadata"
                 muted
+                onLoadedData={() => setVideoLoaded(true)}
               />
+            )}
+            {isVisible && !videoLoaded && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/60">
+                <ContextLoader size={14} />
+              </div>
             )}
             <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover/play:opacity-100 transition-opacity">
               <Play size={18} className="text-white" />
@@ -192,6 +199,7 @@ function BrowseClipCard({
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = useState(false);
+  const [videoLoaded, setVideoLoaded] = useState(false);
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
@@ -243,7 +251,13 @@ function BrowseClipCard({
               loop
               muted
               playsInline
+              onLoadedData={() => setVideoLoaded(true)}
             />
+          )}
+          {isVisible && !videoLoaded && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/60">
+              <ContextLoader size={20} />
+            </div>
           )}
           <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover/play:opacity-100 transition-opacity">
             <Play size={24} className="text-white drop-shadow-lg" />
