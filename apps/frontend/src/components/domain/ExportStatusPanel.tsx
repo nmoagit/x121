@@ -3,11 +3,15 @@
  * Displays progress indicator, error messages, and download links for completed parts.
  */
 
+import { useCallback } from "react";
+
 import { Button } from "@/components/primitives";
 import { API_BASE_URL } from "@/lib/api";
+import { downloadBlob } from "@/lib/file-utils";
 import { formatBytes } from "@/lib/format";
+import { useAuthStore } from "@/stores/auth-store";
 import { Download, X } from "@/tokens/icons";
-import type { ExportJob } from "@/features/exports/hooks/use-exports";
+import type { ExportJob, ExportPart } from "@/features/exports/hooks/use-exports";
 
 interface ExportStatusPanelProps {
   job: ExportJob;
@@ -16,6 +20,20 @@ interface ExportStatusPanelProps {
 
 export function ExportStatusPanel({ job, onDismiss }: ExportStatusPanelProps) {
   const isActive = job.status === "queued" || job.status === "processing";
+
+  const handleDownloadPart = useCallback(
+    async (part: ExportPart) => {
+      const token = useAuthStore.getState().accessToken;
+      const url = `${API_BASE_URL}/exports/${job.id}/download/${part.part}`;
+      const res = await fetch(url, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!res.ok) throw new Error(`Download failed: ${res.status}`);
+      const blob = await res.blob();
+      downloadBlob(blob, `export_${job.id}_part${part.part}.zip`);
+    },
+    [job.id],
+  );
 
   return (
     <div className="bg-[#161b22] border-t border-[var(--color-border-default)] px-4 py-2.5">
@@ -51,23 +69,21 @@ export function ExportStatusPanel({ job, onDismiss }: ExportStatusPanelProps) {
         </div>
 
         <div className="flex items-center gap-1.5">
-          {/* Download links for completed parts */}
+          {/* Download buttons for completed parts */}
           {job.status === "completed" &&
             job.parts.map((part) => (
-              <a
+              <button
                 key={part.part}
-                href={`${API_BASE_URL}/exports/${job.id}/download/${part.part}`}
-                download
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 rounded px-2 py-1 font-mono text-[10px] bg-[#0d1117] text-[var(--color-text-primary)] hover:bg-[#1c2128] transition-colors border border-[var(--color-border-default)]"
+                type="button"
+                onClick={() => handleDownloadPart(part)}
+                className="inline-flex items-center gap-1 rounded px-2 py-1 font-mono text-[10px] bg-[#0d1117] text-[var(--color-text-primary)] hover:bg-[#1c2128] transition-colors border border-[var(--color-border-default)] cursor-pointer"
               >
                 <Download size={10} />
                 Part {part.part}
                 <span className="text-[var(--color-text-muted)]">
                   ({formatBytes(part.size_bytes)})
                 </span>
-              </a>
+              </button>
             ))}
 
           {/* Dismiss */}
