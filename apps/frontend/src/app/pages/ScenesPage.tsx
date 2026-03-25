@@ -24,6 +24,7 @@ import { usePipelineContextSafe } from "@/features/pipelines";
 import { useProjects } from "@/features/projects/hooks/use-projects";
 import { useSceneTypes } from "@/features/scene-types/hooks/use-scene-types";
 import { useTracks } from "@/features/scene-catalogue/hooks/use-tracks";
+import { TagFilter } from "@/components/domain/TagFilter";
 import { Ban, CheckCircle, Layers, LayoutGrid, List, Play, XCircle } from "@/tokens/icons";
 
 /* --------------------------------------------------------------------------
@@ -290,6 +291,7 @@ export function ScenesPage() {
   const [statusFilter, setStatusFilter] = useState<string[]>([]);
   const [sceneTypeFilter, setSceneTypeFilter] = useState<string[]>([]);
   const [trackFilter, setTrackFilter] = useState<string[]>([]);
+  const [labelFilter, setLabelFilter] = useState<number[]>([]);
   // Absolute index across all pages (0 to total-1), not page-local
   const [playingAbsIndex, setPlayingAbsIndex] = useState<number | null>(null);
   const [showDisabled, setShowDisabled] = useState(false);
@@ -309,6 +311,7 @@ export function ScenesPage() {
     source: sourceFilter.length > 0 ? sourceFilter.join(",") : undefined,
     qaStatus: statusFilter.length > 0 ? statusFilter.join(",") : undefined,
     showDisabled,
+    tagIds: labelFilter.length > 0 ? labelFilter.join(",") : undefined,
     limit: pageSize,
     offset: page * pageSize,
   });
@@ -425,6 +428,13 @@ export function ScenesPage() {
         </div>
       </MultiFilterBar>
 
+      {/* Label filter */}
+      <TagFilter
+        selectedTagIds={labelFilter}
+        onSelectionChange={(ids) => { setLabelFilter(ids); setPage(0); }}
+        pipelineId={pipelineCtx?.pipelineId}
+      />
+
       {/* Content */}
       {isLoading ? (
         <div className="flex justify-center py-12">
@@ -536,6 +546,7 @@ export function ScenesPage() {
         onReject={playingClipData ? () => playingClipData.qa_status === "rejected" ? unapproveMut.mutate({ sceneId: playingClipData.scene_id, versionId: playingClipData.id }) : rejectMut.mutate({ sceneId: playingClipData.scene_id, versionId: playingClipData.id, input: { reason: "Rejected from browse" } }) : undefined}
         pipelineId={pipelineCtx?.pipelineId}
         meta={playingClipData ? {
+          projectName: playingClipData.project_name,
           avatarName: playingClipData.avatar_name,
           sceneTypeName: playingClipData.scene_type_name,
           trackName: playingClipData.track_name,

@@ -801,7 +801,12 @@ pub async fn browse_clips(
           AND ($4::text IS NULL OR t.name = ANY(string_to_array($4, ','))) \
           AND ($5::text IS NULL OR svv.source = ANY(string_to_array($5, ','))) \
           AND ($6::text IS NULL OR svv.qa_status = ANY(string_to_array($6, ','))) \
-          AND ($7::bool OR c.is_enabled = true)";
+          AND ($7::bool OR c.is_enabled = true) \
+          AND ($8::text IS NULL OR svv.id IN ( \
+            SELECT et.entity_id FROM entity_tags et \
+            WHERE et.entity_type = 'scene_video_version' \
+              AND et.tag_id = ANY(string_to_array($8, ',')::bigint[]) \
+          ))";
 
     let count_sql = format!("SELECT COUNT(*) {base_from}");
     let total: i64 = sqlx::query_scalar(&count_sql)
@@ -812,6 +817,7 @@ pub async fn browse_clips(
         .bind(&params.source)
         .bind(&params.qa_status)
         .bind(show_disabled)
+        .bind(&params.tag_ids)
         .fetch_one(&state.pool)
         .await?;
 
@@ -829,7 +835,7 @@ pub async fn browse_clips(
             p.id AS project_id, p.name AS project_name \
         {base_from} \
         ORDER BY svv.created_at DESC \
-        LIMIT $8 OFFSET $9"
+        LIMIT $9 OFFSET $10"
     );
     let items = sqlx::query_as::<_, ClipBrowseItem>(&items_sql)
         .bind(params.project_id)
@@ -839,6 +845,7 @@ pub async fn browse_clips(
         .bind(&params.source)
         .bind(&params.qa_status)
         .bind(show_disabled)
+        .bind(&params.tag_ids)
         .bind(limit as i64)
         .bind(offset as i64)
         .fetch_all(&state.pool)
@@ -858,6 +865,8 @@ pub struct BrowseClipsParams {
     pub source: Option<String>,
     pub qa_status: Option<String>,
     pub show_disabled: Option<bool>,
+    /// Comma-separated tag IDs for label filtering.
+    pub tag_ids: Option<String>,
     pub limit: Option<i32>,
     pub offset: Option<i32>,
 }

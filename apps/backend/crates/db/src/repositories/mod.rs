@@ -5,6 +5,7 @@
 
 pub mod activity_log_repo;
 pub mod activity_log_settings_repo;
+pub mod annotation_preset_repo;
 pub mod api_key_repo;
 pub mod api_observability_repo;
 pub mod approval_repo;
@@ -66,7 +67,6 @@ pub mod image_qa_threshold_repo;
 pub mod metric_threshold_repo;
 
 pub mod image_quality_score_repo;
-pub mod media_variant_repo;
 pub mod import_report_repo;
 pub mod import_session_repo;
 pub mod integrity_scan_repo;
@@ -80,6 +80,7 @@ pub mod layout_repo;
 pub mod legacy_import_entity_log_repo;
 pub mod legacy_import_run_repo;
 pub mod library_avatar_repo;
+pub mod media_variant_repo;
 pub mod metadata_repo;
 pub mod metadata_template_repo;
 pub mod mixin_repo;
@@ -190,6 +191,7 @@ pub mod workspace_repo;
 
 pub use activity_log_repo::ActivityLogRepo;
 pub use activity_log_settings_repo::ActivityLogSettingsRepo;
+pub use annotation_preset_repo::AnnotationPresetRepo;
 pub use api_key_repo::ApiKeyRepo;
 pub use api_observability_repo::ApiAlertConfigRepo;
 pub use api_observability_repo::ApiMetricsRepo;
@@ -262,7 +264,6 @@ pub use hook_execution_log_repo::HookExecutionLogRepo;
 pub use hook_repo::HookRepo;
 pub use image_qa_threshold_repo::ImageQaThresholdRepo;
 pub use image_quality_score_repo::ImageQualityScoreRepo;
-pub use media_variant_repo::MediaVariantRepo;
 pub use import_report_repo::ImportReportRepo;
 pub use import_session_repo::ImportMappingEntryRepo;
 pub use import_session_repo::ImportSessionRepo;
@@ -280,6 +281,7 @@ pub use legacy_import_entity_log_repo::LegacyImportEntityLogRepo;
 pub use legacy_import_run_repo::LegacyImportRunRepo;
 pub use library_avatar_repo::LibraryAvatarRepo;
 pub use library_avatar_repo::ProjectAvatarLinkRepo;
+pub use media_variant_repo::MediaVariantRepo;
 pub use metadata_repo::MetadataGenerationRepo;
 pub use metadata_template_repo::MetadataTemplateFieldRepo;
 pub use metadata_template_repo::MetadataTemplateRepo;

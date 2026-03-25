@@ -63,7 +63,9 @@ export interface FrameAnnotation {
   segment_id: number;
   user_id: number;
   frame_number: number;
+  frame_end: number | null;
   annotations_json: DrawingObject[];
+  note: string | null;
   review_note_id: number | null;
   created_at: string;
   updated_at: string;
@@ -72,13 +74,17 @@ export interface FrameAnnotation {
 /** DTO for creating a new frame annotation. */
 export interface CreateFrameAnnotation {
   frame_number: number;
+  frame_end?: number;
   annotations_json: DrawingObject[];
+  note?: string;
   review_note_id?: number;
 }
 
 /** DTO for updating an existing frame annotation. */
 export interface UpdateFrameAnnotation {
+  frame_end?: number | null;
   annotations_json?: DrawingObject[];
+  note?: string;
   review_note_id?: number;
 }
 
@@ -115,6 +121,8 @@ export interface AnnotatedItem {
   version_id: number | null;
   segment_id: number | null;
   frame_number: number;
+  frame_end: number | null;
+  note: string | null;
   annotation_count: number;
   avatar_id: number;
   avatar_name: string;

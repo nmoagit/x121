@@ -125,7 +125,7 @@ impl TagRepo {
         .await
     }
 
-    /// Update a tag's `display_name` and/or `color`.
+    /// Update a tag's `display_name` (and normalized `name`) and/or `color`.
     ///
     /// Returns `None` if no tag with the given ID exists.
     pub async fn update(
@@ -134,15 +134,18 @@ impl TagRepo {
         display_name: Option<&str>,
         color: Option<&str>,
     ) -> Result<Option<Tag>, sqlx::Error> {
+        let normalized = display_name.map(normalize_tag_name);
         let query = format!(
             "UPDATE tags SET \
-                 display_name = COALESCE($2, display_name), \
-                 color = COALESCE($3, color) \
+                 name = COALESCE($2, name), \
+                 display_name = COALESCE($3, display_name), \
+                 color = COALESCE($4, color) \
              WHERE id = $1 \
              RETURNING {TAG_COLUMNS}"
         );
         sqlx::query_as::<_, Tag>(&query)
             .bind(id)
+            .bind(normalized.as_deref())
             .bind(display_name)
             .bind(color)
             .fetch_optional(pool)

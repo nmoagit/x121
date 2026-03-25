@@ -46,15 +46,21 @@ export function useUpsertVersionAnnotation(sceneId: number, versionId: number) {
     mutationFn: ({
       frameNumber,
       annotations,
+      frameEnd,
+      note,
     }: {
       frameNumber: number;
       annotations: DrawingObject[];
+      frameEnd?: number | null;
+      note?: string;
     }) =>
       api.put<FrameAnnotation | null>(
         `/scenes/${sceneId}/versions/${versionId}/annotations/${frameNumber}`,
         {
           frame_number: frameNumber,
           annotations_json: annotations,
+          ...(frameEnd !== undefined ? { frame_end: frameEnd } : {}),
+          ...(note !== undefined ? { note } : {}),
         },
       ),
     onSuccess: () => {

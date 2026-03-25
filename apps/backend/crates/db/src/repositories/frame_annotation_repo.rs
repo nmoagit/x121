@@ -10,7 +10,7 @@ use crate::models::frame_annotation::{
 
 /// Column list for frame_annotations queries.
 const COLUMNS: &str = "id, segment_id, version_id, media_variant_id, user_id, frame_number, \
-    annotations_json, review_note_id, created_at, updated_at";
+    frame_end, annotations_json, note, review_note_id, created_at, updated_at";
 
 /// Provides CRUD operations for frame annotations.
 pub struct FrameAnnotationRepo;
@@ -29,15 +29,17 @@ impl FrameAnnotationRepo {
     ) -> Result<FrameAnnotation, sqlx::Error> {
         let query = format!(
             "INSERT INTO frame_annotations
-                (segment_id, user_id, frame_number, annotations_json, review_note_id)
-             VALUES ($1, $2, $3, $4, $5)
+                (segment_id, user_id, frame_number, frame_end, annotations_json, note, review_note_id)
+             VALUES ($1, $2, $3, $4, $5, $6, $7)
              RETURNING {COLUMNS}"
         );
         sqlx::query_as::<_, FrameAnnotation>(&query)
             .bind(segment_id)
             .bind(user_id)
             .bind(input.frame_number)
+            .bind(input.frame_end)
             .bind(&input.annotations_json)
+            .bind(&input.note)
             .bind(input.review_note_id)
             .fetch_one(pool)
             .await
@@ -115,13 +117,17 @@ impl FrameAnnotationRepo {
     ) -> Result<Option<FrameAnnotation>, sqlx::Error> {
         let query = format!(
             "UPDATE frame_annotations SET
-                annotations_json = COALESCE($1, annotations_json),
-                review_note_id = COALESCE($2, review_note_id)
-             WHERE id = $3
+                frame_end = COALESCE($1, frame_end),
+                annotations_json = COALESCE($2, annotations_json),
+                note = COALESCE($3, note),
+                review_note_id = COALESCE($4, review_note_id)
+             WHERE id = $5
              RETURNING {COLUMNS}"
         );
         sqlx::query_as::<_, FrameAnnotation>(&query)
+            .bind(input.frame_end)
             .bind(&input.annotations_json)
+            .bind(&input.note)
             .bind(input.review_note_id)
             .bind(id)
             .fetch_optional(pool)
@@ -186,15 +192,17 @@ impl FrameAnnotationRepo {
     ) -> Result<FrameAnnotation, sqlx::Error> {
         let query = format!(
             "INSERT INTO frame_annotations
-                (version_id, user_id, frame_number, annotations_json)
-             VALUES ($1, $2, $3, $4)
+                (version_id, user_id, frame_number, frame_end, annotations_json, note)
+             VALUES ($1, $2, $3, $4, $5, $6)
              RETURNING {COLUMNS}"
         );
         sqlx::query_as::<_, FrameAnnotation>(&query)
             .bind(version_id)
             .bind(user_id)
             .bind(input.frame_number)
+            .bind(input.frame_end)
             .bind(&input.annotations_json)
+            .bind(&input.note)
             .fetch_one(pool)
             .await
     }
@@ -242,7 +250,9 @@ impl FrameAnnotationRepo {
         version_id: DbId,
         user_id: DbId,
         frame_number: i32,
+        frame_end: Option<i32>,
         annotations_json: &serde_json::Value,
+        note: Option<&str>,
     ) -> Result<Option<FrameAnnotation>, sqlx::Error> {
         // Delete existing for this version+frame
         sqlx::query(
@@ -259,15 +269,17 @@ impl FrameAnnotationRepo {
         if arr.is_some_and(|a| !a.is_empty()) {
             let query = format!(
                 "INSERT INTO frame_annotations
-                    (version_id, user_id, frame_number, annotations_json)
-                 VALUES ($1, $2, $3, $4)
+                    (version_id, user_id, frame_number, frame_end, annotations_json, note)
+                 VALUES ($1, $2, $3, $4, $5, $6)
                  RETURNING {COLUMNS}"
             );
             let row = sqlx::query_as::<_, FrameAnnotation>(&query)
                 .bind(version_id)
                 .bind(user_id)
                 .bind(frame_number)
+                .bind(frame_end)
                 .bind(annotations_json)
+                .bind(note)
                 .fetch_one(pool)
                 .await?;
             Ok(Some(row))
@@ -315,6 +327,8 @@ impl FrameAnnotationRepo {
                 fa.version_id,
                 fa.segment_id,
                 fa.frame_number,
+                fa.frame_end,
+                fa.note,
                 COALESCE(jsonb_array_length(fa.annotations_json), 0)::int4 AS annotation_count,
                 ch.id AS avatar_id,
                 ch.name AS avatar_name,
@@ -382,7 +396,9 @@ impl FrameAnnotationRepo {
         media_variant_id: DbId,
         user_id: DbId,
         frame_number: i32,
+        frame_end: Option<i32>,
         annotations_json: &serde_json::Value,
+        note: Option<&str>,
     ) -> Result<Option<FrameAnnotation>, sqlx::Error> {
         // Delete existing for this variant+frame
         sqlx::query(
@@ -399,15 +415,17 @@ impl FrameAnnotationRepo {
         if arr.is_some_and(|a| !a.is_empty()) {
             let query = format!(
                 "INSERT INTO frame_annotations
-                    (media_variant_id, user_id, frame_number, annotations_json)
-                 VALUES ($1, $2, $3, $4)
+                    (media_variant_id, user_id, frame_number, frame_end, annotations_json, note)
+                 VALUES ($1, $2, $3, $4, $5, $6)
                  RETURNING {COLUMNS}"
             );
             let row = sqlx::query_as::<_, FrameAnnotation>(&query)
                 .bind(media_variant_id)
                 .bind(user_id)
                 .bind(frame_number)
+                .bind(frame_end)
                 .bind(annotations_json)
+                .bind(note)
                 .fetch_one(pool)
                 .await?;
             Ok(Some(row))

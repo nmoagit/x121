@@ -13,7 +13,9 @@ pub struct FrameAnnotation {
     pub media_variant_id: Option<DbId>,
     pub user_id: DbId,
     pub frame_number: i32,
+    pub frame_end: Option<i32>,
     pub annotations_json: serde_json::Value,
+    pub note: Option<String>,
     pub review_note_id: Option<DbId>,
     pub created_at: Timestamp,
     pub updated_at: Timestamp,
@@ -23,7 +25,9 @@ pub struct FrameAnnotation {
 #[derive(Debug, Deserialize)]
 pub struct CreateFrameAnnotation {
     pub frame_number: i32,
+    pub frame_end: Option<i32>,
     pub annotations_json: serde_json::Value,
+    pub note: Option<String>,
     pub review_note_id: Option<DbId>,
 }
 
@@ -31,20 +35,26 @@ pub struct CreateFrameAnnotation {
 #[derive(Debug, Deserialize)]
 pub struct CreateVersionAnnotation {
     pub frame_number: i32,
+    pub frame_end: Option<i32>,
     pub annotations_json: serde_json::Value,
+    pub note: Option<String>,
 }
 
 /// DTO for creating a new frame annotation on an image variant.
 #[derive(Debug, Deserialize)]
 pub struct CreateMediaVariantAnnotation {
     pub frame_number: i32,
+    pub frame_end: Option<i32>,
     pub annotations_json: serde_json::Value,
+    pub note: Option<String>,
 }
 
 /// DTO for updating an existing frame annotation.
 #[derive(Debug, Deserialize)]
 pub struct UpdateFrameAnnotation {
+    pub frame_end: Option<i32>,
     pub annotations_json: Option<serde_json::Value>,
+    pub note: Option<String>,
     pub review_note_id: Option<DbId>,
 }
 
@@ -63,6 +73,8 @@ pub struct AnnotatedItem {
     pub version_id: Option<DbId>,
     pub segment_id: Option<DbId>,
     pub frame_number: i32,
+    pub frame_end: Option<i32>,
+    pub note: Option<String>,
     pub annotation_count: i32,
     pub avatar_id: DbId,
     pub avatar_name: String,

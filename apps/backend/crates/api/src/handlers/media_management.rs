@@ -296,8 +296,10 @@ pub async fn get_seed_summary(
 
     // 3. Build lookup: (media_slot_id, track_id) -> assignment.
     //    Also support assignments keyed by (media_slot_id, None) as avatar-level defaults.
-    let mut assignment_map: std::collections::HashMap<(Option<DbId>, Option<DbId>), AvatarMediaAssignment> =
-        std::collections::HashMap::new();
+    let mut assignment_map: std::collections::HashMap<
+        (Option<DbId>, Option<DbId>),
+        AvatarMediaAssignment,
+    > = std::collections::HashMap::new();
     for a in assignments {
         assignment_map.insert((Some(a.media_slot_id), a.track_id), a);
     }
@@ -507,8 +509,10 @@ pub async fn auto_assign_seeds(
     let assignments = AvatarMediaAssignmentRepo::list_by_avatar(&state.pool, avatar_id).await?;
 
     // Build lookup: (media_slot_id, track_id) -> assignment.
-    let mut assignment_map: std::collections::HashMap<(Option<DbId>, Option<DbId>), AvatarMediaAssignment> =
-        std::collections::HashMap::new();
+    let mut assignment_map: std::collections::HashMap<
+        (Option<DbId>, Option<DbId>),
+        AvatarMediaAssignment,
+    > = std::collections::HashMap::new();
     for a in assignments {
         assignment_map.insert((Some(a.media_slot_id), a.track_id), a);
     }
@@ -585,7 +589,9 @@ pub async fn auto_assign_seeds(
 
                 // If overwriting, check for existing and update; otherwise create.
                 if has_existing {
-                    if let Some(existing) = assignment_map.get(&(Some(media_slot_id), Some(entry.track_id))) {
+                    if let Some(existing) =
+                        assignment_map.get(&(Some(media_slot_id), Some(entry.track_id)))
+                    {
                         let update = UpdateAvatarMediaAssignment {
                             scene_type_id: Some(entry.scene_type_id),
                             media_variant_id: Some(variant.id),
@@ -595,7 +601,8 @@ pub async fn auto_assign_seeds(
                             passthrough_track_id: None,
                             notes: Some("Auto-assigned".to_string()),
                         };
-                        AvatarMediaAssignmentRepo::update(&state.pool, existing.id, &update).await?;
+                        AvatarMediaAssignmentRepo::update(&state.pool, existing.id, &update)
+                            .await?;
                     }
                 } else {
                     AvatarMediaAssignmentRepo::create(&state.pool, &create_input).await?;

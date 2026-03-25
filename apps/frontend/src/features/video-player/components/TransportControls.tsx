@@ -1,5 +1,5 @@
 import { cn } from "@/lib/cn";
-import { ChevronLeft, ChevronRight, Pause, Play, Repeat } from "@/tokens/icons";
+import { ChevronLeft, ChevronRight, Pause, Play, Repeat, RotateCcw, SkipBack } from "@/tokens/icons";
 
 import type { ABLoopControls } from "../hooks/use-ab-loop";
 import type { VideoPlayerControls } from "../hooks/use-video-player";
@@ -30,6 +30,16 @@ export function TransportControls({
         className,
       )}
     >
+      {/* Replay from start */}
+      <button
+        type="button"
+        onClick={() => { player.seekToTime(0); player.play(); }}
+        className="p-[var(--spacing-1)] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
+        title="Replay from start"
+      >
+        <SkipBack size={14} />
+      </button>
+
       {/* Step backward */}
       <button
         type="button"
@@ -44,7 +54,7 @@ export function TransportControls({
       <button
         type="button"
         onClick={player.togglePlay}
-        className="p-[var(--spacing-1)] text-[var(--color-text-inverse)] hover:text-[var(--color-action-primary)] transition-colors"
+        className="p-[var(--spacing-1)] text-[var(--color-text-primary)] hover:text-[var(--color-action-primary)] transition-colors"
         title={player.isPlaying ? "Pause" : "Play"}
       >
         {player.isPlaying ? <Pause size={20} /> : <Play size={20} />}
@@ -58,6 +68,16 @@ export function TransportControls({
         title="Step forward (frame)"
       >
         <ChevronRight size={16} />
+      </button>
+
+      {/* Back 5 seconds */}
+      <button
+        type="button"
+        onClick={() => player.seekToTime(Math.max(0, player.currentTime - 5))}
+        className="p-[var(--spacing-1)] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
+        title="Back 5 seconds"
+      >
+        <RotateCcw size={14} />
       </button>
 
       {/* Separator */}

@@ -551,7 +551,15 @@ pub fn discover_media_nodes(workflow: &serde_json::Value) -> Vec<DiscoveredMedia
             .and_then(|m| m.get("title"))
             .and_then(|t| t.as_str())
             .unwrap_or("");
-        let generic_titles = ["Load Image", "LoadImage", "Load Video", "LoadVideo", "Load Audio", "LoadAudio", ""];
+        let generic_titles = [
+            "Load Image",
+            "LoadImage",
+            "Load Video",
+            "LoadVideo",
+            "Load Audio",
+            "LoadAudio",
+            "",
+        ];
         let auto_label = if !generic_titles.contains(&meta_title) {
             meta_title.to_string()
         } else {

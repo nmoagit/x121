@@ -320,7 +320,9 @@ pub async fn upsert_version_annotation(
         version_id,
         auth.user_id,
         frame,
+        input.frame_end,
         &input.annotations_json,
+        input.note.as_deref(),
     )
     .await?;
 
@@ -406,7 +408,9 @@ pub async fn upsert_media_variant_annotation(
         variant_id,
         auth.user_id,
         frame,
+        input.frame_end,
         &input.annotations_json,
+        input.note.as_deref(),
     )
     .await?;
 

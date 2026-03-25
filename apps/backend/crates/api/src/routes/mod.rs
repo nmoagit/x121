@@ -1,6 +1,7 @@
 pub mod activity_log;
 pub mod admin;
 pub mod annotation;
+pub mod annotation_preset;
 pub mod api_observability;
 pub mod approval;
 pub mod assets;
@@ -931,6 +932,8 @@ pub fn api_routes() -> Router<AppState> {
         .route("/scene-video-versions/browse", axum::routing::get(crate::handlers::scene_video_version::browse_clips))
         // Annotation browsing (cross-project annotation overview).
         .nest("/annotations", annotation::annotation_browse_router())
+        // Annotation presets (PRD-149).
+        .nest("/annotation-presets", annotation_preset::router())
         // Notifications, preferences, and settings.
         .nest("/notifications", notification::router())
         // Image quality assurance (check types, QA runs, thresholds).

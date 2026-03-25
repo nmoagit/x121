@@ -817,6 +817,8 @@ pub struct BrowseVariantsParams {
     pub provenance: Option<String>,
     pub variant_type: Option<String>,
     pub show_disabled: Option<bool>,
+    /// Comma-separated tag IDs for label filtering.
+    pub tag_ids: Option<String>,
     pub limit: Option<i32>,
     pub offset: Option<i32>,
 }
@@ -897,7 +899,12 @@ pub async fn browse_variants(
           AND ($3::text IS NULL OR iv.status_id::text = ANY(string_to_array($3, ','))) \
           AND ($4::text IS NULL OR iv.provenance = ANY(string_to_array($4, ','))) \
           AND ($5::text IS NULL OR iv.variant_type = ANY(string_to_array($5, ','))) \
-          AND ($6::bool OR c.is_enabled = true)";
+          AND ($6::bool OR c.is_enabled = true) \
+          AND ($7::text IS NULL OR iv.id IN ( \
+            SELECT et.entity_id FROM entity_tags et \
+            WHERE et.entity_type = 'media_variant' \
+              AND et.tag_id = ANY(string_to_array($7, ',')::bigint[]) \
+          ))";
 
     let count_sql = format!("SELECT COUNT(*) {base_from}");
     let total: i64 = sqlx::query_scalar(&count_sql)
@@ -907,6 +914,7 @@ pub async fn browse_variants(
         .bind(&params.provenance)
         .bind(&params.variant_type)
         .bind(show_disabled)
+        .bind(&params.tag_ids)
         .fetch_one(&state.pool)
         .await?;
 
@@ -919,7 +927,7 @@ pub async fn browse_variants(
             p.id AS project_id, p.name AS project_name \
         {base_from} \
         ORDER BY iv.created_at DESC \
-        LIMIT $7 OFFSET $8"
+        LIMIT $8 OFFSET $9"
     );
     let items = sqlx::query_as::<_, MediaVariantBrowseItem>(&items_sql)
         .bind(params.project_id)
@@ -928,6 +936,7 @@ pub async fn browse_variants(
         .bind(&params.provenance)
         .bind(&params.variant_type)
         .bind(show_disabled)
+        .bind(&params.tag_ids)
         .bind(limit as i64)
         .bind(offset as i64)
         .fetch_all(&state.pool)

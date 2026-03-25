@@ -53,7 +53,13 @@ interface Point {
    Rendering helpers
    -------------------------------------------------------------------------- */
 
-function renderObject(ctx: CanvasRenderingContext2D, obj: DrawingObject) {
+/** Scale a 0-1 normalized coordinate to canvas pixel space. */
+function sx(v: number, canvasW: number): number { return v <= 1.5 ? v * canvasW : v; }
+function sy(v: number, canvasH: number): number { return v <= 1.5 ? v * canvasH : v; }
+
+function renderObject(ctx: CanvasRenderingContext2D, obj: DrawingObject, cw?: number, ch?: number) {
+  const w = cw ?? ctx.canvas.width;
+  const h = ch ?? ctx.canvas.height;
   ctx.strokeStyle = obj.color;
   ctx.fillStyle = obj.color;
   ctx.lineWidth = obj.strokeWidth;
@@ -67,58 +73,58 @@ function renderObject(ctx: CanvasRenderingContext2D, obj: DrawingObject) {
     if (!pts || pts.length < 2) return;
     if (obj.tool === "highlight") ctx.globalAlpha = 0.4;
     ctx.beginPath();
-    ctx.moveTo(pts[0]!.x, pts[0]!.y);
+    ctx.moveTo(sx(pts[0]!.x, w), sy(pts[0]!.y, h));
     for (let i = 1; i < pts.length; i++) {
-      ctx.lineTo(pts[i]!.x, pts[i]!.y);
+      ctx.lineTo(sx(pts[i]!.x, w), sy(pts[i]!.y, h));
     }
     ctx.stroke();
     ctx.globalAlpha = 1;
   } else if (obj.tool === "rectangle") {
-    const sx = d.startX as number;
-    const sy = d.startY as number;
-    const ex = d.endX as number;
-    const ey = d.endY as number;
+    const x1 = sx(d.startX as number, w);
+    const y1 = sy(d.startY as number, h);
+    const x2 = sx(d.endX as number, w);
+    const y2 = sy(d.endY as number, h);
     ctx.beginPath();
-    ctx.rect(sx, sy, ex - sx, ey - sy);
+    ctx.rect(x1, y1, x2 - x1, y2 - y1);
     ctx.stroke();
   } else if (obj.tool === "circle") {
-    const sx = d.startX as number;
-    const sy = d.startY as number;
-    const ex = d.endX as number;
-    const ey = d.endY as number;
-    const rx = Math.abs(ex - sx) / 2;
-    const ry = Math.abs(ey - sy) / 2;
-    const cx = (sx + ex) / 2;
-    const cy = (sy + ey) / 2;
+    const x1 = sx(d.startX as number, w);
+    const y1 = sy(d.startY as number, h);
+    const x2 = sx(d.endX as number, w);
+    const y2 = sy(d.endY as number, h);
+    const rx = Math.abs(x2 - x1) / 2;
+    const ry = Math.abs(y2 - y1) / 2;
+    const cx = (x1 + x2) / 2;
+    const cy = (y1 + y2) / 2;
     ctx.beginPath();
     ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
     ctx.stroke();
   } else if (obj.tool === "arrow") {
-    const sx = d.startX as number;
-    const sy = d.startY as number;
-    const ex = d.endX as number;
-    const ey = d.endY as number;
-    const angle = Math.atan2(ey - sy, ex - sx);
+    const x1 = sx(d.startX as number, w);
+    const y1 = sy(d.startY as number, h);
+    const x2 = sx(d.endX as number, w);
+    const y2 = sy(d.endY as number, h);
+    const angle = Math.atan2(y2 - y1, x2 - x1);
     const headLen = Math.max(10, obj.strokeWidth * 4);
     ctx.beginPath();
-    ctx.moveTo(sx, sy);
-    ctx.lineTo(ex, ey);
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
     ctx.stroke();
     ctx.beginPath();
-    ctx.moveTo(ex, ey);
+    ctx.moveTo(x2, y2);
     ctx.lineTo(
-      ex - headLen * Math.cos(angle - Math.PI / 6),
-      ey - headLen * Math.sin(angle - Math.PI / 6),
+      x2 - headLen * Math.cos(angle - Math.PI / 6),
+      y2 - headLen * Math.sin(angle - Math.PI / 6),
     );
-    ctx.moveTo(ex, ey);
+    ctx.moveTo(x2, y2);
     ctx.lineTo(
-      ex - headLen * Math.cos(angle + Math.PI / 6),
-      ey - headLen * Math.sin(angle + Math.PI / 6),
+      x2 - headLen * Math.cos(angle + Math.PI / 6),
+      y2 - headLen * Math.sin(angle + Math.PI / 6),
     );
     ctx.stroke();
   } else if (obj.tool === "text") {
-    const tx = d.x as number;
-    const ty = d.y as number;
+    const tx = sx(d.x as number, w);
+    const ty = sy(d.y as number, h);
     const content = d.content as string;
     const fontSize = (d.fontSize as number) ?? 16;
     ctx.font = `${fontSize}px sans-serif`;
@@ -134,6 +140,8 @@ function renderInProgress(
   color: string,
   sw: number,
 ) {
+  const w = ctx.canvas.width;
+  const h = ctx.canvas.height;
   ctx.strokeStyle = tool === "highlight" ? `${color}80` : color;
   ctx.lineWidth = tool === "highlight" ? sw * 3 : sw;
   ctx.lineCap = "round";
@@ -143,45 +151,51 @@ function renderInProgress(
     if (tool === "highlight") ctx.globalAlpha = 0.4;
     if (points.length >= 2) {
       ctx.beginPath();
-      ctx.moveTo(points[0]!.x, points[0]!.y);
+      ctx.moveTo(sx(points[0]!.x, w), sy(points[0]!.y, h));
       for (let i = 1; i < points.length; i++) {
-        ctx.lineTo(points[i]!.x, points[i]!.y);
+        ctx.lineTo(sx(points[i]!.x, w), sy(points[i]!.y, h));
       }
       ctx.stroke();
     }
     ctx.globalAlpha = 1;
   } else if (tool === "rectangle") {
     const end = points.at(-1) ?? start;
+    const x1 = sx(start.x, w), y1 = sy(start.y, h);
+    const x2 = sx(end.x, w), y2 = sy(end.y, h);
     ctx.beginPath();
-    ctx.rect(start.x, start.y, end.x - start.x, end.y - start.y);
+    ctx.rect(x1, y1, x2 - x1, y2 - y1);
     ctx.stroke();
   } else if (tool === "circle") {
     const end = points.at(-1) ?? start;
-    const rx = Math.abs(end.x - start.x) / 2;
-    const ry = Math.abs(end.y - start.y) / 2;
-    const cx = (start.x + end.x) / 2;
-    const cy = (start.y + end.y) / 2;
+    const x1 = sx(start.x, w), y1 = sy(start.y, h);
+    const x2 = sx(end.x, w), y2 = sy(end.y, h);
+    const rx = Math.abs(x2 - x1) / 2;
+    const ry = Math.abs(y2 - y1) / 2;
+    const cx = (x1 + x2) / 2;
+    const cy = (y1 + y2) / 2;
     ctx.beginPath();
     ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
     ctx.stroke();
   } else if (tool === "arrow") {
     const end = points.at(-1) ?? start;
-    const angle = Math.atan2(end.y - start.y, end.x - start.x);
+    const x1 = sx(start.x, w), y1 = sy(start.y, h);
+    const x2 = sx(end.x, w), y2 = sy(end.y, h);
+    const angle = Math.atan2(y2 - y1, x2 - x1);
     const headLen = Math.max(10, sw * 4);
     ctx.beginPath();
-    ctx.moveTo(start.x, start.y);
-    ctx.lineTo(end.x, end.y);
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
     ctx.stroke();
     ctx.beginPath();
-    ctx.moveTo(end.x, end.y);
+    ctx.moveTo(x2, y2);
     ctx.lineTo(
-      end.x - headLen * Math.cos(angle - Math.PI / 6),
-      end.y - headLen * Math.sin(angle - Math.PI / 6),
+      x2 - headLen * Math.cos(angle - Math.PI / 6),
+      y2 - headLen * Math.sin(angle - Math.PI / 6),
     );
-    ctx.moveTo(end.x, end.y);
+    ctx.moveTo(x2, y2);
     ctx.lineTo(
-      end.x - headLen * Math.cos(angle + Math.PI / 6),
-      end.y - headLen * Math.sin(angle + Math.PI / 6),
+      x2 - headLen * Math.cos(angle + Math.PI / 6),
+      y2 - headLen * Math.sin(angle + Math.PI / 6),
     );
     ctx.stroke();
   }
@@ -307,13 +321,14 @@ export function DrawingCanvas({
 
   // --- Mouse handlers ------------------------------------------------------
 
+  // Return coordinates normalized to 0-1 range so annotations scale with canvas size.
   const getCanvasPoint = useCallback(
     (e: React.MouseEvent<HTMLCanvasElement>): Point => {
       const rect = canvasRef.current?.getBoundingClientRect();
-      if (!rect) return { x: 0, y: 0 };
+      if (!rect || rect.width === 0 || rect.height === 0) return { x: 0, y: 0 };
       return {
-        x: e.clientX - rect.left,
-        y: e.clientY - rect.top,
+        x: (e.clientX - rect.left) / rect.width,
+        y: (e.clientY - rect.top) / rect.height,
       };
     },
     [],

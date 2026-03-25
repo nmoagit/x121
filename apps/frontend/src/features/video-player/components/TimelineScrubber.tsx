@@ -4,6 +4,12 @@ import { cn } from "@/lib/cn";
 
 import { frameToSeconds } from "../frame-utils";
 
+/** A frame range annotation to render on the timeline. */
+export interface TimelineAnnotationRange {
+  start: number;
+  end: number;
+}
+
 interface TimelineScrubberProps {
   currentTime: number;
   duration: number;
@@ -11,6 +17,8 @@ interface TimelineScrubberProps {
   inPoint: number | null;
   /** Out-point frame for A-B loop marker (null if not set). */
   outPoint: number | null;
+  /** Annotation frame ranges to highlight on the timeline. */
+  annotationRanges?: TimelineAnnotationRange[];
   framerate: number;
   onSeek: (time: number) => void;
   className?: string;
@@ -21,6 +29,7 @@ export function TimelineScrubber({
   duration,
   inPoint,
   outPoint,
+  annotationRanges,
   framerate,
   onSeek,
   className,
@@ -93,6 +102,20 @@ export function TimelineScrubber({
             style={{ left: `${inPercent}%`, width: `${outPercent - inPercent}%` }}
           />
         )}
+
+        {/* Annotation range highlights */}
+        {annotationRanges?.map((range) => {
+          if (framerate <= 0 || duration <= 0) return null;
+          const startPct = (frameToSeconds(range.start, framerate) / duration) * 100;
+          const endPct = (frameToSeconds(range.end, framerate) / duration) * 100;
+          return (
+            <div
+              key={`${range.start}-${range.end}`}
+              className="absolute top-0 bottom-0 bg-amber-500/20 rounded-full"
+              style={{ left: `${startPct}%`, width: `${endPct - startPct}%` }}
+            />
+          );
+        })}
 
         {/* Progress fill */}
         <div

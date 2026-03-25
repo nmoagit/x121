@@ -57,6 +57,7 @@ export interface ClipBrowseParams {
   source?: string;
   qaStatus?: string;
   showDisabled?: boolean;
+  tagIds?: string;
   limit?: number;
   offset?: number;
 }
@@ -71,6 +72,7 @@ export function useClipsBrowse(params: ClipBrowseParams = {}) {
   if (params.source) searchParams.set("source", params.source);
   if (params.qaStatus) searchParams.set("qa_status", params.qaStatus);
   if (params.showDisabled) searchParams.set("show_disabled", "true");
+  if (params.tagIds) searchParams.set("tag_ids", params.tagIds);
   if (params.limit != null) searchParams.set("limit", String(params.limit));
   if (params.offset != null) searchParams.set("offset", String(params.offset));
   const qs = searchParams.toString();

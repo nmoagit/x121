@@ -8,6 +8,7 @@ import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "@tanstack/react-router";
 
 import { EmptyState } from "@/components/domain";
+import { TagFilter } from "@/components/domain/TagFilter";
 import { TagInput } from "@/components/domain/TagInput";
 import type { TagInfo } from "@/components/domain/TagChip";
 import { Modal } from "@/components/composite";
@@ -279,6 +280,7 @@ export function MediaPage() {
   const [sourceFilter, setSourceFilter] = useState<string[]>([]);
   const [variantTypeFilter, setVariantTypeFilter] = useState<string[]>([]);
   const [mediaKindFilter, setMediaKindFilter] = useState<string[]>([]);
+  const [labelFilter, setLabelFilter] = useState<number[]>([]);
   // Absolute index across all pages (0 to total-1)
   const [previewAbsIndex, setPreviewAbsIndex] = useState<number | null>(null);
   const [showDisabled, setShowDisabled] = useState(false);
@@ -298,6 +300,7 @@ export function MediaPage() {
     variantType: variantTypeFilter.length > 0 ? variantTypeFilter.join(",") : undefined,
     mediaKind: mediaKindFilter.length > 0 ? mediaKindFilter.join(",") : undefined,
     showDisabled,
+    tagIds: labelFilter.length > 0 ? labelFilter.join(",") : undefined,
     limit: pageSize,
     offset: page * pageSize,
   });
@@ -375,6 +378,13 @@ export function MediaPage() {
           </span>
         </div>
       </MultiFilterBar>
+
+      {/* Label filter */}
+      <TagFilter
+        selectedTagIds={labelFilter}
+        onSelectionChange={(ids) => { setLabelFilter(ids); setPage(0); }}
+        pipelineId={pipelineCtx?.pipelineId}
+      />
 
       {/* Content */}
       {isLoading ? (
@@ -537,7 +547,7 @@ function ImagePreviewModal({
     <Modal
       open={variant !== null}
       onClose={onClose}
-      title={variant?.variant_label ?? ""}
+      title={variant ? `${variant.project_name} / ${variant.avatar_name} — ${variant.variant_label}` : ""}
       size={expanded ? "full" : "lg"}
     >
       {variant && (

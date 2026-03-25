@@ -9,6 +9,7 @@ import { useABLoop } from "./hooks/use-ab-loop";
 import { useVideoMetadata, getStreamUrl } from "./hooks/use-video-metadata";
 import { useVideoPlayer } from "./hooks/use-video-player";
 import type { PlaybackQuality, SourceType } from "./types";
+import type { TimelineAnnotationRange } from "./components/TimelineScrubber";
 
 interface VideoPlayerProps {
   sourceType: SourceType;
@@ -17,6 +18,8 @@ interface VideoPlayerProps {
   quality?: PlaybackQuality;
   autoPlay?: boolean;
   showControls?: boolean;
+  /** Annotation frame ranges to highlight on the timeline. */
+  annotationRanges?: TimelineAnnotationRange[];
   onFrameChange?: (frame: number) => void;
   onPlayStateChange?: (playing: boolean) => void;
   className?: string;
@@ -28,6 +31,7 @@ export function VideoPlayer({
   quality: initialQuality = "proxy",
   autoPlay = false,
   showControls = true,
+  annotationRanges,
   onFrameChange,
   onPlayStateChange,
   className,
@@ -109,6 +113,7 @@ export function VideoPlayer({
             duration={player.duration}
             inPoint={loop.inPoint}
             outPoint={loop.outPoint}
+            annotationRanges={annotationRanges}
             framerate={framerate}
             onSeek={player.seekToTime}
             className="px-[var(--spacing-2)]"

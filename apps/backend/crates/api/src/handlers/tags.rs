@@ -48,7 +48,13 @@ pub async fn suggest_tags(
     State(state): State<AppState>,
     Query(params): Query<TagSuggestParams>,
 ) -> AppResult<impl IntoResponse> {
-    let suggestions = TagRepo::suggest(&state.pool, &params.prefix, params.pipeline_id, params.limit).await?;
+    let suggestions = TagRepo::suggest(
+        &state.pool,
+        &params.prefix,
+        params.pipeline_id,
+        params.limit,
+    )
+    .await?;
 
     Ok(Json(DataResponse { data: suggestions }))
 }
@@ -138,7 +144,14 @@ pub async fn apply_entity_tags(
     let mut applied_tags = Vec::new();
 
     for tag_name in &input.tag_names {
-        let tag = TagRepo::create_or_get(&state.pool, tag_name, None, Some(auth.user_id), input.pipeline_id).await?;
+        let tag = TagRepo::create_or_get(
+            &state.pool,
+            tag_name,
+            None,
+            Some(auth.user_id),
+            input.pipeline_id,
+        )
+        .await?;
         TagRepo::apply(
             &state.pool,
             &entity_type,
@@ -279,7 +292,15 @@ pub async fn bulk_remove(
 // ---------------------------------------------------------------------------
 
 /// Allowed entity types for tagging.
-const VALID_ENTITY_TYPES: &[&str] = &["project", "avatar", "scene", "segment", "workflow", "scene_video_version", "media_variant"];
+const VALID_ENTITY_TYPES: &[&str] = &[
+    "project",
+    "avatar",
+    "scene",
+    "segment",
+    "workflow",
+    "scene_video_version",
+    "media_variant",
+];
 
 /// Validate that the entity type is one of the allowed values.
 fn validate_entity_type(entity_type: &str) -> AppResult<()> {

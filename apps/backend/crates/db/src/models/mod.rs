@@ -6,6 +6,7 @@
 //! - A `Deserialize` update DTO (all `Option` fields) for patches
 
 pub mod activity_log;
+pub mod annotation_preset;
 pub mod api_key;
 pub mod api_observability;
 pub mod approval;
@@ -57,7 +58,6 @@ pub mod group_scene_setting;
 pub mod hardware;
 pub mod hook;
 pub mod hook_execution_log;
-pub mod media;
 pub mod image_qa;
 pub mod importer;
 pub mod integrity_scan;
@@ -71,6 +71,7 @@ pub mod layout;
 pub mod legacy_import_entity_log;
 pub mod legacy_import_run;
 pub mod library_avatar;
+pub mod media;
 pub mod metadata;
 pub mod metadata_template;
 pub mod mixin;

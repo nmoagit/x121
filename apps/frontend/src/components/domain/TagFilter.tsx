@@ -19,6 +19,8 @@ interface TagFilterProps {
   onLogicChange?: (logic: FilterLogic) => void;
   /** Optional namespace filter for the available tags list. */
   namespace?: string;
+  /** Pipeline ID for pipeline-scoped labels. */
+  pipelineId?: number;
   className?: string;
 }
 
@@ -36,12 +38,16 @@ export function TagFilter({
   logic = "or",
   onLogicChange,
   namespace,
+  pipelineId,
   className,
 }: TagFilterProps) {
   const [fetchedTags, setFetchedTags] = useState<TagWithCount[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const tags = propTags ?? fetchedTags;
+  // Only show tags with usage_count > 0 (or currently selected)
+  const tags = (propTags ?? fetchedTags).filter(
+    (t) => t.usage_count > 0 || selectedTagIds.includes(t.id),
+  );
 
   // Fetch available tags from the API if not provided via props.
   useEffect(() => {
@@ -52,6 +58,7 @@ export function TagFilter({
 
     const params = new URLSearchParams();
     if (namespace) params.set("namespace", namespace);
+    if (pipelineId) params.set("pipeline_id", String(pipelineId));
     params.set("limit", "100");
 
     api
@@ -69,7 +76,7 @@ export function TagFilter({
     return () => {
       cancelled = true;
     };
-  }, [propTags, namespace]);
+  }, [propTags, namespace, pipelineId]);
 
   const toggleTag = useCallback(
     (tagId: number) => {

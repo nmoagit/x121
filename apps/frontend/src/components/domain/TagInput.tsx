@@ -2,7 +2,9 @@ import { useClickOutside } from "@/hooks/useClickOutside";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/cn";
 import { CHIP_CONTAINER } from "@/lib/ui-classes";
+import { Settings } from "@/tokens/icons";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { LabelManagerModal } from "./LabelManagerModal";
 import { TagChip } from "./TagChip";
 import type { TagInfo, TagWithCount } from "./TagChip";
 
@@ -40,19 +42,21 @@ export function TagInput({
   const [suggestions, setSuggestions] = useState<TagWithCount[]>([]);
   const [quickLabels, setQuickLabels] = useState<TagWithCount[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [managerOpen, setManagerOpen] = useState(false);
   const [highlightIndex, setHighlightIndex] = useState(-1);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Fetch quick labels (popular pipeline tags) on mount.
+  // Fetch quick labels (popular pipeline tags) — refresh when entity or tags change.
+  const quickLabelRefKey = `${pipelineId}-${entityId}-${existingTags.length}`;
   useEffect(() => {
-    const params = new URLSearchParams({ limit: "20" });
+    const params = new URLSearchParams({ limit: "100" });
     if (pipelineId) params.set("pipeline_id", String(pipelineId));
     api.get<TagWithCount[]>(`/tags?${params}`)
       .then(setQuickLabels)
       .catch(() => {});
-  }, [pipelineId]);
+  }, [quickLabelRefKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Fetch suggestions when input changes (debounced).
   useEffect(() => {
@@ -174,14 +178,22 @@ export function TagInput({
             "outline-none border-none p-0",
           )}
         />
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); setManagerOpen(true); }}
+          className="shrink-0 p-0.5 rounded text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
+          title="Manage labels"
+        >
+          <Settings size={12} />
+        </button>
       </div>
 
       {/* Quick labels — popular tags for one-click add */}
-      {quickLabels.length > 0 && existingTags.length === 0 && !showSuggestions && (
+      {quickLabels.filter((ql) => !existingTags.some((t) => t.id === ql.id)).length > 0 && !showSuggestions && (
         <div className="flex flex-wrap gap-1 mt-1">
           {quickLabels
             .filter((ql) => !existingTags.some((t) => t.id === ql.id))
-            .slice(0, 8)
+            .sort((a, b) => a.display_name.localeCompare(b.display_name))
             .map((ql) => (
               <button
                 key={ql.id}
@@ -262,6 +274,19 @@ export function TagInput({
           )}
         </div>
       )}
+      <LabelManagerModal
+        open={managerOpen}
+        onClose={() => {
+          setManagerOpen(false);
+          // Refresh quick labels after management
+          const params = new URLSearchParams({ limit: "100" });
+          if (pipelineId) params.set("pipeline_id", String(pipelineId));
+          api.get<TagWithCount[]>(`/tags?${params}`)
+            .then(setQuickLabels)
+            .catch(() => {});
+        }}
+        pipelineId={pipelineId}
+      />
     </div>
   );
 }

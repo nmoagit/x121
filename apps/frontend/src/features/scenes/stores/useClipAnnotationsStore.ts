@@ -14,7 +14,9 @@ const EMPTY_ENTRIES: FrameAnnotationEntry[] = [];
 
 export interface FrameAnnotationEntry {
   frameNumber: number;
+  frameEnd: number | null;
   annotations: DrawingObject[];
+  note: string | null;
 }
 
 interface ClipAnnotationsState {

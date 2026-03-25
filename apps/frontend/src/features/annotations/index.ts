@@ -39,8 +39,17 @@ export {
   useUpdateAnnotation,
 } from "./hooks/use-annotations";
 
+export type { AnnotationPreset } from "./hooks/use-annotation-presets";
+export {
+  useAnnotationPresets,
+  useCreateAnnotationPreset,
+  useUpdateAnnotationPreset,
+  useDeleteAnnotationPreset,
+} from "./hooks/use-annotation-presets";
+
 // Components
 export { AnnotationLayers } from "./AnnotationLayers";
+export { AnnotationPresetManager } from "./AnnotationPresetManager";
 export { AnnotationSummary } from "./AnnotationSummary";
 export { DrawingCanvas } from "./DrawingCanvas";
 export { TextLabel } from "./TextLabel";
