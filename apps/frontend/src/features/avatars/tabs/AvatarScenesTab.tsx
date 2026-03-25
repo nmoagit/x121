@@ -21,7 +21,7 @@ import { useSetToggle } from "@/hooks/useSetToggle";
 import { getStreamUrl } from "@/features/video-player";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/cn";
-import { AlertCircle, AlertTriangle, ChevronLeft, ChevronRight, Clock, EyeOff, MessageSquare, Pause, Play, Upload, Video } from "@/tokens/icons";
+import { AlertCircle, AlertTriangle, ChevronLeft, ChevronRight, Clock, EyeOff, Layers, MessageSquare, Pause, Play, Upload, Video } from "@/tokens/icons";
 import { useGpuAvailability } from "@/app/footer";
 
 import { Modal } from "@/components/composite/Modal";
@@ -1107,9 +1107,17 @@ function SceneCard({ slot, isSelected, onToggleSelect, onGenerate, onSchedule, o
             <EyeOff size={14} />
           </button>
 
-          {/* Warning icons — bottom-left overlay */}
-          {(slot.missingVariant || !hasWorkflow) && (
+          {/* Status icons — bottom-right overlay */}
+          {(slot.missingVariant || !hasWorkflow || scene?.has_newer_than_final) && (
             <div className="absolute bottom-[var(--spacing-1)] right-[var(--spacing-1)] flex items-center gap-1">
+              {scene?.has_newer_than_final && (
+                <span
+                  className="flex items-center justify-center size-5 rounded-full bg-blue-500/80"
+                  title="Newer clips exist after the final version"
+                >
+                  <Layers size={11} className="text-white" />
+                </span>
+              )}
               {slot.missingVariant && (
                 <span
                   className="flex items-center justify-center size-5 rounded-full bg-orange-500/80"
@@ -1127,14 +1135,6 @@ function SceneCard({ slot, isSelected, onToggleSelect, onGenerate, onSchedule, o
                 </span>
               )}
             </div>
-          )}
-
-          {/* Newer-than-final indicator — bottom-right blue dot */}
-          {scene?.has_newer_than_final && (
-            <div
-              className="absolute bottom-[var(--spacing-2)] right-[var(--spacing-2)] h-3 w-3 rounded-full bg-[var(--color-action-primary)] ring-2 ring-[var(--color-surface-primary)]"
-              title="Newer clips exist after the final version"
-            />
           )}
 
           {/* Segment progress overlay — bottom of video thumbnail */}
