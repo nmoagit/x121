@@ -248,8 +248,7 @@ async fn resolve_scene_video_versions(
         let qa = row.qa_status.as_deref().unwrap_or("pending");
         let label_display = labels.get(&row.id).cloned().unwrap_or_default();
 
-        // Folder: {avatar}/{scene_type}/
-        let archive_path = format!("{avatar}/{scene_type}/{filename}");
+        let archive_path = filename.clone();
         let size_bytes = row.file_size_bytes.unwrap_or(0) as u64;
 
         entries.push(ExportFileEntry {
@@ -351,8 +350,7 @@ async fn resolve_media_variants(
         };
         let label_display = labels.get(&row.id).cloned().unwrap_or_default();
 
-        // Folder: {avatar}/{variant_type}/
-        let archive_path = format!("{avatar}/{vtype}/{filename}");
+        let archive_path = filename.clone();
         let size_bytes = row.file_size_bytes.unwrap_or(0) as u64;
 
         entries.push(ExportFileEntry {
