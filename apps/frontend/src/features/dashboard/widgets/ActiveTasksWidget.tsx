@@ -39,7 +39,7 @@ function TaskLabel({ task, showPipeline = true }: { task: ActiveTaskItem; showPi
           <span className="text-[var(--color-text-muted)]">{task.pipeline_code} / </span>
         )}
         {task.avatar_name}
-        {task.scene_type_name && <> &mdash; {task.scene_type_name}</>}
+        {task.scene_type_name && <>{" "}&mdash; {task.scene_type_name}</>}
         {task.track_name && task.track_slug && (
           <>
             {" "}&mdash;{" "}

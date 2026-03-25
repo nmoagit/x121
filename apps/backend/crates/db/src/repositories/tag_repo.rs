@@ -13,7 +13,7 @@ use crate::models::tag::{
 /// Column list for `tags` queries.
 const TAG_COLUMNS: &str = "\
     id, name, display_name, namespace, color, usage_count, \
-    created_by, created_at, updated_at";
+    created_by, pipeline_id, created_at, updated_at";
 
 /// Default page size for tag listing.
 const DEFAULT_LIMIT: i64 = 100;
@@ -44,14 +44,15 @@ impl TagRepo {
         display_name: &str,
         color: Option<&str>,
         created_by: Option<DbId>,
+        pipeline_id: Option<DbId>,
     ) -> Result<Tag, sqlx::Error> {
         let normalized = normalize_tag_name(display_name);
         let namespace = extract_namespace(&normalized);
 
         let query = format!(
-            "INSERT INTO tags (name, display_name, namespace, color, created_by) \
-             VALUES ($1, $2, $3, $4, $5) \
-             ON CONFLICT (name) DO UPDATE SET display_name = EXCLUDED.display_name \
+            "INSERT INTO tags (name, display_name, namespace, color, created_by, pipeline_id) \
+             VALUES ($1, $2, $3, $4, $5, $6) \
+             ON CONFLICT (COALESCE(pipeline_id, -1), name) DO UPDATE SET display_name = EXCLUDED.display_name \
              RETURNING {TAG_COLUMNS}"
         );
         sqlx::query_as::<_, Tag>(&query)
@@ -60,6 +61,7 @@ impl TagRepo {
             .bind(namespace.as_deref())
             .bind(color)
             .bind(created_by)
+            .bind(pipeline_id)
             .fetch_one(pool)
             .await
     }
@@ -73,45 +75,33 @@ impl TagRepo {
             .await
     }
 
-    /// List all tags, optionally filtered by namespace, with pagination.
+    /// List all tags, optionally filtered by namespace and pipeline, with pagination.
     pub async fn list_all(pool: &PgPool, params: &TagListParams) -> Result<Vec<Tag>, sqlx::Error> {
         let limit = params.limit.unwrap_or(DEFAULT_LIMIT).min(MAX_LIMIT);
         let offset = params.offset.unwrap_or(0);
 
-        match &params.namespace {
-            Some(ns) => {
-                let query = format!(
-                    "SELECT {TAG_COLUMNS} FROM tags \
-                     WHERE namespace = $1 \
-                     ORDER BY usage_count DESC, name \
-                     LIMIT $2 OFFSET $3"
-                );
-                sqlx::query_as::<_, Tag>(&query)
-                    .bind(ns)
-                    .bind(limit)
-                    .bind(offset)
-                    .fetch_all(pool)
-                    .await
-            }
-            None => {
-                let query = format!(
-                    "SELECT {TAG_COLUMNS} FROM tags \
-                     ORDER BY usage_count DESC, name \
-                     LIMIT $1 OFFSET $2"
-                );
-                sqlx::query_as::<_, Tag>(&query)
-                    .bind(limit)
-                    .bind(offset)
-                    .fetch_all(pool)
-                    .await
-            }
-        }
+        let query = format!(
+            "SELECT {TAG_COLUMNS} FROM tags \
+             WHERE ($1::text IS NULL OR namespace = $1) \
+               AND ($2::bigint IS NULL OR pipeline_id = $2) \
+             ORDER BY usage_count DESC, name \
+             LIMIT $3 OFFSET $4"
+        );
+        sqlx::query_as::<_, Tag>(&query)
+            .bind(&params.namespace)
+            .bind(params.pipeline_id)
+            .bind(limit)
+            .bind(offset)
+            .fetch_all(pool)
+            .await
     }
 
     /// Autocomplete suggestions: prefix-match on normalized name, sorted by popularity.
+    /// Pipeline-scoped when pipeline_id is provided.
     pub async fn suggest(
         pool: &PgPool,
         prefix: &str,
+        pipeline_id: Option<DbId>,
         limit: Option<i64>,
     ) -> Result<Vec<TagSuggestion>, sqlx::Error> {
         let normalized = normalize_tag_name(prefix);
@@ -124,11 +114,13 @@ impl TagRepo {
             "SELECT id, name, display_name, namespace, color, usage_count \
              FROM tags \
              WHERE name LIKE $1 \
+               AND ($3::bigint IS NULL OR pipeline_id = $3) \
              ORDER BY usage_count DESC, name \
              LIMIT $2",
         )
         .bind(&pattern)
         .bind(limit)
+        .bind(pipeline_id)
         .fetch_all(pool)
         .await
     }
@@ -267,11 +259,12 @@ impl TagRepo {
         entity_ids: &[DbId],
         tag_names: &[String],
         applied_by: Option<DbId>,
+        pipeline_id: Option<DbId>,
     ) -> Result<BulkTagResult, sqlx::Error> {
         let mut result = BulkTagResult::default();
 
         for tag_name in tag_names {
-            let tag = Self::create_or_get(pool, tag_name, None, applied_by).await?;
+            let tag = Self::create_or_get(pool, tag_name, None, applied_by, pipeline_id).await?;
             for &entity_id in entity_ids {
                 let was_applied =
                     Self::apply(pool, entity_type, entity_id, tag.id, applied_by).await?;

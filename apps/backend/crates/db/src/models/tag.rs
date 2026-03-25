@@ -18,6 +18,7 @@ pub struct Tag {
     pub color: Option<String>,
     pub usage_count: i32,
     pub created_by: Option<DbId>,
+    pub pipeline_id: Option<DbId>,
     pub created_at: Timestamp,
     pub updated_at: Timestamp,
 }
@@ -82,6 +83,8 @@ pub struct UpdateTag {
 pub struct ApplyTagsRequest {
     /// Tag names to apply. New tags are created on first use.
     pub tag_names: Vec<String>,
+    /// Pipeline ID for pipeline-scoped tags.
+    pub pipeline_id: Option<DbId>,
 }
 
 /// DTO for bulk-applying tags to multiple entities.
@@ -121,6 +124,8 @@ pub enum TagFilterLogic {
 pub struct TagListParams {
     /// Filter by namespace (e.g., `"priority"`).
     pub namespace: Option<String>,
+    /// Filter by pipeline (pipeline-scoped labels).
+    pub pipeline_id: Option<DbId>,
     /// Maximum results. Defaults to 100.
     pub limit: Option<i64>,
     /// Offset for pagination.
@@ -132,6 +137,8 @@ pub struct TagListParams {
 pub struct TagSuggestParams {
     /// Prefix to match against normalized tag names.
     pub prefix: String,
+    /// Filter by pipeline (pipeline-scoped labels).
+    pub pipeline_id: Option<DbId>,
     /// Maximum suggestions. Defaults to 10.
     pub limit: Option<i64>,
 }

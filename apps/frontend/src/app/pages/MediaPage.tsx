@@ -8,7 +8,10 @@ import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "@tanstack/react-router";
 
 import { EmptyState } from "@/components/domain";
+import { TagInput } from "@/components/domain/TagInput";
+import type { TagInfo } from "@/components/domain/TagChip";
 import { Modal } from "@/components/composite";
+import { api } from "@/lib/api";
 import { PageHeader, Stack } from "@/components/layout";
 import { Button, MultiFilterBar, Select, Toggle ,  WireframeLoader } from "@/components/primitives";
 import type { FilterConfig, FilterOption  } from "@/components/primitives";
@@ -482,6 +485,7 @@ export function MediaPage() {
         onNext={previewAbsIndex !== null && previewAbsIndex < total - 1 ? () => setPreviewAbsIndex(previewAbsIndex + 1) : undefined}
         onApprove={previewVariantData ? () => previewVariantData.status_id === 2 ? unapproveVarMut.mutate({ avatarId: previewVariantData.avatar_id, id: previewVariantData.id }) : approveVarMut.mutate({ avatarId: previewVariantData.avatar_id, id: previewVariantData.id }) : undefined}
         onReject={previewVariantData ? () => previewVariantData.status_id === 3 ? unapproveVarMut.mutate({ avatarId: previewVariantData.avatar_id, id: previewVariantData.id }) : rejectVarMut.mutate({ avatarId: previewVariantData.avatar_id, id: previewVariantData.id }) : undefined}
+        pipelineId={pipelineCtx?.pipelineId}
       />
     </Stack>
   );
@@ -498,6 +502,7 @@ function ImagePreviewModal({
   onNext,
   onApprove,
   onReject,
+  pipelineId,
 }: {
   variant: MediaVariantBrowseItem | null;
   onClose: () => void;
@@ -505,8 +510,18 @@ function ImagePreviewModal({
   onNext?: () => void;
   onApprove?: () => void;
   onReject?: () => void;
+  pipelineId?: number;
 }) {
   const [expanded, setExpanded] = useState(false);
+  const [variantTags, setVariantTags] = useState<TagInfo[]>([]);
+
+  // Load tags when variant changes
+  useEffect(() => {
+    if (!variant) { setVariantTags([]); return; }
+    api.get<TagInfo[]>(`/entities/media_variant/${variant.id}/tags`)
+      .then(setVariantTags)
+      .catch(() => setVariantTags([]));
+  }, [variant?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!variant) return;
@@ -614,6 +629,15 @@ function ImagePreviewModal({
               </button>
             </div>
           </div>
+
+          {/* Labels */}
+          <TagInput
+            entityType="media_variant"
+            entityId={variant.id}
+            existingTags={variantTags}
+            onTagsChange={setVariantTags}
+            pipelineId={pipelineId}
+          />
         </Stack>
       )}
     </Modal>

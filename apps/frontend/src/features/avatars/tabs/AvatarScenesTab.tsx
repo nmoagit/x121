@@ -259,16 +259,19 @@ export function AvatarScenesTab({ avatarId, projectId, focusSceneId, focusSceneT
     return expandedRows.map((row) => {
       const key = `${row.scene_type_id}::${row.track_id ?? "null"}`;
       const scene = sceneByKey.get(key) ?? null;
-      // Check if a seed is assigned (PRD-146 assignment OR legacy variant match)
+      // Check if a seed is assigned via PRD-146 seed summary.
+      // If seed summary has slots for this pipeline, use it as the authority.
+      // Only fall back to legacy variant matching when no seed summary data exists.
+      const hasSeedSlots = (seedSummary?.slots?.length ?? 0) > 0;
       const hasSeedAssignment = row.track_id != null
         ? assignedSeedKeys.has(`${row.scene_type_id}::${row.track_id}`)
         : assignedSeedKeys.has(`${row.scene_type_id}::*`);
-      const variantId = resolveVariantId(row.track_slug);
+      const variantId = !hasSeedSlots ? resolveVariantId(row.track_slug) : null;
       const missingVariant =
         (hasSeedAssignment || variantId !== null) ? null : `${row.track_slug ?? "seed"} seed`;
       return { row, scene, missingVariant };
     });
-  }, [expandedRows, scenes, resolveVariantId, assignedSeedKeys]);
+  }, [expandedRows, scenes, resolveVariantId, assignedSeedKeys, seedSummary?.slots?.length]);
 
   /** Slots that have an existing scene (navigable in the detail modal). */
   const navigableSlots = useMemo(
@@ -1104,11 +1107,25 @@ function SceneCard({ slot, isSelected, onToggleSelect, onGenerate, onSchedule, o
             <EyeOff size={14} />
           </button>
 
-          {/* Missing seed image warning — overlays bottom of preview */}
-          {slot.missingVariant && (
-            <div className="absolute bottom-0 inset-x-0 flex items-center gap-[var(--spacing-1)] px-[var(--spacing-2)] py-[var(--spacing-1)] bg-[var(--color-action-danger)]/90 text-white text-xs">
-              <AlertCircle size={12} className="shrink-0" />
-              <span className="truncate">Missing seed image: {slot.missingVariant}</span>
+          {/* Warning icons — bottom-left overlay */}
+          {(slot.missingVariant || !hasWorkflow) && (
+            <div className="absolute bottom-[var(--spacing-1)] right-[var(--spacing-1)] flex items-center gap-1">
+              {slot.missingVariant && (
+                <span
+                  className="flex items-center justify-center size-5 rounded-full bg-orange-500/80"
+                  title={`Missing seed: ${slot.missingVariant}`}
+                >
+                  <AlertTriangle size={11} className="text-white" />
+                </span>
+              )}
+              {!hasWorkflow && (
+                <span
+                  className="flex items-center justify-center size-5 rounded-full bg-red-500/80"
+                  title="No workflow assigned"
+                >
+                  <AlertCircle size={11} className="text-white" />
+                </span>
+              )}
             </div>
           )}
 

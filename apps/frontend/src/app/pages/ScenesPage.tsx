@@ -534,6 +534,7 @@ export function ScenesPage() {
         onNext={playingAbsIndex !== null && playingAbsIndex < total - 1 ? () => setPlayingAbsIndex(playingAbsIndex + 1) : undefined}
         onApprove={playingClipData ? () => playingClipData.qa_status === "approved" ? unapproveMut.mutate({ sceneId: playingClipData.scene_id, versionId: playingClipData.id }) : approveMut.mutate({ sceneId: playingClipData.scene_id, versionId: playingClipData.id }) : undefined}
         onReject={playingClipData ? () => playingClipData.qa_status === "rejected" ? unapproveMut.mutate({ sceneId: playingClipData.scene_id, versionId: playingClipData.id }) : rejectMut.mutate({ sceneId: playingClipData.scene_id, versionId: playingClipData.id, input: { reason: "Rejected from browse" } }) : undefined}
+        pipelineId={pipelineCtx?.pipelineId}
         meta={playingClipData ? {
           avatarName: playingClipData.avatar_name,
           sceneTypeName: playingClipData.scene_type_name,

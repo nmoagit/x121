@@ -11,6 +11,8 @@ interface TagInputProps {
   entityId: number;
   existingTags: TagInfo[];
   onTagsChange: (tags: TagInfo[]) => void;
+  /** Pipeline ID for pipeline-scoped labels. */
+  pipelineId?: number;
   placeholder?: string;
   className?: string;
 }
@@ -30,16 +32,27 @@ export function TagInput({
   entityId,
   existingTags,
   onTagsChange,
-  placeholder = "Add tag...",
+  pipelineId,
+  placeholder = "Add label...",
   className,
 }: TagInputProps) {
   const [input, setInput] = useState("");
   const [suggestions, setSuggestions] = useState<TagWithCount[]>([]);
+  const [quickLabels, setQuickLabels] = useState<TagWithCount[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [highlightIndex, setHighlightIndex] = useState(-1);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Fetch quick labels (popular pipeline tags) on mount.
+  useEffect(() => {
+    const params = new URLSearchParams({ limit: "20" });
+    if (pipelineId) params.set("pipeline_id", String(pipelineId));
+    api.get<TagWithCount[]>(`/tags?${params}`)
+      .then(setQuickLabels)
+      .catch(() => {});
+  }, [pipelineId]);
 
   // Fetch suggestions when input changes (debounced).
   useEffect(() => {
@@ -53,8 +66,9 @@ export function TagInput({
 
     debounceRef.current = setTimeout(async () => {
       try {
+        const pipelineParam = pipelineId ? `&pipeline_id=${pipelineId}` : "";
         const results = await api.get<TagWithCount[]>(
-          `/tags/suggest?prefix=${encodeURIComponent(input.trim())}&limit=10`,
+          `/tags/suggest?prefix=${encodeURIComponent(input.trim())}&limit=10${pipelineParam}`,
         );
         // Filter out tags already applied.
         const existingIds = new Set(existingTags.map((t) => t.id));
@@ -84,6 +98,7 @@ export function TagInput({
       try {
         const updatedTags = await api.post<TagInfo[]>(`/entities/${entityType}/${entityId}/tags`, {
           tag_names: [tagName.trim()],
+          pipeline_id: pipelineId,
         });
         onTagsChange(updatedTags);
         setInput("");
@@ -160,6 +175,34 @@ export function TagInput({
           )}
         />
       </div>
+
+      {/* Quick labels — popular tags for one-click add */}
+      {quickLabels.length > 0 && existingTags.length === 0 && !showSuggestions && (
+        <div className="flex flex-wrap gap-1 mt-1">
+          {quickLabels
+            .filter((ql) => !existingTags.some((t) => t.id === ql.id))
+            .slice(0, 8)
+            .map((ql) => (
+              <button
+                key={ql.id}
+                type="button"
+                onClick={() => applyTag(ql.display_name)}
+                className={cn(
+                  "inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full",
+                  "text-[10px] font-mono",
+                  "bg-[var(--color-surface-tertiary)] text-[var(--color-text-muted)]",
+                  "hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]",
+                  "transition-colors cursor-pointer",
+                )}
+              >
+                {ql.color && (
+                  <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: ql.color }} />
+                )}
+                {ql.display_name}
+              </button>
+            ))}
+        </div>
+      )}
 
       {/* Suggestions dropdown */}
       {showSuggestions && (

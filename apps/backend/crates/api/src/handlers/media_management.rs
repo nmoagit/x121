@@ -252,30 +252,40 @@ pub async fn get_seed_summary(
     State(state): State<AppState>,
     Path(avatar_id): Path<DbId>,
 ) -> AppResult<Json<DataResponse<SeedSummary>>> {
-    // 1. Get all scene_type × track combos for the avatar's pipeline,
-    //    with their workflow and first media slot.
+    // 1. Get all distinct scene_type × track combos from actual scenes for this avatar,
+    //    with their workflow (from track config or scene type) and first media slot.
     let entries: Vec<SeedSlotEntry> = sqlx::query_as(
-        "SELECT
+        "SELECT DISTINCT ON (st.id, COALESCE(t.id, 0))
             st.id AS scene_type_id,
             st.name AS scene_type_name,
-            t.id AS track_id,
-            t.name AS track_name,
-            sttc.workflow_id,
+            COALESCE(t.id, 0) AS track_id,
+            COALESCE(t.name, 'Default') AS track_name,
+            COALESCE(sttc.workflow_id, st.workflow_id) AS workflow_id,
             w.name AS workflow_name,
             (SELECT wms.id FROM workflow_media_slots wms
-             WHERE wms.workflow_id = sttc.workflow_id
+             WHERE wms.workflow_id = COALESCE(sttc.workflow_id, st.workflow_id)
              ORDER BY wms.sort_order, wms.id LIMIT 1) AS media_slot_id,
             (SELECT wms.slot_label FROM workflow_media_slots wms
-             WHERE wms.workflow_id = sttc.workflow_id
+             WHERE wms.workflow_id = COALESCE(sttc.workflow_id, st.workflow_id)
              ORDER BY wms.sort_order, wms.id LIMIT 1) AS media_slot_label
-         FROM scene_type_track_configs sttc
-         JOIN scene_types st ON st.id = sttc.scene_type_id
-         JOIN tracks t ON t.id = sttc.track_id
-         JOIN avatars a ON a.id = $1
-         JOIN projects p ON p.id = a.project_id
-         LEFT JOIN workflows w ON w.id = sttc.workflow_id
-         WHERE (st.project_id = p.id OR (st.project_id IS NULL AND st.pipeline_id = p.pipeline_id))
-         ORDER BY st.sort_order, st.name, t.sort_order, t.name",
+         FROM scenes s
+         JOIN scene_types st ON st.id = s.scene_type_id
+         JOIN avatars a ON a.id = s.avatar_id
+         LEFT JOIN tracks t ON t.id = s.track_id
+         LEFT JOIN scene_type_track_configs sttc ON sttc.scene_type_id = st.id AND sttc.track_id = s.track_id
+         LEFT JOIN workflows w ON w.id = COALESCE(sttc.workflow_id, st.workflow_id)
+         WHERE s.avatar_id = $1 AND s.deleted_at IS NULL
+           -- Exclude scene types disabled at project level (unless re-enabled at avatar level)
+           AND COALESCE(
+             (SELECT aso.is_enabled FROM avatar_scene_overrides aso
+              WHERE aso.avatar_id = s.avatar_id AND aso.scene_type_id = st.id),
+             (SELECT gss.is_enabled FROM group_scene_settings gss
+              WHERE gss.group_id = a.group_id AND gss.scene_type_id = st.id),
+             (SELECT pss.is_enabled FROM project_scene_settings pss
+              WHERE pss.project_id = a.project_id AND pss.scene_type_id = st.id),
+             true
+           ) = true
+         ORDER BY st.id, COALESCE(t.id, 0), st.sort_order, st.name",
     )
     .bind(avatar_id)
     .fetch_all(&state.pool)
@@ -456,29 +466,38 @@ pub async fn auto_assign_seeds(
     Path(avatar_id): Path<DbId>,
     Json(input): Json<AutoAssignInput>,
 ) -> AppResult<Json<DataResponse<AutoAssignResult>>> {
-    // 1. Get all seed slots (scene_type x track combos) — same query as get_seed_summary.
+    // 1. Get all seed slots from actual scenes — same query as get_seed_summary.
     let entries: Vec<SeedSlotEntry> = sqlx::query_as(
-        "SELECT
+        "SELECT DISTINCT ON (st.id, COALESCE(t.id, 0))
             st.id AS scene_type_id,
             st.name AS scene_type_name,
-            t.id AS track_id,
-            t.name AS track_name,
-            sttc.workflow_id,
+            COALESCE(t.id, 0) AS track_id,
+            COALESCE(t.name, 'Default') AS track_name,
+            COALESCE(sttc.workflow_id, st.workflow_id) AS workflow_id,
             w.name AS workflow_name,
             (SELECT wms.id FROM workflow_media_slots wms
-             WHERE wms.workflow_id = sttc.workflow_id
+             WHERE wms.workflow_id = COALESCE(sttc.workflow_id, st.workflow_id)
              ORDER BY wms.sort_order, wms.id LIMIT 1) AS media_slot_id,
             (SELECT wms.slot_label FROM workflow_media_slots wms
-             WHERE wms.workflow_id = sttc.workflow_id
+             WHERE wms.workflow_id = COALESCE(sttc.workflow_id, st.workflow_id)
              ORDER BY wms.sort_order, wms.id LIMIT 1) AS media_slot_label
-         FROM scene_type_track_configs sttc
-         JOIN scene_types st ON st.id = sttc.scene_type_id
-         JOIN tracks t ON t.id = sttc.track_id
-         JOIN avatars a ON a.id = $1
-         JOIN projects p ON p.id = a.project_id
-         LEFT JOIN workflows w ON w.id = sttc.workflow_id
-         WHERE (st.project_id = p.id OR (st.project_id IS NULL AND st.pipeline_id = p.pipeline_id))
-         ORDER BY st.sort_order, st.name, t.sort_order, t.name",
+         FROM scenes s
+         JOIN scene_types st ON st.id = s.scene_type_id
+         JOIN avatars a ON a.id = s.avatar_id
+         LEFT JOIN tracks t ON t.id = s.track_id
+         LEFT JOIN scene_type_track_configs sttc ON sttc.scene_type_id = st.id AND sttc.track_id = s.track_id
+         LEFT JOIN workflows w ON w.id = COALESCE(sttc.workflow_id, st.workflow_id)
+         WHERE s.avatar_id = $1 AND s.deleted_at IS NULL
+           AND COALESCE(
+             (SELECT aso.is_enabled FROM avatar_scene_overrides aso
+              WHERE aso.avatar_id = s.avatar_id AND aso.scene_type_id = st.id),
+             (SELECT gss.is_enabled FROM group_scene_settings gss
+              WHERE gss.group_id = a.group_id AND gss.scene_type_id = st.id),
+             (SELECT pss.is_enabled FROM project_scene_settings pss
+              WHERE pss.project_id = a.project_id AND pss.scene_type_id = st.id),
+             true
+           ) = true
+         ORDER BY st.id, COALESCE(t.id, 0), st.sort_order, st.name",
     )
     .bind(avatar_id)
     .fetch_all(&state.pool)
