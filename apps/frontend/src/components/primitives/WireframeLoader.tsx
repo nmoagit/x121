@@ -56,13 +56,13 @@ const GLYPH_MAP: Record<string, Glyph> = {
 
 const CELL_WIDTH = 20;
 const GLYPH_GAP = 2;
-const DUR = 3.2;
+const DUR = 1.6;
 const STROKE_COLOR = "var(--color-action-primary, #22d3ee)";
 
 function buildGlyphs(text: string) {
   const chars = [...text];
   const totalWidth = chars.length * CELL_WIDTH + (chars.length - 1) * GLYPH_GAP;
-  const delayStep = 1.6 / Math.max(chars.length, 1);
+  const delayStep = (DUR * 0.5) / Math.max(chars.length, 1);
 
   return {
     totalWidth,

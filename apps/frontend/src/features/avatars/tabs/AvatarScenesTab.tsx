@@ -15,7 +15,7 @@ import { useQueries, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/components/composite/useToast";
 import { EmptyState } from "@/components/domain";
 import { Grid } from "@/components/layout";
-import { Button, LoadingPane, Toggle } from "@/components/primitives";
+import { Button, ContextLoader, LoadingPane, Toggle } from "@/components/primitives";
 import { Checkbox } from "@/components/primitives/Checkbox";
 import { useSetToggle } from "@/hooks/useSetToggle";
 import { getStreamUrl } from "@/features/video-player";
@@ -1262,6 +1262,19 @@ function SceneVideoThumbnail({ versionId, playback }: { versionId: number | null
     return () => observer.disconnect();
   }, [versionId]);
 
+  const streamUrl = versionId ? getStreamUrl("version", versionId, "proxy") : null;
+
+  // Preload video metadata offscreen once visible — only mount <video> when ready.
+  useEffect(() => {
+    if (!isVisible || !streamUrl) return;
+    const v = document.createElement("video");
+    v.preload = "metadata";
+    v.muted = true;
+    v.src = streamUrl;
+    v.onloadeddata = () => setIsLoaded(true);
+    return () => { v.src = ""; v.onloadeddata = null; };
+  }, [isVisible, streamUrl]);
+
   if (!versionId) {
     return (
       <MediaPlaceholder
@@ -1271,31 +1284,25 @@ function SceneVideoThumbnail({ versionId, playback }: { versionId: number | null
     );
   }
 
-  const streamUrl = getStreamUrl("version", versionId, "proxy");
-
   return (
     <div ref={containerRef} className="relative w-full rounded aspect-video bg-black overflow-hidden">
-      {/* Spinner overlay — visible until the video has loaded */}
+      {/* Context-aware loader — visible until the video has loaded */}
       {!isLoaded && (
         <div className="absolute inset-0 flex items-center justify-center">
-          <div className="h-5 w-5 animate-spin rounded-full border-2 border-[var(--color-text-muted)] border-t-transparent" />
+          <ContextLoader size={20} />
         </div>
       )}
 
-      {/* Only mount the video element once the card is in the viewport */}
-      {isVisible && (
+      {/* Only mount the video element once metadata is preloaded offscreen */}
+      {isLoaded && (
         <video
           key={playback ? "play" : "thumb"}
-          src={streamUrl}
-          className={cn(
-            "w-full h-full object-cover transition-opacity duration-300",
-            isLoaded ? "opacity-100" : "opacity-0",
-          )}
+          src={streamUrl!}
+          className="w-full h-full object-cover"
           muted
           autoPlay={playback}
           loop={playback}
           preload="metadata"
-          onLoadedData={() => setIsLoaded(true)}
         />
       )}
     </div>
