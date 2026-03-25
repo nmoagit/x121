@@ -81,8 +81,10 @@ async fn run_export_job_inner(
     let export_dir = state.resolve_to_path(&format!("exports/{job_id}")).await?;
     tokio::fs::create_dir_all(&export_dir).await?;
 
-    // 7. Write ZIP archives.
+    // 7. Write ZIP archives one part at a time, updating DB after each part
+    //    so the frontend can start downloading immediately.
     let mut part_infos = Vec::new();
+    let total_parts = parts.len();
     for (part_idx, file_indices) in parts.iter().enumerate() {
         let part_num = part_idx + 1;
         let zip_path = export_dir.join(format!("part{part_num}.zip"));
@@ -96,6 +98,14 @@ async fn run_export_job_inner(
             None
         };
 
+        tracing::info!(
+            job_id,
+            part = part_num,
+            total_parts,
+            file_count = file_indices.len(),
+            "Building export ZIP part"
+        );
+
         let zip_size = write_zip_archive(&zip_path, &entries_ref, manifest_ref).await?;
 
         part_infos.push(serde_json::json!({
@@ -104,15 +114,20 @@ async fn run_export_job_inner(
             "size_bytes": zip_size,
             "file_count": file_indices.len(),
         }));
-    }
 
-    // 8. Update job with parts and completed status.
-    let parts_json = serde_json::Value::Array(part_infos);
-    ExportJobRepo::update_status(&state.pool, job_id, "completed", Some(&parts_json), None).await?;
+        // Update DB after each part so frontend can start downloading immediately.
+        // Status stays "processing" until the final part.
+        let parts_json = serde_json::Value::Array(part_infos.clone());
+        if part_num < total_parts {
+            ExportJobRepo::update_status(&state.pool, job_id, "processing", Some(&parts_json), None).await?;
+        } else {
+            ExportJobRepo::update_status(&state.pool, job_id, "completed", Some(&parts_json), None).await?;
+        }
+    }
 
     tracing::info!(
         job_id,
-        part_count = parts.len(),
+        part_count = total_parts,
         "Export job completed successfully"
     );
 
@@ -443,8 +458,9 @@ fn csv_escape_field(field: &str) -> String {
 
 /// Write a ZIP archive containing the given file entries.
 ///
-/// If `manifest_csv` is `Some`, the manifest is included as `manifest.csv`.
-/// Returns the total size of the written ZIP file.
+/// Streams one file at a time from disk into the ZIP — never holds more than
+/// one source file in memory. If `manifest_csv` is `Some`, the manifest is
+/// included as `manifest.csv`. Returns the total size of the written ZIP file.
 async fn write_zip_archive(
     zip_path: &std::path::Path,
     entries: &[&ExportFileEntry],
@@ -453,33 +469,32 @@ async fn write_zip_archive(
     let zip_path_owned = zip_path.to_path_buf();
     let manifest_owned = manifest_csv.map(|s| s.to_string());
 
-    // Collect file data: read all source files into memory-mapped pairs.
-    // For large exports we read each file and write to the zip sequentially
-    // inside a blocking task to avoid blocking the async runtime.
-    let mut file_data: Vec<(String, Vec<u8>)> = Vec::with_capacity(entries.len() + 1);
+    // Collect (archive_name, abs_path) pairs — no file data yet.
+    let file_list: Vec<(String, PathBuf)> = entries
+        .iter()
+        .map(|e| (e.archive_path.clone(), e.abs_path.clone()))
+        .collect();
 
-    // Add manifest if provided.
-    if let Some(csv) = &manifest_owned {
-        file_data.push(("manifest.csv".to_string(), csv.as_bytes().to_vec()));
-    }
-
-    // Read each source file.
-    for entry in entries {
-        let bytes = tokio::fs::read(&entry.abs_path).await?;
-        file_data.push((entry.archive_path.clone(), bytes));
-    }
-
-    // Build the ZIP in a blocking task.
+    // Build the ZIP in a blocking task, reading one file at a time.
     let zip_size = tokio::task::spawn_blocking(
         move || -> Result<u64, Box<dyn std::error::Error + Send + Sync>> {
             let file = std::fs::File::create(&zip_path_owned)?;
             let mut zip = zip::ZipWriter::new(file);
             let options = zip::write::SimpleFileOptions::default()
-                .compression_method(zip::CompressionMethod::Deflated);
+                .compression_method(zip::CompressionMethod::Stored);
 
-            for (name, data) in &file_data {
+            // Write manifest first if present.
+            if let Some(ref csv) = manifest_owned {
+                zip.start_file("manifest.csv", options)?;
+                zip.write_all(csv.as_bytes())?;
+            }
+
+            // Stream each file: read from disk, write to ZIP, then drop the buffer.
+            for (name, path) in &file_list {
+                let data = std::fs::read(path)?;
                 zip.start_file(name, options)?;
-                zip.write_all(data)?;
+                zip.write_all(&data)?;
+                // `data` is dropped here — only one file in memory at a time.
             }
 
             zip.finish()?;

@@ -36,17 +36,25 @@ export function ExportStatusPanel({ job, onDismiss }: ExportStatusPanelProps) {
     [job.id],
   );
 
-  // Auto-download all parts when the job completes.
+  // Auto-download parts as they become available (progressive download).
+  // Tracks which parts have already been triggered to avoid duplicates.
+  const downloadedPartsRef = useRef<Set<number>>(new Set());
   useEffect(() => {
-    if (job.status !== "completed") return;
-    if (autoDownloadedRef.current === job.id) return;
-    autoDownloadedRef.current = job.id;
+    if (!job.parts || job.parts.length === 0) return;
+    const newParts = job.parts.filter((p) => !downloadedPartsRef.current.has(p.part));
+    if (newParts.length === 0) return;
 
-    // Stagger downloads slightly so the browser doesn't block them.
-    job.parts.forEach((part, i) => {
+    newParts.forEach((part, i) => {
+      downloadedPartsRef.current.add(part.part);
       setTimeout(() => handleDownloadPart(part), i * 500);
     });
-  }, [job.status, job.id, job.parts, handleDownloadPart]);
+  }, [job.parts, handleDownloadPart]);
+
+  // Reset tracking when job ID changes.
+  useEffect(() => {
+    autoDownloadedRef.current = null;
+    downloadedPartsRef.current = new Set();
+  }, [job.id]);
 
   return (
     <div className="bg-[#161b22] border-t border-[var(--color-border-default)] px-4 py-2.5">
@@ -57,7 +65,9 @@ export function ExportStatusPanel({ job, onDismiss }: ExportStatusPanelProps) {
             <>
               <div className="h-2 w-2 rounded-full bg-blue-400 animate-pulse" />
               <span className="text-blue-400">
-                Export {job.status === "queued" ? "queued" : "processing"}...
+                Export {job.status === "queued" ? "queued" : "processing"}
+                {job.parts.length > 0 && ` — ${job.parts.length} part${job.parts.length !== 1 ? "s" : ""} ready`}
+                ...
               </span>
             </>
           )}
@@ -82,8 +92,8 @@ export function ExportStatusPanel({ job, onDismiss }: ExportStatusPanelProps) {
         </div>
 
         <div className="flex items-center gap-1.5">
-          {/* Download buttons for completed parts */}
-          {job.status === "completed" &&
+          {/* Download buttons for available parts (shown during processing and after completion) */}
+          {job.parts.length > 0 &&
             job.parts.map((part) => (
               <button
                 key={part.part}
