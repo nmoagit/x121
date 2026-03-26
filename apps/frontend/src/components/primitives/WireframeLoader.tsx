@@ -50,8 +50,9 @@ const GLYPH_MAP: Record<string, Glyph> = {
   "9": { d: "M14,36 L14,20 Q18,12 14,6 Q10,2 4,6 Q0,12 4,18 Q8,22 14,18", len: 100 },
   // Lowercase x
   x: { d: "M2,16 L18,36 M18,16 L2,36", len: 56 },
-  // Uppercase Y
+  // Y / y — both map to the same glyph
   Y: { d: "M2,4 L10,20 L18,4 M10,20 L10,36", len: 60 },
+  y: { d: "M2,16 L10,30 M18,16 L6,40", len: 56 },
 };
 
 const CELL_WIDTH = 20;

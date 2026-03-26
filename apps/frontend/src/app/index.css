@@ -57,6 +57,12 @@ video::-webkit-media-controls-overlay-play-button {
   display: none !important;
 }
 
+/* Annotation playback mode — pulsing glow on active ranges (PRD-152) */
+@keyframes annotation-pulse {
+  0%, 100% { opacity: 0.2; }
+  50% { opacity: 0.45; }
+}
+
 body {
   margin: 0;
   font-family: var(--font-sans);

@@ -51,7 +51,12 @@ pub fn router() -> Router<AppState> {
     let version_routes = Router::new()
         .route("/", get(version::list_by_scene))
         .route("/import", post(version::import_video))
-        .route("/{id}", get(version::get_by_id).delete(version::delete))
+        .route(
+            "/{id}",
+            get(version::get_by_id)
+                .put(version::update)
+                .delete(version::delete),
+        )
         .route("/{id}/set-final", put(version::set_final))
         .route("/{id}/approve", put(version::approve_clip))
         .route("/{id}/unapprove", put(version::unapprove_clip))

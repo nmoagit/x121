@@ -34,7 +34,7 @@ import { useAvatarScenes } from "@/features/scenes/hooks/useAvatarScenes";
 import { sceneHasVideo } from "@/features/scenes/types";
 import { VideoPlayer } from "@/features/video-player/VideoPlayer";
 import { getStreamUrl } from "@/features/video-player/hooks/use-video-metadata";
-import { ArrowRight, ChevronLeft, ChevronRight, Film, FileText, Image, Maximize2, MessageSquare, Mic, Minimize2, Play, X } from "@/tokens/icons";
+import { ArrowRight, ChevronLeft, ChevronRight, Film, FileText, Image, Maximize2, MessageSquare, Mic, Minimize2, Play } from "@/tokens/icons";
 
 import type { LibraryAvatar } from "./types";
 
@@ -485,152 +485,134 @@ function DetailOverlay({
     return () => window.removeEventListener("keydown", handleKey);
   }, [onClose, onPrev, onNext]);
 
-  const hasNav = detail.kind === "image" || detail.kind === "video";
+  const detailTitle = detail.kind === "image" || detail.kind === "video"
+    ? `${detail.label}  ${detail.index + 1}/${detail.total}`
+    : detail.kind === "json"
+      ? "Metadata"
+      : detail.kind === "speech"
+        ? detail.label
+        : "";
 
   return (
-    <div
-      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70"
-      onClick={onClose}
+    <Modal
+      open
+      onClose={onClose}
+      title={detailTitle}
+      size={expanded ? "full" : "3xl"}
     >
-      <div
-        className={cn(
-          "relative max-h-[90vh] w-full mx-4",
-          expanded ? "max-w-[calc(100vw-2rem)]" : "max-w-4xl",
-          "bg-[var(--color-surface-primary)] rounded-[var(--radius-lg)]",
-          "shadow-lg overflow-auto",
-        )}
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Top buttons */}
-        <div className="absolute top-3 right-3 z-10 flex items-center gap-1">
-          {hasNav && (
-            <button
-              type="button"
-              onClick={() => setExpanded((v) => !v)}
-              className="p-1 rounded-full bg-[var(--color-surface-tertiary)] hover:bg-[var(--color-surface-hover)] transition-colors text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
-              aria-label={expanded ? "Compact" : "Expand"}
-            >
-              {expanded ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
-            </button>
-          )}
-          <button
-            type="button"
-            onClick={onClose}
-            className="p-1 rounded-full bg-[var(--color-surface-tertiary)] hover:bg-[var(--color-surface-hover)] transition-colors"
-            aria-label="Close"
-          >
-            <X size={18} />
-          </button>
-        </div>
-
+      <div className="flex flex-col gap-[var(--spacing-3)]">
         {detail.kind === "image" && (
-          <div className="p-4">
-            <h4 className="font-mono text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide mb-2">
-              {detail.label}
-              <span className="ml-2 text-[10px] font-normal opacity-50">{detail.index + 1}/{detail.total}</span>
-            </h4>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                disabled={!onPrev}
-                onClick={onPrev}
-                className="shrink-0 rounded p-1 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[#161b22] transition-colors disabled:opacity-20 disabled:pointer-events-none"
-                aria-label="Previous image"
-              >
-                <ChevronLeft size={20} />
-              </button>
-              <div className="min-w-0 flex-1">
+          <>
+            {/* Image with expand overlay */}
+            <div className="group/img relative" onDoubleClick={() => setExpanded((v) => !v)}>
+              <div className="flex justify-center bg-black rounded-[var(--radius-md)] overflow-hidden">
                 <LoadingImage
                   src={detail.url}
                   alt={detail.label}
-                  className="w-full h-auto rounded-[var(--radius-md)]"
+                  className="max-h-[60vh] object-contain"
                 />
               </div>
               <button
                 type="button"
-                disabled={!onNext}
-                onClick={onNext}
-                className="shrink-0 rounded p-1 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[#161b22] transition-colors disabled:opacity-20 disabled:pointer-events-none"
-                aria-label="Next image"
+                className="absolute top-2 right-2 z-20 p-1.5 rounded bg-black/50 text-white/70 hover:text-white hover:bg-black/70 opacity-0 group-hover/img:opacity-100 transition-all"
+                onClick={() => setExpanded((v) => !v)}
+                title={expanded ? "Compact" : "Expand"}
               >
-                <ChevronRight size={20} />
+                {expanded ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
               </button>
             </div>
-          </div>
+            {/* Prev / Next navigation */}
+            {(onPrev || onNext) && (
+              <div className="flex items-center justify-end gap-1">
+                <button
+                  type="button"
+                  disabled={!onPrev}
+                  onClick={onPrev}
+                  className="p-1 rounded text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[#161b22] transition-colors disabled:opacity-20 disabled:pointer-events-none"
+                  aria-label="Previous image"
+                >
+                  <ChevronLeft size={16} />
+                </button>
+                <button
+                  type="button"
+                  disabled={!onNext}
+                  onClick={onNext}
+                  className="p-1 rounded text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[#161b22] transition-colors disabled:opacity-20 disabled:pointer-events-none"
+                  aria-label="Next image"
+                >
+                  <ChevronRight size={16} />
+                </button>
+              </div>
+            )}
+          </>
         )}
 
         {detail.kind === "video" && (
-          <div className="p-4">
-            <h4 className="font-mono text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide mb-2">
-              {detail.label}
-              <span className="ml-2 text-[10px] font-normal opacity-50">{detail.index + 1}/{detail.total}</span>
-            </h4>
-            <div className="flex items-center gap-2">
+          <>
+            {/* Video with expand overlay */}
+            <div className="group/video relative" onDoubleClick={() => setExpanded((v) => !v)}>
+              <VideoPlayer
+                sourceType="version"
+                sourceId={detail.versionId}
+                quality="full"
+                autoPlay
+                showControls
+              />
               <button
                 type="button"
-                disabled={!onPrev}
-                onClick={onPrev}
-                className="shrink-0 rounded p-1 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[#161b22] transition-colors disabled:opacity-20 disabled:pointer-events-none"
-                aria-label="Previous video"
+                className="absolute right-2 top-2 z-20 p-1.5 rounded bg-black/50 text-white/70 hover:text-white hover:bg-black/70 opacity-0 group-hover/video:opacity-100 transition-all"
+                onClick={() => setExpanded((v) => !v)}
+                title={expanded ? "Compact" : "Expand"}
               >
-                <ChevronLeft size={20} />
-              </button>
-              <div className="min-w-0 flex-1">
-                <VideoPlayer
-                  sourceType="version"
-                  sourceId={detail.versionId}
-                  quality="full"
-                  autoPlay
-                  showControls
-                  className="w-full rounded-[var(--radius-md)] overflow-hidden"
-                />
-              </div>
-              <button
-                type="button"
-                disabled={!onNext}
-                onClick={onNext}
-                className="shrink-0 rounded p-1 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[#161b22] transition-colors disabled:opacity-20 disabled:pointer-events-none"
-                aria-label="Next video"
-              >
-                <ChevronRight size={20} />
+                {expanded ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
               </button>
             </div>
-          </div>
+            {/* Prev / Next navigation */}
+            {(onPrev || onNext) && (
+              <div className="flex items-center justify-end gap-1">
+                <button
+                  type="button"
+                  disabled={!onPrev}
+                  onClick={onPrev}
+                  className="p-1 rounded text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[#161b22] transition-colors disabled:opacity-20 disabled:pointer-events-none"
+                  aria-label="Previous video"
+                >
+                  <ChevronLeft size={16} />
+                </button>
+                <button
+                  type="button"
+                  disabled={!onNext}
+                  onClick={onNext}
+                  className="p-1 rounded text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[#161b22] transition-colors disabled:opacity-20 disabled:pointer-events-none"
+                  aria-label="Next video"
+                >
+                  <ChevronRight size={16} />
+                </button>
+              </div>
+            )}
+          </>
         )}
 
         {detail.kind === "json" && (
-          <div className="p-4">
-            <h4 className="font-mono text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide mb-2">
-              Metadata
-            </h4>
-            <pre className="text-xs font-mono text-[var(--color-text-secondary)] bg-[var(--color-surface-tertiary)] p-4 rounded-[var(--radius-md)] overflow-auto max-h-[70vh] whitespace-pre-wrap">
-              {JSON.stringify(detail.data, null, 2)}
-            </pre>
-          </div>
+          <pre className="text-xs font-mono text-[var(--color-text-secondary)] bg-[var(--color-surface-tertiary)] p-4 rounded-[var(--radius-md)] overflow-auto max-h-[70vh] whitespace-pre-wrap">
+            {JSON.stringify(detail.data, null, 2)}
+          </pre>
         )}
 
         {detail.kind === "speech" && (
-          <div className="p-4">
-            <h4 className="font-mono text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide mb-2">
-              {detail.label}
-              <span className="ml-2 text-xs font-normal text-[var(--color-text-muted)]">
-                {detail.entries.length} {detail.entries.length === 1 ? "entry" : "entries"}
-              </span>
-            </h4>
-            <ul className="space-y-2 max-h-[70vh] overflow-auto">
-              {detail.entries.map((s) => (
-                <li
-                  key={s.id}
-                  className="text-sm text-[var(--color-text-secondary)] bg-[var(--color-surface-tertiary)] px-3 py-2 rounded-[var(--radius-md)]"
-                >
-                  {s.text}
-                </li>
-              ))}
-            </ul>
-          </div>
+          <ul className="space-y-2 max-h-[70vh] overflow-auto">
+            {detail.entries.map((s) => (
+              <li
+                key={s.id}
+                className="text-sm text-[var(--color-text-secondary)] bg-[var(--color-surface-tertiary)] px-3 py-2 rounded-[var(--radius-md)]"
+              >
+                {s.text}
+              </li>
+            ))}
+          </ul>
         )}
       </div>
-    </div>
+    </Modal>
   );
 }
 

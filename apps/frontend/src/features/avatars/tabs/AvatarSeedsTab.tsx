@@ -1,21 +1,15 @@
 /**
- * Avatar seeds tab -- shows every scene_type x track that needs a seed image (PRD-146).
+ * Avatar seeds tab -- shows every generation slot that needs a seed image (PRD-146).
  * Enhanced with MediaVariantPicker and auto-assign (PRD-147 Phases 5+7).
- *
- * Each row represents a generation slot: a scene type + track combination
- * that needs a seed file for video generation.
+ * Split into Image Generation and Scene Generation sections (PRD-154).
  */
 
 import { useCallback, useState } from "react";
 
 import { Button, ContextLoader } from "@/components/primitives";
-import { Modal } from "@/components/composite";
 import { EmptyState } from "@/components/domain";
 import { Stack } from "@/components/layout";
 import { Image, Sparkles } from "@/tokens/icons";
-import { TRACK_TEXT_COLORS } from "@/lib/ui-classes";
-import { cn } from "@/lib/cn";
-import { variantThumbnailUrl } from "@/features/media/utils";
 
 import {
   useAvatarSeedSummary,
@@ -27,7 +21,8 @@ import type {
   SeedSlotWithAssignment,
   AutoAssignResult,
 } from "../hooks/use-media-assignments";
-import { MediaVariantPicker } from "../components/MediaVariantPicker";
+import { AutoAssignPreviewModal } from "./AutoAssignPreviewModal";
+import { SeedSlotCard, ImageSlotCard } from "./SeedSlotCards";
 
 /* --------------------------------------------------------------------------
    Component
@@ -103,6 +98,9 @@ export function AvatarSeedsTab({ avatarId, projectId: _projectId }: AvatarSeedsT
     );
   }
 
+  const imageSlots = slots.filter((s) => s.slot_kind === "image");
+  const sceneSlots = slots.filter((s) => s.slot_kind !== "image");
+
   const allAssigned = slots.every((s) => s.assignment != null);
   const unassignedCount = slots.filter((s) => s.assignment == null && s.media_slot_id != null).length;
 
@@ -111,7 +109,7 @@ export function AvatarSeedsTab({ avatarId, projectId: _projectId }: AvatarSeedsT
       {/* Header row */}
       <div className="flex items-center justify-between">
         <p className="text-xs font-mono text-[var(--color-text-muted)]">
-          Each scene type x track combination needs a seed image for video generation.
+          Each slot needs a seed image for generation.
         </p>
         <Button
           size="xs"
@@ -133,179 +131,49 @@ export function AvatarSeedsTab({ avatarId, projectId: _projectId }: AvatarSeedsT
         loading={autoAssignMutation.isPending}
       />
 
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
-        {slots.map((entry) => (
-          <SeedSlotCard
-            key={`${entry.scene_type_id}-${entry.track_id}`}
-            entry={entry}
-            avatarId={avatarId}
-            onSelectVariant={handleSelectVariant}
-            onClearVariant={handleClearVariant}
-            assigning={assignMutation.isPending}
-          />
-        ))}
-      </div>
-    </Stack>
-  );
-}
-
-/* --------------------------------------------------------------------------
-   Auto-assign preview modal
-   -------------------------------------------------------------------------- */
-
-function AutoAssignPreviewModal({
-  preview,
-  onConfirm,
-  onCancel,
-  loading,
-}: {
-  preview: AutoAssignResult | null;
-  onConfirm: () => void;
-  onCancel: () => void;
-  loading: boolean;
-}) {
-  return (
-    <Modal
-      open={preview !== null}
-      onClose={onCancel}
-      title="Auto-Assign Seeds"
-      size="lg"
-    >
-      {preview && (
-        <Stack gap={4}>
-          <p className="text-xs font-mono text-[var(--color-text-muted)]">
-            {preview.total_assigned} of {preview.total_slots} slots will be assigned.
-            {preview.total_skipped > 0 && ` ${preview.total_skipped} skipped.`}
-          </p>
-
-          {/* Assignments */}
-          {preview.assigned.length > 0 && (
-            <div className="space-y-1">
-              <h4 className="text-[10px] font-mono text-green-400 uppercase tracking-wide">Will Assign</h4>
-              <div className="space-y-1">
-                {preview.assigned.map((a) => (
-                  <div
-                    key={`${a.scene_type_id}-${a.track_id}`}
-                    className="flex items-center gap-2 rounded bg-green-500/5 border border-green-500/20 px-2 py-1.5 font-mono text-xs"
-                  >
-                    <span className="text-[var(--color-text-primary)]">{a.scene_type_name}</span>
-                    <span className={TRACK_TEXT_COLORS[a.track_name.toLowerCase()] ?? "text-[var(--color-text-muted)]"}>{a.track_name}</span>
-                    <span className="text-[var(--color-text-muted)]">→</span>
-                    {a.media_variant_id && (
-                      <img
-                        src={variantThumbnailUrl(a.media_variant_id, 64)}
-                        alt={a.variant_label}
-                        className="h-6 w-6 rounded object-cover"
-                      />
-                    )}
-                    <span className="text-cyan-400 truncate">{a.variant_label}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Skipped */}
-          {preview.skipped.length > 0 && (
-            <div className="space-y-1">
-              <h4 className="text-[10px] font-mono text-orange-400 uppercase tracking-wide">Skipped</h4>
-              <div className="space-y-1">
-                {preview.skipped.map((s) => (
-                  <div
-                    key={`${s.scene_type_name}-${s.track_name}`}
-                    className="flex items-center gap-2 rounded bg-orange-500/5 border border-orange-500/20 px-2 py-1.5 font-mono text-[10px] text-[var(--color-text-muted)]"
-                  >
-                    <span>{s.scene_type_name}</span>
-                    <span>{s.track_name}</span>
-                    <span className="text-orange-400">{s.reason}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Actions */}
-          <div className="flex items-center justify-end gap-2 pt-2 border-t border-[var(--color-border-default)]">
-            <Button size="sm" variant="ghost" onClick={onCancel}>
-              Cancel
-            </Button>
-            <Button size="sm" variant="primary" onClick={onConfirm} loading={loading}>
-              Confirm ({preview.total_assigned})
-            </Button>
+      {/* Image Generation section */}
+      {imageSlots.length > 0 && (
+        <div className="space-y-2">
+          <h3 className="text-[10px] font-mono uppercase tracking-wide text-violet-400">
+            Image Generation
+          </h3>
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {imageSlots.map((entry) => (
+              <ImageSlotCard
+                key={`image-${entry.image_type_id}-${entry.track_id}`}
+                entry={entry}
+                avatarId={avatarId}
+                onSelectVariant={handleSelectVariant}
+                onClearVariant={handleClearVariant}
+                assigning={assignMutation.isPending}
+              />
+            ))}
           </div>
-        </Stack>
-      )}
-    </Modal>
-  );
-}
-
-/* --------------------------------------------------------------------------
-   Seed slot card
-   -------------------------------------------------------------------------- */
-
-function SeedSlotCard({
-  entry,
-  avatarId,
-  onSelectVariant,
-  onClearVariant,
-  assigning: _assigning,
-}: {
-  entry: SeedSlotWithAssignment;
-  avatarId: number;
-  onSelectVariant: (entry: SeedSlotWithAssignment, variantId: number) => void;
-  onClearVariant: (assignmentId: number) => void;
-  assigning: boolean;
-}) {
-  const hasAssignment = entry.assignment != null;
-  const trackColor = TRACK_TEXT_COLORS[entry.track_name.toLowerCase()] ?? "text-[var(--color-text-muted)]";
-
-  return (
-    <div
-      className={cn(
-        "rounded-[var(--radius-lg)] border bg-[#0d1117] p-3 space-y-2",
-        hasAssignment
-          ? "border-green-500/40"
-          : "border-red-500/40",
-      )}
-    >
-      {/* Header: scene type + track */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 font-mono text-xs">
-          <span className="font-medium text-[var(--color-text-primary)]">
-            {entry.scene_type_name}
-          </span>
-          <span className={trackColor}>
-            {entry.track_name}
-          </span>
         </div>
-        {hasAssignment ? (
-          <span className="text-[10px] font-mono text-green-400">assigned</span>
-        ) : (
-          <span className="text-[10px] font-mono text-red-400">missing</span>
-        )}
-      </div>
-
-      {/* Workflow context */}
-      {entry.workflow_name && (
-        <p className="text-[10px] font-mono text-[var(--color-text-muted)]">
-          workflow: {entry.workflow_name}
-        </p>
       )}
 
-      {/* Variant picker — shows thumbnails to select/change, or drop zone if no variants */}
-      {entry.media_slot_id ? (
-        <MediaVariantPicker
-          avatarId={avatarId}
-          trackName={entry.track_name}
-          selectedVariantId={entry.assignment?.media_variant_id ?? null}
-          onSelect={(variantId) => onSelectVariant(entry, variantId)}
-          onClear={entry.assignment ? () => onClearVariant(entry.assignment!.id) : undefined}
-        />
-      ) : (
-        <p className="text-[10px] font-mono text-orange-400">
-          No workflow assigned — cannot configure seed.
-        </p>
+      {/* Scene Generation section */}
+      {sceneSlots.length > 0 && (
+        <div className="space-y-2">
+          {imageSlots.length > 0 && (
+            <h3 className="text-[10px] font-mono uppercase tracking-wide text-cyan-400">
+              Scene Generation
+            </h3>
+          )}
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {sceneSlots.map((entry) => (
+              <SeedSlotCard
+                key={`${entry.scene_type_id}-${entry.track_id}`}
+                entry={entry}
+                avatarId={avatarId}
+                onSelectVariant={handleSelectVariant}
+                onClearVariant={handleClearVariant}
+                assigning={assignMutation.isPending}
+              />
+            ))}
+          </div>
+        </div>
       )}
-    </div>
+    </Stack>
   );
 }

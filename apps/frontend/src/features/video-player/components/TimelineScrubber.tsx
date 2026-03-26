@@ -21,6 +21,10 @@ interface TimelineScrubberProps {
   annotationRanges?: TimelineAnnotationRange[];
   framerate: number;
   onSeek: (time: number) => void;
+  /** Whether annotation playback mode is actively slowing in a zone. */
+  annotationModeActive?: boolean;
+  /** Current frame number for determining which range is active. */
+  currentFrame?: number;
   className?: string;
 }
 
@@ -32,6 +36,8 @@ export function TimelineScrubber({
   annotationRanges,
   framerate,
   onSeek,
+  annotationModeActive,
+  currentFrame,
   className,
 }: TimelineScrubberProps) {
   const trackRef = useRef<HTMLDivElement>(null);
@@ -103,15 +109,27 @@ export function TimelineScrubber({
           />
         )}
 
-        {/* Annotation range highlights */}
+        {/* Annotation range fills (below progress) */}
         {annotationRanges?.map((range) => {
           if (framerate <= 0 || duration <= 0) return null;
           const startPct = (frameToSeconds(range.start, framerate) / duration) * 100;
           const endPct = (frameToSeconds(range.end, framerate) / duration) * 100;
+
+          const isActive =
+            annotationModeActive &&
+            currentFrame !== undefined &&
+            currentFrame >= range.start &&
+            currentFrame <= range.end;
+
           return (
             <div
-              key={`${range.start}-${range.end}`}
-              className="absolute top-0 bottom-0 bg-amber-500/20 rounded-full"
+              key={`fill-${range.start}-${range.end}`}
+              className={cn(
+                "absolute top-0 bottom-0 rounded-full",
+                isActive
+                  ? "bg-amber-500/20 animate-[annotation-pulse_1.5s_ease-in-out_infinite]"
+                  : "bg-amber-500/20",
+              )}
               style={{ left: `${startPct}%`, width: `${endPct - startPct}%` }}
             />
           );
@@ -122,6 +140,27 @@ export function TimelineScrubber({
           className="absolute top-0 bottom-0 left-0 bg-[var(--color-action-primary)] rounded-full"
           style={{ width: `${progress}%` }}
         />
+
+        {/* Annotation edge markers (above progress so always visible) */}
+        {annotationRanges?.map((range) => {
+          if (framerate <= 0 || duration <= 0) return null;
+          const startPct = (frameToSeconds(range.start, framerate) / duration) * 100;
+          const endPct = (frameToSeconds(range.end, framerate) / duration) * 100;
+          return (
+            <div key={`markers-${range.start}-${range.end}`}>
+              <div
+                className="absolute w-px bg-amber-500/70"
+                style={{ left: `${startPct}%`, top: "-2px", bottom: "-2px" }}
+                title={`Annotation start: F${range.start}`}
+              />
+              <div
+                className="absolute w-px bg-amber-500/70"
+                style={{ left: `${endPct}%`, top: "-2px", bottom: "-2px" }}
+                title={`Annotation end: F${range.end}`}
+              />
+            </div>
+          );
+        })}
       </div>
 
       {/* In-point marker */}

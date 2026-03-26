@@ -106,22 +106,25 @@ export function MetadataFieldInput({ field, value, onChange, onDelete }: Metadat
               );
             }
 
-            // Sub-value is number → number input
-            if (typeof subValue === "number") {
+            // Sub-value is number → number input (falls back to text if edited to non-numeric)
+            if (typeof subValue === "number" || (typeof subValue === "string" && !Number.isNaN(Number(subValue)) && subValue !== "")) {
               return (
                 <Input
                   key={subKey}
                   label={subLabel}
-                  type="number"
+                  type="text"
+                  inputMode="numeric"
                   size="sm"
                   className={FIELD_INPUT_CLASS}
                   value={String(subValue)}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                    const v = e.target.value;
+                    const num = Number(v);
                     onChange(field.field_name, {
                       ...obj,
-                      [subKey]: e.target.value ? Number(e.target.value) : null,
-                    })
-                  }
+                      [subKey]: v === "" ? null : Number.isNaN(num) ? v : num,
+                    });
+                  }}
                 />
               );
             }
@@ -183,19 +186,25 @@ export function MetadataFieldInput({ field, value, onChange, onDelete }: Metadat
         </div>
       );
 
-    case "number":
+    case "number": {
+      // If the current value is non-numeric (e.g. "Prefer not to say"),
+      // render a text input so the browser doesn't reject it.
+      const isNumericValue = strValue === "" || !Number.isNaN(Number(strValue));
       return (
         <div className="flex items-center gap-[var(--spacing-2)]">
           <div className="flex-1">
             <Input
               label={displayLabel}
-              type="number"
+              type={isNumericValue ? "number" : "text"}
               size="sm"
               className={FIELD_INPUT_CLASS}
               value={strValue}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                onChange(field.field_name, e.target.value ? Number(e.target.value) : null)
-              }
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                const v = e.target.value;
+                // Store as number if parseable, string otherwise
+                const num = Number(v);
+                onChange(field.field_name, v === "" ? null : Number.isNaN(num) ? v : num);
+              }}
             />
           </div>
           {onDelete && !field.is_required && (
@@ -203,6 +212,7 @@ export function MetadataFieldInput({ field, value, onChange, onDelete }: Metadat
           )}
         </div>
       );
+    }
 
     default:
       return (

@@ -119,9 +119,17 @@ async fn run_export_job_inner(
         // Status stays "processing" until the final part.
         let parts_json = serde_json::Value::Array(part_infos.clone());
         if part_num < total_parts {
-            ExportJobRepo::update_status(&state.pool, job_id, "processing", Some(&parts_json), None).await?;
+            ExportJobRepo::update_status(
+                &state.pool,
+                job_id,
+                "processing",
+                Some(&parts_json),
+                None,
+            )
+            .await?;
         } else {
-            ExportJobRepo::update_status(&state.pool, job_id, "completed", Some(&parts_json), None).await?;
+            ExportJobRepo::update_status(&state.pool, job_id, "completed", Some(&parts_json), None)
+                .await?;
         }
     }
 
@@ -168,9 +176,7 @@ async fn fetch_labels_for_entities(
 
     let mut map: std::collections::HashMap<DbId, Vec<String>> = std::collections::HashMap::new();
     for row in rows {
-        map.entry(row.entity_id)
-            .or_default()
-            .push(row.name);
+        map.entry(row.entity_id).or_default().push(row.name);
     }
 
     Ok(map

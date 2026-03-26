@@ -26,6 +26,7 @@ export interface ClipBrowseItem {
   frame_rate: number | null;
   preview_path: string | null;
   is_final: boolean;
+  notes: string | null;
   qa_status: "pending" | "approved" | "rejected";
   qa_rejection_reason: string | null;
   qa_notes: string | null;
@@ -58,6 +59,7 @@ export interface ClipBrowseParams {
   qaStatus?: string;
   showDisabled?: boolean;
   tagIds?: string;
+  excludeTagIds?: string;
   search?: string;
   limit?: number;
   offset?: number;
@@ -74,6 +76,7 @@ export function useClipsBrowse(params: ClipBrowseParams = {}) {
   if (params.qaStatus) searchParams.set("qa_status", params.qaStatus);
   if (params.showDisabled) searchParams.set("show_disabled", "true");
   if (params.tagIds) searchParams.set("tag_ids", params.tagIds);
+  if (params.excludeTagIds) searchParams.set("exclude_tag_ids", params.excludeTagIds);
   if (params.search) searchParams.set("search", params.search);
   if (params.limit != null) searchParams.set("limit", String(params.limit));
   if (params.offset != null) searchParams.set("offset", String(params.offset));

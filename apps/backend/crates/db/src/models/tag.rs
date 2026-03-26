@@ -93,6 +93,7 @@ pub struct BulkApplyRequest {
     pub entity_type: String,
     pub entity_ids: Vec<DbId>,
     pub tag_names: Vec<String>,
+    pub pipeline_id: Option<DbId>,
 }
 
 /// DTO for bulk-removing tags from multiple entities.

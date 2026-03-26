@@ -62,10 +62,18 @@ export function CollapsibleNotes({ value, onChange, onSave, saving }: Collapsibl
     onSave(latestValueRef.current);
   }, [onSave]);
 
-  // Cleanup debounce timer on unmount.
+  // On unmount: flush any pending save.
+  const onSaveRef = useRef(onSave);
+  onSaveRef.current = onSave;
+
   useEffect(() => {
     return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+        debounceRef.current = null;
+        // Fire the pending save with the latest value
+        onSaveRef.current(latestValueRef.current);
+      }
     };
   }, []);
 

@@ -52,6 +52,7 @@ import type { Avatar, AvatarDropPayload, AvatarGroup, FolderDropResult } from "@
 
 import { variantThumbnailUrl } from "@/features/media/utils";
 import { usePipelineContextSafe, usePipeline } from "@/features/pipelines";
+import { useTracks } from "@/features/scene-catalogue/hooks/use-tracks";
 import { cn } from "@/lib/cn";
 import { toSelectOptions } from "@/lib/select-utils";
 import {
@@ -267,14 +268,12 @@ export function AvatarsPage() {
     return null;
   }, [blockingDeliverablesSetting?.value]);
 
-  // Raw seed slots from pipeline (for buildIndicatorDots)
-  const rawSeedSlots = useMemo(() => {
-    const slots = pipelineData?.seed_slots ?? [];
-    return slots as { name: string }[];
-  }, [pipelineData?.seed_slots]);
+  // Pipeline tracks for indicator dots (one image dot per track)
+  const { data: pipelineTracks } = useTracks(false, pipelineCtx?.pipelineId);
 
   const indicatorDotsMap = useMemo(() => {
     const map = new Map<number, IndicatorDot[]>();
+    const tracks = pipelineTracks ?? [];
     // Build a set of variant types per avatar from browse data
     const variantTypes = new Map<number, Set<string>>();
     if (allVariants) {
@@ -289,16 +288,17 @@ export function AvatarsPage() {
       const project = projects?.find((p) => p.id === c.project_id);
       const blocking = project?.blocking_deliverables ?? platformBlocking;
       const dots = buildIndicatorDots({
-        pipelineSeedSlots: rawSeedSlots,
+        tracks,
         blockingDeliverables: blocking,
         avatarVariantTypes: variantTypes.get(c.id) ?? new Set(),
         avatarMetadata: c.metadata ?? null,
+        hasSpeech: (speechLanguageMap.get(c.id)?.length ?? 0) > 0,
         inputsOnly: true,
       });
       map.set(c.id, dots);
     }
     return map;
-  }, [allProjectAvatars, allVariants, rawSeedSlots, projects, platformBlocking]);
+  }, [allProjectAvatars, allVariants, pipelineTracks, projects, platformBlocking, speechLanguageMap]);
 
   /* --- search & filter --- */
   const [searchQuery, setSearchQuery] = useState("");

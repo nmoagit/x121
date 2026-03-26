@@ -9,7 +9,7 @@ import { useNavigate } from "@tanstack/react-router";
 
 import { EmptyState, BulkActionBar, BulkRejectDialog, BulkLabelDialog, ExportStatusPanel } from "@/components/domain";
 import { PageHeader, Stack } from "@/components/layout";
-import { Button, Checkbox, MultiFilterBar, SearchInput, Select, Toggle, ContextLoader } from "@/components/primitives";
+import { Button, Checkbox, MultiFilterBar, Pagination, SearchInput, Toggle, ContextLoader } from "@/components/primitives";
 import type { FilterConfig, FilterOption } from "@/components/primitives";
 import { useClipsBrowse, useBrowseApproveClip, useBrowseUnapproveClip, useBrowseRejectClip, useBulkApproveClips, useBulkRejectClips } from "@/features/scenes/hooks/useClipManagement";
 import type { ClipBrowseItem } from "@/features/scenes/hooks/useClipManagement";
@@ -338,7 +338,6 @@ const STATUS_OPTIONS: FilterOption[] = [
    Pagination constants
    -------------------------------------------------------------------------- */
 
-const PAGE_SIZES = [25, 50, 100] as const;
 const DEFAULT_PAGE_SIZE = 25;
 
 /* --------------------------------------------------------------------------
@@ -353,6 +352,7 @@ export function ScenesPage() {
   const [sceneTypeFilter, setSceneTypeFilter] = useState<string[]>([]);
   const [trackFilter, setTrackFilter] = useState<string[]>([]);
   const [labelFilter, setLabelFilter] = useState<number[]>([]);
+  const [excludeLabelFilter, setExcludeLabelFilter] = useState<number[]>([]);
   const [searchInput, setSearchInput] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   // Absolute index across all pages (0 to total-1), not page-local
@@ -364,8 +364,8 @@ export function ScenesPage() {
 
   // Bulk selection — reset key serializes all filter state
   const bulkResetKey = useMemo(
-    () => JSON.stringify({ projectFilter, sourceFilter, statusFilter, sceneTypeFilter, trackFilter, labelFilter, debouncedSearch, showDisabled }),
-    [projectFilter, sourceFilter, statusFilter, sceneTypeFilter, trackFilter, labelFilter, debouncedSearch, showDisabled],
+    () => JSON.stringify({ projectFilter, sourceFilter, statusFilter, sceneTypeFilter, trackFilter, labelFilter, excludeLabelFilter, debouncedSearch, showDisabled }),
+    [projectFilter, sourceFilter, statusFilter, sceneTypeFilter, trackFilter, labelFilter, excludeLabelFilter, debouncedSearch, showDisabled],
   );
   const bulk = useBulkSelection(bulkResetKey);
 
@@ -388,6 +388,7 @@ export function ScenesPage() {
     qaStatus: statusFilter.length > 0 ? statusFilter.join(",") : undefined,
     showDisabled,
     tagIds: labelFilter.length > 0 ? labelFilter.join(",") : undefined,
+    excludeTagIds: excludeLabelFilter.length > 0 ? excludeLabelFilter.join(",") : undefined,
     search: debouncedSearch || undefined,
     limit: pageSize,
     offset: page * pageSize,
@@ -395,7 +396,6 @@ export function ScenesPage() {
 
   const clips = browseResult?.items;
   const total = browseResult?.total ?? 0;
-  const totalPages = total > 0 ? Math.ceil(total / pageSize) : 0;
 
   const projectOptions: FilterOption[] = useMemo(
     () => toSelectOptions(projects).map((o) => ({ value: o.value, label: o.label })),
@@ -445,8 +445,9 @@ export function ScenesPage() {
     qaStatus: statusFilter.length > 0 ? statusFilter.join(",") : undefined,
     showDisabled,
     tagIds: labelFilter.length > 0 ? labelFilter.join(",") : undefined,
+    excludeTagIds: excludeLabelFilter.length > 0 ? excludeLabelFilter.join(",") : undefined,
     search: debouncedSearch || undefined,
-  }), [projectFilter, pipelineCtx?.pipelineId, sceneTypeFilter, trackFilter, sourceFilter, statusFilter, showDisabled, labelFilter, debouncedSearch]);
+  }), [projectFilter, pipelineCtx?.pipelineId, sceneTypeFilter, trackFilter, sourceFilter, statusFilter, showDisabled, labelFilter, excludeLabelFilter, debouncedSearch]);
 
   const bulkOps = useBulkOperations({
     entityType: "scene_video_version",
@@ -456,6 +457,7 @@ export function ScenesPage() {
     buildFilters,
     approveMut: bulkApproveMut,
     rejectMut: bulkRejectMut,
+    pipelineId: pipelineCtx?.pipelineId,
   });
 
   const filters: FilterConfig[] = useMemo(() => [
@@ -480,7 +482,7 @@ export function ScenesPage() {
     preview_path: clip.preview_path,
     video_codec: null,
     is_final: clip.is_final,
-    notes: null,
+    notes: clip.notes,
     qa_status: clip.qa_status,
     qa_reviewed_by: null,
     qa_reviewed_at: null,
@@ -549,6 +551,8 @@ export function ScenesPage() {
       <TagFilter
         selectedTagIds={labelFilter}
         onSelectionChange={(ids) => { setLabelFilter(ids); setPage(0); }}
+        excludedTagIds={excludeLabelFilter}
+        onExclusionChange={(ids) => { setExcludeLabelFilter(ids); setPage(0); }}
         pipelineId={pipelineCtx?.pipelineId}
       />
 
@@ -613,49 +617,13 @@ export function ScenesPage() {
         </div>
       )}
 
-      {/* Pagination */}
-      {total > 0 && (
-        <div className="flex items-center justify-between border-t border-[var(--color-border-default)]/30 px-4 py-3">
-          <div className="flex items-center gap-2 font-mono text-xs text-[var(--color-text-muted)]">
-            <span>
-              Showing {page * pageSize + 1}
-              {" - "}
-              {Math.min((page + 1) * pageSize, total)} of {total}
-            </span>
-            <Select
-              size="sm"
-              value={String(pageSize)}
-              onChange={(val) => {
-                setPageSize(Number(val));
-                setPage(0);
-              }}
-              options={PAGE_SIZES.map((s) => ({
-                value: String(s),
-                label: `${s} per page`,
-              }))}
-            />
-          </div>
-
-          <div className="flex gap-1">
-            <Button
-              variant="secondary"
-              size="xs"
-              disabled={page === 0}
-              onClick={() => setPage((p) => p - 1)}
-            >
-              Previous
-            </Button>
-            <Button
-              variant="secondary"
-              size="xs"
-              disabled={page >= totalPages - 1}
-              onClick={() => setPage((p) => p + 1)}
-            >
-              Next
-            </Button>
-          </div>
-        </div>
-      )}
+      <Pagination
+        page={page}
+        pageSize={pageSize}
+        total={total}
+        onPageChange={setPage}
+        onPageSizeChange={setPageSize}
+      />
 
       {/* Video playback modal */}
       <ClipPlaybackModal
@@ -709,6 +677,8 @@ export function ScenesPage() {
         mode={bulkOps.labelDialogOpen ?? "add"}
         count={bulk.selectedCount}
         pipelineId={pipelineCtx?.pipelineId}
+        entityType="scene_video_version"
+        entityIds={Array.from(bulk.selectedIds)}
         onConfirm={bulkOps.handleBulkAddLabel}
         onConfirmRemove={bulkOps.handleBulkRemoveLabel}
         onCancel={() => bulkOps.setLabelDialogOpen(null)}

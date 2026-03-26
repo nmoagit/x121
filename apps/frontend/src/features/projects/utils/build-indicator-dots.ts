@@ -27,15 +27,17 @@ export interface IndicatorDot {
    Constants
    -------------------------------------------------------------------------- */
 
+// Default deliverable sections that require user input.
 // Scenes are generated (not user-provided), so excluded from default indicators.
-const DEFAULT_BLOCKING = ["images", "metadata"];
+const DEFAULT_BLOCKING = ["images", "metadata", "speech"];
 
 /* --------------------------------------------------------------------------
    Builder
    -------------------------------------------------------------------------- */
 
 export function buildIndicatorDots(opts: {
-  pipelineSeedSlots: { name: string }[];
+  /** Pipeline tracks that need seed images. */
+  tracks: { name: string; slug: string }[];
   blockingDeliverables: string[] | null;
   avatarVariantTypes: Set<string>;
   avatarMetadata: Record<string, unknown> | null;
@@ -50,14 +52,13 @@ export function buildIndicatorDots(opts: {
 
   const dots: IndicatorDot[] = [];
 
-  // Images — one dot per pipeline seed slot
+  // Images — one dot per pipeline track
   if (blocking.includes("images")) {
-    for (const slot of opts.pipelineSeedSlots) {
-      const slotLower = slot.name.toLowerCase();
+    for (const track of opts.tracks) {
       dots.push({
-        key: `img-${slotLower}`,
-        label: `${slot.name.charAt(0).toUpperCase()}${slot.name.slice(1)} image`,
-        present: opts.avatarVariantTypes.has(slotLower),
+        key: `img-${track.slug}`,
+        label: `${track.name} image`,
+        present: opts.avatarVariantTypes.has(track.slug.toLowerCase()),
         icon: Image,
         tab: "images",
       });

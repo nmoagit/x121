@@ -1,279 +1,64 @@
 /**
  * Annotations Browse Page — browse all annotated frames across projects.
  *
- * Grid of annotation cards. Clicking a card opens a detail modal showing
- * the video with annotation overlay. From the modal you can navigate to
- * the avatar's scene detail page.
+ * Grid of annotation cards. Clicking a card opens the shared ClipPlaybackModal
+ * showing the video with annotation overlay and editing tools.
  */
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import { useNavigate } from "@tanstack/react-router";
+import { useMemo, useState } from "react";
 
-import { useAvatarPath } from "@/hooks/usePipelinePath";
 import { EmptyState } from "@/components/domain";
-import { ConfirmModal, Modal } from "@/components/composite";
+import { ConfirmModal } from "@/components/composite";
 import { PageHeader, Stack } from "@/components/layout";
-import { Button, FilterSelect, SearchInput, Toggle ,  ContextLoader } from "@/components/primitives";
-import { cn } from "@/lib/cn";
-import { DrawingCanvas } from "@/features/annotations/DrawingCanvas";
-import type { DrawingObject } from "@/features/annotations/types";
+import { Button, FilterSelect, SearchInput, Toggle, ContextLoader } from "@/components/primitives";
 import { useAnnotationsBrowse, useDeleteBrowseAnnotation } from "@/features/annotations";
 import type { AnnotatedItem } from "@/features/annotations";
-import { useVersionAnnotations } from "@/features/scenes/hooks/useVersionAnnotations";
-import { VideoPlayer } from "@/features/video-player/VideoPlayer";
 import { getStreamUrl } from "@/features/video-player/hooks/use-video-metadata";
+import { ClipPlaybackModal } from "@/features/scenes/ClipPlaybackModal";
+import type { SceneVideoVersion } from "@/features/scenes/types";
 import { usePipelineContextSafe } from "@/features/pipelines";
 import { useProjects } from "@/features/projects/hooks/use-projects";
 import { formatRelative } from "@/lib/format";
 import { toSelectOptions } from "@/lib/select-utils";
-import { ArrowDown, ArrowRight, Edit3, Trash2 } from "@/tokens/icons";
+import { ArrowDown, Edit3, Trash2 } from "@/tokens/icons";
 
 /* --------------------------------------------------------------------------
-   Annotation Detail Modal
+   Helpers
    -------------------------------------------------------------------------- */
 
-function AnnotationDetailModal({
-  item,
-  onClose,
-}: {
-  item: AnnotatedItem | null;
-  onClose: () => void;
-}) {
-  const navigate = useNavigate();
-  const avatarPath = useAvatarPath();
-  const wrapperRef = useRef<HTMLDivElement>(null);
-  const videoContainerRef = useRef<HTMLDivElement>(null);
-  const [containerWidth, setContainerWidth] = useState(0);
-  const [annotating, setAnnotating] = useState(false);
-  const [currentFrame, setCurrentFrame] = useState(0);
-
-  const sceneId = item?.scene_id ?? 0;
-  const versionId = item?.version_id ?? 0;
-
-  const { data: dbAnnotations } = useVersionAnnotations(sceneId, versionId);
-
-  // Measure container width for canvas sizing
-  useEffect(() => {
-    const el = wrapperRef.current;
-    if (!el) return;
-    setContainerWidth(el.clientWidth);
-    const ro = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        setContainerWidth(entry.contentRect.width);
-      }
-    });
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [item]);
-
-  // Reset state when item changes — default to showing annotations since
-  // the user opened this from the annotations browser.
-  useEffect(() => {
-    setAnnotating(true);
-    setCurrentFrame(item?.frame_number ?? 0);
-  }, [item?.annotation_id, item?.frame_number]);
-
-  const videoHeight = Math.round(containerWidth * (9 / 16));
-
-  // Get annotations for the target frame
-  const frameAnnotations: DrawingObject[] =
-    dbAnnotations
-      ?.filter((a) => a.frame_number === (item?.frame_number ?? 0))
-      .flatMap((a) => (a.annotations_json as unknown as DrawingObject[]) ?? []) ?? [];
-
-  // All annotated frames for this version
-  const annotatedFrames = [
-    ...new Set(dbAnnotations?.map((a) => a.frame_number) ?? []),
-  ].sort((a, b) => a - b);
-
-  const handleGoToScene = useCallback(() => {
-    if (!item) return;
-    navigate({
-      to: avatarPath(item.project_id, item.avatar_id) as string,
-      search: { tab: "scenes", scene: String(item.scene_id) },
-    });
-    onClose();
-  }, [item, navigate, onClose]);
-
-  // Seek video to a specific frame
-  const seekToFrame = useCallback(
-    (frameNumber: number) => {
-      setCurrentFrame(frameNumber);
-      const video = videoContainerRef.current?.querySelector("video");
-      if (video) {
-        video.pause();
-        // Assume 24fps if unknown
-        video.currentTime = frameNumber / 24;
-      }
-      setAnnotating(true);
-    },
-    [],
-  );
-
-  // Once annotations are loaded, wait for video to be ready then pause+seek.
-  // Lock currentFrame so VideoPlayer's onFrameChange doesn't override it.
-  const seekLockRef = useRef(false);
-  const didAutoSeek = useRef(false);
-
-  useEffect(() => {
-    didAutoSeek.current = false;
-    seekLockRef.current = false;
-  }, [item?.annotation_id]);
-
-  const handleVideoFrameChange = useCallback((frame: number) => {
-    // Ignore frame changes from the video player while we're holding the seek lock
-    if (!seekLockRef.current) {
-      setCurrentFrame(frame);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (didAutoSeek.current) return;
-    if (!item || !dbAnnotations || dbAnnotations.length === 0) return;
-
-    let cancelled = false;
-    let pollTimer: ReturnType<typeof setTimeout>;
-
-    function trySeekAndPause() {
-      if (cancelled || didAutoSeek.current) return;
-      const video = videoContainerRef.current?.querySelector("video");
-      if (!video || video.readyState < 2) {
-        pollTimer = setTimeout(trySeekAndPause, 150);
-        return;
-      }
-      didAutoSeek.current = true;
-      seekLockRef.current = true;
-      video.pause();
-      video.currentTime = item!.frame_number / 24;
-      setCurrentFrame(item!.frame_number);
-      setAnnotating(true);
-      // Release the lock after the video has settled
-      setTimeout(() => { seekLockRef.current = false; }, 500);
-    }
-
-    pollTimer = setTimeout(trySeekAndPause, 200);
-    return () => { cancelled = true; clearTimeout(pollTimer); };
-  }, [item, dbAnnotations]);
-
-  // Current frame's annotations (when viewing a different frame)
-  const currentAnnotations: DrawingObject[] = annotating
-    ? dbAnnotations
-        ?.filter((a) => a.frame_number === currentFrame)
-        .flatMap((a) => (a.annotations_json as unknown as DrawingObject[]) ?? []) ?? []
-    : frameAnnotations;
-
-  return (
-    <Modal
-      open={item !== null}
-      onClose={onClose}
-      title={item ? `${item.avatar_name} — ${item.scene_type_name}` : ""}
-      size="3xl"
-    >
-      {item && (
-        <div className="flex flex-col gap-4">
-          {/* Video + annotation overlay */}
-          <div ref={wrapperRef} className="relative">
-            {item.version_id ? (
-              <>
-                <div ref={videoContainerRef}>
-                  <VideoPlayer
-                    sourceType="version"
-                    sourceId={item.version_id}
-                    showControls
-                    onFrameChange={handleVideoFrameChange}
-                  />
-                </div>
-                {annotating && containerWidth > 0 && videoHeight > 0 && currentAnnotations.length > 0 && (
-                  <div
-                    className="absolute top-0 left-0 z-10 pointer-events-none"
-                    style={{ width: containerWidth, height: videoHeight }}
-                  >
-                    <DrawingCanvas
-                      key={`canvas-${currentFrame}-${currentAnnotations.length}`}
-                      width={containerWidth}
-                      height={videoHeight}
-                      existingAnnotations={currentAnnotations}
-                      editable={false}
-                    />
-                  </div>
-                )}
-              </>
-            ) : (
-              <div className="flex items-center justify-center aspect-video bg-[var(--color-surface-secondary)] rounded">
-                <Edit3 size={48} className="text-[var(--color-text-muted)]" />
-              </div>
-            )}
-          </div>
-
-          {/* Annotated frames indicator */}
-          {annotatedFrames.length > 0 && (
-            <div className="flex items-center gap-2">
-              <span className="shrink-0 font-mono text-[10px] uppercase tracking-wide text-[var(--color-text-muted)]">
-                frames
-              </span>
-              <div className="flex flex-wrap gap-1">
-                {annotatedFrames.map((frame) => (
-                  <button
-                    key={frame}
-                    type="button"
-                    className={cn(
-                      "rounded-[2px] px-1.5 py-0.5 font-mono text-[11px] transition-colors",
-                      currentFrame === frame
-                        ? "bg-cyan-400/20 text-cyan-400"
-                        : "text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[#161b22]",
-                    )}
-                    onClick={() => seekToFrame(frame)}
-                  >
-                    {frame}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Toggle annotation overlay */}
-          <div className="flex items-center gap-2">
-            <Button
-              size="xs"
-              variant={annotating ? "primary" : "secondary"}
-              onClick={() => setAnnotating((v) => !v)}
-              icon={<Edit3 size={12} />}
-            >
-              {annotating ? "Hide" : "Show"}
-            </Button>
-            {annotating && (
-              <span className="font-mono text-xs text-cyan-400">
-                frame {currentFrame} · {currentAnnotations.length} mark{currentAnnotations.length !== 1 ? "s" : ""}
-              </span>
-            )}
-          </div>
-
-          {/* Context info + navigation */}
-          <div className="flex items-center justify-between pt-1 border-t border-[var(--color-border-default)]">
-            <div className="flex flex-col gap-0.5 font-mono text-xs">
-              <span className="text-[var(--color-text-primary)]">
-                {item.avatar_name}
-              </span>
-              <span className="text-[var(--color-text-muted)]">
-                {item.project_name} · {item.scene_type_name}
-              </span>
-              <span className="text-[10px] text-[var(--color-text-muted)]">
-                {formatRelative(item.created_at)}
-              </span>
-            </div>
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={handleGoToScene}
-              icon={<ArrowRight size={12} />}
-            >
-              Scene
-            </Button>
-          </div>
-        </div>
-      )}
-    </Modal>
-  );
+/**
+ * Build a minimal SceneVideoVersion shim from an AnnotatedItem so the shared
+ * ClipPlaybackModal can render the clip. Fields not available from the browse
+ * endpoint are filled with safe defaults.
+ */
+function toClipShim(item: AnnotatedItem): SceneVideoVersion {
+  return {
+    id: item.version_id ?? 0,
+    scene_id: item.scene_id,
+    version_number: 1,
+    source: "generated",
+    file_path: item.file_path ?? "",
+    file_size_bytes: 1, // non-null so isPurgedClip() returns false
+    duration_secs: null,
+    width: null,
+    height: null,
+    frame_rate: null,
+    preview_path: item.preview_path,
+    video_codec: null,
+    is_final: false,
+    notes: null,
+    qa_status: "pending",
+    qa_reviewed_by: null,
+    qa_reviewed_at: null,
+    qa_rejection_reason: null,
+    qa_notes: null,
+    generation_snapshot: null,
+    file_purged: false,
+    deleted_at: null,
+    created_at: item.created_at,
+    updated_at: item.updated_at,
+    annotation_count: item.annotation_count,
+  };
 }
 
 /* --------------------------------------------------------------------------
@@ -414,6 +199,25 @@ export function AnnotationsPage() {
     ...toSelectOptions(projects),
   ];
 
+  // Build a SceneVideoVersion shim + meta for the shared ClipPlaybackModal
+  const selectedClip = useMemo(
+    () => (selectedItem?.version_id ? toClipShim(selectedItem) : null),
+    [selectedItem],
+  );
+
+  const selectedMeta = useMemo(
+    () =>
+      selectedItem
+        ? {
+            projectName: selectedItem.project_name,
+            avatarName: selectedItem.avatar_name,
+            sceneTypeName: selectedItem.scene_type_name,
+            trackName: "",
+          }
+        : undefined,
+    [selectedItem],
+  );
+
   return (
     <Stack gap={6}>
       <PageHeader
@@ -483,10 +287,12 @@ export function AnnotationsPage() {
         </div>
       )}
 
-      {/* Detail modal */}
-      <AnnotationDetailModal
-        item={selectedItem}
+      {/* Shared clip playback modal — same player as scenes page */}
+      <ClipPlaybackModal
+        clip={selectedClip}
         onClose={() => setSelectedItem(null)}
+        pipelineId={pipelineCtx?.pipelineId}
+        meta={selectedMeta}
       />
 
       <ConfirmModal

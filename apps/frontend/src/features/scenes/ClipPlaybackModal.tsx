@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 
 import { Modal } from "@/components/composite";
 import { Button, Chip, Input } from "@/components/primitives";
@@ -10,7 +11,7 @@ import { VideoPlayer } from "@/features/video-player/VideoPlayer";
 import { getStreamUrl } from "@/features/video-player";
 import { api } from "@/lib/api";
 import { slugify } from "@/lib/format";
-import { CollapsibleNotes } from "@/components/domain/CollapsibleNotes";
+import { NotesModal } from "@/components/domain/NotesModal";
 import { TagInput } from "@/components/domain/TagInput";
 import type { TagInfo } from "@/components/domain/TagChip";
 import { CheckCircle, ChevronLeft, ChevronRight, Download, Edit3, Maximize2, Minimize2, Settings, Trash2, X, XCircle } from "@/tokens/icons";
@@ -47,6 +48,7 @@ interface ClipPlaybackModalProps {
    -------------------------------------------------------------------------- */
 
 export function ClipPlaybackModal({ clip, onClose, onPrev, onNext, onApprove, onReject, pipelineId, meta }: ClipPlaybackModalProps) {
+  const queryClient = useQueryClient();
   const [expanded, setExpanded] = useState(false);
   const [annotating, setAnnotating] = useState(false);
   const [clipTags, setClipTags] = useState<TagInfo[]>([]);
@@ -356,6 +358,35 @@ export function ClipPlaybackModal({ clip, onClose, onPrev, onNext, onApprove, on
       }
     },
     [clipId, setForClip, deleteMutation, annotating],
+  );
+
+  // Save clip notes to DB and update cache.
+  const saveClipNotes = useCallback(
+    (value: string) => {
+      if (clipId === 0) return;
+      setClipNotesSaving(true);
+      api.put(`/scenes/${sceneId}/versions/${clipId}`, { notes: value })
+        .then(() => {
+          queryClient.setQueriesData(
+            { queryKey: ["scene-versions"] },
+            (old: unknown) => {
+              if (!old || typeof old !== "object") return old;
+              const page = old as { items?: { id: number; notes?: string }[] };
+              if (page.items) {
+                return {
+                  ...page,
+                  items: page.items.map((item) =>
+                    item.id === clipId ? { ...item, notes: value } : item,
+                  ),
+                };
+              }
+              return old;
+            },
+          );
+        })
+        .finally(() => setClipNotesSaving(false));
+    },
+    [clipId, sceneId, queryClient],
   );
 
   // Save all dirty frames on modal close
@@ -740,15 +771,12 @@ export function ClipPlaybackModal({ clip, onClose, onPrev, onNext, onApprove, on
           )}
 
           {/* Notes */}
-          <CollapsibleNotes
+          <NotesModal
             value={clipNotes}
             onChange={setClipNotes}
-            onSave={(value) => {
-              setClipNotesSaving(true);
-              api.put(`/scenes/${clip.scene_id}/versions/${clip.id}`, { notes: value })
-                .finally(() => setClipNotesSaving(false));
-            }}
+            onSave={saveClipNotes}
             saving={clipNotesSaving}
+            title={meta ? `${meta.avatarName} — ${meta.sceneTypeName} v${clip.version_number}` : `Clip v${clip.version_number}`}
           />
 
           {/* Generation snapshot */}

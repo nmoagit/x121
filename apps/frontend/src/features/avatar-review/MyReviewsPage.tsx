@@ -9,7 +9,7 @@ import { useNavigate } from "@tanstack/react-router";
 
 import { EmptyState } from "@/components/domain";
 import { PageHeader, Stack } from "@/components/layout";
-import { Button, FilterSelect, Select, Toggle ,  ContextLoader } from "@/components/primitives";
+import { FilterSelect, Pagination, Toggle, ContextLoader } from "@/components/primitives";
 import { TERMINAL_PANEL, TERMINAL_ROW_HOVER, TERMINAL_STATUS_COLORS } from "@/lib/ui-classes";
 import { useClipsBrowse } from "@/features/scenes/hooks/useClipManagement";
 import type { ClipBrowseItem } from "@/features/scenes/hooks/useClipManagement";
@@ -27,7 +27,6 @@ import { Ban, CheckCircle, Play } from "@/tokens/icons";
    Constants
    -------------------------------------------------------------------------- */
 
-const PAGE_SIZES = [25, 50, 100] as const;
 const DEFAULT_PAGE_SIZE = 25;
 
 const REVIEWER_OPTIONS = [
@@ -191,7 +190,6 @@ export function MyReviewsPage() {
 
   const clips = browseResult?.items;
   const total = browseResult?.total ?? 0;
-  const totalPages = total > 0 ? Math.ceil(total / pageSize) : 0;
 
   const projectOptions = useMemo(
     () => [{ value: "", label: "All Projects" }, ...toSelectOptions(projects)],
@@ -290,48 +288,13 @@ export function MyReviewsPage() {
         </div>
       )}
 
-      {/* Pagination */}
-      {total > 0 && (
-        <div className="flex items-center justify-between border-t border-[var(--color-border-default)]/30 px-4 py-3">
-          <div className="flex items-center gap-2 font-mono text-xs text-[var(--color-text-muted)]">
-            <span>
-              Showing {page * pageSize + 1}
-              {" - "}
-              {Math.min((page + 1) * pageSize, total)} of {total}
-            </span>
-            <Select
-              value={String(pageSize)}
-              onChange={(val) => {
-                setPageSize(Number(val));
-                setPage(0);
-              }}
-              options={PAGE_SIZES.map((s) => ({
-                value: String(s),
-                label: `${s} per page`,
-              }))}
-            />
-          </div>
-
-          <div className="flex gap-1">
-            <Button
-              variant="secondary"
-              size="xs"
-              disabled={page === 0}
-              onClick={() => setPage((p) => p - 1)}
-            >
-              Previous
-            </Button>
-            <Button
-              variant="secondary"
-              size="xs"
-              disabled={page >= totalPages - 1}
-              onClick={() => setPage((p) => p + 1)}
-            >
-              Next
-            </Button>
-          </div>
-        </div>
-      )}
+      <Pagination
+        page={page}
+        pageSize={pageSize}
+        total={total}
+        onPageChange={setPage}
+        onPageSizeChange={setPageSize}
+      />
     </Stack>
   );
 }

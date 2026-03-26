@@ -7,6 +7,7 @@ import { FrameCounter } from "./components/FrameCounter";
 import { TimelineScrubber } from "./components/TimelineScrubber";
 import { TransportControls } from "./components/TransportControls";
 import { useABLoop } from "./hooks/use-ab-loop";
+import { useAnnotationPlayback } from "./hooks/use-annotation-playback";
 import { useVideoMetadata, getStreamUrl } from "./hooks/use-video-metadata";
 import { useVideoPlayer } from "./hooks/use-video-player";
 import type { PlaybackQuality, SourceType } from "./types";
@@ -52,6 +53,16 @@ export function VideoPlayer({
   });
 
   const loop = useABLoop(player.videoRef, framerate);
+
+  const annPlayback = useAnnotationPlayback({
+    currentFrame: player.currentFrame,
+    annotationRanges,
+    setSpeed: player.setSpeed,
+    currentSpeed: player.speed,
+  });
+
+  // Only expose annotation playback controls when ranges exist.
+  const annotationPlayback = annotationRanges?.length ? annPlayback : null;
 
   const streamUrl = getStreamUrl(sourceType, sourceId, quality);
 
@@ -128,6 +139,8 @@ export function VideoPlayer({
             annotationRanges={annotationRanges}
             framerate={framerate}
             onSeek={player.seekToTime}
+            annotationModeActive={annotationPlayback?.isEnabled && annotationPlayback?.isInZone}
+            currentFrame={player.currentFrame}
             className="px-[var(--spacing-2)]"
           />
 
@@ -137,6 +150,7 @@ export function VideoPlayer({
             loop={loop}
             quality={quality}
             onQualityChange={handleQualityChange}
+            annotationPlayback={annotationPlayback}
           />
         </div>
       )}

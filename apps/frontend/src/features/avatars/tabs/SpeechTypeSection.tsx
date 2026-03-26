@@ -1,10 +1,24 @@
 /**
  * Collapsible speech type group with language sub-sections (PRD-136).
  * Terminal-style dark panel matching the hacker aesthetic.
+ * Supports drag-and-drop reordering within each language group.
  */
 
-import { useState } from "react";
-
+import { useCallback, useState } from "react";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
 import { FlagIcon } from "@/components/primitives";
 import { cn } from "@/lib/cn";
 import { ChevronDown, ChevronRight } from "@/tokens/icons";
@@ -35,8 +49,7 @@ interface SpeechTypeSectionProps {
   onDelete: (speech: AvatarSpeech) => void;
   onApprove: (speechId: number) => void;
   onReject: (speechId: number) => void;
-  onMoveUp: (speech: AvatarSpeech, groupItems: AvatarSpeech[]) => void;
-  onMoveDown: (speech: AvatarSpeech, groupItems: AvatarSpeech[]) => void;
+  onDragReorder: (orderedIds: number[]) => void;
   saving: boolean;
 }
 
@@ -56,13 +69,34 @@ export function SpeechTypeSection({
   onDelete,
   onApprove,
   onReject,
-  onMoveUp,
-  onMoveDown,
+  onDragReorder,
   saving,
 }: SpeechTypeSectionProps) {
   const [expanded, setExpanded] = useState(true);
 
   const totalItems = languageGroups.reduce((sum, g) => sum + g.items.length, 0);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  const handleDragEnd = useCallback(
+    (items: AvatarSpeech[], event: DragEndEvent) => {
+      const { active, over } = event;
+      if (!over || active.id === over.id) return;
+
+      const oldIndex = items.findIndex((s) => s.id === active.id);
+      const newIndex = items.findIndex((s) => s.id === over.id);
+      if (oldIndex < 0 || newIndex < 0) return;
+
+      const reordered = [...items];
+      const [moved] = reordered.splice(oldIndex, 1);
+      reordered.splice(newIndex, 0, moved!);
+      onDragReorder(reordered.map((s) => s.id));
+    },
+    [onDragReorder],
+  );
 
   return (
     <div className="rounded-[var(--radius-lg)] border border-[var(--color-border-default)] bg-[#0d1117] overflow-hidden">
@@ -90,7 +124,7 @@ export function SpeechTypeSection({
         <div>
           {languageGroups.map(({ langId, lang, items }) => (
             <div key={langId}>
-              {/* Language sub-header — always visible */}
+              {/* Language sub-header */}
               <div className="flex items-center gap-[var(--spacing-2)] px-[var(--spacing-3)] py-1 border-t border-[var(--color-border-default)] bg-[#161b22]/50">
                 {lang && <FlagIcon flagCode={lang.flag_code} size={10} />}
                 <span className="text-[10px] font-mono uppercase tracking-wide text-[var(--color-text-muted)]">
@@ -99,29 +133,36 @@ export function SpeechTypeSection({
                 <span className="text-[10px] font-mono text-cyan-400">{items.length}</span>
               </div>
 
-              <div className="divide-y divide-[var(--color-border-default)]/30">
-                {items.map((speech, idx) => (
-                  <SpeechEntryRow
-                    key={speech.id}
-                    speech={speech}
-                    typeName={typeName}
-                    isEditing={editingId === speech.id}
-                    editText={editText}
-                    onEditTextChange={onEditTextChange}
-                    onStartEdit={() => onStartEdit(speech)}
-                    onCancelEdit={onCancelEdit}
-                    onSaveEdit={onSaveEdit}
-                    onDelete={() => onDelete(speech)}
-                    onApprove={() => onApprove(speech.id)}
-                    onReject={() => onReject(speech.id)}
-                    onMoveUp={() => onMoveUp(speech, items)}
-                    onMoveDown={() => onMoveDown(speech, items)}
-                    isFirst={idx === 0}
-                    isLast={idx === items.length - 1}
-                    saving={saving}
-                  />
-                ))}
-              </div>
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={(event) => handleDragEnd(items, event)}
+              >
+                <SortableContext
+                  items={items.map((s) => s.id)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  <div className="divide-y divide-[var(--color-border-default)]/30">
+                    {items.map((speech) => (
+                      <SpeechEntryRow
+                        key={speech.id}
+                        speech={speech}
+                        typeName={typeName}
+                        isEditing={editingId === speech.id}
+                        editText={editText}
+                        onEditTextChange={onEditTextChange}
+                        onStartEdit={() => onStartEdit(speech)}
+                        onCancelEdit={onCancelEdit}
+                        onSaveEdit={onSaveEdit}
+                        onDelete={() => onDelete(speech)}
+                        onApprove={() => onApprove(speech.id)}
+                        onReject={() => onReject(speech.id)}
+                        saving={saving}
+                      />
+                    ))}
+                  </div>
+                </SortableContext>
+              </DndContext>
             </div>
           ))}
         </div>

@@ -134,6 +134,7 @@ export {
   Wifi,
   WifiOff,
   RotateCw,
+  ScanEye,
   ScanSearch,
   Shield,
   CircleDot,

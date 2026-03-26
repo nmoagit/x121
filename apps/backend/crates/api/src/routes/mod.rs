@@ -11,6 +11,8 @@ pub mod auto_retry;
 pub mod avatar;
 pub mod avatar_dashboard;
 pub mod avatar_deliverable_ignore;
+pub mod avatar_image;
+pub mod avatar_image_overrides;
 pub mod avatar_ingest;
 pub mod avatar_metadata;
 pub mod avatar_metadata_version;
@@ -47,10 +49,12 @@ pub mod failure_analytics;
 pub mod generation;
 pub mod generator_scripts;
 pub mod gpu_power;
+pub mod group_image_settings;
 pub mod group_scene_settings;
 pub mod hardware;
 pub mod health;
 pub mod image_qa;
+pub mod image_type;
 pub mod importer;
 pub mod infrastructure;
 pub mod integrity;
@@ -83,6 +87,7 @@ pub mod production_run;
 pub mod proficiency;
 pub mod project;
 pub mod project_config;
+pub mod project_image_settings;
 pub mod project_lifecycle;
 pub mod project_scene_settings;
 pub mod project_speech_config;
@@ -854,6 +859,7 @@ pub fn api_routes() -> Router<AppState> {
             .nest("/{project_id}/avatars", avatar_metadata::project_router())
             .nest("/{project_id}/ingest", avatar_ingest::router())
             .nest("/{project_id}/scene-settings", project_scene_settings::router())
+            .nest("/{project_id}/image-settings", project_image_settings::router())
             .nest("/{project_id}/speech-config", project_speech_config::router())
             .nest("/{project_id}/review", avatar_review::project_review_router())
             .merge(project_speech_import::router()))
@@ -873,7 +879,9 @@ pub fn api_routes() -> Router<AppState> {
             .merge(refinement::avatar_refinement_router())
             .merge(avatar_review::avatar_review_router())
             .merge(video_settings::avatar_video_settings_router())
+            .merge(avatar_image::avatar_image_router())
             .nest("/{avatar_id}/scene-settings", avatar_scene_overrides::router())
+            .nest("/{avatar_id}/image-settings", avatar_image_overrides::router())
             .nest("/{avatar_id}/deliverable-ignores", avatar_deliverable_ignore::router())
             .nest("/{avatar_id}/speeches", avatar_speech::router()))
         // Scene-scoped sub-resources (segments, review queue, generation PRD-24, QA PRD-49, resolution PRD-59, storyboard PRD-62, branching PRD-50).
@@ -919,6 +927,8 @@ pub fn api_routes() -> Router<AppState> {
             .merge(video_settings::scene_type_video_settings_router()))
         // Mixin CRUD (PRD-100).
         .nest("/mixins", scene_type_inheritance::mixin_router())
+        // Image types — pipeline-scoped image generation catalogue (PRD-154).
+        .nest("/image-types", image_type::router())
         // Tracks (PRD-111).
         .nest("/tracks", track::router())
         // Pipelines (PRD-138).

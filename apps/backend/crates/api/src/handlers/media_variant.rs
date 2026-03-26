@@ -822,8 +822,10 @@ pub struct BrowseVariantsParams {
     pub provenance: Option<String>,
     pub variant_type: Option<String>,
     pub show_disabled: Option<bool>,
-    /// Comma-separated tag IDs for label filtering.
+    /// Comma-separated tag IDs for label filtering (include).
     pub tag_ids: Option<String>,
+    /// Comma-separated tag IDs to exclude from results.
+    pub exclude_tag_ids: Option<String>,
     /// Free-text search across avatar name, variant type/label, project.
     pub search: Option<String>,
     pub limit: Option<i32>,
@@ -917,6 +919,11 @@ pub async fn browse_variants(
             OR iv.variant_type ILIKE '%' || $8 || '%' \
             OR iv.variant_label ILIKE '%' || $8 || '%' \
             OR p.name ILIKE '%' || $8 || '%' \
+          )) \
+          AND ($9::text IS NULL OR iv.id NOT IN ( \
+            SELECT et.entity_id FROM entity_tags et \
+            WHERE et.entity_type = 'media_variant' \
+              AND et.tag_id = ANY(string_to_array($9, ',')::bigint[]) \
           ))";
 
     let count_sql = format!("SELECT COUNT(*) {base_from}");
@@ -929,6 +936,7 @@ pub async fn browse_variants(
         .bind(show_disabled)
         .bind(&params.tag_ids)
         .bind(&params.search)
+        .bind(&params.exclude_tag_ids)
         .fetch_one(&state.pool)
         .await?;
 
@@ -941,7 +949,7 @@ pub async fn browse_variants(
             p.id AS project_id, p.name AS project_name \
         {base_from} \
         ORDER BY iv.created_at DESC \
-        LIMIT $9 OFFSET $10"
+        LIMIT $10 OFFSET $11"
     );
     let items = sqlx::query_as::<_, MediaVariantBrowseItem>(&items_sql)
         .bind(params.project_id)
@@ -952,6 +960,7 @@ pub async fn browse_variants(
         .bind(show_disabled)
         .bind(&params.tag_ids)
         .bind(&params.search)
+        .bind(&params.exclude_tag_ids)
         .bind(limit as i64)
         .bind(offset as i64)
         .fetch_all(&state.pool)
@@ -1174,7 +1183,7 @@ pub struct BulkVariantAction {
 /// Build the shared WHERE clause used by both browse and bulk operations.
 ///
 /// Returns the clause fragment (starting with `FROM ...`) and expects
-/// parameters $1..$8 bound in the same order as `browse_variants`.
+/// parameters $1..$9 bound in the same order as `browse_variants`.
 fn variant_browse_where_clause() -> &'static str {
     "FROM media_variants iv \
      JOIN avatars c ON c.id = iv.avatar_id AND c.deleted_at IS NULL \
@@ -1196,6 +1205,11 @@ fn variant_browse_where_clause() -> &'static str {
          OR iv.variant_type ILIKE '%' || $8 || '%' \
          OR iv.variant_label ILIKE '%' || $8 || '%' \
          OR p.name ILIKE '%' || $8 || '%' \
+       )) \
+       AND ($9::text IS NULL OR iv.id NOT IN ( \
+         SELECT et.entity_id FROM entity_tags et \
+         WHERE et.entity_type = 'media_variant' \
+           AND et.tag_id = ANY(string_to_array($9, ',')::bigint[]) \
        ))"
 }
 
@@ -1226,7 +1240,7 @@ async fn bulk_update_variant_status(
         let where_clause = variant_browse_where_clause();
         let sql = format!(
             "UPDATE media_variants \
-             SET status_id = $9, updated_at = NOW() \
+             SET status_id = $10, updated_at = NOW() \
              WHERE id IN (SELECT iv.id {where_clause})"
         );
         let result = sqlx::query(&sql)
@@ -1238,6 +1252,7 @@ async fn bulk_update_variant_status(
             .bind(show_disabled)
             .bind(&filters.tag_ids)
             .bind(&filters.search)
+            .bind(&filters.exclude_tag_ids)
             .bind(new_status_id)
             .execute(pool)
             .await?;

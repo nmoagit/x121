@@ -7,6 +7,7 @@ export { BulkRejectDialog } from "./BulkRejectDialog";
 export type { BulkRejectDialogProps } from "./BulkRejectDialog";
 export { BlockingDeliverablesEditor } from "./BlockingDeliverablesEditor";
 export { CollapsibleNotes } from "./CollapsibleNotes";
+export { NotesModal } from "./NotesModal";
 export { EmptyState } from "./EmptyState";
 export { ExportStatusPanel } from "./ExportStatusPanel";
 export { LogLine } from "./LogLine";

@@ -13,13 +13,17 @@ interface BulkLabelDialogProps {
   mode: "add" | "remove";
   count: number;
   pipelineId?: number;
+  /** Entity type for fetching tags in remove mode (e.g. "scene_video_version"). */
+  entityType?: string;
+  /** Selected entity IDs — used to fetch tags in remove mode. */
+  entityIds?: number[];
   /** Called when "add" mode confirms with tag names to apply. */
   onConfirm: (tagNames: string[]) => void;
   /** Called when "remove" mode confirms with tag IDs to remove. */
   onConfirmRemove?: (tagIds: number[]) => void;
   onCancel: () => void;
   loading?: boolean;
-  /** Pre-loaded tags for the "remove" mode (common tags across selected items). */
+  /** Pre-loaded tags for the "remove" mode (overrides auto-fetch if provided). */
   availableTags?: TagInfo[];
 }
 
@@ -39,11 +43,13 @@ export function BulkLabelDialog({
   mode,
   count,
   pipelineId,
+  entityType,
+  entityIds,
   onConfirm,
   onConfirmRemove,
   onCancel,
   loading,
-  availableTags = [],
+  availableTags: propAvailableTags,
 }: BulkLabelDialogProps) {
   // Add mode state
   const [input, setInput] = useState("");
@@ -56,6 +62,13 @@ export function BulkLabelDialog({
 
   // Remove mode state
   const [selectedTagIds, setSelectedTagIds] = useState<Set<number>>(new Set());
+  const [fetchedRemoveTags, setFetchedRemoveTags] = useState<TagInfo[]>([]);
+  const [removeTagsLoading, setRemoveTagsLoading] = useState(false);
+
+  const availableTags = propAvailableTags ?? fetchedRemoveTags;
+
+  // Existing tags for quick-add in "add" mode
+  const [existingTags, setExistingTags] = useState<TagWithCount[]>([]);
 
   // Reset state when dialog opens/closes or mode changes
   useEffect(() => {
@@ -66,7 +79,47 @@ export function BulkLabelDialog({
     setShowSuggestions(false);
     setHighlightIndex(-1);
     setSelectedTagIds(new Set());
-  }, [open, mode]);
+    setFetchedRemoveTags([]);
+
+    // Fetch tags on selected entities for remove mode
+    if (mode === "remove" && !propAvailableTags && entityType && entityIds && entityIds.length > 0) {
+      setRemoveTagsLoading(true);
+      // Fetch tags for all selected entities, then merge into a de-duplicated union.
+      // Process in batches of 20 to avoid overwhelming the server.
+      const batchSize = 20;
+      const allResults: TagInfo[][] = [];
+      const fetchBatches = async () => {
+        for (let i = 0; i < entityIds.length; i += batchSize) {
+          const batch = entityIds.slice(i, i + batchSize);
+          const results = await Promise.all(
+            batch.map((id) => api.get<TagInfo[]>(`/entities/${entityType}/${id}/tags`).catch(() => [] as TagInfo[])),
+          );
+          allResults.push(...results);
+        }
+        return allResults;
+      };
+      fetchBatches()
+        .then((results) => {
+          const tagMap = new Map<number, TagInfo>();
+          for (const tags of results) {
+            for (const tag of tags) {
+              tagMap.set(tag.id, tag);
+            }
+          }
+          setFetchedRemoveTags(Array.from(tagMap.values()).sort((a, b) => a.display_name.localeCompare(b.display_name)));
+        })
+        .finally(() => setRemoveTagsLoading(false));
+    }
+
+    // Fetch existing tags for quick-add chips
+    if (mode === "add") {
+      const params = new URLSearchParams({ limit: "50" });
+      if (pipelineId) params.set("pipeline_id", String(pipelineId));
+      api.get<TagWithCount[]>(`/tags?${params}`)
+        .then(setExistingTags)
+        .catch(() => setExistingTags([]));
+    }
+  }, [open, mode, pipelineId]);
 
   // Autocomplete for add mode
   useEffect(() => {
@@ -182,10 +235,45 @@ export function BulkLabelDialog({
     !pendingNames.some((n) => n.toLowerCase() === input.trim().toLowerCase());
 
   return (
-    <Modal open={open} onClose={handleCancel} title={title} size="sm">
+    <Modal open={open} onClose={handleCancel} title={title} size="lg">
       <Stack gap={4}>
         {mode === "add" ? (
           <>
+            {/* Existing tags — click to quick-add */}
+            {existingTags.length > 0 && (
+              <div className="flex flex-col gap-1.5">
+                <span className="font-mono text-[10px] uppercase tracking-wide text-[var(--color-text-muted)]">
+                  Existing labels
+                </span>
+                <div className="flex flex-wrap gap-1">
+                  {existingTags.map((tag) => {
+                    const alreadyPending = pendingNames.some(
+                      (n) => n.toLowerCase() === tag.display_name.toLowerCase(),
+                    );
+                    return (
+                      <Chip
+                        key={tag.id}
+                        size="sm"
+                        color={tag.color}
+                        active={alreadyPending}
+                        onClick={() => {
+                          if (alreadyPending) {
+                            setPendingNames((prev) =>
+                              prev.filter((n) => n.toLowerCase() !== tag.display_name.toLowerCase()),
+                            );
+                          } else {
+                            addPendingName(tag.display_name);
+                          }
+                        }}
+                      >
+                        {tag.display_name}
+                      </Chip>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             {/* Pending tag chips */}
             {pendingNames.length > 0 && (
               <div className="flex flex-wrap gap-1">
@@ -276,7 +364,11 @@ export function BulkLabelDialog({
         ) : (
           /* Remove mode — selectable tag chips */
           <>
-            {availableTags.length === 0 ? (
+            {removeTagsLoading ? (
+              <p className="font-mono text-xs text-[var(--color-text-muted)]">
+                Loading labels...
+              </p>
+            ) : availableTags.length === 0 ? (
               <p className="font-mono text-xs text-[var(--color-text-muted)]">
                 No labels found on the selected items.
               </p>

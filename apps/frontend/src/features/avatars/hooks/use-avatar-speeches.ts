@@ -150,7 +150,7 @@ export function useReorderSpeeches(avatarId: number) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (orderedIds: number[]) =>
-      api.put(`/avatars/${avatarId}/speeches/reorder`, { ordered_ids: orderedIds }),
+      api.put(`/avatars/${avatarId}/speeches/reorder`, { speech_ids: orderedIds }),
     onSuccess: () => qc.invalidateQueries({ queryKey: speechKeys.list(avatarId) }),
   });
 }

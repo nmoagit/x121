@@ -56,6 +56,13 @@ export interface SeedSlotWithAssignment {
   workflow_name: string | null;
   media_slot_id: number | null;
   assignment: AvatarMediaAssignment | null;
+  /** Discriminator: "scene" for scene-type slots, "image" for image-type slots. */
+  slot_kind: "scene" | "image";
+  /** Output track for image-type slots. */
+  output_track_id?: number | null;
+  output_track_name?: string | null;
+  /** Image type reference for image-type slots. */
+  image_type_id?: number | null;
 }
 
 export interface SeedSummary {

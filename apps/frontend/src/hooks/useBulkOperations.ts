@@ -7,6 +7,7 @@
  */
 
 import { useState, useCallback } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import type { UseMutationResult } from "@tanstack/react-query";
 
 import { api } from "@/lib/api";
@@ -38,6 +39,8 @@ interface UseBulkOperationsConfig {
   approveMut: UseMutationResult<BulkActionResult, unknown, Record<string, unknown>>;
   /** Bulk reject mutation */
   rejectMut: UseMutationResult<BulkActionResult, unknown, Record<string, unknown>>;
+  /** Pipeline ID for scoping newly created tags. */
+  pipelineId?: number;
 }
 
 export interface BulkOperations {
@@ -66,8 +69,9 @@ export interface BulkOperations {
    -------------------------------------------------------------------------- */
 
 export function useBulkOperations(config: UseBulkOperationsConfig): BulkOperations {
-  const { entityType, entityNoun, bulk, total, buildFilters, approveMut, rejectMut } = config;
+  const { entityType, entityNoun, bulk, total, buildFilters, approveMut, rejectMut, pipelineId } = config;
   const { addToast } = useToast();
+  const queryClient = useQueryClient();
 
   // Dialog state
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
@@ -133,31 +137,61 @@ export function useBulkOperations(config: UseBulkOperationsConfig): BulkOperatio
     });
   }, [rejectMut, buildBulkBody, entityNoun, bulk, addToast]);
 
+  /** Convert camelCase filter keys to snake_case for API query params. */
+  const toSnakeCase = (s: string) => s.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`);
+
+  /** Resolve entity IDs: use explicit selection, or fetch all matching IDs from browse endpoint. */
+  const resolveEntityIds = useCallback(async (): Promise<number[]> => {
+    if (!bulk.selectAllMatching) {
+      return Array.from(bulk.selectedIds);
+    }
+    // Fetch all matching IDs from the browse endpoint using current filters
+    const filters = buildFilters();
+    const params = new URLSearchParams();
+    for (const [k, v] of Object.entries(filters)) {
+      if (v != null && v !== "") params.set(toSnakeCase(k), String(v));
+    }
+    params.set("limit", "10000");
+    params.set("offset", "0");
+
+    const browseUrl = entityType === "scene_video_version"
+      ? `/scene-video-versions/browse?${params}`
+      : `/media-variants/browse?${params}`;
+    const result = await api.get<{ items: { id: number }[] }>(browseUrl);
+    return result.items.map((item) => item.id);
+  }, [bulk.selectAllMatching, bulk.selectedIds, buildFilters, entityType]);
+
   const handleBulkAddLabel = useCallback((tagNames: string[]) => {
-    const entityIds = Array.from(bulk.selectedIds);
-    api.post("/tags/bulk-apply", { entity_type: entityType, entity_ids: entityIds, tag_names: tagNames })
-      .then(() => {
-        addToast({ message: `Applied ${tagNames.length} label${plural(tagNames.length)} to ${entityIds.length} ${entityNoun}${plural(entityIds.length)}`, variant: "success" });
-        bulk.clearAll();
-        setLabelDialogOpen(null);
-      })
+    resolveEntityIds()
+      .then((entityIds) =>
+        api.post("/tags/bulk-apply", { entity_type: entityType, entity_ids: entityIds, tag_names: tagNames, pipeline_id: pipelineId ?? null })
+          .then(() => {
+            addToast({ message: `Applied ${tagNames.length} label${plural(tagNames.length)} to ${entityIds.length} ${entityNoun}${plural(entityIds.length)}`, variant: "success" });
+            bulk.clearAll();
+            setLabelDialogOpen(null);
+            queryClient.invalidateQueries({ queryKey: ["tags", "list"] });
+          }),
+      )
       .catch(() => {
         addToast({ message: "Failed to apply labels", variant: "error" });
       });
-  }, [bulk, entityType, entityNoun, addToast]);
+  }, [resolveEntityIds, entityType, entityNoun, pipelineId, bulk, addToast, queryClient]);
 
   const handleBulkRemoveLabel = useCallback((tagIds: number[]) => {
-    const entityIds = Array.from(bulk.selectedIds);
-    api.post("/tags/bulk-remove", { entity_type: entityType, entity_ids: entityIds, tag_ids: tagIds })
-      .then(() => {
-        addToast({ message: `Removed ${tagIds.length} label${plural(tagIds.length)} from ${entityIds.length} ${entityNoun}${plural(entityIds.length)}`, variant: "success" });
-        bulk.clearAll();
-        setLabelDialogOpen(null);
-      })
+    resolveEntityIds()
+      .then((entityIds) =>
+        api.post("/tags/bulk-remove", { entity_type: entityType, entity_ids: entityIds, tag_ids: tagIds })
+          .then(() => {
+            addToast({ message: `Removed ${tagIds.length} label${plural(tagIds.length)} from ${entityIds.length} ${entityNoun}${plural(entityIds.length)}`, variant: "success" });
+            bulk.clearAll();
+            setLabelDialogOpen(null);
+            queryClient.invalidateQueries({ queryKey: ["tags", "list"] });
+          }),
+      )
       .catch(() => {
         addToast({ message: "Failed to remove labels", variant: "error" });
       });
-  }, [bulk, entityType, entityNoun, addToast]);
+  }, [resolveEntityIds, entityType, entityNoun, bulk, addToast, queryClient]);
 
   return {
     rejectDialogOpen,

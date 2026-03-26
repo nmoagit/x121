@@ -1,18 +1,23 @@
 import { cn } from "@/lib/cn";
-import { ChevronLeft, ChevronRight, Pause, Play, Repeat, RotateCcw, SkipBack } from "@/tokens/icons";
+import { ChevronLeft, ChevronRight, Pause, Play, Repeat, RotateCcw, ScanEye, SkipBack } from "@/tokens/icons";
 
 import type { ABLoopControls } from "../hooks/use-ab-loop";
+import type { AnnotationPlaybackControls } from "../hooks/use-annotation-playback";
 import type { VideoPlayerControls } from "../hooks/use-video-player";
 import type { PlaybackQuality } from "../types";
 import { QualitySelector } from "./QualitySelector";
 import { SpeedControl } from "./SpeedControl";
 import { VolumeControl } from "./VolumeControl";
 
+const ANNOTATION_SLOW_PRESETS = [0.1, 0.25, 0.5] as const;
+
 interface TransportControlsProps {
   player: VideoPlayerControls;
   loop: ABLoopControls;
   quality: PlaybackQuality;
   onQualityChange: (quality: PlaybackQuality) => void;
+  /** Annotation playback controls. Null when no annotation ranges exist. */
+  annotationPlayback: AnnotationPlaybackControls | null;
   className?: string;
 }
 
@@ -21,6 +26,7 @@ export function TransportControls({
   loop,
   quality,
   onQualityChange,
+  annotationPlayback,
   className,
 }: TransportControlsProps) {
   return (
@@ -85,6 +91,52 @@ export function TransportControls({
 
       {/* Speed presets */}
       <SpeedControl speed={player.speed} onSpeedChange={player.setSpeed} />
+
+      {/* Annotation playback mode */}
+      {annotationPlayback && (
+        <>
+          {/* Separator */}
+          <div className="w-px h-4 bg-[var(--color-border-secondary)] mx-[var(--spacing-1)]" />
+
+          {/* Toggle */}
+          <button
+            type="button"
+            onClick={annotationPlayback.toggle}
+            className={cn(
+              "p-[var(--spacing-1)] rounded-[var(--radius-sm)] transition-colors",
+              annotationPlayback.isEnabled
+                ? "bg-amber-500 text-[var(--color-text-inverse)]"
+                : "text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]",
+            )}
+            title="Annotation playback mode"
+          >
+            <ScanEye size={14} />
+          </button>
+
+          {/* Slow-speed presets — only visible when annotation mode is active */}
+          {annotationPlayback.isEnabled && (
+            <div className="flex items-center gap-0.5">
+              {ANNOTATION_SLOW_PRESETS.map((preset) => (
+                <button
+                  key={preset}
+                  type="button"
+                  onClick={() => annotationPlayback.setSlowSpeed(preset)}
+                  className={cn(
+                    "px-[var(--spacing-1)] py-0.5 text-[10px] font-mono rounded-[var(--radius-sm)]",
+                    "transition-colors duration-[var(--duration-fast)]",
+                    annotationPlayback.slowSpeed === preset
+                      ? "bg-amber-500 text-[var(--color-text-inverse)]"
+                      : "text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-tertiary)]",
+                  )}
+                  title={`Annotation slow speed: ${preset}x`}
+                >
+                  {preset}x
+                </button>
+              ))}
+            </div>
+          )}
+        </>
+      )}
 
       {/* Separator */}
       <div className="w-px h-4 bg-[var(--color-border-secondary)] mx-[var(--spacing-1)]" />

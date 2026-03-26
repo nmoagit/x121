@@ -9,13 +9,13 @@ import { useNavigate } from "@tanstack/react-router";
 
 import { EmptyState, BulkActionBar, BulkRejectDialog, BulkLabelDialog, ExportStatusPanel } from "@/components/domain";
 import { TagFilter } from "@/components/domain/TagFilter";
-import { CollapsibleNotes } from "@/components/domain/CollapsibleNotes";
+import { NotesModal } from "@/components/domain/NotesModal";
 import { TagInput } from "@/components/domain/TagInput";
 import type { TagInfo } from "@/components/domain/TagChip";
 import { Modal } from "@/components/composite";
 import { api } from "@/lib/api";
 import { PageHeader, Stack } from "@/components/layout";
-import { Button, Checkbox, MultiFilterBar, SearchInput, Select, Toggle, ContextLoader } from "@/components/primitives";
+import { Button, Checkbox, MultiFilterBar, Pagination, SearchInput, Toggle, ContextLoader } from "@/components/primitives";
 import type { FilterConfig, FilterOption } from "@/components/primitives";
 import { ProgressiveImage } from "@/components/primitives";
 import { useBulkSelection } from "@/hooks/useBulkSelection";
@@ -292,7 +292,6 @@ function buildVariantTypeOptions(items: MediaVariantBrowseItem[] | undefined): F
    Pagination constants
    -------------------------------------------------------------------------- */
 
-const PAGE_SIZES = [25, 50, 100] as const;
 const DEFAULT_PAGE_SIZE = 25;
 
 /* --------------------------------------------------------------------------
@@ -307,6 +306,7 @@ export function MediaPage() {
   const [variantTypeFilter, setVariantTypeFilter] = useState<string[]>([]);
   const [mediaKindFilter, setMediaKindFilter] = useState<string[]>([]);
   const [labelFilter, setLabelFilter] = useState<number[]>([]);
+  const [excludeLabelFilter, setExcludeLabelFilter] = useState<number[]>([]);
   const [searchInput, setSearchInput] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   // Absolute index across all pages (0 to total-1)
@@ -318,8 +318,8 @@ export function MediaPage() {
 
   // Bulk selection — reset key serializes all filter state
   const bulkResetKey = useMemo(
-    () => JSON.stringify({ projectFilter, statusFilter, sourceFilter, variantTypeFilter, mediaKindFilter, labelFilter, debouncedSearch, showDisabled }),
-    [projectFilter, statusFilter, sourceFilter, variantTypeFilter, mediaKindFilter, labelFilter, debouncedSearch, showDisabled],
+    () => JSON.stringify({ projectFilter, statusFilter, sourceFilter, variantTypeFilter, mediaKindFilter, labelFilter, excludeLabelFilter, debouncedSearch, showDisabled }),
+    [projectFilter, statusFilter, sourceFilter, variantTypeFilter, mediaKindFilter, labelFilter, excludeLabelFilter, debouncedSearch, showDisabled],
   );
   const bulk = useBulkSelection(bulkResetKey);
 
@@ -342,6 +342,7 @@ export function MediaPage() {
     mediaKind: mediaKindFilter.length > 0 ? mediaKindFilter.join(",") : undefined,
     showDisabled,
     tagIds: labelFilter.length > 0 ? labelFilter.join(",") : undefined,
+    excludeTagIds: excludeLabelFilter.length > 0 ? excludeLabelFilter.join(",") : undefined,
     search: debouncedSearch || undefined,
     limit: pageSize,
     offset: page * pageSize,
@@ -349,7 +350,6 @@ export function MediaPage() {
 
   const variants = browseResult?.items;
   const total = browseResult?.total ?? 0;
-  const totalPages = total > 0 ? Math.ceil(total / pageSize) : 0;
 
   const projectOptions: FilterOption[] = useMemo(
     () => toSelectOptions(projects).map((o) => ({ value: o.value, label: o.label })),
@@ -389,8 +389,9 @@ export function MediaPage() {
     mediaKind: mediaKindFilter.length > 0 ? mediaKindFilter.join(",") : undefined,
     showDisabled,
     tagIds: labelFilter.length > 0 ? labelFilter.join(",") : undefined,
+    excludeTagIds: excludeLabelFilter.length > 0 ? excludeLabelFilter.join(",") : undefined,
     search: debouncedSearch || undefined,
-  }), [projectFilter, pipelineCtx?.pipelineId, statusFilter, sourceFilter, variantTypeFilter, mediaKindFilter, showDisabled, labelFilter, debouncedSearch]);
+  }), [projectFilter, pipelineCtx?.pipelineId, statusFilter, sourceFilter, variantTypeFilter, mediaKindFilter, showDisabled, labelFilter, excludeLabelFilter, debouncedSearch]);
 
   const bulkOps = useBulkOperations({
     entityType: "media_variant",
@@ -400,6 +401,7 @@ export function MediaPage() {
     buildFilters,
     approveMut: bulkApproveMut,
     rejectMut: bulkRejectMut,
+    pipelineId: pipelineCtx?.pipelineId,
   });
 
   const filters: FilterConfig[] = useMemo(() => [
@@ -465,6 +467,8 @@ export function MediaPage() {
       <TagFilter
         selectedTagIds={labelFilter}
         onSelectionChange={(ids) => { setLabelFilter(ids); setPage(0); }}
+        excludedTagIds={excludeLabelFilter}
+        onExclusionChange={(ids) => { setExcludeLabelFilter(ids); setPage(0); }}
         pipelineId={pipelineCtx?.pipelineId}
       />
 
@@ -529,49 +533,13 @@ export function MediaPage() {
         </div>
       )}
 
-      {/* Pagination */}
-      {total > 0 && (
-        <div className="flex items-center justify-between border-t border-[var(--color-border-default)]/30 px-4 py-3">
-          <div className="flex items-center gap-2 font-mono text-xs text-[var(--color-text-muted)]">
-            <span>
-              Showing {page * pageSize + 1}
-              {" - "}
-              {Math.min((page + 1) * pageSize, total)} of {total}
-            </span>
-            <Select
-              size="sm"
-              value={String(pageSize)}
-              onChange={(val) => {
-                setPageSize(Number(val));
-                setPage(0);
-              }}
-              options={PAGE_SIZES.map((s) => ({
-                value: String(s),
-                label: `${s} per page`,
-              }))}
-            />
-          </div>
-
-          <div className="flex gap-1">
-            <Button
-              variant="secondary"
-              size="xs"
-              disabled={page === 0}
-              onClick={() => setPage((p) => p - 1)}
-            >
-              Previous
-            </Button>
-            <Button
-              variant="secondary"
-              size="xs"
-              disabled={page >= totalPages - 1}
-              onClick={() => setPage((p) => p + 1)}
-            >
-              Next
-            </Button>
-          </div>
-        </div>
-      )}
+      <Pagination
+        page={page}
+        pageSize={pageSize}
+        total={total}
+        onPageChange={setPage}
+        onPageSizeChange={setPageSize}
+      />
 
       {/* Image preview modal */}
       <ImagePreviewModal
@@ -619,6 +587,8 @@ export function MediaPage() {
         mode={bulkOps.labelDialogOpen ?? "add"}
         count={bulk.selectedCount}
         pipelineId={pipelineCtx?.pipelineId}
+        entityType="media_variant"
+        entityIds={Array.from(bulk.selectedIds)}
         onConfirm={bulkOps.handleBulkAddLabel}
         onConfirmRemove={bulkOps.handleBulkRemoveLabel}
         onCancel={() => bulkOps.setLabelDialogOpen(null)}
@@ -678,7 +648,7 @@ function ImagePreviewModal({
       open={variant !== null}
       onClose={onClose}
       title={variant ? `${variant.project_name} / ${variant.avatar_name} — ${variant.variant_label}` : ""}
-      size={expanded ? "full" : "lg"}
+      size={expanded ? "full" : "3xl"}
     >
       {variant && (
         <Stack gap={4}>
@@ -805,7 +775,7 @@ function ImagePreviewModal({
           />
 
           {/* Notes */}
-          <CollapsibleNotes
+          <NotesModal
             value={variantNotes}
             onChange={setVariantNotes}
             onSave={(value) => {
@@ -814,6 +784,7 @@ function ImagePreviewModal({
                 .finally(() => setVariantNotesSaving(false));
             }}
             saving={variantNotesSaving}
+            title={`${variant.avatar_name} — ${variant.variant_label}`}
           />
         </Stack>
       )}

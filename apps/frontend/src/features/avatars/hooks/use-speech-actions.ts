@@ -71,28 +71,9 @@ export function useSpeechActions(avatarId: number) {
     [updateStatus],
   );
 
-  const handleMoveUp = useCallback(
-    (speech: AvatarSpeech, groupItems: AvatarSpeech[]) => {
-      const idx = groupItems.findIndex((s) => s.id === speech.id);
-      if (idx <= 0) return;
-      const reordered = [...groupItems];
-      const tmp = reordered[idx - 1]!;
-      reordered[idx - 1] = reordered[idx]!;
-      reordered[idx] = tmp;
-      reorderSpeeches.mutate(reordered.map((s) => s.id));
-    },
-    [reorderSpeeches],
-  );
-
-  const handleMoveDown = useCallback(
-    (speech: AvatarSpeech, groupItems: AvatarSpeech[]) => {
-      const idx = groupItems.findIndex((s) => s.id === speech.id);
-      if (idx < 0 || idx >= groupItems.length - 1) return;
-      const reordered = [...groupItems];
-      const tmp = reordered[idx]!;
-      reordered[idx] = reordered[idx + 1]!;
-      reordered[idx + 1] = tmp;
-      reorderSpeeches.mutate(reordered.map((s) => s.id));
+  const handleDragReorder = useCallback(
+    (orderedIds: number[]) => {
+      reorderSpeeches.mutate(orderedIds);
     },
     [reorderSpeeches],
   );
@@ -159,8 +140,7 @@ export function useSpeechActions(avatarId: number) {
     // Actions
     handleApprove,
     handleReject,
-    handleMoveUp,
-    handleMoveDown,
+    handleDragReorder,
     handleImport,
     handleExport,
     handleBulkApprove,

@@ -359,6 +359,23 @@ pub async fn get_by_id(
     Ok(Json(DataResponse { data: version }))
 }
 
+/// PUT /api/v1/scenes/{scene_id}/versions/{id}
+///
+/// Update mutable fields on a version (notes, qa_notes).
+pub async fn update(
+    State(state): State<AppState>,
+    Path((_scene_id, id)): Path<(DbId, DbId)>,
+    Json(input): Json<UpdateSceneVideoVersion>,
+) -> AppResult<Json<DataResponse<SceneVideoVersion>>> {
+    let version = SceneVideoVersionRepo::update(&state.pool, id, &input)
+        .await?
+        .ok_or(AppError::Core(CoreError::NotFound {
+            entity: "SceneVideoVersion",
+            id,
+        }))?;
+    Ok(Json(DataResponse { data: version }))
+}
+
 /// DELETE /api/v1/scenes/{scene_id}/versions/{id}
 ///
 /// Soft-deletes a version. Returns 409 if the version is currently marked as final.
@@ -757,6 +774,7 @@ pub struct ClipBrowseItem {
     pub frame_rate: Option<f64>,
     pub preview_path: Option<String>,
     pub is_final: bool,
+    pub notes: Option<String>,
     pub qa_status: String,
     pub qa_rejection_reason: Option<String>,
     pub qa_notes: Option<String>,
@@ -812,6 +830,11 @@ pub async fn browse_clips(
             OR st.name ILIKE '%' || $9 || '%' \
             OR t.name ILIKE '%' || $9 || '%' \
             OR p.name ILIKE '%' || $9 || '%' \
+          )) \
+          AND ($10::text IS NULL OR svv.id NOT IN ( \
+            SELECT et.entity_id FROM entity_tags et \
+            WHERE et.entity_type = 'scene_video_version' \
+              AND et.tag_id = ANY(string_to_array($10, ',')::bigint[]) \
           ))";
 
     let count_sql = format!("SELECT COUNT(*) {base_from}");
@@ -825,6 +848,7 @@ pub async fn browse_clips(
         .bind(show_disabled)
         .bind(&params.tag_ids)
         .bind(&params.search)
+        .bind(&params.exclude_tag_ids)
         .fetch_one(&state.pool)
         .await?;
 
@@ -832,7 +856,7 @@ pub async fn browse_clips(
         "SELECT \
             svv.id, svv.scene_id, svv.version_number, svv.source, svv.file_path, \
             svv.file_size_bytes, svv.duration_secs, svv.width, svv.height, svv.frame_rate, \
-            svv.preview_path, svv.is_final, svv.qa_status, svv.qa_rejection_reason, svv.qa_notes, \
+            svv.preview_path, svv.is_final, svv.notes, svv.qa_status, svv.qa_rejection_reason, svv.qa_notes, \
             svv.generation_snapshot, svv.file_purged, svv.created_at, \
             COALESCE((SELECT COUNT(*) FROM frame_annotations fa WHERE fa.version_id = svv.id), 0) AS annotation_count, \
             c.id AS avatar_id, c.name AS avatar_name, \
@@ -842,7 +866,7 @@ pub async fn browse_clips(
             p.id AS project_id, p.name AS project_name \
         {base_from} \
         ORDER BY svv.created_at DESC \
-        LIMIT $10 OFFSET $11"
+        LIMIT $11 OFFSET $12"
     );
     let items = sqlx::query_as::<_, ClipBrowseItem>(&items_sql)
         .bind(params.project_id)
@@ -854,6 +878,7 @@ pub async fn browse_clips(
         .bind(show_disabled)
         .bind(&params.tag_ids)
         .bind(&params.search)
+        .bind(&params.exclude_tag_ids)
         .bind(limit as i64)
         .bind(offset as i64)
         .fetch_all(&state.pool)
@@ -873,8 +898,10 @@ pub struct BrowseClipsParams {
     pub source: Option<String>,
     pub qa_status: Option<String>,
     pub show_disabled: Option<bool>,
-    /// Comma-separated tag IDs for label filtering.
+    /// Comma-separated tag IDs for label filtering (include).
     pub tag_ids: Option<String>,
+    /// Comma-separated tag IDs to exclude from results.
+    pub exclude_tag_ids: Option<String>,
     /// Free-text search across avatar name, scene type, track, project.
     pub search: Option<String>,
     pub limit: Option<i32>,
@@ -911,7 +938,7 @@ pub struct BulkClipAction {
 /// Build the shared WHERE clause used by both browse and bulk operations.
 ///
 /// Returns the clause fragment (starting with `FROM ...`) and expects
-/// parameters $1..$9 bound in the same order as `browse_clips`.
+/// parameters $1..$10 bound in the same order as `browse_clips`.
 fn clip_browse_where_clause() -> &'static str {
     "FROM scene_video_versions svv \
      JOIN scenes sc ON sc.id = svv.scene_id AND sc.deleted_at IS NULL \
@@ -937,6 +964,11 @@ fn clip_browse_where_clause() -> &'static str {
          OR st.name ILIKE '%' || $9 || '%' \
          OR t.name ILIKE '%' || $9 || '%' \
          OR p.name ILIKE '%' || $9 || '%' \
+       )) \
+       AND ($10::text IS NULL OR svv.id NOT IN ( \
+         SELECT et.entity_id FROM entity_tags et \
+         WHERE et.entity_type = 'scene_video_version' \
+           AND et.tag_id = ANY(string_to_array($10, ',')::bigint[]) \
        ))"
 }
 
@@ -969,7 +1001,7 @@ async fn bulk_update_clip_status(
         let where_clause = clip_browse_where_clause();
         let sql = format!(
             "UPDATE scene_video_versions \
-             SET qa_status = $10, qa_rejection_reason = $11, updated_at = NOW() \
+             SET qa_status = $11, qa_rejection_reason = $12, updated_at = NOW() \
              WHERE id IN (SELECT svv.id {where_clause})"
         );
         let result = sqlx::query(&sql)
@@ -982,6 +1014,7 @@ async fn bulk_update_clip_status(
             .bind(show_disabled)
             .bind(&filters.tag_ids)
             .bind(&filters.search)
+            .bind(&filters.exclude_tag_ids)
             .bind(new_status)
             .bind(rejection_reason)
             .execute(pool)

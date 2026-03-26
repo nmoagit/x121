@@ -12,6 +12,7 @@ export { MultiFilterBar } from "./MultiFilterBar";
 export type { FilterConfig, FilterOption } from "./MultiFilterBar";
 export { MultiSelect } from "./MultiSelect";
 export type { MultiSelectOption } from "./MultiSelect";
+export { Pagination } from "./Pagination";
 export { ProgressiveImage } from "./ProgressiveImage";
 export { RemovableChip } from "./RemovableChip";
 export { SearchInput } from "./SearchInput";

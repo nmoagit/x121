@@ -61,5 +61,13 @@ export function formatDuration(seconds: number): string {
   if (h > 0) {
     return `${h}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
   }
-  return `${m}:${s.toString().padStart(2, "0")}`;
+  return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+}
+
+/**
+ * Pad a frame number to a fixed width (default 5 digits for up to 99999 frames).
+ * Uses non-breaking spaces so monospace fonts keep alignment.
+ */
+export function padFrame(frame: number, width = 5): string {
+  return String(frame).padStart(width, "\u2007"); // figure space (same width as digit in monospace)
 }

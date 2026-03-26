@@ -1,10 +1,14 @@
 /**
- * Single speech entry row with inline edit, status badge, and action buttons (PRD-136).
+ * Single speech entry row with inline edit, status badge, drag handle, and action buttons (PRD-136).
+ * Uses @dnd-kit/sortable for drag-and-drop reordering.
  */
+
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 import { Button } from "@/components/primitives";
 import { ICON_ACTION_BTN, ICON_ACTION_BTN_DANGER, TEXTAREA_BASE } from "@/lib/ui-classes";
-import { ArrowDown, ArrowUp, Check, Edit3, Trash2, XCircle } from "@/tokens/icons";
+import { Check, Edit3, GripVertical, Trash2, XCircle } from "@/tokens/icons";
 
 import { SpeechStatusBadge, isApprovable, isRejectable } from "../components/SpeechStatusBadge";
 import type { AvatarSpeech } from "../types";
@@ -25,10 +29,6 @@ interface SpeechEntryRowProps {
   onDelete: () => void;
   onApprove: () => void;
   onReject: () => void;
-  onMoveUp: () => void;
-  onMoveDown: () => void;
-  isFirst: boolean;
-  isLast: boolean;
   saving: boolean;
 }
 
@@ -48,15 +48,41 @@ export function SpeechEntryRow({
   onDelete,
   onApprove,
   onReject,
-  onMoveUp,
-  onMoveDown,
-  isFirst,
-  isLast,
   saving,
 }: SpeechEntryRowProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: speech.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : undefined,
+    position: "relative" as const,
+    zIndex: isDragging ? 10 : undefined,
+  };
+
   return (
-    <div className="px-[var(--spacing-3)] py-[var(--spacing-2)]">
+    <div ref={setNodeRef} style={style} className="px-[var(--spacing-3)] py-[var(--spacing-2)]">
       <div className="flex items-start gap-[var(--spacing-2)]">
+        {/* Drag handle */}
+        {!isEditing && (
+          <button
+            type="button"
+            className="mt-0.5 cursor-grab touch-none text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] active:cursor-grabbing"
+            {...attributes}
+            {...listeners}
+            aria-label="Drag to reorder"
+          >
+            <GripVertical size={14} />
+          </button>
+        )}
+
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-[var(--spacing-2)]">
             <span className="text-xs font-medium text-[var(--color-text-muted)]">
@@ -90,26 +116,6 @@ export function SpeechEntryRow({
 
         {!isEditing && (
           <div className="flex items-center gap-[var(--spacing-1)] shrink-0">
-            {/* Reorder buttons */}
-            <button
-              type="button"
-              onClick={onMoveUp}
-              disabled={isFirst}
-              className={ICON_ACTION_BTN}
-              aria-label="Move up"
-            >
-              <ArrowUp size={14} />
-            </button>
-            <button
-              type="button"
-              onClick={onMoveDown}
-              disabled={isLast}
-              className={ICON_ACTION_BTN}
-              aria-label="Move down"
-            >
-              <ArrowDown size={14} />
-            </button>
-
             {/* Approval buttons */}
             {isApprovable(speech.status_id) && (
               <button

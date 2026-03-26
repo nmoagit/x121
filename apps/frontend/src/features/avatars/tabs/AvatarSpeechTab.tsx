@@ -282,8 +282,7 @@ export function AvatarSpeechTab({ avatarId, projectId }: AvatarSpeechTabProps) {
               onDelete={actions.setDeleteTarget}
               onApprove={actions.handleApprove}
               onReject={actions.handleReject}
-              onMoveUp={actions.handleMoveUp}
-              onMoveDown={actions.handleMoveDown}
+              onDragReorder={actions.handleDragReorder}
               saving={actions.updateSpeech.isPending}
             />
           ))}

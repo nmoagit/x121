@@ -48,13 +48,34 @@ async fn resolve_ids_from_filters(
         "scene_video_version" => {
             let project_id: Option<DbId> = filters.get("projectId").and_then(|v| v.as_i64());
             let pipeline_id: Option<DbId> = filters.get("pipelineId").and_then(|v| v.as_i64());
-            let scene_type: Option<String> = filters.get("sceneType").and_then(|v| v.as_str()).map(|s| s.to_string());
-            let track: Option<String> = filters.get("track").and_then(|v| v.as_str()).map(|s| s.to_string());
-            let source: Option<String> = filters.get("source").and_then(|v| v.as_str()).map(|s| s.to_string());
-            let qa_status: Option<String> = filters.get("qaStatus").and_then(|v| v.as_str()).map(|s| s.to_string());
-            let show_disabled = filters.get("showDisabled").and_then(|v| v.as_bool()).unwrap_or(false);
-            let tag_ids: Option<String> = filters.get("tagIds").and_then(|v| v.as_str()).map(|s| s.to_string());
-            let search: Option<String> = filters.get("search").and_then(|v| v.as_str()).map(|s| s.to_string());
+            let scene_type: Option<String> = filters
+                .get("sceneType")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string());
+            let track: Option<String> = filters
+                .get("track")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string());
+            let source: Option<String> = filters
+                .get("source")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string());
+            let qa_status: Option<String> = filters
+                .get("qaStatus")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string());
+            let show_disabled = filters
+                .get("showDisabled")
+                .and_then(|v| v.as_bool())
+                .unwrap_or(false);
+            let tag_ids: Option<String> = filters
+                .get("tagIds")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string());
+            let search: Option<String> = filters
+                .get("search")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string());
 
             let sql = "SELECT svv.id \
                 FROM scene_video_versions svv \
@@ -101,12 +122,30 @@ async fn resolve_ids_from_filters(
         "media_variant" => {
             let project_id: Option<DbId> = filters.get("projectId").and_then(|v| v.as_i64());
             let pipeline_id: Option<DbId> = filters.get("pipelineId").and_then(|v| v.as_i64());
-            let status_id: Option<String> = filters.get("statusId").and_then(|v| v.as_str()).map(|s| s.to_string());
-            let provenance: Option<String> = filters.get("provenance").and_then(|v| v.as_str()).map(|s| s.to_string());
-            let variant_type: Option<String> = filters.get("variantType").and_then(|v| v.as_str()).map(|s| s.to_string());
-            let show_disabled = filters.get("showDisabled").and_then(|v| v.as_bool()).unwrap_or(false);
-            let tag_ids: Option<String> = filters.get("tagIds").and_then(|v| v.as_str()).map(|s| s.to_string());
-            let search: Option<String> = filters.get("search").and_then(|v| v.as_str()).map(|s| s.to_string());
+            let status_id: Option<String> = filters
+                .get("statusId")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string());
+            let provenance: Option<String> = filters
+                .get("provenance")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string());
+            let variant_type: Option<String> = filters
+                .get("variantType")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string());
+            let show_disabled = filters
+                .get("showDisabled")
+                .and_then(|v| v.as_bool())
+                .unwrap_or(false);
+            let tag_ids: Option<String> = filters
+                .get("tagIds")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string());
+            let search: Option<String> = filters
+                .get("search")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string());
 
             let sql = "SELECT iv.id \
                 FROM media_variants iv \

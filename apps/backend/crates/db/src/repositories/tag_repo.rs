@@ -37,8 +37,9 @@ impl TagRepo {
 
     /// Create a tag or return the existing one if the normalized name already exists.
     ///
-    /// Uses `ON CONFLICT` for idempotent creation. The `display_name` is updated
-    /// on conflict so the most recent casing is preserved.
+    /// First checks for an existing tag by name. If found with a NULL pipeline_id
+    /// and a non-NULL pipeline_id is requested, promotes the tag to the pipeline.
+    /// Only inserts a new row if no tag with that name exists at all.
     pub async fn create_or_get(
         pool: &PgPool,
         display_name: &str,
@@ -49,6 +50,32 @@ impl TagRepo {
         let normalized = normalize_tag_name(display_name);
         let namespace = extract_namespace(&normalized);
 
+        // Check for existing tag by name (any pipeline).
+        let existing = sqlx::query_as::<_, Tag>(&format!(
+            "SELECT {TAG_COLUMNS} FROM tags WHERE name = $1 LIMIT 1"
+        ))
+        .bind(&normalized)
+        .fetch_optional(pool)
+        .await?;
+
+        if let Some(tag) = existing {
+            // If the tag exists with NULL pipeline_id and we have a specific one, promote it.
+            if tag.pipeline_id.is_none() && pipeline_id.is_some() {
+                let updated = sqlx::query_as::<_, Tag>(&format!(
+                    "UPDATE tags SET pipeline_id = $2, display_name = $3 \
+                     WHERE id = $1 RETURNING {TAG_COLUMNS}"
+                ))
+                .bind(tag.id)
+                .bind(pipeline_id)
+                .bind(display_name)
+                .fetch_one(pool)
+                .await?;
+                return Ok(updated);
+            }
+            return Ok(tag);
+        }
+
+        // No existing tag — insert new.
         let query = format!(
             "INSERT INTO tags (name, display_name, namespace, color, created_by, pipeline_id) \
              VALUES ($1, $2, $3, $4, $5, $6) \
@@ -83,8 +110,8 @@ impl TagRepo {
         let query = format!(
             "SELECT {TAG_COLUMNS} FROM tags \
              WHERE ($1::text IS NULL OR namespace = $1) \
-               AND ($2::bigint IS NULL OR pipeline_id = $2) \
-             ORDER BY usage_count DESC, name \
+               AND ($2::bigint IS NULL OR pipeline_id IS NULL OR pipeline_id = $2) \
+             ORDER BY name, usage_count DESC \
              LIMIT $3 OFFSET $4"
         );
         sqlx::query_as::<_, Tag>(&query)
@@ -115,7 +142,7 @@ impl TagRepo {
              FROM tags \
              WHERE name LIKE $1 \
                AND ($3::bigint IS NULL OR pipeline_id = $3) \
-             ORDER BY usage_count DESC, name \
+             ORDER BY name, usage_count DESC \
              LIMIT $2",
         )
         .bind(&pattern)

@@ -1,19 +1,37 @@
+import { useCallback, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+
 import { api } from "@/lib/api";
 import { cn } from "@/lib/cn";
 import { Chip } from "@/components/primitives/Chip";
-import { useCallback, useEffect, useState } from "react";
+import { Settings } from "@/tokens/icons";
+
+import { LabelManagerModal } from "./LabelManagerModal";
 import { TagChip } from "./TagChip";
 import type { TagWithCount } from "./TagChip";
 
+/** Shared query key factory for tags. Invalidate with `queryClient.invalidateQueries({ queryKey: tagKeys.list() })`. */
+export const tagKeys = {
+  list: (pipelineId?: number, namespace?: string) =>
+    ["tags", "list", pipelineId ?? null, namespace ?? null] as const,
+};
+
 type FilterLogic = "and" | "or";
+
+/** Tag filter state: neutral (not filtered), include (show only), exclude (hide). */
+type TagFilterState = "neutral" | "include" | "exclude";
 
 interface TagFilterProps {
   /** Available tags to display. If not provided, fetched from the API. */
   availableTags?: TagWithCount[];
-  /** Currently active tag filter IDs. */
+  /** Currently included tag filter IDs. */
   selectedTagIds: number[];
-  /** Called when the selection changes. */
+  /** Called when the include selection changes. */
   onSelectionChange: (tagIds: number[]) => void;
+  /** Currently excluded tag filter IDs. */
+  excludedTagIds?: number[];
+  /** Called when the exclude selection changes. */
+  onExclusionChange?: (tagIds: number[]) => void;
   /** Current filter logic. Defaults to "or". */
   logic?: FilterLogic;
   /** Called when the filter logic changes. */
@@ -28,85 +46,104 @@ interface TagFilterProps {
 /**
  * Tag filter panel for list views and search.
  *
- * Shows available tags as clickable chips. Selected tags are visually
- * highlighted and can be toggled on/off. An AND/OR logic toggle controls
- * whether entities must match all selected tags or any of them.
+ * Tags cycle through three states on click:
+ * - **Neutral** → not filtering
+ * - **Include** (active/green) → show items with this tag
+ * - **Exclude** (red/strikethrough) → hide items with this tag
+ *
+ * Click cycles: neutral → include → exclude → neutral.
  */
 export function TagFilter({
   availableTags: propTags,
   selectedTagIds,
   onSelectionChange,
+  excludedTagIds = [],
+  onExclusionChange,
   logic = "or",
   onLogicChange,
   namespace,
   pipelineId,
   className,
 }: TagFilterProps) {
-  const [fetchedTags, setFetchedTags] = useState<TagWithCount[]>([]);
-  const [loading, setLoading] = useState(false);
+  const queryClient = useQueryClient();
+  const [managerOpen, setManagerOpen] = useState(false);
 
-  // Only show tags with usage_count > 0 (or currently selected)
+  const { data: fetchedTags = [], isLoading: loading } = useQuery({
+    queryKey: tagKeys.list(pipelineId, namespace),
+    queryFn: () => {
+      const params = new URLSearchParams();
+      if (namespace) params.set("namespace", namespace);
+      if (pipelineId) params.set("pipeline_id", String(pipelineId));
+      params.set("limit", "200");
+      return api.get<TagWithCount[]>(`/tags?${params.toString()}`);
+    },
+    enabled: !propTags,
+  });
+
   const tags = (propTags ?? fetchedTags).filter(
-    (t) => t.usage_count > 0 || selectedTagIds.includes(t.id),
+    (t) => t.usage_count > 0 || selectedTagIds.includes(t.id) || excludedTagIds.includes(t.id),
   );
 
-  // Fetch available tags from the API if not provided via props.
-  useEffect(() => {
-    if (propTags) return;
+  /** Get the current filter state for a tag. */
+  const getTagState = useCallback(
+    (tagId: number): TagFilterState => {
+      if (selectedTagIds.includes(tagId)) return "include";
+      if (excludedTagIds.includes(tagId)) return "exclude";
+      return "neutral";
+    },
+    [selectedTagIds, excludedTagIds],
+  );
 
-    let cancelled = false;
-    setLoading(true);
-
-    const params = new URLSearchParams();
-    if (namespace) params.set("namespace", namespace);
-    if (pipelineId) params.set("pipeline_id", String(pipelineId));
-    params.set("limit", "100");
-
-    api
-      .get<TagWithCount[]>(`/tags?${params.toString()}`)
-      .then((data) => {
-        if (!cancelled) setFetchedTags(data);
-      })
-      .catch(() => {
-        if (!cancelled) setFetchedTags([]);
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [propTags, namespace, pipelineId]);
-
-  const toggleTag = useCallback(
+  /** Cycle tag state: neutral → include → exclude → neutral. */
+  const cycleTag = useCallback(
     (tagId: number) => {
-      if (selectedTagIds.includes(tagId)) {
-        onSelectionChange(selectedTagIds.filter((id) => id !== tagId));
-      } else {
+      const state = getTagState(tagId);
+      if (state === "neutral") {
+        // → include
         onSelectionChange([...selectedTagIds, tagId]);
+      } else if (state === "include") {
+        // → exclude (if exclusion is supported, otherwise → neutral)
+        onSelectionChange(selectedTagIds.filter((id) => id !== tagId));
+        if (onExclusionChange) {
+          onExclusionChange([...excludedTagIds, tagId]);
+        }
+      } else {
+        // exclude → neutral
+        if (onExclusionChange) {
+          onExclusionChange(excludedTagIds.filter((id) => id !== tagId));
+        }
       }
     },
-    [selectedTagIds, onSelectionChange],
+    [getTagState, selectedTagIds, excludedTagIds, onSelectionChange, onExclusionChange],
   );
 
   const clearAll = useCallback(() => {
     onSelectionChange([]);
-  }, [onSelectionChange]);
+    onExclusionChange?.([]);
+  }, [onSelectionChange, onExclusionChange]);
 
-  const selectedSet = new Set(selectedTagIds);
-  const hasSelection = selectedTagIds.length > 0;
+  const hasSelection = selectedTagIds.length > 0 || excludedTagIds.length > 0;
 
   return (
     <div className={cn("flex flex-col gap-2", className)}>
       {/* Header: logic toggle + clear */}
       <div className="flex items-center justify-between">
-        <span className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide">
-          Tags
-        </span>
+        <div className="flex items-center gap-1.5">
+          <span className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide">
+            Tags
+          </span>
+          <button
+            type="button"
+            onClick={() => setManagerOpen(true)}
+            className="p-0.5 rounded text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[#161b22] transition-colors"
+            title="Manage tags"
+          >
+            <Settings size={12} />
+          </button>
+        </div>
         <div className="flex items-center gap-2">
           {/* AND/OR toggle */}
-          {onLogicChange && hasSelection && (
+          {onLogicChange && selectedTagIds.length > 0 && (
             <div
               className={cn(
                 "flex items-center rounded-[var(--radius-full)]",
@@ -162,15 +199,21 @@ export function TagFilter({
       ) : (
         <div className="flex flex-wrap gap-1.5">
           {tags.map((tag) => {
-            const isSelected = selectedSet.has(tag.id);
+            const state = getTagState(tag.id);
             return (
               <Chip
                 key={tag.id}
                 size="sm"
-                color={tag.color}
-                active={isSelected}
-                onClick={() => toggleTag(tag.id)}
+                color={state === "exclude" ? undefined : tag.color}
+                active={state === "include"}
+                onClick={() => cycleTag(tag.id)}
+                className={cn(
+                  state === "exclude" && "border-red-500/60 text-red-400/70 line-through",
+                )}
               >
+                {state === "exclude" && (
+                  <span className="text-red-400 no-underline mr-0.5">−</span>
+                )}
                 {tag.display_name}
                 <span className="text-[0.6rem] leading-none opacity-50">{tag.usage_count}</span>
               </Chip>
@@ -182,14 +225,46 @@ export function TagFilter({
       {/* Active filters summary */}
       {hasSelection && (
         <div className="flex flex-wrap items-center gap-1.5 pt-1 border-t border-[var(--color-border-default)]">
-          <span className="text-xs text-[var(--color-text-muted)] mr-1">Active:</span>
-          {selectedTagIds.map((tagId) => {
-            const tag = tags.find((t) => t.id === tagId);
-            if (!tag) return null;
-            return <TagChip key={tag.id} tag={tag} size="sm" onRemove={() => toggleTag(tag.id)} />;
-          })}
+          {selectedTagIds.length > 0 && (
+            <>
+              <span className="text-xs text-[var(--color-text-muted)] mr-1">Include:</span>
+              {selectedTagIds.map((tagId) => {
+                const tag = tags.find((t) => t.id === tagId);
+                if (!tag) return null;
+                return <TagChip key={tag.id} tag={tag} size="sm" onRemove={() => cycleTag(tag.id)} />;
+              })}
+            </>
+          )}
+          {excludedTagIds.length > 0 && (
+            <>
+              <span className="text-xs text-red-400/70 mr-1">{selectedTagIds.length > 0 ? "| Exclude:" : "Exclude:"}</span>
+              {excludedTagIds.map((tagId) => {
+                const tag = tags.find((t) => t.id === tagId);
+                if (!tag) return null;
+                return (
+                  <TagChip
+                    key={tag.id}
+                    tag={{ ...tag, color: null }}
+                    size="sm"
+                    onRemove={() => cycleTag(tag.id)}
+                    className="line-through text-red-400/70"
+                  />
+                );
+              })}
+            </>
+          )}
         </div>
       )}
+
+      {/* Tag manager modal */}
+      <LabelManagerModal
+        open={managerOpen}
+        onClose={() => {
+          setManagerOpen(false);
+          queryClient.invalidateQueries({ queryKey: tagKeys.list(pipelineId, namespace) });
+        }}
+        pipelineId={pipelineId}
+      />
     </div>
   );
 }

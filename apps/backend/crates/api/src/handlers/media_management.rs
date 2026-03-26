@@ -226,6 +226,20 @@ pub struct SeedSlotEntry {
     pub media_slot_label: Option<String>,
 }
 
+/// One image type slot entry: an image_type that needs a seed image.
+#[derive(Debug, Clone, Serialize, sqlx::FromRow)]
+pub struct ImageSlotEntry {
+    pub image_type_id: DbId,
+    pub image_type_name: String,
+    pub source_track_id: DbId,
+    pub source_track_name: String,
+    pub output_track_id: Option<DbId>,
+    pub output_track_name: Option<String>,
+    pub workflow_name: Option<String>,
+    pub media_slot_id: Option<DbId>,
+    pub media_slot_label: Option<String>,
+}
+
 /// A seed slot with its current avatar assignment (if any).
 #[derive(Debug, Serialize)]
 pub struct SeedSlotWithAssignment {
@@ -236,6 +250,13 @@ pub struct SeedSlotWithAssignment {
     pub workflow_name: Option<String>,
     pub media_slot_id: Option<DbId>,
     pub assignment: Option<AvatarMediaAssignment>,
+    /// Discriminator: `"scene"` for scene-based slots, `"image"` for image-type slots.
+    pub slot_kind: String,
+    /// For image type slots: the output track info.
+    pub output_track_id: Option<DbId>,
+    pub output_track_name: Option<String>,
+    /// For image type slots: the image type ID.
+    pub image_type_id: Option<DbId>,
 }
 
 /// Aggregated seed summary for an avatar — every scene_type × track that needs a seed.
@@ -246,13 +267,13 @@ pub struct SeedSummary {
 
 /// GET /api/v1/avatars/{avatar_id}/seed-summary
 ///
-/// Returns every scene_type × track combination for the avatar's pipeline,
+/// Returns every scene_type × track combination for the avatar's enabled scenes,
 /// paired with the avatar's current media assignment (if any).
 pub async fn get_seed_summary(
     State(state): State<AppState>,
     Path(avatar_id): Path<DbId>,
 ) -> AppResult<Json<DataResponse<SeedSummary>>> {
-    // 1. Get all distinct scene_type × track combos from actual scenes for this avatar,
+    // 1. Get all distinct scene_type × track combos from the avatar's enabled scenes,
     //    with their workflow (from track config or scene type) and first media slot.
     let entries: Vec<SeedSlotEntry> = sqlx::query_as(
         "SELECT DISTINCT ON (st.id, COALESCE(t.id, 0))
@@ -275,7 +296,7 @@ pub async fn get_seed_summary(
          LEFT JOIN scene_type_track_configs sttc ON sttc.scene_type_id = st.id AND sttc.track_id = s.track_id
          LEFT JOIN workflows w ON w.id = COALESCE(sttc.workflow_id, st.workflow_id)
          WHERE s.avatar_id = $1 AND s.deleted_at IS NULL
-           -- Exclude scene types disabled at project level (unless re-enabled at avatar level)
+           -- Exclude scene types disabled at project/group/avatar level
            AND COALESCE(
              (SELECT aso.is_enabled FROM avatar_scene_overrides aso
               WHERE aso.avatar_id = s.avatar_id AND aso.scene_type_id = st.id LIMIT 1),
@@ -304,8 +325,73 @@ pub async fn get_seed_summary(
         assignment_map.insert((Some(a.media_slot_id), a.track_id), a);
     }
 
-    // 4. Build the result: one row per scene_type × track.
-    let slots: Vec<SeedSlotWithAssignment> = entries
+    // 4. Fetch image type slots for the avatar's pipeline.
+    let image_entries: Vec<ImageSlotEntry> = sqlx::query_as(
+        "SELECT
+            it.id AS image_type_id,
+            it.name AS image_type_name,
+            COALESCE(it.source_track_id, 0) AS source_track_id,
+            COALESCE(src_t.name, 'Default') AS source_track_name,
+            it.output_track_id,
+            out_t.name AS output_track_name,
+            w.name AS workflow_name,
+            (SELECT wms.id FROM workflow_media_slots wms
+             WHERE wms.workflow_id = it.workflow_id
+             ORDER BY wms.sort_order, wms.id LIMIT 1) AS media_slot_id,
+            (SELECT wms.slot_label FROM workflow_media_slots wms
+             WHERE wms.workflow_id = it.workflow_id
+             ORDER BY wms.sort_order, wms.id LIMIT 1) AS media_slot_label
+         FROM image_types it
+         JOIN avatars a ON a.id = $1
+         JOIN projects p ON p.id = a.project_id
+         LEFT JOIN tracks src_t ON src_t.id = it.source_track_id
+         LEFT JOIN tracks out_t ON out_t.id = it.output_track_id
+         LEFT JOIN workflows w ON w.id = it.workflow_id
+         WHERE it.pipeline_id = p.pipeline_id
+           AND it.deleted_at IS NULL
+           AND COALESCE(
+             (SELECT aio.is_enabled FROM avatar_image_overrides aio
+              WHERE aio.avatar_id = a.id AND aio.image_type_id = it.id LIMIT 1),
+             (SELECT gis.is_enabled FROM group_image_settings gis
+              WHERE gis.group_id = a.group_id AND gis.image_type_id = it.id LIMIT 1),
+             (SELECT pis.is_enabled FROM project_image_settings pis
+              WHERE pis.project_id = a.project_id AND pis.image_type_id = it.id LIMIT 1),
+             it.is_active
+           ) = true
+         ORDER BY it.sort_order, it.name",
+    )
+    .bind(avatar_id)
+    .fetch_all(&state.pool)
+    .await?;
+
+    // 5. Build image slots (prepended before scene slots).
+    let mut image_slots: Vec<SeedSlotWithAssignment> = image_entries
+        .into_iter()
+        .map(|e| {
+            let assignment = e.media_slot_id.and_then(|slot_id| {
+                assignment_map
+                    .get(&(Some(slot_id), Some(e.source_track_id)))
+                    .or_else(|| assignment_map.get(&(Some(slot_id), None)))
+                    .cloned()
+            });
+            SeedSlotWithAssignment {
+                scene_type_id: 0,
+                scene_type_name: e.image_type_name,
+                track_id: e.source_track_id,
+                track_name: e.source_track_name,
+                workflow_name: e.workflow_name,
+                media_slot_id: e.media_slot_id,
+                assignment,
+                slot_kind: "image".to_string(),
+                output_track_id: e.output_track_id,
+                output_track_name: e.output_track_name,
+                image_type_id: Some(e.image_type_id),
+            }
+        })
+        .collect();
+
+    // 6. Build scene slots.
+    let scene_slots: Vec<SeedSlotWithAssignment> = entries
         .into_iter()
         .map(|e| {
             // Try to find assignment for this slot+track, then fallback to slot-only
@@ -323,9 +409,17 @@ pub async fn get_seed_summary(
                 workflow_name: e.workflow_name,
                 media_slot_id: e.media_slot_id,
                 assignment,
+                slot_kind: "scene".to_string(),
+                output_track_id: None,
+                output_track_name: None,
+                image_type_id: None,
             }
         })
         .collect();
+
+    // Image slots first, then scene slots.
+    image_slots.extend(scene_slots);
+    let slots = image_slots;
 
     Ok(Json(DataResponse {
         data: SeedSummary { slots },
@@ -468,7 +562,7 @@ pub async fn auto_assign_seeds(
     Path(avatar_id): Path<DbId>,
     Json(input): Json<AutoAssignInput>,
 ) -> AppResult<Json<DataResponse<AutoAssignResult>>> {
-    // 1. Get all seed slots from actual scenes — same query as get_seed_summary.
+    // 1. Get all seed slots from avatar's enabled scenes — same query as get_seed_summary.
     let entries: Vec<SeedSlotEntry> = sqlx::query_as(
         "SELECT DISTINCT ON (st.id, COALESCE(t.id, 0))
             st.id AS scene_type_id,

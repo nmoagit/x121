@@ -234,7 +234,7 @@ pub async fn bulk_apply(
         &input.entity_ids,
         &input.tag_names,
         Some(auth.user_id),
-        None, // pipeline_id not available in bulk context
+        input.pipeline_id,
     )
     .await?;
 
