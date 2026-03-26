@@ -7,26 +7,9 @@
 import type { ReactNode } from "react";
 
 import { Toggle } from "@/components/primitives";
+import { CATALOGUE_SOURCE_COLORS, CATALOGUE_SOURCE_LABELS } from "@/lib/setting-source";
 
 import type { EffectiveImageSetting } from "./types";
-
-/* --------------------------------------------------------------------------
-   Source color mapping
-   -------------------------------------------------------------------------- */
-
-const SOURCE_COLORS: Record<string, string> = {
-  image_type: "text-[var(--color-text-muted)]",
-  project: "text-cyan-400",
-  group: "text-green-400",
-  avatar: "text-orange-400",
-};
-
-const SOURCE_LABELS: Record<string, string> = {
-  image_type: "default",
-  project: "project",
-  group: "group",
-  avatar: "model",
-};
 
 /* --------------------------------------------------------------------------
    Props
@@ -63,8 +46,8 @@ export function ImageSettingRow({ row, onToggle, isPending, actions }: ImageSett
 
       {/* Source */}
       <td className="px-3 py-1.5 font-mono text-xs">
-        <span className={SOURCE_COLORS[row.source] ?? "text-[var(--color-text-muted)]"}>
-          {SOURCE_LABELS[row.source] ?? row.source}
+        <span className={CATALOGUE_SOURCE_COLORS[row.source] ?? "text-[var(--color-text-muted)]"}>
+          {CATALOGUE_SOURCE_LABELS[row.source] ?? row.source}
         </span>
       </td>
 

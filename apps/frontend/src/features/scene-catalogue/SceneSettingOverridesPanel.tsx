@@ -29,7 +29,7 @@ interface SceneSettingOverridesPanelProps {
   sourceName: EffectiveSceneSetting["source"];
   entityLabel: string;
   toggleMutation: UseMutationResult<unknown, unknown, SceneSettingUpdate>;
-  removeMutation: UseMutationResult<unknown, unknown, { sceneTypeId: number; trackId: number | null }>;
+  removeMutation: UseMutationResult<unknown, unknown, { typeId: number; trackId: number | null }>;
   videoCountMap?: Map<string, number>;
 }
 
@@ -65,7 +65,7 @@ export function SceneSettingOverridesPanel({
 
   const handleReset = useCallback(
     (sceneTypeId: number, trackId: number | null) => {
-      removeMutation.mutate({ sceneTypeId, trackId });
+      removeMutation.mutate({ typeId: sceneTypeId, trackId });
     },
     [removeMutation],
   );
@@ -75,7 +75,7 @@ export function SceneSettingOverridesPanel({
 
     const overrides = settings.filter((s) => s.source === sourceName);
     for (const override of overrides) {
-      removeMutation.mutate({ sceneTypeId: override.scene_type_id, trackId: override.track_id });
+      removeMutation.mutate({ typeId: override.scene_type_id, trackId: override.track_id });
     }
     setShowResetAll(false);
   }, [settings, sourceName, removeMutation]);

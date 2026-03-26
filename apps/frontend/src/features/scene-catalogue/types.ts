@@ -2,6 +2,8 @@
  * Scene catalogue & track management types (PRD-111).
  */
 
+import { catalogueSettingUrl } from "@/lib/setting-source";
+
 export interface Track {
   id: number;
   name: string;
@@ -122,21 +124,8 @@ export interface UpdateTrack {
    URL helper: build scene-setting toggle/delete URL with optional track
    -------------------------------------------------------------------------- */
 
-/**
- * Builds the API URL for a single scene setting toggle or delete.
- *
- * @param basePath - e.g. `/projects/5/scene-settings` or `/avatars/12/scene-settings`
- * @param sceneTypeId - the scene type to target
- * @param trackId - optional track qualifier (null targets the scene_type level)
- */
-export function sceneSettingUrl(
-  basePath: string,
-  sceneTypeId: number,
-  trackId: number | null | undefined,
-): string {
-  const base = `${basePath}/${sceneTypeId}`;
-  return trackId != null ? `${base}/tracks/${trackId}` : base;
-}
+/** Alias for backward compatibility — delegates to shared `catalogueSettingUrl`. */
+export const sceneSettingUrl = catalogueSettingUrl;
 
 /* --------------------------------------------------------------------------
    Grouping utility: annotate backend-expanded rows with visual group info

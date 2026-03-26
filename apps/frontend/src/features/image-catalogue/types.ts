@@ -5,6 +5,8 @@
  * source/output track associations, prompt templates, and generation params.
  */
 
+import { catalogueSettingUrl } from "@/lib/setting-source";
+
 import type { Track } from "@/features/scene-catalogue/types";
 
 /* --------------------------------------------------------------------------
@@ -165,18 +167,5 @@ export interface ImageSettingUpdate {
    URL helper: build image-setting toggle/delete URL with optional track
    -------------------------------------------------------------------------- */
 
-/**
- * Builds the API URL for a single image setting toggle or delete.
- *
- * @param basePath - e.g. `/projects/5/image-settings` or `/avatars/12/image-settings`
- * @param imageTypeId - the image type to target
- * @param trackId - optional track qualifier (null targets the image_type level)
- */
-export function imageSettingUrl(
-  basePath: string,
-  imageTypeId: number,
-  trackId: number | null | undefined,
-): string {
-  const base = `${basePath}/${imageTypeId}`;
-  return trackId != null ? `${base}/tracks/${trackId}` : base;
-}
+/** Alias for backward compatibility — delegates to shared `catalogueSettingUrl`. */
+export const imageSettingUrl = catalogueSettingUrl;

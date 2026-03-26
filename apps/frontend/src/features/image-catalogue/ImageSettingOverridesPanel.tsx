@@ -27,7 +27,7 @@ interface ImageSettingOverridesPanelProps {
   sourceName: EffectiveImageSetting["source"];
   entityLabel: string;
   toggleMutation: UseMutationResult<unknown, unknown, ImageSettingUpdate>;
-  removeMutation: UseMutationResult<unknown, unknown, { imageTypeId: number; trackId: number | null }>;
+  removeMutation: UseMutationResult<unknown, unknown, { typeId: number; trackId: number | null }>;
 }
 
 /* --------------------------------------------------------------------------
@@ -59,7 +59,7 @@ export function ImageSettingOverridesPanel({
 
   const handleReset = useCallback(
     (imageTypeId: number, trackId: number | null) => {
-      removeMutation.mutate({ imageTypeId, trackId });
+      removeMutation.mutate({ typeId: imageTypeId, trackId });
     },
     [removeMutation],
   );
@@ -69,7 +69,7 @@ export function ImageSettingOverridesPanel({
 
     const overrides = settings.filter((s) => s.source === sourceName);
     for (const override of overrides) {
-      removeMutation.mutate({ imageTypeId: override.image_type_id, trackId: override.track_id });
+      removeMutation.mutate({ typeId: override.image_type_id, trackId: override.track_id });
     }
     setShowResetAll(false);
   }, [settings, sourceName, removeMutation]);

@@ -6,6 +6,7 @@
  */
 
 import { cn } from "@/lib/cn";
+import { CATALOGUE_SOURCE_CONFIG } from "@/lib/setting-source";
 
 import type { EffectiveSceneSetting } from "./types";
 
@@ -15,16 +16,9 @@ import type { EffectiveSceneSetting } from "./types";
 
 type SettingSource = EffectiveSceneSetting["source"];
 
-const SOURCE_CONFIG: Record<SettingSource, { label: string; color: string }> = {
-  scene_type: { label: "Default", color: "text-[var(--color-text-muted)]" },
-  project: { label: "Project", color: "text-cyan-400" },
-  group: { label: "Group", color: "text-green-400" },
-  avatar: { label: "Model", color: "text-orange-400" },
-};
-
 /** Returns the human-readable label for a setting source. */
 export function sourceLabel(source: SettingSource): string {
-  return SOURCE_CONFIG[source].label;
+  return CATALOGUE_SOURCE_CONFIG[source]?.label ?? source;
 }
 
 /* --------------------------------------------------------------------------
@@ -36,7 +30,7 @@ interface SourceBadgeProps {
 }
 
 export function SourceBadge({ source }: SourceBadgeProps) {
-  const config = SOURCE_CONFIG[source];
+  const config = CATALOGUE_SOURCE_CONFIG[source] ?? { label: source, color: "text-[var(--color-text-muted)]" };
 
   return (
     <span className={cn("font-mono text-xs", config.color)}>
