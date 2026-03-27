@@ -32,6 +32,12 @@ pub struct SceneVideoVersion {
     pub generation_snapshot: Option<serde_json::Value>,
     pub content_hash: Option<String>,
     pub file_purged: bool,
+    /// Self-referencing FK to the approved clip this was derived from.
+    /// NULL for non-derived clips (e.g., LoRA training chunks).
+    pub parent_version_id: Option<DbId>,
+    /// Sequential ordering for derived clips (e.g., chunk 0, 1, 2...).
+    /// NULL for non-derived clips.
+    pub clip_index: Option<i32>,
     pub deleted_at: Option<Timestamp>,
     pub created_at: Timestamp,
     pub updated_at: Timestamp,
@@ -52,6 +58,10 @@ pub struct CreateSceneVideoVersion {
     pub notes: Option<String>,
     pub generation_snapshot: Option<serde_json::Value>,
     pub content_hash: Option<String>,
+    /// Self-referencing FK to the parent clip this was derived from.
+    pub parent_version_id: Option<DbId>,
+    /// Sequential ordering for derived clips (chunk index).
+    pub clip_index: Option<i32>,
 }
 
 /// DTO for updating a scene video version. All fields optional.

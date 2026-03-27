@@ -1,28 +1,25 @@
 /**
  * Scene type editor form (PRD-23).
  *
- * Provides a form for creating or editing scene type configurations,
- * including basic info, prompt templates, duration settings, and variants.
+ * Compact modal form for creating/editing scene type core properties.
+ * Includes read-only summary of workflow, prompt, and video settings
+ * with links to switch to the relevant tab for editing.
  */
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
-import { Card, CardBody, CardHeader } from "@/components/composite/Card";
 import { Button } from "@/components/primitives/Button";
 import { Input } from "@/components/primitives/Input";
-import { Select } from "@/components/primitives/Select";
-import { FPS_OPTIONS, RESOLUTION_OPTIONS } from "@/features/video-settings/types";
+import { Toggle } from "@/components/primitives/Toggle";
+import { Stack } from "@/components/layout";
 import { generateSnakeSlug } from "@/lib/format";
-import { SECTION_HEADING } from "@/lib/ui-classes";
+import { TERMINAL_LABEL, TRACK_TEXT_COLORS } from "@/lib/ui-classes";
 
 import { usePipelineContextSafe } from "@/features/pipelines";
+import { useSceneTypePromptDefaults, useWorkflowPromptSlots } from "@/features/prompt-management/hooks/use-prompt-management";
+import { useTrackConfigs } from "@/features/scene-catalogue/hooks/use-track-configs";
 import { useWorkflows } from "@/features/workflow-import";
 
-import {
-  PromptTemplateEditor,
-  type PromptTemplateValues,
-  TEXTAREA_CLASSES,
-} from "./PromptTemplateEditor";
 import type { CreateSceneType, SceneType } from "./types";
 
 /* --------------------------------------------------------------------------
@@ -33,46 +30,22 @@ interface SceneTypeEditorProps {
   sceneType?: SceneType;
   onSave: (data: CreateSceneType) => void;
   onCancel: () => void;
+  /** Navigate to a specific tab (e.g., "workflows", "prompt-defaults", "video-settings"). */
+  onSwitchTab?: (tab: string) => void;
 }
 
 /* --------------------------------------------------------------------------
    Component
    -------------------------------------------------------------------------- */
 
-export function SceneTypeEditor({ sceneType, onSave, onCancel }: SceneTypeEditorProps) {
+export function SceneTypeEditor({ sceneType, onSave, onCancel, onSwitchTab }: SceneTypeEditorProps) {
   const isEdit = sceneType !== undefined;
-  const pipelineCtx = usePipelineContextSafe();
-  const { data: workflows } = useWorkflows(undefined, pipelineCtx?.pipelineId);
+
   const [name, setName] = useState(sceneType?.name ?? "");
-  const [workflowId, setWorkflowId] = useState(
-    sceneType?.workflow_id?.toString() ?? "",
-  );
   const [slug, setSlug] = useState(sceneType?.slug ?? "");
   const [description, setDescription] = useState(sceneType?.description ?? "");
-  const [targetDuration, setTargetDuration] = useState(
-    sceneType?.target_duration_secs?.toString() ?? "",
-  );
-  const [targetFps, setTargetFps] = useState(
-    sceneType?.target_fps?.toString() ?? "",
-  );
-  const [targetResolution, setTargetResolution] = useState(
-    sceneType?.target_resolution ?? "",
-  );
-  const [segmentDuration, setSegmentDuration] = useState(
-    sceneType?.segment_duration_secs?.toString() ?? "",
-  );
-  const [durationTolerance, setDurationTolerance] = useState(
-    sceneType?.duration_tolerance_secs?.toString() ?? "2",
-  );
   const [sortOrder, setSortOrder] = useState(sceneType?.sort_order?.toString() ?? "0");
-  const [prompts, setPrompts] = useState<PromptTemplateValues>({
-    prompt_template: sceneType?.prompt_template ?? "",
-    negative_prompt_template: sceneType?.negative_prompt_template ?? "",
-    prompt_start_clip: sceneType?.prompt_start_clip ?? "",
-    negative_prompt_start_clip: sceneType?.negative_prompt_start_clip ?? "",
-    prompt_continuation_clip: sceneType?.prompt_continuation_clip ?? "",
-    negative_prompt_continuation_clip: sceneType?.negative_prompt_continuation_clip ?? "",
-  });
+  const [isActive, setIsActive] = useState(sceneType?.is_active ?? true);
 
   const isNameEmpty = name.trim() === "";
 
@@ -80,190 +53,211 @@ export function SceneTypeEditor({ sceneType, onSave, onCancel }: SceneTypeEditor
     e.preventDefault();
     if (isNameEmpty) return;
 
-    const data: CreateSceneType = {
+    onSave({
       name: name.trim(),
       slug: slug.trim() || generateSnakeSlug(name.trim()),
       description: description.trim() || null,
-      workflow_id: workflowId ? Number(workflowId) : null,
-      target_duration_secs: targetDuration ? Number.parseInt(targetDuration, 10) : null,
-      target_fps: targetFps ? Number.parseInt(targetFps, 10) : null,
-      target_resolution: targetResolution || null,
-      segment_duration_secs: segmentDuration ? Number.parseInt(segmentDuration, 10) : null,
-      duration_tolerance_secs: durationTolerance ? Number.parseInt(durationTolerance, 10) : null,
       sort_order: sortOrder ? Number.parseInt(sortOrder, 10) : null,
-      prompt_template: prompts.prompt_template || null,
-      negative_prompt_template: prompts.negative_prompt_template || null,
-      prompt_start_clip: prompts.prompt_start_clip || null,
-      negative_prompt_start_clip: prompts.negative_prompt_start_clip || null,
-      prompt_continuation_clip: prompts.prompt_continuation_clip || null,
-      negative_prompt_continuation_clip: prompts.negative_prompt_continuation_clip || null,
-    };
-
-    onSave(data);
+      is_active: isActive,
+    });
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-      {/* Basic Info */}
-      <Card>
-        <CardHeader>
-          <h3 className={SECTION_HEADING}>Basic Info</h3>
-        </CardHeader>
-        <CardBody>
-          <div className="flex flex-col gap-4">
-            <Input
-              label="Name"
-              value={name}
-              onChange={(e) => {
-                setName(e.target.value);
-                if (!isEdit) {
-                  setSlug(generateSnakeSlug(e.target.value));
-                }
-              }}
-              placeholder="Scene type name"
-              required
-            />
-            <Input
-              label="Slug"
-              value={slug}
-              onChange={(e) => setSlug(e.target.value)}
-              placeholder="auto-generated"
-              disabled={isEdit}
-            />
-            <div className="flex flex-col gap-1.5">
-              <label
-                htmlFor="description"
-                className="text-sm font-medium text-[var(--color-text-secondary)]"
-              >
-                Description
-              </label>
-              <textarea
-                id="description"
-                rows={3}
-                className={TEXTAREA_CLASSES}
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Optional description"
-              />
-            </div>
-            <Select
-              label="Workflow"
-              value={workflowId}
-              onChange={(val) => setWorkflowId(val)}
-              options={[
-                { value: "", label: "None (no workflow)" },
-                ...(workflows ?? []).map((w) => ({
-                  value: String(w.id),
-                  label: w.name,
-                })),
-              ]}
-            />
+    <form onSubmit={handleSubmit}>
+      <Stack gap={2}>
+        {/* Row 1: Name, Slug, Sort, Active */}
+        <div className="grid grid-cols-[1fr_1fr_64px_auto] gap-2 items-end">
+          <Input label="Name" size="xs" value={name} onChange={(e) => { setName(e.target.value); if (!isEdit) setSlug(generateSnakeSlug(e.target.value)); }} placeholder="Name" required />
+          <Input label="Slug" size="xs" value={slug} onChange={(e) => setSlug(e.target.value)} placeholder="auto" disabled={isEdit} />
+          <Input label="Sort" size="xs" type="number" min={0} value={sortOrder} onChange={(e) => setSortOrder(e.target.value)} />
+          <div className="flex items-center h-[26px]">
+            <Toggle checked={isActive} onChange={setIsActive} label="Active" size="sm" />
           </div>
-        </CardBody>
-      </Card>
+        </div>
 
-      {/* Prompts */}
-      <Card>
-        <CardHeader>
-          <h3 className={SECTION_HEADING}>
-            Prompt Templates
-          </h3>
-        </CardHeader>
-        <CardBody>
-          <PromptTemplateEditor prompts={prompts} onChange={setPrompts} />
-        </CardBody>
-      </Card>
+        {/* Row 2: Description */}
+        <Input label="Description" size="xs" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Optional description" />
 
-      {/* Video & Duration */}
-      <Card>
-        <CardHeader>
-          <h3 className={SECTION_HEADING}>Video & Duration</h3>
-        </CardHeader>
-        <CardBody>
-          <div className="flex flex-col gap-4">
-            <div className="grid grid-cols-3 gap-4">
-              <Input
-                label="Target Duration (s)"
-                type="number"
-                min={1}
-                value={targetDuration}
-                onChange={(e) => setTargetDuration(e.target.value)}
-                placeholder="e.g. 30"
-              />
-              <Select
-                label="FPS"
-                value={targetFps}
-                onChange={(val) => setTargetFps(val)}
-                options={[
-                  { value: "", label: "Not set" },
-                  ...FPS_OPTIONS.map((fps) => ({
-                    value: String(fps),
-                    label: `${fps} fps`,
-                  })),
-                ]}
-              />
-              <Select
-                label="Resolution"
-                value={targetResolution}
-                onChange={(val) => setTargetResolution(val)}
-                options={[
-                  { value: "", label: "Not set" },
-                  ...RESOLUTION_OPTIONS.map((r) => ({
-                    value: r.value,
-                    label: r.label,
-                  })),
-                ]}
-              />
-            </div>
-            <div className="grid grid-cols-3 gap-4">
-              <Input
-                label="Segment (secs)"
-                type="number"
-                min={1}
-                value={segmentDuration}
-                onChange={(e) => setSegmentDuration(e.target.value)}
-                placeholder="e.g. 5"
-              />
-              <Input
-                label="Tolerance (secs)"
-                type="number"
-                min={0}
-                value={durationTolerance}
-                onChange={(e) => setDurationTolerance(e.target.value)}
-                placeholder="2"
-              />
-            </div>
-          </div>
-        </CardBody>
-      </Card>
+        {/* Read-only summary (only for existing scene types) */}
+        {isEdit && sceneType && <ConfigSummary sceneType={sceneType} onSwitchTab={onSwitchTab} />}
 
-      {/* Advanced */}
-      <Card>
-        <CardHeader>
-          <h3 className={SECTION_HEADING}>Advanced</h3>
-        </CardHeader>
-        <CardBody>
-          <div className="grid grid-cols-2 gap-4">
-            <Input
-              label="Sort Order"
-              type="number"
-              min={0}
-              value={sortOrder}
-              onChange={(e) => setSortOrder(e.target.value)}
-            />
-          </div>
-        </CardBody>
-      </Card>
-
-      {/* Actions */}
-      <div className="flex justify-end gap-3">
-        <Button type="button" variant="secondary" onClick={onCancel}>
-          Cancel
-        </Button>
-        <Button type="submit" variant="primary" disabled={isNameEmpty}>
-          {sceneType ? "Save Changes" : "Create Scene Type"}
-        </Button>
-      </div>
+        {/* Actions */}
+        <div className="flex justify-end gap-2 pt-2 border-t border-[var(--color-border-default)]">
+          <Button type="button" variant="secondary" size="sm" onClick={onCancel}>Cancel</Button>
+          <Button type="submit" variant="primary" size="sm" disabled={isNameEmpty}>{isEdit ? "Save" : "Create"}</Button>
+        </div>
+      </Stack>
     </form>
+  );
+}
+
+/* --------------------------------------------------------------------------
+   Tab link button
+   -------------------------------------------------------------------------- */
+
+function TabLink({ label, tab, onSwitchTab }: { label: string; tab: string; onSwitchTab?: (tab: string) => void }) {
+  if (!onSwitchTab) return <span className={TERMINAL_LABEL}>{label}</span>;
+  return (
+    <button
+      type="button"
+      className="font-mono text-[10px] font-medium text-cyan-400 uppercase tracking-wide hover:text-cyan-300 transition-colors cursor-pointer"
+      onClick={() => onSwitchTab(tab)}
+    >
+      {label} →
+    </button>
+  );
+}
+
+/* --------------------------------------------------------------------------
+   Read-only config summary
+   -------------------------------------------------------------------------- */
+
+function ConfigSummary({ sceneType, onSwitchTab }: { sceneType: SceneType; onSwitchTab?: (tab: string) => void }) {
+  const pipelineCtx = usePipelineContextSafe();
+  const { data: workflows } = useWorkflows(undefined, pipelineCtx?.pipelineId);
+  const { data: trackConfigs } = useTrackConfigs(sceneType.id);
+
+  const wfName = (wfId: number | null) => {
+    if (!wfId) return null;
+    return workflows?.find((w) => w.id === wfId)?.name ?? null;
+  };
+
+  const trackWorkflows = useMemo(() => {
+    return (trackConfigs ?? [])
+      .filter((c) => c.workflow_id != null)
+      .map((c) => ({
+        trackName: c.track_name ?? `Track ${c.track_id}`,
+        trackSlug: c.track_slug ?? "",
+        isClothesOff: c.is_clothes_off,
+        workflowName: wfName(c.workflow_id) ?? `#${c.workflow_id}`,
+      }));
+  }, [trackConfigs, workflows]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const fallbackWorkflow = wfName(sceneType.workflow_id);
+  const hasWorkflows = trackWorkflows.length > 0 || !!fallbackWorkflow;
+  const hasVideoSettings = !!(sceneType.target_duration_secs || sceneType.target_fps || sceneType.target_resolution);
+
+  // Get all unique workflow IDs assigned to this scene type
+  const assignedWorkflowIds = useMemo(() => {
+    const ids = new Set<number>();
+    for (const c of trackConfigs ?? []) {
+      if (c.workflow_id != null) ids.add(c.workflow_id);
+    }
+    if (sceneType.workflow_id) ids.add(sceneType.workflow_id);
+    return ids;
+  }, [trackConfigs, sceneType.workflow_id]);
+
+  return (
+    <div className="rounded-[var(--radius-md)] bg-[#0d1117] border border-[var(--color-border-default)]/30 p-2.5 space-y-2.5">
+      {/* Workflows */}
+      <div className="space-y-1">
+        <TabLink label="Workflows" tab="workflows" onSwitchTab={onSwitchTab} />
+        {hasWorkflows ? (
+          <div className="space-y-0.5">
+            {trackWorkflows.map((tw, i) => (
+              <div key={i} className="flex items-center gap-2 font-mono text-[10px]">
+                <span className={TRACK_TEXT_COLORS[tw.trackSlug] ?? "text-[var(--color-text-muted)]"}>{tw.trackName}</span>
+                {tw.isClothesOff && <span className="text-orange-400">[off]</span>}
+                <span className="text-[var(--color-text-muted)] opacity-30">→</span>
+                <span className="text-[var(--color-text-muted)]">{tw.workflowName}</span>
+              </div>
+            ))}
+            {trackWorkflows.length === 0 && fallbackWorkflow && (
+              <div className="font-mono text-[10px] text-[var(--color-text-muted)]">
+                Default: {fallbackWorkflow}
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="font-mono text-[10px] text-orange-400">No workflow assigned</div>
+        )}
+      </div>
+
+      {/* Video settings */}
+      <div className="space-y-1">
+        <TabLink label="Video Settings" tab="video-settings" onSwitchTab={onSwitchTab} />
+        {hasVideoSettings ? (
+          <div className="flex items-center gap-3 font-mono text-[10px] text-[var(--color-text-muted)]">
+            {sceneType.target_duration_secs && <span>{sceneType.target_duration_secs}s</span>}
+            {sceneType.target_fps && <span>{sceneType.target_fps} fps</span>}
+            {sceneType.target_resolution && <span>{sceneType.target_resolution}</span>}
+            {sceneType.segment_duration_secs && <span>seg: {sceneType.segment_duration_secs}s</span>}
+          </div>
+        ) : (
+          <div className="font-mono text-[10px] text-[var(--color-text-muted)]">Using defaults</div>
+        )}
+      </div>
+
+      {/* Prompts — from prompt defaults system */}
+      <div className="space-y-1">
+        <TabLink label="Prompt Defaults" tab="prompt-defaults" onSwitchTab={onSwitchTab} />
+        <PromptDefaultsSummary sceneTypeId={sceneType.id} workflowIds={assignedWorkflowIds} />
+      </div>
+    </div>
+  );
+}
+
+/* --------------------------------------------------------------------------
+   Prompt defaults summary — fetches slot data from the prompt system
+   -------------------------------------------------------------------------- */
+
+function PromptDefaultsSummary({ sceneTypeId, workflowIds }: { sceneTypeId: number; workflowIds: Set<number> }) {
+  const { data: defaults } = useSceneTypePromptDefaults(sceneTypeId);
+
+  // Fetch slots for the first workflow (most common case — one workflow per scene type)
+  const firstWorkflowId = workflowIds.values().next().value ?? 0;
+  const { data: slots } = useWorkflowPromptSlots(firstWorkflowId);
+
+  const entries = useMemo(() => {
+    if (!slots?.length) return [];
+    // Build map of overrides: slot_id → prompt_text
+    const overrideMap = new Map((defaults ?? []).map((d) => [d.prompt_slot_id, d.prompt_text]));
+
+    return slots
+      .filter((s) => s.is_user_editable)
+      .map((s) => {
+        // Use override if exists, otherwise use the slot's default_text
+        const text = overrideMap.get(s.id) ?? s.default_text ?? "";
+        if (!text.trim()) return null;
+        return {
+          label: s.slot_label,
+          nodeId: s.node_id,
+          text,
+          type: s.slot_type as "positive" | "negative",
+          isOverride: overrideMap.has(s.id),
+        };
+      })
+      .filter((e): e is NonNullable<typeof e> => e !== null)
+      .sort((a, b) => {
+        const typeOrder = a.type === "positive" ? 0 : 1;
+        const typeOrderB = b.type === "positive" ? 0 : 1;
+        return typeOrder - typeOrderB;
+      });
+  }, [defaults, slots]);
+
+  if (workflowIds.size === 0) {
+    return <div className="font-mono text-[10px] text-[var(--color-text-muted)]">No workflow — prompts unavailable</div>;
+  }
+
+  if (entries.length === 0) {
+    return <div className="font-mono text-[10px] text-[var(--color-text-muted)]">No prompts configured</div>;
+  }
+
+  return (
+    <div className="space-y-1">
+      {entries.map((p, i) => (
+        <div
+          key={i}
+          className={`font-mono text-[10px] border-l-2 pl-1.5 ${
+            p.type === "positive"
+              ? "text-green-400/60 border-l-green-500/30"
+              : "text-red-400/60 border-l-red-500/30"
+          }`}
+        >
+          <span className="text-[var(--color-text-muted)] opacity-50">{p.label} {p.nodeId}:</span>{" "}
+          {p.text.slice(0, 60)}{p.text.length > 60 ? "…" : ""}
+        </div>
+      ))}
+    </div>
   );
 }

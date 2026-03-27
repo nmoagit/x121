@@ -17,6 +17,7 @@ import {
 import { PROVENANCE } from "@/features/media/types";
 import type { MediaVariant } from "@/features/media/types";
 import { findVariantForTrackWithFallback } from "@/features/media/utils";
+import { useImageTypes } from "@/features/image-catalogue/hooks/use-image-catalogue";
 import { usePipelineContextSafe } from "@/features/pipelines";
 import { usePipeline } from "@/features/pipelines/hooks/use-pipelines";
 import type { SeedSlot } from "@/features/pipelines/types";
@@ -75,10 +76,44 @@ export function useTrackImageActions(avatarId: number, projectId?: number) {
     [activeTracks, imageVariants, isSingleTrack, seedSlotNames],
   );
 
-  const toplessHeroExists = useMemo(
-    () => (imageVariants ? findVariantForTrackWithFallback(imageVariants, "topless", seedSlotNames, false) !== undefined : false),
-    [imageVariants, seedSlotNames],
-  );
+  // Image catalogue: which tracks are generatable and from which source track
+  const { data: imageTypes } = useImageTypes(resolvedPipelineId);
+
+  /** Map of output track slug → image type (for generatable tracks). */
+  const generatableTrackMap = useMemo(() => {
+    const map = new Map<string, { sourceTrackId: number | null; sourceTrackSlug: string | null; hasWorkflow: boolean }>();
+    if (!imageTypes || !tracks) return map;
+    for (const it of imageTypes) {
+      if (!it.is_active || !it.output_track_id) continue;
+      const outputTrack = tracks.find((t) => t.id === it.output_track_id);
+      const sourceTrack = tracks.find((t) => t.id === it.source_track_id);
+      if (outputTrack) {
+        map.set(outputTrack.slug.toLowerCase(), {
+          sourceTrackId: it.source_track_id,
+          sourceTrackSlug: sourceTrack?.slug.toLowerCase() ?? null,
+          hasWorkflow: it.workflow_id != null,
+        });
+      }
+    }
+    return map;
+  }, [imageTypes, tracks]);
+
+  /** Check if a track's source seed image exists. */
+  const sourceSeedExists = useMemo(() => {
+    const map = new Map<string, boolean>();
+    for (const [outputSlug, info] of generatableTrackMap) {
+      if (info.sourceTrackSlug) {
+        const exists = imageVariants
+          ? findVariantForTrackWithFallback(imageVariants, info.sourceTrackSlug, seedSlotNames, false) !== undefined
+          : false;
+        map.set(outputSlug, exists);
+      }
+    }
+    return map;
+  }, [generatableTrackMap, imageVariants, seedSlotNames]);
+
+  // Legacy alias — kept for any other consumers
+  const toplessHeroExists = sourceSeedExists.get("clothed") ?? false;
 
   function handleGenerateTrackImage(trackSlug: string) {
     const existing = imageVariants ? findVariantForTrackWithFallback(imageVariants, trackSlug, seedSlotNames, isSingleTrack) : undefined;
@@ -129,5 +164,9 @@ export function useTrackImageActions(avatarId: number, projectId?: number) {
     handleConfirmedGenerate,
     handleUploadTrackImage,
     generating: generateVariants.isPending,
+    /** Map of output track slug → generation info (from image catalogue). */
+    generatableTrackMap,
+    /** Map of output track slug → whether source seed exists. */
+    sourceSeedExists,
   };
 }

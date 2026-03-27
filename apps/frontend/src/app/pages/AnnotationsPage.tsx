@@ -58,6 +58,8 @@ function toClipShim(item: AnnotatedItem): SceneVideoVersion {
     created_at: item.created_at,
     updated_at: item.updated_at,
     annotation_count: item.annotation_count,
+    parent_version_id: null,
+    clip_index: null,
   };
 }
 

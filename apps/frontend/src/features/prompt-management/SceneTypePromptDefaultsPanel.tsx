@@ -14,12 +14,18 @@ import { Stack } from "@/components/layout";
 import { Button, LoadingPane } from "@/components/primitives";
 import { Workflow as WorkflowIcon } from "@/tokens/icons";
 
+import { useImageTypes, useUpdateImageType } from "@/features/image-catalogue/hooks/use-image-catalogue";
+import type { ImageType } from "@/features/image-catalogue/types";
 import { useSceneTypes } from "@/features/scene-types";
 import type { SceneType } from "@/features/scene-types";
 import { usePipelineContextSafe } from "@/features/pipelines";
+import { useTracks } from "@/features/scene-catalogue/hooks/use-tracks";
 import { useWorkflows } from "@/features/workflow-import";
 import type { Workflow } from "@/features/workflow-import";
 import { useTrackConfigs, type SceneTypeTrackConfig } from "@/features/scene-catalogue";
+import { cn } from "@/lib/cn";
+import { TERMINAL_LABEL, TERMINAL_TEXTAREA } from "@/lib/ui-classes";
+import { ChevronDown, ChevronRight } from "@/tokens/icons";
 
 import {
   useWorkflowPromptSlots,
@@ -35,28 +41,167 @@ import type { WorkflowPromptSlot } from "./types";
 export function SceneTypePromptDefaultsPanel() {
   const pipelineCtx = usePipelineContextSafe();
   const { data: sceneTypes, isLoading: loadingST } = useSceneTypes(undefined, pipelineCtx?.pipelineId);
+  const { data: imageTypes, isLoading: loadingIT } = useImageTypes(pipelineCtx?.pipelineId);
   const { data: workflows, isLoading: loadingWF } = useWorkflows(undefined, pipelineCtx?.pipelineId);
+  const [imageCollapsed, setImageCollapsed] = useState(false);
+  const [sceneCollapsed, setSceneCollapsed] = useState(false);
 
-  if (loadingST || loadingWF) return <LoadingPane />;
+  if (loadingST || loadingWF || loadingIT) return <LoadingPane />;
 
-  const activeTypes = (sceneTypes ?? []).filter((st) => st.is_active);
+  const activeSceneTypes = (sceneTypes ?? []).filter((st) => st.is_active);
+  const activeImageTypes = (imageTypes ?? []).filter((it) => it.is_active);
 
-  if (!activeTypes.length) {
+  if (!activeSceneTypes.length && !activeImageTypes.length) {
     return (
       <EmptyState
-        title="No Active Scene Types"
-        description="Create and activate scene types with workflows to configure prompt defaults."
+        title="No Active Types"
+        description="Create and activate scene types or image types with workflows to configure prompt defaults."
         icon={<WorkflowIcon />}
       />
     );
   }
 
   return (
-    <Stack gap={4}>
-      {activeTypes.map((st) => (
-        <SceneTypeSection key={st.id} sceneType={st} workflows={workflows ?? []} />
-      ))}
+    <Stack gap={6}>
+      {/* Image type prompts */}
+      {activeImageTypes.length > 0 && (
+        <div>
+          <SectionHeader
+            title="Image Types"
+            count={activeImageTypes.length}
+            collapsed={imageCollapsed}
+            onToggle={() => setImageCollapsed((p) => !p)}
+          />
+          {!imageCollapsed && (
+            <Stack gap={3}>
+              {activeImageTypes.map((it) => (
+                <ImageTypePromptSection key={it.id} imageType={it} />
+              ))}
+            </Stack>
+          )}
+        </div>
+      )}
+
+      {/* Scene type prompts */}
+      {activeSceneTypes.length > 0 && (
+        <div>
+          <SectionHeader
+            title="Scene Types"
+            count={activeSceneTypes.length}
+            collapsed={sceneCollapsed}
+            onToggle={() => setSceneCollapsed((p) => !p)}
+          />
+          {!sceneCollapsed && (
+            <Stack gap={4}>
+              {activeSceneTypes.map((st) => (
+                <SceneTypeSection key={st.id} sceneType={st} workflows={workflows ?? []} />
+              ))}
+            </Stack>
+          )}
+        </div>
+      )}
     </Stack>
+  );
+}
+
+/* --------------------------------------------------------------------------
+   Collapsible section header (shared)
+   -------------------------------------------------------------------------- */
+
+function SectionHeader({
+  title,
+  count,
+  collapsed,
+  onToggle,
+}: {
+  title: string;
+  count: number;
+  collapsed: boolean;
+  onToggle: () => void;
+}) {
+  const Icon = collapsed ? ChevronRight : ChevronDown;
+  return (
+    <button
+      type="button"
+      className="flex items-center gap-2 py-1.5 mb-2 w-full text-left group"
+      onClick={onToggle}
+    >
+      <Icon size={14} className="text-[var(--color-text-muted)] group-hover:text-[var(--color-text-primary)] transition-colors" />
+      <span className="font-mono text-xs font-medium text-[var(--color-text-primary)] uppercase tracking-wide">{title}</span>
+      <span className="font-mono text-[10px] text-[var(--color-text-muted)]">({count})</span>
+    </button>
+  );
+}
+
+/* --------------------------------------------------------------------------
+   Image type prompt section — editable prompt_template + negative
+   -------------------------------------------------------------------------- */
+
+function ImageTypePromptSection({ imageType }: { imageType: ImageType }) {
+  const pipelineCtx = usePipelineContextSafe();
+  const { data: tracks } = useTracks(false, pipelineCtx?.pipelineId);
+  const updateMutation = useUpdateImageType(imageType.id);
+
+  const [prompt, setPrompt] = useState(imageType.prompt_template ?? "");
+  const [negPrompt, setNegPrompt] = useState(imageType.negative_prompt_template ?? "");
+
+  const dirty =
+    prompt !== (imageType.prompt_template ?? "") ||
+    negPrompt !== (imageType.negative_prompt_template ?? "");
+
+  const srcTrack = tracks?.find((t) => t.id === imageType.source_track_id);
+  const outTrack = tracks?.find((t) => t.id === imageType.output_track_id);
+
+  const handleSave = useCallback(() => {
+    updateMutation.mutate({
+      prompt_template: prompt.trim() || null,
+      negative_prompt_template: negPrompt.trim() || null,
+    });
+  }, [updateMutation, prompt, negPrompt]);
+
+  return (
+    <CollapsibleSection
+      card
+      title={imageType.name}
+      description={
+        srcTrack && outTrack
+          ? `${srcTrack.name} → ${outTrack.name}`
+          : undefined
+      }
+      defaultOpen={false}
+    >
+      <Stack gap={3}>
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-1 border-l-2 border-l-green-500 pl-2">
+            <label className={TERMINAL_LABEL}>Prompt Template</label>
+            <textarea
+              rows={3}
+              className={TERMINAL_TEXTAREA}
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              placeholder="Positive prompt for image generation"
+            />
+          </div>
+          <div className="flex flex-col gap-1 border-l-2 border-l-red-500 pl-2">
+            <label className={TERMINAL_LABEL}>Negative Prompt</label>
+            <textarea
+              rows={3}
+              className={TERMINAL_TEXTAREA}
+              value={negPrompt}
+              onChange={(e) => setNegPrompt(e.target.value)}
+              placeholder="Negative prompt"
+            />
+          </div>
+        </div>
+        {dirty && (
+          <div className="flex justify-end">
+            <Button size="sm" onClick={handleSave} loading={updateMutation.isPending}>
+              Save Defaults
+            </Button>
+          </div>
+        )}
+      </Stack>
+    </CollapsibleSection>
   );
 }
 
@@ -73,38 +218,28 @@ function SceneTypeSection({
 }) {
   const { data: configs } = useTrackConfigs(sceneType.id);
 
-  const assignedWorkflows = useMemo(() => {
-    const ids = new Set<number>();
-    for (const config of configs ?? []) {
-      if (config.workflow_id != null) ids.add(config.workflow_id);
-    }
-    return workflows.filter((w) => ids.has(w.id));
-  }, [configs, workflows]);
+  // One section per scene_type × track config that has a workflow
+  const configsWithWorkflow = useMemo(
+    () => (configs ?? []).filter((c) => c.workflow_id != null),
+    [configs],
+  );
 
-  const workflowTrackMap = useMemo(() => {
-    const map = new Map<number, SceneTypeTrackConfig[]>();
-    for (const config of configs ?? []) {
-      if (config.workflow_id != null) {
-        const list = map.get(config.workflow_id) ?? [];
-        list.push(config);
-        map.set(config.workflow_id, list);
-      }
-    }
-    return map;
-  }, [configs]);
-
-  if (!assignedWorkflows.length) return null;
+  if (!configsWithWorkflow.length) return null;
 
   return (
     <>
-      {assignedWorkflows.map((workflow) => (
-        <WorkflowDefaultsSection
-          key={`${sceneType.id}-${workflow.id}`}
-          sceneType={sceneType}
-          workflow={workflow}
-          trackConfigs={workflowTrackMap.get(workflow.id) ?? []}
-        />
-      ))}
+      {configsWithWorkflow.map((config) => {
+        const workflow = workflows.find((w) => w.id === config.workflow_id);
+        if (!workflow) return null;
+        return (
+          <WorkflowDefaultsSection
+            key={`${sceneType.id}-${config.track_id}-${config.is_clothes_off}`}
+            sceneType={sceneType}
+            workflow={workflow}
+            trackConfig={config}
+          />
+        );
+      })}
     </>
   );
 }
@@ -116,11 +251,11 @@ function SceneTypeSection({
 function WorkflowDefaultsSection({
   sceneType,
   workflow,
-  trackConfigs,
+  trackConfig,
 }: {
   sceneType: SceneType;
   workflow: Workflow;
-  trackConfigs: SceneTypeTrackConfig[];
+  trackConfig: SceneTypeTrackConfig;
 }) {
   const { data: slots, isPending: slotsLoading } = useWorkflowPromptSlots(workflow.id);
   const { data: defaults } = useSceneTypePromptDefaults(sceneType.id);
@@ -169,18 +304,14 @@ function WorkflowDefaultsSection({
     }
   }, [drafts, upsertDefault, sceneType.id]);
 
-  const trackSummary = trackConfigs
-    .map((tc) => {
-      const label = tc.track_name ?? `Track ${tc.track_id}`;
-      return tc.is_clothes_off ? `${label} (Clothes Off)` : label;
-    })
-    .join(", ");
+  const trackLabel = trackConfig.track_name ?? `Track ${trackConfig.track_id}`;
+  const trackSuffix = trackConfig.is_clothes_off ? " (Clothes Off)" : "";
 
   return (
     <CollapsibleSection
       card
-      title={`${sceneType.name} — ${workflow.name}`}
-      description={trackSummary ? `Tracks: ${trackSummary}` : undefined}
+      title={`${sceneType.name} — ${trackLabel}${trackSuffix}`}
+      description={`Workflow: ${workflow.name}`}
       defaultOpen={false}
     >
       {slotsLoading && <LoadingPane />}
@@ -193,14 +324,16 @@ function WorkflowDefaultsSection({
 
       {!slotsLoading && editableSlots.length > 0 && (
         <Stack gap={3}>
-          {editableSlots.map((slot) => (
-            <SlotDefaultEditor
-              key={slot.id}
-              slot={slot}
-              value={drafts.get(slot.id) ?? slot.default_text ?? ""}
-              onChange={(text) => handleChange(slot.id, text)}
-            />
-          ))}
+          <div className="flex flex-col gap-3">
+            {editableSlots.map((slot) => (
+              <SlotDefaultEditor
+                key={slot.id}
+                slot={slot}
+                value={drafts.get(slot.id) ?? slot.default_text ?? ""}
+                onChange={(text) => handleChange(slot.id, text)}
+              />
+            ))}
+          </div>
 
           <div className="flex justify-end">
             <Button size="sm" onClick={handleSave} loading={upsertDefault.isPending}>
@@ -226,20 +359,19 @@ function SlotDefaultEditor({
   value: string;
   onChange: (text: string) => void;
 }) {
+  const isPositive = slot.slot_type === "positive";
   return (
-    <div className="rounded-[var(--radius-md)] border border-[var(--color-border-default)] bg-[var(--color-surface-primary)] p-4">
-      <h4 className="text-sm font-medium text-[var(--color-text-primary)] mb-1">
-        {slot.slot_label}
-      </h4>
-      <p className="text-xs text-[var(--color-text-muted)] mb-2">
-        Node: {slot.node_id} &middot; Type: {slot.slot_type}
-      </p>
+    <div className={cn(
+      "flex flex-col gap-1 border-l-2 pl-2",
+      isPositive ? "border-l-green-500" : "border-l-red-500",
+    )}>
+      <label className={TERMINAL_LABEL}>{slot.slot_label} <span className="opacity-50">{slot.node_id}</span></label>
       <textarea
         value={value}
         onChange={(e) => onChange(e.target.value)}
         rows={3}
-        className="w-full rounded-[var(--radius-md)] border border-[var(--color-border-default)] bg-[var(--color-surface-secondary)] px-3 py-2 text-xs text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:ring-1 focus:ring-[var(--color-border-focus)] resize-y"
-        placeholder="Enter default prompt text..."
+        className={TERMINAL_TEXTAREA}
+        placeholder={`${isPositive ? "Positive" : "Negative"} prompt...`}
       />
     </div>
   );

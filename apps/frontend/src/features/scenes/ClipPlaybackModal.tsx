@@ -444,6 +444,15 @@ export function ClipPlaybackModal({ clip, onClose, onPrev, onNext, onApprove, on
     >
       {clip && (
         <div className="flex flex-col gap-[var(--spacing-3)]">
+          {/* Derived clip context badge */}
+          {clip.parent_version_id != null && (
+            <div className="flex items-center gap-2 font-mono text-[10px] text-[var(--color-text-muted)]">
+              <span className="text-cyan-400">derived from v{clip.parent_version_id}</span>
+              {clip.clip_index != null && (
+                <><span className="opacity-30">|</span><span>chunk {clip.clip_index}</span></>
+              )}
+            </div>
+          )}
           {/* Video + annotation overlay */}
           <div ref={wrapperRef} className="group/video relative" onDoubleClick={() => setExpanded((v) => !v)}>
             {isPurgedClip(clip) ? (

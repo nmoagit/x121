@@ -6,6 +6,7 @@
 use axum::extract::{Multipart, Path, State};
 use axum::http::StatusCode;
 use axum::Json;
+use x121_core::clip_filename_parser;
 use x121_core::clip_qa::{
     CLIP_QA_APPROVED, CLIP_QA_PENDING, CLIP_QA_REJECTED, CLIP_SOURCE_IMPORTED, RESUME_STATUS_READY,
 };
@@ -19,7 +20,8 @@ use x121_db::models::scene_video_version::{
 use x121_db::models::scene_video_version_artifact::SceneVideoVersionArtifact;
 use x121_db::models::status::SceneStatus;
 use x121_db::repositories::{
-    SceneRepo, SceneVideoVersionArtifactRepo, SceneVideoVersionRepo, SegmentRepo,
+    SceneRepo, SceneTypeRepo, SceneVideoVersionArtifactRepo, SceneVideoVersionRepo, SegmentRepo,
+    TagRepo,
 };
 
 use crate::error::{AppError, AppResult};
@@ -436,6 +438,8 @@ pub async fn import_video(
 ) -> AppResult<(StatusCode, Json<DataResponse<SceneVideoVersion>>)> {
     let mut file_data: Option<(String, Vec<u8>)> = None;
     let mut notes: Option<String> = None;
+    let mut parent_version_id: Option<DbId> = None;
+    let mut clip_index: Option<i32> = None;
 
     while let Some(field) = multipart
         .next_field()
@@ -458,6 +462,24 @@ pub async fn import_video(
                     .await
                     .map_err(|e| AppError::BadRequest(e.to_string()))?;
                 notes = Some(text);
+            }
+            "parent_version_id" => {
+                let text = field
+                    .text()
+                    .await
+                    .map_err(|e| AppError::BadRequest(e.to_string()))?;
+                parent_version_id = Some(text.parse::<i64>().map_err(|_| {
+                    AppError::BadRequest("Invalid parent_version_id — expected integer".into())
+                })?);
+            }
+            "clip_index" => {
+                let text = field
+                    .text()
+                    .await
+                    .map_err(|e| AppError::BadRequest(e.to_string()))?;
+                clip_index = Some(text.parse::<i32>().map_err(|_| {
+                    AppError::BadRequest("Invalid clip_index — expected integer".into())
+                })?);
             }
             _ => {} // ignore unknown fields
         }
@@ -510,6 +532,18 @@ pub async fn import_video(
         .as_ref()
         .is_some_and(|v| v.qa_status == CLIP_QA_APPROVED);
 
+    // Validate parent version exists and belongs to the same scene.
+    if let Some(pid) = parent_version_id {
+        let parent = SceneVideoVersionRepo::find_by_id(&state.pool, pid)
+            .await?
+            .ok_or_else(|| AppError::BadRequest(format!("Parent version {pid} not found")))?;
+        if parent.scene_id != scene_id {
+            return Err(AppError::BadRequest(
+                "Parent version does not belong to the same scene".into(),
+            ));
+        }
+    }
+
     let input = CreateSceneVideoVersion {
         scene_id,
         source: CLIP_SOURCE_IMPORTED.to_string(),
@@ -520,6 +554,8 @@ pub async fn import_video(
         notes,
         generation_snapshot: None,
         content_hash: Some(content_hash),
+        parent_version_id,
+        clip_index,
     };
 
     let version = if has_approved_final {
@@ -780,6 +816,8 @@ pub struct ClipBrowseItem {
     pub qa_notes: Option<String>,
     pub generation_snapshot: Option<serde_json::Value>,
     pub file_purged: bool,
+    pub parent_version_id: Option<DbId>,
+    pub clip_index: Option<i32>,
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub annotation_count: i64,
     // Context fields
@@ -804,6 +842,8 @@ pub async fn browse_clips(
     let limit = params.limit.unwrap_or(200).min(500);
     let offset = params.offset.unwrap_or(0);
     let show_disabled = params.show_disabled.unwrap_or(false);
+
+    let has_parent = params.has_parent.unwrap_or(false);
 
     let base_from = "\
         FROM scene_video_versions svv \
@@ -835,7 +875,9 @@ pub async fn browse_clips(
             SELECT et.entity_id FROM entity_tags et \
             WHERE et.entity_type = 'scene_video_version' \
               AND et.tag_id = ANY(string_to_array($10, ',')::bigint[]) \
-          ))";
+          )) \
+          AND (NOT $11::bool OR svv.parent_version_id IS NOT NULL) \
+          AND ($12::bigint IS NULL OR svv.parent_version_id = $12)";
 
     let count_sql = format!("SELECT COUNT(*) {base_from}");
     let total: i64 = sqlx::query_scalar(&count_sql)
@@ -849,6 +891,8 @@ pub async fn browse_clips(
         .bind(&params.tag_ids)
         .bind(&params.search)
         .bind(&params.exclude_tag_ids)
+        .bind(has_parent)
+        .bind(params.parent_version_id)
         .fetch_one(&state.pool)
         .await?;
 
@@ -857,7 +901,7 @@ pub async fn browse_clips(
             svv.id, svv.scene_id, svv.version_number, svv.source, svv.file_path, \
             svv.file_size_bytes, svv.duration_secs, svv.width, svv.height, svv.frame_rate, \
             svv.preview_path, svv.is_final, svv.notes, svv.qa_status, svv.qa_rejection_reason, svv.qa_notes, \
-            svv.generation_snapshot, svv.file_purged, svv.created_at, \
+            svv.generation_snapshot, svv.file_purged, svv.parent_version_id, svv.clip_index, svv.created_at, \
             COALESCE((SELECT COUNT(*) FROM frame_annotations fa WHERE fa.version_id = svv.id), 0) AS annotation_count, \
             c.id AS avatar_id, c.name AS avatar_name, \
             COALESCE(st.name, '') AS scene_type_name, \
@@ -866,7 +910,7 @@ pub async fn browse_clips(
             p.id AS project_id, p.name AS project_name \
         {base_from} \
         ORDER BY svv.created_at DESC \
-        LIMIT $11 OFFSET $12"
+        LIMIT $13 OFFSET $14"
     );
     let items = sqlx::query_as::<_, ClipBrowseItem>(&items_sql)
         .bind(params.project_id)
@@ -879,6 +923,8 @@ pub async fn browse_clips(
         .bind(&params.tag_ids)
         .bind(&params.search)
         .bind(&params.exclude_tag_ids)
+        .bind(has_parent)
+        .bind(params.parent_version_id)
         .bind(limit as i64)
         .bind(offset as i64)
         .fetch_all(&state.pool)
@@ -904,6 +950,10 @@ pub struct BrowseClipsParams {
     pub exclude_tag_ids: Option<String>,
     /// Free-text search across avatar name, scene type, track, project.
     pub search: Option<String>,
+    /// When true, only return derived clips (parent_version_id IS NOT NULL).
+    pub has_parent: Option<bool>,
+    /// Filter to children of a specific parent version.
+    pub parent_version_id: Option<DbId>,
     pub limit: Option<i32>,
     pub offset: Option<i32>,
 }
@@ -938,7 +988,7 @@ pub struct BulkClipAction {
 /// Build the shared WHERE clause used by both browse and bulk operations.
 ///
 /// Returns the clause fragment (starting with `FROM ...`) and expects
-/// parameters $1..$10 bound in the same order as `browse_clips`.
+/// parameters $1..$12 bound in the same order as `browse_clips`.
 fn clip_browse_where_clause() -> &'static str {
     "FROM scene_video_versions svv \
      JOIN scenes sc ON sc.id = svv.scene_id AND sc.deleted_at IS NULL \
@@ -969,7 +1019,9 @@ fn clip_browse_where_clause() -> &'static str {
          SELECT et.entity_id FROM entity_tags et \
          WHERE et.entity_type = 'scene_video_version' \
            AND et.tag_id = ANY(string_to_array($10, ',')::bigint[]) \
-       ))"
+       )) \
+       AND (NOT $11::bool OR svv.parent_version_id IS NOT NULL) \
+       AND ($12::bigint IS NULL OR svv.parent_version_id = $12)"
 }
 
 /// Execute a bulk status update for clips, either by explicit IDs or browse filters.
@@ -998,10 +1050,11 @@ async fn bulk_update_clip_status(
 
     if let Some(ref filters) = input.filters {
         let show_disabled = filters.show_disabled.unwrap_or(false);
+        let has_parent = filters.has_parent.unwrap_or(false);
         let where_clause = clip_browse_where_clause();
         let sql = format!(
             "UPDATE scene_video_versions \
-             SET qa_status = $11, qa_rejection_reason = $12, updated_at = NOW() \
+             SET qa_status = $13, qa_rejection_reason = $14, updated_at = NOW() \
              WHERE id IN (SELECT svv.id {where_clause})"
         );
         let result = sqlx::query(&sql)
@@ -1015,6 +1068,8 @@ async fn bulk_update_clip_status(
             .bind(&filters.tag_ids)
             .bind(&filters.search)
             .bind(&filters.exclude_tag_ids)
+            .bind(has_parent)
+            .bind(filters.parent_version_id)
             .bind(new_status)
             .bind(rejection_reason)
             .execute(pool)
@@ -1055,5 +1110,661 @@ pub async fn bulk_reject_clips(
     tracing::info!(updated, "Bulk rejected clips");
     Ok(Json(DataResponse {
         data: BulkActionResult { updated },
+    }))
+}
+
+// ---------------------------------------------------------------------------
+// Server-side single-file import from path
+// ---------------------------------------------------------------------------
+
+/// Input for importing a video from a server-side filesystem path.
+#[derive(Debug, serde::Deserialize)]
+pub struct ImportFromPathInput {
+    pub path: String,
+    pub parent_version_id: Option<DbId>,
+    pub clip_index: Option<i32>,
+    pub notes: Option<String>,
+}
+
+/// POST /api/v1/scenes/{scene_id}/versions/import-from-path
+///
+/// Import a video file from a server-side filesystem path.
+/// Copies the file into managed storage (does not move/delete original).
+pub async fn import_from_path(
+    _auth: AuthUser,
+    State(state): State<AppState>,
+    Path(scene_id): Path<DbId>,
+    Json(input): Json<ImportFromPathInput>,
+) -> AppResult<(StatusCode, Json<DataResponse<SceneVideoVersion>>)> {
+    let src_path = std::path::Path::new(&input.path);
+
+    // Validate file exists.
+    if !src_path.exists() {
+        return Err(AppError::BadRequest(format!(
+            "File not found: {}",
+            input.path
+        )));
+    }
+    if !src_path.is_file() {
+        return Err(AppError::BadRequest(format!(
+            "Path is not a file: {}",
+            input.path
+        )));
+    }
+
+    // Validate extension.
+    let ext = src_path
+        .extension()
+        .and_then(|e| e.to_str())
+        .unwrap_or("")
+        .to_lowercase();
+    if !SUPPORTED_VIDEO_EXTENSIONS.contains(&ext.as_str()) {
+        return Err(AppError::BadRequest(format!(
+            "Unsupported video format '.{ext}'. Supported: .mp4, .webm, .mov"
+        )));
+    }
+
+    // Validate parent version if provided.
+    if let Some(pid) = input.parent_version_id {
+        let parent = SceneVideoVersionRepo::find_by_id(&state.pool, pid)
+            .await?
+            .ok_or_else(|| AppError::BadRequest(format!("Parent version {pid} not found")))?;
+        if parent.scene_id != scene_id {
+            return Err(AppError::BadRequest(
+                "Parent version does not belong to the same scene".into(),
+            ));
+        }
+    }
+
+    // Read file contents.
+    let data = tokio::fs::read(src_path)
+        .await
+        .map_err(|e| AppError::InternalError(format!("Failed to read file: {e}")))?;
+
+    if data.is_empty() {
+        return Err(AppError::BadRequest(
+            "Source video file is empty (0 bytes)".into(),
+        ));
+    }
+
+    // Hash before transcode for duplicate detection.
+    let content_hash = x121_core::hashing::sha256_hex(&data);
+
+    // Transcode to H.264 if needed.
+    let data = ensure_h264(data, &ext)
+        .await
+        .map_err(|e| AppError::InternalError(format!("Video transcode failed: {e}")))?;
+
+    // Store via the active storage provider.
+    let storage_key = format!(
+        "imports/scene_{scene_id}_{}.mp4",
+        chrono::Utc::now().timestamp()
+    );
+    let provider = state.storage_provider().await;
+    provider.upload(&storage_key, &data).await?;
+
+    let file_size = data.len() as i64;
+
+    let existing_final = SceneVideoVersionRepo::find_final_for_scene(&state.pool, scene_id).await?;
+    let has_approved_final = existing_final
+        .as_ref()
+        .is_some_and(|v| v.qa_status == CLIP_QA_APPROVED);
+
+    let create_input = CreateSceneVideoVersion {
+        scene_id,
+        source: CLIP_SOURCE_IMPORTED.to_string(),
+        file_path: storage_key,
+        file_size_bytes: Some(file_size),
+        duration_secs: None,
+        is_final: Some(!has_approved_final),
+        notes: input.notes,
+        generation_snapshot: None,
+        content_hash: Some(content_hash),
+        parent_version_id: input.parent_version_id,
+        clip_index: input.clip_index,
+    };
+
+    let version = if has_approved_final {
+        SceneVideoVersionRepo::create(&state.pool, &create_input).await?
+    } else {
+        SceneVideoVersionRepo::create_as_final(&state.pool, &create_input).await?
+    };
+
+    if !has_approved_final {
+        SceneRepo::set_status(&state.pool, scene_id, SceneStatus::Generated.id()).await?;
+    }
+
+    generate_preview_for_version(&state, &version).await;
+    generate_web_playback_for_version(&state, &version).await;
+    extract_and_set_video_metadata(&state, &version).await;
+
+    let version = SceneVideoVersionRepo::find_by_id(&state.pool, version.id)
+        .await?
+        .unwrap_or(version);
+
+    Ok((StatusCode::CREATED, Json(DataResponse { data: version })))
+}
+
+// ---------------------------------------------------------------------------
+// Batch directory scan import
+// ---------------------------------------------------------------------------
+
+/// Input for batch directory import.
+#[derive(Debug, serde::Deserialize)]
+pub struct ImportDirectoryInput {
+    pub directory_path: String,
+    pub pipeline_id: DbId,
+    pub dry_run: Option<bool>,
+}
+
+/// Per-file import error in batch results.
+#[derive(Debug, serde::Serialize)]
+pub struct ImportError {
+    pub path: String,
+    pub error: String,
+}
+
+/// Per-folder import result.
+#[derive(Debug, serde::Serialize)]
+pub struct FolderImportResult {
+    pub folder_name: String,
+    pub avatar_slug: String,
+    pub scene_type_slug: String,
+    pub track_slug: String,
+    pub version: i32,
+    pub labels: Vec<String>,
+    pub resolved_scene_id: Option<DbId>,
+    pub resolved_parent_id: Option<DbId>,
+    pub files_found: usize,
+    pub files_imported: usize,
+    pub errors: Vec<ImportError>,
+}
+
+/// Summary of a batch directory import.
+#[derive(Debug, serde::Serialize)]
+pub struct ImportDirectoryResult {
+    pub total_folders: usize,
+    pub total_files: usize,
+    pub imported: usize,
+    pub skipped: usize,
+    pub errors: Vec<ImportError>,
+    pub folders: Vec<FolderImportResult>,
+}
+
+/// POST /api/v1/derived-clips/import-directory
+///
+/// Scan a server-side directory, parse filenames using the naming convention,
+/// resolve avatars/scenes/parents, and import all clips.
+pub async fn import_directory(
+    auth: AuthUser,
+    State(state): State<AppState>,
+    Json(input): Json<ImportDirectoryInput>,
+) -> AppResult<Json<DataResponse<ImportDirectoryResult>>> {
+    let dir_path = std::path::Path::new(&input.directory_path);
+    if !dir_path.exists() || !dir_path.is_dir() {
+        return Err(AppError::BadRequest(format!(
+            "Directory not found: {}",
+            input.directory_path
+        )));
+    }
+
+    let dry_run = input.dry_run.unwrap_or(false);
+
+    let mut result = ImportDirectoryResult {
+        total_folders: 0,
+        total_files: 0,
+        imported: 0,
+        skipped: 0,
+        errors: Vec::new(),
+        folders: Vec::new(),
+    };
+
+    // Read directory entries, looking for subdirectories containing video files.
+    let mut entries = tokio::fs::read_dir(dir_path)
+        .await
+        .map_err(|e| AppError::InternalError(format!("Failed to read directory: {e}")))?;
+
+    let mut folders: Vec<std::path::PathBuf> = Vec::new();
+    while let Some(entry) = entries
+        .next_entry()
+        .await
+        .map_err(|e| AppError::InternalError(format!("Failed to read dir entry: {e}")))?
+    {
+        let path = entry.path();
+        if path.is_dir() {
+            folders.push(path);
+        }
+    }
+    folders.sort();
+
+    for folder_path in &folders {
+        let folder_name = folder_path
+            .file_name()
+            .and_then(|n| n.to_str())
+            .unwrap_or("");
+
+        // Parse the folder name.
+        let parsed = match clip_filename_parser::parse_clip_path(folder_name) {
+            Ok(p) => p,
+            Err(e) => {
+                result.errors.push(ImportError {
+                    path: folder_name.to_string(),
+                    error: format!("Failed to parse folder name: {e}"),
+                });
+                continue;
+            }
+        };
+
+        let mut folder_result = FolderImportResult {
+            folder_name: folder_name.to_string(),
+            avatar_slug: parsed.avatar_slug.clone(),
+            scene_type_slug: parsed.scene_type_slug.clone(),
+            track_slug: parsed.track_slug.clone(),
+            version: parsed.version,
+            labels: parsed.labels.clone(),
+            resolved_scene_id: None,
+            resolved_parent_id: None,
+            files_found: 0,
+            files_imported: 0,
+            errors: Vec::new(),
+        };
+
+        result.total_folders += 1;
+
+        // Resolve avatar by slug. Avatar names use spaces where slugs use hyphens.
+        let avatar_name = parsed.avatar_slug.replace('-', " ");
+        let avatar_row: Option<(DbId,)> = sqlx::query_as(
+            "SELECT id FROM avatars \
+             WHERE LOWER(REPLACE(name, ' ', '-')) = LOWER($1) \
+               AND deleted_at IS NULL \
+             LIMIT 1",
+        )
+        .bind(&parsed.avatar_slug)
+        .fetch_optional(&state.pool)
+        .await?;
+
+        let avatar_id = match avatar_row {
+            Some((id,)) => id,
+            None => {
+                // Try name match as fallback.
+                let fallback: Option<(DbId,)> = sqlx::query_as(
+                    "SELECT id FROM avatars \
+                     WHERE LOWER(name) = LOWER($1) AND deleted_at IS NULL \
+                     LIMIT 1",
+                )
+                .bind(&avatar_name)
+                .fetch_optional(&state.pool)
+                .await?;
+                match fallback {
+                    Some((id,)) => id,
+                    None => {
+                        folder_result.errors.push(ImportError {
+                            path: folder_name.to_string(),
+                            error: format!(
+                                "Avatar not found for slug '{}' or name '{}'",
+                                parsed.avatar_slug, avatar_name
+                            ),
+                        });
+                        result.folders.push(folder_result);
+                        continue;
+                    }
+                }
+            }
+        };
+
+        // Resolve scene type by slug.
+        let scene_type = SceneTypeRepo::find_by_slug(
+            &state.pool,
+            &parsed.scene_type_slug,
+            Some(input.pipeline_id),
+        )
+        .await?;
+        let scene_type_id = match scene_type {
+            Some(st) => st.id,
+            None => {
+                folder_result.errors.push(ImportError {
+                    path: folder_name.to_string(),
+                    error: format!("Scene type not found: '{}'", parsed.scene_type_slug),
+                });
+                result.folders.push(folder_result);
+                continue;
+            }
+        };
+
+        // Resolve track by slug.
+        let track_row: Option<(DbId,)> = sqlx::query_as(
+            "SELECT id FROM tracks WHERE slug = $1 AND ($2::bigint IS NULL OR pipeline_id = $2) LIMIT 1",
+        )
+        .bind(&parsed.track_slug)
+        .bind(Some(input.pipeline_id))
+        .fetch_optional(&state.pool)
+        .await?;
+        let track_id = match track_row {
+            Some((id,)) => id,
+            None => {
+                folder_result.errors.push(ImportError {
+                    path: folder_name.to_string(),
+                    error: format!("Track not found: '{}'", parsed.track_slug),
+                });
+                result.folders.push(folder_result);
+                continue;
+            }
+        };
+
+        // Resolve scene by (avatar_id, scene_type_id, track_id).
+        let scene_row: Option<(DbId,)> = sqlx::query_as(
+            "SELECT id FROM scenes \
+             WHERE avatar_id = $1 AND scene_type_id = $2 AND track_id = $3 \
+               AND deleted_at IS NULL \
+             LIMIT 1",
+        )
+        .bind(avatar_id)
+        .bind(scene_type_id)
+        .bind(track_id)
+        .fetch_optional(&state.pool)
+        .await?;
+        let scene_id = match scene_row {
+            Some((id,)) => id,
+            None => {
+                folder_result.errors.push(ImportError {
+                    path: folder_name.to_string(),
+                    error: format!(
+                        "Scene not found for avatar_id={}, scene_type='{}', track='{}'",
+                        avatar_id, parsed.scene_type_slug, parsed.track_slug
+                    ),
+                });
+                result.folders.push(folder_result);
+                continue;
+            }
+        };
+
+        folder_result.resolved_scene_id = Some(scene_id);
+
+        // Resolve parent version by version number (latest version with that number).
+        let parent_row: Option<(DbId,)> = sqlx::query_as(
+            "SELECT id FROM scene_video_versions \
+             WHERE scene_id = $1 AND version_number = $2 AND deleted_at IS NULL \
+             ORDER BY id DESC LIMIT 1",
+        )
+        .bind(scene_id)
+        .bind(parsed.version)
+        .fetch_optional(&state.pool)
+        .await?;
+        let parent_version_id = parent_row.map(|(id,)| id);
+        folder_result.resolved_parent_id = parent_version_id;
+
+        // List video files in the folder.
+        let mut video_files: Vec<std::path::PathBuf> = Vec::new();
+        let mut sub_entries = tokio::fs::read_dir(folder_path)
+            .await
+            .map_err(|e| AppError::InternalError(format!("Failed to read folder: {e}")))?;
+        while let Some(entry) = sub_entries
+            .next_entry()
+            .await
+            .map_err(|e| AppError::InternalError(format!("Failed to read folder entry: {e}")))?
+        {
+            let p = entry.path();
+            if p.is_file() {
+                if let Some(ext) = p.extension().and_then(|e| e.to_str()) {
+                    if SUPPORTED_VIDEO_EXTENSIONS.contains(&ext.to_lowercase().as_str()) {
+                        video_files.push(p);
+                    }
+                }
+            }
+        }
+        video_files.sort();
+        folder_result.files_found = video_files.len();
+        result.total_files += video_files.len();
+
+        if dry_run {
+            result.folders.push(folder_result);
+            continue;
+        }
+
+        // Import each file.
+        for video_path in &video_files {
+            let file_name = video_path
+                .file_name()
+                .and_then(|n| n.to_str())
+                .unwrap_or("");
+
+            // Parse clip index from the file name.
+            let file_clip_index = clip_filename_parser::parse_clip_path(file_name)
+                .ok()
+                .and_then(|p| p.clip_index);
+
+            // Read file.
+            let data = match tokio::fs::read(video_path).await {
+                Ok(d) => d,
+                Err(e) => {
+                    folder_result.errors.push(ImportError {
+                        path: file_name.to_string(),
+                        error: format!("Failed to read file: {e}"),
+                    });
+                    continue;
+                }
+            };
+
+            if data.is_empty() {
+                folder_result.errors.push(ImportError {
+                    path: file_name.to_string(),
+                    error: "File is empty (0 bytes)".into(),
+                });
+                continue;
+            }
+
+            let content_hash = x121_core::hashing::sha256_hex(&data);
+
+            let file_ext = video_path
+                .extension()
+                .and_then(|e| e.to_str())
+                .unwrap_or("mp4");
+
+            let data = match ensure_h264(data, file_ext).await {
+                Ok(d) => d,
+                Err(e) => {
+                    folder_result.errors.push(ImportError {
+                        path: file_name.to_string(),
+                        error: format!("Transcode failed: {e}"),
+                    });
+                    continue;
+                }
+            };
+
+            let storage_key = format!(
+                "imports/scene_{scene_id}_{}.mp4",
+                chrono::Utc::now().timestamp_millis()
+            );
+            let provider = state.storage_provider().await;
+            if let Err(e) = provider.upload(&storage_key, &data).await {
+                folder_result.errors.push(ImportError {
+                    path: file_name.to_string(),
+                    error: format!("Upload failed: {e}"),
+                });
+                continue;
+            }
+
+            let file_size = data.len() as i64;
+
+            let create_input = CreateSceneVideoVersion {
+                scene_id,
+                source: CLIP_SOURCE_IMPORTED.to_string(),
+                file_path: storage_key,
+                file_size_bytes: Some(file_size),
+                duration_secs: None,
+                is_final: Some(false), // derived clips are never auto-final
+                notes: None,
+                generation_snapshot: None,
+                content_hash: Some(content_hash),
+                parent_version_id,
+                clip_index: file_clip_index,
+            };
+
+            let version = match SceneVideoVersionRepo::create(&state.pool, &create_input).await {
+                Ok(v) => v,
+                Err(e) => {
+                    folder_result.errors.push(ImportError {
+                        path: file_name.to_string(),
+                        error: format!("DB insert failed: {e}"),
+                    });
+                    continue;
+                }
+            };
+
+            // Apply labels as tags.
+            for label in &parsed.labels {
+                if let Ok(tag) = TagRepo::create_or_get(
+                    &state.pool,
+                    label,
+                    None,
+                    Some(auth.user_id),
+                    Some(input.pipeline_id),
+                )
+                .await
+                {
+                    let _ = TagRepo::apply(
+                        &state.pool,
+                        "scene_video_version",
+                        version.id,
+                        tag.id,
+                        Some(auth.user_id),
+                    )
+                    .await;
+                }
+            }
+
+            // Best-effort post-processing.
+            generate_preview_for_version(&state, &version).await;
+            extract_and_set_video_metadata(&state, &version).await;
+
+            folder_result.files_imported += 1;
+            result.imported += 1;
+        }
+
+        result.folders.push(folder_result);
+    }
+
+    result.skipped = result.total_files - result.imported;
+
+    tracing::info!(
+        total_folders = result.total_folders,
+        total_files = result.total_files,
+        imported = result.imported,
+        skipped = result.skipped,
+        dry_run,
+        "Directory import completed"
+    );
+
+    Ok(Json(DataResponse { data: result }))
+}
+
+// ---------------------------------------------------------------------------
+// Derived clips listing
+// ---------------------------------------------------------------------------
+
+/// A derived clip row with scene context.
+#[derive(Debug, serde::Serialize, sqlx::FromRow)]
+pub struct DerivedClipItem {
+    pub id: DbId,
+    pub scene_id: DbId,
+    pub version_number: i32,
+    pub file_path: String,
+    pub preview_path: Option<String>,
+    pub duration_secs: Option<f64>,
+    pub qa_status: String,
+    pub clip_index: Option<i32>,
+    pub parent_version_id: Option<DbId>,
+    pub annotation_count: i64,
+    pub created_at: chrono::DateTime<chrono::Utc>,
+    // Context
+    pub scene_type_name: String,
+    pub track_name: String,
+    pub parent_version_number: Option<i32>,
+}
+
+/// Query params for derived clips listing.
+#[derive(Debug, serde::Deserialize)]
+pub struct DerivedClipsParams {
+    pub limit: Option<i32>,
+    pub offset: Option<i32>,
+    pub qa_status: Option<String>,
+    pub tag_ids: Option<String>,
+    pub exclude_tag_ids: Option<String>,
+}
+
+/// Paginated result for derived clips.
+#[derive(Debug, serde::Serialize)]
+pub struct DerivedClipsPage {
+    pub items: Vec<DerivedClipItem>,
+    pub total: i64,
+}
+
+/// GET /api/v1/avatars/{avatar_id}/derived-clips
+///
+/// List all derived clips (where parent_version_id IS NOT NULL) for an avatar,
+/// ordered by parent_version_id then clip_index.
+pub async fn list_derived_clips(
+    State(state): State<AppState>,
+    Path(avatar_id): Path<DbId>,
+    axum::extract::Query(params): axum::extract::Query<DerivedClipsParams>,
+) -> AppResult<Json<DataResponse<DerivedClipsPage>>> {
+    let limit = params.limit.unwrap_or(200).min(500);
+    let offset = params.offset.unwrap_or(0);
+
+    let base_where = "\
+        FROM scene_video_versions svv \
+        JOIN scenes sc ON sc.id = svv.scene_id AND sc.deleted_at IS NULL \
+        LEFT JOIN scene_types st ON st.id = sc.scene_type_id \
+        LEFT JOIN tracks t ON t.id = sc.track_id \
+        LEFT JOIN scene_video_versions pvv ON pvv.id = svv.parent_version_id \
+        WHERE sc.avatar_id = $1 \
+          AND svv.parent_version_id IS NOT NULL \
+          AND svv.deleted_at IS NULL \
+          AND ($2::text IS NULL OR svv.qa_status = ANY(string_to_array($2, ','))) \
+          AND ($3::text IS NULL OR svv.id IN ( \
+            SELECT et.entity_id FROM entity_tags et \
+            WHERE et.entity_type = 'scene_video_version' \
+              AND et.tag_id = ANY(string_to_array($3, ',')::bigint[]) \
+          )) \
+          AND ($4::text IS NULL OR svv.id NOT IN ( \
+            SELECT et.entity_id FROM entity_tags et \
+            WHERE et.entity_type = 'scene_video_version' \
+              AND et.tag_id = ANY(string_to_array($4, ',')::bigint[]) \
+          ))";
+
+    let count_sql = format!("SELECT COUNT(*) {base_where}");
+    let total: i64 = sqlx::query_scalar(&count_sql)
+        .bind(avatar_id)
+        .bind(&params.qa_status)
+        .bind(&params.tag_ids)
+        .bind(&params.exclude_tag_ids)
+        .fetch_one(&state.pool)
+        .await?;
+
+    let items_sql = format!(
+        "SELECT \
+            svv.id, svv.scene_id, svv.version_number, svv.file_path, svv.preview_path, \
+            svv.duration_secs, svv.qa_status, svv.clip_index, svv.parent_version_id, \
+            COALESCE((SELECT COUNT(*) FROM frame_annotations fa WHERE fa.version_id = svv.id), 0) AS annotation_count, \
+            svv.created_at, \
+            COALESCE(st.name, '') AS scene_type_name, \
+            COALESCE(t.name, '') AS track_name, \
+            pvv.version_number AS parent_version_number \
+        {base_where} \
+        ORDER BY svv.parent_version_id, svv.clip_index NULLS LAST, svv.id \
+        LIMIT $5 OFFSET $6"
+    );
+    let items = sqlx::query_as::<_, DerivedClipItem>(&items_sql)
+        .bind(avatar_id)
+        .bind(&params.qa_status)
+        .bind(&params.tag_ids)
+        .bind(&params.exclude_tag_ids)
+        .bind(limit as i64)
+        .bind(offset as i64)
+        .fetch_all(&state.pool)
+        .await?;
+
+    Ok(Json(DataResponse {
+        data: DerivedClipsPage { items, total },
     }))
 }

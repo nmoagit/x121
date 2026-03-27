@@ -54,6 +54,7 @@ import { AvatarOverviewTab } from "./tabs/AvatarOverviewTab";
 import { AvatarScenesTab } from "./tabs/AvatarScenesTab";
 import { AvatarSeedsTab } from "./tabs/AvatarSeedsTab";
 import { AvatarSettingsTab } from "./tabs/AvatarSettingsTab";
+import { AvatarDerivedClipsTab } from "./tabs/AvatarDerivedClipsTab";
 import { AvatarSpeechTab } from "./tabs/AvatarSpeechTab";
 
 /* --------------------------------------------------------------------------
@@ -420,6 +421,9 @@ export function AvatarDetailPage() {
           )}
           <AvatarScenesTab key={avatarId} avatarId={avatarId} projectId={projectId} focusSceneId={focusSceneId} focusSceneTypeId={focusSceneTypeId} focusTrackId={focusTrackId} avatarEnabled={avatar.is_enabled} />
         </div>
+      )}
+      {activeTab === "derived" && (
+        <AvatarDerivedClipsTab key={avatarId} avatarId={avatarId} projectId={projectId} />
       )}
       {activeTab === "deliverables" && (
         <AvatarDeliverablesTab

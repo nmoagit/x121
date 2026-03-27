@@ -55,6 +55,9 @@ export function SlotOverrideSection({
         <h4 className="text-sm font-medium text-[var(--color-text-primary)]">
           {slot.slot_label}
         </h4>
+        <span className="font-mono text-[10px] text-[var(--color-text-muted)]">
+          {slot.node_id}
+        </span>
         <span className={cn("font-mono text-[10px] uppercase tracking-wide", typeColor)}>
           {isPositive ? "positive" : "negative"}
         </span>

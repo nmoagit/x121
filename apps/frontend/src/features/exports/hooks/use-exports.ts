@@ -26,7 +26,7 @@ export interface ExportJob {
   split_size_mb: number;
   filter_snapshot: Record<string, unknown> | null;
   status: "queued" | "processing" | "completed" | "failed";
-  parts: ExportPart[];
+  parts: ExportPart[] | null;
   error_message: string | null;
   started_at: string | null;
   completed_at: string | null;

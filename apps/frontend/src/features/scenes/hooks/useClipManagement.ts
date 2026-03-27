@@ -10,6 +10,7 @@ export const clipKeys = {
     [...clipKeys.all, "detail", sceneId, versionId] as const,
   browse: (projectId?: number, pipelineId?: number, limit?: number, offset?: number) =>
     [...clipKeys.all, "browse", projectId, pipelineId, limit, offset] as const,
+  derived: (avatarId: number) => [...clipKeys.all, "derived", avatarId] as const,
 };
 
 /** A clip enriched with avatar/scene/project context for browsing. */
@@ -41,6 +42,8 @@ export interface ClipBrowseItem {
   avatar_is_enabled: boolean;
   project_id: number;
   project_name: string;
+  parent_version_id: number | null;
+  clip_index: number | null;
 }
 
 /** Paginated browse result for scene video clips. */
@@ -63,6 +66,8 @@ export interface ClipBrowseParams {
   search?: string;
   limit?: number;
   offset?: number;
+  /** Filter to only derived clips (has parent_version_id). */
+  hasParent?: boolean;
 }
 
 /** Fetch paginated clips across all avatars/scenes, most recent first. */
@@ -78,6 +83,7 @@ export function useClipsBrowse(params: ClipBrowseParams = {}) {
   if (params.tagIds) searchParams.set("tag_ids", params.tagIds);
   if (params.excludeTagIds) searchParams.set("exclude_tag_ids", params.excludeTagIds);
   if (params.search) searchParams.set("search", params.search);
+  if (params.hasParent != null) searchParams.set("has_parent", String(params.hasParent));
   if (params.limit != null) searchParams.set("limit", String(params.limit));
   if (params.offset != null) searchParams.set("offset", String(params.offset));
   const qs = searchParams.toString();
@@ -288,5 +294,122 @@ export function useBulkRejectClips() {
       qc.invalidateQueries({ queryKey: clipKeys.all });
       qc.invalidateQueries({ queryKey: sceneKeys.all });
     },
+  });
+}
+
+/* --------------------------------------------------------------------------
+   Derived clip import hooks (PRD-153)
+   -------------------------------------------------------------------------- */
+
+/** Build a FormData for clip import with optional parent link and POST it. */
+export function postClipImportWithParent(
+  sceneId: number,
+  file: File,
+  opts?: { notes?: string; parentVersionId?: number; clipIndex?: number },
+) {
+  const formData = new FormData();
+  formData.append("file", file);
+  if (opts?.notes) formData.append("notes", opts.notes);
+  if (opts?.parentVersionId != null) formData.append("parent_version_id", String(opts.parentVersionId));
+  if (opts?.clipIndex != null) formData.append("clip_index", String(opts.clipIndex));
+  return api.raw(`/scenes/${sceneId}/versions/import`, {
+    method: "POST",
+    body: formData,
+  });
+}
+
+/** Import a single file from a server-side path. */
+export function useImportFromPath(sceneId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { path: string; parent_version_id?: number; clip_index?: number; notes?: string }) =>
+      api.post<SceneVideoVersion>(`/scenes/${sceneId}/versions/import-from-path`, input),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: clipKeys.list(sceneId) });
+      qc.invalidateQueries({ queryKey: clipKeys.all });
+      qc.invalidateQueries({ queryKey: sceneKeys.all });
+    },
+  });
+}
+
+/** Batch directory scan + import response types. */
+export interface DirScanFolderPreview {
+  folder_name: string;
+  avatar_name: string | null;
+  scene_type: string | null;
+  track: string | null;
+  version: number | null;
+  file_count: number;
+  labels: string[];
+  errors: string[];
+}
+
+export interface DirScanResult {
+  folder_count: number;
+  file_count: number;
+  folders: DirScanFolderPreview[];
+  imported?: number;
+  failed?: number;
+  errors: string[];
+}
+
+/** Batch directory scan + import. Use dry_run=true for preview. */
+export function useImportDirectory() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { directory_path: string; pipeline_id: number; dry_run?: boolean }) =>
+      api.post<DirScanResult>("/derived-clips/import-directory", input),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: clipKeys.all });
+      qc.invalidateQueries({ queryKey: sceneKeys.all });
+    },
+  });
+}
+
+/** Derived clip item returned by the derived clips listing endpoint. */
+export interface DerivedClipItem {
+  id: number;
+  scene_id: number;
+  version_number: number;
+  source: "generated" | "imported";
+  file_path: string;
+  file_size_bytes: number | null;
+  duration_secs: number | null;
+  width: number | null;
+  height: number | null;
+  frame_rate: number | null;
+  preview_path: string | null;
+  is_final: boolean;
+  qa_status: "pending" | "approved" | "rejected";
+  clip_index: number | null;
+  parent_version_id: number | null;
+  annotation_count: number;
+  file_purged: boolean;
+  created_at: string;
+  scene_type_name: string;
+  track_name: string;
+}
+
+export interface DerivedClipsPage {
+  items: DerivedClipItem[];
+  total: number;
+}
+
+/** Fetch derived clips for an avatar, grouped by parent version. */
+export function useDerivedClips(
+  avatarId: number,
+  params?: { limit?: number; offset?: number; qaStatus?: string; tagIds?: string; excludeTagIds?: string },
+) {
+  const searchParams = new URLSearchParams();
+  if (params?.limit != null) searchParams.set("limit", String(params.limit));
+  if (params?.offset != null) searchParams.set("offset", String(params.offset));
+  if (params?.qaStatus) searchParams.set("qa_status", params.qaStatus);
+  if (params?.tagIds) searchParams.set("tag_ids", params.tagIds);
+  if (params?.excludeTagIds) searchParams.set("exclude_tag_ids", params.excludeTagIds);
+  const qs = searchParams.toString();
+  return useQuery({
+    queryKey: [...clipKeys.derived(avatarId), qs],
+    queryFn: () => api.get<DerivedClipsPage>(`/avatars/${avatarId}/derived-clips${qs ? `?${qs}` : ""}`),
+    enabled: avatarId > 0,
   });
 }

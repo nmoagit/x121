@@ -148,7 +148,7 @@ export function AvatarCard({ avatar, group, avatarUrl, heroVariantId, selected, 
   return (
     <div
       className={cn(
-        "group/card cursor-pointer rounded-[var(--radius-lg)] border border-[var(--color-border-default)] bg-[#0d1117] overflow-hidden",
+        "group/card cursor-pointer rounded-[var(--radius-lg)] border border-[var(--color-border-default)] bg-[#0d1117] overflow-hidden h-full",
         "transition-shadow duration-[var(--duration-fast)] ease-[var(--ease-default)]",
         "hover:shadow-[var(--shadow-md)]",
         selected && "ring-2 ring-[var(--color-border-accent)]",
@@ -159,7 +159,7 @@ export function AvatarCard({ avatar, group, avatarUrl, heroVariantId, selected, 
       <button
         type="button"
         onClick={onClick}
-        className="relative w-full text-left"
+        className="relative w-full h-full text-left flex flex-col"
         aria-label={`Open avatar ${avatar.name}`}
       >
         {/* Avatar area */}
@@ -293,7 +293,7 @@ export function AvatarCard({ avatar, group, avatarUrl, heroVariantId, selected, 
         )}
 
         {/* Info area */}
-        <div className="px-[var(--spacing-2)] py-[var(--spacing-2)]">
+        <div className="px-[var(--spacing-2)] py-[var(--spacing-2)] flex-1">
           <div className="flex items-center justify-between gap-1">
             <h3 className="text-xs font-medium text-[var(--color-text-primary)] font-mono truncate">
               {avatar.name}

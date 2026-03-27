@@ -20,6 +20,7 @@ pub mod budget_quota;
 pub mod bug_report;
 pub mod channels;
 pub mod checkpointing;
+pub mod clip_filename_parser;
 pub mod clip_qa;
 pub mod cloud;
 pub mod cloud_scaling;

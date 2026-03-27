@@ -1,21 +1,22 @@
 /**
  * Modal form for creating/editing image types (PRD-154).
  *
- * Includes name, slug (auto-generated on create, readonly on edit),
- * description, source/output track selectors, workflow selector,
- * prompt templates, track association checkboxes, and sort order.
+ * Core fields (name, slug, description, source/output track, sort, active)
+ * are editable. Workflow and prompts shown as read-only summary with links
+ * to the relevant tabs — matching the scene type modal pattern.
  */
 
 import { useCallback, useState } from "react";
 
 import { Modal } from "@/components/composite/Modal";
 import { Stack } from "@/components/layout";
-import { Button, Checkbox, Input, Select, Toggle } from "@/components/primitives";
+import { Button, Input, Select, Toggle } from "@/components/primitives";
 import { usePipelineContextSafe } from "@/features/pipelines";
 import { useTracks } from "@/features/scene-catalogue/hooks/use-tracks";
 import { useWorkflows } from "@/features/workflow-import/hooks/use-workflow-import";
 import { generateSnakeSlug } from "@/lib/format";
-import { TERMINAL_TEXTAREA } from "@/lib/ui-classes";
+import { TERMINAL_LABEL, TRACK_TEXT_COLORS } from "@/lib/ui-classes";
+import { ArrowRight } from "@/tokens/icons";
 
 import { useCreateImageType, useUpdateImageType } from "./hooks/use-image-catalogue";
 import type { CreateImageType, ImageType } from "./types";
@@ -28,13 +29,32 @@ interface ImageCatalogueFormProps {
   entry?: ImageType;
   open: boolean;
   onClose: () => void;
+  /** Navigate to a specific tab (e.g., "workflows", "prompt-defaults"). */
+  onSwitchTab?: (tab: string) => void;
+}
+
+/* --------------------------------------------------------------------------
+   Tab link button
+   -------------------------------------------------------------------------- */
+
+function TabLink({ label, tab, onSwitchTab }: { label: string; tab: string; onSwitchTab?: (tab: string) => void }) {
+  if (!onSwitchTab) return <span className={TERMINAL_LABEL}>{label}</span>;
+  return (
+    <button
+      type="button"
+      className="font-mono text-[10px] font-medium text-cyan-400 uppercase tracking-wide hover:text-cyan-300 transition-colors cursor-pointer"
+      onClick={() => onSwitchTab(tab)}
+    >
+      {label} →
+    </button>
+  );
 }
 
 /* --------------------------------------------------------------------------
    Component
    -------------------------------------------------------------------------- */
 
-export function ImageCatalogueForm({ entry, open, onClose }: ImageCatalogueFormProps) {
+export function ImageCatalogueForm({ entry, open, onClose, onSwitchTab }: ImageCatalogueFormProps) {
   const isEdit = entry !== undefined;
   const pipelineCtx = usePipelineContextSafe();
   const pipelineId = pipelineCtx?.pipelineId;
@@ -42,24 +62,14 @@ export function ImageCatalogueForm({ entry, open, onClose }: ImageCatalogueFormP
   const [name, setName] = useState(entry?.name ?? "");
   const [slug, setSlug] = useState(entry?.slug ?? "");
   const [description, setDescription] = useState(entry?.description ?? "");
-  const [workflowId, setWorkflowId] = useState<string>(
-    entry?.workflow_id != null ? String(entry.workflow_id) : "",
-  );
   const [sourceTrackId, setSourceTrackId] = useState<string>(
     entry?.source_track_id != null ? String(entry.source_track_id) : "",
   );
   const [outputTrackId, setOutputTrackId] = useState<string>(
     entry?.output_track_id != null ? String(entry.output_track_id) : "",
   );
-  const [promptTemplate, setPromptTemplate] = useState(entry?.prompt_template ?? "");
-  const [negativePromptTemplate, setNegativePromptTemplate] = useState(
-    entry?.negative_prompt_template ?? "",
-  );
   const [sortOrder, setSortOrder] = useState(entry?.sort_order?.toString() ?? "0");
   const [isActive, setIsActive] = useState(entry?.is_active ?? true);
-  const [selectedTrackIds, setSelectedTrackIds] = useState<Set<number>>(
-    new Set(entry?.tracks.map((t) => t.id) ?? []),
-  );
 
   const { data: tracks } = useTracks(false, pipelineId);
   const { data: workflows } = useWorkflows(undefined, pipelineId);
@@ -72,21 +82,10 @@ export function ImageCatalogueForm({ entry, open, onClose }: ImageCatalogueFormP
   const handleNameChange = useCallback(
     (value: string) => {
       setName(value);
-      if (!isEdit) {
-        setSlug(generateSnakeSlug(value));
-      }
+      if (!isEdit) setSlug(generateSnakeSlug(value));
     },
     [isEdit],
   );
-
-  const handleTrackToggle = useCallback((trackId: number, checked: boolean) => {
-    setSelectedTrackIds((prev) => {
-      const next = new Set(prev);
-      if (checked) next.add(trackId);
-      else next.delete(trackId);
-      return next;
-    });
-  }, []);
 
   const handleSubmit = useCallback(
     (e: React.FormEvent) => {
@@ -95,14 +94,10 @@ export function ImageCatalogueForm({ entry, open, onClose }: ImageCatalogueFormP
 
       const shared = {
         description: description.trim() || null,
-        workflow_id: workflowId ? Number(workflowId) : null,
         source_track_id: sourceTrackId ? Number(sourceTrackId) : null,
         output_track_id: outputTrackId ? Number(outputTrackId) : null,
-        prompt_template: promptTemplate.trim() || null,
-        negative_prompt_template: negativePromptTemplate.trim() || null,
         sort_order: Number.parseInt(sortOrder, 10) || 0,
         is_active: isActive,
-        track_ids: Array.from(selectedTrackIds),
       };
 
       if (isEdit) {
@@ -120,12 +115,7 @@ export function ImageCatalogueForm({ entry, open, onClose }: ImageCatalogueFormP
         createMutation.mutate(data, { onSuccess: () => onClose() });
       }
     },
-    [
-      isEdit, isNameEmpty, pipelineId, name, slug, description,
-      workflowId, sourceTrackId, outputTrackId,
-      promptTemplate, negativePromptTemplate, sortOrder,
-      isActive, selectedTrackIds, createMutation, updateMutation, onClose,
-    ],
+    [isEdit, isNameEmpty, pipelineId, name, slug, description, sourceTrackId, outputTrackId, sortOrder, isActive, createMutation, updateMutation, onClose],
   );
 
   const trackOptions = (tracks ?? []).map((t) => ({
@@ -133,147 +123,93 @@ export function ImageCatalogueForm({ entry, open, onClose }: ImageCatalogueFormP
     label: t.name,
   }));
 
-  const workflowOptions = (workflows ?? []).map((w) => ({
-    value: String(w.id),
-    label: w.name,
-  }));
+  const handleSwitchTab = onSwitchTab ? (tab: string) => {
+    onClose();
+    onSwitchTab(tab);
+  } : undefined;
+
+  // Resolve names for summary
+  const srcTrack = tracks?.find((t) => t.id === entry?.source_track_id);
+  const outTrack = tracks?.find((t) => t.id === entry?.output_track_id);
+  const wfName = entry?.workflow_id ? workflows?.find((w) => w.id === entry.workflow_id)?.name : null;
 
   return (
-    <Modal open={open} onClose={onClose} title={isEdit ? "Edit Image Type" : "Add Image Type"} size="lg">
+    <Modal open={open} onClose={onClose} title={isEdit ? `Edit: ${entry?.name}` : "Add Image Type"} size="lg">
       <form onSubmit={handleSubmit}>
-        <Stack gap={5}>
-          <Input
-            label="Name"
-            size="sm"
-            value={name}
-            onChange={(e) => handleNameChange(e.target.value)}
-            placeholder="Image type name"
-            required
-          />
-
-          <Input
-            label="Slug"
-            size="sm"
-            value={slug}
-            onChange={(e) => setSlug(e.target.value)}
-            placeholder="auto-generated"
-            disabled={isEdit}
-          />
-
-          <div className="flex flex-col gap-1.5">
-            <label
-              htmlFor="image-type-description"
-              className="font-mono text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide"
-            >
-              Description
-            </label>
-            <textarea
-              id="image-type-description"
-              rows={2}
-              className={TERMINAL_TEXTAREA}
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Optional description"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <Select
-              label="Source Track"
-              options={[{ value: "", label: "None" }, ...trackOptions]}
-              value={sourceTrackId}
-              onChange={setSourceTrackId}
-            />
-            <Select
-              label="Output Track"
-              options={[{ value: "", label: "None" }, ...trackOptions]}
-              value={outputTrackId}
-              onChange={setOutputTrackId}
-            />
-          </div>
-
-          <Select
-            label="Workflow"
-            options={[{ value: "", label: "None" }, ...workflowOptions]}
-            value={workflowId}
-            onChange={setWorkflowId}
-          />
-
-          <div className="flex flex-col gap-1.5">
-            <label
-              htmlFor="image-type-prompt"
-              className="font-mono text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide"
-            >
-              Prompt Template
-            </label>
-            <textarea
-              id="image-type-prompt"
-              rows={3}
-              className={TERMINAL_TEXTAREA}
-              value={promptTemplate}
-              onChange={(e) => setPromptTemplate(e.target.value)}
-              placeholder="Prompt template for image generation"
-            />
-          </div>
-
-          <div className="flex flex-col gap-1.5">
-            <label
-              htmlFor="image-type-neg-prompt"
-              className="font-mono text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide"
-            >
-              Negative Prompt Template
-            </label>
-            <textarea
-              id="image-type-neg-prompt"
-              rows={2}
-              className={TERMINAL_TEXTAREA}
-              value={negativePromptTemplate}
-              onChange={(e) => setNegativePromptTemplate(e.target.value)}
-              placeholder="Negative prompt template"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <Input
-              label="Sort Order"
-              size="sm"
-              type="number"
-              min={0}
-              value={sortOrder}
-              onChange={(e) => setSortOrder(e.target.value)}
-            />
-            <div className="flex items-end pb-1">
-              <Toggle checked={isActive} onChange={setIsActive} label="Active" />
+        <Stack gap={2}>
+          {/* Row 1: Name, Slug, Sort, Active */}
+          <div className="grid grid-cols-[1fr_1fr_64px_auto] gap-2 items-end">
+            <Input label="Name" size="xs" value={name} onChange={(e) => handleNameChange(e.target.value)} placeholder="Name" required />
+            <Input label="Slug" size="xs" value={slug} onChange={(e) => setSlug(e.target.value)} placeholder="auto" disabled={isEdit} />
+            <Input label="Sort" size="xs" type="number" min={0} value={sortOrder} onChange={(e) => setSortOrder(e.target.value)} />
+            <div className="flex items-center h-[26px]">
+              <Toggle checked={isActive} onChange={setIsActive} label="Active" size="sm" />
             </div>
           </div>
 
-          {/* Track association checkboxes */}
-          {tracks && tracks.length > 0 && (
-            <div className="flex flex-col gap-2">
-              <span className="font-mono text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide">
-                Associated Tracks
-              </span>
-              <div className="flex flex-col gap-2">
-                {tracks.map((track) => (
-                  <Checkbox
-                    key={track.id}
-                    checked={selectedTrackIds.has(track.id)}
-                    onChange={(checked) => handleTrackToggle(track.id, checked)}
-                    label={track.name}
-                  />
-                ))}
+          {/* Row 2: Description */}
+          <Input label="Description" size="xs" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Optional description" />
+
+          {/* Row 3: Source Track, Output Track */}
+          <div className="grid grid-cols-2 gap-2">
+            <Select label="Source Track" size="xs" options={[{ value: "", label: "None" }, ...trackOptions]} value={sourceTrackId} onChange={setSourceTrackId} />
+            <Select label="Output Track" size="xs" options={[{ value: "", label: "None" }, ...trackOptions]} value={outputTrackId} onChange={setOutputTrackId} />
+          </div>
+
+          {/* Read-only config summary (edit mode only) */}
+          {isEdit && entry && (
+            <div className="rounded-[var(--radius-md)] bg-[#0d1117] border border-[var(--color-border-default)]/30 p-2.5 space-y-2.5">
+              {/* Tracks */}
+              <div className="space-y-1">
+                <span className={TERMINAL_LABEL}>Track Flow</span>
+                {srcTrack && outTrack ? (
+                  <div className="flex items-center gap-1.5 font-mono text-[10px]">
+                    <span className={TRACK_TEXT_COLORS[srcTrack.slug] ?? "text-[var(--color-text-muted)]"}>{srcTrack.name}</span>
+                    <ArrowRight size={8} className="text-[var(--color-text-muted)]" />
+                    <span className={TRACK_TEXT_COLORS[outTrack.slug] ?? "text-[var(--color-text-muted)]"}>{outTrack.name}</span>
+                  </div>
+                ) : (
+                  <div className="font-mono text-[10px] text-orange-400">Tracks not configured</div>
+                )}
+              </div>
+
+              {/* Workflow */}
+              <div className="space-y-1">
+                <TabLink label="Workflows" tab="workflows" onSwitchTab={handleSwitchTab} />
+                {wfName ? (
+                  <div className="font-mono text-[10px] text-[var(--color-text-muted)]">{wfName}</div>
+                ) : (
+                  <div className="font-mono text-[10px] text-orange-400">No workflow assigned</div>
+                )}
+              </div>
+
+              {/* Prompts */}
+              <div className="space-y-1">
+                <TabLink label="Prompt Defaults" tab="prompt-defaults" onSwitchTab={handleSwitchTab} />
+                {entry.prompt_template || entry.negative_prompt_template ? (
+                  <div className="space-y-1">
+                    {entry.prompt_template && (
+                      <div className="font-mono text-[10px] text-green-400/60 border-l-2 border-l-green-500/30 pl-1.5">
+                        {entry.prompt_template.slice(0, 60)}{entry.prompt_template.length > 60 ? "…" : ""}
+                      </div>
+                    )}
+                    {entry.negative_prompt_template && (
+                      <div className="font-mono text-[10px] text-red-400/60 border-l-2 border-l-red-500/30 pl-1.5">
+                        {entry.negative_prompt_template.slice(0, 60)}{entry.negative_prompt_template.length > 60 ? "…" : ""}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="font-mono text-[10px] text-[var(--color-text-muted)]">No prompts configured</div>
+                )}
               </div>
             </div>
           )}
 
           {/* Actions */}
-          <div className="flex justify-end gap-2 pt-1 border-t border-[var(--color-border-default)]">
-            <Button type="button" variant="secondary" size="sm" onClick={onClose}>
-              Cancel
-            </Button>
-            <Button type="submit" variant="primary" size="sm" disabled={isNameEmpty} loading={isPending}>
-              {isEdit ? "Save Changes" : "Create Image Type"}
-            </Button>
+          <div className="flex justify-end gap-2 pt-2 border-t border-[var(--color-border-default)]">
+            <Button type="button" variant="secondary" size="sm" onClick={onClose}>Cancel</Button>
+            <Button type="submit" variant="primary" size="sm" disabled={isNameEmpty} loading={isPending}>{isEdit ? "Save" : "Create"}</Button>
           </div>
         </Stack>
       </form>

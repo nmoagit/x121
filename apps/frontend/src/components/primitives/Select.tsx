@@ -3,14 +3,16 @@ import { ChevronDown } from "@/tokens/icons";
 import { useId } from "react";
 import type { ChangeEvent } from "react";
 
-type SelectSize = "sm" | "md";
+type SelectSize = "xs" | "sm" | "md";
 
 const SIZE_CLASSES: Record<SelectSize, string> = {
+  xs: "px-2 py-1 pr-7 text-xs",
   sm: "px-2 py-1 pr-8 text-xs",
   md: "px-3 py-2 pr-10 text-base",
 };
 
 const ICON_SIZES: Record<SelectSize, number> = {
+  xs: 12,
   sm: 14,
   md: 16,
 };
@@ -104,7 +106,7 @@ export function Select({
           size={iconSize}
           className={cn(
             "absolute top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] pointer-events-none",
-            size === "sm" ? "right-2" : "right-3",
+            size === "md" ? "right-3" : "right-2",
           )}
           aria-hidden="true"
         />

@@ -26,6 +26,7 @@ const IMPORT_BODY_LIMIT: usize = 500 * 1024 * 1024;
 ///
 /// GET    /{scene_id}/versions                list_by_scene
 /// POST   /{scene_id}/versions/import         import_video (multipart)
+/// POST   /{scene_id}/versions/import-from-path import_from_path (JSON, PRD-153)
 /// GET    /{scene_id}/versions/{id}           get_by_id
 /// DELETE /{scene_id}/versions/{id}           delete
 /// PUT    /{scene_id}/versions/{id}/set-final set_final
@@ -51,6 +52,7 @@ pub fn router() -> Router<AppState> {
     let version_routes = Router::new()
         .route("/", get(version::list_by_scene))
         .route("/import", post(version::import_video))
+        .route("/import-from-path", post(version::import_from_path))
         .route(
             "/{id}",
             get(version::get_by_id)

@@ -883,7 +883,8 @@ pub fn api_routes() -> Router<AppState> {
             .nest("/{avatar_id}/scene-settings", avatar_scene_overrides::router())
             .nest("/{avatar_id}/image-settings", avatar_image_overrides::router())
             .nest("/{avatar_id}/deliverable-ignores", avatar_deliverable_ignore::router())
-            .nest("/{avatar_id}/speeches", avatar_speech::router()))
+            .nest("/{avatar_id}/speeches", avatar_speech::router())
+            .route("/{avatar_id}/derived-clips", axum::routing::get(crate::handlers::scene_video_version::list_derived_clips)))
         // Scene-scoped sub-resources (segments, review queue, generation PRD-24, QA PRD-49, resolution PRD-59, storyboard PRD-62, branching PRD-50).
         .nest("/scenes", scene::router()
             .merge(metadata::scene_metadata_router())
@@ -943,6 +944,8 @@ pub fn api_routes() -> Router<AppState> {
         .route("/scene-video-versions/browse", axum::routing::get(crate::handlers::scene_video_version::browse_clips))
         .route("/scene-video-versions/bulk-approve", axum::routing::post(crate::handlers::scene_video_version::bulk_approve_clips))
         .route("/scene-video-versions/bulk-reject", axum::routing::post(crate::handlers::scene_video_version::bulk_reject_clips))
+        // Derived clips: batch directory import (PRD-153).
+        .route("/derived-clips/import-directory", axum::routing::post(crate::handlers::scene_video_version::import_directory))
         // Annotation browsing (cross-project annotation overview).
         .nest("/annotations", annotation::annotation_browse_router())
         // Annotation presets (PRD-149).

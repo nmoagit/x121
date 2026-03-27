@@ -122,7 +122,7 @@ export function AvatarSettingsTab({
         <AvatarSceneOverrides projectId={projectId} avatarId={avatarId} />
       </CollapsibleSection>
 
-      <CollapsibleSection card title="Workflow Assignments" description="Assign workflows per scene and track." open={openSections.has("workflows")} onToggle={() => toggleSection("workflows")}>
+      <CollapsibleSection card title="Workflow Assignments" description="Assign workflows for image and scene types." open={openSections.has("workflows")} onToggle={() => toggleSection("workflows")}>
         <AvatarWorkflowOverrides avatarId={avatarId} />
       </CollapsibleSection>
 

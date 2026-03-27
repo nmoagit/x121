@@ -1,6 +1,7 @@
 /**
  * Inline export status panel shown when an export job is in progress or completed.
  * Displays progress indicator, error messages, and download links for completed parts.
+ * Auto-downloads each part as it becomes ready (progressive download).
  */
 
 import { useCallback, useEffect, useRef } from "react";
@@ -20,7 +21,7 @@ interface ExportStatusPanelProps {
 
 export function ExportStatusPanel({ job, onDismiss }: ExportStatusPanelProps) {
   const isActive = job.status === "queued" || job.status === "processing";
-  const autoDownloadedRef = useRef<number | null>(null);
+  const parts = job.parts ?? [];
 
   const handleDownloadPart = useCallback(
     async (part: ExportPart) => {
@@ -36,25 +37,37 @@ export function ExportStatusPanel({ job, onDismiss }: ExportStatusPanelProps) {
     [job.id],
   );
 
-  // Auto-download parts as they become available (progressive download).
-  // Uses parts.length as dependency so the effect only fires when new parts appear.
-  const downloadedPartsRef = useRef<Set<number>>(new Set());
-  const partsCount = job.parts?.length ?? 0;
+  // Auto-download each part exactly once as it becomes available.
+  // Track by part number — download only parts we haven't downloaded yet.
+  const lastDownloadedPartRef = useRef(0);
+  const partsRef = useRef(parts);
+  partsRef.current = parts;
+  const handleDownloadRef = useRef(handleDownloadPart);
+  handleDownloadRef.current = handleDownloadPart;
+
+  const partsCount = parts.length;
   useEffect(() => {
-    if (partsCount === 0) return;
-    const newParts = job.parts.filter((p) => !downloadedPartsRef.current.has(p.part));
+    const currentParts = partsRef.current;
+    if (currentParts.length === 0) return;
+
+    // Find parts with part number > lastDownloadedPart
+    const newParts = currentParts.filter((p) => p.part > lastDownloadedPartRef.current);
     if (newParts.length === 0) return;
 
-    newParts.forEach((part, i) => {
-      downloadedPartsRef.current.add(part.part);
-      setTimeout(() => handleDownloadPart(part), i * 500);
-    });
-  }, [partsCount]); // eslint-disable-line react-hooks/exhaustive-deps
+    // Sort by part number to ensure sequential download
+    newParts.sort((a, b) => a.part - b.part);
+
+    for (let i = 0; i < newParts.length; i++) {
+      const part = newParts[i]!;
+      lastDownloadedPartRef.current = Math.max(lastDownloadedPartRef.current, part.part);
+      // Stagger downloads by 1s to avoid browser blocking
+      setTimeout(() => handleDownloadRef.current(part), i * 1000);
+    }
+  }, [partsCount]);
 
   // Reset tracking when job ID changes.
   useEffect(() => {
-    autoDownloadedRef.current = null;
-    downloadedPartsRef.current = new Set();
+    lastDownloadedPartRef.current = 0;
   }, [job.id]);
 
   return (
@@ -67,7 +80,7 @@ export function ExportStatusPanel({ job, onDismiss }: ExportStatusPanelProps) {
               <div className="h-2 w-2 rounded-full bg-blue-400 animate-pulse" />
               <span className="text-blue-400">
                 Export {job.status === "queued" ? "queued" : "processing"}
-                {job.parts.length > 0 && ` — ${job.parts.length} part${job.parts.length !== 1 ? "s" : ""} ready`}
+                {parts.length > 0 && ` — ${parts.length} part${parts.length !== 1 ? "s" : ""} ready`}
                 ...
               </span>
             </>
@@ -77,7 +90,7 @@ export function ExportStatusPanel({ job, onDismiss }: ExportStatusPanelProps) {
             <>
               <div className="h-2 w-2 rounded-full bg-green-400" />
               <span className="text-green-400">
-                Export complete — {job.parts.length} part{job.parts.length !== 1 ? "s" : ""}
+                Export complete — {parts.length} part{parts.length !== 1 ? "s" : ""}
               </span>
             </>
           )}
@@ -94,8 +107,8 @@ export function ExportStatusPanel({ job, onDismiss }: ExportStatusPanelProps) {
 
         <div className="flex items-center gap-1.5">
           {/* Download buttons for available parts (shown during processing and after completion) */}
-          {job.parts.length > 0 &&
-            job.parts.map((part) => (
+          {parts.length > 0 &&
+            parts.map((part) => (
               <button
                 key={part.part}
                 type="button"

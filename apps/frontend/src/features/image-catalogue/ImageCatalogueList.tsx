@@ -1,15 +1,15 @@
 /**
  * Image catalogue list view (PRD-154).
  *
- * Displays all image types in a terminal-styled table with track info,
- * active/inactive status, and edit/deactivate actions.
+ * Simple row list — click a row to open the edit modal.
  */
 
 import { useCallback, useState } from "react";
 
-import { Modal } from "@/components/composite";
+import { ConfirmDeleteModal } from "@/components/composite";
+import { EmptyState } from "@/components/domain";
 import { Stack } from "@/components/layout";
-import { Button, ContextLoader, Toggle } from "@/components/primitives";
+import { Button, LoadingPane } from "@/components/primitives";
 import { cn } from "@/lib/cn";
 import {
   GHOST_DANGER_BTN,
@@ -20,99 +20,39 @@ import {
   TERMINAL_PANEL,
   TERMINAL_ROW_HOVER,
   TERMINAL_STATUS_COLORS,
-  TERMINAL_TH,
+  TRACK_TEXT_COLORS,
 } from "@/lib/ui-classes";
-import { Plus } from "@/tokens/icons";
+import { ArrowRight, Plus, Trash2 } from "@/tokens/icons";
 
 import { usePipelineContextSafe } from "@/features/pipelines";
-
+import { useTracks } from "@/features/scene-catalogue/hooks/use-tracks";
 import { ImageCatalogueForm } from "./ImageCatalogueForm";
 import { useDeleteImageType, useImageTypes } from "./hooks/use-image-catalogue";
 import type { ImageType } from "./types";
 
 /* --------------------------------------------------------------------------
-   Entry row
-   -------------------------------------------------------------------------- */
-
-interface EntryRowProps {
-  entry: ImageType;
-  onEdit: (entry: ImageType) => void;
-  onDeactivate: (entry: ImageType) => void;
-}
-
-function EntryRow({ entry, onEdit, onDeactivate }: EntryRowProps) {
-  const statusColor = TERMINAL_STATUS_COLORS[entry.is_active ? "active" : "pending"] ?? "text-[var(--color-text-muted)]";
-
-  return (
-    <tr className={cn(TERMINAL_DIVIDER, TERMINAL_ROW_HOVER)}>
-      <td className="px-3 py-1.5">
-        <div className="flex flex-col">
-          <span className="font-mono text-xs text-cyan-400">{entry.name}</span>
-          <span className="font-mono text-[10px] text-[var(--color-text-muted)] mt-0.5">{entry.slug}</span>
-        </div>
-      </td>
-      <td className="px-3 py-1.5 font-mono text-xs text-[var(--color-text-muted)]">
-        {entry.tracks.length === 0 ? (
-          <span>None</span>
-        ) : (
-          entry.tracks.map((t, i) => (
-            <span key={t.id}>
-              {i > 0 && <span className="opacity-30 mx-1">|</span>}
-              <span className="text-[var(--color-text-primary)]">{t.name}</span>
-            </span>
-          ))
-        )}
-      </td>
-      <td className="px-3 py-1.5 font-mono text-xs text-[var(--color-text-muted)]">
-        {entry.sort_order}
-      </td>
-      <td className="px-3 py-1.5">
-        <span className={cn("font-mono text-xs", statusColor)}>
-          {entry.is_active ? "Active" : "Inactive"}
-        </span>
-      </td>
-      <td className="px-3 py-1.5">
-        <div className="flex items-center gap-1">
-          <Button variant="ghost" size="xs" onClick={() => onEdit(entry)}>
-            Edit
-          </Button>
-          {entry.is_active && (
-            <Button
-              variant="ghost"
-              size="xs"
-              className={GHOST_DANGER_BTN}
-              onClick={() => onDeactivate(entry)}
-            >
-              Deactivate
-            </Button>
-          )}
-        </div>
-      </td>
-    </tr>
-  );
-}
-
-/* --------------------------------------------------------------------------
    Main component
    -------------------------------------------------------------------------- */
 
-export function ImageCatalogueList() {
+export function ImageCatalogueList({ onSwitchTab }: { onSwitchTab?: (tab: string) => void } = {}) {
   const pipelineCtx = usePipelineContextSafe();
-  const { data: entries, isLoading } = useImageTypes(pipelineCtx?.pipelineId);
-  const deactivateMutation = useDeleteImageType();
+  const { data: imageTypes, isLoading } = useImageTypes(pipelineCtx?.pipelineId);
+  const { data: tracks } = useTracks(false, pipelineCtx?.pipelineId);
+  const deleteMutation = useDeleteImageType();
 
   const [formOpen, setFormOpen] = useState(false);
   const [editEntry, setEditEntry] = useState<ImageType | undefined>();
-  const [deactivateTarget, setDeactivateTarget] = useState<ImageType | null>(null);
-  const [showInactive, setShowInactive] = useState(false);
+  const [deleting, setDeleting] = useState<ImageType | null>(null);
 
-  const handleEdit = useCallback((entry: ImageType) => {
-    setEditEntry(entry);
+  const trackName = (id: number | null) => tracks?.find((t) => t.id === id)?.name ?? null;
+  const trackSlug = (id: number | null) => tracks?.find((t) => t.id === id)?.slug ?? "";
+  const handleCreate = useCallback(() => {
+    setEditEntry(undefined);
     setFormOpen(true);
   }, []);
 
-  const handleCreate = useCallback(() => {
-    setEditEntry(undefined);
+  const handleEdit = useCallback((it: ImageType) => {
+    setEditEntry(it);
     setFormOpen(true);
   }, []);
 
@@ -121,77 +61,93 @@ export function ImageCatalogueList() {
     setEditEntry(undefined);
   }, []);
 
-  const handleConfirmDeactivate = useCallback(() => {
-    if (!deactivateTarget) return;
-    deactivateMutation.mutate(deactivateTarget.id, {
-      onSuccess: () => setDeactivateTarget(null),
-    });
-  }, [deactivateTarget, deactivateMutation]);
+  const handleDeleteConfirm = useCallback(() => {
+    if (!deleting) return;
+    deleteMutation.mutate(deleting.id, { onSuccess: () => setDeleting(null) });
+  }, [deleting, deleteMutation]);
 
-  const visibleEntries = showInactive
-    ? entries
-    : entries?.filter((e) => e.is_active);
+  if (isLoading) return <LoadingPane />;
 
-  if (isLoading) {
+  if (!imageTypes?.length && !formOpen) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <ContextLoader size={64} />
-      </div>
+      <>
+        <EmptyState
+          title="No Image Types"
+          description="Create your first image type to define workflow configurations for image generation."
+          action={
+            <Button variant="primary" size="sm" onClick={handleCreate}>
+              Create Image Type
+            </Button>
+          }
+        />
+        <ImageCatalogueForm open={formOpen} onClose={handleFormClose} />
+      </>
     );
   }
 
   return (
-    <Stack gap={6}>
+    <Stack gap={4}>
       <div className={TERMINAL_PANEL}>
         <div className={cn(TERMINAL_HEADER, "flex items-center justify-between")}>
-          <span className={TERMINAL_HEADER_TITLE}>Image Catalogue</span>
-          <div className="flex items-center gap-4">
-            <Toggle
-              checked={showInactive}
-              onChange={setShowInactive}
-              label="Show Inactive"
-              size="sm"
-            />
-            <Button variant="primary" size="sm" icon={<Plus size={14} />} onClick={handleCreate}>
-              Add Image Type
-            </Button>
-          </div>
+          <span className={TERMINAL_HEADER_TITLE}>Image Types</span>
+          <Button variant="primary" size="sm" icon={<Plus size={14} />} onClick={handleCreate}>
+            New
+          </Button>
         </div>
         <div className={TERMINAL_BODY}>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className={TERMINAL_DIVIDER}>
-                  <th className={cn(TERMINAL_TH, "px-3 py-1.5")}>Name</th>
-                  <th className={cn(TERMINAL_TH, "px-3 py-1.5")}>Tracks</th>
-                  <th className={cn(TERMINAL_TH, "px-3 py-1.5")}>Sort</th>
-                  <th className={cn(TERMINAL_TH, "px-3 py-1.5")}>Status</th>
-                  <th className={cn(TERMINAL_TH, "px-3 py-1.5")}>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {!visibleEntries || visibleEntries.length === 0 ? (
-                  <tr>
-                    <td
-                      colSpan={5}
-                      className="px-3 py-6 text-center font-mono text-xs text-[var(--color-text-muted)]"
-                    >
-                      No image types. Click "Add Image Type" to create one.
-                    </td>
-                  </tr>
-                ) : (
-                  visibleEntries.map((entry) => (
-                    <EntryRow
-                      key={entry.id}
-                      entry={entry}
-                      onEdit={handleEdit}
-                      onDeactivate={setDeactivateTarget}
-                    />
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+          {(imageTypes ?? []).map((it) => {
+            const src = trackName(it.source_track_id);
+            const out = trackName(it.output_track_id);
+            const srcSlug = trackSlug(it.source_track_id);
+            const outSlug = trackSlug(it.output_track_id);
+            return (
+              <div
+                key={it.id}
+                role="button"
+                tabIndex={0}
+                className={cn(TERMINAL_DIVIDER, TERMINAL_ROW_HOVER, "flex items-center justify-between px-3 py-2 cursor-pointer")}
+                onClick={() => handleEdit(it)}
+                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") handleEdit(it); }}
+              >
+                <div className="flex items-center gap-4 min-w-0">
+                  {/* Name */}
+                  <span className="font-mono text-xs text-cyan-400 w-[140px] truncate shrink-0">
+                    {it.name}
+                  </span>
+
+                  {/* Source → Output */}
+                  {src && out && (
+                    <div className="flex items-center gap-1 font-mono text-[10px] shrink-0">
+                      <span className={TRACK_TEXT_COLORS[srcSlug] ?? "text-[var(--color-text-muted)]"}>{src}</span>
+                      <ArrowRight size={8} className="text-[var(--color-text-muted)]" />
+                      <span className={TRACK_TEXT_COLORS[outSlug] ?? "text-[var(--color-text-muted)]"}>{out}</span>
+                    </div>
+                  )}
+
+                  {/* Description */}
+                  {it.description && (
+                    <span className="font-mono text-[10px] text-[var(--color-text-muted)] truncate">
+                      {it.description}
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className={cn("font-mono text-[10px]", TERMINAL_STATUS_COLORS[it.is_active ? "active" : "pending"])}>
+                    {it.is_active ? "active" : "off"}
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="xs"
+                    className={GHOST_DANGER_BTN}
+                    icon={<Trash2 size={12} />}
+                    onClick={(e) => { e.stopPropagation(); setDeleting(it); }}
+                    aria-label="Delete"
+                  />
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
 
@@ -201,38 +157,18 @@ export function ImageCatalogueList() {
         entry={editEntry}
         open={formOpen}
         onClose={handleFormClose}
+        onSwitchTab={onSwitchTab}
       />
 
-      {/* Deactivate confirmation */}
-      <Modal
-        open={deactivateTarget !== null}
-        onClose={() => setDeactivateTarget(null)}
-        title="Deactivate Image Type"
-        size="sm"
-      >
-        {deactivateTarget && (
-          <Stack gap={4}>
-            <p className="font-mono text-xs text-[var(--color-text-secondary)]">
-              Are you sure you want to deactivate{" "}
-              <strong className="text-cyan-400">{deactivateTarget.name}</strong>?
-              It will no longer appear in image settings.
-            </p>
-            <div className="flex justify-end gap-2 pt-1 border-t border-[var(--color-border-default)]">
-              <Button variant="secondary" size="sm" onClick={() => setDeactivateTarget(null)}>
-                Cancel
-              </Button>
-              <Button
-                variant="danger"
-                size="sm"
-                onClick={handleConfirmDeactivate}
-                loading={deactivateMutation.isPending}
-              >
-                Deactivate
-              </Button>
-            </div>
-          </Stack>
-        )}
-      </Modal>
+      <ConfirmDeleteModal
+        open={deleting !== null}
+        onClose={() => setDeleting(null)}
+        title="Delete Image Type"
+        entityName={deleting?.name ?? ""}
+        warningText="All avatar images using this type will need to be reconfigured."
+        onConfirm={handleDeleteConfirm}
+        loading={deleteMutation.isPending}
+      />
     </Stack>
   );
 }

@@ -518,12 +518,16 @@ pub fn sanitize_filename(input: &str) -> String {
         .map(|segment| {
             let cleaned: String = segment
                 .chars()
-                .filter(|ch| ch.is_ascii_alphanumeric() || *ch == '.' || *ch == '_' || *ch == '-')
+                .filter(|ch| {
+                    ch.is_ascii_alphanumeric()
+                        || matches!(*ch, '.' | '_' | '-' | '#' | '[' | ']' | ',')
+                })
                 .collect();
             // Collapse consecutive underscores
             let collapsed = collapse_separators(&cleaned);
+            // Trim trailing separators but preserve leading (used for sort ordering, e.g. -phase_2)
             collapsed
-                .trim_matches(|c: char| c == '_' || c == '-')
+                .trim_end_matches(|c: char| c == '_' || c == '-')
                 .to_string()
         })
         .filter(|s| !s.is_empty())
@@ -736,7 +740,7 @@ mod tests {
     fn sanitize_removes_unsafe_chars() {
         assert_eq!(
             sanitize_filename("hello@world#test.mp4"),
-            "helloworldtest.mp4"
+            "helloworld#test.mp4"
         );
     }
 
@@ -746,9 +750,10 @@ mod tests {
     }
 
     #[test]
-    fn sanitize_trims_edges() {
-        assert_eq!(sanitize_filename("_leading_.mp4"), "leading_.mp4");
-        assert_eq!(sanitize_filename("__hello__"), "hello");
+    fn sanitize_trims_trailing_but_preserves_leading() {
+        assert_eq!(sanitize_filename("_leading_.mp4"), "_leading_.mp4");
+        assert_eq!(sanitize_filename("__hello__"), "_hello");
+        assert_eq!(sanitize_filename("-phase_2"), "-phase_2");
     }
 
     #[test]

@@ -139,6 +139,7 @@ function BrowseClipItem({
             </span>
             <span className="text-[var(--color-text-muted)] uppercase">{clip.scene_type_name}</span>
             <span className={TRACK_TEXT_COLORS[clip.track_name.toLowerCase()] ?? "text-[var(--color-text-muted)]"}>{clip.track_name}</span>
+            {clip.clip_index != null && <span className="text-cyan-400">#{clip.clip_index}</span>}
           </div>
           <div className="flex items-center gap-2 text-[10px] text-[var(--color-text-muted)]">
             <span className="text-cyan-400 font-semibold">v{clip.version_number}</span>
@@ -151,6 +152,7 @@ function BrowseClipItem({
             {isPurgedClip(clip) && <><span className="opacity-30">|</span><span className="text-orange-400">purged</span></>}
             {!isPurgedClip(clip) && isEmptyClip(clip) && <><span className="opacity-30">|</span><span className="text-orange-400">empty</span></>}
             {clip.annotation_count > 0 && <><span className="opacity-30">|</span><span className="text-orange-400">{clip.annotation_count} annotated</span></>}
+            {clip.parent_version_id != null && <><span className="opacity-30">|</span><span className="text-violet-400">derived</span></>}
             <span className="opacity-30">|</span>
             <span>{clip.file_size_bytes != null ? formatBytes(clip.file_size_bytes) : "\u2014"}</span>
             <span className="opacity-30">|</span>
@@ -299,6 +301,7 @@ function BrowseClipCard({
           <div className="flex items-center gap-1.5 font-mono text-[10px] text-[var(--color-text-muted)] mt-0.5">
             <span className="text-cyan-400 font-semibold">v{clip.version_number}</span>
             <span className={TRACK_TEXT_COLORS[clip.track_name.toLowerCase()] ?? "text-[var(--color-text-muted)]"}>{clip.track_name}</span>
+            {clip.clip_index != null && <span className="text-cyan-400">#{clip.clip_index}</span>}
             {clip.qa_status !== "pending" && (
               <span className={TERMINAL_STATUS_COLORS[clip.qa_status] ?? "text-[var(--color-text-muted)]"}>{clip.qa_status}</span>
             )}
@@ -325,6 +328,7 @@ function BrowseClipCard({
 const SOURCE_OPTIONS: FilterOption[] = [
   { value: "generated", label: "Generated" },
   { value: "imported", label: "Imported" },
+  { value: "derived", label: "Derived" },
 ];
 
 const STATUS_OPTIONS: FilterOption[] = [
@@ -355,8 +359,8 @@ export function ScenesPage() {
   const [excludeLabelFilter, setExcludeLabelFilter] = useState<number[]>([]);
   const [searchInput, setSearchInput] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
-  // Absolute index across all pages (0 to total-1), not page-local
-  const [playingAbsIndex, setPlayingAbsIndex] = useState<number | null>(null);
+  // Track playing clip by ID so approve/reject doesn't jump to another clip
+  const [playingClipId, setPlayingClipId] = useState<number | null>(null);
   const [showDisabled, setShowDisabled] = useState(false);
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
   const [page, setPage] = useState(0);
@@ -379,17 +383,21 @@ export function ScenesPage() {
   const { data: projects } = useProjects(pipelineCtx?.pipelineId);
   // All filters passed server-side as comma-separated OR values
   const projectId = projectFilter.length === 1 ? Number(projectFilter[0]) : undefined;
+  // "derived" is a virtual source that maps to has_parent=true
+  const isDerivedFilter = sourceFilter.includes("derived");
+  const actualSourceFilter = sourceFilter.filter((s) => s !== "derived");
   const { data: browseResult, isLoading } = useClipsBrowse({
     projectId,
     pipelineId: pipelineCtx?.pipelineId,
     sceneType: sceneTypeFilter.length > 0 ? sceneTypeFilter.join(",") : undefined,
     track: trackFilter.length > 0 ? trackFilter.join(",") : undefined,
-    source: sourceFilter.length > 0 ? sourceFilter.join(",") : undefined,
+    source: actualSourceFilter.length > 0 ? actualSourceFilter.join(",") : undefined,
     qaStatus: statusFilter.length > 0 ? statusFilter.join(",") : undefined,
     showDisabled,
     tagIds: labelFilter.length > 0 ? labelFilter.join(",") : undefined,
     excludeTagIds: excludeLabelFilter.length > 0 ? excludeLabelFilter.join(",") : undefined,
     search: debouncedSearch || undefined,
+    hasParent: isDerivedFilter ? true : undefined,
     limit: pageSize,
     offset: page * pageSize,
   });
@@ -416,19 +424,11 @@ export function ScenesPage() {
   const filteredClips = clips ?? [];
   const pageIds = useMemo(() => filteredClips.map((c) => c.id), [filteredClips]);
 
-  // When the modal navigates past the current page boundary, switch pages
-  const pageOffset = page * pageSize;
-  useEffect(() => {
-    if (playingAbsIndex === null) return;
-    const targetPage = Math.floor(playingAbsIndex / pageSize);
-    if (targetPage !== page) setPage(targetPage);
-  }, [playingAbsIndex, pageSize, page]);
-
-  // Local index within the current page's items
-  const playingLocalIndex = playingAbsIndex !== null ? playingAbsIndex - pageOffset : null;
-  const playingClipData = playingLocalIndex !== null && filteredClips[playingLocalIndex]
-    ? filteredClips[playingLocalIndex]
-    : null;
+  // Resolve playing clip by ID — stable across refetches
+  const playingLocalIndex = playingClipId !== null
+    ? filteredClips.findIndex((c) => c.id === playingClipId)
+    : -1;
+  const playingClipData = playingLocalIndex >= 0 ? filteredClips[playingLocalIndex] : null;
 
   const approveMut = useBrowseApproveClip();
   const unapproveMut = useBrowseUnapproveClip();
@@ -441,13 +441,14 @@ export function ScenesPage() {
     pipelineId: pipelineCtx?.pipelineId,
     sceneType: sceneTypeFilter.length > 0 ? sceneTypeFilter.join(",") : undefined,
     track: trackFilter.length > 0 ? trackFilter.join(",") : undefined,
-    source: sourceFilter.length > 0 ? sourceFilter.join(",") : undefined,
+    source: actualSourceFilter.length > 0 ? actualSourceFilter.join(",") : undefined,
     qaStatus: statusFilter.length > 0 ? statusFilter.join(",") : undefined,
     showDisabled,
     tagIds: labelFilter.length > 0 ? labelFilter.join(",") : undefined,
     excludeTagIds: excludeLabelFilter.length > 0 ? excludeLabelFilter.join(",") : undefined,
     search: debouncedSearch || undefined,
-  }), [projectFilter, pipelineCtx?.pipelineId, sceneTypeFilter, trackFilter, sourceFilter, statusFilter, showDisabled, labelFilter, excludeLabelFilter, debouncedSearch]);
+    hasParent: isDerivedFilter ? true : undefined,
+  }), [projectFilter, pipelineCtx?.pipelineId, sceneTypeFilter, trackFilter, actualSourceFilter, isDerivedFilter, statusFilter, showDisabled, labelFilter, excludeLabelFilter, debouncedSearch]);
 
   const bulkOps = useBulkOperations({
     entityType: "scene_video_version",
@@ -494,6 +495,8 @@ export function ScenesPage() {
     created_at: clip.created_at,
     updated_at: clip.created_at,
     annotation_count: clip.annotation_count,
+    parent_version_id: clip.parent_version_id,
+    clip_index: clip.clip_index,
   }), []);
 
   return (
@@ -569,13 +572,13 @@ export function ScenesPage() {
         />
       ) : viewMode === "list" ? (
         <div className="flex flex-col gap-2">
-          {filteredClips.map((clip, i) => (
+          {filteredClips.map((clip) => (
             <BrowseClipItem
               key={clip.id}
               clip={clip}
               selected={bulk.isSelected(clip.id)}
               onToggleSelect={() => bulk.toggle(clip.id)}
-              onPlay={() => setPlayingAbsIndex(pageOffset + i)}
+              onPlay={() => setPlayingClipId(clip.id)}
               onNavigate={() =>
                 navigate({
                   to: "/projects/$projectId/avatars/$avatarId",
@@ -593,13 +596,13 @@ export function ScenesPage() {
         </div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 min-[1500px]:grid-cols-6 gap-3">
-          {filteredClips.map((clip, i) => (
+          {filteredClips.map((clip) => (
             <BrowseClipCard
               key={clip.id}
               clip={clip}
               selected={bulk.isSelected(clip.id)}
               onToggleSelect={() => bulk.toggle(clip.id)}
-              onPlay={() => setPlayingAbsIndex(pageOffset + i)}
+              onPlay={() => setPlayingClipId(clip.id)}
               onNavigate={() =>
                 navigate({
                   to: "/projects/$projectId/avatars/$avatarId",
@@ -628,9 +631,9 @@ export function ScenesPage() {
       {/* Video playback modal */}
       <ClipPlaybackModal
         clip={playingClipData ? toPlayable(playingClipData) : null}
-        onClose={() => setPlayingAbsIndex(null)}
-        onPrev={playingAbsIndex !== null && playingAbsIndex > 0 ? () => setPlayingAbsIndex(playingAbsIndex - 1) : undefined}
-        onNext={playingAbsIndex !== null && playingAbsIndex < total - 1 ? () => setPlayingAbsIndex(playingAbsIndex + 1) : undefined}
+        onClose={() => setPlayingClipId(null)}
+        onPrev={playingLocalIndex > 0 ? () => setPlayingClipId(filteredClips[playingLocalIndex - 1]!.id) : undefined}
+        onNext={playingLocalIndex >= 0 && playingLocalIndex < filteredClips.length - 1 ? () => setPlayingClipId(filteredClips[playingLocalIndex + 1]!.id) : undefined}
         onApprove={playingClipData ? () => playingClipData.qa_status === "approved" ? unapproveMut.mutate({ sceneId: playingClipData.scene_id, versionId: playingClipData.id }) : approveMut.mutate({ sceneId: playingClipData.scene_id, versionId: playingClipData.id }) : undefined}
         onReject={playingClipData ? () => playingClipData.qa_status === "rejected" ? unapproveMut.mutate({ sceneId: playingClipData.scene_id, versionId: playingClipData.id }) : rejectMut.mutate({ sceneId: playingClipData.scene_id, versionId: playingClipData.id, input: { reason: "Rejected from browse" } }) : undefined}
         pipelineId={pipelineCtx?.pipelineId}

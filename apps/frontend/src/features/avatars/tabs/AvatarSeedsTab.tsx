@@ -4,12 +4,15 @@
  * Split into Image Generation and Scene Generation sections (PRD-154).
  */
 
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 import { Button, ContextLoader } from "@/components/primitives";
 import { EmptyState } from "@/components/domain";
 import { Stack } from "@/components/layout";
 import { Image, Sparkles } from "@/tokens/icons";
+
+import { useMediaVariants } from "@/features/media/hooks/use-media-variants";
+import type { MediaVariant } from "@/features/media/types";
 
 import {
   useAvatarSeedSummary,
@@ -35,11 +38,27 @@ interface AvatarSeedsTabProps {
 
 export function AvatarSeedsTab({ avatarId, projectId: _projectId }: AvatarSeedsTabProps) {
   const { data: seedSummary, isLoading } = useAvatarSeedSummary(avatarId);
+  const { data: allVariants } = useMediaVariants(avatarId);
   const assignMutation = useAssignMedia(avatarId);
   const removeMutation = useRemoveMediaAssignment(avatarId);
   const autoAssignMutation = useAutoAssignSeeds(avatarId);
 
   const [autoAssignPreview, setAutoAssignPreview] = useState<AutoAssignResult | null>(null);
+
+  // Build map: track_name (lowercase) → best variant (hero preferred, then most recent)
+  const sourceVariantMap = useMemo(() => {
+    const map = new Map<string, MediaVariant>();
+    if (!allVariants) return map;
+    for (const v of allVariants) {
+      if (!v.variant_type) continue;
+      const key = v.variant_type.toLowerCase();
+      const existing = map.get(key);
+      if (!existing || v.is_hero || (!existing.is_hero && v.id > existing.id)) {
+        map.set(key, v);
+      }
+    }
+    return map;
+  }, [allVariants]);
 
   const handleSelectVariant = useCallback(
     (entry: SeedSlotWithAssignment, variantId: number) => {
@@ -137,12 +156,13 @@ export function AvatarSeedsTab({ avatarId, projectId: _projectId }: AvatarSeedsT
           <h3 className="text-[10px] font-mono uppercase tracking-wide text-violet-400">
             Image Generation
           </h3>
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
             {imageSlots.map((entry) => (
               <ImageSlotCard
                 key={`image-${entry.image_type_id}-${entry.track_id}`}
                 entry={entry}
                 avatarId={avatarId}
+                sourceVariant={sourceVariantMap.get(entry.track_name.toLowerCase()) ?? null}
                 onSelectVariant={handleSelectVariant}
                 onClearVariant={handleClearVariant}
                 assigning={assignMutation.isPending}
@@ -160,12 +180,13 @@ export function AvatarSeedsTab({ avatarId, projectId: _projectId }: AvatarSeedsT
               Scene Generation
             </h3>
           )}
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
             {sceneSlots.map((entry) => (
               <SeedSlotCard
                 key={`${entry.scene_type_id}-${entry.track_id}`}
                 entry={entry}
                 avatarId={avatarId}
+                sourceVariant={sourceVariantMap.get(entry.track_name.toLowerCase()) ?? null}
                 onSelectVariant={handleSelectVariant}
                 onClearVariant={handleClearVariant}
                 assigning={assignMutation.isPending}

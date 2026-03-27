@@ -50,6 +50,10 @@ export interface SceneVideoVersion {
   updated_at: string;
   /** Number of annotated frames on this version (computed by backend). */
   annotation_count: number;
+  /** Self-referencing FK to parent clip (for derived clips). NULL for non-derived. */
+  parent_version_id: number | null;
+  /** Sequential ordering for derived clips (chunk index). NULL for non-derived. */
+  clip_index: number | null;
 }
 
 export interface SceneVideoVersionArtifact {

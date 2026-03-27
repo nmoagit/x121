@@ -47,18 +47,18 @@ export function WorkflowAssignmentTable({ entries, workflowOptions, enabledTrack
       <table className="w-full">
         <thead>
           <tr className="border-b border-[var(--color-border-default)]/30">
-            <th className="px-3 py-1.5 text-left text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-wide font-mono">
+            <th className="w-1/4 px-3 py-1.5 text-left text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-wide font-mono">
               Scene Type
             </th>
             {!isSingleTrack && (
-              <th className="px-3 py-1.5 text-left text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-wide font-mono">
+              <th className="w-1/4 px-3 py-1.5 text-left text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-wide font-mono">
                 Track
               </th>
             )}
-            <th className="px-3 py-1.5 text-left text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-wide font-mono">
+            <th className="w-1/3 px-3 py-1.5 text-left text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-wide font-mono">
               Workflow
             </th>
-            <th className="px-3 py-1.5 text-left text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-wide font-mono">
+            <th className="w-[100px] px-3 py-1.5 text-left text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-wide font-mono">
               Status
             </th>
           </tr>

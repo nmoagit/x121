@@ -78,6 +78,7 @@ export function SlotCard({ slot, text, isDirty, isSaving, onTextChange, onSave }
     >
       <div className={`${TERMINAL_HEADER} flex items-center gap-2`}>
         <span className={TERMINAL_HEADER_TITLE}>{slot.slot_label}</span>
+        <span className="font-mono text-[10px] text-[var(--color-text-muted)]">{slot.node_id}</span>
         <span className={`font-mono text-[10px] uppercase tracking-wide ${typeColor}`}>
           {isPositive ? "positive" : "negative"}
         </span>

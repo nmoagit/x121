@@ -111,7 +111,7 @@ impl TagRepo {
             "SELECT {TAG_COLUMNS} FROM tags \
              WHERE ($1::text IS NULL OR namespace = $1) \
                AND ($2::bigint IS NULL OR pipeline_id IS NULL OR pipeline_id = $2) \
-             ORDER BY name, usage_count DESC \
+             ORDER BY name COLLATE \"C\", usage_count DESC \
              LIMIT $3 OFFSET $4"
         );
         sqlx::query_as::<_, Tag>(&query)
@@ -142,7 +142,7 @@ impl TagRepo {
              FROM tags \
              WHERE name LIKE $1 \
                AND ($3::bigint IS NULL OR pipeline_id = $3) \
-             ORDER BY name, usage_count DESC \
+             ORDER BY name COLLATE \"C\", usage_count DESC \
              LIMIT $2",
         )
         .bind(&pattern)
@@ -270,7 +270,7 @@ impl TagRepo {
              FROM entity_tags et \
              JOIN tags t ON t.id = et.tag_id \
              WHERE et.entity_type = $1 AND et.entity_id = $2 \
-             ORDER BY t.name",
+             ORDER BY t.name COLLATE \"C\"",
         )
         .bind(entity_type)
         .bind(entity_id)

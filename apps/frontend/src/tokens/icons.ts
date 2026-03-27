@@ -143,6 +143,8 @@ export {
   ChevronsUpDown,
   // Bulk actions
   Tag,
+  // Derived clips
+  FolderSearch,
 } from "lucide-react";
 
 /** Standard icon size tokens (px values matching design grid) */

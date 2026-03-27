@@ -16,6 +16,7 @@ import { useSpeechTypes } from "@/features/avatars/hooks/use-avatar-speeches";
 import { useOutputFormatProfiles, formatProfileOption } from "@/features/delivery";
 import { useExportProjectSettings, useConfigImport } from "@/features/config-io";
 import { ConfigLibrary } from "@/features/config-templates";
+import { ProjectImageSettings } from "@/features/image-catalogue";
 import { ProjectPromptOverrides } from "@/features/prompt-management";
 import { ProjectSceneSettings, ProjectWorkflowOverrides } from "@/features/scene-catalogue";
 import { ProjectVideoSettings } from "@/features/video-settings";
@@ -29,7 +30,7 @@ import { useProject, useUpdateProject } from "../hooks/use-projects";
 
 const DEFAULT_BLOCKING = ["metadata", "images", "scenes"];
 
-const SECTION_IDS = ["blocking", "delivery", "speech", "scenes", "workflows", "video", "prompts", "templates"] as const;
+const SECTION_IDS = ["blocking", "delivery", "speech", "images", "scenes", "workflows", "video", "prompts", "templates"] as const;
 type SectionId = (typeof SECTION_IDS)[number];
 
 interface ProjectSettingsTabProps {
@@ -153,6 +154,15 @@ export function ProjectSettingsTab({ projectId, projectName = "project" }: Proje
       </CollapsibleSection>
 
       <CollapsibleSection card
+        title="Image Settings"
+        description="Enable or disable image types for this project."
+        open={openSections.has("images")}
+        onToggle={() => toggleSection("images")}
+      >
+        <ProjectImageSettings projectId={projectId} />
+      </CollapsibleSection>
+
+      <CollapsibleSection card
         title="Scene Settings"
         description="Enable or disable scenes for this project."
         open={openSections.has("scenes")}
@@ -163,7 +173,7 @@ export function ProjectSettingsTab({ projectId, projectName = "project" }: Proje
 
       <CollapsibleSection card
         title="Workflow Assignments"
-        description="Assign workflows per scene and track combination."
+        description="Assign workflows per scene and track combination. Includes both image and scene types."
         open={openSections.has("workflows")}
         onToggle={() => toggleSection("workflows")}
       >
@@ -181,7 +191,7 @@ export function ProjectSettingsTab({ projectId, projectName = "project" }: Proje
 
       <CollapsibleSection card
         title="Prompt Overrides"
-        description="Override prompt templates at the project level."
+        description="Override prompt templates for image and scene types at the project level."
         open={openSections.has("prompts")}
         onToggle={() => toggleSection("prompts")}
       >

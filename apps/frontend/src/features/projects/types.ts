@@ -281,6 +281,7 @@ export const CHARACTER_TABS = [
   { id: "images", label: "Images" },
   { id: "seeds", label: "Seeds" },
   { id: "scenes", label: "Scenes" },
+  { id: "derived", label: "Derived" },
   { id: "metadata", label: "Metadata" },
   { id: "speech", label: "Speech" },
   { id: "deliverables", label: "Deliverables" },

@@ -10,7 +10,7 @@ import { useCallback, useRef, useState } from "react";
 import { cn } from "@/lib/cn";
 import { Button } from "@/components/primitives";
 import { Tooltip } from "@/components/primitives/Tooltip";
-import { Image as ImageIcon, Upload, Wand2 } from "@/tokens/icons";
+import { AlertCircle, AlertTriangle, Image as ImageIcon, Upload, Wand2 } from "@/tokens/icons";
 
 import { MediaPlaceholder } from "./MediaPlaceholder";
 import type { Track } from "@/features/scene-catalogue/types";
@@ -107,7 +107,7 @@ export function TrackImageCard({
   return (
     <div
       className={cn(
-        "rounded-[var(--radius-lg)] border border-[var(--color-border-default)] bg-[#0d1117] overflow-hidden",
+        "rounded-[var(--radius-lg)] border border-[var(--color-border-default)] bg-[#0d1117]",
         dragOver && "ring-2 ring-[var(--color-action-primary)]",
         heroVariant?.status_id === MEDIA_VARIANT_STATUS.APPROVED && "!border-2 !border-green-500",
         heroVariant?.status_id === MEDIA_VARIANT_STATUS.REJECTED && "!border-2 !border-red-500",
@@ -119,32 +119,55 @@ export function TrackImageCard({
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
       >
-        {/* Image preview / drop target */}
-        {dragOver ? (
-          <div className="flex flex-col items-center justify-center border-2 border-dashed border-[var(--color-action-primary)] aspect-video bg-[#161b22]">
-            <Upload size={24} className="text-[var(--color-action-primary)]" />
-            <span className="text-xs text-[var(--color-action-primary)] mt-1 font-mono">Drop image here</span>
-          </div>
-        ) : heroVariant?.file_path ? (
-          <div
-            role="button"
-            tabIndex={0}
-            onClick={onClick}
-            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") onClick?.(); }}
-            className="cursor-pointer"
-          >
-            <img
-              src={variantMediaUrl(heroVariant.file_path)}
-              alt={`${track.name} seed image`}
-              className="w-full aspect-video object-cover"
+        {/* Image preview / drop target + warning overlay */}
+        <div className="relative overflow-hidden rounded-t-[inherit]">
+          {dragOver ? (
+            <div className="flex flex-col items-center justify-center border-2 border-dashed border-[var(--color-action-primary)] aspect-video bg-[#161b22]">
+              <Upload size={24} className="text-[var(--color-action-primary)]" />
+              <span className="text-xs text-[var(--color-action-primary)] mt-1 font-mono">Drop image here</span>
+            </div>
+          ) : heroVariant?.file_path ? (
+            <div
+              role="button"
+              tabIndex={0}
+              onClick={onClick}
+              onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") onClick?.(); }}
+              className="cursor-pointer"
+            >
+              <img
+                src={variantMediaUrl(heroVariant.file_path)}
+                alt={`${track.name} seed image`}
+                className="w-full aspect-video object-cover"
+              />
+            </div>
+          ) : (
+            <MediaPlaceholder
+              icon={<ImageIcon size={24} className="text-[var(--color-text-muted)]" />}
+              label="No image"
             />
-          </div>
-        ) : (
-          <MediaPlaceholder
-            icon={<ImageIcon size={24} className="text-[var(--color-text-muted)]" />}
-            label="No image"
-          />
-        )}
+          )}
+          {/* Status icons — bottom-right overlay (matches scene cards) */}
+          {canGenerate && !generateEnabled && (
+            <div className="absolute bottom-[var(--spacing-1)] right-[var(--spacing-1)] flex items-center gap-1">
+              {generateDisabledReason?.includes("seed") && (
+                <span
+                  className="flex items-center justify-center size-5 rounded-full bg-orange-500/80"
+                  title={generateDisabledReason}
+                >
+                  <AlertTriangle size={11} className="text-white" />
+                </span>
+              )}
+              {generateDisabledReason?.includes("workflow") && (
+                <span
+                  className="flex items-center justify-center size-5 rounded-full bg-red-500/80"
+                  title={generateDisabledReason}
+                >
+                  <AlertCircle size={11} className="text-white" />
+                </span>
+              )}
+            </div>
+          )}
+        </div>
 
         {/* Content below image */}
         <div className="flex flex-col gap-1.5 px-[var(--spacing-2)] py-[var(--spacing-2)]">

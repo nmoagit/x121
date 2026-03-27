@@ -128,7 +128,6 @@ export function AvatarImagesTab({ avatarId, projectId }: AvatarImagesTabProps) {
   const {
     activeTracks,
     trackImageData,
-    toplessHeroExists,
     seedSlotNames,
     isSingleTrack,
     confirmGenerateTrack,
@@ -137,6 +136,8 @@ export function AvatarImagesTab({ avatarId, projectId }: AvatarImagesTabProps) {
     handleConfirmedGenerate,
     handleUploadTrackImage,
     generating,
+    generatableTrackMap,
+    sourceSeedExists,
   } = useTrackImageActions(avatarId, projectId);
   const [detailTrackIndex, setDetailTrackIndex] = useState<number | null>(null);
   const [annotatingVariant, setAnnotatingVariant] = useState<MediaVariant | null>(null);
@@ -179,22 +180,35 @@ export function AvatarImagesTab({ avatarId, projectId }: AvatarImagesTabProps) {
         <div className="space-y-[var(--spacing-2)]">
           <h3 className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide font-mono">Seed Images</h3>
           <Grid cols={4} gap={4}>
-            {trackImageData.map(({ track, hero }, index) => (
-              <TrackImageCard
-                key={track.id}
-                track={track}
-                heroVariant={hero}
-                canGenerate={!isSingleTrack && track.slug.toLowerCase() === "clothed"}
-                generateEnabled={toplessHeroExists}
-                generateDisabledReason={
-                  !toplessHeroExists ? "Upload a topless hero image first" : null
-                }
-                onGenerate={() => handleGenerateTrackImage(track.slug)}
-                generating={generating}
-                onUpload={handleUploadTrackImage}
-                onClick={() => setDetailTrackIndex(index)}
-              />
-            ))}
+            {trackImageData.map(({ track, hero }, index) => {
+              const slug = track.slug.toLowerCase();
+              const genInfo = generatableTrackMap.get(slug);
+              const canGenerate = !isSingleTrack && genInfo != null;
+              const seedReady = sourceSeedExists.get(slug) ?? false;
+              const generateEnabled = canGenerate && genInfo!.hasWorkflow && seedReady;
+              const generateDisabledReason = canGenerate
+                ? !genInfo!.hasWorkflow
+                  ? "No workflow assigned to this image type"
+                  : !seedReady
+                    ? `Upload the ${genInfo!.sourceTrackSlug ?? "source"} seed image first`
+                    : null
+                : null;
+
+              return (
+                <TrackImageCard
+                  key={track.id}
+                  track={track}
+                  heroVariant={hero}
+                  canGenerate={canGenerate}
+                  generateEnabled={generateEnabled}
+                  generateDisabledReason={generateDisabledReason}
+                  onGenerate={() => handleGenerateTrackImage(track.slug)}
+                  generating={generating}
+                  onUpload={handleUploadTrackImage}
+                  onClick={() => setDetailTrackIndex(index)}
+                />
+              );
+            })}
           </Grid>
         </div>
       )}
@@ -291,12 +305,16 @@ export function AvatarImagesTab({ avatarId, projectId }: AvatarImagesTabProps) {
                 >
                   Upload
                 </Button>
-                {detailTrack.track.slug.toLowerCase() === "clothed" && (
+                {generatableTrackMap.has(detailTrack.track.slug.toLowerCase()) && (
                   <Button
                     size="xs"
                     variant="secondary"
                     icon={<Wand2 size={12} />}
-                    disabled={!toplessHeroExists || generating}
+                    disabled={
+                      !generatableTrackMap.get(detailTrack.track.slug.toLowerCase())?.hasWorkflow ||
+                      !(sourceSeedExists.get(detailTrack.track.slug.toLowerCase()) ?? false) ||
+                      generating
+                    }
                     onClick={() => handleGenerateTrackImage(detailTrack.track.slug)}
                   >
                     {generating ? "Generating…" : "Generate"}

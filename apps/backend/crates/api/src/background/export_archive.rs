@@ -167,7 +167,7 @@ async fn fetch_labels_for_entities(
          FROM entity_tags et \
          JOIN tags t ON t.id = et.tag_id \
          WHERE et.entity_type = $1 AND et.entity_id = ANY($2) \
-         ORDER BY et.entity_id, t.name",
+         ORDER BY et.entity_id, t.name COLLATE \"C\"",
     )
     .bind(entity_type)
     .bind(ids)

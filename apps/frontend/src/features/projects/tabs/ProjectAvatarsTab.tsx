@@ -905,7 +905,7 @@ export function ProjectAvatarsTab({ projectId, projectName, scrollToGroupId, blo
                   <CollapsibleSection card title="Scene Settings" description="Override scene settings for this group.">
                     <GroupSceneOverrides projectId={projectId} groupId={editingGroup.id} />
                   </CollapsibleSection>
-                  <CollapsibleSection card title="Workflow Assignments" description="Assign workflows per scene and track.">
+                  <CollapsibleSection card title="Workflow Assignments" description="Assign workflows for image and scene types.">
                     <GroupWorkflowOverrides projectId={projectId} groupId={editingGroup.id} />
                   </CollapsibleSection>
                   <CollapsibleSection card title="Prompt Overrides" description="Override prompt templates for this group.">
