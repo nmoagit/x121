@@ -39,6 +39,8 @@ interface BulkImportDialogProps {
   sceneId: number;
   parentVersionId?: number;
   onSuccess?: () => void;
+  /** Pre-selected files (e.g., from drag-and-drop on parent component). */
+  initialFiles?: File[];
 }
 
 interface FileEntry {
@@ -52,8 +54,14 @@ interface FileEntry {
    Component
    -------------------------------------------------------------------------- */
 
-export function BulkImportDialog({ open, onClose, sceneId, parentVersionId, onSuccess }: BulkImportDialogProps) {
-  const [files, setFiles] = useState<FileEntry[]>([]);
+export function BulkImportDialog({ open, onClose, sceneId, parentVersionId, onSuccess, initialFiles }: BulkImportDialogProps) {
+  const [files, setFiles] = useState<FileEntry[]>(() => {
+    if (!initialFiles?.length) return [];
+    return initialFiles.map((file, i) => {
+      const match = file.name.match(/_clip(\d+)/i);
+      return { file, clipIndex: match?.[1] ? Number.parseInt(match[1], 10) : i, status: "pending" as const };
+    });
+  });
   const [error, setError] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState(false);
   const [uploading, setUploading] = useState(false);

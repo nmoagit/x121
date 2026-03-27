@@ -15,8 +15,8 @@ import { api } from "@/lib/api";
 import { useSetPageTitle } from "@/hooks/useSetPageTitle";
 import { useSetToggle } from "@/hooks/useSetToggle";
 
-import { ConfirmDeleteModal, ConfirmModal, Modal } from "@/components/composite";
-import { EmptyState, FileDropZone } from "@/components/domain";
+import { ConfirmDeleteModal, ConfirmModal, Modal, useToast } from "@/components/composite";
+import { EmptyState, FileDropZone, ScanDirectoryDialog } from "@/components/domain";
 import { Stack } from "@/components/layout";
 import { Button, Input, LoadingPane, Select } from "@/components/primitives";
 import type { BulkImportReport } from "@/features/avatars/types";
@@ -65,6 +65,7 @@ import { useAuthStore } from "@/stores/auth-store";
 import {
   Folder,
   FolderKanban,
+  FolderSearch,
   Plus,
   Upload,
   User,
@@ -224,6 +225,19 @@ export function AvatarsPage() {
   /* --- voice ID import from dropped CSV --- */
   const voiceFlow = useVoiceImportFlow(primaryProjectId, allProjectAvatars);
 
+  /* --- video files dropped (redirect to Derived tab) --- */
+  const { addToast } = useToast();
+  const handleVideoFilesDrop = useCallback(
+    (_files: File[]) => {
+      addToast({
+        message: "Video files detected — use an avatar's Derived Clips tab for video import.",
+        variant: "info",
+        duration: 5000,
+      });
+    },
+    [addToast],
+  );
+
   /* --- create project modal (admin only) --- */
   const [projectModalOpen, setProjectModalOpen] = useState(false);
   const [newProjectName, setNewProjectName] = useState("");
@@ -327,6 +341,9 @@ export function AvatarsPage() {
 
   const [hideComplete, setHideComplete] = useState(false);
   const toggleHideComplete = useCallback(() => setHideComplete((p) => !p), []);
+
+  /* --- scan directory dialog --- */
+  const [scanOpen, setScanOpen] = useState(false);
 
   /* --- create avatar modal --- */
   const [charModalOpen, setCharModalOpen] = useState(false);
@@ -805,6 +822,7 @@ export function AvatarsPage() {
       onFolderDropped={handleFolderDrop}
       onSpeechFileDropped={handleSpeechFileDrop}
       onVoiceFileDropped={voiceFlow.handleVoiceFileDrop}
+      onVideoFilesDropped={handleVideoFilesDrop}
       browseFolderRef={charImport.browseFolderRef}
     >
       <Stack gap={4}>
@@ -844,6 +862,16 @@ export function AvatarsPage() {
           >
             Import Folder
           </Button>
+          {pipelineCtx?.pipelineId && (
+            <Button
+              size="sm"
+              variant="secondary"
+              icon={<FolderSearch size={14} />}
+              onClick={() => setScanOpen(true)}
+            >
+              Scan Directory
+            </Button>
+          )}
           {isAdmin && (
             <Button
               size="sm"
@@ -1351,6 +1379,15 @@ export function AvatarsPage() {
           result={voiceFlow.voiceImportResult}
           onClose={() => voiceFlow.setVoiceImportResult(null)}
         />
+
+        {pipelineCtx?.pipelineId && (
+          <ScanDirectoryDialog
+            open={scanOpen}
+            onClose={() => setScanOpen(false)}
+            pipelineId={pipelineCtx.pipelineId}
+            projectId={primaryProjectId > 0 ? primaryProjectId : undefined}
+          />
+        )}
       </Stack>
     </FileDropZone>
   );

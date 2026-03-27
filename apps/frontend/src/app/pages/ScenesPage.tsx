@@ -7,7 +7,7 @@
 import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import { useNavigate } from "@tanstack/react-router";
 
-import { EmptyState, BulkActionBar, BulkRejectDialog, BulkLabelDialog, ExportStatusPanel } from "@/components/domain";
+import { EmptyState, BulkActionBar, BulkRejectDialog, BulkLabelDialog, ExportStatusPanel, ScanDirectoryDialog } from "@/components/domain";
 import { PageHeader, Stack } from "@/components/layout";
 import { Button, Checkbox, MultiFilterBar, Pagination, SearchInput, Toggle, ContextLoader } from "@/components/primitives";
 import type { FilterConfig, FilterOption } from "@/components/primitives";
@@ -27,7 +27,7 @@ import { useTracks } from "@/features/scene-catalogue/hooks/use-tracks";
 import { TagFilter } from "@/components/domain/TagFilter";
 import { useBulkSelection } from "@/hooks/useBulkSelection";
 import { useBulkOperations } from "@/hooks/useBulkOperations";
-import { Ban, CheckCircle, Layers, LayoutGrid, List, Play, XCircle } from "@/tokens/icons";
+import { Ban, CheckCircle, FolderSearch, Layers, LayoutGrid, List, Play, XCircle } from "@/tokens/icons";
 
 /* --------------------------------------------------------------------------
    Read-only clip list item
@@ -365,6 +365,7 @@ export function ScenesPage() {
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState<number>(DEFAULT_PAGE_SIZE);
+  const [scanOpen, setScanOpen] = useState(false);
 
   // Bulk selection — reset key serializes all filter state
   const bulkResetKey = useMemo(
@@ -504,6 +505,11 @@ export function ScenesPage() {
       <PageHeader
         title="Scenes"
         description="Browse all generated scene clips, most recent first."
+        actions={pipelineCtx?.pipelineId ? (
+          <Button size="sm" variant="secondary" icon={<FolderSearch size={14} />} onClick={() => setScanOpen(true)}>
+            Scan Directory
+          </Button>
+        ) : undefined}
       />
 
       {/* Search */}
@@ -515,7 +521,7 @@ export function ScenesPage() {
       />
 
       {/* Filter bar */}
-      <MultiFilterBar filters={filters}>
+      <MultiFilterBar filters={filters} size="xs">
         <div className="flex items-center gap-3">
           <Checkbox
             checked={bulk.isAllPageSelected(pageIds)}
@@ -686,6 +692,14 @@ export function ScenesPage() {
         onConfirmRemove={bulkOps.handleBulkRemoveLabel}
         onCancel={() => bulkOps.setLabelDialogOpen(null)}
       />
+
+      {pipelineCtx?.pipelineId && (
+        <ScanDirectoryDialog
+          open={scanOpen}
+          onClose={() => setScanOpen(false)}
+          pipelineId={pipelineCtx.pipelineId}
+        />
+      )}
 
     </Stack>
   );

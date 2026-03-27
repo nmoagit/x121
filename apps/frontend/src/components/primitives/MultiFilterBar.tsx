@@ -30,6 +30,8 @@ interface MultiFilterBarProps {
   filters: FilterConfig[];
   /** Extra elements to render after filters (e.g. toggles). */
   children?: React.ReactNode;
+  /** Size for all dropdowns. Default "sm". */
+  size?: "xs" | "sm" | "md";
   className?: string;
 }
 
@@ -44,7 +46,7 @@ interface MultiFilterBarProps {
  * Active selections appear as removable chips below the dropdowns
  * with filter-name prefixes. A "Clear all" button resets every filter.
  */
-export function MultiFilterBar({ filters, children, className }: MultiFilterBarProps) {
+export function MultiFilterBar({ filters, children, size = "sm", className }: MultiFilterBarProps) {
   const hasAnySelection = filters.some((f) => f.selected.length > 0);
 
   function clearAll() {
@@ -66,6 +68,7 @@ export function MultiFilterBar({ filters, children, className }: MultiFilterBarP
             onChange={filter.onChange}
             placeholder={`All ${filter.label}`}
             showChips={false}
+            size={size}
             className={filter.width ?? "w-40"}
           />
         ))}

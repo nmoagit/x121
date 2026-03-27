@@ -14,6 +14,7 @@ export { LogLine } from "./LogLine";
 export type { LogLevel } from "./LogLine";
 export { LOG_LEVEL_LABELS } from "./LogLine";
 export { FileDropZone } from "./FileDropZone";
+export { ScanDirectoryDialog } from "./ScanDirectoryDialog";
 export type { VoiceIdEntry } from "./FileDropZone";
 export { MetadataField } from "./MetadataField";
 export { ProjectAvatarPicker } from "./ProjectAvatarPicker";

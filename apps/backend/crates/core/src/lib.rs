@@ -35,6 +35,7 @@ pub mod dashboard_customization;
 pub mod delivery;
 pub mod diff;
 pub mod directors_view;
+pub mod directory_scanner;
 pub mod download_manager;
 pub mod duplicate_detection;
 pub mod embedding;

@@ -7,7 +7,7 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { useNavigate } from "@tanstack/react-router";
 
-import { EmptyState, BulkActionBar, BulkRejectDialog, BulkLabelDialog, ExportStatusPanel } from "@/components/domain";
+import { EmptyState, BulkActionBar, BulkRejectDialog, BulkLabelDialog, ExportStatusPanel, ScanDirectoryDialog } from "@/components/domain";
 import { TagFilter } from "@/components/domain/TagFilter";
 import { NotesModal } from "@/components/domain/NotesModal";
 import { TagInput } from "@/components/domain/TagInput";
@@ -41,7 +41,7 @@ import { TERMINAL_STATUS_COLORS, TRACK_TEXT_COLORS } from "@/lib/ui-classes";
 import { toSelectOptions } from "@/lib/select-utils";
 import { usePipelineContextSafe } from "@/features/pipelines";
 import { useProjects } from "@/features/projects/hooks/use-projects";
-import { Check, CheckCircle, ChevronLeft, ChevronRight, Download, Image as ImageIcon, LayoutGrid, List, Maximize2, Minimize2, XCircle } from "@/tokens/icons";
+import { Check, CheckCircle, ChevronLeft, ChevronRight, Download, FolderSearch, Image as ImageIcon, LayoutGrid, List, Maximize2, Minimize2, XCircle } from "@/tokens/icons";
 
 /* --------------------------------------------------------------------------
    Read-only browse item
@@ -309,6 +309,7 @@ export function MediaPage() {
   const [excludeLabelFilter, setExcludeLabelFilter] = useState<number[]>([]);
   const [searchInput, setSearchInput] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [scanOpen, setScanOpen] = useState(false);
   // Absolute index across all pages (0 to total-1)
   const [previewAbsIndex, setPreviewAbsIndex] = useState<number | null>(null);
   const [showDisabled, setShowDisabled] = useState(false);
@@ -417,6 +418,11 @@ export function MediaPage() {
       <PageHeader
         title="Media"
         description="Browse all media variants across avatars, most recent first."
+        actions={pipelineCtx?.pipelineId ? (
+          <Button size="sm" variant="secondary" icon={<FolderSearch size={14} />} onClick={() => setScanOpen(true)}>
+            Scan Directory
+          </Button>
+        ) : undefined}
       />
 
       {/* Search */}
@@ -428,7 +434,7 @@ export function MediaPage() {
       />
 
       {/* Filter bar */}
-      <MultiFilterBar filters={filters}>
+      <MultiFilterBar filters={filters} size="xs">
         <div className="flex items-center gap-3">
           <Checkbox
             checked={bulk.isAllPageSelected(pageIds)}
@@ -593,6 +599,14 @@ export function MediaPage() {
         onConfirmRemove={bulkOps.handleBulkRemoveLabel}
         onCancel={() => bulkOps.setLabelDialogOpen(null)}
       />
+
+      {pipelineCtx?.pipelineId && (
+        <ScanDirectoryDialog
+          open={scanOpen}
+          onClose={() => setScanOpen(false)}
+          pipelineId={pipelineCtx.pipelineId}
+        />
+      )}
 
     </Stack>
   );

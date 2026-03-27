@@ -3,14 +3,16 @@ import { ChevronDown, X } from "@/tokens/icons";
 import { useId } from "react";
 import type { ChangeEvent } from "react";
 
-type MultiSelectSize = "sm" | "md";
+type MultiSelectSize = "xs" | "sm" | "md";
 
 const SIZE_CLASSES: Record<MultiSelectSize, string> = {
+  xs: "px-2 py-1 pr-7 text-xs",
   sm: "px-3 py-1.5 pr-8 text-sm",
   md: "px-3 py-2 pr-10 text-base",
 };
 
 const ICON_SIZES: Record<MultiSelectSize, number> = {
+  xs: 12,
   sm: 14,
   md: 16,
 };

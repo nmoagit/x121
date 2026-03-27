@@ -48,6 +48,7 @@ pub mod delivery;
 pub mod delivery_destination;
 pub mod derived_media;
 pub mod directors_view;
+pub mod directory_scan;
 pub mod downloads;
 pub mod duplicates;
 pub mod embedding;

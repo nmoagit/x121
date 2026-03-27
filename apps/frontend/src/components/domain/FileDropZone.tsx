@@ -37,6 +37,8 @@ interface FileDropZoneProps {
   onSpeechFileDropped?: (format: "json" | "csv", data: string) => void;
   /** When provided and a voice ID CSV is dropped, called with parsed entries. */
   onVoiceFileDropped?: (entries: VoiceIdEntry[]) => void;
+  /** When provided and video files are dropped, called with the video File objects. */
+  onVideoFilesDropped?: (files: File[]) => void;
   /** Optional ref callback to receive the browseFolder function. */
   browseFolderRef?: React.MutableRefObject<(() => void) | null>;
   /** Additional CSS classes for the wrapper div. */
@@ -557,6 +559,7 @@ export function FileDropZone({
   onFolderDropped,
   onSpeechFileDropped,
   onVoiceFileDropped,
+  onVideoFilesDropped,
   browseFolderRef,
   className,
 }: FileDropZoneProps) {
@@ -686,6 +689,20 @@ export function FileDropZone({
         return;
       }
 
+      // Video file separation — extract video files before other processing
+      if (onVideoFilesDropped) {
+        const videoFiles = plainFiles.filter((f) => isVideoFile(f.name));
+        if (videoFiles.length > 0) {
+          onVideoFilesDropped(videoFiles);
+          // Remove video files from plainFiles so they don't get processed below
+          const nonVideoFiles = plainFiles.filter((f) => !isVideoFile(f.name));
+          plainFiles.length = 0;
+          plainFiles.push(...nonVideoFiles);
+          // If there are no remaining files, we're done
+          if (plainFiles.length === 0 && dirEntries.length === 0) return;
+        }
+      }
+
       // Speech file detection — check JSON and CSV before legacy path
       if (onSpeechFileDropped) {
         for (const file of plainFiles) {
@@ -756,7 +773,7 @@ export function FileDropZone({
         onNamesDropped(unique);
       }
     },
-    [onNamesDropped, onFolderDropped, onSpeechFileDropped, onVoiceFileDropped],
+    [onNamesDropped, onFolderDropped, onSpeechFileDropped, onVoiceFileDropped, onVideoFilesDropped],
   );
 
   return (

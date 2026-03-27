@@ -7,7 +7,7 @@ import { BulkActionBar, BulkRejectDialog, BulkLabelDialog, ExportStatusPanel } f
 import type { ClipBrowseItem } from "@/features/scenes/hooks/useClipManagement";
 import { ClipPlaybackModal } from "@/features/scenes/ClipPlaybackModal";
 import { clipBrowseToPlayable } from "@/features/scenes/clip-utils";
-import { ScanDirectoryDialog } from "@/features/scenes/ScanDirectoryDialog";
+import { ScanDirectoryDialog } from "@/components/domain/ScanDirectoryDialog";
 import type { BulkSelection } from "@/hooks/useBulkSelection";
 import type { BulkOperations } from "@/hooks/useBulkOperations";
 

@@ -38,6 +38,7 @@ pub mod dashboard_customization;
 pub mod delivery;
 pub mod delivery_destination;
 pub mod directors_view;
+pub mod directory_scan;
 pub mod downloads;
 pub mod duplicates;
 pub mod embedding;
@@ -964,6 +965,8 @@ pub fn api_routes() -> Router<AppState> {
         .nest("/imports", validation::imports_router())
         // Folder-to-entity bulk importer (PRD-016).
         .nest("/import", importer::router())
+        // Unified directory scanner and selective import (PRD-155).
+        .nest("/directory-scan", directory_scan::router())
         // Video streaming, metadata, and thumbnails.
         .nest("/videos", video::router())
         // Image variant utilities.

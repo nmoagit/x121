@@ -174,7 +174,7 @@ export function DerivedClipsPage() {
 
       <SearchInput value={searchInput} onChange={(e) => setSearchInput(e.target.value)} placeholder="Search by avatar, scene type, track, project..." size="sm" />
 
-      <MultiFilterBar filters={filters}>
+      <MultiFilterBar filters={filters} size="xs">
         <div className="flex items-center gap-3">
           <Checkbox checked={bulk.isAllPageSelected(pageIds)} indeterminate={bulk.isIndeterminate(pageIds)} onChange={(checked) => checked ? bulk.selectPage(pageIds) : bulk.deselectPage(pageIds)} label="Select all" size="sm" />
           <Toggle checked={showDisabled} onChange={setShowDisabled} label="Show disabled" size="sm" />
@@ -182,7 +182,9 @@ export function DerivedClipsPage() {
         </div>
       </MultiFilterBar>
 
-      <TagFilter selectedTagIds={labelFilter} onSelectionChange={(ids) => { setLabelFilter(ids); setPage(0); }} excludedTagIds={excludeLabelFilter} onExclusionChange={(ids) => { setExcludeLabelFilter(ids); setPage(0); }} pipelineId={pipelineCtx?.pipelineId} />
+      {total > 0 && (
+        <TagFilter selectedTagIds={labelFilter} onSelectionChange={(ids) => { setLabelFilter(ids); setPage(0); }} excludedTagIds={excludeLabelFilter} onExclusionChange={(ids) => { setExcludeLabelFilter(ids); setPage(0); }} pipelineId={pipelineCtx?.pipelineId} />
+      )}
 
       {isLoading ? (
         <div className="flex justify-center py-12"><ContextLoader size={48} /></div>
