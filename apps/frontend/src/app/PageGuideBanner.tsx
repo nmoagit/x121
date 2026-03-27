@@ -18,6 +18,7 @@ const PAGE_GUIDES: Record<string, string> = {
   "/content/scene-catalogue": "The scene catalogue defines your scene types (e.g. Close-up, Wide Shot), their track configurations, prompt defaults, and workflow assignments. This is the blueprint that drives generation.",
   "/content/library": "Browse all avatars across projects in one place. Filter by scene type or track, preview assets, and jump to avatar details.",
   "/content/scenes": "View and manage individual scene clips. Filter by avatar, scene type, or status. Import clips or review QA actions.",
+  "/content/derived-clips": "Browse derived and imported clips — clips that were created from or linked to a parent version. Filter, review QA status, and scan directories for new imports.",
   "/content/avatars": "Manage avatars across projects. Drop folders to bulk-import seed images and metadata. Click any avatar to view or upload their seed data.",
   "/content/storyboard": "Visual storyboard layout of scenes in sequence. Drag to reorder, preview clips inline.",
   "/content/images": "Browse and manage image variants (seed images, track images). Approve, reject, or regenerate variants.",

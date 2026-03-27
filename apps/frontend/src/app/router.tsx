@@ -192,6 +192,14 @@ const pipelineScenesRoute = createRoute({
   ),
 });
 
+const pipelineDerivedClipsRoute = createRoute({
+  getParentRoute: () => pipelineLayoutRoute,
+  path: "/derived-clips",
+  component: lazyRouteComponent(() =>
+    import("@/app/pages/DerivedClipsPage").then((m) => ({ default: m.DerivedClipsPage })),
+  ),
+});
+
 const pipelineStoryboardRoute = createRoute({
   getParentRoute: () => pipelineLayoutRoute,
   path: "/storyboard",
@@ -537,6 +545,14 @@ const scenesRoute = createRoute({
   path: "/content/scenes",
   component: lazyRouteComponent(() =>
     import("@/app/pages/ScenesPage").then((m) => ({ default: m.ScenesPage })),
+  ),
+});
+
+const derivedClipsRoute = createRoute({
+  getParentRoute: () => contentLayoutRoute,
+  path: "/content/derived-clips",
+  component: lazyRouteComponent(() =>
+    import("@/app/pages/DerivedClipsPage").then((m) => ({ default: m.DerivedClipsPage })),
   ),
 });
 
@@ -1233,6 +1249,7 @@ export const routeTree = rootRoute.addChildren([
       pipelineLibraryRoute,
       pipelineImagesRoute,
       pipelineScenesRoute,
+      pipelineDerivedClipsRoute,
       pipelineStoryboardRoute,
       pipelineAvatarDashboardRoute,
       pipelineContactSheetRoute,
@@ -1283,6 +1300,7 @@ export const routeTree = rootRoute.addChildren([
 
     contentLayoutRoute.addChildren([
       scenesRoute,
+      derivedClipsRoute,
       avatarsRoute,
       libraryRoute,
       storyboardRoute,
