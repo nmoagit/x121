@@ -826,6 +826,8 @@ pub struct BrowseVariantsParams {
     pub tag_ids: Option<String>,
     /// Comma-separated tag IDs to exclude from results.
     pub exclude_tag_ids: Option<String>,
+    /// When true, only return items with no tags applied.
+    pub no_tags: Option<bool>,
     /// Free-text search across avatar name, variant type/label, project.
     pub search: Option<String>,
     pub limit: Option<i32>,
@@ -924,6 +926,10 @@ pub async fn browse_variants(
             SELECT et.entity_id FROM entity_tags et \
             WHERE et.entity_type = 'media_variant' \
               AND et.tag_id = ANY(string_to_array($9, ',')::bigint[]) \
+          )) \
+          AND (NOT $10::bool OR iv.id NOT IN ( \
+            SELECT et.entity_id FROM entity_tags et \
+            WHERE et.entity_type = 'media_variant' \
           ))";
 
     let count_sql = format!("SELECT COUNT(*) {base_from}");
@@ -937,6 +943,7 @@ pub async fn browse_variants(
         .bind(&params.tag_ids)
         .bind(&params.search)
         .bind(&params.exclude_tag_ids)
+        .bind(params.no_tags.unwrap_or(false))
         .fetch_one(&state.pool)
         .await?;
 
@@ -949,7 +956,7 @@ pub async fn browse_variants(
             p.id AS project_id, p.name AS project_name \
         {base_from} \
         ORDER BY iv.created_at DESC \
-        LIMIT $10 OFFSET $11"
+        LIMIT $11 OFFSET $12"
     );
     let items = sqlx::query_as::<_, MediaVariantBrowseItem>(&items_sql)
         .bind(params.project_id)
@@ -961,6 +968,7 @@ pub async fn browse_variants(
         .bind(&params.tag_ids)
         .bind(&params.search)
         .bind(&params.exclude_tag_ids)
+        .bind(params.no_tags.unwrap_or(false))
         .bind(limit as i64)
         .bind(offset as i64)
         .fetch_all(&state.pool)

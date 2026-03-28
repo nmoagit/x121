@@ -40,6 +40,8 @@ interface TagFilterProps {
   namespace?: string;
   /** Pipeline ID for pipeline-scoped labels. */
   pipelineId?: number;
+  /** When set, only show tags with usage on this entity type (e.g., "scene_video_version", "media_variant"). */
+  entityType?: string;
   className?: string;
 }
 
@@ -63,17 +65,19 @@ export function TagFilter({
   onLogicChange,
   namespace,
   pipelineId,
+  entityType,
   className,
 }: TagFilterProps) {
   const queryClient = useQueryClient();
   const [managerOpen, setManagerOpen] = useState(false);
 
   const { data: fetchedTags = [], isLoading: loading } = useQuery({
-    queryKey: tagKeys.list(pipelineId, namespace),
+    queryKey: [...tagKeys.list(pipelineId, namespace), entityType ?? null],
     queryFn: () => {
       const params = new URLSearchParams();
       if (namespace) params.set("namespace", namespace);
       if (pipelineId) params.set("pipeline_id", String(pipelineId));
+      if (entityType) params.set("entity_type", entityType);
       params.set("limit", "200");
       return api.get<TagWithCount[]>(`/tags?${params.toString()}`);
     },

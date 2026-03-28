@@ -877,7 +877,11 @@ pub async fn browse_clips(
               AND et.tag_id = ANY(string_to_array($10, ',')::bigint[]) \
           )) \
           AND (NOT $11::bool OR svv.parent_version_id IS NOT NULL) \
-          AND ($12::bigint IS NULL OR svv.parent_version_id = $12)";
+          AND ($12::bigint IS NULL OR svv.parent_version_id = $12) \
+          AND (NOT $13::bool OR svv.id NOT IN ( \
+            SELECT et.entity_id FROM entity_tags et \
+            WHERE et.entity_type = 'scene_video_version' \
+          ))";
 
     let count_sql = format!("SELECT COUNT(*) {base_from}");
     let total: i64 = sqlx::query_scalar(&count_sql)
@@ -893,6 +897,7 @@ pub async fn browse_clips(
         .bind(&params.exclude_tag_ids)
         .bind(has_parent)
         .bind(params.parent_version_id)
+        .bind(params.no_tags.unwrap_or(false))
         .fetch_one(&state.pool)
         .await?;
 
@@ -910,7 +915,7 @@ pub async fn browse_clips(
             p.id AS project_id, p.name AS project_name \
         {base_from} \
         ORDER BY svv.created_at DESC \
-        LIMIT $13 OFFSET $14"
+        LIMIT $14 OFFSET $15"
     );
     let items = sqlx::query_as::<_, ClipBrowseItem>(&items_sql)
         .bind(params.project_id)
@@ -925,6 +930,7 @@ pub async fn browse_clips(
         .bind(&params.exclude_tag_ids)
         .bind(has_parent)
         .bind(params.parent_version_id)
+        .bind(params.no_tags.unwrap_or(false))
         .bind(limit as i64)
         .bind(offset as i64)
         .fetch_all(&state.pool)
@@ -948,6 +954,8 @@ pub struct BrowseClipsParams {
     pub tag_ids: Option<String>,
     /// Comma-separated tag IDs to exclude from results.
     pub exclude_tag_ids: Option<String>,
+    /// When true, only return items with no tags applied.
+    pub no_tags: Option<bool>,
     /// Free-text search across avatar name, scene type, track, project.
     pub search: Option<String>,
     /// When true, only return derived clips (parent_version_id IS NOT NULL).

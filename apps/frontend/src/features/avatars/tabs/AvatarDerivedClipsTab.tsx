@@ -1,7 +1,7 @@
 /**
  * Avatar derived clips tab — shows imported derived clips grouped by parent version (PRD-153).
  */
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 
 import { CollapsibleSection } from "@/components/composite/CollapsibleSection";
 import { EmptyState } from "@/components/domain";
@@ -81,8 +81,6 @@ function DerivedClipRow({ clip, onPlay }: { clip: DerivedClipItem; onPlay: () =>
   );
 }
 
-const VIDEO_EXTENSIONS = new Set(["mp4", "webm", "mov"]);
-
 export function AvatarDerivedClipsTab({ avatarId }: AvatarDerivedClipsTabProps) {
   const pipelineCtx = usePipelineContextSafe();
   const [qaFilter, setQaFilter] = useState<string[]>([]);
@@ -92,39 +90,7 @@ export function AvatarDerivedClipsTab({ avatarId }: AvatarDerivedClipsTabProps) 
   const [bulkImportOpen, setBulkImportOpen] = useState(false);
   const [bulkImportFiles, setBulkImportFiles] = useState<File[]>([]);
   const [scanOpen, setScanOpen] = useState(false);
-  const [dragOver, setDragOver] = useState(false);
-  const dragCounterRef = useRef(0);
 
-  const handleDragEnter = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    dragCounterRef.current++;
-    if (dragCounterRef.current === 1) setDragOver(true);
-  }, []);
-
-  const handleDragLeave = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    dragCounterRef.current--;
-    if (dragCounterRef.current <= 0) { dragCounterRef.current = 0; setDragOver(false); }
-  }, []);
-
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = "copy";
-  }, []);
-
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    dragCounterRef.current = 0;
-    setDragOver(false);
-    const files = Array.from(e.dataTransfer.files).filter((f) => {
-      const ext = f.name.split(".").pop()?.toLowerCase() ?? "";
-      return VIDEO_EXTENSIONS.has(ext);
-    });
-    if (files.length > 0) {
-      setBulkImportFiles(files);
-      setBulkImportOpen(true);
-    }
-  }, []);
 
   const { data, isLoading } = useDerivedClips(avatarId, {
     qaStatus: qaFilter.length > 0 ? qaFilter.join(",") : undefined,
@@ -161,18 +127,6 @@ export function AvatarDerivedClipsTab({ avatarId }: AvatarDerivedClipsTabProps) 
   }
 
   return (
-    <div
-      onDragEnter={handleDragEnter}
-      onDragLeave={handleDragLeave}
-      onDragOver={handleDragOver}
-      onDrop={handleDrop}
-      className="relative"
-    >
-      {dragOver && (
-        <div className="absolute inset-0 z-20 flex items-center justify-center bg-[var(--color-action-primary)]/10 border-2 border-dashed border-[var(--color-action-primary)] rounded-[var(--radius-lg)]">
-          <span className="font-mono text-sm text-[var(--color-action-primary)]">Drop video files to import</span>
-        </div>
-      )}
     <Stack gap={4}>
       {/* Toolbar */}
       <div className="flex items-center gap-2 flex-wrap">
@@ -207,6 +161,7 @@ export function AvatarDerivedClipsTab({ avatarId }: AvatarDerivedClipsTabProps) 
           excludedTagIds={excludeLabelFilter}
           onExclusionChange={setExcludeLabelFilter}
           pipelineId={pipelineCtx?.pipelineId}
+          entityType="derived_clip"
         />
       )}
 
@@ -260,6 +215,5 @@ export function AvatarDerivedClipsTab({ avatarId }: AvatarDerivedClipsTabProps) 
         />
       )}
     </Stack>
-    </div>
   );
 }

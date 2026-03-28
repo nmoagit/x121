@@ -102,25 +102,65 @@ impl TagRepo {
             .await
     }
 
-    /// List all tags, optionally filtered by namespace and pipeline, with pagination.
+    /// List all tags, optionally filtered by namespace, pipeline, and entity type.
+    /// When `entity_type` is provided, only tags with actual usage on that entity type
+    /// are returned, and `usage_count` reflects usage for that type only.
     pub async fn list_all(pool: &PgPool, params: &TagListParams) -> Result<Vec<Tag>, sqlx::Error> {
         let limit = params.limit.unwrap_or(DEFAULT_LIMIT).min(MAX_LIMIT);
         let offset = params.offset.unwrap_or(0);
 
-        let query = format!(
-            "SELECT {TAG_COLUMNS} FROM tags \
-             WHERE ($1::text IS NULL OR namespace = $1) \
-               AND ($2::bigint IS NULL OR pipeline_id IS NULL OR pipeline_id = $2) \
-             ORDER BY name COLLATE \"C\", usage_count DESC \
-             LIMIT $3 OFFSET $4"
-        );
-        sqlx::query_as::<_, Tag>(&query)
-            .bind(&params.namespace)
-            .bind(params.pipeline_id)
-            .bind(limit)
-            .bind(offset)
-            .fetch_all(pool)
-            .await
+        if let Some(ref entity_type) = params.entity_type {
+            // Special value "derived_clip" → scene_video_versions with parent_version_id set
+            let (actual_entity_type, extra_join) = if entity_type == "derived_clip" {
+                (
+                    "scene_video_version",
+                    " INNER JOIN scene_video_versions svv ON svv.id = et.entity_id \
+                      AND svv.parent_version_id IS NOT NULL",
+                )
+            } else {
+                (entity_type.as_str(), "")
+            };
+
+            let query = format!(
+                "SELECT t.id, t.name, t.display_name, t.namespace, t.color, \
+                        COALESCE(ec.cnt, 0)::int AS usage_count, \
+                        t.created_by, t.pipeline_id, t.created_at, t.updated_at \
+                 FROM tags t \
+                 INNER JOIN ( \
+                   SELECT et.tag_id, COUNT(*) AS cnt \
+                   FROM entity_tags et{extra_join} \
+                   WHERE et.entity_type = $5 \
+                   GROUP BY et.tag_id \
+                 ) ec ON ec.tag_id = t.id \
+                 WHERE ($1::text IS NULL OR t.namespace = $1) \
+                   AND ($2::bigint IS NULL OR t.pipeline_id IS NULL OR t.pipeline_id = $2) \
+                 ORDER BY t.name COLLATE \"C\", ec.cnt DESC \
+                 LIMIT $3 OFFSET $4"
+            );
+            sqlx::query_as::<_, Tag>(&query)
+                .bind(&params.namespace)
+                .bind(params.pipeline_id)
+                .bind(limit)
+                .bind(offset)
+                .bind(actual_entity_type)
+                .fetch_all(pool)
+                .await
+        } else {
+            let query = format!(
+                "SELECT {TAG_COLUMNS} FROM tags \
+                 WHERE ($1::text IS NULL OR namespace = $1) \
+                   AND ($2::bigint IS NULL OR pipeline_id IS NULL OR pipeline_id = $2) \
+                 ORDER BY name COLLATE \"C\", usage_count DESC \
+                 LIMIT $3 OFFSET $4"
+            );
+            sqlx::query_as::<_, Tag>(&query)
+                .bind(&params.namespace)
+                .bind(params.pipeline_id)
+                .bind(limit)
+                .bind(offset)
+                .fetch_all(pool)
+                .await
+        }
     }
 
     /// Autocomplete suggestions: prefix-match on normalized name, sorted by popularity.

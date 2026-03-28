@@ -191,6 +191,7 @@ export function AvatarDetailPage() {
     );
   }
 
+
   /* --- edit/delete modal state --- */
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);

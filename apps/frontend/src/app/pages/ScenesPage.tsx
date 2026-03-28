@@ -362,6 +362,7 @@ export function ScenesPage() {
   // Track playing clip by ID so approve/reject doesn't jump to another clip
   const [playingClipId, setPlayingClipId] = useState<number | null>(null);
   const [showDisabled, setShowDisabled] = useState(false);
+  const [noTags, setNoTags] = useState(false);
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState<number>(DEFAULT_PAGE_SIZE);
@@ -399,6 +400,7 @@ export function ScenesPage() {
     excludeTagIds: excludeLabelFilter.length > 0 ? excludeLabelFilter.join(",") : undefined,
     search: debouncedSearch || undefined,
     hasParent: isDerivedFilter ? true : undefined,
+    noTags: noTags || undefined,
     limit: pageSize,
     offset: page * pageSize,
   });
@@ -425,8 +427,18 @@ export function ScenesPage() {
   const filteredClips = clips ?? [];
   const pageIds = useMemo(() => filteredClips.map((c) => c.id), [filteredClips]);
 
-  // Resolve playing clip by ID — stable across refetches
-  const playingLocalIndex = playingClipId !== null
+  // Resolve playing clip by ID — stable across refetches.
+  // Sentinel values: -1 = select last clip on page, -2 = select first clip on page
+  // (used when crossing page boundaries via prev/next navigation).
+  useEffect(() => {
+    if (playingClipId === -1 && filteredClips.length > 0) {
+      setPlayingClipId(filteredClips[filteredClips.length - 1]!.id);
+    } else if (playingClipId === -2 && filteredClips.length > 0) {
+      setPlayingClipId(filteredClips[0]!.id);
+    }
+  }, [playingClipId, filteredClips]);
+
+  const playingLocalIndex = playingClipId != null && playingClipId > 0
     ? filteredClips.findIndex((c) => c.id === playingClipId)
     : -1;
   const playingClipData = playingLocalIndex >= 0 ? filteredClips[playingLocalIndex] : null;
@@ -536,6 +548,12 @@ export function ScenesPage() {
             label="Show disabled"
             size="sm"
           />
+          <Toggle
+            checked={noTags}
+            onChange={(v) => { setNoTags(v); setPage(0); }}
+            label="No tags"
+            size="sm"
+          />
           <Button
             variant={viewMode === "grid" ? "secondary" : "ghost"}
             size="xs"
@@ -563,6 +581,7 @@ export function ScenesPage() {
         excludedTagIds={excludeLabelFilter}
         onExclusionChange={(ids) => { setExcludeLabelFilter(ids); setPage(0); }}
         pipelineId={pipelineCtx?.pipelineId}
+        entityType="scene_video_version"
       />
 
       {/* Content */}
@@ -638,8 +657,29 @@ export function ScenesPage() {
       <ClipPlaybackModal
         clip={playingClipData ? toPlayable(playingClipData) : null}
         onClose={() => setPlayingClipId(null)}
-        onPrev={playingLocalIndex > 0 ? () => setPlayingClipId(filteredClips[playingLocalIndex - 1]!.id) : undefined}
-        onNext={playingLocalIndex >= 0 && playingLocalIndex < filteredClips.length - 1 ? () => setPlayingClipId(filteredClips[playingLocalIndex + 1]!.id) : undefined}
+        onPrev={(() => {
+          if (playingLocalIndex > 0) {
+            // Previous clip on same page
+            return () => setPlayingClipId(filteredClips[playingLocalIndex - 1]!.id);
+          }
+          if (page > 0) {
+            // Go to previous page, select last clip (will resolve after page loads)
+            return () => { setPage((p) => p - 1); setPlayingClipId(-1); };
+          }
+          return undefined; // at absolute start
+        })()}
+        onNext={(() => {
+          if (playingLocalIndex >= 0 && playingLocalIndex < filteredClips.length - 1) {
+            // Next clip on same page
+            return () => setPlayingClipId(filteredClips[playingLocalIndex + 1]!.id);
+          }
+          const absoluteIndex = page * pageSize + playingLocalIndex;
+          if (absoluteIndex < total - 1) {
+            // Go to next page, select first clip (will resolve after page loads)
+            return () => { setPage((p) => p + 1); setPlayingClipId(-2); };
+          }
+          return undefined; // at absolute end
+        })()}
         onApprove={playingClipData ? () => playingClipData.qa_status === "approved" ? unapproveMut.mutate({ sceneId: playingClipData.scene_id, versionId: playingClipData.id }) : approveMut.mutate({ sceneId: playingClipData.scene_id, versionId: playingClipData.id }) : undefined}
         onReject={playingClipData ? () => playingClipData.qa_status === "rejected" ? unapproveMut.mutate({ sceneId: playingClipData.scene_id, versionId: playingClipData.id }) : rejectMut.mutate({ sceneId: playingClipData.scene_id, versionId: playingClipData.id, input: { reason: "Rejected from browse" } }) : undefined}
         pipelineId={pipelineCtx?.pipelineId}

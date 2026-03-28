@@ -18,6 +18,10 @@ interface TransportControlsProps {
   onQualityChange: (quality: PlaybackQuality) => void;
   /** Annotation playback controls. Null when no annotation ranges exist. */
   annotationPlayback: AnnotationPlaybackControls | null;
+  /** Whether whole-video looping is enabled. */
+  looping?: boolean;
+  /** Toggle whole-video loop on/off. */
+  onLoopToggle?: () => void;
   className?: string;
 }
 
@@ -27,6 +31,8 @@ export function TransportControls({
   quality,
   onQualityChange,
   annotationPlayback,
+  looping,
+  onLoopToggle,
   className,
 }: TransportControlsProps) {
   return (
@@ -180,6 +186,23 @@ export function TransportControls({
           </button>
         )}
       </div>
+
+      {/* Loop toggle */}
+      {onLoopToggle && (
+        <button
+          type="button"
+          onClick={onLoopToggle}
+          className={cn(
+            "p-[var(--spacing-1)] rounded-[var(--radius-sm)] transition-colors",
+            looping
+              ? "bg-cyan-500 text-[var(--color-text-inverse)]"
+              : "text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]",
+          )}
+          title={looping ? "Looping (R)" : "Loop video (R)"}
+        >
+          <Repeat size={14} />
+        </button>
+      )}
 
       {/* Spacer */}
       <div className="flex-1" />

@@ -16,6 +16,7 @@ import type { ReactNode } from "react";
 
 import type { AvatarDropPayload, DroppedAsset, FolderDropResult } from "@/features/projects/types";
 import { cn } from "@/lib/cn";
+import { parseClipName } from "@/lib/clip-filename-parser";
 import { isImageFile, isVideoFile, readFileText, stripExtension } from "@/lib/file-types";
 
 /* --------------------------------------------------------------------------
@@ -150,10 +151,13 @@ function filenameStem(filename: string): string {
   return stripExtension(filename).toLowerCase();
 }
 
-/** Classify a list of files from a avatar folder into a AvatarDropPayload. */
+/** Classify a list of files from a avatar folder into a AvatarDropPayload.
+ *  folderClipMeta is the parsed clip naming convention from the folder name —
+ *  used as fallback when individual files don't follow the convention. */
 function classifyAvatarFiles(
   avatarName: string,
   files: File[],
+  folderClipMeta?: { sceneTypeSlug: string; trackSlug: string; version: number; labels: string[] },
 ): AvatarDropPayload {
   const assets: DroppedAsset[] = [];
   let bioJson: File | undefined;
@@ -177,10 +181,28 @@ function classifyAvatarFiles(
         kind: "image",
       });
     } else if (isVideoFile(file.name)) {
+      // Try parsing the individual filename first, then fall back to folder metadata
+      const parsed = parseClipName(file.name);
+      const clipMatch = file.name.match(/_?clip(\d+)/i);
+      const folderClipIndex = clipMatch ? Number.parseInt(clipMatch[1]!, 10) : null;
+
       assets.push({
         file,
         category: filenameStem(file.name),
         kind: "video",
+        clipMeta: parsed ? {
+          sceneTypeSlug: parsed.sceneTypeSlug,
+          trackSlug: parsed.trackSlug,
+          version: parsed.version,
+          labels: parsed.labels,
+          clipIndex: parsed.clipIndex,
+        } : folderClipMeta ? {
+          sceneTypeSlug: folderClipMeta.sceneTypeSlug,
+          trackSlug: folderClipMeta.trackSlug,
+          version: folderClipMeta.version,
+          labels: folderClipMeta.labels,
+          clipIndex: folderClipIndex,
+        } : undefined,
       });
     }
   }
@@ -205,7 +227,18 @@ async function readDirectoryStructure(
   // No subdirs → flat single avatar folder
   if (subdirs.length === 0) {
     const files = await collectFilesFromDirectory(entry);
-    const payload = classifyAvatarFiles(entry.name, files);
+    const folderParsed = parseClipName(entry.name);
+    const clipAvatarName = folderParsed
+      ? folderParsed.avatarSlug.split("-").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ")
+      : null;
+    const avatarName = clipAvatarName ?? entry.name;
+    const folderMeta = folderParsed ? {
+      sceneTypeSlug: folderParsed.sceneTypeSlug,
+      trackSlug: folderParsed.trackSlug,
+      version: folderParsed.version,
+      labels: folderParsed.labels,
+    } : undefined;
+    const payload = classifyAvatarFiles(avatarName, files, folderMeta);
     return {
       structure: "flat",
       detectedProjectName: entry.name,
@@ -226,11 +259,24 @@ async function readDirectoryStructure(
   }
 
   // No subdirs have sub-subdirs → flat batch (backward compatible)
+  // Detect clip naming convention folders (e.g., sdg_allie-nicole_idle_topless_v1_[labels])
+  // and extract the real avatar name from the folder name.
   if (subdirsWithChildren === 0) {
     const payloads: AvatarDropPayload[] = [];
     for (const sub of subdirs) {
       const files = await collectFilesFromDirectory(sub);
-      payloads.push(classifyAvatarFiles(sub.name, files));
+      const folderParsed = parseClipName(sub.name);
+      const clipAvatarName = folderParsed
+        ? folderParsed.avatarSlug.split("-").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ")
+        : null;
+      const avatarName = clipAvatarName ?? sub.name;
+      const folderMeta = folderParsed ? {
+        sceneTypeSlug: folderParsed.sceneTypeSlug,
+        trackSlug: folderParsed.trackSlug,
+        version: folderParsed.version,
+        labels: folderParsed.labels,
+      } : undefined;
+      payloads.push(classifyAvatarFiles(avatarName, files, folderMeta));
     }
     return {
       structure: "flat",
@@ -250,7 +296,18 @@ async function readDirectoryStructure(
     if (charDirs.length === 0) {
       // Subdir has only files → treat as ungrouped avatar
       const files = await collectFilesFromDirectory(sub);
-      const payload = classifyAvatarFiles(sub.name, files);
+      const subParsed = parseClipName(sub.name);
+      const clipAvatarName = subParsed
+        ? subParsed.avatarSlug.split("-").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ")
+        : null;
+      const avatarName = clipAvatarName ?? sub.name;
+      const subMeta = subParsed ? {
+        sceneTypeSlug: subParsed.sceneTypeSlug,
+        trackSlug: subParsed.trackSlug,
+        version: subParsed.version,
+        labels: subParsed.labels,
+      } : undefined;
+      const payload = classifyAvatarFiles(avatarName, files, subMeta);
       const ungrouped = groupedPayloads.get("") ?? [];
       ungrouped.push(payload);
       groupedPayloads.set("", ungrouped);
@@ -258,7 +315,18 @@ async function readDirectoryStructure(
       const payloads: AvatarDropPayload[] = [];
       for (const charDir of charDirs) {
         const files = await collectFilesFromDirectory(charDir);
-        const payload = classifyAvatarFiles(charDir.name, files);
+        const charParsed = parseClipName(charDir.name);
+        const clipAvatarName = charParsed
+          ? charParsed.avatarSlug.split("-").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ")
+          : null;
+        const avatarName = clipAvatarName ?? charDir.name;
+        const charMeta = charParsed ? {
+          sceneTypeSlug: charParsed.sceneTypeSlug,
+          trackSlug: charParsed.trackSlug,
+          version: charParsed.version,
+          labels: charParsed.labels,
+        } : undefined;
+        const payload = classifyAvatarFiles(avatarName, files, charMeta);
         payload.groupName = sub.name;
         payloads.push(payload);
       }

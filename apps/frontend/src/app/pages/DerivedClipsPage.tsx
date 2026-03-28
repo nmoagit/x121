@@ -50,6 +50,7 @@ export function DerivedClipsPage() {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [playingClipId, setPlayingClipId] = useState<number | null>(null);
   const [showDisabled, setShowDisabled] = useState(false);
+  const [noTags, setNoTags] = useState(false);
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [scanOpen, setScanOpen] = useState(false);
@@ -82,6 +83,7 @@ export function DerivedClipsPage() {
     excludeTagIds: excludeLabelFilter.length > 0 ? excludeLabelFilter.join(",") : undefined,
     search: debouncedSearch || undefined,
     hasParent: true,
+    noTags: noTags || undefined,
     limit: pageSize,
     offset: page * pageSize,
   });
@@ -89,6 +91,15 @@ export function DerivedClipsPage() {
   const clips = browseResult?.items ?? [];
   const total = browseResult?.total ?? 0;
   const pageIds = useMemo(() => clips.map((c) => c.id), [clips]);
+
+  // Resolve sentinel playingClipId values for cross-page navigation
+  useEffect(() => {
+    if (playingClipId === -1 && clips.length > 0) {
+      setPlayingClipId(clips[clips.length - 1]!.id);
+    } else if (playingClipId === -2 && clips.length > 0) {
+      setPlayingClipId(clips[0]!.id);
+    }
+  }, [playingClipId, clips]);
 
   // Filter options
   const projectOptions: FilterOption[] = useMemo(
@@ -178,13 +189,19 @@ export function DerivedClipsPage() {
         <div className="flex items-center gap-3">
           <Checkbox checked={bulk.isAllPageSelected(pageIds)} indeterminate={bulk.isIndeterminate(pageIds)} onChange={(checked) => checked ? bulk.selectPage(pageIds) : bulk.deselectPage(pageIds)} label="Select all" size="sm" />
           <Toggle checked={showDisabled} onChange={setShowDisabled} label="Show disabled" size="sm" />
+          <Toggle checked={noTags} onChange={(v) => { setNoTags(v); setPage(0); }} label="No tags" size="sm" />
           <span className="text-xs text-[var(--color-text-muted)]">{clips.length} clip{clips.length !== 1 ? "s" : ""}</span>
         </div>
       </MultiFilterBar>
 
-      {total > 0 && (
-        <TagFilter selectedTagIds={labelFilter} onSelectionChange={(ids) => { setLabelFilter(ids); setPage(0); }} excludedTagIds={excludeLabelFilter} onExclusionChange={(ids) => { setExcludeLabelFilter(ids); setPage(0); }} pipelineId={pipelineCtx?.pipelineId} />
-      )}
+      <TagFilter
+        selectedTagIds={labelFilter}
+        onSelectionChange={(ids) => { setLabelFilter(ids); setPage(0); }}
+        excludedTagIds={excludeLabelFilter}
+        onExclusionChange={(ids) => { setExcludeLabelFilter(ids); setPage(0); }}
+        pipelineId={pipelineCtx?.pipelineId}
+        entityType="derived_clip"
+      />
 
       {isLoading ? (
         <div className="flex justify-center py-12"><ContextLoader size={48} /></div>
@@ -212,6 +229,9 @@ export function DerivedClipsPage() {
         bulkOps={bulkOps}
         total={total}
         pageIds={pageIds}
+        page={page}
+        pageSize={pageSize}
+        onPageChange={setPage}
         scanOpen={scanOpen}
         onCloseScan={() => setScanOpen(false)}
       />

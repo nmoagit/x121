@@ -16,6 +16,7 @@
  */
 
 import type { ExpandedSceneSetting } from "@/features/scene-catalogue/types";
+import { parseClipName } from "@/lib/clip-filename-parser";
 import { CLOTHES_OFF_SUFFIX, isVideoFile, stripExtension } from "@/lib/file-types";
 
 /**
@@ -81,7 +82,32 @@ function stripVersionSuffix(slug: string): { slug: string; version: number | nul
   return { slug, version: null };
 }
 
-export function parseFilename(filename: string, trackSlugs: string[]): ParsedFilename {
+export function parseFilename(
+  filename: string,
+  trackSlugs: string[],
+  clipMeta?: { sceneTypeSlug: string; trackSlug: string },
+): ParsedFilename {
+  // First: try the clip naming convention (PRD-153)
+  // e.g. sdg_allie-nicole_idle_topless_v1_[#phase_2,glitch]_clip0010.mp4
+  const clipParsed = parseClipName(filename);
+  if (clipParsed) {
+    return {
+      sceneSlug: clipParsed.sceneTypeSlug,
+      trackSlug: clipParsed.trackSlug,
+      isAdditionalVersion: true,
+    };
+  }
+
+  // Second: use folder-level metadata if available (e.g. clip0000.mp4 inside a parsed folder)
+  if (clipMeta) {
+    return {
+      sceneSlug: clipMeta.sceneTypeSlug,
+      trackSlug: clipMeta.trackSlug,
+      isAdditionalVersion: true,
+    };
+  }
+
+  // Fallback: legacy convention ({track}_scene.mp4 or scene.mp4)
   const stem = stripExtension(filename).toLowerCase();
 
   let sceneSlug: string;
@@ -151,6 +177,14 @@ export function extractAvatarHint(
   filename: string,
   nonCharacterHints?: Set<string>,
 ): string | null {
+  // First: try clip naming convention (PRD-153)
+  // e.g. sdg_zmeena_idle_clothed_v1_[labels]_clip0008.mp4 → "zmeena"
+  const clipParsed = parseClipName(filename);
+  if (clipParsed) {
+    return clipParsed.avatarSlug.replace(/-/g, " ");
+  }
+
+  // Fallback: legacy convention — first underscore-separated part
   const stem = stripExtension(filename).toLowerCase();
   // If the stem contains no underscores, it's likely just a scene name
   if (!stem.includes("_")) return null;

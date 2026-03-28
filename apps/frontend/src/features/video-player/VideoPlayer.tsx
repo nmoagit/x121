@@ -39,6 +39,7 @@ export function VideoPlayer({
   className,
 }: VideoPlayerProps) {
   const [quality, setQuality] = useState<PlaybackQuality>(initialQuality);
+  const [looping, setLooping] = useState(false);
   const restoreTimeRef = useRef<number | null>(null);
 
   const { data: metadata } = useVideoMetadata(sourceType, sourceId);
@@ -65,6 +66,133 @@ export function VideoPlayer({
   const annotationPlayback = annotationRanges?.length ? annPlayback : null;
 
   const streamUrl = getStreamUrl(sourceType, sourceId, quality);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Double-click on video area toggles fullscreen
+  const handleVideoDoubleClick = useCallback(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    if (document.fullscreenElement) {
+      document.exitFullscreen();
+    } else {
+      el.requestFullscreen?.();
+    }
+  }, []);
+
+  // YouTube-style keyboard controls
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    function handleKeyDown(e: KeyboardEvent) {
+      // Ignore when typing in an input/textarea
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+
+      switch (e.key) {
+        case " ":
+        case "k":
+          e.preventDefault();
+          player.togglePlay();
+          break;
+        case "ArrowLeft":
+          e.preventDefault();
+          if (e.shiftKey) {
+            // Shift+Left: seek back 5 seconds
+            player.seekToTime(Math.max(0, player.currentTime - 5));
+          } else {
+            // Left: step back one frame
+            player.stepBackward();
+          }
+          break;
+        case "ArrowRight":
+          e.preventDefault();
+          if (e.shiftKey) {
+            // Shift+Right: seek forward 5 seconds
+            player.seekToTime(Math.min(player.duration, player.currentTime + 5));
+          } else {
+            // Right: step forward one frame
+            player.stepForward();
+          }
+          break;
+        case "ArrowUp":
+          e.preventDefault();
+          // Increase volume
+          if (player.videoRef.current) {
+            player.videoRef.current.volume = Math.min(1, player.videoRef.current.volume + 0.1);
+          }
+          break;
+        case "ArrowDown":
+          e.preventDefault();
+          // Decrease volume
+          if (player.videoRef.current) {
+            player.videoRef.current.volume = Math.max(0, player.videoRef.current.volume - 0.1);
+          }
+          break;
+        case "j":
+          // Seek back 10 seconds
+          e.preventDefault();
+          player.seekToTime(Math.max(0, player.currentTime - 10));
+          break;
+        case "l":
+          // Seek forward 10 seconds
+          e.preventDefault();
+          player.seekToTime(Math.min(player.duration, player.currentTime + 10));
+          break;
+        case "f":
+          // Toggle fullscreen
+          e.preventDefault();
+          handleVideoDoubleClick();
+          break;
+        case "m":
+          // Toggle mute
+          e.preventDefault();
+          if (player.videoRef.current) {
+            player.videoRef.current.muted = !player.videoRef.current.muted;
+          }
+          break;
+        case "Home":
+        case "0":
+          // Go to start
+          e.preventDefault();
+          player.seekToTime(0);
+          break;
+        case "End":
+          // Go to end
+          e.preventDefault();
+          player.seekToTime(player.duration);
+          break;
+        case ",":
+          // Previous frame (when paused)
+          e.preventDefault();
+          player.stepBackward();
+          break;
+        case ".":
+          // Next frame (when paused)
+          e.preventDefault();
+          player.stepForward();
+          break;
+        case "<":
+          // Decrease speed
+          e.preventDefault();
+          player.setSpeed(Math.max(0.25, player.speed - 0.25));
+          break;
+        case ">":
+          // Increase speed
+          e.preventDefault();
+          player.setSpeed(Math.min(4, player.speed + 0.25));
+          break;
+        case "r":
+          // Toggle loop
+          e.preventDefault();
+          setLooping((prev) => !prev);
+          break;
+      }
+    }
+
+    container.addEventListener("keydown", handleKeyDown);
+    return () => container.removeEventListener("keydown", handleKeyDown);
+  }, [player, handleVideoDoubleClick]);
 
   // Save current time before quality switch, restore after new source loads.
   const handleQualityChange = useCallback(
@@ -92,21 +220,25 @@ export function VideoPlayer({
 
   return (
     <div
+      ref={containerRef}
+      tabIndex={0}
       className={cn(
-        "relative flex flex-col bg-black rounded-[var(--radius-md)] overflow-hidden",
+        "relative flex flex-col bg-black rounded-[var(--radius-md)] overflow-hidden outline-none",
         className,
       )}
     >
-      {/* Video element */}
+      {/* Video element — click to play/pause, double-click to fullscreen */}
       <div className="relative">
         <video
           ref={player.videoRef}
           src={streamUrl}
-          className="w-full aspect-video bg-black"
+          className="w-full aspect-video bg-black cursor-pointer"
           style={player.isReady ? undefined : { visibility: "hidden", position: "absolute" }}
+          loop={looping}
           playsInline
           preload="metadata"
           onClick={player.togglePlay}
+          onDoubleClick={handleVideoDoubleClick}
         />
         {/* Placeholder to preserve aspect ratio while video is hidden */}
         {!player.isReady && <div className="w-full aspect-video bg-black" />}
@@ -151,6 +283,8 @@ export function VideoPlayer({
             quality={quality}
             onQualityChange={handleQualityChange}
             annotationPlayback={annotationPlayback}
+            looping={looping}
+            onLoopToggle={() => setLooping((prev) => !prev)}
           />
         </div>
       )}

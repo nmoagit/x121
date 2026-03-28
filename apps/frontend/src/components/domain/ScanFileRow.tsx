@@ -67,15 +67,15 @@ export function ScanFileRow({
   if (ctx.metadata_key) contextParts.push(ctx.metadata_key);
 
   return (
-    <div className="flex items-center gap-2 px-3 py-1.5 border-b border-[var(--color-border-default)]/30 last:border-b-0">
+    <div className="flex items-center gap-2 px-3 py-1 border-b border-[var(--color-border-default)]/30 last:border-b-0">
       <span className="shrink-0 text-[var(--color-text-muted)]">
         {CATEGORY_ICONS[file.category]}
       </span>
       <div className="flex-1 min-w-0">
-        <div className="font-mono text-xs text-[var(--color-text-primary)] truncate">
+        <div className="font-mono text-[10px] text-[var(--color-text-primary)] truncate">
           {file.filename}
         </div>
-        <div className="flex items-center gap-2 font-mono text-[10px] text-[var(--color-text-muted)]">
+        <div className="flex items-center gap-2 font-mono text-[9px] text-[var(--color-text-muted)]">
           <span>{formatBytes(file.size_bytes)}</span>
           {contextParts.length > 0 && (
             <>

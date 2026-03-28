@@ -223,6 +223,38 @@ impl FrameAnnotationRepo {
             .await
     }
 
+    /// List distinct user IDs who have annotated a specific version.
+    pub async fn list_annotators_for_version(
+        pool: &PgPool,
+        version_id: DbId,
+    ) -> Result<Vec<DbId>, sqlx::Error> {
+        let rows: Vec<(DbId,)> = sqlx::query_as(
+            "SELECT DISTINCT user_id FROM frame_annotations WHERE version_id = $1 ORDER BY user_id",
+        )
+        .bind(version_id)
+        .fetch_all(pool)
+        .await?;
+        Ok(rows.into_iter().map(|(id,)| id).collect())
+    }
+
+    /// List annotations for a version filtered to a specific user.
+    pub async fn list_by_version_and_user(
+        pool: &PgPool,
+        version_id: DbId,
+        user_id: DbId,
+    ) -> Result<Vec<FrameAnnotation>, sqlx::Error> {
+        let query = format!(
+            "SELECT {COLUMNS} FROM frame_annotations
+             WHERE version_id = $1 AND user_id = $2
+             ORDER BY frame_number ASC, created_at ASC"
+        );
+        sqlx::query_as::<_, FrameAnnotation>(&query)
+            .bind(version_id)
+            .bind(user_id)
+            .fetch_all(pool)
+            .await
+    }
+
     /// Delete all annotations for a video version and a specific frame.
     /// Returns the number of rows deleted.
     pub async fn delete_by_version_and_frame(

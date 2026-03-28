@@ -313,6 +313,7 @@ export function MediaPage() {
   // Absolute index across all pages (0 to total-1)
   const [previewAbsIndex, setPreviewAbsIndex] = useState<number | null>(null);
   const [showDisabled, setShowDisabled] = useState(false);
+  const [noTags, setNoTags] = useState(false);
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState<number>(DEFAULT_PAGE_SIZE);
@@ -345,6 +346,7 @@ export function MediaPage() {
     tagIds: labelFilter.length > 0 ? labelFilter.join(",") : undefined,
     excludeTagIds: excludeLabelFilter.length > 0 ? excludeLabelFilter.join(",") : undefined,
     search: debouncedSearch || undefined,
+    noTags: noTags || undefined,
     limit: pageSize,
     offset: page * pageSize,
   });
@@ -449,6 +451,12 @@ export function MediaPage() {
             label="Show disabled"
             size="sm"
           />
+          <Toggle
+            checked={noTags}
+            onChange={(v) => { setNoTags(v); setPage(0); }}
+            label="No tags"
+            size="sm"
+          />
           <Button
             variant={viewMode === "grid" ? "secondary" : "ghost"}
             size="xs"
@@ -476,6 +484,7 @@ export function MediaPage() {
         excludedTagIds={excludeLabelFilter}
         onExclusionChange={(ids) => { setExcludeLabelFilter(ids); setPage(0); }}
         pipelineId={pipelineCtx?.pipelineId}
+        entityType="media_variant"
       />
 
       {/* Content */}

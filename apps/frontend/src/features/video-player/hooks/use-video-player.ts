@@ -2,6 +2,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { frameToSeconds, secondsToFrame } from "../frame-utils";
 
+/** Persisted playback speed across clip changes (module-level singleton). */
+let persistedSpeed = 1;
+
 /* --------------------------------------------------------------------------
    Types
    -------------------------------------------------------------------------- */
@@ -73,7 +76,7 @@ export function useVideoPlayer(options: UseVideoPlayerOptions): VideoPlayerContr
   const [currentFrame, setCurrentFrame] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [speed, setSpeedState] = useState(1);
+  const [speed, setSpeedState] = useState(persistedSpeed);
   const [volume, setVolumeState] = useState(1);
   const [isMuted, setIsMuted] = useState(false);
   const [isReady, setIsReady] = useState(false);
@@ -125,6 +128,7 @@ export function useVideoPlayer(options: UseVideoPlayerOptions): VideoPlayerContr
         setDuration(video.duration);
         setIsReady(true);
         video.preservesPitch = true;
+        video.playbackRate = persistedSpeed;
         if (autoPlay) {
           video.play().catch(() => {});
         }
@@ -203,6 +207,7 @@ export function useVideoPlayer(options: UseVideoPlayerOptions): VideoPlayerContr
     const clamped = Math.max(0.1, Math.min(4, newSpeed));
     video.playbackRate = clamped;
     setSpeedState(clamped);
+    persistedSpeed = clamped;
   }, []);
 
   const stepForward = useCallback(() => {

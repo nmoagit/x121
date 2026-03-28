@@ -163,7 +163,7 @@ export function BulkImportDialog({ open, onClose, sceneId, parentVersionId, onSu
           }}
         >
           <Upload size={28} className="text-[var(--color-text-muted)]" />
-          <span className="font-mono text-xs text-[var(--color-text-secondary)]">
+          <span className="font-mono text-[10px] text-[var(--color-text-secondary)]">
             Drag & drop video files here (multiple)
           </span>
           <span className="font-mono text-[10px] text-[var(--color-text-muted)]">
@@ -189,7 +189,7 @@ export function BulkImportDialog({ open, onClose, sceneId, parentVersionId, onSu
           </Button>
         </div>
 
-        {error && <p className="font-mono text-xs text-red-400">{error}</p>}
+        {error && <p className="font-mono text-[10px] text-red-400">{error}</p>}
 
         {/* File list */}
         {files.length > 0 && (
@@ -202,9 +202,9 @@ export function BulkImportDialog({ open, onClose, sceneId, parentVersionId, onSu
             </div>
             <div className="max-h-48 overflow-y-auto">
               {files.map((entry, i) => (
-                <div key={`${entry.file.name}-${i}`} className="flex items-center gap-2 px-3 py-1.5 border-b border-[var(--color-border-default)]/30 last:border-b-0">
-                  <FileVideo size={14} className="shrink-0 text-[var(--color-text-muted)]" />
-                  <span className="font-mono text-xs text-[var(--color-text-primary)] truncate flex-1">{entry.file.name}</span>
+                <div key={`${entry.file.name}-${i}`} className="flex items-center gap-2 px-3 py-1 border-b border-[var(--color-border-default)]/30 last:border-b-0">
+                  <FileVideo size={12} className="shrink-0 text-[var(--color-text-muted)]" />
+                  <span className="font-mono text-[10px] text-[var(--color-text-primary)] truncate flex-1">{entry.file.name}</span>
                   <span className="font-mono text-[10px] text-[var(--color-text-muted)] shrink-0">{formatBytes(entry.file.size)}</span>
                   <span className="font-mono text-[10px] text-cyan-400 shrink-0">#{entry.clipIndex}</span>
                   {entry.status === "success" && <span className="font-mono text-[10px] text-green-400 shrink-0">ok</span>}
@@ -223,14 +223,14 @@ export function BulkImportDialog({ open, onClose, sceneId, parentVersionId, onSu
 
         {/* Progress */}
         {uploading && (
-          <div className="font-mono text-xs text-cyan-400">
+          <div className="font-mono text-[10px] text-cyan-400">
             Uploading {progress.current}/{progress.total}...
           </div>
         )}
 
         {/* Results */}
         {done && (
-          <div className="font-mono text-xs">
+          <div className="font-mono text-[10px]">
             <span className="text-green-400">{successCount} imported</span>
             {failCount > 0 && <>, <span className="text-red-400">{failCount} failed</span></>}
           </div>

@@ -325,6 +325,8 @@ export interface MediaVariantBrowseParams {
   showDisabled?: boolean;
   tagIds?: string;
   excludeTagIds?: string;
+  /** Filter to items with no tags applied. */
+  noTags?: boolean;
   search?: string;
   limit?: number;
   offset?: number;
@@ -342,6 +344,7 @@ export function useMediaVariantsBrowse(params: MediaVariantBrowseParams = {}) {
   if (params.showDisabled) searchParams.set("show_disabled", "true");
   if (params.tagIds) searchParams.set("tag_ids", params.tagIds);
   if (params.excludeTagIds) searchParams.set("exclude_tag_ids", params.excludeTagIds);
+  if (params.noTags) searchParams.set("no_tags", "true");
   if (params.search) searchParams.set("search", params.search);
   if (params.limit != null) searchParams.set("limit", String(params.limit));
   if (params.offset != null) searchParams.set("offset", String(params.offset));

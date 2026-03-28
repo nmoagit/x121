@@ -37,6 +37,7 @@ import { readFileAsJson } from "@/lib/file-types";
 
 import {
   createSceneForAvatar,
+  importDerivedClip,
   importVideoClip,
   uploadMediaVariant,
 } from "../lib/bulk-asset-upload";
@@ -707,7 +708,7 @@ export function useAvatarImport(projectId: number, allAvatars?: Avatar[], pipeli
 
         const videoTasks = videoAssets.map(({ charId, asset, charName }) => async () => {
           if (abort.signal.aborted) return "skipped" as const;
-          const parsed = parseFilename(asset.file.name, trackSlugs);
+          const parsed = parseFilename(asset.file.name, trackSlugs, asset.clipMeta);
 
           // Look up scene_type_id from catalogue by slug
           const sceneType = sceneCatalogue?.find((st) => st.slug === parsed.sceneSlug);
@@ -743,11 +744,45 @@ export function useAvatarImport(projectId: number, allAvatars?: Avatar[], pipeli
             scene = { id: sceneId } as Scene;
           }
 
-          await importVideoClip(scene.id, asset.file);
-          const versionHint = parsed.isAdditionalVersion ? " (next version)" : "";
-          addLogEntry(importLogEntry("info", `${asset.file.name} imported for ${charName}${versionHint}`, projectId, {
-            file: asset.file.name, avatar: charName, scene_type: parsed.sceneSlug, track: parsed.trackSlug,
-          }));
+          // Derived clips (clip naming convention) → import with parent version link
+          if (asset.clipMeta) {
+            // Find the ORIGINAL parent version (non-derived): first approved/final, or first version without a parent
+            const versions = await api.get<{ id: number; is_final: boolean; qa_status: string; parent_version_id: number | null }[]>(
+              `/scenes/${scene.id}/versions`,
+            );
+            const originals = versions.filter((v) => v.parent_version_id == null);
+            const parent = originals.find((v) => v.is_final || v.qa_status === "approved")
+              ?? originals[0]; // fallback to first non-derived version
+
+            if (parent) {
+              try {
+                await importDerivedClip(scene.id, asset.file, parent.id, asset.clipMeta.clipIndex);
+              } catch (err) {
+                // Skip duplicates (unique constraint violation)
+                const msg = err instanceof Error ? err.message : String(err);
+                if (msg.includes("unique") || msg.includes("Duplicate")) {
+                  addLogEntry(importLogEntry("warn", `${asset.file.name} skipped (already imported)`, projectId, {
+                    file: asset.file.name, avatar: charName,
+                  }));
+                  return "skipped" as const;
+                }
+                throw err;
+              }
+            } else {
+              // No parent — import as regular (first version)
+              await importVideoClip(scene.id, asset.file);
+            }
+            addLogEntry(importLogEntry("info", `${asset.file.name} imported as derived clip for ${charName}`, projectId, {
+              file: asset.file.name, avatar: charName, scene_type: parsed.sceneSlug, track: parsed.trackSlug,
+              clipIndex: asset.clipMeta.clipIndex,
+            }));
+          } else {
+            await importVideoClip(scene.id, asset.file);
+            const versionHint = parsed.isAdditionalVersion ? " (next version)" : "";
+            addLogEntry(importLogEntry("info", `${asset.file.name} imported for ${charName}${versionHint}`, projectId, {
+              file: asset.file.name, avatar: charName, scene_type: parsed.sceneSlug, track: parsed.trackSlug,
+            }));
+          }
           return "uploaded" as const;
         });
 

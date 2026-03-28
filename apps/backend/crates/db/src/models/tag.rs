@@ -127,6 +127,9 @@ pub struct TagListParams {
     pub namespace: Option<String>,
     /// Filter by pipeline (pipeline-scoped labels).
     pub pipeline_id: Option<DbId>,
+    /// When set, only return tags that have usage on this entity type.
+    /// The `usage_count` in the response is recalculated for this entity type only.
+    pub entity_type: Option<String>,
     /// Maximum results. Defaults to 100.
     pub limit: Option<i64>,
     /// Offset for pagination.

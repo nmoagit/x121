@@ -187,6 +187,14 @@ export interface DroppedAsset {
   contentHash?: string;
   /** Whether this file already exists in the database (by content hash). */
   isDuplicate?: boolean;
+  /** Parsed clip metadata from naming convention (PRD-153). */
+  clipMeta?: {
+    sceneTypeSlug: string;
+    trackSlug: string;
+    version: number;
+    labels: string[];
+    clipIndex: number | null;
+  };
 }
 
 /** Summary of hash-based deduplication for an import batch. */

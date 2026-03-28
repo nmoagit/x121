@@ -23,6 +23,9 @@ interface DerivedClipDialogsProps {
   bulkOps: BulkOperations;
   total: number;
   pageIds: number[];
+  page: number;
+  pageSize: number;
+  onPageChange: (page: number) => void;
   scanOpen: boolean;
   onCloseScan: () => void;
 }
@@ -39,6 +42,9 @@ export function DerivedClipDialogs({
   bulkOps,
   total,
   pageIds,
+  page,
+  pageSize,
+  onPageChange,
   scanOpen,
   onCloseScan,
 }: DerivedClipDialogsProps) {
@@ -50,8 +56,17 @@ export function DerivedClipDialogs({
       <ClipPlaybackModal
         clip={playingClipData ? clipBrowseToPlayable(playingClipData) : null}
         onClose={onClosePlayback}
-        onPrev={playingLocalIndex > 0 ? () => onSetPlayingId(clips[playingLocalIndex - 1]!.id) : undefined}
-        onNext={playingLocalIndex >= 0 && playingLocalIndex < clips.length - 1 ? () => onSetPlayingId(clips[playingLocalIndex + 1]!.id) : undefined}
+        onPrev={(() => {
+          if (playingLocalIndex > 0) return () => onSetPlayingId(clips[playingLocalIndex - 1]!.id);
+          if (page > 0) return () => { onPageChange(page - 1); onSetPlayingId(-1); };
+          return undefined;
+        })()}
+        onNext={(() => {
+          if (playingLocalIndex >= 0 && playingLocalIndex < clips.length - 1) return () => onSetPlayingId(clips[playingLocalIndex + 1]!.id);
+          const absIdx = page * pageSize + playingLocalIndex;
+          if (absIdx < total - 1) return () => { onPageChange(page + 1); onSetPlayingId(-2); };
+          return undefined;
+        })()}
         onApprove={playingClipData ? () => onApprove(playingClipData) : undefined}
         onReject={playingClipData ? () => onReject(playingClipData) : undefined}
         pipelineId={pipelineId}

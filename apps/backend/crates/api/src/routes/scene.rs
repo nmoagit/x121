@@ -66,6 +66,10 @@ pub fn router() -> Router<AppState> {
         .route("/{id}/artifacts", get(version::list_artifacts))
         .route("/{id}/resume-from", post(version::resume_from_clip))
         .route(
+            "/{id}/annotators",
+            get(annotation::list_version_annotators),
+        )
+        .route(
             "/{id}/annotations",
             get(annotation::list_version_annotations),
         )

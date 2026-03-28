@@ -8,7 +8,7 @@
  */
 
 import { postMediaVariantUpload } from "@/features/media/hooks/use-media-variants";
-import { postClipImport } from "@/features/scenes/hooks/useClipManagement";
+import { postClipImport, postClipImportWithParent } from "@/features/scenes/hooks/useClipManagement";
 import type { Scene } from "@/features/scenes/types";
 import { api } from "@/lib/api";
 
@@ -39,4 +39,17 @@ export async function createSceneForAvatar(
 /** Import a video file into a scene as a new version. */
 export async function importVideoClip(sceneId: number, file: File): Promise<void> {
   await postClipImport(sceneId, file);
+}
+
+/** Import a video file as a derived clip under a parent version. */
+export async function importDerivedClip(
+  sceneId: number,
+  file: File,
+  parentVersionId: number,
+  clipIndex?: number | null,
+): Promise<void> {
+  await postClipImportWithParent(sceneId, file, {
+    parentVersionId,
+    clipIndex: clipIndex ?? undefined,
+  });
 }

@@ -282,12 +282,49 @@ Version-scoped annotation handlers (clip review)
 /// GET /scenes/{scene_id}/versions/{id}/annotations
 ///
 /// List all annotations for a video version, ordered by frame number.
-pub async fn list_version_annotations(
+/// GET /scenes/{scene_id}/versions/{id}/annotators
+///
+/// List distinct users who have annotated a specific video version.
+/// Returns user IDs and names.
+pub async fn list_version_annotators(
     _auth: AuthUser,
     State(state): State<AppState>,
     Path((_scene_id, version_id)): Path<(DbId, DbId)>,
 ) -> AppResult<impl IntoResponse> {
-    let annotations = FrameAnnotationRepo::list_by_version(&state.pool, version_id).await?;
+    let user_ids = FrameAnnotationRepo::list_annotators_for_version(&state.pool, version_id).await?;
+
+    // Resolve user names
+    #[derive(serde::Serialize, sqlx::FromRow)]
+    struct AnnotatorInfo {
+        id: DbId,
+        name: String,
+    }
+
+    let annotators = if user_ids.is_empty() {
+        vec![]
+    } else {
+        sqlx::query_as::<_, AnnotatorInfo>(
+            "SELECT id, COALESCE(display_name, username, 'User ' || id) AS name FROM users WHERE id = ANY($1) ORDER BY name",
+        )
+        .bind(&user_ids)
+        .fetch_all(&state.pool)
+        .await?
+    };
+
+    Ok(Json(DataResponse { data: annotators }))
+}
+
+pub async fn list_version_annotations(
+    _auth: AuthUser,
+    State(state): State<AppState>,
+    Path((_scene_id, version_id)): Path<(DbId, DbId)>,
+    Query(filters): Query<AnnotationListFilters>,
+) -> AppResult<impl IntoResponse> {
+    let annotations = if let Some(user_id) = filters.user_id {
+        FrameAnnotationRepo::list_by_version_and_user(&state.pool, version_id, user_id).await?
+    } else {
+        FrameAnnotationRepo::list_by_version(&state.pool, version_id).await?
+    };
     Ok(Json(DataResponse { data: annotations }))
 }
 

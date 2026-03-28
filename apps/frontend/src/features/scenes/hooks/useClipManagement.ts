@@ -68,6 +68,8 @@ export interface ClipBrowseParams {
   offset?: number;
   /** Filter to only derived clips (has parent_version_id). */
   hasParent?: boolean;
+  /** Filter to items with no tags applied. */
+  noTags?: boolean;
 }
 
 /** Fetch paginated clips across all avatars/scenes, most recent first. */
@@ -84,6 +86,7 @@ export function useClipsBrowse(params: ClipBrowseParams = {}) {
   if (params.excludeTagIds) searchParams.set("exclude_tag_ids", params.excludeTagIds);
   if (params.search) searchParams.set("search", params.search);
   if (params.hasParent != null) searchParams.set("has_parent", String(params.hasParent));
+  if (params.noTags) searchParams.set("no_tags", "true");
   if (params.limit != null) searchParams.set("limit", String(params.limit));
   if (params.offset != null) searchParams.set("offset", String(params.offset));
   const qs = searchParams.toString();

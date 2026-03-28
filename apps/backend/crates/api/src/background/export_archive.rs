@@ -201,6 +201,8 @@ struct SvvExportRow {
     project_name: Option<String>,
     version_number: i32,
     qa_status: Option<String>,
+    parent_version_id: Option<DbId>,
+    clip_index: Option<i32>,
 }
 
 async fn resolve_scene_video_versions(
@@ -215,7 +217,8 @@ async fn resolve_scene_video_versions(
         "SELECT svv.id, svv.file_path, svv.file_size_bytes, \
                 a.name AS avatar_name, st.name AS scene_type_name, \
                 tr.name AS track_name, p.name AS project_name, \
-                svv.version_number, svv.qa_status \
+                svv.version_number, svv.qa_status, \
+                svv.parent_version_id, svv.clip_index \
          FROM scene_video_versions svv \
          JOIN scenes s ON s.id = svv.scene_id \
          JOIN avatars a ON a.id = s.avatar_id \
@@ -252,18 +255,22 @@ async fn resolve_scene_video_versions(
             .and_then(|e| e.to_str())
             .unwrap_or("mp4");
 
-        // Build filename: {project}_{avatar}_{scene_type}_{track}_v{version}[_{labels}].ext
+        // Build filename: {project}_{avatar}_{scene_type}_{track}_v{version}[_clip{N}][_{labels}].ext
         let label_suffix = labels
             .get(&row.id)
             .map(|l| format!("_[{}]", l))
             .unwrap_or_default();
+        let clip_suffix = row.clip_index
+            .map(|idx| format!("_clip{:04}", idx))
+            .unwrap_or_default();
         let filename = format!(
-            "{}_{}_{}_{}_v{}{}.{ext}",
+            "{}_{}_{}_{}_v{}{}{}.{ext}",
             slugify(project),
             slugify(avatar),
             slugify(scene_type),
             slugify(track),
             row.version_number,
+            clip_suffix,
             label_suffix,
         );
         let qa = row.qa_status.as_deref().unwrap_or("pending");
