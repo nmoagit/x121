@@ -5,16 +5,30 @@
  * and action buttons for download/re-export.
  */
 
-import { Badge, Button } from "@/components";
+import { Button } from "@/components";
 import { API_BASE_URL } from "@/lib/api";
-import { cn } from "@/lib/cn";
 import { formatBytes, formatDateTime } from "@/lib/format";
-import { SECTION_HEADING } from "@/lib/ui-classes";
+import {
+  TERMINAL_TH,
+  TERMINAL_DIVIDER,
+  TERMINAL_ROW_HOVER,
+  SECTION_HEADING,
+} from "@/lib/ui-classes";
 import { useAuthStore } from "@/stores/auth-store";
 
 import { useDeliveryExports } from "./hooks/use-delivery";
-import { EXPORT_STATUS_LABELS, EXPORT_STATUS_VARIANT } from "./types";
+import { EXPORT_STATUS_LABELS } from "./types";
 import type { DeliveryExport } from "./types";
+
+const STATUS_COLOR: Record<number, string> = {
+  1: "text-[var(--color-text-muted)]",  // Pending
+  2: "text-cyan-400",                    // Assembling
+  3: "text-cyan-400",                    // Transcoding
+  4: "text-cyan-400",                    // Packaging
+  5: "text-orange-400",                  // Validating
+  6: "text-green-400",                   // Completed
+  7: "text-red-400",                     // Failed
+};
 
 interface ExportHistoryProps {
   projectId: number;
@@ -49,26 +63,19 @@ export function ExportHistory({ projectId, onReExport }: ExportHistoryProps) {
         Export History
       </h3>
 
-      <table className="w-full text-sm">
+      <table className="w-full">
         <thead>
-          <tr
-            className={cn(
-              "border-b border-[var(--color-border-default)]",
-              "text-left text-xs text-[var(--color-text-muted)]",
-            )}
-          >
-            <th className="py-2 pr-3">Date</th>
-            <th className="py-2 pr-3">Status</th>
-            <th className="py-2 pr-3">File Size</th>
-            <th className="py-2">Actions</th>
+          <tr className={TERMINAL_DIVIDER}>
+            <th className={`${TERMINAL_TH} py-2 pr-3`}>Date</th>
+            <th className={`${TERMINAL_TH} py-2 pr-3`}>Status</th>
+            <th className={`${TERMINAL_TH} py-2 pr-3`}>File Size</th>
+            <th className={`${TERMINAL_TH} py-2`}>Actions</th>
           </tr>
         </thead>
         <tbody>
-          {exports
-            .filter((exp) => exp.status_id !== 7)
-            .map((exp) => (
-              <ExportRow key={exp.id} exportItem={exp} onReExport={onReExport} />
-            ))}
+          {visible.map((exp) => (
+            <ExportRow key={exp.id} exportItem={exp} onReExport={onReExport} />
+          ))}
         </tbody>
       </table>
     </div>
@@ -87,21 +94,18 @@ function ExportRow({
 
   return (
     <tr
-      className="border-b border-[var(--color-border-default)]"
+      className={`${TERMINAL_DIVIDER} ${TERMINAL_ROW_HOVER}`}
       data-testid="export-row"
     >
-      <td className="py-2 pr-3 text-[var(--color-text-primary)]">
+      <td className="py-2 pr-3 font-mono text-xs text-[var(--color-text-primary)]">
         {exportItem.created_at ? formatDateTime(exportItem.created_at) : "--"}
       </td>
-      <td className="py-2 pr-3">
-        <Badge
-          variant={EXPORT_STATUS_VARIANT[exportItem.status_id] ?? "default"}
-          size="sm"
-        >
+      <td className="py-2 pr-3 font-mono text-xs">
+        <span className={STATUS_COLOR[exportItem.status_id] ?? "text-[var(--color-text-muted)]"}>
           {EXPORT_STATUS_LABELS[exportItem.status_id] ?? "Unknown"}
-        </Badge>
+        </span>
       </td>
-      <td className="py-2 pr-3 text-[var(--color-text-secondary)]" data-testid="file-size">
+      <td className="py-2 pr-3 font-mono text-xs text-[var(--color-text-muted)]" data-testid="file-size">
         {exportItem.file_size_bytes ? formatBytes(exportItem.file_size_bytes) : "--"}
       </td>
       <td className="py-2">
@@ -109,10 +113,10 @@ function ExportRow({
           {isCompleted && exportItem.file_path && (
             <a
               href={`${API_BASE_URL}/projects/${exportItem.project_id}/exports/${exportItem.id}/download?token=${token}`}
-              className="text-sm text-[var(--color-action-primary)] hover:underline"
+              className="font-mono text-xs text-cyan-400 hover:underline"
               data-testid="download-link"
             >
-              Download .rar
+              Download.rar
             </a>
           )}
           {onReExport && (

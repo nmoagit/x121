@@ -8,7 +8,6 @@ import { useCallback, useEffect, useRef } from "react";
 
 import { Button } from "@/components/primitives";
 import { API_BASE_URL } from "@/lib/api";
-import { downloadBlob } from "@/lib/file-utils";
 import { formatBytes } from "@/lib/format";
 import { useAuthStore } from "@/stores/auth-store";
 import { Download, X } from "@/tokens/icons";
@@ -24,15 +23,18 @@ export function ExportStatusPanel({ job, onDismiss }: ExportStatusPanelProps) {
   const parts = job.parts ?? [];
 
   const handleDownloadPart = useCallback(
-    async (part: ExportPart) => {
+    (part: ExportPart) => {
       const token = useAuthStore.getState().accessToken;
       const url = `${API_BASE_URL}/exports/${job.id}/download/${part.part}`;
-      const res = await fetch(url, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
-      if (!res.ok) throw new Error(`Download failed: ${res.status}`);
-      const blob = await res.blob();
-      downloadBlob(blob, `export_${job.id}_part${part.part}.zip`);
+      // Direct browser download via anchor — avoids fetch+blob memory issues with large files
+      const downloadUrl = token ? `${url}?token=${encodeURIComponent(token)}` : url;
+      const a = document.createElement("a");
+      a.href = downloadUrl;
+      const ts = job.created_at.replace(/[-:.T]/g, "").slice(0, 14);
+      a.download = `export_${ts}_part${part.part}_of_${parts.length}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
     },
     [job.id],
   );
@@ -116,7 +118,7 @@ export function ExportStatusPanel({ job, onDismiss }: ExportStatusPanelProps) {
                 className="inline-flex items-center gap-1 rounded px-2 py-1 font-mono text-[10px] bg-[#0d1117] text-[var(--color-text-primary)] hover:bg-[#1c2128] transition-colors border border-[var(--color-border-default)] cursor-pointer"
               >
                 <Download size={10} />
-                Part {part.part}
+                Part {part.part} of {parts.length}
                 <span className="text-[var(--color-text-muted)]">
                   ({formatBytes(part.size_bytes)})
                 </span>

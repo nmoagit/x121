@@ -84,12 +84,12 @@ export const NAV_GROUPS: NavGroupDef[] = [
   {
     label: "Content",
     items: [
-      { label: "Scene Catalogue", path: "/content/scene-catalogue", icon: List, prominent: true },
+      { label: "Avatars", path: "/content/avatars", icon: User, prominent: true },
       { label: "Library", path: "/content/library", icon: Folder, prominent: true },
       { label: "Media", path: "/content/media", icon: Image, prominent: true },
       { label: "Scenes", path: "/content/scenes", icon: Layers, prominent: true },
-      { label: "Derived Clips", path: "/content/derived-clips", icon: GitBranch },
-      { label: "Avatars", path: "/content/avatars", icon: User, prominent: true },
+      { label: "Derived Clips", path: "/content/derived-clips", icon: GitBranch, prominent: true },
+      { label: "Catalogue", path: "/content/scene-catalogue", icon: List, prominent: true },
       { label: "Storyboard", path: "/content/storyboard", icon: Layout },
       { label: "Avatar Dashboard", path: "/content/avatar-dashboard", icon: Monitor },
       { label: "Contact Sheet", path: "/content/contact-sheet", icon: Image },

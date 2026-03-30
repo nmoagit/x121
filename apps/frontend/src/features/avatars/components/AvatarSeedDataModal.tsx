@@ -802,7 +802,7 @@ export function AvatarSeedDataModal({ avatar, projectId, onClose, groupOptions, 
   const totalAssignments = (pendingUpload?.jsonAssignments.length ?? 0) + (pendingUpload?.imageAssignments.length ?? 0);
 
   return (
-    <Modal open={open} onClose={onClose} size="2xl">
+    <Modal open={open} onClose={onClose} size="2xl" loading={isLoading}>
       {/* Title row — name + delete aligned with modal close X */}
       <div className="flex items-center gap-2 pr-8 mb-[var(--spacing-3)]">
         <h2 className="text-xs font-medium text-[var(--color-text-primary)] font-mono uppercase tracking-wide truncate">

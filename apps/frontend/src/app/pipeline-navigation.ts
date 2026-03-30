@@ -64,11 +64,11 @@ export function buildPipelineNavGroups(pipelineCode: string): NavGroupDef[] {
       label: "Content",
       items: [
         { label: "Avatars", path: `${base}/avatars`, icon: User, prominent: true },
-        { label: "Scene Catalogue", path: `${base}/scene-catalogue`, icon: List, prominent: true },
         { label: "Library", path: `${base}/library`, icon: Folder, prominent: true },
         { label: "Media", path: `${base}/media`, icon: Image, prominent: true },
         { label: "Scenes", path: `${base}/scenes`, icon: Layers, prominent: true },
         { label: "Derived Clips", path: `${base}/derived-clips`, icon: GitBranch, prominent: true },
+        { label: "Catalogue", path: `${base}/scene-catalogue`, icon: List, prominent: true },
         { label: "Storyboard", path: `${base}/storyboard`, icon: Layout },
         { label: "Avatar Dashboard", path: `${base}/avatar-dashboard`, icon: Monitor },
         { label: "Contact Sheet", path: `${base}/contact-sheet`, icon: Image },

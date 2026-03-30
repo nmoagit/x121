@@ -1,4 +1,5 @@
 import { cn } from "@/lib/cn";
+import { Spinner } from "@/components/primitives/Spinner";
 import { X } from "@/tokens/icons";
 import { useEffect, useRef } from "react";
 import type { ReactNode } from "react";
@@ -11,6 +12,8 @@ interface ModalProps {
   onClose: () => void;
   title?: string;
   size?: ModalSize;
+  /** Show a centered spinner placeholder instead of children. */
+  loading?: boolean;
   children: ReactNode;
 }
 
@@ -24,7 +27,7 @@ const SIZE_CLASSES: Record<ModalSize, string> = {
   full: "max-w-[calc(100vw-var(--spacing-8))]",
 };
 
-export function Modal({ open, onClose, title, size = "md", children }: ModalProps) {
+export function Modal({ open, onClose, title, size = "md", loading, children }: ModalProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const previousFocusRef = useRef<Element | null>(null);
   const onCloseRef = useRef(onClose);
@@ -136,7 +139,13 @@ export function Modal({ open, onClose, title, size = "md", children }: ModalProp
 
         {/* Body */}
         <div className="overflow-y-auto min-h-0 px-3 py-2 scrollbar-thin">
-          {children}
+          {loading ? (
+            <div className="flex items-center justify-center min-h-[120px]">
+              <Spinner size="md" />
+            </div>
+          ) : (
+            children
+          )}
         </div>
       </dialog>
     </div>,

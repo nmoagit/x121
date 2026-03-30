@@ -142,6 +142,7 @@ export function QueueFilterBar({ filter, onChange }: QueueFilterBarProps) {
         {/* Worker dropdown */}
         <Select
           label=""
+          size="sm"
           value={filter.instance_id != null ? String(filter.instance_id) : ""}
           onChange={setWorker}
           options={workerOptions}
@@ -150,6 +151,7 @@ export function QueueFilterBar({ filter, onChange }: QueueFilterBarProps) {
         {/* Job type dropdown */}
         <Select
           label=""
+          size="sm"
           value={filter.job_type ?? ""}
           onChange={setJobType}
           options={JOB_TYPES.map((jt) => ({ label: jt.label, value: jt.value }))}
@@ -158,6 +160,7 @@ export function QueueFilterBar({ filter, onChange }: QueueFilterBarProps) {
         {/* Pipeline dropdown */}
         <Select
           label=""
+          size="sm"
           value={filter.pipeline_id != null ? String(filter.pipeline_id) : ""}
           onChange={setPipeline}
           options={[

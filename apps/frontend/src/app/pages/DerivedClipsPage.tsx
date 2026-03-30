@@ -21,7 +21,8 @@ import { useTracks } from "@/features/scene-catalogue/hooks/use-tracks";
 import { TagFilter } from "@/components/domain/TagFilter";
 import { useBulkSelection } from "@/hooks/useBulkSelection";
 import { useBulkOperations } from "@/hooks/useBulkOperations";
-import { FolderSearch, GitBranch } from "@/tokens/icons";
+import { BrowseClipCard } from "@/features/scenes/BrowseClipCard";
+import { FolderSearch, GitBranch, LayoutGrid, List } from "@/tokens/icons";
 
 import { DerivedClipDialogs } from "./DerivedClipDialogs";
 import { DerivedClipRow } from "./DerivedClipRow";
@@ -53,6 +54,7 @@ export function DerivedClipsPage() {
   const [noTags, setNoTags] = useState(false);
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
+  const [viewMode, setViewMode] = useState<"list" | "grid">("list");
   const [scanOpen, setScanOpen] = useState(false);
 
   const pipelineCtx = usePipelineContextSafe();
@@ -190,6 +192,8 @@ export function DerivedClipsPage() {
           <Checkbox checked={bulk.isAllPageSelected(pageIds)} indeterminate={bulk.isIndeterminate(pageIds)} onChange={(checked) => checked ? bulk.selectPage(pageIds) : bulk.deselectPage(pageIds)} label="Select all" size="sm" />
           <Toggle checked={showDisabled} onChange={setShowDisabled} label="Show disabled" size="sm" />
           <Toggle checked={noTags} onChange={(v) => { setNoTags(v); setPage(0); }} label="No tags" size="sm" />
+          <Button variant={viewMode === "grid" ? "secondary" : "ghost"} size="xs" icon={<LayoutGrid size={14} />} onClick={() => setViewMode("grid")} aria-label="Grid view" />
+          <Button variant={viewMode === "list" ? "secondary" : "ghost"} size="xs" icon={<List size={14} />} onClick={() => setViewMode("list")} aria-label="List view" />
           <span className="text-xs text-[var(--color-text-muted)]">{clips.length} clip{clips.length !== 1 ? "s" : ""}</span>
         </div>
       </MultiFilterBar>
@@ -207,10 +211,16 @@ export function DerivedClipsPage() {
         <div className="flex justify-center py-12"><ContextLoader size={48} /></div>
       ) : !clips.length ? (
         <EmptyState icon={<GitBranch size={32} />} title="No derived clips" description="No derived or imported clips match the current filters." />
-      ) : (
+      ) : viewMode === "list" ? (
         <div className="flex flex-col gap-2">
           {clips.map((clip) => (
             <DerivedClipRow key={clip.id} clip={clip} selected={bulk.isSelected(clip.id)} onToggleSelect={() => bulk.toggle(clip.id)} onPlay={() => setPlayingClipId(clip.id)} onNavigate={() => handleNavigate(clip)} onApprove={() => handleApprove(clip)} onReject={() => handleReject(clip)} />
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 min-[1500px]:grid-cols-6 gap-3">
+          {clips.map((clip) => (
+            <BrowseClipCard key={clip.id} clip={clip} selected={bulk.isSelected(clip.id)} onToggleSelect={() => bulk.toggle(clip.id)} onPlay={() => setPlayingClipId(clip.id)} onNavigate={() => handleNavigate(clip)} onApprove={() => handleApprove(clip)} onReject={() => handleReject(clip)} />
           ))}
         </div>
       )}

@@ -52,7 +52,7 @@ type TabKey = "scene-types" | "workflows" | "catalogue" | "image-types" | "track
 const TABS: { id: TabKey; label: string }[] = [
   { id: "image-types", label: "Image Types" },
   { id: "scene-types", label: "Scene Types" },
-  { id: "catalogue", label: "Scene Catalogue" },
+  { id: "catalogue", label: "Catalogue" },
   { id: "tracks", label: "Tracks" },
   { id: "workflows", label: "Workflows" },
   { id: "prompt-defaults", label: "Prompt Defaults" },
@@ -239,8 +239,8 @@ export function SceneCataloguePage() {
       <Stack gap={6}>
         <div className="flex items-start justify-between">
           <PageHeader
-            title="Scene Catalogue"
-            description="Manage scene types, catalogue entries, and track definitions."
+            title="Catalogue"
+            description="Manage scene types, image types, catalogue entries, and track definitions."
           />
           <ConfigToolbar
             onExport={exportConfig}
