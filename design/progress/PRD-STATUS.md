@@ -20,7 +20,7 @@ Source of truth: [`design/design.md`](../design.md)
 
 | Status | Count |
 |--------|-------|
-| backlog | 0 |
+| backlog | 9 |
 | planning | 0 |
 | in-progress | 0 |
 | review | 0 |
@@ -29,7 +29,7 @@ Source of truth: [`design/design.md`](../design.md)
 | deferred | 0 |
 | maybe | 15 |
 | draft | 4 |
-| **Total** | **162** |
+| **Total** | **171** |
 
 ---
 
@@ -76,6 +76,11 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-106 | API Usage & Observability Dashboard | — | `done` | — | |
 | PRD-114 | Cloud GPU Provider Integration (RunPod) | 1 | `done` | 2026-02-28 | 6 migrations (providers, GPU types, instances, scaling rules, cost events), 5 repos, core domain (provider trait, AES-256-GCM crypto, auto-scaling), new `crates/cloud` (RunPod GraphQL+Serverless, registry, 3 background services, S3 bridge), 29 admin API endpoints, frontend dashboard (5 components, 22 hooks). DRY-539 to DRY-554 audited. |
 | PRD-119 | Time-Based Job Scheduling | — | `done` | — | Cron-style schedules (one-time + recurring), calendar UI, smart off-peak slot selection, timezone handling, batch scheduling (PRD-57), schedule executor, execution history. Deps: PRD-08, PRD-07, PRD-10, PRD-03 (all done). Extends PRD-08. Integrates with PRD-87, PRD-57, PRD-54, PRD-97. |
+| PRD-160 | Backend Critical N+1 Query Elimination | 0 | `backlog` | — | Triple-nested N+1 in auto_select_posters (PERF-01), N+1 in validate_delivery (PERF-02), cancel_generation fetch-all pattern (PERF-03), GIN index on jobs.parameters (PERF-25). Source: PERFORMANCE-AUDIT-BACKEND.md. |
+| PRD-161 | Backend N+1 Query Cleanup (Remaining) | 1 | `backlog` | — | 12 remaining N+1 patterns: stale_metadata (PERF-04), assign_avatars (PERF-05), auto_allocate (PERF-06), get_health_summary (PERF-07), cascade_preview (PERF-08), cancel_schedule (PERF-09), create_run (PERF-10), batch_generate (PERF-11), cloud_providers (PERF-12), scan_and_import (PERF-22), speech_import (PERF-23), tags (PERF-24). Deps: PRD-160. |
+| PRD-162 | Backend Transaction Safety | 0 | `backlog` | — | Wrap 5 multi-step mutation handlers in transactions: assign_avatars, create_run, batch_generate, purge_clips (critical data loss risk), import_derived_clips (PERF-18). |
+| PRD-163 | Backend Async Runtime Optimization | 1 | `backlog` | — | Fix blocking std::fs in directory_scanner (PERF-13), std::fs in ensure_h264 (PERF-14), add tokio::try_join! for 10+ handlers (PERF-15), parallelize video backfill (PERF-19), stream video uploads (PERF-21). |
+| PRD-164 | Backend Repository Layer Migration | 2 | `backlog` | — | Move inline SQL from 24 handler files to db/repositories (PERF-16), add pagination to unbounded list_all functions (PERF-17), configurable connection pool via env vars (PERF-20). |
 
 ## Part 2: Data & Storage Management
 
@@ -170,6 +175,10 @@ Source of truth: [`design/design.md`](../design.md)
 | PRD-117 | System Status Footer Bar | 1 | `done` | 2026-02-27 | HealthAggregator background service, status handler, 7 frontend components (StatusFooter, FooterSegment, ServiceHealth, CloudGpu, Job, Workflow, Collapsed). |
 | PRD-118 | Live Activity Console & Logging System | — | `done` | 2026-02-27 | 1 migration (4 tables), core types, ActivityLogBroadcaster, custom tracing::Layer, batch persistence/retention services, WebSocket handler, REST endpoints, Zustand store, dual-mode UI (panel + page). |
 | PRD-126 | Critical Bug Fixes & UX Polish | 1 | `done` | — | 5 bug fixes (import timeout, Select All, empty versions, UTF-8 metadata, DnD groups), 5 UX polish (ignore toggle, show disabled, breadcrumb scroll, header consolidation, wider inputs), 3 import validation fixes (filename mismatch, skip guard, race condition). |
+| PRD-156 | Frontend Re-render Optimization | 2 | `backlog` | — | Memoize PipelineProvider context, fix AppShell useLocation cascade, Sidebar memo wrap, SceneCard inline closure extraction + React.memo, Zustand selector instability fix. Source: PERFORMANCE-AUDIT.md findings 1, 4, 7, 9, 10. |
+| PRD-157 | Frontend Data Fetching Optimization | 2 | `backlog` | — | Convert ClipPlaybackModal inline API calls to TanStack Query, remove unconditional polling from project hooks, consolidate dashboard polling into single endpoint, add visibility-based polling pause. Source: PERFORMANCE-AUDIT.md findings 5, 6, 8, 12. |
+| PRD-158 | Frontend List Virtualization | 2 | `backlog` | — | Add @tanstack/react-virtual, virtualize AvatarScenesTab scene grid, AvatarsPage avatar card grid, ScenesPage browse clip list. Source: PERFORMANCE-AUDIT.md finding 3. Deps: PRD-156. |
+| PRD-159 | Frontend Query Consolidation & Bundle Optimization | 3 | `backlog` | — | Consolidate AvatarsPage N+1 useQueries into single browse endpoint, extract ClipPlaybackModal sub-components, audit barrel exports with bundle visualizer. Source: PERFORMANCE-AUDIT.md findings 2, 11, 12. Deps: PRD-156. |
 
 ## Part 5: Workflow Editor & Review
 
@@ -303,3 +312,5 @@ Source of truth: [`design/design.md`](../design.md)
 | 2026-03-22 | Implemented PRD-139. Full workspace nav (42 items), 33 routes, pipeline-filtered repos (tracks/scene types/workflows), cross-pipeline validation, hardcoded slug removal (6 files), queue pipeline badges, naming rules per pipeline, dashboard scoping, ingest seed slot validation. Done count: 139. |
 | 2026-03-22 | Implemented PRD-138. 6 migrations, pipeline model/repo/handlers/routes, core types (SeedSlot, PipelineNamingRules), pipeline context loader, seed validation, pipeline-scoped naming. Frontend: pipeline feature module (hooks, list page, settings page, SeedSlotEditor, JsonConfigPanel), sidebar pipeline nav, scoped routing, pipeline-aware project creation, dynamic seed upload slots. DRY fixes: parse_json_field, ensure_pipeline_exists, shared search validators. 19 unit tests. Done count: 138. |
 | 2026-03-24 | Added PRD-142 (Dynamic Generation Seeds). Workflow media slots (mirroring PRD-115 prompt slots), avatar media assignments with passthrough support, multi-seed context loader + workflow builder, avatar Seeds tab, migration from single-seed image_variant_id. Deps: PRD-75, PRD-115, PRD-138, PRD-141. Total: 142 + 15 MAYBEs = 157. |
+| 2026-03-30 | Added PRD-156 (Frontend Re-render Optimization), PRD-157 (Frontend Data Fetching Optimization), PRD-158 (Frontend List Virtualization), PRD-159 (Frontend Query Consolidation & Bundle Optimization). Four PRDs from PERFORMANCE-AUDIT.md covering: context memoization, AppShell cascade fix, Sidebar memo, SceneCard memo, Zustand selector fix, TanStack Query migration for ClipPlaybackModal, conditional polling, dashboard endpoint consolidation, visibility-based polling pause, @tanstack/react-virtual for 3 grids, N+1 query consolidation, barrel export audit. Total PRDs: 147 + 15 MAYBEs = 166 (4 backlog). |
+| 2026-03-30 | Added PRD-160 (Backend Critical N+1 Query Elimination), PRD-161 (Backend N+1 Query Cleanup), PRD-162 (Backend Transaction Safety), PRD-163 (Backend Async Runtime Optimization), PRD-164 (Backend Repository Layer Migration). Five PRDs from PERFORMANCE-AUDIT-BACKEND.md covering: critical N+1 (PERF-01/02/03), remaining N+1 (PERF-04 to PERF-12, PERF-22 to PERF-24), transaction wrapping for 5 handlers (PERF-18), blocking std::fs + tokio::try_join! + video streaming (PERF-13/14/15/19/21), inline SQL migration + pagination + pool config (PERF-16/17/20), GIN index (PERF-25). Total PRDs: 152 + 15 MAYBEs = 171 (9 backlog). |
