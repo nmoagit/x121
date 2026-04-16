@@ -55,7 +55,7 @@ export function RejectionDialog({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--color-surface-badge-overlay)]"
       role="dialog"
       aria-label="Rejection reason"
     >
@@ -77,7 +77,7 @@ export function RejectionDialog({
                 onClick={() => setSelectedCategory(cat.id)}
                 className={`rounded-[var(--radius-md)] border px-3 py-2 text-left text-sm transition-colors ${
                   selectedCategory === cat.id
-                    ? "border-red-500 bg-red-500/10 text-red-400"
+                    ? "border-red-500 bg-red-500/10 text-[var(--color-data-red)]"
                     : "border-[var(--color-border)] text-[var(--color-text-primary)] hover:bg-[var(--color-surface-secondary)]"
                 }`}
                 aria-label={cat.name}

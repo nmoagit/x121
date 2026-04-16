@@ -101,7 +101,7 @@ export function ReviewQueue({
                 <span
                   className={`text-xs ${
                     item.has_approval
-                      ? "text-green-400"
+                      ? "text-[var(--color-data-green)]"
                       : isActive
                         ? "text-white/70"
                         : "text-[var(--color-text-muted)]"
@@ -117,7 +117,7 @@ export function ReviewQueue({
 
       {/* End of queue message */}
       {reviewedCount === totalCount && (
-        <div className="rounded-[var(--radius-md)] bg-green-500/10 px-3 py-2 text-center text-sm text-green-400">
+        <div className="rounded-[var(--radius-md)] bg-green-500/10 px-3 py-2 text-center text-sm text-[var(--color-data-green)]">
           All segments reviewed
         </div>
       )}

@@ -18,6 +18,7 @@ import {
   noteStatusLabel,
   statusBadgeVariant,
 } from "./types";
+import { TYPO_DATA_MUTED } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Types
@@ -77,7 +78,7 @@ export function ReviewThread({
             User #{note.user_id}
           </span>
           {note.timecode && (
-            <span className="font-mono text-xs text-[var(--color-text-muted)]">
+            <span className={TYPO_DATA_MUTED}>
               {note.timecode}
             </span>
           )}

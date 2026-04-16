@@ -208,11 +208,11 @@ export function ProjectOverviewTab({ projectId, stats }: ProjectOverviewTabProps
             <Stack gap={2}>
               <p className="text-xs font-mono">
                 <span className="text-[var(--color-text-primary)]">{totalChars}</span> avatars, <span className="text-[var(--color-text-primary)]">{rows.length}</span> combinations, <span className="text-[var(--color-text-primary)]">{totalEntries}</span> entries total.
-                {" "}<span className="text-[var(--color-text-muted)]">(<span className="text-green-400">{matchedCount} matched</span>, <span className="text-orange-400">{totalChars - matchedCount} unmatched</span>)</span>
+                {" "}<span className="text-[var(--color-text-muted)]">(<span className="text-[var(--color-data-green)]">{matchedCount} matched</span>, <span className="text-[var(--color-data-orange)]">{totalChars - matchedCount} unmatched</span>)</span>
               </p>
               <div className="max-h-80 overflow-y-auto rounded border border-[var(--color-border-default)]">
                 <table className="w-full text-xs font-mono">
-                  <thead className="sticky top-0 bg-[#161b22]">
+                  <thead className="sticky top-0 bg-[var(--color-surface-secondary)]">
                     <tr>
                       <th className="text-left px-2 py-1.5 font-medium text-[var(--color-text-muted)]">Avatar</th>
                       <th className="text-left px-2 py-1.5 font-medium text-[var(--color-text-muted)]">Speech Type</th>
@@ -223,13 +223,13 @@ export function ProjectOverviewTab({ projectId, stats }: ProjectOverviewTabProps
                   </thead>
                   <tbody>
                     {rows.map((row, i) => (
-                      <tr key={i} className="border-b border-white/5 hover:bg-[#161b22]">
+                      <tr key={i} className="border-b border-white/5 hover:bg-[var(--color-surface-secondary)]">
                         <td className="px-2 py-1 text-[var(--color-text-primary)]">{row.charSlug}</td>
                         <td className="px-2 py-1 text-[var(--color-text-primary)]">{row.type}</td>
                         <td className="px-2 py-1 text-[var(--color-text-primary)]">{row.lang}</td>
                         <td className="px-2 py-1 text-right text-[var(--color-text-primary)]">{row.count}</td>
                         <td className="px-2 py-1 text-center">
-                          <span className={row.matched ? "text-green-400" : "text-orange-400"}>
+                          <span className={row.matched ? "text-[var(--color-data-green)]" : "text-[var(--color-data-orange)]"}>
                             {row.matched ? "Yes" : "No"}
                           </span>
                         </td>

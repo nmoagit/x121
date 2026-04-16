@@ -56,6 +56,7 @@ import { AvatarSeedsTab } from "./tabs/AvatarSeedsTab";
 import { AvatarSettingsTab } from "./tabs/AvatarSettingsTab";
 import { AvatarDerivedClipsTab } from "./tabs/AvatarDerivedClipsTab";
 import { AvatarSpeechTab } from "./tabs/AvatarSpeechTab";
+import { TYPO_DATA_MUTED, TYPO_TIMESTAMP} from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Component
@@ -241,14 +242,14 @@ export function AvatarDetailPage() {
     <Stack gap={6}>
       {/* Breadcrumb */}
       <nav className="flex items-center gap-[var(--spacing-1)] text-xs font-mono text-[var(--color-text-muted)]">
-        <Link to={withPrefix("/projects") as string} className="hover:text-cyan-400 transition-colors">
+        <Link to={withPrefix("/projects") as string} className="hover:text-[var(--color-data-cyan)] transition-colors">
           projects
         </Link>
         <ChevronRight size={12} aria-hidden className="opacity-40" />
         <Link
           to={projectPathFn(projectId) as string}
           search={{ tab: undefined, group: undefined }}
-          className="hover:text-cyan-400 transition-colors"
+          className="hover:text-[var(--color-data-cyan)] transition-colors"
         >
           {project?.name?.toLowerCase() ?? `project ${projectId}`}
         </Link>
@@ -258,7 +259,7 @@ export function AvatarDetailPage() {
             <Link
               to={projectPathFn(projectId) as string}
               search={{ tab: "avatars", group: String(avatar.group_id) }}
-              className="hover:text-cyan-400 transition-colors"
+              className="hover:text-[var(--color-data-cyan)] transition-colors"
             >
               {groupName.toLowerCase()}
             </Link>
@@ -269,7 +270,7 @@ export function AvatarDetailPage() {
       </nav>
 
       {/* Header */}
-      <div className="flex items-center gap-[var(--spacing-2)] rounded-[var(--radius-lg)] border border-[var(--color-border-default)] bg-[#0d1117] px-[var(--spacing-3)] py-[var(--spacing-2)]">
+      <div className="flex items-center gap-[var(--spacing-2)] rounded-[var(--radius-lg)] border border-[var(--color-border-default)] bg-[var(--color-surface-primary)] px-[var(--spacing-3)] py-[var(--spacing-2)]">
         {avatarUrl ? (
           <button
             type="button"
@@ -287,10 +288,10 @@ export function AvatarDetailPage() {
           <User size={20} className="text-[var(--color-text-muted)]" aria-hidden />
         )}
         <span className={`text-xs font-mono font-semibold ${
-          badgeVariant === "success" ? "text-green-400"
-          : badgeVariant === "danger" ? "text-red-400"
-          : badgeVariant === "warning" ? "text-orange-400"
-          : "text-cyan-400"
+          badgeVariant === "success" ? "text-[var(--color-data-green)]"
+          : badgeVariant === "danger" ? "text-[var(--color-data-red)]"
+          : badgeVariant === "warning" ? "text-[var(--color-data-orange)]"
+          : "text-[var(--color-data-cyan)]"
         }`}>
           {statusLabel.toLowerCase()}
         </span>
@@ -298,7 +299,7 @@ export function AvatarDetailPage() {
         <Link
           to={projectPathFn(projectId) as string}
           search={{ tab: "avatars", group: avatar.group_id != null ? String(avatar.group_id) : undefined }}
-          className="text-xs font-mono text-[var(--color-text-muted)] hover:text-cyan-400 transition-colors"
+          className="text-xs font-mono text-[var(--color-text-muted)] hover:text-[var(--color-data-cyan)] transition-colors"
         >
           {groupName?.toLowerCase() ?? "ungrouped"}
         </Link>
@@ -315,7 +316,7 @@ export function AvatarDetailPage() {
           <>
             <span className="text-[var(--color-text-muted)] opacity-30 font-mono">|</span>
             <span className={`text-xs font-mono ${
-              dashboard.readiness.readiness_pct >= 100 ? "text-green-400" : "text-cyan-400"
+              dashboard.readiness.readiness_pct >= 100 ? "text-[var(--color-data-green)]" : "text-[var(--color-data-cyan)]"
             }`}>
               {dashboard.readiness.readiness_pct}%
             </span>
@@ -334,7 +335,7 @@ export function AvatarDetailPage() {
                     aria-label={`${lang.languageCode.toUpperCase()} speech`}
                   >
                     <FlagIcon flagCode={lang.flagCode} size={10} />
-                    <span className="text-[10px] font-mono text-[var(--color-text-muted)]">{lang.count}</span>
+                    <span className={TYPO_TIMESTAMP}>{lang.count}</span>
                   </button>
                 </Tooltip>
               ))}
@@ -362,7 +363,7 @@ export function AvatarDetailPage() {
         {/* Prev / Next avatar navigation */}
         {totalCount > 1 && (
           <div className="flex items-center gap-[var(--spacing-1)] ml-auto">
-            <span className="text-[10px] font-mono text-[var(--color-text-muted)]">
+            <span className={TYPO_TIMESTAMP}>
               {currentIndex + 1}/{totalCount}
             </span>
             <Button
@@ -496,8 +497,8 @@ export function AvatarDetailPage() {
       {speechImport && (
         <Modal open onClose={() => setSpeechImport(null)} title="Import Speeches" size="md">
           <Stack gap={3}>
-            <p className="font-mono text-xs text-[var(--color-text-muted)]">
-              Detected <span className="text-cyan-400">{speechImport.format.toUpperCase()}</span> speech file.
+            <p className={TYPO_DATA_MUTED}>
+              Detected <span className="text-[var(--color-data-cyan)]">{speechImport.format.toUpperCase()}</span> speech file.
               Existing duplicates will be skipped automatically.
             </p>
             <div className="flex gap-2 justify-end pt-1 border-t border-[var(--color-border-default)]">

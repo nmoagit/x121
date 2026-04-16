@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Modal } from "@/components/composite";
 import { Button, Input } from "@/components/primitives";
 import { Stack } from "@/components/layout";
+import { TYPO_DATA_MUTED } from "@/lib/typography-tokens";
 
 interface BulkRejectDialogProps {
   open: boolean;
@@ -38,7 +39,7 @@ export function BulkRejectDialog({
   return (
     <Modal open={open} onClose={handleCancel} title={`Reject ${count} item${count !== 1 ? "s" : ""}?`} size="sm">
       <Stack gap={4}>
-        <p className="font-mono text-xs text-[var(--color-text-muted)]">
+        <p className={TYPO_DATA_MUTED}>
           This will mark {count} item{count !== 1 ? "s" : ""} as rejected. A reason is required.
         </p>
         <Input

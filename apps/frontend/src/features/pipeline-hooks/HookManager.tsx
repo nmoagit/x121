@@ -39,6 +39,7 @@ import {
   failureModeVariant,
   hookTypeVariant,
 } from "./types";
+import { TYPO_DATA, TYPO_CAPTION} from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Constants
@@ -180,7 +181,7 @@ export function HookManager({ scopeType, scopeId }: HookManagerProps) {
                           {hook.name}
                         </span>
                         {hook.description && (
-                          <p className="text-xs text-[var(--color-text-secondary)]">
+                          <p className={TYPO_CAPTION}>
                             {hook.description}
                           </p>
                         )}
@@ -309,7 +310,7 @@ function CreateHookForm({
 
           <textarea
             data-testid="config-json-input"
-            className="w-full rounded border border-[var(--color-border)] bg-[var(--color-bg-secondary)] p-2 font-mono text-xs text-[var(--color-text-primary)]"
+            className={`w-full rounded border border-[var(--color-border)] bg-[var(--color-bg-secondary)] p-2 ${TYPO_DATA}`}
             rows={4}
             value={configText}
             onChange={(e) => setConfigText(e.target.value)}

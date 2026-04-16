@@ -17,13 +17,13 @@ import { cn } from "@/lib/cn";
  * Any track slug gets a consistent color via hash-based selection.
  */
 const TRACK_COLORS = [
-  "bg-sky-500/15 text-sky-400",
-  "bg-pink-500/15 text-pink-400",
+  "bg-sky-500/15 text-[var(--color-data-sky)]",
+  "bg-pink-500/15 text-[var(--color-data-pink)]",
   "bg-emerald-500/15 text-emerald-400",
   "bg-amber-500/15 text-amber-400",
-  "bg-violet-500/15 text-violet-400",
-  "bg-cyan-500/15 text-cyan-400",
-  "bg-orange-500/15 text-orange-400",
+  "bg-violet-500/15 text-[var(--color-data-violet)]",
+  "bg-cyan-500/15 text-[var(--color-data-cyan)]",
+  "bg-orange-500/15 text-[var(--color-data-orange)]",
   "bg-teal-500/15 text-teal-400",
   "bg-indigo-500/15 text-indigo-400",
   "bg-lime-500/15 text-lime-400",
@@ -31,9 +31,9 @@ const TRACK_COLORS = [
 
 /** Well-known track slugs with fixed colors for visual consistency. */
 const FIXED_COLORS: Record<string, string> = {
-  clothed: "bg-sky-500/15 text-sky-400",
-  topless: "bg-pink-500/15 text-pink-400",
-  clothes_off: "bg-violet-500/15 text-violet-400",
+  clothed: "bg-sky-500/15 text-[var(--color-data-sky)]",
+  topless: "bg-pink-500/15 text-[var(--color-data-pink)]",
+  clothes_off: "bg-violet-500/15 text-[var(--color-data-violet)]",
 };
 
 /** Deterministic color selection: fixed overrides for known slugs, hash-based for others. */

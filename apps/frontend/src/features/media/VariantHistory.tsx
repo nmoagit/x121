@@ -18,6 +18,7 @@ import {
   type Provenance,
 } from "./types";
 import { variantMediaUrl } from "./utils";
+import { TYPO_DATA_CYAN } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Types
@@ -88,10 +89,10 @@ export function VariantHistory({ avatarId, variantId }: VariantHistoryProps) {
 
                   {/* Info */}
                   <Stack gap={1}>
-                    <span className="font-mono text-xs text-cyan-400">
+                    <span className={TYPO_DATA_CYAN}>
                       Version {entry.version}
                       {entry.is_hero && (
-                        <span className="ml-2 text-green-400">[Hero]</span>
+                        <span className="ml-2 text-[var(--color-data-green)]">[Hero]</span>
                       )}
                     </span>
 
@@ -106,7 +107,7 @@ export function VariantHistory({ avatarId, variantId }: VariantHistoryProps) {
                       {entry.width && entry.height && (
                         <>
                           <span className="opacity-30">|</span>
-                          <span className="text-cyan-400">{entry.width} x {entry.height}</span>
+                          <span className="text-[var(--color-data-cyan)]">{entry.width} x {entry.height}</span>
                         </>
                       )}
                     </div>

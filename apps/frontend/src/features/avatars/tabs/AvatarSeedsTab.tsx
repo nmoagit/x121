@@ -153,7 +153,7 @@ export function AvatarSeedsTab({ avatarId, projectId: _projectId }: AvatarSeedsT
       {/* Image Generation section */}
       {imageSlots.length > 0 && (
         <div className="space-y-2">
-          <h3 className="text-[10px] font-mono uppercase tracking-wide text-violet-400">
+          <h3 className="text-[10px] font-mono uppercase tracking-wide text-[var(--color-data-violet)]">
             Image Generation
           </h3>
           <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
@@ -176,7 +176,7 @@ export function AvatarSeedsTab({ avatarId, projectId: _projectId }: AvatarSeedsT
       {sceneSlots.length > 0 && (
         <div className="space-y-2">
           {imageSlots.length > 0 && (
-            <h3 className="text-[10px] font-mono uppercase tracking-wide text-cyan-400">
+            <h3 className="text-[10px] font-mono uppercase tracking-wide text-[var(--color-data-cyan)]">
               Scene Generation
             </h3>
           )}

@@ -36,6 +36,7 @@ import type { ImportWorkflowRequest, Workflow } from "@/features/workflow-import
 import { WorkflowDetailPanel } from "@/features/workflow-import/WorkflowDetailPanel";
 import { useExportWorkflow, useConfigImport } from "@/features/config-io";
 import { usePipelineContextSafe } from "@/features/pipelines";
+import { TYPO_DATA } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Tab types
@@ -79,14 +80,14 @@ function WorkflowRow({
 }) {
   return (
     <SelectableRow isSelected={isSelected} onSelect={onSelect}>
-      <div className="grid w-full grid-cols-[minmax(0,1fr)_auto_auto_auto_auto] items-center gap-2 font-mono text-xs">
+      <div className={`grid w-full grid-cols-[minmax(0,1fr)_auto_auto_auto_auto] items-center gap-2 ${TYPO_DATA}`}>
         <span className="truncate font-medium text-[var(--color-text-primary)]">
           {workflow.name}
         </span>
         <span className={TERMINAL_STATUS_COLORS[workflowStatusLabel(workflow.status_id).toLowerCase()] ?? "text-[var(--color-text-muted)]"}>
           {workflowStatusLabel(workflow.status_id).toLowerCase()}
         </span>
-        <span className="text-cyan-400">
+        <span className="text-[var(--color-data-cyan)]">
           v{workflow.current_version}
         </span>
         <Button
@@ -101,7 +102,7 @@ function WorkflowRow({
         />
         <button
           type="button"
-          className="p-0.5 text-[var(--color-text-muted)] hover:text-red-400 transition-colors"
+          className="p-0.5 text-[var(--color-text-muted)] hover:text-[var(--color-data-red)] transition-colors"
           onClick={(e) => {
             e.stopPropagation();
             onDelete();
@@ -313,7 +314,7 @@ export function WorkflowsPage() {
                 </div>
 
                 {/* Detail panel */}
-                <div className="min-h-[500px] min-w-0 flex-1 rounded-[var(--radius-lg)] border border-[var(--color-border-default)] bg-[#0d1117]">
+                <div className="min-h-[500px] min-w-0 flex-1 rounded-[var(--radius-lg)] border border-[var(--color-border-default)] bg-[var(--color-surface-primary)]">
                   {selectedWorkflow ? (
                     <WorkflowDetailPanel workflow={selectedWorkflow} />
                   ) : (

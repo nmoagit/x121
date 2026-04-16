@@ -7,6 +7,7 @@
 
 import { Badge ,  ContextLoader } from "@/components/primitives";
 import { Stack } from "@/components/layout";
+import { TYPO_SECTION_TITLE } from "@/lib/typography-tokens";
 import type { ImportCommitResult } from "./types";
 
 /* --------------------------------------------------------------------------
@@ -47,7 +48,7 @@ export function ImportProgress({ isCommitting, result }: ImportProgressProps) {
       className="rounded-[var(--radius-lg)] bg-[var(--color-surface-secondary)] p-6"
       data-testid="import-progress"
     >
-      <h3 className="text-base font-semibold text-[var(--color-text-primary)] mb-4">
+      <h3 className={`${TYPO_SECTION_TITLE} mb-4`}>
         Import Complete
       </h3>
 

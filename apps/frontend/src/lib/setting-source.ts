@@ -25,9 +25,9 @@ export type CatalogueSettingSource = "scene_type" | "image_type" | "project" | "
 export const CATALOGUE_SOURCE_COLORS: Record<string, string> = {
   scene_type: "text-[var(--color-text-muted)]",
   image_type: "text-[var(--color-text-muted)]",
-  project: "text-cyan-400",
-  group: "text-green-400",
-  avatar: "text-orange-400",
+  project: "text-[var(--color-data-cyan)]",
+  group: "text-[var(--color-data-green)]",
+  avatar: "text-[var(--color-data-orange)]",
 };
 
 /**

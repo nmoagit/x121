@@ -44,6 +44,7 @@ import type {
   UpdateGeneratorScript,
   ExecuteScriptResponse,
 } from "./hooks/use-generator-scripts";
+import { TYPO_DATA, TYPO_DATA_CYAN, TYPO_DATA_DANGER, TYPO_DATA_MUTED, TYPO_DATA_SUCCESS, TYPO_LABEL} from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Constants
@@ -196,7 +197,7 @@ export function GeneratorScriptsPage() {
           New Script
         </Button>
         <div className="ml-auto flex items-center gap-[var(--spacing-2)]">
-          <span className="font-mono text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">
+          <span className={TYPO_LABEL}>
             Pipeline:
           </span>
           <select
@@ -250,27 +251,27 @@ export function GeneratorScriptsPage() {
                       className={cn(TERMINAL_DIVIDER, TERMINAL_ROW_HOVER, "cursor-pointer")}
                       onClick={() => openEdit(script)}
                     >
-                      <td className="px-2 py-1.5 font-mono text-xs text-[var(--color-text-primary)]">
+                      <td className={`px-2 py-1.5 ${TYPO_DATA}`}>
                         {script.name}
                       </td>
-                      <td className="px-2 py-1.5 font-mono text-xs text-[var(--color-text-secondary)]">
+                      <td className={`px-2 py-1.5 ${TYPO_DATA_MUTED}`}>
                         {pipelineMap.get(script.pipeline_id) ?? `Pipeline #${script.pipeline_id}`}
                       </td>
-                      <td className="px-2 py-1.5 font-mono text-xs text-cyan-400">
+                      <td className={`${TYPO_DATA_CYAN} px-2 py-1.5`}>
                         {script.script_type}
                       </td>
-                      <td className="px-2 py-1.5 font-mono text-xs text-[var(--color-text-secondary)] text-center">
+                      <td className={`px-2 py-1.5 ${TYPO_DATA_MUTED} text-center`}>
                         v{script.version}
                       </td>
                       <td className="px-2 py-1.5">
                         <span className={cn(
                           "font-mono text-[10px] uppercase tracking-wide",
-                          script.is_active ? "text-green-400" : "text-[var(--color-text-muted)]",
+                          script.is_active ? "text-[var(--color-data-green)]" : "text-[var(--color-text-muted)]",
                         )}>
                           {script.is_active ? "Active" : "Inactive"}
                         </span>
                       </td>
-                      <td className="px-2 py-1.5 font-mono text-xs text-[var(--color-text-muted)]">
+                      <td className={`px-2 py-1.5 ${TYPO_DATA_MUTED}`}>
                         {formatDate(script.updated_at)}
                       </td>
                       <td className="px-2 py-1.5 text-right">
@@ -327,7 +328,7 @@ export function GeneratorScriptsPage() {
               placeholder="e.g. bio-generator"
             />
             <div>
-              <span className="block font-mono text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide mb-1">
+              <span className={`block ${TYPO_LABEL} mb-1`}>
                 Pipeline
               </span>
               <select
@@ -344,7 +345,7 @@ export function GeneratorScriptsPage() {
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <span className="block font-mono text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide mb-1">
+              <span className={`block ${TYPO_LABEL} mb-1`}>
                 Script Type
               </span>
               <select
@@ -366,11 +367,11 @@ export function GeneratorScriptsPage() {
             />
           </div>
           <div>
-            <span className="block font-mono text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide mb-1">
+            <span className={`block ${TYPO_LABEL} mb-1`}>
               Script Content
             </span>
             <textarea
-              className="w-full h-48 px-3 py-2 text-xs font-mono bg-[#0d1117] text-[var(--color-text-primary)] border border-[var(--color-border-default)] rounded-[var(--radius-md)] focus:outline-none focus:ring-1 focus:ring-[var(--color-border-focus)] resize-y"
+              className="w-full h-48 px-3 py-2 text-xs font-mono bg-[var(--color-surface-primary)] text-[var(--color-text-primary)] border border-[var(--color-border-default)] rounded-[var(--radius-md)] focus:outline-none focus:ring-1 focus:ring-[var(--color-border-focus)] resize-y"
               value={createContent}
               onChange={(e) => setCreateContent(e.target.value)}
               placeholder={`# ${createType} script\n# Input JSON is passed as first CLI arg (path to temp file)\n`}
@@ -417,24 +418,24 @@ export function GeneratorScriptsPage() {
                 onChange={(e) => setEditDescription(e.target.value)}
               />
             </div>
-            <div className="flex items-center gap-3 font-mono text-xs">
+            <div className={`flex items-center gap-3 ${TYPO_DATA}`}>
               <span className="text-[var(--color-text-muted)]">Type:</span>
-              <span className="text-cyan-400">{editScriptData.script_type}</span>
+              <span className="text-[var(--color-data-cyan)]">{editScriptData.script_type}</span>
               <span className="text-[var(--color-text-muted)]">|</span>
               <span className="text-[var(--color-text-muted)]">Version:</span>
-              <span className="text-cyan-400">v{editScriptData.version}</span>
+              <span className="text-[var(--color-data-cyan)]">v{editScriptData.version}</span>
               <span className="text-[var(--color-text-muted)]">|</span>
               <span className="text-[var(--color-text-muted)]">Pipeline:</span>
-              <span className="text-cyan-400">
+              <span className="text-[var(--color-data-cyan)]">
                 {pipelineMap.get(editScriptData.pipeline_id) ?? `#${editScriptData.pipeline_id}`}
               </span>
             </div>
             <div>
-              <span className="block font-mono text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide mb-1">
+              <span className={`block ${TYPO_LABEL} mb-1`}>
                 Script Content
               </span>
               <textarea
-                className="w-full h-64 px-3 py-2 text-xs font-mono bg-[#0d1117] text-[var(--color-text-primary)] border border-[var(--color-border-default)] rounded-[var(--radius-md)] focus:outline-none focus:ring-1 focus:ring-[var(--color-border-focus)] resize-y"
+                className="w-full h-64 px-3 py-2 text-xs font-mono bg-[var(--color-surface-primary)] text-[var(--color-text-primary)] border border-[var(--color-border-default)] rounded-[var(--radius-md)] focus:outline-none focus:ring-1 focus:ring-[var(--color-border-focus)] resize-y"
                 value={editContent}
                 onChange={(e) => setEditContent(e.target.value)}
               />
@@ -487,20 +488,20 @@ export function GeneratorScriptsPage() {
 
           {testResult && (
             <div className="space-y-2">
-              <div className="flex items-center gap-3 font-mono text-xs">
+              <div className={`flex items-center gap-3 ${TYPO_DATA}`}>
                 <span className="text-[var(--color-text-muted)]">Duration:</span>
-                <span className="text-cyan-400">{testResult.duration_ms}ms</span>
+                <span className="text-[var(--color-data-cyan)]">{testResult.duration_ms}ms</span>
                 <span className="text-[var(--color-text-muted)]">|</span>
                 <span className="text-[var(--color-text-muted)]">Script version:</span>
-                <span className="text-cyan-400">v{testResult.script_version}</span>
+                <span className="text-[var(--color-data-cyan)]">v{testResult.script_version}</span>
               </div>
 
               {/* stdout / output */}
               <div>
-                <span className="block font-mono text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide mb-1">
+                <span className={`block ${TYPO_LABEL} mb-1`}>
                   Output
                 </span>
-                <pre className="max-h-48 overflow-auto px-3 py-2 text-xs font-mono bg-[#0d1117] text-green-400 border border-[var(--color-border-default)] rounded-[var(--radius-md)]">
+                <pre className={`${TYPO_DATA_SUCCESS} max-h-48 overflow-auto px-3 py-2 bg-[var(--color-surface-primary)] border border-[var(--color-border-default)] rounded-[var(--radius-md)]`}>
                   {testResult.output_json != null
                     ? JSON.stringify(testResult.output_json, null, 2)
                     : "(no output)"}
@@ -510,10 +511,10 @@ export function GeneratorScriptsPage() {
               {/* stderr */}
               {testResult.stderr && (
                 <div>
-                  <span className="block font-mono text-[10px] text-red-400 uppercase tracking-wide mb-1">
+                  <span className="block font-mono text-[10px] text-[var(--color-data-red)] uppercase tracking-wide mb-1">
                     Stderr
                   </span>
-                  <pre className="max-h-32 overflow-auto px-3 py-2 text-xs font-mono bg-[#0d1117] text-red-400 border border-red-900/30 rounded-[var(--radius-md)]">
+                  <pre className={`${TYPO_DATA_DANGER} max-h-32 overflow-auto px-3 py-2 bg-[var(--color-surface-primary)] border border-red-900/30 rounded-[var(--radius-md)]`}>
                     {testResult.stderr}
                   </pre>
                 </div>

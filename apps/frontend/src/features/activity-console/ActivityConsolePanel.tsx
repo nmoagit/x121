@@ -17,6 +17,7 @@ import { LogEntryRow } from "./components/LogEntryRow";
 import { useActivityLogStream } from "./hooks/useActivityLogStream";
 import { useActivityConsoleStore } from "./stores/useActivityConsoleStore";
 import type { WsConnectionStatus } from "./types";
+import { TYPO_DATA_MUTED, TYPO_DATA_WARNING } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Constants
@@ -29,9 +30,9 @@ const CONNECTION_LABELS: Record<WsConnectionStatus, string> = {
 };
 
 const CONNECTION_COLORS: Record<WsConnectionStatus, string> = {
-  connecting: "text-orange-400",
-  connected: "text-green-400",
-  disconnected: "text-red-400",
+  connecting: "text-[var(--color-data-orange)]",
+  connected: "text-[var(--color-data-green)]",
+  disconnected: "text-[var(--color-data-red)]",
 };
 
 /* --------------------------------------------------------------------------
@@ -85,7 +86,7 @@ export function ActivityConsolePanel() {
   }, []);
 
   return (
-    <div className="flex flex-col h-full bg-[#0d1117] overflow-hidden">
+    <div className="flex flex-col h-full bg-[var(--color-surface-primary)] overflow-hidden">
       {/* Filter toolbar */}
       <ConsoleFilterToolbar />
 
@@ -96,13 +97,13 @@ export function ActivityConsolePanel() {
             {CONNECTION_LABELS[connectionStatus]}
           </span>
           <span className="opacity-30">|</span>
-          <span className="font-mono text-xs text-[var(--color-text-muted)]">
+          <span className={TYPO_DATA_MUTED}>
             {entries.length.toLocaleString()} entries
           </span>
           {skippedCount > 0 && (
             <>
               <span className="opacity-30">|</span>
-              <span className="font-mono text-xs text-orange-400">
+              <span className={TYPO_DATA_WARNING}>
                 {skippedCount.toLocaleString()} skipped
               </span>
             </>
@@ -133,11 +134,11 @@ export function ActivityConsolePanel() {
       <div
         ref={scrollRef}
         onScroll={handleScroll}
-        className="flex-1 overflow-y-auto min-h-0 bg-[#0d1117] scrollbar-thin"
+        className="flex-1 overflow-y-auto min-h-0 bg-[var(--color-surface-primary)] scrollbar-thin"
       >
         {entries.length === 0 ? (
           <div className="flex items-center justify-center h-full">
-            <p className="font-mono text-xs text-[var(--color-text-muted)]">
+            <p className={TYPO_DATA_MUTED}>
               {connectionStatus === "connected"
                 ? "Waiting for log entries..."
                 : "Not connected to log stream"}

@@ -8,6 +8,7 @@ import { useCallback, useState } from "react";
 
 import { Card, CardBody, CardHeader } from "@/components/composite/Card";
 import { Button, Input, Tooltip ,  ContextLoader } from "@/components/primitives";
+import { TYPO_SECTION_TITLE } from "@/lib/typography-tokens";
 import { Info } from "@/tokens/icons";
 
 import { useSessionConfigs, useUpdateConfig } from "./hooks/use-session-management";
@@ -74,7 +75,7 @@ export function SessionConfigPanel() {
   return (
     <Card>
       <CardHeader>
-        <h3 className="text-base font-semibold text-[var(--color-text-primary)]">
+        <h3 className={TYPO_SECTION_TITLE}>
           Session Configuration
         </h3>
       </CardHeader>

@@ -20,6 +20,7 @@ import {
   type AuditLog,
   type AuditQueryParams,
 } from "./types";
+import { TYPO_DATA, TYPO_DATA_CYAN, TYPO_DATA_MUTED } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Constants
@@ -142,7 +143,7 @@ export function AuditLogViewer() {
               <span className={TERMINAL_LABEL}>Audit Entries</span>
             </div>
             <div className="overflow-x-auto">
-              <table className="w-full font-mono text-xs">
+              <table className={`w-full ${TYPO_DATA}`}>
                 <thead>
                   <tr className={TERMINAL_DIVIDER}>
                     <th className={cn(TERMINAL_TH, "px-4 py-2.5")}>
@@ -167,7 +168,7 @@ export function AuditLogViewer() {
                     <tr>
                       <td
                         colSpan={5}
-                        className="px-4 py-8 text-center font-mono text-xs text-[var(--color-text-muted)]"
+                        className={`px-4 py-8 text-center ${TYPO_DATA_MUTED}`}
                       >
                         No audit log entries found.
                       </td>
@@ -188,7 +189,7 @@ export function AuditLogViewer() {
             {/* Pagination */}
             {data && data.total > 0 && (
               <div className="flex items-center justify-between border-t border-[var(--color-border-default)]/30 px-4 py-3">
-                <div className="flex items-center gap-2 font-mono text-xs text-[var(--color-text-muted)]">
+                <div className={`flex items-center gap-2 ${TYPO_DATA_MUTED}`}>
                   <span>
                     Showing {page * pageSize + 1}
                     {" - "}
@@ -258,7 +259,7 @@ function AuditLogRow({
         role="button"
         aria-expanded={expanded}
       >
-        <td className="px-4 py-2.5 text-cyan-400">
+        <td className="px-4 py-2.5 text-[var(--color-data-cyan)]">
           {ts.toLocaleDateString()}{" "}
           <span className="text-[var(--color-text-muted)]">
             {ts.toLocaleTimeString()}
@@ -268,7 +269,7 @@ function AuditLogRow({
           {log.user_id ? `User #${log.user_id}` : "System"}
         </td>
         <td className="px-4 py-2.5">
-          <span className="text-cyan-400">
+          <span className="text-[var(--color-data-cyan)]">
             {actionTypeLabel(log.action_type)}
           </span>
         </td>
@@ -286,9 +287,9 @@ function AuditLogRow({
         <tr>
           <td
             colSpan={5}
-            className="bg-[#161b22] px-4 py-3"
+            className="bg-[var(--color-surface-secondary)] px-4 py-3"
           >
-            <div className="space-y-2 font-mono text-xs">
+            <div className={`space-y-2 ${TYPO_DATA}`}>
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
                 <DetailItem label="Session ID" value={log.session_id} />
                 <DetailItem label="User Agent" value={log.user_agent} />
@@ -303,7 +304,7 @@ function AuditLogRow({
                   <p className={cn(TERMINAL_LABEL, "mb-1")}>
                     Details
                   </p>
-                  <pre className="max-h-48 overflow-auto rounded-[var(--radius-md)] bg-[#0d1117] p-3 text-xs text-cyan-400 font-mono">
+                  <pre className={`${TYPO_DATA_CYAN} max-h-48 overflow-auto rounded-[var(--radius-md)] bg-[var(--color-surface-primary)] p-3`}>
                     {JSON.stringify(log.details_json, null, 2)}
                   </pre>
                 </div>
@@ -332,7 +333,7 @@ function DetailItem({
       <p className={TERMINAL_LABEL}>
         {label}
       </p>
-      <p className="truncate text-xs text-cyan-400 font-mono">
+      <p className={`${TYPO_DATA_CYAN} truncate`}>
         {value ?? "-"}
       </p>
     </div>

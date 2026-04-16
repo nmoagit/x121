@@ -34,6 +34,7 @@ import type { Avatar, UpdateAvatar } from "@/features/projects/types";
 import { CHARACTER_STATUS_ID_ACTIVE, STATUS_LABELS } from "@/features/projects/types";
 
 import { SeedDataDropSlot } from "./SeedDataDropSlot";
+import { TYPO_DATA, TYPO_DATA_CYAN, TYPO_DATA_MUTED, TYPO_DATA_WARNING } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Types
@@ -82,7 +83,7 @@ function SeedImage({ src, alt }: { src: string; alt: string }) {
   return (
     <div className="relative h-48">
       {!loaded && (
-        <div className="absolute inset-0 rounded-[var(--radius-md)] bg-[#161b22] flex items-center justify-center">
+        <div className="absolute inset-0 rounded-[var(--radius-md)] bg-[var(--color-surface-secondary)] flex items-center justify-center">
           <ContextLoader size={32} />
         </div>
       )}
@@ -811,7 +812,7 @@ export function AvatarSeedDataModal({ avatar, projectId, onClose, groupOptions, 
         {onDelete && (
           <button
             type="button"
-            className="shrink-0 p-0.5 text-[var(--color-text-muted)] hover:text-red-400 transition-colors"
+            className="shrink-0 p-0.5 text-[var(--color-text-muted)] hover:text-[var(--color-data-red)] transition-colors"
             onClick={() => setConfirmDelete(true)}
             aria-label={`Delete ${charName}`}
           >
@@ -843,7 +844,7 @@ export function AvatarSeedDataModal({ avatar, projectId, onClose, groupOptions, 
                 return (
                   <div key={type} className="space-y-[var(--spacing-1)]">
                     <span className={TERMINAL_LABEL}>{label}</span>
-                    <div className="h-48 rounded-[var(--radius-md)] bg-[#161b22] flex items-center justify-center">
+                    <div className="h-48 rounded-[var(--radius-md)] bg-[var(--color-surface-secondary)] flex items-center justify-center">
                       <ContextLoader size={32} />
                     </div>
                   </div>
@@ -856,7 +857,7 @@ export function AvatarSeedDataModal({ avatar, projectId, onClose, groupOptions, 
                   <div key={type} className="space-y-[var(--spacing-1)]">
                     <span className={TERMINAL_LABEL}>{label}</span>
                     {isReplacing ? (
-                      <div className="h-48 rounded-[var(--radius-md)] bg-[#161b22] flex items-center justify-center">
+                      <div className="h-48 rounded-[var(--radius-md)] bg-[var(--color-surface-secondary)] flex items-center justify-center">
                         <ContextLoader size={32} />
                       </div>
                     ) : (
@@ -876,7 +877,7 @@ export function AvatarSeedDataModal({ avatar, projectId, onClose, groupOptions, 
                         <span className={cn("font-mono text-[10px] uppercase", TERMINAL_STATUS_COLORS[MEDIA_VARIANT_STATUS_LABEL[variant.status_id as MediaVariantStatusId]?.toLowerCase() ?? ""] ?? "text-[var(--color-text-muted)]")}>
                           {MEDIA_VARIANT_STATUS_LABEL[variant.status_id as MediaVariantStatusId] ?? "Unknown"}
                         </span>
-                        {variant.is_hero && <span className="font-mono text-[10px] uppercase text-cyan-400">Hero</span>}
+                        {variant.is_hero && <span className="font-mono text-[10px] uppercase text-[var(--color-data-cyan)]">Hero</span>}
                       </div>
                       <div className="flex items-center gap-[var(--spacing-1)]">
                         <label className={cn(ICON_ACTION_BTN, "cursor-pointer")}>
@@ -941,12 +942,12 @@ export function AvatarSeedDataModal({ avatar, projectId, onClose, groupOptions, 
                         onClick={() => setViewingJson({ label: `${label} — ${slot}.json`, data })}
                         className={cn(
                           "w-full text-left rounded-[var(--radius-md)] border border-[var(--color-border-default)]/30",
-                          "bg-[#161b22] px-[var(--spacing-2)] py-[var(--spacing-1)]",
+                          "bg-[var(--color-surface-secondary)] px-[var(--spacing-2)] py-[var(--spacing-1)]",
                           "cursor-pointer hover:border-[var(--color-border-default)] transition-colors",
                         )}
                       >
                         <div className="flex items-center justify-between">
-                          <span className="font-mono text-xs text-cyan-400">{slot}.json</span>
+                          <span className={TYPO_DATA_CYAN}>{slot}.json</span>
                           <Eye size={12} className="text-[var(--color-text-muted)]" />
                         </div>
                       </button>
@@ -985,7 +986,7 @@ export function AvatarSeedDataModal({ avatar, projectId, onClose, groupOptions, 
             <h3 className={cn("flex items-center gap-2 mb-2", TERMINAL_HEADER_TITLE)}>
               <MessageSquare size={14} aria-hidden />
               Speech
-              {speeches && speeches.length > 0 && <span className="font-mono text-[10px] text-cyan-400">[{speeches.length}]</span>}
+              {speeches && speeches.length > 0 && <span className="font-mono text-[10px] text-[var(--color-data-cyan)]">[{speeches.length}]</span>}
               <span className="font-normal text-[8px] opacity-40 hidden sm:inline">{"— JSON ({ avatar: { type: { lang: [texts] } } }) or CSV (avatar, speech_type, language, text)"}</span>
             </h3>
             {speeches && speeches.length > 0 ? (() => {
@@ -1014,7 +1015,7 @@ export function AvatarSeedDataModal({ avatar, projectId, onClose, groupOptions, 
                 <Stack gap={2}>
                   <div className={cn(TERMINAL_PANEL, "max-h-72 overflow-y-auto")}>
                     <table className="w-full text-xs font-mono">
-                      <thead className="sticky top-0 bg-[#161b22]">
+                      <thead className="sticky top-0 bg-[var(--color-surface-secondary)]">
                         <tr>
                           <th className={cn(TERMINAL_TH, "px-2 py-1.5")}>Type</th>
                           <th className={cn(TERMINAL_TH, "px-2 py-1.5")}>Lang</th>
@@ -1034,7 +1035,7 @@ export function AvatarSeedDataModal({ avatar, projectId, onClose, groupOptions, 
                                 )}
                                 onClick={() => setExpandedSpeechGroup(isExpanded ? null : groupKey)}
                               >
-                                <td className="px-2 py-1 text-cyan-400">
+                                <td className="px-2 py-1 text-[var(--color-data-cyan)]">
                                   <span className="inline-flex items-center gap-1">
                                     <span className={cn("transition-transform text-[10px]", isExpanded && "rotate-90")}>▶</span>
                                     {g.typeName}
@@ -1049,7 +1050,7 @@ export function AvatarSeedDataModal({ avatar, projectId, onClose, groupOptions, 
                                 <td className="px-2 py-1 text-right text-[var(--color-text-primary)]">{g.entries.length}</td>
                               </tr>
                               {isExpanded && g.entries.map((speech) => (
-                                <tr key={speech.id} className="bg-[#161b22]/50">
+                                <tr key={speech.id} className="bg-[var(--color-surface-secondary)]/50">
                                   <td colSpan={3} className="px-3 py-1.5">
                                     {speechActions.editingId === speech.id ? (
                                       <div className="space-y-[var(--spacing-1)]">
@@ -1070,7 +1071,7 @@ export function AvatarSeedDataModal({ avatar, projectId, onClose, groupOptions, 
                                       </div>
                                     ) : (
                                       <div className="flex items-start justify-between gap-[var(--spacing-2)]">
-                                        <span className="font-mono text-xs text-[var(--color-text-secondary)] break-words flex-1">{speech.text}</span>
+                                        <span className={`${TYPO_DATA_MUTED} break-words flex-1`}>{speech.text}</span>
                                         <div className="flex items-center gap-[var(--spacing-1)] shrink-0">
                                           <button type="button" className={ICON_ACTION_BTN} onClick={() => speechActions.startEdit(speech)}>
                                             <Edit3 size={12} />
@@ -1097,7 +1098,7 @@ export function AvatarSeedDataModal({ avatar, projectId, onClose, groupOptions, 
                     onFile={handleSpeechFileDrop}
                   />
                   {speechImportCount !== null && (
-                    <span className="font-mono text-[10px] text-green-400">{speechImportCount} imported</span>
+                    <span className="font-mono text-[10px] text-[var(--color-data-green)]">{speechImportCount} imported</span>
                   )}
                 </Stack>
               );
@@ -1111,7 +1112,7 @@ export function AvatarSeedDataModal({ avatar, projectId, onClose, groupOptions, 
                 />
                 {speechImportCount !== null && (
                   <div className="mt-[var(--spacing-1)]">
-                    <span className="font-mono text-[10px] text-green-400">{speechImportCount} imported</span>
+                    <span className="font-mono text-[10px] text-[var(--color-data-green)]">{speechImportCount} imported</span>
                   </div>
                 )}
               </div>
@@ -1129,8 +1130,8 @@ export function AvatarSeedDataModal({ avatar, projectId, onClose, groupOptions, 
               {currentVoiceId && !editingVoiceId ? (
                 /* Configured — show value with edit action */
                 <div className="flex items-center gap-[var(--spacing-2)]">
-                  <span className="font-mono text-[10px] uppercase text-green-400">Configured</span>
-                  <span className="font-mono text-xs text-[var(--color-text-muted)] truncate flex-1">{currentVoiceId}</span>
+                  <span className="font-mono text-[10px] uppercase text-[var(--color-data-green)]">Configured</span>
+                  <span className={`${TYPO_DATA_MUTED} truncate flex-1`}>{currentVoiceId}</span>
                   <Button size="xs" variant="ghost" onClick={() => { setVoiceIdDraft(currentVoiceId); setEditingVoiceId(true); }}>
                     Edit
                   </Button>
@@ -1313,7 +1314,7 @@ export function AvatarSeedDataModal({ avatar, projectId, onClose, groupOptions, 
         {pendingUpload && (
           <Stack gap={4}>
             {pendingUpload.warnings.map((w, i) => (
-              <div key={i} className="flex items-start gap-[var(--spacing-2)] text-xs font-mono text-orange-400">
+              <div key={i} className={`${TYPO_DATA_WARNING} flex items-start gap-[var(--spacing-2)]`}>
                 <AlertTriangle size={16} className="shrink-0 mt-0.5" />
                 <span>{w}</span>
               </div>
@@ -1326,13 +1327,13 @@ export function AvatarSeedDataModal({ avatar, projectId, onClose, groupOptions, 
                 </div>
                 <div className={cn(TERMINAL_BODY, "space-y-[var(--spacing-1)]")}>
                   {pendingUpload.imageAssignments.map(({ slot, file }) => (
-                    <div key={`img-${slot}`} className={cn("flex items-center justify-between font-mono text-xs", TERMINAL_DIVIDER, "pb-1")}>
+                    <div key={`img-${slot}`} className={cn(`flex items-center justify-between ${TYPO_DATA}`, TERMINAL_DIVIDER, "pb-1")}>
                       <span className="text-[var(--color-text-primary)] truncate">{file.name}</span>
-                      <span className="text-cyan-400 text-[10px] uppercase">{slotLabel(slot)} image</span>
+                      <span className="text-[var(--color-data-cyan)] text-[10px] uppercase">{slotLabel(slot)} image</span>
                     </div>
                   ))}
                   {pendingUpload.jsonAssignments.map(({ slot, file }) => (
-                    <div key={`json-${slot}`} className={cn("flex items-center justify-between font-mono text-xs", TERMINAL_DIVIDER, "pb-1")}>
+                    <div key={`json-${slot}`} className={cn(`flex items-center justify-between ${TYPO_DATA}`, TERMINAL_DIVIDER, "pb-1")}>
                       <span className="text-[var(--color-text-primary)] truncate">{file.name}</span>
                       <span className="text-[var(--color-text-muted)] text-[10px] uppercase">{slotLabel(slot)}</span>
                     </div>
@@ -1367,7 +1368,7 @@ export function AvatarSeedDataModal({ avatar, projectId, onClose, groupOptions, 
         size="lg"
       >
         {viewingJson && (
-          <pre className="max-h-[70vh] overflow-auto rounded-[var(--radius-md)] bg-[#0d1117] p-[var(--spacing-4)] text-xs text-cyan-400 font-mono">
+          <pre className={`${TYPO_DATA_CYAN} max-h-[70vh] overflow-auto rounded-[var(--radius-md)] bg-[var(--color-surface-primary)] p-[var(--spacing-4)]`}>
             {JSON.stringify(viewingJson.data, null, 2)}
           </pre>
         )}
@@ -1427,10 +1428,10 @@ export function AvatarSeedDataModal({ avatar, projectId, onClose, groupOptions, 
         {pendingVoiceId && (
           <Stack gap={2}>
             <p className="text-sm text-[var(--color-text-secondary)]">
-              Found voice ID for <strong>{charName}</strong> in <span className="font-mono text-xs">{pendingVoiceId.source}</span>:
+              Found voice ID for <strong>{charName}</strong> in <span className={TYPO_DATA}>{pendingVoiceId.source}</span>:
             </p>
-            <div className="rounded-[var(--radius-md)] bg-[#0d1117] border border-[var(--color-border-default)]/30 p-[var(--spacing-3)]">
-              <span className="font-mono text-xs text-cyan-400 break-all">{pendingVoiceId.voiceId}</span>
+            <div className="rounded-[var(--radius-md)] bg-[var(--color-surface-primary)] border border-[var(--color-border-default)]/30 p-[var(--spacing-3)]">
+              <span className={`${TYPO_DATA_CYAN} break-all`}>{pendingVoiceId.voiceId}</span>
             </div>
             {currentVoiceId && currentVoiceId !== pendingVoiceId.voiceId && (
               <p className="text-xs text-[var(--color-text-muted)]">

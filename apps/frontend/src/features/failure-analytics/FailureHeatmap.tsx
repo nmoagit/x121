@@ -12,6 +12,7 @@ import { Badge } from "@/components/primitives/Badge";
 import { useFailureHeatmap } from "./hooks/use-failure-analytics";
 import type { HeatmapCell } from "./types";
 import { HEATMAP_DIMENSIONS, severityBadgeVariant } from "./types";
+import { TYPO_INPUT_LABEL } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Props
@@ -94,7 +95,7 @@ export function FailureHeatmap({ onCellClick }: FailureHeatmapProps) {
                 {data.col_labels.map((col) => (
                   <th
                     key={col}
-                    className="p-2 text-center text-xs font-medium text-[var(--color-text-secondary)]"
+                    className={`p-2 text-center ${TYPO_INPUT_LABEL}`}
                   >
                     {col}
                   </th>
@@ -104,7 +105,7 @@ export function FailureHeatmap({ onCellClick }: FailureHeatmapProps) {
             <tbody>
               {data.row_labels.map((row) => (
                 <tr key={row}>
-                  <td className="p-2 text-xs font-medium text-[var(--color-text-secondary)]">
+                  <td className={`p-2 ${TYPO_INPUT_LABEL}`}>
                     {row}
                   </td>
                   {data.col_labels.map((col) => {

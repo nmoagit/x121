@@ -13,6 +13,7 @@ import { iconSizes } from "@/tokens/icons";
 import { Stack } from "@/components/layout";
 
 import { computeNextRuns, describeCron } from "./cron-utils";
+import { TYPO_INPUT_LABEL, TYPO_CAPTION} from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Constants
@@ -57,7 +58,7 @@ export function CronPreview({ expression, className }: CronPreviewProps) {
                 size={iconSizes.sm}
                 className="text-[var(--color-text-muted)]"
               />
-              <span className="text-xs font-medium text-[var(--color-text-muted)]">
+              <span className={TYPO_INPUT_LABEL}>
                 Next {nextRuns.length} runs
               </span>
             </Stack>
@@ -65,7 +66,7 @@ export function CronPreview({ expression, className }: CronPreviewProps) {
               {nextRuns.map((date, i) => (
                 <li
                   key={i}
-                  className="text-xs text-[var(--color-text-secondary)]"
+                  className={TYPO_CAPTION}
                 >
                   {formatDateTime(date.toISOString())}
                 </li>

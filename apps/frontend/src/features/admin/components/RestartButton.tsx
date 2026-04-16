@@ -4,6 +4,7 @@ import { Modal } from "@/components/composite";
 import { Stack } from "@/components/layout";
 import { Button, Input, Toggle } from "@/components/primitives";
 import { useRestartService } from "@/features/admin/hooks/use-hardware";
+import { TYPO_DATA_DANGER } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Types
@@ -82,14 +83,14 @@ export function RestartButton({ workerId }: RestartButtonProps) {
               size="sm"
             />
             {force && (
-              <p className="font-mono text-xs text-red-400">
+              <p className={TYPO_DATA_DANGER}>
                 Force restart will terminate the service immediately. In-progress tasks may be lost.
               </p>
             )}
           </div>
 
           {mutation.isError && (
-            <p role="alert" className="font-mono text-xs text-red-400">
+            <p role="alert" className={TYPO_DATA_DANGER}>
               {mutation.error instanceof Error ? mutation.error.message : "Restart failed"}
             </p>
           )}

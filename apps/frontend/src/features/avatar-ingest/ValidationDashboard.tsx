@@ -15,6 +15,7 @@ import {
   useValidationSummary,
 } from "./hooks/use-avatar-ingest";
 import { INGEST_STATUS_LABELS, ingestSessionBadgeVariant } from "./types";
+import { TYPO_DATA } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Component
@@ -97,7 +98,7 @@ export function ValidationDashboard({ projectId }: ValidationDashboardProps) {
             <tbody>
               {sessions.map((session) => (
                 <tr key={session.id} className="border-b hover:bg-muted/30">
-                  <td className="px-3 py-2 font-mono text-xs">
+                  <td className={`px-3 py-2 ${TYPO_DATA}`}>
                     #{session.id}
                   </td>
                   <td className="px-3 py-2">

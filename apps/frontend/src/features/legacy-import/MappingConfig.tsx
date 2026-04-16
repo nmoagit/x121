@@ -5,6 +5,7 @@
 import { useState } from "react";
 
 import type { PathMappingRule } from "./types";
+import { TYPO_DATA } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Props
@@ -83,7 +84,7 @@ export function MappingConfig({
               data-testid={`rule-item-${idx}`}
               className="flex items-center gap-3 rounded border p-2 text-sm"
             >
-              <code className="flex-1 font-mono text-xs">{rule.pattern}</code>
+              <code className={`flex-1 ${TYPO_DATA}`}>{rule.pattern}</code>
               <span className="text-[var(--color-text-secondary)]">
                 {rule.entity_type}
               </span>

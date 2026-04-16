@@ -69,7 +69,7 @@ export function CheatSheet() {
     <div
       className={cn(
         "fixed inset-0 z-50 flex items-center justify-center",
-        "bg-black/60 backdrop-blur-sm",
+        "bg-[var(--color-surface-badge-overlay)] backdrop-blur-sm",
         "animate-[fadeIn_var(--duration-fast)_var(--ease-default)]",
       )}
       onClick={close}

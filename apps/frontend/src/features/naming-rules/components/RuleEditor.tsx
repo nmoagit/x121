@@ -19,6 +19,7 @@ import {
 import type { NamingCategory, NamingRule } from "../types";
 import { TemplatePreview } from "./TemplatePreview";
 import { TokenList } from "./TokenList";
+import { TYPO_DATA_SUCCESS } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Constants
@@ -170,7 +171,7 @@ export function RuleEditor({ category, rule, onClose }: RuleEditorProps) {
 
         {/* Save confirmation indicator */}
         {(updateMutation.isSuccess || createMutation.isSuccess) && (
-          <div className="flex items-center gap-1.5 text-xs text-green-400 font-mono">
+          <div className={`${TYPO_DATA_SUCCESS} flex items-center gap-1.5`}>
             <Check size={14} aria-hidden />
             Saved
           </div>

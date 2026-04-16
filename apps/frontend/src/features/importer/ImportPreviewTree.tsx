@@ -9,6 +9,7 @@ import { Badge, Checkbox } from "@/components/primitives";
 import { Stack } from "@/components/layout";
 import type { ImportMappingEntry, FolderImportPreview } from "./types";
 import { ACTION_LABELS, ACTION_VARIANTS, entityTypeLabel } from "./types";
+import { TYPO_CAPTION } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Props
@@ -118,7 +119,7 @@ function ImportEntryRow({ entry, isSelected, onToggle }: ImportEntryRowProps) {
       </Stack>
 
       <span
-        className="text-xs text-[var(--color-text-secondary)] shrink-0"
+        className={`shrink-0 ${TYPO_CAPTION}`}
         title={entry.source_path}
       >
         {entry.file_name}

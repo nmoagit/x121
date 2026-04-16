@@ -1,4 +1,5 @@
 import { cn } from "@/lib/cn";
+import { TYPO_INPUT_LABEL } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Types
@@ -55,7 +56,7 @@ export function GpuGauge({
   return (
     <div className="flex flex-col gap-1.5">
       <div className="flex items-center justify-between">
-        <span className="text-xs font-medium text-[var(--color-text-secondary)]">{label}</span>
+        <span className={TYPO_INPUT_LABEL}>{label}</span>
         <span className={cn("text-xs font-semibold tabular-nums", SEVERITY_TEXT_CLASSES[severity])}>
           {Math.round(value)}
           {unit} / {Math.round(max)}

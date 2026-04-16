@@ -1,4 +1,5 @@
 import { Modal } from "@/components/composite/Modal";
+import { TYPO_LABEL } from "@/lib/typography-tokens";
 import { Button } from "@/components/primitives/Button";
 import { MAX_VIDEO_FILE_SIZE, VIDEO_EXTENSIONS } from "@/lib/file-types";
 import { formatBytes } from "@/lib/format";
@@ -189,13 +190,13 @@ export function BulkImportDialog({ open, onClose, sceneId, parentVersionId, onSu
           </Button>
         </div>
 
-        {error && <p className="font-mono text-[10px] text-red-400">{error}</p>}
+        {error && <p className="font-mono text-[10px] text-[var(--color-data-red)]">{error}</p>}
 
         {/* File list */}
         {files.length > 0 && (
-          <div className="rounded-[var(--radius-lg)] border border-[var(--color-border-default)] bg-[#0d1117] overflow-hidden">
-            <div className="px-3 py-2 border-b border-[var(--color-border-default)] bg-[#161b22]">
-              <span className="font-mono text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">
+          <div className="rounded-[var(--radius-lg)] border border-[var(--color-border-default)] bg-[var(--color-surface-primary)] overflow-hidden">
+            <div className="px-3 py-2 border-b border-[var(--color-border-default)] bg-[var(--color-surface-secondary)]">
+              <span className={TYPO_LABEL}>
                 {files.length} file{files.length !== 1 ? "s" : ""}
                 {parentVersionId != null && <> — parent v{parentVersionId}</>}
               </span>
@@ -206,12 +207,12 @@ export function BulkImportDialog({ open, onClose, sceneId, parentVersionId, onSu
                   <FileVideo size={12} className="shrink-0 text-[var(--color-text-muted)]" />
                   <span className="font-mono text-[10px] text-[var(--color-text-primary)] truncate flex-1">{entry.file.name}</span>
                   <span className="font-mono text-[10px] text-[var(--color-text-muted)] shrink-0">{formatBytes(entry.file.size)}</span>
-                  <span className="font-mono text-[10px] text-cyan-400 shrink-0">#{entry.clipIndex}</span>
-                  {entry.status === "success" && <span className="font-mono text-[10px] text-green-400 shrink-0">ok</span>}
-                  {entry.status === "error" && <span className="font-mono text-[10px] text-red-400 shrink-0">fail</span>}
-                  {entry.status === "uploading" && <span className="font-mono text-[10px] text-cyan-400 shrink-0 animate-pulse">...</span>}
+                  <span className="font-mono text-[10px] text-[var(--color-data-cyan)] shrink-0">#{entry.clipIndex}</span>
+                  {entry.status === "success" && <span className="font-mono text-[10px] text-[var(--color-data-green)] shrink-0">ok</span>}
+                  {entry.status === "error" && <span className="font-mono text-[10px] text-[var(--color-data-red)] shrink-0">fail</span>}
+                  {entry.status === "uploading" && <span className="font-mono text-[10px] text-[var(--color-data-cyan)] shrink-0 animate-pulse">...</span>}
                   {entry.status === "pending" && !uploading && (
-                    <button type="button" onClick={() => removeFile(i)} className="p-0.5 text-[var(--color-text-muted)] hover:text-red-400 transition-colors">
+                    <button type="button" onClick={() => removeFile(i)} className="p-0.5 text-[var(--color-text-muted)] hover:text-[var(--color-data-red)] transition-colors">
                       <X size={12} />
                     </button>
                   )}
@@ -223,7 +224,7 @@ export function BulkImportDialog({ open, onClose, sceneId, parentVersionId, onSu
 
         {/* Progress */}
         {uploading && (
-          <div className="font-mono text-[10px] text-cyan-400">
+          <div className="font-mono text-[10px] text-[var(--color-data-cyan)]">
             Uploading {progress.current}/{progress.total}...
           </div>
         )}
@@ -231,8 +232,8 @@ export function BulkImportDialog({ open, onClose, sceneId, parentVersionId, onSu
         {/* Results */}
         {done && (
           <div className="font-mono text-[10px]">
-            <span className="text-green-400">{successCount} imported</span>
-            {failCount > 0 && <>, <span className="text-red-400">{failCount} failed</span></>}
+            <span className="text-[var(--color-data-green)]">{successCount} imported</span>
+            {failCount > 0 && <>, <span className="text-[var(--color-data-red)]">{failCount} failed</span></>}
           </div>
         )}
 

@@ -24,6 +24,7 @@ import { HardDrive, Plus } from "@/tokens/icons";
 import { TierIndicator } from "./TierIndicator";
 import type { StorageBackend, StorageBackendStatusId, StorageBackendTypeId } from "./types";
 import { BACKEND_STATUS_LABELS, BACKEND_TYPE_LABELS } from "./types";
+import { TYPO_DATA, TYPO_DATA_MUTED } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Helpers
@@ -89,7 +90,7 @@ export function BackendConfigPanel({
       {/* Body */}
       <div className={TERMINAL_BODY}>
         {backends.length === 0 ? (
-          <p className="font-mono text-xs text-[var(--color-text-muted)]">
+          <p className={TYPO_DATA_MUTED}>
             No storage backends configured.
           </p>
         ) : (
@@ -109,7 +110,7 @@ export function BackendConfigPanel({
                 <div
                   key={backend.id}
                   className={`${TERMINAL_ROW_HOVER} ${idx > 0 ? TERMINAL_DIVIDER : ""} cursor-pointer px-2 py-2.5 ${
-                    isSelected ? "bg-[#161b22] ring-1 ring-cyan-400/40" : ""
+                    isSelected ? "bg-[var(--color-surface-secondary)] ring-1 ring-cyan-400/40" : ""
                   }`}
                   onClick={() => handleSelect(backend)}
                   role="button"
@@ -126,16 +127,16 @@ export function BackendConfigPanel({
                         className="shrink-0 text-[var(--color-text-muted)]"
                         aria-hidden
                       />
-                      <span className="truncate font-mono text-xs font-medium text-[var(--color-text-primary)]">
+                      <span className={`truncate ${TYPO_DATA} font-medium text-[var(--color-text-primary)]`}>
                         {backend.name}
                       </span>
                       {backend.is_default && (
-                        <span className="font-mono text-[10px] text-cyan-400 uppercase tracking-wide">
+                        <span className="font-mono text-[10px] text-[var(--color-data-cyan)] uppercase tracking-wide">
                           default
                         </span>
                       )}
                     </div>
-                    <span className={`font-mono text-xs uppercase ${statusColor}`}>
+                    <span className={`${TYPO_DATA} uppercase ${statusColor}`}>
                       {statusLabel}
                     </span>
                   </div>
@@ -148,16 +149,16 @@ export function BackendConfigPanel({
                     {pct !== null && (
                       <>
                         <span className="opacity-30">|</span>
-                        <span className="font-mono text-xs text-[var(--color-text-muted)]">
+                        <span className={TYPO_DATA_MUTED}>
                           {formatBytes(backend.used_bytes)} / {formatBytes(backend.total_capacity_bytes!)}
                         </span>
                         <span
-                          className={`font-mono text-xs ${
+                          className={`${TYPO_DATA} ${
                             pct > 90
-                              ? "text-red-400"
+                              ? "text-[var(--color-data-red)]"
                               : pct > 70
-                                ? "text-orange-400"
-                                : "text-green-400"
+                                ? "text-[var(--color-data-orange)]"
+                                : "text-[var(--color-data-green)]"
                           }`}
                         >
                           {pct}%

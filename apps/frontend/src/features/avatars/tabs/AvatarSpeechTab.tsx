@@ -24,6 +24,7 @@ import { AddSpeechModal } from "./AddSpeechModal";
 import { LanguageFilterBar } from "./LanguageFilterBar";
 import { SpeechImportModal } from "./SpeechImportModal";
 import { SpeechTypeSection } from "./SpeechTypeSection";
+import { TYPO_DATA, TYPO_DATA_CYAN, TYPO_DATA_DANGER, TYPO_DATA_MUTED, TYPO_DATA_WARNING, TYPO_LABEL} from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Props
@@ -221,12 +222,12 @@ export function AvatarSpeechTab({ avatarId, projectId }: AvatarSpeechTabProps) {
     >
     <Stack gap={4}>
       {/* VoiceID status */}
-      <div className="flex items-center rounded-[var(--radius-lg)] border border-[var(--color-border-default)] bg-[#0d1117] px-[var(--spacing-3)] py-[var(--spacing-2)] font-mono text-xs">
+      <div className={`flex items-center rounded-[var(--radius-lg)] border border-[var(--color-border-default)] bg-[var(--color-surface-primary)] px-[var(--spacing-3)] py-[var(--spacing-2)] ${TYPO_DATA}`}>
         <span className="uppercase tracking-wide text-[var(--color-text-muted)]">voice:</span>
         {voiceId ? (
-          <span className="ml-1.5 text-cyan-400 truncate">{voiceId}</span>
+          <span className="ml-1.5 text-[var(--color-data-cyan)] truncate">{voiceId}</span>
         ) : (
-          <span className="ml-1.5 text-orange-400">not configured</span>
+          <span className="ml-1.5 text-[var(--color-data-orange)]">not configured</span>
         )}
       </div>
 
@@ -335,18 +336,18 @@ export function AvatarSpeechTab({ avatarId, projectId }: AvatarSpeechTabProps) {
         {dropAnalysis && !bulkResult && (
           <Stack gap={3}>
             {/* Summary */}
-            <div className="flex items-center gap-3 font-mono text-xs">
-              <span><span className="text-cyan-400">{dropAnalysis.entries.length}</span> entries in file</span>
+            <div className={`flex items-center gap-3 ${TYPO_DATA}`}>
+              <span><span className="text-[var(--color-data-cyan)]">{dropAnalysis.entries.length}</span> entries in file</span>
               {dropAnalysis.isMultiModel && (
                 <>
                   <span className="text-white/20">|</span>
-                  <span><span className="text-cyan-400">{dropAnalysis.avatars.length}</span> models</span>
+                  <span><span className="text-[var(--color-data-cyan)]">{dropAnalysis.avatars.length}</span> models</span>
                 </>
               )}
               {!dropAnalysis.isMultiModel && dropAnalysis.existing.length > 0 && (
                 <>
                   <span className="text-white/20">|</span>
-                  <span><span className="text-green-400">{dropAnalysis.newEntries.length}</span> new</span>
+                  <span><span className="text-[var(--color-data-green)]">{dropAnalysis.newEntries.length}</span> new</span>
                   <span className="text-white/20">|</span>
                   <span><span className="text-[var(--color-text-muted)]">{dropAnalysis.existing.length}</span> exist</span>
                 </>
@@ -356,10 +357,10 @@ export function AvatarSpeechTab({ avatarId, projectId }: AvatarSpeechTabProps) {
             {/* Multi-model: avatar list */}
             {dropAnalysis.isMultiModel && (
               <div>
-                <p className="font-mono text-[10px] uppercase tracking-wide text-[var(--color-text-muted)] mb-1">models in file</p>
+                <p className={`${TYPO_LABEL} mb-1`}>models in file</p>
                 <div className="max-h-24 overflow-y-auto border border-[var(--color-border-default)] rounded-[var(--radius-sm)]">
                   {dropAnalysis.avatars.map((slug) => (
-                    <div key={slug} className="px-2 py-0.5 font-mono text-xs text-[var(--color-text-primary)] border-b border-white/5 last:border-b-0 hover:bg-[#161b22]">
+                    <div key={slug} className={`px-2 py-0.5 ${TYPO_DATA} border-b border-white/5 last:border-b-0 hover:bg-[var(--color-surface-secondary)]`}>
                       {slug}
                     </div>
                   ))}
@@ -375,13 +376,13 @@ export function AvatarSpeechTab({ avatarId, projectId }: AvatarSpeechTabProps) {
               <>
                 {dropAnalysis.newEntries.length > 0 && (
                   <div>
-                    <p className="font-mono text-[10px] uppercase tracking-wide text-green-400 mb-1">
+                    <p className="font-mono text-[10px] uppercase tracking-wide text-[var(--color-data-green)] mb-1">
                       new ({dropAnalysis.newEntries.length})
                     </p>
                     <div className="max-h-32 overflow-y-auto border border-[var(--color-border-default)] rounded-[var(--radius-sm)]">
                       {dropAnalysis.newEntries.slice(0, 50).map((e, i) => (
-                        <div key={i} className="px-2 py-0.5 font-mono text-xs border-b border-white/5 last:border-b-0 hover:bg-[#161b22] flex items-center gap-2">
-                          {e.type && <span className="text-cyan-400 shrink-0 w-20 truncate">{e.type}</span>}
+                        <div key={i} className={`px-2 py-0.5 ${TYPO_DATA} border-b border-white/5 last:border-b-0 hover:bg-[var(--color-surface-secondary)] flex items-center gap-2`}>
+                          {e.type && <span className="text-[var(--color-data-cyan)] shrink-0 w-20 truncate">{e.type}</span>}
                           <span className="text-[var(--color-text-muted)] shrink-0 w-8">{e.language}</span>
                           <span className="text-[var(--color-text-primary)] truncate">{e.text}</span>
                         </div>
@@ -396,12 +397,12 @@ export function AvatarSpeechTab({ avatarId, projectId }: AvatarSpeechTabProps) {
                 )}
                 {dropAnalysis.existing.length > 0 && (
                   <div>
-                    <p className="font-mono text-[10px] uppercase tracking-wide text-[var(--color-text-muted)] mb-1">
+                    <p className={`${TYPO_LABEL} mb-1`}>
                       already exist ({dropAnalysis.existing.length})
                     </p>
                     <div className="max-h-24 overflow-y-auto border border-[var(--color-border-default)] rounded-[var(--radius-sm)]">
                       {dropAnalysis.existing.slice(0, 20).map((e, i) => (
-                        <div key={i} className="px-2 py-0.5 font-mono text-xs text-[var(--color-text-muted)] border-b border-white/5 last:border-b-0 flex items-center gap-2">
+                        <div key={i} className={`px-2 py-0.5 ${TYPO_DATA_MUTED} border-b border-white/5 last:border-b-0 flex items-center gap-2`}>
                           {e.type && <span className="shrink-0 w-20 truncate">{e.type}</span>}
                           <span className="shrink-0 w-8">{e.language}</span>
                           <span className="truncate">{e.text}</span>
@@ -416,13 +417,13 @@ export function AvatarSpeechTab({ avatarId, projectId }: AvatarSpeechTabProps) {
             {/* Entries preview (multi-model) */}
             {dropAnalysis.isMultiModel && (
               <div>
-                <p className="font-mono text-[10px] uppercase tracking-wide text-[var(--color-text-muted)] mb-1">
+                <p className={`${TYPO_LABEL} mb-1`}>
                   entries ({dropAnalysis.entries.length})
                 </p>
                 <div className="max-h-32 overflow-y-auto border border-[var(--color-border-default)] rounded-[var(--radius-sm)]">
                   {dropAnalysis.entries.slice(0, 50).map((e, i) => (
-                    <div key={i} className="px-2 py-0.5 font-mono text-xs border-b border-white/5 last:border-b-0 hover:bg-[#161b22] flex items-center gap-2">
-                      {e.type && <span className="text-cyan-400 shrink-0 w-20 truncate">{e.type}</span>}
+                    <div key={i} className={`px-2 py-0.5 ${TYPO_DATA} border-b border-white/5 last:border-b-0 hover:bg-[var(--color-surface-secondary)] flex items-center gap-2`}>
+                      {e.type && <span className="text-[var(--color-data-cyan)] shrink-0 w-20 truncate">{e.type}</span>}
                       <span className="text-[var(--color-text-muted)] shrink-0 w-8">{e.language}</span>
                       <span className="text-[var(--color-text-primary)] truncate">{e.text}</span>
                     </div>
@@ -438,7 +439,7 @@ export function AvatarSpeechTab({ avatarId, projectId }: AvatarSpeechTabProps) {
 
             {/* Actions */}
             <div className="flex items-center justify-between pt-1 border-t border-[var(--color-border-default)]">
-              <span className="font-mono text-xs text-[var(--color-text-muted)]">
+              <span className={TYPO_DATA_MUTED}>
                 {dropAnalysis.isMultiModel
                   ? `${dropAnalysis.entries.length} entries across ${dropAnalysis.avatars.length} models`
                   : `${dropAnalysis.newEntries.length} new · ${dropAnalysis.existing.length} existing`}
@@ -495,8 +496,8 @@ export function AvatarSpeechTab({ avatarId, projectId }: AvatarSpeechTabProps) {
         {bulkResult && (
           <Stack gap={3}>
             {/* Counts */}
-            <div className="flex items-center gap-3 font-mono text-xs">
-              <span><span className="text-green-400">{bulkResult.imported}</span> imported</span>
+            <div className={`flex items-center gap-3 ${TYPO_DATA}`}>
+              <span><span className="text-[var(--color-data-green)]">{bulkResult.imported}</span> imported</span>
               {bulkResult.skipped > 0 && (
                 <>
                   <span className="text-white/20">|</span>
@@ -508,12 +509,12 @@ export function AvatarSpeechTab({ avatarId, projectId }: AvatarSpeechTabProps) {
             {/* Matched models — one per line */}
             {bulkResult.avatars_matched.length > 0 && (
               <div>
-                <p className="font-mono text-[10px] uppercase tracking-wide text-[var(--color-text-muted)] mb-1">
+                <p className={`${TYPO_LABEL} mb-1`}>
                   matched ({bulkResult.avatars_matched.length})
                 </p>
                 <div className="max-h-32 overflow-y-auto border border-[var(--color-border-default)] rounded-[var(--radius-sm)]">
                   {bulkResult.avatars_matched.map((name) => (
-                    <div key={name} className="px-2 py-0.5 font-mono text-xs text-cyan-400 border-b border-white/5 last:border-b-0">
+                    <div key={name} className={`${TYPO_DATA_CYAN} px-2 py-0.5 border-b border-white/5 last:border-b-0`}>
                       {name}
                     </div>
                   ))}
@@ -524,12 +525,12 @@ export function AvatarSpeechTab({ avatarId, projectId }: AvatarSpeechTabProps) {
             {/* Unmatched models — one per line */}
             {bulkResult.avatars_unmatched.length > 0 && (
               <div>
-                <p className="font-mono text-[10px] uppercase tracking-wide text-orange-400 mb-1">
+                <p className="font-mono text-[10px] uppercase tracking-wide text-[var(--color-data-orange)] mb-1">
                   unmatched ({bulkResult.avatars_unmatched.length})
                 </p>
                 <div className="max-h-24 overflow-y-auto border border-[var(--color-border-default)] rounded-[var(--radius-sm)]">
                   {bulkResult.avatars_unmatched.map((name) => (
-                    <div key={name} className="px-2 py-0.5 font-mono text-xs text-orange-400 border-b border-white/5 last:border-b-0">
+                    <div key={name} className={`${TYPO_DATA_WARNING} px-2 py-0.5 border-b border-white/5 last:border-b-0`}>
                       {name}
                     </div>
                   ))}
@@ -540,12 +541,12 @@ export function AvatarSpeechTab({ avatarId, projectId }: AvatarSpeechTabProps) {
             {/* Errors */}
             {bulkResult.errors.length > 0 && (
               <div>
-                <p className="font-mono text-[10px] uppercase tracking-wide text-red-400 mb-1">
+                <p className="font-mono text-[10px] uppercase tracking-wide text-[var(--color-data-red)] mb-1">
                   errors ({bulkResult.errors.length})
                 </p>
                 <div className="max-h-24 overflow-y-auto border border-[var(--color-border-default)] rounded-[var(--radius-sm)]">
                   {bulkResult.errors.map((e, i) => (
-                    <div key={i} className="px-2 py-0.5 font-mono text-xs text-red-400 border-b border-white/5 last:border-b-0">
+                    <div key={i} className={`${TYPO_DATA_DANGER} px-2 py-0.5 border-b border-white/5 last:border-b-0`}>
                       {e}
                     </div>
                   ))}

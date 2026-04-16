@@ -14,8 +14,8 @@ import { TIER_LABELS } from "./types";
    -------------------------------------------------------------------------- */
 
 const TIER_COLOR: Record<StorageTier, string> = {
-  hot: "text-green-400",
-  cold: "text-cyan-400",
+  hot: "text-[var(--color-data-green)]",
+  cold: "text-[var(--color-data-cyan)]",
 };
 
 /* --------------------------------------------------------------------------
@@ -36,7 +36,7 @@ interface TierIndicatorProps {
 export function TierIndicator({ tier, isRetrieving = false }: TierIndicatorProps) {
   if (isRetrieving) {
     return (
-      <span className="font-mono text-[10px] uppercase tracking-wide text-orange-400">
+      <span className="font-mono text-[10px] uppercase tracking-wide text-[var(--color-data-orange)]">
         Retrieving...
       </span>
     );

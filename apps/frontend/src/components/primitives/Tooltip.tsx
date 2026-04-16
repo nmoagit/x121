@@ -136,7 +136,7 @@ export function Tooltip({ content, children, side = "top", delay = DEFAULT_DELAY
           className={cn(
             "whitespace-nowrap pointer-events-none",
             "px-2.5 py-1.5 text-xs rounded-[var(--radius-md)]",
-            "bg-[var(--color-surface-overlay)] text-[var(--color-text-primary)]",
+            "bg-[var(--color-surface-tooltip)] text-[var(--color-text-tooltip)]",
             "shadow-[var(--shadow-md)]",
             "animate-[fadeIn_var(--duration-fast)_var(--ease-default)]",
           )}

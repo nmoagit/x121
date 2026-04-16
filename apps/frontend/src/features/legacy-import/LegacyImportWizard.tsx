@@ -7,6 +7,8 @@
 
 import { useState } from "react";
 
+import { TYPO_PAGE_TITLE } from "@/lib/typography-tokens";
+
 import { GapAnalysisPanel } from "./GapAnalysisPanel";
 import { ImportPreview } from "./ImportPreview";
 import { ImportProgress } from "./ImportProgress";
@@ -94,7 +96,7 @@ export function LegacyImportWizard({
   return (
     <div data-testid="legacy-import-wizard" className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-[var(--color-text-primary)]">
+        <h2 className={TYPO_PAGE_TITLE}>
           Legacy Data Import
         </h2>
       </div>

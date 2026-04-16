@@ -17,6 +17,7 @@ import { TEXTAREA_BASE } from "@/lib/ui-classes";
 import { Upload } from "@/tokens/icons";
 
 import { useBulkImportSpeeches } from "../hooks/use-project-speech-import";
+import { TYPO_DATA, TYPO_DATA_DANGER } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Helpers
@@ -145,12 +146,12 @@ export function BulkSpeechImportModal({
         {/* Import result */}
         {result && (
           <Stack gap={3}>
-            <div className="flex items-center gap-3 font-mono text-xs">
-              <span className="text-green-400">{result.imported} imported</span>
+            <div className={`flex items-center gap-3 ${TYPO_DATA}`}>
+              <span className="text-[var(--color-data-green)]">{result.imported} imported</span>
               {result.skipped > 0 && (
                 <>
                   <span className="text-[var(--color-text-muted)] opacity-30 select-none">|</span>
-                  <span className="text-orange-400">{result.skipped} skipped</span>
+                  <span className="text-[var(--color-data-orange)]">{result.skipped} skipped</span>
                 </>
               )}
             </div>
@@ -160,11 +161,11 @@ export function BulkSpeechImportModal({
                 <p className="text-xs font-mono uppercase tracking-wide text-[var(--color-text-muted)] mb-1">
                   Matched avatars ({result.avatars_matched.length})
                 </p>
-                <div className="flex flex-wrap gap-1.5 font-mono text-xs">
+                <div className={`flex flex-wrap gap-1.5 ${TYPO_DATA}`}>
                   {result.avatars_matched.map((name, i) => (
                     <span key={name} className="flex items-center gap-1.5">
                       {i > 0 && <span className="text-[var(--color-text-muted)] opacity-30 select-none">|</span>}
-                      <span className="text-green-400">{name}</span>
+                      <span className="text-[var(--color-data-green)]">{name}</span>
                     </span>
                   ))}
                 </div>
@@ -176,11 +177,11 @@ export function BulkSpeechImportModal({
                 <p className="text-xs font-mono uppercase tracking-wide text-[var(--color-text-muted)] mb-1">
                   Unmatched avatars ({result.avatars_unmatched.length})
                 </p>
-                <div className="flex flex-wrap gap-1.5 font-mono text-xs">
+                <div className={`flex flex-wrap gap-1.5 ${TYPO_DATA}`}>
                   {result.avatars_unmatched.map((name, i) => (
                     <span key={name} className="flex items-center gap-1.5">
                       {i > 0 && <span className="text-[var(--color-text-muted)] opacity-30 select-none">|</span>}
-                      <span className="text-orange-400">{name}</span>
+                      <span className="text-[var(--color-data-orange)]">{name}</span>
                     </span>
                   ))}
                 </div>
@@ -188,7 +189,7 @@ export function BulkSpeechImportModal({
             )}
 
             {result.errors.length > 0 && (
-              <div className="text-xs font-mono text-red-400">
+              <div className={TYPO_DATA_DANGER}>
                 {result.errors.map((err) => (
                   <p key={err}>{err}</p>
                 ))}

@@ -9,6 +9,7 @@ import { useCallback, useState } from "react";
 
 import { Button, Input, Toggle } from "@/components/primitives";
 import { Card, CardBody, CardHeader } from "@/components/composite";
+import { TYPO_SECTION_TITLE } from "@/lib/typography-tokens";
 
 import type { CreateQaThreshold, QaThreshold } from "./types";
 import { CHECK_TYPE_LABELS } from "./types";
@@ -148,7 +149,7 @@ export function ThresholdEditor({
   return (
     <Card data-testid="threshold-editor" elevation="flat">
       <CardHeader>
-        <h3 className="text-base font-semibold text-[var(--color-text-primary)]">
+        <h3 className={TYPO_SECTION_TITLE}>
           QA Thresholds
         </h3>
       </CardHeader>

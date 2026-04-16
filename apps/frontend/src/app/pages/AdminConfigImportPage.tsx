@@ -17,6 +17,7 @@ import {
   type ConfigType,
 } from "@/lib/config-io";
 import { api } from "@/lib/api";
+import { TYPO_INPUT_LABEL, TYPO_CAPTION} from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Types
@@ -356,7 +357,7 @@ export function AdminConfigImportPage() {
               Failed to load:
             </p>
             {loadErrors.map((err, i) => (
-              <p key={i} className="text-xs text-[var(--color-text-secondary)]">
+              <p key={i} className={TYPO_CAPTION}>
                 {err.file}: {err.error}
               </p>
             ))}
@@ -402,19 +403,19 @@ export function AdminConfigImportPage() {
               <table className="w-full text-sm">
                 <thead className="bg-[var(--color-surface-secondary)]">
                   <tr className="border-b border-[var(--color-border-default)]">
-                    <th className="px-3 py-1.5 text-left text-xs font-medium text-[var(--color-text-muted)]">
+                    <th className={`px-3 py-1.5 text-left ${TYPO_INPUT_LABEL}`}>
                       File
                     </th>
-                    <th className="px-3 py-1.5 text-left text-xs font-medium text-[var(--color-text-muted)]">
+                    <th className={`px-3 py-1.5 text-left ${TYPO_INPUT_LABEL}`}>
                       Type
                     </th>
-                    <th className="px-3 py-1.5 text-left text-xs font-medium text-[var(--color-text-muted)]">
+                    <th className={`px-3 py-1.5 text-left ${TYPO_INPUT_LABEL}`}>
                       Source
                     </th>
-                    <th className="px-3 py-1.5 text-left text-xs font-medium text-[var(--color-text-muted)]">
+                    <th className={`px-3 py-1.5 text-left ${TYPO_INPUT_LABEL}`}>
                       Exported
                     </th>
-                    <th className="px-3 py-1.5 text-center text-xs font-medium text-[var(--color-text-muted)]">
+                    <th className={`px-3 py-1.5 text-center ${TYPO_INPUT_LABEL}`}>
                       Status
                     </th>
                     <th className="px-3 py-1.5 w-8" />
@@ -434,7 +435,7 @@ export function AdminConfigImportPage() {
                           {CONFIG_TYPE_LABELS[cfg.envelope.config_type] ?? cfg.envelope.config_type}
                         </Badge>
                       </td>
-                      <td className="px-3 py-1.5 text-xs text-[var(--color-text-secondary)]">
+                      <td className={`px-3 py-1.5 ${TYPO_CAPTION}`}>
                         {cfg.envelope.source_name}
                       </td>
                       <td className="px-3 py-1.5 text-xs text-[var(--color-text-muted)]">

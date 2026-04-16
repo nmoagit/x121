@@ -13,6 +13,7 @@ import { Modal } from "@/components/composite";
 import { Button, Input } from "@/components/primitives";
 import { Stack } from "@/components/layout";
 import { Edit3, Trash2, X } from "@/tokens/icons";
+import { TYPO_DATA } from "@/lib/typography-tokens";
 
 interface Label {
   id: number;
@@ -101,7 +102,7 @@ export function LabelManagerModal({ open, onClose, pipelineId }: LabelManagerMod
                 key={label.id}
                 className={cn(
                   "flex items-center gap-2 rounded-[var(--radius-md)] px-3 py-2",
-                  "bg-[#0d1117] border border-[var(--color-border-default)]",
+                  "bg-[var(--color-surface-primary)] border border-[var(--color-border-default)]",
                 )}
               >
                 {editingId === label.id ? (
@@ -139,7 +140,7 @@ export function LabelManagerModal({ open, onClose, pipelineId }: LabelManagerMod
                         style={{ backgroundColor: label.color }}
                       />
                     )}
-                    <span className="flex-1 font-mono text-xs text-[var(--color-text-primary)]">
+                    <span className={`flex-1 ${TYPO_DATA}`}>
                       {label.display_name}
                     </span>
                     <span className="font-mono text-[10px] text-[var(--color-text-muted)]">
@@ -148,7 +149,7 @@ export function LabelManagerModal({ open, onClose, pipelineId }: LabelManagerMod
                     <button
                       type="button"
                       onClick={() => startEdit(label)}
-                      className="p-1 rounded text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[#161b22] transition-colors"
+                      className="p-1 rounded text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-secondary)] transition-colors"
                       title="Edit"
                     >
                       <Edit3 size={12} />
@@ -156,7 +157,7 @@ export function LabelManagerModal({ open, onClose, pipelineId }: LabelManagerMod
                     <button
                       type="button"
                       onClick={() => deleteLabel(label.id)}
-                      className="p-1 rounded text-[var(--color-text-muted)] hover:text-red-400 hover:bg-[#161b22] transition-colors"
+                      className="p-1 rounded text-[var(--color-text-muted)] hover:text-[var(--color-data-red)] hover:bg-[var(--color-surface-secondary)] transition-colors"
                       title="Delete"
                     >
                       <Trash2 size={12} />

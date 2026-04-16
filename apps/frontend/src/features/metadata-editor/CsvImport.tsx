@@ -23,6 +23,7 @@ import {
 
 import { useImportMetadataCsv } from "./hooks/use-metadata-editor";
 import type { CsvImportPreview } from "./types";
+import { TYPO_DATA } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Component
@@ -134,15 +135,15 @@ export function CsvImport({ projectId }: CsvImportProps) {
             {preview.validation_errors.length > 0 && (
               <div className={TERMINAL_PANEL}>
                 <div className={TERMINAL_HEADER}>
-                  <span className={`${TERMINAL_HEADER_TITLE} !text-red-400`}>
+                  <span className={`${TERMINAL_HEADER_TITLE} !text-[var(--color-data-red)]`}>
                     Validation Errors
                   </span>
                 </div>
                 <div className={TERMINAL_BODY}>
-                  <div className="max-h-32 space-y-1 overflow-y-auto font-mono text-xs">
+                  <div className={`max-h-32 space-y-1 overflow-y-auto ${TYPO_DATA}`}>
                     {preview.validation_errors.map((err) => (
                       <div key={err.row_index} className="text-[var(--color-text-muted)]">
-                        <span className="text-red-400">Row {err.row_index + 1}</span>
+                        <span className="text-[var(--color-data-red)]">Row {err.row_index + 1}</span>
                         {err.avatar_id && (
                           <span> (Avatar #{err.avatar_id})</span>
                         )}
@@ -158,9 +159,9 @@ export function CsvImport({ projectId }: CsvImportProps) {
             {preview.diffs.length > 0 ? (
               <div className={TERMINAL_PANEL}>
                 <div className="max-h-64 overflow-auto">
-                  <table className="w-full font-mono text-xs">
+                  <table className={`w-full ${TYPO_DATA}`}>
                     <thead>
-                      <tr className={`${TERMINAL_DIVIDER} bg-[#161b22]`}>
+                      <tr className={`${TERMINAL_DIVIDER} bg-[var(--color-surface-secondary)]`}>
                         <th className={`${TERMINAL_TH} px-3 py-2`}>Avatar</th>
                         <th className={`${TERMINAL_TH} px-3 py-2`}>Field</th>
                         <th className={`${TERMINAL_TH} px-3 py-2`}>Current</th>
@@ -179,10 +180,10 @@ export function CsvImport({ projectId }: CsvImportProps) {
                           <td className="px-3 py-1.5 text-[var(--color-text-muted)]">
                             {diff.field_name}
                           </td>
-                          <td className="px-3 py-1.5 text-red-400 line-through">
+                          <td className="px-3 py-1.5 text-[var(--color-data-red)] line-through">
                             {formatValue(diff.old_value)}
                           </td>
-                          <td className="px-3 py-1.5 text-green-400">
+                          <td className="px-3 py-1.5 text-[var(--color-data-green)]">
                             {formatValue(diff.new_value)}
                           </td>
                         </tr>

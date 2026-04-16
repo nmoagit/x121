@@ -3,7 +3,8 @@
  * across providers with bulk actions, orphan detection, and provisioning.
  */
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 import { Button, Input, Select, Toggle ,  ContextLoader } from "@/components/primitives";
 import { CollapsibleSection } from "@/components/composite";
@@ -182,6 +183,7 @@ function ProviderSection({
   const provisionInstance = useProvisionInstance(providerId);
   const updateProvider = useUpdateProvider(providerId);
   const [showConfig, setShowConfig] = useState(false);
+  const configToggleRef = useRef<HTMLButtonElement>(null);
   const settings = provider?.settings ?? {};
   const preferredGpuId = settings.gpu_type_id as string | undefined;
   const quickCount = (settings.quick_provision_count as number) ?? 1;
@@ -258,6 +260,7 @@ function ProviderSection({
           </Button>
           {/* Config dropdown toggle */}
           <button
+            ref={configToggleRef}
             type="button"
             onClick={() => setShowConfig((p) => !p)}
             className="flex items-center justify-center px-1.5 rounded-r-[var(--radius-md)] bg-[var(--color-surface-tertiary)] text-[var(--color-text-primary)] hover:bg-[var(--color-border-default)] border border-l-0 border-[var(--color-border-default)]"
@@ -269,6 +272,7 @@ function ProviderSection({
           {/* Config dropdown */}
           {showConfig && (
             <QuickProvisionConfig
+              anchorRef={configToggleRef}
               gpuOptions={gpuOptions}
               selectedGpuId={preferredGpuId ?? ""}
               count={quickCount}
@@ -309,6 +313,7 @@ function ProviderSection({
    -------------------------------------------------------------------------- */
 
 interface QuickProvisionConfigProps {
+  anchorRef: React.RefObject<HTMLButtonElement | null>;
   gpuOptions: { value: string; label: string }[];
   selectedGpuId: string;
   count: number;
@@ -322,6 +327,7 @@ interface QuickProvisionConfigProps {
 }
 
 function QuickProvisionConfig({
+  anchorRef,
   gpuOptions,
   selectedGpuId,
   count,
@@ -333,12 +339,19 @@ function QuickProvisionConfig({
   onChangeNetworkVolumeId,
   onClose,
 }: QuickProvisionConfigProps) {
-  return (
+  const rect = anchorRef.current?.getBoundingClientRect();
+  const top = rect ? rect.bottom + 4 : 0;
+  const right = rect ? window.innerWidth - rect.right : 0;
+
+  return createPortal(
     <>
       {/* Backdrop to close on outside click */}
       {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
       <div className="fixed inset-0 z-40" onClick={onClose} />
-      <div className="absolute right-0 top-full mt-1 z-50 w-72 rounded-[var(--radius-md)] border border-[var(--color-border-default)] bg-[var(--color-surface-primary)] shadow-lg p-3">
+      <div
+        className="fixed z-50 w-72 rounded-[var(--radius-md)] border border-[var(--color-border-default)] bg-[var(--color-surface-primary)] shadow-lg p-3"
+        style={{ top, right }}
+      >
         <div className="space-y-3">
           <h4 className="text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">
             Quick Provision Settings
@@ -382,7 +395,8 @@ function QuickProvisionConfig({
           </p>
         </div>
       </div>
-    </>
+    </>,
+    document.body,
   );
 }
 

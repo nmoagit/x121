@@ -11,6 +11,7 @@ import { Clock } from "@/tokens/icons";
 import { sortByFrecency } from "./frecencyScorer";
 import { ENTITY_TYPE_LABELS } from "./types";
 import type { UserRecentItem } from "./types";
+import { TYPO_INPUT_LABEL } from "@/lib/typography-tokens";
 
 interface RecentItemsProps {
   items: UserRecentItem[];
@@ -38,7 +39,7 @@ export function RecentItems({
 
   return (
     <div data-testid="recent-items-list" role="listbox">
-      <div className="px-3 py-1.5 text-xs font-medium text-[var(--color-text-muted)]">
+      <div className={`px-3 py-1.5 ${TYPO_INPUT_LABEL}`}>
         Recent
       </div>
       {sorted.map((item, index) => (

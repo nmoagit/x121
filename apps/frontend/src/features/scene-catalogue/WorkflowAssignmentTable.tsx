@@ -15,6 +15,7 @@ import { useSingleTrack } from "./hooks/use-single-track";
 import type { SceneCatalogueEntry } from "./types";
 import { cn } from "@/lib/cn";
 import { TERMINAL_SELECT, TRACK_TEXT_COLORS } from "@/lib/ui-classes";
+import { TYPO_DATA, TYPO_LABEL} from "@/lib/typography-tokens";
 
 const SELECT_CLS = cn(TERMINAL_SELECT, "max-w-[200px]");
 
@@ -47,18 +48,18 @@ export function WorkflowAssignmentTable({ entries, workflowOptions, enabledTrack
       <table className="w-full">
         <thead>
           <tr className="border-b border-[var(--color-border-default)]/30">
-            <th className="w-1/4 px-3 py-1.5 text-left text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-wide font-mono">
+            <th className={`w-1/4 px-3 py-1.5 text-left ${TYPO_LABEL}`}>
               Scene Type
             </th>
             {!isSingleTrack && (
-              <th className="w-1/4 px-3 py-1.5 text-left text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-wide font-mono">
+              <th className={`w-1/4 px-3 py-1.5 text-left ${TYPO_LABEL}`}>
                 Track
               </th>
             )}
-            <th className="w-1/3 px-3 py-1.5 text-left text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-wide font-mono">
+            <th className={`w-1/3 px-3 py-1.5 text-left ${TYPO_LABEL}`}>
               Workflow
             </th>
-            <th className="w-[100px] px-3 py-1.5 text-left text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-wide font-mono">
+            <th className={`w-[100px] px-3 py-1.5 text-left ${TYPO_LABEL}`}>
               Status
             </th>
           </tr>
@@ -137,7 +138,7 @@ function SceneTypeRows({ entry, workflowOptions, enabledTrackKeys, hideTracks, s
             key={`${entry.id}-${row.trackId}-${row.isClothesOff}`}
             className="border-b border-[var(--color-border-default)]/30 last:border-b-0"
           >
-            <td className="px-3 py-1.5 font-mono text-xs">
+            <td className={`px-3 py-1.5 ${TYPO_DATA}`}>
               {idx === 0 ? (
                 <span className="text-[var(--color-text-primary)] uppercase tracking-wide">
                   {entry.name}
@@ -146,11 +147,11 @@ function SceneTypeRows({ entry, workflowOptions, enabledTrackKeys, hideTracks, s
             </td>
 
             {!hideTracks && (
-              <td className="px-3 py-1.5 font-mono text-xs">
+              <td className={`px-3 py-1.5 ${TYPO_DATA}`}>
                 <div className="flex items-center gap-2">
                   <span className={TRACK_TEXT_COLORS[row.trackSlug] ?? "text-[var(--color-text-primary)]"}>{row.trackName}</span>
                   {row.isClothesOff && (
-                    <span className="text-orange-400">clothes off</span>
+                    <span className="text-[var(--color-data-orange)]">clothes off</span>
                   )}
                 </div>
               </td>
@@ -183,9 +184,9 @@ function SceneTypeRows({ entry, workflowOptions, enabledTrackKeys, hideTracks, s
               </select>
             </td>
 
-            <td className="px-3 py-1.5 font-mono text-xs">
+            <td className={`px-3 py-1.5 ${TYPO_DATA}`}>
               {hasOverride ? (
-                <span className="text-green-400">set</span>
+                <span className="text-[var(--color-data-green)]">set</span>
               ) : (
                 <span className="text-[var(--color-text-muted)]">not set</span>
               )}

@@ -6,6 +6,7 @@
  */
 
 import { Badge } from "@/components";
+import { TYPO_INPUT_LABEL } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Types
@@ -79,7 +80,7 @@ export function StepSceneTypes({
         <button
           type="button"
           data-testid="deselect-all-btn"
-          className="text-xs font-medium text-[var(--color-text-muted)]"
+          className={TYPO_INPUT_LABEL}
           onClick={handleDeselectAll}
         >
           Deselect All

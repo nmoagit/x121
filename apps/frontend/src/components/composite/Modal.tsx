@@ -80,7 +80,7 @@ export function Modal({ open, onClose, title, size = "md", loading, children }: 
     <div
       className={cn(
         "fixed inset-0 z-50 flex items-center justify-center",
-        "bg-black/60 backdrop-blur-sm",
+        "bg-[var(--color-surface-badge-overlay)] backdrop-blur-sm",
         "animate-[fadeIn_var(--duration-fast)_var(--ease-default)]",
       )}
       role="presentation"
@@ -95,7 +95,7 @@ export function Modal({ open, onClose, title, size = "md", loading, children }: 
         className={cn(
           "relative w-full mx-[var(--spacing-4)] max-h-[calc(100vh-var(--spacing-8))]",
           "flex flex-col",
-          "bg-[#0d1117] text-[var(--color-text-primary)]",
+          "bg-[var(--color-surface-primary)] text-[var(--color-text-primary)]",
           "border border-[var(--color-border-default)] rounded-[var(--radius-lg)]",
           "shadow-[0_8px_32px_rgba(0,0,0,0.6)]",
           "animate-[scaleIn_var(--duration-fast)_var(--ease-default)]",
@@ -105,7 +105,7 @@ export function Modal({ open, onClose, title, size = "md", loading, children }: 
       >
         {/* Header */}
         {title && (
-          <div className="flex items-center justify-between px-3 py-2 border-b border-[var(--color-border-default)] bg-[#161b22] rounded-t-[var(--radius-lg)] shrink-0">
+          <div className="flex items-center justify-between px-3 py-2 border-b border-[var(--color-border-default)] bg-[var(--color-surface-secondary)] rounded-t-[var(--radius-lg)] shrink-0">
             <h2 className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide font-mono">
               {title}
             </h2>

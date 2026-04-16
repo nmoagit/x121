@@ -23,6 +23,7 @@ import {
   SOURCE_LABELS,
   SOURCE_TERMINAL_COLORS,
 } from "@/features/activity-console";
+import { TYPO_DATA, TYPO_DATA_MUTED } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Constants
@@ -38,7 +39,7 @@ function FilteredLogRow({ entry }: { entry: ActivityLogEntry }) {
   return (
     <div
       className={cn(
-        "flex items-center gap-[var(--spacing-2)] px-[var(--spacing-2)] py-0.5 font-mono text-xs",
+        `flex items-center gap-[var(--spacing-2)] px-[var(--spacing-2)] py-0.5 ${TYPO_DATA}`,
         TERMINAL_ROW_HOVER,
         "border-l-2",
         entry.level === "error" && "border-l-red-400",
@@ -111,7 +112,7 @@ export function FilteredActivityLog({
     >
       {filteredEntries.length === 0 ? (
         <div className="flex items-center justify-center h-full">
-          <p className="font-mono text-xs text-[var(--color-text-muted)]">
+          <p className={TYPO_DATA_MUTED}>
             {isConnected
               ? emptyText
               : "Not connected to activity stream"}

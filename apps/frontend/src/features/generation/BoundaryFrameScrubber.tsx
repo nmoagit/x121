@@ -1,3 +1,4 @@
+import { TYPO_INPUT_LABEL } from "@/lib/typography-tokens";
 /**
  * Boundary frame scrubber for manual frame selection (PRD-24).
  *
@@ -29,7 +30,7 @@ export function BoundaryFrameScrubber({
 }: BoundaryFrameScrubberProps) {
   return (
     <div className="flex flex-col gap-1">
-      <span className="text-xs font-medium text-[var(--color-text-secondary)]">
+      <span className={TYPO_INPUT_LABEL}>
         Select boundary frame
       </span>
 
@@ -65,7 +66,7 @@ export function BoundaryFrameScrubber({
               {/* Frame index label */}
               <span
                 className="absolute bottom-0 right-0 px-1 text-[10px] leading-tight
-                           bg-black/60 text-white rounded-tl"
+                           bg-[var(--color-surface-badge-overlay)] text-white rounded-tl"
                 data-testid={`frame-label-${index}`}
               >
                 {index}

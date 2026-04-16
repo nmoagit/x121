@@ -8,6 +8,7 @@
 
 import type { SceneAssignment } from "./types";
 import { TERMINAL_STATUS_COLORS, TRACK_TEXT_COLORS } from "@/lib/ui-classes";
+import { TYPO_DATA } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Types
@@ -38,7 +39,7 @@ export function SceneAssignmentsSection({
 }: SceneAssignmentsSectionProps) {
   return (
     <div data-testid="scene-assignments-section" className="flex flex-col gap-2">
-      <div className="flex items-center gap-2 font-mono text-xs">
+      <div className={`flex items-center gap-2 ${TYPO_DATA}`}>
         <span data-testid="scene-count" className="text-[var(--color-text-muted)]">
           {sceneCount} scene{sceneCount === 1 ? "" : "s"} assigned
         </span>
@@ -49,7 +50,7 @@ export function SceneAssignmentsSection({
           No scene assignments yet.
         </p>
       ) : (
-        <table data-testid="assignments-table" className="w-full font-mono text-xs table-fixed">
+        <table data-testid="assignments-table" className={`w-full ${TYPO_DATA} table-fixed`}>
           <colgroup>
             <col className="w-[40%]" />
             <col className="w-[25%]" />
@@ -74,7 +75,7 @@ export function SceneAssignmentsSection({
                   key={key}
                   data-testid={`assignment-row-${key}`}
                   className={`border-b border-[var(--color-border-default)]/30 last:border-b-0 ${
-                    clickable ? "cursor-pointer hover:bg-[#161b22] transition-colors" : ""
+                    clickable ? "cursor-pointer hover:bg-[var(--color-surface-secondary)] transition-colors" : ""
                   }`}
                   onClick={() => clickable && a.scene_id != null && onSceneClick?.(a.scene_id)}
                 >
@@ -85,7 +86,7 @@ export function SceneAssignmentsSection({
                     <span className="inline-flex items-center gap-1">
                       <span className={TRACK_TEXT_COLORS[a.track_slug] ?? "text-[var(--color-text-primary)]"}>{a.track_name}</span>
                       {a.has_clothes_off_transition && (
-                        <span className="text-orange-400">clothes off</span>
+                        <span className="text-[var(--color-data-orange)]">clothes off</span>
                       )}
                     </span>
                   </td>

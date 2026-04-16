@@ -17,6 +17,7 @@ import {
 } from "./hooks/use-prompt-management";
 import { WorkflowPromptOverridePanel } from "./WorkflowPromptOverridePanel";
 import type { SlotOverride } from "./types";
+import { TYPO_DATA } from "@/lib/typography-tokens";
 
 interface GroupPromptOverridesProps {
   projectId: number;
@@ -28,7 +29,7 @@ function SectionHeader({ title, collapsed, onToggle }: { title: string; collapse
   return (
     <button type="button" className="flex items-center gap-2 py-1.5 mb-1 w-full text-left group" onClick={onToggle}>
       <Icon size={14} className="text-[var(--color-text-muted)] group-hover:text-[var(--color-text-primary)] transition-colors" />
-      <span className="font-mono text-xs font-medium text-[var(--color-text-primary)] uppercase tracking-wide">{title}</span>
+      <span className={`${TYPO_DATA} font-medium text-[var(--color-text-primary)] uppercase tracking-wide`}>{title}</span>
     </button>
   );
 }

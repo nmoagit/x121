@@ -32,6 +32,7 @@ import {
 
 import { useProject, useUpdateProject } from "../hooks/use-projects";
 import { useProjectAvatars } from "../hooks/use-project-avatars";
+import { TYPO_DATA, TYPO_DATA_CYAN, TYPO_DATA_MUTED } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Component
@@ -157,15 +158,15 @@ export function ProjectDeliveryTab({ projectId }: ProjectDeliveryTabProps) {
                           key={s.avatar_id}
                           className={`${TERMINAL_DIVIDER} ${TERMINAL_ROW_HOVER}`}
                         >
-                          <td className="py-2 pr-3 font-mono text-xs text-[var(--color-text-primary)] font-medium">
+                          <td className={`py-2 pr-3 ${TYPO_DATA} font-medium`}>
                             {s.avatar_name}
                           </td>
-                          <td className="py-2 pr-3 font-mono text-xs">
+                          <td className={`py-2 pr-3 ${TYPO_DATA}`}>
                             <span className={statusColor}>
                               {DELIVERY_STATUS_LABELS[s.status]}
                             </span>
                           </td>
-                          <td className="py-2 pr-3 font-mono text-xs text-[var(--color-text-muted)]">
+                          <td className={`py-2 pr-3 ${TYPO_DATA_MUTED}`}>
                             {s.last_delivered_at
                               ? formatDateTime(s.last_delivered_at)
                               : "--"}
@@ -174,12 +175,12 @@ export function ProjectDeliveryTab({ projectId }: ProjectDeliveryTabProps) {
                             {canDownload ? (
                               <a
                                 href={`${API_BASE_URL}/projects/${projectId}/exports/${s.export_id}/download/${slug}?token=${token}`}
-                                className="font-mono text-xs text-cyan-400 hover:underline"
+                                className={`${TYPO_DATA_CYAN} hover:underline`}
                               >
                                 {slug}.rar
                               </a>
                             ) : (
-                              <span className="font-mono text-xs text-[var(--color-text-muted)]">--</span>
+                              <span className={TYPO_DATA_MUTED}>--</span>
                             )}
                           </td>
                         </tr>

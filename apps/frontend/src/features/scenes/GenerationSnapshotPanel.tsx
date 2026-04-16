@@ -8,6 +8,7 @@ import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 
 import { ChevronDown, ChevronRight } from "@/tokens/icons";
+import { TYPO_INPUT_LABEL } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Constants
@@ -60,7 +61,7 @@ export function GenerationSnapshotPanel({ snapshot }: GenerationSnapshotPanelPro
           </h4>
           {Object.entries(prompts).map(([slot, text]) => (
             <div key={slot} className="flex flex-col gap-0.5">
-              <span className="text-xs font-medium text-[var(--color-text-secondary)]">
+              <span className={TYPO_INPUT_LABEL}>
                 {slot}
               </span>
               <p className="rounded bg-[var(--color-surface-tertiary)] px-[var(--spacing-2)] py-[var(--spacing-1)] text-xs text-[var(--color-text-primary)] whitespace-pre-wrap break-words font-mono leading-relaxed">

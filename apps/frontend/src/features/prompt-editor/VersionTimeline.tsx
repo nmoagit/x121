@@ -12,6 +12,7 @@ import { Badge } from "@/components";
 import { formatDateTime } from "@/lib/format";
 
 import type { PromptVersion } from "./types";
+import { TYPO_INPUT_LABEL, TYPO_CAPTION} from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Types
@@ -124,7 +125,7 @@ export function VersionTimeline({
                 by user {ver.created_by_id}
               </span>
               {ver.change_notes && (
-                <span className="truncate text-xs text-[var(--color-text-secondary)]">
+                <span className={`truncate ${TYPO_CAPTION}`}>
                   - {ver.change_notes}
                 </span>
               )}
@@ -151,7 +152,7 @@ export function VersionTimeline({
               className="mt-3 space-y-2 border-t border-[var(--color-border-subtle)] pt-3"
             >
               <div>
-                <span className="text-xs font-medium text-[var(--color-text-secondary)]">
+                <span className={TYPO_INPUT_LABEL}>
                   Positive:
                 </span>
                 <p className="mt-0.5 whitespace-pre-wrap text-xs text-[var(--color-text-primary)]">
@@ -160,7 +161,7 @@ export function VersionTimeline({
               </div>
               {ver.negative_prompt && (
                 <div>
-                  <span className="text-xs font-medium text-[var(--color-text-secondary)]">
+                  <span className={TYPO_INPUT_LABEL}>
                     Negative:
                   </span>
                   <p className="mt-0.5 whitespace-pre-wrap text-xs text-[var(--color-text-primary)]">

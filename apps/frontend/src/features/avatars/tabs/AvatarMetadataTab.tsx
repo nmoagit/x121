@@ -63,6 +63,7 @@ import { MetadataFieldInput } from "./MetadataFieldInput";
 import { MetadataJsonDropZone } from "./MetadataJsonDropZone";
 import { RefinementJobCard } from "./RefinementJobCard";
 import { RejectVersionModal } from "./RejectVersionModal";
+import { TYPO_DATA, TYPO_DATA_CYAN, TYPO_DATA_DANGER, TYPO_DATA_SUCCESS, TYPO_CAPTION} from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Component
@@ -572,10 +573,10 @@ export function AvatarMetadataTab({ avatarId, projectId }: AvatarMetadataTabProp
   return (
     <Stack gap={4}>
       {/* Completeness ticker + Advanced toggle */}
-      <div className="flex items-center justify-between rounded-[var(--radius-lg)] border border-[var(--color-border-default)] bg-[#0d1117] px-[var(--spacing-3)] py-[var(--spacing-2)] font-mono text-xs">
+      <div className={`flex items-center justify-between rounded-[var(--radius-lg)] border border-[var(--color-border-default)] bg-[var(--color-surface-primary)] px-[var(--spacing-3)] py-[var(--spacing-2)] ${TYPO_DATA}`}>
         <div className="flex items-center gap-3">
           <span className="uppercase tracking-wide text-[var(--color-text-muted)]">completeness:</span>
-          <span className={`font-semibold text-sm ${completePct >= 100 ? "text-green-400" : "text-cyan-400"}`}>
+          <span className={`font-semibold text-sm ${completePct >= 100 ? "text-[var(--color-data-green)]" : "text-[var(--color-data-cyan)]"}`}>
             {completePct}%
           </span>
           <span className="text-[var(--color-text-muted)] opacity-30">|</span>
@@ -586,7 +587,7 @@ export function AvatarMetadataTab({ avatarId, projectId }: AvatarMetadataTabProp
             <>
               <span className="text-[var(--color-text-muted)] opacity-30">|</span>
               <Tooltip content="Source bio or tov files changed since this version was created. Consider re-generating or refining.">
-                <span className="text-orange-400 cursor-help">outdated</span>
+                <span className="text-[var(--color-data-orange)] cursor-help">outdated</span>
               </Tooltip>
               <Button
                 variant="ghost"
@@ -618,7 +619,7 @@ export function AvatarMetadataTab({ avatarId, projectId }: AvatarMetadataTabProp
       {/* Source protection notice */}
       <div className="flex items-center gap-[var(--spacing-2)] rounded-[var(--radius-md)] bg-[var(--color-action-primary)]/5 px-3 py-2">
         <Info size={14} className="shrink-0 text-[var(--color-action-primary)]" />
-        <span className="text-xs text-[var(--color-text-secondary)]">
+        <span className={TYPO_CAPTION}>
           Importing metadata creates a new version. Bio and ToV files are not affected.
         </span>
       </div>
@@ -662,7 +663,7 @@ export function AvatarMetadataTab({ avatarId, projectId }: AvatarMetadataTabProp
               size="xs"
               icon={<Trash2 size={12} />}
               onClick={() => setConfirmTarget("bio")}
-              className="!text-red-400 hover:!text-red-300"
+              className="!text-[var(--color-data-red)] hover:!text-red-300"
             >
               bio.json
             </Button>
@@ -673,7 +674,7 @@ export function AvatarMetadataTab({ avatarId, projectId }: AvatarMetadataTabProp
               size="xs"
               icon={<Trash2 size={12} />}
               onClick={() => setConfirmTarget("tov")}
-              className="!text-red-400 hover:!text-red-300"
+              className="!text-[var(--color-data-red)] hover:!text-red-300"
             >
               tov.json
             </Button>
@@ -684,7 +685,7 @@ export function AvatarMetadataTab({ avatarId, projectId }: AvatarMetadataTabProp
               size="xs"
               icon={<Trash2 size={12} />}
               onClick={() => setConfirmTarget("metadata")}
-              className="!text-red-400 hover:!text-red-300"
+              className="!text-[var(--color-data-red)] hover:!text-red-300"
             >
               Metadata
             </Button>
@@ -695,7 +696,7 @@ export function AvatarMetadataTab({ avatarId, projectId }: AvatarMetadataTabProp
               size="xs"
               icon={<Trash2 size={12} />}
               onClick={() => setConfirmTarget("avatar")}
-              className="!text-red-400 hover:!text-red-300"
+              className="!text-[var(--color-data-red)] hover:!text-red-300"
             >
               AvatarJSON
             </Button>
@@ -712,9 +713,9 @@ export function AvatarMetadataTab({ avatarId, projectId }: AvatarMetadataTabProp
               Viewing v{previewVersion.version_number}
             </span>
             <span className="text-xs font-mono text-[var(--color-text-muted)]">{previewVersion.source}</span>
-            {previewVersion.is_active && <span className="text-xs font-mono text-green-400">active</span>}
+            {previewVersion.is_active && <span className={TYPO_DATA_SUCCESS}>active</span>}
             {previewVersion.rejection_reason && (
-              <span className="text-xs font-mono text-red-400">rejected</span>
+              <span className={TYPO_DATA_DANGER}>rejected</span>
             )}
             {diffMap.size > 0 && (
               <span className="text-[10px] text-[var(--color-text-muted)]">
@@ -767,7 +768,7 @@ export function AvatarMetadataTab({ avatarId, projectId }: AvatarMetadataTabProp
               ref={advancedRef}
               value={advancedJson}
               onChange={handleAdvancedJsonChange}
-              className="w-full overflow-hidden rounded-[var(--radius-lg)] border border-[var(--color-border-default)] bg-[#0d1117] p-3 font-mono text-xs text-cyan-400 focus:outline-2 focus:outline-[var(--color-border-focus)]"
+              className={`${TYPO_DATA_CYAN} w-full overflow-hidden rounded-[var(--radius-lg)] border border-[var(--color-border-default)] bg-[var(--color-surface-primary)] p-3 focus:outline-2 focus:outline-[var(--color-border-focus)]`}
               spellCheck={false}
             />
             {jsonError && (
@@ -908,7 +909,7 @@ export function AvatarMetadataTab({ avatarId, projectId }: AvatarMetadataTabProp
               <div
                 key={v.id}
                 className={cn(
-                  "flex items-center justify-between rounded-[var(--radius-md)] px-3 py-1.5 cursor-pointer transition-colors font-mono text-xs",
+                  `flex items-center justify-between rounded-[var(--radius-md)] px-3 py-1.5 cursor-pointer transition-colors ${TYPO_DATA}`,
                   v.is_active && "bg-green-400/10",
                   previewVersion?.id === v.id && !v.is_active && "bg-cyan-400/10",
                 )}
@@ -916,16 +917,16 @@ export function AvatarMetadataTab({ avatarId, projectId }: AvatarMetadataTabProp
               >
                 <div className="flex items-center gap-2">
                   {previewVersion?.id === v.id && (
-                    <Eye size={12} className="text-cyan-400" />
+                    <Eye size={12} className="text-[var(--color-data-cyan)]" />
                   )}
-                  <span className="font-semibold text-cyan-400">v{v.version_number}</span>
+                  <span className="font-semibold text-[var(--color-data-cyan)]">v{v.version_number}</span>
                   <span className="text-[var(--color-text-muted)]">{v.source}</span>
-                  {v.is_active && <span className="text-green-400">active</span>}
+                  {v.is_active && <span className="text-[var(--color-data-green)]">active</span>}
                   {v.rejection_reason && (
-                    <span className="text-red-400" title={v.rejection_reason}>rejected</span>
+                    <span className="text-[var(--color-data-red)]" title={v.rejection_reason}>rejected</span>
                   )}
                   {v.is_active && (
-                    <span className={v.approval_status === "approved" ? "text-green-400" : v.approval_status === "rejected" ? "text-red-400" : "text-[var(--color-text-muted)]"} title={v.approval_comment ?? undefined}>
+                    <span className={v.approval_status === "approved" ? "text-[var(--color-data-green)]" : v.approval_status === "rejected" ? "text-[var(--color-data-red)]" : "text-[var(--color-text-muted)]"} title={v.approval_comment ?? undefined}>
                       {METADATA_APPROVAL_LABEL[v.approval_status].toLowerCase()}
                     </span>
                   )}
@@ -1051,14 +1052,14 @@ export function AvatarMetadataTab({ avatarId, projectId }: AvatarMetadataTabProp
         <div className="grid grid-cols-1 gap-[var(--spacing-4)] lg:grid-cols-2">
           {bioJson && (
             <TerminalSection title="bio.json">
-              <pre className="max-h-[400px] overflow-auto font-mono text-[10px] leading-relaxed text-cyan-400">
+              <pre className="max-h-[400px] overflow-auto font-mono text-[10px] leading-relaxed text-[var(--color-data-cyan)]">
                 {JSON.stringify(bioJson, null, 2)}
               </pre>
             </TerminalSection>
           )}
           {tovJson && (
             <TerminalSection title="tov.json">
-              <pre className="max-h-[400px] overflow-auto font-mono text-[10px] leading-relaxed text-cyan-400">
+              <pre className="max-h-[400px] overflow-auto font-mono text-[10px] leading-relaxed text-[var(--color-data-cyan)]">
                 {JSON.stringify(tovJson, null, 2)}
               </pre>
             </TerminalSection>

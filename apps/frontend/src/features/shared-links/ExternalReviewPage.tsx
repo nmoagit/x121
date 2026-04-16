@@ -11,6 +11,7 @@ import { useState } from "react";
 import { Stack } from "@/components/layout";
 import { Badge ,  ContextLoader } from "@/components/primitives";
 import { formatCountdown } from "@/lib/format";
+import { TYPO_PAGE_TITLE } from "@/lib/typography-tokens";
 
 import { FeedbackForm } from "./FeedbackForm";
 import { LinkError } from "./LinkError";
@@ -63,7 +64,7 @@ export function ExternalReviewPage({ token }: ExternalReviewPageProps) {
         <Stack gap={6}>
           {/* Header */}
           <Stack gap={2} align="center">
-            <h1 className="text-xl font-semibold text-[var(--color-text-primary)]">
+            <h1 className={TYPO_PAGE_TITLE}>
               Review Request
             </h1>
             <div className="flex items-center gap-2">

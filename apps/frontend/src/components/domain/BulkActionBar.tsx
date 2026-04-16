@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 
 import { Button } from "@/components/primitives";
 import { CheckCircle, Download, Minus, Tag, X, XCircle } from "@/tokens/icons";
+import { TYPO_DATA, TYPO_DATA_MUTED } from "@/lib/typography-tokens";
 
 interface BulkActionBarProps {
   selectedCount: number;
@@ -45,10 +46,10 @@ export function BulkActionBar({
   const showSelectAllBanner = isAllPageSelected && !selectAllMatching && totalCount > pageItemCount;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-40 bg-[#0d1117] border-t border-[var(--color-border-default)]">
+    <div className="fixed bottom-0 left-0 right-0 z-40 bg-[var(--color-surface-primary)] border-t border-[var(--color-border-default)]">
       {/* "Select all matching" banner */}
       {showSelectAllBanner && (
-        <div className="flex items-center justify-center gap-2 py-1.5 bg-[#161b22] border-b border-[var(--color-border-default)] font-mono text-xs text-[var(--color-text-muted)]">
+        <div className={`flex items-center justify-center gap-2 py-1.5 bg-[var(--color-surface-secondary)] border-b border-[var(--color-border-default)] ${TYPO_DATA_MUTED}`}>
           <span>All {pageItemCount} items on this page are selected.</span>
           <button
             type="button"
@@ -66,7 +67,7 @@ export function BulkActionBar({
       {/* Action row */}
       <div className="flex items-center justify-between gap-4 px-4 py-2.5">
         {/* Selection count */}
-        <span className="font-mono text-xs font-medium text-[var(--color-text-primary)] shrink-0">
+        <span className={`${TYPO_DATA} font-medium text-[var(--color-text-primary)] shrink-0`}>
           {selectAllMatching
             ? `All ${totalCount} matching selected`
             : `${selectedCount} selected`}

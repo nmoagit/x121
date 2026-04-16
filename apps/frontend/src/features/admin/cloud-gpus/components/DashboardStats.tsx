@@ -4,6 +4,7 @@
 
 import { formatCents } from "@/lib/format";
 import type { CloudDashboardStats } from "../hooks/use-cloud-providers";
+import { TYPO_DATA } from "@/lib/typography-tokens";
 
 interface Props {
   stats: CloudDashboardStats;
@@ -18,14 +19,14 @@ export function DashboardStats({ stats }: Props) {
   ];
 
   return (
-    <div className="flex items-center gap-0 rounded-[var(--radius-lg)] border border-[var(--color-border-default)] bg-[#0d1117] px-[var(--spacing-3)] py-[var(--spacing-2)] font-mono text-xs overflow-x-auto">
+    <div className={`flex items-center gap-0 rounded-[var(--radius-lg)] border border-[var(--color-border-default)] bg-[var(--color-surface-primary)] px-[var(--spacing-3)] py-[var(--spacing-2)] ${TYPO_DATA} overflow-x-auto`}>
       {items.map((item, idx) => (
         <span key={item.label} className="flex items-center whitespace-nowrap">
           {idx > 0 && (
             <span className="mx-3 text-[var(--color-text-muted)] opacity-30 select-none">|</span>
           )}
           <span className="uppercase tracking-wide text-[var(--color-text-muted)]">{item.label}:</span>
-          <span className={`ml-1.5 font-semibold text-sm ${item.complete ? "text-green-400" : "text-cyan-400"}`}>
+          <span className={`ml-1.5 font-semibold text-sm ${item.complete ? "text-[var(--color-data-green)]" : "text-[var(--color-data-cyan)]"}`}>
             {item.value}
           </span>
         </span>

@@ -85,7 +85,7 @@ export function HoverScrub({ keyframes, onFrameSelect }: HoverScrubProps) {
       {/* Timecode overlay */}
       <div
         data-testid="scrub-timecode"
-        className="absolute bottom-2 left-2 rounded bg-black/70 px-2 py-1 text-xs font-medium text-white"
+        className="absolute bottom-2 left-2 rounded bg-[var(--color-surface-badge-overlay)] px-2 py-1 text-xs font-medium text-white"
       >
         #{active.frame_number} &middot; {formatTimecode(active.timestamp_secs)}
       </div>

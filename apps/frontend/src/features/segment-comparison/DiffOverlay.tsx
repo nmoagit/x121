@@ -13,6 +13,7 @@
 import { Button } from "@/components/primitives";
 import { cn } from "@/lib/cn";
 import { Eye, EyeOff } from "@/tokens/icons";
+import { TYPO_INPUT_LABEL } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Props
@@ -59,7 +60,7 @@ export function DiffOverlayPanel({ enabled }: DiffOverlayPanelProps) {
         "flex items-center justify-center",
       )}
     >
-      <span className="text-xs font-medium text-[var(--color-text-muted)] bg-[var(--color-surface-primary)]/80 px-2 py-1 rounded-[var(--radius-sm)]">
+      <span className={`bg-[var(--color-surface-primary)]/80 px-2 py-1 rounded-[var(--radius-sm)] ${TYPO_INPUT_LABEL}`}>
         SSIM Diff (placeholder)
       </span>
     </div>

@@ -80,9 +80,9 @@ export const CONSISTENCY_THRESHOLDS = {
 
 /** Returns a text color class based on a consistency score. */
 export function consistencyColor(score: number): string {
-  if (score >= CONSISTENCY_THRESHOLDS.good) return "text-green-400";
+  if (score >= CONSISTENCY_THRESHOLDS.good) return "text-[var(--color-data-green)]";
   if (score >= CONSISTENCY_THRESHOLDS.warning) return "text-yellow-400";
-  return "text-red-400";
+  return "text-[var(--color-data-red)]";
 }
 
 /** Returns a background color class based on a consistency score. */

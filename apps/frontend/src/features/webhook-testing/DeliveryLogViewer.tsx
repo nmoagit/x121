@@ -15,6 +15,7 @@ import { DeliveryRow } from "./DeliveryRow";
 import { useDeliveryLogs } from "./hooks/use-webhook-testing";
 import type { DeliveryLogFilters } from "./types";
 import { DELIVERY_FILTER_OPTIONS } from "./types";
+import { TYPO_CAPTION } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Constants
@@ -164,7 +165,7 @@ export function DeliveryLogViewer() {
           >
             Previous
           </Button>
-          <span className="text-xs text-[var(--color-text-secondary)]">
+          <span className={TYPO_CAPTION}>
             Page {page} of {totalPages}
           </span>
           <Button

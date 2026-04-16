@@ -10,6 +10,7 @@ import { useState } from "react";
 import { Badge, SearchInput } from "@/components";
 
 import type { PromptLibraryEntry } from "./types";
+import { TYPO_INPUT_LABEL, TYPO_CAPTION} from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Types
@@ -121,12 +122,12 @@ export function PromptLibraryBrowser({
               className="mt-3 space-y-2 border-t border-[var(--color-border-subtle)] pt-3"
             >
               {entry.description && (
-                <p className="text-xs text-[var(--color-text-secondary)]">
+                <p className={TYPO_CAPTION}>
                   {entry.description}
                 </p>
               )}
               <div>
-                <span className="text-xs font-medium text-[var(--color-text-secondary)]">
+                <span className={TYPO_INPUT_LABEL}>
                   Positive:
                 </span>
                 <p className="mt-0.5 whitespace-pre-wrap text-xs text-[var(--color-text-primary)]">
@@ -135,7 +136,7 @@ export function PromptLibraryBrowser({
               </div>
               {entry.negative_prompt && (
                 <div>
-                  <span className="text-xs font-medium text-[var(--color-text-secondary)]">
+                  <span className={TYPO_INPUT_LABEL}>
                     Negative:
                   </span>
                   <p className="mt-0.5 whitespace-pre-wrap text-xs text-[var(--color-text-primary)]">
@@ -145,7 +146,7 @@ export function PromptLibraryBrowser({
               )}
               {entry.model_compatibility && entry.model_compatibility.length > 0 && (
                 <div className="flex flex-wrap gap-1">
-                  <span className="text-xs font-medium text-[var(--color-text-secondary)]">
+                  <span className={TYPO_INPUT_LABEL}>
                     Avatars:
                   </span>
                   {entry.model_compatibility.map((model) => (

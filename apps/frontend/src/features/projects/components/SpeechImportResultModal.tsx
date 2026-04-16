@@ -7,6 +7,7 @@ import { Stack } from "@/components/layout";
 import { Button } from "@/components/primitives";
 
 import type { BulkImportReport } from "@/features/avatars/types";
+import { TYPO_DATA, TYPO_DATA_CYAN, TYPO_DATA_DANGER, TYPO_DATA_WARNING, TYPO_LABEL} from "@/lib/typography-tokens";
 
 interface SpeechImportResultModalProps {
   open: boolean;
@@ -19,8 +20,8 @@ export function SpeechImportResultModal({ open, onClose, result }: SpeechImportR
     <Modal open={open} onClose={onClose} title="Speech Import Complete" size="md">
       <Stack gap={3}>
         {/* Counts */}
-        <div className="flex items-center gap-3 font-mono text-xs">
-          <span><span className="text-green-400">{result.imported}</span> imported</span>
+        <div className={`flex items-center gap-3 ${TYPO_DATA}`}>
+          <span><span className="text-[var(--color-data-green)]">{result.imported}</span> imported</span>
           {result.skipped > 0 && (
             <>
               <span className="text-white/20">|</span>
@@ -32,12 +33,12 @@ export function SpeechImportResultModal({ open, onClose, result }: SpeechImportR
         {/* Matched models */}
         {result.avatars_matched.length > 0 && (
           <div>
-            <p className="font-mono text-[10px] uppercase tracking-wide text-[var(--color-text-muted)] mb-1">
+            <p className={`${TYPO_LABEL} mb-1`}>
               matched ({result.avatars_matched.length})
             </p>
             <div className="max-h-32 overflow-y-auto border border-[var(--color-border-default)] rounded-[var(--radius-sm)]">
               {result.avatars_matched.map((name) => (
-                <div key={name} className="px-2 py-0.5 font-mono text-xs text-cyan-400 border-b border-white/5 last:border-b-0">
+                <div key={name} className={`${TYPO_DATA_CYAN} px-2 py-0.5 border-b border-white/5 last:border-b-0`}>
                   {name}
                 </div>
               ))}
@@ -48,12 +49,12 @@ export function SpeechImportResultModal({ open, onClose, result }: SpeechImportR
         {/* Unmatched models */}
         {result.avatars_unmatched.length > 0 && (
           <div>
-            <p className="font-mono text-[10px] uppercase tracking-wide text-orange-400 mb-1">
+            <p className="font-mono text-[10px] uppercase tracking-wide text-[var(--color-data-orange)] mb-1">
               unmatched ({result.avatars_unmatched.length})
             </p>
             <div className="max-h-24 overflow-y-auto border border-[var(--color-border-default)] rounded-[var(--radius-sm)]">
               {result.avatars_unmatched.map((name) => (
-                <div key={name} className="px-2 py-0.5 font-mono text-xs text-orange-400 border-b border-white/5 last:border-b-0">
+                <div key={name} className={`${TYPO_DATA_WARNING} px-2 py-0.5 border-b border-white/5 last:border-b-0`}>
                   {name}
                 </div>
               ))}
@@ -64,12 +65,12 @@ export function SpeechImportResultModal({ open, onClose, result }: SpeechImportR
         {/* Errors */}
         {result.errors.length > 0 && (
           <div>
-            <p className="font-mono text-[10px] uppercase tracking-wide text-red-400 mb-1">
+            <p className="font-mono text-[10px] uppercase tracking-wide text-[var(--color-data-red)] mb-1">
               errors ({result.errors.length})
             </p>
             <div className="max-h-24 overflow-y-auto border border-[var(--color-border-default)] rounded-[var(--radius-sm)]">
               {result.errors.map((e, i) => (
-                <div key={i} className="px-2 py-0.5 font-mono text-xs text-red-400 border-b border-white/5 last:border-b-0">
+                <div key={i} className={`${TYPO_DATA_DANGER} px-2 py-0.5 border-b border-white/5 last:border-b-0`}>
                   {e}
                 </div>
               ))}

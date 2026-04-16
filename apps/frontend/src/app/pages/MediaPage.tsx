@@ -42,6 +42,7 @@ import { toSelectOptions } from "@/lib/select-utils";
 import { usePipelineContextSafe } from "@/features/pipelines";
 import { useProjects } from "@/features/projects/hooks/use-projects";
 import { Check, CheckCircle, ChevronLeft, ChevronRight, Download, FolderSearch, Image as ImageIcon, LayoutGrid, List, Maximize2, Minimize2, XCircle } from "@/tokens/icons";
+import { TYPO_DATA } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Read-only browse item
@@ -67,7 +68,7 @@ function BrowseVariantItem({
   const statusId = variant.status_id as MediaVariantStatusId;
 
   return (
-    <div className={`rounded-[var(--radius-lg)] border border-[var(--color-border-default)] transition-colors bg-[#0d1117] hover:bg-[#161b22] ${selected ? "ring-2 ring-blue-500/50" : ""} ${!variant.avatar_is_enabled ? "opacity-70 grayscale" : ""}`}>
+    <div className={`rounded-[var(--radius-lg)] border border-[var(--color-border-default)] transition-colors bg-[var(--color-surface-primary)] hover:bg-[var(--color-surface-secondary)] ${selected ? "ring-2 ring-blue-500/50" : ""} ${!variant.avatar_is_enabled ? "opacity-70 grayscale" : ""}`}>
       <div className="flex items-center gap-3 p-3">
         {/* Selection checkbox */}
         <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
@@ -78,7 +79,7 @@ function BrowseVariantItem({
         <button
           type="button"
           onClick={onPreview}
-          className="group/preview relative h-14 w-14 shrink-0 rounded overflow-hidden bg-[#161b22] cursor-pointer"
+          className="group/preview relative h-14 w-14 shrink-0 rounded overflow-hidden bg-[var(--color-surface-secondary)] cursor-pointer"
         >
           {variant.file_path ? (
             <ProgressiveImage
@@ -104,7 +105,7 @@ function BrowseVariantItem({
         <button
           type="button"
           onClick={onNavigate}
-          className="flex min-w-0 flex-1 flex-col gap-0.5 text-left cursor-pointer font-mono text-xs"
+          className={`flex min-w-0 flex-1 flex-col gap-0.5 text-left cursor-pointer ${TYPO_DATA}`}
         >
           <div className="flex items-center gap-2">
             <span className="font-medium text-[var(--color-text-primary)]">
@@ -115,10 +116,10 @@ function BrowseVariantItem({
                 {variant.variant_type}
               </span>
             )}
-            {variant.is_hero && <span className="text-green-400">hero</span>}
+            {variant.is_hero && <span className="text-[var(--color-data-green)]">hero</span>}
           </div>
           <div className="flex items-center gap-2 text-[10px] text-[var(--color-text-muted)]">
-            <span className={TERMINAL_STATUS_COLORS[(MEDIA_VARIANT_STATUS_LABEL[statusId] ?? "unknown").toLowerCase()] ?? "text-cyan-400"}>
+            <span className={TERMINAL_STATUS_COLORS[(MEDIA_VARIANT_STATUS_LABEL[statusId] ?? "unknown").toLowerCase()] ?? "text-[var(--color-data-cyan)]"}>
               {(MEDIA_VARIANT_STATUS_LABEL[statusId] ?? "unknown").toLowerCase()}
             </span>
             <span className="opacity-30">|</span>
@@ -143,7 +144,7 @@ function BrowseVariantItem({
           <button
             type="button"
             onClick={onApprove}
-            className={`p-1 rounded transition-colors ${variant.status_id === 2 ? "text-green-400" : "text-[var(--color-text-muted)] hover:text-green-400"}`}
+            className={`p-1 rounded transition-colors ${variant.status_id === 2 ? "text-[var(--color-data-green)]" : "text-[var(--color-text-muted)] hover:text-[var(--color-data-green)]"}`}
             title={variant.status_id === 2 ? "Approved" : "Approve"}
           >
             <CheckCircle size={16} />
@@ -151,7 +152,7 @@ function BrowseVariantItem({
           <button
             type="button"
             onClick={onReject}
-            className={`p-1 rounded transition-colors ${variant.status_id === 3 ? "text-red-400" : "text-[var(--color-text-muted)] hover:text-red-400"}`}
+            className={`p-1 rounded transition-colors ${variant.status_id === 3 ? "text-[var(--color-data-red)]" : "text-[var(--color-text-muted)] hover:text-[var(--color-data-red)]"}`}
             title={variant.status_id === 3 ? "Rejected" : "Reject"}
           >
             <XCircle size={16} />
@@ -186,10 +187,10 @@ function BrowseVariantCard({
   const statusId = variant.status_id as MediaVariantStatusId;
 
   return (
-    <div className={`relative rounded-[var(--radius-lg)] border border-[var(--color-border-default)] overflow-hidden transition-colors bg-[#0d1117] hover:bg-[#161b22] ${selected ? "ring-2 ring-blue-500/50" : ""} ${!variant.avatar_is_enabled ? "opacity-70 grayscale" : ""}`}>
+    <div className={`relative rounded-[var(--radius-lg)] border border-[var(--color-border-default)] overflow-hidden transition-colors bg-[var(--color-surface-primary)] hover:bg-[var(--color-surface-secondary)] ${selected ? "ring-2 ring-blue-500/50" : ""} ${!variant.avatar_is_enabled ? "opacity-70 grayscale" : ""}`}>
       {/* Selection checkbox overlay */}
       <div
-        className="absolute top-1 left-1 z-10 rounded bg-black/50 p-0.5"
+        className="absolute top-1 left-1 z-10 rounded bg-[var(--color-surface-badge-overlay)] p-0.5"
         onClick={(e) => e.stopPropagation()}
       >
         <Checkbox checked={selected} onChange={onToggleSelect} size="sm" />
@@ -199,7 +200,7 @@ function BrowseVariantCard({
       <button
         type="button"
         onClick={onPreview}
-        className="relative aspect-square w-full cursor-pointer bg-[#161b22]"
+        className="relative aspect-square w-full cursor-pointer bg-[var(--color-surface-secondary)]"
       >
         {variant.file_path ? (
           <ProgressiveImage
@@ -228,7 +229,7 @@ function BrowseVariantCard({
           onClick={onNavigate}
           className="min-w-0 flex-1 text-left cursor-pointer"
         >
-          <div className="flex items-center gap-1.5 font-mono text-xs">
+          <div className={`flex items-center gap-1.5 ${TYPO_DATA}`}>
             <span className="truncate font-medium text-[var(--color-text-primary)]">{variant.avatar_name}</span>
             {variant.variant_type && (
               <span className={`shrink-0 text-[10px] ${TRACK_TEXT_COLORS[variant.variant_type] ?? "text-[var(--color-text-muted)]"}`}>
@@ -237,18 +238,18 @@ function BrowseVariantCard({
             )}
           </div>
           <div className="flex items-center gap-1.5 font-mono text-[10px] text-[var(--color-text-muted)] mt-0.5">
-            <span className={TERMINAL_STATUS_COLORS[(MEDIA_VARIANT_STATUS_LABEL[statusId] ?? "unknown").toLowerCase()] ?? "text-cyan-400"}>
+            <span className={TERMINAL_STATUS_COLORS[(MEDIA_VARIANT_STATUS_LABEL[statusId] ?? "unknown").toLowerCase()] ?? "text-[var(--color-data-cyan)]"}>
               {(MEDIA_VARIANT_STATUS_LABEL[statusId] ?? "unknown").toLowerCase()}
             </span>
             <span>v{variant.version}</span>
-            {variant.is_hero && <span className="text-green-400">hero</span>}
+            {variant.is_hero && <span className="text-[var(--color-data-green)]">hero</span>}
           </div>
         </button>
         <div className="flex flex-col gap-0.5 shrink-0">
-          <button type="button" onClick={onApprove} className={`p-0.5 rounded transition-colors ${variant.status_id === 2 ? "text-green-400" : "text-[var(--color-text-muted)] hover:text-green-400"}`} title="Approve">
+          <button type="button" onClick={onApprove} className={`p-0.5 rounded transition-colors ${variant.status_id === 2 ? "text-[var(--color-data-green)]" : "text-[var(--color-text-muted)] hover:text-[var(--color-data-green)]"}`} title="Approve">
             <CheckCircle size={14} />
           </button>
-          <button type="button" onClick={onReject} className={`p-0.5 rounded transition-colors ${variant.status_id === 3 ? "text-red-400" : "text-[var(--color-text-muted)] hover:text-red-400"}`} title="Reject">
+          <button type="button" onClick={onReject} className={`p-0.5 rounded transition-colors ${variant.status_id === 3 ? "text-[var(--color-data-red)]" : "text-[var(--color-text-muted)] hover:text-[var(--color-data-red)]"}`} title="Reject">
             <XCircle size={14} />
           </button>
         </div>
@@ -693,7 +694,7 @@ function ImagePreviewModal({
             {/* Expand toggle — overlays top-right of image */}
             <button
               type="button"
-              className="absolute top-2 right-2 p-1 rounded bg-black/50 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] opacity-0 group-hover/img:opacity-100 transition-opacity"
+              className="absolute top-2 right-2 p-1 rounded bg-[var(--color-surface-badge-overlay)] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] opacity-0 group-hover/img:opacity-100 transition-opacity"
               onClick={() => setExpanded((v) => !v)}
               title={expanded ? "Compact" : "Expand"}
             >
@@ -703,7 +704,7 @@ function ImagePreviewModal({
 
           {/* Metadata row */}
           <div className="flex items-center gap-2 font-mono text-[10px] text-[var(--color-text-muted)]">
-            <span className={TERMINAL_STATUS_COLORS[(MEDIA_VARIANT_STATUS_LABEL[variant.status_id as MediaVariantStatusId] ?? "unknown").toLowerCase()] ?? "text-cyan-400"}>
+            <span className={TERMINAL_STATUS_COLORS[(MEDIA_VARIANT_STATUS_LABEL[variant.status_id as MediaVariantStatusId] ?? "unknown").toLowerCase()] ?? "text-[var(--color-data-cyan)]"}>
               {(MEDIA_VARIANT_STATUS_LABEL[variant.status_id as MediaVariantStatusId] ?? "unknown").toLowerCase()}
             </span>
             <span className="opacity-30">|</span>
@@ -717,7 +718,7 @@ function ImagePreviewModal({
             <span className="opacity-30">|</span>
             <span>v{variant.version}</span>
             {variant.is_hero && (
-              <><span className="opacity-30">|</span><span className="text-green-400">hero</span></>
+              <><span className="opacity-30">|</span><span className="text-[var(--color-data-green)]">hero</span></>
             )}
             <span className="opacity-30">|</span>
             <span>{variant.avatar_name} · {variant.project_name}</span>
@@ -737,7 +738,7 @@ function ImagePreviewModal({
                 a.download = filename;
                 a.click();
               }}
-              className="p-1 rounded text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[#161b22] transition-colors"
+              className="p-1 rounded text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-secondary)] transition-colors"
               title="Download"
             >
               <Download size={14} />
@@ -749,7 +750,7 @@ function ImagePreviewModal({
               type="button"
               onClick={onApprove}
               disabled={!onApprove}
-              className={`p-1 rounded transition-colors disabled:opacity-30 disabled:pointer-events-none ${variant.status_id === 2 ? "text-green-400" : "text-[var(--color-text-muted)] hover:text-green-400 hover:bg-[#161b22]"}`}
+              className={`p-1 rounded transition-colors disabled:opacity-30 disabled:pointer-events-none ${variant.status_id === 2 ? "text-[var(--color-data-green)]" : "text-[var(--color-text-muted)] hover:text-[var(--color-data-green)] hover:bg-[var(--color-surface-secondary)]"}`}
               title={variant.status_id === 2 ? "Approved" : "Approve"}
             >
               <CheckCircle size={14} />
@@ -758,7 +759,7 @@ function ImagePreviewModal({
               type="button"
               onClick={onReject}
               disabled={!onReject}
-              className={`p-1 rounded transition-colors disabled:opacity-30 disabled:pointer-events-none ${variant.status_id === 3 ? "text-red-400" : "text-[var(--color-text-muted)] hover:text-red-400 hover:bg-[#161b22]"}`}
+              className={`p-1 rounded transition-colors disabled:opacity-30 disabled:pointer-events-none ${variant.status_id === 3 ? "text-[var(--color-data-red)]" : "text-[var(--color-text-muted)] hover:text-[var(--color-data-red)] hover:bg-[var(--color-surface-secondary)]"}`}
               title={variant.status_id === 3 ? "Rejected" : "Reject"}
             >
               <XCircle size={14} />
@@ -771,7 +772,7 @@ function ImagePreviewModal({
                 type="button"
                 onClick={onPrev}
                 disabled={!onPrev}
-                className="p-1 rounded text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[#161b22] transition-colors disabled:opacity-20 disabled:pointer-events-none"
+                className="p-1 rounded text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-secondary)] transition-colors disabled:opacity-20 disabled:pointer-events-none"
                 title="Previous image"
               >
                 <ChevronLeft size={16} />
@@ -780,7 +781,7 @@ function ImagePreviewModal({
                 type="button"
                 onClick={onNext}
                 disabled={!onNext}
-                className="p-1 rounded text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[#161b22] transition-colors disabled:opacity-20 disabled:pointer-events-none"
+                className="p-1 rounded text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-secondary)] transition-colors disabled:opacity-20 disabled:pointer-events-none"
                 title="Next image"
               >
                 <ChevronRight size={16} />

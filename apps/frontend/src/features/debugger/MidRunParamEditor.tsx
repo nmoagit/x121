@@ -12,6 +12,7 @@ import { Badge, Button } from "@/components/primitives";
 import { Stack } from "@/components/layout";
 
 import { DEBUGGER_CARD_CLASSES, DEBUGGER_TEXTAREA_BASE } from "./types";
+import { TYPO_INPUT_LABEL } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Props
@@ -83,7 +84,7 @@ export function MidRunParamEditor({
       {/* JSON editor */}
       <label
         htmlFor="param-editor"
-        className="block text-xs font-medium text-[var(--color-text-secondary)] mb-1"
+        className={`block mb-1 ${TYPO_INPUT_LABEL}`}
       >
         Parameters (JSON)
       </label>

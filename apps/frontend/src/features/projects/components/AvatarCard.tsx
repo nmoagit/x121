@@ -148,7 +148,7 @@ export function AvatarCard({ avatar, group, avatarUrl, heroVariantId, selected, 
   return (
     <div
       className={cn(
-        "group/card cursor-pointer rounded-[var(--radius-lg)] border border-[var(--color-border-default)] bg-[#0d1117] overflow-hidden h-full",
+        "group/card cursor-pointer rounded-[var(--radius-lg)] border border-[var(--color-border-default)] bg-[var(--color-surface-primary)] overflow-hidden h-full",
         "transition-shadow duration-[var(--duration-fast)] ease-[var(--ease-default)]",
         "hover:shadow-[var(--shadow-md)]",
         selected && "ring-2 ring-[var(--color-border-accent)]",
@@ -163,7 +163,7 @@ export function AvatarCard({ avatar, group, avatarUrl, heroVariantId, selected, 
         aria-label={`Open avatar ${avatar.name}`}
       >
         {/* Avatar area */}
-        <div className="relative aspect-[4/3] bg-[#161b22] overflow-hidden rounded-t-[inherit]">
+        <div className="relative aspect-[4/3] bg-[var(--color-surface-secondary)] overflow-hidden rounded-t-[inherit]">
           {avatarUrl ? (
             heroVariantId ? (
               <ProgressiveImage

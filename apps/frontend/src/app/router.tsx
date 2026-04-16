@@ -115,6 +115,16 @@ const pipelineAvatarDetailRoute = createRoute({
   ),
 });
 
+const pipelineAssignmentDashboardRoute = createRoute({
+  getParentRoute: () => pipelineLayoutRoute,
+  path: "/projects/$projectId/review-assignments",
+  component: lazyRouteComponent(() =>
+    import("@/app/pages/AssignmentDashboardPage").then((m) => ({
+      default: m.AssignmentDashboardPage,
+    })),
+  ),
+});
+
 const pipelineAvatarsRoute = createRoute({
   getParentRoute: () => pipelineLayoutRoute,
   path: "/avatars",
@@ -1243,6 +1253,7 @@ export const routeTree = rootRoute.addChildren([
       pipelineProjectsRoute,
       pipelineProjectDetailRoute,
       pipelineAvatarDetailRoute,
+      pipelineAssignmentDashboardRoute,
       pipelineAvatarsRoute,
       pipelineSceneTypesRoute,
       pipelineSceneCatalogueRoute,

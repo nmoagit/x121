@@ -6,6 +6,7 @@
  */
 
 import type { GenerationSummary } from "./types";
+import { TYPO_DATA } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Types
@@ -24,14 +25,14 @@ export function GenerationHistorySection({
 }: GenerationHistorySectionProps) {
   const stats = [
     { label: "total", value: summary.total_segments, color: "text-[var(--color-text-muted)]", testId: "gen-total" },
-    { label: "approved", value: summary.approved, color: "text-green-400", testId: "gen-approved" },
-    { label: "rejected", value: summary.rejected, color: "text-red-400", testId: "gen-rejected" },
-    { label: "pending", value: summary.pending, color: "text-orange-400", testId: "gen-pending" },
+    { label: "approved", value: summary.approved, color: "text-[var(--color-data-green)]", testId: "gen-approved" },
+    { label: "rejected", value: summary.rejected, color: "text-[var(--color-data-red)]", testId: "gen-rejected" },
+    { label: "pending", value: summary.pending, color: "text-[var(--color-data-orange)]", testId: "gen-pending" },
   ];
 
   return (
     <div data-testid="generation-history-section" className="flex flex-col gap-2">
-      <div className="flex items-center gap-0 font-mono text-xs">
+      <div className={`flex items-center gap-0 ${TYPO_DATA}`}>
         {stats.map((stat, idx) => (
           <span key={stat.testId} data-testid={stat.testId} className="flex items-center">
             {idx > 0 && <span className="mx-2 text-[var(--color-text-muted)] opacity-30">|</span>}

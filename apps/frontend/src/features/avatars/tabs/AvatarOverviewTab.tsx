@@ -31,6 +31,7 @@ import { ReadinessStateBadge } from "@/features/readiness/ReadinessStateBadge";
 import type { ReadinessState } from "@/features/readiness/types";
 import { useSpeechLanguageCounts } from "@/features/projects/hooks/use-avatar-deliverables";
 import { useSpeechCompleteness } from "@/features/avatars/hooks/use-avatar-speeches";
+import { TYPO_DATA } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Types
@@ -168,15 +169,15 @@ export function AvatarOverviewTab({
 
         return (
           <TerminalSection title="VoiceID">
-            <div className="flex items-center justify-between font-mono text-xs">
+            <div className={`flex items-center justify-between ${TYPO_DATA}`}>
               {voiceId ? (
                 <div className="flex items-center gap-[var(--spacing-2)]">
-                  <span className="text-green-400">configured</span>
-                  <span className="text-cyan-400 truncate">{voiceId}</span>
+                  <span className="text-[var(--color-data-green)]">configured</span>
+                  <span className="text-[var(--color-data-cyan)] truncate">{voiceId}</span>
                 </div>
               ) : (
                 <div className="flex items-center gap-[var(--spacing-2)]">
-                  <span className="text-orange-400">missing</span>
+                  <span className="text-[var(--color-data-orange)]">missing</span>
                   <span className="text-[var(--color-text-muted)]">configure in Settings tab</span>
                 </div>
               )}
@@ -188,7 +189,7 @@ export function AvatarOverviewTab({
       {/* Speech Languages */}
       {languageSpeechStats.length > 0 && (
         <TerminalSection title="Speech Languages">
-          <div className="flex flex-wrap gap-4 font-mono text-xs">
+          <div className={`flex flex-wrap gap-4 ${TYPO_DATA}`}>
             {languageSpeechStats.map((lang) => (
               <Tooltip
                 key={lang.language_id}
@@ -199,7 +200,7 @@ export function AvatarOverviewTab({
                   <span className="uppercase text-[var(--color-text-muted)]">
                     {lang.code}:
                   </span>
-                  <span className="font-semibold text-cyan-400">
+                  <span className="font-semibold text-[var(--color-data-cyan)]">
                     {lang.count}
                   </span>
                 </div>
@@ -213,7 +214,7 @@ export function AvatarOverviewTab({
       {dashboard?.readiness && (
         <TerminalSection title="Readiness">
           <Stack gap={2}>
-            <div className="flex items-center justify-between font-mono text-xs">
+            <div className={`flex items-center justify-between ${TYPO_DATA}`}>
               <div className="flex items-center gap-[var(--spacing-2)]">
                 <ReadinessStateBadge
                   state={dashboard.readiness.state as ReadinessState}
@@ -221,7 +222,7 @@ export function AvatarOverviewTab({
                 />
               </div>
               <span className={`font-semibold text-sm ${
-                dashboard.readiness.readiness_pct >= 100 ? "text-green-400" : "text-cyan-400"
+                dashboard.readiness.readiness_pct >= 100 ? "text-[var(--color-data-green)]" : "text-[var(--color-data-cyan)]"
               }`}>
                 {dashboard.readiness.readiness_pct}%
               </span>

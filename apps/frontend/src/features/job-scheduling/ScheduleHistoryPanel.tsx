@@ -20,6 +20,7 @@ import {
 
 import { useScheduleHistory } from "./hooks/use-job-scheduling";
 import type { ScheduleHistory } from "./types";
+import { TYPO_DATA, TYPO_DATA_CYAN, TYPO_DATA_DANGER, TYPO_DATA_MUTED } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Sub-components
@@ -36,23 +37,23 @@ function HistoryRow({ entry }: { entry: ScheduleHistory }) {
         "transition-colors",
       )}
     >
-      <td className="px-3 py-2 font-mono text-xs text-[var(--color-text-muted)]">
+      <td className={`px-3 py-2 ${TYPO_DATA_MUTED}`}>
         {formatDateTime(entry.executed_at)}
       </td>
       <td className="px-3 py-2">
-        <span className={`font-mono text-xs uppercase tracking-wide ${statusColor}`}>
+        <span className={`${TYPO_DATA} uppercase tracking-wide ${statusColor}`}>
           {entry.status}
         </span>
       </td>
-      <td className="px-3 py-2 font-mono text-xs text-cyan-400">
+      <td className={`${TYPO_DATA_CYAN} px-3 py-2`}>
         {entry.result_job_id ? `#${entry.result_job_id}` : "\u2014"}
       </td>
-      <td className="px-3 py-2 font-mono text-xs text-[var(--color-text-muted)]">
+      <td className={`px-3 py-2 ${TYPO_DATA_MUTED}`}>
         {entry.execution_duration_ms != null
           ? formatDuration(entry.execution_duration_ms)
           : "\u2014"}
       </td>
-      <td className="px-3 py-2 font-mono text-xs text-red-400 max-w-[200px] truncate">
+      <td className={`${TYPO_DATA_DANGER} px-3 py-2 max-w-[200px] truncate`}>
         {entry.error_message ?? ""}
       </td>
     </tr>

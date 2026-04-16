@@ -10,7 +10,7 @@ interface ScheduleStatusBadgeProps {
 
 export function ScheduleStatusBadge({ isActive }: ScheduleStatusBadgeProps) {
   return (
-    <span className={`font-mono text-xs uppercase tracking-wide ${isActive ? "text-green-400" : "text-[var(--color-text-muted)]"}`}>
+    <span className={`font-mono text-xs uppercase tracking-wide ${isActive ? "text-[var(--color-data-green)]" : "text-[var(--color-text-muted)]"}`}>
       {isActive ? "Active" : "Paused"}
     </span>
   );

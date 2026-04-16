@@ -7,6 +7,7 @@ import { api } from "@/lib/api";
 import { cn } from "@/lib/cn";
 import type { TagInfo, TagWithCount } from "./TagChip";
 import { TagChip } from "./TagChip";
+import { TYPO_DATA_MUTED, TYPO_LABEL} from "@/lib/typography-tokens";
 
 interface BulkLabelDialogProps {
   open: boolean;
@@ -242,7 +243,7 @@ export function BulkLabelDialog({
             {/* Existing tags — click to quick-add */}
             {existingTags.length > 0 && (
               <div className="flex flex-col gap-1.5">
-                <span className="font-mono text-[10px] uppercase tracking-wide text-[var(--color-text-muted)]">
+                <span className={TYPO_LABEL}>
                   Existing labels
                 </span>
                 <div className="flex flex-wrap gap-1">
@@ -365,16 +366,16 @@ export function BulkLabelDialog({
           /* Remove mode — selectable tag chips */
           <>
             {removeTagsLoading ? (
-              <p className="font-mono text-xs text-[var(--color-text-muted)]">
+              <p className={TYPO_DATA_MUTED}>
                 Loading labels...
               </p>
             ) : availableTags.length === 0 ? (
-              <p className="font-mono text-xs text-[var(--color-text-muted)]">
+              <p className={TYPO_DATA_MUTED}>
                 No labels found on the selected items.
               </p>
             ) : (
               <>
-                <p className="font-mono text-xs text-[var(--color-text-muted)]">
+                <p className={TYPO_DATA_MUTED}>
                   Select labels to remove:
                 </p>
                 <div className="flex flex-wrap gap-1">

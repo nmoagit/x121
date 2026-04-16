@@ -12,6 +12,7 @@ import { TRACK_TEXT_COLORS } from "@/lib/ui-classes";
 import { variantThumbnailUrl } from "@/features/media/utils";
 
 import type { AutoAssignResult } from "../hooks/use-media-assignments";
+import { TYPO_DATA } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Component
@@ -47,12 +48,12 @@ export function AutoAssignPreviewModal({
           {/* Assignments */}
           {preview.assigned.length > 0 && (
             <div className="space-y-1">
-              <h4 className="text-[10px] font-mono text-green-400 uppercase tracking-wide">Will Assign</h4>
+              <h4 className="text-[10px] font-mono text-[var(--color-data-green)] uppercase tracking-wide">Will Assign</h4>
               <div className="space-y-1">
                 {preview.assigned.map((a) => (
                   <div
                     key={`${a.scene_type_id}-${a.track_id}`}
-                    className="flex items-center gap-2 rounded bg-green-500/5 border border-green-500/20 px-2 py-1.5 font-mono text-xs"
+                    className={`flex items-center gap-2 rounded bg-green-500/5 border border-green-500/20 px-2 py-1.5 ${TYPO_DATA}`}
                   >
                     <span className="text-[var(--color-text-primary)]">{a.scene_type_name}</span>
                     <span className={TRACK_TEXT_COLORS[a.track_name.toLowerCase()] ?? "text-[var(--color-text-muted)]"}>{a.track_name}</span>
@@ -64,7 +65,7 @@ export function AutoAssignPreviewModal({
                         className="h-6 w-6 rounded object-cover"
                       />
                     )}
-                    <span className="text-cyan-400 truncate">{a.variant_label}</span>
+                    <span className="text-[var(--color-data-cyan)] truncate">{a.variant_label}</span>
                   </div>
                 ))}
               </div>
@@ -74,7 +75,7 @@ export function AutoAssignPreviewModal({
           {/* Skipped */}
           {preview.skipped.length > 0 && (
             <div className="space-y-1">
-              <h4 className="text-[10px] font-mono text-orange-400 uppercase tracking-wide">Skipped</h4>
+              <h4 className="text-[10px] font-mono text-[var(--color-data-orange)] uppercase tracking-wide">Skipped</h4>
               <div className="space-y-1">
                 {preview.skipped.map((s) => (
                   <div
@@ -83,7 +84,7 @@ export function AutoAssignPreviewModal({
                   >
                     <span>{s.scene_type_name}</span>
                     <span>{s.track_name}</span>
-                    <span className="text-orange-400">{s.reason}</span>
+                    <span className="text-[var(--color-data-orange)]">{s.reason}</span>
                   </div>
                 ))}
               </div>

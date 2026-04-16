@@ -10,6 +10,7 @@ import {
   ARTIFACT_ROLE_LABEL,
 } from "./types";
 import type { SceneVideoVersionArtifact } from "./types";
+import { TYPO_DATA_CYAN, TYPO_DATA_MUTED, TYPO_DATA_WARNING } from "@/lib/typography-tokens";
 
 interface ArtifactTimelineProps {
   sceneId: number;
@@ -38,11 +39,11 @@ export function ArtifactTimeline({ sceneId, versionId }: ArtifactTimelineProps) 
             <Card elevation="flat" padding="sm" className="w-48">
               <div className="flex flex-col gap-1.5">
                 <div className="flex items-center justify-between">
-                  <span className="font-mono text-xs text-cyan-400">
+                  <span className={TYPO_DATA_CYAN}>
                     {ARTIFACT_ROLE_LABEL[artifact.role]}
                   </span>
                   {artifact.file_purged ? (
-                    <span className="font-mono text-xs text-orange-400">Purged</span>
+                    <span className={TYPO_DATA_WARNING}>Purged</span>
                   ) : (
                     <Button
                       variant="ghost"
@@ -91,8 +92,8 @@ export function ArtifactTimeline({ sceneId, versionId }: ArtifactTimelineProps) 
               autoPlay
               showControls
             />
-            <div className="flex items-center gap-3 font-mono text-xs text-[var(--color-text-muted)]">
-              <span className="text-cyan-400">
+            <div className={`flex items-center gap-3 ${TYPO_DATA_MUTED}`}>
+              <span className="text-[var(--color-data-cyan)]">
                 {ARTIFACT_ROLE_LABEL[playingArtifact.role]}
               </span>
               {playingArtifact.node_id && (

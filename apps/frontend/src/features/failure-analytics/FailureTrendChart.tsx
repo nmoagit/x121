@@ -10,6 +10,7 @@ import { useState } from "react";
 
 import { useFailureTrends } from "./hooks/use-failure-analytics";
 import { TREND_PERIODS } from "./types";
+import { TYPO_DATA, TYPO_CAPTION} from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Props
@@ -80,7 +81,7 @@ export function FailureTrendChart({ patternId }: FailureTrendChartProps) {
               className="flex items-center gap-3"
               data-testid="trend-point"
             >
-              <span className="w-24 text-xs text-[var(--color-text-secondary)]">
+              <span className={`w-24 ${TYPO_CAPTION}`}>
                 {point.period}
               </span>
               <div className="flex-1">
@@ -91,7 +92,7 @@ export function FailureTrendChart({ patternId }: FailureTrendChartProps) {
                   />
                 </div>
               </div>
-              <span className="w-12 text-right font-mono text-xs text-[var(--color-text-primary)]">
+              <span className={`w-12 text-right ${TYPO_DATA}`}>
                 {(point.failure_rate * 100).toFixed(1)}%
               </span>
               <span className="w-20 text-right text-xs text-[var(--color-text-muted)]">

@@ -15,6 +15,7 @@ import { TERMINAL_TEXTAREA } from "@/lib/ui-classes";
 
 import type { ImageTypeTrackConfig, UpsertImageTrackConfig } from "./types";
 import type { Track } from "@/features/scene-catalogue/types";
+import { TYPO_DATA, TYPO_DATA_MUTED } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Single row
@@ -136,7 +137,7 @@ function ImageTrackConfigRow({
               <div className="flex flex-col gap-1.5">
                 <label
                   htmlFor={`prompt-${track.id}`}
-                  className="font-mono text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide"
+                  className={`${TYPO_DATA} font-medium text-[var(--color-text-muted)] uppercase tracking-wide`}
                 >
                   Prompt Template
                 </label>
@@ -152,7 +153,7 @@ function ImageTrackConfigRow({
               <div className="flex flex-col gap-1.5">
                 <label
                   htmlFor={`neg-prompt-${track.id}`}
-                  className="font-mono text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide"
+                  className={`${TYPO_DATA} font-medium text-[var(--color-text-muted)] uppercase tracking-wide`}
                 >
                   Negative Prompt Template
                 </label>
@@ -213,7 +214,7 @@ export function ImageTrackConfigEditor({
 
   if (tracks.length === 0) {
     return (
-      <p className="font-mono text-xs text-[var(--color-text-muted)] py-4">
+      <p className={`${TYPO_DATA_MUTED} py-4`}>
         No tracks associated with this image type. Add tracks in the image type form.
       </p>
     );

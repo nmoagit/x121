@@ -7,7 +7,7 @@ interface ProtectedBadgeProps {
  */
 export function ProtectedBadge({ isActive }: ProtectedBadgeProps) {
   return (
-    <span className={`font-mono text-[10px] uppercase ${isActive ? "text-green-400" : "text-[var(--color-text-muted)]"}`}>
+    <span className={`font-mono text-[10px] uppercase ${isActive ? "text-[var(--color-data-green)]" : "text-[var(--color-text-muted)]"}`}>
       {isActive ? "Active" : "Inactive"}
     </span>
   );

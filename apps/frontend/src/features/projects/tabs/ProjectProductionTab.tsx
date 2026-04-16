@@ -44,6 +44,7 @@ import { useAvatarGroups } from "../hooks/use-avatar-groups";
 import { QueueOutstandingModal } from "../components/QueueOutstandingModal";
 import { CHARACTER_STATUS_ID_ARCHIVED } from "../types";
 import type { Avatar, AvatarGroup } from "../types";
+import { TYPO_DATA, TYPO_SECTION_TITLE, TYPO_TIMESTAMP} from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Props
@@ -85,10 +86,10 @@ export function ProjectProductionTab({ projectId }: ProjectProductionTabProps) {
           </Button>
 
           {queueStatus && (
-            <div className="flex items-center gap-2 font-mono text-xs">
-              <span className="text-orange-400">{queueStatus.total_queued} queued</span>
+            <div className={`flex items-center gap-2 ${TYPO_DATA}`}>
+              <span className="text-[var(--color-data-orange)]">{queueStatus.total_queued} queued</span>
               <span className="text-[var(--color-text-muted)] opacity-30 select-none">|</span>
-              <span className="text-cyan-400">{queueStatus.total_running} running</span>
+              <span className="text-[var(--color-data-cyan)]">{queueStatus.total_running} running</span>
             </div>
           )}
         </div>
@@ -193,7 +194,7 @@ function RunSelector({
                   setExpanded(false);
                 }}
                 className={`flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition-colors ${TERMINAL_ROW_HOVER} ${
-                  isSelected ? "bg-[#161b22]" : ""
+                  isSelected ? "bg-[var(--color-surface-secondary)]" : ""
                 } ${idx > 0 ? TERMINAL_DIVIDER : ""}`}
               >
                 <div className="flex items-center gap-3 min-w-0">
@@ -203,23 +204,23 @@ function RunSelector({
                       {run.name}
                     </span>
                     {run.description && (
-                      <span className="text-[10px] font-mono text-[var(--color-text-muted)] truncate block">
+                      <span className={`truncate block ${TYPO_TIMESTAMP}`}>
                         {run.description}
                       </span>
                     )}
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 shrink-0 font-mono text-xs">
+                <div className={`flex items-center gap-2 shrink-0 ${TYPO_DATA}`}>
                   <span className={statusColor}>{statusLabel}</span>
                   <span className="text-[var(--color-text-muted)] opacity-30 select-none">|</span>
-                  <span className="text-cyan-400 tabular-nums">
+                  <span className="text-[var(--color-data-cyan)] tabular-nums">
                     {run.completed_cells}/{run.total_cells} ({pct}%)
                   </span>
                   {run.failed_cells > 0 && (
                     <>
                       <span className="text-[var(--color-text-muted)] opacity-30 select-none">|</span>
-                      <span className="text-red-400">{run.failed_cells} failed</span>
+                      <span className="text-[var(--color-data-red)]">{run.failed_cells} failed</span>
                     </>
                   )}
                 </div>
@@ -413,7 +414,7 @@ function CreateRunModal({
         <div>
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-mono uppercase tracking-wide text-[var(--color-text-muted)]">
-              Avatars (<span className="text-cyan-400">{selectedAvatarIds.size || avatars.length}</span> selected)
+              Avatars (<span className="text-[var(--color-data-cyan)]">{selectedAvatarIds.size || avatars.length}</span> selected)
             </span>
             <Checkbox
               label="Select all"
@@ -475,7 +476,7 @@ function CreateRunModal({
         <div>
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-mono uppercase tracking-wide text-[var(--color-text-muted)]">
-              Scenes (<span className="text-cyan-400">{selectedSlotKeys.size || sceneSlots.length}</span> selected)
+              Scenes (<span className="text-[var(--color-data-cyan)]">{selectedSlotKeys.size || sceneSlots.length}</span> selected)
             </span>
             {sceneSlots.length > 0 && (
               <Checkbox
@@ -524,7 +525,7 @@ function CreateRunModal({
         {/* Summary and actions */}
         <div className="flex items-center justify-between pt-1 border-t border-[var(--color-border-default)]">
           <span className="text-xs font-mono text-[var(--color-text-muted)]">
-            <span className="text-cyan-400">{cellCount}</span> cell{cellCount !== 1 ? "s" : ""} will be created
+            <span className="text-[var(--color-data-cyan)]">{cellCount}</span> cell{cellCount !== 1 ? "s" : ""} will be created
           </span>
           <div className="flex items-center gap-2">
             <Button size="sm" variant="secondary" onClick={handleClose}>
@@ -676,15 +677,15 @@ function RunDetail({
     <Stack gap={5}>
       {/* Run header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3 font-mono text-xs">
-          <h3 className="text-base font-semibold text-[var(--color-text-primary)]">
+        <div className={`flex items-center gap-3 ${TYPO_DATA}`}>
+          <h3 className={TYPO_SECTION_TITLE}>
             {run.name}
           </h3>
           <span className={statusColor}>{statusLabel}</span>
           {run.failed_cells > 0 && (
             <>
               <span className="text-[var(--color-text-muted)] opacity-30 select-none">|</span>
-              <span className="text-red-400">{run.failed_cells} failed</span>
+              <span className="text-[var(--color-data-red)]">{run.failed_cells} failed</span>
             </>
           )}
         </div>

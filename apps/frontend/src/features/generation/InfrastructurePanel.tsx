@@ -18,6 +18,7 @@ import {
 } from "@/lib/ui-classes";
 
 import { useInfrastructureStatus } from "./hooks/use-infrastructure";
+import { TYPO_DATA } from "@/lib/typography-tokens";
 
 export function InfrastructurePanel() {
   const { data: status, isLoading } = useInfrastructureStatus();
@@ -47,7 +48,7 @@ export function InfrastructurePanel() {
                   : "bg-[var(--color-text-muted)]",
               )}
             />
-            <span className={`font-mono text-xs ${isConnected ? "text-green-400" : "text-[var(--color-text-muted)]"}`}>
+            <span className={`font-mono text-xs ${isConnected ? "text-[var(--color-data-green)]" : "text-[var(--color-text-muted)]"}`}>
               {isConnected
                 ? `${connectedCount} connected`
                 : "Disconnected"}
@@ -59,7 +60,7 @@ export function InfrastructurePanel() {
       <div className={TERMINAL_BODY}>
         <Link
           to="/admin/infrastructure"
-          className="inline-flex items-center gap-[var(--spacing-1)] font-mono text-xs text-[var(--color-action-primary)] hover:underline"
+          className={`inline-flex items-center gap-[var(--spacing-1)] ${TYPO_DATA} text-[var(--color-action-primary)] hover:underline`}
         >
           Manage Infrastructure
           <ArrowRight size={12} />

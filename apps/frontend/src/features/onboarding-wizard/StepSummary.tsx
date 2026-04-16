@@ -9,6 +9,7 @@ import { Badge, Button } from "@/components";
 
 import { STEP_LABELS } from "./types";
 import type { OnboardingStepNumber } from "./types";
+import { TYPO_INPUT_LABEL, TYPO_CAPTION} from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Types
@@ -61,13 +62,13 @@ export function StepSummary({
           data-testid="summary-avatars"
           className="rounded border border-[var(--color-border-subtle)] bg-[var(--color-surface-secondary)] p-3"
         >
-          <p className="text-xs font-medium text-[var(--color-text-muted)]">
+          <p className={TYPO_INPUT_LABEL}>
             {STEP_LABELS[1 as OnboardingStepNumber]}
           </p>
           <p className="mt-1 text-lg font-bold text-[var(--color-text-primary)]">
             {avatarIds.length}
           </p>
-          <p className="text-xs text-[var(--color-text-secondary)]">
+          <p className={TYPO_CAPTION}>
             avatars uploaded
           </p>
         </div>
@@ -77,13 +78,13 @@ export function StepSummary({
           data-testid="summary-variants"
           className="rounded border border-[var(--color-border-subtle)] bg-[var(--color-surface-secondary)] p-3"
         >
-          <p className="text-xs font-medium text-[var(--color-text-muted)]">
+          <p className={TYPO_INPUT_LABEL}>
             {STEP_LABELS[3 as OnboardingStepNumber]}
           </p>
           <p className="mt-1 text-lg font-bold text-[var(--color-text-primary)]">
             {approvedVariants}
           </p>
-          <p className="text-xs text-[var(--color-text-secondary)]">
+          <p className={TYPO_CAPTION}>
             variants approved
           </p>
         </div>
@@ -93,13 +94,13 @@ export function StepSummary({
           data-testid="summary-metadata"
           className="rounded border border-[var(--color-border-subtle)] bg-[var(--color-surface-secondary)] p-3"
         >
-          <p className="text-xs font-medium text-[var(--color-text-muted)]">
+          <p className={TYPO_INPUT_LABEL}>
             {STEP_LABELS[4 as OnboardingStepNumber]}
           </p>
           <p className="mt-1 text-lg font-bold text-[var(--color-text-primary)]">
             {metadata.length}
           </p>
-          <p className="text-xs text-[var(--color-text-secondary)]">
+          <p className={TYPO_CAPTION}>
             metadata entries
           </p>
         </div>
@@ -109,13 +110,13 @@ export function StepSummary({
           data-testid="summary-scene-types"
           className="rounded border border-[var(--color-border-subtle)] bg-[var(--color-surface-secondary)] p-3"
         >
-          <p className="text-xs font-medium text-[var(--color-text-muted)]">
+          <p className={TYPO_INPUT_LABEL}>
             {STEP_LABELS[5 as OnboardingStepNumber]}
           </p>
           <p className="mt-1 text-lg font-bold text-[var(--color-text-primary)]">
             {sceneTypes.length}
           </p>
-          <p className="text-xs text-[var(--color-text-secondary)]">
+          <p className={TYPO_CAPTION}>
             scene types selected
           </p>
         </div>

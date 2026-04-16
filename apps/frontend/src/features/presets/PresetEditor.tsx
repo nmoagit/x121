@@ -6,6 +6,7 @@ import { useState } from "react";
 
 import { Button } from "@/components";
 import { cn } from "@/lib/cn";
+import { TYPO_SECTION_TITLE } from "@/lib/typography-tokens";
 
 import type { CreatePreset, Preset, Scope } from "./types";
 import { MAX_DESCRIPTION_LEN, MAX_NAME_LEN } from "./types";
@@ -60,7 +61,7 @@ export function PresetEditor({ preset, onSave, onCancel }: PresetEditorProps) {
       )}
       data-testid="preset-editor"
     >
-      <h3 className="text-base font-semibold text-[var(--color-text-primary)] mb-4">
+      <h3 className={`${TYPO_SECTION_TITLE} mb-4`}>
         {isEdit ? "Edit Preset" : "New Preset"}
         {isEdit && preset && (
           <span className="ml-2 text-xs text-[var(--color-text-muted)]">

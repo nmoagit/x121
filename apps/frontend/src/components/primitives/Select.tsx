@@ -1,4 +1,5 @@
 import { cn } from "@/lib/cn";
+import { TYPO_LABEL } from "@/lib/typography-tokens";
 import { ChevronDown } from "@/tokens/icons";
 import { useId } from "react";
 import type { ChangeEvent } from "react";
@@ -61,7 +62,7 @@ export function Select({
       {label && (
         <label
           htmlFor={selectId}
-          className="text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-wide font-mono"
+          className={TYPO_LABEL}
         >
           {label}
         </label>
@@ -86,7 +87,7 @@ export function Select({
               ? "border-[var(--color-border-error)] focus:ring-[var(--color-border-error)]"
               : "border-[var(--color-border-default)] focus:ring-[var(--color-border-focus)]",
             "disabled:opacity-50 disabled:cursor-not-allowed",
-            "[&>option]:bg-[#161b22] [&>option]:text-[var(--color-text-primary)]",
+            "[&>option]:bg-[var(--color-surface-secondary)] [&>option]:text-[var(--color-text-primary)]",
             className,
           )}
         >

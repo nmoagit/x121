@@ -9,6 +9,7 @@
 import { Badge } from "@/components";
 
 import { useEffectiveHooks } from "./hooks/use-pipeline-hooks";
+import { TYPO_CAPTION } from "@/lib/typography-tokens";
 import type { HookPoint, ScopeType } from "./types";
 import {
   FAILURE_MODE_LABELS,
@@ -100,7 +101,7 @@ export function InheritanceView({
                 </Badge>
                 <span
                   data-testid={`source-level-${hook.hook_id}`}
-                  className="text-xs text-[var(--color-text-secondary)]"
+                  className={TYPO_CAPTION}
                 >
                   {isInherited ? `Inherited from ${hook.source_level}` : "Local"}
                 </span>

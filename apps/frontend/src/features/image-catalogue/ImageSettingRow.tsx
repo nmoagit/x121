@@ -10,6 +10,7 @@ import { Toggle } from "@/components/primitives";
 import { CATALOGUE_SOURCE_COLORS, CATALOGUE_SOURCE_LABELS } from "@/lib/setting-source";
 
 import type { EffectiveImageSetting } from "./types";
+import { TYPO_DATA } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Props
@@ -30,7 +31,7 @@ export function ImageSettingRow({ row, onToggle, isPending, actions }: ImageSett
   return (
     <tr className="border-b border-[var(--color-border-default)]/30 last:border-b-0">
       {/* Image type name */}
-      <td className="px-3 py-1.5 font-mono text-xs">
+      <td className={`px-3 py-1.5 ${TYPO_DATA}`}>
         <span className="text-[var(--color-text-primary)] uppercase tracking-wide">{row.name}</span>
       </td>
 
@@ -45,7 +46,7 @@ export function ImageSettingRow({ row, onToggle, isPending, actions }: ImageSett
       </td>
 
       {/* Source */}
-      <td className="px-3 py-1.5 font-mono text-xs">
+      <td className={`px-3 py-1.5 ${TYPO_DATA}`}>
         <span className={CATALOGUE_SOURCE_COLORS[row.source] ?? "text-[var(--color-text-muted)]"}>
           {CATALOGUE_SOURCE_LABELS[row.source] ?? row.source}
         </span>

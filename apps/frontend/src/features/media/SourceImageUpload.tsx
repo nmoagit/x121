@@ -14,6 +14,7 @@ import { TERMINAL_BODY, TERMINAL_HEADER, TERMINAL_HEADER_TITLE, TERMINAL_PANEL }
 import { Image as ImageIcon, Upload } from "@/tokens/icons";
 
 import { VALID_IMAGE_FORMATS } from "./types";
+import { TYPO_DATA } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Types
@@ -191,8 +192,8 @@ export function SourceImageUpload({ avatarId: _avatarId, onUploaded }: SourceIma
 
         {/* Metadata display */}
         {preview && (
-          <div className="flex flex-wrap items-center gap-2 font-mono text-xs">
-            <span className="flex items-center gap-1 text-cyan-400">
+          <div className={`flex flex-wrap items-center gap-2 ${TYPO_DATA}`}>
+            <span className="flex items-center gap-1 text-[var(--color-data-cyan)]">
               <ImageIcon size={12} />
               {preview.width} x {preview.height}
             </span>

@@ -14,6 +14,7 @@ import {
 } from "@/features/admin/hooks/use-reclamation";
 import { useSetPageTitle } from "@/hooks/useSetPageTitle";
 import { formatBytes } from "@/lib/format";
+import { TYPO_DATA, TYPO_DATA_SUCCESS, TYPO_LABEL} from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Tab types
@@ -89,8 +90,8 @@ export function ReclamationDashboard() {
               </div>
               <div className={cn(TERMINAL_BODY, "flex items-center justify-between")}>
                 <div>
-                  <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide font-mono">Total Reclaimable Space</p>
-                  <p className="mt-1 text-2xl font-bold text-cyan-400 font-mono">
+                  <p className={TYPO_LABEL}>Total Reclaimable Space</p>
+                  <p className="mt-1 text-2xl font-bold text-[var(--color-data-cyan)] font-mono">
                     {formatBytes(preview?.total_bytes ?? 0)}
                   </p>
                   <p className="mt-1 text-xs text-[var(--color-text-muted)] font-mono">
@@ -132,11 +133,11 @@ export function ReclamationDashboard() {
 
               {/* Cleanup result */}
               {cleanupMutation.data && (
-                <div className="mx-[var(--spacing-3)] mb-[var(--spacing-3)] rounded-[var(--radius-md)] bg-green-400/5 border border-green-400/30 p-3 text-xs text-green-400 font-mono">
+                <div className={`${TYPO_DATA_SUCCESS} mx-[var(--spacing-3)] mb-[var(--spacing-3)] rounded-[var(--radius-md)] bg-green-400/5 border border-green-400/30 p-3`}>
                   Cleanup complete: {cleanupMutation.data.files_deleted} files deleted,{" "}
                   {formatBytes(cleanupMutation.data.bytes_reclaimed)} reclaimed.
                   {cleanupMutation.data.errors.length > 0 && (
-                    <span className="text-orange-400">
+                    <span className="text-[var(--color-data-orange)]">
                       {" "}
                       ({cleanupMutation.data.errors.length} errors)
                     </span>
@@ -152,7 +153,7 @@ export function ReclamationDashboard() {
                   <span className={TERMINAL_HEADER_TITLE}>Per-Project Breakdown</span>
                 </div>
                 <div className="overflow-x-auto">
-                  <table className="w-full font-mono text-xs">
+                  <table className={`w-full ${TYPO_DATA}`}>
                     <thead>
                       <tr className={TERMINAL_DIVIDER}>
                         <th className={cn(TERMINAL_TH, "px-4 py-2")}>
@@ -172,7 +173,7 @@ export function ReclamationDashboard() {
                           key={p.project_id ?? `unscoped-${i}`}
                           className={cn(TERMINAL_DIVIDER, TERMINAL_ROW_HOVER)}
                         >
-                          <td className="px-4 py-2 text-cyan-400">
+                          <td className="px-4 py-2 text-[var(--color-data-cyan)]">
                             {p.project_name ?? (p.project_id ? `Project #${p.project_id}` : "Unscoped")}
                           </td>
                           <td className="px-4 py-2 text-right text-[var(--color-text-secondary)]">
@@ -206,7 +207,7 @@ export function ReclamationDashboard() {
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full font-mono text-xs">
+                <table className={`w-full ${TYPO_DATA}`}>
                   <thead>
                     <tr className={TERMINAL_DIVIDER}>
                       <th className={cn(TERMINAL_TH, "px-4 py-2")}>Name</th>
@@ -221,7 +222,7 @@ export function ReclamationDashboard() {
                         key={rule.id}
                         className={cn(TERMINAL_DIVIDER, TERMINAL_ROW_HOVER)}
                       >
-                        <td className="px-4 py-2 text-cyan-400">
+                        <td className="px-4 py-2 text-[var(--color-data-cyan)]">
                           {rule.name}
                           {rule.description && (
                             <p className="text-[var(--color-text-muted)]">
@@ -236,7 +237,7 @@ export function ReclamationDashboard() {
                           {rule.condition_field} {rule.condition_operator} {rule.condition_value}
                         </td>
                         <td className="px-4 py-2">
-                          <span className={rule.is_active ? "text-green-400" : "text-[var(--color-text-muted)]"}>
+                          <span className={rule.is_active ? "text-[var(--color-data-green)]" : "text-[var(--color-text-muted)]"}>
                             {rule.is_active ? "Active" : "Inactive"}
                           </span>
                         </td>
@@ -260,7 +261,7 @@ export function ReclamationDashboard() {
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full font-mono text-xs">
+                <table className={`w-full ${TYPO_DATA}`}>
                   <thead>
                     <tr className={TERMINAL_DIVIDER}>
                       <th className={cn(TERMINAL_TH, "px-4 py-2")}>Name</th>
@@ -277,7 +278,7 @@ export function ReclamationDashboard() {
                         key={policy.id}
                         className={cn(TERMINAL_DIVIDER, TERMINAL_ROW_HOVER)}
                       >
-                        <td className="px-4 py-2 text-cyan-400">
+                        <td className="px-4 py-2 text-[var(--color-data-cyan)]">
                           {policy.name}
                           {policy.description && (
                             <p className="text-[var(--color-text-muted)]">
@@ -299,7 +300,7 @@ export function ReclamationDashboard() {
                           {policy.grace_period_days}d
                         </td>
                         <td className="px-4 py-2">
-                          <span className={policy.is_active ? "text-green-400" : "text-[var(--color-text-muted)]"}>
+                          <span className={policy.is_active ? "text-[var(--color-data-green)]" : "text-[var(--color-text-muted)]"}>
                             {policy.is_active ? "Active" : "Inactive"}
                           </span>
                         </td>

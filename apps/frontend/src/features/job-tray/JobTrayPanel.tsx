@@ -20,6 +20,7 @@ import {
   TERMINAL_HEADER_TITLE,
 } from "@/lib/ui-classes";
 import type { JobDetail, JobSummary } from "./useJobStatusAggregator";
+import { TYPO_DATA, TYPO_DATA_CYAN, TYPO_LABEL} from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Types
@@ -76,10 +77,10 @@ function JobRow({ job }: { job: JobDetail }) {
       <Stack direction="vertical" gap={2}>
         {/* Header row: name + status */}
         <Stack direction="horizontal" gap={2} align="center" justify="between">
-          <span className="font-mono text-xs text-[var(--color-text-primary)] truncate max-w-[200px]">
+          <span className={`${TYPO_DATA} truncate max-w-[200px]`}>
             {job.name}
           </span>
-          <span className={`font-mono text-[10px] uppercase ${isRunning ? "text-cyan-400" : "text-[var(--color-text-muted)]"}`}>
+          <span className={`font-mono text-[10px] uppercase ${isRunning ? "text-[var(--color-data-cyan)]" : "text-[var(--color-text-muted)]"}`}>
             {job.status}
           </span>
         </Stack>
@@ -89,7 +90,7 @@ function JobRow({ job }: { job: JobDetail }) {
           <Stack direction="vertical" gap={1}>
             <ProgressBar value={job.progress} />
             <Stack direction="horizontal" gap={2} align="center" justify="between">
-              <span className="font-mono text-[10px] text-cyan-400">
+              <span className="font-mono text-[10px] text-[var(--color-data-cyan)]">
                 {job.progress}%
               </span>
               <Stack direction="horizontal" gap={1} align="center">
@@ -166,7 +167,7 @@ export function JobTrayPanel({ summary, onClose, containerRef }: JobTrayPanelPro
       className={cn(
         "absolute right-0 top-full mt-2 z-50",
         "w-80 max-h-96 overflow-auto",
-        "bg-[#0d1117]",
+        "bg-[var(--color-surface-primary)]",
         "border border-[var(--color-border-default)]",
         "rounded-[var(--radius-lg)] shadow-[var(--shadow-lg)]",
         "animate-[fadeIn_var(--duration-fast)_var(--ease-default)]",
@@ -178,7 +179,7 @@ export function JobTrayPanel({ summary, onClose, containerRef }: JobTrayPanelPro
           "flex items-center justify-between",
           "px-3 py-2.5",
           "border-b border-[var(--color-border-default)]",
-          "bg-[#161b22]",
+          "bg-[var(--color-surface-secondary)]",
         )}
       >
         <Stack direction="horizontal" gap={2} align="center">
@@ -186,7 +187,7 @@ export function JobTrayPanel({ summary, onClose, containerRef }: JobTrayPanelPro
             Active Jobs
           </span>
           {hasJobs && (
-            <span className="font-mono text-xs text-cyan-400">
+            <span className={TYPO_DATA_CYAN}>
               {summary.runningCount + summary.queuedCount}
             </span>
           )}
@@ -228,14 +229,14 @@ export function JobTrayPanel({ summary, onClose, containerRef }: JobTrayPanelPro
           className={cn(
             "px-3 py-2",
             "border-t border-[var(--color-border-default)]",
-            "bg-[#161b22]",
+            "bg-[var(--color-surface-secondary)]",
           )}
         >
           <Stack direction="horizontal" gap={2} align="center" justify="between">
-            <span className="font-mono text-[10px] uppercase tracking-wide text-[var(--color-text-muted)]">
+            <span className={TYPO_LABEL}>
               Overall
             </span>
-            <span className="font-mono text-xs text-cyan-400">
+            <span className={TYPO_DATA_CYAN}>
               {summary.overallProgress}%
             </span>
           </Stack>

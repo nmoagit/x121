@@ -16,6 +16,7 @@ import { Check, RotateCcw, Trash2 } from "@/tokens/icons";
 import { FPS_OPTIONS, RESOLUTION_OPTIONS, EMPTY_OVERRIDE, type VideoSettingsOverride } from "./types";
 import { cn } from "@/lib/cn";
 import { TERMINAL_SELECT } from "@/lib/ui-classes";
+import { TYPO_DATA, TYPO_LABEL} from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Compact form element classes (bypass design system wrappers for density)
@@ -94,9 +95,9 @@ function OverrideRow({ sceneType, existing, onSave, onDelete, isSaving }: Overri
   return (
     <tr className="border-b border-[var(--color-border-default)]/30 last:border-b-0">
       <td className="py-1 pr-3">
-        <div className="flex items-center gap-1.5 font-mono text-xs">
+        <div className={`flex items-center gap-1.5 ${TYPO_DATA}`}>
           <span className="text-[var(--color-text-primary)] uppercase tracking-wide">{sceneType.name}</span>
-          {hasOverride && <span className="text-orange-400">override</span>}
+          {hasOverride && <span className="text-[var(--color-data-orange)]">override</span>}
         </div>
       </td>
       <td className="py-1 px-1">
@@ -153,9 +154,9 @@ function OverrideRow({ sceneType, existing, onSave, onDelete, isSaving }: Overri
             <Button variant="ghost" size="xs" icon={<RotateCcw size={12} />} onClick={() => setDraft(existing ?? EMPTY_OVERRIDE)} aria-label="Reset" />
           )}
           {!isDirty && hasOverride && (
-            <Button variant="ghost" size="xs" icon={<Trash2 size={12} />} onClick={() => onDelete(sceneType.id)} aria-label="Clear override" className="!text-red-400 hover:!text-red-300" />
+            <Button variant="ghost" size="xs" icon={<Trash2 size={12} />} onClick={() => onDelete(sceneType.id)} aria-label="Clear override" className="!text-[var(--color-data-red)] hover:!text-red-300" />
           )}
-          {!isDirty && saved && <span className="text-[10px] font-mono text-green-400">saved</span>}
+          {!isDirty && saved && <span className="text-[10px] font-mono text-[var(--color-data-green)]">saved</span>}
         </div>
       </td>
     </tr>
@@ -213,10 +214,10 @@ export function VideoSettingsOverrideTable({
     <table className="w-full">
       <thead>
         <tr className="border-b border-[var(--color-border-default)]/30">
-          <th className="text-left text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-wide font-mono py-1 pr-3">Scene Type</th>
-          <th className="text-left text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-wide font-mono py-1 px-1">Duration (s)</th>
-          <th className="text-left text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-wide font-mono py-1 px-1">FPS</th>
-          <th className="text-left text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-wide font-mono py-1 px-1">Resolution</th>
+          <th className={`text-left ${TYPO_LABEL} py-1 pr-3`}>Scene Type</th>
+          <th className={`text-left ${TYPO_LABEL} py-1 px-1`}>Duration (s)</th>
+          <th className={`text-left ${TYPO_LABEL} py-1 px-1`}>FPS</th>
+          <th className={`text-left ${TYPO_LABEL} py-1 px-1`}>Resolution</th>
           <th className="py-1 pl-1 w-24" />
         </tr>
       </thead>

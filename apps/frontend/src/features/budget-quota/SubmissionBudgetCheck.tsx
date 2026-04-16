@@ -9,6 +9,7 @@ import { cn } from "@/lib/cn";
 import { useBudgetCheck } from "./hooks/use-budget-quota";
 import type { BudgetCheckResult } from "./types";
 import { BUDGET_CHECK_BADGE } from "./types";
+import { TYPO_CAPTION } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Constants
@@ -51,7 +52,7 @@ function StaticBudgetCheck({ check, estimatedHours }: StaticCheckProps) {
 
       <div className="flex-1 flex flex-col gap-0.5">
         {check.message && (
-          <span data-testid="check-message" className="text-xs text-[var(--color-text-secondary)]">
+          <span data-testid="check-message" className={TYPO_CAPTION}>
             {check.message}
           </span>
         )}

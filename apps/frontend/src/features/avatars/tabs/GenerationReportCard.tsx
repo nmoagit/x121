@@ -7,6 +7,7 @@ import { Accordion } from "@/components/composite";
 import { Stack } from "@/components/layout";
 import { Badge } from "@/components/primitives";
 import type { GenerationReport } from "../types";
+import { TYPO_INPUT_LABEL, TYPO_CAPTION} from "@/lib/typography-tokens";
 
 interface GenerationReportCardProps {
   report: GenerationReport;
@@ -60,7 +61,7 @@ export function GenerationReportCard({ report }: GenerationReportCardProps) {
       id: "warnings",
       title: `Warnings (${warnings.length})`,
       content: (
-        <ul className="list-inside list-disc space-y-1 text-xs text-[var(--color-text-secondary)]">
+        <ul className={`list-inside list-disc space-y-1 ${TYPO_CAPTION}`}>
           {warnings.map((w, i) => (
             <li key={i}>{w}</li>
           ))}
@@ -86,7 +87,7 @@ export function GenerationReportCard({ report }: GenerationReportCardProps) {
   return (
     <Stack gap={2}>
       <div className="flex items-center gap-[var(--spacing-2)]">
-        <span className="text-xs font-medium text-[var(--color-text-muted)]">
+        <span className={TYPO_INPUT_LABEL}>
           Generation Report
         </span>
         <Badge variant={isClean ? "success" : hasErrors ? "danger" : "warning"} size="sm">
@@ -95,7 +96,7 @@ export function GenerationReportCard({ report }: GenerationReportCardProps) {
       </div>
 
       {isClean ? (
-        <p className="text-xs text-[var(--color-text-secondary)]">
+        <p className={TYPO_CAPTION}>
           All expected fields present. No warnings or errors.
         </p>
       ) : (

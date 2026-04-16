@@ -13,6 +13,7 @@ import { Layers } from "@/tokens/icons";
 
 import type { Granularity, HeatmapCell, TimePeriod } from "./types";
 import { formatChartTime } from "./types";
+import { TYPO_CAPTION } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Helpers
@@ -120,7 +121,7 @@ export function EndpointHeatmap({ data, isLoading }: EndpointHeatmapProps) {
             {endpoints.map((endpoint) => (
               <Fragment key={endpoint}>
                 <div
-                  className="truncate pr-2 text-xs text-[var(--color-text-secondary)] leading-8"
+                  className={`truncate pr-2 leading-8 ${TYPO_CAPTION}`}
                   title={endpoint}
                 >
                   {endpoint}

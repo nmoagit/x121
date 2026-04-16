@@ -9,6 +9,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { frameToTimecode } from "@/features/video-player/frame-utils";
+import { TYPO_CAPTION } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Types
@@ -204,7 +205,7 @@ export function TrimTimeline({
       </div>
 
       {/* Timecodes */}
-      <div className="flex justify-between text-xs text-[var(--color-text-secondary)]">
+      <div className={`flex justify-between ${TYPO_CAPTION}`}>
         <span data-testid="in-timecode">
           In: {frameToTimecode(inFrame, framerate)} (frame {inFrame})
         </span>

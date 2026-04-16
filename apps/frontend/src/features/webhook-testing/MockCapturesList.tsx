@@ -9,6 +9,7 @@ import { formatDateTime } from "@/lib/format";
 
 import { useMockCaptures } from "./hooks/use-webhook-testing";
 import type { MockEndpointCapture } from "./types";
+import { TYPO_DATA, TYPO_INPUT_LABEL} from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Component
@@ -65,20 +66,20 @@ export function MockCapturesList({ mockId }: MockCapturesListProps) {
             <div className="mt-2 space-y-2 border-t border-[var(--color-border-default)] pt-2">
               {cap.request_headers_json && (
                 <div>
-                  <span className="text-xs font-medium text-[var(--color-text-secondary)]">
+                  <span className={TYPO_INPUT_LABEL}>
                     Headers:
                   </span>
-                  <pre className="mt-1 max-h-32 overflow-auto rounded bg-[var(--color-bg-secondary)] p-2 font-mono text-xs text-[var(--color-text-primary)]">
+                  <pre className={`mt-1 max-h-32 overflow-auto rounded bg-[var(--color-bg-secondary)] p-2 ${TYPO_DATA}`}>
                     {JSON.stringify(cap.request_headers_json, null, 2)}
                   </pre>
                 </div>
               )}
               {cap.request_body_json && (
                 <div>
-                  <span className="text-xs font-medium text-[var(--color-text-secondary)]">
+                  <span className={TYPO_INPUT_LABEL}>
                     Body:
                   </span>
-                  <pre className="mt-1 max-h-32 overflow-auto rounded bg-[var(--color-bg-secondary)] p-2 font-mono text-xs text-[var(--color-text-primary)]">
+                  <pre className={`mt-1 max-h-32 overflow-auto rounded bg-[var(--color-bg-secondary)] p-2 ${TYPO_DATA}`}>
                     {JSON.stringify(cap.request_body_json, null, 2)}
                   </pre>
                 </div>

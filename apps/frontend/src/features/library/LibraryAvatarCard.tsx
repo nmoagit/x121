@@ -11,6 +11,7 @@ import { TERMINAL_PANEL, TERMINAL_ROW_HOVER } from "@/lib/ui-classes";
 import { Check, Film, Image, Minus, User, Video } from "@/tokens/icons";
 
 import type { LibraryAvatar } from "./types";
+import { TYPO_DATA_CYAN } from "@/lib/typography-tokens";
 
 interface LibraryAvatarCardProps {
   avatar: LibraryAvatar;
@@ -66,7 +67,7 @@ export function LibraryAvatarCard({
         {/* Info area */}
         <div className="px-[var(--spacing-3)] py-[var(--spacing-2)]">
           <div className="flex items-center justify-between gap-1">
-            <h4 className="font-mono text-xs text-cyan-400 truncate">
+            <h4 className={`${TYPO_DATA_CYAN} truncate`}>
               {avatar.name}
             </h4>
             <span className="flex items-center gap-0.5 font-mono text-[10px] text-[var(--color-text-muted)]">
@@ -133,7 +134,7 @@ export function LibraryAvatarRow({
 
       {/* Name + project */}
       <div className="flex-1 min-w-0">
-        <p className="font-mono text-xs text-cyan-400 truncate">
+        <p className={`${TYPO_DATA_CYAN} truncate`}>
           {avatar.name}
         </p>
         <p className="font-mono text-[10px] text-[var(--color-text-muted)] truncate">
@@ -164,7 +165,7 @@ export function LibraryAvatarRow({
           className={cn(
             "flex items-center gap-0.5",
             avatar.has_metadata
-              ? "text-green-400"
+              ? "text-[var(--color-data-green)]"
               : "text-[var(--color-text-muted)]",
           )}
         >

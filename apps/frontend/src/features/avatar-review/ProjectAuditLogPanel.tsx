@@ -11,6 +11,7 @@ import { useProjectAuditLog, useExportAuditLog } from "./hooks/use-avatar-review
 import { ReviewAuditRow } from "./ReviewAuditRow";
 import type { AuditLogFilters, ReviewAuditEntry } from "./types";
 import { Download } from "@/tokens/icons";
+import { TYPO_DATA_MUTED } from "@/lib/typography-tokens";
 
 interface ProjectAuditLogPanelProps {
   projectId: number;
@@ -61,7 +62,7 @@ export function ProjectAuditLogPanel({ projectId }: ProjectAuditLogPanelProps) {
         {isPending ? (
           <ContextLoader size={48} />
         ) : entries.length === 0 ? (
-          <div className="font-mono text-xs text-[var(--color-text-muted)]">No audit entries found.</div>
+          <div className={TYPO_DATA_MUTED}>No audit entries found.</div>
         ) : (
           <div className="space-y-0">
             {entries.map((entry) => (

@@ -12,6 +12,7 @@ import { Card, CardBody, CardHeader } from "@/components/composite";
 import { formatBytes } from "@/lib/format";
 
 import type { CreateModelChecksum, ModelChecksum } from "./types";
+import { TYPO_CAPTION } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Props
@@ -57,7 +58,7 @@ function CreateChecksumForm({
       className="flex gap-2 items-end"
     >
       <div className="flex-1">
-        <label className="text-xs text-[var(--color-text-secondary)] mb-1 block">
+        <label className={`mb-1 block ${TYPO_CAPTION}`}>
           Model Name
         </label>
         <Input
@@ -68,7 +69,7 @@ function CreateChecksumForm({
         />
       </div>
       <div className="flex-1">
-        <label className="text-xs text-[var(--color-text-secondary)] mb-1 block">
+        <label className={`mb-1 block ${TYPO_CAPTION}`}>
           File Path
         </label>
         <Input
@@ -79,7 +80,7 @@ function CreateChecksumForm({
         />
       </div>
       <div className="flex-1">
-        <label className="text-xs text-[var(--color-text-secondary)] mb-1 block">
+        <label className={`mb-1 block ${TYPO_CAPTION}`}>
           Expected Hash
         </label>
         <Input

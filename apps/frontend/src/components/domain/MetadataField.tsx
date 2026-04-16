@@ -1,5 +1,6 @@
 import { cn } from "@/lib/cn";
 import type { ReactNode } from "react";
+import { TYPO_INPUT_LABEL } from "@/lib/typography-tokens";
 
 type MetadataOrientation = "horizontal" | "vertical";
 
@@ -23,7 +24,7 @@ export function MetadataField({
         className,
       )}
     >
-      <dt className="text-xs font-medium text-[var(--color-text-muted)] shrink-0">{label}</dt>
+      <dt className={`shrink-0 ${TYPO_INPUT_LABEL}`}>{label}</dt>
       <dd className="text-sm text-[var(--color-text-primary)]">{value}</dd>
     </div>
   );

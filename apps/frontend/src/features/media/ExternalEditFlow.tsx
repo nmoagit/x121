@@ -25,6 +25,7 @@ import {
   type Provenance,
 } from "./types";
 import { variantMediaUrl } from "./utils";
+import { TYPO_DATA_CYAN, TYPO_DATA_MUTED } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Types
@@ -109,7 +110,7 @@ export function ExternalEditFlow({
         <div className={TERMINAL_BODY}>
         <Stack gap={4}>
 
-          <p className="font-mono text-xs text-[var(--color-text-muted)]">
+          <p className={TYPO_DATA_MUTED}>
             Export the variant at full resolution, edit it in an external tool (e.g., Photoshop),
             then re-import the edited version.
           </p>
@@ -185,7 +186,7 @@ export function ExternalEditFlow({
                   )}
 
                   <div className="flex flex-col">
-                    <span className="font-mono text-xs text-cyan-400">
+                    <span className={TYPO_DATA_CYAN}>
                       v{entry.version}
                     </span>
                     <div className="flex items-center gap-1 font-mono text-[10px]">

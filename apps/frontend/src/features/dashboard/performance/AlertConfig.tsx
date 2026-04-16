@@ -6,6 +6,7 @@ import { Input  } from "@/components/primitives";
 import { Select  } from "@/components/primitives";
 import { Toggle  } from "@/components/primitives";
 import { Stack } from "@/components/layout";
+import { TYPO_SECTION_TITLE } from "@/lib/typography-tokens";
 import {
   useAlertThresholds,
   useCreateAlertThreshold,
@@ -55,7 +56,7 @@ export function AlertConfig() {
   return (
     <Stack gap={4}>
       <div className="flex items-center justify-between">
-        <h3 className="text-base font-semibold text-[var(--color-text-primary)]">
+        <h3 className={TYPO_SECTION_TITLE}>
           Alert Thresholds
         </h3>
         <button

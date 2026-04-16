@@ -26,18 +26,18 @@ export const LOG_LEVEL_LABELS: Record<LogLevel, string> = {
 
 const LEVEL_LABEL_COLORS: Record<LogLevel, string> = {
   debug: "text-[var(--color-text-muted)]",
-  info: "text-cyan-400",
-  warn: "text-orange-400",
-  error: "text-red-400",
-  success: "text-green-400",
+  info: "text-[var(--color-data-cyan)]",
+  warn: "text-[var(--color-data-orange)]",
+  error: "text-[var(--color-data-red)]",
+  success: "text-[var(--color-data-green)]",
 };
 
 const LEVEL_MESSAGE_COLORS: Record<LogLevel, string> = {
   debug: "text-[var(--color-text-muted)]",
   info: "text-[var(--color-text-muted)]",
-  warn: "text-orange-400",
-  error: "text-red-400",
-  success: "text-green-400",
+  warn: "text-[var(--color-data-orange)]",
+  error: "text-[var(--color-data-red)]",
+  success: "text-[var(--color-data-green)]",
 };
 
 /* --------------------------------------------------------------------------

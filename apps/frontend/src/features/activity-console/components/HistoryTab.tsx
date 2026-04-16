@@ -40,6 +40,7 @@ import {
   SOURCE_TERMINAL_COLORS,
 } from "../types";
 import { LogEntryRow } from "./LogEntryRow";
+import { TYPO_DATA_MUTED } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Constants
@@ -113,7 +114,7 @@ export function HistoryTab() {
   const resetOffset = () => setOffset(0);
 
   return (
-    <div className="flex flex-col h-full bg-[#0d1117] overflow-hidden">
+    <div className="flex flex-col h-full bg-[var(--color-surface-primary)] overflow-hidden">
       {/* Filter toolbar */}
       <div className={cn(TERMINAL_HEADER, "flex flex-wrap items-center gap-[var(--spacing-3)]")}>
         {/* Level toggles */}
@@ -121,7 +122,7 @@ export function HistoryTab() {
           <span className={cn(TERMINAL_LABEL, "mr-1")}>Level</span>
           <button type="button" onClick={() => { setSelectedLevel(""); resetOffset(); }} className={cn(
             "font-mono text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded transition-opacity",
-            selectedLevel === "" ? "text-cyan-400" : "text-[var(--color-text-muted)] opacity-40",
+            selectedLevel === "" ? "text-[var(--color-data-cyan)]" : "text-[var(--color-text-muted)] opacity-40",
           )}>
             All
           </button>
@@ -143,7 +144,7 @@ export function HistoryTab() {
           <span className={cn(TERMINAL_LABEL, "mr-1")}>Source</span>
           <button type="button" onClick={() => { setSelectedSource(""); resetOffset(); }} className={cn(
             "font-mono text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded transition-opacity",
-            selectedSource === "" ? "text-cyan-400" : "text-[var(--color-text-muted)] opacity-40",
+            selectedSource === "" ? "text-[var(--color-data-cyan)]" : "text-[var(--color-text-muted)] opacity-40",
           )}>
             All
           </button>
@@ -194,9 +195,9 @@ export function HistoryTab() {
       {/* Status bar */}
       <div className={cn(TERMINAL_HEADER, "flex items-center justify-between")}>
         <div className="flex items-center gap-[var(--spacing-2)]">
-          <span className="font-mono text-[10px] uppercase tracking-wide text-cyan-400">History</span>
+          <span className="font-mono text-[10px] uppercase tracking-wide text-[var(--color-data-cyan)]">History</span>
           <span className="opacity-30">|</span>
-          <span className="font-mono text-xs text-[var(--color-text-muted)]">
+          <span className={TYPO_DATA_MUTED}>
             {data ? data.total.toLocaleString() : "\u2014"} entries
           </span>
         </div>
@@ -212,7 +213,7 @@ export function HistoryTab() {
                 icon={<ChevronLeft size={12} />}
                 aria-label="Previous page"
               />
-              <span className="font-mono text-xs text-[var(--color-text-muted)]">
+              <span className={TYPO_DATA_MUTED}>
                 {currentPage} / {totalPages}
               </span>
               <Button
@@ -238,15 +239,15 @@ export function HistoryTab() {
       </div>
 
       {/* Log entries */}
-      <div className="flex-1 overflow-y-auto min-h-0 bg-[#0d1117] scrollbar-thin">
+      <div className="flex-1 overflow-y-auto min-h-0 bg-[var(--color-surface-primary)] scrollbar-thin">
         {isLoading ? (
           <div className="flex items-center justify-center h-full">
             <ContextLoader size={64} />
           </div>
         ) : error ? (
           <div className="flex items-center justify-center h-full">
-            <AlertCircle size={24} className="text-red-400" aria-hidden />
-            <p className="font-mono text-xs text-[var(--color-text-muted)] ml-2">
+            <AlertCircle size={24} className="text-[var(--color-data-red)]" aria-hidden />
+            <p className={`${TYPO_DATA_MUTED} ml-2`}>
               Failed to load activity logs.
             </p>
           </div>
@@ -258,7 +259,7 @@ export function HistoryTab() {
           </div>
         ) : (
           <div className="flex items-center justify-center h-full">
-            <p className="font-mono text-xs text-[var(--color-text-muted)]">
+            <p className={TYPO_DATA_MUTED}>
               No log entries match the current filters.
             </p>
           </div>

@@ -107,7 +107,7 @@ export function TrackImageCard({
   return (
     <div
       className={cn(
-        "rounded-[var(--radius-lg)] border border-[var(--color-border-default)] bg-[#0d1117]",
+        "rounded-[var(--radius-lg)] border border-[var(--color-border-default)] bg-[var(--color-surface-primary)]",
         dragOver && "ring-2 ring-[var(--color-action-primary)]",
         heroVariant?.status_id === MEDIA_VARIANT_STATUS.APPROVED && "!border-2 !border-green-500",
         heroVariant?.status_id === MEDIA_VARIANT_STATUS.REJECTED && "!border-2 !border-red-500",
@@ -122,7 +122,7 @@ export function TrackImageCard({
         {/* Image preview / drop target + warning overlay */}
         <div className="relative overflow-hidden rounded-t-[inherit]">
           {dragOver ? (
-            <div className="flex flex-col items-center justify-center border-2 border-dashed border-[var(--color-action-primary)] aspect-video bg-[#161b22]">
+            <div className="flex flex-col items-center justify-center border-2 border-dashed border-[var(--color-action-primary)] aspect-video bg-[var(--color-surface-secondary)]">
               <Upload size={24} className="text-[var(--color-action-primary)]" />
               <span className="text-xs text-[var(--color-action-primary)] mt-1 font-mono">Drop image here</span>
             </div>
@@ -175,7 +175,7 @@ export function TrackImageCard({
           <div className="flex items-center justify-between gap-1 min-w-0 font-mono text-[10px]">
             <div className="flex items-center gap-2 text-[var(--color-text-muted)] truncate">
               {heroVariant ? (
-                <span className={heroVariant.status_id === MEDIA_VARIANT_STATUS.APPROVED ? "text-green-400" : "text-cyan-400"}>
+                <span className={heroVariant.status_id === MEDIA_VARIANT_STATUS.APPROVED ? "text-[var(--color-data-green)]" : "text-[var(--color-data-cyan)]"}>
                   {MEDIA_VARIANT_STATUS_LABEL[heroVariant.status_id]?.toLowerCase()}
                 </span>
               ) : (

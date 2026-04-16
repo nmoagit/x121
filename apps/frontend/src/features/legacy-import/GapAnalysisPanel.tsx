@@ -3,6 +3,7 @@
  */
 
 import type { GapEntry, GapReport } from "./types";
+import { TYPO_CAPTION } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Constants
@@ -99,7 +100,7 @@ function GapItem({ gap, index }: { gap: GapEntry; index: number }) {
       </span>
       <div className="flex-1">
         <span className="font-medium">{gap.entity_name}</span>
-        <p className="text-xs text-[var(--color-text-secondary)]">
+        <p className={TYPO_CAPTION}>
           {gap.details}
         </p>
       </div>

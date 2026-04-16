@@ -5,6 +5,7 @@
 import { Badge } from "@/components/primitives";
 
 import type { WebhookDeliveryLog } from "./types";
+import { TYPO_DATA, TYPO_INPUT_LABEL, TYPO_CAPTION} from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Component
@@ -22,11 +23,11 @@ export function TestResultDisplay({ result }: TestResultDisplayProps) {
           {result.success ? "Success" : "Failed"}
         </Badge>
         {result.response_status != null && (
-          <span className="text-xs text-[var(--color-text-secondary)]">
+          <span className={TYPO_CAPTION}>
             HTTP {result.response_status}
           </span>
         )}
-        <span className="text-xs text-[var(--color-text-secondary)]">
+        <span className={TYPO_CAPTION}>
           {result.duration_ms}ms
         </span>
       </div>
@@ -34,10 +35,10 @@ export function TestResultDisplay({ result }: TestResultDisplayProps) {
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         {/* Request */}
         <div>
-          <span className="mb-1 block text-xs font-medium text-[var(--color-text-secondary)]">
+          <span className={`mb-1 block ${TYPO_INPUT_LABEL}`}>
             Request
           </span>
-          <pre className="max-h-48 overflow-auto rounded bg-[var(--color-bg-secondary)] p-2 font-mono text-xs text-[var(--color-text-primary)]">
+          <pre className={`max-h-48 overflow-auto rounded bg-[var(--color-bg-secondary)] p-2 ${TYPO_DATA}`}>
             {result.request_body_json
               ? JSON.stringify(result.request_body_json, null, 2)
               : "(empty body)"}
@@ -46,10 +47,10 @@ export function TestResultDisplay({ result }: TestResultDisplayProps) {
 
         {/* Response */}
         <div>
-          <span className="mb-1 block text-xs font-medium text-[var(--color-text-secondary)]">
+          <span className={`mb-1 block ${TYPO_INPUT_LABEL}`}>
             Response
           </span>
-          <pre className="max-h-48 overflow-auto rounded bg-[var(--color-bg-secondary)] p-2 font-mono text-xs text-[var(--color-text-primary)]">
+          <pre className={`max-h-48 overflow-auto rounded bg-[var(--color-bg-secondary)] p-2 ${TYPO_DATA}`}>
             {result.response_body ?? "(no response body)"}
           </pre>
         </div>

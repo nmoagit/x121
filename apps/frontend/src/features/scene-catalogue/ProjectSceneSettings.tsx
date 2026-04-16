@@ -26,6 +26,7 @@ import {
   useProjectSceneSettings,
   useToggleProjectSceneSetting,
 } from "./hooks/use-project-scene-settings";
+import { TYPO_DATA_MUTED } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Props
@@ -90,7 +91,7 @@ export function ProjectSceneSettings({ projectId }: ProjectSceneSettingsProps) {
                   <tr>
                     <td
                       colSpan={isSingleTrack ? 4 : 5}
-                      className="px-3 py-6 text-center font-mono text-xs text-[var(--color-text-muted)]"
+                      className={`px-3 py-6 text-center ${TYPO_DATA_MUTED}`}
                     >
                       No scene settings available. Add scenes to the catalogue first.
                     </td>

@@ -14,6 +14,7 @@ import { generateSlug } from "@/lib/format";
 
 import type { CreateWikiArticle } from "./types";
 import { CATEGORY_LABELS } from "./types";
+import { TYPO_INPUT_LABEL } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Types
@@ -181,7 +182,7 @@ export function WikiArticleEditor({
             className="min-h-[300px] rounded-[var(--radius-md)] border border-[var(--color-border-default)] bg-[var(--color-surface-primary)] p-3"
             data-testid="wiki-content-preview"
           >
-            <p className="mb-2 text-xs font-medium text-[var(--color-text-muted)]">
+            <p className={`mb-2 ${TYPO_INPUT_LABEL}`}>
               Preview
             </p>
             <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed text-[var(--color-text-secondary)]">

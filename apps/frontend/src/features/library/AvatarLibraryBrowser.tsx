@@ -20,6 +20,7 @@ import { LibraryAvatarCard, LibraryAvatarRow } from "./LibraryAvatarCard";
 import { LibraryAvatarModal } from "./LibraryAvatarModal";
 import { type LibraryFilters, useLibraryAvatars } from "./hooks/use-library";
 import type { LibraryAvatar } from "./types";
+import { TYPO_DATA_MUTED } from "@/lib/typography-tokens";
 
 const DEBOUNCE_MS = 300;
 
@@ -186,7 +187,7 @@ export function AvatarLibraryBrowser() {
         <div
           className={cn(
             TERMINAL_PANEL,
-            "font-mono text-xs text-[var(--color-text-muted)] text-center py-12",
+            `${TYPO_DATA_MUTED} text-center py-12`,
           )}
           data-testid="library-empty"
         >

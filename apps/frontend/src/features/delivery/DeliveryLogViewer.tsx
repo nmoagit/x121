@@ -130,7 +130,7 @@ export function DeliveryLogViewer({ projectId, poll }: DeliveryLogViewerProps) {
       {!collapsed && (
         <div
           ref={scrollRef}
-          className="max-h-64 overflow-y-auto bg-[#0d1117] p-[var(--spacing-3)]"
+          className="max-h-64 overflow-y-auto bg-[var(--color-surface-primary)] p-[var(--spacing-3)]"
         >
           {hasLogs ? (
             <div className="flex flex-col gap-px">

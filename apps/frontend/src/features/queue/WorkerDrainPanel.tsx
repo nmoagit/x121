@@ -19,6 +19,7 @@ import {
   useRedistributeQueue,
 } from "./hooks/use-queue";
 import type { ComfyUIInstanceInfo } from "@/features/generation/hooks/use-infrastructure";
+import { TYPO_DATA } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Sub-component: instance row
@@ -51,14 +52,14 @@ function WorkerRow({ instance, load }: WorkerRowProps) {
         <Server size={iconSizes.md} className="text-[var(--color-text-muted)] shrink-0" />
         <div>
           <Stack direction="horizontal" gap={2} align="center">
-            <span className="font-mono text-xs text-[var(--color-text-primary)]">
+            <span className={TYPO_DATA}>
               {instance.name}
             </span>
-            <span className={`font-mono text-[10px] uppercase ${instance.is_enabled ? "text-green-400" : "text-[var(--color-text-muted)]"}`}>
+            <span className={`font-mono text-[10px] uppercase ${instance.is_enabled ? "text-[var(--color-data-green)]" : "text-[var(--color-text-muted)]"}`}>
               {instance.is_enabled ? "ONLINE" : "OFFLINE"}
             </span>
             {readyToStop && (
-              <span className="font-mono text-[10px] uppercase text-orange-400">READY</span>
+              <span className="font-mono text-[10px] uppercase text-[var(--color-data-orange)]">READY</span>
             )}
           </Stack>
           <span className="font-mono text-[10px] text-[var(--color-text-muted)]">
@@ -111,7 +112,7 @@ export function WorkerDrainPanel({ workerLoad }: WorkerDrainPanelProps) {
 
   return (
     <div className={TERMINAL_PANEL}>
-      <div className="px-[var(--spacing-3)] py-[var(--spacing-2)] border-b border-[var(--color-border-default)] bg-[#161b22] flex items-center justify-between">
+      <div className="px-[var(--spacing-3)] py-[var(--spacing-2)] border-b border-[var(--color-border-default)] bg-[var(--color-surface-secondary)] flex items-center justify-between">
         <span className={TERMINAL_LABEL}>
           Worker Instances
         </span>

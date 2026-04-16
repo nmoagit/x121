@@ -59,7 +59,7 @@ export function ImportPreviewModal({
                   {result.matched.map(({ file, row }) => (
                     <tr
                       key={file.name}
-                      className="border-b border-white/5 hover:bg-[#161b22]"
+                      className="border-b border-white/5 hover:bg-[var(--color-surface-secondary)]"
                     >
                       <td className="px-[var(--spacing-3)] py-[var(--spacing-2)] text-[var(--color-text-primary)] truncate max-w-[200px]">
                         {file.name}
@@ -69,7 +69,7 @@ export function ImportPreviewModal({
                       </td>
                       <td className="px-[var(--spacing-3)] py-[var(--spacing-2)]">
                         {row.track_slug ? (
-                          <span className="text-cyan-400">{row.track_slug}</span>
+                          <span className="text-[var(--color-data-cyan)]">{row.track_slug}</span>
                         ) : (
                           <span className="text-[var(--color-text-muted)]">—</span>
                         )}
@@ -86,7 +86,7 @@ export function ImportPreviewModal({
         {unmatchedCount > 0 && (
           <div className="space-y-[var(--spacing-2)]">
             <h3 className="text-xs font-mono font-medium text-[var(--color-text-primary)] flex items-center gap-[var(--spacing-1)]">
-              <AlertCircle size={14} className="text-orange-400" />
+              <AlertCircle size={14} className="text-[var(--color-data-orange)]" />
               Unmatched ({unmatchedCount}) — will be skipped
             </h3>
             <ul className="rounded-[var(--radius-md)] border border-[var(--color-border-default)] px-[var(--spacing-3)] py-[var(--spacing-2)] space-y-1">

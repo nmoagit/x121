@@ -19,6 +19,7 @@ import {
   resolveReportStatus,
 } from "./types";
 import type { Report } from "./types";
+import { TYPO_INPUT_LABEL } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Row component
@@ -98,19 +99,19 @@ export function ReportList() {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-[var(--color-border-default)]">
-                  <th className="px-3 py-2 text-left text-xs font-medium text-[var(--color-text-muted)]">
+                  <th className={`px-3 py-2 text-left ${TYPO_INPUT_LABEL}`}>
                     Type
                   </th>
-                  <th className="px-3 py-2 text-left text-xs font-medium text-[var(--color-text-muted)]">
+                  <th className={`px-3 py-2 text-left ${TYPO_INPUT_LABEL}`}>
                     Format
                   </th>
-                  <th className="px-3 py-2 text-left text-xs font-medium text-[var(--color-text-muted)]">
+                  <th className={`px-3 py-2 text-left ${TYPO_INPUT_LABEL}`}>
                     Status
                   </th>
-                  <th className="px-3 py-2 text-left text-xs font-medium text-[var(--color-text-muted)]">
+                  <th className={`px-3 py-2 text-left ${TYPO_INPUT_LABEL}`}>
                     Generated
                   </th>
-                  <th className="px-3 py-2 text-left text-xs font-medium text-[var(--color-text-muted)]">
+                  <th className={`px-3 py-2 text-left ${TYPO_INPUT_LABEL}`}>
                     Actions
                   </th>
                 </tr>

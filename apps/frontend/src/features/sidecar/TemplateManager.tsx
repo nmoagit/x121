@@ -23,6 +23,7 @@ import { CreateTemplateForm } from "./CreateTemplateForm";
 import { useDeleteTemplate, useSidecarTemplates } from "./hooks/use-sidecar";
 import { FORMAT_LABELS, TARGET_TOOL_LABELS } from "./types";
 import type { SidecarTemplate } from "./types";
+import { TYPO_DATA, TYPO_DATA_MUTED } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Row component
@@ -41,11 +42,11 @@ function TemplateRow({
       className={`flex items-center justify-between gap-3 px-3 py-2 ${TERMINAL_DIVIDER} last:border-b-0 ${TERMINAL_ROW_HOVER}`}
     >
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 font-mono text-xs">
+        <div className={`flex items-center gap-2 ${TYPO_DATA}`}>
           <span className="font-medium text-[var(--color-text-primary)]">
             {template.name}
           </span>
-          <span className="text-cyan-400 uppercase tracking-wide">
+          <span className="text-[var(--color-data-cyan)] uppercase tracking-wide">
             {FORMAT_LABELS[template.format]}
           </span>
           {template.target_tool && (
@@ -57,7 +58,7 @@ function TemplateRow({
             </>
           )}
           {template.is_builtin && (
-            <span data-testid={`builtin-badge-${template.id}`} className="text-green-400 uppercase tracking-wide">
+            <span data-testid={`builtin-badge-${template.id}`} className="text-[var(--color-data-green)] uppercase tracking-wide">
               Built-in
             </span>
           )}
@@ -76,7 +77,7 @@ function TemplateRow({
           onClick={() => onDelete(template.id)}
           data-testid={`delete-template-${template.id}`}
           icon={<Trash2 size={iconSizes.sm} />}
-          className="!text-red-400 hover:!text-red-300"
+          className="!text-[var(--color-data-red)] hover:!text-red-300"
         >
           Delete
         </Button>
@@ -125,7 +126,7 @@ export function TemplateManager() {
 
         {isLoading ? (
           <div className={TERMINAL_BODY}>
-            <p className="font-mono text-xs text-[var(--color-text-muted)] text-center">
+            <p className={`${TYPO_DATA_MUTED} text-center`}>
               Loading templates...
             </p>
           </div>
@@ -133,7 +134,7 @@ export function TemplateManager() {
           <div className={TERMINAL_BODY}>
             <p
               data-testid="templates-empty"
-              className="font-mono text-xs text-[var(--color-text-muted)] text-center"
+              className={`${TYPO_DATA_MUTED} text-center`}
             >
               No sidecar templates configured.
             </p>

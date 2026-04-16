@@ -23,6 +23,7 @@ import {
   DEFAULT_CONTRAST,
 } from "./types";
 import type { PosterFrame } from "./types";
+import { TYPO_INPUT_LABEL, TYPO_CAPTION} from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Types
@@ -57,7 +58,7 @@ function SliderField({
 }) {
   return (
     <label className="flex flex-col gap-1">
-      <span className="flex items-center justify-between text-xs text-[var(--color-text-secondary)]">
+      <span className={`flex items-center justify-between ${TYPO_CAPTION}`}>
         <span>{label}</span>
         <span className="tabular-nums">{value.toFixed(2)}</span>
       </span>
@@ -135,7 +136,7 @@ export function CropAdjust({ posterFrame, onSave, onCancel }: CropAdjustProps) {
 
       {/* Aspect ratio selector */}
       <fieldset className="flex flex-col gap-1.5">
-        <legend className="text-xs font-medium text-[var(--color-text-secondary)]">
+        <legend className={TYPO_INPUT_LABEL}>
           Aspect Ratio
         </legend>
         <div className="flex flex-wrap gap-2">

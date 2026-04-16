@@ -3,6 +3,7 @@
  */
 
 import type { ImportRunStatus, LegacyImportRun, RunReport } from "./types";
+import { TYPO_CAPTION } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Constants
@@ -130,7 +131,7 @@ function CountCard({
       <div className="text-2xl font-bold text-[var(--color-text-primary)]">
         {value}
       </div>
-      <div className="text-xs text-[var(--color-text-secondary)]">{label}</div>
+      <div className={TYPO_CAPTION}>{label}</div>
     </div>
   );
 }

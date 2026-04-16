@@ -10,6 +10,7 @@ import { formatPercent } from "@/lib/format";
 
 import type { ContactSheetImage, GridColumns } from "./types";
 import { confidenceBadgeVariant } from "./types";
+import { TYPO_CAPTION } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Grid column class map
@@ -97,7 +98,7 @@ export function FaceCropGrid({
 
           {/* Metadata footer */}
           <div className="flex items-center justify-between gap-2 px-2 py-1.5">
-            <span className="text-xs text-[var(--color-text-secondary)] truncate">
+            <span className={`truncate ${TYPO_CAPTION}`}>
               {sceneLabels[image.scene_id] ?? `Scene ${image.scene_id}`}
             </span>
 

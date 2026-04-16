@@ -17,6 +17,7 @@ import {
   TERMINAL_ROW_HOVER,
 } from "@/lib/ui-classes";
 import { ShieldCheck, Users } from "@/tokens/icons";
+import { TYPO_DATA_CYAN } from "@/lib/typography-tokens";
 
 export function AvatarReadinessWidget() {
   const { data: projects, isLoading, error, refetch } = useProjectProgress();
@@ -36,7 +37,7 @@ export function AvatarReadinessWidget() {
       headerActions={
         <Link
           to={withPrefix("/projects") as string}
-          className="font-mono text-xs text-cyan-400 hover:underline"
+          className={`${TYPO_DATA_CYAN} hover:underline`}
         >
           Projects
         </Link>
@@ -52,7 +53,7 @@ export function AvatarReadinessWidget() {
         <div className="space-y-2">
           {/* Global summary */}
           <div className="flex items-center gap-2 font-mono">
-            <span className={`text-lg font-bold tabular-nums ${totalReady >= totalModels && totalModels > 0 ? "text-green-400" : "text-cyan-400"}`}>
+            <span className={`text-lg font-bold tabular-nums ${totalReady >= totalModels && totalModels > 0 ? "text-[var(--color-data-green)]" : "text-[var(--color-data-cyan)]"}`}>
               {totalReady}/{totalModels}
             </span>
             <span className={TERMINAL_LABEL}>models ready</span>
@@ -72,11 +73,11 @@ export function AvatarReadinessWidget() {
                     <Link
                       to={projectPath(p.project_id) as string}
                       search={{ tab: undefined, group: undefined }}
-                      className="font-mono text-[11px] text-[var(--color-text-primary)] truncate hover:text-cyan-400 transition-colors"
+                      className="font-mono text-[11px] text-[var(--color-text-primary)] truncate hover:text-[var(--color-data-cyan)] transition-colors"
                     >
                       {p.project_name}
                     </Link>
-                    <span className={`font-mono text-[11px] tabular-nums shrink-0 ml-2 ${allReady ? "text-green-400" : count > 0 ? "text-cyan-400" : "text-[var(--color-text-muted)]"}`}>
+                    <span className={`font-mono text-[11px] tabular-nums shrink-0 ml-2 ${allReady ? "text-[var(--color-data-green)]" : count > 0 ? "text-[var(--color-data-cyan)]" : "text-[var(--color-text-muted)]"}`}>
                       {ready}/{count}
                     </span>
                   </div>

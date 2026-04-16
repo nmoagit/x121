@@ -17,6 +17,7 @@ import {
 
 import { useQueueStats } from "./hooks/use-queue";
 import type { WorkerLoad } from "./types";
+import { TYPO_DATA } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Sub-component: worker load bar
@@ -27,7 +28,7 @@ function WorkerLoadBar({ worker }: { worker: WorkerLoad }) {
   const pct = Math.min((worker.active_jobs / maxJobs) * 100, 100);
 
   return (
-    <div className="flex items-center gap-3 font-mono text-xs">
+    <div className={`flex items-center gap-3 ${TYPO_DATA}`}>
       <span className="text-[var(--color-text-primary)] w-28 truncate">
         {worker.name}
       </span>
@@ -48,7 +49,7 @@ function WorkerLoadBar({ worker }: { worker: WorkerLoad }) {
         {worker.active_jobs} job{worker.active_jobs !== 1 ? "s" : ""}
       </span>
       {worker.drain_mode && (
-        <span className="text-orange-400">DRAIN</span>
+        <span className="text-[var(--color-data-orange)]">DRAIN</span>
       )}
     </div>
   );
@@ -66,17 +67,17 @@ export function QueueStatsPanel() {
   const running = stats?.counts_by_status?.Running ?? 0;
 
   const tickerStats = [
-    { label: "Pending", value: String(pending + queued), color: pending + queued > 0 ? "text-orange-400" : "text-[var(--color-text-muted)]" },
-    { label: "Running", value: String(running), color: running > 0 ? "text-cyan-400" : "text-[var(--color-text-muted)]" },
-    { label: "Throughput", value: `${stats?.throughput_per_hour?.toFixed(1) ?? "0"}/hr`, color: "text-green-400" },
-    { label: "Avg Wait", value: formatDurationSecs(stats?.avg_wait_secs ?? null), color: "text-cyan-400" },
-    { label: "Avg Exec", value: formatDurationSecs(stats?.avg_execution_secs ?? null), color: "text-cyan-400" },
+    { label: "Pending", value: String(pending + queued), color: pending + queued > 0 ? "text-[var(--color-data-orange)]" : "text-[var(--color-text-muted)]" },
+    { label: "Running", value: String(running), color: running > 0 ? "text-[var(--color-data-cyan)]" : "text-[var(--color-text-muted)]" },
+    { label: "Throughput", value: `${stats?.throughput_per_hour?.toFixed(1) ?? "0"}/hr`, color: "text-[var(--color-data-green)]" },
+    { label: "Avg Wait", value: formatDurationSecs(stats?.avg_wait_secs ?? null), color: "text-[var(--color-data-cyan)]" },
+    { label: "Avg Exec", value: formatDurationSecs(stats?.avg_execution_secs ?? null), color: "text-[var(--color-data-cyan)]" },
   ];
 
   return (
     <div className="space-y-3">
       {/* Stats ticker strip */}
-      <div className="flex items-center gap-0 rounded-[var(--radius-lg)] border border-[var(--color-border-default)] bg-[#0d1117] px-[var(--spacing-3)] py-[var(--spacing-2)] font-mono text-xs overflow-x-auto">
+      <div className={`flex items-center gap-0 rounded-[var(--radius-lg)] border border-[var(--color-border-default)] bg-[var(--color-surface-primary)] px-[var(--spacing-3)] py-[var(--spacing-2)] ${TYPO_DATA} overflow-x-auto`}>
         {tickerStats.map((stat, idx) => (
           <span key={stat.label} className="flex items-center whitespace-nowrap">
             {idx > 0 && (

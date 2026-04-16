@@ -7,6 +7,7 @@
 
 import { Tooltip } from "@/components/primitives";
 import { TERMINAL_LABEL, TERMINAL_PIPE } from "@/lib/ui-classes";
+import { TYPO_DATA } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Types
@@ -31,13 +32,13 @@ export interface TickerStat {
 /** Resolves the text color class for a stat value. */
 function resolveColor(stat: TickerStat): string {
   if (stat.color) return stat.color;
-  return stat.complete ? "text-green-400" : "text-cyan-400";
+  return stat.complete ? "text-[var(--color-data-green)]" : "text-[var(--color-data-cyan)]";
 }
 
 /** Matrix-style horizontal ticker strip for stats. */
 export function StatTicker({ stats }: { stats: TickerStat[] }) {
   return (
-    <div className="flex items-center gap-0 rounded-[var(--radius-lg)] border border-[var(--color-border-default)] bg-[#0d1117] px-[var(--spacing-3)] py-[var(--spacing-2)] font-mono text-xs overflow-x-auto">
+    <div className={`flex items-center gap-0 rounded-[var(--radius-lg)] border border-[var(--color-border-default)] bg-[var(--color-surface-primary)] px-[var(--spacing-3)] py-[var(--spacing-2)] ${TYPO_DATA} overflow-x-auto`}>
       {stats.map((stat, idx) => (
         <span key={stat.label} className="flex items-center whitespace-nowrap">
           {idx > 0 && (

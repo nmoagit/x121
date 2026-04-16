@@ -12,6 +12,7 @@ import {
   useUndoOperation,
 } from "./hooks/use-batch-metadata";
 import type { BatchMetadataOperation } from "./types";
+import { TYPO_CAPTION } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Constants
@@ -99,7 +100,7 @@ export function OperationHistory({
           >
             <div className="flex flex-col gap-0.5">
               <span data-testid={`history-summary-${op.id}`}>{op.summary}</span>
-              <span className="text-xs text-[var(--color-text-secondary)]">
+              <span className={TYPO_CAPTION}>
                 {op.avatar_count} avatars &middot;{" "}
                 {new Date(op.created_at).toLocaleString()}
               </span>

@@ -19,6 +19,7 @@ import {
   SOURCE_LABELS,
   SOURCE_TERMINAL_COLORS,
 } from "../types";
+import { TYPO_DATA } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Helpers
@@ -44,7 +45,7 @@ export function LogEntryRow({ entry }: LogEntryRowProps) {
   return (
     <div
       className={cn(
-        "border-l-2 px-[var(--spacing-2)] py-0.5 font-mono text-xs",
+        `border-l-2 px-[var(--spacing-2)] py-0.5 ${TYPO_DATA}`,
         TERMINAL_ROW_HOVER,
         entry.level === "error" && "border-l-red-400",
         entry.level === "warn" && "border-l-orange-400",
@@ -114,7 +115,7 @@ export function LogEntryRow({ entry }: LogEntryRowProps) {
 
       {/* Expanded fields */}
       {expanded && (
-        <pre className="mt-1 ml-7 p-[var(--spacing-2)] text-[10px] leading-relaxed bg-[#0d1117] rounded-[var(--radius-sm)] text-cyan-400 overflow-x-auto">
+        <pre className="mt-1 ml-7 p-[var(--spacing-2)] text-[10px] leading-relaxed bg-[var(--color-surface-primary)] rounded-[var(--radius-sm)] text-[var(--color-data-cyan)] overflow-x-auto">
           {JSON.stringify(entry.fields, null, 2)}
         </pre>
       )}

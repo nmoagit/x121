@@ -9,6 +9,7 @@ import { BarChart3, Zap } from "@/tokens/icons";
 
 import type { ConsumptionParams } from "./types";
 import { useConsumptionSummary } from "./hooks/use-gpu-power";
+import { TYPO_INPUT_LABEL } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Props
@@ -125,7 +126,7 @@ export function ConsumptionSummary({ params }: ConsumptionSummaryProps) {
           {data.entries.map((entry) => (
             <div key={`${entry.worker_id}-${entry.date}`}>
               <div className="flex items-center justify-between mb-1">
-                <span className="text-xs font-medium text-[var(--color-text-secondary)]">
+                <span className={TYPO_INPUT_LABEL}>
                   Worker #{entry.worker_id} &mdash; {entry.date}
                 </span>
                 <span className="text-xs text-[var(--color-text-muted)]">

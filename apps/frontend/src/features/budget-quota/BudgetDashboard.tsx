@@ -7,6 +7,7 @@ import { Badge } from "@/components/primitives";
 import { Card, CardBody, CardHeader } from "@/components/composite";
 import { cn } from "@/lib/cn";
 
+import { TYPO_INPUT_LABEL } from "@/lib/typography-tokens";
 import type { BudgetStatus, DailyConsumption } from "./types";
 import {
   budgetBarColor,
@@ -27,7 +28,7 @@ function BudgetProgressBar({ consumedPct }: { consumedPct: number }) {
     <div className="w-full" role="progressbar" aria-valuenow={Math.round(consumedPct)} aria-valuemin={0} aria-valuemax={100}>
       <div className="flex items-center justify-between mb-1">
         <span className="text-xs text-[var(--color-text-muted)]">Used</span>
-        <span className="text-xs font-medium text-[var(--color-text-secondary)] tabular-nums">
+        <span className={`tabular-nums ${TYPO_INPUT_LABEL}`}>
           {consumedPct.toFixed(1)}%
         </span>
       </div>

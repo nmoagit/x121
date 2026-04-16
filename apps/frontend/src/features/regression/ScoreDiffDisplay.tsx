@@ -7,6 +7,7 @@
 
 import { cn } from "@/lib/cn";
 import { formatDiff, formatScore, qaMetricLabel } from "@/lib/qa-constants";
+import { TYPO_DATA, TYPO_DATA_MUTED } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Props
@@ -70,16 +71,16 @@ export function ScoreDiffDisplay({
               <td className="py-1 text-[var(--color-text-primary)]">
                 {qaMetricLabel(metric)}
               </td>
-              <td className="py-1 text-right font-mono text-xs text-[var(--color-text-muted)]">
+              <td className={`py-1 text-right ${TYPO_DATA_MUTED}`}>
                 {baseline !== null ? formatScore(baseline) : "-"}
               </td>
-              <td className="py-1 text-right font-mono text-xs text-[var(--color-text-primary)]">
+              <td className={`py-1 text-right ${TYPO_DATA}`}>
                 {newVal !== null ? formatScore(newVal) : "-"}
               </td>
               <td
                 data-testid={`score-diff-${metric}`}
                 className={cn(
-                  "py-1 text-right font-mono text-xs",
+                  `py-1 text-right ${TYPO_DATA}`,
                   diff !== null && diff > 0 && "text-[var(--color-action-success)]",
                   diff !== null && diff < 0 && "text-[var(--color-action-danger)]",
                   (diff === null || diff === 0) && "text-[var(--color-text-muted)]",

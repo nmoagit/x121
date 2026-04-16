@@ -34,6 +34,7 @@ import {
   TERMINAL_TH,
   TERMINAL_STATUS_COLORS,
 } from "@/lib/ui-classes";
+import { TYPO_DATA, TYPO_DATA_CYAN } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Helpers
@@ -74,7 +75,7 @@ function SceneRow({
   const statusColor = TERMINAL_STATUS_COLORS[statusLbl] ?? "text-[var(--color-text-muted)]";
 
   return (
-    <div className={`flex items-center gap-3 px-4 py-2 font-mono text-xs ${TERMINAL_DIVIDER} ${TERMINAL_ROW_HOVER} transition-colors`}>
+    <div className={`flex items-center gap-3 px-4 py-2 ${TYPO_DATA} ${TERMINAL_DIVIDER} ${TERMINAL_ROW_HOVER} transition-colors`}>
       <span className="w-16 shrink-0 text-[var(--color-text-muted)]">
         #{scene.id}
       </span>
@@ -136,7 +137,7 @@ function ScheduleDetailRow({
     <div>
       {/* Summary row */}
       <div
-        className={`px-4 py-3 flex items-center gap-3 font-mono text-xs cursor-pointer ${TERMINAL_ROW_HOVER} transition-colors`}
+        className={`px-4 py-3 flex items-center gap-3 ${TYPO_DATA} cursor-pointer ${TERMINAL_ROW_HOVER} transition-colors`}
         onClick={() => setExpanded((prev) => !prev)}
       >
         <span className="shrink-0 text-[var(--color-text-muted)]">
@@ -147,7 +148,7 @@ function ScheduleDetailRow({
           <span className="font-medium text-[var(--color-text-primary)] truncate">
             {schedule.name}
           </span>
-          <span className="text-cyan-400">
+          <span className="text-[var(--color-data-cyan)]">
             {sceneIds.length} scene{sceneIds.length === 1 ? "" : "s"}
           </span>
         </div>
@@ -195,7 +196,7 @@ function ScheduleDetailRow({
 
       {/* Expanded: scene table */}
       {expanded && (
-        <div className="border-t border-[var(--color-border-default)] bg-[#0d1117]">
+        <div className="border-t border-[var(--color-border-default)] bg-[var(--color-surface-primary)]">
           {/* Column headers */}
           <div className={`flex items-center gap-3 px-4 py-1.5 ${TERMINAL_DIVIDER}`}>
             <span className={`w-16 shrink-0 ${TERMINAL_TH}`}>ID</span>
@@ -276,11 +277,11 @@ export function ScheduledGenerationsPanel() {
   return (
     <div className={TERMINAL_PANEL}>
       <div className={`${TERMINAL_HEADER} flex items-center gap-2`}>
-        <Clock size={14} className="text-cyan-400" />
+        <Clock size={14} className="text-[var(--color-data-cyan)]" />
         <span className={TERMINAL_HEADER_TITLE}>
           Scheduled Generations
         </span>
-        <span className="font-mono text-xs text-cyan-400">
+        <span className={TYPO_DATA_CYAN}>
           {generationSchedules.length}
         </span>
       </div>

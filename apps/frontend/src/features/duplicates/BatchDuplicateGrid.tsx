@@ -9,6 +9,7 @@ import { useCallback, useState } from "react";
 
 import { Badge, Button, Select } from "@/components/primitives";
 import { Card, CardBody, CardHeader } from "@/components/composite";
+import { TYPO_SECTION_TITLE } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Props
@@ -116,7 +117,7 @@ export function BatchDuplicateGrid({
   return (
     <Card elevation="flat" data-testid="batch-duplicate-grid">
       <CardHeader>
-        <h3 className="text-base font-semibold text-[var(--color-text-primary)]">
+        <h3 className={TYPO_SECTION_TITLE}>
           Flagged Duplicates ({pairs.length})
         </h3>
       </CardHeader>

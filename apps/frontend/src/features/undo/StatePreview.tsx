@@ -11,6 +11,7 @@ import { formatDateTime } from "@/lib/format";
 
 import type { UndoNode } from "./types";
 import { isNonUndoable } from "./types";
+import { TYPO_INPUT_LABEL } from "@/lib/typography-tokens";
 
 interface StatePreviewProps {
   /** The node to preview. */
@@ -65,7 +66,7 @@ export function StatePreview({ node }: StatePreviewProps) {
       </div>
 
       <div className="mt-1">
-        <span className="text-xs font-medium text-[var(--color-text-secondary)]">
+        <span className={TYPO_INPUT_LABEL}>
           Forward command
         </span>
         <pre className="mt-1 max-h-32 overflow-auto rounded bg-[var(--color-bg-inset)] p-2 text-xs font-mono text-[var(--color-text-secondary)]">
@@ -74,7 +75,7 @@ export function StatePreview({ node }: StatePreviewProps) {
       </div>
 
       <div>
-        <span className="text-xs font-medium text-[var(--color-text-secondary)]">
+        <span className={TYPO_INPUT_LABEL}>
           Reverse command
         </span>
         <pre className="mt-1 max-h-32 overflow-auto rounded bg-[var(--color-bg-inset)] p-2 text-xs font-mono text-[var(--color-text-secondary)]">

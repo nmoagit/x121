@@ -176,7 +176,7 @@ export function SyncPlayGrid({
             />
 
             {/* Cell label overlay */}
-            <div className="absolute top-[var(--spacing-1)] left-[var(--spacing-1)] px-[var(--spacing-1)] py-0.5 bg-black/60 rounded-[var(--radius-sm)] text-xs text-[var(--color-text-primary)]">
+            <div className="absolute top-[var(--spacing-1)] left-[var(--spacing-1)] px-[var(--spacing-1)] py-0.5 bg-[var(--color-surface-badge-overlay)] rounded-[var(--radius-sm)] text-xs text-[var(--color-text-primary)]">
               {cell.label}
             </div>
           </div>

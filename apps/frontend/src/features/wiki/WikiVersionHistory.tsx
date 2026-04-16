@@ -12,6 +12,7 @@ import { Button } from "@/components/primitives/Button";
 import { formatDateTime } from "@/lib/format";
 
 import type { DiffLine, WikiVersion } from "./types";
+import { TYPO_DATA } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Types
@@ -148,15 +149,15 @@ export function WikiVersionHistory({
           <h4 className="text-sm font-medium text-[var(--color-text-primary)]">
             Diff: v{selectedV1} vs v{selectedV2}
           </h4>
-          <div className="overflow-x-auto rounded-[var(--radius-md)] border border-[var(--color-border-default)] bg-[var(--color-surface-secondary)] p-2 font-mono text-xs">
+          <div className={`overflow-x-auto rounded-[var(--radius-md)] border border-[var(--color-border-default)] bg-[var(--color-surface-secondary)] p-2 ${TYPO_DATA}`}>
             {diffLines.map((line, idx) => {
               let bgClass = "";
               let prefix = " ";
               if (line.line_type === "added") {
-                bgClass = "bg-green-900/20 text-green-400";
+                bgClass = "bg-green-900/20 text-[var(--color-data-green)]";
                 prefix = "+";
               } else if (line.line_type === "removed") {
-                bgClass = "bg-red-900/20 text-red-400";
+                bgClass = "bg-red-900/20 text-[var(--color-data-red)]";
                 prefix = "-";
               }
               return (

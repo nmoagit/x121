@@ -21,6 +21,7 @@ import type {
   CloudOrphanAction,
   DbOrphanAction,
 } from "../types";
+import { TYPO_DATA_CYAN } from "@/lib/typography-tokens";
 
 export function OrphanPanel() {
   const orphanScan = useOrphanScan();
@@ -276,10 +277,10 @@ function OrphanSection({
   return (
     <div>
       <div className="flex items-center gap-2 mb-2">
-        <span className="text-xs font-medium text-cyan-400 font-mono">
+        <span className={`${TYPO_DATA_CYAN} font-medium`}>
           {title}
         </span>
-        <span className="text-[10px] text-orange-400 font-mono">
+        <span className="text-[10px] text-[var(--color-data-orange)] font-mono">
           ({count})
         </span>
       </div>

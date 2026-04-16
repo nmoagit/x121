@@ -133,8 +133,8 @@ export const REVIEW_ACTION_CONFIG: Record<
   assigned: { icon: UserPlus, label: "Assigned", color: "text-blue-400" },
   reassigned: { icon: ArrowRightLeft, label: "Reassigned", color: "text-yellow-400" },
   review_started: { icon: Play, label: "Review Started", color: "text-yellow-400" },
-  approved: { icon: CheckCircle, label: "Approved", color: "text-green-400" },
-  rejected: { icon: XCircle, label: "Rejected", color: "text-red-400" },
+  approved: { icon: CheckCircle, label: "Approved", color: "text-[var(--color-data-green)]" },
+  rejected: { icon: XCircle, label: "Rejected", color: "text-[var(--color-data-red)]" },
   rework_submitted: { icon: RefreshCw, label: "Submitted for Re-review", color: "text-blue-400" },
   re_queued: { icon: RefreshCw, label: "Re-queued", color: "text-blue-400" },
 };

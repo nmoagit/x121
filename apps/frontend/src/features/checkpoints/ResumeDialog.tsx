@@ -76,7 +76,7 @@ export function ResumeDialog({
       className={cn(
         "fixed inset-0 z-50",
         "flex items-center justify-center",
-        "bg-black/50",
+        "bg-[var(--color-surface-badge-overlay)]",
       )}
       role="dialog"
       aria-modal="true"

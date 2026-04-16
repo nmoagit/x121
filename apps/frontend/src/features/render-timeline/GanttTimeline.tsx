@@ -19,6 +19,7 @@ import {
 } from "./constants";
 import type { TimelineJob, WorkerLane, ZoomLevel } from "./types";
 import { JOB_STATUS_COLORS, resolveJobStatus } from "./types";
+import { TYPO_INPUT_LABEL } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Props
@@ -139,7 +140,7 @@ export function GanttTimeline({
           className="border-b border-[var(--color-border-default)] px-3 flex items-center"
           style={{ height: TIME_HEADER_HEIGHT }}
         >
-          <span className="text-xs font-medium text-[var(--color-text-muted)]">Workers</span>
+          <span className={TYPO_INPUT_LABEL}>Workers</span>
         </div>
         {filteredWorkers.map((worker) => (
           <WorkerLaneHeader key={worker.id} worker={worker} />

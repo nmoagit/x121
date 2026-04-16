@@ -45,6 +45,7 @@ import {
 } from "../hooks/use-cloud-providers";
 import type { CloudScalingRule, CloudGpuType } from "../hooks/use-cloud-providers";
 import { CloudInstanceList } from "./CloudInstanceList";
+import { TYPO_DATA, TYPO_DATA_MUTED } from "@/lib/typography-tokens";
 
 type Tab = "instances" | "gpu-types" | "scaling" | "cost";
 
@@ -214,11 +215,11 @@ function GpuTypesTab({ providerId }: { providerId: number }) {
           <tbody>
             {types.map((t) => (
               <tr key={t.id} className={`${TERMINAL_DIVIDER} ${TERMINAL_ROW_HOVER}`}>
-                <td className="py-2 font-mono text-xs font-medium text-[var(--color-text-primary)]">{t.name}</td>
-                <td className="py-2 font-mono text-xs text-[var(--color-text-muted)]">{(t.vram_mb / 1024).toFixed(0)} GB</td>
-                <td className="py-2 font-mono text-xs text-[var(--color-text-muted)]">{formatCents(t.cost_per_hour_cents)}</td>
-                <td className="py-2 font-mono text-xs text-[var(--color-text-muted)]">{t.max_gpu_count}</td>
-                <td className={`py-2 font-mono text-xs ${t.available ? "text-green-400" : "text-[var(--color-text-muted)]"}`}>
+                <td className={`py-2 ${TYPO_DATA} font-medium text-[var(--color-text-primary)]`}>{t.name}</td>
+                <td className={`py-2 ${TYPO_DATA_MUTED}`}>{(t.vram_mb / 1024).toFixed(0)} GB</td>
+                <td className={`py-2 ${TYPO_DATA_MUTED}`}>{formatCents(t.cost_per_hour_cents)}</td>
+                <td className={`py-2 ${TYPO_DATA_MUTED}`}>{t.max_gpu_count}</td>
+                <td className={`py-2 font-mono text-xs ${t.available ? "text-[var(--color-data-green)]" : "text-[var(--color-text-muted)]"}`}>
                   {t.available ? "Yes" : "No"}
                 </td>
               </tr>
@@ -336,9 +337,9 @@ function ScalingTab({ providerId }: { providerId: number }) {
             No scaling decisions recorded yet. Decisions are evaluated every 30 seconds.
           </p>
         ) : (
-          <div className="max-h-80 overflow-y-auto rounded-[var(--radius-lg)] border border-[var(--color-border-default)] bg-[#0d1117]">
-            <table className="w-full font-mono text-xs">
-              <thead className="sticky top-0 bg-[#161b22]">
+          <div className="max-h-80 overflow-y-auto rounded-[var(--radius-lg)] border border-[var(--color-border-default)] bg-[var(--color-surface-primary)]">
+            <table className={`w-full ${TYPO_DATA}`}>
+              <thead className="sticky top-0 bg-[var(--color-surface-secondary)]">
                 <tr>
                   <th className={`px-3 py-2 ${TERMINAL_TH}`}>Time</th>
                   <th className={`px-3 py-2 ${TERMINAL_TH}`}>Action</th>
@@ -429,10 +430,10 @@ function ScalingRuleRow({
 }) {
   return (
     <div
-      className={`flex items-center gap-4 rounded-[var(--radius-md)] border px-4 py-3 font-mono text-xs ${
+      className={`flex items-center gap-4 rounded-[var(--radius-md)] border px-4 py-3 ${TYPO_DATA} ${
         rule.enabled
-          ? "border-[var(--color-border-default)] bg-[#0d1117]"
-          : "border-dashed border-[var(--color-border-default)] bg-[#0d1117] opacity-60"
+          ? "border-[var(--color-border-default)] bg-[var(--color-surface-primary)]"
+          : "border-dashed border-[var(--color-border-default)] bg-[var(--color-surface-primary)] opacity-60"
       }`}
     >
       <div className="flex-1 grid grid-cols-6 gap-2">
@@ -442,21 +443,21 @@ function ScalingRuleRow({
         </div>
         <div>
           <span className={TERMINAL_LABEL}>Min/Max</span>
-          <p className="text-cyan-400">
+          <p className="text-[var(--color-data-cyan)]">
             {rule.min_instances} / {rule.max_instances}
           </p>
         </div>
         <div>
           <span className={TERMINAL_LABEL}>Queue Threshold</span>
-          <p className="text-cyan-400">{rule.queue_threshold} jobs</p>
+          <p className="text-[var(--color-data-cyan)]">{rule.queue_threshold} jobs</p>
         </div>
         <div>
           <span className={TERMINAL_LABEL}>Cooldown</span>
-          <p className="text-cyan-400">{rule.cooldown_secs}s</p>
+          <p className="text-[var(--color-data-cyan)]">{rule.cooldown_secs}s</p>
         </div>
         <div>
           <span className={TERMINAL_LABEL}>Budget</span>
-          <p className="text-cyan-400">
+          <p className="text-[var(--color-data-cyan)]">
             {rule.budget_limit_cents != null ? formatCents(rule.budget_limit_cents) : "—"}
           </p>
         </div>
@@ -514,8 +515,8 @@ function ScalingRuleForm({ gpuTypes, initial, onSave, onCancel, saving }: Scalin
   const set = (field: string, value: unknown) => setForm((f) => ({ ...f, [field]: value }));
 
   return (
-    <div className="rounded-[var(--radius-md)] border border-[var(--color-border-default)] bg-[#161b22] p-4 mb-3">
-      <div className="grid grid-cols-4 gap-3 font-mono text-xs">
+    <div className="rounded-[var(--radius-md)] border border-[var(--color-border-default)] bg-[var(--color-surface-secondary)] p-4 mb-3">
+      <div className={`grid grid-cols-4 gap-3 ${TYPO_DATA}`}>
         {!initial && (
           <div className="flex flex-col gap-1">
             <span className={TERMINAL_LABEL}>GPU Type</span>
@@ -607,9 +608,9 @@ function ScalingRuleForm({ gpuTypes, initial, onSave, onCancel, saving }: Scalin
 /* ---------- Action Badge ---------- */
 
 const SCALING_ACTION_COLORS: Record<string, string> = {
-  scale_up: "text-green-400",
-  scale_down: "text-red-400",
-  provision_error: "text-orange-400",
+  scale_up: "text-[var(--color-data-green)]",
+  scale_down: "text-[var(--color-data-red)]",
+  provision_error: "text-[var(--color-data-orange)]",
   no_change: "text-[var(--color-text-muted)]",
 };
 
@@ -626,7 +627,7 @@ function ScalingActionBadge({ action, count }: { action: string; count: number }
   const label = labelFn ? labelFn(count) : action;
 
   return (
-    <span className={`font-mono text-xs font-semibold whitespace-nowrap ${color}`}>
+    <span className={`${TYPO_DATA} font-semibold whitespace-nowrap ${color}`}>
       {label}
     </span>
   );
@@ -641,15 +642,15 @@ function CostTab({ providerId }: { providerId: number }) {
   return (
     <div>
       {summary && (
-        <div className="mb-4 rounded-[var(--radius-lg)] border border-[var(--color-border-default)] bg-[#161b22] p-3">
-          <p className="font-mono text-xs text-[var(--color-text-muted)]">
-            Last 30 days: <span className="font-medium text-cyan-400">{formatCents(summary.total_cost_cents)}</span>
+        <div className="mb-4 rounded-[var(--radius-lg)] border border-[var(--color-border-default)] bg-[var(--color-surface-secondary)] p-3">
+          <p className={TYPO_DATA_MUTED}>
+            Last 30 days: <span className="font-medium text-[var(--color-data-cyan)]">{formatCents(summary.total_cost_cents)}</span>
             {" "}&middot; {summary.event_count} events
           </p>
         </div>
       )}
       {events && events.length > 0 ? (
-        <table className="w-full font-mono text-xs">
+        <table className={`w-full ${TYPO_DATA}`}>
           <thead>
             <tr className={TERMINAL_DIVIDER}>
               <th className={`pb-2 ${TERMINAL_TH}`}>Type</th>

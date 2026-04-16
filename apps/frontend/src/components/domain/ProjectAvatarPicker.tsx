@@ -8,6 +8,7 @@
 import { useState } from "react";
 
 import { Stack } from "@/components/layout";
+import { TYPO_PAGE_TITLE } from "@/lib/typography-tokens";
 import { Select ,  ContextLoader } from "@/components/primitives";
 import { EmptyState } from "@/components/domain/EmptyState";
 import { usePipelineContextSafe } from "@/features/pipelines";
@@ -59,7 +60,7 @@ export function ProjectAvatarPicker({
   return (
     <Stack gap={6}>
       <div>
-        <h1 className="text-xl font-semibold text-[var(--color-text-primary)]">
+        <h1 className={TYPO_PAGE_TITLE}>
           {title}
         </h1>
         <p className="mt-1 text-sm text-[var(--color-text-muted)]">

@@ -18,6 +18,7 @@ import {
 import { useSchedules } from "./hooks/use-job-scheduling";
 import { ScheduleRow } from "./ScheduleRow";
 import type { Schedule } from "./types";
+import { TYPO_DATA_MUTED } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Filter options
@@ -40,7 +41,7 @@ const COLUMNS = ["Name", "Type", "Schedule", "Next Run", "Last Run", "Runs", "St
 function TableHead() {
   return (
     <thead>
-      <tr className={`${TERMINAL_DIVIDER} bg-[#161b22]`}>
+      <tr className={`${TERMINAL_DIVIDER} bg-[var(--color-surface-secondary)]`}>
         {COLUMNS.map((col) => (
           <th
             key={col}
@@ -105,7 +106,7 @@ export function ScheduleList({ onEdit }: ScheduleListProps) {
   if (!schedules || schedules.length === 0) {
     return (
       <div className={TERMINAL_PANEL}>
-        <div className="p-[var(--spacing-6)] text-center font-mono text-xs text-[var(--color-text-muted)]" data-testid="schedule-list-empty">
+        <div className={`p-[var(--spacing-6)] text-center ${TYPO_DATA_MUTED}`} data-testid="schedule-list-empty">
           No schedules configured yet. Create one to get started.
         </div>
       </div>

@@ -31,8 +31,8 @@ const SENSITIVE_MASK = "********";
 
 /** Terminal-style source colors. */
 const SOURCE_TERMINAL_COLOR: Record<SettingSource, string> = {
-  database: "text-green-400",
-  env: "text-orange-400",
+  database: "text-[var(--color-data-green)]",
+  env: "text-[var(--color-data-orange)]",
   default: "text-[var(--color-text-muted)]",
 };
 
@@ -135,7 +135,7 @@ export function SettingRow({ setting }: SettingRowProps) {
             {setting.requires_restart && (
               <AlertTriangle
                 size={14}
-                className="text-orange-400"
+                className="text-[var(--color-data-orange)]"
                 aria-label="Requires restart"
               />
             )}

@@ -33,10 +33,10 @@ const CATEGORY_ICONS: Record<FileCategory, React.ReactNode> = {
 function ConflictBadge({ status }: { status: string }) {
   const color =
     status === "new"
-      ? "text-green-400 bg-green-400/10"
+      ? "text-[var(--color-data-green)] bg-green-400/10"
       : status === "exists"
         ? "text-yellow-400 bg-yellow-400/10"
-        : "text-red-400 bg-red-400/10";
+        : "text-[var(--color-data-red)] bg-red-400/10";
   return (
     <span className={cn("px-1.5 py-0.5 rounded font-mono text-[10px]", color)}>
       {status}
@@ -80,13 +80,13 @@ export function ScanFileRow({
           {contextParts.length > 0 && (
             <>
               <span className="opacity-30">|</span>
-              <span className="text-cyan-400">{contextParts.join(" \u00b7 ")}</span>
+              <span className="text-[var(--color-data-cyan)]">{contextParts.join(" \u00b7 ")}</span>
             </>
           )}
           {file.resolved.labels.length > 0 && (
             <>
               <span className="opacity-30">|</span>
-              <span className="text-orange-400">{file.resolved.labels.join(", ")}</span>
+              <span className="text-[var(--color-data-orange)]">{file.resolved.labels.join(", ")}</span>
             </>
           )}
         </div>
@@ -94,7 +94,7 @@ export function ScanFileRow({
       <ConflictBadge status={file.conflict} />
       {file.conflict === "exists" && (
         <select
-          className="font-mono text-[10px] bg-[#161b22] text-[var(--color-text-primary)] border border-[var(--color-border-default)] rounded px-1 py-0.5"
+          className="font-mono text-[10px] bg-[var(--color-surface-secondary)] text-[var(--color-text-primary)] border border-[var(--color-border-default)] rounded px-1 py-0.5"
           value={action}
           onChange={(e) => onActionChange(e.target.value as "import" | "skip" | "replace")}
         >

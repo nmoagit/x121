@@ -4,6 +4,7 @@
 
 import { Button } from "@/components";
 import { cn } from "@/lib/cn";
+import { TYPO_SECTION_TITLE } from "@/lib/typography-tokens";
 import { formatValue } from "@/lib/format";
 
 import type { OverrideDiff } from "./types";
@@ -35,7 +36,7 @@ export function OverridePreviewDialog({
       )}
       data-testid="override-preview-dialog"
     >
-      <h3 className="text-base font-semibold text-[var(--color-text-primary)] mb-4">
+      <h3 className={`${TYPO_SECTION_TITLE} mb-4`}>
         Apply &ldquo;{presetName}&rdquo;
       </h3>
 

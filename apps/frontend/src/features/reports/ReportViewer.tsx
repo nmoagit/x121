@@ -11,6 +11,7 @@ import { API_BASE_URL } from "@/lib/api";
 import { formatDateTime } from "@/lib/format";
 import { Download, iconSizes } from "@/tokens/icons";
 
+import { TYPO_INPUT_LABEL } from "@/lib/typography-tokens";
 import { useReport } from "./hooks/use-reports";
 import {
   FORMAT_LABELS,
@@ -120,7 +121,7 @@ export function ReportViewer({ reportId }: ReportViewerProps) {
             {/* Report data preview */}
             {report.data_json && (
               <div className="mt-2">
-                <p className="text-xs font-medium text-[var(--color-text-secondary)] mb-1">
+                <p className={`mb-1 ${TYPO_INPUT_LABEL}`}>
                   Data Preview
                 </p>
                 <pre

@@ -11,6 +11,7 @@ import { StatBadge ,  ContextLoader } from "@/components/primitives";
 import { Stack } from "@/components/layout";
 import { useSetPageTitle } from "@/hooks/useSetPageTitle";
 import { daysAgoDate } from "@/lib/format";
+import { TYPO_SECTION_TITLE } from "@/lib/typography-tokens";
 import { AlertCircle, Power } from "@/tokens/icons";
 
 import { ConsumptionSummary } from "./ConsumptionSummary";
@@ -114,7 +115,7 @@ export function PowerDashboard() {
 
         {/* Consumption summary */}
         <div>
-          <h2 className="text-base font-semibold text-[var(--color-text-primary)] mb-[var(--spacing-3)]">
+          <h2 className={`${TYPO_SECTION_TITLE} mb-[var(--spacing-3)]`}>
             Energy Consumption (Last 7 Days)
           </h2>
           <ConsumptionSummary params={consumptionParams} />

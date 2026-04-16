@@ -23,6 +23,7 @@ import {
   useUpdateAvatarMetadata,
 } from "./hooks/use-metadata-editor";
 import type { AvatarMetadataResponse } from "./types";
+import { TYPO_DATA, TYPO_DATA_CYAN, TYPO_DATA_MUTED } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Types
@@ -143,9 +144,9 @@ export function MetadataSpreadsheet({
           placeholder="Filter avatars..."
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
-          className="rounded-[var(--radius-md)] border border-[var(--color-border-default)] bg-[#0d1117] px-3 py-1.5 font-mono text-xs text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:ring-1 focus:ring-[var(--color-border-focus)]"
+          className={`rounded-[var(--radius-md)] border border-[var(--color-border-default)] bg-[var(--color-surface-primary)] px-3 py-1.5 ${TYPO_DATA} placeholder:text-[var(--color-text-muted)] focus:outline-none focus:ring-1 focus:ring-[var(--color-border-focus)]`}
         />
-        <span className="font-mono text-xs text-[var(--color-text-muted)]">
+        <span className={TYPO_DATA_MUTED}>
           {sortedData.length} avatar{sortedData.length !== 1 ? "s" : ""}
         </span>
       </div>
@@ -153,7 +154,7 @@ export function MetadataSpreadsheet({
       {/* Table */}
       <div className={TERMINAL_PANEL}>
         <div className="overflow-x-auto">
-          <table className="w-full font-mono text-xs">
+          <table className={`w-full ${TYPO_DATA}`}>
             <thead>
               <tr className={`${TERMINAL_DIVIDER} ${TERMINAL_HEADER}`}>
                 {onSelectionChange && (
@@ -277,7 +278,7 @@ function SpreadsheetRow({
               type="text"
               defaultValue={displayValue}
               onBlur={(e) => handleCellBlur(col.name, e.target.value, displayValue)}
-              className="w-full border-0 bg-transparent px-0 font-mono text-xs text-cyan-400 focus:outline-none focus:ring-1 focus:ring-[var(--color-border-focus)] focus:rounded-[var(--radius-sm)] focus:px-1"
+              className={`${TYPO_DATA_CYAN} w-full border-0 bg-transparent px-0 focus:outline-none focus:ring-1 focus:ring-[var(--color-border-focus)] focus:rounded-[var(--radius-sm)] focus:px-1`}
             />
           </td>
         );

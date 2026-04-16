@@ -13,6 +13,7 @@ import { formatDateTime } from "@/lib/format";
 
 import type { ReviewNote, ReviewTag } from "./types";
 import { noteStatusLabel, statusBadgeVariant } from "./types";
+import { TYPO_DATA_MUTED } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Types
@@ -98,14 +99,14 @@ export function NoteTimeline({
               </span>
               {note.timecode && (
                 <span
-                  className="font-mono text-xs text-[var(--color-text-muted)]"
+                  className={TYPO_DATA_MUTED}
                   data-testid={`note-timecode-${note.id}`}
                 >
                   {note.timecode}
                 </span>
               )}
               {note.frame_number != null && !note.timecode && (
-                <span className="font-mono text-xs text-[var(--color-text-muted)]">
+                <span className={TYPO_DATA_MUTED}>
                   Frame {note.frame_number}
                 </span>
               )}

@@ -125,7 +125,7 @@ export function GenerationTerminal({
       {!collapsed && (
       <div
         ref={scrollRef}
-        className="max-h-64 overflow-y-auto bg-[#0d1117] p-[var(--spacing-3)]"
+        className="max-h-64 overflow-y-auto bg-[var(--color-surface-primary)] p-[var(--spacing-3)]"
       >
         {hasEntries ? (
           <div className="flex flex-col gap-px">

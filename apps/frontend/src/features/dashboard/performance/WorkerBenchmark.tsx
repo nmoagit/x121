@@ -15,6 +15,7 @@ import {
 import { Card } from "@/components/composite/Card";
 import { ContextLoader } from "@/components/primitives";
 import { Stack } from "@/components/layout";
+import { TYPO_SECTION_TITLE } from "@/lib/typography-tokens";
 import {
   useWorkersComparison,
   type WorkerPerformanceSummary,
@@ -76,7 +77,7 @@ export function WorkerBenchmark({ from, to }: WorkerBenchmarkProps) {
 
   return (
     <Stack gap={4}>
-      <h3 className="text-base font-semibold text-[var(--color-text-primary)]">
+      <h3 className={TYPO_SECTION_TITLE}>
         Worker Benchmarking
       </h3>
 

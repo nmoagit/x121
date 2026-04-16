@@ -23,6 +23,7 @@ import {
   useDeleteTemplateField,
 } from "../hooks/use-metadata-templates";
 import type { MetadataTemplate } from "../hooks/use-metadata-templates";
+import { TYPO_DATA, TYPO_DATA_CYAN } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Field type options for the select dropdown
@@ -91,11 +92,11 @@ function TemplateRow({ template }: { template: MetadataTemplate }) {
         className={cn(TERMINAL_HEADER, "flex w-full items-center justify-between", TERMINAL_ROW_HOVER)}
       >
         <div className="flex items-center gap-[var(--spacing-2)]">
-          <span className="text-xs font-medium text-cyan-400 font-mono">
+          <span className={`${TYPO_DATA_CYAN} font-medium`}>
             {template.name}
           </span>
           {template.is_default && (
-            <span className="text-[10px] text-green-400 font-mono uppercase">Default</span>
+            <span className="text-[10px] text-[var(--color-data-green)] font-mono uppercase">Default</span>
           )}
           {template.project_id && (
             <span className="text-[10px] text-[var(--color-text-muted)] font-mono uppercase">Project</span>
@@ -122,7 +123,7 @@ function TemplateRow({ template }: { template: MetadataTemplate }) {
               {/* Fields table */}
               {detail?.fields && detail.fields.length > 0 && (
                 <div className="overflow-x-auto">
-                  <table className="w-full font-mono text-xs">
+                  <table className={`w-full ${TYPO_DATA}`}>
                     <thead>
                       <tr className={TERMINAL_DIVIDER}>
                         <th className={cn(TERMINAL_TH, "py-1.5 pr-3")}>Field Name</th>
@@ -139,7 +140,7 @@ function TemplateRow({ template }: { template: MetadataTemplate }) {
                           key={field.id}
                           className={cn(TERMINAL_DIVIDER, "last:border-0", TERMINAL_ROW_HOVER)}
                         >
-                          <td className="py-1.5 pr-3 text-cyan-400">
+                          <td className="py-1.5 pr-3 text-[var(--color-data-cyan)]">
                             {field.field_name}
                           </td>
                           <td className="py-1.5 pr-3 text-[var(--color-text-secondary)]">
@@ -147,7 +148,7 @@ function TemplateRow({ template }: { template: MetadataTemplate }) {
                           </td>
                           <td className="py-1.5 pr-3">
                             {field.is_required ? (
-                              <span className="text-orange-400">Yes</span>
+                              <span className="text-[var(--color-data-orange)]">Yes</span>
                             ) : (
                               <span className="text-[var(--color-text-muted)]">No</span>
                             )}

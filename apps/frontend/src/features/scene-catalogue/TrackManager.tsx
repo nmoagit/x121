@@ -26,6 +26,7 @@ import { Plus } from "@/tokens/icons";
 
 import { useCreateTrack, useTracks, useUpdateTrack } from "./hooks/use-tracks";
 import type { CreateTrack, Track } from "./types";
+import { TYPO_DATA, TYPO_DATA_CYAN, TYPO_DATA_MUTED } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Add track form
@@ -123,7 +124,7 @@ function TrackRow({ track }: TrackRowProps) {
         <td className="px-3 py-1.5">
           <Input value={name} onChange={(e) => setName(e.target.value)} className="text-sm" />
         </td>
-        <td className="px-3 py-1.5 font-mono text-xs text-[var(--color-text-muted)]">{track.slug}</td>
+        <td className={`px-3 py-1.5 ${TYPO_DATA_MUTED}`}>{track.slug}</td>
         <td className="px-3 py-1.5">
           <Input
             type="number"
@@ -134,7 +135,7 @@ function TrackRow({ track }: TrackRowProps) {
           />
         </td>
         <td className="px-3 py-1.5">
-          <span className={cn("font-mono text-xs", TERMINAL_STATUS_COLORS[track.is_active ? "active" : "pending"])}>
+          <span className={cn(TYPO_DATA, TERMINAL_STATUS_COLORS[track.is_active ? "active" : "pending"])}>
             {track.is_active ? "Active" : "Inactive"}
           </span>
         </td>
@@ -160,11 +161,11 @@ function TrackRow({ track }: TrackRowProps) {
 
   return (
     <tr className={cn(TERMINAL_DIVIDER, TERMINAL_ROW_HOVER)}>
-      <td className="px-3 py-1.5 font-mono text-xs text-cyan-400">
+      <td className={`${TYPO_DATA_CYAN} px-3 py-1.5`}>
         {track.name}
       </td>
-      <td className="px-3 py-1.5 font-mono text-xs text-[var(--color-text-muted)]">{track.slug}</td>
-      <td className="px-3 py-1.5 font-mono text-xs text-[var(--color-text-muted)]">{track.sort_order}</td>
+      <td className={`px-3 py-1.5 ${TYPO_DATA_MUTED}`}>{track.slug}</td>
+      <td className={`px-3 py-1.5 ${TYPO_DATA_MUTED}`}>{track.sort_order}</td>
       <td className="px-3 py-1.5">
         <Toggle checked={track.is_active} onChange={handleToggleActive} size="sm" />
       </td>
@@ -229,7 +230,7 @@ export function TrackManager() {
                   <tr>
                     <td
                       colSpan={5}
-                      className="px-4 py-8 text-center font-mono text-xs text-[var(--color-text-muted)]"
+                      className={`px-4 py-8 text-center ${TYPO_DATA_MUTED}`}
                     >
                       No tracks defined. Click "Add Track" to create one.
                     </td>

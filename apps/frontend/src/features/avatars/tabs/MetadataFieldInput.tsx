@@ -8,6 +8,7 @@
 import { Input, Select, Toggle } from "@/components/primitives";
 import { snakeCaseToTitle } from "@/lib/format";
 import { ICON_ACTION_BTN_DANGER } from "@/lib/ui-classes";
+import { TYPO_LABEL } from "@/lib/typography-tokens";
 import { Trash2 } from "@/tokens/icons";
 
 import type { MetadataTemplateField } from "../types";
@@ -66,7 +67,7 @@ export function MetadataFieldInput({ field, value, onChange, onDelete }: Metadat
     return (
       <div className="col-span-full flex flex-col gap-2 rounded-[var(--radius-md)] border border-[var(--color-border-default)]/30 p-3">
         <div className="flex items-center justify-between">
-          <span className="text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-wide font-mono">
+          <span className={TYPO_LABEL}>
             {displayLabel}
           </span>
           {onDelete && !field.is_required && (

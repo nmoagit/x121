@@ -8,6 +8,7 @@ import type { AssetSearchParams, AssetWithStats } from "@/features/admin/hooks/u
 import { useSetPageTitle } from "@/hooks/useSetPageTitle";
 import { formatBytes } from "@/lib/format";
 import { File } from "@/tokens/icons";
+import { TYPO_CAPTION } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Constants
@@ -72,7 +73,7 @@ function AssetCard({ asset, onSelect }: AssetCardProps) {
       <p className="text-xs text-[var(--color-text-muted)]">v{asset.version}</p>
 
       {asset.description && (
-        <p className="text-xs text-[var(--color-text-secondary)] line-clamp-2">
+        <p className={`line-clamp-2 ${TYPO_CAPTION}`}>
           {asset.description}
         </p>
       )}

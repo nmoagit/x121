@@ -15,6 +15,7 @@ import { TEXTAREA_BASE } from "@/lib/ui-classes";
 import { Upload } from "@/tokens/icons";
 
 import type { ImportSpeechesResponse } from "../types";
+import { TYPO_DATA, TYPO_DATA_DANGER } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Props
@@ -136,16 +137,16 @@ export function SpeechImportModal({
         {/* Import result */}
         {result && (
           <Stack gap={2}>
-            <div className="flex items-center gap-[var(--spacing-2)] font-mono text-xs">
-              <span className="text-green-400">{result.imported} imported</span>
+            <div className={`flex items-center gap-[var(--spacing-2)] ${TYPO_DATA}`}>
+              <span className="text-[var(--color-data-green)]">{result.imported} imported</span>
               {result.created_types.length > 0 && (
-                <span className="text-cyan-400">
+                <span className="text-[var(--color-data-cyan)]">
                   {result.created_types.length} new type{result.created_types.length !== 1 ? "s" : ""}
                 </span>
               )}
             </div>
             {result.errors.length > 0 && (
-              <div className="text-xs font-mono text-red-400">
+              <div className={TYPO_DATA_DANGER}>
                 {result.errors.map((err) => (
                   <p key={err}>{err}</p>
                 ))}

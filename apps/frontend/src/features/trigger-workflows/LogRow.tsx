@@ -13,6 +13,7 @@ import { formatDateTime } from "@/lib/format";
 
 import type { TriggerLog } from "./types";
 import { TRIGGER_RESULT_BADGE } from "./types";
+import { TYPO_INPUT_LABEL } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Component
@@ -55,7 +56,7 @@ export function LogRow({ log }: { log: TriggerLog }) {
           <td colSpan={5} className="px-4 py-3 bg-[var(--color-surface-primary)]">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-xs font-medium text-[var(--color-text-muted)] mb-1">
+                <p className={`mb-1 ${TYPO_INPUT_LABEL}`}>
                   Event Data
                 </p>
                 <pre className="text-xs font-mono text-[var(--color-text-secondary)] bg-[var(--color-surface-secondary)] px-3 py-2 rounded-[var(--radius-md)] overflow-auto max-h-40">
@@ -63,7 +64,7 @@ export function LogRow({ log }: { log: TriggerLog }) {
                 </pre>
               </div>
               <div>
-                <p className="text-xs font-medium text-[var(--color-text-muted)] mb-1">
+                <p className={`mb-1 ${TYPO_INPUT_LABEL}`}>
                   Actions Taken
                 </p>
                 <pre className="text-xs font-mono text-[var(--color-text-secondary)] bg-[var(--color-surface-secondary)] px-3 py-2 rounded-[var(--radius-md)] overflow-auto max-h-40">

@@ -37,6 +37,7 @@ import { ProgressiveImage  } from "@/components/primitives";
 import { TrackImageCard } from "./TrackImageCard";
 import { TRACK_TEXT_COLORS } from "@/lib/ui-classes";
 import { useTrackImageActions } from "./useTrackImageActions";
+import { TYPO_TIMESTAMP } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Detail modal variant card (inline — only used inside the modal)
@@ -57,7 +58,7 @@ function ModalVariantCard({ variant, onApprove, onUnapprove, onReject, onExport,
   const canUnapprove = canUnapproveVariant(variant.status_id);
 
   return (
-    <div className="rounded-[var(--radius-lg)] border border-[var(--color-border-default)] bg-[#0d1117] overflow-hidden">
+    <div className="rounded-[var(--radius-lg)] border border-[var(--color-border-default)] bg-[var(--color-surface-primary)] overflow-hidden">
       {/* Thumbnail — click to annotate */}
       {variant.file_path ? (
         <div
@@ -77,7 +78,7 @@ function ModalVariantCard({ variant, onApprove, onUnapprove, onReject, onExport,
           />
         </div>
       ) : (
-        <div className="flex aspect-video items-center justify-center text-xs text-[var(--color-text-muted)] font-mono bg-[#161b22]">
+        <div className="flex aspect-video items-center justify-center text-xs text-[var(--color-text-muted)] font-mono bg-[var(--color-surface-secondary)]">
           No image
         </div>
       )}
@@ -88,10 +89,10 @@ function ModalVariantCard({ variant, onApprove, onUnapprove, onReject, onExport,
           <p className="truncate text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide font-mono">
             {variant.variant_label}
           </p>
-          {variant.is_hero && <span className="text-[10px] font-mono text-green-400">hero</span>}
+          {variant.is_hero && <span className="text-[10px] font-mono text-[var(--color-data-green)]">hero</span>}
         </div>
         <div className="flex items-center gap-2 font-mono text-[10px] text-[var(--color-text-muted)]">
-          <span className={statusBadgeVariant(variant.status_id) === "success" ? "text-green-400" : "text-cyan-400"}>
+          <span className={statusBadgeVariant(variant.status_id) === "success" ? "text-[var(--color-data-green)]" : "text-[var(--color-data-cyan)]"}>
             {(MEDIA_VARIANT_STATUS_LABEL[variant.status_id] ?? "unknown").toLowerCase()}
           </span>
           <span className="opacity-30">|</span>
@@ -238,7 +239,7 @@ export function AvatarImagesTab({ avatarId, projectId }: AvatarImagesTabProps) {
               </h2>
               {!isSingleTrack && (
                 <>
-                  <span className="text-[10px] font-mono text-[var(--color-text-muted)]">
+                  <span className={TYPO_TIMESTAMP}>
                     {(detailTrackIndex ?? 0) + 1}/{trackImageData.length}
                   </span>
                   <Button
@@ -273,7 +274,7 @@ export function AvatarImagesTab({ avatarId, projectId }: AvatarImagesTabProps) {
               <div className="flex items-center gap-2 font-mono text-[10px] text-[var(--color-text-muted)]">
                 {detailTrack.hero && (
                   <>
-                    <span className={statusBadgeVariant(detailTrack.hero.status_id) === "success" ? "text-green-400" : "text-cyan-400"}>
+                    <span className={statusBadgeVariant(detailTrack.hero.status_id) === "success" ? "text-[var(--color-data-green)]" : "text-[var(--color-data-cyan)]"}>
                       {MEDIA_VARIANT_STATUS_LABEL[detailTrack.hero.status_id]?.toLowerCase()}
                     </span>
                     <span className="opacity-30">|</span>

@@ -5,6 +5,7 @@ import { Card, CardBody, CardFooter, CardHeader, Tabs } from "@/components/compo
 import { Stack } from "@/components/layout";
 import { Button, Input, Select ,  ContextLoader } from "@/components/primitives";
 import { api } from "@/lib/api";
+import { TYPO_SECTION_TITLE } from "@/lib/typography-tokens";
 
 import {
   ActionSection,
@@ -194,7 +195,7 @@ export function TokenEditor() {
       <Card className="w-64 shrink-0">
         <CardHeader>
           <div className="flex items-center justify-between">
-            <h2 className="text-base font-semibold text-[var(--color-text-primary)]">Themes</h2>
+            <h2 className={TYPO_SECTION_TITLE}>Themes</h2>
             <Button size="sm" variant="secondary" onClick={handleNew}>
               New
             </Button>
@@ -255,7 +256,7 @@ export function TokenEditor() {
         <div className="grid grid-cols-2 gap-6">
           <Card>
             <CardHeader>
-              <h3 className="text-base font-semibold text-[var(--color-text-primary)]">
+              <h3 className={TYPO_SECTION_TITLE}>
                 Token Editor
               </h3>
             </CardHeader>
@@ -267,7 +268,7 @@ export function TokenEditor() {
 
           <Card>
             <CardHeader>
-              <h3 className="text-base font-semibold text-[var(--color-text-primary)]">Preview</h3>
+              <h3 className={TYPO_SECTION_TITLE}>Preview</h3>
             </CardHeader>
             <CardBody>
               <PreviewPanel tokens={tokens} />

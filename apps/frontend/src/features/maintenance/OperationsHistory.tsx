@@ -6,6 +6,7 @@
  */
 
 import type { BulkOperation } from "./types";
+import { TYPO_DATA, TYPO_CAPTION} from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Constants
@@ -110,7 +111,7 @@ export function OperationsHistory({
               className="cursor-pointer border-b hover:bg-gray-50"
               onClick={() => onSelect?.(op.id)}
             >
-              <td className="py-2 pr-4 font-mono text-xs">{op.id}</td>
+              <td className={`py-2 pr-4 ${TYPO_DATA}`}>{op.id}</td>
               <td className="py-2 pr-4">
                 {TYPE_LABELS[op.operation_type_id] ?? `Type ${op.operation_type_id}`}
               </td>
@@ -129,7 +130,7 @@ export function OperationsHistory({
                 </span>
               </td>
               <td className="py-2 pr-4">{op.affected_count}</td>
-              <td className="py-2 pr-4 text-xs text-[var(--color-text-secondary)]">
+              <td className={`py-2 pr-4 ${TYPO_CAPTION}`}>
                 {formatDate(op.created_at)}
               </td>
               <td className="py-2">

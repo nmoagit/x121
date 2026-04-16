@@ -10,6 +10,7 @@ import { ArtifactTimeline } from "./ArtifactTimeline";
 import { ClipQAActions } from "./ClipQAActions";
 import { GenerationSnapshotPanel } from "./GenerationSnapshotPanel";
 import { type SceneVideoVersion, isEmptyClip, isPurgedClip } from "./types";
+import { TYPO_DATA, TYPO_LABEL} from "@/lib/typography-tokens";
 
 /** Video thumbnail — preloads offscreen, only mounts <video> once metadata is ready. */
 function VideoThumbnail({ clipId, onPlay }: { clipId: number; onPlay: () => void }) {
@@ -96,7 +97,7 @@ export function ClipCard({
 
   return (
     <div
-      className={`rounded-[var(--radius-lg)] border transition-colors bg-[#0d1117] hover:bg-[#161b22] ${
+      className={`rounded-[var(--radius-lg)] border transition-colors bg-[var(--color-surface-primary)] hover:bg-[var(--color-surface-secondary)] ${
         clip.qa_status === "approved"
           ? "border-green-500"
           : clip.qa_status === "rejected"
@@ -115,17 +116,17 @@ export function ClipCard({
       )}
 
       {/* Metadata */}
-      <div className="flex min-w-0 flex-1 flex-col gap-1 font-mono text-xs">
+      <div className={`flex min-w-0 flex-1 flex-col gap-1 ${TYPO_DATA}`}>
         <div className="flex items-center gap-2">
-          <span className="font-semibold text-cyan-400">v{clip.version_number}</span>
+          <span className="font-semibold text-[var(--color-data-cyan)]">v{clip.version_number}</span>
           <span className="text-[var(--color-text-muted)]">{sourceLabel.toLowerCase()}</span>
           {clip.is_final && (
-            <span className="text-green-400 font-medium">final</span>
+            <span className="text-[var(--color-data-green)] font-medium">final</span>
           )}
-          {purged && <span className="text-orange-400">purged</span>}
-          {!purged && isEmptyClip(clip) && <span className="text-orange-400">empty</span>}
+          {purged && <span className="text-[var(--color-data-orange)]">purged</span>}
+          {!purged && isEmptyClip(clip) && <span className="text-[var(--color-data-orange)]">empty</span>}
           {annotationCount > 0 && (
-            <span className="text-orange-400">{annotationCount} annotated</span>
+            <span className="text-[var(--color-data-orange)]">{annotationCount} annotated</span>
           )}
         </div>
         <div className="flex items-center gap-2 text-[10px] text-[var(--color-text-muted)]">
@@ -197,8 +198,8 @@ export function ClipCard({
           <button
             type="button"
             onClick={() => setShowSnapshot((v) => !v)}
-            className="flex w-full items-center gap-1 border-t border-[var(--color-border-default)]/30 px-3 py-1.5
-              text-[10px] font-mono uppercase tracking-wide text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
+            className={`flex w-full items-center gap-1 border-t border-[var(--color-border-default)]/30 px-3 py-1.5
+              ${TYPO_LABEL} hover:text-[var(--color-text-primary)] transition-colors`}
           >
             {showSnapshot ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
             Generation Parameters
@@ -217,8 +218,8 @@ export function ClipCard({
           <button
             type="button"
             onClick={() => setShowArtifacts((v) => !v)}
-            className="flex w-full items-center gap-1 border-t border-[var(--color-border-default)]/30 px-3 py-1.5
-              text-[10px] font-mono uppercase tracking-wide text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
+            className={`flex w-full items-center gap-1 border-t border-[var(--color-border-default)]/30 px-3 py-1.5
+              ${TYPO_LABEL} hover:text-[var(--color-text-primary)] transition-colors`}
           >
             {showArtifacts ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
             <Layers size={12} />

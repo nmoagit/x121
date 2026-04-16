@@ -15,6 +15,7 @@ import {
   trackTextColor,
 } from "@/lib/ui-classes";
 import { Activity, Layers } from "@/tokens/icons";
+import { TYPO_DATA, TYPO_DATA_CYAN, TYPO_DATA_MUTED } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Helpers
@@ -66,11 +67,11 @@ function TaskRow({ task, showPipeline = true }: { task: ActiveTaskItem; showPipe
   return (
     <div className={`flex items-center justify-between gap-2 py-2 ${TERMINAL_DIVIDER} last:border-b-0 ${TERMINAL_ROW_HOVER}`}>
       <div className="flex-1 min-w-0">
-        <p className="font-mono text-xs text-[var(--color-text-primary)] truncate">
+        <p className={`${TYPO_DATA} truncate`}>
           <TaskLabel task={task} showPipeline={showPipeline} />
         </p>
         {task.progress_message && (
-          <p className="font-mono text-xs text-[var(--color-text-muted)] truncate">{task.progress_message}</p>
+          <p className={`${TYPO_DATA_MUTED} truncate`}>{task.progress_message}</p>
         )}
       </div>
 
@@ -85,11 +86,11 @@ function TaskRow({ task, showPipeline = true }: { task: ActiveTaskItem; showPipe
           </div>
         )}
 
-        <span className="font-mono text-xs text-[var(--color-text-muted)] tabular-nums w-14 text-right">
+        <span className={`${TYPO_DATA_MUTED} tabular-nums w-14 text-right`}>
           {task.status === "running" ? `${task.progress_pct}%` : formatElapsed(task.elapsed_seconds)}
         </span>
 
-        <span className={`font-mono text-xs font-medium ${statusColor(task.status)}`}>
+        <span className={`${TYPO_DATA} font-medium ${statusColor(task.status)}`}>
           {task.status}
         </span>
       </div>
@@ -106,14 +107,14 @@ function SummaryBar({ tasks, scheduledCount }: { tasks: ActiveTaskItem[]; schedu
   const queued = tasks.filter((t) => t.status === "pending").length;
 
   return (
-    <div className={`flex items-center gap-3 pb-2 mb-2 font-mono text-xs ${TERMINAL_DIVIDER}`}>
+    <div className={`flex items-center gap-3 pb-2 mb-2 ${TYPO_DATA} ${TERMINAL_DIVIDER}`}>
       <span className="flex items-center gap-1">
-        <span className="text-cyan-400 font-bold tabular-nums">{running}</span>
+        <span className="text-[var(--color-data-cyan)] font-bold tabular-nums">{running}</span>
         <span className={TERMINAL_LABEL}>running</span>
       </span>
       <span className={TERMINAL_PIPE}>|</span>
       <span className="flex items-center gap-1">
-        <span className="text-orange-400 font-bold tabular-nums">{queued}</span>
+        <span className="text-[var(--color-data-orange)] font-bold tabular-nums">{queued}</span>
         <span className={TERMINAL_LABEL}>queued</span>
       </span>
       <span className={TERMINAL_PIPE}>|</span>
@@ -143,7 +144,7 @@ export function ActiveTasksWidget({ pipelineId, showPipeline = true }: { pipelin
       error={error?.message}
       onRetry={() => void refetch()}
       headerActions={
-        <Link to="/admin/queue" className="font-mono text-xs text-cyan-400 hover:underline">
+        <Link to="/admin/queue" className={`${TYPO_DATA_CYAN} hover:underline`}>
           Queue
         </Link>
       }

@@ -169,17 +169,17 @@ export const LEVEL_BADGE_VARIANT: Record<ActivityLogLevel, BadgeVariant> = {
 /** Terminal text color classes for log levels. */
 export const LEVEL_TERMINAL_COLORS: Record<ActivityLogLevel, string> = {
   debug: "text-[var(--color-text-muted)]",
-  info: "text-cyan-400",
-  warn: "text-orange-400",
-  error: "text-red-400",
+  info: "text-[var(--color-data-cyan)]",
+  warn: "text-[var(--color-data-orange)]",
+  error: "text-[var(--color-data-red)]",
 };
 
 /** Terminal text color classes for log sources. */
 export const SOURCE_TERMINAL_COLORS: Record<ActivityLogSource, string> = {
   api: "text-blue-400",
   comfyui: "text-purple-400",
-  worker: "text-green-400",
-  agent: "text-orange-400",
+  worker: "text-[var(--color-data-green)]",
+  agent: "text-[var(--color-data-orange)]",
   pipeline: "text-teal-400",
   infrastructure: "text-yellow-400",
 };

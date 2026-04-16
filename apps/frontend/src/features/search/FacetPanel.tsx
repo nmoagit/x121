@@ -10,6 +10,7 @@ import { useState, useCallback } from "react";
 import { Badge, Button } from "@/components/primitives";
 import { Stack } from "@/components/layout";
 import { entityTypeLabel, type SearchFacets, type FacetValue } from "./types";
+import { TYPO_INPUT_LABEL } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Props
@@ -133,7 +134,7 @@ export function FacetPanel({
     <aside className="w-60 shrink-0 space-y-1">
       {hasActiveFilters && (
         <div className="flex items-center justify-between pb-2">
-          <span className="text-xs font-medium text-[var(--color-text-muted)]">
+          <span className={TYPO_INPUT_LABEL}>
             Active Filters
           </span>
           <Button

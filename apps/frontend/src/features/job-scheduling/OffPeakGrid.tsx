@@ -8,6 +8,7 @@ import { cn } from "@/lib/cn";
 import { Stack } from "@/components/layout";
 
 import { DAY_NAMES, HOURS_OF_DAY } from "./types";
+import { TYPO_INPUT_LABEL } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Helpers
@@ -58,7 +59,7 @@ export function OffPeakGrid({ grid, onToggle }: OffPeakGridProps) {
           <tbody>
             {DAY_NAMES.map((dayName, dayIndex) => (
               <tr key={dayName}>
-                <td className="pr-2 py-0.5 text-xs font-medium text-[var(--color-text-secondary)] whitespace-nowrap">
+                <td className={`pr-2 py-0.5 whitespace-nowrap ${TYPO_INPUT_LABEL}`}>
                   {dayName.slice(0, 3)}
                 </td>
                 {HOURS_OF_DAY.map((hour) => {

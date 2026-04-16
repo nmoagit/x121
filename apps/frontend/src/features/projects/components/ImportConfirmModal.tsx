@@ -27,6 +27,7 @@ import { ImportProgressBar } from "./ImportProgressBar";
 import { useCreateGroup } from "../hooks/use-avatar-groups";
 import { useDuplicateAssetInfo } from "../hooks/use-duplicate-asset-info";
 import { useGroupSelectOptions } from "../hooks/use-group-select-options";
+import { TYPO_DATA, TYPO_DATA_MUTED, TYPO_DATA_WARNING, TYPO_INPUT_LABEL} from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Props
@@ -464,7 +465,7 @@ export function ImportConfirmModal({
       if (isChecking) {
         if (images.length > 0) imgLabel = <span className="text-[var(--color-text-muted)]">{images.length} img…</span>;
         if (videos.length > 0) vidLabel = <span className="text-[var(--color-text-muted)]">{videos.length} vid…</span>;
-        if (metaCount > 0) metaLabel = <span className="text-cyan-400">{metaCount} json</span>;
+        if (metaCount > 0) metaLabel = <span className="text-[var(--color-data-cyan)]">{metaCount} json</span>;
       } else {
         const identicalImages = images.filter((a) => a.isDuplicate);
         const newImgs = images.filter((a) => !a.isDuplicate);
@@ -472,10 +473,10 @@ export function ImportConfirmModal({
         const imgSk = newContentOnly ? identicalImages.length : 0;
 
         if (images.length > 0) {
-          if (imgSk > 0 && imgUp > 0) imgLabel = <><span className="text-green-400">{imgUp}↑</span> <span className="text-[var(--color-text-muted)]">{imgSk}✕</span></>;
+          if (imgSk > 0 && imgUp > 0) imgLabel = <><span className="text-[var(--color-data-green)]">{imgUp}↑</span> <span className="text-[var(--color-text-muted)]">{imgSk}✕</span></>;
           else if (imgSk > 0) imgLabel = <span className="text-[var(--color-text-muted)]">{imgSk} =</span>;
-          else if (identicalImages.length > 0 && !newContentOnly) imgLabel = <span className="text-orange-400">{images.length} ({identicalImages.length}=)</span>;
-          else imgLabel = <span className="text-green-400">{images.length} img</span>;
+          else if (identicalImages.length > 0 && !newContentOnly) imgLabel = <span className="text-[var(--color-data-orange)]">{images.length} ({identicalImages.length}=)</span>;
+          else imgLabel = <span className="text-[var(--color-data-green)]">{images.length} img</span>;
         }
 
         if (videos.length > 0) {
@@ -484,13 +485,13 @@ export function ImportConfirmModal({
           const vidUp = newContentOnly ? newVids.length : videos.length;
           const vidSk = newContentOnly ? identicalVids.length : 0;
 
-          if (vidSk > 0 && vidUp > 0) vidLabel = <><span className="text-green-400">{vidUp}↑</span> <span className="text-[var(--color-text-muted)]">{vidSk}✕</span></>;
+          if (vidSk > 0 && vidUp > 0) vidLabel = <><span className="text-[var(--color-data-green)]">{vidUp}↑</span> <span className="text-[var(--color-text-muted)]">{vidSk}✕</span></>;
           else if (vidSk > 0) vidLabel = <span className="text-[var(--color-text-muted)]">{vidSk} =</span>;
-          else if (identicalVids.length > 0 && !newContentOnly) vidLabel = <span className="text-orange-400">{videos.length} ({identicalVids.length}=)</span>;
-          else vidLabel = <span className="text-green-400">{videos.length} vid</span>;
+          else if (identicalVids.length > 0 && !newContentOnly) vidLabel = <span className="text-[var(--color-data-orange)]">{videos.length} ({identicalVids.length}=)</span>;
+          else vidLabel = <span className="text-[var(--color-data-green)]">{videos.length} vid</span>;
         }
 
-        if (metaCount > 0) metaLabel = <span className="text-cyan-400">{metaCount} json</span>;
+        if (metaCount > 0) metaLabel = <span className="text-[var(--color-data-cyan)]">{metaCount} json</span>;
       }
     }
 
@@ -498,11 +499,11 @@ export function ImportConfirmModal({
       <div
         key={idx}
         className={cn(
-          "grid items-center gap-x-2 px-2 py-0.5 font-mono text-xs",
+          `grid items-center gap-x-2 px-2 py-0.5 ${TYPO_DATA}`,
           payloads ? "grid-cols-[1fr_auto_auto_auto_auto]" : "grid-cols-[1fr_auto]",
           isDuplicate && !checkedExistingAssets.has(idx) && !(bulkMode && hasAssets)
             ? "opacity-40"
-            : "hover:bg-[#161b22]",
+            : "hover:bg-[var(--color-surface-secondary)]",
           "border-b border-white/5 last:border-b-0",
         )}
       >
@@ -521,8 +522,8 @@ export function ImportConfirmModal({
           hashSummary?.isHashing
             ? "text-[var(--color-text-muted)]"
             : isDuplicate
-              ? (bulkMode && hasAssets ? "text-green-400" : "text-orange-400")
-              : checked.has(idx) ? "text-green-400" : "text-[var(--color-text-muted)]"
+              ? (bulkMode && hasAssets ? "text-[var(--color-data-green)]" : "text-[var(--color-data-orange)]")
+              : checked.has(idx) ? "text-[var(--color-data-green)]" : "text-[var(--color-text-muted)]"
         )}>
           {hashSummary?.isHashing
             ? "…"
@@ -542,20 +543,20 @@ export function ImportConfirmModal({
       <Stack gap={3}>
         {/* Target project indicator */}
         {projectName && (
-          <div className="flex items-center gap-2 font-mono text-xs text-[var(--color-text-muted)]">
+          <div className={`flex items-center gap-2 ${TYPO_DATA_MUTED}`}>
             <span>target</span>
-            <span className="text-cyan-400">{projectName}</span>
+            <span className="text-[var(--color-data-cyan)]">{projectName}</span>
           </div>
         )}
 
         {/* Project detection banner (grouped imports only) */}
         {isGroupedImport && detectedProjectName && (
           <p className={cn(
-            "font-mono text-xs border-l-2 pl-2 py-0.5",
+            `${TYPO_DATA} border-l-2 pl-2 py-0.5`,
             projectNameMatch
-              ? "border-green-400 text-green-400"
+              ? "border-green-400 text-[var(--color-data-green)]"
               : projectNameMatch === false
-                ? "border-orange-400 text-orange-400"
+                ? "border-orange-400 text-[var(--color-data-orange)]"
                 : "border-[var(--color-border-default)] text-[var(--color-text-muted)]",
           )}>
             {projectNameMatch
@@ -569,12 +570,12 @@ export function ImportConfirmModal({
         {/* Hash deduplication summary */}
         {hashSummary && (
           <p className={cn(
-            "font-mono text-xs border-l-2 pl-2 py-0.5",
+            `${TYPO_DATA} border-l-2 pl-2 py-0.5`,
             hashSummary.isHashing
               ? "border-[var(--color-border-default)] text-[var(--color-text-muted)]"
               : hashSummary.duplicateFiles > 0
-                ? "border-orange-400 text-orange-400"
-                : "border-green-400 text-green-400",
+                ? "border-orange-400 text-[var(--color-data-orange)]"
+                : "border-green-400 text-[var(--color-data-green)]",
           )}>
             {hashSummary.isHashing
               ? `checking ${hashSummary.totalFiles} file${hashSummary.totalFiles !== 1 ? "s" : ""} for duplicates...`
@@ -588,7 +589,7 @@ export function ImportConfirmModal({
         <div className="flex flex-wrap items-end gap-[var(--spacing-3)]">
           {isGroupedImport ? (
             <div className="w-[200px]">
-              <label className="block text-xs font-medium text-[var(--color-text-muted)] mb-[var(--spacing-1)]">
+              <label className={`block mb-[var(--spacing-1)] ${TYPO_INPUT_LABEL}`}>
                 Groups
               </label>
               <span className="text-sm text-[var(--color-text-secondary)]">
@@ -597,7 +598,7 @@ export function ImportConfirmModal({
             </div>
           ) : existingGroups.length > 1 ? (
             <div className="w-[200px]">
-              <label className="block text-xs font-medium text-[var(--color-text-muted)] mb-[var(--spacing-1)]">
+              <label className={`block mb-[var(--spacing-1)] ${TYPO_INPUT_LABEL}`}>
                 Assign to group
               </label>
               <span className="text-sm text-[var(--color-text-secondary)]">
@@ -715,7 +716,7 @@ export function ImportConfirmModal({
 
         {/* Duplicate warning */}
         {duplicateCount > 0 && (
-          <p className="font-mono text-xs border-l-2 border-orange-400 pl-2 py-0.5 text-orange-400">
+          <p className={`${TYPO_DATA_WARNING} border-l-2 border-orange-400 pl-2 py-0.5`}>
             {duplicateCount} {duplicateCount === 1 ? "name" : "names"} already{" "}
             {duplicateCount === 1 ? "exists" : "exist"}.
             {payloads
@@ -730,28 +731,28 @@ export function ImportConfirmModal({
 
         {/* Action summary */}
         {payloads && (
-          <div className="flex flex-wrap gap-3 font-mono text-xs text-[var(--color-text-muted)] border-t border-[var(--color-border-default)] pt-2">
+          <div className={`flex flex-wrap gap-3 ${TYPO_DATA_MUTED} border-t border-[var(--color-border-default)] pt-2`}>
             {hashSummary?.isHashing ? (
               <span>checking {hashSummary.totalFiles} files…</span>
             ) : (
               <>
                 {selectedCount > 0 && (
-                  <span><span className="text-green-400">{selectedCount}</span> new</span>
+                  <span><span className="text-[var(--color-data-green)]">{selectedCount}</span> new</span>
                 )}
                 {existingAssetsCount > 0 && (
-                  <span><span className="text-cyan-400">{existingAssetsCount}</span> update</span>
+                  <span><span className="text-[var(--color-data-cyan)]">{existingAssetsCount}</span> update</span>
                 )}
                 {duplicateCount > 0 && duplicateCount - existingAssetsCount > 0 && (
                   <span>{duplicateCount - existingAssetsCount} skip</span>
                 )}
                 {hashSummary && hashSummary.duplicateFiles > 0 && (
-                  <span className={newContentOnly ? "" : "text-orange-400"}>
+                  <span className={newContentOnly ? "" : "text-[var(--color-data-orange)]"}>
                     {hashSummary.duplicateFiles} identical
                     {newContentOnly ? " (skip)" : ""}
                   </span>
                 )}
                 {hashSummary && newContentOnly && hashSummary.newFiles > 0 && (
-                  <span className="text-green-400">{hashSummary.newFiles} new</span>
+                  <span className="text-[var(--color-data-green)]">{hashSummary.newFiles} new</span>
                 )}
               </>
             )}
@@ -761,7 +762,7 @@ export function ImportConfirmModal({
         {/* Name list */}
         <div className="max-h-[320px] overflow-y-auto border border-[var(--color-border-default)] rounded-[var(--radius-sm)]">
           {/* Select all header */}
-          <div className="px-2 py-1.5 border-b border-[var(--color-border-default)] bg-[#161b22]">
+          <div className="px-2 py-1.5 border-b border-[var(--color-border-default)] bg-[var(--color-surface-secondary)]">
             <Checkbox
               checked={totalActionCount > 0 && selectedCount === importableCount && (duplicatesWithAssets.size === 0 || existingAssetsCount === duplicatesWithAssets.size)}
               indeterminate={totalActionCount > 0 && (selectedCount < importableCount || (duplicatesWithAssets.size > 0 && existingAssetsCount < duplicatesWithAssets.size))}
@@ -787,13 +788,13 @@ export function ImportConfirmModal({
             /* Grouped view — avatars organized under group headers */
             [...groupedIndices.entries()].map(([groupName, indices]) => (
               <div key={groupName}>
-                <div className="px-2 py-1.5 bg-[#161b22] border-b border-[var(--color-border-default)] flex items-center gap-2">
-                  <span className="font-mono text-xs font-medium text-[var(--color-text-primary)]">
+                <div className="px-2 py-1.5 bg-[var(--color-surface-secondary)] border-b border-[var(--color-border-default)] flex items-center gap-2">
+                  <span className={`${TYPO_DATA} font-medium text-[var(--color-text-primary)]`}>
                     {groupName || "Ungrouped"}
                   </span>
                   <span className="font-mono text-[10px] text-[var(--color-text-muted)]">{indices.length}</span>
                   {groupName && (
-                    <span className={cn("font-mono text-[10px]", existingGroupNameSet.has(groupName.toLowerCase()) ? "text-green-400" : "text-cyan-400")}>
+                    <span className={cn("font-mono text-[10px]", existingGroupNameSet.has(groupName.toLowerCase()) ? "text-[var(--color-data-green)]" : "text-[var(--color-data-cyan)]")}>
                       {existingGroupNameSet.has(groupName.toLowerCase()) ? "exists" : "new"}
                     </span>
                   )}
@@ -814,10 +815,10 @@ export function ImportConfirmModal({
 
         {/* Footer */}
         <div className="flex items-center justify-between pt-2 border-t border-[var(--color-border-default)]">
-          <span className="font-mono text-xs text-[var(--color-text-muted)]">
-            {selectedCount > 0 && <><span className="text-green-400">{selectedCount}</span> new</>}
+          <span className={TYPO_DATA_MUTED}>
+            {selectedCount > 0 && <><span className="text-[var(--color-data-green)]">{selectedCount}</span> new</>}
             {selectedCount > 0 && existingAssetsCount > 0 && " · "}
-            {existingAssetsCount > 0 && <><span className="text-cyan-400">{existingAssetsCount}</span> update</>}
+            {existingAssetsCount > 0 && <><span className="text-[var(--color-data-cyan)]">{existingAssetsCount}</span> update</>}
             {totalActionCount === 0 && "0 selected"}
             {duplicateCount > 0 && totalActionCount === 0 && ` · ${duplicateCount} already exist`}
           </span>

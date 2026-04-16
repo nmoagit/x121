@@ -89,7 +89,7 @@ export function ActivityConsoleDrawer() {
   return (
     <div
       className={cn(
-        "shrink-0 border-t border-[var(--color-border-default)] bg-[#0d1117]",
+        "shrink-0 border-t border-[var(--color-border-default)] bg-[var(--color-surface-primary)]",
         "transition-[height] duration-300 ease-in-out overflow-hidden",
         !isOpen && "!h-0 !border-t-0",
       )}
@@ -98,7 +98,7 @@ export function ActivityConsoleDrawer() {
       <div className="flex h-full flex-col">
         {/* Drag handle */}
         <div
-          className="flex h-1.5 shrink-0 cursor-row-resize items-center justify-center hover:bg-[#161b22] active:bg-[var(--color-action-primary-hover)]"
+          className="flex h-1.5 shrink-0 cursor-row-resize items-center justify-center hover:bg-[var(--color-surface-secondary)] active:bg-[var(--color-action-primary-hover)]"
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
@@ -108,14 +108,14 @@ export function ActivityConsoleDrawer() {
         </div>
 
         {/* Drawer header */}
-        <div className="flex h-7 items-center justify-between px-2 border-b border-[var(--color-border-default)] bg-[#161b22] shrink-0">
+        <div className="flex h-7 items-center justify-between px-2 border-b border-[var(--color-border-default)] bg-[var(--color-surface-secondary)] shrink-0">
           <button
             type="button"
             onClick={togglePanel}
             className="flex items-center gap-1 cursor-pointer hover:opacity-80 transition-opacity"
             aria-label="Close console"
           >
-            <Terminal size={12} className="text-green-400" />
+            <Terminal size={12} className="text-[var(--color-data-green)]" />
             <span className={TERMINAL_HEADER_TITLE}>
               Console
             </span>

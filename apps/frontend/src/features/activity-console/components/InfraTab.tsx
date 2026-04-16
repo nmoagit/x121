@@ -20,6 +20,7 @@ import { useActivityLogStream } from "../hooks/useActivityLogStream";
 import { useActivityConsoleStore } from "../stores/useActivityConsoleStore";
 import type { ActivityLogEntry } from "../types";
 import { formatLogTime, LEVEL_LABELS, LEVEL_TERMINAL_COLORS } from "../types";
+import { TYPO_DATA, TYPO_DATA_MUTED } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Constants
@@ -65,15 +66,15 @@ export function InfraTab() {
   }, []);
 
   return (
-    <div className="relative flex flex-col h-full bg-[#0d1117] overflow-hidden">
+    <div className="relative flex flex-col h-full bg-[var(--color-surface-primary)] overflow-hidden">
       {/* Header */}
       <div className={cn(TERMINAL_HEADER, "flex items-center justify-between")}>
         <div className="flex items-center gap-[var(--spacing-2)]">
-          <span className={cn("font-mono text-[10px] uppercase tracking-wide", isConnected ? "text-green-400" : "text-red-400")}>
+          <span className={cn("font-mono text-[10px] uppercase tracking-wide", isConnected ? "text-[var(--color-data-green)]" : "text-[var(--color-data-red)]")}>
             {isConnected ? "Connected" : "Disconnected"}
           </span>
           <span className="opacity-30">|</span>
-          <span className="font-mono text-xs text-[var(--color-text-muted)]">
+          <span className={TYPO_DATA_MUTED}>
             {infraEntries.length} infra events
           </span>
         </div>
@@ -83,11 +84,11 @@ export function InfraTab() {
       <div
         ref={scrollRef}
         onScroll={handleScroll}
-        className="flex-1 overflow-y-auto min-h-0 bg-[#0d1117] scrollbar-thin"
+        className="flex-1 overflow-y-auto min-h-0 bg-[var(--color-surface-primary)] scrollbar-thin"
       >
         {infraEntries.length === 0 ? (
           <div className="flex items-center justify-center h-full">
-            <p className="font-mono text-xs text-[var(--color-text-muted)]">
+            <p className={TYPO_DATA_MUTED}>
               {isConnected
                 ? "No infrastructure events yet \u2014 waiting for autoscaling, provisioning activity..."
                 : "Not connected to activity stream"}
@@ -122,7 +123,7 @@ function InfraLogRow({ entry }: { entry: ActivityLogEntry }) {
   return (
     <div
       className={cn(
-        "flex items-center gap-[var(--spacing-2)] px-[var(--spacing-2)] py-0.5 font-mono text-xs leading-5",
+        `flex items-center gap-[var(--spacing-2)] px-[var(--spacing-2)] py-0.5 ${TYPO_DATA} leading-5`,
         TERMINAL_ROW_HOVER,
         "border-l-2",
         entry.level === "error" && "border-l-red-400",

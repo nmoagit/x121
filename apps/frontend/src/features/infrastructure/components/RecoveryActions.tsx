@@ -55,7 +55,7 @@ export function RecoveryActions({ instance }: RecoveryActionsProps) {
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               <AlertTriangle size={14} className="text-[var(--color-action-danger)]" />
-              <span className="text-red-400 font-mono text-[10px] uppercase">Error</span>
+              <span className="text-[var(--color-data-red)] font-mono text-[10px] uppercase">Error</span>
               <span className="text-xs text-[var(--color-text-muted)]">
                 Instance encountered an error
               </span>
@@ -78,7 +78,7 @@ export function RecoveryActions({ instance }: RecoveryActionsProps) {
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               <AlertTriangle size={14} className="text-[var(--color-action-warning)]" />
-              <span className="text-orange-400 font-mono text-[10px] uppercase">Disconnected</span>
+              <span className="text-[var(--color-data-orange)] font-mono text-[10px] uppercase">Disconnected</span>
               <span className="text-xs text-[var(--color-text-muted)]">
                 ComfyUI connection lost
               </span>
@@ -113,7 +113,7 @@ export function RecoveryActions({ instance }: RecoveryActionsProps) {
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               <AlertTriangle size={14} className="text-[var(--color-action-warning)]" />
-              <span className="text-orange-400 font-mono text-[10px] uppercase">Stuck</span>
+              <span className="text-[var(--color-data-orange)] font-mono text-[10px] uppercase">Stuck</span>
               <span className="text-xs text-[var(--color-text-muted)]">
                 Provisioning for over 10 minutes
               </span>

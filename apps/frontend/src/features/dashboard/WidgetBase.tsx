@@ -79,7 +79,7 @@ export function WidgetBase({
           <div className="flex flex-col items-center justify-center gap-[var(--spacing-3)] py-[var(--spacing-8)] text-center">
             <AlertCircle
               size={24}
-              className="text-red-400"
+              className="text-[var(--color-data-red)]"
               aria-hidden="true"
             />
             <p className="text-xs font-mono text-[var(--color-text-muted)]">{error}</p>

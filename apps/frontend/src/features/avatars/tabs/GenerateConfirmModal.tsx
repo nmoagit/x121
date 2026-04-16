@@ -13,6 +13,7 @@ import { Stack } from "@/components/layout";
 import { Button, Toggle } from "@/components/primitives";
 import { useSetToggle } from "@/hooks/useSetToggle";
 import { AlertCircle, Play } from "@/tokens/icons";
+import { TYPO_DATA_WARNING } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Types
@@ -75,7 +76,7 @@ export function GenerateConfirmModal({
           {withVideo.length > 0 && (
             <>
               {" "}
-              <span className="text-orange-400 font-medium">
+              <span className="text-[var(--color-data-orange)] font-medium">
                 {withVideo.length} scene{withVideo.length !== 1 ? "s" : ""} already{" "}
                 {withVideo.length === 1 ? "has" : "have"} video.
               </span>
@@ -88,8 +89,8 @@ export function GenerateConfirmModal({
           <div className="rounded-[var(--radius-md)] border border-[var(--color-border-default)]">
             <div className="px-[var(--spacing-3)] py-[var(--spacing-2)] border-b border-[var(--color-border-default)]">
               <div className="flex items-center gap-[var(--spacing-2)]">
-                <AlertCircle size={14} className="text-orange-400 shrink-0" />
-                <span className="text-xs font-mono text-orange-400">
+                <AlertCircle size={14} className="text-[var(--color-data-orange)] shrink-0" />
+                <span className={TYPO_DATA_WARNING}>
                   Toggle to regenerate and override existing video
                 </span>
               </div>
@@ -98,7 +99,7 @@ export function GenerateConfirmModal({
               {withVideo.map((c) => (
                 <div
                   key={c.sceneId}
-                  className="flex items-center justify-between px-[var(--spacing-3)] py-[var(--spacing-2)] border-b last:border-b-0 border-white/5 hover:bg-[#161b22]"
+                  className="flex items-center justify-between px-[var(--spacing-3)] py-[var(--spacing-2)] border-b last:border-b-0 border-white/5 hover:bg-[var(--color-surface-secondary)]"
                 >
                   <div className="flex items-center gap-[var(--spacing-2)] min-w-0">
                     <span className="text-xs font-mono text-[var(--color-text-primary)] truncate">

@@ -12,6 +12,7 @@ import { formatBytes } from "@/lib/format";
 import { useAuthStore } from "@/stores/auth-store";
 import { Download, X } from "@/tokens/icons";
 import type { ExportJob, ExportPart } from "@/features/exports/hooks/use-exports";
+import { TYPO_DATA } from "@/lib/typography-tokens";
 
 interface ExportStatusPanelProps {
   job: ExportJob;
@@ -73,9 +74,9 @@ export function ExportStatusPanel({ job, onDismiss }: ExportStatusPanelProps) {
   }, [job.id]);
 
   return (
-    <div className="bg-[#161b22] border-t border-[var(--color-border-default)] px-4 py-2.5">
+    <div className="bg-[var(--color-surface-secondary)] border-t border-[var(--color-border-default)] px-4 py-2.5">
       <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3 font-mono text-xs">
+        <div className={`flex items-center gap-3 ${TYPO_DATA}`}>
           {/* Status indicator */}
           {isActive && (
             <>
@@ -91,7 +92,7 @@ export function ExportStatusPanel({ job, onDismiss }: ExportStatusPanelProps) {
           {job.status === "completed" && (
             <>
               <div className="h-2 w-2 rounded-full bg-green-400" />
-              <span className="text-green-400">
+              <span className="text-[var(--color-data-green)]">
                 Export complete — {parts.length} part{parts.length !== 1 ? "s" : ""}
               </span>
             </>
@@ -100,7 +101,7 @@ export function ExportStatusPanel({ job, onDismiss }: ExportStatusPanelProps) {
           {job.status === "failed" && (
             <>
               <div className="h-2 w-2 rounded-full bg-red-400" />
-              <span className="text-red-400">
+              <span className="text-[var(--color-data-red)]">
                 Export failed{job.error_message ? `: ${job.error_message}` : ""}
               </span>
             </>
@@ -115,7 +116,7 @@ export function ExportStatusPanel({ job, onDismiss }: ExportStatusPanelProps) {
                 key={part.part}
                 type="button"
                 onClick={() => handleDownloadPart(part)}
-                className="inline-flex items-center gap-1 rounded px-2 py-1 font-mono text-[10px] bg-[#0d1117] text-[var(--color-text-primary)] hover:bg-[#1c2128] transition-colors border border-[var(--color-border-default)] cursor-pointer"
+                className="inline-flex items-center gap-1 rounded px-2 py-1 font-mono text-[10px] bg-[var(--color-surface-primary)] text-[var(--color-text-primary)] hover:bg-[var(--color-surface-tertiary)] transition-colors border border-[var(--color-border-default)] cursor-pointer"
               >
                 <Download size={10} />
                 Part {part.part} of {parts.length}

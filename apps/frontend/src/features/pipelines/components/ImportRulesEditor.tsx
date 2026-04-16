@@ -17,6 +17,7 @@ import { toastStore } from "@/components/composite/useToast";
 import { useUpdatePipeline } from "../hooks/use-pipelines";
 import type { ImportRules, MetadataImportPattern, Pipeline, SeedImportPattern, VideoImportPattern } from "../types";
 import { MetadataPatternRow, SeedPatternRow, VideoPatternRow } from "./ImportPatternRows";
+import { TYPO_DATA_MUTED } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Defaults
@@ -214,7 +215,7 @@ function PatternSection({ title, description, emptyText, addLabel, onAdd, childr
         <Stack gap={3}>
           <p className="text-[10px] text-[var(--color-text-muted)] font-mono">{description}</p>
           {!hasChildren && (
-            <p className="font-mono text-xs text-[var(--color-text-muted)]">{emptyText}</p>
+            <p className={TYPO_DATA_MUTED}>{emptyText}</p>
           )}
           {children}
           <div>

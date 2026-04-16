@@ -21,6 +21,7 @@ import {
 } from "./ShortcutRegistry";
 import { normalizeKeyCombo } from "./normalizeKeyCombo";
 import { presets } from "./presets";
+import { TYPO_CAPTION } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Sub-components
@@ -105,7 +106,7 @@ function CaptureModal({ open, actionId, actionLabel, onCapture, onCancel }: Capt
               Conflicts with:
             </p>
             {conflicts.map((c) => (
-              <p key={c.id} className="text-xs text-[var(--color-text-secondary)]">
+              <p key={c.id} className={TYPO_CAPTION}>
                 {c.label} ({c.id})
               </p>
             ))}

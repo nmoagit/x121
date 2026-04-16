@@ -116,7 +116,7 @@ export function NotesModal({ value, onChange, onSave, saving, title }: NotesModa
           onChange={handleChange}
           rows={16}
           autoFocus
-          className="w-full rounded-[var(--radius-md)] border border-[var(--color-border-default)] bg-[#0d1117] px-4 py-3 font-mono text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:border-[var(--color-action-primary)] focus:outline-none resize-y min-h-[200px]"
+          className="w-full rounded-[var(--radius-md)] border border-[var(--color-border-default)] bg-[var(--color-surface-primary)] px-4 py-3 font-mono text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:border-[var(--color-action-primary)] focus:outline-none resize-y min-h-[200px]"
           placeholder="Add notes..."
         />
         <div className="flex items-center justify-between mt-3">

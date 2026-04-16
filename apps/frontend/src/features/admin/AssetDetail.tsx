@@ -12,6 +12,7 @@ import type {
   RatingSummary,
 } from "@/features/admin/hooks/use-assets";
 import { formatBytes, formatDate } from "@/lib/format";
+import { TYPO_PAGE_TITLE, TYPO_SECTION_TITLE } from "@/lib/typography-tokens";
 import { AlertCircle, ArrowLeft } from "@/tokens/icons";
 
 /* --------------------------------------------------------------------------
@@ -189,7 +190,7 @@ export function AssetDetail({ assetId, onBack }: AssetDetailProps) {
             </Button>
           )}
           <div>
-            <h1 className="text-xl font-semibold text-[var(--color-text-primary)]">
+            <h1 className={TYPO_PAGE_TITLE}>
               {asset.name}{" "}
               <span className="font-normal text-[var(--color-text-muted)]">v{asset.version}</span>
             </h1>
@@ -205,7 +206,7 @@ export function AssetDetail({ assetId, onBack }: AssetDetailProps) {
           <div className="lg:col-span-2">
             <Stack gap={4}>
               <section>
-                <h2 className="mb-[var(--spacing-3)] text-base font-semibold text-[var(--color-text-primary)]">
+                <h2 className={`mb-[var(--spacing-3)] ${TYPO_SECTION_TITLE}`}>
                   Details
                 </h2>
                 <div className="grid grid-cols-2 gap-[var(--spacing-3)]">
@@ -221,7 +222,7 @@ export function AssetDetail({ assetId, onBack }: AssetDetailProps) {
 
               {asset.description && (
                 <section>
-                  <h2 className="mb-[var(--spacing-2)] text-base font-semibold text-[var(--color-text-primary)]">
+                  <h2 className={`mb-[var(--spacing-2)] ${TYPO_SECTION_TITLE}`}>
                     Description
                   </h2>
                   <p className="text-sm text-[var(--color-text-secondary)]">{asset.description}</p>
@@ -229,21 +230,21 @@ export function AssetDetail({ assetId, onBack }: AssetDetailProps) {
               )}
 
               <section>
-                <h2 className="mb-[var(--spacing-3)] text-base font-semibold text-[var(--color-text-primary)]">
+                <h2 className={`mb-[var(--spacing-3)] ${TYPO_SECTION_TITLE}`}>
                   Rating
                 </h2>
                 <RatingWidget assetId={assetId} summary={rating_summary} />
               </section>
 
               <section>
-                <h2 className="mb-[var(--spacing-3)] text-base font-semibold text-[var(--color-text-primary)]">
+                <h2 className={`mb-[var(--spacing-3)] ${TYPO_SECTION_TITLE}`}>
                   Notes
                 </h2>
                 <NotesList notes={notes} />
               </section>
 
               <section>
-                <h2 className="mb-[var(--spacing-3)] text-base font-semibold text-[var(--color-text-primary)]">
+                <h2 className={`mb-[var(--spacing-3)] ${TYPO_SECTION_TITLE}`}>
                   Reviews
                 </h2>
                 <RatingsList ratings={[]} />
@@ -255,14 +256,14 @@ export function AssetDetail({ assetId, onBack }: AssetDetailProps) {
           <div>
             <Stack gap={4}>
               <section>
-                <h2 className="mb-[var(--spacing-3)] text-base font-semibold text-[var(--color-text-primary)]">
+                <h2 className={`mb-[var(--spacing-3)] ${TYPO_SECTION_TITLE}`}>
                   Dependencies
                 </h2>
                 <DependencyList dependencies={dependencies} />
               </section>
 
               <section>
-                <h2 className="mb-[var(--spacing-3)] text-base font-semibold text-[var(--color-text-primary)]">
+                <h2 className={`mb-[var(--spacing-3)] ${TYPO_SECTION_TITLE}`}>
                   Actions
                 </h2>
                 <Button

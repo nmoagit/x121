@@ -40,7 +40,7 @@ export function SlotOverrideSection({
   const hasOverride = !!draft.override_text;
   const isPositive = slot.slot_type === "positive";
   const borderColor = isPositive ? "border-l-green-500" : "border-l-red-500";
-  const typeColor = isPositive ? "text-green-400" : "text-red-400";
+  const typeColor = isPositive ? "text-[var(--color-data-green)]" : "text-[var(--color-data-red)]";
 
   return (
     <div

@@ -33,6 +33,7 @@ import type { EnabledSceneTypeEntry } from "@/features/production/types";
 import { METADATA_APPROVAL_LABEL } from "@/features/avatars/types";
 import { cn } from "@/lib/cn";
 import { TERMINAL_TH, TERMINAL_DIVIDER, TERMINAL_ROW_HOVER } from "@/lib/ui-classes";
+import { TYPO_DATA } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Avatar name with thumbnail tooltip
@@ -101,21 +102,21 @@ function DeliverableRow({ row, projectId, filteredBlockingReasons, readinessPct,
       className={`cursor-pointer ${TERMINAL_DIVIDER} ${TERMINAL_ROW_HOVER}`}
       onClick={onClick}
     >
-      <td className="px-3 py-2 font-mono text-xs font-medium text-[var(--color-text-primary)]">
+      <td className={`px-3 py-2 ${TYPO_DATA} font-medium text-[var(--color-text-primary)]`}>
         <AvatarNameWithThumb name={row.name} heroVariantId={row.hero_variant_id} />
       </td>
-      <td className={`px-3 py-2 font-mono text-xs ${row.images_approved >= row.required_images_count && row.required_images_count > 0 ? "text-green-400 font-medium" : "text-cyan-400"}`}>
+      <td className={`px-3 py-2 font-mono text-xs ${row.images_approved >= row.required_images_count && row.required_images_count > 0 ? "text-[var(--color-data-green)] font-medium" : "text-[var(--color-data-cyan)]"}`}>
         {row.images_approved}/{row.required_images_count}
       </td>
-      <td className={`px-3 py-2 font-mono text-xs ${row.scenes_total > 0 && row.scenes_approved >= row.scenes_total ? "text-green-400 font-medium" : "text-cyan-400"}`}>
+      <td className={`px-3 py-2 font-mono text-xs ${row.scenes_total > 0 && row.scenes_approved >= row.scenes_total ? "text-[var(--color-data-green)] font-medium" : "text-[var(--color-data-cyan)]"}`}>
         {row.scenes_approved}/{row.scenes_with_video}/{row.scenes_total}
       </td>
-      <td className="px-3 py-2 font-mono text-xs">
+      <td className={`px-3 py-2 ${TYPO_DATA}`}>
         {row.has_active_metadata ? (
           <span className={
-            row.metadata_approval_status === "approved" ? "text-green-400"
-              : row.metadata_approval_status === "rejected" ? "text-red-400"
-              : "text-orange-400"
+            row.metadata_approval_status === "approved" ? "text-[var(--color-data-green)]"
+              : row.metadata_approval_status === "rejected" ? "text-[var(--color-data-red)]"
+              : "text-[var(--color-data-orange)]"
           }>
             {METADATA_APPROVAL_LABEL[row.metadata_approval_status ?? "pending"]}
           </span>
@@ -164,8 +165,8 @@ function DeliverableRow({ row, projectId, filteredBlockingReasons, readinessPct,
           <span className="text-xs text-[var(--color-text-muted)]">&mdash;</span>
         )}
       </td>
-      <td className="px-3 py-2 text-right font-mono text-xs">
-        <span className={readinessPct >= 100 ? "text-green-400" : readinessPct >= 50 ? "text-cyan-400" : "text-orange-400"}>
+      <td className={`px-3 py-2 text-right ${TYPO_DATA}`}>
+        <span className={readinessPct >= 100 ? "text-[var(--color-data-green)]" : readinessPct >= 50 ? "text-[var(--color-data-cyan)]" : "text-[var(--color-data-orange)]"}>
           {readinessPct.toFixed(1)}%
         </span>
       </td>
@@ -499,7 +500,7 @@ function MatrixTab({ rows, projectId }: MatrixTabProps) {
         </colgroup>
         <thead>
           <tr className={TERMINAL_DIVIDER}>
-            <th className={`${TERMINAL_TH} px-2 py-1.5 whitespace-nowrap sticky left-0 bg-[#0d1117] z-10`}>
+            <th className={`${TERMINAL_TH} px-2 py-1.5 whitespace-nowrap sticky left-0 bg-[var(--color-surface-primary)] z-10`}>
               Model
             </th>
             {columns.map((col) => {
@@ -540,7 +541,7 @@ function MatrixTab({ rows, projectId }: MatrixTabProps) {
               key={row.id}
               className={`${TERMINAL_DIVIDER} ${TERMINAL_ROW_HOVER}`}
             >
-              <td className="px-2 py-1.5 font-mono text-xs font-medium text-[var(--color-text-primary)] whitespace-nowrap sticky left-0 bg-[#0d1117] z-10">
+              <td className={`px-2 py-1.5 ${TYPO_DATA} font-medium text-[var(--color-text-primary)] whitespace-nowrap sticky left-0 bg-[var(--color-surface-primary)] z-10`}>
                 <button
                   type="button"
                   className="hover:underline cursor-pointer text-left"

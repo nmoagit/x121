@@ -14,6 +14,7 @@ import { Copy, RefreshCw } from "@/tokens/icons";
 
 import { useReplay } from "./hooks/use-webhook-testing";
 import type { WebhookDeliveryLog } from "./types";
+import { TYPO_DATA, TYPO_INPUT_LABEL, TYPO_CAPTION} from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    cURL generator
@@ -49,12 +50,12 @@ interface JsonSectionProps {
 function JsonSection({ label, data, testId }: JsonSectionProps) {
   return (
     <div>
-      <span className="mb-1 block text-xs font-medium text-[var(--color-text-secondary)]">
+      <span className={`mb-1 block ${TYPO_INPUT_LABEL}`}>
         {label}
       </span>
       <pre
         data-testid={testId}
-        className="max-h-40 overflow-auto rounded bg-[var(--color-bg-secondary)] p-2 font-mono text-xs text-[var(--color-text-primary)]"
+        className={`max-h-40 overflow-auto rounded bg-[var(--color-bg-secondary)] p-2 ${TYPO_DATA}`}
       >
         {data ? JSON.stringify(data, null, 2) : "(none)"}
       </pre>
@@ -139,7 +140,7 @@ export function FailedDeliveryInspector({ delivery }: FailedDeliveryInspectorPro
             >
               {delivery.response_status ?? "N/A"}
             </Badge>
-            <span className="text-xs text-[var(--color-text-secondary)]">
+            <span className={TYPO_CAPTION}>
               {delivery.duration_ms}ms
             </span>
           </div>
@@ -149,12 +150,12 @@ export function FailedDeliveryInspector({ delivery }: FailedDeliveryInspectorPro
             testId="response-headers"
           />
           <div>
-            <span className="mb-1 block text-xs font-medium text-[var(--color-text-secondary)]">
+            <span className={`mb-1 block ${TYPO_INPUT_LABEL}`}>
               Body
             </span>
             <pre
               data-testid="response-body"
-              className="max-h-40 overflow-auto rounded bg-[var(--color-bg-secondary)] p-2 font-mono text-xs text-[var(--color-text-primary)]"
+              className={`max-h-40 overflow-auto rounded bg-[var(--color-bg-secondary)] p-2 ${TYPO_DATA}`}
             >
               {delivery.response_body ?? "(no response body)"}
             </pre>

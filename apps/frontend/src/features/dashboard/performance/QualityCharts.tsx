@@ -11,6 +11,7 @@ import {
 import { Card } from "@/components/composite/Card";
 import { ContextLoader } from "@/components/primitives";
 import { Stack } from "@/components/layout";
+import { TYPO_SECTION_TITLE } from "@/lib/typography-tokens";
 import type { PerformanceTrendPoint } from "@/features/dashboard/hooks/use-performance";
 import { formatDate } from "@/lib/format";
 import { AXIS_TICK_STYLE, GRID_STROKE, TOOLTIP_CONTENT_STYLE } from "./chartStyles";
@@ -54,7 +55,7 @@ export function QualityCharts({ data, isLoading }: QualityChartsProps) {
 
   return (
     <Stack gap={4}>
-      <h3 className="text-base font-semibold text-[var(--color-text-primary)]">
+      <h3 className={TYPO_SECTION_TITLE}>
         Quality & Performance Trends
       </h3>
 

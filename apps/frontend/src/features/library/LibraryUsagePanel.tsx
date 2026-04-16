@@ -20,6 +20,7 @@ import {
 import { Layers } from "@/tokens/icons";
 
 import { useLibraryUsage } from "./hooks/use-library";
+import { TYPO_DATA, TYPO_DATA_CYAN, TYPO_DATA_MUTED } from "@/lib/typography-tokens";
 
 interface LibraryUsagePanelProps {
   libraryAvatarId: number;
@@ -69,7 +70,7 @@ export function LibraryUsagePanel({
       <div className={TERMINAL_BODY}>
         {!usage || usage.length === 0 ? (
           <p
-            className="font-mono text-xs text-[var(--color-text-muted)] text-center py-6"
+            className={`${TYPO_DATA_MUTED} text-center py-6`}
             data-testid="usage-empty"
           >
             Not imported into any projects yet.
@@ -91,13 +92,13 @@ export function LibraryUsagePanel({
                     className={cn(TERMINAL_DIVIDER, TERMINAL_ROW_HOVER)}
                     data-testid={`usage-row-${entry.link_id}`}
                   >
-                    <td className="px-3 py-1.5 font-mono text-xs text-cyan-400">
+                    <td className={`${TYPO_DATA_CYAN} px-3 py-1.5`}>
                       {entry.project_name}
                     </td>
-                    <td className="px-3 py-1.5 font-mono text-xs text-[var(--color-text-primary)]">
+                    <td className={`px-3 py-1.5 ${TYPO_DATA}`}>
                       {entry.avatar_name}
                     </td>
-                    <td className="px-3 py-1.5 font-mono text-xs text-[var(--color-text-muted)]">
+                    <td className={`px-3 py-1.5 ${TYPO_DATA_MUTED}`}>
                       {formatDate(entry.imported_at)}
                     </td>
                   </tr>

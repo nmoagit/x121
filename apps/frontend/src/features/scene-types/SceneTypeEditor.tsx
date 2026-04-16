@@ -100,7 +100,7 @@ function TabLink({ label, tab, onSwitchTab }: { label: string; tab: string; onSw
   return (
     <button
       type="button"
-      className="font-mono text-[10px] font-medium text-cyan-400 uppercase tracking-wide hover:text-cyan-300 transition-colors cursor-pointer"
+      className="font-mono text-[10px] font-medium text-[var(--color-data-cyan)] uppercase tracking-wide hover:text-cyan-300 transition-colors cursor-pointer"
       onClick={() => onSwitchTab(tab)}
     >
       {label} →
@@ -148,7 +148,7 @@ function ConfigSummary({ sceneType, onSwitchTab }: { sceneType: SceneType; onSwi
   }, [trackConfigs, sceneType.workflow_id]);
 
   return (
-    <div className="rounded-[var(--radius-md)] bg-[#0d1117] border border-[var(--color-border-default)]/30 p-2.5 space-y-2.5">
+    <div className="rounded-[var(--radius-md)] bg-[var(--color-surface-primary)] border border-[var(--color-border-default)]/30 p-2.5 space-y-2.5">
       {/* Workflows */}
       <div className="space-y-1">
         <TabLink label="Workflows" tab="workflows" onSwitchTab={onSwitchTab} />
@@ -157,7 +157,7 @@ function ConfigSummary({ sceneType, onSwitchTab }: { sceneType: SceneType; onSwi
             {trackWorkflows.map((tw, i) => (
               <div key={i} className="flex items-center gap-2 font-mono text-[10px]">
                 <span className={TRACK_TEXT_COLORS[tw.trackSlug] ?? "text-[var(--color-text-muted)]"}>{tw.trackName}</span>
-                {tw.isClothesOff && <span className="text-orange-400">[off]</span>}
+                {tw.isClothesOff && <span className="text-[var(--color-data-orange)]">[off]</span>}
                 <span className="text-[var(--color-text-muted)] opacity-30">→</span>
                 <span className="text-[var(--color-text-muted)]">{tw.workflowName}</span>
               </div>
@@ -169,7 +169,7 @@ function ConfigSummary({ sceneType, onSwitchTab }: { sceneType: SceneType; onSwi
             )}
           </div>
         ) : (
-          <div className="font-mono text-[10px] text-orange-400">No workflow assigned</div>
+          <div className="font-mono text-[10px] text-[var(--color-data-orange)]">No workflow assigned</div>
         )}
       </div>
 
@@ -250,8 +250,8 @@ function PromptDefaultsSummary({ sceneTypeId, workflowIds }: { sceneTypeId: numb
           key={i}
           className={`font-mono text-[10px] border-l-2 pl-1.5 ${
             p.type === "positive"
-              ? "text-green-400/60 border-l-green-500/30"
-              : "text-red-400/60 border-l-red-500/30"
+              ? "text-[var(--color-data-green)]/60 border-l-green-500/30"
+              : "text-[var(--color-data-red)]/60 border-l-red-500/30"
           }`}
         >
           <span className="text-[var(--color-text-muted)] opacity-50">{p.label} {p.nodeId}:</span>{" "}

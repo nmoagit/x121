@@ -1,4 +1,5 @@
 import { cn } from "@/lib/cn";
+import { TYPO_INPUT_LABEL } from "@/lib/typography-tokens";
 import { ChevronRight } from "@/tokens/icons";
 import { useCallback, useEffect, useState } from "react";
 import type { ReactNode } from "react";
@@ -61,7 +62,7 @@ export function AdvancedDrawer({
         onClick={toggle}
         className={cn(
           "flex items-center gap-1.5 w-full py-2 px-3",
-          "text-left text-xs font-medium text-[var(--color-text-muted)]",
+          `text-left ${TYPO_INPUT_LABEL}`,
           "hover:text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-tertiary)]",
           "transition-colors duration-[var(--duration-fast)] ease-[var(--ease-default)]",
           "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-border-focus)]",

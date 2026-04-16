@@ -15,6 +15,7 @@ import { LogLine } from "@/components/domain";
 import { TERMINAL_HEADER } from "@/lib/ui-classes";
 import { cn } from "@/lib/cn";
 import type { GenerationLogEntry } from "@/features/generation/types";
+import { TYPO_DATA_MUTED } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Hook
@@ -65,10 +66,10 @@ export function GenerationLogTab() {
   }, []);
 
   return (
-    <div className="relative flex flex-col h-full bg-[#0d1117] overflow-hidden">
+    <div className="relative flex flex-col h-full bg-[var(--color-surface-primary)] overflow-hidden">
       {/* Header */}
       <div className={cn(TERMINAL_HEADER, "flex items-center justify-between")}>
-        <span className="font-mono text-xs text-[var(--color-text-muted)]">
+        <span className={TYPO_DATA_MUTED}>
           {chronological.length} entries (polling every 2s)
         </span>
       </div>
@@ -77,15 +78,15 @@ export function GenerationLogTab() {
       <div
         ref={scrollRef}
         onScroll={handleScroll}
-        className="flex-1 overflow-y-auto min-h-0 bg-[#0d1117] scrollbar-thin"
+        className="flex-1 overflow-y-auto min-h-0 bg-[var(--color-surface-primary)] scrollbar-thin"
       >
         {isLoading ? (
           <div className="flex items-center justify-center h-full">
-            <p className="font-mono text-xs text-[var(--color-text-muted)]">Loading...</p>
+            <p className={TYPO_DATA_MUTED}>Loading...</p>
           </div>
         ) : chronological.length === 0 ? (
           <div className="flex items-center justify-center h-full">
-            <p className="font-mono text-xs text-[var(--color-text-muted)]">
+            <p className={TYPO_DATA_MUTED}>
               No generation log entries yet
             </p>
           </div>
@@ -98,7 +99,7 @@ export function GenerationLogTab() {
                 level={entry.level}
                 message={entry.message}
                 prefix={
-                  <span className="shrink-0 text-cyan-400 opacity-70 font-mono text-[10px]">
+                  <span className="shrink-0 text-[var(--color-data-cyan)] opacity-70 font-mono text-[10px]">
                     S{entry.scene_id}
                   </span>
                 }

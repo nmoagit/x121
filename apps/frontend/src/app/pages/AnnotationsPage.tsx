@@ -81,7 +81,7 @@ function AnnotationCard({
     : null;
 
   return (
-    <div className="group relative flex flex-col rounded-[var(--radius-lg)] border border-[var(--color-border-default)] bg-[#0d1117] overflow-hidden transition-shadow hover:shadow-[var(--shadow-md)]">
+    <div className="group relative flex flex-col rounded-[var(--radius-lg)] border border-[var(--color-border-default)] bg-[var(--color-surface-primary)] overflow-hidden transition-shadow hover:shadow-[var(--shadow-md)]">
       {/* Delete button */}
       <button
         type="button"
@@ -102,7 +102,7 @@ function AnnotationCard({
         className="flex flex-col text-left w-full focus:outline-none"
       >
         {/* Thumbnail */}
-        <div className="relative aspect-video w-full bg-[#161b22] flex items-center justify-center overflow-hidden">
+        <div className="relative aspect-video w-full bg-[var(--color-surface-secondary)] flex items-center justify-center overflow-hidden">
           {streamUrl ? (
             <video
               src={streamUrl}
@@ -115,10 +115,10 @@ function AnnotationCard({
           )}
           {/* Overlays */}
           <div className="absolute top-1.5 right-1.5 flex gap-1">
-            <span className="font-mono text-[10px] text-[var(--color-text-primary)] bg-black/60 px-1 py-px rounded-[2px]">
+            <span className="font-mono text-[10px] text-[var(--color-text-primary)] bg-[var(--color-surface-badge-overlay)] px-1 py-px rounded-[2px]">
               f{item.frame_number}
             </span>
-            <span className="font-mono text-[10px] text-cyan-400 bg-black/60 px-1 py-px rounded-[2px]">
+            <span className="font-mono text-[10px] text-[var(--color-data-cyan)] bg-[var(--color-surface-badge-overlay)] px-1 py-px rounded-[2px]">
               {item.annotation_count}
             </span>
           </div>

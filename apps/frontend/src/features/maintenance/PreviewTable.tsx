@@ -6,6 +6,7 @@
  */
 
 import type { FieldInfo } from "./types";
+import { TYPO_DATA } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Props
@@ -65,10 +66,10 @@ export function PreviewTable({
               }`}
             >
               <td className="py-2 pr-4">{field.entity_type}</td>
-              <td className="py-2 pr-4 font-mono text-xs">
+              <td className={`py-2 pr-4 ${TYPO_DATA}`}>
                 {field.table_name}
               </td>
-              <td className="py-2 pr-4 font-mono text-xs">
+              <td className={`py-2 pr-4 ${TYPO_DATA}`}>
                 {field.column_name}
               </td>
               <td className="py-2 pr-4 font-mono text-xs text-red-600">

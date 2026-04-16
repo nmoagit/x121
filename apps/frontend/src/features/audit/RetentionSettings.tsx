@@ -15,6 +15,7 @@ import {
   useUpdateRetentionPolicy,
 } from "./hooks/use-audit";
 import type { AuditRetentionPolicy } from "./types";
+import { TYPO_DATA_CYAN, TYPO_DATA_WARNING } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Component
@@ -120,7 +121,7 @@ function RetentionPolicyRow({
     <div className={cn(TERMINAL_DIVIDER, "pb-3")}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <span className="text-xs font-medium capitalize text-cyan-400 font-mono">
+          <span className={`${TYPO_DATA_CYAN} font-medium capitalize`}>
             {policy.log_category}
           </span>
           <Toggle
@@ -167,7 +168,7 @@ function RetentionPolicyRow({
 
       {showWarning && (
         <div className="mt-3 rounded-[var(--radius-md)] border border-orange-400/30 bg-orange-400/5 p-3">
-          <p className="text-xs text-orange-400 font-mono">
+          <p className={TYPO_DATA_WARNING}>
             Reducing retention may cause existing logs to be purged earlier than
             originally configured. Are you sure?
           </p>

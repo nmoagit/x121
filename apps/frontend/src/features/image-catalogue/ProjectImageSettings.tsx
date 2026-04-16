@@ -20,6 +20,7 @@ import {
   useProjectImageSettings,
   useToggleProjectImageSetting,
 } from "./hooks/use-project-image-settings";
+import { TYPO_DATA_MUTED } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Props
@@ -69,7 +70,7 @@ export function ProjectImageSettings({ projectId }: ProjectImageSettingsProps) {
                 <tr>
                   <td
                     colSpan={3}
-                    className="px-3 py-6 text-center font-mono text-xs text-[var(--color-text-muted)]"
+                    className={`px-3 py-6 text-center ${TYPO_DATA_MUTED}`}
                   >
                     No image settings available. Add image types to the catalogue first.
                   </td>

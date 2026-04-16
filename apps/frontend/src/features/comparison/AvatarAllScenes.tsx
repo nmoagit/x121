@@ -5,6 +5,8 @@
  * playback, sorting, filtering, and quick actions.
  */
 
+import { TYPO_PAGE_TITLE } from "@/lib/typography-tokens";
+
 import { useAvatarAllScenes } from "./hooks/use-comparison";
 import { GalleryLayout } from "./GalleryLayout";
 
@@ -37,7 +39,7 @@ export function AvatarAllScenes({
       isLoading={isLoading}
       header={
         avatarName ? (
-          <h2 className="text-xl font-semibold text-[var(--color-text-primary)]">
+          <h2 className={TYPO_PAGE_TITLE}>
             {avatarName} &mdash; All Scenes
           </h2>
         ) : undefined

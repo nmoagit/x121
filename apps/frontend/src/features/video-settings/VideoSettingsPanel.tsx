@@ -7,6 +7,7 @@
  */
 
 import { Button, Input, Select } from "@/components/primitives";
+import { TYPO_LABEL } from "@/lib/typography-tokens";
 import { RotateCcw, Save } from "@/tokens/icons";
 
 import {
@@ -107,7 +108,7 @@ export function VideoSettingsPanel({
             }
           />
           {!isBaseLevel && inherited?.duration_source && values.target_duration_secs === null && (
-            <span className="font-mono text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">
+            <span className={TYPO_LABEL}>
               {SOURCE_LABELS[inherited.duration_source]}
             </span>
           )}
@@ -134,7 +135,7 @@ export function VideoSettingsPanel({
             }
           />
           {!isBaseLevel && inherited?.fps_source && values.target_fps === null && (
-            <span className="font-mono text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">
+            <span className={TYPO_LABEL}>
               {SOURCE_LABELS[inherited.fps_source]}
             </span>
           )}
@@ -161,7 +162,7 @@ export function VideoSettingsPanel({
             }
           />
           {!isBaseLevel && inherited?.resolution_source && values.target_resolution === null && (
-            <span className="font-mono text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">
+            <span className={TYPO_LABEL}>
               {SOURCE_LABELS[inherited.resolution_source]}
             </span>
           )}

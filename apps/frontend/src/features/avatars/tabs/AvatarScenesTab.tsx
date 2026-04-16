@@ -67,6 +67,7 @@ import { ImportPreviewModal } from "./ImportPreviewModal";
 import { MediaPlaceholder } from "./MediaPlaceholder";
 import { matchDroppedVideos } from "./matchDroppedVideos";
 import type { MatchResult } from "./matchDroppedVideos";
+import { TYPO_TIMESTAMP } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Merged scene slot: one per enabled scene_type × track
@@ -730,7 +731,7 @@ export function AvatarScenesTab({ avatarId, projectId, focusSceneId, focusSceneT
 
       {/* Drop zone overlay */}
       {dragOver && (
-        <div className="flex items-center justify-center rounded-[var(--radius-lg)] border-2 border-dashed border-[var(--color-action-primary)] bg-[#0d1117] p-8">
+        <div className="flex items-center justify-center rounded-[var(--radius-lg)] border-2 border-dashed border-[var(--color-action-primary)] bg-[var(--color-surface-primary)] p-8">
           <div className="flex items-center gap-[var(--spacing-2)] text-[var(--color-action-primary)] font-mono text-sm">
             <Upload size={24} />
             <span>Drop videos to import</span>
@@ -814,7 +815,7 @@ export function AvatarScenesTab({ avatarId, projectId, focusSceneId, focusSceneT
                   {detailScene.row.track_name}
                 </span>
               )}
-              <span className="text-[10px] font-mono text-[var(--color-text-muted)]">
+              <span className={TYPO_TIMESTAMP}>
                 {(detailSlotIndex ?? 0) + 1}/{navigableSlots.length}
               </span>
               <Button
@@ -1053,7 +1054,7 @@ function SceneCard({ slot, isSelected, onToggleSelect, onGenerate, onSchedule, o
   return (
     <div
       className={cn(
-        "group/card rounded-[var(--radius-lg)] border border-[var(--color-border-default)] bg-[#0d1117] overflow-hidden transition-colors",
+        "group/card rounded-[var(--radius-lg)] border border-[var(--color-border-default)] bg-[var(--color-surface-primary)] overflow-hidden transition-colors",
         !isPlaceholder && "cursor-pointer",
         isPlaceholder && !dragOver && "opacity-60 border-dashed",
         dragOver && "ring-2 ring-[var(--color-action-primary)]",
@@ -1101,7 +1102,7 @@ function SceneCard({ slot, isSelected, onToggleSelect, onGenerate, onSchedule, o
           <button
             type="button"
             title="Disable this scene"
-            className="absolute top-[var(--spacing-2)] right-[var(--spacing-2)] opacity-0 group-hover/card:opacity-100 transition-opacity p-1 rounded bg-black/60 hover:bg-black/80 text-white"
+            className="absolute top-[var(--spacing-2)] right-[var(--spacing-2)] opacity-0 group-hover/card:opacity-100 transition-opacity p-1 rounded bg-[var(--color-surface-badge-overlay)] hover:bg-black/80 text-white"
             onClick={(e) => { e.stopPropagation(); onDisable(slot); }}
           >
             <EyeOff size={14} />
@@ -1139,7 +1140,7 @@ function SceneCard({ slot, isSelected, onToggleSelect, onGenerate, onSchedule, o
 
           {/* Segment progress overlay — bottom of video thumbnail */}
           {isGenerating && estimated > 0 && (
-            <div className="absolute bottom-0 inset-x-0 bg-black/60 px-[var(--spacing-2)] py-[var(--spacing-1)]">
+            <div className="absolute bottom-0 inset-x-0 bg-[var(--color-surface-badge-overlay)] px-[var(--spacing-2)] py-[var(--spacing-1)]">
               <div className="flex items-center justify-between text-[10px] text-white mb-0.5">
                 <span>{completed} / {estimated} segments</span>
                 <span>{pct}%</span>
@@ -1166,7 +1167,7 @@ function SceneCard({ slot, isSelected, onToggleSelect, onGenerate, onSchedule, o
                 <span className={TRACK_TEXT_COLORS[row.track_slug] ?? "text-[var(--color-text-primary)]"}>{row.track_name}</span>
               )}
               {row.has_clothes_off_transition && (
-                <span className="text-orange-400">clothes off</span>
+                <span className="text-[var(--color-data-orange)]">clothes off</span>
               )}
             </span>
           </div>
@@ -1175,15 +1176,15 @@ function SceneCard({ slot, isSelected, onToggleSelect, onGenerate, onSchedule, o
           <div className="flex items-center gap-2 font-mono text-[10px] text-[var(--color-text-muted)]">
             <span className={
               isPlaceholder ? "text-[var(--color-text-muted)]"
-              : isApproved ? "text-green-400"
-              : isGenerating ? "text-cyan-400"
-              : isFailed || isRejected ? "text-red-400"
-              : "text-cyan-400"
+              : isApproved ? "text-[var(--color-data-green)]"
+              : isGenerating ? "text-[var(--color-data-cyan)]"
+              : isFailed || isRejected ? "text-[var(--color-data-red)]"
+              : "text-[var(--color-data-cyan)]"
             }>
               {isPlaceholder ? "not started" : (isGenerating && !hasActiveGpu) ? "queued" : sceneStatusLabel(scene.status_id).toLowerCase()}
             </span>
             {isGenerating && !hasActiveGpu && (
-              <span className="flex items-center gap-0.5 text-orange-400" title="No GPU instances are active — job is queued">
+              <span className="flex items-center gap-0.5 text-[var(--color-data-orange)]" title="No GPU instances are active — job is queued">
                 <AlertTriangle size={10} /> no gpu
               </span>
             )}

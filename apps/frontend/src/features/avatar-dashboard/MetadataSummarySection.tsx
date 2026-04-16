@@ -13,6 +13,7 @@
 import { Button, Tooltip } from "@/components";
 
 import { useAvatarMetadata } from "../avatars/hooks/use-avatar-detail";
+import { TYPO_DATA } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Types
@@ -62,7 +63,7 @@ export function MetadataSummarySection({
     : 0;
 
   const tooltipContent = (
-    <span className="flex flex-col gap-0.5 text-left whitespace-normal max-w-[200px] font-mono text-xs">
+    <span className={`flex flex-col gap-0.5 text-left whitespace-normal max-w-[200px] ${TYPO_DATA}`}>
       <span><strong>{filledRequired}</strong> = mandatory fields completed</span>
       <span><strong>{totalRequired}</strong> = total mandatory fields</span>
       <span><strong>{filledOptional}</strong> = optional fields completed</span>
@@ -70,10 +71,10 @@ export function MetadataSummarySection({
   );
 
   return (
-    <div data-testid="metadata-summary-section" className="flex flex-col gap-2 font-mono text-xs">
+    <div data-testid="metadata-summary-section" className={`flex flex-col gap-2 ${TYPO_DATA}`}>
       <div className="flex items-center gap-2">
         <span className="text-[var(--color-text-muted)] uppercase tracking-wide">completeness:</span>
-        <span data-testid="metadata-completeness-badge" className={`font-semibold text-sm ${pct >= 100 ? "text-green-400" : "text-cyan-400"}`}>
+        <span data-testid="metadata-completeness-badge" className={`font-semibold text-sm ${pct >= 100 ? "text-[var(--color-data-green)]" : "text-[var(--color-data-cyan)]"}`}>
           {pct}%
         </span>
         <span className="text-[var(--color-text-muted)] opacity-30">|</span>

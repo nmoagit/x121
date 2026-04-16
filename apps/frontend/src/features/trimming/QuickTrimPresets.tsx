@@ -7,6 +7,7 @@
  */
 
 import { TRIM_PRESETS } from "./types";
+import { TYPO_CAPTION } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Types
@@ -73,7 +74,7 @@ export function QuickTrimPresets({
               <div className="font-medium text-[var(--color-text-primary)]">
                 {preset.label}
               </div>
-              <div className="text-xs text-[var(--color-text-secondary)]">
+              <div className={TYPO_CAPTION}>
                 {isDisabled
                   ? "Not enough frames"
                   : `${resultFrames} frames kept`}

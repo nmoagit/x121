@@ -9,6 +9,7 @@ import { Badge } from "@/components";
 import { formatValue } from "@/lib/format";
 
 import type { BranchComparison as BranchComparisonData, ParameterDiff } from "./types";
+import { TYPO_DATA, TYPO_CAPTION} from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Constants
@@ -100,7 +101,7 @@ export function BranchComparison({ comparison }: BranchComparisonProps) {
       </div>
 
       {/* Diff summary */}
-      <p className="text-xs text-[var(--color-text-secondary)]">
+      <p className={TYPO_CAPTION}>
         {changedCount} difference{changedCount !== 1 ? "s" : ""} found across{" "}
         {diffs.length} parameter{diffs.length !== 1 ? "s" : ""}.
       </p>
@@ -117,7 +118,7 @@ export function BranchComparison({ comparison }: BranchComparisonProps) {
         <div className="overflow-hidden rounded border border-[var(--color-border-subtle)]">
           <table className="w-full text-sm" data-testid="diff-table">
             <thead>
-              <tr className="bg-[var(--color-surface-tertiary)] text-xs text-[var(--color-text-secondary)]">
+              <tr className={`bg-[var(--color-surface-tertiary)] ${TYPO_CAPTION}`}>
                 <th className="px-3 py-2 text-left font-medium">Parameter</th>
                 <th className="px-3 py-2 text-left font-medium">
                   {branch_a.name}
@@ -135,7 +136,7 @@ export function BranchComparison({ comparison }: BranchComparisonProps) {
                   data-testid={`diff-row-${diff.key}`}
                   className={DIFF_STATUS_COLORS[diff.status]}
                 >
-                  <td className="px-3 py-1.5 font-mono text-xs">
+                  <td className={`px-3 py-1.5 ${TYPO_DATA}`}>
                     {diff.key}
                   </td>
                   <td className="px-3 py-1.5 text-xs">

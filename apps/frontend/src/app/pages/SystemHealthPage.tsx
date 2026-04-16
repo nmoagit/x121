@@ -7,6 +7,7 @@ import {
   TERMINAL_HEADER_TITLE,
   TERMINAL_BODY,
 } from "@/lib/ui-classes";
+import { TYPO_DATA, TYPO_DATA_MUTED, TYPO_LABEL } from "@/lib/typography-tokens";
 import { Activity, HardDrive, Cpu, Users } from "@/tokens/icons";
 import type { ReactNode } from "react";
 
@@ -20,11 +21,11 @@ interface ServiceCardProps {
 
 function ServiceCard({ name, icon, status, detail, latency }: ServiceCardProps) {
   const statusColor = status === "healthy"
-    ? "text-green-400"
+    ? "text-[var(--color-data-green)]"
     : status === "degraded"
-      ? "text-orange-400"
+      ? "text-[var(--color-data-orange)]"
       : status === "down"
-        ? "text-red-400"
+        ? "text-[var(--color-data-red)]"
         : "text-[var(--color-text-muted)]";
 
   return (
@@ -36,9 +37,9 @@ function ServiceCard({ name, icon, status, detail, latency }: ServiceCardProps) 
         </div>
         <div className="flex items-center gap-[var(--spacing-2)]">
           {latency != null && (
-            <span className="font-mono text-[10px] text-cyan-400 tabular-nums">{latency}ms</span>
+            <span className="font-mono text-[10px] text-[var(--color-data-cyan)] tabular-nums">{latency}ms</span>
           )}
-          <span className={`font-mono text-xs uppercase tracking-wide ${statusColor}`}>
+          <span className={`${TYPO_DATA} uppercase tracking-wide ${statusColor}`}>
             {status}
           </span>
         </div>
@@ -93,32 +94,32 @@ export default function SystemHealthPage() {
         <div className="grid grid-cols-2 gap-[var(--spacing-3)] sm:grid-cols-5">
           <div className={TERMINAL_PANEL}>
             <div className={TERMINAL_BODY}>
-              <p className="font-mono text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Services</p>
-              <p className="font-mono text-lg font-semibold text-cyan-400">{serviceList.length}</p>
+              <p className={TYPO_LABEL}>Services</p>
+              <p className="font-mono text-lg font-semibold text-[var(--color-data-cyan)]">{serviceList.length}</p>
             </div>
           </div>
           <div className={TERMINAL_PANEL}>
             <div className={TERMINAL_BODY}>
-              <p className="font-mono text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Healthy</p>
-              <p className="font-mono text-lg font-semibold text-green-400">{healthyCt}</p>
+              <p className={TYPO_LABEL}>Healthy</p>
+              <p className="font-mono text-lg font-semibold text-[var(--color-data-green)]">{healthyCt}</p>
             </div>
           </div>
           <div className={TERMINAL_PANEL}>
             <div className={TERMINAL_BODY}>
-              <p className="font-mono text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Degraded</p>
-              <p className="font-mono text-lg font-semibold text-orange-400">{degradedCt}</p>
+              <p className={TYPO_LABEL}>Degraded</p>
+              <p className="font-mono text-lg font-semibold text-[var(--color-data-orange)]">{degradedCt}</p>
             </div>
           </div>
           <div className={TERMINAL_PANEL}>
             <div className={TERMINAL_BODY}>
-              <p className="font-mono text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Down</p>
-              <p className="font-mono text-lg font-semibold text-red-400">{downCt}</p>
+              <p className={TYPO_LABEL}>Down</p>
+              <p className="font-mono text-lg font-semibold text-[var(--color-data-red)]">{downCt}</p>
             </div>
           </div>
           <div className={TERMINAL_PANEL}>
             <div className={TERMINAL_BODY}>
-              <p className="font-mono text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">GPU Pods</p>
-              <p className="font-mono text-lg font-semibold text-cyan-400">{cloudGpu?.active_pods ?? 0}</p>
+              <p className={TYPO_LABEL}>GPU Pods</p>
+              <p className="font-mono text-lg font-semibold text-[var(--color-data-cyan)]">{cloudGpu?.active_pods ?? 0}</p>
             </div>
           </div>
         </div>
@@ -127,9 +128,9 @@ export default function SystemHealthPage() {
         <div className={TERMINAL_PANEL}>
           <div className={`${TERMINAL_BODY} flex items-center gap-[var(--spacing-3)]`}>
             <Activity size={14} className="text-[var(--color-text-muted)]" />
-            <span className="font-mono text-xs text-[var(--color-text-muted)]">
-              <span className="text-cyan-400">{jobs.running}</span> running, <span className="text-orange-400">{jobs.queued}</span> queued
-              {jobs.overallProgress > 0 && <> — <span className="text-green-400">{jobs.overallProgress}%</span> overall</>}
+            <span className={TYPO_DATA_MUTED}>
+              <span className="text-[var(--color-data-cyan)]">{jobs.running}</span> running, <span className="text-[var(--color-data-orange)]">{jobs.queued}</span> queued
+              {jobs.overallProgress > 0 && <> — <span className="text-[var(--color-data-green)]">{jobs.overallProgress}%</span> overall</>}
             </span>
           </div>
         </div>

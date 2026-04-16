@@ -5,6 +5,8 @@
  * synchronized playback, sorting, filtering, and quick actions.
  */
 
+import { TYPO_PAGE_TITLE } from "@/lib/typography-tokens";
+
 import { useSceneComparison } from "./hooks/use-comparison";
 import { GalleryLayout } from "./GalleryLayout";
 
@@ -32,7 +34,7 @@ export function SceneGallery({ projectId, sceneTypeId, className }: SceneGallery
       isLoading={isLoading}
       header={
         data?.scene_type_name ? (
-          <h2 className="text-xl font-semibold text-[var(--color-text-primary)]">
+          <h2 className={TYPO_PAGE_TITLE}>
             {data.scene_type_name}
           </h2>
         ) : undefined

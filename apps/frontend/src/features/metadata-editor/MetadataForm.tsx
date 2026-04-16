@@ -25,6 +25,7 @@ import type {
   MetadataValidationFailure,
 } from "./types";
 import { CATEGORY_LABELS, FIELD_CATEGORIES } from "./types";
+import { TYPO_DATA } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Constants
@@ -122,7 +123,7 @@ export function MetadataForm({ avatarId }: MetadataFormProps) {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="font-mono text-xs font-medium text-[var(--color-text-primary)] uppercase tracking-wide">
+          <h2 className={`${TYPO_DATA} font-medium text-[var(--color-text-primary)] uppercase tracking-wide`}>
             {data.avatar_name} — Metadata
           </h2>
           <div className="mt-2 max-w-md">

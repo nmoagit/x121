@@ -34,6 +34,7 @@ import {
 } from "./types";
 import { ProgressiveImage  } from "@/components/primitives";
 import { variantMediaUrl, variantThumbnailUrl } from "./utils";
+import { TYPO_DATA, TYPO_DATA_MUTED, TYPO_LABEL} from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Sub-components
@@ -119,7 +120,7 @@ function VariantCard({
           {variant.variant_type && (
             <>
               <span className="opacity-30">|</span>
-              <span className="text-cyan-400">{variant.variant_type}</span>
+              <span className="text-[var(--color-data-cyan)]">{variant.variant_type}</span>
             </>
           )}
           <span className="opacity-30">|</span>
@@ -204,7 +205,7 @@ export function VariantGallery({ avatarId, sourceImageUrl }: VariantGalleryProps
               <div className={TERMINAL_PANEL}>
                 <div className="p-[var(--spacing-2)]">
                   <Stack gap={2}>
-                    <p className="font-mono text-[10px] uppercase tracking-wide text-[var(--color-text-muted)]">
+                    <p className={TYPO_LABEL}>
                       Source Image
                     </p>
                     <img
@@ -263,13 +264,13 @@ export function VariantGallery({ avatarId, sourceImageUrl }: VariantGalleryProps
                   className="max-h-[60vh] rounded-[var(--radius-md)] object-contain"
                 />
               ) : (
-                <div className="flex h-48 w-full items-center justify-center font-mono text-xs text-[var(--color-text-muted)]">
+                <div className={`flex h-48 w-full items-center justify-center ${TYPO_DATA_MUTED}`}>
                   No image available
                 </div>
               )}
             </div>
 
-            <div className="flex flex-wrap items-center gap-2 font-mono text-xs">
+            <div className={`flex flex-wrap items-center gap-2 ${TYPO_DATA}`}>
               <span className={TERMINAL_STATUS_COLORS[MEDIA_VARIANT_STATUS_LABEL[previewVariant.status_id]?.toLowerCase() ?? ""] ?? "text-[var(--color-text-muted)]"}>
                 {MEDIA_VARIANT_STATUS_LABEL[previewVariant.status_id]}
               </span>
@@ -280,7 +281,7 @@ export function VariantGallery({ avatarId, sourceImageUrl }: VariantGalleryProps
               {previewVariant.width && previewVariant.height && (
                 <>
                   <span className="opacity-30">|</span>
-                  <span className="flex items-center gap-1 text-cyan-400">
+                  <span className="flex items-center gap-1 text-[var(--color-data-cyan)]">
                     <Eye size={12} />
                     {previewVariant.width} x {previewVariant.height}
                   </span>
@@ -297,7 +298,7 @@ export function VariantGallery({ avatarId, sourceImageUrl }: VariantGalleryProps
               {previewVariant.is_hero && (
                 <>
                   <span className="opacity-30">|</span>
-                  <span className="text-green-400">Hero</span>
+                  <span className="text-[var(--color-data-green)]">Hero</span>
                 </>
               )}
             </div>

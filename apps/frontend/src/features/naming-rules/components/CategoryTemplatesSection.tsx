@@ -20,6 +20,7 @@ import { Trash2 } from "@/tokens/icons";
 
 import type { NamingCategory, NamingRule } from "../types";
 import { CATEGORY_GROUPS } from "../types";
+import { TYPO_DATA_CYAN, TYPO_DATA_MUTED } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Props
@@ -87,7 +88,7 @@ export function CategoryTemplatesSection({
                           TERMINAL_ROW_HOVER,
                         )}
                       >
-                        <span className="font-mono text-xs text-cyan-400 min-w-[160px] shrink-0">
+                        <span className={`${TYPO_DATA_CYAN} min-w-[160px] shrink-0`}>
                           {cat.name}
                         </span>
                         <div className="flex-1 min-w-0">
@@ -124,7 +125,7 @@ export function CategoryTemplatesSection({
           })}
 
           {(!categories || categories.length === 0) && (
-            <p className="font-mono text-xs text-[var(--color-text-muted)]">
+            <p className={TYPO_DATA_MUTED}>
               Loading naming categories...
             </p>
           )}

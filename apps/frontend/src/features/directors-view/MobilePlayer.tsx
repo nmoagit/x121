@@ -108,7 +108,7 @@ export function MobilePlayer({ videoUrl, onClose }: MobilePlayerProps) {
               togglePlay();
             }}
             aria-label={isPlaying ? "Pause" : "Play"}
-            className="absolute flex items-center justify-center rounded-full bg-black/50 p-4"
+            className="absolute flex items-center justify-center rounded-full bg-[var(--color-surface-badge-overlay)] p-4"
             style={{ minWidth: MIN_TOUCH_TARGET, minHeight: MIN_TOUCH_TARGET }}
           >
             <PlayPauseIcon size={48} className="text-white" />

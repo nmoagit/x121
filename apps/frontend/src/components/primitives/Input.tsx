@@ -1,4 +1,5 @@
 import { cn } from "@/lib/cn";
+import { TYPO_LABEL } from "@/lib/typography-tokens";
 import { forwardRef, useId } from "react";
 import type { InputHTMLAttributes } from "react";
 
@@ -32,7 +33,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
   return (
     <div className="flex flex-col gap-1.5">
       {label && (
-        <label htmlFor={inputId} className="text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-wide font-mono">
+        <label htmlFor={inputId} className={TYPO_LABEL}>
           {label}
         </label>
       )}

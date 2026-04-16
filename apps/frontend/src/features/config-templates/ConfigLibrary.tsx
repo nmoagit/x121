@@ -23,6 +23,7 @@ import {
   useDeleteConfig,
 } from "./hooks/use-config-templates";
 import type { CreateProjectConfig, ProjectConfig } from "./types";
+import { TYPO_DATA, TYPO_CAPTION} from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Props
@@ -145,7 +146,7 @@ function ConfigCard({ config, onDelete }: ConfigCardProps) {
       <CardBody>
         <div className="space-y-2">
           {config.description && (
-            <p className="text-xs text-[var(--color-text-secondary)]">
+            <p className={TYPO_CAPTION}>
               {config.description}
             </p>
           )}
@@ -229,7 +230,7 @@ function CreateConfigForm({
           />
           <textarea
             data-testid="config-json-input"
-            className="w-full rounded border border-[var(--color-border)] bg-[var(--color-bg-secondary)] p-2 font-mono text-xs text-[var(--color-text-primary)]"
+            className={`w-full rounded border border-[var(--color-border)] bg-[var(--color-bg-secondary)] p-2 ${TYPO_DATA}`}
             rows={6}
             value={configText}
             onChange={(e) => setConfigText(e.target.value)}

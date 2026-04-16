@@ -22,6 +22,7 @@ import { useCreateGroup } from "../hooks/use-avatar-groups";
 import { useGroupSelectOptions } from "../hooks/use-group-select-options";
 import { CHARACTER_STATUS_ID_ACTIVE } from "../types";
 import type { Avatar, UpdateAvatar } from "../types";
+import { TYPO_DATA_WARNING } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Constants
@@ -174,8 +175,8 @@ export function AvatarEditModal({
           />
           {!voiceConfigured && (
             <div className="mt-1.5 flex items-center gap-1.5">
-              <AlertTriangle size={14} className="text-orange-400 shrink-0" />
-              <span className="text-xs font-mono text-orange-400">
+              <AlertTriangle size={14} className="text-[var(--color-data-orange)] shrink-0" />
+              <span className={TYPO_DATA_WARNING}>
                 VoiceID must be configured in Settings before activating
               </span>
             </div>
@@ -228,7 +229,7 @@ export function AvatarEditModal({
           <Button
             variant="ghost"
             size="sm"
-            className="text-red-400 hover:text-red-300"
+            className="text-[var(--color-data-red)] hover:text-red-300"
             onClick={() => avatar && onDeleteRequest(avatar)}
           >
             Delete avatar

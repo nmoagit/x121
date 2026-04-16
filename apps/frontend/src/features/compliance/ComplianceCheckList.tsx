@@ -18,6 +18,7 @@ import {
 } from "./hooks/use-compliance";
 import type { ComplianceCheck } from "./types";
 import { compliancePassRate } from "./types";
+import { TYPO_INPUT_LABEL } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Check row
@@ -136,19 +137,19 @@ export function ComplianceCheckList({ sceneId }: ComplianceCheckListProps) {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-[var(--color-border-default)]">
-                  <th className="px-3 py-2 text-left text-xs font-medium text-[var(--color-text-muted)]">
+                  <th className={`px-3 py-2 text-left ${TYPO_INPUT_LABEL}`}>
                     Rule
                   </th>
-                  <th className="px-3 py-2 text-left text-xs font-medium text-[var(--color-text-muted)]">
+                  <th className={`px-3 py-2 text-left ${TYPO_INPUT_LABEL}`}>
                     Result
                   </th>
-                  <th className="px-3 py-2 text-left text-xs font-medium text-[var(--color-text-muted)]">
+                  <th className={`px-3 py-2 text-left ${TYPO_INPUT_LABEL}`}>
                     Actual
                   </th>
-                  <th className="px-3 py-2 text-left text-xs font-medium text-[var(--color-text-muted)]">
+                  <th className={`px-3 py-2 text-left ${TYPO_INPUT_LABEL}`}>
                     Expected
                   </th>
-                  <th className="px-3 py-2 text-left text-xs font-medium text-[var(--color-text-muted)]">
+                  <th className={`px-3 py-2 text-left ${TYPO_INPUT_LABEL}`}>
                     Message
                   </th>
                 </tr>

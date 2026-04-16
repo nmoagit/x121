@@ -10,6 +10,7 @@ import {
 } from "./hooks/use-avatar-review";
 import { REVIEW_STATUS_MAP } from "./types";
 import { useAuthStore } from "@/stores/auth-store";
+import { TYPO_DATA, TYPO_DATA_CYAN } from "@/lib/typography-tokens";
 
 interface AvatarReviewControlsProps {
   avatarId: number;
@@ -58,11 +59,11 @@ export function AvatarReviewControls({
 
   return (
     <>
-      <div className="sticky bottom-0 rounded-[var(--radius-lg)] border border-[var(--color-border-default)] bg-[#0d1117] px-[var(--spacing-3)] py-[var(--spacing-2)] flex items-center justify-between font-mono text-xs">
+      <div className={`sticky bottom-0 rounded-[var(--radius-lg)] border border-[var(--color-border-default)] bg-[var(--color-surface-primary)] px-[var(--spacing-3)] py-[var(--spacing-2)] flex items-center justify-between ${TYPO_DATA}`}>
         <div className="flex items-center gap-3">
           <ReviewStatusBadge status={status} />
           {(status === "rejected" || status === "rework") && latestRejection?.comment && (
-            <span className="text-red-400 truncate max-w-[300px]">
+            <span className="text-[var(--color-data-red)] truncate max-w-[300px]">
               {latestRejection.comment}
             </span>
           )}
@@ -125,14 +126,14 @@ export function AvatarReviewControls({
       >
         <div className="space-y-4">
           <div>
-            <span className="block font-mono text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide mb-1">
+            <span className={`block ${TYPO_DATA} font-medium text-[var(--color-text-muted)] uppercase tracking-wide mb-1`}>
               Comment{" "}
               {decisionType === "rejected" && (
-                <span className="text-red-400">*</span>
+                <span className="text-[var(--color-data-red)]">*</span>
               )}
             </span>
             <textarea
-              className="w-full bg-[#0d1117] text-cyan-400 border border-[var(--color-border-default)] rounded-[var(--radius-lg)] p-3 font-mono text-xs min-h-[100px] focus:outline-none focus:ring-2 focus:ring-[var(--color-border-focus)]"
+              className={`${TYPO_DATA_CYAN} w-full bg-[var(--color-surface-primary)] border border-[var(--color-border-default)] rounded-[var(--radius-lg)] p-3 min-h-[100px] focus:outline-none focus:ring-2 focus:ring-[var(--color-border-focus)]`}
               placeholder={
                 decisionType === "rejected"
                   ? "Explain what needs to be fixed..."

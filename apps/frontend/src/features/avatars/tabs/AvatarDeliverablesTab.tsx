@@ -66,6 +66,7 @@ import { formatDuration } from "@/features/video-player/frame-utils";
 import { CLOTHES_OFF_SUFFIX, getExtension } from "@/lib/file-types";
 import { downloadJson } from "@/lib/file-utils";
 import { formatBytes, generateSnakeSlug } from "@/lib/format";
+import { TYPO_DATA, TYPO_DATA_MUTED } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Constants
@@ -174,13 +175,13 @@ function SectionFilter({
 /** Grid-based row layout: icon | title | filename | badges/meta | actions.
  *  Fixed column widths for icon, title, and filename ensure vertical alignment. */
 const ROW_GRID_COLS = "grid-cols-[16px_minmax(100px,160px)_minmax(120px,200px)_1fr_auto]";
-const ROW_CLASS = `grid items-center px-[var(--spacing-3)] py-[var(--spacing-2)] font-mono text-xs ${ROW_GRID_COLS} gap-x-[var(--spacing-3)]`;
-const PLACEHOLDER_CLASS = `grid items-center px-[var(--spacing-3)] py-[var(--spacing-2)] font-mono text-xs text-[var(--color-text-muted)] opacity-50 ${ROW_GRID_COLS} gap-x-[var(--spacing-3)]`;
+const ROW_CLASS = `grid items-center px-[var(--spacing-3)] py-[var(--spacing-2)] ${TYPO_DATA} ${ROW_GRID_COLS} gap-x-[var(--spacing-3)]`;
+const PLACEHOLDER_CLASS = `grid items-center px-[var(--spacing-3)] py-[var(--spacing-2)] ${TYPO_DATA_MUTED} opacity-50 ${ROW_GRID_COLS} gap-x-[var(--spacing-3)]`;
 
 const ROW_ICON_CLASS = "shrink-0 text-[var(--color-text-muted)]";
 const ROW_TITLE_CLASS = "min-w-0 truncate font-medium text-[var(--color-text-muted)] uppercase tracking-wide";
 const ROW_TITLE_MUTED_CLASS = "min-w-0 truncate font-medium text-[var(--color-text-muted)] uppercase tracking-wide";
-const ROW_FILENAME_CLASS = "min-w-0 truncate text-cyan-400";
+const ROW_FILENAME_CLASS = "min-w-0 truncate text-[var(--color-data-cyan)]";
 const ROW_META_CLASS = "flex items-center gap-2 min-w-0 flex-wrap text-[var(--color-text-muted)]";
 
 function ImageRow({
@@ -253,8 +254,8 @@ function VideoRow({
         {clip.file_size_bytes != null && (
           <><span className="opacity-30">|</span><span>{formatBytes(clip.file_size_bytes)}</span></>
         )}
-        {clip.is_final && <><span className="opacity-30">|</span><span className="text-green-400">final</span></>}
-        {isEmptyClip(clip) && <><span className="opacity-30">|</span><span className="text-orange-400">empty</span></>}
+        {clip.is_final && <><span className="opacity-30">|</span><span className="text-[var(--color-data-green)]">final</span></>}
+        {isEmptyClip(clip) && <><span className="opacity-30">|</span><span className="text-[var(--color-data-orange)]">empty</span></>}
       </div>
       <div className="shrink-0 justify-self-end">
         {clip.file_path && (
@@ -291,7 +292,7 @@ function PlaceholderRow({
       <span className={ROW_TITLE_MUTED_CLASS}>{title ?? ""}</span>
       <span className={cn(ROW_FILENAME_CLASS, ignored && "line-through")}>{text}</span>
       <div className={ROW_META_CLASS}>
-        {ignored && <span className="text-orange-400">ignored</span>}
+        {ignored && <span className="text-[var(--color-data-orange)]">ignored</span>}
       </div>
       <div className="shrink-0 justify-self-end">
         {onToggleIgnore && (
@@ -305,10 +306,10 @@ function PlaceholderRow({
 }
 
 const SPEECH_STATUS_COLOR: Record<string, string> = {
-  complete: "text-green-400",
-  partial: "text-orange-400",
-  not_started: "text-red-400",
-  missing: "text-red-400",
+  complete: "text-[var(--color-data-green)]",
+  partial: "text-[var(--color-data-orange)]",
+  not_started: "text-[var(--color-data-red)]",
+  missing: "text-[var(--color-data-red)]",
 };
 
 function SpeechRow({ entry }: { entry: CompletenessEntry }) {
@@ -585,7 +586,7 @@ function MetadataSection({
             <span className={ROW_TITLE_CLASS}>Avatar JSON</span>
             <span className={ROW_FILENAME_CLASS}>{expectedFilenameAvatar}</span>
             <div className={ROW_META_CLASS}>
-              <span className="text-green-400">generated</span>
+              <span className="text-[var(--color-data-green)]">generated</span>
             </div>
             <div className="shrink-0 justify-self-end flex items-center gap-1">
               <Button variant="secondary" size="xs" disabled={!downloadPayload || updateSettings.isPending} onClick={handleGenerate}>
@@ -607,7 +608,7 @@ function MetadataSection({
 
         {/* Collapsible raw JSON preview */}
         {hasAvatarJson && avatarExpanded && (
-          <pre className="text-[10px] font-mono bg-[#161b22] rounded-[var(--radius-md)] p-[var(--spacing-3)] overflow-auto max-h-80 text-cyan-400">
+          <pre className="text-[10px] font-mono bg-[var(--color-surface-secondary)] rounded-[var(--radius-md)] p-[var(--spacing-3)] overflow-auto max-h-80 text-[var(--color-data-cyan)]">
             {JSON.stringify(avatarJson, null, 2)}
           </pre>
         )}

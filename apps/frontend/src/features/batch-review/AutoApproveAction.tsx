@@ -12,6 +12,7 @@ import { Modal } from "@/components/composite";
 import { formatPercent } from "@/lib/format";
 
 import { useAutoApprove, useReviewProgress } from "./hooks/use-batch-review";
+import { TYPO_DATA, TYPO_DATA_MUTED, TYPO_DATA_SUCCESS } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Constants
@@ -60,12 +61,12 @@ export function AutoApproveAction({ projectId }: AutoApproveActionProps) {
 
   return (
     <div data-testid="auto-approve-action" className="flex flex-col gap-3">
-      <h3 className="font-mono text-xs font-semibold text-[var(--color-text-primary)]">
+      <h3 className={`${TYPO_DATA} font-semibold text-[var(--color-text-primary)]`}>
         Auto-Approve by QA Score
       </h3>
 
       <div className="flex items-center gap-4">
-        <span className="font-mono text-xs text-[var(--color-text-secondary)]">
+        <span className={TYPO_DATA_MUTED}>
           Threshold
         </span>
         <input
@@ -91,13 +92,13 @@ export function AutoApproveAction({ projectId }: AutoApproveActionProps) {
         />
       </div>
 
-      <p className="font-mono text-xs text-[var(--color-text-muted)]">
-        <span className="text-cyan-400">{pendingCount}</span> of <span className="text-cyan-400">{totalCount}</span> pending segments would be evaluated at{" "}
-        <span className="text-orange-400">{formatPercent(threshold, 0)}</span> threshold
+      <p className={TYPO_DATA_MUTED}>
+        <span className="text-[var(--color-data-cyan)]">{pendingCount}</span> of <span className="text-[var(--color-data-cyan)]">{totalCount}</span> pending segments would be evaluated at{" "}
+        <span className="text-[var(--color-data-orange)]">{formatPercent(threshold, 0)}</span> threshold
       </p>
 
       {autoApprove.isSuccess && (
-        <p className="font-mono text-xs text-green-400">
+        <p className={TYPO_DATA_SUCCESS}>
           {autoApprove.data.processed_count} segments auto-approved
         </p>
       )}
@@ -118,9 +119,9 @@ export function AutoApproveAction({ projectId }: AutoApproveActionProps) {
         title="Confirm Auto-Approve"
         size="sm"
       >
-        <p className="font-mono text-xs text-[var(--color-text-secondary)] mb-4">
+        <p className={`${TYPO_DATA_MUTED} mb-4`}>
           This will approve all pending segments with a QA score at or above{" "}
-          <strong className="text-orange-400">{formatPercent(threshold, 0)}</strong>. This action cannot be easily undone.
+          <strong className="text-[var(--color-data-orange)]">{formatPercent(threshold, 0)}</strong>. This action cannot be easily undone.
         </p>
         <div className="flex justify-end gap-2 pt-1 border-t border-[var(--color-border-default)]">
           <Button

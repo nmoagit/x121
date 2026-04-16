@@ -40,7 +40,7 @@ const SEGMENT_CLASSES = cn(
   "flex items-center gap-1.5 px-2 py-0.5 text-[10px] font-mono",
   "text-[var(--color-text-muted)]",
   "transition-colors duration-150",
-  "hover:text-[var(--color-text-primary)] hover:bg-[#161b22]",
+  "hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-secondary)]",
   "rounded-[2px]",
 );
 

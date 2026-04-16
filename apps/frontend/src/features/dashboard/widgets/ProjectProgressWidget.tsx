@@ -12,6 +12,7 @@ import {
   TERMINAL_PIPE,
 } from "@/lib/ui-classes";
 import { BarChart3, Folder } from "@/tokens/icons";
+import { TYPO_DATA, TYPO_DATA_CYAN } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Mini-indicator for project rows
@@ -27,10 +28,10 @@ function MiniIndicator({
   total: number;
 }) {
   const complete = total > 0 && current === total;
-  const valueColor = complete ? "text-green-400" : total > 0 ? "text-cyan-400" : "text-[var(--color-text-muted)]";
+  const valueColor = complete ? "text-[var(--color-data-green)]" : total > 0 ? "text-[var(--color-data-cyan)]" : "text-[var(--color-text-muted)]";
 
   return (
-    <span className="flex items-center gap-1 font-mono text-xs">
+    <span className={`flex items-center gap-1 ${TYPO_DATA}`}>
       <span className={`tabular-nums font-bold ${valueColor}`}>
         {current}/{total}
       </span>
@@ -51,13 +52,13 @@ function ProjectRow({ item, showPipeline = true }: { item: ProjectProgressItem; 
   return (
     <div className={`py-2 ${TERMINAL_DIVIDER} last:border-b-0 ${TERMINAL_ROW_HOVER}`}>
       <div className="flex items-center justify-between mb-1">
-        <p className="font-mono text-xs text-[var(--color-text-primary)] truncate">
+        <p className={`${TYPO_DATA} truncate`}>
           {showPipeline && item.pipeline_code && (
             <span className="text-[var(--color-text-muted)]">{item.pipeline_code} / </span>
           )}
           {item.project_name}
         </p>
-        <span className={`font-mono text-xs tabular-nums shrink-0 ml-2 ${allApproved ? "text-green-400" : "text-cyan-400"}`}>
+        <span className={`font-mono text-xs tabular-nums shrink-0 ml-2 ${allApproved ? "text-[var(--color-data-green)]" : "text-[var(--color-data-cyan)]"}`}>
           {item.scenes_approved}/{item.scenes_total} scenes
         </span>
       </div>
@@ -107,7 +108,7 @@ export function ProjectProgressWidget({ pipelineId, showPipeline = true }: { pip
       error={error?.message}
       onRetry={() => void refetch()}
       headerActions={
-        <Link to={withPrefix("/projects") as string} className="font-mono text-xs text-cyan-400 hover:underline">
+        <Link to={withPrefix("/projects") as string} className={`${TYPO_DATA_CYAN} hover:underline`}>
           Projects
         </Link>
       }

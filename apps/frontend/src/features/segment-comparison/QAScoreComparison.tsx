@@ -8,6 +8,7 @@
 import { Badge } from "@/components/primitives";
 import { cn } from "@/lib/cn";
 import { formatDiff, formatScore, qaMetricLabel } from "@/lib/qa-constants";
+import { TYPO_DATA } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Props
@@ -98,7 +99,7 @@ export function QAScoreComparison({ oldScores, newScores, scoreDiffs }: QAScoreC
                 {qaMetricLabel(metric)}
               </span>
 
-              <div className="flex items-center gap-[var(--spacing-1)] shrink-0 font-mono text-xs">
+              <div className={`flex items-center gap-[var(--spacing-1)] shrink-0 ${TYPO_DATA}`}>
                 {oldVal !== null && (
                   <span className="text-[var(--color-text-muted)]">{formatScore(oldVal)}</span>
                 )}

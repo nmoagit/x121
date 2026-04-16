@@ -11,8 +11,9 @@ import { ArrowRight } from "@/tokens/icons";
 
 import { useUpdateImageType } from "@/features/image-catalogue/hooks/use-image-catalogue";
 import type { ImageType } from "@/features/image-catalogue/types";
+import { TYPO_DATA, TYPO_DATA_MUTED, TYPO_LABEL} from "@/lib/typography-tokens";
 
-const TH_CLS = "w-1/4 px-3 py-1.5 text-left text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-wide font-mono";
+const TH_CLS = `w-1/4 px-3 py-1.5 text-left ${TYPO_LABEL}`;
 const SELECT_CLS = cn(TERMINAL_SELECT, "max-w-[200px]");
 
 /* --------------------------------------------------------------------------
@@ -41,8 +42,8 @@ export function ImageWorkflowTable({ imageTypes, workflowOptions, tracks, editab
           <tr className="border-b border-[var(--color-border-default)]/30">
             <th className={TH_CLS}>Image Type</th>
             <th className={TH_CLS}>Tracks</th>
-            <th className="w-1/3 px-3 py-1.5 text-left text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-wide font-mono">Workflow</th>
-            <th className="w-[100px] px-3 py-1.5 text-left text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-wide font-mono">Status</th>
+            <th className={`w-1/3 px-3 py-1.5 text-left ${TYPO_LABEL}`}>Workflow</th>
+            <th className={`w-[100px] px-3 py-1.5 text-left ${TYPO_LABEL}`}>Status</th>
           </tr>
         </thead>
         <tbody>
@@ -83,10 +84,10 @@ function ImageWorkflowRow({
 
   return (
     <tr className="border-b border-[var(--color-border-default)]/30 last:border-b-0">
-      <td className="px-3 py-1.5 font-mono text-xs text-[var(--color-text-primary)] uppercase tracking-wide">
+      <td className={`px-3 py-1.5 ${TYPO_DATA} uppercase tracking-wide`}>
         {imageType.name}
       </td>
-      <td className="px-3 py-1.5 font-mono text-xs">
+      <td className={`px-3 py-1.5 ${TYPO_DATA}`}>
         {srcTrack && outTrack ? (
           <div className="flex items-center gap-1">
             <span className={TRACK_TEXT_COLORS[srcTrack.slug] ?? "text-[var(--color-text-muted)]"}>{srcTrack.name}</span>
@@ -113,14 +114,14 @@ function ImageWorkflowRow({
             ))}
           </select>
         ) : (
-          <span className="font-mono text-xs text-[var(--color-text-muted)]">
+          <span className={TYPO_DATA_MUTED}>
             {wfName ?? "not set"}
           </span>
         )}
       </td>
-      <td className="px-3 py-1.5 font-mono text-xs">
+      <td className={`px-3 py-1.5 ${TYPO_DATA}`}>
         {imageType.workflow_id != null ? (
-          <span className="text-green-400">set</span>
+          <span className="text-[var(--color-data-green)]">set</span>
         ) : (
           <span className="text-[var(--color-text-muted)]">not set</span>
         )}

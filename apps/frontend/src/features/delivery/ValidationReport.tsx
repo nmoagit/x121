@@ -94,7 +94,7 @@ export function ValidationReport({ projectId, initialData, avatarIds }: Validati
 
         {/* Summary badge inline in header */}
         {result && (
-          <span className={`font-mono text-[10px] font-bold tracking-wider ${result.passed ? "text-emerald-400" : "text-red-400"}`}>
+          <span className={`font-mono text-[10px] font-bold tracking-wider ${result.passed ? "text-emerald-400" : "text-[var(--color-data-red)]"}`}>
             [{result.passed ? "PASS" : "FAIL"}]
           </span>
         )}
@@ -130,7 +130,7 @@ export function ValidationReport({ projectId, initialData, avatarIds }: Validati
 
       {/* Log output area */}
       {!collapsed && hasResult && (
-        <div className="max-h-64 overflow-y-auto bg-[#0d1117] p-[var(--spacing-3)]">
+        <div className="max-h-64 overflow-y-auto bg-[var(--color-surface-primary)] p-[var(--spacing-3)]">
           {isError && (
             <p className="text-xs font-mono text-[var(--color-action-danger)]">
               Validation query failed: {error instanceof Error ? error.message : "Unknown error"}

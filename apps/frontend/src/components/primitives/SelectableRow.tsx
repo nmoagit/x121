@@ -25,8 +25,8 @@ export function SelectableRow({
     <div
       className={`flex items-center justify-between rounded-[var(--radius-md)] border px-3 py-2 cursor-pointer transition-colors ${
         isSelected
-          ? "border-[var(--color-action-primary)] bg-[#161b22]"
-          : "border-[var(--color-border-default)]/30 bg-[#0d1117] hover:bg-[#161b22]"
+          ? "border-[var(--color-action-primary)] bg-[var(--color-surface-secondary)]"
+          : "border-[var(--color-border-default)]/30 bg-[var(--color-surface-primary)] hover:bg-[var(--color-surface-secondary)]"
       }`}
       onClick={onSelect}
       role="button"

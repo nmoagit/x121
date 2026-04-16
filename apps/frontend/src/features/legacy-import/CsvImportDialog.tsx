@@ -3,6 +3,7 @@
  */
 
 import { useState } from "react";
+import { TYPO_CAPTION } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Props
@@ -86,7 +87,7 @@ export function CsvImportDialog({
             <div>
               <label
                 htmlFor="map-name"
-                className="text-xs text-[var(--color-text-secondary)]"
+                className={TYPO_CAPTION}
               >
                 Name column
               </label>
@@ -102,7 +103,7 @@ export function CsvImportDialog({
             <div>
               <label
                 htmlFor="map-type"
-                className="text-xs text-[var(--color-text-secondary)]"
+                className={TYPO_CAPTION}
               >
                 Type column
               </label>

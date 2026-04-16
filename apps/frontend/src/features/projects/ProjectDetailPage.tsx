@@ -25,6 +25,7 @@ import { ProjectOverviewTab } from "./tabs/ProjectOverviewTab";
 import { ProjectProductionTab } from "./tabs/ProjectProductionTab";
 import { PROJECT_STATUS_LABELS, PROJECT_TABS, projectStatusSlug } from "./types";
 import { TERMINAL_STATUS_COLORS } from "@/lib/ui-classes";
+import { TYPO_DATA } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Component
@@ -104,7 +105,7 @@ export function ProjectDetailPage() {
       <div className="flex items-start justify-between gap-[var(--spacing-4)]">
         <div>
           <div className="flex items-center gap-[var(--spacing-2)]">
-            <span className={`font-mono text-xs ${statusColor}`}>
+            <span className={`${TYPO_DATA} ${statusColor}`}>
               {statusLabel}
             </span>
           </div>

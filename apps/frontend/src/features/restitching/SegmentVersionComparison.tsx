@@ -11,6 +11,7 @@ import { cn } from "@/lib/cn";
 import { formatDateTime } from "@/lib/format";
 
 import type { SegmentVersionInfo } from "./types";
+import { TYPO_CAPTION } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Props
@@ -98,7 +99,7 @@ export function SegmentVersionComparison({
           <span className="text-sm font-medium text-[var(--color-text-primary)]">
             Version History
           </span>
-          <span className="text-xs text-[var(--color-text-secondary)]">
+          <span className={TYPO_CAPTION}>
             {versions.length} version{versions.length !== 1 ? "s" : ""}
           </span>
         </div>

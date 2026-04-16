@@ -14,6 +14,7 @@ import {
 } from "@/lib/ui-classes";
 
 import type { ProductionRunProgress } from "./types";
+import { TYPO_DATA, TYPO_DATA_SUCCESS, TYPO_TIMESTAMP} from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Types
@@ -39,17 +40,17 @@ export function ProductionProgress({ progress }: ProductionProgressProps) {
   } = progress;
 
   const stats = [
-    { label: "Total", value: total_cells, color: "text-cyan-400" },
-    { label: "Done", value: completed_cells, color: "text-green-400" },
-    { label: "Failed", value: failed_cells, color: failed_cells > 0 ? "text-red-400" : "text-[var(--color-text-muted)]" },
-    { label: "Active", value: in_progress_cells, color: in_progress_cells > 0 ? "text-cyan-400" : "text-[var(--color-text-muted)]" },
+    { label: "Total", value: total_cells, color: "text-[var(--color-data-cyan)]" },
+    { label: "Done", value: completed_cells, color: "text-[var(--color-data-green)]" },
+    { label: "Failed", value: failed_cells, color: failed_cells > 0 ? "text-[var(--color-data-red)]" : "text-[var(--color-text-muted)]" },
+    { label: "Active", value: in_progress_cells, color: in_progress_cells > 0 ? "text-[var(--color-data-cyan)]" : "text-[var(--color-text-muted)]" },
     { label: "Waiting", value: not_started_cells, color: "text-[var(--color-text-muted)]" },
   ];
 
   return (
     <div data-testid="production-progress" className="space-y-3">
       {/* Stats ticker strip */}
-      <div className="flex items-center gap-0 rounded-[var(--radius-lg)] border border-[var(--color-border-default)] bg-[#0d1117] px-[var(--spacing-3)] py-[var(--spacing-2)] font-mono text-xs overflow-x-auto">
+      <div className={`flex items-center gap-0 rounded-[var(--radius-lg)] border border-[var(--color-border-default)] bg-[var(--color-surface-primary)] px-[var(--spacing-3)] py-[var(--spacing-2)] ${TYPO_DATA} overflow-x-auto`}>
         {stats.map((stat, idx) => (
           <span key={stat.label} className="flex items-center whitespace-nowrap">
             {idx > 0 && (
@@ -68,7 +69,7 @@ export function ProductionProgress({ progress }: ProductionProgressProps) {
         <div className={TERMINAL_HEADER}>
           <div className="flex items-center justify-between">
             <span className={TERMINAL_HEADER_TITLE}>Overall Progress</span>
-            <span className="font-mono text-xs text-green-400">
+            <span className={TYPO_DATA_SUCCESS}>
               {completion_pct.toFixed(1)}%
             </span>
           </div>
@@ -83,7 +84,7 @@ export function ProductionProgress({ progress }: ProductionProgressProps) {
           </div>
           {/* Estimated time */}
           {in_progress_cells > 0 && completed_cells > 0 && (
-            <p className="mt-2 text-[10px] font-mono text-[var(--color-text-muted)]">
+            <p className={`mt-2 ${TYPO_TIMESTAMP}`}>
               ETA: {estimateRemaining(total_cells, completed_cells, in_progress_cells)}
             </p>
           )}

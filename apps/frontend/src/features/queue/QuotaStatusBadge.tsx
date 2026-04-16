@@ -49,7 +49,7 @@ export function QuotaStatusBadge() {
 
   if (data.status === "exceeded") {
     return (
-      <span className="font-mono text-[10px] text-red-400">
+      <span className="font-mono text-[10px] text-[var(--color-data-red)]">
         QUOTA EXCEEDED ({data.exceeded_type})
       </span>
     );
@@ -64,7 +64,7 @@ export function QuotaStatusBadge() {
 
   // Use the highest ratio for color
   const maxRatio = Math.max(dailyRatio ?? 0, weeklyRatio ?? 0);
-  const colorCls = maxRatio >= WARNING_THRESHOLD ? "text-orange-400" : "text-cyan-400";
+  const colorCls = maxRatio >= WARNING_THRESHOLD ? "text-[var(--color-data-orange)]" : "text-[var(--color-data-cyan)]";
 
   // Show the most relevant limit
   const label = data.daily_limit_secs != null

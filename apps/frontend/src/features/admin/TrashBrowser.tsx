@@ -6,6 +6,7 @@ import {
 import { formatBytes, formatCountdown } from "@/lib/format";
 import { TERMINAL_TH, TERMINAL_DIVIDER, TERMINAL_ROW_HOVER } from "@/lib/ui-classes";
 import { cn } from "@/lib/cn";
+import { TYPO_DATA } from "@/lib/typography-tokens";
 
 /**
  * Table of pending trash queue items with restore functionality.
@@ -24,7 +25,7 @@ export function TrashBrowser() {
 
   return (
     <div className="overflow-x-auto">
-      <table className="w-full font-mono text-xs">
+      <table className={`w-full ${TYPO_DATA}`}>
         <thead>
           <tr className={TERMINAL_DIVIDER}>
             <th className={cn(TERMINAL_TH, "px-4 py-2")}>File Path</th>
@@ -44,7 +45,7 @@ export function TrashBrowser() {
                 className={cn(TERMINAL_DIVIDER, TERMINAL_ROW_HOVER)}
               >
                 <td
-                  className="max-w-xs truncate px-4 py-2 text-cyan-400"
+                  className="max-w-xs truncate px-4 py-2 text-[var(--color-data-cyan)]"
                   title={entry.file_path}
                 >
                   {entry.file_path}
@@ -56,7 +57,7 @@ export function TrashBrowser() {
                   {formatBytes(entry.file_size_bytes)}
                 </td>
                 <td className="px-4 py-2 text-right">
-                  <span className={isExpired ? "text-red-400" : "text-orange-400"}>
+                  <span className={isExpired ? "text-[var(--color-data-red)]" : "text-[var(--color-data-orange)]"}>
                     {countdown}
                   </span>
                 </td>

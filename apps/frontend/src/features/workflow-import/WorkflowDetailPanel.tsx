@@ -11,8 +11,10 @@
 import { useCallback, useState } from "react";
 
 import { Button, TabBar } from "@/components/primitives";
+import { Modal } from "@/components/composite/Modal";
 import { Stack } from "@/components/layout";
 import { TERMINAL_STATUS_COLORS, TERMINAL_TH, TERMINAL_DIVIDER, TERMINAL_ROW_HOVER, TRACK_TEXT_COLORS } from "@/lib/ui-classes";
+import { Maximize2 } from "@/tokens/icons";
 
 import { WorkflowCanvas } from "@/features/workflow-canvas/WorkflowCanvas";
 import { usePipelineContextSafe } from "@/features/pipelines";
@@ -30,6 +32,7 @@ import type {
   Workflow,
 } from "./types";
 import { workflowStatusLabel } from "./types";
+import { TYPO_DATA, TYPO_LABEL, TYPO_TIMESTAMP} from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Types
@@ -65,7 +68,7 @@ function JsonTab({ workflow }: { workflow: Workflow }) {
     <div className="space-y-2">
       <div className="flex items-center justify-between">
         <span className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide font-mono">
-          Workflow JSON <span className="text-cyan-400">{Object.keys(workflow.json_content).length} nodes</span>
+          Workflow JSON <span className="text-[var(--color-data-cyan)]">{Object.keys(workflow.json_content).length} nodes</span>
         </span>
         <div className="flex gap-1">
           <Button variant="ghost" size="xs" onClick={() => setCollapsed(!collapsed)}>
@@ -77,7 +80,7 @@ function JsonTab({ workflow }: { workflow: Workflow }) {
         </div>
       </div>
       <pre
-        className={`overflow-auto rounded-[var(--radius-md)] border border-[var(--color-border-default)]/30 bg-[#0d1117] p-3 font-mono text-[10px] text-cyan-400 ${
+        className={`overflow-auto rounded-[var(--radius-md)] border border-[var(--color-border-default)]/30 bg-[var(--color-surface-primary)] p-3 font-mono text-[10px] text-[var(--color-data-cyan)] ${
           collapsed ? "max-h-[200px]" : "max-h-[600px]"
         }`}
       >
@@ -126,13 +129,13 @@ function ValidationTab({ workflow }: { workflow: Workflow }) {
       {!isLoading && validation && (
         <div className="space-y-3">
           {/* Overall status */}
-          <div className="flex items-center gap-2 font-mono text-xs">
+          <div className={`flex items-center gap-2 ${TYPO_DATA}`}>
             {validation.validation_source === "live" ? (
-              <span className={validation.overall_valid ? "text-green-400" : "text-red-400"}>
+              <span className={validation.overall_valid ? "text-[var(--color-data-green)]" : "text-[var(--color-data-red)]"}>
                 {validation.overall_valid ? "valid" : "invalid"}
               </span>
             ) : (
-              <span className="text-orange-400">unverified</span>
+              <span className="text-[var(--color-data-orange)]">unverified</span>
             )}
             <span className="text-[var(--color-text-muted)] opacity-30">|</span>
             <span className="text-[var(--color-text-muted)]">
@@ -141,13 +144,13 @@ function ValidationTab({ workflow }: { workflow: Workflow }) {
           </div>
 
           {workflow.last_validated_at && (
-            <p className="text-[10px] font-mono text-[var(--color-text-muted)]">
+            <p className={TYPO_TIMESTAMP}>
               last validated: {new Date(workflow.last_validated_at).toLocaleString()}
             </p>
           )}
 
           {validation.validation_source === "static" && (
-            <p className="text-[10px] font-mono text-orange-400">
+            <p className="text-[10px] font-mono text-[var(--color-data-orange)]">
               No ComfyUI instance connected. Connect and re-validate to check nodes.
             </p>
           )}
@@ -155,15 +158,15 @@ function ValidationTab({ workflow }: { workflow: Workflow }) {
           {/* Node results */}
           {validation.node_results.length > 0 && (
             <div>
-              <h4 className="mb-1 text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-wide font-mono">
-                Node Types <span className="text-cyan-400">{validation.node_results.length}</span>
+              <h4 className={`mb-1 ${TYPO_LABEL}`}>
+                Node Types <span className="text-[var(--color-data-cyan)]">{validation.node_results.length}</span>
               </h4>
               <div className="space-y-px">
                 {validation.node_results.map((nr) => {
                   const isLive = validation.validation_source === "live";
                   return (
-                    <div key={nr.node_type} className="flex items-center gap-2 font-mono text-xs py-0.5">
-                      <span className={isLive ? (nr.present ? "text-green-400" : "text-red-400") : "text-[var(--color-text-muted)]"}>
+                    <div key={nr.node_type} className={`flex items-center gap-2 ${TYPO_DATA} py-0.5`}>
+                      <span className={isLive ? (nr.present ? "text-[var(--color-data-green)]" : "text-[var(--color-data-red)]") : "text-[var(--color-text-muted)]"}>
                         {isLive ? (nr.present ? "\u2713" : "\u2717") : "\u2014"}
                       </span>
                       <span className="text-[var(--color-text-primary)]">{nr.node_type}</span>
@@ -177,13 +180,13 @@ function ValidationTab({ workflow }: { workflow: Workflow }) {
           {/* Model results */}
           {validation.model_results.length > 0 && (
             <div>
-              <h4 className="mb-1 text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-wide font-mono">
-                Models <span className="text-cyan-400">{validation.model_results.length}</span>
+              <h4 className={`mb-1 ${TYPO_LABEL}`}>
+                Models <span className="text-[var(--color-data-cyan)]">{validation.model_results.length}</span>
               </h4>
               <div className="space-y-px">
                 {validation.model_results.map((mr) => (
-                  <div key={mr.model_name} className="flex items-center gap-2 font-mono text-xs py-0.5">
-                    <span className={mr.found_in_registry ? "text-green-400" : "text-orange-400"}>
+                  <div key={mr.model_name} className={`flex items-center gap-2 ${TYPO_DATA} py-0.5`}>
+                    <span className={mr.found_in_registry ? "text-[var(--color-data-green)]" : "text-[var(--color-data-orange)]"}>
                       {mr.found_in_registry ? "\u2713" : "?"}
                     </span>
                     <span className="text-[var(--color-text-primary)]">{mr.model_name}</span>
@@ -210,7 +213,7 @@ function InfoTab({ workflow }: { workflow: Workflow }) {
     (workflow.discovered_params_json as DiscoveredParameter[] | null) ?? [];
 
   return (
-    <div className="space-y-4 font-mono text-xs">
+    <div className={`space-y-4 ${TYPO_DATA}`}>
       {/* Metadata */}
       <div>
         <h4 className="mb-2 text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-wide">
@@ -229,13 +232,13 @@ function InfoTab({ workflow }: { workflow: Workflow }) {
           )}
           <div className="flex gap-2">
             <dt className="text-[var(--color-text-muted)] w-28 shrink-0 uppercase text-[10px]">Status</dt>
-            <dd className={TERMINAL_STATUS_COLORS[workflowStatusLabel(workflow.status_id).toLowerCase()] ?? "text-cyan-400"}>
+            <dd className={TERMINAL_STATUS_COLORS[workflowStatusLabel(workflow.status_id).toLowerCase()] ?? "text-[var(--color-data-cyan)]"}>
               {workflowStatusLabel(workflow.status_id).toLowerCase()}
             </dd>
           </div>
           <div className="flex gap-2">
             <dt className="text-[var(--color-text-muted)] w-28 shrink-0 uppercase text-[10px]">Version</dt>
-            <dd className="text-cyan-400">v{workflow.current_version}</dd>
+            <dd className="text-[var(--color-data-cyan)]">v{workflow.current_version}</dd>
           </div>
           {workflow.imported_from && (
             <div className="flex gap-2">
@@ -259,7 +262,7 @@ function InfoTab({ workflow }: { workflow: Workflow }) {
           )}
           <div className="flex gap-2">
             <dt className="text-[var(--color-text-muted)] w-28 shrink-0 uppercase text-[10px]">Nodes</dt>
-            <dd className="text-cyan-400">{Object.keys(workflow.json_content).length}</dd>
+            <dd className="text-[var(--color-data-cyan)]">{Object.keys(workflow.json_content).length}</dd>
           </div>
         </dl>
       </div>
@@ -268,13 +271,13 @@ function InfoTab({ workflow }: { workflow: Workflow }) {
       {discoveredParams.length > 0 && (
         <div>
           <h4 className="mb-2 text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-wide">
-            Discovered Parameters <span className="text-cyan-400">{discoveredParams.length}</span>
+            Discovered Parameters <span className="text-[var(--color-data-cyan)]">{discoveredParams.length}</span>
           </h4>
           <div className="space-y-1">
             {discoveredParams.map((param) => (
               <div
                 key={`${param.node_id}-${param.input_name}`}
-                className="rounded-[var(--radius-md)] border border-[var(--color-border-default)]/30 bg-[#161b22] p-2"
+                className="rounded-[var(--radius-md)] border border-[var(--color-border-default)]/30 bg-[var(--color-surface-secondary)] p-2"
               >
                 <div className="flex items-center justify-between">
                   <span className="font-medium text-[var(--color-text-primary)]">{param.suggested_name}</span>
@@ -283,7 +286,7 @@ function InfoTab({ workflow }: { workflow: Workflow }) {
                 <p className="mt-0.5 text-[10px] text-[var(--color-text-muted)]">
                   node {param.node_id} / {param.input_name}
                 </p>
-                <p className="mt-0.5 text-[10px] text-cyan-400">
+                <p className="mt-0.5 text-[10px] text-[var(--color-data-cyan)]">
                   {JSON.stringify(param.current_value)}
                 </p>
               </div>
@@ -321,7 +324,7 @@ function ScenesTab({ workflowId }: { workflowId: number }) {
 
   return (
     <div className="space-y-2">
-      <h4 className="text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-wide font-mono">
+      <h4 className={TYPO_LABEL}>
         Scene + Track Assignments
       </h4>
       <div className="overflow-x-auto">
@@ -382,20 +385,20 @@ function SceneTypeAssignmentRows({
             key={`${entry.id}-${row.trackId}-${row.isClothesOff}`}
             className={`${TERMINAL_DIVIDER} ${TERMINAL_ROW_HOVER}`}
           >
-            <td className="px-3 py-1.5 font-mono text-xs">
+            <td className={`px-3 py-1.5 ${TYPO_DATA}`}>
               {idx === 0 ? (
                 <span className="text-[var(--color-text-primary)] uppercase tracking-wide">{entry.name}</span>
               ) : null}
             </td>
-            <td className="px-3 py-1.5 font-mono text-xs">
+            <td className={`px-3 py-1.5 ${TYPO_DATA}`}>
               <span className={TRACK_TEXT_COLORS[row.trackName.toLowerCase()] ?? "text-[var(--color-text-primary)]"}>{row.trackName}</span>
               {row.isClothesOff && (
-                <span className="ml-1.5 text-orange-400">clothes off</span>
+                <span className="ml-1.5 text-[var(--color-data-orange)]">clothes off</span>
               )}
             </td>
-            <td className="px-3 py-1.5 text-center font-mono text-xs">
+            <td className={`px-3 py-1.5 text-center ${TYPO_DATA}`}>
               {isAssigned ? (
-                <span className="text-green-400">yes</span>
+                <span className="text-[var(--color-data-green)]">yes</span>
               ) : (
                 <span className="text-[var(--color-text-muted)]">&mdash;</span>
               )}
@@ -413,6 +416,7 @@ function SceneTypeAssignmentRows({
 
 export function WorkflowDetailPanel({ workflow }: WorkflowDetailPanelProps) {
   const [activeTab, setActiveTab] = useState<DetailTab>("canvas");
+  const [canvasFullscreen, setCanvasFullscreen] = useState(false);
 
   return (
     <Stack gap={0} className="h-full">
@@ -427,8 +431,17 @@ export function WorkflowDetailPanel({ workflow }: WorkflowDetailPanelProps) {
 
       <div className="flex-1 overflow-auto p-4">
         {activeTab === "canvas" && (
-          <div className="h-full min-h-[460px]">
+          <div className="relative h-full min-h-[460px]">
             <WorkflowCanvas workflowJson={workflow.json_content} />
+            <button
+              type="button"
+              onClick={() => setCanvasFullscreen(true)}
+              className="absolute top-2 left-2 z-10 rounded px-2 py-1 text-xs font-medium"
+              style={{ background: "var(--color-surface-secondary)", color: "var(--color-text-secondary)", border: "1px solid var(--color-border-default)" }}
+              title="Expand canvas"
+            >
+              <Maximize2 size={14} />
+            </button>
           </div>
         )}
         {activeTab === "json" && <JsonTab workflow={workflow} />}
@@ -436,6 +449,18 @@ export function WorkflowDetailPanel({ workflow }: WorkflowDetailPanelProps) {
         {activeTab === "scenes" && <ScenesTab workflowId={workflow.id} />}
         {activeTab === "info" && <InfoTab workflow={workflow} />}
       </div>
+
+      {/* Fullscreen canvas modal */}
+      <Modal
+        open={canvasFullscreen}
+        onClose={() => setCanvasFullscreen(false)}
+        title={workflow.name}
+        size="full"
+      >
+        <div className="h-[calc(100vh-8rem)]">
+          <WorkflowCanvas workflowJson={workflow.json_content} />
+        </div>
+      </Modal>
     </Stack>
   );
 }

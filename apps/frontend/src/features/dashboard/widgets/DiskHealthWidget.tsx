@@ -6,15 +6,16 @@ import { cn } from "@/lib/cn";
 import { formatBytes } from "@/lib/format";
 import { TERMINAL_LABEL, TERMINAL_DIVIDER } from "@/lib/ui-classes";
 import { HardDrive } from "@/tokens/icons";
+import { TYPO_DATA, TYPO_DATA_CYAN } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Helpers
    -------------------------------------------------------------------------- */
 
 function gaugeTextColor(usagePct: number, warning: number, critical: number): string {
-  if (usagePct >= critical) return "text-red-400";
-  if (usagePct >= warning) return "text-orange-400";
-  return "text-green-400";
+  if (usagePct >= critical) return "text-[var(--color-data-red)]";
+  if (usagePct >= warning) return "text-[var(--color-data-orange)]";
+  return "text-[var(--color-data-green)]";
 }
 
 function gaugeStroke(usagePct: number, warning: number, critical: number): string {
@@ -48,7 +49,7 @@ export function DiskHealthWidget() {
       error={error?.message}
       onRetry={() => void refetch()}
       headerActions={
-        <Link to="/admin/storage" className="font-mono text-xs text-cyan-400 hover:underline">
+        <Link to="/admin/storage" className={`${TYPO_DATA_CYAN} hover:underline`}>
           Storage
         </Link>
       }
@@ -92,21 +93,21 @@ export function DiskHealthWidget() {
 
           {/* Capacity details */}
           <div className="w-full space-y-1">
-            <div className={`flex justify-between font-mono text-xs py-1 ${TERMINAL_DIVIDER} last:border-b-0`}>
+            <div className={`flex justify-between ${TYPO_DATA} py-1 ${TERMINAL_DIVIDER} last:border-b-0`}>
               <span className={TERMINAL_LABEL}>Used</span>
-              <span className="text-cyan-400 tabular-nums">
+              <span className="text-[var(--color-data-cyan)] tabular-nums">
                 {formatBytes(data.used_bytes)}
               </span>
             </div>
-            <div className={`flex justify-between font-mono text-xs py-1 ${TERMINAL_DIVIDER} last:border-b-0`}>
+            <div className={`flex justify-between ${TYPO_DATA} py-1 ${TERMINAL_DIVIDER} last:border-b-0`}>
               <span className={TERMINAL_LABEL}>Free</span>
-              <span className="text-cyan-400 tabular-nums">
+              <span className="text-[var(--color-data-cyan)] tabular-nums">
                 {formatBytes(data.free_bytes)}
               </span>
             </div>
-            <div className="flex justify-between font-mono text-xs py-1">
+            <div className={`flex justify-between ${TYPO_DATA} py-1`}>
               <span className={TERMINAL_LABEL}>Total</span>
-              <span className="text-cyan-400 tabular-nums">
+              <span className="text-[var(--color-data-cyan)] tabular-nums">
                 {formatBytes(data.total_bytes)}
               </span>
             </div>

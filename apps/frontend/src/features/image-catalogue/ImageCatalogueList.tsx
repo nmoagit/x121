@@ -29,6 +29,7 @@ import { useTracks } from "@/features/scene-catalogue/hooks/use-tracks";
 import { ImageCatalogueForm } from "./ImageCatalogueForm";
 import { useDeleteImageType, useImageTypes } from "./hooks/use-image-catalogue";
 import type { ImageType } from "./types";
+import { TYPO_DATA_CYAN } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Main component
@@ -111,7 +112,7 @@ export function ImageCatalogueList({ onSwitchTab }: { onSwitchTab?: (tab: string
               >
                 <div className="flex items-center gap-4 min-w-0">
                   {/* Name */}
-                  <span className="font-mono text-xs text-cyan-400 w-[140px] truncate shrink-0">
+                  <span className={`${TYPO_DATA_CYAN} w-[140px] truncate shrink-0`}>
                     {it.name}
                   </span>
 

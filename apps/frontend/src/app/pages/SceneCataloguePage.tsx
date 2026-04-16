@@ -40,6 +40,7 @@ import type { CreateSceneType, SceneType } from "@/features/scene-types";
 import { ImageCatalogueList } from "@/features/image-catalogue/ImageCatalogueList";
 import { VideoSettingsDefaultsTab } from "@/features/video-settings/VideoSettingsDefaultsTab";
 import { usePipelineContextSafe } from "@/features/pipelines";
+import { TYPO_DATA_CYAN } from "@/lib/typography-tokens";
 
 
 
@@ -130,7 +131,7 @@ function SceneTypesTab({ onSwitchTab }: { onSwitchTab?: (tab: string) => void })
               onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") setEditing(st); }}
             >
               <div className="flex items-center gap-4 min-w-0">
-                <span className="font-mono text-xs text-cyan-400 w-[160px] truncate shrink-0">
+                <span className={`${TYPO_DATA_CYAN} w-[160px] truncate shrink-0`}>
                   {st.name}
                 </span>
                 {st.description && (

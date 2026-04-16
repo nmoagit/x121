@@ -26,6 +26,7 @@ import { useProjectAvatars } from "./hooks/use-project-avatars";
 import { useAvatarGroups } from "./hooks/use-avatar-groups";
 import { PROJECT_STATUSES, PROJECT_STATUS_LABELS, projectStatusSlug } from "./types";
 import type { FolderDropResult } from "./types";
+import { TYPO_DATA } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Sort options
@@ -404,14 +405,14 @@ export function ProjectListPage() {
         {pendingDrop && (
           <Stack gap={4}>
             <div className="space-y-2">
-              <div className="flex items-center gap-2 font-mono text-xs">
+              <div className={`flex items-center gap-2 ${TYPO_DATA}`}>
                 <span className="text-[var(--color-text-muted)]">
                   Project:
                 </span>
                 <span className="text-[var(--color-text-primary)]">
                   {pendingDrop.projectName}
                 </span>
-                <span className={pendingDrop.existingProjectId ? "text-cyan-400" : "text-green-400"}>
+                <span className={pendingDrop.existingProjectId ? "text-[var(--color-data-cyan)]" : "text-[var(--color-data-green)]"}>
                   {pendingDrop.existingProjectId ? "Existing" : "New"}
                 </span>
               </div>
@@ -421,14 +422,14 @@ export function ProjectListPage() {
                   Contents
                 </div>
                 {pendingDrop.groups.map((g) => (
-                  <div key={g.name} className="flex items-center justify-between py-1 border-b border-white/5 font-mono text-xs">
+                  <div key={g.name} className={`flex items-center justify-between py-1 border-b border-white/5 ${TYPO_DATA}`}>
                     <span className="text-[var(--color-text-primary)]">{g.name}</span>
                     <span className="text-[var(--color-text-muted)]">
                       {g.avatarCount} avatar{g.avatarCount !== 1 ? "s" : ""}
                     </span>
                   </div>
                 ))}
-                <div className="flex items-center justify-between pt-2 mt-1 border-t border-[var(--color-border-default)] font-mono text-xs">
+                <div className={`flex items-center justify-between pt-2 mt-1 border-t border-[var(--color-border-default)] ${TYPO_DATA}`}>
                   <span className="text-[var(--color-text-primary)]">Total</span>
                   <span className="text-[var(--color-text-primary)]">
                     {pendingDrop.totalAvatars} avatar{pendingDrop.totalAvatars !== 1 ? "s" : ""}

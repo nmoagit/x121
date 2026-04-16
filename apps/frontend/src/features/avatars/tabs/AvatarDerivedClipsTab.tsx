@@ -19,6 +19,7 @@ import { getStreamUrl } from "@/features/video-player";
 import { formatDuration } from "@/features/video-player/frame-utils";
 import { TERMINAL_STATUS_COLORS } from "@/lib/ui-classes";
 import { FolderSearch, Layers, Play, Upload } from "@/tokens/icons";
+import { TYPO_DATA } from "@/lib/typography-tokens";
 
 interface AvatarDerivedClipsTabProps {
   avatarId: number;
@@ -52,9 +53,9 @@ function DerivedClipRow({ clip, onPlay }: { clip: DerivedClipItem; onPlay: () =>
     <button
       type="button"
       onClick={onPlay}
-      className="flex items-center gap-3 px-3 py-2 hover:bg-[#161b22] transition-colors cursor-pointer text-left w-full border-b border-[var(--color-border-default)]/30 last:border-b-0"
+      className="flex items-center gap-3 px-3 py-2 hover:bg-[var(--color-surface-secondary)] transition-colors cursor-pointer text-left w-full border-b border-[var(--color-border-default)]/30 last:border-b-0"
     >
-      <div className="relative h-10 w-16 shrink-0 rounded overflow-hidden bg-[#161b22]">
+      <div className="relative h-10 w-16 shrink-0 rounded overflow-hidden bg-[var(--color-surface-secondary)]">
         {!clip.file_purged && (
           <video src={videoSrc} className="absolute inset-0 w-full h-full object-cover" preload="metadata" muted />
         )}
@@ -63,8 +64,8 @@ function DerivedClipRow({ clip, onPlay }: { clip: DerivedClipItem; onPlay: () =>
         </div>
       </div>
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 font-mono text-xs">
-          {clip.clip_index != null && <span className="text-cyan-400 font-semibold">#{clip.clip_index}</span>}
+        <div className={`flex items-center gap-2 ${TYPO_DATA}`}>
+          {clip.clip_index != null && <span className="text-[var(--color-data-cyan)] font-semibold">#{clip.clip_index}</span>}
           <span className="text-[var(--color-text-primary)] truncate">{clip.file_path.split("/").pop()}</span>
         </div>
         <div className="flex items-center gap-2 font-mono text-[10px] text-[var(--color-text-muted)] mt-0.5">
@@ -73,7 +74,7 @@ function DerivedClipRow({ clip, onPlay }: { clip: DerivedClipItem; onPlay: () =>
             <><span className="opacity-30">|</span><span className={TERMINAL_STATUS_COLORS[clip.qa_status] ?? ""}>{clip.qa_status}</span></>
           )}
           {clip.annotation_count > 0 && (
-            <><span className="opacity-30">|</span><span className="text-orange-400">{clip.annotation_count} annotated</span></>
+            <><span className="opacity-30">|</span><span className="text-[var(--color-data-orange)]">{clip.annotation_count} annotated</span></>
           )}
         </div>
       </div>
@@ -145,7 +146,7 @@ export function AvatarDerivedClipsTab({ avatarId }: AvatarDerivedClipsTabProps) 
               type="button"
               onClick={() => setQaFilter((prev) => prev.includes(opt.value) ? prev.filter((v) => v !== opt.value) : [...prev, opt.value])}
               className={`px-2 py-0.5 rounded font-mono text-[10px] transition-colors ${
-                qaFilter.includes(opt.value) ? "bg-[var(--color-action-primary)] text-white" : "bg-[#161b22] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
+                qaFilter.includes(opt.value) ? "bg-[var(--color-action-primary)] text-white" : "bg-[var(--color-surface-secondary)] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
               }`}
             >
               {opt.label}

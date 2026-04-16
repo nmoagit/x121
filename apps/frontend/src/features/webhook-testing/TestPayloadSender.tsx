@@ -14,6 +14,7 @@ import { Button, Select ,  ContextLoader } from "@/components/primitives";
 import { useSamplePayloads, useTestSend } from "./hooks/use-webhook-testing";
 import { TestResultDisplay } from "./TestResultDisplay";
 import type { SamplePayload, WebhookDeliveryLog } from "./types";
+import { TYPO_DATA, TYPO_INPUT_LABEL} from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Constants
@@ -34,7 +35,7 @@ function SamplePreview({ sample }: { sample?: SamplePayload }) {
 
   return (
     <div className="rounded border border-dashed border-[var(--color-border-default)] p-3">
-      <span className="text-xs font-medium text-[var(--color-text-secondary)]">
+      <span className={TYPO_INPUT_LABEL}>
         Sample: {sample.description}
       </span>
     </div>
@@ -106,7 +107,7 @@ export function TestPayloadSender() {
             <>
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-[var(--color-text-secondary)]">
+                  <label className={`mb-1 block ${TYPO_INPUT_LABEL}`}>
                     Endpoint ID
                   </label>
                   <input
@@ -136,12 +137,12 @@ export function TestPayloadSender() {
               )}
 
               <div>
-                <label className="mb-1 block text-xs font-medium text-[var(--color-text-secondary)]">
+                <label className={`mb-1 block ${TYPO_INPUT_LABEL}`}>
                   Custom Payload (JSON)
                 </label>
                 <textarea
                   data-testid="payload-editor"
-                  className="w-full rounded border border-[var(--color-border-default)] bg-[var(--color-surface-secondary)] p-2 font-mono text-xs text-[var(--color-text-primary)]"
+                  className={`w-full rounded border border-[var(--color-border-default)] bg-[var(--color-surface-secondary)] p-2 ${TYPO_DATA}`}
                   rows={8}
                   value={payloadText}
                   onChange={(e) => setPayloadText(e.target.value)}

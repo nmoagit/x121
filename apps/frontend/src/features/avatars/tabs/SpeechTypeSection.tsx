@@ -21,6 +21,7 @@ import {
 } from "@dnd-kit/sortable";
 import { FlagIcon } from "@/components/primitives";
 import { cn } from "@/lib/cn";
+import { TYPO_LABEL } from "@/lib/typography-tokens";
 import { ChevronDown, ChevronRight } from "@/tokens/icons";
 
 import type { AvatarSpeech, Language } from "../types";
@@ -99,14 +100,14 @@ export function SpeechTypeSection({
   );
 
   return (
-    <div className="rounded-[var(--radius-lg)] border border-[var(--color-border-default)] bg-[#0d1117] overflow-hidden">
+    <div className="rounded-[var(--radius-lg)] border border-[var(--color-border-default)] bg-[var(--color-surface-primary)] overflow-hidden">
       {/* Header */}
       <button
         type="button"
         onClick={() => setExpanded((v) => !v)}
         className={cn(
           "flex items-center gap-[var(--spacing-2)] w-full px-[var(--spacing-3)] py-[var(--spacing-2)]",
-          "text-left bg-[#161b22] hover:bg-[#1c2333] transition-colors",
+          "text-left bg-[var(--color-surface-secondary)] hover:bg-[var(--color-surface-tertiary)] transition-colors",
         )}
       >
         {expanded ? (
@@ -117,7 +118,7 @@ export function SpeechTypeSection({
         <span className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide font-mono">
           {typeName}
         </span>
-        <span className="text-[10px] font-mono text-cyan-400">{totalItems}</span>
+        <span className="text-[10px] font-mono text-[var(--color-data-cyan)]">{totalItems}</span>
       </button>
 
       {expanded && (
@@ -125,12 +126,12 @@ export function SpeechTypeSection({
           {languageGroups.map(({ langId, lang, items }) => (
             <div key={langId}>
               {/* Language sub-header */}
-              <div className="flex items-center gap-[var(--spacing-2)] px-[var(--spacing-3)] py-1 border-t border-[var(--color-border-default)] bg-[#161b22]/50">
+              <div className="flex items-center gap-[var(--spacing-2)] px-[var(--spacing-3)] py-1 border-t border-[var(--color-border-default)] bg-[var(--color-surface-secondary)]/50">
                 {lang && <FlagIcon flagCode={lang.flag_code} size={10} />}
-                <span className="text-[10px] font-mono uppercase tracking-wide text-[var(--color-text-muted)]">
+                <span className={TYPO_LABEL}>
                   {lang?.name ?? `Language ${langId}`}
                 </span>
-                <span className="text-[10px] font-mono text-cyan-400">{items.length}</span>
+                <span className="text-[10px] font-mono text-[var(--color-data-cyan)]">{items.length}</span>
               </div>
 
               <DndContext

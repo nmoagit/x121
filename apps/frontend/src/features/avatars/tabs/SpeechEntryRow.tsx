@@ -12,6 +12,7 @@ import { Check, Edit3, GripVertical, Trash2, XCircle } from "@/tokens/icons";
 
 import { SpeechStatusBadge, isApprovable, isRejectable } from "../components/SpeechStatusBadge";
 import type { AvatarSpeech } from "../types";
+import { TYPO_INPUT_LABEL } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Props
@@ -85,7 +86,7 @@ export function SpeechEntryRow({
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-[var(--spacing-2)]">
-            <span className="text-xs font-medium text-[var(--color-text-muted)]">
+            <span className={TYPO_INPUT_LABEL}>
               {typeName}_{speech.version}
             </span>
             <SpeechStatusBadge statusId={speech.status_id} />

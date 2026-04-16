@@ -24,6 +24,7 @@ import { useWorkflows } from "@/features/workflow-import";
 import { ImageWorkflowTable } from "./ImageWorkflowTable";
 import { WorkflowAssignmentTable } from "./WorkflowAssignmentTable";
 import { useSceneCatalogue } from "./hooks/use-scene-catalogue";
+import { TYPO_DATA, TYPO_DATA_MUTED } from "@/lib/typography-tokens";
 
 
 /* --------------------------------------------------------------------------
@@ -49,7 +50,7 @@ function SectionHeader({
       onClick={onToggle}
     >
       <Icon size={14} className="text-[var(--color-text-muted)] group-hover:text-[var(--color-text-primary)] transition-colors" />
-      <span className="font-mono text-xs font-medium text-[var(--color-text-primary)] uppercase tracking-wide">{title}</span>
+      <span className={`${TYPO_DATA} font-medium text-[var(--color-text-primary)] uppercase tracking-wide`}>{title}</span>
       <span className="font-mono text-[10px] text-[var(--color-text-muted)]">({count})</span>
     </button>
   );
@@ -97,7 +98,7 @@ export function TrackWorkflowManager() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className={TERMINAL_HEADER_TITLE}>Workflow Assignments</h2>
-          <p className="mt-1 font-mono text-xs text-[var(--color-text-muted)]">
+          <p className={`mt-1 ${TYPO_DATA_MUTED}`}>
             Assign workflows to image types and scene types.
           </p>
         </div>

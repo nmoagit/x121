@@ -30,6 +30,7 @@ import type { AvatarReadinessCache } from "@/features/readiness/types";
 import { useProjectSceneSettings } from "@/features/scene-catalogue/hooks/use-project-scene-settings";
 import type { EffectiveSceneSetting } from "@/features/scene-catalogue/types";
 import type { Scene, SceneVideoVersion } from "@/features/scenes/types";
+import { TYPO_DATA } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Types
@@ -335,8 +336,8 @@ export function QueueOutstandingModal({
             />
           </div>
           <span className="text-xs font-mono text-[var(--color-text-muted)]">
-            <span className="text-green-400">{readyCount}</span> of {visibleItems.length} ready to queue
-            {blockedCount > 0 && <> (<span className="text-orange-400">{blockedCount} blocked</span>)</>}
+            <span className="text-[var(--color-data-green)]">{readyCount}</span> of {visibleItems.length} ready to queue
+            {blockedCount > 0 && <> (<span className="text-[var(--color-data-orange)]">{blockedCount} blocked</span>)</>}
           </span>
         </div>
 
@@ -383,7 +384,7 @@ export function QueueOutstandingModal({
                 <div
                   key={item.key}
                   className={`flex items-center gap-[var(--spacing-2)] px-[var(--spacing-3)] py-[var(--spacing-1.5)] border-b border-white/5 ${
-                    blocked ? "opacity-50" : "hover:bg-[#161b22]"
+                    blocked ? "opacity-50" : "hover:bg-[var(--color-surface-secondary)]"
                   }`}
                 >
                   <Checkbox
@@ -393,26 +394,26 @@ export function QueueOutstandingModal({
                     label={`${item.avatar.name} - ${item.setting.name}${item.setting.track_name ? ` (${item.setting.track_name})` : ""}`}
                   />
 
-                  <div className="flex items-center gap-2 ml-auto shrink-0 font-mono text-xs">
+                  <div className={`flex items-center gap-2 ml-auto shrink-0 ${TYPO_DATA}`}>
                     {/* Version indicator (A.2) */}
                     {item.latestVersion !== null && (
                       <span className="text-[var(--color-text-muted)]">v{item.latestVersion} exists</span>
                     )}
 
                     {item.hasFinalVersion && (
-                      <span className="text-green-400">Final</span>
+                      <span className="text-[var(--color-data-green)]">Final</span>
                     )}
 
                     {/* Blocking reason */}
                     {item.blockingReason !== null && (
-                      <span className={forceOverride ? "text-cyan-400" : "text-orange-400"}>
+                      <span className={forceOverride ? "text-[var(--color-data-cyan)]" : "text-[var(--color-data-orange)]"}>
                         {item.blockingReason}
                       </span>
                     )}
 
                     {/* No scene yet */}
                     {!item.scene && !blocked && (
-                      <span className="text-cyan-400">New</span>
+                      <span className="text-[var(--color-data-cyan)]">New</span>
                     )}
                   </div>
                 </div>

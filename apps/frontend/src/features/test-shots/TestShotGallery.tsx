@@ -182,7 +182,7 @@ function TestShotCard({
         {qualityPct != null && (
           <span
             data-testid={`quality-score-${shot.id}`}
-            className="absolute right-2 top-2 rounded bg-black/70 px-1.5 py-0.5 text-xs font-medium text-white"
+            className="absolute right-2 top-2 rounded bg-[var(--color-surface-badge-overlay)] px-1.5 py-0.5 text-xs font-medium text-white"
           >
             {qualityPct}%
           </span>

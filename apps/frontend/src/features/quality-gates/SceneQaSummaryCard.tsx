@@ -9,6 +9,7 @@ import { Card, CardBody, CardHeader } from "@/components/composite";
 import { cn } from "@/lib/cn";
 
 import type { SceneQaSummary } from "./types";
+import { TYPO_CAPTION } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Props
@@ -77,7 +78,7 @@ export function SceneQaSummaryCard({ summary }: SceneQaSummaryCardProps) {
       <CardBody>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 mb-4">
           <div>
-            <p className="text-xs text-[var(--color-text-secondary)]">Total Segments</p>
+            <p className={TYPO_CAPTION}>Total Segments</p>
             <p
               data-testid="stat-total"
               className="text-lg font-semibold text-[var(--color-text-primary)] tabular-nums"
@@ -86,7 +87,7 @@ export function SceneQaSummaryCard({ summary }: SceneQaSummaryCardProps) {
             </p>
           </div>
           <div>
-            <p className="text-xs text-[var(--color-text-secondary)]">Failures</p>
+            <p className={TYPO_CAPTION}>Failures</p>
             <p
               data-testid="stat-failures"
               className="text-lg font-semibold text-[var(--color-action-danger)] tabular-nums"
@@ -95,7 +96,7 @@ export function SceneQaSummaryCard({ summary }: SceneQaSummaryCardProps) {
             </p>
           </div>
           <div>
-            <p className="text-xs text-[var(--color-text-secondary)]">Warnings</p>
+            <p className={TYPO_CAPTION}>Warnings</p>
             <p
               data-testid="stat-warnings"
               className="text-lg font-semibold text-[var(--color-action-warning)] tabular-nums"
@@ -104,7 +105,7 @@ export function SceneQaSummaryCard({ summary }: SceneQaSummaryCardProps) {
             </p>
           </div>
           <div>
-            <p className="text-xs text-[var(--color-text-secondary)]">All Passed</p>
+            <p className={TYPO_CAPTION}>All Passed</p>
             <p
               data-testid="stat-passed"
               className="text-lg font-semibold text-[var(--color-action-success)] tabular-nums"

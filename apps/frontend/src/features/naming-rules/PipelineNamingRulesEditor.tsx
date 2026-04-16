@@ -12,7 +12,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Button, Input } from "@/components/primitives";
 import { Stack } from "@/components/layout";
 import { TERMINAL_PANEL, TERMINAL_BODY, TERMINAL_HEADER, TERMINAL_HEADER_TITLE } from "@/lib/ui-classes";
-import { Save, Plus, Trash2 } from "@/tokens/icons";
+import { Save, Plus, Trash2, RotateCcw } from "@/tokens/icons";
 import { iconSizes } from "@/tokens/icons";
 import { toastStore } from "@/components/composite/useToast";
 import { useUpdatePipeline } from "@/features/pipelines/hooks/use-pipelines";
@@ -20,6 +20,7 @@ import type { Pipeline } from "@/features/pipelines/types";
 
 import { CategoryTemplatesSection } from "./components/CategoryTemplatesSection";
 import { useNamingCategories, useNamingRules } from "./hooks/use-naming-rules";
+import { TYPO_DATA, TYPO_DATA_MUTED } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Types
@@ -114,6 +115,15 @@ export function PipelineNamingRulesEditor({ pipeline }: PipelineNamingRulesEdito
     });
   }, []);
 
+  const savedRules = parseRules(pipeline.naming_rules as Record<string, unknown>);
+  const isDirty = JSON.stringify(rules) !== JSON.stringify(savedRules);
+
+  const handleCancel = useCallback(() => {
+    setRules(parseRules(pipeline.naming_rules as Record<string, unknown>));
+    setNewPrefixField("");
+    setNewPrefixValue("");
+  }, [pipeline.naming_rules]);
+
   const prefixEntries = Object.entries(rules.prefix_rules);
 
   return (
@@ -172,11 +182,11 @@ export function PipelineNamingRulesEditor({ pipeline }: PipelineNamingRulesEdito
               <div className="space-y-2">
                 {prefixEntries.map(([field, prefix]) => (
                   <div key={field} className="flex items-center gap-2">
-                    <span className="font-mono text-xs text-[var(--color-text-secondary)] min-w-[120px]">
+                    <span className={`${TYPO_DATA_MUTED} min-w-[120px]`}>
                       {field}
                     </span>
                     <span className="text-xs text-[var(--color-text-muted)]">{"\u2192"}</span>
-                    <span className="font-mono text-xs text-[var(--color-text-primary)]">{prefix}</span>
+                    <span className={TYPO_DATA}>{prefix}</span>
                     <Button
                       variant="ghost"
                       size="xs"
@@ -219,13 +229,24 @@ export function PipelineNamingRulesEditor({ pipeline }: PipelineNamingRulesEdito
         </div>
       </div>
 
-      {/* Save */}
-      <div className="flex justify-end">
+      {/* Actions */}
+      <div className="flex justify-end gap-2">
+        {isDirty && (
+          <Button
+            variant="ghost"
+            icon={<RotateCcw size={iconSizes.sm} />}
+            onClick={handleCancel}
+            disabled={updatePipeline.isPending}
+          >
+            Cancel
+          </Button>
+        )}
         <Button
           variant="primary"
           icon={<Save size={iconSizes.sm} />}
           onClick={handleSave}
           loading={updatePipeline.isPending}
+          disabled={!isDirty}
         >
           Save Naming Rules
         </Button>

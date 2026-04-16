@@ -68,7 +68,7 @@ export function CompatibilityWarning({ notes }: CompatibilityWarningProps) {
           const noteConfig = (SEVERITY_CONFIG[note.severity] ?? DEFAULT_CONFIG);
           return (
             <li key={note.id} className="flex items-start gap-[var(--spacing-2)]">
-              <span className={`font-mono text-[10px] uppercase shrink-0 ${noteConfig.variant === "danger" ? "text-red-400" : "text-orange-400"}`}>
+              <span className={`font-mono text-[10px] uppercase shrink-0 ${noteConfig.variant === "danger" ? "text-[var(--color-data-red)]" : "text-[var(--color-data-orange)]"}`}>
                 {note.severity}
               </span>
               <span className="text-sm text-[var(--color-text-primary)]">

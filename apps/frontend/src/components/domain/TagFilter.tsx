@@ -139,7 +139,7 @@ export function TagFilter({
           <button
             type="button"
             onClick={() => setManagerOpen(true)}
-            className="p-0.5 rounded text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[#161b22] transition-colors"
+            className="p-0.5 rounded text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-secondary)] transition-colors"
             title="Manage tags"
           >
             <Settings size={12} />
@@ -212,11 +212,11 @@ export function TagFilter({
                 active={state === "include"}
                 onClick={() => cycleTag(tag.id)}
                 className={cn(
-                  state === "exclude" && "border-red-500/60 text-red-400/70 line-through",
+                  state === "exclude" && "border-red-500/60 text-[var(--color-data-red)]/70 line-through",
                 )}
               >
                 {state === "exclude" && (
-                  <span className="text-red-400 no-underline mr-0.5">−</span>
+                  <span className="text-[var(--color-data-red)] no-underline mr-0.5">−</span>
                 )}
                 {tag.display_name}
                 <span className="text-[0.6rem] leading-none opacity-50">{tag.usage_count}</span>
@@ -241,7 +241,7 @@ export function TagFilter({
           )}
           {excludedTagIds.length > 0 && (
             <>
-              <span className="text-xs text-red-400/70 mr-1">{selectedTagIds.length > 0 ? "| Exclude:" : "Exclude:"}</span>
+              <span className="text-xs text-[var(--color-data-red)]/70 mr-1">{selectedTagIds.length > 0 ? "| Exclude:" : "Exclude:"}</span>
               {excludedTagIds.map((tagId) => {
                 const tag = tags.find((t) => t.id === tagId);
                 if (!tag) return null;
@@ -251,7 +251,7 @@ export function TagFilter({
                     tag={{ ...tag, color: null }}
                     size="sm"
                     onRemove={() => cycleTag(tag.id)}
-                    className="line-through text-red-400/70"
+                    className="line-through text-[var(--color-data-red)]/70"
                   />
                 );
               })}

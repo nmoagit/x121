@@ -14,6 +14,7 @@ import { generateSnakeSlug } from "@/lib/format";
 
 import type { BulkVoiceImportResult, VoiceImportMode } from "../hooks/use-project-speech-import";
 import type { Avatar } from "../types";
+import { TYPO_DATA, TYPO_DATA_DANGER, TYPO_DATA_SUCCESS, TYPO_INPUT_LABEL} from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Confirmation modal
@@ -63,13 +64,13 @@ export function VoiceImportConfirmModal({
         <p className="text-xs font-mono">
           <span className="text-[var(--color-text-primary)]">{rows.length}</span> voice IDs found.
           {" "}<span className="text-[var(--color-text-muted)]">
-            (<span className="text-green-400">{matchedCount} matched</span>, <span className="text-orange-400">{rows.length - matchedCount} unmatched</span>)
+            (<span className="text-[var(--color-data-green)]">{matchedCount} matched</span>, <span className="text-[var(--color-data-orange)]">{rows.length - matchedCount} unmatched</span>)
           </span>
         </p>
 
         {/* Import mode toggle */}
         <div className="flex items-center gap-[var(--spacing-2)]">
-          <span className="text-xs font-medium text-[var(--color-text-muted)]">Mode:</span>
+          <span className={TYPO_INPUT_LABEL}>Mode:</span>
           <div className="inline-flex rounded-[var(--radius-md)] border border-[var(--color-border-default)] overflow-hidden">
             <button
               type="button"
@@ -103,7 +104,7 @@ export function VoiceImportConfirmModal({
 
         <div className="max-h-80 overflow-y-auto rounded border border-[var(--color-border-default)]">
           <table className="w-full text-xs font-mono">
-            <thead className="sticky top-0 bg-[#161b22]">
+            <thead className="sticky top-0 bg-[var(--color-surface-secondary)]">
               <tr>
                 <th className="text-left px-2 py-1.5 font-medium text-[var(--color-text-muted)]">Avatar</th>
                 <th className="text-left px-2 py-1.5 font-medium text-[var(--color-text-muted)]">New Voice ID</th>
@@ -117,7 +118,7 @@ export function VoiceImportConfirmModal({
                 return (
                   <tr
                     key={i}
-                    className={`border-b border-white/5 hover:bg-[#161b22] ${willSkip ? "opacity-50" : ""}`}
+                    className={`border-b border-white/5 hover:bg-[var(--color-surface-secondary)] ${willSkip ? "opacity-50" : ""}`}
                   >
                     <td className="px-2 py-1 text-[var(--color-text-primary)]">{row.slug}</td>
                     <td className="px-2 py-1 text-[var(--color-text-muted)] truncate max-w-[160px]">{row.voice_id}</td>
@@ -126,13 +127,13 @@ export function VoiceImportConfirmModal({
                     </td>
                     <td className="px-2 py-1 text-center">
                       {!row.matched ? (
-                        <span className="text-orange-400">No match</span>
+                        <span className="text-[var(--color-data-orange)]">No match</span>
                       ) : willSkip ? (
                         <span className="text-[var(--color-text-muted)]">Skip</span>
                       ) : row.existingVoiceId ? (
-                        <span className="text-cyan-400">Overwrite</span>
+                        <span className="text-[var(--color-data-cyan)]">Overwrite</span>
                       ) : (
-                        <span className="text-green-400">Import</span>
+                        <span className="text-[var(--color-data-green)]">Import</span>
                       )}
                     </td>
                   </tr>
@@ -180,15 +181,15 @@ export function VoiceImportResultModal({ result, onClose }: VoiceImportResultMod
     >
       {result && (
         <Stack gap={3}>
-          <span className="text-xs font-mono text-green-400">{result.updated.length} updated</span>
+          <span className={TYPO_DATA_SUCCESS}>{result.updated.length} updated</span>
           {result.updated.length > 0 && (
             <div>
               <p className="text-xs font-mono text-[var(--color-text-muted)] mb-1">Updated models:</p>
-              <div className="flex flex-wrap gap-1.5 font-mono text-xs">
+              <div className={`flex flex-wrap gap-1.5 ${TYPO_DATA}`}>
                 {result.updated.map((name, i) => (
                   <span key={name} className="flex items-center gap-1.5">
                     {i > 0 && <span className="text-[var(--color-text-muted)] opacity-30 select-none">|</span>}
-                    <span className="text-green-400">{name}</span>
+                    <span className="text-[var(--color-data-green)]">{name}</span>
                   </span>
                 ))}
               </div>
@@ -197,7 +198,7 @@ export function VoiceImportResultModal({ result, onClose }: VoiceImportResultMod
           {result.skipped.length > 0 && (
             <div>
               <p className="text-xs font-mono text-[var(--color-text-muted)] mb-1">Skipped (already set):</p>
-              <div className="flex flex-wrap gap-1.5 font-mono text-xs">
+              <div className={`flex flex-wrap gap-1.5 ${TYPO_DATA}`}>
                 {result.skipped.map((name, i) => (
                   <span key={name} className="flex items-center gap-1.5">
                     {i > 0 && <span className="text-[var(--color-text-muted)] opacity-30 select-none">|</span>}
@@ -210,11 +211,11 @@ export function VoiceImportResultModal({ result, onClose }: VoiceImportResultMod
           {result.unmatched.length > 0 && (
             <div>
               <p className="text-xs font-mono text-[var(--color-text-muted)] mb-1">Unmatched (skipped):</p>
-              <div className="flex flex-wrap gap-1.5 font-mono text-xs">
+              <div className={`flex flex-wrap gap-1.5 ${TYPO_DATA}`}>
                 {result.unmatched.map((name, i) => (
                   <span key={name} className="flex items-center gap-1.5">
                     {i > 0 && <span className="text-[var(--color-text-muted)] opacity-30 select-none">|</span>}
-                    <span className="text-orange-400">{name}</span>
+                    <span className="text-[var(--color-data-orange)]">{name}</span>
                   </span>
                 ))}
               </div>
@@ -222,7 +223,7 @@ export function VoiceImportResultModal({ result, onClose }: VoiceImportResultMod
           )}
           {result.errors.length > 0 && (
             <div>
-              <p className="text-xs font-mono text-red-400 mb-1">Errors:</p>
+              <p className={`${TYPO_DATA_DANGER} mb-1`}>Errors:</p>
               <ul className="text-xs font-mono text-[var(--color-text-muted)] list-disc pl-4">
                 {result.errors.map((err, i) => (
                   <li key={i}>{err}</li>

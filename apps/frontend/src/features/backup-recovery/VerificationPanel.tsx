@@ -7,6 +7,7 @@
 import { Badge } from "@/components/primitives";
 
 import type { VerificationResult } from "./types";
+import { TYPO_CAPTION } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Component
@@ -63,7 +64,7 @@ export function VerificationPanel({ result }: VerificationPanelProps) {
             {result.errors.map((err, idx) => (
               <li
                 key={idx}
-                className="text-xs text-[var(--color-text-secondary)] bg-[var(--color-action-danger)]/5 px-2 py-1 rounded-[var(--radius-sm)]"
+                className={`bg-[var(--color-action-danger)]/5 px-2 py-1 rounded-[var(--radius-sm)] ${TYPO_CAPTION}`}
               >
                 {err}
               </li>

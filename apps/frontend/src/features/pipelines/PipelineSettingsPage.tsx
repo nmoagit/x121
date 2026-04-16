@@ -19,6 +19,7 @@ import { JsonConfigPanel } from "./components/JsonConfigPanel";
 import { SeedSlotEditor } from "./components/SeedSlotEditor";
 import { usePipeline, useUpdatePipeline } from "./hooks/use-pipelines";
 import type { SeedSlot } from "./types";
+import { TYPO_DATA_MUTED } from "@/lib/typography-tokens";
 
 interface PipelineSettingsPageProps {
   pipelineId: number;
@@ -122,8 +123,8 @@ export function PipelineSettingsPage({ pipelineId }: PipelineSettingsPageProps) 
                 />
               </div>
               <div className="pt-5">
-                <span className="font-mono text-xs text-[var(--color-text-muted)]">
-                  Code: <span className="text-cyan-400">{pipeline.code}</span>
+                <span className={TYPO_DATA_MUTED}>
+                  Code: <span className="text-[var(--color-data-cyan)]">{pipeline.code}</span>
                 </span>
               </div>
             </div>

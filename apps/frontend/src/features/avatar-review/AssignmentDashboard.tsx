@@ -98,7 +98,7 @@ function WorkloadSection({ workload }: { workload: ReviewerWorkload[] }) {
       </div>
       <div className={TERMINAL_BODY}>
         {workload.length === 0 ? (
-          <div className="font-mono text-xs text-[var(--color-text-muted)]">No reviewers found.</div>
+          <div className={TYPO_DATA_MUTED}>No reviewers found.</div>
         ) : (
           <div className="space-y-2">
             {workload.map((w) => {
@@ -110,22 +110,22 @@ function WorkloadSection({ workload }: { workload: ReviewerWorkload[] }) {
                   : 0;
 
               return (
-                <div key={w.reviewer_user_id} className="bg-[#161b22] rounded-[var(--radius-md)] p-3">
+                <div key={w.reviewer_user_id} className="bg-[var(--color-surface-secondary)] rounded-[var(--radius-md)] p-3">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="font-mono text-xs font-medium text-[var(--color-text-primary)]">
+                    <span className={`${TYPO_DATA} font-medium text-[var(--color-text-primary)]`}>
                       {w.reviewer_username}
                     </span>
                     <div className="flex items-center gap-3 font-mono text-[10px] text-[var(--color-text-muted)]">
-                      <span>Assigned: <span className="text-cyan-400">{w.assigned_count}</span></span>
+                      <span>Assigned: <span className="text-[var(--color-data-cyan)]">{w.assigned_count}</span></span>
                       <span className="opacity-30">|</span>
-                      <span>Review: <span className="text-orange-400">{w.in_review_count}</span></span>
+                      <span>Review: <span className="text-[var(--color-data-orange)]">{w.in_review_count}</span></span>
                       <span className="opacity-30">|</span>
-                      <span>Done: <span className="text-green-400">{w.completed_count}</span></span>
+                      <span>Done: <span className="text-[var(--color-data-green)]">{w.completed_count}</span></span>
                       <span className="opacity-30">|</span>
-                      <span>Approval: <span className="text-green-400">{approvalRate}%</span></span>
+                      <span>Approval: <span className="text-[var(--color-data-green)]">{approvalRate}%</span></span>
                     </div>
                   </div>
-                  <div className="w-full bg-[#0d1117] rounded-full h-1.5">
+                  <div className="w-full bg-[var(--color-surface-primary)] rounded-full h-1.5">
                     <div
                       className="bg-cyan-400 rounded-full h-1.5 transition-all"
                       style={{ width: `${pct}%` }}
@@ -144,6 +144,7 @@ function WorkloadSection({ workload }: { workload: ReviewerWorkload[] }) {
 /* ------------------------------------------------------------------ */
 
 import type { AvatarReviewAssignment } from "./types";
+import { TYPO_DATA, TYPO_DATA_MUTED } from "@/lib/typography-tokens";
 
 function AssignmentsTable({ assignments }: { assignments: AvatarReviewAssignment[] }) {
   return (
@@ -155,7 +156,7 @@ function AssignmentsTable({ assignments }: { assignments: AvatarReviewAssignment
       </div>
       {assignments.length > 0 ? (
         <div className="overflow-x-auto">
-          <table className="w-full font-mono text-xs">
+          <table className={`w-full ${TYPO_DATA}`}>
             <thead>
               <tr className={TERMINAL_DIVIDER}>
                 <th className={`${TERMINAL_TH} py-2 px-3`}>ID</th>
@@ -170,7 +171,7 @@ function AssignmentsTable({ assignments }: { assignments: AvatarReviewAssignment
               {assignments.map((a) => (
                 <tr key={a.id} className={`${TERMINAL_DIVIDER} ${TERMINAL_ROW_HOVER}`}>
                   <td className="py-2 px-3 text-[var(--color-text-muted)]">{a.id}</td>
-                  <td className="py-2 px-3 text-cyan-400">{a.avatar_id}</td>
+                  <td className="py-2 px-3 text-[var(--color-data-cyan)]">{a.avatar_id}</td>
                   <td className="py-2 px-3 text-[var(--color-text-primary)]">{a.reviewer_user_id}</td>
                   <td className="py-2 px-3 text-[var(--color-text-muted)]">{a.review_round}</td>
                   <td className={`py-2 px-3 uppercase tracking-wide ${TERMINAL_STATUS_COLORS[a.status] ?? "text-[var(--color-text-primary)]"}`}>{a.status}</td>
@@ -184,7 +185,7 @@ function AssignmentsTable({ assignments }: { assignments: AvatarReviewAssignment
         </div>
       ) : (
         <div className={TERMINAL_BODY}>
-          <span className="font-mono text-xs text-[var(--color-text-muted)]">No assignments yet.</span>
+          <span className={TYPO_DATA_MUTED}>No assignments yet.</span>
         </div>
       )}
     </div>
@@ -203,20 +204,20 @@ interface AllocatePreviewContentProps {
 function AllocatePreviewContent({ preview, onCancel, onConfirm, isPending }: AllocatePreviewContentProps) {
   return (
     <div className="space-y-4">
-      <p className="font-mono text-xs text-[var(--color-text-muted)]">
+      <p className={TYPO_DATA_MUTED}>
         {preview.unassigned_count} unassigned avatar
         {preview.unassigned_count !== 1 ? "s" : ""} will be distributed across{" "}
         {preview.reviewer_count} reviewer
         {preview.reviewer_count !== 1 ? "s" : ""}:
       </p>
       {preview.proposed_assignments.length === 0 ? (
-        <p className="font-mono text-xs text-[var(--color-text-muted)]">No avatars to allocate.</p>
+        <p className={TYPO_DATA_MUTED}>No avatars to allocate.</p>
       ) : (
         <div className="space-y-1">
           {preview.proposed_assignments.map((pa: ProposedAssignment, idx: number) => (
-            <div key={idx} className="flex justify-between font-mono text-xs py-1 hover:bg-[#161b22] px-2 rounded">
+            <div key={idx} className={`flex justify-between ${TYPO_DATA} py-1 hover:bg-[var(--color-surface-secondary)] px-2 rounded`}>
               <span className="text-[var(--color-text-primary)]">{pa.avatar_name}</span>
-              <span className="text-cyan-400">&rarr; {pa.reviewer_username}</span>
+              <span className="text-[var(--color-data-cyan)]">&rarr; {pa.reviewer_username}</span>
             </div>
           ))}
         </div>

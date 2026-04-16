@@ -14,6 +14,7 @@ import {
 import { Card } from "@/components/composite/Card";
 import { ContextLoader } from "@/components/primitives";
 import { Stack } from "@/components/layout";
+import { TYPO_SECTION_TITLE } from "@/lib/typography-tokens";
 import {
   AXIS_TICK_STYLE,
   GRID_STROKE,
@@ -134,7 +135,7 @@ export function DriftTrendChart({
       <Stack gap={3}>
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-base font-semibold text-[var(--color-text-primary)]">
+            <h3 className={TYPO_SECTION_TITLE}>
               Temporal Continuity
             </h3>
             <p className="text-xs text-[var(--color-text-muted)]">

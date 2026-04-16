@@ -18,6 +18,7 @@ import { ContextLoader } from "@/components/primitives";
 import { useMediaVariants } from "@/features/media/hooks/use-media-variants";
 
 import type { SeedSlotWithAssignment } from "../hooks/use-media-assignments";
+import { TYPO_TIMESTAMP } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Shared card props
@@ -54,7 +55,7 @@ export function SeedSlotCard({
   return (
     <div
       className={cn(
-        "relative rounded-[var(--radius-lg)] border bg-[#0d1117] overflow-hidden",
+        "relative rounded-[var(--radius-lg)] border bg-[var(--color-surface-primary)] overflow-hidden",
         hasAssignment
           ? "border-green-500/40"
           : "border-[var(--color-border-default)]",
@@ -64,7 +65,7 @@ export function SeedSlotCard({
       <div
         role="button"
         tabIndex={0}
-        className={cn("relative aspect-square bg-[#161b22]", canAssign && "cursor-pointer")}
+        className={cn("relative aspect-square bg-[var(--color-surface-secondary)]", canAssign && "cursor-pointer")}
         onClick={() => canAssign && setPickerOpen((p) => !p)}
         onKeyDown={(e) => { if ((e.key === "Enter" || e.key === " ") && canAssign) setPickerOpen((p) => !p); }}
       >
@@ -89,7 +90,7 @@ export function SeedSlotCard({
         )}
 
         {/* Track badge — bottom-left */}
-        <div className="absolute bottom-1.5 left-1.5 rounded bg-black/70 px-1.5 py-0.5 font-mono text-[10px]">
+        <div className="absolute bottom-1.5 left-1.5 rounded bg-[var(--color-surface-badge-overlay)] px-1.5 py-0.5 font-mono text-[10px]">
           <span className={TRACK_TEXT_COLORS[entry.track_name.toLowerCase()] ?? "text-[var(--color-text-muted)]"}>
             {entry.track_name}
           </span>
@@ -125,9 +126,9 @@ export function SeedSlotCard({
             {entry.scene_type_name}
           </span>
           {hasAssignment ? (
-            <span className="text-[10px] font-mono text-green-400 shrink-0">assigned</span>
+            <span className="text-[10px] font-mono text-[var(--color-data-green)] shrink-0">assigned</span>
           ) : (
-            <span className="text-[10px] font-mono text-red-400 shrink-0">missing</span>
+            <span className="text-[10px] font-mono text-[var(--color-data-red)] shrink-0">missing</span>
           )}
         </div>
       </div>
@@ -172,7 +173,7 @@ export function ImageSlotCard({
   return (
     <div
       className={cn(
-        "relative rounded-[var(--radius-lg)] border bg-[#0d1117] overflow-hidden",
+        "relative rounded-[var(--radius-lg)] border bg-[var(--color-surface-primary)] overflow-hidden",
         hasAssignment
           ? "border-violet-500/40"
           : "border-violet-500/20",
@@ -182,7 +183,7 @@ export function ImageSlotCard({
       <div
         role="button"
         tabIndex={0}
-        className={cn("relative aspect-square bg-[#161b22]", canAssign && "cursor-pointer")}
+        className={cn("relative aspect-square bg-[var(--color-surface-secondary)]", canAssign && "cursor-pointer")}
         onClick={() => canAssign && setPickerOpen((p) => !p)}
         onKeyDown={(e) => { if ((e.key === "Enter" || e.key === " ") && canAssign) setPickerOpen((p) => !p); }}
       >
@@ -200,7 +201,7 @@ export function ImageSlotCard({
         )}
 
         {/* Track flow badge — bottom-left overlay */}
-        <div className="absolute bottom-1.5 left-1.5 flex items-center gap-1 rounded bg-black/70 px-1.5 py-0.5 font-mono text-[10px]">
+        <div className="absolute bottom-1.5 left-1.5 flex items-center gap-1 rounded bg-[var(--color-surface-badge-overlay)] px-1.5 py-0.5 font-mono text-[10px]">
           <span className={TRACK_TEXT_COLORS[entry.track_name.toLowerCase()] ?? "text-[var(--color-text-muted)]"}>
             {entry.track_name}
           </span>
@@ -244,7 +245,7 @@ export function ImageSlotCard({
             {entry.scene_type_name}
           </span>
           {hasAssignment ? (
-            <span className="text-[10px] font-mono text-violet-400 shrink-0">assigned</span>
+            <span className="text-[10px] font-mono text-[var(--color-data-violet)] shrink-0">assigned</span>
           ) : (
             <span className="text-[10px] font-mono text-violet-300/60 shrink-0">pending</span>
           )}
@@ -301,7 +302,7 @@ function PickerOverlay({
 
   return (
     <div
-      className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-[#0d1117]/95 backdrop-blur-sm rounded-[inherit] cursor-pointer"
+      className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-[var(--color-surface-primary)]/95 backdrop-blur-sm rounded-[inherit] cursor-pointer"
       onClick={onClose}
       onKeyDown={(e) => { if (e.key === "Escape") onClose(); }}
       role="button"
@@ -310,7 +311,7 @@ function PickerOverlay({
       {isLoading ? (
         <ContextLoader size={24} />
       ) : available.length === 0 ? (
-        <span className="text-[10px] font-mono text-[var(--color-text-muted)]">no variants</span>
+        <span className={TYPO_TIMESTAMP}>no variants</span>
       ) : (
         <div
           className="flex flex-col items-center justify-center gap-2 p-2 max-h-full overflow-y-auto"
@@ -348,7 +349,7 @@ function PickerOverlay({
       )}
       <button
         type="button"
-        className="absolute bottom-0 inset-x-0 py-1.5 text-[10px] font-mono text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] bg-black/60 transition-colors"
+        className={`absolute bottom-0 inset-x-0 py-1.5 hover:text-[var(--color-text-primary)] bg-[var(--color-surface-badge-overlay)] transition-colors ${TYPO_TIMESTAMP}`}
         onClick={(e) => { e.stopPropagation(); onClose(); }}
       >
         close

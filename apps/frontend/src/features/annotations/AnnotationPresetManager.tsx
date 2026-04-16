@@ -19,6 +19,7 @@ import {
   useDeleteAnnotationPreset,
   type AnnotationPreset,
 } from "./hooks/use-annotation-presets";
+import { TYPO_DATA } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Types
@@ -118,7 +119,7 @@ export function AnnotationPresetManager({
             {presets.map((preset) => (
               <div
                 key={preset.id}
-                className="flex items-center gap-2 rounded-[var(--radius-md)] px-3 py-2 bg-[#0d1117] border border-[var(--color-border-default)]"
+                className="flex items-center gap-2 rounded-[var(--radius-md)] px-3 py-2 bg-[var(--color-surface-primary)] border border-[var(--color-border-default)]"
               >
                 {editingId === preset.id ? (
                   <>
@@ -158,13 +159,13 @@ export function AnnotationPresetManager({
                         style={{ backgroundColor: preset.color }}
                       />
                     )}
-                    <span className="flex-1 font-mono text-xs text-[var(--color-text-primary)]">
+                    <span className={`flex-1 ${TYPO_DATA}`}>
                       {preset.label}
                     </span>
                     <button
                       type="button"
                       onClick={() => startEdit(preset)}
-                      className="p-1 rounded text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[#161b22] transition-colors"
+                      className="p-1 rounded text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-secondary)] transition-colors"
                       title="Edit"
                     >
                       <Edit3 size={12} />
@@ -172,7 +173,7 @@ export function AnnotationPresetManager({
                     <button
                       type="button"
                       onClick={() => handleDelete(preset.id)}
-                      className="p-1 rounded text-[var(--color-text-muted)] hover:text-red-400 hover:bg-[#161b22] transition-colors"
+                      className="p-1 rounded text-[var(--color-text-muted)] hover:text-[var(--color-data-red)] hover:bg-[var(--color-surface-secondary)] transition-colors"
                       title="Delete"
                     >
                       <Trash2 size={12} />

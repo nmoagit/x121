@@ -108,7 +108,7 @@ export function ClipGallery({ sceneId, onGenerate, generateLoading, generateDisa
           Clips
         </span>
         {clips && clips.length > 0 && (
-          <span className="text-[10px] font-mono text-cyan-400">{clips.length}</span>
+          <span className="text-[10px] font-mono text-[var(--color-data-cyan)]">{clips.length}</span>
         )}
         {leftActions}
         <div className="flex-1" />

@@ -10,6 +10,7 @@ import { Archive, ArchiveRestore, Trash2 } from "@/tokens/icons";
 
 import type { Project } from "../types";
 import { PROJECT_STATUS_LABELS, projectStatusSlug } from "../types";
+import { TYPO_TIMESTAMP } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Component
@@ -26,8 +27,8 @@ interface ProjectCardProps {
 
 /** Map project status to terminal color class. */
 const STATUS_COLOR: Record<string, string> = {
-  active: TERMINAL_STATUS_COLORS["active"] ?? "text-green-400",
-  draft: TERMINAL_STATUS_COLORS["draft"] ?? "text-orange-400",
+  active: TERMINAL_STATUS_COLORS["active"] ?? "text-[var(--color-data-green)]",
+  draft: TERMINAL_STATUS_COLORS["draft"] ?? "text-[var(--color-data-orange)]",
   archived: "text-[var(--color-text-muted)]",
 };
 
@@ -49,7 +50,7 @@ export function ProjectCard({
   return (
     <div
       className={cn(
-        "cursor-pointer rounded-[var(--radius-lg)] border border-[var(--color-border-default)] bg-[#0d1117] overflow-hidden",
+        "cursor-pointer rounded-[var(--radius-lg)] border border-[var(--color-border-default)] bg-[var(--color-surface-primary)] overflow-hidden",
         "transition-shadow duration-[var(--duration-fast)] ease-[var(--ease-default)]",
         "hover:shadow-[var(--shadow-md)]",
         isArchived && "opacity-60",
@@ -61,7 +62,7 @@ export function ProjectCard({
         aria-label={`Open project ${project.name}`}
       >
         {/* Header */}
-        <div className="flex items-center justify-between gap-2 px-3 py-2 bg-[#161b22] border-b border-[var(--color-border-default)]">
+        <div className="flex items-center justify-between gap-2 px-3 py-2 bg-[var(--color-surface-secondary)] border-b border-[var(--color-border-default)]">
           <h3 className="text-xs font-medium text-[var(--color-text-primary)] font-mono truncate uppercase tracking-wide">
             {project.name}
           </h3>
@@ -82,17 +83,17 @@ export function ProjectCard({
           {total > 0 && (
             <div className="flex items-center gap-1.5 font-mono text-[11px]">
               <span className="text-[var(--color-text-muted)]">avatars</span>
-              <span className={allReady ? "text-green-400" : "text-cyan-400"}>
+              <span className={allReady ? "text-[var(--color-data-green)]" : "text-[var(--color-data-cyan)]"}>
                 {ready}/{total}
               </span>
               {allReady && (
-                <span className="text-green-400 text-[10px]">ready</span>
+                <span className="text-[var(--color-data-green)] text-[10px]">ready</span>
               )}
             </div>
           )}
 
           <div className="flex items-center justify-between">
-            <p className="text-[10px] font-mono text-[var(--color-text-muted)]">
+            <p className={TYPO_TIMESTAMP}>
               {formatDate(project.created_at)}
             </p>
 
@@ -121,7 +122,7 @@ export function ProjectCard({
                       e.stopPropagation();
                       onDelete(project.id);
                     }}
-                    className="text-red-400 hover:text-red-400"
+                    className="text-[var(--color-data-red)] hover:text-[var(--color-data-red)]"
                   >
                     Delete
                   </Button>

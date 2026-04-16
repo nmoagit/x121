@@ -63,7 +63,7 @@ export function HistoryFilterBar({
         <span className={cn(TERMINAL_LABEL, "mr-1")}>Level</span>
         <button type="button" onClick={() => onLevelChange("")} className={cn(
           "font-mono text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded transition-opacity",
-          selectedLevel === "" ? "text-cyan-400" : "text-[var(--color-text-muted)] opacity-40",
+          selectedLevel === "" ? "text-[var(--color-data-cyan)]" : "text-[var(--color-text-muted)] opacity-40",
         )}>
           All
         </button>
@@ -85,7 +85,7 @@ export function HistoryFilterBar({
         <span className={cn(TERMINAL_LABEL, "mr-1")}>Source</span>
         <button type="button" onClick={() => onSourceChange("")} className={cn(
           "font-mono text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded transition-opacity",
-          selectedSource === "" ? "text-cyan-400" : "text-[var(--color-text-muted)] opacity-40",
+          selectedSource === "" ? "text-[var(--color-data-cyan)]" : "text-[var(--color-text-muted)] opacity-40",
         )}>
           All
         </button>

@@ -18,6 +18,7 @@ import { useCreateSceneCatalogueEntry, useUpdateSceneCatalogueEntry } from "./ho
 import { useSingleTrack } from "./hooks/use-single-track";
 import { useTracks } from "./hooks/use-tracks";
 import type { CreateSceneCatalogueEntry, SceneCatalogueEntry } from "./types";
+import { TYPO_DATA, TYPO_DATA_MUTED } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Props
@@ -150,14 +151,14 @@ export function SceneCatalogueForm({ entry, open, onClose }: SceneCatalogueFormP
           <div className="flex flex-col gap-1.5">
             <label
               htmlFor="catalogue-description"
-              className="font-mono text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide"
+              className={`${TYPO_DATA} font-medium text-[var(--color-text-muted)] uppercase tracking-wide`}
             >
               Description
             </label>
             <textarea
               id="catalogue-description"
               rows={3}
-              className="w-full px-3 py-2 font-mono text-xs bg-[#0d1117] text-[var(--color-text-primary)] border border-[var(--color-border-default)] rounded-[var(--radius-md)] resize-y focus:outline-none focus:ring-2 focus:ring-[var(--color-border-focus)]"
+              className={`w-full px-3 py-2 ${TYPO_DATA} bg-[var(--color-surface-primary)] text-[var(--color-text-primary)] border border-[var(--color-border-default)] rounded-[var(--radius-md)] resize-y focus:outline-none focus:ring-2 focus:ring-[var(--color-border-focus)]`}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Optional description"
@@ -181,9 +182,9 @@ export function SceneCatalogueForm({ entry, open, onClose }: SceneCatalogueFormP
           {/* Track assignment — hidden for single-track pipelines (auto-selected) */}
           {!isSingleTrack && (
             <div className="flex flex-col gap-2">
-              <span className="font-mono text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide">Tracks</span>
+              <span className={`${TYPO_DATA} font-medium text-[var(--color-text-muted)] uppercase tracking-wide`}>Tracks</span>
               {!tracks || tracks.length === 0 ? (
-                <p className="font-mono text-xs text-[var(--color-text-muted)]">
+                <p className={TYPO_DATA_MUTED}>
                   No tracks available. Create tracks first.
                 </p>
               ) : (

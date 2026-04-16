@@ -9,6 +9,7 @@ import { cn } from "@/lib/cn";
 import { formatValue } from "@/lib/format";
 
 import type { FieldChange, RefinementReport } from "../types";
+import { TYPO_INPUT_LABEL } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Constants
@@ -76,10 +77,10 @@ export function MetadataDiffView({
       {/* Header */}
       <div className="grid grid-cols-[auto_1fr_1fr] gap-[var(--spacing-3)] px-2">
         <div className="w-6" />
-        <span className="text-xs font-medium text-[var(--color-text-muted)]">
+        <span className={TYPO_INPUT_LABEL}>
           Current Metadata
         </span>
-        <span className="text-xs font-medium text-[var(--color-text-muted)]">
+        <span className={TYPO_INPUT_LABEL}>
           Refined Metadata
         </span>
       </div>
@@ -116,7 +117,7 @@ export function MetadataDiffView({
               </pre>
             </div>
             <div className="flex flex-col gap-0.5">
-              <span className="text-xs font-medium text-[var(--color-text-muted)]">
+              <span className={TYPO_INPUT_LABEL}>
                 {change.source}
               </span>
               <pre className="text-[10px] leading-relaxed text-[var(--color-text-primary)] whitespace-pre-wrap break-words font-mono">

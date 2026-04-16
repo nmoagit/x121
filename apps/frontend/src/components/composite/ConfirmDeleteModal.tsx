@@ -59,7 +59,7 @@ export function ConfirmDeleteModal({
     <Modal open={open} onClose={onClose} title={title} size="md">
       <Stack gap={3}>
         <p className="text-xs font-mono text-[var(--color-text-secondary)]">
-          Are you sure you want to delete <strong className="text-red-400">{entityName}</strong>? {warningText}
+          Are you sure you want to delete <strong className="text-[var(--color-data-red)]">{entityName}</strong>? {warningText}
         </p>
         {children}
         <div className="flex gap-2 justify-end pt-1 border-t border-[var(--color-border-default)]">

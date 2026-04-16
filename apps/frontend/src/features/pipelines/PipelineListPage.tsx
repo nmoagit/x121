@@ -17,6 +17,7 @@ import { cn } from "@/lib/cn";
 import { Plus, Settings, Workflow } from "@/tokens/icons";
 
 import { useCreatePipeline, usePipelines } from "./hooks/use-pipelines";
+import { TYPO_DATA } from "@/lib/typography-tokens";
 
 export function PipelineListPage() {
   useSetPageTitle("Pipelines", "Manage production pipelines.");
@@ -120,7 +121,7 @@ export function PipelineListPage() {
                 <div className="flex items-center gap-3">
                   <Settings size={14} className="text-[var(--color-text-muted)] shrink-0" />
                   <div>
-                    <div className="font-mono text-xs text-[var(--color-text-primary)]">
+                    <div className={TYPO_DATA}>
                       {pipeline.name}
                     </div>
                     <div className="font-mono text-[10px] text-[var(--color-text-muted)]">

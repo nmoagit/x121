@@ -17,6 +17,7 @@ import {
   calculateUptimeMs,
 } from "./status-helpers";
 import { InstanceActions } from "./InstanceActions";
+import { TYPO_DATA, TYPO_DATA_CYAN } from "@/lib/typography-tokens";
 
 interface InstanceCardProps {
   instance: EnrichedInstance;
@@ -43,7 +44,7 @@ export function InstanceCard({
             onChange={() => onToggleSelect(instance.id)}
           />
           <Server size={iconSizes.sm} className="shrink-0 text-[var(--color-text-muted)]" />
-          <span className="text-xs font-medium text-cyan-400 font-mono truncate">
+          <span className={`${TYPO_DATA_CYAN} font-medium truncate`}>
             {instance.name ?? instance.external_id}
           </span>
         </div>
@@ -56,7 +57,7 @@ export function InstanceCard({
       <Stack gap={3}>
 
         {/* Info grid */}
-        <div className="grid grid-cols-2 gap-x-4 gap-y-1 font-mono text-xs">
+        <div className={`grid grid-cols-2 gap-x-4 gap-y-1 ${TYPO_DATA}`}>
           <InfoRow label="Provider" value={instance.provider_name} />
           <InfoRow
             label="GPU"
@@ -86,7 +87,7 @@ export function InstanceCard({
             ) : (
               <WifiOff size={12} className="text-[var(--color-text-muted)]" />
             )}
-            <span className={cn("font-mono text-[10px]", instance.comfyui_status === "connected" ? "text-green-400" : "text-[var(--color-text-muted)]")}>
+            <span className={cn("font-mono text-[10px]", instance.comfyui_status === "connected" ? "text-[var(--color-data-green)]" : "text-[var(--color-text-muted)]")}>
               {comfyuiLabel(instance.comfyui_status)}
             </span>
           </div>

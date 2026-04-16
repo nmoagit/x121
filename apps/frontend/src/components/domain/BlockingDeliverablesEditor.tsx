@@ -9,6 +9,7 @@
 import { Stack } from "@/components/layout";
 import { Button, Toggle } from "@/components/primitives";
 import { RotateCcw } from "@/tokens/icons";
+import { TYPO_DATA } from "@/lib/typography-tokens";
 
 /** All known deliverable section keys with human labels. */
 const DELIVERABLE_SECTIONS = [
@@ -54,8 +55,8 @@ export function BlockingDeliverablesEditor({
 
   return (
     <Stack gap={3}>
-      <div className="flex items-center gap-2 font-mono text-xs">
-        <span className={isOverridden ? "text-orange-400" : "text-[var(--color-text-muted)]"}>
+      <div className={`flex items-center gap-2 ${TYPO_DATA}`}>
+        <span className={isOverridden ? "text-[var(--color-data-orange)]" : "text-[var(--color-text-muted)]"}>
           {isOverridden ? overrideLabel.toLowerCase() : inheritLabel.toLowerCase()}
         </span>
         {isOverridden && (
@@ -64,7 +65,7 @@ export function BlockingDeliverablesEditor({
             size="xs"
             icon={<RotateCcw size={12} />}
             onClick={reset}
-            className="!text-red-400 hover:!text-red-300"
+            className="!text-[var(--color-data-red)] hover:!text-red-300"
           >
             {resetLabel}
           </Button>

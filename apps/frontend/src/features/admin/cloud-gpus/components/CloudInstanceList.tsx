@@ -7,6 +7,7 @@ import { useState } from "react";
 import { ConfirmModal } from "@/components/composite";
 import { formatCents } from "@/lib/format";
 import type { CloudInstance } from "../hooks/use-cloud-providers";
+import { TYPO_DATA_MUTED } from "@/lib/typography-tokens";
 
 interface Props {
   instances: CloudInstance[];
@@ -76,10 +77,10 @@ export function CloudInstanceList({ instances, onStart, onStop, onTerminate }: P
 
           return (
             <tr key={inst.id} className="border-b border-[var(--color-border-default)]">
-              <td className="py-2 font-mono text-xs text-[var(--color-text-muted)]">{inst.external_id.slice(0, 12)}</td>
+              <td className={`py-2 ${TYPO_DATA_MUTED}`}>{inst.external_id.slice(0, 12)}</td>
               <td className="py-2 text-[var(--color-text-primary)]">{inst.name ?? "—"}</td>
               <td className={`py-2 font-medium ${statusColor}`}>{statusLabel}</td>
-              <td className="py-2 font-mono text-xs text-[var(--color-text-muted)]">
+              <td className={`py-2 ${TYPO_DATA_MUTED}`}>
                 {inst.ip_address ?? "—"}
                 {inst.ssh_port ? `:${inst.ssh_port}` : ""}
               </td>

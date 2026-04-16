@@ -29,6 +29,7 @@ import type {
   CreateOutputFormatProfile,
   OutputFormatProfile,
 } from "@/features/delivery";
+import { TYPO_DATA } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Component
@@ -119,7 +120,7 @@ export function OutputProfilesPage() {
               <span className={TERMINAL_HEADER_TITLE}>Profiles</span>
             </div>
             <div className="overflow-x-auto">
-              <table className="w-full font-mono text-xs">
+              <table className={`w-full ${TYPO_DATA}`}>
                 <thead>
                   <tr className={TERMINAL_DIVIDER}>
                     <th className={cn(TERMINAL_TH, "py-2 px-3")}>Name</th>
@@ -185,7 +186,7 @@ function ProfileRow({
 
   return (
     <tr className={cn(TERMINAL_DIVIDER, TERMINAL_ROW_HOVER)}>
-      <td className="py-2 px-3 text-cyan-400">
+      <td className="py-2 px-3 text-[var(--color-data-cyan)]">
         {profile.name}
       </td>
       <td className="py-2 px-3 text-[var(--color-text-secondary)]">{profile.resolution}</td>
@@ -199,7 +200,7 @@ function ProfileRow({
       </td>
       <td className="py-2 px-3">
         {profile.is_default ? (
-          <span className="text-green-400">Default</span>
+          <span className="text-[var(--color-data-green)]">Default</span>
         ) : (
           <Button
             variant="ghost"

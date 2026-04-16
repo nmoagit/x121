@@ -13,6 +13,7 @@ import { BarChart3 } from "@/tokens/icons";
 
 import { useTopConsumers } from "./hooks/use-api-observability";
 import type { TimePeriod, TopConsumer } from "./types";
+import { TYPO_INPUT_LABEL } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Constants
@@ -34,7 +35,7 @@ interface SortHeaderProps {
 function SortHeader({ field, activeSort, onSort, children }: SortHeaderProps) {
   return (
     <th
-      className="cursor-pointer select-none px-3 py-2 text-left text-xs font-medium text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
+      className={`cursor-pointer select-none px-3 py-2 text-left hover:text-[var(--color-text-primary)] ${TYPO_INPUT_LABEL}`}
       onClick={() => onSort(field)}
     >
       {children}
@@ -129,10 +130,10 @@ export function TopConsumersTable({ period = "24h" }: TopConsumersTableProps) {
           <table className="w-full text-left">
             <thead>
               <tr>
-                <th className="px-3 py-2 text-xs font-medium text-[var(--color-text-muted)]">
+                <th className={`px-3 py-2 ${TYPO_INPUT_LABEL}`}>
                   #
                 </th>
-                <th className="px-3 py-2 text-xs font-medium text-[var(--color-text-muted)]">
+                <th className={`px-3 py-2 ${TYPO_INPUT_LABEL}`}>
                   API Key
                 </th>
                 <SortHeader field="request_count" activeSort={sort} onSort={setSort}>

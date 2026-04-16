@@ -19,15 +19,16 @@ import { useAuthStore } from "@/stores/auth-store";
 import { useDeliveryExports } from "./hooks/use-delivery";
 import { EXPORT_STATUS_LABELS } from "./types";
 import type { DeliveryExport } from "./types";
+import { TYPO_DATA, TYPO_DATA_CYAN, TYPO_DATA_MUTED } from "@/lib/typography-tokens";
 
 const STATUS_COLOR: Record<number, string> = {
   1: "text-[var(--color-text-muted)]",  // Pending
-  2: "text-cyan-400",                    // Assembling
-  3: "text-cyan-400",                    // Transcoding
-  4: "text-cyan-400",                    // Packaging
-  5: "text-orange-400",                  // Validating
-  6: "text-green-400",                   // Completed
-  7: "text-red-400",                     // Failed
+  2: "text-[var(--color-data-cyan)]",                    // Assembling
+  3: "text-[var(--color-data-cyan)]",                    // Transcoding
+  4: "text-[var(--color-data-cyan)]",                    // Packaging
+  5: "text-[var(--color-data-orange)]",                  // Validating
+  6: "text-[var(--color-data-green)]",                   // Completed
+  7: "text-[var(--color-data-red)]",                     // Failed
 };
 
 interface ExportHistoryProps {
@@ -97,15 +98,15 @@ function ExportRow({
       className={`${TERMINAL_DIVIDER} ${TERMINAL_ROW_HOVER}`}
       data-testid="export-row"
     >
-      <td className="py-2 pr-3 font-mono text-xs text-[var(--color-text-primary)]">
+      <td className={`py-2 pr-3 ${TYPO_DATA}`}>
         {exportItem.created_at ? formatDateTime(exportItem.created_at) : "--"}
       </td>
-      <td className="py-2 pr-3 font-mono text-xs">
+      <td className={`py-2 pr-3 ${TYPO_DATA}`}>
         <span className={STATUS_COLOR[exportItem.status_id] ?? "text-[var(--color-text-muted)]"}>
           {EXPORT_STATUS_LABELS[exportItem.status_id] ?? "Unknown"}
         </span>
       </td>
-      <td className="py-2 pr-3 font-mono text-xs text-[var(--color-text-muted)]" data-testid="file-size">
+      <td className={`py-2 pr-3 ${TYPO_DATA_MUTED}`} data-testid="file-size">
         {exportItem.file_size_bytes ? formatBytes(exportItem.file_size_bytes) : "--"}
       </td>
       <td className="py-2">
@@ -113,7 +114,7 @@ function ExportRow({
           {isCompleted && exportItem.file_path && (
             <a
               href={`${API_BASE_URL}/projects/${exportItem.project_id}/exports/${exportItem.id}/download?token=${token}`}
-              className="font-mono text-xs text-cyan-400 hover:underline"
+              className={`${TYPO_DATA_CYAN} hover:underline`}
               data-testid="download-link"
             >
               Download.rar

@@ -117,7 +117,7 @@ function AdminNamingRulesView() {
               <div className={`${TERMINAL_BODY} flex flex-col items-center justify-center gap-[var(--spacing-3)] py-[var(--spacing-8)]`}>
                 <AlertCircle
                   size={24}
-                  className="text-red-400"
+                  className="text-[var(--color-data-red)]"
                   aria-hidden
                 />
                 <p className="text-xs text-[var(--color-text-muted)] font-mono">

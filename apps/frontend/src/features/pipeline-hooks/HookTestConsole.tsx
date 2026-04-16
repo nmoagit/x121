@@ -11,6 +11,7 @@ import { Badge, Button, Card, CardBody, CardHeader } from "@/components";
 
 import { useTestHook } from "./hooks/use-pipeline-hooks";
 import type { HookExecutionLog } from "./types";
+import { TYPO_DATA, TYPO_INPUT_LABEL, TYPO_CAPTION} from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Props
@@ -72,12 +73,12 @@ export function HookTestConsole({ hookId }: HookTestConsoleProps) {
       <CardBody>
         <div className="space-y-4">
           <div>
-            <label className="mb-1 block text-xs font-medium text-[var(--color-text-secondary)]">
+            <label className={`mb-1 block ${TYPO_INPUT_LABEL}`}>
               Input JSON
             </label>
             <textarea
               data-testid="test-input"
-              className="w-full rounded border border-[var(--color-border)] bg-[var(--color-bg-secondary)] p-2 font-mono text-xs text-[var(--color-text-primary)]"
+              className={`w-full rounded border border-[var(--color-border)] bg-[var(--color-bg-secondary)] p-2 ${TYPO_DATA}`}
               rows={6}
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
@@ -104,7 +105,7 @@ export function HookTestConsole({ hookId }: HookTestConsoleProps) {
                 {result.exit_code != null && (
                   <span
                     data-testid="exit-code"
-                    className="text-xs text-[var(--color-text-secondary)]"
+                    className={TYPO_CAPTION}
                   >
                     Exit code: {result.exit_code}
                   </span>
@@ -112,7 +113,7 @@ export function HookTestConsole({ hookId }: HookTestConsoleProps) {
                 {result.duration_ms != null && (
                   <span
                     data-testid="duration"
-                    className="text-xs text-[var(--color-text-secondary)]"
+                    className={TYPO_CAPTION}
                   >
                     {result.duration_ms}ms
                   </span>
@@ -121,7 +122,7 @@ export function HookTestConsole({ hookId }: HookTestConsoleProps) {
               {result.output_text && (
                 <pre
                   data-testid="output-text"
-                  className="max-h-48 overflow-auto rounded bg-[var(--color-bg-secondary)] p-2 font-mono text-xs text-[var(--color-text-primary)]"
+                  className={`max-h-48 overflow-auto rounded bg-[var(--color-bg-secondary)] p-2 ${TYPO_DATA}`}
                 >
                   {result.output_text}
                 </pre>

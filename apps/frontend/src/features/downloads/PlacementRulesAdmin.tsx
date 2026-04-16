@@ -16,6 +16,7 @@ import {
   usePlacementRules,
 } from "./hooks/use-downloads";
 import { MODEL_TYPE_LABELS } from "./types";
+import { TYPO_DATA, TYPO_INPUT_LABEL} from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Component
@@ -52,7 +53,7 @@ export function PlacementRulesAdmin() {
       {/* Create form */}
       <form onSubmit={handleCreate} className="flex flex-wrap items-end gap-[var(--spacing-2)]">
         <div>
-          <label className="block text-xs font-medium text-[var(--color-text-muted)] mb-[var(--spacing-1)]">
+          <label className={`block mb-[var(--spacing-1)] ${TYPO_INPUT_LABEL}`}>
             Model Type
           </label>
           <select
@@ -68,7 +69,7 @@ export function PlacementRulesAdmin() {
           </select>
         </div>
         <div>
-          <label className="block text-xs font-medium text-[var(--color-text-muted)] mb-[var(--spacing-1)]">
+          <label className={`block mb-[var(--spacing-1)] ${TYPO_INPUT_LABEL}`}>
             Base Model (optional)
           </label>
           <Input
@@ -79,7 +80,7 @@ export function PlacementRulesAdmin() {
           />
         </div>
         <div className="flex-1">
-          <label className="block text-xs font-medium text-[var(--color-text-muted)] mb-[var(--spacing-1)]">
+          <label className={`block mb-[var(--spacing-1)] ${TYPO_INPUT_LABEL}`}>
             Target Directory
           </label>
           <Input
@@ -108,7 +109,7 @@ export function PlacementRulesAdmin() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-[var(--color-border)] text-left text-xs font-medium text-[var(--color-text-muted)]">
+              <tr className={`border-b border-[var(--color-border)] text-left ${TYPO_INPUT_LABEL}`}>
                 <th className="pb-[var(--spacing-2)] pr-[var(--spacing-3)]">Model Type</th>
                 <th className="pb-[var(--spacing-2)] pr-[var(--spacing-3)]">Base Model</th>
                 <th className="pb-[var(--spacing-2)] pr-[var(--spacing-3)]">Target Directory</th>
@@ -129,7 +130,7 @@ export function PlacementRulesAdmin() {
                   <td className="py-[var(--spacing-2)] pr-[var(--spacing-3)] text-[var(--color-text-muted)]">
                     {rule.base_model ?? "Any"}
                   </td>
-                  <td className="py-[var(--spacing-2)] pr-[var(--spacing-3)] font-mono text-xs text-[var(--color-text-primary)]">
+                  <td className={`py-[var(--spacing-2)] pr-[var(--spacing-3)] ${TYPO_DATA}`}>
                     {rule.target_directory}
                   </td>
                   <td className="py-[var(--spacing-2)] pr-[var(--spacing-3)] text-[var(--color-text-muted)]">

@@ -11,6 +11,7 @@ import { formatDateTime } from "@/lib/format";
 
 import type { IntegrityScan } from "./types";
 import { SCAN_TYPE_LABELS } from "./types";
+import { TYPO_CAPTION } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Props
@@ -54,7 +55,7 @@ function statusBadgeVariant(
 
 function SummaryCounts({ scan }: { scan: IntegrityScan }) {
   return (
-    <div data-testid={`scan-summary-${scan.id}`} className="flex gap-3 text-xs text-[var(--color-text-secondary)]">
+    <div data-testid={`scan-summary-${scan.id}`} className={`flex gap-3 ${TYPO_CAPTION}`}>
       <span>{scan.models_found} found</span>
       {scan.models_missing > 0 && (
         <span className="text-[var(--color-action-warning)]">

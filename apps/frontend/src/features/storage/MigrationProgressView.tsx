@@ -21,6 +21,7 @@ import { AlertCircle } from "@/tokens/icons";
 
 import type { StorageMigration, StorageMigrationStatusId } from "./types";
 import { MIGRATION_STATUS, MIGRATION_STATUS_LABELS } from "./types";
+import { TYPO_DATA, TYPO_DATA_CYAN, TYPO_DATA_DANGER, TYPO_DATA_MUTED, TYPO_DATA_SUCCESS } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Helpers
@@ -79,7 +80,7 @@ export function MigrationProgressView({ migration, onRollback }: MigrationProgre
       {/* Header */}
       <div className={`${TERMINAL_HEADER} flex items-center justify-between`}>
         <span className={TERMINAL_HEADER_TITLE}>Migration #{migration.id}</span>
-        <span className={`font-mono text-xs uppercase ${statusColor}`}>
+        <span className={`${TYPO_DATA} uppercase ${statusColor}`}>
           {statusLabel}
         </span>
       </div>
@@ -88,11 +89,11 @@ export function MigrationProgressView({ migration, onRollback }: MigrationProgre
       <div className={`${TERMINAL_BODY} space-y-3`}>
         {/* Progress bar */}
         <div>
-          <div className="flex items-center justify-between font-mono text-xs text-[var(--color-text-muted)]">
+          <div className={`flex items-center justify-between ${TYPO_DATA_MUTED}`}>
             <span>
               {migration.transferred_files} / {migration.total_files} files
             </span>
-            <span className="text-cyan-400">{pct}%</span>
+            <span className="text-[var(--color-data-cyan)]">{pct}%</span>
           </div>
           <div className="mt-1 h-1.5 w-full rounded-full bg-white/10">
             <div
@@ -110,26 +111,26 @@ export function MigrationProgressView({ migration, onRollback }: MigrationProgre
         <div className="grid grid-cols-2 gap-2">
           <div>
             <span className={TERMINAL_LABEL}>Transferred</span>
-            <p className="font-mono text-xs text-cyan-400">
+            <p className={TYPO_DATA_CYAN}>
               {formatBytes(migration.transferred_bytes)} / {formatBytes(migration.total_bytes)}
             </p>
           </div>
           <div>
             <span className={TERMINAL_LABEL}>Verified</span>
-            <p className="font-mono text-xs text-green-400">
+            <p className={TYPO_DATA_SUCCESS}>
               {migration.verified_files} files
             </p>
           </div>
           <div>
             <span className={TERMINAL_LABEL}>Failed</span>
-            <p className={`font-mono text-xs ${migration.failed_files > 0 ? "text-red-400" : "text-[var(--color-text-muted)]"}`}>
+            <p className={`font-mono text-xs ${migration.failed_files > 0 ? "text-[var(--color-data-red)]" : "text-[var(--color-text-muted)]"}`}>
               {migration.failed_files} files
             </p>
           </div>
           {migration.started_at && (
             <div>
               <span className={TERMINAL_LABEL}>Started</span>
-              <p className="font-mono text-xs text-[var(--color-text-muted)]">
+              <p className={TYPO_DATA_MUTED}>
                 {formatDateTime(migration.started_at)}
               </p>
             </div>
@@ -138,12 +139,12 @@ export function MigrationProgressView({ migration, onRollback }: MigrationProgre
 
         {/* Error log */}
         {errors.length > 0 && (
-          <div className="rounded-[var(--radius-md)] border border-red-400/30 bg-[#0d1117] p-2">
-            <div className="flex items-center gap-1 font-mono text-xs font-medium text-red-400">
+          <div className="rounded-[var(--radius-md)] border border-red-400/30 bg-[var(--color-surface-primary)] p-2">
+            <div className={`${TYPO_DATA_DANGER} flex items-center gap-1 font-medium`}>
               <AlertCircle size={14} aria-hidden />
               ERRORS ({errors.length})
             </div>
-            <ul className="mt-1 max-h-32 overflow-auto font-mono text-xs text-[var(--color-text-muted)]">
+            <ul className={`mt-1 max-h-32 overflow-auto ${TYPO_DATA_MUTED}`}>
               {errors.map((err, i) => (
                 <li key={i} className="truncate">
                   {String(err)}

@@ -6,6 +6,7 @@
  */
 
 import { useState } from "react";
+import { TYPO_LABEL } from "@/lib/typography-tokens";
 
 import { Button, Input } from "@/components";
 import { snakeCaseToTitle } from "@/lib/format";
@@ -87,7 +88,7 @@ export function PipelineSettingsEditor({
             className="flex items-center gap-2"
           >
             <label
-              className="w-36 shrink-0 text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-wide font-mono"
+              className={`w-36 shrink-0 ${TYPO_LABEL}`}
               data-testid={`setting-label-${key}`}
             >
               {snakeCaseToTitle(key)}

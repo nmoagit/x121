@@ -3,6 +3,7 @@
  */
 
 import type { InferredEntity } from "./types";
+import { TYPO_DATA } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Constants
@@ -98,7 +99,7 @@ export function ImportPreview({
                   <td className="py-2 pr-4">
                     {ACTION_LABELS[entity.entity_type] ?? entity.entity_type}
                   </td>
-                  <td className="py-2 font-mono text-xs">
+                  <td className={`py-2 ${TYPO_DATA}`}>
                     {entity.source_path}
                   </td>
                 </tr>

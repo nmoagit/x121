@@ -13,6 +13,7 @@ import { formatDateTime } from "@/lib/format";
 
 import { useHookLogs, useJobHookLogs } from "./hooks/use-pipeline-hooks";
 import type { HookExecutionLog } from "./types";
+import { TYPO_DATA, TYPO_INPUT_LABEL, TYPO_CAPTION} from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Props
@@ -88,11 +89,11 @@ function LogEntry({ log }: { log: HookExecutionLog }) {
           <Badge variant={log.success ? "success" : "danger"}>
             {log.success ? "Success" : "Failed"}
           </Badge>
-          <span className="text-xs text-[var(--color-text-secondary)]">
+          <span className={TYPO_CAPTION}>
             {formattedTime}
           </span>
         </div>
-        <div className="flex items-center gap-3 text-xs text-[var(--color-text-secondary)]">
+        <div className={`flex items-center gap-3 ${TYPO_CAPTION}`}>
           {log.duration_ms != null && <span>{log.duration_ms}ms</span>}
           {log.exit_code != null && <span>Exit: {log.exit_code}</span>}
           <span>{expanded ? "Collapse" : "Expand"}</span>
@@ -103,27 +104,27 @@ function LogEntry({ log }: { log: HookExecutionLog }) {
         <div className="mt-3 space-y-2 border-t border-[var(--color-border)] pt-3">
           {log.input_json && (
             <div>
-              <span className="text-xs font-medium text-[var(--color-text-secondary)]">
+              <span className={TYPO_INPUT_LABEL}>
                 Input:
               </span>
-              <pre className="mt-1 max-h-32 overflow-auto rounded bg-[var(--color-bg-secondary)] p-2 font-mono text-xs text-[var(--color-text-primary)]">
+              <pre className={`mt-1 max-h-32 overflow-auto rounded bg-[var(--color-bg-secondary)] p-2 ${TYPO_DATA}`}>
                 {JSON.stringify(log.input_json, null, 2)}
               </pre>
             </div>
           )}
           {log.output_text && (
             <div>
-              <span className="text-xs font-medium text-[var(--color-text-secondary)]">
+              <span className={TYPO_INPUT_LABEL}>
                 Output:
               </span>
-              <pre className="mt-1 max-h-32 overflow-auto rounded bg-[var(--color-bg-secondary)] p-2 font-mono text-xs text-[var(--color-text-primary)]">
+              <pre className={`mt-1 max-h-32 overflow-auto rounded bg-[var(--color-bg-secondary)] p-2 ${TYPO_DATA}`}>
                 {log.output_text}
               </pre>
             </div>
           )}
           {log.error_message && (
             <div>
-              <span className="text-xs font-medium text-[var(--color-text-secondary)]">
+              <span className={TYPO_INPUT_LABEL}>
                 Error:
               </span>
               <pre className="mt-1 max-h-32 overflow-auto rounded bg-red-50 p-2 font-mono text-xs text-red-700">

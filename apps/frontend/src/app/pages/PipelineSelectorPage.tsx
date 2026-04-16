@@ -15,6 +15,7 @@ import { useSetPageTitle } from "@/hooks/useSetPageTitle";
 import { Workflow } from "@/tokens/icons";
 
 import { usePipelines } from "@/features/pipelines/hooks/use-pipelines";
+import { TYPO_CAPTION } from "@/lib/typography-tokens";
 
 export function PipelineSelectorPage() {
   useSetPageTitle("Pipelines", "Select a pipeline to start working.");
@@ -86,7 +87,7 @@ export function PipelineSelectorPage() {
                   </p>
                 )}
 
-                <div className="flex items-center gap-3 text-xs text-[var(--color-text-secondary)]">
+                <div className={`flex items-center gap-3 ${TYPO_CAPTION}`}>
                   <span>
                     {pipeline.seed_slots.length} seed slot{pipeline.seed_slots.length !== 1 ? "s" : ""}
                   </span>

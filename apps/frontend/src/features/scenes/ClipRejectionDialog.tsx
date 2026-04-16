@@ -2,6 +2,7 @@ import { Modal } from "@/components/composite/Modal";
 import { Button } from "@/components/primitives/Button";
 import { Input } from "@/components/primitives/Input";
 import { useState } from "react";
+import { TYPO_DATA } from "@/lib/typography-tokens";
 
 interface ClipRejectionDialogProps {
   isOpen: boolean;
@@ -42,7 +43,7 @@ export function ClipRejectionDialog({
           required
         />
         <div className="flex flex-col gap-1.5">
-          <span className="font-mono text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide">
+          <span className={`${TYPO_DATA} font-medium text-[var(--color-text-muted)] uppercase tracking-wide`}>
             Notes (optional)
           </span>
           <textarea
@@ -50,12 +51,12 @@ export function ClipRejectionDialog({
             onChange={(e) => setNotes(e.target.value)}
             placeholder="Additional notes..."
             rows={3}
-            className="w-full rounded-[var(--radius-md)] border p-2 font-mono text-xs
+            className={`w-full rounded-[var(--radius-md)] border p-2
               border-[var(--color-border-default)]
-              bg-[#0d1117]
-              text-[var(--color-text-primary)]
+              bg-[var(--color-surface-primary)]
+              ${TYPO_DATA}
               placeholder:text-[var(--color-text-muted)]
-              focus:outline-none focus:ring-2 focus:ring-offset-0 focus:ring-[var(--color-border-focus)]"
+              focus:outline-none focus:ring-2 focus:ring-offset-0 focus:ring-[var(--color-border-focus)]`}
           />
         </div>
         <div className="flex justify-end gap-2 pt-1 border-t border-[var(--color-border-default)]">

@@ -9,6 +9,7 @@ import { useCallback, useState } from "react";
 
 import { Button, Input, Toggle } from "@/components/primitives";
 import { Card, CardBody, CardHeader } from "@/components/composite";
+import { TYPO_SECTION_TITLE } from "@/lib/typography-tokens";
 
 import type { DuplicateDetectionSetting, UpdateDuplicateSetting } from "./types";
 
@@ -69,7 +70,7 @@ export function ThresholdSettings({
   return (
     <Card elevation="flat" data-testid="threshold-settings">
       <CardHeader>
-        <h3 className="text-base font-semibold text-[var(--color-text-primary)]">
+        <h3 className={TYPO_SECTION_TITLE}>
           Duplicate Detection Settings
         </h3>
       </CardHeader>

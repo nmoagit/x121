@@ -17,6 +17,7 @@ import { Badge, Button } from "@/components/primitives";
 import { Stack } from "@/components/layout";
 
 import type { PipelineStage, FailureDiagnosticDetail } from "./types";
+import { TYPO_CAPTION } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Props
@@ -128,7 +129,7 @@ function FailedStageDetail({
       </button>
 
       {expanded && (
-        <div className="mt-2 space-y-1 text-xs text-[var(--color-text-secondary)]">
+        <div className={`mt-2 space-y-1 ${TYPO_CAPTION}`}>
           {diagnostics.comfyui_error && (
             <div>
               <span className="font-medium">ComfyUI:</span>{" "}

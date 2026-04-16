@@ -6,6 +6,7 @@ import { useState } from "react";
 
 import { Badge, Button } from "@/components";
 import { cn } from "@/lib/cn";
+import { TYPO_SECTION_TITLE } from "@/lib/typography-tokens";
 import { Star, Layers } from "lucide-react";
 
 import { useMarketplace } from "./hooks/use-presets";
@@ -116,7 +117,7 @@ export function PresetMarketplace({ onApply }: PresetMarketplaceProps) {
     <div data-testid="preset-marketplace">
       {/* Toolbar */}
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-base font-semibold text-[var(--color-text-primary)]">
+        <h3 className={TYPO_SECTION_TITLE}>
           Preset Marketplace
         </h3>
         <select

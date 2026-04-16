@@ -33,6 +33,7 @@ import {
   useUpsertPromptDefault,
 } from "./hooks/use-prompt-management";
 import type { WorkflowPromptSlot } from "./types";
+import { TYPO_DATA } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Main component
@@ -127,7 +128,7 @@ function SectionHeader({
       onClick={onToggle}
     >
       <Icon size={14} className="text-[var(--color-text-muted)] group-hover:text-[var(--color-text-primary)] transition-colors" />
-      <span className="font-mono text-xs font-medium text-[var(--color-text-primary)] uppercase tracking-wide">{title}</span>
+      <span className={`${TYPO_DATA} font-medium text-[var(--color-text-primary)] uppercase tracking-wide`}>{title}</span>
       <span className="font-mono text-[10px] text-[var(--color-text-muted)]">({count})</span>
     </button>
   );

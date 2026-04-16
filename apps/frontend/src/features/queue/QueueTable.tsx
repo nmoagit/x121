@@ -19,6 +19,7 @@ import { useAdminQueueJobs } from "./hooks/use-queue";
 import { JobActionMenu } from "./JobActions";
 import type { FullQueueJob, QueueJobFilter } from "./types";
 import { statusLabel, priorityLabel, JOB_STATUS_RUNNING } from "./types";
+import { TYPO_DATA, TYPO_DATA_MUTED } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Live timer for running jobs
@@ -37,7 +38,7 @@ function LiveTimer({ startedAt }: { startedAt: string }) {
   }, [startedAt]);
 
   return (
-    <span className="font-mono text-xs text-[var(--color-status-info)]">
+    <span className={`${TYPO_DATA} text-[var(--color-status-info)]`}>
       {formatDuration(elapsed)}
     </span>
   );
@@ -75,11 +76,11 @@ function TargetCell({ job }: { job: FullQueueJob }) {
     const source = job.source_variant_type ?? "?";
     const target = job.target_variant_type ?? "?";
     return (
-      <span className="inline-flex items-center gap-1 font-mono text-xs">
+      <span className={`inline-flex items-center gap-1 ${TYPO_DATA}`}>
         <KindIcon kind="image" />
         <span className="text-[var(--color-text-muted)]">{source}</span>
         <span className="text-[var(--color-text-muted)]">{"\u2192"}</span>
-        <span className="text-cyan-400">{target}</span>
+        <span className="text-[var(--color-data-cyan)]">{target}</span>
       </span>
     );
   }
@@ -87,7 +88,7 @@ function TargetCell({ job }: { job: FullQueueJob }) {
   const scene = job.scene_type_name ?? "--";
   const track = job.track_name;
   return (
-    <span className="inline-flex items-center gap-1 font-mono text-xs">
+    <span className={`inline-flex items-center gap-1 ${TYPO_DATA}`}>
       <KindIcon kind={job.job_kind} />
       <span className="text-[var(--color-text-secondary)]">{scene}</span>
       {track && (
@@ -121,10 +122,10 @@ function JobRow({ job, selected, onToggle, onNavigate }: JobRowProps) {
 
   const errorContent = job.error_message ? (
     <Tooltip content={job.error_message} side="left">
-      <span className={`font-mono text-xs ${statusColorCls}`}>{label}</span>
+      <span className={`${TYPO_DATA} ${statusColorCls}`}>{label}</span>
     </Tooltip>
   ) : (
-    <span className={`font-mono text-xs ${statusColorCls}`}>{label}</span>
+    <span className={`${TYPO_DATA} ${statusColorCls}`}>{label}</span>
   );
 
   return (
@@ -145,7 +146,7 @@ function JobRow({ job, selected, onToggle, onNavigate }: JobRowProps) {
       <td className="px-3 py-2 text-xs font-mono text-[var(--color-text-muted)]">
         #{job.id}
       </td>
-      <td className="px-3 py-2 font-mono text-xs text-[var(--color-text-primary)]">
+      <td className={`px-3 py-2 ${TYPO_DATA}`}>
         {job.avatar_name ?? "--"}
       </td>
       <td className="px-3 py-2">
@@ -159,13 +160,13 @@ function JobRow({ job, selected, onToggle, onNavigate }: JobRowProps) {
         <TargetCell job={job} />
       </td>
       <td className="px-3 py-2">{errorContent}</td>
-      <td className="px-3 py-2 font-mono text-xs text-[var(--color-text-muted)]">
+      <td className={`px-3 py-2 ${TYPO_DATA_MUTED}`}>
         {priorityLabel(job.priority)}
       </td>
-      <td className="px-3 py-2 font-mono text-xs text-[var(--color-text-muted)]">
+      <td className={`px-3 py-2 ${TYPO_DATA_MUTED}`}>
         {job.comfyui_instance_id ?? "--"}
       </td>
-      <td className="px-3 py-2 font-mono text-xs text-[var(--color-text-muted)]">
+      <td className={`px-3 py-2 ${TYPO_DATA_MUTED}`}>
         {formatDateTime(job.submitted_at)}
       </td>
       <td className="px-3 py-2">
@@ -276,7 +277,7 @@ export function QueueTable({
   return (
     <div className="overflow-x-auto">
       <table className="w-full">
-        <thead className="bg-[#161b22] border-b border-[var(--color-border-default)]">
+        <thead className="bg-[var(--color-surface-secondary)] border-b border-[var(--color-border-default)]">
           <tr>
             <th className="px-3 py-2 w-8">
               <Checkbox

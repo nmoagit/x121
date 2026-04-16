@@ -6,6 +6,7 @@ import { TERMINAL_PANEL, TERMINAL_HEADER_TITLE, TERMINAL_ROW_HOVER } from "@/lib
 import { cn } from "@/lib/cn";
 
 import type { NamingCategory, NamingRule } from "../types";
+import { TYPO_DATA_CYAN } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Category card
@@ -33,11 +34,11 @@ export function CategoryCard({ category, rule, isSelected, onSelect }: CategoryC
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-medium text-cyan-400 font-mono">
+            <span className={`${TYPO_DATA_CYAN} font-medium`}>
               {category.name}
             </span>
             {rule?.is_active && (
-              <span className="text-[10px] text-green-400 font-mono uppercase">Active</span>
+              <span className="text-[10px] text-[var(--color-data-green)] font-mono uppercase">Active</span>
             )}
           </div>
           <p className="mt-0.5 text-[10px] text-[var(--color-text-muted)] font-mono line-clamp-2">
@@ -49,7 +50,7 @@ export function CategoryCard({ category, rule, isSelected, onSelect }: CategoryC
       {/* Current template */}
       {rule && (
         <div className="mt-[var(--spacing-3)] px-2.5 py-1.5 text-xs font-mono
-          bg-[#161b22] text-cyan-400
+          bg-[var(--color-surface-secondary)] text-[var(--color-data-cyan)]
           rounded-[var(--radius-md)] truncate">
           {rule.template}
         </div>

@@ -6,6 +6,7 @@
 
 import { Card, CardBody } from "@/components/composite";
 import { Button } from "@/components/primitives";
+import { TYPO_PAGE_TITLE } from "@/lib/typography-tokens";
 import { Check } from "@/tokens/icons";
 
 /* --------------------------------------------------------------------------
@@ -31,7 +32,7 @@ export function WizardCompletePanel({ onGoToDashboard }: WizardCompletePanelProp
           </div>
 
           <div className="space-y-2">
-            <h2 className="text-xl font-semibold text-[var(--color-text-primary)]">
+            <h2 className={TYPO_PAGE_TITLE}>
               Setup Complete
             </h2>
             <p className="text-sm text-[var(--color-text-secondary)] max-w-md">

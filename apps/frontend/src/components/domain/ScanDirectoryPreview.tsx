@@ -10,6 +10,7 @@ import type {
 } from "@/hooks/useDirectoryScan";
 import { cn } from "@/lib/cn";
 import { ScanAvatarGroup, ScanUnresolvedGroup } from "./ScanFileRow";
+import { TYPO_DATA, TYPO_LABEL} from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Toggle category helpers
@@ -57,24 +58,24 @@ export function ScanPreview({
   const { summary } = scanResult;
 
   return (
-    <div className="rounded-[var(--radius-lg)] border border-[var(--color-border-default)] bg-[#0d1117] overflow-hidden">
+    <div className="rounded-[var(--radius-lg)] border border-[var(--color-border-default)] bg-[var(--color-surface-primary)] overflow-hidden">
       {/* Summary header */}
-      <div className="px-3 py-2 border-b border-[var(--color-border-default)] bg-[#161b22]">
-        <div className="flex items-center gap-3 font-mono text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">
+      <div className="px-3 py-2 border-b border-[var(--color-border-default)] bg-[var(--color-surface-secondary)]">
+        <div className={`flex items-center gap-3 ${TYPO_LABEL}`}>
           <span>{summary.total_files} file{summary.total_files !== 1 ? "s" : ""}</span>
           <span className="opacity-30">|</span>
           <span>{scanResult.avatars.length} avatar{scanResult.avatars.length !== 1 ? "s" : ""}</span>
           {scanResult.unresolved.length > 0 && (
             <>
               <span className="opacity-30">|</span>
-              <span className="text-orange-400">{scanResult.unresolved.length} unresolved</span>
+              <span className="text-[var(--color-data-orange)]">{scanResult.unresolved.length} unresolved</span>
             </>
           )}
         </div>
       </div>
 
       {/* Category toggles */}
-      <div className="flex items-center gap-1 px-3 py-2 border-b border-[var(--color-border-default)]/50 bg-[#0d1117]">
+      <div className="flex items-center gap-1 px-3 py-2 border-b border-[var(--color-border-default)]/50 bg-[var(--color-surface-primary)]">
         {TOGGLE_CATEGORIES.map((cat) => {
           const count = cat.summaryKey != null ? summary[cat.summaryKey] : speechCount;
           const active = enabledCategories.has(cat.key);
@@ -87,7 +88,7 @@ export function ScanPreview({
                 "px-2 py-0.5 rounded font-mono text-[10px] transition-colors",
                 active
                   ? "bg-[var(--color-action-primary)] text-white"
-                  : "bg-[#161b22] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]",
+                  : "bg-[var(--color-surface-secondary)] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]",
               )}
             >
               {cat.label} ({count})
@@ -125,19 +126,19 @@ export function ScanPreview({
 
 export function ImportResultSummary({ result }: { result: ImportResult }) {
   return (
-    <div className="rounded-[var(--radius-lg)] border border-[var(--color-border-default)] bg-[#0d1117] overflow-hidden">
-      <div className="px-3 py-2 border-b border-[var(--color-border-default)] bg-[#161b22]">
-        <div className="font-mono text-xs text-[var(--color-text-primary)]">
+    <div className="rounded-[var(--radius-lg)] border border-[var(--color-border-default)] bg-[var(--color-surface-primary)] overflow-hidden">
+      <div className="px-3 py-2 border-b border-[var(--color-border-default)] bg-[var(--color-surface-secondary)]">
+        <div className={TYPO_DATA}>
           Import Complete
         </div>
       </div>
       <div className="px-3 py-3">
-        <div className="flex items-center gap-4 font-mono text-xs">
-          <span className="text-green-400">{result.imported} imported</span>
+        <div className={`flex items-center gap-4 ${TYPO_DATA}`}>
+          <span className="text-[var(--color-data-green)]">{result.imported} imported</span>
           <span className="text-[var(--color-text-muted)]">{result.skipped} skipped</span>
           <span className="text-yellow-400">{result.replaced} replaced</span>
           {result.failed > 0 && (
-            <span className="text-red-400">{result.failed} failed</span>
+            <span className="text-[var(--color-data-red)]">{result.failed} failed</span>
           )}
         </div>
         {result.failed > 0 && result.details.filter((d) => d.error).length > 0 && (
@@ -145,7 +146,7 @@ export function ImportResultSummary({ result }: { result: ImportResult }) {
             {result.details
               .filter((d) => d.error)
               .map((d) => (
-                <div key={d.path} className="font-mono text-[10px] text-red-400">
+                <div key={d.path} className="font-mono text-[10px] text-[var(--color-data-red)]">
                   {d.path}: {d.error}
                 </div>
               ))}

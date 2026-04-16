@@ -89,7 +89,7 @@ export function CollapsibleSection({
         <button
           type="button"
           onClick={toggle}
-          className="flex flex-1 items-center justify-between text-left px-[var(--spacing-3)] py-[var(--spacing-2)] bg-[#161b22] hover:bg-[#1c2333] transition-colors min-w-0"
+          className="flex flex-1 items-center justify-between text-left px-[var(--spacing-3)] py-[var(--spacing-2)] bg-[var(--color-surface-secondary)] hover:bg-[var(--color-surface-tertiary)] transition-colors min-w-0"
         >
           <div className="min-w-0">
             <h3 className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide font-mono">{title}</h3>

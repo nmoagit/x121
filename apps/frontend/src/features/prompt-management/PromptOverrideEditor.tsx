@@ -25,6 +25,7 @@ import type {
   SlotDraft,
   SlotOverride,
 } from "./types";
+import { TYPO_DATA_MUTED } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Types
@@ -173,7 +174,7 @@ export function PromptOverrideEditor({
         <h3 className={TERMINAL_HEADER_TITLE}>
           {levelLabel} Prompt Overrides
         </h3>
-        <p className="mt-1 font-mono text-xs text-[var(--color-text-muted)]">
+        <p className={`mt-1 ${TYPO_DATA_MUTED}`}>
           Add prompt fragments per scene type at the {levelLabel.toLowerCase()} level.
         </p>
       </div>

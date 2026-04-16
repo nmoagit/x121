@@ -37,6 +37,7 @@ import {
   JOB_STATUS_PENDING,
   JOB_STATUS_QUEUED,
 } from "./types";
+import { TYPO_DATA, TYPO_DATA_CYAN, TYPO_DATA_MUTED } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Per-row action dropdown
@@ -142,8 +143,8 @@ function ReassignModal({
   return (
     <Modal open={open} onClose={onClose} title="Reassign Job" size="md">
       <div className="space-y-2">
-        <p className="font-mono text-xs text-[var(--color-text-muted)]">
-          Select a worker instance to reassign job <span className="text-cyan-400">#{jobId}</span>:
+        <p className={TYPO_DATA_MUTED}>
+          Select a worker instance to reassign job <span className="text-[var(--color-data-cyan)]">#{jobId}</span>:
         </p>
         {instances?.map((inst) => (
           <Button
@@ -154,7 +155,7 @@ function ReassignModal({
             onClick={() => handleReassign(inst.id)}
             disabled={reassignJob.isPending || !inst.is_enabled}
           >
-            <span className="flex items-center gap-2 font-mono text-xs">
+            <span className={`flex items-center gap-2 ${TYPO_DATA}`}>
               <span>{inst.name}</span>
               {!inst.is_enabled && (
                 <span className="text-[var(--color-text-muted)]">(disabled)</span>
@@ -163,7 +164,7 @@ function ReassignModal({
           </Button>
         ))}
         {(!instances || instances.length === 0) && (
-          <p className="font-mono text-xs text-[var(--color-text-muted)] py-4 text-center">
+          <p className={`${TYPO_DATA_MUTED} py-4 text-center`}>
             No worker instances available
           </p>
         )}
@@ -198,9 +199,9 @@ export function BulkActionToolbar({ selectedJobIds, onClearSelection }: BulkActi
       direction="horizontal"
       gap={3}
       align="center"
-      className="px-4 py-2 bg-[#161b22] border border-[var(--color-border-default)] rounded-[var(--radius-md)]"
+      className="px-4 py-2 bg-[var(--color-surface-secondary)] border border-[var(--color-border-default)] rounded-[var(--radius-md)]"
     >
-      <span className="font-mono text-xs text-cyan-400">
+      <span className={TYPO_DATA_CYAN}>
         {selectedJobIds.length} selected
       </span>
       <Button

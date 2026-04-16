@@ -20,22 +20,23 @@ import {
 } from "@/lib/ui-classes";
 import { Server, Cloud } from "@/tokens/icons";
 import type { ServiceHealth } from "@/app/footer/types";
+import { TYPO_DATA, TYPO_DATA_CYAN, TYPO_DATA_MUTED } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Helpers
    -------------------------------------------------------------------------- */
 
 const BUDGET_STATUS_COLOR: Record<string, string> = {
-  ok: "text-green-400",
-  warning: "text-orange-400",
-  exceeded: "text-red-400",
+  ok: "text-[var(--color-data-green)]",
+  warning: "text-[var(--color-data-orange)]",
+  exceeded: "text-[var(--color-data-red)]",
 };
 
 function ServiceDot({ name, health }: { name: string; health: ServiceHealth }) {
   return (
     <div className="flex items-center gap-1.5">
       <StatusDot health={health} />
-      <span className="font-mono text-xs text-[var(--color-text-secondary)] capitalize">{name}</span>
+      <span className={`${TYPO_DATA_MUTED} capitalize`}>{name}</span>
     </div>
   );
 }
@@ -58,7 +59,7 @@ export function InfraStatusWidget() {
       error={error?.message}
       onRetry={() => void refetch()}
       headerActions={
-        <Link to="/admin/infrastructure" className="font-mono text-xs text-cyan-400 hover:underline">
+        <Link to="/admin/infrastructure" className={`${TYPO_DATA_CYAN} hover:underline`}>
           Manage
         </Link>
       }
@@ -76,19 +77,19 @@ export function InfraStatusWidget() {
             <div className="space-y-1">
               <div className={`flex items-center justify-between py-1 ${TERMINAL_DIVIDER}`}>
                 <span className={TERMINAL_LABEL}>GPU Instances</span>
-                <span className="font-mono text-sm font-bold text-cyan-400 tabular-nums">
+                <span className="font-mono text-sm font-bold text-[var(--color-data-cyan)] tabular-nums">
                   {gpu.active_pods}
                 </span>
               </div>
               <div className={`flex items-center justify-between py-1 ${TERMINAL_DIVIDER}`}>
                 <span className={TERMINAL_LABEL}>Cost</span>
-                <span className="font-mono text-xs text-cyan-400 tabular-nums">
+                <span className={`${TYPO_DATA_CYAN} tabular-nums`}>
                   {formatCents(gpu.cost_per_hour_cents)}/hr
                 </span>
               </div>
               <div className="flex items-center justify-between py-1">
                 <span className={TERMINAL_LABEL}>Budget</span>
-                <span className={`font-mono text-xs font-medium ${BUDGET_STATUS_COLOR[gpu.budget_status] ?? "text-[var(--color-text-muted)]"}`}>
+                <span className={`${TYPO_DATA} font-medium ${BUDGET_STATUS_COLOR[gpu.budget_status] ?? "text-[var(--color-text-muted)]"}`}>
                   {gpu.budget_status}
                 </span>
               </div>

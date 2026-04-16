@@ -29,6 +29,7 @@ import type {
   Workflow,
 } from "./types";
 import { workflowStatusLabel } from "./types";
+import { TYPO_DATA, TYPO_DATA_DANGER, TYPO_DATA_MUTED, TYPO_LABEL} from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Types
@@ -166,7 +167,7 @@ export function ImportWizard({
   return (
     <div data-testid="import-wizard" className="space-y-4">
       {/* Step indicator */}
-      <nav data-testid="step-indicator" className="flex items-center gap-1 font-mono text-xs">
+      <nav data-testid="step-indicator" className={`flex items-center gap-1 ${TYPO_DATA}`}>
         {STEPS.map((s, i) => {
           const isVisited = i <= currentStepIndex;
           const canClick = isVisited && s !== step && s !== "done" && (s !== "upload" || !workflow);
@@ -185,9 +186,9 @@ export function ImportWizard({
                 className={cn(
                   "uppercase tracking-wide",
                   s === step
-                    ? "text-cyan-400"
+                    ? "text-[var(--color-data-cyan)]"
                     : isVisited
-                      ? "text-cyan-400/60 cursor-pointer hover:text-cyan-400"
+                      ? "text-[var(--color-data-cyan)]/60 cursor-pointer hover:text-[var(--color-data-cyan)]"
                       : "text-[var(--color-text-muted)]",
                 )}
               >
@@ -202,7 +203,7 @@ export function ImportWizard({
       {step === "upload" && (
         <div data-testid="step-upload" className="space-y-3">
           <div className="space-y-1">
-            <span className="font-mono text-[10px] uppercase tracking-wide text-[var(--color-text-muted)]">
+            <span className={TYPO_LABEL}>
               Workflow Name
             </span>
             <input
@@ -216,7 +217,7 @@ export function ImportWizard({
           </div>
 
           <div className="space-y-1">
-            <span className="font-mono text-[10px] uppercase tracking-wide text-[var(--color-text-muted)]">
+            <span className={TYPO_LABEL}>
               Description
             </span>
             <input
@@ -240,12 +241,12 @@ export function ImportWizard({
                 : "border-[var(--color-border-default)]",
             )}
           >
-            <p className="font-mono text-xs text-[var(--color-text-muted)]">
+            <p className={TYPO_DATA_MUTED}>
               {sourceFilename
-                ? <>loaded: <span className="text-cyan-400">{sourceFilename}</span></>
+                ? <>loaded: <span className="text-[var(--color-data-cyan)]">{sourceFilename}</span></>
                 : "drop comfyui workflow .json here"}
             </p>
-            <label className="mt-2 inline-block cursor-pointer rounded bg-[#161b22] px-2 py-1 font-mono text-[11px] uppercase tracking-wide text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors">
+            <label className="mt-2 inline-block cursor-pointer rounded bg-[var(--color-surface-secondary)] px-2 py-1 font-mono text-[11px] uppercase tracking-wide text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors">
               Browse
               <input
                 data-testid="file-upload"
@@ -258,7 +259,7 @@ export function ImportWizard({
           </div>
 
           <div className="space-y-1">
-            <span className="font-mono text-[10px] uppercase tracking-wide text-[var(--color-text-muted)]">
+            <span className={TYPO_LABEL}>
               Or paste JSON
             </span>
             <textarea
@@ -272,7 +273,7 @@ export function ImportWizard({
           </div>
 
           {error && (
-            <p data-testid="error-message" className="font-mono text-xs text-red-400">
+            <p data-testid="error-message" className={TYPO_DATA_DANGER}>
               {error}
             </p>
           )}
@@ -295,24 +296,24 @@ export function ImportWizard({
         <div data-testid="step-validation" className="space-y-3">
           {validationResult ? (
             <div className="space-y-3">
-              <div className="flex items-center gap-2 font-mono text-xs">
+              <div className={`flex items-center gap-2 ${TYPO_DATA}`}>
                 <span className="text-[var(--color-text-muted)]">overall:</span>
                 {validationResult.validation_source === "live" ? (
-                  <span className={validationResult.overall_valid ? "text-green-400" : "text-red-400"}>
+                  <span className={validationResult.overall_valid ? "text-[var(--color-data-green)]" : "text-[var(--color-data-red)]"}>
                     {validationResult.overall_valid ? "valid" : "invalid"}
                   </span>
                 ) : (
-                  <span className="text-orange-400">unverified</span>
+                  <span className="text-[var(--color-data-orange)]">unverified</span>
                 )}
                 <span className="text-white/20">|</span>
-                <span className={validationResult.validation_source === "live" ? "text-cyan-400" : "text-orange-400"}>
+                <span className={validationResult.validation_source === "live" ? "text-[var(--color-data-cyan)]" : "text-[var(--color-data-orange)]"}>
                   {validationResult.validation_source === "live" ? "live (ComfyUI)" : "static — connect ComfyUI to verify"}
                 </span>
               </div>
 
               {validationResult.node_results.length > 0 && (
                 <div>
-                  <p className="font-mono text-[10px] uppercase tracking-wide text-[var(--color-text-muted)] mb-1">
+                  <p className={`${TYPO_LABEL} mb-1`}>
                     nodes ({validationResult.node_results.length})
                   </p>
                   <div className="border border-[var(--color-border-default)] rounded-[var(--radius-sm)] max-h-40 overflow-y-auto">
@@ -322,9 +323,9 @@ export function ImportWizard({
                         <div
                           key={nr.node_type}
                           data-testid={`node-result-${nr.node_type}`}
-                          className={`px-2 py-0.5 font-mono text-xs flex items-center gap-2 ${TERMINAL_DIVIDER} last:border-b-0 ${TERMINAL_ROW_HOVER}`}
+                          className={`px-2 py-0.5 ${TYPO_DATA} flex items-center gap-2 ${TERMINAL_DIVIDER} last:border-b-0 ${TERMINAL_ROW_HOVER}`}
                         >
-                          <span className={isLive ? (nr.present ? "text-green-400" : "text-red-400") : "text-[var(--color-text-muted)]"}>
+                          <span className={isLive ? (nr.present ? "text-[var(--color-data-green)]" : "text-[var(--color-data-red)]") : "text-[var(--color-text-muted)]"}>
                             {isLive ? (nr.present ? "✓" : "✗") : "—"}
                           </span>
                           <span className="text-[var(--color-text-primary)]">{nr.node_type}</span>
@@ -337,7 +338,7 @@ export function ImportWizard({
 
               {validationResult.model_results.length > 0 && (
                 <div>
-                  <p className="font-mono text-[10px] uppercase tracking-wide text-[var(--color-text-muted)] mb-1">
+                  <p className={`${TYPO_LABEL} mb-1`}>
                     models ({validationResult.model_results.length})
                   </p>
                   <div className="border border-[var(--color-border-default)] rounded-[var(--radius-sm)] max-h-40 overflow-y-auto">
@@ -345,9 +346,9 @@ export function ImportWizard({
                       <div
                         key={mr.model_name}
                         data-testid={`model-result-${mr.model_name}`}
-                        className={`px-2 py-0.5 font-mono text-xs flex items-center gap-2 ${TERMINAL_DIVIDER} last:border-b-0 ${TERMINAL_ROW_HOVER}`}
+                        className={`px-2 py-0.5 ${TYPO_DATA} flex items-center gap-2 ${TERMINAL_DIVIDER} last:border-b-0 ${TERMINAL_ROW_HOVER}`}
                       >
-                        <span className={mr.found_in_registry ? "text-green-400" : "text-orange-400"}>
+                        <span className={mr.found_in_registry ? "text-[var(--color-data-green)]" : "text-[var(--color-data-orange)]"}>
                           {mr.found_in_registry ? "✓" : "?"}
                         </span>
                         <span className="text-[var(--color-text-primary)]">{mr.model_name}</span>
@@ -358,7 +359,7 @@ export function ImportWizard({
               )}
             </div>
           ) : (
-            <p data-testid="no-validation" className="font-mono text-xs text-[var(--color-text-muted)]">
+            <p data-testid="no-validation" className={TYPO_DATA_MUTED}>
               No validation results available. Validation can be run after import.
             </p>
           )}
@@ -383,20 +384,20 @@ export function ImportWizard({
                 <div
                   key={`${param.node_id}-${param.input_name}`}
                   data-testid={`param-${param.node_id}-${param.input_name}`}
-                  className={`px-2 py-1.5 font-mono text-xs ${i > 0 ? TERMINAL_DIVIDER : ""} ${TERMINAL_ROW_HOVER}`}
+                  className={`px-2 py-1.5 ${TYPO_DATA} ${i > 0 ? TERMINAL_DIVIDER : ""} ${TERMINAL_ROW_HOVER}`}
                 >
                   <div className="flex items-center justify-between">
                     <span className="text-[var(--color-text-primary)]">{param.suggested_name}</span>
                     <span className="text-[var(--color-text-muted)]">{param.category}</span>
                   </div>
                   <div className="text-[10px] text-[var(--color-text-muted)] mt-0.5">
-                    node {param.node_id} / {param.input_name} = <span className="text-cyan-400">{JSON.stringify(param.current_value)}</span>
+                    node {param.node_id} / {param.input_name} = <span className="text-[var(--color-data-cyan)]">{JSON.stringify(param.current_value)}</span>
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <p data-testid="no-parameters" className="font-mono text-xs text-[var(--color-text-muted)]">
+            <p data-testid="no-parameters" className={TYPO_DATA_MUTED}>
               No configurable parameters detected in this workflow.
             </p>
           )}
@@ -459,18 +460,18 @@ export function ImportWizard({
       {/* Step 5: Done */}
       {step === "done" && workflow && (
         <div data-testid="step-done" className="space-y-3">
-          <div className="border-l-2 border-green-400 pl-2 py-1 font-mono text-xs">
-            <p className="text-green-400">workflow imported successfully</p>
+          <div className={`border-l-2 border-green-400 pl-2 py-1 ${TYPO_DATA}`}>
+            <p className="text-[var(--color-data-green)]">workflow imported successfully</p>
             <p className="text-[var(--color-text-primary)] mt-0.5">
-              <span className="text-cyan-400">{workflow.name}</span> (id: {workflow.id}) v{workflow.current_version}
+              <span className="text-[var(--color-data-cyan)]">{workflow.name}</span> (id: {workflow.id}) v{workflow.current_version}
             </p>
             <p className="text-[var(--color-text-muted)] mt-0.5">
-              status: <span className="text-cyan-400">{workflowStatusLabel(workflow.status_id).toLowerCase()}</span>
+              status: <span className="text-[var(--color-data-cyan)]">{workflowStatusLabel(workflow.status_id).toLowerCase()}</span>
             </p>
           </div>
 
           {error && (
-            <p className="font-mono text-xs text-red-400">{error}</p>
+            <p className={TYPO_DATA_DANGER}>{error}</p>
           )}
 
           {onComplete && (
@@ -516,27 +517,27 @@ function AssignToScenesStep({
   );
 
   if (isLoading) {
-    return <p className="font-mono text-xs text-[var(--color-text-muted)]">loading scenes...</p>;
+    return <p className={TYPO_DATA_MUTED}>loading scenes...</p>;
   }
 
   return (
     <div data-testid="step-assign" className="space-y-3">
-      <p className="font-mono text-xs text-[var(--color-text-muted)]">
+      <p className={TYPO_DATA_MUTED}>
         Toggle scene + track combinations for this workflow. You can skip and assign later.
       </p>
 
       {entriesWithTracks.length === 0 ? (
-        <p className="font-mono text-xs text-[var(--color-text-muted)]">
+        <p className={TYPO_DATA_MUTED}>
           No scene types with tracks found.
         </p>
       ) : (
         <div className="overflow-y-auto max-h-64 border border-[var(--color-border-default)] rounded-[var(--radius-sm)]">
-          <table className="w-full font-mono text-xs">
-            <thead className="sticky top-0 bg-[#161b22]">
+          <table className={`w-full ${TYPO_DATA}`}>
+            <thead className="sticky top-0 bg-[var(--color-surface-secondary)]">
               <tr className={TERMINAL_DIVIDER}>
-                <th className="px-2 py-1 text-left text-[10px] uppercase tracking-wide text-[var(--color-text-muted)]">Scene</th>
-                <th className="px-2 py-1 text-left text-[10px] uppercase tracking-wide text-[var(--color-text-muted)]">Track</th>
-                <th className="px-2 py-1 text-center text-[10px] uppercase tracking-wide text-[var(--color-text-muted)]">Assign</th>
+                <th className={`px-2 py-1 text-left ${TYPO_LABEL}`}>Scene</th>
+                <th className={`px-2 py-1 text-left ${TYPO_LABEL}`}>Track</th>
+                <th className={`px-2 py-1 text-center ${TYPO_LABEL}`}>Assign</th>
               </tr>
             </thead>
             <tbody>
@@ -565,7 +566,7 @@ function AssignToScenesStep({
                       <td className="px-2 py-0.5 text-[var(--color-text-muted)]">
                         {row.trackName}
                         {row.isClothesOff && (
-                          <span className="ml-1 text-orange-400">(off)</span>
+                          <span className="ml-1 text-[var(--color-data-orange)]">(off)</span>
                         )}
                       </td>
                       <td className="px-2 py-0.5 text-center" onClick={(e) => e.stopPropagation()}>

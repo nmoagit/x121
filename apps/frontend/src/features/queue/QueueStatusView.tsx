@@ -22,6 +22,7 @@ import {
 import { useQueueStatus, usePauseJob, useResumeJob, useCancelJob } from "./hooks/use-queue";
 import { priorityLabel, priorityColor } from "./types";
 import type { QueuedJob } from "./types";
+import { TYPO_DATA, TYPO_DATA_MUTED } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Helpers
@@ -65,7 +66,7 @@ function QueueJobRow({ job }: { job: QueuedJob }) {
             title={priorityLabel(job.priority)}
           />
           <Stack direction="vertical" gap={1}>
-            <span className="font-mono text-xs text-[var(--color-text-primary)] truncate max-w-[180px]">
+            <span className={`${TYPO_DATA} truncate max-w-[180px]`}>
               {job.job_type}
             </span>
             <span className="font-mono text-[10px] text-[var(--color-text-muted)]">
@@ -81,7 +82,7 @@ function QueueJobRow({ job }: { job: QueuedJob }) {
         {/* Actions */}
         <Stack direction="horizontal" gap={1} align="center">
           {job.is_paused ? (
-            <span className="font-mono text-[10px] uppercase text-orange-400">PAUSED</span>
+            <span className="font-mono text-[10px] uppercase text-[var(--color-data-orange)]">PAUSED</span>
           ) : null}
           {job.is_paused ? (
             <Button
@@ -155,10 +156,10 @@ export function QueueStatusView() {
           <span className={TERMINAL_HEADER_TITLE}>
             Job Queue
           </span>
-          <span className="font-mono text-xs flex items-center gap-0">
-            <span className="text-cyan-400">{data.total_queued} queued</span>
+          <span className={`${TYPO_DATA} flex items-center gap-0`}>
+            <span className="text-[var(--color-data-cyan)]">{data.total_queued} queued</span>
             <span className={`mx-2 ${TERMINAL_PIPE}`}>|</span>
-            <span className="text-green-400">{data.total_running} running</span>
+            <span className="text-[var(--color-data-green)]">{data.total_running} running</span>
             {data.total_scheduled > 0 && (
               <>
                 <span className={`mx-2 ${TERMINAL_PIPE}`}>|</span>
@@ -191,7 +192,7 @@ export function QueueStatusView() {
         </div>
       ) : (
         <div className="px-4 py-8 text-center">
-          <span className="font-mono text-xs text-[var(--color-text-muted)]">
+          <span className={TYPO_DATA_MUTED}>
             Queue is empty
           </span>
         </div>

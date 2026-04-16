@@ -28,6 +28,7 @@ import {
   resolveExportStatus,
 } from "./types";
 import type { DatasetExport } from "./types";
+import { TYPO_DATA, TYPO_DATA_CYAN, TYPO_DATA_MUTED } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Export row
@@ -45,7 +46,7 @@ function ExportRow({ exportItem }: { exportItem: DatasetExport }) {
       className={`flex items-center justify-between gap-3 px-3 py-2 ${TERMINAL_DIVIDER} last:border-b-0 ${TERMINAL_ROW_HOVER}`}
     >
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 font-mono text-xs">
+        <div className={`flex items-center gap-2 ${TYPO_DATA}`}>
           <span className="font-medium text-[var(--color-text-primary)]">
             {exportItem.name}
           </span>
@@ -55,7 +56,7 @@ function ExportRow({ exportItem }: { exportItem: DatasetExport }) {
           {exportItem.sample_count != null && (
             <>
               <span className="opacity-30">|</span>
-              <span className="text-cyan-400">
+              <span className="text-[var(--color-data-cyan)]">
                 {exportItem.sample_count} samples
               </span>
             </>
@@ -78,7 +79,7 @@ function ExportRow({ exportItem }: { exportItem: DatasetExport }) {
         <a
           href={downloadUrl}
           data-testid={`download-export-${exportItem.id}`}
-          className="inline-flex items-center gap-1 font-mono text-xs text-cyan-400 hover:text-cyan-300"
+          className={`${TYPO_DATA_CYAN} inline-flex items-center gap-1 hover:text-cyan-300`}
         >
           <Download size={iconSizes.sm} aria-hidden="true" />
           Download
@@ -126,7 +127,7 @@ export function DatasetExportPanel({ projectId }: { projectId: number }) {
 
         {isLoading ? (
           <div className={TERMINAL_BODY}>
-            <p className="font-mono text-xs text-[var(--color-text-muted)] text-center">
+            <p className={`${TYPO_DATA_MUTED} text-center`}>
               Loading exports...
             </p>
           </div>
@@ -134,7 +135,7 @@ export function DatasetExportPanel({ projectId }: { projectId: number }) {
           <div className={TERMINAL_BODY}>
             <p
               data-testid="exports-empty"
-              className="font-mono text-xs text-[var(--color-text-muted)] text-center"
+              className={`${TYPO_DATA_MUTED} text-center`}
             >
               No dataset exports yet.
             </p>

@@ -8,6 +8,7 @@
 import { formatDurationSecs } from "@/lib/format";
 
 import type { GenerationProgress, SegmentStatus } from "./types";
+import { TYPO_DATA_MUTED } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Constants
@@ -84,9 +85,9 @@ export function GenerationProgressBar({
       </div>
 
       {/* Stats row */}
-      <div className="flex items-center justify-between font-mono text-xs text-[var(--color-text-muted)]">
+      <div className={`flex items-center justify-between ${TYPO_DATA_MUTED}`}>
         {/* Duration counter */}
-        <span data-testid="duration-counter" className="text-cyan-400">
+        <span data-testid="duration-counter" className="text-[var(--color-data-cyan)]">
           {formatDurationSecs(cumulative_duration)}
           {target_duration != null && (
             <span className="text-[var(--color-text-muted)]"> / {formatDurationSecs(target_duration)} target</span>
@@ -94,7 +95,7 @@ export function GenerationProgressBar({
         </span>
 
         {/* Percentage */}
-        <span data-testid="percent-indicator" className={isComplete ? "text-green-400" : "text-cyan-400"}>
+        <span data-testid="percent-indicator" className={isComplete ? "text-[var(--color-data-green)]" : "text-[var(--color-data-cyan)]"}>
           {isComplete ? "COMPLETE" : `${percent}%`}
         </span>
 

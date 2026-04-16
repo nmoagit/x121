@@ -21,6 +21,7 @@ import {
 } from "./hooks/useMediaVariantAnnotations";
 import type { MediaVariant } from "./types";
 import { variantMediaUrl } from "./utils";
+import { TYPO_DATA_CYAN, TYPO_DATA_MUTED, TYPO_DATA_WARNING } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Constants
@@ -209,7 +210,7 @@ export function MediaVariantAnnotationModal({
             </Button>
 
             {annotationCount > 0 && (
-              <span className="font-mono text-xs text-cyan-400">
+              <span className={TYPO_DATA_CYAN}>
                 {annotationCount} mark{annotationCount !== 1 ? "s" : ""}
               </span>
             )}
@@ -226,11 +227,11 @@ export function MediaVariantAnnotationModal({
             )}
 
             {upsertMutation.isPending && (
-              <span className="font-mono text-xs text-[var(--color-text-muted)]">Saving…</span>
+              <span className={TYPO_DATA_MUTED}>Saving…</span>
             )}
 
             {dirty && !upsertMutation.isPending && (
-              <span className="font-mono text-xs text-orange-400">Unsaved changes</span>
+              <span className={TYPO_DATA_WARNING}>Unsaved changes</span>
             )}
           </div>
         </div>

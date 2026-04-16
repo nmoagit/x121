@@ -27,6 +27,7 @@ import { ScheduleHistoryPanel } from "./ScheduleHistoryPanel";
 import { ScheduleStatusBadge } from "./ScheduleStatusBadge";
 import { SCHEDULE_TYPE_LABEL } from "./types";
 import type { Schedule } from "./types";
+import { TYPO_DATA, TYPO_DATA_CYAN, TYPO_DATA_MUTED } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Helpers
@@ -80,7 +81,7 @@ export function ScheduleRow({ schedule, onEdit }: ScheduleRowProps) {
         onClick={() => setExpanded((prev) => !prev)}
         data-testid={`schedule-row-${schedule.id}`}
       >
-        <td className="px-3 py-2.5 font-mono text-xs font-medium text-[var(--color-text-primary)]">
+        <td className={`px-3 py-2.5 ${TYPO_DATA} font-medium text-[var(--color-text-primary)]`}>
           <div className="flex flex-col gap-0.5">
             {schedule.name}
             {sceneCount !== null && (
@@ -91,18 +92,18 @@ export function ScheduleRow({ schedule, onEdit }: ScheduleRowProps) {
           </div>
         </td>
         <td className="px-3 py-2.5">
-          <span className="font-mono text-xs text-cyan-400 uppercase tracking-wide">{SCHEDULE_TYPE_LABEL[schedule.schedule_type]}</span>
+          <span className={`${TYPO_DATA_CYAN} uppercase tracking-wide`}>{SCHEDULE_TYPE_LABEL[schedule.schedule_type]}</span>
         </td>
-        <td className="px-3 py-2.5 font-mono text-xs text-[var(--color-text-muted)]">
+        <td className={`px-3 py-2.5 ${TYPO_DATA_MUTED}`}>
           {schedule.cron_expression ?? (schedule.scheduled_at ? formatDateTime(schedule.scheduled_at) : "\u2014")}
         </td>
-        <td className="px-3 py-2.5 font-mono text-xs text-[var(--color-text-muted)]">
+        <td className={`px-3 py-2.5 ${TYPO_DATA_MUTED}`}>
           {schedule.next_run_at ? formatDateTime(schedule.next_run_at) : "\u2014"}
         </td>
-        <td className="px-3 py-2.5 font-mono text-xs text-[var(--color-text-muted)]">
+        <td className={`px-3 py-2.5 ${TYPO_DATA_MUTED}`}>
           {schedule.last_run_at ? formatDateTime(schedule.last_run_at) : "\u2014"}
         </td>
-        <td className="px-3 py-2.5 font-mono text-xs text-cyan-400 text-center">
+        <td className={`${TYPO_DATA_CYAN} px-3 py-2.5 text-center`}>
           {schedule.run_count}
         </td>
         <td className="px-3 py-2.5"><ScheduleStatusBadge isActive={schedule.is_active} /></td>

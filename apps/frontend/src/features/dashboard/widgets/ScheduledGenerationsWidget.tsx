@@ -19,6 +19,7 @@ import {
   TERMINAL_PIPE,
 } from "@/lib/ui-classes";
 import { Calendar, Clock } from "@/tokens/icons";
+import { TYPO_DATA, TYPO_DATA_CYAN } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Helpers
@@ -37,13 +38,13 @@ function ScheduleRow({ schedule }: { schedule: Schedule }) {
   return (
     <div className={`flex items-center justify-between gap-2 py-2 ${TERMINAL_DIVIDER} last:border-b-0 ${TERMINAL_ROW_HOVER}`}>
       <div className="flex-1 min-w-0">
-        <p className="font-mono text-xs text-[var(--color-text-primary)] truncate">
+        <p className={`${TYPO_DATA} truncate`}>
           {schedule.name}
         </p>
       </div>
 
-      <div className="flex items-center gap-2 shrink-0 font-mono text-xs">
-        <span className="text-cyan-400 tabular-nums">
+      <div className={`flex items-center gap-2 shrink-0 ${TYPO_DATA}`}>
+        <span className="text-[var(--color-data-cyan)] tabular-nums">
           {sceneCount} scene{sceneCount === 1 ? "" : "s"}
         </span>
         <span className={TERMINAL_PIPE}>|</span>
@@ -78,7 +79,7 @@ export function ScheduledGenerationsWidget() {
         generationSchedules.length > 0 ? (
           <Link
             to="/admin/queue"
-            className="font-mono text-xs text-cyan-400 hover:underline"
+            className={`${TYPO_DATA_CYAN} hover:underline`}
           >
             View all
           </Link>
@@ -99,7 +100,7 @@ export function ScheduledGenerationsWidget() {
           {remaining > 0 && (
             <Link
               to="/admin/queue"
-              className="font-mono text-xs text-cyan-400 hover:underline pt-2 text-center"
+              className={`${TYPO_DATA_CYAN} hover:underline pt-2 text-center`}
             >
               +{remaining} more
             </Link>

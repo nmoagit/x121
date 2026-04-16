@@ -30,6 +30,7 @@ import type {
   UpdateStorageBackend,
 } from "./types";
 import { BACKEND_TYPE, BACKEND_TYPE_LABELS, TIER_LABELS } from "./types";
+import { TYPO_DATA, TYPO_DATA_DANGER } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Constants (derived from shared label maps — never duplicate labels)
@@ -305,10 +306,10 @@ export function BackendFormModal({ open, onClose, backend }: BackendFormModalPro
 
               {testConnection.isSuccess && (
                 <p
-                  className={`font-mono text-xs ${
+                  className={`${TYPO_DATA} ${
                     testConnection.data.success
-                      ? "text-green-400"
-                      : "text-red-400"
+                      ? "text-[var(--color-data-green)]"
+                      : "text-[var(--color-data-red)]"
                   }`}
                 >
                   {testConnection.data.message}
@@ -318,7 +319,7 @@ export function BackendFormModal({ open, onClose, backend }: BackendFormModalPro
               )}
 
               {testConnection.isError && (
-                <p className="font-mono text-xs text-red-400">Connection test failed.</p>
+                <p className={TYPO_DATA_DANGER}>Connection test failed.</p>
               )}
             </div>
           </div>

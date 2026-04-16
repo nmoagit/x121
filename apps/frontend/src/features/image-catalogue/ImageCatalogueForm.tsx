@@ -42,7 +42,7 @@ function TabLink({ label, tab, onSwitchTab }: { label: string; tab: string; onSw
   return (
     <button
       type="button"
-      className="font-mono text-[10px] font-medium text-cyan-400 uppercase tracking-wide hover:text-cyan-300 transition-colors cursor-pointer"
+      className="font-mono text-[10px] font-medium text-[var(--color-data-cyan)] uppercase tracking-wide hover:text-cyan-300 transition-colors cursor-pointer"
       onClick={() => onSwitchTab(tab)}
     >
       {label} →
@@ -158,7 +158,7 @@ export function ImageCatalogueForm({ entry, open, onClose, onSwitchTab }: ImageC
 
           {/* Read-only config summary (edit mode only) */}
           {isEdit && entry && (
-            <div className="rounded-[var(--radius-md)] bg-[#0d1117] border border-[var(--color-border-default)]/30 p-2.5 space-y-2.5">
+            <div className="rounded-[var(--radius-md)] bg-[var(--color-surface-primary)] border border-[var(--color-border-default)]/30 p-2.5 space-y-2.5">
               {/* Tracks */}
               <div className="space-y-1">
                 <span className={TERMINAL_LABEL}>Track Flow</span>
@@ -169,7 +169,7 @@ export function ImageCatalogueForm({ entry, open, onClose, onSwitchTab }: ImageC
                     <span className={TRACK_TEXT_COLORS[outTrack.slug] ?? "text-[var(--color-text-muted)]"}>{outTrack.name}</span>
                   </div>
                 ) : (
-                  <div className="font-mono text-[10px] text-orange-400">Tracks not configured</div>
+                  <div className="font-mono text-[10px] text-[var(--color-data-orange)]">Tracks not configured</div>
                 )}
               </div>
 
@@ -179,7 +179,7 @@ export function ImageCatalogueForm({ entry, open, onClose, onSwitchTab }: ImageC
                 {wfName ? (
                   <div className="font-mono text-[10px] text-[var(--color-text-muted)]">{wfName}</div>
                 ) : (
-                  <div className="font-mono text-[10px] text-orange-400">No workflow assigned</div>
+                  <div className="font-mono text-[10px] text-[var(--color-data-orange)]">No workflow assigned</div>
                 )}
               </div>
 
@@ -189,12 +189,12 @@ export function ImageCatalogueForm({ entry, open, onClose, onSwitchTab }: ImageC
                 {entry.prompt_template || entry.negative_prompt_template ? (
                   <div className="space-y-1">
                     {entry.prompt_template && (
-                      <div className="font-mono text-[10px] text-green-400/60 border-l-2 border-l-green-500/30 pl-1.5">
+                      <div className="font-mono text-[10px] text-[var(--color-data-green)]/60 border-l-2 border-l-green-500/30 pl-1.5">
                         {entry.prompt_template.slice(0, 60)}{entry.prompt_template.length > 60 ? "…" : ""}
                       </div>
                     )}
                     {entry.negative_prompt_template && (
-                      <div className="font-mono text-[10px] text-red-400/60 border-l-2 border-l-red-500/30 pl-1.5">
+                      <div className="font-mono text-[10px] text-[var(--color-data-red)]/60 border-l-2 border-l-red-500/30 pl-1.5">
                         {entry.negative_prompt_template.slice(0, 60)}{entry.negative_prompt_template.length > 60 ? "…" : ""}
                       </div>
                     )}

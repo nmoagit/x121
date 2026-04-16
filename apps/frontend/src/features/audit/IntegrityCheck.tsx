@@ -12,6 +12,7 @@ import { Stack } from "@/components/layout";
 import { TERMINAL_PANEL, TERMINAL_HEADER, TERMINAL_HEADER_TITLE, TERMINAL_BODY } from "@/lib/ui-classes";
 import type { IntegrityCheckResult } from "./types";
 import { api } from "@/lib/api";
+import { TYPO_DATA_DANGER } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Component
@@ -71,7 +72,7 @@ export function IntegrityCheck() {
           )}
 
           {error && (
-            <div className="rounded-[var(--radius-md)] border border-red-400/30 bg-red-400/5 p-3 text-xs text-red-400 font-mono">
+            <div className={`${TYPO_DATA_DANGER} rounded-[var(--radius-md)] border border-red-400/30 bg-red-400/5 p-3`}>
               {error}
             </div>
           )}
@@ -88,8 +89,8 @@ export function IntegrityCheck() {
                 <span
                   className={`text-lg font-bold font-mono ${
                     result.chain_valid
-                      ? "text-green-400"
-                      : "text-red-400"
+                      ? "text-[var(--color-data-green)]"
+                      : "text-[var(--color-data-red)]"
                   }`}
                 >
                   {result.chain_valid ? "PASS" : "FAIL"}
@@ -99,7 +100,7 @@ export function IntegrityCheck() {
                 </span>
               </div>
               {result.first_break !== null && (
-                <p className="mt-2 text-xs text-red-400 font-mono">
+                <p className={`${TYPO_DATA_DANGER} mt-2`}>
                   Chain break detected at entry #{result.first_break}
                 </p>
               )}

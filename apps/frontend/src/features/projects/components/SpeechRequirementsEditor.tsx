@@ -12,6 +12,7 @@ import { Button, FlagIcon, Tooltip } from "@/components/primitives";
 import { TERMINAL_TH, TERMINAL_DIVIDER, TERMINAL_SELECT } from "@/lib/ui-classes";
 import type { Language, ProjectSpeechConfigEntry, SpeechType } from "@/features/avatars/types";
 import { Plus, Save, Wand2 } from "@/tokens/icons";
+import { TYPO_DATA, TYPO_DATA_CYAN } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Constants
@@ -157,7 +158,7 @@ export function SpeechRequirementsEditor({
         )}
         <div className="ml-auto flex items-center gap-[var(--spacing-2)]">
           {dirty && (
-            <span className="text-[10px] font-mono text-orange-400">unsaved</span>
+            <span className="text-[10px] font-mono text-[var(--color-data-orange)]">unsaved</span>
           )}
           <Button size="xs" icon={<Save size={12} />} onClick={handleSave} loading={saving} disabled={!dirty}>
             Save
@@ -186,7 +187,7 @@ export function SpeechRequirementsEditor({
                       <Tooltip content={`Remove ${lang.name}`}>
                         <button
                           type="button"
-                          className="text-[var(--color-text-muted)] hover:text-red-400 cursor-pointer ml-0.5"
+                          className="text-[var(--color-text-muted)] hover:text-[var(--color-data-red)] cursor-pointer ml-0.5"
                           onClick={() => removeLanguage(lang.id)}
                           aria-label={`Remove ${lang.name}`}
                         >
@@ -219,7 +220,7 @@ export function SpeechRequirementsEditor({
             <tbody>
               {sortedTypes.map((type) => (
                 <tr key={type.id} className={TERMINAL_DIVIDER}>
-                  <td className="px-2 py-1 font-mono text-xs text-[var(--color-text-primary)] uppercase tracking-wide">
+                  <td className={`px-2 py-1 ${TYPO_DATA} uppercase tracking-wide`}>
                     {type.name}
                   </td>
                   {configuredLanguages.map((lang) => {
@@ -231,7 +232,7 @@ export function SpeechRequirementsEditor({
                           min={0}
                           value={value}
                           onChange={(e) => setCellValue(type.id, lang.id, Number(e.target.value))}
-                          className="w-10 text-center bg-transparent border border-[var(--color-border-default)] rounded-[2px] px-1 py-0.5 text-xs font-mono text-cyan-400 focus:outline-none focus:ring-1 focus:ring-[var(--color-border-focus)]"
+                          className={`${TYPO_DATA_CYAN} w-10 text-center bg-transparent border border-[var(--color-border-default)] rounded-[2px] px-1 py-0.5 focus:outline-none focus:ring-1 focus:ring-[var(--color-border-focus)]`}
                         />
                       </td>
                     );

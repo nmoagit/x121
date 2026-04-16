@@ -97,7 +97,7 @@ export function GalleryCell({
 
         {/* Hover overlay with quick actions */}
         {isHovered && cell.segment_id && (
-          <div className="absolute inset-0 bg-black/50 flex items-center justify-center gap-[var(--spacing-2)]">
+          <div className="absolute inset-0 bg-[var(--color-surface-badge-overlay)] flex items-center justify-center gap-[var(--spacing-2)]">
             <button
               type="button"
               onClick={onApprove}

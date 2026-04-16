@@ -37,6 +37,7 @@ import { getStreamUrl } from "@/features/video-player/hooks/use-video-metadata";
 import { ArrowRight, ChevronLeft, ChevronRight, Film, FileText, Image, Maximize2, MessageSquare, Mic, Minimize2, Play } from "@/tokens/icons";
 
 import type { LibraryAvatar } from "./types";
+import { TYPO_DATA, TYPO_DATA_CYAN, TYPO_DATA_MUTED, TYPO_DATA_SUCCESS } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Sub-views for detail panels
@@ -197,7 +198,7 @@ export function LibraryAvatarModal({
                   type="button"
                   disabled={!onPrev}
                   onClick={onPrev}
-                  className="p-0.5 rounded-[2px] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[#161b22] disabled:opacity-30 disabled:cursor-default transition-colors"
+                  className="p-0.5 rounded-[2px] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-secondary)] disabled:opacity-30 disabled:cursor-default transition-colors"
                   aria-label="Previous model"
                 >
                   <ChevronLeft size={16} />
@@ -206,14 +207,14 @@ export function LibraryAvatarModal({
                   type="button"
                   disabled={!onNext}
                   onClick={onNext}
-                  className="p-0.5 rounded-[2px] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[#161b22] disabled:opacity-30 disabled:cursor-default transition-colors"
+                  className="p-0.5 rounded-[2px] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-secondary)] disabled:opacity-30 disabled:cursor-default transition-colors"
                   aria-label="Next model"
                 >
                   <ChevronRight size={16} />
                 </button>
               </div>
             )}
-            <p className="font-mono text-xs text-[var(--color-text-muted)]">
+            <p className={TYPO_DATA_MUTED}>
               {avatar.project_name}
               {avatar.group_name && ` / ${avatar.group_name}`}
             </p>
@@ -240,10 +241,10 @@ export function LibraryAvatarModal({
             {/* Seed / Track Images */}
             {seedImages.length > 0 && (
               <section>
-                <h3 className="flex items-center gap-2 font-mono text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide mb-2">
+                <h3 className={`flex items-center gap-2 ${TYPO_DATA} font-medium text-[var(--color-text-muted)] uppercase tracking-wide mb-2`}>
                   <Image size={14} aria-hidden />
                   seed images
-                  <span className="text-cyan-400">{seedImages.length}</span>
+                  <span className="text-[var(--color-data-cyan)]">{seedImages.length}</span>
                 </h3>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                   {seedImages.map((v, i) => (
@@ -261,7 +262,7 @@ export function LibraryAvatarModal({
                       }
                       className={cn(
                         "relative aspect-square rounded-[var(--radius-md)] overflow-hidden",
-                        "bg-[#161b22] cursor-pointer",
+                        "bg-[var(--color-surface-secondary)] cursor-pointer",
                         "ring-1 ring-[var(--color-border-default)]",
                         "hover:ring-[var(--color-border-accent)] transition-all",
                       )}
@@ -274,8 +275,8 @@ export function LibraryAvatarModal({
                         loading="lazy"
                       />
                       <span className={cn(
-                        "absolute bottom-0 inset-x-0 bg-black/60 font-mono text-[10px] px-1.5 py-0.5 truncate",
-                        TRACK_TEXT_COLORS[(v.variant_type ?? "").toLowerCase()] ?? "text-cyan-400",
+                        "absolute bottom-0 inset-x-0 bg-[var(--color-surface-badge-overlay)] font-mono text-[10px] px-1.5 py-0.5 truncate",
+                        TRACK_TEXT_COLORS[(v.variant_type ?? "").toLowerCase()] ?? "text-[var(--color-data-cyan)]",
                       )}>
                         {(v.variant_type || v.variant_label || "image").toLowerCase()}
                       </span>
@@ -288,10 +289,10 @@ export function LibraryAvatarModal({
             {/* Scene Videos */}
             {scenesWithVideo.length > 0 && (
               <section>
-                <h3 className="flex items-center gap-2 font-mono text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide mb-2">
+                <h3 className={`flex items-center gap-2 ${TYPO_DATA} font-medium text-[var(--color-text-muted)] uppercase tracking-wide mb-2`}>
                   <Film size={14} aria-hidden />
                   scenes
-                  <span className="text-cyan-400">{scenesWithVideo.length}</span>
+                  <span className="text-[var(--color-data-cyan)]">{scenesWithVideo.length}</span>
                 </h3>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                   {scenesWithVideo.map((s, i) => {
@@ -312,7 +313,7 @@ export function LibraryAvatarModal({
                         }
                         className={cn(
                           "group/play relative aspect-video rounded-[var(--radius-md)] overflow-hidden",
-                          "bg-[#161b22] cursor-pointer",
+                          "bg-[var(--color-surface-secondary)] cursor-pointer",
                           "ring-1 ring-[var(--color-border-default)]",
                           "hover:ring-[var(--color-border-accent)] transition-all",
                         )}
@@ -321,7 +322,7 @@ export function LibraryAvatarModal({
                         <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover/play:opacity-100 transition-opacity">
                           <Play size={24} className="text-white" />
                         </div>
-                        <span className="absolute bottom-0 inset-x-0 bg-black/60 font-mono text-[10px] px-1.5 py-0.5 truncate">
+                        <span className="absolute bottom-0 inset-x-0 bg-[var(--color-surface-badge-overlay)] font-mono text-[10px] px-1.5 py-0.5 truncate">
                           <span className="text-[var(--color-text-primary)]">{info.sceneName.toLowerCase()}</span>
                           {info.trackName && (
                             <span className={trackColor}> {info.trackName.toLowerCase()}</span>
@@ -337,7 +338,7 @@ export function LibraryAvatarModal({
             {/* Metadata JSON */}
             {hasMetadata && (
               <section>
-                <h3 className="flex items-center gap-2 font-mono text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide mb-2">
+                <h3 className={`flex items-center gap-2 ${TYPO_DATA} font-medium text-[var(--color-text-muted)] uppercase tracking-wide mb-2`}>
                   <FileText size={16} aria-hidden />
                   Metadata
                 </h3>
@@ -346,7 +347,7 @@ export function LibraryAvatarModal({
                   onClick={() => setDetail({ kind: "json", data: metadata })}
                   className={cn(
                     "w-full text-left p-3 rounded-[var(--radius-md)]",
-                    "bg-[#161b22] cursor-pointer",
+                    "bg-[var(--color-surface-secondary)] cursor-pointer",
                     "ring-1 ring-[var(--color-border-default)]",
                     "hover:ring-[var(--color-border-accent)] transition-all",
                     "text-xs text-[var(--color-text-muted)] font-mono",
@@ -362,14 +363,14 @@ export function LibraryAvatarModal({
             {/* Speech */}
             {speechGroups.size > 0 && (
               <section>
-                <h3 className="flex items-center gap-2 font-mono text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide mb-2">
+                <h3 className={`flex items-center gap-2 ${TYPO_DATA} font-medium text-[var(--color-text-muted)] uppercase tracking-wide mb-2`}>
                   <MessageSquare size={16} aria-hidden />
                   Speech
                   <span className="font-mono text-[10px] text-[var(--color-text-muted)]">{speeches?.length ?? 0}</span>
                 </h3>
                 <div className={cn(TERMINAL_PANEL, "overflow-hidden")}>
                   <table className="w-full text-xs">
-                    <thead className="bg-[#161b22]">
+                    <thead className="bg-[var(--color-surface-secondary)]">
                       <tr>
                         <th className={cn(TERMINAL_TH, "px-3 py-1.5")}>Type</th>
                         <th className={cn(TERMINAL_TH, "px-3 py-1.5")}>Lang</th>
@@ -391,14 +392,14 @@ export function LibraryAvatarModal({
                             entries: g.entries,
                           })}
                         >
-                          <td className="px-3 py-1.5 font-mono text-xs text-cyan-400">{g.typeName}</td>
+                          <td className={`${TYPO_DATA_CYAN} px-3 py-1.5`}>{g.typeName}</td>
                           <td className="px-3 py-1.5">
                             <span className="inline-flex items-center gap-1">
                               <FlagIcon flagCode={g.flagCode} size={10} />
                               <span className="font-mono text-[10px] text-[var(--color-text-muted)] uppercase">{g.langCode}</span>
                             </span>
                           </td>
-                          <td className="px-3 py-1.5 text-right font-mono text-xs text-[var(--color-text-muted)]">{g.entries.length}</td>
+                          <td className={`px-3 py-1.5 text-right ${TYPO_DATA_MUTED}`}>{g.entries.length}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -410,14 +411,14 @@ export function LibraryAvatarModal({
             {/* Voice ID */}
             {voiceId && (
               <section>
-                <h3 className="flex items-center gap-2 font-mono text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide mb-2">
+                <h3 className={`flex items-center gap-2 ${TYPO_DATA} font-medium text-[var(--color-text-muted)] uppercase tracking-wide mb-2`}>
                   <Mic size={16} aria-hidden />
                   Voice ID
                 </h3>
                 <div className="flex items-center gap-[var(--spacing-2)]">
-                  <span className="font-mono text-xs text-green-400">Configured</span>
+                  <span className={TYPO_DATA_SUCCESS}>Configured</span>
                   <span className="opacity-30">|</span>
-                  <span className="font-mono text-xs text-[var(--color-text-muted)] truncate">{voiceId}</span>
+                  <span className={`${TYPO_DATA_MUTED} truncate`}>{voiceId}</span>
                 </div>
               </section>
             )}
@@ -514,7 +515,7 @@ function DetailOverlay({
               </div>
               <button
                 type="button"
-                className="absolute top-2 right-2 z-20 p-1.5 rounded bg-black/50 text-white/70 hover:text-white hover:bg-black/70 opacity-0 group-hover/img:opacity-100 transition-all"
+                className="absolute top-2 right-2 z-20 p-1.5 rounded bg-[var(--color-surface-badge-overlay)] text-white/70 hover:text-white hover:bg-[var(--color-surface-badge-overlay)] opacity-0 group-hover/img:opacity-100 transition-all"
                 onClick={() => setExpanded((v) => !v)}
                 title={expanded ? "Compact" : "Expand"}
               >
@@ -528,7 +529,7 @@ function DetailOverlay({
                   type="button"
                   disabled={!onPrev}
                   onClick={onPrev}
-                  className="p-1 rounded text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[#161b22] transition-colors disabled:opacity-20 disabled:pointer-events-none"
+                  className="p-1 rounded text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-secondary)] transition-colors disabled:opacity-20 disabled:pointer-events-none"
                   aria-label="Previous image"
                 >
                   <ChevronLeft size={16} />
@@ -537,7 +538,7 @@ function DetailOverlay({
                   type="button"
                   disabled={!onNext}
                   onClick={onNext}
-                  className="p-1 rounded text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[#161b22] transition-colors disabled:opacity-20 disabled:pointer-events-none"
+                  className="p-1 rounded text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-secondary)] transition-colors disabled:opacity-20 disabled:pointer-events-none"
                   aria-label="Next image"
                 >
                   <ChevronRight size={16} />
@@ -560,7 +561,7 @@ function DetailOverlay({
               />
               <button
                 type="button"
-                className="absolute right-2 top-2 z-20 p-1.5 rounded bg-black/50 text-white/70 hover:text-white hover:bg-black/70 opacity-0 group-hover/video:opacity-100 transition-all"
+                className="absolute right-2 top-2 z-20 p-1.5 rounded bg-[var(--color-surface-badge-overlay)] text-white/70 hover:text-white hover:bg-[var(--color-surface-badge-overlay)] opacity-0 group-hover/video:opacity-100 transition-all"
                 onClick={() => setExpanded((v) => !v)}
                 title={expanded ? "Compact" : "Expand"}
               >
@@ -574,7 +575,7 @@ function DetailOverlay({
                   type="button"
                   disabled={!onPrev}
                   onClick={onPrev}
-                  className="p-1 rounded text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[#161b22] transition-colors disabled:opacity-20 disabled:pointer-events-none"
+                  className="p-1 rounded text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-secondary)] transition-colors disabled:opacity-20 disabled:pointer-events-none"
                   aria-label="Previous video"
                 >
                   <ChevronLeft size={16} />
@@ -583,7 +584,7 @@ function DetailOverlay({
                   type="button"
                   disabled={!onNext}
                   onClick={onNext}
-                  className="p-1 rounded text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[#161b22] transition-colors disabled:opacity-20 disabled:pointer-events-none"
+                  className="p-1 rounded text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-secondary)] transition-colors disabled:opacity-20 disabled:pointer-events-none"
                   aria-label="Next video"
                 >
                   <ChevronRight size={16} />

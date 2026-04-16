@@ -25,6 +25,7 @@ import {
   matchesToggle,
   type ToggleKey,
 } from "./ScanDirectoryPreview";
+import { TYPO_DATA_CYAN } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Props
@@ -211,7 +212,7 @@ export function ScanDirectoryDialog({
 
         {/* Import progress */}
         {importMut.isPending && (
-          <div className="font-mono text-xs text-cyan-400 animate-pulse">Importing...</div>
+          <div className={`${TYPO_DATA_CYAN} animate-pulse`}>Importing...</div>
         )}
 
         {/* Results */}

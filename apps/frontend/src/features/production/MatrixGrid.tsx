@@ -20,6 +20,7 @@ import {
 } from "./types";
 import type { BadgeVariant } from "@/components";
 import type { CellStatus, ProductionRunCell } from "./types";
+import { TYPO_DATA } from "@/lib/typography-tokens";
 
 /* Badge-like label without rounding, sized for compact matrix cells. */
 const MATRIX_BADGE_CLASSES: Record<BadgeVariant, string> = {
@@ -150,11 +151,11 @@ export function MatrixGrid({
   const hasCharActions = !!(onCancelAvatar || onDeleteAvatar);
 
   return (
-    <div data-testid="matrix-grid" className="overflow-auto rounded-[var(--radius-lg)] border border-[var(--color-border-default)] bg-[#0d1117]">
+    <div data-testid="matrix-grid" className="overflow-auto rounded-[var(--radius-lg)] border border-[var(--color-border-default)] bg-[var(--color-surface-primary)]">
       <table className="border-collapse text-sm">
         <thead>
-          <tr className="bg-[#161b22]">
-            <th className={`sticky left-0 z-10 bg-[#161b22] p-2 whitespace-nowrap ${TERMINAL_TH}`}>
+          <tr className="bg-[var(--color-surface-secondary)]">
+            <th className={`sticky left-0 z-10 bg-[var(--color-surface-secondary)] p-2 whitespace-nowrap ${TERMINAL_TH}`}>
               Avatar
             </th>
             {columns.map((col) => (
@@ -180,7 +181,7 @@ export function MatrixGrid({
           <tbody>
             {avatars.map((char) => (
               <tr key={char.id} className={`${TERMINAL_DIVIDER} ${TERMINAL_ROW_HOVER}`}>
-                <td className="sticky left-0 z-10 bg-[#0d1117] p-0 font-mono text-xs text-[var(--color-text-primary)] whitespace-nowrap">
+                <td className={`sticky left-0 z-10 bg-[var(--color-surface-primary)] p-0 ${TYPO_DATA} whitespace-nowrap`}>
                   <div
                     onMouseEnter={() => setHoveredCharId(char.id)}
                     onMouseLeave={() => setHoveredCharId(null)}
@@ -210,7 +211,7 @@ export function MatrixGrid({
                           <button
                             type="button"
                             style={{ paddingLeft: 2 }}
-                            className="text-[10px] font-medium text-red-400 hover:text-red-300"
+                            className="text-[10px] font-medium text-[var(--color-data-red)] hover:text-red-300"
                             onClick={() => onDeleteAvatar(char.id)}
                           >
                             <span className="inline-block rounded bg-[var(--color-surface-primary)] px-1.5 py-0.5 shadow border border-[var(--color-border-default)]">
@@ -305,7 +306,7 @@ export function MatrixGrid({
                                 <button
                                   type="button"
                                   style={{ paddingLeft: 2 }}
-                                  className="text-[10px] font-medium text-red-400 hover:text-red-300"
+                                  className="text-[10px] font-medium text-[var(--color-data-red)] hover:text-red-300"
                                   onClick={(e) => { e.stopPropagation(); onDeleteCell(cell.id); }}
                                 >
                                   <span className="inline-block rounded bg-[var(--color-surface-primary)] px-1.5 py-0.5 shadow border border-[var(--color-border-default)]">

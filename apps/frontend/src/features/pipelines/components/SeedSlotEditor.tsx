@@ -11,6 +11,7 @@ import { Plus, Trash2 } from "@/tokens/icons";
 import { ICON_ACTION_BTN_DANGER, TERMINAL_DIVIDER, TERMINAL_LABEL } from "@/lib/ui-classes";
 import { cn } from "@/lib/cn";
 import type { SeedSlot } from "../types";
+import { TYPO_DATA_MUTED } from "@/lib/typography-tokens";
 
 interface SeedSlotEditorProps {
   slots: SeedSlot[];
@@ -40,7 +41,7 @@ export function SeedSlotEditor({ slots, onChange }: SeedSlotEditorProps) {
       </div>
 
       {slots.length === 0 && (
-        <p className="font-mono text-xs text-[var(--color-text-muted)]">
+        <p className={TYPO_DATA_MUTED}>
           No seed slots defined. Add slots to define what images are required per avatar.
         </p>
       )}

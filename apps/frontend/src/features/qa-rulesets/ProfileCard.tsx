@@ -9,6 +9,7 @@ import { Badge, Button } from "@/components/primitives";
 import { Card, CardBody } from "@/components/composite";
 
 import type { QaProfile } from "./types";
+import { TYPO_CAPTION } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Props
@@ -83,7 +84,7 @@ export function ProfileCard({ profile, onEdit, onDelete }: ProfileCardProps) {
         {/* Threshold summary */}
         <p
           data-testid={`profile-threshold-count-${profile.id}`}
-          className="text-xs text-[var(--color-text-secondary)]"
+          className={TYPO_CAPTION}
         >
           {thresholdCount} {thresholdCount === 1 ? "metric" : "metrics"}{" "}
           configured

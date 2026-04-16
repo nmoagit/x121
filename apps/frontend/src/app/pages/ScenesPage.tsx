@@ -29,6 +29,7 @@ import { TagFilter } from "@/components/domain/TagFilter";
 import { useBulkSelection } from "@/hooks/useBulkSelection";
 import { useBulkOperations } from "@/hooks/useBulkOperations";
 import { Ban, CheckCircle, FolderSearch, Layers, LayoutGrid, List, Play, XCircle } from "@/tokens/icons";
+import { TYPO_DATA } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Read-only clip list item
@@ -83,7 +84,7 @@ function BrowseClipItem({
   return (
     <div
       ref={ref}
-      className={`rounded-[var(--radius-lg)] border transition-colors bg-[#0d1117] hover:bg-[#161b22] ${
+      className={`rounded-[var(--radius-lg)] border transition-colors bg-[var(--color-surface-primary)] hover:bg-[var(--color-surface-secondary)] ${
         selected ? "ring-2 ring-blue-500/50" : ""
       } ${
         clip.qa_status === "approved"
@@ -101,14 +102,14 @@ function BrowseClipItem({
 
         {/* Clickable video thumbnail */}
         {isPurgedClip(clip) ? (
-          <div className="relative flex h-14 w-20 shrink-0 items-center justify-center rounded bg-[#161b22]">
+          <div className="relative flex h-14 w-20 shrink-0 items-center justify-center rounded bg-[var(--color-surface-secondary)]">
             <Ban size={18} className="text-[var(--color-text-muted)]" />
           </div>
         ) : (
           <button
             type="button"
             onClick={onPlay}
-            className="group/play relative h-14 w-20 shrink-0 rounded overflow-hidden bg-[#161b22] cursor-pointer"
+            className="group/play relative h-14 w-20 shrink-0 rounded overflow-hidden bg-[var(--color-surface-secondary)] cursor-pointer"
           >
             {videoReady ? (
               <video
@@ -132,7 +133,7 @@ function BrowseClipItem({
         <button
           type="button"
           onClick={onNavigate}
-          className="flex min-w-0 flex-1 flex-col gap-0.5 text-left cursor-pointer font-mono text-xs"
+          className={`flex min-w-0 flex-1 flex-col gap-0.5 text-left cursor-pointer ${TYPO_DATA}`}
         >
           <div className="flex items-center gap-2">
             <span className="font-medium text-[var(--color-text-primary)]">
@@ -140,20 +141,20 @@ function BrowseClipItem({
             </span>
             <span className="text-[var(--color-text-muted)] uppercase">{clip.scene_type_name}</span>
             <span className={TRACK_TEXT_COLORS[clip.track_name.toLowerCase()] ?? "text-[var(--color-text-muted)]"}>{clip.track_name}</span>
-            {clip.clip_index != null && <span className="text-cyan-400">#{clip.clip_index}</span>}
+            {clip.clip_index != null && <span className="text-[var(--color-data-cyan)]">#{clip.clip_index}</span>}
           </div>
           <div className="flex items-center gap-2 text-[10px] text-[var(--color-text-muted)]">
-            <span className="text-cyan-400 font-semibold">v{clip.version_number}</span>
+            <span className="text-[var(--color-data-cyan)] font-semibold">v{clip.version_number}</span>
             <span className="opacity-30">|</span>
             <span>{sourceLabel}</span>
-            {clip.is_final && <><span className="opacity-30">|</span><span className="text-green-400">final</span></>}
+            {clip.is_final && <><span className="opacity-30">|</span><span className="text-[var(--color-data-green)]">final</span></>}
             {clip.qa_status !== "pending" && (
               <><span className="opacity-30">|</span><span className={TERMINAL_STATUS_COLORS[clip.qa_status] ?? "text-[var(--color-text-muted)]"}>{clip.qa_status}</span></>
             )}
-            {isPurgedClip(clip) && <><span className="opacity-30">|</span><span className="text-orange-400">purged</span></>}
-            {!isPurgedClip(clip) && isEmptyClip(clip) && <><span className="opacity-30">|</span><span className="text-orange-400">empty</span></>}
-            {clip.annotation_count > 0 && <><span className="opacity-30">|</span><span className="text-orange-400">{clip.annotation_count} annotated</span></>}
-            {clip.parent_version_id != null && <><span className="opacity-30">|</span><span className="text-violet-400">derived</span></>}
+            {isPurgedClip(clip) && <><span className="opacity-30">|</span><span className="text-[var(--color-data-orange)]">purged</span></>}
+            {!isPurgedClip(clip) && isEmptyClip(clip) && <><span className="opacity-30">|</span><span className="text-[var(--color-data-orange)]">empty</span></>}
+            {clip.annotation_count > 0 && <><span className="opacity-30">|</span><span className="text-[var(--color-data-orange)]">{clip.annotation_count} annotated</span></>}
+            {clip.parent_version_id != null && <><span className="opacity-30">|</span><span className="text-[var(--color-data-violet)]">derived</span></>}
             <span className="opacity-30">|</span>
             <span>{clip.file_size_bytes != null ? formatBytes(clip.file_size_bytes) : "\u2014"}</span>
             <span className="opacity-30">|</span>
@@ -170,7 +171,7 @@ function BrowseClipItem({
           <button
             type="button"
             onClick={onApprove}
-            className={`p-1 rounded transition-colors ${clip.qa_status === "approved" ? "text-green-400" : "text-[var(--color-text-muted)] hover:text-green-400"}`}
+            className={`p-1 rounded transition-colors ${clip.qa_status === "approved" ? "text-[var(--color-data-green)]" : "text-[var(--color-text-muted)] hover:text-[var(--color-data-green)]"}`}
             title={clip.qa_status === "approved" ? "Approved" : "Approve"}
           >
             <CheckCircle size={16} />
@@ -178,7 +179,7 @@ function BrowseClipItem({
           <button
             type="button"
             onClick={onReject}
-            className={`p-1 rounded transition-colors ${clip.qa_status === "rejected" ? "text-red-400" : "text-[var(--color-text-muted)] hover:text-red-400"}`}
+            className={`p-1 rounded transition-colors ${clip.qa_status === "rejected" ? "text-[var(--color-data-red)]" : "text-[var(--color-text-muted)] hover:text-[var(--color-data-red)]"}`}
             title={clip.qa_status === "rejected" ? "Rejected" : "Reject"}
           >
             <XCircle size={16} />

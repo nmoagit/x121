@@ -22,6 +22,7 @@ import { useProjects } from "@/features/projects/hooks/use-projects";
 import { useAuthStore } from "@/stores/auth-store";
 import { useSetPageTitle } from "@/hooks/useSetPageTitle";
 import { Ban, CheckCircle, Play } from "@/tokens/icons";
+import { TYPO_DATA, TYPO_DATA_CYAN, TYPO_DATA_MUTED, TYPO_DATA_WARNING } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Constants
@@ -112,33 +113,33 @@ function ReviewClipRow({
           className="flex min-w-0 flex-1 flex-col gap-1 text-left cursor-pointer"
         >
           <div className="flex items-center gap-2">
-            <span className="font-mono text-xs font-medium text-[var(--color-text-primary)]">
+            <span className={`${TYPO_DATA} font-medium text-[var(--color-text-primary)]`}>
               {clip.avatar_name}
             </span>
-            <span className="font-mono text-xs text-[var(--color-text-muted)]">
+            <span className={TYPO_DATA_MUTED}>
               {clip.scene_type_name}
             </span>
             <span className="opacity-30">|</span>
-            <span className="font-mono text-xs text-[var(--color-text-muted)]">
+            <span className={TYPO_DATA_MUTED}>
               {clip.track_name}
             </span>
             <span className="opacity-30">|</span>
-            <span className="font-mono text-xs text-cyan-400">
+            <span className={TYPO_DATA_CYAN}>
               v{clip.version_number}
             </span>
           </div>
           <div className="flex items-center gap-2">
-            <span className={`font-mono text-xs uppercase tracking-wide ${TERMINAL_STATUS_COLORS[clip.qa_status ?? "pending"] ?? "text-[var(--color-text-muted)]"}`}>
+            <span className={`${TYPO_DATA} uppercase tracking-wide ${TERMINAL_STATUS_COLORS[clip.qa_status ?? "pending"] ?? "text-[var(--color-text-muted)]"}`}>
               {isApproved ? "Approved" : isRejected ? "Rejected" : "Pending"}
             </span>
             {isPurgedClip(clip) && (
-              <span className="font-mono text-xs uppercase tracking-wide text-orange-400">Purged</span>
+              <span className={`${TYPO_DATA_WARNING} uppercase tracking-wide`}>Purged</span>
             )}
             {!isPurgedClip(clip) && isEmptyClip(clip) && (
-              <span className="font-mono text-xs uppercase tracking-wide text-orange-400">Empty file</span>
+              <span className={`${TYPO_DATA_WARNING} uppercase tracking-wide`}>Empty file</span>
             )}
           </div>
-          <div className="flex items-center gap-2 font-mono text-xs text-[var(--color-text-muted)]">
+          <div className={`flex items-center gap-2 ${TYPO_DATA_MUTED}`}>
             <span>{clip.project_name}</span>
             <span className="opacity-30">|</span>
             <span>{formatDateTime(clip.created_at)}</span>

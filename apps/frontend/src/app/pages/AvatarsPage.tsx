@@ -70,6 +70,7 @@ import {
   Upload,
   User,
 } from "@/tokens/icons";
+import { TYPO_DATA_CYAN, TYPO_DATA_MUTED } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Constants
@@ -1075,7 +1076,7 @@ export function AvatarsPage() {
               const folderName = pendingFolderDrop.detectedProjectName!;
               const match = projects?.find((p) => p.name.toLowerCase() === folderName.toLowerCase());
               return (
-                <p className={`font-mono text-xs border-l-2 pl-2 py-0.5 ${match ? "border-green-400 text-green-400" : "border-orange-400 text-orange-400"}`}>
+                <p className={`font-mono text-xs border-l-2 pl-2 py-0.5 ${match ? "border-green-400 text-[var(--color-data-green)]" : "border-orange-400 text-[var(--color-data-orange)]"}`}>
                   {match
                     ? `folder "${folderName}" matches project "${match.name}"`
                     : `folder "${folderName}" — no matching project`}
@@ -1319,7 +1320,7 @@ export function AvatarsPage() {
                   </p>
                   <div className="max-h-80 overflow-y-auto rounded border border-[var(--color-border-default)]">
                     <table className="w-full text-xs">
-                      <thead className="sticky top-0 bg-[#161b22]">
+                      <thead className="sticky top-0 bg-[var(--color-surface-secondary)]">
                         <tr>
                           <th className={cn(TERMINAL_TH, "px-2 py-1.5")}>Avatar</th>
                           <th className={cn(TERMINAL_TH, "px-2 py-1.5")}>Speech Type</th>
@@ -1331,12 +1332,12 @@ export function AvatarsPage() {
                       <tbody>
                         {rows.map((row, i) => (
                           <tr key={i} className={cn(TERMINAL_DIVIDER, TERMINAL_ROW_HOVER)}>
-                            <td className="px-2 py-1 font-mono text-xs text-cyan-400">{row.charSlug}</td>
-                            <td className="px-2 py-1 font-mono text-xs text-[var(--color-text-muted)]">{row.type}</td>
-                            <td className="px-2 py-1 font-mono text-xs text-[var(--color-text-muted)]">{row.lang}</td>
-                            <td className="px-2 py-1 text-right font-mono text-xs text-[var(--color-text-muted)]">{row.count}</td>
+                            <td className={`${TYPO_DATA_CYAN} px-2 py-1`}>{row.charSlug}</td>
+                            <td className={`px-2 py-1 ${TYPO_DATA_MUTED}`}>{row.type}</td>
+                            <td className={`px-2 py-1 ${TYPO_DATA_MUTED}`}>{row.lang}</td>
+                            <td className={`px-2 py-1 text-right ${TYPO_DATA_MUTED}`}>{row.count}</td>
                             <td className="px-2 py-1 text-center">
-                              <span className={cn("font-mono text-xs", row.matched ? "text-green-400" : "text-orange-400")}>
+                              <span className={cn("font-mono text-xs", row.matched ? "text-[var(--color-data-green)]" : "text-[var(--color-data-orange)]")}>
                                 {row.matched ? "Yes" : "No"}
                               </span>
                             </td>

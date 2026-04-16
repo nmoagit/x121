@@ -9,6 +9,7 @@ import { cn } from "@/lib/cn";
 import { CATALOGUE_SOURCE_CONFIG } from "@/lib/setting-source";
 
 import type { EffectiveSceneSetting } from "./types";
+import { TYPO_DATA } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Source mapping
@@ -33,7 +34,7 @@ export function SourceBadge({ source }: SourceBadgeProps) {
   const config = CATALOGUE_SOURCE_CONFIG[source] ?? { label: source, color: "text-[var(--color-text-muted)]" };
 
   return (
-    <span className={cn("font-mono text-xs", config.color)}>
+    <span className={cn(TYPO_DATA, config.color)}>
       {config.label}
     </span>
   );

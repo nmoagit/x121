@@ -5,6 +5,8 @@
  * scene-type overrides, effective thresholds, and A/B test results.
  */
 
+import { TYPO_SECTION_TITLE } from "@/lib/typography-tokens";
+
 /* --------------------------------------------------------------------------
    Metric thresholds
    -------------------------------------------------------------------------- */
@@ -106,5 +108,4 @@ export {
 export const EMPTY_THRESHOLD: MetricThreshold = { warn: 0, fail: 0 };
 
 /** Shared class string for section headings within QA ruleset panels. */
-export const SECTION_HEADING_CLASSES =
-  "text-base font-semibold text-[var(--color-text-primary)]";
+export const SECTION_HEADING_CLASSES = TYPO_SECTION_TITLE;

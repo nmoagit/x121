@@ -5,6 +5,7 @@ import { formatBytes } from "@/lib/format";
 import { FileVideo, Upload } from "@/tokens/icons";
 import { useCallback, useRef, useState } from "react";
 import { useImportClip } from "./hooks/useClipManagement";
+import { TYPO_DATA, TYPO_DATA_DANGER, TYPO_DATA_MUTED } from "@/lib/typography-tokens";
 
 interface ImportClipDialogProps {
   isOpen: boolean;
@@ -104,20 +105,20 @@ export function ImportClipDialog({ isOpen, onClose, sceneId, onSuccess }: Import
           {file ? (
             <>
               <FileVideo size={32} className="text-[var(--color-action-primary)]" />
-              <span className="font-mono text-xs font-medium text-[var(--color-text-primary)]">
+              <span className={`${TYPO_DATA} font-medium text-[var(--color-text-primary)]`}>
                 {file.name}
               </span>
-              <span className="font-mono text-xs text-[var(--color-text-muted)]">
+              <span className={TYPO_DATA_MUTED}>
                 {formatBytes(file.size)}
               </span>
             </>
           ) : (
             <>
               <Upload size={32} className="text-[var(--color-text-muted)]" />
-              <span className="font-mono text-xs text-[var(--color-text-secondary)]">
+              <span className={TYPO_DATA_MUTED}>
                 Drag & drop a video file here
               </span>
-              <span className="font-mono text-xs text-[var(--color-text-muted)]">
+              <span className={TYPO_DATA_MUTED}>
                 Accepted: .mp4, .webm, .mov (max 500 MB)
               </span>
             </>
@@ -141,11 +142,11 @@ export function ImportClipDialog({ isOpen, onClose, sceneId, onSuccess }: Import
           </Button>
         </div>
 
-        {error && <p className="font-mono text-xs text-red-400">{error}</p>}
+        {error && <p className={TYPO_DATA_DANGER}>{error}</p>}
 
         {/* Notes */}
         <div className="flex flex-col gap-1.5">
-          <span className="font-mono text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide">
+          <span className={`${TYPO_DATA} font-medium text-[var(--color-text-muted)] uppercase tracking-wide`}>
             Notes (optional)
           </span>
           <textarea
@@ -153,12 +154,12 @@ export function ImportClipDialog({ isOpen, onClose, sceneId, onSuccess }: Import
             onChange={(e) => setNotes(e.target.value)}
             placeholder="Describe this clip..."
             rows={2}
-            className="w-full rounded-[var(--radius-md)] border p-2 font-mono text-xs
+            className={`w-full rounded-[var(--radius-md)] border p-2
               border-[var(--color-border-default)]
-              bg-[#0d1117]
-              text-[var(--color-text-primary)]
+              bg-[var(--color-surface-primary)]
+              ${TYPO_DATA}
               placeholder:text-[var(--color-text-muted)]
-              focus:outline-none focus:ring-2 focus:ring-offset-0 focus:ring-[var(--color-border-focus)]"
+              focus:outline-none focus:ring-2 focus:ring-offset-0 focus:ring-[var(--color-border-focus)]`}
           />
         </div>
 

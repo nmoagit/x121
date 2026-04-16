@@ -12,6 +12,7 @@ import { Card, CardBody, CardHeader } from "@/components/composite";
 import { Plus, Trash2 } from "@/tokens/icons";
 import { iconSizes } from "@/tokens/icons";
 import { formatDateTime } from "@/lib/format";
+import { TYPO_SECTION_TITLE } from "@/lib/typography-tokens";
 
 import {
   useAssignments,
@@ -61,7 +62,7 @@ export function AssignmentManager({ projectId }: AssignmentManagerProps) {
     <div data-testid="assignment-manager" className="flex flex-col gap-4">
       <Card>
         <CardHeader>
-          <h3 className="text-base font-semibold text-[var(--color-text-primary)]">
+          <h3 className={TYPO_SECTION_TITLE}>
             Review Assignments
           </h3>
         </CardHeader>
@@ -170,7 +171,7 @@ function CreateAssignmentForm({ projectId }: { projectId: number }) {
   return (
     <Card>
       <CardHeader>
-        <h3 className="text-base font-semibold text-[var(--color-text-primary)]">
+        <h3 className={TYPO_SECTION_TITLE}>
           New Assignment
         </h3>
       </CardHeader>

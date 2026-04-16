@@ -12,6 +12,7 @@ import { CATALOGUE_SOURCE_COLORS, CATALOGUE_SOURCE_LABELS } from "@/lib/setting-
 import { TRACK_TEXT_COLORS } from "@/lib/ui-classes";
 
 import type { ExpandedSceneSetting } from "./types";
+import { TYPO_DATA } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Props
@@ -35,7 +36,7 @@ export function SceneSettingRow({ row, onToggle, isPending, hasVideo, actions, h
   return (
     <tr className="border-b border-[var(--color-border-default)]/30 last:border-b-0">
       {/* Scene name */}
-      <td className="px-3 py-1.5 font-mono text-xs">
+      <td className={`px-3 py-1.5 ${TYPO_DATA}`}>
         {row.isFirstInGroup ? (
           <span className="text-[var(--color-text-primary)] uppercase tracking-wide">{row.name}</span>
         ) : (
@@ -45,7 +46,7 @@ export function SceneSettingRow({ row, onToggle, isPending, hasVideo, actions, h
 
       {/* Track — hidden for single-track pipelines */}
       {!hideTracks && (
-        <td className="px-3 py-1.5 font-mono text-xs">
+        <td className={`px-3 py-1.5 ${TYPO_DATA}`}>
           <span className="inline-flex items-center gap-1">
             {row.track_slug ? (
               <span className={TRACK_TEXT_COLORS[row.track_slug] ?? "text-[var(--color-text-primary)]"}>{row.track_name}</span>
@@ -53,7 +54,7 @@ export function SceneSettingRow({ row, onToggle, isPending, hasVideo, actions, h
               <span className="text-[var(--color-text-muted)]">-</span>
             )}
             {row.has_clothes_off_transition && (
-              <span className="text-orange-400">clothes off</span>
+              <span className="text-[var(--color-data-orange)]">clothes off</span>
             )}
           </span>
         </td>
@@ -70,7 +71,7 @@ export function SceneSettingRow({ row, onToggle, isPending, hasVideo, actions, h
       </td>
 
       {/* Source */}
-      <td className="px-3 py-1.5 font-mono text-xs">
+      <td className={`px-3 py-1.5 ${TYPO_DATA}`}>
         <span className={CATALOGUE_SOURCE_COLORS[row.source] ?? "text-[var(--color-text-muted)]"}>
           {CATALOGUE_SOURCE_LABELS[row.source] ?? row.source}
         </span>
@@ -83,7 +84,7 @@ export function SceneSettingRow({ row, onToggle, isPending, hasVideo, actions, h
             <span className="inline-flex items-center justify-center">
               <Film
                 size={14}
-                className={hasVideo ? "text-green-400" : "text-[var(--color-text-muted)] opacity-40"}
+                className={hasVideo ? "text-[var(--color-data-green)]" : "text-[var(--color-text-muted)] opacity-40"}
               />
             </span>
           </Tooltip>

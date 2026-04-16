@@ -7,6 +7,7 @@
 
 import { useState } from "react";
 import { X } from "@/tokens/icons";
+import { TYPO_CAPTION } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Component
@@ -38,7 +39,7 @@ export function LowConfidenceWarning({
         <p className="text-sm font-medium text-[var(--color-action-warning)]">
           Low Confidence Detection
         </p>
-        <p className="mt-1 text-xs text-[var(--color-text-secondary)]">
+        <p className={`mt-1 ${TYPO_CAPTION}`}>
           Face detection confidence is{" "}
           <strong>{(confidence * 100).toFixed(1)}%</strong>, which is below the{" "}
           <strong>{(threshold * 100).toFixed(0)}%</strong> threshold. The

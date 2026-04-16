@@ -30,6 +30,7 @@ import { SceneCatalogueForm } from "./SceneCatalogueForm";
 import { useDeactivateSceneCatalogueEntry, useSceneCatalogue } from "./hooks/use-scene-catalogue";
 import { useSingleTrack } from "./hooks/use-single-track";
 import type { SceneCatalogueEntry } from "./types";
+import { TYPO_DATA, TYPO_DATA_CYAN, TYPO_DATA_MUTED } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Entry row
@@ -49,23 +50,23 @@ function EntryRow({ entry, onEdit, onDeactivate, hideTracks }: EntryRowProps) {
     <tr className={cn(TERMINAL_DIVIDER, TERMINAL_ROW_HOVER)}>
       <td className="px-3 py-1.5">
         <div className="flex flex-col">
-          <span className="font-mono text-xs text-cyan-400">{entry.name}</span>
+          <span className={TYPO_DATA_CYAN}>{entry.name}</span>
           <span className="font-mono text-[10px] text-[var(--color-text-muted)] mt-0.5">{entry.slug}</span>
         </div>
       </td>
-      <td className="px-3 py-1.5 font-mono text-xs text-[var(--color-text-muted)]">
+      <td className={`px-3 py-1.5 ${TYPO_DATA_MUTED}`}>
         {entry.description ?? "\u2014"}
       </td>
       {!hideTracks && (
         <td className="px-3 py-1.5">
           <div className="flex flex-wrap gap-1">
             {entry.tracks.length === 0 ? (
-              <span className="font-mono text-xs text-[var(--color-text-muted)]">None</span>
+              <span className={TYPO_DATA_MUTED}>None</span>
             ) : (
               entry.tracks.map((track, i) => (
-                <span key={track.id} className="font-mono text-xs">
+                <span key={track.id} className={TYPO_DATA}>
                   {i > 0 && <span className="text-[var(--color-text-muted)] opacity-30 mx-1">|</span>}
-                  <span className={track.slug === "clothed" ? "text-sky-400" : track.slug === "topless" ? "text-pink-400" : "text-[var(--color-text-primary)]"}>{track.name}</span>
+                  <span className={track.slug === "clothed" ? "text-[var(--color-data-sky)]" : track.slug === "topless" ? "text-[var(--color-data-pink)]" : "text-[var(--color-text-primary)]"}>{track.name}</span>
                 </span>
               ))
             )}
@@ -73,12 +74,12 @@ function EntryRow({ entry, onEdit, onDeactivate, hideTracks }: EntryRowProps) {
         </td>
       )}
       <td className="px-3 py-1.5 text-center">
-        <span className={cn("font-mono text-xs", entry.has_clothes_off_transition ? "text-orange-400" : "text-[var(--color-text-muted)]")}>
+        <span className={cn("font-mono text-xs", entry.has_clothes_off_transition ? "text-[var(--color-data-orange)]" : "text-[var(--color-text-muted)]")}>
           {entry.has_clothes_off_transition ? "Yes" : "No"}
         </span>
       </td>
       <td className="px-3 py-1.5">
-        <span className={cn("font-mono text-xs", statusColor)}>
+        <span className={cn(TYPO_DATA, statusColor)}>
           {entry.is_active ? "Active" : "Inactive"}
         </span>
       </td>
@@ -188,7 +189,7 @@ export function SceneCatalogueList() {
                   <tr>
                     <td
                       colSpan={isSingleTrack ? 5 : 6}
-                      className="px-3 py-6 text-center font-mono text-xs text-[var(--color-text-muted)]"
+                      className={`px-3 py-6 text-center ${TYPO_DATA_MUTED}`}
                     >
                       No scene catalogue entries. Click "Add Scene" to create one.
                     </td>
@@ -227,9 +228,9 @@ export function SceneCatalogueList() {
       >
         {deactivateTarget && (
           <Stack gap={4}>
-            <p className="font-mono text-xs text-[var(--color-text-secondary)]">
+            <p className={TYPO_DATA_MUTED}>
               Are you sure you want to deactivate{" "}
-              <strong className="text-cyan-400">{deactivateTarget.name}</strong>?
+              <strong className="text-[var(--color-data-cyan)]">{deactivateTarget.name}</strong>?
               It will no longer appear in scene settings.
             </p>
             <div className="flex justify-end gap-2 pt-1 border-t border-[var(--color-border-default)]">

@@ -4,6 +4,7 @@ import { RestartButton } from "@/features/admin/components/RestartButton";
 import type { MetricThreshold, WorkerCurrentMetrics } from "@/features/admin/hooks/use-hardware";
 import { cn } from "@/lib/cn";
 import { TERMINAL_PANEL, TERMINAL_HEADER, TERMINAL_BODY } from "@/lib/ui-classes";
+import { TYPO_DATA_CYAN } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Types
@@ -78,10 +79,10 @@ export function WorkerCard({ metrics, thresholds, isSelected, onSelect }: Worker
       >
         <div className={cn(TERMINAL_HEADER, "px-[var(--spacing-4)]")}>
           <Stack direction="horizontal" gap={3} align="center" justify="between">
-            <span className="text-xs font-semibold text-cyan-400 font-mono">
+            <span className={`${TYPO_DATA_CYAN} font-semibold`}>
               Worker {metrics.worker_id} / GPU {metrics.gpu_index}
             </span>
-            <span className={cn("font-mono text-[10px] uppercase", online ? "text-green-400" : "text-red-400")}>
+            <span className={cn("font-mono text-[10px] uppercase", online ? "text-[var(--color-data-green)]" : "text-[var(--color-data-red)]")}>
               {online ? "Online" : "Offline"}
             </span>
           </Stack>

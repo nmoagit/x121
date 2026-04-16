@@ -10,6 +10,7 @@ import { Button, Input } from "@/components/primitives";
 import { Clock } from "@/tokens/icons";
 
 import { useScheduleGeneration } from "./hooks/use-generation";
+import { TYPO_DATA_DANGER, TYPO_DATA_MUTED } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Types
@@ -73,8 +74,8 @@ export function ScheduleGenerationModal({ sceneIds, onClose, onScheduled }: Sche
   return (
     <Modal open={isOpen} onClose={onClose} title="Schedule Generation" size="sm">
       <div className="flex flex-col gap-[var(--spacing-4)]">
-        <p className="font-mono text-xs text-[var(--color-text-secondary)]">
-          Schedule <span className="text-cyan-400">{sceneIds.length}</span> scene{sceneIds.length === 1 ? "" : "s"} for generation at a future time.
+        <p className={TYPO_DATA_MUTED}>
+          Schedule <span className="text-[var(--color-data-cyan)]">{sceneIds.length}</span> scene{sceneIds.length === 1 ? "" : "s"} for generation at a future time.
         </p>
 
         <Input
@@ -85,12 +86,12 @@ export function ScheduleGenerationModal({ sceneIds, onClose, onScheduled }: Sche
         />
 
         {!isInFuture && scheduledTime && (
-          <p className="font-mono text-xs text-red-400">
+          <p className={TYPO_DATA_DANGER}>
             Scheduled time must be in the future.
           </p>
         )}
 
-        <p className="font-mono text-xs text-[var(--color-text-muted)]">
+        <p className={TYPO_DATA_MUTED}>
           Times are in your local timezone ({Intl.DateTimeFormat().resolvedOptions().timeZone}).
         </p>
 

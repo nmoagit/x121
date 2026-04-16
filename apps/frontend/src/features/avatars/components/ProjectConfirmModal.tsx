@@ -11,6 +11,7 @@ import { Modal } from "@/components/composite";
 import { Stack } from "@/components/layout";
 import { Button, Checkbox } from "@/components/primitives";
 import type { Project } from "@/features/projects/types";
+import { TYPO_DATA } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Types
@@ -98,15 +99,15 @@ export function ProjectConfirmModal({
             return (
               <div
                 key={project.name}
-                className="flex items-center gap-[var(--spacing-3)] px-[var(--spacing-3)] py-[var(--spacing-2)] border-b border-white/5 last:border-b-0 hover:bg-[#161b22]"
+                className="flex items-center gap-[var(--spacing-3)] px-[var(--spacing-3)] py-[var(--spacing-2)] border-b border-white/5 last:border-b-0 hover:bg-[var(--color-surface-secondary)]"
               >
                 <Checkbox
                   checked={checked.has(project.name)}
                   onChange={() => toggleProject(project.name)}
                   label={project.name}
                 />
-                <div className="flex items-center gap-[var(--spacing-2)] ml-auto font-mono text-xs">
-                  <span className={isExisting ? "text-green-400" : "text-cyan-400"}>
+                <div className={`flex items-center gap-[var(--spacing-2)] ml-auto ${TYPO_DATA}`}>
+                  <span className={isExisting ? "text-[var(--color-data-green)]" : "text-[var(--color-data-cyan)]"}>
                     {isExisting ? "existing" : "new"}
                   </span>
                   <span className="text-[var(--color-text-muted)]">

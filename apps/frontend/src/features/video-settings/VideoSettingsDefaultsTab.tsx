@@ -24,6 +24,7 @@ import {
   TERMINAL_SELECT,
 } from "@/lib/ui-classes";
 import { FPS_OPTIONS, RESOLUTION_OPTIONS } from "./types";
+import { TYPO_DATA, TYPO_DATA_MUTED } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Shared compact input classes
@@ -75,7 +76,7 @@ function SceneTypeRow({ sceneType }: { sceneType: SceneType }) {
   return (
     <tr className={`${TERMINAL_DIVIDER} last:border-b-0 ${TERMINAL_ROW_HOVER}`}>
       <td className="py-2 px-3">
-        <div className="flex items-center gap-1.5 font-mono text-xs">
+        <div className={`flex items-center gap-1.5 ${TYPO_DATA}`}>
           <span className="text-[var(--color-text-primary)] uppercase tracking-wide">{sceneType.name}</span>
           {!sceneType.is_active && <span className="text-[var(--color-text-muted)]">inactive</span>}
         </div>
@@ -124,7 +125,7 @@ function SceneTypeRow({ sceneType }: { sceneType: SceneType }) {
               <Button variant="ghost" size="xs" icon={<RotateCcw size={12} />} onClick={() => setDraft(toRowDraft(sceneType))} aria-label="Reset" />
             </>
           )}
-          {!isDirty && updateMutation.isSuccess && <span className="font-mono text-[10px] text-green-400">saved</span>}
+          {!isDirty && updateMutation.isSuccess && <span className="font-mono text-[10px] text-[var(--color-data-green)]">saved</span>}
         </div>
       </td>
     </tr>
@@ -156,7 +157,7 @@ export function VideoSettingsDefaultsTab() {
 
   return (
     <Stack gap={3}>
-      <p className="font-mono text-xs text-[var(--color-text-muted)]">
+      <p className={TYPO_DATA_MUTED}>
         Set the default video duration, frame rate, and resolution for each scene type.
         These defaults are inherited by all projects, groups, and avatars unless overridden.
       </p>

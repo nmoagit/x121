@@ -37,27 +37,27 @@ function eventVisual(item: ActivityFeedItem): {
     return {
       icon: <Check size={14} />,
       color: "bg-green-400/15",
-      textColor: "text-green-400",
+      textColor: "text-[var(--color-data-green)]",
     };
   }
   if (item.event_type.includes("failed") || item.event_type.includes("rejected")) {
     return {
       icon: <XCircle size={14} />,
       color: "bg-red-400/15",
-      textColor: "text-red-400",
+      textColor: "text-[var(--color-data-red)]",
     };
   }
   if (item.category === "system") {
     return {
       icon: <AlertTriangle size={14} />,
       color: "bg-orange-400/15",
-      textColor: "text-orange-400",
+      textColor: "text-[var(--color-data-orange)]",
     };
   }
   return {
     icon: <Zap size={14} />,
     color: "bg-cyan-400/15",
-    textColor: "text-cyan-400",
+    textColor: "text-[var(--color-data-cyan)]",
   };
 }
 

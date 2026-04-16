@@ -12,6 +12,7 @@ import { getStreamUrl } from "@/features/video-player";
 import { formatDuration } from "@/features/video-player/frame-utils";
 import { TERMINAL_STATUS_COLORS, TRACK_TEXT_COLORS } from "@/lib/ui-classes";
 import { Ban, CheckCircle, Play, XCircle } from "@/tokens/icons";
+import { TYPO_DATA } from "@/lib/typography-tokens";
 
 /* -------------------------------------------------------------------------- */
 
@@ -65,7 +66,7 @@ export function BrowseClipCard({
   return (
     <div
       ref={ref}
-      className={`relative rounded-[var(--radius-lg)] border overflow-hidden transition-colors bg-[#0d1117] hover:bg-[#161b22] ${
+      className={`relative rounded-[var(--radius-lg)] border overflow-hidden transition-colors bg-[var(--color-surface-primary)] hover:bg-[var(--color-surface-secondary)] ${
         selected ? "ring-2 ring-blue-500/50" : ""
       } ${
         clip.qa_status === "approved"
@@ -77,7 +78,7 @@ export function BrowseClipCard({
     >
       {/* Selection checkbox overlay */}
       <div
-        className="absolute top-1 left-1 z-10 rounded bg-black/50 p-0.5"
+        className="absolute top-1 left-1 z-10 rounded bg-[var(--color-surface-badge-overlay)] p-0.5"
         onClick={(e) => e.stopPropagation()}
       >
         <Checkbox checked={selected} onChange={onToggleSelect} size="sm" />
@@ -85,14 +86,14 @@ export function BrowseClipCard({
 
       {/* Video preview */}
       {isPurgedClip(clip) ? (
-        <div className="flex aspect-video items-center justify-center bg-[#161b22]">
+        <div className="flex aspect-video items-center justify-center bg-[var(--color-surface-secondary)]">
           <Ban size={24} className="text-[var(--color-text-muted)]" />
         </div>
       ) : (
         <button
           type="button"
           onClick={onPlay}
-          className="group/play relative aspect-video w-full cursor-pointer bg-[#161b22]"
+          className="group/play relative aspect-video w-full cursor-pointer bg-[var(--color-surface-secondary)]"
         >
           {videoReady ? (
             <video
@@ -121,14 +122,14 @@ export function BrowseClipCard({
           onClick={onNavigate}
           className="min-w-0 flex-1 text-left cursor-pointer"
         >
-          <div className="flex items-center gap-1.5 font-mono text-xs">
+          <div className={`flex items-center gap-1.5 ${TYPO_DATA}`}>
             <span className="truncate font-medium text-[var(--color-text-primary)]">{clip.avatar_name}</span>
             <span className="shrink-0 text-[var(--color-text-muted)] uppercase text-[10px]">{clip.scene_type_name}</span>
           </div>
           <div className="flex items-center gap-1.5 font-mono text-[10px] text-[var(--color-text-muted)] mt-0.5">
-            <span className="text-cyan-400 font-semibold">v{clip.version_number}</span>
+            <span className="text-[var(--color-data-cyan)] font-semibold">v{clip.version_number}</span>
             <span className={TRACK_TEXT_COLORS[clip.track_name.toLowerCase()] ?? "text-[var(--color-text-muted)]"}>{clip.track_name}</span>
-            {clip.clip_index != null && <span className="text-cyan-400">#{clip.clip_index}</span>}
+            {clip.clip_index != null && <span className="text-[var(--color-data-cyan)]">#{clip.clip_index}</span>}
             {clip.qa_status !== "pending" && (
               <span className={TERMINAL_STATUS_COLORS[clip.qa_status] ?? "text-[var(--color-text-muted)]"}>{clip.qa_status}</span>
             )}
@@ -136,10 +137,10 @@ export function BrowseClipCard({
           </div>
         </button>
         <div className="flex flex-col gap-0.5 shrink-0">
-          <button type="button" onClick={onApprove} className={`p-0.5 rounded transition-colors ${clip.qa_status === "approved" ? "text-green-400" : "text-[var(--color-text-muted)] hover:text-green-400"}`} title="Approve">
+          <button type="button" onClick={onApprove} className={`p-0.5 rounded transition-colors ${clip.qa_status === "approved" ? "text-[var(--color-data-green)]" : "text-[var(--color-text-muted)] hover:text-[var(--color-data-green)]"}`} title="Approve">
             <CheckCircle size={14} />
           </button>
-          <button type="button" onClick={onReject} className={`p-0.5 rounded transition-colors ${clip.qa_status === "rejected" ? "text-red-400" : "text-[var(--color-text-muted)] hover:text-red-400"}`} title="Reject">
+          <button type="button" onClick={onReject} className={`p-0.5 rounded transition-colors ${clip.qa_status === "rejected" ? "text-[var(--color-data-red)]" : "text-[var(--color-text-muted)] hover:text-[var(--color-data-red)]"}`} title="Reject">
             <XCircle size={14} />
           </button>
         </div>

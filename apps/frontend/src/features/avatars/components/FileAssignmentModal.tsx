@@ -10,6 +10,7 @@ import { cn } from "@/lib/cn";
 import type { FileAssignments, UnmatchedAvatarFiles } from "../hooks/useAvatarImportBase";
 import { suggestImageCategory } from "../hooks/useAvatarImportBase";
 import { ImageThumbnail, JsonFileCard } from "./FileAssignmentThumbnails";
+import { TYPO_DATA_WARNING } from "@/lib/typography-tokens";
 
 /* ------------------------------------------------------------------ */
 /*  Constants                                                          */
@@ -178,7 +179,7 @@ export function FileAssignmentModal({ open, onClose, unmatchedFiles, onConfirm, 
       <Stack gap={4}>
         {warningCount > 0 && (
           <div className="rounded-[var(--radius-md)] border border-[var(--color-border-default)] border-l-2 border-l-orange-400 px-[var(--spacing-3)] py-[var(--spacing-2)]">
-            <p className="text-xs font-mono text-orange-400">
+            <p className={TYPO_DATA_WARNING}>
               {warningCount} metadata {warningCount === 1 ? "file" : "files"} unassigned (bio.json / tov.json). This is non-blocking.
             </p>
           </div>
@@ -202,7 +203,7 @@ export function FileAssignmentModal({ open, onClose, unmatchedFiles, onConfirm, 
                     <div key={col}>
                       <div className="mb-1.5 flex items-center gap-1">
                         <span className="text-xs font-mono text-[var(--color-text-secondary)]">{columnLabel(col)}</span>
-                        {hasWarning && <span className="text-xs font-mono text-orange-400">!</span>}
+                        {hasWarning && <span className={TYPO_DATA_WARNING}>!</span>}
                       </div>
                       <div className={cn("flex flex-col gap-1.5", isImage && "grid grid-cols-3 gap-1.5")}>
                         {files.map((file) => {

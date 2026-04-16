@@ -6,6 +6,7 @@
 
 import { Card, CardBody, CardHeader } from "@/components/composite/Card";
 import { formatDateTime } from "@/lib/format";
+import { TYPO_SECTION_TITLE } from "@/lib/typography-tokens";
 import { Badge, Button } from "@/components/primitives";
 import { Cpu, Power, ShieldCheck, X } from "@/tokens/icons";
 
@@ -106,7 +107,7 @@ export function WorkerDetailPanel({
     <div className="flex h-full w-full flex-col bg-[var(--color-surface-primary)]">
       {/* Header */}
       <div className="flex items-center justify-between border-b border-[var(--color-border-default)] px-[var(--spacing-4)] py-[var(--spacing-3)]">
-        <h2 className="text-base font-semibold text-[var(--color-text-primary)]">
+        <h2 className={TYPO_SECTION_TITLE}>
           {worker.name}
         </h2>
         <button

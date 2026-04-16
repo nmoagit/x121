@@ -11,6 +11,7 @@ import { Button } from "@/components/primitives/Button";
 import { Tooltip } from "@/components/primitives/Tooltip";
 
 import { useContextualHelp } from "./hooks/use-wiki";
+import { TYPO_CAPTION } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Types
@@ -75,7 +76,7 @@ export function ContextualHelpButton({
           <h4 className="mb-1 text-sm font-medium text-[var(--color-text-primary)]">
             {data.article.title}
           </h4>
-          <p className="mb-2 line-clamp-3 text-xs text-[var(--color-text-secondary)]">
+          <p className={`mb-2 line-clamp-3 ${TYPO_CAPTION}`}>
             {data.article.content_md}
           </p>
           {onNavigateToArticle && (

@@ -31,7 +31,7 @@ export function StatusFooter() {
 
   return (
     <footer
-      className="flex h-7 shrink-0 items-center justify-between border-t border-[var(--color-border-default)] bg-[#0d1117] px-2 text-xs font-mono"
+      className="flex h-7 shrink-0 items-center justify-between border-t border-[var(--color-border-default)] bg-[var(--color-surface-primary)] px-2 text-xs font-mono"
       role="contentinfo"
     >
       {/* Left: console toggle + system status segments */}
