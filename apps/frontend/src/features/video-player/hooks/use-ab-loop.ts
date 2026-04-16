@@ -38,13 +38,14 @@ export function useABLoop(
 ): ABLoopControls {
   const [inPoint, setInPointState] = useState<number | null>(null);
   const [outPoint, setOutPointState] = useState<number | null>(null);
-  const isLooping = inPoint !== null && outPoint !== null;
-  const loopActiveRef = useRef(false);
 
-  // Keep ref in sync.
-  useEffect(() => {
-    loopActiveRef.current = isLooping;
-  }, [isLooping]);
+  // Refs for synchronous access in the timeupdate listener.
+  // State setters are async (batched), so the listener needs refs
+  // to see the latest values immediately after they're set.
+  const inPointRef = useRef<number | null>(null);
+  const outPointRef = useRef<number | null>(null);
+
+  const isLooping = inPoint !== null && outPoint !== null;
 
   // Listen for timeupdate to enforce the loop.
   useEffect(() => {
@@ -52,12 +53,14 @@ export function useABLoop(
     if (!video) return;
 
     function handleTimeUpdate() {
-      if (!loopActiveRef.current || outPoint === null || inPoint === null) return;
+      const inPt = inPointRef.current;
+      const outPt = outPointRef.current;
+      if (inPt === null || outPt === null) return;
       if (framerate <= 0) return;
 
-      const outTime = frameToSeconds(outPoint, framerate);
+      const outTime = frameToSeconds(outPt, framerate);
       if (video && video.currentTime >= outTime) {
-        video.currentTime = frameToSeconds(inPoint, framerate);
+        video.currentTime = frameToSeconds(inPt, framerate);
       }
     }
 
@@ -65,17 +68,21 @@ export function useABLoop(
     return () => {
       video.removeEventListener("timeupdate", handleTimeUpdate);
     };
-  }, [videoRef, inPoint, outPoint, framerate]);
+  }, [videoRef, framerate]);
 
   const setInPoint = useCallback((frame: number) => {
+    inPointRef.current = frame;
     setInPointState(frame);
   }, []);
 
   const setOutPoint = useCallback((frame: number) => {
+    outPointRef.current = frame;
     setOutPointState(frame);
   }, []);
 
   const clearLoop = useCallback(() => {
+    inPointRef.current = null;
+    outPointRef.current = null;
     setInPointState(null);
     setOutPointState(null);
   }, []);

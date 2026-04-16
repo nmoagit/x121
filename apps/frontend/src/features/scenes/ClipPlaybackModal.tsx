@@ -20,6 +20,7 @@ import { GenerationSnapshotPanel } from "./GenerationSnapshotPanel";
 import { useDeleteVersionFrameAnnotation, useUpsertVersionAnnotation, useVersionAnnotations } from "./hooks/useVersionAnnotations";
 import { useClipAnnotationsStore, type FrameAnnotationEntry } from "./stores/useClipAnnotationsStore";
 import { type SceneVideoVersion, isPurgedClip } from "./types";
+import { TYPO_DATA, TYPO_DATA_CYAN, TYPO_DATA_MUTED, TYPO_TIMESTAMP} from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Types
@@ -56,11 +57,15 @@ export function ClipPlaybackModal({ clip, onClose, onPrev, onNext, onApprove, on
   const [clipNotesSaving, setClipNotesSaving] = useState(false);
   const [rangeEnd, setRangeEnd] = useState<number | null>(null);
   const [annotationNote, setAnnotationNote] = useState("");
+  const [activeLoopRange, setActiveLoopRange] = useState<{ start: number; end: number } | null>(null);
+  const playerControlRef = useRef<import("@/features/video-player/VideoPlayer").VideoPlayerControl | null>(null);
   const [presetManagerOpen, setPresetManagerOpen] = useState(false);
   const [canvasVersion, setCanvasVersion] = useState(0);
   const [canvasInitialTool, setCanvasInitialTool] = useState<"pen" | "text">("pen");
   /** Set of annotation frame numbers that are toggled visible. All visible by default. */
   const [hiddenAnnotationFrames, setHiddenAnnotationFrames] = useState<Set<number>>(new Set());
+  /** Mark currently being hovered for deletion — highlighted on the canvas overlay. */
+  const [highlightedMark, setHighlightedMark] = useState<{ frameNumber: number; markIndex: number } | null>(null);
 
   // Load existing tags + notes when clip changes
   useEffect(() => {
@@ -267,53 +272,24 @@ export function ClipPlaybackModal({ clip, onClose, onPrev, onNext, onApprove, on
   // `newAnnotations` contains only user-drawn items from the current session,
   // so we must merge them with the snapshot taken when annotation mode started.
   const handleAnnotationsChange = useCallback(
-    (newAnnotations: DrawingObject[]) => {
+    (annotations: DrawingObject[]) => {
       const frame = annotatingFrameRef.current;
       dirtyFramesRef.current.add(frame);
 
-      // Merge existing (snapshot) with new (undoStack from canvas).
-      // If a new annotation matches an existing one by tool+content (text drag),
-      // replace the existing with the moved version instead of duplicating.
-      const snapshot = existingSnapshotRef.current.slice(0, existingCountRef.current);
-      const replaced = new Set<number>();
-      const extras: DrawingObject[] = [];
-
-      for (const newObj of newAnnotations) {
-        let didReplace = false;
-        if (newObj.tool === "text") {
-          const nd = newObj.data as Record<string, unknown>;
-          for (let i = 0; i < snapshot.length; i++) {
-            if (replaced.has(i)) continue;
-            const b = snapshot[i]!;
-            if (b.tool !== "text") continue;
-            const bd = b.data as Record<string, unknown>;
-            if (bd.content === nd.content && bd.fontSize === nd.fontSize) {
-              replaced.add(i);
-              extras.push(newObj);
-              didReplace = true;
-              break;
-            }
-          }
-        }
-        if (!didReplace) extras.push(newObj);
-      }
-
-      const merged = [
-        ...snapshot.filter((_, i) => !replaced.has(i)),
-        ...extras,
-      ];
+      // Canvas sends the complete final list (existing minus moved + user-drawn).
+      // Store it directly — no merge needed.
       const current = useClipAnnotationsStore.getState().getForClip(clipId);
 
-      if (merged.length === 0) {
+      if (annotations.length === 0) {
         setForClip(clipId, current.filter((e) => e.frameNumber !== frame));
       } else {
         const idx = current.findIndex((e) => e.frameNumber === frame);
         if (idx >= 0) {
           const next = [...current];
-          next[idx] = { ...next[idx]!, frameNumber: frame, annotations: merged };
+          next[idx] = { ...next[idx]!, frameNumber: frame, annotations };
           setForClip(clipId, next);
         } else {
-          setForClip(clipId, [...current, { frameNumber: frame, frameEnd: null, annotations: merged, note: null }]);
+          setForClip(clipId, [...current, { frameNumber: frame, frameEnd: null, annotations, note: null }]);
         }
       }
     },
@@ -358,6 +334,29 @@ export function ClipPlaybackModal({ clip, onClose, onPrev, onNext, onApprove, on
       }
     },
     [clipId, setForClip, deleteMutation, annotating],
+  );
+
+  /** Delete a single mark (drawing object) from a frame's annotations by index. */
+  const handleDeleteMark = useCallback(
+    (frameNumber: number, markIndex: number) => {
+      const current = useClipAnnotationsStore.getState().getForClip(clipId);
+      const updated = current.map((e) => {
+        if (e.frameNumber !== frameNumber) return e;
+        const remaining = e.annotations.filter((_, i) => i !== markIndex);
+        return { ...e, annotations: remaining };
+      }).filter((e) => e.annotations.length > 0 || e.note);
+
+      if (updated.find((e) => e.frameNumber === frameNumber)) {
+        // Still has marks or a note — update in store and save
+        setForClip(clipId, updated);
+        dirtyFramesRef.current.add(frameNumber);
+        saveFrame(frameNumber);
+      } else {
+        // No marks or note left — delete the entire frame annotation
+        handleDeleteFrameAnnotation(frameNumber);
+      }
+    },
+    [clipId, setForClip, saveFrame, handleDeleteFrameAnnotation],
   );
 
   // Save clip notes to DB and update cache.
@@ -447,7 +446,7 @@ export function ClipPlaybackModal({ clip, onClose, onPrev, onNext, onApprove, on
           {/* Derived clip context badge */}
           {clip.parent_version_id != null && (
             <div className="flex items-center gap-2 font-mono text-[10px] text-[var(--color-text-muted)]">
-              <span className="text-cyan-400">derived from v{clip.parent_version_id}</span>
+              <span className="text-[var(--color-data-cyan)]">derived from v{clip.parent_version_id}</span>
               {clip.clip_index != null && (
                 <><span className="opacity-30">|</span><span>chunk {clip.clip_index}</span></>
               )}
@@ -459,8 +458,8 @@ export function ClipPlaybackModal({ clip, onClose, onPrev, onNext, onApprove, on
               <div className="flex h-48 items-center justify-center rounded-[var(--radius-md)] border border-dashed border-[var(--color-border-default)] bg-[var(--color-surface-secondary)]">
                 <div className="flex flex-col items-center gap-2 text-[var(--color-text-muted)]">
                   <X size={32} />
-                  <span className="font-mono text-xs">Video file has been purged from disk</span>
-                  <span className="font-mono text-xs text-[var(--color-text-muted)]">Metadata and generation parameters are still available below.</span>
+                  <span className={TYPO_DATA}>Video file has been purged from disk</span>
+                  <span className={TYPO_DATA_MUTED}>Metadata and generation parameters are still available below.</span>
                 </div>
               </div>
             ) : (
@@ -473,6 +472,7 @@ export function ClipPlaybackModal({ clip, onClose, onPrev, onNext, onApprove, on
                     autoPlay
                     showControls
                     annotationRanges={annotationRanges}
+                    controlRef={playerControlRef}
                     onFrameChange={setCurrentFrame}
                   />
                 </div>
@@ -486,6 +486,7 @@ export function ClipPlaybackModal({ clip, onClose, onPrev, onNext, onApprove, on
                     currentFrame={currentFrame}
                     width={containerWidth}
                     height={videoHeight}
+                    highlightedMark={highlightedMark}
                   />
                 )}
 
@@ -516,7 +517,7 @@ export function ClipPlaybackModal({ clip, onClose, onPrev, onNext, onApprove, on
             <button
               type="button"
               onClick={() => setExpanded((v) => !v)}
-              className={`absolute right-2 z-20 p-1.5 rounded bg-black/50 text-white/70 hover:text-white hover:bg-black/70 opacity-0 group-hover/video:opacity-100 transition-all ${annotating ? "top-10" : "top-2"}`}
+              className={`absolute right-2 z-20 p-1.5 rounded bg-[var(--color-surface-badge-overlay)] text-white/70 hover:text-white hover:bg-[var(--color-surface-badge-overlay)] opacity-0 group-hover/video:opacity-100 transition-all ${annotating ? "top-10" : "top-2"}`}
               title={expanded ? "Compact" : "Expand"}
             >
               {expanded ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
@@ -526,30 +527,49 @@ export function ClipPlaybackModal({ clip, onClose, onPrev, onNext, onApprove, on
           {/* Annotated frames indicator — chips toggle visibility */}
           {frameAnnotations.length > 0 && !annotating && (
             <div className="flex items-center gap-[var(--spacing-2)]">
-              <span className="shrink-0 text-[10px] font-mono text-[var(--color-text-muted)]">
+              <span className={`shrink-0 ${TYPO_TIMESTAMP}`}>
                 Annotated:
               </span>
               <div className="flex flex-wrap gap-1">
                 {sortedAnnotations.map((entry) => {
                   const isHidden = hiddenAnnotationFrames.has(entry.frameNumber);
+                  const hasRange = entry.frameEnd !== null && entry.frameEnd > entry.frameNumber;
+                  const isLooped = hasRange &&
+                    activeLoopRange?.start === entry.frameNumber &&
+                    activeLoopRange?.end === entry.frameEnd;
                   return (
                   <Chip
                     key={entry.frameNumber}
                     size="xs"
-                    active={!isHidden}
+                    active={isLooped || !isHidden}
                     onClick={() => {
-                      setHiddenAnnotationFrames((prev) => {
-                        const next = new Set(prev);
-                        if (next.has(entry.frameNumber)) {
-                          next.delete(entry.frameNumber);
+                      if (hasRange) {
+                        if (isLooped) {
+                          // Clear loop
+                          setActiveLoopRange(null);
+                          playerControlRef.current?.loopRange(null);
                         } else {
-                          next.add(entry.frameNumber);
+                          // Set loop — call player control directly (same path as timeline click)
+                          const range = { start: entry.frameNumber, end: entry.frameEnd as number };
+                          setActiveLoopRange(range);
+                          playerControlRef.current?.loopRange(range);
                         }
-                        return next;
-                      });
+                      } else {
+                        // Single-frame annotation: toggle visibility
+                        setHiddenAnnotationFrames((prev) => {
+                          const next = new Set(prev);
+                          if (next.has(entry.frameNumber)) {
+                            next.delete(entry.frameNumber);
+                          } else {
+                            next.add(entry.frameNumber);
+                          }
+                          return next;
+                        });
+                      }
                     }}
                   >
                     {frameLabel(entry)}
+                    {isLooped && " ↻"}
                   </Chip>
                   );
                 })}
@@ -567,7 +587,7 @@ export function ClipPlaybackModal({ clip, onClose, onPrev, onNext, onApprove, on
                 className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[var(--radius-md)] text-xs font-mono transition-all ${
                   annotating
                     ? "bg-[var(--color-action-primary)] text-white shadow-[0_0_12px_rgba(59,130,246,0.4)]"
-                    : "bg-[#161b22] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[#1c2129] border border-[var(--color-border-default)]"
+                    : "bg-[var(--color-surface-secondary)] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-tertiary)] border border-[var(--color-border-default)]"
                 }`}
               >
                 {annotating ? <X size={12} /> : <Edit3 size={12} />}
@@ -576,7 +596,7 @@ export function ClipPlaybackModal({ clip, onClose, onPrev, onNext, onApprove, on
 
               {annotating ? (
                 <>
-                  <span className="font-mono text-xs text-cyan-400">
+                  <span className={TYPO_DATA_CYAN}>
                     Frame {annotatingFrameRef.current}
                     {rangeEnd !== null && ` — ${rangeEnd}`}
                   </span>
@@ -600,7 +620,7 @@ export function ClipPlaybackModal({ clip, onClose, onPrev, onNext, onApprove, on
                       a.download = filename;
                       a.click();
                     }}
-                    className="p-1 rounded text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[#161b22] transition-colors"
+                    className="p-1 rounded text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-secondary)] transition-colors"
                     title="Export"
                   >
                     <Download size={14} />
@@ -612,7 +632,7 @@ export function ClipPlaybackModal({ clip, onClose, onPrev, onNext, onApprove, on
                     type="button"
                     onClick={onApprove}
                     disabled={!onApprove}
-                    className={`p-1 rounded transition-colors disabled:opacity-30 disabled:pointer-events-none ${clip.qa_status === "approved" ? "text-green-400" : "text-[var(--color-text-muted)] hover:text-green-400 hover:bg-[#161b22]"}`}
+                    className={`p-1 rounded transition-colors disabled:opacity-30 disabled:pointer-events-none ${clip.qa_status === "approved" ? "text-[var(--color-data-green)]" : "text-[var(--color-text-muted)] hover:text-[var(--color-data-green)] hover:bg-[var(--color-surface-secondary)]"}`}
                     title={clip.qa_status === "approved" ? "Approved" : "Approve"}
                   >
                     <CheckCircle size={14} />
@@ -621,7 +641,7 @@ export function ClipPlaybackModal({ clip, onClose, onPrev, onNext, onApprove, on
                     type="button"
                     onClick={onReject}
                     disabled={!onReject}
-                    className={`p-1 rounded transition-colors disabled:opacity-30 disabled:pointer-events-none ${clip.qa_status === "rejected" ? "text-red-400" : "text-[var(--color-text-muted)] hover:text-red-400 hover:bg-[#161b22]"}`}
+                    className={`p-1 rounded transition-colors disabled:opacity-30 disabled:pointer-events-none ${clip.qa_status === "rejected" ? "text-[var(--color-data-red)]" : "text-[var(--color-text-muted)] hover:text-[var(--color-data-red)] hover:bg-[var(--color-surface-secondary)]"}`}
                     title={clip.qa_status === "rejected" ? "Rejected" : "Reject"}
                   >
                     <XCircle size={14} />
@@ -634,7 +654,7 @@ export function ClipPlaybackModal({ clip, onClose, onPrev, onNext, onApprove, on
                       type="button"
                       onClick={() => { saveAllDirty(); onPrev?.(); }}
                       disabled={!onPrev}
-                      className="p-1 rounded text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[#161b22] transition-colors disabled:opacity-20 disabled:pointer-events-none"
+                      className="p-1 rounded text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-secondary)] transition-colors disabled:opacity-20 disabled:pointer-events-none"
                       title="Previous clip"
                     >
                       <ChevronLeft size={16} />
@@ -643,7 +663,7 @@ export function ClipPlaybackModal({ clip, onClose, onPrev, onNext, onApprove, on
                       type="button"
                       onClick={() => { saveAllDirty(); onNext?.(); }}
                       disabled={!onNext}
-                      className="p-1 rounded text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[#161b22] transition-colors disabled:opacity-20 disabled:pointer-events-none"
+                      className="p-1 rounded text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-secondary)] transition-colors disabled:opacity-20 disabled:pointer-events-none"
                   title="Next clip"
                 >
                   <ChevronRight size={16} />
@@ -740,7 +760,7 @@ export function ClipPlaybackModal({ clip, onClose, onPrev, onNext, onApprove, on
                   <button
                     type="button"
                     onClick={() => setPresetManagerOpen(true)}
-                    className="p-1 rounded text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[#161b22] transition-colors"
+                    className="p-1 rounded text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-secondary)] transition-colors"
                     title="Manage Presets"
                   >
                     <Settings size={14} />
@@ -799,7 +819,7 @@ export function ClipPlaybackModal({ clip, onClose, onPrev, onNext, onApprove, on
           {/* Annotation summary list */}
           {sortedAnnotations.length > 0 && (
             <div className="flex flex-col gap-[var(--spacing-2)]">
-              <h4 className="font-mono text-xs font-medium text-[var(--color-text-primary)]">
+              <h4 className={`${TYPO_DATA} font-medium text-[var(--color-text-primary)]`}>
                 Annotations
               </h4>
               <div className="flex flex-col gap-1 max-h-40 overflow-y-auto">
@@ -808,30 +828,74 @@ export function ClipPlaybackModal({ clip, onClose, onPrev, onNext, onApprove, on
                     key={entry.frameNumber}
                     className="flex items-center gap-1"
                   >
-                    <button
-                      type="button"
-                      className="flex flex-1 flex-col gap-0.5 rounded border border-[var(--color-border-default)] px-3 py-1.5 text-left font-mono text-xs hover:bg-[#161b22] transition-colors"
-                      onClick={() => handleFrameSelect(entry.frameNumber)}
-                    >
-                      <div className="flex w-full items-center justify-between">
-                        <span className="font-mono text-xs text-[var(--color-text-primary)]">
-                          {entry.frameEnd !== null && entry.frameEnd > entry.frameNumber
-                            ? `Frame ${entry.frameNumber}-${entry.frameEnd}`
-                            : `Frame ${entry.frameNumber}`}
-                        </span>
-                        <span className="text-xs text-[var(--color-text-muted)]">
-                          {entry.annotations.length} mark{entry.annotations.length !== 1 ? "s" : ""}
-                        </span>
-                      </div>
-                      {entry.note && (
-                        <span className="text-[10px] text-[var(--color-text-muted)] truncate w-full">
-                          {entry.note}
-                        </span>
+                    <div className="flex-1 rounded border border-[var(--color-border-default)] overflow-hidden">
+                      {/* Frame header — click to navigate/loop */}
+                      <button
+                        type="button"
+                        className={`flex w-full flex-col gap-0.5 px-3 py-1.5 text-left ${TYPO_DATA} hover:bg-[var(--color-surface-secondary)] transition-colors`}
+                        onClick={() => {
+                          handleFrameSelect(entry.frameNumber);
+                          const hasRange = entry.frameEnd !== null && entry.frameEnd > entry.frameNumber;
+                          if (hasRange) {
+                            const range = { start: entry.frameNumber, end: entry.frameEnd as number };
+                            setActiveLoopRange(range);
+                            playerControlRef.current?.loopRange(range);
+                          }
+                        }}
+                      >
+                        <div className="flex w-full items-center justify-between">
+                          <span className={TYPO_DATA}>
+                            {entry.frameEnd !== null && entry.frameEnd > entry.frameNumber
+                              ? `Frame ${entry.frameNumber}-${entry.frameEnd}`
+                              : `Frame ${entry.frameNumber}`}
+                          </span>
+                          <span className="text-xs text-[var(--color-text-muted)]">
+                            {entry.annotations.length} mark{entry.annotations.length !== 1 ? "s" : ""}
+                          </span>
+                        </div>
+                        {entry.note && (
+                          <span className="text-[10px] text-[var(--color-text-muted)] truncate w-full">
+                            {entry.note}
+                          </span>
+                        )}
+                      </button>
+                      {/* Individual marks */}
+                      {entry.annotations.length > 0 && (
+                        <div className="border-t border-[var(--color-border-default)]/30 px-3 py-1 flex flex-wrap gap-1">
+                          {entry.annotations.map((mark, idx) => (
+                            <span
+                              key={idx}
+                              className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-mono bg-[var(--color-surface-secondary)] text-[var(--color-text-muted)] cursor-default"
+                              onMouseEnter={() => setHighlightedMark({ frameNumber: entry.frameNumber, markIndex: idx })}
+                              onMouseLeave={() => setHighlightedMark(null)}
+                            >
+                              <span
+                                className="inline-block w-2 h-2 rounded-full shrink-0"
+                                style={{ backgroundColor: mark.color }}
+                              />
+                              {mark.tool}
+                              <button
+                                type="button"
+                                className="ml-0.5 text-[var(--color-text-muted)] hover:text-[var(--color-action-danger)] transition-colors"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteMark(entry.frameNumber, idx);
+                                  setHighlightedMark(null);
+                                }}
+                                onMouseEnter={() => setHighlightedMark({ frameNumber: entry.frameNumber, markIndex: idx })}
+                                onMouseLeave={() => setHighlightedMark(null)}
+                                title={`Delete this ${mark.tool} mark`}
+                              >
+                                <X size={10} />
+                              </button>
+                            </span>
+                          ))}
+                        </div>
                       )}
-                    </button>
+                    </div>
                     <button
                       type="button"
-                      className="rounded p-1 text-[var(--color-text-muted)] hover:text-[var(--color-action-danger)] hover:bg-[#161b22] transition-colors"
+                      className="rounded p-1 text-[var(--color-text-muted)] hover:text-[var(--color-action-danger)] hover:bg-[var(--color-surface-secondary)] transition-colors self-start"
                       onClick={() => handleDeleteFrameAnnotation(entry.frameNumber)}
                       title={`Delete all annotations on frame ${entry.frameNumber}`}
                       aria-label={`Delete frame ${entry.frameNumber} annotations`}
@@ -866,26 +930,30 @@ function AnnotationOverlay({
   currentFrame,
   width,
   height,
+  highlightedMark,
 }: {
   frameAnnotations: FrameAnnotationEntry[];
   hiddenFrames: Set<number>;
   currentFrame: number;
   width: number;
   height: number;
+  highlightedMark?: { frameNumber: number; markIndex: number } | null;
 }) {
-  // Filter to only annotations whose range includes the current frame and aren't hidden
-  const visibleAnnotations = frameAnnotations
-    .filter((e) => {
-      if (e.annotations.length === 0) return false;
-      if (hiddenFrames.has(e.frameNumber)) return false;
-      const start = e.frameNumber;
-      const end = (e.frameEnd != null && e.frameEnd > start) ? e.frameEnd : start;
-      return currentFrame >= start && currentFrame <= end;
-    })
-    .flatMap((e) => e.annotations);
+  // Build a flat list of visible annotations, tracking their source frame + index
+  // so we can identify which one to highlight.
+  const visible: { obj: DrawingObject; frameNumber: number; markIndex: number }[] = [];
+  for (const e of frameAnnotations) {
+    if (e.annotations.length === 0) continue;
+    if (hiddenFrames.has(e.frameNumber)) continue;
+    const start = e.frameNumber;
+    const end = (e.frameEnd != null && e.frameEnd > start) ? e.frameEnd : start;
+    if (currentFrame < start || currentFrame > end) continue;
+    for (let i = 0; i < e.annotations.length; i++) {
+      visible.push({ obj: e.annotations[i]!, frameNumber: e.frameNumber, markIndex: i });
+    }
+  }
 
-  // Don't render anything if no annotations visible
-  if (visibleAnnotations.length === 0) return null;
+  if (visible.length === 0) return null;
 
   const sx = (v: number) => v <= 1.5 ? v * width : v;
   const sy = (v: number) => v <= 1.5 ? v * height : v;
@@ -899,28 +967,49 @@ function AnnotationOverlay({
           if (!ctx) return;
           ctx.clearRect(0, 0, width, height);
 
-          for (const obj of visibleAnnotations) {
+          for (const { obj, frameNumber, markIndex } of visible) {
+            const isHighlighted = highlightedMark?.frameNumber === frameNumber && highlightedMark?.markIndex === markIndex;
             ctx.save();
             ctx.strokeStyle = obj.color;
             ctx.fillStyle = obj.color;
             ctx.lineWidth = obj.strokeWidth;
             ctx.lineCap = "round";
             ctx.lineJoin = "round";
+
+            // Dim non-highlighted marks when a highlight is active
+            if (highlightedMark && !isHighlighted) {
+              ctx.globalAlpha = 0.25;
+            }
+
+            // Highlight glow effect
+            if (isHighlighted) {
+              ctx.shadowColor = "#ef4444";
+              ctx.shadowBlur = 12;
+            }
+
             const d = obj.data as Record<string, unknown>;
 
             if (obj.tool === "text") {
               const fontSize = (d.fontSize as number) ?? 16;
               ctx.font = `${fontSize}px sans-serif`;
+              if (isHighlighted) {
+                // Draw red outline behind the text
+                ctx.strokeStyle = "#ef4444";
+                ctx.lineWidth = 2;
+                const tx = sx(d.x as number);
+                const ty = sy(d.y as number);
+                const tw = ctx.measureText((d.content as string) ?? "").width;
+                ctx.strokeRect(tx - 4, ty - fontSize, tw + 8, fontSize * 1.3);
+              }
               ctx.fillText((d.content as string) ?? "", sx(d.x as number), sy(d.y as number));
             } else if (obj.tool === "pen" || obj.tool === "highlight") {
               const pts = d.points as { x: number; y: number }[] | undefined;
               if (pts && pts.length >= 2) {
-                if (obj.tool === "highlight") ctx.globalAlpha = 0.4;
+                if (obj.tool === "highlight") ctx.globalAlpha = Math.min(ctx.globalAlpha, 0.4);
                 ctx.beginPath();
                 ctx.moveTo(sx(pts[0]!.x), sy(pts[0]!.y));
                 for (let i = 1; i < pts.length; i++) ctx.lineTo(sx(pts[i]!.x), sy(pts[i]!.y));
                 ctx.stroke();
-                ctx.globalAlpha = 1;
               }
             } else if (obj.tool === "rectangle") {
               const x1 = sx(d.startX as number), y1 = sy(d.startY as number);

@@ -5,6 +5,33 @@ import { frameToSeconds, secondsToFrame } from "../frame-utils";
 /** Persisted playback speed across clip changes (module-level singleton). */
 let persistedSpeed = 1;
 
+/**
+ * Seek to an exact frame, working around browser keyframe-only seeking.
+ *
+ * Strategy: set currentTime to the target, then check what frame we actually
+ * landed on after the seek completes. If we overshot (landed on a later
+ * keyframe), step backward frame-by-frame until we reach the target.
+ */
+function seekToFrameAccurate(
+  video: HTMLVideoElement,
+  targetFrame: number,
+  fps: number,
+): void {
+  const targetTime = frameToSeconds(targetFrame, fps);
+  video.currentTime = targetTime;
+
+  const onSeeked = () => {
+    video.removeEventListener("seeked", onSeeked);
+    const landedFrame = secondsToFrame(video.currentTime, fps);
+
+    if (landedFrame > targetFrame) {
+      // Overshot — step backward to exact frame
+      video.currentTime = targetTime - (landedFrame - targetFrame) / fps;
+    }
+  };
+  video.addEventListener("seeked", onSeeked);
+}
+
 /* --------------------------------------------------------------------------
    Types
    -------------------------------------------------------------------------- */
@@ -190,7 +217,7 @@ export function useVideoPlayer(options: UseVideoPlayerOptions): VideoPlayerContr
     (frame: number) => {
       const video = videoRef.current;
       if (!video || framerate <= 0) return;
-      video.currentTime = frameToSeconds(frame, framerate);
+      seekToFrameAccurate(video, frame, framerate);
     },
     [framerate],
   );

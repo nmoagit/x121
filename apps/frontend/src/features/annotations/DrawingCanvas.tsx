@@ -34,8 +34,8 @@ interface DrawingCanvasProps {
   /** Called when a new annotation is completed. */
   onAnnotationComplete?: (annotation: DrawingObject) => void;
   /**
-   * Called whenever the full annotation list changes (including undo/redo).
-   * Returns only user-drawn annotations (excludes existingAnnotations).
+   * Called whenever annotations change (including undo/redo/drag).
+   * Receives the complete final list: existing (minus moved originals) + user-drawn.
    */
   onAnnotationsChange?: (annotations: DrawingObject[]) => void;
   /** Whether the canvas is in edit mode. */
@@ -207,14 +207,24 @@ function renderInProgress(
    Hit-testing
    -------------------------------------------------------------------------- */
 
-/** Returns the index in allAnnotations if the point is near a text annotation, or -1. */
+/**
+ * Returns the index in allAnnotations if the point is near a text annotation, or -1.
+ * All coordinates are in 0-1 normalized space — textWidth must be converted
+ * from pixel space back to normalized space using the canvas dimensions.
+ * @param skipIndices - indices to skip (e.g. moved existing annotations that aren't rendered)
+ */
 function hitTestText(
   allAnnotations: DrawingObject[],
   point: Point,
   ctx: CanvasRenderingContext2D | null,
+  skipIndices?: Set<number>,
 ): number {
+  const cw = ctx?.canvas.width ?? 1;
+  const ch = ctx?.canvas.height ?? 1;
+
   // Walk in reverse so topmost (last drawn) is hit first.
   for (let i = allAnnotations.length - 1; i >= 0; i--) {
+    if (skipIndices?.has(i)) continue;
     const obj = allAnnotations[i]!;
     if (obj.tool !== "text") continue;
     const d = obj.data as Record<string, unknown>;
@@ -223,20 +233,25 @@ function hitTestText(
     const content = (d.content as string) ?? "";
     const fontSize = (d.fontSize as number) ?? 16;
 
-    // Measure the text bounding box using the canvas context.
-    let textWidth = content.length * fontSize * 0.6; // fallback estimate
+    // Measure text width in pixels, then convert to normalized space.
+    let textWidthNorm = content.length * fontSize * 0.6 / cw; // fallback estimate
     if (ctx) {
       ctx.font = `${fontSize}px sans-serif`;
-      textWidth = ctx.measureText(content).width;
+      textWidthNorm = ctx.measureText(content).width / cw;
     }
+    const fontSizeNormY = fontSize / ch;
+
+    // Hit padding in normalized space (4px equivalent).
+    const padX = 4 / cw;
+    const padY = 4 / ch;
 
     // Text is drawn at (tx, ty) where ty is the baseline.
     // Bounding box: x=[tx, tx+textWidth], y=[ty-fontSize, ty+fontSize*0.2]
     if (
-      point.x >= tx - 4 &&
-      point.x <= tx + textWidth + 4 &&
-      point.y >= ty - fontSize - 4 &&
-      point.y <= ty + fontSize * 0.2 + 4
+      point.x >= tx - padX &&
+      point.x <= tx + textWidthNorm + padX &&
+      point.y >= ty - fontSizeNormY - padY &&
+      point.y <= ty + fontSizeNormY * 0.2 + padY
     ) {
       return i;
     }
@@ -287,14 +302,18 @@ export function DrawingCanvas({
   const allAnnotations = [...existingAnnotations, ...undoStack];
   const totalCount = allAnnotations.length;
 
-  // Notify parent whenever user-drawn annotations change
+  // Notify parent with the complete final annotation list whenever anything changes.
   const prevUndoRef = useRef(undoStack);
+  const prevMovedRef = useRef(movedExistingIndices);
   useEffect(() => {
-    if (undoStack !== prevUndoRef.current) {
+    if (undoStack !== prevUndoRef.current || movedExistingIndices !== prevMovedRef.current) {
       prevUndoRef.current = undoStack;
-      onAnnotationsChange?.(undoStack);
+      prevMovedRef.current = movedExistingIndices;
+      // Build complete list: existing (minus moved originals) + undoStack
+      const kept = existingAnnotations.filter((_, i) => !movedExistingIndices.has(i));
+      onAnnotationsChange?.([...kept, ...undoStack]);
     }
-  }, [undoStack, onAnnotationsChange]);
+  }, [undoStack, movedExistingIndices, existingAnnotations, onAnnotationsChange]);
 
   // --- Canvas repaint on every render --------------------------------------
   useEffect(() => {
@@ -349,7 +368,7 @@ export function DrawingCanvas({
         // Check if clicking on an existing text annotation to drag it.
         const ctx = canvasRef.current?.getContext("2d") ?? null;
         const all = [...existingAnnotations, ...undoStack];
-        const hitIdx = hitTestText(all, point, ctx);
+        const hitIdx = hitTestText(all, point, ctx, movedExistingIndices);
         if (hitIdx >= 0) {
           const obj = all[hitIdx]!;
           const d = obj.data as Record<string, unknown>;
@@ -370,7 +389,7 @@ export function DrawingCanvas({
       setStartPoint(point);
       setPathPoints([point]);
     },
-    [editable, activeTool, getCanvasPoint, existingAnnotations, undoStack],
+    [editable, activeTool, getCanvasPoint, existingAnnotations, undoStack, movedExistingIndices],
   );
 
   const handleMouseMove = useCallback(
@@ -522,7 +541,7 @@ export function DrawingCanvas({
       {/* Toolbar — compact in overlay mode, full in standalone */}
       {editable && overlay && (
         <div
-          className="absolute top-0 left-0 right-0 z-20 flex flex-col bg-black/70 backdrop-blur-sm rounded-t"
+          className="absolute top-0 left-0 right-0 z-20 flex flex-col bg-[var(--color-surface-badge-overlay)] backdrop-blur-sm rounded-t"
           data-testid="tool-selector"
         >
           {/* Compact bar — always visible */}
@@ -751,7 +770,7 @@ export function DrawingCanvas({
           data-testid="annotation-canvas"
         />
         {/* Annotation count overlay */}
-        <div className={`absolute ${overlay ? "bottom-2 right-2" : "bottom-1 right-1"} rounded bg-black/50 px-1.5 py-0.5 text-[10px] font-mono text-white`}>
+        <div className={`absolute ${overlay ? "bottom-2 right-2" : "bottom-1 right-1"} rounded bg-[var(--color-surface-badge-overlay)] px-1.5 py-0.5 text-[10px] font-mono text-white`}>
           {totalCount} annotation{totalCount !== 1 ? "s" : ""}
         </div>
 

@@ -13,6 +13,12 @@ import { useVideoPlayer } from "./hooks/use-video-player";
 import type { PlaybackQuality, SourceType } from "./types";
 import type { TimelineAnnotationRange } from "./components/TimelineScrubber";
 
+/** Imperative control handle for VideoPlayer. */
+export interface VideoPlayerControl {
+  /** Set A-B loop to the given range, seek to start, and play. Pass null to clear. */
+  loopRange: (range: TimelineAnnotationRange | null) => void;
+}
+
 interface VideoPlayerProps {
   sourceType: SourceType;
   sourceId: number;
@@ -22,6 +28,8 @@ interface VideoPlayerProps {
   showControls?: boolean;
   /** Annotation frame ranges to highlight on the timeline. */
   annotationRanges?: TimelineAnnotationRange[];
+  /** Imperative handle ref for controlling the player from outside (e.g. set loop range). */
+  controlRef?: React.MutableRefObject<VideoPlayerControl | null>;
   onFrameChange?: (frame: number) => void;
   onPlayStateChange?: (playing: boolean) => void;
   className?: string;
@@ -34,6 +42,7 @@ export function VideoPlayer({
   autoPlay = false,
   showControls = true,
   annotationRanges,
+  controlRef,
   onFrameChange,
   onPlayStateChange,
   className,
@@ -64,6 +73,23 @@ export function VideoPlayer({
 
   // Only expose annotation playback controls when ranges exist.
   const annotationPlayback = annotationRanges?.length ? annPlayback : null;
+
+  // Expose imperative control handle to parent via ref — assigned every render, no effect needed.
+  // This calls the EXACT same functions as the timeline's onAnnotationRangeClick handler.
+  if (controlRef) {
+    controlRef.current = {
+      loopRange(range) {
+        if (range) {
+          loop.setInPoint(range.start);
+          loop.setOutPoint(range.end);
+          player.seekToFrame(range.start);
+          player.play();
+        } else {
+          loop.clearLoop();
+        }
+      },
+    };
+  }
 
   const streamUrl = getStreamUrl(sourceType, sourceId, quality);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -273,6 +299,12 @@ export function VideoPlayer({
             onSeek={player.seekToTime}
             annotationModeActive={annotationPlayback?.isEnabled && annotationPlayback?.isInZone}
             currentFrame={player.currentFrame}
+            onAnnotationRangeClick={(range) => {
+              loop.setInPoint(range.start);
+              loop.setOutPoint(range.end);
+              player.seekToFrame(range.start);
+              player.play();
+            }}
             className="px-[var(--spacing-2)]"
           />
 

@@ -25,6 +25,8 @@ interface TimelineScrubberProps {
   annotationModeActive?: boolean;
   /** Current frame number for determining which range is active. */
   currentFrame?: number;
+  /** Called when an annotation range is clicked on the timeline. */
+  onAnnotationRangeClick?: (range: TimelineAnnotationRange) => void;
   className?: string;
 }
 
@@ -38,10 +40,12 @@ export function TimelineScrubber({
   onSeek,
   annotationModeActive,
   currentFrame,
+  onAnnotationRangeClick,
   className,
 }: TimelineScrubberProps) {
   const trackRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const annotationClickedRef = useRef(false);
 
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
 
@@ -59,6 +63,11 @@ export function TimelineScrubber({
 
   const handlePointerDown = useCallback(
     (e: React.PointerEvent) => {
+      // Skip if an annotation range was just clicked
+      if (annotationClickedRef.current) {
+        annotationClickedRef.current = false;
+        return;
+      }
       e.currentTarget.setPointerCapture(e.pointerId);
       setIsDragging(true);
       seekFromPointer(e.clientX);
@@ -77,6 +86,14 @@ export function TimelineScrubber({
   const handlePointerUp = useCallback(() => {
     setIsDragging(false);
   }, []);
+
+  const handleAnnotationClick = useCallback(
+    (range: TimelineAnnotationRange) => {
+      annotationClickedRef.current = true;
+      onAnnotationRangeClick?.(range);
+    },
+    [onAnnotationRangeClick],
+  );
 
   // Convert A-B loop frame markers to percentage positions.
   const inPercent =
@@ -109,7 +126,7 @@ export function TimelineScrubber({
           />
         )}
 
-        {/* Annotation range fills (below progress) */}
+        {/* Annotation range fills (visual only — clickable zones are separate) */}
         {annotationRanges?.map((range) => {
           if (framerate <= 0 || duration <= 0) return null;
           const startPct = (frameToSeconds(range.start, framerate) / duration) * 100;
@@ -125,7 +142,7 @@ export function TimelineScrubber({
             <div
               key={`fill-${range.start}-${range.end}`}
               className={cn(
-                "absolute top-0 bottom-0 rounded-full",
+                "absolute top-0 bottom-0 rounded-full pointer-events-none",
                 isActive
                   ? "bg-amber-500/20 animate-[annotation-pulse_1.5s_ease-in-out_infinite]"
                   : "bg-amber-500/20",
@@ -163,10 +180,36 @@ export function TimelineScrubber({
         })}
       </div>
 
+      {/* Clickable annotation zones — full height for easy clicking */}
+      {onAnnotationRangeClick && annotationRanges?.map((range) => {
+        if (framerate <= 0 || duration <= 0) return null;
+        const startPct = (frameToSeconds(range.start, framerate) / duration) * 100;
+        const endPct = (frameToSeconds(range.end, framerate) / duration) * 100;
+
+        const isLooped = inPoint === range.start && outPoint === range.end;
+
+        return (
+          <div
+            key={`click-${range.start}-${range.end}`}
+            className={cn(
+              "absolute top-0 bottom-0 z-10 cursor-pointer",
+              "hover:bg-amber-500/15 transition-colors",
+              isLooped && "bg-amber-500/10 border-y border-amber-500/30",
+            )}
+            style={{ left: `${startPct}%`, width: `${endPct - startPct}%` }}
+            title={`F${range.start}–F${range.end} (click to loop)`}
+            onPointerDown={(e) => {
+              e.stopPropagation();
+              handleAnnotationClick(range);
+            }}
+          />
+        );
+      })}
+
       {/* In-point marker */}
       {inPercent !== null && (
         <div
-          className="absolute top-0 bottom-0 w-0.5 bg-[var(--color-status-warning)]"
+          className="absolute top-0 bottom-0 w-0.5 bg-[var(--color-status-warning)] pointer-events-none"
           style={{ left: `${inPercent}%` }}
           title={`In-point: frame ${inPoint}`}
         />
@@ -175,7 +218,7 @@ export function TimelineScrubber({
       {/* Out-point marker */}
       {outPercent !== null && (
         <div
-          className="absolute top-0 bottom-0 w-0.5 bg-[var(--color-status-warning)]"
+          className="absolute top-0 bottom-0 w-0.5 bg-[var(--color-status-warning)] pointer-events-none"
           style={{ left: `${outPercent}%` }}
           title={`Out-point: frame ${outPoint}`}
         />
@@ -184,7 +227,7 @@ export function TimelineScrubber({
       {/* Playhead */}
       <div
         className={cn(
-          "absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-3 h-3 rounded-full",
+          "absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-3 h-3 rounded-full pointer-events-none",
           "bg-[var(--color-action-primary)] shadow-sm",
           "transition-transform duration-75",
           isDragging ? "scale-125" : "scale-100 group-hover:scale-110",
