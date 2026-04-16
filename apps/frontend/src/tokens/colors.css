@@ -36,6 +36,23 @@
   --color-border-default: #3d444d;
   --color-border-focus: #1f6feb;
   --color-border-error: #da3633;
+
+  /* Tooltip (solid, opaque backgrounds for readability) */
+  --color-surface-tooltip: #2d333b;
+  --color-text-tooltip: #f0f6fc;
+
+  /* Overlay badge (semi-transparent chip on thumbnails/cards) */
+  --color-surface-badge-overlay: rgba(0, 0, 0, 0.6);
+  --color-text-badge-overlay: #f0f6fc;
+
+  /* Data / status accent colors (bright on dark, muted on light) */
+  --color-data-cyan: #22d3ee;
+  --color-data-green: #4ade80;
+  --color-data-orange: #fb923c;
+  --color-data-red: #f87171;
+  --color-data-pink: #f472b6;
+  --color-data-sky: #38bdf8;
+  --color-data-violet: #a78bfa;
 }
 
 /* --------------------------------------------------------------------------
@@ -46,6 +63,10 @@
   --color-surface-secondary: #151b23;
   --color-surface-tertiary: #212830;
   --color-surface-overlay: rgba(1, 4, 9, 0.6);
+  --color-surface-tooltip: #2d333b;
+  --color-text-tooltip: #f0f6fc;
+  --color-surface-badge-overlay: rgba(0, 0, 0, 0.6);
+  --color-text-badge-overlay: #f0f6fc;
 
   --color-text-primary: #f0f6fc;
   --color-text-secondary: #9198a1;
@@ -62,6 +83,14 @@
   --color-border-default: #3d444d;
   --color-border-focus: #1f6feb;
   --color-border-error: #da3633;
+
+  --color-data-cyan: #22d3ee;
+  --color-data-green: #4ade80;
+  --color-data-orange: #fb923c;
+  --color-data-red: #f87171;
+  --color-data-pink: #f472b6;
+  --color-data-sky: #38bdf8;
+  --color-data-violet: #a78bfa;
 }
 
 /* --------------------------------------------------------------------------
@@ -72,6 +101,10 @@
   --color-surface-secondary: #0d1117;
   --color-surface-tertiary: #151b23;
   --color-surface-overlay: rgba(1, 4, 9, 0.7);
+  --color-surface-tooltip: #21262d;
+  --color-text-tooltip: #f0f6fc;
+  --color-surface-badge-overlay: rgba(0, 0, 0, 0.6);
+  --color-text-badge-overlay: #f0f6fc;
 
   --color-text-primary: #f0f6fc;
   --color-text-secondary: #b1bac4;
@@ -88,6 +121,14 @@
   --color-border-default: #30363d;
   --color-border-focus: #2f81f7;
   --color-border-error: #f85149;
+
+  --color-data-cyan: #22d3ee;
+  --color-data-green: #4ade80;
+  --color-data-orange: #fb923c;
+  --color-data-red: #f87171;
+  --color-data-pink: #f472b6;
+  --color-data-sky: #38bdf8;
+  --color-data-violet: #a78bfa;
 }
 
 /* --------------------------------------------------------------------------
@@ -98,6 +139,10 @@
   --color-surface-secondary: #f6f8fa;
   --color-surface-tertiary: #eff2f5;
   --color-surface-overlay: rgba(31, 35, 40, 0.3);
+  --color-surface-tooltip: #24292f;
+  --color-text-tooltip: #f0f6fc;
+  --color-surface-badge-overlay: rgba(0, 0, 0, 0.75);
+  --color-text-badge-overlay: #ffffff;
 
   --color-text-primary: #1f2328;
   --color-text-secondary: #59636e;
@@ -114,6 +159,14 @@
   --color-border-default: #d1d9e0;
   --color-border-focus: #0969da;
   --color-border-error: #cf222e;
+
+  --color-data-cyan: #0e7490;
+  --color-data-green: #15803d;
+  --color-data-orange: #c2410c;
+  --color-data-red: #dc2626;
+  --color-data-pink: #be185d;
+  --color-data-sky: #0369a1;
+  --color-data-violet: #6d28d9;
 }
 
 /* --------------------------------------------------------------------------
@@ -124,6 +177,10 @@
   --color-surface-secondary: #f6f8fa;
   --color-surface-tertiary: #eaeef2;
   --color-surface-overlay: rgba(31, 35, 40, 0.25);
+  --color-surface-tooltip: #1f2328;
+  --color-text-tooltip: #f0f6fc;
+  --color-surface-badge-overlay: rgba(0, 0, 0, 0.75);
+  --color-text-badge-overlay: #ffffff;
 
   --color-text-primary: #1f2328;
   --color-text-secondary: #424a53;
@@ -140,6 +197,14 @@
   --color-border-default: #d0d7de;
   --color-border-focus: #0969da;
   --color-border-error: #d1242f;
+
+  --color-data-cyan: #0891b2;
+  --color-data-green: #16a34a;
+  --color-data-orange: #ea580c;
+  --color-data-red: #dc2626;
+  --color-data-pink: #db2777;
+  --color-data-sky: #0284c7;
+  --color-data-violet: #7c3aed;
 }
 
 /* --------------------------------------------------------------------------

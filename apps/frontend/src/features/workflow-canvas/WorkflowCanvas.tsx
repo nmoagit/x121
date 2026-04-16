@@ -118,7 +118,7 @@ function parseWorkflowToGraph(json: Record<string, unknown>): {
       position: { x: 0, y: 0 }, // will be set by dagre
       style: {
         background: bg,
-        color: "#fff",
+        color: "var(--color-text-inverse)",
         border: "1px solid rgba(255,255,255,0.15)",
         borderRadius: 6,
         padding: "8px 10px",
@@ -141,8 +141,8 @@ function parseWorkflowToGraph(json: Record<string, unknown>): {
           source: sourceId,
           target: nodeId,
           label: inputName,
-          style: { stroke: "#94a3b8", strokeWidth: 1.5 },
-          labelStyle: { fontSize: 9, fill: "#94a3b8" },
+          style: { stroke: "var(--color-text-secondary)", strokeWidth: 1.5 },
+          labelStyle: { fontSize: 9, fill: "var(--color-text-secondary)" },
         });
       }
     }
@@ -204,7 +204,7 @@ function ZoomIndicator() {
         type="button"
         onClick={() => fitView()}
         className="rounded px-2 py-1 text-xs font-medium"
-        style={{ background: "#1e293b", color: "#94a3b8", border: "1px solid #334155" }}
+        style={{ background: "var(--color-surface-secondary)", color: "var(--color-text-secondary)", border: "1px solid var(--color-border-default)" }}
         title="Click to fit view"
       >
         {Math.round(zoom * 100)}%
@@ -251,9 +251,9 @@ export function WorkflowCanvas({ workflowJson }: WorkflowCanvasProps) {
           minZoom={0.05}
           maxZoom={4}
           proOptions={{ hideAttribution: true }}
-          style={{ background: "#1e1e2e" }}
+          style={{ background: "var(--color-surface-primary)" }}
         >
-          <Background color="#334155" gap={20} />
+          <Background color="var(--color-border-default)" gap={20} />
           <Controls
             showZoom
             showFitView
@@ -262,7 +262,7 @@ export function WorkflowCanvas({ workflowJson }: WorkflowCanvasProps) {
           <MiniMap
             nodeColor={(n) => (n.style?.background as string) ?? "#64748b"}
             maskColor="rgba(0,0,0,0.6)"
-            style={{ background: "#0f172a", borderColor: "#334155" }}
+            style={{ background: "var(--color-surface-primary)", borderColor: "var(--color-border-default)" }}
           />
           <ZoomIndicator />
         </ReactFlow>
