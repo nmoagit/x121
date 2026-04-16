@@ -843,7 +843,12 @@ pub async fn browse_clips(
     let offset = params.offset.unwrap_or(0);
     let show_disabled = params.show_disabled.unwrap_or(false);
 
-    let has_parent = params.has_parent.unwrap_or(false);
+    // has_parent tri-state: None = all clips, true = only derived, false = only non-derived
+    let has_parent_filter: &str = match params.has_parent {
+        Some(true) => "only_derived",
+        Some(false) => "only_non_derived",
+        None => "all",
+    };
 
     let base_from = "\
         FROM scene_video_versions svv \
@@ -876,7 +881,7 @@ pub async fn browse_clips(
             WHERE et.entity_type = 'scene_video_version' \
               AND et.tag_id = ANY(string_to_array($10, ',')::bigint[]) \
           )) \
-          AND (NOT $11::bool OR svv.parent_version_id IS NOT NULL) \
+          AND ($11::text = 'all' OR ($11::text = 'only_derived' AND svv.parent_version_id IS NOT NULL) OR ($11::text = 'only_non_derived' AND svv.parent_version_id IS NULL)) \
           AND ($12::bigint IS NULL OR svv.parent_version_id = $12) \
           AND (NOT $13::bool OR svv.id NOT IN ( \
             SELECT et.entity_id FROM entity_tags et \
@@ -895,7 +900,7 @@ pub async fn browse_clips(
         .bind(&params.tag_ids)
         .bind(&params.search)
         .bind(&params.exclude_tag_ids)
-        .bind(has_parent)
+        .bind(has_parent_filter)
         .bind(params.parent_version_id)
         .bind(params.no_tags.unwrap_or(false))
         .fetch_one(&state.pool)
@@ -928,7 +933,7 @@ pub async fn browse_clips(
         .bind(&params.tag_ids)
         .bind(&params.search)
         .bind(&params.exclude_tag_ids)
-        .bind(has_parent)
+        .bind(has_parent_filter)
         .bind(params.parent_version_id)
         .bind(params.no_tags.unwrap_or(false))
         .bind(limit as i64)

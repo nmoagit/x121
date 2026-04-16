@@ -111,11 +111,18 @@ impl TagRepo {
 
         if let Some(ref entity_type) = params.entity_type {
             // Special value "derived_clip" → scene_video_versions with parent_version_id set
+            // "scene_video_version" → only non-derived clips (parent_version_id IS NULL)
             let (actual_entity_type, extra_join) = if entity_type == "derived_clip" {
                 (
                     "scene_video_version",
                     " INNER JOIN scene_video_versions svv ON svv.id = et.entity_id \
                       AND svv.parent_version_id IS NOT NULL",
+                )
+            } else if entity_type == "scene_video_version" {
+                (
+                    "scene_video_version",
+                    " INNER JOIN scene_video_versions svv ON svv.id = et.entity_id \
+                      AND svv.parent_version_id IS NULL",
                 )
             } else {
                 (entity_type.as_str(), "")

@@ -77,7 +77,7 @@ impl SceneVideoVersionRepo {
                     COALESCE((SELECT COUNT(*) FROM frame_annotations fa
                               WHERE fa.version_id = scene_video_versions.id), 0) AS annotation_count
              FROM scene_video_versions
-             WHERE scene_id = $1 AND deleted_at IS NULL
+             WHERE scene_id = $1 AND deleted_at IS NULL AND parent_version_id IS NULL
              ORDER BY version_number DESC"
         );
         sqlx::query_as::<_, SceneVideoVersion>(&query)
