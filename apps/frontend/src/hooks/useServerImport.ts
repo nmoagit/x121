@@ -72,9 +72,7 @@ interface StartImportArgs {
 // Hook
 // ---------------------------------------------------------------------------
 
-export function useServerImport(
-  options: UseServerImportOptions,
-): UseServerImportResult {
+export function useServerImport(options: UseServerImportOptions): UseServerImportResult {
   const { pipelineId, projectId, onComplete, onError } = options;
 
   const [progress, setProgress] = useState<ImportProgress | null>(null);
@@ -129,8 +127,9 @@ export function useServerImport(
           buffer += decoder.decode(value, { stream: true });
 
           // SSE frames are delimited by a blank line.
-          let idx: number;
-          while ((idx = buffer.indexOf("\n\n")) !== -1) {
+          while (true) {
+            const idx = buffer.indexOf("\n\n");
+            if (idx === -1) break;
             const frame = buffer.slice(0, idx);
             buffer = buffer.slice(idx + 2);
             handleFrame(frame, errors, setProgress, (s) => {
@@ -167,8 +166,7 @@ export function useServerImport(
 // Internal: SSE frame parser
 // ---------------------------------------------------------------------------
 
-type ProgressUpdater =
-  (updater: (prev: ImportProgress | null) => ImportProgress) => void;
+type ProgressUpdater = (updater: (prev: ImportProgress | null) => ImportProgress) => void;
 
 function handleFrame(
   frame: string,
@@ -211,11 +209,7 @@ function handleFrame(
   }
 }
 
-function applyProgress(
-  parsed: unknown,
-  errors: string[],
-  setProgress: ProgressUpdater,
-): void {
+function applyProgress(parsed: unknown, errors: string[], setProgress: ProgressUpdater): void {
   if (!isRecord(parsed)) return;
   const phase = typeof parsed.phase === "string" ? parsed.phase : "creating";
   const current = typeof parsed.current === "number" ? parsed.current : 0;
@@ -256,11 +250,11 @@ function isRecord(v: unknown): v is Record<string, unknown> {
 
 function isDoneSummary(v: unknown): v is ImportDoneSummary {
   return (
-    isRecord(v)
-    && typeof v.imported === "number"
-    && typeof v.skipped === "number"
-    && typeof v.failed === "number"
-    && Array.isArray(v.errors)
+    isRecord(v) &&
+    typeof v.imported === "number" &&
+    typeof v.skipped === "number" &&
+    typeof v.failed === "number" &&
+    Array.isArray(v.errors)
   );
 }
 
@@ -355,4 +349,3 @@ interface ServerAvatarPayloadDTO {
   tov_json_path: string | null;
   metadata_json_path: string | null;
 }
-

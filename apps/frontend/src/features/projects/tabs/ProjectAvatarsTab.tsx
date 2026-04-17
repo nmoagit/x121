@@ -13,9 +13,10 @@ import { useAvatarPath } from "@/hooks/usePipelinePath";
 import { useSetToggle } from "@/hooks/useSetToggle";
 
 import { CollapsibleSection, ConfirmDeleteModal, ConfirmModal, ConfigToolbar, Modal } from "@/components/composite";
-import { BlockingDeliverablesEditor, EmptyState, FileDropZone } from "@/components/domain";
+import { BlockingDeliverablesEditor, EmptyState, FileDropZone, ScanInputDialog } from "@/components/domain";
 import { Stack } from "@/components/layout";
 import { Button, Input, LoadingPane, Select } from "@/components/primitives";
+import { useScanImportFlow } from "@/hooks/useScanImportFlow";
 import { AvatarFilterBar, AvatarGroupSection, FileAssignmentModal } from "@/features/avatars/components";
 import type { GroupSectionDragHandlers } from "@/features/avatars/components";
 import { useExportGroupSettings, useConfigImport } from "@/features/config-io";
@@ -26,6 +27,7 @@ import { toSelectOptions } from "@/lib/select-utils";
 import { INLINE_LINK_BTN } from "@/lib/ui-classes";
 import {
   Folder,
+  FolderSearch,
   Plus,
   Upload,
   User,
@@ -99,6 +101,12 @@ export function ProjectAvatarsTab({ projectId, projectName, scrollToGroupId, blo
   const deleteGroup = useDeleteGroup(projectId);
   const moveAvatar = useMoveAvatarToGroup(projectId);
   const charImport = useAvatarImport(projectId, undefined, pipelineCtx?.pipelineId);
+
+  /* --- Directory scan → confirm → SSE import flow (PRD-165) --- */
+  const scanFlow = useScanImportFlow({
+    pipelineId: pipelineCtx?.pipelineId ?? 0,
+    projectId,
+  });
   const toggleEnabled = useToggleAvatarEnabled(projectId);
   const groupExport = useExportGroupSettings();
   const groupImport = useConfigImport();
@@ -626,6 +634,16 @@ export function ProjectAvatarsTab({ projectId, projectName, scrollToGroupId, blo
           >
             Import Folder
           </Button>
+          {pipelineCtx?.pipelineId && (
+            <Button
+              size="sm"
+              variant="secondary"
+              icon={<FolderSearch size={14} />}
+              onClick={scanFlow.openScan}
+            >
+              Scan Directory
+            </Button>
+          )}
           <Button size="sm" variant="secondary" icon={<Folder size={14} />} onClick={openCreateGroup}>
             New Group
           </Button>
@@ -1082,6 +1100,53 @@ export function ProjectAvatarsTab({ projectId, projectName, scrollToGroupId, blo
           existingGroupNames={groups?.map((g) => g.name) ?? []}
           hashSummary={charImport.hashSummary}
         />
+
+        {/* Directory scan flow (PRD-165) */}
+        {pipelineCtx?.pipelineId && (
+          <>
+            <ScanInputDialog
+              open={scanFlow.scanOpen}
+              onClose={scanFlow.closeScan}
+              pipelineId={pipelineCtx.pipelineId}
+              projectId={projectId}
+              onScanSuccess={scanFlow.handleScanSuccess}
+            />
+            {scanFlow.confirmPayloads && (
+              <ImportConfirmModal
+                open={scanFlow.confirmOpen}
+                onClose={scanFlow.closeConfirm}
+                names={scanFlow.confirmPayloads.map((p) => p.rawName)}
+                payloads={scanFlow.confirmPayloads}
+                projectId={projectId}
+                existingNames={avatars?.map((c) => c.name) ?? []}
+                avatars={avatars ?? []}
+                onConfirm={() => {}}
+                onConfirmWithAssets={(
+                  newPayloads,
+                  existingPayloads,
+                  groupId,
+                  overwrite,
+                  skipExisting,
+                ) =>
+                  scanFlow.handleConfirm(
+                    newPayloads,
+                    existingPayloads,
+                    groupId,
+                    overwrite,
+                    skipExisting,
+                    true, // apply filename tags by default for directory scans
+                  )
+                }
+                loading={scanFlow.isImporting}
+                importProgress={scanFlow.importProgress}
+                onAbort={scanFlow.cancelImport}
+                projectName={projectName}
+                existingGroupNames={groups?.map((g) => g.name) ?? []}
+                hashSummary={scanFlow.hashSummary}
+              />
+            )}
+          </>
+        )}
 
         {/* Voice ID import */}
         {voiceFlow.voiceImport && (

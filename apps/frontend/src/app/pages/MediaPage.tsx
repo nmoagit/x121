@@ -7,7 +7,11 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { useNavigate } from "@tanstack/react-router";
 
-import { EmptyState, BulkActionBar, BulkRejectDialog, BulkLabelDialog, ExportStatusPanel, ScanDirectoryDialog } from "@/components/domain";
+import { EmptyState, BulkActionBar, BulkRejectDialog, BulkLabelDialog, ExportStatusPanel, ScanInputDialog } from "@/components/domain";
+import { ImportConfirmModal } from "@/features/projects/components/ImportConfirmModal";
+import { useScanImportFlow } from "@/hooks/useScanImportFlow";
+import { useProjectAvatars } from "@/features/projects/hooks/use-project-avatars";
+import { useAvatarGroups } from "@/features/projects/hooks/use-avatar-groups";
 import { TagFilter } from "@/components/domain/TagFilter";
 import { NotesModal } from "@/components/domain/NotesModal";
 import { TagInput } from "@/components/domain/TagInput";
@@ -310,7 +314,7 @@ export function MediaPage() {
   const [excludeLabelFilter, setExcludeLabelFilter] = useState<number[]>([]);
   const [searchInput, setSearchInput] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [scanOpen, setScanOpen] = useState(false);
+  // PRD-165: scan flow is gated on single-project context below.
   // Absolute index across all pages (0 to total-1)
   const [previewAbsIndex, setPreviewAbsIndex] = useState<number | null>(null);
   const [showDisabled, setShowDisabled] = useState(false);
@@ -336,6 +340,20 @@ export function MediaPage() {
   const { data: projects } = useProjects(pipelineCtx?.pipelineId);
   // All filters passed server-side as comma-separated OR values
   const projectId = projectFilter.length === 1 ? Number(projectFilter[0]) : undefined;
+
+  // PRD-165: unified scan → confirm → SSE import flow.
+  const scanFlow = useScanImportFlow({
+    pipelineId: pipelineCtx?.pipelineId ?? 0,
+    projectId: projectId ?? 0,
+  });
+  const scanAvailable = Boolean(pipelineCtx?.pipelineId && projectId);
+  const { data: scanAvatars } = useProjectAvatars(projectId ?? 0);
+  const { data: scanGroups } = useAvatarGroups(projectId ?? 0);
+  const scanProjectName = useMemo(
+    () => (projectId ? projects?.find((p) => p.id === projectId)?.name : undefined),
+    [projectId, projects],
+  );
+
   const { data: browseResult, isLoading } = useMediaVariantsBrowse({
     projectId,
     pipelineId: pipelineCtx?.pipelineId,
@@ -421,8 +439,8 @@ export function MediaPage() {
       <PageHeader
         title="Media"
         description="Browse all media variants across avatars, most recent first."
-        actions={pipelineCtx?.pipelineId ? (
-          <Button size="sm" variant="secondary" icon={<FolderSearch size={14} />} onClick={() => setScanOpen(true)}>
+        actions={scanAvailable ? (
+          <Button size="sm" variant="secondary" icon={<FolderSearch size={14} />} onClick={scanFlow.openScan}>
             Scan Directory
           </Button>
         ) : undefined}
@@ -610,12 +628,37 @@ export function MediaPage() {
         onCancel={() => bulkOps.setLabelDialogOpen(null)}
       />
 
-      {pipelineCtx?.pipelineId && (
-        <ScanDirectoryDialog
-          open={scanOpen}
-          onClose={() => setScanOpen(false)}
-          pipelineId={pipelineCtx.pipelineId}
-        />
+      {scanAvailable && pipelineCtx?.pipelineId && projectId && (
+        <>
+          <ScanInputDialog
+            open={scanFlow.scanOpen}
+            onClose={scanFlow.closeScan}
+            pipelineId={pipelineCtx.pipelineId}
+            projectId={projectId}
+            onScanSuccess={scanFlow.handleScanSuccess}
+          />
+          {scanFlow.confirmPayloads && (
+            <ImportConfirmModal
+              open={scanFlow.confirmOpen}
+              onClose={scanFlow.closeConfirm}
+              names={scanFlow.confirmPayloads.map((p) => p.rawName)}
+              payloads={scanFlow.confirmPayloads}
+              projectId={projectId}
+              existingNames={scanAvatars?.map((c) => c.name) ?? []}
+              avatars={scanAvatars ?? []}
+              onConfirm={() => {}}
+              onConfirmWithAssets={(newPayloads, existingPayloads, groupId, overwrite, skipExisting) =>
+                scanFlow.handleConfirm(newPayloads, existingPayloads, groupId, overwrite, skipExisting, true)
+              }
+              loading={scanFlow.isImporting}
+              importProgress={scanFlow.importProgress}
+              onAbort={scanFlow.cancelImport}
+              projectName={scanProjectName}
+              existingGroupNames={scanGroups?.map((g) => g.name) ?? []}
+              hashSummary={scanFlow.hashSummary}
+            />
+          )}
+        </>
       )}
 
     </Stack>

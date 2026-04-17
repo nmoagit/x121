@@ -7,8 +7,12 @@
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { useNavigate } from "@tanstack/react-router";
 
-import { EmptyState } from "@/components/domain";
+import { EmptyState, ScanInputDialog } from "@/components/domain";
+import { ImportConfirmModal } from "@/features/projects/components/ImportConfirmModal";
 import { PageHeader, Stack } from "@/components/layout";
+import { useScanImportFlow } from "@/hooks/useScanImportFlow";
+import { useProjectAvatars } from "@/features/projects/hooks/use-project-avatars";
+import { useAvatarGroups } from "@/features/projects/hooks/use-avatar-groups";
 import { Button, Checkbox, MultiFilterBar, Pagination, SearchInput, Toggle, ContextLoader } from "@/components/primitives";
 import type { FilterConfig, FilterOption } from "@/components/primitives";
 import { useClipsBrowse, useBrowseApproveClip, useBrowseUnapproveClip, useBrowseRejectClip, useBulkApproveClips, useBulkRejectClips } from "@/features/scenes/hooks/useClipManagement";
@@ -55,8 +59,6 @@ export function DerivedClipsPage() {
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
-  const [scanOpen, setScanOpen] = useState(false);
-
   const pipelineCtx = usePipelineContextSafe();
 
   // Debounce search
@@ -73,6 +75,19 @@ export function DerivedClipsPage() {
 
   const { data: projects } = useProjects(pipelineCtx?.pipelineId);
   const projectId = projectFilter.length === 1 ? Number(projectFilter[0]) : undefined;
+
+  // PRD-165: scan → confirm → SSE import flow, gated on a single-project filter.
+  const scanFlow = useScanImportFlow({
+    pipelineId: pipelineCtx?.pipelineId ?? 0,
+    projectId: projectId ?? 0,
+  });
+  const scanAvailable = Boolean(pipelineCtx?.pipelineId && projectId);
+  const { data: scanAvatars } = useProjectAvatars(projectId ?? 0);
+  const { data: scanGroups } = useAvatarGroups(projectId ?? 0);
+  const scanProjectName = useMemo(
+    () => (projectId ? projects?.find((p) => p.id === projectId)?.name : undefined),
+    [projectId, projects],
+  );
 
   const { data: browseResult, isLoading } = useClipsBrowse({
     projectId,
@@ -178,8 +193,8 @@ export function DerivedClipsPage() {
       <PageHeader
         title="Derived Clips"
         description="Browse imported and derived clips across all avatars."
-        actions={pipelineCtx?.pipelineId ? (
-          <Button size="sm" variant="secondary" icon={<FolderSearch size={14} />} onClick={() => setScanOpen(true)}>
+        actions={scanAvailable ? (
+          <Button size="sm" variant="secondary" icon={<FolderSearch size={14} />} onClick={scanFlow.openScan}>
             Scan Directory
           </Button>
         ) : undefined}
@@ -242,9 +257,40 @@ export function DerivedClipsPage() {
         page={page}
         pageSize={pageSize}
         onPageChange={setPage}
-        scanOpen={scanOpen}
-        onCloseScan={() => setScanOpen(false)}
       />
+
+      {scanAvailable && pipelineCtx?.pipelineId && projectId && (
+        <>
+          <ScanInputDialog
+            open={scanFlow.scanOpen}
+            onClose={scanFlow.closeScan}
+            pipelineId={pipelineCtx.pipelineId}
+            projectId={projectId}
+            onScanSuccess={scanFlow.handleScanSuccess}
+          />
+          {scanFlow.confirmPayloads && (
+            <ImportConfirmModal
+              open={scanFlow.confirmOpen}
+              onClose={scanFlow.closeConfirm}
+              names={scanFlow.confirmPayloads.map((p) => p.rawName)}
+              payloads={scanFlow.confirmPayloads}
+              projectId={projectId}
+              existingNames={scanAvatars?.map((c) => c.name) ?? []}
+              avatars={scanAvatars ?? []}
+              onConfirm={() => {}}
+              onConfirmWithAssets={(newPayloads, existingPayloads, groupId, overwrite, skipExisting) =>
+                scanFlow.handleConfirm(newPayloads, existingPayloads, groupId, overwrite, skipExisting, true)
+              }
+              loading={scanFlow.isImporting}
+              importProgress={scanFlow.importProgress}
+              onAbort={scanFlow.cancelImport}
+              projectName={scanProjectName}
+              existingGroupNames={scanGroups?.map((g) => g.name) ?? []}
+              hashSummary={scanFlow.hashSummary}
+            />
+          )}
+        </>
+      )}
     </Stack>
   );
 }

@@ -7,7 +7,9 @@
 import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import { useNavigate } from "@tanstack/react-router";
 
-import { EmptyState, BulkActionBar, BulkRejectDialog, BulkLabelDialog, ExportStatusPanel, ScanDirectoryDialog } from "@/components/domain";
+import { EmptyState, BulkActionBar, BulkRejectDialog, BulkLabelDialog, ExportStatusPanel, ScanInputDialog } from "@/components/domain";
+import { ImportConfirmModal } from "@/features/projects/components/ImportConfirmModal";
+import { useScanImportFlow } from "@/hooks/useScanImportFlow";
 import { PageHeader, Stack } from "@/components/layout";
 import { Button, Checkbox, MultiFilterBar, Pagination, SearchInput, Toggle, ContextLoader } from "@/components/primitives";
 import type { FilterConfig, FilterOption } from "@/components/primitives";
@@ -23,6 +25,8 @@ import { TERMINAL_STATUS_COLORS, TRACK_TEXT_COLORS } from "@/lib/ui-classes";
 import { toSelectOptions } from "@/lib/select-utils";
 import { usePipelineContextSafe } from "@/features/pipelines";
 import { useProjects } from "@/features/projects/hooks/use-projects";
+import { useProjectAvatars } from "@/features/projects/hooks/use-project-avatars";
+import { useAvatarGroups } from "@/features/projects/hooks/use-avatar-groups";
 import { useSceneTypes } from "@/features/scene-types/hooks/use-scene-types";
 import { useTracks } from "@/features/scene-catalogue/hooks/use-tracks";
 import { TagFilter } from "@/components/domain/TagFilter";
@@ -235,7 +239,8 @@ export function ScenesPage() {
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState<number>(DEFAULT_PAGE_SIZE);
-  const [scanOpen, setScanOpen] = useState(false);
+  // PRD-165: scan flow is only available when a single project is in context
+  // (the SSE import needs a project_id for avatar creation + group routing).
 
   // Bulk selection — reset key serializes all filter state
   const bulkResetKey = useMemo(
@@ -254,6 +259,23 @@ export function ScenesPage() {
   const { data: projects } = useProjects(pipelineCtx?.pipelineId);
   // All filters passed server-side as comma-separated OR values
   const projectId = projectFilter.length === 1 ? Number(projectFilter[0]) : undefined;
+
+  // PRD-165: unified scan → confirm → SSE import flow. Requires a pipeline
+  // context and a single-project filter since the backend orchestrator
+  // needs both to route avatar/group creation.
+  const scanFlow = useScanImportFlow({
+    pipelineId: pipelineCtx?.pipelineId ?? 0,
+    projectId: projectId ?? 0,
+  });
+  const scanAvailable = Boolean(pipelineCtx?.pipelineId && projectId);
+  // Avatars + groups for the scan's ImportConfirmModal (only queried when
+  // a single project is active, otherwise returns an empty list).
+  const { data: scanAvatars } = useProjectAvatars(projectId ?? 0);
+  const { data: scanGroups } = useAvatarGroups(projectId ?? 0);
+  const scanProjectName = useMemo(
+    () => (projectId ? projects?.find((p) => p.id === projectId)?.name : undefined),
+    [projectId, projects],
+  );
   // "derived" is a virtual source that maps to has_parent=true
   const isDerivedFilter = sourceFilter.includes("derived");
   const actualSourceFilter = sourceFilter.filter((s) => s !== "derived");
@@ -386,8 +408,13 @@ export function ScenesPage() {
       <PageHeader
         title="Scenes"
         description="Browse all generated scene clips, most recent first."
-        actions={pipelineCtx?.pipelineId ? (
-          <Button size="sm" variant="secondary" icon={<FolderSearch size={14} />} onClick={() => setScanOpen(true)}>
+        actions={scanAvailable ? (
+          <Button
+            size="sm"
+            variant="secondary"
+            icon={<FolderSearch size={14} />}
+            onClick={scanFlow.openScan}
+          >
             Scan Directory
           </Button>
         ) : undefined}
@@ -602,12 +629,50 @@ export function ScenesPage() {
         onCancel={() => bulkOps.setLabelDialogOpen(null)}
       />
 
-      {pipelineCtx?.pipelineId && (
-        <ScanDirectoryDialog
-          open={scanOpen}
-          onClose={() => setScanOpen(false)}
-          pipelineId={pipelineCtx.pipelineId}
-        />
+      {scanAvailable && pipelineCtx?.pipelineId && projectId && (
+        <>
+          <ScanInputDialog
+            open={scanFlow.scanOpen}
+            onClose={scanFlow.closeScan}
+            pipelineId={pipelineCtx.pipelineId}
+            projectId={projectId}
+            onScanSuccess={scanFlow.handleScanSuccess}
+          />
+          {scanFlow.confirmPayloads && (
+            <ImportConfirmModal
+              open={scanFlow.confirmOpen}
+              onClose={scanFlow.closeConfirm}
+              names={scanFlow.confirmPayloads.map((p) => p.rawName)}
+              payloads={scanFlow.confirmPayloads}
+              projectId={projectId}
+              existingNames={scanAvatars?.map((c) => c.name) ?? []}
+              avatars={scanAvatars ?? []}
+              onConfirm={() => {}}
+              onConfirmWithAssets={(
+                newPayloads,
+                existingPayloads,
+                groupId,
+                overwrite,
+                skipExisting,
+              ) =>
+                scanFlow.handleConfirm(
+                  newPayloads,
+                  existingPayloads,
+                  groupId,
+                  overwrite,
+                  skipExisting,
+                  true,
+                )
+              }
+              loading={scanFlow.isImporting}
+              importProgress={scanFlow.importProgress}
+              onAbort={scanFlow.cancelImport}
+              projectName={scanProjectName}
+              existingGroupNames={scanGroups?.map((g) => g.name) ?? []}
+              hashSummary={scanFlow.hashSummary}
+            />
+          )}
+        </>
       )}
 
     </Stack>

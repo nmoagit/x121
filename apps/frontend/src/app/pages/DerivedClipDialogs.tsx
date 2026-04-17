@@ -1,13 +1,13 @@
 /**
  * Dialog/modal group for the DerivedClipsPage — playback, bulk actions,
- * reject, label, scan directory. Extracted to keep the page under 200 lines.
+ * reject, label. The directory scan dialog is owned by the page directly
+ * (PRD-165 unified scan → confirm → SSE import flow).
  */
 
 import { BulkActionBar, BulkRejectDialog, BulkLabelDialog, ExportStatusPanel } from "@/components/domain";
 import type { ClipBrowseItem } from "@/features/scenes/hooks/useClipManagement";
 import { ClipPlaybackModal } from "@/features/scenes/ClipPlaybackModal";
 import { clipBrowseToPlayable } from "@/features/scenes/clip-utils";
-import { ScanDirectoryDialog } from "@/components/domain/ScanDirectoryDialog";
 import type { BulkSelection } from "@/hooks/useBulkSelection";
 import type { BulkOperations } from "@/hooks/useBulkOperations";
 
@@ -26,8 +26,6 @@ interface DerivedClipDialogsProps {
   page: number;
   pageSize: number;
   onPageChange: (page: number) => void;
-  scanOpen: boolean;
-  onCloseScan: () => void;
 }
 
 export function DerivedClipDialogs({
@@ -45,8 +43,6 @@ export function DerivedClipDialogs({
   page,
   pageSize,
   onPageChange,
-  scanOpen,
-  onCloseScan,
 }: DerivedClipDialogsProps) {
   const playingLocalIndex = playingClipId !== null ? clips.findIndex((c) => c.id === playingClipId) : -1;
   const playingClipData = playingLocalIndex >= 0 ? clips[playingLocalIndex] : null;
@@ -115,9 +111,6 @@ export function DerivedClipDialogs({
         onCancel={() => bulkOps.setLabelDialogOpen(null)}
       />
 
-      {pipelineId != null && (
-        <ScanDirectoryDialog open={scanOpen} onClose={onCloseScan} pipelineId={pipelineId} />
-      )}
     </>
   );
 }

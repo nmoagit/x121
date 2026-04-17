@@ -10,16 +10,8 @@
  * dummy `File`.
  */
 
-import type {
-  AvatarScanGroup,
-  ScannedFileResponse,
-  ScanResponse,
-} from "@/hooks/useDirectoryScan";
-import type {
-  AvatarDropPayload,
-  DroppedAsset,
-  ImportHashSummary,
-} from "../types";
+import type { AvatarScanGroup, ScanResponse, ScannedFileResponse } from "@/hooks/useDirectoryScan";
+import type { AvatarDropPayload, DroppedAsset, ImportHashSummary } from "../types";
 
 // ---------------------------------------------------------------------------
 // Public API
@@ -108,17 +100,18 @@ function mapFileToAsset(file: ScannedFileResponse): DroppedAsset {
   // the raw filename as category to mirror browser-drop behavior.
   const category = isVideo
     ? file.filename.replace(/\.[^.]+$/, "")
-    : file.resolved.variant_type ?? file.filename.replace(/\.[^.]+$/, "");
+    : (file.resolved.variant_type ?? file.filename.replace(/\.[^.]+$/, ""));
 
-  const clipMeta = isVideo && file.resolved.scene_type_slug
-    ? {
-        sceneTypeSlug: file.resolved.scene_type_slug,
-        trackSlug: file.resolved.track_slug ?? "",
-        version: file.resolved.version ?? 1,
-        labels: file.resolved.labels ?? [],
-        clipIndex: file.resolved.clip_index ?? null,
-      }
-    : undefined;
+  const clipMeta =
+    isVideo && file.resolved.scene_type_slug
+      ? {
+          sceneTypeSlug: file.resolved.scene_type_slug,
+          trackSlug: file.resolved.track_slug ?? "",
+          version: file.resolved.version ?? 1,
+          labels: file.resolved.labels ?? [],
+          clipIndex: file.resolved.clip_index ?? null,
+        }
+      : undefined;
 
   return {
     // Dummy File object — the server reads bytes from `serverPath`, not
