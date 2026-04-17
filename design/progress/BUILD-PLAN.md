@@ -521,6 +521,7 @@ This phase contains no PRD work — only structural setup.
 | 155 | PRD-155 | Server-Side Directory Scan Import | M | Full-Stack | PRD-153, PRD-21, PRD-136, PRD-138 (all done) | **DONE** 2026-04-13 |
 | 165 | PRD-165 | Server Directory & S3 Import with Unified Confirmation Flow | L | Full-Stack | PRD-155, PRD-122, PRD-16 (all done) | **DONE** 2026-04-17 |
 | 166 | PRD-166 | Semantic Typography Token System | M | Frontend | PRD-29 (done) | **DONE** 2026-04-17 |
+| 169 | PRD-169 | Asynchronous Post-Import Video Transcoding | L | Full-Stack | PRD-165, PRD-008 (all done) | **DONE** 2026-04-17 |
 
 **Structural note:** PRD-153 depends on PRD-149 (Frame Range Annotations, still DRAFT) per spec — but PRD-153 is already marked DONE in PRD-STATUS. Dep relationship in the status note may be informational/forward-looking rather than hard-blocking. **Flag for user review.**
 

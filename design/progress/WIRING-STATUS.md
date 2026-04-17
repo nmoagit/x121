@@ -141,6 +141,7 @@ They do NOT need their own routes.
 | `image-catalogue` | PRD-154 | ImageCatalogueList + ImageCatalogueForm embedded as `image-types` tab inside `/content/scene-catalogue` (SceneCataloguePage); ProjectImageSettings embedded in ProjectConfigTab; per-avatar overrides in avatar detail |
 | `directory-scan` | PRD-155 | ScanDirectoryDialog (modal) embedded on `/content/avatars` (AvatarsPage), `/content/media` (MediaPage), `/content/scenes` (ScenesPage), `/content/derived-clips` (DerivedClipsPage) — unified scan preview flow, overlay pattern |
 | `directory-scan` | PRD-165 | S3 source dropdown + path validation on ScanDirectoryDialog; new ScanInputDialog + useScanImportFlow hand scan results into ImportConfirmModal; SSE-backed `/directory-scan/import-assets` streams multi-type import progress. Wired on ProjectAvatarsTab, ScenesPage, DerivedClipsPage, MediaPage — the cross-project pages gate the button on a single-project filter. |
+| `components/domain`, `features/video-player`, `hooks` | PRD-169 | Shared `TranscodeStatusBadge` + `TranscodeOverlay` embedded in `ClipPlaybackModal`, `DerivedClipRow`, `AvatarDerivedClipsTab` thumbnails; `useTranscodeRefresh` mounted at `AppShell` for broadcaster subscription + 5s polling fallback. Backend worker + admin endpoints (`/admin/transcode-jobs`, `/transcode-jobs/{id}/retry`) are API-only — no new routed page. Upload success toast copy changes in `ImportClipDialog` via centralized `upload-copy.ts`. |
 
 ---
 
