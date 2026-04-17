@@ -1,13 +1,13 @@
 # X121 Platform — Build Plan
 
-Optimal build order for all 135 PRDs, organized into dependency-ordered phases.
+Optimal build order for all 166 committed PRDs, organized into dependency-ordered phases.
 Each phase can begin only after all prior phases are complete. PRDs within a phase
 can be built **in parallel** (dependencies are satisfied by earlier phases).
 
-> **136 PRDs complete as of 2026-03-18.** All committed PRDs implemented. 15 MAYBEs remain on the evaluation list.
+> **As of 2026-04-17:** 149 PRDs `done`, 1 `in-progress` (PRD-51 v1.1 amendment), 7 `draft`, 9 `backlog` (perf hardening), 1 blocked (PRD-167 on PRD-51). 15 MAYBEs remain on the evaluation list.
 
 > **Source of truth:** Cross-Reference Map in [`design/design.md`](../design.md) (Appendix)
-> **Status tracking:** [`PRD-STATUS.md`](./PRD-STATUS.md)
+> **Status tracking:** [`PRD-STATUS.md`](./PRD-STATUS.md) (authoritative status, 181 total entries including MAYBEs)
 
 ---
 
@@ -17,7 +17,7 @@ can be built **in parallel** (dependencies are satisfied by earlier phases).
 - **Track** = a parallel workstream within a phase (Backend / Frontend / Data / Pipeline)
 - PRDs listed within a track have no inter-dependencies and can be built simultaneously
 - Estimated effort is relative (S/M/L/XL) not calendar time
-- The plan covers 133 confirmed PRDs. The 15 "MAYBE" items (M-01 through M-15) are excluded
+- The plan covers 166 confirmed PRDs. The 15 "MAYBE" items (M-01 through M-15) are excluded
 
 ## Mandatory Quality Gate: dry-guy
 
@@ -247,7 +247,7 @@ This phase contains no PRD work — only structural setup.
 | # | PRD | Title | Effort | Depends On | Status |
 |---|-----|-------|--------|------------|--------|
 | 44 | PRD-48 | External & Tiered Storage | M | PRD-15 | **DONE** |
-| 45 | PRD-51 | Undo/Redo Architecture | L | PRD-04, PRD-47 | **DONE** |
+| 45 | PRD-51 | Undo/Redo Architecture | L | PRD-04, PRD-47 | **IN-PROGRESS** (v1.1 amendment — unblocks PRD-167) |
 | 46 | PRD-60 | Character Library (Cross-Project) | L | PRD-01, PRD-03, PRD-20, PRD-21 | **DONE** |
 
 ### Track C — UI & Review
@@ -464,9 +464,13 @@ This phase contains no PRD work — only structural setup.
 | 108 | PRD-55 | Director's View (Mobile/Tablet Review) | L | Frontend | PRD-03, PRD-29, PRD-35, PRD-36, PRD-38, PRD-52 | DONE |
 | 109 | PRD-89 | Dashboard Widget Customization | M | Frontend | PRD-04, PRD-42, PRD-85 | DONE |
 | 110 | PRD-105 | Platform Setup Wizard | M | Admin | PRD-03, PRD-05, PRD-46, PRD-80, PRD-81 | DONE |
-| 126 | PRD-126 | Critical Bug Fixes & UX Polish | L | Full-Stack | PRD-112, PRD-113, PRD-108, PRD-109 (all done) |
+| 121 | PRD-121 | SVI Clip Management | M | Full-Stack | PRD-109 (done) | **DONE** 2026-03-01 |
+| 122 | PRD-122 | Storage Configuration (Local & Cloud S3) | M | Backend | PRD-48, PRD-110 (all done) | **DONE** 2026-03-01 |
+| 123 | PRD-123 | Scene Catalog & Scene Types Unification | M | Full-Stack | PRD-111 (done) | **DONE** |
+| 126 | PRD-126 | Critical Bug Fixes & UX Polish | L | Full-Stack | PRD-112, PRD-113, PRD-108, PRD-109 (all done) | **DONE** |
 | 127 | PRD-127 | ComfyUI Output Handling & Artifact Storage | M | Full-Stack | PRD-03, PRD-24, PRD-47, PRD-109 (all done) | **DONE** |
 | 128 | PRD-128 | Character Readiness Indicators | S | Full-Stack | PRD-112, PRD-108 (all done) | **DONE** |
+| 129 | PRD-129 | Character Review Allocation | L | Full-Stack | PRD-112, PRD-92 (all done) | **DONE** 2026-03-08 |
 | 130 | PRD-130 | Unified Cloud & ComfyUI Orchestration | XL | Backend | PRD-02, PRD-05, PRD-114 (all done) | **DONE** |
 | 131 | PRD-131 | Infrastructure Control Panel | L | Full-Stack | PRD-02, PRD-05, PRD-114, PRD-130 | **DONE** |
 | 132 | PRD-132 | Queue Manager & Intelligent Job Allocation | L | Full-Stack | PRD-07, PRD-08, PRD-05, PRD-46 (all done) | **DONE** |
@@ -489,6 +493,74 @@ This phase contains no PRD work — only structural setup.
 | 139 | PRD-139 | Pipeline Workspace Completeness | L | Full-Stack | PRD-138 (done) | **DONE** 2026-03-22 |
 | 140 | PRD-140 | Character to Avatar Rename | XL | Full-Stack | All character PRDs (done) | **DONE** 2026-03-22 |
 | 141 | PRD-141 | Pipeline-Scoped Imports and Storage | XL | Full-Stack | PRD-138, PRD-113, PRD-116 (all done) | **DONE** 2026-03-23 |
+| 142 | PRD-142 | Pipeline-Scoped Avatars | L | Full-Stack | PRD-138, PRD-141 (all done) | **DONE** — not tracked in PRD-STATUS (flagged) |
+
+---
+
+## Phase 14 — Pipeline Ecosystem & Refinements
+
+**Goal:** Post-Phase-13 refinements that extend the multi-pipeline foundation — pipeline-scoped metadata/speech, pipeline-aware navigation, dynamic seeds, media variants, image catalogue, server-side scan imports, bulk ops, derived clips, review enhancements, typography tokens.
+**Milestone:** Pipeline workspace fully featured; deliverables, seeds, imports, and UX uniformly pipeline-scoped.
+
+**Note:** Many entries below were merged into the project after Phase 13 landed. They continue the Phase 13 theme but post-date the original build plan; all deps listed here are satisfied by earlier phases plus Phase 13.
+
+| # | PRD | Title | Effort | Track | Depends On | Status |
+|---|-----|-------|--------|-------|------------|--------|
+| 143 | PRD-143 | Pipeline-Scoped Metadata & Speech Requirements | M | Backend | PRD-138, PRD-142 (all done) | **DONE** 2026-03-23 |
+| 144 | PRD-144 | Complete Deliverables Tab | S | Frontend | PRD-136, PRD-143, PRD-112 (all done) | **DONE** 2026-03-23 |
+| 145 | PRD-145 | Pipeline-Aware Navigation | S | Frontend | PRD-138, PRD-139 (all done) | **DONE** 2026-03-23 |
+| 146 | PRD-146 | Dynamic Generation Seeds | L | Full-Stack | PRD-75, PRD-115, PRD-138, PRD-141 (all done) | **DONE** 2026-03-24 — internal spec header still reads "PRD-142" (flagged for cleanup) |
+| 147 | PRD-147 | Media Variants & Seed Auto-Detection | L | Full-Stack | PRD-21, PRD-146 (all done) | **DONE** 2026-03-25 |
+| 148 | PRD-148 | Dynamic Avatar Card Indicators | S | Frontend | PRD-128, PRD-138, PRD-146 (all done) | **DRAFT** |
+| 149 | PRD-149 | Frame Range Annotations | S | Frontend | PRD-70, PRD-109 (all done) | **DRAFT** |
+| 150 | PRD-150 | Clip & Media Notes | S | Frontend | PRD-01, PRD-21 (all done) | **DRAFT** |
+| 151 | PRD-151 | Bulk Operations & Export | L | Full-Stack | PRD-01, PRD-21, PRD-47, PRD-07, PRD-121 (all done) | **DONE** 2026-03-25 |
+| 152 | PRD-152 | Annotation Playback Mode | S | Frontend | PRD-83, PRD-109, PRD-70, PRD-149 (PRD-149 DRAFT) | **DRAFT** — blocked on PRD-149 |
+| 153 | PRD-153 | Derived Clip Import & Review | M | Full-Stack | PRD-83, PRD-109, PRD-70, PRD-149 (PRD-149 DRAFT) | **DONE** 2026-04-12 |
+| 154 | PRD-154 | Image Catalogue & Image Type Management | L | Full-Stack | PRD-111, PRD-123, PRD-138, PRD-147 (all done) | **DONE** 2026-04-11 |
+| 155 | PRD-155 | Server-Side Directory Scan Import | M | Full-Stack | PRD-153, PRD-21, PRD-136, PRD-138 (all done) | **DONE** 2026-04-13 |
+| 165 | PRD-165 | Server Directory & S3 Import with Unified Confirmation Flow | L | Full-Stack | PRD-155, PRD-122, PRD-16 (all done) | **DONE** 2026-04-17 |
+| 166 | PRD-166 | Semantic Typography Token System | M | Frontend | PRD-29 (done) | **DONE** 2026-04-17 |
+
+**Structural note:** PRD-153 depends on PRD-149 (Frame Range Annotations, still DRAFT) per spec — but PRD-153 is already marked DONE in PRD-STATUS. Dep relationship in the status note may be informational/forward-looking rather than hard-blocking. **Flag for user review.**
+
+---
+
+## Phase 15 — Performance Hardening
+
+**Goal:** Systematic performance optimization across frontend and backend, sourced from the 2026-03-30 performance audits (PERFORMANCE-AUDIT.md, PERFORMANCE-AUDIT-BACKEND.md).
+**Milestone:** All audit findings (PERF-01 through PERF-25 + frontend findings 1–12) resolved.
+
+All entries currently `backlog` — scheduled after Phase 14 UX work stabilizes.
+
+### Track A — Frontend Performance
+
+| # | PRD | Title | Effort | Depends On | Status |
+|---|-----|-------|--------|------------|--------|
+| 156 | PRD-156 | Frontend Re-render Optimization | M | None (patches existing code) | **BACKLOG** |
+| 157 | PRD-157 | Frontend Data Fetching Optimization | M | None | **BACKLOG** |
+| 158 | PRD-158 | Frontend List Virtualization | M | PRD-156 | **BACKLOG** |
+| 159 | PRD-159 | Frontend Query Consolidation & Bundle Optimization | M | PRD-156 | **BACKLOG** |
+
+### Track B — Backend Performance
+
+| # | PRD | Title | Effort | Depends On | Status |
+|---|-----|-------|--------|------------|--------|
+| 160 | PRD-160 | Backend Critical N+1 Query Elimination | M | None | **BACKLOG** (priority 0) |
+| 161 | PRD-161 | Backend N+1 Query Cleanup (Remaining) | L | PRD-160 | **BACKLOG** |
+| 162 | PRD-162 | Backend Transaction Safety | M | None | **BACKLOG** (priority 0) |
+| 163 | PRD-163 | Backend Async Runtime Optimization | M | None | **BACKLOG** |
+| 164 | PRD-164 | Backend Repository Layer Migration | L | None | **BACKLOG** |
+
+---
+
+## Blocked — Pending Extension Points
+
+These PRDs have been drafted but cannot begin until a blocking dependency is re-opened or extended.
+
+| PRD | Title | Blocked By | Status | Notes |
+|-----|-------|------------|--------|-------|
+| PRD-167 | Revert to Original (Uploaded Baseline Restoration) | PRD-51 v1.1 (in-progress) | **DRAFT** 2026-04-17 | Hard dependency: requires PRD-51's Phase 3 Extensibility to ship first (action-type registry, protected-node-types pruning, `external_mutation` node kind, stability contract). Do not schedule until PRD-51 v1.1 is DONE. |
 
 ---
 
@@ -568,9 +640,13 @@ PRD-29 → PRD-83 → PRD-35 → PRD-57
 | 9 | 8 | Advanced Review | Cross-char comparison, QA rulesets, regression testing |
 | 10 | 8 | Reporting & Delivery | Production reports, compliance, lifecycle, sharing |
 | 11 | 10 | Admin Infrastructure | GPU power, budgets, health, webhooks, observability, time scheduling |
-| 12 | 8 | Polish & Hardening | Backup/DR, mobile review, setup wizard, dashboard config, readiness, cloud orchestration, queue manager, scheduled generation, character creator, multilingual speech |
+| 12 | 19 | Polish & Hardening | Backup/DR, mobile review, setup wizard, SVI clip mgmt, storage config, scene catalog unification, review allocation, bug fixes, cloud orchestration, queue manager, scheduled generation, character creator, multilingual speech, output profiles |
+| 13 | 5 | Multi-Pipeline Architecture | Pipelines as top-level entity, pipeline-scoped imports/storage/avatars |
+| 14 | 16 | Pipeline Ecosystem & Refinements | Pipeline-scoped metadata/speech, deliverables tab, dynamic seeds, media variants, image catalogue, server-side scan import, bulk ops, derived clips, typography tokens |
+| 15 | 9 | Performance Hardening | Frontend re-render/fetching/virtualization/bundle, backend N+1 cleanup, transaction safety, async runtime, repo layer |
+| Blocked | 1 | Pending Extension Points | PRD-167 blocked on PRD-51 v1.1 |
 | Standalone | 1 | Python Scripts | Scene naming hierarchy for generation script |
-| **Total** | **136** | | |
+| **Total** | **166** | | (+ 15 MAYBEs excluded) |
 
 ---
 
@@ -578,11 +654,11 @@ PRD-29 → PRD-83 → PRD-35 → PRD-57
 
 | Track | Skills | Active Phases |
 |-------|--------|---------------|
-| **Backend/Infra** | Rust, Axum, SQLx, PostgreSQL, WebSocket | 0–12 (continuous) |
-| **Pipeline/ML** | ComfyUI, GPU, video processing, embeddings | 1, 4–9 |
-| **Frontend/UI** | React/TS, design system, video player, review UI | 0, 2–12 |
-| **Data/Storage** | PostgreSQL, pgvector, S3, file management | 1–8 |
-| **DevOps/Admin** | Infrastructure, monitoring, backup, deployment | 2, 5, 11–12 |
+| **Backend/Infra** | Rust, Axum, SQLx, PostgreSQL, WebSocket | 0–15 (continuous) |
+| **Pipeline/ML** | ComfyUI, GPU, video processing, embeddings | 1, 4–9, 13–14 |
+| **Frontend/UI** | React/TS, design system, video player, review UI | 0, 2–15 |
+| **Data/Storage** | PostgreSQL, pgvector, S3, file management | 1–8, 13–14 |
+| **DevOps/Admin** | Infrastructure, monitoring, backup, deployment | 2, 5, 11–12, 15 |
 
 ---
 
@@ -619,6 +695,7 @@ PRD-29 → PRD-83 → PRD-35 → PRD-57
 | 2026-03-22 | Added PRD-139 (Pipeline Workspace Completeness). Full nav in pipeline workspace, dynamic pipeline list, queue pipeline awareness, naming rules per pipeline. Deps: PRD-138. Total: 139 PRDs (138 done, 1 planning). |
 | 2026-03-22 | Completed PRD-139. Full workspace nav, 33 routes, pipeline-filtered repos, hardcoded slug removal, queue/dashboard/naming pipeline awareness, ingest validation. Done count: 139 PRDs. |
 | 2026-03-22 | Completed PRD-138. 6 migrations, full backend (model/repo/handlers/routes/core types/pipeline crate), full frontend (feature module, sidebar nav, scoped routing, settings, dynamic seed uploads), 19 tests. Done count: 138 PRDs. |
+| 2026-04-17 | **Audit sync against PRD-STATUS.md.** Added 30 previously-untracked PRDs. Phase 12 gained PRD-121, PRD-122, PRD-123, PRD-129 (legacy era additions, all DONE). Phase 13 gained PRD-142 (Pipeline-Scoped Avatars, DONE but absent from PRD-STATUS — flagged). New **Phase 14 — Pipeline Ecosystem & Refinements** added (PRD-143 through PRD-155, PRD-165, PRD-166; 16 entries; mix of DONE and DRAFT). New **Phase 15 — Performance Hardening** added (PRD-156–164, all BACKLOG). New **Blocked** section added for PRD-167 (draft, blocked on PRD-51 v1.1). PRD-51 marked IN-PROGRESS (v1.1 amendment underway). Total: 166 PRDs (up from 136). |
 
 ---
 

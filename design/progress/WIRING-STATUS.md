@@ -3,19 +3,24 @@
 Tracks which completed PRDs have frontend features accessible via routes/navigation
 versus those that are implemented but need integration into host pages.
 
-**Last updated:** 2026-03-18
+**Last updated:** 2026-04-17
 
 **136 of 136 PRDs are complete.** All committed PRDs implemented.
+
+> Note: PRDs 137-166 are progressively being audited into this document.
+> The 9-PRD sweep on 2026-04-17 added rows for PRD-143, 144, 145, 152, 153,
+> 154, 155, 165, 166. Earlier post-136 PRDs (137-142, 146-151, 156-164) are
+> not yet reflected in the per-row tables below.
 
 ## Summary
 
 | Category | Count |
 |----------|-------|
-| Routed (accessible via sidebar/nav) | 73 |
-| Correctly unrouted (overlays/framework/embedded) | 19 |
+| Routed (accessible via sidebar/nav) | 74 |
+| Correctly unrouted (overlays/framework/embedded) | 25 |
 | Missing routes (need host-page integration) | 29 |
-| No frontend (backend/script only) | 15 |
-| **Total** | **135** |
+| No frontend (backend/script only) | 17 |
+| **Total** | **145** |
 
 ---
 
@@ -29,12 +34,13 @@ These features have routes in `router.tsx` and entries in `navigation.ts`.
 | `/performance` | `dashboard` | PRD-41 |
 | `/dashboard/customize` | `dashboard-customization` | PRD-89 |
 | `/content/scenes` | `scenes` | PRD-01 |
-| `/content/characters` | `characters` | PRD-01, PRD-135 |
+| `/content/avatars` | `avatars` | PRD-01, PRD-135 |
 | `/content/library` | `library` | PRD-60 |
 | `/content/storyboard` | `storyboard` | PRD-62 |
-| `/content/images` | `images` | PRD-21 |
-| `/content/scene-catalog` | `scene-catalog` | PRD-23, PRD-111 |
-| `/content/character-dashboard` | `character-dashboard` | PRD-108 |
+| `/content/media` | `media` | PRD-21 |
+| `/content/derived-clips` | `app/pages/DerivedClipsPage` | PRD-153 |
+| `/content/scene-catalogue` | `scene-catalogue` | PRD-23, PRD-111 |
+| `/content/avatar-dashboard` | `avatar-dashboard` | PRD-108 |
 | `/content/contact-sheet` | `contact-sheet` | PRD-103 |
 | `/content/duplicates` | `duplicates` | PRD-79 |
 | `/production/queue` | `queue` | PRD-08 |
@@ -59,7 +65,7 @@ These features have routes in `router.tsx` and entries in `navigation.ts`.
 | `/tools/search` | `search` | PRD-20 |
 | `/tools/branching` | `branching` | PRD-50 |
 | `/tools/activity-console` | `activity-console` | PRD-118 |
-| `/tools/character-ingest` | `character-ingest` | PRD-113 |
+| `/tools/avatar-ingest` | `avatar-ingest` | PRD-113 |
 | `/tools/batch-metadata` | `batch-metadata` | PRD-88 |
 | `/tools/pipeline-hooks` | `pipeline-hooks` | PRD-77 |
 | `/tools/workflow-import` | `workflow-import` | PRD-75 |
@@ -98,7 +104,7 @@ These features have routes in `router.tsx` and entries in `navigation.ts`.
 | `/settings/wiki` | `wiki` | PRD-56 |
 | `/projects` | `projects` | PRD-112 |
 | `/projects/$projectId` | `projects` | PRD-112 |
-| `/projects/$projectId/characters/$characterId` | `characters` | PRD-112 |
+| `/projects/$projectId/avatars/$avatarId` | `avatars` | PRD-112 |
 
 ---
 
@@ -123,12 +129,18 @@ They do NOT need their own routes.
 | `setup-wizard` | PRD-105 | Platform setup wizard (first-run overlay flow) |
 | — | PRD-126 | Bug fixes & UX polish (cross-cutting, no standalone UI) |
 | `scenes` | PRD-127 | ArtifactTimeline embedded in ClipCard (scene detail page) |
-| `projects` | PRD-128 | ReadinessIndicators embedded in CharacterCard (project character grid) |
-| `characters` | PRD-133 | Metadata approval controls embedded in CharacterMetadataTab |
-| `queue` | PRD-134 | ScheduledGenerationsPanel embedded in QueueManagerPage; ScheduleGenerationModal in CharacterScenesTab |
-| `characters` | PRD-135 | Shared CharacterGroupSection/CharacterFilterBar used by CharactersPage (routed at /content/characters via PRD-01/PRD-135) and ProjectCharactersTab |
-| `characters` | PRD-136 | Multilingual speech tab (language filter, approval, reorder, deliverable) embedded in CharacterDetailPage; SpeechRequirementsEditor + BulkSpeechImportModal embedded in ProjectConfigTab; language flags on CharacterCard |
-| `character-review` | PRD-129 | `/review/my-reviews` (MyReviewsPage), `/projects/$projectId/review-assignments` (AssignmentDashboard), Review tab + controls in CharacterDetailPage |
+| `projects` | PRD-128 | ReadinessIndicators embedded in AvatarCard (project avatar grid) |
+| `avatars` | PRD-133 | Metadata approval controls embedded in AvatarMetadataTab |
+| `queue` | PRD-134 | ScheduledGenerationsPanel embedded in QueueManagerPage; ScheduleGenerationModal in AvatarScenesTab |
+| `avatars` | PRD-135 | Shared AvatarGroupSection/AvatarFilterBar used by AvatarsPage (routed at /content/avatars via PRD-01/PRD-135) and ProjectAvatarsTab |
+| `avatars` | PRD-136 | Multilingual speech tab (language filter, approval, reorder, deliverable) embedded in AvatarDetailPage; SpeechRequirementsEditor + BulkSpeechImportModal embedded in ProjectConfigTab; language flags on AvatarCard |
+| `avatar-review` | PRD-129 | `/review/my-reviews` (MyReviewsPage), `/projects/$projectId/review-assignments` (AssignmentDashboard), Review tab + controls in AvatarDetailPage |
+| `avatars` | PRD-144 | Speech deliverable section embedded in AvatarDeliverablesTab (avatar detail page); blocking-vs-optional toggle state embedded in same tab |
+| `hooks` | PRD-145 | `usePipelinePath`/`useAvatarPath`/`useProjectPath` helper hooks consumed by AvatarCard, AvatarDeliverablesGrid, ReadinessIndicators, ProjectProgressWidget, QueueTable, ProjectListPage (framework, no route) |
+| `video-player` | PRD-152 | Annotation playback mode toggle in TransportControls, `use-annotation-playback` hook and timeline pulse embedded in VideoPlayer |
+| `image-catalogue` | PRD-154 | ImageCatalogueList + ImageCatalogueForm embedded as `image-types` tab inside `/content/scene-catalogue` (SceneCataloguePage); ProjectImageSettings embedded in ProjectConfigTab; per-avatar overrides in avatar detail |
+| `directory-scan` | PRD-155 | ScanDirectoryDialog (modal) embedded on `/content/avatars` (AvatarsPage), `/content/media` (MediaPage), `/content/scenes` (ScenesPage), `/content/derived-clips` (DerivedClipsPage) — unified scan preview flow, overlay pattern |
+| `directory-scan` | PRD-165 | S3 source dropdown + path validation on ScanDirectoryDialog; new ScanInputDialog + useScanImportFlow hand scan results into ImportConfirmModal; SSE-backed `/directory-scan/import-assets` streams multi-type import progress. Wired on ProjectAvatarsTab, ScenesPage, DerivedClipsPage, MediaPage — the cross-project pages gate the button on a single-project filter. |
 
 ---
 
@@ -139,10 +151,10 @@ existing host pages, not standalone routes.
 
 | Feature Dir | PRD | Title | Embed Location |
 |-------------|-----|-------|----------------|
-| `embedding` | PRD-76 | Character identity embeddings | Character detail / Character Dashboard |
+| `embedding` | PRD-76 | Character identity embeddings | Avatar detail / Avatar Dashboard |
 | `estimation` | PRD-61 | Cost & resource estimation | Generation page, Batch production page |
 | `metadata` | PRD-13 | Metadata viewer/editor | Scene/character detail views |
-| `metadata-editor` | PRD-66 | Character metadata editor | Character detail / Character Dashboard |
+| `metadata-editor` | PRD-66 | Character metadata editor | Avatar detail / Avatar Dashboard |
 | `provenance` | PRD-69 | Generation provenance viewer | Generation page, asset detail views |
 | `resolution` | PRD-59 | Multi-resolution tier controls | Generation page, Scene type editor |
 | `restitching` | PRD-25 | Segment re-stitching controls | Scene detail, segment views |
@@ -166,8 +178,8 @@ existing host pages, not standalone routes.
 | `compliance` | PRD-102 | Video compliance checker | Production section |
 | `prompt-management` | PRD-115 | Generation strategy & workflow prompts | Tools section |
 | `scenes` | PRD-121 | SVI clip management | Scene detail (ClipGallery embedded) |
-| `characters` | PRD-124 | Speech & TTS repository | Character detail page (Speech tab) |
-| `characters` | PRD-125 | LLM-driven metadata refinement | Character detail page (Metadata tab) |
+| `avatars` | PRD-124 | Speech & TTS repository | Avatar detail page (Speech tab) |
+| `avatars` | PRD-125 | LLM-driven metadata refinement | Avatar detail page (Metadata tab) |
 
 ---
 
@@ -193,6 +205,8 @@ within other PRDs' pages.
 | PRD-120 | Scene & Workflow Naming Hierarchy | Python generation script only |
 | PRD-123 | Scene Catalog & Scene Types Unification | Backend migration + UI absorbed into PRD-111 route |
 | PRD-130 | Unified Cloud & ComfyUI Orchestration | Backend only (UI in PRD-131) |
+| PRD-143 | Pipeline-Scoped Metadata & Speech Requirements | Backend only — schema/resolver changes; UI consumed through existing metadata/speech panels |
+| PRD-166 | Semantic Typography Token System | Design system only (`lib/typography-tokens.ts`, CSS variable additions) — no route/nav |
 
 ---
 
