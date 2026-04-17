@@ -94,6 +94,7 @@ x121/
 | Password hashing | argon2 | 0.5.x | For auth |
 | JWT | jsonwebtoken | 9.x | For auth tokens |
 | Vector similarity | pgvector | 0.4.x | For embeddings (PRD-20, PRD-76) |
+| TS type generation | ts-rs | 10.x | Exports Rust wire structs to TS (ADR-003) |
 
 ### Frontend
 
@@ -522,6 +523,66 @@ GET /api/v1/characters?page=2&per_page=25&sort=name&order=asc
 - Access tokens: short-lived (15 minutes)
 - Refresh tokens: long-lived (7 days), stored httpOnly cookie
 - API keys: `X-API-Key` header for service accounts (PRD-12)
+
+### Type generation (backend → frontend)
+
+Rust wire structs that cross the HTTP boundary are the **single source of
+truth** for TypeScript types — never hand-transcribed (DEVELOPER_RULES §3.2
+"Schema drift"). We use [`ts-rs`](https://github.com/Aleph-Alpha/ts-rs) to
+emit `.ts` files from annotated structs. See ADR-003 for the decision.
+
+**Annotation:**
+
+```rust
+use ts_rs::TS;
+
+#[derive(Debug, Clone, serde::Serialize, TS)]
+#[ts(export)]
+pub struct MyResponse {
+    #[ts(type = "number")]   // override for i64 (DbId) — default maps to bigint
+    pub id: DbId,
+    pub name: String,
+}
+```
+
+- `DbId` (`i64`): annotate with `#[ts(type = "number")]` or
+  `#[ts(type = "number | null")]` — matches the project's existing DB-ID
+  convention on the frontend.
+- `Timestamp` (`DateTime<Utc>`): annotate with `#[ts(type = "string")]` so
+  the wire format is the ISO-8601 JSON string that `serde_json` emits.
+- `serde_json::Value`: annotate with
+  `#[ts(type = "Record<string, unknown> | null")]`.
+
+**Generation command (from the repo root):**
+
+```bash
+./scripts/generate-types.sh
+```
+
+The script sets `TS_RS_EXPORT_DIR` to `apps/frontend/src/generated/` and
+runs the `export_bindings_*` test functions ts-rs auto-generates; each
+test writes one `.ts` file. Commit the generated files alongside the
+Rust annotations.
+
+**CI drift check:**
+
+```bash
+./scripts/generate-types.sh
+git diff --exit-code apps/frontend/src/generated/
+```
+
+If the diff exits non-zero, the Rust annotations and committed TS files
+disagree — regenerate and commit.
+
+**Frontend import path:** `@/generated/<StructName>` via the `@/*` alias
+already configured in `tsconfig.json` / `vite.config.ts`.
+
+**Scope (current):** SVV-related types only
+(`SceneVideoVersion`, `SceneVideoVersionWithContext`, `TranscodeJob`,
+`BrowseClipsPage`, `DerivedClipsPage`). Other wire structs remain
+hand-typed and migrate in follow-up PRs as they are touched. Any new wire
+struct MUST be annotated with `#[derive(TS)] #[ts(export)]` — CI drift
+check enforces this for annotated structs.
 
 ---
 

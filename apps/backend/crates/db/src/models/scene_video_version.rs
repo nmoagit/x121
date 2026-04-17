@@ -2,16 +2,21 @@
 
 use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
+use ts_rs::TS;
 use x121_core::types::{DbId, Timestamp};
 
 /// A row from the `scene_video_versions` table.
-#[derive(Debug, Clone, FromRow, Serialize)]
+#[derive(Debug, Clone, FromRow, Serialize, TS)]
+#[ts(export)]
 pub struct SceneVideoVersion {
+    #[ts(type = "number")]
     pub id: DbId,
+    #[ts(type = "number")]
     pub scene_id: DbId,
     pub version_number: i32,
     pub source: String,
     pub file_path: String,
+    #[ts(type = "number | null")]
     pub file_size_bytes: Option<i64>,
     pub duration_secs: Option<f64>,
     pub width: Option<i32>,
@@ -25,15 +30,19 @@ pub struct SceneVideoVersion {
     pub is_final: bool,
     pub notes: Option<String>,
     pub qa_status: String,
+    #[ts(type = "number | null")]
     pub qa_reviewed_by: Option<DbId>,
+    #[ts(type = "string | null")]
     pub qa_reviewed_at: Option<Timestamp>,
     pub qa_rejection_reason: Option<String>,
     pub qa_notes: Option<String>,
+    #[ts(type = "Record<string, unknown> | null")]
     pub generation_snapshot: Option<serde_json::Value>,
     pub content_hash: Option<String>,
     pub file_purged: bool,
     /// Self-referencing FK to the approved clip this was derived from.
     /// NULL for non-derived clips (e.g., LoRA training chunks).
+    #[ts(type = "number | null")]
     pub parent_version_id: Option<DbId>,
     /// Sequential ordering for derived clips (e.g., chunk 0, 1, 2...).
     /// NULL for non-derived clips.
@@ -43,11 +52,15 @@ pub struct SceneVideoVersion {
     /// remains `transcode_jobs`; this column is a cheap read for
     /// card/player "is this playable?" checks.
     pub transcode_state: String,
+    #[ts(type = "string | null")]
     pub deleted_at: Option<Timestamp>,
+    #[ts(type = "string")]
     pub created_at: Timestamp,
+    #[ts(type = "string")]
     pub updated_at: Timestamp,
     /// Number of annotated frames on this version (computed, not stored).
     #[sqlx(default)]
+    #[ts(type = "number")]
     pub annotation_count: i64,
     /// Latest `transcode_jobs.error_message` for this version (PRD-169).
     /// Populated from a LEFT JOIN LATERAL; null when no job exists or success.
@@ -58,6 +71,7 @@ pub struct SceneVideoVersion {
     /// "processing for N minutes" UI copy (PRD-169).
     #[sqlx(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[ts(type = "string | null")]
     pub transcode_started_at: Option<Timestamp>,
     /// Latest `transcode_jobs.attempts` for this version (PRD-169).
     #[sqlx(default)]
@@ -67,6 +81,7 @@ pub struct SceneVideoVersion {
     /// `POST /transcode-jobs/{id}/retry` uses it (PRD-169).
     #[sqlx(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[ts(type = "number | null")]
     pub transcode_job_id: Option<DbId>,
 }
 
@@ -133,15 +148,18 @@ pub struct ResumeFromResponse {
 /// See ADR-001 for the decision and rationale. The drift bug that motivated
 /// this struct (`transcode_state` missing from hand-rolled SELECT in PRD-169)
 /// is documented in DRY-TRACKER (DRY-820).
-#[derive(Debug, Clone, FromRow, Serialize)]
+#[derive(Debug, Clone, FromRow, Serialize, TS)]
+#[ts(export)]
 pub struct SceneVideoVersionWithContext {
     /// Full canonical SVV row — flattened into the top-level JSON object
     /// so the wire format stays flat for the frontend.
     #[sqlx(flatten)]
     #[serde(flatten)]
+    #[ts(flatten)]
     pub version: SceneVideoVersion,
 
     // ── Avatar context ──────────────────────────────────────────────
+    #[ts(type = "number")]
     pub avatar_id: DbId,
     pub avatar_name: String,
     pub avatar_is_enabled: bool,
@@ -151,6 +169,7 @@ pub struct SceneVideoVersionWithContext {
     pub track_name: String,
 
     // ── Project context ─────────────────────────────────────────────
+    #[ts(type = "number")]
     pub project_id: DbId,
     pub project_name: String,
 

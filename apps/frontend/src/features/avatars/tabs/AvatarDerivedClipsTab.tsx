@@ -7,15 +7,15 @@ import { CollapsibleSection } from "@/components/composite/CollapsibleSection";
 import { EmptyState } from "@/components/domain";
 import { ScanDirectoryDialog } from "@/components/domain/ScanDirectoryDialog";
 import { TagFilter } from "@/components/domain/TagFilter";
-import { TranscodeStatusBadge } from "@/components/domain/TranscodeStatusBadge";
+import { TranscodeStatusBadge, type TranscodeState } from "@/components/domain/TranscodeStatusBadge";
 import { Stack } from "@/components/layout";
 import { Button, ContextLoader } from "@/components/primitives";
 import type { FilterOption } from "@/components/primitives";
 import { usePipelineContextSafe } from "@/features/pipelines";
 import { BulkImportDialog } from "@/features/scenes/BulkImportDialog";
 import { ClipPlaybackModal } from "@/features/scenes/ClipPlaybackModal";
+import { clipBrowseToPlayable } from "@/features/scenes/clip-utils";
 import { type DerivedClipItem, useDerivedClips } from "@/features/scenes/hooks/useClipManagement";
-import type { SceneVideoVersion } from "@/features/scenes/types";
 import { getStreamUrl } from "@/features/video-player";
 import { formatDuration } from "@/features/video-player/frame-utils";
 import { TYPO_DATA } from "@/lib/typography-tokens";
@@ -33,42 +33,10 @@ const STATUS_OPTIONS: FilterOption[] = [
   { value: "rejected", label: "Rejected" },
 ];
 
-function toPlayable(clip: DerivedClipItem): SceneVideoVersion {
-  return {
-    id: clip.id,
-    scene_id: clip.scene_id,
-    version_number: clip.version_number,
-    source: clip.source,
-    file_path: clip.file_path,
-    file_size_bytes: clip.file_size_bytes,
-    duration_secs: clip.duration_secs,
-    width: clip.width,
-    height: clip.height,
-    frame_rate: clip.frame_rate,
-    preview_path: clip.preview_path,
-    video_codec: null,
-    is_final: clip.is_final,
-    notes: null,
-    qa_status: clip.qa_status,
-    qa_reviewed_by: null,
-    qa_reviewed_at: null,
-    qa_rejection_reason: null,
-    qa_notes: null,
-    generation_snapshot: null,
-    file_purged: clip.file_purged,
-    deleted_at: null,
-    created_at: clip.created_at,
-    updated_at: clip.created_at,
-    annotation_count: clip.annotation_count,
-    parent_version_id: clip.parent_version_id,
-    clip_index: clip.clip_index,
-    transcode_state: clip.transcode_state,
-    transcode_error: clip.transcode_error,
-    transcode_started_at: clip.transcode_started_at,
-    transcode_attempts: clip.transcode_attempts,
-    transcode_job_id: clip.transcode_job_id,
-  };
-}
+// Generated `DerivedClipItem` (ts-rs, ADR-003) is identical in shape to
+// `ClipBrowseItem`, so reuse the shared converter instead of duplicating
+// the mapping here.
+const toPlayable = clipBrowseToPlayable;
 
 function DerivedClipRow({ clip, onPlay }: { clip: DerivedClipItem; onPlay: () => void }) {
   const videoSrc = getStreamUrl("version", clip.id, "proxy");
@@ -90,7 +58,10 @@ function DerivedClipRow({ clip, onPlay }: { clip: DerivedClipItem; onPlay: () =>
         )}
         {clip.transcode_state !== "completed" && (
           <div className="absolute inset-0 flex items-center justify-center">
-            <TranscodeStatusBadge state={clip.transcode_state} error={clip.transcode_error} />
+            <TranscodeStatusBadge
+              state={clip.transcode_state as TranscodeState}
+              error={clip.transcode_error}
+            />
           </div>
         )}
         <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 hover:opacity-100 transition-opacity">

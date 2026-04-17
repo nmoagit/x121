@@ -45,6 +45,7 @@ rustls = { version = "0.23", default-features = false, features = ["ring"] }
 libc = { workspace = true }
 indexmap = { version = "2", features = ["serde"] }
 zip = "2"
+ts-rs = { workspace = true }
 
 [dev-dependencies]
 assert_matches = { workspace = true }

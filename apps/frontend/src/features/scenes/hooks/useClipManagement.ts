@@ -1,3 +1,6 @@
+import type { BrowseClipsPage as GeneratedBrowseClipsPage } from "@/generated/BrowseClipsPage";
+import type { DerivedClipsPage as GeneratedDerivedClipsPage } from "@/generated/DerivedClipsPage";
+import type { SceneVideoVersionWithContext } from "@/generated/SceneVideoVersionWithContext";
 import { api } from "@/lib/api";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { RejectClipInput, ResumeFromResponse, SceneVideoVersion } from "../types";
@@ -13,54 +16,19 @@ export const clipKeys = {
   derived: (avatarId: number) => [...clipKeys.all, "derived", avatarId] as const,
 };
 
-/** A clip enriched with avatar/scene/project context for browsing. */
-export interface ClipBrowseItem {
-  id: number;
-  scene_id: number;
-  version_number: number;
-  source: "generated" | "imported";
-  file_path: string;
-  file_size_bytes: number | null;
-  duration_secs: number | null;
-  width: number | null;
-  height: number | null;
-  frame_rate: number | null;
-  preview_path: string | null;
-  is_final: boolean;
-  notes: string | null;
-  qa_status: "pending" | "approved" | "rejected";
-  qa_rejection_reason: string | null;
-  qa_notes: string | null;
-  generation_snapshot: Record<string, unknown> | null;
-  file_purged: boolean;
-  created_at: string;
-  annotation_count: number;
-  avatar_id: number;
-  avatar_name: string;
-  scene_type_name: string;
-  track_name: string;
-  avatar_is_enabled: boolean;
-  project_id: number;
-  project_name: string;
-  parent_version_id: number | null;
-  clip_index: number | null;
-  /** Transcode surface state (PRD-169). `completed` for browser-playable videos. */
-  transcode_state: "pending" | "in_progress" | "completed" | "failed";
-  /** Latest transcode error message (PRD-169). Populated when failed. */
-  transcode_error?: string | null;
-  /** Latest transcode started_at (PRD-169). */
-  transcode_started_at?: string | null;
-  /** Latest transcode attempt count (PRD-169). */
-  transcode_attempts?: number | null;
-  /** Latest transcode job id — used by POST /transcode-jobs/{id}/retry. */
-  transcode_job_id?: number | null;
-}
+/**
+ * A clip enriched with avatar/scene/project context for browsing.
+ *
+ * Alias of the ts-rs-generated `SceneVideoVersionWithContext` (ADR-003).
+ * Kept under the old name to minimize consumer churn during rollout.
+ */
+export type ClipBrowseItem = SceneVideoVersionWithContext;
 
-/** Paginated browse result for scene video clips. */
-export interface ClipBrowsePage {
-  items: ClipBrowseItem[];
-  total: number;
-}
+/**
+ * Paginated browse result for scene video clips. Alias of generated
+ * `BrowseClipsPage`.
+ */
+export type ClipBrowsePage = GeneratedBrowseClipsPage;
 
 /** Params for browsing clips with pagination and server-side filtering. */
 export interface ClipBrowseParams {
@@ -387,40 +355,17 @@ export function useImportDirectory() {
   });
 }
 
-/** Derived clip item returned by the derived clips listing endpoint. */
-export interface DerivedClipItem {
-  id: number;
-  scene_id: number;
-  version_number: number;
-  source: "generated" | "imported";
-  file_path: string;
-  file_size_bytes: number | null;
-  duration_secs: number | null;
-  width: number | null;
-  height: number | null;
-  frame_rate: number | null;
-  preview_path: string | null;
-  is_final: boolean;
-  qa_status: "pending" | "approved" | "rejected";
-  clip_index: number | null;
-  parent_version_id: number | null;
-  annotation_count: number;
-  file_purged: boolean;
-  created_at: string;
-  scene_type_name: string;
-  track_name: string;
-  /** Transcode surface state (PRD-169). `completed` for browser-playable videos. */
-  transcode_state: "pending" | "in_progress" | "completed" | "failed";
-  transcode_error?: string | null;
-  transcode_started_at?: string | null;
-  transcode_attempts?: number | null;
-  transcode_job_id?: number | null;
-}
+/**
+ * Derived clip item returned by the derived clips listing endpoint.
+ *
+ * Alias of the ts-rs-generated `SceneVideoVersionWithContext` (ADR-003).
+ * Derived and browse clips share the same shape; the endpoint just filters
+ * to `parent_version_id IS NOT NULL`. Kept under the old name to minimize
+ * consumer churn during rollout.
+ */
+export type DerivedClipItem = SceneVideoVersionWithContext;
 
-export interface DerivedClipsPage {
-  items: DerivedClipItem[];
-  total: number;
-}
+export type DerivedClipsPage = GeneratedDerivedClipsPage;
 
 /** Fetch derived clips for an avatar, grouped by parent version. */
 export function useDerivedClips(

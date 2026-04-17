@@ -5,6 +5,7 @@
 
 use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
+use ts_rs::TS;
 use uuid::Uuid;
 use x121_core::types::{DbId, Timestamp};
 
@@ -39,24 +40,34 @@ pub fn status_name_for(status_id: i16) -> &'static str {
 // ---------------------------------------------------------------------------
 
 /// A row from the `transcode_jobs` table.
-#[derive(Debug, Clone, FromRow, Serialize)]
+#[derive(Debug, Clone, FromRow, Serialize, TS)]
+#[ts(export)]
 pub struct TranscodeJob {
+    #[ts(type = "number")]
     pub id: DbId,
+    #[ts(type = "string")]
     pub uuid: Uuid,
     pub entity_type: String,
+    #[ts(type = "number")]
     pub entity_id: DbId,
     pub status_id: i16,
     pub attempts: i32,
     pub max_attempts: i32,
+    #[ts(type = "string | null")]
     pub next_attempt_at: Option<Timestamp>,
     pub source_codec: Option<String>,
     pub source_storage_key: String,
     pub target_storage_key: Option<String>,
     pub error_message: Option<String>,
+    #[ts(type = "string | null")]
     pub started_at: Option<Timestamp>,
+    #[ts(type = "string | null")]
     pub completed_at: Option<Timestamp>,
+    #[ts(type = "string")]
     pub created_at: Timestamp,
+    #[ts(type = "string")]
     pub updated_at: Timestamp,
+    #[ts(type = "string | null")]
     pub deleted_at: Option<Timestamp>,
 }
 

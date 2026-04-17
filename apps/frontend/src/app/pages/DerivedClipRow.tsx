@@ -5,7 +5,7 @@
 
 import { useEffect, useRef, useState } from "react";
 
-import { TranscodeStatusBadge } from "@/components/domain/TranscodeStatusBadge";
+import { TranscodeStatusBadge, type TranscodeState } from "@/components/domain/TranscodeStatusBadge";
 import { Checkbox } from "@/components/primitives";
 import { ContextLoader } from "@/components/primitives";
 import type { ClipBrowseItem } from "@/features/scenes/hooks/useClipManagement";
@@ -122,7 +122,10 @@ export function DerivedClipRow({
               </div>
             ) : clip.transcode_state !== "completed" ? (
               <div className="absolute inset-0 flex items-center justify-center">
-                <TranscodeStatusBadge state={clip.transcode_state} error={clip.transcode_error} />
+                <TranscodeStatusBadge
+                  state={clip.transcode_state as TranscodeState}
+                  error={clip.transcode_error}
+                />
               </div>
             ) : null}
             <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover/play:opacity-100 transition-opacity">

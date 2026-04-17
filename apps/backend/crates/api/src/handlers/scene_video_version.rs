@@ -833,9 +833,11 @@ impl BrowseClipsParams {
 }
 
 /// Paginated browse result for scene video clips.
-#[derive(Debug, serde::Serialize)]
+#[derive(Debug, serde::Serialize, ts_rs::TS)]
+#[ts(export)]
 pub struct BrowseClipsPage {
     pub items: Vec<SceneVideoVersionWithContext>,
+    #[ts(type = "number")]
     pub total: i64,
 }
 
@@ -1533,9 +1535,11 @@ pub struct DerivedClipsParams {
 }
 
 /// Paginated result for derived clips.
-#[derive(Debug, serde::Serialize)]
+#[derive(Debug, serde::Serialize, ts_rs::TS)]
+#[ts(export)]
 pub struct DerivedClipsPage {
     pub items: Vec<SceneVideoVersionWithContext>,
+    #[ts(type = "number")]
     pub total: i64,
 }
 
