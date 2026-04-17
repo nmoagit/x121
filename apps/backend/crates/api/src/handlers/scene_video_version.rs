@@ -293,20 +293,29 @@ pub async fn extract_and_set_video_metadata(state: &AppState, version: &SceneVid
 /// GET /api/v1/scenes/{scene_id}/versions
 ///
 /// List all video versions for a scene, ordered by version number descending.
+/// Each row carries `transcode_state` and (when non-completed) optional
+/// `transcode_error`, `transcode_started_at`, `transcode_attempts`,
+/// `transcode_job_id` fields (PRD-169).
 pub async fn list_by_scene(
     State(state): State<AppState>,
     Path(scene_id): Path<DbId>,
 ) -> AppResult<Json<DataResponse<Vec<SceneVideoVersion>>>> {
-    let versions = SceneVideoVersionRepo::list_by_scene(&state.pool, scene_id).await?;
+    let mut versions = SceneVideoVersionRepo::list_by_scene(&state.pool, scene_id).await?;
+    SceneVideoVersionRepo::enrich_with_transcode_fields(&state.pool, &mut versions).await?;
     Ok(Json(DataResponse { data: versions }))
 }
 
 /// GET /api/v1/scenes/{scene_id}/versions/{id}
+///
+/// Response carries the PRD-169 transcode fields — see `list_by_scene`.
 pub async fn get_by_id(
     State(state): State<AppState>,
     Path((_scene_id, id)): Path<(DbId, DbId)>,
 ) -> AppResult<Json<DataResponse<SceneVideoVersion>>> {
-    let version = ensure_version_exists(&state.pool, id).await?;
+    let mut version = ensure_version_exists(&state.pool, id).await?;
+    let mut as_slice = [version.clone()];
+    SceneVideoVersionRepo::enrich_with_transcode_fields(&state.pool, &mut as_slice).await?;
+    version = as_slice.into_iter().next().unwrap();
     Ok(Json(DataResponse { data: version }))
 }
 

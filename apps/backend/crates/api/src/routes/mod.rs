@@ -945,6 +945,10 @@ pub fn api_routes() -> Router<AppState> {
         .route("/scene-video-versions/browse", axum::routing::get(crate::handlers::scene_video_version::browse_clips))
         .route("/scene-video-versions/bulk-approve", axum::routing::post(crate::handlers::scene_video_version::bulk_approve_clips))
         .route("/scene-video-versions/bulk-reject", axum::routing::post(crate::handlers::scene_video_version::bulk_reject_clips))
+        // Transcode jobs admin list / detail + editor retry (PRD-169).
+        .route("/admin/transcode-jobs", axum::routing::get(crate::handlers::transcode_job_admin::list))
+        .route("/admin/transcode-jobs/{id}", axum::routing::get(crate::handlers::transcode_job_admin::detail))
+        .route("/transcode-jobs/{id}/retry", axum::routing::post(crate::handlers::transcode_job_admin::retry))
         // Derived clips: batch directory import (PRD-153).
         .route("/derived-clips/import-directory", axum::routing::post(crate::handlers::scene_video_version::import_directory))
         // Annotation browsing (cross-project annotation overview).

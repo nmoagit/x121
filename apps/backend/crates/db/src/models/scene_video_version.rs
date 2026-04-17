@@ -49,6 +49,25 @@ pub struct SceneVideoVersion {
     /// Number of annotated frames on this version (computed, not stored).
     #[sqlx(default)]
     pub annotation_count: i64,
+    /// Latest `transcode_jobs.error_message` for this version (PRD-169).
+    /// Populated from a LEFT JOIN LATERAL; null when no job exists or success.
+    #[sqlx(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub transcode_error: Option<String>,
+    /// Latest `transcode_jobs.started_at` for this version — drives the
+    /// "processing for N minutes" UI copy (PRD-169).
+    #[sqlx(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub transcode_started_at: Option<Timestamp>,
+    /// Latest `transcode_jobs.attempts` for this version (PRD-169).
+    #[sqlx(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub transcode_attempts: Option<i32>,
+    /// Latest `transcode_jobs.id` for this version — the retry endpoint
+    /// `POST /transcode-jobs/{id}/retry` uses it (PRD-169).
+    #[sqlx(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub transcode_job_id: Option<DbId>,
 }
 
 /// DTO for creating a new scene video version.

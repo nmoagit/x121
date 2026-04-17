@@ -146,6 +146,7 @@ pub mod temporal;
 pub mod test_shot;
 pub mod themes;
 pub mod track;
+pub mod transcode_job_admin;
 pub mod trash;
 pub mod trigger_workflow;
 pub mod trimming;

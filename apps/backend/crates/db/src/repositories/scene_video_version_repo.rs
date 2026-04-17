@@ -1,7 +1,7 @@
 //! Repository for the `scene_video_versions` table.
 
 use sqlx::PgPool;
-use x121_core::types::DbId;
+use x121_core::types::{DbId, Timestamp};
 
 use crate::models::scene_video_version::{
     CreateSceneVideoVersion, SceneVideoVersion, UpdateSceneVideoVersion,
@@ -598,5 +598,55 @@ impl SceneVideoVersionRepo {
         .fetch_optional(pool)
         .await?;
         Ok(row.and_then(|(pid,)| pid))
+    }
+
+    /// Enrich a list of SVV rows with transcode job fields (error, started_at,
+    /// attempts, job_id) from the most recent row in `transcode_jobs` per entity.
+    ///
+    /// Mutates the input in place. Cheap for small lists (< 200 rows) —
+    /// single `WHERE id = ANY($1)` lookup. API list endpoints with larger
+    /// result sets should prefer a single enriched SELECT instead.
+    pub async fn enrich_with_transcode_fields(
+        pool: &PgPool,
+        versions: &mut [SceneVideoVersion],
+    ) -> Result<(), sqlx::Error> {
+        if versions.is_empty() {
+            return Ok(());
+        }
+        let ids: Vec<DbId> = versions.iter().map(|v| v.id).collect();
+
+        #[derive(sqlx::FromRow)]
+        struct JobRow {
+            entity_id: DbId,
+            id: DbId,
+            attempts: i32,
+            error_message: Option<String>,
+            started_at: Option<Timestamp>,
+        }
+        let rows: Vec<JobRow> = sqlx::query_as::<_, JobRow>(
+            "SELECT DISTINCT ON (entity_id) \
+                 entity_id, id, attempts, error_message, started_at \
+             FROM transcode_jobs \
+             WHERE entity_type = 'scene_video_version' \
+               AND entity_id = ANY($1) \
+               AND deleted_at IS NULL \
+             ORDER BY entity_id, created_at DESC",
+        )
+        .bind(&ids)
+        .fetch_all(pool)
+        .await?;
+
+        let mut by_entity: std::collections::HashMap<DbId, JobRow> =
+            rows.into_iter().map(|r| (r.entity_id, r)).collect();
+
+        for v in versions.iter_mut() {
+            if let Some(job) = by_entity.remove(&v.id) {
+                v.transcode_job_id = Some(job.id);
+                v.transcode_attempts = Some(job.attempts);
+                v.transcode_error = job.error_message;
+                v.transcode_started_at = job.started_at;
+            }
+        }
+        Ok(())
     }
 }
