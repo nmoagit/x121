@@ -27,3 +27,5 @@ export type { TickerStat } from "./StatTicker";
 export { StatusBadge } from "./StatusBadge";
 export { TerminalSection } from "./TerminalSection";
 export { ThumbnailCard } from "./ThumbnailCard";
+export { TranscodeStatusBadge } from "./TranscodeStatusBadge";
+export type { TranscodeState, TranscodeStatusBadgeProps } from "./TranscodeStatusBadge";
