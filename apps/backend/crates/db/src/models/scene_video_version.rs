@@ -38,6 +38,11 @@ pub struct SceneVideoVersion {
     /// Sequential ordering for derived clips (e.g., chunk 0, 1, 2...).
     /// NULL for non-derived clips.
     pub clip_index: Option<i32>,
+    /// Denormalized transcode surface state (PRD-169). One of
+    /// `pending`, `in_progress`, `completed`, `failed`. The source of truth
+    /// remains `transcode_jobs`; this column is a cheap read for
+    /// card/player "is this playable?" checks.
+    pub transcode_state: String,
     pub deleted_at: Option<Timestamp>,
     pub created_at: Timestamp,
     pub updated_at: Timestamp,

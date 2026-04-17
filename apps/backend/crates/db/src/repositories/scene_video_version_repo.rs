@@ -11,7 +11,7 @@ use crate::models::scene_video_version::{
 const COLUMNS: &str = "id, scene_id, version_number, source, file_path, \
     file_size_bytes, duration_secs, width, height, frame_rate, preview_path, web_playback_path, video_codec, is_final, notes, \
     qa_status, qa_reviewed_by, qa_reviewed_at, qa_rejection_reason, qa_notes, \
-    generation_snapshot, content_hash, file_purged, parent_version_id, clip_index, deleted_at, created_at, updated_at";
+    generation_snapshot, content_hash, file_purged, parent_version_id, clip_index, transcode_state, deleted_at, created_at, updated_at";
 
 /// Provides CRUD and version-management operations for scene video versions.
 pub struct SceneVideoVersionRepo;
@@ -540,5 +540,63 @@ impl SceneVideoVersionRepo {
         .fetch_one(pool)
         .await?;
         Ok(row.0)
+    }
+
+    // ── Transcode state (PRD-169) ────────────────────────────────────
+
+    /// Set the `transcode_state` for a version. Accepts a transaction so
+    /// callers can couple the update to a `transcode_jobs` row mutation.
+    pub async fn set_transcode_state<'c>(
+        tx: &mut sqlx::Transaction<'c, sqlx::Postgres>,
+        id: DbId,
+        state: &str,
+    ) -> Result<bool, sqlx::Error> {
+        let result = sqlx::query(
+            "UPDATE scene_video_versions SET transcode_state = $2 \
+             WHERE id = $1 AND deleted_at IS NULL",
+        )
+        .bind(id)
+        .bind(state)
+        .execute(&mut **tx)
+        .await?;
+        Ok(result.rows_affected() > 0)
+    }
+
+    /// Atomic: update `file_path` + flip `transcode_state` to `'completed'`
+    /// in the same row update. Used by the worker on successful transcode.
+    pub async fn set_transcoded<'c>(
+        tx: &mut sqlx::Transaction<'c, sqlx::Postgres>,
+        id: DbId,
+        new_file_path: &str,
+    ) -> Result<bool, sqlx::Error> {
+        let result = sqlx::query(
+            "UPDATE scene_video_versions \
+             SET file_path = $2, transcode_state = 'completed' \
+             WHERE id = $1 AND deleted_at IS NULL",
+        )
+        .bind(id)
+        .bind(new_file_path)
+        .execute(&mut **tx)
+        .await?;
+        Ok(result.rows_affected() > 0)
+    }
+
+    /// Look up the owning project_id for a version via
+    /// `scene_video_versions → scenes → avatars → project_id`.
+    /// Used by the transcode worker to populate broadcaster events.
+    pub async fn find_project_id(
+        pool: &PgPool,
+        id: DbId,
+    ) -> Result<Option<DbId>, sqlx::Error> {
+        let row: Option<(Option<DbId>,)> = sqlx::query_as(
+            "SELECT a.project_id FROM scene_video_versions svv \
+             JOIN scenes s ON s.id = svv.scene_id \
+             JOIN avatars a ON a.id = s.avatar_id \
+             WHERE svv.id = $1",
+        )
+        .bind(id)
+        .fetch_optional(pool)
+        .await?;
+        Ok(row.and_then(|(pid,)| pid))
     }
 }

@@ -160,6 +160,7 @@ pub mod temporal_metric;
 pub mod test_shot;
 pub mod theme;
 pub mod track;
+pub mod transcode_job;
 pub mod trigger_workflow;
 pub mod undo_tree;
 pub mod user;
