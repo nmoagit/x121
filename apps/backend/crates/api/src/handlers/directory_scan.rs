@@ -9,15 +9,15 @@ use axum::Json;
 use serde::{Deserialize, Serialize};
 
 use x121_core::directory_scanner::{
-    self, ConflictStatus, FileCategory, ResolvedContext, ScanSummary,
+    self, ConflictStatus, FileCategory, ResolvedContext, ScanSummary, ScannedEntry,
 };
 use x121_core::hashing::sha256_hex;
 use x121_core::images;
-use x121_core::storage::pipeline_scoped_key;
+use x121_core::storage::{pipeline_scoped_key, StorageProvider};
 use x121_core::types::DbId;
 use x121_db::models::media::CreateMediaVariant;
 use x121_db::models::status::MediaVariantStatus;
-use x121_db::repositories::{AuditLogRepo, MediaVariantRepo, PipelineRepo};
+use x121_db::repositories::{AuditLogRepo, MediaVariantRepo, PipelineRepo, StorageBackendRepo};
 
 use crate::error::{AppError, AppResult};
 use crate::middleware::auth::AuthUser;
@@ -58,6 +58,9 @@ pub struct ScannedFileResponse {
     pub category: FileCategory,
     pub resolved: ResolvedContext,
     pub conflict: ConflictStatus,
+    /// Pre-computed SHA-256 (hex) for local image/video files. `None` for S3.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub content_hash: Option<String>,
 }
 
 /// An avatar group in the scan response, enriched with DB-resolved avatar info.
@@ -124,23 +127,30 @@ pub struct ImportResult {
 
 /// POST /api/v1/directory-scan
 ///
-/// Scan a directory, classify files, resolve avatars, and detect conflicts.
+/// Scan a directory (local filesystem or `s3://` prefix), classify files,
+/// resolve avatars, and detect conflicts.
 pub async fn scan(
     _auth: AuthUser,
     State(state): State<AppState>,
     Json(input): Json<ScanInput>,
 ) -> AppResult<Json<DataResponse<ScanResponse>>> {
-    let scan_result = directory_scanner::scan_directory(&input.path).map_err(|e| match e {
-        directory_scanner::ScanError::NotFound(p) => {
-            AppError::BadRequest(format!("Directory not found: {p}"))
-        }
-        directory_scanner::ScanError::NotADirectory(p) => {
-            AppError::BadRequest(format!("Path is not a directory: {p}"))
-        }
-        directory_scanner::ScanError::Io(e) => {
-            AppError::InternalError(format!("I/O error scanning directory: {e}"))
-        }
-    })?;
+    // Dispatch local filesystem vs S3 source based on the path prefix.
+    let is_s3 = input.path.starts_with("s3://");
+    let scan_result = if is_s3 {
+        s3_scan(&state, &input.path).await?
+    } else {
+        directory_scanner::scan_directory(&input.path).map_err(|e| match e {
+            directory_scanner::ScanError::NotFound(p) => {
+                AppError::BadRequest(format!("Directory not found: {p}"))
+            }
+            directory_scanner::ScanError::NotADirectory(p) => {
+                AppError::BadRequest(format!("Path is not a directory: {p}"))
+            }
+            directory_scanner::ScanError::Io(e) => {
+                AppError::InternalError(format!("I/O error scanning directory: {e}"))
+            }
+        })?
+    };
 
     let mut avatar_groups = Vec::with_capacity(scan_result.avatars.len());
 
@@ -151,6 +161,7 @@ pub async fn scan(
         let mut files = Vec::with_capacity(group.files.len());
         for f in &group.files {
             let conflict = detect_conflict(&state.pool, f, avatar_id).await?;
+            let content_hash = compute_scan_hash(f, is_s3).await;
             files.push(ScannedFileResponse {
                 path: f.path.clone(),
                 filename: f.filename.clone(),
@@ -158,6 +169,7 @@ pub async fn scan(
                 category: f.category.clone(),
                 resolved: f.resolved.clone(),
                 conflict,
+                content_hash,
             });
         }
 
@@ -169,18 +181,19 @@ pub async fn scan(
         });
     }
 
-    let unresolved = scan_result
-        .unresolved
-        .iter()
-        .map(|f| ScannedFileResponse {
+    let mut unresolved = Vec::with_capacity(scan_result.unresolved.len());
+    for f in &scan_result.unresolved {
+        let content_hash = compute_scan_hash(f, is_s3).await;
+        unresolved.push(ScannedFileResponse {
             path: f.path.clone(),
             filename: f.filename.clone(),
             size_bytes: f.size_bytes,
             category: f.category.clone(),
             resolved: f.resolved.clone(),
             conflict: ConflictStatus::New,
-        })
-        .collect();
+            content_hash,
+        });
+    }
 
     Ok(Json(DataResponse {
         data: ScanResponse {
@@ -189,6 +202,158 @@ pub async fn scan(
             summary: scan_result.summary,
         },
     }))
+}
+
+/// Compute SHA-256 for local image/video files so the frontend can dedup
+/// without re-hashing in the browser. S3 hashes are deferred to import time.
+async fn compute_scan_hash(
+    file: &directory_scanner::ScannedFile,
+    is_s3: bool,
+) -> Option<String> {
+    if is_s3 {
+        return None;
+    }
+    match file.category {
+        FileCategory::Image | FileCategory::VideoClip => {
+            match tokio::fs::read(&file.path).await {
+                Ok(data) => Some(sha256_hex(&data)),
+                Err(_) => None,
+            }
+        }
+        _ => None,
+    }
+}
+
+/// Parse an `s3://bucket/prefix/...` URI into its bucket and prefix parts.
+fn parse_s3_uri(uri: &str) -> Result<(String, String), AppError> {
+    let without_scheme = uri
+        .strip_prefix("s3://")
+        .ok_or_else(|| AppError::BadRequest("S3 URI must start with s3://".to_string()))?;
+    let mut parts = without_scheme.splitn(2, '/');
+    let bucket = parts
+        .next()
+        .filter(|s| !s.is_empty())
+        .ok_or_else(|| AppError::BadRequest("S3 URI missing bucket".to_string()))?
+        .to_string();
+    let prefix = parts.next().unwrap_or("").trim_matches('/').to_string();
+    Ok((bucket, prefix))
+}
+
+/// Build an `S3StorageProvider` from the first active S3 backend whose
+/// `config.bucket` matches `bucket`, or from the platform default backend
+/// if no bucket-specific match is found.
+async fn build_s3_provider_for_bucket(
+    state: &AppState,
+    bucket: &str,
+) -> Result<x121_cloud::storage_provider::S3StorageProvider, AppError> {
+    let backends = StorageBackendRepo::list(&state.pool).await?;
+    // Prefer an active S3 backend whose config.bucket matches the URI's bucket.
+    let candidate = backends
+        .iter()
+        .filter(|b| b.backend_type_id == 2) // s3
+        .find(|b| {
+            b.config
+                .get("bucket")
+                .and_then(|v| v.as_str())
+                .map(|v| v.eq_ignore_ascii_case(bucket))
+                .unwrap_or(false)
+        })
+        .cloned()
+        .or_else(|| {
+            // Fall back to the default S3 backend so admins can scan any
+            // bucket the default credentials can access.
+            backends
+                .into_iter()
+                .find(|b| b.backend_type_id == 2 && b.is_default)
+        });
+
+    let backend = candidate.ok_or_else(|| {
+        AppError::BadRequest(format!(
+            "No S3 storage backend configured for bucket '{bucket}'. \
+             Add an S3 backend via admin settings first."
+        ))
+    })?;
+
+    let mut config: x121_cloud::storage_provider::S3Config =
+        serde_json::from_value(backend.config.clone()).map_err(|e| {
+            AppError::InternalError(format!(
+                "Stored S3 backend '{}' has invalid config: {e}",
+                backend.name
+            ))
+        })?;
+    // Always target the bucket named in the URI, in case the stored backend
+    // lives at the account level with a different default bucket.
+    config.bucket = bucket.to_string();
+    // Scanning does not use the backend's path_prefix — the user already
+    // typed the desired prefix in the URI.
+    config.path_prefix = None;
+
+    x121_cloud::storage_provider::S3StorageProvider::new(config)
+        .await
+        .map_err(|e| AppError::InternalError(format!("Failed to init S3 provider: {e}")))
+}
+
+/// Enumerate objects under an `s3://bucket/prefix/` URI and classify them
+/// using the shared [`directory_scanner::classify_entries`] logic.
+async fn s3_scan(
+    state: &AppState,
+    uri: &str,
+) -> AppResult<directory_scanner::ScanResult> {
+    let (bucket, prefix) = parse_s3_uri(uri)?;
+    let provider = build_s3_provider_for_bucket(state, &bucket).await?;
+
+    let objects = provider
+        .list(&prefix)
+        .await
+        .map_err(|e| AppError::InternalError(format!("S3 list failed: {e}")))?;
+
+    if objects.is_empty() {
+        return Err(AppError::BadRequest(format!(
+            "No objects found under s3://{bucket}/{prefix}"
+        )));
+    }
+
+    let entries: Vec<ScannedEntry> = objects
+        .into_iter()
+        .filter(|obj| !obj.key.ends_with('/')) // skip folder markers
+        .map(|obj| {
+            // Filename: last path segment of the key.
+            let filename = obj
+                .key
+                .rsplit('/')
+                .next()
+                .unwrap_or(&obj.key)
+                .to_string();
+            // Path segments: the key with the requested prefix stripped, split on '/'.
+            let rel_key = obj
+                .key
+                .strip_prefix(&format!("{}/", prefix.trim_end_matches('/')))
+                .or_else(|| obj.key.strip_prefix(&prefix))
+                .unwrap_or(&obj.key)
+                .trim_start_matches('/');
+            let segments: Vec<String> = rel_key
+                .split('/')
+                .filter(|s| !s.is_empty())
+                .map(String::from)
+                .collect();
+            ScannedEntry {
+                path: format!("s3://{bucket}/{}", obj.key),
+                filename,
+                size_bytes: obj.size_bytes.max(0) as u64,
+                segments,
+            }
+        })
+        .collect();
+
+    directory_scanner::classify_entries(entries).map_err(|e| match e {
+        directory_scanner::ScanError::NotFound(p) => AppError::BadRequest(format!("Not found: {p}")),
+        directory_scanner::ScanError::NotADirectory(p) => {
+            AppError::BadRequest(format!("Not a directory: {p}"))
+        }
+        directory_scanner::ScanError::Io(e) => {
+            AppError::InternalError(format!("I/O error: {e}"))
+        }
+    })
 }
 
 // ---------------------------------------------------------------------------
@@ -486,21 +651,20 @@ async fn import_image(
         Some(code) => pipeline_scoped_key(code, VARIANT_KEY_PREFIX),
         None => VARIANT_KEY_PREFIX.to_string(),
     };
-    let abs_dir = state.resolve_to_path(&prefix).await?;
-    tokio::fs::create_dir_all(&abs_dir)
-        .await
-        .map_err(|e| AppError::InternalError(e.to_string()))?;
 
     let stored_filename = format!(
         "variant_{avatar_id}_{variant_type}_{}.{ext}",
         chrono::Utc::now().timestamp_millis()
     );
-    let abs_path = abs_dir.join(&stored_filename);
-    tokio::fs::write(&abs_path, &data)
-        .await
-        .map_err(|e| AppError::InternalError(e.to_string()))?;
-
     let storage_key = format!("{prefix}/{stored_filename}");
+
+    // Upload through the active storage provider so the import works with
+    // local, S3, or any future backend (PRD-122/PRD-165).
+    let provider = state.storage_provider().await;
+    provider
+        .upload(&storage_key, &data)
+        .await
+        .map_err(|e| AppError::InternalError(format!("Storage upload failed: {e}")))?;
 
     // Image dimensions.
     let (width, height) = images::image_dimensions(&data)

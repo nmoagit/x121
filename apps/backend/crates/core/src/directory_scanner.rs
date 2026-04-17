@@ -89,6 +89,26 @@ pub struct ScannedFile {
     pub resolved: ResolvedContext,
 }
 
+/// A pre-enumerated file entry from any source (local filesystem or S3).
+///
+/// Produced by the scanner entrypoints (local walk, S3 list) and consumed
+/// by [`classify_entries`]. This abstraction lets the classifier operate
+/// identically over local paths and S3 keys (PRD-165).
+#[derive(Debug, Clone)]
+pub struct ScannedEntry {
+    /// Full path or URI (e.g. `/mnt/data/alice/seed.png` or `s3://bucket/prefix/alice/seed.png`).
+    pub path: String,
+    /// Filename component only.
+    pub filename: String,
+    /// File size in bytes.
+    pub size_bytes: u64,
+    /// Path segments relative to the scan root — used for structure detection.
+    /// For `scan_root/alice/seed.png` this is `["alice", "seed.png"]`.
+    /// For a top-level clip folder `scan_root/sdg_alice_idle_v1/clip0001.mp4`
+    /// this is `["sdg_alice_idle_v1", "clip0001.mp4"]`.
+    pub segments: Vec<String>,
+}
+
 /// A group of scanned files belonging to the same avatar.
 #[derive(Debug, Clone, Serialize)]
 pub struct AvatarScanGroup {
@@ -147,14 +167,15 @@ const VIDEO_EXTENSIONS: &[&str] = &["mp4", "webm", "mov"];
 // Public API
 // ---------------------------------------------------------------------------
 
-/// Scan a directory and classify all files.
+/// Scan a local directory and classify all files.
 ///
-/// Entries at the root level:
-/// - Subdirectories whose name matches the clip naming convention are treated
-///   as clip folders; video files inside are classified as `VideoClip`.
-/// - Other subdirectories are treated as avatar folders (folder name = avatar
-///   slug); all files inside are classified by extension.
-/// - Root-level files are classified and placed in `unresolved`.
+/// Thin wrapper that walks the local filesystem, builds a list of
+/// [`ScannedEntry`] values, and delegates to [`classify_entries`]. All
+/// classification logic lives in `classify_entries` so the same code path
+/// is used for local and S3 sources (PRD-165).
+///
+/// Local scans additionally sniff CSV headers so voice-mapping CSVs are
+/// distinguished from speech CSVs (not possible for S3 without a fetch).
 pub fn scan_directory(path: &str) -> Result<ScanResult, ScanError> {
     let dir = Path::new(path);
     if !dir.exists() {
@@ -164,33 +185,109 @@ pub fn scan_directory(path: &str) -> Result<ScanResult, ScanError> {
         return Err(ScanError::NotADirectory(path.to_string()));
     }
 
+    let (entries, csv_overrides) = collect_local_entries(dir)?;
+    classify_entries_with_overrides(entries, &csv_overrides)
+}
+
+/// Classify a pre-enumerated list of file entries into avatar groups.
+///
+/// Each entry's `segments` field drives the grouping:
+/// - `segments.len() == 1` → root-level file, goes into `unresolved`
+/// - `segments.len() >= 2` → first segment is treated as either a clip folder
+///   (if it parses as the clip naming convention and the file is a video) or
+///   as an avatar slug (flat-folder layout).
+///
+/// CSV files cannot be sniffed here because we don't have a reader — all CSVs
+/// default to [`FileCategory::SpeechCsv`]. Callers that can distinguish voice
+/// vs speech (e.g. local filesystem scans) should use
+/// [`classify_entries_with_overrides`] instead.
+pub fn classify_entries(entries: Vec<ScannedEntry>) -> Result<ScanResult, ScanError> {
+    classify_entries_with_overrides(entries, &std::collections::HashMap::new())
+}
+
+/// Like [`classify_entries`] but consults a per-path override map for CSV files.
+///
+/// The override map lets local scanners record the result of CSV header
+/// sniffing (voice vs speech) without moving filesystem I/O into the
+/// classifier.
+pub fn classify_entries_with_overrides(
+    entries: Vec<ScannedEntry>,
+    csv_overrides: &std::collections::HashMap<String, FileCategory>,
+) -> Result<ScanResult, ScanError> {
     let mut avatar_groups: Vec<AvatarScanGroup> = Vec::new();
     let mut unresolved: Vec<ScannedFile> = Vec::new();
 
-    for entry in fs::read_dir(dir)? {
-        let entry = entry?;
-        let entry_path = entry.path();
-        let entry_name = entry.file_name().to_string_lossy().to_string();
+    // Group entries by their first path segment so we can detect clip folders
+    // (multiple files all claim the same top-level clip-named folder).
+    let mut by_first_segment: std::collections::BTreeMap<String, Vec<ScannedEntry>> =
+        std::collections::BTreeMap::new();
+    let mut root_entries: Vec<ScannedEntry> = Vec::new();
 
-        if entry_path.is_dir() {
-            // Try clip naming convention first.
-            if let Ok(parsed) = clip_filename_parser::parse_clip_path(&entry_name) {
-                let clip_files = scan_clip_folder(&entry_path, &parsed)?;
-                let slug = parsed.avatar_slug.clone();
-                push_to_avatar_group(&mut avatar_groups, &slug, clip_files);
-            } else {
-                // Treat as avatar folder.
-                let avatar_slug = entry_name;
-                let files = scan_avatar_folder(&entry_path, &avatar_slug)?;
-                if !files.is_empty() {
-                    push_to_avatar_group(&mut avatar_groups, &avatar_slug, files);
+    for entry in entries {
+        match entry.segments.len() {
+            0 | 1 => root_entries.push(entry),
+            _ => {
+                let first = entry.segments.first().cloned().unwrap_or_default();
+                by_first_segment.entry(first).or_default().push(entry);
+            }
+        }
+    }
+
+    // Root-level files -> unresolved.
+    for entry in root_entries {
+        let csv_override = csv_overrides.get(&entry.path).cloned();
+        unresolved.push(scanned_file_from_entry(&entry, csv_override));
+    }
+
+    for (first_segment, entries) in by_first_segment {
+        // Try clip naming convention on the folder name first.
+        if let Ok(parsed) = clip_filename_parser::parse_clip_path(&first_segment) {
+            let mut clip_files: Vec<ScannedFile> = Vec::new();
+            for entry in &entries {
+                let ext = ext_from_filename(&entry.filename);
+                if !VIDEO_EXTENSIONS.contains(&ext.as_str()) {
+                    continue; // non-video files in clip folders are ignored
                 }
+                let clip_index = clip_filename_parser::parse_clip_path(&entry.filename)
+                    .ok()
+                    .and_then(|p| p.clip_index)
+                    .or(parsed.clip_index);
+
+                clip_files.push(ScannedFile {
+                    path: entry.path.clone(),
+                    filename: entry.filename.clone(),
+                    size_bytes: entry.size_bytes,
+                    category: FileCategory::VideoClip,
+                    resolved: ResolvedContext {
+                        avatar_slug: Some(parsed.avatar_slug.clone()),
+                        scene_type_slug: Some(parsed.scene_type_slug.clone()),
+                        track_slug: Some(parsed.track_slug.clone()),
+                        version: Some(parsed.version),
+                        clip_index,
+                        labels: parsed.labels.clone(),
+                        ..Default::default()
+                    },
+                });
             }
-        } else if entry_path.is_file() {
-            // Root-level file — no avatar context.
-            if let Some(file) = classify_file(&entry_path, &ResolvedContext::default())? {
-                unresolved.push(file);
+            if !clip_files.is_empty() {
+                push_to_avatar_group(&mut avatar_groups, &parsed.avatar_slug, clip_files);
             }
+            continue;
+        }
+
+        // Otherwise treat as an avatar folder.
+        let avatar_slug = first_segment;
+        let base_ctx = ResolvedContext {
+            avatar_slug: Some(avatar_slug.clone()),
+            ..Default::default()
+        };
+        let mut avatar_files: Vec<ScannedFile> = Vec::new();
+        for entry in &entries {
+            let csv_override = csv_overrides.get(&entry.path).cloned();
+            avatar_files.push(classify_entry_by_extension(entry, &base_ctx, csv_override));
+        }
+        if !avatar_files.is_empty() {
+            push_to_avatar_group(&mut avatar_groups, &avatar_slug, avatar_files);
         }
     }
 
@@ -203,142 +300,137 @@ pub fn scan_directory(path: &str) -> Result<ScanResult, ScanError> {
     })
 }
 
-// ---------------------------------------------------------------------------
-// Internal helpers
-// ---------------------------------------------------------------------------
-
-/// Scan a clip-convention folder for video files.
-fn scan_clip_folder(
-    folder: &Path,
-    parsed: &clip_filename_parser::ParsedClipFilename,
-) -> Result<Vec<ScannedFile>, ScanError> {
-    let mut files = Vec::new();
-
-    for entry in fs::read_dir(folder)? {
-        let entry = entry?;
-        let path = entry.path();
-        if !path.is_file() {
-            continue;
-        }
-
-        let ext = path
-            .extension()
-            .and_then(|e| e.to_str())
-            .unwrap_or("")
-            .to_lowercase();
-
-        if !VIDEO_EXTENSIONS.contains(&ext.as_str()) {
-            continue;
-        }
-
-        let filename = path
-            .file_name()
-            .map(|n| n.to_string_lossy().to_string())
-            .unwrap_or_default();
-
-        // Try parsing the individual clip file name for clip_index.
-        let clip_index = clip_filename_parser::parse_clip_path(&filename)
-            .ok()
-            .and_then(|p| p.clip_index)
-            .or(parsed.clip_index);
-
-        let meta = path.metadata()?;
-
-        files.push(ScannedFile {
-            path: path.to_string_lossy().to_string(),
-            filename,
-            size_bytes: meta.len(),
-            category: FileCategory::VideoClip,
-            resolved: ResolvedContext {
-                avatar_slug: Some(parsed.avatar_slug.clone()),
-                scene_type_slug: Some(parsed.scene_type_slug.clone()),
-                track_slug: Some(parsed.track_slug.clone()),
-                version: Some(parsed.version),
-                clip_index,
-                labels: parsed.labels.clone(),
-                ..Default::default()
-            },
-        });
-    }
-
-    Ok(files)
-}
-
-/// Scan an avatar folder (flat structure) for all supported file types.
-fn scan_avatar_folder(folder: &Path, avatar_slug: &str) -> Result<Vec<ScannedFile>, ScanError> {
-    let mut files = Vec::new();
-
-    for entry in fs::read_dir(folder)? {
-        let entry = entry?;
-        let path = entry.path();
-        if !path.is_file() {
-            continue;
-        }
-
-        let base_ctx = ResolvedContext {
-            avatar_slug: Some(avatar_slug.to_string()),
-            ..Default::default()
-        };
-
-        if let Some(file) = classify_file(&path, &base_ctx)? {
-            files.push(file);
-        }
-    }
-
-    Ok(files)
-}
-
-/// Classify a single file by extension and content.
+/// Build a [`ScannedFile`] from a [`ScannedEntry`] by classifying its extension.
 ///
-/// Returns `None` for entries that cannot be read (broken symlinks, etc.).
-fn classify_file(
-    path: &Path,
+/// `base_ctx.avatar_slug` is inherited when the classifier doesn't set one.
+/// `csv_override` lets local callers pass the result of header sniffing.
+fn classify_entry_by_extension(
+    entry: &ScannedEntry,
     base_ctx: &ResolvedContext,
-) -> Result<Option<ScannedFile>, ScanError> {
-    let meta = match path.metadata() {
-        Ok(m) => m,
-        Err(_) => return Ok(None),
-    };
+    csv_override: Option<FileCategory>,
+) -> ScannedFile {
+    let ext = ext_from_filename(&entry.filename);
+    let stem = stem_from_filename(&entry.filename).to_lowercase();
 
-    let filename = path
-        .file_name()
-        .map(|n| n.to_string_lossy().to_string())
-        .unwrap_or_default();
+    let (mut category, mut ctx) = classify_by_extension_no_io(&ext, &stem, base_ctx);
 
-    let ext = path
-        .extension()
-        .and_then(|e| e.to_str())
-        .unwrap_or("")
-        .to_lowercase();
+    // Upgrade SpeechCsv → VoiceCsv when the local sniffer identified a voice CSV.
+    if matches!(category, FileCategory::SpeechCsv) {
+        if let Some(cat) = csv_override {
+            category = cat;
+        }
+    }
 
-    let stem = path
-        .file_stem()
-        .and_then(|s| s.to_str())
-        .unwrap_or("")
-        .to_lowercase();
-
-    let (category, mut ctx) = classify_by_extension(&ext, &stem, &filename, path, base_ctx);
-
-    // Inherit avatar_slug from parent context if not already set.
     if ctx.avatar_slug.is_none() {
         ctx.avatar_slug.clone_from(&base_ctx.avatar_slug);
     }
 
-    Ok(Some(ScannedFile {
-        path: path.to_string_lossy().to_string(),
-        filename,
-        size_bytes: meta.len(),
+    ScannedFile {
+        path: entry.path.clone(),
+        filename: entry.filename.clone(),
+        size_bytes: entry.size_bytes,
         category,
         resolved: ctx,
-    }))
+    }
 }
 
-/// Classify a file by its extension and filename.
-fn classify_by_extension(
+/// Build a minimal [`ScannedFile`] for entries without a folder context.
+fn scanned_file_from_entry(
+    entry: &ScannedEntry,
+    csv_override: Option<FileCategory>,
+) -> ScannedFile {
+    let ext = ext_from_filename(&entry.filename);
+    let stem = stem_from_filename(&entry.filename).to_lowercase();
+
+    let (mut category, ctx) =
+        classify_by_extension_no_io(&ext, &stem, &ResolvedContext::default());
+    if matches!(category, FileCategory::SpeechCsv) {
+        if let Some(cat) = csv_override {
+            category = cat;
+        }
+    }
+
+    ScannedFile {
+        path: entry.path.clone(),
+        filename: entry.filename.clone(),
+        size_bytes: entry.size_bytes,
+        category,
+        resolved: ctx,
+    }
+}
+
+/// Walk a local directory tree and build [`ScannedEntry`] records along with
+/// a per-path CSV classification map (for voice-vs-speech sniffing).
+///
+/// Layout expectations:
+/// - Files directly under `dir` are placed at `segments.len() == 1` (unresolved).
+/// - Files under a single level of subfolder have `segments = [folder, filename]`.
+/// - Deeper nesting is flattened to the top-level folder (current behaviour —
+///   the legacy scanner did not recurse either).
+fn collect_local_entries(
+    dir: &Path,
+) -> Result<(Vec<ScannedEntry>, std::collections::HashMap<String, FileCategory>), ScanError> {
+    let mut out: Vec<ScannedEntry> = Vec::new();
+    let mut csv_overrides: std::collections::HashMap<String, FileCategory> =
+        std::collections::HashMap::new();
+
+    for entry in fs::read_dir(dir)? {
+        let entry = entry?;
+        let entry_path = entry.path();
+        let entry_name = entry.file_name().to_string_lossy().to_string();
+
+        if entry_path.is_file() {
+            let meta = entry_path.metadata()?;
+            let path_str = entry_path.to_string_lossy().to_string();
+            if ext_from_filename(&entry_name) == "csv" {
+                csv_overrides.insert(path_str.clone(), classify_csv(&entry_path));
+            }
+            out.push(ScannedEntry {
+                path: path_str,
+                filename: entry_name.clone(),
+                size_bytes: meta.len(),
+                segments: vec![entry_name],
+            });
+        } else if entry_path.is_dir() {
+            for child in fs::read_dir(&entry_path)? {
+                let child = child?;
+                let child_path = child.path();
+                if !child_path.is_file() {
+                    continue;
+                }
+                let meta = match child_path.metadata() {
+                    Ok(m) => m,
+                    Err(_) => continue, // broken symlink etc.
+                };
+                let child_name = child.file_name().to_string_lossy().to_string();
+                let path_str = child_path.to_string_lossy().to_string();
+                if ext_from_filename(&child_name) == "csv" {
+                    csv_overrides.insert(path_str.clone(), classify_csv(&child_path));
+                }
+                out.push(ScannedEntry {
+                    path: path_str,
+                    filename: child_name.clone(),
+                    size_bytes: meta.len(),
+                    segments: vec![entry_name.clone(), child_name],
+                });
+            }
+        }
+    }
+    Ok((out, csv_overrides))
+}
+
+// ---------------------------------------------------------------------------
+// Internal helpers
+// ---------------------------------------------------------------------------
+
+/// Classify a file by its extension and filename, without any filesystem I/O.
+///
+/// This is the shared core used by both local and pre-enumerated (S3) scans.
+/// CSV files default to [`FileCategory::SpeechCsv`]; callers who can inspect
+/// the file should upgrade the category via `csv_override` at the call site.
+fn classify_by_extension_no_io(
     ext: &str,
     stem: &str,
-    _filename: &str,
-    path: &Path,
     base_ctx: &ResolvedContext,
 ) -> (FileCategory, ResolvedContext) {
     let mut ctx = base_ctx.clone();
@@ -359,13 +451,30 @@ fn classify_by_extension(
         return classify_json(stem, ctx);
     }
 
-    // CSV files
+    // CSV files — caller may override to VoiceCsv.
     if ext == "csv" {
-        let category = classify_csv(path);
-        return (category, ctx);
+        return (FileCategory::SpeechCsv, ctx);
     }
 
     (FileCategory::Unknown, ctx)
+}
+
+/// Extract the lowercase extension from a filename (without the leading dot).
+fn ext_from_filename(filename: &str) -> String {
+    Path::new(filename)
+        .extension()
+        .and_then(|e| e.to_str())
+        .unwrap_or("")
+        .to_lowercase()
+}
+
+/// Extract the file stem (filename without extension) from a filename.
+fn stem_from_filename(filename: &str) -> String {
+    Path::new(filename)
+        .file_stem()
+        .and_then(|s| s.to_str())
+        .unwrap_or("")
+        .to_string()
 }
 
 /// Classify a JSON file as metadata or speech.
@@ -649,6 +758,77 @@ mod tests {
         let result = scan_directory(file_path.to_str().unwrap());
         assert!(result.is_err());
         assert!(matches!(result.unwrap_err(), ScanError::NotADirectory(_)));
+    }
+
+    #[test]
+    fn classify_entries_handles_s3_style_paths() {
+        // Simulate `s3://bucket/scans/alice/seed.png` and a clip folder.
+        let entries = vec![
+            ScannedEntry {
+                path: "s3://bucket/scans/alice/seed.png".to_string(),
+                filename: "seed.png".to_string(),
+                size_bytes: 1024,
+                segments: vec!["alice".to_string(), "seed.png".to_string()],
+            },
+            ScannedEntry {
+                path: "s3://bucket/scans/alice/bio.json".to_string(),
+                filename: "bio.json".to_string(),
+                size_bytes: 42,
+                segments: vec!["alice".to_string(), "bio.json".to_string()],
+            },
+            ScannedEntry {
+                path: "s3://bucket/scans/sdg_allie-nicole_idle_topless_v1/clip0001.mp4"
+                    .to_string(),
+                filename: "clip0001.mp4".to_string(),
+                size_bytes: 2048,
+                segments: vec![
+                    "sdg_allie-nicole_idle_topless_v1".to_string(),
+                    "clip0001.mp4".to_string(),
+                ],
+            },
+            ScannedEntry {
+                path: "s3://bucket/scans/stray.png".to_string(),
+                filename: "stray.png".to_string(),
+                size_bytes: 99,
+                segments: vec!["stray.png".to_string()],
+            },
+        ];
+
+        let result = classify_entries(entries).unwrap();
+
+        // Expect two avatar groups: "alice" and "allie-nicole".
+        assert_eq!(result.avatars.len(), 2);
+
+        let alice = result
+            .avatars
+            .iter()
+            .find(|g| g.avatar_slug == "alice")
+            .expect("alice group");
+        assert_eq!(alice.files.len(), 2);
+        assert!(alice
+            .files
+            .iter()
+            .any(|f| f.category == FileCategory::Image && f.filename == "seed.png"));
+        assert!(alice
+            .files
+            .iter()
+            .any(|f| f.category == FileCategory::Metadata && f.filename == "bio.json"));
+
+        let clips = result
+            .avatars
+            .iter()
+            .find(|g| g.avatar_slug == "allie-nicole")
+            .expect("clip-folder derived avatar");
+        assert_eq!(clips.files.len(), 1);
+        assert_eq!(clips.files[0].category, FileCategory::VideoClip);
+        assert_eq!(clips.files[0].resolved.scene_type_slug.as_deref(), Some("idle"));
+        assert_eq!(clips.files[0].resolved.track_slug.as_deref(), Some("topless"));
+        assert_eq!(clips.files[0].resolved.version, Some(1));
+
+        // Root-level file -> unresolved.
+        assert_eq!(result.unresolved.len(), 1);
+        assert_eq!(result.unresolved[0].filename, "stray.png");
+        assert_eq!(result.unresolved[0].category, FileCategory::Image);
     }
 
     #[test]
