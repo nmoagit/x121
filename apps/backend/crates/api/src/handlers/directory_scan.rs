@@ -29,10 +29,10 @@ use crate::state::AppState;
 // ---------------------------------------------------------------------------
 
 /// Storage key prefix for variant images.
-const VARIANT_KEY_PREFIX: &str = "variants";
+pub(super) const VARIANT_KEY_PREFIX: &str = "variants";
 
 /// Provenance tag for directory-scan imported images.
-const PROVENANCE_DIRECTORY_SCAN: &str = "directory_scan";
+pub(super) const PROVENANCE_DIRECTORY_SCAN: &str = "directory_scan";
 
 // ---------------------------------------------------------------------------
 // Scan endpoint types

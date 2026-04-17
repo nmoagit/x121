@@ -109,6 +109,7 @@ pub mod settings;
 pub mod setup_wizard;
 pub mod shared_link;
 pub mod sidecar;
+pub mod source_reader;
 pub mod storage;
 pub mod storage_visualizer;
 pub mod storyboard;
