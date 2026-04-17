@@ -4,7 +4,8 @@ use sqlx::PgPool;
 use x121_core::types::{DbId, Timestamp};
 
 use crate::models::scene_video_version::{
-    CreateSceneVideoVersion, SceneVideoVersion, UpdateSceneVideoVersion,
+    ClipBrowseFilters, CreateSceneVideoVersion, SceneVideoVersion,
+    SceneVideoVersionWithContext, UpdateSceneVideoVersion,
 };
 
 /// Column list shared across queries to avoid repetition.
@@ -12,6 +13,93 @@ const COLUMNS: &str = "id, scene_id, version_number, source, file_path, \
     file_size_bytes, duration_secs, width, height, frame_rate, preview_path, web_playback_path, video_codec, is_final, notes, \
     qa_status, qa_reviewed_by, qa_reviewed_at, qa_rejection_reason, qa_notes, \
     generation_snapshot, content_hash, file_purged, parent_version_id, clip_index, transcode_state, deleted_at, created_at, updated_at";
+
+/// Shared FROM + WHERE for clip browse / bulk / export / derived-clip list
+/// queries (ADR-002). Callers bind positional parameters in the exact order
+/// documented by `CLIP_BROWSE_BIND_ORDER`.
+///
+/// The predicate filters `scene_video_versions` by project / pipeline /
+/// scene-type / track / source / QA-status / tags / search / derived-vs-
+/// non-derived / parent / no-tags / avatar — the full set used by the
+/// browse UI.
+///
+/// Keep the JOIN aliases (`svv`, `sc`, `c`, `p`, `st`, `t`) stable: callers
+/// that SELECT columns above this WHERE rely on them.
+const CLIP_BROWSE_WHERE: &str = "\
+    FROM scene_video_versions svv \
+    JOIN scenes sc ON sc.id = svv.scene_id AND sc.deleted_at IS NULL \
+    JOIN avatars c ON c.id = sc.avatar_id AND c.deleted_at IS NULL \
+    JOIN projects p ON p.id = c.project_id AND p.deleted_at IS NULL \
+    LEFT JOIN scene_types st ON st.id = sc.scene_type_id \
+    LEFT JOIN tracks t ON t.id = sc.track_id \
+    WHERE svv.deleted_at IS NULL \
+      AND ($1::bigint IS NULL OR p.id = $1) \
+      AND ($2::bigint IS NULL OR p.pipeline_id = $2) \
+      AND ($3::text IS NULL OR st.name = ANY(string_to_array($3, ','))) \
+      AND ($4::text IS NULL OR t.name = ANY(string_to_array($4, ','))) \
+      AND ($5::text IS NULL OR svv.source = ANY(string_to_array($5, ','))) \
+      AND ($6::text IS NULL OR svv.qa_status = ANY(string_to_array($6, ','))) \
+      AND ($7::bool OR c.is_enabled = true) \
+      AND ($8::text IS NULL OR svv.id IN ( \
+        SELECT et.entity_id FROM entity_tags et \
+        WHERE et.entity_type = 'scene_video_version' \
+          AND et.tag_id = ANY(string_to_array($8, ',')::bigint[]) \
+      )) \
+      AND ($9::text IS NULL OR ( \
+        c.name ILIKE '%' || $9 || '%' \
+        OR st.name ILIKE '%' || $9 || '%' \
+        OR t.name ILIKE '%' || $9 || '%' \
+        OR p.name ILIKE '%' || $9 || '%' \
+      )) \
+      AND ($10::text IS NULL OR svv.id NOT IN ( \
+        SELECT et.entity_id FROM entity_tags et \
+        WHERE et.entity_type = 'scene_video_version' \
+          AND et.tag_id = ANY(string_to_array($10, ',')::bigint[]) \
+      )) \
+      AND ($11::text = 'all' OR ($11::text = 'only_derived' AND svv.parent_version_id IS NOT NULL) OR ($11::text = 'only_non_derived' AND svv.parent_version_id IS NULL)) \
+      AND ($12::bigint IS NULL OR svv.parent_version_id = $12) \
+      AND (NOT $13::bool OR svv.id NOT IN ( \
+        SELECT et.entity_id FROM entity_tags et \
+        WHERE et.entity_type = 'scene_video_version' \
+      )) \
+      AND ($14::bigint IS NULL OR sc.avatar_id = $14)";
+
+/// Expose the shared WHERE clause fragment so handlers outside the repo
+/// (e.g. bulk actions, export) can compose it without duplicating the SQL.
+///
+/// ### Bind order (14 positional parameters)
+///
+/// Callers MUST bind these exact parameters before any LIMIT/OFFSET binds
+/// they add to their own SELECT. See `list_with_context` in this module for
+/// the canonical binding order.
+///
+/// 1.  `project_id`          `Option<DbId>`
+/// 2.  `pipeline_id`         `Option<DbId>`
+/// 3.  `scene_type` CSV      `Option<&str>`
+/// 4.  `track` CSV           `Option<&str>`
+/// 5.  `source` CSV          `Option<&str>`
+/// 6.  `qa_status` CSV       `Option<&str>`
+/// 7.  `show_disabled`       `bool`
+/// 8.  `tag_ids` CSV         `Option<&str>`
+/// 9.  `search`              `Option<&str>`
+/// 10. `exclude_tag_ids` CSV `Option<&str>`
+/// 11. `has_parent_filter`   `&str`  — one of `"all"`, `"only_derived"`, `"only_non_derived"`
+/// 12. `parent_version_id`   `Option<DbId>`
+/// 13. `no_tags`             `bool`
+/// 14. `avatar_id`           `Option<DbId>`
+pub fn clip_browse_where_clause() -> &'static str {
+    CLIP_BROWSE_WHERE
+}
+
+/// Translate `ClipBrowseFilters::has_parent` tri-state into the string the
+/// WHERE clause expects (`$11`).
+fn has_parent_filter_str(has_parent: Option<bool>) -> &'static str {
+    match has_parent {
+        Some(true) => "only_derived",
+        Some(false) => "only_non_derived",
+        None => "all",
+    }
+}
 
 /// Provides CRUD and version-management operations for scene video versions.
 pub struct SceneVideoVersionRepo;
@@ -598,6 +686,133 @@ impl SceneVideoVersionRepo {
         .fetch_optional(pool)
         .await?;
         Ok(row.and_then(|(pid,)| pid))
+    }
+
+    // ── Context-enriched list (ADR-001 / ADR-002) ───────────────────
+
+    /// Count clips matching `filters`. Binds the 14-parameter contract
+    /// documented in `CLIP_BROWSE_BIND_ORDER`.
+    pub async fn count_with_context(
+        pool: &PgPool,
+        filters: &ClipBrowseFilters,
+    ) -> Result<i64, sqlx::Error> {
+        let show_disabled = filters.show_disabled.unwrap_or(false);
+        let no_tags = filters.no_tags.unwrap_or(false);
+        let sql = format!("SELECT COUNT(*) {CLIP_BROWSE_WHERE}");
+        sqlx::query_scalar::<_, i64>(&sql)
+            .bind(filters.project_id)
+            .bind(filters.pipeline_id)
+            .bind(&filters.scene_type)
+            .bind(&filters.track)
+            .bind(&filters.source)
+            .bind(&filters.qa_status)
+            .bind(show_disabled)
+            .bind(&filters.tag_ids)
+            .bind(&filters.search)
+            .bind(&filters.exclude_tag_ids)
+            .bind(has_parent_filter_str(filters.has_parent))
+            .bind(filters.parent_version_id)
+            .bind(no_tags)
+            .bind(filters.avatar_id)
+            .fetch_one(pool)
+            .await
+    }
+
+    /// List clips with avatar / scene / track / project context and latest
+    /// transcode-job enrichment, in one SELECT.
+    ///
+    /// Ordering:
+    /// - When `filters.avatar_id` is set (derived-clip list for an avatar),
+    ///   orders by `parent_version_id, clip_index NULLS LAST, id`.
+    /// - Otherwise, orders by `created_at DESC` (browse page).
+    ///
+    /// Selects the full canonical column set via `COLUMNS` so adding a
+    /// column to `scene_video_versions` flows through without further
+    /// changes (ADR-001).
+    pub async fn list_with_context(
+        pool: &PgPool,
+        filters: &ClipBrowseFilters,
+    ) -> Result<Vec<SceneVideoVersionWithContext>, sqlx::Error> {
+        let show_disabled = filters.show_disabled.unwrap_or(false);
+        let no_tags = filters.no_tags.unwrap_or(false);
+        let limit = filters.limit.unwrap_or(200).clamp(1, 500) as i64;
+        let offset = filters.offset.unwrap_or(0).max(0) as i64;
+
+        // Prefix canonical SVV columns with `svv.` for disambiguation in JOIN.
+        let prefixed_columns = COLUMNS
+            .split(", ")
+            .map(|c| format!("svv.{}", c.trim()))
+            .collect::<Vec<_>>()
+            .join(", ");
+
+        // Derived-clip mode (avatar-scoped) orders by parent grouping so
+        // the UI renders natural clip-index sequences; browse mode orders
+        // by recency.
+        let order_by = if filters.avatar_id.is_some() {
+            "ORDER BY svv.parent_version_id, svv.clip_index NULLS LAST, svv.id"
+        } else {
+            "ORDER BY svv.created_at DESC"
+        };
+
+        // The shared CLIP_BROWSE_WHERE constant starts with `FROM ... WHERE
+        // ...`. We need two extra JOINs (transcode LATERAL + parent-version
+        // LEFT JOIN) between the FROM-block and the WHERE clause. Split on
+        // the first `WHERE` to insert them cleanly without duplicating the
+        // base JOINs.
+        let (from_block, where_block) = CLIP_BROWSE_WHERE
+            .split_once(" WHERE ")
+            .expect("CLIP_BROWSE_WHERE contains ' WHERE '");
+        let extra_joins = "\
+             LEFT JOIN LATERAL ( \
+                 SELECT tj.id, tj.error_message, tj.started_at, tj.attempts \
+                 FROM transcode_jobs tj \
+                 WHERE tj.entity_type = 'scene_video_version' \
+                   AND tj.entity_id = svv.id \
+                   AND tj.deleted_at IS NULL \
+                 ORDER BY tj.created_at DESC LIMIT 1 \
+             ) tj ON TRUE \
+             LEFT JOIN scene_video_versions pvv ON pvv.id = svv.parent_version_id";
+
+        let sql = format!(
+            "SELECT {prefixed_columns}, \
+                    COALESCE((SELECT COUNT(*) FROM frame_annotations fa \
+                              WHERE fa.version_id = svv.id), 0) AS annotation_count, \
+                    tj.error_message AS transcode_error, \
+                    tj.started_at AS transcode_started_at, \
+                    tj.attempts AS transcode_attempts, \
+                    tj.id AS transcode_job_id, \
+                    c.id AS avatar_id, \
+                    c.name AS avatar_name, \
+                    c.is_enabled AS avatar_is_enabled, \
+                    COALESCE(st.name, '') AS scene_type_name, \
+                    COALESCE(t.name, '') AS track_name, \
+                    p.id AS project_id, \
+                    p.name AS project_name, \
+                    pvv.version_number AS parent_version_number \
+             {from_block} {extra_joins} WHERE {where_block} \
+             {order_by} \
+             LIMIT $15 OFFSET $16"
+        );
+
+        sqlx::query_as::<_, SceneVideoVersionWithContext>(&sql)
+            .bind(filters.project_id)
+            .bind(filters.pipeline_id)
+            .bind(&filters.scene_type)
+            .bind(&filters.track)
+            .bind(&filters.source)
+            .bind(&filters.qa_status)
+            .bind(show_disabled)
+            .bind(&filters.tag_ids)
+            .bind(&filters.search)
+            .bind(&filters.exclude_tag_ids)
+            .bind(has_parent_filter_str(filters.has_parent))
+            .bind(filters.parent_version_id)
+            .bind(no_tags)
+            .bind(filters.avatar_id)
+            .bind(limit)
+            .bind(offset)
+            .fetch_all(pool)
+            .await
     }
 
     /// Enrich a list of SVV rows with transcode job fields (error, started_at,

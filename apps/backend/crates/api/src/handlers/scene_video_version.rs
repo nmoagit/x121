@@ -14,8 +14,8 @@ use x121_core::error::CoreError;
 use x121_core::ffmpeg;
 use x121_core::types::DbId;
 use x121_db::models::scene_video_version::{
-    CreateSceneVideoVersion, RejectClipRequest, ResumeFromResponse, SceneVideoVersion,
-    UpdateSceneVideoVersion,
+    ClipBrowseFilters, CreateSceneVideoVersion, RejectClipRequest, ResumeFromResponse,
+    SceneVideoVersion, SceneVideoVersionWithContext, UpdateSceneVideoVersion,
 };
 use x121_db::models::scene_video_version_artifact::SceneVideoVersionArtifact;
 use x121_db::models::status::SceneStatus;
@@ -759,153 +759,23 @@ pub async fn resume_from_clip(
 // Browse all clips across all avatars/scenes
 // ---------------------------------------------------------------------------
 
-/// A clip row enriched with avatar/scene/project context for browsing.
-#[derive(Debug, serde::Serialize, sqlx::FromRow)]
-pub struct ClipBrowseItem {
-    // Video version fields
-    pub id: DbId,
-    pub scene_id: DbId,
-    pub version_number: i32,
-    pub source: String,
-    pub file_path: String,
-    pub file_size_bytes: Option<i64>,
-    pub duration_secs: Option<f64>,
-    pub width: Option<i32>,
-    pub height: Option<i32>,
-    pub frame_rate: Option<f64>,
-    pub preview_path: Option<String>,
-    pub is_final: bool,
-    pub notes: Option<String>,
-    pub qa_status: String,
-    pub qa_rejection_reason: Option<String>,
-    pub qa_notes: Option<String>,
-    pub generation_snapshot: Option<serde_json::Value>,
-    pub file_purged: bool,
-    pub parent_version_id: Option<DbId>,
-    pub clip_index: Option<i32>,
-    pub created_at: chrono::DateTime<chrono::Utc>,
-    pub annotation_count: i64,
-    // Context fields
-    pub avatar_id: DbId,
-    pub avatar_name: String,
-    pub scene_type_name: String,
-    pub track_name: String,
-    pub avatar_is_enabled: bool,
-    pub project_id: DbId,
-    pub project_name: String,
-}
-
 /// GET /api/v1/scene-video-versions/browse
 ///
 /// Returns all scene video versions with avatar/scene/project context,
 /// ordered by most recent first. Supports optional project_id filter.
 /// Returns paginated results with a total count.
+///
+/// Rows are `SceneVideoVersionWithContext` — the shared row-mapper that
+/// flattens the canonical `SceneVideoVersion` (via `#[sqlx(flatten)]`)
+/// with context fields. Adding a column to `scene_video_versions`
+/// flows through automatically (ADR-001).
 pub async fn browse_clips(
     State(state): State<AppState>,
     axum::extract::Query(params): axum::extract::Query<BrowseClipsParams>,
 ) -> AppResult<Json<DataResponse<BrowseClipsPage>>> {
-    let limit = params.limit.unwrap_or(200).min(500);
-    let offset = params.offset.unwrap_or(0);
-    let show_disabled = params.show_disabled.unwrap_or(false);
-
-    // has_parent tri-state: None = all clips, true = only derived, false = only non-derived
-    let has_parent_filter: &str = match params.has_parent {
-        Some(true) => "only_derived",
-        Some(false) => "only_non_derived",
-        None => "all",
-    };
-
-    let base_from = "\
-        FROM scene_video_versions svv \
-        JOIN scenes sc ON sc.id = svv.scene_id AND sc.deleted_at IS NULL \
-        JOIN avatars c ON c.id = sc.avatar_id AND c.deleted_at IS NULL \
-        JOIN projects p ON p.id = c.project_id AND p.deleted_at IS NULL \
-        LEFT JOIN scene_types st ON st.id = sc.scene_type_id \
-        LEFT JOIN tracks t ON t.id = sc.track_id \
-        WHERE svv.deleted_at IS NULL \
-          AND ($1::bigint IS NULL OR p.id = $1) \
-          AND ($2::bigint IS NULL OR p.pipeline_id = $2) \
-          AND ($3::text IS NULL OR st.name = ANY(string_to_array($3, ','))) \
-          AND ($4::text IS NULL OR t.name = ANY(string_to_array($4, ','))) \
-          AND ($5::text IS NULL OR svv.source = ANY(string_to_array($5, ','))) \
-          AND ($6::text IS NULL OR svv.qa_status = ANY(string_to_array($6, ','))) \
-          AND ($7::bool OR c.is_enabled = true) \
-          AND ($8::text IS NULL OR svv.id IN ( \
-            SELECT et.entity_id FROM entity_tags et \
-            WHERE et.entity_type = 'scene_video_version' \
-              AND et.tag_id = ANY(string_to_array($8, ',')::bigint[]) \
-          )) \
-          AND ($9::text IS NULL OR ( \
-            c.name ILIKE '%' || $9 || '%' \
-            OR st.name ILIKE '%' || $9 || '%' \
-            OR t.name ILIKE '%' || $9 || '%' \
-            OR p.name ILIKE '%' || $9 || '%' \
-          )) \
-          AND ($10::text IS NULL OR svv.id NOT IN ( \
-            SELECT et.entity_id FROM entity_tags et \
-            WHERE et.entity_type = 'scene_video_version' \
-              AND et.tag_id = ANY(string_to_array($10, ',')::bigint[]) \
-          )) \
-          AND ($11::text = 'all' OR ($11::text = 'only_derived' AND svv.parent_version_id IS NOT NULL) OR ($11::text = 'only_non_derived' AND svv.parent_version_id IS NULL)) \
-          AND ($12::bigint IS NULL OR svv.parent_version_id = $12) \
-          AND (NOT $13::bool OR svv.id NOT IN ( \
-            SELECT et.entity_id FROM entity_tags et \
-            WHERE et.entity_type = 'scene_video_version' \
-          ))";
-
-    let count_sql = format!("SELECT COUNT(*) {base_from}");
-    let total: i64 = sqlx::query_scalar(&count_sql)
-        .bind(params.project_id)
-        .bind(params.pipeline_id)
-        .bind(&params.scene_type)
-        .bind(&params.track)
-        .bind(&params.source)
-        .bind(&params.qa_status)
-        .bind(show_disabled)
-        .bind(&params.tag_ids)
-        .bind(&params.search)
-        .bind(&params.exclude_tag_ids)
-        .bind(has_parent_filter)
-        .bind(params.parent_version_id)
-        .bind(params.no_tags.unwrap_or(false))
-        .fetch_one(&state.pool)
-        .await?;
-
-    let items_sql = format!(
-        "SELECT \
-            svv.id, svv.scene_id, svv.version_number, svv.source, svv.file_path, \
-            svv.file_size_bytes, svv.duration_secs, svv.width, svv.height, svv.frame_rate, \
-            svv.preview_path, svv.is_final, svv.notes, svv.qa_status, svv.qa_rejection_reason, svv.qa_notes, \
-            svv.generation_snapshot, svv.file_purged, svv.parent_version_id, svv.clip_index, svv.created_at, \
-            COALESCE((SELECT COUNT(*) FROM frame_annotations fa WHERE fa.version_id = svv.id), 0) AS annotation_count, \
-            c.id AS avatar_id, c.name AS avatar_name, \
-            COALESCE(st.name, '') AS scene_type_name, \
-            COALESCE(t.name, '') AS track_name, \
-            c.is_enabled AS avatar_is_enabled, \
-            p.id AS project_id, p.name AS project_name \
-        {base_from} \
-        ORDER BY svv.created_at DESC \
-        LIMIT $14 OFFSET $15"
-    );
-    let items = sqlx::query_as::<_, ClipBrowseItem>(&items_sql)
-        .bind(params.project_id)
-        .bind(params.pipeline_id)
-        .bind(&params.scene_type)
-        .bind(&params.track)
-        .bind(&params.source)
-        .bind(&params.qa_status)
-        .bind(show_disabled)
-        .bind(&params.tag_ids)
-        .bind(&params.search)
-        .bind(&params.exclude_tag_ids)
-        .bind(has_parent_filter)
-        .bind(params.parent_version_id)
-        .bind(params.no_tags.unwrap_or(false))
-        .bind(limit as i64)
-        .bind(offset as i64)
-        .fetch_all(&state.pool)
-        .await?;
-
+    let filters = params.into_filters(None);
+    let total = SceneVideoVersionRepo::count_with_context(&state.pool, &filters).await?;
+    let items = SceneVideoVersionRepo::list_with_context(&state.pool, &filters).await?;
     Ok(Json(DataResponse {
         data: BrowseClipsPage { items, total },
     }))
@@ -936,10 +806,36 @@ pub struct BrowseClipsParams {
     pub offset: Option<i32>,
 }
 
+impl BrowseClipsParams {
+    /// Convert incoming query params into the repo-level `ClipBrowseFilters`.
+    /// `avatar_id` is supplied by the caller for avatar-scoped list endpoints
+    /// (see `/avatars/{id}/derived-clips`).
+    pub fn into_filters(self, avatar_id: Option<DbId>) -> ClipBrowseFilters {
+        ClipBrowseFilters {
+            project_id: self.project_id,
+            pipeline_id: self.pipeline_id,
+            scene_type: self.scene_type,
+            track: self.track,
+            source: self.source,
+            qa_status: self.qa_status,
+            show_disabled: self.show_disabled,
+            tag_ids: self.tag_ids,
+            exclude_tag_ids: self.exclude_tag_ids,
+            no_tags: self.no_tags,
+            search: self.search,
+            has_parent: self.has_parent,
+            parent_version_id: self.parent_version_id,
+            avatar_id,
+            limit: self.limit,
+            offset: self.offset,
+        }
+    }
+}
+
 /// Paginated browse result for scene video clips.
 #[derive(Debug, serde::Serialize)]
 pub struct BrowseClipsPage {
-    pub items: Vec<ClipBrowseItem>,
+    pub items: Vec<SceneVideoVersionWithContext>,
     pub total: i64,
 }
 
@@ -963,46 +859,11 @@ pub struct BulkClipAction {
     pub reason: Option<String>,
 }
 
-/// Build the shared WHERE clause used by both browse and bulk operations.
-///
-/// Returns the clause fragment (starting with `FROM ...`) and expects
-/// parameters $1..$12 bound in the same order as `browse_clips`.
-fn clip_browse_where_clause() -> &'static str {
-    "FROM scene_video_versions svv \
-     JOIN scenes sc ON sc.id = svv.scene_id AND sc.deleted_at IS NULL \
-     JOIN avatars c ON c.id = sc.avatar_id AND c.deleted_at IS NULL \
-     JOIN projects p ON p.id = c.project_id AND p.deleted_at IS NULL \
-     LEFT JOIN scene_types st ON st.id = sc.scene_type_id \
-     LEFT JOIN tracks t ON t.id = sc.track_id \
-     WHERE svv.deleted_at IS NULL \
-       AND ($1::bigint IS NULL OR p.id = $1) \
-       AND ($2::bigint IS NULL OR p.pipeline_id = $2) \
-       AND ($3::text IS NULL OR st.name = ANY(string_to_array($3, ','))) \
-       AND ($4::text IS NULL OR t.name = ANY(string_to_array($4, ','))) \
-       AND ($5::text IS NULL OR svv.source = ANY(string_to_array($5, ','))) \
-       AND ($6::text IS NULL OR svv.qa_status = ANY(string_to_array($6, ','))) \
-       AND ($7::bool OR c.is_enabled = true) \
-       AND ($8::text IS NULL OR svv.id IN ( \
-         SELECT et.entity_id FROM entity_tags et \
-         WHERE et.entity_type = 'scene_video_version' \
-           AND et.tag_id = ANY(string_to_array($8, ',')::bigint[]) \
-       )) \
-       AND ($9::text IS NULL OR ( \
-         c.name ILIKE '%' || $9 || '%' \
-         OR st.name ILIKE '%' || $9 || '%' \
-         OR t.name ILIKE '%' || $9 || '%' \
-         OR p.name ILIKE '%' || $9 || '%' \
-       )) \
-       AND ($10::text IS NULL OR svv.id NOT IN ( \
-         SELECT et.entity_id FROM entity_tags et \
-         WHERE et.entity_type = 'scene_video_version' \
-           AND et.tag_id = ANY(string_to_array($10, ',')::bigint[]) \
-       )) \
-       AND (NOT $11::bool OR svv.parent_version_id IS NOT NULL) \
-       AND ($12::bigint IS NULL OR svv.parent_version_id = $12)"
-}
-
 /// Execute a bulk status update for clips, either by explicit IDs or browse filters.
+///
+/// When the caller provides `filters`, we resolve IDs through
+/// `SceneVideoVersionRepo`'s shared WHERE clause (ADR-002) so bulk actions
+/// match exactly what the browse endpoint selects.
 async fn bulk_update_clip_status(
     pool: &sqlx::PgPool,
     input: &BulkClipAction,
@@ -1028,11 +889,17 @@ async fn bulk_update_clip_status(
 
     if let Some(ref filters) = input.filters {
         let show_disabled = filters.show_disabled.unwrap_or(false);
-        let has_parent = filters.has_parent.unwrap_or(false);
-        let where_clause = clip_browse_where_clause();
+        let no_tags = filters.no_tags.unwrap_or(false);
+        // has_parent tri-state string for the shared WHERE clause.
+        let has_parent_str: &str = match filters.has_parent {
+            Some(true) => "only_derived",
+            Some(false) => "only_non_derived",
+            None => "all",
+        };
+        let where_clause = x121_db::repositories::scene_video_version_repo::clip_browse_where_clause();
         let sql = format!(
             "UPDATE scene_video_versions \
-             SET qa_status = $13, qa_rejection_reason = $14, updated_at = NOW() \
+             SET qa_status = $15, qa_rejection_reason = $16, updated_at = NOW() \
              WHERE id IN (SELECT svv.id {where_clause})"
         );
         let result = sqlx::query(&sql)
@@ -1046,8 +913,10 @@ async fn bulk_update_clip_status(
             .bind(&filters.tag_ids)
             .bind(&filters.search)
             .bind(&filters.exclude_tag_ids)
-            .bind(has_parent)
+            .bind(has_parent_str)
             .bind(filters.parent_version_id)
+            .bind(no_tags)
+            .bind::<Option<DbId>>(None) // $14: avatar_id (browse bulk does not scope by avatar)
             .bind(new_status)
             .bind(rejection_reason)
             .execute(pool)
@@ -1653,26 +1522,6 @@ pub async fn import_directory(
 // Derived clips listing
 // ---------------------------------------------------------------------------
 
-/// A derived clip row with scene context.
-#[derive(Debug, serde::Serialize, sqlx::FromRow)]
-pub struct DerivedClipItem {
-    pub id: DbId,
-    pub scene_id: DbId,
-    pub version_number: i32,
-    pub file_path: String,
-    pub preview_path: Option<String>,
-    pub duration_secs: Option<f64>,
-    pub qa_status: String,
-    pub clip_index: Option<i32>,
-    pub parent_version_id: Option<DbId>,
-    pub annotation_count: i64,
-    pub created_at: chrono::DateTime<chrono::Utc>,
-    // Context
-    pub scene_type_name: String,
-    pub track_name: String,
-    pub parent_version_number: Option<i32>,
-}
-
 /// Query params for derived clips listing.
 #[derive(Debug, serde::Deserialize)]
 pub struct DerivedClipsParams {
@@ -1686,7 +1535,7 @@ pub struct DerivedClipsParams {
 /// Paginated result for derived clips.
 #[derive(Debug, serde::Serialize)]
 pub struct DerivedClipsPage {
-    pub items: Vec<DerivedClipItem>,
+    pub items: Vec<SceneVideoVersionWithContext>,
     pub total: i64,
 }
 
@@ -1694,66 +1543,28 @@ pub struct DerivedClipsPage {
 ///
 /// List all derived clips (where parent_version_id IS NOT NULL) for an avatar,
 /// ordered by parent_version_id then clip_index.
+///
+/// Rows are `SceneVideoVersionWithContext` (ADR-001) so the canonical SVV
+/// column set is selected automatically.
 pub async fn list_derived_clips(
     State(state): State<AppState>,
     Path(avatar_id): Path<DbId>,
     axum::extract::Query(params): axum::extract::Query<DerivedClipsParams>,
 ) -> AppResult<Json<DataResponse<DerivedClipsPage>>> {
-    let limit = params.limit.unwrap_or(200).min(500);
-    let offset = params.offset.unwrap_or(0);
+    let filters = ClipBrowseFilters {
+        avatar_id: Some(avatar_id),
+        has_parent: Some(true), // derived clips only
+        qa_status: params.qa_status,
+        tag_ids: params.tag_ids,
+        exclude_tag_ids: params.exclude_tag_ids,
+        show_disabled: Some(true), // avatar pages see their own clips regardless of disabled flag
+        limit: params.limit,
+        offset: params.offset,
+        ..Default::default()
+    };
 
-    let base_where = "\
-        FROM scene_video_versions svv \
-        JOIN scenes sc ON sc.id = svv.scene_id AND sc.deleted_at IS NULL \
-        LEFT JOIN scene_types st ON st.id = sc.scene_type_id \
-        LEFT JOIN tracks t ON t.id = sc.track_id \
-        LEFT JOIN scene_video_versions pvv ON pvv.id = svv.parent_version_id \
-        WHERE sc.avatar_id = $1 \
-          AND svv.parent_version_id IS NOT NULL \
-          AND svv.deleted_at IS NULL \
-          AND ($2::text IS NULL OR svv.qa_status = ANY(string_to_array($2, ','))) \
-          AND ($3::text IS NULL OR svv.id IN ( \
-            SELECT et.entity_id FROM entity_tags et \
-            WHERE et.entity_type = 'scene_video_version' \
-              AND et.tag_id = ANY(string_to_array($3, ',')::bigint[]) \
-          )) \
-          AND ($4::text IS NULL OR svv.id NOT IN ( \
-            SELECT et.entity_id FROM entity_tags et \
-            WHERE et.entity_type = 'scene_video_version' \
-              AND et.tag_id = ANY(string_to_array($4, ',')::bigint[]) \
-          ))";
-
-    let count_sql = format!("SELECT COUNT(*) {base_where}");
-    let total: i64 = sqlx::query_scalar(&count_sql)
-        .bind(avatar_id)
-        .bind(&params.qa_status)
-        .bind(&params.tag_ids)
-        .bind(&params.exclude_tag_ids)
-        .fetch_one(&state.pool)
-        .await?;
-
-    let items_sql = format!(
-        "SELECT \
-            svv.id, svv.scene_id, svv.version_number, svv.file_path, svv.preview_path, \
-            svv.duration_secs, svv.qa_status, svv.clip_index, svv.parent_version_id, \
-            COALESCE((SELECT COUNT(*) FROM frame_annotations fa WHERE fa.version_id = svv.id), 0) AS annotation_count, \
-            svv.created_at, \
-            COALESCE(st.name, '') AS scene_type_name, \
-            COALESCE(t.name, '') AS track_name, \
-            pvv.version_number AS parent_version_number \
-        {base_where} \
-        ORDER BY svv.parent_version_id, svv.clip_index NULLS LAST, svv.id \
-        LIMIT $5 OFFSET $6"
-    );
-    let items = sqlx::query_as::<_, DerivedClipItem>(&items_sql)
-        .bind(avatar_id)
-        .bind(&params.qa_status)
-        .bind(&params.tag_ids)
-        .bind(&params.exclude_tag_ids)
-        .bind(limit as i64)
-        .bind(offset as i64)
-        .fetch_all(&state.pool)
-        .await?;
+    let total = SceneVideoVersionRepo::count_with_context(&state.pool, &filters).await?;
+    let items = SceneVideoVersionRepo::list_with_context(&state.pool, &filters).await?;
 
     Ok(Json(DataResponse {
         data: DerivedClipsPage { items, total },

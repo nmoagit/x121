@@ -72,48 +72,38 @@ async fn resolve_ids_from_filters(
                 .get("tagIds")
                 .and_then(|v| v.as_str())
                 .map(|s| s.to_string());
+            let exclude_tag_ids: Option<String> = filters
+                .get("excludeTagIds")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string());
             let search: Option<String> = filters
                 .get("search")
                 .and_then(|v| v.as_str())
                 .map(|s| s.to_string());
 
-            let sql = "SELECT svv.id \
-                FROM scene_video_versions svv \
-                JOIN scenes sc ON sc.id = svv.scene_id AND sc.deleted_at IS NULL \
-                JOIN avatars c ON c.id = sc.avatar_id AND c.deleted_at IS NULL \
-                JOIN projects p ON p.id = c.project_id AND p.deleted_at IS NULL \
-                LEFT JOIN scene_types st ON st.id = sc.scene_type_id \
-                LEFT JOIN tracks t ON t.id = sc.track_id \
-                WHERE svv.deleted_at IS NULL \
-                  AND ($1::bigint IS NULL OR p.id = $1) \
-                  AND ($2::bigint IS NULL OR p.pipeline_id = $2) \
-                  AND ($3::text IS NULL OR st.name = ANY(string_to_array($3, ','))) \
-                  AND ($4::text IS NULL OR t.name = ANY(string_to_array($4, ','))) \
-                  AND ($5::text IS NULL OR svv.source = ANY(string_to_array($5, ','))) \
-                  AND ($6::text IS NULL OR svv.qa_status = ANY(string_to_array($6, ','))) \
-                  AND ($7::bool OR c.is_enabled = true) \
-                  AND ($8::text IS NULL OR svv.id IN ( \
-                    SELECT et.entity_id FROM entity_tags et \
-                    WHERE et.entity_type = 'scene_video_version' \
-                      AND et.tag_id = ANY(string_to_array($8, ',')::bigint[]) \
-                  )) \
-                  AND ($9::text IS NULL OR ( \
-                    c.name ILIKE '%' || $9 || '%' \
-                    OR st.name ILIKE '%' || $9 || '%' \
-                    OR t.name ILIKE '%' || $9 || '%' \
-                    OR p.name ILIKE '%' || $9 || '%' \
-                  ))";
+            // ADR-002: share the browse predicate so export rows always
+            // match what the user saw. Unused filter dimensions (has_parent,
+            // parent_version_id, no_tags, avatar_id) bind to their no-op
+            // defaults per the documented BIND_ORDER.
+            let where_clause =
+                x121_db::repositories::scene_video_version_repo::clip_browse_where_clause();
+            let sql = format!("SELECT svv.id {where_clause}");
 
-            let ids: Vec<(DbId,)> = sqlx::query_as(sql)
-                .bind(project_id)
-                .bind(pipeline_id)
-                .bind(&scene_type)
-                .bind(&track)
-                .bind(&source)
-                .bind(&qa_status)
-                .bind(show_disabled)
-                .bind(&tag_ids)
-                .bind(&search)
+            let ids: Vec<(DbId,)> = sqlx::query_as(&sql)
+                .bind(project_id) // $1
+                .bind(pipeline_id) // $2
+                .bind(&scene_type) // $3
+                .bind(&track) // $4
+                .bind(&source) // $5
+                .bind(&qa_status) // $6
+                .bind(show_disabled) // $7
+                .bind(&tag_ids) // $8
+                .bind(&search) // $9
+                .bind(&exclude_tag_ids) // $10
+                .bind("all") // $11: has_parent tri-state — export all
+                .bind::<Option<DbId>>(None) // $12: parent_version_id
+                .bind(false) // $13: no_tags
+                .bind::<Option<DbId>>(None) // $14: avatar_id
                 .fetch_all(pool)
                 .await?;
 

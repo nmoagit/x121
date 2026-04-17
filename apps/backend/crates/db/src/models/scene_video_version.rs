@@ -116,3 +116,74 @@ pub struct ResumeFromResponse {
     pub segments_discarded: i32,
     pub status: String,
 }
+
+// ---------------------------------------------------------------------------
+// Context-enriched row for browse / derived-clip list endpoints (ADR-001).
+// ---------------------------------------------------------------------------
+
+/// A `SceneVideoVersion` row with avatar / scene / track / project context
+/// and latest-transcode-job enrichment.
+///
+/// This struct is the canonical wire format for list-style endpoints that
+/// need a clip with its surrounding context. It flattens the full
+/// `SceneVideoVersion` via `#[sqlx(flatten)]` so any column added to the
+/// table automatically flows through every consumer. Context fields below
+/// are named to avoid collision with `SceneVideoVersion`'s columns.
+///
+/// See ADR-001 for the decision and rationale. The drift bug that motivated
+/// this struct (`transcode_state` missing from hand-rolled SELECT in PRD-169)
+/// is documented in DRY-TRACKER (DRY-820).
+#[derive(Debug, Clone, FromRow, Serialize)]
+pub struct SceneVideoVersionWithContext {
+    /// Full canonical SVV row — flattened into the top-level JSON object
+    /// so the wire format stays flat for the frontend.
+    #[sqlx(flatten)]
+    #[serde(flatten)]
+    pub version: SceneVideoVersion,
+
+    // ── Avatar context ──────────────────────────────────────────────
+    pub avatar_id: DbId,
+    pub avatar_name: String,
+    pub avatar_is_enabled: bool,
+
+    // ── Scene-type / track context ──────────────────────────────────
+    pub scene_type_name: String,
+    pub track_name: String,
+
+    // ── Project context ─────────────────────────────────────────────
+    pub project_id: DbId,
+    pub project_name: String,
+
+    // ── Parent (derived-clip) context ───────────────────────────────
+    /// Parent version's `version_number`, for derived clips.
+    /// `None` when this row is not a derived clip.
+    pub parent_version_number: Option<i32>,
+}
+
+/// Filters accepted by `SceneVideoVersionRepo::list_with_context`.
+///
+/// Mirrors the query params shape of `/scene-video-versions/browse` so a
+/// handler can pass the deserialized params straight through.
+#[derive(Debug, Clone, Default, Deserialize)]
+pub struct ClipBrowseFilters {
+    pub project_id: Option<DbId>,
+    pub pipeline_id: Option<DbId>,
+    pub scene_type: Option<String>,
+    pub track: Option<String>,
+    pub source: Option<String>,
+    pub qa_status: Option<String>,
+    pub show_disabled: Option<bool>,
+    pub tag_ids: Option<String>,
+    pub exclude_tag_ids: Option<String>,
+    pub no_tags: Option<bool>,
+    pub search: Option<String>,
+    /// Tri-state. `None` = all clips, `Some(true)` = only derived,
+    /// `Some(false)` = only non-derived.
+    pub has_parent: Option<bool>,
+    pub parent_version_id: Option<DbId>,
+    /// When set, scopes to derived clips of this avatar (used by
+    /// `/avatars/{id}/derived-clips`).
+    pub avatar_id: Option<DbId>,
+    pub limit: Option<i32>,
+    pub offset: Option<i32>,
+}
