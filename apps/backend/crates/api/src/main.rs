@@ -334,6 +334,14 @@ async fn main() {
         delivery_assembly_cancel_clone,
     ));
 
+    // Spawn video transcode worker (PRD-169).
+    let video_transcode_cancel = tokio_util::sync::CancellationToken::new();
+    let video_transcode_cancel_clone = video_transcode_cancel.clone();
+    let video_transcode_handle = tokio::spawn(x121_api::background::video_transcode::run(
+        state.clone(),
+        video_transcode_cancel_clone,
+    ));
+
     // --- Router ---
     let app = build_app_router(state, &config);
 
@@ -391,6 +399,12 @@ async fn main() {
     delivery_assembly_cancel.cancel();
     let _ = tokio::time::timeout(Duration::from_secs(30), delivery_assembly_handle).await;
     tracing::info!("Delivery assembly pipeline stopped");
+
+    // Stop video transcode worker (PRD-169). Allow in-flight transcodes to
+    // finish naturally — the 30s timeout matches delivery_assembly's shape.
+    video_transcode_cancel.cancel();
+    let _ = tokio::time::timeout(Duration::from_secs(30), video_transcode_handle).await;
+    tracing::info!("Video transcode worker stopped");
 
     // Drop the event bus sender to close the broadcast channel.
     // This signals persistence and notification router to shut down.
