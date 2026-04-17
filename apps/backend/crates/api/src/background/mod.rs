@@ -11,3 +11,4 @@ pub mod delivery_assembly;
 pub mod export_archive;
 pub mod metrics_retention;
 pub mod schedule_executor;
+pub mod video_transcode;

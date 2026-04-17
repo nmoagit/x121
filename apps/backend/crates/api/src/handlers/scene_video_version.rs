@@ -51,57 +51,6 @@ async fn ensure_version_exists(pool: &sqlx::PgPool, id: DbId) -> AppResult<Scene
         })
 }
 
-/// Ensure uploaded video data is H.264 encoded.
-///
-/// If the source codec is already H.264, returns the data unchanged.
-/// Otherwise, writes to a temp file, transcodes via ffmpeg, and returns
-/// the transcoded bytes. The output is always `.mp4` / H.264.
-async fn ensure_h264(data: Vec<u8>, _ext: &str) -> Result<Vec<u8>, String> {
-    // Write to a temp file so ffprobe can inspect the codec.
-    let tmp_dir = std::env::temp_dir().join("x121_import");
-    std::fs::create_dir_all(&tmp_dir).map_err(|e| e.to_string())?;
-    let input_path = tmp_dir.join(format!(
-        "import_in_{}.mp4",
-        chrono::Utc::now().timestamp_millis()
-    ));
-    tokio::fs::write(&input_path, &data)
-        .await
-        .map_err(|e| format!("Failed to write temp input: {e}"))?;
-
-    let is_compatible = ffmpeg::is_browser_compatible(&input_path)
-        .await
-        .unwrap_or(false);
-
-    if is_compatible {
-        let _ = tokio::fs::remove_file(&input_path).await;
-        return Ok(data);
-    }
-
-    // Transcode to H.264 at original resolution.
-    let output_path = tmp_dir.join(format!(
-        "import_out_{}.mp4",
-        chrono::Utc::now().timestamp_millis()
-    ));
-    let result = ffmpeg::transcode_web_playback(&input_path, &output_path)
-        .await
-        .map_err(|e| format!("Transcode failed: {e}"))?;
-
-    let transcoded = tokio::fs::read(&output_path)
-        .await
-        .map_err(|e| format!("Failed to read transcoded file: {e}"))?;
-
-    tracing::info!(
-        original_size = data.len(),
-        transcoded_size = result.file_size,
-        "Transcoded imported video to H.264"
-    );
-
-    let _ = tokio::fs::remove_file(&input_path).await;
-    let _ = tokio::fs::remove_file(&output_path).await;
-
-    Ok(transcoded)
-}
-
 /// Generate a low-res preview for a scene video version (best-effort).
 ///
 /// Transcodes to a temp file, then uploads via the storage provider so the
@@ -510,16 +459,12 @@ pub async fn import_video(
     );
     let provider = state.storage_provider().await;
 
-    // Hash the original file for duplicate detection BEFORE any transcoding,
-    // so re-importing the same source file is always caught.
+    // Hash the original file for duplicate detection.
     let content_hash = x121_core::hashing::sha256_hex(&data);
 
-    // Probe codec and transcode to H.264 if needed, so every video in the
-    // system is browser-compatible and delivery-ready from the start.
-    let data = ensure_h264(data, &ext)
-        .await
-        .map_err(|e| AppError::InternalError(format!("Video transcode failed: {e}")))?;
-
+    // PRD-169: upload the original bytes as-is. Transcoding (if any) happens
+    // asynchronously in the background `video_transcode` worker — the HTTP
+    // response no longer blocks on ffmpeg.
     provider.upload(&storage_key, &data).await?;
 
     let file_size = data.len() as i64;
@@ -569,6 +514,17 @@ pub async fn import_video(
     if !has_approved_final {
         SceneRepo::set_status(&state.pool, scene_id, SceneStatus::Generated.id()).await?;
     }
+
+    // PRD-169: ffprobe the uploaded file; mark `transcode_state='completed'`
+    // if already browser-compatible, otherwise enqueue a transcode job. The
+    // HTTP response returns in under 10s for a 100 MB non-H.264 upload — no
+    // inline ffmpeg transcode blocking the request thread.
+    let _ = crate::background::video_transcode::enqueue_if_needed(
+        &state,
+        version.id,
+        &version.file_path,
+    )
+    .await?;
 
     // Best-effort: generate a low-res preview copy for card thumbnails.
     generate_preview_for_version(&state, &version).await;
@@ -1200,17 +1156,13 @@ pub async fn import_from_path(
         ));
     }
 
-    // Hash before transcode for duplicate detection.
+    // Hash for duplicate detection.
     let content_hash = x121_core::hashing::sha256_hex(&data);
 
-    // Transcode to H.264 if needed.
-    let data = ensure_h264(data, &ext)
-        .await
-        .map_err(|e| AppError::InternalError(format!("Video transcode failed: {e}")))?;
-
-    // Store via the active storage provider.
+    // PRD-169: upload the original bytes as-is; transcoding runs in the
+    // background worker, not inline in the HTTP response.
     let storage_key = format!(
-        "imports/scene_{scene_id}_{}.mp4",
+        "imports/scene_{scene_id}_{}.{ext}",
         chrono::Utc::now().timestamp()
     );
     let provider = state.storage_provider().await;
@@ -1246,6 +1198,15 @@ pub async fn import_from_path(
     if !has_approved_final {
         SceneRepo::set_status(&state.pool, scene_id, SceneStatus::Generated.id()).await?;
     }
+
+    // PRD-169: non-blocking transcode hook. Returned row's `transcode_state`
+    // reflects the outcome (`completed` for H.264 sources, `pending` otherwise).
+    let _ = crate::background::video_transcode::enqueue_if_needed(
+        &state,
+        version.id,
+        &version.file_path,
+    )
+    .await?;
 
     generate_preview_for_version(&state, &version).await;
     generate_web_playback_for_version(&state, &version).await;
@@ -1573,19 +1534,9 @@ pub async fn import_directory(
                 .and_then(|e| e.to_str())
                 .unwrap_or("mp4");
 
-            let data = match ensure_h264(data, file_ext).await {
-                Ok(d) => d,
-                Err(e) => {
-                    folder_result.errors.push(ImportError {
-                        path: file_name.to_string(),
-                        error: format!("Transcode failed: {e}"),
-                    });
-                    continue;
-                }
-            };
-
+            // PRD-169: upload original bytes; async worker handles transcode.
             let storage_key = format!(
-                "imports/scene_{scene_id}_{}.mp4",
+                "imports/scene_{scene_id}_{}.{file_ext}",
                 chrono::Utc::now().timestamp_millis()
             );
             let provider = state.storage_provider().await;
@@ -1623,6 +1574,24 @@ pub async fn import_directory(
                     continue;
                 }
             };
+
+            // PRD-169: enqueue async transcode (non-blocking). Failure here
+            // does not abort the batch — we log it and mark the clip as
+            // needing attention via `transcode_state='pending'` (default).
+            if let Err(e) = crate::background::video_transcode::enqueue_if_needed(
+                &state,
+                version.id,
+                &version.file_path,
+            )
+            .await
+            {
+                folder_result.errors.push(ImportError {
+                    path: file_name.to_string(),
+                    error: format!("Transcode enqueue failed: {e}"),
+                });
+                // Continue — the version row exists; an admin can retry via
+                // the retry endpoint once they see the failed state.
+            }
 
             // Apply labels as tags.
             for label in &parsed.labels {

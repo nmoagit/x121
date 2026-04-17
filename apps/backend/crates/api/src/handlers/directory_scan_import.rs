@@ -971,6 +971,16 @@ async fn import_video_from_source(
         SceneVideoVersionRepo::create(&state.pool, &create_input).await?
     };
 
+    // PRD-169: ffprobe the uploaded file; mark `transcode_state='completed'`
+    // if already browser-compatible, otherwise enqueue a transcode job. This
+    // replaces the transcode_deferred TODO flagged in PRD-165.
+    let _ = crate::background::video_transcode::enqueue_if_needed(
+        state,
+        version.id,
+        &version.file_path,
+    )
+    .await?;
+
     // Apply filename labels as tags when requested.
     if apply_tags {
         for label in &clip.labels {
