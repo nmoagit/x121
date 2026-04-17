@@ -7,17 +7,17 @@
 
 import { useMemo, useState } from "react";
 
-import { EmptyState } from "@/components/domain";
 import { ConfirmModal } from "@/components/composite";
+import { EmptyState } from "@/components/domain";
 import { PageHeader, Stack } from "@/components/layout";
-import { Button, FilterSelect, SearchInput, Toggle, ContextLoader } from "@/components/primitives";
+import { Button, ContextLoader, FilterSelect, SearchInput, Toggle } from "@/components/primitives";
 import { useAnnotationsBrowse, useDeleteBrowseAnnotation } from "@/features/annotations";
 import type { AnnotatedItem } from "@/features/annotations";
-import { getStreamUrl } from "@/features/video-player/hooks/use-video-metadata";
-import { ClipPlaybackModal } from "@/features/scenes/ClipPlaybackModal";
-import type { SceneVideoVersion } from "@/features/scenes/types";
 import { usePipelineContextSafe } from "@/features/pipelines";
 import { useProjects } from "@/features/projects/hooks/use-projects";
+import { ClipPlaybackModal } from "@/features/scenes/ClipPlaybackModal";
+import type { SceneVideoVersion } from "@/features/scenes/types";
+import { getStreamUrl } from "@/features/video-player/hooks/use-video-metadata";
 import { formatRelative } from "@/lib/format";
 import { toSelectOptions } from "@/lib/select-utils";
 import { ArrowDown, Edit3, Trash2 } from "@/tokens/icons";
@@ -60,6 +60,9 @@ function toClipShim(item: AnnotatedItem): SceneVideoVersion {
     annotation_count: item.annotation_count,
     parent_version_id: null,
     clip_index: null,
+    // PRD-169: browse endpoints don't return transcode_state; default to
+    // 'completed' so legacy/annotated rows stay playable without a round-trip.
+    transcode_state: "completed",
   };
 }
 
@@ -76,9 +79,7 @@ function AnnotationCard({
   onClick: () => void;
   onDelete: () => void;
 }) {
-  const streamUrl = item.version_id
-    ? getStreamUrl("version", item.version_id, "proxy")
-    : null;
+  const streamUrl = item.version_id ? getStreamUrl("version", item.version_id, "proxy") : null;
 
   return (
     <div className="group relative flex flex-col rounded-[var(--radius-lg)] border border-[var(--color-border-default)] bg-[var(--color-surface-primary)] overflow-hidden transition-shadow hover:shadow-[var(--shadow-md)]">
@@ -194,12 +195,10 @@ export function AnnotationsPage() {
     return true;
   });
 
-  const completedCount = items?.filter((item) => COMPLETED_SCENE_STATUSES.has(item.scene_status_id)).length ?? 0;
+  const completedCount =
+    items?.filter((item) => COMPLETED_SCENE_STATUSES.has(item.scene_status_id)).length ?? 0;
 
-  const projectOptions = [
-    { value: "", label: "All Projects" },
-    ...toSelectOptions(projects),
-  ];
+  const projectOptions = [{ value: "", label: "All Projects" }, ...toSelectOptions(projects)];
 
   // Build a SceneVideoVersion shim + meta for the shared ClipPlaybackModal
   const selectedClip = useMemo(
@@ -251,7 +250,12 @@ export function AnnotationsPage() {
           variant="ghost"
           size="xs"
           onClick={() => setSortDir((d) => (d === "asc" ? "desc" : "asc"))}
-          icon={<ArrowDown size={12} className={`transition-transform ${sortDir === "asc" ? "rotate-180" : ""}`} />}
+          icon={
+            <ArrowDown
+              size={12}
+              className={`transition-transform ${sortDir === "asc" ? "rotate-180" : ""}`}
+            />
+          }
         >
           {sortDir === "asc" ? "Asc" : "Desc"}
         </Button>
@@ -312,7 +316,8 @@ export function AnnotationsPage() {
       >
         {deleteTarget && (
           <p>
-            Delete annotation on {deleteTarget.avatar_name} — {deleteTarget.scene_type_name}, frame {deleteTarget.frame_number}?
+            Delete annotation on {deleteTarget.avatar_name} — {deleteTarget.scene_type_name}, frame{" "}
+            {deleteTarget.frame_number}?
           </p>
         )}
       </ConfirmModal>

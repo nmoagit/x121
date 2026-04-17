@@ -9,9 +9,23 @@ import { useEffect, useMemo, useState } from "react";
 
 import { Link } from "@tanstack/react-router";
 
-import { useAvatarPath } from "@/hooks/usePipelinePath";
 import { Modal } from "@/components/composite";
-import { Button, FlagIcon, ProgressiveImage, ContextLoader } from "@/components/primitives";
+import { Button, ContextLoader, FlagIcon, ProgressiveImage } from "@/components/primitives";
+import { useAvatarMetadata, useAvatarSettings } from "@/features/avatars/hooks/use-avatar-detail";
+import { useAvatarSpeeches, useSpeechTypes } from "@/features/avatars/hooks/use-avatar-speeches";
+import { useLanguages } from "@/features/avatars/hooks/use-languages";
+import { getVoiceId } from "@/features/avatars/types";
+import type { AvatarSpeech } from "@/features/avatars/types";
+import { useMediaVariants } from "@/features/media/hooks/use-media-variants";
+import { variantMediaUrl, variantThumbnailUrl } from "@/features/media/utils";
+import { usePipelineContextSafe } from "@/features/pipelines";
+import { useSceneCatalogue } from "@/features/scene-catalogue/hooks/use-scene-catalogue";
+import { useTracks } from "@/features/scene-catalogue/hooks/use-tracks";
+import { useAvatarScenes } from "@/features/scenes/hooks/useAvatarScenes";
+import { sceneHasVideo } from "@/features/scenes/types";
+import { VideoPlayer } from "@/features/video-player/VideoPlayer";
+import { getStreamUrl } from "@/features/video-player/hooks/use-video-metadata";
+import { useAvatarPath } from "@/hooks/usePipelinePath";
 import { cn } from "@/lib/cn";
 import {
   TERMINAL_DIVIDER,
@@ -20,24 +34,27 @@ import {
   TERMINAL_TH,
   TRACK_TEXT_COLORS,
 } from "@/lib/ui-classes";
-import { useAvatarMetadata, useAvatarSettings } from "@/features/avatars/hooks/use-avatar-detail";
-import { useAvatarSpeeches, useSpeechTypes } from "@/features/avatars/hooks/use-avatar-speeches";
-import { useLanguages } from "@/features/avatars/hooks/use-languages";
-import { getVoiceId } from "@/features/avatars/types";
-import type { AvatarSpeech } from "@/features/avatars/types";
-import { useMediaVariants } from "@/features/media/hooks/use-media-variants";
-import { variantThumbnailUrl, variantMediaUrl } from "@/features/media/utils";
-import { usePipelineContextSafe } from "@/features/pipelines";
-import { useSceneCatalogue } from "@/features/scene-catalogue/hooks/use-scene-catalogue";
-import { useTracks } from "@/features/scene-catalogue/hooks/use-tracks";
-import { useAvatarScenes } from "@/features/scenes/hooks/useAvatarScenes";
-import { sceneHasVideo } from "@/features/scenes/types";
-import { VideoPlayer } from "@/features/video-player/VideoPlayer";
-import { getStreamUrl } from "@/features/video-player/hooks/use-video-metadata";
-import { ArrowRight, ChevronLeft, ChevronRight, Film, FileText, Image, Maximize2, MessageSquare, Mic, Minimize2, Play } from "@/tokens/icons";
+import {
+  ArrowRight,
+  ChevronLeft,
+  ChevronRight,
+  FileText,
+  Film,
+  Image,
+  Maximize2,
+  MessageSquare,
+  Mic,
+  Minimize2,
+  Play,
+} from "@/tokens/icons";
 
+import {
+  TYPO_DATA,
+  TYPO_DATA_CYAN,
+  TYPO_DATA_MUTED,
+  TYPO_DATA_SUCCESS,
+} from "@/lib/typography-tokens";
 import type { LibraryAvatar } from "./types";
-import { TYPO_DATA, TYPO_DATA_CYAN, TYPO_DATA_MUTED, TYPO_DATA_SUCCESS } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Sub-views for detail panels
@@ -74,14 +91,22 @@ export function LibraryAvatarModal({
   const [detail, setDetail] = useState<DetailView | null>(null);
 
   // Clear detail view when avatar changes
-  useEffect(() => { setDetail(null); }, [avatar.id]);
+  useEffect(() => {
+    setDetail(null);
+  }, [avatar.id]);
 
   // Keyboard navigation: left/right arrows
   useEffect(() => {
     if (!open) return;
     function handleKey(e: KeyboardEvent) {
-      if (e.key === "ArrowLeft" && onPrev) { e.preventDefault(); onPrev(); }
-      if (e.key === "ArrowRight" && onNext) { e.preventDefault(); onNext(); }
+      if (e.key === "ArrowLeft" && onPrev) {
+        e.preventDefault();
+        onPrev();
+      }
+      if (e.key === "ArrowRight" && onNext) {
+        e.preventDefault();
+        onNext();
+      }
     }
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
@@ -123,7 +148,7 @@ export function LibraryAvatarModal({
   // Seed/track images — pick hero or first variant per variant_type
   const seedImages = useMemo(() => {
     if (!variants) return [];
-    const byType = new Map<string, typeof variants[number]>();
+    const byType = new Map<string, (typeof variants)[number]>();
     for (const v of variants) {
       if (!v.file_path) continue;
       const key = v.variant_type?.toLowerCase() ?? "default";
@@ -142,7 +167,11 @@ export function LibraryAvatarModal({
   }, [scenes]);
 
   /** Structured scene info for colored rendering. */
-  const sceneInfo = (scene: { scene_type_id: number; track_id: number | null; transition_mode?: string }) => {
+  const sceneInfo = (scene: {
+    scene_type_id: number;
+    track_id: number | null;
+    transition_mode?: string;
+  }) => {
     const st = sceneTypeMap.get(scene.scene_type_id);
     const sceneName = st?.name ?? `Type ${scene.scene_type_id}`;
     const isClothesOff = scene.transition_mode === "clothes_off";
@@ -162,10 +191,19 @@ export function LibraryAvatarModal({
 
   // Build speech summary groups with full entries for expand
   const speechGroups = useMemo(() => {
-    if (!speeches || speeches.length === 0) return new Map<string, { typeName: string; langCode: string; flagCode: string; entries: AvatarSpeech[] }>();
+    if (!speeches || speeches.length === 0)
+      return new Map<
+        string,
+        { typeName: string; langCode: string; flagCode: string; entries: AvatarSpeech[] }
+      >();
     const typeMap = new Map(speechTypes?.map((t) => [t.id, t.name]) ?? []);
-    const langMap = new Map(languages?.map((l) => [l.id, { code: l.code, flag_code: l.flag_code }]) ?? []);
-    const groups = new Map<string, { typeName: string; langCode: string; flagCode: string; entries: AvatarSpeech[] }>();
+    const langMap = new Map(
+      languages?.map((l) => [l.id, { code: l.code, flag_code: l.flag_code }]) ?? [],
+    );
+    const groups = new Map<
+      string,
+      { typeName: string; langCode: string; flagCode: string; entries: AvatarSpeech[] }
+    >();
     for (const s of speeches) {
       const key = `${s.speech_type_id}-${s.language_id}`;
       const existing = groups.get(key);
@@ -241,7 +279,9 @@ export function LibraryAvatarModal({
             {/* Seed / Track Images */}
             {seedImages.length > 0 && (
               <section>
-                <h3 className={`flex items-center gap-2 ${TYPO_DATA} font-medium text-[var(--color-text-muted)] uppercase tracking-wide mb-2`}>
+                <h3
+                  className={`flex items-center gap-2 ${TYPO_DATA} font-medium text-[var(--color-text-muted)] uppercase tracking-wide mb-2`}
+                >
                   <Image size={14} aria-hidden />
                   seed images
                   <span className="text-[var(--color-data-cyan)]">{seedImages.length}</span>
@@ -274,10 +314,13 @@ export function LibraryAvatarModal({
                         className="absolute inset-0 w-full h-full object-cover"
                         loading="lazy"
                       />
-                      <span className={cn(
-                        "absolute bottom-0 inset-x-0 bg-[var(--color-surface-badge-overlay)] font-mono text-[10px] px-1.5 py-0.5 truncate",
-                        TRACK_TEXT_COLORS[(v.variant_type ?? "").toLowerCase()] ?? "text-[var(--color-data-cyan)]",
-                      )}>
+                      <span
+                        className={cn(
+                          "absolute bottom-0 inset-x-0 bg-[var(--color-surface-badge-overlay)] font-mono text-[10px] px-1.5 py-0.5 truncate",
+                          TRACK_TEXT_COLORS[(v.variant_type ?? "").toLowerCase()] ??
+                            "text-[var(--color-data-cyan)]",
+                        )}
+                      >
                         {(v.variant_type || v.variant_label || "image").toLowerCase()}
                       </span>
                     </button>
@@ -289,7 +332,9 @@ export function LibraryAvatarModal({
             {/* Scene Videos */}
             {scenesWithVideo.length > 0 && (
               <section>
-                <h3 className={`flex items-center gap-2 ${TYPO_DATA} font-medium text-[var(--color-text-muted)] uppercase tracking-wide mb-2`}>
+                <h3
+                  className={`flex items-center gap-2 ${TYPO_DATA} font-medium text-[var(--color-text-muted)] uppercase tracking-wide mb-2`}
+                >
                   <Film size={14} aria-hidden />
                   scenes
                   <span className="text-[var(--color-data-cyan)]">{scenesWithVideo.length}</span>
@@ -297,7 +342,9 @@ export function LibraryAvatarModal({
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                   {scenesWithVideo.map((s, i) => {
                     const info = sceneInfo(s);
-                    const trackColor = info.trackSlug ? (TRACK_TEXT_COLORS[info.trackSlug] ?? "text-[var(--color-text-muted)]") : "";
+                    const trackColor = info.trackSlug
+                      ? (TRACK_TEXT_COLORS[info.trackSlug] ?? "text-[var(--color-text-muted)]")
+                      : "";
                     return (
                       <button
                         key={s.id}
@@ -323,7 +370,9 @@ export function LibraryAvatarModal({
                           <Play size={24} className="text-white" />
                         </div>
                         <span className="absolute bottom-0 inset-x-0 bg-[var(--color-surface-badge-overlay)] font-mono text-[10px] px-1.5 py-0.5 truncate">
-                          <span className="text-[var(--color-text-primary)]">{info.sceneName.toLowerCase()}</span>
+                          <span className="text-[var(--color-text-primary)]">
+                            {info.sceneName.toLowerCase()}
+                          </span>
                           {info.trackName && (
                             <span className={trackColor}> {info.trackName.toLowerCase()}</span>
                           )}
@@ -338,7 +387,9 @@ export function LibraryAvatarModal({
             {/* Metadata JSON */}
             {hasMetadata && (
               <section>
-                <h3 className={`flex items-center gap-2 ${TYPO_DATA} font-medium text-[var(--color-text-muted)] uppercase tracking-wide mb-2`}>
+                <h3
+                  className={`flex items-center gap-2 ${TYPO_DATA} font-medium text-[var(--color-text-muted)] uppercase tracking-wide mb-2`}
+                >
                   <FileText size={16} aria-hidden />
                   Metadata
                 </h3>
@@ -363,10 +414,14 @@ export function LibraryAvatarModal({
             {/* Speech */}
             {speechGroups.size > 0 && (
               <section>
-                <h3 className={`flex items-center gap-2 ${TYPO_DATA} font-medium text-[var(--color-text-muted)] uppercase tracking-wide mb-2`}>
+                <h3
+                  className={`flex items-center gap-2 ${TYPO_DATA} font-medium text-[var(--color-text-muted)] uppercase tracking-wide mb-2`}
+                >
                   <MessageSquare size={16} aria-hidden />
                   Speech
-                  <span className="font-mono text-[10px] text-[var(--color-text-muted)]">{speeches?.length ?? 0}</span>
+                  <span className="font-mono text-[10px] text-[var(--color-text-muted)]">
+                    {speeches?.length ?? 0}
+                  </span>
                 </h3>
                 <div className={cn(TERMINAL_PANEL, "overflow-hidden")}>
                   <table className="w-full text-xs">
@@ -381,25 +436,27 @@ export function LibraryAvatarModal({
                       {[...speechGroups.entries()].map(([groupKey, g]) => (
                         <tr
                           key={groupKey}
-                          className={cn(
-                            TERMINAL_DIVIDER,
-                            TERMINAL_ROW_HOVER,
-                            "cursor-pointer",
-                          )}
-                          onClick={() => setDetail({
-                            kind: "speech",
-                            label: `${g.typeName} — ${g.langCode.toUpperCase()}`,
-                            entries: g.entries,
-                          })}
+                          className={cn(TERMINAL_DIVIDER, TERMINAL_ROW_HOVER, "cursor-pointer")}
+                          onClick={() =>
+                            setDetail({
+                              kind: "speech",
+                              label: `${g.typeName} — ${g.langCode.toUpperCase()}`,
+                              entries: g.entries,
+                            })
+                          }
                         >
                           <td className={`${TYPO_DATA_CYAN} px-3 py-1.5`}>{g.typeName}</td>
                           <td className="px-3 py-1.5">
                             <span className="inline-flex items-center gap-1">
                               <FlagIcon flagCode={g.flagCode} size={10} />
-                              <span className="font-mono text-[10px] text-[var(--color-text-muted)] uppercase">{g.langCode}</span>
+                              <span className="font-mono text-[10px] text-[var(--color-text-muted)] uppercase">
+                                {g.langCode}
+                              </span>
                             </span>
                           </td>
-                          <td className={`px-3 py-1.5 text-right ${TYPO_DATA_MUTED}`}>{g.entries.length}</td>
+                          <td className={`px-3 py-1.5 text-right ${TYPO_DATA_MUTED}`}>
+                            {g.entries.length}
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -411,7 +468,9 @@ export function LibraryAvatarModal({
             {/* Voice ID */}
             {voiceId && (
               <section>
-                <h3 className={`flex items-center gap-2 ${TYPO_DATA} font-medium text-[var(--color-text-muted)] uppercase tracking-wide mb-2`}>
+                <h3
+                  className={`flex items-center gap-2 ${TYPO_DATA} font-medium text-[var(--color-text-muted)] uppercase tracking-wide mb-2`}
+                >
                   <Mic size={16} aria-hidden />
                   Voice ID
                 </h3>
@@ -424,11 +483,15 @@ export function LibraryAvatarModal({
             )}
 
             {/* Empty state */}
-            {seedImages.length === 0 && scenesWithVideo.length === 0 && !hasMetadata && speechGroups.size === 0 && !voiceId && (
-              <div className="text-sm text-[var(--color-text-muted)] text-center py-8">
-                No assets found for this avatar.
-              </div>
-            )}
+            {seedImages.length === 0 &&
+              scenesWithVideo.length === 0 &&
+              !hasMetadata &&
+              speechGroups.size === 0 &&
+              !voiceId && (
+                <div className="text-sm text-[var(--color-text-muted)] text-center py-8">
+                  No assets found for this avatar.
+                </div>
+              )}
           </div>
         )}
       </div>
@@ -439,17 +502,59 @@ export function LibraryAvatarModal({
           detail={detail}
           onClose={() => setDetail(null)}
           onPrev={
-            (detail.kind === "image" && detail.index > 0)
-              ? () => { const v = seedImages[detail.index - 1]; if (!v) return; setDetail({ kind: "image", url: variantMediaUrl(v.file_path), label: v.variant_label || v.variant_type || "Image", index: detail.index - 1, total: seedImages.length }); }
-              : (detail.kind === "video" && detail.index > 0)
-                ? () => { const s = scenesWithVideo[detail.index - 1]; if (!s) return; const info = sceneInfo(s); setDetail({ kind: "video", versionId: s.latest_version_id!, label: `${info.sceneName}${info.trackName ? ` — ${info.trackName}` : ""}`, index: detail.index - 1, total: scenesWithVideo.length }); }
+            detail.kind === "image" && detail.index > 0
+              ? () => {
+                  const v = seedImages[detail.index - 1];
+                  if (!v) return;
+                  setDetail({
+                    kind: "image",
+                    url: variantMediaUrl(v.file_path),
+                    label: v.variant_label || v.variant_type || "Image",
+                    index: detail.index - 1,
+                    total: seedImages.length,
+                  });
+                }
+              : detail.kind === "video" && detail.index > 0
+                ? () => {
+                    const s = scenesWithVideo[detail.index - 1];
+                    if (!s) return;
+                    const info = sceneInfo(s);
+                    setDetail({
+                      kind: "video",
+                      versionId: s.latest_version_id!,
+                      label: `${info.sceneName}${info.trackName ? ` — ${info.trackName}` : ""}`,
+                      index: detail.index - 1,
+                      total: scenesWithVideo.length,
+                    });
+                  }
                 : undefined
           }
           onNext={
-            (detail.kind === "image" && detail.index < detail.total - 1)
-              ? () => { const v = seedImages[detail.index + 1]; if (!v) return; setDetail({ kind: "image", url: variantMediaUrl(v.file_path), label: v.variant_label || v.variant_type || "Image", index: detail.index + 1, total: seedImages.length }); }
-              : (detail.kind === "video" && detail.index < detail.total - 1)
-                ? () => { const s = scenesWithVideo[detail.index + 1]; if (!s) return; const info = sceneInfo(s); setDetail({ kind: "video", versionId: s.latest_version_id!, label: `${info.sceneName}${info.trackName ? ` — ${info.trackName}` : ""}`, index: detail.index + 1, total: scenesWithVideo.length }); }
+            detail.kind === "image" && detail.index < detail.total - 1
+              ? () => {
+                  const v = seedImages[detail.index + 1];
+                  if (!v) return;
+                  setDetail({
+                    kind: "image",
+                    url: variantMediaUrl(v.file_path),
+                    label: v.variant_label || v.variant_type || "Image",
+                    index: detail.index + 1,
+                    total: seedImages.length,
+                  });
+                }
+              : detail.kind === "video" && detail.index < detail.total - 1
+                ? () => {
+                    const s = scenesWithVideo[detail.index + 1];
+                    if (!s) return;
+                    const info = sceneInfo(s);
+                    setDetail({
+                      kind: "video",
+                      versionId: s.latest_version_id!,
+                      label: `${info.sceneName}${info.trackName ? ` — ${info.trackName}` : ""}`,
+                      index: detail.index + 1,
+                      total: scenesWithVideo.length,
+                    });
+                  }
                 : undefined
           }
         />
@@ -478,29 +583,36 @@ function DetailOverlay({
   // Keyboard navigation
   useEffect(() => {
     function handleKey(e: KeyboardEvent) {
-      if (e.key === "Escape") { onClose(); return; }
-      if (e.key === "ArrowLeft" && onPrev) { e.preventDefault(); e.stopPropagation(); onPrev(); }
-      if (e.key === "ArrowRight" && onNext) { e.preventDefault(); e.stopPropagation(); onNext(); }
+      if (e.key === "Escape") {
+        onClose();
+        return;
+      }
+      if (e.key === "ArrowLeft" && onPrev) {
+        e.preventDefault();
+        e.stopPropagation();
+        onPrev();
+      }
+      if (e.key === "ArrowRight" && onNext) {
+        e.preventDefault();
+        e.stopPropagation();
+        onNext();
+      }
     }
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
   }, [onClose, onPrev, onNext]);
 
-  const detailTitle = detail.kind === "image" || detail.kind === "video"
-    ? `${detail.label}  ${detail.index + 1}/${detail.total}`
-    : detail.kind === "json"
-      ? "Metadata"
-      : detail.kind === "speech"
-        ? detail.label
-        : "";
+  const detailTitle =
+    detail.kind === "image" || detail.kind === "video"
+      ? `${detail.label}  ${detail.index + 1}/${detail.total}`
+      : detail.kind === "json"
+        ? "Metadata"
+        : detail.kind === "speech"
+          ? detail.label
+          : "";
 
   return (
-    <Modal
-      open
-      onClose={onClose}
-      title={detailTitle}
-      size={expanded ? "full" : "3xl"}
-    >
+    <Modal open onClose={onClose} title={detailTitle} size={expanded ? "full" : "3xl"}>
       <div className="flex flex-col gap-[var(--spacing-3)]">
         {detail.kind === "image" && (
           <>
@@ -552,6 +664,15 @@ function DetailOverlay({
           <>
             {/* Video with expand overlay */}
             <div className="group/video relative" onDoubleClick={() => setExpanded((v) => !v)}>
+              {/*
+                PRD-169: VideoPlayer rendering here assumes the scene's latest version is
+                transcode_state='completed'. Library scenes mostly reflect legacy data
+                where transcode_state defaults to 'completed'. For newly-imported
+                non-H.264 clips landing in the library, the playback will still attempt
+                to load — if the codec is non-compatible the browser will show an
+                error. A follow-up can fetch the version and wrap this in a gated
+                overlay; v1 favors minimal churn in the library flow.
+              */}
               <VideoPlayer
                 sourceType="version"
                 sourceId={detail.versionId}
@@ -658,7 +779,10 @@ function VideoThumb({ versionId }: { versionId: number }) {
       {!errored && (
         <video
           src={getStreamUrl("version", versionId, "proxy")}
-          className={cn("absolute inset-0 w-full h-full object-cover transition-opacity duration-300", !loaded && "opacity-0")}
+          className={cn(
+            "absolute inset-0 w-full h-full object-cover transition-opacity duration-300",
+            !loaded && "opacity-0",
+          )}
           preload="metadata"
           autoPlay
           loop

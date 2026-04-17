@@ -44,6 +44,16 @@ export interface ClipBrowseItem {
   project_name: string;
   parent_version_id: number | null;
   clip_index: number | null;
+  /** Transcode surface state (PRD-169). `completed` for browser-playable videos. */
+  transcode_state: "pending" | "in_progress" | "completed" | "failed";
+  /** Latest transcode error message (PRD-169). Populated when failed. */
+  transcode_error?: string | null;
+  /** Latest transcode started_at (PRD-169). */
+  transcode_started_at?: string | null;
+  /** Latest transcode attempt count (PRD-169). */
+  transcode_attempts?: number | null;
+  /** Latest transcode job id — used by POST /transcode-jobs/{id}/retry. */
+  transcode_job_id?: number | null;
 }
 
 /** Paginated browse result for scene video clips. */
@@ -207,7 +217,11 @@ export function useBrowseUnapproveClip() {
 export function useBrowseRejectClip() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ sceneId, versionId, input }: { sceneId: number; versionId: number; input: RejectClipInput }) =>
+    mutationFn: ({
+      sceneId,
+      versionId,
+      input,
+    }: { sceneId: number; versionId: number; input: RejectClipInput }) =>
       api.put<SceneVideoVersion>(`/scenes/${sceneId}/versions/${versionId}/reject`, input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: clipKeys.all });
@@ -231,8 +245,7 @@ export function postClipImport(sceneId: number, file: File, notes?: string) {
 export function useDeleteClip(sceneId: number) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (versionId: number) =>
-      api.delete(`/scenes/${sceneId}/versions/${versionId}`),
+    mutationFn: (versionId: number) => api.delete(`/scenes/${sceneId}/versions/${versionId}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: clipKeys.list(sceneId) });
       queryClient.invalidateQueries({ queryKey: sceneKeys.all });
@@ -313,7 +326,8 @@ export function postClipImportWithParent(
   const formData = new FormData();
   formData.append("file", file);
   if (opts?.notes) formData.append("notes", opts.notes);
-  if (opts?.parentVersionId != null) formData.append("parent_version_id", String(opts.parentVersionId));
+  if (opts?.parentVersionId != null)
+    formData.append("parent_version_id", String(opts.parentVersionId));
   if (opts?.clipIndex != null) formData.append("clip_index", String(opts.clipIndex));
   return api.raw(`/scenes/${sceneId}/versions/import`, {
     method: "POST",
@@ -325,8 +339,12 @@ export function postClipImportWithParent(
 export function useImportFromPath(sceneId: number) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (input: { path: string; parent_version_id?: number; clip_index?: number; notes?: string }) =>
-      api.post<SceneVideoVersion>(`/scenes/${sceneId}/versions/import-from-path`, input),
+    mutationFn: (input: {
+      path: string;
+      parent_version_id?: number;
+      clip_index?: number;
+      notes?: string;
+    }) => api.post<SceneVideoVersion>(`/scenes/${sceneId}/versions/import-from-path`, input),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: clipKeys.list(sceneId) });
       qc.invalidateQueries({ queryKey: clipKeys.all });
@@ -391,6 +409,12 @@ export interface DerivedClipItem {
   created_at: string;
   scene_type_name: string;
   track_name: string;
+  /** Transcode surface state (PRD-169). `completed` for browser-playable videos. */
+  transcode_state: "pending" | "in_progress" | "completed" | "failed";
+  transcode_error?: string | null;
+  transcode_started_at?: string | null;
+  transcode_attempts?: number | null;
+  transcode_job_id?: number | null;
 }
 
 export interface DerivedClipsPage {
@@ -401,7 +425,13 @@ export interface DerivedClipsPage {
 /** Fetch derived clips for an avatar, grouped by parent version. */
 export function useDerivedClips(
   avatarId: number,
-  params?: { limit?: number; offset?: number; qaStatus?: string; tagIds?: string; excludeTagIds?: string },
+  params?: {
+    limit?: number;
+    offset?: number;
+    qaStatus?: string;
+    tagIds?: string;
+    excludeTagIds?: string;
+  },
 ) {
   const searchParams = new URLSearchParams();
   if (params?.limit != null) searchParams.set("limit", String(params.limit));
@@ -412,7 +442,8 @@ export function useDerivedClips(
   const qs = searchParams.toString();
   return useQuery({
     queryKey: [...clipKeys.derived(avatarId), qs],
-    queryFn: () => api.get<DerivedClipsPage>(`/avatars/${avatarId}/derived-clips${qs ? `?${qs}` : ""}`),
+    queryFn: () =>
+      api.get<DerivedClipsPage>(`/avatars/${avatarId}/derived-clips${qs ? `?${qs}` : ""}`),
     enabled: avatarId > 0,
   });
 }

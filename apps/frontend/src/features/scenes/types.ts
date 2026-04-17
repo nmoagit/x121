@@ -54,6 +54,16 @@ export interface SceneVideoVersion {
   parent_version_id: number | null;
   /** Sequential ordering for derived clips (chunk index). NULL for non-derived. */
   clip_index: number | null;
+  /** Transcode surface state (PRD-169). `completed` for browser-playable videos. */
+  transcode_state: "pending" | "in_progress" | "completed" | "failed";
+  /** Latest transcode error message (PRD-169). Populated when failed. */
+  transcode_error?: string | null;
+  /** Latest transcode started_at (PRD-169). */
+  transcode_started_at?: string | null;
+  /** Latest transcode attempt count (PRD-169). */
+  transcode_attempts?: number | null;
+  /** Latest transcode job id — used by POST /transcode-jobs/{id}/retry. */
+  transcode_job_id?: number | null;
 }
 
 export interface SceneVideoVersionArtifact {

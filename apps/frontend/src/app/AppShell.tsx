@@ -6,9 +6,14 @@ import { Sidebar } from "@/app/Sidebar";
 import { StatusFooter } from "@/app/StatusFooter";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { ActivityConsoleDrawer } from "@/features/activity-console/ActivityConsoleDrawer";
+import { useTranscodeRefresh } from "@/hooks/useTranscodeRefresh";
 
 export function AppShell() {
   const { pathname } = useLocation();
+  // PRD-169: subscribe to `transcode.updated` broadcaster events + run the
+  // 5s polling fallback when the WebSocket is down. Mounted at shell level
+  // so invalidations fire on every page.
+  useTranscodeRefresh();
 
   return (
     <ProtectedRoute>

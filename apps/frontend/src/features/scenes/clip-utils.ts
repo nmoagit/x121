@@ -35,5 +35,10 @@ export function clipBrowseToPlayable(clip: ClipBrowseItem): SceneVideoVersion {
     annotation_count: clip.annotation_count,
     parent_version_id: clip.parent_version_id,
     clip_index: clip.clip_index,
+    transcode_state: clip.transcode_state,
+    transcode_error: clip.transcode_error,
+    transcode_started_at: clip.transcode_started_at,
+    transcode_attempts: clip.transcode_attempts,
+    transcode_job_id: clip.transcode_job_id,
   };
 }

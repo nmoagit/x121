@@ -1,26 +1,51 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { Modal } from "@/components/composite";
+import { NotesModal } from "@/components/domain/NotesModal";
+import type { TagInfo } from "@/components/domain/TagChip";
+import { TagInput } from "@/components/domain/TagInput";
 import { Button, Chip, Input } from "@/components/primitives";
-import { DrawingCanvas } from "@/features/annotations/DrawingCanvas";
 import { AnnotationPresetManager } from "@/features/annotations/AnnotationPresetManager";
+import { DrawingCanvas } from "@/features/annotations/DrawingCanvas";
 import { useAnnotationPresets } from "@/features/annotations/hooks/use-annotation-presets";
 import type { DrawingObject } from "@/features/annotations/types";
-import { VideoPlayer } from "@/features/video-player/VideoPlayer";
 import { getStreamUrl } from "@/features/video-player";
+import { TranscodeOverlay } from "@/features/video-player/TranscodeOverlay";
+import { VideoPlayer } from "@/features/video-player/VideoPlayer";
 import { api } from "@/lib/api";
 import { slugify } from "@/lib/format";
-import { NotesModal } from "@/components/domain/NotesModal";
-import { TagInput } from "@/components/domain/TagInput";
-import type { TagInfo } from "@/components/domain/TagChip";
-import { CheckCircle, ChevronLeft, ChevronRight, Download, Edit3, Maximize2, Minimize2, Settings, Trash2, X, XCircle } from "@/tokens/icons";
+import {
+  CheckCircle,
+  ChevronLeft,
+  ChevronRight,
+  Download,
+  Edit3,
+  Maximize2,
+  Minimize2,
+  Settings,
+  Trash2,
+  X,
+  XCircle,
+} from "@/tokens/icons";
 
+import {
+  TYPO_DATA,
+  TYPO_DATA_CYAN,
+  TYPO_DATA_MUTED,
+  TYPO_TIMESTAMP,
+} from "@/lib/typography-tokens";
 import { GenerationSnapshotPanel } from "./GenerationSnapshotPanel";
-import { useDeleteVersionFrameAnnotation, useUpsertVersionAnnotation, useVersionAnnotations } from "./hooks/useVersionAnnotations";
-import { useClipAnnotationsStore, type FrameAnnotationEntry } from "./stores/useClipAnnotationsStore";
+import {
+  useDeleteVersionFrameAnnotation,
+  useUpsertVersionAnnotation,
+  useVersionAnnotations,
+} from "./hooks/useVersionAnnotations";
+import {
+  type FrameAnnotationEntry,
+  useClipAnnotationsStore,
+} from "./stores/useClipAnnotationsStore";
 import { type SceneVideoVersion, isPurgedClip } from "./types";
-import { TYPO_DATA, TYPO_DATA_CYAN, TYPO_DATA_MUTED, TYPO_TIMESTAMP} from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
    Types
@@ -48,7 +73,16 @@ interface ClipPlaybackModalProps {
    Component
    -------------------------------------------------------------------------- */
 
-export function ClipPlaybackModal({ clip, onClose, onPrev, onNext, onApprove, onReject, pipelineId, meta }: ClipPlaybackModalProps) {
+export function ClipPlaybackModal({
+  clip,
+  onClose,
+  onPrev,
+  onNext,
+  onApprove,
+  onReject,
+  pipelineId,
+  meta,
+}: ClipPlaybackModalProps) {
   const queryClient = useQueryClient();
   const [expanded, setExpanded] = useState(false);
   const [annotating, setAnnotating] = useState(false);
@@ -57,21 +91,33 @@ export function ClipPlaybackModal({ clip, onClose, onPrev, onNext, onApprove, on
   const [clipNotesSaving, setClipNotesSaving] = useState(false);
   const [rangeEnd, setRangeEnd] = useState<number | null>(null);
   const [annotationNote, setAnnotationNote] = useState("");
-  const [activeLoopRange, setActiveLoopRange] = useState<{ start: number; end: number } | null>(null);
-  const playerControlRef = useRef<import("@/features/video-player/VideoPlayer").VideoPlayerControl | null>(null);
+  const [activeLoopRange, setActiveLoopRange] = useState<{ start: number; end: number } | null>(
+    null,
+  );
+  const playerControlRef = useRef<
+    import("@/features/video-player/VideoPlayer").VideoPlayerControl | null
+  >(null);
   const [presetManagerOpen, setPresetManagerOpen] = useState(false);
   const [canvasVersion, setCanvasVersion] = useState(0);
   const [canvasInitialTool, setCanvasInitialTool] = useState<"pen" | "text">("pen");
   /** Set of annotation frame numbers that are toggled visible. All visible by default. */
   const [hiddenAnnotationFrames, setHiddenAnnotationFrames] = useState<Set<number>>(new Set());
   /** Mark currently being hovered for deletion — highlighted on the canvas overlay. */
-  const [highlightedMark, setHighlightedMark] = useState<{ frameNumber: number; markIndex: number } | null>(null);
+  const [highlightedMark, setHighlightedMark] = useState<{
+    frameNumber: number;
+    markIndex: number;
+  } | null>(null);
 
   // Load existing tags + notes when clip changes
   useEffect(() => {
-    if (!clip) { setClipTags([]); setClipNotes(""); return; }
+    if (!clip) {
+      setClipTags([]);
+      setClipNotes("");
+      return;
+    }
     setClipNotes(clip.notes ?? "");
-    api.get<TagInfo[]>(`/entities/scene_video_version/${clip.id}/tags`)
+    api
+      .get<TagInfo[]>(`/entities/scene_video_version/${clip.id}/tags`)
       .then(setClipTags)
       .catch(() => setClipTags([]));
   }, [clip?.id]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -161,7 +207,7 @@ export function ClipPlaybackModal({ clip, onClose, onPrev, onNext, onApprove, on
         frameNumber,
         annotations: entry?.annotations ?? [],
         frameEnd: overrideFrameEnd !== undefined ? overrideFrameEnd : entry?.frameEnd,
-        note: overrideNote !== undefined ? overrideNote : entry?.note ?? undefined,
+        note: overrideNote !== undefined ? overrideNote : (entry?.note ?? undefined),
       });
       dirtyFramesRef.current.delete(frameNumber);
     },
@@ -206,14 +252,20 @@ export function ClipPlaybackModal({ clip, onClose, onPrev, onNext, onApprove, on
     const frame = annotatingFrameRef.current;
     const current = useClipAnnotationsStore.getState().getForClip(clipId);
     const idx = current.findIndex((e) => e.frameNumber === frame);
-    const hasContent = (idx >= 0 && current[idx]!.annotations.length > 0) || annotationNote.trim() || rangeEnd !== null;
+    const hasContent =
+      (idx >= 0 && current[idx]!.annotations.length > 0) ||
+      annotationNote.trim() ||
+      rangeEnd !== null;
     if (idx >= 0) {
       const next = [...current];
       next[idx] = { ...next[idx]!, frameEnd: rangeEnd, note: annotationNote || null };
       setForClip(clipId, next);
     } else if (hasContent) {
       // Create entry for note/range-only annotations
-      setForClip(clipId, [...current, { frameNumber: frame, frameEnd: rangeEnd, annotations: [], note: annotationNote || null }]);
+      setForClip(clipId, [
+        ...current,
+        { frameNumber: frame, frameEnd: rangeEnd, annotations: [], note: annotationNote || null },
+      ]);
     }
     // Save if there's any content
     if (hasContent) {
@@ -255,7 +307,10 @@ export function ClipPlaybackModal({ clip, onClose, onPrev, onNext, onApprove, on
         next[idx] = { ...next[idx]!, annotations: merged, note: text.trim() };
         setForClip(clipId, next);
       } else {
-        setForClip(clipId, [...current, { frameNumber: frame, frameEnd: rangeEnd, annotations: merged, note: text.trim() }]);
+        setForClip(clipId, [
+          ...current,
+          { frameNumber: frame, frameEnd: rangeEnd, annotations: merged, note: text.trim() },
+        ]);
       }
       // Update refs and force canvas remount in text mode
       existingCountRef.current = merged.length;
@@ -281,7 +336,10 @@ export function ClipPlaybackModal({ clip, onClose, onPrev, onNext, onApprove, on
       const current = useClipAnnotationsStore.getState().getForClip(clipId);
 
       if (annotations.length === 0) {
-        setForClip(clipId, current.filter((e) => e.frameNumber !== frame));
+        setForClip(
+          clipId,
+          current.filter((e) => e.frameNumber !== frame),
+        );
       } else {
         const idx = current.findIndex((e) => e.frameNumber === frame);
         if (idx >= 0) {
@@ -289,7 +347,10 @@ export function ClipPlaybackModal({ clip, onClose, onPrev, onNext, onApprove, on
           next[idx] = { ...next[idx]!, frameNumber: frame, annotations };
           setForClip(clipId, next);
         } else {
-          setForClip(clipId, [...current, { frameNumber: frame, frameEnd: null, annotations, note: null }]);
+          setForClip(clipId, [
+            ...current,
+            { frameNumber: frame, frameEnd: null, annotations, note: null },
+          ]);
         }
       }
     },
@@ -302,12 +363,10 @@ export function ClipPlaybackModal({ clip, onClose, onPrev, onNext, onApprove, on
       if (dirtyFramesRef.current.has(annotatingFrameRef.current)) {
         saveFrame(annotatingFrameRef.current);
       }
-      const video = getVideoEl();
-      if (video) {
-        video.pause();
-        const fps = clip?.frame_rate ?? 24;
-        video.currentTime = frameNumber / fps;
-      }
+      // Delegate to the player so seeks use the REAL framerate from video metadata,
+      // not clip.frame_rate (which is null for shims built on AnnotationsPage).
+      playerControlRef.current?.pause();
+      playerControlRef.current?.seekToFrame(frameNumber);
       annotatingFrameRef.current = frameNumber;
       const current = useClipAnnotationsStore.getState().getForClip(clipId);
       const entry = current.find((e) => e.frameNumber === frameNumber);
@@ -318,14 +377,17 @@ export function ClipPlaybackModal({ clip, onClose, onPrev, onNext, onApprove, on
       setAnnotationNote(entry?.note ?? "");
       setAnnotating(true);
     },
-    [clip?.frame_rate, clipId, getVideoEl, saveFrame],
+    [clipId, saveFrame],
   );
 
   /** Delete all annotations for a specific frame (local store + DB). */
   const handleDeleteFrameAnnotation = useCallback(
     (frameNumber: number) => {
       const current = useClipAnnotationsStore.getState().getForClip(clipId);
-      setForClip(clipId, current.filter((e) => e.frameNumber !== frameNumber));
+      setForClip(
+        clipId,
+        current.filter((e) => e.frameNumber !== frameNumber),
+      );
       dirtyFramesRef.current.delete(frameNumber);
       deleteMutation.mutate(frameNumber);
       // If we're currently annotating the deleted frame, exit annotation mode
@@ -340,11 +402,13 @@ export function ClipPlaybackModal({ clip, onClose, onPrev, onNext, onApprove, on
   const handleDeleteMark = useCallback(
     (frameNumber: number, markIndex: number) => {
       const current = useClipAnnotationsStore.getState().getForClip(clipId);
-      const updated = current.map((e) => {
-        if (e.frameNumber !== frameNumber) return e;
-        const remaining = e.annotations.filter((_, i) => i !== markIndex);
-        return { ...e, annotations: remaining };
-      }).filter((e) => e.annotations.length > 0 || e.note);
+      const updated = current
+        .map((e) => {
+          if (e.frameNumber !== frameNumber) return e;
+          const remaining = e.annotations.filter((_, i) => i !== markIndex);
+          return { ...e, annotations: remaining };
+        })
+        .filter((e) => e.annotations.length > 0 || e.note);
 
       if (updated.find((e) => e.frameNumber === frameNumber)) {
         // Still has marks or a note — update in store and save
@@ -364,24 +428,22 @@ export function ClipPlaybackModal({ clip, onClose, onPrev, onNext, onApprove, on
     (value: string) => {
       if (clipId === 0) return;
       setClipNotesSaving(true);
-      api.put(`/scenes/${sceneId}/versions/${clipId}`, { notes: value })
+      api
+        .put(`/scenes/${sceneId}/versions/${clipId}`, { notes: value })
         .then(() => {
-          queryClient.setQueriesData(
-            { queryKey: ["scene-versions"] },
-            (old: unknown) => {
-              if (!old || typeof old !== "object") return old;
-              const page = old as { items?: { id: number; notes?: string }[] };
-              if (page.items) {
-                return {
-                  ...page,
-                  items: page.items.map((item) =>
-                    item.id === clipId ? { ...item, notes: value } : item,
-                  ),
-                };
-              }
-              return old;
-            },
-          );
+          queryClient.setQueriesData({ queryKey: ["scene-versions"] }, (old: unknown) => {
+            if (!old || typeof old !== "object") return old;
+            const page = old as { items?: { id: number; notes?: string }[] };
+            if (page.items) {
+              return {
+                ...page,
+                items: page.items.map((item) =>
+                  item.id === clipId ? { ...item, notes: value } : item,
+                ),
+              };
+            }
+            return old;
+          });
         })
         .finally(() => setClipNotesSaving(false));
     },
@@ -399,8 +461,16 @@ export function ClipPlaybackModal({ clip, onClose, onPrev, onNext, onApprove, on
     if (!clip) return;
     const handler = (e: KeyboardEvent) => {
       if (annotating) return;
-      if (e.key === "ArrowLeft" && onPrev) { e.preventDefault(); saveAllDirty(); onPrev(); }
-      if (e.key === "ArrowRight" && onNext) { e.preventDefault(); saveAllDirty(); onNext(); }
+      if (e.key === "ArrowLeft" && onPrev) {
+        e.preventDefault();
+        saveAllDirty();
+        onPrev();
+      }
+      if (e.key === "ArrowRight" && onNext) {
+        e.preventDefault();
+        saveAllDirty();
+        onNext();
+      }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
@@ -410,9 +480,7 @@ export function ClipPlaybackModal({ clip, onClose, onPrev, onNext, onApprove, on
   // to prevent double-counting annotations that the canvas also has in its undoStack.
   const existingForFrame = existingSnapshotRef.current;
 
-  const sortedAnnotations = [...frameAnnotations].sort(
-    (a, b) => a.frameNumber - b.frameNumber,
-  );
+  const sortedAnnotations = [...frameAnnotations].sort((a, b) => a.frameNumber - b.frameNumber);
 
   const canvasKey = `canvas-${annotatingFrameRef.current}-${canvasVersion}`;
 
@@ -438,7 +506,13 @@ export function ClipPlaybackModal({ clip, onClose, onPrev, onNext, onApprove, on
     <Modal
       open={clip !== null}
       onClose={handleClose}
-      title={clip ? (meta ? `${meta.projectName} / ${meta.avatarName} — ${meta.sceneTypeName} — ${meta.trackName} — v${clip.version_number}` : `Clip v${clip.version_number}`) : ""}
+      title={
+        clip
+          ? meta
+            ? `${meta.projectName} / ${meta.avatarName} — ${meta.sceneTypeName} — ${meta.trackName} — v${clip.version_number}`
+            : `Clip v${clip.version_number}`
+          : ""
+      }
       size={expanded ? "full" : "3xl"}
     >
       {clip && (
@@ -446,41 +520,64 @@ export function ClipPlaybackModal({ clip, onClose, onPrev, onNext, onApprove, on
           {/* Derived clip context badge */}
           {clip.parent_version_id != null && (
             <div className="flex items-center gap-2 font-mono text-[10px] text-[var(--color-text-muted)]">
-              <span className="text-[var(--color-data-cyan)]">derived from v{clip.parent_version_id}</span>
+              <span className="text-[var(--color-data-cyan)]">
+                derived from v{clip.parent_version_id}
+              </span>
               {clip.clip_index != null && (
-                <><span className="opacity-30">|</span><span>chunk {clip.clip_index}</span></>
+                <>
+                  <span className="opacity-30">|</span>
+                  <span>chunk {clip.clip_index}</span>
+                </>
               )}
             </div>
           )}
           {/* Video + annotation overlay */}
-          <div ref={wrapperRef} className="group/video relative" onDoubleClick={() => setExpanded((v) => !v)}>
+          <div
+            ref={wrapperRef}
+            className="group/video relative"
+            onDoubleClick={() => setExpanded((v) => !v)}
+          >
             {isPurgedClip(clip) ? (
               <div className="flex h-48 items-center justify-center rounded-[var(--radius-md)] border border-dashed border-[var(--color-border-default)] bg-[var(--color-surface-secondary)]">
                 <div className="flex flex-col items-center gap-2 text-[var(--color-text-muted)]">
                   <X size={32} />
                   <span className={TYPO_DATA}>Video file has been purged from disk</span>
-                  <span className={TYPO_DATA_MUTED}>Metadata and generation parameters are still available below.</span>
+                  <span className={TYPO_DATA_MUTED}>
+                    Metadata and generation parameters are still available below.
+                  </span>
                 </div>
               </div>
             ) : (
               <>
                 <div ref={videoContainerRef}>
-                  <VideoPlayer
-                    sourceType="version"
-                    sourceId={clip.id}
-                    quality="full"
-                    autoPlay
-                    showControls
-                    annotationRanges={annotationRanges}
-                    controlRef={playerControlRef}
-                    onFrameChange={setCurrentFrame}
-                  />
+                  {clip.transcode_state === "completed" ? (
+                    <VideoPlayer
+                      sourceType="version"
+                      sourceId={clip.id}
+                      quality="full"
+                      autoPlay
+                      showControls
+                      annotationRanges={annotationRanges}
+                      controlRef={playerControlRef}
+                      onFrameChange={setCurrentFrame}
+                    />
+                  ) : (
+                    <div className="relative h-96 w-full">
+                      <TranscodeOverlay
+                        state={clip.transcode_state}
+                        error={clip.transcode_error ?? null}
+                        startedAt={clip.transcode_started_at ?? null}
+                        jobId={clip.transcode_job_id ?? null}
+                        canRetry
+                        svvId={clip.id}
+                      />
+                    </div>
+                  )}
                 </div>
 
                 {/* Read-only annotation overlay — show annotations only for frames within their range */}
                 {!annotating && containerWidth > 0 && videoHeight > 0 && (
                   <AnnotationOverlay
-                    key={`ao-${currentFrame}`}
                     frameAnnotations={frameAnnotations}
                     hiddenFrames={hiddenAnnotationFrames}
                     currentFrame={currentFrame}
@@ -490,27 +587,30 @@ export function ClipPlaybackModal({ clip, onClose, onPrev, onNext, onApprove, on
                   />
                 )}
 
-                {annotating && containerWidth > 0 && videoHeight > 0 && (() => {
-                  const aStart = annotatingFrameRef.current;
-                  const aEnd = rangeEnd != null && rangeEnd > aStart ? rangeEnd : aStart;
-                  return currentFrame >= aStart && currentFrame <= aEnd;
-                })() && (
-                  <div
-                    className="absolute top-0 left-0 z-10"
-                    style={{ width: containerWidth, height: videoHeight }}
-                  >
-                    <DrawingCanvas
-                      key={canvasKey}
-                      width={containerWidth}
-                      height={videoHeight}
-                      existingAnnotations={existingForFrame}
-                      onAnnotationsChange={handleAnnotationsChange}
-                      initialTool={canvasInitialTool}
-                      editable
-                      overlay
-                    />
-                  </div>
-                )}
+                {annotating &&
+                  containerWidth > 0 &&
+                  videoHeight > 0 &&
+                  (() => {
+                    const aStart = annotatingFrameRef.current;
+                    const aEnd = rangeEnd != null && rangeEnd > aStart ? rangeEnd : aStart;
+                    return currentFrame >= aStart && currentFrame <= aEnd;
+                  })() && (
+                    <div
+                      className="absolute top-0 left-0 z-10"
+                      style={{ width: containerWidth, height: videoHeight }}
+                    >
+                      <DrawingCanvas
+                        key={canvasKey}
+                        width={containerWidth}
+                        height={videoHeight}
+                        existingAnnotations={existingForFrame}
+                        onAnnotationsChange={handleAnnotationsChange}
+                        initialTool={canvasInitialTool}
+                        editable
+                        overlay
+                      />
+                    </div>
+                  )}
               </>
             )}
             {/* Expand toggle — overlays top-right of video, shifts down when annotation toolbar is visible */}
@@ -527,50 +627,52 @@ export function ClipPlaybackModal({ clip, onClose, onPrev, onNext, onApprove, on
           {/* Annotated frames indicator — chips toggle visibility */}
           {frameAnnotations.length > 0 && !annotating && (
             <div className="flex items-center gap-[var(--spacing-2)]">
-              <span className={`shrink-0 ${TYPO_TIMESTAMP}`}>
-                Annotated:
-              </span>
+              <span className={`shrink-0 ${TYPO_TIMESTAMP}`}>Annotated:</span>
               <div className="flex flex-wrap gap-1">
                 {sortedAnnotations.map((entry) => {
                   const isHidden = hiddenAnnotationFrames.has(entry.frameNumber);
                   const hasRange = entry.frameEnd !== null && entry.frameEnd > entry.frameNumber;
-                  const isLooped = hasRange &&
+                  const isLooped =
+                    hasRange &&
                     activeLoopRange?.start === entry.frameNumber &&
                     activeLoopRange?.end === entry.frameEnd;
                   return (
-                  <Chip
-                    key={entry.frameNumber}
-                    size="xs"
-                    active={isLooped || !isHidden}
-                    onClick={() => {
-                      if (hasRange) {
-                        if (isLooped) {
-                          // Clear loop
-                          setActiveLoopRange(null);
-                          playerControlRef.current?.loopRange(null);
-                        } else {
-                          // Set loop — call player control directly (same path as timeline click)
-                          const range = { start: entry.frameNumber, end: entry.frameEnd as number };
-                          setActiveLoopRange(range);
-                          playerControlRef.current?.loopRange(range);
-                        }
-                      } else {
-                        // Single-frame annotation: toggle visibility
-                        setHiddenAnnotationFrames((prev) => {
-                          const next = new Set(prev);
-                          if (next.has(entry.frameNumber)) {
-                            next.delete(entry.frameNumber);
+                    <Chip
+                      key={entry.frameNumber}
+                      size="xs"
+                      active={isLooped || !isHidden}
+                      onClick={() => {
+                        if (hasRange) {
+                          if (isLooped) {
+                            // Clear loop
+                            setActiveLoopRange(null);
+                            playerControlRef.current?.loopRange(null);
                           } else {
-                            next.add(entry.frameNumber);
+                            // Set loop — call player control directly (same path as timeline click)
+                            const range = {
+                              start: entry.frameNumber,
+                              end: entry.frameEnd as number,
+                            };
+                            setActiveLoopRange(range);
+                            playerControlRef.current?.loopRange(range);
                           }
-                          return next;
-                        });
-                      }
-                    }}
-                  >
-                    {frameLabel(entry)}
-                    {isLooped && " ↻"}
-                  </Chip>
+                        } else {
+                          // Single-frame annotation: toggle visibility
+                          setHiddenAnnotationFrames((prev) => {
+                            const next = new Set(prev);
+                            if (next.has(entry.frameNumber)) {
+                              next.delete(entry.frameNumber);
+                            } else {
+                              next.add(entry.frameNumber);
+                            }
+                            return next;
+                          });
+                        }
+                      }}
+                    >
+                      {frameLabel(entry)}
+                      {isLooped && " ↻"}
+                    </Chip>
                   );
                 })}
               </div>
@@ -579,212 +681,239 @@ export function ClipPlaybackModal({ clip, onClose, onPrev, onNext, onApprove, on
 
           {/* Annotation & export controls */}
           {!isPurgedClip(clip) && (
-          <div className="flex flex-col gap-[var(--spacing-2)]">
-            <div className="flex items-center gap-[var(--spacing-2)]">
-              <button
-                type="button"
-                onClick={annotating ? exitAnnotation : enterAnnotation}
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[var(--radius-md)] text-xs font-mono transition-all ${
-                  annotating
-                    ? "bg-[var(--color-action-primary)] text-white shadow-[0_0_12px_rgba(59,130,246,0.4)]"
-                    : "bg-[var(--color-surface-secondary)] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-tertiary)] border border-[var(--color-border-default)]"
-                }`}
-              >
-                {annotating ? <X size={12} /> : <Edit3 size={12} />}
-                {annotating ? "Exit" : "Annotate"}
-              </button>
-
-              {annotating ? (
-                <>
-                  <span className={TYPO_DATA_CYAN}>
-                    Frame {annotatingFrameRef.current}
-                    {rangeEnd !== null && ` — ${rangeEnd}`}
-                  </span>
-                  {upsertMutation.isPending && (
-                    <span className="text-xs text-[var(--color-text-muted)]">Saving…</span>
-                  )}
-                </>
-              ) : (
-                <>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const url = getStreamUrl("version", clip.id, "full");
-                      const ext = clip.file_path?.split(".").pop() ?? "mp4";
-                      const labelSuffix = clipTags.length > 0 ? `_[${clipTags.map((t) => slugify(t.display_name)).join(",")}]` : "";
-                      const filename = meta
-                        ? `${slugify(meta.projectName)}_${slugify(meta.avatarName)}_${slugify(meta.sceneTypeName)}_${slugify(meta.trackName)}_v${clip.version_number}${labelSuffix}.${ext}`
-                        : `clip_v${clip.version_number}${labelSuffix}.${ext}`;
-                      const a = document.createElement("a");
-                      a.href = url;
-                      a.download = filename;
-                      a.click();
-                    }}
-                    className="p-1 rounded text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-secondary)] transition-colors"
-                    title="Export"
-                  >
-                    <Download size={14} />
-                  </button>
-
-                  <div className="w-px h-4 bg-[var(--color-border-default)]" />
-
-                  <button
-                    type="button"
-                    onClick={onApprove}
-                    disabled={!onApprove}
-                    className={`p-1 rounded transition-colors disabled:opacity-30 disabled:pointer-events-none ${clip.qa_status === "approved" ? "text-[var(--color-data-green)]" : "text-[var(--color-text-muted)] hover:text-[var(--color-data-green)] hover:bg-[var(--color-surface-secondary)]"}`}
-                    title={clip.qa_status === "approved" ? "Approved" : "Approve"}
-                  >
-                    <CheckCircle size={14} />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={onReject}
-                    disabled={!onReject}
-                    className={`p-1 rounded transition-colors disabled:opacity-30 disabled:pointer-events-none ${clip.qa_status === "rejected" ? "text-[var(--color-data-red)]" : "text-[var(--color-text-muted)] hover:text-[var(--color-data-red)] hover:bg-[var(--color-surface-secondary)]"}`}
-                    title={clip.qa_status === "rejected" ? "Rejected" : "Reject"}
-                  >
-                    <XCircle size={14} />
-                  </button>
-
-                  {/* Spacer + Prev/Next */}
-                  <div className="flex-1" />
-                  <div className="flex items-center gap-1">
-                    <button
-                      type="button"
-                      onClick={() => { saveAllDirty(); onPrev?.(); }}
-                      disabled={!onPrev}
-                      className="p-1 rounded text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-secondary)] transition-colors disabled:opacity-20 disabled:pointer-events-none"
-                      title="Previous clip"
-                    >
-                      <ChevronLeft size={16} />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => { saveAllDirty(); onNext?.(); }}
-                      disabled={!onNext}
-                      className="p-1 rounded text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-secondary)] transition-colors disabled:opacity-20 disabled:pointer-events-none"
-                  title="Next clip"
+            <div className="flex flex-col gap-[var(--spacing-2)]">
+              <div className="flex items-center gap-[var(--spacing-2)]">
+                <button
+                  type="button"
+                  onClick={annotating ? exitAnnotation : enterAnnotation}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[var(--radius-md)] text-xs font-mono transition-all ${
+                    annotating
+                      ? "bg-[var(--color-action-primary)] text-white shadow-[0_0_12px_rgba(59,130,246,0.4)]"
+                      : "bg-[var(--color-surface-secondary)] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-tertiary)] border border-[var(--color-border-default)]"
+                  }`}
                 >
-                  <ChevronRight size={16} />
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
+                  {annotating ? <X size={12} /> : <Edit3 size={12} />}
+                  {annotating ? "Exit" : "Annotate"}
+                </button>
 
-            {/* Mark Start/End range controls + note input (annotation mode only) */}
-            {annotating && (
-              <div className="flex flex-col gap-[var(--spacing-2)]">
-                <div className="flex items-center gap-[var(--spacing-2)]">
-                  <Button size="xs" variant="secondary" className="font-mono" onClick={() => {
-                    pauseVideo();
-                    const oldFrame = annotatingFrameRef.current;
-                    const newFrame = currentFrame;
-                    if (oldFrame === newFrame) return;
-                    // Move the store entry from old frame to new frame
-                    const cur = useClipAnnotationsStore.getState().getForClip(clipId);
-                    const oldIdx = cur.findIndex((en) => en.frameNumber === oldFrame);
-                    if (oldIdx >= 0) {
-                      const entry = cur[oldIdx]!;
-                      const next = cur.filter((_, i) => i !== oldIdx);
-                      next.push({ ...entry, frameNumber: newFrame });
-                      setForClip(clipId, next);
-                    }
-                    annotatingFrameRef.current = newFrame;
-                    // Save: delete old frame, save new frame
-                    saveFrame(newFrame, rangeEnd, annotationNote || undefined);
-                  }}>
-                    Mark Start
-                  </Button>
-                  <Button size="xs" variant="secondary" className="font-mono" onClick={() => {
-                    pauseVideo();
-                    const newEnd = currentFrame;
-                    setRangeEnd(newEnd);
-                    // Immediately update store entry with the new range
-                    const frame = annotatingFrameRef.current;
-                    const cur = useClipAnnotationsStore.getState().getForClip(clipId);
-                    const idx = cur.findIndex((en) => en.frameNumber === frame);
-                    if (idx >= 0) {
-                      const next = [...cur];
-                      next[idx] = { ...next[idx]!, frameEnd: newEnd };
-                      setForClip(clipId, next);
-                    } else {
-                      setForClip(clipId, [...cur, { frameNumber: frame, frameEnd: newEnd, annotations: [], note: null }]);
-                    }
-                    saveFrame(frame, newEnd, annotationNote || undefined);
-                  }}>
-                    Mark End
-                  </Button>
-                  {rangeEnd !== null && (
-                    <>
-                      <span className="font-mono text-xs text-amber-400">
-                        F{annotatingFrameRef.current} — F{rangeEnd}
-                      </span>
-                      <Button size="xs" variant="ghost" className="font-mono" onClick={() => {
-                        setRangeEnd(null);
-                        // Clear range in store too
+                {annotating ? (
+                  <>
+                    <span className={TYPO_DATA_CYAN}>
+                      Frame {annotatingFrameRef.current}
+                      {rangeEnd !== null && ` — ${rangeEnd}`}
+                    </span>
+                    {upsertMutation.isPending && (
+                      <span className="text-xs text-[var(--color-text-muted)]">Saving…</span>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const url = getStreamUrl("version", clip.id, "full");
+                        const ext = clip.file_path?.split(".").pop() ?? "mp4";
+                        const labelSuffix =
+                          clipTags.length > 0
+                            ? `_[${clipTags.map((t) => slugify(t.display_name)).join(",")}]`
+                            : "";
+                        const filename = meta
+                          ? `${slugify(meta.projectName)}_${slugify(meta.avatarName)}_${slugify(meta.sceneTypeName)}_${slugify(meta.trackName)}_v${clip.version_number}${labelSuffix}.${ext}`
+                          : `clip_v${clip.version_number}${labelSuffix}.${ext}`;
+                        const a = document.createElement("a");
+                        a.href = url;
+                        a.download = filename;
+                        a.click();
+                      }}
+                      className="p-1 rounded text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-secondary)] transition-colors"
+                      title="Export"
+                    >
+                      <Download size={14} />
+                    </button>
+
+                    <div className="w-px h-4 bg-[var(--color-border-default)]" />
+
+                    <button
+                      type="button"
+                      onClick={onApprove}
+                      disabled={!onApprove}
+                      className={`p-1 rounded transition-colors disabled:opacity-30 disabled:pointer-events-none ${clip.qa_status === "approved" ? "text-[var(--color-data-green)]" : "text-[var(--color-text-muted)] hover:text-[var(--color-data-green)] hover:bg-[var(--color-surface-secondary)]"}`}
+                      title={clip.qa_status === "approved" ? "Approved" : "Approve"}
+                    >
+                      <CheckCircle size={14} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={onReject}
+                      disabled={!onReject}
+                      className={`p-1 rounded transition-colors disabled:opacity-30 disabled:pointer-events-none ${clip.qa_status === "rejected" ? "text-[var(--color-data-red)]" : "text-[var(--color-text-muted)] hover:text-[var(--color-data-red)] hover:bg-[var(--color-surface-secondary)]"}`}
+                      title={clip.qa_status === "rejected" ? "Rejected" : "Reject"}
+                    >
+                      <XCircle size={14} />
+                    </button>
+
+                    {/* Spacer + Prev/Next */}
+                    <div className="flex-1" />
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          saveAllDirty();
+                          onPrev?.();
+                        }}
+                        disabled={!onPrev}
+                        className="p-1 rounded text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-secondary)] transition-colors disabled:opacity-20 disabled:pointer-events-none"
+                        title="Previous clip"
+                      >
+                        <ChevronLeft size={16} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          saveAllDirty();
+                          onNext?.();
+                        }}
+                        disabled={!onNext}
+                        className="p-1 rounded text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-secondary)] transition-colors disabled:opacity-20 disabled:pointer-events-none"
+                        title="Next clip"
+                      >
+                        <ChevronRight size={16} />
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {/* Mark Start/End range controls + note input (annotation mode only) */}
+              {annotating && (
+                <div className="flex flex-col gap-[var(--spacing-2)]">
+                  <div className="flex items-center gap-[var(--spacing-2)]">
+                    <Button
+                      size="xs"
+                      variant="secondary"
+                      className="font-mono"
+                      onClick={() => {
+                        pauseVideo();
+                        const oldFrame = annotatingFrameRef.current;
+                        const newFrame = currentFrame;
+                        if (oldFrame === newFrame) return;
+                        // Move the store entry from old frame to new frame
+                        const cur = useClipAnnotationsStore.getState().getForClip(clipId);
+                        const oldIdx = cur.findIndex((en) => en.frameNumber === oldFrame);
+                        if (oldIdx >= 0) {
+                          const entry = cur[oldIdx]!;
+                          const next = cur.filter((_, i) => i !== oldIdx);
+                          next.push({ ...entry, frameNumber: newFrame });
+                          setForClip(clipId, next);
+                        }
+                        annotatingFrameRef.current = newFrame;
+                        // Save: delete old frame, save new frame
+                        saveFrame(newFrame, rangeEnd, annotationNote || undefined);
+                      }}
+                    >
+                      Mark Start
+                    </Button>
+                    <Button
+                      size="xs"
+                      variant="secondary"
+                      className="font-mono"
+                      onClick={() => {
+                        pauseVideo();
+                        const newEnd = currentFrame;
+                        setRangeEnd(newEnd);
+                        // Immediately update store entry with the new range
                         const frame = annotatingFrameRef.current;
                         const cur = useClipAnnotationsStore.getState().getForClip(clipId);
                         const idx = cur.findIndex((en) => en.frameNumber === frame);
                         if (idx >= 0) {
                           const next = [...cur];
-                          next[idx] = { ...next[idx]!, frameEnd: null };
+                          next[idx] = { ...next[idx]!, frameEnd: newEnd };
                           setForClip(clipId, next);
+                        } else {
+                          setForClip(clipId, [
+                            ...cur,
+                            { frameNumber: frame, frameEnd: newEnd, annotations: [], note: null },
+                          ]);
                         }
-                        saveFrame(frame, null, annotationNote || undefined);
-                      }}>
-                        Clear Range
-                      </Button>
-                    </>
+                        saveFrame(frame, newEnd, annotationNote || undefined);
+                      }}
+                    >
+                      Mark End
+                    </Button>
+                    {rangeEnd !== null && (
+                      <>
+                        <span className="font-mono text-xs text-amber-400">
+                          F{annotatingFrameRef.current} — F{rangeEnd}
+                        </span>
+                        <Button
+                          size="xs"
+                          variant="ghost"
+                          className="font-mono"
+                          onClick={() => {
+                            setRangeEnd(null);
+                            // Clear range in store too
+                            const frame = annotatingFrameRef.current;
+                            const cur = useClipAnnotationsStore.getState().getForClip(clipId);
+                            const idx = cur.findIndex((en) => en.frameNumber === frame);
+                            if (idx >= 0) {
+                              const next = [...cur];
+                              next[idx] = { ...next[idx]!, frameEnd: null };
+                              setForClip(clipId, next);
+                            }
+                            saveFrame(frame, null, annotationNote || undefined);
+                          }}
+                        >
+                          Clear Range
+                        </Button>
+                      </>
+                    )}
+                  </div>
+
+                  {/* Note input + preset chips */}
+                  <div className="flex items-center gap-[var(--spacing-2)]">
+                    <Input
+                      size="sm"
+                      value={annotationNote}
+                      onChange={(e) => setAnnotationNote(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          if (!annotationNote.trim()) return;
+                          addTextAnnotation(annotationNote);
+                          setAnnotationNote("");
+                        }
+                      }}
+                      placeholder="Annotation note..."
+                      className="flex-1"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setPresetManagerOpen(true)}
+                      className="p-1 rounded text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-secondary)] transition-colors"
+                      title="Manage Presets"
+                    >
+                      <Settings size={14} />
+                    </button>
+                  </div>
+
+                  {/* Preset chips */}
+                  {presets.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      {presets.map((preset) => (
+                        <Chip
+                          key={preset.id}
+                          size="sm"
+                          color={preset.color}
+                          onClick={() => addTextAnnotation(preset.label)}
+                        >
+                          {preset.label}
+                        </Chip>
+                      ))}
+                    </div>
                   )}
                 </div>
-
-                {/* Note input + preset chips */}
-                <div className="flex items-center gap-[var(--spacing-2)]">
-                  <Input
-                    size="sm"
-                    value={annotationNote}
-                    onChange={(e) => setAnnotationNote(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        if (!annotationNote.trim()) return;
-                        addTextAnnotation(annotationNote);
-                        setAnnotationNote("");
-                      }
-                    }}
-                    placeholder="Annotation note..."
-                    className="flex-1"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setPresetManagerOpen(true)}
-                    className="p-1 rounded text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-secondary)] transition-colors"
-                    title="Manage Presets"
-                  >
-                    <Settings size={14} />
-                  </button>
-                </div>
-
-                {/* Preset chips */}
-                {presets.length > 0 && (
-                  <div className="flex flex-wrap gap-1">
-                    {presets.map((preset) => (
-                      <Chip
-                        key={preset.id}
-                        size="sm"
-                        color={preset.color}
-                        onClick={() => addTextAnnotation(preset.label)}
-                      >
-                        {preset.label}
-                      </Chip>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
+              )}
+            </div>
           )}
 
           {/* Labels — hidden in annotation mode */}
@@ -805,16 +934,19 @@ export function ClipPlaybackModal({ clip, onClose, onPrev, onNext, onApprove, on
             onChange={setClipNotes}
             onSave={saveClipNotes}
             saving={clipNotesSaving}
-            title={meta ? `${meta.avatarName} — ${meta.sceneTypeName} v${clip.version_number}` : `Clip v${clip.version_number}`}
+            title={
+              meta
+                ? `${meta.avatarName} — ${meta.sceneTypeName} v${clip.version_number}`
+                : `Clip v${clip.version_number}`
+            }
           />
 
           {/* Generation snapshot */}
-          {clip.generation_snapshot != null &&
-            Object.keys(clip.generation_snapshot).length > 0 && (
-              <div className="rounded-[var(--radius-md)] border border-[var(--color-border-default)] p-[var(--spacing-3)]">
-                <GenerationSnapshotPanel snapshot={clip.generation_snapshot} />
-              </div>
-            )}
+          {clip.generation_snapshot != null && Object.keys(clip.generation_snapshot).length > 0 && (
+            <div className="rounded-[var(--radius-md)] border border-[var(--color-border-default)] p-[var(--spacing-3)]">
+              <GenerationSnapshotPanel snapshot={clip.generation_snapshot} />
+            </div>
+          )}
 
           {/* Annotation summary list */}
           {sortedAnnotations.length > 0 && (
@@ -824,10 +956,7 @@ export function ClipPlaybackModal({ clip, onClose, onPrev, onNext, onApprove, on
               </h4>
               <div className="flex flex-col gap-1 max-h-40 overflow-y-auto">
                 {sortedAnnotations.map((entry) => (
-                  <div
-                    key={entry.frameNumber}
-                    className="flex items-center gap-1"
-                  >
+                  <div key={entry.frameNumber} className="flex items-center gap-1">
                     <div className="flex-1 rounded border border-[var(--color-border-default)] overflow-hidden">
                       {/* Frame header — click to navigate/loop */}
                       <button
@@ -835,9 +964,13 @@ export function ClipPlaybackModal({ clip, onClose, onPrev, onNext, onApprove, on
                         className={`flex w-full flex-col gap-0.5 px-3 py-1.5 text-left ${TYPO_DATA} hover:bg-[var(--color-surface-secondary)] transition-colors`}
                         onClick={() => {
                           handleFrameSelect(entry.frameNumber);
-                          const hasRange = entry.frameEnd !== null && entry.frameEnd > entry.frameNumber;
+                          const hasRange =
+                            entry.frameEnd !== null && entry.frameEnd > entry.frameNumber;
                           if (hasRange) {
-                            const range = { start: entry.frameNumber, end: entry.frameEnd as number };
+                            const range = {
+                              start: entry.frameNumber,
+                              end: entry.frameEnd as number,
+                            };
                             setActiveLoopRange(range);
                             playerControlRef.current?.loopRange(range);
                           }
@@ -850,7 +983,8 @@ export function ClipPlaybackModal({ clip, onClose, onPrev, onNext, onApprove, on
                               : `Frame ${entry.frameNumber}`}
                           </span>
                           <span className="text-xs text-[var(--color-text-muted)]">
-                            {entry.annotations.length} mark{entry.annotations.length !== 1 ? "s" : ""}
+                            {entry.annotations.length} mark
+                            {entry.annotations.length !== 1 ? "s" : ""}
                           </span>
                         </div>
                         {entry.note && (
@@ -866,7 +1000,12 @@ export function ClipPlaybackModal({ clip, onClose, onPrev, onNext, onApprove, on
                             <span
                               key={idx}
                               className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-mono bg-[var(--color-surface-secondary)] text-[var(--color-text-muted)] cursor-default"
-                              onMouseEnter={() => setHighlightedMark({ frameNumber: entry.frameNumber, markIndex: idx })}
+                              onMouseEnter={() =>
+                                setHighlightedMark({
+                                  frameNumber: entry.frameNumber,
+                                  markIndex: idx,
+                                })
+                              }
                               onMouseLeave={() => setHighlightedMark(null)}
                             >
                               <span
@@ -882,7 +1021,12 @@ export function ClipPlaybackModal({ clip, onClose, onPrev, onNext, onApprove, on
                                   handleDeleteMark(entry.frameNumber, idx);
                                   setHighlightedMark(null);
                                 }}
-                                onMouseEnter={() => setHighlightedMark({ frameNumber: entry.frameNumber, markIndex: idx })}
+                                onMouseEnter={() =>
+                                  setHighlightedMark({
+                                    frameNumber: entry.frameNumber,
+                                    markIndex: idx,
+                                  })
+                                }
                                 onMouseLeave={() => setHighlightedMark(null)}
                                 title={`Delete this ${mark.tool} mark`}
                               >
@@ -939,113 +1083,130 @@ function AnnotationOverlay({
   height: number;
   highlightedMark?: { frameNumber: number; markIndex: number } | null;
 }) {
-  // Build a flat list of visible annotations, tracking their source frame + index
-  // so we can identify which one to highlight.
-  const visible: { obj: DrawingObject; frameNumber: number; markIndex: number }[] = [];
-  for (const e of frameAnnotations) {
-    if (e.annotations.length === 0) continue;
-    if (hiddenFrames.has(e.frameNumber)) continue;
-    const start = e.frameNumber;
-    const end = (e.frameEnd != null && e.frameEnd > start) ? e.frameEnd : start;
-    if (currentFrame < start || currentFrame > end) continue;
-    for (let i = 0; i < e.annotations.length; i++) {
-      visible.push({ obj: e.annotations[i]!, frameNumber: e.frameNumber, markIndex: i });
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.clearRect(0, 0, width, height);
+
+    const visible: { obj: DrawingObject; frameNumber: number; markIndex: number }[] = [];
+    for (const e of frameAnnotations) {
+      if (e.annotations.length === 0) continue;
+      if (hiddenFrames.has(e.frameNumber)) continue;
+      const start = e.frameNumber;
+      const end = e.frameEnd != null && e.frameEnd > start ? e.frameEnd : start;
+      if (currentFrame < start || currentFrame > end) continue;
+      for (let i = 0; i < e.annotations.length; i++) {
+        visible.push({ obj: e.annotations[i]!, frameNumber: e.frameNumber, markIndex: i });
+      }
     }
-  }
 
-  if (visible.length === 0) return null;
+    if (visible.length === 0) return;
 
-  const sx = (v: number) => v <= 1.5 ? v * width : v;
-  const sy = (v: number) => v <= 1.5 ? v * height : v;
+    const sx = (v: number) => (v <= 1.5 ? v * width : v);
+    const sy = (v: number) => (v <= 1.5 ? v * height : v);
+
+    for (const { obj, frameNumber, markIndex } of visible) {
+      const isHighlighted =
+        highlightedMark?.frameNumber === frameNumber && highlightedMark?.markIndex === markIndex;
+      ctx.save();
+      ctx.strokeStyle = obj.color;
+      ctx.fillStyle = obj.color;
+      ctx.lineWidth = obj.strokeWidth;
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+
+      if (highlightedMark && !isHighlighted) {
+        ctx.globalAlpha = 0.25;
+      }
+
+      if (isHighlighted) {
+        ctx.shadowColor = "#ef4444";
+        ctx.shadowBlur = 16;
+        ctx.lineWidth = obj.strokeWidth + 2;
+      }
+
+      const d = obj.data as Record<string, unknown>;
+
+      if (obj.tool === "text") {
+        const fontSize = (d.fontSize as number) ?? 16;
+        ctx.font = `${fontSize}px sans-serif`;
+        if (isHighlighted) {
+          ctx.strokeStyle = "#ef4444";
+          ctx.lineWidth = 2;
+          const tx = sx(d.x as number);
+          const ty = sy(d.y as number);
+          const tw = ctx.measureText((d.content as string) ?? "").width;
+          ctx.strokeRect(tx - 4, ty - fontSize, tw + 8, fontSize * 1.3);
+        }
+        ctx.fillText((d.content as string) ?? "", sx(d.x as number), sy(d.y as number));
+      } else if (obj.tool === "pen" || obj.tool === "highlight") {
+        const pts = d.points as { x: number; y: number }[] | undefined;
+        if (pts && pts.length >= 2) {
+          if (obj.tool === "highlight") ctx.globalAlpha = Math.min(ctx.globalAlpha, 0.4);
+          ctx.beginPath();
+          ctx.moveTo(sx(pts[0]!.x), sy(pts[0]!.y));
+          for (let i = 1; i < pts.length; i++) ctx.lineTo(sx(pts[i]!.x), sy(pts[i]!.y));
+          ctx.stroke();
+        }
+      } else if (obj.tool === "rectangle") {
+        const x1 = sx(d.startX as number),
+          y1 = sy(d.startY as number);
+        const x2 = sx(d.endX as number),
+          y2 = sy(d.endY as number);
+        ctx.beginPath();
+        ctx.rect(x1, y1, x2 - x1, y2 - y1);
+        ctx.stroke();
+      } else if (obj.tool === "circle") {
+        const x1 = sx(d.startX as number),
+          y1 = sy(d.startY as number);
+        const x2 = sx(d.endX as number),
+          y2 = sy(d.endY as number);
+        ctx.beginPath();
+        ctx.ellipse(
+          (x1 + x2) / 2,
+          (y1 + y2) / 2,
+          Math.abs(x2 - x1) / 2,
+          Math.abs(y2 - y1) / 2,
+          0,
+          0,
+          Math.PI * 2,
+        );
+        ctx.stroke();
+      } else if (obj.tool === "arrow") {
+        const x1 = sx(d.startX as number),
+          y1 = sy(d.startY as number);
+        const x2 = sx(d.endX as number),
+          y2 = sy(d.endY as number);
+        const angle = Math.atan2(y2 - y1, x2 - x1);
+        const headLen = Math.max(10, obj.strokeWidth * 4);
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(x2, y2);
+        ctx.lineTo(
+          x2 - headLen * Math.cos(angle - Math.PI / 6),
+          y2 - headLen * Math.sin(angle - Math.PI / 6),
+        );
+        ctx.moveTo(x2, y2);
+        ctx.lineTo(
+          x2 - headLen * Math.cos(angle + Math.PI / 6),
+          y2 - headLen * Math.sin(angle + Math.PI / 6),
+        );
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+  }, [frameAnnotations, hiddenFrames, currentFrame, width, height, highlightedMark]);
 
   return (
     <div className="absolute top-0 left-0 z-10 pointer-events-none" style={{ width, height }}>
-      <canvas
-        ref={(el) => {
-          if (!el) return;
-          const ctx = el.getContext("2d");
-          if (!ctx) return;
-          ctx.clearRect(0, 0, width, height);
-
-          for (const { obj, frameNumber, markIndex } of visible) {
-            const isHighlighted = highlightedMark?.frameNumber === frameNumber && highlightedMark?.markIndex === markIndex;
-            ctx.save();
-            ctx.strokeStyle = obj.color;
-            ctx.fillStyle = obj.color;
-            ctx.lineWidth = obj.strokeWidth;
-            ctx.lineCap = "round";
-            ctx.lineJoin = "round";
-
-            // Dim non-highlighted marks when a highlight is active
-            if (highlightedMark && !isHighlighted) {
-              ctx.globalAlpha = 0.25;
-            }
-
-            // Highlight glow effect
-            if (isHighlighted) {
-              ctx.shadowColor = "#ef4444";
-              ctx.shadowBlur = 12;
-            }
-
-            const d = obj.data as Record<string, unknown>;
-
-            if (obj.tool === "text") {
-              const fontSize = (d.fontSize as number) ?? 16;
-              ctx.font = `${fontSize}px sans-serif`;
-              if (isHighlighted) {
-                // Draw red outline behind the text
-                ctx.strokeStyle = "#ef4444";
-                ctx.lineWidth = 2;
-                const tx = sx(d.x as number);
-                const ty = sy(d.y as number);
-                const tw = ctx.measureText((d.content as string) ?? "").width;
-                ctx.strokeRect(tx - 4, ty - fontSize, tw + 8, fontSize * 1.3);
-              }
-              ctx.fillText((d.content as string) ?? "", sx(d.x as number), sy(d.y as number));
-            } else if (obj.tool === "pen" || obj.tool === "highlight") {
-              const pts = d.points as { x: number; y: number }[] | undefined;
-              if (pts && pts.length >= 2) {
-                if (obj.tool === "highlight") ctx.globalAlpha = Math.min(ctx.globalAlpha, 0.4);
-                ctx.beginPath();
-                ctx.moveTo(sx(pts[0]!.x), sy(pts[0]!.y));
-                for (let i = 1; i < pts.length; i++) ctx.lineTo(sx(pts[i]!.x), sy(pts[i]!.y));
-                ctx.stroke();
-              }
-            } else if (obj.tool === "rectangle") {
-              const x1 = sx(d.startX as number), y1 = sy(d.startY as number);
-              const x2 = sx(d.endX as number), y2 = sy(d.endY as number);
-              ctx.beginPath();
-              ctx.rect(x1, y1, x2 - x1, y2 - y1);
-              ctx.stroke();
-            } else if (obj.tool === "circle") {
-              const x1 = sx(d.startX as number), y1 = sy(d.startY as number);
-              const x2 = sx(d.endX as number), y2 = sy(d.endY as number);
-              ctx.beginPath();
-              ctx.ellipse((x1 + x2) / 2, (y1 + y2) / 2, Math.abs(x2 - x1) / 2, Math.abs(y2 - y1) / 2, 0, 0, Math.PI * 2);
-              ctx.stroke();
-            } else if (obj.tool === "arrow") {
-              const x1 = sx(d.startX as number), y1 = sy(d.startY as number);
-              const x2 = sx(d.endX as number), y2 = sy(d.endY as number);
-              const angle = Math.atan2(y2 - y1, x2 - x1);
-              const headLen = Math.max(10, obj.strokeWidth * 4);
-              ctx.beginPath();
-              ctx.moveTo(x1, y1);
-              ctx.lineTo(x2, y2);
-              ctx.stroke();
-              ctx.beginPath();
-              ctx.moveTo(x2, y2);
-              ctx.lineTo(x2 - headLen * Math.cos(angle - Math.PI / 6), y2 - headLen * Math.sin(angle - Math.PI / 6));
-              ctx.moveTo(x2, y2);
-              ctx.lineTo(x2 - headLen * Math.cos(angle + Math.PI / 6), y2 - headLen * Math.sin(angle + Math.PI / 6));
-              ctx.stroke();
-            }
-            ctx.restore();
-          }
-        }}
-        width={width}
-        height={height}
-        className="w-full h-full"
-      />
+      <canvas ref={canvasRef} width={width} height={height} className="w-full h-full" />
     </div>
   );
 }

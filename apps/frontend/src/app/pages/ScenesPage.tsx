@@ -4,36 +4,67 @@
  * and navigation to avatar scene detail.
  */
 
-import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import { useNavigate } from "@tanstack/react-router";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { EmptyState, BulkActionBar, BulkRejectDialog, BulkLabelDialog, ExportStatusPanel, ScanInputDialog } from "@/components/domain";
-import { ImportConfirmModal } from "@/features/projects/components/ImportConfirmModal";
-import { useScanImportFlow } from "@/hooks/useScanImportFlow";
+import {
+  BulkActionBar,
+  BulkLabelDialog,
+  BulkRejectDialog,
+  EmptyState,
+  ExportStatusPanel,
+  ScanInputDialog,
+} from "@/components/domain";
+import { TagFilter } from "@/components/domain/TagFilter";
 import { PageHeader, Stack } from "@/components/layout";
-import { Button, Checkbox, MultiFilterBar, Pagination, SearchInput, Toggle, ContextLoader } from "@/components/primitives";
+import {
+  Button,
+  Checkbox,
+  ContextLoader,
+  MultiFilterBar,
+  Pagination,
+  SearchInput,
+  Toggle,
+} from "@/components/primitives";
 import type { FilterConfig, FilterOption } from "@/components/primitives";
-import { useClipsBrowse, useBrowseApproveClip, useBrowseUnapproveClip, useBrowseRejectClip, useBulkApproveClips, useBulkRejectClips } from "@/features/scenes/hooks/useClipManagement";
-import type { ClipBrowseItem } from "@/features/scenes/hooks/useClipManagement";
+import { usePipelineContextSafe } from "@/features/pipelines";
+import { ImportConfirmModal } from "@/features/projects/components/ImportConfirmModal";
+import { useAvatarGroups } from "@/features/projects/hooks/use-avatar-groups";
+import { useProjectAvatars } from "@/features/projects/hooks/use-project-avatars";
+import { useProjects } from "@/features/projects/hooks/use-projects";
+import { useTracks } from "@/features/scene-catalogue/hooks/use-tracks";
+import { useSceneTypes } from "@/features/scene-types/hooks/use-scene-types";
 import { BrowseClipCard } from "@/features/scenes/BrowseClipCard";
 import { ClipPlaybackModal } from "@/features/scenes/ClipPlaybackModal";
-import { isEmptyClip, isPurgedClip, type SceneVideoVersion } from "@/features/scenes/types";
+import {
+  useBrowseApproveClip,
+  useBrowseRejectClip,
+  useBrowseUnapproveClip,
+  useBulkApproveClips,
+  useBulkRejectClips,
+  useClipsBrowse,
+} from "@/features/scenes/hooks/useClipManagement";
+import type { ClipBrowseItem } from "@/features/scenes/hooks/useClipManagement";
+import { type SceneVideoVersion, isEmptyClip, isPurgedClip } from "@/features/scenes/types";
 import { getStreamUrl } from "@/features/video-player";
 import { formatDuration } from "@/features/video-player/frame-utils";
-import { formatBytes, formatDateTime } from "@/lib/format";
-import { TERMINAL_STATUS_COLORS, TRACK_TEXT_COLORS } from "@/lib/ui-classes";
-import { toSelectOptions } from "@/lib/select-utils";
-import { usePipelineContextSafe } from "@/features/pipelines";
-import { useProjects } from "@/features/projects/hooks/use-projects";
-import { useProjectAvatars } from "@/features/projects/hooks/use-project-avatars";
-import { useAvatarGroups } from "@/features/projects/hooks/use-avatar-groups";
-import { useSceneTypes } from "@/features/scene-types/hooks/use-scene-types";
-import { useTracks } from "@/features/scene-catalogue/hooks/use-tracks";
-import { TagFilter } from "@/components/domain/TagFilter";
-import { useBulkSelection } from "@/hooks/useBulkSelection";
 import { useBulkOperations } from "@/hooks/useBulkOperations";
-import { Ban, CheckCircle, FolderSearch, Layers, LayoutGrid, List, Play, XCircle } from "@/tokens/icons";
+import { useBulkSelection } from "@/hooks/useBulkSelection";
+import { useScanImportFlow } from "@/hooks/useScanImportFlow";
+import { formatBytes, formatDateTime } from "@/lib/format";
+import { toSelectOptions } from "@/lib/select-utils";
 import { TYPO_DATA } from "@/lib/typography-tokens";
+import { TERMINAL_STATUS_COLORS, TRACK_TEXT_COLORS } from "@/lib/ui-classes";
+import {
+  Ban,
+  CheckCircle,
+  FolderSearch,
+  Layers,
+  LayoutGrid,
+  List,
+  Play,
+  XCircle,
+} from "@/tokens/icons";
 
 /* --------------------------------------------------------------------------
    Read-only clip list item
@@ -67,7 +98,12 @@ function BrowseClipItem({
     const el = ref.current;
     if (!el) return;
     const observer = new IntersectionObserver(
-      ([entry]) => { if (entry?.isIntersecting) { setIsVisible(true); observer.disconnect(); } },
+      ([entry]) => {
+        if (entry?.isIntersecting) {
+          setIsVisible(true);
+          observer.disconnect();
+        }
+      },
       { rootMargin: "200px" },
     );
     observer.observe(el);
@@ -82,7 +118,10 @@ function BrowseClipItem({
     v.muted = true;
     v.src = videoSrc;
     v.onloadeddata = () => setVideoReady(true);
-    return () => { v.src = ""; v.onloadeddata = null; };
+    return () => {
+      v.src = "";
+      v.onloadeddata = null;
+    };
   }, [isVisible, videoSrc, clip]);
 
   return (
@@ -140,29 +179,77 @@ function BrowseClipItem({
           className={`flex min-w-0 flex-1 flex-col gap-0.5 text-left cursor-pointer ${TYPO_DATA}`}
         >
           <div className="flex items-center gap-2">
-            <span className="font-medium text-[var(--color-text-primary)]">
-              {clip.avatar_name}
-            </span>
+            <span className="font-medium text-[var(--color-text-primary)]">{clip.avatar_name}</span>
             <span className="text-[var(--color-text-muted)] uppercase">{clip.scene_type_name}</span>
-            <span className={TRACK_TEXT_COLORS[clip.track_name.toLowerCase()] ?? "text-[var(--color-text-muted)]"}>{clip.track_name}</span>
-            {clip.clip_index != null && <span className="text-[var(--color-data-cyan)]">#{clip.clip_index}</span>}
+            <span
+              className={
+                TRACK_TEXT_COLORS[clip.track_name.toLowerCase()] ?? "text-[var(--color-text-muted)]"
+              }
+            >
+              {clip.track_name}
+            </span>
+            {clip.clip_index != null && (
+              <span className="text-[var(--color-data-cyan)]">#{clip.clip_index}</span>
+            )}
           </div>
           <div className="flex items-center gap-2 text-[10px] text-[var(--color-text-muted)]">
-            <span className="text-[var(--color-data-cyan)] font-semibold">v{clip.version_number}</span>
+            <span className="text-[var(--color-data-cyan)] font-semibold">
+              v{clip.version_number}
+            </span>
             <span className="opacity-30">|</span>
             <span>{sourceLabel}</span>
-            {clip.is_final && <><span className="opacity-30">|</span><span className="text-[var(--color-data-green)]">final</span></>}
-            {clip.qa_status !== "pending" && (
-              <><span className="opacity-30">|</span><span className={TERMINAL_STATUS_COLORS[clip.qa_status] ?? "text-[var(--color-text-muted)]"}>{clip.qa_status}</span></>
+            {clip.is_final && (
+              <>
+                <span className="opacity-30">|</span>
+                <span className="text-[var(--color-data-green)]">final</span>
+              </>
             )}
-            {isPurgedClip(clip) && <><span className="opacity-30">|</span><span className="text-[var(--color-data-orange)]">purged</span></>}
-            {!isPurgedClip(clip) && isEmptyClip(clip) && <><span className="opacity-30">|</span><span className="text-[var(--color-data-orange)]">empty</span></>}
-            {clip.annotation_count > 0 && <><span className="opacity-30">|</span><span className="text-[var(--color-data-orange)]">{clip.annotation_count} annotated</span></>}
-            {clip.parent_version_id != null && <><span className="opacity-30">|</span><span className="text-[var(--color-data-violet)]">derived</span></>}
+            {clip.qa_status !== "pending" && (
+              <>
+                <span className="opacity-30">|</span>
+                <span
+                  className={
+                    TERMINAL_STATUS_COLORS[clip.qa_status] ?? "text-[var(--color-text-muted)]"
+                  }
+                >
+                  {clip.qa_status}
+                </span>
+              </>
+            )}
+            {isPurgedClip(clip) && (
+              <>
+                <span className="opacity-30">|</span>
+                <span className="text-[var(--color-data-orange)]">purged</span>
+              </>
+            )}
+            {!isPurgedClip(clip) && isEmptyClip(clip) && (
+              <>
+                <span className="opacity-30">|</span>
+                <span className="text-[var(--color-data-orange)]">empty</span>
+              </>
+            )}
+            {clip.annotation_count > 0 && (
+              <>
+                <span className="opacity-30">|</span>
+                <span className="text-[var(--color-data-orange)]">
+                  {clip.annotation_count} annotated
+                </span>
+              </>
+            )}
+            {clip.parent_version_id != null && (
+              <>
+                <span className="opacity-30">|</span>
+                <span className="text-[var(--color-data-violet)]">derived</span>
+              </>
+            )}
             <span className="opacity-30">|</span>
-            <span>{clip.file_size_bytes != null ? formatBytes(clip.file_size_bytes) : "\u2014"}</span>
+            <span>
+              {clip.file_size_bytes != null ? formatBytes(clip.file_size_bytes) : "\u2014"}
+            </span>
             <span className="opacity-30">|</span>
-            <span>{clip.duration_secs != null ? formatDuration(clip.duration_secs) : "\u2014"}</span>
+            <span>
+              {clip.duration_secs != null ? formatDuration(clip.duration_secs) : "\u2014"}
+            </span>
             <span className="opacity-30">|</span>
             <span>{clip.project_name}</span>
             <span className="opacity-30">|</span>
@@ -210,7 +297,6 @@ const STATUS_OPTIONS: FilterOption[] = [
   { value: "rejected", label: "Rejected" },
 ];
 
-
 /* --------------------------------------------------------------------------
    Pagination constants
    -------------------------------------------------------------------------- */
@@ -244,14 +330,38 @@ export function ScenesPage() {
 
   // Bulk selection — reset key serializes all filter state
   const bulkResetKey = useMemo(
-    () => JSON.stringify({ projectFilter, sourceFilter, statusFilter, sceneTypeFilter, trackFilter, labelFilter, excludeLabelFilter, debouncedSearch, showDisabled }),
-    [projectFilter, sourceFilter, statusFilter, sceneTypeFilter, trackFilter, labelFilter, excludeLabelFilter, debouncedSearch, showDisabled],
+    () =>
+      JSON.stringify({
+        projectFilter,
+        sourceFilter,
+        statusFilter,
+        sceneTypeFilter,
+        trackFilter,
+        labelFilter,
+        excludeLabelFilter,
+        debouncedSearch,
+        showDisabled,
+      }),
+    [
+      projectFilter,
+      sourceFilter,
+      statusFilter,
+      sceneTypeFilter,
+      trackFilter,
+      labelFilter,
+      excludeLabelFilter,
+      debouncedSearch,
+      showDisabled,
+    ],
   );
   const bulk = useBulkSelection(bulkResetKey);
 
   // Debounce search
   useEffect(() => {
-    const t = setTimeout(() => { setDebouncedSearch(searchInput); setPage(0); }, 300);
+    const t = setTimeout(() => {
+      setDebouncedSearch(searchInput);
+      setPage(0);
+    }, 300);
     return () => clearTimeout(t);
   }, [searchInput]);
 
@@ -306,11 +416,17 @@ export function ScenesPage() {
   const { data: sceneTypes } = useSceneTypes(undefined, pipelineCtx?.pipelineId);
   const { data: tracks } = useTracks(false, pipelineCtx?.pipelineId);
   const sceneTypeOptions: FilterOption[] = useMemo(
-    () => (sceneTypes ?? []).map((st) => ({ value: st.name, label: st.name })).sort((a, b) => a.label.localeCompare(b.label)),
+    () =>
+      (sceneTypes ?? [])
+        .map((st) => ({ value: st.name, label: st.name }))
+        .sort((a, b) => a.label.localeCompare(b.label)),
     [sceneTypes],
   );
   const trackOptions: FilterOption[] = useMemo(
-    () => (tracks ?? []).map((t) => ({ value: t.name, label: t.name })).sort((a, b) => a.label.localeCompare(b.label)),
+    () =>
+      (tracks ?? [])
+        .map((t) => ({ value: t.name, label: t.name }))
+        .sort((a, b) => a.label.localeCompare(b.label)),
     [tracks],
   );
 
@@ -329,9 +445,10 @@ export function ScenesPage() {
     }
   }, [playingClipId, filteredClips]);
 
-  const playingLocalIndex = playingClipId != null && playingClipId > 0
-    ? filteredClips.findIndex((c) => c.id === playingClipId)
-    : -1;
+  const playingLocalIndex =
+    playingClipId != null && playingClipId > 0
+      ? filteredClips.findIndex((c) => c.id === playingClipId)
+      : -1;
   const playingClipData = playingLocalIndex >= 0 ? filteredClips[playingLocalIndex] : null;
 
   const approveMut = useBrowseApproveClip();
@@ -340,19 +457,34 @@ export function ScenesPage() {
   const bulkApproveMut = useBulkApproveClips();
   const bulkRejectMut = useBulkRejectClips();
   // Bulk operations (shared hook eliminates ~130 lines of duplication with MediaPage)
-  const buildFilters = useCallback(() => ({
-    projectId: projectFilter.length === 1 ? Number(projectFilter[0]) : undefined,
-    pipelineId: pipelineCtx?.pipelineId,
-    sceneType: sceneTypeFilter.length > 0 ? sceneTypeFilter.join(",") : undefined,
-    track: trackFilter.length > 0 ? trackFilter.join(",") : undefined,
-    source: actualSourceFilter.length > 0 ? actualSourceFilter.join(",") : undefined,
-    qaStatus: statusFilter.length > 0 ? statusFilter.join(",") : undefined,
-    showDisabled,
-    tagIds: labelFilter.length > 0 ? labelFilter.join(",") : undefined,
-    excludeTagIds: excludeLabelFilter.length > 0 ? excludeLabelFilter.join(",") : undefined,
-    search: debouncedSearch || undefined,
-    hasParent: isDerivedFilter ? true : undefined,
-  }), [projectFilter, pipelineCtx?.pipelineId, sceneTypeFilter, trackFilter, actualSourceFilter, isDerivedFilter, statusFilter, showDisabled, labelFilter, excludeLabelFilter, debouncedSearch]);
+  const buildFilters = useCallback(
+    () => ({
+      projectId: projectFilter.length === 1 ? Number(projectFilter[0]) : undefined,
+      pipelineId: pipelineCtx?.pipelineId,
+      sceneType: sceneTypeFilter.length > 0 ? sceneTypeFilter.join(",") : undefined,
+      track: trackFilter.length > 0 ? trackFilter.join(",") : undefined,
+      source: actualSourceFilter.length > 0 ? actualSourceFilter.join(",") : undefined,
+      qaStatus: statusFilter.length > 0 ? statusFilter.join(",") : undefined,
+      showDisabled,
+      tagIds: labelFilter.length > 0 ? labelFilter.join(",") : undefined,
+      excludeTagIds: excludeLabelFilter.length > 0 ? excludeLabelFilter.join(",") : undefined,
+      search: debouncedSearch || undefined,
+      hasParent: isDerivedFilter ? true : undefined,
+    }),
+    [
+      projectFilter,
+      pipelineCtx?.pipelineId,
+      sceneTypeFilter,
+      trackFilter,
+      actualSourceFilter,
+      isDerivedFilter,
+      statusFilter,
+      showDisabled,
+      labelFilter,
+      excludeLabelFilter,
+      debouncedSearch,
+    ],
+  );
 
   const bulkOps = useBulkOperations({
     entityType: "scene_video_version",
@@ -365,59 +497,128 @@ export function ScenesPage() {
     pipelineId: pipelineCtx?.pipelineId,
   });
 
-  const filters: FilterConfig[] = useMemo(() => [
-    { key: "project", label: "Project", options: projectOptions, selected: projectFilter, onChange: (v: string[]) => { setProjectFilter(v); setPage(0); }, width: "w-44" },
-    { key: "source", label: "Source", options: SOURCE_OPTIONS, selected: sourceFilter, onChange: (v: string[]) => { setSourceFilter(v); setPage(0); } },
-    { key: "status", label: "Status", options: STATUS_OPTIONS, selected: statusFilter, onChange: (v: string[]) => { setStatusFilter(v); setPage(0); } },
-    { key: "sceneType", label: "Scene Type", options: sceneTypeOptions, selected: sceneTypeFilter, onChange: (v: string[]) => { setSceneTypeFilter(v); setPage(0); }, width: "w-44" },
-    { key: "track", label: "Track", options: trackOptions, selected: trackFilter, onChange: (v: string[]) => { setTrackFilter(v); setPage(0); } },
-  ], [projectOptions, projectFilter, sourceFilter, statusFilter, sceneTypeOptions, sceneTypeFilter, trackOptions, trackFilter]);
+  const filters: FilterConfig[] = useMemo(
+    () => [
+      {
+        key: "project",
+        label: "Project",
+        options: projectOptions,
+        selected: projectFilter,
+        onChange: (v: string[]) => {
+          setProjectFilter(v);
+          setPage(0);
+        },
+        width: "w-44",
+      },
+      {
+        key: "source",
+        label: "Source",
+        options: SOURCE_OPTIONS,
+        selected: sourceFilter,
+        onChange: (v: string[]) => {
+          setSourceFilter(v);
+          setPage(0);
+        },
+      },
+      {
+        key: "status",
+        label: "Status",
+        options: STATUS_OPTIONS,
+        selected: statusFilter,
+        onChange: (v: string[]) => {
+          setStatusFilter(v);
+          setPage(0);
+        },
+      },
+      {
+        key: "sceneType",
+        label: "Scene Type",
+        options: sceneTypeOptions,
+        selected: sceneTypeFilter,
+        onChange: (v: string[]) => {
+          setSceneTypeFilter(v);
+          setPage(0);
+        },
+        width: "w-44",
+      },
+      {
+        key: "track",
+        label: "Track",
+        options: trackOptions,
+        selected: trackFilter,
+        onChange: (v: string[]) => {
+          setTrackFilter(v);
+          setPage(0);
+        },
+      },
+    ],
+    [
+      projectOptions,
+      projectFilter,
+      sourceFilter,
+      statusFilter,
+      sceneTypeOptions,
+      sceneTypeFilter,
+      trackOptions,
+      trackFilter,
+    ],
+  );
 
-  const toPlayable = useCallback((clip: ClipBrowseItem): SceneVideoVersion => ({
-    id: clip.id,
-    scene_id: clip.scene_id,
-    version_number: clip.version_number,
-    source: clip.source,
-    file_path: clip.file_path,
-    file_size_bytes: clip.file_size_bytes,
-    duration_secs: clip.duration_secs,
-    width: clip.width,
-    height: clip.height,
-    frame_rate: clip.frame_rate,
-    preview_path: clip.preview_path,
-    video_codec: null,
-    is_final: clip.is_final,
-    notes: clip.notes,
-    qa_status: clip.qa_status,
-    qa_reviewed_by: null,
-    qa_reviewed_at: null,
-    qa_rejection_reason: clip.qa_rejection_reason,
-    qa_notes: clip.qa_notes,
-    generation_snapshot: clip.generation_snapshot,
-    file_purged: clip.file_purged,
-    deleted_at: null,
-    created_at: clip.created_at,
-    updated_at: clip.created_at,
-    annotation_count: clip.annotation_count,
-    parent_version_id: clip.parent_version_id,
-    clip_index: clip.clip_index,
-  }), []);
+  const toPlayable = useCallback(
+    (clip: ClipBrowseItem): SceneVideoVersion => ({
+      id: clip.id,
+      scene_id: clip.scene_id,
+      version_number: clip.version_number,
+      source: clip.source,
+      file_path: clip.file_path,
+      file_size_bytes: clip.file_size_bytes,
+      duration_secs: clip.duration_secs,
+      width: clip.width,
+      height: clip.height,
+      frame_rate: clip.frame_rate,
+      preview_path: clip.preview_path,
+      video_codec: null,
+      is_final: clip.is_final,
+      notes: clip.notes,
+      qa_status: clip.qa_status,
+      qa_reviewed_by: null,
+      qa_reviewed_at: null,
+      qa_rejection_reason: clip.qa_rejection_reason,
+      qa_notes: clip.qa_notes,
+      generation_snapshot: clip.generation_snapshot,
+      file_purged: clip.file_purged,
+      deleted_at: null,
+      created_at: clip.created_at,
+      updated_at: clip.created_at,
+      annotation_count: clip.annotation_count,
+      parent_version_id: clip.parent_version_id,
+      clip_index: clip.clip_index,
+      transcode_state: clip.transcode_state,
+      transcode_error: clip.transcode_error,
+      transcode_started_at: clip.transcode_started_at,
+      transcode_attempts: clip.transcode_attempts,
+      transcode_job_id: clip.transcode_job_id,
+    }),
+    [],
+  );
 
   return (
     <Stack gap={6}>
       <PageHeader
         title="Scenes"
         description="Browse all generated scene clips, most recent first."
-        actions={scanAvailable ? (
-          <Button
-            size="sm"
-            variant="secondary"
-            icon={<FolderSearch size={14} />}
-            onClick={scanFlow.openScan}
-          >
-            Scan Directory
-          </Button>
-        ) : undefined}
+        actions={
+          scanAvailable ? (
+            <Button
+              size="sm"
+              variant="secondary"
+              icon={<FolderSearch size={14} />}
+              onClick={scanFlow.openScan}
+            >
+              Scan Directory
+            </Button>
+          ) : undefined
+        }
       />
 
       {/* Search */}
@@ -434,7 +635,9 @@ export function ScenesPage() {
           <Checkbox
             checked={bulk.isAllPageSelected(pageIds)}
             indeterminate={bulk.isIndeterminate(pageIds)}
-            onChange={(checked) => checked ? bulk.selectPage(pageIds) : bulk.deselectPage(pageIds)}
+            onChange={(checked) =>
+              checked ? bulk.selectPage(pageIds) : bulk.deselectPage(pageIds)
+            }
             label="Select all"
             size="sm"
           />
@@ -446,7 +649,10 @@ export function ScenesPage() {
           />
           <Toggle
             checked={noTags}
-            onChange={(v) => { setNoTags(v); setPage(0); }}
+            onChange={(v) => {
+              setNoTags(v);
+              setPage(0);
+            }}
             label="No tags"
             size="sm"
           />
@@ -465,7 +671,9 @@ export function ScenesPage() {
             aria-label="List view"
           />
           <span className="text-xs text-[var(--color-text-muted)]">
-            {filteredClips.length}{clips && filteredClips.length !== clips.length ? ` of ${clips.length}` : ""} clip{filteredClips.length !== 1 ? "s" : ""}
+            {filteredClips.length}
+            {clips && filteredClips.length !== clips.length ? ` of ${clips.length}` : ""} clip
+            {filteredClips.length !== 1 ? "s" : ""}
           </span>
         </div>
       </MultiFilterBar>
@@ -473,9 +681,15 @@ export function ScenesPage() {
       {/* Label filter */}
       <TagFilter
         selectedTagIds={labelFilter}
-        onSelectionChange={(ids) => { setLabelFilter(ids); setPage(0); }}
+        onSelectionChange={(ids) => {
+          setLabelFilter(ids);
+          setPage(0);
+        }}
         excludedTagIds={excludeLabelFilter}
-        onExclusionChange={(ids) => { setExcludeLabelFilter(ids); setPage(0); }}
+        onExclusionChange={(ids) => {
+          setExcludeLabelFilter(ids);
+          setPage(0);
+        }}
         pipelineId={pipelineCtx?.pipelineId}
         entityType="scene_video_version"
       />
@@ -510,8 +724,20 @@ export function ScenesPage() {
                   search: { tab: "scenes", scene: String(clip.scene_id) },
                 })
               }
-              onApprove={() => clip.qa_status === "approved" ? unapproveMut.mutate({ sceneId: clip.scene_id, versionId: clip.id }) : approveMut.mutate({ sceneId: clip.scene_id, versionId: clip.id })}
-              onReject={() => clip.qa_status === "rejected" ? unapproveMut.mutate({ sceneId: clip.scene_id, versionId: clip.id }) : rejectMut.mutate({ sceneId: clip.scene_id, versionId: clip.id, input: { reason: "Rejected from browse" } })}
+              onApprove={() =>
+                clip.qa_status === "approved"
+                  ? unapproveMut.mutate({ sceneId: clip.scene_id, versionId: clip.id })
+                  : approveMut.mutate({ sceneId: clip.scene_id, versionId: clip.id })
+              }
+              onReject={() =>
+                clip.qa_status === "rejected"
+                  ? unapproveMut.mutate({ sceneId: clip.scene_id, versionId: clip.id })
+                  : rejectMut.mutate({
+                      sceneId: clip.scene_id,
+                      versionId: clip.id,
+                      input: { reason: "Rejected from browse" },
+                    })
+              }
             />
           ))}
         </div>
@@ -534,8 +760,20 @@ export function ScenesPage() {
                   search: { tab: "scenes", scene: String(clip.scene_id) },
                 })
               }
-              onApprove={() => clip.qa_status === "approved" ? unapproveMut.mutate({ sceneId: clip.scene_id, versionId: clip.id }) : approveMut.mutate({ sceneId: clip.scene_id, versionId: clip.id })}
-              onReject={() => clip.qa_status === "rejected" ? unapproveMut.mutate({ sceneId: clip.scene_id, versionId: clip.id }) : rejectMut.mutate({ sceneId: clip.scene_id, versionId: clip.id, input: { reason: "Rejected from browse" } })}
+              onApprove={() =>
+                clip.qa_status === "approved"
+                  ? unapproveMut.mutate({ sceneId: clip.scene_id, versionId: clip.id })
+                  : approveMut.mutate({ sceneId: clip.scene_id, versionId: clip.id })
+              }
+              onReject={() =>
+                clip.qa_status === "rejected"
+                  ? unapproveMut.mutate({ sceneId: clip.scene_id, versionId: clip.id })
+                  : rejectMut.mutate({
+                      sceneId: clip.scene_id,
+                      versionId: clip.id,
+                      input: { reason: "Rejected from browse" },
+                    })
+              }
             />
           ))}
         </div>
@@ -560,7 +798,10 @@ export function ScenesPage() {
           }
           if (page > 0) {
             // Go to previous page, select last clip (will resolve after page loads)
-            return () => { setPage((p) => p - 1); setPlayingClipId(-1); };
+            return () => {
+              setPage((p) => p - 1);
+              setPlayingClipId(-1);
+            };
           }
           return undefined; // at absolute start
         })()}
@@ -572,19 +813,53 @@ export function ScenesPage() {
           const absoluteIndex = page * pageSize + playingLocalIndex;
           if (absoluteIndex < total - 1) {
             // Go to next page, select first clip (will resolve after page loads)
-            return () => { setPage((p) => p + 1); setPlayingClipId(-2); };
+            return () => {
+              setPage((p) => p + 1);
+              setPlayingClipId(-2);
+            };
           }
           return undefined; // at absolute end
         })()}
-        onApprove={playingClipData ? () => playingClipData.qa_status === "approved" ? unapproveMut.mutate({ sceneId: playingClipData.scene_id, versionId: playingClipData.id }) : approveMut.mutate({ sceneId: playingClipData.scene_id, versionId: playingClipData.id }) : undefined}
-        onReject={playingClipData ? () => playingClipData.qa_status === "rejected" ? unapproveMut.mutate({ sceneId: playingClipData.scene_id, versionId: playingClipData.id }) : rejectMut.mutate({ sceneId: playingClipData.scene_id, versionId: playingClipData.id, input: { reason: "Rejected from browse" } }) : undefined}
+        onApprove={
+          playingClipData
+            ? () =>
+                playingClipData.qa_status === "approved"
+                  ? unapproveMut.mutate({
+                      sceneId: playingClipData.scene_id,
+                      versionId: playingClipData.id,
+                    })
+                  : approveMut.mutate({
+                      sceneId: playingClipData.scene_id,
+                      versionId: playingClipData.id,
+                    })
+            : undefined
+        }
+        onReject={
+          playingClipData
+            ? () =>
+                playingClipData.qa_status === "rejected"
+                  ? unapproveMut.mutate({
+                      sceneId: playingClipData.scene_id,
+                      versionId: playingClipData.id,
+                    })
+                  : rejectMut.mutate({
+                      sceneId: playingClipData.scene_id,
+                      versionId: playingClipData.id,
+                      input: { reason: "Rejected from browse" },
+                    })
+            : undefined
+        }
         pipelineId={pipelineCtx?.pipelineId}
-        meta={playingClipData ? {
-          projectName: playingClipData.project_name,
-          avatarName: playingClipData.avatar_name,
-          sceneTypeName: playingClipData.scene_type_name,
-          trackName: playingClipData.track_name,
-        } : undefined}
+        meta={
+          playingClipData
+            ? {
+                projectName: playingClipData.project_name,
+                avatarName: playingClipData.avatar_name,
+                sceneTypeName: playingClipData.scene_type_name,
+                trackName: playingClipData.track_name,
+              }
+            : undefined
+        }
       />
 
       {/* Bulk action bar */}
@@ -674,7 +949,6 @@ export function ScenesPage() {
           )}
         </>
       )}
-
     </Stack>
   );
 }

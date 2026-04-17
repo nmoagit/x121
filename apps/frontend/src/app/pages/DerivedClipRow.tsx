@@ -3,8 +3,9 @@
  * clip index badge, and derived-specific metadata prominently.
  */
 
-import { useState, useRef, useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 
+import { TranscodeStatusBadge } from "@/components/domain/TranscodeStatusBadge";
 import { Checkbox } from "@/components/primitives";
 import { ContextLoader } from "@/components/primitives";
 import type { ClipBrowseItem } from "@/features/scenes/hooks/useClipManagement";
@@ -12,9 +13,9 @@ import { isEmptyClip, isPurgedClip } from "@/features/scenes/types";
 import { getStreamUrl } from "@/features/video-player";
 import { formatDuration } from "@/features/video-player/frame-utils";
 import { formatBytes, formatDateTime } from "@/lib/format";
+import { TYPO_DATA } from "@/lib/typography-tokens";
 import { TERMINAL_STATUS_COLORS, TRACK_TEXT_COLORS } from "@/lib/ui-classes";
 import { Ban, CheckCircle, Play, XCircle } from "@/tokens/icons";
-import { TYPO_DATA } from "@/lib/typography-tokens";
 
 interface DerivedClipRowProps {
   clip: ClipBrowseItem;
@@ -26,7 +27,15 @@ interface DerivedClipRowProps {
   onToggleSelect: () => void;
 }
 
-export function DerivedClipRow({ clip, onPlay, onNavigate, onApprove, onReject, selected, onToggleSelect }: DerivedClipRowProps) {
+export function DerivedClipRow({
+  clip,
+  onPlay,
+  onNavigate,
+  onApprove,
+  onReject,
+  selected,
+  onToggleSelect,
+}: DerivedClipRowProps) {
   const ref = useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = useState(false);
   const [videoReady, setVideoReady] = useState(false);
@@ -36,7 +45,12 @@ export function DerivedClipRow({ clip, onPlay, onNavigate, onApprove, onReject, 
     const el = ref.current;
     if (!el) return;
     const observer = new IntersectionObserver(
-      ([entry]) => { if (entry?.isIntersecting) { setIsVisible(true); observer.disconnect(); } },
+      ([entry]) => {
+        if (entry?.isIntersecting) {
+          setIsVisible(true);
+          observer.disconnect();
+        }
+      },
       { rootMargin: "200px" },
     );
     observer.observe(el);
@@ -50,14 +64,18 @@ export function DerivedClipRow({ clip, onPlay, onNavigate, onApprove, onReject, 
     v.muted = true;
     v.src = videoSrc;
     v.onloadeddata = () => setVideoReady(true);
-    return () => { v.src = ""; v.onloadeddata = null; };
+    return () => {
+      v.src = "";
+      v.onloadeddata = null;
+    };
   }, [isVisible, videoSrc, clip]);
 
-  const borderColor = clip.qa_status === "approved"
-    ? "border-green-500"
-    : clip.qa_status === "rejected"
-      ? "border-red-500"
-      : "border-[var(--color-border-default)]";
+  const borderColor =
+    clip.qa_status === "approved"
+      ? "border-green-500"
+      : clip.qa_status === "rejected"
+        ? "border-red-500"
+        : "border-[var(--color-border-default)]";
 
   return (
     <div
@@ -90,10 +108,22 @@ export function DerivedClipRow({ clip, onPlay, onNavigate, onApprove, onReject, 
             onClick={onPlay}
             className="group/play relative h-14 w-20 shrink-0 rounded overflow-hidden bg-[var(--color-surface-secondary)] cursor-pointer"
           >
-            {videoReady ? (
-              <video src={videoSrc} className="absolute inset-0 w-full h-full object-cover" preload="metadata" muted />
-            ) : isVisible ? (
-              <div className="absolute inset-0 flex items-center justify-center"><ContextLoader size={14} /></div>
+            {/* PRD-169: only mount <video> when transcode is completed; otherwise show the badge. */}
+            {clip.transcode_state === "completed" && videoReady ? (
+              <video
+                src={videoSrc}
+                className="absolute inset-0 w-full h-full object-cover"
+                preload="metadata"
+                muted
+              />
+            ) : clip.transcode_state === "completed" && isVisible ? (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <ContextLoader size={14} />
+              </div>
+            ) : clip.transcode_state !== "completed" ? (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <TranscodeStatusBadge state={clip.transcode_state} error={clip.transcode_error} />
+              </div>
             ) : null}
             <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover/play:opacity-100 transition-opacity">
               <Play size={18} className="text-white" />
@@ -102,28 +132,80 @@ export function DerivedClipRow({ clip, onPlay, onNavigate, onApprove, onReject, 
         )}
 
         {/* Metadata */}
-        <button type="button" onClick={onNavigate} className={`flex min-w-0 flex-1 flex-col gap-0.5 text-left cursor-pointer ${TYPO_DATA}`}>
+        <button
+          type="button"
+          onClick={onNavigate}
+          className={`flex min-w-0 flex-1 flex-col gap-0.5 text-left cursor-pointer ${TYPO_DATA}`}
+        >
           <div className="flex items-center gap-2">
             <span className="font-medium text-[var(--color-text-primary)]">{clip.avatar_name}</span>
             <span className="text-[var(--color-text-muted)] uppercase">{clip.scene_type_name}</span>
-            <span className={TRACK_TEXT_COLORS[clip.track_name.toLowerCase()] ?? "text-[var(--color-text-muted)]"}>{clip.track_name}</span>
+            <span
+              className={
+                TRACK_TEXT_COLORS[clip.track_name.toLowerCase()] ?? "text-[var(--color-text-muted)]"
+              }
+            >
+              {clip.track_name}
+            </span>
           </div>
           <div className="flex items-center gap-2 text-[10px] text-[var(--color-text-muted)]">
-            <span className="text-[var(--color-data-cyan)] font-semibold">v{clip.version_number}</span>
+            <span className="text-[var(--color-data-cyan)] font-semibold">
+              v{clip.version_number}
+            </span>
             {clip.parent_version_id != null && (
-              <><span className="opacity-30">|</span><span className="text-[var(--color-data-violet)]">parent v{clip.parent_version_id}</span></>
+              <>
+                <span className="opacity-30">|</span>
+                <span className="text-[var(--color-data-violet)]">
+                  parent v{clip.parent_version_id}
+                </span>
+              </>
             )}
-            {clip.is_final && <><span className="opacity-30">|</span><span className="text-[var(--color-data-green)]">final</span></>}
+            {clip.is_final && (
+              <>
+                <span className="opacity-30">|</span>
+                <span className="text-[var(--color-data-green)]">final</span>
+              </>
+            )}
             {clip.qa_status !== "pending" && (
-              <><span className="opacity-30">|</span><span className={TERMINAL_STATUS_COLORS[clip.qa_status] ?? "text-[var(--color-text-muted)]"}>{clip.qa_status}</span></>
+              <>
+                <span className="opacity-30">|</span>
+                <span
+                  className={
+                    TERMINAL_STATUS_COLORS[clip.qa_status] ?? "text-[var(--color-text-muted)]"
+                  }
+                >
+                  {clip.qa_status}
+                </span>
+              </>
             )}
-            {isPurgedClip(clip) && <><span className="opacity-30">|</span><span className="text-[var(--color-data-orange)]">purged</span></>}
-            {!isPurgedClip(clip) && isEmptyClip(clip) && <><span className="opacity-30">|</span><span className="text-[var(--color-data-orange)]">empty</span></>}
-            {clip.annotation_count > 0 && <><span className="opacity-30">|</span><span className="text-[var(--color-data-orange)]">{clip.annotation_count} annotated</span></>}
+            {isPurgedClip(clip) && (
+              <>
+                <span className="opacity-30">|</span>
+                <span className="text-[var(--color-data-orange)]">purged</span>
+              </>
+            )}
+            {!isPurgedClip(clip) && isEmptyClip(clip) && (
+              <>
+                <span className="opacity-30">|</span>
+                <span className="text-[var(--color-data-orange)]">empty</span>
+              </>
+            )}
+            {clip.annotation_count > 0 && (
+              <>
+                <span className="opacity-30">|</span>
+                <span className="text-[var(--color-data-orange)]">
+                  {clip.annotation_count} annotated
+                </span>
+              </>
+            )}
             <span className="opacity-30">|</span>
-            <span>{clip.file_size_bytes != null ? formatBytes(clip.file_size_bytes) : "\u2014"}</span>
+            <span>
+              {clip.file_size_bytes != null ? formatBytes(clip.file_size_bytes) : "\u2014"}
+            </span>
             <span className="opacity-30">|</span>
-            <span>{clip.duration_secs != null ? formatDuration(clip.duration_secs) : "\u2014"}</span>
+            <span>
+              {clip.duration_secs != null ? formatDuration(clip.duration_secs) : "\u2014"}
+            </span>
             <span className="opacity-30">|</span>
             <span>{clip.project_name}</span>
             <span className="opacity-30">|</span>

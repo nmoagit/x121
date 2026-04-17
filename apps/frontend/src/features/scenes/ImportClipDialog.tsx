@@ -1,11 +1,13 @@
 import { Modal } from "@/components/composite/Modal";
+import { toastStore } from "@/components/composite/useToast";
 import { Button } from "@/components/primitives/Button";
 import { MAX_VIDEO_FILE_SIZE, VIDEO_EXTENSIONS } from "@/lib/file-types";
 import { formatBytes } from "@/lib/format";
+import { TYPO_DATA, TYPO_DATA_DANGER, TYPO_DATA_MUTED } from "@/lib/typography-tokens";
 import { FileVideo, Upload } from "@/tokens/icons";
 import { useCallback, useRef, useState } from "react";
 import { useImportClip } from "./hooks/useClipManagement";
-import { TYPO_DATA, TYPO_DATA_DANGER, TYPO_DATA_MUTED } from "@/lib/typography-tokens";
+import { uploadSuccessMessage } from "./upload-copy";
 
 interface ImportClipDialogProps {
   isOpen: boolean;
@@ -61,9 +63,32 @@ export function ImportClipDialog({ isOpen, onClose, sceneId, onSuccess }: Import
   const handleSubmit = async () => {
     if (!file) return;
     try {
-      await importMutation.mutateAsync({
+      const response = await importMutation.mutateAsync({
         file,
         notes: notes || undefined,
+      });
+      // PRD-169: toast copy reflects backend-returned transcode_state so the
+      // user sees "processing for playback" on non-H.264 uploads.
+      let transcodeState: "pending" | "in_progress" | "completed" | "failed" | null = null;
+      try {
+        if (response instanceof Response) {
+          const body = await response.clone().json();
+          const state = body?.data?.transcode_state;
+          if (
+            state === "pending" ||
+            state === "in_progress" ||
+            state === "completed" ||
+            state === "failed"
+          ) {
+            transcodeState = state;
+          }
+        }
+      } catch {
+        // Response body unreadable — fall through with null, toast uses "processing".
+      }
+      toastStore.addToast({
+        message: uploadSuccessMessage(transcodeState),
+        variant: "success",
       });
       setFile(null);
       setNotes("");
@@ -108,19 +133,13 @@ export function ImportClipDialog({ isOpen, onClose, sceneId, onSuccess }: Import
               <span className={`${TYPO_DATA} font-medium text-[var(--color-text-primary)]`}>
                 {file.name}
               </span>
-              <span className={TYPO_DATA_MUTED}>
-                {formatBytes(file.size)}
-              </span>
+              <span className={TYPO_DATA_MUTED}>{formatBytes(file.size)}</span>
             </>
           ) : (
             <>
               <Upload size={32} className="text-[var(--color-text-muted)]" />
-              <span className={TYPO_DATA_MUTED}>
-                Drag & drop a video file here
-              </span>
-              <span className={TYPO_DATA_MUTED}>
-                Accepted: .mp4, .webm, .mov (max 500 MB)
-              </span>
+              <span className={TYPO_DATA_MUTED}>Drag & drop a video file here</span>
+              <span className={TYPO_DATA_MUTED}>Accepted: .mp4, .webm, .mov (max 500 MB)</span>
             </>
           )}
         </div>
@@ -146,7 +165,9 @@ export function ImportClipDialog({ isOpen, onClose, sceneId, onSuccess }: Import
 
         {/* Notes */}
         <div className="flex flex-col gap-1.5">
-          <span className={`${TYPO_DATA} font-medium text-[var(--color-text-muted)] uppercase tracking-wide`}>
+          <span
+            className={`${TYPO_DATA} font-medium text-[var(--color-text-muted)] uppercase tracking-wide`}
+          >
             Notes (optional)
           </span>
           <textarea
@@ -164,7 +185,12 @@ export function ImportClipDialog({ isOpen, onClose, sceneId, onSuccess }: Import
         </div>
 
         <div className="flex justify-end gap-2 pt-1 border-t border-[var(--color-border-default)]">
-          <Button variant="ghost" size="sm" onClick={handleClose} disabled={importMutation.isPending}>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleClose}
+            disabled={importMutation.isPending}
+          >
             Cancel
           </Button>
           <Button
