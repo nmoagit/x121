@@ -41,6 +41,14 @@ export interface ScannedFileResponse {
   category: FileCategory;
   resolved: ResolvedContext;
   conflict: ConflictStatus;
+  /**
+   * Pre-computed SHA-256 of the file content (hex).
+   *
+   * Populated for local image/video scans so the frontend can dedup
+   * without re-hashing. S3 scans leave this `null` — hashes are computed
+   * on the server during import (PRD-165).
+   */
+  content_hash?: string | null;
 }
 
 export interface AvatarScanGroup {

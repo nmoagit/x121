@@ -180,6 +180,14 @@ export interface UpdateAvatar {
 /** A file classified from a dropped avatar folder. */
 export interface DroppedAsset {
   file: File;
+  /**
+   * Source path on the server (local path or `s3://bucket/key`).
+   *
+   * When set, the server-side import engine copies bytes from this location
+   * instead of expecting a multipart upload (PRD-165). Set by the
+   * directory-scan flow; unset for browser-drop imports.
+   */
+  serverPath?: string;
   /** For images: variant_type (e.g. "topless"). For videos: raw filename stem. */
   category: string;
   kind: "image" | "video";
@@ -195,6 +203,13 @@ export interface DroppedAsset {
     labels: string[];
     clipIndex: number | null;
   };
+}
+
+/** JSON source file reference — either a browser File or a server path. */
+export interface DroppedJsonRef {
+  file?: File;
+  /** Source path on the server (local or s3://) when this came from a scan. */
+  serverPath?: string;
 }
 
 /** Summary of hash-based deduplication for an import batch. */
@@ -221,6 +236,12 @@ export interface AvatarDropPayload {
   tovJson?: File;
   /** metadata.json file (pre-flattened metadata, takes precedence over bio/tov). */
   metadataJson?: File;
+  /** bio.json source path on the server (PRD-165 scan imports only). */
+  bioJsonPath?: string;
+  /** tov.json source path on the server (PRD-165 scan imports only). */
+  tovJsonPath?: string;
+  /** metadata.json source path on the server (PRD-165 scan imports only). */
+  metadataJsonPath?: string;
 }
 
 /** Result from folder structure detection in FileDropZone. */
