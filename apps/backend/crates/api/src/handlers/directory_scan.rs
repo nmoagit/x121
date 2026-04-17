@@ -38,6 +38,47 @@ pub(super) const PROVENANCE_DIRECTORY_SCAN: &str = "directory_scan";
 // Scan endpoint types
 // ---------------------------------------------------------------------------
 
+/// A summarised S3 scan source — just what the scan dialog's dropdown needs.
+///
+/// Exposes the bucket name and label of each configured S3 backend so any
+/// authenticated user can pre-fill an `s3://bucket/` URI without needing
+/// access to the admin-only storage credentials.
+#[derive(Debug, Serialize)]
+pub struct ScanSourceResponse {
+    pub id: DbId,
+    pub name: String,
+    pub bucket: String,
+}
+
+/// GET /api/v1/directory-scan/sources
+///
+/// List the non-secret metadata of every active S3 storage backend so the
+/// scan dialog can offer an "S3 source" dropdown without exposing the full
+/// admin credentials (PRD-165).
+pub async fn list_scan_sources(
+    _auth: AuthUser,
+    State(state): State<AppState>,
+) -> AppResult<Json<DataResponse<Vec<ScanSourceResponse>>>> {
+    let backends = StorageBackendRepo::list(&state.pool).await?;
+    let sources: Vec<ScanSourceResponse> = backends
+        .into_iter()
+        .filter(|b| b.backend_type_id == 2) // S3
+        .filter_map(|b| {
+            let bucket = b
+                .config
+                .get("bucket")
+                .and_then(|v| v.as_str())
+                .map(String::from)?;
+            Some(ScanSourceResponse {
+                id: b.id,
+                name: b.name,
+                bucket,
+            })
+        })
+        .collect();
+    Ok(Json(DataResponse { data: sources }))
+}
+
 /// Input for the scan endpoint.
 #[derive(Debug, Deserialize)]
 pub struct ScanInput {

@@ -5,7 +5,7 @@
  * POST /directory-scan/import — selectively import scanned files
  */
 
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 
 /* --------------------------------------------------------------------------
@@ -125,5 +125,25 @@ export function useDirectoryImport() {
   return useMutation({
     mutationFn: (input: ImportInput) =>
       api.post<ImportResult>("/directory-scan/import", input),
+  });
+}
+
+/* --------------------------------------------------------------------------
+   Scan source listing (PRD-165)
+   -------------------------------------------------------------------------- */
+
+/** A configured S3 storage backend visible as a scan source. */
+export interface ScanSource {
+  id: number;
+  name: string;
+  bucket: string;
+}
+
+/** List non-secret S3 scan sources for the scan dialog's source dropdown. */
+export function useScanSources() {
+  return useQuery({
+    queryKey: ["directory-scan", "sources"],
+    queryFn: () => api.get<ScanSource[]>("/directory-scan/sources"),
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }
