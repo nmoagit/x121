@@ -17,6 +17,10 @@ import type { TimelineAnnotationRange } from "./components/TimelineScrubber";
 export interface VideoPlayerControl {
   /** Set A-B loop to the given range, seek to start, and play. Pass null to clear. */
   loopRange: (range: TimelineAnnotationRange | null) => void;
+  /** Seek to an exact frame using the player's real framerate (from video metadata). */
+  seekToFrame: (frame: number) => void;
+  /** Pause playback. */
+  pause: () => void;
 }
 
 interface VideoPlayerProps {
@@ -87,6 +91,12 @@ export function VideoPlayer({
         } else {
           loop.clearLoop();
         }
+      },
+      seekToFrame(frame) {
+        player.seekToFrame(frame);
+      },
+      pause() {
+        player.pause();
       },
     };
   }

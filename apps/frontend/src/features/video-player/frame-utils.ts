@@ -35,7 +35,7 @@ export function timecodeToFrame(timecode: string, fps: number): number {
 }
 
 /**
- * Convert a frame number to seconds.
+ * Convert a frame number to seconds (start of frame's display duration).
  */
 export function frameToSeconds(frame: number, fps: number): number {
   if (fps <= 0) return 0;
@@ -43,11 +43,29 @@ export function frameToSeconds(frame: number, fps: number): number {
 }
 
 /**
+ * Time to seek to so the video reliably lands ON the given frame.
+ *
+ * Uses mid-frame time (`(frame + 0.5) / fps`) because HTMLVideoElement.currentTime
+ * tends to snap to the nearest decodable boundary, and seeking to the exact
+ * start-of-frame time (`frame / fps`) often lands on the previous frame.
+ * Mid-frame targeting keeps any snapping within frame N.
+ */
+export function frameToSeekTime(frame: number, fps: number): number {
+  if (fps <= 0) return 0;
+  return (frame + 0.5) / fps;
+}
+
+/**
  * Convert seconds to a frame number.
+ *
+ * Adds a tiny epsilon before flooring so that `secondsToFrame(frameToSeconds(n), fps)`
+ * round-trips to `n` instead of `n - 1` on values where float multiplication
+ * undershoots (e.g. `50/24 * 24 === 49.999999…`).
  */
 export function secondsToFrame(seconds: number, fps: number): number {
   if (fps <= 0) return 0;
-  return Math.floor(seconds * fps);
+  // +1e-6 corrects IEEE-754 undershoot (e.g. 50/24*24 === 49.999…) so floor returns the intended frame.
+  return Math.floor(seconds * fps + 1e-6);
 }
 
 /**

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { frameToSeconds } from "../frame-utils";
+import { frameToSeconds, frameToSeekTime } from "../frame-utils";
 
 /* --------------------------------------------------------------------------
    Types
@@ -60,7 +60,8 @@ export function useABLoop(
 
       const outTime = frameToSeconds(outPt, framerate);
       if (video && video.currentTime >= outTime) {
-        video.currentTime = frameToSeconds(inPt, framerate);
+        // Seek to mid-frame so wrap-around lands on inPt, not inPt-1.
+        video.currentTime = frameToSeekTime(inPt, framerate);
       }
     }
 

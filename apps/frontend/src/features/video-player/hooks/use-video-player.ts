@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { frameToSeconds, secondsToFrame } from "../frame-utils";
+import { frameToSeekTime, secondsToFrame } from "../frame-utils";
 
 /** Persisted playback speed across clip changes (module-level singleton). */
 let persistedSpeed = 1;
@@ -17,16 +17,17 @@ function seekToFrameAccurate(
   targetFrame: number,
   fps: number,
 ): void {
-  const targetTime = frameToSeconds(targetFrame, fps);
+  const targetTime = frameToSeekTime(targetFrame, fps);
   video.currentTime = targetTime;
 
   const onSeeked = () => {
     video.removeEventListener("seeked", onSeeked);
     const landedFrame = secondsToFrame(video.currentTime, fps);
 
-    if (landedFrame > targetFrame) {
-      // Overshot — step backward to exact frame
-      video.currentTime = targetTime - (landedFrame - targetFrame) / fps;
+    // Correct in either direction — browsers can snap forward (keyframe overshoot)
+    // or backward (start-of-frame boundary undershoot).
+    if (landedFrame !== targetFrame) {
+      video.currentTime = targetTime + (targetFrame - landedFrame) / fps;
     }
   };
   video.addEventListener("seeked", onSeeked);

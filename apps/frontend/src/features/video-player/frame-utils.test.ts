@@ -98,6 +98,14 @@ describe("secondsToFrame", () => {
     expect(secondsToFrame(2.04, 24)).toBe(48);
   });
 
+  it("round-trips frame→seconds→frame without off-by-one (frame 50 at 24fps)", () => {
+    expect(secondsToFrame(50 / 24, 24)).toBe(50);
+  });
+
+  it("round-trips frame→seconds→frame without off-by-one (frame 100 at 30fps)", () => {
+    expect(secondsToFrame(100 / 30, 30)).toBe(100);
+  });
+
   it("returns 0 for fps <= 0", () => {
     expect(secondsToFrame(10, 0)).toBe(0);
   });
