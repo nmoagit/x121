@@ -1,0 +1,60 @@
+% =============================================================================
+% alphaN2N Platform — App Guide
+% Master document
+% =============================================================================
+\documentclass[11pt,a4paper,oneside]{book}
+
+\input{preamble}
+
+\begin{document}
+
+% ---------- Title page -------------------------------------------------------
+\begin{titlepage}
+  \centering
+  \vspace*{3cm}
+
+  {\sffamily\fontsize{28}{34}\selectfont\bfseries\textcolor{appT}{alpha-N2N APP GUIDE}}\\[0.8em]
+  {\sffamily\large\textcolor{appGray}{v\today}}
+
+  \vspace{3cm}
+
+  {\normalsize Prominent Pages, Tabs \& Wizards}\\[0.8em]
+  {\normalsize App shell\enspace$\cdot$\enspace Global routes\enspace$\cdot$\enspace Pipeline workspace (x121)}
+
+  \vfill
+
+  {\small\textcolor{appGray}{INTERNAL USE ONLY\enspace$\cdot$\enspace PROPRIETARY \& CONFIDENTIAL}}
+\end{titlepage}
+
+% ---------- Table of contents ------------------------------------------------
+\tableofcontents
+\newpage
+
+% ---------- Part I: Foundations ----------------------------------------------
+\part{Foundations}
+\input{chapters/00-introduction}
+\input{chapters/01-app-shell}
+\input{chapters/02-auth-public}
+
+% ---------- Part II: Landing ------------------------------------------------
+\part{Landing}
+\input{chapters/03-pipeline-selector}
+\input{chapters/04-dashboard}
+
+% ---------- Part III: Global Nav Walkthrough ---------------------------------
+\part{Global Nav Walkthrough}
+\input{chapters/05-content}
+\input{chapters/06-queue-review}
+\input{chapters/07-tools}
+\input{chapters/08-admin}
+
+% ---------- Part IV: Pipeline Workspace --------------------------------------
+\part{Pipeline Workspace: x121 — Adult Content}
+\input{chapters/09-pipeline-workspace}
+
+% ---------- Appendices -------------------------------------------------------
+\appendix
+\input{chapters/A-appendix-modals}
+\input{chapters/B-appendix-icons}
+
+\end{document}

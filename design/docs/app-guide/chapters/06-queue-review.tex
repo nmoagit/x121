@@ -1,0 +1,77 @@
+% =============================================================================
+\chapter{Queue \& Review}
+\label{ch:queue-review}
+% =============================================================================
+
+Three prominent pages cover outstanding work: Queue (production scheduling),
+Annotations (frame-level review), and Reviews (assignment dashboard).
+
+% --------------------------------------------------------------------------
+\section{Queue}
+\label{sec:queue}
+% Route: /production/queue
+% Component: app/pages/QueuePage.tsx
+
+Production-facing view of the scheduler: running, queued, and recently completed
+jobs with priority ordering, pause / cancel / requeue actions, and an activity
+feed. Sits on top of the 9-state job state machine and the queue manager's
+allocation layer.
+
+\screenshot{06-queue-hero.png}{Production queue — active + recent jobs.}
+
+\begin{itemize}
+  \pagelement{Tab / filter strip}{Active, running, completed, failed.}
+  \pagelement{Queue rows}{Per-job rows: status, progress, worker, ETA, actions.}
+  \pagelement{Activity log}{Scrolling activity feed of queue events.}
+  \pagelement{Job actions}{Abort, requeue, jump to debugger (where permitted).}
+\end{itemize}
+
+% --------------------------------------------------------------------------
+\section{Annotations}
+\label{sec:annotations}
+% Route: /review/annotations
+% Component: app/pages/AnnotationsPage.tsx
+
+Cross-project browser for every annotated frame in the system. Annotations pin a
+drawing (and, optionally, text from a pipeline-scoped preset) to a frame or a
+frame range so "the hand is wrong" becomes an unambiguous visual mark rather
+than a vague comment.
+
+\screenshot{06-annotations-hero.png}{Annotations browser — all annotated frames.}
+
+\begin{itemize}
+  \pagelement{Filter bar}{Project / avatar search, sort, completed-scenes toggle.}
+  \pagelement{Annotation card grid}{Each card shows frame thumbnail, frame number, annotation count.}
+  \pagelement{Card overlays}{Frame badge (\texttt{f\{n\}}) and annotation count badge.}
+  \pagelement{Delete}{Inline delete button on each card (UI shown, not confirmed).}
+\end{itemize}
+
+\screenshot{06-annotations-card-detail.png}{Single annotation card with frame + count overlays.}
+
+Clicking a card opens the shared \texttt{ClipPlaybackModal} with the annotation
+overlay pre-loaded. See Appendix~\ref{ch:appendix-modals} for the modal shot.
+
+% --------------------------------------------------------------------------
+\section{Reviews}
+\label{sec:reviews}
+% Route: /reviews
+% Component: app/pages/MyReviewsPage.tsx
+
+Personal assignment dashboard for reviewers: avatar-level review gates (not
+individual segments) assigned manually by admins or by round-robin allocation,
+with an audit trail and a rejection-rework loop that re-queues the avatar when a
+creator fixes an issue.
+
+\screenshot{06-reviews-hero.png}{Reviews dashboard — empty state on this dev DB.}
+
+\begin{itemize}
+  \pagelement{Filter bar}{Assigned to me, pending, completed, project scoping.}
+  \pagelement{Assignment list}{Review assignments ordered by due date.}
+  \pagelement{Empty state}{Shown here because the dev DB has no review assignments.}
+\end{itemize}
+
+\begin{designnote}
+The Reviews page is intentionally captured in its empty state so readers
+know what "nothing to review" looks like. In a production environment this
+page carries the reviewer's active queue.
+\end{designnote}

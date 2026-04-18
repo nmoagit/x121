@@ -1,0 +1,55 @@
+% =============================================================================
+\chapter{Authentication \& Public Pages}
+\label{ch:auth-public}
+% =============================================================================
+
+Only two routes render outside the app shell: the login form and the
+external review share page. Both are public entry points and have no
+sidebar, header or footer chrome.
+
+% --------------------------------------------------------------------------
+\section{Login Page}
+\label{sec:auth-login}
+% Route: /login
+% Component: features/auth/LoginPage.tsx
+
+\screenshotnarrow{02-auth-login-hero.png}{Login page at rest.}
+
+\begin{itemize}
+  \pagelement{Brand mark}{Centred product identity.}
+  \pagelement{Email field}{\texttt{Input} with validation.}
+  \pagelement{Password field}{\texttt{Input} with show / hide toggle.}
+  \pagelement{Sign-in button}{Primary action; becomes a spinner during submit.}
+  \pagelement{Error state}{Inline error banner for invalid credentials or server failures.}
+\end{itemize}
+
+\screenshotnarrow{02-auth-login-error.png}{Login page with an invalid-credentials error.}
+
+% --------------------------------------------------------------------------
+\section{External Review Page}
+\label{sec:auth-external-review}
+% Route: /review/share/$token
+% Component: app/pages/ExternalReviewPage.tsx
+
+The route at \route{/review/share/\$token} renders an asset review surface
+keyed by a signed share token. It shows:
+
+\begin{itemize}
+  \pagelement{Share context bar}{Summary of what is being reviewed, who shared it, and the expiry.}
+  \pagelement{Player / viewer}{Renders the asset in read-only mode.}
+  \pagelement{Approve / reject controls}{Present only when the token carries review scope.}
+  \pagelement{Invalid / expired state}{Rendered when the token fails validation.}
+\end{itemize}
+
+\begin{integritynote}
+External share tokens carry a scope and an expiry. The page never loads
+project data beyond what the token permits, so a leaked URL cannot be
+used to escalate access.
+\end{integritynote}
+
+\begin{designnote}
+No screenshot is included here — the page only renders meaningful content
+given a valid share token, and we don't have one in the dev environment.
+When we wire a test-fixture token, this section will get hero + invalid
+state shots.
+\end{designnote}

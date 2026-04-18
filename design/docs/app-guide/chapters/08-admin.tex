@@ -1,0 +1,193 @@
+% =============================================================================
+\chapter{Admin}
+\label{ch:admin}
+% =============================================================================
+
+Seven prominent admin pages: Pipelines, Infrastructure, Cloud GPUs, Storage,
+Naming Rules, Queue Manager and Output Profiles. We drill into
+\textbf{x121} for pipeline detail, \textbf{RunPod} for cloud GPU detail, and
+\textbf{delivery\_video} for the naming-rule edit modal. Other
+\texttt{/admin/*} routes are out of scope.
+
+% --------------------------------------------------------------------------
+\section{Pipelines}
+\label{sec:admin-pipelines}
+% Route: /admin/pipelines
+% Component: features/admin/pipelines/PipelineListPage.tsx
+
+Pipelines are first-class top-level entities: a pipeline captures its own seed
+image requirements, workflows, tracks, naming rules and delivery formats. New
+content verticals are added by creating a pipeline record (seed slots, workflows,
+naming) rather than by forking the codebase.
+
+\screenshot{08-admin-pipelines-list-hero.png}{Pipelines list — one card per pipeline.}
+
+\begin{itemize}
+  \pagelement{Pipeline cards}{Code, name, owner, state, quick-edit link.}
+  \pagelement{Create action}{Opens the pipeline creation flow (UI shown, not submitted).}
+\end{itemize}
+
+\screenshot{08-admin-pipelines-x121-detail.png}{\texttt{x121} pipeline detail / edit page.}
+
+\begin{itemize}
+  \pagelement{General}{Code, name, owner, description.}
+  \pagelement{Seed slots}{Per-slot config (name, required flag).}
+  \pagelement{Hooks}{Pipeline hook registrations.}
+  \pagelement{Save / Delete}{Captured but never submitted.}
+\end{itemize}
+
+% --------------------------------------------------------------------------
+\section{Infrastructure}
+\label{sec:admin-infrastructure}
+% Route: /admin/infrastructure
+% Component: features/admin/infrastructure/InfrastructureControlPanel.tsx
+
+Single operational command centre for cloud GPU and ComfyUI infrastructure. It
+replaces two older UIs (an inline panel on the Generation page and the
+read-only cloud-GPU dashboard) with one page that covers the full lifecycle:
+provision $\rightarrow$ SSH startup $\rightarrow$ ComfyUI readiness $\rightarrow$
+WebSocket connection $\rightarrow$ queue distribution $\rightarrow$ teardown.
+Includes orphan detection and failed-connection recovery.
+
+\screenshot{08-admin-infrastructure-hero.png}{Infrastructure control panel.}
+
+\begin{itemize}
+  \pagelement{Provider management}{Summary of registered cloud providers.}
+  \pagelement{Provision wizard}{Opens the provisioning flow (UI shown, not submitted).}
+  \pagelement{Instance actions}{Start / stop / reclaim buttons per instance.}
+  \pagelement{Orphan panel}{Orphaned instances to reclaim.}
+  \pagelement{Activity log}{Recent provisioning events.}
+\end{itemize}
+
+% --------------------------------------------------------------------------
+\section{Cloud GPUs}
+\label{sec:admin-cloud-gpus}
+% Route: /admin/cloud-gpus
+% Component: features/admin/cloud-gpus/CloudGpuDashboard.tsx
+
+Provider registry and per-provider configuration. The integration layer is
+built around a provider trait (RunPod Pods and RunPod Serverless are the first
+implementations) so Vast.ai, Lambda Labs, etc. can be added without refactoring
+core queueing or dispatch.
+
+\screenshot{08-admin-cloud-gpus-hero.png}{Cloud GPU dashboard.}
+
+\begin{itemize}
+  \pagelement{Stats strip}{Total providers, active providers, instance counts.}
+  \pagelement{Provider list}{Card per provider with health + cost summary.}
+\end{itemize}
+
+\subsection{RunPod — provider detail}
+% Route: /admin/cloud-gpus/$providerId (RunPod → id 1)
+% Component: features/admin/cloud-gpus/components/CloudProviderDetail.tsx
+
+Per-provider detail: instance list, supported GPU types, scaling rules, and
+cost tracking. RunPod is the reference provider implementation.
+
+\screenshot{08-admin-cloud-gpus-runpod-hero.png}{RunPod provider detail — default (Instances) tab.}
+
+\begin{itemize}
+  \pagelement{Four tabs}{Instances, GPU Types, Scaling Rules, Cost.}
+\end{itemize}
+
+\subsubsection{Instances tab}
+\screenshot{08-admin-cloud-gpus-runpod-instances-tab.png}{RunPod / Instances tab.}
+
+\subsubsection{GPU Types tab}
+\screenshot{08-admin-cloud-gpus-runpod-gpu-types-tab.png}{RunPod / GPU Types tab.}
+
+\subsubsection{Scaling Rules tab}
+\screenshot{08-admin-cloud-gpus-runpod-scaling-rules-tab.png}{RunPod / Scaling Rules tab.}
+
+\subsubsection{Cost tab}
+\screenshot{08-admin-cloud-gpus-runpod-cost-tab.png}{RunPod / Cost tab.}
+
+% --------------------------------------------------------------------------
+\section{Storage}
+\label{sec:admin-storage}
+% Route: /admin/storage
+% Component: features/storage/StoragePage.tsx
+
+Backend configuration for pluggable storage. File I/O goes through a
+\texttt{StorageProvider} trait with local-filesystem and S3-compatible
+implementations (MinIO, DO Spaces, Backblaze B2), with policy-driven hot / cold
+tiering between them. Each pipeline's imports land in its own isolated storage
+path via the pipeline-scoped key helper.
+
+\screenshot{08-admin-storage-hero.png}{Storage backends list.}
+
+\begin{itemize}
+  \pagelement{Backend table}{Current backends, kind (local / S3 / Azure), status.}
+  \pagelement{Add backend}{Opens \texttt{BackendFormModal}. UI shown, never submitted.}
+\end{itemize}
+
+\screenshotnarrow{08-admin-storage-backend-form-modal.png}{BackendFormModal — new-backend form.}
+
+% --------------------------------------------------------------------------
+\section{Naming Rules}
+\label{sec:admin-naming}
+% Route: /admin/naming
+% Component: features/naming-rules/NamingRulesPage.tsx
+
+Centralised, token-based naming engine. Every file the platform produces (scene
+videos, variants, thumbnails, delivery ZIPs, exports) is named from templates
+stored per category in the database, with live preview. Global by default with
+per-project overrides for client-specific delivery specs — replacing 7+
+hardcoded patterns that previously required code changes.
+
+\screenshot{08-admin-naming-hero.png}{Admin Naming Rules — category grid.}
+
+\begin{itemize}
+  \pagelement{Category groups}{Categories grouped by domain (Generation, Storage, Export, Delivery).}
+  \pagelement{Category card}{Shows current template and an example output.}
+  \pagelement{Edit action}{Clicking opens a modal with the template editor (captured below).}
+\end{itemize}
+
+\screenshot{08-admin-naming-delivery-video-modal.png}{Edit modal for the \texttt{delivery\_video} category — template input, token chips, live preview.}
+
+\begin{itemize}
+  \pagelement{Template pattern}{Textarea for the naming template.}
+  \pagelement{Token chips}{Clickable token chips insert at cursor.}
+  \pagelement{Preview}{Live preview of a rendered filename.}
+  \pagelement{Save / Cancel}{Captured but never saved.}
+\end{itemize}
+
+% --------------------------------------------------------------------------
+\section{Queue Manager}
+\label{sec:admin-queue-manager}
+% Route: /admin/queue
+% Component: features/queue/QueueManagerPage.tsx
+
+Admin-only operational view over the same job queue the production page shows,
+with added controls: reassign jobs across workers, drain an instance without
+killing in-flight jobs, move jobs to the front, and redistribute load. This is
+what turns the queue from a status page into something admins can actively
+manage.
+
+\screenshot{08-admin-queue-manager-hero.png}{Admin Queue Manager — queue state + activity.}
+
+\begin{itemize}
+  \pagelement{Queue status view}{All jobs across the system with admin-only controls.}
+  \pagelement{Activity log}{Global queue event stream.}
+\end{itemize}
+
+% --------------------------------------------------------------------------
+\section{Output Profiles}
+\label{sec:admin-output-profiles}
+% Route: /admin/output-profiles
+% Component: features/output-profiles/OutputProfilesPage.tsx
+
+Platform-wide delivery encoding presets (resolution, codec, container, bitrate,
+framerate). One profile is designated as the platform default; projects can
+override it with a project-specific default so the ExportPanel auto-selects
+the right profile without asking.
+
+\screenshot{08-admin-output-profiles-hero.png}{Output Profiles list.}
+
+\begin{itemize}
+  \pagelement{Profile cards}{Each profile: name, codec, container, bitrate, resolution.}
+  \pagelement{Default profile}{Captured below in detail.}
+  \pagelement{Create / Edit}{Form opens in a side panel (captured, never submitted).}
+\end{itemize}
+
+\screenshotnarrow{08-admin-output-profiles-default-detail.png}{Default output profile — edit panel.}

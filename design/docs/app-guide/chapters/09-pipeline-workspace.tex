@@ -1,0 +1,243 @@
+% =============================================================================
+\chapter{Pipeline Workspace: x121 — Adult Content}
+\label{ch:pipeline-workspace}
+% =============================================================================
+
+Selecting a pipeline from the landing page enters the pipeline workspace: a
+re-scoped sidebar with an added \emph{Pipeline Admin} group, and every Content
+/ Production / Review / Tools route filtered to the chosen pipeline.
+
+We walk \texttt{x121 — Adult Content} end to end. The drill-down example uses
+the \textbf{SDG} project, and within SDG the \textbf{Amouranth} avatar.
+
+\screenshot{09-ws-enter.png}{Pipeline card click — routing into the \texttt{x121} workspace.}
+\screenshot{09-ws-sidebar.png}{Sidebar re-scoped to the \texttt{x121} workspace (note the Pipeline header and Pipeline Admin group).}
+
+\begin{designnote}
+The re-scoping is driven by \texttt{PipelineProvider} which reads
+\texttt{\$pipelineCode} from the URL. All subsequent queries include the
+pipeline ID, so even pages whose component is shared with the global nav
+(e.g. Media, Scenes) show pipeline-filtered data.
+\end{designnote}
+
+% --------------------------------------------------------------------------
+\section{Workspace Dashboard}
+\label{sec:ws-dashboard}
+% Route: /pipelines/x121/dashboard
+% Component: app/pages/PipelineDashboardPage.tsx
+
+Pipeline-scoped landing page. Same widget framework as the global dashboard, but
+every query is pre-filtered to \texttt{x121}, and the header surfaces pipeline
+seed-slot summary.
+
+\screenshot{09-ws-dashboard-hero.png}{Pipeline dashboard for \texttt{x121}.}
+
+\begin{itemize}
+  \pagelement{Pipeline header}{Code, name, description, seed-slot summary.}
+  \pagelement{Widget grid}{Pipeline-scoped Active Tasks and Project Progress widgets.}
+  \pagelement{Quick Navigation}{Grid of card links to prominent pages within the workspace.}
+\end{itemize}
+
+% --------------------------------------------------------------------------
+\section{All Projects → SDG}
+\label{sec:ws-projects}
+% Route: /pipelines/x121/projects
+% Component: features/projects/ProjectListPage.tsx
+
+Projects are the top-level container of avatars. The Project Hub list plus the
+project detail page make the project the frontend's explicit working context.
+
+
+\screenshot{09-ws-projects-list.png}{Pipeline-scoped project list.}
+
+\subsection{SDG — project detail}
+% Route: /pipelines/x121/projects/1
+% Component: features/projects/ProjectDetailPage.tsx
+
+Project detail is the central hub for avatar work. Its primary view is the
+project's avatars; additional tabs cover scene enablement, batch production
+state, delivery, and project settings.
+
+\screenshot{09-ws-sdg-detail-hero.png}{SDG detail — default (Overview) tab.}
+
+\begin{itemize}
+  \pagelement{Breadcrumb}{Projects $\rightarrow$ SDG.}
+  \pagelement{Tab strip}{Overview, Avatars, Production, Delivery, Settings.}
+  \pagelement{Review assignments link}{Opens the assignment dashboard.}
+\end{itemize}
+
+\subsubsection{Overview tab}
+Stat tickers plus the deliverables grid. Per-avatar readiness (metadata, images,
+scenes, speech) is surfaced as coloured indicators on each card so the reader
+can see at-a-glance which avatars still need work without drilling in.
+\screenshot{09-ws-sdg-overview-tab.png}{SDG / Overview — stat tickers and deliverables grid.}
+The AvatarDeliverablesGrid has two inner tabs:
+\screenshot{09-ws-sdg-overview-readiness.png}{Overview / Readiness inner tab.}
+\screenshot{09-ws-sdg-overview-matrix.png}{Overview / Matrix inner tab.}
+
+\subsubsection{Avatars tab}
+All avatars in the project. Avatars are pipeline-scoped: the same avatar name
+imported into \texttt{x121} and \texttt{y122} is two completely independent
+records with no cross-pipeline linking.
+\screenshot{09-ws-sdg-avatars-tab.png}{SDG / Avatars tab — all avatars in the project.}
+
+\subsubsection{Production tab}
+Project-level view over the batch orchestrator's scene matrix — what is queued,
+running and blocked across this project's avatars.
+\screenshot{09-ws-sdg-production-tab.png}{SDG / Production tab.}
+
+\subsubsection{Delivery tab}
+Delivery readiness per avatar, keyed off the project's \texttt{blocking\_deliverables}
+setting (non-blocking sections start deselected).
+\screenshot{09-ws-sdg-delivery-tab.png}{SDG / Delivery tab.}
+
+\subsubsection{Settings tab}
+Project-level overrides: scene enablement, naming-rule overrides, delivery
+output-profile default, metadata template inheritance.
+\screenshot{09-ws-sdg-settings-tab.png}{SDG / Settings tab.}
+
+% --------------------------------------------------------------------------
+\section{SDG → Amouranth (avatar detail)}
+\label{sec:ws-amouranth}
+% Route: /pipelines/x121/projects/1/avatars/5
+% Component: features/avatars/AvatarDetailPage.tsx
+
+Amouranth is an example avatar inside SDG. The avatar detail page is the full
+"workstation": the entire avatar workflow — image upload, seed assignment,
+scene generation, review, metadata, speech and delivery — is achievable from
+this single page without navigating away. The detail page has ten tabs.
+
+
+\screenshot{09-amouranth-hero.png}{Amouranth detail — default (Overview) tab.}
+
+\subsection{Overview}
+Aggregated snapshot of the avatar's configuration and readiness — what is set,
+what is missing, and a direct link into the fix-it flow for each gap.
+\screenshot{09-amouranth-overview-tab.png}{Amouranth / Overview tab.}
+
+\subsection{Images}
+Per-track image grid. "Image" here means a media variant: the underlying
+tables cover images, video and audio uniformly after the image-to-media
+rename.
+\screenshot{09-amouranth-images-tab.png}{Amouranth / Images tab — per-track image grid.}
+
+\subsection{Seeds}
+Seed slot cards, driven by the pipeline's \texttt{seed\_slots} definition (not
+hardcoded clothed / topless). Each slot is a Workflow Media Slot — bound to a
+\texttt{LoadImage} / \texttt{LoadVideo} / \texttt{LoadAudio} node in the workflow
+JSON — and auto-detection picks the best matching approved variant by track
+affinity.
+\screenshot{09-amouranth-seeds-tab.png}{Amouranth / Seeds tab — seed slot cards.}
+
+\subsection{Scenes}
+Every scene video version for this avatar, with clip gallery, per-clip QA
+state, and resume-from-last-good-clip for partial regenerations that avoid
+re-rendering approved work.
+\screenshot{09-amouranth-scenes-tab.png}{Amouranth / Scenes tab.}
+
+\subsection{Derived}
+Externally-processed clips cut from this avatar's approved scenes, with parent-
+version lineage preserved. Same review tooling as generated clips; import is
+available via browser upload or server-side directory scan.
+\screenshot{09-amouranth-derived-tab.png}{Amouranth / Derived clips tab.}
+
+\subsection{Metadata}
+Dual-metadata editor backed by pipeline-scoped templates. Each pipeline defines
+its own required metadata fields (x121 wants body type / ethnicity;
+y122 wants speaking style / topic expertise).
+\screenshot{09-amouranth-metadata-tab.png}{Amouranth / Metadata tab.}
+
+\subsection{Speech}
+Avatar dialogue strings organised by speech type and language — the text feed
+for ElevenLabs TTS. Speech types are pipeline-scoped, so each pipeline has its
+own set (x121 has "Flirty" / "Whisper"; y122 has "Introduction" / "Q\&A Response").
+
+\screenshot{09-amouranth-speech-tab.png}{Amouranth / Speech tab.}
+
+\subsection{Deliverables}
+Four sections — Metadata, Images, Scene Videos, Speech — gated by the project's
+\texttt{blocking\_deliverables} setting. Non-blocking sections start deselected
+("ignored") so it's clear which deliverables the project actually requires.
+\screenshot{09-amouranth-deliverables-tab.png}{Amouranth / Deliverables tab.}
+
+\subsection{Review}
+Avatar-level review gate: a holistic sign-off that says "this avatar, across all
+its scenes and deliverables, is complete". Sits above the per-clip review and
+can be auto-allocated with round-robin load balancing.
+
+\screenshot{09-amouranth-review-tab.png}{Amouranth / Review tab.}
+
+\subsection{Settings}
+Per-avatar overrides on top of project / pipeline / catalogue defaults:
+model settings, voice ID, scene enablement, and metadata overrides.
+\screenshot{09-amouranth-settings-tab.png}{Amouranth / Settings tab.}
+
+% --------------------------------------------------------------------------
+\section{Pipeline-scoped Content}
+\label{sec:ws-content}
+
+Each of these mirrors the global Content pages in Chapter~\ref{ch:content}
+but scoped to \texttt{x121}. Only the filter defaults and visible data
+differ; the UI is otherwise identical. Internal links within the workspace
+preserve the pipeline prefix so sidebar context isn't lost.
+
+\screenshot{09-ws-avatars.png}{\texttt{x121} → Avatars browse.}
+\screenshot{09-ws-library.png}{\texttt{x121} → Library.}
+\screenshot{09-ws-media.png}{\texttt{x121} → Media.}
+\screenshot{09-ws-scenes.png}{\texttt{x121} → Scenes.}
+\screenshot{09-ws-derived-clips.png}{\texttt{x121} → Derived Clips.}
+\screenshot{09-ws-catalogue.png}{\texttt{x121} → Catalogue (first tab).}
+
+% --------------------------------------------------------------------------
+\section{Pipeline-scoped Queue \& Review}
+\label{sec:ws-queue-review}
+
+Queue, Annotations and Reviews filtered to jobs, clips and assignments that
+belong to \texttt{x121}.
+
+\screenshot{09-ws-queue.png}{\texttt{x121} → Queue.}
+\screenshot{09-ws-annotations.png}{\texttt{x121} → Annotations.}
+\screenshot{09-ws-reviews.png}{\texttt{x121} → Reviews.}
+
+% --------------------------------------------------------------------------
+\section{Pipeline-scoped Tools}
+\label{sec:ws-tools}
+
+Workflows filtered to the pipeline. A scene type can only reference tracks and
+workflows that belong to its own pipeline, so cross-pipeline leakage is caught
+at save time.
+
+\screenshot{09-ws-workflows.png}{\texttt{x121} → Workflows.}
+
+% --------------------------------------------------------------------------
+\section{Pipeline Admin}
+\label{sec:ws-admin}
+
+Two admin pages are scoped to the pipeline workspace sidebar. They target the
+pipeline-level configuration that admins routinely edit without leaving the
+workspace.
+
+\subsection{Naming Rules (pipeline-scoped)}
+% Route: /pipelines/x121/naming
+% Component: features/naming-rules/NamingRulesPage.tsx (PipelineNamingRulesEditor)
+
+Edits the pipeline's import matching rules and naming-rule JSONB — the tokens
+and patterns that keep the naming engine aware of this pipeline's specifics
+(e.g. x121's \texttt{clothed.png} / \texttt{topless.png} seed convention).
+
+
+\screenshot{09-ws-naming-hero.png}{Pipeline-scoped naming editor — different UX to the admin view.}
+
+\begin{itemize}
+  \pagelement{Editor pane}{Edit the pipeline's \texttt{naming\_rules} JSONB directly.}
+  \pagelement{Validation}{Inline errors for invalid tokens.}
+  \pagelement{Save}{Captured, never submitted.}
+\end{itemize}
+
+\subsection{Output Profiles (pipeline-scoped)}
+% Route: /pipelines/x121/output-profiles
+
+Pipeline-level output-profile default. Sits in the inheritance chain between
+the platform default and any project-specific override.
+
+\screenshot{09-ws-output-profiles-hero.png}{Pipeline-scoped output profiles.}

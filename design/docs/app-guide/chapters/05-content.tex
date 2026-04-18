@@ -1,0 +1,215 @@
+% =============================================================================
+\chapter{Content}
+\label{ch:content}
+% =============================================================================
+
+The Content nav group gathers the cross-project browse surfaces: Avatars,
+Library, Media, Scenes, Derived Clips and the Scene Catalogue. Each page
+opens to a list / grid with filters and bulk actions. Where detail drill-downs
+use a concrete example, we use \textbf{Amouranth} (an avatar inside the
+\textbf{SDG} project in the \texttt{x121} pipeline).
+
+% --------------------------------------------------------------------------
+\section{Avatars (browse)}
+\label{sec:content-avatars}
+% Route: /content/avatars
+% Component: app/pages/AvatarsPage.tsx
+
+Cross-project browse surface for the platform's primary entity. "Avatar" is the
+unified term for what was historically called character / model — one name across
+database, backend and UI. Cards click through to the seed-data editor (see the
+Page intent callout below).
+
+\screenshot{05-avatars-hero.png}{Cross-project avatars browser.}
+
+\begin{itemize}
+  \pagelement{Filter bar}{Project, scene types, tracks, tag filters; free-text search.}
+  \pagelement{Avatar grid}{Card per avatar with hero thumbnail, name, project / group, stats.}
+  \pagelement{Bulk action bar}{Appears when rows are selected (approve / label / reject).}
+  \pagelement{Empty state}{Rendered when filters match zero avatars.}
+\end{itemize}
+
+Clicking an avatar card opens the \texttt{SeedDataModal} rather than navigating.
+See Chapter~\ref{ch:pipeline-workspace} for the full Avatar detail walk via
+the SDG project.
+
+\begin{designnote}
+\textbf{Page intent.} The Avatars page is shaped so it could be exposed
+externally to partners who supply seed content — the click target is the
+seed-data editor, not an internal detail view, and no pipeline-level
+controls are surfaced. If we eventually open an external-partner surface,
+this is the page we expect to derive it from.
+\end{designnote}
+
+% --------------------------------------------------------------------------
+\section{Library}
+\label{sec:content-library}
+% Route: /content/library
+% Component: app/pages/LibraryPage.tsx
+
+Studio-level avatar registry that spans projects and pipelines. An approved avatar
+prepared for Project A can be imported into Project B without re-running source-image
+QA or variant generation.
+
+\screenshot{05-library-hero.png}{Shared avatar library — cross-project view.}
+
+\begin{itemize}
+  \pagelement{Filter bar}{Project, group, tag filters; search.}
+  \pagelement{Library card grid}{Each card shows avatar stats and project chip.}
+  \pagelement{Card}{Clicking opens the \texttt{LibraryAvatarModal} (Amouranth example).}
+  \pagelement{Import affordance}{Button to open the Library \texttt{ImportDialog} (UI shown, not submitted).}
+\end{itemize}
+
+\screenshotnarrow{05-library-avatar-modal.png}{LibraryAvatarModal — Amouranth profile overview.}
+
+\begin{designnote}
+\textbf{Page intent.} The Library is read-only. Its purpose is to browse
+the shared pool of avatars across all projects and pipelines without risk
+of accidental edits. The only mutating action surfaced here is
+\emph{Import into project}, which is an explicit downstream action rather
+than an edit of the source data.
+\end{designnote}
+
+% --------------------------------------------------------------------------
+\section{Media}
+\label{sec:content-media}
+% Route: /content/media
+% Component: app/pages/MediaPage.tsx
+
+Cross-project browser for source images and generated variants — the seed assets
+that drive scene generation. The underlying tables (originally image-only) were
+renamed to \texttt{source\_media} / \texttt{media\_variants} when video and audio
+became first-class generation inputs, which is why the page route is
+\texttt{/content/media} rather than \texttt{/content/images}.
+
+\screenshot{05-media-hero.png}{Media browser — default grid view.}
+\screenshot{05-media-list.png}{Media browser — list view toggle.}
+
+\begin{itemize}
+  \pagelement{View toggle}{Grid / list switch; density adjustable.}
+  \pagelement{Filter bar}{Project, avatar, status, track, tag, date.}
+  \pagelement{Variant tile / row}{Thumbnail, version, source, approval state, quick-approve / reject.}
+  \pagelement{Bulk action bar}{Select all, label, reject, export.}
+  \pagelement{Preview}{Clicking a thumbnail opens the \texttt{ImagePreviewModal} (Amouranth example).}
+\end{itemize}
+
+\screenshot{05-media-preview-modal.png}{ImagePreviewModal — Amouranth variant.}
+
+% --------------------------------------------------------------------------
+\section{Scenes}
+\label{sec:content-scenes}
+% Route: /content/scenes
+% Component: app/pages/ScenesPage.tsx
+
+Cross-project browser over scene video versions — the assembled clips produced by
+the recursive generation loop and its re-stitching extensions. Every regeneration
+or external import creates a new version; rows here reflect those versions, not
+just scenes.
+
+\screenshot{05-scenes-hero.png}{Scenes browser.}
+
+\begin{itemize}
+  \pagelement{Filter bar}{Project, avatar, scene type, track, QA status.}
+  \pagelement{Scene rows}{Per-scene-version rows with thumb, duration, QA status, actions.}
+  \pagelement{Bulk actions}{Approve / reject / label / export.}
+  \pagelement{Playback}{Clicking a row opens the \texttt{ClipPlaybackModal} (Amouranth example).}
+\end{itemize}
+
+\screenshot{05-scenes-playback-modal.png}{ClipPlaybackModal — Amouranth clip with transport controls.}
+
+% --------------------------------------------------------------------------
+\section{Derived Clips}
+\label{sec:content-derived-clips}
+% Route: /content/derived-clips
+% Component: app/pages/DerivedClipsPage.tsx
+
+Derived clips are externally-processed videos — LoRA training chunks, test renders,
+reference cuts — that are imported back into the app for review. They carry a
+parent-version link, so every derived clip knows which approved clip it was cut
+from, and they reuse the same annotation / tag / approval tooling as generated
+clips. Bulk import is supported via browser upload and via a server-side directory
+scan.
+
+\screenshot{05-derived-clips-hero.png}{Derived clips browser.}
+
+\begin{itemize}
+  \pagelement{Grouping}{Derived clips grouped by parent version.}
+  \pagelement{Scan \& import}{Scan a directory to register imported clips (UI only).}
+  \pagelement{Actions}{Approve / reject / delete / open lineage.}
+\end{itemize}
+
+\screenshotnarrow{05-derived-clips-group.png}{A single derived-clip group expanded.}
+
+% --------------------------------------------------------------------------
+\section{Catalogue (Scene Catalogue)}
+\label{sec:content-catalogue}
+% Route: /content/scene-catalogue
+% Component: app/pages/SceneCataloguePage.tsx
+
+The Catalogue is the studio-level registry of what can be generated: image types,
+scene types, tracks (clothed / topless / speaker / …), per-track workflow and
+prompt assignments, and default video settings. It replaces the old flat
+\texttt{variant\_applicability} string with a normalized tracks model and unifies
+what used to be two separate tables (\texttt{scene\_types} + \texttt{scene\_catalog})
+behind a single page.
+
+\begin{designnote}
+Three-tier inheritance: catalogue defaults flow into project settings, which can
+be overridden per avatar. A scene type can only reference tracks from the same
+pipeline, so cross-pipeline mix-ups are rejected at save time.
+\end{designnote}
+
+\screenshot{05-catalogue-hero.png}{Scene Catalogue — default tab (Image Types).}
+
+\begin{itemize}
+  \pagelement{Seven tabs}{Image Types, Scene Types, Catalogue, Tracks, Workflows, Prompt Defaults, Video Settings.}
+\end{itemize}
+
+\subsection{Image Types tab}
+Image catalogue — image counterpart to the scene catalogue. Defines generatable
+image types (e.g. \texttt{clothed} generated from \texttt{topless} seed) with
+workflow assignments and per-track configuration.
+\screenshot{05-catalogue-image-types-tab.png}{Image Types tab.}
+
+\subsection{Scene Types tab}
+The reusable "recipe" layer: each scene type packages a workflow, LoRA config,
+prompt template, and duration — stamped across avatars rather than configured
+one-by-one.
+\screenshot{05-catalogue-scene-types-tab.png}{Scene Types tab.}
+
+\subsection{Catalogue tab}
+Full cross-product view of scene types × tracks — the generation matrix at a
+glance. This is the unified view that replaced the split \texttt{scene\_types} /
+\texttt{scene\_catalog} pages.
+\screenshot{05-catalogue-catalogue-tab.png}{Catalogue tab — full cross-product of scene types and tracks.}
+
+\subsection{Tracks tab}
+Tracks are the extensible replacement for the old \texttt{variant\_applicability}
+string (clothed / topless / speaker / …). Admins can add, rename, reorder, and
+deactivate tracks without schema migrations.
+\screenshot{05-catalogue-tracks-tab.png}{Tracks tab.}
+
+\subsection{Workflows tab}
+Per-track default workflow assignments. The three-level naming hierarchy
+(workflow $\rightarrow$ scene type $\rightarrow$ scene) lets a single workflow
+file back multiple scene variants without duplicating entries.
+
+\screenshot{05-catalogue-workflows-tab.png}{Workflows tab — per-track default workflow assignments.}
+
+\subsection{Prompt Defaults tab}
+Per-scene-type prompt templates with placeholder substitution from avatar
+metadata. Prompt node mapping and additive per-avatar-per-scene overrides let
+prompts be edited in-app instead of opening the workflow in ComfyUI.
+\screenshot{05-catalogue-prompt-defaults-tab.png}{Prompt Defaults tab.}
+
+\subsection{Video Settings tab}
+Default video parameters that feed the recursive generation loop and the
+in-workflow chunking strategies (duration, boundary-frame selection,
+clothes-off transition behaviour).
+\screenshot{05-catalogue-video-settings-tab.png}{Video Settings tab.}
+
+\begin{designnote}
+Most rows on these tabs expose inline editors for prompts, workflow
+assignments, or settings. We capture tab list views only — editing UI is
+shown but never submitted.
+\end{designnote}

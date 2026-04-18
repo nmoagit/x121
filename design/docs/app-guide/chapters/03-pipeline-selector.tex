@@ -1,0 +1,34 @@
+% =============================================================================
+\chapter{Pipeline Selector}
+\label{ch:pipeline-selector}
+% =============================================================================
+
+The pipeline selector is the landing page for the app shell. Everyone
+starts here after login: pick a pipeline to enter its workspace, or
+continue in global mode by navigating via the sidebar.
+
+% --------------------------------------------------------------------------
+\section{PipelineSelectorPage}
+\label{sec:pipeline-selector-page}
+% Route: /
+% Component: app/pages/PipelineSelectorPage.tsx
+
+\screenshot{03-pipeline-selector-hero.png}{Pipeline selector — card grid of available pipelines.}
+
+\begin{itemize}
+  \pagelement{Header}{Page title and a short hint about what a pipeline is.}
+  \pagelement{Card grid}{One card per pipeline (code, name, status, owner).}
+  \pagelement{Pipeline card}{Click navigates into the pipeline workspace (Chapter~\ref{ch:pipeline-workspace-x121}).}
+  \pagelement{Create pipeline action}{Visible for admins; opens the admin flow.}
+  \pagelement{Empty state}{Rendered when no pipelines exist yet, with a call-to-action.}
+  \pagelement{Error state}{Rendered when the backend call fails.}
+\end{itemize}
+
+\screenshot{03-pipeline-selector-empty.png}{Empty state — no pipelines yet.}
+\screenshotnarrow{03-pipeline-selector-card-detail.png}{A single pipeline card showing code, name and status.}
+
+\begin{designnote}
+The selector is intentionally the app root (\route{/}) so a fresh
+session always surfaces pipeline choice, even for users who have been
+working inside a pipeline previously.
+\end{designnote}

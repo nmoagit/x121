@@ -1,0 +1,184 @@
+% =============================================================================
+\chapter{App Shell}
+\label{ch:app-shell}
+% =============================================================================
+
+The app shell is the frame that wraps every authenticated page: the
+collapsible left sidebar, the top header, the main content region, the
+status footer at the bottom, and a slide-up activity console. The same
+components render on every route, so they are documented once here and
+referenced throughout the rest of the guide.
+
+% --------------------------------------------------------------------------
+\section{AppShell}
+\label{sec:app-shell-appshell}
+% Component: app/AppShell.tsx
+
+\screenshot{01-app-shell-appshell-hero.png}{The outer \texttt{AppShell} layout: Sidebar, Header, main content and StatusFooter.}
+
+\begin{itemize}
+  \pagelement{Sidebar region}{Left column, collapsible, carries all navigation.}
+  \pagelement{Header region}{Top bar with page title / breadcrumb and user menu.}
+  \pagelement{Main region}{The current route's page renders here, inside a scrollable container.}
+  \pagelement{StatusFooter}{Always-visible single-line bar anchored to the bottom edge.}
+  \pagelement{ActivityConsoleDrawer}{Slide-up panel summoned from the StatusFooter's Console toggle.}
+  \pagelement{PageGuideBanner}{Per-route dismissible tip banner rendered just under the Header when applicable.}
+\end{itemize}
+
+% --------------------------------------------------------------------------
+\section{Sidebar}
+\label{sec:app-shell-sidebar}
+% Component: components/layout/Sidebar.tsx
+
+\screenshotpair{01-app-shell-sidebar-expanded.png}{Sidebar expanded (default).}{01-app-shell-sidebar-collapsed.png}{Sidebar collapsed (icon-only).}
+
+\begin{itemize}
+  \pagelement{Expand / collapse toggle}{Flips between full-width (labels visible) and compact (icons only) modes.}
+  \pagelement{Pipeline header block}{Visible only when inside a pipeline route; shows pipeline code, name and a back-to-global chip.}
+  \pagelement{Nav groups}{Rendered from \texttt{NAV\_GROUPS} globally or \texttt{buildPipelineNavGroups()} inside a pipeline.}
+  \pagelement{Active highlight}{Current route is highlighted; groups collapse / expand according to selection state.}
+  \pagelement{Role-gated items}{Admin group only renders when the logged-in user has the admin role.}
+\end{itemize}
+
+\subsection{Global nav groups (\texttt{NAV\_GROUPS})}
+\label{sec:app-shell-nav-groups-global}
+% File: apps/frontend/src/app/navigation.ts
+
+\begin{itemize}
+  \pagelement{Overview}{Dashboard, Performance.}
+  \pagelement{Pipelines}{All Pipelines (the selector at \route{/}).}
+  \pagelement{Content}{Avatars, Library, Media, Scenes, Derived Clips, Catalogue, Storyboard, Avatar Dashboard, Contact Sheet, Duplicates.}
+  \pagelement{Production}{Queue, Generation, Test Shots, Batch, Delivery, Checkpoints, Debugger, Render Timeline.}
+  \pagelement{Review}{Annotations, Reviews, Notes, Production Notes, QA Gates, Cinema, Temporal.}
+  \pagelement{Tools}{Workflows, Prompts, Config, Presets, Search, Branching, Activity Console, Avatar Ingest, Batch Metadata, Pipeline Hooks, Import Workflow, Undo Tree.}
+  \pagelement{Admin (role-gated)}{Pipelines, Infrastructure, Cloud GPUs, Storage, Naming Rules, Queue Manager, Output Profiles, Hardware, Workers, Integrity, Audit, Reclamation, Downloads, API Keys, Extensions, Maintenance, Onboarding Wizard, Legacy Import, Readiness, Settings, Themes, Job Scheduling, Sessions, Webhook Testing, API Observability, Trigger Workflows, Backups, Budgets, GPU Scheduling, Disk Usage, Failure Analytics, Importer, Config Import.}
+  \pagelement{Settings}{Shortcuts, Wiki.}
+\end{itemize}
+
+\subsection{Pipeline nav groups (\texttt{buildPipelineNavGroups})}
+\label{sec:app-shell-nav-groups-pipeline}
+% File: apps/frontend/src/app/pipeline-navigation.ts
+
+\begin{itemize}
+  \pagelement{Overview}{Dashboard.}
+  \pagelement{Projects}{All Projects (plus dynamic per-project children rendered indented).}
+  \pagelement{Content}{Avatars, Library, Media, Scenes, Derived Clips, Catalogue, Storyboard, Avatar Dashboard, Contact Sheet, Duplicates.}
+  \pagelement{Production}{Queue, Generation, Test Shots, Batch, Delivery, Checkpoints, Debugger, Render Timeline.}
+  \pagelement{Review}{Annotations, Reviews, Notes, Production Notes, QA Gates, Cinema, Temporal.}
+  \pagelement{Tools}{Workflows, Prompts, Config, Presets, Search, Branching, Activity Console, Avatar Ingest, Batch Metadata, Pipeline Hooks, Import Workflow, Undo Tree.}
+  \pagelement{Pipeline Admin}{Naming Rules, Output Profiles, Settings — only appears inside a pipeline.}
+\end{itemize}
+
+\begin{designnote}
+Two nav catalogues share one \texttt{Sidebar} component. Which catalogue
+is used is decided by the presence of a pipeline context: global routes
+see \texttt{NAV\_GROUPS}, pipeline routes see
+\texttt{buildPipelineNavGroups(code)}.
+\end{designnote}
+
+% --------------------------------------------------------------------------
+\section{Header}
+\label{sec:app-shell-header}
+% Component: components/layout/Header.tsx
+
+\screenshotstrip{01-app-shell-header-hero.png}{Top header with page title, optional breadcrumb, and user menu entry.}
+
+\begin{itemize}
+  \pagelement{Page title}{Derived from the current route.}
+  \pagelement{Breadcrumb}{Context trail for nested routes (project, avatar, pipeline).}
+  \pagelement{User menu entry}{Avatar glyph / initials; clicking opens \texttt{UserMenu}.}
+\end{itemize}
+
+% --------------------------------------------------------------------------
+\section{UserMenu}
+\label{sec:app-shell-user-menu}
+% Component: components/layout/UserMenu.tsx
+
+\screenshotnarrow{01-app-shell-user-menu-open.png}{UserMenu open, showing Theme toggle and actions.}
+
+\begin{itemize}
+  \pagelement{Theme toggle}{Light / System / Dark (\texttt{ThemeToggle}).}
+  \pagelement{Settings}{Link to \route{/settings/shortcuts}.}
+  \pagelement{Log out}{Ends the session, returns to \route{/login}.}
+\end{itemize}
+
+% --------------------------------------------------------------------------
+\section{StatusFooter}
+\label{sec:app-shell-status-footer}
+% Component: components/layout/StatusFooter.tsx
+
+\screenshotstrip{01-app-shell-status-footer-hero.png}{StatusFooter: console toggle and live segments.}
+
+\begin{itemize}
+  \pagelement{Console toggle}{Opens / closes the \texttt{ActivityConsoleDrawer}.}
+  \pagelement{ServiceHealth segment}{Backend / DB / ComfyUI reachability summary.}
+  \pagelement{CloudGpu segment}{Provisioned / running GPU instances at a glance.}
+  \pagelement{Job segment}{Queue depth and currently running jobs.}
+  \pagelement{Workflow segment}{Active workflow runs / failures.}
+\end{itemize}
+
+% --------------------------------------------------------------------------
+\section{ActivityConsoleDrawer}
+\label{sec:app-shell-activity-console}
+% Component: features/activity-console/ActivityConsoleDrawer.tsx
+
+\screenshot{01-app-shell-activity-console-hero.png}{ActivityConsoleDrawer open over the main content.}
+
+\begin{itemize}
+  \pagelement{Drawer chrome}{Slides up from the footer, dimmed backdrop, close button.}
+  \pagelement{Tab strip}{Four tabs: Generation, Infra, Live, History.}
+\end{itemize}
+
+\subsection{Generation tab}
+\screenshot{01-app-shell-activity-console-generation-tab.png}{Generation tab — recent / running generation jobs.}
+\begin{itemize}
+  \pagelement{Job rows}{Recent generation jobs with status, duration, ETA.}
+  \pagelement{Actions}{Jump to debugger, abort, requeue where permitted.}
+\end{itemize}
+
+\subsection{Infra tab}
+\screenshot{01-app-shell-activity-console-infra-tab.png}{Infra tab — infrastructure event stream.}
+\begin{itemize}
+  \pagelement{Event stream}{Provider actions, provisioning events, failures.}
+\end{itemize}
+
+\subsection{Live tab}
+\screenshot{01-app-shell-activity-console-live-tab.png}{Live tab — real-time log tail.}
+\begin{itemize}
+  \pagelement{Live log tail}{Streaming output from current activity.}
+\end{itemize}
+
+\subsection{History tab}
+\screenshot{01-app-shell-activity-console-history-tab.png}{History tab — browsable historical activity.}
+\begin{itemize}
+  \pagelement{Filter bar}{Filter by kind / date range.}
+  \pagelement{Row list}{Paginated history.}
+\end{itemize}
+
+% --------------------------------------------------------------------------
+\section{PageGuideBanner}
+\label{sec:app-shell-page-guide}
+% Component: components/layout/PageGuideBanner.tsx
+
+\screenshot{01-app-shell-page-guide-banner.png}{Dismissible per-route guide banner under the Header.}
+
+\begin{itemize}
+  \pagelement{Tip body}{Short, route-specific hint for first-time visitors.}
+  \pagelement{Dismiss action}{Persists "dismissed" state per route so the banner does not return.}
+\end{itemize}
+
+% --------------------------------------------------------------------------
+\section{ProtectedRoute}
+\label{sec:app-shell-protected-route}
+% Component: app/ProtectedRoute.tsx
+
+\texttt{ProtectedRoute} wraps every authenticated route. Unauthenticated
+visits redirect to \route{/login}; role-gated routes (anything under the
+Admin group) additionally require the appropriate role or redirect to
+the Dashboard.
+
+\begin{designnote}
+Route guards live above the page components so pages themselves can
+assume a valid session. Unsupported-role access is treated as a soft
+redirect, not a 403 screen.
+\end{designnote}

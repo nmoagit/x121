@@ -1,0 +1,96 @@
+% =============================================================================
+\chapter{Dashboard \& Performance}
+\label{ch:dashboard}
+% =============================================================================
+
+Two routes sit under the Overview nav group: the global Dashboard and the
+Performance analytics page.
+
+% --------------------------------------------------------------------------
+\section{Global Dashboard}
+\label{sec:dashboard-global}
+% Route: /dashboard
+% Component: app/pages/DashboardPage.tsx
+
+The Studio Pulse Dashboard is the default landing page: a real-time, event-bus-driven
+overview of studio activity (active jobs, disk health, project progress, recent
+events). It exists so nobody has to navigate into individual projects just to see
+whether anything is on fire.
+
+\screenshot{04-dashboard-global-hero.png}{Global Dashboard — full page with widget grid.}
+
+\begin{itemize}
+  \pagelement{Header row}{Page title, time-range selector, refresh control.}
+  \pagelement{Banner slot}{Notification / KYC / onboarding banners when applicable.}
+  \pagelement{Widget grid}{Responsive grid of dashboard widgets (see list below).}
+  \pagelement{Empty / loading states}{Widgets render their own skeletons while fetching.}
+\end{itemize}
+
+\screenshot{04-dashboard-global-widget-grid.png}{Widget grid detail — multiple rows of widgets.}
+
+\subsection{Widgets used on this page}
+
+The widget grid is user-configurable: widgets can be added, removed, resized, and
+arranged via drag-and-drop, with role-based defaults so admins, creators and
+reviewers each get a sensible starting layout.
+
+\begin{itemize}
+  \pagelement{ActiveTasksWidget}{In-flight jobs with status and ETA.}
+  \pagelement{ProjectProgressWidget}{Progress bars per active project.}
+  \pagelement{AvatarReadinessWidget}{Readiness roll-up across avatars.}
+  \pagelement{ActivityFeedWidget}{Recent cross-app activity.}
+  \pagelement{ScheduledGenerationsWidget}{Upcoming scheduled generation runs.}
+  \pagelement{DiskHealthWidget}{Disk usage / reclamation headroom.}
+  \pagelement{InfraStatusWidget}{Cloud GPU / worker snapshot.}
+\end{itemize}
+
+% --------------------------------------------------------------------------
+\section{Performance Dashboard}
+\label{sec:dashboard-performance}
+% Route: /performance
+% Component: features/performance/PerformanceDashboard.tsx
+
+The Performance Dashboard reports on generation cost and quality — time-per-frame,
+GPU time, VRAM peaks, likeness scores, failure trends — so admins can identify
+expensive or low-quality workflows and right-size worker allocation.
+
+\screenshot{04-performance-hero.png}{Performance dashboard — default (Overview) tab.}
+
+\begin{itemize}
+  \pagelement{Tab strip}{Five tabs: Overview, Quality Trends, Workflow Comparison, Worker Benchmarking, Alert Thresholds.}
+  \pagelement{Time range}{Global time window that scopes all tabs.}
+  \pagelement{Export}{CSV export of the current tab's data set.}
+\end{itemize}
+
+\subsection{Overview tab}
+\screenshot{04-performance-overview-tab.png}{Performance / Overview tab.}
+\begin{itemize}
+  \pagelement{KPI tiles}{Throughput, success rate, average job duration.}
+  \pagelement{Trend chart}{Headline time-series of recent job counts.}
+\end{itemize}
+
+\subsection{Quality Trends tab}
+\screenshot{04-performance-quality-trends-tab.png}{Performance / Quality Trends tab.}
+\begin{itemize}
+  \pagelement{Quality metric picker}{Selects which quality score to chart.}
+  \pagelement{Trend chart}{Quality score over time, broken down by avatar / scene type.}
+\end{itemize}
+
+\subsection{Workflow Comparison tab}
+\screenshot{04-performance-workflow-comparison-tab.png}{Performance / Workflow Comparison tab.}
+\begin{itemize}
+  \pagelement{Workflow pickers}{Select two or more workflows to compare.}
+  \pagelement{Comparison chart}{Side-by-side metrics for picked workflows.}
+\end{itemize}
+
+\subsection{Worker Benchmarking tab}
+\screenshot{04-performance-worker-benchmarking-tab.png}{Performance / Worker Benchmarking tab.}
+\begin{itemize}
+  \pagelement{Worker table}{Per-worker throughput and average job time.}
+\end{itemize}
+
+\subsection{Alert Thresholds tab}
+\screenshot{04-performance-alert-thresholds-tab.png}{Performance / Alert Thresholds tab.}
+\begin{itemize}
+  \pagelement{Threshold editor}{Configurable thresholds for alerting on quality / throughput drift.}
+\end{itemize}

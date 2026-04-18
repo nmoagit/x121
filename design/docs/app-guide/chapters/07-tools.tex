@@ -1,0 +1,77 @@
+% =============================================================================
+\chapter{Tools: Workflows}
+\label{ch:tools}
+% =============================================================================
+
+Only one Tools page is prominent in the sidebar: the Workflows browser and
+detail panel. All other \texttt{/tools/*} routes are secondary and not
+covered here.
+
+% --------------------------------------------------------------------------
+\section{Workflows}
+\label{sec:tools-workflows}
+% Route: /tools/workflows
+% Component: app/pages/WorkflowsPage.tsx
+
+The Workflows page manages imported ComfyUI workflow JSON. Import-time validation
+checks every referenced custom node, model and LoRA against the active workers,
+so missing dependencies fail in seconds rather than during a production run.
+Once validated, a workflow can be wired to scene types, used as a generation
+strategy target, or inspected visually.
+
+\screenshot{07-workflows-hero.png}{Workflows browser — list with selection pane.}
+
+\begin{itemize}
+  \pagelement{List pane (left)}{All workflows with name, track, status indicator.}
+  \pagelement{Detail pane (right)}{Shows the selected workflow with tabbed sub-views.}
+  \pagelement{Import New tab}{Top-level tab that opens the import-new affordance (UI only).}
+  \pagelement{Bulk actions}{Enable / disable workflows by selection.}
+\end{itemize}
+
+\screenshot{07-workflows-list-bj-selected.png}{\texttt{bj} workflow selected — detail panel populated.}
+
+The rest of this chapter walks the \texttt{bj} workflow's five detail tabs.
+
+\subsection{Canvas tab}
+React-Flow rendering of the workflow's node graph. Used to locate bottlenecks
+visually — node-level timing telemetry surfaces which nodes consume the most
+GPU time.
+\screenshot{07-workflow-bj-canvas-tab.png}{Workflow detail / Canvas tab — node graph view of the \texttt{bj} workflow.}
+
+\begin{itemize}
+  \pagelement{Canvas}{Interactive node-and-edge layout (ComfyUI graph).}
+  \pagelement{Zoom / pan}{Minimap + controls for navigating the graph.}
+\end{itemize}
+
+\subsection{Raw JSON tab}
+Read-only view of the stored workflow definition. Canonical source for dry-run
+execution and for diffing across workflow versions.
+\screenshot{07-workflow-bj-raw-json-tab.png}{Workflow detail / Raw JSON tab.}
+\begin{itemize}
+  \pagelement{JSON viewer}{Read-only view of the workflow definition.}
+\end{itemize}
+
+\subsection{Validation tab}
+Structured import-time checks: schema conformance, missing custom nodes, missing
+models / LoRAs, required inputs. A workflow that fails validation is blocked
+from scene-type assignment.
+\screenshot{07-workflow-bj-validation-tab.png}{Workflow detail / Validation tab.}
+\begin{itemize}
+  \pagelement{Validation checks}{Schema conformance, missing nodes, required inputs.}
+\end{itemize}
+
+\subsection{Scenes tab}
+Lists every scene type currently pinned to this workflow. Because scene types
+are the "recipe" layer, this is the reverse-lookup view for "what breaks if I
+re-import this workflow".
+\screenshot{07-workflow-bj-scenes-tab.png}{Workflow detail / Scenes tab — scene types using this workflow.}
+\begin{itemize}
+  \pagelement{Scene assignment list}{Scene types currently pinned to the \texttt{bj} workflow.}
+\end{itemize}
+
+\subsection{Info tab}
+Provenance metadata: version, author, source file, last-imported-at.
+\screenshot{07-workflow-bj-info-tab.png}{Workflow detail / Info tab.}
+\begin{itemize}
+  \pagelement{Metadata}{Version, author, source file, last-imported-at.}
+\end{itemize}

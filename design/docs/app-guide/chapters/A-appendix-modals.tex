@@ -1,0 +1,48 @@
+% =============================================================================
+\chapter{Modal Index}
+\label{ch:appendix-modals}
+% =============================================================================
+
+Every modal referenced from a prominent page. Each entry shows the modal,
+its file path, what opens it, and one line on its purpose. Modals that open
+import / create / destructive flows are captured with their UI visible but
+their submit actions never executed.
+
+% --------------------------------------------------------------------------
+\section{Content modals}
+
+\screenshotnarrow{A-modal-library-avatar.png}{\texttt{LibraryAvatarModal} — avatar profile from the shared library (opened from Ch.~\ref{sec:content-library}).}
+
+\screenshotnarrow{A-modal-image-preview.png}{\texttt{ImagePreviewModal} — image variant preview (opened from Ch.~\ref{sec:content-media}).}
+
+\screenshotnarrow{A-modal-clip-playback.png}{\texttt{ClipPlaybackModal} — video playback with transport controls (opened from Ch.~\ref{sec:content-scenes}).}
+
+\screenshotnarrow{A-modal-seed-data.png}{\texttt{SeedDataModal} — avatar seed data editor (opened from Ch.~\ref{sec:content-avatars}).}
+
+% --------------------------------------------------------------------------
+\section{Review modals}
+
+\screenshotnarrow{A-modal-clip-playback-annotations.png}{\texttt{ClipPlaybackModal} with annotation overlay (opened from Ch.~\ref{sec:annotations}).}
+
+% --------------------------------------------------------------------------
+\section{Admin modals}
+
+\screenshotnarrow{A-modal-backend-form.png}{\texttt{BackendFormModal} — add / edit a storage backend (opened from Ch.~\ref{sec:admin-storage}).}
+
+\screenshotnarrow{A-modal-naming-rule-edit.png}{Naming rule edit modal for \texttt{delivery\_video} (opened from Ch.~\ref{sec:admin-naming}).}
+
+\screenshotnarrow{A-modal-provision-wizard.png}{\texttt{ProvisionWizard} — provision a new cloud instance (opened from Ch.~\ref{sec:admin-infrastructure}; UI only).}
+
+% --------------------------------------------------------------------------
+\section{Project / avatar modals (from pipeline workspace)}
+
+\screenshotnarrow{A-modal-avatar-edit.png}{Avatar edit modal — opened from Amouranth detail (Ch.~\ref{sec:ws-amouranth}).}
+
+\screenshotnarrow{A-modal-queue-outstanding.png}{\texttt{QueueOutstandingModal} — confirm queuing avatars (opened from SDG → Production tab).}
+
+\begin{designnote}
+Modal captures are best-effort: each modal has a distinct trigger and some
+open only when specific data is selected. If a modal is not captured, the
+placeholder will read ``Screenshot pending''. The spec catalogues which
+modals it attempts in \texttt{apps/frontend/e2e/capture/A-appendix-modals.spec.ts}.
+\end{designnote}

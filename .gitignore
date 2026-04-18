@@ -139,3 +139,21 @@ runpod/
 # Design Assets (screenshots, mockups)
 # -----------------------------------------------------------------------------
 design/screenshots/
+
+# -----------------------------------------------------------------------------
+# App Guide (LaTeX build artifacts + Playwright-captured screenshots)
+# -----------------------------------------------------------------------------
+design/docs/app-guide/screenshots/
+design/docs/app-guide/out/
+design/docs/app-guide/main.pdf
+design/docs/app-guide/main.aux
+design/docs/app-guide/main.log
+design/docs/app-guide/main.out
+design/docs/app-guide/main.toc
+design/docs/app-guide/_chapter_tmp.*
+
+# -----------------------------------------------------------------------------
+# Playwright (test outputs)
+# -----------------------------------------------------------------------------
+apps/frontend/test-results/
+apps/frontend/playwright-report/

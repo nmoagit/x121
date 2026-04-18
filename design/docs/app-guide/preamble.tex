@@ -1,0 +1,275 @@
+% =============================================================================
+% αN2N Platform — App Guide
+% Shared preamble: packages, custom commands, styling
+% Styled to echo the app's terminal/neon aesthetic while staying print-friendly.
+% Adapted from reesets_app/docs/portal-guide/preamble.tex.
+% =============================================================================
+
+% ---------- Packages ---------------------------------------------------------
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[sfdefault]{roboto}  % Roboto (primary — body + headings)
+\usepackage{roboto-mono}        % Roboto Mono (technical/code)
+\usepackage[top=1.8cm,bottom=1.8cm,left=1.5cm,right=1.5cm]{geometry}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{longtable}
+\usepackage{colortbl}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage[most]{tcolorbox}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{pifont}
+\usepackage{microtype}
+\usepackage{parskip}
+\usepackage{setspace}
+\usepackage{footnote}
+
+% ---------- Line-breaking fixes ----------------------------------------------
+\newcommand{\breakaliases}{%
+  \let\origttfamily\ttfamily
+  \renewcommand{\ttfamily}{\origttfamily\hyphenchar\font=`\-}%
+}
+\AtBeginDocument{\breakaliases}
+\tolerance=1000
+\emergencystretch=1.5em
+\setlength{\hfuzz}{12pt}
+
+% ---------- Colour palette ---------------------------------------------------
+% Terminal/neon-inspired but print-friendly. Heading colour is a calm cyan
+% so the document reads well on paper.
+\definecolor{appT}{HTML}{0B7B8C}            % Primary cyan-teal (headings)
+\definecolor{appT2}{HTML}{065E6C}           % Darker cyan (links)
+\definecolor{appGray}{HTML}{555555}         % Muted text
+\definecolor{appLightGray}{HTML}{F4F6F8}    % Very light background
+\definecolor{appTableHead}{HTML}{0B7B8C}    % Table header bg
+\definecolor{appBlack}{HTML}{1F2328}        % Body text
+\definecolor{appAccent}{HTML}{A7533C}       % Warm contrast accent (warnings)
+
+% ---------- Hyperlink styling ------------------------------------------------
+\hypersetup{
+  colorlinks=true,
+  linkcolor=appT2,
+  urlcolor=appT2,
+  citecolor=appT2,
+  pdfauthor={Matthias Asemota},
+  pdftitle={alpha-N2N Platform — App Guide},
+  pdfsubject={Comprehensive page, tab and modal documentation},
+  pdfkeywords={trulience, alphaN2N, avatars, pipelines, app guide, internal},
+  pdfcreator={Trulience},
+  pdfproducer={Trulience},
+}
+
+% ---------- Header / Footer --------------------------------------------------
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[R]{\small\textcolor{appGray}{\_alphaN2N\enspace|\enspace\thepage}}
+\fancyfoot[C]{\small\textcolor{appGray}{INTERNAL — PROPRIETARY \& CONFIDENTIAL}}
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\footrulewidth}{0pt}
+
+\fancypagestyle{plain}{%
+  \fancyhf{}%
+  \fancyhead[R]{\small\textcolor{appGray}{\_alphaN2N\enspace|\enspace\thepage}}%
+  \fancyfoot[C]{\small\textcolor{appGray}{INTERNAL — PROPRIETARY \& CONFIDENTIAL}}%
+  \renewcommand{\headrulewidth}{0pt}%
+  \renewcommand{\footrulewidth}{0pt}%
+}
+
+% ---------- Section title styling --------------------------------------------
+\titleformat{\chapter}[display]
+  {\sffamily\LARGE\bfseries\color{appT}}
+  {\chaptertitlename\ \thechapter}{16pt}{\huge\sffamily\bfseries}
+\titleformat{\section}
+  {\sffamily\Large\bfseries\color{appT}}
+  {\thesection}{0.8em}{}
+\titleformat{\subsection}
+  {\sffamily\large\bfseries\color{appT}}
+  {\thesubsection}{0.8em}{}
+\titleformat{\subsubsection}
+  {\sffamily\normalsize\bfseries\color{appBlack}}
+  {\thesubsubsection}{0.8em}{}
+
+% ---------- List styling -----------------------------------------------------
+\setlist[itemize]{leftmargin=2em, itemsep=3pt, parsep=2pt}
+\setlist[enumerate]{leftmargin=2em, itemsep=3pt, parsep=2pt}
+
+% ---------- Table styling ----------------------------------------------------
+\newcommand{\tableheader}[1]{%
+  \cellcolor{appTableHead}\textcolor{white}{\textbf{#1}}%
+}
+
+% ---------- Custom environments ----------------------------------------------
+
+% Screenshot with caption: \screenshot{path}{caption}
+% Renders at up to full textwidth with a minimum rendered width (0.55\textwidth)
+% so narrow crops (header, footer, login card) stay legible rather than
+% shrinking to postage-stamp size. Height is capped so a tall crop still
+% leaves room for the caption.
+\newcommand{\screenshot}[2]{%
+  \begin{figure}[H]
+    \centering
+    \IfFileExists{screenshots/#1}{%
+      \includegraphics[width=\textwidth,height=0.75\textheight,keepaspectratio]{screenshots/#1}%
+    }{%
+      \fbox{%
+        \parbox{0.9\textwidth}{%
+          \vspace{3em}
+          \centering\textcolor{appGray}{\textit{Screenshot pending}}\\[0.5em]
+          \texttt{\small \detokenize{#1}}
+          \vspace{3em}
+        }%
+      }%
+    }
+    \caption{#2}
+  \end{figure}
+}
+
+% Narrow / region-crop screenshot: \screenshotnarrow{path}{caption}
+% For small sub-UI captures (login card, modal, user menu dropdown, etc.)
+% that look small at full-textwidth scale. Renders at 0.65\textwidth so
+% content is easy to read without stretching a small source image.
+\newcommand{\screenshotnarrow}[2]{%
+  \begin{figure}[H]
+    \centering
+    \IfFileExists{screenshots/#1}{%
+      \includegraphics[width=0.65\textwidth,height=0.75\textheight,keepaspectratio]{screenshots/#1}%
+    }{%
+      \fbox{%
+        \parbox{0.6\textwidth}{%
+          \vspace{2em}
+          \centering\textcolor{appGray}{\textit{Screenshot pending}}\\[0.5em]
+          \texttt{\small \detokenize{#1}}
+          \vspace{2em}
+        }%
+      }%
+    }
+    \caption{#2}
+  \end{figure}
+}
+
+% Wide / thin-strip screenshot: \screenshotstrip{path}{caption}
+% For very wide narrow captures (header bar, status footer). Caps HEIGHT at
+% 0.15\textheight rather than fitting to width, so the image doesn't blow up
+% vertically into a skinny unreadable strip.
+\newcommand{\screenshotstrip}[2]{%
+  \begin{figure}[H]
+    \centering
+    \IfFileExists{screenshots/#1}{%
+      \includegraphics[width=\textwidth,height=0.12\textheight,keepaspectratio]{screenshots/#1}%
+    }{%
+      \fbox{%
+        \parbox{0.9\textwidth}{%
+          \vspace{1em}
+          \centering\textcolor{appGray}{\textit{Screenshot pending}}\\[0.3em]
+          \texttt{\small \detokenize{#1}}
+          \vspace{1em}
+        }%
+      }%
+    }
+    \caption{#2}
+  \end{figure}
+}
+
+% Two side-by-side screenshots
+\newcommand{\screenshotpair}[4]{%
+  \begin{figure}[H]
+    \centering
+    \begin{subfigure}[t]{0.48\textwidth}
+      \centering
+      \IfFileExists{screenshots/#1}{%
+        \includegraphics[width=\textwidth,height=0.75\textheight,keepaspectratio]{screenshots/#1}%
+      }{%
+        \fbox{%
+          \parbox{0.85\textwidth}{%
+            \vspace{2.5em}\centering\textcolor{appGray}{\textit{Screenshot pending}}\\[0.3em]
+            \texttt{\scriptsize \detokenize{#1}}\vspace{2.5em}%
+          }%
+        }%
+      }
+      \caption{#2}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[t]{0.48\textwidth}
+      \centering
+      \IfFileExists{screenshots/#3}{%
+        \includegraphics[width=\textwidth,height=0.75\textheight,keepaspectratio]{screenshots/#3}%
+      }{%
+        \fbox{%
+          \parbox{0.85\textwidth}{%
+            \vspace{2.5em}\centering\textcolor{appGray}{\textit{Screenshot pending}}\\[0.3em]
+            \texttt{\scriptsize \detokenize{#3}}\vspace{2.5em}%
+          }%
+        }%
+      }
+      \caption{#4}
+    \end{subfigure}
+  \end{figure}
+}
+
+% Small inline icon glyph (for the icon reference appendix).
+% Usage: \iconrow{filename.png}{IconName}{Short meaning in this app}
+\newcommand{\iconrow}[3]{%
+  \noindent\begin{minipage}[c]{0.06\textwidth}%
+    \IfFileExists{screenshots/icons/#1}{%
+      \includegraphics[height=1.3em,keepaspectratio]{screenshots/icons/#1}%
+    }{%
+      \fbox{\rule{0pt}{1.2em}\rule{1.2em}{0pt}}%
+    }%
+  \end{minipage}%
+  \begin{minipage}[c]{0.20\textwidth}\texttt{#2}\end{minipage}%
+  \begin{minipage}[c]{0.72\textwidth}#3\end{minipage}\\[2pt]
+}
+
+% ---------- Callout boxes ----------------------------------------------------
+\newtcolorbox{designnote}{
+  blanker,
+  borderline west={2pt}{0pt}{appT},
+  left=10pt, right=6pt, top=6pt, bottom=6pt,
+  before upper={\sffamily\textbf{\textcolor{appT}{Design Decision.}}\enspace},
+}
+
+\newtcolorbox{integritynote}{
+  blanker,
+  borderline west={2pt}{0pt}{appT},
+  left=10pt, right=6pt, top=6pt, bottom=6pt,
+  before upper={\sffamily\textbf{\textcolor{appT}{Integrity \& Safety.}}\enspace},
+}
+
+\newtcolorbox{rolenote}[1][]{
+  blanker,
+  borderline west={2pt}{0pt}{appT},
+  left=10pt, right=6pt, top=6pt, bottom=6pt,
+  before upper={\sffamily\textbf{\textcolor{appT}{Role-Specific: #1.}}\enspace},
+}
+
+\newtcolorbox{warningnote}{
+  blanker,
+  borderline west={2pt}{0pt}{appAccent},
+  left=10pt, right=6pt, top=6pt, bottom=6pt,
+  before upper={\sffamily\textbf{\textcolor{appAccent}{Important.}}\enspace},
+}
+
+\newtcolorbox{futureidea}{
+  blanker,
+  borderline west={2pt}{0pt}{appT},
+  left=10pt, right=6pt, top=6pt, bottom=6pt,
+  before upper={\sffamily\textbf{\textcolor{appT}{Future Idea.}}\enspace},
+}
+
+% ---------- Utility commands -------------------------------------------------
+
+% Key-value detail row.
+\newcommand{\pagelement}[2]{\item \textbf{#1} — #2}
+
+% Tab indicator.
+\newcommand{\tab}[1]{\texttt{#1}}
+
+% Route indicator.
+\newcommand{\route}[1]{\texttt{#1}}

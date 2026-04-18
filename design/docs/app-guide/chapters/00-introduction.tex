@@ -1,0 +1,92 @@
+% =============================================================================
+\chapter{Introduction}
+\label{ch:introduction}
+% =============================================================================
+
+This guide documents every page, tab, modal and icon in the \emph{alphaN2N}
+avatar-production platform. It is intended as an internal reference — a way to
+onboard new team members, align engineering and product on existing behaviour,
+and capture what the UI actually does (not what we think it does).
+
+\begin{designnote}
+The app is still evolving, and you will notice visible overlap between some
+pages — for instance the same piece of data may be reachable from several
+nav entries, or two pages may offer similar filters against slightly
+different scopes. This is deliberate: we are exploring which surfaces best
+fit the team's day-to-day workflow, and some ideas will be merged, renamed
+or retired as that picture firms up. Treat overlap as a sign that the UX is
+still settling, not a mistake.
+\end{designnote}
+
+% --------------------------------------------------------------------------
+\section{Audience}
+\label{sec:intro-audience}
+
+\begin{itemize}
+  \pagelement{Engineers}{joining a feature area and needing a map of what exists.}
+  \pagelement{Product \& design}{auditing flows, spotting gaps, and checking whether the UI matches the PRDs.}
+  \pagelement{Operations \& support}{cross-referencing what users see against backend behaviour.}
+  \pagelement{QA}{building test plans from a canonical list of pages, tabs and modals.}
+\end{itemize}
+
+% --------------------------------------------------------------------------
+\section{How to read this guide}
+\label{sec:intro-how-to-read}
+
+The guide follows the app's own navigation. Part I covers the shell and public
+pages everyone sees. Parts II–VII walk the global sidebar groups in order
+(Overview, Projects/Avatars, Content, Production, Review, Tools). Part VIII
+covers the Admin area. Part X then takes a complete walk through the pipeline
+workspace using the \texttt{x121 — adult content} pipeline as a worked example,
+so the reader can see how every page re-scopes when entered via a pipeline
+context.
+
+Within each chapter:
+
+\begin{itemize}
+  \pagelement{Hero shot}{a full-page screenshot of the page at rest, taken on a seeded dev database.}
+  \pagelement{Sections}{one sub-section per prominent UI region (header, filters, grid, side panels, etc.) with its own screenshot.}
+  \pagelement{Tabs}{every tab on a tabbed page is screenshotted and described.}
+  \pagelement{Modals}{every modal the page can open appears with a screenshot of its opened state (backdrop included). Shared modals also appear in Appendix~A.}
+\end{itemize}
+
+Two appendices round the guide out:
+
+\begin{itemize}
+  \pagelement{Appendix~A}{master index of every modal in the app, grouped by feature domain.}
+  \pagelement{Appendix~B}{every icon used in the UI, grouped by category, with a sentence on what it means in context here (since the same icon can mean different things in different apps).}
+\end{itemize}
+
+% --------------------------------------------------------------------------
+\section{Capture conventions}
+\label{sec:intro-capture}
+
+Screenshots are taken against the \emph{live} development database — no seed
+script wipes or reshapes the data, so every shot reflects whatever projects,
+avatars and generated assets currently exist in the running dev environment.
+Capture specs are strictly read-only.
+
+We use two capture passes:
+
+\begin{enumerate}
+  \item \textbf{Global pass} — logged in as super-admin, pipeline selector open, walking the global sidebar top-to-bottom.
+  \item \textbf{Pipeline pass} — pipeline \texttt{x121 — adult content} selected, walking the pipeline-scoped sidebar. \texttt{x121} is the only pipeline deep-dived; other pipelines (e.g.\ \texttt{y122}) behave identically and are not captured separately.
+\end{enumerate}
+
+Public email templates and external-share-link variants are out of scope for
+this edition.
+
+Where a page appears in both global and pipeline contexts and renders the same
+component, we document it once (in the global part) and note any pipeline-scope
+differences inline.
+
+\begin{designnote}
+The goal of this guide is fidelity to what the UI actually does today, not
+aspirational design. If you find something here that disagrees with the running
+app, the app is right — raise a doc update.
+\end{designnote}
+
+\begin{futureidea}
+Automate screenshot capture with Playwright so every chapter rebuilds from
+seeded state on demand, and the PDF stays in sync as the UI evolves.
+\end{futureidea}
